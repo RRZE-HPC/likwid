@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -111,7 +111,7 @@ memsweep_setMemoryFraction(uint64_t fraction)
 void
 memsweep_node(void)
 {
-    for ( uint32_t i=0; i < numa_info.numberOfNodes; i++)
+    for ( int i=0; i < numa_info.numberOfNodes; i++)
     {
         memsweep_domain(i);
     }
@@ -135,9 +135,15 @@ memsweep_domain(int domainId)
 void
 memsweep_threadGroup(int* processorList, int numberOfProcessors)
 {
-    for (uint32_t i=0; i<numa_info.numberOfNodes; i++)
+    uint32_t i;
+    int j;
+    int ret=0;
+    int numberOfNodes = 0;
+    unsigned long mask = 0UL;
+
+    for (i=0; i<numa_info.numberOfNodes; i++)
     {
-        for (int j=0; j<numberOfProcessors; j++)
+        for (j=0; j<numberOfProcessors; j++)
         {
             if (findProcessor(i,processorList[j]))
             {

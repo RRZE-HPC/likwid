@@ -11,11 +11,11 @@ my $fc = '!';
 
 #my $VERSION   = '<VERSION>';
 #my $DATE   = '<DATE>';
-my $VERSION   = '3.1';
-my $DATE   = '5.2.2014';
-my $YEAR  = '2014';
+my $VERSION   = '2.4 beta';
+my $DATE   = '26.09.2012';
+my $YEAR  = '2012';
 my $AUTHOR = 'Jan Treibig';
-my $LICENSE = 'gpl';
+my $LICENSE = 'bsd';
 
 sub print_copyright
 {
@@ -24,7 +24,7 @@ sub print_copyright
 
     if ($LICENSE eq 'gpl') {
         print $fh <<END;
-$cm      Copyright (C) $YEAR $AUTHOR
+$cm      Copyright (C) $YEAR $AUTHOR 
 $cm
 $cm      This program is free software: you can redistribute it and/or modify it under
 $cm      the terms of the GNU General Public License as published by the Free Software

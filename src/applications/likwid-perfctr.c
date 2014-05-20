@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -42,7 +42,6 @@
 
 #include <error.h>
 #include <types.h>
-#include <bitUtil.h>
 #include <accessClient.h>
 #include <msr.h>
 #include <timer.h>
@@ -73,7 +72,8 @@ printf("-m\t use markers inside code \n"); \
 printf("-s\t bitmask with threads to skip\n"); \
 printf("-o\t Store output to file. (Optional: Apply text filter)\n"); \
 printf("-O\t Output easily parseable CSV instead of fancy tables\n"); \
-printf("-M\t set how MSR registers are accessed: 0=direct, 1=msrd\n"); \
+printf("-M\t set how MSR registers are accessed: 0=direct, 1=msrd, 2=sysmsrd \n"); \
+printf("-P\t request low priority mode from sysdaemon \n"); \
 printf("-a\t list available performance groups\n"); \
 printf("-e\t list available counters and events\n"); \
 printf("-i\t print cpu info\n"); \
@@ -92,7 +92,7 @@ static void Signal_Handler(int sig)
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 int main (int argc, char** argv)
-{
+{ 
     int optInfo = 0;
     int optPrintGroups = 0;
     int optPrintGroupHelp = 0;
@@ -109,7 +109,6 @@ int main (int argc, char** argv)
     bstring  skipString;
     bstring  filterScript = bfromcstr("NO");
     int skipMask = 0;
-    BitMask counterMask;
     bstring filepath = bformat("/tmp/likwid_%u.txt", (uint32_t) getpid());
     int numThreads = 0;
     int threads[MAX_NUM_THREADS];
@@ -118,18 +117,15 @@ int main (int argc, char** argv)
     FILE* OUTSTREAM = stdout;
     struct timespec interval;
 
-    if (argc ==  1)
+    if (argc ==  1) 
     {
         HELP_MSG;
         bdestroy(filepath);
         bdestroy(eventString);
-        exit (EXIT_SUCCESS);
+        exit (EXIT_SUCCESS);    
     }
 
-    if (cpuid_init() == EXIT_FAILURE)
-    {
-        ERROR_PLAIN_PRINT(Unsupported processor!);
-    }
+    cpuid_init();
     numa_init();
     affinity_init();
 
@@ -164,7 +160,7 @@ int main (int argc, char** argv)
 
                 break;
             case 'd':
-                printf("Option -d for daemon mode is deprecated. Daemon mode has be renamed to timeline mode (Option -t)!\n");
+                printf("Option -t for daemon mode is deprecated. Daemon mode has be renamed to timeline mode (Option -t)!\n");
                 break;
             case 'e':
                 numThreads=1; /*to get over the error message */
@@ -177,10 +173,9 @@ int main (int argc, char** argv)
                 break;
             case 'h':
                 HELP_MSG;
-                cpuid_print();
                 bdestroy(filepath);
                 bdestroy(eventString);
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case 'H':
                 numThreads=1; /*to get over the error message */
                 threads[0]=0;
@@ -211,6 +206,9 @@ int main (int argc, char** argv)
             case 'O':
                 perfmon_setCSVMode(1);
                 break;
+            case 'P':
+                accessClient_setlowaccesspriority();
+                break;
             case 's':
                 CHECK_OPTION_STRING;
                 skipMask = strtoul((char*) argString->data,NULL,16);
@@ -220,6 +218,7 @@ int main (int argc, char** argv)
                 optStethoscope = str2int((char*) argString->data);
                 break;
             case 't':
+                printf("Option -t for pinning is deprecated. The OpenMP type is now determined automatically!\n");
                 CHECK_OPTION_STRING;
                 bstr_to_interval(argString, &interval);
                 optTimeline = 1;
@@ -228,7 +227,7 @@ int main (int argc, char** argv)
                 VERSION_MSG;
                 bdestroy(filepath);
                 bdestroy(eventString);
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case 'V':
                 perfmon_verbose = 1;
                 break;
@@ -248,7 +247,7 @@ int main (int argc, char** argv)
                 HELP_MSG;
                 bdestroy(filepath);
                 bdestroy(eventString);
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
         }
     }
 
@@ -258,7 +257,7 @@ int main (int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    if (optPin)
+    if (optPin) 
     {
 
         if ( getenv("OMP_NUM_THREADS") == NULL )
@@ -278,19 +277,17 @@ int main (int argc, char** argv)
                 bformata(pinString,",%d",threads[i]);
             }
 
-            bformata(pinString,",%d",threads[0]);
-
             skipString = bformat("%d",skipMask);
 
             setenv("KMP_AFFINITY", "disabled", 1);
             setenv("LIKWID_PIN",(char*) pinString->data , 1);
             setenv("LIKWID_SKIP",(char*) skipString->data , 1);
-            setenv("LIKWID_SILENT","true", 1);
+            //           setenv("LIKWID_SILENT","true", 1);
             if (ldPreload == NULL)
             {
                 setenv("LD_PRELOAD",TOSTRING(LIBLIKWIDPIN), 1);
             }
-            else
+            else 
             {
                 bconchar(ldPreload, ':');
                 bcatcstr(ldPreload, TOSTRING(LIBLIKWIDPIN));
@@ -321,10 +318,10 @@ int main (int argc, char** argv)
         sia.sa_flags = 0;
         sigaction(SIGPIPE, &sia, NULL);
     }
-
+    
     perfmon_init(numThreads, threads, OUTSTREAM);
 
-    if (perfmon_verbose)
+    if (perfmon_verbose) 
     {
         fprintf(OUTSTREAM,"CPU family:\t%u \n",cpuid_info.family);
         fprintf(OUTSTREAM,"CPU model:\t%u \n", cpuid_info.model);
@@ -349,18 +346,18 @@ int main (int argc, char** argv)
     if (optPrintGroups)
     {
         perfmon_printAvailableGroups();
-        exit (EXIT_SUCCESS);
+        exit (EXIT_SUCCESS);    
     }
     if (optPrintGroupHelp)
     {
         perfmon_printGroupHelp(eventString);
-        exit (EXIT_SUCCESS);
+        exit (EXIT_SUCCESS);    
     }
     if (optPrintEvents)
     {
         perfmon_printCounters();
         perfmon_printEvents();
-        exit (EXIT_SUCCESS);
+        exit (EXIT_SUCCESS);    
     }
     if ((!optTimeline && !optStethoscope) && (optind == argc)) 
     {
@@ -380,12 +377,12 @@ int main (int argc, char** argv)
     fprintf(OUTSTREAM,"CPU type:\t%s \n",cpuid_info.name);
     fprintf(OUTSTREAM,"CPU clock:\t%3.2f GHz \n",  (float) timer_getCpuClock() * 1.E-09);
 
-    perfmon_setupEventSet(eventString, &counterMask);
+    perfmon_setupEventSet(eventString);
     fprintf(OUTSTREAM,HLINE);
 
     if (optTimeline)
     {
-        fprintf(OUTSTREAM,"CORES: %d", threads[0]);
+        fprintf(OUTSTREAM,"CORES: %d", threads[1]);
         for (int i=1; i<numThreads; i++)
         {
             fprintf(OUTSTREAM," %d", threads[i]);
@@ -408,6 +405,7 @@ int main (int argc, char** argv)
     }
     else
     {
+
         for (i=1; i<(argc-optind); i++)
         {
             bconchar(exeString, ' ');
@@ -425,20 +423,16 @@ int main (int argc, char** argv)
         }
         else
         {
-            setenv("LIKWID_FILEPATH",(char*) filepath->data, 1);
-
-            char* modeStr = (char*) malloc(40 * sizeof(char));
+            char* modeStr = (char*) malloc(4 * sizeof(char));
             sprintf(modeStr,"%d",accessClient_mode);
+            setenv("LIKWID_FILEPATH",(char*) filepath->data, 1);
             setenv("LIKWID_MODE", modeStr, 1);
-            bitMask_toString(modeStr,counterMask);
-            setenv("LIKWID_MASK", modeStr, 1);
             free(modeStr);
 
             perfmon_startCounters();
         }
 
         fprintf(OUTSTREAM,"%s\n",bdata(exeString));
-
         if (system(bdata(exeString)) == EOF)
         {
             fprintf(stderr, "Failed to execute %s!\n", bdata(exeString));
@@ -468,6 +462,7 @@ int main (int argc, char** argv)
     bdestroy(filepath);
     bdestroy(exeString);
     perfmon_finalize();
+
     fflush(OUTSTREAM);
     fclose(OUTSTREAM);
     /* call filterscript if specified */

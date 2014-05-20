@@ -5,15 +5,13 @@ FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
 PWR0  PWR_PKG_ENERGY
-PWR3  PWR_DRAM_ENERGY
 
 METRICS
 Runtime (RDTSC) [s] time 
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-Energy [J]  PWR0
-Energy DRAM [J]  PWR3
+Energy [J]  PWR0 
 Power [W] PWR0/time
 
 LONG

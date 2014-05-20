@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -36,10 +36,11 @@
 typedef struct LikwidThreadResults{
     bstring  label;
     double time;
-    TimerData startTime;
+    CyclesData startTime;
     uint32_t count;
     double StartPMcounters[NUM_PMC];
     double PMcounters[NUM_PMC];
+    struct LikwidThreadResults* next;
 } LikwidThreadResults;
 
 typedef struct {

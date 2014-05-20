@@ -3,7 +3,7 @@
  *
  *      Filename:  perfmon_atom.h
  *
- *      Description:  Header file of perfmon module for Atom
+ *      Description:  Atom specific subroutines
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,9 +28,14 @@
  * =======================================================================================
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #include <perfmon_atom_events.h>
 #include <perfmon_atom_groups.h>
 
+
 static int perfmon_numGroupsAtom = NUM_GROUPS_ATOM;
 static int perfmon_numArchEventsAtom = NUM_ARCH_EVENTS_ATOM;
+
 

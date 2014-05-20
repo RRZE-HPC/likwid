@@ -3,7 +3,7 @@
  *
  *      Filename:  power.h
  *
- *      Description:  Header File Power Module
+ *      Description:  Header File Power Module. 
  *                    Implements Intel RAPL Interface.
  *
  *      Version:   <VERSION>
@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

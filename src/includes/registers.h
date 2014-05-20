@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -97,9 +97,9 @@
 #define MSR_MIC_PERF_GLOBAL_CTRL      0x02F 
 
 
-/* Core v1/v2 type uncore
+/* Sandy Bridge type uncore 
  * Naming following Intel Uncore Performance Monitoring Guide
- * Ref. Nr. 327043-001 and 329468-001
+ * Ref. Nr. 327043-001
  * */
 
 /* CBo Performance Monitoring */
@@ -112,7 +112,6 @@
 #define MSR_UNC_C0_PMON_CTL2           0xD12
 #define MSR_UNC_C0_PMON_CTL3           0xD13
 #define MSR_UNC_C0_PMON_BOX_FILTER     0xD14
-#define MSR_UNC_C0_PMON_BOX_FILTER1    0xD1A
 #define MSR_UNC_C0_PMON_BOX_CTL        0xD04
 
 #define MSR_UNC_C1_PMON_CTR0           0xD36
@@ -124,7 +123,6 @@
 #define MSR_UNC_C1_PMON_CTL2           0xD32
 #define MSR_UNC_C1_PMON_CTL3           0xD33
 #define MSR_UNC_C1_PMON_BOX_FILTER     0xD34
-#define MSR_UNC_C1_PMON_BOX_FILTER1    0xD3A
 #define MSR_UNC_C1_PMON_BOX_CTL        0xD24
 
 #define MSR_UNC_C2_PMON_CTR0           0xD56
@@ -136,7 +134,6 @@
 #define MSR_UNC_C2_PMON_CTL2           0xD52
 #define MSR_UNC_C2_PMON_CTL3           0xD53
 #define MSR_UNC_C2_PMON_BOX_FILTER     0xD54
-#define MSR_UNC_C2_PMON_BOX_FILTER1    0xD5A
 #define MSR_UNC_C2_PMON_BOX_CTL        0xD44
 
 #define MSR_UNC_C3_PMON_CTR0           0xD76
@@ -148,7 +145,6 @@
 #define MSR_UNC_C3_PMON_CTL2           0xD72
 #define MSR_UNC_C3_PMON_CTL3           0xD73
 #define MSR_UNC_C3_PMON_BOX_FILTER     0xD74
-#define MSR_UNC_C3_PMON_BOX_FILTER1    0xD7A
 #define MSR_UNC_C3_PMON_BOX_CTL        0xD64
 
 #define MSR_UNC_C4_PMON_CTR0           0xD96
@@ -160,7 +156,6 @@
 #define MSR_UNC_C4_PMON_CTL2           0xD92
 #define MSR_UNC_C4_PMON_CTL3           0xD93
 #define MSR_UNC_C4_PMON_BOX_FILTER     0xD94
-#define MSR_UNC_C4_PMON_BOX_FILTER1    0xD9A
 #define MSR_UNC_C4_PMON_BOX_CTL        0xD84
 
 #define MSR_UNC_C5_PMON_CTR0           0xDB6
@@ -172,7 +167,6 @@
 #define MSR_UNC_C5_PMON_CTL2           0xDB2
 #define MSR_UNC_C5_PMON_CTL3           0xDB3
 #define MSR_UNC_C5_PMON_BOX_FILTER     0xDB4
-#define MSR_UNC_C5_PMON_BOX_FILTER1    0xDBA
 #define MSR_UNC_C5_PMON_BOX_CTL        0xDA4
 
 #define MSR_UNC_C6_PMON_CTR0           0xDD6
@@ -184,7 +178,6 @@
 #define MSR_UNC_C6_PMON_CTL2           0xDD2
 #define MSR_UNC_C6_PMON_CTL3           0xDD3
 #define MSR_UNC_C6_PMON_BOX_FILTER     0xDD4
-#define MSR_UNC_C6_PMON_BOX_FILTER1    0xDDA
 #define MSR_UNC_C6_PMON_BOX_CTL        0xDC4
 
 #define MSR_UNC_C7_PMON_CTR0           0xDF6
@@ -196,92 +189,7 @@
 #define MSR_UNC_C7_PMON_CTL2           0xDF2
 #define MSR_UNC_C7_PMON_CTL3           0xDF3
 #define MSR_UNC_C7_PMON_BOX_FILTER     0xDF4
-#define MSR_UNC_C7_PMON_BOX_FILTER1    0xDFA
 #define MSR_UNC_C7_PMON_BOX_CTL        0xDE4
-
-#define MSR_UNC_C8_PMON_CTR0           0xE16
-#define MSR_UNC_C8_PMON_CTR1           0xE17
-#define MSR_UNC_C8_PMON_CTR2           0xE18
-#define MSR_UNC_C8_PMON_CTR3           0xE19
-#define MSR_UNC_C8_PMON_CTL0           0xE10
-#define MSR_UNC_C8_PMON_CTL1           0xE11
-#define MSR_UNC_C8_PMON_CTL2           0xE12
-#define MSR_UNC_C8_PMON_CTL3           0xE13
-#define MSR_UNC_C8_PMON_BOX_FILTER     0xE14
-#define MSR_UNC_C8_PMON_BOX_FILTER1    0xE1A
-#define MSR_UNC_C8_PMON_BOX_CTL        0xE04
-
-#define MSR_UNC_C9_PMON_CTR0           0xE36
-#define MSR_UNC_C9_PMON_CTR1           0xE37
-#define MSR_UNC_C9_PMON_CTR2           0xE38
-#define MSR_UNC_C9_PMON_CTR3           0xE39
-#define MSR_UNC_C9_PMON_CTL0           0xE30
-#define MSR_UNC_C9_PMON_CTL1           0xE31
-#define MSR_UNC_C9_PMON_CTL2           0xE32
-#define MSR_UNC_C9_PMON_CTL3           0xE33
-#define MSR_UNC_C9_PMON_BOX_FILTER     0xE34
-#define MSR_UNC_C9_PMON_BOX_FILTER1    0xE3A
-#define MSR_UNC_C9_PMON_BOX_CTL        0xE24
-
-#define MSR_UNC_C10_PMON_CTR0           0xE56
-#define MSR_UNC_C10_PMON_CTR1           0xE57
-#define MSR_UNC_C10_PMON_CTR2           0xE58
-#define MSR_UNC_C10_PMON_CTR3           0xE59
-#define MSR_UNC_C10_PMON_CTL0           0xE50
-#define MSR_UNC_C10_PMON_CTL1           0xE51
-#define MSR_UNC_C10_PMON_CTL2           0xE52
-#define MSR_UNC_C10_PMON_CTL3           0xE53
-#define MSR_UNC_C10_PMON_BOX_FILTER     0xE54
-#define MSR_UNC_C10_PMON_BOX_FILTER1    0xE5A
-#define MSR_UNC_C10_PMON_BOX_CTL        0xE44
-
-#define MSR_UNC_C11_PMON_CTR0           0xE76
-#define MSR_UNC_C11_PMON_CTR1           0xE77
-#define MSR_UNC_C11_PMON_CTR2           0xE78
-#define MSR_UNC_C11_PMON_CTR3           0xE79
-#define MSR_UNC_C11_PMON_CTL0           0xE70
-#define MSR_UNC_C11_PMON_CTL1           0xE71
-#define MSR_UNC_C11_PMON_CTL2           0xE72
-#define MSR_UNC_C11_PMON_CTL3           0xE73
-#define MSR_UNC_C11_PMON_BOX_FILTER     0xE74
-#define MSR_UNC_C11_PMON_BOX_FILTER1    0xE7A
-#define MSR_UNC_C11_PMON_BOX_CTL        0xE64
-
-#define MSR_UNC_C12_PMON_CTR0           0xE96
-#define MSR_UNC_C12_PMON_CTR1           0xE97
-#define MSR_UNC_C12_PMON_CTR2           0xE98
-#define MSR_UNC_C12_PMON_CTR3           0xE99
-#define MSR_UNC_C12_PMON_CTL0           0xE90
-#define MSR_UNC_C12_PMON_CTL1           0xE91
-#define MSR_UNC_C12_PMON_CTL2           0xE92
-#define MSR_UNC_C12_PMON_CTL3           0xE93
-#define MSR_UNC_C12_PMON_BOX_FILTER     0xE94
-#define MSR_UNC_C12_PMON_BOX_FILTER1    0xE9A
-#define MSR_UNC_C12_PMON_BOX_CTL        0xE84
-
-#define MSR_UNC_C13_PMON_CTR0           0xEB6
-#define MSR_UNC_C13_PMON_CTR1           0xEB7
-#define MSR_UNC_C13_PMON_CTR2           0xEB8
-#define MSR_UNC_C13_PMON_CTR3           0xEB9
-#define MSR_UNC_C13_PMON_CTL0           0xEB0
-#define MSR_UNC_C13_PMON_CTL1           0xEB1
-#define MSR_UNC_C13_PMON_CTL2           0xEB2
-#define MSR_UNC_C13_PMON_CTL3           0xEB3
-#define MSR_UNC_C13_PMON_BOX_FILTER     0xEB4
-#define MSR_UNC_C13_PMON_BOX_FILTER1    0xEBA
-#define MSR_UNC_C13_PMON_BOX_CTL        0xEA4
-
-#define MSR_UNC_C14_PMON_CTR0           0xED6
-#define MSR_UNC_C14_PMON_CTR1           0xED7
-#define MSR_UNC_C14_PMON_CTR2           0xED8
-#define MSR_UNC_C14_PMON_CTR3           0xED9
-#define MSR_UNC_C14_PMON_CTL0           0xED0
-#define MSR_UNC_C14_PMON_CTL1           0xED1
-#define MSR_UNC_C14_PMON_CTL2           0xED2
-#define MSR_UNC_C14_PMON_CTL3           0xED3
-#define MSR_UNC_C14_PMON_BOX_FILTER     0xED4
-#define MSR_UNC_C14_PMON_BOX_FILTER1    0xEDA
-#define MSR_UNC_C14_PMON_BOX_CTL        0xEC4
 
 /* PCU (Power Control) Performance Monitoring */
 
@@ -327,7 +235,6 @@
 /* iMC Box Performance Monitoring */
 
 #define PCI_UNC_MC_PMON_BOX_CTL         0xF4
-#define PCI_UNC_MC_PMON_BOX_STATUS      0xF8
 #define PCI_UNC_MC_PMON_FIXED_CTL       0xF0
 #define PCI_UNC_MC_PMON_CTL_0           0xD8
 #define PCI_UNC_MC_PMON_CTL_1           0xDC
@@ -738,11 +645,6 @@
 #define MSR_DRAM_PERF_STATUS            0x61B
 #define MSR_DRAM_POWER_INFO             0x61C
 
-/* TM/TM2 interface */
-#define IA32_THERM_STATUS               0x19C
-#define IA32_PACKAGE_THERM_STATUS       0x1B1
-#define MSR_TEMPERATURE_TARGET          0x1A2
-
 /* Turbo Boost Interface */
 #define MSR_IA32_MISC_ENABLE            0x1A0
 #define MSR_PLATFORM_INFO               0x0CE
@@ -787,25 +689,6 @@
 #define MSR_AMD15_NB_PMC1               0xC0010243
 #define MSR_AMD15_NB_PMC2               0xC0010245
 #define MSR_AMD15_NB_PMC3               0xC0010247
-
-/* AMD 0x16 */
-#define MSR_AMD16_PERFEVTSEL0           0xC0010000
-#define MSR_AMD16_PERFEVTSEL1           0xC0010001
-#define MSR_AMD16_PERFEVTSEL2           0xC0010002
-#define MSR_AMD16_PERFEVTSEL3           0xC0010003
-#define MSR_AMD16_PMC0                  0xC0010004
-#define MSR_AMD16_PMC1                  0xC0010005
-#define MSR_AMD16_PMC2                  0xC0010006
-#define MSR_AMD16_PMC3                  0xC0010007
-
-#define MSR_AMD16_NB_PERFEVTSEL0        0xC0010240
-#define MSR_AMD16_NB_PERFEVTSEL1        0xC0010242
-#define MSR_AMD16_NB_PERFEVTSEL2        0xC0010244
-#define MSR_AMD16_NB_PERFEVTSEL3        0xC0010246
-#define MSR_AMD16_NB_PMC0               0xC0010241
-#define MSR_AMD16_NB_PMC1               0xC0010243
-#define MSR_AMD16_NB_PMC2               0xC0010245
-#define MSR_AMD16_NB_PMC3               0xC0010247
 
 #endif /* REGISTERS_H */
 

@@ -1,6 +1,6 @@
 program testmarker
 
-use likwid
+#include <likwid_f90.h>
 
 implicit none
 

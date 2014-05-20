@@ -16,13 +16,13 @@ Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 L3 request rate   UPMC0/FIXC0
 L3 miss rate   UPMC1/FIXC0
-L3 miss ratio  UPMC1/(UPMC0+UPMC1)
+L3 miss ratio  UPMC1/UPMC0
 
 LONG
 Formulas:
 L3 request rate  UNC_L3_HITS_ANY / INSTR_RETIRED_ANY 
 L3 miss rate   UNC_L3_MISS_ANY / INSTR_RETIRED_ANY
-L3 miss ratio  UNC_L3_MISS_ANY / (UNC_L3_HITS_ANY + UNC_L3_MISS_ANY)
+L3 miss ratio  UNC_L3_MISS_ANY / UNC_L3_HITS_ANY
 -
 This group measures the locality of your data accesses with regard to the L3
 Cache. L3 request rate tells you how data intensive your code is or how many

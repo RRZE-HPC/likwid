@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -80,76 +80,107 @@ getProcessorID(cpu_set_t* cpu_set)
     return processorId;
 }
 
+/* this routine expects a core node and will traverse the tree over all threads
+ * with physical cores first order */
 static void
-treeFillNextEntries(
-    TreeNode* tree,
-    int* processorIds,
-    int socketId,
-    int offset,
-    int numberOfEntries )
+treeFillNextEntries(int numberOfEntries, int* processorIds, TreeNode** tree)
 {
-  int counter = numberOfEntries;
-  TreeNode* node = tree;
-  TreeNode* thread;
+    int tmplist[numberOfEntries];
+    int mapping[numberOfEntries];
+    int counter = numberOfEntries;
+    TreeNode* threadNode;
+    int threadsPerCore = cpuid_topology.numThreadsPerCore;
+    int row, column;
+    int numberOfCores = numberOfEntries/threadsPerCore;
 
-  node = tree_getChildNode(node);
-
-  /* get socket node */
-  for (int i=0; i<socketId; i++)
-  {
-    node = tree_getNextNode(node);
-
-    if ( node == NULL )
+    while ( *tree != NULL )
     {
-      printf("ERROR: Socket %d not existing!",i);
-      exit(EXIT_FAILURE);
+        if ( !counter ) break;
+
+        threadNode = tree_getChildNode(*tree);
+
+        while ( threadNode != NULL )
+        {
+            tmplist[numberOfEntries-counter] = threadNode->id;
+            threadNode = tree_getNextNode(threadNode);
+            counter--;
+        }
+        *tree = tree_getNextNode(*tree);
     }
-  }
 
-  node = tree_getChildNode(node);
-  /* skip offset cores */
-  for (int i=0; i<offset; i++)
-  {
-    node = tree_getNextNode(node);
-
-    if ( node == NULL )
+    for ( int i=0; i < numberOfEntries; i++ )
     {
-      printf("ERROR: Core %d not existing!",i);
-      exit(EXIT_FAILURE);
+        column = i%threadsPerCore;
+        row = i/threadsPerCore;
+        mapping[column*numberOfCores+row]=i;
     }
-  }
 
-  /* Traverse horizontal */
-  while ( node != NULL )
-  {
-    if ( !counter ) break;
-
-    thread = tree_getChildNode(node);
-
-    while ( thread != NULL )
+    for ( int i=0; i < numberOfEntries; i++ )
     {
-      processorIds[numberOfEntries-counter] = thread->id;
-      thread = tree_getNextNode(thread);
-      counter--;
+        processorIds[i] = tmplist[mapping[i]];
     }
-    node = tree_getNextNode(node);
-  }
+
 }
+
+static void
+treeFillEntriesNode(int* processorIds)
+{
+    int tmplist[cpuid_topology.numHWThreads];
+    int mapping[cpuid_topology.numHWThreads];
+    int counter = cpuid_topology.numHWThreads;
+    TreeNode* threadNode;
+    TreeNode* coreNode;
+    TreeNode* socketNode;
+    int threadsPerCore = cpuid_topology.numThreadsPerCore;
+    int row, column;
+    int numberOfCores = cpuid_topology.numHWThreads/threadsPerCore;
+
+    socketNode = tree_getChildNode(cpuid_topology.topologyTree);
+
+    while ( socketNode != NULL )
+    {
+        coreNode = tree_getChildNode(socketNode);
+
+        while ( coreNode != NULL )
+        {
+            threadNode = tree_getChildNode(coreNode);
+
+            while ( threadNode != NULL )
+            {
+                tmplist[cpuid_topology.numHWThreads-counter] = threadNode->id;
+                threadNode = tree_getNextNode(threadNode);
+                counter--;
+            }
+            coreNode = tree_getNextNode(coreNode);
+        }
+        socketNode = tree_getNextNode(socketNode);
+    }
+
+    for ( uint32_t i=0; i < cpuid_topology.numHWThreads; i++ )
+    {
+        column = i%threadsPerCore;
+        row = i/threadsPerCore;
+        mapping[column*numberOfCores+row]=i;
+    }
+
+    for ( uint32_t i=0; i < cpuid_topology.numHWThreads; i++ )
+    {
+        processorIds[i] = tmplist[mapping[i]];
+    }
+}
+
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void
 affinity_init()
 {
-    int numberOfDomains = 1; /* all systems have the node domain */
+    int  numberOfDomains = 1;
     int currentDomain;
-    int subCounter = 0;
-    int offset = 0;
-    int numberOfSocketDomains = cpuid_topology.numSockets;;
-    int numberOfNumaDomains = numa_info.numberOfNodes;
-    int numberOfProcessorsPerSocket =
-        cpuid_topology.numCoresPerSocket * cpuid_topology.numThreadsPerCore;
     int numberOfCacheDomains;
+    int numberOfNumaDomains;
+    TreeNode* socketNode;
+    TreeNode* coreNode;
 
     int numberOfCoresPerCache =
         cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads/
@@ -158,6 +189,9 @@ affinity_init()
     int numberOfProcessorsPerCache =
         cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
 
+    /* determine total number of domains */
+    numberOfDomains += cpuid_topology.numSockets;
+
     /* for the cache domain take only into account last level cache and assume
      * all sockets to be uniform. */
 
@@ -165,92 +199,116 @@ affinity_init()
     numberOfCacheDomains = cpuid_topology.numSockets *
         (cpuid_topology.numCoresPerSocket/numberOfCoresPerCache);
 
-    /* determine total number of domains */
-    numberOfDomains += numberOfSocketDomains + numberOfCacheDomains + numberOfNumaDomains;
+    numberOfDomains += numberOfCacheDomains;
+
+    /* determine how many numa domains exist */
+    numberOfNumaDomains = numa_info.numberOfNodes;
+    numberOfDomains += numberOfNumaDomains;
 
     domains = (AffinityDomain*) malloc(numberOfDomains * sizeof(AffinityDomain));
+    currentDomain = 0;
 
     /* Node domain */
     domains[0].numberOfProcessors = cpuid_topology.numHWThreads;
-    domains[0].numberOfCores = cpuid_topology.numSockets * cpuid_topology.numCoresPerSocket;
     domains[0].processorList = (int*) malloc(cpuid_topology.numHWThreads*sizeof(int));
     domains[0].tag = bformat("N");
-    offset = 0;
 
-    for (int i=0; i<numberOfSocketDomains; i++)
+    for ( int i=1; i < numberOfDomains; i++ )
     {
-      treeFillNextEntries(
-          cpuid_topology.topologyTree,
-          domains[0].processorList + offset,
-          i, 0, numberOfProcessorsPerSocket);
+        if ( i < (int) (cpuid_topology.numSockets+1) )
+        {
+            domains[i].numberOfProcessors = cpuid_topology.numCoresPerSocket *
+                cpuid_topology.numThreadsPerCore;
 
-      offset += numberOfProcessorsPerSocket;
+            domains[i].processorList = (int*) malloc(cpuid_topology.numCoresPerSocket*
+                    cpuid_topology.numThreadsPerCore * sizeof(int));
+
+            domains[i].tag = bformat("S%d",i-1);
+        }
+        else if ( i < (int) ((cpuid_topology.numSockets + numberOfCacheDomains)+1) )
+        {
+            domains[i].processorList = (int*)
+                malloc(numberOfProcessorsPerCache*sizeof(int));
+
+            domains[i].tag = bformat("C%d",currentDomain++);
+            domains[i].numberOfProcessors = numberOfProcessorsPerCache;
+
+        }
+        else 
+        {
+            domains[i].processorList = (int*)
+                malloc(numa_info.nodes[currentDomain].numberOfProcessors * sizeof(int));
+
+            domains[i].numberOfProcessors = numa_info.nodes[currentDomain].numberOfProcessors; 
+
+            for ( int j=0; j < numa_info.nodes[currentDomain].numberOfProcessors; j++ )
+            {
+                domains[i].processorList[j] = (int) numa_info.nodes[currentDomain].processors[j];
+            }
+
+            domains[i].tag = bformat("M%d",currentDomain++);
+        }
+
+        /* reset domain counter */
+        if ( i == (int) ((cpuid_topology.numSockets + numberOfCacheDomains)) )
+        {
+            currentDomain = 0;
+        }
     }
 
-    /* Socket domains */
-    currentDomain = 1;
+    treeFillEntriesNode(domains[0].processorList);
+    currentDomain = 0;
 
-    for (int i=0; i < numberOfSocketDomains; i++ )
+    /* create socket domains */
+    socketNode = tree_getChildNode(cpuid_topology.topologyTree);
+
+    while ( socketNode != NULL )
     {
-      domains[currentDomain + i].numberOfProcessors = numberOfProcessorsPerSocket;
-      domains[currentDomain + i].numberOfCores =  cpuid_topology.numCoresPerSocket;
-      domains[currentDomain + i].processorList = (int*) malloc( domains[currentDomain + i].numberOfProcessors * sizeof(int));
-      domains[currentDomain + i].tag = bformat("S%d", i);
+        currentDomain++;
+        coreNode = tree_getChildNode(socketNode);
+        treeFillNextEntries(domains[currentDomain].numberOfProcessors,
+                domains[currentDomain].processorList, &coreNode);
 
-      treeFillNextEntries(
-          cpuid_topology.topologyTree,
-          domains[currentDomain + i].processorList,
-          i, 0, domains[currentDomain + i].numberOfProcessors);
+        socketNode = tree_getNextNode(socketNode);
     }
 
-    /* Cache domains */
-    currentDomain += numberOfSocketDomains;
-    subCounter = 0;
+    /* create last level cache domains */
+    socketNode = tree_getChildNode(cpuid_topology.topologyTree);
 
-    for (int i=0; i < numberOfSocketDomains; i++ )
+    while ( socketNode != NULL )
     {
-      offset = 0;
+        coreNode = tree_getChildNode(socketNode);
 
-      for ( int j=0; j < (numberOfCacheDomains/numberOfSocketDomains); j++ )
-      {
-        domains[currentDomain + subCounter].numberOfProcessors = numberOfProcessorsPerCache;
-        domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
-        domains[currentDomain + subCounter].processorList = (int*) malloc(numberOfProcessorsPerCache*sizeof(int));
-        domains[currentDomain + subCounter].tag = bformat("C%d", subCounter);
+        for ( int i=0; i < (int) (cpuid_topology.numCoresPerSocket/numberOfCoresPerCache); i++ )
+        {
+            currentDomain++;
+            treeFillNextEntries(domains[currentDomain].numberOfProcessors,
+                    domains[currentDomain].processorList, &coreNode);
+        }
 
-        treeFillNextEntries(
-            cpuid_topology.topologyTree,
-            domains[currentDomain + subCounter].processorList,
-            i, offset, domains[currentDomain + subCounter].numberOfProcessors);
-
-        offset += numberOfCoresPerCache;
-        subCounter++;
-      }
+        socketNode = tree_getNextNode(socketNode);
     }
 
-    /* Memory domains */
-    currentDomain += numberOfCacheDomains;
-    subCounter = 0;
-
-    for (int i=0; i < numberOfSocketDomains; i++ )
+    /* FIXME Quick and dirty hack to get physical cores first on Intel Numa domains */
+    if ( (cpuid_info.family == P6_FAMILY) && (cpuid_topology.numThreadsPerCore > 1))
     {
-      offset = 0;
+        for ( int socketId=0; socketId < cpuid_topology.numSockets; socketId++)
+        {
+            bstring tmpDomain = bformat("M%d",socketId);
 
-      for ( int j=0; j < (numberOfNumaDomains/numberOfSocketDomains); j++ )
-      {
-        domains[currentDomain + subCounter].numberOfProcessors = numberOfProcessorsPerCache;
-        domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
-        domains[currentDomain + subCounter].processorList = (int*) malloc(numa_info.nodes[subCounter].numberOfProcessors*sizeof(int));
-        domains[currentDomain + subCounter].tag = bformat("M%d", subCounter);
+            for ( int i=0; i < numberOfDomains; i++ )
+            {
+                if ( biseq(tmpDomain, domains[i].tag) )
+                {
+                    for (int procId=0; procId < domains[socketId+1].numberOfProcessors; procId++)
+                    {
+                        domains[i].processorList[procId] = domains[socketId+1].processorList[procId];
+                    }
+                }
+            }
 
-        treeFillNextEntries(
-            cpuid_topology.topologyTree,
-            domains[currentDomain + subCounter].processorList,
-            i, offset, domains[currentDomain + subCounter].numberOfProcessors);
-
-        offset += numberOfCoresPerCache;
-        subCounter++;
-      }
+            bdestroy(tmpDomain);
+        }
     }
 
     /* This is redundant ;-). Create thread to node lookup */

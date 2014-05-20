@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -38,7 +38,6 @@
 #include <ctype.h>
 
 #include <types.h>
-#include <error.h>
 #include <cpuid.h>
 #include <timer.h>
 #include <affinity.h>
@@ -87,10 +86,10 @@ int main (int argc, char** argv)
         {
             case 'h':
                 HELP_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case 'v':
                 VERSION_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case 'g':
                 optGraphical = 1;
                 break;
@@ -127,14 +126,11 @@ int main (int argc, char** argv)
                 return EXIT_FAILURE;
             default:
                 HELP_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
         }
     }
 
-    if (cpuid_init() == EXIT_FAILURE)
-    {
-        ERROR_PLAIN_PRINT(Unsupported processor!);
-    }
+    cpuid_init();
     affinity_init();
     numa_init();
 
@@ -330,16 +326,6 @@ int main (int argc, char** argv)
         }
     }
     fprintf(OUTSTREAM, "\n");
-    
-    if (optCaches)
-    {
-    	fprintf(OUTSTREAM, SLINE);
-    	fprintf(OUTSTREAM, "TLB Information\n");
-    	fprintf(OUTSTREAM, SLINE);
-    
-    	cpuid_printTlbTopology();
-    	fprintf(OUTSTREAM, "\n");
-    }
 
     /*----------------------------------------------------------------------
      *  Graphical topology

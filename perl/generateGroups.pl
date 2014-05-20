@@ -41,7 +41,6 @@ while (defined(my $arch = readdir(DIR))) {
                 print "SCANNING GROUP $group\n" if ($DEBUG);
                 my $eventSet;
                 my @metrics;
-                my $isUncore = 0;
                 $Vars->{groups} = [];
 
                 $group =~ /([A-Za-z_0-9]+)\.txt/;
@@ -87,7 +86,6 @@ while (defined(my $arch = readdir(DIR))) {
                                 $rule =~ s/(SBOX[P0-9]+)/perfmon_getResult(threadId,"$1")/g;
                                 $rule =~ s/(RBOX[C0-9]+)/perfmon_getResult(threadId,"$1")/g;
                                 $rule =~ s/(PWR[0-9]+)/perfmon_getResult(threadId,"$1")/g;
-                                $rule =~ s/(TMP[0-9]+)/perfmon_getResult(threadId,"$1")/g;
                                 $rule =~ s/(MBOXFIX)/perfmon_getResult(threadId,"$1")/g;
 
                                 $metric =~ s/(^\s+|\s+$)//g;
@@ -101,15 +99,9 @@ while (defined(my $arch = readdir(DIR))) {
                 }
                 close FILE;
                 $msg =~ s/\n/\\n\\\n/g;
-
-                if ($eventSet =~ /WBOX|BBOX|MBOX|SBOX|RBOX/) {
-                    $isUncore = 1;
-                }
-
                 push (@groups, {name => $name,
                         shortHelp => $shortHelp,
                         longHelp  => $msg,
-                        isUncore  => $isUncore,
                         eventSet  => $eventSet,
                         numRows   => $#metrics+1,
                         metrics   => \@metrics});

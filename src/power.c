@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -53,6 +53,7 @@ void
 power_init(int cpuId)
 {
     uint64_t flags;
+    uint32_t tmp;
     int hasRAPL = 0;
 
     /* determine Turbo Mode features */
@@ -60,8 +61,6 @@ power_init(int cpuId)
 
     if ((cpuid_info.model == SANDYBRIDGE_EP) ||
             (cpuid_info.model == SANDYBRIDGE) ||
-            (cpuid_info.model == HASWELL) ||
-            (cpuid_info.model == IVYBRIDGE_EP) ||
             (cpuid_info.model == IVYBRIDGE))
     {
         hasRAPL = 1;
@@ -90,13 +89,13 @@ power_init(int cpuId)
 
         for (int i=0; i < power_info.turbo.numSteps; i++)
         {
-            if (i < 8)
+            if ( i < 4 )
             {
-                power_info.turbo.steps[i] = busSpeed * (double) field64(flags,i*8, 8);
+                power_info.turbo.steps[i] = busSpeed * (double) extractBitField(flags,8,i*8);
             }
             else
             {
-                power_info.turbo.steps[i] = power_info.turbo.steps[7];
+                power_info.turbo.steps[i] = busSpeed * (double) extractBitField(flags>>(32),8,i*8);
             }
         }
     }
@@ -118,7 +117,7 @@ power_init(int cpuId)
         power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
         power_info.minPower =  (double) extractBitField(flags,15,16) * power_info.powerUnit;
         power_info.maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
-        power_info.maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
+        power_info.maxTimeWindow = (double) extractBitField(flags,15,48) * power_info.timeUnit;
     }
     else
     {

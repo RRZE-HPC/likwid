@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -189,7 +189,7 @@ threads_registerDataGroup(int groupId,
 }
 
 void
-threads_join(void)
+threads_destroy(void)
 {
     int i;
 
@@ -199,15 +199,5 @@ threads_join(void)
     }
 
     pthread_attr_destroy(&attr);
-    pthread_barrier_destroy(&threads_barrier);
-    
 }
 
-
-void 
-threads_destroy(void)
-{
-    free(threads_data);
-    free(threads_groups);
-    free(threads);
-}

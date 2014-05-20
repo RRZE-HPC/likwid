@@ -8,7 +8,9 @@ use Data::Dumper;
 use Getopt::Std;
 use Cwd 'abs_path';
 
+use isa;
 use gas;
+
 
 my $ROOT = abs_path('./');
 my $DEBUG=0;
@@ -65,7 +67,16 @@ sub init
 		print "INFO: No as specified.\n Using default $AS.\n\n" if ($VERBOSE);
 	}
 
-  as::isa_init();
+#	if (-e "$ISA.pl") { 
+#		require "$ISA.pl";
+#	} else {
+#		die "ERROR: Required file $ISA.pl missing!\n";
+#	}
+#	if (-e "$AS.pl") { 
+#		require "$AS.pl";
+#	} else {
+#		die "ERROR: Required file $AS.pl missing!\n";
+#	}
 }
 
 sub usage
@@ -117,7 +128,6 @@ INUMBER     : NUMBER
 UNUMBER     : NUMBER
 SNUMBER     : NUMBER
 FNUMBER     : NUMBER
-OFFSET      : /([0-9]+\,){15}[0-9]+/
 NUMBER      : /[-+]?[0-9]*\.?[0-9]+/
 SYMBOL      : /[.A-Z-a-z_][A-Za-z0-9_]*/
 REG         : /GPR[0-9]+/i
@@ -201,18 +211,11 @@ mode:  START LOCAL
 block: '{' expression(s) '}'
 { $item[2] }
 
-define_data: DEFINE type  SYMBOL  OFFSET
-{
-{FUNC => 'as::define_offset',
- ARGS => [$item{SYMBOL}[1], $item{type}[1][1],"$item{OFFSET}[1]"]}
-}
-
 define_data: DEFINE type  SYMBOL  NUMBER
 {
 {FUNC => 'as::define_data',
  ARGS => [$item{SYMBOL}[1], $item{type}[1][1],"$item{NUMBER}[1]"]}
 }
-
 
 expression:  align
             |COMMENT

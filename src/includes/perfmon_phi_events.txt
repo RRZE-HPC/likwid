@@ -10,7 +10,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig 
+#      Copyright (C) 2012 Jan Treibig 
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -122,12 +122,6 @@ UMASK_LONG_DATA_PAGE_WALK                  0x00
 
 EVENT_LONG_CODE_PAGE_WALK                  0x3B      PMC
 UMASK_LONG_CODE_PAGE_WALK                  0x00
-
-EVENT_HWP_L2HIT                  0xC3      PMC
-UMASK_HWP_L2HIT                  0x10
-
-EVENT_HWP_L2MISS                  0xC4      PMC
-UMASK_HWP_L2MISS                  0x10
 
 EVENT_L2_READ_HIT_E                  0xC8      PMC
 UMASK_L2_READ_HIT_E                  0x10

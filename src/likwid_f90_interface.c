@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -33,51 +33,34 @@
 
 #include <likwid.h>
 
-void likwid_markerinit_(void)
+void
+likwid_markerinit_(void)
 {
     likwid_markerInit();
 }
 
-void likwid_markerthreadinit_(void)
-{
-    likwid_markerThreadInit();
-}
-
-void likwid_markerclose_(void)
+void
+likwid_markerclose_(void)
 {
     likwid_markerClose();
 }
 
-void likwid_markerstartregion_(char* regionTag, int len)
+void
+likwid_markerstartregion_(char* regionTag, int* len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char) );
-    strncpy(tmp, regionTag, len * sizeof(char) );
-
-    for (int i=(len-1); len > 0; len--)
-    {
-        if (tmp[i] != ' ') {
-            tmp[i+1] = 0;
-            break;
-        }
-    }
-
+    char* tmp = (char*) malloc(((*len)+1) * sizeof(char));
+    strncpy(tmp, regionTag, (*len));
+    tmp[(*len)] = 0;
     likwid_markerStartRegion( tmp );
 	free(tmp);
 }
 
-void likwid_markerstopregion_(char* regionTag, int len)
+void
+likwid_markerstopregion_(char* regionTag, int* len)
 {
-    char* tmp = (char*) malloc((len+1) * sizeof(char));
-    strncpy(tmp, regionTag, len * sizeof(char) );
-
-    for (int i=(len-1); len > 0; len--)
-    {
-        if (tmp[i] != ' ') {
-            tmp[i+1] = 0;
-            break;
-        }
-    }
-
+    char* tmp = (char*) malloc(((*len)+1) * sizeof(char));
+    strncpy(tmp, regionTag, (*len));
+    tmp[(*len)] = 0;
     likwid_markerStopRegion( tmp );
 	free(tmp);
 }

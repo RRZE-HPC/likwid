@@ -1,10 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  bitUtil.h
+ *      Filename:  rdtsc.h
  *
- *      Description:  Header File bitUtil Module. 
- *                    Helper routines for dealing with bit manipulations
+ *      Description:  rdtsc module header
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -29,17 +28,26 @@
  * =======================================================================================
  */
 
-#ifndef BITUTIL_H
-#define BITUTIL_H
+#ifndef RDTSC_H
+#define RDTSC_H
 
 #include <types.h>
 
-extern uint32_t extractBitField(uint32_t inField, uint32_t width, uint32_t offset);
-extern uint32_t getBitFieldWidth(uint32_t number);
+#define RDTSC(cpu_c) \
+__asm__ volatile( "rdtsc\n\t"           \
+"movl %%eax, %0\n\t"  \
+"movl %%edx, %1\n\t"  \
+: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
+: : "%eax", "%edx")
 
-#define setBit(reg,bit)  (reg) |= (1ULL<<(bit))
-#define clearBit(reg,bit) (reg) &= ~(1ULL<<(bit))
-#define toggleBit(reg,bit) (reg) ^= (1ULL<<(bit))
-#define testBit(reg,bit) (reg) & (1ULL<<(bit))
+#define RDTSC2(cpu_c) \
+__asm__ volatile("xor %%eax,%%eax\n\t"           \
+"cpuid\n\t"           \
+"rdtsc\n\t"           \
+"movl %%eax, %0\n\t"  \
+"movl %%edx, %1\n\t"  \
+: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
+: : "%eax","%ebx","%ecx","%edx")
 
-#endif /*BITUTIL_H*/
+
+#endif /*RDTSC_H*/

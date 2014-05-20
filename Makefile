@@ -10,7 +10,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig 
+#      Copyright (C) 2012 Jan Treibig 
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -28,12 +28,27 @@
 
 SRC_DIR     = ./src
 DOC_DIR     = ./doc
+BENCH_DIR   = ./bench
 GROUP_DIR   = ./groups
 FILTER_DIR  = ./filters
-MAKE_DIR    = ./make
-EXT_TARGETS = ./ext/lua ./ext/hwloc ./src/libwid
+MAKE_DIR    = ./
 
 #DO NOT EDIT BELOW
+
+# determine kernel Version
+KERNEL_VERSION := $(shell uname -r | awk -F- '{ print $$1 }' | awk -F. '{ print $$3 }')
+KERNEL_VERSION_MAJOR := $(shell uname -r | awk -F- '{ print $$1 }' | awk -F. '{ print $$1 }')
+
+HAS_MEMPOLICY = $(shell if [ $(KERNEL_VERSION) -lt 7 -a $(KERNEL_VERSION_MAJOR) -lt 3 ]; then \
+               echo 0;  else echo 1; \
+			   fi; )
+
+# determine glibc Version
+GLIBC_VERSION := $(shell ldd --version | grep ldd |  awk '{ print $$NF }' | awk -F. '{ print $$2 }')
+
+HAS_SCHEDAFFINITY = $(shell if [ $(GLIBC_VERSION) -lt 4 ]; then \
+               echo 0;  else echo 1; \
+			   fi; )
 
 
 # Dependency chains:
@@ -41,85 +56,115 @@ EXT_TARGETS = ./ext/lua ./ext/hwloc ./src/libwid
 # *.ptt -> *.pas -> *.s -> *.o -> executables
 # *.txt -> *.h (generated)
 
-include ./config.mk
+include $(MAKE_DIR)/config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
-include $(MAKE_DIR)/config_checks.mk
-include $(MAKE_DIR)/config_defines.mk
-
-INCLUDES  += -I./src/includes -I./ext/lua/includes -I./ext/hwloc/include -I$(BUILD_DIR)
-LIBS      +=
+INCLUDES  += -I./src/includes  -I$(BUILD_DIR)
+DEFINES   += -DVERSION=$(VERSION)                 \
+		 -DRELEASE=$(RELEASE)                 \
+		 -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) \
+		 -DMAX_NUM_NODES=$(MAX_NUM_NODES) \
+		 -DHASH_TABLE_SIZE=$(HASH_TABLE_SIZE) \
+		 -DLIBLIKWIDPIN=$(LIBLIKWIDPIN)       \
+		 -DLIKWIDFILTERPATH=$(LIKWIDFILTERPATH)
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
 Q         ?= @
 GENGROUPLOCK = .gengroup
 
-ifeq ($(COMPILER),MIC)
-BENCH_DIR   = ./bench/phi
-else
-ifeq ($(COMPILER),GCCX86)
-BENCH_DIR   = ./bench/x86
-else
-BENCH_DIR   = ./bench/x86-64
-endif
-endif
-
 ifeq ($(SHARED_LIBRARY),true)
 CFLAGS += $(SHARED_CFLAGS)
-LIBS += -L. -llikwid -lm
 DYNAMIC_TARGET_LIB := liblikwid.so
-TARGET_LIB := $(DYNAMIC_TARGET_LIB)
 else
 STATIC_TARGET_LIB := liblikwid.a
-TARGET_LIB := $(STATIC_TARGET_LIB)
 endif
 
+ifneq ($(COLOR),NONE)
+DEFINES += -DCOLOR=$(COLOR)
+endif
+
+ifeq ($(ENABLE_SNB_UNCORE),true)
+DEFINES += -DSNB_UNCORE
+endif
+
+ifeq ($(BUILDDAEMON),true)
+	DAEMON_TARGET = likwid-accessD
+endif
+
+ifeq ($(INSTRUMENT_BENCH),true)
+DEFINES += -DPERFMON
+endif
+
+ifeq ($(HAS_MEMPOLICY),1)
+DEFINES += -DHAS_MEMPOLICY
+else
+$(info echo "Kernel 2.6.$(KERNEL_VERSION) has no mempolicy support!");
+endif
+
+ifeq ($(HAS_SCHEDAFFINITY),1)
+DEFINES += -DHAS_SCHEDAFFINITY
+PINLIB  = liblikwidpin.so
+else
+$(info echo "GLIBC version 2.$(GLIBC_VERSION) has no pthread_setaffinity_np support!");
+PINLIB  =
+endif
+
+DEFINES += -DACCESSDAEMON=$(ACCESSDAEMON)
+DEFINES += -DSYSDAEMONSOCKETPATH=$(SYSDAEMONSOCKETPATH)
+
+ifeq ($(ACCESSMODE),sysdaemon)
+DEFINES += -DACCESSMODE=2
+else
+ifeq ($(ACCESSMODE),accessdaemon)
+DEFINES += -DACCESSMODE=1
+else
+DEFINES += -DACCESSMODE=0
+endif
+endif
 
 VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
-OBJ      += $(patsubst $(SRC_DIR)/%.cc, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.cc))
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
-OBJ_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
-OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
-OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)
-OBJ_LIBWID =  $(wildcard ./src/libwid/$(COMPILER)/*.o)
-
+ifeq ($(MAKECMDGOALS),likwid-bench)
+OBJ      += $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
+endif
 APPS      = likwid-perfctr    \
 		likwid-features   \
 		likwid-powermeter \
 		likwid-memsweeper \
 		likwid-topology   \
-		likwid-genCfg     \
 		likwid-pin        \
 		likwid-bench
 
-LIBWID = libwid.a
-LIBHWLOC = ext/hwloc/libhwloc.a
+CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
 
-CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
+ifneq ($(FORTRAN_INTERFACE),)
+HAS_FORTRAN_COMPILER = $(shell $(FC) --version 2>/dev/null || echo 'NOFORTRAN' )
+ifeq ($(HAS_FORTRAN_COMPILER),NOFORTRAN)
+FORTRAN_INTERFACE=
+$(info Warning: You have selected the fortran interface in config.mk, but there seems to be no fortran compiler - not compiling it!)
+else
+FORTRAN_INSTALL =  @cp -f likwid.mod  $(PREFIX)/include/
+endif
+endif
 
-all: $(BUILD_DIR) $(GENGROUPLOCK) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(EXT_TARGETS) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(APPS) $(FORTRAN_INTERFACE)  $(PINLIB)  $(DAEMON_TARGET)
+all: $(BUILD_DIR) $(GENGROUPLOCK) $(PERFMONHEADERS) $(OBJ) $(filter-out likwid-bench,$(APPS)) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(FORTRAN_INTERFACE)  $(PINLIB)  $(DAEMON_TARGET)
 
 tags:
 	@echo "===>  GENERATE  TAGS"
 	$(Q)ctags -R
 
-$(APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(APPS))) $(BUILD_DIR) $(GENGROUPLOCK)  $(OBJ) $(OBJ_BENCH)
+$(APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(APPS))) $(BUILD_DIR) $(GENGROUPLOCK)  $(OBJ)
 	@echo "===>  LINKING  $@"
-	$(Q)${CC} $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ_BENCH) $(TARGET_LIB) $(LIBHWLOC) $(LIBS)
+	$(Q)${CC} $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ) $(LIBS)
 
 $(STATIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE STATIC LIB  $(STATIC_TARGET_LIB)"
-	$(Q)${AR} -cq $(STATIC_TARGET_LIB) $(OBJ) $(OBJ_HWLOC)
-
-$(LIBWID): $(OBJ_LUA) $(OBJ_HWLOC) $(OBJ_LIBWID)
-	@echo "===>  CREATE STATIC LIB  $(LIBWID)"
-	$(Q)${AR} -cq $(LIBWID)  $(OBJ_LUA) $(OBJ_HWLOC) $(OBJ_LIBWID)
-
+	$(Q)${AR} -cq $(STATIC_TARGET_LIB) $(OBJ)
 
 $(DYNAMIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE SHARED LIB  $(DYNAMIC_TARGET_LIB)"
-	$(Q)${CC} $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(OBJ_HWLOC) 
+	$(Q)${CC} $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  Build access daemon likwid-accessD"
@@ -128,7 +173,7 @@ $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
 
-$(PINLIB):
+$(PINLIB): 
 	@echo "===>  CREATE LIB  $(PINLIB)"
 	$(Q)$(MAKE) -s -C src/pthread-overload/ $(PINLIB) 
 
@@ -139,12 +184,7 @@ $(GENGROUPLOCK): $(foreach directory,$(shell ls $(GROUP_DIR)), $(wildcard $(GROU
 
 $(FORTRAN_INTERFACE): $(SRC_DIR)/likwid.f90
 	@echo "===>  COMPILE FORTRAN INTERFACE  $@"
-	$(Q)$(FC) -c  $(FCFLAGS) $<
-	@rm -f likwid.o
-
-$(EXT_TARGETS):
-	@echo "===>  ENTER  $@"
-	$(Q)$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS)
+	$(Q)$(FC) -c  $(FCFLAGS) $< 
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
@@ -152,15 +192,9 @@ $(BUILD_DIR)/%.o:  %.c
 	$(Q)$(CC) -c  $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
-$(BUILD_DIR)/%.o:  %.cc
-	@echo "===>  COMPILE  $@"
-	$(Q)$(CXX) -c  $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-	$(Q)$(CXX) $(CXXFLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
-
-
 $(BUILD_DIR)/%.pas:  $(BENCH_DIR)/%.ptt
 	@echo "===>  GENERATE BENCHMARKS"
-	$(Q)$(GEN_PAS)  $(BENCH_DIR) $(BUILD_DIR) ./perl/templates
+	$(Q)$(GEN_PAS) ./bench  $(BUILD_DIR) ./perl/templates
 
 $(BUILD_DIR)/%.h:  $(SRC_DIR)/includes/%.txt
 	@echo "===>  GENERATE HEADER $@"
@@ -168,24 +202,24 @@ $(BUILD_DIR)/%.h:  $(SRC_DIR)/includes/%.txt
 
 $(BUILD_DIR)/%.o:  $(BUILD_DIR)/%.pas
 	@echo "===>  ASSEMBLE  $@"
-	$(Q)$(PAS) -i $(PASFLAGS) -o $(BUILD_DIR)/$*.s $<  '$(DEFINES)'
+	$(Q)$(PAS) -i x86-64 -o $(BUILD_DIR)/$*.s $<  '$(DEFINES)'
 	$(Q)$(AS) $(ASFLAGS)  $(BUILD_DIR)/$*.s -o $@
 
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
-.PHONY: clean distclean install uninstall $(EXT_TARGETS)
-
+.PHONY: clean distclean install uninstall
 
 .PRECIOUS: $(BUILD_DIR)/%.pas
 
 .NOTPARALLEL:
 
 
-clean: $(EXT_TARGETS)
+clean:
 	@echo "===>  CLEAN"
 	@rm -rf $(BUILD_DIR)
+	@rm -f likwid.o
 	@rm -f $(GENGROUPLOCK)
 
 distclean: clean
@@ -193,7 +227,7 @@ distclean: clean
 	@rm -f likwid-*
 	@rm -f $(STATIC_TARGET_LIB)
 	@rm -f $(DYNAMIC_TARGET_LIB)
-	@rm -f $(FORTRAN_INTERFACE)
+	@rm -f $(FORTRAN_INTERFACE) 
 	@rm -f $(PINLIB)
 	@rm -f tags
 

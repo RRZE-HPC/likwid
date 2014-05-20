@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -37,7 +37,6 @@
 #include <ctype.h>
 
 #include <types.h>
-#include <error.h>
 #include <strUtil.h>
 #include <accessClient.h>
 #include <msr.h>
@@ -73,10 +72,10 @@ int main (int argc, char** argv)
         {
             case 'h':
                 HELP_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case 'v':
                 VERSION_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case 'u':
                 optSetFeature = 2;
             case 's':
@@ -86,19 +85,19 @@ int main (int argc, char** argv)
                     exit(EXIT_FAILURE);
                 }
 
-                if (biseqcstr(argString,"HW_PREFETCHER"))
+                if (biseqcstr(argString,"HW_PREFETCHER")) 
                 {
                     feature = HW_PREFETCHER;
                 }
-                else if (biseqcstr(argString,"CL_PREFETCHER"))
+                else if (biseqcstr(argString,"CL_PREFETCHER")) 
                 {
                     feature = CL_PREFETCHER;
                 }
-                else if (biseqcstr(argString,"DCU_PREFETCHER"))
+                else if (biseqcstr(argString,"DCU_PREFETCHER")) 
                 {
                     feature = DCU_PREFETCHER;
                 }
-                else if (biseqcstr(argString,"IP_PREFETCHER"))
+                else if (biseqcstr(argString,"IP_PREFETCHER")) 
                 {
                     feature = IP_PREFETCHER;
                 }
@@ -138,14 +137,11 @@ int main (int argc, char** argv)
                 return EXIT_FAILURE;
             default:
                 HELP_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
         }
     }
 
-    if (cpuid_init() == EXIT_FAILURE)
-    {
-        ERROR_PLAIN_PRINT(Unsupported processor!);
-    }
+    cpuid_init();
 
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);

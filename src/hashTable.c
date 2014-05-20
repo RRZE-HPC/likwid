@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -35,7 +35,7 @@
 #include <string.h>
 #include <pthread.h>
 
-#include <ghash.h>
+#include <sglib.h>
 #include <bstrlib.h>
 #include <types.h>
 #include <hashTable.h>
@@ -44,15 +44,42 @@
 typedef struct {
     pthread_t tid;
     uint32_t coreId;
-    GHashTable* hashTable;
+    LikwidThreadResults* hashTable[HASH_TABLE_SIZE];
+    uint32_t currentMaxSize;
+    uint32_t numberOfRegions;
 } ThreadList;
 
 
 static ThreadList* threadList[MAX_NUM_THREADS];
 
-/* ======================================================================== */
+static unsigned int hashFunction(LikwidThreadResults* item)
+{
+    const char* str =  bdata(item->label);
+    unsigned int len = blength(item->label);
+    unsigned int b    = 378551;
+    unsigned int a    = 63689;
+    unsigned int hash = 0;
+    unsigned int i    = 0;
 
-void hashTable_init()
+    for(i = 0; i < len; str++, i++)
+    {
+        hash = hash * a + (*str);
+        a    = a * b;
+    }
+
+    return hash;
+}
+
+/* ======================================================================== */
+#define SLIST_COMPARATOR(e1, e2)    bstrncmp((e1)->label,(e2)->label,100)
+
+SGLIB_DEFINE_LIST_PROTOTYPES(LikwidThreadResults,SLIST_COMPARATOR , next)
+SGLIB_DEFINE_LIST_FUNCTIONS(LikwidThreadResults,SLIST_COMPARATOR , next)
+SGLIB_DEFINE_HASHED_CONTAINER_PROTOTYPES(LikwidThreadResults, HASH_TABLE_SIZE, hashFunction)
+SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(LikwidThreadResults, HASH_TABLE_SIZE, hashFunction)
+
+void
+hashTable_init()
 {
     for (int i=0; i<MAX_NUM_THREADS; i++)
     {
@@ -61,10 +88,14 @@ void hashTable_init()
 }
 
 
-int hashTable_get(bstring label, LikwidThreadResults** resEntry)
+int
+hashTable_get(bstring label, LikwidThreadResults** resEntry)
 {
+    LikwidThreadResults li;
     int coreID = likwid_getProcessorId();
+
     ThreadList* resPtr = threadList[coreID];
+    li.label = label;
 
     /* check if thread was already initialized */
     if (resPtr == NULL)
@@ -73,116 +104,114 @@ int hashTable_get(bstring label, LikwidThreadResults** resEntry)
         /* initialize structure */
         resPtr->tid =  pthread_self();
         resPtr->coreId  = coreID;
-        resPtr->hashTable = g_hash_table_new(g_str_hash, g_str_equal);
+        resPtr->numberOfRegions = 0;
+        sglib_hashed_LikwidThreadResults_init(resPtr->hashTable);
         threadList[coreID] = resPtr;
     }
 
-    (*resEntry) = g_hash_table_lookup(resPtr->hashTable, (gpointer) bdata(label));
-
     /* if region is not known create new region and add to hashtable */
-    if ( (*resEntry) == NULL )
+    if (((*resEntry) = sglib_hashed_LikwidThreadResults_find_member(resPtr->hashTable, &li)) == NULL) 
     {
         (*resEntry) = (LikwidThreadResults*) malloc(sizeof(LikwidThreadResults));
         (*resEntry)->label = bstrcpy (label);
         (*resEntry)->time = 0.0;
         (*resEntry)->count = 0;
+        resPtr->numberOfRegions++; 
         for (int i=0; i< NUM_PMC; i++) (*resEntry)->PMcounters[i] = 0.0;
-
-        g_hash_table_insert(
-                resPtr->hashTable,
-                (gpointer) g_strdup(bdata(label)),
-                (gpointer) (*resEntry));
+        sglib_hashed_LikwidThreadResults_add(resPtr->hashTable, (*resEntry));
     }
 
     return coreID;
 }
 
-void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
+void
+hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
 {
+    int init = 0;
     int threadId = 0;
+    int regionId = 0;
     uint32_t numberOfThreads = 0;
     uint32_t numberOfRegions = 0;
-    GHashTable* regionLookup;
+    struct sglib_hashed_LikwidThreadResults_iterator hash_it;
 
-    regionLookup = g_hash_table_new(g_str_hash, g_str_equal);
-
-    /* determine number of active threads */
+    /* determine number of threads */
     for (int i=0; i<MAX_NUM_THREADS; i++)
     {
         if (threadList[i] != NULL)
         {
             numberOfThreads++;
-            uint32_t threadNumberOfRegions = g_hash_table_size(threadList[i]->hashTable);
-
-            /*  Determine maximum number of regions */
-            if (numberOfRegions < threadNumberOfRegions)
+            if (!init)
             {
-                numberOfRegions = threadNumberOfRegions;
+                /* determine number of regions */
+                numberOfRegions = threadList[i]->numberOfRegions;
+                init = 1;
+            } 
+            else
+            {
+                if (numberOfRegions != threadList[i]->numberOfRegions)
+                {
+                    printf("Different number of regions!! %d\n",threadList[i]->numberOfRegions);
+                }
             }
         }
     }
 
-    /* allocate data structures */
-    (*results) = (LikwidResults*) malloc(numberOfRegions * sizeof(LikwidResults));
-
-    for ( uint32_t i=0; i < numberOfRegions; i++ )
-    {
-        (*results)[i].time = (double*) malloc(numberOfThreads * sizeof(double));
-        (*results)[i].count = (uint32_t*) malloc(numberOfThreads * sizeof(uint32_t));
-        (*results)[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
-
-        for ( uint32_t j=0; j < numberOfThreads; j++ )
-        {
-            (*results)[i].time[j] = 0.0;
-            (*results)[i].count[j] = 0;
-            (*results)[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
-
-            for ( uint32_t k=0; k < NUM_PMC; k++ )
-            {
-                (*results)[i].counters[j][k] = 0.0;
-            }
-        }
-    }
-
-    uint32_t regionIds[numberOfRegions];
-    uint32_t currentRegion = 0;
+    init = 0;
 
     for (int core=0; core<MAX_NUM_THREADS; core++)
     {
         ThreadList* resPtr = threadList[core];
-
         if (resPtr != NULL)
         {
-            LikwidThreadResults* threadResult  = NULL;
 
-            GHashTableIter iter;
-            gpointer key, value;
+            resPtr->numberOfRegions=0;
+            LikwidThreadResults* hash  = NULL;
 
-            g_hash_table_iter_init (&iter, resPtr->hashTable);
-
-            /* iterate over all regions in thread */
-            while (g_hash_table_iter_next (&iter, &key, &value))
+            if (!init)
             {
-                threadResult = (LikwidThreadResults*) value;
-                uint32_t* regionId = (uint32_t*) g_hash_table_lookup(regionLookup, key);
-
-                /* is region not yet registered */
-                if ( regionId == NULL )
+                init =1;
+                for(hash=sglib_hashed_LikwidThreadResults_it_init(&hash_it,resPtr->hashTable);
+                        hash!=NULL; hash=sglib_hashed_LikwidThreadResults_it_next(&hash_it))
                 {
-                    (*results)[currentRegion].tag = bstrcpy (threadResult->label);
-                    regionIds[currentRegion] = currentRegion;
-                    regionId = regionIds + currentRegion;
-                    g_hash_table_insert(regionLookup, g_strdup(key), (regionIds+currentRegion));
-                    currentRegion++;
+                    resPtr->numberOfRegions++;
                 }
 
-                (*results)[*regionId].count[threadId] = threadResult->count;
-                (*results)[*regionId].time[threadId] = threadResult->time;
+                if( resPtr->numberOfRegions != numberOfRegions)
+                {
+                    printf("Different number of regions!!\n");
+                }
+
+                /* allocate data structure */
+                (*results) = (LikwidResults*) malloc(numberOfRegions * sizeof(LikwidResults));
+
+                for ( uint32_t i=0; i < numberOfRegions; i++ )
+                {
+                    (*results)[i].time = (double*) malloc(numberOfThreads * sizeof(double));
+                    (*results)[i].count = (uint32_t*) malloc(numberOfThreads * sizeof(uint32_t));
+                    (*results)[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
+
+                    for ( uint32_t j=0; j < numberOfThreads; j++ )
+                    {
+                        (*results)[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
+                    }
+                }
+            }
+
+            regionId = 0;
+            /* iterate over all regions in thread */
+            for ( hash=sglib_hashed_LikwidThreadResults_it_init(&hash_it,resPtr->hashTable);
+                    hash!=NULL; hash=sglib_hashed_LikwidThreadResults_it_next(&hash_it) )
+            {
+                (*results)[regionId].tag = bstrcpy (hash->label);
+                (*results)[regionId].count[threadId] = hash->count;
+                (*results)[regionId].time[threadId] = hash->time;
 
                 for ( int j=0; j < NUM_PMC; j++ )
                 {
-                    (*results)[*regionId].counters[threadId][j] = threadResult->PMcounters[j];
+                    (*results)[regionId].counters[threadId][j] = hash->PMcounters[j];
                 }
+
+                regionId++;
             }
 
             threadId++;

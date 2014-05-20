@@ -13,7 +13,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -50,7 +50,7 @@ extern void perfmon_printAvailableGroups(void);
 extern void perfmon_printGroupHelp(bstring group);
 extern void perfmon_init(int numThreads, int threads[],FILE* outstream);
 extern void perfmon_finalize(void);
-extern void perfmon_setupEventSet(bstring eventString, BitMask* mask);
+extern void perfmon_setupEventSet(bstring eventString);
 extern double perfmon_getEventResult(int thread, int index);
 extern int perfmon_setupEventSetC(char* eventCString, const char*** eventnames);
 extern void perfmon_setupCounters(void);

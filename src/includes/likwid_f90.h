@@ -1,6 +1,6 @@
 ! =======================================================================================
 !
-!     Filename:  likwid.f90
+!     Filename:  likwid_f90.h
 !
 !     Description: Marker API f90 module
 !
@@ -26,29 +26,15 @@
 !
 ! =======================================================================================
 
+#ifndef LIKWID_F90_H
+#define LIKWID_F90_H
 
+      use likwid
 
-module likwid
+#define likwid_markerStart(region) \
+ likwid_markerStartRegion(region,len_trim(region))
 
-interface 
+#define likwid_markerStop(region) \
+ likwid_markerStopRegion(region,len_trim(region))
 
-  subroutine likwid_markerInit()
-  end subroutine likwid_markerInit
-
-  subroutine likwid_markerClose()
-  end subroutine likwid_markerClose
-
-  subroutine likwid_markerStartRegion( regionTag, strLen )
-  character(*) :: regionTag
-  integer strLen
-  end subroutine likwid_markerStartRegion
-
-  subroutine likwid_markerStopRegion( regionTag, strLen )
-  character(*) :: regionTag
-  integer strLen
-  end subroutine likwid_markerStopRegion
-
-end interface
-
-end module likwid
-
+#endif

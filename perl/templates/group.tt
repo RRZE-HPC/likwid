@@ -4,7 +4,7 @@
 
 static PerfmonGroupMap [% arch %]_group_map[NUM_GROUPS_[% arch FILTER upper %]] = {
 [% FOREACH group IN groups %]
-    {"[% group.name %]",[% group.name %],[% group.isUncore %],"[% group.shortHelp %]","[% group.eventSet %]"},
+    {"[% group.name %]",[% group.name %],"[% group.shortHelp %]","[% group.eventSet %]"},
 [% END %]
 };
 
