@@ -2,8 +2,7 @@
 
 package as;
 use Data::Dumper;
-use isax86;
-use isax86_64;
+use isa;
 
 $AS = { HEADER     => '.intel_syntax noprefix',
 	    FOOTER     => ''};
@@ -12,17 +11,12 @@ $LOCAL = {};
 $MODE = 'GLOBAL';
 
 my $CURRENT_SECTION='NONE';
-my $WORDLENGTH;
-my $STACKPTR;
-my $BASEPTR;
-my $REG;
-my $ARG;
 
 sub emit_code
 {
 	my $code = shift;
-	$code =~ s/([GF]PR[0-9]+)/$REG->{$1}/g;
-	$code =~ s/(ARG[0-9]+)/$ARG->{$1}/g;
+	$code =~ s/([GF]PR[0-9]+)/$isa::REG->{$1}/g;
+	$code =~ s/(ARG[0-9]+)/$isa::ARG->{$1}/g;
 	$code =~ s/(LOCAL[0-9]+)/$LOCAL->{$1}/g;
 	print "$code\n";
 }
@@ -45,15 +39,15 @@ sub mode
 	}
 }
 
-sub function_entry
+sub function_entry 
 {
 	my $symbolname = shift;
 	my $allocate = shift;
 	my $distance;
 
 	foreach ( (0 .. $allocate) ) {
-		$distance =  $_ * $WORDLENGTH;
-		$LOCAL->{"LOCAL$_"} = "[$BASEPTR-$distance]";
+		$distance =  $_ * $isa::WORDLENGTH;
+		$LOCAL->{"LOCAL$_"} = "[$isa::BASEPTR-$distance]";
 	}
 
 	if($CURRENT_SECTION ne 'text') {
@@ -68,7 +62,7 @@ sub function_entry
 	if ($main::ISA eq 'x86') {
 		print "push ebp\n";
 		print "mov ebp, esp\n";
-		$distance = $allocate * $WORDLENGTH;
+		$distance = $allocate * $isa::WORDLENGTH;
 		print "sub  esp, $distance\n" if ($allocate);
 		print "push ebx\n";
 		print "push esi\n";
@@ -76,7 +70,7 @@ sub function_entry
 	} elsif ($main::ISA eq 'x86-64') {
 		print "push rbp\n";
 		print "mov rbp, rsp\n";
-		$distance = $allocate * $WORDLENGTH;
+		$distance = $allocate * $isa::WORDLENGTH;
 		print "sub  rsp, $distance\n" if ($allocate);
 		print "push rbx\n";
 		print "push r12\n";
@@ -86,7 +80,7 @@ sub function_entry
 	}
 }
 
-sub function_exit
+sub function_exit 
 {
 	my $symbolname = shift;
 
@@ -122,89 +116,46 @@ sub define_data
 		$CURRENT_SECTION = 'data';
 		print ".data\n";
 	}
-	print ".align 64\n";
+	print ".align 16\n";
 	print "$symbolname:\n";
 	if ($type eq 'DOUBLE') {
-		print ".double $value, $value, $value, $value, $value, $value, $value, $value\n"
+		print ".double $value, $value\n"
 	} elsif ($type eq 'SINGLE') {
-		print ".single $value, $value, $value, $value, $value, $value, $value, $value\n"
+		print ".single $value, $value, $value, $value\n"
 	} elsif ($type eq 'INT') {
 		print ".int $value, $value\n"
 	}
 }
 
-sub define_offset
+sub loop_entry 
 {
 	my $symbolname = shift;
-	my $type = shift;
-	my $value = shift;
+	my $stopping_criterion = shift;
+	$stopping_criterion = $isa::REG->{$stopping_criterion} if( exists $isa::REG->{$stopping_criterion});
 
-	if($CURRENT_SECTION ne 'data') {
-		$CURRENT_SECTION = 'data';
-		print ".data\n";
+	print "mov   rax, $stopping_criterion\n";
+	print "neg   rax\n";
+	print ".align 32\n";
+	if ($MODE eq 'GLOBAL') {
+		print "$symbolname :\n";
+	}else {
+		print "1:\n";
 	}
-	print ".align 16\n";
-	print "$symbolname:\n";
-  print ".int $value\n";
 }
 
 
-sub loop_entry
+sub loop_exit 
 {
-  my $symbolname = shift;
-  my $stopping_criterion = shift;
-  $stopping_criterion = $REG->{$stopping_criterion} if( exists $REG->{$stopping_criterion});
+	my $symbolname = shift;
+	my $step = shift;
 
-  if ($main::ISA eq 'x86') {
-    print "xor   eax, eax\n";
-  } elsif ($main::ISA eq 'x86-64') {
-    print "xor   rax, rax\n";
-  }
-  print ".align 16\n";
-  if ($MODE eq 'GLOBAL') {
-    print "$symbolname :\n";
-  }else {
-    print "1:\n";
-  }
-
-}
-
-
-sub loop_exit
-{
-  my $symbolname = shift;
-  my $step = shift;
-
-  if ($main::ISA eq 'x86') {
-    print "add eax, $step\n";
-    print "cmp eax, edi\n";
-  } elsif ($main::ISA eq 'x86-64') {
-    print "add rax, $step\n";
-    print "cmp rax, rdi\n";
-  }
-  if ($MODE eq 'GLOBAL') {
-    print "jl $symbolname\n";
-  }else {
-    print "jl 1b\n";
-  }
-  print "\n";
-}
-
-sub isa_init
-{
-  if ($main::ISA eq 'x86') {
-    $WORDLENGTH = $isax86::WORDLENGTH_X86 ;
-    $STACKPTR = $isax86::STACKPTR_X86 ;
-    $BASEPTR = $isax86::BASEPTR_X86 ;
-    $REG = $isax86::REG_X86;
-    $ARG = $isax86::ARG_X86 ;
-  } elsif ($main::ISA eq 'x86-64') {
-    $WORDLENGTH = $isax86_64::WORDLENGTH_X86_64;
-    $STACKPTR = $isax86_64::STACKPTR_X86_64 ;
-    $BASEPTR = $isax86_64::BASEPTR_X86_64 ;
-    $REG = $isax86_64::REG_X86_64;
-    $ARG = $isax86_64::ARG_X86_64 ;
-  }
+	print "add rax, $step\n";
+	if ($MODE eq 'GLOBAL') {
+		print "js $symbolname\n";
+	}else {
+		print "js 1b\n";
+	}
+	print "\n";
 }
 
 

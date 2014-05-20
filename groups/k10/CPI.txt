@@ -6,8 +6,7 @@ PMC1  CPU_CLOCKS_UNHALTED
 PMC2  UOPS_RETIRED
 
 METRICS
-Runtime (RDTSC) [s] time
-Runtime unhalted [s]  PMC1*inverseClock
+Runtime [s]  PMC1*inverseClock
 CPI   PMC1/PMC0
 CPI (based on uops)   PMC1/PMC2
 IPC   PMC0/PMC1

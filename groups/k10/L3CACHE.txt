@@ -6,7 +6,6 @@ PMC1  L3_READ_REQUEST_ALL_ALL_CORES
 PMC2  L3_MISSES_ALL_ALL_CORES
 
 METRICS
-Runtime (RDTSC) [s] time
 L3 request rate  PMC1/PMC0
 L3 miss rate   PMC2/PMC0
 L3 miss ratio  PMC2/PMC1

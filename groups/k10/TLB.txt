@@ -7,7 +7,6 @@ PMC2  DTLB_L2_HIT_ALL
 PMC3  DTLB_L2_MISS_ALL
 
 METRICS
-Runtime (RDTSC) [s] time
 L1 DTLB request rate  PMC1/PMC0
 L1 DTLB miss rate   (PMC2+PMC3)/PMC0
 L1 DTLB miss ratio   (PMC2+PMC3)/PMC1

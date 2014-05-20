@@ -1,347 +1,287 @@
 /*
- * =======================================================================================
+ * ===========================================================================
  *
  *      Filename:  affinity.c
  *
  *      Description:  Implementation of affinity module.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
  *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
- *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * =======================================================================================
+ * ===========================================================================
  */
+
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <pthread.h>
+
 #include <sys/types.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <sched.h>
-#include <time.h>
-#include <pthread.h>
 
 #include <error.h>
 #include <types.h>
-#include <numa.h>
 #include <affinity.h>
 #include <cpuid.h>
 #include <tree.h>
 
+#include <osdep/affinity.h>
+
 /* #####   EXPORTED VARIABLES   ########################################### */
 
-int affinity_core2node_lookup[MAX_NUM_THREADS];
-
-/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-
-#define gettid() syscall(SYS_gettid)
 
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-static int  affinity_numberOfDomains = 0;
+static int  numberOfDomains = 1; /* add node domain per default */
 static AffinityDomain*  domains;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static int
-getProcessorID(cpu_set_t* cpu_set)
+/* this routine expects a core node and will traverse the tree over all threads
+ * with physical cores first order */
+static void
+treeFillNextEntries(int numberOfEntries, int* processorIds, TreeNode** tree)
 {
-    int processorId;
+    int tmplist[numberOfEntries];
+    int mapping[numberOfEntries];
+    int counter = numberOfEntries;
+    TreeNode* threadNode;
+    int threadsPerCore = cpuid_topology.numThreadsPerCore;
+    int row, column;
+    int numberOfCores = numberOfEntries/threadsPerCore;
 
-    for ( processorId = 0; processorId < MAX_NUM_THREADS; processorId++ )
+    while (*tree != NULL)
     {
-        if ( CPU_ISSET(processorId,cpu_set) )
+        if (!counter) break;
+        threadNode = tree_getChildNode(*tree);
+        while (threadNode != NULL)
         {
-            break;
+            tmplist[numberOfEntries-counter] = threadNode->id;
+            threadNode = tree_getNextNode(threadNode);
+            counter--;
         }
+        *tree = tree_getNextNode(*tree);
     }
-    return processorId;
+
+    for (int i=0; i<numberOfEntries; i++)
+    {
+        column = i%threadsPerCore;
+        row = i/threadsPerCore;
+        mapping[column*numberOfCores+row]=i;
+    }
+
+    for (int i=0; i<numberOfEntries; i++)
+    {
+        processorIds[i] = tmplist[mapping[i]];
+    }
+
 }
 
 static void
-treeFillNextEntries(
-    TreeNode* tree,
-    int* processorIds,
-    int socketId,
-    int offset,
-    int numberOfEntries )
+treeFillEntriesNode(int* processorIds)
 {
-  int counter = numberOfEntries;
-  TreeNode* node = tree;
-  TreeNode* thread;
+    uint32_t i;
+    int tmplist[cpuid_topology.numHWThreads];
+    int mapping[cpuid_topology.numHWThreads];
+    int counter = cpuid_topology.numHWThreads;
+    TreeNode* threadNode;
+    TreeNode* coreNode;
+    TreeNode* socketNode;
+    int threadsPerCore = cpuid_topology.numThreadsPerCore;
+    int row, column;
+    int numberOfCores = cpuid_topology.numHWThreads/threadsPerCore;
 
-  node = tree_getChildNode(node);
-
-  /* get socket node */
-  for (int i=0; i<socketId; i++)
-  {
-    node = tree_getNextNode(node);
-
-    if ( node == NULL )
+    socketNode = tree_getChildNode(cpuid_topology.topologyTree);
+    while (socketNode != NULL)
     {
-      printf("ERROR: Socket %d not existing!",i);
-      exit(EXIT_FAILURE);
+        coreNode = tree_getChildNode(socketNode);
+
+        while (coreNode != NULL)
+        {
+            threadNode = tree_getChildNode(coreNode);
+            while (threadNode != NULL)
+            {
+                tmplist[cpuid_topology.numHWThreads-counter] = threadNode->id;
+                threadNode = tree_getNextNode(threadNode);
+                counter--;
+            }
+            coreNode = tree_getNextNode(coreNode);
+        }
+        socketNode = tree_getNextNode(socketNode);
     }
-  }
 
-  node = tree_getChildNode(node);
-  /* skip offset cores */
-  for (int i=0; i<offset; i++)
-  {
-    node = tree_getNextNode(node);
-
-    if ( node == NULL )
+    for (i=0; i< cpuid_topology.numHWThreads; i++)
     {
-      printf("ERROR: Core %d not existing!",i);
-      exit(EXIT_FAILURE);
+        column = i%threadsPerCore;
+        row = i/threadsPerCore;
+        mapping[column*numberOfCores+row]=i;
     }
-  }
 
-  /* Traverse horizontal */
-  while ( node != NULL )
-  {
-    if ( !counter ) break;
-
-    thread = tree_getChildNode(node);
-
-    while ( thread != NULL )
+    for (i=0; i< cpuid_topology.numHWThreads; i++)
     {
-      processorIds[numberOfEntries-counter] = thread->id;
-      thread = tree_getNextNode(thread);
-      counter--;
+        processorIds[i] = tmplist[mapping[i]];
     }
-    node = tree_getNextNode(node);
-  }
+
 }
+
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void
-affinity_init()
+void affinity_init()
 {
-    int numberOfDomains = 1; /* all systems have the node domain */
+    int i;
+    int cacheDomain;
     int currentDomain;
-    int subCounter = 0;
-    int offset = 0;
-    int numberOfSocketDomains = cpuid_topology.numSockets;;
-    int numberOfNumaDomains = numa_info.numberOfNodes;
-    int numberOfProcessorsPerSocket =
-        cpuid_topology.numCoresPerSocket * cpuid_topology.numThreadsPerCore;
-    int numberOfCacheDomains;
+    TreeNode* socketNode;
+    TreeNode* coreNode;
 
     int numberOfCoresPerCache =
-        cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads/
-        cpuid_topology.numThreadsPerCore;
-
+        cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads/cpuid_topology.numThreadsPerCore;
     int numberOfProcessorsPerCache =
         cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
 
+    /* determine total number of domains */
+    numberOfDomains += cpuid_topology.numSockets;
+
     /* for the cache domain take only into account last level cache and assume
-     * all sockets to be uniform. */
+     * all sockets to be uniform.
+     * */
 
     /* determine how many last level shared caches exist per socket */
-    numberOfCacheDomains = cpuid_topology.numSockets *
-        (cpuid_topology.numCoresPerSocket/numberOfCoresPerCache);
+ //   numberOfDomains += cpuid_topology.numSockets * (cpuid_topology.numCoresPerSocket/numberOfCoresPerCache);
+    numberOfDomains += cpuid_topology.numSockets * (cpuid_topology.numCoresPerSocket/numberOfCoresPerCache);
 
-    /* determine total number of domains */
-    numberOfDomains += numberOfSocketDomains + numberOfCacheDomains + numberOfNumaDomains;
+     /* :TODO:05/01/2010 10:02:36 AM:jt: Add NUMA domains here */
 
     domains = (AffinityDomain*) malloc(numberOfDomains * sizeof(AffinityDomain));
+    cacheDomain = 0;
 
     /* Node domain */
     domains[0].numberOfProcessors = cpuid_topology.numHWThreads;
-    domains[0].numberOfCores = cpuid_topology.numSockets * cpuid_topology.numCoresPerSocket;
     domains[0].processorList = (int*) malloc(cpuid_topology.numHWThreads*sizeof(int));
     domains[0].tag = bformat("N");
-    offset = 0;
 
-    for (int i=0; i<numberOfSocketDomains; i++)
-    {
-      treeFillNextEntries(
-          cpuid_topology.topologyTree,
-          domains[0].processorList + offset,
-          i, 0, numberOfProcessorsPerSocket);
-
-      offset += numberOfProcessorsPerSocket;
-    }
-
-    /* Socket domains */
-    currentDomain = 1;
-
-    for (int i=0; i < numberOfSocketDomains; i++ )
-    {
-      domains[currentDomain + i].numberOfProcessors = numberOfProcessorsPerSocket;
-      domains[currentDomain + i].numberOfCores =  cpuid_topology.numCoresPerSocket;
-      domains[currentDomain + i].processorList = (int*) malloc( domains[currentDomain + i].numberOfProcessors * sizeof(int));
-      domains[currentDomain + i].tag = bformat("S%d", i);
-
-      treeFillNextEntries(
-          cpuid_topology.topologyTree,
-          domains[currentDomain + i].processorList,
-          i, 0, domains[currentDomain + i].numberOfProcessors);
-    }
-
-    /* Cache domains */
-    currentDomain += numberOfSocketDomains;
-    subCounter = 0;
-
-    for (int i=0; i < numberOfSocketDomains; i++ )
-    {
-      offset = 0;
-
-      for ( int j=0; j < (numberOfCacheDomains/numberOfSocketDomains); j++ )
-      {
-        domains[currentDomain + subCounter].numberOfProcessors = numberOfProcessorsPerCache;
-        domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
-        domains[currentDomain + subCounter].processorList = (int*) malloc(numberOfProcessorsPerCache*sizeof(int));
-        domains[currentDomain + subCounter].tag = bformat("C%d", subCounter);
-
-        treeFillNextEntries(
-            cpuid_topology.topologyTree,
-            domains[currentDomain + subCounter].processorList,
-            i, offset, domains[currentDomain + subCounter].numberOfProcessors);
-
-        offset += numberOfCoresPerCache;
-        subCounter++;
-      }
-    }
-
-    /* Memory domains */
-    currentDomain += numberOfCacheDomains;
-    subCounter = 0;
-
-    for (int i=0; i < numberOfSocketDomains; i++ )
-    {
-      offset = 0;
-
-      for ( int j=0; j < (numberOfNumaDomains/numberOfSocketDomains); j++ )
-      {
-        domains[currentDomain + subCounter].numberOfProcessors = numberOfProcessorsPerCache;
-        domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
-        domains[currentDomain + subCounter].processorList = (int*) malloc(numa_info.nodes[subCounter].numberOfProcessors*sizeof(int));
-        domains[currentDomain + subCounter].tag = bformat("M%d", subCounter);
-
-        treeFillNextEntries(
-            cpuid_topology.topologyTree,
-            domains[currentDomain + subCounter].processorList,
-            i, offset, domains[currentDomain + subCounter].numberOfProcessors);
-
-        offset += numberOfCoresPerCache;
-        subCounter++;
-      }
-    }
-
-    /* This is redundant ;-). Create thread to node lookup */
-    for ( uint32_t i = 0; i < numa_info.numberOfNodes; i++ )
-    {
-        for ( int j = 0; j < numa_info.nodes[i].numberOfProcessors; j++ )
+    for (i=1; i<numberOfDomains; i++) {
+        if (i < (int) (cpuid_topology.numSockets+1))
         {
-            affinity_core2node_lookup[numa_info.nodes[i].processors[j]] = i;
+            domains[i].numberOfProcessors = cpuid_topology.numCoresPerSocket *
+                cpuid_topology.numThreadsPerCore;
+            domains[i].processorList = (int*) malloc(cpuid_topology.numCoresPerSocket*
+                    cpuid_topology.numThreadsPerCore * sizeof(int));
+            domains[i].tag = bformat("S%d",i-1);
+        }
+        else
+        {
+            domains[i].processorList = (int*)
+                malloc(numberOfProcessorsPerCache*sizeof(int));
+            domains[i].tag = bformat("C%d",cacheDomain++);
+            domains[i].numberOfProcessors = numberOfProcessorsPerCache;
         }
     }
 
-    affinity_numberOfDomains = numberOfDomains;
+    treeFillEntriesNode(domains[0].processorList);
+    currentDomain = 0;
+    /* create socket domains */
+    socketNode = tree_getChildNode(cpuid_topology.topologyTree);
+
+    while (socketNode != NULL)
+    {
+        currentDomain++;
+        coreNode = tree_getChildNode(socketNode);
+        treeFillNextEntries(domains[currentDomain].numberOfProcessors, domains[currentDomain].processorList, &coreNode);
+        socketNode = tree_getNextNode(socketNode);
+    }
+
+    /* create last level cache domains */
+    socketNode = tree_getChildNode(cpuid_topology.topologyTree);
+    while (socketNode != NULL)
+    {
+        coreNode = tree_getChildNode(socketNode);
+        for (i=0; i< (int) (cpuid_topology.numCoresPerSocket/numberOfCoresPerCache); i++)
+        {
+            currentDomain++;
+            treeFillNextEntries(domains[currentDomain].numberOfProcessors, domains[currentDomain].processorList, &coreNode);
+        }
+
+        socketNode = tree_getNextNode(socketNode);
+    }
 }
 
 
-void
-affinity_finalize()
+void affinity_finalize()
 {
-    for ( int i=0; i < affinity_numberOfDomains; i++ )
-    {
+    int i;
+
+    for (i=0; i<numberOfDomains; i++) {
         free(domains[i].processorList);
     }
     free(domains);
 }
 
 
-int
-affinity_processGetProcessorId()
+int  affinity_processGetProcessorId()
 {
-    int ret;
-    cpu_set_t cpu_set;
-    CPU_ZERO(&cpu_set);
-    ret = sched_getaffinity(getpid(),sizeof(cpu_set_t), &cpu_set);
-
-    if (ret < 0)
-    {
-        ERROR;
-    }
-
-    return getProcessorID(&cpu_set);
+    return processGetProcessorId();
 }
 
 
-int
-affinity_threadGetProcessorId()
+int  affinity_threadGetProcessorId()
 {
-    cpu_set_t  cpu_set;
-    CPU_ZERO(&cpu_set);
-    sched_getaffinity(gettid(),sizeof(cpu_set_t), &cpu_set);
-
-    return getProcessorID(&cpu_set);
+    return  threadGetProcessorId();
 }
 
 #ifdef HAS_SCHEDAFFINITY
-void
-affinity_pinThread(int processorId)
+void  affinity_pinThread(int processorId)
 {
-	cpu_set_t cpuset;
-    pthread_t thread;
-
-    thread = pthread_self();
-    CPU_ZERO(&cpuset);
-    CPU_SET(processorId, &cpuset);
-    pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+    pinThread(processorId);
 }
 #else
-void
-affinity_pinThread(int processorId)
+void  affinity_pinThread(int processorId)
 {
 }
 #endif
 
 
-void
-affinity_pinProcess(int processorId)
+void  affinity_pinProcess(int processorId)
 {
-	cpu_set_t cpuset;
-
-	CPU_ZERO(&cpuset);
-	CPU_SET(processorId, &cpuset);
-	sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
+    pinProcess(processorId);
 }
 
 
-const AffinityDomain*
-affinity_getDomain(bstring domain)
+const AffinityDomain* affinity_getDomain(bstring domain)
 {
+    int i;
 
-    for ( int i=0; i < affinity_numberOfDomains; i++ )
+    for (i=0; i<numberOfDomains; i++)
     {
-        if ( biseq(domain, domains[i].tag) )
+        if (biseq(domain, domains[i].tag))
         {
             return domains+i;
         }
@@ -350,19 +290,37 @@ affinity_getDomain(bstring domain)
     return NULL;
 }
 
-void
-affinity_printDomains()
+void affinity_printDomains()
 {
-    for ( int i=0; i < affinity_numberOfDomains; i++ )
+    int i;
+    uint32_t j;
+
+    for (i=0; i<numberOfDomains; i++)
     {
         printf("Domain %d:\n",i);
         printf("\tTag %s:",bdata(domains[i].tag));
-
-        for ( uint32_t j=0; j < domains[i].numberOfProcessors; j++ )
+        for (j=0; j<domains[i].numberOfProcessors; j++)
         {
             printf(" %d",domains[i].processorList[j]);
         }
         printf("\n");
     }
 }
+
+void  affinity_state(int operation)
+{
+    static cpu_set_t cpuSet;
+
+    if (!operation)
+    {
+        CPU_ZERO(&cpuSet);
+        sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
+    }
+    else
+    {
+        /* restore affinity mask of process */
+        sched_setaffinity(0, sizeof(cpu_set_t), &cpuSet);
+    }
+}
+
 

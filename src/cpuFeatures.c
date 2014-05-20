@@ -1,5 +1,5 @@
 /*
- * =======================================================================================
+ * ===========================================================================
  *
  *     Filename:  cpuFeatures.c
  *
@@ -9,28 +9,30 @@
  *                  Allows to turn on and off the Hardware prefetcher
  *                  available.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
  *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
- *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * =======================================================================================
+ * ===========================================================================
  */
+
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
@@ -41,7 +43,6 @@
 #include <types.h>
 #include <msr.h>
 #include <cpuid.h>
-#include <registers.h>
 #include <textcolor.h>
 #include <cpuFeatures.h>
 
@@ -51,6 +52,7 @@ CpuFeatureFlags cpuFeatureFlags;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
+#define MSR_IA32_MISC_ENABLE      0x1A0
 
 #define PRINT_VALUE(color,string)  \
     color_on(BRIGHT,(color));      \
@@ -94,10 +96,6 @@ cpuFeatures_init(int cpu)
     {
         /*Nehalem */
         TEST_FLAG(turboMode,38);
-        TEST_FLAG(hardwarePrefetcher,9);
-        TEST_FLAG(clPrefetcher,19);
-        TEST_FLAG(dcuPrefetcher,37);
-        TEST_FLAG(ipPrefetcher,39);
     }
     else if ((cpuid_info.model == CORE2_45) ||
             (cpuid_info.model == CORE2_65))
@@ -213,46 +211,6 @@ cpuFeatures_print(int cpu)
         PRINT_VALUE(GREEN,enabled);
     }
 
-    printf("IP Prefetcher: \t\t\t");
-    if (flags & (1ULL<<39)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("Hardware Prefetcher: \t\t");
-    if (flags & (1ULL<<9)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("Adjacent Cache Line Prefetch: \t");
-    if (flags & (1ULL<<19)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("DCU Prefetcher: \t\t");
-    if (flags & (1ULL<<37)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
     if ((cpuid_info.model == NEHALEM) ||
             (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
             (cpuid_info.model == NEHALEM_LYNNFIELD) ||
@@ -280,6 +238,46 @@ cpuFeatures_print(int cpu)
             PRINT_VALUE(RED,disabled);
         }
         else 
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
+
+        printf("IP Prefetcher: \t\t\t");
+        if (flags & (1ULL<<39)) 
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        else
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
+
+        printf("Hardware Prefetcher: \t\t");
+        if (flags & (1ULL<<9)) 
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        else
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
+
+        printf("Adjacent Cache Line Prefetch: \t");
+        if (flags & (1ULL<<19)) 
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        else
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
+
+        printf("DCU Prefetcher: \t\t");
+        if (flags & (1ULL<<37)) 
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        else
         {
             PRINT_VALUE(GREEN,enabled);
         }

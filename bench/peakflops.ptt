@@ -1,0 +1,37 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 2
+BYTES 16
+INC 8
+movaps FPR1, [SCALAR]
+sub  GPR2, 4
+sub  STR0, 32
+sub  STR1, 32
+mov   GPR1, GPR2
+neg   GPR1
+.align 16
+1:
+movaps    FPR2, [STR0 + GPR1 * 8 ]
+addpd     FPR2, FPR1
+mulpd     FPR2, FPR1
+addpd     FPR2, FPR1
+mulpd     FPR2, FPR1
+movaps    FPR3, [STR0 + GPR1 * 8 + 16]
+add GPR1, 8
+addpd     FPR3, FPR1
+mulpd     FPR3, FPR1
+addpd     FPR3, FPR1
+mulpd     FPR3, FPR1
+movaps    FPR4, [STR0 + GPR1 * 8 - 32]
+addpd     FPR4, FPR1
+mulpd     FPR4, FPR1
+addpd     FPR4, FPR1
+mulpd     FPR4, FPR1
+movaps    FPR5, [STR0 + GPR1 * 8 - 16]
+addpd     FPR5, FPR1
+mulpd     FPR5, FPR1
+addpd     FPR5, FPR1
+mulpd     FPR5, FPR1
+js 1b
+
+

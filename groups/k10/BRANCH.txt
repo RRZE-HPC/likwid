@@ -7,7 +7,6 @@ PMC2  BRANCH_MISPREDICT_RETIRED
 PMC3  BRANCH_TAKEN_RETIRED
 
 METRICS
-Runtime (RDTSC) [s] time
 Branch rate   PMC1/PMC0
 Branch misprediction rate  PMC2/PMC0
 Branch misprediction ratio  PMC2/PMC1

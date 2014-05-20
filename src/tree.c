@@ -1,32 +1,34 @@
 /*
- * =======================================================================================
+ * ===========================================================================
  *
  *      Filename:  tree.c
  *
  *      Description:  Module implementing a tree data structure
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
  *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
- *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * =======================================================================================
+ * ===========================================================================
  */
+
 /* #####   HEADER FILE INCLUDES   ######################################### */
 #include <stdlib.h>
 #include <stdio.h>
@@ -48,33 +50,18 @@ tree_init(TreeNode** root, int id)
 void
 tree_print(TreeNode* nodePtr)
 {
-  int level = 0;
-
-  if (nodePtr != NULL)
-  {
-
-    TreeNode* digger;
-    TreeNode* walker;
-
-    digger = nodePtr->llink;
-
-    while (digger != NULL)
+    if (nodePtr != NULL) 
     {
-      printf("\n Level %d:\n", level++);
-      printf("%d ", digger->id);
-      walker = digger->rlink;
+        printf("%d ", nodePtr->id);
+        TreeNode* walker;    
+        walker = nodePtr->llink;
 
-      while (walker != NULL)
-      {
-        printf("%d ", walker->id);
-        walker = walker->rlink;
-      }
-
-      digger = digger->llink;
+        while (walker != NULL)
+        {
+            tree_print(walker);
+            walker = walker->rlink;
+        }
     }
-
-    printf("\n ");
-  }
 }
 
 void
@@ -85,7 +72,7 @@ tree_insertNode(TreeNode* nodePtr, int id)
 
     if (nodePtr == NULL)
     {
-        ERROR_PLAIN_PRINT(Node invalid);
+        ERROR_MSG(Node invalid);
     }
 
     if (nodePtr->llink == NULL)
@@ -139,7 +126,7 @@ tree_nodeExists(TreeNode* nodePtr, int id)
 
     if (nodePtr == NULL)
     {
-        ERROR_PLAIN_PRINT(Node invalid);
+        ERROR_MSG(Node invalid);
     }
 
     walker = nodePtr->llink;
@@ -167,10 +154,11 @@ tree_countChildren(TreeNode* nodePtr)
 
     if (nodePtr == NULL)
     {
-        ERROR_PLAIN_PRINT(Node invalid);
+        ERROR_MSG(Node invalid);
     }
     if (nodePtr->llink == NULL)
     {
+        WARNING(Node has no children);
         return 0;
     }
 
@@ -192,10 +180,11 @@ tree_getNode(TreeNode* nodePtr, int id)
 
     if (nodePtr == NULL)
     {
-        ERROR_PLAIN_PRINT(Node invalid);
+        ERROR_MSG(Node invalid);
     }
     if (nodePtr->llink == NULL)
     {
+        WARNING(Node has no children);
         return NULL;
     }
 
@@ -221,10 +210,11 @@ tree_getChildNode(TreeNode* nodePtr)
 {
     if (nodePtr == NULL)
     {
-        ERROR_PLAIN_PRINT(Node invalid);
+        ERROR_MSG(Node invalid);
     }
     if (nodePtr->llink == NULL)
     {
+        WARNING(Node has no children);
         return NULL;
     }
 
@@ -236,11 +226,12 @@ tree_getNextNode(TreeNode* nodePtr)
 {
     if (nodePtr == NULL)
     {
-        ERROR_PLAIN_PRINT(Node invalid);
+        ERROR_MSG(Node invalid);
     }
 
     if (nodePtr->rlink == NULL)
     {
+        WARNING(Node has no children);
         return NULL;
     }
 

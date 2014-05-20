@@ -3,14 +3,11 @@ SHORT L2 cache miss rate/ratio
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
-FIXC2 CPU_CLK_UNHALTED_REF
 PMC0  L2_DATA_RQSTS_DEMAND_ANY
 PMC1  L2_RQSTS_MISS
 
 METRICS
-Runtime (RDTSC) [s] time
-Runtime unhalted [s] FIXC1*inverseClock
-Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+Runtime [s] FIXC1*inverseClock
 CPI  FIXC1/FIXC0
 L2 request rate PMC0/FIXC0
 L2 miss rate PMC1/FIXC0
@@ -20,7 +17,7 @@ LONG
 Formulas:
 L2 request rate = L2_DATA_RQSTS_DEMAND_ANY / INSTR_RETIRED_ANY
 L2 miss rate  = L2_RQSTS_MISS / INSTR_RETIRED_ANY
-L2 miss ratio = L2_RQSTS_MISS / L2_DATA_RQSTS_DEMAND_MESI
+L2 miss ratio = L2_RQSTS_MISS / L2_DATA_RQSTS_DEMAND_ANY
 -
 This group measures the locality of your data accesses with regard to the
 L2 Cache. L2 request rate tells you how data intensive your code is
@@ -30,5 +27,6 @@ cachelines from memory. And finally L2 miss ratio tells you how many of your
 memory references required a cacheline to be loaded from a higher level.
 While the Data cache miss rate might be given by your algorithm you should
 try to get Data cache miss ratio as low as possible by increasing your cache reuse.
+Note: This group might need to be revised!
 
 

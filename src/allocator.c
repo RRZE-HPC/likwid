@@ -1,32 +1,34 @@
 /*
- * =======================================================================================
+ * ===========================================================================
  *
  *      Filename:  allocator.c
  *
  *      Description:  Implementation of allocator module.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
  *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
- *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * =======================================================================================
+ * ===========================================================================
  */
+
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 #include <stdlib.h>
@@ -75,19 +77,19 @@ allocator_finalize()
 }
 
 void
-allocator_allocateVector(
-        void** ptr,
+allocator_allocateVector(void** ptr,
         int alignment,
-        uint64_t size,
+        int size,
         int offset,
         DataType type,
         bstring domainString)
 {
-    size_t bytesize = 0;
+    int ret;
+    int bytesize = 0;
+    int i;
     const AffinityDomain* domain;
-    int errorCode;
 
-    switch ( type )
+    switch (type)
     {
         case SINGLE:
             bytesize = (size+offset) * sizeof(float);
@@ -98,49 +100,30 @@ allocator_allocateVector(
             break;
     }
 
-    errorCode =  posix_memalign(ptr, alignment, bytesize);
+    ret = posix_memalign(ptr, alignment, bytesize);
 
-    if (errorCode)
+    if (ret < 0)
     {
-        if (errorCode == EINVAL) 
-        {
-            fprintf(stderr,
-                    "Alignment parameter is not a power of two\n");
-            exit(EXIT_FAILURE);
-        }
-        if (errorCode == ENOMEM) 
-        {
-            fprintf(stderr,
-                    "Insufficient memory to fulfill the request\n");
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    if ((*ptr) == NULL)
-    {
-            fprintf(stderr, "posix_memalign failed!\n");
-            exit(EXIT_FAILURE);
-
+        ERROR;
     }
 
     allocations[numberOfAllocatedVectors] = *ptr;
     numberOfAllocatedVectors++;
     domain = affinity_getDomain(domainString);
     affinity_pinProcess(domain->processorList[0]);
-
-    printf("Allocate: Process running on core %d - Vector length %llu Offset %d\n",
+    printf("Allocate: Process running on core %d - Vector length %d Offset %d\n",
             affinity_processGetProcessorId(),
-            LLU_CAST size,
+            size,
             offset);
+
 
     switch ( type )
     {
         case SINGLE:
             {
-                float* sptr = (float*) (*ptr);
+                float* sptr = (float*) *ptr;
                 sptr += offset;
-
-                for ( uint64_t i=0; i < size; i++ )
+                for (i=0; i<size; i++)
                 {
                     sptr[i] = 0.0;
                 }
@@ -151,10 +134,9 @@ allocator_allocateVector(
 
         case DOUBLE:
             {
-                double* dptr = (double*) (*ptr);
+                double* dptr = (double*) *ptr;
                 dptr += offset;
-
-                for ( uint64_t i=0; i < size; i++ )
+                for (i=0; i<size; i++)
                 {
                     dptr[i] = 0.0;
                 }

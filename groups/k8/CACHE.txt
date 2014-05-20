@@ -7,7 +7,6 @@ PMC2  DATA_CACHE_REFILLS_L2_ALL
 PMC3  DATA_CACHE_REFILLS_NORTHBRIDGE_ALL
 
 METRICS
-Runtime (RDTSC) [s] time
 Data cache misses PMC2+PMC3
 Data cache request rate PMC1/PMC0
 Data cache miss rate (PMC2+PMC3)/PMC0

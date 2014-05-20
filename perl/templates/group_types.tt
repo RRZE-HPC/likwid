@@ -3,7 +3,7 @@
 
 
 typedef enum {
-    _NOGROUP = 0,
+    NOGROUP = 0,
 [% FOREACH group IN groups %]
     [% group.key %],
 [% END %]

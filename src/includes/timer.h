@@ -1,5 +1,4 @@
 /*
- * =======================================================================================
  *      Filename:  timer.h
  *
  *      Description:  Measure runtime with getTimeOfday and rdtsc.
@@ -10,109 +9,100 @@
  *      with rdtsc of 100 cycles in the worst case. Therefore sensible
  *      measurements should be over 1000 cycles.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
  *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
+
  *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * =======================================================================================
+ * ============================================================================
  */
 #ifndef TIMER_H
 #define TIMER_H
 
-#include <types.h>
-
-#define RDTSC(cpu_c) \
-__asm__ volatile("xor %%eax,%%eax\n\t"           \
-"cpuid\n\t"           \
-"rdtsc\n\t"           \
-"movl %%eax, %0\n\t"  \
-"movl %%edx, %1\n\t"  \
-: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
-: : "%eax","%ebx","%ecx","%edx")
-
-#define RDTSC_CR(cpu_c) \
-__asm__ volatile(   \
-"rdtsc\n\t"           \
-"movl %%eax, %0\n\t"  \
-"movl %%edx, %1\n\t"  \
-: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
-: : "%eax","%ebx","%ecx","%edx")
-
-#define RDTSCP(cpu_c) \
-__asm__ volatile(     \
-"rdtscp\n\t"          \
-"movl %%eax, %0\n\t"  \
-"movl %%edx, %1\n\t"  \
-"cpuid\n\t"           \
-: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
-: : "%eax","%ebx","%ecx","%edx")
-
-#ifdef HAS_RDTSCP
-#define RDTSC_STOP(cpu_c) RDTSCP(cpu_c);
-#else
-#define RDTSC_STOP(cpu_c) RDTSC_CR(cpu_c);
-#endif
+#include <timer_types.h>
 
 
-extern void timer_init( void );
-extern double timer_print( TimerData* );
-extern uint64_t timer_printCycles( TimerData* );
-extern uint64_t timer_getCpuClock( void );
-extern uint64_t timer_getBaseline( void );
+/**
+ * @brief  Initialize timer module
+ *
+ * Determines processor clock and cycles for cpuid.
+ */
+extern void timer_init(void );
 
-static inline void timer_start( TimerData* );
-static inline void timer_stop ( TimerData* );
+/**
+ * @brief  Start timer measurement with getTimeofDay
+ * @param  time  Reference to struct holding the timestamps
+ */
+extern void timer_start(TimerData* time);
 
-void timer_start( TimerData* time )
-{
-#ifdef __x86_64
-    RDTSC(time->start);
-#endif
-#ifdef _ARCH_PPC
-	uint32_t tbl, tbu0, tbu1;
+/**
+ * @brief  Stop timer measurement with getTimeofDay
+ * @param  time Reference to struct holding the timestamps
+ */
+extern void timer_stop(TimerData* time);
 
-	do {
-		__asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
-		__asm__ __volatile__ ("mftb %0" : "=r"(tbl));
-		__asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
-	} while (tbu0 != tbu1);
+/**
+ * @brief  Get timer measurement with getTimeofDay
+ * @param  time Reference to struct holding the timestamps
+ * @return Time duration between start and stop in seconds
+ */
+extern float timer_print(TimerData* timer);
 
-	time->start.int64 = (((uint64_t)tbu0) << 32) | tbl;
-#endif
-}
+/**
+ * @brief  Start cycles measurement with rdtsc
+ * @param cycles Reference to struct holding the timestamps 
+ */
+extern void timer_startCycles(CyclesData* cycles);
 
-void timer_stop( TimerData* time )
-{
-#ifdef __x86_64
-    RDTSC_STOP(time->stop)
-#endif
-#ifdef _ARCH_PPC
-	uint32_t tbl, tbu0, tbu1;
-	do {
-		__asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
-		__asm__ __volatile__ ("mftb %0" : "=r"(tbl));
-		__asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
-	} while (tbu0 != tbu1);
+/**
+ * @brief  Stop cycles measurement with rdtsc
+ * @param cycles Reference to struct holding the timestamps 
+ */
+extern void timer_stopCycles(CyclesData* cycles);
 
-	time->stop.int64 = (((uint64_t)tbu0) << 32) | tbl;
-#endif
-}
 
+/**
+ * @brief  Get time of cycles measurement
+ * @param cycles Reference to struct holding the timestamps 
+ * @return Timer duration between start and stop in seconds
+ */
+extern float timer_printCyclesTime(CyclesData* cycles);
+
+/**
+ * @brief  Get cycles of cycles measurement
+ * @param cycles Reference to struct holding the timestamps 
+ * @return cycles between start and stop
+ */
+extern uint64_t timer_printCycles(CyclesData* cycles);
+
+/**
+ * @brief  Get Clock rate of cpu in Hertz 
+ * @return clock rate of cpu
+ */
+extern uint64_t timer_getCpuClock(void);
+
+/**
+ * @brief  Get cycles for cpuid
+ * @return cycles for cpuid
+ */
+extern uint64_t timer_getCpuidCycles(void);
 
 #endif /* TIMER_H */

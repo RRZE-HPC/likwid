@@ -6,8 +6,7 @@ PMC1  SSE_RETIRED_MULT_SINGLE_FLOPS
 PMC2  CPU_CLOCKS_UNHALTED
 
 METRICS
-Runtime (RDTSC) [s] time
-Runtime unhalted [s] PMC2*inverseClock
+Runtime [s] PMC2*inverseClock
 SP MFlops/s  1.0E-06*(PMC0+PMC1)/time
 SP Add MFlops/s  1.0E-06*PMC0/time
 SP Mult MFlops/s   1.0E-06*PMC1/time

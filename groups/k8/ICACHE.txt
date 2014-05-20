@@ -7,7 +7,6 @@ PMC2  ICACHE_REFILLS_L2
 PMC3  ICACHE_REFILLS_MEM
 
 METRICS
-Runtime (RDTSC) [s] time
 Instruction cache misses  PMC2+PMC3
 Instruction cache request rate   PMC1/PMC0
 Instruction cache miss rate    (PMC2+PMC3)/PMC0

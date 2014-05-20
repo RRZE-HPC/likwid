@@ -1,45 +1,31 @@
 .TH LIKWID-PERFCTR 1 <DATE> likwid\-<VERSION>
 .SH NAME
-likwid-perfctr \- configure and read out hardware performance counters on x86 cpus
+likwid-perfCtr \- configure and read out hardware performance counters on x86 cpus
 .SH SYNOPSIS
-.B likwid-perfctr 
-.RB [\-vhHVmaiCst]
+.B likwid-perfCtr 
+.RB [\-vhHVmai]
 .RB [ \-c
 .IR core_list ]
 .RB [ \-g
 .IR performance_group
 or
 .IR performance_event_string ]
-.RB [ \-d
-.IR frequency
 .SH DESCRIPTION
-.B likwid-perfctr
+.B likwid-perfCtr
 is a lightweight command line application to configure and read out hardware performance monitoring data
 on supported x86 processors. It can measure either as wrapper without changing the measured application
-or with marker API functions inside the code, which will turn on and off the counters. There are preconfigured
+or with marker functions inside the code, which will turn on and off the counters. There are preconfigured
 groups with useful event sets and derived metrics. Additonally arbitrary events can be measured with
-custom event sets. The marker API can measure mulitple named regions. Results are accumulated on multiple calls.
-The following x86 processor's are supported:
+custom event sets. The marker API can measure mulitple named regions and the results are accumulated.
+The following x86 processor families are supported:
 .IP \[bu] 
 .B Intel Core 2:
 all variants. Counters:
-.I PMC0, PMC1, FIXC0, FIXC1, FIXC2
+.I PMC0, PMC1, FIXC0, FIXC1
 .IP \[bu] 
 .B Intel Nehalem:
-all variants. Counters:
-.I PMC0, PMC1, PMC2, PMC3, UPMC0 - UPMC7, FIXC0, FIXC1, FIXC2
-.IP \[bu] 
-.B Intel Nehalem EX:
-all variants, no uncore for the moment. Counters:
-.I PMC0, PMC1, PMC2, PMC3, FIXC0, FIXC1, FIXC2
-.IP \[bu] 
-.B Intel Westmere:
-all variants, Counters:
-.I PMC0, PMC1, PMC2, PMC3, UPMC0 - UPMC7, FIXC0, FIXC1, FIXC2
-.IP \[bu] 
-.B Intel Sandy Bridge:
-all variants, no uncore at the moment, experimental support, Counters:
-.I PMC0, PMC1, PMC2, PMC3, FIXC0, FIXC1, FIXC2
+all variants (apart from Nehalem EX). Counters:
+.I PMC0, PMC1, PMC2, PMC3, UPMC0 - UPMC7, FIXC0, FIXC1
 .IP \[bu] 
 .B Intel Pentium M:
 Banias and Dothan variants. Counters:
@@ -53,7 +39,7 @@ all variants. Counters:
 .I PMC0, PMC1, PMC2, PMC3
 .IP \[bu] 
 .B AMD K10:
-Barcelona, Shanghai, Istanbul, MagnyCours based processors. Counters:
+Barcelona, Shanghai and Istanbul based processors. Counters:
 .I PMC0, PMC1, PMC2, PMC3
 
 .SH OPTIONS
@@ -65,26 +51,16 @@ prints version information to standard output, then exits.
 prints a help message to standard output, then exits.
 .TP
 .B \-\^H
-prints group help message (use together with -g switch).
+prints group help message (use together with -g switch)
 .TP
 .B \-\^V
-verbose output during execution for debugging.
+verbose output during execution for diagnostic reasons.
 .TP
 .B \-\^m
-run in marker API mode
+run in marker mode
 .TP
 .B \-\^a
 print available performance groups for current processor, then exit.
-.TP
-.B \-\^e
-print available counters and performance events of current processor.
-.TP
-.B \-\^o
-store all ouput to a file instead of stdout. For the filename the following placeholders are supported: 
-%j for PBS_JOBID, %r for MPI RANK (only Intel MPI at the moment), %h hostname and %p for process pid.
-The placeholders must be separated by underscore as, e.g., -o test_%h_%p. You must specify a suffix to
-the filename. For txt the output is printed as is to the file. Other suffixes trigger a filter on the output.
-Available filters are csv (comma separated values) and xml at the moment.
 .TP
 .B \-\^i
 print cpuid information about processor and on Intel Performance Monitoring features, then exit.
@@ -93,39 +69,33 @@ print cpuid information about processor and on Intel Performance Monitoring feat
 specify a numerical list of processors. The list may contain multiple 
 items, separated by comma, and ranges. For example 0,3,9-11.
 .TP
-.B \-\^C " processor_list"
-specify a numerical list of processors. The list may contain multiple 
-items, separated by comma, and ranges. For example 0,3,9-11. This variant will
-also pin the threads to the cores. Also logical numberings can be used.
-.TP
 .B \-\^g " performance group or performance event set string"
 specify which performance group to measure. This can be one of the tags output with the -a flag.
 Also a custom event set can be specified by a comma separated list of events. Each event has the format
 eventId:register with the the register being one of a architecture supported performance counter registers.
-.TP
-.B \-\^d " frequency of measurements in seconds"
-timeline mode for time resolved measurements. The output has the format:
-.TP
-.B <Event> <Timestamp> <Result thread0> <Result thread1> ...
 
 .SH EXAMPLE
 Because 
-.B likwid-perfctr
+.B likwid-perfCtr
 measures on processors and not single applications it is necessary to ensure
-that processes and threads are pinned to dedicated resources. You can either pin the application yourself
-or the builtin pin functionality.
+that processes and threads are pinned to dedicated resources. This can be achieved by chaining the 
+.B likwid-perCtr
+and 
+.B likwid-pin
+applications.
 .IP 1. 4
 As wrapper with performance group:
 .TP
-.B likwid-perfctr  -C 0-2  -g TLB   ./cacheBench -n 2 -l 1048576 -i 100 -t Stream
+.B likwid-perfCtr  -c 1,2  -g TLB   likwid-pin -c 0,1,2 ./cacheBench -n 2 -l 1048576 -i 100 -t Stream
 .PP
 The parent process is pinned to processor 0, Thread 0 to processor 1 and Thread 1 to processor 2.
+We want to measure the threads only. Therefore only processor 1 and 2 are measured.
 .IP 2. 4
 As wrapper with custom event set on AMD:
 .TP
-.B likwid-perfctr  -C 0-4  -g INSTRUCTIONS_RETIRED_SSE:PMC0,CPU_CLOCKS_UNHALTED:PMC3   ./cacheBench
+.B likwid-perfCtr  -c 1,2  -g INSTRUCTIONS_RETIRED_SSE:PMC0,CPU_CLOCKS_UNHALTED:PMC3   likwid-pin -c 0,1-4 ./cacheBench
 .PP
-It is specified that the event
+Only processors 1 and 2 are measured. It is specified that the event
 .B INSTRUCTIONS_RETIRED_SSE
 is measured on counter
 .B PMC0
@@ -133,27 +103,27 @@ and the event
 .B CPU_CLOCKS_UNHALTED
 on counter
 .B PMC3.
-It is possible calculate the runtime of all threads based on the
+It is possible to let likwid-perfCtr calculate the runtime of all threads based on the
 .B CPU_CLOCKS_UNHALTED
 event. If you want this you have to include this event in your custom event string as shown above.
 
 .IP 3. 4
 As wrapper with custom event set on Intel:
 .TP
-.B likwid-perfctr  -C 0  -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UNC_L3_LINES_IN_ANY:UPMC0  ./stream-icc
+.B likwid-perfCtr  -c 0  -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UNC_L3_LINES_IN_ANY:UPMC0   likwid-pin -c 0  ./stream-icc
 .PP
 On Intel processors fixed events are measured on dedicated counters. These are
 .B INSTR_RETIRED_ANY
 and
 .B CPU_CLK_UNHALTED_CORE.
 If you configure these fixed counters, 
-.B likwid-perfctr
-will calculate the runtime and CPI metrics for your run.
+.B likwid-perfCtr
+will calculate the runtime and CPI metric for your run.
 
 .IP 4. 4
 Using the marker API to measure only parts of your code (this can be used both with groups or custom event sets):
 .TP
-.B likwid-perfctr -m -C 0-4  -g INSTRUCTIONS_RETIRED_SSE:PMC0,CPU_CLOCKS_UNHALTED:PMC3   ./cacheBench
+.B likwid-perfCtr -m -c 1-4  -g INSTRUCTIONS_RETIRED_SSE:PMC0,CPU_CLOCKS_UNHALTED:PMC3   likwid-pin -c 0,1-4 ./cacheBench
 .PP
 You have to link you code against liblikwid.a and use the marker API calls.
 The following code snippet shows the necessary calls:
@@ -164,13 +134,18 @@ The following code snippet shows the necessary calls:
 /* only one thread calls init */
      if (threadId == 0)
      {
-         likwid_markerInit();
+         likwid_markerInit(numberOfThreads,1);
+         likwid_markerRegisterRegion("Benchmark");
      }
      BARRIER;
-     likwid_markerStartRegion("Benchmark");
+     /* all threads get the regionId */
+     Region = likwid_markerGetRegionId("Benchmark");
+
+     likwid_markerStartRegion(threadId, coreId);
      /* your code to be measured is here */
 
-     likwid_markerStopRegion("Benchmark");
+     /* you must specify the threadId and the coreId the thread is running on */
+     likwid_markerStopRegion(threadId, coreId, Region);
      BARRIER;
      /* again only one thread can close the markers */
      if (threadId == 0)
@@ -179,13 +154,6 @@ The following code snippet shows the necessary calls:
      }
 .fi
 
-.IP 5. 4
-Using likwid in timeline mode:
-.TP
-.B likwid-perfctr -c 0-3  -g FLOPS_DP -d 300ms  ./cacheBench > out.txt
-.PP
-This will read out the counters every 300ms on physical cores 0-3 and write the results to out.txt.
-For timeline mode there is a frontend application likwid-scope, which enables live plotting of selected events.
 For more code examples have a look at the likwid WIKI pages.
 
 .SH AUTHOR
@@ -193,4 +161,4 @@ Written by Jan Treibig <jan.treibig@gmail.com>.
 .SH BUGS
 Report Bugs on <http://code.google.com/p/likwid/issues/list>.
 .SH SEE ALSO
-likwid-topology(1), likwid-features(1), likwid-pin(1), likwid-bench(1)
+likwid-topology(1), likwid-features(1), likwid-pin(1)

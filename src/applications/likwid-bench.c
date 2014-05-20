@@ -1,32 +1,34 @@
 /*
- * =======================================================================================
+ * ===========================================================================
  *
  *      Filename:  likwid-bench.c
  *
  *      Description:  A flexible and extensible benchmarking toolbox
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
  *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
- *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * =======================================================================================
+ * ===========================================================================
  */
+
 #include <stdlib.h>
 #include <errno.h>
 #include <stdio.h>
@@ -37,9 +39,7 @@
 
 #include <bstrlib.h>
 #include <types.h>
-#include <error.h>
 #include <cpuid.h>
-#include <numa.h>
 #include <affinity.h>
 #include <timer.h>
 #include <threads.h>
@@ -55,27 +55,23 @@ extern void* runTest(void* arg);
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define HELP_MSG \
-    printf("Threaded Memory Hierarchy Benchmark --  Version  %d.%d \n\n",VERSION,RELEASE); \
+printf("Threaded Memory Hierarchy Benchmark --  Version 1.0\n"); \
 printf("\n"); \
 printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-a\t list available benchmarks \n"); \
-printf("-d\t delimiter used for physical core list (default ,) \n"); \
-printf("-p\t list available thread domains\n or the physical ids of the cores selected by the -c expression \n"); \
+printf("-p\t list available thread domains \n"); \
 printf("-l <TEST>\t list properties of benchmark \n"); \
 printf("-i <INT>\t number of iterations \n"); \
 printf("-g <INT>\t number of workgroups (mandatory)\n"); \
 printf("-t <TEST>\t type of test \n"); \
-printf("-w\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>], size in kB, MB or GB  (mandatory)\n"); \
-printf("Processors are in compact ordering.\n"); \
-printf("Usage: likwid-bench -t copy -i 1000 -g 1 -w S0:100kB \n")
-
-#define VERSION_MSG \
-    printf("likwid-bench   %d.%d \n\n",VERSION,RELEASE)
+printf("-w\t <thread_domain>:<size>[:<num_threads>]-<streamId>:<domain_id>[:<offset>], size in kB, MB or GB  (mandatory)\n"); \
+printf("Usage: likwid-bench -t copy -i 1000 -g 1 -w S0:100kB \n"); \
+exit(0);
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ############ */
 
-    void
+void
 copyThreadData(ThreadUserData* src,ThreadUserData* dst)
 {
     uint32_t i;
@@ -116,32 +112,21 @@ int main(int argc, char** argv)
     Workgroup* currentWorkgroup = NULL;
     Workgroup* groups = NULL;
 
-    if (cpuid_init() == EXIT_FAILURE)
-    {
-        ERROR_PLAIN_PRINT(Unsupported processor!);
-    }
-    numa_init();
+    cpuid_init();
     affinity_init();
 
     /* Handling of command line options */
-    if (argc ==  1)
-    {
-        HELP_MSG;
-        exit(EXIT_SUCCESS);
-    }
+    if (argc ==  1) { HELP_MSG }
 
-    while ((c = getopt (argc, argv, "g:w:t:i:l:aphv")) != -1) {
+    while ((c = getopt (argc, argv, "g:w:t:i:l:aph")) != -1) {
         switch (c)
         {
             case 'h':
-                HELP_MSG;
-                exit (EXIT_SUCCESS);
-            case 'v':
-                VERSION_MSG;
-                exit (EXIT_SUCCESS);
+                HELP_MSG
+                exit (EXIT_SUCCESS);    
             case 'a':
                 printf(TESTS"\n");
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case 'w':
                 tmp--;
 
@@ -214,7 +199,7 @@ int main(int argc, char** argv)
                     }
                 }
                 bdestroy(testcase);
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
 
                 break;
             case 'p':
@@ -254,7 +239,7 @@ int main(int argc, char** argv)
                             optopt);
                 return EXIT_FAILURE;
             default:
-                HELP_MSG;
+                HELP_MSG
         }
     }
 
@@ -262,12 +247,12 @@ int main(int argc, char** argv)
     if (optPrintDomains)
     {
         affinity_printDomains();
-        exit (EXIT_SUCCESS);
+        exit (EXIT_SUCCESS);    
     }
     timer_init();
 
-    /* :WARNING:05/04/2010 08:58:05 AM:jt: At the moment the thread
-     * module only allows equally sized thread groups*/
+ /* :WARNING:05/04/2010 08:58:05 AM:jt: At the moment the thread
+  * module only allows equally sized thread groups*/
     for (i=0; i<numberOfWorkgroups; i++)
     {
         globalNumberOfThreads += groups[i].numberOfThreads;
@@ -282,7 +267,8 @@ int main(int argc, char** argv)
 
 #ifdef PERFMON
     printf("Using likwid\n");
-    likwid_markerInit();
+    likwid_markerInit(globalNumberOfThreads,1);
+    likwid_markerRegisterRegion("Bench");
 #endif
 
 
@@ -313,56 +299,45 @@ int main(int argc, char** argv)
     }
 
     printf(HLINE);
-    printf("LIKWID MICRO BENCHMARK\n");
-    printf("Test: %s\n",test->name);
+    printf("LIKWID MICRO BENCHMARK\n"); 
+    printf("Test: %s\n",test->name); 
     printf(HLINE);
     printf("Using %d work groups\n",numberOfWorkgroups);
     printf("Using %d threads\n",globalNumberOfThreads);
     printf(HLINE);
 
-    threads_create(runTest);
-    threads_join();
+    threads_create(runTest); 
+    threads_destroy();
     allocator_finalize();
-
-    uint32_t realSize = 0;
-
-    for (int i=0; i<globalNumberOfThreads; i++)
-    {
-        realSize += threads_data[i].data.size;
-    }
-
 
     time = (double) threads_data[0].cycles / (double) timer_getCpuClock();
     printf("Cycles: %llu \n", LLU_CAST threads_data[0].cycles);
     printf("Iterations: %llu \n", LLU_CAST iter);
-    printf("Size: %d \n",  realSize );
-    printf("Vectorlength: %llu \n", LLU_CAST threads_data[0].data.size);
+    printf("Size: %d \n",  currentWorkgroup->size );
+    printf("Vectorlength: %d \n", threads_data[0].data.size);
     printf("Time: %e sec\n", time);
-    printf("Number of Flops: %llu \n", LLU_CAST (numberOfWorkgroups * iter * realSize *  test->flops));
     printf("MFlops/s:\t%.2f\n",
-            1.0E-06 * ((double) numberOfWorkgroups * iter * realSize *  test->flops/  time));
+            1.0E-06 * ((double) numberOfWorkgroups * iter * currentWorkgroup->size *  test->flops/  time));
     printf("MByte/s:\t%.2f\n",
-            1.0E-06 * ( (double) numberOfWorkgroups * iter * realSize *  test->bytes/ time));
+            1.0E-06 * ( (double) numberOfWorkgroups * iter * currentWorkgroup->size *  test->bytes/ time));
     printf("Cycles per update:\t%f\n",
-            ((double) threads_data[0].cycles / (double) (iter * globalNumberOfThreads *  threads_data[0].data.size)));
+            ((double) threads_data[0].cycles / (double) (iter * threads_data[0].data.size)));
 
-    switch ( test->type )
+	switch ( test->type )
     {
         case SINGLE:
-            printf("Cycles per cacheline:\t%f\n",
-                    (16.0 * (double) threads_data[0].cycles / (double) (iter * globalNumberOfThreads * threads_data[0].data.size)));
+    printf("Cycles per cacheline:\t%f\n",
+            (16.0 * (double) threads_data[0].cycles / (double) (iter * threads_data[0].data.size)));
             break;
         case DOUBLE:
-            printf("Cycles per cacheline:\t%f\n",
-                    (8.0 * (double) threads_data[0].cycles / (double) (iter * globalNumberOfThreads *  threads_data[0].data.size)));
+    printf("Cycles per cacheline:\t%f\n",
+            (8.0 * (double) threads_data[0].cycles / (double) (iter * threads_data[0].data.size)));
             break;
     }
 
     printf(HLINE);
-    threads_destroy();
-    
 #ifdef PERFMON
-    likwid_markerClose();
+   likwid_markerClose();
 #endif
 
     return EXIT_SUCCESS;

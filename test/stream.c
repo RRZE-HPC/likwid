@@ -40,20 +40,11 @@
 /*     program constitutes acceptance of these licensing restrictions.   */
 /*  5. Absolutely no warranty is expressed or implied.                   */
 /*-----------------------------------------------------------------------*/
-#define _GNU_SOURCE
-#include <stdlib.h>
 # include <stdio.h>
 # include <math.h>
 # include <float.h>
-# include <omp.h>
 # include <limits.h>
 # include <sys/time.h>
-#include <sys/types.h>
-#include <sys/syscall.h>
-#include <unistd.h>
-#include <sched.h>
-#include <time.h>
-#include <pthread.h>
 
 /* INSTRUCTIONS:
  *
@@ -63,7 +54,7 @@
  *          that should be good to about 5% precision.
  */
 
-# define N	60000000
+# define N	6000000
 # define NTIMES	10
 # define OFFSET	0
 
@@ -87,8 +78,6 @@
  * Thanks!
  *
  */
-#define gettid() syscall(SYS_gettid)
-#include <likwid.h>
 
 # define HLINE "-------------------------------------------------------------\n"
 
@@ -116,32 +105,14 @@ static double	bytes[4] = {
     3 * sizeof(double) * N
     };
 
-static int
-getProcessorID(cpu_set_t* cpu_set)
-{
-    int processorId;
-
-    for (processorId=0;processorId<128;processorId++)
-    {
-        if (CPU_ISSET(processorId,cpu_set))
-        {
-            break;
-        }
-    }
-    return processorId;
-}
-
-int  threadGetProcessorId()
-{
-    cpu_set_t  cpu_set;
-    CPU_ZERO(&cpu_set);
-    sched_getaffinity(gettid(),sizeof(cpu_set_t), &cpu_set);
-
-    return getProcessorID(&cpu_set);
-}
-
 extern double mysecond();
 extern void checkSTREAMresults();
+#ifdef TUNED
+extern void tuned_STREAM_Copy();
+extern void tuned_STREAM_Scale(double scalar);
+extern void tuned_STREAM_Add();
+extern void tuned_STREAM_Triad(double scalar);
+#endif
 #ifdef _OPENMP
 extern int omp_get_num_threads();
 #endif
@@ -169,36 +140,31 @@ main()
     printf("Each test is run %d times, but only\n", NTIMES);
     printf("the *best* time for each is used.\n");
 
-#ifdef LIKWID_PERFMON
-    printf("Using likwid\n");
-#endif
-
-    LIKWID_MARKER_INIT;
-
 #ifdef _OPENMP
     printf(HLINE);
-#pragma omp parallel
+#pragma omp parallel 
     {
-	LIKWID_MARKER_THREADINIT;
 #pragma omp master
 	{
 	    k = omp_get_num_threads();
 	    printf ("Number of Threads requested = %i\n",k);
-    }
-
-    printf ("Thread %d running on processor %d ....\n",omp_get_thread_num(),threadGetProcessorId());
+        }
     }
 #endif
 
-    LIKWID_MARKER_START("init");
+    printf(HLINE);
+#pragma omp parallel
+    {
+    printf ("Printing one line per active thread....\n");
+    }
+
     /* Get initial value for system clock. */
-//#pragma omp parallel for
+#pragma omp parallel for
     for (j=0; j<N; j++) {
 	a[j] = 1.0;
 	b[j] = 2.0;
 	c[j] = 0.0;
 	}
-    LIKWID_MARKER_STOP("init");
 
     printf(HLINE);
 
@@ -229,56 +195,52 @@ main()
     printf("For best results, please be sure you know the\n");
     printf("precision of your system timer.\n");
     printf(HLINE);
-
+    
     /*	--- MAIN LOOP --- repeat test cases NTIMES times --- */
 
     scalar = 3.0;
     for (k=0; k<NTIMES; k++)
-    {
-        times[0][k] = mysecond();
-#pragma omp parallel
 	{
-        LIKWID_MARKER_START("copy");
-#pragma omp for
-        for (j=0; j<N; j++)
-            c[j] = a[j];
-        LIKWID_MARKER_STOP("copy");
+	times[0][k] = mysecond();
+#ifdef TUNED
+        tuned_STREAM_Copy();
+#else
+#pragma omp parallel for
+	for (j=0; j<N; j++)
+	    c[j] = a[j];
+#endif
+	times[0][k] = mysecond() - times[0][k];
+	
+	times[1][k] = mysecond();
+#ifdef TUNED
+        tuned_STREAM_Scale(scalar);
+#else
+#pragma omp parallel for
+	for (j=0; j<N; j++)
+	    b[j] = scalar*c[j];
+#endif
+	times[1][k] = mysecond() - times[1][k];
+	
+	times[2][k] = mysecond();
+#ifdef TUNED
+        tuned_STREAM_Add();
+#else
+#pragma omp parallel for
+	for (j=0; j<N; j++)
+	    c[j] = a[j]+b[j];
+#endif
+	times[2][k] = mysecond() - times[2][k];
+	
+	times[3][k] = mysecond();
+#ifdef TUNED
+        tuned_STREAM_Triad(scalar);
+#else
+#pragma omp parallel for
+	for (j=0; j<N; j++)
+	    a[j] = b[j]+scalar*c[j];
+#endif
+	times[3][k] = mysecond() - times[3][k];
 	}
-        times[0][k] = mysecond() - times[0][k];
-
-        times[1][k] = mysecond();
-#pragma omp parallel
-	{
-        LIKWID_MARKER_START("scale");
-#pragma omp for
-        for (j=0; j<N; j++)
-            b[j] = scalar*c[j];
-        LIKWID_MARKER_STOP("scale");
-	}
-        times[1][k] = mysecond() - times[1][k];
-
-        times[2][k] = mysecond();
-#pragma omp parallel
-	{
-        LIKWID_MARKER_START("add");
-#pragma omp for
-        for (j=0; j<N; j++)
-            c[j] = a[j]+b[j];
-        LIKWID_MARKER_STOP("add");
-	}
-        times[2][k] = mysecond() - times[2][k];
-
-        times[3][k] = mysecond();
-#pragma omp parallel
-	{
-        LIKWID_MARKER_START("triad");
-#pragma omp for
-        for (j=0; j<N; j++)
-            a[j] = b[j]+scalar*c[j];
-        LIKWID_MARKER_STOP("triad");
-	}
-        times[3][k] = mysecond() - times[3][k];
-    }
 
     /*	--- SUMMARY --- */
 
@@ -291,7 +253,7 @@ main()
 	    maxtime[j] = MAX(maxtime[j], times[j][k]);
 	    }
 	}
-
+    
     printf("Function      Rate (MB/s)   Avg time     Min time     Max time\n");
     for (j=0; j<4; j++) {
 	avgtime[j] = avgtime[j]/(double)(NTIMES-1);
@@ -308,7 +270,6 @@ main()
     checkSTREAMresults();
     printf(HLINE);
 
-    LIKWID_MARKER_CLOSE;
     return 0;
 }
 
@@ -395,6 +356,11 @@ void checkSTREAMresults ()
 		bsum += b[j];
 		csum += c[j];
 	}
+#ifdef VERBOSE
+	printf ("Results Comparison: \n");
+	printf ("        Expected  : %f %f %f \n",aj,bj,cj);
+	printf ("        Observed  : %f %f %f \n",asum,bsum,csum);
+#endif
 
 #ifndef abs
 #define abs(a) ((a) >= 0 ? (a) : -(a))
@@ -421,3 +387,34 @@ void checkSTREAMresults ()
 	}
 }
 
+void tuned_STREAM_Copy()
+{
+	int j;
+#pragma omp parallel for
+        for (j=0; j<N; j++)
+            c[j] = a[j];
+}
+
+void tuned_STREAM_Scale(double scalar)
+{
+	int j;
+#pragma omp parallel for
+	for (j=0; j<N; j++)
+	    b[j] = scalar*c[j];
+}
+
+void tuned_STREAM_Add()
+{
+	int j;
+#pragma omp parallel for
+	for (j=0; j<N; j++)
+	    c[j] = a[j]+b[j];
+}
+
+void tuned_STREAM_Triad(double scalar)
+{
+	int j;
+#pragma omp parallel for
+	for (j=0; j<N; j++)
+	    a[j] = b[j]+scalar*c[j];
+}

@@ -1,30 +1,4 @@
 #!/usr/bin/perl -w
-#########################################################################################
-#   HPCBench
-#
-#   File: xmgrace.pm
-#   Description:  Perl module to create Graphs with xmgrace
-#
-#   Version:  1.0
-#
-#   Author:  Jan Treibig (jt), jan.treibig@gmail.com
-#   Company:  RRZE Erlangen
-#   Copyright:  Copyright (c) 2011, Jan Treibig
-#
-#   This program is free software; you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License, v2, as
-#   published by the Free Software Foundation
-#  
-#   This program is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
-#  
-#   You should have received a copy of the GNU General Public License
-#   along with this program; if not, write to the Free Software
-#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-#
-#########################################################################################
 
 package xmgrace;
 use Exporter;
@@ -41,26 +15,20 @@ sub xmgrace
 	my ($global_opts, $datasets, $outputs);
 	my $global_options = shift;
 	my $data_sets = shift;
-	my $world = determine_world_coords($data_sets);
-
-	my $x_ticks = {'axis' => 'x', 'major' => 0, 'minor ticks' => 0};
-	my $y_ticks = {'axis' => 'y', 'major' => 0, 'minor ticks' => 0};
-
-	determine_ticks($X_MAX,$x_ticks);
-	determine_ticks($Y_MAX,$y_ticks);
 
 	$outputs = "-hdevice $global_options->{'device'} -printfile $global_options->{'output file'} ";
 	$outputs .= "-saveall $global_options->{'grace output file'}";
-	$global_opts = "-autoscale none -world $world";
+	$global_opts = "-autoscale none -world $global_options->{world}";
 	open FILE,'>tmp.bat';
 	print FILE "title \"$global_options->{'title'}\"\n";
 	print FILE "subtitle \"$global_options->{'subtitle'}\"\n";
+    print FILE "xaxes scale Logarithmic\n";
 	print FILE "xaxis label  \"$global_options->{'xaxis label'}\"\n";
-	print FILE "xaxis tick major  $x_ticks->{'major'}\n";
-	print FILE "xaxis tick minor ticks $x_ticks->{'minor ticks'}\n";
+	print FILE "xaxis tick major  2\n";
+	print FILE "xaxis tick minor ticks 9\n";
 	print FILE "yaxis label  \"$global_options->{'yaxis label'}\"\n";
-	print FILE "yaxis tick major  $y_ticks->{'major'}\n";
-	print FILE "yaxis tick minor ticks $y_ticks->{'minor ticks'}\n";
+	print FILE "yaxis tick major $global_options->{'yaxis ticks'}\n";
+	print FILE "yaxis tick minor ticks 1\n";
 	print FILE "legend  $global_options->{'legend'}\n";
 	$datasets = ' ';
 
@@ -89,65 +57,6 @@ sub xmgrace
 	close FILE;
 	system ("gracebat $global_opts $datasets -param tmp.bat $outputs");
 	unlink 'tmp.bat';
-}
-
-sub determine_world_coords
-{
-	my $data_sets = shift;
-	my $x_min = 0;
-	my $y_min = 0;
-	my $x_max = 0;
-	my $y_max = 0.;
-	my @x, @y;
-
-	foreach my $dataset (@{$data_sets}) {
-		open FILE, "<$dataset->{'data file'}";
-
-		@x = ();
-		@y = ();
-
-		while (<FILE>) {
-			/([\d\.]+)[ ]+([\d\.]+)/;
-
-			push @x, $1;
-			push @y, $2;
-		}
-		close FILE;
-
-		@x = sort { $a <=> $b } @x;
-		@y = sort { $a <=> $b } @y;
-
-		$x_max = $x[-1] if ($x[-1] > $x_max);
-		$y_max = $y[-1] if ($y[-1] > $y_max);
-	}
-
-	$x_max += $x_max * 0.1;
-	$y_max += $y_max * 0.1;
-
-	$X_MAX = $x_max; $Y_MAX = $y_max;
-	# We base all axes on zero for the moment
-	return "0 0 $x_max $y_max";
-}
-
-sub determine_ticks 
-{
-	my $range_max = shift;
-	my $tick_ptr = shift;
-
-	if ($tick_ptr->{'axis'} eq 'x') {
-			$tick_ptr->{'major'} = 25;
-			$tick_ptr->{'minor ticks'} = 5;
-	}
-
-    if ($tick_ptr->{'axis'} eq 'y') {
-        if ($range_max < 10000) {
-            $tick_ptr->{'major'} = 1000;
-            $tick_ptr->{'minor ticks'} = 5;
-        } else {
-            $tick_ptr->{'major'} = 5000;
-            $tick_ptr->{'minor ticks'} = 1;
-        }
-    }
 }
 
 1;

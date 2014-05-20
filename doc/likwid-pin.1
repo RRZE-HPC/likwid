@@ -6,10 +6,10 @@ likwid-pin \- pin a sequential or threaded application to dedicated processors
 .RB [\-vh]
 .RB [ \-c
 .IR corelist
+.RB [ \-t
+.IR OpenMP_type ]
 .RB [ \-s
 .IR skip_mask ]
-.RB [ \-S
-.IR Sweep memory before run]
 .RB [ \-p]
 .RB [ \-q]
 .RB [ \-i]
@@ -22,18 +22,22 @@ For multi threaded applications based on the pthread library the
 .I pthread_create
 library call is overloaded through a LD_PRELOAD and each created thread is pinned
 to a dedicated processor as specified in 
-.I core_list .
+.I core_list 
 .PP
 Per default every generated thread is pinned to the core in the order of calls 
 to pthread_create. It is possible to skip single threads.
 .PP
-For OpenMP implementations gcc and icc compilers are explicitly supported. Others may also work
-.B likwid-pin
-sets the environment variable OMP_NUM_THREADS for you if not already present.
-It will set as many threads as present in the pin expression.  Be aware that
-with pthreads the parent thread is always pinned. If you create for example 4
-threads with pthread_create and do not use the parent process as worker you
-still have to provide num_threads+1 processor ids.
+For OpenMP implementations gcc and icc compilers are supported. Other OpenMP
+implementations can be pinned using a skip mask.  With gcc the parent process
+is used as worker and OMP_NUM_THREADS-1 are generated. Intel OpenMP creates
+OMP_NUM_THREADS new threads but uses the first generated thread as shepard
+thread.  Therefore if you specify 
+.I intel
+as OpenMP type this thread is skipped.
+.PP
+Be aware that aith pthreads the parent thread is always pinned. If you create for example 4 threads
+with pthread_create and do not use the parent process as worker you still have to provide
+num_threads+1 processor ids.
 .PP
 .B likwid-pin
 supports different numberings for pinning. Per default physical numbering of
@@ -47,7 +51,7 @@ inside sockets, again physical cores come first. You can mix different domains
 with a @.  -c S0:0-3@S2:2-3 you pin thread 0-3 to logical cores 0-3 on socket 0
 and threads 4-6 on logical cores 2-3 on socket 2.
 .PP
-For applications where first touch policy on numa systems cannot be employed
+For application where first touch policy on numa systems cannot be employed
 .B likwid-pin
 can be used to turn on interleave memory placement. This can significantly
 speed up the performance of memory bound multi threaded codes. All numa nodes
@@ -61,19 +65,15 @@ prints version information to standard output, then exits.
 .B \-\^h
 prints a help message to standard output, then exits.
 .TP
-.B \-\^c " processor_list OR thread expression OR scatter policy "
+.B \-\^c " processor_list"
 specify a numerical list of processors. The list may contain multiple 
-items, separated by comma, and ranges. For example 0,3,9-11. You can also use
-logical numberings, either within a node (N), a socket (S<id>) or a numa domain (M<id>).
-likwid-pin also supports logical pinning within a cpuset with a L prefix. If you ommit this option
-likwid-pin will pin the threads to the processors on the node with physical cores first.
-See below for details on using a thread expression or scatter policy
+items, separated by comma, and ranges. For example 0,3,9-11.
+.TP
+.B \-\^t " OpenMP_type"
+specify OpenMP implementation used. At the moment only intel is allowed as parameter.
 .TP
 .B \-\^s " skip_mask
 Specify skip mask as HEX number. For each set bit the corresponding thread is skipped.
-.TP
-.B \-\^S " enable memory sweeper
-All ccNUMA memory domains belonging to the specified threadlist will be cleaned before the run. Can solve file buffer cache problems on Linux.
 .TP
 .B \-\^p
 prints the available thread domains for logical pinning
@@ -105,7 +105,7 @@ For Intel icc OpenMP the flag
 .I intel
 must be set.
 .TP
-.B OMP_NUM_THREADS=4; likwid-pin -t intel -c S0:0,1@S1:0,1  ./myApp
+.B OMP_NUM_THREADS=4; likwid-pin -t intel -c 0,2,1,3  ./myApp
 .IP 4. 4
 Full control over the pinning can be achieved by specifying a skip mask.
 For example above case for Intel OpenMP can also be achieved with:
@@ -117,4 +117,4 @@ Written by Jan Treibig <jan.treibig@gmail.com>.
 .SH BUGS
 Report Bugs on <http://code.google.com/p/likwid/issues/list>.
 .SH "SEE ALSO"
-taskset(1), likwid-perfctr(1), likwid-features(1), likwid-topology(1),
+taskset(1), likwid-perfCtr(1), likwid-features(1), likwid-topology(1),

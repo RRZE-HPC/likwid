@@ -7,8 +7,7 @@ PMC0  L1D_REPL
 PMC1  L1D_ALL_CACHE_REF
 
 METRICS
-Runtime (RDTSC) [s] time
-Runtime unhalted [s] FIXC1*inverseClock
+Runtime [s] FIXC1*inverseClock
 CPI  FIXC1/FIXC0
 Data cache misses PMC0
 Data cache request rate PMC1/FIXC0
