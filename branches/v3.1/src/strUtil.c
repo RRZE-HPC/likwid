@@ -40,6 +40,7 @@
 #include <strUtil.h>
 #include <affinity.h>
 #include <cpuid.h>
+#include <pci.h>
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 static int

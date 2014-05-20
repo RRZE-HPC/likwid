@@ -52,6 +52,5 @@ typedef enum {
     MAX_NUM_DEVICES
 } PciDeviceIndex;
 
-static short pci_DevicePresent[MAX_NUM_DEVICES] = { 0 }; 
 
 #endif /*PCI_TYPES_H*/
