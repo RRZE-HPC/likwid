@@ -1,32 +1,36 @@
 /*
- * =======================================================================================
+ * ===========================================================================
  *
  *      Filename:  asciiBoxes.c
  *
  *      Description:  Module implementing output of nested ascii art boxes
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
  *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
- *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * =======================================================================================
+ * ===========================================================================
  */
+
+
+
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
 #include <stdlib.h>
@@ -34,15 +38,16 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <error.h>
 #include <types.h>
 #include <asciiBoxes.h>
+
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 BoxContainer*
 asciiBoxes_allocateContainer(int numLines, int numColumns)
 {
+    int i;
     BoxContainer* container;
 
     container = (BoxContainer*) malloc(sizeof(BoxContainer));
@@ -51,19 +56,22 @@ asciiBoxes_allocateContainer(int numLines, int numColumns)
 
     container->boxes = (Box**) malloc(numLines * sizeof(Box*));
 
-    for ( int i=0; i < numLines; i++ )
+    for(i=0; i<numLines; i++)
     {
         container->boxes[i] = (Box*) malloc(numColumns * sizeof(Box));
     }
 
-    for(int i=0; i<numLines; i++)
+#if 0
+    for(i=0; i<numLines; i++)
     {
-        for(int j=0; j<numColumns; j++)
+        for(j=0; j<numColumns; j++)
         {
             container->boxes[i][j].width = 0;
             container->boxes[i][j].label = NULL;
         }
     }
+#endif
+
 
     return container;
 }
@@ -71,13 +79,15 @@ asciiBoxes_allocateContainer(int numLines, int numColumns)
 void 
 asciiBoxes_addBox(BoxContainer* container, int line, int column, bstring label)
 {
-    if ( line >= container->numLines )
+    if( line >= container->numLines)
     {
-        ERROR_PRINT(line id %d too large,line);
+        printf("ERROR: line id %d too large!\n",line);
+        exit(EXIT_FAILURE);
     }
-    if ( column >= container->numColumns )
+    if( column >= container->numColumns)
     {
-        ERROR_PRINT(column id %d too large,column);
+        printf("ERROR: column id %d too large!\n",column);
+        exit(EXIT_FAILURE);
     }
 
     container->boxes[line][column].width = 1;
@@ -86,21 +96,21 @@ asciiBoxes_addBox(BoxContainer* container, int line, int column, bstring label)
 
 
 void
-asciiBoxes_addJoinedBox(
-        BoxContainer* container,
+asciiBoxes_addJoinedBox(BoxContainer* container,
         int line,
         int startColumn,
         int endColumn,
         bstring label)
 {
-    if ( line >= container->numLines )
+    if( line >= container->numLines)
     {
-        ERROR_PRINT(line id %d too large,line);
+        printf("ERROR: line id %d too large!\n",line);
+        exit(EXIT_FAILURE);
     }
-
-    if ( endColumn >= container->numColumns )
+    if( endColumn >= container->numColumns)
     {
-        ERROR_PRINT(column id %d too large,endColumn);
+        printf("ERROR: column id %d too large!\n",endColumn);
+        exit(EXIT_FAILURE);
     }
 
     container->boxes[line][startColumn].width = (endColumn-startColumn)+1;
@@ -110,62 +120,58 @@ asciiBoxes_addJoinedBox(
 void
 asciiBoxes_print(BoxContainer* container)
 {
+    int i;
+    int j;
+    int k;
     int width;
     int boxwidth=0; /* box width is inner width of box */
 
     /* determine maximum label width */
-    for ( int i=0; i < container->numLines; i++ )
+    for (i=0; i<container->numLines; i++)
     {
-        for ( int j=0; j < container->numColumns; j++ )
+        for (j=0; j<container->numColumns; j++)
         {
             btrimws(container->boxes[i][j].label);
             boxwidth = MAX(boxwidth,blength(container->boxes[i][j].label));
-
-            /* if box is joined increase counter */
-            if ( container->boxes[i][j].width > 1 )
-            {
-                j +=  container->boxes[i][j].width;
-            }
         }
     }
     boxwidth += 2;  /* add one space each side */
 
     /* top line */
     printf("+");
-
-    for ( int i=0; i < (container->numColumns * (boxwidth+2) +
+    for (i=0;
+            i<(container->numColumns * (boxwidth+2) +
                 (container->numColumns+1));  /* one space between boxes */
-            i++ )
+            i++)
     {
         printf("-");
     }
     printf("+\n");
 
-    for ( int i=0; i < container->numLines; i++ )
+    for (i=0; i<container->numLines; i++)
     {
         /* Box top line */
         printf("| ");
-
-        for ( int j=0; j < container->numColumns; j++ )
+        for (j=0; j<container->numColumns; j++)
         {
             printf("+");
-
-            if ( container->boxes[i][j].width == 1 )
+            if(container->boxes[i][j].width == 1)
             {
-                for ( int k=0; k < boxwidth; k++ )
+                for (k=0; k<boxwidth; k++)
                 {
                     printf("-");
                 }
             }
             else 
             {
-                for ( int k=0; k < (container->boxes[i][j].width * boxwidth +
+                for (k=0;
+                        k<(container->boxes[i][j].width * boxwidth +
                             (container->boxes[i][j].width-1)*3);
                         k++)
                 {
                     printf("-");
                 }
-                j += container->boxes[i][j].width-1;
+                j+= container->boxes[i][j].width-1;
             }
             printf("+ ");
         }
@@ -173,14 +179,16 @@ asciiBoxes_print(BoxContainer* container)
         printf("| ");
 
         /* Box label line */
-        for ( int j=0; j < container->numColumns; j++ )
+        for (j=0; j<container->numColumns; j++)
         {
             int offset=0;
 
             /* center label */
-            if ( container->boxes[i][j].width == 1 )
+            if(container->boxes[i][j].width == 1)
             {
+         //       printf("\nblength %d\n",blength(container->boxes[i][j].label));
                 width = (boxwidth - blength(container->boxes[i][j].label))/2;
+
                 offset = (boxwidth - blength(container->boxes[i][j].label))%2;
             }
             else
@@ -193,22 +201,23 @@ asciiBoxes_print(BoxContainer* container)
                         ((container->boxes[i][j].width-1)*3) -
                         blength(container->boxes[i][j].label))%2;
             }
+
             printf("|");
 
-            for ( int k=0; k < (width+offset); k++ )
+            for (k=0; k<(width+offset); k++)
             {
                 printf(" ");
             }
 
             printf("%s",container->boxes[i][j].label->data);
 
-            for ( int k=0; k < width; k++ )
+            for (k=0; k<width; k++)
             {
                 printf(" ");
             }
             printf("| ");
 
-            if ( container->boxes[i][j].width != 1 )
+            if(container->boxes[i][j].width != 1)
             {
                 j+= container->boxes[i][j].width-1;
             }
@@ -217,39 +226,43 @@ asciiBoxes_print(BoxContainer* container)
         printf("| ");
 
         /* Box bottom line */
-        for ( int j=0; j < container->numColumns; j++ )
+        for (j=0; j<container->numColumns; j++)
         {
             printf("+");
-
-            if ( container->boxes[i][j].width == 1 )
+            if(container->boxes[i][j].width == 1)
             {
-                for ( int k=0; k < boxwidth; k++ )
+                for (k=0; k<boxwidth; k++)
                 {
                     printf("-");
                 }
             }
             else 
             {
-                for ( int k=0; k < (container->boxes[i][j].width * boxwidth +
+                for (k=0;
+                        k<(container->boxes[i][j].width * boxwidth +
                             (container->boxes[i][j].width-1)*3);
-                        k++ )
+                        k++)
                 {
                     printf("-");
                 }
                 j+= container->boxes[i][j].width-1;
             }
             printf("+ ");
+
         }
         printf("|\n");
     }
 
     /* bottom line */
     printf("+");
-    for ( int i=0; i < (container->numColumns * (boxwidth+2) + 
-                container->numColumns+1); i++ )
+    for (i=0; i< (container->numColumns * (boxwidth+2) + 
+                container->numColumns+1); i++)
     {
         printf("-");
     }
     printf("+\n");
 }
+
+
+
 

@@ -1,33 +1,35 @@
 /*
- * =======================================================================================
+ * ===========================================================================
  *
  *      Filename:  likwid-features.c
  *
  *      Description:  An application to read out and set the feature flag
  *                  register on Intel Core 2 processors.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
  *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
- *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * =======================================================================================
+ * ===========================================================================
  */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -37,9 +39,7 @@
 #include <ctype.h>
 
 #include <types.h>
-#include <error.h>
 #include <strUtil.h>
-#include <accessClient.h>
 #include <msr.h>
 #include <cpuid.h>
 #include <cpuFeatures.h>
@@ -60,7 +60,6 @@ printf("likwid-features  %d.%d \n\n",VERSION,RELEASE)
 
 int main (int argc, char** argv)
 { 
-    int socket_fd = -1;
     int optSetFeature = 0;
     int cpuId = 0;
     int c;
@@ -73,10 +72,10 @@ int main (int argc, char** argv)
         {
             case 'h':
                 HELP_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case 'v':
                 VERSION_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case 'u':
                 optSetFeature = 2;
             case 's':
@@ -86,19 +85,19 @@ int main (int argc, char** argv)
                     exit(EXIT_FAILURE);
                 }
 
-                if (biseqcstr(argString,"HW_PREFETCHER"))
+                if (biseqcstr(argString,"HW_PREFETCHER")) 
                 {
                     feature = HW_PREFETCHER;
                 }
-                else if (biseqcstr(argString,"CL_PREFETCHER"))
+                else if (biseqcstr(argString,"CL_PREFETCHER")) 
                 {
                     feature = CL_PREFETCHER;
                 }
-                else if (biseqcstr(argString,"DCU_PREFETCHER"))
+                else if (biseqcstr(argString,"DCU_PREFETCHER")) 
                 {
                     feature = DCU_PREFETCHER;
                 }
-                else if (biseqcstr(argString,"IP_PREFETCHER"))
+                else if (biseqcstr(argString,"IP_PREFETCHER")) 
                 {
                     feature = IP_PREFETCHER;
                 }
@@ -108,6 +107,7 @@ int main (int argc, char** argv)
                     exit(EXIT_FAILURE);
                 }
 
+                bdestroy(argString);
 
                 if (!optSetFeature)
                 {
@@ -122,6 +122,7 @@ int main (int argc, char** argv)
                 }
 
                 cpuId = str2int((char*) argString->data);
+                bdestroy(argString);
 
                 break;
             case '?':
@@ -138,14 +139,11 @@ int main (int argc, char** argv)
                 return EXIT_FAILURE;
             default:
                 HELP_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
         }
     }
 
-    if (cpuid_init() == EXIT_FAILURE)
-    {
-        ERROR_PLAIN_PRINT(Unsupported processor!);
-    }
+    cpuid_init();
 
     printf(HLINE);
     printf("CPU name:\t%s \n",cpuid_info.name);
@@ -157,14 +155,7 @@ int main (int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    if (cpuId >= (int) cpuid_topology.numHWThreads)
-    {
-        fprintf (stderr, "This processor has only %d HWthreads! \n",cpuid_topology.numHWThreads);
-        exit(EXIT_FAILURE);
-    }
-
-    accessClient_init(&socket_fd);
-    msr_init(socket_fd);
+    msr_check();
 	cpuFeatures_init(cpuId);
     cpuFeatures_print(cpuId);
 
@@ -181,7 +172,6 @@ int main (int argc, char** argv)
         printf(SLINE);
     }
 
-    msr_finalize();
     return EXIT_SUCCESS;
 }
 

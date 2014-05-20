@@ -1,40 +1,8 @@
-# =======================================================================================
-#  
-#      Filename:  perfmon_westmere_events.txt
-# 
-#      Description:  Event list for Intel Westmere
-# 
-#      Version:   <VERSION>
-#      Released:  <DATE>
-# 
-#      Author:  Jan Treibig (jt), jan.treibig@gmail.com
-#      Project:  likwid
-#
-#      Copyright (C) 2013 Jan Treibig 
-#
-#      This program is free software: you can redistribute it and/or modify it under
-#      the terms of the GNU General Public License as published by the Free Software
-#      Foundation, either version 3 of the License, or (at your option) any later
-#      version.
-#
-#      This program is distributed in the hope that it will be useful, but WITHOUT ANY
-#      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-#      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-#
-#      You should have received a copy of the GNU General Public License along with
-#      this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# =======================================================================================
-
-
 EVENT_INSTR_RETIRED              0x00   FIXC0
 UMASK_INSTR_RETIRED_ANY          0x00
 
 EVENT_CPU_CLK_UNHALTED           0x00   FIXC1
 UMASK_CPU_CLK_UNHALTED_CORE      0x00
-
-EVENT_CPU_CLK_UNHALTED           0x00   FIXC2
-UMASK_CPU_CLK_UNHALTED_REF       0x00
 
 EVENT_LOAD_BLOCK                 0x03  PMC
 UMASK_LOAD_BLOCK_OVERLAP_STORE   0x02
@@ -46,7 +14,7 @@ EVENT_MISALIGN_MEMORY           0x05  PMC
 UMASK_MISALIGN_MEMORY_STORE     0x02
 
 EVENT_STORE_BLOCKS                0x06  PMC
-UMASK_STORE_BLOCKS_L1D_AT_RET      0x04
+UMASK_STORE_BLOCKS_L1D_BLOCK      0x04
 UMASK_STORE_BLOCKS_L1D_BLOCK      0x08
 
 EVENT_PARTIAL_ADDRESS_ALIAS      0x07  PMC
@@ -69,7 +37,6 @@ UMASK_MEM_STORE_RETIRED_DTLB_MISS   0x01
 
 EVENT_UOPS_ISSUED                0x0E   PMC
 UMASK_UOPS_ISSUED_ANY            0x01 
-UMASK_UOPS_ISSUED_STALLED_CYCLES 0x01 0xC1  0x01
 UMASK_UOPS_ISSUED_FUSED          0x02 
 
 EVENT_MEM_UNCORE_RETIRED         0x0F    PMC
@@ -106,7 +73,6 @@ UMASK_LOAD_DISPATCH_ANY           0x07
 
 EVENT_ARITH                      0x14   PMC
 UMASK_ARITH_CYCLES_DIV_BUSY      0x01
-UMASK_ARITH_NUM_DIV              0x01 0xC5 0x01
 UMASK_ARITH_MUL                  0x02
 
 EVENT_INST_QUEUE                  0x17   PMC
@@ -288,7 +254,6 @@ UMASK_BACLEAR_FORCE_IQ              0x01
 
 EVENT_LSD_UOPS              0xA8   PMC
 UMASK_LSD_UOPS              0x01
-UMASK_LSD_CYCLES              0x01 0xC1  0x01
 
 EVENT_ITLB_FLUSH              0xAE   PMC
 UMASK_ITLB_FLUSH              0x01
@@ -312,19 +277,15 @@ UMASK_UOPS_EXECUTED_CORE_ACTIVE_CYCLES_NO_PORT5 0x1F
 UMASK_UOPS_EXECUTED_PORT5           0x20
 UMASK_UOPS_EXECUTED_CORE_ACTIVE_CYCLES 0x3F
 UMASK_UOPS_EXECUTED_PORT015         0x40
-UMASK_UOPS_EXECUTED_PORT015_STALL_CYCLES   0x40 0xC1  0x01
 UMASK_UOPS_EXECUTED_PORT234         0x80
 
 EVENT_OFFCORE_REQUESTS_SQ_FULL     0xB2  PMC
 UMASK_OFFCORE_REQUESTS_SQ_FULL     0x01
 
-EVENT_SNOOPQ_REQUESTS_OUTSTANDING            0xB3  PMC0
+EVENT_SNOOPQ_REQUESTS_OUTSTANDING            0xB3  PMC
 UMASK_SNOOPQ_REQUESTS_OUTSTANDING_DATA       0x01
-UMASK_SNOOPQ_REQUESTS_OUTSTANDING_DATA_NOT_EMPTY  0x01 0x41 0x01
 UMASK_SNOOPQ_REQUESTS_OUTSTANDING_INVALIDATE 0x02
-UMASK_SNOOPQ_REQUESTS_OUTSTANDING_INVALIDATE_NOT_EMPTY 0x02 0x41 0x01
 UMASK_SNOOPQ_REQUESTS_OUTSTANDING_CODE       0x04
-UMASK_SNOOPQ_REQUESTS_OUTSTANDING_CODE_NOT_EMPTY       0x04 0x41 0x01
 
 EVENT_SNOOPQ_REQUESTS              0xB4  PMC
 UMASK_SNOOPQ_REQUESTS_CODE         0x01
@@ -343,8 +304,6 @@ UMASK_INST_RETIRED_MMX              0x04
 
 EVENT_UOPS_RETIRED                  0xC2  PMC
 UMASK_UOPS_RETIRED_ANY              0x01
-UMASK_UOPS_RETIRED_STALL_CYCLES     0x01 0xC1  0x01
-UMASK_UOPS_RETIRED_ACTIVE_CYCLES    0x01 0x41  0x01
 UMASK_UOPS_RETIRED_RETIRE_SLOTS     0x02
 UMASK_UOPS_RETIRED_MACRO_FUSED      0x04
 
@@ -392,7 +351,6 @@ EVENT_MACRO_INSTS            0xD0    PMC
 UMASK_MACRO_INSTS_DECODED            0x01
 
 EVENT_UOPS_DECODED               0xD1   PMC
-UMASK_UOPS_DECODED_STALL_CYCLES  0x01 0xC1 0x01
 UMASK_UOPS_DECODED_MS            0x02
 UMASK_UOPS_DECODED_ESP_FOLDING   0x04
 UMASK_UOPS_DECODED_ESP_SYNC      0x08

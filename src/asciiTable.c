@@ -1,32 +1,34 @@
 /*
- * =======================================================================================
+ * ===========================================================================
  *
  *      Filename:  asciiTable.c
  *
  *      Description:  Module implementing output of ascii table.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
  *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
- *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * =======================================================================================
+ * ===========================================================================
  */
+
 
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
@@ -36,29 +38,17 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <error.h>
 #include <types.h>
 #include <strUtil.h>
 #include <asciiTable.h>
 
-/* #####   LOCAL VARIABLES   ########################################### */
-
-static FILE* OUTPUT;
-
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
-
-void
-asciiTable_setOutput(FILE* stream)
-{
-    OUTPUT = stream;
-}
 
 TableContainer*
 asciiTable_allocate(int numRows,int numColumns, bstrList* headerLabels)
 {
     int i;
     TableContainer* container;
-    OUTPUT = stdout;
 
     container = (TableContainer*) malloc(sizeof(TableContainer));
     container->numRows = numRows;
@@ -68,7 +58,8 @@ asciiTable_allocate(int numRows,int numColumns, bstrList* headerLabels)
 
     if (numColumns != headerLabels->qty)
     {
-        ERROR_PRINT(Number of columns %d not equal to number of header labels %d,numColumns,headerLabels->qty);
+        fprintf(stderr, "asciiTable: Number of columns not equal to number of header labels!\n");
+        exit(EXIT_FAILURE);
     }
 
     container->header = bstrListCreate();
@@ -97,7 +88,8 @@ asciiTable_free(TableContainer* container)
 
     if(container == NULL)
     {
-        ERROR_PLAIN_PRINT(Cannot free NULL reference);
+        fprintf(stderr, "asciiTable_free: Cannot free NULL reference!\n");
+        return;
     }
 
     bstrListDestroy(container->header);
@@ -117,12 +109,14 @@ asciiTable_insertRow(TableContainer* container, int row, bstrList* fields)
 
     if (container->numColumns != fields->qty)
     {
-        ERROR_PRINT(Number of colummns %d not equal to number of field labels %d,container->numColumns,fields->qty);
+        fprintf(stderr, "asciiTable: Number of colummns not equal to number of field labels!\n");
+        exit(EXIT_FAILURE);
     }
 
     if (row >= container->numRows)
     {
-        ERROR_PRINT(Number of Rows %d smaller than requested row index %d, container->numRows,row);
+        fprintf(stderr, "asciiTable: Number of Rows smaller than requested row index!\n");
+        exit(EXIT_FAILURE);
     }
 
     for(i=0; i<container->numColumns; i++)
@@ -180,52 +174,52 @@ asciiTable_print(TableContainer* container)
 
     for (j=0; j<container->numColumns; j++)
     {
-        fprintf(OUTPUT,"+");
+        printf("+");
         for (i=0;i<boxwidth[j];i++)
         {
-            fprintf(OUTPUT,"-");
+            printf("-");
         }
     }
-    fprintf(OUTPUT,"+\n");
+    printf("+\n");
 
     for (j=0; j<container->numColumns; j++)
     {
-        fprintf(OUTPUT,"|");
+        printf("|");
         bJustifyCenter(container->header->entry[j],boxwidth[j]);
-        fprintf(OUTPUT,"%s",bdata(container->header->entry[j]));
+        printf("%s",bdata(container->header->entry[j]));
     }
-    fprintf(OUTPUT,"|\n");
+    printf("|\n");
 
     for (j=0; j<container->numColumns; j++)
     {
-        fprintf(OUTPUT,"+");
+        printf("+");
         for (i=0;i<boxwidth[j];i++)
         {
-            fprintf(OUTPUT,"-");
+            printf("-");
         }
     }
-    fprintf(OUTPUT,"+\n");
+    printf("+\n");
 
     for (i=0; i<container->numRows; i++)
     {
         for (j=0; j<container->numColumns; j++)
         {
-            fprintf(OUTPUT,"|");
+            printf("|");
             bJustifyCenter(container->rows[i]->entry[j],boxwidth[j]);
-            fprintf(OUTPUT,"%s",bdata(container->rows[i]->entry[j]));
+            printf("%s",bdata(container->rows[i]->entry[j]));
         }
-        fprintf(OUTPUT,"|\n");
+        printf("|\n");
     }
 
     for (j=0; j<container->numColumns; j++)
     {
-        fprintf(OUTPUT,"+");
+        printf("+");
         for (i=0;i<boxwidth[j];i++)
         {
-            fprintf(OUTPUT,"-");
+            printf("-");
         }
     }
-    fprintf(OUTPUT,"+\n");
+    printf("+\n");
     container->printed = 1;
 
     free(boxwidth);

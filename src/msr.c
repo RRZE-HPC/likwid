@@ -1,5 +1,5 @@
 /*
- * =======================================================================================
+ * ===========================================================================
  *
  *      Filename:  msr.c
  *
@@ -9,305 +9,153 @@
  *                   sys interface of the Linux 2.6 kernel. This module 
  *                   is based on the msr-util tools.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
  *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
- *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * =======================================================================================
+ * ===========================================================================
  */
+
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 
-#include <types.h>
-#include <error.h>
-#include <cpuid.h>
-#include <accessClient.h>
 #include <msr.h>
-#include <registers.h>
-#ifdef LIKWID_PROFILE_COUNTER_READ
-#include <timer.h>
-#endif
-/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-#define MAX_LENGTH_MSR_DEV_NAME  20
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-
-/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
-static int FD[MAX_NUM_THREADS];
-static int socket_fd = -1;
-static int rdpmc_works = 0;
-
-/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
-static inline int __rdpmc(int counter, uint64_t* value)
-{
-	unsigned low, high;
-
-	__asm__ volatile("rdpmc" : "=a" (low), "=d" (high) : "c" (counter));
-	*value = ((low) | ((uint64_t )(high) << 32));
-	return 0;
-}
-
-//Needed for rdpmc check
-void segfault_sigaction(int signal, siginfo_t *si, void *arg)
-{
-    exit(1);
-}
-
-int test_rdpmc(int flag)
-{
-    int ret, waiting;
-    int pid;
-    int status = 0;
-    uint64_t tmp;
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sigaction));
-    sigemptyset(&sa.sa_mask);
-    sa.sa_sigaction = segfault_sigaction;
-    sa.sa_flags   = SA_SIGINFO;
-    
-    
-    pid = fork();
-    
-    if (pid < 0)
-    {
-        return -1;
-    }
-    if (!pid)
-    {
-        sigaction(SIGSEGV, &sa, NULL);
-        if (flag == 0)
-        {
-            __rdpmc(0, &tmp);
-        }
-        exit(0);
-    } else {
-    
-        waiting = waitpid(pid, &status, 0);
-        if (waiting < 0 || status)
-        {
-            ret = 0;
-        } else 
-        {
-            ret = 1;
-        }
-    }
-    return ret;
-}  
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
-
-
 void
-msr_init(int initSocket_fd)
+msr_check()
 {
-    
-    if (accessClient_mode == DAEMON_AM_DIRECT)
+    int  fd;
+    char* msr_file_name = "/dev/cpu/0/msr";
+
+    fd = open(msr_file_name, O_RDWR);
+
+    if (fd < 0)
     {
-
-        int  fd;
-#ifdef __MIC
-        char* msr_file_name = "/dev/msr0";
-#else
-        char* msr_file_name = "/dev/cpu/0/msr";
-#endif
-        rdpmc_works = test_rdpmc(0);
-        
-        fd = open(msr_file_name, O_RDWR);
-
-        if (fd < 0)
-        {
-            fprintf(stderr, "ERROR\n");
-            fprintf(stderr, "rdmsr: failed to open '%s': %s!\n",
-                    msr_file_name , strerror(errno));
-            fprintf(stderr, "       Please check if the msr module \
-                    is loaded and the device file has correct permissions.\n");
-            fprintf(stderr, "       Alternatively you might want to \
-                    look into (sys)daemonmode.\n\n");
-            exit(127);
-        }
-
-        close(fd);
-
-        /* NOTICE: This assumes consecutive processor Ids! */
-        for ( uint32_t i=0; i < cpuid_topology.numHWThreads; i++ )
-        {
-            char* msr_file_name = (char*) malloc(MAX_LENGTH_MSR_DEV_NAME * sizeof(char));
-#ifdef __MIC
-            sprintf(msr_file_name,"/dev/msr%d",i);
-#else
-            sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
-#endif
-
-            FD[i] = open(msr_file_name, O_RDWR);
-
-            if ( FD[i] < 0 )
-            {
-                ERROR;
-            }
-        }
+        fprintf(stderr, "ERROR\n");
+        fprintf(stderr, "rdmsr: failed to open '%s': %s!\n",msr_file_name , strerror(errno));
+        fprintf(stderr, "       Please check if the msr module is loaded and the device file has correct permissions.\n\n");
+        exit(127);
     }
-    else
-    {
-        socket_fd = initSocket_fd;
-    }
-}
 
-void
-msr_finalize(void)
-{
-    if (accessClient_mode == DAEMON_AM_DIRECT)
-    {
-        for ( uint32_t i=0; i < cpuid_topology.numHWThreads; i++ )
-        {
-            close(FD[i]);
-        }
-    }
-    else
-    {
-        socket_fd = -1;
-    }
+    close(fd);
 }
 
 
 uint64_t 
-msr_tread(const int tsocket_fd, const int cpu, uint32_t reg)
+msr_read(const int cpu, uint32_t reg)
 {
-    if (accessClient_mode == DAEMON_AM_DIRECT) 
+    int  fd;
+    uint64_t data;
+    char msr_file_name[64];
+
+    sprintf(msr_file_name, "/dev/cpu/%d/msr", cpu);
+    fd = open(msr_file_name, O_RDONLY);
+    if (fd < 0)
     {
-        uint64_t data;
-        if (rdpmc_works && reg >= MSR_PMC0 && reg <=MSR_PMC3)
+        if (errno == ENXIO) 
         {
-            if (__rdpmc(reg - MSR_PMC0, &data) )
-            {
-                ERROR_PRINT("cpu %d reg %x",cpu, reg);
-            }
+            fprintf(stderr, "rdmsr: No CPU %d\n", cpu);
+            exit(2);
+        }
+        else if (errno == EIO) 
+        {
+            fprintf(stderr, "rdmsr: CPU %d doesn't support MSRs\n", cpu);
+            exit(3);
         }
         else
         {
-            if ( pread(FD[cpu], &data, sizeof(data), reg) != sizeof(data) )
-            {
-                ERROR_PRINT("cpu %d reg %x",cpu, reg);
-            }
+            perror("rdmsr: open");
+            exit(127);
         }
+    }
 
-        return data;
+    if (pread(fd, &data, sizeof data, reg) != sizeof data) 
+    {
+        if (errno == EIO)
+        {
+            fprintf(stderr, "rdmsr: CPU %d cannot read MSR %x\n", cpu, reg);
+            exit(4);
+        }
+        else
+        {
+            perror("rdmsr: pread");
+            exit(127);
+        }
     }
-    else
-    { /* daemon or sysdaemon-mode */
-        return accessClient_read(tsocket_fd, cpu, DAEMON_AD_MSR, reg);
-    }
+
+    close(fd);
+    return data;
 }
-
 
 void 
-msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
+msr_write(const int cpu, uint32_t reg, uint64_t data)
 {
-    if (accessClient_mode == DAEMON_AM_DIRECT) 
+    int  fd;
+    char msr_file_name[64];
+
+    sprintf(msr_file_name, "/dev/cpu/%d/msr", cpu);
+    fd = open(msr_file_name, O_WRONLY);
+    if (fd < 0) 
     {
-        if (pwrite(FD[cpu], &data, sizeof(data), reg) != sizeof(data))
+        if (errno == ENXIO)
         {
-            ERROR_PRINT("cpu %d reg %x",cpu, reg);
+            fprintf(stderr, "wrmsr: No CPU %d\n", cpu);
+            exit(2);
+        }
+        else if (errno == EIO)
+        {
+            fprintf(stderr, "wrmsr: CPU %d doesn't support MSRs\n", cpu);
+            exit(3);
+        } 
+        else
+        {
+            perror("wrmsr: open");
+            exit(127);
         }
     }
-    else
-    { /* daemon or sysdaemon-mode */
-        accessClient_write(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data);
-    }
-}
 
-
-uint64_t 
-msr_read( const int cpu, uint32_t reg)
-{
-    if (accessClient_mode == DAEMON_AM_DIRECT) 
+    if (pwrite(fd, &data, sizeof data, reg) != sizeof data) 
     {
-        uint64_t data;
-#ifdef LIKWID_PROFILE_COUNTER_READ
-	    TimerData timer;
-	    timer_start(&timer);
-#endif
-        if (rdpmc_works && reg >= MSR_PMC0 && reg <=MSR_PMC3)
+        if (errno == EIO) 
         {
-            if (__rdpmc(reg - MSR_PMC0, &data) )
-            {
-                ERROR_PRINT("cpu %d reg %x",cpu, reg);
-            }
+            fprintf(stderr, "wrmsr: CPU %d cannot set MSR %X to %llX\n",
+                    cpu, reg, LLU_CAST data);
+            exit(4);
         }
-        else 
+        else
         {
-            if ( pread(FD[cpu], &data, sizeof(data), reg) != sizeof(data) )
-            {
-                ERROR_PRINT("cpu %d reg %x",cpu, reg);
-            }
+            perror("wrmsr: pwrite");
+            exit(127);
         }
-#ifdef LIKWID_PROFILE_COUNTER_READ
-	    timer_stop(&timer);
-	    fprintf(stdout,"Profile: Read Cycles %u CPU %d REG 0x%X DATA 0x%X\n",timer_printCycles(&timer),cpu,reg, data);
-	    fflush(stdout);
-#endif
+    }
 
-        return data;
-    }
-    else
-    { /* daemon or sysdaemon-mode */
-        return accessClient_read(socket_fd, cpu, DAEMON_AD_MSR, reg);
-    }
-}
-
-
-void
-msr_write( const int cpu, uint32_t reg, uint64_t data)
-{
-    if (accessClient_mode == DAEMON_AM_DIRECT) 
-    {
-#ifdef LIKWID_PROFILE_COUNTER_READ
-	TimerData timer;
-	timer_start(&timer);
-#endif
-        if (pwrite(FD[cpu], &data, sizeof(data), reg) != sizeof(data))
-        {
-            ERROR_PRINT("cpu %d reg %x",cpu, reg);
-        }
-#ifdef LIKWID_PROFILE_COUNTER_READ
-	timer_stop(&timer);
-	fprintf(stdout,"Profile: Write Cycles %u CPU %d REG 0x%X DATA 0x%X\n",timer_printCycles(&timer),cpu,reg, data);
-	fflush(stdout);
-#endif
-    }
-    else
-    { /* daemon or sysdaemon-mode */
-        accessClient_write(socket_fd, cpu, DAEMON_AD_MSR, reg, data);
-    }
+    close(fd);
 }
 
 

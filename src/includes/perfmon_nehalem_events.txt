@@ -1,40 +1,8 @@
-# =======================================================================================
-#  
-#      Filename:  perfmon_nehalem_events.txt
-# 
-#      Description:  Event list for Intel Nehalem
-# 
-#      Version:   <VERSION>
-#      Released:  <DATE>
-# 
-#      Author:  Jan Treibig (jt), jan.treibig@gmail.com
-#      Project:  likwid
-#
-#      Copyright (C) 2013 Jan Treibig 
-#
-#      This program is free software: you can redistribute it and/or modify it under
-#      the terms of the GNU General Public License as published by the Free Software
-#      Foundation, either version 3 of the License, or (at your option) any later
-#      version.
-#
-#      This program is distributed in the hope that it will be useful, but WITHOUT ANY
-#      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-#      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-#
-#      You should have received a copy of the GNU General Public License along with
-#      this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# =======================================================================================
-
-
 EVENT_INSTR_RETIRED              0x00   FIXC0
 UMASK_INSTR_RETIRED_ANY          0x00
 
 EVENT_CPU_CLK_UNHALTED           0x00   FIXC1
 UMASK_CPU_CLK_UNHALTED_CORE      0x00
-
-EVENT_CPU_CLK_UNHALTED           0x00   FIXC2
-UMASK_CPU_CLK_UNHALTED_REF       0x00
 
 EVENT_SB_FORWARD                 0x02  PMC
 UMASK_SB_FORWARD_ANY             0x01
@@ -85,7 +53,6 @@ UMASK_MEM_STORE_RETIRED_DTLB_MISS   0x01
 
 EVENT_UOPS_ISSUED                0x0E   PMC
 UMASK_UOPS_ISSUED_ANY            0x01 
-UMASK_UOPS_ISSUED_STALLED_CYCLES 0x01 0xC1 0x01 
 UMASK_UOPS_ISSUED_FUSED          0x02 
 
 EVENT_MEM_UNCORE_RETIRED         0x0F    PMC
@@ -121,7 +88,6 @@ UMASK_LOAD_DISPATCH_ANY           0x07
 
 EVENT_ARITH                      0x14   PMC
 UMASK_ARITH_CYCLES_DIV_BUSY      0x01
-UMASK_ARITH_NUM_DIV              0x01 0xC5 0x01
 UMASK_ARITH_MUL                  0x02
 
 EVENT_INST_QUEUE                  0x17   PMC
@@ -354,7 +320,6 @@ UMASK_BACLEAR_FORCE_IQ              0x01
 
 EVENT_LSD_UOPS              0xA8   PMC
 UMASK_LSD_UOPS              0x01
-UMASK_LSD_CYCLES              0x01 0xC1  0x01
 
 EVENT_ITLB_FLUSH              0xAE   PMC
 UMASK_ITLB_FLUSH              0x01
@@ -368,15 +333,8 @@ UMASK_UOPS_EXECUTED_PORT1           0x02
 UMASK_UOPS_EXECUTED_PORT2_CORE      0x04
 UMASK_UOPS_EXECUTED_PORT3_CORE      0x08
 UMASK_UOPS_EXECUTED_PORT4_CORE      0x10
-UMASK_UOPS_EXECUTED_CORE_ACTIVE_CYCLES_NO_PORT5      0x1F 0x61 0x00
-UMASK_UOPS_EXECUTED_CORE_STALL_CYCLES_NO_PORT5      0x1F 0xC1 0x01
-UMASK_UOPS_EXECUTED_CORE_STALL_COUNT_NO_PORT5      0x1F 0xC5 0x01
 UMASK_UOPS_EXECUTED_PORT5           0x20
-UMASK_UOPS_EXECUTED_CORE_ACTIVE_CYCLES    0x3F 0x61 0x00
-UMASK_UOPS_EXECUTED_CORE_STALL_CYCLES      0x3F 0xC1 0x01
-UMASK_UOPS_EXECUTED_CORE_STALL_COUNT      0x3F 0xC5 0x01
 UMASK_UOPS_EXECUTED_PORT015         0x40
-UMASK_UOPS_EXECUTED_PORT015_STALL_CYCLES   0x40 0xC1  0x01
 UMASK_UOPS_EXECUTED_PORT234         0x80
 
 EVENT_OFFCORE_REQUESTS_SQ_FULL     0xB2  PMC
@@ -394,8 +352,6 @@ UMASK_INST_RETIRED_MMX              0x04
 
 EVENT_UOPS_RETIRED                  0xC2  PMC
 UMASK_UOPS_RETIRED_ANY              0x01
-UMASK_UOPS_RETIRED_STALL_CYCLES     0x01 0xC1  0x01
-UMASK_UOPS_RETIRED_ACTIVE_CYCLES    0x01 0x41  0x01
 UMASK_UOPS_RETIRED_RETIRE_SLOTS     0x02
 UMASK_UOPS_RETIRED_MACRO_FUSED      0x04
 
@@ -405,7 +361,7 @@ UMASK_MACHINE_CLEARS_MEM_ORDER    0x02
 UMASK_MACHINE_CLEARS_SMC          0x04
 
 EVENT_BR_INST_RETIRED               0xC4  PMC
-UMASK_BR_INST_RETIRED_ALL_RET_BRANCHES  0x00
+UMASK_BR_INST_RETIRED_ALL_BRANCHES  0x00
 UMASK_BR_INST_RETIRED_CONDITIONAL   0x01
 UMASK_BR_INST_RETIRED_NEAR_CALL     0x02
 UMASK_BR_INST_RETIRED_ALL_BRANCHES  0x04
@@ -483,9 +439,9 @@ UMASK_L2_TRANSACTIONS_RFO           0x02
 UMASK_L2_TRANSACTIONS_IFETCH        0x04
 UMASK_L2_TRANSACTIONS_PREFETCH      0x08
 UMASK_L2_TRANSACTIONS_L1D_WB        0x10
-UMASK_L2_TRANSACTIONS_FILL      0x20
-UMASK_L2_TRANSACTIONS_WB        0x40
-UMASK_L2_TRANSACTIONS_ANY       0x80
+UMASK_L2_TRANSACTIONS_L1D_FILL      0x20
+UMASK_L2_TRANSACTIONS_L1D_WB        0x40
+UMASK_L2_TRANSACTIONS_L1D_ANY       0x80
 
 EVENT_L2_LINES_IN                   0xF1   PMC
 UMASK_L2_LINES_IN_S_STATE           0x02

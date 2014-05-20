@@ -1,32 +1,34 @@
 /*
- * =======================================================================================
+ * ===========================================================================
  *
  *      Filename:  multiplex.c
  *
- *      Description:  
+ *      Description:  Utility routines for strings. Depends on bstring lib.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:  <VERSION>
+ *      Created:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Company:  RRZE Erlangen
  *      Project:  likwid
+ *      Copyright:  Copyright (c) 2010, Jan Treibig
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License, v2, as
+ *      published by the Free Software Foundation
+ *     
+ *      This program is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *      GNU General Public License for more details.
+ *     
+ *      You should have received a copy of the GNU General Public License
+ *      along with this program; if not, write to the Free Software
+ *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *      This program is free software: you can redistribute it and/or modify it under
- *      the terms of the GNU General Public License as published by the Free Software
- *      Foundation, either version 3 of the License, or (at your option) any later
- *      version.
- *
- *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License along with
- *      this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * =======================================================================================
+ * ===========================================================================
  */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,21 +41,10 @@
 #include <perfmon.h>
 #include <multiplex.h>
 
-#if 0
 static int currentCollection = -1;
 static MultiplexCollections* multiplex_set = NULL;
-static TimerData timeData;
+static CyclesData timeData;
 static int  multiplex_useMarker = 0;
-
-void
-multiplex_printCounters ()
-{
-
-
-
-}
-
-
 
 void
 multiplex_swapEventSet ()
@@ -117,19 +108,19 @@ multiplex_init(MultiplexCollections* set)
 }
 
 void
-multiplex_start()
+multiplex_start(int useMarker)
 {
     struct itimerval val;
     struct sigaction sa;
 
-//    multiplex_useMarker = useMarker;
+    multiplex_useMarker = useMarker;
 
     val.it_interval.tv_sec = 0;
     val.it_interval.tv_usec = 500;
     val.it_value.tv_sec = 0; 
     val.it_value.tv_usec = 100;
 
-    sa.sa_handler = multiplex_printCounters;
+    sa.sa_handler = multiplex_swapEventSet;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
     if (sigaction(SIGALRM, &sa, NULL) == -1)
@@ -138,9 +129,8 @@ multiplex_start()
         perror("sigaction");
     }
 
-    perfmon_startCounters();
     setitimer(ITIMER_REAL, &val,0);
-    timer_start(&timeData);
+    timer_startCycles(&timeData);
 }
 
 void
@@ -153,13 +143,11 @@ multiplex_stop()
     val.it_value.tv_sec = 0; 
     val.it_value.tv_usec = 0;
 
-    timer_stop(&timeData);
+    timer_stopCycles(&timeData);
     setitimer(ITIMER_REAL, &val,0);
-    perfmon_stopCounters();
 
-    multiplex_set->time = timer_print(&timeData);
+    multiplex_set->time = timer_printCyclesTime(&timeData);
 }
 
-#endif
 
 
