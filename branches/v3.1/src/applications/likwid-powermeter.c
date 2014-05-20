@@ -59,7 +59,7 @@ printf("Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \
 printf("-M\t set how MSR registers are accessed: 0=direct, 1=msrd \n"); \
-printf("-c\t specify socket to measure\n"); \
+printf("-c\t specify sockets to measure\n"); \
 printf("-i\t print information from MSR_PKG_POWER_INFO register and Turbo Mode\n"); \
 printf("-s <duration>\t set measure duration in sec. (default 2s) \n"); \
 printf("-p\t print dynamic clocking and CPI values\n\n");   \
@@ -76,29 +76,26 @@ int main (int argc, char** argv)
     int optInfo = 0;
     int optClock = 0;
     int optStethoscope = 0;
-    int socketId = 0;
     double runtime;
     int hasDRAM = 0;
     int c;
     bstring argString;
     bstring eventString = bfromcstr("CLOCK");
+    int numSockets=1;
     int numThreads=0;
+    int threadsSockets[MAX_NUM_NODES*2];
     int threads[MAX_NUM_THREADS];
+
+    threadsSockets[0] = 0;
 
     while ((c = getopt (argc, argv, "+c:hiM:ps:v")) != -1)
     {
         switch (c)
         {
             case 'c':
-                if (! (argString = bSecureInput(10,optarg)))
-                {
-                    fprintf(stderr,"Failed to read argument string!\n");
-                    exit(EXIT_FAILURE);
-                }
-
-                socketId = str2int((char*) argString->data);
+                CHECK_OPTION_STRING;
+                numSockets = bstr_to_cpuset_physical((uint32_t*) threadsSockets, argString);
                 bdestroy(argString);
-
                 break;
 
             case 'h':
@@ -140,11 +137,6 @@ int main (int argc, char** argv)
         }
     }
 
-    if (optind == argc && !optStethoscope)
-    {
-    	optStethoscope = 2;
-    }
-
     if (!lock_check())
     {
         fprintf(stderr,"Access to performance counters is locked.\n");
@@ -155,6 +147,7 @@ int main (int argc, char** argv)
     {
         ERROR_PLAIN_PRINT(Unsupported processor!);
     }
+
     numa_init(); /* consider NUMA node as power unit for the moment */
     accessClient_init(&socket_fd);
     msr_init(socket_fd);
@@ -227,7 +220,12 @@ int main (int argc, char** argv)
     if (optClock)
     {
         affinity_init();
-        argString = bformat("S%u:0-%u", socketId, cpuid_topology.numCoresPerSocket-1);
+        argString = bformat("S%u:0-%u", threadsSockets[0], cpuid_topology.numCoresPerSocket-1);
+        for (int i=1; i<numSockets; i++)
+        {
+            bstring tExpr = bformat("S%u:0-%u", threadsSockets[i], cpuid_topology.numCoresPerSocket-1);
+            bconcat(argString, tExpr);
+        }
         numThreads = bstr_to_cpuset(threads, argString);
         bdestroy(argString);
         perfmon_init(numThreads, threads, stdout);
@@ -235,30 +233,46 @@ int main (int argc, char** argv)
     }
 
     {
-        PowerData pDataPkg;
-        PowerData pDataDram;
-        int cpuId = numa_info.nodes[socketId].processors[0];
-        printf("Measure on socket %d \n", socketId );
+        PowerData pDataPkg[MAX_NUM_NODES*2];
+        PowerData pDataDram[MAX_NUM_NODES*2];
+        printf("Measure on sockets %d", threadsSockets[0]);
+        for (int i=1; i<numSockets; i++)
+        {
+            printf(" %d", threadsSockets[i]);
+        }
+        printf(".\n");
 
         if (optStethoscope)
         {
-
             if (optClock)
             {
                 perfmon_startCounters();
             }
-
-            if (hasDRAM) power_start(&pDataDram, cpuId, DRAM);
-            power_start(&pDataPkg, cpuId, PKG);
+            else
+            {
+                for (int i=0; i<numSockets; i++)
+                {
+                    int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
+                    if (hasDRAM) power_start(pDataDram+i, cpuId, DRAM);
+                    power_start(pDataPkg+i, cpuId, PKG);
+                }
+            }
             sleep(optStethoscope);
-            power_stop(&pDataPkg, cpuId, PKG);
-            if (hasDRAM) power_stop(&pDataDram, cpuId, DRAM);
 
             if (optClock)
             {
                 perfmon_stopCounters();
                 perfmon_printCounterResults();
                 perfmon_finalize();
+            }
+            else
+            {
+                for (int i=0; i<numSockets; i++)
+                {
+                    int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
+                    power_stop(pDataPkg+i, cpuId, PKG);
+                    if (hasDRAM) power_stop(pDataDram+i, cpuId, DRAM);
+                }
             }
             runtime = (double) optStethoscope;
         }
@@ -280,19 +294,23 @@ int main (int argc, char** argv)
             {
                 perfmon_startCounters();
             }
+            else
+            {
+                for (int i=0; i<numSockets; i++)
+                {
+                    int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
+                    if (hasDRAM) power_start(pDataDram+i, cpuId, DRAM);
+                    power_start(pDataPkg+i, cpuId, PKG);
+                }
 
-            if (hasDRAM) power_start(&pDataDram, cpuId, DRAM);
-            power_start(&pDataPkg, cpuId, PKG);
-            timer_start(&time);
+                timer_start(&time);
+            }
 
             if (system(bdata(exeString)) == EOF)
             {
                 fprintf(stderr, "Failed to execute %s!\n", bdata(exeString));
                 exit(EXIT_FAILURE);
             }
-            timer_stop(&time);
-            power_stop(&pDataPkg, cpuId, PKG);
-            if (hasDRAM) power_stop(&pDataDram, cpuId, DRAM);
 
             if (optClock)
             {
@@ -300,21 +318,41 @@ int main (int argc, char** argv)
                 perfmon_printCounterResults();
                 perfmon_finalize();
             }
-            runtime = timer_print(&time);
+            else
+            {
+                timer_stop(&time);
+
+                for (int i=0; i<numSockets; i++)
+                {
+                    int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
+                    power_stop(pDataPkg+i, cpuId, PKG);
+                    if (hasDRAM) power_stop(pDataDram+i, cpuId, DRAM);
+                }
+                runtime = timer_print(&time);
+            }
         }
 
-        printf("Runtime: %g s \n",runtime);
-        printf("Domain: PKG \n");
-        printf("Energy consumed: %g Joules \n", power_printEnergy(&pDataPkg));
-        printf("Power consumed: %g Watts \n", power_printEnergy(&pDataPkg) / runtime );
-        if (hasDRAM)
+        if (!optClock)
         {
-            printf("Domain: DRAM \n");
-            printf("Energy consumed: %g Joules \n", power_printEnergy(&pDataDram));
-            printf("Power consumed: %g Watts \n", power_printEnergy(&pDataDram) / runtime );
+            printf("Runtime: %g s \n",runtime);
+            printf("Domain: PKG \n");
+            for (int i=0; i<numSockets; i++)
+            {
+                printf("Socket %d\n",i);
+                printf("Energy consumed: %g Joules \n", power_printEnergy(pDataPkg+i));
+                printf("Power consumed: %g Watts \n", power_printEnergy(pDataPkg+i) / runtime );
+                if (hasDRAM)
+                {
+                    printf("Domain: DRAM \n");
+                    printf("Energy consumed: %g Joules \n", power_printEnergy(pDataDram+i));
+                    printf("Power consumed: %g Watts \n", power_printEnergy(pDataDram+i) / runtime );
+                }
+                printf("\n");
+            }
         }
     }
 
+#if 0
     if ( cpuid_hasFeature(TM2) )
     {
         thermal_init(0);
@@ -327,6 +365,7 @@ int main (int argc, char** argv)
                     thermal_read(numa_info.nodes[socketId].processors[i]));
         }
     }
+#endif
 
     msr_finalize();
     return EXIT_SUCCESS;
