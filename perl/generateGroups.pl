@@ -41,7 +41,6 @@ while (defined(my $arch = readdir(DIR))) {
                 print "SCANNING GROUP $group\n" if ($DEBUG);
                 my $eventSet;
                 my @metrics;
-                my $isUncore = 0;
                 $Vars->{groups} = [];
 
                 $group =~ /([A-Za-z_0-9]+)\.txt/;
@@ -82,15 +81,12 @@ while (defined(my $arch = readdir(DIR))) {
                                 $rule =~ s/([^U]|^)(PMC[0-9]+)/$1perfmon_getResult(threadId,"$2")/g;
                                 $rule =~ s/(FIXC[0-9]+)/perfmon_getResult(threadId,"$1")/g;
                                 $rule =~ s/(WBOX[0-9]+)/perfmon_getResult(threadId,"$1")/g;
-                                $rule =~ s/(BBOX[C0-9]+)/perfmon_getResult(threadId,"$1")/g;
-                                $rule =~ s/(MBOX[CC0-9]+)/perfmon_getResult(threadId,"$1")/g;
+                                $rule =~ s/(BBOX[AB0-9]+)/perfmon_getResult(threadId,"$1")/g;
+                                $rule =~ s/(MBOX[ABC0-9]+)/perfmon_getResult(threadId,"$1")/g;
                                 $rule =~ s/(SBOX[P0-9]+)/perfmon_getResult(threadId,"$1")/g;
-                                $rule =~ s/(RBOX[C0-9]+)/perfmon_getResult(threadId,"$1")/g;
+                                $rule =~ s/(RBOX[AB0-9]+)/perfmon_getResult(threadId,"$1")/g;
                                 $rule =~ s/(PWR[0-9]+)/perfmon_getResult(threadId,"$1")/g;
-                                $rule =~ s/(TMP[0-9]+)/perfmon_getResult(threadId,"$1")/g;
                                 $rule =~ s/(MBOXFIX)/perfmon_getResult(threadId,"$1")/g;
-
-                                $metric =~ s/(^\s+|\s+$)//g;
                                 push (@metrics, {label => $metric,
                                         rule  => $rule});
                             }
@@ -101,15 +97,9 @@ while (defined(my $arch = readdir(DIR))) {
                 }
                 close FILE;
                 $msg =~ s/\n/\\n\\\n/g;
-
-                if ($eventSet =~ /WBOX|BBOX|MBOX|SBOX|RBOX/) {
-                    $isUncore = 1;
-                }
-
                 push (@groups, {name => $name,
                         shortHelp => $shortHelp,
                         longHelp  => $msg,
-                        isUncore  => $isUncore,
                         eventSet  => $eventSet,
                         numRows   => $#metrics+1,
                         metrics   => \@metrics});

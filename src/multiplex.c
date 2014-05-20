@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -42,7 +42,7 @@
 #if 0
 static int currentCollection = -1;
 static MultiplexCollections* multiplex_set = NULL;
-static TimerData timeData;
+static CyclesData timeData;
 static int  multiplex_useMarker = 0;
 
 void
@@ -140,7 +140,7 @@ multiplex_start()
 
     perfmon_startCounters();
     setitimer(ITIMER_REAL, &val,0);
-    timer_start(&timeData);
+    timer_startCycles(&timeData);
 }
 
 void
@@ -153,11 +153,11 @@ multiplex_stop()
     val.it_value.tv_sec = 0; 
     val.it_value.tv_usec = 0;
 
-    timer_stop(&timeData);
+    timer_stopCycles(&timeData);
     setitimer(ITIMER_REAL, &val,0);
     perfmon_stopCounters();
 
-    multiplex_set->time = timer_print(&timeData);
+    multiplex_set->time = timer_printCyclesTime(&timeData);
 }
 
 #endif

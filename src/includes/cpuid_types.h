@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -45,27 +45,6 @@ typedef enum {
     CORE,
     THREAD} NodeLevel;
 
-typedef enum {
-    SSE3=0,
-    VSX,
-    MMX,
-    SSE,
-    SSE2,
-    MONITOR,
-    ACPI,
-    RDTSCP,
-    VMX,
-    EIST,
-    TM,
-    TM2,
-    AES,
-    RDRAND,
-    SSSE3,
-    SSE41,
-    SSE42,
-    AVX,
-    FMA} FeatureBit;
-
 typedef struct {
     uint32_t family;
     uint32_t model;
@@ -74,7 +53,6 @@ typedef struct {
     int      turbo;
     char*  name;
     char*  features;
-    uint32_t featureFlags;
     uint32_t perf_version;
     uint32_t perf_num_ctr;
     uint32_t perf_width_ctr;

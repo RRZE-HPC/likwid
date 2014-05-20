@@ -7,7 +7,6 @@ PMC2  INSTRUCTION_CACHE_SYSTEM_REFILLS
 PMC3  RETIRED_INSTRUCTIONS
 
 METRICS
-Runtime (RDTSC) [s] time
 Instruction cache misses  PMC1+PMC2
 Instruction cache request rate   PMC0/PMC3
 Instruction cache miss rate    (PMC1+PMC2)/PMC3

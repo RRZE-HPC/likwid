@@ -6,7 +6,6 @@ PMC1  REQUESTS_TO_L2_DC_FILL
 PMC2  L2_CACHE_MISS_DC_FILL
 
 METRICS
-Runtime (RDTSC) [s] time
 L2 request rate   (PMC1)/PMC0
 L2 miss rate   PMC2/PMC0
 L2 miss ratio   PMC2/(PMC1)

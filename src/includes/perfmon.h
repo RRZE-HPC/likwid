@@ -13,7 +13,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -37,12 +37,16 @@
 #include <types.h>
 
 extern int perfmon_verbose;
+extern PerfmonThread* perfmon_threadData;
+extern int perfmon_numThreads;
 
 extern void (*perfmon_startCountersThread) (int thread_id);
 extern void (*perfmon_stopCountersThread) (int thread_id);
 extern int  (*perfmon_getIndex) (bstring reg, PerfmonCounterIndex* index);
 extern void (*perfmon_setupCounterThread) (int thread_id,
        PerfmonEvent* event , PerfmonCounterIndex index);
+//extern void (*perfmon_setupReport) (MultiplexCollections* collections);
+//extern void (*perfmon_printReport) (MultiplexCollections* collections);
 
 extern void perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set);
 extern void perfmon_setCSVMode(int v);
@@ -50,7 +54,7 @@ extern void perfmon_printAvailableGroups(void);
 extern void perfmon_printGroupHelp(bstring group);
 extern void perfmon_init(int numThreads, int threads[],FILE* outstream);
 extern void perfmon_finalize(void);
-extern void perfmon_setupEventSet(bstring eventString, BitMask* mask);
+extern void perfmon_setupEventSet(bstring eventString);
 extern double perfmon_getEventResult(int thread, int index);
 extern int perfmon_setupEventSetC(char* eventCString, const char*** eventnames);
 extern void perfmon_setupCounters(void);

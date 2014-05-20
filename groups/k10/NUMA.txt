@@ -7,7 +7,6 @@ PMC2  CPU_TO_DRAM_LOCAL_TO_2
 PMC3  CPU_TO_DRAM_LOCAL_TO_3
 
 METRICS
-Runtime (RDTSC) [s] time
 Mega requests per second to Node 0   1.0E-06*PMC0/time
 Mega requests per second to Node 1   1.0E-06*PMC1/time
 Mega requests per second to Node 2   1.0E-06*PMC2/time

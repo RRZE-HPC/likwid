@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -40,9 +40,6 @@
 #include <dirent.h>
 #ifdef HAS_MEMPOLICY
 #include <linux/mempolicy.h>
-#endif
-#ifdef LIKWID_USE_HWLOC
-#include <cpuid-hwloc.h>
 #endif
 
 #include <error.h>
@@ -105,20 +102,20 @@ setConfiguredNodes(void)
 
 static void
 nodeMeminfo(int node, uint64_t* totalMemory, uint64_t* freeMemory)
-{
-	FILE *fp;
+{ 
+	FILE *fp; 
     bstring filename;
     bstring totalString = bformat("MemTotal:");
     bstring freeString  = bformat("MemFree:");
     int i;
 
-	filename = bformat("/sys/devices/system/node/node%d/meminfo", node);
+	filename = bformat("/sys/devices/system/node/node%d/meminfo", node); 
 
 	if (NULL != (fp = fopen (bdata(filename), "r"))) 
 	{
 		bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
-
+        
         for (i=0;i<tokens->qty;i++)
         {
             if (binstr(tokens->entry[i],0,totalString) != BSTR_ERR)
@@ -136,19 +133,19 @@ nodeMeminfo(int node, uint64_t* totalMemory, uint64_t* freeMemory)
                  *freeMemory = str2int(bdata(subtokens->entry[0]));
             }
         }
-	}
+	} 
     else
     {
         ERROR;
     }
 
-	fclose(fp);
+	fclose(fp); 
 }
 
 static int
 nodeProcessorList(int node, uint32_t** list)
 {
-    FILE *fp;
+    FILE *fp; 
     bstring filename;
     int count = 0;
     bstring src;
@@ -211,10 +208,6 @@ nodeProcessorList(int node, uint32_t** list)
         bdestroy(src);
         bdestroy(filename);
         fclose(fp); 
-
-        /* FIXME: CPU list here is not physical cores first but numerical sorted */
-
-
         return count;
     }
 
@@ -229,7 +222,11 @@ nodeDistanceList(int node, int numberOfNodes, uint32_t** list)
     bstring filename;
     int count = 0;
     bstring src;
+    int i,j;
     struct bstrList* tokens;
+    unsigned long val;
+    char* endptr;
+    int cursor=0;
 
     *list = (uint32_t*) malloc(numberOfNodes * sizeof(uint32_t));
 
@@ -242,7 +239,7 @@ nodeDistanceList(int node, int numberOfNodes, uint32_t** list)
         src = bread ((bNread) fread, fp);
         tokens = bsplit(src,' ');
 
-        for (int i=0; i<(tokens->qty); i++)
+        for (i=0; i<(tokens->qty); i++)
         {
             if (count < numberOfNodes)
             {
@@ -283,82 +280,6 @@ findProcessor(uint32_t nodeId, uint32_t coreId)
     return 0;
 }
 
-#ifdef LIKWID_USE_HWLOC
-uint64_t getFreeNodeMem(int nodeId)
-{
-	FILE *fp;
-    bstring filename;
-    uint64_t free = 0;
-    bstring freeString  = bformat("MemFree:");
-    int i;
-    
-    filename = bformat("/sys/devices/system/node/node%d/meminfo", nodeId);
-
-	if (NULL != (fp = fopen (bdata(filename), "r"))) 
-	{
-		bstring src = bread ((bNread) fread, fp);
-        struct bstrList* tokens = bsplit(src,(char) '\n');
-
-        for (i=0;i<tokens->qty;i++)
-        {
-            if (binstr(tokens->entry[i],0,freeString) != BSTR_ERR)
-            {
-                 bstring tmp = bmidstr (tokens->entry[i], 18, blength(tokens->entry[i])-18  );
-                 bltrimws(tmp);
-                 struct bstrList* subtokens = bsplit(tmp,(char) ' ');
-                 free = str2int(bdata(subtokens->entry[0]));
-            }
-        }
-        fclose(fp);
-	}
-    else
-    {
-        ERROR;
-    }
-
-	
-	return free;
-    
-}
-
-uint64_t getTotalNodeMem(int nodeId)
-{
-	FILE *fp;
-    bstring filename;
-    uint64_t free = 0;
-    bstring freeString  = bformat("MemTotal:");
-    int i;
-    
-    filename = bformat("/sys/devices/system/node/node%d/meminfo", nodeId);
-
-	if (NULL != (fp = fopen (bdata(filename), "r"))) 
-	{
-		bstring src = bread ((bNread) fread, fp);
-        struct bstrList* tokens = bsplit(src,(char) '\n');
-
-        for (i=0;i<tokens->qty;i++)
-        {
-            if (binstr(tokens->entry[i],0,freeString) != BSTR_ERR)
-            {
-                 bstring tmp = bmidstr (tokens->entry[i], 18, blength(tokens->entry[i])-18  );
-                 bltrimws(tmp);
-                 struct bstrList* subtokens = bsplit(tmp,(char) ' ');
-                 free = str2int(bdata(subtokens->entry[0]));
-            }
-        }
-        fclose(fp);
-	}
-    else
-    {
-        ERROR;
-    }
-
-	
-	return free;
-    
-}
-#endif
-
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -368,148 +289,24 @@ numa_init()
 {
     int errno;
     uint32_t i;
-#ifdef LIKWID_USE_HWLOC
-	int use_native = 0;
-	int d;
-    int depth;
-    hwloc_obj_t obj, tmp_obj;
-    const struct hwloc_distances_s* distances;
-    hwloc_obj_type_t numa_type = HWLOC_OBJ_NODE;
-    int cores_per_socket;
-#else
-	int use_native = 1;
-#endif
-
 
     if (get_mempolicy(NULL, NULL, 0, 0, 0) < 0 && errno == ENOSYS)
     {
         return -1; 
     }
-#ifdef LIKWID_USE_HWLOC    
-    if (!use_native)
-    {
-		if (!hwloc_topology)
-		{
-		    hwloc_topology_init(&hwloc_topology);
-		    hwloc_topology_load(hwloc_topology);
-		}
-		/* First determine maximum number of nodes */
-		numa_info.numberOfNodes = hwloc_get_nbobjs_by_type(hwloc_topology, numa_type);
-		if (numa_info.numberOfNodes == 0)
-		{
-			numa_type = HWLOC_OBJ_SOCKET;
-			numa_info.numberOfNodes = 1;
-			hwloc_get_nbobjs_by_type(hwloc_topology, numa_type);
-			maxIdConfiguredNode = 1;
-			i = 0;
-			
-			numa_info.nodes = (NumaNode*) malloc(sizeof(NumaNode));
-			if (!numa_info.nodes)
-			{
-				fprintf(stderr,"No memory to allocate %d byte for nodes array\n",sizeof(NumaNode));
-				return -1;
-			}
-			numa_info.nodes[i].id = i;
-			numa_info.nodes[i].numberOfProcessors = 0;
-			numa_info.nodes[i].totalMemory = getTotalNodeMem(i);
-			numa_info.nodes[i].freeMemory = getFreeNodeMem(i);
-			numa_info.nodes[i].processors = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
-			if (!numa_info.nodes[i].processors)
-			{
-				fprintf(stderr,"No memory to allocate %d byte for processors array of NUMA node %d\n",
-								MAX_NUM_THREADS * sizeof(uint32_t),i);
-				return -1;
-			}
-			numa_info.nodes[i].distances = (uint32_t*) malloc(sizeof(uint32_t));
-			if (!numa_info.nodes[i].distances)
-			{
-				fprintf(stderr,"No memory to allocate %d byte for distances array of NUMA node %d\n",sizeof(uint32_t),i);
-				return -1;
-			}
-			numa_info.nodes[i].distances[i] = 10;
-			numa_info.nodes[i].numberOfDistances = 1;
-			cores_per_socket = cpuid_topology.numHWThreads/cpuid_topology.numSockets;
-			for (d=0; d<hwloc_get_nbobjs_by_type(hwloc_topology, hwloc_type); d++)
-			{
-				obj = hwloc_get_obj_by_type(hwloc_topology, hwloc_type, d);
-				/* depth is here used as index in the processors array */		
-				depth = d * cores_per_socket;
-				numa_info.nodes[i].numberOfProcessors += hwloc_record_objs_of_type_below_obj(
-					    hwloc_topology, obj, HWLOC_OBJ_PU, &depth, &numa_info.nodes[i].processors);
-			}
-		}
-		else
-		{
-			numa_info.nodes = (NumaNode*) malloc(numa_info.numberOfNodes * sizeof(NumaNode));
-			/* Get depth of NUMA nodes in hwloc topology */
-			depth = hwloc_get_type_depth(hwloc_topology, numa_type);
-			/* Get distance matrix, contains all node to node latencies*/
-			distances = hwloc_get_whole_distance_matrix_by_type(hwloc_topology, numa_type);
-			for (i=0; i<numa_info.numberOfNodes; i++)
-			{
-				/* Get NUMA node object */
-				obj = hwloc_get_obj_by_depth(hwloc_topology, depth, i);
-				
-				/* Use the physical ID of the NUMA node as id */
-				numa_info.nodes[i].id = obj->os_index;
-				/* Retrieve maximum ID */
-				if (obj->os_index > maxIdConfiguredNode)
-				    maxIdConfiguredNode = obj->os_index;
-				/* Save memory amount of the current NUMA node */
-				
-				if (obj->memory.local_memory == 0)
-				{
-					numa_info.nodes[i].totalMemory = getTotalNodeMem(i);
-				}
-				else
-				{
-					numa_info.nodes[i].totalMemory = obj->memory.local_memory;
-				}
-				/* freeMemory not detected by hwloc, do it the native way */
-				numa_info.nodes[i].freeMemory = getFreeNodeMem(i);
-				/* Create and fill list of processors of the current NUMA node */
-				numa_info.nodes[i].processors = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
-				d = 0;
-				numa_info.nodes[i].numberOfProcessors = hwloc_record_objs_of_type_below_obj(
-				        hwloc_topology, obj, HWLOC_OBJ_PU, &d, &numa_info.nodes[i].processors);
-				
-				/* Determine the distances of the current NUMA node to all others in the system */ 
-				numa_info.nodes[i].distances = (uint32_t*) malloc(numa_info.numberOfNodes * sizeof(uint32_t));
-				if (distances)
-				{
-					for(d=0;d<distances->nbobjs;d++)
-					{
-						numa_info.nodes[i].distances[d] = distances->latency[i*distances->nbobjs +d] * distances->latency_base;
-					}
-					numa_info.nodes[i].numberOfDistances = distances->nbobjs;
-				}
-				else
-				{
-					numa_info.nodes[i].numberOfDistances = numa_info.numberOfNodes;
-					for(d=0;d<numa_info.numberOfNodes;d++)
-					{
-						numa_info.nodes[i].distances[d] = 10;
-					}
-				}
-			}
-		}
-	}
-#endif	
-	if (use_native)
-	{
-		/* First determine maximum number of nodes */
-		setConfiguredNodes();
-		numa_info.numberOfNodes = maxIdConfiguredNode+1;
-		numa_info.nodes = (NumaNode*) malloc(numa_info.numberOfNodes * sizeof(NumaNode));
 
-		for (i=0; i<numa_info.numberOfNodes; i++)
-		{
-		    nodeMeminfo(i, &numa_info.nodes[i].totalMemory, &numa_info.nodes[i].freeMemory);
-		    numa_info.nodes[i].numberOfProcessors = nodeProcessorList(i,&numa_info.nodes[i].processors);
-		    numa_info.nodes[i].numberOfDistances = nodeDistanceList(i, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
-		}
-	}
-	
+    /* First determine maximum number of nodes */
+    setConfiguredNodes();
+    numa_info.numberOfNodes = maxIdConfiguredNode+1;
+    numa_info.nodes = (NumaNode*) malloc(numa_info.numberOfNodes * sizeof(NumaNode));
+
+    for (i=0; i<numa_info.numberOfNodes; i++)
+    {
+        nodeMeminfo(i, &numa_info.nodes[i].totalMemory, &numa_info.nodes[i].freeMemory);
+        numa_info.nodes[i].numberOfProcessors = nodeProcessorList(i,&numa_info.nodes[i].processors);
+        numa_info.nodes[i].numberOfDistances = nodeDistanceList(i, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
+    }
+
     if (numa_info.nodes[0].numberOfProcessors < 0)
     {
         return -1;
@@ -523,10 +320,10 @@ numa_init()
 void 
 numa_setInterleaved(int* processorList, int numberOfProcessors)
 {
-    long i;
+    uint32_t i;
     int j;
     int ret=0;
-    unsigned long numberOfNodes = 65;
+    int numberOfNodes = 0;
     unsigned long mask = 0UL;
 
     for (i=0; i<numa_info.numberOfNodes; i++)
@@ -536,6 +333,7 @@ numa_setInterleaved(int* processorList, int numberOfProcessors)
             if (findProcessor(i,processorList[j]))
             {
                 mask |= (1UL<<i);
+                numberOfNodes++;
                 break;
             }
         }
@@ -554,7 +352,9 @@ numa_membind(void* ptr, size_t size, int domainId)
 {
     int ret=0;
     unsigned long mask = 0UL;
+    unsigned long maxnode = 0UL;
     unsigned int flags = 0U;
+    int mode = 0;
 
     flags |= MPOL_MF_STRICT;
     mask |= (1UL<<domainId);

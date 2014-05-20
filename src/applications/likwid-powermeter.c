@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -39,7 +39,6 @@
 #include <types.h>
 #include <strUtil.h>
 #include <error.h>
-#include <lock.h>
 #include <timer.h>
 #include <cpuid.h>
 #include <numa.h>
@@ -48,7 +47,6 @@
 #include <affinity.h>
 #include <perfmon.h>
 #include <power.h>
-#include <thermal.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -58,7 +56,7 @@ printf("A tool to print Power and Clocking information on Intel SandyBridge CPUS
 printf("Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \
-printf("-M\t set how MSR registers are accessed: 0=direct, 1=msrd \n"); \
+printf("-M\t set how MSR registers are accessed: 0=direct, 1=msrd, 2=sysmsrd \n"); \
 printf("-c\t specify socket to measure\n"); \
 printf("-i\t print information from MSR_PKG_POWER_INFO register and Turbo Mode\n"); \
 printf("-s <duration>\t set measure duration in sec. (default 2s) \n"); \
@@ -71,12 +69,13 @@ printf("likwid-powermeter  %d.%d \n\n",VERSION,RELEASE)
 
 
 int main (int argc, char** argv)
-{
+{ 
     int socket_fd = -1;
     int optInfo = 0;
     int optClock = 0;
     int optStethoscope = 0;
     int socketId = 0;
+    int cpuId = 0;
     double runtime;
     int hasDRAM = 0;
     int c;
@@ -88,7 +87,7 @@ int main (int argc, char** argv)
     while ((c = getopt (argc, argv, "+c:hiM:ps:v")) != -1)
     {
         switch (c)
-        {
+        { 
             case 'c':
                 if (! (argString = bSecureInput(10,optarg)))
                 {
@@ -103,7 +102,7 @@ int main (int argc, char** argv)
 
             case 'h':
                 HELP_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case 'i':
                 optInfo = 1;
                 break;
@@ -121,7 +120,7 @@ int main (int argc, char** argv)
                 break;
             case 'v':
                 VERSION_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case '?':
                 if (isprint (optopt))
                 {
@@ -136,20 +135,11 @@ int main (int argc, char** argv)
                 return EXIT_FAILURE;
             default:
                 HELP_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
         }
     }
 
-    if (!lock_check())
-    {
-        fprintf(stderr,"Access to performance counters is locked.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (cpuid_init() == EXIT_FAILURE)
-    {
-        ERROR_PLAIN_PRINT(Unsupported processor!);
-    }
+    cpuid_init();
     numa_init(); /* consider NUMA node as power unit for the moment */
     accessClient_init(&socket_fd);
     msr_init(socket_fd);
@@ -158,9 +148,6 @@ int main (int argc, char** argv)
     /* check for supported processors */
     if ((cpuid_info.model == SANDYBRIDGE_EP) ||
             (cpuid_info.model == SANDYBRIDGE) ||
-            (cpuid_info.model == IVYBRIDGE) ||
-            (cpuid_info.model == IVYBRIDGE_EP) ||
-            (cpuid_info.model == HASWELL) ||
             (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
             (cpuid_info.model == NEHALEM_LYNNFIELD) ||
             (cpuid_info.model == NEHALEM_WESTMERE))
@@ -169,7 +156,7 @@ int main (int argc, char** argv)
     }
     else
     {
-        fprintf (stderr, "Query Turbo Mode only supported on Intel Nehalem/Westmere/SandyBridge/IvyBridge/Haswell processors!\n");
+        fprintf (stderr, "Query Turbo Mode only supported on Intel Nehalem/Westmere/SandyBridge processors!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -194,30 +181,25 @@ int main (int argc, char** argv)
         }
         printf(HLINE);
     }
-
+    
     if (cpuid_info.model == SANDYBRIDGE_EP)
     {
         hasDRAM = 1;
     }
-    else if ((cpuid_info.model != SANDYBRIDGE) &&
-            (cpuid_info.model != SANDYBRIDGE_EP)  &&
-            (cpuid_info.model != IVYBRIDGE)  &&
-            (cpuid_info.model != IVYBRIDGE_EP)  &&
-            (cpuid_info.model != HASWELL))
+    else if (cpuid_info.model != SANDYBRIDGE)
     {
-        fprintf (stderr, "RAPL not supported on this processor!\n");
+        fprintf (stderr, "RAPL only supported on Intel Sandy Bridge processors!\n");
         exit(EXIT_FAILURE);
     }
-
-    if (optInfo)
-    {
-        printf("Thermal Spec Power: %g Watts \n", power_info.tdp );
-        printf("Minimum  Power: %g Watts \n", power_info.minPower);
-        printf("Maximum  Power: %g Watts \n", power_info.maxPower);
-        printf("Maximum  Time Window: %g micro sec \n", power_info.maxTimeWindow);
-        printf(HLINE);
-        exit(EXIT_SUCCESS);
-    }
+        if (optInfo)
+        {
+            printf("Thermal Spec Power: %g Watts \n", power_info.tdp );
+            printf("Minimum  Power: %g Watts \n", power_info.minPower);
+            printf("Maximum  Power: %g Watts \n", power_info.maxPower);
+            printf("Maximum  Time Window: %g micro sec \n", power_info.maxTimeWindow);
+            printf(HLINE);
+            exit(EXIT_SUCCESS);
+        }
 
     if (optClock)
     {
@@ -226,14 +208,14 @@ int main (int argc, char** argv)
         numThreads = bstr_to_cpuset(threads, argString);
         bdestroy(argString);
         perfmon_init(numThreads, threads, stdout);
-        perfmon_setupEventSet(eventString, NULL);
+        perfmon_setupEventSet(eventString);
     }
 
     {
         PowerData pDataPkg;
         PowerData pDataDram;
         int cpuId = numa_info.nodes[socketId].processors[0];
-        printf("Measure on socket %d \n", socketId );
+        printf("Measure on CoreId %d \n", cpuId );
 
         if (optStethoscope)
         {
@@ -259,7 +241,7 @@ int main (int argc, char** argv)
         }
         else
         {
-            TimerData time;
+            CyclesData time;
             argv +=  optind;
             bstring exeString = bfromcstr(argv[0]);
 
@@ -278,14 +260,14 @@ int main (int argc, char** argv)
 
             if (hasDRAM) power_start(&pDataDram, cpuId, DRAM);
             power_start(&pDataPkg, cpuId, PKG);
-            timer_start(&time);
+            timer_startCycles(&time);
 
             if (system(bdata(exeString)) == EOF)
             {
                 fprintf(stderr, "Failed to execute %s!\n", bdata(exeString));
                 exit(EXIT_FAILURE);
             }
-            timer_stop(&time);
+            timer_stopCycles(&time);
             power_stop(&pDataPkg, cpuId, PKG);
             if (hasDRAM) power_stop(&pDataDram, cpuId, DRAM);
 
@@ -295,7 +277,7 @@ int main (int argc, char** argv)
                 perfmon_printCounterResults();
                 perfmon_finalize();
             }
-            runtime = timer_print(&time);
+            runtime = timer_printCyclesTime(&time);
         }
 
         printf("Runtime: %g s \n",runtime);
@@ -307,19 +289,6 @@ int main (int argc, char** argv)
             printf("Domain: DRAM \n");
             printf("Energy consumed: %g Joules \n", power_printEnergy(&pDataDram));
             printf("Power consumed: %g Watts \n", power_printEnergy(&pDataDram) / runtime );
-        }
-    }
-
-    if ( cpuid_hasFeature(TM2) )
-    {
-        thermal_init(0);
-        printf("Current core temperatures:\n");
-
-        for (uint32_t i = 0; i < cpuid_topology.numCoresPerSocket; i++ )
-        {
-            printf("Core %d: %u C\n",
-                    numa_info.nodes[socketId].processors[i],
-                    thermal_read(numa_info.nodes[socketId].processors[i]));
         }
     }
 

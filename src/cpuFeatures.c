@@ -15,7 +15,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -94,10 +94,6 @@ cpuFeatures_init(int cpu)
     {
         /*Nehalem */
         TEST_FLAG(turboMode,38);
-        TEST_FLAG(hardwarePrefetcher,9);
-        TEST_FLAG(clPrefetcher,19);
-        TEST_FLAG(dcuPrefetcher,37);
-        TEST_FLAG(ipPrefetcher,39);
     }
     else if ((cpuid_info.model == CORE2_45) ||
             (cpuid_info.model == CORE2_65))
@@ -213,46 +209,6 @@ cpuFeatures_print(int cpu)
         PRINT_VALUE(GREEN,enabled);
     }
 
-    printf("IP Prefetcher: \t\t\t");
-    if (flags & (1ULL<<39)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("Hardware Prefetcher: \t\t");
-    if (flags & (1ULL<<9)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("Adjacent Cache Line Prefetch: \t");
-    if (flags & (1ULL<<19)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("DCU Prefetcher: \t\t");
-    if (flags & (1ULL<<37)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
     if ((cpuid_info.model == NEHALEM) ||
             (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
             (cpuid_info.model == NEHALEM_LYNNFIELD) ||
@@ -280,6 +236,46 @@ cpuFeatures_print(int cpu)
             PRINT_VALUE(RED,disabled);
         }
         else 
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
+
+        printf("IP Prefetcher: \t\t\t");
+        if (flags & (1ULL<<39)) 
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        else
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
+
+        printf("Hardware Prefetcher: \t\t");
+        if (flags & (1ULL<<9)) 
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        else
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
+
+        printf("Adjacent Cache Line Prefetch: \t");
+        if (flags & (1ULL<<19)) 
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        else
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
+
+        printf("DCU Prefetcher: \t\t");
+        if (flags & (1ULL<<37)) 
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        else
         {
             PRINT_VALUE(GREEN,enabled);
         }

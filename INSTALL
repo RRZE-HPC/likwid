@@ -2,19 +2,18 @@
 
 1. Edit config.mk. Follow the comments there.
    Optionally you can change compiler settings in include_[GCC|ICC].mk.
-   Please note that only the default compiler flags are supported and tested.
+   Please note that only the default flags are supported and tested.
 2. make
 (2.a make likwid-bench  (if you want to build and install likwid-bench)
-3. make install (this is required for likwid-pin and if you use the accessDaemon)
+3. make install (this is required for likwid-pin)
 4. setup access to the msr device files (see end of this document)
 
-Only the default flags set are tested. As it is not possible to test all
-compiler setting variants the Intel icc compiler is only build tested. A basic
-function test is done for the icc binary. The only variant fully tested is gcc
-with default compiler flags. It is therefore recommended to use gcc with the
-default flags. If you want to use and build the Fortran interface you can mix
-GCC with the Intel Fortran Compiler. More information on this can be found in
-the WIKI.
+Only the default flags set are tested. As it is not possible to test all compiler setting
+variants the Intel icc compiler is only build tested. A basic
+function test is done for the icc binary. The only variant fully tested is gcc with
+default compiler flags. It is therefore recommended to use gcc with the default
+flags. If you want to use and build the Fortran interface you can mix GCC with the
+Intel Fortran Compiler. More information on this can be found in the WIKI.
 
 *NOTICE*
 
@@ -44,23 +43,30 @@ make likwid-bench
 
 This is because likwid-bench does not compile on 32bit systems.
 
-== Build  accessDaemon ==
+To enable instrumentation of likwid-bench for likwid-perfctr uncomment
+#DEFINES  += -DPERFMON
 
-To build the accessDaemon:
+in include_GCC.mk (or include_ICC.mk) and rebuild after a make distclean.
 
-1. Edit config.mk and configure path in ACCESSDAEMON variable. 
-2. Set the desired default ACCESSMODE. You can overwrite this on the command line.
-2. make will also build the accessDaemon
-3. Install with
+
+== Build msr daemon ==
+
+To build the msr daemon do:
+
+1. Edit config.mk and configure path in MSRDAEMON variable. 
+   It is recommended to take the default in the comment.
+2. cd src/msr-daemon
+2. make
+3. install every thing with
    make install
 
-With the standard  make install target the daemon will also be installed in
-${PREFIX}/bin . Don't forget to copy the dameon if you configured a different
-path in ACCESSDAEMON.
+The executable will be in the likwid-root. With the standard  make install
+target the daemon will also be installed in ${PREFIX}/bin . Don't forget to
+copy the dameon if you configured a different path in MSRDAEMON.
 
 == Setup of msr module ==
 
-likwid-perfctr, likwid-powermeter and likwid-features require the Linux msr kernel module. This module
+likwid-perfctr and likwid-features require the Linux msr kernel module. This module
 is part of most standard distro kernels. You have to be root to do the initial setup.
 
 1. Check if the msr module is loaded with  'lsmod | grep msr' . There should be an output.
@@ -73,31 +79,15 @@ As a general access to the msr registers is not desired on security sensitive
 systems you can either implement a more sophisticated access rights settings
 with e.g. setgid. A common solution used on many other device files, e.g. for
 audio, is to introduce a group and make a chown on the msr device files to that
-group. Now if you execute likwid-perfctr with setgid on that group the
+group. Now if you execute likwid-perfCtr with setgid on that group the
 executing user can use the tool but cannot directly write or read the msr
 device files.
 
-A secure solution is to use the accessDaemon, which encapsulates the access to
-the msr device files and performs a address check for allowed registers. For
-more information how to setup and use this solution have a look at the WIKI
-page:
+A secure solution is to use the msr-daemon, which encapsulates the access to the msr
+device files and performs a address check for allowed registers. For more information 
+how to setup and use this solution have a look at the WIKI page:
 
 http://code.google.com/p/likwid/wiki/MSRDaemon
-
-A demo for a root exploit involving the msr device files was published. As
-a consequence the security settings for access to the msr device files are
-tightened in recent kernels.
-
-Just setting the file access rights or using suid root on the access daemon is
-not sufficient anymore. You have to register your binary now to get access.
-This is only necessary if above setup dos not work.
-
-You register the necessary capability by calling
-
-sudo setcap cap_sys_rawio+ep EXECUTABLE
-
-on the executables. This is only possible on local file systems.
-The only feasable way is to register the likwid-accessD and proxy all access over it.
 
 If you have still problems please let me know on the likwid mailing list:
 

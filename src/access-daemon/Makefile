@@ -10,7 +10,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig 
+#      Copyright (C) 2012 Jan Treibig 
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -29,7 +29,7 @@
 TARGET   = likwid-accessD
 
 CC        = gcc
-DEFINES   = -D_GNU_SOURCE -DMAX_NUM_THREADS=264
+DEFINES   = -D_GNU_SOURCE
 CFLAGS   = -O2 -Wall -ansi -pedantic -Wextra -std=c99
 CPPFLAGS = $(DEFINES)
 INCLUDES = -I../includes

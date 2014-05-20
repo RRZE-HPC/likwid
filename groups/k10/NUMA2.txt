@@ -7,7 +7,6 @@ PMC2  CPU_TO_DRAM_LOCAL_TO_6
 PMC3  CPU_TO_DRAM_LOCAL_TO_7
 
 METRICS
-Runtime (RDTSC) [s] time
 Hyper Transport link0 bandwidth (MBytes/s)  1.0E-06*PMC0*4.0/time
 Hyper Transport link1 bandwidth (MBytes/s)  1.0E-06*PMC1*4.0/time
 Hyper Transport link2 bandwidth (MBytes/s)  1.0E-06*PMC2*4.0/time

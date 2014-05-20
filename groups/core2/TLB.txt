@@ -7,8 +7,7 @@ PMC0  DTLB_MISSES_ANY
 PMC1  L1D_ALL_CACHE_REF
 
 METRICS
-Runtime (RDTSC) [s] time
-Runtime unhalted [s] FIXC1*inverseClock
+Runtime [s] FIXC1*inverseClock
 CPI  FIXC1/FIXC0
 L1 DTLB request rate    PMC1/FIXC0
 DTLB miss rate    PMC0/FIXC0

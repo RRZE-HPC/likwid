@@ -6,7 +6,6 @@ PMC1  FP_INSTRUCTIONS_RETIRED_ALL
 PMC2  FPU_EXCEPTIONS_ALL
 
 METRICS
-Runtime (RDTSC) [s] time
 Overall FP exception rate  PMC2/PMC0
 FP exception rate    PMC2/PMC1
 

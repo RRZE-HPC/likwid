@@ -1,9 +1,9 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <omp.h>
 
+#ifdef PERFMON
 #include <likwid.h>
+#endif
 
 #define SIZE 1000000
 
@@ -22,25 +22,24 @@ main()
         c[i] = (double) i;
     }
 
-//    likwid_pinProcess(2);
-    printf("Running on core %d\n", likwid_getProcessorId());
-
-    LIKWID_MARKER_INIT;
+#ifdef PERFMON
+    printf("Using likwid\n");
+    likwid_markerInit();
+#endif
 
 /****************************************************/
 #pragma omp parallel
     {
-        LIKWID_MARKER_THREADINIT;
         char* label = malloc(40*sizeof(char));
         int threadId = omp_get_thread_num();
-//        likwid_pinThread(threadId);
-        printf("Running on core %d\n", likwid_getProcessorId());
 
         for (int counter=1; counter< 3; counter++)
         {
             sprintf(label,"plain-%d",counter);
+#ifdef PERFMON
 #pragma omp barrier
-            LIKWID_MARKER_START(label);
+            likwid_markerStartRegion(label);
+#endif
             for (j = 0; j < counter * threadId; j++)
             {
                 for (i = 0; i < SIZE; i++) 
@@ -49,8 +48,10 @@ main()
                     sum += a[i];
                 }
             }
+#ifdef PERFMON
 #pragma omp barrier
-            LIKWID_MARKER_STOP(label);
+            likwid_markerStopRegion(label);
+#endif
             printf("Flops performed thread %d region %s: %g\n",threadId, label,(double)counter*threadId*SIZE*3);
         }
         free(label);
@@ -58,6 +59,8 @@ main()
 /****************************************************/
 
 
-    LIKWID_MARKER_CLOSE;
+#ifdef PERFMON
+    likwid_markerClose();
+#endif
     printf( "OK, dofp result = %e\n", sum);
 }

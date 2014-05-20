@@ -88,7 +88,16 @@
  *
  */
 #define gettid() syscall(SYS_gettid)
+
+#ifdef PERFMON
 #include <likwid.h>
+#define START_PERFMON(s) likwid_markerStartRegion(s);
+#define STOP_PERFMON(s)  likwid_markerStopRegion(s);
+#else
+#define START_PERFMON(s)
+#define STOP_PERFMON(s)
+#endif
+
 
 # define HLINE "-------------------------------------------------------------\n"
 
@@ -169,17 +178,16 @@ main()
     printf("Each test is run %d times, but only\n", NTIMES);
     printf("the *best* time for each is used.\n");
 
-#ifdef LIKWID_PERFMON
+#ifdef PERFMON
     printf("Using likwid\n");
+    likwid_markerInit();
 #endif
 
-    LIKWID_MARKER_INIT;
 
 #ifdef _OPENMP
     printf(HLINE);
-#pragma omp parallel
+#pragma omp parallel 
     {
-	LIKWID_MARKER_THREADINIT;
 #pragma omp master
 	{
 	    k = omp_get_num_threads();
@@ -190,15 +198,13 @@ main()
     }
 #endif
 
-    LIKWID_MARKER_START("init");
     /* Get initial value for system clock. */
-//#pragma omp parallel for
+#pragma omp parallel for
     for (j=0; j<N; j++) {
 	a[j] = 1.0;
 	b[j] = 2.0;
 	c[j] = 0.0;
 	}
-    LIKWID_MARKER_STOP("init");
 
     printf(HLINE);
 
@@ -229,7 +235,7 @@ main()
     printf("For best results, please be sure you know the\n");
     printf("precision of your system timer.\n");
     printf(HLINE);
-
+    
     /*	--- MAIN LOOP --- repeat test cases NTIMES times --- */
 
     scalar = 3.0;
@@ -238,44 +244,44 @@ main()
         times[0][k] = mysecond();
 #pragma omp parallel
 	{
-        LIKWID_MARKER_START("copy");
+        START_PERFMON("copy")
 #pragma omp for
         for (j=0; j<N; j++)
             c[j] = a[j];
-        LIKWID_MARKER_STOP("copy");
+        STOP_PERFMON("copy")
 	}
         times[0][k] = mysecond() - times[0][k];
 
         times[1][k] = mysecond();
 #pragma omp parallel
 	{
-        LIKWID_MARKER_START("scale");
+        START_PERFMON("scale")
 #pragma omp for
         for (j=0; j<N; j++)
             b[j] = scalar*c[j];
-        LIKWID_MARKER_STOP("scale");
+        STOP_PERFMON("scale")
 	}
         times[1][k] = mysecond() - times[1][k];
 
         times[2][k] = mysecond();
 #pragma omp parallel
 	{
-        LIKWID_MARKER_START("add");
+        START_PERFMON("add")
 #pragma omp for
         for (j=0; j<N; j++)
             c[j] = a[j]+b[j];
-        LIKWID_MARKER_STOP("add");
+        STOP_PERFMON("add")
 	}
         times[2][k] = mysecond() - times[2][k];
 
         times[3][k] = mysecond();
 #pragma omp parallel
 	{
-        LIKWID_MARKER_START("triad");
+        START_PERFMON("triad")
 #pragma omp for
         for (j=0; j<N; j++)
             a[j] = b[j]+scalar*c[j];
-        LIKWID_MARKER_STOP("triad");
+        STOP_PERFMON("triad")
 	}
         times[3][k] = mysecond() - times[3][k];
     }
@@ -291,7 +297,7 @@ main()
 	    maxtime[j] = MAX(maxtime[j], times[j][k]);
 	    }
 	}
-
+    
     printf("Function      Rate (MB/s)   Avg time     Min time     Max time\n");
     for (j=0; j<4; j++) {
 	avgtime[j] = avgtime[j]/(double)(NTIMES-1);
@@ -308,7 +314,9 @@ main()
     checkSTREAMresults();
     printf(HLINE);
 
-    LIKWID_MARKER_CLOSE;
+#ifdef PERFMON
+   likwid_markerClose();
+#endif
     return 0;
 }
 
@@ -395,6 +403,11 @@ void checkSTREAMresults ()
 		bsum += b[j];
 		csum += c[j];
 	}
+#ifdef VERBOSE
+	printf ("Results Comparison: \n");
+	printf ("        Expected  : %f %f %f \n",aj,bj,cj);
+	printf ("        Observed  : %f %f %f \n",asum,bsum,csum);
+#endif
 
 #ifndef abs
 #define abs(a) ((a) >= 0 ? (a) : -(a))
@@ -421,3 +434,34 @@ void checkSTREAMresults ()
 	}
 }
 
+void tuned_STREAM_Copy()
+{
+	int j;
+#pragma omp parallel for
+        for (j=0; j<N; j++)
+            c[j] = a[j];
+}
+
+void tuned_STREAM_Scale(double scalar)
+{
+	int j;
+#pragma omp parallel for
+	for (j=0; j<N; j++)
+	    b[j] = scalar*c[j];
+}
+
+void tuned_STREAM_Add()
+{
+	int j;
+#pragma omp parallel for
+	for (j=0; j<N; j++)
+	    c[j] = a[j]+b[j];
+}
+
+void tuned_STREAM_Triad(double scalar)
+{
+	int j;
+#pragma omp parallel for
+	for (j=0; j<N; j++)
+	    a[j] = b[j]+scalar*c[j];
+}

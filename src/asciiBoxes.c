@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -56,14 +56,16 @@ asciiBoxes_allocateContainer(int numLines, int numColumns)
         container->boxes[i] = (Box*) malloc(numColumns * sizeof(Box));
     }
 
-    for(int i=0; i<numLines; i++)
+#if 0
+    for(i=0; i<numLines; i++)
     {
-        for(int j=0; j<numColumns; j++)
+        for(j=0; j<numColumns; j++)
         {
             container->boxes[i][j].width = 0;
             container->boxes[i][j].label = NULL;
         }
     }
+#endif
 
     return container;
 }

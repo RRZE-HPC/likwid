@@ -1,29 +1,42 @@
 LIKWID_LIB = -L../ -llikwid 
 INCLUDES = -I../src/includes -I../ -I../GCC
 
-all:  testmarker testmarkerF90 stream streamM
+all:  test-marker 
 
-testmarkerF90: chaos.F90
-	ifort $(INCLUDES)  -O3  -o $@ chaos.F90 $(LIKWID_LIB) -lpthread
+fortran: chaos.F90
+	gfortran $(INCLUDES) -ffree-form -fintrinsic-modules-path ../  -O3  -o $@ chaos.F90 $(LIKWID_LIB) -lpthread
 
-stream: stream.c
-	gcc -O3 $(INCLUDES) -fopenmp  -o $@  -DLIKWID_PERFMON stream.c $(LIKWID_LIB) -lm
+fortranfix: chaos_fixed.F90
+	gfortran $(INCLUDES) -P -fintrinsic-modules-path ../  -O3  -o $@ chaos.F90 $(LIKWID_LIB) -lpthread
 
-streamM: stream.c
-	gcc -O3 $(INCLUDES) -fopenmp  -o $@  -DLIKWID_PERFMON stream.c $(LIKWID_LIB) -lm
+stream-gcc:
+	gcc -O3 -fopenmp -o $@  stream.c
+
+
+stream-icc:
+	icc -O3 -openmp -o $@  stream.c
+
+dumper:
+	gcc -O1 -g $(INCLUDES) -pthread  -o $@ cpuid_dump.c $(LIKWID_LIB)
+
+test:
+	icc -O3 -o $@ dofp.c 
 
 testmarker:
-	gcc -O3 -std=c99  $(INCLUDES) -fopenmp -DLIKWID_PERFMON  -o $@ testmarker-cnt.c $(LIKWID_LIB) -lm
+	icc -O3  $(INCLUDES) -pthread -DPERFMON  -o $@ testmarker-seq.c $(LIKWID_LIB)
 
 testmarker-omp:
-	gcc -O3 -std=c99  $(INCLUDES) -openmp -DLIKWID_PERFMON  -o $@ testmarker-omp.c $(LIKWID_LIB)
+	icc -O3 -std=c99  $(INCLUDES) -openmp -DPERFMON  -o $@ testmarker-omp.c $(LIKWID_LIB)
+
+test-msr:
+	gcc -O2 -o $@ msrClient.c 
 
 test-mpi:
-	mpicc -DMAX_NUM_THREADS=128 -O2 -openmp -I../src/includes  -I../GCC -D_GNU_SOURCE  -o $@ MPI_pin_test.c $(LIKWID_LIB)
+	mpicc -O2 -openmp -I../src/includes  -I../GCC -D_GNU_SOURCE  -o $@ MPI_pin_test.c $(LIKWID_LIB)
 
 .PHONY: clean
 
 clean: 
-	rm -f stream streamM  testmarker testmarkerF90
+	rm -f stream-* test test-marker test-msr test-mpi fortran
 
 

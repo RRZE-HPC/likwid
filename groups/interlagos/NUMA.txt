@@ -7,7 +7,6 @@ UPMC2  UNC_CPU_TO_DRAM_LOCAL_TO_2
 UPMC3  UNC_CPU_TO_DRAM_LOCAL_TO_3
 
 METRICS
-Runtime (RDTSC) [s] time
 DRAM read/write local to 0 [MegaEvents/s]  1.0E-06*UPMC0/time
 DRAM read/write local to 1 [MegaEvents/s]  1.0E-06*UPMC1/time
 DRAM read/write local to 2 [MegaEvents/s]  1.0E-06*UPMC2/time

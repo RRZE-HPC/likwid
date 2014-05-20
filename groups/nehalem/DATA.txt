@@ -3,14 +3,11 @@ SHORT Load to store ratio
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
-FIXC2 CPU_CLK_UNHALTED_REF
 PMC0  MEM_INST_RETIRED_LOADS
 PMC1  MEM_INST_RETIRED_STORES
 
 METRICS
-Runtime (RDTSC) [s] time
-Runtime unhalted [s] FIXC1*inverseClock
-Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+RDTSC Runtime [s] time
 CPI  FIXC1/FIXC0
 Load to Store ratio PMC0/PMC1
 

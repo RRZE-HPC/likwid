@@ -10,7 +10,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig 
+#      Copyright (C) 2012 Jan Treibig 
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -27,23 +27,21 @@
 # =======================================================================================
 
 include  ../../config.mk
-include  ../../make/config_checks.mk
-include  ../../make/config_defines.mk
-include  ../../make/include_$(COMPILER).mk
-
 TARGET   = liblikwidpin.so
 
+CC        = gcc
+DEFINES  = -DMAX_NUM_THREADS=$(MAX_NUM_THREADS)
 ifneq ($(COLOR),NONE)
 DEFINES += -DCOLOR=$(COLOR)
 endif
 
-DEFINES  += -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) -D_GNU_SOURCE
-INCLUDES += -I../includes
-LIBS     += -ldl
-CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
+CFLAGS   = -O2 -Wall -std=c99 -shared -fPIC
+CPPFLAGS = $(DEFINES) -D_GNU_SOURCE -I.
+INCLUDES = -I../includes
+LIBS     = -ldl -lpthread
 
 all: $(TARGET)
 
 $(TARGET): pthread-overload.c
-	$(CC) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(INCLUDES) $(SHARED_CFLAGS) $(SHARED_LFLAGS) -o ../../$(TARGET) pthread-overload.c $(LIBS)
+	$(CC) $(CPPFLAGS) $(INCLUDES) $(CFLAGS) -o ../../$(TARGET) pthread-overload.c $(LIBS)
 

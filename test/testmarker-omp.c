@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <omp.h>
 
+#ifdef PERFMON
 #include <likwid.h>
+#endif
 
 #define SIZE 1000000
 
@@ -19,23 +21,22 @@ main()
         c[i] = (double) i;
     }
 
-    LIKWID_MARKER_INIT;
+#ifdef PERFMON
+    printf("Using likwid\n");
+    likwid_markerInit();
+#endif
 
 #pragma omp parallel
     {
-        LIKWID_MARKER_THREADINIT;
-
-        LIKWID_MARKER_START("time");
-        sleep(2);
-        LIKWID_MARKER_STOP("time");
-
         int threadId = omp_get_thread_num();
         /****************************************************/
 #pragma omp for
         for (int j = 0; j < 10; j++)
         {
 
-        LIKWID_MARKER_START("plain");
+#ifdef PERFMON
+        likwid_markerStartRegion("plain");
+#endif
             for (int k = 0; k < (threadId+1); k++)  {
                 for (int i = 0; i < SIZE; i++) 
                 {
@@ -44,13 +45,17 @@ main()
                 }
             }
 
-        LIKWID_MARKER_STOP("plain");
+#ifdef PERFMON
+        likwid_markerStopRegion("plain");
+#endif
         }
         printf("Flops performed plain: %g\n",(double)10*SIZE*3);
         /****************************************************/
     }
 
 
-    LIKWID_MARKER_CLOSE;
+#ifdef PERFMON
+    likwid_markerClose();
+#endif
     printf( "OK, dofp result = %e\n", sum);
 }

@@ -7,7 +7,6 @@ PMC2  L2_MISSES_ALL
 PMC3  L2_FILL_ALL
 
 METRICS
-Runtime (RDTSC) [s] time
 L2 request rate   (PMC1+PMC3)/PMC0
 L2 miss rate   PMC2/PMC0
 L2 miss ratio   PMC2/(PMC1+PMC3)

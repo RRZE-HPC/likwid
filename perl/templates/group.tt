@@ -4,7 +4,7 @@
 
 static PerfmonGroupMap [% arch %]_group_map[NUM_GROUPS_[% arch FILTER upper %]] = {
 [% FOREACH group IN groups %]
-    {"[% group.name %]",[% group.name %],[% group.isUncore %],"[% group.shortHelp %]","[% group.eventSet %]"},
+    {"[% group.name %]",[% group.name %],"[% group.shortHelp %]","[% group.eventSet %]"},
 [% END %]
 };
 
@@ -17,13 +17,9 @@ perfmon_printDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group)
     PerfmonResultTable tableData;
     int numRows;
     int numColumns = perfmon_numThreads;
-    bstring label;
     bstrList* fc;
+    bstring label;
     double** stat;
-    double tmpValue;
-    uint64_t cpi_instr = 0;
-    uint64_t cpi_cyc  = 0;
-    int cpi_index = 0;
 
     switch ( group ) 
     {
@@ -47,32 +43,12 @@ perfmon_printDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group)
             for(threadId=0; threadId < perfmon_numThreads; threadId++)
             {
 [% FOREACH metric IN group.metrics %]
-                tmpValue = [% metric.rule %];
-                if (!isnan(tmpValue))
-                {
-                    tableData.rows[[% loop.index %]].value[threadId] = tmpValue;
-                }
-                else
-                {
-                    tableData.rows[[% loop.index %]].value[threadId] = 0.0;
-                }
-[% IF metric.label == 'CPI' && arch == 'westmere' %]
-                cpi_instr += perfmon_getResult(threadId,"FIXC0");
-                cpi_cyc += perfmon_getResult(threadId,"FIXC1");
-                cpi_index = [% loop.index %];
-[% ELSE %]
+                tableData.rows[[% loop.index %]].value[threadId] = [% metric.rule %];
                 stat[[% loop.index %]][0] += (double) tableData.rows[[% loop.index %]].value[threadId];
-[% END %]
                 stat[[% loop.index %]][1] =  MAX(stat[[% loop.index %]][1],(double) tableData.rows[[% loop.index %]].value[threadId]);
                 stat[[% loop.index %]][2] =  MIN(stat[[% loop.index %]][2],(double) tableData.rows[[% loop.index %]].value[threadId]);
 [% END %]
             }
-
-            if (cpi_instr)
-            {
-                stat[cpi_index][0] = (double) cpi_cyc / (double) cpi_instr;
-            }
-                
             break;
 [% END %]
 
@@ -84,6 +60,8 @@ perfmon_printDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group)
 
     printResultTable(&tableData);
     freeResultTable(&tableData);
+
+
 
     /* for threaded results print sum, max, min and avg */
     if (perfmon_numThreads > 1)
@@ -106,6 +84,7 @@ perfmon_printDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group)
         free(stat[i]);
     }
     free(stat);
+    bdestroy(label);
     bstrListDestroy(fc);
 }
 
@@ -113,7 +92,6 @@ void
 perfmon_logDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group, double time,double timeStamp)
 {
     int threadId;
-    double tmpValue;
     double inverseClock = 1.0 /(double) timer_getCpuClock();
 
     switch ( group ) 
@@ -125,15 +103,7 @@ perfmon_logDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group, double ti
                         printf("[% metric.label %] %e ",timeStamp);
                         for(threadId=0; threadId < perfmon_numThreads; threadId++)
                         {
-                            tmpValue = [% metric.rule %];
-                            if (!isnan(tmpValue))
-                            {
-                                printf(" %e  ", tmpValue);
-                            }
-                            else
-                            {
-                                printf(" 0.0  ");
-                            }
+                            printf(" %e  ",[% metric.rule %]);
                         }
                         printf("\n");
                     [% END %]

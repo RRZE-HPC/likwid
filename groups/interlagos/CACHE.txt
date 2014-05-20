@@ -7,7 +7,6 @@ PMC2  DATA_CACHE_REFILLS_VALID
 PMC3  DATA_CACHE_MISSES_ALL
 
 METRICS
-Runtime (RDTSC) [s] time
 Data cache misses PMC3
 Data cache request rate PMC1/PMC0
 Data cache miss rate (PMC2)/PMC0

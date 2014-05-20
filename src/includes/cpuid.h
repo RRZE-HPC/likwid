@@ -13,7 +13,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -42,9 +42,6 @@
 #define CORE2_65             0x0FU
 #define CORE2_45             0x17U
 #define ATOM                 0x1CU
-#define ATOM_45              0x26U
-#define ATOM_32              0x36U
-#define ATOM_22              0x27U
 #define NEHALEM              0x1AU
 #define NEHALEM_BLOOMFIELD   0x1AU
 #define NEHALEM_LYNNFIELD    0x1EU
@@ -53,18 +50,9 @@
 #define NEHALEM_WESTMERE_M   0x25U
 #define SANDYBRIDGE          0x2AU
 #define SANDYBRIDGE_EP       0x2DU
-#define HASWELL              0x3CU
-#define HASWELL_EX           0x3FU
-#define HASWELL_M1           0x45U
-#define HASWELL_M2           0x46U
-#define IVYBRIDGE            0x3AU
-#define IVYBRIDGE_EP         0x3EU
 #define NEHALEM_EX           0x2EU
 #define WESTMERE_EX          0x2FU
 #define XEON_MP              0x1DU
-
-/* Intel MIC */
-#define XEON_PHI           0x01U
 
 /* AMD K10 */
 #define BARCELONA      0x02U
@@ -86,10 +74,8 @@
 
 
 #define  P6_FAMILY        0x6U
-#define  MIC_FAMILY       0xBU
 #define  NETBURST_FAMILY  0xFFU
 #define  K15_FAMILY       0x15U
-#define  K16_FAMILY       0x16U
 #define  K10_FAMILY       0x10U
 #define  K8_FAMILY        0xFU
 
@@ -110,17 +96,9 @@ extern CpuTopology cpuid_topology;
  *  - Performance counter features (Intel P6 only)
  *
  */
-extern int cpuid_init (void);
-extern void cpuid_print (void);
+extern void cpuid_init (void);
 extern void cpuid_initTopology (void);
 extern void cpuid_initCacheTopology (void);
 extern int  cpuid_isInCpuset(void);
-extern void cpuid_printTlbTopology(void);
-
-static inline int cpuid_hasFeature(FeatureBit bit)
-{
-  return (cpuid_info.featureFlags & (1<<bit));
-}
-
 
 #endif /*CPUID_H*/

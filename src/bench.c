@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -66,7 +66,7 @@
     BARRIER; \
     if (data->globalThreadId == 0) \
     { \
-        timer_start(&time); \
+        timer_startCycles(&time); \
     } \
     START_PERFMON  \
     for (i=0; i<  data->data.iter; i++) \
@@ -77,7 +77,7 @@
     STOP_PERFMON  \
     if (data->globalThreadId == 0) \
     { \
-        timer_stop(&time); \
+        timer_stopCycles(&time); \
         data->cycles = timer_printCycles(&time); \
     } \
     BARRIER
@@ -94,7 +94,7 @@ void* runTest(void* arg)
     BarrierData barr;
     ThreadData* data;
     ThreadUserData* myData;
-    TimerData time;
+    CyclesData time;
     FuncPrototype func;
 
     data = (ThreadData*) arg;
@@ -109,6 +109,7 @@ void* runTest(void* arg)
     offset = data->threadId * size;
     myData->size = size;
 
+    
     switch ( myData->test->type )
     {
         case SINGLE:
@@ -118,7 +119,7 @@ void* runTest(void* arg)
                 {
                     sptr = (float*) myData->streams[i];
                     sptr +=  offset;
-              //      sptr +=  size;
+                    sptr +=  size;
                     myData->streams[i] = (float*) sptr;
                 }
             }
@@ -130,7 +131,7 @@ void* runTest(void* arg)
                 {
                     dptr = (double*) myData->streams[i];
                     dptr +=  offset;
-             //       dptr +=  size;
+                    dptr +=  size;
                     myData->streams[i] = (double*) dptr;
                 }
             }
@@ -148,7 +149,7 @@ void* runTest(void* arg)
             threadId,
             data->globalThreadId,
             affinity_threadGetProcessorId(),
-            LLU_CAST size,
+            size,
             offset);
     BARRIER;
 

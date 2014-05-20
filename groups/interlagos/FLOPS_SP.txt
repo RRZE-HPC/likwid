@@ -7,8 +7,7 @@ PMC2  RETIRED_UOPS
 PMC3  RETIRED_FLOPS_SINGLE_ALL
 
 METRICS
-Runtime (RDTSC) [s] time
-Runtime unhalted [s]  PMC1*inverseClock
+RDTSC Runtime [s] time
 MFlops/s    1.0E-06*(PMC3)/time
 CPI   PMC1/PMC0
 CPI (based on uops)   PMC1/PMC2

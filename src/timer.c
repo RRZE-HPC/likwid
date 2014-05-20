@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,118 +28,176 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <sys/time.h>
 
 #include <types.h>
 #include <timer.h>
 
-static uint64_t baseline = 0ULL;
-static uint64_t cpuClock = 0ULL;
 
+/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
+
+static uint64_t cpuClock = 0;
+static uint64_t cyclesForCpuid = 0;
+
+/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static uint64_t
 getCpuSpeed(void)
 {
-#ifdef __x86_64
-    TimerData data;
+    int i;
     TscCounter start;
     TscCounter stop;
     uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
     struct timeval tv1;
     struct timeval tv2;
     struct timezone tzp;
-    struct timespec delay = { 0, 800000000 }; /* calibration time: 800 ms */
+    struct timespec delay = { 0, 100000000 }; /* calibration time: 800 ms */
 
-    for (int i=0; i< 10; i++)
-    {
-        timer_start(&data);
-        timer_stop(&data);
-        result = MIN(result,timer_printCycles(&data));
-    }
-
-    baseline = result;
-    result = 0xFFFFFFFFFFFFFFFFULL;
-
-    for (int i=0; i< 2; i++)
+    for (i=0; i< 2; i++)
     {
         RDTSC(start);
         gettimeofday( &tv1, &tzp);
         nanosleep( &delay, NULL);
-        RDTSC_STOP(stop);
+        RDTSC(stop);
         gettimeofday( &tv2, &tzp);
+
+        result = MIN(result,(stop.int64 - start.int64 - cyclesForCpuid));
+    }
+
+    return (result) * 1000000 / 
+        (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
+         ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
+}
+
+
+static uint64_t
+getCpuidCycles(void)
+{
+    int i;
+    TscCounter start;
+    TscCounter stop;
+    uint64_t result = 1000000000ULL;
+
+    for (i=0; i< 5; i++)
+    {
+        RDTSC(start);
+        RDTSC(stop);
 
         result = MIN(result,(stop.int64 - start.int64));
     }
 
-    return (result) * 1000000 /
-        (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
-         ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
-#endif
-#ifdef _ARCH_PPC
-	FILE *fpipe;
-	char *command="grep timebase /proc/cpuinfo | awk '{ print $3 }'";
-	char buff[256];
-
-	if ( !(fpipe = (FILE*)popen(command,"r")) )
-	{  // If fpipe is NULL
-		perror("Problems with pipe");
-		exit(1);
-	}
-
-	fgets(buff, 256, fpipe);
-
-	return (uint64_t)   atoi(buff);
-#endif
+    return result;
 }
 
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void timer_init( void )
+void
+timer_init(void )
 {
+    getCpuidCycles();
+    getCpuSpeed();
+
+    cyclesForCpuid = getCpuidCycles();
     cpuClock = getCpuSpeed();
 }
 
-uint64_t timer_printCycles( TimerData* time )
+void
+timer_startCycles(CyclesData* time) 
 {
-    /* clamp to zero if something goes wrong */
-    if ((time->stop.int64-baseline) < time->start.int64)
-    {
-        return 0ULL;
-    }
-    else
-    {
-        return (time->stop.int64 - time->start.int64 - baseline);
-    }
+    TscCounter start;
+    TscCounter stop;
+
+    RDTSC(start);
+    RDTSC(stop);
+
+    time->base = cyclesForCpuid + (stop.int64 - start.int64 - cyclesForCpuid);
+    RDTSC(time->start);
 }
 
-/* Return time duration in seconds */
-double timer_print( TimerData* time )
+void
+timer_stopCycles(CyclesData* time) 
+{
+    RDTSC(time->stop);
+}
+
+void
+timer_start(TimerData* time)
+{
+    gettimeofday(&(time->before),NULL);
+
+#ifdef DEBUG
+    printf("Timer Start - Seconds: %ld \t uSeconds: %ld \n",
+            before.tv_sec, before.tv_usec);
+#endif
+}
+
+void
+timer_stop(TimerData* time)
+{
+    gettimeofday(&(time->after),NULL);
+
+#ifdef DEBUG
+    printf("Timer Start - Seconds: %ld \t uSeconds: %ld \n",
+            after.tv_sec, after.tv_usec);
+#endif
+}
+
+float
+timer_print(TimerData* time)
+{
+    long int sec;
+    float timeDuration;
+
+    sec = time->after.tv_sec - time->before.tv_sec;
+
+    timeDuration = (((sec*1000000)+time->after.tv_usec)- time->before.tv_usec);
+
+#ifdef VERBOSE
+    printf("*******************************************\n");
+    printf("TIME [ms]\t:\t %f \n", timeDuration );
+    printf("*******************************************\n\n");
+#endif
+
+    return (timeDuration * 0.000001F);
+}
+
+uint64_t
+timer_printCycles(CyclesData* time)
+{
+    return (time->stop.int64 - time->start.int64 - time->base);
+}
+
+float
+timer_printCyclesTime(CyclesData* time)
 {
     uint64_t cycles;
+    float timeDuration;
 
-    /* clamp to zero if something goes wrong */
-   if ((time->stop.int64-baseline) < time->start.int64)
-    {
-        cycles = 0ULL;
-    }
-    else
-    {
-        cycles = time->stop.int64 - time->start.int64 - baseline;
-    }
+    cycles = (time->stop.int64 - time->start.int64 - time->base);
+    timeDuration   =  (float) cycles / (float) cpuClock;
 
-    return  ((double) cycles / (double) cpuClock);
+#ifdef VERBOSE
+    printf("*******************************************\n");
+    printf("TIME [ms]\t:\t %f \n", timeDuration );
+    printf("*******************************************\n\n");
+#endif
+
+    return timeDuration;
 }
 
-uint64_t timer_getCpuClock( void )
+uint64_t
+timer_getCpuClock(void)
 {
     return cpuClock;
 }
 
-uint64_t timer_getBaseline( void )
+uint64_t
+timer_getCpuidCycles(void)
 {
-    return baseline;
+    return cyclesForCpuid;
 }
 
 

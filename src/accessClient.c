@@ -14,7 +14,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -58,6 +58,8 @@ int accessClient_mode = ACCESSMODE;
 #define TOSTRING(x) STRINGIFY(x)
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
+//static char* msr_strerror(AccessErrorType met);
+static int accesslowprio = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 static char* accessClient_strerror(AccessErrorType det)
@@ -113,7 +115,16 @@ static int startDaemon(void)
 
     address.sun_family = AF_LOCAL;
     address_length = sizeof(address);
-    snprintf(address.sun_path, sizeof(address.sun_path), "/tmp/likwid-%d", pid);
+
+    if (accessClient_mode == DAEMON_AM_SYSACCESS_D)
+    {
+        snprintf(address.sun_path, sizeof(address.sun_path), "%s", TOSTRING(SYSDAEMONSOCKETPATH));
+    }
+    else
+    {
+        snprintf(address.sun_path, sizeof(address.sun_path), "/tmp/likwid-%d", pid);
+    }
+
     filepath = strdup(address.sun_path);
     DEBUG_PRINT(0, "%ssocket pathname is %s\n",
             ((accessClient_mode == DAEMON_AM_ACCESS_D) ? "Generated " : ""),
@@ -137,11 +148,9 @@ static int startDaemon(void)
     if (timeout <= 0)
     {
         ERRNO_PRINT;  /* should hopefully still work, as we make no syscalls in between. */
-        fprintf(stderr, "Exiting due to timeout: The socket file at '%s' \
-                could not be opened within 10 seconds.\n", filepath);
+        fprintf(stderr, "Exiting due to timeout: The socket file at '%s' could not be opened within 10 seconds.\n", filepath);
         fprintf(stderr, "Consult the error message above this to find out why.\n");
-        fprintf(stderr, "If the error is 'no such file or directoy', \
-                it usually means that likwid-accessD just failed to start.\n");
+        fprintf(stderr, "If the error is 'no such file or directoy', it usually means that likwid-accessD just failed to start.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -153,9 +162,10 @@ static int startDaemon(void)
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void accessClient_setaccessmode(int mode)
+void
+accessClient_setaccessmode(int mode)
 {
-    if ((accessClient_mode > DAEMON_AM_ACCESS_D) || (accessClient_mode < DAEMON_AM_DIRECT))
+    if ((accessClient_mode > DAEMON_AM_SYSACCESS_D) || (accessClient_mode < DAEMON_AM_DIRECT)) 
     {
         fprintf(stderr, "Invalid accessmode %d\n", accessClient_mode);
         exit(EXIT_FAILURE);
@@ -164,15 +174,46 @@ void accessClient_setaccessmode(int mode)
     accessClient_mode = mode;
 }
 
-void accessClient_init(int* socket_fd)
+
+void
+accessClient_setlowaccesspriority()
 {
-    if ((accessClient_mode == DAEMON_AM_ACCESS_D))
+    accesslowprio = 1;
+}
+
+void
+accessClient_initThread(int* socket_fd)
+{
+    (*socket_fd) = startDaemon();
+}
+
+void
+accessClient_init(int* socket_fd)
+{
+    (*socket_fd) = startDaemon();
+
+    if ((accessClient_mode == DAEMON_AM_SYSACCESS_D) && (accesslowprio))
     {
-        (*socket_fd) = startDaemon();
+        AccessDataRecord data;
+
+        DEBUG_PRINT(1, "%s\n", "Requesting low priority mode from daemon...");
+        memset(&data, 0, sizeof(AccessDataRecord));
+        data.type = DAEMON_MARK_CLIENT_LOWPRIO;
+        CHECK_ERROR(write((*socket_fd), &data, sizeof(AccessDataRecord)), socket write failed);
+        CHECK_ERROR(read((*socket_fd), &data, sizeof(AccessDataRecord)), socket read failed);
+
+        if (data.errorcode != ERR_NOERROR)
+        {
+            fprintf(stderr, "Failed to request low prio mode from daemon: "
+                    "daemon returned error %d '%s'\n",
+                    data.errorcode, accessClient_strerror(data.errorcode));
+            exit(EXIT_FAILURE);
+        }
     }
 }
 
-void accessClient_finalize(int socket_fd)
+void
+accessClient_finalize(int socket_fd)
 {
     if ( socket_fd != -1 )
     { /* Only if a socket is actually open */
@@ -184,11 +225,8 @@ void accessClient_finalize(int socket_fd)
 }
 
 
-uint64_t accessClient_read(
-        int socket_fd,
-        const int cpu,
-        const int device,
-        uint32_t reg)
+uint64_t 
+accessClient_read(int socket_fd, const int cpu, const int device, uint32_t reg)
 {
     AccessDataRecord data;
 
@@ -212,12 +250,8 @@ uint64_t accessClient_read(
     return data.data;
 }
 
-void accessClient_write(
-        int socket_fd,
-        const int cpu,
-        const int device,
-        uint32_t reg,
-        uint64_t sdata)
+void 
+accessClient_write(int socket_fd, const int cpu, const int device, uint32_t reg, uint64_t sdata)
 {
     AccessDataRecord data;
 

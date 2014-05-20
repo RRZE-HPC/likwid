@@ -7,8 +7,7 @@ PMC0  SIMD_COMP_INST_RETIRED_PACKED_DOUBLE
 PMC1  SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE
 
 METRICS
-Runtime (RDTSC) [s] time
-Runtime unhalted [s] FIXC1*inverseClock
+Runtime [s] FIXC1*inverseClock
 CPI  FIXC1/FIXC0
 DP MFlops/s    1.0E-06*(PMC0*2.0+PMC1)/time
 

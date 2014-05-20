@@ -10,8 +10,7 @@ PMC2  FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION
 PMC3  FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION
 
 METRICS
-Runtime (RDTSC) [s] time
-Runtime unhalted [s] FIXC1*inverseClock
+Runtime [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 MFlops/s  1.0E-06*(PMC0*2.0+PMC1)/time

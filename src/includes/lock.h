@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,76 +27,16 @@
  *
  * =======================================================================================
  */
+
 #ifndef LOCK_H
 #define LOCK_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-
 #define LOCK_INIT -1
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-#define LIKWIDLOCK  /tmp/likwid.lock
 
 static inline int lock_acquire(int* var, int newval)
 {
     int oldval = LOCK_INIT;
     return __sync_bool_compare_and_swap (var, oldval, newval);
-}
-
-
-
-static int lock_check(void)
-{
-    struct stat buf;
-    int lock_handle = -1;
-    int result = 0;
-    char* filepath = TOSTRING(LIKWIDLOCK);
-
-    if ((lock_handle = open(filepath, O_RDONLY )) == -1 )
-    {
-	if (errno == ENOENT)
-	{
-	    /* There is no lock file. Proceed. */
-	    result = 1;
-	}
-	else if (errno == EACCES)
-	{
-	    /* There is a lock file. We cannot open it. */
-	    result = 0;
-	}
-	else 
-	{
-	    /* Another error occured. Proceed. */
-	    result = 1;
-	}
-    }
-    else
-    {
-	/* There is a lock file and we can open it. Check if we own it. */
-	stat(filepath, &buf);
-
-	if ( buf.st_uid == getuid() )  /* Succeed, we own the lock */
-	{
-	    result = 1;
-	}
-	else  /* we are not the owner */
-	{
-	    result = 0;
-	}
-    }
-
-    if (lock_handle)
-    {
-	close(lock_handle);
-    }
-
-    return result;
 }
 
 #endif /*LOCK_H*/

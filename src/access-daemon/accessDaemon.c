@@ -12,7 +12,7 @@
  *                Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -47,7 +47,6 @@
 #include <getopt.h>
 
 #include <pci_types.h>
-#include <lock.h>
 #include <accessClient_types.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
@@ -67,77 +66,72 @@
 
 #define CPUID                    \
     __asm__ volatile ("cpuid"    \
-            : "=a" (eax),            \
-            "=b" (ebx)             \
-            : "0" (eax))
+        : "=a" (eax),            \
+          "=b" (ebx)             \
+        : "0" (eax))
 
 
 #define  P6_FAMILY        0x6U
 #define  K8_FAMILY        0xFU
 #define  K10_FAMILY       0x10U
 #define  K15_FAMILY       0x15U
-#define  K16_FAMILY       0x16U
 
 #define SANDYBRIDGE          0x2AU
 #define SANDYBRIDGE_EP       0x2DU
-#define IVYBRIDGE            0x3AU
-#define IVYBRIDGE_EP         0x3EU
-#define HASWELL              0x3CU
 
 #define PCI_ROOT_PATH    "/proc/bus/pci/"
 #define MAX_PATH_LENGTH   60
+#define MAX_NUM_THREADS  64
 #define MAX_NUM_NODES    4
-
-/* Lock file controlled from outside which prevents likwid to start.
- * Can be used to synchronize access to the hardware counters
- * with an external monitoring system. */
 
 /* #####   TYPE DEFINITIONS   ########### */
 typedef int (*FuncPrototype)(uint32_t);
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 static int sockfd = -1;
-static int connfd = -1; /* temporary in to make it compile */
+static int connfd = -1;
 static char* filepath;
 static const char* ident = "accessD";
 static FuncPrototype allowed = NULL;
+static int sysdaemonmode = 0;
 static int FD_MSR[MAX_NUM_THREADS];
 static int FD_PCI[MAX_NUM_NODES][MAX_NUM_DEVICES];
-static int isPCIUncore = 0;
+static int isSandyBridge = 0;
 
 static char* pci_DevicePath[MAX_NUM_DEVICES] = {
-    "13.5", "13.6", "13.1", "10.0", "10.1", "10.4",
-    "10.5", "0e.1", "08.0", "09.0", "08.6", "09.6",
-    "08.0", "09.0" };
+ "13.5", "13.6", "13.1", "10.0", "10.1", "10.4",
+ "10.5", "0e.1", "08.2", "09.2", "08.6", "09.6",
+ "08.0", "09.0" };
 static char pci_filepath[MAX_PATH_LENGTH];
 
-/* Socket to bus mapping -- will be determined at runtime;
- * typical mappings are:
+/* Socket to bus mapping
  * Socket  Bus (2S)  Bus (4s)
  *   0        0xff      0x3f
  *   1        0x7f      0x7f
  *   2                  0xbf
  *   3                  0xff
  */
-static char* socket_bus[MAX_NUM_NODES];
 
+static char* socket_bus[] = { "7f/", "ff/",  "bf/",  "ff/" };
+
+#ifndef ALLOWSYSDAEMONMODE
+#define ALLOWSYSDAEMONMODE 1
+#endif
+#ifndef SYSDAEMONSOCKETPATH
+#define SYSDAEMONSOCKETPATH "/var/run/likwid-msrd.sock"
+#endif
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static int allowed_intel(uint32_t reg)
 {
     if ( ((reg & 0x0F8U) == 0x0C0U) ||
-            ((reg & 0xFF0U) == 0x180U) ||
-            ((reg & 0xF00U) == 0x300U) ||
-            ((reg & 0xF00U) == 0xC00U) ||
-            ((reg & 0xF00U) == 0xD00U) ||
-            ((reg & 0xF00U) == 0xE00U) ||
-            (reg == 0x1A0)  ||
-            (reg == 0x0CE)  ||
-            (reg == 0x19C)  ||
-            (reg == 0x1A2)  ||
-            (reg == 0x1AD)  ||
-            (reg == 0x1A6))
+         ((reg & 0xFF0U) == 0x180U) ||
+         ((reg & 0xF00U) == 0x300U) ||
+         (reg == 0x1A0)  ||
+         (reg == 0x0CE)  ||
+         (reg == 0x1AD)  ||
+         (reg == 0x1A6))
     {
         return 1;
     }
@@ -150,17 +144,15 @@ static int allowed_intel(uint32_t reg)
 static int allowed_sandybridge(uint32_t reg)
 {
     if ( ((reg & 0x0F8U) == 0x0C0U) ||
-            ((reg & 0xFF0U) == 0x180U) ||
-            ((reg & 0xF00U) == 0x300U) ||
-            ((reg & 0xF00U) == 0x600U) ||
-            ((reg & 0xF00U) == 0xC00U) ||
-            ((reg & 0xF00U) == 0xD00U) ||
-            (reg == 0x1A0)  ||
-            (reg == 0x0CE)  ||
-            (reg == 0x1AD)  ||
-            (reg == 0x19C)  ||
-            (reg == 0x1A2)  ||
-            (reg == 0x1A6))
+         ((reg & 0xFF0U) == 0x180U) ||
+         ((reg & 0xF00U) == 0x300U) ||
+         ((reg & 0xF00U) == 0x600U) ||
+         ((reg & 0xF00U) == 0xC00U) ||
+         ((reg & 0xF00U) == 0xD00U) ||
+         (reg == 0x1A0)  ||
+         (reg == 0x0CE)  ||
+         (reg == 0x1AD)  ||
+         (reg == 0x1A6))
     {
         return 1;
     }
@@ -186,21 +178,8 @@ static int allowed_amd(uint32_t reg)
 static int allowed_amd15(uint32_t reg)
 {
     if ( ((reg & 0xFFFFFFF0U) == 0xC0010000U) ||
-            ((reg & 0xFFFFFFF0U) == 0xC0010200U) ||
-            ((reg & 0xFFFFFFF8U) == 0xC0010240U))
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-static int allowed_amd16(uint32_t reg)
-{
-    if ( ((reg & 0xFFFFFFF0U) == 0xC0010000U) ||
-            ((reg & 0xFFFFFFF8U) == 0xC0010240U))
+         ((reg & 0xFFFFFFF0U) == 0xC0010200U) ||
+         ((reg & 0xFFFFFFF8U) == 0xC0010240U))
     {
         return 1;
     }
@@ -226,7 +205,7 @@ static void msr_read(AccessDataRecord * dRecord)
         return;
     }
 
-    if (pread(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data))
+    if (pread(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data)) 
     {
         syslog(LOG_ERR, "Failed to read data from msr device file on core %u", cpu);
         dRecord->errorcode = ERR_RWFAIL;
@@ -241,7 +220,7 @@ static void msr_write(AccessDataRecord * dRecord)
     uint32_t cpu = dRecord->cpu;
     uint32_t reg = dRecord->reg;
     uint64_t data = dRecord->data;
-
+    
     dRecord->errorcode = ERR_NOERROR;
 
     if (!allowed(reg))
@@ -251,15 +230,16 @@ static void msr_write(AccessDataRecord * dRecord)
         return;
     }
 
-    if (pwrite(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data))
+    if (pwrite(FD_MSR[cpu], &data, sizeof data, reg) != sizeof(data)) 
     {
-        syslog(LOG_ERR, "Failed to write data to msr device file on core %u", cpu);
+        syslog(LOG_ERR, "Failed to write data from msr device file on core %u", cpu);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
 }
 
-static void pci_read(AccessDataRecord* dRecord)
+static void
+pci_read(AccessDataRecord* dRecord)
 {
     uint32_t socketId = dRecord->cpu;
     uint32_t reg = dRecord->reg;
@@ -271,9 +251,9 @@ static void pci_read(AccessDataRecord* dRecord)
 
     if ( !FD_PCI[socketId][device] )
     {
-        strncpy(pci_filepath, PCI_ROOT_PATH, 30);
-        strncat(pci_filepath, socket_bus[socketId], 10);
-        strncat(pci_filepath, pci_DevicePath[device], 20);
+	strncpy(pci_filepath, PCI_ROOT_PATH, 30);
+	strncat(pci_filepath, socket_bus[socketId], 10);
+	strncat(pci_filepath, pci_DevicePath[device], 20);
 
         FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
 
@@ -287,19 +267,19 @@ static void pci_read(AccessDataRecord* dRecord)
 
     if ( pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data)) 
     {
-        syslog(LOG_ERR, "Failed to read data from pci device file on socket %u device %u",
-                socketId, device);
+        syslog(LOG_ERR, "Failed to read data from pci device file on socket %u", socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
     //    printf("READ Device %s cpu %d reg 0x%x data 0x%x \n",bdata(filepath), cpu, reg, data);
-
+    
     dRecord->data = (uint64_t) data;
 }
 
 
 
-static void pci_write(AccessDataRecord* dRecord)
+void
+pci_write(AccessDataRecord* dRecord)
 {
     uint32_t socketId = dRecord->cpu;
     uint32_t reg = dRecord->reg;
@@ -310,9 +290,9 @@ static void pci_write(AccessDataRecord* dRecord)
 
     if ( !FD_PCI[socketId][device] )
     {
-        strncpy(pci_filepath, PCI_ROOT_PATH, 30);
-        strncat(pci_filepath, socket_bus[socketId], 10);
-        strncat(pci_filepath, pci_DevicePath[device], 20);
+	strncpy(pci_filepath, PCI_ROOT_PATH, 30);
+	strncat(pci_filepath, socket_bus[socketId], 10);
+	strncat(pci_filepath, pci_DevicePath[device], 20);
 
         FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
 
@@ -326,7 +306,7 @@ static void pci_write(AccessDataRecord* dRecord)
 
     if (pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data) 
     {
-        syslog(LOG_ERR, "Failed to write data to pci device file on socket %u", socketId);
+        syslog(LOG_ERR, "Failed to write data from pci device file on socket %u", socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -337,7 +317,7 @@ static void kill_client(void)
 {
     syslog(LOG_NOTICE, "daemon dropped client");
 
-    if (connfd != -1)
+    if (connfd != -1) 
     {
         CHECK_ERROR(close(connfd), socket close failed);
     }
@@ -350,9 +330,14 @@ static void stop_daemon(void)
     kill_client();
     syslog(LOG_NOTICE, "daemon exiting");
 
-    if (sockfd != -1)
+    if (sockfd != -1) 
     {
         CHECK_ERROR(close(sockfd), socket close sockfd failed);
+
+        if (sysdaemonmode) 
+        {
+            CHECK_ERROR(unlink(filepath), unlink of socket failed);
+        }
     }
 
     free(filepath);
@@ -365,11 +350,19 @@ static void Signal_Handler(int sig)
     if (sig == SIGPIPE)
     {
         syslog(LOG_NOTICE, "SIGPIPE? client crashed?!");
-        stop_daemon();
+
+        if (sysdaemonmode) 
+        {
+            kill_client();
+        }
+        else
+        {
+            stop_daemon();
+        }
     }
 
     /* For SIGALRM we just return - we're just here to create a EINTR */
-    if ((sig == SIGTERM))
+    if ((sig == SIGTERM) && (sysdaemonmode))
     {
         stop_daemon();
     }
@@ -403,7 +396,6 @@ static void daemonize(int* parentPid)
 
     /* Create a new SID for the child process */
     sid = setsid();
-
     if (sid < 0)
     {
         syslog(LOG_ERR, "setsid failed: %s", strerror(errno));
@@ -428,7 +420,7 @@ static void daemonize(int* parentPid)
 
 /* #####  MAIN FUNCTION DEFINITION   ################## */
 
-int main(void)
+int main(int argc, char ** argv) 
 {
     int ret;
     pid_t pid;
@@ -436,17 +428,41 @@ int main(void)
     socklen_t socklen;
     AccessDataRecord dRecord;
     mode_t oldumask;
-    uint32_t numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
-    uint32_t model;
-
-    openlog(ident, 0, LOG_USER);
-
-    if (!lock_check())
-    {
-        syslog(LOG_ERR,"Access to performance counters is locked.\n");
-        stop_daemon();
+    static struct option long_options[] = {
+                   { "help",      0, 0, '?' },
+                   { "sysdaemon", 0, 0, 's' },
+                   { 0, 0, 0, 0 }
+    };
+    int c;
+  
+    while ((c = getopt_long(argc, argv, "h?", long_options, NULL)) > 0) {
+      switch (c) {
+      case '?':
+      case 'h':
+                printf("Syntax: %s --sysdaemon\n", argv[0]);
+                printf("You should NOT manually call this program unless you");
+                printf(" want to run it as a system daemon.\n");
+                exit(EXIT_SUCCESS);
+                break;
+      case 's':
+#if (ALLOWSYSDAEMONMODE == 1)
+                if (getuid() != 0) {
+                    printf("Sorry, only root is allowed to call sysdaemonmode.\n");
+                    exit(EXIT_FAILURE);
+                }
+                sysdaemonmode = 1;
+#else
+                printf("sysdaemonmode has been disallowed at compiletime.\n");
+                exit(EXIT_FAILURE);
+#endif
+                break;
+      default:
+                fprintf(stderr, "Invalid option. try -h for help.\n");
+                exit(EXIT_FAILURE);
+      };
     }
 
+    openlog(ident, 0, LOG_USER);
     daemonize(&pid);
 
     {
@@ -462,24 +478,17 @@ int main(void)
         eax = 0x01;
         CPUID;
         uint32_t family = ((eax >> 8) & 0xFU) + ((eax >> 20) & 0xFFU);
-        model  = (((eax >> 16) & 0xFU) << 4) + ((eax >> 4) & 0xFU);
+        uint32_t model  = (((eax >> 16) & 0xFU) << 4) + ((eax >> 4) & 0xFU);
 
         switch (family)
         {
             case P6_FAMILY:
                 allowed = allowed_intel;
 
-                if ((model == SANDYBRIDGE)        ||
-                        (model == SANDYBRIDGE_EP) ||
-                        (model == IVYBRIDGE)      ||
-                        (model == IVYBRIDGE_EP) )
+                if ((model == SANDYBRIDGE) || (model == SANDYBRIDGE_EP))
                 {
                     allowed = allowed_sandybridge;
-                    isPCIUncore = 1;
-                }
-                else if (model == HASWELL)
-                {
-                    allowed = allowed_sandybridge;
+                    isSandyBridge = 1;
                 }
                 break;
             case K8_FAMILY:
@@ -496,19 +505,19 @@ int main(void)
             case K15_FAMILY:
                 allowed = allowed_amd15;
                 break;
-            case K16_FAMILY:
-                allowed = allowed_amd16;
-	        break;
             default:
-                syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
-                        __FILE__, __LINE__);
+                syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n", __FILE__, __LINE__);
                 exit(EXIT_FAILURE);
         }
     }
 
     /* setup filename for socket */
     filepath = (char*) calloc(sizeof(addr1.sun_path), 1);
-    snprintf(filepath, sizeof(addr1.sun_path), "/tmp/likwid-%d", pid);
+    if (sysdaemonmode == 1) {
+        snprintf(filepath, sizeof(addr1.sun_path), "%s", SYSDAEMONSOCKETPATH);
+    } else {
+        snprintf(filepath, sizeof(addr1.sun_path), "/tmp/likwid-%d", pid);
+    }
 
     /* get a socket */
     EXIT_IF_ERROR(sockfd = socket(AF_LOCAL, SOCK_STREAM, 0), socket failed);
@@ -545,166 +554,243 @@ int main(void)
     }
 
     syslog(LOG_NOTICE, "daemon started");
+    
+    if (sysdaemonmode == 0) {
+        /* The normal case: without sysdaemon mode. We only ever accept one client. */
+        /* accept one connect from one client */
+    
+        /* setup an alarm to stop the daemon if there is no connect.
+         * or to change to different metrics in sysdaemonmode. */
+        alarm(15U);
 
-    /* setup an alarm to stop the daemon if there is no connect.*/
-    alarm(15U);
-
-    if ((connfd = accept(sockfd, (SA*) &addr1, &socklen)) < 0)
-    {
-        if (errno == EINTR)
+        if ((connfd = accept(sockfd, (SA*) &addr1, &socklen)) < 0)
         {
-            syslog(LOG_ERR, "exiting due to timeout - no client connected after 15 seconds.");
-        }
-        else
-        {
-            syslog(LOG_ERR, "accept() failed:  %s", strerror(errno));
-        }
-        CHECK_ERROR(unlink(filepath), unlink of socket failed);
-        exit(EXIT_FAILURE);
-    }
-
-    alarm(0);
-    CHECK_ERROR(unlink(filepath), unlink of socket failed);
-    syslog(LOG_NOTICE, "daemon accepted client");
-
-    {
-        char* msr_file_name = (char*) malloc(MAX_PATH_LENGTH * sizeof(char));
-
-        /* Open MSR device files for less overhead.
-         * NOTICE: This assumes consecutive processor Ids! */
-        for ( uint32_t i=0; i < numHWThreads; i++ )
-        {
-            sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
-            FD_MSR[i] = open(msr_file_name, O_RDWR);
-
-            if ( FD_MSR[i] < 0 )
+            if (errno == EINTR)
             {
-                syslog(LOG_ERR, "Failed to open device files.");
+                syslog(LOG_ERR, "exiting due to timeout - no client connected after 15 seconds.");
             }
-        }
-
-        free(msr_file_name);
-
-        if (isPCIUncore)
-        {
-            for (int j=0; j<MAX_NUM_NODES; j++)
+            else
             {
-                for (int i=0; i<MAX_NUM_DEVICES; i++)
+                syslog(LOG_ERR, "accept() failed:  %s", strerror(errno));
+            }
+            CHECK_ERROR(unlink(filepath), unlink of socket failed);
+            exit(EXIT_FAILURE);
+        }
+      
+        alarm(0);
+        CHECK_ERROR(unlink(filepath), unlink of socket failed);
+        syslog(LOG_NOTICE, "daemon accepted client");
+
+        {
+            uint32_t numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
+            char* msr_file_name = (char*) malloc(MAX_PATH_LENGTH * sizeof(char));
+
+            /* Open MSR device files for less overhead.
+             * NOTICE: This assumes consecutive processor Ids! */
+            for ( uint32_t i=0; i < numHWThreads; i++ )
+            {
+                sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
+                FD_MSR[i] = open(msr_file_name, O_RDWR);
+
+                if ( FD_MSR[i] < 0 )
                 {
-                    FD_PCI[j][i] = 0;
+                    syslog(LOG_ERR, "Failed to open device files.");
                 }
             }
 
-            /* determine PCI-BUSID mapping ... */
-            FILE *fptr;
-            char buf[1024];
-            uint32_t testDevice;
-            uint32_t sbus, sdevfn, svend;
-            int cntr = 0;
+            free(msr_file_name);
 
-            for ( int i=0; i<MAX_NUM_NODES; i++ )
+            if (isSandyBridge)
             {
-                socket_bus[i] = "N-A";
-            }
-
-            if (model == SANDYBRIDGE_EP)
-            {
-                testDevice = 0x80863c44;
-            }
-            else if (model == IVYBRIDGE_EP)
-            {
-                testDevice = 0x80860e36;
-            }
-            else
-            {
-                testDevice = 0;
-                syslog(LOG_NOTICE, "PCI Uncore not supported on this system");
-            }
-
-            if ( ((fptr = fopen("/proc/bus/pci/devices", "r")) == NULL) || !testDevice)
-            {
-                syslog(LOG_NOTICE, "Unable to open /proc/bus/pci/devices");
-            }
-            else
-            {
-                while( fgets(buf, sizeof(buf)-1, fptr) )
+                for (int j=0; j<MAX_NUM_NODES; j++)
                 {
-                    if ( sscanf(buf, "%2x%2x %8x", &sbus, &sdevfn, &svend) == 3 &&
-                            svend == testDevice )
+                    for (int i=0; i<MAX_NUM_DEVICES; i++)
                     {
-                        socket_bus[cntr] = (char*)malloc(4);
-                        sprintf(socket_bus[cntr++], "%02x/", sbus);
+                        FD_PCI[j][i] = 0;
                     }
                 }
-                fclose(fptr);
+
+                /* TODO Exten to 4 socket systems */
+#if 0
+                if ( cpuid_topology.numSockets == 2 )
+                {
+                    /* Already correctly initialized */
+                }
+                else if ( cpuid_topology.numSockets == 4 )
+                {
+                    strcpy(socket_bus[1],"3f/");
+                }
+                else 
+                {
+                    /*TODO Check devices on single socket variants!! */
+                    syslog(LOG_NOTICE, "Uncore currently not supported for single socket systems");
+                }
+#endif
             }
+        }
 
-            if ( cntr == 0 )
-            {
-                syslog(LOG_NOTICE, "Uncore not supported on this system");
+        while (1)
+        {
+            ret = read(connfd, (void*) &dRecord, sizeof(AccessDataRecord));
+    
+            if (ret < 0)
+            { 
+                syslog(LOG_ERR, "ERROR - [%s:%d] read from client failed  - %s \n", __FILE__, __LINE__, strerror(errno));
+                stop_daemon();
             }
-        }
-    }
-
-    while (1)
-    {
-        ret = read(connfd, (void*) &dRecord, sizeof(AccessDataRecord));
-
-        if (ret < 0)
-        {
-            syslog(LOG_ERR, "ERROR - [%s:%d] read from client failed  - %s \n",
-                    __FILE__, __LINE__, strerror(errno));
-            stop_daemon();
-        }
-        else if (ret == 0)
-        {
-            syslog(LOG_ERR, "ERROR - [%s:%d] zero read", __FILE__, __LINE__);
-            stop_daemon();
-        }
-        else if (ret != sizeof(AccessDataRecord))
-        {
-            syslog(LOG_ERR, "ERROR - [%s:%d] unaligned read", __FILE__, __LINE__);
-            stop_daemon();
-        }
-
-
-        if (dRecord.type == DAEMON_READ)
-        {
-            if (dRecord.device == DAEMON_AD_MSR)
+            else if (ret == 0)
             {
-                msr_read(&dRecord);
+                syslog(LOG_ERR, "ERROR - [%s:%d] zero read", __FILE__, __LINE__);
+                stop_daemon();
+            }
+            else if (ret != sizeof(AccessDataRecord))
+            {
+                syslog(LOG_ERR, "ERROR - [%s:%d] unaligned read", __FILE__, __LINE__);
+                stop_daemon();
+            }
+    
+
+            if (dRecord.type == DAEMON_READ)
+            {
+                if (dRecord.device == DAEMON_AD_MSR)
+                {
+                    msr_read(&dRecord);
+                }
+                else
+                {
+                    pci_read(&dRecord);
+                }
+            }
+            else if (dRecord.type == DAEMON_WRITE)
+            {
+                if (dRecord.device == DAEMON_AD_MSR)
+                {
+                    msr_write(&dRecord);
+                    dRecord.data = 0x0ULL;
+                }
+                else
+                {
+                    pci_write(&dRecord);
+                    dRecord.data = 0x0ULL;
+                }
+            }
+            else if (dRecord.type == DAEMON_EXIT)
+            {
+                stop_daemon();
             }
             else
             {
-                pci_read(&dRecord);
+                syslog(LOG_ERR, "unknown daemon access type  %d", dRecord.type);
+                dRecord.errorcode = ERR_UNKNOWN;
             }
-        }
-        else if (dRecord.type == DAEMON_WRITE)
-        {
-            if (dRecord.device == DAEMON_AD_MSR)
-            {
-                msr_write(&dRecord);
-                dRecord.data = 0x0ULL;
-            }
-            else
-            {
-                pci_write(&dRecord);
-                dRecord.data = 0x0ULL;
-            }
-        }
-        else if (dRecord.type == DAEMON_EXIT)
-        {
-            stop_daemon();
-        }
-        else
-        {
-            syslog(LOG_ERR, "unknown daemon access type  %d", dRecord.type);
-            dRecord.errorcode = ERR_UNKNOWN;
-        }
+    
+//    syslog(LOG_NOTICE, "write: cpu %d reg 0x%x data 0x%x type %d device %d error %d \n",
+//	    dRecord.cpu, dRecord.reg, dRecord.data, dRecord.type, dRecord.device, dRecord.errorcode);
 
-        EXIT_IF_ERROR(write(connfd, (void*) &dRecord, sizeof(AccessDataRecord)), write failed);
+            EXIT_IF_ERROR(write(connfd, (void*) &dRecord, sizeof(AccessDataRecord)), write failed);
+        }
+    } else {  /* Sysdaemonmode. */
+        /* Things are slightly more complicated in sysdaemonmode: We can accept
+         * multiple clients, and clients can preemt lower priority clients.
+         * While this does share quite a bit of copy&paste with above, it is
+         * seperated intentionally, to keep the code for the setuid use case
+         * above as simple as possible. */
+        int haveclient = 0;
+        int clientprio = 0;
+        fd_set fds;
+        
+        while (1) {
+            FD_ZERO(&fds);
+            FD_SET(sockfd, &fds);
+            if (haveclient) {
+                FD_SET(connfd, &fds);
+            }
+            if (select(FD_SETSIZE, &fds, NULL, NULL, NULL) < 0) {
+                syslog(LOG_ERR, "exiting due to error on select().");
+                exit(EXIT_FAILURE);
+            }
+            if (haveclient) {
+                if (FD_ISSET(connfd, &fds)) { /* data (or an error) from our client */
+                    ret = read(connfd, (void*) &dRecord, sizeof(AccessDataRecord));
+            
+                    if (ret < 0)
+                    {
+                        syslog(LOG_ERR, "ERROR - [%s:%d] read from client failed  - %s \n", __FILE__, __LINE__, strerror(errno));
+                        kill_client();
+                        haveclient = 0;
+                    }
+                    else if (ret == 0)
+                    {
+                        syslog(LOG_ERR, "ERROR - [%s:%d] zero read", __FILE__, __LINE__);
+                        kill_client();
+                        haveclient = 0;
+                    }
+                    else if (ret != sizeof(AccessDataRecord))
+                    {
+                        syslog(LOG_ERR, "ERROR - [%s:%d] unaligned read", __FILE__, __LINE__);
+                        kill_client();
+                        haveclient = 0;
+                    }
+            
+                    if (dRecord.type == DAEMON_READ)
+                    {
+                        msr_read(&dRecord);
+                    }
+                    else if (dRecord.type == DAEMON_WRITE)
+                    {
+                        msr_write(&dRecord);
+                        dRecord.data = 0x0ULL;
+                    }
+                    else if (dRecord.type == DAEMON_MARK_CLIENT_LOWPRIO)
+                    {
+                        clientprio = 20;
+                    }
+                    else if (dRecord.type == DAEMON_EXIT)
+                    {
+                        kill_client();
+                        haveclient = 0;
+                        clientprio = 0;
+                    }
+                    else
+                    {
+                        syslog(LOG_ERR, "unknown msr access type  %d", dRecord.type);
+                        dRecord.errorcode = ERR_UNKNOWN;
+                    }
+                    if (connfd > 0) { /* Still >0? we might have lost the client above. */
+                        if (write(connfd, (void*) &dRecord, sizeof(AccessDataRecord)) < 0) {
+                            syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno));
+                            kill_client();
+                        }
+                    }
+                }
+            }
+            if (FD_ISSET(sockfd, &fds)) { /* new connection */
+                int newconnfd = accept(sockfd, (SA*) &addr1, &socklen);
+                if (newconnfd < 0) {
+                    syslog(LOG_ERR, "error on accept() - ignoring");
+                } else {
+                    if (haveclient) { /* Check if the old client can be dropped */
+                        if (clientprio > 0) {
+                            kill_client();
+                            /* FIXME reset MSR state? */
+                            connfd = newconnfd;
+                            clientprio = 0;
+                        } else { /* it cannot, so drop the new client. */
+                            memset(&dRecord, 0, sizeof(dRecord));
+                            dRecord.errorcode = ERR_DAEMONBUSY;
+                            EXIT_IF_ERROR(write(newconnfd, (void*) &dRecord, sizeof(AccessDataRecord)), write failed);
+                            EXIT_IF_ERROR(close(newconnfd), close failed);
+                        }
+                    } else {
+                        connfd = newconnfd;
+                        haveclient = 1;
+                        clientprio = 0;
+                    }
+                }
+            }
+        }
     }
-
+    
     /* never reached */
     return EXIT_SUCCESS;
 }

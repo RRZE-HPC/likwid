@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -71,10 +71,10 @@ int main (int argc, char** argv)
         {
             case 'h':
                 HELP_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case 'v':
                 VERSION_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
             case 'c':
                 if (! (argString = bSecureInput(10,optarg)))
                 {
@@ -99,14 +99,11 @@ int main (int argc, char** argv)
                 return EXIT_FAILURE;
             default:
                 HELP_MSG;
-                exit (EXIT_SUCCESS);
+                exit (EXIT_SUCCESS);    
         }
     }
 
-    if (cpuid_init() == EXIT_FAILURE)
-    {
-        ERROR_PLAIN_PRINT(Unsupported processor!);
-    }
+    cpuid_init();
     numa_init();
 
     if (domainId < 0) 

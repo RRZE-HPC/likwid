@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -130,7 +130,7 @@ allocator_allocateVector(
 
     printf("Allocate: Process running on core %d - Vector length %llu Offset %d\n",
             affinity_processGetProcessorId(),
-            LLU_CAST size,
+            size,
             offset);
 
     switch ( type )

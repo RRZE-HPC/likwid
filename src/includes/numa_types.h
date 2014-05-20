@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -38,7 +38,6 @@ typedef struct {
     uint64_t freeMemory;
     int numberOfProcessors;
     uint32_t*  processors;
-    uint32_t*  processorsCompact;
     int numberOfDistances;
     uint32_t*  distances;
 } NumaNode;

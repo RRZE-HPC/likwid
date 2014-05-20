@@ -24,7 +24,10 @@ main()
         c[i] = (double) i;
     }
 
-    LIKWID_MARKER_INIT;
+#ifdef PERFMON
+    printf("Using likwid\n");
+    likwid_markerInit(numberOfThreads,numberOfRegions);
+#endif
 
 #pragma omp parallel for num_threads(num_tasks) 
         for (int task = 0; task<num_dels+1; task++) { 
@@ -36,7 +39,9 @@ main()
                     CPU_SET(...) 
                     sched_setaffinity(0, sizeof(cpu_set_t), &set); 
 
+                    struct marker_t m = markerStart(); 
                     /**... work ...**/ 
+                    markerStop(m, regionId); 
                 } //barrier 
 
                 /**...unmeasured work **/ 
@@ -46,10 +51,14 @@ main()
                 CPU_SET(...) 
                 sched_setaffinity(0, sizeof(cpu_set_t), &set); 
 
+                struct marker_t m = markerStart(); 
                 /**... work... **/ 
+                markerStop(m, regionId); 
             } 
         } 
 
-    LIKWID_MARKER_CLOSE;
+#ifdef PERFMON
+    likwid_markerClose();
+#endif
     printf( "OK, dofp result = %e\n", sum);
 }

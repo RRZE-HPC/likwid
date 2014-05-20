@@ -7,7 +7,6 @@ UPMC2  UNC_LINK_TRANSMIT_BW_L2_USE
 UPMC3  UNC_LINK_TRANSMIT_BW_L3_USE
 
 METRICS
-Runtime (RDTSC) [s] time
 Link bandwidth L0 [MBytes/s]  1.0E-06*UPMC0*4.0/time
 Link bandwidth L1 [MBytes/s]  1.0E-06*UPMC1*4.0/time
 Link bandwidth L2 [MBytes/s]  1.0E-06*UPMC2*4.0/time

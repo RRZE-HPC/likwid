@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -43,7 +43,6 @@
 
 static int daemon_run = 0;
 static bstring eventString;
-static TimerData timeData;
 
 
 void
@@ -60,16 +59,13 @@ daemon_start(struct timespec interval)
 {
     daemon_run = 1;
     perfmon_startCounters();
-    timer_start(&timeData);
 
     while (1)
     {
         if (daemon_run)
         {
-            timer_stop(&timeData);
             perfmon_readCounters();
-            perfmon_logCounterResults( timer_print(&timeData) );
-            timer_start(&timeData);
+            perfmon_logCounterResults((double) interval.tv_sec + (double) interval.tv_nsec * 1.0E-9 );
         }
         nanosleep( &interval, NULL);
     }
@@ -95,7 +91,7 @@ daemon_interrupt(int sig)
     }
     else
     {
-        perfmon_setupEventSet(eventString, NULL);
+        perfmon_setupEventSet(eventString);
         perfmon_startCounters();
         daemon_run = 1;
         printf("DAEMON:  START\n");

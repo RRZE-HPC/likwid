@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -34,8 +34,6 @@
 
 #include <types.h>
 
-extern uint64_t field64(uint64_t value, int start, int length);
-extern uint32_t field32(uint32_t value, int start, int length);
 extern uint32_t extractBitField(uint32_t inField, uint32_t width, uint32_t offset);
 extern uint32_t getBitFieldWidth(uint32_t number);
 
@@ -43,28 +41,5 @@ extern uint32_t getBitFieldWidth(uint32_t number);
 #define clearBit(reg,bit) (reg) &= ~(1ULL<<(bit))
 #define toggleBit(reg,bit) (reg) ^= (1ULL<<(bit))
 #define testBit(reg,bit) (reg) & (1ULL<<(bit))
-
-#define bitMask_init(_mask)  \
-    (_mask).mask[0] = 0ULL; \
-    (_mask).mask[1] = 0ULL;
-
-#define bitMask_set(_mask,_bit)  \
-{ \
-    int pos = _bit/64; \
-    int shift = _bit-(pos*64); \
-    setBit((_mask).mask[pos],shift); \
-}
-
-#define bitMask_test(_res,_mask,_bit)  \
-{ \
-    _res = 0LLU; \
-    int pos = _bit/64; \
-    int shift = _bit-(pos*64); \
-    _res = testBit((_mask).mask[pos],shift); \
-}
-
-#define bitMask_toString(_string,_mask)  \
-    sprintf(_string,"%llX %llX", LLU_CAST (_mask).mask[0], LLU_CAST (_mask).mask[1]);
-
 
 #endif /*BITUTIL_H*/

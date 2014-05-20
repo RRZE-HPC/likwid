@@ -7,8 +7,7 @@ PMC0  BR_INST_RETIRED_ANY
 PMC1  BR_INST_RETIRED_MISPRED
 
 METRICS
-Runtime (RDTSC) [s] time
-Runtime unhalted [s] FIXC1*inverseClock
+Runtime [s] FIXC1*inverseClock
 CPI  FIXC1/FIXC0
 Branch rate   PMC0/FIXC0
 Branch misprediction rate  PMC1/FIXC0

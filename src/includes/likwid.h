@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -58,8 +58,7 @@ extern void likwid_markerStopRegion(const char* regionTag);
 
 /* utility routines */
 extern int  likwid_getProcessorId();
-extern int  likwid_pinProcess(int processorId);
-extern int  likwid_pinThread(int processorId);
+extern int  likwid_pin(int processorId);
 
 #ifdef __cplusplus
 }

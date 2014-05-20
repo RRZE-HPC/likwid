@@ -13,7 +13,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -47,19 +47,12 @@ typedef enum {
     PMC25, PMC26, PMC27, PMC28, PMC29, PMC30,
     PMC31, PMC32, PMC33, PMC34, PMC35, PMC36,
     PMC37, PMC38, PMC39, PMC40, PMC41, PMC42,
-    PMC43, PMC44, PMC45, PMC46, PMC47, PMC48,
-    PMC49, PMC50, PMC51, PMC52, PMC53, PMC54,
-    PMC55, PMC56, PMC57, PMC58, PMC59, PMC60,
-    PMC61, PMC62, PMC63, PMC64, PMC65, PMC66,
-    PMC67, PMC68, PMC69, PMC70, PMC71, PMC72,
-    PMC73, PMC74, PMC75, PMC76, PMC77, PMC78,
-    PMC79, PMC80, PMC81, PMC82, PMC83, PMC84,
+    PMC43, PMC44, PMC45, PMC46, PMC47,
     NUM_PMC} PerfmonCounterIndex;
 
 typedef enum {
     PMC = 0,
     FIXED,
-    THERMAL,
     UNCORE,
     MBOX0,
     MBOX1,
@@ -74,18 +67,7 @@ typedef enum {
     SBOX0,
     SBOX1,
     SBOX2,
-    CBOX0,
-    CBOX1,
-    CBOX2,
-    CBOX3,
-    CBOX4,
-    CBOX5,
-    CBOX6,
-    CBOX7,
-    CBOX8,
-    CBOX9,
-    CBOX10,
-    CBOX11,
+    CBOX,
     PBOX,
     POWER,
     NUM_UNITS} PerfmonType;
@@ -93,17 +75,11 @@ typedef enum {
 typedef struct {
     char* key;
     PerfmonCounterIndex index;
-    PerfmonType  type;
-    uint64_t  configRegister;
-    uint64_t  counterRegister;
-    uint64_t  counterRegister2;
-    PciDeviceIndex device;
 } PerfmonCounterMap;
 
 typedef struct {
     char* key;
     PerfmonGroup index;
-    int isUncore;
     char* info;
     char* config;
 } PerfmonGroupMap;
@@ -121,8 +97,12 @@ typedef struct {
 } PerfmonUnit;
 
 typedef struct {
+    PerfmonType  type;
     int       init;
-    int       id;  /* TODO id is only used for EX type processors */
+    int       id;
+    uint64_t  configRegister;
+    uint64_t  counterRegister;
+    uint64_t  counterRegister2;
     uint64_t  counterData;
 } PerfmonCounter;
 

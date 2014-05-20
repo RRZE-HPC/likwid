@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -34,7 +34,6 @@
 
 #include <stdint.h>
 
-
 typedef enum {
     PCI_R3QPI_DEVICE_LINK_0 = 0,
     PCI_R3QPI_DEVICE_LINK_1,
@@ -52,7 +51,5 @@ typedef enum {
     PCI_QPI_MISC_DEVICE_PORT_1,
     MAX_NUM_DEVICES
 } PciDeviceIndex;
-
-static short pci_DevicePresent[MAX_NUM_DEVICES] = { 0 };
 
 #endif /*PCI_TYPES_H*/

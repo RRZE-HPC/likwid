@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -48,33 +48,18 @@ tree_init(TreeNode** root, int id)
 void
 tree_print(TreeNode* nodePtr)
 {
-  int level = 0;
-
-  if (nodePtr != NULL)
-  {
-
-    TreeNode* digger;
-    TreeNode* walker;
-
-    digger = nodePtr->llink;
-
-    while (digger != NULL)
+    if (nodePtr != NULL) 
     {
-      printf("\n Level %d:\n", level++);
-      printf("%d ", digger->id);
-      walker = digger->rlink;
+        printf("%d ", nodePtr->id);
+        TreeNode* walker;    
+        walker = nodePtr->llink;
 
-      while (walker != NULL)
-      {
-        printf("%d ", walker->id);
-        walker = walker->rlink;
-      }
-
-      digger = digger->llink;
+        while (walker != NULL)
+        {
+            tree_print(walker);
+            walker = walker->rlink;
+        }
     }
-
-    printf("\n ");
-  }
 }
 
 void

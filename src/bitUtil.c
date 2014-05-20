@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -37,17 +37,6 @@
 
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
-uint64_t
-field64(uint64_t value, int start, int length)
-{
-    return (value >> start) & (~0ULL >> (64 - length));
-}
-
-uint32_t
-field32(uint32_t value, int start, int length)
-{
-    return (value >> start) & (~0U >> (32 - length));
-}
 
 uint32_t 
 extractBitField(uint32_t inField, uint32_t width, uint32_t offset)

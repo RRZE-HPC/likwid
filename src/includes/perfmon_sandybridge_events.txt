@@ -10,7 +10,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig 
+#      Copyright (C) 2012 Jan Treibig 
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -26,8 +26,6 @@
 #
 # =======================================================================================
 
-EVENT_TEMP_CORE          0x00   TMP0
-UMASK_TEMP_CORE          0x00
 
 EVENT_PWR_PKG_ENERGY          0x00   PWR0
 UMASK_PWR_PKG_ENERGY          0x00
@@ -378,33 +376,10 @@ UMASK_L2_LINES_OUT_DEMAND_CLEAN     0x01
 UMASK_L2_LINES_OUT_DEMAND_DIRTY     0x02
 UMASK_L2_LINES_OUT_PF_CLEAN   0x04
 UMASK_L2_LINES_OUT_PF_DIRTY   0x08
-UMASK_L2_LINES_OUT_DIRTY_ALL              0x0A
+UMASK_L2_LINES_OUT_DIRY_ALL              0x0A
 
 EVENT_SQ_MISC                         0xF4  PMC
 UMASK_SQ_MISC_SPLIT_LOCK              0x10
-
-EVENT_MEM_LOAD_UOPS_LLC_HIT_RETIRED               0xD2  PMC
-UMASK_MEM_LOAD_UOPS_LLC_HIT_RETIRED_XSNP_MISS              0x01
-UMASK_MEM_LOAD_UOPS_LLC_HIT_RETIRED_XSNP_HIT              0x02
-UMASK_MEM_LOAD_UOPS_LLC_HIT_RETIRED_XSNP_HITM              0x04
-UMASK_MEM_LOAD_UOPS_LLC_HIT_RETIRED_XSNP_NON              0x08
-
-EVENT_MEM_TRANS_RETIRED_LOAD_LATENCY          0xCD  PMC
-UMASK_MEM_TRANS_RETIRED_LOAD_LATENCY           0x01
-
-EVENT_MEM_LOAD_UOPS_RETIRED          0xD1  PMC
-UMASK_MEM_LOAD_UOPS_RETIRED_LLC_HIT           0x04
-UMASK_MEM_LOAD_UOPS_RETIRED_LLC_MISS           0x20
-
-EVENT_MEM_LOAD_UOPS_LLC_HIT_RETIRED          0xD2  PMC
-UMASK_MEM_LOAD_UOPS_LLC_HIT_RETIRED_XSNP_MISS           0x01
-UMASK_MEM_LOAD_UOPS_LLC_HIT_RETIRED_XSNP_HIT            0x02
-UMASK_MEM_LOAD_UOPS_LLC_HIT_RETIRED_XSNP_HITM           0x04
-UMASK_MEM_LOAD_UOPS_LLC_HIT_RETIRED_XSNP_NONE           0x08
-
-EVENT_MEM_LOAD_UOPS_LLC_MISS_RETIRED          0xD3  PMC
-UMASK_MEM_LOAD_UOPS_LLC_MISS_RETIRED_LOCAL_DRAM           0x01
-UMASK_MEM_LOAD_UOPS_LLC_MISS_RETIRED_REMOTE_DRAM            0x04
 
 EVENT_CBO_CLOCKTICKS                         0x00  CBOX
 UMASK_CBO_CLOCKTICKS                         0x00

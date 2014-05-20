@@ -4,6 +4,8 @@
  *      Filename:  perfmon_westmere.h
  *
  *      Description:  Header File of perfmon module for Westmere.
+ *                    Configures and reads out performance counters
+ *                    on x86 based architectures. Supports multi threading.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -11,7 +13,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,6 +30,14 @@
  * =======================================================================================
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+
+#include <cpuid.h>
+#include <tree.h>
+#include <bstrlib.h>
+#include <types.h>
+#include <registers.h>
 #include <perfmon_westmere_events.h>
 #include <perfmon_westmere_groups.h>
 

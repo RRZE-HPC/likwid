@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -35,15 +35,12 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
-#include <unistd.h>
-#include <sys/types.h>
 
-#include <types.h>
-#include <bitUtil.h>
 #include <bstrlib.h>
 #include <strUtil.h>
 #include <bitUtil.h>
 #include <error.h>
+#include <types.h>
 #include <timer.h>
 #include <accessClient.h>
 #include <msr.h>
@@ -53,7 +50,6 @@
 #include <affinity.h>
 #include <tree.h>
 #include <power.h>
-#include <thermal.h>
 #include <perfmon.h>
 #include <asciiTable.h>
 #include <registers.h>
@@ -61,8 +57,13 @@
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
+int perfmon_numArchEvents;
+int perfmon_numThreads;
+int perfmon_numRegions;
 int perfmon_verbose = 0;
 int perfmon_csvoutput = 0;
+PerfmonThread* perfmon_threadData;
+double** perfmon_threadState;
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -72,17 +73,12 @@ static PerfmonCounterMap* counter_map;
 static PerfmonGroupMap* group_map;
 static PerfmonGroupHelp* group_help;
 
-static TimerData timeData;
+static CyclesData timeData;
 static double rdtscTime;
 static PerfmonEventSet perfmon_set;
 static int perfmon_numGroups;
 static int perfmon_numCounters;
-static int perfmon_numArchEvents;
-static int perfmon_numThreads;
-static int perfmon_numRegions;
 static FILE* OUTSTREAM;
-static double** perfmon_threadState;
-static PerfmonThread* perfmon_threadData;
 
 static int socket_fd = -1;
 static int socket_lock[MAX_NUM_NODES];
@@ -138,13 +134,9 @@ static void initThread(int , int );
 #include <perfmon_westmereEX.h>
 #include <perfmon_nehalemEX.h>
 #include <perfmon_sandybridge.h>
-#include <perfmon_ivybridge.h>
-#include <perfmon_haswell.h>
-#include <perfmon_phi.h>
 #include <perfmon_k8.h>
 #include <perfmon_k10.h>
 #include <perfmon_interlagos.h>
-#include <perfmon_kabini.h>
 
 /* #####  EXPORTED  FUNCTION POINTERS   ################################### */
 void (*perfmon_startCountersThread) (int thread_id);
@@ -161,9 +153,11 @@ static void (*initThreadArch) (PerfmonThread *thread);
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static int getIndex (bstring reg, PerfmonCounterIndex* index)
+static int  getIndex (bstring reg, PerfmonCounterIndex* index)
 {
-    for (int i=0; i< perfmon_numCounters; i++)
+    int i;
+
+    for (i=0; i< perfmon_numCounters; i++)
     {
         if (biseqcstr(reg, counter_map[i].key))
         {
@@ -178,7 +172,9 @@ static int getIndex (bstring reg, PerfmonCounterIndex* index)
 static int
 getEvent(bstring event_str, PerfmonEvent* event)
 {
-    for (int i=0; i< perfmon_numArchEvents; i++)
+    int i;
+
+    for (i=0; i< perfmon_numArchEvents; i++)
     {
         if (biseqcstr(event_str, eventHash[i].name))
         {
@@ -186,13 +182,8 @@ getEvent(bstring event_str, PerfmonEvent* event)
 
             if (perfmon_verbose)
             {
-                fprintf(OUTSTREAM,"Found event %s : \
-                    Event_id 0x%02X Umask 0x%02X CfgBits 0x%02X Cmask 0x%02X \n",
-                        bdata( event_str),
-                        event->eventId,
-                        event->umask,
-                        event->cfgBits,
-                        event->cmask);
+                fprintf(OUTSTREAM,"Found event %s : Event_id 0x%02X Umask 0x%02X CfgBits 0x%02X Cmask 0x%02X \n",
+                        bdata(event_str), event->eventId, event->umask, event->cfgBits, event->cmask);
             }
             return TRUE;
         }
@@ -204,13 +195,16 @@ getEvent(bstring event_str, PerfmonEvent* event)
 static void
 initThread(int thread_id, int cpu_id)
 {
-    for (int i=0; i<NUM_PMC; i++)
+    int i;
+
+    for (i=0; i<NUM_PMC; i++)
     {
         perfmon_threadData[thread_id].counters[i].init = FALSE;
     }
 
     perfmon_threadData[thread_id].processorId = cpu_id;
     initThreadArch(&perfmon_threadData[thread_id]);
+
 }
 
 struct cbsScan{
@@ -283,7 +277,7 @@ readMarkerFile(bstring filename, LikwidResults** resultsRef)
     FILE * fp;
     LikwidResults* results = *resultsRef;
 
-    if (NULL != (fp = fopen (bdata(filename), "r")))
+    if (NULL != (fp = fopen (bdata(filename), "r"))) 
     {
         bstring src = bread ((bNread) fread, fp);
 
@@ -293,13 +287,8 @@ readMarkerFile(bstring filename, LikwidResults** resultsRef)
 
         if (numberOfThreads != perfmon_numThreads)
         {
-            fprintf(OUTSTREAM,"ERROR: \
-                Is the number of threads for likwid-perfctr equal \
-                to the number in the measured application?\n");
-
-            fprintf(OUTSTREAM,"likwid_markerInit and likwid_markerClose \
-                must be called in serial region.\n");
-
+            fprintf(OUTSTREAM,"ERROR: Is the number of threads for likwid-perfctr equal to the number in the measured application?\n");
+            fprintf(OUTSTREAM,"likwid_markerInit and likwid_markerClose must be called in serial region.\n");
             ERROR_PRINT(Number of threads %d in marker file unequal to number of threads in likwid-perfCtr %d,numberOfThreads,perfmon_numThreads);
         }
 
@@ -314,7 +303,6 @@ readMarkerFile(bstring filename, LikwidResults** resultsRef)
             {
                 results[i].time[j] = 0.0;
                 results[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
-
                 for (k=0;k<NUM_PMC; k++)
                 {
                         results[i].counters[j][k] = 0.0;
@@ -338,7 +326,9 @@ readMarkerFile(bstring filename, LikwidResults** resultsRef)
     }
 
     *resultsRef = results;
+
     bstring exeString = bformat("rm  -f %s",bdata(filename));
+
     ret = system(bdata(exeString));
 
     if (ret == EOF)
@@ -360,11 +350,9 @@ printResultTable(PerfmonResultTable * tableData)
             fprintf(OUTSTREAM, "%s%s", ((c == 0) ? "\n" : ","), tableData->header->entry[c]->data);
         }
         fprintf(OUTSTREAM, "%s", "\n");
-
         for (r = 0; r < tableData->numRows; r++) 
         {
             fprintf(OUTSTREAM, "%s", tableData->rows[r].label->data);
-
             for (c = 0; c < tableData->numColumns; c++) 
             {
                 if (!isnan(tableData->rows[r].value[c])) 
@@ -386,30 +374,38 @@ printResultTable(PerfmonResultTable * tableData)
         TableContainer* table;
         bstrList* labelStrings = NULL;
         bstring label = bfromcstr("NO");
-
+    
         table = asciiTable_allocate(tableData->numRows,
                 tableData->numColumns+1,
                 tableData->header);
         asciiTable_setOutput(OUTSTREAM);
-
+    
         labelStrings = bstrListCreate();
         bstrListAlloc(labelStrings, tableData->numColumns+1);
-
+    
         for (i=0; i<tableData->numRows; i++)
         {
             labelStrings->qty = 0;
             labelStrings->entry[0] = bstrcpy(tableData->rows[i].label);
             labelStrings->qty++;
-
+    
             for (j=0; j<(tableData->numColumns);j++)
             {
-                label = bformat("%g", tableData->rows[i].value[j]);
+                if (!isnan(tableData->rows[i].value[j]))
+                {
+                    label = bformat("%g", tableData->rows[i].value[j]);
+                }
+                else
+                {
+                    label = bformat("0");
+                }
+    
                 labelStrings->entry[1+j] = bstrcpy(label);
                 labelStrings->qty++;
             }
             asciiTable_appendRow(table,labelStrings);
         }
-
+    
         asciiTable_print(table);
         bdestroy(label);
         bstrListDestroy(labelStrings);
@@ -556,74 +552,6 @@ initStatisticTable(PerfmonResultTable* tableData,
     }
 }
 
-static void printDerivedMetricsFixed(void)
-{
-    int threadId;
-    double time = rdtscTime;
-    double inverseClock = 1.0 /(double) timer_getCpuClock();
-    PerfmonResultTable tableData;
-    int numRows;
-    int numColumns = perfmon_numThreads;
-    bstring label;
-    bstrList* fc;
-    double tmpValue;
-
-    numRows = 4;
-    INIT_BASIC;
-
-    bstrListAdd(fc,1,Runtime (RDTSC) [s]);
-    bstrListAdd(fc,2,Runtime unhalted [s]);
-    bstrListAdd(fc,3,Clock [MHz]);
-    bstrListAdd(fc,4,CPI);
-
-    initResultTable(&tableData, fc, numRows, numColumns);
-
-    for(threadId=0; threadId < perfmon_numThreads; threadId++)
-    {
-        tmpValue = time;
-        if (!isnan(tmpValue))
-        {
-            tableData.rows[0].value[threadId] = tmpValue;
-        }
-        else
-        {
-            tableData.rows[0].value[threadId] = 0.0;
-        }
-
-        tmpValue = perfmon_getResult(threadId,"FIXC1")*inverseClock;
-        if (!isnan(tmpValue))
-        {
-            tableData.rows[1].value[threadId] = tmpValue;
-        }
-        else
-        {
-            tableData.rows[1].value[threadId] = 0.0;
-        }
-
-        tmpValue = 1.E-06*(perfmon_getResult(threadId,"FIXC1")/perfmon_getResult(threadId,"FIXC2"))/inverseClock;
-        if (!isnan(tmpValue))
-        {
-            tableData.rows[2].value[threadId] = tmpValue;
-        }
-        else
-        {
-            tableData.rows[2].value[threadId] = 0.0;
-        }
-
-        tmpValue = perfmon_getResult(threadId,"FIXC1")/perfmon_getResult(threadId,"FIXC0");
-        if (!isnan(tmpValue))
-        {
-            tableData.rows[3].value[threadId] = tmpValue;
-        }
-        else
-        {
-            tableData.rows[3].value[threadId] = 0.0;
-        }
-
-    }
-    printResultTable(&tableData);
-    freeResultTable(&tableData);
-}
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -636,10 +564,12 @@ perfmon_setCSVMode(int v)
 void
 perfmon_printCounters(void)
 {
+    int i;
+
     fprintf(OUTSTREAM,"This architecture has %d counters.\n", perfmon_numCounters);
     fprintf(OUTSTREAM,"Counters names:  ");
 
-    for (int i=0; i<perfmon_numCounters; i++)
+    for (i=0; i<perfmon_numCounters; i++)
     {
         fprintf(OUTSTREAM,"%s\t",counter_map[i].key);
     }
@@ -684,39 +614,38 @@ perfmon_getResult(int threadId, char* counterString)
 void
 perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set)
 {
+    int i;
+
     set->numberOfEvents = eventSetConfig->numberOfEvents;
     set->events = (PerfmonEventSetEntry*)
         malloc(set->numberOfEvents * sizeof(PerfmonEventSetEntry));
 
-    for (int i=0; i<set->numberOfEvents; i++)
+    for (i=0; i<set->numberOfEvents; i++)
     {
         /* get register index */
         if (!getIndex(eventSetConfig->events[i].counterName,
                     &set->events[i].index))
         {
-            ERROR_PRINT(Counter register %s not supported,bdata(
-                  eventSetConfig->events[i].counterName));
+            ERROR_PRINT(Counter register %s not supported,bdata(eventSetConfig->events[i].counterName));
         }
 
         /* setup event */
         if (!getEvent(eventSetConfig->events[i].eventName,
                     &set->events[i].event))
         {
-            ERROR_PRINT(Event %s not found for current architecture,
-                bdata(eventSetConfig->events[i].eventName));
+            ERROR_PRINT(Event %s not found for current architecture,bdata(eventSetConfig->events[i].eventName));
         }
-
+        
         /* is counter allowed for event */
         if (!checkCounter(eventSetConfig->events[i].counterName,
                     set->events[i].event.limit))
         {
-            ERROR_PRINT(Register not allowed  for event  %s,
-                bdata(eventSetConfig->events[i].eventName));
+            ERROR_PRINT(Register not allowed  for event  %s, bdata(eventSetConfig->events[i].eventName));
         }
     }
 }
 
-void
+void 
 perfmon_printMarkerResults(bstring filepath)
 {
     int i;
@@ -779,10 +708,6 @@ perfmon_printMarkerResults(bstring filepath)
         {
             printDerivedMetrics(groupSet);
         }
-        else if ( cpuid_info.family == P6_FAMILY )
-        {
-            printDerivedMetricsFixed();
-        }
     }
 
     for (i=0;i<perfmon_numRegions; i++)
@@ -818,15 +743,14 @@ perfmon_logCounterResults(double time)
         for (j=0; j<perfmon_numThreads; j++)
         {
             fprintf(OUTSTREAM, "%e ",
-                    (double) (perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData) - perfmon_threadState[j][i]);
-            tmp =perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData;
-            perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData -=
-              perfmon_threadState[j][i];
+                    (double) (perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData) - perfmon_threadState[j][i]) ;
+            tmp =perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData ; 
+            perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData -= perfmon_threadState[j][i] ;
             perfmon_threadState[j][i] = tmp;
         }
         fprintf(OUTSTREAM,"\n");
     }
-
+    
     if (groupSet != _NOGROUP)
     {
         logDerivedMetrics(groupSet, time, timeStamp);
@@ -864,12 +788,9 @@ perfmon_printCounterResults()
         {
             tableData.rows[i].value[j] =
                 (double) perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData;
-            stat[i][0] +=
-                (double) perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData;
-            stat[i][1] =  MAX(stat[i][1],
-                    (double) perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData);
-            stat[i][2] =  MIN(stat[i][2],
-                    (double) perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData);
+            stat[i][0] += (double) perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData;
+            stat[i][1] =  MAX(stat[i][1],(double) perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData);
+            stat[i][2] =  MIN(stat[i][2],(double) perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData);
         }
     }
     printResultTable(&tableData);
@@ -880,11 +801,9 @@ perfmon_printCounterResults()
     if (perfmon_numThreads > 1)
     {
         initStatisticTable(&tableData, fc, numRows);
-
         for (i=0; i<numRows; i++)
         {
             stat[i][3] =  stat[i][0]/perfmon_numThreads;
-
             for (j=0; j<4; j++)
             {
                 tableData.rows[i].value[j] = stat[i][j];
@@ -898,10 +817,6 @@ perfmon_printCounterResults()
     {
         /* print derived metrics */
         printDerivedMetrics(groupSet);
-    }
-    else if ( cpuid_info.family == P6_FAMILY )
-    {
-        printDerivedMetricsFixed();
     }
 }
 
@@ -947,8 +862,10 @@ perfmon_setupEventSetC(char* eventCString, const char*** eventnames)
      return perfmon_set.numberOfEvents;
 }
 
+
+
 void
-perfmon_setupEventSet(bstring eventString, BitMask* counterMask)
+perfmon_setupEventSet(bstring eventString)
 {
     int groupId;
     StrUtilEventSet eventSetConfig;
@@ -958,54 +875,18 @@ perfmon_setupEventSet(bstring eventString, BitMask* counterMask)
     if (groupSet == _NOGROUP)
     {
         /* eventString is a custom eventSet */
-        /* append fixed counters for Intel processors */
-#ifndef LIKWID_PROFILE_COUNTER_READ
-        if ( cpuid_info.family == P6_FAMILY )
-        {
-            bcatcstr(eventString,
-                    ",INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,CPU_CLK_UNHALTED_REF:FIXC2");
-        }
-#endif
         bstr_to_eventset(&eventSetConfig, eventString);
     }
     else
     {
-        if ( group_map[groupId].isUncore )
-        {
-            if ( (cpuid_info.model == SANDYBRIDGE_EP) ||
-                    (cpuid_info.model == IVYBRIDGE_EP))
-            {
-                
-                fprintf(OUTSTREAM,"Measuring group %s\n", group_map[groupId].key);
-				/* eventString is a group */
-				eventString = bfromcstr(group_map[groupId].config);
-				bstr_to_eventset(&eventSetConfig, eventString);
-            }
-            else
-            {
-            	ERROR_PLAIN_PRINT(Uncore not supported on Desktop processors!);
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        
+        fprintf(OUTSTREAM,"Measuring group %s\n", group_map[groupId].key);
+        /* eventString is a group */
+        eventString = bfromcstr(group_map[groupId].config);
+        bstr_to_eventset(&eventSetConfig, eventString);
     }
 
     perfmon_initEventSet(&eventSetConfig, &perfmon_set);
     perfmon_setupCounters();
-
-    if ( counterMask != NULL )
-    {
-        bitMask_init((*counterMask));
-        /* Extract counter mask from first thread */
-        for (int index=0; index<perfmon_numCounters; index++)
-        {
-            if ( perfmon_threadData[0].counters[index].init == TRUE )
-            {
-                bitMask_set((*counterMask),index);
-            }
-        }
-    }
 }
 
 
@@ -1026,16 +907,12 @@ perfmon_setupCounters()
 void
 perfmon_startCounters(void)
 {
-#ifdef LIKWID_PROFILE_COUNTER_READ
-    printf("Profile: Start reading counters\n");
-    fflush(stdout);
-#endif
     for (int i=0;i<perfmon_numThreads;i++)
     {
         perfmon_startCountersThread(i);
     }
 
-    timer_start(&timeData);
+    timer_startCycles(&timeData);
 }
 
 void
@@ -1043,17 +920,14 @@ perfmon_stopCounters(void)
 {
     int i;
 
-    timer_stop(&timeData);
+    timer_stopCycles(&timeData);
 
     for (i=0;i<perfmon_numThreads;i++)
     {
         perfmon_stopCountersThread(i);
     }
-#ifdef LIKWID_PROFILE_COUNTER_READ
-    printf("Profile: Done reading counters\n");
-    fflush(stdout);
-#endif
-    rdtscTime = timer_print(&timeData);
+
+    rdtscTime = timer_printCyclesTime(&timeData);
 }
 
 void
@@ -1077,20 +951,8 @@ perfmon_printAvailableGroups()
 
     for(i=0; i<perfmon_numGroups; i++)
     {
-        if ( group_map[i].isUncore )
-        {
-            if ( (cpuid_info.model == SANDYBRIDGE_EP) ||
-                    (cpuid_info.model == IVYBRIDGE_EP))
-            {
-                fprintf(OUTSTREAM,"%s: %s\n",group_map[i].key,
-                        group_map[i].info);
-            }
-        }
-        else
-        {
-            fprintf(OUTSTREAM,"%s: %s\n",group_map[i].key,
-                    group_map[i].info);
-        }
+        fprintf(OUTSTREAM,"%s: %s\n",group_map[i].key,
+                group_map[i].info);
     }
 }
 
@@ -1116,12 +978,7 @@ perfmon_printGroupHelp(bstring group)
 void
 perfmon_init(int numThreads_local, int threads[], FILE* outstream)
 {
-    if (!lock_check())
-    {
-        fprintf(stderr,"Access to performance counters is locked.\n");
-        exit(EXIT_FAILURE);
-    }
-
+    int i;
     perfmon_numThreads = numThreads_local;
     perfmon_threadData = (PerfmonThread*)
         malloc(perfmon_numThreads * sizeof(PerfmonThread));
@@ -1129,7 +986,7 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
     perfmon_threadState = (double**)
         malloc(perfmon_numThreads * sizeof(double*));
 
-    for (int i=0; i<perfmon_numThreads; i++)
+    for (i=0; i<perfmon_numThreads; i++)
     {
         perfmon_threadState[i] = (double*)
             malloc(NUM_PMC * sizeof(double));
@@ -1146,11 +1003,11 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
 
     msr_init(socket_fd);
 
-    switch ( cpuid_info.family )
+    switch ( cpuid_info.family ) 
     {
         case P6_FAMILY:
 
-            switch ( cpuid_info.model )
+            switch ( cpuid_info.model ) 
             {
                 case PENTIUM_M_BANIAS:
 
@@ -1172,12 +1029,6 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_pm;
                     perfmon_setupCounterThread = perfmon_setupCounterThread_pm;
                     break;
-
-                case ATOM_45:
-
-                case ATOM_32:
-
-                case ATOM_22:
 
                 case ATOM:
 
@@ -1274,8 +1125,6 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
 
                 case NEHALEM_LYNNFIELD:
 
-                    thermal_init(0);
-
                     eventHash = nehalem_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsNehalem;
 
@@ -1296,10 +1145,8 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
                     break;
 
                 case NEHALEM_WESTMERE_M:
-
+                    
                 case NEHALEM_WESTMERE:
-
-                    thermal_init(0);
 
                     eventHash = westmere_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsWestmere;
@@ -1320,71 +1167,14 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
                     perfmon_setupCounterThread = perfmon_setupCounterThread_nehalem;
                     break;
 
-                case IVYBRIDGE:
-
-                case IVYBRIDGE_EP:
-
-                    power_init(0); /* FIXME Static coreId is dangerous */
-                    thermal_init(0);
-                    pci_init(socket_fd); 
-
-                    eventHash = ivybridge_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsIvybridge;
-
-                    group_map = ivybridge_group_map;
-                    group_help = ivybridge_group_help;
-                    perfmon_numGroups = perfmon_numGroupsIvybridge;
-
-                    counter_map = ivybridge_counter_map;
-                    perfmon_numCounters = perfmon_numCountersIvybridge;
-
-                    initThreadArch = perfmon_init_ivybridge;
-                    printDerivedMetrics = perfmon_printDerivedMetricsIvybridge;
-                    logDerivedMetrics = perfmon_logDerivedMetricsIvybridge;
-                    perfmon_startCountersThread = perfmon_startCountersThread_ivybridge;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_ivybridge;
-                    perfmon_readCountersThread = perfmon_readCountersThread_ivybridge;
-                    perfmon_setupCounterThread = perfmon_setupCounterThread_ivybridge;
-                    break;
-
-                case HASWELL:
-
-                case HASWELL_EX:
-
-                case HASWELL_M1:
-
-                case HASWELL_M2:
-
-                    power_init(0); /* FIXME Static coreId is dangerous */
-                    thermal_init(0);
-
-                    eventHash = haswell_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsHaswell;
-
-                    group_map = haswell_group_map;
-                    group_help = haswell_group_help;
-                    perfmon_numGroups = perfmon_numGroupsHaswell;
-
-                    counter_map = haswell_counter_map;
-                    perfmon_numCounters = perfmon_numCountersHaswell;
-
-                    initThreadArch = perfmon_init_haswell;
-                    printDerivedMetrics = perfmon_printDerivedMetricsHaswell;
-                    logDerivedMetrics = perfmon_logDerivedMetricsHaswell;
-                    perfmon_startCountersThread = perfmon_startCountersThread_haswell;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_haswell;
-                    perfmon_readCountersThread = perfmon_readCountersThread_haswell;
-                    perfmon_setupCounterThread = perfmon_setupCounterThread_haswell;
-                    break;
-
                 case SANDYBRIDGE:
-
+                    
                 case SANDYBRIDGE_EP:
 
                     power_init(0); /* FIXME Static coreId is dangerous */
-                    thermal_init(0);
-                    pci_init(socket_fd);
-
+#ifdef SNB_UNCORE
+                    pci_init(socket_fd); 
+#endif
                     eventHash = sandybridge_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsSandybridge;
 
@@ -1402,37 +1192,6 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_sandybridge;
                     perfmon_readCountersThread = perfmon_readCountersThread_sandybridge;
                     perfmon_setupCounterThread = perfmon_setupCounterThread_sandybridge;
-                    break;
-
-                default:
-                    ERROR_PLAIN_PRINT(Unsupported Processor);
-                    break;
-            }
-            break;
-
-        case MIC_FAMILY:
-
-            switch ( cpuid_info.model )
-            {
-                case XEON_PHI:
-
-                    eventHash = phi_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsPhi;
-
-                    group_map = phi_group_map;
-                    group_help = phi_group_help;
-                    perfmon_numGroups = perfmon_numGroupsPhi;
-
-                    counter_map = phi_counter_map;
-                    perfmon_numCounters = perfmon_numCountersPhi;
-
-                    initThreadArch = perfmon_init_phi;
-                    printDerivedMetrics = perfmon_printDerivedMetricsPhi;
-                    logDerivedMetrics = perfmon_logDerivedMetricsPhi;
-                    perfmon_startCountersThread = perfmon_startCountersThread_phi;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_phi;
-                    perfmon_readCountersThread = perfmon_readCountersThread_phi;
-                    perfmon_setupCounterThread = perfmon_setupCounterThread_phi;
                     break;
 
                 default:
@@ -1501,25 +1260,6 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
             perfmon_setupCounterThread = perfmon_setupCounterThread_interlagos;
             break;
 
-        case K16_FAMILY:
-            eventHash = kabini_arch_events;
-            perfmon_numArchEvents = perfmon_numArchEventsKabini;
-
-            group_map = kabini_group_map;
-            group_help = kabini_group_help;
-            perfmon_numGroups = perfmon_numGroupsKabini;
-
-            counter_map = kabini_counter_map;
-            perfmon_numCounters = perfmon_numCountersKabini;
-
-            initThreadArch = perfmon_init_kabini;
-            printDerivedMetrics = perfmon_printDerivedMetricsKabini;
-            logDerivedMetrics = perfmon_logDerivedMetricsKabini;
-            perfmon_startCountersThread = perfmon_startCountersThread_kabini;
-            perfmon_stopCountersThread = perfmon_stopCountersThread_kabini;
-            perfmon_readCountersThread = perfmon_readCountersThread_kabini;
-            perfmon_setupCounterThread = perfmon_setupCounterThread_kabini;
-           break;
 
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);
@@ -1527,7 +1267,7 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
     }
 
 
-    for (int i=0; i<perfmon_numThreads; i++)
+    for (i=0; i<perfmon_numThreads; i++) 
     {
         initThread(i,threads[i]);
     }

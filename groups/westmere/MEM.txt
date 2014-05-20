@@ -1,9 +1,8 @@
-SHORT Main memory bandwidth
+SHORT Main memory bandwidth in MBytes/s
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
-FIXC2 CPU_CLK_UNHALTED_REF
 UPMC0  UNC_QMC_NORMAL_READS_ANY
 UPMC1  UNC_QMC_WRITES_FULL_ANY
 UPMC2 UNC_QHL_REQUESTS_REMOTE_READS
@@ -11,12 +10,9 @@ UPMC3 UNC_QHL_REQUESTS_LOCAL_READS
 UPMC4 UNC_QHL_REQUESTS_REMOTE_WRITES 
 
 METRICS
-Runtime (RDTSC) [s] time
-Runtime unhalted [s] FIXC1*inverseClock
-Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+Runtime [s] FIXC1*inverseClock
 CPI  FIXC1/FIXC0
 Memory bandwidth [MBytes/s] 1.0E-06*(UPMC0+UPMC1)*64/time
-Memory data volume [GBytes] 1.0E-09*(UPMC0+UPMC1)*64
 Remote Read BW [MBytes/s] 1.0E-06*(UPMC2)*64/time
 Remote Write BW [MBytes/s] 1.0E-06*(UPMC4)*64/time
 Remote BW [MBytes/s] 1.0E-06*(UPMC2+UPMC4)*64/time
@@ -24,14 +20,12 @@ Remote BW [MBytes/s] 1.0E-06*(UPMC2+UPMC4)*64/time
 LONG
 Formulas:
 Memory bandwidth [MBytes/s] = 1.0E-06*(UNC_QMC_NORMAL_READS_ANY+UNC_QMC_WRITES_FULL_ANY)*64/time
-Memory data volume [GBytes] = 1.0E-09*(UNC_QMC_NORMAL_READS_ANY+UNC_QMC_WRITES_FULL_ANY)*64
 Remote Read BW [MBytes/s] =  1.0E-06*(UNC_QHL_REQUESTS_REMOTE_READS)*64/time;
 Remote Write BW [MBytes/s] 1.0E-06*(UNC_QHL_REQUESTS_REMOTE_WRITES)*64/time
-Remote BW [MBytes/s] 1.0E-06*(UNC_QHL_REQUESTS_REMOTE_READS+UNC_QHL_REQUESTS_REMOTE_WRITES)*64/time
+Remote Write BW [MBytes/s] 1.0E-06*(UNC_QHL_REQUESTS_REMOTE_READS+UNC_QHL_REQUESTS_REMOTE_WRITES)*64/time
 -
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
-This group will be measured by one core per socket. The Remote  Read BW  tells
-you if cachelines are transfered between sockets, meaning that cores access
-data owned by a remote NUMA domain. The group also reports total data volume
-transfered from main memory.
+This group will be measured by one core per socket. The Remote  Read BW  tells you if
+cachelines are transfered between sockets, meaning that cores access data owned by a remote
+NUMA domain.
 

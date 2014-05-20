@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2012 Jan Treibig 
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -38,7 +38,6 @@
 #include <accessClient_types.h>
 #include <pci_types.h>
 #include <power_types.h>
-#include <thermal_types.h>
 #include <strUtil_types.h>
 #include <test_types.h>
 #include <barrier_types.h>
@@ -56,10 +55,6 @@
 #include <numa_types.h>
 
 
-typedef struct {
-    uint64_t mask[2];
-} BitMask;
-
 /* #####   EXPORTED MACROS   ############################################## */
 
 #ifndef MIN
@@ -69,10 +64,8 @@ typedef struct {
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #endif
 
-#ifndef GLIB_MAJOR_VERSION
 #define TRUE  1
 #define FALSE 0
-#endif
 
 #define HLINE "-------------------------------------------------------------\n"
 #define SLINE "*************************************************************\n"
