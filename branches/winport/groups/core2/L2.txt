@@ -1,0 +1,27 @@
+SHORT L2 cache bandwidth in MBytes/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+PMC0  L1D_REPL
+PMC1  L1D_M_EVICT
+
+METRICS
+Runtime [s] FIXC1*inverseClock
+CPI  FIXC1/FIXC0
+L2 Load [MBytes/s] 1.0E-06*PMC0*64.0/time
+L2 Evict [MBytes/s] 1.0E-06*PMC1*64.0/time
+L2 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
+
+LONG
+Formulas:
+L2 Load [MBytes/s] = 1.0E-06*L1D_REPL*64/time
+L2 Evict [MBytes/s] = 1.0E-06*L1D_M_EVICT*64/time
+L2 bandwidth [MBytes/s] = 1.0E-06*(L1D_REPL+L1D_M_EVICT)*64/time
+-
+Profiling group to measure L2 cache bandwidth. The bandwidth is
+computed by the number of cacheline allocated in the L1 and the 
+number of modified cachelines evicted from the L1. 
+Note that this bandwidth also includes data transfers due to a
+write allocate load on a store miss in L1.
+

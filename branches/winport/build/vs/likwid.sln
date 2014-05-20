@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "likwid-topology", "likwid-topology\likwid-topology.vcxproj", "{CB00EA80-AC15-4F30-A005-B9FEF24EBCD1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "likwid-pin", "likwid-pin\likwid-pin.vcxproj", "{6EE13064-8777-42AF-9001-7BC65104FF62}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "executePinned_clientDll", "executePinned_clientDll\executePinned_clientDll.vcxproj", "{1C655478-424A-46D4-9899-41BADBB0D9EB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CB00EA80-AC15-4F30-A005-B9FEF24EBCD1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CB00EA80-AC15-4F30-A005-B9FEF24EBCD1}.Debug|Win32.Build.0 = Debug|Win32
+		{CB00EA80-AC15-4F30-A005-B9FEF24EBCD1}.Release|Win32.ActiveCfg = Release|Win32
+		{CB00EA80-AC15-4F30-A005-B9FEF24EBCD1}.Release|Win32.Build.0 = Release|Win32
+		{6EE13064-8777-42AF-9001-7BC65104FF62}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6EE13064-8777-42AF-9001-7BC65104FF62}.Debug|Win32.Build.0 = Debug|Win32
+		{6EE13064-8777-42AF-9001-7BC65104FF62}.Release|Win32.ActiveCfg = Release|Win32
+		{6EE13064-8777-42AF-9001-7BC65104FF62}.Release|Win32.Build.0 = Release|Win32
+		{1C655478-424A-46D4-9899-41BADBB0D9EB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1C655478-424A-46D4-9899-41BADBB0D9EB}.Debug|Win32.Build.0 = Debug|Win32
+		{1C655478-424A-46D4-9899-41BADBB0D9EB}.Release|Win32.ActiveCfg = Release|Win32
+		{1C655478-424A-46D4-9899-41BADBB0D9EB}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

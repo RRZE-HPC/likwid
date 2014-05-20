@@ -1,0 +1,20 @@
+SHORT  Cycles per instruction
+
+EVENTSET
+PMC0  INSTRUCTIONS_RETIRED
+PMC1  CPU_CLOCKS_UNHALTED
+PMC2  UOPS_RETIRED
+
+METRICS
+Runtime [s]  PMC1*inverseClock
+CPI   PMC1/PMC0
+CPI (based on uops)   PMC1/PMC2
+IPC   PMC0/PMC1
+
+LONG
+This group measures how efficient the processor works with
+regard to instruction throughput. Also important as a standalone
+metric is INSTRUCTIONS_RETIRED as it tells you how many instruction
+you need to execute for a task. An optimization might show very
+low CPI values but execute many more instruction for it.
+

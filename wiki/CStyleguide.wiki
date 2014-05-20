@@ -1,0 +1,165 @@
+#summary C style guide for likwid.
+#labels Phase-Implementation
+
+<wiki:toc max_depth="2" />
+
+Initial version of a C style guide for likwid.
+
+= Files =
+
+== C1  File organization ==
+
+   # Include files always have the file name extension ".h".
+   # Implementation files always have the file name extension ".c".
+   # Machine dependent code has to be placed in a separate file.
+   # Modules shall be named all lowercase according to the module name.
+   # Source and belonging header files shall have the same name.
+   # Type definitions shall be declared in a file named `modulename_types.h`.
+   # All type headers are included wrapped by a single header file `types.h` .
+
+== C2  File structure ==
+
+   # Every source file shall have the following structure:
+       * File Header
+       * System Includes
+       * Local Includes
+       * Macro Definitions
+       * Local Type Definitions
+       * Local Function Prototypes
+       * Global Constant Definitions
+       * Global Variable Definitions
+       * Module Constant Definitions
+       * Module Variable Definitions
+       * Global and local Function Definitions
+
+   # Every header file shall have the following structure:
+       * File Header
+       * System Includes
+       * Local Includes
+       * Macro Definitions
+       * Type Definitions
+       * Global Constant Declarations
+       * Global Variable Declarations
+       * Global Function Declarations
+
+   # The source/header file header shall be as follows
+
+ {{{
+    ===========================================================================
+    
+         Filename:  test.c
+    
+         Description:  Implementation of test module.
+    
+         Version:  <VERSION>
+         Created:  <DATE>
+    
+         Author:  Jan Treibig (jt), jan.treibig@gmail.com
+         Company:  RRZE Erlangen
+         Project:  likwid
+         Copyright:  Copyright (c) 2010, Jan Treibig
+    
+         This program is free software; you can redistribute it and/or modify
+         it under the terms of the GNU General Public License, v2, as
+         published by the Free Software Foundation
+        
+         This program is distributed in the hope that it will be useful,
+         but WITHOUT ANY WARRANTY; without even the implied warranty of
+         MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+         GNU General Public License for more details.
+        
+         You should have received a copy of the GNU General Public License
+         along with this program; if not, write to the Free Software
+         Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    
+    ===========================================================================
+ }}}
+
+   # The public API and all enums, structs or typedefs shall be documented using doxygen.
+
+
+= Code =
+
+== C3  Code formatting ==
+
+   # Maximum line length is 78 characters.
+   # Language for specifiers and comments is in US English only.
+   # Braces enclosing a block are to be placed in the same column, on separate lines directly before and after the block.
+   # Comments shall use `/*  */` .
+   # After an opening brace the code is indented.
+   # Indent depth is always 4.
+   # Indent is always using spaces, **NO** tabs.
+   # The flow control primitives if, else, while, for and do should always be followed by a block.
+   # The dereference operator `*` and the address-of operator `&` should be directly connected with the type names in declarations and definitions.
+   # Every declaration has to be a separate statement.
+   # Do not use spaces around `.` or `->`, nor between unary operators and operands.
+   # Put spaces around binary operators and operands.
+   # Every statement shall be on a separate line.
+ 
+Example:
+{{{
+    int* source;
+
+    if (i < 0)
+    {
+        A[i] = 1;
+    }
+}}}
+
+=== C3.A Functions ===
+
+   # Always provide the return type of a function explicitly.
+   # When declaring functions, the leading parenthesis and the first argument  are to be written on the same line as the function name.
+   # Other arguments and the closing parenthesis have be written on the same line as the function name.
+   # If not all arguments fit in one line each additional argument is to be written on a separate line (with the closing parenthesis directly after the last argument).
+   # In a function definition, the return type of the function should be written on a separate line directly above the function name.
+   # Always write the left parenthesis directly after a function name.
+
+Example:
+{{{
+    void testFunction( int, double*, double);
+
+    void
+    testFunction( int i,
+                  double* A,
+                  double* B,
+                  double* C,
+                  int size)
+    {
+}}}
+
+== C4  Naming conventions ==
+
+   # The identifier of every globally symbol has to begin with a prefix that is unique to the module.
+   # The module prefix consists of the uppercase module name and is separated by one underscore.
+   # The names of variables, constants, and functions are to begin with a lowercase letter.
+   # In names which consist of more than one word, the words are written together and each word that follows is begun with an uppercase letter.
+   # Apart from suffixes and prefixes Symbol names should not contain underscores.
+   # Names should not include abbreviations that are not generally accepted.
+   # The names of structures and enumerated types and their typedefs are to begin with an uppercase letter.
+   # All other typedefs shall be lowercase with a `_t` suffix.
+   # Macro names are all uppercase.
+
+
+== C6 Coding style ==
+
+   # Definitions of variables and functions are always in c files.
+   # The visibility of variables and types has to be as restricted as possible.
+   # Every global function prototypes must be declared with `extern` in include files.
+   # Local function prototypes are declared with `static` in c files.
+   # No argument names shall be specified in prototypes.
+   # A function without argument shall explicitly use void in the argument list.
+
+=== C6.A Include files ===
+
+   # Every include file must contain a mechanism that prevents multiple inclusions of the file.
+   # All includes shall use the directive `#include <filename.h>`.
+   # An include directive shall not contain a path.
+
+Technique for preventing multiple inclusion of an include file:
+{{{
+    #ifndef FOO_H
+    #define FOO_H
+      /*The rest of the file*/
+    #endif /* FOO_H */
+}}}

@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6EE13064-8777-42AF-9001-7BC65104FF62}</ProjectGuid>
+    <RootNamespace>likwidpin</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)../../src/includes/;$(SolutionDir)../../../pthreads/;$(SolutionDir)../../../detours/include/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;HAVE_STRUCT_TIMESPEC;_DEBUG;_CONSOLE;VERSION=0.1;RELEASE=42;MAX_NUM_THREADS=30;MAX_NUM_SOCKETS=10;LIBLIKWIDPIN=whatsThis;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(SolutionDir)../../../detours/lib/detoured.lib;$(SolutionDir)../../../detours/lib/detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>$(SolutionDir)../../src/includes/;$(SolutionDir)../../../pthreads/;$(SolutionDir)../../../detours/include/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;HAVE_STRUCT_TIMESPEC;NDEBUG;_CONSOLE;VERSION=0.1;RELEASE=42;MAX_NUM_THREADS=30;MAX_NUM_SOCKETS=10;LIBLIKWIDPIN=whatsThis;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>$(SolutionDir)../../../detours/lib/detoured.lib;$(SolutionDir)../../../detours/lib/detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\applications\likwid-pin.c" />
+    <ClCompile Include="..\..\..\src\bstrlib.c" />
+    <ClCompile Include="..\..\..\src\cpuid.c" />
+    <ClCompile Include="..\..\..\src\domains.c" />
+    <ClCompile Include="..\..\..\src\osdep\affinitymask.c" />
+    <ClCompile Include="..\..\..\src\osdep\likCreateProcessWithDll_win.c" />
+    <ClCompile Include="..\..\..\src\osdep\executePinned_host.c" />
+    <ClCompile Include="..\..\..\src\osdep\windowsError_win.c" />
+    <ClCompile Include="..\..\..\src\osdep\getopt_win.c" />
+    <ClCompile Include="..\..\..\src\osdep\numOfProcessors.c" />
+    <ClCompile Include="..\..\..\src\osdep\affinity.c" />
+    <ClCompile Include="..\..\..\src\osdep\setenv_win.c" />
+    <ClCompile Include="..\..\..\src\strUtil.c" />
+    <ClCompile Include="..\..\..\src\tree.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\includes\domains.h" />
+    <ClInclude Include="..\..\..\src\includes\domains_types.h" />
+    <ClInclude Include="..\..\..\src\includes\bstrlib.h" />
+    <ClInclude Include="..\..\..\src\includes\cpuid.h" />
+    <ClInclude Include="..\..\..\src\includes\cpuid_types.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\cpuid_asm.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\likCreateProcessWithDll_win.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\executePinned.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\execvp.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\numOfProcessors.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\affinity.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\threadid.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\windowsError_win.h" />
+    <ClInclude Include="..\..\..\src\includes\strUtil.h" />
+    <ClInclude Include="..\..\..\src\includes\strUtil_types.h" />
+    <ClInclude Include="..\..\..\src\includes\tree.h" />
+    <ClInclude Include="..\..\..\src\includes\tree_types.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

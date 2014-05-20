@@ -1,0 +1,28 @@
+SHORT  L3 cache bandwidth in MBytes/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+PMC0  L2_LINES_IN_ANY
+PMC1  L2_LINES_OUT_DEMAND_DIRTY
+
+METRICS
+Runtime [s] FIXC1*inverseClock
+CPI  FIXC1/FIXC0
+L3 Load [MBytes/s]  1.0E-06*PMC0*64.0/time
+L3 Evict [MBytes/s]  1.0E-06*PMC1*64.0/time
+L3 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
+
+LONG
+Formulas:
+L3 Load [MBytes/s]  1.0E-06*L2_LINES_IN_ANY*64/time
+L3 Evict [MBytes/s]  1.0E-06*L2_LINES_OUT_DEMAND_DIRTY*64/time
+L3 bandwidth [MBytes/s] 1.0E-06*(L2_LINES_IN_ANY+L2_LINES_OUT_DEMAND_DIRTY)*64/time
+-
+Profiling group to measure L3 cache bandwidth. The bandwidth is
+computed by the number of cacheline allocated in the L2 and the 
+number of modified cachelines evicted from the L2. 
+Note that this bandwidth also includes data transfers due to a
+write allocate load on a store miss in L2.
+Note: This group might need to be revised!
+

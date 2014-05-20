@@ -1,0 +1,21 @@
+SHORT Double Precision MFlops/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+PMC0  SIMD_COMP_INST_RETIRED_PACKED_DOUBLE
+PMC1  SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE
+
+METRICS
+Runtime [s] FIXC1*inverseClock
+CPI  FIXC1/FIXC0
+DP MFlops/s    1.0E-06*(PMC0*2.0+PMC1)/time
+
+LONG
+Formulas:
+DP MFlops/s = 1.0E-06*(SIMD_COMP_INST_RETIRED_PACKED_DOUBLE*2+SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE)/time
+-
+Profiling group to measure double SSE flops. Dont forget that your code might also execute X87 flops.
+On the number of SIMD_COMP_INST_RETIRED_PACKED_DOUBLE you can see how well your code was vectorized.
+
+

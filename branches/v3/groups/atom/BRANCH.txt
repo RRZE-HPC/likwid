@@ -1,0 +1,19 @@
+SHORT Branch prediction miss rate/ratio
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+PMC0  BR_INST_RETIRED_ANY
+PMC1  BR_INST_RETIRED_MISPRED
+
+METRICS
+Runtime [s] FIXC1*inverseClock
+CPI  FIXC1/FIXC0
+Branch rate   PMC0/FIXC0
+Branch misprediction rate  PMC1/FIXC0
+Branch misprediction ratio  PMC1/PMC0
+Instructions per branch  FIXC0/PMC0
+
+LONG
+Bla Bla
+

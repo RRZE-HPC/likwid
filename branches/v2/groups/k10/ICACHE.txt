@@ -1,0 +1,24 @@
+SHORT Instruction cache miss rate/ratio
+
+EVENTSET
+PMC0  INSTRUCTIONS_RETIRED
+PMC1  ICACHE_FETCHES
+PMC2  ICACHE_REFILLS_L2
+PMC3  ICACHE_REFILLS_MEM
+
+METRICS
+Instruction cache misses  PMC2+PMC3
+Instruction cache request rate   PMC1/PMC0
+Instruction cache miss rate    (PMC2+PMC3)/PMC0
+Instruction cache miss ratio   (PMC2+PMC3)/PMC1
+
+LONG
+Formulas:
+Instruction cache misses ICACHE_REFILLS_L2 + ICACHE_REFILLS_MEM
+Instruction cache request rate ICACHE_FETCHES / INSTRUCTIONS_RETIRED
+Instruction cache miss rate  (ICACHE_REFILLS_L2+ICACHE_REFILLS_MEM)/INSTRUCTIONS_RETIRED
+Instruction cache miss ratio (ICACHE_REFILLS_L2+ICACHE_REFILLS_MEM)/ICACHE_FETCHES
+-
+This group measures the locality of your instruction code with regard to the
+L1 I-Cache. 
+

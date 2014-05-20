@@ -1,0 +1,13 @@
+SHORT L2 Write Misses
+
+EVENTSET
+PMC0  L2_DATA_WRITE_MISS_MEM_FILL
+
+METRICS
+Runtime (RDTSC) [s] time
+RFO Data Bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
+RFO Volume [GBytes] 1.0E-09*PMC0*64.0
+
+LONG
+Bla
+

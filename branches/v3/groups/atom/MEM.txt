@@ -1,0 +1,15 @@
+SHORT Main memory bandwidth in MBytes/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+PMC0  BUS_TRANS_MEM_THIS_CORE_THIS_A
+
+METRICS
+Runtime [s] FIXC1*inverseClock
+CPI  FIXC1/FIXC0
+Memory bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
+
+LONG
+Bla Bla
+

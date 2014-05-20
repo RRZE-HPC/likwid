@@ -1,0 +1,33 @@
+SHORT L3 cache miss rate/ratio
+
+EVENTSET
+PMC0  RETIRED_INSTRUCTIONS
+UPMC0  UNC_READ_REQ_TO_L3_ALL
+UPMC1  UNC_L3_CACHE_MISS_ALL
+UPMC2  UNC_L3_LATENCY_CYCLE_COUNT
+UPMC3  UNC_L3_LATENCY_REQUEST_COUNT
+
+METRICS
+L3 request rate   UPMC0/PMC0
+L3 miss rate   UPMC1/PMC0
+L3 miss ratio   UPMC1/UPMC0
+L3 average access latency [cycles]  UPMC2/UPMC3
+
+LONG
+Formulas:
+L2 request rate = (L2_REQUESTS_ALL)/INSTRUCTIONS_RETIRED
+L2 miss rate  = L2_MISSES_ALL/INSTRUCTIONS_RETIRED
+L2 miss ratio = L2_MISSES_ALL/(L2_REQUESTS_ALL)
+-
+This group measures the locality of your data accesses with regard to the L3
+Cache. L3 request rate tells you how data intensive your code is or how many
+Data accesses you have in average per instruction.  The L3 miss rate gives a
+measure how often it was necessary to get cachelines from memory. And finally
+L3 miss ratio tells you how many of your memory references required a cacheline
+to be loaded from a higher level.  While the Data cache miss rate might be
+given by your algorithm you should try to get Data cache miss ratio as low as
+possible by increasing your cache reuse.  This group was inspired from the
+whitepaper -Basic Performance Measurements for AMD Athlon 64, AMD Opteron and
+AMD Phenom Processors- from Paul J. Drongowski.
+
+

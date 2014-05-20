@@ -1,0 +1,18 @@
+SHORT X87 MFlops/s
+
+EVENTSET
+PMC0  X87_FLOPS_RETIRED_ADD
+PMC1  X87_FLOPS_RETIRED_MULT
+PMC2  X87_FLOPS_RETIRED_DIV
+PMC3  CPU_CLOCKS_UNHALTED
+
+METRICS
+Runtime [s] PMC3*inverseClock
+X87 MFlops/s       1.0E-06*(PMC0+PMC1+PMC2)/time
+X87 Add MFlops/s    1.0E-06*PMC0/time
+X87 Mult MFlops/s   1.0E-06*PMC1/time
+X87 Div MFlops/s    1.0E-06*PMC2/time
+
+LONG
+Profiling group to measure X87 flop rates.
+

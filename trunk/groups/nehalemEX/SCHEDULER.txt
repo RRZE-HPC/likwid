@@ -1,0 +1,21 @@
+SHORT Scheduler Ports
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  UOPS_EXECUTED_PORT0
+PMC1  UOPS_EXECUTED_PORT1
+PMC2  UOPS_EXECUTED_PORT5
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+RATIO Port 1  PMC1/PMC0
+RATIO Port 5  PMC2/PMC0
+
+LONG
+Measures how many instructions were scheduled on which issue port.
+

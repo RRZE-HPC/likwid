@@ -1,0 +1,58 @@
+.TH LIKWID-FEATURES 1 <DATE> likwid\-<VERSION>
+.SH NAME
+likwid-features \- print and toggle the flags of the MSR_IA32_MISC_ENABLE model specific register
+.SH SYNOPSIS
+.B likwid-features 
+.RB [ \-vh ]
+.RB [ \-t
+.IR coreId ]
+.RB [ \-su
+.IR prefetcher_tag ]
+.SH DESCRIPTION
+.B likwid-features
+is a command line application to print the flags in the model
+specific register (MSR) MSR_IA32_MISC_ENABLE on Intel x86 processors. On Core2 processors
+it can be used to toggle the hardware prefetch flags. It does not work on AMD processors.
+For a documentation what flags are supported on which processor refer to the Intel
+Software Developer's Manual Volume 3B, Table B.2. The MSR are set individually for every core.
+The following hardware prefetchers can be toggled:
+.IP \[bu] 
+.B HW_PREFETCHER:
+Hardware prefetcher.
+.IP \[bu] 
+.B CL_PREFETCHER:
+Adjacent cache line prefetcher.
+.IP \[bu] 
+.B DCU_PREFETCHER:
+When the DCU prefetcher detects multiple loads from the same line done within a
+time limit, the DCU prefetcher assumes the next line will be required. The next
+line is prefetched in to the L1 data cache from memory or L2.
+.IP \[bu] 
+.B IP_PREFETCHER:
+The IP prefetcher is an L1 data cache prefetcher. The IP prefetcher looks for
+sequential load history to determine whether to prefetch the next expected data
+into the L1 cache from memory or L2.
+
+.SH OPTIONS
+.TP
+.B \-\^v
+prints version information to standard output, then exits.
+.TP
+.B \-\^h
+prints a help message to standard output, then exits.
+.TP
+.B \-\^t " coreId"
+set on which processor core the MSR should be read
+.TP
+.B \-\^u " HW_PREFETCHER | CL_PREFETCHER | DCU_PREFETCHER | IP_PREFETCHER"
+specify which prefetcher to unset
+.TP
+.B \-\^s " HW_PREFETCHER | CL_PREFETCHER | DCU_PREFETCHER | IP_PREFETCHER"
+specify which prefetcher to set
+
+.SH AUTHOR
+Written by Jan Treibig <jan.treibig@gmail.com>.
+.SH BUGS
+Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+.SH "SEE ALSO"
+likwid-topology(1), likwid-perfCtr(1), likwid-pin(1),

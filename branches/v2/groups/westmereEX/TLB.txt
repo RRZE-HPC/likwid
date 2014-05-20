@@ -1,0 +1,19 @@
+SHORT  TLB miss rate/ratio
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+PMC0  DTLB_MISSES_ANY
+
+METRICS
+Runtime [s] FIXC1*inverseClock
+CPI  FIXC1/FIXC0
+L1 DTLB miss rate  PMC0/FIXC0
+
+LONG
+Formulas:
+DTLB miss rate  = DTLB_MISSES_ANY / INSTR_RETIRED_ANY
+-
+The DTLB miss  rate gives a measure how often a TLB miss occured
+per instruction. 
+

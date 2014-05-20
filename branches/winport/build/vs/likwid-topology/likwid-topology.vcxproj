@@ -1,0 +1,169 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CB00EA80-AC15-4F30-A005-B9FEF24EBCD1}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>likwidtopology</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;HAVE_STRUCT_TIMESPEC;_DEBUG;_CONSOLE;VERSION=0.1;RELEASE=42;MAX_NUM_THREADS=2;MAX_NUM_SOCKETS=10;LIBLIKWIDPIN=whatsThis;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)../../src/includes;$(SolutionDir)../../../pthreads/</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;HAVE_STRUCT_TIMESPEC;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)../../src/includes;$(SolutionDir)../../../pthreads/</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\applications\likwid-topology.c" />
+    <ClCompile Include="..\..\..\src\asciiBoxes.c" />
+    <ClCompile Include="..\..\..\src\bstrlib.c" />
+    <ClCompile Include="..\..\..\src\cpuid.c" />
+    <ClCompile Include="..\..\..\src\domains.c" />
+    <ClCompile Include="..\..\..\src\osdep\affinity.c" />
+    <ClCompile Include="..\..\..\src\osdep\affinitymask.c" />
+    <ClCompile Include="..\..\..\src\osdep\getopt_win.c" />
+    <ClCompile Include="..\..\..\src\osdep\numOfProcessors.c" />
+    <ClCompile Include="..\..\..\src\osdep\rdtsc.c" />
+    <ClCompile Include="..\..\..\src\osdep\time.c" />
+    <ClCompile Include="..\..\..\src\osdep\windowsError_win.c" />
+    <ClCompile Include="..\..\..\src\strUtil.c" />
+    <ClCompile Include="..\..\..\src\timer.c" />
+    <ClCompile Include="..\..\..\src\tree.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\includes\allocator.h" />
+    <ClInclude Include="..\..\..\src\includes\asciiBoxes.h" />
+    <ClInclude Include="..\..\..\src\includes\asciiBoxes_types.h" />
+    <ClInclude Include="..\..\..\src\includes\asciiTable.h" />
+    <ClInclude Include="..\..\..\src\includes\asciiTable_types.h" />
+    <ClInclude Include="..\..\..\src\includes\barrier.h" />
+    <ClInclude Include="..\..\..\src\includes\barrier_types.h" />
+    <ClInclude Include="..\..\..\src\includes\bstrlib.h" />
+    <ClInclude Include="..\..\..\src\includes\cpuFeatures.h" />
+    <ClInclude Include="..\..\..\src\includes\cpuFeatures_types.h" />
+    <ClInclude Include="..\..\..\src\includes\cpuid.h" />
+    <ClInclude Include="..\..\..\src\includes\cpuid_types.h" />
+    <ClInclude Include="..\..\..\src\includes\domains.h" />
+    <ClInclude Include="..\..\..\src\includes\domains_types.h" />
+    <ClInclude Include="..\..\..\src\includes\libperfctr_types.h" />
+    <ClInclude Include="..\..\..\src\includes\likwid.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\affinity.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\bsr_asm.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\cpuid_asm.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\getopt.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\getopt_win.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\isnan.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\numOfProcessors.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\rdtsc_asm.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\time.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\time_win.h" />
+    <ClInclude Include="..\..\..\src\includes\osdep\windowsError_win.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_atom.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_atom_events.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_core2.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_core2_events.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_k10.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_k10_events.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_k8.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_k8_events.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_nehalem.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_nehalem_events.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_pm.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_pm_events.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_types.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_westmere.h" />
+    <ClInclude Include="..\..\..\src\includes\perfmon_westmere_events.h" />
+    <ClInclude Include="..\..\..\src\includes\rdtsc.h" />
+    <ClInclude Include="..\..\..\src\includes\registers.h" />
+    <ClInclude Include="..\..\..\src\includes\strUtil.h" />
+    <ClInclude Include="..\..\..\src\includes\strUtil_types.h" />
+    <ClInclude Include="..\..\..\src\includes\test_types.h" />
+    <ClInclude Include="..\..\..\src\includes\textcolor.h" />
+    <ClInclude Include="..\..\..\src\includes\threads.h" />
+    <ClInclude Include="..\..\..\src\includes\threads_types.h" />
+    <ClInclude Include="..\..\..\src\includes\timer.h" />
+    <ClInclude Include="..\..\..\src\includes\timer_types.h" />
+    <ClInclude Include="..\..\..\src\includes\tree.h" />
+    <ClInclude Include="..\..\..\src\includes\tree_types.h" />
+    <ClInclude Include="..\..\..\src\includes\types.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\src\includes\gen_events.pl" />
+    <None Include="..\..\..\src\includes\perfmon_atom_events.txt" />
+    <None Include="..\..\..\src\includes\perfmon_core2_events.txt" />
+    <None Include="..\..\..\src\includes\perfmon_k10_events.txt" />
+    <None Include="..\..\..\src\includes\perfmon_k8_events.txt" />
+    <None Include="..\..\..\src\includes\perfmon_nehalem_events.txt" />
+    <None Include="..\..\..\src\includes\perfmon_p6_events.txt" />
+    <None Include="..\..\..\src\includes\perfmon_pm_events.txt" />
+    <None Include="..\..\..\src\includes\perfmon_westmere_events.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

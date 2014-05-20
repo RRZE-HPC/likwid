@@ -1,0 +1,26 @@
+SHORT Main memory bandwidth in MBytes/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+UPMC0  UNC_QMC_NORMAL_READS_ANY
+UPMC1  UNC_QMC_WRITES_FULL_ANY
+UPMC2 UNC_QHL_REQUESTS_REMOTE_READS
+UPMC3 UNC_QHL_REQUESTS_LOCAL_READS 
+
+METRICS
+Runtime [s] FIXC1*inverseClock
+CPI  FIXC1/FIXC0
+Memory bandwidth [MBytes/s] 1.0E-06*(UPMC0+UPMC1)*64/time
+Remote Read BW [MBytes/s] 1.0E-06*(UPMC2)*64/time
+
+LONG
+Formulas:
+Memory bandwidth [MBytes/s] = 1.0E-06*(UNC_QMC_NORMAL_READS_ANY+UNC_QMC_WRITES_FULL_ANY)*64/time
+Remote Read BW [MBytes/s] =  1.0E-06*(UNC_QHL_REQUESTS_REMOTE_READS)*64/time;
+-
+Profiling group to measure memory bandwidth drawn by all cores of a socket.
+This group will be measured by one core per socket. The Remote  Read BW  tells you if
+cachelines are transfered between sockets, meaning that cores access data owned by a remote
+NUMA domain.
+

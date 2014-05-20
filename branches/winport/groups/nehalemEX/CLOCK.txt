@@ -1,0 +1,18 @@
+SHORT Clock of cores
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+
+METRICS
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+
+LONG
+Formulas:
+Clock [MHz]  1.E-06*(CPU_CLK_UNHALTED_CORE/CPU_CLK_UNHALTED_REF)/inverseClock
+-
+This group gives you the actual core frequency in the measured time period. This is 
+important because due to Speedstep and Turbo mode the frequency can vary significantly.
+
+

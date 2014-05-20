@@ -1,0 +1,25 @@
+SHORT Bandwidth on the Hypertransport links
+
+EVENTSET
+UPMC0  UNC_LINK_TRANSMIT_BW_L0_USE
+UPMC1  UNC_LINK_TRANSMIT_BW_L1_USE
+UPMC2  UNC_LINK_TRANSMIT_BW_L2_USE
+UPMC3  UNC_LINK_TRANSMIT_BW_L3_USE
+
+METRICS
+Link bandwidth L0 [MBytes/s]  1.0E-06*UPMC0*4.0/time
+Link bandwidth L1 [MBytes/s]  1.0E-06*UPMC1*4.0/time
+Link bandwidth L2 [MBytes/s]  1.0E-06*UPMC2*4.0/time
+Link bandwidth L3 [MBytes/s]  1.0E-06*UPMC3*4.0/time
+
+LONG
+Formulas:
+Link bandwidth L0 [MBytes/s]  1.0E-06*UNC_LINK_TRANSMIT_BW_L0_USE*4.0/time
+Link bandwidth L1 [MBytes/s]  1.0E-06*UNC_LINK_TRANSMIT_BW_L1_USE*4.0/time
+Link bandwidth L2 [MBytes/s]  1.0E-06*UNC_LINK_TRANSMIT_BW_L2_USE*4.0/time
+Link bandwidth L3 [MBytes/s]  1.0E-06*UNC_LINK_TRANSMIT_BW_L3_USE*4.0/time
+-
+Profiling group to measure the Hypertransport link bandwidth for the four links
+of a local node. This indicates the data flow between different ccNUMA nodes.
+
+

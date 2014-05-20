@@ -1,0 +1,21 @@
+SHORT Single Precision MFlops/s
+
+EVENTSET
+PMC0  SSE_RETIRED_ADD_SINGLE_FLOPS
+PMC1  SSE_RETIRED_MULT_SINGLE_FLOPS
+PMC2  CPU_CLOCKS_UNHALTED
+
+METRICS
+Runtime [s] PMC2*inverseClock
+SP MFlops/s  1.0E-06*(PMC0+PMC1)/time
+SP Add MFlops/s  1.0E-06*PMC0/time
+SP Mult MFlops/s   1.0E-06*PMC1/time
+
+LONG
+Formulas:
+SP MFlops/s = 1.0E-06*(SSE_RETIRED_ADD_SINGLE_FLOPS+SSE_RETIRED_MULT_SINGLE_FLOPS)/time
+-
+Profiling group to measure single precision SSE flops.
+Dont forget that your code might also execute X87 flops.
+
+

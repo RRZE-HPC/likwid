@@ -1,0 +1,32 @@
+SHORT Data cache miss rate/ratio
+
+EVENTSET
+PMC0  INSTRUCTIONS_RETIRED
+PMC1  DATA_CACHE_ACCESSES
+PMC2  DATA_CACHE_REFILLS_L2_ALL
+PMC3  DATA_CACHE_REFILLS_NORTHBRIDGE_ALL
+
+METRICS
+Data cache misses PMC2+PMC3
+Data cache request rate PMC1/PMC0
+Data cache miss rate (PMC2+PMC3)/PMC0
+Data cache miss ratio (PMC2+PMC3)/PMC1
+
+LONG
+Formulas:
+Data cache misses = DATA_CACHE_REFILLS_L2_AL + DATA_CACHE_REFILLS_NORTHBRIDGE_ALL
+Data cache request rate = DATA_CACHE_ACCESSES / INSTRUCTIONS_RETIRED
+Data cache miss rate = (DATA_CACHE_REFILLS_L2_AL + DATA_CACHE_REFILLS_NORTHBRIDGE_ALL)/INSTRUCTIONS_RETIRED
+Data cache miss ratio = (DATA_CACHE_REFILLS_L2_AL + DATA_CACHE_REFILLS_NORTHBRIDGE_ALL)/DATA_CACHE_ACCESSES
+-
+This group measures the locality of your data accesses with regard to the
+L1 Cache. Data cache request rate tells you how data intensive your code is
+or how many Data accesses you have in average per instruction.
+The Data cache miss rate gives a measure how often it was necessary to get
+cachelines from higher levels of the memory hierarchy. And finally 
+Data cache miss ratio tells you how many of your memory references required
+a cacheline to be loaded from a higher level. While the Data cache miss rate 
+might be given by your algorithm you should try to get Data cache miss ratio
+as low as possible by increasing your cache reuse.
+This group was taken from the whitepaper -Basic Performance Measurements for AMD Athlon 64,
+AMD Opteron and AMD Phenom Processors- from Paul J. Drongowski.

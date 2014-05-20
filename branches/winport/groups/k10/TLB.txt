@@ -1,0 +1,34 @@
+SHORT  TLB miss rate/ratio
+
+EVENTSET
+PMC0  INSTRUCTIONS_RETIRED
+PMC1  DATA_CACHE_ACCESSES
+PMC2  DTLB_L2_HIT_ALL
+PMC3  DTLB_L2_MISS_ALL
+
+METRICS
+L1 DTLB request rate  PMC1/PMC0
+L1 DTLB miss rate   (PMC2+PMC3)/PMC0
+L1 DTLB miss ratio   (PMC2+PMC3)/PMC1
+L2 DTLB request rate   (PMC2+PMC3)/PMC0
+L2 DTLB miss rate    PMC3/PMC0
+L2 DTLB miss ratio    PMC3/(PMC2+PMC3)
+
+
+LONG
+Formulas:
+L1 DTLB request rate  DATA_CACHE_ACCESSES / INSTRUCTIONS_RETIRED
+L1 DTLB miss rate  (DTLB_L2_HIT_ALL+DTLB_L2_MISS_ALL)/INSTRUCTIONS_RETIRED
+L1 DTLB miss ratio  (DTLB_L2_HIT_ALL+DTLB_L2_MISS_ALL)/DATA_CACHE_ACCESSES
+L2 DTLB request rate  (DTLB_L2_HIT_ALL+DTLB_L2_MISS_ALL)/INSTRUCTIONS_RETIRED
+L2 DTLB miss rate  DTLB_L2_MISS_ALL / INSTRUCTIONS_RETIRED
+L2 DTLB miss ratio DTLB_L2_MISS_ALL / (DTLB_L2_HIT_ALL+DTLB_L2_MISS_ALL)
+-
+L1 DTLB request  rate tells you how data intensive your code is
+or how many Data accesses you have in average per instruction.
+The DTLB miss  rate gives a measure how often a TLB miss occured
+per instruction. And finally L1 DTLB  miss ratio tells you how many
+of your memory references required caused a TLB miss in average.
+NOTE: The L2 metrics are only relevant if L2 DTLB request rate is equal to the L1 DTLB miss rate!
+This group was taken from the whitepaper Basic -Performance Measurements for AMD Athlon 64,
+AMD Opteron and AMD Phenom Processors- from Paul J. Drongowski.

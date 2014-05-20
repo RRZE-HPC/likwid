@@ -1,0 +1,120 @@
+.TH LIKWID-PIN 1 <DATE> likwid\-VERSION
+.SH NAME
+likwid-pin \- pin a sequential or threaded application to dedicated processors
+.SH SYNOPSIS
+.B likwid-pin 
+.RB [\-vh]
+.RB [ \-c
+.IR corelist
+.RB [ \-t
+.IR OpenMP_type ]
+.RB [ \-s
+.IR skip_mask ]
+.RB [ \-p]
+.RB [ \-q]
+.RB [ \-i]
+.SH DESCRIPTION
+.B likwid-pin
+is a command line application to pin a sequential or multi threaded 
+application to dedicated processors. It can be used as replacement for taskset. 
+Opposite to taskset no affinity mask but single processors are specified.
+For multi threaded applications based on the pthread library the 
+.I pthread_create
+library call is overloaded through a LD_PRELOAD and each created thread is pinned
+to a dedicated processor as specified in 
+.I core_list 
+.PP
+Per default every generated thread is pinned to the core in the order of calls 
+to pthread_create. It is possible to skip single threads.
+.PP
+For OpenMP implementations gcc and icc compilers are supported. Other OpenMP
+implementations can be pinned using a skip mask.  With gcc the parent process
+is used as worker and OMP_NUM_THREADS-1 are generated. Intel OpenMP creates
+OMP_NUM_THREADS new threads but uses the first generated thread as shepard
+thread.  Therefore if you specify 
+.I intel
+as OpenMP type this thread is skipped.
+.PP
+Be aware that aith pthreads the parent thread is always pinned. If you create for example 4 threads
+with pthread_create and do not use the parent process as worker you still have to provide
+num_threads+1 processor ids.
+.PP
+.B likwid-pin
+supports different numberings for pinning. Per default physical numbering of
+the cores is used.  This is the numbering also likwid-topology reports. But
+also logical numbering inside the node or the sockets can be used.  If using
+with a N (e.g. -c N:0-6) the cores are logical numbered over the whole node.
+Physical cores come first. If a system e.g. has 8 cores with 16 SMT threads
+with -c N:0-7 you get all physical cores.  If you specify -c N:0-15 you get all
+physical cores and all SMT threads. With S you can specify logical numberings
+inside sockets, again physical cores come first. You can mix different domains
+with a @.  -c S0:0-3@S2:2-3 you pin thread 0-3 to logical cores 0-3 on socket 0
+and threads 4-6 on logical cores 2-3 on socket 2.
+.PP
+For application where first touch policy on numa systems cannot be employed
+.B likwid-pin
+can be used to turn on interleave memory placement. This can significantly
+speed up the performance of memory bound multi threaded codes. All numa nodes
+the user pinned threads to are used for interleaving.
+
+.SH OPTIONS
+.TP
+.B \-\^v
+prints version information to standard output, then exits.
+.TP
+.B \-\^h
+prints a help message to standard output, then exits.
+.TP
+.B \-\^c " processor_list"
+specify a numerical list of processors. The list may contain multiple 
+items, separated by comma, and ranges. For example 0,3,9-11.
+.TP
+.B \-\^t " OpenMP_type"
+specify OpenMP implementation used. At the moment only intel is allowed as parameter.
+.TP
+.B \-\^s " skip_mask
+Specify skip mask as HEX number. For each set bit the corresponding thread is skipped.
+.TP
+.B \-\^p
+prints the available thread domains for logical pinning
+.TP
+.B \-\^i
+set numa memory policy to interleave involving all numa nodes involved in pinning
+.TP
+.B \-\^q
+silent execution without output
+
+
+.SH EXAMPLE
+.IP 1. 4
+For  standard pthread application:
+.TP
+.B likwid-pin -c 0,2,4-6  ./myApp
+.PP
+The parent process is pinned to processor 0. Thread 0 to processor 2, thread
+1 to processor 4, thread 2 to processor 5 and thread 3 to processor 6. If more threads
+are created than specified in the processor list, these threads are pinned to processor 0
+as fallback.
+.IP 2. 4
+For gcc OpenMP as many ids must be specified in processor list as there are threads: 
+.TP
+.B OMP_NUM_THREADS=4; likwid-pin -c 0,2,1,3  ./myApp
+.IP 3. 4
+For Intel icc OpenMP the flag 
+.B \-\^t 
+.I intel
+must be set.
+.TP
+.B OMP_NUM_THREADS=4; likwid-pin -t intel -c 0,2,1,3  ./myApp
+.IP 4. 4
+Full control over the pinning can be achieved by specifying a skip mask.
+For example above case for Intel OpenMP can also be achieved with:
+.TP
+.B OMP_NUM_THREADS=4; likwid-pin -s 0x1 -c 0,2,1,3  ./myApp
+
+.SH AUTHOR
+Written by Jan Treibig <jan.treibig@gmail.com>.
+.SH BUGS
+Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+.SH "SEE ALSO"
+taskset(1), likwid-perfCtr(1), likwid-features(1), likwid-topology(1),

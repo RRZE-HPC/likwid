@@ -1,0 +1,20 @@
+SHORT   Floating point exceptions
+
+EVENTSET
+PMC0  INSTRUCTIONS_RETIRED
+PMC1  FP_INSTRUCTIONS_RETIRED_ALL
+PMC2  FPU_EXCEPTIONS_ALL
+
+METRICS
+Overall FP exception rate  PMC2/PMC0
+FP exception rate    PMC2/PMC1
+
+LONG
+Formulas:
+Overall FP exception rate = FPU_EXCEPTIONS_ALL / INSTRUCTIONS_RETIRED
+FP exception rate = FPU_EXCEPTIONS_ALL / FP_INSTRUCTIONS_RETIRED_ALL
+-
+Floating point exceptions occur e.g. on the treatment of Denormals.
+There might be a large penalty if there are too many floating point
+exceptions.
+

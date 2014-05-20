@@ -1,0 +1,59 @@
+#summary Architecture specific notes for Intel Xeon Phi
+
+= Introduction =
+
+Intel Xeon Phi processors support the P6 HPM interface.
+
+It has the following support for performance monitoring:
+
+ * Two general purpose performance counter registers (40 bit wide)
+ * Most events can be measured per SMT thread 
+
+If you want to use LIKWID on a Xeon Phi you have to use set MIC as COMPILER in config.mk.
+This build of LIKWID will not be binary compatible with other X86 processors.
+To use LIKWID you have to turn of power management on the MIC. LIKWID relies on
+RDTSC being used for wallclock time. On the MIC this is only given if power
+management is turned off. This can be configured in
+/etc/sysconfig/mic/default.conf.
+
+At the end of this file the power management is configured. The following
+configuration worked:
+
+{{{
+    PowerManagement "cpufreq_off;corec6_off;pc3_off;pc6_off"
+}}}
+
+
+= Build =
+
+To compile LIKWID for Phi set the following  in `config.mk`:
+
+{{{
+COMPILER = MIC#NO SPACE
+BUILDDAEMON = false#NO SPACE
+ACCESSMODE = direct#NO SPACE
+}}}
+
+Then build and install as usual.
+
+= Performance groups =
+
+For an exact documentation of the performance groups call likwid-perfctr with
+the -g GROUP_TAG -H switch. This will output a detailed documentation of the
+performance group. Please note that because of the limited number of counters
+on this architectures the groups are very limited. Future releases will add
+multiplexing to allow for more meaningful performance groups.
+
+Supported Groups: 
+
+This is still not settled. You can find out about supported groups with
+likwid-perfctr -a .
+
+= Counters =
+
+2 General Purpose Counters: PMC0, PMC1.
+
+= Events =
+
+This architecture has 59 events.
+For a recent list of supported events execute likwid-perfctr with the -e switch.

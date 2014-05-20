@@ -1,0 +1,23 @@
+SHORT Main memory bandwidth in MBytes/s
+
+EVENTSET
+PMC0  NORTHBRIDGE_READ_RESPONSE_ALL
+PMC1  OCTWORDS_WRITE_TRANSFERS
+PMC2  DRAM_ACCESSES_DCTO_ALL
+PMC3  DRAM_ACCESSES_DCT1_ALL
+
+METRICS
+Read data bandwidth (MBytes/s)  1.0E-06*PMC0*64.0/time
+Write data bandwidth (MBytes/s)  1.0E-06*PMC1*8.0/time
+DRAM bandwidth (MBytes/s)   1.0E-06*(PMC2+PMC3)*64.0/time
+
+LONG
+Formulas:
+Read data bandwidth (MBytes/s)  1.0E-06*NORTHBRIDGE_READ_RESPONSE_ALL*64/time
+Write data bandwidth (MBytes/s)  1.0E-06*OCTWORDS_WRITE_TRANSFERS*8/time
+Memory bandwidth [MBytes/s] = 1.0E-06*(DRAM_ACCESSES_DCTO_ALL+DRAM_ACCESSES_DCT1_ALL)*64/time
+-
+Profiling group to measure memory bandwidth drawn by all cores of a socket.
+Note: As this group measures the accesses from all cores it only makes sense
+to measure with one core per socket, similiar as with the Intel Nehalem Uncore events.
+

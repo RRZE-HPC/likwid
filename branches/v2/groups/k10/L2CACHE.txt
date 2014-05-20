@@ -1,0 +1,31 @@
+SHORT L2 cache miss rate/ratio
+
+EVENTSET
+PMC0  INSTRUCTIONS_RETIRED
+PMC1  L2_REQUESTS_ALL
+PMC2  L2_MISSES_ALL
+PMC3  L2_FILL_ALL
+
+METRICS
+L2 request rate   (PMC1+PMC3)/PMC0
+L2 miss rate   PMC2/PMC0
+L2 miss ratio   PMC2/(PMC1+PMC3)
+
+LONG
+Formulas:
+L2 request rate = (L2_REQUESTS_ALL+L2_FILL_ALL)/INSTRUCTIONS_RETIRED
+L2 miss rate  = L2_MISSES_ALL/INSTRUCTIONS_RETIRED
+L2 miss ratio = L2_MISSES_ALL/(L2_REQUESTS_ALL+L2_FILL_ALL)
+-
+This group measures the locality of your data accesses with regard to the
+L2 Cache. L2 request rate tells you how data intensive your code is
+or how many Data accesses you have in average per instruction.
+The L2 miss rate gives a measure how often it was necessary to get
+cachelines from memory. And finally L2 miss ratio tells you how many of your
+memory references required a cacheline to be loaded from a higher level.
+While the Data cache miss rate might be given by your algorithm you should
+try to get Data cache miss ratio as low as possible by increasing your cache reuse.
+This group was taken from the whitepaper -Basic Performance Measurements for AMD Athlon 64,
+AMD Opteron and AMD Phenom Processors- from Paul J. Drongowski.
+
+

@@ -1,0 +1,28 @@
+SHORT Single Precision MFlops/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+PMC0  FP_COMP_OPS_EXE_SSE_FP_PACKED
+PMC1  FP_COMP_OPS_EXE_SSE_FP_SCALAR
+PMC2  FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION
+PMC3  FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION
+
+METRICS
+Runtime [s] FIXC1*inverseClock
+CPI  FIXC1/FIXC0
+SP MFlops/s (SP assumed) 1.0E-06*(PMC0*4.0+PMC1)/time
+Packed MUOPS/s   1.0E-06*PMC0/time
+Scalar MUOPS/s 1.0E-06*PMC1/time
+SP MUOPS/s 1.0E-06*PMC2/time
+DP MUOPS/s 1.0E-06*PMC3/time
+
+LONG
+Formula:
+SP MFlops/s =  (FP_COMP_OPS_EXE_SSE_FP_PACKED*4 +  FP_COMP_OPS_EXE_SSE_FP_SCALAR)/ runtime
+-
+The Nehalem has not possibility to measure MFlops if mixed precision calculations are done.
+Therefore both Single as well as Double precision are measured to ensure the correctness
+of the measurements. You can check if your code was vectorized on the number of
+FP_COMP_OPS_EXE_SSE_FP_PACKED versus the  FP_COMP_OPS_EXE_SSE_FP_SCALAR.
+

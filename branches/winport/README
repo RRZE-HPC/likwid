@@ -1,0 +1,50 @@
+Likwid is a simple to install and use toolsuite of command line applications
+for performance oriented programmers. It works for Intel and AMD processors
+on the Linux operating system.
+
+It consists of:
+
+likwid-topology  - print thread and cache topology
+likwid-features  - view and toggle feature reagister on Intel processors
+likwid-perfCtr   - configure and read out hardware performance counters on Intel and AMD processors
+likwid-pin       - pin your threaded application (pthread, Intel and gcc OpenMP to dedicated processors
+likwid-bench     - Micro benchmarking platform
+
+For a detailed  documentation on the usage of the tools have a look at the
+likwid wiki pages at:
+
+http://code.google.com/p/likwid/wiki/Introduction
+
+Known problems:
+
+For likwid-perfCtr you need to load the msr kernel module. You have to be root to do so.
+
+> modprobe msr
+
+or with sudo
+
+>sudo modprobe msr
+
+Now there are new device files located in /dev/cpu/*/ for every core. In order
+to use likwid-perfCtr as normal user you have to set appropriate read and write access
+permissions on these device files. This can be done (as root or with sudo) with
+
+>chmod o+rw /dev/cpu/*/msr
+
+If you install likwid on a multi user system you may wish stricter access control
+for accessing these device files. A common solution used on many other device files,
+e.g. for audio, is to introduce a group and make a chown on the msr device files to
+that group. Now if you execute likwid-perfCtr with setgid on that group the executing
+user can use the tool but cannot directly write or read the msr device files.
+
+Of course there are other solutions to this. For a single user private computer you can
+savely use above change on the read and write permissions. It is recommended to put 
+these commands in a startup script, so that it is automatically executed on every start.
+
+If you have still problems with this or want to suggest a better solution
+please let me know on the likwid mailing list:
+
+http://groups.google.com/group/likwid-users
+
+
+

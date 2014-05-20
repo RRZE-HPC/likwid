@@ -1,0 +1,31 @@
+#define STR0 ARG2
+#define STR1 ARG3
+#define STR2 ARG4
+#define STR3 ARG5 
+#define STR4 ARG6 
+#define STR5 GPR9 
+#define STR6 GPR10 
+#define STR7 GPR11 
+#define STR8 GPR12 
+#define STR9 GPR13 
+#define STR10 GPR14 
+
+DEFINE DOUBLE SCALAR  1.0
+DEFINE INT ISCALAR  1
+
+START LOCAL
+
+FUNC [% name %]
+{
+mov GPR2, ARG1
+[% prolog %]
+
+[% IF NOT skip %]
+LOOP .loop [% increment %] GPR2 {
+[% loop %]
+}
+[% END %]
+}
+
+STOP LOCAL
+

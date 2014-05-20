@@ -1,0 +1,27 @@
+SHORT TLB miss rate/ratio
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+PMC0  DTLB_MISSES_ANY
+PMC1  L1D_ALL_CACHE_REF
+
+METRICS
+Runtime [s] FIXC1*inverseClock
+CPI  FIXC1/FIXC0
+L1 DTLB request rate    PMC1/FIXC0
+DTLB miss rate    PMC0/FIXC0
+L1 DTLB miss ratio   PMC0/PMC1
+
+LONG
+Formulas:
+L1 DTLB request rate =  L1D_ALL_CACHE_REF / INSTR_RETIRED_ANY
+DTLB miss rate  = DTLB_MISSES_ANY / INSTR_RETIRED_ANY
+L1 DTLB miss ratio  =  DTLB_MISSES_ANY / L1D_ALL_CACHE_REF
+-
+L1 DTLB request  rate tells you how data intensive your code is
+or how many Data accesses you have in average per instruction.
+The DTLB miss  rate gives a measure how often a TLB miss occured
+per instruction. And finally L1 DTLB  miss ratio tells you how many
+of your memory references required caused a TLB miss in average.
+

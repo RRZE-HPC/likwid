@@ -1,0 +1,22 @@
+SHORT Data cache miss rate/ratio
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+PMC0  L1D_REPL
+
+METRICS
+Runtime [s] FIXC1*inverseClock
+CPI  FIXC1/FIXC0
+Data cache misses PMC0
+Data cache miss rate PMC0/FIXC0
+
+LONG
+Formulas:
+Data cache miss rate = L1D_REPL / INSTR_RETIRED_ANY
+-
+This group measures the locality of your data accesses with regard to the
+L1 Cache. 
+The Data cache miss rate gives a measure how often it was necessary to get
+cachelines from higher levels of the memory hierarchy.
+

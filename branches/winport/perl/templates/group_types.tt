@@ -1,0 +1,13 @@
+#ifndef PERFMON_GROUP_TYPES_H
+#define PERFMON_GROUP_TYPES_H
+
+
+typedef enum {
+    NOGROUP = 0,
+[% FOREACH group IN groups %]
+    [% group.key %],
+[% END %]
+    MAXNUMGROUPS
+    } PerfmonGroup;
+
+#endif

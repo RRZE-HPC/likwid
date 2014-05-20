@@ -1,0 +1,56 @@
+#summary Test procedure for releases
+#labels Phase-QA
+
+= Building =
+
+  # Change config.mk
+  # Build with all supported compilers. Check for compiler warnings.
+  # make install
+  # make uninstall
+
+
+= Applications =
+
+== likwid-topology ==
+
+  # Call likwid-topology -h. Check all flags on correctness.
+  # Call likwid-topology with all flag variants.
+  # Test likwid-topology on:
+    * Intel Core 2
+    * Intel Nehalem EP (with and without SMT)
+    * Intel Nehalem EX
+    * AMD K8
+    * AMD K10
+
+== likwid-pin ==
+
+  # Call likwid-pin -h. Check all flags on correctness.
+  # Call likwid-pin with all flag variants.
+  # Pin serial stream benchmark to process.
+  # Pin threaded OpenMP stream benchmark to Sockets on NUMA machine (gcc, icc, skip mask). Check for scaling bandwidth.
+
+== likwid-features ==
+
+
+== likwid-perfCtr ==
+
+  # Call likwid-perfCtr -h. Check all flags on correctness.
+  # Call likwid-perfCtr with all flag variants.
+  # Check all Performance groups on plausibility with likwid-bench on
+    * Intel Core 2
+    * Intel Nehalem EP
+    * AMD K8
+    * AMD K10
+  Cases:
+  # Serial
+  # Threaded
+  # Marker (one call)
+  # Marker (accumulate)
+  # Custom events
+  # Uncore Events: Wrapper, API, Accumulated
+
+== Formal issues ==
+
+  # Check file headers with date
+  # Check formatting
+  # Verify Version strings

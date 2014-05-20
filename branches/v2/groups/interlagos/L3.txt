@@ -1,0 +1,23 @@
+SHORT L3 cache bandwidth in MBytes/s
+
+EVENTSET
+PMC0  L2_FILL_WB_FILL
+PMC1  L2_FILL_WB_WB
+PMC2  CPU_CLOCKS_UNHALTED
+
+METRICS
+RDTSC Runtime [s] time
+L3 bandwidth [MBytes/s]   1.0E-06*(PMC0+PMC1)*64.0/time
+L3 refill bandwidth [MBytes/s]   1.0E-06*PMC0*64.0/time
+L3 evict [MBytes/s]    1.0E-06*PMC1*64.0/time
+L2-L3 total data volume [MBytes]    1.0E-06*(PMC0+PMC1)*64.0
+
+LONG
+Formulas:
+L3 bandwidth MBytes/s   1.0E-06*(L2_FILL_WB_FILL+L2_FILL_WB_WB)*64/time
+L3 refill bandwidth MBytes/s   1.0E-06*L2_FILL_WB_FILL*64/time
+-
+Profiling group to measure L3 cache bandwidth. The bandwidth is
+computed by the number of cacheline loaded from L3 to L2 and the
+number of modified cachelines evicted from the L2. 
+

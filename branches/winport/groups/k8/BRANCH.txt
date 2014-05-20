@@ -1,0 +1,30 @@
+SHORT Branch prediction miss rate/ratio
+
+EVENTSET
+PMC0  INSTRUCTIONS_RETIRED
+PMC1  BRANCH_RETIRED
+PMC2  BRANCH_MISPREDICT_RETIRED
+PMC3  BRANCH_TAKEN_RETIRED
+
+METRICS
+Branch rate   PMC1/PMC0
+Branch misprediction rate  PMC2/PMC0
+Branch misprediction ratio  PMC2/PMC1
+Branch taken rate  PMC3/PMC0
+Branch taken ratio  PMC3/PMC1
+Instructions per branch  PMC0/PMC1
+
+LONG
+Formulas:
+Branch rate = BRANCH_RETIRED / INSTRUCTIONS_RETIRED
+Branch misprediction rate = BRANCH_MISPREDICT_RETIRED / INSTRUCTIONS_RETIRED
+Branch misprediction ratio = BRANCH_MISPREDICT_RETIRED / BRANCH_RETIRED
+Branch taken rate = BRANCH_TAKEN_RETIRED / INSTRUCTIONS_RETIRED
+Branch taken ratio = BRANCH_TAKEN_RETIRED / BRANCH_RETIRED
+Instructions per branch = INSTRUCTIONS_RETIRED / BRANCH_RETIRED
+-
+The rates state how often in average a branch or a mispredicted branch occured
+per instruction retired in total. The Branch misprediction ratio sets directly
+into relation what ration of all branch instruction where mispredicted.
+Instructions per branch is 1/Branch rate. The same applies for the branches
+taken metrics.

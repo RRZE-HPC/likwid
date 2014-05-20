@@ -1,0 +1,21 @@
+1. Edit config.mk. Follow the comments there.
+2. make
+3. make install
+
+To build likwid-bench you have to explicitly call:
+
+make likwid-bench
+
+This is because likwid-bench does not compile on 32bit systems.
+
+To enable intrumentation of likwid-bench for likwid-perfCtr uncomment
+#DEFINES  += -DPERFMON
+
+in include_GCC.mk (or include_ICC.mk) and rebuild after a make distclean.
+
+Additional Targets:
+
+make clean     -  clean the object directory
+make distclean -  clean all generated files
+make uninstall -  delete installed files
+

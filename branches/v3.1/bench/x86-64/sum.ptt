@@ -1,0 +1,23 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 1
+BYTES 4
+xorps FPR1, FPR1
+movaps FPR2, FPR1
+movaps FPR3, FPR1
+movaps FPR4, FPR1
+movaps FPR5, FPR1
+movaps FPR6, FPR1
+movaps FPR7, FPR1
+movaps FPR8, FPR1
+LOOP 32
+addps    FPR1, [STR0 + GPR1 * 4]
+addps    FPR2, [STR0 + GPR1 * 4 + 16]
+addps    FPR3, [STR0 + GPR1 * 4 + 32]
+addps    FPR4, [STR0 + GPR1 * 4 + 48]
+addps    FPR5, [STR0 + GPR1 * 4 + 64]
+addps    FPR6, [STR0 + GPR1 * 4 + 80]
+addps    FPR7, [STR0 + GPR1 * 4 + 96]
+addps    FPR8, [STR0 + GPR1 * 4 + 112]
+
+

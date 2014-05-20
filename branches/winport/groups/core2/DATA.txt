@@ -1,0 +1,19 @@
+SHORT Load to store ratio
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+PMC0  INST_RETIRED_LOADS
+PMC1  INST_RETIRED_STORES
+
+METRICS
+Runtime [s] FIXC1*inverseClock
+CPI  FIXC1/FIXC0
+Load to Store ratio PMC0/PMC1
+
+LONG
+Formulas:
+Load to Store ratio = INST_RETIRED_LOADS / INST_RETIRED_STORES
+-
+This is a simple metric to determine your Load to store ratio.
+

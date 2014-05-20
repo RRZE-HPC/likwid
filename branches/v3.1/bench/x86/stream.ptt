@@ -1,0 +1,27 @@
+STREAMS 3
+TYPE DOUBLE
+FLOPS 2
+BYTES 24
+movaps FPR5, [SCALAR]
+mov    GPR6, ARG1
+mov  GPR2, STR0
+mov  GPR3, STR1
+mov  GPR4, STR2
+LOOP 8
+movaps    FPR1, [GPR3 + GPR1*8]
+movaps    FPR2, [GPR3 + GPR1*8+16]
+movaps    FPR3, [GPR3 + GPR1*8+32]
+movaps    FPR4, [GPR3 + GPR1*8+48]
+mulpd     FPR1, FPR5
+addpd     FPR1, [GPR4 + GPR1*8]
+mulpd     FPR2, FPR5
+addpd     FPR2, [GPR4 + GPR1*8+16]
+mulpd     FPR3, FPR5
+addpd     FPR3, [GPR4 + GPR1*8+32]
+mulpd     FPR4, FPR5
+addpd     FPR4, [GPR4 + GPR1*8+48]
+movaps    [GPR2 + GPR1*8]   , FPR1
+movaps    [GPR2 + GPR1*8+16], FPR2
+movaps    [GPR2 + GPR1*8+32], FPR3
+movaps    [GPR2 + GPR1*8+48], FPR4
+

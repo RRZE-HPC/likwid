@@ -1,0 +1,10 @@
+1. Edit config.mk. Follow the comments there.
+2. make
+3. make install
+
+Additional Targets:
+
+make clean     -  clean the object directory
+make distclean -  clean all generated files
+make uninstall -  delete installed files
+

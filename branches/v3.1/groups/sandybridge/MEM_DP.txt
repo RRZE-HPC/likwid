@@ -1,0 +1,43 @@
+SHORT Overview of arithmetic and main memory performance
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  FP_COMP_OPS_EXE_SSE_FP_PACKED_DOUBLE
+PMC1  FP_COMP_OPS_EXE_SSE_FP_SCALAR_DOUBLE
+PMC2  SIMD_FP_256_PACKED_DOUBLE
+MBOX0C0 CAS_COUNT_RD
+MBOX1C0 CAS_COUNT_WR
+MBOX0C1 CAS_COUNT_RD
+MBOX1C1 CAS_COUNT_WR
+MBOX0C2 CAS_COUNT_RD
+MBOX1C2 CAS_COUNT_WR
+MBOX0C3 CAS_COUNT_RD
+MBOX1C3 CAS_COUNT_WR
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+MFlops/s  1.0E-06*(PMC0*2.0+PMC1)/time
+32b AVX MFlops/s  1.0E-06*(PMC2*4.0)/time
+Packed MUOPS/s   1.0E-06*(PMC0+PMC2)/time
+Scalar MUOPS/s 1.0E-06*PMC1/time
+Memory Read BW [MBytes/s] 1.0E-06*(MBOX0C0+MBOX0C1+MBOX0C2+MBOX0C3)*64.0/time
+Memory Write BW [MBytes/s] 1.0E-06*(MBOX1C0+MBOX1C1+MBOX1C2+MBOX1C3)*64.0/time
+Memory BW [MBytes/s] 1.0E-06*(MBOX0C0+MBOX0C1+MBOX0C2+MBOX0C3+MBOX1C0+MBOX1C1+MBOX1C2+MBOX1C3)*64.0/time
+Memory data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX0C1+MBOX0C2+MBOX0C3+MBOX1C0+MBOX1C1+MBOX1C2+MBOX1C3)*64.0
+
+LONG
+Formula:
+MFlops/s =  (FP_COMP_OPS_EXE_SSE_FP_PACKED*2 +  FP_COMP_OPS_EXE_SSE_FP_SCALAR)/ runtime
+AVX MFlops/s =  (SIMD_FP_256_PACKED_DOUBLE*4)/ runtime
+--
+Profiling group to measure memory bandwidth drawn by all cores of a socket.
+Since this group is based on uncore events it is only possible to measure on
+a per socket base. Also outputs total data volume transfered from main memory.
+SSE scalar and packed double precision flop rates. Also reports on packed AVX
+32b instructions.  Please note that the current flop measurements on IvyBridge
+are potentially wrong. So you cannot trust these counters at the moment!

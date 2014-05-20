@@ -1,0 +1,213 @@
+# =======================================================================================
+#  
+#      Filename:  perfmon_phi_events.txt
+# 
+#      Description:  Event list for Intel Xeon Phi
+# 
+#      Version:   <VERSION>
+#      Released:  <DATE>
+# 
+#      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+#      Project:  likwid
+#
+#      Copyright (C) 2013 Jan Treibig 
+#
+#      This program is free software: you can redistribute it and/or modify it under
+#      the terms of the GNU General Public License as published by the Free Software
+#      Foundation, either version 3 of the License, or (at your option) any later
+#      version.
+#
+#      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+#      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+#      You should have received a copy of the GNU General Public License along with
+#      this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# =======================================================================================
+
+
+EVENT_DATA_READ              0x00      PMC
+UMASK_DATA_READ              0x00
+
+EVENT_DATA_WRITE               0x01      PMC
+UMASK_DATA_WRITE               0x00
+
+EVENT_DATA_PAGE_WALK             0x02      PMC
+UMASK_DATA_PAGE_WALK             0x00
+
+EVENT_DATA_READ_MISS            0x03      PMC
+UMASK_DATA_READ_MISS            0x00
+
+EVENT_DATA_WRITE_MISS       0x04      PMC
+UMASK_DATA_WRITE_MISS       0x00
+
+EVENT_DATA_CACHE_LINES_WRITTEN_BACK             0x06      PMC
+UMASK_DATA_CACHE_LINES_WRITTEN_BACK             0x00
+
+EVENT_MEMORY_ACCESS_BOTH_PIPES               0x09      PMC
+UMASK_MEMORY_ACCESS_BOTH_PIPES               0x00
+
+EVENT_BANK_CONFLICTS              0x0A      PMC
+UMASK_BANK_CONFLICTS              0x00
+
+EVENT_CODE_READ          0x0C      PMC
+UMASK_CODE_READ          0x00
+
+EVENT_CODE_PAGE_WALK                0x0D      PMC
+UMASK_CODE_PAGE_WALK                0x00
+
+EVENT_CODE_CACHE_MISS          0x0E      PMC
+UMASK_CODE_CACHE_MISS          0x00
+
+EVENT_L1_DATA_PF1                0x11      PMC
+UMASK_L1_DATA_PF1                0x00
+
+EVENT_BRANCHES          0x12      PMC
+UMASK_BRANCHES          0x00
+
+EVENT_PIPELINE_FLUSHES                0x15      PMC
+UMASK_PIPELINE_FLUSHES                0x00
+
+EVENT_INSTRUCTIONS_EXECUTED          0x16      PMC
+UMASK_INSTRUCTIONS_EXECUTED          0x00
+
+EVENT_INSTRUCTIONS_EXECUTED_V_PIPE      0x17      PMC
+UMASK_INSTRUCTIONS_EXECUTED_V_PIPE      0x00
+
+EVENT_L1_DATA_PF1_MISS               0x1C      PMC
+UMASK_L1_DATA_PF1_MISS               0x00
+
+EVENT_L1_DATA_PF1_DROP         0x1E      PMC
+UMASK_L1_DATA_PF1_DROP         0x00
+
+EVENT_PIPELINE_AGI_STALLS           0x1F      PMC
+UMASK_PIPELINE_AGI_STALLS           0x00
+
+EVENT_L1_DATA_HIT_INFLIGHT_PF1                 0x20      PMC
+UMASK_L1_DATA_HIT_INFLIGHT_PF1                 0x00
+
+EVENT_PIPELINE_SG_AGI_STALLS            0x21      PMC
+UMASK_PIPELINE_SG_AGI_STALLS            0x00
+
+EVENT_DATA_READ_OR_WRITE                  0x28      PMC
+UMASK_DATA_READ_OR_WRITE                  0x00
+
+EVENT_DATA_READ_MISS_OR_WRITE_MISS              0x29      PMC
+UMASK_DATA_READ_MISS_OR_WRITE_MISS              0x00
+
+EVENT_CPU_CLK_UNHALTED                  0x2A      PMC
+UMASK_CPU_CLK_UNHALTED                  0x00
+
+EVENT_BRANCHES_MISPREDICTED                  0x2B      PMC
+UMASK_BRANCHES_MISPREDICTED                  0x00
+
+EVENT_MICROCODE_CYCLES                  0x2C      PMC
+UMASK_MICROCODE_CYCLES                  0x00
+
+EVENT_FE_STALLED                  0x2D      PMC
+UMASK_FE_STALLED                  0x00
+
+EVENT_EXEC_STAGE_CYCLES                  0x2E      PMC
+UMASK_EXEC_STAGE_CYCLES                  0x00
+
+EVENT_L1_DATA_PF2                  0x37      PMC
+UMASK_L1_DATA_PF2                  0x00
+
+EVENT_L2_DATA_PF1_MISS                  0x38      PMC
+UMASK_L2_DATA_PF1_MISS                  0x00
+
+EVENT_LONG_DATA_PAGE_WALK                  0x3A      PMC
+UMASK_LONG_DATA_PAGE_WALK                  0x00
+
+EVENT_LONG_CODE_PAGE_WALK                  0x3B      PMC
+UMASK_LONG_CODE_PAGE_WALK                  0x00
+
+EVENT_HWP_L2HIT                  0xC3      PMC
+UMASK_HWP_L2HIT                  0x10
+
+EVENT_HWP_L2MISS                  0xC4      PMC
+UMASK_HWP_L2MISS                  0x10
+
+EVENT_L2_READ_HIT_E                  0xC8      PMC
+UMASK_L2_READ_HIT_E                  0x10
+
+EVENT_L2_READ_HIT_M                  0xC9      PMC
+UMASK_L2_READ_HIT_M                  0x10
+
+EVENT_L2_READ_HIT_S                  0xCA      PMC
+UMASK_L2_READ_HIT_S                  0x10
+
+EVENT_L2_READ_MISS                  0xCB      PMC
+UMASK_L2_READ_MISS                  0x10
+
+EVENT_L2_WRITE_HIT                  0xCC      PMC
+UMASK_L2_WRITE_HIT                  0x10
+
+EVENT_L2_VICTIM_REQ_WITH_DATA                  0xD7      PMC
+UMASK_L2_VICTIM_REQ_WITH_DATA                  0x10
+
+EVENT_SNP_HITM_BUNIT                  0xE3      PMC
+UMASK_SNP_HITM_BUNIT                  0x10
+
+EVENT_SNP_HIT_L2                  0xE6      PMC
+UMASK_SNP_HIT_L2                  0x10
+
+EVENT_SNP_HITM_L2                  0xE7      PMC
+UMASK_SNP_HITM_L2                  0x10
+
+EVENT_L2_CODE_READ_MISS_CACHE_FILL                  0xF0      PMC
+UMASK_L2_CODE_READ_MISS_CACHE_FILL                  0x10
+
+EVENT_L2_DATA_READ_MISS_CACHE_FILL                  0xF1      PMC
+UMASK_L2_DATA_READ_MISS_CACHE_FILL                  0x10
+
+EVENT_L2_DATA_WRITE_MISS_CACHE_FILL                  0xF2      PMC
+UMASK_L2_DATA_WRITE_MISS_CACHE_FILL                  0x10
+
+EVENT_L2_CODE_READ_MISS_MEM_FILL                  0xF5      PMC
+UMASK_L2_CODE_READ_MISS_MEM_FILL                  0x10
+
+EVENT_L2_DATA_READ_MISS_MEM_FILL                  0xF6      PMC
+UMASK_L2_DATA_READ_MISS_MEM_FILL                  0x10
+
+EVENT_L2_DATA_WRITE_MISS_MEM_FILL                  0xF7      PMC
+UMASK_L2_DATA_WRITE_MISS_MEM_FILL                  0x10
+
+EVENT_L2_DATA_PF2                  0xFC      PMC
+UMASK_L2_DATA_PF2                  0x10
+
+EVENT_L2_DATA_PF2_DROP                  0xFD      PMC
+UMASK_L2_DATA_PF2_DROP                  0x10
+
+EVENT_L2_DATA_PF2_MISS                  0xFE      PMC
+UMASK_L2_DATA_PF2_MISS                  0x10
+
+EVENT_L2_DATA_HIT_INFLIGHT_PF2                  0xFF      PMC
+UMASK_L2_DATA_HIT_INFLIGHT_PF2                  0x10
+
+EVENT_VPU_DATA_READ                  0x00      PMC
+UMASK_VPU_DATA_READ                  0x20
+
+EVENT_VPU_DATA_WRITE                  0x01      PMC
+UMASK_VPU_DATA_WRITE                  0x20
+
+EVENT_VPU_DATA_READ_MISS                  0x03      PMC
+UMASK_VPU_DATA_READ_MISS                  0x20
+
+EVENT_VPU_DATA_WRITE_MISS                  0x04      PMC
+UMASK_VPU_DATA_WRITE_MISS                  0x20
+
+EVENT_VPU_STALL_REG                  0x05      PMC
+UMASK_VPU_STALL_REG                  0x20
+
+EVENT_VPU_INSTRUCTIONS_EXECUTED                  0x16      PMC
+UMASK_VPU_INSTRUCTIONS_EXECUTED                  0x20
+
+EVENT_VPU_INSTRUCTIONS_EXECUTED_V_PIPE                  0x17      PMC
+UMASK_VPU_INSTRUCTIONS_EXECUTED_V_PIPE                  0x20
+
+EVENT_VPU_ELEMENTS_ACTIVE                  0x18      PMC
+UMASK_VPU_ELEMENTS_ACTIVE                  0x20
+
+

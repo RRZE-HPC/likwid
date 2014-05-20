@@ -1,0 +1,19 @@
+SHORT X87 MFlops/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+PMC0  X87_OPS_RETIRED_ANY
+
+METRICS
+Runtime [s] FIXC1*inverseClock
+CPI  FIXC1/FIXC0
+X87 MFlops/s  1.0E-06*PMC0/time
+
+LONG
+Formulas:
+X87 MFlops/s = 1.0E-06*X87_OPS_RETIRED_ANY/time
+-
+Profiling group to measure X87 flops. Note that also non computational operations
+are measured by this event.
+
