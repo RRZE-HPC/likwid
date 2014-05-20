@@ -1,0 +1,12 @@
+SHORT VPU filling for Double
+
+EVENTSET
+PMC0  VPU_INSTRUCTIONS_EXECUTED
+PMC1  VPU_ELEMENTS_ACTIVE
+
+METRICS
+Runtime (RDTSC) [s] time
+VPUFillRatio PMC0*8/PMC1
+
+LONG
+VPU filling for Double

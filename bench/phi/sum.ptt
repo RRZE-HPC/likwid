@@ -1,0 +1,10 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 1
+BYTES 4
+LOOP 64
+vprefetch0 [STR0 + GPR1 * 8 + 1024]
+vaddps    zmm0, zmm0, [STR0 + GPR1 * 8]
+vaddps    zmm1, zmm1, [STR0 + GPR1 * 8 + 64]
+vaddps    zmm2, zmm2, [STR0 + GPR1 * 8 + 128]
+vaddps    zmm3, zmm3, [STR0 + GPR1 * 8 + 192]

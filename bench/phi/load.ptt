@@ -1,0 +1,10 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 8
+LOOP 32
+vprefetch0 [STR0 + GPR1 * 8 + 1024]
+vmovaps    zmm0, [STR0 + GPR1 * 8]
+vmovaps    zmm1, [STR0 + GPR1 * 8 + 64]
+vmovaps    zmm2, [STR0 + GPR1 * 8 + 128]
+vmovaps    zmm3, [STR0 + GPR1 * 8 + 192]
