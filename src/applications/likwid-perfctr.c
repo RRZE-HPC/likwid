@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -108,7 +108,7 @@ int main (int argc, char** argv)
     bstring  pinString;
     bstring  skipString;
     bstring  filterScript = bfromcstr("NO");
-    int skipMask = 0;
+    int skipMask = -1;
     BitMask counterMask;
     bstring filepath = bformat("/tmp/likwid_%u.txt", (uint32_t) getpid());
     int numThreads = 0;
@@ -279,12 +279,15 @@ int main (int argc, char** argv)
             }
 
             bformata(pinString,",%d",threads[0]);
-
-            skipString = bformat("%d",skipMask);
-
+			
+			if (skipMask > 0)
+			{
+            	skipString = bformat("%d",skipMask);
+				setenv("LIKWID_SKIP",(char*) skipString->data , 1);
+			}
             setenv("KMP_AFFINITY", "disabled", 1);
             setenv("LIKWID_PIN",(char*) pinString->data , 1);
-            setenv("LIKWID_SKIP",(char*) skipString->data , 1);
+
             setenv("LIKWID_SILENT","true", 1);
             if (ldPreload == NULL)
             {
@@ -425,7 +428,8 @@ int main (int argc, char** argv)
         }
         else
         {
-            setenv("LIKWID_FILEPATH",(char*) filepath->data, 1);
+            if (getenv("LIKWID_FILEPATH") == NULL)
+                setenv("LIKWID_FILEPATH",(char*) filepath->data, 1);
 
             char* modeStr = (char*) malloc(40 * sizeof(char));
             sprintf(modeStr,"%d",accessClient_mode);

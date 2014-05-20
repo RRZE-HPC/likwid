@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -277,7 +277,7 @@ bstr_to_cpuset_expression(uint32_t* threads,  const_bstring qi)
         else
         {
           startId += stride;
-          if (startId > numThreads) startId -= numThreads;
+          if (startId >= numThreads) startId -= numThreads;
           currentId = startId;
           threads[globalNumThreads++] = domain->processorList[currentId++];
           counter = chunksize;
@@ -461,7 +461,14 @@ bstr_to_eventset(StrUtilEventSet* set, const_bstring q)
 
     if ( subtokens->qty != 2 )
     {
-      ERROR_PLAIN_PRINT(Error in parsing event string);
+      
+      fprintf(stderr, "Cannot parse event string %s, probably missing counter name\n"
+      					,bdata(tokens->entry[i]));
+      fprintf(stderr, "Format: <eventName>:<counter>,...\n");
+      msr_finalize();
+      pci_finalize();
+      exit(EXIT_FAILURE);
+      //ERROR_PLAIN_PRINT(Error in parsing event string);
     }
     else
     {

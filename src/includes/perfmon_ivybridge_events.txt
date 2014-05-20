@@ -10,7 +10,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig 
+#      Copyright (C) 2014 Jan Treibig
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -146,8 +146,8 @@ UMASK_CPL_CYCLES_RING123             0x02
 EVENT_RS_EVENTS               0x5E    PMC
 UMASK_RS_EVENTS_EMPTY_CYCLES    0x01
 
-EVENT_DTLB_LOAD_MISSES_STLB   0x5F PMC
-UMASK_DTLB_LOAD_MISSES_STLB_HIT   0x04
+EVENT_DTLB_LOAD_MISSES_STLB	0x5F PMC
+UMASK_DTLB_LOAD_MISSES_STLB_HIT 0x04
 
 EVENT_OFFCORE_REQUESTS_OUTSTANDING          0x60   PMC
 UMASK_OFFCORE_REQUESTS_OUTSTANDING_DEMAND_DATA_RD   0x01

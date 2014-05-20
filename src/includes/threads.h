@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -86,13 +86,13 @@ extern void threads_registerDataGroup(
         threads_copyDataFunc func);
 
 /**
- * @brief  Join the threads and free pthread related of data structures
+ * @brief  Join the threads and free pthread related data structures
  * @param
  */
 extern void threads_join(void);
 
 /**
- * @brief  Free memory of threads data structures
+ * @brief  Free memory of thread data structures
  * @param
  */
 extern void threads_destroy(void);

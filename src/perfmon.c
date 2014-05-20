@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -951,44 +951,54 @@ void
 perfmon_setupEventSet(bstring eventString, BitMask* counterMask)
 {
     int groupId;
+    int eventBool = FALSE;
     StrUtilEventSet eventSetConfig;
+    PerfmonEvent eventSet;
+    struct bstrList* subStr;
+    
 
     groupId = getGroupId(eventString, &groupSet);
-
+    
     if (groupSet == _NOGROUP)
+    {
+        subStr = bstrListCreate();
+        subStr = bsplit(eventString,':');
+        eventBool = getEvent(subStr->entry[0], &eventSet);
+        bstrListDestroy(subStr);
+    }
+    
+    if (groupSet == _NOGROUP && eventBool != FALSE)
     {
         /* eventString is a custom eventSet */
         /* append fixed counters for Intel processors */
-#ifndef LIKWID_PROFILE_COUNTER_READ
         if ( cpuid_info.family == P6_FAMILY )
         {
             bcatcstr(eventString,
                     ",INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,CPU_CLK_UNHALTED_REF:FIXC2");
         }
-#endif
         bstr_to_eventset(&eventSetConfig, eventString);
+    }
+    else if (groupId < 0 && eventBool == FALSE)
+    {
+        ERROR_PLAIN_PRINT(Unsupported group or event for this architecture!);
+        exit(EXIT_FAILURE);
     }
     else
     {
         if ( group_map[groupId].isUncore )
         {
-            if ( (cpuid_info.model == SANDYBRIDGE_EP) ||
-                    (cpuid_info.model == IVYBRIDGE_EP))
+            if ( (cpuid_info.model != SANDYBRIDGE_EP) &&
+                    (cpuid_info.model != IVYBRIDGE_EP))
             {
-                
-                fprintf(OUTSTREAM,"Measuring group %s\n", group_map[groupId].key);
-				/* eventString is a group */
-				eventString = bfromcstr(group_map[groupId].config);
-				bstr_to_eventset(&eventSetConfig, eventString);
-            }
-            else
-            {
-            	ERROR_PLAIN_PRINT(Uncore not supported on Desktop processors!);
+                ERROR_PLAIN_PRINT(Uncore not supported on Desktop processors!);
                 exit(EXIT_FAILURE);
             }
         }
 
-        
+        fprintf(OUTSTREAM,"Measuring group %s\n", group_map[groupId].key);
+        /* eventString is a group */
+        eventString = bfromcstr(group_map[groupId].config);
+        bstr_to_eventset(&eventSetConfig, eventString);
     }
 
     perfmon_initEventSet(&eventSetConfig, &perfmon_set);
@@ -1026,10 +1036,6 @@ perfmon_setupCounters()
 void
 perfmon_startCounters(void)
 {
-#ifdef LIKWID_PROFILE_COUNTER_READ
-    printf("Profile: Start reading counters\n");
-    fflush(stdout);
-#endif
     for (int i=0;i<perfmon_numThreads;i++)
     {
         perfmon_startCountersThread(i);
@@ -1049,10 +1055,7 @@ perfmon_stopCounters(void)
     {
         perfmon_stopCountersThread(i);
     }
-#ifdef LIKWID_PROFILE_COUNTER_READ
-    printf("Profile: Done reading counters\n");
-    fflush(stdout);
-#endif
+
     rdtscTime = timer_print(&timeData);
 }
 

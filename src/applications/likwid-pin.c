@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -132,7 +132,7 @@ int main (int argc, char** argv)
 {
     int i;
     int c;
-    int skipMask = 0;
+    int skipMask = -1;
     int optInterleaved = 0;
     int optMemSweep = 0;
     int optPrintDomains = 0;
@@ -158,7 +158,7 @@ int main (int argc, char** argv)
         hasAffinity = 1;
     }
 
-    while ((c = getopt (argc, argv, "+c:d:hipqs:St:v")) != -1)
+    while ((c = getopt (argc, argv, "+c:d:hipqs:Sv")) != -1)
     {
         switch (c)
         {
@@ -210,9 +210,6 @@ int main (int argc, char** argv)
                     exit(EXIT_SUCCESS);
                 }
                 optMemSweep = 1;
-                break;
-            case 't':
-                printf("Option -t is deprecated. The OpenMP type is now determined automatically!\n");
                 break;
             case 'v':
                 VERSION_MSG;
@@ -285,11 +282,15 @@ int main (int argc, char** argv)
 
         bformata(pinString,",%d",threads[0]);
 
-        skipString = bformat("%d",skipMask);
+		if (skipMask >= 0)
+		{
+        	skipString = bformat("%d",skipMask);
+			setenv("LIKWID_SKIP",(char*) bdata(skipString) , 1);
+		}
 
         setenv("KMP_AFFINITY", "disabled", 1);
-        setenv("LIKWID_PIN",(char*) pinString->data , 1);
-        setenv("LIKWID_SKIP",(char*) skipString->data , 1);
+        setenv("LIKWID_PIN",(char*) bdata(pinString) , 1);
+
 
         if (ldPreload == NULL)
         {

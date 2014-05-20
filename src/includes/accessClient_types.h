@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -69,7 +69,10 @@ typedef enum {
     ERR_RESTREG,      /* attempt to access restricted MSR */
     ERR_OPENFAIL,     /* failure to open msr files */
     ERR_RWFAIL,       /* failure to read/write msr */
-    ERR_DAEMONBUSY    /* daemon already has another client */
+    ERR_DAEMONBUSY,   /* daemon already has another client */
+    ERR_LOCKED,       /* access to HPM is locked */
+    ERR_UNSUPPORTED,   /* unsupported processor */
+    ERR_NODEV	/* No such device */
 } AccessErrorType;
 
 typedef struct {

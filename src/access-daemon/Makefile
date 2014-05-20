@@ -10,7 +10,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig 
+#      Copyright (C) 2014 Jan Treibig
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -26,17 +26,20 @@
 #
 # =======================================================================================
 
+include  ../../config.mk
+include  ../../make/include_$(COMPILER).mk
+
 TARGET   = likwid-accessD
 
-CC        = gcc
-DEFINES   = -D_GNU_SOURCE -DMAX_NUM_THREADS=264
-CFLAGS   = -O2 -Wall -ansi -pedantic -Wextra -std=c99
-CPPFLAGS = $(DEFINES)
-INCLUDES = -I../includes
-LIBS     =
+DEFINES   = -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS)
+INCLUDES  = -I../includes
+ifeq ($(COMPILER),GCC)
+CFLAGS    +=  -pedantic -Wall -Wextra -std=c99
+endif
+CPPFLAGS :=  $(DEFINES) $(INCLUDES)
 
 all: $(TARGET)
 
 $(TARGET): accessDaemon.c
-	$(CC) $(CPPFLAGS) $(INCLUDES) $(CFLAGS) -o ../../$(TARGET) accessDaemon.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(TARGET) accessDaemon.c
 

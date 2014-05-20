@@ -12,7 +12,7 @@
  *                Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -106,9 +106,21 @@ static int FD_PCI[MAX_NUM_NODES][MAX_NUM_DEVICES];
 static int isPCIUncore = 0;
 
 static char* pci_DevicePath[MAX_NUM_DEVICES] = {
-    "13.5", "13.6", "13.1", "10.0", "10.1", "10.4",
-    "10.5", "0e.1", "08.0", "09.0", "08.6", "09.6",
-    "08.0", "09.0" };
+ "13.5",   /* PCI_R3QPI_DEVICE_LINK_0 */
+ "13.6",   /* PCI_R3QPI_DEVICE_LINK_1 */
+ "13.1",   /* PCI_R2PCIE_DEVICE */
+ "10.0",   /* PCI_IMC_DEVICE_CH_0 */
+ "10.1",   /* PCI_IMC_DEVICE_CH_1 */
+ "10.4",   /* PCI_IMC_DEVICE_CH_2 */
+ "10.5",   /* PCI_IMC_DEVICE_CH_3 */
+ "0e.1",   /* PCI_HA_DEVICE */
+ "08.2",   /* PCI_QPI_DEVICE_PORT_0 */
+ "09.2",   /* PCI_QPI_DEVICE_PORT_1 */
+ "08.6",   /* PCI_QPI_MASK_DEVICE_PORT_0 */
+ "09.6",   /* PCI_QPI_MASK_DEVICE_PORT_1 */
+ "08.0",   /* PCI_QPI_MISC_DEVICE_PORT_0 */
+ "09.0" }; /* PCI_QPI_MISC_DEVICE_PORT_1 */
+
 static char pci_filepath[MAX_PATH_LENGTH];
 
 /* Socket to bus mapping -- will be determined at runtime;
@@ -221,7 +233,7 @@ static void msr_read(AccessDataRecord * dRecord)
 
     if (!allowed(reg))
     {
-        syslog(LOG_ERR, "attempt to read from restricted register %x", reg);
+        syslog(LOG_ERR, "attempt to read from restricted register 0x%x", reg);
         dRecord->errorcode = ERR_RESTREG;
         return;
     }
@@ -269,7 +281,12 @@ static void pci_read(AccessDataRecord* dRecord)
     dRecord->errorcode = ERR_NOERROR;
     dRecord->data = 0;
 
-    if ( !FD_PCI[socketId][device] )
+    if (FD_PCI[socketId][device] == -2)
+	{
+		dRecord->errorcode = ERR_NODEV;
+		return;
+	}
+    else if ( !FD_PCI[socketId][device] )
     {
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
         strncat(pci_filepath, socket_bus[socketId], 10);
@@ -307,8 +324,12 @@ static void pci_write(AccessDataRecord* dRecord)
     uint32_t data = (uint32_t) dRecord->data;
 
     dRecord->errorcode = ERR_NOERROR;
-
-    if ( !FD_PCI[socketId][device] )
+	if (FD_PCI[socketId][device] == -2)
+	{
+		dRecord->errorcode = ERR_NODEV;
+		return;
+	}
+    else if ( !FD_PCI[socketId][device] )
     {
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
         strncat(pci_filepath, socket_bus[socketId], 10);
@@ -396,7 +417,7 @@ static void daemonize(int* parentPid)
     /* If we got a good PID, then we can exit the parent process. */
     if (pid > 0)
     {
-        exit(EXIT_SUCCESS);
+        exit(ERR_NOERROR);
     }
 
     /* At this point we are executing as the child process */
@@ -439,15 +460,11 @@ int main(void)
     uint32_t numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
     uint32_t model;
 
-    openlog(ident, 0, LOG_USER);
-
     if (!lock_check())
     {
-        syslog(LOG_ERR,"Access to performance counters is locked.\n");
-        stop_daemon();
+        fprintf(stderr,"Access to performance counters is locked. Exiting!\n");
+        exit(EXIT_FAILURE);
     }
-
-    daemonize(&pid);
 
     {
         uint32_t  eax = 0x00;
@@ -485,7 +502,7 @@ int main(void)
             case K8_FAMILY:
                 if (isIntel)
                 {
-                    syslog(LOG_ERR,
+                    fprintf(stderr,
                             "ERROR - [%s:%d] - Netburst architecture is not supported! Exiting! \n",
                             __FILE__,__LINE__);
                     exit(EXIT_FAILURE);
@@ -500,11 +517,14 @@ int main(void)
                 allowed = allowed_amd16;
 	        break;
             default:
-                syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
+                fprintf(stderr, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
                         __FILE__, __LINE__);
                 exit(EXIT_FAILURE);
         }
     }
+
+    openlog(ident, 0, LOG_USER);
+    daemonize(&pid);
 
     /* setup filename for socket */
     filepath = (char*) calloc(sizeof(addr1.sun_path), 1);
@@ -579,7 +599,7 @@ int main(void)
 
             if ( FD_MSR[i] < 0 )
             {
-                syslog(LOG_ERR, "Failed to open device files.");
+                syslog(LOG_ERR, "Failed to open device file %s.",msr_file_name);
             }
         }
 
@@ -589,9 +609,10 @@ int main(void)
         {
             for (int j=0; j<MAX_NUM_NODES; j++)
             {
+            	socket_bus[j] = "N-A";
                 for (int i=0; i<MAX_NUM_DEVICES; i++)
                 {
-                    FD_PCI[j][i] = 0;
+                    FD_PCI[j][i] = -2;
                 }
             }
 
@@ -601,11 +622,6 @@ int main(void)
             uint32_t testDevice;
             uint32_t sbus, sdevfn, svend;
             int cntr = 0;
-
-            for ( int i=0; i<MAX_NUM_NODES; i++ )
-            {
-                socket_bus[i] = "N-A";
-            }
 
             if (model == SANDYBRIDGE_EP)
             {
@@ -643,6 +659,27 @@ int main(void)
             {
                 syslog(LOG_NOTICE, "Uncore not supported on this system");
             }
+            else
+            {
+		        socket_count = cntr;
+            
+		        for (int j=0; j<socket_count; j++)
+			{
+				    for (int i=0; i<MAX_NUM_DEVICES; i++)
+				{
+						sprintf(pci_filepath, "%s%s%s",PCI_ROOT_PATH,socket_bus[j],pci_DevicePath[i]);
+
+						if (!access(pci_filepath,F_OK))
+					{
+							FD_PCI[j][i] = 0;
+					}
+					else
+					{
+							syslog(LOG_NOTICE, "Device %s not found, excluded it from device list\n",pci_filepath);
+					}
+				}
+			}
+			}
         }
     }
 

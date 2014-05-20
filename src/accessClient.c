@@ -14,7 +14,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -70,6 +70,9 @@ static char* accessClient_strerror(AccessErrorType det)
         case ERR_OPENFAIL:   return "failed to open device file";
         case ERR_RWFAIL:     return "failed to read/write register";
         case ERR_DAEMONBUSY: return "daemon already has a same/higher priority client";
+        case ERR_LOCKED:     return "access to HPM is locked";
+        case ERR_UNSUPPORTED: return "unsupported processor";
+        case ERR_NODEV: 	 return "no such device";
         default:             return "UNKNOWN errorcode";
     }
 }
@@ -85,7 +88,7 @@ static int startDaemon(void)
     size_t address_length;
     int  ret;
     pid_t pid;
-    int timeout = 10;
+    int timeout = 1000;
     int socket_fd = -1;
 
     if (accessClient_mode == DAEMON_AM_ACCESS_D)
@@ -93,16 +96,12 @@ static int startDaemon(void)
         pid = fork();
 
         if (pid == 0)
-        {
-            ret = execve (exeprog, newargv, newenv);
-
-            if (ret < 0)
-            {
-                ERRNO_PRINT;
-                fprintf(stderr, "Failed to execute the daemon '%s' (see error above)\n", exeprog);
-                exit(EXIT_FAILURE);
-            }
-        }
+	{
+	    ret = execve (exeprog, newargv, newenv);
+	    ERRNO_PRINT;
+	    fprintf(stderr, "Failed to execute the daemon '%s' (see error above)\n", exeprog);
+	    exit(EXIT_FAILURE);
+	}
         else if (pid < 0)
         {
             ERROR_PLAIN_PRINT(Failed to fork);
@@ -122,7 +121,7 @@ static int startDaemon(void)
     while (timeout > 0)
     {
         int res;
-        sleep(1);
+        usleep(1000);
         res = connect(socket_fd, (struct sockaddr *) &address, address_length);
 
         if (res == 0)
@@ -142,6 +141,8 @@ static int startDaemon(void)
         fprintf(stderr, "Consult the error message above this to find out why.\n");
         fprintf(stderr, "If the error is 'no such file or directoy', \
                 it usually means that likwid-accessD just failed to start.\n");
+        fprintf(stderr, "In case the daemon itself output an error', \
+                ignore this.\n");
         exit(EXIT_FAILURE);
     }
 

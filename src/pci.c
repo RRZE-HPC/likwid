@@ -14,7 +14,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -52,9 +52,6 @@
 #include <pci.h>
 #include <cpuid.h>
 #include <affinity.h>
-#ifdef LIKWID_USE_HWLOC
-#include <cpuid-hwloc.h>
-#endif
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 #define STRINGIFY(x) #x
@@ -65,7 +62,7 @@
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int socket_fd = -1;
-static int FD[MAX_NUM_NODES][MAX_NUM_DEVICES] = { [0 ... MAX_NUM_NODES-1] = { 0 } };
+static int FD[MAX_NUM_NODES][MAX_NUM_DEVICES];
 
 static char* pci_DevicePath[MAX_NUM_DEVICES] = {
  "13.5",   /* PCI_R3QPI_DEVICE_LINK_0 */
@@ -82,7 +79,6 @@ static char* pci_DevicePath[MAX_NUM_DEVICES] = {
  "09.6",   /* PCI_QPI_MASK_DEVICE_PORT_1 */
  "08.0",   /* PCI_QPI_MISC_DEVICE_PORT_0 */
  "09.0" }; /* PCI_QPI_MISC_DEVICE_PORT_1 */
- 
 
 /* Socket to bus mapping -- will be determined at runtime;
  * typical mappings are:
@@ -92,7 +88,8 @@ static char* pci_DevicePath[MAX_NUM_DEVICES] = {
  *   2                  0xbf
  *   3                  0xff
  */
-static char* socket_bus[MAX_NUM_NODES] = { "N-A" };
+static char* socket_bus[MAX_NUM_NODES];
+static int socket_count = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -104,29 +101,27 @@ pci_init(int initSocket_fd)
 {
     FILE *fptr;
     char buf[1024];
-    uint16_t testDevice;
-    uint16_t testVendor = 0x8086;
+    uint32_t testDevice;
     uint32_t sbus, sdevfn, svend;
     int cntr = 0;
-#ifdef LIKWID_USE_HWLOC
-	hwloc_obj_t obj;
-	int flags;
-	int i,j ;
-	char testString[5];
-#endif
+    int active_devs = 0;
 
-    /*for ( int i=0; i<MAX_NUM_NODES; i++ )
+    for ( int j=0; j<MAX_NUM_NODES; j++ )
     {
-        socket_bus[i] = "N-A";
-    }*/
+        socket_bus[j] = "N-A";
+        for (int i=0; i<MAX_NUM_DEVICES; i++)
+        {
+            FD[j][i] = 0;
+        }
+    }
 
     if (cpuid_info.model == SANDYBRIDGE_EP)
     {
-        testDevice = 0x3c44;
+        testDevice = 0x80863c44;
     }
     else if (cpuid_info.model == IVYBRIDGE_EP)
     {
-        testDevice = 0x0e36;
+        testDevice = 0x80860e36;
     }
     else
     {
@@ -136,55 +131,8 @@ pci_init(int initSocket_fd)
                 */
         return;
     }
-#ifdef LIKWID_USE_HWLOC
-	if (!hwloc_topology)
-	{
-		fprintf(stderr, "HwLoc Topology not initialized\n");
-		hwloc_topology_init(&hwloc_topology);
-		flags = hwloc_topology_get_flags(hwloc_topology);
-        hwloc_topology_set_flags(hwloc_topology, flags | HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
-        hwloc_topology_load(hwloc_topology);
-	}
-	
-	for(i=0;i<hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PCI_DEVICE);i++)
-	{
-		obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PCI_DEVICE, i);
-		if (obj->attr->pcidev.vendor_id != testVendor)
-			continue;
-		if (obj->attr->pcidev.vendor_id == testVendor && obj->attr->pcidev.device_id == testDevice)
-		{
-			socket_bus[cntr] = (char*)malloc(4);
-            sprintf(socket_bus[cntr++], "%02x/", obj->attr->pcidev.bus);
-		}
-		
-		bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
-		sprintf(testString,"%02x/", obj->attr->pcidev.bus);
-		bcatcstr(filepath, testString);
-		sprintf(testString, "%02x.%01x", obj->attr->pcidev.dev, obj->attr->pcidev.func);
-		bcatcstr(filepath, testString );
-		
 
-        for(j=0;j<MAX_NUM_DEVICES;j++)
-        {
-        	if (strcmp(testString, pci_DevicePath[j]) == 0 &&
-        		!access(bdata(filepath),F_OK))
-        	{
-        		pci_DevicePresent[j] = 1;
-        		break;
-        	}
-        }
-	}
-	for(j=0;j<MAX_NUM_DEVICES;j++)
-    {
-		if (pci_DevicePresent[j])
-			printf("Device exists %s\n",pci_DevicePath[j]);
-		else
-			printf("Device does not exist %s\n",pci_DevicePath[j]);
-    }
-	
-	
-#endif
-    /*if ( (fptr = fopen( "/proc/bus/pci/devices", "r")) == NULL )
+    if ( (fptr = fopen( "/proc/bus/pci/devices", "r")) == NULL )
     {
         fprintf(stderr, "Unable to open /proc/bus/pci/devices. \
                 Thus, no support for PCI based Uncore counters.\n");
@@ -208,21 +156,21 @@ pci_init(int initSocket_fd)
         return;
     }
 
-    bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
+	socket_count = cntr;
+	
+			bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
     bcatcstr(filepath, socket_bus[0]);
     bcatcstr(filepath, pci_DevicePath[0] );
 
-    int fd = open( bdata(filepath), O_RDONLY);
 
-    if (fd < 0)
+    if (access(bdata(filepath),F_OK))
     {
         fprintf(stderr, "INFO\n");
         fprintf(stderr, "       This system has no support for PCI based Uncore counters.\n");
         fprintf(stderr, "       This means you cannot use performance groups as MEM, which require Uncore counters.\n\n");
         return;
     }
-
-    close(fd);*/
+    bdestroy(filepath);
 
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
@@ -234,13 +182,27 @@ pci_init(int initSocket_fd)
             fprintf(stderr, "       Alternatively you might want to look into (sys)daemonmode.\n\n");
         }
 
-        /*for (int j=0; j<MAX_NUM_NODES; j++)
+        for (int j=0; j<socket_count; j++)
         {
             for (int i=0; i<MAX_NUM_DEVICES; i++)
             {
-                FD[j][i] = 0;
+
+                bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
+				bcatcstr(filepath, socket_bus[j]);
+				bcatcstr(filepath, pci_DevicePath[i] );
+				
+				if (!access(bdata(filepath),R_OK|W_OK))
+				{
+					FD[j][i] = 0;
+				}
+				else
+				{
+					fprintf(stderr, "Device %s not found, excluded it from device list\n",bdata(filepath));
+					FD[j][i] = -2;
+				}
+				bdestroy(filepath);
             }
-        }*/
+        }
     }
     else /* daemon or sysdaemon-mode */
     {
@@ -252,15 +214,15 @@ pci_init(int initSocket_fd)
 void
 pci_finalize()
 {
-    if (accessClient_mode != DAEMON_AM_DIRECT)
+    if (accessClient_mode == DAEMON_AM_DIRECT)
     {
-        for (int j=0; j<MAX_NUM_NODES; j++)
+        for (int j=0; j<socket_count; j++)
         {
             for (int i=0; i<MAX_NUM_DEVICES; i++)
             {
-                if (FD[j][i])
+                if (FD[j][i] > 0)
                 {
-                    close(FD[i][i]);
+                    close(FD[j][i]);
                 }
             }
         }
@@ -276,15 +238,15 @@ uint32_t
 pci_read(int cpu, PciDeviceIndex device, uint32_t reg)
 {
     int socketId = affinity_core2node_lookup[cpu];
-    if (!pci_DevicePresent[device])
-    {
-    	return 0;
-	}
+
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
         uint32_t data = 0;
-
-        if ( !FD[socketId][device] )
+		if ( FD[socketId][device] == -2)
+		{
+			return data;
+		}
+        else if ( !FD[socketId][device] )
         {
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
@@ -297,6 +259,7 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg)
                         bdata(filepath), strerror(errno));
                 // exit(127);
             }
+            bdestroy(filepath);
         }
 
         if ( FD[socketId][device] > 0 &&
@@ -322,8 +285,11 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
 
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
-
-        if ( !FD[socketId][device] )
+		if ( FD[socketId][device] == -2)
+	{
+		return;
+	}
+        else if ( !FD[socketId][device] )
         {
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
@@ -336,6 +302,7 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
                         bdata(filepath), strerror(errno));
                 // exit(127);
             }
+            bdestroy(filepath);
         }
 
         if ( FD[socketId][device] > 0 &&
@@ -356,13 +323,15 @@ uint32_t
 pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t reg)
 {
     int socketId = affinity_core2node_lookup[cpu];
-	if (!pci_DevicePresent[device])
-    	return 0;
+
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
         uint32_t data = 0;
-
-        if ( !FD[socketId][device] )
+		if ( FD[socketId][device] == -2)
+		{
+			return data;
+		}
+        else if ( !FD[socketId][device] )
         {
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
@@ -377,6 +346,7 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
                         bdata(filepath), strerror(errno));
                 // exit(127);
             }
+            bdestroy(filepath);
         }
 
         if ( FD[socketId][device] > 0 &&
@@ -401,8 +371,11 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
 	
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
-
-        if ( !FD[socketId][device] )
+		if ( FD[socketId][device] == -2)
+	{
+		return;
+	}
+        else if ( !FD[socketId][device] )
         {
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
@@ -417,6 +390,7 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
                         bdata(filepath), strerror(errno));
                 //exit(127);
             }
+            bdestroy(filepath);
         }
 
         if ( FD[socketId][device] > 0 &&

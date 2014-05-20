@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -129,7 +129,7 @@ int main(int argc, char** argv)
         HELP_MSG;
         exit(EXIT_SUCCESS);
     }
-
+    opterr = 0;
     while ((c = getopt (argc, argv, "g:w:t:i:l:aphv")) != -1) {
         switch (c)
         {
@@ -191,9 +191,11 @@ int main(int argc, char** argv)
                     }
                 }
 
-                if (biseqcstr(testcase,"none"))
+                if (biseqcstr(testcase,"none") || !test)
                 {
                     fprintf (stderr, "Unknown test case %s\n",optarg);
+                    printf("Available test cases:\n");
+                    printf(TESTS"\n");
                     return EXIT_FAILURE;
                 }
                 else
@@ -246,7 +248,10 @@ int main(int argc, char** argv)
                 bdestroy(testcase);
                 break;
             case '?':
-                if (isprint (optopt))
+                if (optopt == 'l' || optopt == 'g' || optopt == 'w' || 
+                        optopt == 't' || optopt == 'i')
+                    fprintf (stderr, "Option `-%c' requires an argument.\n", optopt);
+                else if (isprint (optopt))
                     fprintf (stderr, "Unknown option `-%c'.\n", optopt);
                 else
                     fprintf (stderr,
@@ -350,17 +355,16 @@ int main(int argc, char** argv)
     {
         case SINGLE:
             printf("Cycles per cacheline:\t%f\n",
-                    (16.0 * (double) threads_data[0].cycles / (double) (iter * globalNumberOfThreads * threads_data[0].data.size)));
+                    (16.0 * (double) threads_data[0].cycles / (double) (iter * realSize)));
             break;
         case DOUBLE:
             printf("Cycles per cacheline:\t%f\n",
-                    (8.0 * (double) threads_data[0].cycles / (double) (iter * globalNumberOfThreads *  threads_data[0].data.size)));
+                    (8.0 * (double) threads_data[0].cycles / (double) (iter * realSize)));
             break;
     }
 
     printf(HLINE);
     threads_destroy();
-    
 #ifdef PERFMON
     likwid_markerClose();
 #endif

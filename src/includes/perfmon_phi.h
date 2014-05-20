@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -132,7 +132,7 @@ void perfmon_stopCountersThread_phi(int thread_id)
     }
 
     flags = msr_read(cpu_id,MSR_MIC_PERF_GLOBAL_STATUS);
-    printf ("Status: 0x%llX \n", LLU_CAST flags);
+//    printf ("Status: 0x%llX \n", LLU_CAST flags);
 
     if((flags & 0x3))
     {

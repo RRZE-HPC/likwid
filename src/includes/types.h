@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -54,6 +54,7 @@
 #include <libperfctr_types.h>
 #include <multiplex_types.h>
 #include <numa_types.h>
+#include <pci_types.h>
 
 
 typedef struct {

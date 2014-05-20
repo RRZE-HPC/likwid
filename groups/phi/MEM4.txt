@@ -1,4 +1,4 @@
-SHORT L2 Victom requests
+SHORT L2 Victim requests
 
 EVENTSET
 PMC0  L2_VICTIM_REQ_WITH_DATA

@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -330,16 +330,6 @@ int main (int argc, char** argv)
         }
     }
     fprintf(OUTSTREAM, "\n");
-    
-    if (optCaches)
-    {
-    	fprintf(OUTSTREAM, SLINE);
-    	fprintf(OUTSTREAM, "TLB Information\n");
-    	fprintf(OUTSTREAM, SLINE);
-    
-    	cpuid_printTlbTopology();
-    	fprintf(OUTSTREAM, "\n");
-    }
 
     /*----------------------------------------------------------------------
      *  Graphical topology

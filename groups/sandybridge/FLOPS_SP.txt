@@ -6,7 +6,7 @@ FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
 PMC0  FP_COMP_OPS_EXE_SSE_FP_PACKED_SINGLE
 PMC1  FP_COMP_OPS_EXE_SSE_FP_SCALAR_SINGLE
-PMC2  FP_256_PACKED_SINGLE
+PMC2  SIMD_FP_256_PACKED_SINGLE
 
 METRICS
 Runtime (RDTSC) [s] time
@@ -21,9 +21,9 @@ Scalar MUOPS/s 1.0E-06*PMC1/time
 LONG
 Formula:
 MFlops/s =  (FP_COMP_OPS_EXE_SSE_FP_PACKED*4 +  FP_COMP_OPS_EXE_SSE_FP_SCALAR)/ runtime
-AVX MFlops/s =  (FP_256_PACKED_SINGLE*8)/ runtime
+AVX MFlops/s =  (SIMD_FP_256_PACKED_SINGLE*8)/ runtime
 -
-SSE scalar and packed single precision flop rates. Please note that the current
-flop measurements on SandyBridge are potentially wrong. So you cannot trust
-these counters at the moment!
+SSE scalar and packed single precision flop rates. Also shows packed AVX 32b
+flop rates. Please note that the current flop measurements on SandyBridge are
+potentially wrong. So you cannot trust these counters at the moment!
 

@@ -10,7 +10,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig 
+#      Copyright (C) 2014 Jan Treibig
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -81,9 +81,9 @@ UMASK_FP_COMP_OPS_EXE_SSE_FP_SCALAR_SINGLE     0x20
 UMASK_FP_COMP_OPS_EXE_SSE_FP_PACKED_SINGLE     0x40
 UMASK_FP_COMP_OPS_EXE_SSE_FP_SCALAR_DOUBLE     0x80
 
-EVENT_FP_256_PACKED       0x11   PMC
-UMASK_FP_256_PACKED_SINGLE     0x01
-UMASK_FP_256_PACKED_DOUBLE     0x02
+EVENT_SIMD_FP_256_PACKED       0x11   PMC
+UMASK_SIMD_FP_256_PACKED_SINGLE     0x01
+UMASK_SIMD_FP_256_PACKED_DOUBLE     0x02
 
 EVENT_ARITH                      0x14   PMC
 UMASK_ARITH_FPU_DIV_ACTIVE       0x01

@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -31,7 +31,6 @@
 #include <perfmon_sandybridge_events.h>
 #include <perfmon_sandybridge_groups.h>
 #include <perfmon_sandybridge_counters.h>
-#include <pci_types.h>
 
 static int perfmon_numCountersSandybridge = NUM_COUNTERS_SANDYBRIDGE;
 static int perfmon_numGroupsSandybridge = NUM_GROUPS_SANDYBRIDGE;
@@ -86,8 +85,7 @@ void perfmon_init_sandybridge(PerfmonThread *thread)
             if (accessClient_mode != DAEMON_AM_DIRECT)
             {
                 uint32_t  uflags = 0x10100U; /* enable freeze (bit 16), freeze (bit 8) */
-                if (pci_DevicePresent[PCI_IMC_DEVICE_CH_0])
-               		pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_BOX_CTL, uflags);
+                pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_BOX_CTL, uflags);
                 pci_write(cpu_id, PCI_IMC_DEVICE_CH_1,  PCI_UNC_MC_PMON_BOX_CTL, uflags);
                 pci_write(cpu_id, PCI_IMC_DEVICE_CH_2,  PCI_UNC_MC_PMON_BOX_CTL, uflags);
                 pci_write(cpu_id, PCI_IMC_DEVICE_CH_3,  PCI_UNC_MC_PMON_BOX_CTL, uflags);

@@ -17,6 +17,7 @@ LONG
 Formulas:
 DTLB miss rate  LOAD_MISSES_CAUSES_A_WALK / INSTR_RETIRED_ANY
 -
-The DTLB miss  rate gives a measure how often a TLB miss occured
-per instruction. 
+The DTLB miss rate gives a measure how often a TLB miss occured per instruction
+in average. TLB misses increase if many pages (4kB data chunks) are accessed in
+a short time period.
 

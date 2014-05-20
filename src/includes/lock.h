@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -41,7 +41,7 @@
 #define LOCK_INIT -1
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
-#define LIKWIDLOCK  /tmp/likwid.lock
+#define LIKWIDLOCK  /var/run/likwid.lock
 
 static inline int lock_acquire(int* var, int newval)
 {
