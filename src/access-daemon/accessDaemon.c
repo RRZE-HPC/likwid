@@ -622,6 +622,7 @@ int main(void)
             uint32_t testDevice;
             uint32_t sbus, sdevfn, svend;
             int cntr = 0;
+            int socket_count = 0;
 
             if (model == SANDYBRIDGE_EP)
             {
@@ -664,21 +665,21 @@ int main(void)
 		        socket_count = cntr;
             
 		        for (int j=0; j<socket_count; j++)
-			{
-				    for (int i=0; i<MAX_NUM_DEVICES; i++)
 				{
+					for (int i=0; i<MAX_NUM_DEVICES; i++)
+					{
 						sprintf(pci_filepath, "%s%s%s",PCI_ROOT_PATH,socket_bus[j],pci_DevicePath[i]);
 
 						if (!access(pci_filepath,F_OK))
-					{
+						{
 							FD_PCI[j][i] = 0;
-					}
-					else
-					{
+						}
+						else
+						{
 							syslog(LOG_NOTICE, "Device %s not found, excluded it from device list\n",pci_filepath);
+						}
 					}
 				}
-			}
 			}
         }
     }

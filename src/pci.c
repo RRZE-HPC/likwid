@@ -157,10 +157,10 @@ pci_init(int initSocket_fd)
     }
 
 	socket_count = cntr;
-	
-			bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
-    bcatcstr(filepath, socket_bus[0]);
-    bcatcstr(filepath, pci_DevicePath[0] );
+
+	bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
+	bcatcstr(filepath, socket_bus[0]);
+	bcatcstr(filepath, pci_DevicePath[0] );
 
 
     if (access(bdata(filepath),F_OK))
@@ -286,9 +286,9 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
 		if ( FD[socketId][device] == -2)
-	{
-		return;
-	}
+		{
+			return;
+		}
         else if ( !FD[socketId][device] )
         {
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
@@ -372,9 +372,9 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
 		if ( FD[socketId][device] == -2)
-	{
-		return;
-	}
+		{
+			return;
+		}
         else if ( !FD[socketId][device] )
         {
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
