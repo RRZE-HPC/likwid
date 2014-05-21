@@ -1,0 +1,146 @@
+#!/usr/bin/perl
+
+use Getopt::Std;
+
+my $LIKWIDPIN  = '/usr/local/bin/likwid-pin';
+my $SYSPATH = '/sys/devices/system/cpu';
+my $SYSCMD = '/usr/local/bin/setfreq';
+my $domain = 'N';
+my $governor = 'ondemand';
+my @processors;
+my %frequencies;
+my $freq_string;
+use vars qw/ %opt /;
+
+sub init
+{
+    my $opt_string = 'g:d:f:lph';
+    getopts( $opt_string, \%opt ) or usage();
+    usage() if $opt{h};
+}
+
+sub usage
+{
+    print STDERR << "EOF";
+
+This script allows to switch governors and set fixed
+frequencies on Linux system.
+
+usage: $0 [-hlp] [-g governor] [-d domain] [-f frequency]
+-h          : this (help) message
+-p          : print current frequencies
+-l          : list available frequencies
+-d domain   : likwid thread domain which to apply settings
+              (set to N if omitted)
+-g governor : set governor (ondemand, performance, turbo)
+              (set to ondemand if omitted)
+-f frequency: set fixed frequency, implicitly sets userspace
+              governor
+
+example: $0 -d S0 -f 2.7
+EOF
+    exit;
+}
+
+sub extractAvailableFrequencies
+{
+    my @tmp_keys;
+    open FILE, "<$SYSPATH/cpu0/cpufreq/scaling_available_frequencies";
+    my $tmp = <FILE>;
+    my @list = split(/ /,$tmp);
+    close FILE;
+    $frequencies{'turbo'} = $list[0];
+
+    foreach my $item ( @list ) {
+        if( not $item =~ /\n/ ) {
+            my $key = $item/1000000.0;
+            push @tmp_keys, $key;
+            $frequencies{$key} = $item;
+        }
+    }
+
+    $freq_string = join(' ', sort @tmp_keys);
+}
+
+sub extractProcessorList
+{
+    my $output = `$LIKWIDPIN -p`;
+    my $found = 0;
+
+    foreach my $line (split("\n",$output)) {
+        if ($line =~ /Tag ([NSCM][0-9]*): ([0-9 ]+)/) {
+            if ($domain eq $1) {
+                $found = 1;
+                @processors =  split(/ /,$2);
+                last;
+            }
+        }
+    }
+
+    if ( not $found ) {
+		print "Domain $domain not available!\n";
+        exit;
+    }
+}
+
+
+init();
+
+if ($opt{d}) {
+    $domain = $opt{d};
+}
+
+extractProcessorList();
+extractAvailableFrequencies();
+
+if ($opt{f}) {
+    $freq = $opt{f};
+
+	if (not exists($frequencies{$freq})) {
+		print "Frequency $freq not available!\nPlease select one of $freq_string\n";
+		exit;
+	}
+
+	foreach my $processID (@processors) {
+#		print "$SYSCMD $processID $frequencies{$freq}\n";
+        system("$SYSCMD $processID $frequencies{$freq}");
+	}
+}
+
+if ($opt{p}) {
+	foreach my $processID (@processors) {
+		open FILE,"<$SYSPATH/cpu".$processID."/cpufreq/scaling_governor";
+		my $gov = <FILE>;
+		chomp $gov;
+		close FILE;
+		open FILE,"<$SYSPATH/cpu".$processID."/cpufreq/scaling_cur_freq";
+		my $freq = <FILE>;
+		chomp $freq;
+		close FILE;
+		print "CPU $processID: governor $gov frequency $freq\n"
+	}
+	exit;
+}
+
+if ($opt{l}) {
+    print "Available frequencies: $freq_string\n";
+    exit;
+}
+
+if ($opt{g} eq 'turbo') {
+    foreach my $processID (@processors) {
+#        print "$SYSCMD $processID $frequencies{turbo}\n";
+        system("$SYSCMD $processID $frequencies{turbo}");
+    }
+    exit;
+}
+
+if ($opt{g}) {
+    $governor = $opt{g};
+    print "Set governor in domain $domain to $governor \n";
+    foreach my $processID (@processors) {
+#    print "$SYSCMD $processID 0 $governor\n";
+        system("$SYSCMD $processID 0 $governor");
+    }
+}
+
