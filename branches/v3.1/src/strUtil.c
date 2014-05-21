@@ -79,7 +79,6 @@ int str2int(const char* str)
   errno = 0;
   unsigned long val;
   val = strtoul(str, &endptr, 10);
-
   if ((errno == ERANGE && val == LONG_MAX )
       || (errno != 0 && val == 0))
   {
@@ -88,7 +87,7 @@ int str2int(const char* str)
 
   if (endptr == str)
   {
-    ERROR_PLAIN_PRINT(No digits were found);
+    ERROR_PRINT(Cannot parse string %s to digits, str);
   }
 
   return (int) val;
@@ -117,13 +116,13 @@ bstr_to_cpuset_physical(uint32_t* threads,  const_bstring q)
 
     if( subtokens->qty == 1 )
     {
-      threads[numThreads] = str2int((char *) subtokens->entry[0]->data);
+      threads[numThreads] = str2int((char *) bdata(subtokens->entry[0]));
       numThreads++;
     }
     else if ( subtokens->qty == 2 )
     {
-      rangeBegin = str2int((char*) subtokens->entry[0]->data);
-      rangeEnd = str2int((char*) subtokens->entry[1]->data);
+      rangeBegin = str2int((char*) bdata(subtokens->entry[0]));
+      rangeEnd = str2int((char*) bdata(subtokens->entry[1]));
 
       if (!(rangeBegin <= rangeEnd))
       {
