@@ -1,12 +1,12 @@
 # =======================================================================================
-#  
+#
 #      Filename:  Makefile
-# 
+#
 #      Description:  accessDaemon Makefile
-# 
+#
 #      Version:   <VERSION>
 #      Released:  <DATE>
-# 
+#
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
@@ -29,7 +29,7 @@
 include  ../../config.mk
 include  ../../make/include_$(COMPILER).mk
 
-TARGET   = likwid-accessD
+TARGETS   = likwid-accessD likwid-setFreq
 
 DEFINES   = -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS)
 INCLUDES  = -I../includes
@@ -40,6 +40,6 @@ CPPFLAGS :=  $(DEFINES) $(INCLUDES)
 
 all: $(TARGET)
 
-$(TARGET): accessDaemon.c
+$(TARGETS): accessDaemon.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(TARGET) accessDaemon.c
 
