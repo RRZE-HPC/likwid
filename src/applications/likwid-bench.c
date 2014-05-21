@@ -61,7 +61,7 @@ printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-a\t list available benchmarks \n"); \
 printf("-d\t delimiter used for physical core list (default ,) \n"); \
-printf("-p\t list available thread domains\n or the physical ids of the cores selected by the -c expression \n"); \
+printf("-p\t list available thread domains\n"); \
 printf("-l <TEST>\t list properties of benchmark \n"); \
 printf("-i <INT>\t number of iterations \n"); \
 printf("-g <INT>\t number of workgroups (mandatory)\n"); \
@@ -147,7 +147,8 @@ int main(int argc, char** argv)
 
                 if (tmp == -1)
                 {
-                    fprintf (stderr, "More workgroups configured than allocated!\n");
+                    fprintf (stderr, "More workgroups configured than allocated!\n"
+                    	"Did you forget to set the number of workgroups with -g?\n");
                     return EXIT_FAILURE;
                 }
                 if (!test)
@@ -263,10 +264,19 @@ int main(int argc, char** argv)
         }
     }
 
+	if (tmp > 0)
+	{
+		fprintf(stderr, "%d workgroups requested but only %d given on commandline\n",numberOfWorkgroups,numberOfWorkgroups-tmp);
+		affinity_finalize();
+		allocator_finalize();
+		exit(EXIT_FAILURE);
+	}
 
     if (optPrintDomains)
     {
         affinity_printDomains();
+        affinity_finalize();
+		allocator_finalize();
         exit (EXIT_SUCCESS);
     }
     timer_init();
@@ -310,7 +320,6 @@ int main(int argc, char** argv)
         {
             myData.streams[j] = groups[i].streams[j].ptr;
         }
-
         threads_registerDataGroup(i, &myData, copyThreadData);
 
         free(myData.processors);
@@ -329,42 +338,53 @@ int main(int argc, char** argv)
     threads_join();
     allocator_finalize();
 
-    uint32_t realSize = 0;
-
-    for (int i=0; i<globalNumberOfThreads; i++)
+    
+	printf(HLINE);
+    for(j=0;j<numberOfWorkgroups;j++)
     {
-        realSize += threads_data[i].data.size;
-    }
+    	int current_id = j*groups[j].numberOfThreads;
+    	uint32_t realSize = 0;
+    	
+    	for (int i=0; i<groups[j].numberOfThreads; i++)
+		{
+		    realSize += threads_data[current_id + i].data.size;
+		}
+		time = (double) threads_data[current_id].cycles / (double) timer_getCpuClock();
+		printf("Workgroup: %d\n",j, current_id);
+		printf("Cycles: %llu \n", LLU_CAST threads_data[current_id].cycles);
+		printf("Iterations: %llu \n", LLU_CAST iter);
+		printf("Size: %d \n",  realSize );
+		printf("Vectorlength: %llu \n", LLU_CAST threads_data[current_id].data.size);
+		printf("Time: %e sec\n", time);
+		printf("Number of Flops: %llu \n", LLU_CAST (iter * realSize *  test->flops));
+		printf("MFlops/s:\t%.2f\n",
+		        1.0E-06 * ((double) iter * realSize *  test->flops/  time));
+		printf("MByte/s:\t%.2f\n",
+		        1.0E-06 * ( (double) iter * realSize *  test->bytes/ time));
+		printf("Cycles per update:\t%f\n",
+		        ((double) threads_data[current_id].cycles / (double) (iter * threads_data[current_id].numberOfThreads *  threads_data[current_id].data.size)));
 
-
-    time = (double) threads_data[0].cycles / (double) timer_getCpuClock();
-    printf("Cycles: %llu \n", LLU_CAST threads_data[0].cycles);
-    printf("Iterations: %llu \n", LLU_CAST iter);
-    printf("Size: %d \n",  realSize );
-    printf("Vectorlength: %llu \n", LLU_CAST threads_data[0].data.size);
-    printf("Time: %e sec\n", time);
-    printf("Number of Flops: %llu \n", LLU_CAST (numberOfWorkgroups * iter * realSize *  test->flops));
-    printf("MFlops/s:\t%.2f\n",
-            1.0E-06 * ((double) numberOfWorkgroups * iter * realSize *  test->flops/  time));
-    printf("MByte/s:\t%.2f\n",
-            1.0E-06 * ( (double) numberOfWorkgroups * iter * realSize *  test->bytes/ time));
-    printf("Cycles per update:\t%f\n",
-            ((double) threads_data[0].cycles / (double) (iter * globalNumberOfThreads *  threads_data[0].data.size)));
-
-    switch ( test->type )
-    {
-        case SINGLE:
-            printf("Cycles per cacheline:\t%f\n",
-                    (16.0 * (double) threads_data[0].cycles / (double) (iter * realSize)));
-            break;
-        case DOUBLE:
-            printf("Cycles per cacheline:\t%f\n",
-                    (8.0 * (double) threads_data[0].cycles / (double) (iter * realSize)));
-            break;
-    }
-
+		switch ( test->type )
+		{
+		    case SINGLE:
+		        printf("Cycles per cacheline:\t%f\n",
+		                (16.0 * (double) threads_data[current_id].cycles / (double) (iter * realSize)));
+		        break;
+		    case DOUBLE:
+		        printf("Cycles per cacheline:\t%f\n",
+		                (8.0 * (double) threads_data[current_id].cycles / (double) (iter * realSize)));
+		        break;
+		}
+		if (numberOfWorkgroups > 1)
+		{
+			printf("\n");
+		}
+	}
     printf(HLINE);
-    threads_destroy();
+    threads_destroy(numberOfWorkgroups);
+    barrier_destroy();
+    
+	affinity_finalize();
 #ifdef PERFMON
     likwid_markerClose();
 #endif
