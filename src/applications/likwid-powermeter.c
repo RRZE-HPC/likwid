@@ -56,13 +56,13 @@
 printf("\nlikwid-powermeter --  Version  %d.%d \n\n",VERSION,RELEASE); \
 printf("A tool to print Power and Clocking information on Intel SandyBridge CPUS.\n"); \
 printf("Options:\n"); \
-printf("-h\t Help message\n"); \
-printf("-v\t Version information\n"); \
-printf("-M\t set how MSR registers are accessed: 0=direct, 1=msrd \n"); \
-printf("-c\t specify sockets to measure\n"); \
-printf("-i\t print information from MSR_PKG_POWER_INFO register and Turbo Mode\n"); \
+printf("-h\t\t Help message\n"); \
+printf("-v\t\t Version information\n"); \
+printf("-M <0|1>\t set how MSR registers are accessed: 0=direct, 1=msrd \n"); \
+printf("-c <list>\t specify sockets to measure\n"); \
+printf("-i\t\t print information from MSR_PKG_POWER_INFO register and Turbo Mode\n"); \
 printf("-s <duration>\t set measure duration in sec. (default 2s) \n"); \
-printf("-p\t print dynamic clocking and CPI values\n\n");   \
+printf("-p\t\t print dynamic clocking and CPI values (requires executable)\n\n");   \
 printf("Usage: likwid-powermeter -s 4 -c 1 \n");  \
 printf("Alternative as wrapper: likwid-powermeter -c 1 ./a.out\n")
 
@@ -76,6 +76,7 @@ int main (int argc, char** argv)
     int optInfo = 0;
     int optClock = 0;
     int optStethoscope = 0;
+    int optSockets = 0;
     double runtime;
     int hasDRAM = 0;
     int c;
@@ -87,6 +88,12 @@ int main (int argc, char** argv)
     int threads[MAX_NUM_THREADS];
 
     threadsSockets[0] = 0;
+    
+    if (argc == 1)
+    {
+    	HELP_MSG;
+    	exit (EXIT_SUCCESS);
+    }
 
     while ((c = getopt (argc, argv, "+c:hiM:ps:v")) != -1)
     {
@@ -96,6 +103,7 @@ int main (int argc, char** argv)
                 CHECK_OPTION_STRING;
                 numSockets = bstr_to_cpuset_physical((uint32_t*) threadsSockets, argString);
                 bdestroy(argString);
+                optSockets = 1;
                 break;
 
             case 'h':
@@ -107,6 +115,7 @@ int main (int argc, char** argv)
             case 'M':  /* Set MSR Access mode */
                 CHECK_OPTION_STRING;
                 accessClient_setaccessmode(str2int((char*) argString->data));
+                bdestroy(argString);
                 break;
             case 'p':
                 optClock = 1;
@@ -114,13 +123,17 @@ int main (int argc, char** argv)
             case 's':
                 CHECK_OPTION_STRING;
                 optStethoscope = str2int((char*) argString->data);
-
+                bdestroy(argString);
                 break;
             case 'v':
                 VERSION_MSG;
                 exit (EXIT_SUCCESS);
             case '?':
-                if (isprint (optopt))
+            	if (optopt == 's' || optopt == 'M' || optopt == 'c')
+            	{
+            		HELP_MSG;
+            	}
+                else if (isprint (optopt))
                 {
                     fprintf (stderr, "Unknown option `-%c'.\n", optopt);
                 }
@@ -130,7 +143,7 @@ int main (int argc, char** argv)
                             "Unknown option character `\\x%x'.\n",
                             optopt);
                 }
-                return EXIT_FAILURE;
+                exit( EXIT_FAILURE);
             default:
                 HELP_MSG;
                 exit (EXIT_SUCCESS);
@@ -142,10 +155,29 @@ int main (int argc, char** argv)
         fprintf(stderr,"Access to performance counters is locked.\n");
         exit(EXIT_FAILURE);
     }
+    
+    if (optClock && optind == argc)
+    {
+    	fprintf(stderr,"Commandline option -p requires an executable.\n");
+    	exit(EXIT_FAILURE);
+    }
+    if (optSockets && !optStethoscope && optind == argc)
+    {
+    	fprintf(stderr,"Commandline option -c requires an executable if not used in combination with -s.\n");
+    	exit(EXIT_FAILURE);
+    }
 
     if (cpuid_init() == EXIT_FAILURE)
     {
-        ERROR_PLAIN_PRINT(Unsupported processor!);
+        fprintf(stderr, "CPU %s not supported\n",cpuid_info.name);
+        exit(EXIT_FAILURE);
+    }
+    
+    if (numSockets > cpuid_topology.numSockets)
+    {
+    	fprintf(stderr, "System has only %d sockets but %d are given on commandline\n",
+    			cpuid_topology.numSockets, numSockets);
+    	exit(EXIT_FAILURE);
     }
 
     numa_init(); /* consider NUMA node as power unit for the moment */
@@ -214,19 +246,19 @@ int main (int argc, char** argv)
         printf("Maximum  Power: %g Watts \n", power_info.maxPower);
         printf("Maximum  Time Window: %g micro sec \n", power_info.maxTimeWindow);
         printf(HLINE);
-        exit(EXIT_SUCCESS);
     }
 
     if (optClock)
     {
         affinity_init();
-        argString = bformat("S%u:0-%u", threadsSockets[0], cpuid_topology.numCoresPerSocket-1);
+        //argString = bformat("S%u:0-%u", threadsSockets[0], cpuid_topology.numCoresPerSocket-1);
+        argString = bformat("S%u:0", threadsSockets[0]);
         for (int i=1; i<numSockets; i++)
         {
-            bstring tExpr = bformat("@S%u:0-%u", threadsSockets[i], cpuid_topology.numCoresPerSocket-1);
+            //bstring tExpr = bformat("@S%u:0-%u", threadsSockets[i], cpuid_topology.numCoresPerSocket-1);
+            bstring tExpr = bformat("@S%u:0", threadsSockets[i]);
             bconcat(argString, tExpr);
         }
-        printf("STRING  %s\n\n", bdata(argString));
         numThreads = bstr_to_cpuset(threads, argString);
         bdestroy(argString);
         perfmon_init(numThreads, threads, stdout);
@@ -236,12 +268,12 @@ int main (int argc, char** argv)
     {
         PowerData pDataPkg[MAX_NUM_NODES*2];
         PowerData pDataDram[MAX_NUM_NODES*2];
-        printf("Measure on sockets %d", threadsSockets[0]);
+        printf("Measure on sockets: %d", threadsSockets[0]);
         for (int i=1; i<numSockets; i++)
         {
-            printf(" %d", threadsSockets[i]);
+            printf(", %d", threadsSockets[i]);
         }
-        printf(".\n");
+        printf("\n");
 
         if (optStethoscope)
         {
@@ -335,11 +367,12 @@ int main (int argc, char** argv)
 
         if (!optClock)
         {
-            printf("Runtime: %g s \n",runtime);
-            printf("Domain: PKG \n");
+            printf("Runtime: %g second \n",runtime);
+            printf(HLINE);
             for (int i=0; i<numSockets; i++)
             {
-                printf("Socket %d\n",i);
+                printf("Socket %d\n",threadsSockets[i]);
+                printf("Domain: PKG \n");
                 printf("Energy consumed: %g Joules \n", power_printEnergy(pDataPkg+i));
                 printf("Power consumed: %g Watts \n", power_printEnergy(pDataPkg+i) / runtime );
                 if (hasDRAM)
