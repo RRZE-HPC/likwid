@@ -40,6 +40,11 @@
 extern void barrier_init(int numberOfGroups);
 
 /**
+ * @brief  Destroy data structures of the barrier module
+ */
+extern void barrier_destroy(void);
+
+/**
  * @brief  Register a thread for a barrier
  * @param  threadId The id of the thread to register
  */

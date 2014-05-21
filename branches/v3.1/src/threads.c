@@ -203,9 +203,14 @@ threads_join(void)
 }
 
 void
-threads_destroy(void)
+threads_destroy(int numberOfGroups)
 {
+	int i;
     free(threads_data);
+    for(i=0;i<numberOfGroups;i++)
+    {
+    	free(threads_groups[i].threadIds);
+    }
     free(threads_groups);
     free(threads);
 }

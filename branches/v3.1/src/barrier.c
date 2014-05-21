@@ -149,4 +149,7 @@ barrier_synchronize(BarrierData* barr)
     barr->offset = !barr->offset;
 }
 
-
+void barrier_destroy(void)
+{
+	free(groups);
+}

@@ -169,7 +169,7 @@ int main (int argc, char** argv)
 
     if (cpuid_init() == EXIT_FAILURE)
     {
-        fprintf(stderr, "CPU %s not supported\n",cpuid_info.name);
+        fprintf(stderr, "CPU not supported\n");
         exit(EXIT_FAILURE);
     }
     
