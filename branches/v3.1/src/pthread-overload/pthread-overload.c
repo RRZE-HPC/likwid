@@ -89,16 +89,10 @@ pthread_create(pthread_t* thread,
         int i = 0;
         int ncpus = 0;
 
-        str = getenv("LIKWID_SKIP");
         if (str != NULL)
         {
             skipMask = strtoul(str, &str, 10);
             got_skipMask = 1;
-        }
-        else
-        {
-            printf("[pthread wrapper] ERROR: Environment Variabel LIKWID_SKIP not set!\n");
-            
         }
 
         if ( got_skipMask == 0 && skipMask == 0x0 )

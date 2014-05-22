@@ -59,10 +59,10 @@ printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \
 printf("-i\t Set numa interleave policy with all involved numa nodes\n"); \
 printf("-S\t Sweep memory in involved numa nodes\n"); \
-printf("-c\t comma separated processor ids\n"); \
+printf("-c\t comma separated list of processor ids or expression\n"); \
 printf("-s\t bitmask with threads to skip\n"); \
 printf("-p\t Print available domains with mapping on physical ids\n"); \
-printf("  \t If used together with -p option outputs a physical processor ids.\n"); \
+printf("  \t If used together with -c option outputs a physical processor ids.\n"); \
 printf("-d\t Delimiter used for using -p to output physical processor list, default is comma.\n\n"); \
 printf("-q\t Silent without output\n\n"); \
 printf("There are three possibilities to provide a thread to processor list:\n\n"); \
@@ -218,6 +218,11 @@ int main (int argc, char** argv)
                 HELP_MSG;
                 exit(EXIT_FAILURE);
         }
+    }
+    if (optind == argc && !optPrintDomains)
+    {
+    	fprintf(stderr,"Executable must be given on commandline\n");
+    	exit(EXIT_FAILURE);
     }
 
     if (optPrintDomains && numThreads)
