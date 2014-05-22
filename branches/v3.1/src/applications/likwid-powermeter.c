@@ -251,12 +251,10 @@ int main (int argc, char** argv)
     if (optClock)
     {
         affinity_init();
-        //argString = bformat("S%u:0-%u", threadsSockets[0], cpuid_topology.numCoresPerSocket-1);
-        argString = bformat("S%u:0", threadsSockets[0]);
+        argString = bformat("S%u:0-%u", threadsSockets[0], cpuid_topology.numCoresPerSocket-1);
         for (int i=1; i<numSockets; i++)
         {
-            //bstring tExpr = bformat("@S%u:0-%u", threadsSockets[i], cpuid_topology.numCoresPerSocket-1);
-            bstring tExpr = bformat("@S%u:0", threadsSockets[i]);
+            bstring tExpr = bformat("@S%u:0-%u", threadsSockets[i], cpuid_topology.numCoresPerSocket-1);
             bconcat(argString, tExpr);
         }
         numThreads = bstr_to_cpuset(threads, argString);

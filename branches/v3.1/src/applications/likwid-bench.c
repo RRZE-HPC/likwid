@@ -60,7 +60,6 @@ printf("\n"); \
 printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-a\t list available benchmarks \n"); \
-printf("-d\t delimiter used for physical core list (default ,) \n"); \
 printf("-p\t list available thread domains\n"); \
 printf("-l <TEST>\t list properties of benchmark \n"); \
 printf("-i <INT>\t number of iterations \n"); \
@@ -69,6 +68,8 @@ printf("-t <TEST>\t type of test \n"); \
 printf("-w\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>], size in kB, MB or GB  (mandatory)\n"); \
 printf("Processors are in compact ordering.\n"); \
 printf("Usage: likwid-bench -t copy -i 1000 -g 1 -w S0:100kB \n")
+
+//printf("-d\t delimiter used for physical core list (default ,) \n"); \
 
 #define VERSION_MSG \
     printf("likwid-bench   %d.%d \n\n",VERSION,RELEASE)
@@ -127,6 +128,7 @@ int main(int argc, char** argv)
     if (argc ==  1)
     {
         HELP_MSG;
+        affinity_finalize();
         exit(EXIT_SUCCESS);
     }
     opterr = 0;
@@ -135,12 +137,27 @@ int main(int argc, char** argv)
         {
             case 'h':
                 HELP_MSG;
+                affinity_finalize();
+				if (groups)
+				{
+					free(groups);
+				}
                 exit (EXIT_SUCCESS);
             case 'v':
                 VERSION_MSG;
+                affinity_finalize();
+                if (groups)
+                {
+                	free(groups);
+                }
                 exit (EXIT_SUCCESS);
             case 'a':
                 printf(TESTS"\n");
+                affinity_finalize();
+                if (groups)
+                {
+                	free(groups);
+                }
                 exit (EXIT_SUCCESS);
             case 'w':
                 tmp--;
@@ -149,11 +166,21 @@ int main(int argc, char** argv)
                 {
                     fprintf (stderr, "More workgroups configured than allocated!\n"
                     	"Did you forget to set the number of workgroups with -g?\n");
+                    affinity_finalize();
+                    if (groups)
+		            {
+		            	free(groups);
+		            }
                     return EXIT_FAILURE;
                 }
                 if (!test)
                 {
                     fprintf (stderr, "You need to specify a test case first!\n");
+                    affinity_finalize();
+                    if (groups)
+		            {
+		            	free(groups);
+		            }
                     return EXIT_FAILURE;
                 }
                 testcase = bfromcstr(optarg);
@@ -166,6 +193,11 @@ int main(int argc, char** argv)
                     if (currentWorkgroup->streams[i].offset%test->stride)
                     {
                         fprintf (stderr, "Stream %d: offset is not a multiple of stride!\n",i);
+                        affinity_finalize();
+                        if (groups)
+				        {
+				        	free(groups);
+				        }
                         return EXIT_FAILURE;
                     }
 
@@ -197,6 +229,11 @@ int main(int argc, char** argv)
                     fprintf (stderr, "Unknown test case %s\n",optarg);
                     printf("Available test cases:\n");
                     printf(TESTS"\n");
+                    affinity_finalize();
+                    if (groups)
+		            {
+		            	free(groups);
+		            }
                     return EXIT_FAILURE;
                 }
                 else
@@ -217,6 +254,11 @@ int main(int argc, char** argv)
                     }
                 }
                 bdestroy(testcase);
+                affinity_finalize();
+                if (groups)
+		        {
+		        	free(groups);
+		        }
                 exit (EXIT_SUCCESS);
 
                 break;
@@ -240,10 +282,14 @@ int main(int argc, char** argv)
                         break;
                     }
                 }
-
                 if (biseqcstr(testcase,"none"))
                 {
                     fprintf (stderr, "Unknown test case %s\n",optarg);
+                    affinity_finalize();
+                    if (groups)
+		            {
+		            	free(groups);
+		            }
                     return EXIT_FAILURE;
                 }
                 bdestroy(testcase);
@@ -258,6 +304,11 @@ int main(int argc, char** argv)
                     fprintf (stderr,
                             "Unknown option character `\\x%x'.\n",
                             optopt);
+                affinity_finalize();
+                if (groups)
+		        {
+		        	free(groups);
+		        }
                 return EXIT_FAILURE;
             default:
                 HELP_MSG;
@@ -269,6 +320,32 @@ int main(int argc, char** argv)
 		fprintf(stderr, "%d workgroups requested but only %d given on commandline\n",numberOfWorkgroups,numberOfWorkgroups-tmp);
 		affinity_finalize();
 		allocator_finalize();
+		if (groups)
+        {
+        	free(groups);
+        }
+		exit(EXIT_FAILURE);
+	}
+	if (iter <= 0)
+	{
+		fprintf(stderr,"Iterations must be greater than 0\n");
+		affinity_finalize();
+		allocator_finalize();
+		if (groups)
+        {
+        	free(groups);
+        }
+		exit(EXIT_FAILURE);
+	}
+	if (test && !(currentWorkgroup || groups))
+	{
+		fprintf(stderr, "Workgroups must be set on commandline\n");
+		affinity_finalize();
+		allocator_finalize();
+		if (groups)
+        {
+        	free(groups);
+        }
 		exit(EXIT_FAILURE);
 	}
 
@@ -277,6 +354,10 @@ int main(int argc, char** argv)
         affinity_printDomains();
         affinity_finalize();
 		allocator_finalize();
+		if (groups)
+        {
+        	free(groups);
+        }
         exit (EXIT_SUCCESS);
     }
     timer_init();
@@ -350,13 +431,13 @@ int main(int argc, char** argv)
 		    realSize += threads_data[current_id + i].data.size;
 		}
 		time = (double) threads_data[current_id].cycles / (double) timer_getCpuClock();
-		printf("Workgroup: %d\n",j, current_id);
-		printf("Cycles: %llu \n", LLU_CAST threads_data[current_id].cycles);
-		printf("Iterations: %llu \n", LLU_CAST iter);
-		printf("Size: %d \n",  realSize );
-		printf("Vectorlength: %llu \n", LLU_CAST threads_data[current_id].data.size);
-		printf("Time: %e sec\n", time);
-		printf("Number of Flops: %llu \n", LLU_CAST (iter * realSize *  test->flops));
+		printf("Workgroup:\t%d\n",j, current_id);
+		printf("Cycles:\t%llu \n", LLU_CAST threads_data[current_id].cycles);
+		printf("Iterations:\t%llu \n", LLU_CAST iter);
+		printf("Size\t%d \n",  realSize );
+		printf("Vectorlength:\t%llu \n", LLU_CAST threads_data[current_id].data.size);
+		printf("Time:\t%e sec\n", time);
+		printf("Number of Flops:\t%llu \n", LLU_CAST (iter * realSize *  test->flops));
 		printf("MFlops/s:\t%.2f\n",
 		        1.0E-06 * ((double) iter * realSize *  test->flops/  time));
 		printf("MByte/s:\t%.2f\n",
