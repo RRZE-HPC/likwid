@@ -9,7 +9,7 @@ COMPILER = GCC#NO SPACE
 COLOR = BLUE#NO SPACE
 
 # Path were to install likwid
-PREFIX = /home/rrze/unrz/unrz139/TMP/likwid-install#NO SPACE
+PREFIX = /usr/local#NO SPACE
 MANPREFIX = $(PREFIX)/man#NO SPACE
 
 # For the daemon based secure msr/pci access configure
