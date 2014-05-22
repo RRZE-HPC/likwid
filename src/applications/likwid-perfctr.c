@@ -65,13 +65,14 @@ printf("Supported Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \
 printf("-V\t verbose output\n"); \
-printf("-g\t performance group  or event set string\n"); \
+printf("-g\t performance group or event set string\n"); \
 printf("-H\t Get group help (together with -g switch) \n"); \
 printf("-t\t timeline mode with frequency in s or ms, e.g. 300ms\n"); \
 printf("-S\t stethoscope mode with duration in s\n"); \
 printf("-m\t use markers inside code \n"); \
 printf("-s\t bitmask with threads to skip\n"); \
-printf("-o\t Store output to file. (Optional: Apply text filter)\n"); \
+printf("-o\t Store output to file, with output conversation according to file suffix\n"); \
+printf("\t Conversation scripts can be supplied in %s\n",TOSTRING(LIKWIDFILTERPATH)); \
 printf("-O\t Output easily parseable CSV instead of fancy tables\n"); \
 printf("-M\t set how MSR registers are accessed: 0=direct, 1=msrd\n"); \
 printf("-a\t list available performance groups\n"); \
@@ -233,7 +234,12 @@ int main (int argc, char** argv)
                 perfmon_verbose = 1;
                 break;
             case '?':
-                if (isprint (optopt))
+            	if (optopt == 'S'||optopt == 't'||optopt == 'c'||optopt == 'C'||
+            		optopt == 'o'||optopt == 'M'||optopt == 'g')
+            	{
+            	
+            	}
+                else if (isprint (optopt))
                 {
                     fprintf (stderr, "Unknown option `-%c'.\n", optopt);
                 }
