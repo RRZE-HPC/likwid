@@ -145,6 +145,7 @@ else
     DEFINES += -DACCESSMODE=0
 endif
 
+SETFREQ_TARGET = likwid-setFreq
 
 VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
@@ -160,6 +161,12 @@ APPS      = likwid-perfctr    \
 		likwid-genCfg     \
 		likwid-pin        \
 		likwid-bench
+
+PERL_APPS	= likwid-mpirun \
+			likwid-perfscope
+
+DAEMON_APPS = $(SETFREQ_TARGET) \
+			$(DAEMON_TARGET)
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
@@ -177,7 +184,7 @@ FORTRAN_INTERFACE =
 FORTRAN_INSTALL =
 endif
 
-all: $(BUILD_DIR) $(GENGROUPLOCK) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(APPS) $(FORTRAN_INTERFACE)  $(PINLIB)  $(DAEMON_TARGET)
+all: $(BUILD_DIR) $(GENGROUPLOCK) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(APPS) $(FORTRAN_INTERFACE)  $(PINLIB)  $(DAEMON_TARGET) $(SETFREQ_TARGET)
 
 tags:
 	@echo "===>  GENERATE  TAGS"
@@ -196,8 +203,12 @@ $(DYNAMIC_TARGET_LIB): $(OBJ)
 	$(Q)${CC} $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) -lm
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
-	@echo "===>  Build access daemon likwid-accessD"
-	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon
+	@echo "===>  Build access daemon $(DAEMON_TARGET)"
+	$(Q)$(MAKE) -s -C  $(SRC_DIR)/access-daemon $(DAEMON_TARGET)
+
+$(SETFREQ_TARGET): $(SRC_DIR)/access-daemon/setFreq.c
+	@echo "===>  Build frequency daemon $(SETFREQ_TARGET)"
+	$(Q)$(MAKE) -s -C  $(SRC_DIR)/access-daemon $(SETFREQ_TARGET)
 
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
@@ -269,10 +280,21 @@ distclean: clean
 install:
 	@echo "===> INSTALL applications to $(PREFIX)/bin"
 	@mkdir -p $(PREFIX)/bin
-	@cp -f likwid-*  $(PREFIX)/bin
+	@for app in $(APPS); do \
+		cp -f $$app $(PREFIX)/bin; \
+	done
 	@cp -f perl/feedGnuplot  $(PREFIX)/bin
-	@cp -f perl/likwid-*  $(PREFIX)/bin
+	@sed -e "s+/usr/local+$(PREFIX)+g" perl/likwid-setFrequencies > $(PREFIX)/bin/likwid-setFrequencies
+	@for app in $(PERL_APPS); do \
+		cp -f perl/$$app $(PREFIX)/bin; \
+	done
 	@chmod 755 $(PREFIX)/bin/likwid-*
+	@echo "===> INSTALL daemon applications to $(PREFIX)/bin"
+	@mkdir -p $(PREFIX)/sbin
+	@for app in $(DAEMON_APPS); do \
+		cp -f $$app $(PREFIX)/sbin; \
+	done
+	@chmod 755 $(PREFIX)/sbin/likwid-*
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
@@ -293,15 +315,21 @@ install:
 	@mkdir -p $(LIKWIDFILTERPATH)
 	@cp -f filters/*  $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
+	@echo 
+	@echo "Please set suitable permissions and capabilities\nfor the daemon applications in $(PREFIX)/sbin"
 
 uninstall:
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
 	@rm -f $(addprefix $(PREFIX)/bin/,$(APPS)) 
-	@rm -f $(PREFIX)/bin/likwid-mpirun
-	@rm -f $(PREFIX)/bin/likwid-perfscope
+	@rm -f $(addprefix $(PREFIX)/bin/,$(PERL_APPS))
+	@rm -f $(PREFIX)/bin/likwid-setFrequencies
 	@rm -f $(PREFIX)/bin/feedGnuplot
+	@echo "===> REMOVING daemon applications from $(PREFIX)/sbin"
+	@rm -f $(addprefix $(PREFIX)/sbin/,$(DAEMON_APPS)) 
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
-	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(APPS))) 
+	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(APPS)))
+	@echo "===> REMOVING headers from $(PREFIX)/include"
+	@rm -f $(PREFIX)/include/likwid*.h
 	@echo "===> REMOVING libs from $(PREFIX)/lib"
 	@rm -f $(PREFIX)/lib/liblikwid* 
 	@echo "===> REMOVING filter from $(PREFIX)/share"

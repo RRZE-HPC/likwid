@@ -4,7 +4,7 @@ use Getopt::Std;
 
 my $LIKWIDPIN  = '/usr/local/bin/likwid-pin';
 my $SYSPATH = '/sys/devices/system/cpu';
-my $SYSCMD = '/usr/local/bin/setfreq';
+my $SYSCMD = '/usr/local/sbin/likwid-setfreq';
 my $domain = 'N';
 my $governor = 'ondemand';
 my @processors;
