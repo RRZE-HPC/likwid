@@ -84,12 +84,13 @@ BENCH_DIR   = ./bench/x86-64
 endif
 endif
 
+LIKWID_LIB = liblikwid
 ifeq ($(SHARED_LIBRARY),true)
 CFLAGS += $(SHARED_CFLAGS)
-DYNAMIC_TARGET_LIB := liblikwid.so
+DYNAMIC_TARGET_LIB := $(LIKWID_LIB).so
 LIBS += -L. -llikwid
 else
-STATIC_TARGET_LIB := liblikwid.a
+STATIC_TARGET_LIB := $(LIKWID_LIB).a
 endif
 
 ifneq ($(COLOR),NONE)
@@ -271,8 +272,7 @@ clean:
 distclean: clean
 	@echo "===>  DIST CLEAN"
 	@rm -f likwid-*
-	@rm -f $(STATIC_TARGET_LIB)
-	@rm -f $(DYNAMIC_TARGET_LIB)
+	@rm -f $(LIKWID_LIB)*
 	@rm -f $(FORTRAN_INTERFACE)
 	@rm -f $(PINLIB)
 	@rm -f tags
@@ -309,7 +309,7 @@ install:
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL libraries to $(PREFIX)/lib"
 	@mkdir -p $(PREFIX)/lib
-	@cp -f liblikwid*  $(PREFIX)/lib
+	@cp -f $(LIKWID_LIB)*  $(PREFIX)/lib
 	@chmod 755 $(PREFIX)/lib/$(PINLIB)
 	@echo "===> INSTALL filters to $(LIKWIDFILTERPATH)"
 	@mkdir -p $(LIKWIDFILTERPATH)
@@ -331,7 +331,7 @@ uninstall:
 	@echo "===> REMOVING headers from $(PREFIX)/include"
 	@rm -f $(PREFIX)/include/likwid*.h
 	@echo "===> REMOVING libs from $(PREFIX)/lib"
-	@rm -f $(PREFIX)/lib/liblikwid* 
+	@rm -f $(PREFIX)/lib/$(LIKWID_LIB)* 
 	@echo "===> REMOVING filter from $(PREFIX)/share"
 	@rm -rf  $(PREFIX)/share/likwid
 
