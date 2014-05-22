@@ -29,7 +29,8 @@
 include  ../../config.mk
 include  ../../make/include_$(COMPILER).mk
 
-TARGETS   = likwid-accessD likwid-setFreq
+DAEMON_TARGET = likwid-accessD
+SETFREQ_TARGET = likwid-setFreq
 
 DEFINES   = -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS)
 INCLUDES  = -I../includes
@@ -38,8 +39,11 @@ CFLAGS    +=  -pedantic -Wall -Wextra -std=c99
 endif
 CPPFLAGS :=  $(DEFINES) $(INCLUDES)
 
-all: $(TARGET)
+all: $(DAEMON_TARGET) $(SETFREQ_TARGET)
 
-$(TARGETS): accessDaemon.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(TARGET) accessDaemon.c
+$(DAEMON_TARGET): accessDaemon.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c
+
+$(SETFREQ_TARGET): setFreq.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreq.c
 
