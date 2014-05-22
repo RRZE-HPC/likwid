@@ -9,7 +9,7 @@ COMPILER = GCC#NO SPACE
 COLOR = BLUE#NO SPACE
 
 # Path were to install likwid
-PREFIX = /usr/local#NO SPACE
+PREFIX = /home/rrze/unrz/unrz139/TMP/likwid-install#NO SPACE
 MANPREFIX = $(PREFIX)/man#NO SPACE
 
 # For the daemon based secure msr/pci access configure
@@ -26,7 +26,7 @@ BUILDDAEMON = true#NO SPACE
 ACCESSMODE = accessdaemon#NO SPACE
 
 # Change to true to a build shared library instead of a static one
-SHARED_LIBRARY = false#NO SPACE
+SHARED_LIBRARY = true#NO SPACE
 
 # Build Fortran90 module interface for marker API. Adopt Fortran compiler
 # in ./make/include_<COMPILER>.mk if necessary. Default: ifort .
