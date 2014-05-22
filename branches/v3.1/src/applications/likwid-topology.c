@@ -58,7 +58,8 @@ printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \
 printf("-c\t list cache information\n"); \
 printf("-C\t measure processor clock\n"); \
-printf("-o\t Store output to file. (Optional: Apply text filter)\n"); \
+printf("-o\t Store output to file, with output conversation according to file suffix\n"); \
+printf("\t Conversation scripts can be supplied in %s\n",TOSTRING(LIKWIDFILTERPATH)); \
 printf("-g\t graphical output\n\n")
 
 #define VERSION_MSG \
@@ -474,6 +475,21 @@ int main (int argc, char** argv)
     /* call filterscript if specified */
     if (!biseqcstr(filterScript,"NO"))
     {
+    	struct bstrList* tokens;
+    	tokens = bsplit(filterScript,' ');
+    	if (access(bdata(tokens->entry[0]), F_OK))
+    	{
+    		fprintf(stderr, "Cannot find filter %s!\n", bdata(tokens->entry[0]));
+    		bstrListDestroy(tokens);
+    		exit(EXIT_FAILURE);
+    	}
+    	if (access(bdata(tokens->entry[0]), X_OK))
+    	{
+    		fprintf(stderr, "Cannot execute filter %s!\n", bdata(tokens->entry[0]));
+    		bstrListDestroy(tokens);
+    		exit(EXIT_FAILURE);
+    	}
+    	bstrListDestroy(tokens);
         bcatcstr(filterScript, " topology");
         if (system(bdata(filterScript)) == EOF)
         {
