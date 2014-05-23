@@ -9,21 +9,21 @@ There are no fixed counters as on Intel processors.
 
 You can get a recent list with likwid-perfctr -a .
 
-BRANCH: Branch prediction miss rate/ratio
-CACHE: Data cache miss rate/ratio
-CPI: Cycles per instruction
-DATA: Load to store ratio
-FLOPS_DP: Double Precision MFlops/s
-FLOPS_SP: Single Precision MFlops/s
-FPU_EXCEPTION: Floating point exceptions
-ICACHE: Instruction cache miss rate/ratio
-L2: L2 cache bandwidth in MBytes/s
-L2CACHE: L2 cache miss rate/ratio
-L3: L3 cache bandwidth in MBytes/s
-L3CACHE: L3 cache miss rate/ratio
-LINKS: Bandwidth on the Hypertransport links
-MEM: Main memory bandwidth in MBytes/s
-NUMA: Read/Write Events between the ccNUMA nodes
+BRANCH: Branch prediction miss rate/ratio<br>
+CACHE: Data cache miss rate/ratio<br>
+CPI: Cycles per instruction<br>
+DATA: Load to store ratio<br>
+FLOPS_DP: Double Precision MFlops/s<br>
+FLOPS_SP: Single Precision MFlops/s<br>
+FPU_EXCEPTION: Floating point exceptions<br>
+ICACHE: Instruction cache miss rate/ratio<br>
+L2: L2 cache bandwidth in MBytes/s<br>
+L2CACHE: L2 cache miss rate/ratio<br>
+L3: L3 cache bandwidth in MBytes/s<br>
+L3CACHE: L3 cache miss rate/ratio<br>
+LINKS: Bandwidth on the Hypertransport links<br>
+MEM: Main memory bandwidth in MBytes/s<br>
+NUMA: Read/Write Events between the ccNUMA nodes<br>
 
 = Counters =
 
