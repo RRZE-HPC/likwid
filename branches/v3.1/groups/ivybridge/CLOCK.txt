@@ -18,6 +18,6 @@ LONG
 Formula:
 Power =  PWR_PKG_ENERGY / time
 -
-Haswell implements the new RAPL interface. This interface enables to
+IvyBridge implements the new RAPL interface. This interface enables to
 monitor the consumed energy on the package (socket) level.
 

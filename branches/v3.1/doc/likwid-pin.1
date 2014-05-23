@@ -5,13 +5,14 @@ likwid-pin \- pin a sequential or threaded application to dedicated processors
 .B likwid-pin 
 .RB [\-vh]
 .RB [ \-c
-.IR corelist
+.IR corelist ]
 .RB [ \-s
 .IR skip_mask ]
 .RB [ \-S
 .IR Sweep memory before run]
 .RB [ \-p]
 .RB [ \-q]
+.RB [ \-d]
 .RB [ \-i]
 .SH DESCRIPTION
 .B likwid-pin
@@ -83,6 +84,9 @@ set numa memory policy to interleave involving all numa nodes involved in pinnin
 .TP
 .B \-\^q
 silent execution without output
+.TP
+.B \-\^d
+set delimiter used to output the physical processor list
 
 
 .SH EXAMPLE
@@ -100,17 +104,29 @@ For gcc OpenMP as many ids must be specified in processor list as there are thre
 .TP
 .B OMP_NUM_THREADS=4; likwid-pin -c 0,2,1,3  ./myApp
 .IP 3. 4
-For Intel icc OpenMP the flag 
-.B \-\^t 
-.I intel
-must be set.
-.TP
-.B OMP_NUM_THREADS=4; likwid-pin -t intel -c S0:0,1@S1:0,1  ./myApp
-.IP 4. 4
 Full control over the pinning can be achieved by specifying a skip mask.
-For example above case for Intel OpenMP can also be achieved with:
+For example the following command skips the pinning of thread 1:
 .TP
 .B OMP_NUM_THREADS=4; likwid-pin -s 0x1 -c 0,2,1,3  ./myApp
+.IP 4. 4
+The -c switch supports the definition of threads in a specific affinity domain like
+NUMA node or cache group. The available affinity domains can be retrieved with the -p switch 
+and no further option on the commandline. The common affinity domains are N (whole Node), 
+SX (socket X), CX (cache group X) and MX (memory group X). Multiple affinity domains 
+can be set separated by @. In order to pin 2 threads on each socket of a 2-socket system:
+.TP
+.B OMP_NUM_THREADS=4; likwid-pin -c S0:0-1@S1:0-1  ./myApp
+.IP 5. 4
+Another argument definition of the -c switch allows the threads to be pinned according
+to an expression like E:N:4:1:2. The syntax is E:<thread domain>:<number of threads>(:<chunk size>:<stride>).
+The example pins 122 threads with 2 SMT threads per core on a SMT 4 machine:
+.TP
+.B OMP_NUM_THREADS=4; likwid-pin -c E:N:122:2:4  ./myApp
+.IP 6. 4
+The last alternative for the -c switch is the automatic scattering of threads on affinity domains.
+For example to scatter the threads over all memory domains in a system:
+.TP
+.B OMP_NUM_THREADS=4; likwid-pin -c M:scatter  ./myApp
 
 .SH AUTHOR
 Written by Jan Treibig <jan.treibig@gmail.com>.

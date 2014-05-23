@@ -296,7 +296,7 @@ static void pci_read(AccessDataRecord* dRecord)
 
         if ( FD_PCI[socketId][device] < 0)
         {
-            syslog(LOG_ERR, "Failed to open device file on socket %u", socketId);
+            syslog(LOG_ERR, "Failed to open device file %s on socket %u", pci_filepath, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
@@ -309,7 +309,6 @@ static void pci_read(AccessDataRecord* dRecord)
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
-    //    printf("READ Device %s cpu %d reg 0x%x data 0x%x \n",bdata(filepath), cpu, reg, data);
 
     dRecord->data = (uint64_t) data;
 }
@@ -339,7 +338,7 @@ static void pci_write(AccessDataRecord* dRecord)
 
         if ( FD_PCI[socketId][device] < 0)
         {
-            syslog(LOG_ERR, "Failed to open device file on socket %u", socketId);
+            syslog(LOG_ERR, "Failed to open device file %s on socket %u", pci_filepath, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
