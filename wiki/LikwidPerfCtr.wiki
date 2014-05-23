@@ -103,7 +103,8 @@ registers is a security problem. For solutions to this issue have a look at
 -S stethoscope mode with duration in s
 -m use markers inside code
 -s bitmask with threads to skip
--o Store output to file. (Optional: Apply text filter)
+-o Store output to file, with output conversation according to file suffix
+   Conversation scripts can be supplied in /usr/local/share/likwid
 -O Output easily parseable CSV instead of fancy tables
 -M set how MSR registers are accessed: 0=direct, 1=msrd
 -a list available performance groups
@@ -333,7 +334,7 @@ Additionally you need pthread enabled during linking.
 For gcc or icc this look e.g. as:
 
 {{{
- gcc -O3 -pthread -o test dofp.c -L/usr/local/lib -llikwid -lm
+ gcc -O3 -pthread -o test dofp.c -DLIKWID_PERFMON -L/usr/local/lib -llikwid -lm
 }}}
 
 Below is an example showing the usage of the marker API for a serial code:
@@ -409,7 +410,7 @@ You have to care that the fortran interface module likwid.mod is in your module 
 For the Intel fortran compiler this can look as follows:
 
 {{{
-ifort -I../  -O3  -o fortran chaos.F90 -L../ -llikwid  -lpthread -lm
+ifort -I../  -O3  -o fortran chaos.F90 -DLIKWID_PERFMON -L../ -llikwid  -lpthread -lm
 }}}
 
 There is a example how to use the marker API in Fortran in the test directory (chaos.F90).
