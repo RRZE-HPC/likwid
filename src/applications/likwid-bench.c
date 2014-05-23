@@ -418,49 +418,45 @@ int main(int argc, char** argv)
     threads_create(runTest);
     threads_join();
     allocator_finalize();
-
+	
+	uint32_t realSize = 0;
+	uint64_t realCycles = 0;
+	int current_id = 0;
     
 	printf(HLINE);
     for(j=0;j<numberOfWorkgroups;j++)
     {
-    	int current_id = j*groups[j].numberOfThreads;
-    	uint32_t realSize = 0;
-    	
-    	for (int i=0; i<groups[j].numberOfThreads; i++)
-		{
-		    realSize += threads_data[current_id + i].data.size;
-		}
-		time = (double) threads_data[current_id].cycles / (double) timer_getCpuClock();
-		printf("Workgroup:\t%d\n",j, current_id);
-		printf("Cycles:\t%llu \n", LLU_CAST threads_data[current_id].cycles);
-		printf("Iterations:\t%llu \n", LLU_CAST iter);
-		printf("Size\t%d \n",  realSize );
-		printf("Vectorlength:\t%llu \n", LLU_CAST threads_data[current_id].data.size);
-		printf("Time:\t%e sec\n", time);
-		printf("Number of Flops:\t%llu \n", LLU_CAST (iter * realSize *  test->flops));
-		printf("MFlops/s:\t%.2f\n",
-		        1.0E-06 * ((double) iter * realSize *  test->flops/  time));
-		printf("MByte/s:\t%.2f\n",
-		        1.0E-06 * ( (double) iter * realSize *  test->bytes/ time));
-		printf("Cycles per update:\t%f\n",
-		        ((double) threads_data[current_id].cycles / (double) (iter * threads_data[current_id].numberOfThreads *  threads_data[current_id].data.size)));
-
-		switch ( test->type )
-		{
-		    case SINGLE:
-		        printf("Cycles per cacheline:\t%f\n",
-		                (16.0 * (double) threads_data[current_id].cycles / (double) (iter * realSize)));
-		        break;
-		    case DOUBLE:
-		        printf("Cycles per cacheline:\t%f\n",
-		                (8.0 * (double) threads_data[current_id].cycles / (double) (iter * realSize)));
-		        break;
-		}
-		if (numberOfWorkgroups > 1)
-		{
-			printf("\n");
-		}
+    	current_id = j*groups[j].numberOfThreads;
+    	realCycles += threads_data[current_id].cycles;
+    	realSize += groups[j].numberOfThreads * threads_data[current_id].data.size;
 	}
+	time = (double) realCycles / (double) timer_getCpuClock();
+	printf("Cycles: %llu \n", LLU_CAST realCycles);
+	printf("Iterations: %llu \n", LLU_CAST iter);
+	printf("Size %d \n",  realSize );
+	printf("Vectorlength: %llu \n", LLU_CAST threads_data[current_id].data.size);
+	printf("Time: %e sec\n", time);
+	printf("Number of Flops: %llu \n", LLU_CAST (iter * realSize *  test->flops));
+	printf("MFlops/s: %.2f\n",
+	        1.0E-06 * ((double) iter * realSize *  test->flops/  time));
+	printf("MByte/s: %.2f\n",
+	        1.0E-06 * ( (double) iter * realSize *  test->bytes/ time));
+	printf("Cycles per update: %f\n",
+	        ((double) realCycles / (double) (iter * numberOfWorkgroups * threads_data[current_id].numberOfThreads *  threads_data[current_id].data.size)));
+
+	switch ( test->type )
+	{
+	    case SINGLE:
+	        printf("Cycles per cacheline: %f\n",
+	                (16.0 * (double) realCycles / (double) (iter * realSize)));
+	        break;
+	    case DOUBLE:
+	        printf("Cycles per cacheline: %f\n",
+	                (8.0 * (double) realCycles / (double) (iter * realSize)));
+	        break;
+	}
+
+	
     printf(HLINE);
     threads_destroy(numberOfWorkgroups);
     barrier_destroy();
