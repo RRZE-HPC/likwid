@@ -46,8 +46,27 @@ multiplexing to allow for more meaningful performance groups.
 
 Supported Groups: 
 
-This is still not settled. You can find out about supported groups with
-likwid-perfctr -a .
+You can find out about supported groups with likwid-perfctr -a.
+
+CACHE: Compute to Data Access Ratio <br>
+CPI: Cycles per instruction<br>
+L2CACHE: L2 Compute to Data Access Ratio<br>
+MEM1: L2 Write Misses<br>
+MEM2: L2 Read Misses<br>
+MEM3: HW prefetch transfers<br>
+MEM4: L2 Victim requests<br>
+MEM5: L2 Snoop hits<br>
+MEM6: L2 Read Misses<br>
+PAIRING: Pairing ratio<br>
+READ_MISS_RATIO: Miss ratio for data read<br>
+WRITE_MISS_RATIO: Miss ratio for data write<br>
+VECTOR: Vector unit usage<br>
+VECTOR2: Vector unit usage<br>
+VPU_FILL_RATIO_DBL: VPU filling for double<br>
+VPU_PAIRING: VPU Pairing ratio<br>
+VPU_READ_MISS_RATIO: Miss ratio for VPU data read<br>
+VPU_WRITE_MISS_RATIO: Miss ratio for VPU data write<br>
+
 
 = Counters =
 
@@ -55,5 +74,5 @@ likwid-perfctr -a .
 
 = Events =
 
-This architecture has 59 events.
+This architecture has 61 events.
 For a recent list of supported events execute likwid-perfctr with the -e switch.
