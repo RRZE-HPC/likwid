@@ -3,11 +3,13 @@
 likwid-powermeter \- A tool to print Power and Clocking information on Intel CPUS
 .SH SYNOPSIS
 .B likwid-powermeter 
-.RB [ \-vh ]
+.RB [ \-vhip ]
 .RB [ \-c
-.IR socketId ]
+.IR socketIds ]
 .RB [ \-s
 .IR duration in seconds ]
+.RB [ \-M
+.IR access mode (0=direct, 1=accessDaemon) ]
 .SH DESCRIPTION
 .B likwid-powermeter
 is a command line application to get the Energy comsumption on Intel RAPL capable processors. Currently
@@ -24,14 +26,21 @@ prints version information to standard output, then exits.
 .B \-\^h
 prints a help message to standard output, then exits.
 .TP
-.B \-\^c " socketId"
-set on which socket the RAPL interface is accessed.
+.B \-\^c " socketIds"
+set on which sockets the RAPL interface is accessed. comma-separated list of socketIds
 .TP
 .B \-\^p
 prints out information about dynamic clocks and CPI information on the socket measured.
 .TP
 .B \-\^i
 prints out information TDP and Turbo mode steps
+.TP
+.B \-\^M
+set the access method. 0 for direct access to MSR/RAPL registers, 1 for using the accessDaemon.
+.TP
+.B \-\^s
+measure the power for a specific time (default 2s)
+
 
 .SH AUTHOR
 Written by Jan Treibig <jan.treibig@gmail.com>.

@@ -93,15 +93,25 @@ static int startDaemon(void)
 
     if (accessClient_mode == DAEMON_AM_ACCESS_D)
     {
+    	if (access(exeprog, F_OK))
+    	{
+    		fprintf(stderr, "Daemon '%s' cannot be found\n", exeprog);
+    		exit(EXIT_FAILURE);
+    	}
+    	if (access(exeprog, X_OK))
+    	{
+    		fprintf(stderr, "Daemon '%s' not executable\n", exeprog);
+    		exit(EXIT_FAILURE);
+    	}
         pid = fork();
 
         if (pid == 0)
-	{
-	    ret = execve (exeprog, newargv, newenv);
-	    ERRNO_PRINT;
-	    fprintf(stderr, "Failed to execute the daemon '%s' (see error above)\n", exeprog);
-	    exit(EXIT_FAILURE);
-	}
+		{
+			ret = execve (exeprog, newargv, newenv);
+			ERRNO_PRINT;
+			fprintf(stderr, "Failed to execute the daemon '%s' (see error above)\n", exeprog);
+			exit(EXIT_FAILURE);
+		}
         else if (pid < 0)
         {
             ERROR_PLAIN_PRINT(Failed to fork);

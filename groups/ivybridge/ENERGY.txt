@@ -13,12 +13,17 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-TEMP [C]  TMP0
+Temperature [C]  TMP0
 Energy [J]  PWR0
 Power [W] PWR0/time
 Energy DRAM [J]  PWR3
 Power DRAM [W] PWR3/time
 
 LONG
-To be added
+Formula:
+Power =  PWR_PKG_ENERGY / time
+Power DRAM = PWR_DRAM_ENERGY / time
+-
+IvyBridge implements the new RAPL interface. This interface enables to
+monitor the consumed energy on the package (socket) and DRAM level.
 

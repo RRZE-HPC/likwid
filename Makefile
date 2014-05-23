@@ -284,7 +284,7 @@ install:
 		cp -f $$app $(PREFIX)/bin; \
 	done
 	@cp -f perl/feedGnuplot  $(PREFIX)/bin
-	@sed -e "s+/usr/local+$(PREFIX)+g" perl/likwid-setFrequencies > $(PREFIX)/bin/likwid-setFrequencies
+	@sed -e "s+<PREFIX>+$(PREFIX)+g" perl/likwid-setFrequencies > $(PREFIX)/bin/likwid-setFrequencies
 	@for app in $(PERL_APPS); do \
 		cp -f perl/$$app $(PREFIX)/bin; \
 	done
