@@ -3,15 +3,21 @@
 likwid-perfctr \- configure and read out hardware performance counters on x86 cpus
 .SH SYNOPSIS
 .B likwid-perfctr 
-.RB [\-vhHVmaiCst]
-.RB [ \-c
+.RB [\-vhHVmaeiMoO]
+.RB [ \-c/\-C
 .IR core_list ]
 .RB [ \-g
 .IR performance_group
 or
 .IR performance_event_string ]
-.RB [ \-d
-.IR frequency
+.RB [ \-t
+.IR frequency ]
+.RB [ \-S
+.IR time ]
+.RB [ \-s
+.IR skip_mask ]
+.RB [ \-o
+.IR output_file ]
 .SH DESCRIPTION
 .B likwid-perfctr
 is a lightweight command line application to configure and read out hardware performance monitoring data
@@ -19,7 +25,7 @@ on supported x86 processors. It can measure either as wrapper without changing t
 or with marker API functions inside the code, which will turn on and off the counters. There are preconfigured
 groups with useful event sets and derived metrics. Additonally arbitrary events can be measured with
 custom event sets. The marker API can measure mulitple named regions. Results are accumulated on multiple calls.
-The following x86 processor's are supported:
+The following x86 processors are supported:
 .IP \[bu] 
 .B Intel Core 2:
 all variants. Counters:
@@ -34,19 +40,19 @@ all variants, no uncore for the moment. Counters:
 .I PMC0, PMC1, PMC2, PMC3, FIXC0, FIXC1, FIXC2
 .IP \[bu] 
 .B Intel Westmere:
-all variants, Counters:
+all variants. Counters:
 .I PMC0, PMC1, PMC2, PMC3, UPMC0 - UPMC7, FIXC0, FIXC1, FIXC2
 .IP \[bu] 
 .B Intel Sandy Bridge:
-all variants, partial support for uncore, full RAPL support Counters:
+all variants, partial support for uncore, full RAPL support. Counters:
 .I PMC0, PMC1, PMC2, PMC3, FIXC0, FIXC1, FIXC2
 .IP \[bu] 
 .B Intel Ivy Bridge:
-all variants, partial support for uncore, full RAPL support Counters:
+all variants, partial support for uncore, full RAPL support. Counters:
 .I PMC0, PMC1, PMC2, PMC3, FIXC0, FIXC1, FIXC2
 .IP \[bu] 
 .B Intel Haswell:
-only desktop variants, full RAPL support Counters:
+only desktop variants, full RAPL support. Counters:
 .I PMC0, PMC1, PMC2, PMC3, FIXC0, FIXC1, FIXC2
 .IP \[bu] 
 .B Intel Pentium M:
@@ -82,7 +88,7 @@ verbose output during execution for debugging.
 run in marker API mode
 .TP
 .B \-\^a
-print available performance groups for current processor, then exit.
+print available performance groups for current processor.
 .TP
 .B \-\^e
 print available counters and performance events of current processor.
@@ -93,6 +99,9 @@ store all ouput to a file instead of stdout. For the filename the following plac
 The placeholders must be separated by underscore as, e.g., -o test_%h_%p. You must specify a suffix to
 the filename. For txt the output is printed as is to the file. Other suffixes trigger a filter on the output.
 Available filters are csv (comma separated values) and xml at the moment.
+.TP
+.B \-\^O
+Do not print tables for results, use easily parseable CSV instead.
 .TP
 .B \-\^i
 print cpuid information about processor and on Intel Performance Monitoring features, then exit.
@@ -111,17 +120,20 @@ specify which performance group to measure. This can be one of the tags output w
 Also a custom event set can be specified by a comma separated list of events. Each event has the format
 eventId:register with the the register being one of a architecture supported performance counter registers.
 .TP
-.B \-\^d " frequency of measurements in seconds"
+.B \-\^t " frequency of measurements in seconds"
 timeline mode for time resolved measurements. The output has the format:
 .TP
 .B <Event> <Timestamp> <Result thread0> <Result thread1> ...
+.TP
+.B \-\^S " time_in_seconds"
+stethoscope mode with duration in senconds. Can be used to measure an application from the outside.
 
 .SH EXAMPLE
 Because 
 .B likwid-perfctr
 measures on processors and not single applications it is necessary to ensure
 that processes and threads are pinned to dedicated resources. You can either pin the application yourself
-or the builtin pin functionality.
+or use the builtin pin functionality.
 .IP 1. 4
 As wrapper with performance group:
 .TP
@@ -152,8 +164,10 @@ As wrapper with custom event set on Intel:
 .PP
 On Intel processors fixed events are measured on dedicated counters. These are
 .B INSTR_RETIRED_ANY
-and
+,
 .B CPU_CLK_UNHALTED_CORE.
+and
+.B CPU_CLK_UNHALTED_REF
 If you configure these fixed counters, 
 .B likwid-perfctr
 will calculate the runtime and CPI metrics for your run.
@@ -163,38 +177,52 @@ Using the marker API to measure only parts of your code (this can be used both w
 .TP
 .B likwid-perfctr -m -C 0-4  -g INSTRUCTIONS_RETIRED_SSE:PMC0,CPU_CLOCKS_UNHALTED:PMC3   ./cacheBench
 .PP
-You have to link you code against liblikwid.a and use the marker API calls.
+You have to link you code against liblikwid.a/.so and use the marker API calls.
 The following code snippet shows the necessary calls:
 
 .nf
 #include <likwid.h>
 
 /* only one thread calls init */
-     if (threadId == 0)
-     {
-         likwid_markerInit();
-     }
-     BARRIER;
-     likwid_markerStartRegion("Benchmark");
-     /* your code to be measured is here */
+if (threadId == 0)
+{
+    likwid_markerInit();
+}
+/* if you want to measure an threaded application
+ * you have to call likwid_markerThreadInit() for
+ * preparation, example with OpenMP */
+#pragma omp parallel
+{
+	likwid_markerThreadInit();
+}
+BARRIER;
+likwid_markerStartRegion("Benchmark");
+/* your code to be measured is here.*/
 
-     likwid_markerStopRegion("Benchmark");
-     BARRIER;
-     /* again only one thread can close the markers */
-     if (threadId == 0)
-     {
-         likwid_markerClose();
-     }
+likwid_markerStopRegion("Benchmark");
+BARRIER;
+/* again only one thread can close the markers */
+if (threadId == 0)
+{
+    likwid_markerClose();
+}
 .fi
 
 .IP 5. 4
 Using likwid in timeline mode:
 .TP
-.B likwid-perfctr -c 0-3  -g FLOPS_DP -d 300ms  ./cacheBench > out.txt
+.B likwid-perfctr -c 0-3  -g FLOPS_DP -t 300ms  ./cacheBench > out.txt
 .PP
 This will read out the counters every 300ms on physical cores 0-3 and write the results to out.txt.
 For timeline mode there is a frontend application likwid-scope, which enables live plotting of selected events.
 For more code examples have a look at the likwid WIKI pages.
+
+.IP 6. 4
+Using likwid in stethoscope mode:
+.TP
+.B likwid-perfctr -c 0-3  -g FLOPS_DP -S 2s
+.PP
+This will start the counters and read them out after 2s on physical cores 0-3 and write the results to stdout.
 
 .SH AUTHOR
 Written by Jan Treibig <jan.treibig@gmail.com>.

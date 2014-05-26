@@ -4,7 +4,7 @@ likwid-features \- print and toggle the flags of the MSR_IA32_MISC_ENABLE model 
 .SH SYNOPSIS
 .B likwid-features 
 .RB [ \-vh ]
-.RB [ \-t
+.RB [ \-c
 .IR coreId ]
 .RB [ \-su
 .IR prefetcher_tag ]
@@ -41,7 +41,7 @@ prints version information to standard output, then exits.
 .B \-\^h
 prints a help message to standard output, then exits.
 .TP
-.B \-\^t " coreId"
+.B \-\^c " coreId"
 set on which processor core the MSR should be read
 .TP
 .B \-\^u " HW_PREFETCHER | CL_PREFETCHER | DCU_PREFETCHER | IP_PREFETCHER"
@@ -55,4 +55,4 @@ Written by Jan Treibig <jan.treibig@gmail.com>.
 .SH BUGS
 Report Bugs on <http://code.google.com/p/likwid/issues/list>.
 .SH "SEE ALSO"
-likwid-topology(1), likwid-perfCtr(1), likwid-pin(1),
+likwid-perfctr(1), likwid-pin(1), likwid-powermeter(1), likwid-topology(1), likwid-setFrequencies(1)
