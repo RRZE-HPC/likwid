@@ -14,7 +14,7 @@ use vars qw/ %opt /;
 
 sub init
 {
-    my $opt_string = 'g:d:f:lph';
+    my $opt_string = 'g:c:f:lph';
     getopts( $opt_string, \%opt ) or usage();
     usage() if $opt{h};
 }
@@ -30,14 +30,14 @@ usage: $0 [-hlp] [-g governor] [-d domain] [-f frequency]
 -h          : this (help) message
 -p          : print current frequencies
 -l          : list available frequencies
--d domain   : likwid thread domain which to apply settings
+-c cpu_list : likwid thread domain which to apply settings
               (set to N if omitted)
 -g governor : set governor (ondemand, performance, turbo)
               (set to ondemand if omitted)
 -f frequency: set fixed frequency, implicitly sets userspace
               governor
 
-example: $0 -d S0 -f 2.7
+example: $0 -c S0 -f 2.7 (set all CPUs on socket 0 to 2.7 GHz)
 EOF
     exit;
 }
@@ -86,8 +86,8 @@ sub extractProcessorList
 
 init();
 
-if ($opt{d}) {
-    $domain = $opt{d};
+if ($opt{c}) {
+    $domain = $opt{c};
 }
 
 extractProcessorList();

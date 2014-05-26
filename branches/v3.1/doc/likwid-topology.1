@@ -5,14 +5,14 @@ likwid-topology \- print thread and cache topology
 .B likwid-topology 
 .RB [\-hvgcC]
 .RB [ \-o
-.IR output file ]
+.IR output_file ]
 .SH DESCRIPTION
 .B likwid-topology
 is a command line application to print the thread and cache
-toppology on multicore x86 processors. Used with mono spaced fonts it can
-draw the processor topology of a machine in ascii art. Beyond topology
+topology on multicore x86 processors. Used with mono spaced fonts it can
+draw the processor topology of a machine in ASCII art. Beyond topology
 likwid-topology determines the clock of a processor and prints detailed
-informations about the caches hierarchy.
+informations about the caches hierarchy and NUMA structure.
 .SH OPTIONS
 .TP
 .B \-v
@@ -22,7 +22,7 @@ prints version information to standard output, then exits.
 prints a help message to standard output, then exits.
 .TP
 .B \-g
-prints topology information in ascii art. Best viewed with monospaced font.
+prints topology information in ASCII art. Best viewed with monospaced font.
 .TP
 .B \-c
 prints detailed informations about cache hierarchy
@@ -39,4 +39,4 @@ Written by Jan Treibig <jan.treibig@gmail.com>.
 .SH BUGS
 Report Bugs on <http://code.google.com/p/likwid/issues/list>.
 .SH "SEE ALSO"
-likwid-perfCtr(1), likwid-features(1), likwid-pin(1),
+likwid-perfctr(1), likwid-features(1), likwid-pin(1), likwid-powermeter(1), likwid-setFrequencies(1)
