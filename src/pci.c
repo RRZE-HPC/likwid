@@ -197,7 +197,7 @@ pci_init(int initSocket_fd)
 				}
 				else
 				{
-					fprintf(stderr, "Device %s not found, excluded it from device list\n",bdata(filepath));
+					//fprintf(stderr, "Device %s not found, excluded it from device list\n",bdata(filepath));
 					FD[j][i] = -2;
 				}
 				bdestroy(filepath);
@@ -244,6 +244,7 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg)
         uint32_t data = 0;
 		if ( FD[socketId][device] == -2)
 		{
+			fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
 			return data;
 		}
         else if ( !FD[socketId][device] )
@@ -287,6 +288,7 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
     {
 		if ( FD[socketId][device] == -2)
 		{
+			fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
 			return;
 		}
         else if ( !FD[socketId][device] )
@@ -329,6 +331,7 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
         uint32_t data = 0;
 		if ( FD[socketId][device] == -2)
 		{
+			fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
 			return data;
 		}
         else if ( !FD[socketId][device] )
@@ -373,6 +376,7 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
     {
 		if ( FD[socketId][device] == -2)
 		{
+			fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
 			return;
 		}
         else if ( !FD[socketId][device] )
