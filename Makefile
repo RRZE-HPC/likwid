@@ -35,10 +35,11 @@ MAKE_DIR    = ./make
 #DO NOT EDIT BELOW
 
 # determine kernel Version
-KERNEL_VERSION := $(shell uname -r | awk -F. '{ print $$2 }')
-KERNEL_VERSION_MAJOR := $(shell uname -r | awk -F. '{ print $$1 }')
+KERNEL_VERSION_MAJOR := $(shell uname -r | awk '{split($$1,a,"."); print a[1]}' | cut -d '-' -f1)
+KERNEL_VERSION := $(shell uname -r | awk  '{split($$1,a,"."); print a[2]}' | cut -d '-' -f1)
+KERNEL_VERSION_MINOR := $(shell uname -r | awk '{split($$1,a,"."); print a[3]}' | cut -d '-' -f1)
 
-HAS_MEMPOLICY = $(shell if [ $(KERNEL_VERSION) -lt 7 -a $(KERNEL_VERSION_MAJOR) -lt 3 ]; then \
+HAS_MEMPOLICY = $(shell if [ $(KERNEL_VERSION) -lt 7 -a $(KERNEL_VERSION_MAJOR) -lt 3 -a $(KERNEL_VERSION_MINOR) -lt 7 ]; then \
                echo 0;  else echo 1; \
 			   fi; )
 
@@ -112,7 +113,7 @@ endif
 ifeq ($(HAS_MEMPOLICY),1)
 DEFINES += -DHAS_MEMPOLICY
 else
-$(info Kernel 2.6.$(KERNEL_VERSION) has no mempolicy support!);
+$(info Kernel $(KERNEL_VERSION_MAJOR).$(KERNEL_VERSION).$(KERNEL_VERSION_MINOR) has no mempolicy support! First Linux kernel with memory policies has version 2.6.7);
 endif
 
 ifeq ($(HAS_RDTSCP),0)
