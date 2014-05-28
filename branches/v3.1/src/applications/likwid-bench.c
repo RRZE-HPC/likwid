@@ -65,19 +65,19 @@ printf("-l <TEST>\t list properties of benchmark \n"); \
 printf("-i <INT>\t number of iterations \n"); \
 printf("-g <INT>\t number of workgroups (mandatory)\n"); \
 printf("-t <TEST>\t type of test \n"); \
-printf("-w\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>], size in kB, MB or GB  (mandatory)\n"); \
-printf("Processors are in compact ordering.\n"); \
-printf("Usage: likwid-bench -t copy -i 1000 -g 1 -w S0:100kB \n")
-
-//printf("-d\t delimiter used for physical core list (default ,) \n"); \
+printf("-w\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>][-<streamId>:<domain_id>[:<offset>]], size in kB, MB or GB  (mandatory)\n"); \
+printf("Processors are in compact ordering. Optionally every stream can be placed. Either no stream or all streams must be placed. Multiple streams are separated by commas.\n"); \
+printf("Usage: likwid-bench -t copy -i 1000 -g 1 -w S0:100kB:10:1:2 \n"); \
+printf("\tRun 10 threads on socket 0 using physical cores only (presuming SMT2 system).\n"); \
+printf("Example with data placement: likwid-bench -t copy -i 1000 -g 1 -w S0:100kB:20-0:S1,1:S1 \n"); \
+printf("\tRun 20 threads on socket 0 and place both arrays of the copy test case on socket 1.\n")
 
 #define VERSION_MSG \
     printf("likwid-bench   %d.%d \n\n",VERSION,RELEASE)
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ############ */
 
-    void
-copyThreadData(ThreadUserData* src,ThreadUserData* dst)
+void copyThreadData(ThreadUserData* src,ThreadUserData* dst)
 {
     uint32_t i;
 
