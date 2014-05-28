@@ -1,6 +1,6 @@
 .TH LIKWID-BENCH 1 <DATE> likwid\-<VERSION>
 .SH NAME
-likwid-bench \- low-level benchmark suite in order to measure peak performance of a system
+likwid-bench \- low-level benchmark suite and microbenchmarking framework
 .SH SYNOPSIS
 .B likwid-bench
 .RB [\-hap]
@@ -16,7 +16,7 @@ likwid-bench \- low-level benchmark suite in order to measure peak performance o
 .IR workgroup_expression ]
 .SH DESCRIPTION
 .B likwid-bench
-is a benchmark suite for low-level (assembly) benchmarks to estimate the peak performance of a x86 system. The currently included benchmark codes include common memory operations like load and store but also calculations like vector triad and sum. 
+is a benchmark suite for low-level (assembly) benchmarks to measure bandwidths and instruction throughput for specific instruction code on x86 systems. The currently included benchmark codes include common data access patterns like load and store but also calculations like vector triad and sum.
 .B likwid-bench
 includes architecture specific benchmarks for x86, x86_64 and x86 for Intel Xeon Phi coprocessors. The performance values can either be calculated by 
 .B likwid-bench 
@@ -24,6 +24,9 @@ or measured using performance counters by using.
 .B likwid-perfctr
 as a wrapper to
 .B likwid-bench.
+This requires to build
+.B likwid-bench.
+with Instrumentation which can be enabled in config.mk.
 .SH OPTIONS
 .TP
 .B \-\^h
@@ -39,21 +42,32 @@ list available thread domains.
 list properties of a benchmark code.
 .TP
 .B \-\^i " iterations"
-number of iterations to perform inside the benchmark code
+number of iterations to perform inside the benchmark code.
 .TP
 .B \-\^t " testname"
-Name of the benchmark code
+Name of the benchmark code to run (mandatory).
 .TP
 .B \-\^g " number_of_workgroups"
-Mandatory option to specify the number of workgroups to perform the benchmark code on.
+specify the number of workgroups to perform the benchmark code on (mandatory).
 .TP
 .B \-\^w " workgroup_expression"
-Specify the affinity domain, thread count and workload for the current benchmarking run. 
-Syntax: <thread domain>:<size>[:<num_threads>[:<chunk size>:<stride>]] with size in kB, MB or GB.
+Specify the affinity domain, thread count and data set size for the current benchmarking run (mandatory).
+
+.SH WORKGROUP SYNTAX
+.B <thread_domain>:<size>[:<num_threads>[:<chunk_size>:<stride>]][-<streamId>:<domain_id>]
+with size in kB, MB or GB.
+Where thread domain is where threads are placed. Size is the total data set size for the benchmark. num_threads specifies how many threads are used. Threads are always placed using a compact policy in
+.B likwid-bench.
+This means that per default all SMT threads are used. Optionally similar a the expression based syntax in
+.B likwid-pin
+a chunk size and stride can be provided. Optionally for every stream means array the placement can be controlled. Per default all arrays are placed in the same thread domain the threads are running in. To place the data in a different domain for every stream of a benchmark case (the total number of streams  can be aquired by the \-l option) the domain to place the data in can be specified. Multiple streams are comma separated. Either the placement is provided or all streams have to be explicitly placed. Please refer to the Wiki pages on
+.B http://code.google.com/p/likwid/wiki/LikwidBench
+for further details and examples on usage.
+
 
 .SH EXAMPLE
 .IP 1. 4
-Run the copy benchmark with 1000 iterations on socket 0 with a workload of 100kB.
+Run the copy benchmark with 1000 iterations on socket 0 with a total data set size of 100kB.
 .TP
 .B likwid-bench -t copy -i 1000 -g 1 -w S0:100kB
 .PP
@@ -65,7 +79,7 @@ Run the triad benchmark code with 100 iterations with 2 threads on the socket 0 
 .TP
 .B likwid-bench -t triad -i 100 -g 1 -w S0:1GB:2:1:2
 .PP
-Assuming socket 0 has 4 SMT threads, one thread is assigned to each phyiscal core of socket 0.
+Assuming socket 0 has 4 SMT threads, one thread is assigned to each physical core of socket 0.
 .IP 3. 4
 Run the update benchmark with 1000 iterations on socket 0 with a workload of 100kB and on socket 1 with the same workload.
 .TP
@@ -82,8 +96,15 @@ The option INSTRUMENT_BENCH in config.mk needs to be true at compile time to use
 .B likwid-perfctr 
 will configure and start the performance counters on socket 0 with 4 threads prior to the execution of
 .B likwid-bench
-. The perfmance counters are read right before and after running the benchmarking code to 
+. The performance counters are read right before and after running the benchmarking code to 
 minimize the interferences of the measurement.
+.IP 5. 4
+Run the copy benchmark and place the data on other socket
+.TP
+.B likwid-bench -t copy -i 50 -g 1 -w S0:1GB:10:1:2-0:S1,1:S1
+.PP
+Stream id 0 and 1 are placed in thread domains S1, which is socket 1. This can be verified as the initialization threads output where they are running.
+
 
 .SH AUTHOR
 Written by Jan Treibig <jan.treibig@gmail.com>.
