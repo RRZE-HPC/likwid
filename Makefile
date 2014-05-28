@@ -151,6 +151,7 @@ SETFREQ_TARGET = likwid-setFreq
 
 VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
+OBJ      += $(patsubst $(SRC_DIR)/%.s, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.s))
 OBJ      += $(patsubst $(SRC_DIR)/%.cc, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.cc))
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
@@ -234,6 +235,10 @@ $(BUILD_DIR)/%.o:  %.c
 	@echo "===>  COMPILE  $@"
 	$(Q)$(CC) -c  $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+
+$(BUILD_DIR)/%.o:  %.s
+	@echo "===>  ASSEMBLE  $@"
+	$(Q)$(AS) $(ASFLAGS)  $< -o $@
 
 $(BUILD_DIR)/%.o:  %.cc
 	@echo "===>  COMPILE  $@"

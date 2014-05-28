@@ -37,8 +37,12 @@
 #include <error.h>
 #include <types.h>
 #include <memsweep.h>
+#include <cpuid.h>
 #include <numa.h>
 #include <affinity.h>
+
+extern void _loadData(uint32_t size, void* ptr);
+
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -53,12 +57,12 @@ static uint64_t  memoryFraction = 80ULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static void* 
+static void*
 allocateOnNode(size_t size, int domainId)
 {
 	char *ptr; 
 
-	ptr = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);  
+	ptr = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
 
 	if (ptr == (char *)-1)
     {
@@ -70,7 +74,7 @@ allocateOnNode(size_t size, int domainId)
     return ptr;
 }
 
-static void 
+static void
 initMemory(size_t size, char* ptr, int domainId)
 {
     affinity_pinProcess(numa_info.nodes[domainId].processors[0]);
@@ -96,8 +100,17 @@ findProcessor(uint32_t nodeId, uint32_t coreId)
     return 0;
 }
 
-
-
+/* evict all dirty cachelines from last level cache */
+static void cleanupCache(char* ptr)
+{
+#ifdef __x86_64
+    uint32_t cachesize = 2 * cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].size;
+    printf("Cleanup LLC using %u MB\n", cachesize / (1000000));
+    _loadData(cachesize,ptr);
+#else
+    ERROR_PLAIN_PRINT(Cleanup cache is currently only available on 64bit X86 systems.);
+#endif
+}
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -125,10 +138,11 @@ memsweep_domain(int domainId)
     size_t size = numa_info.nodes[domainId].totalMemory * 1024ULL * memoryFraction / 100ULL;
     printf("Sweeping domain %d: Using %g MB of %g MB\n",
             domainId,
-            size / (1024.0 * 1024.0),
-            numa_info.nodes[domainId].totalMemory/ 1024.0);
+            size / (1000.0 * 1000.0),
+            numa_info.nodes[domainId].totalMemory/ 1000.0);
     ptr = (char*) allocateOnNode(size, domainId);
     initMemory(size, ptr, domainId);
+    cleanupCache(ptr);
     munmap(ptr, size);
 }
 
@@ -147,7 +161,4 @@ memsweep_threadGroup(int* processorList, int numberOfProcessors)
         }
     }
 }
-
-
-
 

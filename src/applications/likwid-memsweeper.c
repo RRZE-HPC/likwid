@@ -47,7 +47,7 @@
 
 #define HELP_MSG \
 printf("\nlikwid-memsweeper --  Version  %d.%d \n\n",VERSION,RELEASE); \
-printf("A tool clean up NUMA memory domains.\n"); \
+printf("A tool clean up NUMA memory domains and last level caches.\n"); \
 printf("Options:\n"); \
 printf("-h\t Help message\n"); \
 printf("-v\t Version information\n"); \
@@ -60,7 +60,7 @@ printf("likwid-memsweeper  %d.%d \n\n",VERSION,RELEASE)
 
 
 int main (int argc, char** argv)
-{ 
+{
     int domainId = -1;
     int c;
     bstring argString;
