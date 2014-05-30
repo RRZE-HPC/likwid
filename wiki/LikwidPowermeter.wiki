@@ -33,6 +33,12 @@ Do get info about RAPL and Turbo Mode call
  likwid-powermeter -i
 }}}
 
+Toggle between the access modes of LIKWID to the MSR/RAPL counters:
+{{{
+ likwid-powermeter -M 0
+}}}
+-M 0 means directly accessing the MSR device files and -M 1 forward the read/write requests to LIKWID's accessDaemon
+
 Output should be something like the following:
 {{{
 -------------------------------------------------------------
@@ -78,14 +84,14 @@ Power consumed: 3.82963 Watts
 
 Next you can use likwid-powermeter as a wrapper:
 {{{
-./likwid-powermeter  ./a.out
+ likwid-powermeter  ./a.out
 }}}
 
 Finally you can also output the clock and CPI calues for the socket you are
 currently measuring:
 
 {{{
-./likwid-powermeter -p ./a.out
+ likwid-powermeter -p ./a.out
 }}}
 
 It outputs a table similar to likwid-perfctr:
@@ -97,28 +103,34 @@ It outputs a table similar to likwid-perfctr:
 |   INSTR_RETIRED_ANY   | 2.46061e+09 | 2.45852e+09 | 31496  |  3577  |
 | CPU_CLK_UNHALTED_CORE | 2.68793e+09 | 2.68622e+09 | 74456  | 38276  |
 | CPU_CLK_UNHALTED_REF  | 2.68808e+09 | 2.68622e+09 | 96145  | 57540  |
+|    PWR_PKG_ENERGY     |     16      |      0      |   0    |   0    |
+|    PWR_DRAM_ENERGY    |     16      |      0      |   0    |   0    |
 +-----------------------+-------------+-------------+--------+--------+
-+-------------+---------+---------+---------+---------+
-|   Metric    | core 0  | core 1  | core 2  | core 3  |
-+-------------+---------+---------+---------+---------+
-| Clock [MHz] | 3491.17 | 3491.35 | 2703.76 | 2322.48 |
-|     CPI     | 1.09238 | 1.09261 | 2.36398 | 10.7006 |
-+-------------+---------+---------+---------+---------+
-+------------------+---------+---------+---------+---------+
-|      Metric      |   Sum   |   Max   |   Min   |   Avg   |
-+------------------+---------+---------+---------+---------+
-| Clock [MHz] STAT | 12008.8 | 3491.35 | 2322.48 | 3002.19 |
-|     CPI STAT     | 15.2496 | 10.7006 | 1.09238 | 3.81239 |
-+------------------+---------+---------+---------+---------+
-Runtime: 2.57498 s 
-Domain: PKG 
-Energy consumed: 33.9597 Joules 
-Power consumed: 13.1883 Watts 
++-----------------+---------+---------+---------+---------+
+|     Metric      | core 0  | core 1  | core 2  | core 3  |
++-----------------+---------+---------+---------+---------+
+|   Clock [MHz]   | 3491.17 | 3491.35 | 2703.76 | 2322.48 |
+|       CPI       | 1.09238 | 1.09261 | 2.36398 | 10.7006 |
+|   Energy [J]    |   16    |    0    |    0    |    0    |
+|   Power [W]     | 15.3491 |    0    |    0    |    0    |
+| Energy DRAM [J] |   16    |    0    |    0    |    0    |
+| Power DRAM [W]  | 15.3491 |    0    |    0    |    0    |
++-----------------+---------+---------+---------+---------+
++----------------------+---------+---------+---------+-----------+
+|        Metric        |   Sum   |   Max   |   Min   |    Avg    |
++----------------------+---------+---------+---------+-----------+
+|   Clock [MHz] STAT   | 12008.8 | 3491.35 | 2322.48 |  3002.19  |
+|       CPI STAT       | 15.2496 | 10.7006 | 1.09238 |  3.81239  |
+| Energy [J] STAT      |   16    |   16    |    0    |    2      |
+| Power [W] STAT       | 15.3491 | 15.3491 |    0    | 1.91864   |
+| Energy DRAM [J] STAT |   16    |   16    |    0    |    2      |
+| Power DRAM [W] STAT  | 15.3491 | 15.3491 |    0    | 1.91864   |
++----------------------+---------+---------+---------+-----------+
 }}}
 
 The application only used two cores and clocked (in average) 3.5 GHz.
 
-Lets consider a more intensive run:
+Lets consider a more intensive run (shortend table):
 
 {{{
 +-------------+----------+---------+----------+----------+
@@ -136,3 +148,34 @@ Power consumed: 55.3131 Watts
 
 Turbo mode was disabled on this machine.
 
+For each package (socket) exist one instance of RAPL counters, hence the values can only be retrieved on a package basis. Single cores cannot be measured. In order to measure multiple packages (sockets) at once, the likwid-powermeter supports the -c cmdline switch:
+{{{
+ likwid-powermeter -c 0,1 -s 1
+}}}
+
+The values are printed for each package, no aggregation is done by LIKWID:
+
+{{{
+-------------------------------------------------------------
+CPU name:	Intel Core SandyBridge EP processor 
+CPU clock:	3.09 GHz 
+-------------------------------------------------------------
+Measure on sockets: 0, 1
+Runtime: 1 second 
+-------------------------------------------------------------
+Socket 0
+Domain: PKG 
+Energy consumed: 15.1598 Joules 
+Power consumed: 15.1598 Watts 
+Domain: DRAM 
+Energy consumed: 1.4343 Joules 
+Power consumed: 1.4343 Watts 
+
+Socket 1
+Domain: PKG 
+Energy consumed: 16.0223 Joules 
+Power consumed: 16.0223 Watts 
+Domain: DRAM 
+Energy consumed: 1.46671 Joules 
+Power consumed: 1.46671 Watts 
+}}}
