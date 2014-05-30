@@ -246,6 +246,7 @@ int main (int argc, char** argv)
         printf("Maximum  Power: %g Watts \n", power_info.maxPower);
         printf("Maximum  Time Window: %g micro sec \n", power_info.maxTimeWindow);
         printf(HLINE);
+        exit(EXIT_SUCCESS);
     }
 
     if (optClock)
