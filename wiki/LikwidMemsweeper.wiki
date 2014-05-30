@@ -1,4 +1,4 @@
-﻿#summary likwid-memsweeper - A tool to cleanup ccNUMA domains 
+﻿#summary likwid-memsweeper - A tool to cleanup ccNUMA domains
 
 <wiki:toc max_depth="1" />
 
@@ -29,6 +29,8 @@ likwid-memsweeper is doing. It allows you to clean up all or some of the ccNUMA
 domains on a compute node in a safe and convenient way. This functionality is
 also available as an option to likwid-pin.
 
+Starting with version 3.1.2 of LIKWID, also the CPU caches of the selected node(s) are invalidated to avoid the time-consuming eviction of cache lines of different processes.
+
 = Options =
 
 {{{
@@ -53,4 +55,3 @@ To cleanup a specific ccNUMA domains call:
 {{{
  likwid-memsweeper -c
 }}}
-
