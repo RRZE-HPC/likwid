@@ -17,6 +17,10 @@ sub init
     my $opt_string = 'g:c:f:lph';
     getopts( $opt_string, \%opt ) or usage();
     usage() if $opt{h};
+    if (scalar(keys %opt) == 0)
+    {
+    	usage();
+    }
 }
 
 sub usage
