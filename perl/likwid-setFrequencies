@@ -90,6 +90,10 @@ sub extractProcessorList
 
 init();
 
+if (! -s $SYSCMD) {
+    die "ERROR Binary $SYSCMD not existing!\n\n";
+}
+
 if ( defined $opt{c}) {
     $domain = $opt{c};
 }
