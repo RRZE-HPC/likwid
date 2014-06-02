@@ -14,11 +14,9 @@ MANPREFIX = $(PREFIX)/man#NO SPACE
 
 # For the daemon based secure msr/pci access configure
 # the absolute path to the msr daemon executable.
-# $(PREFIX)/bin/likwid-accessD
+# Usually you can leave this to the default.
+# $(PREFIX)/sbin/likwid-accessD
 ACCESSDAEMON = $(PREFIX)/sbin/likwid-accessD#NO SPACE
-
-# Build the accessDaemon. Have a look in the WIKI for details.
-BUILDDAEMON = true#NO SPACE
 
 # Set the default mode for MSR access.
 # This can usually be overriden on the commandline.

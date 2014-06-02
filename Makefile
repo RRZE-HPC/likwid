@@ -98,12 +98,10 @@ ifneq ($(COLOR),NONE)
 DEFINES += -DCOLOR=$(COLOR)
 endif
 
-ifeq ($(BUILDDAEMON),true)
 ifneq ($(COMPILER),MIC)
     DAEMON_TARGET = likwid-accessD
 else
     $(info Info: Compiling for Xeon Phi. Disabling build of likwid-accessD.);
-endif
 endif
 
 ifeq ($(INSTRUMENT_BENCH),true)
