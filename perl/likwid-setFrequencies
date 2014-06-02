@@ -4,7 +4,7 @@ use Getopt::Std;
 
 my $LIKWIDPIN  = '<PREFIX>/bin/likwid-pin';
 my $SYSPATH = '/sys/devices/system/cpu';
-my $SYSCMD = '<PREFIX>/sbin/likwid-setfreq';
+my $SYSCMD = '<PREFIX>/sbin/likwid-setFreq';
 my $domain = 'N';
 my $governor = 'ondemand';
 my @processors;
@@ -34,7 +34,7 @@ usage: $0 [-hlp] [-g governor] [-d domain] [-f frequency]
 -h          : this (help) message
 -p          : print current frequencies
 -l          : list available frequencies
--c cpu_list : likwid thread domain which to apply settings
+-c domain   : likwid thread domain which to apply settings
               (set to N if omitted)
 -g governor : set governor (ondemand, performance, turbo)
               (set to ondemand if omitted)
@@ -90,7 +90,7 @@ sub extractProcessorList
 
 init();
 
-if ($opt{c}) {
+if ( defined $opt{c}) {
     $domain = $opt{c};
 }
 
