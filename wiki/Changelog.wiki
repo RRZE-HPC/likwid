@@ -3,6 +3,7 @@
 = Release 3.1.2 =
   * New application likwid-setFrequencies and corresponding daemon likwid-setFreq
   * likwid-powermeter can measure multiple sockets at once
+  * likwid-memsweeper also  cleans last level cache from dirty cachelines
   * Sanitized groups for Intel IvyBridge and SandyBridge
   * Automatic lookup of Uncore PCI devices with exclusion of non-existent devices
   * Reduced connect time to likwid-accessD
