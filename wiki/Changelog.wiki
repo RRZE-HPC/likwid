@@ -10,6 +10,7 @@
   * MSR device file handling on Intel Xeon Phi improved
   * Improved commandline argument handling for all LIKWID tools
   * man pages sanitized and a new one for likwid-bench
+  * Moved setuid command to sbin directory
   * Lots of bugfixes
 
 = Release 3.1 =
