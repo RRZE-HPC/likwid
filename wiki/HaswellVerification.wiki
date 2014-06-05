@@ -22,6 +22,7 @@ L3: load, store, copy, stream, triad, update<br>
 
 = Accuracy comparison =
 For each varification group, the tests are performed twice. Once in a plain manner without measuring but calculating the resulting values and once through an instumented code with LIKWID.<br>
+
 == Verification of Group L3 with test load ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
@@ -37,6 +38,7 @@ http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_load.png
 || 1MB || 41121 || 5 || 82000 || 41263 || 73143.40 || 8260.00 ||
 || 4MB || 40436 || 5 || 82000 || 41431 || 65272.20 || 16542.80 ||
 || 1GB || 40436 || 5 || 82000 || 41431 || 57151.40 || 24751.60 ||
+
 == Verification of Group L3 with test store ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
@@ -52,6 +54,7 @@ http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_store.png
 || 1MB || 25171 || 3 || 53077 || 45994 || 47462.20 || 9201.40 ||
 || 4MB || 25157 || 3 || 53077 || 45994 || 41897.00 || 18390.00 ||
 || 1GB || 25157 || 3 || 53077 || 45994 || 36323.60 || 27570.00 ||
+
 == Verification of Group L3 with test copy ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
@@ -67,6 +70,7 @@ http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_copy.png
 || 1MB || 32477 || 6 || 102805 || 45011 || 84896.40 || 9007.60 ||
 || 4MB || 32477 || 6 || 102754 || 45011 || 70853.40 || 18003.40 ||
 || 1GB || 32410 || 6 || 102754 || 45304 || 60584.80 || 27062.80 ||
+
 == Verification of Group L3 with test stream ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
@@ -82,6 +86,7 @@ http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_stream.png
 || 1MB || 36604 || 6 || 101154 || 44605 || 88102.80 || 8927.60 ||
 || 4MB || 36604 || 6 || 101154 || 44605 || 75202.00 || 17803.60 ||
 || 1GB || 36486 || 6 || 100956 || 44605 || 62268.40 || 26672.20 ||
+
 == Verification of Group L3 with test triad ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
@@ -97,6 +102,7 @@ http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_triad.png
 || 1MB || 38617 || 7 || 101797 || 44209 || 89041.80 || 8848.40 ||
 || 4MB || 38617 || 7 || 101663 || 44209 || 76445.00 || 17119.80 ||
 || 1GB || 38617 || 7 || 101663 || 44522 || 63855.40 || 26022.80 ||
+
 == Verification of Group L3 with test update ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
