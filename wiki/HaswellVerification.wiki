@@ -1,4 +1,4 @@
-Accuracy Tests for Intel Core Haswell processor<br>
+#summary Accuracy Tests for Intel Core Haswell processor
 
 = Hardware description =
 Sockets: 1<br>
@@ -122,5 +122,3 @@ http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_update.png
 || 1MB || 45309 || 30634 || 47856 || 31064 || 47010.60 || 30843.20 ||
 || 4MB || 46965 || 30556 || 47646 || 30973 || 47347.80 || 30748.60 ||
 || 1GB || 19537 || 15512 || 19731 || 15594 || 19663.40 || 15569.00 ||
-
-
