@@ -1,4 +1,4 @@
-Accuracy Tests for Intel Core Haswell processor
+Accuracy Tests for Intel Core Haswell processor<br>
 
 = Hardware description =
 Sockets: 1<br>
@@ -17,13 +17,12 @@ L2CACHE: L2 cache miss rate/ratio<br>
 DATA: Load to store ratio<br>
 
 = Available verification tests =
-Not all groups can be tested for accuracy. Here only the groups are listed that can be verified. Each group is followed by the low-level benchmarks that are performed for comparison: <br>
+Not all groups can be tested for accuracy. Here only the groups are listed that can be verified. Each group is followed by the low-level benchmarks that are performed for comparison.<br>
 L3: load, store, copy, stream, triad, update<br>
 
 = Accuracy comparison =
 For each varification group, the tests are performed twice. Once in a plain manner without measuring but calculating the resulting values and once through an instumented code with LIKWID.<br>
-
-== Verification of Group L3 with test load ==
+== Verification of Group L3 with Test load ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
 || 1MB || 10000 ||
@@ -31,15 +30,16 @@ For each varification group, the tests are performed twice. Once in a plain mann
 || 1GB || 50 ||
 
 Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
-http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_load.png
+http://likwid.googlecode.com/svn/wiki/images//heidi/L3_load.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
-|| 12kB || 79792 || 5 || 82000 || 17 || 81269.00 || 8.40 ||
-|| 1MB || 41121 || 5 || 82000 || 41263 || 73143.40 || 8260.00 ||
-|| 4MB || 40436 || 5 || 82000 || 41431 || 65272.20 || 16542.80 ||
-|| 1GB || 40436 || 5 || 82000 || 41431 || 57151.40 || 24751.60 ||
+|| 12kB || 81670 || 4 || 81956 || 10 || 81812.40 || 7.00 ||
+|| 1MB || 40509 || 39289 || 41198 || 41414 || 40981.00 || 40908.20 ||
+|| 4MB || 40048 || 39932 || 41326 || 41319 || 40687.40 || 40810.80 ||
+|| 1GB || 16888 || 16731 || 17409 || 17378 || 17203.20 || 17041.80 ||
 
-== Verification of Group L3 with test store ==
+
+== Verification of Group L3 with Test store ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
 || 1MB || 10000 ||
@@ -47,15 +47,16 @@ http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_load.png
 || 1GB || 50 ||
 
 Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
-http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_store.png
+http://likwid.googlecode.com/svn/wiki/images//heidi/L3_store.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
-|| 12kB || 52867 || 3 || 53077 || 4 || 53001.40 || 3.20 ||
-|| 1MB || 25171 || 3 || 53077 || 45994 || 47462.20 || 9201.40 ||
-|| 4MB || 25157 || 3 || 53077 || 45994 || 41897.00 || 18390.00 ||
-|| 1GB || 25157 || 3 || 53077 || 45994 || 36323.60 || 27570.00 ||
+|| 12kB || 52975 || 3 || 53150 || 5 || 53092.40 || 3.60 ||
+|| 1MB || 25168 || 45822 || 25195 || 47077 || 25181.20 || 46185.20 ||
+|| 4MB || 25019 || 44509 || 25139 || 45700 || 25088.20 || 45422.60 ||
+|| 1GB || 9639 || 15810 || 9877 || 16500 || 9747.60 || 16009.40 ||
 
-== Verification of Group L3 with test copy ==
+
+== Verification of Group L3 with Test copy ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
 || 1MB || 10000 ||
@@ -63,15 +64,16 @@ http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_store.png
 || 1GB || 50 ||
 
 Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
-http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_copy.png
+http://likwid.googlecode.com/svn/wiki/images//heidi/L3_copy.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
-|| 12kB || 83753 || 6 || 102811 || 14 || 98963.20 || 8.20 ||
-|| 1MB || 32477 || 6 || 102805 || 45011 || 84896.40 || 9007.60 ||
-|| 4MB || 32477 || 6 || 102754 || 45011 || 70853.40 || 18003.40 ||
-|| 1GB || 32410 || 6 || 102754 || 45304 || 60584.80 || 27062.80 ||
+|| 12kB || 101938 || 6 || 102747 || 14 || 102313.40 || 9.80 ||
+|| 1MB || 32508 || 44498 || 32655 || 45102 || 32585.40 || 44795.20 ||
+|| 4MB || 31983 || 43379 || 32570 || 44818 || 32317.40 || 44334.20 ||
+|| 1GB || 12743 || 17080 || 13051 || 17347 || 12949.60 || 17264.00 ||
 
-== Verification of Group L3 with test stream ==
+
+== Verification of Group L3 with Test stream ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
 || 1MB || 10000 ||
@@ -79,15 +81,16 @@ http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_copy.png
 || 1GB || 50 ||
 
 Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
-http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_stream.png
+http://likwid.googlecode.com/svn/wiki/images//heidi/L3_stream.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
-|| 12kB || 100662 || 6 || 101154 || 12 || 101008.80 || 7.80 ||
-|| 1MB || 36604 || 6 || 101154 || 44605 || 88102.80 || 8927.60 ||
-|| 4MB || 36604 || 6 || 101154 || 44605 || 75202.00 || 17803.60 ||
-|| 1GB || 36486 || 6 || 100956 || 44605 || 62268.40 || 26672.20 ||
+|| 12kB || 87434 || 6 || 101118 || 7 || 98085.60 || 6.60 ||
+|| 1MB || 36474 || 44212 || 36552 || 44664 || 36519.40 || 44497.00 ||
+|| 4MB || 35986 || 44071 || 36546 || 44426 || 36230.40 || 44273.80 ||
+|| 1GB || 14216 || 17095 || 14441 || 17247 || 14350.20 || 17176.80 ||
 
-== Verification of Group L3 with test triad ==
+
+== Verification of Group L3 with Test triad ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
 || 1MB || 10000 ||
@@ -95,15 +98,16 @@ http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_stream.png
 || 1GB || 50 ||
 
 Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
-http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_triad.png
+http://likwid.googlecode.com/svn/wiki/images//heidi/L3_triad.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
-|| 12kB || 101511 || 7 || 101811 || 11 || 101680.60 || 8.20 ||
-|| 1MB || 38617 || 7 || 101797 || 44209 || 89041.80 || 8848.40 ||
-|| 4MB || 38617 || 7 || 101663 || 44209 || 76445.00 || 17119.80 ||
-|| 1GB || 38617 || 7 || 101663 || 44522 || 63855.40 || 26022.80 ||
+|| 12kB || 101321 || 7 || 101819 || 8 || 101545.80 || 7.20 ||
+|| 1MB || 38859 || 44344 || 38977 || 44484 || 38914.40 || 44431.20 ||
+|| 4MB || 37835 || 43019 || 39003 || 44285 || 38550.00 || 43810.60 ||
+|| 1GB || 14557 || 17227 || 15179 || 17412 || 15025.20 || 17327.00 ||
 
-== Verification of Group L3 with test update ==
+
+== Verification of Group L3 with Test update ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
 || 1MB || 10000 ||
@@ -111,10 +115,12 @@ http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_triad.png
 || 1GB || 50 ||
 
 Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
-http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_update.png
+http://likwid.googlecode.com/svn/wiki/images//heidi/L3_update.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
-|| 12kB || 104661 || 3 || 105018 || 4 || 104772.20 || 3.20 ||
-|| 1MB || 47680 || 3 || 105018 || 30626 || 93358.00 || 6127.80 ||
-|| 4MB || 47680 || 3 || 104759 || 30918 || 81891.60 || 12310.60 ||
-|| 1GB || 47506 || 3 || 104672 || 30918 || 70441.00 || 18430.20 ||
+|| 12kB || 104674 || 3 || 104925 || 5 || 104779.00 || 3.40 ||
+|| 1MB || 45309 || 30634 || 47856 || 31064 || 47010.60 || 30843.20 ||
+|| 4MB || 46965 || 30556 || 47646 || 30973 || 47347.80 || 30748.60 ||
+|| 1GB || 19537 || 15512 || 19731 || 15594 || 19663.40 || 15569.00 ||
+
+
