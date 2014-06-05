@@ -8,7 +8,7 @@ Total number of processing units: 8
 
 = Available groups =
 Each architecture defines a different set of groups. Here all the groups available for the Intel Core Haswell processor are listed
-CLOCK: Power and Energy consumption
+CLOCK: Power and Energy consumption<br>
 ENERGY: Power and Energy consumption
 TLB: TLB miss rate/ratio
 L3: L3 cache bandwidth in MBytes/s
