@@ -30,7 +30,7 @@ For each varification group, the tests are performed twice. Once in a plain mann
 || 1GB || 50 ||
 
 Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
-http://likwid.googlecode.com/svn/wiki/images//heidi/L3_load.png
+http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_load.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
 || 12kB || 81670 || 4 || 81956 || 10 || 81812.40 || 7.00 ||
@@ -47,7 +47,7 @@ http://likwid.googlecode.com/svn/wiki/images//heidi/L3_load.png
 || 1GB || 50 ||
 
 Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
-http://likwid.googlecode.com/svn/wiki/images//heidi/L3_store.png
+http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_store.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
 || 12kB || 52975 || 3 || 53150 || 5 || 53092.40 || 3.60 ||
@@ -64,7 +64,7 @@ http://likwid.googlecode.com/svn/wiki/images//heidi/L3_store.png
 || 1GB || 50 ||
 
 Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
-http://likwid.googlecode.com/svn/wiki/images//heidi/L3_copy.png
+http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_copy.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
 || 12kB || 101938 || 6 || 102747 || 14 || 102313.40 || 9.80 ||
@@ -81,7 +81,7 @@ http://likwid.googlecode.com/svn/wiki/images//heidi/L3_copy.png
 || 1GB || 50 ||
 
 Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
-http://likwid.googlecode.com/svn/wiki/images//heidi/L3_stream.png
+http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_stream.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
 || 12kB || 87434 || 6 || 101118 || 7 || 98085.60 || 6.60 ||
@@ -98,7 +98,7 @@ http://likwid.googlecode.com/svn/wiki/images//heidi/L3_stream.png
 || 1GB || 50 ||
 
 Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
-http://likwid.googlecode.com/svn/wiki/images//heidi/L3_triad.png
+http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_triad.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
 || 12kB || 101321 || 7 || 101819 || 8 || 101545.80 || 7.20 ||
@@ -115,7 +115,7 @@ http://likwid.googlecode.com/svn/wiki/images//heidi/L3_triad.png
 || 1GB || 50 ||
 
 Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
-http://likwid.googlecode.com/svn/wiki/images//heidi/L3_update.png
+http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_update.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
 || 12kB || 104674 || 3 || 104925 || 5 || 104779.00 || 3.40 ||
