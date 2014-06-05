@@ -1,27 +1,27 @@
 Accuracy Tests for Intel Core Haswell processor
 
 = Hardware description =
-Sockets: 1
-Cores per socket: 4
-Threads per core: 2
-Total number of processing units: 8
+Sockets: 1<br>
+Cores per socket: 4<br>
+Threads per core: 2<br>
+Total number of processing units: 8<br>
 
 = Available groups =
-Each architecture defines a different set of groups. Here all the groups available for the Intel Core Haswell processor are listed
+Each architecture defines a different set of groups. Here all the groups available for the Intel Core Haswell processor are listed:<br>
 CLOCK: Power and Energy consumption<br>
-ENERGY: Power and Energy consumption
-TLB: TLB miss rate/ratio
-L3: L3 cache bandwidth in MBytes/s
-BRANCH: Branch prediction miss rate/ratio
-L2CACHE: L2 cache miss rate/ratio
-DATA: Load to store ratio
+ENERGY: Power and Energy consumption<br>
+TLB: TLB miss rate/ratio<br>
+L3: L3 cache bandwidth in MBytes/s<br>
+BRANCH: Branch prediction miss rate/ratio<br>
+L2CACHE: L2 cache miss rate/ratio<br>
+DATA: Load to store ratio<br>
 
 = Available verification tests =
-Not all groups can be tested for accuracy. Here only the groups are listed that can be verified. Each group is followed by the low-level benchmarks that are performed for comparison
-L3: load, store, copy, stream, triad, update
+Not all groups can be tested for accuracy. Here only the groups are listed that can be verified. Each group is followed by the low-level benchmarks that are performed for comparison: <br>
+L3: load, store, copy, stream, triad, update<br>
 
 = Accuracy comparison =
-For each varification group, the tests are performed twice. Once in a plain manner without measuring but calculating the resulting values and once through an instumented code with LIKWID.
+For each varification group, the tests are performed twice. Once in a plain manner without measuring but calculating the resulting values and once through an instumented code with LIKWID.<br>
 == Verification of Group L3 with test load ==
 || *Stream size* || *Iterations* ||
 || 12kB || 20000 ||
@@ -29,8 +29,8 @@ For each varification group, the tests are performed twice. Once in a plain mann
 || 4MB || 7500 ||
 || 1GB || 50 ||
 
-Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.
-https://code.google.com/p/likwid/source/browse/wiki/images/accuracy/heidi/L3_load.png
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_load.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
 || 12kB || 79792 || 5 || 82000 || 17 || 81269.00 || 8.40 ||
@@ -44,8 +44,8 @@ https://code.google.com/p/likwid/source/browse/wiki/images/accuracy/heidi/L3_loa
 || 4MB || 2000 ||
 || 1GB || 50 ||
 
-Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.
-https://code.google.com/p/likwid/source/browse/wiki/images/accuracy/heidi/L3_store.png
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_store.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
 || 12kB || 52867 || 3 || 53077 || 4 || 53001.40 || 3.20 ||
@@ -59,8 +59,8 @@ https://code.google.com/p/likwid/source/browse/wiki/images/accuracy/heidi/L3_sto
 || 4MB || 2000 ||
 || 1GB || 50 ||
 
-Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.
-https://code.google.com/p/likwid/source/browse/wiki/images/accuracy/heidi/L3_copy.png
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_copy.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
 || 12kB || 83753 || 6 || 102811 || 14 || 98963.20 || 8.20 ||
@@ -74,8 +74,8 @@ https://code.google.com/p/likwid/source/browse/wiki/images/accuracy/heidi/L3_cop
 || 4MB || 2000 ||
 || 1GB || 50 ||
 
-Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.
-https://code.google.com/p/likwid/source/browse/wiki/images/accuracy/heidi/L3_stream.png
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_stream.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
 || 12kB || 100662 || 6 || 101154 || 12 || 101008.80 || 7.80 ||
@@ -89,8 +89,8 @@ https://code.google.com/p/likwid/source/browse/wiki/images/accuracy/heidi/L3_str
 || 4MB || 2000 ||
 || 1GB || 50 ||
 
-Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.
-https://code.google.com/p/likwid/source/browse/wiki/images/accuracy/heidi/L3_triad.png
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_triad.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
 || 12kB || 101511 || 7 || 101811 || 11 || 101680.60 || 8.20 ||
@@ -104,8 +104,8 @@ https://code.google.com/p/likwid/source/browse/wiki/images/accuracy/heidi/L3_tri
 || 4MB || 2000 ||
 || 1GB || 50 ||
 
-Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.
-https://code.google.com/p/likwid/source/browse/wiki/images/accuracy/heidi/L3_update.png
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images/accuracy/heidi/L3_update.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
 || 12kB || 104661 || 3 || 105018 || 4 || 104772.20 || 3.20 ||
