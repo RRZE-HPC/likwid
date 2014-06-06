@@ -27,6 +27,8 @@ L2CACHE: L2 cache miss rate/ratio<br>
 L3: L3 cache bandwidth in MBytes/s<br>
 TLB: TLB miss rate/ratio<br>
 
+Some of the groups accuracy can be determined through likwid-bench. The results for Haswell are shown here [HaswellVerification].
+
 = Counters =
 
 3 Fixed Counters: FIXC0, FIXC1, FIXC2.
