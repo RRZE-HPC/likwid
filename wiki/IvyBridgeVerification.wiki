@@ -1,0 +1,466 @@
+#summary Accuracy Tests for Intel Core IvyBridge EP processor
+
+= Hardware description =
+Sockets: 2<br>
+Cores per socket: 10<br>
+Threads per core: 2<br>
+Total number of processing units: 40<br>
+
+= Available groups =
+Each architecture defines a different set of groups. Here all the groups available for the Intel Core IvyBridge EP processor are listed:<br>
+FLOPS_AVX: Packed AVX MFlops/s<br>
+CLOCK: Power and Energy consumption<br>
+MEM: Main memory bandwidth in MBytes/s<br>
+MEM_DP: Power and Energy consumption<br>
+ENERGY: Power and Energy consumption<br>
+FLOPS_SP: Single Precision MFlops/s<br>
+MEM_SP: Power and Energy consumption<br>
+TLB: TLB miss rate/ratio<br>
+L2: L2 cache bandwidth in MBytes/s<br>
+L3: L3 cache bandwidth in MBytes/s<br>
+BRANCH: Branch prediction miss rate/ratio<br>
+L2CACHE: L2 cache miss rate/ratio<br>
+FLOPS_DP: Double Precision MFlops/s<br>
+DATA: Load to store ratio<br>
+
+= Available verification tests =
+Not all groups can be tested for accuracy. Here only the groups are listed that can be verified. Each group is followed by the low-level benchmarks that are performed for comparison.<br>
+MEM: load, store, copy, stream, triad, update, copy_mem, triad_mem, stream_mem, store_mem<br>
+FLOPS_DP: stream, triad<br>
+L2: load, store, copy, stream, triad, update<br>
+FLOPS_AVX: sum_avx<br>
+L3: load, store, copy, stream, triad, update<br>
+
+= Accuracy comparison =
+For each varification group, the tests are performed twice. Once in a plain manner without measuring but calculating the resulting values and once through an instumented code with LIKWID.<br>
+== Verification of Group MEM ==
+=== Verification of Group MEM with Test load ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/MEM_load.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 68274 || 15 || 70537 || 19 || 69256.60 || 16.70 ||
+|| 128kB || 41218 || 15 || 42321 || 17 || 41881.20 || 16.10 ||
+|| 2MB || 27266 || 15 || 27304 || 16 || 27288.30 || 15.20 ||
+|| 1GB || 16243 || 16341 || 16427 || 16531 || 16305.60 || 16407.10 ||
+
+
+=== Verification of Group MEM with Test store ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/MEM_store.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 47124 || 17 || 47318 || 22 || 47222.50 || 19.60 ||
+|| 128kB || 29763 || 16 || 30662 || 28 || 30350.30 || 18.00 ||
+|| 2MB || 20581 || 15 || 20601 || 16 || 20593.20 || 15.40 ||
+|| 1GB || 9000 || 17657 || 9017 || 17686 || 9008.70 || 17670.60 ||
+
+
+=== Verification of Group MEM with Test copy ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/MEM_copy.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 92545 || 15 || 92954 || 20 || 92821.80 || 16.80 ||
+|| 128kB || 43313 || 15 || 45512 || 17 || 44734.30 || 15.80 ||
+|| 2MB || 25799 || 15 || 25831 || 17 || 25819.20 || 15.50 ||
+|| 1GB || 11737 || 17391 || 11764 || 17455 || 11748.90 || 17420.20 ||
+
+
+=== Verification of Group MEM with Test stream ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/MEM_stream.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 79211 || 15 || 79715 || 18 || 79414.40 || 16.00 ||
+|| 128kB || 44710 || 16 || 49559 || 19 || 48065.00 || 16.90 ||
+|| 2MB || 27607 || 15 || 27666 || 16 || 27647.70 || 15.60 ||
+|| 1GB || 12467 || 16515 || 12483 || 16538 || 12475.40 || 16530.10 ||
+
+
+=== Verification of Group MEM with Test triad ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/MEM_triad.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 88668 || 15 || 91267 || 27 || 89995.10 || 17.40 ||
+|| 128kB || 44071 || 15 || 45885 || 23 || 45210.80 || 16.70 ||
+|| 2MB || 27906 || 15 || 28184 || 22 || 28141.60 || 16.00 ||
+|| 1GB || 10889 || 13543 || 11653 || 13642 || 10985.40 || 13599.50 ||
+
+
+=== Verification of Group MEM with Test update ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/MEM_update.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 94128 || 15 || 94365 || 18 || 94259.90 || 16.70 ||
+|| 128kB || 54127 || 15 || 56991 || 21 || 55887.30 || 16.50 ||
+|| 2MB || 36630 || 15 || 36655 || 16 || 36642.80 || 15.30 ||
+|| 1GB || 19077 || 18701 || 19116 || 18734 || 19096.50 || 18719.30 ||
+
+
+=== Verification of Group MEM with Test copy_mem ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/MEM_copy_mem.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 11275 || 5637 || 11301 || 5668 || 11289.50 || 5662.30 ||
+|| 128kB || 8094 || 4491 || 8113 || 4512 || 8106.90 || 4506.10 ||
+|| 2MB || 7935 || 4427 || 7940 || 4428 || 7937.10 || 4427.80 ||
+|| 1GB || 7386 || 7765 || 7398 || 7783 || 7392.10 || 7771.20 ||
+
+
+=== Verification of Group MEM with Test triad_mem ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/MEM_triad_mem.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 17400 || 5641 || 17582 || 5661 || 17488.50 || 5652.10 ||
+|| 128kB || 12579 || 3950 || 12668 || 3965 || 12649.80 || 3959.90 ||
+|| 2MB || 13466 || 3820 || 13477 || 3827 || 13471.20 || 3824.60 ||
+|| 1GB || 11396 || 11730 || 11428 || 11790 || 11415.00 || 11751.80 ||
+
+
+=== Verification of Group MEM with Test stream_mem ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/MEM_stream_mem.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 16931 || 5655 || 16957 || 5670 || 16945.60 || 5665.20 ||
+|| 128kB || 10148 || 4277 || 10179 || 4287 || 10160.00 || 4284.20 ||
+|| 2MB || 11048 || 4115 || 11061 || 4125 || 11054.50 || 4120.80 ||
+|| 1GB || 9898 || 10235 || 9915 || 10251 || 9903.10 || 10241.70 ||
+
+
+=== Verification of Group MEM with Test store_mem ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/MEM_store_mem.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 4892 || 5649 || 4907 || 5667 || 4900.40 || 5661.50 ||
+|| 128kB || 5642 || 5658 || 5648 || 5664 || 5646.20 || 5661.30 ||
+|| 2MB || 5641 || 5659 || 5644 || 5660 || 5643.40 || 5659.70 ||
+|| 1GB || 5632 || 5557 || 5634 || 5559 || 5633.00 || 5557.80 ||
+
+
+== Verification of Group FLOPS_DP ==
+=== Verification of Group FLOPS_DP with Test stream ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 5000 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/FLOPS_DP_stream.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 6354 || 6340 || 6456 || 6471 || 6399.70 || 6421.20 ||
+|| 24kB || 6608 || 6597 || 6654 || 6636 || 6625.30 || 6621.90 ||
+|| 128kB || 3997 || 5103 || 4137 || 5280 || 4091.80 || 5217.50 ||
+|| 2MB || 2090 || 3745 || 2307 || 3783 || 2282.40 || 3760.60 ||
+|| 1GB || 1041 || 1711 || 1043 || 1727 || 1041.80 || 1721.70 ||
+
+
+=== Verification of Group FLOPS_DP with Test triad ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 5000 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/FLOPS_DP_triad.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 5552 || 5563 || 5589 || 5588 || 5572.40 || 5578.50 ||
+|| 24kB || 5587 || 5661 || 5717 || 5725 || 5642.40 || 5688.00 ||
+|| 128kB || 2842 || 3474 || 2905 || 3890 || 2870.90 || 3696.60 ||
+|| 2MB || 1758 || 2002 || 1762 || 2054 || 1760.00 || 2009.00 ||
+|| 1GB || 679 || 903 || 683 || 915 || 681.60 || 909.20 ||
+
+
+== Verification of Group L2 ==
+=== Verification of Group L2 with Test load ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 1MB || 10000 ||
+|| 4MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L2_load.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 63300 || 6 || 66422 || 8 || 65332.80 || 6.80 ||
+|| 1MB || 27269 || 27292 || 27295 || 27351 || 27279.80 || 27322.60 ||
+|| 4MB || 27399 || 26579 || 27419 || 27472 || 27410.20 || 27292.00 ||
+|| 1GB || 16247 || 16279 || 16404 || 16357 || 16318.60 || 16333.80 ||
+
+
+=== Verification of Group L2 with Test store ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 1MB || 10000 ||
+|| 4MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L2_store.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 46563 || 4 || 46625 || 6 || 46601.80 || 5.00 ||
+|| 1MB || 20613 || 20540 || 20624 || 20621 || 20619.00 || 20597.60 ||
+|| 4MB || 20490 || 20534 || 20501 || 20538 || 20498.20 || 20536.20 ||
+|| 1GB || 8980 || 8791 || 9000 || 8807 || 8990.60 || 8797.00 ||
+
+
+=== Verification of Group L2 with Test copy ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 1MB || 10000 ||
+|| 4MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L2_copy.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 89549 || 8 || 90306 || 10 || 89765.40 || 8.60 ||
+|| 1MB || 25796 || 25809 || 25843 || 25854 || 25818.20 || 25826.40 ||
+|| 4MB || 25685 || 25732 || 25706 || 25755 || 25693.80 || 25745.40 ||
+|| 1GB || 11720 || 11566 || 11746 || 11594 || 11727.20 || 11581.80 ||
+
+
+=== Verification of Group L2 with Test stream ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 1MB || 10000 ||
+|| 4MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L2_stream.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 76412 || 5 || 77378 || 8 || 76878.60 || 7.00 ||
+|| 1MB || 27668 || 27698 || 27701 || 27714 || 27688.40 || 27709.60 ||
+|| 4MB || 27408 || 27481 || 27499 || 27560 || 27456.80 || 27514.20 ||
+|| 1GB || 12501 || 12401 || 12514 || 12413 || 12506.60 || 12408.80 ||
+
+
+=== Verification of Group L2 with Test triad ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 1MB || 10000 ||
+|| 4MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L2_triad.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 88937 || 8 || 89403 || 10 || 89103.80 || 8.80 ||
+|| 1MB || 28162 || 28287 || 28238 || 28320 || 28205.20 || 28300.60 ||
+|| 4MB || 27939 || 28084 || 27963 || 28117 || 27952.20 || 28104.00 ||
+|| 1GB || 10870 || 10839 || 10921 || 10885 || 10898.40 || 10868.60 ||
+
+
+=== Verification of Group L2 with Test update ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 1MB || 10000 ||
+|| 4MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L2_update.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 89932 || 4 || 92852 || 5 || 92082.80 || 4.60 ||
+|| 1MB || 36446 || 18329 || 36692 || 18345 || 36625.60 || 18334.60 ||
+|| 4MB || 34893 || 18211 || 36376 || 18220 || 36077.00 || 18215.60 ||
+|| 1GB || 19047 || 9330 || 19070 || 9337 || 19058.80 || 9334.40 ||
+
+
+== Verification of Group FLOPS_AVX ==
+=== Verification of Group FLOPS_AVX with Test sum_avx ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 5000 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/FLOPS_AVX_sum_avx.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 23221 || 23170 || 23316 || 23305 || 23281.50 || 23269.54 ||
+|| 128kB || 8353 || 9798 || 8720 || 10404 || 8626.49 || 10281.72 ||
+|| 2MB || 6663 || 8079 || 6670 || 8092 || 6667.26 || 8086.89 ||
+|| 1GB || 3742 || 4112 || 3756 || 4126 || 3746.23 || 4115.26 ||
+
+== Verification of Group L3 ==
+=== Verification of Group L3 with Test load ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 1MB || 10000 ||
+|| 4MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_load.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 62449 || 4 || 67167 || 5 || 65812.20 || 4.40 ||
+|| 1MB || 27262 || 22694 || 27322 || 22721 || 27294.00 || 22707.60 ||
+|| 4MB || 27408 || 22981 || 27420 || 22996 || 27413.60 || 22989.00 ||
+|| 1GB || 16256 || 14452 || 16314 || 14609 || 16292.20 || 14510.40 ||
+
+
+=== Verification of Group L3 with Test store ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 1MB || 10000 ||
+|| 4MB || 2000 ||
+|| 1GB || 50 ||
+
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_store.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 46535 || 3 || 46666 || 3 || 46601.80 || 3.00 ||
+|| 1MB || 20597 || 16362 || 20635 || 16379 || 20614.00 || 16369.60 ||
+|| 4MB || 20501 || 16266 || 20510 || 16279 || 20504.00 || 16271.40 ||
+|| 1GB || 8998 || 7907 || 9017 || 7923 || 9004.80 || 7916.60 ||
+
+
+=== Verification of Group L3 with Test copy ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 1MB || 10000 ||
+|| 4MB || 2000 ||
+|| 1GB || 50 ||
+
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_copy.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 89401 || 6 || 90306 || 7 || 89816.00 || 6.40 ||
+|| 1MB || 25808 || 23064 || 25830 || 23094 || 25817.60 || 23082.20 ||
+|| 4MB || 25669 || 22941 || 25709 || 22992 || 25695.60 || 22976.60 ||
+|| 1GB || 11717 || 10876 || 11747 || 10900 || 11734.80 || 10888.60 ||
+
+
+=== Verification of Group L3 with Test stream ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 1MB || 10000 ||
+|| 4MB || 2000 ||
+|| 1GB || 50 ||
+
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_stream.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 76436 || 5 || 76881 || 7 || 76650.80 || 5.80 ||
+|| 1MB || 27687 || 25547 || 27701 || 25569 || 27695.40 || 25558.60 ||
+|| 4MB || 27448 || 25352 || 27536 || 25398 || 27496.20 || 25369.40 ||
+|| 1GB || 12488 || 12018 || 12499 || 12036 || 12493.60 || 12027.40 ||
+
+
+=== Verification of Group L3 with Test triad ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 1MB || 10000 ||
+|| 4MB || 2000 ||
+|| 1GB || 50 ||
+
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_triad.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 88792 || 6 || 89290 || 8 || 89024.20 || 6.80 ||
+|| 1MB || 28163 || 25874 || 28225 || 25919 || 28192.80 || 25892.20 ||
+|| 4MB || 27916 || 25669 || 27942 || 25761 || 27933.80 || 25726.20 ||
+|| 1GB || 10916 || 10756 || 10936 || 10796 || 10923.60 || 10774.00 ||
+
+
+=== Verification of Group L3 with Test update ===
+|| *Stream size* || *Iterations* ||
+|| 12kB || 20000 ||
+|| 1MB || 10000 ||
+|| 4MB || 2000 ||
+|| 1GB || 50 ||
+
+Each data size is tested 5 times, hence the first 5 entries on the x-axis correspond to the 5 runs for the first data size of 12kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_update.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 12kB || 92743 || 2 || 92867 || 3 || 92811.40 || 2.80 ||
+|| 1MB || 36654 || 14880 || 36681 || 14897 || 36665.40 || 14891.40 ||
+|| 4MB || 36341 || 14565 || 36370 || 14576 || 36356.00 || 14569.20 ||
+|| 1GB || 19053 || 8418 || 19075 || 8432 || 19067.60 || 8426.00 ||
