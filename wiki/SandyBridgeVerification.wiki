@@ -24,8 +24,8 @@ FLOPS_DP: Double Precision MFlops/s<br>
 DATA: Load to store ratio<br>
 
 = Available verification tests =
-Not all groups can be tested for accuracy. Here only the groups are listed that can be verified. Each group is followed by the low-level benchmarks that are performed for comparison.<br>
-MEM: load, store, copy, stream, triad, update<br>
+Not all groups can be tested for accuracy. Here only the groups are listed that can be verified. Each group is followed by the low-level benchmarks that are performed for comparison. The benchmarks with _mem use non-temporal stores.<br>
+MEM: load, store, copy, stream, triad, update, copy_mem, store_mem, stream_mem, triad_mem<br>
 FLOPS_DP: stream, triad<br>
 L2: load, store, copy, stream, triad, update<br>
 FLOPS_AVX: sum_avx<br>
@@ -134,6 +134,70 @@ http://likwid.googlecode.com/svn/wiki/images//accuracy/sandyep1/MEM_update.png
 || 128kB || 54079 || 13 || 58370 || 14 || 57156.40 || 13.70 ||
 || 2MB || 37361 || 13 || 37393 || 15 || 37380.00 || 13.50 ||
 || 1GB || 21315 || 21354 || 21337 || 21365 || 21323.10 || 21361.00 ||
+
+=== Verification of Group MEM with Test copy_mem ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/sandyep1/MEM_copy_mem.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 11579 || 4647 || 11644 || 5835 || 11632.50 || 5712.50 ||
+|| 128kB || 8339 || 4515 || 8380 || 4652 || 8370.50 || 4637.10 ||
+|| 2MB || 8100 || 4515 || 8103 || 8016 || 8101.80 || 4865.90 ||
+|| 1GB || 7564 || 8012 || 7572 || 8029 || 7568.80 || 8024.89 ||
+
+=== Verification of Group MEM with Test triad_mem ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/sandyep1/MEM_triad_mem.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 17486 || 5823 || 17553 || 5994 || 17522.70 || 5849.60 ||
+|| 128kB || 14477 || 4045 || 14501 || 4092 || 14489.50 || 4084.90 ||
+|| 2MB || 13707 || 3882 || 13715 || 3884 || 13710.60 || 3882.90 ||
+|| 1GB || 11592 || 11967 || 11618 || 11982 || 11603.50 || 11974.20 ||
+
+=== Verification of Group MEM with Test stream_mem ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/sandyep1/MEM_stream_mem.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 17426 || 5830 || 17473 || 5839 || 17455.30 || 5835.40 ||
+|| 128kB || 11048 || 4385 || 11210 || 4390 || 11188.30 || 4387.50 ||
+|| 2MB || 11110 || 4150 || 11134 || 4159 || 11123.20 || 4155.40 ||
+|| 1GB || 10070 || 10523 || 10086 || 10531 || 10079.50 || 10525.30 ||
+
+=== Verification of Group MEM with Test store_mem ===
+|| *Stream size* || *Iterations* ||
+|| 24kB || 20000 ||
+|| 128kB || 10000 ||
+|| 2MB || 7500 ||
+|| 1GB || 50 ||
+
+Each data size is tested 10 times, hence the first 10 entries on the x-axis correspond to the 10 runs for the first data size of 24kB and so on.<br>
+http://likwid.googlecode.com/svn/wiki/images//accuracy/sandyep1/MEM_store_mem.png
+
+|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
+|| 24kB || 5803 || 5828 || 5823 || 5838 || 5815.80 || 5834.40 ||
+|| 128kB || 5815 || 5828 || 5823 || 5837 || 5819.20 || 5834.00 ||
+|| 2MB || 5820 || 5834 || 5821 || 5836 || 5820.60 || 5835.00 ||
+|| 1GB || 5816 || 5837 || 5823 || 5838 || 5821.70 || 5837.90 ||
 
 
 == Verification of Group FLOPS_DP ==
