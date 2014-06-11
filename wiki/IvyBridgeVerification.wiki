@@ -375,10 +375,10 @@ Each data size is tested 5 times, hence the first 5 entries on the x-axis corres
 http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_load.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
-|| 12kB || 62639 || 3 || 67297 || 4 || 64161.00 || 3.40 ||
-|| 1MB || 27272 || 22690 || 27311 || 22737 || 27284.80 || 22713.40 ||
-|| 4MB || 25448 || 22992 || 27422 || 23009 || 27021.80 || 22997.00 ||
-|| 1GB || 16298 || 14481 || 16311 || 14516 || 16303.60 || 14504.60 ||
+|| 12kB || 63288 || 3 || 67410 || 4 || 66208.80 || 3.80 ||
+|| 1MB || 27280 || 22707 || 27313 || 22730 || 27297.20 || 22720.60 ||
+|| 4MB || 27404 || 22989 || 27413 || 23018 || 27408.60 || 22997.20 ||
+|| 1GB || 16264 || 14509 || 16318 || 14529 || 16303.40 || 14520.40 ||
 
 
 === Verification of Group L3 with Test store ===
@@ -392,10 +392,10 @@ Each data size is tested 5 times, hence the first 5 entries on the x-axis corres
 http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_store.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
-|| 12kB || 46339 || 2 || 46568 || 3 || 46475.00 || 2.80 ||
-|| 1MB || 20606 || 32456 || 20623 || 32490 || 20617.00 || 32473.60 ||
-|| 4MB || 20492 || 32244 || 20508 || 32267 || 20501.40 || 32251.20 ||
-|| 1GB || 8993 || 15726 || 9008 || 15738 || 9003.20 || 15731.80 ||
+|| 12kB || 45202 || 3 || 46648 || 3 || 46349.20 || 3.00 ||
+|| 1MB || 20601 || 32439 || 20623 || 32490 || 20613.00 || 32466.00 ||
+|| 4MB || 20493 || 32215 || 20506 || 32236 || 20502.20 || 32222.40 ||
+|| 1GB || 9003 || 15740 || 9020 || 15765 || 9012.60 || 15749.20 ||
 
 
 === Verification of Group L3 with Test copy ===
@@ -409,10 +409,10 @@ Each data size is tested 5 times, hence the first 5 entries on the x-axis corres
 http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_copy.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
-|| 12kB || 89421 || 6 || 90306 || 7 || 89951.40 || 6.20 ||
-|| 1MB || 25822 || 34123 || 25842 || 34198 || 25831.20 || 34158.80 ||
-|| 4MB || 25671 || 33937 || 25709 || 33984 || 25696.20 || 33962.20 ||
-|| 1GB || 11723 || 16223 || 11767 || 16244 || 11746.60 || 16234.60 ||
+|| 12kB || 89594 || 6 || 90277 || 7 || 89947.20 || 6.20 ||
+|| 1MB || 25800 || 34084 || 25821 || 34122 || 25811.60 || 34103.40 ||
+|| 4MB || 25707 || 33975 || 25721 || 34013 || 25712.20 || 33993.20 ||
+|| 1GB || 11725 || 16181 || 11771 || 16231 || 11742.40 || 16204.00 ||
 
 
 === Verification of Group L3 with Test stream ===
@@ -426,10 +426,10 @@ Each data size is tested 5 times, hence the first 5 entries on the x-axis corres
 http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_stream.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
-|| 12kB || 76629 || 5 || 76881 || 7 || 76783.80 || 5.80 ||
-|| 1MB || 27676 || 33718 || 27699 || 33749 || 27690.00 || 33728.00 ||
-|| 4MB || 27462 || 33407 || 27513 || 33536 || 27485.80 || 33469.80 ||
-|| 1GB || 12492 || 15953 || 12512 || 15976 || 12503.40 || 15961.60 ||
+|| 12kB || 76664 || 5 || 77189 || 6 || 76841.20 || 5.40 ||
+|| 1MB || 27682 || 33435 || 27703 || 33770 || 27691.80 || 33688.40 ||
+|| 4MB || 27414 || 33379 || 27501 || 33507 || 27473.40 || 33455.40 ||
+|| 1GB || 12503 || 15962 || 12524 || 15991 || 12516.80 || 15978.80 ||
 
 
 === Verification of Group L3 with Test triad ===
@@ -443,10 +443,10 @@ Each data size is tested 5 times, hence the first 5 entries on the x-axis corres
 http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_triad.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
-|| 12kB || 89215 || 6 || 89439 || 6 || 89350.40 || 6.00 ||
-|| 1MB || 28170 || 32068 || 28231 || 32161 || 28202.60 || 32124.60 ||
-|| 4MB || 27903 || 31788 || 28005 || 31903 || 27949.00 || 31854.20 ||
-|| 1GB || 10904 || 13384 || 10943 || 13412 || 10930.00 || 13399.40 ||
+|| 12kB || 88739 || 6 || 89246 || 8 || 88943.00 || 6.60 ||
+|| 1MB || 28026 || 32071 || 28212 || 32157 || 28169.20 || 32103.60 ||
+|| 4MB || 27707 || 31782 || 27952 || 31856 || 27884.20 || 31815.20 ||
+|| 1GB || 10912 || 13364 || 10925 || 13389 || 10917.60 || 13379.60 ||
 
 
 === Verification of Group L3 with Test update ===
@@ -460,7 +460,8 @@ Each data size is tested 5 times, hence the first 5 entries on the x-axis corres
 http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_update.png
 
 || Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||
-|| 12kB || 92410 || 2 || 92835 || 3 || 92682.00 || 2.80 ||
-|| 1MB || 36659 || 29711 || 36683 || 29760 || 36673.40 || 29741.20 ||
-|| 4MB || 30679 || 29105 || 36369 || 29114 || 35227.00 || 29109.80 ||
-|| 1GB || 19074 || 16807 || 19110 || 16827 || 19092.40 || 16819.20 ||
+|| 12kB || 92566 || 3 || 92823 || 3 || 92717.80 || 3.00 ||
+|| 1MB || 36652 || 29744 || 36679 || 29777 || 36668.40 || 29757.00 ||
+|| 4MB || 36339 || 29071 || 36363 || 29084 || 36356.60 || 29078.20 ||
+|| 1GB || 19083 || 16817 || 19108 || 16828 || 19094.20 || 16823.20 ||
+
