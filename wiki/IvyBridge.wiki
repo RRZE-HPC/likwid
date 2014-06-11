@@ -40,6 +40,8 @@ MEM_DP: Power and Energy consumption<br>
 MEM_SP: Power and Energy consumption<br>
 TLB: TLB miss rate/ratio<br>
 
+Some of the groups accuracy can be determined through likwid-bench. The results for Haswell are shown here [IvyBridgeVerification]. 
+
 = Counters =
 
 3 Fixed Counters: FIXC0, FIXC1, FIXC2.
