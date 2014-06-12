@@ -22,17 +22,19 @@ For an exact documentation of the performance groups call likwid-perfctr with th
 
 Supported Groups: 
 
-BRANCH: Branch prediction miss rate/ratio
-CACHE: Data cache miss rate/ratio
-DATA: Load to store ratio
-FLOPS_DP: Double Precision MFlops/s
-FLOPS_SP: Single Precision MFlops/s
-FLOPS_X87: X87 MFlops/s
-L2: L2 cache bandwidth in MBytes/s
-L2CACHE: L2 cache miss rate/ratio
-L3: L3 cache bandwidth in MBytes/s
-MEM: Main memory bandwidth
-TLB: TLB miss rate/ratio
+BRANCH: Branch prediction miss rate/ratio<br>
+CACHE: Data cache miss rate/ratio<br>
+DATA: Load to store ratio<br>
+FLOPS_DP: Double Precision MFlops/s<br>
+FLOPS_SP: Single Precision MFlops/s<br>
+FLOPS_X87: X87 MFlops/s<br>
+L2: L2 cache bandwidth in MBytes/s<br>
+L2CACHE: L2 cache miss rate/ratio<br>
+L3: L3 cache bandwidth in MBytes/s<br>
+MEM: Main memory bandwidth<br>
+TLB: TLB miss rate/ratio<br>
+
+Some of the groups accuracy can be determined through likwid-bench. The results for Haswell are shown here [WestmereEXVerification]. 
 
 = Counters =
 
