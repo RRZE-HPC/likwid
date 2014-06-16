@@ -35,16 +35,24 @@
 #include <registers.h>
 #include <bitUtil.h>
 #include <msr.h>
+#include <error.h>
 
 extern ThermalInfo thermal_info;
 
 extern void thermal_init(int cpuId);
-static inline uint32_t thermal_read(int cpuId);
+static inline int thermal_read(int cpuId, uint32_t *data);
 
-static uint32_t
-thermal_read(int cpuId)
+static int
+thermal_read(int cpuId, uint32_t *data)
 {
-    return (thermal_info.activationT - extractBitField(msr_read(cpuId, IA32_THERM_STATUS),7,16));
+	uint64_t result = 0;
+	if (msr_read(cpuId, IA32_THERM_STATUS, &result))
+	{
+		*data = 0;
+		return -EIO;
+	}
+    *data = (thermal_info.activationT - extractBitField(result,7,16));
+    return 0;
 }
 
 #endif /*THERMAL_H*/

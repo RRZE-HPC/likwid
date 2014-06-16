@@ -60,7 +60,8 @@ int accessClient_mode = ACCESSMODE;
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-static char* accessClient_strerror(AccessErrorType det)
+static char* 
+accessClient_strerror(AccessErrorType det)
 {
     switch (det)
     {
@@ -74,7 +75,8 @@ static char* accessClient_strerror(AccessErrorType det)
     }
 }
 
-static int startDaemon(void)
+static int 
+startDaemon(void)
 {
     /* Check the function of the daemon here */
     char* filepath;
@@ -153,7 +155,8 @@ static int startDaemon(void)
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void accessClient_setaccessmode(int mode)
+void 
+accessClient_setaccessmode(int mode)
 {
     if ((accessClient_mode > DAEMON_AM_ACCESS_D) || (accessClient_mode < DAEMON_AM_DIRECT))
     {
@@ -164,7 +167,8 @@ void accessClient_setaccessmode(int mode)
     accessClient_mode = mode;
 }
 
-void accessClient_init(int* socket_fd)
+void 
+accessClient_init(int* socket_fd)
 {
     if ((accessClient_mode == DAEMON_AM_ACCESS_D))
     {
@@ -172,7 +176,8 @@ void accessClient_init(int* socket_fd)
     }
 }
 
-void accessClient_finalize(int socket_fd)
+void 
+accessClient_finalize(int socket_fd)
 {
     if ( socket_fd != -1 )
     { /* Only if a socket is actually open */
@@ -184,11 +189,13 @@ void accessClient_finalize(int socket_fd)
 }
 
 
-uint64_t accessClient_read(
+int
+accessClient_read(
         int socket_fd,
         const int cpu,
         const int device,
-        uint32_t reg)
+        uint32_t reg,
+        uint64_t *result)
 {
     AccessDataRecord data;
 
@@ -206,13 +213,16 @@ uint64_t accessClient_read(
         fprintf(stderr, "Failed to read data through daemon: "
                 "daemon returned error %d '%s' for cpu %d reg %x\n",
                 data.errorcode, accessClient_strerror(data.errorcode), cpu, reg);
-        exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
+        *result = 0;
+        return -EIO;
     }
-
-    return data.data;
+	*result = data.data;
+    return 0;
 }
 
-void accessClient_write(
+int 
+accessClient_write(
         int socket_fd,
         const int cpu,
         const int device,
@@ -234,13 +244,17 @@ void accessClient_write(
         fprintf(stderr, "Failed to write data through daemon: "
                 "daemon returned error %d '%s' for cpu %d reg 0x%x\n",
                 data.errorcode, accessClient_strerror(data.errorcode), cpu, reg);
-        exit(EXIT_FAILURE);
+        return -EIO;
     }
 
     if (data.data != 0x00ULL)
     {
-        ERROR_PLAIN_PRINT(daemon write failed);
+        fprintf(stderr, "Failed to write data through daemon: "
+        				"daemon returned successfully for cpu %d reg 0x%x but write operation failed\n",
+        				cpu, reg);
+        return -EIO;
     }
+    return 0;
 }
 
 

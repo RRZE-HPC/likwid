@@ -31,92 +31,101 @@
 #include <perfmon_core2_events.h>
 #include <perfmon_core2_groups.h>
 #include <perfmon_core2_counters.h>
+#include <error.h>
 
 static int perfmon_numCountersCore2 = NUM_COUNTERS_CORE2;
 static int perfmon_numGroupsCore2 = NUM_GROUPS_CORE2;
 static int perfmon_numArchEventsCore2 = NUM_ARCH_EVENTS_CORE2;
 
-void perfmon_init_core2(PerfmonThread *thread)
+void perfmon_init_core2(int cpu_id)
 {
     uint64_t flags = 0x0ULL;
-    int cpu_id = thread->processorId;
 
     /* Initialize registers */
-    msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
-    msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL));
 
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
 
     /* always initialize fixed counters
      * FIXED 0: Instructions retired
      * FIXED 1: Clocks unhalted */
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x22ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x22ULL));
 
     /* Preinit of PMC counters */
     flags |= (1<<16);  /* user mode flag */
     flags |= (1<<19);  /* pin control flag */
     flags |= (1<<22);  /* enable flag */
 
-    msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL1, flags);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, flags));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, flags));
 }
 
 
 void perfmon_setupCounterThread_core2(
         int thread_id,
-        PerfmonEvent* event,
-        PerfmonCounterIndex index)
+        PerfmonEventSet* eventSet)
 {
     uint64_t flags;
-    uint64_t reg = core2_counter_map[index].configRegister;
-    int cpu_id = perfmon_threadData[thread_id].processorId;
+    int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if ( core2_counter_map[index].type == PMC )
-    {
-        perfmon_threadData[thread_id].counters[index].init = TRUE;
-        flags = msr_read(cpu_id,reg);
-        flags &= ~(0xFFFFU); 
+	for (int i=0;i < eventSet->numberOfEvents;i++)
+	{
+		PerfmonCounterIndex index = eventSet->events[i].index;
+		PerfmonEvent *event = &(eventSet->events[i].event);
+		uint64_t reg = core2_counter_map[index].configRegister;
+		
+		switch (core2_counter_map[index].type)
+		{
+			case PMC:
+				eventSet->events[i].threadCounter[thread_id].init = TRUE;
+				CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &flags));
+				flags &= ~(0xFFFFU); 
 
-        /* Intel with standard 8 bit event mask: [7:0] */
-        flags |= (event->umask<<8) + event->eventId;
+				/* Intel with standard 8 bit event mask: [7:0] */
+				flags |= (event->umask<<8) + event->eventId;
 
-        if ( event->cfgBits != 0 ) /* set custom cfg and cmask */
-        {
-            flags &= ~(0xFFFFU<<16);  /* clear upper 16bits */
-            flags |= ((event->cmask<<8) + event->cfgBits)<<16;
-        }
+				if ( event->cfgBits != 0 ) /* set custom cfg and cmask */
+				{
+				    flags &= ~(0xFFFFU<<16);  /* clear upper 16bits */
+				    flags |= ((event->cmask<<8) + event->cfgBits)<<16;
+				}
 
-        msr_write(cpu_id, reg , flags);
+				CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
 
-        if (perfmon_verbose)
-        {
-            printf("[%d] perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
-                    cpu_id,
-                    LLU_CAST reg,
-                    LLU_CAST flags);
-        }
-    }
-    else if (core2_counter_map[index].type == FIXED)
-    {
-        perfmon_threadData[thread_id].counters[index].init = TRUE;
-    }
+				/*if (perfmon_verbose)
+				{
+				    printf("[%d] perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
+				            cpu_id,
+				            LLU_CAST reg,
+				            LLU_CAST flags);
+				}*/
+				break;
+			case FIXED:
+				eventSet->events[i].threadCounter[thread_id].init = TRUE;
+				break;
+		}
+	}
+	return 0;
 }
 
-void perfmon_startCountersThread_core2(int thread_id)
+void perfmon_startCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
 {
     uint64_t flags = 0ULL;
-    int cpu_id = perfmon_threadData[thread_id].processorId;
+    int cpu_id = groupSet->threads[thread_id].processorId;
 
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
 
-    for ( int i=0; i<NUM_COUNTERS_CORE2; i++ )
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (perfmon_threadData[thread_id].counters[i].init == TRUE)
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            msr_write(cpu_id, core2_counter_map[i].counterRegister , 0x0ULL);
+        	PerfmonCounterIndex index = eventSet->events[i].index;
+        	
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, core2_counter_map[index].counterRegister , 0x0ULL));
 
             if (core2_counter_map[i].type == PMC)
             {
@@ -129,36 +138,39 @@ void perfmon_startCountersThread_core2(int thread_id)
         }
     }
 
-    if (perfmon_verbose)
+    /*if (perfmon_verbose)
     {
         printf("perfmon_start_counters: Write Register 0x%X , Flags: 0x%llX \n",
                 MSR_PERF_GLOBAL_CTRL, LLU_CAST flags);
-    }
+    }*/
 
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
-    msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x300000003ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x300000003ULL));
 }
 
-void perfmon_stopCountersThread_core2(int thread_id)
+void perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
 {
     uint64_t flags;
-    int cpu_id = perfmon_threadData[thread_id].processorId;
+    uint64_t tmp;
+    int cpu_id = groupSet->threads[thread_id].processorId;
 
     /* stop counters */
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
 
     /* read out counter results */
-    for ( int i=0; i<NUM_COUNTERS_CORE2; i++)
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if ( perfmon_threadData[thread_id].counters[i].init == TRUE )
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            perfmon_threadData[thread_id].counters[i].counterData =
-                msr_read(cpu_id, core2_counter_map[i].counterRegister);
+        	PerfmonCounterIndex index = eventSet->events[i].index;
+        	CHECK_MSR_READ_ERROR(msr_read(cpu_id, core2_counter_map[index].counterRegister,
+                    				(uint64_t*)&tmp));
+            eventSet->events[i].threadCounter[thread_id].counterData = tmp;
         }
     }
 
     /* check overflow status */
-    flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
+    CHECK_MSR_READ_ERROR(msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS, &flags));
     if ( (flags & 0x3) || (flags & (0x3ULL<<32)) )
     {
         printf ("Overflow occured \n");
@@ -166,16 +178,16 @@ void perfmon_stopCountersThread_core2(int thread_id)
     }
 }
 
-void perfmon_readCountersThread_core2(int thread_id)
+void perfmon_readCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
 {
-    int cpu_id = perfmon_threadData[thread_id].processorId;
-
-    for ( int i=0; i<NUM_COUNTERS_CORE2; i++ )
+    int cpu_id = groupSet->threads[thread_id].processorId;
+	uint64_t tmp;
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if ( perfmon_threadData[thread_id].counters[i].init == TRUE )
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            perfmon_threadData[thread_id].counters[i].counterData =
-                msr_read(cpu_id, core2_counter_map[i].counterRegister);
+            CHECK_MSR_READ_ERROR(msr_read(cpu_id, core2_counter_map[i].counterRegister, &tmp));
+            eventSet->events[i].threadCounter[thread_id].counterData = tmp;
         }
     }
 }
