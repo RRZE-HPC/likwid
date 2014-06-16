@@ -32,6 +32,7 @@
 
 #include <perfmon_k8_events.h>
 #include <perfmon_k8_groups.h>
+#include <error.h>
 
 
 static int perfmon_numGroupsK8 = NUM_GROUPS_K8;

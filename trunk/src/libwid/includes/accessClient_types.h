@@ -36,7 +36,7 @@
 /* This naming with AccessType and AccessMode is admittedly a bit confusing */
 typedef enum {
     DAEMON_AM_DIRECT = 0,
-    DAEMON_AM_ACCESS_D
+    DAEMON_AM_ACCESS_D = 1
 } AccessMode;
 
 typedef enum {

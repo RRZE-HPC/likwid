@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  thermal.c
+ *      Filename:  bitUtil.c
  *
- *      Description:  Module implementing Intel TM/TM2 interface
+ *      Description:  Utility routines manipulating bit arrays.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -27,53 +27,65 @@
  *
  * =======================================================================================
  */
-
 #include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
 
 #include <types.h>
-#include <thermal.h>
-#include <topology.h>
-
-/* #####   EXPORTED VARIABLES   ########################################### */
-
-ThermalInfo thermal_info;
+#include <bitUtil.h>
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
-
-void thermal_init(int cpuId)
+uint64_t
+field64(uint64_t value, int start, int length)
 {
-    uint64_t flags=0ULL;
-
-    if ( cpuid_hasFeature(TM2) )
-    {
-        if (msr_read(cpuId, IA32_THERM_STATUS, &flags))
-        {
-        	return;
-        }
-
-        if ( flags & 0x1 )
-        {
-            thermal_info.highT = 1;
-        }
-        else
-        {
-            thermal_info.highT = 0;
-        }
-
-        thermal_info.resolution =  extractBitField(flags,4,27);
-
-        flags = 0ULL;
-        if (msr_read(cpuId, MSR_TEMPERATURE_TARGET, &flags))
-        {
-        	return;
-        }
-        thermal_info.activationT =  extractBitField(flags,8,16);
-    }
+    return (value >> start) & (~0ULL >> (64 - length));
 }
+
+uint32_t
+field32(uint32_t value, int start, int length)
+{
+    return (value >> start) & (~0U >> (32 - length));
+}
+
+uint32_t 
+extractBitField(uint32_t inField, uint32_t width, uint32_t offset)
+{
+    uint32_t bitMask;
+    uint32_t outField;
+
+    if ((offset+width) == 32) 
+    {
+        bitMask = (0xFFFFFFFF<<offset);
+    }
+    else 
+    {
+        bitMask = (0xFFFFFFFF<<offset) ^ (0xFFFFFFFF<<(offset+width));
+
+    }
+
+    outField = (inField & bitMask) >> offset;
+    return outField;
+}
+
+uint32_t
+getBitFieldWidth(uint32_t number)
+{
+    uint32_t fieldWidth;
+
+    number--;
+    if (number == 0)
+    {
+        return 0;
+    }
+
+    __asm__ volatile ( "bsr %%eax, %%ecx\n\t"
+            : "=c" (fieldWidth)
+            : "a"(number));
+
+
+    return fieldWidth+1;  /* bsr returns the position, we want the width */
+}
+
 

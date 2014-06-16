@@ -35,22 +35,26 @@
 
 #include <bstrlib.h>
 #include <types.h>
+#include <topology.h>
 
 extern int perfmon_verbose;
+extern PerfmonGroupSet *groupSet;
 
-extern void (*perfmon_startCountersThread) (int thread_id);
-extern void (*perfmon_stopCountersThread) (int thread_id);
+extern int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
+extern int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int  (*perfmon_getIndex) (bstring reg, PerfmonCounterIndex* index);
-extern void (*perfmon_setupCounterThread) (int thread_id,
-       PerfmonEvent* event , PerfmonCounterIndex index);
+extern int (*perfmon_setupCounterThread) (int thread_id, PerfmonEventSet* eventSet);
 
-extern int perfmon_setupEventSet(char* eventCString, PerfmonEventSet* eventSet);
-extern int perfmon_setupCounters(PerfmonEventSet* eventSet);
-extern void perfmon_startCounters(void);
-extern void perfmon_stopCounters(void);
-extern void perfmon_readCounters(void);
-extern void perfmon_init(int numThreads, int threads[]);
-
+extern int perfmon_addEventSet(char* eventCString);
+extern int perfmon_setupCounters(int groupId);
+extern int perfmon_startCounters(void);
+extern int perfmon_stopCounters(void);
+extern int perfmon_readCounters(void);
+int perfmon_initThread(int thread_id, int cpu_id);
+extern int perfmon_init(int nrThreads, int threadsToCpu[]);
+extern void perfmon_finalize(void);
+uint64_t perfmon_getResults(int groupId, int eventId, int threadId);
+void perfmon_switchActiveGroup(int new_group);
 
 #if 0
 extern void perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set);

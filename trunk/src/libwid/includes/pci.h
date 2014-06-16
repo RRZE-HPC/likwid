@@ -41,9 +41,9 @@
 
 extern void pci_init();
 extern void pci_finalize();
-extern uint32_t pci_read(int cpu, PciDeviceIndex index, uint32_t reg);
-extern void pci_write(int cpu, PciDeviceIndex index, uint32_t reg, uint32_t data);
-extern uint32_t pci_tread(int socket_fd, int cpu, PciDeviceIndex index, uint32_t reg);
-extern void pci_twrite(int socket_fd, int cpu, PciDeviceIndex index, uint32_t reg, uint32_t data);
+extern int pci_read(int cpu, PciDeviceIndex index, uint32_t reg, uint32_t *data);
+extern int pci_write(int cpu, PciDeviceIndex index, uint32_t reg, uint32_t data);
+extern int pci_tread(int socket_fd, int cpu, PciDeviceIndex index, uint32_t reg, uint32_t *data);
+extern int pci_twrite(int socket_fd, int cpu, PciDeviceIndex index, uint32_t reg, uint32_t data);
 
 #endif /* PCI_H */
