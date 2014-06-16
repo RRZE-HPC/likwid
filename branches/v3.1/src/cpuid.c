@@ -647,7 +647,7 @@ int cpuid_init (void)
 
     if ((file = fopen(filepath, "rb")) != NULL) 
     {
-        printf("Read config from file\n");
+        //printf("Read config from file\n");
         initTopology(file);
         fclose(file);
     }
