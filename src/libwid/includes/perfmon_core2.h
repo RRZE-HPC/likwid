@@ -37,7 +37,7 @@ static int perfmon_numCountersCore2 = NUM_COUNTERS_CORE2;
 static int perfmon_numGroupsCore2 = NUM_GROUPS_CORE2;
 static int perfmon_numArchEventsCore2 = NUM_ARCH_EVENTS_CORE2;
 
-void perfmon_init_core2(int cpu_id)
+int perfmon_init_core2(int cpu_id)
 {
     uint64_t flags = 0x0ULL;
 
@@ -62,57 +62,58 @@ void perfmon_init_core2(int cpu_id)
 
     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, flags));
     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, flags));
+    return 0;
 }
 
 
-void perfmon_setupCounterThread_core2(
+int perfmon_setupCounterThread_core2(
         int thread_id,
         PerfmonEventSet* eventSet)
 {
     uint64_t flags;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-	for (int i=0;i < eventSet->numberOfEvents;i++)
-	{
-		PerfmonCounterIndex index = eventSet->events[i].index;
-		PerfmonEvent *event = &(eventSet->events[i].event);
-		uint64_t reg = core2_counter_map[index].configRegister;
-		
-		switch (core2_counter_map[index].type)
-		{
-			case PMC:
-				eventSet->events[i].threadCounter[thread_id].init = TRUE;
-				CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &flags));
-				flags &= ~(0xFFFFU); 
+    for (int i=0;i < eventSet->numberOfEvents;i++)
+    {
+        PerfmonCounterIndex index = eventSet->events[i].index;
+        PerfmonEvent *event = &(eventSet->events[i].event);
+        uint64_t reg = core2_counter_map[index].configRegister;
+        
+        switch (core2_counter_map[index].type)
+        {
+            case PMC:
+                eventSet->events[i].threadCounter[thread_id].init = TRUE;
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &flags));
+                flags &= ~(0xFFFFU); 
 
-				/* Intel with standard 8 bit event mask: [7:0] */
-				flags |= (event->umask<<8) + event->eventId;
+                /* Intel with standard 8 bit event mask: [7:0] */
+                flags |= (event->umask<<8) + event->eventId;
 
-				if ( event->cfgBits != 0 ) /* set custom cfg and cmask */
-				{
-				    flags &= ~(0xFFFFU<<16);  /* clear upper 16bits */
-				    flags |= ((event->cmask<<8) + event->cfgBits)<<16;
-				}
+                if ( event->cfgBits != 0 ) /* set custom cfg and cmask */
+                {
+                    flags &= ~(0xFFFFU<<16);  /* clear upper 16bits */
+                    flags |= ((event->cmask<<8) + event->cfgBits)<<16;
+                }
 
-				CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
 
-				/*if (perfmon_verbose)
-				{
-				    printf("[%d] perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
-				            cpu_id,
-				            LLU_CAST reg,
-				            LLU_CAST flags);
-				}*/
-				break;
-			case FIXED:
-				eventSet->events[i].threadCounter[thread_id].init = TRUE;
-				break;
-		}
-	}
-	return 0;
+                /*if (perfmon_verbose)
+                {
+                    printf("[%d] perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
+                            cpu_id,
+                            LLU_CAST reg,
+                            LLU_CAST flags);
+                }*/
+                break;
+            case FIXED:
+                eventSet->events[i].threadCounter[thread_id].init = TRUE;
+                break;
+        }
+    }
+    return 0;
 }
 
-void perfmon_startCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
+int perfmon_startCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
 {
     uint64_t flags = 0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
@@ -123,8 +124,8 @@ void perfmon_startCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-        	PerfmonCounterIndex index = eventSet->events[i].index;
-        	
+            PerfmonCounterIndex index = eventSet->events[i].index;
+            
             CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, core2_counter_map[index].counterRegister , 0x0ULL));
 
             if (core2_counter_map[i].type == PMC)
@@ -146,9 +147,10 @@ void perfmon_startCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
 
     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x300000003ULL));
+    return 0;
 }
 
-void perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
+int perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
 {
     uint64_t flags;
     uint64_t tmp;
@@ -162,9 +164,9 @@ void perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-        	PerfmonCounterIndex index = eventSet->events[i].index;
-        	CHECK_MSR_READ_ERROR(msr_read(cpu_id, core2_counter_map[index].counterRegister,
-                    				(uint64_t*)&tmp));
+            PerfmonCounterIndex index = eventSet->events[i].index;
+            CHECK_MSR_READ_ERROR(msr_read(cpu_id, core2_counter_map[index].counterRegister,
+                                    (uint64_t*)&tmp));
             eventSet->events[i].threadCounter[thread_id].counterData = tmp;
         }
     }
@@ -176,12 +178,13 @@ void perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
         printf ("Overflow occured \n");
         printf ("Status: 0x%llX \n", LLU_CAST flags);
     }
+    return 0;
 }
 
-void perfmon_readCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
+int perfmon_readCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
 {
     int cpu_id = groupSet->threads[thread_id].processorId;
-	uint64_t tmp;
+    uint64_t tmp;
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
@@ -190,5 +193,6 @@ void perfmon_readCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
             eventSet->events[i].threadCounter[thread_id].counterData = tmp;
         }
     }
+    return 0;
 }
 

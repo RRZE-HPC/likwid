@@ -72,77 +72,71 @@ typedef enum {
     NUM_UNITS} PerfmonType;
 
 typedef struct {
-    char* key;
+    char*               key;
     PerfmonCounterIndex index;
-    PerfmonType  type;
-    uint64_t  configRegister;
-    uint64_t  counterRegister;
-    uint64_t  counterRegister2;
-    PciDeviceIndex device;
+    PerfmonType         type;
+    uint64_t            configRegister;
+    uint64_t            counterRegister;
+    uint64_t            counterRegister2;
+    PciDeviceIndex      device;
 } PerfmonCounterMap;
 
+typedef struct {
+    char*           key;
+    PerfmonGroup    index;
+    int             isUncore;
+    char*           info;
+    char*           config;
+} PerfmonGroupMap;
+
+typedef struct {
+    char*           key;
+    char*           msg;
+} PerfmonGroupHelp;
 
 /////////////////////////////////////////////
 typedef struct {
-	int thread_id;
-	int processorId;
+    int             thread_id;
+    int             processorId;
 } PerfmonThread;
 
 typedef struct {
-    const char    	*name;
-    const char    	*limit;
-    uint16_t 		eventId;
-    uint8_t 		umask;
-    uint8_t 		cfgBits;
-    uint8_t 		cmask;
+    const char*     name;
+    const char*     limit;
+    uint16_t        eventId;
+    uint8_t         umask;
+    uint8_t         cfgBits;
+    uint8_t         cmask;
 } PerfmonEvent;
 
 typedef struct {
-    int       	init;
-    int       	id;
-    uint64_t  	counterData;
+    int         init;
+    int         id;
+    uint64_t    counterData;
 } PerfmonCounter;
 
 typedef struct {
-	PerfmonEvent 		event;
-	PerfmonCounterIndex index;
-	PerfmonCounter 		*threadCounter;
-} PerfmonGroupEvent; 
+    PerfmonEvent        event;
+    PerfmonCounterIndex index;
+    PerfmonCounter*     threadCounter;
+} PerfmonEventSetEntry;
 
 typedef struct {
-	int 				numberOfEvents;
-	PerfmonGroupEvent 	*events;
-	TimerData 			timer;
-	double 				rdtscTime;
-} PerfmonEventSet; 
+    int                   numberOfEvents;
+    PerfmonEventSetEntry* events;
+    TimerData             timer;
+    double                rdtscTime;
+} PerfmonEventSet;
 
 typedef struct {
-	int 			numberOfGroups;
-	int 			numberOfActiveGroups;
-	int 			activeGroup;
-	PerfmonEventSet *groups;
-	int 			numberOfThreads;
-	PerfmonThread	*threads;
-} PerfmonGroupSet; 
+    int              numberOfGroups;
+    int              numberOfActiveGroups;
+    int              activeGroup;
+    PerfmonEventSet* groups;
+    int              numberOfThreads;
+    PerfmonThread*   threads;
+} PerfmonGroupSet;
 
-
-/*typedef struct {
-	const char* eventName;
-	uint64_t*	counterData;
-} PerfmonResultGroupEvent;
-
-typedef struct {
-	int numberOfEvents;
-	PerfmonResultGroupEvent *events;
-	double 				rdtscTime;
-} PerfmonResultEventSet;
-
-typedef struct {
-	int numberOfGroups;
-	PerfmonResultEventSet *groups;
-	int numberOfThreads;
-	PerfmonThread	*threads;
-} PerfmonResultGroupSet*/
 
 
 #endif /*PERFMON_TYPES_H*/
