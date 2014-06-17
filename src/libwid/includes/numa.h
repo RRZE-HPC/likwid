@@ -14,9 +14,9 @@
 extern int maxIdConfiguredNode;
 
 struct numa_functions {
-	int (*numa_init) (void);
-	void (*numa_setInterleaved) (int*, int);
-	void (*numa_membind) (void*, size_t, int);
+    int (*numa_init) (void);
+    void (*numa_setInterleaved) (int*, int);
+    void (*numa_membind) (void*, size_t, int);
 };
 
 

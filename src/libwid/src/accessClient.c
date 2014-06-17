@@ -217,7 +217,7 @@ accessClient_read(
         *result = 0;
         return -EIO;
     }
-	*result = data.data;
+    *result = data.data;
     return 0;
 }
 
@@ -250,8 +250,8 @@ accessClient_write(
     if (data.data != 0x00ULL)
     {
         fprintf(stderr, "Failed to write data through daemon: "
-        				"daemon returned successfully for cpu %d reg 0x%x but write operation failed\n",
-        				cpu, reg);
+                        "daemon returned successfully for cpu %d reg 0x%x but write operation failed\n",
+                        cpu, reg);
         return -EIO;
     }
     return 0;

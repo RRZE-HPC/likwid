@@ -99,7 +99,7 @@ static void initTopologyFile(FILE* file)
 
 int topology_setName(void)
 {
-	switch ( cpuid_info.family )
+    switch ( cpuid_info.family )
     {
         case P6_FAMILY:
             switch ( cpuid_info.model )
@@ -293,34 +293,34 @@ int topology_setName(void)
             return EXIT_FAILURE;
             break;
     }
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 const struct topology_functions topology_funcs = {
 #ifndef USE_HWLOC
-	.init_cpuInfo = cpuid_init_cpuInfo,
-	.init_cpuFeatures = cpuid_init_cpuFeatures,
-	.init_nodeTopology = cpuid_init_nodeTopology,
-	.init_cacheTopology = cpuid_init_cacheTopology,
+    .init_cpuInfo = cpuid_init_cpuInfo,
+    .init_cpuFeatures = cpuid_init_cpuFeatures,
+    .init_nodeTopology = cpuid_init_nodeTopology,
+    .init_cacheTopology = cpuid_init_cacheTopology,
 #else
-	.init_cpuInfo = hwloc_init_cpuInfo,
-	.init_nodeTopology = hwloc_get_nodeTopology,
-	.init_cacheTopology = hwloc_get_cacheTopology,
-	.init_cpuFeatures = hwloc_get_cpuFeatures,
+    .init_cpuInfo = hwloc_init_cpuInfo,
+    .init_nodeTopology = hwloc_get_nodeTopology,
+    .init_cacheTopology = hwloc_get_cacheTopology,
+    .init_cpuFeatures = hwloc_get_cpuFeatures,
 #endif
-	
-	.init_fileTopology = initTopologyFile,
+    
+    .init_fileTopology = initTopologyFile,
 };
 
 
 void topology_setupTree(void)
 {
-	uint32_t i;
-	TreeNode* currentNode;
-	HWThread* hwThreadPool = cpuid_topology.threadPool; 
-	
-	tree_init(&cpuid_topology.topologyTree, 0);
-	for (i=0; i<  cpuid_topology.numHWThreads; i++)
+    uint32_t i;
+    TreeNode* currentNode;
+    HWThread* hwThreadPool = cpuid_topology.threadPool; 
+    
+    tree_init(&cpuid_topology.topologyTree, 0);
+    for (i=0; i<  cpuid_topology.numHWThreads; i++)
     {
         /* Add node to Topology tree */
         if (!tree_nodeExists(cpuid_topology.topologyTree,
@@ -352,43 +352,43 @@ void topology_setupTree(void)
     cpuid_topology.numCoresPerSocket = tree_countChildren(currentNode);
     currentNode = tree_getChildNode(currentNode);
     cpuid_topology.numThreadsPerCore = tree_countChildren(currentNode);
-	return;
+    return;
 }
 
 int topology_init(void)
 {
-	FILE *file;
-	char *filepath = TOSTRING(CFGFILE);
-	const struct topology_functions funcs = topology_funcs;
-	
-	if (init)
-	{
-		return EXIT_SUCCESS;
-	}
-	init = 1;
-	
-	
-	funcs.init_cpuInfo();
-	topology_setName();
-	funcs.init_cpuFeatures();	
-	if (access(filepath, R_OK))
-	{
-		cpu_set_t cpuSet;
+    FILE *file;
+    char *filepath = TOSTRING(CFGFILE);
+    const struct topology_functions funcs = topology_funcs;
+    
+    if (init)
+    {
+        return EXIT_SUCCESS;
+    }
+    init = 1;
+    
+    
+    funcs.init_cpuInfo();
+    topology_setName();
+    funcs.init_cpuFeatures();    
+    if (access(filepath, R_OK))
+    {
+        cpu_set_t cpuSet;
         CPU_ZERO(&cpuSet);
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
-		funcs.init_nodeTopology();
-		topology_setupTree();
-		funcs.init_cacheTopology();
-		sched_setaffinity(0, sizeof(cpu_set_t), &cpuSet);
-	}
-	else
-	{
-		file = fopen(filepath, "rb");
-		funcs.init_fileTopology(file);
-		fclose(file);
-	}
-	
-	return EXIT_SUCCESS;
+        funcs.init_nodeTopology();
+        topology_setupTree();
+        funcs.init_cacheTopology();
+        sched_setaffinity(0, sizeof(cpu_set_t), &cpuSet);
+    }
+    else
+    {
+        file = fopen(filepath, "rb");
+        funcs.init_fileTopology(file);
+        fclose(file);
+    }
+    
+    return EXIT_SUCCESS;
 }
 
 
@@ -472,23 +472,23 @@ int cpuid_isInCpuset(void)
         return 0;
     }
 freeStrings:
-	bdestroy(filename);  
-	bdestroy(grepString);
-	bdestroy(cpulist);
-	return ret;
+    bdestroy(filename);  
+    bdestroy(grepString);
+    bdestroy(cpulist);
+    return ret;
 }
 
 CpuTopology_t get_cpuTopology(void)
 {
-	return &cpuid_topology;
+    return &cpuid_topology;
 }
 
 CpuInfo_t get_cpuInfo(void)
 {
-	return &cpuid_info;
+    return &cpuid_info;
 }
 NumaTopology_t get_numaTopology(void)
 {
-	return &numa_info;
+    return &numa_info;
 }
 

@@ -70,11 +70,11 @@ static int rdpmc_works = 0;
 
 static inline int __rdpmc(int counter, uint64_t* value)
 {
-	unsigned low, high;
+    unsigned low, high;
 
-	__asm__ volatile("rdpmc" : "=a" (low), "=d" (high) : "c" (counter));
-	*value = ((low) | ((uint64_t )(high) << 32));
-	return 0;
+    __asm__ volatile("rdpmc" : "=a" (low), "=d" (high) : "c" (counter));
+    *value = ((low) | ((uint64_t )(high) << 32));
+    return 0;
 }
 
 //Needed for rdpmc check
@@ -134,8 +134,8 @@ msr_init(int initSocket_fd)
     int i = 0;
     char* msr_file_name = (char*) malloc(MAX_LENGTH_MSR_DEV_NAME * sizeof(char));
     if (!msr_file_name)
-    {	
-    	return -ENOMEM;
+    {    
+        return -ENOMEM;
     }
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
@@ -143,7 +143,7 @@ msr_init(int initSocket_fd)
         sprintf(msr_file_name,"/dev/msr0");
         if (access(msr_file_name, F_OK))
         {
-        	sprintf(msr_file_name,"/dev/cpu/0/msr");
+            sprintf(msr_file_name,"/dev/cpu/0/msr");
         }    
 #else
         sprintf(msr_file_name,"/dev/cpu/0/msr");
@@ -153,8 +153,8 @@ msr_init(int initSocket_fd)
         if (access(msr_file_name, R_OK|W_OK))
         {
             ERROR_PRINT("Cannot access MSR device file %s: %s.\n"
-            			"Please check if 'msr' module is loaded and device files have correct permissions\n"
-            			"Alternatively you might want to look into (sys)daemonmode\n",msr_file_name , strerror(errno));
+                        "Please check if 'msr' module is loaded and device files have correct permissions\n"
+                        "Alternatively you might want to look into (sys)daemonmode\n",msr_file_name , strerror(errno));
             free(msr_file_name);
             return -EPERM;
         }
@@ -165,9 +165,9 @@ msr_init(int initSocket_fd)
 #ifdef __MIC
             sprintf(msr_file_name,"/dev/msr%d",i);
             if (access(msr_file_name, F_OK))
-		    {
-		    	sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
-		    } 
+            {
+                sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
+            } 
 #else
             sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
 #endif
@@ -177,9 +177,9 @@ msr_init(int initSocket_fd)
             if ( FD[i] < 0 )
             {
                 ERROR_PRINT("Cannot access MSR device file %s: %s\n",
-                				msr_file_name , strerror(errno));
+                                msr_file_name , strerror(errno));
                 free(msr_file_name);
-               	return -EPERM;
+                   return -EPERM;
             }
         }
     }
@@ -194,7 +194,7 @@ msr_init(int initSocket_fd)
 void
 msr_finalize(void)
 {
-	int i = 0;
+    int i = 0;
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
         for (i=0; i < cpuid_topology.numHWThreads; i++ )
@@ -219,7 +219,7 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
             if (__rdpmc(reg - MSR_PMC0, data) )
             {
                 ERROR_PRINT("Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n",
-                		reg,cpu);
+                        reg,cpu);
                 return -EIO;
             }
         }
@@ -228,7 +228,7 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
             if ( pread(FD[cpu], data, sizeof(*data), reg) != sizeof(*data) )
             {
                 ERROR_PRINT("Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d\n",
-                		reg, cpu);
+                        reg, cpu);
                 return -EIO;
             }
         }
@@ -237,8 +237,8 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
     { /* daemon or sysdaemon-mode */
         if (accessClient_read(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data))
         {
-        	return -EIO;
-        }	
+            return -EIO;
+        }    
     }
     return 0;
 }
@@ -252,7 +252,7 @@ msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
         if (pwrite(FD[cpu], &data, sizeof(data), reg) != sizeof(data))
         {
             ERROR_PRINT("Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n",
-                		reg, cpu);
+                        reg, cpu);
             return -EIO;
         }
     }
@@ -260,7 +260,7 @@ msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
     { /* daemon or sysdaemon-mode */
         if (accessClient_write(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data))
         {
-        	return -EIO;
+            return -EIO;
         }
     }
     return 0;
@@ -278,7 +278,7 @@ msr_read( const int cpu, uint32_t reg, uint64_t *data)
             {
                 //ERROR_PRINT("cpu %d reg %x",cpu, reg);
                 ERROR_PRINT("Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n",
-                		reg,cpu);
+                        reg,cpu);
                 return -EIO;
             }
         }
@@ -288,7 +288,7 @@ msr_read( const int cpu, uint32_t reg, uint64_t *data)
             {
                 //ERROR_PRINT("cpu %d reg %x",cpu, reg);
                 ERROR_PRINT("Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d\n",
-                		reg, cpu);
+                        reg, cpu);
                 return -EIO;
             }
         }
@@ -297,7 +297,7 @@ msr_read( const int cpu, uint32_t reg, uint64_t *data)
     { /* daemon or sysdaemon-mode */
         if (accessClient_read(socket_fd, cpu, DAEMON_AD_MSR, reg, data))
         {
-        	return -EIO;
+            return -EIO;
         }
     }
     return 0;
@@ -312,7 +312,7 @@ msr_write( const int cpu, uint32_t reg, uint64_t data)
         if (pwrite(FD[cpu], &data, sizeof(data), reg) != sizeof(data))
         {
             ERROR_PRINT("Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n",
-                		reg, cpu);
+                        reg, cpu);
             return -EIO;
         }
     }
@@ -320,7 +320,7 @@ msr_write( const int cpu, uint32_t reg, uint64_t data)
     { /* daemon or sysdaemon-mode */
         if (accessClient_write(socket_fd, cpu, DAEMON_AD_MSR, reg, data))
         {
-        	return -EIO;
+            return -EIO;
         }
     }
     return 0;
