@@ -53,8 +53,16 @@ extern int perfmon_readCounters(void);
 int perfmon_initThread(int thread_id, int cpu_id);
 extern int perfmon_init(int nrThreads, int threadsToCpu[]);
 extern void perfmon_finalize(void);
-uint64_t perfmon_getResults(int groupId, int eventId, int threadId);
-void perfmon_switchActiveGroup(int new_group);
+extern int perfmon_switchActiveGroup(int new_group);
+
+extern uint64_t perfmon_getResult(int groupId, int eventId, int threadId);
+extern int perfmon_getNumberOfGroups(void);
+extern int perfmon_getNumberOfEvents(int groupId);
+extern int perfmon_getNumberOfActiveGroup(void);
+extern int perfmon_getNumberOfThreads(void);
+
+
+
 
 #if 0
 extern void perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set);

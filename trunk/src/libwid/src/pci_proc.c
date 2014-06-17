@@ -14,9 +14,9 @@
 int 
 proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
 {
-	FILE *fptr;
+    FILE *fptr;
     char buf[1024];
-	int cntr = 0;
+    int cntr = 0;
     uint16_t testVendor = 0x8086;
     uint32_t sbus, sdevfn, svend, sdev;
     
@@ -40,8 +40,8 @@ proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     }
     fclose(fptr);
     
-	*nrSockets = cntr;
-	
+    *nrSockets = cntr;
+    
     if ( cntr == 0 )
     {
         //fprintf(stderr, "Uncore not supported on this system\n");

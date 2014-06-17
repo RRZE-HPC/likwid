@@ -106,62 +106,62 @@ pci_init(int initSocket_fd)
 {
     uint16_t testDevice;
     int nr_sockets = 0;
-	int i=0;
-	int j=0;
-	int ret = 0;
+    int i=0;
+    int j=0;
+    int ret = 0;
 
     for (i=0; i<MAX_NUM_NODES; i++ )
     {
         socket_bus[i] = "N-A";
         for(j=0;j<MAX_NUM_DEVICES;j++)
         {
-        	FD[i][j] = -2;
+            FD[i][j] = -2;
         }
     }
 
-	/* PCI is only provided by Intel systems */
+    /* PCI is only provided by Intel systems */
     if (!cpuid_info.isIntel)
     {
-    	return;
+        return;
     }
 
     switch (cpuid_info.model)
     {
-    	case SANDYBRIDGE_EP:
-    		testDevice = 0x3c44;
-    		break;
-    	case IVYBRIDGE_EP:
-    		testDevice = 0x0e36;
-    		break;
-    	default:
-    		return;
+        case SANDYBRIDGE_EP:
+            testDevice = 0x3c44;
+            break;
+        case IVYBRIDGE_EP:
+            testDevice = 0x0e36;
+            break;
+        default:
+            return;
     }
     
 #ifdef LIKWID_USE_HWLOC
-	ret = hwloc_pci_init(testDevice, socket_bus, &nr_sockets);
+    ret = hwloc_pci_init(testDevice, socket_bus, &nr_sockets);
 #else
-	ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
+    ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
 #endif
-	if (ret)
-	{
-		fprintf(stderr, "Uncore not supported on this system\n");
-		return;
-	}
-	
+    if (ret)
+    {
+        fprintf(stderr, "Uncore not supported on this system\n");
+        return;
+    }
+    
 
     for(i=0;i<nr_sockets;i++)
-	{
-		for(j=0;j<MAX_NUM_DEVICES;j++)
-		{
-			bstring filepath = bformat("%s%s%s",PCI_ROOT_PATH,
-												socket_bus[i],
-												pci_DevicePath[j]);
-			if (!access(bdata(filepath), F_OK))
-			{
-				FD[i][j] = 0;
-			}
-		}
-	}
+    {
+        for(j=0;j<MAX_NUM_DEVICES;j++)
+        {
+            bstring filepath = bformat("%s%s%s",PCI_ROOT_PATH,
+                                                socket_bus[i],
+                                                pci_DevicePath[j]);
+            if (!access(bdata(filepath), F_OK))
+            {
+                FD[i][j] = 0;
+            }
+        }
+    }
 
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
@@ -183,8 +183,8 @@ pci_init(int initSocket_fd)
 void
 pci_finalize()
 {
-	int i=0;
-	int j=0;
+    int i=0;
+    int j=0;
     if (accessClient_mode != DAEMON_AM_DIRECT)
     {
         for (i=0; i<MAX_NUM_NODES; i++)
@@ -216,8 +216,8 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t* data)
     {
         if (FD[socketId][device] < 0)
         {
-        	*data = 0;
-        	return -ENODEV;
+            *data = 0;
+            return -ENODEV;
         }
         else if ( !FD[socketId][device] )
         {
@@ -239,7 +239,7 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t* data)
              pread(FD[socketId][device], &tmp, sizeof(tmp), reg) != sizeof(tmp) ) 
         {
             fprintf(stderr,"ERROR in pci_read:\nCannot read from PCI device %s: %s\n",
-            		bdata(filepath),strerror(errno));
+                    bdata(filepath),strerror(errno));
             *data = 0;
             return -EIO;
         }
@@ -248,7 +248,7 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t* data)
     { /* daemon or sysdaemon-mode */
         if (accessClient_read(socket_fd, socketId, device, reg, &tmp))
         {
-        	return -EIO;
+            return -EIO;
         } 
     }
     *data = tmp;
@@ -261,12 +261,12 @@ int
 pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
 {
     int socketId = affinity_core2node_lookup[cpu];
-	bstring filepath = NULL;
+    bstring filepath = NULL;
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
         if (FD[socketId][device] < 0)
         {
-        	return -ENODEV;
+            return -ENODEV;
         }
         else if ( !FD[socketId][device] )
         {
@@ -288,15 +288,15 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
              pwrite(FD[socketId][device], &data, sizeof data, reg) != sizeof data) 
         {
             fprintf(stderr,"ERROR in pci_write:\nCannot write to PCI device %s: %s\n",
-            		bdata(filepath),strerror(errno));
+                    bdata(filepath),strerror(errno));
             return -EIO;
-        }	
+        }    
     }
     else
     { /* daemon or sysdaemon-mode */
         if (accessClient_write(socket_fd, socketId, device, reg, (uint64_t) data))
         {
-        	return -EIO;
+            return -EIO;
         }
     }
     return 0;
@@ -314,7 +314,7 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
 
         if (FD[socketId][device] < 0)
         {
-        	return -ENODEV;
+            return -ENODEV;
         }
         else if ( !FD[socketId][device] )
         {
@@ -336,7 +336,7 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
              pread(FD[socketId][device], &tmp, sizeof(tmp), reg) != sizeof(tmp) ) 
         {
             fprintf(stderr,"ERROR in pci_tread:\nCannot read from PCI device %s: %s\n",
-            		bdata(filepath),strerror(errno));
+                    bdata(filepath),strerror(errno));
             *data = 0;
             return -EIO;
         }
@@ -345,7 +345,7 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
     { /* daemon or sysdaemon-mode */
         if (accessClient_read(tsocket_fd, socketId, device, reg, &tmp))
         {
-        	return -EIO;
+            return -EIO;
         }
         
     }
@@ -357,13 +357,13 @@ int
 pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
 {
     int socketId = affinity_core2node_lookup[cpu];
-	bstring filepath = NULL;
+    bstring filepath = NULL;
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
 
         if (FD[socketId][device] < 0)
         {
-        	return -ENODEV;
+            return -ENODEV;
         }
         else if ( !FD[socketId][device] )
         {
@@ -385,7 +385,7 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
              pwrite(FD[socketId][device], &data, sizeof data, reg) != sizeof data) 
         {
             fprintf(stderr,"ERROR in pci_twrite:\nCannot write to pci device %s: %s\n",
-            		bdata(filepath),strerror(errno));
+                    bdata(filepath),strerror(errno));
             return -EIO;
         }
     }
@@ -393,7 +393,7 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
     { /* daemon or sysdaemon-mode */
         if (accessClient_write(tsocket_fd, socketId, device, reg, data))
         {
-        	return -EIO;
+            return -EIO;
         }
     }
     return 0;

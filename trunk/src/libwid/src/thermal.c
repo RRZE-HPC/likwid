@@ -54,7 +54,7 @@ void thermal_init(int cpuId)
     {
         if (msr_read(cpuId, IA32_THERM_STATUS, &flags))
         {
-        	return;
+            return;
         }
 
         if ( flags & 0x1 )
@@ -71,7 +71,7 @@ void thermal_init(int cpuId)
         flags = 0ULL;
         if (msr_read(cpuId, MSR_TEMPERATURE_TARGET, &flags))
         {
-        	return;
+            return;
         }
         thermal_info.activationT =  extractBitField(flags,8,16);
     }

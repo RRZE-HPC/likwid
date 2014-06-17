@@ -45,12 +45,12 @@ static inline int thermal_read(int cpuId, uint32_t *data);
 static int
 thermal_read(int cpuId, uint32_t *data)
 {
-	uint64_t result = 0;
-	if (msr_read(cpuId, IA32_THERM_STATUS, &result))
-	{
-		*data = 0;
-		return -EIO;
-	}
+    uint64_t result = 0;
+    if (msr_read(cpuId, IA32_THERM_STATUS, &result))
+    {
+        *data = 0;
+        return -EIO;
+    }
     *data = (thermal_info.activationT - extractBitField(result,7,16));
     return 0;
 }

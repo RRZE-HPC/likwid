@@ -18,11 +18,11 @@ extern NumaTopology numa_info;
 
 
 struct topology_functions {
-	void (*init_cpuInfo) (void);
-	void (*init_cpuFeatures) (void);
-	void (*init_nodeTopology) (void);
-	void (*init_cacheTopology) (void);
-	void (*init_fileTopology) (FILE*);
+    void (*init_cpuInfo) (void);
+    void (*init_cpuFeatures) (void);
+    void (*init_nodeTopology) (void);
+    void (*init_cacheTopology) (void);
+    void (*init_fileTopology) (FILE*);
 };
 
 /* Intel P6 */
@@ -91,7 +91,7 @@ int cpuid_isInCpuset(void);
 
 static inline int cpuid_hasFeature(FeatureBit bit)
 {
-  	return (cpuid_info.featureFlags & (1<<bit));
+      return (cpuid_info.featureFlags & (1<<bit));
 }
 extern int topology_init(void);
 extern CpuTopology_t get_cpuTopology(void);

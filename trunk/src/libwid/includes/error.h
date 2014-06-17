@@ -38,8 +38,8 @@
 
 #define str(x) #x
 
-#define FINALIZE  	msr_finalize(); \
-					pci_finalize()
+#define FINALIZE      msr_finalize(); \
+                      pci_finalize()
 
 #define ERRNO_PRINT fprintf(stderr, "ERROR - [%s:%d] %s\n", __FILE__, __LINE__, strerror(errno))
 

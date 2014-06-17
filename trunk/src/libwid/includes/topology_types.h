@@ -75,7 +75,7 @@ typedef struct {
     char*  name;
     char*  short_name;
     char*  features;
-    int		 isIntel;
+    int         isIntel;
     uint32_t featureFlags;
     uint32_t perf_version;
     uint32_t perf_num_ctr;

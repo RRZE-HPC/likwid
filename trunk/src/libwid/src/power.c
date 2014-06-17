@@ -71,7 +71,7 @@ power_init(int cpuId)
     if (cpuid_info.turbo)
     {
         if (msr_read(cpuId, MSR_PLATFORM_INFO, &flags))
-        	return;
+            return;
 
         if ( hasRAPL )
         {
@@ -90,7 +90,7 @@ power_init(int cpuId)
 
         if (msr_read(cpuId, MSR_TURBO_RATIO_LIMIT, &flags))
         {
-        	return;
+            return;
         }
 
         for (int i=0; i < power_info.turbo.numSteps; i++)
@@ -115,7 +115,7 @@ power_init(int cpuId)
     {
         if (msr_read(cpuId, MSR_RAPL_POWER_UNIT, &flags))
         {
-        	return;
+            return;
         }
 
         power_info.powerUnit = pow(0.5,(double) extractBitField(flags,4,0));
@@ -124,7 +124,7 @@ power_init(int cpuId)
 
         if (msr_read(cpuId, MSR_PKG_POWER_INFO, &flags))
         {
-        	return;
+            return;
         }
         power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
         power_info.minPower =  (double) extractBitField(flags,15,16) * power_info.powerUnit;

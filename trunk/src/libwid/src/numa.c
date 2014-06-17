@@ -87,18 +87,18 @@ empty_numa_membind(void* ptr, size_t size, int domainId)
 
 const struct numa_functions numa_funcs = {
 #ifndef HAS_MEMPOLICY
-	.numa_init = empty_numa_init,
-	.numa_setInterleaved = empty_numa_setInterleaved,
-	.numa_membind = empty_numa_membind
+    .numa_init = empty_numa_init,
+    .numa_setInterleaved = empty_numa_setInterleaved,
+    .numa_membind = empty_numa_membind
 #else
 #ifdef LIKWID_USE_HWLOC
-	.numa_init = hwloc_numa_init,
-	.numa_setInterleaved = hwloc_numa_setInterleaved,
-	.numa_membind = hwloc_numa_membind
+    .numa_init = hwloc_numa_init,
+    .numa_setInterleaved = hwloc_numa_setInterleaved,
+    .numa_membind = hwloc_numa_membind
 #else
-	.numa_init = proc_numa_init,
-	.numa_setInterleaved = proc_numa_setInterleaved,
-	.numa_membind = proc_numa_membind
+    .numa_init = proc_numa_init,
+    .numa_setInterleaved = proc_numa_setInterleaved,
+    .numa_membind = proc_numa_membind
 #endif
 #endif
 };
@@ -106,20 +106,20 @@ const struct numa_functions numa_funcs = {
 
 int numa_init(void)
 {
-	const struct numa_functions funcs = numa_funcs;
-	return funcs.numa_init();
+    const struct numa_functions funcs = numa_funcs;
+    return funcs.numa_init();
 }
 
 void numa_setInterleaved(int* processorList, int numberOfProcessors)
 {
-	const struct numa_functions funcs = numa_funcs;
-	return funcs.numa_setInterleaved(processorList, numberOfProcessors);
+    const struct numa_functions funcs = numa_funcs;
+    return funcs.numa_setInterleaved(processorList, numberOfProcessors);
 }
 
 void numa_membind(void* ptr, size_t size, int domainId)
 {
-	const struct numa_functions funcs = numa_funcs;
-	return funcs.numa_membind(ptr, size, domainId);
+    const struct numa_functions funcs = numa_funcs;
+    return funcs.numa_membind(ptr, size, domainId);
 }
 
 

@@ -57,36 +57,36 @@ power_printEnergy(PowerData* data)
 static void
 power_start(PowerData* data, int cpuId, PowerType type)
 {
-	uint64_t result = 0;
-	if (msr_read(cpuId, power_regs[type], &result))
-	{
-		data->before = 0;
-		return;
-	}
+    uint64_t result = 0;
+    if (msr_read(cpuId, power_regs[type], &result))
+    {
+        data->before = 0;
+        return;
+    }
     data->before = extractBitField(result,32,0);
 }
 
 static void
 power_stop(PowerData* data, int cpuId, PowerType type)
 {
-	uint64_t result = 0;
-	if (msr_read(cpuId, power_regs[type], &result))
-	{
-		data->after = 0;
-		return;
-	}
+    uint64_t result = 0;
+    if (msr_read(cpuId, power_regs[type], &result))
+    {
+        data->after = 0;
+        return;
+    }
     data->after = extractBitField(result,32,0);
 }
 
 static int
 power_read(int cpuId, uint64_t reg, uint32_t *data)
 {
-	uint64_t result = 0;
-	if (msr_read(cpuId, reg, &result))
-	{
-		*data = 0;
-		return -EIO;
-	}
+    uint64_t result = 0;
+    if (msr_read(cpuId, reg, &result))
+    {
+        *data = 0;
+        return -EIO;
+    }
     *data = extractBitField(result,32,0);
     return 0;
 }
@@ -94,12 +94,12 @@ power_read(int cpuId, uint64_t reg, uint32_t *data)
 static int
 power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
 {
-	uint64_t result = 0;
-	if (msr_tread(socket_fd, cpuId, reg, &result))
-	{
-		*data = 0;
-		return -EIO;
-	}
+    uint64_t result = 0;
+    if (msr_tread(socket_fd, cpuId, reg, &result))
+    {
+        *data = 0;
+        return -EIO;
+    }
     *data = extractBitField(result,32,0);
     return 0;
 }

@@ -30,7 +30,7 @@
 
 static int readCacheInclusive(int level)
 {
-	uint32_t eax, ebx, ecx, edx;
+    uint32_t eax, ebx, ecx, edx;
     eax = 0x04;
     ecx = level;
     CPUID;
@@ -52,8 +52,8 @@ int hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwl
         {
             if (list && *list && index)
             {
-	            (*list)[(*index)++] = walker->logical_index;
-	        }
+                (*list)[(*index)++] = walker->logical_index;
+            }
             count++;
         }
         count += hwloc_record_objs_of_type_below_obj(t, walker, type, index, list);
@@ -63,7 +63,7 @@ int hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwl
 
 void hwloc_init_cpuInfo(void)
 {
-	int i;
+    int i;
     hwloc_obj_t obj;
     
     hwloc_topology_init(&hwloc_topology);
@@ -94,144 +94,144 @@ void hwloc_init_cpuInfo(void)
 
 void hwloc_init_cpuFeatures(void)
 {
-	int ret;
-	FILE* file;
-	char buf[1024];
-	char ident[30];
-	char delimiter[] = " ";
-	char* cptr;
+    int ret;
+    FILE* file;
+    char buf[1024];
+    char ident[30];
+    char delimiter[] = " ";
+    char* cptr;
 
-	
+    
     
     if ( (file = fopen( "/proc/cpuinfo", "r")) == NULL )
-	{
-		fprintf(stderr, "Cannot open /proc/cpuinfo\n");
-		return;
-	}
-	
-	while( fgets(buf, sizeof(buf)-1, file) )
+    {
+        fprintf(stderr, "Cannot open /proc/cpuinfo\n");
+        return;
+    }
+    
+    while( fgets(buf, sizeof(buf)-1, file) )
     {
         ret = sscanf(buf, "%s\t:", &(ident[0]));
         if (ret != 1 || strcmp(ident,"flags") != 0)
-        	continue;
+            continue;
         else
-        	break;
+            break;
     }
     fclose(file);
-	
-	cpuid_info.featureFlags = 0;
+    
+    cpuid_info.featureFlags = 0;
     cpuid_info.features = (char*) malloc(200*sizeof(char));
     
     cptr = strtok(&(buf[9]),delimiter);
     
     while (cptr != NULL)
     {
-    	if (strcmp(cptr,"ssse3") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<SSSE3);
-    		strcat(cpuid_info.features, "SSSE3 ");
-    	}
-    	else if (strcmp(cptr,"sse3") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<SSE3);
-    		strcat(cpuid_info.features, "SSE3 ");
-    	}
-    	else if (strcmp(cptr,"vsx") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<VSX);
-    		strcat(cpuid_info.features, "VSX ");
-    	}
-    	else if (strcmp(cptr,"monitor") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<MONITOR);
-    		strcat(cpuid_info.features, "MONITOR ");
-    	}
-    	else if (strcmp(cptr,"mmx") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<MMX);
-    		strcat(cpuid_info.features, "MMX ");
-    	}
-    	else if (strcmp(cptr,"sse") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<SSE);
-    		strcat(cpuid_info.features, "SSE ");
-    	}
-    	else if (strcmp(cptr,"sse2") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<SSE2);
-    		strcat(cpuid_info.features, "SSE2 ");
-    	}
-    	else if (strcmp(cptr,"acpi") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<ACPI);
-    		strcat(cpuid_info.features, "ACPI ");
-    	}
-    	else if (strcmp(cptr,"rdtscp") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<RDTSCP);
-    		strcat(cpuid_info.features, "RDTSCP ");
-    	}
-    	else if (strcmp(cptr,"vmx") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<VMX);
-    		strcat(cpuid_info.features, "VMX ");
-    	}
-    	else if (strcmp(cptr,"eist") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<EIST);
-    		strcat(cpuid_info.features, "EIST ");
-    	}
-    	else if (strcmp(cptr,"tm") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<TM);
-    		strcat(cpuid_info.features, "TM ");
-    	}
-    	else if (strcmp(cptr,"tm2") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<TM2);
-    		strcat(cpuid_info.features, "TM2 ");
-    	}
-    	else if (strcmp(cptr,"aes") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<AES);
-    		strcat(cpuid_info.features, "AES ");
-    	}
-    	else if (strcmp(cptr,"rdrand") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<RDRAND);
-    		strcat(cpuid_info.features, "RDRAND ");
-    	}
-    	else if (strcmp(cptr,"sse4_1") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<SSE41);
-    		strcat(cpuid_info.features, "SSE41 ");
-    	}
-    	else if (strcmp(cptr,"sse4_2") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<SSE42);
-    		strcat(cpuid_info.features, "SSE42 ");
-    	}
-    	else if (strcmp(cptr,"avx") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<AVX);
-    		strcat(cpuid_info.features, "AVX ");
-    	}
-    	else if (strcmp(cptr,"fma") == 0)
-    	{
-    		cpuid_info.featureFlags |= (1<<FMA);
-    		strcat(cpuid_info.features, "FMA ");
-    	}
-    	cptr = strtok(NULL, delimiter);
+        if (strcmp(cptr,"ssse3") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<SSSE3);
+            strcat(cpuid_info.features, "SSSE3 ");
+        }
+        else if (strcmp(cptr,"sse3") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<SSE3);
+            strcat(cpuid_info.features, "SSE3 ");
+        }
+        else if (strcmp(cptr,"vsx") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<VSX);
+            strcat(cpuid_info.features, "VSX ");
+        }
+        else if (strcmp(cptr,"monitor") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<MONITOR);
+            strcat(cpuid_info.features, "MONITOR ");
+        }
+        else if (strcmp(cptr,"mmx") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<MMX);
+            strcat(cpuid_info.features, "MMX ");
+        }
+        else if (strcmp(cptr,"sse") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<SSE);
+            strcat(cpuid_info.features, "SSE ");
+        }
+        else if (strcmp(cptr,"sse2") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<SSE2);
+            strcat(cpuid_info.features, "SSE2 ");
+        }
+        else if (strcmp(cptr,"acpi") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<ACPI);
+            strcat(cpuid_info.features, "ACPI ");
+        }
+        else if (strcmp(cptr,"rdtscp") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<RDTSCP);
+            strcat(cpuid_info.features, "RDTSCP ");
+        }
+        else if (strcmp(cptr,"vmx") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<VMX);
+            strcat(cpuid_info.features, "VMX ");
+        }
+        else if (strcmp(cptr,"eist") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<EIST);
+            strcat(cpuid_info.features, "EIST ");
+        }
+        else if (strcmp(cptr,"tm") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<TM);
+            strcat(cpuid_info.features, "TM ");
+        }
+        else if (strcmp(cptr,"tm2") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<TM2);
+            strcat(cpuid_info.features, "TM2 ");
+        }
+        else if (strcmp(cptr,"aes") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<AES);
+            strcat(cpuid_info.features, "AES ");
+        }
+        else if (strcmp(cptr,"rdrand") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<RDRAND);
+            strcat(cpuid_info.features, "RDRAND ");
+        }
+        else if (strcmp(cptr,"sse4_1") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<SSE41);
+            strcat(cpuid_info.features, "SSE41 ");
+        }
+        else if (strcmp(cptr,"sse4_2") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<SSE42);
+            strcat(cpuid_info.features, "SSE42 ");
+        }
+        else if (strcmp(cptr,"avx") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<AVX);
+            strcat(cpuid_info.features, "AVX ");
+        }
+        else if (strcmp(cptr,"fma") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<FMA);
+            strcat(cpuid_info.features, "FMA ");
+        }
+        cptr = strtok(NULL, delimiter);
     
     }
 
-	
-	return;
+    
+    return;
 }
 
 void hwloc_init_nodeTopology(void)
 {
-	uint32_t apicId;
+    uint32_t apicId;
     uint32_t bitField;
     int level;
     int prevOffset = 0;
@@ -243,8 +243,8 @@ void hwloc_init_nodeTopology(void)
     int maxNumCores;
     int width;
     hwloc_obj_t obj;
-	int realThreadId;
-	int sibling;
+    int realThreadId;
+    int sibling;
     
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
     
@@ -268,15 +268,15 @@ void hwloc_init_nodeTopology(void)
         
     }
     
-	cpuid_topology.threadPool = hwThreadPool;
-	
-	return;
+    cpuid_topology.threadPool = hwThreadPool;
+    
+    return;
 }
 
 
 void hwloc_init_cacheTopology(void)
 {
-	int maxNumLevels=0;
+    int maxNumLevels=0;
     int id=0;
     CacheLevel* cachePool = NULL;
     CacheType type = DATACACHE;
@@ -284,7 +284,7 @@ void hwloc_init_cacheTopology(void)
     int depth;
     int d;
     
-	/* Sum up all depths with caches */
+    /* Sum up all depths with caches */
     depth = hwloc_topology_get_depth(hwloc_topology);
     for (d = 0; d < depth; d++)
     {
@@ -357,28 +357,28 @@ void hwloc_init_cacheTopology(void)
     
     cpuid_topology.numCacheLevels = maxNumLevels;
     cpuid_topology.cacheLevels = cachePool;
-	return;
+    return;
 }
 
 #else
 
 void hwloc_init_cpuInfo(void)
 {
-	return;
+    return;
 }
 
 void hwloc_init_cpuFeatures(void)
 {
-	return;
+    return;
 }
 
 void hwloc_init_nodeTopology(void)
 {
-	return;
+    return;
 }
 
 void hwloc_init_cacheTopology(void)
 {
-	return;
+    return;
 }
 #endif
