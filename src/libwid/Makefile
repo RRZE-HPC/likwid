@@ -60,7 +60,7 @@ ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
-.PHONY: clean distclean $(STATIC_LIB)
+.PHONY: clean distclean $(STATIC_LIB) $(DYNAMIC_LIB)
 
 clean:
 	@rm -rf $(BUILD_DIR) 
