@@ -112,10 +112,12 @@ pthread_create(pthread_t* thread,
         {
             silent = 1;
         }
+#ifdef COLOR
         else
         {
             color_on(BRIGHT, COLOR);
         }
+#endif
 
         if (!silent)
         {
