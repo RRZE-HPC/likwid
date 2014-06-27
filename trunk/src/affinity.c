@@ -46,8 +46,8 @@
 #include <types.h>
 #include <numa.h>
 #include <affinity.h>
-#include <cpuid.h>
 #include <tree.h>
+#include <topology.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -158,6 +158,7 @@ affinity_init()
     int numberOfProcessorsPerCache =
         cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
 
+
     /* for the cache domain take only into account last level cache and assume
      * all sockets to be uniform. */
 
@@ -167,14 +168,25 @@ affinity_init()
 
     /* determine total number of domains */
     numberOfDomains += numberOfSocketDomains + numberOfCacheDomains + numberOfNumaDomains;
-
     domains = (AffinityDomain*) malloc(numberOfDomains * sizeof(AffinityDomain));
+    if (!domains)
+    {
+        fprintf(stderr,"No more memory for %d bytes for array of affinity domains\n",numberOfDomains * sizeof(AffinityDomain));
+        return;
+    }
 
     /* Node domain */
     domains[0].numberOfProcessors = cpuid_topology.numHWThreads;
     domains[0].numberOfCores = cpuid_topology.numSockets * cpuid_topology.numCoresPerSocket;
-    domains[0].processorList = (int*) malloc(cpuid_topology.numHWThreads*sizeof(int));
     domains[0].tag = bformat("N");
+    domains[0].processorList = (int*) malloc(cpuid_topology.numHWThreads*sizeof(int));
+    if (!domains[0].processorList)
+    {
+        fprintf(stderr,"No more memory for %d bytes for processor list of affinity domain %s\n",
+                cpuid_topology.numHWThreads*sizeof(int), 
+                bdata(domains[0].tag));
+        return;
+    }
     offset = 0;
 
     for (int i=0; i<numberOfSocketDomains; i++)
@@ -194,8 +206,15 @@ affinity_init()
     {
       domains[currentDomain + i].numberOfProcessors = numberOfProcessorsPerSocket;
       domains[currentDomain + i].numberOfCores =  cpuid_topology.numCoresPerSocket;
-      domains[currentDomain + i].processorList = (int*) malloc( domains[currentDomain + i].numberOfProcessors * sizeof(int));
       domains[currentDomain + i].tag = bformat("S%d", i);
+      domains[currentDomain + i].processorList = (int*) malloc( domains[currentDomain + i].numberOfProcessors * sizeof(int));
+      if (!domains[currentDomain + i].processorList)   
+      {
+            fprintf(stderr,"No more memory for %d bytes for processor list of affinity domain %s\n",
+                    domains[currentDomain + i].numberOfProcessors * sizeof(int), 
+                    bdata(domains[currentDomain + i].tag));
+            return;
+      }
 
       treeFillNextEntries(
           cpuid_topology.topologyTree,
@@ -215,8 +234,15 @@ affinity_init()
       {
         domains[currentDomain + subCounter].numberOfProcessors = numberOfProcessorsPerCache;
         domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
-        domains[currentDomain + subCounter].processorList = (int*) malloc(numberOfProcessorsPerCache*sizeof(int));
         domains[currentDomain + subCounter].tag = bformat("C%d", subCounter);
+        domains[currentDomain + subCounter].processorList = (int*) malloc(numberOfProcessorsPerCache*sizeof(int));
+        if (!domains[currentDomain + subCounter].processorList)   
+        {
+            fprintf(stderr,"No more memory for %d bytes for processor list of affinity domain %s\n",
+                    numberOfProcessorsPerCache*sizeof(int), 
+                    bdata(domains[currentDomain + subCounter].tag));
+            return;
+        }
 
         treeFillNextEntries(
             cpuid_topology.topologyTree,
@@ -240,8 +266,15 @@ affinity_init()
       {
         domains[currentDomain + subCounter].numberOfProcessors = numberOfProcessorsPerCache;
         domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
-        domains[currentDomain + subCounter].processorList = (int*) malloc(numa_info.nodes[subCounter].numberOfProcessors*sizeof(int));
         domains[currentDomain + subCounter].tag = bformat("M%d", subCounter);
+        domains[currentDomain + subCounter].processorList = (int*) malloc(numa_info.nodes[subCounter].numberOfProcessors*sizeof(int));
+        if (!domains[currentDomain + subCounter].processorList)   
+        {
+            fprintf(stderr,"No more memory for %d bytes for processor list of affinity domain %s\n",
+                    numa_info.nodes[subCounter].numberOfProcessors*sizeof(int), 
+                    bdata(domains[currentDomain + subCounter].tag));
+            return;
+        }
 
         treeFillNextEntries(
             cpuid_topology.topologyTree,
@@ -308,7 +341,7 @@ affinity_threadGetProcessorId()
 void
 affinity_pinThread(int processorId)
 {
-	cpu_set_t cpuset;
+    cpu_set_t cpuset;
     pthread_t thread;
 
     thread = pthread_self();
@@ -327,11 +360,11 @@ affinity_pinThread(int processorId)
 void
 affinity_pinProcess(int processorId)
 {
-	cpu_set_t cpuset;
+    cpu_set_t cpuset;
 
-	CPU_ZERO(&cpuset);
-	CPU_SET(processorId, &cpuset);
-	sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
+    CPU_ZERO(&cpuset);
+    CPU_SET(processorId, &cpuset);
+    sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
 }
 
 

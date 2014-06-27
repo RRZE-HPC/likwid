@@ -30,6 +30,8 @@
 
 #include <perfmon_nehalemEX_events.h>
 #include <perfmon_nehalemEX_groups.h>
+#include <error.h>
+#include <affinity.h>
 
 #define NUM_COUNTERS_NEHALEMEX 7
 
@@ -45,287 +47,361 @@ static int perfmon_numArchEventsNehalemEX = NUM_ARCH_EVENTS_NEHALEMEX;
 /* MBOX macros */
 
 #define MBOX_GATE_NEHEX(NUM)  \
-flags = 0x41ULL; \
-switch (event->cfgBits)  \
-{  \
-    case 0x00:   /* primary Event */  \
-        flags |= (event->eventId<<9);  \
-        break;  \
-    case 0x01: /* secondary Events */  \
-        /* TODO fvid index is missing defaults to 0 */   \
-        flags |= (1<<7); /* toggle flag mode */   \
-        flags |= (event->eventId<<19);   \
-        switch (event->eventId)   \
-        {   \
-            case 0x00: /* CYCLES_DSP_FILL: DSP */   \
+    flags = 0x41ULL; \
+    switch (event->cfgBits)  \
+    {  \
+        case 0x00:   /* primary Event */  \
+            flags |= (event->eventId<<9);  \
+            break;  \
+        case 0x01: /* secondary Events */  \
+            /* TODO fvid index is missing defaults to 0 */   \
+            flags |= (1<<7); /* toggle flag mode */   \
+            flags |= (event->eventId<<19);   \
+            switch (event->eventId)   \
+            {   \
+                case 0x00: /* CYCLES_DSP_FILL: DSP */   \
+                    {   \
+                        uint64_t dsp_flags = 0x0ULL;   \
+                        dsp_flags |= (event->umask<<7);  \
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_DSP, dsp_flags));   \
+                    }   \
+                    break;   \
+                case 0x01: /* CYCLES_SCHED_MODE: ISS */   \
+                    {   \
+                        uint32_t iss_flags = 0x0UL;   \
+                        iss_flags |= (event->umask<<4);   \
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags));   \
+                    }    \
+                    break;   \
+                case 0x05: /* CYCLES_PGT_STATE: PGT */   \
+                    {   \
+                        uint32_t pgt_flags = 0x0UL;   \
+                        pgt_flags |= (event->umask<<6);   \
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, pgt_flags));   \
+                    }    \
+                    break;   \
+                case 0x06: /* BCMD_SCHEDQ_OCCUPANCY: MAP */   \
+                    {   \
+                        uint32_t map_flags = 0x0UL;   \
+                        map_flags |= (event->umask<<6);   \
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_MAP, map_flags));   \
+                    }   \
+                    break;   \
+            }    \
+            break;   \
+        case 0x02: /* DRAM_CMD: PLD/ISS */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t pld_flags = 0x0UL;   \
+                uint32_t iss_flags = 0x0UL;   \
+                pld_flags |= (event->umask<<8);   \
+                if (event->cmask != 0)   \
                 {   \
-                    uint64_t dsp_flags = 0x0ULL;   \
-                    dsp_flags |= (event->umask<<7);  \
-                    msr_write(cpu_id, MSR_M##NUM##_PMON_DSP, dsp_flags);   \
+                    iss_flags |= (event->cmask<<7);   \
+                    pld_flags |= 1; /* toggle cmd flag */   \
                 }   \
-                break;   \
-            case 0x01: /* CYCLES_SCHED_MODE: ISS */   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_PLD, pld_flags));   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags));   \
+            }   \
+            break;   \
+        case 0x03: /* DSP_FILL: DSP */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint64_t dsp_flags = 0x0ULL;   \
+                dsp_flags |= (event->umask<<7);   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_DSP, dsp_flags));   \
+            }   \
+            break;   \
+        case 0x04: /* DRAM_MISC: PLD */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint64_t pld_flags = 0x0ULL;   \
+                switch (event->cmask)   \
                 {   \
-                    uint32_t iss_flags = 0x0UL;   \
-                    iss_flags |= (event->umask<<4);   \
-                    msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags);   \
-                }    \
-                break;   \
-            case 0x05: /* CYCLES_PGT_STATE: PGT */   \
-                {   \
-                    uint32_t pgt_flags = 0x0UL;   \
-                    pgt_flags |= (event->umask<<6);   \
-                    msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, pgt_flags);   \
-                }    \
-                break;   \
-            case 0x06: /* BCMD_SCHEDQ_OCCUPANCY: MAP */   \
-                {   \
-                    uint32_t map_flags = 0x0UL;   \
-                    map_flags |= (event->umask<<6);   \
-                    msr_write(cpu_id, MSR_M##NUM##_PMON_MAP, map_flags);   \
+                    case 0x0:   \
+                        pld_flags |= (1<<16);   \
+                        pld_flags |= (event->umask<<19);   \
+                        break;   \
+                    case 0x1:   \
+                        pld_flags |= (event->umask<<18);   \
+                        break;   \
+                    case 0x2:   \
+                        pld_flags |= (event->umask<<17);   \
+                        break;   \
+                    case 0x3:   \
+                        pld_flags |= (event->umask<<7);   \
+                        break;   \
                 }   \
-                break;   \
-        }    \
-    break;   \
-    case 0x02: /* DRAM_CMD: PLD/ISS */   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_PLD, pld_flags));   \
+            }   \
+            break;   \
+        case 0x05: /* FRM_TYPE: ISS */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t iss_flags = 0x0UL;   \
+                iss_flags |= event->umask;   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags));   \
+            }   \
+        break;   \
+        case 0x06: /* FVC_EV0: FVC */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t fvc_flags = 0x0UL;   \
+                fvc_flags |= (event->umask<<11);   \
+                if (event->umask == 0x5)   \
+                {   \
+                    fvc_flags |= (event->cmask<<5);   \
+                }   \
+                else   \
+                {   \
+                    fvc_flags |= (event->cmask<<8);   \
+                }   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags));   \
+                VERBOSEPRINTREG(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags, FVC_EV0) \
+            }   \
+            break;   \
+        case 0x07: /* FVC_EV1: FVC */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t fvc_flags = 0x0UL;   \
+                fvc_flags |= (event->umask<<14);   \
+                if (event->umask == 0x5)   \
+                {   \
+                    fvc_flags |= (event->cmask<<5);   \
+                }   \
+                else   \
+                {   \
+                    fvc_flags |= (event->cmask<<8);   \
+                }   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags));   \
+                VERBOSEPRINTREG(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags, FVC_EV1) \
+            }   \
+            break;   \
+        case 0x08: /* FVC_EV2: FVC */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t fvc_flags = 0x0UL;   \
+                fvc_flags |= (event->umask<<17);   \
+                if (event->umask == 0x5)   \
+                {   \
+                    fvc_flags |= (event->cmask<<5);   \
+                }   \
+                else   \
+                {   \
+                    fvc_flags |= (event->cmask<<8);   \
+                }   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags));   \
+                VERBOSEPRINTREG(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags, FVC_EV2) \
+            }   \
+            break;   \
+        case 0x09: /* FVC_EV3: FVC(ZDP) */   \
         flags |= (event->eventId<<9);   \
         {   \
-            uint32_t pld_flags = 0x0UL;   \
+            uint32_t fvc_flags = 0x0UL;   \
+            fvc_flags |= (event->umask<<20);   \
+            if (event->umask == 0x5)   \
+            {   \
+                fvc_flags |= (event->cmask<<5);   \
+            }   \
+            else   \
+            {   \
+                fvc_flags |= (event->cmask<<8);   \
+            }   \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags));   \
+        }   \
+        break;   \
+        case 0x0A: /* ISS_SCHED: ISS */   \
+        flags |= (event->eventId<<9);   \
+        {   \
             uint32_t iss_flags = 0x0UL;   \
-            pld_flags |= (event->umask<<8);   \
-            if (event->cmask != 0)   \
-            {   \
-                iss_flags |= (event->cmask<<7);   \
-                pld_flags |= 1; /* toggle cmd flag */   \
-            }   \
-            msr_write(cpu_id, MSR_M##NUM##_PMON_PLD, pld_flags);   \
-            msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags);   \
+            iss_flags |= (event->umask<<10);   \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags));   \
         }   \
         break;   \
-    case 0x03: /* DSP_FILL: DSP */   \
+        case 0x0B: /* PGT_PAGE_EV: PGT */   \
         flags |= (event->eventId<<9);   \
         {   \
-            uint64_t dsp_flags = 0x0ULL;   \
-            dsp_flags |= (event->umask<<7);   \
-            msr_write(cpu_id, MSR_M##NUM##_PMON_DSP, dsp_flags);   \
+            uint32_t pgt_flags = 0x0UL;   \
+            pgt_flags |= event->umask;   \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, pgt_flags));   \
         }   \
         break;   \
-    case 0x04: /* DRAM_MISC: PLD */   \
+        case 0x0C: /* PGT_PAGE_EV2: PGT */   \
         flags |= (event->eventId<<9);   \
         {   \
-            uint64_t pld_flags = 0x0ULL;   \
-            switch (event->cmask)   \
-            {   \
-                case 0x0:   \
-                    pld_flags |= (1<<16);   \
-                    pld_flags |= (event->umask<<19);   \
-                    break;   \
-                case 0x1:   \
-                    pld_flags |= (event->umask<<18);   \
-                    break;   \
-                case 0x2:   \
-                    pld_flags |= (event->umask<<17);   \
-                    break;   \
-                case 0x3:   \
-                    pld_flags |= (event->umask<<7);   \
-                    break;   \
-            }   \
-            msr_write(cpu_id, MSR_M##NUM##_PMON_PLD, pld_flags);   \
+            uint32_t pgt_flags = 0x0UL;   \
+            pgt_flags |= (event->umask<<11);   \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, pgt_flags));   \
         }   \
         break;   \
-    case 0x05: /* FRM_TYPE: ISS */   \
+        case 0x0D: /* THERM_TRP_DN: THR */   \
         flags |= (event->eventId<<9);   \
         {   \
-            uint32_t iss_flags = 0x0UL;   \
-            iss_flags |= event->umask;   \
-            msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags);   \
-        }   \
-    break;   \
-    case 0x06: /* FVC_EV0: FVC */   \
-        flags |= (event->eventId<<9);   \
-        {   \
-            uint32_t fvc_flags = 0x0UL;   \
-            fvc_flags |= (event->umask<<11);   \
-            if (event->umask == 0x5)   \
-            {   \
-                fvc_flags |= (event->cmask<<5);   \
-            }   \
-            else   \
-            {   \
-                fvc_flags |= (event->cmask<<8);   \
-            }   \
-            msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags);   \
-            VERBOSEPRINTREG(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags, FVC_EV0) \
+            uint32_t thr_flags = 0x0UL;   \
+            thr_flags |= (1<<3);   \
+            thr_flags |= (event->umask<<9);   \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, thr_flags));   \
         }   \
         break;   \
-    case 0x07: /* FVC_EV1: FVC */   \
-        flags |= (event->eventId<<9);   \
-        {   \
-            uint32_t fvc_flags = 0x0UL;   \
-            fvc_flags |= (event->umask<<14);   \
-            if (event->umask == 0x5)   \
-            {   \
-                fvc_flags |= (event->cmask<<5);   \
-            }   \
-            else   \
-            {   \
-                fvc_flags |= (event->cmask<<8);   \
-            }   \
-            msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags);   \
-            VERBOSEPRINTREG(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags, FVC_EV1) \
-        }   \
-        break;   \
-    case 0x08: /* FVC_EV2: FVC */   \
-        flags |= (event->eventId<<9);   \
-        {   \
-            uint32_t fvc_flags = 0x0UL;   \
-            fvc_flags |= (event->umask<<17);   \
-            if (event->umask == 0x5)   \
-            {   \
-                fvc_flags |= (event->cmask<<5);   \
-            }   \
-            else   \
-            {   \
-                fvc_flags |= (event->cmask<<8);   \
-            }   \
-            msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags);   \
-            VERBOSEPRINTREG(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags, FVC_EV2) \
-        }   \
-        break;   \
-    case 0x09: /* FVC_EV3: FVC(ZDP) */   \
-    flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t fvc_flags = 0x0UL;   \
-        fvc_flags |= (event->umask<<20);   \
-        if (event->umask == 0x5)   \
-        {   \
-            fvc_flags |= (event->cmask<<5);   \
-        }   \
-        else   \
-        {   \
-            fvc_flags |= (event->cmask<<8);   \
-        }   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags);   \
-    }   \
-    break;   \
-    case 0x0A: /* ISS_SCHED: ISS */   \
-    flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t iss_flags = 0x0UL;   \
-        iss_flags |= (event->umask<<10);   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags);   \
-    }   \
-    break;   \
-    case 0x0B: /* PGT_PAGE_EV: PGT */   \
-    flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t pgt_flags = 0x0UL;   \
-        pgt_flags |= event->umask;   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, pgt_flags);   \
-    }   \
-    break;   \
-    case 0x0C: /* PGT_PAGE_EV2: PGT */   \
-    flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t pgt_flags = 0x0UL;   \
-        pgt_flags |= (event->umask<<11);   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, pgt_flags);   \
-    }   \
-    break;   \
-    case 0x0D: /* THERM_TRP_DN: THR */   \
-    flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t thr_flags = 0x0UL;   \
-        thr_flags |= (1<<3);   \
-        thr_flags |= (event->umask<<9);   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, thr_flags);   \
-    }   \
-    break;   \
-}
-
-
-void perfmon_setupCounterThread_nehalemEX(
-        int thread_id,
-        PerfmonEvent* event,
-        PerfmonCounterIndex index)
-{
-    uint64_t flags = 0x0ULL;;
-    uint64_t reg = westmereEX_counter_map[index].configRegister;
-    int cpu_id = perfmon_threadData[thread_id].processorId;
-    perfmon_threadData[thread_id].counters[index].init = TRUE;
-
-    switch (westmereEX_counter_map[index].type)
-    {
-        case PMC:
-            flags = msr_read(cpu_id,reg);
-            flags &= ~(0xFFFFU);   /* clear lower 16bits */
-
-            /* Intel with standard 8 bit event mask: [7:0] */
-            flags |= (event->umask<<8) + event->eventId;
-
-            if (event->cfgBits != 0) /* set custom cfg and cmask */
-            {
-                flags &= ~(0xFFFFU<<16);  /* clear upper 16bits */
-                flags |= ((event->cmask<<8) + event->cfgBits)<<16;
-            }
-
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, PMC_EV_SEL)
-            break;
-
-        case FIXED:
-            break;
-
-        case MBOX0:
-            MBOX_GATE_NEHEX(0);
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, MBOX0_CTRL)
-            break;
-
-        case MBOX1:
-            MBOX_GATE_NEHEX(1);
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, MBOX1_CTRL)
-            break;
-
-        case BBOX0:
-
-        case BBOX1:
-            flags = 0x1ULL; /* set enable bit */
-            flags |=  (event->eventId<<1);
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, BBOX_CTRL)
-            break;
-
-        case RBOX0:
-            RBOX_GATE(0);
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, RBOX0_CTRL)
-            break;
-
-        case RBOX1:
-            RBOX_GATE(1);
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, RBOX1_CTRL)
-            break;
-
-        case WBOX:
-            if (event->eventId == 0xFF)  /* Fixed Counter */
-            {
-                flags = 0x1ULL; /* set enable bit */
-            }
-            else
-            {
-                flags |= (1<<22); /* set enable bit */
-                flags |= (event->umask<<8) + event->eventId;
-            }
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, WBOX_CTRL)
-            break;
-
-        default:
-            /* should never be reached */
-            break;
     }
+
+#define RBOX_GATE(NUM)  \
+    flags = 0x01ULL; /* set local enable flag */ \
+    switch (event->eventId) {  \
+        case 0x00:  \
+            flags |= (event->umask<<1); /* configure sub register */   \
+            {  \
+                uint32_t iperf_flags = 0x0UL;   \
+                iperf_flags |= (event->cfgBits<<event->cmask); /* configure event */  \
+                switch (event->umask) { /* pick correct iperf register */  \
+                    case 0x00: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF0_P0, iperf_flags));   \
+                    break; \
+                    case 0x01: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF1_P0, iperf_flags));   \
+                    break; \
+                    case 0x06: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF0_P1, iperf_flags));   \
+                    break; \
+                    case 0x07: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF1_P1, iperf_flags));   \
+                    break; \
+                    case 0x0C: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF0_P2, iperf_flags));   \
+                    break; \
+                    case 0x0D: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF1_P2, iperf_flags));   \
+                    break; \
+                    case 0x12: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF0_P3, iperf_flags));   \
+                    break; \
+                    case 0x13: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF1_P3, iperf_flags));   \
+                    break; \
+                } \
+            } \
+            break; \
+        case 0x01: \
+            flags |= (event->umask<<1); /* configure sub register */   \
+            { \
+                uint32_t qlx_flags = 0x0UL;   \
+                qlx_flags |= (event->cfgBits); /* configure event */  \
+                if (event->cmask) qlx_flags |= (event->cmask<<4);  \
+                switch (event->umask) { /* pick correct qlx register */  \
+                    case 0x02: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, qlx_flags));   \
+                    break; \
+                    case 0x03: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, (qlx_flags<<8)));   \
+                    break; \
+                    case 0x08: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, qlx_flags));   \
+                    break; \
+                    case 0x09: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P1, (qlx_flags<<8)));   \
+                    break; \
+                    case 0x0E: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, qlx_flags));   \
+                    break; \
+                    case 0x0F: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P2, (qlx_flags<<8)));   \
+                    break; \
+                    case 0x14: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, qlx_flags));   \
+                    break; \
+                    case 0x15: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P3, (qlx_flags<<8)));   \
+                    break; \
+                } \
+            } \
+            break; \
+    }
+
+
+int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSet)
+{
+    uint64_t flags = 0x0ULL;
+    int cpu_id = groupSet->threads[thread_id].processorId;
+
+    for (int i=0;i < eventSet->numberOfEvents;i++)
+    {
+        PerfmonCounterIndex index = eventSet->events[i].index;
+        PerfmonEvent *event = &(eventSet->events[i].event);
+        uint64_t reg = westmereEX_counter_map[index].configRegister;
+        eventSet->events[i].threadCounter[thread_id].init = TRUE;
+        switch (westmereEX_counter_map[index].type)
+        {
+            case PMC:
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &flags));
+                flags &= ~(0xFFFFU);   /* clear lower 16bits */
+
+                /* Intel with standard 8 bit event mask: [7:0] */
+                flags |= (event->umask<<8) + event->eventId;
+
+                if (event->cfgBits != 0) /* set custom cfg and cmask */
+                {
+                    flags &= ~(0xFFFFU<<16);  /* clear upper 16bits */
+                    flags |= ((event->cmask<<8) + event->cfgBits)<<16;
+                }
+
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, flags));
+                VERBOSEPRINTREG(cpu_id, reg, flags, PMC_EV_SEL)
+                break;
+
+            case FIXED:
+                break;
+
+            case MBOX0:
+                MBOX_GATE_NEHEX(0);
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, flags));
+                VERBOSEPRINTREG(cpu_id, reg, flags, MBOX0_CTRL)
+                break;
+
+            case MBOX1:
+                MBOX_GATE_NEHEX(1);
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, flags));
+                VERBOSEPRINTREG(cpu_id, reg, flags, MBOX1_CTRL)
+                break;
+
+            case BBOX0:
+            case BBOX1:
+                flags = 0x1ULL; /* set enable bit */
+                flags |=  (event->eventId<<1);
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                VERBOSEPRINTREG(cpu_id, reg, flags, BBOX_CTRL)
+                break;
+
+            case RBOX0:
+                RBOX_GATE(0);
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                VERBOSEPRINTREG(cpu_id, reg, flags, RBOX0_CTRL)
+                break;
+
+            case RBOX1:
+                RBOX_GATE(1);
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                VERBOSEPRINTREG(cpu_id, reg, flags, RBOX1_CTRL)
+                break;
+
+            case WBOX:
+                if (event->eventId == 0xFF)  /* Fixed Counter */
+                {
+                    flags = 0x1ULL; /* set enable bit */
+                }
+                else
+                {
+                    flags |= (1<<22); /* set enable bit */
+                    flags |= (event->umask<<8) + event->eventId;
+                }
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                VERBOSEPRINTREG(cpu_id, reg, flags, WBOX_CTRL)
+                break;
+
+            default:
+                /* should never be reached */
+                break;
+        }
+    }
+    return 0;
 }
 

@@ -35,13 +35,14 @@
 
 #include <bstrlib.h>
 #include <perfmon_group_types.h>
+#include <timer.h>
 
 /* #####   EXPORTED TYPE DEFINITIONS   #################################### */
 
 typedef enum {
     PMC0 = 0,
-    PMC1, PMC2, PMC3, PMC4, PMC5, PMC6,
-    PMC7, PMC8, PMC9, PMC10, PMC11, PMC12,
+    PMC1 , PMC2 , PMC3 , PMC4 , PMC5 , PMC6,
+    PMC7 , PMC8 , PMC9 , PMC10, PMC11, PMC12,
     PMC13, PMC14, PMC15, PMC16, PMC17, PMC18,
     PMC19, PMC20, PMC21, PMC22, PMC23, PMC24,
     PMC25, PMC26, PMC27, PMC28, PMC29, PMC30,
@@ -58,111 +59,84 @@ typedef enum {
 
 typedef enum {
     PMC = 0,
-    FIXED,
-    THERMAL,
-    UNCORE,
-    MBOX0,
-    MBOX1,
-    MBOX2,
-    MBOX3,
-    MBOXFIX,
-    BBOX0,
-    BBOX1,
-    RBOX0,
-    RBOX1,
+    FIXED, THERMAL, UNCORE,
+    MBOX0, MBOX1, MBOX2, MBOX3, MBOXFIX,
+    BBOX0, BBOX1,
+    RBOX0, RBOX1,
     WBOX,
-    SBOX0,
-    SBOX1,
-    SBOX2,
-    CBOX0,
-    CBOX1,
-    CBOX2,
-    CBOX3,
-    CBOX4,
-    CBOX5,
-    CBOX6,
-    CBOX7,
-    CBOX8,
-    CBOX9,
-    CBOX10,
-    CBOX11,
-    PBOX,
-    POWER,
+    SBOX0, SBOX1, SBOX2,
+    CBOX0, CBOX1, CBOX2, CBOX3, CBOX4,
+    CBOX5, CBOX6, CBOX7, CBOX8, CBOX9,
+    CBOX10, CBOX11,
+    PBOX, POWER,
     NUM_UNITS} PerfmonType;
 
 typedef struct {
-    char* key;
+    char*               key;
     PerfmonCounterIndex index;
-    PerfmonType  type;
-    uint64_t  configRegister;
-    uint64_t  counterRegister;
-    uint64_t  counterRegister2;
-    PciDeviceIndex device;
+    PerfmonType         type;
+    uint64_t            configRegister;
+    uint64_t            counterRegister;
+    uint64_t            counterRegister2;
+    PciDeviceIndex      device;
 } PerfmonCounterMap;
 
 typedef struct {
-    char* key;
-    PerfmonGroup index;
-    int isUncore;
-    char* info;
-    char* config;
+    char*           key;
+    PerfmonGroup    index;
+    int             isUncore;
+    char*           info;
+    char*           config;
 } PerfmonGroupMap;
 
 typedef struct {
-    char* key;
-    char* msg;
+    char*           key;
+    char*           msg;
 } PerfmonGroupHelp;
 
-/* only used in westmereEX at the moment */
+/////////////////////////////////////////////
 typedef struct {
-    uint32_t  ctrlRegister;
-    uint32_t  statusRegister;
-    uint32_t  ovflRegister;
-} PerfmonUnit;
-
-typedef struct {
-    int       init;
-    int       id;  /* TODO id is only used for EX type processors */
-    uint64_t  counterData;
-} PerfmonCounter;
-
-typedef struct {
-    int processorId;
-    PerfmonCounter counters[NUM_PMC];
+    int             thread_id;
+    int             processorId;
 } PerfmonThread;
 
 typedef struct {
-    const char*    name;
-    const char*    limit;
-    uint16_t eventId;
-    uint8_t umask;
-    uint8_t cfgBits;
-    uint8_t cmask;
+    const char*     name;
+    const char*     limit;
+    uint16_t        eventId;
+    uint8_t         umask;
+    uint8_t         cfgBits;
+    uint8_t         cmask;
 } PerfmonEvent;
 
 typedef struct {
-    PerfmonEvent event;
+    int         init;
+    int         id;
+    uint64_t    counterData;
+} PerfmonCounter;
+
+typedef struct {
+    PerfmonEvent        event;
     PerfmonCounterIndex index;
-    double* result;
+    PerfmonCounter*     threadCounter;
 } PerfmonEventSetEntry;
 
 typedef struct {
-    int numberOfEvents;
+    int                   numberOfEvents;
     PerfmonEventSetEntry* events;
+    TimerData             timer;
+    double                rdtscTime;
 } PerfmonEventSet;
 
-
 typedef struct {
-    bstring label;
-    double* value;
-} PerfmonResult;
+    int              numberOfGroups;
+    int              numberOfActiveGroups;
+    int              activeGroup;
+    PerfmonEventSet* groups;
+    int              numberOfThreads;
+    PerfmonThread*   threads;
+} PerfmonGroupSet;
 
-typedef struct {
-    bstrList* header;
-    int numRows;
-    int numColumns;
-    PerfmonResult* rows;
-} PerfmonResultTable;
 
 
 #endif /*PERFMON_TYPES_H*/

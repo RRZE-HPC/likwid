@@ -34,7 +34,7 @@
 
 #include <types.h>
 #include <thermal.h>
-#include <cpuid.h>
+#include <topology.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -52,7 +52,10 @@ void thermal_init(int cpuId)
 
     if ( cpuid_hasFeature(TM2) )
     {
-        flags = msr_read(cpuId, IA32_THERM_STATUS);
+        if (msr_read(cpuId, IA32_THERM_STATUS, &flags))
+        {
+            return;
+        }
 
         if ( flags & 0x1 )
         {
@@ -66,7 +69,10 @@ void thermal_init(int cpuId)
         thermal_info.resolution =  extractBitField(flags,4,27);
 
         flags = 0ULL;
-        flags = msr_read(cpuId, MSR_TEMPERATURE_TARGET);
+        if (msr_read(cpuId, MSR_TEMPERATURE_TARGET, &flags))
+        {
+            return;
+        }
         thermal_info.activationT =  extractBitField(flags,8,16);
     }
 }

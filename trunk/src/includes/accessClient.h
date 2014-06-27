@@ -49,7 +49,7 @@ extern void accessClient_setlowaccesspriority(void);
 extern void accessClient_init(int* socket_fd);
 extern void accessClient_initThread(int* socket_fd);
 extern void accessClient_finalize(int socket_fd);
-extern uint64_t accessClient_read(int socket_fd, int cpu, int device, uint32_t reg);
-extern void accessClient_write(int socket_fd, int cpu, int device, uint32_t reg, uint64_t data);
+extern int accessClient_read(int socket_fd, int cpu, int device, uint32_t reg, uint64_t *data);
+extern int accessClient_write(int socket_fd, int cpu, int device, uint32_t reg, uint64_t data);
 
 #endif /* ACCESSCLIENT_H */

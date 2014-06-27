@@ -34,6 +34,7 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 #include <stdint.h>
+#include <bstrlib.h>
 
 #include <accessClient_types.h>
 #include <pci_types.h>
@@ -41,18 +42,12 @@
 #include <thermal_types.h>
 #include <strUtil_types.h>
 #include <test_types.h>
-#include <barrier_types.h>
 #include <timer_types.h>
 #include <tree_types.h>
-#include <cpuid_types.h>
+#include <topology_types.h>
 #include <affinity_types.h>
-#include <threads_types.h>
-#include <cpuFeatures_types.h>
-#include <asciiBoxes_types.h>
-#include <asciiTable_types.h>
 #include <perfmon_types.h>
 #include <libperfctr_types.h>
-#include <multiplex_types.h>
 #include <numa_types.h>
 
 
@@ -81,5 +76,8 @@ typedef struct {
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
+
+#define likely(x)       __builtin_expect(!!(x), 1)
+#define unlikely(x)     __builtin_expect(!!(x), 0)
 
 #endif /*TYPES_H*/

@@ -39,7 +39,7 @@
 #include <bstrlib.h>
 #include <strUtil.h>
 #include <affinity.h>
-#include <cpuid.h>
+#include <topology.h>
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 static int
@@ -277,7 +277,6 @@ bstr_to_cpuset_expression(uint32_t* threads,  const_bstring qi)
         else
         {
           startId += stride;
-          if (startId > numThreads) startId -= numThreads;
           currentId = startId;
           threads[globalNumThreads++] = domain->processorList[currentId++];
           counter = chunksize;
@@ -311,6 +310,7 @@ bstr_to_cpuset_scatter(uint32_t* threads,  const_bstring qi)
     int numberOfDomains = 0;
     AffinityDomain* domain;
     AffinityDomain* tmpDomainPtr;
+
 
     domain = (AffinityDomain*) malloc(cpuid_topology.numHWThreads * sizeof(AffinityDomain));
 
@@ -377,6 +377,7 @@ bstr_to_cpuset(int* threadsIN,  const_bstring q)
 {
   uint32_t i;
   int num=0;
+
   int cpuMapping[cpuid_topology.numHWThreads];
   cpu_set_t cpu_set;
   uint32_t numThreads;

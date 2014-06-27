@@ -34,7 +34,6 @@
 
 #include <stdint.h>
 
-
 typedef enum {
     PCI_R3QPI_DEVICE_LINK_0 = 0,
     PCI_R3QPI_DEVICE_LINK_1,
@@ -52,7 +51,5 @@ typedef enum {
     PCI_QPI_MISC_DEVICE_PORT_1,
     MAX_NUM_DEVICES
 } PciDeviceIndex;
-
-static short pci_DevicePresent[MAX_NUM_DEVICES] = { 0 };
 
 #endif /*PCI_TYPES_H*/

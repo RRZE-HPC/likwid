@@ -33,8 +33,9 @@
 
 #include <types.h>
 
-extern int affinity_core2node_lookup[MAX_NUM_THREADS];
+int socket_lock[MAX_NUM_NODES];
 
+extern int affinity_core2node_lookup[MAX_NUM_THREADS];
 extern void affinity_init();
 extern void affinity_finalize();
 extern int  affinity_processGetProcessorId();
