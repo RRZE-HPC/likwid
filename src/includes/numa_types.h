@@ -48,5 +48,6 @@ typedef struct {
     NumaNode* nodes;
 } NumaTopology;
 
+typedef NumaTopology* NumaTopology_t;
 
 #endif /*NUMA_TYPES_H*/

@@ -30,6 +30,7 @@
 
 #include <perfmon_atom_events.h>
 #include <perfmon_atom_groups.h>
+#include <error.h>
 
 static int perfmon_numGroupsAtom = NUM_GROUPS_ATOM;
 static int perfmon_numArchEventsAtom = NUM_ARCH_EVENTS_ATOM;

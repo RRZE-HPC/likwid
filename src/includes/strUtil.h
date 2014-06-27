@@ -31,7 +31,6 @@
 
 #ifndef STRUTIL_H
 #define STRUTIL_H
-
 #include <bstrlib.h>
 #include <types.h>
 #include <time.h>

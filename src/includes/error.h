@@ -34,10 +34,12 @@
 #include <errno.h>
 #include <string.h>
 #include <msr.h>
+#include <pci.h>
 
 #define str(x) #x
 
-#define FINALIZE  msr_finalize()
+#define FINALIZE      msr_finalize(); \
+                      pci_finalize()
 
 #define ERRNO_PRINT fprintf(stderr, "ERROR - [%s:%d] %s\n", __FILE__, __LINE__, strerror(errno))
 
@@ -53,13 +55,18 @@
 
 
 #define ERROR_PRINT(fmt, ...) \
-   fprintf(stderr,  "ERROR - [%s:%d] " str(fmt) "\n", __FILE__, __LINE__, __VA_ARGS__);  \
-   FINALIZE; \
-   exit(EXIT_FAILURE)
+   fprintf(stderr,  "ERROR - [%s:%d] %s.\n" str(fmt) "\n", __FILE__, __LINE__, strerror(errno), __VA_ARGS__);  \
+   FINALIZE;
 
 #define CHECK_ERROR(func, msg)  \
     if ((func) < 0) { \
         fprintf(stderr, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno));  \
+    }
+
+#define CHECK_AND_RETURN_ERROR(func, msg)  \
+    if ((func) < 0) { \
+        fprintf(stderr, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno));  \
+        return errno; \
     }
 
 #define EXIT_IF_ERROR(func, msg)  \
@@ -74,11 +81,11 @@
 #endif
 
 #define VERBOSEPRINTREG(cpuid,reg,flags,msg) \
-    if (perfmon_verbose) {  \
         printf("DEBUG - [%s:%d] "  str(msg) " [%d] Register 0x%llX , Flags: 0x%llX \n",  \
                 __FILE__, __LINE__,  (cpuid), LLU_CAST (reg), LLU_CAST (flags)); \
         fflush(stdout);  \
-    } 
+    //if (perfmon_verbose) {  \
+    //}
 
 
 #define DEBUG_PRINT(lev, fmt, ...) \
@@ -86,5 +93,12 @@
         printf(fmt, __VA_ARGS__); \
         fflush(stdout); \
     }
+    
+#define CHECK_MSR_WRITE_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR write operation failed);
+#define CHECK_MSR_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR read operation failed);
+#define CHECK_PCI_WRITE_ERROR(func) CHECK_AND_RETURN_ERROR(func, PCI write operation failed);
+#define CHECK_PCI_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, PCI read operation failed);
+#define CHECK_POWER_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, Power register read operation failed);
+#define CHECK_TEMP_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, Temperature register read operation failed);
 
 #endif /*ERROR_H*/

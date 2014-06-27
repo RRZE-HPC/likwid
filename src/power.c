@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -33,7 +33,7 @@
 
 #include <types.h>
 #include <power.h>
-#include <cpuid.h>
+#include <topology.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -54,6 +54,7 @@ power_init(int cpuId)
 {
     uint64_t flags;
     int hasRAPL = 0;
+    
 
     /* determine Turbo Mode features */
     double busSpeed;
@@ -69,13 +70,14 @@ power_init(int cpuId)
 
     if (cpuid_info.turbo)
     {
-        flags = msr_read(cpuId, MSR_PLATFORM_INFO);
+        if (msr_read(cpuId, MSR_PLATFORM_INFO, &flags))
+            return;
 
         if ( hasRAPL )
         {
             busSpeed = 100.0;
         }
-        else 
+        else
         {
             busSpeed = 133.33;
         }
@@ -86,7 +88,10 @@ power_init(int cpuId)
         power_info.turbo.numSteps = cpuid_topology.numCoresPerSocket;
         power_info.turbo.steps = (double*) malloc(power_info.turbo.numSteps * sizeof(double));
 
-        flags = msr_read(cpuId, MSR_TURBO_RATIO_LIMIT);
+        if (msr_read(cpuId, MSR_TURBO_RATIO_LIMIT, &flags))
+        {
+            return;
+        }
 
         for (int i=0; i < power_info.turbo.numSteps; i++)
         {
@@ -108,13 +113,19 @@ power_init(int cpuId)
     /* determine RAPL parameters */
     if ( hasRAPL )
     {
-        flags = msr_read(cpuId, MSR_RAPL_POWER_UNIT);
+        if (msr_read(cpuId, MSR_RAPL_POWER_UNIT, &flags))
+        {
+            return;
+        }
 
         power_info.powerUnit = pow(0.5,(double) extractBitField(flags,4,0));
         power_info.energyUnit = pow(0.5,(double) extractBitField(flags,5,8));
         power_info.timeUnit = pow(0.5,(double) extractBitField(flags,4,16));
 
-        flags = msr_read(cpuId, MSR_PKG_POWER_INFO);
+        if (msr_read(cpuId, MSR_PKG_POWER_INFO, &flags))
+        {
+            return;
+        }
         power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
         power_info.minPower =  (double) extractBitField(flags,15,16) * power_info.powerUnit;
         power_info.maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;

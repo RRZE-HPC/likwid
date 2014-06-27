@@ -43,30 +43,30 @@
 #define HASH_IS_TOMBSTONE(h_) ((h_) == TOMBSTONE_HASH_VALUE)
 #define HASH_IS_REAL(h_) ((h_) >= 2)
 
-#ifndef	FALSE
-#define	FALSE	(0)
+#ifndef    FALSE
+#define    FALSE    (0)
 #endif
 
-#ifndef	TRUE
-#define	TRUE	(!FALSE)
+#ifndef    TRUE
+#define    TRUE    (!FALSE)
 #endif
 
-#undef	MAX
+#undef    MAX
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 
-#undef	MIN
+#undef    MIN
 #define MIN(a, b)  (((a) < (b)) ? (a) : (b))
 
-#undef	ABS
-#define ABS(a)	   (((a) < 0) ? -(a) : (a))
+#undef    ABS
+#define ABS(a)       (((a) < 0) ? -(a) : (a))
 #define G_LIKELY(expr) (expr)
 #define G_UNLIKELY(expr) (expr)
 
 #define _G_NEW(struct_type, n_structs, func) \
         ((struct_type *) g_##func##_n ((n_structs), sizeof (struct_type)))
 
-#define g_new(struct_type, n_structs)			_G_NEW (struct_type, n_structs, malloc)
-#define g_new0(struct_type, n_structs)			_G_NEW (struct_type, n_structs, malloc0)
+#define g_new(struct_type, n_structs)            _G_NEW (struct_type, n_structs, malloc)
+#define g_new0(struct_type, n_structs)            _G_NEW (struct_type, n_structs, malloc0)
 
 struct _GHashTable
 {

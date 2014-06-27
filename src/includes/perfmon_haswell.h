@@ -29,8 +29,11 @@
  */
 
 #include <perfmon_haswell_events.h>
-#include <perfmon_haswell_groups.h>
+//#include <perfmon_haswell_groups.h>
+#define NUM_GROUPS_HASWELL 6
 #include <perfmon_haswell_counters.h>
+#include <error.h>
+#include <affinity.h>
 
 static int perfmon_numCountersHaswell = NUM_COUNTERS_HASWELL;
 static int perfmon_numGroupsHaswell = NUM_GROUPS_HASWELL;
@@ -39,144 +42,154 @@ static int perfmon_numArchEventsHaswell = NUM_ARCH_EVENTS_HASWELL;
 
 #define OFFSET_PMC 3
 
-void perfmon_init_haswell(PerfmonThread *thread)
+
+int perfmon_init_haswell(int cpu_id)
 {
     uint64_t flags = 0x0ULL;
-    int cpu_id = thread->processorId;
+    int ret;
 
     /* Initialize registers */
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
-    msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL);
-    msr_write(cpu_id, MSR_PERFEVTSEL2, 0x0ULL);
-    msr_write(cpu_id, MSR_PERFEVTSEL3, 0x0ULL);
-    msr_write(cpu_id, MSR_PMC0, 0x0ULL);
-    msr_write(cpu_id, MSR_PMC1, 0x0ULL);
-    msr_write(cpu_id, MSR_PMC2, 0x0ULL);
-    msr_write(cpu_id, MSR_PMC3, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR2, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL2, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL3, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC0, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC1, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC2, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC3, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR2, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
 
     /* initialize fixed counters
      * FIXED 0: Instructions retired
      * FIXED 1: Clocks unhalted core
      * FIXED 2: Clocks unhalted ref */
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL));
 
     /* Preinit of PERFEVSEL registers */
     flags |= (1<<22);  /* enable flag */
     flags |= (1<<16);  /* user mode flag */
 
-    msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL1, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL2, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL3, flags);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, flags));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, flags));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL2, flags));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL3, flags));
 
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
+    /*if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
             lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id))
     {
 
-    }
-
+    }*/
+    return 0;
 }
 
-void perfmon_setupCounterThread_haswell(
+int perfmon_setupCounterThread_haswell(
         int thread_id,
-        PerfmonEvent* event,
-        PerfmonCounterIndex index)
+        PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
+    int ret;
     uint64_t flags;
-    uint32_t uflags;
-    uint64_t reg = haswell_counter_map[index].configRegister;
-    int cpu_id = perfmon_threadData[thread_id].processorId;
-    perfmon_threadData[thread_id].counters[index].init = TRUE;
-
+    uint32_t uflags; 
+    int cpu_id = groupSet->threads[thread_id].processorId;
+    
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
     }
-
-    switch (haswell_counter_map[index].type)
+    
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        case PMC:
+        PerfmonCounterIndex index = eventSet->events[i].index;
+        PerfmonEvent *event = &(eventSet->events[i].event);
+        uint64_t reg = haswell_counter_map[index].configRegister;
+        eventSet->events[i].threadCounter[thread_id].init = TRUE;
+        switch (haswell_counter_map[index].type)
+        {
+            case PMC:
 
-            flags = msr_read(cpu_id,reg);
-            flags &= ~(0xFFFFU);   /* clear lower 16bits */
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &flags));
 
-            /* Intel with standard 8 bit event mask: [7:0] */
-            flags |= (event->umask<<8) + event->eventId;
+                flags &= ~(0xFFFFU);   /* clear lower 16bits */
 
-            if (event->cfgBits != 0) /* set custom cfg and cmask */
-            {
-                flags &= ~(0xFFFFU<<16);  /* clear upper 16bits */
-                flags |= ((event->cmask<<8) + event->cfgBits)<<16;
-            }
+                /* Intel with standard 8 bit event mask: [7:0] */
+                flags |= (event->umask<<8) + event->eventId;
 
-            if (perfmon_verbose)
-            {
-                printf("[%d] perfmon_setup_counter PMC: Write Register 0x%llX , Flags: 0x%llX \n",
-                        cpu_id,
-                        LLU_CAST reg,
-                        LLU_CAST flags);
-            }
+                if (event->cfgBits != 0) /* set custom cfg and cmask */
+                {
+                    flags &= ~(0xFFFFU<<16);  /* clear upper 16bits */
+                    flags |= ((event->cmask<<8) + event->cfgBits)<<16;
+                }
 
-            msr_write(cpu_id, reg , flags);
-            break;
+                /*if (perfmon_verbose)
+                {
+                    printf("[%d] perfmon_setup_counter PMC: Write Register 0x%llX , Flags: 0x%llX \n",
+                            cpu_id,
+                            LLU_CAST reg,
+                            LLU_CAST flags);
+                }*/
 
-        case FIXED:
-            break;
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                break;
 
-        case POWER:
-            break;
+            case FIXED:
+                break;
 
-        default:
-            /* should never be reached */
-            break;
+            case POWER:
+                break;
+
+            default:
+                /* should never be reached */
+                break;
+        }
     }
+    return 0;
 }
 
-void perfmon_startCountersThread_haswell(int thread_id)
+int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
 {
+    int ret;
     int haveLock = 0;
     uint64_t flags = 0x0ULL;
     uint32_t uflags = 0x10000UL; /* Clear freeze bit */
-    int cpu_id = perfmon_threadData[thread_id].processorId;
+    int cpu_id = groupSet->threads[thread_id].processorId;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
     }
 
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
 
-    for ( int i=0; i<perfmon_numCountersHaswell; i++ )
+
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (perfmon_threadData[thread_id].counters[i].init == TRUE)
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            switch (haswell_counter_map[i].type)
+            PerfmonCounterIndex index = eventSet->events[i].index;
+            switch (haswell_counter_map[index].type)
             {
                 case PMC:
-                    msr_write(cpu_id, haswell_counter_map[i].counterRegister, 0x0ULL);
-                    flags |= (1<<(i-OFFSET_PMC));  /* enable counter */
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, haswell_counter_map[index].counterRegister, 0x0ULL));
+                    flags |= (1<<(index-OFFSET_PMC));  /* enable counter */
                     break;
 
                 case FIXED:
-                    msr_write(cpu_id, haswell_counter_map[i].counterRegister, 0x0ULL);
-                    flags |= (1ULL<<(i+32));  /* enable fixed counter */
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, haswell_counter_map[index].counterRegister, 0x0ULL));
+                    flags |= (1ULL<<(index+32));  /* enable fixed counter */
                     break;
 
                 case POWER:
-                    if(haveLock)
+                    if(haveLock == 1)
                     {
-                        perfmon_threadData[thread_id].counters[i].counterData =
-                            power_read(cpu_id, haswell_counter_map[i].counterRegister);
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, haswell_counter_map[index].counterRegister,
+                                        (uint32_t*)&eventSet->events[i].threadCounter[thread_id].counterData));
                     }
-
                     break;
 
                 default:
@@ -186,59 +199,67 @@ void perfmon_startCountersThread_haswell(int thread_id)
         }
     }
 
-    if (perfmon_verbose)
+    /*if (perfmon_verbose)
     {
         printf("perfmon_start_counters: Write Register 0x%X , \
                 Flags: 0x%llX \n",MSR_PERF_GLOBAL_CTRL, LLU_CAST flags);
         printf("perfmon_start_counters: Write Register 0x%X , \
                 Flags: 0x%llX \n",MSR_UNCORE_PERF_GLOBAL_CTRL, LLU_CAST uflags);
-    }
+    }*/
 
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
-    msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL));
+
+    return 0;
 }
 
-void perfmon_stopCountersThread_haswell(int thread_id)
+int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
 {
+    int ret;
+    int haveLock = 0;
     uint64_t flags;
+    uint64_t tmp;
     uint32_t uflags = 0x10100UL; /* Set freeze bit */
     uint64_t counter_result = 0x0ULL;
-    int haveLock = 0;
-    int cpu_id = perfmon_threadData[thread_id].processorId;
+    int cpu_id = groupSet->threads[thread_id].processorId;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
     }
 
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
 
-    for ( int i=0; i < perfmon_numCountersHaswell; i++ ) 
+
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            switch (haswell_counter_map[i].type)
+            PerfmonCounterIndex index = eventSet->events[i].index;
+            switch (haswell_counter_map[index].type)
             {
                 case PMC:
 
                 case FIXED:
-                    perfmon_threadData[thread_id].counters[i].counterData =
-                        msr_read(cpu_id, haswell_counter_map[i].counterRegister);
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, haswell_counter_map[index].counterRegister,
+                                    (uint64_t*)&tmp));
+                    eventSet->events[i].threadCounter[thread_id].counterData = tmp;
+                    
                     break;
 
                 case POWER:
-                    if(haveLock)
+                    if (haveLock == 1)
                     {
-                        perfmon_threadData[thread_id].counters[i].counterData =
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, haswell_counter_map[index].counterRegister, (uint32_t*)&tmp));
+                        eventSet->events[i].threadCounter[thread_id].counterData =
                             power_info.energyUnit *
-                            ( power_read(cpu_id, haswell_counter_map[i].counterRegister) -
-                              perfmon_threadData[thread_id].counters[i].counterData);
+                            ( tmp - eventSet->events[i].threadCounter[thread_id].counterData);
                     }
                     break;
 
                 case THERMAL:
-                        perfmon_threadData[thread_id].counters[i].counterData =
-                             thermal_read(cpu_id);
+                        CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&tmp));
+                        eventSet->events[i].threadCounter[thread_id].counterData = tmp;
                     break;
 
                 default:
@@ -246,47 +267,54 @@ void perfmon_stopCountersThread_haswell(int thread_id)
                     break;
             }
         }
+        eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
 
-    flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
+    CHECK_MSR_READ_ERROR(msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS, &flags));
+
     //    printf ("Status: 0x%llX \n", LLU_CAST flags);
     if ( (flags & 0x3) || (flags & (0x3ULL<<32)) ) 
     {
         printf ("Overflow occured \n");
     }
+    return 0;
 }
 
-void perfmon_readCountersThread_haswell(int thread_id)
+int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
 {
+    int ret;
     uint64_t counter_result = 0x0ULL;
+    uint64_t tmp;
     int haveLock = 0;
-    int cpu_id = perfmon_threadData[thread_id].processorId;
+    int cpu_id = groupSet->threads[thread_id].processorId;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
     }
 
-    for ( int i=0; i<perfmon_numCountersHaswell; i++ )
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (perfmon_threadData[thread_id].counters[i].init == TRUE)
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            if ((haswell_counter_map[i].type == PMC) ||
-                    (haswell_counter_map[i].type == FIXED))
+            PerfmonCounterIndex index = eventSet->events[i].index;
+            
+            if ((haswell_counter_map[index].type == PMC) ||
+                    (haswell_counter_map[index].type == FIXED))
             {
-                perfmon_threadData[thread_id].counters[i].counterData =
-                    msr_read(cpu_id, haswell_counter_map[i].counterRegister);
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, haswell_counter_map[index].counterRegister, &tmp));
+                eventSet->events[i].threadCounter[thread_id].counterData = tmp;
             }
             else
             {
-                if(haveLock)
+                if (haveLock == 1)
                 {
-                    switch (haswell_counter_map[i].type)
+                    switch (haswell_counter_map[index].type)
                     {
                         case POWER:
-                            perfmon_threadData[thread_id].counters[i].counterData =
-                                power_info.energyUnit *
-                                power_read(cpu_id, haswell_counter_map[i].counterRegister);
+                            CHECK_POWER_READ_ERROR(power_read(cpu_id, haswell_counter_map[index].counterRegister,(uint32_t*) &tmp));
+                            eventSet->events[i].threadCounter[thread_id].counterData =
+                                power_info.energyUnit * tmp;
                             break;
 
                         default:
@@ -297,5 +325,5 @@ void perfmon_readCountersThread_haswell(int thread_id)
             }
         }
     }
+    return 0;
 }
-

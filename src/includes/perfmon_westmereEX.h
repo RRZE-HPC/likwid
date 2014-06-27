@@ -31,573 +31,601 @@
 #include <perfmon_westmereEX_events.h>
 #include <perfmon_westmereEX_groups.h>
 #include <perfmon_westmereEX_counters.h>
+#include <error.h>
+#include <affinity.h>
 
+/* only used in westmereEX at the moment */
+typedef struct {
+    uint32_t  ctrlRegister;
+    uint32_t  statusRegister;
+    uint32_t  ovflRegister;
+} PerfmonUnit;
 
 static int perfmon_numCountersWestmereEX = NUM_COUNTERS_WESTMEREEX;
 static int perfmon_numGroupsWestmereEX = NUM_GROUPS_WESTMEREEX;
 static int perfmon_numArchEventsWestmereEX = NUM_ARCH_EVENTS_WESTMEREEX;
 
 static PerfmonUnit westmereEX_PMunits[NUM_UNITS];
+static int westmereEX_IDs[NUM_PMC];
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void perfmon_init_westmereEX(PerfmonThread *thread)
+int perfmon_init_westmereEX(int cpu_id)
 {
     uint64_t flags = 0x0ULL;
-    int cpu_id = thread->processorId;
 
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
-    msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL);
-    msr_write(cpu_id, MSR_PERFEVTSEL2, 0x0ULL);
-    msr_write(cpu_id, MSR_PERFEVTSEL3, 0x0ULL);
-    msr_write(cpu_id, MSR_PMC0, 0x0ULL);
-    msr_write(cpu_id, MSR_PMC1, 0x0ULL);
-    msr_write(cpu_id, MSR_PMC2, 0x0ULL);
-    msr_write(cpu_id, MSR_PMC3, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR2, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL2, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL3, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC0, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC1, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC2, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC3, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR2, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
 
     /* initialize fixed counters
      * FIXED 0: Instructions retired
      * FIXED 1: Clocks unhalted core
      * FIXED 2: Clocks unhalted ref */
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL));
 
     /* Preinit of PERFEVSEL registers */
     flags |= (1<<22);  /* enable flag */
     flags |= (1<<16);  /* user mode flag */
 
-    msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL1, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL2, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL3, flags);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, flags));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, flags));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL2, flags));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL3, flags));
 
+    /* avoid uninitialized values */
+    westmereEX_IDs[PMC0]  = 0;
+    westmereEX_IDs[PMC1]  = 0;
+    westmereEX_IDs[PMC2]  = 0;
+    westmereEX_IDs[PMC3]  = 0;
+    westmereEX_IDs[PMC4]  = 0;
+    westmereEX_IDs[PMC5]  = 0;
+    westmereEX_IDs[PMC6]  = 0;
     /* Initialize uncore */
     /* MBOX */
-    thread->counters[PMC7].id  = 0;
-    thread->counters[PMC8].id  = 1;
-    thread->counters[PMC9].id  = 2;
-    thread->counters[PMC10].id = 3;
-    thread->counters[PMC11].id = 4;
-    thread->counters[PMC12].id = 5;
+    westmereEX_IDs[PMC7]  = 0;
+    westmereEX_IDs[PMC8]  = 1;
+    westmereEX_IDs[PMC9]  = 2;
+    westmereEX_IDs[PMC10] = 3;
+    westmereEX_IDs[PMC11] = 4;
+    westmereEX_IDs[PMC12] = 5;
     westmereEX_PMunits[MBOX0].ctrlRegister = MSR_M0_PMON_BOX_CTRL;
     westmereEX_PMunits[MBOX0].statusRegister = MSR_M0_PMON_BOX_STATUS;
     westmereEX_PMunits[MBOX0].ovflRegister = MSR_M0_PMON_BOX_OVF_CTRL;
 
-    thread->counters[PMC13].id = 0;
-    thread->counters[PMC14].id = 1;
-    thread->counters[PMC15].id = 2;
-    thread->counters[PMC16].id = 3;
-    thread->counters[PMC17].id = 4;
-    thread->counters[PMC18].id = 5;
+    westmereEX_IDs[PMC13] = 0;
+    westmereEX_IDs[PMC14] = 1;
+    westmereEX_IDs[PMC15] = 2;
+    westmereEX_IDs[PMC16] = 3;
+    westmereEX_IDs[PMC17] = 4;
+    westmereEX_IDs[PMC18] = 5;
     westmereEX_PMunits[MBOX1].ctrlRegister = MSR_M1_PMON_BOX_CTRL;
     westmereEX_PMunits[MBOX1].statusRegister = MSR_M1_PMON_BOX_STATUS;
     westmereEX_PMunits[MBOX1].ovflRegister = MSR_M1_PMON_BOX_OVF_CTRL;
 
     /* BBOX */
-    thread->counters[PMC19].id = 0;
-    thread->counters[PMC20].id = 1;
-    thread->counters[PMC21].id = 2;
-    thread->counters[PMC22].id = 3;
+    westmereEX_IDs[PMC19] = 0;
+    westmereEX_IDs[PMC20] = 1;
+    westmereEX_IDs[PMC21] = 2;
+    westmereEX_IDs[PMC22] = 3;
     westmereEX_PMunits[BBOX0].ctrlRegister = MSR_B0_PMON_BOX_CTRL;
     westmereEX_PMunits[BBOX0].statusRegister =  MSR_B0_PMON_BOX_STATUS;
     westmereEX_PMunits[BBOX0].ovflRegister = MSR_B0_PMON_BOX_OVF_CTRL;
 
-    thread->counters[PMC23].id = 0;
-    thread->counters[PMC24].id = 1;
-    thread->counters[PMC25].id = 2;
-    thread->counters[PMC26].id = 3;
+    westmereEX_IDs[PMC23] = 0;
+    westmereEX_IDs[PMC24] = 1;
+    westmereEX_IDs[PMC25] = 2;
+    westmereEX_IDs[PMC26] = 3;
     westmereEX_PMunits[BBOX1].ctrlRegister = MSR_B1_PMON_BOX_CTRL;
     westmereEX_PMunits[BBOX1].statusRegister =  MSR_B1_PMON_BOX_STATUS;
     westmereEX_PMunits[BBOX1].ovflRegister = MSR_B1_PMON_BOX_OVF_CTRL;
 
     /* RBOX */
-    thread->counters[PMC27].id = 0;
-    thread->counters[PMC28].id = 1;
-    thread->counters[PMC29].id = 2;
-    thread->counters[PMC30].id = 3;
-    thread->counters[PMC31].id = 4;
-    thread->counters[PMC32].id = 5;
-    thread->counters[PMC33].id = 6;
-    thread->counters[PMC34].id = 7;
+    westmereEX_IDs[PMC27] = 0;
+    westmereEX_IDs[PMC28] = 1;
+    westmereEX_IDs[PMC29] = 2;
+    westmereEX_IDs[PMC30] = 3;
+    westmereEX_IDs[PMC31] = 4;
+    westmereEX_IDs[PMC32] = 5;
+    westmereEX_IDs[PMC33] = 6;
+    westmereEX_IDs[PMC34] = 7;
     westmereEX_PMunits[RBOX0].ctrlRegister = MSR_R0_PMON_BOX_CTRL;
     westmereEX_PMunits[RBOX0].statusRegister =  MSR_R0_PMON_BOX_STATUS;
     westmereEX_PMunits[RBOX0].ovflRegister = MSR_R0_PMON_BOX_OVF_CTRL;
 
-    thread->counters[PMC35].id = 0;
-    thread->counters[PMC36].id = 1;
-    thread->counters[PMC37].id = 2;
-    thread->counters[PMC38].id = 3;
-    thread->counters[PMC39].id = 4;
-    thread->counters[PMC40].id = 5;
-    thread->counters[PMC41].id = 6;
-    thread->counters[PMC42].id = 7;
+    westmereEX_IDs[PMC35] = 0;
+    westmereEX_IDs[PMC36] = 1;
+    westmereEX_IDs[PMC37] = 2;
+    westmereEX_IDs[PMC38] = 3;
+    westmereEX_IDs[PMC39] = 4;
+    westmereEX_IDs[PMC40] = 5;
+    westmereEX_IDs[PMC41] = 6;
+    westmereEX_IDs[PMC42] = 7;
     westmereEX_PMunits[RBOX1].ctrlRegister = MSR_R1_PMON_BOX_CTRL;
     westmereEX_PMunits[RBOX1].statusRegister =  MSR_R1_PMON_BOX_STATUS;
     westmereEX_PMunits[RBOX1].ovflRegister = MSR_R1_PMON_BOX_OVF_CTRL;
 
     /* WBOX */
-    thread->counters[PMC43].id = 0;
-    thread->counters[PMC44].id = 1;
-    thread->counters[PMC45].id = 2;
-    thread->counters[PMC46].id = 3;
-    thread->counters[PMC47].id = 31;
+    westmereEX_IDs[PMC43] = 0;
+    westmereEX_IDs[PMC44] = 1;
+    westmereEX_IDs[PMC45] = 2;
+    westmereEX_IDs[PMC46] = 3;
+    westmereEX_IDs[PMC47] = 31;
     westmereEX_PMunits[WBOX].ctrlRegister   = MSR_W_PMON_BOX_CTRL;
     westmereEX_PMunits[WBOX].statusRegister = MSR_W_PMON_BOX_STATUS;
     westmereEX_PMunits[WBOX].ovflRegister   = MSR_W_PMON_BOX_OVF_CTRL;
+    
+    /* avoid uninitialized values */
+    for(int i = PMC48;i <NUM_PMC;i++)
+    {
+        westmereEX_IDs[i] = 0;
+    }
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
             lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id))
     {
-        msr_write(cpu_id, MSR_W_PMON_BOX_CTRL,  0x0ULL);
-        msr_write(cpu_id, MSR_W_PMON_EVNT_SEL0, 0x0ULL);
-        msr_write(cpu_id, MSR_W_PMON_EVNT_SEL1, 0x0ULL);
-        msr_write(cpu_id, MSR_W_PMON_EVNT_SEL2, 0x0ULL);
-        msr_write(cpu_id, MSR_W_PMON_EVNT_SEL3, 0x0ULL);
-        msr_write(cpu_id, MSR_W_PMON_FIXED_CTR, 0x0ULL);
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_W_PMON_BOX_CTRL,  0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_W_PMON_EVNT_SEL0, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_W_PMON_EVNT_SEL1, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_W_PMON_EVNT_SEL2, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_W_PMON_EVNT_SEL3, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_W_PMON_FIXED_CTR, 0x0ULL));
 
-        msr_write(cpu_id, MSR_M0_PMON_BOX_CTRL,  0x0ULL);
-        msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL0, 0x0ULL);
-        msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL1, 0x0ULL);
-        msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL2, 0x0ULL);
-        msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL3, 0x0ULL);
-        msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL4, 0x0ULL);
-        msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL5, 0x0ULL);
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M0_PMON_BOX_CTRL,  0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL0, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL1, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL2, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL3, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL4, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL5, 0x0ULL));
 
-        msr_write(cpu_id, MSR_M1_PMON_BOX_CTRL,  0x0ULL);
-        msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL0, 0x0ULL);
-        msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL1, 0x0ULL);
-        msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL2, 0x0ULL);
-        msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL3, 0x0ULL);
-        msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL4, 0x0ULL);
-        msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL5, 0x0ULL);
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M1_PMON_BOX_CTRL,  0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL0, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL1, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL2, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL3, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL4, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL5, 0x0ULL));
 
-        msr_write(cpu_id, MSR_B0_PMON_BOX_CTRL,  0x0ULL);
-        msr_write(cpu_id, MSR_B0_PMON_EVNT_SEL0, 0x0ULL);
-        msr_write(cpu_id, MSR_B0_PMON_EVNT_SEL1, 0x0ULL);
-        msr_write(cpu_id, MSR_B0_PMON_EVNT_SEL2, 0x0ULL);
-        msr_write(cpu_id, MSR_B0_PMON_EVNT_SEL3, 0x0ULL);
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_B0_PMON_BOX_CTRL,  0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_B0_PMON_EVNT_SEL0, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_B0_PMON_EVNT_SEL1, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_B0_PMON_EVNT_SEL2, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_B0_PMON_EVNT_SEL3, 0x0ULL));
 
-        msr_write(cpu_id, MSR_B1_PMON_BOX_CTRL,  0x0ULL);
-        msr_write(cpu_id, MSR_B1_PMON_EVNT_SEL0, 0x0ULL);
-        msr_write(cpu_id, MSR_B1_PMON_EVNT_SEL1, 0x0ULL);
-        msr_write(cpu_id, MSR_B1_PMON_EVNT_SEL2, 0x0ULL);
-        msr_write(cpu_id, MSR_B1_PMON_EVNT_SEL3, 0x0ULL);
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_B1_PMON_BOX_CTRL,  0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_B1_PMON_EVNT_SEL0, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_B1_PMON_EVNT_SEL1, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_B1_PMON_EVNT_SEL2, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_B1_PMON_EVNT_SEL3, 0x0ULL));
 
-        msr_write(cpu_id, MSR_R0_PMON_BOX_CTRL,  0x0ULL);
-        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL0, 0x0ULL);
-        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL1, 0x0ULL);
-        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL2, 0x0ULL);
-        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL3, 0x0ULL);
-        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL4, 0x0ULL);
-        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL5, 0x0ULL);
-        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL6, 0x0ULL);
-        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL7, 0x0ULL);
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R0_PMON_BOX_CTRL,  0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL0, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL1, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL2, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL3, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL4, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL5, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL6, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL7, 0x0ULL));
 
-        msr_write(cpu_id, MSR_R1_PMON_BOX_CTRL,   0x0ULL);
-        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL8,  0x0ULL);
-        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL9,  0x0ULL);
-        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL10, 0x0ULL);
-        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL11, 0x0ULL);
-        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL12, 0x0ULL);
-        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL13, 0x0ULL);
-        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL14, 0x0ULL);
-        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL15, 0x0ULL);
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R1_PMON_BOX_CTRL,   0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL8,  0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL9,  0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL10, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL11, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL12, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL13, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL14, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL15, 0x0ULL));
 
         {
             uint32_t ubflags = 0x0UL;
             ubflags |= (1<<29); /* reset all */
-            msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags );
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags ));
         }
     }
+    return 0;
 }
 
 /* MBOX macros */
 
 #define MBOX_GATE(NUM)  \
     flags = 0x41ULL; \
-switch (event->cfgBits)  \
-{  \
-    case 0x00:   /* primary Event */  \
-                                      flags |= (event->eventId<<9);  \
-    break;  \
-    case 0x01: /* secondary Events */  \
-                                       /* TODO fvid index is missing defaults to 0 */   \
-    flags |= (1<<7); /* toggle flag mode */   \
-    flags |= (event->eventId<<19);   \
-    switch (event->eventId)   \
-    {   \
-        case 0x00: /* CYCLES_DSP_FILL: DSP */   \
-                                                {   \
-                                                    uint64_t dsp_flags = 0x0ULL;   \
-                                                    dsp_flags |= (event->umask<<7);  \
-                                                    msr_write(cpu_id, MSR_M##NUM##_PMON_DSP, dsp_flags);   \
-                                                }   \
-        break;   \
-        case 0x01: /* CYCLES_SCHED_MODE: ISS */   \
-                                                  {   \
-                                                      uint32_t iss_flags = 0x0UL;   \
-                                                      iss_flags |= (event->umask<<4);   \
-                                                      msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags);   \
-                                                  }    \
-        break;   \
-        case 0x05: /* CYCLES_PGT_STATE: PGT */   \
-                                                 {   \
-                                                     uint32_t pgt_flags = 0x0UL;   \
-                                                     pgt_flags |= (event->umask<<6);   \
-                                                     msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, pgt_flags);   \
-                                                 }    \
-        break;   \
-        case 0x06: /* BCMD_SCHEDQ_OCCUPANCY: MAP */   \
-                                                      {   \
-                                                          uint32_t map_flags = 0x0UL;   \
-                                                          map_flags |= (event->umask<<6);   \
-                                                          msr_write(cpu_id, MSR_M##NUM##_PMON_MAP, map_flags);   \
-                                                      }   \
-        break;   \
-    }    \
-    break;   \
-    case 0x02: /* DRAM_CMD: PLD/ISS */   \
-                                         flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t pld_flags = 0x0UL;   \
-        uint32_t iss_flags = 0x0UL;   \
-        pld_flags |= (event->umask<<8);   \
-        if (event->cmask != 0)   \
-        {   \
-            iss_flags |= (event->cmask<<7);   \
-            pld_flags |= 1; /* toggle cmd flag */   \
-        }   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_PLD, pld_flags);   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags);   \
-    }   \
-    break;   \
-    case 0x03: /* DSP_FILL: DSP */   \
-                                     flags |= (event->eventId<<9);   \
-    {   \
-        uint64_t dsp_flags = 0x0ULL;   \
-        dsp_flags |= (event->umask<<7);   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_DSP, dsp_flags);   \
-    }   \
-    break;   \
-    case 0x04: /* DRAM_MISC: PLD */   \
-                                      flags |= (event->eventId<<9);   \
-    {   \
-        uint64_t pld_flags = 0x0ULL;   \
-        switch (event->cmask)   \
-        {   \
-            case 0x0:   \
-                        pld_flags |= (1<<16);   \
-            pld_flags |= (event->umask<<19);   \
+    switch (event->cfgBits)  \
+    {  \
+        case 0x00:   /* primary Event */  \
+                                          flags |= (event->eventId<<9);  \
+        break;  \
+        case 0x01: /* secondary Events */  \
+            /* TODO fvid index is missing defaults to 0 */   \
+            flags |= (1<<7); /* toggle flag mode */   \
+            flags |= (event->eventId<<19);   \
+            switch (event->eventId)   \
+            {   \
+                case 0x00: /* CYCLES_DSP_FILL: DSP */   \
+                    {   \
+                        uint64_t dsp_flags = 0x0ULL;   \
+                        dsp_flags |= (event->umask<<7);  \
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_DSP, dsp_flags));   \
+                    }   \
+                    break;   \
+                case 0x01: /* CYCLES_SCHED_MODE: ISS */   \
+                    {   \
+                      uint32_t iss_flags = 0x0UL;   \
+                      iss_flags |= (event->umask<<4);   \
+                      CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags));   \
+                    }    \
+                    break;   \
+                case 0x05: /* CYCLES_PGT_STATE: PGT */   \
+                    {   \
+                     uint32_t pgt_flags = 0x0UL;   \
+                     pgt_flags |= (event->umask<<6);   \
+                     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, pgt_flags));   \
+                    }    \
+                    break;   \
+                case 0x06: /* BCMD_SCHEDQ_OCCUPANCY: MAP */   \
+                    {   \
+                      uint32_t map_flags = 0x0UL;   \
+                      map_flags |= (event->umask<<6);   \
+                      CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_MAP, map_flags));   \
+                    }   \
+                    break;   \
+            }    \
             break;   \
-            case 0x1:   \
-                        pld_flags |= (event->umask<<18);   \
+        case 0x02: /* DRAM_CMD: PLD/ISS */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t pld_flags = 0x0UL;   \
+                uint32_t iss_flags = 0x0UL;   \
+                pld_flags |= (event->umask<<8);   \
+                if (event->cmask != 0)   \
+                {   \
+                    iss_flags |= (event->cmask<<7);   \
+                    pld_flags |= 1; /* toggle cmd flag */   \
+                }   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_PLD, pld_flags));   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags));   \
+            }   \
             break;   \
-            case 0x2:   \
-                        pld_flags |= (event->umask<<17);   \
+        case 0x03: /* DSP_FILL: DSP */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint64_t dsp_flags = 0x0ULL;   \
+                dsp_flags |= (event->umask<<7);   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_DSP, dsp_flags));   \
+            }   \
             break;   \
-            case 0x3:   \
-                        pld_flags |= (event->umask<<7);   \
+        case 0x04: /* DRAM_MISC: PLD */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint64_t pld_flags = 0x0ULL;   \
+                switch (event->cmask)   \
+                {   \
+                    case 0x0:   \
+                                pld_flags |= (1<<16);   \
+                    pld_flags |= (event->umask<<19);   \
+                    break;   \
+                    case 0x1:   \
+                                pld_flags |= (event->umask<<18);   \
+                    break;   \
+                    case 0x2:   \
+                                pld_flags |= (event->umask<<17);   \
+                    break;   \
+                    case 0x3:   \
+                                pld_flags |= (event->umask<<7);   \
+                    break;   \
+                }   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_PLD, pld_flags));   \
+            }   \
             break;   \
-        }   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_PLD, pld_flags);   \
-    }   \
-    break;   \
-    case 0x05: /* FRM_TYPE: ISS */   \
-                                     flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t iss_flags = 0x0UL;   \
-        iss_flags |= event->umask;   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags);   \
-    }   \
-    break;   \
-    case 0x06: /* FVC_EV0: FVC */   \
-                                    flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t fvc_flags = 0x0UL;   \
-        fvc_flags |= (event->umask<<12);   \
-        if (event->umask == 0x5)   \
-        {   \
-            fvc_flags |= (event->cmask<<6);   \
-        }   \
-        else   \
-        {   \
-            fvc_flags |= (event->cmask<<9);   \
-        }   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags);   \
-        VERBOSEPRINTREG(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags, FVC_EV0) \
-    }   \
-    break;   \
-    case 0x07: /* FVC_EV1: FVC */   \
-                                    flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t fvc_flags = 0x0UL;   \
-        fvc_flags |= (event->umask<<15);   \
-        if (event->umask == 0x5)   \
-        {   \
-            fvc_flags |= (event->cmask<<6);   \
-        }   \
-        else   \
-        {   \
-            fvc_flags |= (event->cmask<<9);   \
-        }   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags);   \
-        VERBOSEPRINTREG(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags, FVC_EV1) \
-    }   \
-    break;   \
-    case 0x08: /* FVC_EV2: FVC */   \
-                                    flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t fvc_flags = 0x0UL;   \
-        fvc_flags |= (event->umask<<18);   \
-        if (event->umask == 0x5)   \
-        {   \
-            fvc_flags |= (event->cmask<<6);   \
-        }   \
-        else   \
-        {   \
-            fvc_flags |= (event->cmask<<9);   \
-        }   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags);   \
-        VERBOSEPRINTREG(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags, FVC_EV2) \
-    }   \
-    break;   \
-    case 0x09: /* FVC_EV3: FVC(ZDP) */   \
-                                         flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t fvc_flags = 0x0UL;   \
-        fvc_flags |= (event->umask<<21);   \
-        if (event->umask == 0x5)   \
-        {   \
-            fvc_flags |= (event->cmask<<6);   \
-        }   \
-        else   \
-        {   \
-            fvc_flags |= (event->cmask<<9);   \
-        }   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags);   \
-    }   \
-    break;   \
-    case 0x0A: /* ISS_SCHED: ISS */   \
-                                      flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t iss_flags = 0x0UL;   \
-        iss_flags |= (event->umask<<10);   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags);   \
-    }   \
-    break;   \
-    case 0x0B: /* PGT_PAGE_EV: PGT */   \
-                                        flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t pgt_flags = 0x0UL;   \
-        pgt_flags |= event->umask;   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, pgt_flags);   \
-    }   \
-    break;   \
-    case 0x0C: /* PGT_PAGE_EV2: PGT */   \
-                                         flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t pgt_flags = 0x0UL;   \
-        pgt_flags |= (event->umask<<11);   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, pgt_flags);   \
-    }   \
-    break;   \
-    case 0x0D: /* THERM_TRP_DN: THR */   \
-                                         flags |= (event->eventId<<9);   \
-    {   \
-        uint32_t thr_flags = 0x0UL;   \
-        thr_flags |= (1<<3);   \
-        thr_flags |= (event->umask<<9);   \
-        msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, thr_flags);   \
-    }   \
-    break;   \
-}
+        case 0x05: /* FRM_TYPE: ISS */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t iss_flags = 0x0UL;   \
+                iss_flags |= event->umask;   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags));   \
+            }   \
+            break;   \
+        case 0x06: /* FVC_EV0: FVC */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t fvc_flags = 0x0UL;   \
+                fvc_flags |= (event->umask<<12);   \
+                if (event->umask == 0x5)   \
+                {   \
+                    fvc_flags |= (event->cmask<<6);   \
+                }   \
+                else   \
+                {   \
+                    fvc_flags |= (event->cmask<<9);   \
+                }   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags));   \
+                VERBOSEPRINTREG(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags, FVC_EV0) \
+            }   \
+            break;   \
+        case 0x07: /* FVC_EV1: FVC */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t fvc_flags = 0x0UL;   \
+                fvc_flags |= (event->umask<<15);   \
+                if (event->umask == 0x5)   \
+                {   \
+                    fvc_flags |= (event->cmask<<6);   \
+                }   \
+                else   \
+                {   \
+                    fvc_flags |= (event->cmask<<9);   \
+                }   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags));   \
+                VERBOSEPRINTREG(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags, FVC_EV1) \
+            }   \
+            break;   \
+        case 0x08: /* FVC_EV2: FVC */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t fvc_flags = 0x0UL;   \
+                fvc_flags |= (event->umask<<18);   \
+                if (event->umask == 0x5)   \
+                {   \
+                    fvc_flags |= (event->cmask<<6);   \
+                }   \
+                else   \
+                {   \
+                    fvc_flags |= (event->cmask<<9);   \
+                }   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags));   \
+                VERBOSEPRINTREG(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags, FVC_EV2) \
+            }   \
+            break;   \
+        case 0x09: /* FVC_EV3: FVC(ZDP) */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t fvc_flags = 0x0UL;   \
+                fvc_flags |= (event->umask<<21);   \
+                if (event->umask == 0x5)   \
+                {   \
+                    fvc_flags |= (event->cmask<<6);   \
+                }   \
+                else   \
+                {   \
+                    fvc_flags |= (event->cmask<<9);   \
+                }   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ZDP, fvc_flags));   \
+            }   \
+            break;   \
+        case 0x0A: /* ISS_SCHED: ISS */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t iss_flags = 0x0UL;   \
+                iss_flags |= (event->umask<<10);   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_ISS, iss_flags));   \
+            }   \
+            break;   \
+        case 0x0B: /* PGT_PAGE_EV: PGT */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t pgt_flags = 0x0UL;   \
+                pgt_flags |= event->umask;   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, pgt_flags));   \
+            }   \
+            break;   \
+        case 0x0C: /* PGT_PAGE_EV2: PGT */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t pgt_flags = 0x0UL;   \
+                pgt_flags |= (event->umask<<11);   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, pgt_flags));   \
+            }   \
+            break;   \
+        case 0x0D: /* THERM_TRP_DN: THR */   \
+            flags |= (event->eventId<<9);   \
+            {   \
+                uint32_t thr_flags = 0x0UL;   \
+                thr_flags |= (1<<3);   \
+                thr_flags |= (event->umask<<9);   \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_M##NUM##_PMON_PGT, thr_flags));   \
+            }   \
+            break;   \
+    }
 
 /* RBOX macros */
 #define RBOX_GATE(NUM)  \
     flags = 0x01ULL; /* set local enable flag */ \
-switch (event->eventId) {  \
-    case 0x00:  \
-                flags |= (event->umask<<1); /* configure sub register */   \
-    {  \
-        uint32_t iperf_flags = 0x0UL;   \
-        iperf_flags |= (event->cfgBits<<event->cmask); /* configure event */  \
-        switch (event->umask) { /* pick correct iperf register */  \
-            case 0x00: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF0_P0, iperf_flags);   \
+    switch (event->eventId) {  \
+        case 0x00:  \
+            flags |= (event->umask<<1); /* configure sub register */   \
+            {  \
+                uint32_t iperf_flags = 0x0UL;   \
+                iperf_flags |= (event->cfgBits<<event->cmask); /* configure event */  \
+                switch (event->umask) { /* pick correct iperf register */  \
+                    case 0x00: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF0_P0, iperf_flags));   \
+                    break; \
+                    case 0x01: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF1_P0, iperf_flags));   \
+                    break; \
+                    case 0x06: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF0_P1, iperf_flags));   \
+                    break; \
+                    case 0x07: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF1_P1, iperf_flags));   \
+                    break; \
+                    case 0x0C: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF0_P2, iperf_flags));   \
+                    break; \
+                    case 0x0D: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF1_P2, iperf_flags));   \
+                    break; \
+                    case 0x12: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF0_P3, iperf_flags));   \
+                    break; \
+                    case 0x13: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF1_P3, iperf_flags));   \
+                    break; \
+                } \
+            } \
             break; \
-            case 0x01: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF1_P0, iperf_flags);   \
+        case 0x01: \
+            flags |= (event->umask<<1); /* configure sub register */   \
+            { \
+                uint32_t qlx_flags = 0x0UL;   \
+                qlx_flags |= (event->cfgBits); /* configure event */  \
+                if (event->cmask) qlx_flags |= (event->cmask<<4);  \
+                switch (event->umask) { /* pick correct qlx register */  \
+                    case 0x02: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, qlx_flags));   \
+                    break; \
+                    case 0x03: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, (qlx_flags<<8)));   \
+                    break; \
+                    case 0x08: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, qlx_flags));   \
+                    break; \
+                    case 0x09: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P1, (qlx_flags<<8)));   \
+                    break; \
+                    case 0x0E: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, qlx_flags));   \
+                    break; \
+                    case 0x0F: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P2, (qlx_flags<<8)));   \
+                    break; \
+                    case 0x14: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, qlx_flags));   \
+                    break; \
+                    case 0x15: \
+                               CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P3, (qlx_flags<<8)));   \
+                    break; \
+                } \
+            } \
             break; \
-            case 0x06: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF0_P1, iperf_flags);   \
-            break; \
-            case 0x07: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF1_P1, iperf_flags);   \
-            break; \
-            case 0x0C: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF0_P2, iperf_flags);   \
-            break; \
-            case 0x0D: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF1_P2, iperf_flags);   \
-            break; \
-            case 0x12: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF0_P3, iperf_flags);   \
-            break; \
-            case 0x13: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_IPERF1_P3, iperf_flags);   \
-            break; \
-        } } \
-    break; \
-    case 0x01: \
-               flags |= (event->umask<<1); /* configure sub register */   \
-    { \
-        uint32_t qlx_flags = 0x0UL;   \
-        qlx_flags |= (event->cfgBits); /* configure event */  \
-        if (event->cmask) qlx_flags |= (event->cmask<<4);  \
-        switch (event->umask) { /* pick correct qlx register */  \
-            case 0x02: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, qlx_flags);   \
-            break; \
-            case 0x03: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, (qlx_flags<<8));   \
-            break; \
-            case 0x08: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, qlx_flags);   \
-            break; \
-            case 0x09: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P1, (qlx_flags<<8));   \
-            break; \
-            case 0x0E: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, qlx_flags);   \
-            break; \
-            case 0x0F: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P2, (qlx_flags<<8));   \
-            break; \
-            case 0x14: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P0, qlx_flags);   \
-            break; \
-            case 0x15: \
-                       msr_write(cpu_id, MSR_R##NUM##_PMON_QLX_P3, (qlx_flags<<8));   \
-            break; \
-        } } \
-    break; \
-}
+    }
 
 
 
-void perfmon_setupCounterThread_westmereEX(
-        int thread_id,
-        PerfmonEvent* event,
-        PerfmonCounterIndex index)
+int perfmon_setupCounterThread_westmereEX(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
     uint64_t flags = 0x0ULL;;
-    uint64_t reg = westmereEX_counter_map[index].configRegister;
-    int cpu_id = perfmon_threadData[thread_id].processorId;
-    perfmon_threadData[thread_id].counters[index].init = TRUE;
+    int cpu_id = groupSet->threads[thread_id].processorId;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
     }
 
-    switch (westmereEX_counter_map[index].type)
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        case PMC:
-            flags = msr_read(cpu_id,reg);
-            flags &= ~(0xFFFFU);   /* clear lower 16bits */
+        PerfmonCounterIndex index = eventSet->events[i].index;
+        PerfmonEvent *event = &(eventSet->events[i].event);
+        uint64_t reg = westmereEX_counter_map[index].configRegister;
+        eventSet->events[i].threadCounter[thread_id].init = TRUE;
+        switch (westmereEX_counter_map[index].type)
+        {
+            case PMC:
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &flags));
+                flags &= ~(0xFFFFU);   /* clear lower 16bits */
 
-            /* Intel with standard 8 bit event mask: [7:0] */
-            flags |= (event->umask<<8) + event->eventId;
+                /* Intel with standard 8 bit event mask: [7:0] */
+                flags |= (event->umask<<8) + event->eventId;
 
-            if (event->cfgBits != 0) /* set custom cfg and cmask */
-            {
-                flags &= ~(0xFFFFU<<16);  /* clear upper 16bits */
-                flags |= ((event->cmask<<8) + event->cfgBits)<<16;
-            }
+                if (event->cfgBits != 0) /* set custom cfg and cmask */
+                {
+                    flags &= ~(0xFFFFU<<16);  /* clear upper 16bits */
+                    flags |= ((event->cmask<<8) + event->cfgBits)<<16;
+                }
 
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, PMC_EV_SEL)
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                VERBOSEPRINTREG(cpu_id, reg, flags, PMC_EV_SEL)
+                    break;
+
+            case FIXED:
                 break;
 
-        case FIXED:
-            break;
+            case MBOX0:
+                if (haveLock)
+                {
+                    MBOX_GATE(0);
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                    VERBOSEPRINTREG(cpu_id, reg, flags, MBOX0_CTRL)
+                }
+                break;
 
-        case MBOX0:
-            if (haveLock)
-            {
-                MBOX_GATE(0);
-                msr_write(cpu_id, reg , flags);
-                VERBOSEPRINTREG(cpu_id, reg, flags, MBOX0_CTRL)
-            }
-            break;
+            case MBOX1:
+                if (haveLock)
+                {
+                    MBOX_GATE(1);
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                    VERBOSEPRINTREG(cpu_id, reg, flags, MBOX1_CTRL)
+                }
+                break;
 
-        case MBOX1:
-            if (haveLock)
-            {
-                MBOX_GATE(1);
-                msr_write(cpu_id, reg , flags);
-                VERBOSEPRINTREG(cpu_id, reg, flags, MBOX1_CTRL)
-            }
-            break;
+            case BBOX0:
 
-        case BBOX0:
-
-        case BBOX1:
-            if (haveLock)
-            {
-                flags = 0x1ULL; /* set enable bit */
-                flags |=  (event->eventId<<1);
-                msr_write(cpu_id, reg , flags);
-                VERBOSEPRINTREG(cpu_id, reg, flags, BBOX_CTRL)
-            }
-            break;
-
-        case RBOX0:
-            if (haveLock)
-            {
-                RBOX_GATE(0);
-                msr_write(cpu_id, reg , flags);
-                VERBOSEPRINTREG(cpu_id, reg, flags, RBOX0_CTRL)
-            }
-            break;
-
-        case RBOX1:
-            if (haveLock)
-            {
-                RBOX_GATE(1);
-                msr_write(cpu_id, reg , flags);
-                VERBOSEPRINTREG(cpu_id, reg, flags, RBOX1_CTRL)
-            }
-            break;
-
-        case WBOX:
-            if (haveLock)
-            {
-                if (event->eventId == 0xFF)  /* Fixed Counter */
+            case BBOX1:
+                if (haveLock)
                 {
                     flags = 0x1ULL; /* set enable bit */
+                    flags |=  (event->eventId<<1);
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                    VERBOSEPRINTREG(cpu_id, reg, flags, BBOX_CTRL)
                 }
-                else
-                {
-                    flags |= (1<<22); /* set enable bit */
-                    flags |= (event->umask<<8) + event->eventId;
-                }
-                msr_write(cpu_id, reg , flags);
-                VERBOSEPRINTREG(cpu_id, reg, flags, WBOX_CTRL)
-            }
-            break;
+                break;
 
-        default:
-            /* should never be reached */
-            break;
+            case RBOX0:
+                if (haveLock)
+                {
+                    RBOX_GATE(0);
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                    VERBOSEPRINTREG(cpu_id, reg, flags, RBOX0_CTRL)
+                }
+                break;
+
+            case RBOX1:
+                if (haveLock)
+                {
+                    RBOX_GATE(1);
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                    VERBOSEPRINTREG(cpu_id, reg, flags, RBOX1_CTRL)
+                }
+                break;
+
+            case WBOX:
+                if (haveLock)
+                {
+                    if (event->eventId == 0xFF)  /* Fixed Counter */
+                    {
+                        flags = 0x1ULL; /* set enable bit */
+                    }
+                    else
+                    {
+                        flags |= (1<<22); /* set enable bit */
+                        flags |= (event->umask<<8) + event->eventId;
+                    }
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                    VERBOSEPRINTREG(cpu_id, reg, flags, WBOX_CTRL)
+                }
+                break;
+
+            default:
+                /* should never be reached */
+                break;
+        }
     }
+    return 0;
 }
 
 /* Actions for Performance Monitoring Session:
@@ -616,21 +644,21 @@ void perfmon_setupCounterThread_westmereEX(
  * 3) Set enable bit in global U Box control register
  * */
 
-void perfmon_startCountersThread_westmereEX(int thread_id)
+int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
     uint64_t flags = 0x0ULL;
     uint32_t uflags[NUM_UNITS];
-    int cpu_id = perfmon_threadData[thread_id].processorId;
+    int cpu_id = groupSet->threads[thread_id].processorId;
 
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
 
     if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
     {
         uint32_t ubflags = 0x0UL;
         ubflags |= (1<<29); /* reset all */
         haveLock = 1;
-        //        msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags );
+        //        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags ));
         //       VERBOSEPRINTREG(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags, UBOX_GLOBAL_CTRL)
     }
 
@@ -639,26 +667,28 @@ void perfmon_startCountersThread_westmereEX(int thread_id)
         uflags[i] = 0x0UL;
     }
 
-    for ( int i=0; i<NUM_PMC; i++ ) 
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (perfmon_threadData[thread_id].counters[i].init == TRUE) {
-            if (westmereEX_counter_map[i].type == PMC)
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE) {
+            PerfmonCounterIndex index = eventSet->events[i].index;
+            
+            if (westmereEX_counter_map[index].type == PMC)
             {
-                msr_write(cpu_id, westmereEX_counter_map[i].counterRegister , 0x0ULL);
-                flags |= (1<<(i-OFFSET_PMC));  /* enable counter */
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, westmereEX_counter_map[index].counterRegister , 0x0ULL));
+                flags |= (1<<(index-OFFSET_PMC));  /* enable counter */
             }
-            else if (westmereEX_counter_map[i].type == FIXED)
+            else if (westmereEX_counter_map[index].type == FIXED)
             {
-                msr_write(cpu_id, westmereEX_counter_map[i].counterRegister , 0x0ULL);
-                flags |= (1ULL<<(i+32));  /* enable fixed counter */
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, westmereEX_counter_map[index].counterRegister , 0x0ULL));
+                flags |= (1ULL<<(index+32));  /* enable fixed counter */
             }
-            else if (westmereEX_counter_map[i].type > UNCORE)
+            else if (westmereEX_counter_map[index].type > UNCORE)
             {
                 if(haveLock)
                 {
-                    msr_write(cpu_id, westmereEX_counter_map[i].counterRegister , 0x0ULL);
-                    uflags[westmereEX_counter_map[i].type] |=
-                        (1<<(perfmon_threadData[thread_id].counters[i].id));  /* enable uncore counter */
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, westmereEX_counter_map[index].counterRegister , 0x0ULL));
+                    /* enable uncore counter */
+                    uflags[westmereEX_counter_map[index].type] |= (1<<westmereEX_IDs[index]);
                 }
             }
         }
@@ -673,7 +703,7 @@ void perfmon_startCountersThread_westmereEX(int thread_id)
             /* if counters are enabled write the according box ctrl register */
             if (uflags[i]) 
             {
-                msr_write(cpu_id, westmereEX_PMunits[i].ctrlRegister, uflags[i]);
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, westmereEX_PMunits[i].ctrlRegister, uflags[i]));
                 VERBOSEPRINTREG(cpu_id, westmereEX_PMunits[i].ctrlRegister, LLU_CAST uflags[i], BOXCTRL);
             }
         }
@@ -682,92 +712,95 @@ void perfmon_startCountersThread_westmereEX(int thread_id)
         uint32_t ubflags = 0x0UL;
         ubflags |= (1<<28); /* enable all */
         VERBOSEPRINTREG(cpu_id, MSR_U_PMON_GLOBAL_CTRL, LLU_CAST ubflags, UBOX_GLOBAL_CTRL);
-        msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags );
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags));
     }
     /* Finally enable counters */
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
-    msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL));
+    return 0;
 }
 
-void perfmon_stopCountersThread_westmereEX(int thread_id)
+int perfmon_stopCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    int cpu_id = perfmon_threadData[thread_id].processorId;
+    uint64_t counter_result = 0x0ULL;
+    int cpu_id = groupSet->threads[thread_id].processorId;
 
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
 
     if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
     {
         uint32_t ubflags = 0x0UL;
         haveLock = 1;
         //        ubflags |= (1<<29); /* reset all */
-        msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags );
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags));
     }
 
-    for ( int i=0; i<NUM_COUNTERS_WESTMEREEX; i++ ) 
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            if (westmereEX_counter_map[i].type > UNCORE)
+            PerfmonCounterIndex index = eventSet->events[i].index;
+            if (westmereEX_counter_map[index].type > UNCORE)
             {
                 if(haveLock)
                 {
-                    perfmon_threadData[thread_id].counters[i].counterData =
-                        msr_read(cpu_id, westmereEX_counter_map[i].counterRegister);
-
-                    VERBOSEPRINTREG(cpu_id, westmereEX_counter_map[i].counterRegister,
-                            LLU_CAST perfmon_threadData[thread_id].counters[i].counterData, READ_UNCORE);
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, westmereEX_counter_map[index].counterRegister, &counter_result));
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    VERBOSEPRINTREG(cpu_id, westmereEX_counter_map[index].counterRegister, LLU_CAST counter_result, READ_UNCORE);
                 }
             }
             else
             {
-                perfmon_threadData[thread_id].counters[i].counterData =
-                    msr_read(cpu_id, westmereEX_counter_map[i].counterRegister);
-
-                VERBOSEPRINTREG(cpu_id, westmereEX_counter_map[i].counterRegister,
-                        LLU_CAST perfmon_threadData[thread_id].counters[i].counterData, READ_CORE);
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, westmereEX_counter_map[index].counterRegister, &counter_result));
+                eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                VERBOSEPRINTREG(cpu_id, westmereEX_counter_map[index].counterRegister, LLU_CAST counter_result, READ_CORE);
             }
         }
     }
 
 #if 0
-    flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
+    CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_STATUS, &flags));
     printf ("Status: 0x%llX \n", LLU_CAST flags);
     if((flags & 0x3) || (flags & (0x3ULL<<32)) ) 
     {
         printf ("Overflow occured \n");
     }
 #endif
+    return 0;
 }
 
-void perfmon_readCountersThread_westmereEX(int thread_id)
+int perfmon_readCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    int cpu_id = perfmon_threadData[thread_id].processorId;
+    int cpu_id = groupSet->threads[thread_id].processorId;
+    uint64_t counter_result = 0x0ULL;
 
     if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
 
-    for ( int i=0; i<NUM_COUNTERS_WESTMEREEX; i++ ) 
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            if (westmereEX_counter_map[i].type > UNCORE)
+            PerfmonCounterIndex index = eventSet->events[i].index;
+            if (westmereEX_counter_map[index].type > UNCORE)
             {
                 if(haveLock)
                 {
-                    perfmon_threadData[thread_id].counters[i].counterData =
-                        msr_read(cpu_id, westmereEX_counter_map[i].counterRegister);
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, westmereEX_counter_map[index].counterRegister, &counter_result));
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                 }
             }
             else
             {
-                perfmon_threadData[thread_id].counters[i].counterData =
-                    msr_read(cpu_id, westmereEX_counter_map[i].counterRegister);
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, westmereEX_counter_map[index].counterRegister, &counter_result));
+                eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
             }
         }
     }
+    return 0;
 }
 
