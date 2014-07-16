@@ -45,8 +45,8 @@ static PerfmonCounterMap haswell_counter_map[NUM_COUNTERS_HASWELL] = {
     {"TMP0", PMC7, THERMAL, 0, 0, 0, 0},
     /* RAPL counters */
     {"PWR0", PMC8, POWER, 0, MSR_PKG_ENERGY_STATUS, 0, 0},
-    {"PWR1", PMC9, POWER, 0, MSR_PKG_ENERGY_STATUS, 0, 0},
-    {"PWR2", PMC10, POWER, 0, MSR_PKG_ENERGY_STATUS,  0, 0},
-    {"PWR3", PMC11, POWER, 0, MSR_PKG_ENERGY_STATUS,  0, 0},
+    {"PWR1", PMC9, POWER, 0, MSR_PP0_ENERGY_STATUS, 0, 0},
+    {"PWR2", PMC10, POWER, 0, MSR_PP1_ENERGY_STATUS,  0, 0},
+    {"PWR3", PMC11, POWER, 0, MSR_DRAM_ENERGY_STATUS,  0, 0},
 };
 
