@@ -38,7 +38,9 @@ typedef void (*FuncPrototype)();
 
 typedef enum {
     SINGLE = 0,
-    DOUBLE} DataType;
+    DOUBLE,
+    SINGLE_RAND,
+    DOUBLE_RAND} DataType;
 
 typedef enum {
     STREAM_1 = 1,
@@ -87,7 +89,7 @@ typedef struct {
     DataType type ;
     int stride;
     FuncPrototype kernel;
-    int  flops;
+    double  flops;
     int  bytes;
 } TestCase;
 
