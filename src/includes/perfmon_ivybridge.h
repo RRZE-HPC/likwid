@@ -33,6 +33,7 @@
 #include <perfmon_ivybridge_counters.h>
 #include <error.h>
 #include <affinity.h>
+#include <limits.h>
 
 static int perfmon_numCountersIvybridge = NUM_COUNTERS_IVYBRIDGE;
 static int perfmon_numGroupsIvybridge = NUM_GROUPS_IVYBRIDGE;
@@ -600,9 +601,19 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, ivybridge_counter_map[index].counterRegister,
                             (uint32_t*)&counter_result));
+                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        {
+                            fprintf(stderr,"Overflow in power status register 0x%x, assuming single overflow\n",
+                                                ivybridge_counter_map[index].counterRegister);
+                            counter_result += (UINT_MAX - perfmon_threadData[thread_id].counters[i].counterData);
+                            eventSet->events[i].threadCounter[thread_id].counterData = power_info.energyUnit * counter_result;
+                        }
+                        else
+                        {
                         eventSet->events[i].threadCounter[thread_id].counterData =
                             power_info.energyUnit *
                             ( counter_result - eventSet->events[i].threadCounter[thread_id].counterData);
+                        }
                     }
                     break;
 

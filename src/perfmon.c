@@ -37,6 +37,7 @@
 #include <perfmon_k10.h>
 #include <perfmon_interlagos.h>
 #include <perfmon_kabini.h>
+#include <perfmon_silvermont.h>
 
 
 static PerfmonEvent* eventHash;
@@ -139,7 +140,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
 {
     int i;
     int ret;
-    char func_name[100];
+    int initialize_power = 0;
+    int initialize_thermal = 0;
 
     if (nrThreads <= 0)
     {
@@ -207,11 +209,9 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         return ret;
     }
     
-    /*ret =*/power_init(0); /* FIXME Static coreId is dangerous */
-    /*ret =*/thermal_init(0);
+
     timer_init();
-    
-    
+
      switch ( cpuid_info.family )
     {
         case P6_FAMILY:
@@ -258,6 +258,27 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                     perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_core2;
                     perfmon_readCountersThread = perfmon_readCountersThread_core2;
+                    break;
+
+                case ATOM_SILVERMONT:
+                    initialize_power = 1;
+                    initialize_thermal = 1;
+
+                    eventHash = silvermont_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsSilvermont;
+
+                    group_map = silvermont_group_map;
+                    group_help = silvermont_group_help;
+                    perfmon_numGroups = perfmon_numGroupsSilvermont;
+
+                    counter_map = silvermont_counter_map;
+                    perfmon_numCounters = perfmon_numCountersSilvermont;
+
+                    initThreadArch = perfmon_init_silvermont;
+                    printDerivedMetrics = perfmon_printDerivedMetricsSilvermont;
+                    perfmon_startCountersThread = perfmon_startCountersThread_silvermont;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_silvermont;
+                    perfmon_setupCounterThread = perfmon_setupCounterThread_silvermont;
                     break;
 
 
@@ -327,8 +348,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case NEHALEM_BLOOMFIELD:
 
                 case NEHALEM_LYNNFIELD:
-
-                    thermal_init(0);
+                    initialize_thermal = 1;
 
                     eventHash = nehalem_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsNehalem;
@@ -351,7 +371,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
 
                 case NEHALEM_WESTMERE:
 
-                    thermal_init(0);
+                    initialize_thermal = 1;
 
                     eventHash = westmere_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsWestmere;
@@ -374,8 +394,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
 
                 case IVYBRIDGE_EP:
 
-                    power_init(0);
-                    thermal_init(0);
+                    initialize_power = 1;
+                    initialize_thermal = 1;
                     pci_init(socket_fd); 
 
                     eventHash = ivybridge_arch_events;
@@ -403,8 +423,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
 
                 case HASWELL_M2:
 
-                    power_init(0);
-                    thermal_init(0);
+                    initialize_power = 1;
+                    initialize_thermal = 1;
 
                     eventHash = haswell_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsHaswell;
@@ -424,8 +444,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
 
                 case SANDYBRIDGE_EP:
 
-                    power_init(0);
-                    thermal_init(0);
+                    initialize_power = 1;
+                    initialize_thermal = 1;
                     pci_init(socket_fd);
 
                     eventHash = sandybridge_arch_events;
@@ -554,10 +574,19 @@ perfmon_init(int nrThreads, int threadsToCpu[])
             ERROR_PLAIN_PRINT(Unsupported Processor);
             break;
     }
-    
+
     /* Store thread information and reset counters for processor*/
+    /* If the arch supports it, initialize power and thermal measurements */
     for(i=0;i<nrThreads;i++)
     {
+        if (initialize_power == 1)
+        {
+            power_init(threadsToCpu[i]);
+        }
+        if (initialize_thermal == 1)
+        {
+            thermal_init(threadsToCpu[i]);
+        }
         groupSet->threads[i].thread_id = i;
         groupSet->threads[i].processorId = threadsToCpu[i];
         perfmon_initThread(i, threadsToCpu[i]);

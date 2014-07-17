@@ -34,6 +34,8 @@
 #include <perfmon_haswell_counters.h>
 #include <error.h>
 #include <affinity.h>
+#include <limits.h>
+
 
 static int perfmon_numCountersHaswell = NUM_COUNTERS_HASWELL;
 static int perfmon_numGroupsHaswell = NUM_GROUPS_HASWELL;
@@ -218,7 +220,6 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
     int ret;
     int haveLock = 0;
     uint64_t flags;
-    uint64_t tmp;
     uint32_t uflags = 0x10100UL; /* Set freeze bit */
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
@@ -242,24 +243,34 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
 
                 case FIXED:
                     CHECK_MSR_READ_ERROR(msr_read(cpu_id, haswell_counter_map[index].counterRegister,
-                                    (uint64_t*)&tmp));
-                    eventSet->events[i].threadCounter[thread_id].counterData = tmp;
+                                    (uint64_t*)&counter_result));
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     
                     break;
 
                 case POWER:
                     if (haveLock == 1)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, haswell_counter_map[index].counterRegister, (uint32_t*)&tmp));
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, haswell_counter_map[index].counterRegister, (uint32_t*)&counter_result));
+                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        {
+                            fprintf(stderr,"Overflow in power status register 0x%x, assuming single overflow\n",
+                                            haswell_counter_map[index].counterRegister);
+                            counter_result += (UINT_MAX - perfmon_threadData[thread_id].counters[i].counterData);
+                            eventSet->events[i].threadCounter[thread_id].counterData = power_info.energyUnit * counter_result;
+                        }
+                        else
+                        {
                         eventSet->events[i].threadCounter[thread_id].counterData =
                             power_info.energyUnit *
-                            ( tmp - eventSet->events[i].threadCounter[thread_id].counterData);
+                            ( counter_result - eventSet->events[i].threadCounter[thread_id].counterData);
+                        }
                     }
                     break;
 
                 case THERMAL:
-                        CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&tmp));
-                        eventSet->events[i].threadCounter[thread_id].counterData = tmp;
+                        CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
+                        eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 default:

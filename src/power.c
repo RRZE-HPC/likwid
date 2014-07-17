@@ -63,7 +63,8 @@ power_init(int cpuId)
             (cpuid_info.model == SANDYBRIDGE) ||
             (cpuid_info.model == HASWELL) ||
             (cpuid_info.model == IVYBRIDGE_EP) ||
-            (cpuid_info.model == IVYBRIDGE))
+            (cpuid_info.model == IVYBRIDGE) ||
+            (cpuid_info.model == ATOM_SILVERMONT))
     {
         hasRAPL = 1;
     }
