@@ -38,6 +38,7 @@ typedef struct {
     uint16_t highT;
     uint32_t resolution;
     uint32_t activationT;
+    uint32_t offset;
 } ThermalInfo;
 
 

@@ -83,6 +83,7 @@
 #define IVYBRIDGE            0x3AU
 #define IVYBRIDGE_EP         0x3EU
 #define HASWELL              0x3CU
+#define ATOM_SILVERMONT      0x4DU
 
 #define PCI_ROOT_PATH    "/proc/bus/pci/"
 #define MAX_PATH_LENGTH   60
@@ -150,6 +151,31 @@ static int allowed_intel(uint32_t reg)
             (reg == 0x1A2)  ||
             (reg == 0x1AD)  ||
             (reg == 0x1A6))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+static int allowed_silvermont(uint32_t reg)
+{
+    if ( ((reg & 0x0F8U) == 0x0C0U) ||
+            ((reg & 0xFF0U) == 0x180U) ||
+            ((reg & 0xF00U) == 0x300U) ||
+            ((reg & 0xF00U) == 0x600U) ||
+            ((reg & 0xF00U) == 0xC00U) ||
+            ((reg & 0xF00U) == 0xD00U) ||
+            (reg == 0x1A0)  ||
+            (reg == 0x0CE)  ||
+            (reg == 0x1AD)  ||
+            (reg == 0x19C)  ||
+            (reg == 0x1A2)  ||
+            (reg == 0x1A6) ||
+            (reg == 0x1A6) ||
+            (reg == 0x1A7))
     {
         return 1;
     }
@@ -496,6 +522,10 @@ int main(void)
                 else if (model == HASWELL)
                 {
                     allowed = allowed_sandybridge;
+                }
+                else if (model == ATOM_SILVERMONT)
+                {
+                    allowed = allowed_silvermont;
                 }
                 break;
             case K8_FAMILY:

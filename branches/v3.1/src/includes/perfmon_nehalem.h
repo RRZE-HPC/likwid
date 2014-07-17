@@ -105,7 +105,7 @@ void perfmon_init_nehalem(PerfmonThread *thread)
         msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
         msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_OVF_CTRL, 0x0ULL);
         msr_write(cpu_id, MSR_UNCORE_ADDR_OPCODE_MATCH, 0x0ULL);
-        msr_write(cpu_id, MSR_OFFCORE_RSP0, 0x0ULL);
+        msr_write(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL);
 
         /* Preinit of PERFEVSEL registers */
         clearBit(flags,16); /* set enable flag */
@@ -214,7 +214,7 @@ void perfmon_startCountersThread_nehalem(int thread_id)
         uflags = 0x100000000ULL;
     }
 
-    for ( int i=0; i<NUM_PMC; i++ ) 
+    for ( int i=0; i<NUM_PMC; i++ )
     {
         if (perfmon_threadData[thread_id].counters[i].init == TRUE)
         {
@@ -289,7 +289,7 @@ void perfmon_stopCountersThread_nehalem(int thread_id)
     flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
     printf ("Status: 0x%llX \n", LLU_CAST flags);
 
-    if((flags & 0x3) || (flags & (0x3ULL<<32)) ) 
+    if((flags & 0x3) || (flags & (0x3ULL<<32)) )
     {
         printf ("Overflow occured \n");
     }

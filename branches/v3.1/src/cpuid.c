@@ -78,6 +78,7 @@ static char* core_2b_str = "Intel Core 2 45nm processor";
 static char* atom_45_str = "Intel Atom 45nm processor";
 static char* atom_32_str = "Intel Atom 32nm processor";
 static char* atom_22_str = "Intel Atom 22nm processor";
+static char* atom_silvermont_str = "Intel Atom (Silvermont) 22nm processor";
 static char* nehalem_bloom_str = "Intel Core Bloomfield processor";
 static char* nehalem_lynn_str = "Intel Core Lynnfield processor";
 static char* nehalem_west_str = "Intel Core Westmere processor";
@@ -416,6 +417,10 @@ int cpuid_init (void)
 
                 case ATOM_22:
                     cpuid_info.name = atom_22_str;
+                    break;
+
+                case ATOM_SILVERMONT:
+                    cpuid_info.name = atom_silvermont_str;
                     break;
 
                 default:

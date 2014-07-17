@@ -145,6 +145,7 @@ static void initThread(int , int );
 #include <perfmon_k10.h>
 #include <perfmon_interlagos.h>
 #include <perfmon_kabini.h>
+#include <perfmon_silvermont.h>
 
 /* #####  EXPORTED  FUNCTION POINTERS   ################################### */
 void (*perfmon_startCountersThread) (int thread_id);
@@ -973,8 +974,18 @@ perfmon_setupEventSet(bstring eventString, BitMask* counterMask)
         /* append fixed counters for Intel processors */
         if ( cpuid_info.family == P6_FAMILY )
         {
-            bcatcstr(eventString,
-                    ",INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,CPU_CLK_UNHALTED_REF:FIXC2");
+            if (cpuid_info.perf_num_fixed_ctr > 0)
+            {
+                bcatcstr(eventString,",INSTR_RETIRED_ANY:FIXC0");
+            }
+            if (cpuid_info.perf_num_fixed_ctr > 1)
+            {
+                bcatcstr(eventString,",CPU_CLK_UNHALTED_CORE:FIXC1");
+            }
+            if (cpuid_info.perf_num_fixed_ctr > 2)
+            {
+                bcatcstr(eventString,",CPU_CLK_UNHALTED_REF:FIXC2");
+            }
         }
         bstr_to_eventset(&eventSetConfig, eventString);
     }
@@ -1199,6 +1210,26 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
                     perfmon_startCountersThread = perfmon_startCountersThread_core2;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
                     perfmon_setupCounterThread = perfmon_setupCounterThread_core2;
+                    break;
+                    
+                case ATOM_SILVERMONT:
+                    power_init(0);
+                    thermal_init(0);
+                    eventHash = silvermont_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsSilvermont;
+
+                    group_map = silvermont_group_map;
+                    group_help = silvermont_group_help;
+                    perfmon_numGroups = perfmon_numGroupsSilvermont;
+
+                    counter_map = silvermont_counter_map;
+                    perfmon_numCounters = perfmon_numCountersSilvermont;
+
+                    initThreadArch = perfmon_init_silvermont;
+                    printDerivedMetrics = perfmon_printDerivedMetricsSilvermont;
+                    perfmon_startCountersThread = perfmon_startCountersThread_silvermont;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_silvermont;
+                    perfmon_setupCounterThread = perfmon_setupCounterThread_silvermont;
                     break;
 
 

@@ -44,7 +44,10 @@ static inline uint32_t thermal_read(int cpuId);
 static uint32_t
 thermal_read(int cpuId)
 {
-    return (thermal_info.activationT - extractBitField(msr_read(cpuId, IA32_THERM_STATUS),7,16));
+    uint32_t readout = extractBitField(msr_read(cpuId, IA32_THERM_STATUS),7,16);
+    return (readout == 0 ? 
+                thermal_info.activationT - thermal_info.offset : 
+                (thermal_info.activationT-thermal_info.offset) - readout );
 }
 
 #endif /*THERMAL_H*/
