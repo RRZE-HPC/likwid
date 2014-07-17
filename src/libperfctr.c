@@ -69,6 +69,7 @@
 #include <perfmon_sandybridge_counters.h>
 #include <perfmon_ivybridge_counters.h>
 #include <perfmon_westmereEX_counters.h>
+#include <perfmon_silvermont_counters.h>
 
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
@@ -202,6 +203,14 @@ void likwid_markerInit(void)
                     perfmon_counter_map = core2_counter_map;
                     perfmon_numCounters = NUM_COUNTERS_CORE2;
                     perfmon_numCountersCore = NUM_COUNTERS_CORE_CORE2;
+                    break;
+
+                case ATOM_SILVERMONT:
+
+                    power_init(0);
+                    perfmon_counter_map = silvermont_counter_map;
+                    perfmon_numCounters = NUM_COUNTERS_SILVERMONT;
+                    perfmon_numCountersCore = NUM_COUNTERS_CORE_SILVERMONT;
                     break;
 
                 case CORE_DUO:
