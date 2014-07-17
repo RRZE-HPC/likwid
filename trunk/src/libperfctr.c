@@ -69,6 +69,7 @@
 #include <perfmon_sandybridge_counters.h>
 #include <perfmon_ivybridge_counters.h>
 #include <perfmon_westmereEX_counters.h>
+#include <perfmon_silvermont_counters.h>
 
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
@@ -204,6 +205,12 @@ void likwid_markerInit(void)
                     perfmon_numCountersCore = NUM_COUNTERS_CORE_CORE2;
                     break;
 
+                case ATOM_SILVERMONT:
+                    perfmon_counter_map = silvermont_counter_map;
+                    perfmon_numCounters = NUM_COUNTERS_SILVERMONT;
+                    perfmon_numCountersCore = NUM_COUNTERS_CORE_SILVERMONT;
+                    break;
+
                 case CORE_DUO:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
                     break;
@@ -250,7 +257,7 @@ void likwid_markerInit(void)
                     {
                         int socket_fd = thread_socketFD[cpuId];
                         hasPCICounters = 1;
-                        power_init(0); /* FIXME Static coreId is dangerous */
+                        power_init(cpuId); /* FIXME Static coreId is dangerous */
                         pci_init(socket_fd);
                         perfmon_counter_map = ivybridge_counter_map;
                         perfmon_numCounters = NUM_COUNTERS_IVYBRIDGE;
@@ -267,7 +274,7 @@ void likwid_markerInit(void)
 
                 case HASWELL_M2:
 
-                    power_init(0); /* FIXME Static coreId is dangerous */
+                    power_init(cpuId); /* FIXME Static coreId is dangerous */
 
                     perfmon_counter_map = haswell_counter_map;
                     perfmon_numCounters = NUM_COUNTERS_HASWELL;
@@ -281,7 +288,7 @@ void likwid_markerInit(void)
                     {
                         int socket_fd = thread_socketFD[cpuId];
                         hasPCICounters = 1;
-                        power_init(0); /* FIXME Static coreId is dangerous */
+                        power_init(cpuId); /* FIXME Static coreId is dangerous */
                         pci_init(socket_fd);
                         perfmon_counter_map = sandybridge_counter_map;
                         perfmon_numCounters = NUM_COUNTERS_SANDYBRIDGE;

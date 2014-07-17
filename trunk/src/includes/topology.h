@@ -35,6 +35,7 @@ struct topology_functions {
 #define ATOM_45              0x26U
 #define ATOM_32              0x36U
 #define ATOM_22              0x27U
+#define ATOM_SILVERMONT      0x4DU
 #define NEHALEM              0x1AU
 #define NEHALEM_BLOOMFIELD   0x1AU
 #define NEHALEM_LYNNFIELD    0x1EU

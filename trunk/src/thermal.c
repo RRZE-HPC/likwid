@@ -74,6 +74,7 @@ void thermal_init(int cpuId)
             return;
         }
         thermal_info.activationT =  extractBitField(flags,8,16);
+        thermal_info.offset = extractBitField(flags,6,24);
     }
 }
 
