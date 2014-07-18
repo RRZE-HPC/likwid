@@ -199,18 +199,19 @@ int perfmon_init_ivybridge(int cpu_id)
 }
 
 #define BOX_GATE_SNB(channel,label) \
-    if (perfmon_verbose) { \
+    if(haveLock) { \
+        CHECK_PCI_READ_ERROR(pci_read(cpu_id, channel, reg, &uflags));  \
+        uflags &= ~(0xFFFFU);  \
+        uflags |= (event->umask<<8) + event->eventId;  \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, channel,  reg, uflags));  \
+    }
+    /*if (perfmon_verbose) { \
         printf("[%d] perfmon_setup_counter (label): Write Register 0x%llX , Flags: 0x%llX \n", \
                 cpu_id, \
                 LLU_CAST reg, \
                 LLU_CAST flags); \
-    } \
-if(haveLock) { \
-    CHECK_PCI_READ_ERROR(pci_read(cpu_id, channel, reg, &uflags));  \
-    uflags &= ~(0xFFFFU);  \
-    uflags |= (event->umask<<8) + event->eventId;  \
-    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, channel,  reg, uflags));  \
-}
+    } \*/
+    
 
 
 int perfmon_setupCounterThread_ivybridge(

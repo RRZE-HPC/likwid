@@ -38,5 +38,17 @@ typedef struct {
     int*  processorList;
 } AffinityDomain;
 
+typedef struct {
+    uint32_t numberOfAffinityDomains;
+    uint32_t numberOfSocketDomains;
+    uint32_t numberOfNumaDomains;
+    uint32_t numberOfProcessorsPerSocket;
+    uint32_t numberOfCacheDomains;
+    uint32_t numberOfCoresPerCache;
+    uint32_t numberOfProcessorsPerCache;
+    AffinityDomain* domains;
+} AffinityDomains;
+
+typedef AffinityDomains* AffinityDomains_t;
 
 #endif /*AFFINITY_TYPES_H*/

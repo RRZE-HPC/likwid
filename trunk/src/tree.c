@@ -78,6 +78,37 @@ tree_print(TreeNode* nodePtr)
 }
 
 void
+tree_destroy(TreeNode* nodePtr)
+{
+    int level = 0;
+
+    if (nodePtr != NULL)
+    {
+
+        TreeNode* digger;
+        TreeNode* walker;
+        TreeNode* tmp;
+
+        digger = nodePtr->llink;
+
+        while (digger != NULL)
+        {
+            walker = digger->rlink;
+
+            while (walker != NULL)
+            {
+                tmp = walker;
+                walker = walker->rlink;
+                free(tmp);
+            }
+            tmp = digger;
+            digger = digger->llink;
+            free(tmp);
+        }
+    }
+}
+
+void
 tree_insertNode(TreeNode* nodePtr, int id)
 {
     TreeNode* currentNode;

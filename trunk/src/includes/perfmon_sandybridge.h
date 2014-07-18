@@ -476,7 +476,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                         {
                             fprintf(stderr,"Overflow in power status register 0x%x, assuming single overflow\n",
                                                 sandybridge_counter_map[index].counterRegister);
-                            counter_result += (UINT_MAX - perfmon_threadData[thread_id].counters[i].counterData);
+                            counter_result += (UINT_MAX - eventSet->events[i].threadCounter[thread_id].counterData);
                             eventSet->events[i].threadCounter[thread_id].counterData = power_info.energyUnit * counter_result;
                         }
                         else

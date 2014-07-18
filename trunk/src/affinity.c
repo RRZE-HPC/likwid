@@ -63,6 +63,8 @@ int affinity_core2node_lookup[MAX_NUM_THREADS];
 static int  affinity_numberOfDomains = 0;
 static AffinityDomain*  domains;
 
+AffinityDomains affinityDomains;
+
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static int
@@ -296,6 +298,15 @@ affinity_init()
     }
 
     affinity_numberOfDomains = numberOfDomains;
+    
+    affinityDomains.numberOfAffinityDomains = numberOfDomains;
+    affinityDomains.numberOfSocketDomains = numberOfSocketDomains;
+    affinityDomains.numberOfNumaDomains = numberOfNumaDomains;
+    affinityDomains.numberOfProcessorsPerSocket = numberOfProcessorsPerSocket;
+    affinityDomains.numberOfCacheDomains = numberOfCacheDomains;
+    affinityDomains.numberOfCoresPerCache = numberOfCoresPerCache;
+    affinityDomains.numberOfProcessorsPerCache = numberOfProcessorsPerCache;
+    affinityDomains.domains = domains;
 }
 
 
@@ -397,5 +408,11 @@ affinity_printDomains()
         }
         printf("\n");
     }
+}
+
+AffinityDomains_t
+get_affinityDomains(void)
+{
+    return &affinityDomains;
 }
 

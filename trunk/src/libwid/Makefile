@@ -8,11 +8,12 @@ include $(MAKE_DIR)/include_$(COMPILER).mk
 
 INCLUDES  = -I./includes -I../../$(COMPILER) 
 ifeq ($(USE_HWLOC),true)
-INCLUDES += -I../../ext/hwloc/include
+INCLUDES += -I../../ext/hwloc/include -I../../ext/lua/includes
 LIBHWLOC = ../../ext/hwloc/libhwloc.so
+LIBLUA = ../../ext/lua/liblua.so
 endif
 DEFINES   =
-LIBS      = -ldl
+LIBS      =
 LFLAGS    = -fPIC -Wl,-rpath=$(PREFIX)/ext/hwloc
 CFLAGS	 += -fPIC 
 Q         ?= @
@@ -24,7 +25,7 @@ include $(MAKE_DIR)/config_checks.mk
 include $(MAKE_DIR)/config_defines.mk
 
 STATIC_LIB = libwid.a
-DYNAMIC_LIB = libwid.so
+SHARED_LIB = libwid.so
 LUA_INTERFACE = luawid.so
 
 VPATH     = $(SRC_DIRS)
@@ -35,22 +36,22 @@ OBJ_LUA = ../../ext/lua/$(COMPILER)/*.o
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(BUILD_DIR) $(OBJ) $(DYNAMIC_LIB) $(STATIC_LIB)
+all: $(BUILD_DIR) $(OBJ) $(SHARED_LIB) $(STATIC_LIB)
 
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
 
-$(DYNAMIC_LIB): $(OBJ)
-	${Q}$(CC) $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_LIB) $(OBJ) $(OBJ_HWLOC) $(OBJ_LUA) 
+$(SHARED_LIB): $(OBJ) $(OBJ_HWLOC)
+	${Q}$(CC) $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(SHARED_LIB) $(OBJ) $(OBJ_HWLOC)
 
 $(STATIC_LIB): $(OBJ)
 	${Q}$(AR) -cq $(STATIC_LIB) $(OBJ) $(OBJ_HWLOC)
 
 $(LUA_INTERFACE): $(OBJ) $(OBJ_HWLOC) $(OBJ_LUA)
-	$(CC) -Wall -shared -fPIC -pthread $(INCLUDES) -I../../ext/lua/includes lua-wrapper.c $(OBJ) $(OBJ_HWLOC) $(OBJ_LUA) -o $(LUA_INTERFACE) -lpci
+	$(CC) -Wall -shared -fPIC -pthread $(INCLUDES) -I../../ext/lua/includes luawid.c $(SHARED_LIB) -o $(LUA_INTERFACE) -lpci
 
 test: test_libwid.c
-	$(CC) $(CFLAGS) -g -pthread $(INCLUDES) test_libwid.c -o test_libwid $(STATIC_LIB) $(LIBHWLOC) -lm -ldl 
+	$(CC) $(CFLAGS) -g -pthread $(INCLUDES) test_libwid.c -o test_libwid $(STATIC_LIB) $(LIBHWLOC) -lm
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
 	${Q}$(CC) -g -c  $(CFLAGS) $(CPPFLAGS) $< -o $@

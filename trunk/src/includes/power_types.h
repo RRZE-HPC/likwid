@@ -35,9 +35,9 @@
 
 typedef enum {
     PKG = 0,
-    PP0,
-    PP1,
-    DRAM
+    PP0 = 1,
+    PP1 = 2,
+    DRAM = 3
 } PowerType;
 
 typedef struct {
@@ -63,5 +63,6 @@ typedef struct {
     uint32_t after;
 } PowerData;
 
+typedef PowerInfo* PowerInfo_t;
 
 #endif /*POWER_TYPES_H*/

@@ -9,7 +9,7 @@ include $(MAKE_DIR)/include_$(COMPILER).mk
 CFLAGS    = -O2 -Wall -fPIC
 INCLUDES  = -I./include
 DEFINES   =
-LIBS      = -lm -Wl,-E
+LIBS      = -lm -lpci -Wl,-E
 LFLAGS    =
 Q         ?= @
 
@@ -20,17 +20,21 @@ VPATH     = $(SRC_DIRS)
 FILES     = $(notdir $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c)))
 OBJ       = $(patsubst %.c, $(BUILD_DIR)/%.o, $(FILES))
 
-LIBHWLOC = libhwloc.a
+STATIC_LIBHWLOC = libhwloc.a
+SHARED_LIBHWLOC = libhwloc.so
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(BUILD_DIR) $(OBJ) $(LIBHWLOC)
+all: $(BUILD_DIR) $(OBJ) $(STATIC_LIBHWLOC) $(SHARED_LIBHWLOC)
 
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
 
-$(LIBHWLOC):
-	$(Q)${AR} -cq $(LIBHWLOC) $(OBJ)
+$(STATIC_LIBHWLOC):
+	$(Q)${AR} -cq $(STATIC_LIBHWLOC) $(OBJ)
+
+$(SHARED_LIBHWLOC):
+	${Q}$(CC) $(LFLAGS) -Wall -shared -fPIC -o $(SHARED_LIBHWLOC) $(OBJ) $(LIBS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c

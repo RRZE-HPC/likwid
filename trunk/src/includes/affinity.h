@@ -34,6 +34,7 @@
 #include <types.h>
 
 int socket_lock[MAX_NUM_NODES];
+extern AffinityDomains affinityDomains;
 
 extern int affinity_core2node_lookup[MAX_NUM_THREADS];
 extern void affinity_init();
@@ -44,6 +45,7 @@ extern void  affinity_pinProcess(int processorId);
 extern void  affinity_pinThread(int processorId);
 extern const AffinityDomain* affinity_getDomain(bstring domain);
 extern void affinity_printDomains();
+extern AffinityDomains_t get_affinityDomains(void);
 
 #endif /*AFFINITY_H*/
 

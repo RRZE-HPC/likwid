@@ -81,11 +81,11 @@
 #endif
 
 #define VERBOSEPRINTREG(cpuid,reg,flags,msg) \
-    if (perfmon_verbose) {  \
         printf("DEBUG - [%s:%d] "  str(msg) " [%d] Register 0x%llX , Flags: 0x%llX \n",  \
                 __FILE__, __LINE__,  (cpuid), LLU_CAST (reg), LLU_CAST (flags)); \
         fflush(stdout);  \
-    } 
+    //if (perfmon_verbose) {  \
+    //}
 
 
 #define DEBUG_PRINT(lev, fmt, ...) \

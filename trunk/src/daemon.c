@@ -68,7 +68,7 @@ daemon_start(struct timespec interval)
         {
             timer_stop(&timeData);
             perfmon_readCounters();
-            perfmon_logCounterResults( timer_print(&timeData) );
+            //perfmon_logCounterResults( timer_print(&timeData) );
             timer_start(&timeData);
         }
         nanosleep( &interval, NULL);
@@ -87,6 +87,7 @@ daemon_stop(int sig)
 void
 daemon_interrupt(int sig)
 {
+    int groupId;
     if (daemon_run)
     {
         perfmon_stopCounters();
@@ -95,7 +96,8 @@ daemon_interrupt(int sig)
     }
     else
     {
-        perfmon_setupEventSet(eventString, NULL);
+        groupId = perfmon_addEventSet(bdata(eventString));
+        perfmon_setupCounters(groupId);
         perfmon_startCounters();
         daemon_run = 1;
         printf("DAEMON:  START\n");

@@ -73,7 +73,6 @@ typedef struct {
     uint64_t clock;
     int      turbo;
     char*  name;
-    char*  short_name;
     char*  features;
     int         isIntel;
     uint32_t featureFlags;

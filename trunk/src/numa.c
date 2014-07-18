@@ -93,13 +93,11 @@ const struct numa_functions numa_funcs = {
 #else
 #ifdef LIKWID_USE_HWLOC
     .numa_init = hwloc_numa_init,
-    .numa_setInterleaved = hwloc_numa_setInterleaved,
-    .numa_membind = hwloc_numa_membind
 #else
     .numa_init = proc_numa_init,
+#endif
     .numa_setInterleaved = proc_numa_setInterleaved,
     .numa_membind = proc_numa_membind
-#endif
 #endif
 };
 
@@ -122,5 +120,20 @@ void numa_membind(void* ptr, size_t size, int domainId)
     return funcs.numa_membind(ptr, size, domainId);
 }
 
-
-
+#ifndef HAS_MEMPOLICY
+void numa_finalize(void)
+{
+    return;
+}
+#else
+void numa_finalize(void)
+{
+    int i;
+    for(i=0;i<numa_info.numberOfNodes;i++)
+    {
+        free(numa_info.nodes[i].processors);
+        free(numa_info.nodes[i].distances);
+    }
+    free(numa_info.nodes);
+}
+#endif

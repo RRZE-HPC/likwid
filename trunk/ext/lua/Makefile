@@ -6,11 +6,11 @@ MAKE_DIR   = ../../make
 include ../../config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 
-CFLAGS    = -O2 -Wall
+CFLAGS    = -O2 -Wall -fPIC -rdynamic
 INCLUDES  = -I./includes
 DEFINES   = -DLUA_COMPAT_ALL -DLUA_USE_LINUX
 LIBS      = -lm -Wl,-E -ldl -lreadline
-LFLAGS    =
+LFLAGS    = -rdynamic
 Q         ?= @
 
 #CONFIGURE BUILD SYSTEM
@@ -22,11 +22,19 @@ OBJ       = $(patsubst %.c, $(BUILD_DIR)/%.o, $(FILES))
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
+STATIC_LIBLUA = liblua.a
+SHARED_LIBLUA = liblua.so
+
 all: $(BUILD_DIR) $(OBJ)
 
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
 
+$(STATIC_LIBLUA):
+	$(Q)${AR} -cq $(STATIC_LIBLUA) $(OBJ)
+
+$(SHARED_LIBLUA):
+	$(Q)$(CC) $(LFLAGS) -shared -fPIC -o $(SHARED_LIBLUA) $(OBJ)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c

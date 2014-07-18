@@ -36,6 +36,7 @@
 
 extern void tree_init(TreeNode** root, int id);
 extern void tree_print(TreeNode* nodePtr);
+extern void tree_destroy(TreeNode* nodePtr);
 extern void tree_insertNode(TreeNode* nodePtr, int id);
 extern int tree_nodeExists(TreeNode* nodePtr, int id);
 extern int tree_countChildren(TreeNode* nodePtr);

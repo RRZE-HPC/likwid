@@ -53,8 +53,8 @@ extern "C" {
 extern void likwid_markerInit(void);
 extern void likwid_markerThreadInit(void);
 extern void likwid_markerClose(void);
-extern void likwid_markerStartRegion(const char* regionTag);
-extern void likwid_markerStopRegion(const char* regionTag);
+extern int likwid_markerStartRegion(const char* regionTag);
+extern int likwid_markerStopRegion(const char* regionTag);
 
 /* utility routines */
 extern int  likwid_getProcessorId();

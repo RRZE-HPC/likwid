@@ -297,18 +297,17 @@ int topology_setName(void)
 }
 
 const struct topology_functions topology_funcs = {
-#ifndef USE_HWLOC
+#ifndef LIKWID_USE_HWLOC
     .init_cpuInfo = cpuid_init_cpuInfo,
     .init_cpuFeatures = cpuid_init_cpuFeatures,
     .init_nodeTopology = cpuid_init_nodeTopology,
     .init_cacheTopology = cpuid_init_cacheTopology,
 #else
     .init_cpuInfo = hwloc_init_cpuInfo,
-    .init_nodeTopology = hwloc_get_nodeTopology,
-    .init_cacheTopology = hwloc_get_cacheTopology,
-    .init_cpuFeatures = hwloc_get_cpuFeatures,
+    .init_nodeTopology = hwloc_init_nodeTopology,
+    .init_cacheTopology = hwloc_init_cacheTopology,
+    .init_cpuFeatures = hwloc_init_cpuFeatures,
 #endif
-    
     .init_fileTopology = initTopologyFile,
 };
 
@@ -370,7 +369,7 @@ int topology_init(void)
     
     funcs.init_cpuInfo();
     topology_setName();
-    funcs.init_cpuFeatures();    
+    funcs.init_cpuFeatures();
     if (access(filepath, R_OK))
     {
         cpu_set_t cpuSet;
@@ -392,7 +391,13 @@ int topology_init(void)
 }
 
 
-
+void topology_finalize(void)
+{
+    free(cpuid_info.features);
+    free(cpuid_topology.cacheLevels);
+    free(cpuid_topology.threadPool);
+    tree_destroy(cpuid_topology.topologyTree);
+}
 
 
 

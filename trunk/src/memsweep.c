@@ -37,6 +37,7 @@
 #include <error.h>
 #include <types.h>
 #include <memsweep.h>
+#include <topology.h>
 #include <numa.h>
 #include <affinity.h>
 

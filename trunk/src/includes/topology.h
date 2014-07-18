@@ -11,10 +11,12 @@
 #include <types.h>
 #include <tree.h>
 
+#define MAX_FEATURE_STRING_LENGTH 200
 
 extern CpuInfo cpuid_info;
 extern CpuTopology cpuid_topology;
 extern NumaTopology numa_info;
+
 
 
 struct topology_functions {
@@ -98,6 +100,7 @@ extern int topology_init(void);
 extern CpuTopology_t get_cpuTopology(void);
 extern CpuInfo_t get_cpuInfo(void);
 extern int numa_init(void);
+extern void topology_finalize(void);
 extern NumaTopology_t get_numaTopology(void);
 
 #endif
