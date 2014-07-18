@@ -1,0 +1,86 @@
+#!/usr/bin/env lua
+
+--[[
+ * =======================================================================================
+ *
+ *      Filename:  likwid-memsweeper.lua
+ *
+ *      Description:  An application to clean up NUMA memory domains.
+ *
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
+ *
+ *      Author:  Thomas Roehl (tr), thomas.roehl@gmail.com
+ *      Project:  likwid
+ *
+ *      Copyright (C) 2014 Thomas Roehl
+ *
+ *      This program is free software: you can redistribute it and/or modify it under
+ *      the terms of the GNU General Public License as published by the Free Software
+ *      Foundation, either version 3 of the License, or (at your option) any later
+ *      version.
+ *
+ *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License along with
+ *      this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * =======================================================================================]]
+
+VERSION = 4
+RELEASE = 0
+
+require("liblikwid")
+local likwid = require("likwid")
+
+local HLINE = string.rep("-",80)
+local SLINE = string.rep("*",80)
+
+local function version()
+    print(string.format("likwid-memsweeper --  Version %d.%d",VERSION,RELEASE))
+end
+
+local function examples()
+    print("Examples:")
+    print("To clean specific domain:")
+    print("likwid-memsweeper.lua -c 2")
+
+end
+
+local function usage()
+    version()
+    print("A tool clean up NUMA memory domains.\n")
+    print("Options:")
+    print("-h\t\t Help message")
+    print("-v\t\t Version information")
+    print("-c <list>\t Specify NUMA domain ID to clean up")
+    print("\n")
+    examples()
+end
+
+numainfo = likwid_getNumaInfo()
+nodes = {}
+for i,a in pairs(numainfo) do
+    if tonumber(i) ~= nil then
+        table.insert(nodes,i)
+    end
+end
+
+for opt,arg in likwid.getopt(arg, "c:hv") do
+    if (opt == "h") then
+        usage()
+        os.exit(0)
+    elseif (opt == "v") then
+        version()
+        os.exit(0)
+    elseif (opt == "c") then
+        num_nodes, nodes = likwid.nodestr_to_nodelist(arg)
+        likwid.tableprint(nodes)
+    end
+end
+
+for i,socket in pairs(nodes) do
+    likwid_memSweepDomain(socket)
+end
