@@ -106,7 +106,7 @@ int perfmon_init_nehalem(int cpu_id)
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_ADDR_OPCODE_MATCH, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_OFFCORE_RSP0, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL));
 
         /* Preinit of PERFEVSEL registers */
         clearBit(flags,16); /* set enable flag */

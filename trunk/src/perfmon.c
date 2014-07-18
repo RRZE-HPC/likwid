@@ -203,6 +203,15 @@ perfmon_init_maps(void)
                     perfmon_numCounters = perfmon_numCountersCore2;
                     break;
 
+                case ATOM_SILVERMONT:
+                    eventHash = silvermont_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsSilvermont;
+                    group_map = silvermont_group_map;
+                    group_help = silvermont_group_help;
+                    perfmon_numGroups = perfmon_numGroupsSilvermont;
+                    counter_map = silvermont_counter_map;
+                    perfmon_numCounters = perfmon_numCountersSilvermont;
+                    break;
 
                 case CORE_DUO:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
@@ -492,22 +501,11 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case ATOM_SILVERMONT:
                     initialize_power = 1;
                     initialize_thermal = 1;
-
-                    eventHash = silvermont_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsSilvermont;
-
-                    group_map = silvermont_group_map;
-                    group_help = silvermont_group_help;
-                    perfmon_numGroups = perfmon_numGroupsSilvermont;
-
-                    counter_map = silvermont_counter_map;
-                    perfmon_numCounters = perfmon_numCountersSilvermont;
-
                     initThreadArch = perfmon_init_silvermont;
-                    printDerivedMetrics = perfmon_printDerivedMetricsSilvermont;
                     perfmon_startCountersThread = perfmon_startCountersThread_silvermont;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_silvermont;
-                    perfmon_setupCounterThread = perfmon_setupCounterThread_silvermont;
+                    perfmon_setupCountersThread = perfmon_setupCountersThread_silvermont;
+                    perfmon_readCountersThread = perfmon_readCountersThread_silvermont;
                     break;
 
 

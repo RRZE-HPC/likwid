@@ -97,7 +97,7 @@ int perfmon_setupCounterThread_haswell(
     int haveLock = 0;
     int ret;
     uint64_t flags;
-    uint32_t uflags; 
+    uint32_t uflags;
     int cpu_id = groupSet->threads[thread_id].processorId;
     
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))

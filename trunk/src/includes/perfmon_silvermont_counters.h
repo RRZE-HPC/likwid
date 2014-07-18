@@ -27,6 +27,7 @@
  *
  * =======================================================================================
  */
+#include <registers.h>
 
 #define NUM_COUNTERS_CORE_SILVERMONT 6
 #define NUM_COUNTERS_UNCORE_SILVERMONT 0
