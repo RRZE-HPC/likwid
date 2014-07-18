@@ -41,9 +41,11 @@
 extern PowerInfo power_info;
 extern  const uint32_t power_regs[4];
 
-extern void power_init(int cpuId);
-static inline void power_start(PowerData* data, int cpuId, PowerType type);
-static inline void power_stop(PowerData* data, int cpuId, PowerType type);
+extern int power_init(int cpuId);
+extern PowerInfo_t get_powerInfo(void);
+
+static inline int power_start(PowerData* data, int cpuId, PowerType type);
+static inline int power_stop(PowerData* data, int cpuId, PowerType type);
 static inline int power_read(int cpuId, uint64_t reg, uint32_t *data);
 static inline int power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data);
 static inline double power_printEnergy(PowerData* data);
@@ -54,27 +56,21 @@ power_printEnergy(PowerData* data)
     return  (double) ((data->after - data->before) * power_info.energyUnit);
 }
 
-static void
+static int
 power_start(PowerData* data, int cpuId, PowerType type)
 {
     uint64_t result = 0;
-    if (msr_read(cpuId, power_regs[type], &result))
-    {
-        data->before = 0;
-        return;
-    }
+    data->before = 0;
+    CHECK_MSR_READ_ERROR(msr_read(cpuId, power_regs[type], &result))
     data->before = extractBitField(result,32,0);
 }
 
-static void
+static int
 power_stop(PowerData* data, int cpuId, PowerType type)
 {
     uint64_t result = 0;
-    if (msr_read(cpuId, power_regs[type], &result))
-    {
-        data->after = 0;
-        return;
-    }
+    data->after = 0;
+    CHECK_MSR_READ_ERROR(msr_read(cpuId, power_regs[type], &result))
     data->after = extractBitField(result,32,0);
 }
 
@@ -82,11 +78,8 @@ static int
 power_read(int cpuId, uint64_t reg, uint32_t *data)
 {
     uint64_t result = 0;
-    if (msr_read(cpuId, reg, &result))
-    {
-        *data = 0;
-        return -EIO;
-    }
+    *data = 0;
+    CHECK_MSR_READ_ERROR(msr_read(cpuId, reg, &result))
     *data = extractBitField(result,32,0);
     return 0;
 }
@@ -95,13 +88,12 @@ static int
 power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
 {
     uint64_t result = 0;
-    if (msr_tread(socket_fd, cpuId, reg, &result))
-    {
-        *data = 0;
-        return -EIO;
-    }
+    *data = 0;
+    CHECK_MSR_READ_ERROR(msr_tread(socket_fd, cpuId, reg, &result))
     *data = extractBitField(result,32,0);
     return 0;
 }
+
+
 
 #endif /*POWER_H*/

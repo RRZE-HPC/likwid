@@ -290,7 +290,8 @@ void cpuid_init_cpuFeatures(void)
     CPUID;
 
     cpuid_info.featureFlags = 0;
-    cpuid_info.features = (char*) malloc(200*sizeof(char));
+    cpuid_info.features = (char*) malloc(MAX_FEATURE_STRING_LENGTH*sizeof(char));
+    cpuid_info.features[0] = '\0';
     if (ecx & (1<<0))
     {
         strcat(cpuid_info.features, "SSE3 ");

@@ -48,7 +48,7 @@ static int perfmon_numCounters;
 static int perfmon_numArchEvents;
 static int perfmon_numGroups;
 
-static int socket_fd = -1;
+int socket_fd = -1;
 
 PerfmonGroupSet* groupSet = NULL;
 
@@ -133,6 +133,252 @@ checkCounter(bstring counterName, const char* limit)
     return value;
 }
 
+void
+perfmon_printCounters(FILE* OUTSTREAM)
+{
+    fprintf(OUTSTREAM,"This architecture has %d counters.\n", perfmon_numCounters);
+    fprintf(OUTSTREAM,"Counters names:  ");
+
+    for (int i=0; i<perfmon_numCounters; i++)
+    {
+        fprintf(OUTSTREAM,"%s",counter_map[i].key);
+        if (i != perfmon_numCounters-1)
+        {
+            fprintf(OUTSTREAM,"\t");
+        }
+    }
+    fprintf(OUTSTREAM,".\n");
+}
+
+void
+perfmon_printEvents(FILE* OUTSTREAM)
+{
+    int i;
+
+    fprintf(OUTSTREAM,"This architecture has %d events.\n", perfmon_numArchEvents);
+    fprintf(OUTSTREAM,"Event tags (tag, id, umask, counters):\n");
+
+    for (i=0; i<perfmon_numArchEvents; i++)
+    {
+        fprintf(OUTSTREAM,"%s, 0x%X, 0x%X, %s \n",
+                eventHash[i].name,
+                eventHash[i].eventId,
+                eventHash[i].umask,
+                eventHash[i].limit);
+    }
+}
+
+void
+perfmon_init_maps(void)
+{
+    switch ( cpuid_info.family )
+    {
+        case P6_FAMILY:
+
+            switch ( cpuid_info.model )
+            {
+                case PENTIUM_M_BANIAS:
+
+                case PENTIUM_M_DOTHAN:
+
+                    eventHash = pm_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEvents_pm;
+                    perfmon_numGroups = perfmon_numGroups_pm;
+                    counter_map = pm_counter_map;
+                    perfmon_numCounters = perfmon_numCounters_pm;
+                    break;
+
+                case ATOM_45:
+
+                case ATOM_32:
+
+                case ATOM_22:
+
+                case ATOM:
+
+                    eventHash = atom_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsAtom;
+                    perfmon_numGroups = perfmon_numGroupsAtom;
+                    counter_map = core2_counter_map;
+                    perfmon_numCounters = perfmon_numCountersCore2;
+                    break;
+
+
+                case CORE_DUO:
+                    ERROR_PLAIN_PRINT(Unsupported Processor);
+                    break;
+
+                case XEON_MP:
+
+                case CORE2_65:
+
+                case CORE2_45:
+
+                    eventHash = core2_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsCore2;
+                    perfmon_numGroups = perfmon_numGroupsCore2;
+                    counter_map = core2_counter_map;
+                    perfmon_numCounters = perfmon_numCountersCore2;
+                    break;
+
+                case NEHALEM_EX:
+
+                    eventHash = nehalemEX_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsNehalemEX;
+                    group_map = nehalemEX_group_map;
+                    group_help = nehalemEX_group_help;
+                    perfmon_numGroups = perfmon_numGroupsNehalemEX;
+                    counter_map = westmereEX_counter_map;
+                    perfmon_numCounters = perfmon_numCountersWestmereEX;
+
+                    break;
+
+                case WESTMERE_EX:
+
+                    eventHash = westmereEX_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsWestmereEX;
+                    group_map = westmereEX_group_map;
+                    group_help = westmereEX_group_help;
+                    perfmon_numGroups = perfmon_numGroupsWestmereEX;
+                    counter_map = westmereEX_counter_map;
+                    perfmon_numCounters = perfmon_numCountersWestmereEX;
+                    break;
+
+                case NEHALEM_BLOOMFIELD:
+
+                case NEHALEM_LYNNFIELD:
+
+                    thermal_init(0);
+
+                    eventHash = nehalem_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsNehalem;
+                    group_map = nehalem_group_map;
+                    group_help = nehalem_group_help;
+                    perfmon_numGroups = perfmon_numGroupsNehalem;
+                    counter_map = nehalem_counter_map;
+                    perfmon_numCounters = perfmon_numCountersNehalem;
+                    break;
+
+                case NEHALEM_WESTMERE_M:
+
+                case NEHALEM_WESTMERE:
+                    eventHash = westmere_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsWestmere;
+                    group_map = westmere_group_map;
+                    group_help = westmere_group_help;
+                    perfmon_numGroups = perfmon_numGroupsWestmere;
+                    counter_map = nehalem_counter_map;
+                    perfmon_numCounters = perfmon_numCountersNehalem;
+                    break;
+
+                case IVYBRIDGE:
+
+                case IVYBRIDGE_EP:
+                    eventHash = ivybridge_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsIvybridge;
+                    group_map = ivybridge_group_map;
+                    group_help = ivybridge_group_help;
+                    perfmon_numGroups = perfmon_numGroupsIvybridge;
+                    counter_map = ivybridge_counter_map;
+                    perfmon_numCounters = perfmon_numCountersIvybridge;
+                    break;
+
+                case HASWELL:
+
+                case HASWELL_EX:
+
+                case HASWELL_M1:
+
+                case HASWELL_M2:
+                    eventHash = haswell_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsHaswell;
+                    perfmon_numGroups = perfmon_numGroupsHaswell;
+                    counter_map = haswell_counter_map;
+                    perfmon_numCounters = perfmon_numCountersHaswell;
+                    break;
+
+                case SANDYBRIDGE:
+
+                case SANDYBRIDGE_EP:
+                    eventHash = sandybridge_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsSandybridge;
+                    perfmon_numGroups = perfmon_numGroupsSandybridge;
+                    counter_map = sandybridge_counter_map;
+                    perfmon_numCounters = perfmon_numCountersSandybridge;
+                    break;
+
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported Processor);
+                    break;
+            }
+            break;
+
+        case MIC_FAMILY:
+
+            switch ( cpuid_info.model )
+            {
+                case XEON_PHI:
+                    eventHash = phi_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsPhi;
+                    group_map = phi_group_map;
+                    group_help = phi_group_help;
+                    perfmon_numGroups = perfmon_numGroupsPhi;
+                    counter_map = phi_counter_map;
+                    perfmon_numCounters = perfmon_numCountersPhi;
+                    break;
+
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported Processor);
+                    break;
+            }
+            break;
+
+        case K8_FAMILY:
+            eventHash = k8_arch_events;
+            perfmon_numArchEvents = perfmon_numArchEventsK8;
+            group_map = k8_group_map;
+            group_help = k8_group_help;
+            perfmon_numGroups = perfmon_numGroupsK8;
+            counter_map = k10_counter_map;
+            perfmon_numCounters = perfmon_numCountersK10;
+            break;
+
+        case K10_FAMILY:
+            eventHash = k10_arch_events;
+            perfmon_numArchEvents = perfmon_numArchEventsK10;
+            group_map = k10_group_map;
+            group_help = k10_group_help;
+            perfmon_numGroups = perfmon_numGroupsK10;
+            counter_map = k10_counter_map;
+            perfmon_numCounters = perfmon_numCountersK10;
+            break;
+
+        case K15_FAMILY:
+            eventHash = interlagos_arch_events;
+            perfmon_numArchEvents = perfmon_numArchEventsInterlagos;
+            group_map = interlagos_group_map;
+            group_help = interlagos_group_help;
+            perfmon_numGroups = perfmon_numGroupsInterlagos;
+            counter_map = interlagos_counter_map;
+            perfmon_numCounters = perfmon_numCountersInterlagos;
+            break;
+
+        case K16_FAMILY:
+            eventHash = kabini_arch_events;
+            perfmon_numArchEvents = perfmon_numArchEventsKabini;
+            group_map = kabini_group_map;
+            group_help = kabini_group_help;
+            perfmon_numGroups = perfmon_numGroupsKabini;
+            counter_map = kabini_counter_map;
+            perfmon_numCounters = perfmon_numCountersKabini;
+           break;
+
+        default:
+            ERROR_PLAIN_PRINT(Unsupported Processor);
+            break;
+    }
+    return;
+}
 
 
 int
@@ -211,8 +457,9 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     
 
     timer_init();
+    perfmon_init_maps();
 
-     switch ( cpuid_info.family )
+    switch ( cpuid_info.family )
     {
         case P6_FAMILY:
 
@@ -221,15 +468,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case PENTIUM_M_BANIAS:
 
                 case PENTIUM_M_DOTHAN:
-
-                    eventHash = pm_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEvents_pm;
-
-                    perfmon_numGroups = perfmon_numGroups_pm;
-
-                    counter_map = pm_counter_map;
-                    perfmon_numCounters = perfmon_numCounters_pm;
-
                     initThreadArch = perfmon_init_pm;
                     perfmon_startCountersThread = perfmon_startCountersThread_pm;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_pm;
@@ -244,15 +482,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case ATOM_22:
 
                 case ATOM:
-
-                    eventHash = atom_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsAtom;
-
-                    perfmon_numGroups = perfmon_numGroupsAtom;
-
-                    counter_map = core2_counter_map;
-                    perfmon_numCounters = perfmon_numCountersCore2;
-
                     initThreadArch = perfmon_init_core2;
                     perfmon_startCountersThread = perfmon_startCountersThread_core2;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
@@ -291,15 +520,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case CORE2_65:
 
                 case CORE2_45:
-
-                    eventHash = core2_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsCore2;
-
-                    perfmon_numGroups = perfmon_numGroupsCore2;
-
-                    counter_map = core2_counter_map;
-                    perfmon_numCounters = perfmon_numCountersCore2;
-
                     initThreadArch = perfmon_init_core2;
                     perfmon_startCountersThread = perfmon_startCountersThread_core2;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
@@ -308,17 +528,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                     break;
 
                 case NEHALEM_EX:
-
-                    eventHash = nehalemEX_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsNehalemEX;
-
-                    group_map = nehalemEX_group_map;
-                    group_help = nehalemEX_group_help;
-                    perfmon_numGroups = perfmon_numGroupsNehalemEX;
-
-                    counter_map = westmereEX_counter_map;
-                    perfmon_numCounters = perfmon_numCountersWestmereEX;
-
                     initThreadArch = perfmon_init_westmereEX;
                     perfmon_startCountersThread = perfmon_startCountersThread_westmereEX;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_westmereEX;
@@ -327,17 +536,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                     break;
 
                 case WESTMERE_EX:
-
-                    eventHash = westmereEX_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsWestmereEX;
-
-                    group_map = westmereEX_group_map;
-                    group_help = westmereEX_group_help;
-                    perfmon_numGroups = perfmon_numGroupsWestmereEX;
-
-                    counter_map = westmereEX_counter_map;
-                    perfmon_numCounters = perfmon_numCountersWestmereEX;
-
                     initThreadArch = perfmon_init_westmereEX;
                     perfmon_startCountersThread = perfmon_startCountersThread_westmereEX;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_westmereEX;
@@ -348,18 +546,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case NEHALEM_BLOOMFIELD:
 
                 case NEHALEM_LYNNFIELD:
-                    initialize_thermal = 1;
-
-                    eventHash = nehalem_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsNehalem;
-
-                    group_map = nehalem_group_map;
-                    group_help = nehalem_group_help;
-                    perfmon_numGroups = perfmon_numGroupsNehalem;
-
-                    counter_map = nehalem_counter_map;
-                    perfmon_numCounters = perfmon_numCountersNehalem;
-
+                    thermal_init(0);
                     initThreadArch = perfmon_init_nehalem;
                     perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
@@ -370,19 +557,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case NEHALEM_WESTMERE_M:
 
                 case NEHALEM_WESTMERE:
-
                     initialize_thermal = 1;
-
-                    eventHash = westmere_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsWestmere;
-
-                    group_map = westmere_group_map;
-                    group_help = westmere_group_help;
-                    perfmon_numGroups = perfmon_numGroupsWestmere;
-
-                    counter_map = nehalem_counter_map;
-                    perfmon_numCounters = perfmon_numCountersNehalem;
-
                     initThreadArch = perfmon_init_nehalem;
                     perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
@@ -396,18 +571,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
 
                     initialize_power = 1;
                     initialize_thermal = 1;
-                    pci_init(socket_fd); 
-
-                    eventHash = ivybridge_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsIvybridge;
-
-                    group_map = ivybridge_group_map;
-                    group_help = ivybridge_group_help;
-                    perfmon_numGroups = perfmon_numGroupsIvybridge;
-
-                    counter_map = ivybridge_counter_map;
-                    perfmon_numCounters = perfmon_numCountersIvybridge;
-
+                    pci_init(socket_fd);
                     initThreadArch = perfmon_init_ivybridge;
                     perfmon_startCountersThread = perfmon_startCountersThread_ivybridge;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_ivybridge;
@@ -422,17 +586,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case HASWELL_M1:
 
                 case HASWELL_M2:
-
                     initialize_power = 1;
                     initialize_thermal = 1;
-
-                    eventHash = haswell_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsHaswell;
-                    perfmon_numGroups = perfmon_numGroupsHaswell;
-
-                    counter_map = haswell_counter_map;
-                    perfmon_numCounters = perfmon_numCountersHaswell;
-
                     initThreadArch = perfmon_init_haswell;
                     perfmon_startCountersThread = perfmon_startCountersThread_haswell;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_haswell;
@@ -443,19 +598,9 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case SANDYBRIDGE:
 
                 case SANDYBRIDGE_EP:
-
                     initialize_power = 1;
                     initialize_thermal = 1;
                     pci_init(socket_fd);
-
-                    eventHash = sandybridge_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsSandybridge;
-
-                    perfmon_numGroups = perfmon_numGroupsSandybridge;
-
-                    counter_map = sandybridge_counter_map;
-                    perfmon_numCounters = perfmon_numCountersSandybridge;
-
                     initThreadArch = perfmon_init_sandybridge;
                     perfmon_startCountersThread = perfmon_startCountersThread_sandybridge;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_sandybridge;
@@ -474,17 +619,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
             switch ( cpuid_info.model )
             {
                 case XEON_PHI:
-
-                    eventHash = phi_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsPhi;
-
-                    group_map = phi_group_map;
-                    group_help = phi_group_help;
-                    perfmon_numGroups = perfmon_numGroupsPhi;
-
-                    counter_map = phi_counter_map;
-                    perfmon_numCounters = perfmon_numCountersPhi;
-
                     initThreadArch = perfmon_init_phi;
                     perfmon_startCountersThread = perfmon_startCountersThread_phi;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_phi;
@@ -499,16 +633,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
             break;
 
         case K8_FAMILY:
-            eventHash = k8_arch_events;
-            perfmon_numArchEvents = perfmon_numArchEventsK8;
-
-            group_map = k8_group_map;
-            group_help = k8_group_help;
-            perfmon_numGroups = perfmon_numGroupsK8;
-
-            counter_map = k10_counter_map;
-            perfmon_numCounters = perfmon_numCountersK10;
-
             initThreadArch = perfmon_init_k10;
             perfmon_startCountersThread = perfmon_startCountersThread_k10;
             perfmon_stopCountersThread = perfmon_stopCountersThread_k10;
@@ -517,16 +641,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
             break;
 
         case K10_FAMILY:
-            eventHash = k10_arch_events;
-            perfmon_numArchEvents = perfmon_numArchEventsK10;
-
-            group_map = k10_group_map;
-            group_help = k10_group_help;
-            perfmon_numGroups = perfmon_numGroupsK10;
-
-            counter_map = k10_counter_map;
-            perfmon_numCounters = perfmon_numCountersK10;
-
             initThreadArch = perfmon_init_k10;
             perfmon_startCountersThread = perfmon_startCountersThread_k10;
             perfmon_stopCountersThread = perfmon_stopCountersThread_k10;
@@ -535,16 +649,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
             break;
 
         case K15_FAMILY:
-            eventHash = interlagos_arch_events;
-            perfmon_numArchEvents = perfmon_numArchEventsInterlagos;
-
-            group_map = interlagos_group_map;
-            group_help = interlagos_group_help;
-            perfmon_numGroups = perfmon_numGroupsInterlagos;
-
-            counter_map = interlagos_counter_map;
-            perfmon_numCounters = perfmon_numCountersInterlagos;
-
             initThreadArch = perfmon_init_interlagos;
             perfmon_startCountersThread = perfmon_startCountersThread_interlagos;
             perfmon_stopCountersThread = perfmon_stopCountersThread_interlagos;
@@ -553,16 +657,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
             break;
 
         case K16_FAMILY:
-            eventHash = kabini_arch_events;
-            perfmon_numArchEvents = perfmon_numArchEventsKabini;
-
-            group_map = kabini_group_map;
-            group_help = kabini_group_help;
-            perfmon_numGroups = perfmon_numGroupsKabini;
-
-            counter_map = kabini_counter_map;
-            perfmon_numCounters = perfmon_numCountersKabini;
-
             initThreadArch = perfmon_init_kabini;
             perfmon_startCountersThread = perfmon_startCountersThread_kabini;
             perfmon_stopCountersThread = perfmon_stopCountersThread_kabini;
@@ -658,69 +752,67 @@ perfmon_addEventSet(char* eventCString)
     
     if (eventSet->events == NULL)
     {
-        ERROR_PRINT(Cannot allocate event list for group %d, groupSet->numberOfActiveGroups);
+        fprintf(stderr,"Cannot allocate event list for group %d\n", groupSet->numberOfActiveGroups);
         bstrListDestroy(tokens);
         return -ENOMEM;
     }
     eventSet->numberOfEvents = 0;
-    
-       
-       for(i=0;i<tokens->qty;i++)
-       {
-           event = &(groupSet->groups[groupSet->numberOfActiveGroups].events[i]);
-           
-           subtokens = bsplit(tokens->entry[i],':');
 
-           if (subtokens->qty != 2)
-           {
-               ERROR_PRINT(Cannot parse event descriptor %s,tokens->entry[i]);
-               bstrListDestroy(subtokens);
-               continue;
-           }
-           else
-           {
-               if (!getIndex(subtokens->entry[1], &event->index))
-               {
-                   ERROR_PRINT(Counter register %s not supported,bdata(
-                            subtokens->entry[1]));
+    for(i=0;i<tokens->qty;i++)
+    {
+        event = &(groupSet->groups[groupSet->numberOfActiveGroups].events[i]);
+
+        subtokens = bsplit(tokens->entry[i],':');
+        if (subtokens->qty != 2)
+        {
+            fprintf(stderr,"Cannot parse event descriptor %s\n",tokens->entry[i]);
+            bstrListDestroy(subtokens);
+            continue;
+        }
+        else
+        {
+            if (!getIndex(subtokens->entry[1], &event->index))
+            {
+                ERROR_PRINT(Counter register %s not supported,bdata(
+                        subtokens->entry[1]));
                 bstrListDestroy(subtokens);
-                   continue;
-               }
-               
-               if (!getEvent(subtokens->entry[0], &event->event))
-               {
-                   ERROR_PRINT(Event %s not found for current architecture,
-                        bdata(subtokens->entry[0]));
+                continue;
+            }
+
+            if (!getEvent(subtokens->entry[0], &event->event))
+            {
+                ERROR_PRINT(Event %s not found for current architecture,
+                     bdata(subtokens->entry[0]));
                 bstrListDestroy(subtokens);
-                   continue;
-               }
-               
-               if (!checkCounter(subtokens->entry[1], event->event.limit))
-               {
-                   ERROR_PRINT(Register %s not allowed for event %s,
-                        bdata(subtokens->entry[1]),bdata(subtokens->entry[0]));
+                continue;
+            }
+           
+            if (!checkCounter(subtokens->entry[1], event->event.limit))
+            {
+                ERROR_PRINT(Register %s not allowed for event %s,
+                     bdata(subtokens->entry[1]),bdata(subtokens->entry[0]));
                 bstrListDestroy(subtokens);
-                   continue;
-               }
-               
-               eventSet->numberOfEvents++;
-               
-               event->threadCounter = (PerfmonCounter*) malloc(
-                   groupSet->numberOfThreads * sizeof(PerfmonCounter));
-               
-               if (event->threadCounter == NULL)
-               {
-                   ERROR_PRINT(Cannot allocate counter for all threads in group %d,groupSet->numberOfActiveGroups);
-                   bstrListDestroy(subtokens);
-                   continue;
-               }
-               for(j=0;j<groupSet->numberOfThreads;j++)
-               {
-                   event->threadCounter[j].counterData = 0;
-               }
-           }
-           bstrListDestroy(subtokens);
-       }
+                continue;
+            }
+
+            eventSet->numberOfEvents++;
+
+            event->threadCounter = (PerfmonCounter*) malloc(
+                groupSet->numberOfThreads * sizeof(PerfmonCounter));
+
+            if (event->threadCounter == NULL)
+            {
+                ERROR_PRINT(Cannot allocate counter for all threads in group %d,groupSet->numberOfActiveGroups);
+                bstrListDestroy(subtokens);
+                continue;
+            }
+            for(j=0;j<groupSet->numberOfThreads;j++)
+            {
+                event->threadCounter[j].counterData = 0;
+            }
+        }
+        bstrListDestroy(subtokens);
+    }
     bstrListDestroy(tokens);
     groupSet->numberOfActiveGroups++;
     return groupSet->numberOfActiveGroups-1;
@@ -850,4 +942,20 @@ int
 perfmon_getNumberOfEvents(int groupId)
 {
     return groupSet->groups[groupId].numberOfEvents;
+}
+
+double
+perfmon_getTimeOfGroup(int groupId)
+{
+    return groupSet->groups[groupId].rdtscTime * 1.E06;
+}
+
+int 
+perfmon_accessClientInit(void)
+{
+    if (accessClient_mode != DAEMON_AM_DIRECT)
+    {
+        accessClient_init(&socket_fd);
+        msr_init(socket_fd);
+    }
 }

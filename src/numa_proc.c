@@ -258,6 +258,7 @@ int proc_numa_init(void)
 
     for (i=0; i<numa_info.numberOfNodes; i++)
     {
+        numa_info.nodes[i].id = i;
         nodeMeminfo(i, &numa_info.nodes[i].totalMemory, &numa_info.nodes[i].freeMemory);
         numa_info.nodes[i].numberOfProcessors = nodeProcessorList(i,&numa_info.nodes[i].processors);
         numa_info.nodes[i].numberOfDistances = nodeDistanceList(i, numa_info.numberOfNodes, &numa_info.nodes[i].distances);

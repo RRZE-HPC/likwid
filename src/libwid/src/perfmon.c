@@ -256,6 +256,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                     perfmon_startCountersThread = perfmon_startCountersThread_core2;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
                     perfmon_setupCounterThread = perfmon_setupCounterThread_core2;
+                    perfmon_readCountersThread = perfmon_readCountersThread_core2;
                     break;
 
 

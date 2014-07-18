@@ -120,7 +120,7 @@ double timer_print( TimerData* time )
     uint64_t cycles;
 
     /* clamp to zero if something goes wrong */
-   if ((time->stop.int64-baseline) < time->start.int64)
+    if ((time->stop.int64-baseline) < time->start.int64)
     {
         cycles = 0ULL;
     }

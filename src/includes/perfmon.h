@@ -38,6 +38,7 @@
 #include <topology.h>
 
 //extern int perfmon_verbose;
+extern int socket_fd;
 extern PerfmonGroupSet *groupSet;
 
 extern int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
@@ -52,17 +53,20 @@ extern int perfmon_stopCounters(void);
 extern int perfmon_readCounters(void);
 int perfmon_initThread(int thread_id, int cpu_id);
 extern int perfmon_init(int nrThreads, int threadsToCpu[]);
+extern void perfmon_init_maps(void);
 extern void perfmon_finalize(void);
 extern int perfmon_switchActiveGroup(int new_group);
 
 extern uint64_t perfmon_getResult(int groupId, int eventId, int threadId);
 extern int perfmon_getNumberOfGroups(void);
 extern int perfmon_getNumberOfEvents(int groupId);
+extern double perfmon_getTimeOfGroup(int groupId);
 extern int perfmon_getNumberOfActiveGroup(void);
 extern int perfmon_getNumberOfThreads(void);
 
-
-
+extern void perfmon_printCounters(FILE* OUTSTREAM);
+extern void perfmon_printEvents(FILE* OUTSTREAM);
+extern int perfmon_accessClientInit(void);
 
 #if 0
 extern void perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set);

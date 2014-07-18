@@ -23,7 +23,7 @@ struct numa_functions {
 
 void numa_setInterleaved(int* processorList, int numberOfProcessors);
 void numa_membind(void* ptr, size_t size, int domainId);
-
+void numa_finalize(void);
 
 int likwid_getNumberOfNodes(void);
 

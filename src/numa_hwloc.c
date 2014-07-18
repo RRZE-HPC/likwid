@@ -154,7 +154,7 @@ int hwloc_numa_init(void)
         numa_info.nodes[i].numberOfProcessors = 0;
         numa_info.nodes[i].totalMemory = getTotalNodeMem(i);
         numa_info.nodes[i].freeMemory = getFreeNodeMem(i);
-        numa_info.nodes[i].processors = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));    
+        numa_info.nodes[i].processors = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
         if (!numa_info.nodes[i].processors)
         {
             fprintf(stderr,"No memory to allocate %d byte for processors array of NUMA node %d\n",MAX_NUM_THREADS * sizeof(uint32_t),i);

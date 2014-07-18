@@ -8,7 +8,7 @@ static PerfmonGroupMap [% arch %]_group_map[NUM_GROUPS_[% arch FILTER upper %]] 
 [% END %]
 };
 
-void
+/*void
 perfmon_printDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group)
 {
     int threadId;
@@ -85,7 +85,7 @@ perfmon_printDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group)
     printResultTable(&tableData);
     freeResultTable(&tableData);
 
-    /* for threaded results print sum, max, min and avg */
+    // for threaded results print sum, max, min and avg 
     if (perfmon_numThreads > 1)
     {
         initStatisticTable(&tableData, fc, numRows);
@@ -145,7 +145,7 @@ perfmon_logDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group, double ti
                 exit (EXIT_FAILURE);
                 break;
     }
-}
+}*/
 
 
 

@@ -31,7 +31,7 @@ DOC_DIR     = ./doc
 GROUP_DIR   = ./groups
 FILTER_DIR  = ./filters
 MAKE_DIR    = ./make
-EXT_TARGETS = ./ext/lua ./ext/hwloc ./src/libwid
+EXT_TARGETS = ./ext/lua ./ext/hwloc
 
 #DO NOT EDIT BELOW
 
@@ -66,12 +66,19 @@ endif
 
 ifeq ($(SHARED_LIBRARY),true)
 CFLAGS += $(SHARED_CFLAGS)
-LIBS += -L. -llikwid -lm
+LIBS += -L. -pthread -lm -lpci
 DYNAMIC_TARGET_LIB := liblikwid.so
 TARGET_LIB := $(DYNAMIC_TARGET_LIB)
 else
 STATIC_TARGET_LIB := liblikwid.a
 TARGET_LIB := $(STATIC_TARGET_LIB)
+endif
+
+ifeq ($(DEBUG),true)
+DEBUG_FLAGS = -g
+DEFINES += -DDEBUG_LIKWID
+else
+DEBUG_FLAGS =
 endif
 
 
@@ -93,12 +100,11 @@ APPS      = likwid-perfctr    \
 		likwid-pin        \
 		likwid-bench
 
-LIBWID = libwid.a
 LIBHWLOC = ext/hwloc/libhwloc.a
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(BUILD_DIR) $(GENGROUPLOCK) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(EXT_TARGETS) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(APPS) $(FORTRAN_INTERFACE)  $(PINLIB)  $(DAEMON_TARGET)
+all: $(BUILD_DIR) $(GENGROUPLOCK) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(EXT_TARGETS) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(FORTRAN_INTERFACE)  $(PINLIB)  $(DAEMON_TARGET)
 
 tags:
 	@echo "===>  GENERATE  TAGS"
@@ -106,20 +112,16 @@ tags:
 
 $(APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(APPS))) $(BUILD_DIR) $(GENGROUPLOCK)  $(OBJ) $(OBJ_BENCH)
 	@echo "===>  LINKING  $@"
-	$(Q)${CC} $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ_BENCH) $(TARGET_LIB) $(LIBHWLOC) $(LIBS)
+	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ_BENCH) $(TARGET_LIB) $(LIBHWLOC) $(LIBS)
 
 $(STATIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE STATIC LIB  $(STATIC_TARGET_LIB)"
 	$(Q)${AR} -cq $(STATIC_TARGET_LIB) $(OBJ) $(OBJ_HWLOC)
 
-$(LIBWID): $(OBJ_LUA) $(OBJ_HWLOC) $(OBJ_LIBWID)
-	@echo "===>  CREATE STATIC LIB  $(LIBWID)"
-	$(Q)${AR} -cq $(LIBWID)  $(OBJ_LUA) $(OBJ_HWLOC) $(OBJ_LIBWID)
-
 
 $(DYNAMIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE SHARED LIB  $(DYNAMIC_TARGET_LIB)"
-	$(Q)${CC} $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(OBJ_HWLOC) 
+	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(LIBHWLOC) 
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  Build access daemon likwid-accessD"
@@ -149,13 +151,13 @@ $(EXT_TARGETS):
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
 	@echo "===>  COMPILE  $@"
-	$(Q)$(CC) -c  $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
-	$(Q)$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
+	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 $(BUILD_DIR)/%.o:  %.cc
 	@echo "===>  COMPILE  $@"
-	$(Q)$(CXX) -c  $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-	$(Q)$(CXX) $(CXXFLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+	$(Q)$(CXX) -c $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+	$(Q)$(CXX) $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 
 $(BUILD_DIR)/%.pas:  $(BENCH_DIR)/%.ptt

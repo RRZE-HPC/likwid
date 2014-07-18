@@ -37,7 +37,7 @@
 #include <types.h>
 #include <topology.h>
 
-extern int perfmon_verbose;
+//extern int perfmon_verbose;
 extern PerfmonGroupSet *groupSet;
 
 extern int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);

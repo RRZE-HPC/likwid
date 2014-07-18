@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -38,23 +38,23 @@ typedef enum {
     IP_PREFETCHER} CpuFeature;
 
 typedef struct {
-    unsigned int fastStrings:1;
-    unsigned int thermalControl:1;
-    unsigned int perfMonitoring:1;
-    unsigned int hardwarePrefetcher:1;
-    unsigned int ferrMultiplex:1;
-    unsigned int branchTraceStorage:1;
-    unsigned int pebs:1;
-    unsigned int speedstep:1;
-    unsigned int monitor:1;
-    unsigned int clPrefetcher:1;
-    unsigned int speedstepLock:1;
-    unsigned int cpuidMaxVal:1;
-    unsigned int xdBit:1;
-    unsigned int dcuPrefetcher:1;
-    unsigned int dynamicAcceleration:1;
-    unsigned int turboMode:1;
-    unsigned int ipPrefetcher:1;
+	unsigned int fastStrings:1;
+	unsigned int thermalControl:1;
+	unsigned int perfMonitoring:1;
+	unsigned int hardwarePrefetcher:1;
+	unsigned int ferrMultiplex:1;
+	unsigned int branchTraceStorage:1;
+	unsigned int pebs:1;
+	unsigned int speedstep:1;
+	unsigned int monitor:1;
+	unsigned int clPrefetcher:1;
+	unsigned int speedstepLock:1;
+	unsigned int cpuidMaxVal:1;
+	unsigned int xdBit:1;
+	unsigned int dcuPrefetcher:1;
+	unsigned int dynamicAcceleration:1;
+	unsigned int turboMode:1;
+	unsigned int ipPrefetcher:1;
     } CpuFeatureFlags;
 
 

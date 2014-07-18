@@ -40,7 +40,7 @@
 
 #include <types.h>
 #include <msr.h>
-#include <cpuid.h>
+#include <topology.h>
 #include <registers.h>
 #include <textcolor.h>
 #include <cpuFeatures.h>
@@ -73,7 +73,9 @@ CpuFeatureFlags cpuFeatureFlags;
 void
 cpuFeatures_init(int cpu)
 {
-    uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
+    int ret;
+    uint64_t flags;
+    ret = msr_read(cpu, MSR_IA32_MISC_ENABLE, &flags);
 
 	TEST_FLAG(fastStrings,0);
 	TEST_FLAG(thermalControl,3);
@@ -120,7 +122,9 @@ cpuFeatures_init(int cpu)
 void
 cpuFeatures_print(int cpu)
 {
-    uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
+    int ret;
+    uint64_t flags;
+    ret = msr_read(cpu, MSR_IA32_MISC_ENABLE, &flags);
 
     printf(HLINE);
     printf("Fast-Strings: \t\t\t");
@@ -291,7 +295,9 @@ cpuFeatures_print(int cpu)
 void 
 cpuFeatures_enable(int cpu, CpuFeature type)
 {
-    uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
+    int ret;
+    uint64_t flags; 
+    ret = msr_read(cpu, MSR_IA32_MISC_ENABLE, &flags);
 
     switch ( type )
     {
@@ -329,7 +335,9 @@ cpuFeatures_enable(int cpu, CpuFeature type)
 void
 cpuFeatures_disable(int cpu, CpuFeature type)
 {
-    uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
+    int ret;
+    uint64_t flags;
+    ret = msr_read(cpu, MSR_IA32_MISC_ENABLE, &flags);
 
     switch ( type ) 
     {

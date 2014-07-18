@@ -90,14 +90,14 @@ typedef struct {
 } HWThread;
 
 typedef struct {
-    int level;
+    uint32_t level;
     CacheType type;
-    int associativity;
-    int sets;
-    int lineSize;
-    int size;
-    int threads;
-    int inclusive;
+    uint32_t associativity;
+    uint32_t sets;
+    uint32_t lineSize;
+    uint32_t size;
+    uint32_t threads;
+    uint32_t inclusive;
 } CacheLevel;
 
 typedef struct {

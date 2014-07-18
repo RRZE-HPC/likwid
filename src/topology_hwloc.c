@@ -37,6 +37,39 @@ static int readCacheInclusive(int level)
     return edx & 0x2;
 }
 
+static int get_cpu_perf_data(void)
+{
+    uint32_t eax, ebx, ecx, edx;
+    int largest_function = 0;
+    eax = 0x00;
+    CPUID;
+    largest_function = eax;
+    eax = 0x01;
+    CPUID;
+    cpuid_info.stepping =  (eax&0xFU);
+    if (cpuid_info.family == P6_FAMILY && 0x0A <= largest_function)
+    {
+        eax = 0x0A;
+        CPUID;
+        cpuid_info.perf_version   =  (eax&0xFFU);
+        cpuid_info.perf_num_ctr   =   ((eax>>8)&0xFFU);
+        cpuid_info.perf_width_ctr =  ((eax>>16)&0xFFU);
+        cpuid_info.perf_num_fixed_ctr =  (edx&0xFU);
+
+        eax = 0x06;
+        CPUID;
+        if (eax & (1<<1))
+        {
+            cpuid_info.turbo = 1;
+        }
+        else
+        {
+            cpuid_info.turbo = 0;
+        }
+    }
+    return 0;
+}
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 #ifdef LIKWID_USE_HWLOC
 int hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwloc_obj_type_t type, int* index, uint32_t **list)
@@ -101,28 +134,36 @@ void hwloc_init_cpuFeatures(void)
     char delimiter[] = " ";
     char* cptr;
 
-    
-    
     if ( (file = fopen( "/proc/cpuinfo", "r")) == NULL )
     {
         fprintf(stderr, "Cannot open /proc/cpuinfo\n");
         return;
     }
-    
+    ret = 0;
     while( fgets(buf, sizeof(buf)-1, file) )
     {
         ret = sscanf(buf, "%s\t:", &(ident[0]));
         if (ret != 1 || strcmp(ident,"flags") != 0)
+        {
             continue;
+        }
         else
+        {
+            ret = 1;
             break;
+        }
     }
     fclose(file);
+    if (ret == 0)
+    {
+        return;
+    }
     
     cpuid_info.featureFlags = 0;
-    cpuid_info.features = (char*) malloc(200*sizeof(char));
-    
-    cptr = strtok(&(buf[9]),delimiter);
+    cpuid_info.features = (char*) malloc(MAX_FEATURE_STRING_LENGTH*sizeof(char));
+    cpuid_info.features[0] = '\0';
+
+    cptr = strtok(&(buf[6]),delimiter);
     
     while (cptr != NULL)
     {
@@ -225,7 +266,8 @@ void hwloc_init_cpuFeatures(void)
     
     }
 
-    
+    get_cpu_perf_data();
+
     return;
 }
 
