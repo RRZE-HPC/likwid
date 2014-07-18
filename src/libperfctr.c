@@ -43,7 +43,7 @@
 #include <types.h>
 #include <bitUtil.h>
 #include <bstrlib.h>
-#include <cpuid.h>
+#include <topology.h>
 #include <numa.h>
 #include <affinity.h>
 #include <lock.h>
@@ -78,7 +78,7 @@ static int perfmon_numCounters=0;     /* total number of counters */
 static int perfmon_numCountersCore=0; /* max index of core counters */
 static int perfmon_numCountersUncore=0; /* max index of conventional uncore counters */
 static PerfmonCounterMap* perfmon_counter_map = NULL;
-static int socket_lock[MAX_NUM_NODES];
+int socket_lock[MAX_NUM_NODES];
 static int thread_socketFD[MAX_NUM_THREADS];
 static int hasPCICounters = 0;
 static int likwid_init = 0;
@@ -157,7 +157,7 @@ void likwid_markerInit(void)
         exit(EXIT_FAILURE);
     }
 
-    cpuid_init();
+    topology_init();
     numa_init();
     affinity_init();
     timer_init();
@@ -451,16 +451,16 @@ void likwid_markerClose(void)
 }
 
 
-void likwid_markerStartRegion(const char* regionTag)
+int likwid_markerStartRegion(const char* regionTag)
 {
     if ( ! likwid_init )
     {
-        return;
+        return -EFAULT;
     }
-
     bstring tag = bfromcstralloc(100, regionTag);
     LikwidThreadResults* results;
     uint64_t res;
+    uint64_t tmp, counter_result;
     int cpu_id = hashTable_get(tag, &results);
     bdestroy(tag);
     int socket_fd = thread_socketFD[cpu_id];
@@ -484,11 +484,9 @@ void likwid_markerStartRegion(const char* regionTag)
         {
             if (perfmon_counter_map[i].type != THERMAL)
             {
-                results->StartPMcounters[i] =
-                    (double) msr_tread(
-                            socket_fd,
-                            cpu_id,
-                            perfmon_counter_map[i].counterRegister);
+                CHECK_MSR_READ_ERROR(msr_tread(socket_fd, cpu_id, 
+                            perfmon_counter_map[i].counterRegister, &counter_result));
+                results->StartPMcounters[i] = counter_result;
             }
         }
     }
@@ -506,19 +504,15 @@ void likwid_markerStartRegion(const char* regionTag)
             {
                 if (perfmon_counter_map[i].type != POWER)
                 {
-                    results->StartPMcounters[i] =
-                        (double) msr_tread(
-                                socket_fd,
-                                cpu_id,
-                                perfmon_counter_map[i].counterRegister);
+                    CHECK_MSR_READ_ERROR(msr_tread(socket_fd, cpu_id,
+                            perfmon_counter_map[i].counterRegister, &counter_result));
+                    results->StartPMcounters[i] = (double)counter_result;
                 }
                 else
                 {
-                    results->StartPMcounters[i] =
-                        (double) power_tread(
-                                socket_fd,
-                                cpu_id,
-                                perfmon_counter_map[i].counterRegister);
+                    CHECK_POWER_READ_ERROR(msr_tread(socket_fd, cpu_id,
+                            perfmon_counter_map[i].counterRegister, &counter_result));
+                    results->StartPMcounters[i] = (double)counter_result;
                 }
             }
         }
@@ -531,19 +525,20 @@ void likwid_markerStartRegion(const char* regionTag)
                 bitMask_test(res,counterMask,i);
                 if ( res )
                 {
-                    uint64_t counter_result =
-                        pci_tread(
+                    CHECK_PCI_READ_ERROR(pci_tread(
                                 socket_fd,
                                 cpu_id,
                                 perfmon_counter_map[i].device,
-                                perfmon_counter_map[i].counterRegister);
-
-                    counter_result = (counter_result<<32) +
-                        pci_tread(
+                                perfmon_counter_map[i].counterRegister,
+                                (uint32_t*)&tmp));
+                    counter_result = (tmp<<32);
+                    CHECK_PCI_READ_ERROR(pci_tread(
                                 socket_fd,
                                 cpu_id,
                                 perfmon_counter_map[i].device,
-                                perfmon_counter_map[i].counterRegister2);
+                                perfmon_counter_map[i].counterRegister2,
+                                (uint32_t*)&tmp));
+                    counter_result += tmp;
 
                     results->StartPMcounters[perfmon_counter_map[i].index] =
                         (double) counter_result;
@@ -565,17 +560,18 @@ void likwid_markerStartRegion(const char* regionTag)
 /* TODO: Readout hash at the end. Compute result at the end of the function to
  * keep overhead in region low */
 
-void likwid_markerStopRegion(const char* regionTag)
+int likwid_markerStopRegion(const char* regionTag)
 {
     if (! likwid_init)
     {
-        return;
+        return -EFAULT;
     }
 
     TimerData timestamp;
     timer_stop(&timestamp);
     int cpu_id = likwid_getProcessorId();
     uint64_t res;
+    uint64_t tmp, counter_result;
     int socket_fd = thread_socketFD[cpu_id];
     double PMcounters[NUM_PMC];
 
@@ -587,14 +583,14 @@ void likwid_markerStopRegion(const char* regionTag)
         {
             if (perfmon_counter_map[i].type != THERMAL)
             {
-                PMcounters[i] = (double) msr_tread(
-                        socket_fd,
-                        cpu_id,
-                        perfmon_counter_map[i].counterRegister);
+                CHECK_MSR_READ_ERROR(msr_tread(socket_fd, cpu_id,
+                        perfmon_counter_map[i].counterRegister, &counter_result))
+                PMcounters[i] = (double) counter_result;
             }
             else
             {
-                PMcounters[i] = (double) thermal_read(cpu_id);
+                CHECK_TEMP_READ_ERROR(thermal_read(cpu_id, (uint32_t*)&counter_result));
+                PMcounters[i] = (double) counter_result;
             }
         }
     }
@@ -610,17 +606,15 @@ void likwid_markerStopRegion(const char* regionTag)
             {
                 if (perfmon_counter_map[i].type != POWER)
                 {
-                    PMcounters[i] = (double) msr_tread(
-                            socket_fd,
-                            cpu_id,
-                            perfmon_counter_map[i].counterRegister);
+                    CHECK_MSR_READ_ERROR(msr_tread(socket_fd, cpu_id,
+                        perfmon_counter_map[i].counterRegister, &counter_result))
+                    PMcounters[i] = (double) counter_result;
                 }
                 else
                 {
-                    PMcounters[i] = (double) power_tread(
-                            socket_fd,
-                            cpu_id,
-                            perfmon_counter_map[i].counterRegister);
+                    CHECK_POWER_READ_ERROR(msr_tread(socket_fd, cpu_id,
+                            perfmon_counter_map[i].counterRegister, &counter_result));
+                    PMcounters[i] = (double)counter_result;
                 }
             }
         }
@@ -633,19 +627,20 @@ void likwid_markerStopRegion(const char* regionTag)
                 bitMask_test(res,counterMask,i);
                 if ( res )
                 {
-                    uint64_t counter_result =
-                        pci_tread(
+                    CHECK_PCI_READ_ERROR(pci_tread(
                                 socket_fd,
                                 cpu_id,
                                 perfmon_counter_map[i].device,
-                                perfmon_counter_map[i].counterRegister);
-
-                    counter_result = (counter_result<<32) +
-                        pci_tread(
+                                perfmon_counter_map[i].counterRegister,
+                                (uint32_t*)&tmp));
+                    counter_result = (tmp<<32);
+                    CHECK_PCI_READ_ERROR(pci_tread(
                                 socket_fd,
                                 cpu_id,
                                 perfmon_counter_map[i].device,
-                                perfmon_counter_map[i].counterRegister2);
+                                perfmon_counter_map[i].counterRegister2,
+                                (uint32_t*)&tmp));
+                    counter_result += tmp;
 
                     PMcounters[i] = (double) counter_result;
                 }
