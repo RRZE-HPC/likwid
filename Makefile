@@ -89,7 +89,6 @@ PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildc
 OBJ_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
 OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)
-OBJ_LIBWID =  $(wildcard ./src/libwid/$(COMPILER)/*.o)
 
 APPS      = likwid-perfctr    \
 		likwid-features   \
@@ -101,6 +100,7 @@ APPS      = likwid-perfctr    \
 		likwid-bench
 
 LIBHWLOC = ext/hwloc/libhwloc.a
+LIBLUA = ext/lua/liblua.a
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
@@ -116,12 +116,12 @@ $(APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(APPS))) $(BUILD
 
 $(STATIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE STATIC LIB  $(STATIC_TARGET_LIB)"
-	$(Q)${AR} -cq $(STATIC_TARGET_LIB) $(OBJ) $(OBJ_HWLOC)
+	$(Q)${AR} -cq $(STATIC_TARGET_LIB) $(OBJ) $(OBJ_HWLOC) $(OBJ_LUA)
 
 
 $(DYNAMIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE SHARED LIB  $(DYNAMIC_TARGET_LIB)"
-	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(LIBHWLOC) 
+	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(LIBHWLOC) $(LIBLUA)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  Build access daemon likwid-accessD"
