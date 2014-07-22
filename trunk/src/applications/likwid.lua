@@ -1,7 +1,6 @@
 local likwid = {}
 
 groupfolder = "/home/rrze/unrz/unrz139/Work/likwid/trunk/groups"
-architecture = "ivybridge"
 
 local function getopt(args, ostr)
     local arg, place = nil, 0;
@@ -355,7 +354,7 @@ end
 
 likwid.nodestr_to_nodelist = nodestr_to_nodelist
 
-local function get_groups()
+local function get_groups(architecture)
     groups = {}
     local f = io.popen("ls " .. groupfolder .. "/" .. architecture)
     t = stringsplit(f:read("*a"),"\n")
@@ -369,10 +368,10 @@ end
 
 likwid.get_groups = get_groups
 
-local function get_groupdata(group)
+local function get_groupdata(architecture, group)
     groupdata = {}
     local group_exist = 0
-    num_groups, groups = get_groups()
+    num_groups, groups = get_groups(architecture)
     for i, a in pairs(groups) do
         if (a == group) then group_exist = 1 end
     end
@@ -388,6 +387,7 @@ local function get_groupdata(group)
     groupdata["Events"] = {}
     groupdata["Metrics"] = {}
     groupdata["LongDescription"] = ""
+    groupdata["GroupString"] = group
     nr_events = 0
     nr_metrics = 1
     for i, line in pairs(stringsplit(t,"\n")) do
@@ -449,18 +449,37 @@ end
 
 likwid.get_groupdata = get_groupdata
 
+local function new_groupdata(eventString)
+    local gdata = {}
+    local num_events = 0
+    gdata["Events"] = {}
+    gdata["GroupString"] = eventString
+    local eventslist = likwid.stringsplit(eventString,",")
+    for i,e in pairs(eventslist) do
+        eventlist = likwid.stringsplit(e,":")
+        gdata["Events"][num_events] = {}
+        gdata["Events"][num_events]["Event"] = eventlist[1]
+        gdata["Events"][num_events]["Counter"] = eventlist[2]
+        num_events = num_events + 1
+    end
+    return gdata
+end
+
+likwid.new_groupdata = new_groupdata
+
 local function evaluate_groupmetrics(group, results)
-    gdata = get_groupdata(group)
-    metrics = gdata["Metrics"]
-    output = {}
+    local cpuinfo = likwid_getCpuInfo()
+    local gdata = get_groupdata(cpuinfo["short_name"], group)
+    local metrics = gdata["Metrics"]
+    local output = {}
     for i=1,#metrics do
-        formula = metrics[i]["formula"]
+        local formula = metrics[i]["formula"]
         for counter, result in pairs(results) do
             formula = string.gsub(formula, tostring(counter), tostring(result))
         end
-        result = assert(loadstring("return (" .. formula .. ")")())
+        local result = assert(loadstring("return (" .. formula .. ")")())
         if (result ~= nil) then
-            output[metrics[i]["description"]] = result
+            output[i] = result
         end
     end
     return output
@@ -469,6 +488,7 @@ end
 likwid.evaluate_groupmetrics = evaluate_groupmetrics
 
 local function parse_time(timestr)
+    local duration = 0
     local s1,e1 = timestr:find("ms")
     local s2,e2 = timestr:find("us")
     if s1 ~= nil then
@@ -478,7 +498,7 @@ local function parse_time(timestr)
     else
         s1,e1 = timestr:find("s")
         if s1 == nil then
-            print("Cannot parse time for timeline mode, " .. timestr .. "not well formatted")
+            print("Cannot parse time, " .. timestr .. "not well formatted")
             os.exit(1)
         end
         duration = tonumber(timestr:sub(1,s1-1)) * 1.E06
@@ -488,5 +508,155 @@ end
 
 likwid.parse_time = parse_time
 
+local function get_spaces(str, max_space)
+    local length = str:len()
+    local back = math.ceil((max_space-length)/2)
+    local front = max_space - length - back
+    return string.rep(" ", front),string.rep(" ", back)
+end
+
+local function min_max_avg(values)
+    min = math.huge
+    max = 0.0
+    sum = 0.0
+    count = 0
+    for _, value in pairs(values) do
+        if (value < min) then min = value end
+        if (value > max) then max = value end
+        sum = sum + value
+        count = count + 1
+    end
+    return min, max, sum/count
+end
+
+
+local function print_output(groupID, groupdata, cpulist)
+    
+    local num_events = likwid_getNumberOfEvents(groupId);
+    local num_threads = likwid_getNumberOfThreads(groupID);
+    local results = {}
+    local metric_input = {}
+    local mins = {}
+    local maxs = {}
+    local avgs = {}
+    local max_eventName = 0
+    local max_result = 0
+    local front_space = 0
+    local back_space = 0
+    metric_input["time"] = likwid_getRuntimeOfGroup(groupID)* 1.E-06
+    metric_input["inverseClock"] = 1.0/likwid_getCpuClock();
+    for i=0,num_events-1 do
+        results[i] = {}
+        if groupdata["Events"][i]["Event"]:len() > max_eventName then
+            max_eventName = groupdata["Events"][i]["Event"]:len()
+        end
+        for j=0,num_threads-1 do
+            results[i][j] = likwid_getResult(groupID, i, j)
+            if tostring(results[i][j]):len() > max_result then
+                max_result = tostring(results[i][j]):len()
+            end
+        end
+    end
+    print(string.rep("-",4+max_eventName+ (max_result+3)*#cpulist))
+    local heading = "Event"
+    local front = ""
+    local back = ""
+    front, back = get_spaces(heading, max_eventName)
+    heading = "| " .. front .. heading .. back .. " | "
+    for j=1,num_threads do
+        local cpuid = "Core " .. tostring(cpulist[j])
+        front, back = get_spaces(cpuid, max_result)
+        heading = heading .. front .. cpuid .. back .. " | "
+    end
+    print(heading)
+    print(string.rep("-",4+max_eventName+ (max_result+3)*#cpulist))
+    for i=0,num_events-1 do
+        front, back = get_spaces(groupdata["Events"][i]["Event"], max_eventName)
+        local event_result = "| " .. front .. groupdata["Events"][i]["Event"] .. back .. " | "
+        metric_input[groupdata["Events"][i]["Counter"]] = 0.0
+        mins[groupdata["Events"][i]["Event"]],maxs[groupdata["Events"][i]["Event"]], avgs[groupdata["Events"][i]["Event"]] = min_max_avg(results[i])
+        for j=0,num_threads-1 do
+            front, back = get_spaces(tostring(results[i][j]), max_result)
+            event_result = event_result .. front .. tostring(results[i][j]) .. back .. " | "
+            metric_input[groupdata["Events"][i]["Counter"]] = metric_input[groupdata["Events"][i]["Counter"]] + results[i][j]
+        end
+        print(event_result)
+    end
+    print(string.rep("-",4+max_eventName+ (max_result+3)*#cpulist))
+    
+    print()
+    print(string.rep("-",4+max_eventName+ (max_result+3)*3))
+    heading = "Event"
+    front, back = get_spaces(heading, max_eventName)
+    heading = "| " .. front .. heading .. back .. " | "
+    event_string = "MIN"
+    front, back = get_spaces(event_string, max_result)
+    heading = heading .. front .. "MIN" .. back .. " | "
+    heading = heading .. front .. "MAX" .. back .. " | "
+    heading = heading .. front .. "AVG" .. back .. " | "
+    print(heading)
+    print(string.rep("-",4+max_eventName+ (max_result+3)*3))
+    for i=0,num_events-1 do
+        event_string = groupdata["Events"][i]["Event"]
+        front, back = get_spaces(event_string, max_eventName)
+        event_string = "| " .. front .. event_string .. back .. " | "
+        heading = string.format("%d", mins[groupdata["Events"][i]["Event"]])
+        front, back = get_spaces(heading, max_result)
+        event_string = event_string .. front .. heading .. back .. " | "
+        heading = string.format("%d", maxs[groupdata["Events"][i]["Event"]])
+        front, back = get_spaces(heading, max_result)
+        event_string = event_string .. front .. heading .. back .. " | "
+        heading = string.format("%d", avgs[groupdata["Events"][i]["Event"]])
+        front, back = get_spaces(heading, max_result)
+        event_string = event_string .. front .. heading .. back .. " | "
+        print(event_string)
+    end
+    print(string.rep("-",4+max_eventName+ (max_result+3)*3))
+    
+    if groupdata["Metrics"] then
+        max_eventName = 0
+        max_result = 0
+        metric_input = evaluate_groupmetrics(groupdata["GroupString"], metric_input)
+        for i, res in pairs(metric_input) do
+            local desc = groupdata["Metrics"][i]["description"]
+            local print_res = string.format("%.5f",res)
+            if desc:len() > max_eventName then
+                max_eventName = desc:len()
+            end
+            if print_res:len() > max_result then
+                max_result = print_res:len()
+            end
+        end
+        print()
+        
+        heading = "Metric"
+        front, back = get_spaces(heading, max_eventName)
+        heading = "| " .. front .. heading .. back .. " | "
+        event_string = "Result"
+        front, back = get_spaces(event_string, max_result)
+        heading = heading .. front .. event_string .. back .. " | "
+        
+        print(string.rep("-",4+max_eventName+ (max_result+3)))
+        print(heading)
+        print(string.rep("-",4+max_eventName+ (max_result+3)))
+        for i, res in pairs(metric_input) do
+            event_string = "| "
+            local desc = groupdata["Metrics"][i]["description"]
+            local print_res = string.format("%.5f",res)
+            current_length = desc:len()
+            front_space = math.ceil((max_eventName-current_length)/2)
+            back_space = max_eventName - current_length - front_space
+            event_string = event_string .. string.rep(" ",front_space) .. desc .. string.rep(" ",back_space) .. " | "
+            current_length = print_res:len()
+            front_space = math.ceil((max_result-current_length)/2)
+            back_space = max_result - current_length - front_space
+            event_string = event_string .. string.rep(" ",front_space) .. print_res .. string.rep(" ",back_space) .. " | "
+            print(event_string)
+        end
+    end
+    print(string.rep("-",4+max_eventName+ (max_result+3)))
+end
+
+likwid.print_output = print_output
 
 return likwid

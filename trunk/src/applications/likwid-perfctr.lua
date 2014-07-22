@@ -1,4 +1,4 @@
-#!/usr/bin/env lua
+#!/home/rrze/unrz/unrz139/Work/likwid/trunk/ext/lua/lua
 
 --[[
  * =======================================================================================
@@ -38,7 +38,7 @@ P6_FAMILY = 6
 require("liblikwid")
 local likwid = require("likwid")
 
-local HLINE = string.rep("-",80)
+HLINE = string.rep("-",80)
 local SLINE = string.rep("*",80)
 
 local function version()
@@ -93,6 +93,7 @@ access_mode = 1
 use_marker = false
 use_stethoscpe = false
 use_timeline = false
+daemon_run = 0
 use_wrapper = false
 duration = 2000
 output = ""
@@ -123,7 +124,6 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV") do
         event_string = arg
     elseif (opt == "H") then
         print_group_help = true
-        print("Set group help")
     elseif (opt == "s") then
         skip_mask = arg
     elseif (opt == "M") then
@@ -151,6 +151,7 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV") do
     end
 end
 
+io.stdout:setvbuf("no")
 cpuinfo = likwid_getCpuInfo()
 cputopo = likwid_getCpuTopology()
 numainfo = likwid_getNumaInfo()
@@ -162,9 +163,9 @@ if print_events == true then
 end
 
 if print_groups == true then
-    local num_groups, grouplist = likwid.get_groups()
+    local num_groups, grouplist = likwid.get_groups(cpuinfo["short_name"])
     for i,g in pairs(grouplist) do
-        local gdata = likwid.get_groupdata(g)
+        local gdata = likwid.get_groupdata(cpuinfo["short_name"], g)
         print(string.format("%10s\t%s",g,gdata["ShortDescription"]))
     end
     os.exit(0)
@@ -270,33 +271,24 @@ end
 local s,e = event_string:find(":")
 gdata = nil
 if s == nil then
-    gdata = likwid.get_groupdata(event_string)
-    group_string = event_string
+    gdata = likwid.get_groupdata(cpuinfo["short_name"], event_string)
     event_string = gdata["EventString"]
 else
-    gdata = {}
-    num_events = 0
-    gdata["Events"] = {}
-    eventslist = likwid.stringsplit(event_string,",")
-    for i,e in pairs(eventslist) do
-        eventlist = likwid.stringsplit(e,":")
-        gdata["Events"][num_events] = {}
-        gdata["Events"][num_events]["Event"] = eventlist[1]
-        gdata["Events"][num_events]["Counter"] = eventlist[2]
-        num_events = num_events + 1
-    end
+    gdata = likwid.new_groupdata(event_string)
 end
-
-
-
-likwid_setAccessClientMode(access_mode)
-likwid_init(num_cpus, cpulist)
 
 print(HLINE)
 print(string.format("CPU type:\t%s",cpuinfo["name"]))
 print(string.format("CPU clock:\t%3.2f GHz",likwid_getCpuClock() * 1.E-09))
+io.stdout:flush()
+
+likwid_setAccessClientMode(access_mode)
+likwid_init(num_cpus, cpulist)
+
+
 
 local groupID = likwid_addEventSet(event_string)
+
 likwid_setupCounters(groupID)
 print(HLINE)
 
@@ -306,92 +298,48 @@ if use_timeline == true then
         cores_string = cores_string .. tostring(cpu) .. " "
     end
     print(cores_string:sub(1,cores_string:len()-1))
+    --[[likwid_initDaemon(event_string)]]
+    likwid_startDaemon(duration, 5);
 end
 
-if use_wrapper then
+if use_wrapper or use_timeline then
     execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
-    print(execString)
-end
-
-if use_stethoscpe == true then
-    likwid_startCounters()
-    usleep(duration)
-    likwid_stopCounters()
-    results = {}
-    numberOfEvents = likwid_getNumberOfEvents(groupID)
-    runtime = likwid_getRuntimeOfGroup(groupID)
-    metric_input = {}
-    metric_input["time"] = runtime* 1.E-06
-    metric_input["inverseClock"] = 1.0/likwid_getCpuClock();
-    for i=0,numberOfEvents-1 do
-        results[i] = {}
-        event_result = gdata["Events"][i]["Event"] .. " "
-        metric_input[gdata["Events"][i]["Counter"]] = 0.0
-        for j=0,num_cpus-1 do
-            results[i][j] = likwid_getResult(groupID, i, j)
-            event_result = event_result .. tostring(results[i][j]) .. " "
-            metric_input[gdata["Events"][i]["Counter"]] = metric_input[gdata["Events"][i]["Counter"]] + results[i][j]
-        end
-        print(event_result)
-    end
-    if gdata["Metrics"] then
-        print(HLINE)
-        metric_result = likwid.evaluate_groupmetrics(group_string,metric_input)
-        for desc, res in pairs(metric_result) do
-            print(desc ..":", res)
-        end
-    end
-    print(HLINE)
-else
     if verbose == true then
         print(string.format("Executing: %s",execString))
     end
+end
 
-    if use_marker == true then
-        likwid_setenv("LIKWID_FILEPATH", markerFile)
-        likwid_setenv("LIKWID_MODE", tostring(access_mode))
-        likwid_setenv("LIKWID_MASK", skip_mask)
-    end
+if use_marker == true then
+    likwid_setenv("LIKWID_FILEPATH", markerFile)
+    likwid_setenv("LIKWID_MODE", tostring(access_mode))
+    likwid_setenv("LIKWID_MASK", skip_mask)
+end
+
+if use_wrapper or use_stethoscpe then
     likwid_startCounters()
-    
+end
+io.stdout:flush()
+if use_wrapper or use_timeline then
     local err = os.execute(execString)
     if (err == false) then
         print("Failed to execute command: ".. exec)
     end
-    
-    likwid_stopCounters()
-    
-    if use_marker == true then
-        print("Read marker file")
-    else
-        print(HLINE)
-        results = {}
-        numberOfEvents = likwid_getNumberOfEvents(groupID)
-        runtime = likwid_getRuntimeOfGroup(groupID)
-        metric_input = {}
-        metric_input["time"] = runtime* 1.E-06
-        metric_input["inverseClock"] = 1.0/likwid_getCpuClock();
-        for i=0,numberOfEvents-1 do
-            results[i] = {}
-            event_result = gdata["Events"][i]["Event"] .. " "
-            metric_input[gdata["Events"][i]["Counter"]] = 0.0
-            for j=0,num_cpus-1 do
-                results[i][j] = likwid_getResult(groupID, i, j)
-                event_result = event_result .. tostring(results[i][j]) .. " "
-                metric_input[gdata["Events"][i]["Counter"]] = metric_input[gdata["Events"][i]["Counter"]] + results[i][j]
-            end
-            print(event_result)
-        end
-        if gdata["Metrics"] then
-            print(HLINE)
-            metric_result = likwid.evaluate_groupmetrics(group_string,metric_input)
-            for desc, res in pairs(metric_result) do
-                print(desc ..":", res)
-            end
-        end
-        print(HLINE)
-    end
+else
+    usleep(duration)
 end
+io.stdout:flush()
+if use_wrapper or use_stethoscpe then
+    likwid_stopCounters()
+elseif use_timeline then
+    likwid_stopDaemon(9)
+end
+
+if use_marker == true then
+    print("Read marker file")
+elseif use_wrapper or use_stethoscpe then
+    likwid.print_output(groupID, gdata, cpulist)
+end
+
 
 likwid_finalize()
 
