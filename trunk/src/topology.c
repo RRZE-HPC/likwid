@@ -23,6 +23,7 @@ static char* core_2b_str = "Intel Core 2 45nm processor";
 static char* atom_45_str = "Intel Atom 45nm processor";
 static char* atom_32_str = "Intel Atom 32nm processor";
 static char* atom_22_str = "Intel Atom 22nm processor";
+static char* atom_silvermont_str = "Intel Atom (Silvermont) processor";
 static char* nehalem_bloom_str = "Intel Core Bloomfield processor";
 static char* nehalem_lynn_str = "Intel Core Lynnfield processor";
 static char* nehalem_west_str = "Intel Core Westmere processor";
@@ -52,6 +53,22 @@ static char* amd_k8_str = "AMD K8 architecture";
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 
+static char* short_core2 = "core2";
+static char* short_atom = "atom";
+static char* short_silvermont = "silvermont";
+static char* short_nehalem = "nehalem";
+static char* short_nehalemEX = "nehalemEX";
+static char* short_westmere = "westmere";
+static char* short_westmereEX = "westmereEX";
+static char* short_haswell = "haswell";
+static char* short_ivybridge = "ivybridge";
+static char* short_sandybridge = "sandybridge";
+static char* short_phi = "phi";
+static char* short_k8 = "k8";
+static char* short_k10 = "k10";
+static char* short_k15 = "interlagos";
+static char* short_k16 = "kabini";
+static char* short_unknown = "unknown";
 
 static void initTopologyFile(FILE* file)
 {
@@ -106,52 +123,64 @@ int topology_setName(void)
             {
                 case PENTIUM_M_BANIAS:
                     cpuid_info.name = pentium_m_b_str;
+                    cpuid_info.short_name = short_unknown;
                     break;
 
                 case PENTIUM_M_DOTHAN:
                     cpuid_info.name = pentium_m_d_str;
+                    cpuid_info.short_name = short_unknown;
                     break;
 
                 case CORE_DUO:
                     cpuid_info.name = core_duo_str;
+                    cpuid_info.short_name = short_core2;
                     break;
 
                 case CORE2_65:
                     cpuid_info.name = core_2a_str;
+                    cpuid_info.short_name = short_core2;
                     break;
 
                 case CORE2_45:
                     cpuid_info.name = core_2b_str;
+                    cpuid_info.short_name = short_core2;
                     break;
 
                 case NEHALEM_BLOOMFIELD:
                     cpuid_info.name = nehalem_bloom_str;
+                    cpuid_info.short_name = short_nehalem;
                     break;
 
                 case NEHALEM_LYNNFIELD:
                     cpuid_info.name = nehalem_lynn_str;
+                    cpuid_info.short_name = short_nehalem;
                     break;
 
                 case NEHALEM_WESTMERE_M:
 
                 case NEHALEM_WESTMERE:
                     cpuid_info.name = nehalem_west_str;
+                    cpuid_info.short_name = short_westmere;
                     break;
 
                 case SANDYBRIDGE:
                     cpuid_info.name = sandybridge_str;
+                    cpuid_info.short_name = short_sandybridge;
                     break;
 
                 case SANDYBRIDGE_EP:
                     cpuid_info.name = sandybridge_ep_str;
+                    cpuid_info.short_name = short_sandybridge;
                     break;
 
                 case IVYBRIDGE:
                     cpuid_info.name = ivybridge_str;
+                    cpuid_info.short_name = short_ivybridge;
                     break;
 
                 case IVYBRIDGE_EP:
                     cpuid_info.name = ivybridge_ep_str;
+                    cpuid_info.short_name = short_ivybridge;
                     break;
 
                 case HASWELL:
@@ -162,36 +191,48 @@ int topology_setName(void)
 
                 case HASWELL_M2:
                     cpuid_info.name = haswell_str;
+                    cpuid_info.short_name = short_haswell;
                     break;
 
                 case NEHALEM_EX:
                     cpuid_info.name = nehalem_ex_str;
+                    cpuid_info.short_name = short_nehalemEX;
                     break;
 
                 case WESTMERE_EX:
                     cpuid_info.name = westmere_ex_str;
+                    cpuid_info.short_name = short_westmereEX;
                     break;
 
                 case XEON_MP:
                     cpuid_info.name = xeon_mp_string;
+                    cpuid_info.short_name = short_unknown;
                     break;
 
                 case ATOM_45:
 
                 case ATOM:
                     cpuid_info.name = atom_45_str;
+                    cpuid_info.short_name = short_atom;
                     break;
 
                 case ATOM_32:
                     cpuid_info.name = atom_32_str;
+                    cpuid_info.short_name = short_atom;
                     break;
 
                 case ATOM_22:
                     cpuid_info.name = atom_22_str;
+                    cpuid_info.short_name = short_atom;
                     break;
+
+                case ATOM_SILVERMONT:
+                    cpuid_info.name = atom_silvermont_str;
+                    cpuid_info.short_name = short_silvermont;
 
                 default:
                     cpuid_info.name = unknown_intel_str;
+                    cpuid_info.short_name = short_unknown;
                     break;
             }
             break;
@@ -201,6 +242,7 @@ int topology_setName(void)
             {
                 case XEON_PHI:
                     cpuid_info.name = xeon_phi_string;
+                    cpuid_info.short_name = short_phi;
                     break;
 
             }
@@ -253,7 +295,7 @@ int topology_setName(void)
                     cpuid_info.name = amd_k8_str;
                     break;
             }
-
+            cpuid_info.short_name = short_k8;
             break;
 
         case K10_FAMILY:
@@ -279,14 +321,17 @@ int topology_setName(void)
                     cpuid_info.name = unknown_amd_str;
                     break;
             }
+            cpuid_info.short_name = short_k10;
             break;
 
         case K15_FAMILY:
             cpuid_info.name = interlagos_str;
+            cpuid_info.short_name = short_k15;
             break;
 
         case K16_FAMILY:
             cpuid_info.name = kabini_str;
+            cpuid_info.short_name = short_k16;
             break;
             
         default:
