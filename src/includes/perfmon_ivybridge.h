@@ -415,7 +415,7 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
 
     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
 
-    for ( int i=0; i<perfmon_numCountersIvybridge; i++ )
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
         {
