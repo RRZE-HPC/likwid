@@ -750,6 +750,8 @@
 #define MSR_TURBO_POWER_CURRENT_LIMIT   0x1AC
 #define MSR_TURBO_RATIO_LIMIT           0x1AD
 
+/* Intel Silvermont's RAPL registers */
+#define MSR_PKG_POWER_INFO_SILVERMONT   0x66E
 /*
  * AMD
  */
