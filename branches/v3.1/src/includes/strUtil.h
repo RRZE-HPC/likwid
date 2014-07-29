@@ -37,7 +37,7 @@
 #include <time.h>
 
 #define CHECK_OPTION_STRING  \
-if (! (argString = bSecureInput(200,optarg))) {  \
+if (! (argString = bSecureInput(400,optarg))) {  \
     ERROR_PLAIN_PRINT(Failed to read argument string!);  \
 }
 

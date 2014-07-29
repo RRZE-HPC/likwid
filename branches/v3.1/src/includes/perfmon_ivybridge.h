@@ -713,13 +713,11 @@ void perfmon_readCountersThread_ivybridge(int thread_id)
     {
         haveLock = 1;
     }
-
     for ( int i=0; i<NUM_COUNTERS_IVYBRIDGE; i++ )
     {
         if (perfmon_threadData[thread_id].counters[i].init == TRUE)
         {
-            if ((ivybridge_counter_map[i].type == PMC) ||
-                    (ivybridge_counter_map[i].type == FIXED))
+            if ((ivybridge_counter_map[i].type == PMC) || (ivybridge_counter_map[i].type == FIXED))
             {
                 perfmon_threadData[thread_id].counters[i].counterData =
                     msr_read(cpu_id, ivybridge_counter_map[i].counterRegister);
