@@ -60,11 +60,11 @@ CpuFeatureFlags cpuFeatureFlags;
 #define TEST_FLAG(feature,flag)  \
     if (flags & (1ULL<<(flag)))   \
     {                    \
-		cpuFeatureFlags.feature = 1; \
+        cpuFeatureFlags.feature = 1; \
     }                    \
     else                \
     {                \
-		cpuFeatureFlags.feature = 0; \
+        cpuFeatureFlags.feature = 0; \
     }
 
 
@@ -75,15 +75,15 @@ cpuFeatures_init(int cpu)
 {
     uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
 
-	TEST_FLAG(fastStrings,0);
-	TEST_FLAG(thermalControl,3);
-	TEST_FLAG(perfMonitoring,7);
-	TEST_FLAG(branchTraceStorage,11);
-	TEST_FLAG(pebs,12);
-	TEST_FLAG(speedstep,16);
-	TEST_FLAG(monitor,18);
-	TEST_FLAG(cpuidMaxVal,22);
-	TEST_FLAG(xdBit,34);
+    TEST_FLAG(fastStrings,0);
+    TEST_FLAG(thermalControl,3);
+    TEST_FLAG(perfMonitoring,7);
+    TEST_FLAG(branchTraceStorage,11);
+    TEST_FLAG(pebs,12);
+    TEST_FLAG(speedstep,16);
+    TEST_FLAG(monitor,18);
+    TEST_FLAG(cpuidMaxVal,22);
+    TEST_FLAG(xdBit,34);
 
     if ((cpuid_info.model == NEHALEM) ||
             (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
@@ -212,45 +212,53 @@ cpuFeatures_print(int cpu)
     {
         PRINT_VALUE(GREEN,enabled);
     }
+    if ((cpuid_info.model == NEHALEM) ||
+            (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
+            (cpuid_info.model == NEHALEM_LYNNFIELD) ||
+            (cpuid_info.model == NEHALEM_WESTMERE) ||
+            (cpuid_info.model == NEHALEM_WESTMERE_M) ||
+            (cpuid_info.model == NEHALEM_EX) ||
+            (cpuid_info.model == CORE2_45) ||
+            (cpuid_info.model == CORE2_65))
+    {
+        printf("IP Prefetcher: \t\t\t");
+        if (flags & (1ULL<<39)) 
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        else
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
 
-    printf("IP Prefetcher: \t\t\t");
-    if (flags & (1ULL<<39)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("Hardware Prefetcher: \t\t");
-    if (flags & (1ULL<<9)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("Adjacent Cache Line Prefetch: \t");
-    if (flags & (1ULL<<19)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("DCU Prefetcher: \t\t");
-    if (flags & (1ULL<<37)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
+        printf("Hardware Prefetcher: \t\t");
+        if (flags & (1ULL<<9)) 
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        else
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
+        printf("Adjacent Cache Line Prefetch: \t");
+        if (flags & (1ULL<<19)) 
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        else
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
+    
+        printf("DCU Prefetcher: \t\t");
+        if (flags & (1ULL<<37)) 
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        else
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
     }
 
     if ((cpuid_info.model == NEHALEM) ||
@@ -291,75 +299,101 @@ cpuFeatures_print(int cpu)
 void 
 cpuFeatures_enable(int cpu, CpuFeature type)
 {
-    uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
-
-    switch ( type )
+    if ((cpuid_info.model == NEHALEM) ||
+            (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
+            (cpuid_info.model == NEHALEM_LYNNFIELD) ||
+            (cpuid_info.model == NEHALEM_WESTMERE) ||
+            (cpuid_info.model == NEHALEM_WESTMERE_M) ||
+            (cpuid_info.model == NEHALEM_EX) ||
+            (cpuid_info.model == CORE2_45) ||
+            (cpuid_info.model == CORE2_65))
     {
-        case HW_PREFETCHER:
-            printf("HW_PREFETCHER:\t");
-            flags &= ~(1ULL<<9);
-            break;
+        uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
+        switch ( type )
+        {
+            case HW_PREFETCHER:
+                printf("HW_PREFETCHER:\t");
+                flags &= ~(1ULL<<9);
+                break;
 
-        case CL_PREFETCHER:
-            printf("CL_PREFETCHER:\t");
-            flags &= ~(1ULL<<19);
-            break;
+            case CL_PREFETCHER:
+                printf("CL_PREFETCHER:\t");
+                flags &= ~(1ULL<<19);
+                break;
 
-        case DCU_PREFETCHER:
-            printf("DCU_PREFETCHER:\t");
-            flags &= ~(1ULL<<37);
-            break;
+            case DCU_PREFETCHER:
+                printf("DCU_PREFETCHER:\t");
+                flags &= ~(1ULL<<37);
+                break;
 
-        case IP_PREFETCHER:
-            printf("IP_PREFETCHER:\t");
-            flags &= ~(1ULL<<39);
-            break;
+            case IP_PREFETCHER:
+                printf("IP_PREFETCHER:\t");
+                flags &= ~(1ULL<<39);
+                break;
 
-        default:
-            printf("ERROR: CpuFeature not supported!\n");
-            break;
+            default:
+                printf("ERROR: CpuFeature not supported!\n");
+                break;
+        }
+        PRINT_VALUE(GREEN,enabled);
+        printf("\n");
+        msr_write(cpu, MSR_IA32_MISC_ENABLE, flags);
     }
-    PRINT_VALUE(GREEN,enabled);
-    printf("\n");
-
-    msr_write(cpu, MSR_IA32_MISC_ENABLE, flags);
+    else
+    {
+        printf("ERROR: Architecture does not support the manipulation of prefetchers\n");
+    }
 }
 
 
 void
 cpuFeatures_disable(int cpu, CpuFeature type)
 {
-    uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
-
-    switch ( type ) 
+    if ((cpuid_info.model == NEHALEM) ||
+            (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
+            (cpuid_info.model == NEHALEM_LYNNFIELD) ||
+            (cpuid_info.model == NEHALEM_WESTMERE) ||
+            (cpuid_info.model == NEHALEM_WESTMERE_M) ||
+            (cpuid_info.model == NEHALEM_EX) ||
+            (cpuid_info.model == CORE2_45) ||
+            (cpuid_info.model == CORE2_65))
     {
-        case HW_PREFETCHER:
-            printf("HW_PREFETCHER:\t");
-            flags |= (1ULL<<9);
-            break;
+        uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
 
-        case CL_PREFETCHER:
-            printf("CL_PREFETCHER:\t");
-            flags |= (1ULL<<19);
-            break;
+        switch ( type ) 
+        {
+            case HW_PREFETCHER:
+                printf("HW_PREFETCHER:\t");
+                flags |= (1ULL<<9);
+                break;
 
-        case DCU_PREFETCHER:
-            printf("DCU_PREFETCHER:\t");
-            flags |= (1ULL<<37);
-            break;
+            case CL_PREFETCHER:
+                printf("CL_PREFETCHER:\t");
+                flags |= (1ULL<<19);
+                break;
 
-        case IP_PREFETCHER:
-            printf("IP_PREFETCHER:\t");
-            flags |= (1ULL<<39);
-            break;
+            case DCU_PREFETCHER:
+                printf("DCU_PREFETCHER:\t");
+                flags |= (1ULL<<37);
+                break;
 
-        default:
-            printf("ERROR: CpuFeature not supported!\n");
-            break;
+            case IP_PREFETCHER:
+                printf("IP_PREFETCHER:\t");
+                flags |= (1ULL<<39);
+                break;
+
+            default:
+                printf("ERROR: CpuFeature not supported!\n");
+                break;
+        }
+        PRINT_VALUE(RED,disabled);
+        printf("\n");
+
+        msr_write(cpu, MSR_IA32_MISC_ENABLE, flags);
     }
-    PRINT_VALUE(RED,disabled);
-    printf("\n");
-
-    msr_write(cpu, MSR_IA32_MISC_ENABLE, flags);
+    else
+    {
+        printf("ERROR: Architecture does not support the manipulation of prefetchers\n");
+    }
 }
 

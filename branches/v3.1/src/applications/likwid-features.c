@@ -80,7 +80,7 @@ int main (int argc, char** argv)
             case 'u':
                 optSetFeature = 2;
             case 's':
-                if (! (argString = bSecureInput(20,optarg)))
+                if (! (argString = bSecureInput(40,optarg)))
                 {
                     fprintf(stderr,"Failed to read argument string!\n");
                     exit(EXIT_FAILURE);
@@ -115,7 +115,7 @@ int main (int argc, char** argv)
                 }
                 break;
             case 'c':
-                if (! (argString = bSecureInput(10,optarg)))
+                if (! (argString = bSecureInput(20,optarg)))
                 {
                     fprintf(stderr,"Failed to read argument string!\n");
                     exit(EXIT_FAILURE);
@@ -165,7 +165,7 @@ int main (int argc, char** argv)
 
     accessClient_init(&socket_fd);
     msr_init(socket_fd);
-	cpuFeatures_init(cpuId);
+    cpuFeatures_init(cpuId);
     cpuFeatures_print(cpuId);
 
     if (optSetFeature == 1)
