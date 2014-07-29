@@ -623,7 +623,15 @@ int main(void)
          * NOTICE: This assumes consecutive processor Ids! */
         for ( uint32_t i=0; i < numHWThreads; i++ )
         {
+#ifdef __MIC
+            sprintf(msr_file_name,"/dev/msr%d",i);
+            if (access(msr_file_name, F_OK))
+            {
+                sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
+            }
+#else
             sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
+#endif
             FD_MSR[i] = open(msr_file_name, O_RDWR);
 
             if ( FD_MSR[i] < 0 )
