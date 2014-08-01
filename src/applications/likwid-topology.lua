@@ -87,7 +87,11 @@ print(HLINE)
 print(string.format("CPU type:\t%s",cpuinfo["name"]))
 
 if (measure_clock) then
-    print(string.format("CPU clock:\t%3.2f GHz", likwid_getCpuClock() * 1.E-09))
+    if cpuinfo["clock"] == 0 then
+        print(string.format("CPU clock:\t%3.2f GHz", likwid_getCpuClock() * 1.E-09))
+    else
+        print(string.format("CPU clock:\t%3.2f GHz", cpuinfo["clock"] * 1.E-09))
+    end
 end
 
 print(SLINE)
@@ -99,8 +103,8 @@ print(string.format("Threads per core:\t%u",cputopo["numThreadsPerCore"]))
 print(HLINE)
 print("HWThread\tThread\t\tCore\t\tSocket")
 
-for cntr=0,cputopo["numHWThreads"]-1 do
-    print(string.format("%d\t\t%u\t\t%u\t\t%u",cntr,
+for cntr=1,cputopo["numHWThreads"] do
+    print(string.format("%d\t\t%u\t\t%u\t\t%u",cputopo["threadPool"][cntr]["apicId"],
                         cputopo["threadPool"][cntr]["threadId"],
                         cputopo["threadPool"][cntr]["coreId"],
                         cputopo["threadPool"][cntr]["packageId"]))
@@ -122,7 +126,7 @@ print(SLINE)
 print("Cache Topology")
 print(SLINE)
 
-for level=0,cputopo["numCacheLevels"]-1 do
+for level=1,cputopo["numCacheLevels"] do
     if (cputopo["cacheLevels"][level]["type"] ~= "INSTRUCTIONCACHE") then
         print(string.format("Level:\t%d",cputopo["cacheLevels"][level]["level"]))
         if (cputopo["cacheLevels"][level]["size"] < 1048576) then
@@ -181,22 +185,21 @@ else
     print(string.format("NUMA domains: %d",numainfo["numberOfNodes"]))
     print(HLINE)
     -- -2 because numberOfNodes is seen as one entry
-    for node=0,numainfo["numberOfNodes"]-1 do
-        print(string.format("Domain %d:",numainfo[node]["id"]))
+    for node=1,numainfo["numberOfNodes"] do
+        print(string.format("Domain %d:",numainfo["nodes"][node]["id"]))
         str = "Processors: "
-        for cpu=0,numainfo[node]["numberOfProcessors"]-1 do
-            str = str .. " " .. numainfo[node]["processors"][cpu]
+        for cpu=1,numainfo["nodes"][node]["numberOfProcessors"] do
+            str = str .. " " .. numainfo["nodes"][node]["processors"][cpu]
         end
         print(str)
-        
         str = "Relative distance to nodes: "
-        for cpu=0,numainfo[node]["numberOfDistances"]-1 do
-            str = str .. " " .. numainfo[node]["distances"][cpu]
+        for cpu=1,numainfo["nodes"][node]["numberOfDistances"] do
+            str = str .. " " .. numainfo["nodes"][node]["distances"][cpu][cpu-1]
         end
         print(str)
         print(string.format("Memory: %g MB free of total %g MB", 
-                                numainfo[node]["freeMemory"]/1024,
-                                numainfo[node]["totalMemory"]/1024))
+                                numainfo["nodes"][node]["freeMemory"]/1024,
+                                numainfo["nodes"][node]["totalMemory"]/1024))
         print(HLINE)
     end
 end

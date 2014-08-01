@@ -99,9 +99,7 @@ skip_mask = "0x0"
 affinity = nil
 num_threads = 0
 
-cpuinfo = likwid_getCpuInfo()
 cputopo = likwid_getCpuTopology()
-numatopo = likwid_getNumaInfo()
 affinity = likwid_getAffinityInfo()
 
 if (#arg == 0) then
