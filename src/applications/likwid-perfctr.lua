@@ -368,7 +368,7 @@ end
 if use_marker == true then
     print("Read marker file")
 elseif use_wrapper or use_stethoscpe then
-    likwid.print_output(groupID, gdata, cpulist)
+    print(likwid.print_output(groupID, gdata, cpulist))
 end
 
 
