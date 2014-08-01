@@ -122,7 +122,7 @@ int test_rdpmc(int flag)
         }
     }
     return ret;
-}  
+}
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -176,10 +176,9 @@ msr_init(int initSocket_fd)
 
             if ( FD[i] < 0 )
             {
-                ERROR_PRINT("Cannot access MSR device file %s: %s\n",
-                                msr_file_name , strerror(errno));
+                ERROR_PRINT(Cannot access MSR device file %s in direct mode, msr_file_name);
                 free(msr_file_name);
-                   return -EPERM;
+                return -EPERM;
             }
         }
     }
@@ -251,7 +250,7 @@ msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
     {
         if (pwrite(FD[cpu], &data, sizeof(data), reg) != sizeof(data))
         {
-            ERROR_PRINT("Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n",
+            ERROR_PRINT(Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n,
                         reg, cpu);
             return -EIO;
         }
@@ -277,7 +276,7 @@ msr_read( const int cpu, uint32_t reg, uint64_t *data)
             if (__rdpmc(reg - MSR_PMC0, data) )
             {
                 //ERROR_PRINT("cpu %d reg %x",cpu, reg);
-                ERROR_PRINT("Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n",
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n,
                         reg,cpu);
                 return -EIO;
             }
@@ -287,7 +286,7 @@ msr_read( const int cpu, uint32_t reg, uint64_t *data)
             if ( pread(FD[cpu], data, sizeof(*data), reg) != sizeof(*data) )
             {
                 //ERROR_PRINT("cpu %d reg %x",cpu, reg);
-                ERROR_PRINT("Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d\n",
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d\n,
                         reg, cpu);
                 return -EIO;
             }
