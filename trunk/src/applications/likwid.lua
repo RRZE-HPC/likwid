@@ -519,10 +519,26 @@ end
 
 likwid.parse_time = parse_time
 
-local function get_spaces(str, max_space)
+local function get_spaces(str, min_space, max_space)
     local length = str:len()
-    local back = math.ceil((max_space-length)/2)
-    local front = max_space - length - back
+    local back = 0
+    local front = 0
+    if length < min_space then
+        length = min_space
+        back = math.ceil((length-str:len()) /2)
+        front = max_space - back - str:len()
+        --print(str, str:len(), length, front, back, max_space)
+    else
+        back = math.ceil((max_space-length)/2)
+        front = max_space - length - back
+        
+    end
+    if (front < back) then
+        local tmp = front
+        front = back
+        back = tmp
+    end
+    --print(str,str:len(), length, front, back)
     return string.rep(" ", front),string.rep(" ", back)
 end
 
@@ -551,15 +567,20 @@ local function print_output(groupID, groupdata, cpulist)
     local maxs = {}
     local avgs = {}
     local max_eventName = 0
+    local min_eventName = 100000
     local max_result = 0
     local front_space = 0
     local back_space = 0
+    local str = ""
     metric_input["time"] = likwid_getRuntimeOfGroup(groupID)* 1.E-06
     metric_input["inverseClock"] = 1.0/likwid_getCpuClock();
     for i=0,num_events-1 do
         results[i] = {}
         if groupdata["Events"][i]["Event"]:len() > max_eventName then
             max_eventName = groupdata["Events"][i]["Event"]:len()
+        end
+        if groupdata["Events"][i]["Event"]:len() < min_eventName then
+            min_eventName = groupdata["Events"][i]["Event"]:len()
         end
         for j=0,num_threads-1 do
             results[i][j] = likwid_getResult(groupID, i, j)
@@ -568,61 +589,64 @@ local function print_output(groupID, groupdata, cpulist)
             end
         end
     end
-    print(string.rep("-",4+max_eventName+ (max_result+3)*#cpulist))
+    
     local heading = "Event"
     local front = ""
     local back = ""
-    front, back = get_spaces(heading, max_eventName)
+    front, back = get_spaces(heading, heading:len(), max_eventName)
     heading = "| " .. front .. heading .. back .. " | "
+    
+    cpuid = ""
     for j=1,num_threads do
-        local cpuid = "Core " .. tostring(cpulist[j])
-        front, back = get_spaces(cpuid, max_result)
+        cpuid = "Core " .. tostring(cpulist[j])
+        front, back = get_spaces(cpuid, cpuid:len(), max_result)
         heading = heading .. front .. cpuid .. back .. " | "
     end
-    print(heading)
-    print(string.rep("-",4+max_eventName+ (max_result+3)*#cpulist))
+    str = str .. string.rep("-",heading:len()-1) .. "\n"
+    str = str .. heading.. "\n"
+    str = str .. string.rep("-",heading:len()-1).. "\n"
     for i=0,num_events-1 do
-        front, back = get_spaces(groupdata["Events"][i]["Event"], max_eventName)
+        front, back = get_spaces(groupdata["Events"][i]["Event"], min_eventName, max_eventName)
         local event_result = "| " .. front .. groupdata["Events"][i]["Event"] .. back .. " | "
         metric_input[groupdata["Events"][i]["Counter"]] = 0.0
         mins[groupdata["Events"][i]["Event"]],maxs[groupdata["Events"][i]["Event"]], avgs[groupdata["Events"][i]["Event"]] = min_max_avg(results[i])
         for j=0,num_threads-1 do
-            front, back = get_spaces(tostring(results[i][j]), max_result)
+            front, back = get_spaces(tostring(results[i][j]), cpuid:len(), cpuid:len())
             event_result = event_result .. front .. tostring(results[i][j]) .. back .. " | "
             metric_input[groupdata["Events"][i]["Counter"]] = metric_input[groupdata["Events"][i]["Counter"]] + results[i][j]
         end
-        print(event_result)
+        str = str .. event_result.. "\n"
     end
-    print(string.rep("-",4+max_eventName+ (max_result+3)*#cpulist))
+    str = str .. string.rep("-",heading:len()-1).. "\n\n"
     
-    print()
-    print(string.rep("-",4+max_eventName+ (max_result+3)*3))
+    if max_result < 3 then max_result = 3 end
+    str = str .. string.rep("-",4+max_eventName+ (max_result+3)*3).. "\n"
     heading = "Event"
-    front, back = get_spaces(heading, max_eventName)
+    front, back = get_spaces(heading, heading:len(), max_eventName)
     heading = "| " .. front .. heading .. back .. " | "
     event_string = "MIN"
-    front, back = get_spaces(event_string, max_result)
+    front, back = get_spaces(event_string,event_string:len(), max_result)
     heading = heading .. front .. "MIN" .. back .. " | "
     heading = heading .. front .. "MAX" .. back .. " | "
     heading = heading .. front .. "AVG" .. back .. " | "
-    print(heading)
-    print(string.rep("-",4+max_eventName+ (max_result+3)*3))
+    str = str .. heading.. "\n"
+    str = str .. string.rep("-",4+max_eventName+ (max_result+3)*3).. "\n"
     for i=0,num_events-1 do
         event_string = groupdata["Events"][i]["Event"]
-        front, back = get_spaces(event_string, max_eventName)
+        front, back = get_spaces(event_string, 3, max_eventName)
         event_string = "| " .. front .. event_string .. back .. " | "
         heading = string.format("%d", mins[groupdata["Events"][i]["Event"]])
-        front, back = get_spaces(heading, max_result)
+        front, back = get_spaces(heading, 3, max_result)
         event_string = event_string .. front .. heading .. back .. " | "
         heading = string.format("%d", maxs[groupdata["Events"][i]["Event"]])
-        front, back = get_spaces(heading, max_result)
+        front, back = get_spaces(heading, 3, max_result)
         event_string = event_string .. front .. heading .. back .. " | "
         heading = string.format("%d", avgs[groupdata["Events"][i]["Event"]])
-        front, back = get_spaces(heading, max_result)
+        front, back = get_spaces(heading, 3, max_result)
         event_string = event_string .. front .. heading .. back .. " | "
-        print(event_string)
+        str = str .. event_string.. "\n"
     end
-    print(string.rep("-",4+max_eventName+ (max_result+3)*3))
+    str = str .. string.rep("-",4+max_eventName+ (max_result+3)*3).. "\n"
     
     if groupdata["Metrics"] then
         max_eventName = 0
@@ -638,18 +662,18 @@ local function print_output(groupID, groupdata, cpulist)
                 max_result = print_res:len()
             end
         end
-        print()
+        str = str .. "\n"
         
         heading = "Metric"
-        front, back = get_spaces(heading, max_eventName)
+        front, back = get_spaces(heading, heading:len(), max_eventName)
         heading = "| " .. front .. heading .. back .. " | "
         event_string = "Result"
-        front, back = get_spaces(event_string, max_result)
+        front, back = get_spaces(event_string, event_string:len(), max_result)
         heading = heading .. front .. event_string .. back .. " | "
         
-        print(string.rep("-",4+max_eventName+ (max_result+3)))
-        print(heading)
-        print(string.rep("-",4+max_eventName+ (max_result+3)))
+        str = str .. string.rep("-",4+max_eventName+ (max_result+3)).. "\n"
+        str = str .. heading.. "\n"
+        str = str .. string.rep("-",4+max_eventName+ (max_result+3)).. "\n"
         for i, res in pairs(metric_input) do
             event_string = "| "
             local desc = groupdata["Metrics"][i]["description"]
@@ -662,10 +686,11 @@ local function print_output(groupID, groupdata, cpulist)
             front_space = math.ceil((max_result-current_length)/2)
             back_space = max_result - current_length - front_space
             event_string = event_string .. string.rep(" ",front_space) .. print_res .. string.rep(" ",back_space) .. " | "
-            print(event_string)
+            str = str .. event_string.. "\n"
         end
+        str = str .. string.rep("-",4+max_eventName+ (max_result+3)).. "\n"
     end
-    print(string.rep("-",4+max_eventName+ (max_result+3)))
+    return str
 end
 
 likwid.print_output = print_output
