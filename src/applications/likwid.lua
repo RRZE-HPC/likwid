@@ -670,4 +670,23 @@ end
 
 likwid.print_output = print_output
 
+function getResults()
+    local results = {}
+    local nr_groups = likwid_getNumberOfGroups()
+    local nr_threads = likwid_getNumberOfThreads()
+    for i=0,nr_groups-1 do
+        results[i] = {}
+        local nr_events = likwid_getNumberOfEvents(i)
+        for j=0,nr_events-1 do
+            results[i][j] = {}
+            for k=0, nr_threads-1 do
+                results[i][j][k] = likwid_getResult(i,j,k)
+            end
+        end
+    end
+    return results
+end
+
+likwid.getResults = getResults
+
 return likwid
