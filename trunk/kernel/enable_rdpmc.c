@@ -4,7 +4,12 @@
 #include <linux/module.h>   /* Needed by all modules */
 #include <linux/kernel.h>   /* Needed for KERN_INFO */
 
+#define MODULE_PARAM(type, name, value, desc)			\
+	type name = value;					\
+	module_param(name, type, 0664);				\
+	MODULE_PARM_DESC(name, desc)
 
+MODULE_PARAM(int, debug, 0, "Debug output");
 
 
 static void printc4(void) {
@@ -24,9 +29,9 @@ static void setc4b8(void * info) {
             "pop    %rax"
     );
 
-    // Check which CPU we are on:
-    printk(KERN_INFO "Ran on Processor %d", smp_processor_id());
-    //printc4();
+    if (debug) {
+        printk(KERN_INFO "Processor %d, RDPMC_ENABLE_BIT=%d\n", smp_processor_id(), printc4());
+    }
 }
 
 static void clearc4b8(void * info) {
@@ -42,7 +47,10 @@ static void clearc4b8(void * info) {
             "pop    %rbx\n\t"
             "pop    %rax\n\t"
     );
-    printk(KERN_INFO "Ran on Processor %d", smp_processor_id());
+    
+    if (debug) {
+        printk(KERN_INFO "Processor %d, RDPMC_ENABLE_BIT=%d\n", smp_processor_id(), printc4());
+    }
 }
 
 
@@ -61,5 +69,5 @@ module_init(start_module);
 module_exit(stop_module)
 
 MODULE_AUTHOR("Thomas Roehl <Thomas.Roehl@fau.de>");
-MODULE_DESCRIPTION("Enable RDPMC from userspace");
+MODULE_DESCRIPTION("Enable RDPMC for userspace");
 MODULE_LICENSE("GPL");
