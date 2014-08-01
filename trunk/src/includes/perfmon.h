@@ -40,6 +40,10 @@
 //extern int perfmon_verbose;
 extern int socket_fd;
 extern PerfmonGroupSet *groupSet;
+extern int perfmon_numCounters;
+extern int perfmon_numArchEvents;
+extern PerfmonEvent* eventHash;
+extern PerfmonCounterMap* counter_map;
 
 extern int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
