@@ -6,11 +6,11 @@ MAKE_DIR   = ../../make
 include ../../config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 
-CFLAGS    = -O2 -Wall -fPIC
+CFLAGS    = -O2 -Wall -fPIC -Wno-unused-result
 INCLUDES  = -I./include
 DEFINES   =
 LIBS      = -lm -lpci -Wl,-E
-LFLAGS    =
+LFLAGS    = -Wno-unused-result
 Q         ?= @
 
 #CONFIGURE BUILD SYSTEM
@@ -48,10 +48,10 @@ endif
 .PHONY: clean distclean
 
 clean:
-	@rm -rf $(BUILD_DIR) $(LIBHWLOC)
+	@rm -rf $(BUILD_DIR)
 
 distclean: clean
-	@rm -f $(TARGET)
+	@rm -f $(TARGET) $(STATIC_LIBHWLOC) $(SHARED_LIBHWLOC)
 
 
 

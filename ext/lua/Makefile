@@ -37,7 +37,7 @@ $(STATIC_LIBLUA):
 $(SHARED_LIBLUA):
 	$(Q)$(CC) $(LFLAGS) -shared -fPIC -o $(SHARED_LIBLUA) $(OBJ)
 
-$(INTERPRETER):
+$(INTERPRETER): $(STATIC_LIBLUA) $(BUILD_DIR)/lua.o
 	$(Q)$(CC) -o $@ $(LFLAGS) $(BUILD_DIR)/lua.o $(STATIC_LIBLUA) $(LIBS)
 
 #PATTERN RULES
@@ -49,13 +49,13 @@ ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
-.PHONY: clean distclean
+.PHONY: clean distclean $(INTERPRETER)
 
 clean:
 	@rm -rf $(BUILD_DIR)
 
 distclean: clean
-	@rm -f $(TARGET)
+	@rm -f $(TARGET) $(INTERPRETER) $(STATIC_LIBLUA) $(SHARED_LIBLUA)
 
 
 
