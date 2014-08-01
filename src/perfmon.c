@@ -40,12 +40,12 @@
 #include <perfmon_silvermont.h>
 
 
-static PerfmonEvent* eventHash;
-static PerfmonCounterMap* counter_map;
+PerfmonEvent* eventHash;
+PerfmonCounterMap* counter_map;
 static PerfmonGroupMap* group_map;
 static PerfmonGroupHelp* group_help;
-static int perfmon_numCounters;
-static int perfmon_numArchEvents;
+int perfmon_numCounters;
+int perfmon_numArchEvents;
 static int perfmon_numGroups;
 
 int socket_fd = -1;
