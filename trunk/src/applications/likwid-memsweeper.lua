@@ -46,6 +46,10 @@ local function examples()
     print("Examples:")
     print("To clean specific domain:")
     print("likwid-memsweeper.lua -c 2")
+    print("To clean a range of domains:")
+    print("likwid-memsweeper.lua -c 1-2")
+    print("To clean specific domains:")
+    print("likwid-memsweeper.lua -c 0,1-2")
 
 end
 
@@ -62,9 +66,9 @@ end
 
 numainfo = likwid_getNumaInfo()
 nodes = {}
-for i,a in pairs(numainfo) do
-    if tonumber(i) ~= nil then
-        table.insert(nodes,i)
+for i,_ in pairs(numainfo["nodes"]) do
+    if tonumber(numainfo["nodes"][i]["id"]) ~= nil then
+        table.insert(nodes,numainfo["nodes"][i]["id"])
     end
 end
 
@@ -77,7 +81,10 @@ for opt,arg in likwid.getopt(arg, "c:hv") do
         os.exit(0)
     elseif (opt == "c") then
         num_nodes, nodes = likwid.nodestr_to_nodelist(arg)
-        likwid.tableprint(nodes)
+    else
+        print("Unknown option found on commandline")
+        usage()
+        os.exit(1)
     end
 end
 

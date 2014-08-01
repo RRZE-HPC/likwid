@@ -332,7 +332,7 @@ local function nodestr_to_nodelist(cpustr)
                 local ende = tonumber(subList[2])
                 if ende >= numainfo["numberOfNodes"] then
                     print("Expression selects too many nodes, host has ".. tablelength(numainfo)-1 .." nodes")
-                    return {}
+                    return 0,{}
                 end
                 for i=start,ende do
                     table.insert(cpulist, i)
@@ -340,14 +340,25 @@ local function nodestr_to_nodelist(cpustr)
             else
                 if tonumber(expr) >= numainfo["numberOfNodes"] then
                     print("Expression selects too many nodes, host has ".. tablelength(numainfo)-1 .." nodes")
-                    return {}
+                    return 0,{}
                 end
             end
         end
     elseif s2 ~= nil then
-        cpulist = stringsplit(cpustr,"-")
+        local subList = stringsplit(cpustr,"-")
+        local start = tonumber(subList[1])
+        local ende = tonumber(subList[2])
+        if ende >= numainfo["numberOfNodes"] then
+            print("Expression selects too many nodes, host has ".. tablelength(numainfo)-1 .." nodes")
+            return 0,{}
+        end
+        for i=start,ende do
+            table.insert(cpulist, i)
+        end
     else
-        table.insert(cpulist, tonumber(cpustr))
+        if (tonumber(cpustr) < numainfo["numberOfNodes"]) then
+            table.insert(cpulist, tonumber(cpustr))
+        end
     end
     return tablelength(cpulist),cpulist
 end
@@ -498,7 +509,7 @@ local function parse_time(timestr)
     else
         s1,e1 = timestr:find("s")
         if s1 == nil then
-            print("Cannot parse time, " .. timestr .. "not well formatted")
+            print("Cannot parse time, '" .. timestr .. "' not well formatted, we need a time unit like s, ms, us")
             os.exit(1)
         end
         duration = tonumber(timestr:sub(1,s1-1)) * 1.E06

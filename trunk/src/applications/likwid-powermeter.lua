@@ -60,18 +60,23 @@ local function usage()
     print("-M <0|1>\t Set how MSR registers are accessed, 0=direct, 1=msrd")
     print("-c <list>\t Specify sockets to measure")
     print("-i\t\t Print information from MSR_PKG_POWER_INFO register and Turbo mode")
-    print("-s <duration>\t Set measure duration in sec. (default 2s)")
+    print("-s <duration>\t Set measure duration in us, ms or s. (default 2s)")
     print("-p\t\t Print dynamic clocking and CPI values")
     print("")
     examples()
 end
 
+local config = likwid_getConfiguration();
 
 print_info = false
 use_perfctr = false
 stethoscope = false
 fahrenheit = false
-access_mode = 1
+if config["daemonMode"] < 0 then
+    access_mode = 1
+else
+    access_mode = config["daemonMode"]
+end
 time_interval = 2
 sockets = {}
 eventString = "PWR_PKG_ENERGY:PWR0,PWR_PP0_ENERGY:PWR1,PWR_DRAM_ENERGY:PWR3"
@@ -141,36 +146,38 @@ for opt,arg in likwid.getopt(arg, "c:hiM:ps:vf") do
     elseif (opt == "f") then
         fahrenheit = true
     elseif (opt == "s") then
-        time_interval = tonumber(arg)
+        time_interval = likwid.parse_time(arg)
         stethoscope = true
-        if (time_interval == nil) then
-            print("Time interval (-s) must be an number")
-            usage()
-            os.exit(1)
-        elseif (time_interval <= 0) then
-            print("Time interval (-s) must be greater than 0")
-            usage()
-            os.exit(1)
-        end
     end
 end
-accessClient_setaccessmode(access_mode)
+
+
 
 cpulist = {}
 for i,socketId in pairs(sockets) do
-    for j, cpuId in pairs(numatopo[socketId]["processors"]) do
+    for j, cpuId in pairs(numatopo["nodes"][i]["processors"]) do
         table.insert(cpulist,cpuId)
     end
 end
 
 
-
+if likwid_setAccessClientMode(access_mode) ~= 0 then
+    os.exit(1)
+end
 
 power = likwid_getPowerInfo()
+if time_interval < power["timeUnit"]*1.E06 then
+    print("Time interval too short, minimum measurement time is "..tostring(power["timeUnit"]*1.E06).. " us")
+    os.exit(1)
+end
 
 print(HLINE);
 print(string.format("CPU name:\t%s", cpuinfo["name"]))
-print(string.format("CPU clock:\t%3.2f GHz",likwid_getCpuClock() *  1.E-09))
+if cpuinfo["clock"] > 0 then
+    print(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] *  1.E-09))
+else
+    print(string.format("CPU clock:\t%3.2f GHz",likwid_getCpuClock() *  1.E-09))
+end
 print(HLINE);
 
 if (print_info) then
@@ -179,7 +186,7 @@ if (print_info) then
         print(string.format("Minimal clock:\t%.2f MHz", power["minFrequency"]))
         print("Turbo Boost Steps:")
         for i,step in pairs(power["turbo"]["steps"]) do
-            print(string.format("C%d %.2f MHz",i,power["turbo"]["steps"][i]))
+            print(string.format("C%d %.2f MHz",i-1,power["turbo"]["steps"][i]))
         end
     end
     print(HLINE)
@@ -208,7 +215,7 @@ if (print_info) then
 end
 
 if (use_perfctr) then
-    affinity = likwid_getAffinityInfo
+    affinity = likwid_getAffinityInfo()
     argString = ""
     for i,socket in pairs(sockets) do
         argString = argString .. string.format("S%u:0-%u",socket,(cputopo["numCoresPerSocket"]*cputopo["numThreadsPerCore"])-1)
@@ -222,7 +229,7 @@ if (use_perfctr) then
 end
 
 for i,socket in pairs(sockets) do
-    cpu = numatopo[socket]["processors"][0]
+    cpu = numatopo["nodes"][i]["processors"][1]
     print(string.format("Measure for socket %d on cpu %d", socket,cpu ))
     if (stethoscope) then
         if (use_perfctr) then
@@ -231,7 +238,7 @@ for i,socket in pairs(sockets) do
         
         if (hasDRAM) then before3 = likwid_startPower(cpu, 3) end
         before0 = likwid_startPower(cpu, 0)
-        sleep(time_interval);
+        usleep(time_interval);
         after0 = likwid_stopPower(cpu, 0)
         if (hasDRAM) then 
             after3 = likwid_stopPower(cpu, 3) 
@@ -279,7 +286,7 @@ for i,socket in pairs(sockets) do
         time_after = likwid_stopClock()
         runtime = likwid_getClock(time_before, time_after)
     end
-    print(string.format("Runtime: %g s",runtime))
+    print(string.format("Runtime: %g us",runtime))
     print("Domain: PKG")
     energy = (after0 - before0) * power["energyUnit"]
     print(string.format("Energy consumed: %g Joules",energy))
@@ -294,12 +301,14 @@ for i,socket in pairs(sockets) do
         print(HLINE)
         likwid_initTemp(cpu);
         print("Current core temperatures:");
-        for i=0,(cputopo["numCoresPerSocket"]*cputopo["numThreadsPerCore"])-1 do
-            cpuid = numatopo[socket]["processors"][i]
-            if (fahrenheit) then
-                print(string.format("Core %d: %u °F",cpuid, 1.8*likwid_readTemp(cpuid)+32));
-            else
-                print(string.format("Core %d: %u °C",cpuid, likwid_readTemp(cpuid)));
+        for i=1,cputopo["numSockets"] do
+            for j=1,(cputopo["numCoresPerSocket"]*cputopo["numThreadsPerCore"]) do
+                cpuid = numatopo["nodes"][i]["processors"][j]
+                if (fahrenheit) then
+                    print(string.format("Socket %d Core %d: %u °F",numatopo["nodes"][i]["id"],cpuid, 1.8*likwid_readTemp(cpuid)+32));
+                else
+                    print(string.format("Socket %d Core %d: %u °C",numatopo["nodes"][i]["id"],cpuid, likwid_readTemp(cpuid)));
+                end
             end
         end
     end
