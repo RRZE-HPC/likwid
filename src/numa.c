@@ -43,6 +43,8 @@
 #endif
 #include <topology.h>
 
+#include <configuration.h>
+
 #include <error.h>
 #include <bstrlib.h>
 #include <strUtil.h>
@@ -105,7 +107,16 @@ const struct numa_functions numa_funcs = {
 int numa_init(void)
 {
     const struct numa_functions funcs = numa_funcs;
-    return funcs.numa_init();
+
+    if (init_config == 0)
+    {
+        init_configuration();
+    }
+
+    if (access(config.topologyCfgFileName, R_OK) && numa_info.numberOfNodes <= 0)
+    {
+        return funcs.numa_init();
+    }
 }
 
 void numa_setInterleaved(int* processorList, int numberOfProcessors)
