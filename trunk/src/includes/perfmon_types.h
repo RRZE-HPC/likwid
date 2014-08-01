@@ -112,6 +112,7 @@ typedef struct {
 typedef struct {
     int         init;
     int         id;
+    uint64_t    startData;
     uint64_t    counterData;
 } PerfmonCounter;
 
