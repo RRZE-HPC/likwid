@@ -86,7 +86,11 @@ int hashTable_get(bstring label, LikwidThreadResults** resEntry)
         (*resEntry)->label = bstrcpy (label);
         (*resEntry)->time = 0.0;
         (*resEntry)->count = 0;
-        for (int i=0; i< NUM_PMC; i++) (*resEntry)->PMcounters[i] = 0.0;
+        for (int i=0; i< NUM_PMC; i++) 
+        {
+            (*resEntry)->PMcounters[i] = 0.0;
+            (*resEntry)->StartPMcounters[i] = 0.0;
+        }
 
         g_hash_table_insert(
                 resPtr->hashTable,
