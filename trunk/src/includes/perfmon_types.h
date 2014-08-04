@@ -112,6 +112,7 @@ typedef struct {
 typedef struct {
     int         init;
     int         id;
+    int         overflows;
     uint64_t    startData;
     uint64_t    counterData;
 } PerfmonCounter;
@@ -127,6 +128,10 @@ typedef struct {
     PerfmonEventSetEntry* events;
     TimerData             timer;
     double                rdtscTime;
+    uint8_t               measureFixed;
+    uint8_t               measurePMC;
+    uint8_t               measurePMCUncore;
+    uint8_t               measurePCIUncore;
 } PerfmonEventSet;
 
 typedef struct {
