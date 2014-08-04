@@ -71,6 +71,7 @@ static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
 static char* short_unknown = "unknown";
 
+
 static void initTopologyFile(FILE* file)
 {
     size_t items;
@@ -850,5 +851,26 @@ CpuInfo_t get_cpuInfo(void)
 NumaTopology_t get_numaTopology(void)
 {
     return &numa_info;
+}
+
+uint64_t get_maxPerfCounterValue(void)
+{
+    int j;
+    uint64_t tmp = 0x0ULL;
+    for (j=0;j< cpuid_info.perf_width_ctr;j++)
+    {
+        tmp |= (1<<j);
+    }
+    return tmp;
+}
+uint64_t get_maxPowerCounterValue(void)
+{
+    int j;
+    uint64_t tmp = 0x0ULL;
+    for (j=0;j<32;j++)
+    {
+        tmp |= (1<<j);
+    }
+    return tmp;
 }
 

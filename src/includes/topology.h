@@ -102,5 +102,7 @@ extern CpuInfo_t get_cpuInfo(void);
 extern int numa_init(void);
 extern void topology_finalize(void);
 extern NumaTopology_t get_numaTopology(void);
+extern uint64_t get_maxPerfCounterValue(void);
+extern uint64_t get_maxPowerCounterValue(void);
 
 #endif
