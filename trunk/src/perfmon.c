@@ -75,13 +75,14 @@ perfmon_initThread(/*PerfmonGroupSet* groupSet, int groupId,*/ int thread_id, in
 }
 
 static int
-getIndex (bstring reg, PerfmonCounterIndex* index)
+getIndexAndType (bstring reg, PerfmonCounterIndex* index, PerfmonType* type)
 {
     for (int i=0; i< perfmon_numCounters; i++)
     {
         if (biseqcstr(reg, counter_map[i].key))
         {
             *index = counter_map[i].index;
+            *type = counter_map[i].type;
             return TRUE;
         }
     }
@@ -395,8 +396,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
 {
     int i;
     int ret;
-    int initialize_power = 0;
-    int initialize_thermal = 0;
+    int initialize_power = FALSE;
+    int initialize_thermal = FALSE;
 
     if (nrThreads <= 0)
     {
@@ -455,6 +456,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     }
     
     ret = msr_init(socket_fd);
+
     if (ret)
     {
         ERROR_PLAIN_PRINT("Initialization of MSR device accesses failed");
@@ -466,6 +468,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     
 
     timer_init();
+    
     perfmon_init_maps();
 
     switch ( cpuid_info.family )
@@ -499,8 +502,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                     break;
 
                 case ATOM_SILVERMONT:
-                    initialize_power = 1;
-                    initialize_thermal = 1;
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_silvermont;
                     perfmon_startCountersThread = perfmon_startCountersThread_silvermont;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_silvermont;
@@ -544,7 +547,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case NEHALEM_BLOOMFIELD:
 
                 case NEHALEM_LYNNFIELD:
-                    thermal_init(0);
+                    initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_nehalem;
                     perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
@@ -555,7 +558,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case NEHALEM_WESTMERE_M:
 
                 case NEHALEM_WESTMERE:
-                    initialize_thermal = 1;
+                    initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_nehalem;
                     perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
@@ -567,8 +570,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
 
                 case IVYBRIDGE_EP:
 
-                    initialize_power = 1;
-                    initialize_thermal = 1;
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
                     pci_init(socket_fd);
                     initThreadArch = perfmon_init_ivybridge;
                     perfmon_startCountersThread = perfmon_startCountersThread_ivybridge;
@@ -584,8 +587,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case HASWELL_M1:
 
                 case HASWELL_M2:
-                    initialize_power = 1;
-                    initialize_thermal = 1;
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_haswell;
                     perfmon_startCountersThread = perfmon_startCountersThread_haswell;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_haswell;
@@ -596,8 +599,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                 case SANDYBRIDGE:
 
                 case SANDYBRIDGE_EP:
-                    initialize_power = 1;
-                    initialize_thermal = 1;
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
                     pci_init(socket_fd);
                     initThreadArch = perfmon_init_sandybridge;
                     perfmon_startCountersThread = perfmon_startCountersThread_sandybridge;
@@ -671,11 +674,11 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     /* If the arch supports it, initialize power and thermal measurements */
     for(i=0;i<nrThreads;i++)
     {
-        if (initialize_power == 1)
+        if (initialize_power == TRUE)
         {
             power_init(threadsToCpu[i]);
         }
-        if (initialize_thermal == 1)
+        if (initialize_thermal == TRUE)
         {
             thermal_init(threadsToCpu[i]);
         }
@@ -719,17 +722,30 @@ perfmon_addEventSet(char* eventCString)
     struct bstrList* subtokens;
     PerfmonEventSet* eventSet;
     PerfmonEventSetEntry* event;
+    PerfmonType event_type;
     
     if (eventCString == NULL)
     {
-        fprintf(stderr,"Event string is empty\nTrying environment variable LIKWID_EVENTS\n");
+        ERROR_PLAIN_PRINT(Event string is empty. Trying environment variable LIKWID_EVENTS);
         eventCString = getenv("LIKWID_EVENTS");
         if (eventCString == NULL)
         {
-            fprintf(stderr,"Event string from environment variable is empty");
+            ERROR_PLAIN_PRINT(Event string from environment variable is empty);
             return -EINVAL;
         }
-        
+    }
+    
+    if (strchr(eventCString, '-') != NULL)
+    {
+        return -EINVAL;
+    }
+    if (strchr(eventCString, '.') != NULL)
+    {
+        return -EINVAL;
+    }
+    if (strchr(eventCString, ';') != NULL)
+    {
+        return -EINVAL;
     }
     
     if (groupSet->numberOfActiveGroups == groupSet->numberOfGroups)
@@ -755,6 +771,10 @@ perfmon_addEventSet(char* eventCString)
         return -ENOMEM;
     }
     eventSet->numberOfEvents = 0;
+    eventSet->measureFixed = 0;
+    eventSet->measurePMC = 0;
+    eventSet->measurePMCUncore = 0;
+    eventSet->measurePCIUncore = 0;
 
     for(i=0;i<tokens->qty;i++)
     {
@@ -769,7 +789,7 @@ perfmon_addEventSet(char* eventCString)
         }
         else
         {
-            if (!getIndex(subtokens->entry[1], &event->index))
+            if (!getIndexAndType(subtokens->entry[1], &event->index, &event_type))
             {
                 ERROR_PRINT(Counter register %s not supported,bdata(
                         subtokens->entry[1]));
@@ -794,6 +814,44 @@ perfmon_addEventSet(char* eventCString)
             }
 
             eventSet->numberOfEvents++;
+            switch (event_type)
+            {
+                case FIXED:
+                    eventSet->measureFixed = 1;
+                    break;
+                case PMC:
+                    eventSet->measurePMC = 1;
+                    break;
+                case UNCORE:
+                    eventSet->measurePMCUncore = 1;
+                case MBOX0:
+                case MBOX1:
+                case MBOX2:
+                case MBOX3:
+                case MBOXFIX:
+                case BBOX0:
+                case BBOX1:
+                case RBOX0:
+                case RBOX1:
+                case WBOX:
+                case SBOX0:
+                case SBOX1:
+                case SBOX2:
+                case CBOX0:
+                case CBOX1:
+                case CBOX2:
+                case CBOX3:
+                case CBOX4:
+                case CBOX5:
+                case CBOX6:
+                case CBOX7:
+                case CBOX8:
+                case CBOX9:
+                case CBOX10:
+                case CBOX11:
+                case PBOX:
+                    eventSet->measurePCIUncore = 1;       
+            }
 
             event->threadCounter = (PerfmonCounter*) malloc(
                 groupSet->numberOfThreads * sizeof(PerfmonCounter));
@@ -807,6 +865,8 @@ perfmon_addEventSet(char* eventCString)
             for(j=0;j<groupSet->numberOfThreads;j++)
             {
                 event->threadCounter[j].counterData = 0;
+                event->threadCounter[j].startData = 0;
+                event->threadCounter[j].overflows = 0;
             }
         }
         bstrListDestroy(subtokens);
@@ -853,7 +913,6 @@ int
 perfmon_stopCounters(void)
 {
     timer_stop(&groupSet->groups[groupSet->activeGroup].timer);
-
     for (int i=0; i<groupSet->numberOfThreads; i++)
     {
         perfmon_stopCountersThread(i, &groupSet->groups[groupSet->activeGroup]);
@@ -877,6 +936,9 @@ perfmon_readCounters(void)
 uint64_t
 perfmon_getResult(int groupId, int eventId, int threadId)
 {
+    uint64_t result = 0x0ULL;
+    PerfmonEventSetEntry* event;
+    PerfmonCounter* counter;
     if (unlikely(groupSet == NULL))
     {
         return 0;
@@ -893,7 +955,23 @@ perfmon_getResult(int groupId, int eventId, int threadId)
     {
         return 0;
     }
-    return groupSet->groups[groupId].events[eventId].threadCounter[threadId].counterData;
+    event = &(groupSet->groups[groupId].events[eventId]);
+    counter = &(event->threadCounter[threadId]);
+    
+    result = counter->counterData;
+    
+    if ((counter_map[event->index].type == FIXED) || 
+                    (counter_map[event->index].type == PMC))
+    {
+        result += counter->overflows * get_maxPerfCounterValue();
+    }
+    else if (counter_map[event->index].type == POWER)
+    {
+        result += counter->overflows * get_maxPowerCounterValue();
+        result -= counter->startData;
+        result *= power_info.energyUnit;
+    }
+    return result;
 }
 
 int
@@ -925,7 +1003,7 @@ perfmon_getNumberOfGroups(void)
 }
 
 int
-perfmon_getNumberOfActiveGroup(void)
+perfmon_getIdOfActiveGroup(void)
 {
     return groupSet->activeGroup;
 }
