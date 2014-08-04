@@ -33,23 +33,10 @@
 #include <error.h>
 #include <affinity.h>
 
-#define NUM_GROUPS_PM 5
 
 static int perfmon_numCounters_pm = NUM_COUNTERS_PM;
-static int perfmon_numGroups_pm = NUM_GROUPS_PM;
 static int perfmon_numArchEvents_pm = NUM_ARCH_EVENTS_PM;
 
-static PerfmonGroupMap pm_group_map[NUM_GROUPS_PM] = {
-    {"FLOPS_DP",FLOPS_DP,0,"Double Precision MFlops/s",
-        "EMON_SSE_SSE2_COMP_INST_RETIRED_PACKED_DP:PMC0,EMON_SSE_SSE2_COMP_INST_RETIRED_SCALAR_DP:PMC1"},
-    {"FLOPS_SP",FLOPS_SP,0,"Single Precision MFlops/s",
-        "EMON_SSE_SSE2_COMP_INST_RETIRED_ALL_SP:PMC0,EMON_SSE_SSE2_COMP_INST_RETIRED_SCALAR_SP:PMC1"},
-    {"L2",L2,0,"L2 cache bandwidth in MBytes/s",
-        "L2_LINES_IN_ALL_ALL:PMC0,L2_LINES_OUT_ALL_ALL:PMC1"},
-    {"BRANCH",BRANCH,0,"Branch prediction miss rate",
-        "BR_INST_EXEC:PMC0,BR_INST_MISSP_EXEC:PMC1"},
-    {"CPI",CPI,0,"Cycles per instruction","UOPS_RETIRED:PMC0"}
-};
 
 int perfmon_init_pm(int cpu_id)
 {

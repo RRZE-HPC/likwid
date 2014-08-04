@@ -29,13 +29,11 @@
  */
 
 #include <perfmon_kabini_events.h>
-#include <perfmon_kabini_groups.h>
 #include <perfmon_kabini_counters.h>
 #include <error.h>
 #include <affinity.h>
 
 static int perfmon_numCountersKabini = NUM_COUNTERS_KABINI;
-static int perfmon_numGroupsKabini = NUM_GROUPS_KABINI;
 static int perfmon_numArchEventsKabini = NUM_ARCH_EVENTS_KABINI;
 
 int perfmon_init_kabini(int cpu_id)

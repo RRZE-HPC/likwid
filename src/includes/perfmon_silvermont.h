@@ -29,11 +29,9 @@
  */
  
 #include <perfmon_silvermont_events.h>
-#include <perfmon_silvermont_groups.h>
 #include <perfmon_silvermont_counters.h>
 
 static int perfmon_numCountersSilvermont = NUM_COUNTERS_SILVERMONT;
-static int perfmon_numGroupsSilvermont = NUM_GROUPS_SILVERMONT;
 static int perfmon_numArchEventsSilvermont = NUM_ARCH_EVENTS_SILVERMONT;
 
 

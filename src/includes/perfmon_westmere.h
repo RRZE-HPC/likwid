@@ -29,8 +29,6 @@
  */
 
 #include <perfmon_westmere_events.h>
-#include <perfmon_westmere_groups.h>
 
-static int perfmon_numGroupsWestmere = NUM_GROUPS_WESTMERE;
 static int perfmon_numArchEventsWestmere = NUM_ARCH_EVENTS_WESTMERE;
 

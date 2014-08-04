@@ -29,12 +29,10 @@
  */
 
 #include <perfmon_interlagos_events.h>
-#include <perfmon_interlagos_groups.h>
 #include <perfmon_interlagos_counters.h>
 #include <error.h>
 
 static int perfmon_numCountersInterlagos = NUM_COUNTERS_INTERLAGOS;
-static int perfmon_numGroupsInterlagos = NUM_GROUPS_INTERLAGOS;
 static int perfmon_numArchEventsInterlagos = NUM_ARCH_EVENTS_INTERLAGOS;
 
 

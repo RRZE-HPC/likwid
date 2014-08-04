@@ -29,8 +29,6 @@
  */
 
 #include <perfmon_haswell_events.h>
-//#include <perfmon_haswell_groups.h>
-#define NUM_GROUPS_HASWELL 6
 #include <perfmon_haswell_counters.h>
 #include <error.h>
 #include <affinity.h>
@@ -39,7 +37,6 @@
 
 
 static int perfmon_numCountersHaswell = NUM_COUNTERS_HASWELL;
-static int perfmon_numGroupsHaswell = NUM_GROUPS_HASWELL;
 static int perfmon_numArchEventsHaswell = NUM_ARCH_EVENTS_HASWELL;
 
 

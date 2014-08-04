@@ -29,16 +29,13 @@
  */
 
 #include <perfmon_sandybridge_events.h>
-#include <perfmon_sandybridge_groups.h>
 #include <perfmon_sandybridge_counters.h>
 #include <error.h>
 #include <affinity.h>
 
 static int perfmon_numCountersSandybridge = NUM_COUNTERS_SANDYBRIDGE;
-static int perfmon_numGroupsSandybridge = NUM_GROUPS_SANDYBRIDGE;
 static int perfmon_numArchEventsSandybridge = NUM_ARCH_EVENTS_SANDYBRIDGE;
 
-#define OFFSET_PMC 3
 
 int perfmon_init_sandybridge(int cpu_id)
 {
