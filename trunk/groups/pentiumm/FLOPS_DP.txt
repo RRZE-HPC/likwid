@@ -1,0 +1,18 @@
+SHORT Double Precision MFlops/s
+
+EVENTSET
+PMC0 EMON_SSE_SSE2_COMP_INST_RETIRED_PACKED_DP
+PMC1 EMON_SSE_SSE2_COMP_INST_RETIRED_SCALAR_DP
+
+METRICS
+Runtime (RDTSC) [s] time
+MFlops/s  1.0E-06*(PMC0*2.0+PMC1)/time
+Packed MUOPS/s   1.0E-06*(PMC0)/time
+Scalar MUOPS/s 1.0E-06*PMC1/time
+
+LONG
+Formula:
+MFlops/s =  (EMON_SSE_SSE2_COMP_INST_RETIRED_PACKED_DP*2 + EMON_SSE_SSE2_COMP_INST_RETIRED_SCALAR_DP )/ runtime
+-
+SSE scalar and packed double precision flop rates.
+
