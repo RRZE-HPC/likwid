@@ -266,23 +266,19 @@ bstr_to_cpuset_expression(uint32_t* threads,  const_bstring qi)
         ERROR_PRINT(Invalid processor id requested. Avaialable 0-%d,domain->numberOfProcessors-1);
       }
 
-      counter = chunksize;
-
-      for (j=0; j<numThreads; j++)
+      
+      counter = 0;
+      for (j=0; j<numThreads; j+=chunksize)
       {
-        if (counter)
+        for(i=0;i<chunksize;i++)
         {
-          threads[globalNumThreads++] = domain->processorList[currentId++];
+            threads[globalNumThreads++] = domain->processorList[counter+i];
         }
-        else
+        counter += stride;
+        if (counter >= domain->numberOfProcessors)
         {
-          startId += stride;
-          if (startId >= numThreads) startId -= numThreads;
-          currentId = startId;
-          threads[globalNumThreads++] = domain->processorList[currentId++];
-          counter = chunksize;
+            counter = 0;
         }
-        counter--;
       }
     }
     else
@@ -607,10 +603,12 @@ bstr_to_doubleSize(const_bstring str, DataType type)
   switch (type)
   {
     case SINGLE:
+    case SINGLE_RAND:
       bytesize = sizeof(float);
       break;
 
     case DOUBLE:
+    case DOUBLE_RAND:
       bytesize = sizeof(double);
       break;
   }
