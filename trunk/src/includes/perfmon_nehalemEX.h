@@ -29,14 +29,12 @@
  */
 
 #include <perfmon_nehalemEX_events.h>
-#include <perfmon_nehalemEX_groups.h>
 #include <error.h>
 #include <affinity.h>
 
 #define NUM_COUNTERS_NEHALEMEX 7
 
-//static int perfmon_numCountersNehalemEX = NUM_COUNTERS_NEHALEMEX;
-static int perfmon_numGroupsNehalemEX = NUM_GROUPS_NEHALEMEX;
+static int perfmon_numCountersNehalemEX = NUM_COUNTERS_NEHALEMEX;
 static int perfmon_numArchEventsNehalemEX = NUM_ARCH_EVENTS_NEHALEMEX;
 
 /* This SUCKS: There are only subtle difference between NehalemEX

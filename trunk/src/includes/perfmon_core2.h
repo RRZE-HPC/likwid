@@ -29,12 +29,10 @@
  */
 
 #include <perfmon_core2_events.h>
-#include <perfmon_core2_groups.h>
 #include <perfmon_core2_counters.h>
 #include <error.h>
 
 static int perfmon_numCountersCore2 = NUM_COUNTERS_CORE2;
-static int perfmon_numGroupsCore2 = NUM_GROUPS_CORE2;
 static int perfmon_numArchEventsCore2 = NUM_ARCH_EVENTS_CORE2;
 
 int perfmon_init_core2(int cpu_id)

@@ -29,12 +29,10 @@
  */
 
 #include <perfmon_k10_events.h>
-#include <perfmon_k10_groups.h>
 #include <perfmon_k10_counters.h>
 #include <error.h>
 
 static int perfmon_numCountersK10 = NUM_COUNTERS_K10;
-static int perfmon_numGroupsK10 = NUM_GROUPS_K10;
 static int perfmon_numArchEventsK10 = NUM_ARCH_EVENTS_K10;
 
 int perfmon_init_k10(int cpu_id)

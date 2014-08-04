@@ -29,14 +29,12 @@
  */
 
 #include <perfmon_ivybridge_events.h>
-#include <perfmon_ivybridge_groups.h>
 #include <perfmon_ivybridge_counters.h>
 #include <error.h>
 #include <affinity.h>
 #include <limits.h>
 
 static int perfmon_numCountersIvybridge = NUM_COUNTERS_IVYBRIDGE;
-static int perfmon_numGroupsIvybridge = NUM_GROUPS_IVYBRIDGE;
 static int perfmon_numArchEventsIvybridge = NUM_ARCH_EVENTS_IVYBRIDGE;
 
 #define OFFSET_PMC 3

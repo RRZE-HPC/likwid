@@ -1,3 +1,4 @@
+# w
 # =======================================================================================
 #  
 #      Filename:  Makefile
@@ -104,7 +105,7 @@ LIBLUA = ext/lua/liblua.a
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(BUILD_DIR) $(GENGROUPLOCK) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(EXT_TARGETS) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(FORTRAN_INTERFACE)  $(PINLIB)  $(DAEMON_TARGET)
+all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(EXT_TARGETS) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(FORTRAN_INTERFACE)  $(PINLIB)  $(DAEMON_TARGET)
 
 tags:
 	@echo "===>  GENERATE  TAGS"

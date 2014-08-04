@@ -42,11 +42,8 @@
 
 PerfmonEvent* eventHash;
 PerfmonCounterMap* counter_map;
-static PerfmonGroupMap* group_map;
-static PerfmonGroupHelp* group_help;
 int perfmon_numCounters;
 int perfmon_numArchEvents;
-static int perfmon_numGroups;
 
 int socket_fd = -1;
 
@@ -184,7 +181,6 @@ perfmon_init_maps(void)
 
                     eventHash = pm_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEvents_pm;
-                    perfmon_numGroups = perfmon_numGroups_pm;
                     counter_map = pm_counter_map;
                     perfmon_numCounters = perfmon_numCounters_pm;
                     break;
@@ -199,7 +195,6 @@ perfmon_init_maps(void)
 
                     eventHash = atom_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsAtom;
-                    perfmon_numGroups = perfmon_numGroupsAtom;
                     counter_map = core2_counter_map;
                     perfmon_numCounters = perfmon_numCountersCore2;
                     break;
@@ -207,9 +202,6 @@ perfmon_init_maps(void)
                 case ATOM_SILVERMONT:
                     eventHash = silvermont_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsSilvermont;
-                    group_map = silvermont_group_map;
-                    group_help = silvermont_group_help;
-                    perfmon_numGroups = perfmon_numGroupsSilvermont;
                     counter_map = silvermont_counter_map;
                     perfmon_numCounters = perfmon_numCountersSilvermont;
                     break;
@@ -226,7 +218,6 @@ perfmon_init_maps(void)
 
                     eventHash = core2_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsCore2;
-                    perfmon_numGroups = perfmon_numGroupsCore2;
                     counter_map = core2_counter_map;
                     perfmon_numCounters = perfmon_numCountersCore2;
                     break;
@@ -235,9 +226,6 @@ perfmon_init_maps(void)
 
                     eventHash = nehalemEX_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsNehalemEX;
-                    group_map = nehalemEX_group_map;
-                    group_help = nehalemEX_group_help;
-                    perfmon_numGroups = perfmon_numGroupsNehalemEX;
                     counter_map = westmereEX_counter_map;
                     perfmon_numCounters = perfmon_numCountersWestmereEX;
 
@@ -247,9 +235,6 @@ perfmon_init_maps(void)
 
                     eventHash = westmereEX_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsWestmereEX;
-                    group_map = westmereEX_group_map;
-                    group_help = westmereEX_group_help;
-                    perfmon_numGroups = perfmon_numGroupsWestmereEX;
                     counter_map = westmereEX_counter_map;
                     perfmon_numCounters = perfmon_numCountersWestmereEX;
                     break;
@@ -258,13 +243,8 @@ perfmon_init_maps(void)
 
                 case NEHALEM_LYNNFIELD:
 
-                    thermal_init(0);
-
                     eventHash = nehalem_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsNehalem;
-                    group_map = nehalem_group_map;
-                    group_help = nehalem_group_help;
-                    perfmon_numGroups = perfmon_numGroupsNehalem;
                     counter_map = nehalem_counter_map;
                     perfmon_numCounters = perfmon_numCountersNehalem;
                     break;
@@ -274,9 +254,6 @@ perfmon_init_maps(void)
                 case NEHALEM_WESTMERE:
                     eventHash = westmere_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsWestmere;
-                    group_map = westmere_group_map;
-                    group_help = westmere_group_help;
-                    perfmon_numGroups = perfmon_numGroupsWestmere;
                     counter_map = nehalem_counter_map;
                     perfmon_numCounters = perfmon_numCountersNehalem;
                     break;
@@ -286,9 +263,6 @@ perfmon_init_maps(void)
                 case IVYBRIDGE_EP:
                     eventHash = ivybridge_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsIvybridge;
-                    group_map = ivybridge_group_map;
-                    group_help = ivybridge_group_help;
-                    perfmon_numGroups = perfmon_numGroupsIvybridge;
                     counter_map = ivybridge_counter_map;
                     perfmon_numCounters = perfmon_numCountersIvybridge;
                     break;
@@ -302,7 +276,6 @@ perfmon_init_maps(void)
                 case HASWELL_M2:
                     eventHash = haswell_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsHaswell;
-                    perfmon_numGroups = perfmon_numGroupsHaswell;
                     counter_map = haswell_counter_map;
                     perfmon_numCounters = perfmon_numCountersHaswell;
                     break;
@@ -312,7 +285,6 @@ perfmon_init_maps(void)
                 case SANDYBRIDGE_EP:
                     eventHash = sandybridge_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsSandybridge;
-                    perfmon_numGroups = perfmon_numGroupsSandybridge;
                     counter_map = sandybridge_counter_map;
                     perfmon_numCounters = perfmon_numCountersSandybridge;
                     break;
@@ -330,9 +302,6 @@ perfmon_init_maps(void)
                 case XEON_PHI:
                     eventHash = phi_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsPhi;
-                    group_map = phi_group_map;
-                    group_help = phi_group_help;
-                    perfmon_numGroups = perfmon_numGroupsPhi;
                     counter_map = phi_counter_map;
                     perfmon_numCounters = perfmon_numCountersPhi;
                     break;
@@ -346,9 +315,6 @@ perfmon_init_maps(void)
         case K8_FAMILY:
             eventHash = k8_arch_events;
             perfmon_numArchEvents = perfmon_numArchEventsK8;
-            group_map = k8_group_map;
-            group_help = k8_group_help;
-            perfmon_numGroups = perfmon_numGroupsK8;
             counter_map = k10_counter_map;
             perfmon_numCounters = perfmon_numCountersK10;
             break;
@@ -356,9 +322,6 @@ perfmon_init_maps(void)
         case K10_FAMILY:
             eventHash = k10_arch_events;
             perfmon_numArchEvents = perfmon_numArchEventsK10;
-            group_map = k10_group_map;
-            group_help = k10_group_help;
-            perfmon_numGroups = perfmon_numGroupsK10;
             counter_map = k10_counter_map;
             perfmon_numCounters = perfmon_numCountersK10;
             break;
@@ -366,9 +329,6 @@ perfmon_init_maps(void)
         case K15_FAMILY:
             eventHash = interlagos_arch_events;
             perfmon_numArchEvents = perfmon_numArchEventsInterlagos;
-            group_map = interlagos_group_map;
-            group_help = interlagos_group_help;
-            perfmon_numGroups = perfmon_numGroupsInterlagos;
             counter_map = interlagos_counter_map;
             perfmon_numCounters = perfmon_numCountersInterlagos;
             break;
@@ -376,9 +336,6 @@ perfmon_init_maps(void)
         case K16_FAMILY:
             eventHash = kabini_arch_events;
             perfmon_numArchEvents = perfmon_numArchEventsKabini;
-            group_map = kabini_group_map;
-            group_help = kabini_group_help;
-            perfmon_numGroups = perfmon_numGroupsKabini;
             counter_map = kabini_counter_map;
             perfmon_numCounters = perfmon_numCountersKabini;
            break;

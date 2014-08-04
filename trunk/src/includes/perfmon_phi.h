@@ -29,13 +29,11 @@
  */
 
 #include <perfmon_phi_events.h>
-#include <perfmon_phi_groups.h>
 #include <perfmon_phi_counters.h>
 #include <error.h>
 #include <affinity.h>
 
 static int perfmon_numCountersPhi = NUM_COUNTERS_PHI;
-static int perfmon_numGroupsPhi = NUM_GROUPS_PHI;
 static int perfmon_numArchEventsPhi = NUM_ARCH_EVENTS_PHI;
 
 int perfmon_init_phi(int cpu_id)

@@ -29,7 +29,6 @@
  */
 
 #include <perfmon_westmereEX_events.h>
-#include <perfmon_westmereEX_groups.h>
 #include <perfmon_westmereEX_counters.h>
 #include <error.h>
 #include <affinity.h>
@@ -42,7 +41,6 @@ typedef struct {
 } PerfmonUnit;
 
 static int perfmon_numCountersWestmereEX = NUM_COUNTERS_WESTMEREEX;
-static int perfmon_numGroupsWestmereEX = NUM_GROUPS_WESTMEREEX;
 static int perfmon_numArchEventsWestmereEX = NUM_ARCH_EVENTS_WESTMEREEX;
 
 static PerfmonUnit westmereEX_PMunits[NUM_UNITS];

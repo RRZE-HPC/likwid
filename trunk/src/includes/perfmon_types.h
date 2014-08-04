@@ -34,7 +34,6 @@
 #define PERFMON_TYPES_H
 
 #include <bstrlib.h>
-#include <perfmon_group_types.h>
 #include <timer.h>
 
 /* #####   EXPORTED TYPE DEFINITIONS   #################################### */
@@ -81,18 +80,6 @@ typedef struct {
     PciDeviceIndex      device;
 } PerfmonCounterMap;
 
-typedef struct {
-    char*           key;
-    PerfmonGroup    index;
-    int             isUncore;
-    char*           info;
-    char*           config;
-} PerfmonGroupMap;
-
-typedef struct {
-    char*           key;
-    char*           msg;
-} PerfmonGroupHelp;
 
 /////////////////////////////////////////////
 typedef struct {

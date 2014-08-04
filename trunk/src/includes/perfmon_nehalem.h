@@ -29,13 +29,11 @@
  */
 
 #include <perfmon_nehalem_events.h>
-#include <perfmon_nehalem_groups.h>
 #include <perfmon_nehalem_counters.h>
 #include <error.h>
 #include <affinity.h>
 
 static int perfmon_numCountersNehalem = NUM_COUNTERS_NEHALEM;
-static int perfmon_numGroupsNehalem = NUM_GROUPS_NEHALEM;
 static int perfmon_numArchEventsNehalem = NUM_ARCH_EVENTS_NEHALEM;
 
 #define OFFSET_PMC 3
