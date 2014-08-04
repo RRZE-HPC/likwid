@@ -47,7 +47,6 @@ extern PerfmonCounterMap* counter_map;
 
 extern int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-extern int  (*perfmon_getIndex) (bstring reg, PerfmonCounterIndex* index);
 extern int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 
 extern int perfmon_addEventSet(char* eventCString);

@@ -72,7 +72,7 @@ int perfmon_setupCounterThread_kabini(int thread_id, PerfmonEventSet* eventSet)
     
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        PerfmonCounterIndex index = eventSet->events[i].index;
+        RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = kabini_counter_map[index].configRegister;
 
@@ -119,7 +119,7 @@ int perfmon_startCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             
             if (kabini_counter_map[index].type == PMC)
             {
@@ -176,7 +176,7 @@ int perfmon_stopCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             if ( kabini_counter_map[index].type == PMC )
             {
                 CHECK_MSR_READ_ERROR(msr_read(cpu_id,kabini_counter_map[index].configRegister, &flags));
@@ -237,7 +237,7 @@ int perfmon_readCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             if ( kabini_counter_map[index].type == UNCORE )
             {
                 if ( haveLock )

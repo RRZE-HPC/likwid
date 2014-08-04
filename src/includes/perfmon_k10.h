@@ -63,7 +63,7 @@ int perfmon_setupCounterThread_k10(
     
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        PerfmonCounterIndex index = eventSet->events[i].index;
+        RegisterIndex index = eventSet->events[i].index;
         uint64_t reg = k10_counter_map[index].configRegister;
         PerfmonEvent *event = &(eventSet->events[i].event);
         
@@ -96,7 +96,7 @@ int perfmon_startCountersThread_k10(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, k10_counter_map[index].counterRegister , 0x0ULL));
             CHECK_MSR_READ_ERROR(msr_read(cpu_id, k10_counter_map[index].configRegister, &flags));
             flags |= (1<<22);  /* enable flag */
@@ -124,7 +124,7 @@ int perfmon_stopCountersThread_k10(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             CHECK_MSR_READ_ERROR(msr_read(cpu_id, k10_counter_map[index].configRegister, &flags));
             flags &= ~(1<<22);  /* clear enable flag */
             CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, k10_counter_map[index].configRegister , flags));

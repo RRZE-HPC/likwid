@@ -103,7 +103,7 @@ int perfmon_setupCounterThread_haswell(
     
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        PerfmonCounterIndex index = eventSet->events[i].index;
+        RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = haswell_counter_map[index].configRegister;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
@@ -169,7 +169,7 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             switch (haswell_counter_map[index].type)
             {
                 case PMC:
@@ -232,7 +232,7 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             switch (haswell_counter_map[index].type)
             {
                 case PMC:
@@ -337,7 +337,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             
             if (haswell_counter_map[index].type == PMC)
             {
