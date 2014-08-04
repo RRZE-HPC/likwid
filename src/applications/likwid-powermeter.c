@@ -193,7 +193,8 @@ int main (int argc, char** argv)
             (cpuid_info.model == HASWELL) ||
             (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
             (cpuid_info.model == NEHALEM_LYNNFIELD) ||
-            (cpuid_info.model == NEHALEM_WESTMERE))
+            (cpuid_info.model == NEHALEM_WESTMERE) ||
+            (cpuid_info.model == ATOM_SILVERMONT))
     {
         power_init(numa_info.nodes[0].processors[0]);
     }
@@ -225,7 +226,7 @@ int main (int argc, char** argv)
         printf(HLINE);
     }
 
-    if (cpuid_info.model == SANDYBRIDGE_EP)
+    if ((cpuid_info.model == SANDYBRIDGE_EP) || (cpuid_info.model == ATOM_SILVERMONT))
     {
         hasDRAM = 1;
     }
