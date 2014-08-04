@@ -54,6 +54,7 @@ power_init(int cpuId)
 {
     uint64_t flags;
     int hasRAPL = 0;
+    uint32_t info_register;
 
     /* determine Turbo Mode features */
     double busSpeed;
@@ -62,10 +63,15 @@ power_init(int cpuId)
             (cpuid_info.model == SANDYBRIDGE) ||
             (cpuid_info.model == HASWELL) ||
             (cpuid_info.model == IVYBRIDGE_EP) ||
-            (cpuid_info.model == IVYBRIDGE) ||
-            (cpuid_info.model == ATOM_SILVERMONT))
+            (cpuid_info.model == IVYBRIDGE))
     {
         hasRAPL = 1;
+        info_register = MSR_PKG_POWER_INFO;
+    }
+    else if (cpuid_info.model == ATOM_SILVERMONT)
+    {
+        hasRAPL = 1;
+        info_register = MSR_PKG_POWER_INFO_SILVERMONT;
     }
 
     if (cpuid_info.turbo)
@@ -115,11 +121,18 @@ power_init(int cpuId)
         power_info.energyUnit = pow(0.5,(double) extractBitField(flags,5,8));
         power_info.timeUnit = pow(0.5,(double) extractBitField(flags,4,16));
 
-        flags = msr_read(cpuId, MSR_PKG_POWER_INFO);
+        flags = msr_read(cpuId, info_register);
         power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
-        power_info.minPower =  (double) extractBitField(flags,15,16) * power_info.powerUnit;
-        power_info.maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
-        power_info.maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
+        if (cpuid_info.model != ATOM_SILVERMONT)
+        {
+            power_info.minPower =  (double) extractBitField(flags,15,16) * power_info.powerUnit;
+            power_info.maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
+            power_info.maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
+        }
+        else
+            power_info.minPower = 0.0;
+            power_info.maxPower = 0.0;
+            power_info.maxTimeWindow = 0.0;
     }
     else
     {
