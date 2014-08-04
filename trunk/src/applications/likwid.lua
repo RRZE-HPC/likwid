@@ -523,22 +523,14 @@ local function get_spaces(str, min_space, max_space)
     local length = str:len()
     local back = 0
     local front = 0
-    if length < min_space then
-        length = min_space
-        back = math.ceil((length-str:len()) /2)
-        front = max_space - back - str:len()
-        --print(str, str:len(), length, front, back, max_space)
-    else
-        back = math.ceil((max_space-length)/2)
-        front = max_space - length - back
-        
-    end
+    back = math.ceil((max_space-str:len()) /2)
+    front = max_space - back - str:len()
+
     if (front < back) then
         local tmp = front
         front = back
         back = tmp
     end
-    --print(str,str:len(), length, front, back)
     return string.rep(" ", front),string.rep(" ", back)
 end
 
@@ -611,7 +603,7 @@ local function print_output(groupID, groupdata, cpulist)
         metric_input[groupdata["Events"][i]["Counter"]] = 0.0
         mins[groupdata["Events"][i]["Event"]],maxs[groupdata["Events"][i]["Event"]], avgs[groupdata["Events"][i]["Event"]] = min_max_avg(results[i])
         for j=0,num_threads-1 do
-            front, back = get_spaces(tostring(results[i][j]), cpuid:len(), cpuid:len())
+            front, back = get_spaces(tostring(results[i][j]), cpuid:len(), max_result)
             event_result = event_result .. front .. tostring(results[i][j]) .. back .. " | "
             metric_input[groupdata["Events"][i]["Counter"]] = metric_input[groupdata["Events"][i]["Counter"]] + results[i][j]
         end
