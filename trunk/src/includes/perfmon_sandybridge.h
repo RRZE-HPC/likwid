@@ -205,7 +205,7 @@ int perfmon_setupCounterThread_sandybridge(
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         PerfmonEvent *event = &(eventSet->events[i].event);
-        PerfmonCounterIndex index = eventSet->events[i].index;
+        RegisterIndex index = eventSet->events[i].index;
         uint64_t reg = sandybridge_counter_map[index].configRegister;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
         switch (sandybridge_counter_map[index].type)
@@ -345,7 +345,7 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             switch (sandybridge_counter_map[index].type)
             {
                 case PMC:
@@ -454,7 +454,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             switch (sandybridge_counter_map[index].type)
             {
                 case PMC:
@@ -626,7 +626,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             if ((sandybridge_counter_map[index].type == PMC) ||
                     (sandybridge_counter_map[index].type == FIXED))
             {

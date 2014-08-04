@@ -72,7 +72,7 @@ perfmon_initThread(/*PerfmonGroupSet* groupSet, int groupId,*/ int thread_id, in
 }
 
 static int
-getIndexAndType (bstring reg, PerfmonCounterIndex* index, PerfmonType* type)
+getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
 {
     for (int i=0; i< perfmon_numCounters; i++)
     {
@@ -679,7 +679,7 @@ perfmon_addEventSet(char* eventCString)
     struct bstrList* subtokens;
     PerfmonEventSet* eventSet;
     PerfmonEventSetEntry* event;
-    PerfmonType event_type;
+    RegisterType reg_type;
     
     if (eventCString == NULL)
     {
@@ -746,7 +746,7 @@ perfmon_addEventSet(char* eventCString)
         }
         else
         {
-            if (!getIndexAndType(subtokens->entry[1], &event->index, &event_type))
+            if (!getIndexAndType(subtokens->entry[1], &event->index, &reg_type))
             {
                 ERROR_PRINT(Counter register %s not supported,bdata(
                         subtokens->entry[1]));
@@ -771,7 +771,7 @@ perfmon_addEventSet(char* eventCString)
             }
 
             eventSet->numberOfEvents++;
-            switch (event_type)
+            switch (reg_type)
             {
                 case FIXED:
                     eventSet->measureFixed = 1;

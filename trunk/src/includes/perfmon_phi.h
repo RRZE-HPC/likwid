@@ -63,7 +63,7 @@ int perfmon_setupCounterThread_phi(int thread_id, PerfmonEventSet* eventSet)
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        PerfmonCounterIndex index = eventSet->events[i].index;
+        RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = phi_counter_map[index].configRegister;
         
@@ -101,7 +101,7 @@ int perfmon_startCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, phi_counter_map[index].counterRegister , 0x0ULL));
             flags |= (1<<(index));  /* enable counter */
         }
@@ -133,7 +133,7 @@ int perfmon_stopCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             CHECK_MSR_WRITE_ERROR(msr_read(cpu_id, phi_counter_map[index].counterRegister, &counter_result));
             eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
         }
@@ -157,7 +157,7 @@ int perfmon_readCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             CHECK_MSR_WRITE_ERROR(msr_read(cpu_id, phi_counter_map[i].counterRegister, &counter_result));
             eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
         }

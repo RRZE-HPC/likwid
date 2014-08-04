@@ -79,7 +79,7 @@ int perfmon_setupCountersThread_silvermont(
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        PerfmonCounterIndex index = eventSet->events[i].index;
+        RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = silvermont_counter_map[index].configRegister;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
@@ -153,7 +153,7 @@ int perfmon_startCountersThread_silvermont(int thread_id, PerfmonEventSet* event
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             switch (silvermont_counter_map[index].type)
             {
                 case PMC:
@@ -215,7 +215,7 @@ int perfmon_stopCountersThread_silvermont(int thread_id, PerfmonEventSet* eventS
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             switch (silvermont_counter_map[index].type)
             {
                 case PMC:
@@ -282,7 +282,7 @@ int perfmon_readCountersThread_silvermont(int thread_id, PerfmonEventSet* eventS
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             if ((silvermont_counter_map[index].type == PMC) ||
                     (silvermont_counter_map[index].type == FIXED))
             {

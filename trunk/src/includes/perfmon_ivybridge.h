@@ -229,7 +229,7 @@ int perfmon_setupCounterThread_ivybridge(
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        PerfmonCounterIndex index = eventSet->events[i].index;
+        RegisterIndex index = eventSet->events[i].index;
         uint64_t reg = ivybridge_counter_map[index].configRegister;
         PerfmonEvent *event = &(eventSet->events[i].event);
         
@@ -417,7 +417,7 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             switch (ivybridge_counter_map[index].type)
             {
                 case PMC:
@@ -584,7 +584,7 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             switch (ivybridge_counter_map[index].type)
             {
                 case PMC:
@@ -739,7 +739,7 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             if ((ivybridge_counter_map[index].type == PMC) ||
                     (ivybridge_counter_map[index].type == FIXED))
             {

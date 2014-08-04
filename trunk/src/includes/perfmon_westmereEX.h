@@ -527,7 +527,7 @@ int perfmon_setupCounterThread_westmereEX(int thread_id, PerfmonEventSet* eventS
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        PerfmonCounterIndex index = eventSet->events[i].index;
+        RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = westmereEX_counter_map[index].configRegister;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
@@ -668,7 +668,7 @@ int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* event
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE) {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             
             if (westmereEX_counter_map[index].type == PMC)
             {
@@ -738,7 +738,7 @@ int perfmon_stopCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventS
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             if (westmereEX_counter_map[index].type > UNCORE)
             {
                 if(haveLock)
@@ -783,7 +783,7 @@ int perfmon_readCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventS
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             if (westmereEX_counter_map[index].type > UNCORE)
             {
                 if(haveLock)

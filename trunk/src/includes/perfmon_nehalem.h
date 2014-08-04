@@ -135,7 +135,7 @@ int perfmon_setupCounterThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        PerfmonCounterIndex index = eventSet->events[i].index;
+        RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = nehalem_counter_map[index].configRegister;
 
@@ -221,7 +221,7 @@ int perfmon_startCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             if (nehalem_counter_map[index].type == PMC)
             {
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, nehalem_counter_map[index].counterRegister , 0x0ULL));
@@ -275,7 +275,7 @@ int perfmon_stopCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             if (nehalem_counter_map[index].type == UNCORE)
             {
                 if(haveLock)
@@ -316,7 +316,7 @@ int perfmon_readCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             if (nehalem_counter_map[index].type == UNCORE)
             {
                 if(haveLock)

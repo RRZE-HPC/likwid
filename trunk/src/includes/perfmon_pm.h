@@ -62,7 +62,7 @@ int perfmon_setupCounterThread_pm(int thread_id, PerfmonEventSet* eventSet)
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        PerfmonCounterIndex index = eventSet->events[i].index;
+        RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = pm_counter_map[index].configRegister;
         
@@ -129,7 +129,7 @@ int perfmon_stopCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
         {
-            PerfmonCounterIndex index = eventSet->events[i].index;
+            RegisterIndex index = eventSet->events[i].index;
             CHECK_MSR_READ_ERROR(msr_read(cpu_id, pm_counter_map[index].counterRegister, &counter_result));
             eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
         }
