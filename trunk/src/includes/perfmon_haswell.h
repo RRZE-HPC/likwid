@@ -35,6 +35,7 @@
 #include <error.h>
 #include <affinity.h>
 #include <limits.h>
+#include <topology.h>
 
 
 static int perfmon_numCountersHaswell = NUM_COUNTERS_HASWELL;
@@ -82,11 +83,9 @@ int perfmon_init_haswell(int cpu_id)
     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL2, flags));
     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL3, flags));
 
-    /*if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
-            lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id))
-    {
 
-    }*/
+    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
+    
     return 0;
 }
 
@@ -100,10 +99,10 @@ int perfmon_setupCounterThread_haswell(
     uint32_t uflags;
     int cpu_id = groupSet->threads[thread_id].processorId;
     
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
+    /*if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
-    }
+    }*/
     
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -190,7 +189,7 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
                     if(haveLock == 1)
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, haswell_counter_map[index].counterRegister,
-                                        (uint32_t*)&eventSet->events[i].threadCounter[thread_id].counterData));
+                                        (uint32_t*)&eventSet->events[i].threadCounter[thread_id].startData));
                     }
                     break;
 
@@ -217,7 +216,7 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
 
 int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
 {
-    int ret;
+    int bit;
     int haveLock = 0;
     uint64_t flags;
     uint32_t uflags = 0x10100UL; /* Set freeze bit */
@@ -240,30 +239,56 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
             switch (haswell_counter_map[index].type)
             {
                 case PMC:
-
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, haswell_counter_map[index].counterRegister,
+                                    (uint64_t*)&counter_result));
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    
+                    
+                    bit = haswell_counter_map[index].index - cpuid_info.perf_num_fixed_ctr;
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_STATUS, &flags))
+                    if (extractBitField(flags, 1, bit))
+                    {
+                        fprintf(stderr,"Overflow occured for PMC%d\n",bit);
+                        eventSet->events[i].threadCounter[thread_id].overflows++;
+                        CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, &flags))
+                        flags |= (1<<bit);
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, flags));
+                    }
                 case FIXED:
                     CHECK_MSR_READ_ERROR(msr_read(cpu_id, haswell_counter_map[index].counterRegister,
                                     (uint64_t*)&counter_result));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     
+                    
+                    bit = 32 + haswell_counter_map[index].index;
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_STATUS, &flags))
+                    if (extractBitField(flags, 1, bit))
+                    {
+                        fprintf(stderr,"Overflow occured for FIXC%d\n",bit-32);
+                        eventSet->events[i].threadCounter[thread_id].overflows++;
+                        CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, &flags))
+                        flags |= (1<<bit);
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, flags));
+                    }
                     break;
 
                 case POWER:
                     if (haveLock == 1)
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, haswell_counter_map[index].counterRegister, (uint32_t*)&counter_result));
-                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                  
+                        if (eventSet->events[i].threadCounter[thread_id].startData = 0)
+                        {
+                            eventSet->events[i].threadCounter[thread_id].startData = counter_result-1;
+                        }
+                        
+                        eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                
+                        if (counter_result <= eventSet->events[i].threadCounter[thread_id].startData)
                         {
                             fprintf(stderr,"Overflow in power status register 0x%x, assuming single overflow\n",
                                             haswell_counter_map[index].counterRegister);
-                            counter_result += (UINT_MAX - eventSet->events[i].threadCounter[thread_id].counterData);
-                            eventSet->events[i].threadCounter[thread_id].counterData = power_info.energyUnit * counter_result;
-                        }
-                        else
-                        {
-                        eventSet->events[i].threadCounter[thread_id].counterData =
-                            power_info.energyUnit *
-                            ( counter_result - eventSet->events[i].threadCounter[thread_id].counterData);
+                            eventSet->events[i].threadCounter[thread_id].overflows++;  
                         }
                     }
                     break;
@@ -281,21 +306,24 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
 
-    CHECK_MSR_READ_ERROR(msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS, &flags));
+    //CHECK_MSR_READ_ERROR(msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS, &flags));
 
     //    printf ("Status: 0x%llX \n", LLU_CAST flags);
-    if ( (flags & 0x3) || (flags & (0x3ULL<<32)) ) 
+    /*if ( (flags & 0x3) || (flags & (0x3ULL<<32)) ) 
     {
         printf ("Overflow occured \n");
-    }
+    }*/
     return 0;
 }
 
+#define START_READ_MASK 0x00070007
+#define STOP_READ_MASK ~(START_READ_MASK)
+
 int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
 {
-    int ret;
-    uint64_t counter_result = 0x0ULL;
-    uint64_t tmp;
+    int bit;
+    uint64_t tmp = 0x0ULL;
+    uint64_t flags;
     int haveLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
@@ -303,6 +331,10 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
     {
         haveLock = 1;
     }
+    
+    CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_CTRL, &flags));
+    flags &= STOP_READ_MASK;
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -310,31 +342,74 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
         {
             PerfmonCounterIndex index = eventSet->events[i].index;
             
-            if ((haswell_counter_map[index].type == PMC) ||
-                    (haswell_counter_map[index].type == FIXED))
+            if (haswell_counter_map[index].type == PMC)
             {
                 CHECK_MSR_READ_ERROR(msr_read(cpu_id, haswell_counter_map[index].counterRegister, &tmp));
+                
                 eventSet->events[i].threadCounter[thread_id].counterData = tmp;
-            }
-            else
-            {
-                if (haveLock == 1)
+                
+                if (eventSet->events[i].threadCounter[thread_id].startData == 0)
                 {
-                    switch (haswell_counter_map[index].type)
-                    {
-                        case POWER:
-                            CHECK_POWER_READ_ERROR(power_read(cpu_id, haswell_counter_map[index].counterRegister,(uint32_t*) &tmp));
-                            eventSet->events[i].threadCounter[thread_id].counterData =
-                                power_info.energyUnit * tmp;
-                            break;
-
-                        default:
-                            /* should never be reached */
-                            break;
-                    }
+                    eventSet->events[i].threadCounter[thread_id].startData = tmp;
+                }
+                
+                bit = haswell_counter_map[index].index - cpuid_info.perf_num_fixed_ctr;
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_STATUS, &tmp))
+                if (extractBitField(tmp, 1, bit))
+                {
+                    fprintf(stderr,"Overflow occured for PMC%d\n",bit);
+                    eventSet->events[i].threadCounter[thread_id].overflows++;
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, &flags))
+                    flags |= (1<<bit);
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, flags));
+                }
+            }
+            else if (haswell_counter_map[index].type == FIXED)
+            {
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, haswell_counter_map[index].counterRegister, &tmp));
+                
+                eventSet->events[i].threadCounter[thread_id].counterData = tmp;
+                
+                if (eventSet->events[i].threadCounter[thread_id].startData == 0)
+                {
+                    eventSet->events[i].threadCounter[thread_id].startData = tmp;
+                }
+                
+                bit = 32 + haswell_counter_map[index].index;
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_STATUS, &tmp))
+                if (extractBitField(tmp, 1, bit))
+                {
+                    fprintf(stderr,"Overflow occured for FIXC%d\n",bit-32);
+                    eventSet->events[i].threadCounter[thread_id].overflows++;
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, &flags))
+                    flags |= (1<<bit);
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, flags));
+                }
+            }
+            else if ((haswell_counter_map[index].type == POWER) && haveLock == 1 )
+            {
+                CHECK_POWER_READ_ERROR(power_read(cpu_id, 
+                    haswell_counter_map[index].counterRegister,(uint32_t*) &tmp));
+                if (eventSet->events[i].threadCounter[thread_id].startData = 0)
+                {
+                    eventSet->events[i].threadCounter[thread_id].startData = tmp-1;
+                }
+                
+                eventSet->events[i].threadCounter[thread_id].counterData = tmp;
+                
+                if (tmp <= eventSet->events[i].threadCounter[thread_id].startData)
+                {
+                    fprintf(stderr,"Overflow in power status register 0x%x, assuming single overflow\n",
+                                    haswell_counter_map[index].counterRegister);
+                    eventSet->events[i].threadCounter[thread_id].overflows++;  
                 }
             }
         }
     }
+    
+    CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_CTRL, &flags));
+    flags |= START_READ_MASK;
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
+    
     return 0;
 }
