@@ -65,7 +65,7 @@ extern uint64_t perfmon_getResult(int groupId, int eventId, int threadId);
 extern int perfmon_getNumberOfGroups(void);
 extern int perfmon_getNumberOfEvents(int groupId);
 extern double perfmon_getTimeOfGroup(int groupId);
-extern int perfmon_getNumberOfActiveGroup(void);
+extern int perfmon_getIdOfActiveGroup(void);
 extern int perfmon_getNumberOfThreads(void);
 
 extern void perfmon_printCounters(FILE* OUTSTREAM);

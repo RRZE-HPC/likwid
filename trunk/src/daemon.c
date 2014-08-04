@@ -100,7 +100,7 @@ daemon_start(uint64_t duration, uint64_t switch_interval)
         {
             timer_stop(&timeData);
             perfmon_readCounters();
-            group = perfmon_getNumberOfActiveGroup();
+            group = perfmon_getIdOfActiveGroup();
             //perfmon_logCounterResults( timer_print(&timeData) );
             nr_events = perfmon_getNumberOfEvents(group);
             
@@ -130,7 +130,7 @@ daemon_start(uint64_t duration, uint64_t switch_interval)
             usleep(duration);
         }
         signal(SIGUSR1, SIG_DFL);
-        group = perfmon_getNumberOfActiveGroup();
+        group = perfmon_getIdOfActiveGroup();
         nr_events = perfmon_getNumberOfEvents(group);
         nr_threads = perfmon_getNumberOfThreads();
         for(i=0;i<nr_events;i++)
