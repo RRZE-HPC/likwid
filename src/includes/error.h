@@ -50,8 +50,7 @@
 
 #define ERROR_PLAIN_PRINT(msg) \
    fprintf(stderr,  "ERROR - [%s:%d] " str(msg) "\n", __FILE__, __LINE__);  \
-   FINALIZE; \
-   exit(EXIT_FAILURE)
+   FINALIZE;
 
 
 #define ERROR_PRINT(fmt, ...) \
