@@ -56,6 +56,7 @@ static char* unknown_amd_str = "Unknown AMD Processor";
 
 static char* short_core2 = "core2";
 static char* short_atom = "atom";
+static char* short_pm = "pentiumm";
 static char* short_silvermont = "silvermont";
 static char* short_nehalem = "nehalem";
 static char* short_nehalemEX = "nehalemEX";
@@ -434,12 +435,12 @@ int topology_setName(void)
             {
                 case PENTIUM_M_BANIAS:
                     cpuid_info.name = pentium_m_b_str;
-                    cpuid_info.short_name = short_unknown;
+                    cpuid_info.short_name = short_pm;
                     break;
 
                 case PENTIUM_M_DOTHAN:
                     cpuid_info.name = pentium_m_d_str;
-                    cpuid_info.short_name = short_unknown;
+                    cpuid_info.short_name = short_pm;
                     break;
 
                 case CORE_DUO:
