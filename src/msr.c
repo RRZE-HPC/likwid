@@ -45,12 +45,14 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/wait.h>
 
 #include <types.h>
 #include <error.h>
 #include <cpuid.h>
 #include <accessClient.h>
 #include <msr.h>
+#include <registers.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 #define MAX_LENGTH_MSR_DEV_NAME  20
