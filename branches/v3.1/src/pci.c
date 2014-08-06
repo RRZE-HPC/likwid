@@ -172,6 +172,28 @@ pci_init(int initSocket_fd)
     }
     bdestroy(filepath);
 
+    for (int j=0; j<socket_count; j++)
+    {
+        for (int i=0; i<MAX_NUM_DEVICES; i++)
+        {
+
+            bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
+			bcatcstr(filepath, socket_bus[j]);
+			bcatcstr(filepath, pci_DevicePath[i] );
+			
+			if (!access(bdata(filepath),F_OK))
+			{
+				FD[j][i] = 0;
+			}
+			else
+			{
+				fprintf(stderr, "Device %s not found, excluded it from device list\n",bdata(filepath));
+				FD[j][i] = -2;
+			}
+			bdestroy(filepath);
+        }
+    }
+
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
         if(geteuid() != 0)
@@ -180,28 +202,6 @@ pci_init(int initSocket_fd)
             fprintf(stderr, "       Direct access to the PCI Cfg Adressspace is only allowed for uid root!\n");
             fprintf(stderr, "       This means you can use performance groups as MEM only as root in direct mode.\n");
             fprintf(stderr, "       Alternatively you might want to look into (sys)daemonmode.\n\n");
-        }
-
-        for (int j=0; j<socket_count; j++)
-        {
-            for (int i=0; i<MAX_NUM_DEVICES; i++)
-            {
-
-                bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
-				bcatcstr(filepath, socket_bus[j]);
-				bcatcstr(filepath, pci_DevicePath[i] );
-				
-				if (!access(bdata(filepath),R_OK|W_OK))
-				{
-					FD[j][i] = 0;
-				}
-				else
-				{
-					//fprintf(stderr, "Device %s not found, excluded it from device list\n",bdata(filepath));
-					FD[j][i] = -2;
-				}
-				bdestroy(filepath);
-            }
         }
     }
     else /* daemon or sysdaemon-mode */
@@ -214,20 +214,18 @@ pci_init(int initSocket_fd)
 void
 pci_finalize()
 {
-    if (accessClient_mode == DAEMON_AM_DIRECT)
+    for (int j=0; j<socket_count; j++)
     {
-        for (int j=0; j<socket_count; j++)
+        for (int i=0; i<MAX_NUM_DEVICES; i++)
         {
-            for (int i=0; i<MAX_NUM_DEVICES; i++)
+            if (FD[j][i] > 0)
             {
-                if (FD[j][i] > 0)
-                {
-                    close(FD[j][i]);
-                }
+                close(FD[j][i]);
             }
         }
     }
-    else
+
+    if (accessClient_mode != DAEMON_AM_DIRECT)
     {
         socket_fd = -1;
     }
@@ -238,16 +236,16 @@ uint32_t
 pci_read(int cpu, PciDeviceIndex device, uint32_t reg)
 {
     int socketId = affinity_core2node_lookup[cpu];
+    if ( FD[socketId][device] == -2)
+    {
+        //fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
+        return 0;
+    }
 
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
         uint32_t data = 0;
-		if ( FD[socketId][device] == -2)
-		{
-			fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
-			return data;
-		}
-        else if ( !FD[socketId][device] )
+        if ( !FD[socketId][device] )
         {
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
@@ -284,14 +282,14 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
 {
     int socketId = affinity_core2node_lookup[cpu];
 
+    if ( FD[socketId][device] == -2)
+    {
+        //fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
+        return;
+    }
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
-		if ( FD[socketId][device] == -2)
-		{
-			fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
-			return;
-		}
-        else if ( !FD[socketId][device] )
+        if ( !FD[socketId][device] )
         {
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
@@ -325,16 +323,16 @@ uint32_t
 pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t reg)
 {
     int socketId = affinity_core2node_lookup[cpu];
+    if ( FD[socketId][device] == -2)
+    {
+        //fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
+        return 0;
+    }
 
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
         uint32_t data = 0;
-		if ( FD[socketId][device] == -2)
-		{
-			fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
-			return data;
-		}
-        else if ( !FD[socketId][device] )
+        if ( !FD[socketId][device] )
         {
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
@@ -371,15 +369,14 @@ void
 pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
 {
     int socketId = affinity_core2node_lookup[cpu];
-	
+    if ( FD[socketId][device] == -2)
+    {
+        //fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
+        return;
+    }
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
-		if ( FD[socketId][device] == -2)
-		{
-			fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
-			return;
-		}
-        else if ( !FD[socketId][device] )
+        if ( !FD[socketId][device] )
         {
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
