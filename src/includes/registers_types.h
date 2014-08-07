@@ -31,6 +31,8 @@
 #ifndef REGISTERS_TYPES_H
 #define REGISTERS_TYPES_H
 
+#include <pci_types.h>
+
 typedef enum {
     PMC0 = 0,
     PMC1 , PMC2 , PMC3 , PMC4 , PMC5 , PMC6,
@@ -47,7 +49,8 @@ typedef enum {
     PMC67, PMC68, PMC69, PMC70, PMC71, PMC72,
     PMC73, PMC74, PMC75, PMC76, PMC77, PMC78,
     PMC79, PMC80, PMC81, PMC82, PMC83, PMC84,
-    NUM_PMC} RegisterIndex;
+    NUM_PMC
+} RegisterIndex;
 
 typedef enum {
     PMC = 0,
@@ -61,8 +64,17 @@ typedef enum {
     CBOX5, CBOX6, CBOX7, CBOX8, CBOX9,
     CBOX10, CBOX11,
     PBOX, POWER,
-    NUM_UNITS} RegisterType;
+    NUM_UNITS
+} RegisterType;
 
-
+typedef struct {
+    char*               key;
+    RegisterIndex       index;
+    RegisterType        type;
+    uint64_t            configRegister;
+    uint64_t            counterRegister;
+    uint64_t            counterRegister2;
+    PciDeviceIndex      device;
+} RegisterMap;
 
 #endif
