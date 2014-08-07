@@ -286,7 +286,7 @@ msr_read( const int cpu, uint32_t reg, uint64_t *data)
             if ( pread(FD[cpu], data, sizeof(*data), reg) != sizeof(*data) )
             {
                 //ERROR_PRINT("cpu %d reg %x",cpu, reg);
-                ERROR_PRINT(Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d\n,
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d,
                         reg, cpu);
                 return -EIO;
             }
@@ -306,20 +306,22 @@ msr_read( const int cpu, uint32_t reg, uint64_t *data)
 int
 msr_write( const int cpu, uint32_t reg, uint64_t data)
 {
+    int ret;
     if (accessClient_mode == DAEMON_AM_DIRECT) 
     {
-        if (pwrite(FD[cpu], &data, sizeof(data), reg) != sizeof(data))
+        ret = pwrite(FD[cpu], &data, sizeof(data), reg);
+        if (ret != sizeof(data))
         {
-            ERROR_PRINT("Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n",
-                        reg, cpu);
-            return -EIO;
+            //ERROR_PRINT(Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d pwrite returned %d, reg, cpu, ret);
+            return ret;
         }
     }
     else
     { /* daemon or sysdaemon-mode */
-        if (accessClient_write(socket_fd, cpu, DAEMON_AD_MSR, reg, data))
+        ret = accessClient_write(socket_fd, cpu, DAEMON_AD_MSR, reg, data);
+        if (ret)
         {
-            return -EIO;
+            return ret;
         }
     }
     return 0;
