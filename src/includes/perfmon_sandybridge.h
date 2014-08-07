@@ -36,6 +36,7 @@
 static int perfmon_numCountersSandybridge = NUM_COUNTERS_SANDYBRIDGE;
 static int perfmon_numArchEventsSandybridge = NUM_ARCH_EVENTS_SANDYBRIDGE;
 
+#define OFFSET_PMC 3
 
 int perfmon_init_sandybridge(int cpu_id)
 {
@@ -80,7 +81,7 @@ int perfmon_init_sandybridge(int cpu_id)
         if ( cpuid_info.model == SANDYBRIDGE_EP )
         {
             /* Only root can access pci address space in direct mode */
-            if (accessClient_mode != DAEMON_AM_DIRECT)
+            if ((accessClient_mode == DAEMON_AM_ACCESS_D) || (getuid() == 0))
             {
                 uint32_t  uflags = 0x10100U; /* enable freeze (bit 16), freeze (bit 8) */
                 CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_BOX_CTL, uflags));
@@ -146,12 +147,23 @@ int perfmon_init_sandybridge(int cpu_id)
                 CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_3,  PCI_UNC_MC_PMON_CTR_2_B, 0x0U));
                 CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_3,  PCI_UNC_MC_PMON_CTR_3_A, 0x0U));
                 CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_3,  PCI_UNC_MC_PMON_CTR_3_B, 0x0U));
+                
+                /* CBOX */
+                uflags = 0x10103U; /*enable freeze (bit 16), freeze (bit 8), reset counter (bit 1), reset control (bit 0) */
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C0_PMON_BOX_CTL, uflags));
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C1_PMON_BOX_CTL, uflags));
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C2_PMON_BOX_CTL, uflags));
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C3_PMON_BOX_CTL, uflags));
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C4_PMON_BOX_CTL, uflags));
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C5_PMON_BOX_CTL, uflags));
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C6_PMON_BOX_CTL, uflags));
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C7_PMON_BOX_CTL, uflags));
 
                 /* FIXME: Not yet tested/ working due to BIOS issues on test
                  * machines */
 #if 0
                 /* QPI registers can be zeroed with single write */
-                uflags = 0x0113UL; /*enable freeze (bit 16), freeze (bit 8), reset */
+                uflags = 0x0113UL; /*enable freeze (bit 16), freeze (bit 8), reset counter (bit 1), reset control (bit 0) */
                 CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL, uflags));
                 CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL, uflags));
                 uflags = 0x0UL;
@@ -165,6 +177,7 @@ int perfmon_init_sandybridge(int cpu_id)
                 CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_CTL_2, uflags));
                 CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_CTL_3, uflags));
 #endif
+                
             }
         }
     }
@@ -256,6 +269,20 @@ int perfmon_setupCounterThread_sandybridge(
                 BOX_GATE_IVYB(PCI_IMC_DEVICE_CH_3,MBOX3);
                 break;
 
+            case CBOX0:
+            case CBOX1:
+            case CBOX2:
+            case CBOX3:
+            case CBOX4:
+            case CBOX5:
+            case CBOX6:
+            case CBOX7:
+                uflags &= ~(0xFFFFU);
+                uflags |= (event->umask<<8) + event->eventId;
+                uflags |= (1<<22);
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, uflags));
+                break;
+
             case SBOX0:
 
                 /* CTO_COUNT event requires programming of MATCH/MASK registers */
@@ -325,6 +352,14 @@ int perfmon_setupCounterThread_sandybridge(
     }
     return 0;
 }
+
+
+#define UNFREEZE_CBOX(boxid) \
+    if(haveLock) { \
+        CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_UNC_C##boxid##_PMON_BOX_CTL, (uint64_t*)&uflags)); \
+        uflags &= 0xFFFEFFFF; \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C##boxid##_PMON_BOX_CTL, (uint64_t)uflags)); \
+    }
 
 int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* eventSet)
 {
@@ -415,6 +450,32 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
                     }
                     break;
 
+                case CBOX0:
+                    UNFREEZE_CBOX(0);
+                    break;
+                case CBOX1:
+                    UNFREEZE_CBOX(1)
+                    break;
+                case CBOX2:
+                    UNFREEZE_CBOX(2)
+                    break;
+                case CBOX3:
+                    UNFREEZE_CBOX(3)
+                    break;
+                case CBOX4:
+                    UNFREEZE_CBOX(4)
+                    break;
+                case CBOX5:
+                    UNFREEZE_CBOX(5)
+                    break;
+                case CBOX6:
+                    UNFREEZE_CBOX(6)
+                    break;
+                case CBOX7:
+                    UNFREEZE_CBOX(7)
+                    break;
+
+
                 default:
                     /* should never be reached */
                     break;
@@ -434,6 +495,14 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL));
     return 0;
 }
+
+#define STOP_AND_READ_CBOX(boxid) \
+    if(haveLock) \
+    { \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C##boxid##_PMON_BOX_CTL, uflags)) \
+        CHECK_MSR_READ_ERROR(msr_read(cpu_id, sandybridge_counter_map[index].counterRegister, &counter_result)); \
+        eventSet->events[i].threadCounter[thread_id].counterData += counter_result; \
+    }
 
 int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* eventSet)
 {
@@ -593,6 +662,31 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                                 (uint32_t*)&counter_result));
                         eventSet->events[i].threadCounter[thread_id].counterData += counter_result;
                     }
+                    break;
+
+                case CBOX0:
+                    STOP_AND_READ_CBOX(0);
+                    break;
+                case CBOX1:
+                    STOP_AND_READ_CBOX(1);
+                    break;
+                case CBOX2:
+                    STOP_AND_READ_CBOX(2);
+                    break;
+                case CBOX3:
+                    STOP_AND_READ_CBOX(3);
+                    break;
+                case CBOX4:
+                    STOP_AND_READ_CBOX(4);
+                    break;
+                case CBOX5:
+                    STOP_AND_READ_CBOX(5);
+                    break;
+                case CBOX6:
+                    STOP_AND_READ_CBOX(6);
+                    break;
+                case CBOX7:
+                    STOP_AND_READ_CBOX(7);
                     break;
 
                 default:
