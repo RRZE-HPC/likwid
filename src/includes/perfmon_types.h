@@ -38,15 +38,7 @@
 
 /* #####   EXPORTED TYPE DEFINITIONS   #################################### */
 
-typedef struct {
-    char*               key;
-    RegisterIndex       index;
-    RegisterType        type;
-    uint64_t            configRegister;
-    uint64_t            counterRegister;
-    uint64_t            counterRegister2;
-    PciDeviceIndex      device;
-} PerfmonCounterMap;
+
 
 
 /////////////////////////////////////////////
