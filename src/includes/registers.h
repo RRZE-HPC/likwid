@@ -295,7 +295,10 @@
 #define MSR_UNC_PCU_PMON_CTL2           0xC32
 #define MSR_UNC_PCU_PMON_CTL3           0xC33
 #define MSR_UNC_PCU_PMON_BOX_FILTER     0xC34
-#define MSR_UNC_PCU_PMON_BOX_CTL        0xD24
+#define MSR_UNC_PCU_PMON_BOX_CTL1       0xC24
+#define MSR_UNC_PCU_PMON_BOX_CTL2       0xC35
+#define MSR_UNC_PCU_PMON_FIXED_CTR0     0x3FC
+#define MSR_UNC_PCU_PMON_FIXED_CTR1     0x3FD
 
 /* UBox Performance Monitoring */
 
@@ -305,10 +308,15 @@
 #define MSR_UNC_U_PMON_CTL1             0xC11
 #define MSR_UNC_U_UCLK_FIXED_CTR        0xC09
 #define MSR_UNC_U_UCLK_FIXED_CTL        0xC08
+#define MSR_UNC_U_PMON_BOX_STATUS       0xC15
+#define MSR_UNC_U_PMON_GLOBAL_CTL       0xC01
+#define MSR_UNC_U_PMON_GLOBAL_STATUS    0xC00
+#define MSR_UNC_U_PMON_GLOBAL_CONFIG    0xC06
 
 /* HA Box Performance Monitoring */
 
 #define PCI_UNC_HA_PMON_BOX_CTL         0xF4
+#define PCI_UNC_HA_PMON_BOX_STATUS      0xF8
 #define PCI_UNC_HA_PMON_CTL_0           0xD8
 #define PCI_UNC_HA_PMON_CTL_1           0xDC
 #define PCI_UNC_HA_PMON_CTL_2           0xE0
@@ -344,6 +352,18 @@
 #define PCI_UNC_MC_PMON_CTR_1_B         0xA8
 #define PCI_UNC_MC_PMON_CTR_2_B         0xB0
 #define PCI_UNC_MC_PMON_CTR_3_B         0xB8
+
+/* IRP Performance Monitoring */
+#define PCI_UNC_IRP_PMON_BOX_STATUS     0xF8
+#define PCI_UNC_IRP_PMON_BOX_CTL        0xF4
+#define PCI_UNC_IRP0_PMON_CTL_0         0xD8
+#define PCI_UNC_IRP0_PMON_CTL_1         0xDC
+#define PCI_UNC_IRP0_PMON_CTR_0         0xA0
+#define PCI_UNC_IRP0_PMON_CTR_1         0xB0
+#define PCI_UNC_IRP1_PMON_CTL_0         0xE0
+#define PCI_UNC_IRP1_PMON_CTL_1         0xE4
+#define PCI_UNC_IRP1_PMON_CTR_0         0xB8
+#define PCI_UNC_IRP1_PMON_CTR_1         0xC0
 
 /* QPI Box Performance Monitoring */
 
