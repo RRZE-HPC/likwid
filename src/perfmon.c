@@ -41,7 +41,7 @@
 
 
 PerfmonEvent* eventHash;
-PerfmonCounterMap* counter_map;
+RegisterMap* counter_map;
 int perfmon_numCounters;
 int perfmon_numArchEvents;
 
@@ -853,41 +853,103 @@ perfmon_setupCounters(int groupId)
 }
 
 int
-perfmon_startCounters(void)
+__perfmon_startCounters(int groupId)
 {
-    int i;
-    for(i=0;i<groupSet->numberOfThreads;i++)
+    int i = 0;
+    int ret = 0;
+    if ((groupId < 0) || (groupId >= groupSet->numberOfActiveGroups))
     {
-        perfmon_startCountersThread(i, &groupSet->groups[groupSet->activeGroup]);
+        groupId = groupSet->activeGroup;
     }
-    
-    
-    timer_start(&groupSet->groups[groupSet->activeGroup].timer);
+    for(;i<groupSet->numberOfThreads;i++)
+    {
+        ret = perfmon_startCountersThread(i, &groupSet->groups[groupId]);
+        if (ret)
+        {
+            return -i;
+        }
+    }
+    timer_start(&groupSet->groups[groupId].timer);
     return 0;
 }
 
-int
-perfmon_stopCounters(void)
+int perfmon_startCounters(void)
 {
-    timer_stop(&groupSet->groups[groupSet->activeGroup].timer);
-    for (int i=0; i<groupSet->numberOfThreads; i++)
+    return __perfmon_startCounters(-1);
+}
+
+int perfmon_startGroupCounters(int groupId)
+{
+    return __perfmon_startGroupCounters(groupId);
+}
+
+int
+__perfmon_stopCounters(int groupId)
+{
+    int i = 0;
+    int ret = 0;
+
+    if ((groupId < 0) || (groupId >= groupSet->numberOfActiveGroups))
     {
-        perfmon_stopCountersThread(i, &groupSet->groups[groupSet->activeGroup]);
+        groupId = groupSet->activeGroup;
+    }
+
+    timer_stop(&groupSet->groups[groupId].timer);
+
+    for (; i<groupSet->numberOfThreads; i++)
+    {
+        ret = perfmon_stopCountersThread(i, &groupSet->groups[groupId]);
+        if (ret)
+        {
+            return -i;
+        }
     }
 
     groupSet->groups[groupSet->activeGroup].rdtscTime += 
-                timer_print(&groupSet->groups[groupSet->activeGroup].timer);
+                timer_print(&groupSet->groups[groupId].timer);
     return 0;
 }
 
-int
-perfmon_readCounters(void)
+int perfmon_stopCounters(void)
 {
-    for (int i=0; i<groupSet->numberOfThreads; i++)
+    return __perfmon_stopCounters(-1);
+}
+
+int perfmon_stopGroupCounters(int groupId)
+{
+    return __perfmon_stopCounters(groupId);
+}
+
+int
+__perfmon_readCounters(int groupId)
+{
+    int i = 0;
+    int ret = 0;
+
+    if ((groupId < 0) || (groupId >= groupSet->numberOfActiveGroups))
     {
-        perfmon_readCountersThread(i, &groupSet->groups[groupSet->activeGroup]);
+        groupId = groupSet->activeGroup;
+    }
+
+    for (; i<groupSet->numberOfThreads; i++)
+    {
+        ret = perfmon_readCountersThread(i, &groupSet->groups[groupId]);
+        if (ret)
+        {
+            return -i;
+        }
     }
     return 0;
+}
+
+int perfmon_readCounters(void)
+{
+    return __perfmon_readCounters(-1);
+}
+
+int perfmon_readGroupCounters(int groupId)
+{
+    return __perfmon_readCounters(groupId);
 }
 
 uint64_t
