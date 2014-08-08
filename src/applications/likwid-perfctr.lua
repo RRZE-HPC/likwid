@@ -91,6 +91,7 @@ group_string = nil
 event_string = nil
 print_group_help = false
 skip_mask = "0x0"
+counter_mask = {}
 if config["daemonMode"] < 0 then
     access_mode = 1
 else
@@ -329,7 +330,6 @@ if use_timeline == true then
         cores_string = cores_string .. tostring(cpu) .. " "
     end
     print(cores_string:sub(1,cores_string:len()-1))
-    --[[likwid_initDaemon(event_string)]]
     likwid_startDaemon(duration, 5);
 end
 
@@ -343,7 +343,10 @@ end
 if use_marker == true then
     likwid_setenv("LIKWID_FILEPATH", markerFile)
     likwid_setenv("LIKWID_MODE", tostring(access_mode))
-    likwid_setenv("LIKWID_MASK", skip_mask)
+    likwid_setenv("LIKWID_MASK", likwid.createBitMask(gdata))
+    likwid_setenv("LIKWID_GROUPS", tostring(likwid_getNumberOfGroups()))
+    local str = event_string
+    likwid_setenv("LIKWID_EVENTS", str)
 end
 
 if use_wrapper or use_stethoscpe then
@@ -366,9 +369,10 @@ elseif use_timeline then
 end
 
 if use_marker == true then
-    print("Read marker file")
+    groups, results = likwid.getMarkerResults(markerFile)
+    likwid.print_markerOutput(groups, results, gdata, cpulist)
 elseif use_wrapper or use_stethoscpe then
-    print(likwid.print_output(groupID, gdata, cpulist))
+    likwid.print_output(groupID, gdata, cpulist)
 end
 
 
