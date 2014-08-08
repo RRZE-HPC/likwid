@@ -31,7 +31,7 @@
 #define NUM_COUNTERS_HASWELL 12
 #define NUM_COUNTERS_CORE_HASWELL 7
 
-static PerfmonCounterMap haswell_counter_map[NUM_COUNTERS_HASWELL] = {
+static RegisterMap haswell_counter_map[NUM_COUNTERS_HASWELL] = {
     /* Fixed Counters: instructions retired, cycles unhalted core */
     {"FIXC0", PMC0, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR0, 0, 0},
     {"FIXC1", PMC1, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR1, 0, 0},
