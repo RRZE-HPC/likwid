@@ -880,7 +880,7 @@ int perfmon_startCounters(void)
 
 int perfmon_startGroupCounters(int groupId)
 {
-    return __perfmon_startGroupCounters(groupId);
+    return __perfmon_startCounters(groupId);
 }
 
 int
@@ -1054,3 +1054,4 @@ perfmon_accessClientInit(void)
         msr_init(socket_fd);
     }
 }
+
