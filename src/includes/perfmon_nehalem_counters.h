@@ -32,7 +32,7 @@
 #define NUM_COUNTERS_UNCORE_NEHALEM 15
 #define NUM_COUNTERS_NEHALEM 15
 
-static PerfmonCounterMap nehalem_counter_map[NUM_COUNTERS_NEHALEM] = {
+static RegisterMap nehalem_counter_map[NUM_COUNTERS_NEHALEM] = {
     /* Fixed Counters: instructions retired, cycles unhalted core */
     {"FIXC0",PMC0, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR0, 0, 0},
     {"FIXC1",PMC1, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR1, 0, 0},

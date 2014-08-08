@@ -31,7 +31,7 @@
 #define NUM_COUNTERS_INTERLAGOS 10
 #define NUM_COUNTERS_CORE_INTERLAGOS 6
 
-static PerfmonCounterMap interlagos_counter_map[NUM_COUNTERS_INTERLAGOS] = {
+static RegisterMap interlagos_counter_map[NUM_COUNTERS_INTERLAGOS] = {
     /* Core counters */
     {"PMC0",PMC0, PMC, MSR_AMD15_PERFEVTSEL0, MSR_AMD15_PMC0, 0, 0},
     {"PMC1",PMC1, PMC, MSR_AMD15_PERFEVTSEL1, MSR_AMD15_PMC1, 0, 0},

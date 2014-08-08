@@ -32,7 +32,7 @@
 #define NUM_COUNTERS_UNCORE_SANDYBRIDGE 44
 #define NUM_COUNTERS_CORE_SANDYBRIDGE 8
 
-static PerfmonCounterMap sandybridge_counter_map[NUM_COUNTERS_SANDYBRIDGE] = {
+static RegisterMap sandybridge_counter_map[NUM_COUNTERS_SANDYBRIDGE] = {
     /* Fixed Counters: instructions retired, cycles unhalted core */
     {"FIXC0", PMC0, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR0, 0, 0},
     {"FIXC1", PMC1, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR1, 0, 0},

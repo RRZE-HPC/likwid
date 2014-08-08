@@ -31,7 +31,7 @@
 #define NUM_COUNTERS_KABINI 8 
 #define NUM_COUNTERS_CORE_KABINI 4
 
-static PerfmonCounterMap kabini_counter_map[NUM_COUNTERS_KABINI] = {
+static RegisterMap kabini_counter_map[NUM_COUNTERS_KABINI] = {
     /* Core counters */
     {"PMC0",PMC0, PMC, MSR_AMD16_PERFEVTSEL0, MSR_AMD16_PMC0, 0, 0},
     {"PMC1",PMC1, PMC, MSR_AMD16_PERFEVTSEL1, MSR_AMD16_PMC1, 0, 0},

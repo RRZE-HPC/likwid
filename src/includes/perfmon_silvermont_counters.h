@@ -33,7 +33,7 @@
 #define NUM_COUNTERS_UNCORE_SILVERMONT 0
 #define NUM_COUNTERS_SILVERMONT 10
 
-static PerfmonCounterMap silvermont_counter_map[NUM_COUNTERS_SILVERMONT] = {
+static RegisterMap silvermont_counter_map[NUM_COUNTERS_SILVERMONT] = {
     /* Fixed Counters: instructions retired, cycles unhalted core */
     {"FIXC0", PMC0, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR0, 0, 0},
     {"FIXC1", PMC1, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR1, 0, 0},
