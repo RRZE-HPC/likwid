@@ -57,6 +57,7 @@
 #include <hashTable.h>
 #include <registers.h>
 #include <likwid.h>
+#include <perfmon.h>
 
 #include <perfmon_core2_counters.h>
 #include <perfmon_haswell_counters.h>
@@ -74,15 +75,17 @@
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-static int perfmon_numCounters=0;     /* total number of counters */
+//static int perfmon_numCounters=0;     /* total number of counters */
 static int perfmon_numCountersCore=0; /* max index of core counters */
 static int perfmon_numCountersUncore=0; /* max index of conventional uncore counters */
-static PerfmonCounterMap* perfmon_counter_map = NULL;
+static RegisterMap* perfmon_counter_map = NULL;
 int socket_lock[MAX_NUM_NODES];
 static int thread_socketFD[MAX_NUM_THREADS];
 static int hasPCICounters = 0;
 static int likwid_init = 0;
 static BitMask counterMask;
+static int numberOfGroups = 0;
+static int activeGroup = 0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -101,7 +104,6 @@ void str2BitMask(const char* str, BitMask* mask)
   for (int i=0; i<tokens->qty; i++)
   {
       uint64_t val =  strtoull((char*) tokens->entry[i]->data, &endptr, 16);
-
       if ((errno == ERANGE && val == LONG_MAX )
               || (errno != 0 && val == 0))
       {
@@ -141,6 +143,8 @@ void likwid_markerInit(void)
     int cpuId = likwid_getProcessorId();
     char* modeStr = getenv("LIKWID_MODE");
     char* maskStr = getenv("LIKWID_MASK");
+    char* eventStr = getenv("LIKWID_EVENTS");
+    numberOfGroups = atoi(getenv("LIKWID_GROUPS"));
 
     if ((modeStr != NULL) && (maskStr != NULL))
     {
@@ -397,7 +401,7 @@ void likwid_markerClose(void)
 
     if (file != NULL)
     {
-        fprintf(file,"%d %d\n",numberOfThreads,numberOfRegions);
+        fprintf(file,"%d %d %d\n",numberOfThreads,numberOfRegions, numberOfGroups);
 
         for (int i=0; i<numberOfRegions; i++)
         {
@@ -415,7 +419,7 @@ void likwid_markerClose(void)
 
                 for (int k=0; k<NUM_PMC; k++)
                 {
-                    fprintf(file,"%e ",results[i].counters[j][k]);
+                    fprintf(file,"%llu ",results[i].counters[j][k]);
                 }
                 fprintf(file,"\n");
             }
@@ -461,6 +465,10 @@ int likwid_markerStartRegion(const char* regionTag)
     LikwidThreadResults* results;
     uint64_t res;
     uint64_t tmp, counter_result;
+    char groupSuffix[10];
+    sprintf(groupSuffix, "-%d", activeGroup);
+    bcatcstr(tag, groupSuffix);
+    
     int cpu_id = hashTable_get(tag, &results);
     bdestroy(tag);
     int socket_fd = thread_socketFD[cpu_id];
@@ -479,7 +487,7 @@ int likwid_markerStartRegion(const char* regionTag)
     /* Core specific counters */
     for ( int i=0; i<perfmon_numCountersCore; i++ )
     {
-        bitMask_test(res,counterMask,i);
+        bitMask_test(res, counterMask, i);
         if ( res )
         {
             if (perfmon_counter_map[i].type != THERMAL)
@@ -506,13 +514,13 @@ int likwid_markerStartRegion(const char* regionTag)
                 {
                     CHECK_MSR_READ_ERROR(msr_tread(socket_fd, cpu_id,
                             perfmon_counter_map[i].counterRegister, &counter_result));
-                    results->StartPMcounters[i] = (double)counter_result;
+                    results->StartPMcounters[i] = (uint64_t)counter_result;
                 }
                 else
                 {
                     CHECK_POWER_READ_ERROR(msr_tread(socket_fd, cpu_id,
                             perfmon_counter_map[i].counterRegister, &counter_result));
-                    results->StartPMcounters[i] = (double)counter_result;
+                    results->StartPMcounters[i] = (uint64_t)counter_result;
                 }
             }
         }
@@ -541,7 +549,7 @@ int likwid_markerStartRegion(const char* regionTag)
                     counter_result += tmp;
 
                     results->StartPMcounters[perfmon_counter_map[i].index] =
-                        (double) counter_result;
+                        (uint64_t) counter_result;
                 }
             }
         }
@@ -554,7 +562,7 @@ int likwid_markerStartRegion(const char* regionTag)
     counter_result = pci_tread(socket_fd, cpu_id, channel, reg##_A); \
     counter_result = (counter_result<<32) +                          \
     pci_tread(socket_fd, cpu_id, channel, reg##_B);                  \
-    results->PMcounters[cid] += (double) counter_result - results->StartPMcounters[cid]
+    results->PMcounters[cid] += (uint64_t) counter_result - results->StartPMcounters[cid]
 
 
 /* TODO: Readout hash at the end. Compute result at the end of the function to
@@ -573,8 +581,7 @@ int likwid_markerStopRegion(const char* regionTag)
     uint64_t res;
     uint64_t tmp, counter_result;
     int socket_fd = thread_socketFD[cpu_id];
-    double PMcounters[NUM_PMC];
-
+    uint64_t PMcounters[NUM_PMC];
     /* Core specific counters */
     for ( int i=0; i<perfmon_numCountersCore; i++ )
     {
@@ -585,12 +592,12 @@ int likwid_markerStopRegion(const char* regionTag)
             {
                 CHECK_MSR_READ_ERROR(msr_tread(socket_fd, cpu_id,
                         perfmon_counter_map[i].counterRegister, &counter_result))
-                PMcounters[i] = (double) counter_result;
+                PMcounters[i] = (uint64_t) counter_result;
             }
             else
             {
                 CHECK_TEMP_READ_ERROR(thermal_read(cpu_id, (uint32_t*)&counter_result));
-                PMcounters[i] = (double) counter_result;
+                PMcounters[i] = (uint64_t) counter_result;
             }
         }
     }
@@ -608,13 +615,13 @@ int likwid_markerStopRegion(const char* regionTag)
                 {
                     CHECK_MSR_READ_ERROR(msr_tread(socket_fd, cpu_id,
                         perfmon_counter_map[i].counterRegister, &counter_result))
-                    PMcounters[i] = (double) counter_result;
+                    PMcounters[i] = (uint64_t) counter_result;
                 }
                 else
                 {
                     CHECK_POWER_READ_ERROR(msr_tread(socket_fd, cpu_id,
                             perfmon_counter_map[i].counterRegister, &counter_result));
-                    PMcounters[i] = (double)counter_result;
+                    PMcounters[i] = (uint64_t)counter_result;
                 }
             }
         }
@@ -642,14 +649,18 @@ int likwid_markerStopRegion(const char* regionTag)
                                 (uint32_t*)&tmp));
                     counter_result += tmp;
 
-                    PMcounters[i] = (double) counter_result;
+                    PMcounters[i] = (uint64_t) counter_result;
                 }
             }
         }
     }
 
     bstring tag = bfromcstralloc(100, regionTag);
+    char groupSuffix[10];
     LikwidThreadResults* results;
+    sprintf(groupSuffix, "-%d", activeGroup);
+    bcatcstr(tag, groupSuffix);
+    
     hashTable_get(tag, &results);
     results->startTime.stop = timestamp.stop;
     results->time += timer_print(&(results->startTime));
@@ -693,6 +704,12 @@ int likwid_markerStopRegion(const char* regionTag)
             }
         }
     }
+}
+
+void likwid_switchMarkerGroup(int groupId)
+{
+    perfmon_switchActiveGroup(groupId);
+    activeGroup = groupId;
 }
 
 int  likwid_getProcessorId()
