@@ -148,7 +148,7 @@ static int lua_likwid_addEventSet(lua_State* L)
     luaL_argcheck(L, strlen(tmpString) > 0, n, "Event string must be larger than 0");
     
     groupId = perfmon_addEventSet((char*)tmpString);
-    lua_pushnumber(L, groupId);
+    lua_pushnumber(L, groupId+1);
     return 1;
 }
 
@@ -156,7 +156,7 @@ static int lua_likwid_setupCounters(lua_State* L)
 {
     int ret;
     int groupId = lua_tonumber(L,1);
-    ret = perfmon_setupCounters(groupId);
+    ret = perfmon_setupCounters(groupId-1);
     lua_pushnumber(L,ret);
     return 1;
 }
@@ -199,7 +199,7 @@ static int lua_likwid_getResult(lua_State* L)
     groupId = lua_tonumber(L,1);
     eventId = lua_tonumber(L,2);
     threadId = lua_tonumber(L,3);
-    result = perfmon_getResult(groupId, eventId, threadId);
+    result = perfmon_getResult(groupId-1, eventId, threadId);
     lua_pushnumber(L,result);
     return 1;
 }
@@ -224,7 +224,7 @@ static int lua_likwid_getRuntimeOfGroup(lua_State* L)
 {
     int number, groupId;
     groupId = lua_tonumber(L,1);
-    number = perfmon_getTimeOfGroup(groupId);
+    number = perfmon_getTimeOfGroup(groupId-1);
     lua_pushnumber(L, number);
     return 1;
 }
