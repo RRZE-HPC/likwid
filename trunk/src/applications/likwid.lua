@@ -645,6 +645,10 @@ local function print_output(groupID, groupdata, cpulist)
     for i=0,num_events-1 do
         table.insert(tab[1],groupdata["Events"][i]["Event"])
     end
+    tab[2] = {"Counter"}
+    for i=0,num_events-1 do
+        table.insert(tab[2],groupdata["Events"][i]["Counter"])
+    end
     for j=0,num_threads-1 do
         tmpList = {"Core "..tostring(cpulist[j+1])}
         for i=1,num_events do
@@ -693,7 +697,7 @@ local function print_output(groupID, groupdata, cpulist)
         end
     end
     
-    for i=#tab,2,-1 do
+    for i=#tab,3,-1 do
         table.remove(tab,i)
     end
     table.insert(tab, sums)
@@ -825,6 +829,10 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
             tab[1] = {"Event"}
             for e=0,nr_events-1 do
                 table.insert(tab[1],gdata["Events"][e]["Event"])
+            end
+            tab[2] = {"Counter"}
+            for e=0,nr_events-1 do
+                table.insert(tab[2],gdata["Events"][e]["Counter"])
             end
             for t=0,nr_threads-1 do
                 local tmpList = {}
