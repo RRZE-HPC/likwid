@@ -50,6 +50,7 @@
 #include <error.h>
 #include <cpuid.h>
 #include <accessClient.h>
+#include <perfmon.h>
 
 int accessClient_mode = ACCESSMODE;
 
@@ -117,9 +118,10 @@ startDaemon(void)
     address_length = sizeof(address);
     snprintf(address.sun_path, sizeof(address.sun_path), "/tmp/likwid-%d", pid);
     filepath = strdup(address.sun_path);
-    DEBUG_PRINT(0, "%ssocket pathname is %s\n",
-            ((accessClient_mode == DAEMON_AM_ACCESS_D) ? "Generated " : ""),
-            filepath);
+    if (accessClient_mode == DAEMON_AM_ACCESS_D)
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, socket pathname is %s, filepath);
+    }
 
     while (timeout > 0)
     {
@@ -133,7 +135,7 @@ startDaemon(void)
         }
 
         timeout--;
-        DEBUG_PRINT(1, "%s\n", "Still waiting for socket...");
+        DEBUG_PRINT(DEBUGLEV_INFO, "%s\n", "Still waiting for socket...");
     }
 
     if (timeout <= 0)
