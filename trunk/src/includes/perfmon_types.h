@@ -36,6 +36,8 @@
 #include <bstrlib.h>
 #include <timer.h>
 
+#define MAX_EVENT_OPTIONS 4
+
 /* #####   EXPORTED TYPE DEFINITIONS   #################################### */
 
 
@@ -47,6 +49,25 @@ typedef struct {
     int             processorId;
 } PerfmonThread;
 
+typedef enum {
+    EVENT_OPTION_NONE = 0,
+    EVENT_OPTION_OPCODE,
+    EVENT_OPTION_ADDR,
+    EVENT_OPTION_NID,
+    EVENT_OPTION_TID,
+    EVENT_OPTION_STATE,
+    EVENT_OPTION_EDGE,
+    EVENT_OPTION_THRESHOLD,
+    EVENT_OPTION_INVERT,
+    EVENT_OPTION_COUNT_KERNEL,
+    EVENT_OPTION_OCCUPANCY
+} EventOptionType;
+
+typedef struct {
+    EventOptionType      type;
+    uint32_t             value;
+} PerfmonEventOption;
+
 typedef struct {
     const char*     name;
     const char*     limit;
@@ -54,6 +75,8 @@ typedef struct {
     uint8_t         umask;
     uint8_t         cfgBits;
     uint8_t         cmask;
+    uint8_t         numberOfOptions;
+    PerfmonEventOption options[MAX_EVENT_OPTIONS];
 } PerfmonEvent;
 
 typedef struct {
