@@ -150,15 +150,13 @@ static int allowed_intel(uint32_t reg)
 
 static int allowed_sandybridge(uint32_t reg)
 {
-    if (!allowed_intel(reg)) {
-        return 0;
-    }
-    if ((reg & 0xF00U) != 0x600U) &&
-        (reg != 0x1AD))
+    if ((allowed_intel(reg)) ||
+        (((reg & 0xF00U) == 0x600U) ||
+        (reg == 0x1AD)))
     {
-        return 0;
+        return 1;
     }
-    return 1;
+    return 0;
 }
 
 static int allowed_silvermont(uint32_t reg)
@@ -167,7 +165,6 @@ static int allowed_silvermont(uint32_t reg)
     {
         return 0;
     }
-    if ((reg != 0x1A7))
 
     if ( ((reg & 0x0F8U) == 0x0C0U) ||
             ((reg & 0xFF0U) == 0x180U) ||
@@ -181,7 +178,7 @@ static int allowed_silvermont(uint32_t reg)
             (reg == 0x19C)  ||
             (reg == 0x1A2)  ||
             (reg == 0x1A6) ||
-            )
+            (reg != 0x1A7))
     {
         return 1;
     }
@@ -241,14 +238,14 @@ static void msr_read(AccessDataRecord * dRecord)
 
     if (!allowed(reg))
     {
-        syslog(LOG_ERR, "attempt to read from restricted register %x", reg);
+        syslog(LOG_ERR, "Attempt to read to restricted register 0x%x on core %u", reg, cpu);
         dRecord->errorcode = ERR_RESTREG;
         return;
     }
 
     if (pread(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data))
     {
-        syslog(LOG_ERR, "Failed to read data from msr device file on core %u", cpu);
+        syslog(LOG_ERR, "Failed to read data to register 0x%x on core %u", reg, cpu);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -266,14 +263,14 @@ static void msr_write(AccessDataRecord * dRecord)
 
     if (!allowed(reg))
     {
-        syslog(LOG_ERR, "attempt to write to restricted register %x", reg);
+        syslog(LOG_ERR, "Attempt to write to restricted register 0x%x on core %u", reg, cpu);
         dRecord->errorcode = ERR_RESTREG;
         return;
     }
 
     if (pwrite(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data))
     {
-        syslog(LOG_ERR, "Failed to write data to msr device file on core %u", cpu);
+        syslog(LOG_ERR, "Failed to write data to register 0x%x on core %u", reg, cpu);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -299,7 +296,7 @@ static void pci_read(AccessDataRecord* dRecord)
 
         if ( FD_PCI[socketId][device] < 0)
         {
-            syslog(LOG_ERR, "Failed to open device file on socket %u", socketId);
+            syslog(LOG_ERR, "Failed to open device file %s for device %u on socket %u", pci_filepath, device, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
@@ -307,8 +304,8 @@ static void pci_read(AccessDataRecord* dRecord)
 
     if ( pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data)) 
     {
-        syslog(LOG_ERR, "Failed to read data from pci device file on socket %u device %u",
-                socketId, device);
+        syslog(LOG_ERR, "Failed to read data from pci device file %s for device %u on socket %u",
+                pci_filepath,device,socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -338,7 +335,7 @@ static void pci_write(AccessDataRecord* dRecord)
 
         if ( FD_PCI[socketId][device] < 0)
         {
-            syslog(LOG_ERR, "Failed to open device file on socket %u", socketId);
+            syslog(LOG_ERR, "Failed to open device file %s for device %u on socket %u", pci_filepath, device, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
@@ -346,7 +343,7 @@ static void pci_write(AccessDataRecord* dRecord)
 
     if (pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data) 
     {
-        syslog(LOG_ERR, "Failed to write data to pci device file on socket %u", socketId);
+        syslog(LOG_ERR, "Failed to write data to pci device file %s for device %u on socket %u",pci_filepath, device, socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
