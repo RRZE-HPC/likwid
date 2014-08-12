@@ -44,6 +44,7 @@ PerfmonEvent* eventHash;
 RegisterMap* counter_map;
 int perfmon_numCounters;
 int perfmon_numArchEvents;
+int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
 int socket_fd = -1;
 
@@ -56,50 +57,48 @@ int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 
 int (*initThreadArch) (int cpu_id);
 
-int
-perfmon_initThread(/*PerfmonGroupSet* groupSet, int groupId,*/ int thread_id, int cpu_id)
-{
-    int i, j;
-    
-    for (i=0;i<groupSet->numberOfActiveGroups;i++)
-    {
-        for (i=0;i<groupSet->groups[i].numberOfEvents;i++)
-        {
-            groupSet->groups[i].events[j].threadCounter[thread_id].init = FALSE;
-        }
-    }
-    return initThreadArch(cpu_id);
-}
 
 static int
 getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
 {
+    int ret = FALSE;
+    int extended = -1;
+    extended = bstrchrp(reg,'{', 0);
+    bstring work_reg = bstrcpy(reg);
+    
+    if (extended >= 0)
+    {
+        btrunc(work_reg, extended);
+    }
     for (int i=0; i< perfmon_numCounters; i++)
     {
-        if (biseqcstr(reg, counter_map[i].key))
+        if (biseqcstr(work_reg, counter_map[i].key))
         {
             *index = counter_map[i].index;
             *type = counter_map[i].type;
-            return TRUE;
+            ret = TRUE;
+            break;
         }
     }
-
-    return FALSE;
+    bdestroy(work_reg);
+    return ret;
 }
 
 static int
 getEvent(bstring event_str, PerfmonEvent* event)
 {
+    int ret = FALSE;
     for (int i=0; i< perfmon_numArchEvents; i++)
     {
         if (biseqcstr(event_str, eventHash[i].name))
         {
             *event = eventHash[i];
-            return TRUE;
+            ret = TRUE;
+            break;
         }
     }
 
-    return FALSE;
+    return ret;
 }
 
 static int
@@ -107,30 +106,193 @@ checkCounter(bstring counterName, const char* limit)
 {
     int i;
     struct bstrList* tokens;
-    int value = FALSE;
+    int ret = FALSE;
     bstring limitString = bfromcstr(limit);
+    bstring str = bstrcpy(counterName);
 
     tokens = bstrListCreate();
     tokens = bsplit(limitString,'|');
-
+    i = bstrchrp(str,'{', 0);
+    if (i >= 0)
+    {
+        btrunc(str, i);
+    }
     for(i=0; i<tokens->qty; i++)
     {
-        if(bstrncmp(counterName, tokens->entry[i], blength(tokens->entry[i])))
+        if(bstrncmp(str, tokens->entry[i], blength(tokens->entry[i])))
         {
-            value = FALSE;
+            ret = FALSE;
         }
         else
         {
-            value = TRUE;
+            ret = TRUE;
             break;
         }
     }
-
+    bdestroy(str);
     bdestroy(limitString);
     bstrListDestroy(tokens);
-    return value;
+    return ret;
 }
 
+static int
+parseOptions(bstring counterName, PerfmonEvent* event)
+{
+    int i,j;
+    int optStart = -1;
+    int optEnd = -1;
+    struct bstrList* tokens;
+    struct bstrList* subtokens;
+
+    for (i = 0; i < MAX_EVENT_OPTIONS; i++)
+    {
+        event->options[i].type = EVENT_OPTION_NONE;
+    }
+
+    optStart = bstrchrp(counterName,'{', 0);
+    if (optStart == BSTR_ERR)
+    {
+        return 0;
+    }
+
+    optEnd = bstrchrp(counterName,'}', optStart);
+    if (optEnd == BSTR_ERR)
+    {
+        
+        return -EINVAL;
+    }
+
+    counterName = bmidstr(counterName, optStart+1, optEnd - optStart -1);
+    tokens = bstrListCreate();
+    tokens = bsplit(counterName,',');
+    if (tokens->qty > MAX_EVENT_OPTIONS)
+    {
+        bstrListDestroy(tokens);
+        return -ERANGE;
+    }
+
+    subtokens = bstrListCreate();
+    
+    event->numberOfOptions = 0;
+
+    for (i=0;i<tokens->qty;i++)
+    {
+        subtokens = bsplit(tokens->entry[i],'=');
+        if (biseqcstr(subtokens->entry[0], "opcode") == 1)
+        {
+            event->options[event->numberOfOptions].type = EVENT_OPTION_OPCODE;
+        }
+        else if (biseqcstr(subtokens->entry[0], "addr") == 1)
+        {
+            event->options[event->numberOfOptions].type = EVENT_OPTION_ADDR;
+        }
+        else if (biseqcstr(subtokens->entry[0], "nid") == 1)
+        {
+            event->options[event->numberOfOptions].type = EVENT_OPTION_NID;
+        }
+        else if (biseqcstr(subtokens->entry[0], "tid") == 1)
+        {
+            event->options[event->numberOfOptions].type = EVENT_OPTION_TID;
+        }
+        else if (biseqcstr(subtokens->entry[0], "state") == 1)
+        {
+            event->options[event->numberOfOptions].type = EVENT_OPTION_STATE;
+        }
+        else if (biseqcstr(subtokens->entry[0], "threshold") == 1)
+        {
+            event->options[event->numberOfOptions].type = EVENT_OPTION_THRESHOLD;
+        }
+        else if (biseqcstr(subtokens->entry[0], "edgedetect") == 1)
+        {
+            event->options[event->numberOfOptions].type = EVENT_OPTION_EDGE;
+        }
+        else if (biseqcstr(subtokens->entry[0], "invert") == 1)
+        {
+            event->options[event->numberOfOptions].type = EVENT_OPTION_INVERT;
+        }
+        else if (biseqcstr(subtokens->entry[0], "kernel") == 1)
+        {
+            event->options[event->numberOfOptions].type = EVENT_OPTION_COUNT_KERNEL;
+        }
+        else if (biseqcstr(subtokens->entry[0], "occupancy") == 1)
+        {
+            event->options[event->numberOfOptions].type = EVENT_OPTION_OCCUPANCY;
+        }
+        else
+        {
+            continue;
+        }
+        sscanf(bdata(subtokens->entry[1]), "%x", &(event->options[event->numberOfOptions].value));
+        event->numberOfOptions++;
+    }
+
+    for(i=0;i<event->numberOfOptions;i++)
+    {
+        if (event->options[i].type == EVENT_OPTION_EDGE)
+        {
+            int threshold_set = FALSE;
+            for (j=0;j<event->numberOfOptions;j++)
+            {
+                if (event->options[i].type == EVENT_OPTION_THRESHOLD)
+                {
+                    threshold_set = TRUE;
+                    break;
+                }
+            }
+            if ((threshold_set == FALSE) && (event->numberOfOptions < MAX_EVENT_OPTIONS))
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_THRESHOLD;
+                event->options[event->numberOfOptions].value = 0x1;
+                event->numberOfOptions++;
+            }
+            else
+            {
+                ERROR_PLAIN_PRINT(Cannot set threshold option to default. no more space in options list);
+            }
+        }
+        else if (event->options[i].type == EVENT_OPTION_OCCUPANCY)
+        {
+            int threshold_set = FALSE;
+            int edge_set = FALSE;
+            int invert_set = FALSE;
+            for (j=0;j<event->numberOfOptions;j++)
+            {
+                if (event->options[i].type == EVENT_OPTION_THRESHOLD)
+                {
+                    threshold_set = TRUE;
+                    break;
+                }
+                if (event->options[i].type == EVENT_OPTION_EDGE)
+                {
+                    edge_set = TRUE;
+                    break;
+                }
+                if (event->options[i].type == EVENT_OPTION_INVERT)
+                {
+                    invert_set = TRUE;
+                    break;
+                }
+            }
+            if ((threshold_set == FALSE) && (event->numberOfOptions < MAX_EVENT_OPTIONS) && 
+                (edge_set == TRUE || invert_set == TRUE ))
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_THRESHOLD;
+                event->options[event->numberOfOptions].value = 0x1;
+                event->numberOfOptions++;
+            }
+            else
+            {
+                ERROR_PLAIN_PRINT(Cannot set threshold option to default. no more space in options list);
+            }
+        }
+    }
+
+    bstrListDestroy(tokens);
+    bstrListDestroy(subtokens);
+    return event->numberOfOptions;
+}
+
+/* DEPRECATED */
 void
 perfmon_printCounters(FILE* OUTSTREAM)
 {
@@ -148,6 +310,7 @@ perfmon_printCounters(FILE* OUTSTREAM)
     fprintf(OUTSTREAM,".\n");
 }
 
+/* DEPRECATED */
 void
 perfmon_printEvents(FILE* OUTSTREAM)
 {
@@ -631,6 +794,9 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     /* If the arch supports it, initialize power and thermal measurements */
     for(i=0;i<nrThreads;i++)
     {
+        groupSet->threads[i].thread_id = i;
+        groupSet->threads[i].processorId = threadsToCpu[i];
+
         if (initialize_power == TRUE)
         {
             power_init(threadsToCpu[i]);
@@ -639,9 +805,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         {
             thermal_init(threadsToCpu[i]);
         }
-        groupSet->threads[i].thread_id = i;
-        groupSet->threads[i].processorId = threadsToCpu[i];
-        perfmon_initThread(i, threadsToCpu[i]);
+
+        initThreadArch(threadsToCpu[i]);
     }
     
     return 0;
@@ -683,65 +848,78 @@ perfmon_addEventSet(char* eventCString)
     
     if (eventCString == NULL)
     {
-        ERROR_PLAIN_PRINT(Event string is empty. Trying environment variable LIKWID_EVENTS);
+        DEBUG_PLAIN_PRINT(1, Event string is empty. Trying environment variable LIKWID_EVENTS);
         eventCString = getenv("LIKWID_EVENTS");
         if (eventCString == NULL)
         {
-            ERROR_PLAIN_PRINT(Event string from environment variable is empty);
+            ERROR_PLAIN_PRINT(Cannot read event string. Also event string from environment variable is empty);
             return -EINVAL;
         }
     }
     
     if (strchr(eventCString, '-') != NULL)
     {
+        ERROR_PLAIN_PRINT(Event string contains valid character -);
         return -EINVAL;
     }
     if (strchr(eventCString, '.') != NULL)
     {
+        ERROR_PLAIN_PRINT(Event string contains valid character .);
         return -EINVAL;
     }
     if (strchr(eventCString, ';') != NULL)
     {
+        ERROR_PLAIN_PRINT(Event string contains valid character ;);
         return -EINVAL;
     }
-    
     if (groupSet->numberOfActiveGroups == groupSet->numberOfGroups)
     {
         groupSet->numberOfGroups++;
         groupSet->groups = (PerfmonEventSet*)realloc(groupSet->groups, groupSet->numberOfGroups*sizeof(PerfmonEventSet));
+        if (!groupSet->groups)
+        {
+            ERROR_PLAIN_PRINT(Cannot allocate additional group);
+            return -ENOMEM;
+        }
         groupSet->groups[groupSet->numberOfActiveGroups].rdtscTime = 0;
+        DEBUG_PLAIN_PRINT(DEBUGLEV_INFO,
+                    Allocating new group structure for group.);
     }
-    
-    
+    DEBUG_PRINT(DEBUGLEV_INFO, Currently %d groups of %d active,
+                    groupSet->numberOfActiveGroups+1,
+                    groupSet->numberOfGroups+1);
+
+    eventSet = &(groupSet->groups[groupSet->numberOfActiveGroups]);
+
     eventBString = bfromcstr(eventCString);
+    tokens = bstrListCreate();
     tokens = bsplit(eventBString,',');
     bdestroy(eventBString);
-    
-    eventSet = &(groupSet->groups[groupSet->numberOfActiveGroups]);
-    
+
     eventSet->events = (PerfmonEventSetEntry*) malloc(tokens->qty * sizeof(PerfmonEventSetEntry));
-    
+
     if (eventSet->events == NULL)
     {
-        fprintf(stderr,"Cannot allocate event list for group %d\n", groupSet->numberOfActiveGroups);
-        bstrListDestroy(tokens);
+        ERROR_PRINT(Cannot allocate event list for group %d\n, groupSet->numberOfActiveGroups);
         return -ENOMEM;
     }
+
     eventSet->numberOfEvents = 0;
     eventSet->measureFixed = 0;
     eventSet->measurePMC = 0;
     eventSet->measurePMCUncore = 0;
     eventSet->measurePCIUncore = 0;
-
+    
+    subtokens = bstrListCreate();
+    
     for(i=0;i<tokens->qty;i++)
     {
-        event = &(groupSet->groups[groupSet->numberOfActiveGroups].events[i]);
+        event = &(eventSet->events[i]);
 
         subtokens = bsplit(tokens->entry[i],':');
         if (subtokens->qty != 2)
         {
-            fprintf(stderr,"Cannot parse event descriptor %s\n",tokens->entry[i]);
-            bstrListDestroy(subtokens);
+            ERROR_PRINT(Cannot parse event descriptor %s\n,tokens->entry[i]);
             continue;
         }
         else
@@ -750,7 +928,6 @@ perfmon_addEventSet(char* eventCString)
             {
                 ERROR_PRINT(Counter register %s not supported,bdata(
                         subtokens->entry[1]));
-                bstrListDestroy(subtokens);
                 continue;
             }
 
@@ -758,7 +935,6 @@ perfmon_addEventSet(char* eventCString)
             {
                 ERROR_PRINT(Event %s not found for current architecture,
                      bdata(subtokens->entry[0]));
-                bstrListDestroy(subtokens);
                 continue;
             }
            
@@ -766,7 +942,11 @@ perfmon_addEventSet(char* eventCString)
             {
                 ERROR_PRINT(Register %s not allowed for event %s,
                      bdata(subtokens->entry[1]),bdata(subtokens->entry[0]));
-                bstrListDestroy(subtokens);
+                continue;
+            }
+            if (parseOptions(subtokens->entry[1], &event->event) < 0)
+            {
+                ERROR_PRINT(Cannot parse options in %s, bdata(subtokens->entry[1]));
                 continue;
             }
 
@@ -816,7 +996,6 @@ perfmon_addEventSet(char* eventCString)
             if (event->threadCounter == NULL)
             {
                 ERROR_PRINT(Cannot allocate counter for all threads in group %d,groupSet->numberOfActiveGroups);
-                bstrListDestroy(subtokens);
                 continue;
             }
             for(j=0;j<groupSet->numberOfThreads;j++)
@@ -824,10 +1003,50 @@ perfmon_addEventSet(char* eventCString)
                 event->threadCounter[j].counterData = 0;
                 event->threadCounter[j].startData = 0;
                 event->threadCounter[j].overflows = 0;
+                event->threadCounter[j].init = FALSE;
             }
+
+            if (perfmon_verbosity > DEBUGLEV_ONLY_ERROR)
+            {
+                DEBUG_PRINT(DEBUGLEV_INFO,
+                            Added event %s for counter %s to group %d,
+                            event->event.name, 
+                            counter_map[event->index].key,
+                            groupSet->numberOfActiveGroups);
+                DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL,
+                            Event options are:);
+                if (perfmon_verbosity >= DEBUGLEV_DETAIL)
+                {
+                    for(j=0;j<event->event.numberOfOptions;j++)
+                    {
+                        switch(event->event.options[j].type)
+                        {
+                            case (EVENT_OPTION_NONE):
+                                j = event->event.numberOfOptions;
+                                break;
+                            case (EVENT_OPTION_OPCODE):
+                                DEBUG_PRINT(DEBUGLEV_DETAIL,
+                                    Programming Opcode to 0x%x, 
+                                    event->event.options[j].value);
+                                break;
+                            case (EVENT_OPTION_ADDR):
+                                DEBUG_PRINT(DEBUGLEV_DETAIL,
+                                    Programming Addr to 0x%x, 
+                                    event->event.options[j].value);
+                                break;
+                            case (EVENT_OPTION_NID):
+                                DEBUG_PRINT(DEBUGLEV_DETAIL,
+                                    Programming NodeID to 0x%x, 
+                                    event->event.options[j].value);
+                                break;
+                        }
+                    }
+                }
+            }
+            
         }
-        bstrListDestroy(subtokens);
     }
+    bstrListDestroy(subtokens);
     bstrListDestroy(tokens);
     groupSet->numberOfActiveGroups++;
     return groupSet->numberOfActiveGroups-1;
