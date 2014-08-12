@@ -41,6 +41,7 @@
 
 extern void pci_init();
 extern void pci_finalize();
+extern int pci_checkDevice(PciDeviceIndex index, int cpu);
 extern int pci_read(int cpu, PciDeviceIndex index, uint32_t reg, uint32_t *data);
 extern int pci_write(int cpu, PciDeviceIndex index, uint32_t reg, uint32_t data);
 extern int pci_tread(int socket_fd, int cpu, PciDeviceIndex index, uint32_t reg, uint32_t *data);
