@@ -399,5 +399,13 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
     return 0;
 }
 
-
+int pci_checkDevice(PciDeviceIndex index, int cpu)
+{
+    int socketId = affinity_core2node_lookup[cpu];
+    if (FD[socketId][index] > 0)
+    {
+        return 1;
+    }
+    return 0;
+}
 
