@@ -57,7 +57,7 @@ local function usage()
     print("Options:")
     print("-h\t\t Help message")
     print("-v\t\t Version information")
-    print("-V\t\t Verbose output")
+    print("-V <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details)")
     print("-c <list>\t Processor ids to measure (required), e.g. 1,2-4,8")
     print("-C <list>\t Processor ids to pin threads and measure, e.g. 1,2-4,8")
     print("-g <string>\t Performance group or custom event set string")
@@ -71,6 +71,8 @@ local function usage()
     print("-S <time>\t Stethoscope mode with duration in s, ms or us, e.g 20ms")
     print("-t <time>\t Timeline mode with frequency in s, ms or us, e.g. 300ms")
     print("-m\t\t Use Marker API inside code")
+    print("Multiplexing:")
+    print("-u <count>\t Switch groups after <count> times <time> set with -t")
     print("Output options:")
     print("-o <file>\t Store output to file. (Optional: Apply text filter according to filename suffix)")
     print("-O\t\t Output easily parseable CSV instead of fancy tables")
@@ -89,6 +91,9 @@ num_cpus = 0
 pin_cpus = false
 group_string = nil
 event_string = nil
+event_string_list = {}
+group_list = {}
+group_ids = {}
 print_group_help = false
 skip_mask = "0x0"
 counter_mask = {}
@@ -98,11 +103,13 @@ else
     access_mode = config["daemonMode"]
 end
 use_marker = false
-use_stethoscpe = false
+use_stethoscope = false
 use_timeline = false
 daemon_run = 0
 use_wrapper = false
 duration = 2000
+use_switch_interval = false
+switch_interval = 5
 output = ""
 use_csv = false
 execString = nil
@@ -110,7 +117,7 @@ markerFile = string.format("/tmp/likwid_%d.txt",likwid_getpid("pid"))
 
 
 
-for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV") do
+for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:u:") do
     if (opt == "h") then
         usage()
         os.exit(0)
@@ -118,7 +125,9 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV") do
         version()
         os.exit(0)
     elseif (opt == "V") then
-        verbose = true
+        verbose = tonumber(arg)
+        verbose = 2
+        likwid_setVerbosity(verbose)
     elseif (opt == "c") then
         num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
     elseif (opt == "C") then
@@ -129,7 +138,7 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV") do
     elseif (opt == "e") then
         print_events = true
     elseif (opt == "g") then
-        event_string = arg
+        table.insert(event_string_list, arg)
     elseif (opt == "H") then
         print_group_help = true
     elseif (opt == "s") then
@@ -147,11 +156,14 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV") do
         use_marker = true
         use_wrapper = true
     elseif (opt == "S") then
-        use_stethoscpe = true
+        use_stethoscope = true
         duration = likwid.parse_time(arg)
     elseif (opt == "t") then
         use_timeline = true
         duration = likwid.parse_time(arg)
+    elseif (opt == "u") then
+        use_switch_interval = true
+        switch_interval = tonumber(arg)
     elseif (opt == "o") then
         output = arg
         io.output(arg)
@@ -194,18 +206,20 @@ if print_groups == true then
 end
 
 if print_group_help == true then
-    if event_string == nil then
-        print("Group must be given on commandline to get group help")
+    if #event_string_list == 0 then
+        print("Group(s) must be given on commandline to get group help")
         os.exit(1)
     end
-    local s,e = event_string:find(":")
-    if s ~= nil then
-        print("Given string is no group")
-        os.exit(1)
+    for i,event_string in pairs(event_string_list) do
+        local s,e = event_string:find(":")
+        if s ~= nil then
+            print("Given string is no group")
+            os.exit(1)
+        end
+        local gdata = likwid.get_groupdata(cpuinfo["short_name"],event_string)
+        print(string.format("Group %s:",event_string))
+        print(gdata["LongDescription"])
     end
-    local gdata = likwid.get_groupdata(event_string)
-    print(string.format("Group %s",event_string))
-    print(gdata["LongDescription"])
     os.exit(0)
 end
 
@@ -242,8 +256,8 @@ if num_cpus == 0 then
     os.exit(1)
 end
 
-if event_string == nil then
-    print("Option -g <string> must be given on commandline")
+if #event_string_list == 0 then
+    print("Option(s) -g <string> must be given on commandline")
     usage()
     os.exit(1)
 end
@@ -259,8 +273,12 @@ if num_cpus > 0 then
     end
 end
 
-if use_stethoscpe == false and use_timeline == false then
+if use_stethoscope == false and use_timeline == false then
     use_wrapper = true
+end
+
+if use_wrapper == true and use_timeline == false and #event_string_list > 1 then
+    use_timeline = true
 end
 
 if use_wrapper and likwid.tablelength(arg)-2 == 0 and print_info == false then
@@ -299,15 +317,17 @@ if pin_cpus then
 end
 
 
+event_string = event_string_list[1];
 
-
-local s,e = event_string:find(":")
-gdata = nil
-if s == nil then
-    gdata = likwid.get_groupdata(cpuinfo["short_name"], event_string)
-    event_string = gdata["EventString"]
-else
-    gdata = likwid.new_groupdata(event_string)
+for i, event_string in pairs(event_string_list) do
+    local s,e = event_string:find(":")
+    gdata = nil
+    if s == nil then
+        table.insert(group_list,likwid.get_groupdata(cpuinfo["short_name"], event_string))
+        event_string_list[i] = group_list[i]["EventString"]
+    else
+        table.insert(group_list, likwid.new_groupdata(event_string))
+    end
 end
 
 
@@ -318,10 +338,11 @@ end
 likwid_init(num_cpus, cpulist)
 
 
+for i, event_string in pairs(event_string_list) do
+    table.insert(group_ids,likwid_addEventSet(event_string))
+end
 
-local groupID = likwid_addEventSet(event_string)
-
-likwid_setupCounters(groupID)
+likwid_setupCounters(group_ids[1])
 print(HLINE)
 
 if use_timeline == true then
@@ -330,7 +351,7 @@ if use_timeline == true then
         cores_string = cores_string .. tostring(cpu) .. " "
     end
     print(cores_string:sub(1,cores_string:len()-1))
-    likwid_startDaemon(duration, 5);
+    likwid_startDaemon(duration, switch_interval);
 end
 
 if use_wrapper or use_timeline then
@@ -349,7 +370,7 @@ if use_marker == true then
     likwid_setenv("LIKWID_EVENTS", str)
 end
 
-if use_wrapper or use_stethoscpe then
+if use_wrapper or use_stethoscope then
     likwid_startCounters()
 end
 io.stdout:flush()
@@ -362,7 +383,7 @@ else
     usleep(duration)
 end
 io.stdout:flush()
-if use_wrapper or use_stethoscpe then
+if use_wrapper or use_stethoscope then
     likwid_stopCounters()
 elseif use_timeline then
     likwid_stopDaemon(9)
@@ -371,8 +392,11 @@ end
 if use_marker == true then
     groups, results = likwid.getMarkerResults(markerFile)
     likwid.print_markerOutput(groups, results, gdata, cpulist)
-elseif use_wrapper or use_stethoscpe then
-    likwid.print_output(groupID, gdata, cpulist)
+elseif use_wrapper or use_stethoscope then
+    for i, group in pairs(group_ids) do
+        print(string.format("Group %d: %s", group, group_list[group]["GroupString"]))
+        likwid.print_output(group, group_list[group], cpulist)
+    end
 end
 
 
