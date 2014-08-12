@@ -75,9 +75,10 @@
         exit(EXIT_FAILURE); \
     }
 
-#ifndef DEBUGLEV
-#define DEBUGLEV 0
-#endif
+#define DEBUGLEV_ONLY_ERROR 0
+#define DEBUGLEV_INFO 1
+#define DEBUGLEV_DETAIL 2
+#define DEBUGLEV_DEVELOP 3
 
 #define VERBOSEPRINTREG(cpuid,reg,flags,msg) \
         printf("DEBUG - [%s:%d] "  str(msg) " [%d] Register 0x%llX , Flags: 0x%llX \n",  \
@@ -88,9 +89,14 @@
 
 
 #define DEBUG_PRINT(lev, fmt, ...) \
-    if (DEBUGLEV > lev) { \
-        printf(fmt, __VA_ARGS__); \
+    if ((lev > 0) && (lev <= perfmon_verbosity)) { \
+        fprintf(stdout, "DEBUG: " str(fmt) "\n", __VA_ARGS__); \
         fflush(stdout); \
+    }
+
+#define DEBUG_PLAIN_PRINT(lev, msg) \
+    if ((lev > 0) && (lev <= perfmon_verbosity)) { \
+        fprintf(stdout, "DEBUG: " str(msg) "\n");  \
     }
     
 #define CHECK_MSR_WRITE_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR write operation failed);
