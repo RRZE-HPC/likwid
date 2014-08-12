@@ -750,11 +750,13 @@ local function print_output(groupID, groupdata, cpulist)
                 end
                 
                 local tmp = tonumber(tab[i+1][j])
-                if tmp < mins[j] then
-                    mins[j] = tmp
-                end
-                if tmp > maxs[j] then
-                    maxs[j] = tmp
+                if tmp ~= nil then
+                    if tmp < mins[j] then
+                        mins[j] = tmp
+                    end
+                    if tmp > maxs[j] then
+                        maxs[j] = tmp
+                    end
                 end
                 sums[j] = sums[j] + tmp
             end
