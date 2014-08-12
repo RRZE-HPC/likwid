@@ -21,6 +21,7 @@
 #include <daemon.h>
 #include <configuration.h>
 #include <msr.h>
+#include <error.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -87,10 +88,10 @@ static int lua_accessClient_setaccessmode(lua_State* L)
         lua_pushnumber(L,1);
         return 1;
     }
-    else if (flag == 1)
+    /*else if (flag == 1)
     {
         perfmon_accessClientInit();
-    }
+    }*/
     lua_pushnumber(L,0);
     return 1;
 }
@@ -1026,20 +1027,13 @@ static int lua_likwid_getpid(lua_State* L)
     return 1;
 }
 
-static int lua_likwid_fork(lua_State* L)
+static int lua_likwid_setVerbosity(lua_State* L)
 {
-    int ret = fork();
-    lua_pushnumber(L,ret);
-    return 1;
-}
-
-static int lua_likwid_wait(lua_State* L)
-{
-    int status = 0;
-    pid_t pid = luaL_checknumber(L,-1);
-    pid = waitpid(pid, &status, 0);
-    lua_pushnumber(L,pid);
-    return 1;
+    int verbosity = lua_tointeger(L,-1);
+    luaL_argcheck(L, (verbosity >= 0 && verbosity <= DEBUGLEV_DEVELOP), -1, 
+                "Verbosity must be between 0 (only errors) and 3 (developer)");
+    perfmon_verbosity = verbosity;
+    return 0;
 }
 
 int luaopen_liblikwid(lua_State* L){
@@ -1100,7 +1094,7 @@ int luaopen_liblikwid(lua_State* L){
     // Helper functions
     lua_register(L, "likwid_setenv", lua_likwid_setenv);
     lua_register(L, "likwid_getpid", lua_likwid_getpid);
-    lua_register(L, "likwid_fork", lua_likwid_fork);
-    lua_register(L, "likwid_wait", lua_likwid_wait);
+    // Verbosity functions
+    lua_register(L, "likwid_setVerbosity", lua_likwid_setVerbosity);
     return 0;
 }
