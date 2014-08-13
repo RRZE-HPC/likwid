@@ -65,7 +65,6 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
     int extended = -1;
     extended = bstrchrp(reg,'{', 0);
     bstring work_reg = bstrcpy(reg);
-    
     if (extended >= 0)
     {
         btrunc(work_reg, extended);
@@ -136,12 +135,11 @@ checkCounter(bstring counterName, const char* limit)
 }
 
 static int
-parseOptions(bstring counterName, PerfmonEvent* event)
+parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
 {
     int i,j;
     int optStart = -1;
     int optEnd = -1;
-    struct bstrList* tokens;
     struct bstrList* subtokens;
 
     for (i = 0; i < MAX_EVENT_OPTIONS; i++)
@@ -149,81 +147,89 @@ parseOptions(bstring counterName, PerfmonEvent* event)
         event->options[i].type = EVENT_OPTION_NONE;
     }
 
-    optStart = bstrchrp(counterName,'{', 0);
-    if (optStart == BSTR_ERR)
-    {
-        return 0;
-    }
-
-    optEnd = bstrchrp(counterName,'}', optStart);
-    if (optEnd == BSTR_ERR)
-    {
-        
-        return -EINVAL;
-    }
-
-    counterName = bmidstr(counterName, optStart+1, optEnd - optStart -1);
-    tokens = bstrListCreate();
-    tokens = bsplit(counterName,',');
-    if (tokens->qty > MAX_EVENT_OPTIONS)
+    if (tokens->qty-2 > MAX_EVENT_OPTIONS)
     {
         bstrListDestroy(tokens);
         return -ERANGE;
     }
 
     subtokens = bstrListCreate();
-    
     event->numberOfOptions = 0;
 
-    for (i=0;i<tokens->qty;i++)
+    for (i=2;i<tokens->qty;i++)
     {
         subtokens = bsplit(tokens->entry[i],'=');
-        if (biseqcstr(subtokens->entry[0], "opcode") == 1)
+        btolower(subtokens->entry[0]);
+        if (subtokens->qty == 1)
         {
-            event->options[event->numberOfOptions].type = EVENT_OPTION_OPCODE;
+            if (biseqcstr(subtokens->entry[0], "edgedetect") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_EDGE;
+            }
+            else if (biseqcstr(subtokens->entry[0], "invert") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_INVERT;
+            }
+            else if (biseqcstr(subtokens->entry[0], "kernel") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_COUNT_KERNEL;
+            }
+            else
+            {
+                continue;
+            }
+            event->options[event->numberOfOptions].value = 0;
         }
-        else if (biseqcstr(subtokens->entry[0], "addr") == 1)
+        else if (subtokens->qty == 2)
         {
-            event->options[event->numberOfOptions].type = EVENT_OPTION_ADDR;
+            if (biseqcstr(subtokens->entry[0], "opcode") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_OPCODE;
+            }
+            else if (biseqcstr(subtokens->entry[0], "addr") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_ADDR;
+            }
+            else if (biseqcstr(subtokens->entry[0], "nid") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_NID;
+            }
+            else if (biseqcstr(subtokens->entry[0], "tid") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_TID;
+            }
+            else if (biseqcstr(subtokens->entry[0], "state") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_STATE;
+            }
+            else if (biseqcstr(subtokens->entry[0], "threshold") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_THRESHOLD;
+            }
+            else if (biseqcstr(subtokens->entry[0], "occupancy") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_OCCUPANCY;
+                
+            }
+            else
+            {
+                continue;
+            }
+            sscanf(bdata(subtokens->entry[1]), "%x", &(event->options[event->numberOfOptions].value));
         }
-        else if (biseqcstr(subtokens->entry[0], "nid") == 1)
-        {
-            event->options[event->numberOfOptions].type = EVENT_OPTION_NID;
-        }
-        else if (biseqcstr(subtokens->entry[0], "tid") == 1)
-        {
-            event->options[event->numberOfOptions].type = EVENT_OPTION_TID;
-        }
-        else if (biseqcstr(subtokens->entry[0], "state") == 1)
-        {
-            event->options[event->numberOfOptions].type = EVENT_OPTION_STATE;
-        }
-        else if (biseqcstr(subtokens->entry[0], "threshold") == 1)
-        {
-            event->options[event->numberOfOptions].type = EVENT_OPTION_THRESHOLD;
-        }
-        else if (biseqcstr(subtokens->entry[0], "edgedetect") == 1)
-        {
-            event->options[event->numberOfOptions].type = EVENT_OPTION_EDGE;
-        }
-        else if (biseqcstr(subtokens->entry[0], "invert") == 1)
-        {
-            event->options[event->numberOfOptions].type = EVENT_OPTION_INVERT;
-        }
-        else if (biseqcstr(subtokens->entry[0], "kernel") == 1)
-        {
-            event->options[event->numberOfOptions].type = EVENT_OPTION_COUNT_KERNEL;
-        }
-        else if (biseqcstr(subtokens->entry[0], "occupancy") == 1)
-        {
-            event->options[event->numberOfOptions].type = EVENT_OPTION_OCCUPANCY;
-        }
-        else
-        {
-            continue;
-        }
-        sscanf(bdata(subtokens->entry[1]), "%x", &(event->options[event->numberOfOptions].value));
         event->numberOfOptions++;
+    }
+    
+    for(i=event->numberOfOptions-1;i>=0;i--)
+    {
+        if (!(OPTIONS_TYPE_MASK(event->options[i].type) & (counter_map[index].optionMask|event->optionMask)))
+        {
+            DEBUG_PRINT(DEBUGLEV_INFO,Removing Option %s, not valid for register %s,
+                        eventOptionTypeName[event->options[i].type],
+                        counter_map[index].key);
+            event->options[i].type = EVENT_OPTION_NONE;
+            event->numberOfOptions--;
+        }
     }
 
     for(i=0;i<event->numberOfOptions;i++)
@@ -287,7 +293,6 @@ parseOptions(bstring counterName, PerfmonEvent* event)
         }
     }
 
-    bstrListDestroy(tokens);
     bstrListDestroy(subtokens);
     return event->numberOfOptions;
 }
@@ -549,32 +554,15 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         free(groupSet);
         return -ENOMEM;
     }
-    
-    groupSet->groups = (PerfmonEventSet*) malloc(sizeof(PerfmonEventSet));
-    if (groupSet->groups == NULL)
-    {
-        ERROR_PLAIN_PRINT("Cannot allocate set of groups");
-        free(groupSet->threads);
-        free(groupSet);
-        return -ENOMEM;
-    }
-    
-    groupSet->numberOfGroups = 1;
-    groupSet->numberOfActiveGroups = 0;
     groupSet->numberOfThreads = nrThreads;
-    
-    
-    /* Only one group exists by now */
-    groupSet->groups[0].rdtscTime = 0;
-    groupSet->groups[0].numberOfEvents = 0;
-    
+
     for(i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
     
     if (accessClient_mode != DAEMON_AM_DIRECT)
     {
         accessClient_init(&socket_fd);
     }
-    
+
     ret = msr_init(socket_fd);
 
     if (ret)
@@ -585,7 +573,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         free(groupSet);
         return ret;
     }
-    
 
     timer_init();
     
@@ -806,7 +793,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
             thermal_init(threadsToCpu[i]);
         }
 
-        initThreadArch(threadsToCpu[i]);
+        
     }
     
     return 0;
@@ -840,7 +827,7 @@ perfmon_addEventSet(char* eventCString)
     int i, j;
     int groupIndex;
     bstring eventBString;
-    struct bstrList* tokens;
+    struct bstrList* eventtokens;
     struct bstrList* subtokens;
     PerfmonEventSet* eventSet;
     PerfmonEventSetEntry* event;
@@ -856,7 +843,7 @@ perfmon_addEventSet(char* eventCString)
             return -EINVAL;
         }
     }
-    
+
     if (strchr(eventCString, '-') != NULL)
     {
         ERROR_PLAIN_PRINT(Event string contains valid character -);
@@ -867,10 +854,21 @@ perfmon_addEventSet(char* eventCString)
         ERROR_PLAIN_PRINT(Event string contains valid character .);
         return -EINVAL;
     }
-    if (strchr(eventCString, ';') != NULL)
+    if (groupSet->numberOfActiveGroups == 0)
     {
-        ERROR_PLAIN_PRINT(Event string contains valid character ;);
-        return -EINVAL;
+        groupSet->groups = (PerfmonEventSet*) malloc(sizeof(PerfmonEventSet));
+        if (groupSet->groups == NULL)
+        {
+            ERROR_PLAIN_PRINT(Cannot allocate initialize of event group list);
+            return -ENOMEM;
+        }
+
+        groupSet->numberOfGroups = 1;
+        groupSet->numberOfActiveGroups = 0;
+
+        /* Only one group exists by now */
+        groupSet->groups[0].rdtscTime = 0;
+        groupSet->groups[0].numberOfEvents = 0;
     }
     if (groupSet->numberOfActiveGroups == groupSet->numberOfGroups)
     {
@@ -882,6 +880,7 @@ perfmon_addEventSet(char* eventCString)
             return -ENOMEM;
         }
         groupSet->groups[groupSet->numberOfActiveGroups].rdtscTime = 0;
+        groupSet->groups[groupSet->numberOfActiveGroups].numberOfEvents = 0;
         DEBUG_PLAIN_PRINT(DEBUGLEV_INFO,
                     Allocating new group structure for group.);
     }
@@ -892,11 +891,11 @@ perfmon_addEventSet(char* eventCString)
     eventSet = &(groupSet->groups[groupSet->numberOfActiveGroups]);
 
     eventBString = bfromcstr(eventCString);
-    tokens = bstrListCreate();
-    tokens = bsplit(eventBString,',');
+    eventtokens = bstrListCreate();
+    eventtokens = bsplit(eventBString,',');
     bdestroy(eventBString);
 
-    eventSet->events = (PerfmonEventSetEntry*) malloc(tokens->qty * sizeof(PerfmonEventSetEntry));
+    eventSet->events = (PerfmonEventSetEntry*) malloc(eventtokens->qty * sizeof(PerfmonEventSetEntry));
 
     if (eventSet->events == NULL)
     {
@@ -905,21 +904,18 @@ perfmon_addEventSet(char* eventCString)
     }
 
     eventSet->numberOfEvents = 0;
-    eventSet->measureFixed = 0;
-    eventSet->measurePMC = 0;
-    eventSet->measurePMCUncore = 0;
-    eventSet->measurePCIUncore = 0;
-    
+    eventSet->regTypeMask = 0x0ULL;
+
     subtokens = bstrListCreate();
     
-    for(i=0;i<tokens->qty;i++)
+    for(i=0;i<eventtokens->qty;i++)
     {
         event = &(eventSet->events[i]);
 
-        subtokens = bsplit(tokens->entry[i],':');
-        if (subtokens->qty != 2)
+        subtokens = bsplit(eventtokens->entry[i],':');
+        if (subtokens->qty < 2)
         {
-            ERROR_PRINT(Cannot parse event descriptor %s\n,tokens->entry[i]);
+            ERROR_PRINT(Cannot parse event descriptor %s\n,eventtokens->entry[i]);
             continue;
         }
         else
@@ -944,51 +940,14 @@ perfmon_addEventSet(char* eventCString)
                      bdata(subtokens->entry[1]),bdata(subtokens->entry[0]));
                 continue;
             }
-            if (parseOptions(subtokens->entry[1], &event->event) < 0)
+            if (parseOptions(subtokens, &event->event, event->index) < 0)
             {
-                ERROR_PRINT(Cannot parse options in %s, bdata(subtokens->entry[1]));
+                ERROR_PRINT(Cannot parse options in %s, bdata(eventtokens->entry[i]));
                 continue;
             }
 
             eventSet->numberOfEvents++;
-            switch (reg_type)
-            {
-                case FIXED:
-                    eventSet->measureFixed = 1;
-                    break;
-                case PMC:
-                    eventSet->measurePMC = 1;
-                    break;
-                case UNCORE:
-                    eventSet->measurePMCUncore = 1;
-                case MBOX0:
-                case MBOX1:
-                case MBOX2:
-                case MBOX3:
-                case MBOXFIX:
-                case BBOX0:
-                case BBOX1:
-                case RBOX0:
-                case RBOX1:
-                case WBOX:
-                case SBOX0:
-                case SBOX1:
-                case SBOX2:
-                case CBOX0:
-                case CBOX1:
-                case CBOX2:
-                case CBOX3:
-                case CBOX4:
-                case CBOX5:
-                case CBOX6:
-                case CBOX7:
-                case CBOX8:
-                case CBOX9:
-                case CBOX10:
-                case CBOX11:
-                case PBOX:
-                    eventSet->measurePCIUncore = 1;       
-            }
+            eventSet->regTypeMask = (1<<reg_type);
 
             event->threadCounter = (PerfmonCounter*) malloc(
                 groupSet->numberOfThreads * sizeof(PerfmonCounter));
@@ -1013,41 +972,11 @@ perfmon_addEventSet(char* eventCString)
                             event->event.name, 
                             counter_map[event->index].key,
                             groupSet->numberOfActiveGroups);
-                DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL,
-                            Event options are:);
-                if (perfmon_verbosity >= DEBUGLEV_DETAIL)
-                {
-                    for(j=0;j<event->event.numberOfOptions;j++)
-                    {
-                        switch(event->event.options[j].type)
-                        {
-                            case (EVENT_OPTION_NONE):
-                                j = event->event.numberOfOptions;
-                                break;
-                            case (EVENT_OPTION_OPCODE):
-                                DEBUG_PRINT(DEBUGLEV_DETAIL,
-                                    Programming Opcode to 0x%x, 
-                                    event->event.options[j].value);
-                                break;
-                            case (EVENT_OPTION_ADDR):
-                                DEBUG_PRINT(DEBUGLEV_DETAIL,
-                                    Programming Addr to 0x%x, 
-                                    event->event.options[j].value);
-                                break;
-                            case (EVENT_OPTION_NID):
-                                DEBUG_PRINT(DEBUGLEV_DETAIL,
-                                    Programming NodeID to 0x%x, 
-                                    event->event.options[j].value);
-                                break;
-                        }
-                    }
-                }
             }
-            
         }
     }
     bstrListDestroy(subtokens);
-    bstrListDestroy(tokens);
+    bstrListDestroy(eventtokens);
     groupSet->numberOfActiveGroups++;
     return groupSet->numberOfActiveGroups-1;
 }
@@ -1061,9 +990,10 @@ perfmon_setupCounters(int groupId)
         ERROR_PRINT(Group %d does not exist in groupSet, groupId);
         return -ENOENT;
     }
-    
+
     for(i=0;i<groupSet->numberOfThreads;i++)
     {
+        CHECK_AND_RETURN_ERROR(initThreadArch(groupSet->threads[i].processorId), Init failed);
         CHECK_AND_RETURN_ERROR(perfmon_setupCountersThread(i, &groupSet->groups[groupId]),
             Setup of counters failed);
     }
