@@ -70,8 +70,12 @@ CFLAGS += $(SHARED_CFLAGS)
 LIBS += -L. -pthread -lm -lpci
 DYNAMIC_TARGET_LIB := liblikwid.so
 TARGET_LIB := $(DYNAMIC_TARGET_LIB)
+LIBHWLOC = ext/hwloc/libhwloc.a
+LIBLUA = ext/lua/liblua.a
 else
 STATIC_TARGET_LIB := liblikwid.a
+LIBHWLOC = ext/hwloc/libhwloc.a
+LIBLUA = ext/lua/liblua.a
 TARGET_LIB := $(STATIC_TARGET_LIB)
 endif
 
@@ -100,8 +104,6 @@ APPS      = likwid-perfctr    \
 		likwid-pin        \
 		likwid-bench
 
-LIBHWLOC = ext/hwloc/libhwloc.a
-LIBLUA = ext/lua/liblua.a
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
@@ -117,7 +119,7 @@ $(APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(APPS))) $(BUILD
 
 $(STATIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE STATIC LIB  $(STATIC_TARGET_LIB)"
-	$(Q)${AR} -cq $(STATIC_TARGET_LIB) $(OBJ) $(OBJ_HWLOC) $(OBJ_LUA)
+	$(Q)${AR} -cq $(STATIC_TARGET_LIB) $(OBJ) $(LIBHWLOC) $(LIBLUA)
 
 
 $(DYNAMIC_TARGET_LIB): $(OBJ)
