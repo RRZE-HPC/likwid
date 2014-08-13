@@ -258,48 +258,58 @@ int perfmon_init_sandybridge(int cpu_id)
         CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, channel,  reg, uflags));  \
     }
 
-uint32_t add_pmc_config(EventOptionType type, uint32_t value)
+uint32_t add_fixed_config(RegisterIndex index, PerfmonEvent *event)
 {
+    int j;
     uint32_t ret = 0x0U;
-    switch (type)
+    for(j=0;j<event->numberOfOptions;j++)
     {
-        case EVENT_OPTION_EDGE:
-            ret |= (1<<18);
-            break;
-        case EVENT_OPTION_COUNT_KERNEL:
-            ret |= (1<<17);
-            break;
-        default:
-            break;
-    }
-    return ret;
-}
-uint32_t add_fixed_config(EventOptionType type, uint32_t value, RegisterIndex index)
-{
-    uint32_t ret = 0x0U;
-    switch (type)
-    {
-        case EVENT_OPTION_COUNT_KERNEL:
-            if (index == 0)
-            {
-                ret |= (1<<0);
-            }
-            else if (index == 1)
-            {
-                ret |= (1<<4);
-            }
-            else if (index == 2)
-            {
-                ret |= (1<<8);
-            }
-            break;
-        default:
-            break;
+        switch (event->options[j].type)
+        {
+            case EVENT_OPTION_COUNT_KERNEL:
+                if (index == 0)
+                {
+                    ret |= (1<<0);
+                }
+                else if (index == 1)
+                {
+                    ret |= (1<<4);
+                }
+                else if (index == 2)
+                {
+                    ret |= (1<<8);
+                }
+                break;
+            default:
+                break;
+        }
     }
     return ret;
 }
 
-uint32_t add_cbox_filter(EventOptionType type, uint32_t value)
+uint32_t add_pmc_config(RegisterIndex index, PerfmonEvent *event)
+{
+    int j;
+    uint32_t ret = 0x0U;
+    for(j=0;j<event->numberOfOptions;j++)
+    {
+        switch (event->options[j].type)
+        {
+            case EVENT_OPTION_EDGE:
+                ret |= (1<<18);
+                break;
+            case EVENT_OPTION_COUNT_KERNEL:
+                ret |= (1<<17);
+                break;
+            default:
+                break;
+        }
+    }
+    return ret;
+}
+
+
+uint32_t add_cbox_filter(uint64_t eventMask, EventOptionType type, uint32_t value)
 {
     uint32_t ret = 0x0;
     switch (type)
@@ -369,7 +379,7 @@ uint32_t add_cbox_filter(EventOptionType type, uint32_t value)
     return ret;
 }
 
-uint32_t add_cbox_config(EventOptionType type, uint32_t value)
+uint32_t add_cbox_config(RegisterIndex index, EventOptionType type, uint32_t value)
 {
     uint32_t ret = 0x0U;
     switch (type)
@@ -389,7 +399,7 @@ uint32_t add_cbox_config(EventOptionType type, uint32_t value)
     return ret;
 }
 
-uint32_t add_ubox_config(EventOptionType type, uint32_t value)
+uint32_t add_ubox_config(RegisterIndex index, EventOptionType type, uint32_t value)
 {
     uint32_t ret = 0x0U;
     switch (type)
@@ -406,7 +416,7 @@ uint32_t add_ubox_config(EventOptionType type, uint32_t value)
     return ret;
 }
 
-uint32_t add_bbox_config(EventOptionType type, uint32_t value)
+uint32_t add_bbox_config(RegisterIndex index, EventOptionType type, uint32_t value)
 {
     uint32_t ret = 0x0U;
     switch (type)
@@ -426,7 +436,7 @@ uint32_t add_bbox_config(EventOptionType type, uint32_t value)
     return ret;
 }
 
-int add_bbox_match(EventOptionType type, uint32_t value, uint32_t* opcodematch, uint32_t* addr0match, uint32_t* addr1match)
+int add_bbox_match(RegisterIndex index, EventOptionType type, uint32_t value, uint32_t* opcodematch, uint32_t* addr0match, uint32_t* addr1match)
 {
     int ret = 0;
     *opcodematch = 0x0U;
@@ -450,7 +460,7 @@ int add_bbox_match(EventOptionType type, uint32_t value, uint32_t* opcodematch, 
     return ret;
 }
 
-uint32_t add_wbox_config(EventOptionType type, uint32_t value)
+uint32_t add_wbox_config(RegisterIndex index, EventOptionType type, uint32_t value)
 {
     uint32_t ret = 0x0U;
     switch (type)
@@ -470,7 +480,7 @@ uint32_t add_wbox_config(EventOptionType type, uint32_t value)
     return ret;
 }
 
-uint32_t add_wbox_filter(EventOptionType type, uint32_t value)
+uint32_t add_wbox_filter(RegisterIndex index, EventOptionType type, uint32_t value)
 {
     if (type == EVENT_OPTION_OCCUPANCY)
     {
@@ -518,10 +528,7 @@ int perfmon_setupCounterThread_sandybridge(
 
                 if (event->numberOfOptions > 0)
                 {
-                    for(j=0;j<event->numberOfOptions;j++)
-                    {
-                        flags |= add_pmc_config(event->options[j].type, event->options[j].value);
-                    }
+                    flags |= add_pmc_config(index, event);
                 }
 
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Setting up reg 0x%x with value 0x%x, reg, flags);
@@ -533,10 +540,7 @@ int perfmon_setupCounterThread_sandybridge(
                 CHECK_MSR_READ_ERROR(msr_read(cpu_id,reg, &flags));
                 if (event->numberOfOptions > 0)
                 {
-                    for(j=0;j<event->numberOfOptions;j++)
-                    {
-                        flags |= add_fixed_config(event->options[j].type, event->options[j].value, index);
-                    }
+                    flags |= add_fixed_config(index,event);
                 }
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
                 break;
@@ -578,8 +582,8 @@ int perfmon_setupCounterThread_sandybridge(
                     uint32_t optflags = 0x0U;
                     for (j=0;j< event->numberOfOptions; j++)
                     {
-                        optflags |= add_cbox_filter(event->options[j].type, event->options[j].value);
-                        uflags |= add_cbox_config(event->options[j].type, event->options[j].value);
+                        optflags |= add_cbox_filter(event->optionMask, event->options[j].type, event->options[j].value);
+                        uflags |= add_cbox_config(index, event->options[j].type, event->options[j].value);
                     }
                     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C0_PMON_BOX_FILTER, optflags));
                 }
@@ -596,7 +600,7 @@ int perfmon_setupCounterThread_sandybridge(
                 {
                     for (j=0;j< event->numberOfOptions; j++)
                     {
-                        uflags |= add_ubox_config(event->options[j].type, event->options[j].value);
+                        uflags |= add_ubox_config(index, event->options[j].type, event->options[j].value);
                     }
                 }
 
@@ -683,8 +687,8 @@ int perfmon_setupCounterThread_sandybridge(
                         CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_HA_DEVICE, PCI_UNC_HA_PMON_ADDRMATCH1, &addr1));
                         for (j=0;j<event->numberOfOptions;j++)
                         {
-                            uflags |= add_bbox_config(event->options[j].type, event->options[j].value);
-                            add_bbox_match(event->options[j].type, event->options[j].value, &opcode, &addr0, &addr1);
+                            uflags |= add_bbox_config(index, event->options[j].type, event->options[j].value);
+                            add_bbox_match(index, event->options[j].type, event->options[j].value, &opcode, &addr0, &addr1);
                         }
                         CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE, 
                                             PCI_UNC_HA_PMON_OPCODEMATCH, opcode));
@@ -709,8 +713,8 @@ int perfmon_setupCounterThread_sandybridge(
                         CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, (uint64_t*)&filter));
                         for(j=0;j<event->numberOfOptions;j++)
                         {
-                            uflags |= add_wbox_config(event->options[j].type, event->options[j].value);
-                            filter |= add_wbox_filter(event->options[j].type, event->options[j].value);
+                            uflags |= add_wbox_config(index, event->options[j].type, event->options[j].value);
+                            filter |= add_wbox_filter(index, event->options[j].type, event->options[j].value);
                         }
                         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, (uint64_t)filter));
                     }
