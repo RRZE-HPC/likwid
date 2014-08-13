@@ -76,6 +76,7 @@ typedef struct {
     uint64_t            counterRegister;
     uint64_t            counterRegister2;
     PciDeviceIndex      device;
+    uint64_t            optionMask;
 } RegisterMap;
 
 #endif
