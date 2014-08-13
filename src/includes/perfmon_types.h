@@ -63,6 +63,18 @@ typedef enum {
     EVENT_OPTION_OCCUPANCY
 } EventOptionType;
 
+#define EVENT_MASK_NONE 0x0
+#define EVENT_MASK_OPCODE (1<<EVENT_OPTION_OPCODE)
+#define EVENT_MASK_ADDR (1<<EVENT_OPTION_ADDR)
+#define EVENT_MASK_NID (1<<EVENT_OPTION_NID)
+#define EVENT_MASK_TID (1<<EVENT_OPTION_TID)
+#define EVENT_MASK_STATE (1<<EVENT_OPTION_STATE)
+#define EVENT_MASK_EDGE (1<<EVENT_OPTION_EDGE)
+#define EVENT_MASK_THRESHOLD (1<<EVENT_OPTION_THRESHOLD)
+#define EVENT_MASK_INVERT (1<<EVENT_OPTION_INVERT)
+#define EVENT_MASK_COUNT_KERNEL (1<<EVENT_OPTION_COUNT_KERNEL)
+#define EVENT_MASK_OCCUPANCY (1<<EVENT_OPTION_OCCUPANCY)
+
 typedef struct {
     EventOptionType      type;
     uint32_t             value;
@@ -76,6 +88,7 @@ typedef struct {
     uint8_t         cfgBits;
     uint8_t         cmask;
     uint8_t         numberOfOptions;
+    uint64_t        optionMask;
     PerfmonEventOption options[MAX_EVENT_OPTIONS];
 } PerfmonEvent;
 
@@ -98,10 +111,7 @@ typedef struct {
     PerfmonEventSetEntry* events;
     TimerData             timer;
     double                rdtscTime;
-    uint8_t               measureFixed;
-    uint8_t               measurePMC;
-    uint8_t               measurePMCUncore;
-    uint8_t               measurePCIUncore;
+    uint64_t              regTypeMask;
 } PerfmonEventSet;
 
 typedef struct {

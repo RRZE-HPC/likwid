@@ -497,10 +497,18 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
     lua_newtable(L);
     for(i=1;i<=perfmon_numCounters;i++)
     {
+        fprintf(stderr, "Counter %s with Mask 0x%x\n",counter_map[i-1].key,counter_map[i-1].optionMask);
         lua_pushunsigned(L,i);
+        lua_newtable(L);
+        lua_pushstring(L,"Name");
         lua_pushstring(L,counter_map[i-1].key);
         lua_settable(L,-3);
+        lua_pushstring(L,"Options");
+        lua_pushunsigned(L,counter_map[i-1].optionMask);
+        lua_settable(L,-3);
+        lua_settable(L,-3);
     }
+    fprintf(stderr, "Set up Counter list\n");
     lua_settable(L,-3);
     lua_pushstring(L,"Events");
     lua_newtable(L);
@@ -520,9 +528,13 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
         lua_pushstring(L,"Limit");
         lua_pushstring(L,eventHash[i-1].limit);
         lua_settable(L,-3);
+        lua_pushstring(L,"Options");
+        lua_pushunsigned(L,eventHash[i-1].optionMask);
+        lua_settable(L,-3);
         lua_settable(L,-3);
     }
     lua_settable(L,-3);
+    fprintf(stderr, "Set up Event list\n");
     return 1;
 }
 

@@ -521,7 +521,13 @@ local function get_groupdata(architecture, group)
         
         if parse_eventset and line:find("EVENTSET") == nil then
             linelist = stringsplit(line, "%s+", nil, "%s+")
-            groupdata["EventString"] = groupdata["EventString"] .. "," .. linelist[2] .. ":" .. linelist[1]
+            eventstring = linelist[2] .. ":" .. linelist[1]
+            if #linelist > 2 then
+                table.remove(linelist,2)
+                table.remove(linelist,1)
+                eventstring = eventstring .. ":".. table.concat(":",linelist)
+            end
+            groupdata["EventString"] = groupdata["EventString"] .. "," .. eventstring
             groupdata["Events"][nr_events] = {}
             groupdata["Events"][nr_events]["Event"] = linelist[2]
             groupdata["Events"][nr_events]["Counter"] = linelist[1]
@@ -562,6 +568,11 @@ local function new_groupdata(eventString)
         gdata["Events"][num_events] = {}
         gdata["Events"][num_events]["Event"] = eventlist[1]
         gdata["Events"][num_events]["Counter"] = eventlist[2]
+        if #eventlist > 2 then
+            table.remove(eventlist, 2)
+            table.remove(eventlist, 1)
+            gdata["Events"][num_events]["Options"] = eventlist
+        end
         num_events = num_events + 1
     end
     return gdata
@@ -761,8 +772,8 @@ local function print_output(groupID, groupdata, cpulist)
                     if tmp > maxs[j] then
                         maxs[j] = tmp
                     end
+                    sums[j] = sums[j] + tmp
                 end
-                sums[j] = sums[j] + tmp
             end
             avgs[j] = sums[j] / num_threads
             if tostring(avgs[j]):len() > 6 then

@@ -71,8 +71,6 @@ local function usage()
     print("-S <time>\t Stethoscope mode with duration in s, ms or us, e.g 20ms")
     print("-t <time>\t Timeline mode with frequency in s, ms or us, e.g. 300ms")
     print("-m\t\t Use Marker API inside code")
-    print("Multiplexing:")
-    print("-u <count>\t Switch groups after <count> times <time> set with -t")
     print("Output options:")
     print("-o <file>\t Store output to file. (Optional: Apply text filter according to filename suffix)")
     print("-O\t\t Output easily parseable CSV instead of fancy tables")
@@ -82,7 +80,7 @@ end
 
 
 local config = likwid_getConfiguration();
-verbose = false
+verbose = 0
 print_groups = false
 print_events = false
 print_info = false
@@ -107,7 +105,7 @@ use_stethoscope = false
 use_timeline = false
 daemon_run = 0
 use_wrapper = false
-duration = 2000
+duration = 100000
 use_switch_interval = false
 switch_interval = 5
 output = ""
@@ -116,8 +114,7 @@ execString = nil
 markerFile = string.format("/tmp/likwid_%d.txt",likwid_getpid("pid"))
 
 
-
-for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:u:") do
+for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
     if (opt == "h") then
         usage()
         os.exit(0)
@@ -126,7 +123,6 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:u:") do
         os.exit(0)
     elseif (opt == "V") then
         verbose = tonumber(arg)
-        verbose = 2
         likwid_setVerbosity(verbose)
     elseif (opt == "c") then
         num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
@@ -161,9 +157,6 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:u:") do
     elseif (opt == "t") then
         use_timeline = true
         duration = likwid.parse_time(arg)
-    elseif (opt == "u") then
-        use_switch_interval = true
-        switch_interval = tonumber(arg)
     elseif (opt == "o") then
         output = arg
         io.output(arg)
@@ -182,7 +175,7 @@ if print_events == true then
     print(string.format("This architecture has %d counters.", #tab["Counters"]))
     local outstr = "Counters names: "
     for _, counter in pairs(tab["Counters"]) do
-        outstr = outstr .. counter .. " "
+        outstr = outstr .. counter["Name"] .. " "
     end
     print(outstr)
     print(string.format("This architecture has %d events.",#tab["Events"]))
@@ -191,6 +184,9 @@ if print_events == true then
         outstr = eventTab["Name"] .. ", "
         outstr = outstr .. string.format("0x%X, 0x%X, ",eventTab["ID"],eventTab["UMask"])
         outstr = outstr .. eventTab["Limit"]
+        if eventTab["Options"] > 0 then
+            outstr = outstr .. ", " .. string.format("0x%X",eventTab["Options"])
+        end
         print(outstr)
     end
     os.exit(0)
@@ -232,7 +228,7 @@ else
 end
 io.stdout:flush()
 
-if verbose then
+if verbose > 0 then
     print(string.format("CPU family:\t%u", cpuinfo["family"]))
     print(string.format("CPU model:\t%u", cpuinfo["model"]))
     print(string.format("CPU stepping:\t%u", cpuinfo["stepping"]))
@@ -282,6 +278,7 @@ if use_wrapper == true and use_timeline == false and #event_string_list > 1 then
 end
 
 if use_wrapper and likwid.tablelength(arg)-2 == 0 and print_info == false then
+    print("No Executable can be found on commandline")
     usage()
     os.exit(0)
 end
@@ -317,7 +314,6 @@ if pin_cpus then
 end
 
 
-event_string = event_string_list[1];
 
 for i, event_string in pairs(event_string_list) do
     local s,e = event_string:find(":")
