@@ -5,11 +5,13 @@ use warnings;
 
 my $arch;
 my $key;
+my $optkey = "";
 my $eventId;
 my $limit;
 my $umask;
 my $cmask;
 my $cfg;
+my $opts = "";
 my $num_events=0;
 my @events = ();
 
@@ -35,8 +37,13 @@ while (<INFILE>) {
     }elsif (/(EVENT_[A-Z0-9_]*)[ ]+(0x[A-F0-9]+)[ ]+([A-Z0-9|]+)/) {
         $eventId = $2;
         $limit = $3;
+        $opts = "";
     } elsif (/UMASK_([A-Z0-9_]*)[ ]*(0x[A-F0-9]+)[ ]*(0x[A-F0-9]+)[ ]*(0x[A-F0-9]+)/) {
         $key   = $1;
+        if ($key ne $optkey or $optkey eq "")
+        {
+            $opts = ""
+        }
         $umask = $2;
         $cfg   = $3;
         $cmask = $4;
@@ -45,18 +52,27 @@ while (<INFILE>) {
                 eventId=>$eventId,
                 cfg=>$cfg,
                 cmask=>$cmask,
-                mask=>$umask});
+                mask=>$umask,
+                opts=>$opts});
         $num_events++;
     } elsif (/UMASK_([A-Z0-9_]*)[ ]*(0x[A-F0-9]+)/) {
         $key = $1;
+        if ($key ne $optkey or $optkey eq "")
+        {
+            $opts = ""
+        }
         $umask = $2;
         push(@events,{name=>$key,
                 limit=>$limit,
                 eventId=>$eventId,
                 cfg=>0x00,
                 cmask=>0x00,
-                mask=>$umask});
+                mask=>$umask,
+                opts=>$opts});
         $num_events++;
+    } elsif (/OPTIONS_([A-Z0-9_]*)[ ]*([A-Z0-9_|]+)/) {
+        $optkey = $1;
+        $opts = $2;
     }
 }
 close INFILE;
@@ -72,11 +88,10 @@ print OUTFILE "#define NUM_ARCH_EVENTS_$ucArch $num_events\n\n";
 print OUTFILE "static PerfmonEvent  ".$arch."_arch_events[NUM_ARCH_EVENTS_$ucArch] = {\n";
 
 foreach my $event (@events) {
-
     print OUTFILE <<END;
 $delim {\"$event->{name}\",
    \"$event->{limit}\", 
-   $event->{eventId},$event->{mask},$event->{cfg},$event->{cmask}}
+   $event->{eventId},$event->{mask},$event->{cfg},$event->{cmask},0,$event->{opts}}
 END
     $delim = ',';
 }
