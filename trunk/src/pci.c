@@ -238,8 +238,6 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t* data)
         if ( FD[socketId][device] > 0 &&
              pread(FD[socketId][device], &tmp, sizeof(tmp), reg) != sizeof(tmp) ) 
         {
-            fprintf(stderr,"ERROR in pci_read:\nCannot read from PCI device %s: %s\n",
-                    bdata(filepath),strerror(errno));
             *data = 0;
             return -EIO;
         }
@@ -402,7 +400,7 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
 int pci_checkDevice(PciDeviceIndex index, int cpu)
 {
     int socketId = affinity_core2node_lookup[cpu];
-    if (FD[socketId][index] > 0)
+    if (FD[socketId][index] >= 0)
     {
         return 1;
     }
