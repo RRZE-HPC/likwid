@@ -135,9 +135,9 @@ startDaemon(void)
         }
 
         timeout--;
-        DEBUG_PRINT(DEBUGLEV_INFO, "%s\n", "Still waiting for socket...");
+        DEBUG_PRINT(DEBUGLEV_INFO, Still waiting for socket %s ..., filepath);
     }
-
+    
     if (timeout <= 0)
     {
         ERRNO_PRINT;  /* should hopefully still work, as we make no syscalls in between. */
@@ -148,8 +148,7 @@ startDaemon(void)
                 it usually means that likwid-accessD just failed to start.\n");
         exit(EXIT_FAILURE);
     }
-
-    DEBUG_PRINT(0, "%s\n", "Successfully opened socket to daemon.");
+    DEBUG_PRINT(DEBUGLEV_INFO, Successfully opened socket %s to daemon, filepath);
     free(filepath);
 
     return socket_fd;
@@ -212,10 +211,6 @@ accessClient_read(
 
     if (data.errorcode != ERR_NOERROR)
     {
-        fprintf(stderr, "Failed to read data through daemon: "
-                "daemon returned error %d '%s' for cpu %d reg %x\n",
-                data.errorcode, accessClient_strerror(data.errorcode), cpu, reg);
-        //exit(EXIT_FAILURE);
         *result = 0;
         return -EIO;
     }
@@ -241,21 +236,11 @@ accessClient_write(
     CHECK_ERROR(write(socket_fd, &data, sizeof(AccessDataRecord)), socket write failed);
     CHECK_ERROR(read(socket_fd, &data, sizeof(AccessDataRecord)), socket read failed);
 
-    if (data.errorcode != ERR_NOERROR)
+    if ((data.errorcode != ERR_NOERROR) || (data.data != 0x00ULL))
     {
-        fprintf(stderr, "Failed to write data through daemon: "
-                "daemon returned error %d '%s' for cpu %d reg 0x%x\n",
-                data.errorcode, accessClient_strerror(data.errorcode), cpu, reg);
         return -EIO;
     }
 
-    if (data.data != 0x00ULL)
-    {
-        fprintf(stderr, "Failed to write data through daemon: "
-                        "daemon returned successfully for cpu %d reg 0x%x but write operation failed\n",
-                        cpu, reg);
-        return -EIO;
-    }
     return 0;
 }
 
