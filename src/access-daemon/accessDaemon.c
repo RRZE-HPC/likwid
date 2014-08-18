@@ -106,10 +106,25 @@ static int FD_MSR[MAX_NUM_THREADS];
 static int FD_PCI[MAX_NUM_NODES][MAX_NUM_DEVICES];
 static int isPCIUncore = 0;
 
-static char* pci_DevicePath[MAX_NUM_DEVICES] = {
+/*static char* pci_DevicePath[MAX_NUM_DEVICES] = {
     "13.5", "13.6", "13.1", "10.0", "10.1", "10.4",
     "10.5", "0e.1", "08.0", "09.0", "08.6", "09.6",
-    "08.0", "09.0" };
+    "08.0", "09.0" };*/
+static char* pci_DevicePath[MAX_NUM_DEVICES] = {
+ "13.5",   /* PCI_R3QPI_DEVICE_LINK_0 */
+ "13.6",   /* PCI_R3QPI_DEVICE_LINK_1 */
+ "13.1",   /* PCI_R2PCIE_DEVICE */
+ "10.0",   /* PCI_IMC_DEVICE_CH_0 */
+ "10.1",   /* PCI_IMC_DEVICE_CH_1 */
+ "10.4",   /* PCI_IMC_DEVICE_CH_2 */
+ "10.5",   /* PCI_IMC_DEVICE_CH_3 */
+ "0e.1",   /* PCI_HA_DEVICE */
+ "08.2",   /* PCI_QPI_DEVICE_PORT_0 */
+ "09.2",   /* PCI_QPI_DEVICE_PORT_1 */
+ "08.6",   /* PCI_QPI_MASK_DEVICE_PORT_0 */
+ "09.6",   /* PCI_QPI_MASK_DEVICE_PORT_1 */
+ "08.0",   /* PCI_QPI_MISC_DEVICE_PORT_0 */
+ "09.0" }; /* PCI_QPI_MISC_DEVICE_PORT_1 */
 static char pci_filepath[MAX_PATH_LENGTH];
 
 /* Socket to bus mapping -- will be determined at runtime;
@@ -291,7 +306,6 @@ static void pci_read(AccessDataRecord* dRecord)
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
         strncat(pci_filepath, socket_bus[socketId], 10);
         strncat(pci_filepath, pci_DevicePath[device], 20);
-
         FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
 
         if ( FD_PCI[socketId][device] < 0)
@@ -302,14 +316,13 @@ static void pci_read(AccessDataRecord* dRecord)
         }
     }
 
-    if ( pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data)) 
+    if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data)) 
     {
         syslog(LOG_ERR, "Failed to read data from pci device file %s for device %u on socket %u",
                 pci_filepath,device,socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
-    //    printf("READ Device %s cpu %d reg 0x%x data 0x%x \n",bdata(filepath), cpu, reg, data);
 
     dRecord->data = (uint64_t) data;
 }
@@ -341,7 +354,7 @@ static void pci_write(AccessDataRecord* dRecord)
         }
     }
 
-    if (pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data) 
+    if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data) 
     {
         syslog(LOG_ERR, "Failed to write data to pci device file %s for device %u on socket %u",pci_filepath, device, socketId);
         dRecord->errorcode = ERR_RWFAIL;
