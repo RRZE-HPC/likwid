@@ -331,11 +331,16 @@ end
 if likwid_setAccessClientMode(access_mode) ~= 0 then
     os.exit(1)
 end
-likwid_init(num_cpus, cpulist)
-
+if likwid_init(num_cpus, cpulist) < 0 then
+    os.exit(1)
+end
 
 for i, event_string in pairs(event_string_list) do
-    table.insert(group_ids,likwid_addEventSet(event_string))
+    local gid = likwid_addEventSet(event_string)
+    if gid < 0 then
+        os.exit(1)
+    end
+    table.insert(group_ids, gid)
 end
 
 likwid_setupCounters(group_ids[1])
@@ -367,7 +372,11 @@ if use_marker == true then
 end
 
 if use_wrapper or use_stethoscope then
-    likwid_startCounters()
+    local ret = likwid_startCounters()
+    if ret < 0 then
+        print(string.format("Error starting counters for thread %d.",ret * (-1))
+        os.exit(1)
+    end
 end
 io.stdout:flush()
 if use_wrapper or use_timeline then
@@ -380,7 +389,11 @@ else
 end
 io.stdout:flush()
 if use_wrapper or use_stethoscope then
-    likwid_stopCounters()
+    local ret = likwid_stopCounters()
+    if ret < 0 then
+         print(string.format("Error stopping counters for thread %d.",ret * (-1))
+        os.exit(1)
+    end
 elseif use_timeline then
     likwid_stopDaemon(9)
 end
