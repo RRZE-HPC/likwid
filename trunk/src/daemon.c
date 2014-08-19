@@ -75,9 +75,10 @@ daemon_init(const char* str)
 
 }
 
-void
-daemon_start(uint64_t duration, uint64_t switch_interval)
+int
+daemon_start(uint64_t duration)
 {
+    int ret;
     int group;
     int nr_groups;
     int nr_events;
@@ -86,7 +87,11 @@ daemon_start(uint64_t duration, uint64_t switch_interval)
     int current_interval = 0;
     int first_round = 1;
     
-    perfmon_startCounters();
+    ret = perfmon_startCounters();
+    if (ret < 0)
+    {
+        return -EFAULT;
+    }
     timer_start(&timeData);
     
     childpid = fork();
@@ -94,13 +99,33 @@ daemon_start(uint64_t duration, uint64_t switch_interval)
     if (childpid == 0)
     {
         nr_groups = perfmon_getNumberOfGroups();
+        if (nr_groups == 0)
+        {
+            ERROR_PLAIN_PRINT(DAEMON: No groups configured);
+            exit(1);
+        }
         nr_threads = perfmon_getNumberOfThreads();
+        if (nr_threads == 0)
+        {
+            ERROR_PLAIN_PRINT(DAEMON: No threads configured);
+            exit(1);
+        }
         signal(SIGUSR1, daemon_intr);
         while (daemon_running == 1)
         {
             timer_stop(&timeData);
-            perfmon_readCounters();
+            ret = perfmon_readCounters();
+            if (ret < 0)
+            {
+                ERROR_PLAIN_PRINT(DAEMON: Failed to read counters);
+                exit(1);
+            }
             group = perfmon_getIdOfActiveGroup();
+            if (group < 0)
+            {
+                ERROR_PLAIN_PRINT(DAEMON: Active group not configured);
+                exit(1);
+            }
             //perfmon_logCounterResults( timer_print(&timeData) );
             nr_events = perfmon_getNumberOfEvents(group);
             
@@ -113,7 +138,7 @@ daemon_start(uint64_t duration, uint64_t switch_interval)
                 }
                 fprintf(stderr,"\n");
             }
-            if (current_interval == switch_interval && nr_groups > 1 && !first_round)
+            if (nr_groups > 1 && !first_round)
             {
                 group++;
                 if (group == nr_groups)
@@ -121,8 +146,12 @@ daemon_start(uint64_t duration, uint64_t switch_interval)
                     group = 0;
                 }
                 current_interval = -1;
-                fprintf(stderr,"Switch group to %d\n",group);
-                perfmon_switchActiveGroup(group);
+                ret = perfmon_switchActiveGroup(group);
+                if (ret < 0)
+                {
+                    ERROR_PRINT(DAEMON: Failed to switch to group %d, group);
+                    exit(1);
+                }
             }
             current_interval++;
             first_round = 0;
@@ -131,29 +160,61 @@ daemon_start(uint64_t duration, uint64_t switch_interval)
         }
         signal(SIGUSR1, SIG_DFL);
         group = perfmon_getIdOfActiveGroup();
+        if (group < 0)
+        {
+            ERROR_PLAIN_PRINT(DAEMON: Failed to get ID of active group);
+            exit(1);
+        }
         nr_events = perfmon_getNumberOfEvents(group);
-        nr_threads = perfmon_getNumberOfThreads();
+        if (nr_events <= 0)
+        {
+            ERROR_PRINT(DAEMON: Group %d has not events configured, group);
+            exit(1);
+        }
+        fprintf(stderr, "%d,%d,%d,%f,", group, nr_events, nr_threads, timer_print(&timeData), );
         for(i=0;i<nr_events;i++)
         {
-            fprintf(stderr, "%d %d %d %f %d ", group,nr_events, nr_threads, timer_print(&timeData), i);
+            fprintf(stderr, "%d,", i);
             for(j = 0;j<nr_threads;j++)
             {
-                fprintf(stderr, "%lu ", perfmon_getResult(group, i, j));
+                fprintf(stderr, "%lu", perfmon_getResult(group, i, j));
+                if ((i != nr_events-1) && (j != nr_threads-1))
+                {
+                    fprintf(stderr, ",");
+                }
             }
-            fprintf(stderr,"\n");
+            
         }
+        fprintf(stderr,"\n");
         exit(0);
     }
 }
 
-void
+int
 daemon_stop(int sig)
 {
+    pid_t ret;
     int status = 0;
-    kill(childpid, SIGUSR1);
-    waitpid(childpid, &status, 0);
-    //printf("DAEMON:  EXIT on %d, status %d\n", sig, status);
-    perfmon_stopCounters();
+    status = kill(childpid, SIGUSR1);
+    if (status < 0)
+    {
+        ERROR_PRINT(Failed to kill daemon with SIGUSR1 signal. kill returned %d, status);
+        return status;
+    }
+    ret = waitpid(childpid, &status, 0);
+    if (ret < 0)
+    {
+        ERROR_PRINT(Daemon process returned %d with status %d,ret, status);
+        return (int)ret;
+    }
+    
+    status = perfmon_stopCounters();
+    if (status < 0)
+    {
+        ERROR_PRINT(Failed to stop counters. LIKWID returned %d, status);
+        return status;
+    }
+    return 0;
 }
 
 void

@@ -35,8 +35,8 @@
 #include <time.h>
 
 //extern void daemon_init(const char* str);
-extern void daemon_start(uint64_t duration, uint64_t switch_interval);
-extern void daemon_stop(int sig);
+extern int daemon_start(uint64_t duration);
+extern int daemon_stop(int sig);
 //extern void daemon_interrupt(int sig);
 
 #endif /* DAEMON_H */
