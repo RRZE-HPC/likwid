@@ -55,10 +55,11 @@ typedef enum {
 typedef enum {
     PMC = 0,
     FIXED, THERMAL, UNCORE,
-    MBOX0, MBOX1, MBOX2, MBOX3, MBOXFIX,
+    MBOX0, MBOX1, MBOX2, MBOX3,
+    MBOX0FIX, MBOX1FIX, MBOX2FIX, MBOX3FIX,
     BBOX0, BBOX1,
     RBOX0, RBOX1,
-    WBOX,
+    WBOX, WBOXFIXC3, WBOXFIXC6,
     SBOX0, SBOX1, SBOX2,
     CBOX0, CBOX1, CBOX2, CBOX3, CBOX4,
     CBOX5, CBOX6, CBOX7, CBOX8, CBOX9,
@@ -67,6 +68,8 @@ typedef enum {
     UBOX, UBOXFIX,
     NUM_UNITS
 } RegisterType;
+
+#define REG_TYPE_MASK(type) (type < NUM_UNITS ? (0x1ULL<<type) : 0x0ULL)
 
 typedef struct {
     char*               key;
