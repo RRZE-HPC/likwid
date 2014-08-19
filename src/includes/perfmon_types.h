@@ -54,6 +54,10 @@ typedef enum {
     PMC67, PMC68, PMC69, PMC70, PMC71, PMC72,
     PMC73, PMC74, PMC75, PMC76, PMC77, PMC78,
     PMC79, PMC80, PMC81, PMC82, PMC83, PMC84,
+    PMC85, PMC86, PMC87, PMC88, PMC89, PMC90,
+    PMC91, PMC92, PMC93, PMC94, PMC95, PMC96,
+    PMC97, PMC98, PMC99, PMC100, PMC101, PMC102,
+    PMC103, PMC104, PMC105, PMC106, PMC107, PMC108,
     NUM_PMC} PerfmonCounterIndex;
 
 typedef enum {
@@ -86,8 +90,12 @@ typedef enum {
     CBOX9,
     CBOX10,
     CBOX11,
+    CBOX12,
+    CBOX13,
+    CBOX14,
     PBOX,
     POWER,
+    UBOX,
     NUM_UNITS} PerfmonType;
 
 typedef struct {
