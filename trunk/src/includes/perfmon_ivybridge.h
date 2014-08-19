@@ -455,7 +455,7 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
                     MBOX_START(3);
                     break;
 
-                case MBOXFIX:
+                case MBOX0FIX:
                     break;
 
                 case SBOX0:
@@ -636,7 +636,7 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     MBOX_STOP(3);
                     break;
 
-                case MBOXFIX:
+                case MBOX0FIX:
                     if(haveLock)
                     {
                         CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_FIXED_CTL, uflags));
