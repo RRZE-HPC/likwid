@@ -36,47 +36,48 @@
 static int perfmon_numCountersSandybridge = NUM_COUNTERS_SANDYBRIDGE;
 static int perfmon_numArchEventsSandybridge = NUM_ARCH_EVENTS_SANDYBRIDGE;
 
-#define OFFSET_PMC 3
 
 int perfmon_init_sandybridge(int cpu_id)
 {
     uint64_t flags = 0x0ULL;
-
+    if ( cpuid_info.model == SANDYBRIDGE_EP )
+    {
+        lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
+    }
+    return 0;
     /* Initialize registers */
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL3, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC3, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
+    /*if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+    {
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
+    }*/
+    /*if (eventSet->regTypeMask & REG_TYPE_MASK(FIXED))
+    {
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR2, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL));
+    }*/
+    /*if (eventSet->regTypeMask & REG_TYPE_MASK(PMC))
+    {
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC0, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC1, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC2, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC3, 0x0ULL));
 
-    /* initialize fixed counters
-     * FIXED 0: Instructions retired
-     * FIXED 1: Clocks unhalted core
-     * FIXED 2: Clocks unhalted ref */
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL));
+        flags |= (1<<22);
+        flags |= (1<<16);
 
-    /* Preinit of PERFEVSEL registers */
-    flags |= (1<<22);  /* enable flag */
-    flags |= (1<<16);  /* user mode flag */
-
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL2, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL3, flags));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, flags));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, flags));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL2, flags));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL3, flags));
+    }*/
 
     /* TODO Robust implementation which also works if stuff is not there */
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
-            lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id))
+    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         if ( cpuid_info.model == SANDYBRIDGE_EP )
         {
@@ -86,7 +87,8 @@ int perfmon_init_sandybridge(int cpu_id)
                 uint32_t uflags = 0x10100U; /* enable freeze (bit 16), freeze (bit 8) */
                 uint32_t confflags = (1<<22); /* enable flag */
                 uint32_t fixedflags = (1<<19); /* reset fixed counter */
-                if (pci_checkDevice(PCI_IMC_DEVICE_CH_0, cpu_id))
+                /*if ((eventSet->regTypeMask & REG_TYPE_MASK(MBOX0)) &&
+                    (pci_checkDevice(PCI_IMC_DEVICE_CH_0, cpu_id)))
                 {
                  
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_BOX_CTL, uflags));
@@ -95,7 +97,6 @@ int perfmon_init_sandybridge(int cpu_id)
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_CTL_2, confflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_CTL_3, confflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_FIXED_CTL, fixedflags));
-                    /* iMC counters need to be manually reset to zero */
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_CTR_0_A, 0x0U));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_CTR_0_B, 0x0U));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_CTR_1_A, 0x0U));
@@ -155,17 +156,17 @@ int perfmon_init_sandybridge(int cpu_id)
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_3,  PCI_UNC_MC_PMON_CTR_2_B, 0x0U));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_3,  PCI_UNC_MC_PMON_CTR_3_A, 0x0U));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_3,  PCI_UNC_MC_PMON_CTR_3_B, 0x0U));
-                }
+                }*/
+
 
                 /* BBOX / Home Agent */
-                if (pci_checkDevice(PCI_HA_DEVICE, cpu_id))
+                /*if (pci_checkDevice(PCI_HA_DEVICE, cpu_id))
                 {
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_BOX_CTL, uflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_CTL_0, confflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_CTL_1, confflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_CTL_2, confflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_CTL_3, confflags));
-                    /* Manual reset of BBOX counters */
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_CTR_0_A, 0x0U));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_CTR_0_B, 0x0U));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_CTR_1_A, 0x0U));
@@ -174,19 +175,19 @@ int perfmon_init_sandybridge(int cpu_id)
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_CTR_2_B, 0x0U));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_CTR_3_A, 0x0U));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_CTR_3_B, 0x0U));
-                }
+                } */
 
                 /* UBOX */
                 /* Enable (bit 22) and reset (bit 17) counter */
-                uflags = 0x0U;
+                /*uflags = 0x0U;
                 uflags = (1<<17)|(1<<22);
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_U_PMON_CTL0, uflags));
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_U_PMON_CTL1, uflags));
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_U_UCLK_FIXED_CTL, 0x0U));
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_U_UCLK_FIXED_CTL, 0x0U));*/
 
                 /* CBOX */
                 /*enable freeze (bit 16), freeze (bit 8), reset counter (bit 1), reset control (bit 0) */
-                uflags = 0x10103U; 
+                /*uflags = 0x10103U; 
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C0_PMON_BOX_CTL, uflags));
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C1_PMON_BOX_CTL, uflags));
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C2_PMON_BOX_CTL, uflags));
@@ -194,37 +195,37 @@ int perfmon_init_sandybridge(int cpu_id)
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C4_PMON_BOX_CTL, uflags));
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C5_PMON_BOX_CTL, uflags));
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C6_PMON_BOX_CTL, uflags));
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C7_PMON_BOX_CTL, uflags));
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C7_PMON_BOX_CTL, uflags));*/
 
                 /* FIXME: Not yet tested/ working due to BIOS issues on test
                  * machines */
                 /* QPI registers can be zeroed with single write */
-                if (pci_checkDevice(PCI_QPI_DEVICE_PORT_0, cpu_id))
-                {
+                /*if (pci_checkDevice(PCI_QPI_DEVICE_PORT_0, cpu_id))
+                {*/
                     /*enable freeze (bit 16), freeze (bit 8), reset counter (bit 1), reset control (bit 0) */
-                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL, uflags));
+                    /*CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL, uflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_CTL_0, confflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_CTL_1, confflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_CTL_2, confflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_CTL_3, confflags));
-                }
-                if (pci_checkDevice(PCI_QPI_DEVICE_PORT_1, cpu_id))
-                {
+                }*/
+                /*if (pci_checkDevice(PCI_QPI_DEVICE_PORT_1, cpu_id))
+                {*/
                     /*enable freeze (bit 16), freeze (bit 8), reset counter (bit 1), reset control (bit 0) */ 
-                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL, uflags));
+                    /*CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL, uflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_CTL_0, confflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_CTL_1, confflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_CTL_2, confflags));
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_CTL_3, confflags));
-                }
+                }*/
                 
                 /* WBOX or Power Control */
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_BOX_CTL1, uflags));
+                /*CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_BOX_CTL1, uflags));
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_CTL0, confflags));
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_CTL1, confflags));
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_CTL2, confflags));
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_CTL3, confflags));
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, 0x0U));
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, 0x0U));*/
             }
         }
     }
@@ -234,8 +235,7 @@ int perfmon_init_sandybridge(int cpu_id)
 
 #define BOX_GATE_IVYB(channel,label) \
     if(haveLock) { \
-        CHECK_PCI_READ_ERROR(pci_read(cpu_id, channel, reg, &uflags));  \
-        uflags &= ~(0xFFFFU);  \
+        uflags = (1<<22);  \
         uflags |= (event->umask<<8) + event->eventId;  \
         if (event->numberOfOptions > 0) \
         { \
@@ -308,186 +308,377 @@ uint32_t add_pmc_config(RegisterIndex index, PerfmonEvent *event)
     return ret;
 }
 
-
-uint32_t add_cbox_filter(uint64_t eventMask, EventOptionType type, uint32_t value)
+uint32_t add_mbox_config(RegisterIndex index, PerfmonEvent *event)
 {
+    int j;
+    uint32_t ret = 0x0U;
+    for(j=0;j<event->numberOfOptions;j++)
+    {
+        switch (event->options[j].type)
+        {
+            case EVENT_OPTION_EDGE:
+                ret |= (1<<18);
+                break;
+            case EVENT_OPTION_INVERT:
+                ret |= (1<<23);
+                break;
+            case EVENT_OPTION_THRESHOLD:
+                ret |= ((event->options[j].value << 24) & 0xFF000000);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+uint32_t add_cbox_filter(PerfmonEvent *event)
+{
+    int j;
     uint32_t ret = 0x0;
-    switch (type)
+    for(j=0;j<event->numberOfOptions;j++)
     {
-        case EVENT_OPTION_OPCODE:
-            if ((value == 0x180) ||
-                (value == 0x181) ||
-                (value == 0x182) ||
-                (value == 0x187) ||
-                (value == 0x18C) ||
-                (value == 0x18D) ||
-                (value == 0x190) ||
-                (value == 0x191) ||
-                (value == 0x192) ||
-                (value == 0x194) ||
-                (value == 0x195) ||
-                (value == 0x19C) ||
-                (value == 0x19E) ||
-                (value == 0x1C4) ||
-                (value == 0x1C5) ||
-                (value == 0x1C8) ||
-                (value == 0x1E4) ||
-                (value == 0x1E5) ||
-                (value == 0x1E6))
-            {
-                ret |= ((value << 23) & 0xFF800000);
-            }
-            else
-            {
-                ERROR_PRINT(Invalid value 0x%x for opcode option, value);
-            }
-            break;
-        case EVENT_OPTION_STATE:
-            if (value & 0x1F)
-            {
-                ret |= ((value << 18) & 0x7C0000);
-            }
-            else
-            {
-                ERROR_PRINT(Invalid value 0x%x for state option, value);
-            }
-            break;
-        case EVENT_OPTION_NID:
-            if (value >= 0x1 && value <= (affinityDomains.numberOfNumaDomains+1<<1))
-            {
-                ret |= ((value << 10) & 0x3FC00);
-            }
-            else
-            {
-                ERROR_PRINT(Invalid value 0x%x for node id option, value);
-            }
-            break;
-        case EVENT_OPTION_TID:
-            if (value <= 0xF)
-            {
-                ret |= ((value << 0) & 0x1F);
-            }
-            else
-            {
-                ERROR_PRINT(Invalid value 0x%x for thread id option, value);
-            }
-            break;
-        default:
-            printf("DEFAULT SWITCH\n");
-            break;
+        switch (event->options[j].type)
+        {
+            case EVENT_OPTION_OPCODE:
+                if ((event->options[j].value == 0x180) ||
+                    (event->options[j].value == 0x181) ||
+                    (event->options[j].value == 0x182) ||
+                    (event->options[j].value == 0x187) ||
+                    (event->options[j].value == 0x18C) ||
+                    (event->options[j].value == 0x18D) ||
+                    (event->options[j].value == 0x190) ||
+                    (event->options[j].value == 0x191) ||
+                    (event->options[j].value == 0x192) ||
+                    (event->options[j].value == 0x194) ||
+                    (event->options[j].value == 0x195) ||
+                    (event->options[j].value == 0x19C) ||
+                    (event->options[j].value == 0x19E) ||
+                    (event->options[j].value == 0x1C4) ||
+                    (event->options[j].value == 0x1C5) ||
+                    (event->options[j].value == 0x1C8) ||
+                    (event->options[j].value == 0x1E4) ||
+                    (event->options[j].value == 0x1E5) ||
+                    (event->options[j].value == 0x1E6))
+                {
+                    ret |= ((event->options[j].value << 23) & 0xFF800000);
+                }
+                else
+                {
+                    ERROR_PRINT(Invalid value 0x%x for opcode option, event->options[j].value);
+                }
+                break;
+            case EVENT_OPTION_STATE:
+                if (event->options[j].value & 0x1F)
+                {
+                    ret |= ((event->options[j].value << 18) & 0x7C0000);
+                }
+                else
+                {
+                    ERROR_PRINT(Invalid value 0x%x for state option, event->options[j].value);
+                }
+                break;
+            case EVENT_OPTION_NID:
+                if (event->options[j].value >= 0x1 && 
+                    event->options[j].value <= (affinityDomains.numberOfNumaDomains+1<<1))
+                {
+                    ret |= ((event->options[j].value << 10) & 0x3FC00);
+                }
+                else
+                {
+                    ERROR_PRINT(Invalid value 0x%x for node id option, event->options[j].value);
+                }
+                break;
+            case EVENT_OPTION_TID:
+                if (event->options[j].value <= 0xF)
+                {
+                    ret |= ((event->options[j].value << 0) & 0x1F);
+                }
+                else
+                {
+                    ERROR_PRINT(Invalid value 0x%x for thread id option, event->options[j].value);
+                }
+                break;
+            default:
+                break;
+        }
     }
     return ret;
 }
 
-uint32_t add_cbox_config(RegisterIndex index, EventOptionType type, uint32_t value)
+uint32_t add_cbox_config(RegisterIndex index, PerfmonEvent *event)
 {
+    int j;
     uint32_t ret = 0x0U;
-    switch (type)
+    for(j=0;j<event->numberOfOptions;j++)
     {
-        case EVENT_OPTION_TID:
-            ret |= (1<<19);
-            break;
-        case EVENT_OPTION_EDGE:
-            ret |= (1<<18);
-            break;
-        case EVENT_OPTION_THRESHOLD:
-            ret |= ((value << 24) & 0xFF000000);
-            break;
-        default:
-            break;
+        switch (event->options[j].type)
+        {
+            case EVENT_OPTION_TID:
+                ret |= (1<<19);
+                break;
+            case EVENT_OPTION_EDGE:
+                ret |= (1<<18);
+                break;
+            case EVENT_OPTION_THRESHOLD:
+                ret |= ((event->options[j].value << 24) & 0xFF000000);
+                break;
+            default:
+                break;
+        }
     }
     return ret;
 }
 
-uint32_t add_ubox_config(RegisterIndex index, EventOptionType type, uint32_t value)
+uint32_t add_ubox_config(RegisterIndex index, PerfmonEvent *event)
 {
+    int j;
     uint32_t ret = 0x0U;
-    switch (type)
+    for(j=0;j<event->numberOfOptions;j++)
     {
-        case EVENT_OPTION_EDGE:
-            ret |= (1<<18);
-            break;
-        case EVENT_OPTION_THRESHOLD:
-            ret |= ((value << 24) & 0x1F000000);
-            break;
-        default:
-            break;
+        switch (event->options[j].type)
+        {
+            case EVENT_OPTION_EDGE:
+                ret |= (1<<18);
+                break;
+            case EVENT_OPTION_THRESHOLD:
+                ret |= ((event->options[j].value << 24) & 0x1F000000);
+                break;
+            default:
+                break;
+        }
     }
     return ret;
 }
 
-uint32_t add_bbox_config(RegisterIndex index, EventOptionType type, uint32_t value)
+uint32_t add_bbox_config(   RegisterIndex index, 
+                            PerfmonEvent *event, 
+                            uint32_t* opcodematch, 
+                            uint32_t* addr0match, 
+                            uint32_t* addr1match)
 {
+    int j;
     uint32_t ret = 0x0U;
-    switch (type)
+    for(j=0;j<event->numberOfOptions;j++)
     {
-        case EVENT_OPTION_EDGE:
-            ret |= (1<<18);
-            break;
-        case EVENT_OPTION_INVERT:
-            ret |= (1<<23);
-            break;
-        case EVENT_OPTION_THRESHOLD:
-            ret |= ((value << 24) & 0xFF000000);
-            break;
-        default:
-            break;
+        switch (event->options[j].type)
+        {
+            case EVENT_OPTION_EDGE:
+                ret |= (1<<18);
+                break;
+            case EVENT_OPTION_INVERT:
+                ret |= (1<<23);
+                break;
+            case EVENT_OPTION_THRESHOLD:
+                ret |= ((event->options[j].value << 24) & 0xFF000000);
+                break;
+            case EVENT_OPTION_OPCODE:
+                *opcodematch = (event->options[j].value & 0x3F);
+                break;
+            case EVENT_OPTION_MATCH0:
+                *addr0match = (extractBitField(event->options[j].value,0,26))<<5;
+                break;
+            case EVENT_OPTION_MATCH1:
+                *addr1match = extractBitField(event->options[j].value,32,14) & 0x3FFF;
+                break;
+            default:
+                break;
+        }
     }
     return ret;
 }
 
-int add_bbox_match(RegisterIndex index, EventOptionType type, uint32_t value, uint32_t* opcodematch, uint32_t* addr0match, uint32_t* addr1match)
-{
-    int ret = 0;
-    *opcodematch = 0x0U;
-    *addr0match = 0x0U;
-    *addr1match = 0x0U;
 
-    switch (type)
-    {
-        case EVENT_OPTION_OPCODE:
-            *opcodematch |= (value & 0x3F);
-            ret = 1;
-            break;
-        case EVENT_OPTION_ADDR:
-            *addr0match |= (extractBitField(value,0,26))<<5;
-            *addr1match |= extractBitField(value,32,14) & 0x3FFF;
-            ret = 2;
-            break;
-        default:
-            break;
-    }
-    return ret;
-}
-
-uint32_t add_wbox_config(RegisterIndex index, EventOptionType type, uint32_t value)
+uint32_t add_wbox_config(RegisterIndex index, PerfmonEvent *event, uint64_t* filter)
 {
+    int j;
     uint32_t ret = 0x0U;
-    switch (type)
+    for(j=0;j<event->numberOfOptions;j++)
     {
-        case EVENT_OPTION_EDGE:
-            ret |= (1<<18);
-            break;
-        case EVENT_OPTION_INVERT:
-            ret |= (1<<23);
-            break;
-        case EVENT_OPTION_THRESHOLD:
-            ret |= ((value << 24) & 0x1F000000);
-            break;
-        default:
-            break;
+        switch (event->options[j].type)
+        {
+            case EVENT_OPTION_EDGE:
+                ret |= (1<<18);
+                break;
+            case EVENT_OPTION_INVERT:
+                ret |= (1<<23);
+                break;
+            case EVENT_OPTION_THRESHOLD:
+                ret |= ((event->options[j].value & 0x1F) << 24);
+                break;
+            case EVENT_OPTION_OCCUPANCY:
+                ret |= ((event->options[j].value & 0x3) << 14);
+                break;
+            case EVENT_OPTION_OCCUPANCY_EDGE:
+                ret |= (1<<31);
+                break;
+            case EVENT_OPTION_OCCUPANCY_INVERT:
+                ret |= (1<<30);
+                break;
+            case EVENT_OPTION_OCCUPANCY_FILTER:
+                *filter = event->options[j].value;
+            default:
+                break;
+        }
     }
     return ret;
 }
 
-uint32_t add_wbox_filter(RegisterIndex index, EventOptionType type, uint32_t value)
+uint32_t add_sbox_config(RegisterIndex index, PerfmonEvent *event,
+                            uint32_t* match0, uint32_t* match1,
+                            uint32_t* mask0, uint32_t* mask1)
 {
-    if (type == EVENT_OPTION_OCCUPANCY)
+    int j;
+    uint32_t ret = 0x0U;
+    for(j=0;j<event->numberOfOptions;j++)
     {
-        return value;
+        switch (event->options[j].type)
+        {
+            case EVENT_OPTION_EDGE:
+                ret |= (1<<18);
+                break;
+            case EVENT_OPTION_INVERT:
+                ret |= (1<<23);
+                break;
+            case EVENT_OPTION_THRESHOLD:
+                ret |= ((event->options[j].value & 0x1F) << 24);
+                break;
+            case EVENT_OPTION_MATCH0:
+                *match0 = event->options[j].value;
+            case EVENT_OPTION_MATCH1:
+                *match1 = event->options[j].value;
+            case EVENT_OPTION_MASK0:
+                *mask0 = event->options[j].value;
+            case EVENT_OPTION_MASK1:
+                *mask1 = event->options[j].value;
+            default:
+                break;
+        }
     }
-    return 0x0u;
+    return ret;
 }
+
+// Macros to stop counting and reset control registers
+// FREEZE(_AND_RESET_CTL) uses central box register to freeze (bit 8 + 16) and bit 1 to reset control registers
+#define FREEZE_AND_RESET_CTL_BOX(id, reg) \
+    if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(id))) \
+    { \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, 0x10101U)); \
+    }
+
+#define FREEZE_BOX(id, reg) \
+    if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(id))) \
+    { \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, 0x10100U)); \
+    }
+
+// FREEZE(_AND_RESET_CTL)_PCI uses central box register to freeze (bit 8 + 16) and bit 1 to reset control registers
+// Checks whether PCI device exists, because this is the first operation we do on the devices
+#define FREEZE_AND_RESET_CTL_PCI_BOX(id, dev, reg) \
+    if (pci_checkDevice(dev, cpu_id) == 0) \
+    { \
+        fprintf(stderr, "PCI device with index %d does not exist. Skipping all operations on device\n", dev); \
+    } \
+    else if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) \
+    { \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, reg, 0x10101U)); \
+    }
+
+#define FREEZE_PCI_BOX(id, dev, reg) \
+    if (pci_checkDevice(dev, cpu_id) == 0) \
+    { \
+        fprintf(stderr, "PCI device with index %d does not exist. Skipping all operations on device\n", dev); \
+    } \
+    else if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) \
+    { \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, reg, 0x10100U)); \
+    }
+
+// MBOX control registers must be reset to 0 manually
+#define RESET_MBOX_CTL(number, ctl) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX##number))) && \
+                    (pci_checkDevice(PCI_IMC_DEVICE_CH_##number, cpu_id))) \
+    { \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_##number, ctl, 0x0U)); \
+    }
+
+// MBOX*FIX have a slightly different scheme, setting the whole register to 0 freeze the counter
+#define FREEZE_MBOXFIX(number) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX##number##FIX))) && \
+                    (pci_checkDevice(PCI_IMC_DEVICE_CH_##number, cpu_id))) \
+    { \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_##number,  PCI_UNC_MC_PMON_FIXED_CTL, 0x0U)); \
+    }
+
+
+
+
+// Some setup macros to avoid polluting the functions
+#define SETUP_MBOX(number) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX##number))) && \
+                    (pci_checkDevice(PCI_IMC_DEVICE_CH_##number, cpu_id))) { \
+        uflags = (1<<22);  \
+        uflags |= (event->umask<<8) + event->eventId;  \
+        if (event->numberOfOptions > 0) \
+        { \
+            uflags |= add_mbox_config(index, event); \
+        } \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_##number, reg, uflags));  \
+    }
+
+#define SETUP_CBOX(number) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(CBOX##number)))) { \
+        uflags = (1<<22);  \
+        uflags |= (event->umask<<8) + event->eventId;  \
+        if (event->numberOfOptions > 0) \
+        { \
+            uint32_t optflags = add_cbox_filter(event); \
+            if (optflags != 0x0U) \
+            { \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C##number##_PMON_BOX_FILTER, optflags)); \
+            } \
+            uflags |= add_cbox_config(index, event); \
+        } \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, uflags));  \
+    }
+
+#define SETUP_SBOX(number) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(SBOX##number))) && \
+                    (pci_checkDevice(PCI_QPI_DEVICE_PORT_##number, cpu_id))) { \
+        uint32_t match0 = 0x0U; \
+        uint32_t match1 = 0x0U; \
+        uint32_t mask0 = 0x0U; \
+        uint32_t mask1 = 0x0U; \
+        uint64_t counter1 = sandybridge_counter_map[index].counterRegister; \
+        uint64_t counter2 = sandybridge_counter_map[index].counterRegister2; \
+        uflags = (1<<22);  \
+        uflags |= event->cfgBits; \
+        uflags |= (event->umask<<8) + event->eventId;  \
+        if (event->numberOfOptions > 0) \
+        { \
+            uflags |= add_sbox_config(index, event, &match0, &match1, &mask0, &mask1); \
+            if (match0 != 0x0) \
+            { \
+                CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_MASK_DEVICE_PORT_##number, \
+                                                PCI_UNC_QPI_PMON_MATCH_0, uflags)); \
+            } \
+            if (match1 != 0x0) \
+            { \
+                CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_MASK_DEVICE_PORT_##number, \
+                                                PCI_UNC_QPI_PMON_MATCH_1, uflags)); \
+            } \
+            if (mask0 != 0x0) \
+            { \
+                CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_MASK_DEVICE_PORT_##number, \
+                                                PCI_UNC_QPI_PMON_MASK_0, uflags)); \
+            } \
+            if (mask1 != 0x0) \
+            { \
+                CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_MASK_DEVICE_PORT_##number, \
+                                                PCI_UNC_QPI_PMON_MASK_1, uflags)); \
+            } \
+        } \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_##number,  reg, uflags));  \
+    }
 
 int perfmon_setupCounterThread_sandybridge(
         int thread_id,
@@ -496,6 +687,7 @@ int perfmon_setupCounterThread_sandybridge(
     int i, j;
     int haveLock = 0;
     uint64_t flags;
+    uint64_t fixed_flags = 0x0ULL;
     uint32_t uflags;
 
     int cpu_id = groupSet->threads[thread_id].processorId;
@@ -505,24 +697,56 @@ int perfmon_setupCounterThread_sandybridge(
         haveLock = 1;
     }
 
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+    {
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
+    }
+    FREEZE_BOX(CBOX0, MSR_UNC_C0_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX1, MSR_UNC_C1_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX2, MSR_UNC_C2_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX3, MSR_UNC_C3_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX4, MSR_UNC_C4_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX5, MSR_UNC_C5_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX6, MSR_UNC_C6_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX7, MSR_UNC_C7_PMON_BOX_CTL);
+
+    FREEZE_PCI_BOX(MBOX0, PCI_IMC_DEVICE_CH_0, PCI_UNC_MC_PMON_BOX_CTL);
+    FREEZE_PCI_BOX(MBOX1, PCI_IMC_DEVICE_CH_1, PCI_UNC_MC_PMON_BOX_CTL);
+    FREEZE_PCI_BOX(MBOX2, PCI_IMC_DEVICE_CH_2, PCI_UNC_MC_PMON_BOX_CTL);
+    FREEZE_PCI_BOX(MBOX3, PCI_IMC_DEVICE_CH_3, PCI_UNC_MC_PMON_BOX_CTL);
+
+    FREEZE_MBOXFIX(0);
+    FREEZE_MBOXFIX(1);
+    FREEZE_MBOXFIX(2);
+    FREEZE_MBOXFIX(3);
+
+    FREEZE_PCI_BOX(SBOX0, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL);
+    FREEZE_PCI_BOX(SBOX1, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL);
+
+    FREEZE_PCI_BOX(BBOX0, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_BOX_CTL);
+    FREEZE_BOX(WBOX, MSR_UNC_PCU_PMON_BOX_CTL1);
+
     for (i=0;i < eventSet->numberOfEvents;i++)
     {
         PerfmonEvent *event = &(eventSet->events[i].event);
         RegisterIndex index = eventSet->events[i].index;
         uint64_t reg = sandybridge_counter_map[index].configRegister;
+        uint64_t filter_reg;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
         switch (sandybridge_counter_map[index].type)
         {
             case PMC:
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id,reg, &flags));
-                flags &= ~(0xFFFFU);   /* clear lower 16bits */
+                flags = 0x0ULL;
+                flags |= (1<<22);  /* enable flag */
+                flags |= (1<<16);  /* user mode flag */
 
                 /* Intel with standard 8 bit event mask: [7:0] */
                 flags |= (event->umask<<8) + event->eventId;
 
                 if (event->cfgBits != 0) /* set custom cfg and cmask */
                 {
-                    flags &= ~(0xFFFFU<<16);  /* clear upper 16bits */
                     flags |= ((event->cmask<<8) + event->cfgBits)<<16;
                 }
 
@@ -530,195 +754,150 @@ int perfmon_setupCounterThread_sandybridge(
                 {
                     flags |= add_pmc_config(index, event);
                 }
-
-                DEBUG_PRINT(DEBUGLEV_DETAIL, Setting up reg 0x%x with value 0x%x, reg, flags);
                 
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, flags));
                 break;
 
             case FIXED:
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id,reg, &flags));
+                /* initialize fixed counters
+                 * FIXED 0: Instructions retired
+                 * FIXED 1: Clocks unhalted core
+                 * FIXED 2: Clocks unhalted ref */
+                fixed_flags |= (0x2 << (4*index));
                 if (event->numberOfOptions > 0)
                 {
-                    flags |= add_fixed_config(index,event);
+                    fixed_flags |= add_fixed_config(index,event);
                 }
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                /* Written in the end of function for all fixed purpose registers */
                 break;
 
             case POWER:
                 break;
 
             case MBOX0:
-                BOX_GATE_IVYB(PCI_IMC_DEVICE_CH_0,MBOX0);
+                SETUP_MBOX(0);
                 break;
-
             case MBOX1:
-                BOX_GATE_IVYB(PCI_IMC_DEVICE_CH_1,MBOX1);
+                SETUP_MBOX(1);
                 break;
-
             case MBOX2:
-                BOX_GATE_IVYB(PCI_IMC_DEVICE_CH_2,MBOX2);
+                SETUP_MBOX(2);
+                break;
+            case MBOX3:
+                SETUP_MBOX(3);
                 break;
 
-            case MBOX3:
-                BOX_GATE_IVYB(PCI_IMC_DEVICE_CH_3,MBOX3);
+            case MBOX0FIX:
+                break;
+            case MBOX1FIX:
+                break;
+            case MBOX2FIX:
+                break;
+            case MBOX3FIX:
                 break;
 
             case CBOX0:
+                SETUP_CBOX(0);
+                break;
             case CBOX1:
+                SETUP_CBOX(1);
+                break;
             case CBOX2:
+                SETUP_CBOX(2);
+                break;
             case CBOX3:
+                SETUP_CBOX(3);
+                break;
             case CBOX4:
+                SETUP_CBOX(4);
+                break;
             case CBOX5:
+                SETUP_CBOX(5);
+                break;
             case CBOX6:
+                SETUP_CBOX(6);
+                break;
             case CBOX7:
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, (uint64_t*)&uflags));
-                uflags &= ~(0xFFFFU);
-                uflags |= (event->umask<<8) + event->eventId;
-                uflags |= (1<<22);
-
-                if (event->numberOfOptions > 0)
-                {
-                    uint32_t optflags = 0x0U;
-                    for (j=0;j< event->numberOfOptions; j++)
-                    {
-                        optflags |= add_cbox_filter(event->optionMask, event->options[j].type, event->options[j].value);
-                        uflags |= add_cbox_config(index, event->options[j].type, event->options[j].value);
-                    }
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_C0_PMON_BOX_FILTER, optflags));
-                }
-
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, (uint64_t)uflags));
+                SETUP_CBOX(7);
                 break;
 
             case UBOX:
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, (uint64_t*)&uflags));
-                uflags &= ~(0xFFFFU);
-                uflags |= (event->umask<<8) + event->eventId;
-
-                if (event->numberOfOptions > 0)
+                if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(UBOX))))
                 {
-                    for (j=0;j< event->numberOfOptions; j++)
-                    {
-                        uflags |= add_ubox_config(index, event->options[j].type, event->options[j].value);
-                    }
-                }
+                    uflags = (1<<17);
+                    uflags |= (event->umask<<8) + event->eventId;
 
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, uflags));
+                    if (event->numberOfOptions > 0)
+                    {
+                        uflags |= add_ubox_config(index, event);
+                    }
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, uflags));
+                }
                 break;
                 
             case UBOXFIX:
+                if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(UBOXFIX))))
+                {
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, 0x0U));
+                }
                 break;
 
             case SBOX0:
-
-                /* CTO_COUNT event requires programming of MATCH/MASK registers */
-                if (event->eventId != 0x38)
-                {
-                    BOX_GATE_IVYB(PCI_QPI_DEVICE_PORT_0,SBOX0);
-                }
-                else
-                {
-                    if(haveLock)
-                    {
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_QPI_DEVICE_PORT_0, reg, &uflags));
-                        uflags &= ~(0xFFFFU);
-                        uflags |= (1UL<<21) + event->eventId; /* Set extension bit */
-                        printf("UFLAGS 0x%x \n",uflags);
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  reg, uflags));
-
-                        /* program MATCH0 */
-                        uflags = 0x0UL;
-                        uflags = (event->cmask<<13) + (event->umask<<8);
-                        printf("MATCH UFLAGS 0x%x \n",uflags);
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_MASK_DEVICE_PORT_0, PCI_UNC_QPI_PMON_MATCH_0, uflags));
-
-                        /* program MASK0 */
-                        uflags = 0x0UL;
-                        uflags = (0x3F<<12) + (event->cfgBits<<4);
-                        printf("MASK UFLAGS 0x%x \n",uflags);
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_MASK_DEVICE_PORT_0, PCI_UNC_QPI_PMON_MASK_0, uflags));
-                    }
-                }
-
+                SETUP_SBOX(0);
                 break;
-
             case SBOX1:
-
-                /* CTO_COUNT event requires programming of MATCH/MASK registers */
-                if (event->eventId != 0x38)
-                {
-                    BOX_GATE_IVYB(PCI_QPI_DEVICE_PORT_0,SBOX0);
-                }
-                else
-                {
-                    if(haveLock)
-                    {
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_QPI_DEVICE_PORT_1, reg, &uflags));
-                        uflags &= ~(0xFFFFU);
-                        uflags |= (1UL<<21) + event->eventId; /* Set extension bit */
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  reg, uflags));
-
-                        /* program MATCH0 */
-                        uflags = 0x0UL;
-                        uflags = (event->cmask<<13) + (event->umask<<8);
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_MASK_DEVICE_PORT_1, PCI_UNC_QPI_PMON_MATCH_0, uflags));
-
-                        /* program MASK0 */
-                        uflags = 0x0UL;
-                        uflags = (0x3F<<12) + (event->cfgBits<<4);
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_MASK_DEVICE_PORT_1, PCI_UNC_QPI_PMON_MASK_0, uflags));
-                    }
-                }
+                SETUP_SBOX(1);
                 break;
 
             case BBOX0:
-                if(haveLock) {
-                    uint32_t opcode;
-                    uint32_t addr0;
-                    uint32_t addr1;
-                    CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_HA_DEVICE, reg, &uflags));
-                    uflags &= ~(0xFFFFU);
+                if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(BBOX0))) && 
+                                (pci_checkDevice(PCI_HA_DEVICE, cpu_id))) 
+                {
+                    uint32_t opcode = 0x0U;
+                    uint32_t match0 = 0x0U;
+                    uint32_t match1 = 0x0U;
+                    uint64_t counter1 = sandybridge_counter_map[index].counterRegister;
+                    uint64_t counter2 = sandybridge_counter_map[index].counterRegister2;
+                    uflags = (1<<22);
                     uflags |= (event->umask<<8) + event->eventId;
                     if (event->numberOfOptions > 0)
                     {
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_HA_DEVICE, PCI_UNC_HA_PMON_OPCODEMATCH, &opcode));
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_HA_DEVICE, PCI_UNC_HA_PMON_ADDRMATCH0, &addr0));
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_HA_DEVICE, PCI_UNC_HA_PMON_ADDRMATCH1, &addr1));
-                        for (j=0;j<event->numberOfOptions;j++)
+                        uflags |= add_bbox_config(index, event, &opcode, &match0, &match1);
+                        if (opcode != 0x0)
                         {
-                            uflags |= add_bbox_config(index, event->options[j].type, event->options[j].value);
-                            add_bbox_match(index, event->options[j].type, event->options[j].value, &opcode, &addr0, &addr1);
-                        }
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE, 
+                            CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,
                                             PCI_UNC_HA_PMON_OPCODEMATCH, opcode));
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE, 
-                                            PCI_UNC_HA_PMON_ADDRMATCH0, addr0));
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE, 
-                                            PCI_UNC_HA_PMON_ADDRMATCH1, addr1));
+                        }
+                        if (match0 != 0x0)
+                        {
+                            CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,
+                                            PCI_UNC_HA_PMON_ADDRMATCH0, match0));
+                        }
+                        if (match1 != 0x0)
+                        {
+                            CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,
+                                            PCI_UNC_HA_PMON_ADDRMATCH1, match1));
+                        }
                     }
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE,  reg, uflags));
                 }
                 break;
 
             case WBOX:
-                if (haveLock)
+                if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(WBOX))))
                 {
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, (uint64_t*)&uflags));
-                    uflags &= ~(0xFFFFU);
-                    uflags |= event->eventId & 0xFF;
+                    flags = (1<<22);
+                    flags |= event->eventId & 0xFF;
                     if (event->numberOfOptions > 0)
                     {
-                        uint32_t filter = 0x0U;
-                        CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, (uint64_t*)&filter));
-                        for(j=0;j<event->numberOfOptions;j++)
+                        uint64_t filter = 0x0U;
+                        flags |= add_wbox_config(index, event, &filter);
+                        if (filter != 0x0)
                         {
-                            uflags |= add_wbox_config(index, event->options[j].type, event->options[j].value);
-                            filter |= add_wbox_filter(index, event->options[j].type, event->options[j].value);
+                            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, filter));
                         }
-                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, (uint64_t)filter));
                     }
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, uflags));
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, flags));
                 }
 
             default:
@@ -726,32 +905,77 @@ int perfmon_setupCounterThread_sandybridge(
                 break;
         }
     }
+    
+    if (fixed_flags > 0x0)
+    {
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL , fixed_flags));
+    }
     return 0;
 }
 
 
-#define UNFREEZE_BOX(reg) \
-    if(haveLock) { \
-        CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, (uint64_t*)&uflags)); \
-        uflags &= 0xFFFFFEFF; \
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Start MSR box with flags 0x%llX to register 0x%llX, \
-            LLU_CAST uflags, LLU_CAST reg); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, (uint64_t)uflags)); \
+// Macros for MSR HPM counters
+// UNFREEZE(_AND_RESET_CTR) uses the central box registers to unfreeze and reset the counter registers
+#define UNFREEZE_BOX(id, reg) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) { \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, 0x0ULL)); \
     }
 
-#define UNFREEZE_PCI_BOX(dev, reg) \
-    if (haveLock) { \
-        CHECK_PCI_READ_ERROR(pci_read(cpu_id, dev, reg, &uflags)); \
-        uflags &= 0xFFFFFEFF; \
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Start PCI box with flags 0x%llX to register 0x%llX at device %d, \
-            LLU_CAST uflags, LLU_CAST reg, dev); \
-        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, reg, uflags)); \
+#define UNFREEZE_AND_RESET_CTR_BOX(id, reg) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) { \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, 0x2ULL)); \
     }
+
+// ENABLE(_AND_RESET_CTR) uses the control registers to enable (bit 22) and reset the counter registers (bit 19)
+#define ENABLE_BOX(id, reg) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) { \
+        uint64_t tmp = 0x0ULL; \
+        CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &tmp)); \
+        tmp |= (1<<22); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, tmp)); \
+    }
+
+#define ENABLE_AND_RESET_CTR_BOX(id, reg) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) { \
+        uint64_t tmp = 0x0ULL; \
+        CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &tmp)); \
+        tmp |= (1<<22)|(1<<17); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, tmp)); \
+    }
+
+// UNFREEZE(_AND_RESET_CTR)_PCI is similar to MSR UNFREEZE but for PCI devices
+#define UNFREEZE_PCI_BOX(id, dev, reg) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id))) \
+                && (pci_checkDevice(dev, cpu_id))) \
+    { \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, reg, 0x0ULL)); \
+    }
+#define UNFREEZE_AND_RESET_CTR_PCI_BOX(id, dev, reg) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id))) \
+                && (pci_checkDevice(dev, cpu_id))) \
+    { \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, reg, 0x2ULL)); \
+    }
+
+// UNFREEZE(_AND_RESET_CTR)_MBOXFIX is kind of ENABLE for PCI but uses bit 19 for reset
+#define UNFREEZE_AND_RESET_CTR_MBOXFIX(number) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX##number##FIX))) && \
+                    (pci_checkDevice(PCI_IMC_DEVICE_CH_##number, cpu_id))) \
+    { \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_##number,  PCI_UNC_MC_PMON_FIXED_CTL, (1<<22)|(1<<19))); \
+    }
+#define UNFREEZE_MBOXFIX(number) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX##number##FIX))) && \
+                    (pci_checkDevice(PCI_IMC_DEVICE_CH_##number, cpu_id))) \
+    { \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_##number,  PCI_UNC_MC_PMON_FIXED_CTL, (1<<22))); \
+    }
+
 
 int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    uint32_t tmp;
+    uint64_t tmp;
     uint64_t flags = 0x0ULL;
     uint32_t uflags = 0x10000UL; /* Clear freeze bit */
     int cpu_id = groupSet->threads[thread_id].processorId;
@@ -768,114 +992,120 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterIndex index = eventSet->events[i].index;
+            uint64_t reg = sandybridge_counter_map[index].configRegister;
+            uint64_t counter1 = sandybridge_counter_map[index].counterRegister;
+            uint64_t counter2 = sandybridge_counter_map[index].counterRegister2;
             switch (sandybridge_counter_map[index].type)
             {
                 case PMC:
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, sandybridge_counter_map[index].counterRegister, 0x0ULL));
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
                     flags |= (1<<(index-OFFSET_PMC));  /* enable counter */
                     break;
 
                 case FIXED:
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, sandybridge_counter_map[index].counterRegister, 0x0ULL));
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
                     flags |= (1ULL<<(index+32));  /* enable fixed counter */
                     break;
 
                 case POWER:
                     if(haveLock)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, sandybridge_counter_map[index].counterRegister, &tmp));
-                        eventSet->events[i].threadCounter[thread_id].counterData = tmp;
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&tmp));
+                        eventSet->events[i].threadCounter[thread_id].startData = tmp;
                     }
                     break;
 
                 case MBOX0:
-                    if(haveLock)
+                    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX0))) && \
+                            pci_checkDevice(cpu_id, PCI_IMC_DEVICE_CH_0))
                     {
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_BOX_CTL, uflags));
+                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0, counter1, 0x0ULL));
+                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0, counter2, 0x0ULL));
                     }
                     break;
-
                 case MBOX1:
-                    if(haveLock)
+                    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX1))) && \
+                            pci_checkDevice(cpu_id, PCI_IMC_DEVICE_CH_1))
                     {
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_1,  PCI_UNC_MC_PMON_BOX_CTL, uflags));
+                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_1, counter1, 0x0ULL));
+                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_1, counter2, 0x0ULL));
                     }
                     break;
 
                 case MBOX2:
-                    if(haveLock)
+                    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX2))) && \
+                            pci_checkDevice(cpu_id, PCI_IMC_DEVICE_CH_2))
                     {
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_2,  PCI_UNC_MC_PMON_BOX_CTL, uflags));
+                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_2, counter1, 0x0ULL));
+                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_2, counter2, 0x0ULL));
                     }
                     break;
 
                 case MBOX3:
-                    if(haveLock)
+                    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX3))) && \
+                            pci_checkDevice(cpu_id, PCI_IMC_DEVICE_CH_3))
                     {
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_3,  PCI_UNC_MC_PMON_BOX_CTL, uflags));
+                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_3, counter1, 0x0ULL));
+                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_3, counter2, 0x0ULL));
                     }
                     break;
 
-                case MBOXFIX:
-                    if(haveLock)
-                    {
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_FIXED_CTL, 0x48000UL));
-                    }
+                case MBOX0FIX:
                     break;
+                case MBOX1FIX:
+                    break;
+                case MBOX2FIX:
+                    break;
+                case MBOX3FIX:
+                    break;
+
 
                 case SBOX0:
-                    if(haveLock)
-                    {
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL, uflags));
-                    }
                     break;
 
                 case SBOX1:
-                    if(haveLock)
-                    {
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL, uflags));
-                    }
                     break;
 
                 case CBOX0:
-                    UNFREEZE_BOX(MSR_UNC_C0_PMON_BOX_CTL);
                     break;
                 case CBOX1:
-                    UNFREEZE_BOX(MSR_UNC_C1_PMON_BOX_CTL);
                     break;
                 case CBOX2:
-                    UNFREEZE_BOX(MSR_UNC_C2_PMON_BOX_CTL);
                     break;
                 case CBOX3:
-                    UNFREEZE_BOX(MSR_UNC_C3_PMON_BOX_CTL);
                     break;
                 case CBOX4:
-                    UNFREEZE_BOX(MSR_UNC_C4_PMON_BOX_CTL);
                     break;
                 case CBOX5:
-                    UNFREEZE_BOX(MSR_UNC_C5_PMON_BOX_CTL);
                     break;
                 case CBOX6:
-                    UNFREEZE_BOX(MSR_UNC_C6_PMON_BOX_CTL);
                     break;
                 case CBOX7:
-                    UNFREEZE_BOX(MSR_UNC_C7_PMON_BOX_CTL);
                     break;
 
                 case UBOX:
+                    ENABLE_AND_RESET_CTR_BOX(UBOX, reg);
+                    break;
                 case UBOXFIX:
-                    if(haveLock)
-                    {
-                        uflags = 0x0U;
-                        uflags |= (1<<22);
-                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, sandybridge_counter_map[index].configRegister, uflags));
-                    }
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
+                    ENABLE_BOX(UBOXFIX, reg);
                     break;
 
                 case BBOX0:
-                    UNFREEZE_PCI_BOX(PCI_HA_DEVICE, PCI_UNC_HA_PMON_BOX_CTL);
+                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE, counter1, 0x0ULL));
+                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE, counter2, 0x0ULL));
                     break;
 
+                case WBOX:
+                    break;
+                case WBOXFIXC3:
+                case WBOXFIXC6:
+                    if(haveLock)
+                    {
+                        CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &tmp));
+                        eventSet->events[i].threadCounter[thread_id].startData = tmp;
+                    }
+                    break;
                 default:
                     /* should never be reached */
                     break;
@@ -883,48 +1113,127 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
         }
     }
 
-    DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Start thread-local MSR counters);
-    DEBUG_PRINT(DEBUGLEV_DETAIL, Write flags 0x%llX to register 0x%X ,
-                    MSR_PERF_GLOBAL_CTRL, LLU_CAST flags);
-    DEBUG_PRINT(DEBUGLEV_DETAIL, Write flags 0x%llX to register 0x%X ,
-                    MSR_UNCORE_PERF_GLOBAL_CTRL, LLU_CAST uflags);
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
+    {
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Start thread-local MSR counters);
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Write flags 0x%llX to register 0x%X ,
+                        MSR_PERF_GLOBAL_CTRL, LLU_CAST flags);
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Write flags 0x%llX to register 0x%X ,
+                        MSR_UNCORE_PERF_GLOBAL_CTRL, LLU_CAST uflags);
 
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL));
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(CBOX0)))
+    {
+        UNFREEZE_AND_RESET_CTR_BOX(CBOX0, MSR_UNC_C0_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(CBOX1)))
+    {
+        UNFREEZE_AND_RESET_CTR_BOX(CBOX1, MSR_UNC_C1_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(CBOX2)))
+    {
+        UNFREEZE_AND_RESET_CTR_BOX(CBOX2, MSR_UNC_C2_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(CBOX3)))
+    {
+        UNFREEZE_AND_RESET_CTR_BOX(CBOX3, MSR_UNC_C3_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(CBOX4)))
+    {
+        UNFREEZE_AND_RESET_CTR_BOX(CBOX4, MSR_UNC_C4_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(CBOX5)))
+    {
+        UNFREEZE_AND_RESET_CTR_BOX(CBOX5, MSR_UNC_C5_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(CBOX6)))
+    {
+        UNFREEZE_AND_RESET_CTR_BOX(CBOX6, MSR_UNC_C6_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(CBOX7)))
+    {
+        UNFREEZE_AND_RESET_CTR_BOX(CBOX7, MSR_UNC_C7_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(SBOX0)))
+    {
+        UNFREEZE_AND_RESET_CTR_PCI_BOX(SBOX0, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(SBOX1)))
+    {
+        UNFREEZE_AND_RESET_CTR_PCI_BOX(SBOX1, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX0)))
+    {
+        UNFREEZE_PCI_BOX(MBOX0, PCI_IMC_DEVICE_CH_0, PCI_UNC_MC_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX1)))
+    {
+        UNFREEZE_PCI_BOX(MBOX1, PCI_IMC_DEVICE_CH_1, PCI_UNC_MC_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX2)))
+    {
+        UNFREEZE_PCI_BOX(MBOX2, PCI_IMC_DEVICE_CH_2, PCI_UNC_MC_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX3)))
+    {
+        UNFREEZE_PCI_BOX(MBOX3, PCI_IMC_DEVICE_CH_3, PCI_UNC_MC_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX0FIX)))
+    {
+        UNFREEZE_AND_RESET_CTR_MBOXFIX(0);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX1FIX)))
+    {
+        UNFREEZE_AND_RESET_CTR_MBOXFIX(1);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX2FIX)))
+    {
+        UNFREEZE_AND_RESET_CTR_MBOXFIX(2);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX3FIX)))
+    {
+        UNFREEZE_AND_RESET_CTR_MBOXFIX(3);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(BBOX0)))
+    {
+        UNFREEZE_PCI_BOX(BBOX0, PCI_HA_DEVICE, PCI_UNC_HA_PMON_BOX_CTL);
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(WBOX)))
+    {
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, 0x0U));
+        UNFREEZE_AND_RESET_CTR_BOX(WBOX, MSR_UNC_PCU_PMON_BOX_CTL1);
+    }
     return 0;
 }
 
-#define READ_BOX() \
-    if(haveLock) \
+// Read MSR counter register
+#define READ_BOX(id, reg1) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) \
     { \
-        CHECK_MSR_READ_ERROR(msr_read(cpu_id, sandybridge_counter_map[index].counterRegister, &counter_result)); \
-        eventSet->events[i].threadCounter[thread_id].counterData = counter_result; \
+        CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg1, &counter_result)); \
     }
 
-#define STOP_AND_READ_BOX(stopreg) \
-    if(haveLock) \
+// Read PCI counter registers and combine them to a single value
+#define READ_PCI_BOX(id, dev, reg1, reg2) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id))) && pci_checkDevice(dev, cpu_id)) \
     { \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, stopreg, uflags)) \
-    } \
-    READ_BOX()
-    
-#define READ_PCI_BOX(dev, reg1, reg2) \
-    if(haveLock) \
-    { \
-        CHECK_PCI_READ_ERROR(pci_read(cpu_id, dev, reg1, (uint32_t*)&counter_result)); \
-        eventSet->events[i].threadCounter[thread_id].counterData = (counter_result<<32); \
-        CHECK_PCI_READ_ERROR(pci_read(cpu_id, dev, reg2, (uint32_t*)&counter_result)); \
-        eventSet->events[i].threadCounter[thread_id].counterData += counter_result; \
+        uint64_t tmp = 0x0U; \
+        CHECK_PCI_READ_ERROR(pci_read(cpu_id, dev, reg1, (uint32_t*)&tmp)); \
+        counter_result = (tmp<<32); \
+        CHECK_PCI_READ_ERROR(pci_read(cpu_id, dev, reg2, (uint32_t*)&tmp)); \
+        counter_result += tmp; \
     }
 
-#define STOP_AND_READ_PCI_BOX(dev, configreg, reg1, reg2) \
-    if (haveLock) \
-    {  \
-        CHECK_PCI_READ_ERROR(pci_read(cpu_id, dev, configreg, &uflags)); \
-        uflags &= ~(1<<22); \
-        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, configreg, uflags)); \
-    } \
-    READ_PCI_BOX(dev, reg1, reg2)
+// Check counter result for overflows. We do not handle overflows directly, that is done in the getResults function in perfmon.c
+// SandyBridge has no bits indicating that overflows occured, therefore we use this simple check
+#define CHECK_OVERFLOW \
+    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) \
+    { \
+        eventSet->events[i].threadCounter[thread_id].overflows++; \
+    }
+
 
 int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* eventSet)
 {
@@ -940,39 +1249,51 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
     }
 
     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+    FREEZE_AND_RESET_CTL_BOX(CBOX0, MSR_UNC_C0_PMON_BOX_CTL);
+    FREEZE_AND_RESET_CTL_BOX(CBOX1, MSR_UNC_C1_PMON_BOX_CTL);
+    FREEZE_AND_RESET_CTL_BOX(CBOX2, MSR_UNC_C2_PMON_BOX_CTL);
+    FREEZE_AND_RESET_CTL_BOX(CBOX3, MSR_UNC_C3_PMON_BOX_CTL);
+    FREEZE_AND_RESET_CTL_BOX(CBOX4, MSR_UNC_C4_PMON_BOX_CTL);
+    FREEZE_AND_RESET_CTL_BOX(CBOX5, MSR_UNC_C5_PMON_BOX_CTL);
+    FREEZE_AND_RESET_CTL_BOX(CBOX6, MSR_UNC_C6_PMON_BOX_CTL);
+    FREEZE_AND_RESET_CTL_BOX(CBOX7, MSR_UNC_C7_PMON_BOX_CTL);
+
+    FREEZE_PCI_BOX(MBOX0, PCI_IMC_DEVICE_CH_0, PCI_UNC_MC_PMON_BOX_CTL);
+    FREEZE_PCI_BOX(MBOX1, PCI_IMC_DEVICE_CH_1, PCI_UNC_MC_PMON_BOX_CTL);
+    FREEZE_PCI_BOX(MBOX2, PCI_IMC_DEVICE_CH_2, PCI_UNC_MC_PMON_BOX_CTL);
+    FREEZE_PCI_BOX(MBOX3, PCI_IMC_DEVICE_CH_3, PCI_UNC_MC_PMON_BOX_CTL);
+
+    FREEZE_AND_RESET_CTL_PCI_BOX(SBOX0, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL);
+    FREEZE_AND_RESET_CTL_PCI_BOX(SBOX1, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL);
+
+    FREEZE_PCI_BOX(BBOX0, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_BOX_CTL);
+    FREEZE_AND_RESET_CTL_BOX(WBOX, MSR_UNC_PCU_PMON_BOX_CTL1);
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
         {
+            counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
+            uint64_t reg = sandybridge_counter_map[index].configRegister;
+            uint64_t counter1 = sandybridge_counter_map[index].counterRegister;
+            uint64_t counter2 = sandybridge_counter_map[index].counterRegister2;
             switch (sandybridge_counter_map[index].type)
             {
                 case PMC:
 
                 case FIXED:
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, sandybridge_counter_map[index].counterRegister, &counter_result));
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
+                    CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case POWER:
                     if(haveLock)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, sandybridge_counter_map[index].counterRegister, 
-                                (uint32_t*)&counter_result));
-                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
-                        {
-                            fprintf(stderr,"Overflow in power status register 0x%x, assuming single overflow\n",
-                                                sandybridge_counter_map[index].counterRegister);
-                            counter_result += (UINT_MAX - eventSet->events[i].threadCounter[thread_id].counterData);
-                            eventSet->events[i].threadCounter[thread_id].counterData = power_info.energyUnit * counter_result;
-                        }
-                        else
-                        {
-                        eventSet->events[i].threadCounter[thread_id].counterData =
-                            power_info.energyUnit *
-                            ( counter_result - eventSet->events[i].threadCounter[thread_id].counterData);
-                        }
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+                        CHECK_OVERFLOW;
+                        eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     }
                     break;
 
@@ -982,160 +1303,140 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     break;
 
                 case MBOX0:
-                    if(haveLock)
-                    {
-                        uflags = 0x10100UL;
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_BOX_CTL, uflags));
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_0, 
-                                sandybridge_counter_map[index].counterRegister,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData = (counter_result<<32);
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_0, 
-                                sandybridge_counter_map[index].counterRegister2,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData += counter_result;
-                    }
+                    RESET_MBOX_CTL(0, reg);
+                    READ_PCI_BOX(MBOX0, PCI_IMC_DEVICE_CH_0, counter1, counter2);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case MBOX1:
-                    if(haveLock)
-                    {
-                        uflags = 0x10100UL;
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_1,  PCI_UNC_MC_PMON_BOX_CTL, uflags));
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_1, 
-                                sandybridge_counter_map[index].counterRegister,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData = (counter_result<<32);
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_1, 
-                                sandybridge_counter_map[index].counterRegister2,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData += counter_result;
-                    }
+                    RESET_MBOX_CTL(1, reg);
+                    READ_PCI_BOX(MBOX1, PCI_IMC_DEVICE_CH_1, counter1, counter2);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case MBOX2:
-                    if(haveLock)
-                    {
-                        uflags = 0x10100UL;
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_2,  PCI_UNC_MC_PMON_BOX_CTL, uflags));
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_2, 
-                                sandybridge_counter_map[index].counterRegister,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData = (counter_result<<32);
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_2, 
-                                sandybridge_counter_map[index].counterRegister2,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData += counter_result;
-                    }
+                    RESET_MBOX_CTL(2, reg);
+                    READ_PCI_BOX(MBOX2, PCI_IMC_DEVICE_CH_2, counter1, counter2);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case MBOX3:
-                    if(haveLock)
-                    {
-                        uflags = 0x10100UL;
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_3,  PCI_UNC_MC_PMON_BOX_CTL, uflags));
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_3, 
-                                sandybridge_counter_map[index].counterRegister,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData = (counter_result<<32);
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_3, 
-                                sandybridge_counter_map[index].counterRegister2,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData += counter_result;
-                    }
+                    RESET_MBOX_CTL(3, reg);
+                    READ_PCI_BOX(MBOX3, PCI_IMC_DEVICE_CH_3, counter1, counter2);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
-                case MBOXFIX:
-                    if(haveLock)
-                    {
-                        uflags = 0x10100UL;
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_FIXED_CTL, uflags));
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_0, 
-                                sandybridge_counter_map[index].counterRegister,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData = (counter_result<<32);
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_0, 
-                                sandybridge_counter_map[index].counterRegister2,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData += counter_result;
-                    }
+                case MBOX0FIX:
+                    READ_PCI_BOX(MBOX0FIX, PCI_IMC_DEVICE_CH_0, counter1, counter2);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case MBOX1FIX:
+                    READ_PCI_BOX(MBOX1FIX, PCI_IMC_DEVICE_CH_1, counter1, counter2);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case MBOX2FIX:
+                    READ_PCI_BOX(MBOX2FIX, PCI_IMC_DEVICE_CH_2, counter1, counter2);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case MBOX3FIX:
+                    READ_PCI_BOX(MBOX3FIX, PCI_IMC_DEVICE_CH_3, counter1, counter2);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case SBOX0:
-                    if(haveLock)
-                    {
-                        uflags = 0x10100UL;
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL, uflags));
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_QPI_DEVICE_PORT_0, 
-                                sandybridge_counter_map[index].counterRegister,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData = (counter_result<<32);
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_QPI_DEVICE_PORT_0, 
-                                sandybridge_counter_map[index].counterRegister2,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData += counter_result;
-                    }
+                    READ_PCI_BOX(SBOX0, PCI_QPI_DEVICE_PORT_0, counter1, counter2);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case SBOX1:
-                    if(haveLock)
-                    {
-                        uflags = 0x10100UL;
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL, uflags));
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_QPI_DEVICE_PORT_1, 
-                                sandybridge_counter_map[index].counterRegister,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData = (counter_result<<32);
-                        CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_QPI_DEVICE_PORT_1, 
-                                sandybridge_counter_map[index].counterRegister2,
-                                (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData += counter_result;
-                    }
+                    READ_PCI_BOX(SBOX1, PCI_QPI_DEVICE_PORT_1, counter1, counter2);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case CBOX0:
-                    uflags = 0x10100UL;
-                    STOP_AND_READ_BOX(MSR_UNC_C0_PMON_BOX_CTL);
+                    READ_BOX(CBOX0, counter1);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX1:
-                    uflags = 0x10100UL;
-                    STOP_AND_READ_BOX(MSR_UNC_C1_PMON_BOX_CTL);
+                    READ_BOX(CBOX1, counter1);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX2:
-                    uflags = 0x10100UL;
-                    STOP_AND_READ_BOX(MSR_UNC_C2_PMON_BOX_CTL);
+                    READ_BOX(CBOX2, counter1);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX3:
-                    uflags = 0x10100UL;
-                    STOP_AND_READ_BOX(MSR_UNC_C3_PMON_BOX_CTL);
+                    READ_BOX(CBOX3, counter1);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX4:
-                    uflags = 0x10100UL;
-                    STOP_AND_READ_BOX(MSR_UNC_C4_PMON_BOX_CTL);
+                    READ_BOX(CBOX4, counter1);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX5:
-                    uflags = 0x10100UL;
-                    STOP_AND_READ_BOX(MSR_UNC_C5_PMON_BOX_CTL);
+                    READ_BOX(CBOX5, counter1);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX6:
-                    uflags = 0x10100UL;
-                    STOP_AND_READ_BOX(MSR_UNC_C6_PMON_BOX_CTL);
+                    READ_BOX(CBOX6, counter1);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX7:
-                    uflags = 0x10100UL;
-                    STOP_AND_READ_BOX(MSR_UNC_C7_PMON_BOX_CTL);
+                    READ_BOX(CBOX7, counter1);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case UBOX:
-                case UBOXFIX:
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, sandybridge_counter_map[index].configRegister, 0x0U));
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, sandybridge_counter_map[index].counterRegister, &counter_result));
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, 0x0U));
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
+                    CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case UBOXFIX:
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, 0x0U));
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
 
                 case BBOX0:
-                    STOP_AND_READ_PCI_BOX(PCI_HA_DEVICE, sandybridge_counter_map[index].configRegister, 
-                                    sandybridge_counter_map[index].counterRegister, sandybridge_counter_map[index].counterRegister2);
+                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_HA_DEVICE, reg, 0x0U));
+                    READ_PCI_BOX(BBOX0, PCI_HA_DEVICE, counter1, counter2);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
 
+                case WBOX:
+                    READ_BOX(WBOX, counter1);
+                    CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case WBOXFIXC3:
+                    READ_BOX(WBOXFIXC3, counter1);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case WBOXFIXC6:
+                    READ_BOX(WBOXFIXC6, counter1);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
                 default:
                     /* should never be reached */
                     break;
@@ -1163,15 +1464,45 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
         haveLock = 1;
     }
 
+    FREEZE_BOX(CBOX0, MSR_UNC_C0_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX1, MSR_UNC_C1_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX2, MSR_UNC_C2_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX3, MSR_UNC_C3_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX4, MSR_UNC_C4_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX5, MSR_UNC_C5_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX6, MSR_UNC_C6_PMON_BOX_CTL);
+    FREEZE_BOX(CBOX7, MSR_UNC_C7_PMON_BOX_CTL);
+
+    FREEZE_PCI_BOX(MBOX0, PCI_IMC_DEVICE_CH_0, PCI_UNC_MC_PMON_BOX_CTL);
+    FREEZE_PCI_BOX(MBOX1, PCI_IMC_DEVICE_CH_1, PCI_UNC_MC_PMON_BOX_CTL);
+    FREEZE_PCI_BOX(MBOX2, PCI_IMC_DEVICE_CH_2, PCI_UNC_MC_PMON_BOX_CTL);
+    FREEZE_PCI_BOX(MBOX3, PCI_IMC_DEVICE_CH_3, PCI_UNC_MC_PMON_BOX_CTL);
+
+    FREEZE_MBOXFIX(0);
+    FREEZE_MBOXFIX(1);
+    FREEZE_MBOXFIX(2);
+    FREEZE_MBOXFIX(3);
+
+    FREEZE_PCI_BOX(SBOX0, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL);
+    FREEZE_PCI_BOX(SBOX1, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL);
+
+    FREEZE_PCI_BOX(BBOX0, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_BOX_CTL);
+    FREEZE_BOX(WBOX, MSR_UNC_PCU_PMON_BOX_CTL1);
+
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
+            counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
+            uint64_t reg = sandybridge_counter_map[index].configRegister;
+            uint64_t counter1 = sandybridge_counter_map[index].counterRegister;
+            uint64_t counter2 = sandybridge_counter_map[index].counterRegister2;
             if ((sandybridge_counter_map[index].type == PMC) ||
                     (sandybridge_counter_map[index].type == FIXED))
             {
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, sandybridge_counter_map[index].counterRegister, &counter_result));
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
+                CHECK_OVERFLOW;
                 eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
             }
             else
@@ -1181,88 +1512,101 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     switch (sandybridge_counter_map[index].type)
                     {
                         case POWER:
-                            CHECK_POWER_READ_ERROR(power_read(cpu_id, sandybridge_counter_map[index].counterRegister,
-                                    (uint32_t*)&counter_result));
-                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result * power_info.energyUnit;
+                            CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
 
                         case MBOX0:
-                            CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_0,
-                                    sandybridge_counter_map[index].counterRegister,
-                                    (uint32_t*)&counter_result));
-                            eventSet->events[i].threadCounter[thread_id].counterData = (counter_result<<32);
-                            CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_0,
-                                    sandybridge_counter_map[index].counterRegister2,
-                                    (uint32_t*)&counter_result));
-                            eventSet->events[i].threadCounter[thread_id].counterData += counter_result;
+                            READ_PCI_BOX(MBOX0, PCI_IMC_DEVICE_CH_0, counter1, counter2);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
 
                         case MBOX1:
-                            CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_1,
-                                    sandybridge_counter_map[index].counterRegister,
-                                    (uint32_t*)&counter_result));
-                            eventSet->events[i].threadCounter[thread_id].counterData = (counter_result<<32);
-                            CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_1,
-                                    sandybridge_counter_map[index].counterRegister2,
-                                    (uint32_t*)&counter_result));
-                            eventSet->events[i].threadCounter[thread_id].counterData += counter_result;
+                            READ_PCI_BOX(MBOX1, PCI_IMC_DEVICE_CH_1, counter1, counter2);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
 
                         case MBOX2:
-                            CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_2,
-                                    sandybridge_counter_map[index].counterRegister,
-                                    (uint32_t*)&counter_result));
-                            eventSet->events[i].threadCounter[thread_id].counterData = (counter_result<<32);
-                            CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_2,
-                                    sandybridge_counter_map[index].counterRegister2,
-                                    (uint32_t*)&counter_result));
-                            eventSet->events[i].threadCounter[thread_id].counterData += counter_result;
+                            READ_PCI_BOX(MBOX2, PCI_IMC_DEVICE_CH_2, counter1, counter2);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
 
                         case MBOX3:
-                            CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_3,
-                                    sandybridge_counter_map[index].counterRegister,
-                                    (uint32_t*)&counter_result));
-                            eventSet->events[i].threadCounter[thread_id].counterData = (counter_result<<32);
-                            CHECK_PCI_READ_ERROR(pci_read(cpu_id, PCI_IMC_DEVICE_CH_3,
-                                    sandybridge_counter_map[index].counterRegister2,
-                                    (uint32_t*)&counter_result));
-                            eventSet->events[i].threadCounter[thread_id].counterData += counter_result;
+                            READ_PCI_BOX(MBOX3, PCI_IMC_DEVICE_CH_3, counter1, counter2);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
 
                         case UBOX:
                         case UBOXFIX:
-                            CHECK_MSR_READ_ERROR(msr_read(cpu_id, sandybridge_counter_map[index].counterRegister, &counter_result));
+                            CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
+                            CHECK_OVERFLOW;
                             eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
 
                         case CBOX0:
-                            READ_BOX();
+                            READ_BOX(CBOX0, counter1);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
                         case CBOX1:
-                            READ_BOX();
+                            READ_BOX(CBOX1, counter1);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
                         case CBOX2:
-                            READ_BOX();
+                            READ_BOX(CBOX2, counter1);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
                         case CBOX3:
-                            READ_BOX();
+                            READ_BOX(CBOX3, counter1);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
                         case CBOX4:
-                            READ_BOX();
+                            READ_BOX(CBOX4, counter1);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
                         case CBOX5:
-                            READ_BOX();
+                            READ_BOX(CBOX5, counter1);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
                         case CBOX6:
-                            READ_BOX();
+                            READ_BOX(CBOX6, counter1);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
                         case CBOX7:
-                            READ_BOX();
+                            READ_BOX(CBOX7, counter1);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                             break;
-                    
+
                         case BBOX0:
-                            READ_PCI_BOX(PCI_HA_DEVICE, sandybridge_counter_map[index].counterRegister,
-                                                        sandybridge_counter_map[index].counterRegister2);
+                            READ_PCI_BOX(BBOX0, PCI_HA_DEVICE, counter1, counter2);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                            break;
+
+                        case WBOX:
+                            READ_BOX(WBOX, counter1);
+                            CHECK_OVERFLOW;
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                            break;
+                        case WBOXFIXC3:
+                            READ_BOX(WBOXFIXC3, counter1);
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                            break;
+                        case WBOXFIXC6:
+                            READ_BOX(WBOXFIXC6, counter1);
+                            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                            break;
 
                         default:
                             /* should never be reached */
@@ -1272,6 +1616,32 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
             }
         }
     }
+
+    UNFREEZE_BOX(CBOX0, MSR_UNC_C0_PMON_BOX_CTL);
+    UNFREEZE_BOX(CBOX1, MSR_UNC_C1_PMON_BOX_CTL);
+    UNFREEZE_BOX(CBOX2, MSR_UNC_C2_PMON_BOX_CTL);
+    UNFREEZE_BOX(CBOX3, MSR_UNC_C3_PMON_BOX_CTL);
+    UNFREEZE_BOX(CBOX4, MSR_UNC_C4_PMON_BOX_CTL);
+    UNFREEZE_BOX(CBOX5, MSR_UNC_C5_PMON_BOX_CTL);
+    UNFREEZE_BOX(CBOX6, MSR_UNC_C6_PMON_BOX_CTL);
+    UNFREEZE_BOX(CBOX7, MSR_UNC_C7_PMON_BOX_CTL);
+
+    UNFREEZE_PCI_BOX(MBOX0, PCI_IMC_DEVICE_CH_0, PCI_UNC_MC_PMON_BOX_CTL);
+    UNFREEZE_PCI_BOX(MBOX1, PCI_IMC_DEVICE_CH_1, PCI_UNC_MC_PMON_BOX_CTL);
+    UNFREEZE_PCI_BOX(MBOX2, PCI_IMC_DEVICE_CH_2, PCI_UNC_MC_PMON_BOX_CTL);
+    UNFREEZE_PCI_BOX(MBOX3, PCI_IMC_DEVICE_CH_3, PCI_UNC_MC_PMON_BOX_CTL);
+
+    UNFREEZE_MBOXFIX(0);
+    UNFREEZE_MBOXFIX(1);
+    UNFREEZE_MBOXFIX(2);
+    UNFREEZE_MBOXFIX(3);
+
+    UNFREEZE_PCI_BOX(SBOX0, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL);
+    UNFREEZE_PCI_BOX(SBOX1, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL);
+
+    UNFREEZE_PCI_BOX(BBOX0, PCI_HA_DEVICE,  PCI_UNC_HA_PMON_BOX_CTL);
+    UNFREEZE_BOX(WBOX, MSR_UNC_PCU_PMON_BOX_CTL1);
+
     return 0;
 }
 
