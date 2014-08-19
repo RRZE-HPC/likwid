@@ -174,6 +174,14 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
             {
                 event->options[event->numberOfOptions].type = EVENT_OPTION_COUNT_KERNEL;
             }
+            else if (biseqcstr(subtokens->entry[0], "occ_edgedetect") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_OCCUPANCY_EDGE;
+            }
+            else if (biseqcstr(subtokens->entry[0], "occ_invert") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_OCCUPANCY_INVERT;
+            }
             else
             {
                 continue;
@@ -186,9 +194,21 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
             {
                 event->options[event->numberOfOptions].type = EVENT_OPTION_OPCODE;
             }
-            else if (biseqcstr(subtokens->entry[0], "addr") == 1)
+            else if (biseqcstr(subtokens->entry[0], "match0") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_ADDR;
+                event->options[event->numberOfOptions].type = EVENT_OPTION_MATCH0;
+            }
+            else if (biseqcstr(subtokens->entry[0], "match1") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_MATCH1;
+            }
+            else if (biseqcstr(subtokens->entry[0], "mask0") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_MASK0;
+            }
+            else if (biseqcstr(subtokens->entry[0], "mask1") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_MASK1;
             }
             else if (biseqcstr(subtokens->entry[0], "nid") == 1)
             {
@@ -209,7 +229,10 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
             else if (biseqcstr(subtokens->entry[0], "occupancy") == 1)
             {
                 event->options[event->numberOfOptions].type = EVENT_OPTION_OCCUPANCY;
-                
+            }
+            else if (biseqcstr(subtokens->entry[0], "occ_filter") == 1)
+            {
+                event->options[event->numberOfOptions].type = EVENT_OPTION_OCCUPANCY_FILTER;
             }
             else
             {
@@ -224,7 +247,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
     {
         if (!(OPTIONS_TYPE_MASK(event->options[i].type) & (counter_map[index].optionMask|event->optionMask)))
         {
-            DEBUG_PRINT(DEBUGLEV_INFO,Removing Option %s, not valid for register %s,
+            DEBUG_PRINT(DEBUGLEV_INFO,Removing Option %s not valid for register %s,
                         eventOptionTypeName[event->options[i].type],
                         counter_map[index].key);
             event->options[i].type = EVENT_OPTION_NONE;
@@ -531,7 +554,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     }
     
     /* Check threadsToCpu array if only valid cpu_ids are listed */
-
     if (groupSet != NULL)
     {
         /* TODO: Decision whether setting new thread count and adjust processorIds
@@ -546,7 +568,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         ERROR_PLAIN_PRINT("Cannot allocate group descriptor");
         return -ENOMEM;
     }
-    
     groupSet->threads = (PerfmonThread*) malloc(nrThreads * sizeof(PerfmonThread));
     if (groupSet->threads == NULL)
     {
@@ -555,6 +576,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         return -ENOMEM;
     }
     groupSet->numberOfThreads = nrThreads;
+    groupSet->numberOfGroups = 0;
+    groupSet->numberOfActiveGroups = 0;
 
     for(i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
     
@@ -568,7 +591,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     if (ret)
     {
         ERROR_PLAIN_PRINT("Initialization of MSR device accesses failed");
-        free(groupSet->groups);
         free(groupSet->threads);
         free(groupSet);
         return ret;
@@ -776,7 +798,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
             ERROR_PLAIN_PRINT(Unsupported Processor);
             break;
     }
-
     /* Store thread information and reset counters for processor*/
     /* If the arch supports it, initialize power and thermal measurements */
     for(i=0;i<nrThreads;i++)
@@ -792,8 +813,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         {
             thermal_init(threadsToCpu[i]);
         }
-
-        
+        initThreadArch(threadsToCpu[i]);
     }
     
     return 0;
@@ -854,7 +874,7 @@ perfmon_addEventSet(char* eventCString)
         ERROR_PLAIN_PRINT(Event string contains valid character .);
         return -EINVAL;
     }
-    if (groupSet->numberOfActiveGroups == 0)
+    if (groupSet->numberOfGroups == 0)
     {
         groupSet->groups = (PerfmonEventSet*) malloc(sizeof(PerfmonEventSet));
         if (groupSet->groups == NULL)
@@ -870,11 +890,13 @@ perfmon_addEventSet(char* eventCString)
         groupSet->groups[0].rdtscTime = 0;
         groupSet->groups[0].numberOfEvents = 0;
     }
+    
     if (groupSet->numberOfActiveGroups == groupSet->numberOfGroups)
     {
+        
         groupSet->numberOfGroups++;
         groupSet->groups = (PerfmonEventSet*)realloc(groupSet->groups, groupSet->numberOfGroups*sizeof(PerfmonEventSet));
-        if (!groupSet->groups)
+        if (groupSet->groups == NULL)
         {
             ERROR_PLAIN_PRINT(Cannot allocate additional group);
             return -ENOMEM;
@@ -894,15 +916,13 @@ perfmon_addEventSet(char* eventCString)
     eventtokens = bstrListCreate();
     eventtokens = bsplit(eventBString,',');
     bdestroy(eventBString);
-
     eventSet->events = (PerfmonEventSetEntry*) malloc(eventtokens->qty * sizeof(PerfmonEventSetEntry));
-
+    
     if (eventSet->events == NULL)
     {
         ERROR_PRINT(Cannot allocate event list for group %d\n, groupSet->numberOfActiveGroups);
         return -ENOMEM;
     }
-
     eventSet->numberOfEvents = 0;
     eventSet->regTypeMask = 0x0ULL;
 
@@ -947,7 +967,7 @@ perfmon_addEventSet(char* eventCString)
             }
 
             eventSet->numberOfEvents++;
-            eventSet->regTypeMask = (1<<reg_type);
+            eventSet->regTypeMask |= REG_TYPE_MASK(reg_type);
 
             event->threadCounter = (PerfmonCounter*) malloc(
                 groupSet->numberOfThreads * sizeof(PerfmonCounter));
@@ -978,7 +998,14 @@ perfmon_addEventSet(char* eventCString)
     bstrListDestroy(subtokens);
     bstrListDestroy(eventtokens);
     groupSet->numberOfActiveGroups++;
-    return groupSet->numberOfActiveGroups-1;
+    if (eventSet->numberOfEvents > 0)
+    {
+        return groupSet->numberOfActiveGroups-1;
+    }
+    else
+    {
+        return -EINVAL;
+    }
 }
 
 int
@@ -993,7 +1020,7 @@ perfmon_setupCounters(int groupId)
 
     for(i=0;i<groupSet->numberOfThreads;i++)
     {
-        CHECK_AND_RETURN_ERROR(initThreadArch(groupSet->threads[i].processorId), Init failed);
+        //CHECK_AND_RETURN_ERROR(initThreadArch(groupSet->threads[i].processorId), Init failed);
         CHECK_AND_RETURN_ERROR(perfmon_setupCountersThread(i, &groupSet->groups[groupId]),
             Setup of counters failed);
     }
