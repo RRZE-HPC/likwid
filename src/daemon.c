@@ -42,6 +42,7 @@
 #include <timer.h>
 #include <perfmon.h>
 #include <daemon.h>
+#include <error.h>
 
 static int daemon_running = 0;
 static char eventString[1024];
@@ -171,7 +172,7 @@ daemon_start(uint64_t duration)
             ERROR_PRINT(DAEMON: Group %d has not events configured, group);
             exit(1);
         }
-        fprintf(stderr, "%d,%d,%d,%f,", group, nr_events, nr_threads, timer_print(&timeData), );
+        fprintf(stderr, "%d,%d,%d,%f,", group, nr_events, nr_threads, timer_print(&timeData));
         for(i=0;i<nr_events;i++)
         {
             fprintf(stderr, "%d,", i);
