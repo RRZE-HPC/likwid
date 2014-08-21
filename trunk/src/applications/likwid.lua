@@ -70,10 +70,13 @@ end
 likwid.tablelength = tablelength
 
 local function tableprint(T)
-    if T == nil then return end
+    if T == nil or #T == 0 then
+        print("[]")
+        return
+    end
     outstr = ""
-    for i, item in pairs(T) do
-        outstr = outstr .. "," .. item
+    for i=0,#T do
+        outstr = outstr .. "," .. tostring(T[i])
     end
     print("["..outstr:sub(2,outstr:len()).."]")
 end
@@ -520,7 +523,7 @@ local function get_groupdata(architecture, group)
         end
         
         if parse_eventset and line:find("EVENTSET") == nil then
-            linelist = stringsplit(line, "%s+", nil, "%s+")
+            linelist = stringsplit(line:gsub("^%s*(.-)%s*$", "%1"), "%s+", nil, "%s+")
             eventstring = linelist[2] .. ":" .. linelist[1]
             if #linelist > 2 then
                 table.remove(linelist,2)
@@ -529,17 +532,17 @@ local function get_groupdata(architecture, group)
             end
             groupdata["EventString"] = groupdata["EventString"] .. "," .. eventstring
             groupdata["Events"][nr_events] = {}
-            groupdata["Events"][nr_events]["Event"] = linelist[2]
-            groupdata["Events"][nr_events]["Counter"] = linelist[1]
+            groupdata["Events"][nr_events]["Event"] = linelist[2]:gsub("^%s*(.-)%s*$", "%1")
+            groupdata["Events"][nr_events]["Counter"] = linelist[1]:gsub("^%s*(.-)%s*$", "%1")
             nr_events = nr_events + 1
         end
         
         if parse_metrics and line:find("METRICS") == nil then
-            linelist = stringsplit(line, "%s+", nil, "%s+")
+            linelist = stringsplit(line:gsub("^%s*(.-)%s*$", "%1"), "%s+", nil, "%s+")
             formula = linelist[#linelist]
             table.remove(linelist)
             groupdata["Metrics"][nr_metrics] = {}
-            groupdata["Metrics"][nr_metrics]["description"] = table.concat(linelist, " ")  
+            groupdata["Metrics"][nr_metrics]["description"] = table.concat(linelist, " ")
             groupdata["Metrics"][nr_metrics]["formula"] = formula
             nr_metrics = nr_metrics + 1
         end
