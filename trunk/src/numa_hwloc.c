@@ -202,7 +202,7 @@ int hwloc_numa_init(void)
             }
             else
             {
-                numa_info.nodes[i].totalMemory = obj->memory.local_memory;
+                numa_info.nodes[i].totalMemory = (uint64_t)(obj->memory.local_memory/1024);
             }
             
             /* freeMemory not detected by hwloc, do it the native way */
