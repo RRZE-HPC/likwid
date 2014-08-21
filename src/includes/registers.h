@@ -662,6 +662,38 @@
 #define MSR_C7_PMON_CTR4                0xDF9
 #define MSR_C7_PMON_EVNT_SEL5           0xDFA
 #define MSR_C7_PMON_CTR5                0xDFB
+/* C box 8 - Coherence Engine core 8 */
+#define MSR_C8_PMON_BOX_CTRL            0xF40
+#define MSR_C8_PMON_BOX_STATUS          0xF41
+#define MSR_C8_PMON_BOX_OVF_CTRL        0xF42
+#define MSR_C8_PMON_EVNT_SEL0           0xF50
+#define MSR_C8_PMON_CTR0                0xF51
+#define MSR_C8_PMON_EVNT_SEL1           0xF52
+#define MSR_C8_PMON_CTR1                0xF53
+#define MSR_C8_PMON_EVNT_SEL2           0xF54
+#define MSR_C8_PMON_CTR2                0xF55
+#define MSR_C8_PMON_EVNT_SEL3           0xF56
+#define MSR_C8_PMON_CTR3                0xF57
+#define MSR_C8_PMON_EVNT_SEL4           0xF58
+#define MSR_C8_PMON_CTR4                0xF59
+#define MSR_C8_PMON_EVNT_SEL5           0xF5A
+#define MSR_C8_PMON_CTR5                0xF5B
+/* C box 9 - Coherence Engine core 9 */
+#define MSR_C9_PMON_BOX_CTRL            0xFC0
+#define MSR_C9_PMON_BOX_STATUS          0xFC1
+#define MSR_C9_PMON_BOX_OVF_CTRL        0xFC2
+#define MSR_C9_PMON_EVNT_SEL0           0xFD0
+#define MSR_C9_PMON_CTR0                0xFD1
+#define MSR_C9_PMON_EVNT_SEL1           0xFD2
+#define MSR_C9_PMON_CTR1                0xFD3
+#define MSR_C9_PMON_EVNT_SEL2           0xFD4
+#define MSR_C9_PMON_CTR2                0xFD5
+#define MSR_C9_PMON_EVNT_SEL3           0xFD6
+#define MSR_C9_PMON_CTR3                0xFD7
+#define MSR_C9_PMON_EVNT_SEL4           0xFD8
+#define MSR_C9_PMON_CTR4                0xFD9
+#define MSR_C9_PMON_EVNT_SEL5           0xFDA
+#define MSR_C9_PMON_CTR5                0xFDB
 /* R box 0 - Router 0 */
 #define MSR_R0_PMON_BOX_CTRL            0xE00
 #define MSR_R0_PMON_BOX_STATUS          0xE01
@@ -729,6 +761,7 @@
 /* Match/Mask MSRs */
 #define MSR_B0_PMON_MATCH               0xE45
 #define MSR_B0_PMON_MASK                0xE46
+#define MSR_S0_PMON_MM_CFG              0xE49
 #define MSR_S0_PMON_MATCH               0xE49
 #define MSR_S0_PMON_MASK                0xE4A
 #define MSR_B1_PMON_MATCH               0xE4D
@@ -736,6 +769,7 @@
 #define MSR_M0_PMON_MM_CONFIG           0xE54
 #define MSR_M0_PMON_ADDR_MATCH          0xE55
 #define MSR_M0_PMON_ADDR_MASK           0xE56
+#define MSR_S1_PMON_MM_CFG              0xE58
 #define MSR_S1_PMON_MATCH               0xE59
 #define MSR_S1_PMON_MASK                0xE5A
 #define MSR_M1_PMON_MM_CONFIG           0xE5C
