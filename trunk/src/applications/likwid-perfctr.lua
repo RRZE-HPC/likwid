@@ -374,7 +374,7 @@ end
 if use_wrapper or use_stethoscope then
     local ret = likwid_startCounters()
     if ret < 0 then
-        print(string.format("Error starting counters for thread %d.",ret * (-1))
+        print(string.format("Error starting counters for thread %d.",ret * (-1)))
         os.exit(1)
     end
 end
@@ -388,10 +388,11 @@ else
     usleep(duration)
 end
 io.stdout:flush()
+print(HLINE)
 if use_wrapper or use_stethoscope then
     local ret = likwid_stopCounters()
     if ret < 0 then
-         print(string.format("Error stopping counters for thread %d.",ret * (-1))
+         print(string.format("Error stopping counters for thread %d.",ret * (-1)))
         os.exit(1)
     end
 elseif use_timeline then
