@@ -113,9 +113,9 @@ print(HLINE)
 
 for socket=0,cputopo["numSockets"]-1 do
     str = string.format("Socket %d: (",socket)
-    for core=0,#cputopo["topologyTree"][socket] do
-        for cpu=0,#cputopo["topologyTree"][socket][core] do
-            str = str .. " " .. cputopo["topologyTree"][socket][core][cpu]
+    for cntr=1,cputopo["numHWThreads"] do
+        if cputopo["threadPool"][cntr]["packageId"] == socket then
+            str = str .. " " .. cputopo["threadPool"][cntr]["apicId"]
         end
     end
     print(str .. " )")
@@ -198,8 +198,8 @@ else
         end
         print(str)
         print(string.format("Memory: %g MB free of total %g MB", 
-                                numainfo["nodes"][node]["freeMemory"]/1024,
-                                numainfo["nodes"][node]["totalMemory"]/1024))
+                                tonumber(numainfo["nodes"][node]["freeMemory"]/1024),
+                                tonumber(numainfo["nodes"][node]["totalMemory"]/1024)))
         print(HLINE)
     end
 end
