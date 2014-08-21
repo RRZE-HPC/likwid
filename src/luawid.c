@@ -129,7 +129,7 @@ static int lua_likwid_init(lua_State* L)
         {
             lua_pushstring(L,"Cannot initialize likwid perfmon");
             lua_error(L);
-            return 0;
+            return 1;
         }
         perfmon_isInitialized = 1;
         timer_isInitialized = 1;
@@ -956,9 +956,8 @@ static int lua_likwid_readTemp(lua_State* L)
 
 static int lua_likwid_startDaemon(lua_State* L)
 {
-    uint64_t switch_interval = (uint64_t)luaL_checknumber(L,-1);
-    uint64_t duration = (uint64_t)lua_tonumber(L,-2);
-    daemon_start(duration, switch_interval);
+    uint64_t duration = (uint64_t)luaL_checknumber(L,-1);
+    daemon_start(duration);
     return 0;
 }
 
