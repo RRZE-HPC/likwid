@@ -673,7 +673,7 @@ void topology_setupTree(void)
 {
     uint32_t i;
     TreeNode* currentNode;
-    HWThread* hwThreadPool = cpuid_topology.threadPool; 
+    HWThread* hwThreadPool = cpuid_topology.threadPool;
     
     tree_init(&cpuid_topology.topologyTree, 0);
     for (i=0; i<  cpuid_topology.numHWThreads; i++)
@@ -687,13 +687,11 @@ void topology_setupTree(void)
         }
         currentNode = tree_getNode(cpuid_topology.topologyTree,
                 hwThreadPool[i].packageId);
-
         if (!tree_nodeExists(currentNode, hwThreadPool[i].coreId))
         {
             tree_insertNode(currentNode, hwThreadPool[i].coreId);
         }
         currentNode = tree_getNode(currentNode, hwThreadPool[i].coreId);
-
         if (!tree_nodeExists(currentNode, i))
         {
             /*

@@ -287,27 +287,31 @@ void hwloc_init_nodeTopology(void)
     hwloc_obj_t obj;
     int realThreadId;
     int sibling;
+    hwloc_obj_type_t socket_type = HWLOC_OBJ_NODE;
     
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
     
     maxNumLogicalProcs = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
     maxNumCores = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_CORE);
+    if (hwloc_get_nbobjs_by_type(hwloc_topology, socket_type) == 0)
+    {
+        socket_type = HWLOC_OBJ_SOCKET;
+    }
     maxNumLogicalProcsPerCore = maxNumLogicalProcs/maxNumCores;
     for (uint32_t i=0; i< maxNumLogicalProcs; i++)
     {
         obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PU, i);
         realThreadId = obj->os_index;
-        hwThreadPool[realThreadId].apicId = obj->os_index;
-        hwThreadPool[realThreadId].threadId = obj->sibling_rank;
+        hwThreadPool[i].apicId = obj->logical_index;
+        hwThreadPool[i].threadId = obj->sibling_rank;
         while (obj->type != HWLOC_OBJ_CORE) {
             obj = obj->parent;
         }
-        hwThreadPool[realThreadId].coreId = obj->os_index;
-        while (obj->type != HWLOC_OBJ_SOCKET) {
+        hwThreadPool[i].coreId = obj->logical_index;
+        while (obj->type != socket_type) {
             obj = obj->parent;
         }
-        hwThreadPool[realThreadId].packageId = obj->logical_index;
-        
+        hwThreadPool[i].packageId = obj->logical_index;
     }
     
     cpuid_topology.threadPool = hwThreadPool;
