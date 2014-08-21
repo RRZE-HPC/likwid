@@ -81,11 +81,20 @@
 #define DEBUGLEV_DEVELOP 3
 
 #define VERBOSEPRINTREG(cpuid,reg,flags,msg) \
+    if (perfmon_verbosity == 3) \
+    { \
         printf("DEBUG - [%s:%d] "  str(msg) " [%d] Register 0x%llX , Flags: 0x%llX \n",  \
                 __FILE__, __LINE__,  (cpuid), LLU_CAST (reg), LLU_CAST (flags)); \
         fflush(stdout);  \
-    //if (perfmon_verbose) {  \
-    //}
+    }
+    
+#define VERBOSEPRINTPCIREG(cpuid,dev,reg,flags,msg) \
+    if (perfmon_verbosity == 3) \
+    { \
+        printf("DEBUG - [%s:%d] "  str(msg) " [%d] Device %d Register 0x%llX , Flags: 0x%llX \n",  \
+                __FILE__, __LINE__,  (cpuid), LLU_CAST (reg), LLU_CAST (flags)); \
+        fflush(stdout);  \
+    }
 
 
 #define DEBUG_PRINT(lev, fmt, ...) \
