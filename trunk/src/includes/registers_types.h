@@ -35,8 +35,8 @@
 
 typedef enum {
     PMC0 = 0,
-    PMC1 , PMC2 , PMC3 , PMC4 , PMC5 , PMC6,
-    PMC7 , PMC8 , PMC9 , PMC10, PMC11, PMC12,
+    PMC1, PMC2, PMC3, PMC4, PMC5, PMC6,
+    PMC7, PMC8, PMC9, PMC10, PMC11, PMC12,
     PMC13, PMC14, PMC15, PMC16, PMC17, PMC18,
     PMC19, PMC20, PMC21, PMC22, PMC23, PMC24,
     PMC25, PMC26, PMC27, PMC28, PMC29, PMC30,
@@ -49,6 +49,10 @@ typedef enum {
     PMC67, PMC68, PMC69, PMC70, PMC71, PMC72,
     PMC73, PMC74, PMC75, PMC76, PMC77, PMC78,
     PMC79, PMC80, PMC81, PMC82, PMC83, PMC84,
+    PMC85, PMC86, PMC87, PMC88, PMC89, PMC90,
+    PMC91, PMC92, PMC93, PMC94, PMC95, PMC96,
+    PMC97, PMC98, PMC99, PMC100, PMC101, PMC102,
+    PMC103, PMC104, PMC105, PMC106, PMC107, PMC108,
     NUM_PMC
 } RegisterIndex;
 
@@ -59,7 +63,7 @@ typedef enum {
     MBOX0FIX, MBOX1FIX, MBOX2FIX, MBOX3FIX,
     BBOX0, BBOX1,
     RBOX0, RBOX1,
-    WBOX, WBOXFIXC3, WBOXFIXC6,
+    WBOX, WBOXFIX0, WBOXFIX1,
     SBOX0, SBOX1, SBOX2,
     CBOX0, CBOX1, CBOX2, CBOX3, CBOX4,
     CBOX5, CBOX6, CBOX7, CBOX8, CBOX9,
@@ -81,5 +85,11 @@ typedef struct {
     PciDeviceIndex      device;
     uint64_t            optionMask;
 } RegisterMap;
+
+typedef struct {
+    uint32_t  ctrlRegister;
+    uint32_t  statusRegister;
+    uint32_t  ovflRegister;
+} BoxMap;
 
 #endif
