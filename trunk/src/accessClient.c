@@ -91,6 +91,12 @@ startDaemon(void)
     int timeout = 10;
     int socket_fd = -1;
 
+    if (access(exeprog, X_OK))
+    {
+        fprintf(stderr, "Failed to find the daemon '%s': %s\n", exeprog, strerror(errno));
+         exit(EXIT_FAILURE);
+    }
+
     if (accessClient_mode == DAEMON_AM_ACCESS_D)
     {
         pid = fork();
@@ -101,8 +107,8 @@ startDaemon(void)
 
             if (ret < 0)
             {
-                ERRNO_PRINT;
-                fprintf(stderr, "Failed to execute the daemon '%s' (see error above)\n", exeprog);
+                //ERRNO_PRINT;
+                fprintf(stderr, "Failed to execute the daemon '%s': %s\n", exeprog, strerror(errno));
                 exit(EXIT_FAILURE);
             }
         }
