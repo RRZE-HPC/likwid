@@ -301,6 +301,23 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
     return maxNumLevels;
 }
 
+static recheck_numHWThreads()
+{
+    int cpucount = 0;
+    char line[1024];
+    FILE* fp = fopen("/proc/cpuinfo","r");
+    if (fp != NULL)
+    {
+        while( fgets(line,1024,fp) )
+        {
+            if (strncmp(line, "processor", 9) == 0)
+            {
+                cpucount++;
+            }
+        }
+    }
+    return cpucount;
+}
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -659,6 +676,10 @@ int cpuid_init (void)
     else
     {
         cpuid_topology.numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
+        if (recheck_numHWThreads() != cpuid_topology.numHWThreads)
+        {
+            cpuid_topology.numHWThreads = recheck_numHWThreads();
+        }
         cpu_set_t cpuSet;
         CPU_ZERO(&cpuSet);
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
