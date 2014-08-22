@@ -342,7 +342,7 @@ static void pci_read(AccessDataRecord* dRecord)
         }
     }
 
-    if ( pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data)) 
+    if ( pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data))
     {
         syslog(LOG_ERR, "Failed to read data from pci device file on socket %u device %u",
                 socketId, device);
@@ -384,7 +384,7 @@ static void pci_write(AccessDataRecord* dRecord)
         }
     }
 
-    if (pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data) 
+    if (pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
     {
         syslog(LOG_ERR, "Failed to write data to pci device file on socket %u", socketId);
         dRecord->errorcode = ERR_RWFAIL;
@@ -472,7 +472,7 @@ static void daemonize(int* parentPid)
 
     /* Change the current working directory.  This prevents the current
        directory from being locked; hence not being able to remove it. */
-    if ((chdir("/")) < 0) 
+    if ((chdir("/")) < 0)
     {
         syslog(LOG_ERR, "chdir failed:  %s", strerror(errno));
         exit(EXIT_FAILURE);
@@ -547,13 +547,6 @@ int main(void)
                 }
                 break;
             case K8_FAMILY:
-                if (isIntel)
-                {
-                    fprintf(stderr,
-                            "ERROR - [%s:%d] - Netburst architecture is not supported! Exiting! \n",
-                            __FILE__,__LINE__);
-                    exit(EXIT_FAILURE);
-                }
             case K10_FAMILY:
                 allowed = allowed_amd;
                 break;
@@ -718,7 +711,7 @@ int main(void)
             else
             {
 		        socket_count = cntr;
-            
+
 		        for (int j=0; j<socket_count; j++)
 				{
 					for (int i=0; i<MAX_NUM_DEVICES; i++)
