@@ -47,9 +47,6 @@ int perfmon_init_westmereEX(int cpu_id)
     {
         lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     }
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
     return 0;
 }
 
@@ -492,14 +489,6 @@ int perfmon_init_westmereEX(int cpu_id)
         VERBOSEPRINTREG(cpu_id, westmereEX_box_map[id].ctrlRegister, LLU_CAST 0x0U, FREEZE_BOX_##id) \
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, westmereEX_box_map[id].ctrlRegister, 0x0U)); \
     }
-
-#define WEX_FREEZE_BOX_SAFE(id, safe_reg) \
-    if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(id))) \
-    { \
-        CHECK_MSR_READ_ERROR(msr_read(cpu_id, westmereEX_box_map[id].ctrlRegister, &safe_reg)); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, westmereEX_box_map[id].ctrlRegister, 0x0U)); \
-    }
-
 
 #define WEX_RESET_OVF_BOX(id) \
     if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(id))) \
