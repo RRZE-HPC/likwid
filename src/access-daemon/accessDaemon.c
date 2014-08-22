@@ -12,7 +12,7 @@
  *                Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -316,7 +316,7 @@ static void pci_read(AccessDataRecord* dRecord)
         }
     }
 
-    if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data)) 
+    if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data))
     {
         syslog(LOG_ERR, "Failed to read data from pci device file %s for device %u on socket %u",
                 pci_filepath,device,socketId);
@@ -354,7 +354,7 @@ static void pci_write(AccessDataRecord* dRecord)
         }
     }
 
-    if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data) 
+    if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
     {
         syslog(LOG_ERR, "Failed to write data to pci device file %s for device %u on socket %u",pci_filepath, device, socketId);
         dRecord->errorcode = ERR_RWFAIL;
@@ -442,7 +442,7 @@ static void daemonize(int* parentPid)
 
     /* Change the current working directory.  This prevents the current
        directory from being locked; hence not being able to remove it. */
-    if ((chdir("/")) < 0) 
+    if ((chdir("/")) < 0)
     {
         syslog(LOG_ERR, "chdir failed:  %s", strerror(errno));
         exit(EXIT_FAILURE);
@@ -517,13 +517,6 @@ int main(void)
                 }
                 break;
             case K8_FAMILY:
-                if (isIntel)
-                {
-                    syslog(LOG_ERR,
-                            "ERROR - [%s:%d] - Netburst architecture is not supported! Exiting! \n",
-                            __FILE__,__LINE__);
-                    exit(EXIT_FAILURE);
-                }
             case K10_FAMILY:
                 allowed = allowed_amd;
                 break;
