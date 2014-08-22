@@ -77,7 +77,8 @@ static char* pci_DevicePath[MAX_NUM_DEVICES] = {
  "10.1",   /* PCI_IMC_DEVICE_CH_1 */
  "10.4",   /* PCI_IMC_DEVICE_CH_2 */
  "10.5",   /* PCI_IMC_DEVICE_CH_3 */
- "0e.1",   /* PCI_HA_DEVICE */
+ "0e.1",   /* PCI_HA_DEVICE_0 */
+ "1c.1",   /* PCI_HA_DEVICE_1 */
  "08.2",   /* PCI_QPI_DEVICE_PORT_0 */
  "09.2",   /* PCI_QPI_DEVICE_PORT_1 */
  "08.6",   /* PCI_QPI_MASK_DEVICE_PORT_0 */
