@@ -629,12 +629,12 @@ int perfmon_setupCounterThread_westmereEX(int thread_id, PerfmonEventSet* eventS
                 }
                 break;  
 
-            case WBOXFIX0:
-                if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(WBOXFIX0)))
+            case WBOX0FIX:
+                if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(WBOX0FIX)))
                 {
                     flags = 0x1;
                     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
-                    VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, WBOXFIX0_CTRL);
+                    VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, WBOX0FIX_CTRL);
                     eventSet->regTypeMask |= REG_TYPE_MASK(WBOX);
                 }
                 break;
@@ -790,8 +790,8 @@ int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* event
                     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
                     core_ctrl_flags |= (1ULL<<(index+32));
                     break;
-                case WBOXFIX0:
-                    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(WBOXFIX0)))
+                case WBOX0FIX:
+                    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(WBOX0FIX)))
                     {
                         uflags[WBOX] |= (1<<31);
                     }
