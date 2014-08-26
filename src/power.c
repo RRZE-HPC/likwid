@@ -118,7 +118,7 @@ power_init(int cpuId)
         CHECK_MSR_READ_ERROR(msr_read(cpuId, MSR_PKG_POWER_INFO, &flags))
 
         power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
-        power_info.minPower =  (double) extractBitField(flags,15,16) * power_info.powerUnit;
+        power_info.minPower = (double) extractBitField(flags,15,16) * power_info.powerUnit;
         power_info.maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
         power_info.maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
     }

@@ -41,7 +41,8 @@
 
 
 PerfmonEvent* eventHash;
-RegisterMap* counter_map;
+RegisterMap* counter_map = NULL;
+BoxMap* box_map;
 int perfmon_numCounters;
 int perfmon_numArchEvents;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
@@ -61,17 +62,12 @@ int (*initThreadArch) (int cpu_id);
 static int
 getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
 {
+    int err = 0;
     int ret = FALSE;
-    int extended = -1;
-    extended = bstrchrp(reg,'{', 0);
-    bstring work_reg = bstrcpy(reg);
-    if (extended >= 0)
-    {
-        btrunc(work_reg, extended);
-    }
+    uint64_t tmp;
     for (int i=0; i< perfmon_numCounters; i++)
     {
-        if (biseqcstr(work_reg, counter_map[i].key))
+        if (biseqcstr(reg, counter_map[i].key))
         {
             *index = counter_map[i].index;
             *type = counter_map[i].type;
@@ -79,7 +75,49 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             break;
         }
     }
-    bdestroy(work_reg);
+    if (ret == TRUE && !((counter_map[*index].type == THERMAL) || (counter_map[*index].type == POWER)))
+    {
+        if (counter_map[*index].device == 0)
+        {
+            err = msr_read(0, counter_map[*index].configRegister, &tmp);
+            if (err != 0)
+            {
+                DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not readable on this machine,
+                                             counter_map[*index].key);
+                *type = NOTYPE;
+            }
+            else
+            {
+                err = msr_write(0, counter_map[*index].configRegister, 0x0ULL);
+                if (err != 0)
+                {
+                    DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not writeable on this machine,
+                                                 counter_map[*index].key);
+                    *type = NOTYPE;
+                }
+            }
+        }
+        else
+        {
+            err = pci_read(0, counter_map[*index].device, counter_map[*index].configRegister, (uint32_t*)&tmp);
+            if (err != 0)
+            {
+                DEBUG_PRINT(DEBUGLEV_DETAIL, PCI Counter %s not readable on this machine,
+                                             counter_map[*index].key);
+                *type = NOTYPE;
+            }
+            else
+            {
+                err = pci_write(0, counter_map[*index].device, counter_map[*index].configRegister, 0x0U);
+                if (err != 0)
+                {
+                    DEBUG_PRINT(DEBUGLEV_DETAIL, PCI Counter %s not writeable on this machine,
+                                                 counter_map[*index].key);
+                    *type = NOTYPE;
+                }
+            }
+        }
+    }
     return ret;
 }
 
@@ -107,18 +145,12 @@ checkCounter(bstring counterName, const char* limit)
     struct bstrList* tokens;
     int ret = FALSE;
     bstring limitString = bfromcstr(limit);
-    bstring str = bstrcpy(counterName);
 
     tokens = bstrListCreate();
     tokens = bsplit(limitString,'|');
-    i = bstrchrp(str,'{', 0);
-    if (i >= 0)
-    {
-        btrunc(str, i);
-    }
     for(i=0; i<tokens->qty; i++)
     {
-        if(bstrncmp(str, tokens->entry[i], blength(tokens->entry[i])))
+        if(bstrncmp(counterName, tokens->entry[i], blength(tokens->entry[i])))
         {
             ret = FALSE;
         }
@@ -128,21 +160,50 @@ checkCounter(bstring counterName, const char* limit)
             break;
         }
     }
-    bdestroy(str);
     bdestroy(limitString);
     bstrListDestroy(tokens);
     return ret;
+}
+
+static int assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type, int zero_value)
+{
+    int found_double = -1;
+    int return_index = index;
+    for (int k = 0; k < index; k++)
+    {
+        if (event->options[k].type == type)
+        {
+            found_double = k;
+            break;
+        }
+    }
+    if (found_double >= 0)
+    {
+        index = found_double;
+    }
+    else
+    {
+        return_index++;
+    }
+    event->options[index].type = type;
+    if (zero_value)
+    {
+        event->options[index].value = 0;
+    }
+    else
+    {
+        sscanf(bdata(entry), "%x", &(event->options[index].value));
+    }
+    return return_index;
 }
 
 static int
 parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
 {
     int i,j;
-    int optStart = -1;
-    int optEnd = -1;
     struct bstrList* subtokens;
 
-    for (i = 0; i < MAX_EVENT_OPTIONS; i++)
+    for (i = event->numberOfOptions; i < MAX_EVENT_OPTIONS; i++)
     {
         event->options[i].type = EVENT_OPTION_NONE;
     }
@@ -154,33 +215,38 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
     }
 
     subtokens = bstrListCreate();
-    event->numberOfOptions = 0;
 
     for (i=2;i<tokens->qty;i++)
     {
+        int insert_index = event->numberOfOptions;
         subtokens = bsplit(tokens->entry[i],'=');
         btolower(subtokens->entry[0]);
         if (subtokens->qty == 1)
         {
             if (biseqcstr(subtokens->entry[0], "edgedetect") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_EDGE;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_EDGE, 1);
             }
             else if (biseqcstr(subtokens->entry[0], "invert") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_INVERT;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_INVERT, 1);
             }
             else if (biseqcstr(subtokens->entry[0], "kernel") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_COUNT_KERNEL;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_COUNT_KERNEL, 1);
             }
             else if (biseqcstr(subtokens->entry[0], "occ_edgedetect") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_OCCUPANCY_EDGE;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_OCCUPANCY_EDGE, 1);
             }
             else if (biseqcstr(subtokens->entry[0], "occ_invert") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_OCCUPANCY_INVERT;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_OCCUPANCY_INVERT, 1);
             }
             else
             {
@@ -192,57 +258,67 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
         {
             if (biseqcstr(subtokens->entry[0], "opcode") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_OPCODE;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_OPCODE, 0);
             }
             else if (biseqcstr(subtokens->entry[0], "match0") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_MATCH0;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_MATCH0, 0);
             }
             else if (biseqcstr(subtokens->entry[0], "match1") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_MATCH1;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_MATCH1, 0);
             }
             else if (biseqcstr(subtokens->entry[0], "mask0") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_MASK0;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_MASK0, 0);
             }
             else if (biseqcstr(subtokens->entry[0], "mask1") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_MASK1;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_MASK1, 0);
             }
             else if (biseqcstr(subtokens->entry[0], "nid") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_NID;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_NID, 0);
             }
             else if (biseqcstr(subtokens->entry[0], "tid") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_TID;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_TID, 0);
             }
             else if (biseqcstr(subtokens->entry[0], "state") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_STATE;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_STATE, 0);
             }
             else if (biseqcstr(subtokens->entry[0], "threshold") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_THRESHOLD;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_THRESHOLD, 0);
             }
             else if (biseqcstr(subtokens->entry[0], "occupancy") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_OCCUPANCY;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_OCCUPANCY, 0);
             }
             else if (biseqcstr(subtokens->entry[0], "occ_filter") == 1)
             {
-                event->options[event->numberOfOptions].type = EVENT_OPTION_OCCUPANCY_FILTER;
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_OCCUPANCY_FILTER, 0);
             }
             else
             {
                 continue;
             }
-            sscanf(bdata(subtokens->entry[1]), "%x", &(event->options[event->numberOfOptions].value));
+            //sscanf(bdata(subtokens->entry[1]), "%x", &(event->options[event->numberOfOptions].value));
         }
-        event->numberOfOptions++;
+        //event->numberOfOptions++;
     }
-    
     for(i=event->numberOfOptions-1;i>=0;i--)
     {
         if (!(OPTIONS_TYPE_MASK(event->options[i].type) & (counter_map[index].optionMask|event->optionMask)))
@@ -320,6 +396,24 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
     return event->numberOfOptions;
 }
 
+int
+getCounterTypeOffset(int index)
+{
+    int off = 0;
+    for (int j=index-1;j>=NUM_COUNTERS_CORE_IVYBRIDGE;j--)
+    {
+        if (counter_map[index].type == counter_map[j].type)
+        {
+            off++;
+        }
+        else
+        {
+            break;
+        }
+    }
+    return off;
+}
+
 /* DEPRECATED */
 void
 perfmon_printCounters(FILE* OUTSTREAM)
@@ -360,6 +454,7 @@ perfmon_printEvents(FILE* OUTSTREAM)
 void
 perfmon_init_maps(void)
 {
+    box_map = NULL;
     switch ( cpuid_info.family )
     {
         case P6_FAMILY:
@@ -428,6 +523,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsWestmereEX;
                     counter_map = westmereEX_counter_map;
                     perfmon_numCounters = perfmon_numCountersWestmereEX;
+                    box_map = westmereEX_box_map;
                     break;
 
                 case NEHALEM_BLOOMFIELD:
@@ -456,6 +552,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsIvybridge;
                     counter_map = ivybridge_counter_map;
                     perfmon_numCounters = perfmon_numCountersIvybridge;
+                    box_map = ivybridge_box_map;
                     break;
 
                 case HASWELL:
@@ -478,6 +575,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsSandybridge;
                     counter_map = sandybridge_counter_map;
                     perfmon_numCounters = perfmon_numCountersSandybridge;
+                    box_map = sandybridge_box_map;
                     break;
 
                 default:
@@ -846,6 +944,7 @@ perfmon_addEventSet(char* eventCString)
 {
     int i, j;
     int groupIndex;
+    int new_events = 0;
     bstring eventBString;
     struct bstrList* eventtokens;
     struct bstrList* subtokens;
@@ -965,8 +1064,7 @@ perfmon_addEventSet(char* eventCString)
                 ERROR_PRINT(Cannot parse options in %s, bdata(eventtokens->entry[i]));
                 continue;
             }
-
-            eventSet->numberOfEvents++;
+            
             eventSet->regTypeMask |= REG_TYPE_MASK(reg_type);
 
             event->threadCounter = (PerfmonCounter*) malloc(
@@ -984,14 +1082,22 @@ perfmon_addEventSet(char* eventCString)
                 event->threadCounter[j].overflows = 0;
                 event->threadCounter[j].init = FALSE;
             }
-
-            if (perfmon_verbosity > DEBUGLEV_ONLY_ERROR)
+            if (reg_type != NOTYPE)
             {
+                eventSet->numberOfEvents++;
                 DEBUG_PRINT(DEBUGLEV_INFO,
-                            Added event %s for counter %s to group %d,
-                            event->event.name, 
-                            counter_map[event->index].key,
-                            groupSet->numberOfActiveGroups);
+                        Added event %s for counter %s to group %d,
+                        event->event.name, 
+                        counter_map[event->index].key,
+                        groupSet->numberOfActiveGroups);
+            }
+            else
+            {
+                DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
+                        Event %s for counter %s to group %d not configurable because of unavailable counter,
+                        event->event.name, 
+                        counter_map[event->index].key,
+                        groupSet->numberOfActiveGroups);
             }
         }
     }
@@ -1004,6 +1110,7 @@ perfmon_addEventSet(char* eventCString)
     }
     else
     {
+        ERROR_PLAIN_PRINT(No event in given event string can be configured);
         return -EINVAL;
     }
 }
@@ -1020,7 +1127,6 @@ perfmon_setupCounters(int groupId)
 
     for(i=0;i<groupSet->numberOfThreads;i++)
     {
-        //CHECK_AND_RETURN_ERROR(initThreadArch(groupSet->threads[i].processorId), Init failed);
         CHECK_AND_RETURN_ERROR(perfmon_setupCountersThread(i, &groupSet->groups[groupId]),
             Setup of counters failed);
     }
@@ -1128,10 +1234,10 @@ int perfmon_readGroupCounters(int groupId)
     return __perfmon_readCounters(groupId);
 }
 
-uint64_t
+double
 perfmon_getResult(int groupId, int eventId, int threadId)
 {
-    uint64_t result = 0x0ULL;
+    double result = 0.0;
     PerfmonEventSetEntry* event;
     PerfmonCounter* counter;
     if (unlikely(groupSet == NULL))
@@ -1152,18 +1258,19 @@ perfmon_getResult(int groupId, int eventId, int threadId)
     }
     event = &(groupSet->groups[groupId].events[eventId]);
     counter = &(event->threadCounter[threadId]);
-    
-    result = counter->counterData;
-    
-    if ((counter_map[event->index].type == FIXED) || 
-                    (counter_map[event->index].type == PMC))
+    if (counter->overflows == 0)
     {
-        result += counter->overflows * get_maxPerfCounterValue();
+        result += (double) (counter->counterData - counter->startData);
     }
-    else if (counter_map[event->index].type == POWER)
+    if (counter->overflows > 0)
     {
-        result += counter->overflows * get_maxPowerCounterValue();
-        result -= counter->startData;
+        result += (double) ((get_maxPerfCounterValue() - counter->startData) + counter->counterData);
+        counter->overflows--;
+    }
+    result += (double) (counter->overflows * get_maxPerfCounterValue());
+
+    if (counter_map[event->index].type == POWER)
+    {
         result *= power_info.energyUnit;
     }
     return result;
