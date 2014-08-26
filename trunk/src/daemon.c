@@ -112,6 +112,7 @@ daemon_start(uint64_t duration)
             exit(1);
         }
         signal(SIGUSR1, daemon_intr);
+        signal(SIGINT, daemon_intr);
         while (daemon_running == 1)
         {
             timer_stop(&timeData);
@@ -129,16 +130,20 @@ daemon_start(uint64_t duration)
             }
             //perfmon_logCounterResults( timer_print(&timeData) );
             nr_events = perfmon_getNumberOfEvents(group);
-            
+            fprintf(stderr, "%d,%d,%d,%f,", group, nr_events, nr_threads, timer_print(&timeData));
             for(i=0;i<nr_events;i++)
             {
-                fprintf(stderr, "%d %d %d %f %d ", group,nr_events, nr_threads, timer_print(&timeData), i);
+                fprintf(stderr, "%d,", i);
                 for(j = 0;j<nr_threads;j++)
                 {
-                    fprintf(stderr, "%lu ", perfmon_getResult(group, i, j));
+                    fprintf(stderr, "%f", perfmon_getResult(group, i, j));
+                    if ((i < nr_events) && (j < nr_threads))
+                    {
+                        fprintf(stderr, ",");
+                    }
                 }
-                fprintf(stderr,"\n");
             }
+            fprintf(stderr,"\n");
             if (nr_groups > 1 && !first_round)
             {
                 group++;
@@ -160,6 +165,7 @@ daemon_start(uint64_t duration)
             usleep(duration);
         }
         signal(SIGUSR1, SIG_DFL);
+        signal(SIGINT, SIG_DFL);
         group = perfmon_getIdOfActiveGroup();
         if (group < 0)
         {
@@ -178,13 +184,12 @@ daemon_start(uint64_t duration)
             fprintf(stderr, "%d,", i);
             for(j = 0;j<nr_threads;j++)
             {
-                fprintf(stderr, "%lu", perfmon_getResult(group, i, j));
-                if ((i != nr_events-1) && (j != nr_threads-1))
+                fprintf(stderr, "%f", perfmon_getResult(group, i, j));
+                if ((i < nr_events) && (j < nr_threads))
                 {
                     fprintf(stderr, ",");
                 }
             }
-            
         }
         fprintf(stderr,"\n");
         exit(0);
