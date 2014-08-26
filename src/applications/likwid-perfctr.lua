@@ -115,6 +115,15 @@ markerFile = string.format("/tmp/likwid_%d.txt",likwid_getpid("pid"))
 
 
 for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
+    
+    if (type(arg) == "string") then
+        local s,e = arg:find("-");
+        if s == 1 then
+            print(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
+            print("Did you forget an argument to an option?")
+            os.exit(1)
+        end
+    end
     if (opt == "h") then
         usage()
         os.exit(0)
@@ -405,7 +414,7 @@ if use_marker == true then
 elseif use_wrapper or use_stethoscope then
     for i, group in pairs(group_ids) do
         print(string.format("Group %d: %s", group, group_list[group]["GroupString"]))
-        likwid.print_output(group, group_list[group], cpulist)
+        likwid.print_output(group, group_list[group], cpulist, use_csv)
     end
 end
 
