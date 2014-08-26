@@ -22,6 +22,7 @@
 #include <configuration.h>
 #include <msr.h>
 #include <error.h>
+#include <pci.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -196,7 +197,7 @@ static int lua_likwid_finalize(lua_State* L)
 static int lua_likwid_getResult(lua_State* L)
 {
     int groupId, eventId, threadId;
-    uint64_t result = 0;
+    double result = 0;
     groupId = lua_tonumber(L,1);
     eventId = lua_tonumber(L,2);
     threadId = lua_tonumber(L,3);
@@ -497,7 +498,6 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
     lua_newtable(L);
     for(i=1;i<=perfmon_numCounters;i++)
     {
-        fprintf(stderr, "Counter %s with Mask 0x%x\n",counter_map[i-1].key,counter_map[i-1].optionMask);
         lua_pushunsigned(L,i);
         lua_newtable(L);
         lua_pushstring(L,"Name");
@@ -508,7 +508,6 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
         lua_settable(L,-3);
         lua_settable(L,-3);
     }
-    fprintf(stderr, "Set up Counter list\n");
     lua_settable(L,-3);
     lua_pushstring(L,"Events");
     lua_newtable(L);
@@ -534,7 +533,34 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
         lua_settable(L,-3);
     }
     lua_settable(L,-3);
-    fprintf(stderr, "Set up Event list\n");
+    return 1;
+}
+
+static int lua_likwid_getOnlineDevices(lua_State* L)
+{
+    int i;
+    lua_newtable(L);
+    for(i=0;i<=MAX_NUM_PCI_DEVICES;i++)
+    {
+        if (pci_devices[i].online)
+        {
+            lua_pushstring(L,pci_devices[i].likwid_name);
+            lua_newtable(L);
+            lua_pushstring(L, "Name");
+            lua_pushstring(L,pci_devices[i].name);
+            lua_settable(L,-3);
+            lua_pushstring(L, "Path");
+            lua_pushstring(L,pci_devices[i].path);
+            lua_settable(L,-3);
+            lua_pushstring(L, "Type");
+            lua_pushstring(L,pci_types[pci_devices[i].type].name);
+            lua_settable(L,-3);
+            lua_pushstring(L, "TypeDescription");
+            lua_pushstring(L,pci_types[pci_devices[i].type].desc);
+            lua_settable(L,-3);
+        }
+        lua_settable(L,-3);
+    }
     return 1;
 }
 
@@ -1080,6 +1106,7 @@ int luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_putAffinityInfo",lua_likwid_putAffinityInfo);
     lua_register(L, "likwid_printAffinityDomains",lua_likwid_printAffinityDomains);
     lua_register(L, "likwid_getPowerInfo",lua_likwid_getPowerInfo);
+    lua_register(L, "likwid_getOnlineDevices", lua_likwid_getOnlineDevices);
     // Timer functions
     lua_register(L, "likwid_getCpuClock",lua_likwid_getCpuClock);
     lua_register(L, "likwid_startClock",lua_likwid_startClock);

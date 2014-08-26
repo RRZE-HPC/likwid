@@ -44,7 +44,7 @@ extern int perfmon_numCounters;
 extern int perfmon_numArchEvents;
 extern PerfmonEvent* eventHash;
 extern RegisterMap* counter_map;
-extern int perfmon_verbosity;
+
 
 extern int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
@@ -61,16 +61,19 @@ extern void perfmon_init_maps(void);
 extern void perfmon_finalize(void);
 extern int perfmon_switchActiveGroup(int new_group);
 
-extern uint64_t perfmon_getResult(int groupId, int eventId, int threadId);
+extern double perfmon_getResult(int groupId, int eventId, int threadId);
 extern int perfmon_getNumberOfGroups(void);
 extern int perfmon_getNumberOfEvents(int groupId);
 extern double perfmon_getTimeOfGroup(int groupId);
 extern int perfmon_getIdOfActiveGroup(void);
 extern int perfmon_getNumberOfThreads(void);
 
-extern void perfmon_printCounters(FILE* OUTSTREAM);
-extern void perfmon_printEvents(FILE* OUTSTREAM);
+//extern void perfmon_printCounters(FILE* OUTSTREAM);
+//extern void perfmon_printEvents(FILE* OUTSTREAM);
 extern int perfmon_accessClientInit(void);
+
+/* Internal helpers */
+extern int getCounterTypeOffset(int index);
 
 #if 0
 extern void perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set);

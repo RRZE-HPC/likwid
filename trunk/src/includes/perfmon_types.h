@@ -44,10 +44,7 @@
 
 
 /////////////////////////////////////////////
-typedef struct {
-    int             thread_id;
-    int             processorId;
-} PerfmonThread;
+
 
 typedef enum {
     EVENT_OPTION_NONE = 0,
@@ -111,6 +108,11 @@ static char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
 #define EVENT_OPTION_OCCUPANCY_FILTER_MASK (1ULL<<EVENT_OPTION_OCCUPANCY_FILTER)
 #define EVENT_OPTION_OCCUPANCY_EDGE_MASK (1ULL<<EVENT_OPTION_OCCUPANCY_EDGE)
 #define EVENT_OPTION_OCCUPANCY_INVERT_MASK (1ULL<<EVENT_OPTION_OCCUPANCY_INVERT)
+
+typedef struct {
+    int             thread_id;
+    int             processorId;
+} PerfmonThread;
 
 typedef struct {
     EventOptionType      type;

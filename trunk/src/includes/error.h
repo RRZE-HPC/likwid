@@ -36,6 +36,8 @@
 #include <msr.h>
 #include <pci.h>
 
+extern int perfmon_verbosity;
+
 #define str(x) #x
 
 #define FINALIZE      msr_finalize(); \
@@ -49,12 +51,12 @@
     exit(EXIT_FAILURE)
 
 #define ERROR_PLAIN_PRINT(msg) \
-   fprintf(stderr,  "ERROR - [%s:%d] " str(msg) "\n", __FILE__, __LINE__);  \
+   fprintf(stderr,  "ERROR - [%s:%s:%d] " str(msg) "\n", __FILE__, __func__,__LINE__);  \
    FINALIZE;
 
 
 #define ERROR_PRINT(fmt, ...) \
-   fprintf(stderr,  "ERROR - [%s:%d] %s.\n" str(fmt) "\n", __FILE__, __LINE__, strerror(errno), __VA_ARGS__);  \
+   fprintf(stderr,  "ERROR - [%s:%s:%d] %s.\n" str(fmt) "\n", __FILE__,  __func__,__LINE__, strerror(errno), __VA_ARGS__);  \
    FINALIZE;
 
 #define CHECK_ERROR(func, msg)  \
@@ -84,7 +86,7 @@
     if (perfmon_verbosity == 3) \
     { \
         printf("DEBUG - [%s:%d] "  str(msg) " [%d] Register 0x%llX , Flags: 0x%llX \n",  \
-                __FILE__, __LINE__,  (cpuid), LLU_CAST (reg), LLU_CAST (flags)); \
+                __func__, __LINE__,  (cpuid), LLU_CAST (reg), LLU_CAST (flags)); \
         fflush(stdout);  \
     }
     
@@ -92,7 +94,7 @@
     if (perfmon_verbosity == 3) \
     { \
         printf("DEBUG - [%s:%d] "  str(msg) " [%d] Device %d Register 0x%llX , Flags: 0x%llX \n",  \
-                __FILE__, __LINE__,  (cpuid), LLU_CAST (reg), LLU_CAST (flags)); \
+                __func__, __LINE__,  (cpuid), dev, LLU_CAST (reg), LLU_CAST (flags)); \
         fflush(stdout);  \
     }
 

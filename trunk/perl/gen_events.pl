@@ -7,11 +7,14 @@ my $arch;
 my $key;
 my $optkey = "";
 my $eventId;
+my $eventname;
 my $limit;
 my $umask;
 my $cmask;
 my $cfg;
 my $opts = "";
+my $defoptkey = "";
+my $defopts = "";
 my $num_events=0;
 my @events = ();
 
@@ -35,42 +38,91 @@ while (<INFILE>) {
     if (/^#/) {
         # Skip comment
     }elsif (/(EVENT_[A-Z0-9_]*)[ ]+(0x[A-F0-9]+)[ ]+([A-Z0-9|]+)/) {
+        $eventname = $1;
         $eventId = $2;
         $limit = $3;
-        $opts = "";
+        $opts = "EVENT_OPTION_NONE_MASK";
     } elsif (/UMASK_([A-Z0-9_]*)[ ]*(0x[A-F0-9]+)[ ]*(0x[A-F0-9]+)[ ]*(0x[A-F0-9]+)/) {
         $key   = $1;
-        if ($key ne $optkey or $optkey eq "")
-        {
-            $opts = ""
-        }
         $umask = $2;
         $cfg   = $3;
         $cmask = $4;
+        my $defaultopts = "{";
+        my $nropts = 0;
+        if ($key ne $optkey or $optkey eq "")
+        {
+            $opts = "EVENT_OPTION_NONE_MASK";
+        }
+        if ($key =~ m/$defoptkey[A-Z0-9_]*/)
+        {
+            my @optlist = split(",", $defopts);
+            foreach my $opt (@optlist)
+            {
+                my @tmplist = split("=", $opt);
+                $defaultopts = $defaultopts."{".$tmplist[0].",".$tmplist[1]."},";
+                $nropts++;
+            }
+        }
+        if (length($defaultopts) > 1)
+        {
+            substr($defaultopts,length($defaultopts)-1,1) = '}';
+        }
+        else
+        {
+            $defaultopts = $defaultopts."}";
+        }
         push(@events,{name=>$key,
                 limit=>$limit,
                 eventId=>$eventId,
                 cfg=>$cfg,
                 cmask=>$cmask,
                 mask=>$umask,
-                opts=>$opts});
+                nropts=>$nropts,
+                opts=>$opts,
+                defopts=>$defaultopts});
         $num_events++;
     } elsif (/UMASK_([A-Z0-9_]*)[ ]*(0x[A-F0-9]+)/) {
         $key = $1;
+        $umask = $2;
+        my $defaultopts = "{";
+        my $nropts = 0;
         if ($key ne $optkey or $optkey eq "")
         {
-            $opts = ""
+            $opts = "EVENT_OPTION_NONE_MASK"
         }
-        $umask = $2;
+        if ($key =~ m/$defoptkey[A-Z0-9_]*/)
+        {
+            my @optlist = split(",", $defopts);
+            foreach my $opt (@optlist)
+            {
+                my @tmplist = split("=", $opt);
+                $defaultopts = $defaultopts."{".$tmplist[0].",".$tmplist[1]."},";
+                $nropts++;
+            }
+        }
+        if (length($defaultopts) > 1)
+        {
+            substr($defaultopts,length($defaultopts)-1,1) = '}';
+        }
+        else
+        {
+            $defaultopts = $defaultopts."}";
+        }
         push(@events,{name=>$key,
                 limit=>$limit,
                 eventId=>$eventId,
                 cfg=>0x00,
                 cmask=>0x00,
                 mask=>$umask,
-                opts=>$opts});
+                nropts=>$nropts,
+                opts=>$opts,
+                defopts=>$defaultopts});
         $num_events++;
-    } elsif (/OPTIONS_([A-Z0-9_]*)[ ]*([A-Z0-9_|]+)/) {
+    }
+    elsif (/DEFAULT_OPTIONS_([A-Z0-9_]*)[ ]*([xA-Z0-9_=,]*)/) {
+        $defoptkey = $1;
+        $defopts = $2;
+    } elsif (/OPTIONS_([A-Z0-9_]*)[ ]*([A-Z0-9_\|]+)/) {
         $optkey = $1;
         $opts = $2;
     }
@@ -89,9 +141,7 @@ print OUTFILE "static PerfmonEvent  ".$arch."_arch_events[NUM_ARCH_EVENTS_$ucArc
 
 foreach my $event (@events) {
     print OUTFILE <<END;
-$delim {\"$event->{name}\",
-   \"$event->{limit}\", 
-   $event->{eventId},$event->{mask},$event->{cfg},$event->{cmask},0,$event->{opts}}
+$delim {\"$event->{name}\", \"$event->{limit}\", $event->{eventId},$event->{mask},$event->{cfg},$event->{cmask},$event->{nropts},$event->{opts},$event->{defopts}}
 END
     $delim = ',';
 }

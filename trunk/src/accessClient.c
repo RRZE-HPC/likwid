@@ -93,8 +93,8 @@ startDaemon(void)
 
     if (access(exeprog, X_OK))
     {
-        fprintf(stderr, "Failed to find the daemon '%s': %s\n", exeprog, strerror(errno));
-         exit(EXIT_FAILURE);
+        ERROR_PRINT(Failed to find the daemon '%s'\n, exeprog);
+        exit(EXIT_FAILURE);
     }
 
     if (accessClient_mode == DAEMON_AM_ACCESS_D)
@@ -108,7 +108,7 @@ startDaemon(void)
             if (ret < 0)
             {
                 //ERRNO_PRINT;
-                fprintf(stderr, "Failed to execute the daemon '%s': %s\n", exeprog, strerror(errno));
+                ERROR_PRINT(Failed to execute the daemon '%s'\n, exeprog);
                 exit(EXIT_FAILURE);
             }
         }
@@ -126,7 +126,7 @@ startDaemon(void)
     filepath = strdup(address.sun_path);
     if (accessClient_mode == DAEMON_AM_ACCESS_D)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, socket pathname is %s, filepath);
+        DEBUG_PRINT(DEBUGLEV_INFO, Socket pathname is %s, filepath);
     }
 
     while (timeout > 0)
@@ -167,7 +167,7 @@ accessClient_setaccessmode(int mode)
 {
     if ((accessClient_mode > DAEMON_AM_ACCESS_D) || (accessClient_mode < DAEMON_AM_DIRECT))
     {
-        fprintf(stderr, "Invalid accessmode %d\n", accessClient_mode);
+        DEBUG_PRINT(DEBUGLEV_INFO, Invalid accessmode %d, accessClient_mode);
         exit(EXIT_FAILURE);
     }
 
@@ -242,8 +242,10 @@ accessClient_write(
     CHECK_ERROR(write(socket_fd, &data, sizeof(AccessDataRecord)), socket write failed);
     CHECK_ERROR(read(socket_fd, &data, sizeof(AccessDataRecord)), socket read failed);
 
-    if ((data.errorcode != ERR_NOERROR) || (data.data != 0x00ULL))
+    if ((data.errorcode != ERR_NOERROR) || (data.data != sdata))
     {
+        DEBUG_PRINT(DEBUGLEV_INFO, Got error %s from access daemon and data is %llu,
+                                    accessClient_strerror(data.errorcode), data.data);
         return -EIO;
     }
 

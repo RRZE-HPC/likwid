@@ -103,29 +103,9 @@ static char* filepath;
 static const char* ident = "accessD";
 static FuncPrototype allowed = NULL;
 static int FD_MSR[MAX_NUM_THREADS];
-static int FD_PCI[MAX_NUM_NODES][MAX_NUM_DEVICES];
+static int FD_PCI[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
 static int isPCIUncore = 0;
 
-/*static char* pci_DevicePath[MAX_NUM_DEVICES] = {
-    "13.5", "13.6", "13.1", "10.0", "10.1", "10.4",
-    "10.5", "0e.1", "08.0", "09.0", "08.6", "09.6",
-    "08.0", "09.0" };*/
-static char* pci_DevicePath[MAX_NUM_DEVICES] = {
- "13.5",   /* PCI_R3QPI_DEVICE_LINK_0 */
- "13.6",   /* PCI_R3QPI_DEVICE_LINK_1 */
- "13.1",   /* PCI_R2PCIE_DEVICE */
- "10.0",   /* PCI_IMC_DEVICE_CH_0 */
- "10.1",   /* PCI_IMC_DEVICE_CH_1 */
- "10.4",   /* PCI_IMC_DEVICE_CH_2 */
- "10.5",   /* PCI_IMC_DEVICE_CH_3 */
- "0e.1",   /* PCI_HA_DEVICE_0 */
- "1c.1",   /* PCI_HA_DEVICE_1 */
- "08.2",   /* PCI_QPI_DEVICE_PORT_0 */
- "09.2",   /* PCI_QPI_DEVICE_PORT_1 */
- "08.6",   /* PCI_QPI_MASK_DEVICE_PORT_0 */
- "09.6",   /* PCI_QPI_MASK_DEVICE_PORT_1 */
- "08.0",   /* PCI_QPI_MISC_DEVICE_PORT_0 */
- "09.0" }; /* PCI_QPI_MISC_DEVICE_PORT_1 */
 static char pci_filepath[MAX_PATH_LENGTH];
 
 /* Socket to bus mapping -- will be determined at runtime;
@@ -306,12 +286,13 @@ static void pci_read(AccessDataRecord* dRecord)
     {
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
         strncat(pci_filepath, socket_bus[socketId], 10);
-        strncat(pci_filepath, pci_DevicePath[device], 20);
+        strncat(pci_filepath, pci_devices[device].path, 20);
         FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
 
         if ( FD_PCI[socketId][device] < 0)
         {
-            syslog(LOG_ERR, "Failed to open device file %s for device %u on socket %u", pci_filepath, device, socketId);
+            syslog(LOG_ERR, "Failed to open device file %s for device %s on socket %u", pci_filepath, 
+                    pci_devices[device].name, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
@@ -319,8 +300,8 @@ static void pci_read(AccessDataRecord* dRecord)
 
     if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data))
     {
-        syslog(LOG_ERR, "Failed to read data from pci device file %s for device %u on socket %u",
-                pci_filepath,device,socketId);
+        syslog(LOG_ERR, "Failed to read data from pci device file %s for device %s on socket %u",
+                pci_filepath,pci_devices[device].name,socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -343,13 +324,14 @@ static void pci_write(AccessDataRecord* dRecord)
     {
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
         strncat(pci_filepath, socket_bus[socketId], 10);
-        strncat(pci_filepath, pci_DevicePath[device], 20);
+        strncat(pci_filepath, pci_devices[device].path, 20);
 
         FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
 
         if ( FD_PCI[socketId][device] < 0)
         {
-            syslog(LOG_ERR, "Failed to open device file %s for device %u on socket %u", pci_filepath, device, socketId);
+            syslog(LOG_ERR, "Failed to open device file %s for device %s on socket %u", pci_filepath, 
+                        pci_devices[device].name, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
@@ -357,7 +339,8 @@ static void pci_write(AccessDataRecord* dRecord)
 
     if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
     {
-        syslog(LOG_ERR, "Failed to write data to pci device file %s for device %u on socket %u",pci_filepath, device, socketId);
+        syslog(LOG_ERR, "Failed to write data to pci device file %s for device %s on socket %u",pci_filepath, 
+                pci_devices[device].name, socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -483,12 +466,12 @@ int main(void)
     {
         uint32_t  eax = 0x00;
         uint32_t  ebx = 0x00;
-        int isIntel = 1;
+        /*int isIntel = 1;
         CPUID;
         if (ebx == 0x68747541U)
         {
             isIntel = 0;
-        }
+        }*/
 
         eax = 0x01;
         CPUID;
@@ -617,7 +600,7 @@ int main(void)
         {
             for (int j=0; j<MAX_NUM_NODES; j++)
             {
-                for (int i=0; i<MAX_NUM_DEVICES; i++)
+                for (int i=0; i<MAX_NUM_PCI_DEVICES; i++)
                 {
                     FD_PCI[j][i] = 0;
                 }
@@ -684,7 +667,7 @@ int main(void)
                     __FILE__, __LINE__, strerror(errno));
             stop_daemon();
         }
-        else if (ret == 0)
+        else if ((ret == 0) && (dRecord.type != DAEMON_EXIT))
         {
             syslog(LOG_ERR, "ERROR - [%s:%d] zero read", __FILE__, __LINE__);
             stop_daemon();
