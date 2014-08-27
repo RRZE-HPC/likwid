@@ -301,7 +301,7 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
     return maxNumLevels;
 }
 
-static recheck_numHWThreads()
+static int recheck_numHWThreads()
 {
     int cpucount = 0;
     char line[1024];

@@ -109,11 +109,13 @@ typedef struct {
 } PerfmonCounterMap;
 
 typedef struct {
-    char* key;
+    const char* key;
     PerfmonGroup index;
     int isUncore;
-    char* info;
-    char* config;
+    const char* info;
+    const char* config;
+    int derivedCounters;
+    const char ** derivedCounterNames;
 } PerfmonGroupMap;
 
 typedef struct {
@@ -131,7 +133,7 @@ typedef struct {
 typedef struct {
     int       init;
     int       id;  /* TODO id is only used for EX type processors */
-    uint64_t  counterData;
+    double    counterData;
 } PerfmonCounter;
 
 typedef struct {
