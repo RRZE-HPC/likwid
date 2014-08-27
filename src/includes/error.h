@@ -31,6 +31,18 @@
 #ifndef ERROR_H
 #define ERROR_H
 
+#ifdef PURGE_OUTPUT
+#ifdef fprintf
+#undef fprintf
+#endif
+#define fprintf(...)
+#endif
+
+#ifdef printf
+#undef printf
+#endif
+#define printf(...)
+
 #include <errno.h>
 #include <string.h>
 #include <msr.h>

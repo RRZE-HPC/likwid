@@ -60,7 +60,7 @@ HAS_SCHEDAFFINITY = $(shell if [ $(GLIBC_VERSION) -lt 4 ]; then \
 include ./config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 INCLUDES  += -I./src/includes  -I$(BUILD_DIR)
-LIBS      +=
+LIBS      += 
 DEFINES   += -DVERSION=$(VERSION)         \
 		 -DRELEASE=$(RELEASE)                 \
 		 -DCFGFILE=$(CFG_FILE_PATH)           \
@@ -68,7 +68,7 @@ DEFINES   += -DVERSION=$(VERSION)         \
 		 -DMAX_NUM_NODES=$(MAX_NUM_NODES)     \
 		 -DHASH_TABLE_SIZE=$(HASH_TABLE_SIZE) \
 		 -DLIBLIKWIDPIN=$(LIBLIKWIDPIN)       \
-		 -DLIKWIDFILTERPATH=$(LIKWIDFILTERPATH)
+		 -DLIKWIDFILTERPATH=$(LIKWIDFILTERPATH) 
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
@@ -87,9 +87,10 @@ endif
 
 LIKWID_LIB = liblikwid
 ifeq ($(SHARED_LIBRARY),true)
-CFLAGS += $(SHARED_CFLAGS)
+CFLAGS += $(SHARED_CFLAGS) -ggdb
 DYNAMIC_TARGET_LIB := $(LIKWID_LIB).so
 LIBS += -L. -llikwid
+SHARED_LFLAGS += -lm -lpthread
 else
 STATIC_TARGET_LIB := $(LIKWID_LIB).a
 endif
@@ -201,7 +202,7 @@ $(STATIC_TARGET_LIB): $(OBJ)
 
 $(DYNAMIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE SHARED LIB  $(DYNAMIC_TARGET_LIB)"
-	$(Q)${CC} $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) -lm
+	$(Q)${CC} $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) -lm $(SHARED_LFLAGS) 
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  Build access daemon $(DAEMON_TARGET)"
@@ -310,8 +311,10 @@ install:
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-bench.1 > $(MANPREFIX)/man1/likwid-bench.1
 	@chmod 644 $(MANPREFIX)/man1/likwid-*
 	@echo "===> INSTALL headers to $(PREFIX)/include"
-	@mkdir -p $(PREFIX)/include
+	@mkdir -p $(PREFIX)/include/likwid
 	@cp -f src/includes/likwid*.h  $(PREFIX)/include/
+	@cp -f src/includes/*  $(PREFIX)/include/likwid
+	@cp -f GCC/perfmon_group_types.h  $(PREFIX)/include/likwid
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL libraries to $(PREFIX)/lib"
 	@mkdir -p $(PREFIX)/lib
@@ -323,6 +326,8 @@ install:
 	@chmod 755 $(LIKWIDFILTERPATH)/*
 	@echo 
 	@echo "Please set suitable permissions and capabilities\nfor the daemon applications in $(PREFIX)/sbin"
+	@chown root $(PREFIX)/sbin/likwid-accessD
+	@chmod u+s $(PREFIX)/sbin/likwid-accessD	
 
 uninstall:
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
