@@ -143,7 +143,6 @@ static int lua_likwid_init(lua_State* L)
 static int lua_likwid_addEventSet(lua_State* L)
 {
     int groupId, n;
-    char eventString[1000];
     const char* tmpString;
     n = lua_gettop(L);
     tmpString = luaL_checkstring(L, n);
