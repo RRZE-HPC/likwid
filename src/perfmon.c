@@ -44,6 +44,7 @@ PerfmonEvent* eventHash;
 RegisterMap* counter_map = NULL;
 BoxMap* box_map;
 int perfmon_numCounters;
+int perfmon_numCoreCounters;
 int perfmon_numArchEvents;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
@@ -65,7 +66,9 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
     int err = 0;
     int ret = FALSE;
     uint64_t tmp;
-    for (int i=0; i< perfmon_numCounters; i++)
+    int check_range = (cpuid_info.supportUncore == 1 ? perfmon_numCounters : perfmon_numCoreCounters);
+
+    for (int i=0; i< check_range; i++)
     {
         if (biseqcstr(reg, counter_map[i].key))
         {
@@ -75,7 +78,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             break;
         }
     }
-    if (ret == TRUE && !((counter_map[*index].type == THERMAL) || (counter_map[*index].type == POWER)))
+    if ((ret) && (counter_map[*index].type != THERMAL) && (counter_map[*index].type != POWER))
     {
         if (counter_map[*index].device == 0)
         {
@@ -116,6 +119,16 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
                     *type = NOTYPE;
                 }
             }
+        }
+    }
+    else if ((ret) && (counter_map[*index].type == POWER))
+    {
+        err = msr_read(0, counter_map[*index].counterRegister, &tmp);
+        if (err != 0)
+        {
+            DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not readable on this machine,
+                                         counter_map[*index].key);
+            *type = NOTYPE;
         }
     }
     return ret;
@@ -165,7 +178,8 @@ checkCounter(bstring counterName, const char* limit)
     return ret;
 }
 
-static int assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type, int zero_value)
+static int 
+assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type, int zero_value)
 {
     int found_double = -1;
     int return_index = index;
@@ -247,6 +261,16 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
             {
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
                                     event->numberOfOptions, EVENT_OPTION_OCCUPANCY_INVERT, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "in_trans") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_IN_TRANS, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "in_trans_aborted") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_IN_TRANS_ABORT, 1);
             }
             else
             {
@@ -552,6 +576,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsIvybridge;
                     counter_map = ivybridge_counter_map;
                     perfmon_numCounters = perfmon_numCountersIvybridge;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersIvybridge;
                     box_map = ivybridge_box_map;
                     break;
 
@@ -566,6 +591,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsHaswell;
                     counter_map = haswell_counter_map;
                     perfmon_numCounters = perfmon_numCountersHaswell;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersHaswell;
                     break;
 
                 case SANDYBRIDGE:
@@ -576,6 +602,7 @@ perfmon_init_maps(void)
                     counter_map = sandybridge_counter_map;
                     perfmon_numCounters = perfmon_numCountersSandybridge;
                     box_map = sandybridge_box_map;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersSandybridge;
                     break;
 
                 default:
@@ -950,8 +977,7 @@ perfmon_addEventSet(char* eventCString)
     struct bstrList* subtokens;
     PerfmonEventSet* eventSet;
     PerfmonEventSetEntry* event;
-    RegisterType reg_type;
-    
+
     if (eventCString == NULL)
     {
         DEBUG_PLAIN_PRINT(1, Event string is empty. Trying environment variable LIKWID_EVENTS);
@@ -1030,43 +1056,46 @@ perfmon_addEventSet(char* eventCString)
     for(i=0;i<eventtokens->qty;i++)
     {
         event = &(eventSet->events[i]);
-
         subtokens = bsplit(eventtokens->entry[i],':');
         if (subtokens->qty < 2)
         {
-            ERROR_PRINT(Cannot parse event descriptor %s\n,eventtokens->entry[i]);
+            fprintf(stderr,"Cannot parse event descriptor %s\n",eventtokens->entry[i]);
             continue;
         }
         else
         {
-            if (!getIndexAndType(subtokens->entry[1], &event->index, &reg_type))
+            if (!getIndexAndType(subtokens->entry[1], &event->index,&event->type))
             {
-                ERROR_PRINT(Counter register %s not supported,bdata(
+                fprintf(stderr,"Counter register %s not supported\n",bdata(
                         subtokens->entry[1]));
-                continue;
+                event->type = NOTYPE;
+                goto past_checks;
             }
 
             if (!getEvent(subtokens->entry[0], &event->event))
             {
-                ERROR_PRINT(Event %s not found for current architecture,
+                fprintf(stderr,"Event %s not found for current architecture\n",
                      bdata(subtokens->entry[0]));
-                continue;
+                event->type = NOTYPE;
+                goto past_checks;
             }
            
             if (!checkCounter(subtokens->entry[1], event->event.limit))
             {
-                ERROR_PRINT(Register %s not allowed for event %s,
+                fprintf(stderr,"Register %s not allowed for event %s\n",
                      bdata(subtokens->entry[1]),bdata(subtokens->entry[0]));
-                continue;
+                event->type = NOTYPE;
+                goto past_checks;
             }
             if (parseOptions(subtokens, &event->event, event->index) < 0)
             {
-                ERROR_PRINT(Cannot parse options in %s, bdata(eventtokens->entry[i]));
-                continue;
+                fprintf(stderr,"Cannot parse options in %s\n", bdata(eventtokens->entry[i]));
+                event->type = NOTYPE;
+                goto past_checks;
             }
             
-            eventSet->regTypeMask |= REG_TYPE_MASK(reg_type);
-
+            eventSet->regTypeMask |= REG_TYPE_MASK(event->type);
+past_checks:
             event->threadCounter = (PerfmonCounter*) malloc(
                 groupSet->numberOfThreads * sizeof(PerfmonCounter));
 
@@ -1082,20 +1111,14 @@ perfmon_addEventSet(char* eventCString)
                 event->threadCounter[j].overflows = 0;
                 event->threadCounter[j].init = FALSE;
             }
-            if (reg_type != NOTYPE)
+
+            eventSet->numberOfEvents++;
+
+            if (event->type != NOTYPE)
             {
-                eventSet->numberOfEvents++;
                 DEBUG_PRINT(DEBUGLEV_INFO,
                         Added event %s for counter %s to group %d,
-                        event->event.name, 
-                        counter_map[event->index].key,
-                        groupSet->numberOfActiveGroups);
-            }
-            else
-            {
-                DEBUG_PRINT(DEBUGLEV_ONLY_ERROR,
-                        Event %s for counter %s to group %d not configurable because of unavailable counter,
-                        event->event.name, 
+                        event->event.name,
                         counter_map[event->index].key,
                         groupSet->numberOfActiveGroups);
             }
@@ -1104,13 +1127,13 @@ perfmon_addEventSet(char* eventCString)
     bstrListDestroy(subtokens);
     bstrListDestroy(eventtokens);
     groupSet->numberOfActiveGroups++;
-    if (eventSet->numberOfEvents > 0)
+    if ((eventSet->numberOfEvents > 0) && (eventSet->regTypeMask != 0x0ULL)
     {
         return groupSet->numberOfActiveGroups-1;
     }
     else
     {
-        ERROR_PLAIN_PRINT(No event in given event string can be configured);
+        fprintf(stderr,"No event in given event string can be configured\n");
         return -EINVAL;
     }
 }
