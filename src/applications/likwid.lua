@@ -99,12 +99,25 @@ local function get_spaces(str, min_space, max_space)
 end
 
 local function calculate_metric(formula, counters_to_values)
+    local result = "Nan"
     for counter,value in pairs(counters_to_values) do
         formula = string.gsub(formula, tostring(counter), tostring(value))
     end
-    local result = assert(loadstring("return (" .. formula .. ")")())
-    if (result == nil) then
-        result = "Nan"
+    for c in formula:gmatch"." do
+        if c ~= "+" and c ~= "-" and  c ~= "*" and  c ~= "/" and c ~= "(" and c ~= ")" and c ~= "." and c:lower() ~= "e" then
+            local tmp = tonumber(c)
+            if type(tmp) ~= "number" then
+                print("Not all formula entries can be substituted with measured values")
+                err = true
+                break
+            end
+        end
+    end
+    if not err then
+        result = assert(loadstring("return (" .. formula .. ")")())
+        if (result == nil) then
+            result = "Nan"
+        end
     end
     return result
 end
@@ -611,25 +624,6 @@ end
 
 likwid.new_groupdata = new_groupdata
 
-local function evaluate_groupmetrics(group, results)
-    local cpuinfo = likwid_getCpuInfo()
-    local gdata = get_groupdata(cpuinfo["short_name"], group)
-    local metrics = gdata["Metrics"]
-    local output = {}
-    for i=1,#metrics do
-        local formula = metrics[i]["formula"]
-        for counter, result in pairs(results) do
-            formula = string.gsub(formula, tostring(counter), tostring(result))
-        end
-        local result = assert(loadstring("return (" .. formula .. ")")())
-        if (result ~= nil) then
-            output[i] = result
-        end
-    end
-    return output
-end
-
-likwid.evaluate_groupmetrics = evaluate_groupmetrics
 
 local function parse_time(timestr)
     local duration = 0
