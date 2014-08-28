@@ -481,6 +481,7 @@ int topology_setName(void)
                     break;
 
                 case SANDYBRIDGE_EP:
+                    cpuid_info.supportUncore = 1;
                     cpuid_info.name = sandybridge_ep_str;
                     cpuid_info.short_name = short_sandybridge;
                     break;
@@ -491,17 +492,18 @@ int topology_setName(void)
                     break;
 
                 case IVYBRIDGE_EP:
+                    cpuid_info.supportUncore = 1;
                     cpuid_info.name = ivybridge_ep_str;
                     cpuid_info.short_name = short_ivybridge;
                     break;
 
-                case HASWELL:
+                
 
                 case HASWELL_EX:
-
                 case HASWELL_M1:
-
                 case HASWELL_M2:
+                    cpuid_info.supportUncore = 1;
+                case HASWELL:
                     cpuid_info.name = haswell_str;
                     cpuid_info.short_name = short_haswell;
                     break;
@@ -509,11 +511,13 @@ int topology_setName(void)
                 case NEHALEM_EX:
                     cpuid_info.name = nehalem_ex_str;
                     cpuid_info.short_name = short_nehalemEX;
+                    cpuid_info.supportUncore = 1;
                     break;
 
                 case WESTMERE_EX:
                     cpuid_info.name = westmere_ex_str;
                     cpuid_info.short_name = short_westmereEX;
+                    cpuid_info.supportUncore = 1;
                     break;
 
                 case XEON_MP:

@@ -76,6 +76,7 @@ typedef struct {
     char*  short_name;
     char*  features;
     int         isIntel;
+    int     supportUncore;
     uint32_t featureFlags;
     uint32_t perf_version;
     uint32_t perf_num_ctr;
