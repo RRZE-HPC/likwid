@@ -34,6 +34,7 @@
 #include <affinity.h>
 
 static int perfmon_numCountersSandybridge = NUM_COUNTERS_SANDYBRIDGE;
+static int perfmon_numCoreCountersSandybridge = NUM_COUNTERS_CORE_SANDYBRIDGE;
 static int perfmon_numArchEventsSandybridge = NUM_ARCH_EVENTS_SANDYBRIDGE;
 
 

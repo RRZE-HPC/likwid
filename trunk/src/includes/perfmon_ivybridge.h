@@ -35,6 +35,7 @@
 #include <limits.h>
 
 static int perfmon_numCountersIvybridge = NUM_COUNTERS_IVYBRIDGE;
+static int perfmon_numCoreCountersIvybridge = NUM_COUNTERS_CORE_IVYBRIDGE;
 static int perfmon_numArchEventsIvybridge = NUM_ARCH_EVENTS_IVYBRIDGE;
 
 #define OFFSET_PMC 3
@@ -270,12 +271,12 @@ int perfmon_init_ivybridge(int cpu_id)
                     VERBOSEPRINTPCIREG(cpu_id, ivybridge_box_map[j].device, \
                             ivybridge_box_map[j].ctrlRegister, LLU_CAST (1ULL<<0), RESET_PCI_CTL); \
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, ivybridge_box_map[j].device, \
-                            ivybridge_box_map[j].ctrlRegister, (1<<0))); \
+                            ivybridge_box_map[j].ctrlRegister, (1ULL<<0))); \
                 } \
                 else if (ivybridge_box_map[j].ctrlRegister != 0x0) \
                 { \
                     VERBOSEPRINTREG(cpu_id, ivybridge_box_map[j].ctrlRegister, LLU_CAST (1ULL<<0), RESET_CTL); \
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, ivybridge_box_map[j].ctrlRegister, (1<<0))); \
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, ivybridge_box_map[j].ctrlRegister, (1ULL<<0))); \
                 } \
             } \
         } \
@@ -300,9 +301,9 @@ int perfmon_init_ivybridge(int cpu_id)
             pci_checkDevice(ivybridge_box_map[id].device, cpu_id)) \
     { \
         VERBOSEPRINTPCIREG(cpu_id, ivybridge_box_map[id].device, \
-            ivybridge_box_map[id].ctrlRegister, (1<<8), FREEZE_PCI_##id); \
+            ivybridge_box_map[id].ctrlRegister, (1ULL<<8), FREEZE_PCI_##id); \
         CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, ivybridge_box_map[id].device, \
-            ivybridge_box_map[id].ctrlRegister, (1<<8))); \
+            ivybridge_box_map[id].ctrlRegister, (1ULL<<8))); \
     }
 
 #define IVB_UNFREEZE_PCI_BOX(id) \
@@ -319,7 +320,7 @@ int perfmon_init_ivybridge(int cpu_id)
     if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(MBOX##number)) && \
             pci_checkDevice(ivybridge_box_map[MBOX##number].device, cpu_id)) \
     { \
-        flags = (1<<22)|(1<<20); \
+        flags = (1ULL<<22)|(1ULL<<20); \
         flags |= (event->umask<<8) + event->eventId; \
         if (event->numberOfOptions > 0) \
         { \
@@ -328,10 +329,10 @@ int perfmon_init_ivybridge(int cpu_id)
                 switch (event->options[j].type) \
                 { \
                     case EVENT_OPTION_EDGE: \
-                        flags |= (1<<18); \
+                        flags |= (1ULL<<18); \
                         break; \
                     case EVENT_OPTION_THRESHOLD: \
-                        flags |= ((event->options[j].value & 0x1F) << 24); \
+                        flags |= ((event->options[j].value & 0x1FULL) << 24); \
                         break; \
                     default: \
                         break; \
@@ -346,7 +347,7 @@ int perfmon_init_ivybridge(int cpu_id)
     if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(MBOX##number##FIX)) && \
             pci_checkDevice(ivybridge_box_map[MBOX##number].device, cpu_id)) \
     { \
-        flags = (1<<22); \
+        flags = (1ULL<<22); \
         VERBOSEPRINTPCIREG(cpu_id, ivybridge_box_map[MBOX##number].device, \
             PCI_UNC_MC_PMON_FIXED_CTL, flags, SETUP_MBOX##number##FIX); \
         CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, ivybridge_box_map[MBOX##number].device, \
@@ -357,11 +358,11 @@ int perfmon_init_ivybridge(int cpu_id)
     if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(SBOX##number)) && \
             pci_checkDevice(ivybridge_box_map[SBOX##number].device, cpu_id)) \
     { \
-        flags = (1<<22)|(1<<20); \
+        flags = (1ULL<<22)|(1ULL<<20); \
         flags |= (event->umask<<8) + event->eventId; \
         if (event->cfgBits != 0x0) \
         { \
-            flags = (1<<21); \
+            flags = (1ULL<<21); \
         } \
         if (event->numberOfOptions > 0) \
         { \
@@ -370,10 +371,10 @@ int perfmon_init_ivybridge(int cpu_id)
                 switch (event->options[j].type) \
                 { \
                     case EVENT_OPTION_EDGE: \
-                        flags |= (1<<18); \
+                        flags |= (1ULL<<18); \
                         break; \
                     case EVENT_OPTION_THRESHOLD: \
-                        flags |= ((event->options[j].value & 0x1F) << 24); \
+                        flags |= ((event->options[j].value & 0x1FULL) << 24); \
                         break; \
                     case EVENT_OPTION_MATCH0: \
                         VERBOSEPRINTPCIREG(cpu_id, ivybridge_box_map[SBOX##number].device, \
@@ -419,33 +420,33 @@ int perfmon_init_ivybridge(int cpu_id)
                 switch (event->options[j].type) \
                 { \
                     case EVENT_OPTION_EDGE: \
-                        flags |= (1<<18); \
+                        flags |= (1ULL<<18); \
                         break; \
                     case EVENT_OPTION_THRESHOLD: \
-                        flags |= ((event->options[j].value & 0x1F) << 24); \
+                        flags |= ((event->options[j].value & 0x1FULL) << 24); \
                         break; \
                     case EVENT_OPTION_TID: \
                         flags |= (1<<19); \
-                        filter0 |= (event->options[j].value & 0x1F); \
+                        filter0 |= (event->options[j].value & 0x1FULL); \
                         break; \
                     case EVENT_OPTION_STATE: \
-                        filter0 |= ((event->options[j].value & 0x3F) << 17); \
+                        filter0 |= ((event->options[j].value & 0x3FULL) << 17); \
                         state_set = 1; \
                         break; \
                     case EVENT_OPTION_NID: \
                         if (event->options[j].value >= 0x1 && event->options[j].value <= (affinityDomains.numberOfNumaDomains+1<<1)) \
                         { \
-                            filter1 |= (event->options[j].value & 0xFFFF); \
+                            filter1 |= (event->options[j].value & 0xFFFFULL); \
                         } \
                         break; \
                     case EVENT_OPTION_OPCODE: \
-                        filter1 |= ((event->options[j].value & 0x1FF) << 20); \
+                        filter1 |= ((event->options[j].value & 0x1FFULL) << 20); \
                         break; \
                     case EVENT_OPTION_MATCH0: \
-                        filter1 |= (1<<30); \
+                        filter1 |= (1ULL<<30); \
                         break; \
                     case EVENT_OPTION_MATCH1: \
-                        filter1 |= (1<<31); \
+                        filter1 |= (1ULL<<31); \
                         break; \
                     default: \
                         break; \
@@ -453,7 +454,7 @@ int perfmon_init_ivybridge(int cpu_id)
             } \
             if (state_set == 0 && event->eventId == 0x34) \
             { \
-                filter0 |= (0x1F<<17); \
+                filter0 |= (0x1FULL<<17); \
             } \
             if (filter0 != 0x0ULL) \
             { \
@@ -482,7 +483,7 @@ int perfmon_init_ivybridge(int cpu_id)
                 switch (event->options[j].type) \
                 { \
                     case EVENT_OPTION_EDGE: \
-                        flags |= (1<<18); \
+                        flags |= (1ULL<<18); \
                         break; \
                     case EVENT_OPTION_THRESHOLD: \
                         flags |= ((event->options[j].value & 0x1F) << 24); \
@@ -509,7 +510,7 @@ int perfmon_init_ivybridge(int cpu_id)
                 switch (event->options[j].type) \
                 { \
                     case EVENT_OPTION_EDGE: \
-                        flags |= (1<<18); \
+                        flags |= (1ULL<<18); \
                         break; \
                     case EVENT_OPTION_THRESHOLD: \
                         flags |= ((event->options[j].value & 0x1F) << 24); \
@@ -539,7 +540,7 @@ int perfmon_init_ivybridge(int cpu_id)
                 switch (event->options[j].type) \
                 { \
                     case EVENT_OPTION_EDGE: \
-                        flags |= (1<<18); \
+                        flags |= (1ULL<<18); \
                         break; \
                     case EVENT_OPTION_THRESHOLD: \
                         flags |= ((event->options[j].value & 0x1F) << 24); \
@@ -548,10 +549,10 @@ int perfmon_init_ivybridge(int cpu_id)
                         flags |= ((event->options[j].value & 0x3) << 14); \
                         break; \
                     case EVENT_OPTION_OCCUPANCY_INVERT: \
-                        flags |= (1<<30); \
+                        flags |= (1ULL<<30); \
                         break; \
                     case EVENT_OPTION_OCCUPANCY_EDGE: \
-                        flags |= (1<<31); \
+                        flags |= (1ULL<<31); \
                         break; \
                     case EVENT_OPTION_MATCH0: \
                         VERBOSEPRINTREG(cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, event->options[j].value, SETUP_WBOX_FILTER); \
@@ -580,7 +581,7 @@ int perfmon_init_ivybridge(int cpu_id)
                 switch (event->options[j].type) \
                 { \
                     case EVENT_OPTION_EDGE: \
-                        flags |= (1<<18); \
+                        flags |= (1ULL<<18); \
                         break; \
                     case EVENT_OPTION_THRESHOLD: \
                         flags |= ((event->options[j].value & 0xFF) << 24); \
@@ -622,7 +623,7 @@ int perfmon_setupCounterThread_ivybridge(
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         RegisterIndex index = eventSet->events[i].index;
-        uint64_t reg = ivybridge_counter_map[index].configRegister;
+        uint64_t reg = counter_map[index].configRegister;
         PerfmonEvent *event = &(eventSet->events[i].event);
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
         switch (counter_map[index].type)
@@ -630,7 +631,7 @@ int perfmon_setupCounterThread_ivybridge(
             case PMC:
                 if (eventSet->regTypeMask & REG_TYPE_MASK(PMC))
                 {
-                    flags = (1<<22)|(1<<16);
+                    flags = (1ULL<<22)|(1ULL<<16);
 
                     /* Intel with standard 8 bit event mask: [7:0] */
                     flags |= (event->umask<<8) + event->eventId;
@@ -647,16 +648,16 @@ int perfmon_setupCounterThread_ivybridge(
                             switch (event->options[j].type)
                             {
                                 case EVENT_OPTION_EDGE:
-                                    flags |= (1<<18);
+                                    flags |= (1ULL<<18);
                                     break;
                                 case EVENT_OPTION_COUNT_KERNEL:
-                                    flags |= (1<<17);
+                                    flags |= (1ULL<<17);
                                     break;
                                 case EVENT_OPTION_INVERT:
-                                    flags |= (1<<23);
+                                    flags |= (1ULL<<23);
                                     break;
                                 case EVENT_OPTION_ANYTHREAD:
-                                    flags |= (1<<21);
+                                    flags |= (1ULL<<21);
                                     break;
                                 default:
                                     break;
@@ -671,7 +672,7 @@ int perfmon_setupCounterThread_ivybridge(
             case FIXED:
                 if (eventSet->regTypeMask & REG_TYPE_MASK(FIXED))
                 {
-                    fixed_flags |= (0x2 << (4*index));
+                    fixed_flags |= (0x2ULL << (4*index));
                     if (event->numberOfOptions > 0)
                     {
                         for(int j=0;j<event->numberOfOptions;j++)
@@ -679,10 +680,10 @@ int perfmon_setupCounterThread_ivybridge(
                             switch (event->options[j].type)
                             {
                                 case EVENT_OPTION_COUNT_KERNEL:
-                                    fixed_flags |= (1<<(index*4));
+                                    fixed_flags |= (1ULL<<(index*4));
                                     break;
                                 case EVENT_OPTION_ANYTHREAD:
-                                    fixed_flags |= (1<<(2+(index*4)));
+                                    fixed_flags |= (1ULL<<(2+(index*4)));
                                     break;
                                 default:
                                     break;
@@ -783,7 +784,7 @@ int perfmon_setupCounterThread_ivybridge(
                 IVB_SETUP_UBOX;
                 break;
             case UBOXFIX:
-                flags = (1<<22)|(1<<20);
+                flags = (1ULL<<22)|(1ULL<<20);
                 VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, SETUP_UBOXFIX)
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
                 break;
@@ -864,7 +865,7 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
                     if (eventSet->regTypeMask & REG_TYPE_MASK(PMC))
                     {
                         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
-                        fixed_flags |= (1<<(index-OFFSET_PMC));  /* enable counter */
+                        fixed_flags |= (1ULL<<(index-OFFSET_PMC));  /* enable counter */
                     }
                     break;
 
@@ -894,7 +895,7 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
     IVB_UNFREEZE_UNCORE_AND_RESET_CTR;
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
     {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST fixed_flags, UNFREEZE_PMC_OR_FIXED)
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST fixed_flags, UNFREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, fixed_flags));
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL));
     }
@@ -1016,7 +1017,7 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
             {
                 case PMC:
                     CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
-                    IVB_CHECK_OVERFLOW(index-OFFSET_PMC);
+                    IVB_CHECK_OVERFLOW(index-cpuid_info.perf_num_fixed_ctr);
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_PMC)
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
 
@@ -1257,6 +1258,7 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     break;
             }
         }
+        eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
 
     //CHECK_MSR_READ_ERROR(msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS, &flags));
