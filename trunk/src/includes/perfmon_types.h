@@ -65,6 +65,8 @@ typedef enum {
     EVENT_OPTION_OCCUPANCY_FILTER,
     EVENT_OPTION_OCCUPANCY_EDGE,
     EVENT_OPTION_OCCUPANCY_INVERT,
+    EVENT_OPTION_IN_TRANS,
+    EVENT_OPTION_IN_TRANS_ABORT,
     NUM_EVENT_OPTIONS
 } EventOptionType;
 
@@ -86,7 +88,9 @@ static char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     "OCCUPANCY",
     "OCCUPANCY_FILTER",
     "OCCUPANCY_EDGEDETECT",
-    "OCCUPANCY_INVERT"
+    "OCCUPANCY_INVERT",
+    "IN_TRANSACTION",
+    "IN_TRANSACTION_ABORTED"
 };
 
 #define OPTIONS_TYPE_MASK(type) (type == EVENT_OPTION_NONE ? 0x0ULL : (1ULL<<type))
@@ -108,6 +112,8 @@ static char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
 #define EVENT_OPTION_OCCUPANCY_FILTER_MASK (1ULL<<EVENT_OPTION_OCCUPANCY_FILTER)
 #define EVENT_OPTION_OCCUPANCY_EDGE_MASK (1ULL<<EVENT_OPTION_OCCUPANCY_EDGE)
 #define EVENT_OPTION_OCCUPANCY_INVERT_MASK (1ULL<<EVENT_OPTION_OCCUPANCY_INVERT)
+#define EVENT_OPTION_IN_TRANS_MASK (1ULL<<EVENT_OPTION_IN_TRANS)
+#define EVENT_OPTION_IN_TRANS_ABORT_MASK (1ULL<<EVENT_OPTION_IN_TRANS_ABORT)
 
 typedef struct {
     int             thread_id;
@@ -142,6 +148,7 @@ typedef struct {
 typedef struct {
     PerfmonEvent        event;
     RegisterIndex       index;
+    RegisterType        type;
     PerfmonCounter*     threadCounter;
 } PerfmonEventSetEntry;
 
