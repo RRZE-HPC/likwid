@@ -76,10 +76,10 @@ typedef enum {
     CBOX9, CBOX10, CBOX11,
     CBOX12, CBOX13, CBOX14,
     PBOX, UBOX, UBOXFIX,
-    NUM_UNITS, NOTYPE
+    NUM_UNITS, NOTYPE, MAX_UNITS
 } RegisterType;
 
-static char* RegisterTypeNames[NUM_UNITS] = {
+static char* RegisterTypeNames[MAX_UNITS] = {
     [PMC] = "Core-local general purpose counters",
     [FIXED] = "Fixed counters",
     [THERMAL] = "Thermal",
@@ -123,7 +123,9 @@ static char* RegisterTypeNames[NUM_UNITS] = {
     [CBOX14] = "Caching Agent box 14",
     [PBOX] = "Physical Layer box",
     [UBOX] = "System Configuration box",
-    [UBOXFIX] = "System Configuration box fixed counter"
+    [UBOXFIX] = "System Configuration box fixed counter",
+    [NUM_UNITS] = "Maximally usable register types",
+    [NOTYPE] = "No Type, used for skipping unavailable counters"
 };
 
 #define REG_TYPE_MASK(type) (type < NUM_UNITS ? (0x1ULL<<type) : 0x0ULL)
