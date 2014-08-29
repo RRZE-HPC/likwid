@@ -234,11 +234,11 @@ int main (int argc, char** argv)
                 perfmon_verbose = 1;
                 break;
             case '?':
-            	if (optopt == 'S'||optopt == 't'||optopt == 'c'||optopt == 'C'||
-            		optopt == 'o'||optopt == 'M'||optopt == 'g')
-            	{
-            	
-            	}
+                if (optopt == 'S'||optopt == 't'||optopt == 'c'||optopt == 'C'||
+                    optopt == 'o'||optopt == 'M'||optopt == 'g')
+                {
+
+                }
                 else if (isprint (optopt))
                 {
                     fprintf (stderr, "Unknown option `-%c'.\n", optopt);
@@ -285,12 +285,12 @@ int main (int argc, char** argv)
             }
 
             bformata(pinString,",%d",threads[0]);
-			
-			if (skipMask > 0)
-			{
-            	skipString = bformat("%d",skipMask);
-				setenv("LIKWID_SKIP",(char*) skipString->data , 1);
-			}
+
+            if (skipMask > 0)
+            {
+                skipString = bformat("%d",skipMask);
+                setenv("LIKWID_SKIP",(char*) skipString->data , 1);
+            }
             setenv("KMP_AFFINITY", "disabled", 1);
             setenv("LIKWID_PIN",(char*) pinString->data , 1);
 
@@ -340,7 +340,7 @@ int main (int argc, char** argv)
         fprintf(OUTSTREAM,"CPU stepping:\t%u \n", cpuid_info.stepping);
         fprintf(OUTSTREAM,"CPU features:\t%s \n", cpuid_info.features);
 
-        if( cpuid_info.family == P6_FAMILY && cpuid_info.perf_version) 
+        if( cpuid_info.family == P6_FAMILY && cpuid_info.perf_version)
         {
             fprintf(OUTSTREAM,HLINE);
             fprintf(OUTSTREAM,"PERFMON version:\t%u \n",cpuid_info.perf_version);
@@ -371,7 +371,7 @@ int main (int argc, char** argv)
         perfmon_printEvents();
         exit (EXIT_SUCCESS);
     }
-    if ((!optTimeline && !optStethoscope) && (optind == argc)) 
+    if ((!optTimeline && !optStethoscope) && (optind == argc))
     {
         fprintf(OUTSTREAM,"NOTICE: You have to specify a program to measure as argument!\n");
         exit (EXIT_SUCCESS);
