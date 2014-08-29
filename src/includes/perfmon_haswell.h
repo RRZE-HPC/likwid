@@ -79,10 +79,51 @@ void perfmon_init_haswell(PerfmonThread *thread)
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
             lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id))
     {
+        
+        flags = (1ULL<<22)|(1ULL<<20);
+        msr_write(cpu_id, MSR_UNC_CBO_0_PERFEVTSEL0, flags);
+        msr_write(cpu_id, MSR_UNC_CBO_0_PERFEVTSEL1, flags);
+        msr_write(cpu_id, MSR_UNC_CBO_1_PERFEVTSEL0, flags);
+        msr_write(cpu_id, MSR_UNC_CBO_1_PERFEVTSEL1, flags);
+        msr_write(cpu_id, MSR_UNC_CBO_2_PERFEVTSEL0, flags);
+        msr_write(cpu_id, MSR_UNC_CBO_2_PERFEVTSEL1, flags);
+        msr_write(cpu_id, MSR_UNC_CBO_3_PERFEVTSEL0, flags);
+        msr_write(cpu_id, MSR_UNC_CBO_3_PERFEVTSEL1, flags);
 
+        msr_write(cpu_id, MSR_UNC_ARB_PERFEVTSEL0, flags);
+        msr_write(cpu_id, MSR_UNC_ARB_PERFEVTSEL1, flags);
+
+        msr_write(cpu_id, MSR_UNC_PERF_FIXED_CTRL, flags);
+
+        msr_write(cpu_id, MSR_UNC_CBO_0_CTR0, 0x0ULL);
+        msr_write(cpu_id, MSR_UNC_CBO_0_CTR1, 0x0ULL);
+        msr_write(cpu_id, MSR_UNC_CBO_1_CTR0, 0x0ULL);
+        msr_write(cpu_id, MSR_UNC_CBO_1_CTR1, 0x0ULL);
+        msr_write(cpu_id, MSR_UNC_CBO_2_CTR0, 0x0ULL);
+        msr_write(cpu_id, MSR_UNC_CBO_2_CTR1, 0x0ULL);
+        msr_write(cpu_id, MSR_UNC_CBO_3_CTR0, 0x0ULL);
+        msr_write(cpu_id, MSR_UNC_CBO_3_CTR1, 0x0ULL);
+
+        msr_write(cpu_id, MSR_UNC_ARB_CTR0, 0x0ULL);
+        msr_write(cpu_id, MSR_UNC_ARB_CTR1, 0x0ULL);
+
+        msr_write(cpu_id, MSR_UNC_PERF_FIXED_CTR, 0x0ULL);
     }
-
 }
+
+#define HAS_SETUP_BOX \
+    if (haveLock) \
+    { \
+        flags = msr_read(cpu_id,reg); \
+        flags &= ~(0xFFFFU);   /* clear lower 16bits */ \
+        flags |= (event->umask<<8) + event->eventId; \
+        if (event->cfgBits != 0) /* set custom cfg and cmask */ \
+        { \
+            flags &= ~(0xFFFFU<<16);  /* clear upper 16bits */ \
+            flags |= ((event->cmask<<8) + event->cfgBits)<<16; \
+        } \
+        msr_write(cpu_id, reg , flags); \
+    }
 
 void perfmon_setupCounterThread_haswell(
         int thread_id,
@@ -134,6 +175,14 @@ void perfmon_setupCounterThread_haswell(
         case POWER:
             break;
 
+        case CBOX0:
+        case CBOX1:
+        case CBOX2:
+        case CBOX3:
+        case UBOX:
+            HAS_SETUP_BOX;
+            break;
+
         default:
             /* should never be reached */
             break;
@@ -146,6 +195,7 @@ void perfmon_startCountersThread_haswell(int thread_id)
     uint64_t flags = 0x0ULL;
     uint32_t uflags = 0x10000UL; /* Clear freeze bit */
     int cpu_id = perfmon_threadData[thread_id].processorId;
+    int start_uncore = 0;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
@@ -176,7 +226,14 @@ void perfmon_startCountersThread_haswell(int thread_id)
                         perfmon_threadData[thread_id].counters[i].counterData =
                             power_read(cpu_id, haswell_counter_map[i].counterRegister);
                     }
+                    break;
 
+                case CBOX0:
+                case CBOX1:
+                case CBOX2:
+                case CBOX3:
+                case UBOX:
+                    start_uncore = 1;
                     break;
 
                 default:
@@ -186,6 +243,11 @@ void perfmon_startCountersThread_haswell(int thread_id)
         }
     }
 
+    if (haveLock && start_uncore)
+    {
+        msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<29));
+    }
+
     if (perfmon_verbose)
     {
         printf("perfmon_start_counters: Write Register 0x%X , \
@@ -193,7 +255,6 @@ void perfmon_startCountersThread_haswell(int thread_id)
         printf("perfmon_start_counters: Write Register 0x%X , \
                 Flags: 0x%llX \n",MSR_UNCORE_PERF_GLOBAL_CTRL, LLU_CAST uflags);
     }
-
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
     msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL);
 }
@@ -212,6 +273,7 @@ void perfmon_stopCountersThread_haswell(int thread_id)
     }
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
 
     for ( int i=0; i < perfmon_numCountersHaswell; i++ ) 
     {
@@ -241,6 +303,18 @@ void perfmon_stopCountersThread_haswell(int thread_id)
                              thermal_read(cpu_id);
                     break;
 
+                case CBOX0:
+                case CBOX1:
+                case CBOX2:
+                case CBOX3:
+                case UBOX:
+                    if(haveLock)
+                    {
+                        perfmon_threadData[thread_id].counters[i].counterData =
+                            msr_read(cpu_id, haswell_counter_map[i].counterRegister);
+                    }
+                    break;
+
                 default:
                     /* should never be reached */
                     break;
@@ -261,11 +335,18 @@ void perfmon_readCountersThread_haswell(int thread_id)
     uint64_t counter_result = 0x0ULL;
     int haveLock = 0;
     int cpu_id = perfmon_threadData[thread_id].processorId;
+    uint64_t core_flags = 0x0ULL;
+    uint64_t uncore_flags = 0x0ULL;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
     }
+
+    core_flags = msr_read(cpu_id, MSR_PERF_GLOBAL_CTRL);
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    uncore_flags = msr_read(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL);
+    msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
 
     for ( int i=0; i<perfmon_numCountersHaswell; i++ )
     {
@@ -289,6 +370,17 @@ void perfmon_readCountersThread_haswell(int thread_id)
                                 power_read(cpu_id, haswell_counter_map[i].counterRegister);
                             break;
 
+                        case CBOX0:
+                        case CBOX1:
+                        case CBOX2:
+                        case CBOX3:
+                        case UBOX:
+                            if(haveLock)
+                            {
+                                perfmon_threadData[thread_id].counters[i].counterData =
+                                    msr_read(cpu_id, haswell_counter_map[i].counterRegister);
+                            }
+                            break;
                         default:
                             /* should never be reached */
                             break;
@@ -297,5 +389,7 @@ void perfmon_readCountersThread_haswell(int thread_id)
             }
         }
     }
+    msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, uncore_flags);
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, core_flags);
 }
 

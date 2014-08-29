@@ -222,6 +222,30 @@ static int allowed_sandybridge(uint32_t reg)
     }
 }
 
+static int allowed_haswell(uint32_t reg)
+{
+    if ( ((reg & 0x0F8U) == 0x0C0U) ||
+            ((reg & 0xFF0U) == 0x180U) ||
+            ((reg & 0xF00U) == 0x300U) ||
+            ((reg & 0xF00U) == 0xC00U) ||
+            ((reg & 0xF00U) == 0xD00U) ||
+            ((reg & 0xF00U) == 0xE00U) ||
+            ((reg & 0xF00U) == 0x600U) ||
+            ((reg & 0xF00U) == 0x700U) ||
+            (reg == 0x1A0)  ||
+            (reg == 0x0CE)  ||
+            (reg == 0x19C)  ||
+            (reg == 0x1A2)  ||
+            (reg == 0x1AD)  ||
+            (reg == 0x1A6))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
 
 static int allowed_amd(uint32_t reg)
 {
@@ -535,7 +559,7 @@ int main(void)
                 }
                 else if (model == HASWELL)
                 {
-                    allowed = allowed_sandybridge;
+                    allowed = allowed_haswell;
                 }
                 else if (model == ATOM_SILVERMONT)
                 {

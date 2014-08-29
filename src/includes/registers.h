@@ -85,7 +85,36 @@
 #define MSR_UNCORE_PMC5                0x3B5
 #define MSR_UNCORE_PMC6                0x3B6
 #define MSR_UNCORE_PMC7                0x3B7
-
+/* 
+ * Perfmon V4 (starting with Haswell, according to 
+ * Intel software developers guide also for SandyBridge,
+ * IvyBridge not mentioned in this section) 
+ */
+#define MSR_UNC_PERF_GLOBAL_CTRL       MSR_UNCORE_PERF_GLOBAL_CTRL
+#define MSR_UNC_PERF_GLOBAL_STATUS     MSR_UNCORE_PERF_GLOBAL_STATUS
+#define MSR_UNC_PERF_FIXED_CTRL        MSR_UNCORE_FIXED_CTR0
+#define MSR_UNC_PERF_FIXED_CTR         MSR_UNCORE_FIXED_CTR_CTRL
+#define MSR_UNC_ARB_PERFEVTSEL0        MSR_UNCORE_PMC2
+#define MSR_UNC_ARB_PERFEVTSEL1        MSR_UNCORE_PMC3
+#define MSR_UNC_ARB_CTR0               MSR_UNCORE_PMC0
+#define MSR_UNC_ARB_CTR1               MSR_UNCORE_PMC1
+#define MSR_UNC_CBO_CONFIG             0x396
+#define MSR_UNC_CBO_0_PERFEVTSEL0      0x700
+#define MSR_UNC_CBO_0_PERFEVTSEL1      0x701
+#define MSR_UNC_CBO_0_CTR0             0x706
+#define MSR_UNC_CBO_0_CTR1             0x707
+#define MSR_UNC_CBO_1_PERFEVTSEL0      0x710
+#define MSR_UNC_CBO_1_PERFEVTSEL1      0x711
+#define MSR_UNC_CBO_1_CTR0             0x716
+#define MSR_UNC_CBO_1_CTR1             0x717
+#define MSR_UNC_CBO_2_PERFEVTSEL0      0x720
+#define MSR_UNC_CBO_2_PERFEVTSEL1      0x721
+#define MSR_UNC_CBO_2_CTR0             0x726
+#define MSR_UNC_CBO_2_CTR1             0x727
+#define MSR_UNC_CBO_3_PERFEVTSEL0      0x730
+#define MSR_UNC_CBO_3_PERFEVTSEL1      0x731
+#define MSR_UNC_CBO_3_CTR0             0x736
+#define MSR_UNC_CBO_3_CTR1             0x737
 /* Xeon Phi */
 #define MSR_MIC_TSC                   0x010
 #define MSR_MIC_PERFEVTSEL0           0x028
@@ -305,6 +334,10 @@
 #define MSR_UNC_U_PMON_CTL1             0xC11
 #define MSR_UNC_U_UCLK_FIXED_CTR        0xC09
 #define MSR_UNC_U_UCLK_FIXED_CTL        0xC08
+#define MSR_UNC_U_PMON_BOX_STATUS       0xC15
+#define MSR_UNC_U_PMON_GLOBAL_STATUS    0xC01
+#define MSR_UNC_U_PMON_GLOBAL_CTL       0xC00
+#define MSR_UNC_U_PMON_GLOBAL_CONFIG    0xC06
 
 /* HA Box Performance Monitoring */
 
