@@ -197,9 +197,9 @@ void perfmon_init_ivybridge(PerfmonThread *thread)
     }
 }
 
-#define BOX_GATE_SNB(channel,label) \
+#define BOX_GATE_IVB(channel,label) \
     if (perfmon_verbose) { \
-        printf("[%d] perfmon_setup_counter (label): Write Register 0x%llX , Flags: 0x%llX \n", \
+        printf("[%d] perfmon_setup_counter (##label): Write Register 0x%llX , Flags: 0x%llX \n", \
                 cpu_id, \
                 LLU_CAST reg, \
                 LLU_CAST flags); \
@@ -264,19 +264,19 @@ void perfmon_setupCounterThread_ivybridge(
             break;
 
         case MBOX0:
-            BOX_GATE_SNB(PCI_IMC_DEVICE_CH_0,MBOX0);
+            BOX_GATE_IVB(PCI_IMC_DEVICE_CH_0,MBOX0);
             break;
 
         case MBOX1:
-            BOX_GATE_SNB(PCI_IMC_DEVICE_CH_1,MBOX1);
+            BOX_GATE_IVB(PCI_IMC_DEVICE_CH_1,MBOX1);
             break;
 
         case MBOX2:
-            BOX_GATE_SNB(PCI_IMC_DEVICE_CH_2,MBOX2);
+            BOX_GATE_IVB(PCI_IMC_DEVICE_CH_2,MBOX2);
             break;
 
         case MBOX3:
-            BOX_GATE_SNB(PCI_IMC_DEVICE_CH_3,MBOX3);
+            BOX_GATE_IVB(PCI_IMC_DEVICE_CH_3,MBOX3);
             break;
 
         case SBOX0:
@@ -307,7 +307,7 @@ void perfmon_setupCounterThread_ivybridge(
             }
             else
             {
-                BOX_GATE_SNB(PCI_QPI_DEVICE_PORT_0,SBOX0);
+                BOX_GATE_IVB(PCI_QPI_DEVICE_PORT_0,SBOX0);
             }
 
             break;
@@ -337,7 +337,7 @@ void perfmon_setupCounterThread_ivybridge(
             }
             else
             {
-                BOX_GATE_SNB(PCI_QPI_DEVICE_PORT_0,SBOX0);
+                BOX_GATE_IVB(PCI_QPI_DEVICE_PORT_0,SBOX0);
             }
             break;
 
