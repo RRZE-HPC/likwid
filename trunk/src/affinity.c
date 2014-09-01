@@ -173,7 +173,7 @@ affinity_init()
     domains = (AffinityDomain*) malloc(numberOfDomains * sizeof(AffinityDomain));
     if (!domains)
     {
-        fprintf(stderr,"No more memory for %d bytes for array of affinity domains\n",numberOfDomains * sizeof(AffinityDomain));
+        fprintf(stderr,"No more memory for %ld bytes for array of affinity domains\n",numberOfDomains * sizeof(AffinityDomain));
         return;
     }
 
@@ -184,7 +184,7 @@ affinity_init()
     domains[0].processorList = (int*) malloc(cpuid_topology.numHWThreads*sizeof(int));
     if (!domains[0].processorList)
     {
-        fprintf(stderr,"No more memory for %d bytes for processor list of affinity domain %s\n",
+        fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
                 cpuid_topology.numHWThreads*sizeof(int), 
                 bdata(domains[0].tag));
         return;
@@ -212,7 +212,7 @@ affinity_init()
       domains[currentDomain + i].processorList = (int*) malloc( domains[currentDomain + i].numberOfProcessors * sizeof(int));
       if (!domains[currentDomain + i].processorList)   
       {
-            fprintf(stderr,"No more memory for %d bytes for processor list of affinity domain %s\n",
+            fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
                     domains[currentDomain + i].numberOfProcessors * sizeof(int), 
                     bdata(domains[currentDomain + i].tag));
             return;
@@ -240,7 +240,7 @@ affinity_init()
         domains[currentDomain + subCounter].processorList = (int*) malloc(numberOfProcessorsPerCache*sizeof(int));
         if (!domains[currentDomain + subCounter].processorList)   
         {
-            fprintf(stderr,"No more memory for %d bytes for processor list of affinity domain %s\n",
+            fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
                     numberOfProcessorsPerCache*sizeof(int), 
                     bdata(domains[currentDomain + subCounter].tag));
             return;
@@ -272,7 +272,7 @@ affinity_init()
         domains[currentDomain + subCounter].processorList = (int*) malloc(numa_info.nodes[subCounter].numberOfProcessors*sizeof(int));
         if (!domains[currentDomain + subCounter].processorList)   
         {
-            fprintf(stderr,"No more memory for %d bytes for processor list of affinity domain %s\n",
+            fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
                     numa_info.nodes[subCounter].numberOfProcessors*sizeof(int), 
                     bdata(domains[currentDomain + subCounter].tag));
             return;

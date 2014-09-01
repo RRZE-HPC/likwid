@@ -389,7 +389,6 @@ void likwid_markerClose(void)
     LikwidResults* results = NULL;
     int numberOfThreads;
     int numberOfRegions;
-
     if ( ! likwid_init )
     {
         return;
@@ -419,7 +418,7 @@ void likwid_markerClose(void)
 
                 for (int k=0; k<NUM_PMC; k++)
                 {
-                    fprintf(file,"%llu ",results[i].counters[j][k]);
+                    fprintf(file,"%lu ",results[i].counters[j][k]);
                 }
                 fprintf(file,"\n");
             }

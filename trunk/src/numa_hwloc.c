@@ -146,7 +146,7 @@ int hwloc_numa_init(void)
         numa_info.nodes = (NumaNode*) malloc(sizeof(NumaNode));
         if (!numa_info.nodes)
         {
-            fprintf(stderr,"No memory to allocate %d byte for nodes array\n",sizeof(NumaNode));
+            fprintf(stderr,"No memory to allocate %ld byte for nodes array\n",sizeof(NumaNode));
             return -1;
         }
         
@@ -157,13 +157,13 @@ int hwloc_numa_init(void)
         numa_info.nodes[i].processors = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
         if (!numa_info.nodes[i].processors)
         {
-            fprintf(stderr,"No memory to allocate %d byte for processors array of NUMA node %d\n",MAX_NUM_THREADS * sizeof(uint32_t),i);
+            fprintf(stderr,"No memory to allocate %ld byte for processors array of NUMA node %d\n",MAX_NUM_THREADS * sizeof(uint32_t),i);
             return -1;
         }
         numa_info.nodes[i].distances = (uint32_t*) malloc(sizeof(uint32_t));
         if (!numa_info.nodes[i].distances)
         {
-            fprintf(stderr,"No memory to allocate %d byte for distances array of NUMA node %d\n",sizeof(uint32_t),i);
+            fprintf(stderr,"No memory to allocate %ld byte for distances array of NUMA node %d\n",sizeof(uint32_t),i);
             return -1;
         }
         numa_info.nodes[i].distances[i] = 10;
@@ -184,7 +184,7 @@ int hwloc_numa_init(void)
         numa_info.nodes = (NumaNode*) malloc(numa_info.numberOfNodes * sizeof(NumaNode));
         if (!numa_info.nodes)
         {
-            fprintf(stderr,"No memory to allocate %d byte for nodes array\n",numa_info.numberOfNodes * sizeof(NumaNode));
+            fprintf(stderr,"No memory to allocate %ld byte for nodes array\n",numa_info.numberOfNodes * sizeof(NumaNode));
             return -1;
         }
         depth = hwloc_get_type_depth(hwloc_topology, hwloc_type);
@@ -210,7 +210,7 @@ int hwloc_numa_init(void)
             numa_info.nodes[i].processors = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
             if (!numa_info.nodes[i].processors)
             {
-                fprintf(stderr,"No memory to allocate %d byte for processors array of NUMA node %d\n",MAX_NUM_THREADS * sizeof(uint32_t), i);
+                fprintf(stderr,"No memory to allocate %ld byte for processors array of NUMA node %d\n",MAX_NUM_THREADS * sizeof(uint32_t), i);
                 return -1;
             }
             d = 0;
@@ -220,7 +220,7 @@ int hwloc_numa_init(void)
             numa_info.nodes[i].distances = (uint32_t*) malloc(numa_info.numberOfNodes * sizeof(uint32_t));
             if (!numa_info.nodes[i].distances)
             {
-                fprintf(stderr,"No memory to allocate %d byte for distances array of NUMA node %d\n",numa_info.numberOfNodes*sizeof(uint32_t),i);
+                fprintf(stderr,"No memory to allocate %ld byte for distances array of NUMA node %d\n",numa_info.numberOfNodes*sizeof(uint32_t),i);
                 return -1;
             }
             if (distances)

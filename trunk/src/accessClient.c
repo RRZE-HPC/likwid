@@ -244,7 +244,7 @@ accessClient_write(
 
     if ((data.errorcode != ERR_NOERROR) || ((data.data > 0) && (data.data != sdata)))
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Got error %s from access daemon and data is %llu,
+        DEBUG_PRINT(DEBUGLEV_INFO, Got error %s from access daemon and data is %lu,
                                     accessClient_strerror(data.errorcode), data.data);
         return -EIO;
     }

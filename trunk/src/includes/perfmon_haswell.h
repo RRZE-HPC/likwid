@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -41,70 +41,30 @@ static int perfmon_numCoreCountersHaswell = NUM_COUNTERS_CORE_HASWELL;
 static int perfmon_numArchEventsHaswell = NUM_ARCH_EVENTS_HASWELL;
 static int model_has_uncore = 0;
 
-#define OFFSET_PMC 3
-
 
 int perfmon_init_haswell(int cpu_id)
 {
     uint64_t flags = 0x0ULL;
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     return 0;
-    int ret;
-
-    /* Initialize registers */
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL3, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC3, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
-
-    /* initialize fixed counters
-     * FIXED 0: Instructions retired
-     * FIXED 1: Clocks unhalted core
-     * FIXED 2: Clocks unhalted ref */
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL));
-
-    /* Preinit of PERFEVSEL registers */
-    flags |= (1<<22);  /* enable flag */
-    flags |= (1<<16);  /* user mode flag */
-
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL2, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL3, flags));
-
-
-    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
-    
-    return 0;
 }
 
 #define HAS_FREEZE_UNCORE \
     if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
     { \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, (1ULL<<31))); \
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), ACTIVATE_UNCORE); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31))); \
     }
 
 #define HAS_UNFREEZE_UNCORE \
     if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
     { \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, (1ULL<<29))); \
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, UNFREEZE_UNCORE); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL)); \
     }
 
 #define HAS_UNFREEZE_UNCORE_AND_RESET_CTR \
-    if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
+    if (haveLock && (eventSet->regTypeMask != 0x0ULL)) \
     { \
         for (int j=0; j<NUM_COUNTERS_HASWELL; j++) \
         { \
@@ -113,22 +73,24 @@ int perfmon_init_haswell(int cpu_id)
                 if (counter_map[j].counterRegister != 0x0) \
                 { \
                     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[j].counterRegister, 0x0ULL)); \
+                    VERBOSEPRINTREG(cpu_id, counter_map[j].counterRegister, 0x0ULL, CLEAR_CTR); \
                 } \
                 if (counter_map[j].counterRegister2 != 0x0) \
                 { \
                     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[j].counterRegister2, 0x0ULL)); \
+                    VERBOSEPRINTREG(cpu_id, counter_map[j].counterRegister2, 0x0ULL, CLEAR_CTR); \
                 } \
             } \
         } \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, (1ULL<<29))); \
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, UNFREEZE_UNCORE); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL)); \
     }
 
 #define HAS_FREEZE_UNCORE_AND_RESET_CTL \
-    if (haveLock && eventSet->regTypeMask & ~(0xF)) \
+    if (haveLock && (eventSet->regTypeMask != 0x0ULL)) \
     { \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, (1ULL<<31))); \
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31))); \
         for (int j=0; j<NUM_COUNTERS_HASWELL; j++) \
         { \
             if (eventSet->regTypeMask & REG_TYPE_MASK(counter_map[j].type)) \
@@ -136,6 +98,7 @@ int perfmon_init_haswell(int cpu_id)
                 if (counter_map[j].configRegister != 0x0) \
                 { \
                     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[j].configRegister, 0x0ULL)); \
+                    VERBOSEPRINTREG(cpu_id, counter_map[j].configRegister, LLU_CAST 0x0ULL, CLEAR_CTL); \
                 } \
             } \
         } \
@@ -177,7 +140,7 @@ int perfmon_setupCounterThread_haswell(
     uint32_t uflags;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
-    
+
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
@@ -318,7 +281,7 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
 
     //CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
 
-
+    fprintf(stderr, "Starting counters\n");
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
@@ -331,7 +294,7 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
             {
                 case PMC:
                     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
-                    flags |= (1ULL<<(index-OFFSET_PMC));  /* enable counter */
+                    flags |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));  /* enable counter */
                     break;
 
                 case FIXED:
@@ -367,7 +330,7 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
     return 0;
 }
 
-#define HAS_CHECK_OVERFLOW(offset) \
+#define HAS_CHECK_CORE_OVERFLOW(offset) \
     if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) \
     { \
         uint64_t ovf_values = 0x0ULL; \
@@ -378,6 +341,19 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
         } \
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<offset))); \
     }
+
+#define HAS_CHECK_UNCORE_OVERFLOW(offset) \
+    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) \
+    { \
+        uint64_t ovf_values = 0x0ULL; \
+        CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_UNC_PERF_GLOBAL_STATUS, &ovf_values)); \
+        if (ovf_values & (1ULL<<offset)) \
+        { \
+            eventSet->events[i].threadCounter[thread_id].overflows++; \
+        } \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_STATUS, (1ULL<<offset))); \
+    }
+
 
 #define HAS_READ_BOX(id, reg1) \
     if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) \
@@ -421,14 +397,14 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
             {
                 case PMC:
                     CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
-                    HAS_CHECK_OVERFLOW(index-OFFSET_PMC);
+                    HAS_CHECK_CORE_OVERFLOW(index-cpuid_info.perf_num_fixed_ctr);
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_PMC)
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case FIXED:
                     CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
-                    HAS_CHECK_OVERFLOW(index+32);
+                    HAS_CHECK_CORE_OVERFLOW(index+32);
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_FIXED)
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
@@ -453,28 +429,35 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
 
                 case CBOX0:
                     HAS_READ_BOX(CBOX0, counter1);
-                    HAS_CHECK_OVERFLOW(61);
+                    HAS_CHECK_UNCORE_OVERFLOW(3);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX1:
                     HAS_READ_BOX(CBOX1, counter1);
-                    HAS_CHECK_OVERFLOW(61);
+                    HAS_CHECK_UNCORE_OVERFLOW(3);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX2:
                     HAS_READ_BOX(CBOX2, counter1);
-                    HAS_CHECK_OVERFLOW(61);
+                    HAS_CHECK_UNCORE_OVERFLOW(3);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX3:
                     HAS_READ_BOX(CBOX3, counter1);
-                    HAS_CHECK_OVERFLOW(61);
+                    HAS_CHECK_UNCORE_OVERFLOW(3);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case UBOX:
                     HAS_READ_BOX(UBOX, counter1);
-                    HAS_CHECK_OVERFLOW(61);
+                    if (getCounterTypeOffset(eventSet->events[i].type) == 2)
+                    {
+                        HAS_CHECK_UNCORE_OVERFLOW(1);
+                    }
+                    else
+                    {
+                        HAS_CHECK_UNCORE_OVERFLOW(2);
+                    }
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
@@ -486,13 +469,12 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
 
-    //CHECK_MSR_READ_ERROR(msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS, &flags));
-
-    //    printf ("Status: 0x%llX \n", LLU_CAST flags);
-    /*if ( (flags & 0x3) || (flags & (0x3ULL<<32)) ) 
+    if (haveLock && eventSet->regTypeMask & ~(0xFULL))
     {
-        printf ("Overflow occured \n");
-    }*/
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, DISABLE_UNCORE);
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, 0x0ULL));
+    }
+
     return 0;
 }
 
@@ -505,91 +487,110 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
     uint64_t tmp = 0x0ULL;
     uint64_t flags;
     int haveLock = 0;
+    uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
     }
-    
-    CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_CTRL, &flags));
-    flags &= STOP_READ_MASK;
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
+
+    if (haveLock && eventSet->regTypeMask & ~(0xFULL))
+    {
+        CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_CTRL, &flags));
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+    }
+    HAS_FREEZE_UNCORE;
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
+            counter_result= 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
-            
-            if (haswell_counter_map[index].type == PMC)
+            uint64_t reg = counter_map[index].configRegister;
+            uint64_t counter1 = counter_map[index].counterRegister;
+            uint64_t counter2 = counter_map[index].counterRegister2;
+            switch (eventSet->events[i].type)
             {
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, haswell_counter_map[index].counterRegister, &tmp));
-                
-                eventSet->events[i].threadCounter[thread_id].counterData = tmp;
-                
-                if (eventSet->events[i].threadCounter[thread_id].startData == 0)
-                {
-                    eventSet->events[i].threadCounter[thread_id].startData = tmp;
-                }
-                
-                bit = haswell_counter_map[index].index - cpuid_info.perf_num_fixed_ctr;
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_STATUS, &tmp))
-                if (extractBitField(tmp, 1, bit))
-                {
-                    fprintf(stderr,"Overflow occured for PMC%d\n",bit);
-                    eventSet->events[i].threadCounter[thread_id].overflows++;
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, &flags))
-                    flags |= (1<<bit);
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, flags));
-                }
-            }
-            else if (haswell_counter_map[index].type == FIXED)
-            {
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, haswell_counter_map[index].counterRegister, &tmp));
-                
-                eventSet->events[i].threadCounter[thread_id].counterData = tmp;
-                
-                if (eventSet->events[i].threadCounter[thread_id].startData == 0)
-                {
-                    eventSet->events[i].threadCounter[thread_id].startData = tmp;
-                }
-                
-                bit = 32 + haswell_counter_map[index].index;
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_STATUS, &tmp))
-                if (extractBitField(tmp, 1, bit))
-                {
-                    fprintf(stderr,"Overflow occured for FIXC%d\n",bit-32);
-                    eventSet->events[i].threadCounter[thread_id].overflows++;
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, &flags))
-                    flags |= (1<<bit);
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, flags));
-                }
-            }
-            else if ((haswell_counter_map[index].type == POWER) && haveLock == 1 )
-            {
-                CHECK_POWER_READ_ERROR(power_read(cpu_id, 
-                    haswell_counter_map[index].counterRegister,(uint32_t*) &tmp));
-                if (eventSet->events[i].threadCounter[thread_id].startData = 0)
-                {
-                    eventSet->events[i].threadCounter[thread_id].startData = tmp-1;
-                }
-                
-                eventSet->events[i].threadCounter[thread_id].counterData = tmp;
-                
-                if (tmp <= eventSet->events[i].threadCounter[thread_id].startData)
-                {
-                    fprintf(stderr,"Overflow in power status register 0x%x, assuming single overflow\n",
-                                    haswell_counter_map[index].counterRegister);
-                    eventSet->events[i].threadCounter[thread_id].overflows++;  
-                }
+                case PMC:
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
+                    HAS_CHECK_CORE_OVERFLOW(index-cpuid_info.perf_num_fixed_ctr);
+                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_PMC)
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case FIXED:
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
+                    HAS_CHECK_CORE_OVERFLOW(index+32);
+                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_FIXED)
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case POWER:
+                    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(POWER)))
+                    {
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
+                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        {
+                            eventSet->events[i].threadCounter[thread_id].overflows++;
+                        }
+                        eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    }
+                    break;
+
+                case THERMAL:
+                    CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case CBOX0:
+                    HAS_READ_BOX(CBOX0, counter1);
+                    HAS_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX1:
+                    HAS_READ_BOX(CBOX1, counter1);
+                    HAS_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX2:
+                    HAS_READ_BOX(CBOX2, counter1);
+                    HAS_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX3:
+                    HAS_READ_BOX(CBOX3, counter1);
+                    HAS_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case UBOX:
+                    HAS_READ_BOX(UBOX, counter1);
+                    if (getCounterTypeOffset(eventSet->events[i].type) == 2)
+                    {
+                        HAS_CHECK_UNCORE_OVERFLOW(1);
+                    }
+                    else
+                    {
+                        HAS_CHECK_UNCORE_OVERFLOW(2);
+                    }
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                default:
+                    /* should never be reached */
+                    break;
             }
         }
     }
-    
-    CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERF_GLOBAL_CTRL, &flags));
-    flags |= START_READ_MASK;
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
-    
+
+    HAS_UNFREEZE_UNCORE;
+    if (haveLock && eventSet->regTypeMask & ~(0xFULL))
+    {
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
+    }
+
     return 0;
 }
