@@ -232,7 +232,7 @@ int perfmon_stopCountersThread_silvermont(int thread_id, PerfmonEventSet* eventS
                                 (uint32_t*)&counter_result));
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
-                            fprintf(stderr,"Overflow in power status register 0x%x, assuming single overflow\n",
+                            fprintf(stderr,"Overflow in power status register 0x%lx, assuming single overflow\n",
                                                 silvermont_counter_map[index].counterRegister);
                             counter_result += (UINT_MAX - eventSet->events[i].threadCounter[thread_id].counterData);
                             eventSet->events[i].threadCounter[thread_id].counterData = power_info.energyUnit * counter_result;

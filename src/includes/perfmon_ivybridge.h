@@ -38,8 +38,6 @@ static int perfmon_numCountersIvybridge = NUM_COUNTERS_IVYBRIDGE;
 static int perfmon_numCoreCountersIvybridge = NUM_COUNTERS_CORE_IVYBRIDGE;
 static int perfmon_numArchEventsIvybridge = NUM_ARCH_EVENTS_IVYBRIDGE;
 
-#define OFFSET_PMC 3
-
 int perfmon_init_ivybridge(int cpu_id)
 {
     uint64_t flags = 0x0ULL;
@@ -241,14 +239,11 @@ int perfmon_init_ivybridge(int cpu_id)
             { \
                 if ((ivybridge_box_map[j].ctrlRegister != 0x0) && (ivybridge_box_map[j].isPci)) \
                 { \
-                    VERBOSEPRINTPCIREG(cpu_id, ivybridge_box_map[j].device, \
-                                ivybridge_box_map[j].ctrlRegister, LLU_CAST (1ULL<<1), RESET_CTR); \
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, ivybridge_box_map[j].device, \
                             ivybridge_box_map[j].ctrlRegister, (1ULL<<1))); \
                 } \
                 else if (ivybridge_box_map[j].ctrlRegister != 0x0)\
                 { \
-                    VERBOSEPRINTREG(cpu_id, ivybridge_box_map[j].ctrlRegister, LLU_CAST (1ULL<<1), RESET_CTR); \
                     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, ivybridge_box_map[j].ctrlRegister, (1ULL<<1))); \
                 } \
             } \
@@ -256,6 +251,7 @@ int perfmon_init_ivybridge(int cpu_id)
         VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE); \
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, (1ULL<<29))); \
     }
+
 
 #define IVB_FREEZE_UNCORE_AND_RESET_CTL \
     if (haveLock && eventSet->regTypeMask & ~(0xF)) \
@@ -626,7 +622,7 @@ int perfmon_setupCounterThread_ivybridge(
         uint64_t reg = counter_map[index].configRegister;
         PerfmonEvent *event = &(eventSet->events[i].event);
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
-        switch (counter_map[index].type)
+        switch (eventSet->events[i].type)
         {
             case PMC:
                 if (eventSet->regTypeMask & REG_TYPE_MASK(PMC))
@@ -859,13 +855,13 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
             uint64_t reg = counter_map[index].configRegister;
             uint64_t counter1 = counter_map[index].counterRegister;
             uint64_t counter2 = counter_map[index].counterRegister2;
-            switch (counter_map[index].type)
+            switch (eventSet->events[i].type)
             {
                 case PMC:
                     if (eventSet->regTypeMask & REG_TYPE_MASK(PMC))
                     {
                         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
-                        fixed_flags |= (1ULL<<(index-OFFSET_PMC));  /* enable counter */
+                        fixed_flags |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));  /* enable counter */
                     }
                     break;
 
@@ -970,6 +966,14 @@ if(haveLock) { \
         CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg1, &counter_result)); \
     }
 
+#define IVB_READ_BOX_AND_RESET_CTR(id, reg1) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) \
+    { \
+        VERBOSEPRINTREG(cpu_id, reg1, LLU_CAST counter_result, READ_BOX_##id) \
+        CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg1, &counter_result)); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg1, 0x0ULL)); \
+    }
+
 #define IVB_READ_PCI_BOX(id, reg1, reg2) \
     if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id))) && \
                     pci_checkDevice(ivybridge_box_map[id].device, cpu_id)) \
@@ -982,7 +986,19 @@ if(haveLock) { \
         VERBOSEPRINTPCIREG(cpu_id, ivybridge_box_map[id].device, reg1, LLU_CAST counter_result, READ_PCI_BOX_##id) \
     }
 
-
+#define IVB_READ_PCI_BOX_AND_RESET_CTR(id, reg1, reg2) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id))) && \
+                    pci_checkDevice(ivybridge_box_map[id].device, cpu_id)) \
+    { \
+        uint64_t tmp = 0x0ULL; \
+        CHECK_PCI_READ_ERROR(pci_read(cpu_id, ivybridge_box_map[id].device, reg1, (uint32_t*)&tmp)); \
+        counter_result = (tmp<<32); \
+        CHECK_PCI_READ_ERROR(pci_read(cpu_id, ivybridge_box_map[id].device, reg2, (uint32_t*)&tmp)); \
+        counter_result += tmp; \
+        VERBOSEPRINTPCIREG(cpu_id, ivybridge_box_map[id].device, reg1, LLU_CAST counter_result, READ_PCI_BOX_##id) \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, ivybridge_box_map[id].device, reg1, 0x0U)); \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, ivybridge_box_map[id].device, reg2, 0x0U)); \
+    }
 
 int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSet)
 {
@@ -1013,14 +1029,14 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
             uint64_t reg = counter_map[index].configRegister;
             uint64_t counter1 = counter_map[index].counterRegister;
             uint64_t counter2 = counter_map[index].counterRegister2;
-            switch (counter_map[index].type)
+            switch (eventSet->events[i].type)
             {
                 case PMC:
                     CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
                     IVB_CHECK_OVERFLOW(index-cpuid_info.perf_num_fixed_ctr);
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_PMC)
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
-
+                    break;
                 case FIXED:
                     CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
                     IVB_CHECK_OVERFLOW(index+32);
@@ -1047,58 +1063,58 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     break;
 
                 case MBOX0:
-                    IVB_READ_PCI_BOX(MBOX0, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(MBOX0, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(MBOX0, 20, getCounterTypeOffset(index)+1)
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case MBOX1:
-                    IVB_READ_PCI_BOX(MBOX1, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(MBOX1, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(MBOX0, 20, getCounterTypeOffset(index)+1)
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case MBOX2:
-                    IVB_READ_PCI_BOX(MBOX2, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(MBOX2, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(MBOX2, 20, getCounterTypeOffset(index)+1)
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case MBOX3:
-                    IVB_READ_PCI_BOX(MBOX3, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(MBOX3, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(MBOX3, 20, getCounterTypeOffset(index)+1)
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case MBOX0FIX:
-                    IVB_READ_PCI_BOX(MBOX0FIX, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(MBOX0FIX, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(MBOX0, 20, 0);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case MBOX1FIX:
-                    IVB_READ_PCI_BOX(MBOX1FIX, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(MBOX1FIX, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(MBOX1, 20, 0);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case MBOX2FIX:
-                    IVB_READ_PCI_BOX(MBOX2FIX, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(MBOX2FIX, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(MBOX2, 20, 0);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case MBOX3FIX:
-                    IVB_READ_PCI_BOX(MBOX3FIX, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(MBOX3FIX, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(MBOX3, 20, 0);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case SBOX0:
-                    IVB_READ_PCI_BOX(SBOX0, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(SBOX0, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(SBOX0, 22, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case SBOX1:
-                    IVB_READ_PCI_BOX(SBOX1, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(SBOX1, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(SBOX1, 23, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
@@ -1137,119 +1153,119 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX0:
-                    IVB_READ_BOX(CBOX0, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX0, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX0, 3, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX1:
-                    IVB_READ_BOX(CBOX1, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX1, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX1, 4, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX2:
-                    IVB_READ_BOX(CBOX2, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX2, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX2, 5, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX3:
-                    IVB_READ_BOX(CBOX3, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX3, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX3, 6, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX4:
-                    IVB_READ_BOX(CBOX4, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX4, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX4, 7, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX5:
-                    IVB_READ_BOX(CBOX5, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX5, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX5, 8, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX6:
-                    IVB_READ_BOX(CBOX6, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX6, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX6, 9, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX7:
-                    IVB_READ_BOX(CBOX7, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX7, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX7, 10, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX8:
-                    IVB_READ_BOX(CBOX8, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX8, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX8, 11, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX9:
-                    IVB_READ_BOX(CBOX9, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX9, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX9, 12, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX10:
-                    IVB_READ_BOX(CBOX10, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX10, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX10, 13, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX11:
-                    IVB_READ_BOX(CBOX11, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX11, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX11, 14, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX12:
-                    IVB_READ_BOX(CBOX12, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX12, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX12, 15, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX13:
-                    IVB_READ_BOX(CBOX13, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX13, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX13, 16, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX14:
-                    IVB_READ_BOX(CBOX14, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(CBOX14, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(CBOX14, 17, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case UBOX:
-                    IVB_READ_BOX(UBOX, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(UBOX, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(UBOX, 1, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case UBOXFIX:
-                    IVB_READ_BOX(UBOX, counter1);
+                    IVB_READ_BOX_AND_RESET_CTR(UBOX, counter1);
                     IVB_CHECK_UNCORE_OVERFLOW(UBOX, 0, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case BBOX0:
-                    IVB_READ_PCI_BOX(BBOX0, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(BBOX0, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(BBOX0, 18, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case BBOX1:
-                    IVB_READ_PCI_BOX(BBOX1, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(BBOX1, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(BBOX1, 19, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case WBOX:
-                    IVB_READ_PCI_BOX(WBOX, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(WBOX, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(WBOX, 2, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
 
                 case PBOX:
-                    IVB_READ_PCI_BOX(PBOX, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(PBOX, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(PBOX, 26, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
 
                 case RBOX0:
-                    IVB_READ_PCI_BOX(RBOX0, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(RBOX0, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(RBOX0, 24, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                 case RBOX1:
-                    IVB_READ_PCI_BOX(RBOX1, counter1, counter2);
+                    IVB_READ_PCI_BOX_AND_RESET_CTR(RBOX1, counter1, counter2);
                     IVB_CHECK_UNCORE_OVERFLOW(RBOX1, 25, getCounterTypeOffset(index));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
 
@@ -1298,11 +1314,11 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
             uint64_t reg = counter_map[index].configRegister;
             uint64_t counter1 = counter_map[index].counterRegister;
             uint64_t counter2 = counter_map[index].counterRegister2;
-            switch (counter_map[index].type)
+            switch (eventSet->events[i].type)
             {
                 case PMC:
                     CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
-                    IVB_CHECK_OVERFLOW(index-OFFSET_PMC);
+                    IVB_CHECK_OVERFLOW(index-cpuid_info.perf_num_fixed_ctr);
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_PMC)
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
 

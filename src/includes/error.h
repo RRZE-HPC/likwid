@@ -83,7 +83,7 @@ extern int perfmon_verbosity;
 #define DEBUGLEV_DEVELOP 3
 
 #define VERBOSEPRINTREG(cpuid,reg,flags,msg) \
-    if (perfmon_verbosity == 3) \
+    if (perfmon_verbosity == DEBUGLEV_DEVELOP) \
     { \
         printf("DEBUG - [%s:%d] "  str(msg) " [%d] Register 0x%llX , Flags: 0x%llX \n",  \
                 __func__, __LINE__,  (cpuid), LLU_CAST (reg), LLU_CAST (flags)); \
@@ -91,7 +91,7 @@ extern int perfmon_verbosity;
     }
     
 #define VERBOSEPRINTPCIREG(cpuid,dev,reg,flags,msg) \
-    if (perfmon_verbosity == 3) \
+    if (perfmon_verbosity == DEBUGLEV_DEVELOP) \
     { \
         printf("DEBUG - [%s:%d] "  str(msg) " [%d] Device %d Register 0x%llX , Flags: 0x%llX \n",  \
                 __func__, __LINE__,  (cpuid), dev, LLU_CAST (reg), LLU_CAST (flags)); \
@@ -108,6 +108,7 @@ extern int perfmon_verbosity;
 #define DEBUG_PLAIN_PRINT(lev, msg) \
     if ((lev >= 0) && (lev <= perfmon_verbosity)) { \
         fprintf(stdout, "DEBUG: " str(msg) "\n");  \
+        fflush(stdout); \
     }
     
 #define CHECK_MSR_WRITE_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR write operation failed);

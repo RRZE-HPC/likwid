@@ -89,7 +89,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
                                              counter_map[*index].key);
                 *type = NOTYPE;
             }
-            else
+            else if (tmp == 0x0)
             {
                 err = msr_write(0, counter_map[*index].configRegister, 0x0ULL);
                 if (err != 0)
@@ -99,6 +99,12 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
                     *type = NOTYPE;
                 }
             }
+            /*else
+            {
+                DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Counter %s already in use. Skipping the setup of this event,
+                                                 counter_map[*index].key);
+                *type = NOTYPE;
+            }*/
         }
         else
         {
@@ -109,7 +115,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
                                              counter_map[*index].key);
                 *type = NOTYPE;
             }
-            else
+            else if (tmp == 0x0)
             {
                 err = pci_write(0, counter_map[*index].device, counter_map[*index].configRegister, 0x0U);
                 if (err != 0)
@@ -119,6 +125,12 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
                     *type = NOTYPE;
                 }
             }
+            /*else
+            {
+                DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Counter %s already in use. Skipping setup of this event,
+                                                 counter_map[*index].key);
+                *type = NOTYPE;
+            }*/
         }
     }
     else if ((ret) && (counter_map[*index].type == POWER))
@@ -1028,8 +1040,7 @@ perfmon_addEventSet(char* eventCString)
         }
         groupSet->groups[groupSet->numberOfActiveGroups].rdtscTime = 0;
         groupSet->groups[groupSet->numberOfActiveGroups].numberOfEvents = 0;
-        DEBUG_PLAIN_PRINT(DEBUGLEV_INFO,
-                    Allocating new group structure for group.);
+        DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, Allocating new group structure for group.);
     }
     DEBUG_PRINT(DEBUGLEV_INFO, Currently %d groups of %d active,
                     groupSet->numberOfActiveGroups+1,
@@ -1059,7 +1070,7 @@ perfmon_addEventSet(char* eventCString)
         subtokens = bsplit(eventtokens->entry[i],':');
         if (subtokens->qty < 2)
         {
-            fprintf(stderr,"Cannot parse event descriptor %s\n",eventtokens->entry[i]);
+            fprintf(stderr,"Cannot parse event descriptor %s\n", bdata(eventtokens->entry[i]));
             continue;
         }
         else
@@ -1127,7 +1138,7 @@ past_checks:
     bstrListDestroy(subtokens);
     bstrListDestroy(eventtokens);
     groupSet->numberOfActiveGroups++;
-    if ((eventSet->numberOfEvents > 0) && (eventSet->regTypeMask != 0x0ULL)
+    if ((eventSet->numberOfEvents > 0) && (eventSet->regTypeMask != 0x0ULL))
     {
         return groupSet->numberOfActiveGroups-1;
     }
