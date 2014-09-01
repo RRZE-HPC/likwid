@@ -289,7 +289,7 @@ local function cpustr_to_cpulist_expression(cpustr)
                 return {}
             end
             local count = tonumber(subexpr_list[2])
-            for i=0,count-1 do
+            for i=1,count do
                 table.insert(cpulist,affinity["domains"][domain]["processorList"][i])
             end
         elseif tablelength(subexpr_list) == 4 then
@@ -301,7 +301,7 @@ local function cpustr_to_cpulist_expression(cpustr)
                 print("Domain "..domain.." not valid")
                 return {}
             end
-            index = 0
+            index = 1
             for i=0,count-1 do
                 for j=0,chunk-1 do
                     table.insert(cpulist,affinity["domains"][domain]["processorList"][index+j])
@@ -852,6 +852,7 @@ likwid.print_output = print_output
 local function printMarkerOutput(groups, results, groupData, cpulist)
     local nr_groups = #groups
     local nr_regions = #groups[1]
+    likwid.tableprint(groups)
     local nr_threads = likwid.tablelength(groups[1][1]["Time"])
     for g=1,nr_groups do
         local gdata = nil
@@ -1056,12 +1057,16 @@ end
 likwid.getResults = getResults
 
 function getMarkerResults(filename)
-    local NUM_PMC = 85
     local cpuinfo = likwid_getCpuInfo()
     local ctr_and_events = likwid_getEventsAndCounters()
     local group_data = {}
     local results = {}
-    local f = assert(io.open(filename, "r"))
+    local f = io.open(filename, "r")
+    if f == nil then
+        print("Have you called LIKWID_MARKER_CLOSE?")
+        print(string.format("Cannot find intermediate results file %s", filename))
+        return {}, {}
+    end
     local lines = stringsplit(f:read("*all"),"\n")
     f:close()
     -- Read first line with general counts
@@ -1134,6 +1139,9 @@ end
 likwid.getMarkerResults = getMarkerResults
 
 function createBitMask(gdata)
+    if gdata == nil then
+        return "0x0 0x0"
+    end
     local ctr_and_events = likwid_getEventsAndCounters()
     local bitmask_low = 0
     local bitmask_high = 0
