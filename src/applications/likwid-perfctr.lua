@@ -374,9 +374,9 @@ end
 if use_marker == true then
     likwid_setenv("LIKWID_FILEPATH", markerFile)
     likwid_setenv("LIKWID_MODE", tostring(access_mode))
-    likwid_setenv("LIKWID_MASK", likwid.createBitMask(gdata))
+    likwid_setenv("LIKWID_MASK", likwid.createBitMask(group_list[1]))
     likwid_setenv("LIKWID_GROUPS", tostring(likwid_getNumberOfGroups()))
-    local str = event_string
+    local str = event_string_list[1]
     likwid_setenv("LIKWID_EVENTS", str)
 end
 
@@ -410,6 +410,9 @@ end
 
 if use_marker == true then
     groups, results = likwid.getMarkerResults(markerFile)
+    if #groups == 0 and #results == 0 then
+        os.exit(1)
+    end
     likwid.print_markerOutput(groups, results, gdata, cpulist)
 elseif use_wrapper or use_stethoscope then
     for i, group in pairs(group_ids) do
