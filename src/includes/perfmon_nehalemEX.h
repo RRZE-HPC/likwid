@@ -42,8 +42,295 @@ static int perfmon_numArchEventsNehalemEX = NUM_ARCH_EVENTS_NEHALEMEX;
  * 1 bit shifted. Thank you Intel for this mess!!! Do you want 
  * to change the register definitions for every architecture?*/
 
-/* MBOX macros */
 
+void perfmon_init_nehalemEX(PerfmonThread *thread)
+{
+    uint64_t flags = 0x0ULL;
+    int cpu_id = thread->processorId;
+    perfmon_verbose = 1;
+    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL);
+    msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
+    msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL);
+    msr_write(cpu_id, MSR_PERFEVTSEL2, 0x0ULL);
+    msr_write(cpu_id, MSR_PERFEVTSEL3, 0x0ULL);
+    msr_write(cpu_id, MSR_PMC0, 0x0ULL);
+    msr_write(cpu_id, MSR_PMC1, 0x0ULL);
+    msr_write(cpu_id, MSR_PMC2, 0x0ULL);
+    msr_write(cpu_id, MSR_PMC3, 0x0ULL);
+    msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL);
+    msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL);
+    msr_write(cpu_id, MSR_PERF_FIXED_CTR2, 0x0ULL);
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL);
+    msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL);
+
+    /* initialize fixed counters
+     * FIXED 0: Instructions retired
+     * FIXED 1: Clocks unhalted core
+     * FIXED 2: Clocks unhalted ref */
+    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL);
+
+    /* Preinit of PERFEVSEL registers */
+    flags |= (1<<22);  /* enable flag */
+    flags |= (1<<16);  /* user mode flag */
+
+    msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
+    msr_write(cpu_id, MSR_PERFEVTSEL1, flags);
+    msr_write(cpu_id, MSR_PERFEVTSEL2, flags);
+    msr_write(cpu_id, MSR_PERFEVTSEL3, flags);
+
+    /* Initialize uncore */
+    /* MBOX */
+    thread->counters[PMC7].id  = 0;
+    thread->counters[PMC8].id  = 1;
+    thread->counters[PMC9].id  = 2;
+    thread->counters[PMC10].id = 3;
+    thread->counters[PMC11].id = 4;
+    thread->counters[PMC12].id = 5;
+    westmereEX_PMunits[MBOX0].ctrlRegister = MSR_M0_PMON_BOX_CTRL;
+    westmereEX_PMunits[MBOX0].statusRegister = MSR_M0_PMON_BOX_STATUS;
+    westmereEX_PMunits[MBOX0].ovflRegister = MSR_M0_PMON_BOX_OVF_CTRL;
+
+    thread->counters[PMC13].id = 0;
+    thread->counters[PMC14].id = 1;
+    thread->counters[PMC15].id = 2;
+    thread->counters[PMC16].id = 3;
+    thread->counters[PMC17].id = 4;
+    thread->counters[PMC18].id = 5;
+    westmereEX_PMunits[MBOX1].ctrlRegister = MSR_M1_PMON_BOX_CTRL;
+    westmereEX_PMunits[MBOX1].statusRegister = MSR_M1_PMON_BOX_STATUS;
+    westmereEX_PMunits[MBOX1].ovflRegister = MSR_M1_PMON_BOX_OVF_CTRL;
+
+    /* BBOX */
+    thread->counters[PMC19].id = 0;
+    thread->counters[PMC20].id = 1;
+    thread->counters[PMC21].id = 2;
+    thread->counters[PMC22].id = 3;
+    westmereEX_PMunits[BBOX0].ctrlRegister = MSR_B0_PMON_BOX_CTRL;
+    westmereEX_PMunits[BBOX0].statusRegister =  MSR_B0_PMON_BOX_STATUS;
+    westmereEX_PMunits[BBOX0].ovflRegister = MSR_B0_PMON_BOX_OVF_CTRL;
+
+    thread->counters[PMC23].id = 0;
+    thread->counters[PMC24].id = 1;
+    thread->counters[PMC25].id = 2;
+    thread->counters[PMC26].id = 3;
+    westmereEX_PMunits[BBOX1].ctrlRegister = MSR_B1_PMON_BOX_CTRL;
+    westmereEX_PMunits[BBOX1].statusRegister =  MSR_B1_PMON_BOX_STATUS;
+    westmereEX_PMunits[BBOX1].ovflRegister = MSR_B1_PMON_BOX_OVF_CTRL;
+
+    /* RBOX */
+    thread->counters[PMC27].id = 0;
+    thread->counters[PMC28].id = 1;
+    thread->counters[PMC29].id = 2;
+    thread->counters[PMC30].id = 3;
+    thread->counters[PMC31].id = 4;
+    thread->counters[PMC32].id = 5;
+    thread->counters[PMC33].id = 6;
+    thread->counters[PMC34].id = 7;
+    westmereEX_PMunits[RBOX0].ctrlRegister = MSR_R0_PMON_BOX_CTRL;
+    westmereEX_PMunits[RBOX0].statusRegister =  MSR_R0_PMON_BOX_STATUS;
+    westmereEX_PMunits[RBOX0].ovflRegister = MSR_R0_PMON_BOX_OVF_CTRL;
+
+    thread->counters[PMC35].id = 0;
+    thread->counters[PMC36].id = 1;
+    thread->counters[PMC37].id = 2;
+    thread->counters[PMC38].id = 3;
+    thread->counters[PMC39].id = 4;
+    thread->counters[PMC40].id = 5;
+    thread->counters[PMC41].id = 6;
+    thread->counters[PMC42].id = 7;
+    westmereEX_PMunits[RBOX1].ctrlRegister = MSR_R1_PMON_BOX_CTRL;
+    westmereEX_PMunits[RBOX1].statusRegister =  MSR_R1_PMON_BOX_STATUS;
+    westmereEX_PMunits[RBOX1].ovflRegister = MSR_R1_PMON_BOX_OVF_CTRL;
+
+    /* WBOX */
+    thread->counters[PMC43].id = 0;
+    thread->counters[PMC44].id = 1;
+    thread->counters[PMC45].id = 2;
+    thread->counters[PMC46].id = 3;
+    thread->counters[PMC47].id = 31;
+    westmereEX_PMunits[WBOX].ctrlRegister   = MSR_W_PMON_BOX_CTRL;
+    westmereEX_PMunits[WBOX].statusRegister = MSR_W_PMON_BOX_STATUS;
+    westmereEX_PMunits[WBOX].ovflRegister   = MSR_W_PMON_BOX_OVF_CTRL;
+
+    thread->counters[PMC48].id = 0;
+    westmereEX_PMunits[UBOX].ctrlRegister   = MSR_U_PMON_GLOBAL_CTRL;
+    westmereEX_PMunits[UBOX].statusRegister = MSR_U_PMON_GLOBAL_STATUS;
+    westmereEX_PMunits[UBOX].ovflRegister   = MSR_U_PMON_GLOBAL_OVF_CTRL;
+
+    /* Set IDs for all CBOXes */
+    for (int i=PMC49; i<=PMC88; i+= 5)
+    {
+        for(int j=0; j<5; j++)
+        {
+            thread->counters[i].id = j;
+        }
+    }
+    westmereEX_PMunits[CBOX0].ctrlRegister   = MSR_C0_PMON_BOX_CTRL;
+    westmereEX_PMunits[CBOX0].statusRegister = MSR_C0_PMON_BOX_STATUS;
+    westmereEX_PMunits[CBOX0].ovflRegister   = MSR_C0_PMON_BOX_OVF_CTRL;
+    westmereEX_PMunits[CBOX1].ctrlRegister   = MSR_C1_PMON_BOX_CTRL;
+    westmereEX_PMunits[CBOX1].statusRegister = MSR_C1_PMON_BOX_STATUS;
+    westmereEX_PMunits[CBOX1].ovflRegister   = MSR_C1_PMON_BOX_OVF_CTRL;
+    westmereEX_PMunits[CBOX2].ctrlRegister   = MSR_C2_PMON_BOX_CTRL;
+    westmereEX_PMunits[CBOX2].statusRegister = MSR_C2_PMON_BOX_STATUS;
+    westmereEX_PMunits[CBOX2].ovflRegister   = MSR_C2_PMON_BOX_OVF_CTRL;
+    westmereEX_PMunits[CBOX3].ctrlRegister   = MSR_C3_PMON_BOX_CTRL;
+    westmereEX_PMunits[CBOX3].statusRegister = MSR_C3_PMON_BOX_STATUS;
+    westmereEX_PMunits[CBOX3].ovflRegister   = MSR_C3_PMON_BOX_OVF_CTRL;
+    westmereEX_PMunits[CBOX4].ctrlRegister   = MSR_C4_PMON_BOX_CTRL;
+    westmereEX_PMunits[CBOX4].statusRegister = MSR_C4_PMON_BOX_STATUS;
+    westmereEX_PMunits[CBOX4].ovflRegister   = MSR_C4_PMON_BOX_OVF_CTRL;
+    westmereEX_PMunits[CBOX5].ctrlRegister   = MSR_C5_PMON_BOX_CTRL;
+    westmereEX_PMunits[CBOX5].statusRegister = MSR_C5_PMON_BOX_STATUS;
+    westmereEX_PMunits[CBOX5].ovflRegister   = MSR_C5_PMON_BOX_OVF_CTRL;
+    westmereEX_PMunits[CBOX6].ctrlRegister   = MSR_C6_PMON_BOX_CTRL;
+    westmereEX_PMunits[CBOX6].statusRegister = MSR_C6_PMON_BOX_STATUS;
+    westmereEX_PMunits[CBOX6].ovflRegister   = MSR_C6_PMON_BOX_OVF_CTRL;
+    westmereEX_PMunits[CBOX7].ctrlRegister   = MSR_C7_PMON_BOX_CTRL;
+    westmereEX_PMunits[CBOX7].statusRegister = MSR_C7_PMON_BOX_STATUS;
+    westmereEX_PMunits[CBOX7].ovflRegister   = MSR_C7_PMON_BOX_OVF_CTRL;
+
+    thread->counters[PMC99].id = 0;
+    thread->counters[PMC100].id = 1;
+    thread->counters[PMC101].id = 2;
+    thread->counters[PMC102].id = 3;
+    westmereEX_PMunits[SBOX0].ctrlRegister   = MSR_S0_PMON_BOX_CTRL;
+    westmereEX_PMunits[SBOX0].statusRegister = MSR_S0_PMON_BOX_STATUS;
+    westmereEX_PMunits[SBOX0].ovflRegister   = MSR_S0_PMON_BOX_OVF_CTRL;
+    thread->counters[PMC103].id = 0;
+    thread->counters[PMC104].id = 1;
+    thread->counters[PMC105].id = 2;
+    thread->counters[PMC106].id = 3;
+    westmereEX_PMunits[SBOX1].ctrlRegister   = MSR_S1_PMON_BOX_CTRL;
+    westmereEX_PMunits[SBOX1].statusRegister = MSR_S1_PMON_BOX_STATUS;
+    westmereEX_PMunits[SBOX1].ovflRegister   = MSR_S1_PMON_BOX_OVF_CTRL;
+
+    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
+            lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id))
+    {
+        msr_write(cpu_id, MSR_W_PMON_BOX_CTRL,  0x0ULL);
+        msr_write(cpu_id, MSR_W_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_W_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_W_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_W_PMON_EVNT_SEL3, 0x0ULL);
+        msr_write(cpu_id, MSR_W_PMON_FIXED_CTR, 0x0ULL);
+
+        msr_write(cpu_id, MSR_M0_PMON_BOX_CTRL,  0x0ULL);
+        msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL3, 0x0ULL);
+        msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL4, 0x0ULL);
+        msr_write(cpu_id, MSR_M0_PMON_EVNT_SEL5, 0x0ULL);
+
+        msr_write(cpu_id, MSR_M1_PMON_BOX_CTRL,  0x0ULL);
+        msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL3, 0x0ULL);
+        msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL4, 0x0ULL);
+        msr_write(cpu_id, MSR_M1_PMON_EVNT_SEL5, 0x0ULL);
+
+        msr_write(cpu_id, MSR_B0_PMON_BOX_CTRL,  0x0ULL);
+        msr_write(cpu_id, MSR_B0_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_B0_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_B0_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_B0_PMON_EVNT_SEL3, 0x0ULL);
+
+        msr_write(cpu_id, MSR_B1_PMON_BOX_CTRL,  0x0ULL);
+        msr_write(cpu_id, MSR_B1_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_B1_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_B1_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_B1_PMON_EVNT_SEL3, 0x0ULL);
+
+        msr_write(cpu_id, MSR_R0_PMON_BOX_CTRL,  0x0ULL);
+        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL3, 0x0ULL);
+        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL4, 0x0ULL);
+        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL5, 0x0ULL);
+        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL6, 0x0ULL);
+        msr_write(cpu_id, MSR_R0_PMON_EVNT_SEL7, 0x0ULL);
+
+        msr_write(cpu_id, MSR_R1_PMON_BOX_CTRL,   0x0ULL);
+        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL8,  0x0ULL);
+        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL9,  0x0ULL);
+        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL10, 0x0ULL);
+        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL11, 0x0ULL);
+        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL12, 0x0ULL);
+        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL13, 0x0ULL);
+        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL14, 0x0ULL);
+        msr_write(cpu_id, MSR_R1_PMON_EVNT_SEL15, 0x0ULL);
+
+        msr_write(cpu_id, MSR_U_PMON_GLOBAL_EVNT_SEL, 0x0ULL);
+
+        msr_write(cpu_id, MSR_C0_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_C0_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_C0_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_C0_PMON_EVNT_SEL3, 0x0ULL);
+        msr_write(cpu_id, MSR_C0_PMON_EVNT_SEL4, 0x0ULL);
+
+        msr_write(cpu_id, MSR_C1_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_C1_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_C1_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_C1_PMON_EVNT_SEL3, 0x0ULL);
+        msr_write(cpu_id, MSR_C1_PMON_EVNT_SEL4, 0x0ULL);
+
+        msr_write(cpu_id, MSR_C2_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_C2_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_C2_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_C2_PMON_EVNT_SEL3, 0x0ULL);
+        msr_write(cpu_id, MSR_C2_PMON_EVNT_SEL4, 0x0ULL);
+
+        msr_write(cpu_id, MSR_C3_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_C3_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_C3_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_C3_PMON_EVNT_SEL3, 0x0ULL);
+        msr_write(cpu_id, MSR_C3_PMON_EVNT_SEL4, 0x0ULL);
+
+        msr_write(cpu_id, MSR_C4_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_C4_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_C4_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_C4_PMON_EVNT_SEL3, 0x0ULL);
+        msr_write(cpu_id, MSR_C4_PMON_EVNT_SEL4, 0x0ULL);
+
+        msr_write(cpu_id, MSR_C5_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_C5_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_C5_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_C5_PMON_EVNT_SEL3, 0x0ULL);
+        msr_write(cpu_id, MSR_C5_PMON_EVNT_SEL4, 0x0ULL);
+
+        msr_write(cpu_id, MSR_C6_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_C6_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_C6_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_C6_PMON_EVNT_SEL3, 0x0ULL);
+        msr_write(cpu_id, MSR_C6_PMON_EVNT_SEL4, 0x0ULL);
+
+        msr_write(cpu_id, MSR_C7_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_C7_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_C7_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_C7_PMON_EVNT_SEL3, 0x0ULL);
+        msr_write(cpu_id, MSR_C7_PMON_EVNT_SEL4, 0x0ULL);
+
+        msr_write(cpu_id, MSR_S0_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_S0_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_S0_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_S0_PMON_EVNT_SEL3, 0x0ULL);
+
+        msr_write(cpu_id, MSR_S1_PMON_EVNT_SEL0, 0x0ULL);
+        msr_write(cpu_id, MSR_S1_PMON_EVNT_SEL1, 0x0ULL);
+        msr_write(cpu_id, MSR_S1_PMON_EVNT_SEL2, 0x0ULL);
+        msr_write(cpu_id, MSR_S1_PMON_EVNT_SEL3, 0x0ULL);
+
+        flags = 0x0UL;
+        flags |= (1<<29); /* reset all */
+        msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, flags );
+    }
+}
+
+/* MBOX macros */
 #define MBOX_GATE_NEHEX(NUM)  \
 flags = 0x41ULL; \
 switch (event->cfgBits)  \
@@ -249,12 +536,18 @@ void perfmon_setupCounterThread_nehalemEX(
         PerfmonEvent* event,
         PerfmonCounterIndex index)
 {
-    uint64_t flags = 0x0ULL;;
-    uint64_t reg = westmereEX_counter_map[index].configRegister;
+    uint64_t flags = 0x0ULL;
+    int haveLock = 0;
+    uint64_t reg = counter_map[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
     perfmon_threadData[thread_id].counters[index].init = TRUE;
 
-    switch (westmereEX_counter_map[index].type)
+    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
+    {
+        haveLock = 1;
+    }
+
+    switch (counter_map[index].type)
     {
         case PMC:
             flags = msr_read(cpu_id,reg);
@@ -277,55 +570,295 @@ void perfmon_setupCounterThread_nehalemEX(
             break;
 
         case MBOX0:
-            MBOX_GATE_NEHEX(0);
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, MBOX0_CTRL)
+            if (haveLock)
+            {
+                MBOX_GATE_NEHEX(0);
+                msr_write(cpu_id, reg , flags);
+                VERBOSEPRINTREG(cpu_id, reg, flags, MBOX0_CTRL)
+            }
             break;
 
         case MBOX1:
-            MBOX_GATE_NEHEX(1);
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, MBOX1_CTRL)
+            if (haveLock)
+            {
+                MBOX_GATE_NEHEX(1);
+                msr_write(cpu_id, reg , flags);
+                VERBOSEPRINTREG(cpu_id, reg, flags, MBOX1_CTRL)
+            }
             break;
 
         case BBOX0:
-
         case BBOX1:
-            flags = 0x1ULL; /* set enable bit */
-            flags |=  (event->eventId<<1);
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, BBOX_CTRL)
+            if (haveLock)
+            {
+                flags = 0x1ULL; /* set enable bit */
+                flags |=  (event->eventId<<1);
+                msr_write(cpu_id, reg , flags);
+                VERBOSEPRINTREG(cpu_id, reg, flags, BBOX_CTRL)
+            }
             break;
 
         case RBOX0:
-            RBOX_GATE(0);
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, RBOX0_CTRL)
+            if (haveLock)
+            {
+                RBOX_GATE(0);
+                msr_write(cpu_id, reg , flags);
+                VERBOSEPRINTREG(cpu_id, reg, flags, RBOX0_CTRL)
+            }
             break;
 
         case RBOX1:
-            RBOX_GATE(1);
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, RBOX1_CTRL)
+            if (haveLock)
+            {
+                RBOX_GATE(1);
+                msr_write(cpu_id, reg , flags);
+                VERBOSEPRINTREG(cpu_id, reg, flags, RBOX1_CTRL)
+            }
             break;
 
         case WBOX:
-            if (event->eventId == 0xFF)  /* Fixed Counter */
+            if (haveLock)
             {
-                flags = 0x1ULL; /* set enable bit */
+                if (event->eventId == 0xFF)  /* Fixed Counter */
+                {
+                    flags = 0x1ULL; /* set enable bit */
+                }
+                else
+                {
+                    flags |= (1<<22); /* set enable bit */
+                    flags |= (event->umask<<8) + event->eventId;
+                }
+                msr_write(cpu_id, reg , flags);
+                VERBOSEPRINTREG(cpu_id, reg, flags, WBOX_CTRL)
             }
-            else
+            break;
+
+        case UBOX:
+            if (haveLock)
             {
-                flags |= (1<<22); /* set enable bit */
+                flags |= (1<<22);
+                flags |= event->eventId;
+                fprintf(stderr, "Setup UBOX with value 0x%x in register 0x%x, event 0x%x \n", LLU_CAST flags, reg,event->eventId);
+                msr_write(cpu_id, reg , flags);
+                VERBOSEPRINTREG(cpu_id, reg, flags, UBOX_CTRL)
+            }
+            break;
+
+        case CBOX0:
+        case CBOX1:
+        case CBOX2:
+        case CBOX3:
+        case CBOX4:
+        case CBOX5:
+        case CBOX6:
+        case CBOX7:
+            if (haveLock)
+            {
+                flags = 0x0ULL;
+                flags |= (1<<22);
                 flags |= (event->umask<<8) + event->eventId;
+                fprintf(stderr, "Setup CBOX with value 0x%x in register 0x%x, event 0x%x umask 0x%x \n", LLU_CAST flags, reg,event->eventId, event->umask);
+                msr_write(cpu_id, reg , flags);
+                VERBOSEPRINTREG(cpu_id, reg, flags, CBOX_CTRL)
             }
-            msr_write(cpu_id, reg , flags);
-            VERBOSEPRINTREG(cpu_id, reg, flags, WBOX_CTRL)
+            break;
+        case SBOX0:
+        case SBOX1:
+            if (haveLock)
+            {
+                flags = 0x0ULL;
+                flags |= (1<<22);
+                flags |= (event->umask<<8);
+                flags |= (event->eventId);
+                msr_write(cpu_id, reg , flags);
+                VERBOSEPRINTREG(cpu_id, reg, flags, SBOX_CTRL)
+            }
             break;
 
         default:
             /* should never be reached */
             break;
+    }
+}
+
+
+/* Actions for Performance Monitoring Session:
+ *
+ * Core Counters (counter is always enabled in PERVSEL register):
+ * 1) Disable counters in global ctrl Register MSR_PERF_GLOBAL_CTRL
+ * 2) Zero according counter registers
+ * 3) Set enable bit in global register flag
+ * 4) Write global register flag
+ *
+ * Uncore Counters (only one core per socket):
+ * 1) Set reset flag in global U Box control register
+ * 2) Zero according counter registers
+ * 3) Set enable bit in Box control register
+ * 4) Write according uncore Box ctrl register
+ * 3) Set enable bit in global U Box control register
+ * */
+
+void perfmon_startCountersThread_nehalemEX(int thread_id)
+{
+    int haveLock = 0;
+    uint64_t flags = 0x0ULL;
+    uint32_t uflags[NUM_UNITS];
+    int enable_ubox = 0;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
+
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    {
+        uint32_t ubflags = 0x0UL;
+        ubflags |= (1<<29); /* reset all */
+        haveLock = 1;
+        //        msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags );
+        //       VERBOSEPRINTREG(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags, UBOX_GLOBAL_CTRL)
+    }
+
+    for ( int i=0; i<NUM_UNITS; i++ )
+    {
+        uflags[i] = 0x0UL;
+    }
+
+    for ( int i=0; i<NUM_PMC; i++ ) 
+    {
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE) {
+            if (westmereEX_counter_map[i].type == PMC)
+            {
+                msr_write(cpu_id, westmereEX_counter_map[i].counterRegister , 0x0ULL);
+                flags |= (1<<(i-OFFSET_PMC));  /* enable counter */
+            }
+            else if (westmereEX_counter_map[i].type == FIXED)
+            {
+                msr_write(cpu_id, westmereEX_counter_map[i].counterRegister , 0x0ULL);
+                flags |= (1ULL<<(i+32));  /* enable fixed counter */
+            }
+            else if (westmereEX_counter_map[i].type > UNCORE)
+            {
+                if(haveLock)
+                {
+                    msr_write(cpu_id, westmereEX_counter_map[i].counterRegister , 0x0ULL);
+                    uflags[westmereEX_counter_map[i].type] |=
+                        (1<<(perfmon_threadData[thread_id].counters[i].id));  /* enable uncore counter */
+                    if (westmereEX_counter_map[i].type == UBOX)
+                    {
+                        enable_ubox = 1;
+                    }
+                }
+            }
+        }
+    }
+
+    VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, GLOBAL_CTRL);
+
+    if (haveLock)
+    {
+        for ( int i=0; i<NUM_UNITS; i++ )
+        {
+            /* if counters are enabled write the according box ctrl register */
+            if (uflags[i]) 
+            {
+                msr_write(cpu_id, westmereEX_PMunits[i].ctrlRegister, uflags[i]);
+                VERBOSEPRINTREG(cpu_id, westmereEX_PMunits[i].ctrlRegister, LLU_CAST uflags[i], BOXCTRL);
+            }
+        }
+
+        /* set global enable flag in U BOX ctrl register */
+        uint32_t ubflags = 0x0UL;
+        ubflags |= (1<<28); /* enable all */
+        if (enable_ubox)
+        {
+            ubflags |= (1<<0);
+        }
+        VERBOSEPRINTREG(cpu_id, MSR_U_PMON_GLOBAL_CTRL, LLU_CAST ubflags, UBOX_GLOBAL_CTRL);
+        msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags );
+    }
+    /* Finally enable counters */
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
+    msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL);
+}
+
+void perfmon_stopCountersThread_nehalemEX(int thread_id)
+{
+    int haveLock = 0;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
+
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    {
+        uint32_t ubflags = 0x0UL;
+        haveLock = 1;
+        //        ubflags |= (1<<29); /* reset all */
+        msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags );
+    }
+
+    for ( int i=0; i<NUM_COUNTERS_WESTMEREEX; i++ ) 
+    {
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
+        {
+            if (westmereEX_counter_map[i].type > UNCORE)
+            {
+                if(haveLock)
+                {
+                    perfmon_threadData[thread_id].counters[i].counterData =
+                        msr_read(cpu_id, westmereEX_counter_map[i].counterRegister);
+
+                    VERBOSEPRINTREG(cpu_id, westmereEX_counter_map[i].counterRegister,
+                            LLU_CAST perfmon_threadData[thread_id].counters[i].counterData, READ_UNCORE);
+                }
+            }
+            else
+            {
+                perfmon_threadData[thread_id].counters[i].counterData =
+                    msr_read(cpu_id, westmereEX_counter_map[i].counterRegister);
+
+                VERBOSEPRINTREG(cpu_id, westmereEX_counter_map[i].counterRegister,
+                        LLU_CAST perfmon_threadData[thread_id].counters[i].counterData, READ_CORE);
+            }
+        }
+    }
+
+#if 0
+    flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
+    printf ("Status: 0x%llX \n", LLU_CAST flags);
+    if((flags & 0x3) || (flags & (0x3ULL<<32)) ) 
+    {
+        printf ("Overflow occured \n");
+    }
+#endif
+}
+
+void perfmon_readCountersThread_nehalemEX(int thread_id)
+{
+    int haveLock = 0;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    {
+        haveLock = 1;
+    }
+
+    for ( int i=0; i<NUM_COUNTERS_WESTMEREEX; i++ ) 
+    {
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
+        {
+            if (westmereEX_counter_map[i].type > UNCORE)
+            {
+                if(haveLock)
+                {
+                    perfmon_threadData[thread_id].counters[i].counterData =
+                        msr_read(cpu_id, westmereEX_counter_map[i].counterRegister);
+                }
+            }
+            else
+            {
+                perfmon_threadData[thread_id].counters[i].counterData =
+                    msr_read(cpu_id, westmereEX_counter_map[i].counterRegister);
+            }
+        }
     }
 }
 

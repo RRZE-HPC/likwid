@@ -752,6 +752,7 @@ void perfmon_setupCounterThread_westmereEX(
                 flags |= (event->eventId);
                 msr_write(cpu_id, reg , flags);
             }
+            break;
 
         default:
             /* should never be reached */
