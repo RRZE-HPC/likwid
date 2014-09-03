@@ -1354,15 +1354,15 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
                     perfmon_numGroups = perfmon_numGroupsNehalemEX;
 
                     counter_map = westmereEX_counter_map;
-                    perfmon_numCounters = perfmon_numCountersWestmereEX;                    
+                    perfmon_numCounters = perfmon_numCountersWestmereEX;
 
-                    initThreadArch = perfmon_init_westmereEX;
+                    initThreadArch = perfmon_init_nehalemEX;
                     printDerivedMetrics = perfmon_printDerivedMetricsNehalemEX;
                     perfmon_getDerivedCounterValuesArch = perfmon_getDerivedCounterValuesNehalemEX;
                     logDerivedMetrics = perfmon_logDerivedMetricsNehalemEX;
-                    perfmon_startCountersThread = perfmon_startCountersThread_westmereEX;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_westmereEX;
-                    perfmon_readCountersThread = perfmon_readCountersThread_westmereEX;
+                    perfmon_startCountersThread = perfmon_startCountersThread_nehalemEX;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_nehalemEX;
+                    perfmon_readCountersThread = perfmon_readCountersThread_nehalemEX;
                     perfmon_setupCounterThread = perfmon_setupCounterThread_nehalemEX;
                     break;
 

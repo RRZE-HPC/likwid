@@ -534,26 +534,26 @@ UMASK_C_CYCLES_TURBO_C7               0x80
 UMASK_C_CYCLES_TURBO_C_ALL            0xFF
 
 EVENT_C_C0_THROTTLE_DIE              0x01  WBOX
-UMASK_C_C0_THROTTLE_DIE_C0               0x01              
-UMASK_C_C0_THROTTLE_DIE_C1               0x02              
-UMASK_C_C0_THROTTLE_DIE_C2               0x04              
-UMASK_C_C0_THROTTLE_DIE_C3               0x08              
-UMASK_C_C0_THROTTLE_DIE_C4               0x10              
-UMASK_C_C0_THROTTLE_DIE_C5               0x20              
-UMASK_C_C0_THROTTLE_DIE_C6               0x40              
-UMASK_C_C0_THROTTLE_DIE_C7               0x80              
-UMASK_C_C0_THROTTLE_DIE_C_ALL            0xFF              
+UMASK_C_C0_THROTTLE_DIE_C0               0x01
+UMASK_C_C0_THROTTLE_DIE_C1               0x02
+UMASK_C_C0_THROTTLE_DIE_C2               0x04
+UMASK_C_C0_THROTTLE_DIE_C3               0x08
+UMASK_C_C0_THROTTLE_DIE_C4               0x10
+UMASK_C_C0_THROTTLE_DIE_C5               0x20
+UMASK_C_C0_THROTTLE_DIE_C6               0x40
+UMASK_C_C0_THROTTLE_DIE_C7               0x80
+UMASK_C_C0_THROTTLE_DIE_C_ALL            0xFF
 
 EVENT_C_C0_THROTTLE_PROCHOT          0x03  WBOX
-UMASK_C_C0_THROTTLE_PROCHOT_C0               0x01          
-UMASK_C_C0_THROTTLE_PROCHOT_C1               0x02          
-UMASK_C_C0_THROTTLE_PROCHOT_C2               0x04          
-UMASK_C_C0_THROTTLE_PROCHOT_C3               0x08          
-UMASK_C_C0_THROTTLE_PROCHOT_C4               0x10          
-UMASK_C_C0_THROTTLE_PROCHOT_C5               0x20          
-UMASK_C_C0_THROTTLE_PROCHOT_C6               0x40          
-UMASK_C_C0_THROTTLE_PROCHOT_C7               0x80          
-UMASK_C_C0_THROTTLE_PROCHOT_C_ALL            0xFF          
+UMASK_C_C0_THROTTLE_PROCHOT_C0               0x01
+UMASK_C_C0_THROTTLE_PROCHOT_C1               0x02
+UMASK_C_C0_THROTTLE_PROCHOT_C2               0x04
+UMASK_C_C0_THROTTLE_PROCHOT_C3               0x08
+UMASK_C_C0_THROTTLE_PROCHOT_C4               0x10
+UMASK_C_C0_THROTTLE_PROCHOT_C5               0x20
+UMASK_C_C0_THROTTLE_PROCHOT_C6               0x40
+UMASK_C_C0_THROTTLE_PROCHOT_C7               0x80
+UMASK_C_C0_THROTTLE_PROCHOT_C_ALL            0xFF
 
 EVENT_C_C0_THROTTLE_TMP              0x00  WBOX
 UMASK_C_C0_THROTTLE_TMP_C0               0x01
@@ -1463,7 +1463,7 @@ UMASK_GLOBAL_ARB_BID_PORT6_QLX1           0x0F 0x02  0x00
 UMASK_GLOBAL_ARB_BID_PORT7_QLX0           0x14 0x02  0x00
 UMASK_GLOBAL_ARB_BID_PORT7_QLX1           0x15 0x02  0x00
 
-EVENT_GLOBAL_ARB_BID_FAIL                           0x01  RBO0A
+EVENT_GLOBAL_ARB_BID_FAIL                           0x01  RBOX0
 UMASK_GLOBAL_ARB_BID_FAIL_PORT0_QLX0_VN0_HOM        0x02 0x05 0x00
 UMASK_GLOBAL_ARB_BID_FAIL_PORT0_QLX0_VN0_SNP        0x02 0x05 0x01
 UMASK_GLOBAL_ARB_BID_FAIL_PORT0_QLX0_VN0_NDR        0x02 0x05 0x02
@@ -2751,3 +2751,580 @@ UMASK_TARGET_AVAILABLE_PORT7_QLX1_VN1_NCB        0x15 0x09 0x0D
 UMASK_TARGET_AVAILABLE_PORT7_QLX1_VN1_VSM        0x15 0x09 0x0E
 UMASK_TARGET_AVAILABLE_PORT7_QLX1_VN1_VLG        0x15 0x09 0x0F
 
+EVENT_LLC_MISSES                                 0x14 CBOX
+UMASK_LLC_MISSES_SHARED                          0x01
+UMASK_LLC_MISSES_FORWARD                         0x02
+UMASK_LLC_MISSES_INVALID                         0x04
+UMASK_LLC_MISSES_ALL                             0x07
+
+EVENT_LLC_HITS                                   0x15 CBOX
+UMASK_LLC_HITS_MODIFIED                          0x01
+UMASK_LLC_HITS_EXCLUSIVE                         0x02
+UMASK_LLC_HITS_SHARED                            0x04
+UMASK_LLC_HITS_FORWARD                           0x08
+UMASK_LLC_HITS_ALL                               0x0F
+
+EVENT_LLC_S_FILLS                               0x16 CBOX
+UMASK_LLC_S_FILLS_MODIFIED                      0x01
+UMASK_LLC_S_FILLS_EXCLUSIVE                     0x02
+UMASK_LLC_S_FILLS_SHARED                        0x04
+UMASK_LLC_S_FILLS_FORWARD                       0x08
+UMASK_LLC_S_FILLS_ALL                           0x0F
+
+EVENT_LLC_VICTIMS                               0x17 CBOX
+UMASK_LLC_VICTIMS_MODIFIED                      0x01
+UMASK_LLC_VICTIMS_EXCLUSIVE                     0x02
+UMASK_LLC_VICTIMS_SHARED                        0x04
+UMASK_LLC_VICTIMS_FORWARD                       0x08
+UMASK_LLC_VICTIMS_ALL                           0x1F
+UMASK_LLC_VICTIMS_FILL_WITHOUT_VICTIMS          0x10
+
+EVENT_ARB_LOSSES                                 0x0A CBOX
+UMASK_ARB_LOSSES_AD_SB                           0x01
+UMASK_ARB_LOSSES_AD_NSB                          0x02
+UMASK_ARB_LOSSES_AD_ALL                          0x03
+UMASK_ARB_LOSSES_AK_SB                           0x04
+UMASK_ARB_LOSSES_AK_NSB                          0x08
+UMASK_ARB_LOSSES_AK_ALL                          0x0C
+UMASK_ARB_LOSSES_BL_SB                           0x10
+UMASK_ARB_LOSSES_BL_NSB                          0x20
+UMASK_ARB_LOSSES_BL_ALL                          0x30
+UMASK_ARB_LOSSES_IV                              0x40
+UMASK_ARB_LOSSES_ALL                             0x7F
+
+EVENT_ARB_WINS                                 0x0A CBOX
+UMASK_ARB_WINS_AD_SB                           0x01
+UMASK_ARB_WINS_AD_NSB                          0x02
+UMASK_ARB_WINS_AD_ALL                          0x03
+UMASK_ARB_WINS_AK_SB                           0x04
+UMASK_ARB_WINS_AK_NSB                          0x08
+UMASK_ARB_WINS_AK_ALL                          0x0C
+UMASK_ARB_WINS_BL_SB                           0x10
+UMASK_ARB_WINS_BL_NSB                          0x20
+UMASK_ARB_WINS_BL_ALL                          0x30
+UMASK_ARB_WINS_IV                              0x40
+UMASK_ARB_WINS_ALL                             0x7F
+
+EVENT_BOUNCES_C2P_AK                            0x02 CBOX
+UMASK_BOUNCES_C2P_AK_SB                         0x01
+UMASK_BOUNCES_C2P_AK_NSB                        0x02
+UMASK_BOUNCES_C2P_AK_ALL                        0x03
+
+EVENT_BOUNCES_C2P_BL                            0x03 CBOX
+UMASK_BOUNCES_C2P_BL_SB                         0x01
+UMASK_BOUNCES_C2P_BL_NSB                        0x02
+UMASK_BOUNCES_C2P_BL_ALL                        0x03
+
+EVENT_BOUNCES_C2P_IV                            0x04 CBOX
+UMASK_BOUNCES_C2P_IV                            0x00
+
+EVENT_BOUNCES_P2C_AD                            0x01 CBOX
+UMASK_BOUNCES_P2C_AD_SB                         0x01
+UMASK_BOUNCES_P2C_AD_NSB                        0x02
+UMASK_BOUNCES_P2C_AD_ALL                        0x03
+
+EVENT_EGRESS_BYPASS_WINS                        0x0C CBOX
+UMASK_EGRESS_BYPASS_WINS_AD_BYP0                0x01
+UMASK_EGRESS_BYPASS_WINS_AD_BYP1                0x02
+UMASK_EGRESS_BYPASS_WINS_AK_BYP0                0x04
+UMASK_EGRESS_BYPASS_WINS_AK_BYP1                0x08
+UMASK_EGRESS_BYPASS_WINS_BL_BYP0                0x10
+UMASK_EGRESS_BYPASS_WINS_BL_BYP1                0x20
+UMASK_EGRESS_BYPASS_WINS_IV_BYP0                0x40
+UMASK_EGRESS_BYPASS_WINS_IV_BYP1                0x80
+
+EVENT_INGRESS_BYPASS_WINS_AD                    0x0E CBOX
+UMASK_INGRESS_BYPASS_WINS_AD_IRQ_BYP0           0x01
+UMASK_INGRESS_BYPASS_WINS_AD_IRQ_BYP1           0x02
+UMASK_INGRESS_BYPASS_WINS_AD_IPQ_BYP0           0x04
+UMASK_INGRESS_BYPASS_WINS_AD_IPQ_BYP1           0x08
+
+EVENT_MAF_ACK                                0x10 CBOX
+UMASK_MAF_ACK                                0x00
+
+EVENT_MAF_NACK1                                0x11 CBOX
+UMASK_MAF_NACK1_GO_PENDING                     0x01
+UMASK_MAF_NACK1_VIC_PENDING                    0x02
+UMASK_MAF_NACK1_SNP_PENDING                    0x04
+UMASK_MAF_NACK1_AC_PENDING                     0x08
+UMASK_MAF_NACK1_IDX_BLOCK                      0x10
+UMASK_MAF_NACK1_PA_BLOCK                       0x20
+UMASK_MAF_NACK1_IDLE_QPI                       0x40
+UMASK_MAF_NACK1_ALL_MAF_NACK1                  0x80
+UMASK_MAF_NACK1_TOTAL_MAF_NACKS                0xFF
+
+EVENT_MAF_NACK2                                0x12 CBOX
+UMASK_MAF_NACK2_MAF_FULL                       0x01
+UMASK_MAF_NACK2_EGRESS_FULL                    0x02
+UMASK_MAF_NACK2_VIQ_FULL                       0x04
+UMASK_MAF_NACK2_NO_TRACKER_CREDITS             0x08
+UMASK_MAF_NACK2_NO_S_FIFO_CREDITS              0x10
+UMASK_MAF_NACK2_NO_S_REQTBL_ENTRIES            0x20
+UMASK_MAF_NACK2_WB_PENDING                     0x40
+UMASK_MAF_NACK2_NACK2_ELSE                     0x80
+
+EVENT_OCCUPANCY_IPQ                            0x1A CBOX
+UMASK_OCCUPANCY_IPQ                            0x00
+
+EVENT_OCCUPANCY_IRQ                            0x18 CBOX
+UMASK_OCCUPANCY_IRQ                            0x00
+
+EVENT_OCCUPANCY_MAF                            0x1E CBOX
+UMASK_OCCUPANCY_MAF                            0x00
+
+EVENT_OCCUPANCY_RSPF                           0x22 CBOX
+UMASK_OCCUPANCY_RSPF                           0x00
+
+EVENT_OCCUPANCY_RWRF                           0x20 CBOX
+UMASK_OCCUPANCY_RWRF                           0x00
+
+EVENT_OCCUPANCY_VIQ                            0x1C CBOX
+UMASK_OCCUPANCY_VIQ                            0x00
+
+EVENT_SINKS_C2P                                0x06 CBOX
+UMASK_SINKS_C2P_IV                             0x01
+UMASK_SINKS_C2P_AK                             0x02
+UMASK_SINKS_C2P_BL                             0x04
+
+EVENT_SINKS_P2C                                0x05 CBOX
+UMASK_SINKS_P2C_IV                             0x01
+UMASK_SINKS_P2C_AK                             0x02
+UMASK_SINKS_P2C_BL                             0x04
+
+EVENT_SINKS_S2C                                0x07 CBOX
+UMASK_SINKS_S2C_AD                             0x01
+UMASK_SINKS_S2C_AK                             0x02
+UMASK_SINKS_S2C_BL                             0x04
+
+EVENT_SINKS_S2P_BL                            0x08 CBOX
+UMASK_SINKS_S2P_BL                            0x00
+
+EVENT_SNP_HITS                                  0x28 CBOX
+UMASK_SNP_HITS_REMOTE_RD_HITM                   0x01
+UMASK_SNP_HITS_REMOTE_RD_HITE                   0x02
+UMASK_SNP_HITS_REMOTE_RD_HITS                   0x04
+UMASK_SNP_HITS_REMOTE_RD_HITF                   0x08
+UMASK_SNP_HITS_REMOTE_RFO_HITM                  0x10
+UMASK_SNP_HITS_REMOTE_RFO_HITE                  0x20
+UMASK_SNP_HITS_REMOTE_RFO_HITS                  0x40
+UMASK_SNP_HITS_REMOTE_RFO_HITF                  0x80
+UMASK_SNP_HITS_REMOTE_HITM                      0x11
+UMASK_SNP_HITS_REMOTE_HITE                      0x22
+UMASK_SNP_HITS_REMOTE_HITS                      0x44
+UMASK_SNP_HITS_REMOTE_HITF                      0x88
+UMASK_SNP_HITS_REMOTE_ANY                       0xFF
+
+EVENT_SNPS                                      0x27 CBOX
+UMASK_SNPS_REMOTE_RD                            0x01
+UMASK_SNPS_REMOTE_RFO                           0x02
+UMASK_SNPS_REMOTE_ANY                           0x03
+
+EVENT_STARVED_EGRESS                            0x0B CBOX
+UMASK_STARVED_EGRESS_P2C_AD_SB                  0x01
+UMASK_STARVED_EGRESS_C2P_AD_SB                  0x02
+UMASK_STARVED_EGRESS_AD_SB                      0x03
+UMASK_STARVED_EGRESS_AD_NSB                     0x04
+UMASK_STARVED_EGRESS_AD                         0x07
+UMASK_STARVED_EGRESS_AK_SB                      0x08
+UMASK_STARVED_EGRESS_AK_NSB                     0x10
+UMASK_STARVED_EGRESS_AK                         0x18
+UMASK_STARVED_EGRESS_BL_SB                      0x20
+UMASK_STARVED_EGRESS_BL_NSB                     0x40
+UMASK_STARVED_EGRESS_BL                         0x60
+UMASK_STARVED_EGRESS_IV                         0x80
+
+EVENT_TRANS_IPQ                                 0x1B CBOX
+UMASK_TRANS_IPQ                                 0x00
+
+EVENT_TRANS_IRQ                                 0x19 CBOX
+UMASK_TRANS_IRQ                                 0x00
+
+EVENT_TRANS_MAF                                 0x1F CBOX
+UMASK_TRANS_MAF                                 0x00
+
+EVENT_TRANS_RSPF                                0x23 CBOX
+UMASK_TRANS_RSPF                                0x00
+
+EVENT_TRANS_RWRF                                0x21 CBOX
+UMASK_TRANS_RWRF                                0x00
+
+EVENT_TRANS_VIQ                                 0x1D CBOX
+UMASK_TRANS_VIQ                                 0x00
+
+EVENT_BUF_VALID_LOCAL_INT                        0x00  UBOX
+UMASK_BUF_VALID_LOCAL_INT                        0x00
+
+EVENT_BUF_VALID_REMOTE_INT                       0x01  UBOX
+UMASK_BUF_VALID_REMOTE_INT                       0x00
+
+EVENT_BUF_VALID_LOCK                             0x02  UBOX
+UMASK_BUF_VALID_LOCK                             0x00
+
+EVENT_BUF_VALID_STST                             0x03  UBOX
+UMASK_BUF_VALID_STST                             0x00
+
+EVENT_BUF_VALID_SPC_CYCLES                       0x04  UBOX
+UMASK_BUF_VALID_SPC_CYCLES                       0x00
+
+EVENT_CORRECTED_ERR                             0x1E4  UBOX
+UMASK_CORRECTED_ERR                             0x00
+
+EVENT_FATAL_ERR                                 0x1E6  UBOX
+UMASK_FATAL_ERR                                 0x00
+
+EVENT_IPIS_SENT                                  0xF9  UBOX
+UMASK_IPIS_SENT                                  0x00
+
+EVENT_RECOV                                     0x1DF  UBOX
+UMASK_RECOV                                      0x00
+
+EVENT_U2R_REQUESTS                               0x050  UBOX
+UMASK_U2R_REQUESTS                               0x00
+
+EVENT_U2R_REQUEST_CYCLES                         0x051  UBOX
+UMASK_U2R_REQUEST_CYCLES                         0x00
+
+EVENT_WOKEN                                      0xF8  UBOX
+UMASK_WOKEN                                      0x00
+
+EVENT_TO_R_B_HOM_MSGQ_CYCLES_FULL               0x03 SBOX
+UMASK_TO_R_B_HOM_MSGQ_CYCLES_FULL_RBOX          0x01
+UMASK_TO_R_B_HOM_MSGQ_CYCLES_FULL_BBOX          0x02
+UMASK_TO_R_B_HOM_MSGQ_CYCLES_FULL_ALL           0x03
+
+EVENT_TO_R_B_HOM_MSGQ_CYCLES_NE                 0x06 SBOX
+UMASK_TO_R_B_HOM_MSGQ_CYCLES_NE_RBOX            0x01
+UMASK_TO_R_B_HOM_MSGQ_CYCLES_NE_BBOX            0x02
+UMASK_TO_R_B_HOM_MSGQ_CYCLES_NE_ALL             0x03
+
+EVENT_TO_R_B_HOM_MSGQ_OCCUPANCY                 0x07 SBOX
+UMASK_TO_R_B_HOM_MSGQ_OCCUPANCY_RBOX            0x01
+UMASK_TO_R_B_HOM_MSGQ_OCCUPANCY_BBOX            0x02
+UMASK_TO_R_B_HOM_MSGQ_OCCUPANCY_ALL             0x03
+
+EVENT_B2S_DRS_BYPASS                            0x53 SBOX
+UMASK_B2S_DRS_BYPASS                            0x00
+
+EVENT_BBOX_CREDITS                              0x77 SBOX
+UMASK_BBOX_CREDITS                              0x00
+
+EVENT_BBOX_CREDIT_RETURNS                       0x6B SBOX
+UMASK_BBOX_CREDIT_RETURNS                       0x00
+
+EVENT_BBOX_HOM_BYPASS                           0x54 SBOX
+UMASK_BBOX_HOM_BYPASS                           0x00
+
+EVENT_EGRESS_BYPASS                             0x40 SBOX
+UMASK_EGRESS_BYPASS_AD_CW                      0x01
+UMASK_EGRESS_BYPASS_AD_CCW                     0x02
+UMASK_EGRESS_BYPASS_AD                         0x03
+UMASK_EGRESS_BYPASS_AK_CW                      0x04
+UMASK_EGRESS_BYPASS_AK_CCW                     0x08
+UMASK_EGRESS_BYPASS_AK                         0x0C
+UMASK_EGRESS_BYPASS_BL_CW                      0x10
+UMASK_EGRESS_BYPASS_BL_CCW                     0x20
+UMASK_EGRESS_BYPASS_BL                         0x30
+
+EVENT_EGRESS_ARB_WINS                           0x41 SBOX
+UMASK_EGRESS_ARB_WINS_AD_CW                   0x01
+UMASK_EGRESS_ARB_WINS_AD_CCW                  0x02
+UMASK_EGRESS_ARB_WINS_AD                      0x03
+UMASK_EGRESS_ARB_WINS_AK_CW                   0x04
+UMASK_EGRESS_ARB_WINS_AK_CCW                  0x08
+UMASK_EGRESS_ARB_WINS_AK                      0x0C
+UMASK_EGRESS_ARB_WINS_BL_CW                   0x10
+UMASK_EGRESS_ARB_WINS_BL_CCW                  0x20
+UMASK_EGRESS_ARB_WINS_BL                      0x30
+
+EVENT_EGRESS_ARB_LOSSES                         0x42 SBOX
+UMASK_EGRESS_ARB_LOSSES_AD_CW                   0x01
+UMASK_EGRESS_ARB_LOSSES_AD_CCW                  0x02
+UMASK_EGRESS_ARB_LOSSES_AD                      0x03
+UMASK_EGRESS_ARB_LOSSES_AK_CW                   0x04
+UMASK_EGRESS_ARB_LOSSES_AK_CCW                  0x08
+UMASK_EGRESS_ARB_LOSSES_AK                      0x0C
+UMASK_EGRESS_ARB_LOSSES_BL_CW                   0x10
+UMASK_EGRESS_ARB_LOSSES_BL_CCW                  0x20
+UMASK_EGRESS_ARB_LOSSES_BL                      0x30
+
+EVENT_EGRESS_STARVED                            0x43 SBOX
+UMASK_EGRESS_STARVED_AD_CW                      0x01
+UMASK_EGRESS_STARVED_AD_CCW                     0x02
+UMASK_EGRESS_STARVED_AD                         0x03
+UMASK_EGRESS_STARVED_AK_CW                      0x04
+UMASK_EGRESS_STARVED_AK_CCW                     0x08
+UMASK_EGRESS_STARVED_AK                         0x0C
+UMASK_EGRESS_STARVED_BL_CW                      0x10
+UMASK_EGRESS_STARVED_BL_CCW                     0x20
+UMASK_EGRESS_STARVED_BL                         0x30
+
+EVENT_FLITS_SENT_DRS                            0x65 SBOX
+UMASK_FLITS_SENT_DRS                            0x00
+
+EVENT_FLITS_SENT_NCB                            0x69 SBOX
+UMASK_FLITS_SENT_NCB                            0x00
+
+EVENT_FLITS_SENT_NCS                            0x67 SBOX
+UMASK_FLITS_SENT_NCS                            0x00
+
+EVENT_HALFLINE_BYPASS                           0x30 SBOX
+UMASK_HALFLINE_BYPASS                           0x00
+
+EVENT_NO_CREDIT_AD                              0x87 SBOX
+UMASK_NO_CREDIT_AD                              0x00
+
+EVENT_NO_CREDIT_AK                              0x88 SBOX
+UMASK_NO_CREDIT_AK                              0x00
+
+EVENT_NO_CREDIT_BL                              0x89 SBOX
+UMASK_NO_CREDIT_BL                              0x00
+
+EVENT_NO_CREDIT_HOM                             0x80 SBOX
+UMASK_NO_CREDIT_HOM                             0x00
+
+EVENT_NO_CREDIT_SNP                             0x81 SBOX
+UMASK_NO_CREDIT_SNP                             0x00
+
+EVENT_NO_CREDIT_DRS                             0x82 SBOX
+UMASK_NO_CREDIT_DRS                             0x00
+
+EVENT_NO_CREDIT_NCS                             0x83 SBOX
+UMASK_NO_CREDIT_NCS                             0x00
+
+EVENT_NO_CREDIT_NCB                             0x84 SBOX
+UMASK_NO_CREDIT_NCB                             0x00
+
+EVENT_NO_CREDIT_NDR                             0x85 SBOX
+UMASK_NO_CREDIT_NDR                             0x00
+
+EVENT_NO_CREDIT_IPQ                             0x8A SBOX
+UMASK_NO_CREDIT_IPQ                             0x00
+
+EVENT_NO_CREDIT_VNA                             0x86 SBOX
+UMASK_NO_CREDIT_VNA_RBOX                        0x01
+UMASK_NO_CREDIT_VNA_BBOX                        0x02
+UMASK_NO_CREDIT_VNA_ALL                         0x03
+
+EVENT_PKTS_RCVD_DRS_FROM_R                      0x72 SBOX
+UMASK_PKTS_RCVD_DRS_FROM_R                      0x00
+
+EVENT_PKTS_RCVD_DRS_FROM_B                      0x73 SBOX
+UMASK_PKTS_RCVD_DRS_FROM_B                      0x00
+
+EVENT_PKTS_RCVD_NCB                             0x75 SBOX
+UMASK_PKTS_RCVD_NCB                             0x00
+
+EVENT_PKTS_RCVD_NCS                             0x74 SBOX
+UMASK_PKTS_RCVD_NCS                             0x00
+
+EVENT_PKTS_RCVD_NDR                             0x70 SBOX
+UMASK_PKTS_RCVD_NDR                             0x00
+
+EVENT_PKTS_RCVD_SNP                             0x71 SBOX
+UMASK_PKTS_RCVD_SNP                             0x00
+
+EVENT_PKTS_SENT_DRS                             0x64 SBOX
+UMASK_PKTS_SENT_DRS_CBOX0_4                     0x01
+UMASK_PKTS_SENT_DRS_CBOX1_5                     0x02
+UMASK_PKTS_SENT_DRS_CBOX2_6                     0x04
+UMASK_PKTS_SENT_DRS_CBOX3_7                     0x08
+UMASK_PKTS_SENT_DRS_ALL                         0x0F
+
+EVENT_PKTS_SENT_HOM                             0x60 SBOX
+UMASK_PKTS_SENT_HOM_RBOX                        0x01
+UMASK_PKTS_SENT_HOM_BBOX                        0x02
+UMASK_PKTS_SENT_HOM_ALL                         0x03
+
+EVENT_PKTS_SENT_NCB                             0x68 SBOX
+UMASK_PKTS_SENT_NCB_CBOX0_4                     0x01
+UMASK_PKTS_SENT_NCB_CBOX1_5                     0x02
+UMASK_PKTS_SENT_NCB_CBOX2_6                     0x04
+UMASK_PKTS_SENT_NCB_CBOX3_7                     0x08
+UMASK_PKTS_SENT_NCB_ALL                         0x0F
+
+EVENT_PKTS_SENT_NCS                             0x66 SBOX
+UMASK_PKTS_SENT_NCS_CBOX0_4                     0x01
+UMASK_PKTS_SENT_NCS_CBOX1_5                     0x02
+UMASK_PKTS_SENT_NCS_CBOX2_6                     0x04
+UMASK_PKTS_SENT_NCS_CBOX3_7                     0x08
+UMASK_PKTS_SENT_NCS_ALL                         0x0F
+
+EVENT_PKTS_SENT_NDR                             0x63 SBOX
+UMASK_PKTS_SENT_NDR                             0x00
+
+EVENT_PKTS_SENT_SNP                             0x62 SBOX
+UMASK_PKTS_SENT_SNP                             0x00
+
+EVENT_RBOX_CREDIT_RETURNS                       0x6A SBOX
+UMASK_RBOX_CREDIT_RETURNS                       0x00
+
+EVENT_RBOX_CREDIT_CARRIERS                       0x76 SBOX
+UMASK_RBOX_CREDIT_CARRIERS                       0x00
+
+EVENT_RBOX_HOM_BYPASS                           0x50 SBOX
+UMASK_RBOX_HOM_BYPASS                           0x00
+
+EVENT_RBOX_SNP_BYPASS                           0x51 SBOX
+UMASK_RBOX_SNP_BYPASS_SNP                       0x01
+UMASK_RBOX_SNP_BYPASS_BIG_SNP                   0x02
+UMASK_RBOX_SNP_BYPASS_ALL                       0x03
+
+EVENT_REQ_TBL_OCCUPANCY                         0x31 SBOX
+UMASK_REQ_TBL_OCCUPANCY_LOCAL                   0x01
+UMASK_REQ_TBL_OCCUPANCY_REMOTE                  0x02
+UMASK_REQ_TBL_OCCUPANCY_ALL                     0x03
+
+EVENT_S2B_HOM_BYPASS                            0x52 SBOX
+UMASK_S2B_HOM_BYPASS                            0x00
+
+EVENT_TO_RING_B2S_MSGQ_CYCLES_FULL              0x2B SBOX
+UMASK_TO_RING_B2S_MSGQ_CYCLES_FULL              0x00
+
+EVENT_TO_RING_B2S_MSGQ_CYCLES_NE                0x2D SBOX
+UMASK_TO_RING_B2S_MSGQ_CYCLES_NE                0x00
+
+EVENT_TO_RING_B2S_MSGQ_OCCUPANCY                0x2F SBOX
+UMASK_TO_RING_B2S_MSGQ_OCCUPANCY                0x00
+
+EVENT_TO_RING_MSGQ_OCCUPANCY                    0x26 SBOX
+UMASK_TO_RING_MSGQ_OCCUPANCY_SNP                0x01
+UMASK_TO_RING_MSGQ_OCCUPANCY_NCS                0x02
+UMASK_TO_RING_MSGQ_OCCUPANCY_NCB                0x04
+UMASK_TO_RING_MSGQ_OCCUPANCY_ALL                0x07
+
+EVENT_TO_RING_NCB_MSGQ_CYCLES_FULL              0x21 SBOX
+UMASK_TO_RING_NCB_MSGQ_CYCLES_FULL              0x00
+
+EVENT_TO_RING_NCB_MSGQ_CYCLES_NE                0x24 SBOX
+UMASK_TO_RING_NCB_MSGQ_CYCLES_NE                0x00
+
+EVENT_TO_RING_NCS_MSGQ_CYCLES_FULL              0x22 SBOX
+UMASK_TO_RING_NCS_MSGQ_CYCLES_FULL              0x00
+
+EVENT_TO_RING_NDR_MSGQ_CYCLES_FULL              0x27 SBOX
+UMASK_TO_RING_NDR_MSGQ_CYCLES_FULL              0x00
+
+EVENT_TO_RING_NDR_MSGQ_CYCLES_NE                0x28 SBOX
+UMASK_TO_RING_NDR_MSGQ_CYCLES_NE                0x00
+
+EVENT_TO_RING_NDR_MSGQ_OCCUPANCY                0x29 SBOX
+UMASK_TO_RING_NDR_MSGQ_OCCUPANCY                0x00
+
+EVENT_TO_RING_R2S_MSGQ_CYCLES_FULL              0x2A SBOX
+UMASK_TO_RING_R2S_MSGQ_CYCLES_FULL              0x00
+
+EVENT_TO_RING_R2S_MSGQ_CYCLES_NE                0x2C SBOX
+UMASK_TO_RING_R2S_MSGQ_CYCLES_NE                0x00
+
+EVENT_TO_RING_R2S_MSGQ_OCCUPANCY                0x2E SBOX
+UMASK_TO_RING_R2S_MSGQ_OCCUPANCY                0x00
+
+EVENT_TO_RING_SNP_MSGQ_CYCLES_FULL              0x20 SBOX
+UMASK_TO_RING_SNP_MSGQ_CYCLES_FULL              0x00
+
+EVENT_TO_RING_SNP_MSGQ_CYCLES_NE                0x23 SBOX
+UMASK_TO_RING_SNP_MSGQ_CYCLES_NE                0x00
+
+EVENT_TO_R_DRS_MSGQ_CYCLES_FULL                 0x0E SBOX
+UMASK_TO_R_DRS_MSGQ_CYCLES_FULL_CBOX0_4         0x01
+UMASK_TO_R_DRS_MSGQ_CYCLES_FULL_CBOX1_5         0x02
+UMASK_TO_R_DRS_MSGQ_CYCLES_FULL_CBOX2_6         0x04
+UMASK_TO_R_DRS_MSGQ_CYCLES_FULL_CBOX3_7         0x08
+UMASK_TO_R_DRS_MSGQ_CYCLES_FULL_ALL             0x0F
+
+EVENT_TO_R_DRS_MSGQ_CYCLES_NE                   0x0F SBOX
+UMASK_TO_R_DRS_MSGQ_CYCLES_NE_CBOX0_4           0x01
+UMASK_TO_R_DRS_MSGQ_CYCLES_NE_CBOX1_5           0x02
+UMASK_TO_R_DRS_MSGQ_CYCLES_NE_CBOX2_6           0x04
+UMASK_TO_R_DRS_MSGQ_CYCLES_NE_CBOX3_7           0x08
+UMASK_TO_R_DRS_MSGQ_CYCLES_NE_ALL               0x0F
+
+EVENT_TO_R_DRS_MSGQ_OCCUPANCY                   0x10 SBOX
+UMASK_TO_R_DRS_MSGQ_OCCUPANCY_CBOX0_4           0x01
+UMASK_TO_R_DRS_MSGQ_OCCUPANCY_CBOX1_5           0x02
+UMASK_TO_R_DRS_MSGQ_OCCUPANCY_CBOX2_6           0x04
+UMASK_TO_R_DRS_MSGQ_OCCUPANCY_CBOX3_7           0x08
+UMASK_TO_R_DRS_MSGQ_OCCUPANCY_ALL               0x0F
+
+EVENT_TO_R_B_HOM_MSGQ_CYCLES_FULL               0x03 SBOX
+UMASK_TO_R_B_HOM_MSGQ_CYCLES_FULL_RBOX          0x01
+UMASK_TO_R_B_HOM_MSGQ_CYCLES_FULL_BBOX          0x02
+UMASK_TO_R_B_HOM_MSGQ_CYCLES_FULL_ALL           0x03
+
+EVENT_TO_R_B_HOM_MSGQ_CYCLES_NE                 0x06 SBOX
+UMASK_TO_R_B_HOM_MSGQ_CYCLES_NE_RBOX            0x01
+UMASK_TO_R_B_HOM_MSGQ_CYCLES_NE_BBOX            0x02
+UMASK_TO_R_B_HOM_MSGQ_CYCLES_NE_ALL             0x03
+
+EVENT_TO_R_B_HOM_MSGQ_OCCUPANCY                 0x07 SBOX
+UMASK_TO_R_B_HOM_MSGQ_OCCUPANCY_RBOX            0x01
+UMASK_TO_R_B_HOM_MSGQ_OCCUPANCY_BBOX            0x02
+UMASK_TO_R_B_HOM_MSGQ_OCCUPANCY_ALL             0x03
+
+EVENT_TO_R_NCB_MSGQ_CYCLES_FULL                 0x11 SBOX
+UMASK_TO_R_NCB_MSGQ_CYCLES_FULL_CBOX0_4         0x01
+UMASK_TO_R_NCB_MSGQ_CYCLES_FULL_CBOX1_5         0x02
+UMASK_TO_R_NCB_MSGQ_CYCLES_FULL_CBOX2_6         0x04
+UMASK_TO_R_NCB_MSGQ_CYCLES_FULL_CBOX3_7         0x08
+UMASK_TO_R_NCB_MSGQ_CYCLES_FULL_ALL             0x0F
+
+EVENT_TO_R_NCB_MSGQ_CYCLES_NE                   0x12 SBOX
+UMASK_TO_R_NCB_MSGQ_CYCLES_NE_CBOX0_4           0x01
+UMASK_TO_R_NCB_MSGQ_CYCLES_NE_CBOX1_5           0x02
+UMASK_TO_R_NCB_MSGQ_CYCLES_NE_CBOX2_6           0x04
+UMASK_TO_R_NCB_MSGQ_CYCLES_NE_CBOX3_7           0x08
+UMASK_TO_R_NCB_MSGQ_CYCLES_NE_ALL               0x0F
+
+EVENT_TO_R_NCB_MSGQ_OCCUPANCY                   0x13 SBOX
+UMASK_TO_R_NCB_MSGQ_OCCUPANCY_CBOX0_4           0x01
+UMASK_TO_R_NCB_MSGQ_OCCUPANCY_CBOX1_5           0x02
+UMASK_TO_R_NCB_MSGQ_OCCUPANCY_CBOX2_6           0x04
+UMASK_TO_R_NCB_MSGQ_OCCUPANCY_CBOX3_7           0x08
+UMASK_TO_R_NCB_MSGQ_OCCUPANCY_ALL               0x0F
+
+EVENT_TO_R_NCS_MSGQ_CYCLES_FULL                 0x14 SBOX
+UMASK_TO_R_NCS_MSGQ_CYCLES_FULL_CBOX0_4         0x01
+UMASK_TO_R_NCS_MSGQ_CYCLES_FULL_CBOX1_5         0x02
+UMASK_TO_R_NCS_MSGQ_CYCLES_FULL_CBOX2_6         0x04
+UMASK_TO_R_NCS_MSGQ_CYCLES_FULL_CBOX3_7         0x08
+UMASK_TO_R_NCS_MSGQ_CYCLES_FULL_ALL             0x0F
+
+EVENT_TO_R_NCS_MSGQ_CYCLES_NE                   0x15 SBOX
+UMASK_TO_R_NCS_MSGQ_CYCLES_NE_CBOX0_4           0x01
+UMASK_TO_R_NCS_MSGQ_CYCLES_NE_CBOX1_5           0x02
+UMASK_TO_R_NCS_MSGQ_CYCLES_NE_CBOX2_6           0x04
+UMASK_TO_R_NCS_MSGQ_CYCLES_NE_CBOX3_7           0x08
+UMASK_TO_R_NCS_MSGQ_CYCLES_NE_ALL               0x0F
+
+EVENT_TO_R_NCS_MSGQ_OCCUPANCY                   0x16 SBOX
+UMASK_TO_R_NCS_MSGQ_OCCUPANCY_CBOX0_4           0x01
+UMASK_TO_R_NCS_MSGQ_OCCUPANCY_CBOX1_5           0x02
+UMASK_TO_R_NCS_MSGQ_OCCUPANCY_CBOX2_6           0x04
+UMASK_TO_R_NCS_MSGQ_OCCUPANCY_CBOX3_7           0x08
+UMASK_TO_R_NCS_MSGQ_OCCUPANCY_ALL               0x0F
+
+EVENT_TO_R_NDR_MSGQ_CYCLES_FULL                 0x0B SBOX
+UMASK_TO_R_NDR_MSGQ_CYCLES_FULL                 0x00
+
+EVENT_TO_R_NDR_MSGQ_CYCLES_NE                   0x0C SBOX
+UMASK_TO_R_NDR_MSGQ_CYCLES_NE                   0x00
+
+EVENT_TO_R_NDR_MSGQ_OCCUPANCY                   0x0D SBOX
+UMASK_TO_R_NDR_MSGQ_OCCUPANCY                   0x00
+
+EVENT_TO_R_PROG_EV                              0x00 SBOX
+UMASK_TO_R_PROG_EV                              0x00
+
+EVENT_TO_R_B_REQUESTS                           0x6C SBOX
+UMASK_TO_R_B_REQUESTS_LOCAL                     0x01
+UMASK_TO_R_B_REQUESTS_REMOTE                    0x02
+UMASK_TO_R_B_REQUESTS_ALL                       0x03
+
+EVENT_TO_R_SNP_MSGQ_CYCLES_FULL                 0x08 SBOX
+UMASK_TO_R_SNP_MSGQ_CYCLES_FULL                 0x00
+
+EVENT_TO_R_SNP_MSGQ_CYCLES_NE                   0x09 SBOX
+UMASK_TO_R_SNP_MSGQ_CYCLES_NE                   0x00
+
+EVENT_TO_R_SNP_MSGQ_OCCUPANCY                   0x0A SBOX
+UMASK_TO_R_SNP_MSGQ_OCCUPANCY                   0x00
