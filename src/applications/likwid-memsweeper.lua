@@ -28,18 +28,11 @@
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================]]
-
-VERSION = 4
-RELEASE = 0
-
-require("liblikwid")
+package.path = package.path .. ';' .. string.gsub(debug.getinfo(1).source, "^@(.+/)[^/]+$", "%1") .. '/?.lua'
 local likwid = require("likwid")
 
-local HLINE = string.rep("-",80)
-local SLINE = string.rep("*",80)
-
 local function version()
-    print(string.format("likwid-memsweeper --  Version %d.%d",VERSION,RELEASE))
+    print(string.format("likwid-memsweeper --  Version %d.%d",likwid.version,likwid.release))
 end
 
 local function examples()
@@ -64,7 +57,7 @@ local function usage()
     examples()
 end
 
-numainfo = likwid_getNumaInfo()
+numainfo = likwid.getNumaInfo()
 nodes = {}
 for i,_ in pairs(numainfo["nodes"]) do
     if tonumber(numainfo["nodes"][i]["id"]) ~= nil then
@@ -82,12 +75,13 @@ for opt,arg in likwid.getopt(arg, "c:hv") do
     elseif (opt == "c") then
         num_nodes, nodes = likwid.nodestr_to_nodelist(arg)
     else
-        print("Unknown option found on commandline")
+        print("Unknown option found on commanlikwid.dline")
         usage()
         os.exit(1)
     end
 end
 
 for i,socket in pairs(nodes) do
-    likwid_memSweepDomain(socket)
+    likwid.memSweepDomain(socket)
 end
+likwid.putNumaInfo()

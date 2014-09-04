@@ -28,18 +28,11 @@
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================]]
-VERSION = 4
-RELEASE = 0
-LIBLIKWIDPIN = "/usr/local/lib/liblikwidpin.so"
-
-require("liblikwid")
+package.path = package.path .. ';' .. string.gsub(debug.getinfo(1).source, "^@(.+/)[^/]+$", "%1") .. '/?.lua'
 local likwid = require("likwid")
 
-local HLINE = string.rep("-",80)
-local SLINE = string.rep("*",80)
-
 local function version()
-    print(string.format("likwid-pin.lua --  Version %d.%d",VERSION,RELEASE))
+    print(string.format("likwid-pin.lua --  Version %d.%d",likwid.version,likwid.release))
 end
 
 local function examples()
@@ -99,8 +92,9 @@ skip_mask = "0x0"
 affinity = nil
 num_threads = 0
 
-cputopo = likwid_getCpuTopology()
-affinity = likwid_getAffinityInfo()
+config = likwid.getConfiguration()
+cputopo = likwid.getCpuTopology()
+affinity = likwid.getAffinityInfo()
 
 if (#arg == 0) then
     usage()
@@ -144,7 +138,7 @@ for opt,arg in likwid.getopt(arg, "c:d:hipqs:St:v") do
         end
         skip_mask = arg
     elseif (opt == "q") then
-        likwid_setenv("LIKWID_SILENT","true")
+        likwid.setenv("LIKWID_SILENT","true")
         quiet = 1
     else
         print("Unknown option -" .. opt .. "\n")
@@ -160,7 +154,7 @@ if print_domains and num_threads > 0 then
     end
     print(outstr:sub(2,outstr:len()))
 elseif print_domains then
-    likwid_printAffinityDomains()
+    likwid.printAffinityDomains()
     os.exit(0)
 end
 
@@ -170,17 +164,17 @@ end
 
 if interleaved_policy then
     print("Set mem_policy to interleaved")
-    likwid_setMemInterleaved(num_threads, cpu_list)
+    likwid.setMemInterleaved(num_threads, cpu_list)
 end
 
 if sweep_sockets then
     print("Sweeping memory")
-    likwid_memSweep(num_threads, cpu_list)
+    likwid.memSweep(num_threads, cpu_list)
 end
 
 local omp_threads = os.getenv("OMP_NUM_THREADS")
 if omp_threads == nil then
-    likwid_setenv("OMP_NUM_THREADS",tostring(num_threads))
+    likwid.setenv("OMP_NUM_THREADS",tostring(num_threads))
 end
 
 
@@ -193,18 +187,18 @@ if num_threads > 1 then
     pinString = pinString .. "," .. cpu_list[1]
     skipString = skip_mask
 
-    likwid_setenv("KMP_AFFINITY","disabled")
-    likwid_setenv("LIKWID_PIN", pinString)
-    likwid_setenv("LIKWID_SKIP",skipString)
+    likwid.setenv("KMP_AFFINITY","disabled")
+    likwid.setenv("LIKWID_PIN", pinString)
+    likwid.setenv("LIKWID_SKIP",skipString)
 
     if preload == nil then
-        likwid_setenv("LD_PRELOAD",LIBLIKWIDPIN)
+        likwid.setenv("LD_PRELOAD",likwid.pinlibpath)
     else
-        likwid_setenv("LD_PRELOAD",LIBLIKWIDPIN .. ":" .. preload)
+        likwid.setenv("LD_PRELOAD",likwid.pinlibpath .. ":" .. preload)
     end
 end
 
-likwid_pinProcess(cpu_list[1], quiet)
+likwid.pinProcess(cpu_list[1], quiet)
 local exec = table.concat(arg," ",1, likwid.tablelength(arg)-2)
 local err
 err = os.execute(exec)
@@ -212,4 +206,8 @@ if (err == false) then
     print("Failed to execute command: ".. exec)
     os.exit(1)
 end
+
+likwid.putAffinityInfo()
+likwid.putTopology()
+likwid.putConfiguration()
 os.exit(0)

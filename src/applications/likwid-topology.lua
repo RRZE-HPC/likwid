@@ -1,4 +1,4 @@
-#!/home/rrze/unrz/unrz139/Work/likwid/trunk/ext/lua/lua
+#!/home/tr993631/likwid/trunk/ext/lua/lua
 
 --[[
  * =======================================================================================
@@ -29,18 +29,11 @@
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================]]
-VERSION = 4
-RELEASE = 0
-
-require("liblikwid")
+package.path = package.path .. ';' .. string.gsub(debug.getinfo(1).source, "^@(.+/)[^/]+$", "%1") .. '/?.lua'
 local likwid = require("likwid")
 
-local HLINE = string.rep("-",80)
-local SLINE = string.rep("*",80)
-
-
 function version()
-    print(string.format("likwid-topology --  Version %d.%d",VERSION,RELEASE))
+    print(string.format("likwid-topology --  Version %d.%d",likwid.version,likwid.release))
 end
 
 function usage()
@@ -78,53 +71,55 @@ for opt,arg in likwid.getopt(arg, "hvcCgo:") do
     end
 end
 
-local cpuinfo = likwid_getCpuInfo()
-local cputopo = likwid_getCpuTopology()
-local numainfo = likwid_getNumaInfo()
-local affinity = likwid_getAffinityInfo()
+local config = likwid.getConfiguration();
+local cpuinfo = likwid.getCpuInfo()
+local cputopo = likwid.getCpuTopology()
+local numainfo = likwid.getNumaInfo()
+local affinity = likwid.getAffinityInfo()
 
-print(HLINE)
+print(likwid.hline)
 print(string.format("CPU type:\t%s",cpuinfo["name"]))
-
+print(string.format("CPU stepping:\t%s",cpuinfo["stepping"]))
 if (measure_clock) then
     if cpuinfo["clock"] == 0 then
-        print(string.format("CPU clock:\t%3.2f GHz", likwid_getCpuClock() * 1.E-09))
+        print(string.format("CPU clock:\t%3.2f GHz", likwid.getCpuClock() * 1.E-09))
     else
         print(string.format("CPU clock:\t%3.2f GHz", cpuinfo["clock"] * 1.E-09))
     end
 end
 
-print(SLINE)
+print(likwid.sline)
 print("Hardware Thread Topology")
-print(SLINE)
+print(likwid.sline)
 print(string.format("Sockets:\t\t%u",cputopo["numSockets"]))
 print(string.format("Cores per socket:\t%u",cputopo["numCoresPerSocket"]))
 print(string.format("Threads per core:\t%u",cputopo["numThreadsPerCore"]))
-print(HLINE)
+print(likwid.hline)
 print("HWThread\tThread\t\tCore\t\tSocket")
 
-for cntr=1,cputopo["numHWThreads"] do
-    print(string.format("%d\t\t%u\t\t%u\t\t%u",cputopo["threadPool"][cntr]["apicId"],
+for cntr=0,cputopo["numHWThreads"]-1 do
+    print(string.format("%d\t\t%u\t\t%u\t\t%u",cntr,
                         cputopo["threadPool"][cntr]["threadId"],
                         cputopo["threadPool"][cntr]["coreId"],
                         cputopo["threadPool"][cntr]["packageId"]))
 end
-print(HLINE)
+print(likwid.hline)
 
 for socket=0,cputopo["numSockets"]-1 do
-    str = string.format("Socket %d: (",socket)
-    for cntr=1,cputopo["numHWThreads"] do
-        if cputopo["threadPool"][cntr]["packageId"] == socket then
-            str = str .. " " .. cputopo["threadPool"][cntr]["apicId"]
+    str = string.format("Socket %d: (",cputopo["topologyTree"][socket]["ID"])
+    for core=0,cputopo["numCoresPerSocket"]-1 do
+        for thread=0, cputopo["numThreadsPerCore"]-1 do
+            str = str .. " " .. tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread])
         end
     end
     print(str .. " )")
 end
-print(HLINE .. "\n")
+    
+print(likwid.hline .. "\n")
 
-print(SLINE)
+print(likwid.sline)
 print("Cache Topology")
-print(SLINE)
+print(likwid.sline)
 
 for level=1,cputopo["numCacheLevels"] do
     if (cputopo["cacheLevels"][level]["type"] ~= "INSTRUCTIONCACHE") then
@@ -152,38 +147,38 @@ for level=1,cputopo["numCacheLevels"] do
                 print("Inclusive cache")
             end
             print(string.format("Shared among %d threads",cputopo["cacheLevels"][level]["threads"]))
-            local threads = cputopo["cacheLevels"][level]["threads"]
-            str = "Cache groups:\t( "
-            for socket=0,cputopo["numSockets"]-1 do
-                for core=0,#cputopo["topologyTree"][socket] do
-                    for cpu=0,#cputopo["topologyTree"][socket][core] do
-                        if (threads ~= 0) then
-                            str = str .. cputopo["topologyTree"][socket][core][cpu] .. " "
-                            threads = threads - 1
-                        else
-                            str = str .. string.format(") ( %d ",cputopo["topologyTree"][socket][core][cpu])
-                            threads = cputopo["cacheLevels"][level]["threads"]
-                            threads = threads - 1
-                        end
+        end
+        local threads = cputopo["cacheLevels"][level]["threads"]
+        str = "Cache groups:\t( "
+        for socket=0,cputopo["numSockets"]-1 do
+            for core=0,cputopo["numCoresPerSocket"]-1 do
+                for cpu=0,cputopo["numThreadsPerCore"]-1 do
+                    if (threads ~= 0) then
+                        str = str .. cputopo["topologyTree"][socket]["Childs"][core]["Childs"][cpu] .. " "
+                        threads = threads - 1
+                    else
+                        str = str .. string.format(") ( %d ",cputopo["topologyTree"][socket]["Childs"][core]["Childs"][cpu])
+                        threads = cputopo["cacheLevels"][level]["threads"]
+                        threads = threads - 1
                     end
                 end
-                print(str .. ")")
             end
         end
-        print(HLINE)
+        print(str .. ")")
+        print(likwid.hline)
     end
 end
 print("\n")
 
-print(SLINE)
+print(likwid.sline)
 print("NUMA Topology")
-print(SLINE)
+print(likwid.sline)
 
 if (numainfo["numberOfNodes"] == 0) then
     print("NUMA is not supported on this node!")
 else
     print(string.format("NUMA domains: %d",numainfo["numberOfNodes"]))
-    print(HLINE)
+    print(likwid.hline)
     -- -2 because numberOfNodes is seen as one entry
     for node=1,numainfo["numberOfNodes"] do
         print(string.format("Domain %d:",numainfo["nodes"][node]["id"]))
@@ -200,7 +195,7 @@ else
         print(string.format("Memory: %g MB free of total %g MB", 
                                 tonumber(numainfo["nodes"][node]["freeMemory"]/1024),
                                 tonumber(numainfo["nodes"][node]["totalMemory"]/1024)))
-        print(HLINE)
+        print(likwid.hline)
     end
 end
 
@@ -208,7 +203,10 @@ if (print_graphical) then
     print("Graphical output currently not supported by likwid-topology written in Lua")
 end
 
-
+likwid.putAffinityInfo()
+likwid.putNumaInfo()
+likwid.putTopology()
+likwid.putConfiguration()
 
 
 

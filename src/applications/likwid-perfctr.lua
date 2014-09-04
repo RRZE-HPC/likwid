@@ -1,4 +1,4 @@
-#!/home/rrze/unrz/unrz139/Work/likwid/trunk/ext/lua/lua
+#!/home/tr993631/likwid/trunk/ext/lua/lua
 
 --[[
  * =======================================================================================
@@ -30,19 +30,12 @@
  *
  * =======================================================================================]]
 
-VERSION = 4
-RELEASE = 0
-LIBLIKWIDPIN = "/usr/local/lib/liblikwidpin.so"
 P6_FAMILY = 6
-
-require("liblikwid")
+package.path = package.path .. ';' .. string.gsub(debug.getinfo(1).source, "^@(.+/)[^/]+$", "%1") .. '/?.lua'
 local likwid = require("likwid")
 
-HLINE = string.rep("-",80)
-local SLINE = string.rep("*",80)
-
 local function version()
-    print(string.format("likwid-perfctr.lua --  Version %d.%d",VERSION,RELEASE))
+    print(string.format("likwid-perfctr.lua --  Version %d.%d",likwid.version,likwid.release))
 end
 
 local function examples()
@@ -79,7 +72,7 @@ local function usage()
 end
 
 
-local config = likwid_getConfiguration();
+local config = likwid.getConfiguration();
 verbose = 0
 print_groups = false
 print_events = false
@@ -111,7 +104,7 @@ switch_interval = 5
 output = ""
 use_csv = false
 execString = nil
-markerFile = string.format("/tmp/likwid_%d.txt",likwid_getpid("pid"))
+markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid("pid"))
 
 
 for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
@@ -132,7 +125,7 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
         os.exit(0)
     elseif (opt == "V") then
         verbose = tonumber(arg)
-        likwid_setVerbosity(verbose)
+        likwid.setVerbosity(verbose)
     elseif (opt == "c") then
         num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
     elseif (opt == "C") then
@@ -175,12 +168,12 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
 end
 
 io.stdout:setvbuf("no")
-cpuinfo = likwid_getCpuInfo()
+cpuinfo = likwid.getCpuInfo()
 
 
 
 if print_events == true then
-    local tab = likwid_getEventsAndCounters()
+    local tab = likwid.getEventsAndCounters()
     print(string.format("This architecture has %d counters.", #tab["Counters"]))
     local outstr = "Counters names: "
     for _, counter in pairs(tab["Counters"]) do
@@ -212,7 +205,7 @@ end
 
 if print_group_help == true then
     if #event_string_list == 0 then
-        print("Group(s) must be given on commandline to get group help")
+        print("Group(s) must be given on commanlikwid.dline to get group help")
         os.exit(1)
     end
     for i,event_string in pairs(event_string_list) do
@@ -228,14 +221,13 @@ if print_group_help == true then
     os.exit(0)
 end
 
-print(HLINE)
+print(likwid.hline)
 print(string.format("CPU type:\t%s",cpuinfo["name"]))
 if (cpuinfo["clock"] > 0) then
     print(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] * 1.E-09))
 else
-    print(string.format("CPU clock:\t%3.2f GHz",likwid_getCpuClock() * 1.E-09))
+    print(string.format("CPU clock:\t%3.2f GHz",likwid.getCpuClock() * 1.E-09))
 end
-io.stdout:flush()
 
 if verbose > 0 then
     print(string.format("CPU family:\t%u", cpuinfo["family"]))
@@ -243,7 +235,7 @@ if verbose > 0 then
     print(string.format("CPU stepping:\t%u", cpuinfo["stepping"]))
     print(string.format("CPU features:\t%s", cpuinfo["features"]))
     if cpuinfo["family"] == P6_FAMILY and cpuinfo["perf_version"] > 0 then
-        print(HLINE)
+        print(likwid.hline)
         print(string.format("PERFMON version:\t%u",cpuinfo["perf_version"]))
         print(string.format("PERFMON number of counters:\t%u",cpuinfo["perf_num_ctr"]))
         print(string.format("PERFMON width of counters:\t%u",cpuinfo["perf_width_ctr"]))
@@ -256,13 +248,13 @@ if print_info then
 end
 
 if num_cpus == 0 then
-    print("Option -c <list> or -C <list> must be given on commandline")
+    print("Option -c <list> or -C <list> must be given on commanlikwid.dline")
     usage()
     os.exit(1)
 end
 
 if #event_string_list == 0 then
-    print("Option(s) -g <string> must be given on commandline")
+    print("Option(s) -g <string> must be given on commanlikwid.dline")
     usage()
     os.exit(1)
 end
@@ -287,7 +279,7 @@ if use_wrapper == true and use_timeline == false and #event_string_list > 1 then
 end
 
 if use_wrapper and likwid.tablelength(arg)-2 == 0 and print_info == false then
-    print("No Executable can be found on commandline")
+    print("No Executable can be found on commanlikwid.dline")
     usage()
     os.exit(0)
 end
@@ -297,7 +289,7 @@ end
 if pin_cpus then
     local omp_threads = os.getenv("OMP_NUM_THREADS")
     if omp_threads == nil then
-        likwid_setenv("OMP_NUM_THREADS",tostring(num_cpus))
+        likwid.setenv("OMP_NUM_THREADS",tostring(num_cpus))
     end
     
     if num_cpus > 1 then
@@ -309,17 +301,17 @@ if pin_cpus then
         pinString = pinString .. "," .. cpulist[1]
         skipString = skip_mask
 
-        likwid_setenv("KMP_AFFINITY","disabled")
-        likwid_setenv("LIKWID_PIN", pinString)
-        likwid_setenv("LIKWID_SKIP",skipString)
-        likwid_setenv("LIKWID_SILENT","true")
+        likwid.setenv("KMP_AFFINITY","disabled")
+        likwid.setenv("LIKWID_PIN", pinString)
+        likwid.setenv("LIKWID_SKIP",skipString)
+        likwid.setenv("LIKWID_SILENT","true")
         if preload == nil then
-            likwid_setenv("LD_PRELOAD",LIBLIKWIDPIN)
+            likwid.setenv("LD_PRELOAD",likwid.pinlibpath)
         else
-            likwid_setenv("LD_PRELOAD",LIBLIKWIDPIN .. ":" .. preload)
+            likwid.setenv("LD_PRELOAD",likwid.pinlibpath .. ":" .. preload)
         end
     end
-    likwid_pinProcess(cpulist[1], 1)
+    likwid.pinProcess(cpulist[1], 1)
 end
 
 
@@ -337,23 +329,23 @@ end
 
 
 
-if likwid_setAccessClientMode(access_mode) ~= 0 then
+if likwid.setAccessClientMode(access_mode) ~= 0 then
     os.exit(1)
 end
-if likwid_init(num_cpus, cpulist) < 0 then
+if likwid.init(num_cpus, cpulist) < 0 then
     os.exit(1)
 end
 
 for i, event_string in pairs(event_string_list) do
-    local gid = likwid_addEventSet(event_string)
+    local gid = likwid.addEventSet(event_string)
     if gid < 0 then
         os.exit(1)
     end
     table.insert(group_ids, gid)
 end
 
-likwid_setupCounters(group_ids[1])
-print(HLINE)
+likwid.setupCounters(group_ids[1])
+print(likwid.hline)
 
 if use_timeline == true then
     local cores_string = "CORES: "
@@ -361,7 +353,7 @@ if use_timeline == true then
         cores_string = cores_string .. tostring(cpu) .. " "
     end
     print(cores_string:sub(1,cores_string:len()-1))
-    likwid_startDaemon(duration, switch_interval);
+    likwid.startDaemon(duration, switch_interval);
 end
 
 if use_wrapper or use_timeline then
@@ -372,16 +364,16 @@ if use_wrapper or use_timeline then
 end
 
 if use_marker == true then
-    likwid_setenv("LIKWID_FILEPATH", markerFile)
-    likwid_setenv("LIKWID_MODE", tostring(access_mode))
-    likwid_setenv("LIKWID_MASK", likwid.createBitMask(group_list[1]))
-    likwid_setenv("LIKWID_GROUPS", tostring(likwid_getNumberOfGroups()))
+    likwid.setenv("LIKWID_FILEPATH", markerFile)
+    likwid.setenv("LIKWID_MODE", tostring(access_mode))
+    likwid.setenv("LIKWID_MASK", likwid.createBitMask(group_list[1]))
+    likwid.setenv("LIKWID_GROUPS", tostring(likwid.getNumberOfGroups()))
     local str = event_string_list[1]
-    likwid_setenv("LIKWID_EVENTS", str)
+    likwid.setenv("LIKWID_EVENTS", str)
 end
 
 if use_wrapper or use_stethoscope then
-    local ret = likwid_startCounters()
+    local ret = likwid.startCounters()
     if ret < 0 then
         print(string.format("Error starting counters for thread %d.",ret * (-1)))
         os.exit(1)
@@ -397,15 +389,15 @@ else
     usleep(duration)
 end
 io.stdout:flush()
-print(HLINE)
+print(likwid.hline)
 if use_wrapper or use_stethoscope then
-    local ret = likwid_stopCounters()
+    local ret = likwid.stopCounters()
     if ret < 0 then
          print(string.format("Error stopping counters for thread %d.",ret * (-1)))
         os.exit(1)
     end
 elseif use_timeline then
-    likwid_stopDaemon(9)
+    likwid.stopDaemon(9)
 end
 
 if use_marker == true then
@@ -422,5 +414,7 @@ elseif use_wrapper or use_stethoscope then
 end
 
 
-likwid_finalize()
+likwid.finalize()
+likwid.putTopology()
+likwid.putConfiguration()
 

@@ -1,7 +1,6 @@
 #!/home/rrze/unrz/unrz139/Work/likwid/trunk/ext/lua/lua
 
-
-require("liblikwid")
+package.path = package.path .. ';' .. string.gsub(debug.getinfo(1).source, "^@(.+/)[^/]+$", "%1") .. '/?.lua'
 local likwid = require("likwid")
 
 -- Read commandline arguments
@@ -13,10 +12,10 @@ local eventSet = arg[1]
 local duration = arg[2]
 
 -- Get architectural information for the current system
-local cpuinfo = likwid_getCpuInfo()
-local cputopo = likwid_getCpuTopology()
+local cpuinfo = likwid.getCpuInfo()
+local cputopo = likwid.getCpuTopology()
 -- Read configuration file
-local config = likwid_getConfiguration()
+local config = likwid.getConfiguration()
 
 -- Add all cpus to the cpulist
 local cpulist = {}
@@ -29,7 +28,7 @@ access_mode = config["daemonMode"]
 if access_mode < 0 then
     access_mode = 1
 end
-if likwid_setAccessClientMode(access_mode) ~= 0 then
+if likwid.setAccessClientMode(access_mode) ~= 0 then
     os.exit(1)
 end
 
@@ -44,15 +43,15 @@ else
 end
 
 -- Initialize likwid perfctr
-likwid_init(cputopo["numHWThreads"], cpulist)
-local groupID = likwid_addEventSet(eventSet)
+likwid.init(cputopo["numHWThreads"], cpulist)
+local groupID = likwid.addEventSet(eventSet)
 
-likwid_setupCounters(groupID)
+likwid.setupCounters(groupID)
 
 -- Perform the measurement
-likwid_startCounters()
+likwid.startCounters()
 sleep(duration)
-likwid_stopCounters()
+likwid.stopCounters()
 
 -- Read all results and print them in CSV
 local results = likwid.getResults()
@@ -68,4 +67,6 @@ for ig,g in pairs(results) do
 end
 
 -- Finalize likwid perfctr
-likwid_finalize()
+likwid.finalize()
+likwid.putConfiguration()
+likwid.putTopology()

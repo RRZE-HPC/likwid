@@ -1,11 +1,64 @@
 local likwid = {}
+require("liblikwid")
 
 groupfolder = "/home/tr993631/likwid/trunk/groups"
 
+likwid.version = 4
+likwid.release = 0
+likwid.pinlibpath = "/usr/local/lib/liblikwidpin.so"
 likwid.dline = string.rep("=",24)
 likwid.hline =  string.rep("-",80)
 likwid.sline = string.rep("*",80)
 
+
+
+likwid.getConfiguration = likwid_getConfiguration
+likwid.putConfiguration = likwid_putConfiguration
+likwid.setAccessClientMode = likwid_setAccessClientMode
+likwid.init = likwid_init
+likwid.addEventSet = likwid_addEventSet
+likwid.setupCounters = likwid_setupCounters
+likwid.startCounters = likwid_startCounters
+likwid.stopCounters = likwid_stopCounters
+likwid.readCounters = likwid_readCounters
+likwid.finalize = likwid_finalize
+likwid.getEventsAndCounters = likwid_getEventsAndCounters
+likwid.getResult = likwid_getResult
+likwid.getNumberOfGroups = likwid_getNumberOfGroups
+likwid.getRuntimeOfGroup = likwid_getRuntimeOfGroup
+likwid.getIdOfActiveGroup = likwid_getIdOfActiveGroup
+likwid.getNumberOfEvents = likwid_getNumberOfEvents
+likwid.getNumberOfThreads = likwid_getNumberOfThreads
+likwid.getCpuInfo = likwid_getCpuInfo
+likwid.getCpuTopology = likwid_getCpuTopology
+likwid.putTopology = likwid_putTopology
+likwid.getNumaInfo = likwid_getNumaInfo
+likwid.putNumaInfo = likwid_putNumaInfo
+likwid.setMemInterleaved = likwid_setMemInterleaved
+likwid.getAffinityInfo = likwid_getAffinityInfo
+likwid.putAffinityInfo = likwid_putAffinityInfo
+likwid.printAffinityDomains = likwid_printAffinityDomains
+likwid.getPowerInfo = likwid_getPowerInfo
+likwid.getOnlineDevices = likwid_getOnlineDevices
+likwid.getCpuClock = likwid_getCpuClock
+likwid.startClock = likwid_startClock
+likwid.stopClock = likwid_stopClock
+likwid.getClockCycles = likwid_getClockCycles
+likwid.getClock = likwid_getClock
+likwid.sleep = sleep
+likwid.usleep = usleep
+likwid.startDaemon = likwid_startDaemon
+likwid.stopDaemon = likwid_stopDaemon
+likwid.startPower = likwid_startPower
+likwid.stopPower = likwid_stopPower
+likwid.initTemp = likwid_initTemp
+likwid.readTemp = likwid_readTemp
+likwid.memSweep = likwid_memSweep
+likwid.memSweepDomain = likwid_memSweepDomain
+likwid.pinProcess = likwid_pinProcess
+likwid.setenv = likwid_setenv
+likwid.getpid = likwid_getpid
+likwid.setVerbosity = likwid_setVerbosity
 
 local function getopt(args, ostr)
     local arg, place = nil, 0;

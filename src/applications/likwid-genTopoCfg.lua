@@ -29,10 +29,7 @@
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================]]
-VERSION = 4
-RELEASE = 0
 
-require("liblikwid")
 local likwid = require("likwid")
 
 local HLINE = string.rep("-",80)
@@ -40,7 +37,7 @@ local SLINE = string.rep("*",80)
 
 
 function version()
-    print(string.format("likwid-genCfg --  Version %d.%d",VERSION,RELEASE))
+    print(string.format("likwid-genCfg --  Version %d.%d",likwid.version,likwid.release))
 end
 
 function usage()
@@ -55,11 +52,11 @@ function usage()
     print("-g\t Graphical output")
 end
 
-local cpuinfo = likwid_getCpuInfo()
-local cputopo = likwid_getCpuTopology()
-local numainfo = likwid_getNumaInfo()
-local affinity = likwid_getAffinityInfo()
-cpuinfo["clock"] = likwid_getCpuClock()
+local cpuinfo = likwid.getCpuInfo()
+local cputopo = likwid.getCpuTopology()
+local numainfo = likwid.getNumaInfo()
+local affinity = likwid.getAffinityInfo()
+cpuinfo["clock"] = likwid.getCpuClock()
 
 local threadPool_order = {"threadId", "coreId", "packageId", "apicId"}
 local cacheLevels_order = {"type", "associativity", "sets", "lineSize", "size", "threads", "inclusive"}
@@ -114,7 +111,8 @@ for field, value in pairs(numainfo["nodes"]) do
     end
 end
 
-
-
-
 file:close()
+likwid.putAffinityInfo()
+likwid.putNumaInfo()
+likwid.putTopology()
+
