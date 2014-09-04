@@ -119,7 +119,7 @@ $(APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(APPS))) $(BUILD
 
 $(STATIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE STATIC LIB  $(STATIC_TARGET_LIB)"
-	$(Q)${AR} -cq $(STATIC_TARGET_LIB) $(OBJ) $(LIBHWLOC) $(LIBLUA)
+	$(Q)${AR} -crus $(STATIC_TARGET_LIB) $(OBJ) $(LIBHWLOC) $(LIBLUA)
 
 
 $(DYNAMIC_TARGET_LIB): $(OBJ)
