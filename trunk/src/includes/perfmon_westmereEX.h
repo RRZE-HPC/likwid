@@ -486,14 +486,14 @@ int perfmon_init_westmereEX(int cpu_id)
 #define WEX_FREEZE_BOX(id) \
     if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(id))) \
     { \
-        VERBOSEPRINTREG(cpu_id, westmereEX_box_map[id].ctrlRegister, LLU_CAST 0x0U, FREEZE_BOX_##id) \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, westmereEX_box_map[id].ctrlRegister, 0x0U)); \
+        VERBOSEPRINTREG(cpu_id, box_map[id].ctrlRegister, LLU_CAST 0x0U, FREEZE_BOX_##id) \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].ctrlRegister, 0x0U)); \
     }
 
 #define WEX_RESET_OVF_BOX(id) \
     if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(id))) \
     { \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, westmereEX_box_map[id].ovflRegister, 0xFFFFFFFF)); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].ovflRegister, 0xFFFFFFFF)); \
     }
 
 
@@ -525,10 +525,10 @@ int perfmon_setupCounterThread_westmereEX(int thread_id, PerfmonEventSet* eventS
     {
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
-        uint64_t reg = westmereEX_counter_map[index].configRegister;
+        uint64_t reg = counter_map[index].configRegister;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
         flags = 0x0ULL;
-        switch (westmereEX_counter_map[index].type)
+        switch (counter_map[index].type)
         {
             case PMC:
                 /* Intel with standard 8 bit event mask: [7:0] */
@@ -566,6 +566,23 @@ int perfmon_setupCounterThread_westmereEX(int thread_id, PerfmonEventSet* eventS
 
             case FIXED:
                 fixed_flags |= (0x2 << (4*index));
+                if (event->numberOfOptions > 0)
+                {
+                    for (int j=0;j<event->numberOfOptions;j++)
+                    {
+                        switch (event->options[j].type)
+                        {
+                            case EVENT_OPTION_ANYTHREAD:
+                                fixed_flags |= (0x4 << (4*index));
+                                break;
+                            case EVENT_OPTION_COUNT_KERNEL:
+                                fixed_flags |= (0x1 << (4*index));
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
                 break;
 
             case MBOX0:
@@ -750,8 +767,8 @@ int perfmon_setupCounterThread_westmereEX(int thread_id, PerfmonEventSet* eventS
 #define WEX_UNFREEZE_BOX(id, flags) \
     if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(id))) \
     { \
-        VERBOSEPRINTREG(cpu_id, westmereEX_box_map[id].ctrlRegister, LLU_CAST flags, UNFREEZE_BOX); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, westmereEX_box_map[id].ctrlRegister, flags)); \
+        VERBOSEPRINTREG(cpu_id, box_map[id].ctrlRegister, LLU_CAST flags, UNFREEZE_BOX); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].ctrlRegister, flags)); \
     }
 
 int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventSet)
@@ -784,7 +801,7 @@ int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* event
             {
                 case PMC:
                     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
-                    core_ctrl_flags |= (1ULL<<(index-OFFSET_PMC));
+                    core_ctrl_flags |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));
                     break;
                 case FIXED:
                     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
@@ -845,7 +862,7 @@ int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* event
     if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) \
     { \
         uint64_t tmp = 0x0ULL; \
-        CHECK_MSR_READ_ERROR(msr_read(cpu_id, westmereEX_box_map[id].statusRegister, &tmp)); \
+        CHECK_MSR_READ_ERROR(msr_read(cpu_id, box_map[id].statusRegister, &tmp)); \
         if (tmp & (1<<offset)) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
@@ -853,7 +870,7 @@ int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* event
     }
 
 #define WEX_CLEAR_OVERFLOW(id, offset) \
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, westmereEX_box_map[id].ctrlRegister, (1<<offset)));
+    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].ctrlRegister, (1<<offset)));
 
 
 #define WEX_CHECK_UNCORE_OVERFLOW(id, index) \
@@ -872,7 +889,7 @@ int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* event
                 break; \
             } \
         } \
-        CHECK_MSR_READ_ERROR(msr_read(cpu_id, westmereEX_box_map[id].statusRegister, &tmp)); \
+        CHECK_MSR_READ_ERROR(msr_read(cpu_id, box_map[id].statusRegister, &tmp)); \
         if (tmp & (1<<offset)) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
@@ -908,7 +925,7 @@ int perfmon_stopCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventS
                 case PMC:
                     CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter_map[index].counterRegister, 
                                                     &counter_result));
-                    WEX_CHECK_OVERFLOW(PMC, index-OFFSET_PMC);
+                    WEX_CHECK_OVERFLOW(PMC, index-cpuid_info.perf_num_fixed_ctr);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST counter_result, READ_PMC);
                     break;
@@ -967,27 +984,27 @@ int perfmon_readCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventS
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterIndex index = eventSet->events[i].index;
-            if (westmereEX_counter_map[index].type > UNCORE)
+            if (counter_map[index].type > UNCORE)
             {
                 if(haveLock)
                 {
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, westmereEX_counter_map[index].counterRegister, &counter_result));
+                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter_map[index].counterRegister, &counter_result));
                     WEX_CHECK_UNCORE_OVERFLOW(counter_map[index].type, index);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST counter_result, READ_UNCORE);
                 }
             }
-            else if (westmereEX_counter_map[index].type == FIXED)
+            else if (counter_map[index].type == FIXED)
             {
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, westmereEX_counter_map[index].counterRegister, &counter_result));
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter_map[index].counterRegister, &counter_result));
                 WEX_CHECK_OVERFLOW(PMC, index+32);
                 eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                 VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST counter_result, READ_FIXED);
             }
-            else if (westmereEX_counter_map[index].type == PMC)
+            else if (counter_map[index].type == PMC)
             {
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, westmereEX_counter_map[index].counterRegister, &counter_result));
-                WEX_CHECK_OVERFLOW(PMC, index-OFFSET_PMC);
+                CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter_map[index].counterRegister, &counter_result));
+                WEX_CHECK_OVERFLOW(PMC, index-cpuid_info.perf_num_fixed_ctr);
                 eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                 VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST counter_result, READ_PMC);
             }
