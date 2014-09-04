@@ -331,32 +331,32 @@ static int lua_likwid_getCpuTopology(lua_State* L)
     cputopo = get_cpuTopology();
 
     lua_newtable(L);
-    
+
     lua_pushstring(L,"numHWThreads");
     lua_pushunsigned(L,cputopo->numHWThreads);
     lua_settable(L,-3);
-    
+
     lua_pushstring(L,"numSockets");
     lua_pushunsigned(L,cputopo->numSockets);
     lua_settable(L,-3);
-    
+
     lua_pushstring(L,"numCoresPerSocket");
     lua_pushunsigned(L,cputopo->numCoresPerSocket);
     lua_settable(L,-3);
-    
+
     lua_pushstring(L,"numThreadsPerCore");
     lua_pushunsigned(L,cputopo->numThreadsPerCore);
     lua_settable(L,-3);
-    
+
     lua_pushstring(L,"numCacheLevels");
     lua_pushinteger(L,cputopo->numCacheLevels);
     lua_settable(L,-3);
-    
+
     lua_pushstring(L,"threadPool");
     lua_newtable(L);
     for(i=0;i<cputopo->numHWThreads;i++)
     {
-        lua_pushnumber(L,i+1);
+        lua_pushnumber(L,i);
         lua_newtable(L);
         lua_pushstring(L,"threadId");
         lua_pushunsigned(L,cputopo->threadPool[i].threadId);
@@ -373,42 +373,42 @@ static int lua_likwid_getCpuTopology(lua_State* L)
         lua_settable(L,-3);
     }
     lua_settable(L,-3);
-    
+
     lua_pushstring(L,"cacheLevels");
     lua_newtable(L);
     for(i=0;i<cputopo->numCacheLevels;i++)
     {
         lua_pushnumber(L,i+1);
         lua_newtable(L);
-        
+
         lua_pushstring(L,"level");
         lua_pushunsigned(L,cputopo->cacheLevels[i].level);
         lua_settable(L,-3);
-        
+
         lua_pushstring(L,"associativity");
         lua_pushunsigned(L,cputopo->cacheLevels[i].associativity);
         lua_settable(L,-3);
-        
+
         lua_pushstring(L,"sets");
         lua_pushunsigned(L,cputopo->cacheLevels[i].sets);
         lua_settable(L,-3);
-        
+
         lua_pushstring(L,"lineSize");
         lua_pushunsigned(L,cputopo->cacheLevels[i].lineSize);
         lua_settable(L,-3);
-        
+
         lua_pushstring(L,"size");
         lua_pushunsigned(L,cputopo->cacheLevels[i].size);
         lua_settable(L,-3);
-        
+
         lua_pushstring(L,"threads");
         lua_pushunsigned(L,cputopo->cacheLevels[i].threads);
         lua_settable(L,-3);
-        
+
         lua_pushstring(L,"inclusive");
         lua_pushunsigned(L,cputopo->cacheLevels[i].inclusive);
         lua_settable(L,-3);
-        
+
         lua_pushstring(L,"type");
         switch (cputopo->cacheLevels[i].type)
         {
@@ -436,21 +436,30 @@ static int lua_likwid_getCpuTopology(lua_State* L)
         lua_settable(L,-3);
     }
     lua_settable(L,-3);
-    
+
     lua_pushstring(L,"topologyTree");
     lua_newtable(L);
 
     socketNode = tree_getChildNode(cputopo->topologyTree);
     while (socketNode != NULL)
     {
+        lua_pushinteger(L, socketCount);
+        lua_newtable(L);
+        lua_pushstring(L, "ID");
         lua_pushunsigned(L,socketNode->id);
+        lua_settable(L, -3);
+        lua_pushstring(L, "Childs");
         lua_newtable(L);
         coreCount = 0;
         coreNode = tree_getChildNode(socketNode);
-
         while (coreNode != NULL)
         {
+            lua_pushinteger(L, coreCount);
+            lua_newtable(L);
+            lua_pushstring(L, "ID");
             lua_pushunsigned(L,coreNode->id);
+            lua_settable(L,-3);
+            lua_pushstring(L, "Childs");
             lua_newtable(L);
             threadNode = tree_getChildNode(coreNode);
             threadCount = 0;
@@ -462,6 +471,7 @@ static int lua_likwid_getCpuTopology(lua_State* L)
                 threadNode = tree_getNextNode(threadNode);
                 threadCount++;
             }
+            lua_settable(L,-3);
             coreNode = tree_getNextNode(coreNode);
             coreCount++;
             lua_settable(L,-3);
@@ -469,9 +479,9 @@ static int lua_likwid_getCpuTopology(lua_State* L)
         lua_settable(L,-3);
         socketNode = tree_getNextNode(socketNode);
         socketCount++;
+        lua_settable(L,-3);
     }
     lua_settable(L,-3);
-    
 
     return 1;
 }

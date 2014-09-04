@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <error.h>
+#include <strUtil.h>
 
 #include <topology.h>
 #ifdef LIKWID_USE_HWLOC
@@ -26,7 +27,40 @@
 
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+int getStepping(void)
+{
+    FILE *fp;
+    bstring filename;
+    int stepping = 0;
+    bstring steppingString  = bformat("stepping:");
+    int i;
+    
+    filename = bformat("/proc/cpuinfo");
 
+    if (NULL != (fp = fopen (bdata(filename), "r"))) 
+    {
+        bstring src = bread ((bNread) fread, fp);
+        struct bstrList* tokens = bsplit(src,(char) '\n');
+
+        for (i=0;i<tokens->qty;i++)
+        {
+            if (binstr(tokens->entry[i],0,steppingString) != BSTR_ERR)
+            {
+                 bstring tmp = bmidstr (tokens->entry[i], 18, blength(tokens->entry[i])-18  );
+                 bltrimws(tmp);
+                 struct bstrList* subtokens = bsplit(tmp,(char) ' ');
+                 stepping = str2int(bdata(subtokens->entry[0]));
+            }
+        }
+        fclose(fp);
+    }
+    else
+    {
+        ERROR;
+    }
+
+    return stepping;
+}
 
 static int readCacheInclusive(int level)
 {
@@ -85,7 +119,7 @@ int hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwl
         {
             if (list && *list && index)
             {
-                (*list)[(*index)++] = walker->logical_index;
+                (*list)[(*index)++] = walker->os_index;
             }
             count++;
         }
@@ -119,7 +153,7 @@ void hwloc_init_cpuInfo(void)
         if (strcmp(obj->infos[i].name, "CPUVendor") == 0 && 
                 strcmp(hwloc_obj_get_info_by_name(obj, "CPUVendor"), "GenuineIntel") == 0)
             cpuid_info.isIntel = 1;
-        /* Currently no CPU stepping */
+        cpuid_info.stepping = getStepping();
     }
     cpuid_topology.numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
     return;
@@ -288,9 +322,9 @@ void hwloc_init_nodeTopology(void)
     int realThreadId;
     int sibling;
     hwloc_obj_type_t socket_type = HWLOC_OBJ_NODE;
-    
+
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
-    
+
     maxNumLogicalProcs = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
     maxNumCores = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_CORE);
     if (hwloc_get_nbobjs_by_type(hwloc_topology, socket_type) == 0)
@@ -302,20 +336,20 @@ void hwloc_init_nodeTopology(void)
     {
         obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PU, i);
         realThreadId = obj->os_index;
-        hwThreadPool[i].apicId = obj->logical_index;
-        hwThreadPool[i].threadId = obj->sibling_rank;
+        hwThreadPool[realThreadId].apicId = obj->os_index;
+        hwThreadPool[realThreadId].threadId = obj->sibling_rank;
         while (obj->type != HWLOC_OBJ_CORE) {
             obj = obj->parent;
         }
-        hwThreadPool[i].coreId = obj->logical_index;
+        hwThreadPool[realThreadId].coreId = obj->os_index;
         while (obj->type != socket_type) {
             obj = obj->parent;
         }
-        hwThreadPool[i].packageId = obj->logical_index;
+        hwThreadPool[realThreadId].packageId = obj->os_index;
     }
-    
+
     cpuid_topology.threadPool = hwThreadPool;
-    
+
     return;
 }
 

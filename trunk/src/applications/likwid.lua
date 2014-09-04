@@ -1,6 +1,6 @@
 local likwid = {}
 
-groupfolder = "/home/rrze/unrz/unrz139/Work/likwid/trunk/groups"
+groupfolder = "/home/tr993631/likwid/trunk/groups"
 
 likwid.dline = string.rep("=",24)
 likwid.hline =  string.rep("-",80)
@@ -69,14 +69,34 @@ end
 
 likwid.tablelength = tablelength
 
-local function tableprint(T)
+local function tableprint(T, long)
     if T == nil or #T == 0 then
         print("[]")
         return
     end
+    local start_index = 0
+    local end_index = #T
+    if T[start_index] == nil then
+        start_index = 1
+        end_index = #T
+    end
     outstr = ""
-    for i=0,#T do
-        outstr = outstr .. "," .. tostring(T[i])
+    if T[start_index] ~= nil then
+        for i=start_index,end_index do
+            if not long then
+                outstr = outstr .. "," .. tostring(T[i])
+            else
+                outstr = outstr .. "," .. "[" .. tostring(i) .. "] = ".. tostring(T[i])
+            end
+        end
+    else
+        for k,v in pairs(T) do
+            if not long then
+                outstr = outstr .. "," .. tostring(v)
+            else
+                outstr = outstr .. "," .. "[" .. tostring(k) .. "] = ".. tostring(v)
+            end
+        end
     end
     print("["..outstr:sub(2,outstr:len()).."]")
 end
