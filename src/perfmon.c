@@ -42,7 +42,7 @@
 
 PerfmonEvent* eventHash;
 RegisterMap* counter_map = NULL;
-BoxMap* box_map;
+BoxMap* box_map = NULL;
 int perfmon_numCounters;
 int perfmon_numCoreCounters;
 int perfmon_numArchEvents;
@@ -550,7 +550,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsNehalemEX;
                     counter_map = westmereEX_counter_map;
                     perfmon_numCounters = perfmon_numCountersWestmereEX;
-
+                    box_map = westmereEX_box_map;
                     break;
 
                 case WESTMERE_EX:
@@ -795,10 +795,10 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                     break;
 
                 case NEHALEM_EX:
-                    initThreadArch = perfmon_init_westmereEX;
-                    perfmon_startCountersThread = perfmon_startCountersThread_westmereEX;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_westmereEX;
-                    perfmon_readCountersThread = perfmon_readCountersThread_westmereEX;
+                    initThreadArch = perfmon_init_nehalemEX;
+                    perfmon_startCountersThread = perfmon_startCountersThread_nehalemEX;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_nehalemEX;
+                    perfmon_readCountersThread = perfmon_readCountersThread_nehalemEX;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_nehalemEX;
                     break;
 

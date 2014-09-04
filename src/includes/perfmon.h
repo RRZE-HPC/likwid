@@ -44,6 +44,7 @@ extern int perfmon_numCounters;
 extern int perfmon_numArchEvents;
 extern PerfmonEvent* eventHash;
 extern RegisterMap* counter_map;
+extern BoxMap* box_map;
 
 
 extern int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
