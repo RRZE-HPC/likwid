@@ -680,6 +680,7 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
     { \
         VERBOSEPRINTREG(cpu_id, box_map[id].ctrlRegister, LLU_CAST flags, UNFREEZE_BOX); \
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].ctrlRegister, flags)); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].ovflRegister, flags)); \
     }
 
 int perfmon_startCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventSet)
@@ -776,6 +777,7 @@ int perfmon_startCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventS
         if (tmp & (1<<offset)) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].statusRegister, (tmp & (1<<offset))); \
         } \
     }
 
@@ -799,6 +801,7 @@ int perfmon_startCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventS
         if (tmp & (1<<offset)) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].ovflRegister, (tmp & (1<<offset)))); \
         } \
     }
 
