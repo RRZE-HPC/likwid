@@ -1,4 +1,4 @@
-#!/home/tr993631/likwid/trunk/ext/lua/lua
+#!/home/rrze/unrz/unrz139/Work/likwid/trunk/ext/lua/lua
 
 --[[
  * =======================================================================================
@@ -83,6 +83,8 @@ pin_cpus = false
 group_string = nil
 event_string = nil
 event_string_list = {}
+avail_groups = {}
+num_avail_groups = 0
 group_list = {}
 group_ids = {}
 print_group_help = false
@@ -170,7 +172,11 @@ end
 io.stdout:setvbuf("no")
 cpuinfo = likwid.getCpuInfo()
 
-
+if not likwid.msr_available() then
+    print("MSR device files not available")
+    print("Please load msr kernel module before retrying")
+    os.exit(1)
+end
 
 if print_events == true then
     local tab = likwid.getEventsAndCounters()
@@ -194,9 +200,10 @@ if print_events == true then
     os.exit(0)
 end
 
+
 if print_groups == true then
-    local num_groups, grouplist = likwid.get_groups(cpuinfo["short_name"])
-    for i,g in pairs(grouplist) do
+    local num_avail_groups, avail_groups = likwid.get_groups(cpuinfo["short_name"])
+    for i,g in pairs(avail_groups) do
         local gdata = likwid.get_groupdata(cpuinfo["short_name"], g)
         print(string.format("%10s\t%s",g,gdata["ShortDescription"]))
     end
@@ -214,11 +221,21 @@ if print_group_help == true then
             print("Given string is no group")
             os.exit(1)
         end
-        local gdata = likwid.get_groupdata(cpuinfo["short_name"],event_string)
-        print(string.format("Group %s:",event_string))
-        print(gdata["LongDescription"])
+        for i,g in pairs(avail_groups) do
+            if event_string == g then
+                local gdata = likwid.get_groupdata(cpuinfo["short_name"],event_string)
+                print(string.format("Group %s:",event_string))
+                print(gdata["LongDescription"])
+            end
+        end
     end
     os.exit(0)
+end
+
+if #event_string_list == 0 then
+    print("Option(s) -g <string> must be given on commandline")
+    usage()
+    os.exit(1)
 end
 
 print(likwid.hline)
@@ -253,11 +270,6 @@ if num_cpus == 0 then
     os.exit(1)
 end
 
-if #event_string_list == 0 then
-    print("Option(s) -g <string> must be given on commanlikwid.dline")
-    usage()
-    os.exit(1)
-end
 
 if num_cpus > 0 then
     for i,cpu1 in pairs(cpulist) do
@@ -318,15 +330,19 @@ end
 
 for i, event_string in pairs(event_string_list) do
     local s,e = event_string:find(":")
-    gdata = nil
     if s == nil then
-        table.insert(group_list,likwid.get_groupdata(cpuinfo["short_name"], event_string))
-        event_string_list[i] = group_list[i]["EventString"]
+        local groupdata = likwid.get_groupdata(cpuinfo["short_name"], event_string)
+        if groupdata == nil then
+            print("Cannot read event string, it's neither a performance group nor a proper event string <event>:<counter>:<options>,...")
+            usage()
+            os.exit(1)
+        end
+        table.insert(group_list, groupdata)
+        event_string_list[i] = groupdata["EventString"]
     else
         table.insert(group_list, likwid.new_groupdata(event_string))
     end
 end
-
 
 
 if likwid.setAccessClientMode(access_mode) ~= 0 then
@@ -368,6 +384,7 @@ if use_marker == true then
     likwid.setenv("LIKWID_MODE", tostring(access_mode))
     likwid.setenv("LIKWID_MASK", likwid.createBitMask(group_list[1]))
     likwid.setenv("LIKWID_GROUPS", tostring(likwid.getNumberOfGroups()))
+    likwid.setenv("LIKWID_COUNTERMASK", likwid.createGroupMask(group_list[1]))
     local str = event_string_list[1]
     likwid.setenv("LIKWID_EVENTS", str)
 end
@@ -401,11 +418,11 @@ elseif use_timeline then
 end
 
 if use_marker == true then
-    groups, results = likwid.getMarkerResults(markerFile)
+    groups, results = likwid.getMarkerResults(markerFile, num_cpus)
     if #groups == 0 and #results == 0 then
         os.exit(1)
     end
-    likwid.print_markerOutput(groups, results, gdata, cpulist)
+    likwid.print_markerOutput(groups, results, group_list, cpulist)
 elseif use_wrapper or use_stethoscope then
     for i, group in pairs(group_ids) do
         print(string.format("Group %d: %s", group, group_list[group]["GroupString"]))

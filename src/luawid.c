@@ -515,6 +515,9 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
         lua_pushstring(L,"Options");
         lua_pushunsigned(L,counter_map[i-1].optionMask);
         lua_settable(L,-3);
+        lua_pushstring(L,"Type");
+        lua_pushunsigned(L,counter_map[i-1].type);
+        lua_settable(L,-3);
         lua_settable(L,-3);
     }
     lua_settable(L,-3);
@@ -1082,6 +1085,18 @@ static int lua_likwid_setVerbosity(lua_State* L)
     return 0;
 }
 
+static int lua_likwid_access(lua_State* L)
+{
+    const char* file = (const char*)luaL_checkstring(L,-1);
+    if (file)
+    {
+        lua_pushinteger(L, access(file, F_OK));
+        return 1;
+    }
+    lua_pushinteger(L, -1);
+    return 1;
+}
+
 int luaopen_liblikwid(lua_State* L){
     // Configuration functions
     lua_register(L, "likwid_getConfiguration", lua_likwid_getConfiguration);
@@ -1141,6 +1156,7 @@ int luaopen_liblikwid(lua_State* L){
     // Helper functions
     lua_register(L, "likwid_setenv", lua_likwid_setenv);
     lua_register(L, "likwid_getpid", lua_likwid_getpid);
+    lua_register(L, "likwid_access", lua_likwid_access);
     // Verbosity functions
     lua_register(L, "likwid_setVerbosity", lua_likwid_setVerbosity);
     return 0;

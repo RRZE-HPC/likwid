@@ -1,7 +1,7 @@
 local likwid = {}
 require("liblikwid")
 
-groupfolder = "/home/tr993631/likwid/trunk/groups"
+groupfolder = "/home/rrze/unrz/unrz139/Work/likwid/trunk/groups/"
 
 likwid.version = 4
 likwid.release = 0
@@ -59,6 +59,7 @@ likwid.pinProcess = likwid_pinProcess
 likwid.setenv = likwid_setenv
 likwid.getpid = likwid_getpid
 likwid.setVerbosity = likwid_setVerbosity
+likwid.access = likwid_access
 
 local function getopt(args, ostr)
     local arg, place = nil, 0;
@@ -178,6 +179,7 @@ local function calculate_metric(formula, counters_to_values)
     end
     for c in formula:gmatch"." do
         if c ~= "+" and c ~= "-" and  c ~= "*" and  c ~= "/" and c ~= "(" and c ~= ")" and c ~= "." and c:lower() ~= "e" then
+            
             local tmp = tonumber(c)
             if type(tmp) ~= "number" then
                 print("Not all formula entries can be substituted with measured values")
@@ -396,18 +398,17 @@ local function cpustr_to_cpulist_logical(cpustr)
     local cpulist = {}
     local affinity = likwid_getAffinityInfo()
     local domain = "N"
-    local s1,e1 = cpustr:find(":")
-    if s1 == nil then 
-        e1 = -1
-    else
-        if cpustr:sub(1,s1-1) ~= "L" then
-            domain = cpustr:sub(1,s1-1)
-        end
-    end
-    print(domain)
-    tableprint(affinity["domains"][domain]["processorList"])
-    expression_list = stringsplit(cpustr:sub(e1+1,cpustr:len()),"@")
+    local expression_list = stringsplit(cpustr,"@")
     for expr_idx,expr in pairs(expression_list) do
+        local s1,e1 = expr:find(":")
+        if s1 == nil then 
+            e1 = -1
+        else
+            if expr:sub(1,s1-1) ~= "L" then
+                domain = expr:sub(1,s1-1)
+            end
+        end
+        expr = expr:sub(s1+1)
         s1,e1 = expr:find(",")
         local s2,e2 = expr:find("-")
         if s1 ~= nil then
@@ -492,6 +493,8 @@ local function cpustr_to_cpulist_physical(cpustr)
     return cpulist
 end
 
+likwid.cpustr_to_cpulist_physical = cpustr_to_cpulist_physical
+
 local function cpustr_to_cpulist(cpustr)
     local cpulist = {}
     local filled = false
@@ -523,7 +526,7 @@ local function cpustr_to_cpulist(cpustr)
 end
 
 likwid.cpustr_to_cpulist = cpustr_to_cpulist
-likwid.cpustr_to_cpulist_physical = cpustr_to_cpulist_physical
+
 
 local function nodestr_to_nodelist(cpustr)
     local cpulist = {}
@@ -925,15 +928,9 @@ likwid.print_output = print_output
 local function printMarkerOutput(groups, results, groupData, cpulist)
     local nr_groups = #groups
     local nr_regions = #groups[1]
-    likwid.tableprint(groups)
     local nr_threads = likwid.tablelength(groups[1][1]["Time"])
     for g=1,nr_groups do
-        local gdata = nil
-        if nr_groups ~= 1 then
-            gdata = groupData[g]
-        else
-            gdata = groupData
-        end
+        local gdata = groupData[g]
         local nr_events = likwid.tablelength(gdata["Events"])
         for r=1,nr_regions do
             print(likwid.dline)
@@ -1129,7 +1126,7 @@ end
 
 likwid.getResults = getResults
 
-function getMarkerResults(filename)
+function getMarkerResults(filename, num_cpus)
     local cpuinfo = likwid_getCpuInfo()
     local ctr_and_events = likwid_getEventsAndCounters()
     local group_data = {}
@@ -1144,9 +1141,25 @@ function getMarkerResults(filename)
     f:close()
     -- Read first line with general counts
     local tmpList = stringsplit(lines[1]," ")
+    if #tmpList ~= 3 then
+        print(string.format("Marker file %s not in proper format",filename))
+        return {}, {}
+    end
     local nr_threads = tmpList[1]
+    if nr_threads ~= num_cpus then
+        print(string.format("Marker file lists only %d cpus, but perfctr configured %d cpus", nr_threads, num_cpus))
+        return {},{}
+    end
     local nr_regions = tmpList[2]
+    if nr_regions == 0 then
+        print("No region results can be found in marker API output file")
+        return {},{}
+    end
     local nr_groups = tmpList[3]
+    if nr_groups == 0 then
+        print("No group listed in the marker API output file")
+        return {},{}
+    end
     local regions_per_group = nr_regions/nr_groups
     table.remove(lines,1)
     
@@ -1192,10 +1205,10 @@ function getMarkerResults(filename)
             end
             local tmp = tonumber(tmpList[c])
             results[r][g][c][t]["Value"] = tmp
-            results[r][g][c][t]["Counter"] = ctr_and_events["Counters"][c]
+            results[r][g][c][t]["Counter"] = ctr_and_events["Counters"][c]["Name"]
         end
     end
-    
+
     --[[for r,_ in pairs(results) do
         for g,_ in pairs(results[r]) do
             for c,_ in pairs(results[r][g]) do
@@ -1205,7 +1218,7 @@ function getMarkerResults(filename)
             end
         end
     end]]
-    
+
     return group_data, results
 end
 
@@ -1222,7 +1235,7 @@ function createBitMask(gdata)
         for j, ctr in pairs(tab) do
             if j == "Counter" then
                 for k, c in pairs(ctr_and_events["Counters"]) do
-                    if c == ctr then
+                    if c["Name"] == ctr then
                         if k-1 < 64 then
                             bitmask_low = bitmask_low + math.pow(2,k-1)
                         else
@@ -1237,5 +1250,33 @@ function createBitMask(gdata)
 end
 
 likwid.createBitMask = createBitMask
+
+function createGroupMask(gdata)
+    if gdata == nil then
+        return "0x0"
+    end
+    local bitmask = 0
+    local typelist = {}
+    local ctr_and_events = likwid_getEventsAndCounters()
+    for k,v in pairs(ctr_and_events["Counters"]) do
+        for i, event in pairs(gdata["Events"]) do
+            if v["Name"] == event["Counter"] then
+                typelist[v["Type"]] = math.pow(2, v["Type"])
+            end
+        end
+    end
+    for k,v in pairs(typelist) do
+        bitmask = bitmask + v
+    end
+    return "0x" .. string.format("%x",bitmask)
+end
+likwid.createGroupMask = createGroupMask
+
+function msr_available()
+    local ret = likwid_access("/dev/cpu/0/msr")
+    if ret == 0 then return true else return false end
+    return false
+end
+likwid.msr_available = msr_available
 
 return likwid
