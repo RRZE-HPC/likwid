@@ -127,6 +127,8 @@ UMASK_LOAD_HIT_PRE_HW_PF               0x02
 
 EVENT_L1D                        0x51   PMC
 UMASK_L1D_REPLACEMENT             0x01
+# Undocumented
+UMASK_L1D_M_EVICT             0x04
 
 EVENT_MOVE_ELIMINATION                        0x58   PMC
 UMASK_MOVE_ELIMINATION_INT_NOT_ELIMINATED     0x04
