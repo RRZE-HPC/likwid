@@ -217,7 +217,7 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
         {
             if (__rdpmc(reg - MSR_PMC0, data) )
             {
-                ERROR_PRINT("Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n",
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d,
                         reg,cpu);
                 return -EIO;
             }
@@ -226,7 +226,7 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
         {
             if ( pread(FD[cpu], data, sizeof(*data), reg) != sizeof(*data) )
             {
-                ERROR_PRINT("Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d\n",
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d,
                         reg, cpu);
                 return -EIO;
             }
@@ -236,8 +236,10 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
     { /* daemon or sysdaemon-mode */
         if (accessClient_read(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data))
         {
+            ERROR_PRINT(Cannot read MSR reg 0x%x through accessDaemon on CPU %d,
+                        reg, cpu);
             return -EIO;
-        }    
+        }
     }
     return 0;
 }

@@ -777,7 +777,7 @@ int perfmon_startCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventS
         if (tmp & (1<<offset)) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
-            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].statusRegister, (tmp & (1<<offset))); \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].statusRegister, (tmp & (1<<offset)))); \
         } \
     }
 
