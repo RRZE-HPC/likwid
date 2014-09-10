@@ -27,40 +27,6 @@
 
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-int getStepping(void)
-{
-    FILE *fp;
-    bstring filename;
-    int stepping = 0;
-    bstring steppingString  = bformat("stepping:");
-    int i;
-    
-    filename = bformat("/proc/cpuinfo");
-
-    if (NULL != (fp = fopen (bdata(filename), "r"))) 
-    {
-        bstring src = bread ((bNread) fread, fp);
-        struct bstrList* tokens = bsplit(src,(char) '\n');
-
-        for (i=0;i<tokens->qty;i++)
-        {
-            if (binstr(tokens->entry[i],0,steppingString) != BSTR_ERR)
-            {
-                 bstring tmp = bmidstr (tokens->entry[i], 18, blength(tokens->entry[i])-18  );
-                 bltrimws(tmp);
-                 struct bstrList* subtokens = bsplit(tmp,(char) ' ');
-                 stepping = str2int(bdata(subtokens->entry[0]));
-            }
-        }
-        fclose(fp);
-    }
-    else
-    {
-        ERROR;
-    }
-
-    return stepping;
-}
 
 static int readCacheInclusive(int level)
 {
@@ -71,6 +37,14 @@ static int readCacheInclusive(int level)
     return edx & 0x2;
 }
 
+static int get_stepping(void)
+{
+    uint32_t eax, ebx, ecx, edx;
+    eax = 0x01;
+    CPUID;
+    cpuid_info.stepping = (eax&0xFU);
+}
+
 static int get_cpu_perf_data(void)
 {
     uint32_t eax, ebx, ecx, edx;
@@ -78,9 +52,6 @@ static int get_cpu_perf_data(void)
     eax = 0x00;
     CPUID;
     largest_function = eax;
-    eax = 0x01;
-    CPUID;
-    cpuid_info.stepping =  (eax&0xFU);
     if (cpuid_info.family == P6_FAMILY && 0x0A <= largest_function)
     {
         eax = 0x0A;
@@ -140,7 +111,7 @@ void hwloc_init_cpuInfo(void)
 
     cpuid_info.model = 0;
     cpuid_info.family = 0;
-    
+    cpuid_info.isIntel = 0;
     for(i=0;i<obj->infos_count;i++)
     {
         if (strcmp(obj->infos[i].name ,"CPUModelNumber") == 0)
@@ -148,14 +119,17 @@ void hwloc_init_cpuInfo(void)
         if (strcmp(obj->infos[i].name, "CPUFamilyNumber") == 0)
             cpuid_info.family = atoi(hwloc_obj_get_info_by_name(obj, "CPUFamilyNumber"));
         if (strcmp(obj->infos[i].name, "CPUVendor") == 0 && 
-                strcmp(hwloc_obj_get_info_by_name(obj, "CPUVendor"), "AuthenticAMD") == 0)
-            cpuid_info.isIntel = 0;
-        if (strcmp(obj->infos[i].name, "CPUVendor") == 0 && 
                 strcmp(hwloc_obj_get_info_by_name(obj, "CPUVendor"), "GenuineIntel") == 0)
             cpuid_info.isIntel = 1;
-        cpuid_info.stepping = getStepping();
     }
-    cpuid_topology.numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
+    cpuid_topology.numHWThreads = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
+    get_stepping();
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
+                            cpuid_info.family,
+                            cpuid_info.model,
+                            cpuid_info.stepping,
+                            cpuid_info.isIntel,
+                            cpuid_topology.numHWThreads)
     return;
 }
 
@@ -346,6 +320,11 @@ void hwloc_init_nodeTopology(void)
             obj = obj->parent;
         }
         hwThreadPool[realThreadId].packageId = obj->os_index;
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Socket %d, 
+                            realThreadId,
+                            hwThreadPool[realThreadId].threadId,
+                            hwThreadPool[realThreadId].coreId,
+                            hwThreadPool[realThreadId].packageId)
     }
 
     cpuid_topology.threadPool = hwThreadPool;
