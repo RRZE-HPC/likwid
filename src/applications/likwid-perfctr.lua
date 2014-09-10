@@ -200,9 +200,9 @@ if print_events == true then
     os.exit(0)
 end
 
+num_avail_groups, avail_groups = likwid.get_groups(cpuinfo["short_name"])
 
 if print_groups == true then
-    local num_avail_groups, avail_groups = likwid.get_groups(cpuinfo["short_name"])
     for i,g in pairs(avail_groups) do
         local gdata = likwid.get_groupdata(cpuinfo["short_name"], g)
         print(string.format("%10s\t%s",g,gdata["ShortDescription"]))

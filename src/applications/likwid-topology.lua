@@ -202,14 +202,34 @@ else
 end
 
 if (print_graphical) then
+    print("\n")
+    print(likwid.sline)
+    print("Graphical Topology")
+    print(likwid.sline)
     --print("Graphical output currently not supported by likwid-topology written in Lua")
     for socket=0,cputopo["numSockets"]-1 do
         print(string.format("Socket %d:",cputopo["topologyTree"][socket]["ID"]))
         thread_line = "| | "
+        local box_width = 0
         for core=0,cputopo["numCoresPerSocket"]-1 do
+            local tmpString = ""
             for thread=0,cputopo["numThreadsPerCore"]-1 do
-                thread_line = thread_line .. tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread]) .. " "
+                tmpString = tmpString .. tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread]) .. " "
             end
+            if tmpString:len() > box_width then
+                box_width = tmpString:len()
+            end
+        end
+        box_width = box_width + 3
+        for core=0,cputopo["numCoresPerSocket"]-1 do
+            local tmpString = ""
+            for thread=0,cputopo["numThreadsPerCore"]-1 do
+                tmpString = tmpString .. tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread]) .. " "
+            end
+            if tmpString:len() < box_width-3 then
+                tmpString = tmpString .. string.rep(" ",box_width-3-tmpString:len())
+            end
+            thread_line = thread_line .. tmpString
             if core ~= cputopo["numCoresPerSocket"]-1 then
                 thread_line = thread_line .. "| | "
             end
@@ -218,13 +238,13 @@ if (print_graphical) then
         print("+" .. string.rep("-",thread_line:len()-2) .. "+")
         str = "| "
         for core=0,cputopo["numCoresPerSocket"]-1 do
-            str = str .. "+" .. string.rep("-",2+cputopo["numThreadsPerCore"]-1 + cputopo["numThreadsPerCore"]) .. "+ "
+            str = str .. "+" .. string.rep("-",box_width-2) .. "+ "
         end
         print(str .. "|")
         print(thread_line)
         str = "| "
         for core=0,cputopo["numCoresPerSocket"]-1 do
-            str = str .. "+" .. string.rep("-",2+cputopo["numThreadsPerCore"]-1 + cputopo["numThreadsPerCore"]) .. "+ "
+            str = str .. "+" .. string.rep("-",box_width-2) .. "+ "
         end
         print(str .. "|")
         print("+" .. string.rep("-",thread_line:len()-2) .. "+")
