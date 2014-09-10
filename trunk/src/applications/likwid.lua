@@ -408,6 +408,10 @@ local function cpustr_to_cpulist_logical(cpustr)
                 domain = expr:sub(1,s1-1)
             end
         end
+        if affinity["domains"][domain] == nil then
+            print(string.format("System has no affinity domain %s ... skipping",domain))
+            return cpulist
+        end
         expr = expr:sub(s1+1)
         s1,e1 = expr:find(",")
         local s2,e2 = expr:find("-")
@@ -444,7 +448,9 @@ local function cpustr_to_cpulist_logical(cpustr)
                 table.insert(cpulist,affinity["domains"][domain]["processorList"][i])
             end
         else
-            table.insert(cpulist,affinity["domains"][domain]["processorList"][tonumber(expr)])
+            for i=0, tonumber(expr) do
+                table.insert(cpulist,affinity["domains"][domain]["processorList"][i])
+            end
         end
     end
     return cpulist
