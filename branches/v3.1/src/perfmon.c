@@ -168,16 +168,36 @@ static void (*initThreadArch) (PerfmonThread *thread);
 
 static int getIndex (bstring reg, PerfmonCounterIndex* index)
 {
+    int ret = FALSE;
+    int err = 0;
+    uint64_t tmp;
     for (int i=0; i< perfmon_numCounters; i++)
     {
         if (biseqcstr(reg, counter_map[i].key))
         {
             *index = counter_map[i].index;
-            return TRUE;
+            ret = TRUE;
         }
     }
+    if ((ret) && (counter_map[*index].type != THERMAL) && (counter_map[*index].type != POWER))
+    {
+        if (counter_map[*index].device == 0)
+        {
+            tmp = msr_read(0, counter_map[*index].configRegister);
+            msr_write(0, counter_map[*index].configRegister,0x0ULL);
+        }
+        else
+        {
+            tmp = pci_read(0, counter_map[*index].device, counter_map[*index].configRegister);
+            pci_write(0, counter_map[*index].device, counter_map[*index].configRegister, 0x0U);
+        }
+    }
+    else if ((ret) && (counter_map[*index].type == POWER))
+    {
+        tmp = msr_read(0, counter_map[*index].counterRegister);
+    }
 
-    return FALSE;
+    return ret;
 }
 
 
@@ -297,14 +317,15 @@ readMarkerFile(bstring filename, LikwidResults** resultsRef)
         ret = sscanf (bdata(src), "%d %d", &numberOfThreads, &perfmon_numRegions); CHECKERROR;
         results = (LikwidResults*) malloc(perfmon_numRegions * sizeof(LikwidResults));
 
-        if (numberOfThreads != perfmon_numThreads)
+        if (perfmon_numRegions == 0)
         {
-            fprintf(OUTSTREAM,"ERROR: \
-                Is the number of threads for likwid-perfctr equal \
-                to the number in the measured application?\n");
-
-            fprintf(OUTSTREAM,"likwid_markerInit and likwid_markerClose \
-                must be called in serial region.\n");
+            fprintf(OUTSTREAM,"ERROR: No region results are listed in marker file\n");
+            ERROR_PLAIN_PRINT(No region results in marker file);
+        }
+        else if (numberOfThreads != perfmon_numThreads)
+        {
+            fprintf(OUTSTREAM,"ERROR: Is the number of threads for likwid-perfctr equal to the number in the measured application?\n");
+            fprintf(OUTSTREAM,"likwid_markerInit and likwid_markerClose must be called in serial region.\n");
 
             ERROR_PRINT(Number of threads %d in marker file unequal to number of threads in likwid-perfCtr %d,numberOfThreads,perfmon_numThreads);
         }
