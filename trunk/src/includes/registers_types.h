@@ -147,6 +147,7 @@ typedef struct {
     uint32_t  ovflRegister;
     uint8_t   isPci;
     PciDeviceIndex device;
+    uint32_t  regWidth;
 } BoxMap;
 
 #endif
