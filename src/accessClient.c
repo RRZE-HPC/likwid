@@ -167,7 +167,7 @@ accessClient_setaccessmode(int mode)
 {
     if ((accessClient_mode > DAEMON_AM_ACCESS_D) || (accessClient_mode < DAEMON_AM_DIRECT))
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Invalid accessmode %d, accessClient_mode);
+        ERROR_PRINT(Invalid accessmode %d, accessClient_mode);
         exit(EXIT_FAILURE);
     }
 

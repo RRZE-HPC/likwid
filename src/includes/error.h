@@ -101,13 +101,13 @@ extern int perfmon_verbosity;
 
 #define DEBUG_PRINT(lev, fmt, ...) \
     if ((lev >= 0) && (lev <= perfmon_verbosity)) { \
-        fprintf(stdout, "DEBUG: " str(fmt) "\n", __VA_ARGS__); \
+        fprintf(stdout, "DEBUG - [%s:%d] " str(fmt) "\n", __func__, __LINE__,__VA_ARGS__); \
         fflush(stdout); \
     }
 
 #define DEBUG_PLAIN_PRINT(lev, msg) \
     if ((lev >= 0) && (lev <= perfmon_verbosity)) { \
-        fprintf(stdout, "DEBUG: " str(msg) "\n");  \
+        fprintf(stdout, "DEBUG - [%s:%d] " str(msg) "\n",__func__, __LINE__);  \
         fflush(stdout); \
     }
     
