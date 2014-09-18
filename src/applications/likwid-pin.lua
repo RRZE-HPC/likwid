@@ -154,7 +154,11 @@ if print_domains and num_threads > 0 then
     end
     print(outstr:sub(2,outstr:len()))
 elseif print_domains then
-    likwid.printAffinityDomains()
+    for k,v in pairs(affinity["domains"]) do
+        print(string.format("Domain %d Tag %s:",k, v["tag"]))
+        print("\t" .. table.concat(v["processorList"], ","))
+        print()
+    end
     os.exit(0)
 end
 
