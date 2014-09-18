@@ -182,12 +182,16 @@ if print_events == true then
     local tab = likwid.getEventsAndCounters()
     print(string.format("This architecture has %d counters.", #tab["Counters"]))
     local outstr = "Counters names: "
+    print("Counter tags(name, type<, options>):")
     for _, counter in pairs(tab["Counters"]) do
-        outstr = outstr .. counter["Name"] .. " "
+        outstr = string.format("%s, %s", counter["Name"], counter["TypeName"]);
+        if counter["Options"]:len() > 0 then
+            outstr = outstr .. string.format(", %s",string.lower(counter["Options"]))
+        end
+        print(outstr)
     end
-    print(outstr)
     print(string.format("This architecture has %d events.",#tab["Events"]))
-    print("Event tags (tag, id, umask, counters):")
+    print("Event tags (tag, id, umask, counters<, options>):")
     for _, eventTab in pairs(tab["Events"]) do
         outstr = eventTab["Name"] .. ", "
         outstr = outstr .. string.format("0x%X, 0x%X, ",eventTab["ID"],eventTab["UMask"])
@@ -387,6 +391,7 @@ if use_marker == true then
     likwid.setenv("LIKWID_COUNTERMASK", likwid.createGroupMask(group_list[1]))
     local str = event_string_list[1]
     likwid.setenv("LIKWID_EVENTS", str)
+    likwid.setenv("LIKWID_THREADS", table.concat(cpulist,","))
 end
 
 if use_wrapper or use_stethoscope then
