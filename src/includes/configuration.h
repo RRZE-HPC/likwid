@@ -32,25 +32,14 @@
 #define CONFIGURATION_H
 
 #include <types.h>
+#include <likwid.h>
 #include <error.h>
 
-typedef struct {
-    char* topologyCfgFileName;
-    char* daemonPath;
-    AccessMode daemonMode;
-    int maxNumThreads;
-    int maxNumNodes;
-    int maxHashTableSize;
-} Configuration;
-
-typedef Configuration* Configuration_t;
 
 extern Configuration config;
 extern int init_config;
 
-int init_configuration(void);
-int destroy_configuration(void);
-Configuration_t get_configuration(void);
+
 
 
 

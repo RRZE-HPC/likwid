@@ -63,6 +63,9 @@ typedef struct {
     uint32_t after;
 } PowerData;
 
+extern PowerInfo power_info;
+extern const uint32_t power_regs[4];
 typedef PowerInfo* PowerInfo_t;
+typedef PowerData* PowerData_t;
 
 #endif /*POWER_TYPES_H*/

@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #include <types.h>
-
+#include <likwid.h>
 #include <numa_hwloc.h>
 #include <numa_proc.h>
 
@@ -21,10 +21,6 @@ struct numa_functions {
 
 
 
-void numa_setInterleaved(int* processorList, int numberOfProcessors);
-void numa_membind(void* ptr, size_t size, int domainId);
-void numa_finalize(void);
 
-int likwid_getNumberOfNodes(void);
 
 #endif

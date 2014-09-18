@@ -38,25 +38,17 @@
 #include <msr.h>
 #include <error.h>
 
-extern PowerInfo power_info;
-extern  const uint32_t power_regs[4];
 
-extern int power_init(int cpuId);
-extern PowerInfo_t get_powerInfo(void);
 
-static inline int power_start(PowerData* data, int cpuId, PowerType type);
-static inline int power_stop(PowerData* data, int cpuId, PowerType type);
-static inline int power_read(int cpuId, uint64_t reg, uint32_t *data);
-static inline int power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data);
-static inline double power_printEnergy(PowerData* data);
+extern double power_printEnergy(PowerData* data);
 
-static double
+double
 power_printEnergy(PowerData* data)
 {
     return  (double) ((data->after - data->before) * power_info.energyUnit);
 }
 
-static int
+int
 power_start(PowerData* data, int cpuId, PowerType type)
 {
     uint64_t result = 0;
@@ -65,7 +57,7 @@ power_start(PowerData* data, int cpuId, PowerType type)
     data->before = extractBitField(result,32,0);
 }
 
-static int
+int
 power_stop(PowerData* data, int cpuId, PowerType type)
 {
     uint64_t result = 0;
@@ -74,7 +66,7 @@ power_stop(PowerData* data, int cpuId, PowerType type)
     data->after = extractBitField(result,32,0);
 }
 
-static int
+int
 power_read(int cpuId, uint64_t reg, uint32_t *data)
 {
     uint64_t result = 0;
@@ -84,7 +76,7 @@ power_read(int cpuId, uint64_t reg, uint32_t *data)
     return 0;
 }
 
-static int
+int
 power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
 {
     uint64_t result = 0;

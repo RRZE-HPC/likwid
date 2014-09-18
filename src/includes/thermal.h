@@ -37,12 +37,9 @@
 #include <msr.h>
 #include <error.h>
 
-extern ThermalInfo thermal_info;
 
-extern void thermal_init(int cpuId);
-static inline int thermal_read(int cpuId, uint32_t *data);
 
-static int
+int
 thermal_read(int cpuId, uint32_t *data)
 {
     uint64_t result = 0;
@@ -59,7 +56,7 @@ thermal_read(int cpuId, uint32_t *data)
     return 0;
 }
 
-static int
+int
 thermal_tread(int socket_fd, int cpuId, uint32_t *data)
 {
     uint64_t result = 0;

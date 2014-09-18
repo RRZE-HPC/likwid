@@ -38,10 +38,10 @@
 #include <sys/wait.h>
 #include <time.h>
 
-
+#include <types.h>
 #include <timer.h>
 #include <perfmon.h>
-#include <daemon.h>
+#include <likwid.h>
 #include <error.h>
 
 static int daemon_running = 0;

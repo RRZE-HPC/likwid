@@ -39,25 +39,14 @@
 #include <sched.h>
 #include <pthread.h>
 
-#include <error.h>
-#include <types.h>
+#include <likwid.h>
 #include <bitUtil.h>
-#include <bstrlib.h>
-#include <topology.h>
-#include <numa.h>
-#include <affinity.h>
 #include <lock.h>
 #include <tree.h>
-#include <accessClient.h>
-#include <msr.h>
-#include <pci.h>
-#include <power.h>
-#include <thermal.h>
 #include <timer.h>
 #include <hashTable.h>
 #include <registers.h>
-#include <likwid.h>
-#include <perfmon.h>
+
 
 #include <perfmon_core2_counters.h>
 #include <perfmon_haswell_counters.h>

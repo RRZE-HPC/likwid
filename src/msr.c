@@ -63,7 +63,6 @@
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 static int FD[MAX_NUM_THREADS];
-static int socket_fd = -1;
 static int rdpmc_works = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
