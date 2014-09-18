@@ -81,4 +81,6 @@ typedef struct {
     AccessErrorType errorcode; /* Only in replies - 0 if no error. */
 } AccessDataRecord;
 
+extern int accessClient_mode;
+
 #endif /*ACCESSCLIENT_TYPES_H*/

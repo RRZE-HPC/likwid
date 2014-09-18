@@ -40,7 +40,8 @@
 
 /* #####   EXPORTED TYPE DEFINITIONS   #################################### */
 
-
+extern int socket_fd;
+extern int thread_sockets[MAX_NUM_THREADS];
 
 
 /////////////////////////////////////////////
@@ -169,6 +170,14 @@ typedef struct {
     PerfmonThread*   threads;
 } PerfmonGroupSet;
 
-
+/* perfmon datatypes */
+extern PerfmonGroupSet *groupSet;
+extern int perfmon_numCounters;
+extern int perfmon_numCoreCounters;
+extern int perfmon_numUncoreCounters;
+extern RegisterMap* counter_map;
+extern BoxMap* box_map;
+extern int perfmon_numArchEvents;
+extern PerfmonEvent* eventHash;
 
 #endif /*PERFMON_TYPES_H*/

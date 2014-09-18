@@ -41,5 +41,6 @@ typedef struct {
     uint32_t offset;
 } ThermalInfo;
 
+extern ThermalInfo thermal_info;
 
 #endif /*THERMAL_TYPES_H*/

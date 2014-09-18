@@ -6,18 +6,13 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#include <types.h>
+
+#include <likwid.h>
 #include <bitUtil.h>
-#include <bstrlib.h>
-#include <error.h>
 #include <timer.h>
-#include <accessClient.h>
 #include <msr.h>
 #include <pci.h>
 #include <lock.h>
-#include <topology.h>
-#include <power.h>
-#include <thermal.h>
 #include <perfmon.h>
 #include <registers.h>
 

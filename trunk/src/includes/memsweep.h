@@ -35,8 +35,6 @@
 
 extern void memsweep_setMemoryFraction(uint64_t fraction);
 extern void memsweep_node(void);
-extern void memsweep_domain(int domainId);
-extern void memsweep_threadGroup(int* processorList, int numberOfProcessors);
 
 #endif /* MEMSWEEP_H */
 

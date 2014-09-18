@@ -33,48 +33,14 @@
 #ifndef PERFMON_H
 #define PERFMON_H
 
-#include <bstrlib.h>
+
 #include <types.h>
-#include <topology.h>
-
-//extern int perfmon_verbose;
-extern int socket_fd;
-extern int thread_sockets[MAX_NUM_THREADS];
-extern PerfmonGroupSet *groupSet;
-extern int perfmon_numCounters;
-extern int perfmon_numCoreCounters;
-extern int perfmon_numArchEvents;
-extern PerfmonEvent* eventHash;
-extern RegisterMap* counter_map;
-extern BoxMap* box_map;
-
+#include <likwid.h>
 
 extern int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 
-extern int perfmon_addEventSet(char* eventCString);
-extern int perfmon_setupCounters(int groupId);
-extern int perfmon_startCounters(void);
-extern int perfmon_stopCounters(void);
-extern int perfmon_readCounters(void);
-extern int perfmon_readCountersCpu(int cpu_id);
-int perfmon_initThread(int thread_id, int cpu_id);
-extern int perfmon_init(int nrThreads, int threadsToCpu[]);
-extern void perfmon_init_maps(void);
-extern void perfmon_finalize(void);
-extern int perfmon_switchActiveGroup(int new_group);
-
-extern double perfmon_getResult(int groupId, int eventId, int threadId);
-extern int perfmon_getNumberOfGroups(void);
-extern int perfmon_getNumberOfEvents(int groupId);
-extern double perfmon_getTimeOfGroup(int groupId);
-extern int perfmon_getIdOfActiveGroup(void);
-extern int perfmon_getNumberOfThreads(void);
-
-//extern void perfmon_printCounters(FILE* OUTSTREAM);
-//extern void perfmon_printEvents(FILE* OUTSTREAM);
-extern int perfmon_accessClientInit(void);
 
 /* Internal helpers */
 extern int getCounterTypeOffset(int index);

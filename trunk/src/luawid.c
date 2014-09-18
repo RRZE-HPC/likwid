@@ -8,21 +8,8 @@
 #include <lauxlib.h>                           /* Always include this */
 #include <lualib.h>                            /* Always include this */
 
+#include <likwid.h>
 
-#include <perfmon.h>
-#include <topology.h>
-#include <numa.h>
-#include <affinity.h>
-#include <power.h>
-#include <bstrlib.h>
-#include <accessClient.h>
-#include <thermal.h>
-#include <memsweep.h>
-#include <daemon.h>
-#include <configuration.h>
-#include <msr.h>
-#include <error.h>
-#include <pci.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -84,11 +71,11 @@ static int lua_accessClient_setaccessmode(lua_State* L)
     flag = luaL_checknumber(L,1);
     luaL_argcheck(L, flag >= 0 && flag <= 1, 1, "invalid access mode, only 0 (direct) and 1 (accessdaemon) allowed");
     accessClient_setaccessmode(flag);
-    if (flag == 0 && msr_init(0) != 0)
+    /*if (flag == 0 && msr_init(0) != 0)
     {
         lua_pushnumber(L,1);
         return 1;
-    }
+    }*/
     /*else if (flag == 1)
     {
         perfmon_accessClientInit();
@@ -769,9 +756,11 @@ static int lua_likwid_getAffinityInfo(lua_State* L)
     lua_newtable(L);
     for(i=0;i<affinity->numberOfAffinityDomains;i++)
     {
-        lua_pushstring(L,bdata(affinity->domains[i].tag));
+        lua_pushunsigned(L, i+1);
         lua_newtable(L);
-        
+        lua_pushstring(L,"tag");
+        lua_pushstring(L,bdata(affinity->domains[i].tag));
+        lua_settable(L,-3);
         lua_pushstring(L,"numberOfProcessors");
         lua_pushunsigned(L,affinity->domains[i].numberOfProcessors);
         lua_settable(L,-3);
@@ -799,18 +788,6 @@ static int lua_likwid_putAffinityInfo(lua_State* L)
     affinity_isInitialized = 0;
     return 0;
 }
-
-static int lua_likwid_printAffinityDomains(lua_State* L)
-{
-    if (affinity_isInitialized == 0)
-    {
-        affinity_init();
-        affinity_isInitialized = 1;
-    }
-    affinity_printDomains();
-    return 0;
-}
-
 
 static int lua_likwid_getPowerInfo(lua_State* L)
 {
@@ -1146,7 +1123,6 @@ int luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_setMemInterleaved", lua_likwid_setMemInterleaved);
     lua_register(L, "likwid_getAffinityInfo",lua_likwid_getAffinityInfo);
     lua_register(L, "likwid_putAffinityInfo",lua_likwid_putAffinityInfo);
-    lua_register(L, "likwid_printAffinityDomains",lua_likwid_printAffinityDomains);
     lua_register(L, "likwid_getPowerInfo",lua_likwid_getPowerInfo);
     lua_register(L, "likwid_getOnlineDevices", lua_likwid_getOnlineDevices);
     // Timer functions

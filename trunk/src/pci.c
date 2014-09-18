@@ -66,7 +66,6 @@
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-static int socket_fd = -1;
 static int FD[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
 
 /* Socket to bus mapping -- will be determined at runtime;

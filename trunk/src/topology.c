@@ -2,7 +2,9 @@
 #include <unistd.h>
 #include <sched.h>
 
-#include <topology.h>
+#include <likwid.h>
+
+//#include <topology.h>
 #include <error.h>
 #include <tree.h>
 #include <bitUtil.h>
