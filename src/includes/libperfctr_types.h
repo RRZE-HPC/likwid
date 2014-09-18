@@ -38,15 +38,15 @@ typedef struct LikwidThreadResults{
     double time;
     TimerData startTime;
     uint32_t count;
-    uint64_t StartPMcounters[NUM_PMC];
-    uint64_t PMcounters[NUM_PMC];
+    double StartPMcounters[NUM_PMC];
+    double PMcounters[NUM_PMC];
 } LikwidThreadResults;
 
 typedef struct {
     bstring  tag;
     double*  time;
     uint32_t*  count;
-    uint64_t** counters;
+    double** counters;
 } LikwidResults;
 
 #endif /*LIBPERFCTR_H*/
