@@ -59,4 +59,21 @@ thermal_read(int cpuId, uint32_t *data)
     return 0;
 }
 
+static int
+thermal_tread(int socket_fd, int cpuId, uint32_t *data)
+{
+    uint64_t result = 0;
+    uint32_t readout = 0;
+    if (msr_tread(socket_fd, cpuId, IA32_THERM_STATUS, &result))
+    {
+        *data = 0;
+        return -EIO;
+    }
+    readout = extractBitField(result,7,16);
+    *data = (readout == 0 ?
+                thermal_info.activationT - thermal_info.offset :
+                (thermal_info.activationT - thermal_info.offset) - readout );
+    return 0;
+}
+
 #endif /*THERMAL_H*/
