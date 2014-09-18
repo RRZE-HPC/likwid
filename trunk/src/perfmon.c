@@ -43,12 +43,13 @@
 PerfmonEvent* eventHash;
 RegisterMap* counter_map = NULL;
 BoxMap* box_map = NULL;
-int perfmon_numCounters;
-int perfmon_numCoreCounters;
-int perfmon_numArchEvents;
+int perfmon_numCounters = 0;
+int perfmon_numCoreCounters = 0;
+int perfmon_numArchEvents = 0;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
 int socket_fd = -1;
+int thread_sockets[MAX_NUM_THREADS];
 
 PerfmonGroupSet* groupSet = NULL;
 
@@ -593,17 +594,17 @@ perfmon_init_maps(void)
                     break;
 
                 case HASWELL:
-
-                case HASWELL_EX:
-
+                    perfmon_numCounters = perfmon_numCountersHaswell - NUM_COUNTERS_UNCORE_HASWELL;
                 case HASWELL_M1:
-
                 case HASWELL_M2:
+                case HASWELL_EX:
                     eventHash = haswell_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsHaswell;
                     counter_map = haswell_counter_map;
-                    perfmon_numCounters = perfmon_numCountersHaswell;
+                    perfmon_numCounters = (perfmon_numCounters == 0 ?
+                    perfmon_numCountersHaswell : perfmon_numCounters);
                     perfmon_numCoreCounters = perfmon_numCoreCountersHaswell;
+                    box_map = haswell_box_map;
                     break;
 
                 case SANDYBRIDGE:
@@ -1263,6 +1264,21 @@ int perfmon_readCounters(void)
     return __perfmon_readCounters(-1);
 }
 
+int perfmon_readCountersCpu(int cpu_id)
+{
+    int i;
+    int thread_id = 0;
+    for(i=0;i<groupSet->numberOfThreads;i++)
+    {
+        if (groupSet->threads[i].processorId == cpu_id)
+        {
+            thread_id = groupSet->threads[i].thread_id;
+            break;
+        }
+    }
+    return perfmon_readCountersThread(thread_id, &groupSet->groups[groupSet->activeGroup]);
+}
+
 int perfmon_readGroupCounters(int groupId)
 {
     return __perfmon_readCounters(groupId);
@@ -1298,14 +1314,18 @@ perfmon_getResult(int groupId, int eventId, int threadId)
     }
     if (counter->overflows > 0)
     {
-        result += (double) ((get_maxPerfCounterValue() - counter->startData) + counter->counterData);
+        result += (double) ((perfmon_getMaxCounterValue(counter_map[event->index].type) - counter->startData) + counter->counterData);
         counter->overflows--;
     }
-    result += (double) (counter->overflows * get_maxPerfCounterValue());
+    result += (double) (counter->overflows * perfmon_getMaxCounterValue(counter_map[event->index].type));
 
     if (counter_map[event->index].type == POWER)
     {
         result *= power_info.energyUnit;
+    }
+    else if (counter_map[event->index].type == THERMAL)
+    {
+        result = (double)counter->counterData;
     }
     return result;
 }
@@ -1362,6 +1382,22 @@ perfmon_getTimeOfGroup(int groupId)
     return groupSet->groups[groupId].rdtscTime * 1.E06;
 }
 
+uint64_t
+perfmon_getMaxCounterValue(RegisterType type)
+{
+    int width = 48;
+    uint64_t tmp = 0x0ULL;
+    if (box_map && (box_map[type].regWidth > 0))
+    {
+        width = box_map[type].regWidth;
+    }
+    for(int i=0;i<width;i++)
+    {
+        tmp |= (1<<i);
+    }
+
+    return tmp;
+}
 int 
 perfmon_accessClientInit(void)
 {
@@ -1371,4 +1407,5 @@ perfmon_accessClientInit(void)
         msr_init(socket_fd);
     }
 }
+
 
