@@ -935,6 +935,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
     local nr_groups = #groups
     local nr_regions = #groups[1]
     local nr_threads = likwid.tablelength(groups[1][1]["Time"])
+    local ctr_and_events = likwid_getEventsAndCounters()
     for g=1,nr_groups do
         local gdata = groupData[g]
         local nr_events = likwid.tablelength(gdata["Events"])
@@ -973,8 +974,24 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
             for t=0,nr_threads-1 do
                 local tmpList = {}
                 table.insert(tmpList, "Core "..tostring(cpulist[t+1]))
+                for i, event in pairs(gdata["Events"]) do
+                    local index = 0
+                    for k,v in pairs(ctr_and_events["Counters"]) do
+                        if v["Name"] == gdata["Events"][i]["Counter"] then
+                            index = k
+                            break
+                        end
+                    end
+                end
                 for e=1,nr_events do
-                    local tmp = results[r][g][e][t]["Value"]
+                    local index = 0
+                    for k,v in pairs(ctr_and_events["Counters"]) do
+                        if v["Name"] == gdata["Events"][e-1]["Counter"] then
+                            index = k
+                            break
+                        end
+                    end
+                    local tmp = results[r][g][index][t]["Value"]
                     if tmp == nil then
                         tmp = 0
                     end
@@ -999,7 +1016,14 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                 for t=0,nr_threads-1 do
                     counterlist = {}
                     for e=1,nr_events do
-                        counterlist[results[r][g][e][t]["Counter"]] = results[r][g][e][t]["Value"]
+                        local index = 0
+                        for k,v in pairs(ctr_and_events["Counters"]) do
+                            if v["Name"] == gdata["Events"][e-1]["Counter"] then
+                                index = k
+                                break
+                            end
+                        end
+                        counterlist[results[r][g][index][t]["Counter"]] = results[r][g][index][t]["Value"]
                     end
                     counterlist["inverseClock"] = 1.0/likwid_getCpuClock();
                     counterlist["time"] = groups[g][r]["Time"][t+1]
@@ -1152,21 +1176,21 @@ function getMarkerResults(filename, num_cpus)
         return {}, {}
     end
     local nr_threads = tmpList[1]
-    if nr_threads ~= num_cpus then
+    if tonumber(nr_threads) ~= tonumber(num_cpus) then
         print(string.format("Marker file lists only %d cpus, but perfctr configured %d cpus", nr_threads, num_cpus))
         return {},{}
     end
     local nr_regions = tmpList[2]
-    if nr_regions == 0 then
+    if tonumber(nr_regions) == 0 then
         print("No region results can be found in marker API output file")
         return {},{}
     end
     local nr_groups = tmpList[3]
-    if nr_groups == 0 then
+    if tonumber(nr_groups) == 0 then
         print("No group listed in the marker API output file")
         return {},{}
     end
-    local regions_per_group = nr_regions/nr_groups
+    local regions_per_group = tonumber(nr_regions)/tonumber(nr_groups)
     table.remove(lines,1)
     
     -- Read Region IDs and names from following lines
@@ -1201,7 +1225,8 @@ function getMarkerResults(filename, num_cpus)
         table.remove(tmpList, 1 )
         time = tonumber(tmpList[1])
         group_data[g][r]["Time"][t+1] = time
-        table.remove(tmpList, 1 )
+        table.remove(tmpList, 1)
+
         for c=1,#ctr_and_events["Counters"] do
             if results[r][g][c] == nil then
                 results[r][g][c] = {}

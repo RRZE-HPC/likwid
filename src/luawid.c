@@ -501,22 +501,40 @@ static int lua_likwid_putTopology(lua_State* L)
 static int lua_likwid_getEventsAndCounters(lua_State* L)
 {
     int i;
+    char optString[1024];
+    int optStringIndex = 0;
     perfmon_init_maps();
     lua_newtable(L);
     lua_pushstring(L,"Counters");
     lua_newtable(L);
     for(i=1;i<=perfmon_numCounters;i++)
     {
+        optStringIndex = 0;
+        optString[0] = '\0';
         lua_pushunsigned(L,i);
         lua_newtable(L);
         lua_pushstring(L,"Name");
         lua_pushstring(L,counter_map[i-1].key);
         lua_settable(L,-3);
         lua_pushstring(L,"Options");
-        lua_pushunsigned(L,counter_map[i-1].optionMask);
+        for(int j=1; j<NUM_EVENT_OPTIONS; j++)
+        {
+            if (counter_map[i-1].optionMask & REG_TYPE_MASK(j))
+            {
+                optStringIndex += sprintf(&(optString[optStringIndex]), "%s|", eventOptionTypeName[j]);
+            }
+        }
+        optString[optStringIndex-1] = '\0';
+        lua_pushstring(L,optString);
         lua_settable(L,-3);
         lua_pushstring(L,"Type");
-        lua_pushunsigned(L,counter_map[i-1].type);
+        lua_pushunsigned(L, counter_map[i-1].type);
+        lua_settable(L,-3);
+        lua_pushstring(L,"TypeName");
+        lua_pushstring(L, RegisterTypeNames[counter_map[i-1].type]);
+        lua_settable(L,-3);
+        lua_pushstring(L,"Index");
+        lua_pushunsigned(L,counter_map[i-1].index);
         lua_settable(L,-3);
         lua_settable(L,-3);
     }
