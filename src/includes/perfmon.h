@@ -39,8 +39,10 @@
 
 //extern int perfmon_verbose;
 extern int socket_fd;
+extern int thread_sockets[MAX_NUM_THREADS];
 extern PerfmonGroupSet *groupSet;
 extern int perfmon_numCounters;
+extern int perfmon_numCoreCounters;
 extern int perfmon_numArchEvents;
 extern PerfmonEvent* eventHash;
 extern RegisterMap* counter_map;
@@ -56,6 +58,7 @@ extern int perfmon_setupCounters(int groupId);
 extern int perfmon_startCounters(void);
 extern int perfmon_stopCounters(void);
 extern int perfmon_readCounters(void);
+extern int perfmon_readCountersCpu(int cpu_id);
 int perfmon_initThread(int thread_id, int cpu_id);
 extern int perfmon_init(int nrThreads, int threadsToCpu[]);
 extern void perfmon_init_maps(void);
@@ -75,6 +78,7 @@ extern int perfmon_accessClientInit(void);
 
 /* Internal helpers */
 extern int getCounterTypeOffset(int index);
+extern uint64_t perfmon_getMaxCounterValue(RegisterType type);
 
 #if 0
 extern void perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set);
