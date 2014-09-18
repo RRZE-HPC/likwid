@@ -37,7 +37,6 @@ likwid.putNumaInfo = likwid_putNumaInfo
 likwid.setMemInterleaved = likwid_setMemInterleaved
 likwid.getAffinityInfo = likwid_getAffinityInfo
 likwid.putAffinityInfo = likwid_putAffinityInfo
-likwid.printAffinityDomains = likwid_printAffinityDomains
 likwid.getPowerInfo = likwid_getPowerInfo
 likwid.getOnlineDevices = likwid_getOnlineDevices
 likwid.getCpuClock = likwid_getCpuClock
