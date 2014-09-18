@@ -129,17 +129,17 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
     {
         (*results)[i].time = (double*) malloc(numberOfThreads * sizeof(double));
         (*results)[i].count = (uint32_t*) malloc(numberOfThreads * sizeof(uint32_t));
-        (*results)[i].counters = (uint64_t**) malloc(numberOfThreads * sizeof(uint64_t*));
+        (*results)[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
 
         for ( uint32_t j=0; j < numberOfThreads; j++ )
         {
             (*results)[i].time[j] = 0.0;
             (*results)[i].count[j] = 0;
-            (*results)[i].counters[j] = (uint64_t*) malloc(NUM_PMC * sizeof(uint64_t));
+            (*results)[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
 
             for ( uint32_t k=0; k < NUM_PMC; k++ )
             {
-                (*results)[i].counters[j][k] = 0;
+                (*results)[i].counters[j][k] = 0.0;
             }
         }
     }
