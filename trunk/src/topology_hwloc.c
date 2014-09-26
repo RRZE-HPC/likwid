@@ -185,11 +185,6 @@ void hwloc_init_cpuFeatures(void)
             cpuid_info.featureFlags |= (1<<SSE3);
             strcat(cpuid_info.features, "SSE3 ");
         }
-        else if (strcmp(cptr,"vsx") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<VSX);
-            strcat(cpuid_info.features, "VSX ");
-        }
         else if (strcmp(cptr,"monitor") == 0)
         {
             cpuid_info.featureFlags |= (1<<MONITOR);

@@ -101,7 +101,7 @@ int destroy_configuration(void)
 {
     if (init_config == 0) 
     {
-        return 0;
+        return -EFAULT;
     }
     free(config.topologyCfgFileName);
     free(config.daemonPath);
