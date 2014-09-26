@@ -108,7 +108,7 @@ use_csv = false
 execString = nil
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid("pid"))
 
-
+print(arg)
 for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
     
     if (type(arg) == "string") then
@@ -389,6 +389,8 @@ if use_marker == true then
     likwid.setenv("LIKWID_MASK", likwid.createBitMask(group_list[1]))
     likwid.setenv("LIKWID_GROUPS", tostring(likwid.getNumberOfGroups()))
     likwid.setenv("LIKWID_COUNTERMASK", likwid.createGroupMask(group_list[1]))
+    likwid.setenv("LIKWID_CPULIST", table.concat(cpulist,","))
+    likwid.setenv("LIKWID_DEBUG", tostring(verbose))
     local str = event_string_list[1]
     likwid.setenv("LIKWID_EVENTS", str)
     likwid.setenv("LIKWID_THREADS", table.concat(cpulist,","))
@@ -404,8 +406,13 @@ end
 io.stdout:flush()
 if use_wrapper or use_timeline then
     local err = os.execute(execString)
-    if (err == false) then
-        print("Failed to execute command: ".. exec)
+    if (err == false or err == nil) then
+        print("Failed to execute command: ".. execString)
+        likwid.stopCounters()
+        likwid.finalize()
+        likwid.putTopology()
+        likwid.putConfiguration()
+        os.exit(1)
     end
 else
     usleep(duration)
@@ -423,7 +430,7 @@ elseif use_timeline then
 end
 
 if use_marker == true then
-    groups, results = likwid.getMarkerResults(markerFile, num_cpus)
+    groups, results = likwid.getMarkerResults(markerFile, group_list, num_cpus)
     if #groups == 0 and #results == 0 then
         os.exit(1)
     end
