@@ -166,6 +166,7 @@ if time_interval < power["timeUnit"]*1.E06 then
     os.exit(1)
 end
 
+
 print(likwid.hline);
 print(string.format("CPU name:\t%s", cpuinfo["name"]))
 if cpuinfo["clock"] > 0 then
@@ -187,16 +188,8 @@ if (print_info) then
     print(likwid.hline)
 end
 
-hasDRAM = 0
-
-if (cpuinfo["model"] == 45 or cpuinfo["model"] == 62) then
-    hasDRAM = 1
-elseif (cpuinfo["model"] ~= 45 and
-        cpuinfo["model"] ~= 42 and
-        cpuinfo["model"] ~= 58 and
-        cpuinfo["model"] ~= 62 and
-        cpuinfo["model"] ~= 60) then
-    print("RAPL not supported for this processor")
+if power["hasRAPL"] == 0 then
+    print("Measuring power is not supported on this machine")
     os.exit(1)
 end
 
@@ -230,15 +223,16 @@ for i,socket in pairs(sockets) do
         if (use_perfctr) then
             likwid.startCounters()
         end
-        
-        if (hasDRAM) then before3 = likwid.startPower(cpu, 3) end
+        if (power["hasRAPL_PP0"]) then before1 = likwid.startPower(cpu, 1) end
+        if (power["hasRAPL_PP1"]) then before2 = likwid.startPower(cpu, 2) end
+        if (power["hasRAPL_DRAM"]) then before3 = likwid.startPower(cpu, 3) end
         before0 = likwid.startPower(cpu, 0)
         usleep(time_interval);
         after0 = likwid.stopPower(cpu, 0)
-        if (hasDRAM) then 
-            after3 = likwid.stopPower(cpu, 3) 
-        end
-        
+        if (power["hasRAPL_PP0"]) then after1 = likwid.stopPower(cpu, 1) end
+        if (power["hasRAPL_PP1"]) then after2 = likwid.stopPower(cpu, 2) end
+        if (power["hasRAPL_DRAM"]) then after3 = likwid.stopPower(cpu, 3) end
+
         if (use_perfctr) then
             likwid.stopCounters()
             likwid.finalize()
@@ -254,8 +248,10 @@ for i,socket in pairs(sockets) do
         if (use_perfctr) then
             likwid.startCounters()
         end
-        
-        if (hasDRAM) then before3 = likwid.startPower(cpu, 3) end
+
+        if (power["hasRAPL_PP0"]) then before1 = likwid.startPower(cpu, 1) end
+        if (power["hasRAPL_PP1"]) then before2 = likwid.startPower(cpu, 2) end
+        if (power["hasRAPL_DRAM"]) then before3 = likwid.startPower(cpu, 3) end
         before0 = likwid.startPower(cpu, 0)
         time_before = likwid.startClock()
 
@@ -271,9 +267,9 @@ for i,socket in pairs(sockets) do
             os.exit(1)
         end
         after0 = likwid.stopPower(cpu, 0)
-        if (hasDRAM) then 
-            after3 = likwid.stopPower(cpu, 3)
-        end
+        if (power["hasRAPL_PP0"]) then after1 = likwid.stopPower(cpu, 1) end
+        if (power["hasRAPL_PP1"]) then after2 = likwid.stopPower(cpu, 2) end
+        if (power["hasRAPL_DRAM"]) then after3 = likwid.stopPower(cpu, 3) end
         if (use_perfctr) then
             likwid.stopCounters()
             likwid.finalize()
@@ -286,7 +282,19 @@ for i,socket in pairs(sockets) do
     energy = (after0 - before0) * power["energyUnit"]
     print(string.format("Energy consumed: %g Joules",energy))
     print(string.format("Power consumed: %g Watts",energy/runtime))
-    if (hasDRAM) then
+    if (power["hasRAPL_PP0"]) then
+        print("Domain: PP0")
+        energy = (after1 - before1) * power["energyUnit"]
+        print(string.format("Energy consumed: %g Joules",energy));
+        print(string.format("Power consumed: %g Watts",energy/runtime))
+    end
+    if (power["hasRAPL_PP1"]) then
+        print("Domain: PP1")
+        energy = (after2 - before2) * power["energyUnit"]
+        print(string.format("Energy consumed: %g Joules",energy));
+        print(string.format("Power consumed: %g Watts",energy/runtime))
+    end
+    if (power["hasRAPL_DRAM"]) then
         print("Domain: DRAM")
         energy = (after3 - before3) * power["energyUnit"]
         print(string.format("Energy consumed: %g Joules",energy));
@@ -300,9 +308,9 @@ for i,socket in pairs(sockets) do
             for j=1,(cputopo["numCoresPerSocket"]*cputopo["numThreadsPerCore"]) do
                 cpuid = numatopo["nodes"][i]["processors"][j]
                 if (fahrenheit) then
-                    print(string.format("Socket %d Core %d: %u °F",numatopo["nodes"][i]["id"],cpuid, 1.8*likwid.readTemp(cpuid)+32));
+                    print(string.format("Socket %d Core %d: %u F",numatopo["nodes"][i]["id"],cpuid, 1.8*likwid.readTemp(cpuid)+32));
                 else
-                    print(string.format("Socket %d Core %d: %u °C",numatopo["nodes"][i]["id"],cpuid, likwid.readTemp(cpuid)));
+                    print(string.format("Socket %d Core %d: %u C",numatopo["nodes"][i]["id"],cpuid, likwid.readTemp(cpuid)));
                 end
             end
         end

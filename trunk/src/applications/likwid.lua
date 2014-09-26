@@ -947,7 +947,6 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
             tab = {}
             tab[1] = {"Region Info","RDTSC Runtime [s]","call count"}
             for thread=1, nr_threads do
-            --for thread, value in pairs(groups[g][r]["Time"]) do
                 local tmpList = {}
                 table.insert(tmpList, "Core "..tostring(cpulist[thread]))
                 table.insert(tmpList, string.format("%.6f", groups[g][r]["Time"][thread]))
@@ -1027,7 +1026,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                     counterlist["inverseClock"] = 1.0/likwid_getCpuClock();
                     counterlist["time"] = groups[g][r]["Time"][t+1]
                     tmpList = {}
-                    table.insert(tmpList, "Core "..tostring(t))
+                    table.insert(tmpList, "Core "..tostring(cpulist[t+1]))
                     for m=1,#gdata["Metrics"] do
                         local tmp = likwid.calculate_metric(gdata["Metrics"][m]["formula"],counterlist)
                         if tmp == nil or tostring(tmp) == "-nan" then
@@ -1155,7 +1154,7 @@ end
 
 likwid.getResults = getResults
 
-function getMarkerResults(filename, num_cpus)
+function getMarkerResults(filename, group_list, num_cpus)
     local cpuinfo = likwid_getCpuInfo()
     local ctr_and_events = likwid_getEventsAndCounters()
     local group_data = {}
@@ -1205,6 +1204,7 @@ function getMarkerResults(filename, num_cpus)
             results[r][g] = {}
             tmpList = stringsplit(lines[1],":")
             tmpList = stringsplit(tmpList[2], "-")
+            group_data[g][r]["ID"] = tonumber(tmpList[#tmpList]) + 1
             table.remove(tmpList, #tmpList)
             group_data[g][r]["Name"] = table.concat(tmpList,"-")
             group_data[g][r]["Time"] = {}
@@ -1220,6 +1220,8 @@ function getMarkerResults(filename, num_cpus)
         table.remove(tmpList, 1 )
         t = tonumber(tmpList[1])
         table.remove(tmpList, 1 )
+        c = tonumber(tmpList[1])
+        table.remove(tmpList, 1 )
         group_data[g][r]["Count"][t+1] = tonumber(tmpList[1])
         table.remove(tmpList, 1 )
         time = tonumber(tmpList[1])
@@ -1230,12 +1232,12 @@ function getMarkerResults(filename, num_cpus)
             if results[r][g][c] == nil then
                 results[r][g][c] = {}
             end
-            if results[r][g][c][t] == nil then
-                results[r][g][c][t] = {}
+            if results[r][g][c+1][t] == nil then
+                results[r][g][c+1][t] = {}
             end
-            local tmp = tonumber(tmpList[c])
-            results[r][g][c][t]["Value"] = tmp
-            results[r][g][c][t]["Counter"] = ctr_and_events["Counters"][c]["Name"]
+            local tmp = tonumber(tmpList[c+1])
+            results[r][g][c+1][t]["Value"] = tmp
+            results[r][g][c+1][t]["Counter"] = event["Counter"]
         end
     end
 

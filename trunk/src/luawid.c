@@ -66,12 +66,13 @@ static int lua_likwid_putConfiguration(lua_State* L)
     return 0;
 }
 
-static int lua_accessClient_setaccessmode(lua_State* L)
+static int lua_likwid_setAccessMode(lua_State* L)
 {
     int flag;
     flag = luaL_checknumber(L,1);
     luaL_argcheck(L, flag >= 0 && flag <= 1, 1, "invalid access mode, only 0 (direct) and 1 (accessdaemon) allowed");
     accessClient_setaccessmode(flag);
+    perfmon_accessClientInit();
     /*if (flag == 0 && msr_init(0) != 0)
     {
         lua_pushnumber(L,1);
@@ -1128,8 +1129,8 @@ int luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getConfiguration", lua_likwid_getConfiguration);
     lua_register(L, "likwid_putConfiguration", lua_likwid_putConfiguration);
     // Perfmon functions
-    lua_register(L, "accessClient_setaccessmode",lua_accessClient_setaccessmode);
-    lua_register(L, "likwid_setAccessClientMode",lua_accessClient_setaccessmode);
+    //lua_register(L, "accessClient_setaccessmode",lua_accessClient_setaccessmode);
+    lua_register(L, "likwid_setAccessClientMode",lua_likwid_setAccessMode);
     lua_register(L, "likwid_init",lua_likwid_init);
     lua_register(L, "likwid_addEventSet", lua_likwid_addEventSet);
     lua_register(L, "likwid_setupCounters",lua_likwid_setupCounters);
