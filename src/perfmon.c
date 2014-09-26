@@ -671,68 +671,11 @@ perfmon_init_maps(void)
     return;
 }
 
-
-int
-perfmon_init(int nrThreads, int threadsToCpu[])
+void
+perfmon_init_funcs(int* init_power, int* init_temp)
 {
-    int i;
-    int ret;
     int initialize_power = FALSE;
     int initialize_thermal = FALSE;
-
-    if (nrThreads <= 0)
-    {
-        ERROR_PRINT("Number of threads must be greater than 0, given %d",nrThreads);
-        return -EINVAL;
-    }
-    
-    /* Check threadsToCpu array if only valid cpu_ids are listed */
-    if (groupSet != NULL)
-    {
-        /* TODO: Decision whether setting new thread count and adjust processorIds
-         *          or just exit like implemented now
-         */
-        return -EEXIST;
-    }
-    
-    groupSet = (PerfmonGroupSet*) malloc(sizeof(PerfmonGroupSet));
-    if (groupSet == NULL)
-    {
-        ERROR_PLAIN_PRINT("Cannot allocate group descriptor");
-        return -ENOMEM;
-    }
-    groupSet->threads = (PerfmonThread*) malloc(nrThreads * sizeof(PerfmonThread));
-    if (groupSet->threads == NULL)
-    {
-        ERROR_PLAIN_PRINT("Cannot allocate set of threads");
-        free(groupSet);
-        return -ENOMEM;
-    }
-    groupSet->numberOfThreads = nrThreads;
-    groupSet->numberOfGroups = 0;
-    groupSet->numberOfActiveGroups = 0;
-
-    for(i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
-    
-    if (accessClient_mode != DAEMON_AM_DIRECT)
-    {
-        accessClient_init(&socket_fd);
-    }
-
-    ret = msr_init(socket_fd);
-
-    if (ret)
-    {
-        ERROR_PLAIN_PRINT("Initialization of MSR device accesses failed");
-        free(groupSet->threads);
-        free(groupSet);
-        return ret;
-    }
-
-    timer_init();
-    
-    perfmon_init_maps();
-
     switch ( cpuid_info.family )
     {
         case P6_FAMILY:
@@ -828,13 +771,11 @@ perfmon_init(int nrThreads, int threadsToCpu[])
                     perfmon_setupCountersThread = perfmon_setupCounterThread_nehalem;
                     break;
 
-                case IVYBRIDGE:
-
                 case IVYBRIDGE_EP:
-
+                    pci_init(socket_fd);
+                case IVYBRIDGE:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
-                    pci_init(socket_fd);
                     initThreadArch = perfmon_init_ivybridge;
                     perfmon_startCountersThread = perfmon_startCountersThread_ivybridge;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_ivybridge;
@@ -931,6 +872,75 @@ perfmon_init(int nrThreads, int threadsToCpu[])
             ERROR_PLAIN_PRINT(Unsupported Processor);
             break;
     }
+    *init_power = initialize_power;
+    *init_temp = initialize_thermal;
+}
+
+
+int
+perfmon_init(int nrThreads, int threadsToCpu[])
+{
+    int i;
+    int ret;
+    int initialize_power = FALSE;
+    int initialize_thermal = FALSE;
+
+    if (nrThreads <= 0)
+    {
+        ERROR_PRINT("Number of threads must be greater than 0, given %d",nrThreads);
+        return -EINVAL;
+    }
+    
+    /* Check threadsToCpu array if only valid cpu_ids are listed */
+    if (groupSet != NULL)
+    {
+        /* TODO: Decision whether setting new thread count and adjust processorIds
+         *          or just exit like implemented now
+         */
+        return -EEXIST;
+    }
+    
+    groupSet = (PerfmonGroupSet*) malloc(sizeof(PerfmonGroupSet));
+    if (groupSet == NULL)
+    {
+        ERROR_PLAIN_PRINT("Cannot allocate group descriptor");
+        return -ENOMEM;
+    }
+    groupSet->threads = (PerfmonThread*) malloc(nrThreads * sizeof(PerfmonThread));
+    if (groupSet->threads == NULL)
+    {
+        ERROR_PLAIN_PRINT("Cannot allocate set of threads");
+        free(groupSet);
+        return -ENOMEM;
+    }
+    groupSet->numberOfThreads = nrThreads;
+    groupSet->numberOfGroups = 0;
+    groupSet->numberOfActiveGroups = 0;
+
+    for(i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
+    
+    if (accessClient_mode != DAEMON_AM_DIRECT)
+    {
+        accessClient_init(&socket_fd);
+    }
+
+    ret = msr_init(socket_fd);
+
+    if (ret)
+    {
+        ERROR_PLAIN_PRINT("Initialization of MSR device accesses failed");
+        free(groupSet->threads);
+        free(groupSet);
+        return ret;
+    }
+
+    timer_init();
+
+    /* Initialize maps pointer to current architecture maps */
+    perfmon_init_maps();
+    /* Initialize function pointer to current architecture functions */
+    perfmon_init_funcs(&initialize_power, &initialize_thermal);
+
     /* Store thread information and reset counters for processor*/
     /* If the arch supports it, initialize power and thermal measurements */
     for(i=0;i<nrThreads;i++)
@@ -948,7 +958,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         }
         initThreadArch(threadsToCpu[i]);
     }
-    
     return 0;
 }
 
@@ -1233,9 +1242,8 @@ int perfmon_stopGroupCounters(int groupId)
 }
 
 int
-__perfmon_readCounters(int groupId)
+__perfmon_readCounters(int groupId, int threadId)
 {
-    int i = 0;
     int ret = 0;
 
     if ((groupId < 0) || (groupId >= groupSet->numberOfActiveGroups))
@@ -1243,12 +1251,23 @@ __perfmon_readCounters(int groupId)
         groupId = groupSet->activeGroup;
     }
 
-    for (; i<groupSet->numberOfThreads; i++)
+    if (threadId == -1)
     {
-        ret = perfmon_readCountersThread(i, &groupSet->groups[groupId]);
+        for (threadId = 0; threadId<groupSet->numberOfThreads; threadId++)
+        {
+            ret = perfmon_readCountersThread(threadId, &groupSet->groups[groupId]);
+            if (ret)
+            {
+                return -threadId-1;
+            }
+        }
+    }
+    else if ((threadId >= 0) && (threadId < groupSet->numberOfThreads))
+    {
+        ret = perfmon_readCountersThread(threadId, &groupSet->groups[groupId]);
         if (ret)
         {
-            return -i;
+            return -threadId-1;
         }
     }
     return 0;
@@ -1256,7 +1275,7 @@ __perfmon_readCounters(int groupId)
 
 int perfmon_readCounters(void)
 {
-    return __perfmon_readCounters(-1);
+    return __perfmon_readCounters(-1,-1);
 }
 
 int perfmon_readCountersCpu(int cpu_id)
@@ -1276,8 +1295,13 @@ int perfmon_readCountersCpu(int cpu_id)
 
 int perfmon_readGroupCounters(int groupId)
 {
-    return __perfmon_readCounters(groupId);
+    return __perfmon_readCounters(groupId,-1);
 }
+int perfmon_readGroupThreadCounters(int groupId, int threadId)
+{
+    return __perfmon_readCounters(groupId,threadId);
+}
+
 
 double
 perfmon_getResult(int groupId, int eventId, int threadId)
@@ -1287,27 +1311,31 @@ perfmon_getResult(int groupId, int eventId, int threadId)
     PerfmonCounter* counter;
     if (unlikely(groupSet == NULL))
     {
+        printf("GroupSet NULL\n");
         return 0;
     }
     if (groupId < 0)
     {
+        printf("Sanitizing groupID to currently active Group\n");
         groupId = groupSet->activeGroup;
     }
     if (eventId >= groupSet->groups[groupId].numberOfEvents)
     {
+        printf("EventID greater than defined events\n");
         return 0;
     }
     if (threadId >= groupSet->numberOfThreads)
     {
+        printf("ThreadID greater then defined threads\n");
         return 0;
     }
     event = &(groupSet->groups[groupId].events[eventId]);
     counter = &(event->threadCounter[threadId]);
     if (counter->overflows == 0)
     {
-        result += (double) (counter->counterData - counter->startData);
+        result = (double) (counter->counterData - counter->startData);
     }
-    if (counter->overflows > 0)
+    else if (counter->overflows > 0)
     {
         result += (double) ((perfmon_getMaxCounterValue(counter_map[event->index].type) - counter->startData) + counter->counterData);
         counter->overflows--;
@@ -1403,4 +1431,25 @@ perfmon_accessClientInit(void)
     }
 }
 
-
+char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
+    "NONE",
+    "OPCODE",
+    "MATCH0",
+    "MATCH1",
+    "MASK0",
+    "MASK1",
+    "NID",
+    "TID",
+    "STATE",
+    "EDGEDETECT",
+    "THRESHOLD",
+    "INVERT",
+    "COUNT_KERNEL",
+    "ANYTHREAD",
+    "OCCUPANCY",
+    "OCCUPANCY_FILTER",
+    "OCCUPANCY_EDGEDETECT",
+    "OCCUPANCY_INVERT",
+    "IN_TRANSACTION",
+    "IN_TRANSACTION_ABORTED"
+};

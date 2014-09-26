@@ -83,6 +83,7 @@
 #define IVYBRIDGE            0x3AU
 #define IVYBRIDGE_EP         0x3EU
 #define HASWELL              0x3CU
+#define HASWELL_EX           0x3FU
 #define ATOM_SILVERMONT      0x4DU
 
 #define PCI_ROOT_PATH    "/proc/bus/pci/"
@@ -147,12 +148,25 @@ static int allowed_intel(uint32_t reg)
 static int allowed_sandybridge(uint32_t reg)
 {
     if ((allowed_intel(reg)) ||
-        (((reg & 0xF00U) == 0x600U) ||
-        (reg == 0x1AD)))
+        (((reg & 0xF00U) == 0x600U)))
     {
         return 1;
     }
     return 0;
+}
+
+static int allowed_haswell(uint32_t reg)
+{
+    if ((allowed_intel(reg)) ||
+        (allowed_sandybridge(reg)) ||
+        (((reg & 0xF00U) == 0x700U)))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 static int allowed_silvermont(uint32_t reg)
@@ -291,8 +305,8 @@ static void pci_read(AccessDataRecord* dRecord)
 
         if ( FD_PCI[socketId][device] < 0)
         {
-            syslog(LOG_ERR, "Failed to open device file %s for device %s on socket %u", pci_filepath, 
-                    pci_devices[device].name, socketId);
+            syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pci_filepath, 
+                    pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
@@ -300,8 +314,8 @@ static void pci_read(AccessDataRecord* dRecord)
 
     if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data))
     {
-        syslog(LOG_ERR, "Failed to read data from pci device file %s for device %s on socket %u",
-                pci_filepath,pci_devices[device].name,socketId);
+        syslog(LOG_ERR, "Failed to read data from pci device file %s for device %s (%s) on socket %u",
+                pci_filepath,pci_types[pci_devices[device].type].name, pci_devices[device].name,socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -330,8 +344,8 @@ static void pci_write(AccessDataRecord* dRecord)
 
         if ( FD_PCI[socketId][device] < 0)
         {
-            syslog(LOG_ERR, "Failed to open device file %s for device %s on socket %u", pci_filepath, 
-                        pci_devices[device].name, socketId);
+            syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pci_filepath, 
+                        pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
@@ -339,8 +353,8 @@ static void pci_write(AccessDataRecord* dRecord)
 
     if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
     {
-        syslog(LOG_ERR, "Failed to write data to pci device file %s for device %s on socket %u",pci_filepath, 
-                pci_devices[device].name, socketId);
+        syslog(LOG_ERR, "Failed to write data to pci device file %s for device %s (%s) on socket %u",pci_filepath, 
+                pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -453,6 +467,7 @@ int main(void)
     uint32_t numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
     uint32_t model;
 
+
     openlog(ident, 0, LOG_USER);
 
     if (!lock_check())
@@ -491,9 +506,9 @@ int main(void)
                     allowed = allowed_sandybridge;
                     isPCIUncore = 1;
                 }
-                else if (model == HASWELL)
+                else if ((model == HASWELL) || (model == HASWELL_EX))
                 {
-                    allowed = allowed_sandybridge;
+                    allowed = allowed_haswell;
                 }
                 else if (model == ATOM_SILVERMONT)
                 {
