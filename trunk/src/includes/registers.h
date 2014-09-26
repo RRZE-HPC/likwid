@@ -825,6 +825,8 @@
 #define MSR_DRAM_ENERGY_STATUS          0x619
 #define MSR_DRAM_PERF_STATUS            0x61B
 #define MSR_DRAM_POWER_INFO             0x61C
+/* Intel Silvermont's RAPL registers */
+#define MSR_PKG_POWER_INFO_SILVERMONT   0x66E
 
 /* TM/TM2 interface */
 #define IA32_THERM_STATUS               0x19C

@@ -83,28 +83,7 @@ typedef enum {
 
 List of strings for all event and counter options used for matching and output
 */
-char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
-    "NONE",
-    "OPCODE",
-    "MATCH0",
-    "MATCH1",
-    "MASK0",
-    "MASK1",
-    "NID",
-    "TID",
-    "STATE",
-    "EDGEDETECT",
-    "THRESHOLD",
-    "INVERT",
-    "COUNT_KERNEL",
-    "ANYTHREAD",
-    "OCCUPANCY",
-    "OCCUPANCY_FILTER",
-    "OCCUPANCY_EDGEDETECT",
-    "OCCUPANCY_INVERT",
-    "IN_TRANSACTION",
-    "IN_TRANSACTION_ABORTED"
-};
+extern char* eventOptionTypeName[NUM_EVENT_OPTIONS];
 
 /** \brief Bitmask with no event/counter option set */
 #define EVENT_OPTION_NONE_MASK 0x0ULL

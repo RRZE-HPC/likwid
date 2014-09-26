@@ -35,6 +35,7 @@ static char* ivybridge_str = "Intel Core IvyBridge processor";
 static char* ivybridge_ep_str = "Intel Core IvyBridge EP processor";
 static char* sandybridge_ep_str = "Intel Core SandyBridge EP processor";
 static char* haswell_str = "Intel Core Haswell processor";
+static char* haswell_ex_str = "Intel Core Haswell EX processor";
 static char* nehalem_ex_str = "Intel Nehalem EX processor";
 static char* westmere_ex_str = "Intel Westmere EX processor";
 static char* xeon_mp_string = "Intel Xeon MP processor";
@@ -505,6 +506,9 @@ int topology_setName(void)
                 case HASWELL_M1:
                 case HASWELL_M2:
                     cpuid_info.supportUncore = 1;
+                    cpuid_info.name = haswell_ex_str;
+                    cpuid_info.short_name = short_haswell;
+                    break;
                 case HASWELL:
                     cpuid_info.name = haswell_str;
                     cpuid_info.short_name = short_haswell;

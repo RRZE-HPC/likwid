@@ -66,6 +66,7 @@ typedef struct {
     double minPower; /*!< \brief Minimal power consumption of the CPU */
     double maxPower; /*!< \brief Maximal power consumption of the CPU */
     double maxTimeWindow; /*!< \brief Minimal power measurement interval */
+    uint32_t supportedTypes;
 } PowerInfo;
 
 /*! \brief Power measurement data for start/stop measurements

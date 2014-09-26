@@ -21,6 +21,7 @@ static int affinity_isInitialized = 0;
 static int perfmon_isInitialized = 0;
 static int timer_isInitialized = 0;
 static int power_isInitialized = 0;
+static int power_hasRAPL = 0;
 static int config_isInitialized = 0;
 
 
@@ -800,13 +801,43 @@ static int lua_likwid_getPowerInfo(lua_State* L)
     }
     if (power_isInitialized == 0)
     {
-        power_init(0);
+        power_hasRAPL = power_init(0);
         power_isInitialized = 1;
     }
     power = get_powerInfo();
-    
+
 
     lua_newtable(L);
+    if (power_hasRAPL)
+    {
+        lua_pushstring(L,"hasRAPL");
+        lua_pushboolean(L,power_hasRAPL);
+        lua_settable(L,-3);
+        if (power->supportedTypes & (1<<PKG))
+        {
+            lua_pushstring(L,"hasRAPL_PKG");
+            lua_pushboolean(L,1);
+            lua_settable(L,-3);
+        }
+        if (power->supportedTypes & (1<<PP0))
+        {
+            lua_pushstring(L,"hasRAPL_PP0");
+            lua_pushboolean(L,1);
+            lua_settable(L,-3);
+        }
+        if (power->supportedTypes & (1<<PP1))
+        {
+            lua_pushstring(L,"hasRAPL_PP1");
+            lua_pushboolean(L,1);
+            lua_settable(L,-3);
+        }
+        if (power->supportedTypes & (1<<DRAM))
+        {
+            lua_pushstring(L,"hasRAPL_DRAM");
+            lua_pushboolean(L,1);
+            lua_settable(L,-3);
+        }
+    }
     lua_pushstring(L,"baseFrequency");
     lua_pushnumber(L,power->baseFrequency);
     lua_settable(L,-3);
