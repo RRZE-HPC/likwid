@@ -217,6 +217,7 @@ accessClient_read(
 
     if (data.errorcode != ERR_NOERROR)
     {
+        DEBUG_PRINT(DEBUGLEV_INFO, Got error '%s' from access daemon, accessClient_strerror(data.errorcode));
         *result = 0;
         return -EIO;
     }
@@ -242,10 +243,9 @@ accessClient_write(
     CHECK_ERROR(write(socket_fd, &data, sizeof(AccessDataRecord)), socket write failed);
     CHECK_ERROR(read(socket_fd, &data, sizeof(AccessDataRecord)), socket read failed);
 
-    if ((data.errorcode != ERR_NOERROR) || ((data.data > 0) && (data.data != sdata)))
+    if (data.errorcode != ERR_NOERROR)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Got error %s from access daemon and data is %lu,
-                                    accessClient_strerror(data.errorcode), data.data);
+        
         return -EIO;
     }
 

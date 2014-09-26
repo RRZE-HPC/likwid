@@ -46,6 +46,7 @@
 #include <timer.h>
 #include <hashTable.h>
 #include <registers.h>
+#include <error.h>
 
 
 #include <perfmon_core2_counters.h>
@@ -70,6 +71,9 @@ static int likwid_init = 0;
 static BitMask counterMask;
 static int numberOfGroups = 0;
 static int activeGroup = 0;
+static uint64_t regTypeMask = 0;
+static int threads2Cpu[MAX_NUM_THREADS];
+static int num_cpus = 0;
 
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
@@ -126,6 +130,7 @@ void likwid_markerInit(void)
 {
     int i;
     int groupId;
+    int verbosity;
     bstring bThreadStr;
     struct bstrList* threadTokens;
     int cpu_id = likwid_getProcessorId();
@@ -134,6 +139,8 @@ void likwid_markerInit(void)
     char* eventStr = getenv("LIKWID_EVENTS");
     char* cThreadStr = getenv("LIKWID_THREADS");
     char* groupStr = getenv("LIKWID_GROUPS");
+    sscanf(getenv("LIKWID_COUNTERMASK"), "%x", &regTypeMask);
+    verbosity = atoi(getenv("LIKWID_DEBUG"));
 
     if ((modeStr != NULL) && (maskStr != NULL) && (eventStr != NULL) && (cThreadStr != NULL) && (groupStr != NULL))
     {
@@ -161,6 +168,19 @@ void likwid_markerInit(void)
     for(int i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
 
     accessClient_setaccessmode(atoi(modeStr));
+    perfmon_verbosity = verbosity;
+    perfmon_init(num_cpus, threads2Cpu);
+
+    activeGroup = perfmon_addEventSet(eventStr);
+    groupSet->activeGroup = activeGroup;
+    for(int i=0;i<groupSet->groups[activeGroup].numberOfEvents;i++)
+    {
+        for(int j=0;j<groupSet->numberOfThreads;j++)
+        {
+            groupSet->groups[activeGroup].events[i].threadCounter[j].init = TRUE;
+        }
+    }
+    
     str2BitMask(maskStr, &counterMask);
 
     bThreadStr = bfromcstr(cThreadStr);
@@ -218,7 +238,7 @@ void likwid_markerClose(void)
     {
         return;
     }
-
+    numberOfGroups = atoi(getenv("LIKWID_GROUPS"));
     hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
 
     file = fopen(getenv("LIKWID_FILEPATH"),"w");
@@ -226,22 +246,21 @@ void likwid_markerClose(void)
     if (file != NULL)
     {
         fprintf(file,"%d %d %d\n",numberOfThreads,numberOfRegions, numberOfGroups);
-
         for (int i=0; i<numberOfRegions; i++)
         {
             fprintf(file,"%d:%s\n",i,bdata(results[i].tag));
         }
-
         for (int i=0; i<numberOfRegions; i++)
         {
             for (int j=0; j<numberOfThreads; j++)
             {
                 fprintf(file,"%d ",i);
                 fprintf(file,"%d ",j);
+                fprintf(file,"%d ",threads2Cpu[j]);
                 fprintf(file,"%u ",results[i].count[j]);
                 fprintf(file,"%e ",results[i].time[j]);
 
-                for (int k=0; k<NUM_PMC; k++)
+                for (int k=0; k<groupSet->groups[activeGroup].numberOfEvents; k++)
                 {
                     fprintf(file,"%e ",results[i].counters[j][k]);
                 }
@@ -287,26 +306,30 @@ int likwid_markerStartRegion(const char* regionTag)
     }
     bstring tag = bfromcstralloc(100, regionTag);
     LikwidThreadResults* results;
+    int ret;
+    int threadId;
     uint64_t res;
     uint64_t tmp, counter_result;
     char groupSuffix[10];
     sprintf(groupSuffix, "-%d", activeGroup);
     bcatcstr(tag, groupSuffix);
-    
     int cpu_id = hashTable_get(tag, &results);
     bdestroy(tag);
     int socket_fd = thread_sockets[cpu_id];
 
     if (accessClient_mode != DAEMON_AM_DIRECT)
     {
-        if (socket_fd == -1)
+        for(int i=0;i<groupSet->numberOfThreads;i++)
         {
-            printf("ERROR: Invalid socket file handle on processor %d. \
-                    Did you call likwid_markerThreadInit() ?\n", cpu_id);
+            if (cpu_id == groupSet->threads[i].processorId)
+            {
+                threadId = i;
+                break;
+            }
         }
     }
 
-    results->count++;
+    socket_fd = thread_sockets[cpu_id];
 
     perfmon_readCountersCpu(cpu_id);
 
@@ -341,13 +364,13 @@ int likwid_markerStopRegion(const char* regionTag)
     TimerData timestamp;
     timer_stop(&timestamp);
     int cpu_id = likwid_getProcessorId();
+    int ret;
     uint64_t res;
     uint64_t tmp, counter_result;
     int socket_fd = thread_sockets[cpu_id];
     double PMcounters[NUM_PMC];
-    
-    bstring tag = bfromcstralloc(100, regionTag);
-    char groupSuffix[10];
+    bstring tag = bfromcstr(regionTag);
+    char groupSuffix[100];
     LikwidThreadResults* results;
     sprintf(groupSuffix, "-%d", activeGroup);
     bcatcstr(tag, groupSuffix);

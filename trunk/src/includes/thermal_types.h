@@ -44,7 +44,7 @@ typedef struct {
 } ThermalInfo;
 
 /** \brief Pointer for exporting the ThermalInfo data structure */
-typedef ThermalInfo* ThermalInfo_t
+typedef ThermalInfo* ThermalInfo_t;
 /** @}*/
 
 extern ThermalInfo thermal_info;
