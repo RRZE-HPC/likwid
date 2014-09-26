@@ -1421,7 +1421,8 @@ perfmon_getMaxCounterValue(RegisterType type)
 
     return tmp;
 }
-int 
+
+void
 perfmon_accessClientInit(void)
 {
     if (accessClient_mode != DAEMON_AM_DIRECT)

@@ -358,6 +358,7 @@ The access mode must already be set when calling perfmon_init()
 @return error code (0 on success, -ERRORCODE on failure)
 */
 extern int perfmon_init(int nrThreads, int threadsToCpu[]);
+extern void perfmon_accessClientInit(void);
 /*! \brief Initialize performance monitoring maps
 
 Initialize the performance monitoring maps for counters, events and Uncore boxes#
