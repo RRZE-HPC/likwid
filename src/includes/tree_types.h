@@ -31,14 +31,25 @@
 #ifndef TREE_TYPES_H
 #define TREE_TYPES_H
 
-/* For arbitrary trees llink are the children and
- * rlink are the neighbours
- */
-typedef struct treeNode {
-    int id;
-    struct treeNode* llink;
-    struct treeNode* rlink;
-} TreeNode;
 
+/** \addtogroup CPUTopology
+*  @{
+*/
+/* \brief Structure of a tree node
+
+This structure is used to form the tree of the system topology. The information
+describing each node is store in other places, therefore an ID is enough.
+\extends CpuTopology
+*/
+struct treeNode {
+    int id; /*!< \brief ID of the node */
+    struct treeNode* llink; /*!< \brief List of children of the current node */
+    struct treeNode* rlink; /*!< \brief List of neighbors of the current node */
+};
+
+/* \brief Shorter Name of struct treeNode*
+*/
+typedef struct treeNode* TreeNode;
+/** @}*/
 
 #endif /*TREE_TYPES_H*/
