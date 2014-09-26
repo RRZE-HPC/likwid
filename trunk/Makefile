@@ -113,6 +113,10 @@ tags:
 	@echo "===>  GENERATE  TAGS"
 	$(Q)ctags -R
 
+docs:
+	@echo "===>  GENERATE DOXYGEN DOCS"
+	$(Q)doxygen doc/Doxyfile
+
 $(APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(APPS))) $(BUILD_DIR) $(GENGROUPLOCK)  $(OBJ) $(OBJ_BENCH)
 	@echo "===>  LINKING  $@"
 	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ_BENCH) $(TARGET_LIB) $(LIBHWLOC) $(LIBS)

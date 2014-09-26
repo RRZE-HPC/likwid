@@ -44,34 +44,46 @@ extern int socket_fd;
 extern int thread_sockets[MAX_NUM_THREADS];
 
 
+/** \addtogroup PerfMon
+ *  @{
+ */
 /////////////////////////////////////////////
 
+/*! \brief Enum of possible event and counter options
 
+List of internally used IDs for all event and counter options that are supported
+by LIKWID.
+\extends PerfmonEventOption
+*/
 typedef enum {
-    EVENT_OPTION_NONE = 0,
-    EVENT_OPTION_OPCODE,
-    EVENT_OPTION_MATCH0,
-    EVENT_OPTION_MATCH1,
-    EVENT_OPTION_MASK0,
-    EVENT_OPTION_MASK1,
-    EVENT_OPTION_NID,
-    EVENT_OPTION_TID,
-    EVENT_OPTION_STATE,
-    EVENT_OPTION_EDGE,
-    EVENT_OPTION_THRESHOLD,
-    EVENT_OPTION_INVERT,
-    EVENT_OPTION_COUNT_KERNEL,
-    EVENT_OPTION_ANYTHREAD,
-    EVENT_OPTION_OCCUPANCY,
-    EVENT_OPTION_OCCUPANCY_FILTER,
-    EVENT_OPTION_OCCUPANCY_EDGE,
-    EVENT_OPTION_OCCUPANCY_INVERT,
-    EVENT_OPTION_IN_TRANS,
-    EVENT_OPTION_IN_TRANS_ABORT,
-    NUM_EVENT_OPTIONS
+    EVENT_OPTION_NONE = 0, /*!< \brief No option, used as False value */
+    EVENT_OPTION_OPCODE, /*!< \brief Match opcode */
+    EVENT_OPTION_MATCH0, /*!< \brief Match0 register */
+    EVENT_OPTION_MATCH1, /*!< \brief Match1 register */
+    EVENT_OPTION_MASK0, /*!< \brief Mask0 register */
+    EVENT_OPTION_MASK1, /*!< \brief Mask0 register */
+    EVENT_OPTION_NID, /*!< \brief Set NUMA node ID */
+    EVENT_OPTION_TID, /*!< \brief Set Thread ID */
+    EVENT_OPTION_STATE, /*!< \brief Match for state */
+    EVENT_OPTION_EDGE, /*!< \brief Increment counter at each edge */
+    EVENT_OPTION_THRESHOLD, /*!< \brief Increment only if exceeding threshold */
+    EVENT_OPTION_INVERT, /*!< \brief Invert behavior of EVENT_OPTION_THRESHOLD, hence increment only below threshold */
+    EVENT_OPTION_COUNT_KERNEL, /*!< \brief Also count events when in kernel space */
+    EVENT_OPTION_ANYTHREAD, /*!< \brief Increment counter at events of all HW threads in the core */
+    EVENT_OPTION_OCCUPANCY, /*!< \brief Count occupancy not occurrences */
+    EVENT_OPTION_OCCUPANCY_FILTER, /*!< \brief Filter for occupancy counting */
+    EVENT_OPTION_OCCUPANCY_EDGE, /*!< \brief Increment occupancy counter at detection of an edge */
+    EVENT_OPTION_OCCUPANCY_INVERT, /*!< \brief Invert filter for occupancy counting */
+    EVENT_OPTION_IN_TRANS, /*!< \brief Count events during transactions */
+    EVENT_OPTION_IN_TRANS_ABORT, /*!< \brief Count events that aborted during transactions */
+    NUM_EVENT_OPTIONS /*!< \brief Amount of defined options */
 } EventOptionType;
 
-static char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
+/*! \brief List of option names
+
+List of strings for all event and counter options used for matching and output
+*/
+char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     "NONE",
     "OPCODE",
     "MATCH0",
@@ -94,8 +106,16 @@ static char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     "IN_TRANSACTION_ABORTED"
 };
 
-#define OPTIONS_TYPE_MASK(type) (type == EVENT_OPTION_NONE ? 0x0ULL : (1ULL<<type))
+/** \brief Bitmask with no event/counter option set */
 #define EVENT_OPTION_NONE_MASK 0x0ULL
+/** \brief Define for easily creating an bitmask of all configured event/counter options */
+#define OPTIONS_TYPE_MASK(type) \
+        (((type == EVENT_OPTION_NONE)||(type >= NUM_EVENT_OPTIONS)) ? \
+        EVENT_OPTION_NONE_MASK : \
+        (1ULL<<type))
+
+
+/** @cond */ 
 #define EVENT_OPTION_OPCODE_MASK (1ULL<<EVENT_OPTION_OPCODE)
 #define EVENT_OPTION_MATCH0_MASK (1ULL<<EVENT_OPTION_MATCH0)
 #define EVENT_OPTION_MATCH1_MASK (1ULL<<EVENT_OPTION_MATCH1)
@@ -115,69 +135,121 @@ static char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
 #define EVENT_OPTION_OCCUPANCY_INVERT_MASK (1ULL<<EVENT_OPTION_OCCUPANCY_INVERT)
 #define EVENT_OPTION_IN_TRANS_MASK (1ULL<<EVENT_OPTION_IN_TRANS)
 #define EVENT_OPTION_IN_TRANS_ABORT_MASK (1ULL<<EVENT_OPTION_IN_TRANS_ABORT)
+/** @endcond */
 
+/*! \brief Structure specifying thread to CPU relation
+
+Threads are always numbered incrementally. This structure is used in order to 
+resolve the real HW thread ID.
+\extends PerfmonGroupSet
+*/
 typedef struct {
-    int             thread_id;
-    int             processorId;
+    int             thread_id; /*!< \brief Thread ID how it is used internally */
+    int             processorId; /*!< \brief Real HW thread ID */
 } PerfmonThread;
 
+/*! \brief Structure specifying event/counter options and their value
+
+Most options set a bitfield in registers and their values are stored in this structure.
+If an option is a binary option, the value is set to 1.
+\extends PerfmonEvent
+*/
 typedef struct {
-    EventOptionType      type;
-    uint32_t             value;
+    EventOptionType      type; /*!< \brief Type of the option */
+    uint32_t             value; /*!< \brief Value of the option */
 } PerfmonEventOption;
 
+/*! \brief Structure specifying an performance monitoring event
+
+This structure holds the configuration data for an event. It groups the name,
+the allowed counters and internally used values like event ID and masks. Moreover
+the event options are hold here.
+\extends PerfmonEventSetEntry
+*/
 typedef struct {
-    const char*     name;
-    const char*     limit;
-    uint16_t        eventId;
-    uint8_t         umask;
-    uint8_t         cfgBits;
-    uint8_t         cmask;
-    uint8_t         numberOfOptions;
-    uint64_t        optionMask;
-    PerfmonEventOption options[MAX_EVENT_OPTIONS];
+    const char*     name; /*!< \brief Name of the event */
+    const char*     limit; /*!< \brief Valid counters for the event */
+    uint16_t        eventId; /*!< \brief ID of the event */
+    uint8_t         umask; /*!< \brief Most events need to specify a mask to limit counting */
+    uint8_t         cfgBits; /*!< \brief Misc configuration bits */
+    uint8_t         cmask; /*!< \brief Misc mask bits */
+    uint8_t         numberOfOptions; /*!< \brief Number of options for the event */
+    uint64_t        optionMask; /*!< \brief Bitmask for fast check of set options */
+    PerfmonEventOption options[NUM_EVENT_OPTIONS]; /*!< \brief List of options */
 } PerfmonEvent;
 
+/*! \brief Structure describing performance monitoring counter data
+
+Each event holds one of these structures for each thread to store the counter
+data, if it is configured and the amount of happened overflows.
+\extends PerfmonEventSetEntry
+*/
 typedef struct {
-    int         init;
-    int         id;
-    int         overflows;
-    uint64_t    startData;
-    uint64_t    counterData;
+    int         init; /*!< \brief Flag if corresponding control register is set up properly */
+    int         id; /*!< \brief Offset in higher level control register, e.g. position of enable bit */
+    int         overflows; /*!< \brief Amount of overflows */
+    uint64_t    startData; /*!< \brief Start data from the counter */
+    uint64_t    counterData; /*!< \brief Intermediate data from the counters */
 } PerfmonCounter;
 
+
+/*! \brief Structure specifying an performance monitoring event
+
+An eventSet consists of an event and a counter and the read counter values.
+\extends PerfmonEventSet
+*/
 typedef struct {
-    PerfmonEvent        event;
-    RegisterIndex       index;
-    RegisterType        type;
-    PerfmonCounter*     threadCounter;
+    PerfmonEvent        event; /*!< \brief Event configuration */
+    RegisterIndex       index; /*!< \brief Index of the counter register in the counter map */
+    RegisterType        type; /*!< \brief Type of the counter register and event */
+    PerfmonCounter*     threadCounter; /*!< \brief List of counter data for each thread, list length is \a numberOfThreads in PerfmonGroupSet */
 } PerfmonEventSetEntry;
 
+/*! \brief Structure specifying an performance monitoring event group
+
+A PerfmonEventSet holds a set of event and counter combinations and some global information about all eventSet entries
+\extends PerfmonGroupSet
+*/
 typedef struct {
-    int                   numberOfEvents;
-    PerfmonEventSetEntry* events;
-    TimerData             timer;
-    double                rdtscTime;
-    uint64_t              regTypeMask;
+    int                   numberOfEvents; /*!< \brief Number of eventSets in \a events */
+    PerfmonEventSetEntry* events; /*!< \brief List of eventSets */
+    TimerData             timer; /*!< \brief Time information how long the counters were running */
+    double                rdtscTime; /*!< \brief Evaluation of the Time information in seconds */
+    uint64_t              regTypeMask; /*!< \brief Bitmask for easy checks which types are included in the eventSet */
 } PerfmonEventSet;
 
+/*! \brief Structure specifying all performance monitoring event groups
+
+The global PerfmonGroupSet structure holds all eventSets and threads that are
+configured to measure. Only one eventSet can be measured at a time but the groups
+can be switched to perform some kind of multiplexing.
+*/
 typedef struct {
-    int              numberOfGroups;
-    int              numberOfActiveGroups;
-    int              activeGroup;
-    PerfmonEventSet* groups;
-    int              numberOfThreads;
-    PerfmonThread*   threads;
+    int              numberOfGroups; /*!< \brief List length of \a groups*/
+    int              numberOfActiveGroups; /*!< \brief Amount of added eventSets. Only those eventSets can be accessed in \a groups. */
+    int              activeGroup; /*!< \brief Currently active eventSet */
+    PerfmonEventSet* groups; /*!< \brief List of eventSets */
+    int              numberOfThreads; /*!< \brief Amount of threads in \a threads */
+    PerfmonThread*   threads; /*!< \brief List of threads */
 } PerfmonGroupSet;
+
+/** \brief List of counter with name, config register, counter registers and
+if needed PCI device */
+extern RegisterMap* counter_map;
+/** \brief List of boxes with name, config register, counter registers and if
+needed PCI device. Mainly used in Uncore handling but also core-local counters
+are defined as a box. */
+extern BoxMap* box_map;
+/** \brief List of events available for the current architecture */
+extern PerfmonEvent* eventHash;
+/** @}*/
 
 /* perfmon datatypes */
 extern PerfmonGroupSet *groupSet;
 extern int perfmon_numCounters;
 extern int perfmon_numCoreCounters;
 extern int perfmon_numUncoreCounters;
-extern RegisterMap* counter_map;
-extern BoxMap* box_map;
 extern int perfmon_numArchEvents;
-extern PerfmonEvent* eventHash;
+
 
 #endif /*PERFMON_TYPES_H*/

@@ -33,7 +33,9 @@
 
 #include <stdint.h>
 
-
+/** \addtogroup ThermalMon
+ *  @{
+ */
 typedef struct {
     uint16_t highT;
     uint32_t resolution;
@@ -41,6 +43,11 @@ typedef struct {
     uint32_t offset;
 } ThermalInfo;
 
+/** \brief Pointer for exporting the ThermalInfo data structure */
+typedef ThermalInfo* ThermalInfo_t
+/** @}*/
+
 extern ThermalInfo thermal_info;
+
 
 #endif /*THERMAL_TYPES_H*/

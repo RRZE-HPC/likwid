@@ -40,7 +40,7 @@
 
 
 
-extern double power_printEnergy(PowerData* data);
+
 
 double
 power_printEnergy(PowerData* data)
