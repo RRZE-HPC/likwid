@@ -47,9 +47,9 @@ struct treeNode {
     struct treeNode* rlink; /*!< \brief List of neighbors of the current node */
 };
 
-/* \brief Shorter Name of struct treeNode*
+/* \brief Shorter Name of struct treeNode
 */
-typedef struct treeNode* TreeNode;
+typedef struct treeNode TreeNode;
 /** @}*/
 
 #endif /*TREE_TYPES_H*/

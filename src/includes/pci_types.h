@@ -118,11 +118,11 @@ static PciDevice pci_devices[MAX_NUM_PCI_DEVICES] = {
 };
 
 static PciType pci_types[MAX_NUM_PCI_TYPES] = {
-    {"R3QPI", "R3QPI is the interface between the Intel QPI Link Layer and the Ring."},
-    {"R2PCIE", "R2PCIe represents the interface between the Ring and IIO traffic to/from PCIe."},
-    {"IMC", "The integrated Memory Controller provides the interface to DRAM and communicates to the rest of the uncore through the Home Agent."},
-    {"HA", "The HA is responsible for the protocol side of memory interactions."},
-    {"QPI", "The Intel QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface."},
-    {"IRP", "IRP is responsible for maintaining coherency for IIO traffic e.g. crosssocket P2P."}
+    [R3QPI] = {"R3QPI", "R3QPI is the interface between the Intel QPI Link Layer and the Ring."},
+    [R2PCIE] = {"R2PCIE", "R2PCIe represents the interface between the Ring and IIO traffic to/from PCIe."},
+    [IMC] = {"IMC", "The integrated Memory Controller provides the interface to DRAM and communicates to the rest of the uncore through the Home Agent."},
+    [HA] = {"HA", "The HA is responsible for the protocol side of memory interactions."},
+    [QPI] = {"QPI", "The Intel QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface."},
+    [IRP] = {"IRP", "IRP is responsible for maintaining coherency for IIO traffic e.g. crosssocket P2P."}
 };
 #endif /*PCI_TYPES_H*/
