@@ -1,4 +1,5 @@
 
+ifneq ($(MAKECMDGOALS),docs)
 # determine kernel Version
 KERNEL_VERSION_MAJOR := $(shell uname -r | awk '{split($$1,a,"."); print a[1]}' | cut -d '-' -f1)
 KERNEL_VERSION := $(shell uname -r | awk  '{split($$1,a,"."); print a[2]}' | cut -d '-' -f1)
@@ -31,4 +32,6 @@ else
 FORTRAN_INTERFACE =
 FORTRAN_INSTALL =
 endif
+endif
+
 
