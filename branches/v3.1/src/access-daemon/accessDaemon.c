@@ -85,6 +85,7 @@
 #define HASWELL              0x3CU
 #define ATOM_SILVERMONT      0x4DU
 #define WESTMERE_EX          0x2FU
+#define HASWELL_EX           0x3FU
 
 #define PCI_ROOT_PATH    "/proc/bus/pci/"
 #define MAX_PATH_LENGTH   60
@@ -557,7 +558,7 @@ int main(void)
                     allowed = allowed_sandybridge;
                     isPCIUncore = 1;
                 }
-                else if (model == HASWELL)
+                else if ((model == HASWELL) || (model == HASWELL_EX))
                 {
                     allowed = allowed_haswell;
                 }
