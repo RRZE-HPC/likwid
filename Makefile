@@ -1,17 +1,17 @@
 # w
 # =======================================================================================
-#  
+#
 #      Filename:  Makefile
-# 
+#
 #      Description:  Central Makefile
-# 
+#
 #      Version:   <VERSION>
 #      Released:  <DATE>
-# 
+#
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig 
+#      Copyright (C) 2013 Jan Treibig
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -139,7 +139,7 @@ $(BUILD_DIR):
 
 $(PINLIB):
 	@echo "===>  CREATE LIB  $(PINLIB)"
-	$(Q)$(MAKE) -s -C src/pthread-overload/ $(PINLIB) 
+	$(Q)$(MAKE) -s -C src/pthread-overload/ $(PINLIB)
 
 $(GENGROUPLOCK): $(foreach directory,$(shell ls $(GROUP_DIR)), $(wildcard $(GROUP_DIR)/$(directory)/*.txt))
 	@echo "===>  GENERATE GROUP HEADERS"
@@ -204,6 +204,7 @@ distclean: clean
 	@rm -f $(DYNAMIC_TARGET_LIB)
 	@rm -f $(FORTRAN_INTERFACE)
 	@rm -f $(PINLIB)
+	@rm -rf doc/html
 	@rm -f tags
 
 install:
@@ -236,14 +237,14 @@ install:
 
 uninstall:
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
-	@rm -f $(addprefix $(PREFIX)/bin/,$(APPS)) 
+	@rm -f $(addprefix $(PREFIX)/bin/,$(APPS))
 	@rm -f $(PREFIX)/bin/likwid-mpirun
 	@rm -f $(PREFIX)/bin/likwid-perfscope
 	@rm -f $(PREFIX)/bin/feedGnuplot
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
-	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(APPS))) 
+	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(APPS)))
 	@echo "===> REMOVING libs from $(PREFIX)/lib"
-	@rm -f $(PREFIX)/lib/liblikwid* 
+	@rm -f $(PREFIX)/lib/liblikwid*
 	@echo "===> REMOVING filter from $(PREFIX)/share"
 	@rm -rf  $(PREFIX)/share/likwid
 
