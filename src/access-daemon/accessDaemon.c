@@ -171,10 +171,6 @@ static int allowed_haswell(uint32_t reg)
 
 static int allowed_silvermont(uint32_t reg)
 {
-    if (!allowed_sandybridge(reg))
-    {
-        return 0;
-    }
 
     if ( ((reg & 0x0F8U) == 0x0C0U) ||
             ((reg & 0xFF0U) == 0x180U) ||
@@ -524,7 +520,7 @@ int main(void)
                 break;
             case K16_FAMILY:
                 allowed = allowed_amd16;
-	        break;
+            break;
             default:
                 syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
                         __FILE__, __LINE__);
