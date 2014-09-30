@@ -1,13 +1,13 @@
 # =======================================================================================
 #  
-#      Filename:  perfmon_ivybridge_events.txt
+#      Filename:  perfmon_silvermont_events.txt
 # 
-#      Description:  Event list for Intel Ivy Bridge
+#      Description:  Event list for Intel Atom (Silvermont)
 # 
 #      Version:   <VERSION>
 #      Released:  <DATE>
 # 
-#      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+#      Author:  Thomas Roehl (tr), thomas.roehl@googlemail.com
 #      Project:  likwid
 #
 #      Copyright (C) 2014 Jan Treibig
@@ -34,9 +34,6 @@ UMASK_PWR_PKG_ENERGY          0x00
 
 EVENT_PWR_PP0_ENERGY          0x00   PWR1
 UMASK_PWR_PP0_ENERGY          0x00
-
-EVENT_PWR_DRAM_ENERGY          0x00   PWR3
-UMASK_PWR_DRAM_ENERGY          0x00
 
 EVENT_INSTR_RETIRED              0x00   FIXC0
 UMASK_INSTR_RETIRED_ANY          0x00

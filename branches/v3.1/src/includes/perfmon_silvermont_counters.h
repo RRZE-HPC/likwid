@@ -30,13 +30,13 @@
 
 #define NUM_COUNTERS_CORE_SILVERMONT 6
 #define NUM_COUNTERS_UNCORE_SILVERMONT 0
-#define NUM_COUNTERS_SILVERMONT 10
+#define NUM_COUNTERS_SILVERMONT 8
 
 static PerfmonCounterMap silvermont_counter_map[NUM_COUNTERS_SILVERMONT] = {
     /* Fixed Counters: instructions retired, cycles unhalted core */
     {"FIXC0", PMC0, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR0, 0, 0},
     {"FIXC1", PMC1, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR1, 0, 0},
-    {"FIXC2", PMC1, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR2, 0, 0},
+    {"FIXC2", PMC2, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR2, 0, 0},
     /* PMC Counters: 4 48bit wide */
     {"PMC0", PMC3, PMC, MSR_PERFEVTSEL0, MSR_PMC0, 0, 0},
     {"PMC1", PMC4, PMC, MSR_PERFEVTSEL1, MSR_PMC1, 0, 0},
@@ -45,8 +45,6 @@ static PerfmonCounterMap silvermont_counter_map[NUM_COUNTERS_SILVERMONT] = {
     /* RAPL counters */
     {"PWR0", PMC6, POWER, 0, MSR_PKG_ENERGY_STATUS, 0, 0},
     {"PWR1", PMC7, POWER, 0, MSR_PP0_ENERGY_STATUS, 0, 0},
-    {"PWR2", PMC8, POWER, 0, MSR_PP1_ENERGY_STATUS, 0, 0},
-    {"PWR3", PMC9, POWER, 0, MSR_DRAM_ENERGY_STATUS, 0, 0}
 };
 
 
