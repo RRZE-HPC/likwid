@@ -41,6 +41,7 @@ void perfmon_init_silvermont(PerfmonThread *thread)
 {
     uint64_t flags = 0x0ULL;
     int cpu_id = thread->processorId;
+    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
 
     /* Initialize registers */
     msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
@@ -48,21 +49,8 @@ void perfmon_init_silvermont(PerfmonThread *thread)
 
     msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL);
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL);
     msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL);
 
-    /* initialize fixed counters
-     * FIXED 0: Instructions retired
-     * FIXED 1: Clocks unhalted core
-     * FIXED 2: Clocks unhalted ref */
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL);
-
-    /* Preinit of PMC counters */
-    flags |= (1<<16);  /* user mode flag */
-    flags |= (1<<22);  /* enable flag */
-
-    msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL1, flags);
 }
 
 void perfmon_setupCounterThread_silvermont(
@@ -71,7 +59,7 @@ void perfmon_setupCounterThread_silvermont(
         PerfmonCounterIndex index)
 {
     int haveLock = 0;
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     uint32_t uflags;
     uint64_t reg = silvermont_counter_map[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
@@ -82,11 +70,12 @@ void perfmon_setupCounterThread_silvermont(
         haveLock = 1;
     }*/
 
+
     switch (silvermont_counter_map[index].type)
     {
         case PMC:
 
-            flags = msr_read(cpu_id, reg);
+            flags = (1<<16)|(1<<22);
             flags &= ~(0xFFFFU);   /* clear lower 16bits */
 
             /* Intel with standard 8 bit event mask: [7:0] */
@@ -101,7 +90,6 @@ void perfmon_setupCounterThread_silvermont(
                         LLU_CAST reg,
                         LLU_CAST flags);
             }
-
             msr_write(cpu_id, reg , flags);
 
             // Offcore event with additional configuration register
@@ -137,6 +125,7 @@ void perfmon_startCountersThread_silvermont(int thread_id)
     int haveLock = 0;
     uint64_t flags = 0x0ULL;
     uint32_t uflags = 0x10000UL; /* Clear freeze bit */
+    uint64_t fixed_flags = 0x0ULL;
     int cpu_id = perfmon_threadData[thread_id].processorId;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
@@ -160,6 +149,7 @@ void perfmon_startCountersThread_silvermont(int thread_id)
                 case FIXED:
                     msr_write(cpu_id, silvermont_counter_map[i].counterRegister, 0x0ULL);
                     flags |= (1ULL<<(i+32));  /* enable fixed counter */
+                    fixed_flags |= (2ULL<<(i*4));
                     break;
 
                 case POWER:
@@ -185,9 +175,11 @@ void perfmon_startCountersThread_silvermont(int thread_id)
         printf("perfmon_start_counters: Write Register 0x%X , \
                 Flags: 0x%llX \n",MSR_UNCORE_PERF_GLOBAL_CTRL, LLU_CAST uflags);
     }
-
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
-    msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL);
+    if (fixed_flags != 0x0ULL)
+    {
+        msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags);
+    }
 }
 
 
@@ -216,7 +208,7 @@ void perfmon_stopCountersThread_silvermont(int thread_id)
 
                 case FIXED:
                     perfmon_threadData[thread_id].counters[i].counterData =
-                        msr_read(cpu_id, silvermont_counter_map[i].counterRegister);
+                        (double)msr_read(cpu_id, silvermont_counter_map[i].counterRegister);
                     break;
 
                 case POWER:
