@@ -131,30 +131,30 @@ asciiBoxes_print(BoxContainer* container)
     boxwidth += 2;  /* add one space each side */
 
     /* top line */
-    printf("+");
+    fprintf(stdout, "+");
 
     for ( int i=0; i < (container->numColumns * (boxwidth+2) +
                 (container->numColumns+1));  /* one space between boxes */
             i++ )
     {
-        printf("-");
+        fprintf(stdout, "-");
     }
-    printf("+\n");
+    fprintf(stdout, "+\n");
 
     for ( int i=0; i < container->numLines; i++ )
     {
         /* Box top line */
-        printf("| ");
+        fprintf(stdout, "| ");
 
         for ( int j=0; j < container->numColumns; j++ )
         {
-            printf("+");
+            fprintf(stdout, "+");
 
             if ( container->boxes[i][j].width == 1 )
             {
                 for ( int k=0; k < boxwidth; k++ )
                 {
-                    printf("-");
+                    fprintf(stdout, "-");
                 }
             }
             else 
@@ -163,14 +163,14 @@ asciiBoxes_print(BoxContainer* container)
                             (container->boxes[i][j].width-1)*3);
                         k++)
                 {
-                    printf("-");
+                    fprintf(stdout, "-");
                 }
                 j += container->boxes[i][j].width-1;
             }
-            printf("+ ");
+            fprintf(stdout, "+ ");
         }
-        printf("|\n");
-        printf("| ");
+        fprintf(stdout, "|\n");
+        fprintf(stdout, "| ");
 
         /* Box label line */
         for ( int j=0; j < container->numColumns; j++ )
@@ -193,39 +193,39 @@ asciiBoxes_print(BoxContainer* container)
                         ((container->boxes[i][j].width-1)*3) -
                         blength(container->boxes[i][j].label))%2;
             }
-            printf("|");
+            fprintf(stdout, "|");
 
             for ( int k=0; k < (width+offset); k++ )
             {
-                printf(" ");
+                fprintf(stdout, " ");
             }
 
-            printf("%s",container->boxes[i][j].label->data);
+            fprintf(stdout, "%s",container->boxes[i][j].label->data);
 
             for ( int k=0; k < width; k++ )
             {
-                printf(" ");
+                fprintf(stdout, " ");
             }
-            printf("| ");
+            fprintf(stdout, "| ");
 
             if ( container->boxes[i][j].width != 1 )
             {
                 j+= container->boxes[i][j].width-1;
             }
         }
-        printf("|\n");
-        printf("| ");
+        fprintf(stdout, "|\n");
+        fprintf(stdout, "| ");
 
         /* Box bottom line */
         for ( int j=0; j < container->numColumns; j++ )
         {
-            printf("+");
+            fprintf(stdout, "+");
 
             if ( container->boxes[i][j].width == 1 )
             {
                 for ( int k=0; k < boxwidth; k++ )
                 {
-                    printf("-");
+                    fprintf(stdout, "-");
                 }
             }
             else 
@@ -234,22 +234,23 @@ asciiBoxes_print(BoxContainer* container)
                             (container->boxes[i][j].width-1)*3);
                         k++ )
                 {
-                    printf("-");
+                    fprintf(stdout, "-");
                 }
                 j+= container->boxes[i][j].width-1;
             }
-            printf("+ ");
+            fprintf(stdout, "+ ");
         }
-        printf("|\n");
+        fprintf(stdout, "|\n");
     }
 
     /* bottom line */
-    printf("+");
+    fprintf(stdout, "+");
     for ( int i=0; i < (container->numColumns * (boxwidth+2) + 
                 container->numColumns+1); i++ )
     {
-        printf("-");
+        fprintf(stdout, "-");
     }
-    printf("+\n");
+    fprintf(stdout, "+\n");
+    fflush(stdout);
 }
 

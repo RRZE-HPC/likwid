@@ -53,21 +53,23 @@
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define HELP_MSG \
-printf("\nlikwid-powermeter --  Version  %d.%d \n\n",VERSION,RELEASE); \
-printf("A tool to print Power and Clocking information on Intel SandyBridge CPUS.\n"); \
-printf("Options:\n"); \
-printf("-h\t\t Help message\n"); \
-printf("-v\t\t Version information\n"); \
-printf("-M <0|1>\t set how MSR registers are accessed: 0=direct, 1=msrd \n"); \
-printf("-c <list>\t specify sockets to measure\n"); \
-printf("-i\t\t print information from MSR_PKG_POWER_INFO register and Turbo Mode\n"); \
-printf("-s <duration>\t set measure duration in sec. (default 2s) \n"); \
-printf("-p\t\t print dynamic clocking and CPI values (requires executable)\n\n");   \
-printf("Usage: likwid-powermeter -s 4 -c 1 \n");  \
-printf("Alternative as wrapper: likwid-powermeter -c 1 ./a.out\n")
+fprintf(stdout, "\nlikwid-powermeter --  Version  %d.%d \n\n",VERSION,RELEASE); \
+fprintf(stdout, "A tool to print Power and Clocking information on Intel SandyBridge CPUS.\n"); \
+fprintf(stdout, "Options:\n"); \
+fprintf(stdout, "-h\t\t Help message\n"); \
+fprintf(stdout, "-v\t\t Version information\n"); \
+fprintf(stdout, "-M <0|1>\t set how MSR registers are accessed: 0=direct, 1=msrd \n"); \
+fprintf(stdout, "-c <list>\t specify sockets to measure\n"); \
+fprintf(stdout, "-i\t\t print information from MSR_PKG_POWER_INFO register and Turbo Mode\n"); \
+fprintf(stdout, "-s <duration>\t set measure duration in sec. (default 2s) \n"); \
+fprintf(stdout, "-p\t\t print dynamic clocking and CPI values (requires executable)\n\n");   \
+fprintf(stdout, "Usage: likwid-powermeter -s 4 -c 1 \n");  \
+fprintf(stdout, "Alternative as wrapper: likwid-powermeter -c 1 ./a.out\n"); \
+fflush(stdout);
 
 #define VERSION_MSG \
-printf("likwid-powermeter  %d.%d \n\n",VERSION,RELEASE)
+fprintf(stdout, "likwid-powermeter  %d.%d \n\n",VERSION,RELEASE); \
+fflush(stdout);
 
 
 int main (int argc, char** argv)
@@ -79,6 +81,7 @@ int main (int argc, char** argv)
     int optSockets = 0;
     double runtime;
     int hasDRAM = 0;
+    int hasPP0 = 0;
     int c;
     bstring argString;
     bstring eventString = bfromcstr("CLOCK");
@@ -86,9 +89,8 @@ int main (int argc, char** argv)
     int numThreads=0;
     int threadsSockets[MAX_NUM_NODES*2];
     int threads[MAX_NUM_THREADS];
-
     threadsSockets[0] = 0;
-    
+
     if (argc == 1)
     {
     	HELP_MSG;
@@ -191,12 +193,20 @@ int main (int argc, char** argv)
             (cpuid_info.model == IVYBRIDGE) ||
             (cpuid_info.model == IVYBRIDGE_EP) ||
             (cpuid_info.model == HASWELL) ||
+            (cpuid_info.model == HASWELL_EX) ||
             (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
             (cpuid_info.model == NEHALEM_LYNNFIELD) ||
             (cpuid_info.model == NEHALEM_WESTMERE) ||
             (cpuid_info.model == ATOM_SILVERMONT))
     {
-        power_init(numa_info.nodes[0].processors[0]);
+        if (numSockets == 0)
+        {
+            numSockets = numa_info.numberOfNodes;
+        }
+        for(int i=0; i<numSockets; i++)
+        {
+            power_init(numa_info.nodes[threadsSockets[i]].processors[0]);
+        }
     }
     else
     {
@@ -206,35 +216,45 @@ int main (int argc, char** argv)
 
     double clock = (double) timer_getCpuClock();
 
-    printf(HLINE);
-    printf("CPU name:\t%s \n",cpuid_info.name);
-    printf("CPU clock:\t%3.2f GHz \n",  (float) clock * 1.E-09);
-    printf(HLINE);
+    fprintf(stdout, HLINE);
+    fprintf(stdout, "CPU name:\t%s \n",cpuid_info.name);
+    fprintf(stdout, "CPU clock:\t%3.2f GHz \n",  (float) clock * 1.E-09);
+    fprintf(stdout, HLINE);
+    fflush(stdout);
 
     if (optInfo)
     {
         if (power_info.turbo.numSteps != 0)
         {
-            printf("Base clock:\t%.2f MHz \n",  power_info.baseFrequency );
-            printf("Minimal clock:\t%.2f MHz \n",  power_info.minFrequency );
-            printf("Turbo Boost Steps:\n");
+            fprintf(stdout, "Base clock:\t%.2f MHz \n",  power_info.baseFrequency );
+            fprintf(stdout, "Minimal clock:\t%.2f MHz \n",  power_info.minFrequency );
+            fprintf(stdout, "Turbo Boost Steps:\n");
             for (int i=0; i < power_info.turbo.numSteps; i++ )
             {
-                printf("C%d %.2f MHz \n",i+1,  power_info.turbo.steps[i] );
+                fprintf(stdout, "C%d %.2f MHz \n",i+1,  power_info.turbo.steps[i] );
             }
         }
-        printf(HLINE);
+        fprintf(stdout, HLINE);
+        fflush(stdout);
     }
 
-    if ((cpuid_info.model == SANDYBRIDGE_EP) || (cpuid_info.model == ATOM_SILVERMONT))
+    if ((cpuid_info.model == SANDYBRIDGE_EP) ||
+        (cpuid_info.model == IVYBRIDGE_EP) ||
+        (cpuid_info.model == HASWELL_EX))
     {
         hasDRAM = 1;
     }
-    else if ((cpuid_info.model != SANDYBRIDGE) &&
-            (cpuid_info.model != SANDYBRIDGE_EP)  &&
-            (cpuid_info.model != IVYBRIDGE)  &&
-            (cpuid_info.model != IVYBRIDGE_EP)  &&
-            (cpuid_info.model != HASWELL))
+    if (cpuid_info.model != ATOM_SILVERMONT)
+    {
+        hasPP0 = 1;
+    }
+    if ((cpuid_info.model != SANDYBRIDGE) &&
+        (cpuid_info.model != SANDYBRIDGE_EP)  &&
+        (cpuid_info.model != IVYBRIDGE)  &&
+        (cpuid_info.model != IVYBRIDGE_EP)  &&
+        (cpuid_info.model != HASWELL) &&
+        (cpuid_info.model != HASWELL_EX) &&
+        (cpuid_info.model != ATOM_SILVERMONT))
     {
         fprintf (stderr, "RAPL not supported on this processor!\n");
         exit(EXIT_FAILURE);
@@ -242,11 +262,12 @@ int main (int argc, char** argv)
 
     if (optInfo)
     {
-        printf("Thermal Spec Power: %g Watts \n", power_info.tdp );
-        printf("Minimum  Power: %g Watts \n", power_info.minPower);
-        printf("Maximum  Power: %g Watts \n", power_info.maxPower);
-        printf("Maximum  Time Window: %g micro sec \n", power_info.maxTimeWindow);
-        printf(HLINE);
+        fprintf(stdout, "Thermal Spec Power: %g Watts \n", power_info.tdp );
+        fprintf(stdout, "Minimum  Power: %g Watts \n", power_info.minPower);
+        fprintf(stdout, "Maximum  Power: %g Watts \n", power_info.maxPower);
+        fprintf(stdout, "Maximum  Time Window: %g micro sec \n", power_info.maxTimeWindow);
+        fprintf(stdout, HLINE);
+        fflush(stdout);
         exit(EXIT_SUCCESS);
     }
 
@@ -268,12 +289,14 @@ int main (int argc, char** argv)
     {
         PowerData pDataPkg[MAX_NUM_NODES*2];
         PowerData pDataDram[MAX_NUM_NODES*2];
-        printf("Measure on sockets: %d", threadsSockets[0]);
+        PowerData pDataPP0[MAX_NUM_NODES*2];
+        fprintf(stdout, "Measure on sockets: %d", threadsSockets[0]);
         for (int i=1; i<numSockets; i++)
         {
-            printf(", %d", threadsSockets[i]);
+            fprintf(stdout, ", %d", threadsSockets[i]);
         }
-        printf("\n");
+        fprintf(stdout, "\n");
+        fflush(stdout);
 
         if (optStethoscope)
         {
@@ -287,6 +310,7 @@ int main (int argc, char** argv)
                 {
                     int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
                     if (hasDRAM) power_start(pDataDram+i, cpuId, DRAM);
+                    if (hasPP0) power_start(pDataPP0+i, cpuId, PP0);
                     power_start(pDataPkg+i, cpuId, PKG);
                 }
             }
@@ -304,6 +328,7 @@ int main (int argc, char** argv)
                 {
                     int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
                     power_stop(pDataPkg+i, cpuId, PKG);
+                    if (hasPP0) power_stop(pDataPP0+i, cpuId, PP0);
                     if (hasDRAM) power_stop(pDataDram+i, cpuId, DRAM);
                 }
             }
@@ -320,7 +345,8 @@ int main (int argc, char** argv)
                 bconchar(exeString, ' ');
                 bcatcstr(exeString, argv[i]);
             }
-            printf("%s\n",bdata(exeString));
+            fprintf(stdout, "Executing: %s\n",bdata(exeString));
+            fflush(stdout);
 
 
             if (optClock)
@@ -333,6 +359,7 @@ int main (int argc, char** argv)
                 {
                     int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
                     if (hasDRAM) power_start(pDataDram+i, cpuId, DRAM);
+                    if (hasPP0) power_start(pDataPP0+i, cpuId, PP0);
                     power_start(pDataPkg+i, cpuId, PKG);
                 }
 
@@ -360,6 +387,7 @@ int main (int argc, char** argv)
                     int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
                     power_stop(pDataPkg+i, cpuId, PKG);
                     if (hasDRAM) power_stop(pDataDram+i, cpuId, DRAM);
+                    if (hasPP0) power_stop(pDataPP0+i, cpuId, PP0);
                 }
                 runtime = timer_print(&time);
             }
@@ -367,22 +395,29 @@ int main (int argc, char** argv)
 
         if (!optClock)
         {
-            printf("Runtime: %g second \n",runtime);
-            printf(HLINE);
+            fprintf(stdout, "Runtime: %g second \n",runtime);
+            fprintf(stdout, HLINE);
             for (int i=0; i<numSockets; i++)
             {
-                printf("Socket %d\n",threadsSockets[i]);
-                printf("Domain: PKG \n");
-                printf("Energy consumed: %g Joules \n", power_printEnergy(pDataPkg+i));
-                printf("Power consumed: %g Watts \n", power_printEnergy(pDataPkg+i) / runtime );
+                fprintf(stdout, "Socket %d\n",threadsSockets[i]);
+                fprintf(stdout, "Domain: PKG \n");
+                fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(pDataPkg+i));
+                fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(pDataPkg+i) / runtime );
                 if (hasDRAM)
                 {
-                    printf("Domain: DRAM \n");
-                    printf("Energy consumed: %g Joules \n", power_printEnergy(pDataDram+i));
-                    printf("Power consumed: %g Watts \n", power_printEnergy(pDataDram+i) / runtime );
+                    fprintf(stdout, "Domain: DRAM \n");
+                    fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(pDataDram+i));
+                    fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(pDataDram+i) / runtime );
                 }
-                printf("\n");
+                if (hasPP0)
+                {
+                    fprintf(stdout, "Domain: PP0 \n");
+                    fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(pDataPP0+i));
+                    fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(pDataPP0+i) / runtime );
+                }
+                fprintf(stdout, "\n");
             }
+            fflush(stdout);
         }
     }
 

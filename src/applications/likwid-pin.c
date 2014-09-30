@@ -52,46 +52,48 @@
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 #define HELP_MSG \
-printf("likwid-pin --  Version %d.%d \n\n",VERSION,RELEASE); \
-printf("\n"); \
-printf("Supported Options:\n"); \
-printf("-h\t Help message\n"); \
-printf("-v\t Version information\n"); \
-printf("-i\t Set numa interleave policy with all involved numa nodes\n"); \
-printf("-S\t Sweep memory in involved numa nodes\n"); \
-printf("-c\t comma separated list of processor ids or expression\n"); \
-printf("-s\t bitmask with threads to skip\n"); \
-printf("-p\t Print available domains with mapping on physical ids\n"); \
-printf("  \t If used together with -c option outputs a physical processor ids.\n"); \
-printf("-d\t Delimiter used for using -p to output physical processor list, default is comma.\n\n"); \
-printf("-q\t Silent without output\n\n"); \
-printf("There are three possibilities to provide a thread to processor list:\n\n"); \
-printf("1. Thread list with physical or logical thread numberings and physical cores first.\n"); \
-printf("Example usage thread list: likwid-pin -c N:0,4-6 ./myApp\n"); \
-printf("You can pin with the following numberings:\n");  \
-printf("\t1. Physical numbering of OS.\n");  \
-printf("\t2. Logical numbering inside node. e.g. -c N:0-3\n");  \
-printf("\t3. Logical numbering inside socket. e.g. -c S0:0-3\n");  \
-printf("\t4. Logical numbering inside last level cache group. e.g. -c C0:0-3\n");  \
-printf("\t5. Logical numbering inside NUMA domain. e.g. -c M0:0-3\n");  \
-printf("\tYou can also mix domains separated by  @, e.g. -c S0:0-3@S1:0-3 \n\n");  \
-printf("2. Expressions based thread list generation with compact processor numbering.\n"); \
-printf("Example usage expression: likwid-pin -c E:N:8 ./myApp\n"); \
-printf("This will generate a compact list of thread to processor mapping for the node domain with eight threads.\n");  \
-printf("The following syntax variants are available:\n");  \
-printf("\t1. -c E:<thread domain>:<number of threads>\n");  \
-printf("\t2. -c E:<thread domain>:<number of threads>:<chunk size>:<stride>\n");  \
-printf("\t   For two SMT threads per core on a SMT 4 machine use e.g. -c E:N:122:2:4\n\n");  \
-printf("3. Scatter policy among thread domain type.\n"); \
-printf("Example usage scatter: likwid-pin -c M:scatter ./myApp\n"); \
-printf("This will generate a thread to processor mapping scattered among all memory domains with physical cores first.\n\n");  \
-printf("If you ommit the -c option likwid will use all processors available on the node\n"); \
-printf("with physical cores first. likwid-pin will also set OMP_NUM_THREADS with as many\n"); \
-printf("threads as specified in your pin expression if OMP_NUM_THREADS is not present\n"); \
-printf("in your environment.\n\n")
+    fprintf(stdout, "likwid-pin --  Version %d.%d \n\n",VERSION,RELEASE); \
+    fprintf(stdout, "\n"); \
+    fprintf(stdout, "Supported Options:\n"); \
+    fprintf(stdout, "-h\t Help message\n"); \
+    fprintf(stdout, "-v\t Version information\n"); \
+    fprintf(stdout, "-i\t Set numa interleave policy with all involved numa nodes\n"); \
+    fprintf(stdout, "-S\t Sweep memory in involved numa nodes\n"); \
+    fprintf(stdout, "-c\t comma separated list of processor ids or expression\n"); \
+    fprintf(stdout, "-s\t bitmask with threads to skip\n"); \
+    fprintf(stdout, "-p\t Print available domains with mapping on physical ids\n"); \
+    fprintf(stdout, "  \t If used together with -c option outputs a physical processor ids.\n"); \
+    fprintf(stdout, "-d\t Delimiter used for using -p to output physical processor list, default is comma.\n\n"); \
+    fprintf(stdout, "-q\t Silent without output\n\n"); \
+    fprintf(stdout, "There are three possibilities to provide a thread to processor list:\n\n"); \
+    fprintf(stdout, "1. Thread list with physical or logical thread numberings and physical cores first.\n"); \
+    fprintf(stdout, "Example usage thread list: likwid-pin -c N:0,4-6 ./myApp\n"); \
+    fprintf(stdout, "You can pin with the following numberings:\n");  \
+    fprintf(stdout, "\t1. Physical numbering of OS.\n");  \
+    fprintf(stdout, "\t2. Logical numbering inside node. e.g. -c N:0-3\n");  \
+    fprintf(stdout, "\t3. Logical numbering inside socket. e.g. -c S0:0-3\n");  \
+    fprintf(stdout, "\t4. Logical numbering inside last level cache group. e.g. -c C0:0-3\n");  \
+    fprintf(stdout, "\t5. Logical numbering inside NUMA domain. e.g. -c M0:0-3\n");  \
+    fprintf(stdout, "\tYou can also mix domains separated by  @, e.g. -c S0:0-3@S1:0-3 \n\n");  \
+    fprintf(stdout, "2. Expressions based thread list generation with compact processor numbering.\n"); \
+    fprintf(stdout, "Example usage expression: likwid-pin -c E:N:8 ./myApp\n"); \
+    fprintf(stdout, "This will generate a compact list of thread to processor mapping for the node domain with eight threads.\n");  \
+    fprintf(stdout, "The following syntax variants are available:\n");  \
+    fprintf(stdout, "\t1. -c E:<thread domain>:<number of threads>\n");  \
+    fprintf(stdout, "\t2. -c E:<thread domain>:<number of threads>:<chunk size>:<stride>\n");  \
+    fprintf(stdout, "\t   For two SMT threads per core on a SMT 4 machine use e.g. -c E:N:122:2:4\n\n");  \
+    fprintf(stdout, "3. Scatter policy among thread domain type.\n"); \
+    fprintf(stdout, "Example usage scatter: likwid-pin -c M:scatter ./myApp\n"); \
+    fprintf(stdout, "This will generate a thread to processor mapping scattered among all memory domains with physical cores first.\n\n");  \
+    fprintf(stdout, "If you ommit the -c option likwid will use all processors available on the node\n"); \
+    fprintf(stdout, "with physical cores first. likwid-pin will also set OMP_NUM_THREADS with as many\n"); \
+    fprintf(stdout, "threads as specified in your pin expression if OMP_NUM_THREADS is not present\n"); \
+    fprintf(stdout, "in your environment.\n\n"); \
+    fflush(stdout);
 
 #define VERSION_MSG \
-    printf("likwid-pin   %d.%d \n\n",VERSION,RELEASE)
+    fprintf(stdout, "likwid-pin   %d.%d \n\n",VERSION,RELEASE); \
+    fflush(stdout);
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
     static void
@@ -107,7 +109,7 @@ pinPid(int cpuid, int silent)
 
     if (status == -1) 
     {
-        printf("sched_setaffinity failed : %s \n",strerror(errno));
+        fprintf(stderr, "sched_setaffinity failed : %s \n",strerror(errno));
     }
     else 
     {
@@ -116,11 +118,12 @@ pinPid(int cpuid, int silent)
 #ifdef COLOR
             color_on(BRIGHT, COLOR);
 #endif
-            printf("[likwid-pin] Main PID -> core %d - OK",  cpuid);
+            fprintf(stdout, "[likwid-pin] Main PID -> core %d - OK",  cpuid);
 #ifdef COLOR
             color_reset();
 #endif
-            printf("\n");
+            fprintf(stdout, "\n");
+            fflush(stdout);
         }
     }
 }
@@ -190,7 +193,7 @@ int main (int argc, char** argv)
             case 'p':
                 if (!hasAffinity)
                 {
-                    printf("Option -p is not supported for unknown processor!\n");
+                    fprintf(stderr, "Option -p is not supported for unknown processor!\n");
                     exit(EXIT_SUCCESS);
                 }
                 optPrintDomains = 1;
@@ -206,7 +209,7 @@ int main (int argc, char** argv)
             case 'S':
                 if (!hasAffinity)
                 {
-                    printf("Option -S is not supported for unknown processor!\n");
+                    fprintf(stderr, "Option -S is not supported for unknown processor!\n");
                     exit(EXIT_SUCCESS);
                 }
                 optMemSweep = 1;
@@ -227,13 +230,14 @@ int main (int argc, char** argv)
 
     if (optPrintDomains && numThreads)
     {
-        printf("%d",threads[0]);
+        fprintf(stdout, "%d",threads[0]);
 
         for ( i=1; i< numThreads; i++)
         {
-            printf("%c%d",delimiter,threads[i]);
+            fprintf(stdout, "%c%d",delimiter,threads[i]);
         }
-        printf("\n");
+        fprintf(stdout, "\n");
+        fflush(stdout);
         exit (EXIT_SUCCESS);
     }
     else if ( optPrintDomains )
@@ -258,13 +262,15 @@ int main (int argc, char** argv)
 
     if (optInterleaved)
     {
-        printf("Set mem_policy to interleaved\n");
+        fprintf(stdout, "Set mem_policy to interleaved\n");
+        fflush(stdout);
         numa_setInterleaved(threads, numThreads);
     }
 
     if (optMemSweep)
     {
-        printf("Sweeping memory\n");
+        fprintf(stdout, "Sweeping memory\n");
+        fflush(stdout);
         memsweep_threadGroup(threads, numThreads);
     }
 
@@ -287,11 +293,11 @@ int main (int argc, char** argv)
 
         bformata(pinString,",%d",threads[0]);
 
-		if (skipMask >= 0)
-		{
-        	skipString = bformat("%d",skipMask);
-			setenv("LIKWID_SKIP",(char*) bdata(skipString) , 1);
-		}
+        if (skipMask >= 0)
+        {
+            skipString = bformat("%d",skipMask);
+            setenv("LIKWID_SKIP",(char*) bdata(skipString) , 1);
+        }
 
         setenv("KMP_AFFINITY", "disabled", 1);
         setenv("LIKWID_PIN",(char*) bdata(pinString) , 1);

@@ -51,19 +51,21 @@
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define HELP_MSG \
-printf("\nlikwid-topology --  Version %d.%d \n\n",VERSION,RELEASE); \
-printf("A tool to print the thread and cache topology on x86 CPUs.\n"); \
-printf("Options:\n"); \
-printf("-h\t Help message\n"); \
-printf("-v\t Version information\n"); \
-printf("-c\t list cache information\n"); \
-printf("-C\t measure processor clock\n"); \
-printf("-o\t Store output to file, with output conversation according to file suffix\n"); \
-printf("\t Conversation scripts can be supplied in %s\n",TOSTRING(LIKWIDFILTERPATH)); \
-printf("-g\t graphical output\n\n")
+    fprintf(stdout, "\nlikwid-topology --  Version %d.%d \n\n",VERSION,RELEASE); \
+    fprintf(stdout, "A tool to print the thread and cache topology on x86 CPUs.\n"); \
+    fprintf(stdout, "Options:\n"); \
+    fprintf(stdout, "-h\t Help message\n"); \
+    fprintf(stdout, "-v\t Version information\n"); \
+    fprintf(stdout, "-c\t list cache information\n"); \
+    fprintf(stdout, "-C\t measure processor clock\n"); \
+    fprintf(stdout, "-o\t Store output to file, with output conversation according to file suffix\n"); \
+    fprintf(stdout, "\t Conversation scripts can be supplied in %s\n",TOSTRING(LIKWIDFILTERPATH)); \
+    fprintf(stdout, "-g\t graphical output\n\n"); \
+    fflush(stdout);
 
 #define VERSION_MSG \
-printf("likwid-topology  %d.%d \n\n",VERSION,RELEASE)
+    fprintf(stdout, "likwid-topology  %d.%d \n\n",VERSION,RELEASE); \
+    fflush(stdout);
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -190,6 +192,7 @@ int main (int argc, char** argv)
         fprintf(OUTSTREAM, ")\n");
     }
     fprintf(OUTSTREAM, HLINE"\n");
+    fflush(OUTSTREAM);
 
     /*----------------------------------------------------------------------
      *  Cache Topology
@@ -289,6 +292,7 @@ int main (int argc, char** argv)
     }
 
     fprintf(OUTSTREAM, "\n");
+    fflush(OUTSTREAM);
 
     /*----------------------------------------------------------------------
      *  NUMA Topology
@@ -331,6 +335,7 @@ int main (int argc, char** argv)
         }
     }
     fprintf(OUTSTREAM, "\n");
+    fflush(OUTSTREAM);
 
     /*----------------------------------------------------------------------
      *  Graphical topology

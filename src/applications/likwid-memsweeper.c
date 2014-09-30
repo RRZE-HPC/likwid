@@ -46,17 +46,19 @@
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define HELP_MSG \
-printf("\nlikwid-memsweeper --  Version  %d.%d \n\n",VERSION,RELEASE); \
-printf("A tool clean up NUMA memory domains and last level caches.\n"); \
-printf("Options:\n"); \
-printf("-h\t Help message\n"); \
-printf("-v\t Version information\n"); \
-printf("-c\t specify NUMA domain ID to clean up\n"); \
-printf("Usage: likwid-memsweeper \n"); \
-printf("To clean specific domain: likwid-memsweeper -c 2 \n");
+    fprintf(stdout, "\nlikwid-memsweeper --  Version  %d.%d \n\n",VERSION,RELEASE); \
+    fprintf(stdout, "A tool clean up NUMA memory domains and last level caches.\n"); \
+    fprintf(stdout, "Options:\n"); \
+    fprintf(stdout, "-h\t Help message\n"); \
+    fprintf(stdout, "-v\t Version information\n"); \
+    fprintf(stdout, "-c\t specify NUMA domain ID to clean up\n"); \
+    fprintf(stdout, "Usage: likwid-memsweeper \n"); \
+    fprintf(stdout, "To clean specific domain: likwid-memsweeper -c 2 \n"); \
+    fflush(stdout);
 
 #define VERSION_MSG \
-printf("likwid-memsweeper  %d.%d \n\n",VERSION,RELEASE)
+    fprintf(stdout, "likwid-memsweeper  %d.%d \n\n",VERSION,RELEASE); \
+    fflush(stdout);
 
 
 int main (int argc, char** argv)

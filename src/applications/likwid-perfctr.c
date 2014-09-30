@@ -58,31 +58,33 @@
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 #define HELP_MSG \
-printf("likwid-perfctr --  Version  %d.%d \n\n",VERSION,RELEASE); \
-printf("\n"); \
-printf("Example Usage: likwid-perfctr -C 2  ./a.out \n"); \
-printf("Supported Options:\n"); \
-printf("-h\t Help message\n"); \
-printf("-v\t Version information\n"); \
-printf("-V\t verbose output\n"); \
-printf("-g\t performance group or event set string\n"); \
-printf("-H\t Get group help (together with -g switch) \n"); \
-printf("-t\t timeline mode with frequency in s or ms, e.g. 300ms\n"); \
-printf("-S\t stethoscope mode with duration in s\n"); \
-printf("-m\t use markers inside code \n"); \
-printf("-s\t bitmask with threads to skip\n"); \
-printf("-o\t Store output to file, with output conversation according to file suffix\n"); \
-printf("\t Conversation scripts can be supplied in %s\n",TOSTRING(LIKWIDFILTERPATH)); \
-printf("-O\t Output easily parseable CSV instead of fancy tables\n"); \
-printf("-M\t set how MSR registers are accessed: 0=direct, 1=msrd\n"); \
-printf("-a\t list available performance groups\n"); \
-printf("-e\t list available counters and events\n"); \
-printf("-i\t print cpu info\n"); \
-printf("-c\t processor ids to measure (required), e.g. 1,2-4,8\n"); \
-printf("-C\t processor ids to measure (this variant also cares for pinning of process/threads), e.g. 1,2-4,8\n");
+fprintf(stdout, "likwid-perfctr --  Version  %d.%d \n\n",VERSION,RELEASE); \
+fprintf(stdout, "\n"); \
+fprintf(stdout, "Example Usage: likwid-perfctr -C 2  ./a.out \n"); \
+fprintf(stdout, "Supported Options:\n"); \
+fprintf(stdout, "-h\t Help message\n"); \
+fprintf(stdout, "-v\t Version information\n"); \
+fprintf(stdout, "-V\t verbose output\n"); \
+fprintf(stdout, "-g\t performance group or event set string\n"); \
+fprintf(stdout, "-H\t Get group help (together with -g switch) \n"); \
+fprintf(stdout, "-t\t timeline mode with frequency in s or ms, e.g. 300ms\n"); \
+fprintf(stdout, "-S\t stethoscope mode with duration in s\n"); \
+fprintf(stdout, "-m\t use markers inside code \n"); \
+fprintf(stdout, "-s\t bitmask with threads to skip\n"); \
+fprintf(stdout, "-o\t Store output to file, with output conversation according to file suffix\n"); \
+fprintf(stdout, "\t Conversation scripts can be supplied in %s\n",TOSTRING(LIKWIDFILTERPATH)); \
+fprintf(stdout, "-O\t Output easily parseable CSV instead of fancy tables\n"); \
+fprintf(stdout, "-M\t set how MSR registers are accessed: 0=direct, 1=msrd\n"); \
+fprintf(stdout, "-a\t list available performance groups\n"); \
+fprintf(stdout, "-e\t list available counters and events\n"); \
+fprintf(stdout, "-i\t print cpu info\n"); \
+fprintf(stdout, "-c\t processor ids to measure (required), e.g. 1,2-4,8\n"); \
+fprintf(stdout, "-C\t processor ids to measure (this variant also cares for pinning of process/threads), e.g. 1,2-4,8\n"); \
+fflush(stdout);
 
 #define VERSION_MSG \
-printf("likwid-perfctr  %d.%d \n\n",VERSION,RELEASE);
+fprintf(stdout, "likwid-perfctr  %d.%d \n\n",VERSION,RELEASE); \
+fflush(stdout);
 
 /* To be able to give useful error messages instead of just dieing without a
  * comment. Mainly happens because we get a SIGPIPE if the daemon drops us. */
@@ -165,7 +167,8 @@ int main (int argc, char** argv)
 
                 break;
             case 'd':
-                printf("Option -d for daemon mode is deprecated. Daemon mode has be renamed to timeline mode (Option -t)!\n");
+                fprintf(stdout, "Option -d for daemon mode is deprecated. Daemon mode has be renamed to timeline mode (Option -t)!\n");
+                fflush(stdout);
                 break;
             case 'e':
                 numThreads=1; /*to get over the error message */
@@ -350,6 +353,7 @@ int main (int argc, char** argv)
         }
     }
     fprintf(OUTSTREAM,HLINE);
+    fflush(OUTSTREAM);
 
     if (optInfo)
     {
@@ -388,9 +392,11 @@ int main (int argc, char** argv)
     fprintf(OUTSTREAM,HLINE);
     fprintf(OUTSTREAM,"CPU type:\t%s \n",cpuid_info.name);
     fprintf(OUTSTREAM,"CPU clock:\t%3.2f GHz \n",  (float) timer_getCpuClock() * 1.E-09);
+    fflush(OUTSTREAM);
 
     perfmon_setupEventSet(eventString, &counterMask);
     fprintf(OUTSTREAM,HLINE);
+    fflush(OUTSTREAM);
 
     if (optTimeline)
     {
@@ -400,6 +406,7 @@ int main (int argc, char** argv)
             fprintf(OUTSTREAM," %d", threads[i]);
         }
         fprintf(OUTSTREAM," \n");
+        fflush(OUTSTREAM);
 
         daemon_init(eventString);
         daemon_start(interval);
@@ -422,7 +429,11 @@ int main (int argc, char** argv)
             bconchar(exeString, ' ');
             bcatcstr(exeString, argv[i]);
         }
-        if (perfmon_verbose) fprintf(OUTSTREAM,"Executing: %s \n",bdata(exeString));
+        if (perfmon_verbose)
+        {
+            fprintf(OUTSTREAM,"Executing: %s \n",bdata(exeString));
+            fflush(OUTSTREAM);
+        }
 
         if (optReport)
         {
@@ -448,6 +459,7 @@ int main (int argc, char** argv)
         }
 
         fprintf(OUTSTREAM,"%s\n",bdata(exeString));
+        fflush(OUTSTREAM);
 
         if (system(bdata(exeString)) == EOF)
         {
