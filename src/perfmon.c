@@ -63,7 +63,6 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
     int ret = FALSE;
     uint64_t tmp;
     int check_range = (cpuid_info.supportUncore == 1 ? perfmon_numCounters : perfmon_numCoreCounters);
-
     for (int i=0; i< check_range; i++)
     {
         if (biseqcstr(reg, counter_map[i].key))
@@ -259,6 +258,11 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
             {
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
                                     event->numberOfOptions, EVENT_OPTION_COUNT_KERNEL, 1);
+            }
+            else if (biseqcstr(subtokens->entry[0], "anythread") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_ANYTHREAD, 1);
             }
             else if (biseqcstr(subtokens->entry[0], "occ_edgedetect") == 1)
             {
@@ -522,6 +526,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsSilvermont;
                     counter_map = silvermont_counter_map;
                     perfmon_numCounters = perfmon_numCountersSilvermont;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersSilvermont;
                     break;
 
                 case CORE_DUO:
@@ -1080,7 +1085,7 @@ perfmon_addEventSet(char* eventCString)
         }
         else
         {
-            if (!getIndexAndType(subtokens->entry[1], &event->index,&event->type))
+            if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type))
             {
                 fprintf(stderr,"Counter register %s not supported\n",bdata(
                         subtokens->entry[1]));

@@ -562,6 +562,7 @@ int perfmon_setupCounterThread_sandybridge(
 
     for (i=0;i < eventSet->numberOfEvents;i++)
     {
+        flags = 0x0ULL;
         PerfmonEvent *event = &(eventSet->events[i].event);
         RegisterIndex index = eventSet->events[i].index;
         uint64_t reg = sandybridge_counter_map[index].configRegister;
@@ -570,7 +571,6 @@ int perfmon_setupCounterThread_sandybridge(
         switch (sandybridge_counter_map[index].type)
         {
             case PMC:
-                flags = 0x0ULL;
                 flags |= (1<<22);  /* enable flag */
                 flags |= (1<<16);  /* user mode flag */
 
@@ -964,7 +964,6 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
 
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, "Start thread-local MSR counters");
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, UNFREEZE_PMC_OR_FIXED)
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL));
