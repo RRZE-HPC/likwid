@@ -45,18 +45,20 @@
 #include <cpuFeatures.h>
 
 #define HELP_MSG \
-printf("\nlikwid-features --  Version  %d.%d \n\n",VERSION,RELEASE); \
-printf("A tool to print and toggle the feature flag msr on Intel CPUS.\n"); \
-printf("Supported Features: HW_PREFETCHER, CL_PREFETCHER, DCU_PREFETCHER, IP_PREFETCHER.\n\n"); \
-printf("Options:\n"); \
-printf("-h\t Help message\n"); \
-printf("-v\t Version information\n"); \
-printf("-s <FEATURE>\t set cpu feature \n"); \
-printf("-u <FEATURE>\t unset cpu feature \n"); \
-printf("-c <ID>\t core id\n\n")
+    fprintf(stdout, "\nlikwid-features --  Version  %d.%d \n\n",VERSION,RELEASE); \
+    fprintf(stdout, "A tool to print and toggle the feature flag msr on Intel CPUS.\n"); \
+    fprintf(stdout, "Supported Features: HW_PREFETCHER, CL_PREFETCHER, DCU_PREFETCHER, IP_PREFETCHER.\n\n"); \
+    fprintf(stdout, "Options:\n"); \
+    fprintf(stdout, "-h\t Help message\n"); \
+    fprintf(stdout, "-v\t Version information\n"); \
+    fprintf(stdout, "-s <FEATURE>\t set cpu feature \n"); \
+    fprintf(stdout, "-u <FEATURE>\t unset cpu feature \n"); \
+    fprintf(stdout, "-c <ID>\t core id\n\n"); \
+    fflush(stdout);
 
 #define VERSION_MSG \
-printf("likwid-features  %d.%d \n\n",VERSION,RELEASE)
+    fprintf(stdout, "likwid-features  %d.%d \n\n",VERSION,RELEASE); \
+    fflush(stdout);
 
 int main (int argc, char** argv)
 { 
@@ -147,9 +149,10 @@ int main (int argc, char** argv)
         ERROR_PLAIN_PRINT(Unsupported processor!);
     }
 
-    printf(HLINE);
-    printf("CPU name:\t%s \n",cpuid_info.name);
-    printf("CPU core id:\t%d \n", cpuId);
+    fprintf(stdout, HLINE);
+    fprintf(stdout, "CPU name:\t%s \n",cpuid_info.name);
+    fprintf(stdout, "CPU core id:\t%d \n", cpuId);
+    fflush(stdout);
 
     if (cpuid_info.family != P6_FAMILY)
     {
@@ -170,16 +173,17 @@ int main (int argc, char** argv)
 
     if (optSetFeature == 1)
     {
-        printf(SLINE);
+        fprintf(stdout, SLINE);
         cpuFeatures_enable(cpuId, feature);
-        printf(SLINE);
+        fprintf(stdout, SLINE);
     }
     else if (optSetFeature == 2)
     {
-        printf(SLINE);
+        fprintf(stdout, SLINE);
         cpuFeatures_disable(cpuId, feature);
-        printf(SLINE);
+        fprintf(stdout, SLINE);
     }
+    fflush(stdout);
 
     msr_finalize();
     return EXIT_SUCCESS;

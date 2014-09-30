@@ -43,15 +43,17 @@
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define HELP_MSG \
-printf("\nlikwid-genCfg --  Version  %d.%d \n\n",VERSION,RELEASE); \
-printf("A tool to dump node topology information into a file.\n"); \
-printf("Options:\n"); \
-printf("-h\t Help message\n"); \
-printf("-v\t Version information\n"); \
-printf("-o\t output file path (optional)\n\n");
+    fprintf(stdout, "\nlikwid-genCfg --  Version  %d.%d \n\n",VERSION,RELEASE); \
+    fprintf(stdout, "A tool to dump node topology information into a file.\n"); \
+    fprintf(stdout, "Options:\n"); \
+    fprintf(stdout, "-h\t Help message\n"); \
+    fprintf(stdout, "-v\t Version information\n"); \
+    fprintf(stdout, "-o\t output file path (optional)\n\n"); \
+    fflush(stdout);
 
 #define VERSION_MSG \
-printf("likwid-powermeter  %d.%d \n\n",VERSION,RELEASE)
+    fprintf(stdout, "likwid-powermeter  %d.%d \n\n",VERSION,RELEASE); \
+    fflush(stdout);
 
 
 int main (int argc, char** argv)
@@ -92,8 +94,9 @@ int main (int argc, char** argv)
     }
 
     cpuid_init();
-    printf(HLINE);
-    printf("CPU name:\t%s \n",cpuid_info.name);
+    fprintf(stdout, HLINE);
+    fprintf(stdout, "CPU name:\t%s \n",cpuid_info.name);
+    fflush(stdout);
 
     if ((file = fopen(filepath, "wb")) != NULL) 
     {

@@ -55,25 +55,27 @@ extern void* runTest(void* arg);
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define HELP_MSG \
-    printf("Threaded Memory Hierarchy Benchmark --  Version  %d.%d \n\n",VERSION,RELEASE); \
-printf("\n"); \
-printf("Supported Options:\n"); \
-printf("-h\t Help message\n"); \
-printf("-a\t list available benchmarks \n"); \
-printf("-p\t list available thread domains\n"); \
-printf("-l <TEST>\t list properties of benchmark \n"); \
-printf("-i <INT>\t number of iterations \n"); \
-printf("-g <INT>\t number of workgroups (mandatory)\n"); \
-printf("-t <TEST>\t type of test \n"); \
-printf("-w\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>][-<streamId>:<domain_id>[:<offset>]], size in kB, MB or GB  (mandatory)\n"); \
-printf("Processors are in compact ordering. Optionally every stream can be placed. Either no stream or all streams must be placed. Multiple streams are separated by commas.\n"); \
-printf("Usage: likwid-bench -t copy -i 1000 -g 1 -w S0:100kB:10:1:2 \n"); \
-printf("\tRun 10 threads on socket 0 using physical cores only (presuming SMT2 system).\n"); \
-printf("Example with data placement: likwid-bench -t copy -i 1000 -g 1 -w S0:100kB:20-0:S1,1:S1 \n"); \
-printf("\tRun 20 threads on socket 0 and place both arrays of the copy test case on socket 1.\n")
+    fprintf(stdout, "Threaded Memory Hierarchy Benchmark --  Version  %d.%d \n\n",VERSION,RELEASE); \
+    fprintf(stdout, "\n"); \
+    fprintf(stdout, "Supported Options:\n"); \
+    fprintf(stdout, "-h\t Help message\n"); \
+    fprintf(stdout, "-a\t list available benchmarks \n"); \
+    fprintf(stdout, "-p\t list available thread domains\n"); \
+    fprintf(stdout, "-l <TEST>\t list properties of benchmark \n"); \
+    fprintf(stdout, "-i <INT>\t number of iterations \n"); \
+    fprintf(stdout, "-g <INT>\t number of workgroups (mandatory)\n"); \
+    fprintf(stdout, "-t <TEST>\t type of test \n"); \
+    fprintf(stdout, "-w\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>][-<streamId>:<domain_id>[:<offset>]], size in kB, MB or GB  (mandatory)\n"); \
+    fprintf(stdout, "Processors are in compact ordering. Optionally every stream can be placed. Either no stream or all streams must be placed. Multiple streams are separated by commas.\n"); \
+    fprintf(stdout, "Usage: likwid-bench -t copy -i 1000 -g 1 -w S0:100kB:10:1:2 \n"); \
+    fprintf(stdout, "\tRun 10 threads on socket 0 using physical cores only (presuming SMT2 system).\n"); \
+    fprintf(stdout, "Example with data placement: likwid-bench -t copy -i 1000 -g 1 -w S0:100kB:20-0:S1,1:S1 \n"); \
+    fprintf(stdout, "\tRun 20 threads on socket 0 and place both arrays of the copy test case on socket 1.\n"); \
+    fflush(stdout);
 
 #define VERSION_MSG \
-    printf("likwid-bench   %d.%d \n\n",VERSION,RELEASE)
+    fprintf(stdout, "likwid-bench   %d.%d \n\n",VERSION,RELEASE); \
+    fflush(stdout);
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ############ */
 
@@ -152,7 +154,8 @@ int main(int argc, char** argv)
                 }
                 exit (EXIT_SUCCESS);
             case 'a':
-                printf(TESTS"\n");
+                fprintf(stdout, TESTS"\n");
+                fflush(stdout);
                 affinity_finalize();
                 if (groups)
                 {
@@ -227,8 +230,9 @@ int main(int argc, char** argv)
                 if (biseqcstr(testcase,"none") || !test)
                 {
                     fprintf (stderr, "Unknown test case %s\n",optarg);
-                    printf("Available test cases:\n");
-                    printf(TESTS"\n");
+                    fprintf(stdout, "Available test cases:\n");
+                    fprintf(stdout, TESTS"\n");
+                    fflush(stdout);
                     affinity_finalize();
                     if (groups)
 		            {
@@ -238,20 +242,21 @@ int main(int argc, char** argv)
                 }
                 else
                 {
-                    printf("Name: %s\n",test->name);
-                    printf("Number of streams: %d\n",test->streams);
-                    printf("Loop stride: %d\n",test->stride);
-                    printf("Flops: %d\n",test->flops);
-                    printf("Bytes: %d\n",test->bytes);
+                    fprintf(stdout, "Name: %s\n",test->name);
+                    fprintf(stdout, "Number of streams: %d\n",test->streams);
+                    fprintf(stdout, "Loop stride: %d\n",test->stride);
+                    fprintf(stdout, "Flops: %d\n",test->flops);
+                    fprintf(stdout, "Bytes: %d\n",test->bytes);
                     switch (test->type)
                     {
                         case SINGLE:
-                            printf("Data Type: Single precision float\n");
+                            fprintf(stdout, "Data Type: Single precision float\n");
                             break;
                         case DOUBLE:
-                            printf("Data Type: Double precision float\n");
+                            fprintf(stdout, "Data Type: Double precision float\n");
                             break;
                     }
+                    fflush(stdout);
                 }
                 bdestroy(testcase);
                 affinity_finalize();
@@ -377,7 +382,8 @@ int main(int argc, char** argv)
     barrier_registerGroup(globalNumberOfThreads);
 
 #ifdef PERFMON
-    printf("Using likwid\n");
+    fprintf(stdout, "Using likwid\n");
+    fflush(stdout);
     likwid_markerInit();
 #endif
 
@@ -407,13 +413,14 @@ int main(int argc, char** argv)
         free(myData.streams);
     }
 
-    printf(HLINE);
-    printf("LIKWID MICRO BENCHMARK\n");
-    printf("Test: %s\n",test->name);
-    printf(HLINE);
-    printf("Using %d work groups\n",numberOfWorkgroups);
-    printf("Using %d threads\n",globalNumberOfThreads);
-    printf(HLINE);
+    fprintf(stdout, HLINE);
+    fprintf(stdout, "LIKWID MICRO BENCHMARK\n");
+    fprintf(stdout, "Test: %s\n",test->name);
+    fprintf(stdout, HLINE);
+    fprintf(stdout, "Using %d work groups\n",numberOfWorkgroups);
+    fprintf(stdout, "Using %d threads\n",globalNumberOfThreads);
+    fprintf(stdout, HLINE);
+    fflush(stdout);
 
     threads_create(runTest);
     threads_join();
@@ -423,7 +430,7 @@ int main(int argc, char** argv)
 	uint64_t realCycles = 0;
 	int current_id = 0;
     
-	printf(HLINE);
+	fprintf(stdout, HLINE);
     for(j=0;j<numberOfWorkgroups;j++)
     {
     	current_id = j*groups[j].numberOfThreads;
@@ -431,33 +438,34 @@ int main(int argc, char** argv)
     	realSize += groups[j].numberOfThreads * threads_data[current_id].data.size;
 	}
 	time = (double) realCycles / (double) timer_getCpuClock();
-	printf("Cycles: %llu \n", LLU_CAST realCycles);
-	printf("Iterations: %llu \n", LLU_CAST iter);
-	printf("Size %d \n",  realSize );
-	printf("Vectorlength: %llu \n", LLU_CAST threads_data[current_id].data.size);
-	printf("Time: %e sec\n", time);
-	printf("Number of Flops: %llu \n", LLU_CAST (iter * realSize *  test->flops));
-	printf("MFlops/s: %.2f\n",
+	fprintf(stdout, "Cycles: %llu \n", LLU_CAST realCycles);
+	fprintf(stdout, "Iterations: %llu \n", LLU_CAST iter);
+	fprintf(stdout, "Size %d \n",  realSize );
+	fprintf(stdout, "Vectorlength: %llu \n", LLU_CAST threads_data[current_id].data.size);
+	fprintf(stdout, "Time: %e sec\n", time);
+	fprintf(stdout, "Number of Flops: %llu \n", LLU_CAST (iter * realSize *  test->flops));
+	fprintf(stdout, "MFlops/s: %.2f\n",
 	        1.0E-06 * ((double) iter * realSize *  test->flops/  time));
-	printf("MByte/s: %.2f\n",
+	fprintf(stdout, "MByte/s: %.2f\n",
 	        1.0E-06 * ( (double) iter * realSize *  test->bytes/ time));
-	printf("Cycles per update: %f\n",
+	fprintf(stdout, "Cycles per update: %f\n",
 	        ((double) realCycles / (double) (iter * numberOfWorkgroups * threads_data[current_id].numberOfThreads *  threads_data[current_id].data.size)));
 
 	switch ( test->type )
 	{
 	    case SINGLE:
-	        printf("Cycles per cacheline: %f\n",
+	        fprintf(stdout, "Cycles per cacheline: %f\n",
 	                (16.0 * (double) realCycles / (double) (iter * realSize)));
 	        break;
 	    case DOUBLE:
-	        printf("Cycles per cacheline: %f\n",
+	        fprintf(stdout, "Cycles per cacheline: %f\n",
 	                (8.0 * (double) realCycles / (double) (iter * realSize)));
 	        break;
 	}
 
 	
-    printf(HLINE);
+    fprintf(stdout, HLINE);
+    fflush(stdout);
     threads_destroy(numberOfWorkgroups);
     barrier_destroy();
     
