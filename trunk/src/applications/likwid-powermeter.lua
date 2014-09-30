@@ -1,4 +1,4 @@
-#!/home/rrze/unrz/unrz139/Work/likwid/trunk/ext/lua/lua
+#!/home/unrz139/likwid/trunk/ext/lua/lua
 
 --[[
  * =======================================================================================
@@ -161,10 +161,7 @@ if likwid.setAccessClientMode(access_mode) ~= 0 then
 end
 
 power = likwid.getPowerInfo()
-if time_interval < power["timeUnit"]*1.E06 then
-    print("Time interval too short, minimum measurement time is "..tostring(power["timeUnit"]*1.E06).. " us")
-    os.exit(1)
-end
+
 
 
 print(likwid.hline);
@@ -195,11 +192,16 @@ end
 
 if (print_info) then
     print(string.format("Thermal Spec Power: %g Watts",power["tdp"]))
-    print(string.format("Minimum  Power: %g Watts",power["minPower"]))
-    print(string.format("Maximum  Power: %g Watts",power["maxPower"]))
-    print(string.format("Maximum  Time Window: %g micro sec",power["maxTimeWindow"]))
+    print(string.format("Minimum Power: %g Watts",power["minPower"]))
+    print(string.format("Maximum Power: %g Watts",power["maxPower"]))
+    print(string.format("Maximum Time Window: %g micro sec",power["maxTimeWindow"]))
     print(likwid.hline)
     os.exit(0)
+end
+
+if time_interval < power["timeUnit"]*1.E06 then
+    print("Time interval too short, minimum measurement time is "..tostring(power["timeUnit"]*1.E06).. " us")
+    os.exit(1)
 end
 
 if (use_perfctr) then

@@ -215,7 +215,7 @@ uint64_t accessClient_read(
     if (data.errorcode != ERR_NOERROR)
     {
         fprintf(stderr, "Failed to read data through daemon: "
-                "daemon returned error %d '%s' for cpu %d reg %x\n",
+                "daemon returned error %d '%s' for cpu %d reg 0x%x\n",
                 data.errorcode, accessClient_strerror(data.errorcode), cpu, reg);
         exit(EXIT_FAILURE);
     }

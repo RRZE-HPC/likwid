@@ -141,9 +141,9 @@ msr_init(int initSocket_fd)
         
         if (access(msr_file_name, R_OK|W_OK))
         {
-            ERROR_PRINT("Cannot access MSR device file %s: %s.\n"
-                        "Please check if 'msr' module is loaded and device files have correct permissions\n"
-                        "Alternatively you might want to look into (sys)daemonmode\n",msr_file_name , strerror(errno));
+            ERROR_PRINT(Cannot access MSR device file %s: %s.\n
+                        Please check if 'msr' module is loaded and device files have correct permissions\n
+                        Alternatively you might want to look into (sys)daemonmode\n,msr_file_name , strerror(errno));
             free(msr_file_name);
             exit(127);
         }
@@ -166,7 +166,7 @@ msr_init(int initSocket_fd)
 
             if ( FD[i] < 0 )
             {
-                ERROR_PRINT("Cannot access MSR device file %s: %s\n",
+                ERROR_PRINT(Cannot access MSR device file %s: %s\n,
                                 msr_file_name , strerror(errno));
                 free(msr_file_name);
                 ERROR;
@@ -209,7 +209,7 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg)
         {
             if (__rdpmc(reg - MSR_PMC0, &data) )
             {
-                ERROR_PRINT("Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n",
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n,
                         reg,cpu);
             }
         }
@@ -217,7 +217,7 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg)
         {
             if ( pread(FD[cpu], &data, sizeof(data), reg) != sizeof(data) )
             {
-                ERROR_PRINT("Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d\n",
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d\n,
                         reg, cpu);
             }
         }
@@ -238,7 +238,7 @@ msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
     {
         if (pwrite(FD[cpu], &data, sizeof(data), reg) != sizeof(data))
         {
-            ERROR_PRINT("Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n",
+            ERROR_PRINT(Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n,
                         reg, cpu);
         }
     }
@@ -260,7 +260,7 @@ msr_read( const int cpu, uint32_t reg)
         {
             if (__rdpmc(reg - MSR_PMC0, &data) )
             {
-                ERROR_PRINT("Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n",
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n,
                         reg,cpu);
             }
         }
@@ -268,7 +268,7 @@ msr_read( const int cpu, uint32_t reg)
         {
             if ( pread(FD[cpu], &data, sizeof(data), reg) != sizeof(data) )
             {
-                ERROR_PRINT("Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d\n",
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d\n,
                         reg, cpu);
             }
         }
@@ -289,7 +289,7 @@ msr_write( const int cpu, uint32_t reg, uint64_t data)
     {
         if (pwrite(FD[cpu], &data, sizeof(data), reg) != sizeof(data))
         {
-            ERROR_PRINT("Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n",
+            ERROR_PRINT(Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n,
                         reg, cpu);
         }
     }

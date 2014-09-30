@@ -70,7 +70,7 @@ power_init(int cpuId)
             break;
         case ATOM_SILVERMONT:
             hasRAPL = 1;
-            power_info.supportedTypes = (1<<PKG)|(1<<PP0);
+            power_info.supportedTypes = (1<<PKG);
             info_register = MSR_PKG_POWER_INFO_SILVERMONT;
             break;
         case SANDYBRIDGE_EP:
@@ -129,6 +129,8 @@ power_init(int cpuId)
         power_info.energyUnit = pow(0.5,(double) extractBitField(flags,5,8));
         power_info.timeUnit = pow(0.5,(double) extractBitField(flags,4,16));
 
+        /* info_register set in the switch-case-statement at the beginning
+           because Atom Silvermont uses another register */
         CHECK_MSR_READ_ERROR(msr_read(cpuId, info_register, &flags))
         power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
         if (cpuid_info.model != ATOM_SILVERMONT)

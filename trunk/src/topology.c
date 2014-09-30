@@ -551,6 +551,7 @@ int topology_setName(void)
                 case ATOM_SILVERMONT:
                     cpuid_info.name = atom_silvermont_str;
                     cpuid_info.short_name = short_silvermont;
+                    break;
 
                 default:
                     cpuid_info.name = unknown_intel_str;

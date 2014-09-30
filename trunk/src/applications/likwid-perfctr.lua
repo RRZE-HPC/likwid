@@ -1,4 +1,4 @@
-#!/home/rrze/unrz/unrz139/Work/likwid/trunk/ext/lua/lua
+#!/home/unrz139/likwid/trunk/ext/lua/lua
 
 --[[
  * =======================================================================================
@@ -108,7 +108,6 @@ use_csv = false
 execString = nil
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid("pid"))
 
-print(arg)
 for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
     
     if (type(arg) == "string") then
