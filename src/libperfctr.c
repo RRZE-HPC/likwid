@@ -169,17 +169,11 @@ void likwid_markerInit(void)
 
     accessClient_setaccessmode(atoi(modeStr));
     perfmon_verbosity = verbosity;
-    perfmon_init(num_cpus, threads2Cpu);
+    /*perfmon_init(num_cpus, threads2Cpu);
 
     activeGroup = perfmon_addEventSet(eventStr);
-    groupSet->activeGroup = activeGroup;
-    for(int i=0;i<groupSet->groups[activeGroup].numberOfEvents;i++)
-    {
-        for(int j=0;j<groupSet->numberOfThreads;j++)
-        {
-            groupSet->groups[activeGroup].events[i].threadCounter[j].init = TRUE;
-        }
-    }
+    groupSet->activeGroup = activeGroup;*/
+    
     
     str2BitMask(maskStr, &counterMask);
 
@@ -203,7 +197,13 @@ void likwid_markerInit(void)
     accessClient_finalize(socket_fd);
     socket_fd = -1;
     groupSet->activeGroup = groupId;
-
+    for(int i=0;i<groupSet->groups[activeGroup].numberOfEvents;i++)
+    {
+        for(int j=0;j<groupSet->numberOfThreads;j++)
+        {
+            groupSet->groups[activeGroup].events[i].threadCounter[j].init = TRUE;
+        }
+    }
 }
 
 void likwid_markerThreadInit(void)
