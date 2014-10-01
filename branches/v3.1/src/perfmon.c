@@ -268,7 +268,8 @@ static int lineCb (void* parm, int ofs, int len)
             ERROR_PLAIN_PRINT(Failed to read marker file);
         }
         ret = sscanf (bdata(strList->entry[0]), "%d", &id); CHECKERROR;
-        st->results[id].tag = bstrcpy(strList->entry[1]);
+        st->results[id].tag = bstrcpy(line);
+	 bdelete(st->results[id].tag, 0, blength(strList->entry[0])+1);
     }
     else
     {
