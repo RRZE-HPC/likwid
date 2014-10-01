@@ -972,7 +972,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
             for t=0,nr_threads-1 do
                 local tmpList = {}
                 table.insert(tmpList, "Core "..tostring(cpulist[t+1]))
-                for i, event in pairs(gdata["Events"]) do
+                --[[for i, event in pairs(gdata["Events"]) do
                     local index = 0
                     for k,v in pairs(ctr_and_events["Counters"]) do
                         if v["Name"] == gdata["Events"][i]["Counter"] then
@@ -980,16 +980,17 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                             break
                         end
                     end
-                end
+                end]]
                 for e=1,nr_events do
                     local index = 0
-                    for k,v in pairs(ctr_and_events["Counters"]) do
+                    --[[for k,v in pairs(ctr_and_events["Counters"]) do
                         if v["Name"] == gdata["Events"][e-1]["Counter"] then
                             index = k
                             break
                         end
-                    end
-                    local tmp = results[r][g][index][t]["Value"]
+                    end]]
+                    print(r,g,e,t)
+                    local tmp = results[r][g][e][t]["Value"]
                     if tmp == nil then
                         tmp = 0
                     end
@@ -1190,7 +1191,7 @@ function getMarkerResults(filename, group_list, num_cpus)
     end
     local regions_per_group = tonumber(nr_regions)/tonumber(nr_groups)
     table.remove(lines,1)
-    
+
     -- Read Region IDs and names from following lines
     for r=1, regions_per_group do
         results[r] = {}
@@ -1202,11 +1203,12 @@ function getMarkerResults(filename, group_list, num_cpus)
                 group_data[g][r] = {}
             end
             results[r][g] = {}
-            tmpList = stringsplit(lines[1],":")
-            tmpList = stringsplit(tmpList[2], "-")
+            tmpList = stringsplit(lines[1],"-")
             group_data[g][r]["ID"] = tonumber(tmpList[#tmpList]) + 1
             table.remove(tmpList, #tmpList)
-            group_data[g][r]["Name"] = table.concat(tmpList,"-")
+            tmpList = stringsplit(table.concat(tmpList,"-"), ":")
+            table.remove(tmpList, 1)
+            group_data[g][r]["Name"] = table.concat(tmpList,":")
             group_data[g][r]["Time"] = {}
             group_data[g][r]["Count"] = {}
             table.remove(lines,1)
@@ -1228,28 +1230,17 @@ function getMarkerResults(filename, group_list, num_cpus)
         group_data[g][r]["Time"][t+1] = time
         table.remove(tmpList, 1)
 
-        for c=1,#ctr_and_events["Counters"] do
-            if results[r][g][c] == nil then
-                results[r][g][c] = {}
-            end
-            if results[r][g][c+1][t] == nil then
-                results[r][g][c+1][t] = {}
-            end
-            local tmp = tonumber(tmpList[c+1])
-            results[r][g][c+1][t]["Value"] = tmp
-            results[r][g][c+1][t]["Counter"] = event["Counter"]
+        if results[r][g][c+1] == nil then
+            results[r][g][c+1] = {}
         end
-    end
+        if results[r][g][c+1][t] == nil then
+            results[r][g][c+1][t] = {}
+        end
+        local tmp = tonumber(tmpList[c+1])
+        results[r][g][c+1][t]["Value"] = tmp
+        results[r][g][c+1][t]["Counter"] = group_list[g]["Events"][c]["Counter"]
 
-    --[[for r,_ in pairs(results) do
-        for g,_ in pairs(results[r]) do
-            for c,_ in pairs(results[r][g]) do
-                for t,_ in pairs(results[r][g][c]) do
-                    print(r,g,c,t,results[r][g][c][t]["Counter"],results[r][g][c][t]["Value"])
-                end
-            end
-        end
-    end]]
+    end
 
     return group_data, results
 end

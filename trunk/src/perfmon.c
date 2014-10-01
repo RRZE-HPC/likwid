@@ -892,7 +892,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
 
     if (nrThreads <= 0)
     {
-        ERROR_PRINT("Number of threads must be greater than 0, given %d",nrThreads);
+        ERROR_PRINT(Number of threads must be greater than 0 but only %d given,nrThreads);
         return -EINVAL;
     }
     
@@ -908,13 +908,13 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     groupSet = (PerfmonGroupSet*) malloc(sizeof(PerfmonGroupSet));
     if (groupSet == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate group descriptor");
+        ERROR_PLAIN_PRINT(Cannot allocate group descriptor);
         return -ENOMEM;
     }
     groupSet->threads = (PerfmonThread*) malloc(nrThreads * sizeof(PerfmonThread));
     if (groupSet->threads == NULL)
     {
-        ERROR_PLAIN_PRINT("Cannot allocate set of threads");
+        ERROR_PLAIN_PRINT(Cannot allocate set of threads);
         free(groupSet);
         return -ENOMEM;
     }
@@ -933,7 +933,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
 
     if (ret)
     {
-        ERROR_PLAIN_PRINT("Initialization of MSR device accesses failed");
+        ERROR_PLAIN_PRINT(Initialization of MSR device accesses failed);
         free(groupSet->threads);
         free(groupSet);
         return ret;
