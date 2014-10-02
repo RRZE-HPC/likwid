@@ -167,8 +167,12 @@ affinity_init()
 
     /* determine total number of domains */
     numberOfDomains += numberOfSocketDomains + numberOfCacheDomains + numberOfNumaDomains;
-
     domains = (AffinityDomain*) malloc(numberOfDomains * sizeof(AffinityDomain));
+    if (!domains)
+    {
+        fprintf(stderr, "Cannot allocate affinity domain memory\n");
+        return;
+    }
 
     /* Node domain */
     domains[0].numberOfProcessors = cpuid_topology.numHWThreads;
@@ -238,7 +242,7 @@ affinity_init()
 
       for ( int j=0; j < (numberOfNumaDomains/numberOfSocketDomains); j++ )
       {
-        domains[currentDomain + subCounter].numberOfProcessors = numberOfProcessorsPerCache;
+        domains[currentDomain + subCounter].numberOfProcessors = numa_info.nodes[subCounter].numberOfProcessors;
         domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
         domains[currentDomain + subCounter].processorList = (int*) malloc(numa_info.nodes[subCounter].numberOfProcessors*sizeof(int));
         domains[currentDomain + subCounter].tag = bformat("M%d", subCounter);
@@ -248,11 +252,10 @@ affinity_init()
             domains[currentDomain + subCounter].processorList,
             i, offset, domains[currentDomain + subCounter].numberOfProcessors);
 
-        offset += numberOfCoresPerCache;
+        offset += numa_info.nodes[subCounter].numberOfProcessors;
         subCounter++;
       }
     }
-
     /* This is redundant ;-). Create thread to node lookup */
     for ( uint32_t i = 0; i < numa_info.numberOfNodes; i++ )
     {
@@ -355,14 +358,15 @@ affinity_printDomains()
 {
     for ( int i=0; i < affinity_numberOfDomains; i++ )
     {
-        printf("Domain %d:\n",i);
-        printf("\tTag %s:",bdata(domains[i].tag));
+        fprintf(stdout, "Domain %d:\n",i);
+        fprintf(stdout,"\tTag %s:",bdata(domains[i].tag));
 
         for ( uint32_t j=0; j < domains[i].numberOfProcessors; j++ )
         {
-            printf(" %d",domains[i].processorList[j]);
+            fprintf(stdout," %d",domains[i].processorList[j]);
         }
-        printf("\n");
+        fprintf(stdout,"\n");
+        fflush(stdout);
     }
 }
 
