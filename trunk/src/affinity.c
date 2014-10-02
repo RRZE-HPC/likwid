@@ -266,7 +266,7 @@ affinity_init()
 
       for ( int j=0; j < (numberOfNumaDomains/numberOfSocketDomains); j++ )
       {
-        domains[currentDomain + subCounter].numberOfProcessors = numberOfProcessorsPerCache;
+        domains[currentDomain + subCounter].numberOfProcessors = numa_info.nodes[subCounter].numberOfProcessors;
         domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
         domains[currentDomain + subCounter].tag = bformat("M%d", subCounter);
         domains[currentDomain + subCounter].processorList = (int*) malloc(numa_info.nodes[subCounter].numberOfProcessors*sizeof(int));
@@ -283,7 +283,7 @@ affinity_init()
             domains[currentDomain + subCounter].processorList,
             i, offset, domains[currentDomain + subCounter].numberOfProcessors);
 
-        offset += numberOfCoresPerCache;
+        offset += numa_info.nodes[subCounter].numberOfProcessors;
         subCounter++;
       }
     }
