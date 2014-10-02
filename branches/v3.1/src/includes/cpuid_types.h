@@ -79,6 +79,7 @@ typedef struct {
     uint32_t perf_num_ctr;
     uint32_t perf_width_ctr;
     uint32_t perf_num_fixed_ctr;
+    int supportUncore;
 } CpuInfo;
 
 typedef struct {

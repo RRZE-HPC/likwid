@@ -61,25 +61,18 @@ void perfmon_init_haswell(PerfmonThread *thread)
     msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL);
     msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL);
 
-    /* initialize fixed counters
-     * FIXED 0: Instructions retired
-     * FIXED 1: Clocks unhalted core
-     * FIXED 2: Clocks unhalted ref */
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL);
-
-    /* Preinit of PERFEVSEL registers */
-    flags |= (1<<22);  /* enable flag */
-    flags |= (1<<16);  /* user mode flag */
-
-    msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL1, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL2, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL3, flags);
-
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
-            lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id))
+    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
+    msr_write(cpu_id, MSR_UNC_CBO_0_PERFEVTSEL0, 0xAAAAAAAA);
+    flags = msr_read(cpu_id, MSR_UNC_CBO_0_PERFEVTSEL0);
+    if (flags != 0xAAAAAAAA)
     {
-        
+        fprintf(stdout, "The current system does not support Uncore MSRs, deactivating Uncore support\n");
+        cpuid_info.supportUncore = 0;
+    }
+
+    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) && (cpuid_info.supportUncore))
+    {
+        flags = 0x0ULL;
         flags = (1ULL<<22)|(1ULL<<20);
         msr_write(cpu_id, MSR_UNC_CBO_0_PERFEVTSEL0, flags);
         msr_write(cpu_id, MSR_UNC_CBO_0_PERFEVTSEL1, flags);
@@ -131,10 +124,11 @@ void perfmon_setupCounterThread_haswell(
         PerfmonCounterIndex index)
 {
     int haveLock = 0;
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     uint32_t uflags;
     uint64_t reg = haswell_counter_map[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
+    uint64_t fixed_flags = msr_read(cpu_id, MSR_PERF_FIXED_CTR_CTRL);
     perfmon_threadData[thread_id].counters[index].init = TRUE;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
@@ -146,8 +140,7 @@ void perfmon_setupCounterThread_haswell(
     {
         case PMC:
 
-            flags = msr_read(cpu_id,reg);
-            flags &= ~(0xFFFFU);   /* clear lower 16bits */
+            flags = (1<<22)|(1<<16);
 
             /* Intel with standard 8 bit event mask: [7:0] */
             flags |= (event->umask<<8) + event->eventId;
@@ -165,11 +158,11 @@ void perfmon_setupCounterThread_haswell(
                         LLU_CAST reg,
                         LLU_CAST flags);
             }
-
             msr_write(cpu_id, reg , flags);
             break;
 
         case FIXED:
+            fixed_flags |= (0x2 << (index*4));
             break;
 
         case POWER:
@@ -180,12 +173,19 @@ void perfmon_setupCounterThread_haswell(
         case CBOX2:
         case CBOX3:
         case UBOX:
-            HAS_SETUP_BOX;
+	    if (cpuid_info.supportUncore)
+            {
+            	HAS_SETUP_BOX;
+            }
             break;
 
         default:
             /* should never be reached */
             break;
+    }
+    if (fixed_flags != 0x0ULL)
+    {
+        msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags);
     }
 }
 
@@ -243,7 +243,7 @@ void perfmon_startCountersThread_haswell(int thread_id)
         }
     }
 
-    if (haveLock && start_uncore)
+    if (haveLock && start_uncore && cpuid_info.supportUncore)
     {
         msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<29));
     }
@@ -262,6 +262,7 @@ void perfmon_startCountersThread_haswell(int thread_id)
 void perfmon_stopCountersThread_haswell(int thread_id)
 {
     uint64_t flags;
+    uint64_t tmp;
     uint32_t uflags = 0x10100UL; /* Set freeze bit */
     uint64_t counter_result = 0x0ULL;
     int haveLock = 0;
@@ -273,7 +274,10 @@ void perfmon_stopCountersThread_haswell(int thread_id)
     }
 
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-    msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
+    if (haveLock && cpuid_info.supportUncore)
+    {
+    	msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
+    }
 
     for ( int i=0; i < perfmon_numCountersHaswell; i++ ) 
     {
@@ -308,7 +312,7 @@ void perfmon_stopCountersThread_haswell(int thread_id)
                 case CBOX2:
                 case CBOX3:
                 case UBOX:
-                    if(haveLock)
+                    if(haveLock && cpuid_info.supportUncore)
                     {
                         perfmon_threadData[thread_id].counters[i].counterData =
                             msr_read(cpu_id, haswell_counter_map[i].counterRegister);

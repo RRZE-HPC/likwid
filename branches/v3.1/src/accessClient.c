@@ -5,7 +5,7 @@
  *
  *      Description:  Implementation of client to the access daemon.
  *                   Provides API to read and write values to MSR or
- *                   PCI Cfg Adresses. This module is used by the 
+ *                   PCI Cfg Adresses. This module is used by the
  *                   msr and pci modules.
  *
  *      Version:   <VERSION>
@@ -217,7 +217,7 @@ uint64_t accessClient_read(
         fprintf(stderr, "Failed to read data through daemon: "
                 "daemon returned error %d '%s' for cpu %d reg 0x%x\n",
                 data.errorcode, accessClient_strerror(data.errorcode), cpu, reg);
-        exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
     }
 
     return data.data;
@@ -245,7 +245,7 @@ void accessClient_write(
         fprintf(stderr, "Failed to write data through daemon: "
                 "daemon returned error %d '%s' for cpu %d reg 0x%x\n",
                 data.errorcode, accessClient_strerror(data.errorcode), cpu, reg);
-        exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
     }
 
     if (data.data != 0x00ULL)
