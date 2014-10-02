@@ -83,6 +83,7 @@
 #define IVYBRIDGE            0x3AU
 #define IVYBRIDGE_EP         0x3EU
 #define HASWELL              0x3CU
+#define HASWELL_EX           0x3FU
 #define ATOM_SILVERMONT      0x4DU
 #define WESTMERE_EX          0x2FU
 #define HASWELL_EX           0x3FU

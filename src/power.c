@@ -62,6 +62,7 @@ power_init(int cpuId)
     if ((cpuid_info.model == SANDYBRIDGE_EP) ||
             (cpuid_info.model == SANDYBRIDGE) ||
             (cpuid_info.model == HASWELL) ||
+            (cpuid_info.model == HASWELL_EX) ||
             (cpuid_info.model == IVYBRIDGE_EP) ||
             (cpuid_info.model == IVYBRIDGE))
     {
@@ -130,9 +131,11 @@ power_init(int cpuId)
             power_info.maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
         }
         else
+        {
             power_info.minPower = 0.0;
             power_info.maxPower = 0.0;
             power_info.maxTimeWindow = 0.0;
+        }
     }
     else
     {
