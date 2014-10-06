@@ -27,6 +27,7 @@
 #include <perfmon_sandybridge.h>
 #include <perfmon_ivybridge.h>
 #include <perfmon_haswell.h>
+#include <perfmon_haswellEP.h>
 #include <perfmon_phi.h>
 #include <perfmon_k8.h>
 #include <perfmon_k10.h>
@@ -606,6 +607,14 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersHaswell;
                     box_map = haswell_box_map;
                     break;
+                case HASWELL_EP:
+                    eventHash = haswellEP_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsHaswellEP;
+                    counter_map = haswellEP_counter_map;
+                    perfmon_numCounters = perfmon_numCountersHaswellEP;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersHaswellEP;
+                    box_map = haswellEP_box_map;
+                    break;
 
                 case SANDYBRIDGE:
 
@@ -790,7 +799,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
                 case HASWELL:
 
-                case HASWELL_EX:
+                
 
                 case HASWELL_M1:
 
@@ -802,6 +811,17 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_haswell;
                     perfmon_readCountersThread = perfmon_readCountersThread_haswell;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_haswell;
+                    break;
+
+                case HASWELL_EP:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    pci_init(socket_fd);
+                    initThreadArch = perfmon_init_haswellEP;
+                    perfmon_startCountersThread = perfmon_startCountersThread_haswellEP;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_haswellEP;
+                    perfmon_readCountersThread = perfmon_readCountersThread_haswellEP;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_haswellEP;
                     break;
 
                 case SANDYBRIDGE:

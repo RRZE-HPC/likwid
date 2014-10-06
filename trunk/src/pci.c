@@ -117,6 +117,9 @@ pci_init(int initSocket_fd)
         case IVYBRIDGE_EP:
             testDevice = 0x0e36;
             break;
+        case HASWELL_EP:
+            testDevice = 0x2f30;
+            break;
         default:
             ERROR_PRINT(CPU model %s does not support PCI based Uncore performance monitoring, cpuid_info.name);
             return -ENODEV;

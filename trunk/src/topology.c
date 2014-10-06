@@ -66,6 +66,7 @@ static char* short_nehalemEX = "nehalemEX";
 static char* short_westmere = "westmere";
 static char* short_westmereEX = "westmereEX";
 static char* short_haswell = "haswell";
+static char* short_haswell_ep = "haswellEP";
 static char* short_ivybridge = "ivybridge";
 static char* short_sandybridge = "sandybridge";
 static char* short_phi = "phi";
