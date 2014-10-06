@@ -83,7 +83,7 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
                     (cpuid_info.model == IVYBRIDGE) ||
                     (cpuid_info.model == IVYBRIDGE_EP) ||
                     (cpuid_info.model == HASWELL) ||
-                    (cpuid_info.model == HASWELL_EX) ||
+                    (cpuid_info.model == HASWELL_EP) ||
                     (cpuid_info.model == HASWELL_M1) ||
                     (cpuid_info.model == HASWELL_M2) ||
                     (cpuid_info.model == WESTMERE_EX) ||

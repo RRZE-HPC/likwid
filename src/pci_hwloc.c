@@ -34,7 +34,9 @@ hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     {
         obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PCI_DEVICE, i);
         if (obj->attr->pcidev.vendor_id != testVendor)
+        {
             continue;
+        }
         if (obj->attr->pcidev.vendor_id == testVendor && obj->attr->pcidev.device_id == testDevice)
         {
             socket_bus[cntr] = (char*)malloc(4);

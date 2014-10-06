@@ -45,7 +45,7 @@ struct topology_functions {
 #define SANDYBRIDGE          0x2AU
 #define SANDYBRIDGE_EP       0x2DU
 #define HASWELL              0x3CU
-#define HASWELL_EX           0x3FU
+#define HASWELL_EP           0x3FU
 #define HASWELL_M1           0x45U
 #define HASWELL_M2           0x46U
 #define IVYBRIDGE            0x3AU
