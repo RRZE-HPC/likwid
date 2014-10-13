@@ -49,6 +49,10 @@
 #include <allocator.h>
 
 #include <likwid.h>
+#ifdef PAPI
+#include <papi.h>
+#include <omp.h>
+#endif
 
 extern void* runTest(void* arg);
 
@@ -140,17 +144,17 @@ int main(int argc, char** argv)
             case 'h':
                 HELP_MSG;
                 affinity_finalize();
-				if (groups)
-				{
-					free(groups);
-				}
+                if (groups)
+                {
+                    free(groups);
+                }
                 exit (EXIT_SUCCESS);
             case 'v':
                 VERSION_MSG;
                 affinity_finalize();
                 if (groups)
                 {
-                	free(groups);
+                    free(groups);
                 }
                 exit (EXIT_SUCCESS);
             case 'a':
@@ -159,7 +163,7 @@ int main(int argc, char** argv)
                 affinity_finalize();
                 if (groups)
                 {
-                	free(groups);
+                    free(groups);
                 }
                 exit (EXIT_SUCCESS);
             case 'w':
@@ -168,12 +172,12 @@ int main(int argc, char** argv)
                 if (tmp == -1)
                 {
                     fprintf (stderr, "More workgroups configured than allocated!\n"
-                    	"Did you forget to set the number of workgroups with -g?\n");
+                        "Did you forget to set the number of workgroups with -g?\n");
                     affinity_finalize();
                     if (groups)
-		            {
-		            	free(groups);
-		            }
+                    {
+                        free(groups);
+                    }
                     return EXIT_FAILURE;
                 }
                 if (!test)
@@ -181,9 +185,9 @@ int main(int argc, char** argv)
                     fprintf (stderr, "You need to specify a test case first!\n");
                     affinity_finalize();
                     if (groups)
-		            {
-		            	free(groups);
-		            }
+                    {
+                        free(groups);
+                    }
                     return EXIT_FAILURE;
                 }
                 testcase = bfromcstr(optarg);
@@ -198,9 +202,9 @@ int main(int argc, char** argv)
                         fprintf (stderr, "Stream %d: offset is not a multiple of stride!\n",i);
                         affinity_finalize();
                         if (groups)
-				        {
-				        	free(groups);
-				        }
+                        {
+                            free(groups);
+                        }
                         return EXIT_FAILURE;
                     }
 
@@ -215,6 +219,11 @@ int main(int argc, char** argv)
                 break;
             case 'i':
                 iter =  atoi(optarg);
+                if (iter <= 0)
+                {
+                    fprintf(stderr, "Iterations must be greater than 0.\n");
+                    exit(EXIT_FAILURE);
+                }
                 break;
             case 'l':
                 testcase = bfromcstr(optarg);
@@ -235,9 +244,9 @@ int main(int argc, char** argv)
                     fflush(stdout);
                     affinity_finalize();
                     if (groups)
-		            {
-		            	free(groups);
-		            }
+                    {
+                        free(groups);
+                    }
                     return EXIT_FAILURE;
                 }
                 else
@@ -261,9 +270,9 @@ int main(int argc, char** argv)
                 bdestroy(testcase);
                 affinity_finalize();
                 if (groups)
-		        {
-		        	free(groups);
-		        }
+                {
+                    free(groups);
+                }
                 exit (EXIT_SUCCESS);
 
                 break;
@@ -272,6 +281,11 @@ int main(int argc, char** argv)
                 break;
             case 'g':
                 numberOfWorkgroups =  atoi(optarg);
+                if (numberOfWorkgroups <= 0)
+                {
+                    fprintf(stderr, "Number of Workgroups must be 1 or greater.\n");
+                    exit(EXIT_FAILURE);
+                }
                 allocator_init(numberOfWorkgroups * MAX_STREAMS);
                 tmp = numberOfWorkgroups;
                 groups = (Workgroup*) malloc(numberOfWorkgroups*sizeof(Workgroup));
@@ -292,9 +306,9 @@ int main(int argc, char** argv)
                     fprintf (stderr, "Unknown test case %s\n",optarg);
                     affinity_finalize();
                     if (groups)
-		            {
-		            	free(groups);
-		            }
+                    {
+                        free(groups);
+                    }
                     return EXIT_FAILURE;
                 }
                 bdestroy(testcase);
@@ -311,57 +325,68 @@ int main(int argc, char** argv)
                             optopt);
                 affinity_finalize();
                 if (groups)
-		        {
-		        	free(groups);
-		        }
+                {
+                    free(groups);
+                }
                 return EXIT_FAILURE;
             default:
                 HELP_MSG;
         }
     }
 
-	if (tmp > 0)
-	{
-		fprintf(stderr, "%d workgroups requested but only %d given on commandline\n",numberOfWorkgroups,numberOfWorkgroups-tmp);
-		affinity_finalize();
-		allocator_finalize();
-		if (groups)
+    if (numberOfWorkgroups == 0 && !optPrintDomains)
+    {
+        fprintf(stderr, "Number of Workgroups must be 1 or greater.\n");
+        affinity_finalize();
+        allocator_finalize();
+        if (groups)
         {
-        	free(groups);
+            free(groups);
         }
-		exit(EXIT_FAILURE);
-	}
-	if (iter <= 0)
-	{
-		fprintf(stderr,"Iterations must be greater than 0\n");
-		affinity_finalize();
-		allocator_finalize();
-		if (groups)
+        exit(EXIT_FAILURE);
+    }
+    if (tmp > 0 && iter > 0)
+    {
+        fprintf(stderr, "%d workgroups requested but only %d given on commandline\n",numberOfWorkgroups,numberOfWorkgroups-tmp);
+        affinity_finalize();
+        allocator_finalize();
+        if (groups)
         {
-        	free(groups);
+            free(groups);
         }
-		exit(EXIT_FAILURE);
-	}
-	if (test && !(currentWorkgroup || groups))
-	{
-		fprintf(stderr, "Workgroups must be set on commandline\n");
-		affinity_finalize();
-		allocator_finalize();
-		if (groups)
+        exit(EXIT_FAILURE);
+    }
+    if (iter <= 0)
+    {
+        fprintf(stderr,"Iterations must be greater than 0\n");
+        affinity_finalize();
+        allocator_finalize();
+        if (groups)
         {
-        	free(groups);
+            free(groups);
         }
-		exit(EXIT_FAILURE);
-	}
+        exit(EXIT_FAILURE);
+    }
+    if (test && !(currentWorkgroup || groups))
+    {
+        fprintf(stderr, "Workgroups must be set on commandline\n");
+        affinity_finalize();
+        allocator_finalize();
+        if (groups)
+        {
+            free(groups);
+        }
+        exit(EXIT_FAILURE);
+    }
 
     if (optPrintDomains)
     {
         affinity_printDomains();
         affinity_finalize();
-		allocator_finalize();
-		if (groups)
+        allocator_finalize();
+        if (groups)
         {
-        	free(groups);
+            free(groups);
         }
         exit (EXIT_SUCCESS);
     }
@@ -385,6 +410,11 @@ int main(int argc, char** argv)
     fprintf(stdout, "Using likwid\n");
     fflush(stdout);
     likwid_markerInit();
+#endif
+#ifdef PAPI
+    printf("Using PAPI\n");
+    PAPI_library_init (PAPI_VER_CURRENT);
+    PAPI_thread_init((unsigned long (*)(void))(omp_get_thread_num));
 #endif
 
 
@@ -425,51 +455,51 @@ int main(int argc, char** argv)
     threads_create(runTest);
     threads_join();
     allocator_finalize();
-	
-	uint32_t realSize = 0;
-	uint64_t realCycles = 0;
-	int current_id = 0;
     
-	fprintf(stdout, HLINE);
+    uint32_t realSize = 0;
+    uint64_t realCycles = 0;
+    int current_id = 0;
+    
+    fprintf(stdout, HLINE);
     for(j=0;j<numberOfWorkgroups;j++)
     {
-    	current_id = j*groups[j].numberOfThreads;
-    	realCycles += threads_data[current_id].cycles;
-    	realSize += groups[j].numberOfThreads * threads_data[current_id].data.size;
-	}
-	time = (double) realCycles / (double) timer_getCpuClock();
-	fprintf(stdout, "Cycles: %llu \n", LLU_CAST realCycles);
-	fprintf(stdout, "Iterations: %llu \n", LLU_CAST iter);
-	fprintf(stdout, "Size %d \n",  realSize );
-	fprintf(stdout, "Vectorlength: %llu \n", LLU_CAST threads_data[current_id].data.size);
-	fprintf(stdout, "Time: %e sec\n", time);
-	fprintf(stdout, "Number of Flops: %llu \n", LLU_CAST (iter * realSize *  test->flops));
-	fprintf(stdout, "MFlops/s: %.2f\n",
-	        1.0E-06 * ((double) iter * realSize *  test->flops/  time));
-	fprintf(stdout, "MByte/s: %.2f\n",
-	        1.0E-06 * ( (double) iter * realSize *  test->bytes/ time));
-	fprintf(stdout, "Cycles per update: %f\n",
-	        ((double) realCycles / (double) (iter * numberOfWorkgroups * threads_data[current_id].numberOfThreads *  threads_data[current_id].data.size)));
+        current_id = j*groups[j].numberOfThreads;
+        realCycles += threads_data[current_id].cycles;
+        realSize += groups[j].numberOfThreads * threads_data[current_id].data.size;
+    }
+    time = (double) realCycles / (double) timer_getCpuClock();
+    fprintf(stdout, "Cycles: %llu \n", LLU_CAST realCycles);
+    fprintf(stdout, "Iterations: %llu \n", LLU_CAST iter);
+    fprintf(stdout, "Size %d \n",  realSize );
+    fprintf(stdout, "Vectorlength: %llu \n", LLU_CAST threads_data[current_id].data.size);
+    fprintf(stdout, "Time: %e sec\n", time);
+    fprintf(stdout, "Number of Flops: %llu \n", LLU_CAST (iter * realSize *  test->flops));
+    fprintf(stdout, "MFlops/s: %.2f\n",
+            1.0E-06 * ((double) iter * realSize *  test->flops/  time));
+    fprintf(stdout, "MByte/s: %.2f\n",
+            1.0E-06 * ( (double) iter * realSize *  test->bytes/ time));
+    fprintf(stdout, "Cycles per update: %f\n",
+            ((double) realCycles / (double) (iter * numberOfWorkgroups * threads_data[current_id].numberOfThreads *  threads_data[current_id].data.size)));
 
-	switch ( test->type )
-	{
-	    case SINGLE:
-	        fprintf(stdout, "Cycles per cacheline: %f\n",
-	                (16.0 * (double) realCycles / (double) (iter * realSize)));
-	        break;
-	    case DOUBLE:
-	        fprintf(stdout, "Cycles per cacheline: %f\n",
-	                (8.0 * (double) realCycles / (double) (iter * realSize)));
-	        break;
-	}
+    switch ( test->type )
+    {
+        case SINGLE:
+            fprintf(stdout, "Cycles per cacheline: %f\n",
+                    (16.0 * (double) realCycles / (double) (iter * realSize)));
+            break;
+        case DOUBLE:
+            fprintf(stdout, "Cycles per cacheline: %f\n",
+                    (8.0 * (double) realCycles / (double) (iter * realSize)));
+            break;
+    }
 
-	
+    
     fprintf(stdout, HLINE);
     fflush(stdout);
     threads_destroy(numberOfWorkgroups);
     barrier_destroy();
     
-	affinity_finalize();
+    affinity_finalize();
 #ifdef PERFMON
     likwid_markerClose();
 #endif

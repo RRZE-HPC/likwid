@@ -51,21 +51,21 @@
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define HELP_MSG \
-    fprintf(stdout, "\nlikwid-topology --  Version %d.%d \n\n",VERSION,RELEASE); \
-    fprintf(stdout, "A tool to print the thread and cache topology on x86 CPUs.\n"); \
-    fprintf(stdout, "Options:\n"); \
-    fprintf(stdout, "-h\t Help message\n"); \
-    fprintf(stdout, "-v\t Version information\n"); \
-    fprintf(stdout, "-c\t list cache information\n"); \
-    fprintf(stdout, "-C\t measure processor clock\n"); \
-    fprintf(stdout, "-o\t Store output to file, with output conversation according to file suffix\n"); \
-    fprintf(stdout, "\t Conversation scripts can be supplied in %s\n",TOSTRING(LIKWIDFILTERPATH)); \
-    fprintf(stdout, "-g\t graphical output\n\n"); \
-    fflush(stdout);
+    fprintf(OUTSTREAM, "\nlikwid-topology --  Version %d.%d \n\n",VERSION,RELEASE); \
+    fprintf(OUTSTREAM, "A tool to print the thread and cache topology on x86 CPUs.\n"); \
+    fprintf(OUTSTREAM, "Options:\n"); \
+    fprintf(OUTSTREAM, "-h\t Help message\n"); \
+    fprintf(OUTSTREAM, "-v\t Version information\n"); \
+    fprintf(OUTSTREAM, "-c\t list cache information\n"); \
+    fprintf(OUTSTREAM, "-C\t measure processor clock\n"); \
+    fprintf(OUTSTREAM, "-o\t Store output to file, with output conversation according to file suffix\n"); \
+    fprintf(OUTSTREAM, "\t Conversation scripts can be supplied in %s\n",TOSTRING(LIKWIDFILTERPATH)); \
+    fprintf(OUTSTREAM, "-g\t graphical output\n\n"); \
+    fflush(OUTSTREAM);
 
 #define VERSION_MSG \
-    fprintf(stdout, "likwid-topology  %d.%d \n\n",VERSION,RELEASE); \
-    fflush(stdout);
+    fprintf(OUTSTREAM, "likwid-topology  %d.%d \n\n",VERSION,RELEASE); \
+    fflush(OUTSTREAM);
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -469,7 +469,7 @@ int main (int argc, char** argv)
                 }
             }
 
-            asciiBoxes_print(container);
+            asciiBoxes_print(OUTSTREAM, container);
             socketNode = tree_getNextNode(socketNode);
         }
         bdestroy(boxLabel);

@@ -159,7 +159,6 @@ int main (int argc, char** argv)
             case 'c':
                 CHECK_OPTION_STRING;
                 numThreads = bstr_to_cpuset(threads, argString);
-
                 if(!numThreads)
                 {
                     ERROR_PLAIN_PRINT(Failed to parse cpu list.);
@@ -222,6 +221,12 @@ int main (int argc, char** argv)
             case 'S':
                 CHECK_OPTION_STRING;
                 optStethoscope = str2int((char*) argString->data);
+                if (optStethoscope <= 0)
+                {
+                    fprintf(stderr, "The measurement time must be larger than 0\n\n");
+                    HELP_MSG;
+                    exit(EXIT_FAILURE);
+                }
                 break;
             case 't':
                 CHECK_OPTION_STRING;
@@ -264,6 +269,7 @@ int main (int argc, char** argv)
     if (!numThreads)
     {
         fprintf (stderr, "ERROR: Required -c. You must specify at least one processor.\n");
+        HELP_MSG;
         exit(EXIT_FAILURE);
     }
 
@@ -380,6 +386,19 @@ int main (int argc, char** argv)
         fprintf(OUTSTREAM,"NOTICE: You have to specify a program to measure as argument!\n");
         exit (EXIT_SUCCESS);
     }
+    argv +=  optind;
+    bstring exeString = bfromcstr(argv[0]);
+    for (i=1; i<(argc-optind); i++)
+        {
+            bconchar(exeString, ' ');
+            bcatcstr(exeString, argv[i]);
+        }
+    if (blength(exeString) == 0 && !optStethoscope)
+    {
+        fprintf(OUTSTREAM, "Executable must be given on commandline\n");
+        fflush(OUTSTREAM);
+        exit(EXIT_FAILURE);
+    }
     if (biseqcstr(eventString,"_NOGROUP"))
     {
         fprintf(OUTSTREAM,"NOTICE: You have to specify a group or event set to measure using the -g option.\n");
@@ -394,11 +413,18 @@ int main (int argc, char** argv)
     fprintf(OUTSTREAM,"CPU clock:\t%3.2f GHz \n",  (float) timer_getCpuClock() * 1.E-09);
     fflush(OUTSTREAM);
 
-    perfmon_setupEventSet(eventString, &counterMask);
     fprintf(OUTSTREAM,HLINE);
     fflush(OUTSTREAM);
 
-    if (optTimeline)
+    if (optStethoscope)
+    {
+        perfmon_setupEventSet(eventString, &counterMask);
+        perfmon_startCounters();
+        sleep(optStethoscope);
+        perfmon_stopCounters();
+        perfmon_printCounterResults();
+    }
+    else if (optTimeline)
     {
         fprintf(OUTSTREAM,"CORES: %d", threads[0]);
         for (int i=1; i<numThreads; i++)
@@ -408,27 +434,16 @@ int main (int argc, char** argv)
         fprintf(OUTSTREAM," \n");
         fflush(OUTSTREAM);
 
-        daemon_init(eventString);
-        daemon_start(interval);
-    }
-
-    argv +=  optind;
-    bstring exeString = bfromcstr(argv[0]);
-
-    if (optStethoscope)
-    {
-        perfmon_startCounters();
-        sleep(optStethoscope);
-        perfmon_stopCounters();
-        perfmon_printCounterResults();
+        daemon_start(eventString, interval);
+        if (system(bdata(exeString)) == EOF)
+        {
+            fprintf(stderr, "Failed to execute %s!\n", bdata(exeString));
+            exit(EXIT_FAILURE);
+        }
+        daemon_stop(SIGINT);
     }
     else
     {
-        for (i=1; i<(argc-optind); i++)
-        {
-            bconchar(exeString, ' ');
-            bcatcstr(exeString, argv[i]);
-        }
         if (perfmon_verbose)
         {
             fprintf(OUTSTREAM,"Executing: %s \n",bdata(exeString));
@@ -439,8 +454,9 @@ int main (int argc, char** argv)
         {
             //        multiplex_start();
         }
-        else if (!optUseMarker)
+        else if (!optUseMarker && !optTimeline)
         {
+            perfmon_setupEventSet(eventString, &counterMask);
             perfmon_startCounters();
         }
         else
@@ -474,15 +490,15 @@ int main (int argc, char** argv)
         }
         else
         {
-            if (!optUseMarker)
+            if (optUseMarker)
             {
                 perfmon_stopCounters();
-                perfmon_printCounterResults();
+                perfmon_printMarkerResults(filepath);
             }
             else
             {
                 perfmon_stopCounters();
-                perfmon_printMarkerResults(filepath);
+                perfmon_printCounterResults();
             }
         }
     }

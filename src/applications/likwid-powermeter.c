@@ -157,7 +157,6 @@ int main (int argc, char** argv)
         fprintf(stderr,"Access to performance counters is locked.\n");
         exit(EXIT_FAILURE);
     }
-    
     if (optClock && optind == argc)
     {
     	fprintf(stderr,"Commandline option -p requires an executable.\n");
@@ -165,8 +164,13 @@ int main (int argc, char** argv)
     }
     if (optSockets && !optStethoscope && optind == argc)
     {
-    	fprintf(stderr,"Commandline option -c requires an executable if not used in combination with -s.\n");
-    	exit(EXIT_FAILURE);
+        fprintf(stderr,"Commandline option -c requires an executable if not used in combination with -s.\n");
+        exit(EXIT_FAILURE);
+    }
+    if (optStethoscope == 0 && optind == argc && !optInfo)
+    {
+        fprintf(stderr,"Either -s <seconds> or executable must be given on commandline.\n");
+        exit(EXIT_FAILURE);
     }
 
     if (cpuid_init() == EXIT_FAILURE)
@@ -177,7 +181,7 @@ int main (int argc, char** argv)
     
     if (numSockets > cpuid_topology.numSockets)
     {
-    	fprintf(stderr, "System has only %d sockets but %d are given on commandline\n",
+    	fprintf(stderr, "System has only %d sockets but %d are given on commandline.\n",
     			cpuid_topology.numSockets, numSockets);
     	exit(EXIT_FAILURE);
     }

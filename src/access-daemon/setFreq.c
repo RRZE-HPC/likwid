@@ -1,23 +1,53 @@
 #include <stdlib.h>
 #include <stdio.h>
-
 #include <string.h>
+
+static int get_numCPUs()
+{
+    int cpucount = 0;
+    char line[1024];
+    FILE* fp = fopen("/proc/cpuinfo","r");
+    if (fp != NULL)
+    {
+        while( fgets(line,1024,fp) )
+        {
+            if (strncmp(line, "processor", 9) == 0)
+            {
+                cpucount++;
+            }
+        }
+    }
+    return cpucount;
+}
 
 int main (int argn, char** argv)
 {
     int cpuid;
     int freq;
+    int numCPUs = 0;
     char* gov;
     char* gpath = malloc(100);
     char* fpath = malloc(100);
 
-    if (argn < 3)
+    if (argn < 3 || argn > 4)
     {
         fprintf(stderr, "Usage: %s <processorID> <frequency> [<governor>] \n",argv[0]);
+        exit(EXIT_FAILURE);
     }
 
     cpuid = atoi(argv[1]);
+    numCPUs = get_numCPUs();
+    if (cpuid < 0 || cpuid > numCPUs)
+    {
+        fprintf(stderr, "CPU %d not a valid CPU ID. Range from 0 to %d.\n",cpuid,numCPUs);
+        exit(EXIT_FAILURE);
+    }
     freq  = atoi(argv[2]);
+    if (freq <= 0)
+    {
+        fprintf(stderr, "Frequency must be greater than 0.\n");
+        exit(EXIT_FAILURE);
+    }
 
     if (argn == 4)
     {

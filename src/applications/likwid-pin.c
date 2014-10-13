@@ -224,8 +224,8 @@ int main (int argc, char** argv)
     }
     if (optind == argc && !optPrintDomains)
     {
-    	fprintf(stderr,"Executable must be given on commandline\n");
-    	exit(EXIT_FAILURE);
+        fprintf(stderr,"Executable must be given on commandline\n");
+        exit(EXIT_FAILURE);
     }
 
     if (optPrintDomains && numThreads)
