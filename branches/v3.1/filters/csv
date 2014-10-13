@@ -67,8 +67,9 @@ if ($fileType eq 'topology') {
         } elsif ($region eq 'numa') {
             if (/Domain ([0-9]*)/) {
                 print OUTFILE 'Domain ID'.$SEP.$1.$NL;
-            } elsif (/Memory:.*total ([0-9.]+) MB/) {
-                print OUTFILE 'Memory [MB]'.$SEP.$1.$NL;
+            } elsif (/Memory: ([0-9.]+) MB free of total ([0-9.]+) MB/) {
+                print OUTFILE 'Free Memory [MB]'.$SEP.$1.$NL;
+                print OUTFILE 'Total Memory [MB]'.$SEP.$2.$NL;
             } elsif (/(.*):\t*[ ]*(.*)/) {
                 print OUTFILE $1.$SEP.$2.$NL;
             }
