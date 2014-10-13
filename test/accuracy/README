@@ -1,0 +1,18 @@
+LIKWID accuracy tester
+
+likwid-tester and likwid-tester-plot are test applications written in Perl. The likwid-accuracy.py application does the same but is written in Python.
+
+Usage:
+make #build non-instrumentated and LIKWID-instrumentated versions of
+likwid-bench.
+Adjust test files in TESTS.
+Adjust test set file SET.txt or use the -s/--sets switch on commandline.
+likwid-accuracy.py #Runs the tests of all sets and saves results in folder RESULTS/<hostname>
+
+Options for likwid-accuracy.py:
+--pgf: Create a TeX file containing the definition of a PGF plot with suffix .tex -> .pdf
+--grace: Create grace batch file for further manipulation with XMgrace or create plot with gracebat .agr/.bat -> .png
+--gnuplot: Create GNUplot script .plot -> .jpg
+--script: Create a Bash script containing all commands to create all plots using pdflatex, gracebat and gnuplot.
+--scriptname: Set name for Bash script, default is $CWD/create_plots.sh
+--wiki/--only_wiki: Create a Wiki page for the Google Code Wiki including the .png pics found in Google Code Wiki picture path (http://<project>.googlecode.com/svn/wiki/images). 

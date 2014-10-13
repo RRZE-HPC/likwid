@@ -127,10 +127,12 @@ foreach my $test ( keys %$TESTS ) {
                 foreach ( 0 ... $runs ) {
                     print DATAFILE1 "$globalrun ";
                     print DATAFILE2 "$globalrun ";
+                    #print "$BENCH_PLAIN -g 1 -t $benchmark -i $variant->{iter} -w $domain:$variant->{size}:1 > out-$hostname.txt";
                     system ("$BENCH_PLAIN -g 1 -t $benchmark -i $variant->{iter} -w $domain:$variant->{size}:1 > out-$hostname.txt");
                     my $result = extract_result('plain',$TESTS->{$test}->{REGEX_BENCH},$TESTS->{$test}->{REGEX_PERF});
                     print DATAFILE1 "$result\n";
-                    system ("$PERFCTR  -c". $domain .":0 -m -g $test $BENCH_MARKER -g 1 -t $benchmark -i $variant->{iter} -w $domain:$variant->{size}:1 > out-$hostname.txt");
+                    #print "$PERFCTR  -C E:". $domain .":0 -m -g $test $BENCH_MARKER -g 1 -t $benchmark -i $variant->{iter} -w $domain:$variant->{size}:1 > out-$hostname.txt";
+                    system ("$PERFCTR  -C E:". $domain .":1 -m -g $test $BENCH_MARKER -g 1 -t $benchmark -i $variant->{iter} -w $domain:$variant->{size}:1 > out-$hostname.txt");
                     $result = extract_result('marker',$TESTS->{$test}->{REGEX_BENCH},$TESTS->{$test}->{REGEX_PERF});
                     print DATAFILE2 "$result\n";
                     $globalrun++;
