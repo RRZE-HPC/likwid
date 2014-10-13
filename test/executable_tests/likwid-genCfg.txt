@@ -1,0 +1,5 @@
+| EXIT 1 | GREP Permission denied
+-h | EXIT 0 | GREP Help message
+-v | EXIT 0 | GREP likwid-genCfg
+-o | EXIT 1 | GREP option requires an argument
+-o /tmp/topo.txt | EXIT 0 | GREP CPU name

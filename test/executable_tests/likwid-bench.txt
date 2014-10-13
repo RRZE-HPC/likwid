@@ -1,0 +1,29 @@
+| EXIT 0 | GREP Help message
+-h | EXIT 0 | GREP Help message
+-v | EXIT 0 | GREP likwid-bench
+-p | EXIT 0 | GREP Domain
+-a | EXIT 0 | GREP sum
+-i | EXIT 1 | GREP requires an argument
+-i 0 | EXIT 1 | GREP Iterations must be greater than 0
+-i 100 | EXIT 1 | GREP Number of Workgroups must be 1 or greater
+-l | EXIT 1 | GREP requires an argument
+-l sum | EXIT 0 | GREP Name: sum
+-l XXX | EXIT 0 | GREP Unknown test case XXX
+-t | EXIT 1 | GREP requires an argument
+-t sum | EXIT 1 | GREP Number of Workgroups must be 1 or greater
+-t XXX | EXIT 1 | GREP Number of Workgroups must be 1 or greater
+-g | EXIT 1 | GREP requires an argument
+-g 0 | EXIT 1 | GREP Number of Workgroups must be 1 or greater
+-g 1 | EXIT 1 | GREP workgroups requested but only 0 given on commandline
+-g X | EXIT 1 | GREP Number of Workgroups must be 1 or greater
+-w | EXIT 1 | GREP requires an argument
+-g 1 -w X | EXIT 1 | GREP You need to specify a test case first
+-t sum -g 1 -w X | EXIT 1 | GREP Error in parsing workgroup string
+-t sum -g 1 -w N:1 | EXIT 1 | GREP Cannot parse string
+-t XXX -g 1 -w N:1MB:1 | EXIT 1 | GREP You need to specify a test case first
+-g 1 -w N:100kB:1 | EXIT 1 | GREP You need to specify a test case first
+-i 100 -t sum -g 1 -w N:100kB:1 | EXIT 0 | GREP Number of Flops
+-i 100 -t sum -g 2 -w N:100kB:1 | EXIT 1 | GREP workgroups requested but only 1 given on commandline
+-i 100 -t sum -g 2 -w N:100kB:1 -w N:100kB:1 | EXIT 0 | GREP Number of Flops
+-i 100 -t sum -g 1 -w N:100kB:2:1 | EXIT 1 | GREP Error in parsing workgroup string
+-i 100 -t sum -g 1 -w N:100kB:2:1:2 | EXIT 0 | GREP Number of Flops
