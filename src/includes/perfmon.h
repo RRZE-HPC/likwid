@@ -41,8 +41,7 @@ extern int perfmon_verbose;
 extern void (*perfmon_startCountersThread) (int thread_id);
 extern void (*perfmon_stopCountersThread) (int thread_id);
 extern int  (*perfmon_getIndex) (bstring reg, PerfmonCounterIndex* index);
-extern void (*perfmon_setupCounterThread) (int thread_id,
-       PerfmonEvent* event , PerfmonCounterIndex index);
+extern void (*perfmon_setupCounterThread) (int thread_id, PerfmonEvent* event , PerfmonCounterIndex index);
 
 extern void perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set);
 extern void perfmon_setCSVMode(int v);
@@ -71,17 +70,17 @@ perfmon_getEventCounterValues() and/or
 perfmon_getDerivedCounterValues()
  */
 typedef struct {
-	const char * groupName;
-	int numberOfEvents;
-	const char ** eventNames;
-	int numberOfDerivedCounters;
-	const char ** derivedNames;	
+    const char* groupName;
+    int numberOfEvents;
+    const char** eventNames;
+    int numberOfDerivedCounters;
+    const char** derivedNames;    
 
-	// Internal structures DO NOT ACCESS THEM, they need cleanup.
-	StrUtilEventSet* eventSetConfig;
-	PerfmonEventSet* perfmon_set;
-	PerfmonGroup groupSet;
-	int groupIndex;
+    // Internal structures DO NOT ACCESS THEM, they need cleanup.
+    StrUtilEventSet* eventSetConfig;
+    PerfmonEventSet* perfmon_set;
+    PerfmonGroup groupSet;
+    int groupIndex;
 } EventSetup;
 
 
@@ -89,8 +88,8 @@ extern EventSetup perfmon_prepareEventSetup(char* eventGroupString);
 extern void perfmon_setupCountersForEventSet(EventSetup * setup);
 
 // obtain values for all cores, average, min and max for the cores.
-extern void perfmon_getEventCounterValues(uint64_t * avg_values, uint64_t * max, uint64_t * min);
-extern void perfmon_getDerivedCounterValues(float * avg_values, float * max, float * min);
+extern void perfmon_getEventCounterValues(uint64_t* avg_values, uint64_t* max, uint64_t* min);
+extern void perfmon_getDerivedCounterValues(float* avg_values, float* max, float* min);
 /////////////////////////
 
 extern void perfmon_setupCounters(void);

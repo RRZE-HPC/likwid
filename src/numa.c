@@ -69,18 +69,18 @@ static int maxIdConfiguredNode = 0;
 static void
 setConfiguredNodes(void)
 {
-	DIR *dir;
-	struct dirent *de;
+    DIR *dir;
+    struct dirent *de;
 
-	dir = opendir("/sys/devices/system/node");
+    dir = opendir("/sys/devices/system/node");
 
-	if (!dir) 
+    if (!dir) 
     {
-		maxIdConfiguredNode = 0;
-	}
+        maxIdConfiguredNode = 0;
+    }
     else
     {
-		while ((de = readdir(dir)) != NULL) 
+        while ((de = readdir(dir)) != NULL) 
         {
             int nd;
             if (strncmp(de->d_name, "node", 4))
@@ -95,25 +95,25 @@ setConfiguredNodes(void)
                 maxIdConfiguredNode = nd;
             }
         }
-		closedir(dir);
-	}
+        closedir(dir);
+    }
 }
 
 
 static void
 nodeMeminfo(int node, uint64_t* totalMemory, uint64_t* freeMemory)
 {
-	FILE *fp;
+    FILE *fp;
     bstring filename;
     bstring totalString = bformat("MemTotal:");
     bstring freeString  = bformat("MemFree:");
     int i;
 
-	filename = bformat("/sys/devices/system/node/node%d/meminfo", node);
+    filename = bformat("/sys/devices/system/node/node%d/meminfo", node);
 
-	if (NULL != (fp = fopen (bdata(filename), "r"))) 
-	{
-		bstring src = bread ((bNread) fread, fp);
+    if (NULL != (fp = fopen (bdata(filename), "r"))) 
+    {
+        bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
 
         for (i=0;i<tokens->qty;i++)
@@ -133,13 +133,13 @@ nodeMeminfo(int node, uint64_t* totalMemory, uint64_t* freeMemory)
                  *freeMemory = str2int(bdata(subtokens->entry[0]));
             }
         }
-	}
+    }
     else
     {
         ERROR;
     }
 
-	fclose(fp);
+    fclose(fp);
 }
 
 static int
@@ -210,7 +210,6 @@ nodeProcessorList(int node, uint32_t** list)
         fclose(fp); 
 
         /* FIXME: CPU list here is not physical cores first but numerical sorted */
-
 
         return count;
     }

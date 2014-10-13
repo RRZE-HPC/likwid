@@ -119,7 +119,7 @@ extern int  cpuid_isInCpuset(void);
 
 static inline int cpuid_hasFeature(FeatureBit bit)
 {
-  return (cpuid_info.featureFlags & (1<<bit));
+    return (cpuid_info.featureFlags & (1<<bit));
 }
 
 

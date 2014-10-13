@@ -48,33 +48,33 @@ tree_init(TreeNode** root, int id)
 void
 tree_print(TreeNode* nodePtr)
 {
-  int level = 0;
+    int level = 0;
 
-  if (nodePtr != NULL)
-  {
-
-    TreeNode* digger;
-    TreeNode* walker;
-
-    digger = nodePtr->llink;
-
-    while (digger != NULL)
+    if (nodePtr != NULL)
     {
-      printf("\n Level %d:\n", level++);
-      printf("%d ", digger->id);
-      walker = digger->rlink;
 
-      while (walker != NULL)
-      {
-        printf("%d ", walker->id);
-        walker = walker->rlink;
-      }
+        TreeNode* digger;
+        TreeNode* walker;
 
-      digger = digger->llink;
+        digger = nodePtr->llink;
+
+        while (digger != NULL)
+        {
+            printf("\n Level %d:\n", level++);
+            printf("%d ", digger->id);
+            walker = digger->rlink;
+
+            while (walker != NULL)
+            {
+            printf("%d ", walker->id);
+            walker = walker->rlink;
+            }
+
+            digger = digger->llink;
+        }
+
+        printf("\n ");
     }
-
-    printf("\n ");
-  }
 }
 
 void

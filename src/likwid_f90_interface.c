@@ -62,7 +62,7 @@ void likwid_markerstartregion_(char* regionTag, int len)
     }
 
     likwid_markerStartRegion( tmp );
-	free(tmp);
+    free(tmp);
 }
 
 void likwid_markerstopregion_(char* regionTag, int len)
@@ -79,6 +79,6 @@ void likwid_markerstopregion_(char* regionTag, int len)
     }
 
     likwid_markerStopRegion( tmp );
-	free(tmp);
+    free(tmp);
 }
 

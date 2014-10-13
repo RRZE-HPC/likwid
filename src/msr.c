@@ -89,10 +89,9 @@ int test_rdpmc(int flag)
     sigemptyset(&sa.sa_mask);
     sa.sa_sigaction = segfault_sigaction;
     sa.sa_flags   = SA_SIGINFO;
-    
-    
+
     pid = fork();
-    
+
     if (pid < 0)
     {
         return -1;
@@ -134,11 +133,10 @@ msr_init(int initSocket_fd)
         {
             sprintf(msr_file_name,"/dev/cpu/0/msr");
         }
-#else 
+#else
         sprintf(msr_file_name,"/dev/cpu/0/msr");
-#endif 
+#endif
         rdpmc_works = test_rdpmc(0);
-        
         if (access(msr_file_name, R_OK|W_OK))
         {
             ERROR_PRINT(Cannot access MSR device file %s: %s.\n
@@ -151,7 +149,6 @@ msr_init(int initSocket_fd)
         /* NOTICE: This assumes consecutive processor Ids! */
         for ( uint32_t i=0; i < cpuid_topology.numHWThreads; i++ )
         {
-            
 #ifdef __MIC
             sprintf(msr_file_name,"/dev/msr%d",i);
             if( access( msr_file_name, F_OK ) == -1 )
@@ -161,9 +158,7 @@ msr_init(int initSocket_fd)
 #else
             sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
 #endif
-
             FD[i] = open(msr_file_name, O_RDWR);
-
             if ( FD[i] < 0 )
             {
                 ERROR_PRINT(Cannot access MSR device file %s: %s\n,

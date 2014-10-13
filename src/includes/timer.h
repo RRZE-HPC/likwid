@@ -38,30 +38,28 @@
 #include <types.h>
 
 #define RDTSC(cpu_c) \
-__asm__ volatile("xor %%eax,%%eax\n\t"           \
-"cpuid\n\t"           \
-"rdtsc\n\t"           \
-"movl %%eax, %0\n\t"  \
-"movl %%edx, %1\n\t"  \
-: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
-: : "%eax","%ebx","%ecx","%edx")
+    __asm__ volatile("xor %%eax,%%eax\n\t" \
+                     "cpuid\n\t"           \
+                     "rdtsc\n\t"           \
+                     "movl %%eax, %0\n\t"  \
+                     "movl %%edx, %1\n\t"  \
+    : "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
+    : : "%eax","%ebx","%ecx","%edx")
 
 #define RDTSC_CR(cpu_c) \
-__asm__ volatile(   \
-"rdtsc\n\t"           \
-"movl %%eax, %0\n\t"  \
-"movl %%edx, %1\n\t"  \
-: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
-: : "%eax","%ebx","%ecx","%edx")
+    __asm__ volatile("rdtsc\n\t"           \
+                     "movl %%eax, %0\n\t"  \
+                     "movl %%edx, %1\n\t"  \
+    : "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
+    : : "%eax","%ebx","%ecx","%edx")
 
 #define RDTSCP(cpu_c) \
-__asm__ volatile(     \
-"rdtscp\n\t"          \
-"movl %%eax, %0\n\t"  \
-"movl %%edx, %1\n\t"  \
-"cpuid\n\t"           \
-: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
-: : "%eax","%ebx","%ecx","%edx")
+    __asm__ volatile("rdtscp\n\t"          \
+                     "movl %%eax, %0\n\t"  \
+                     "movl %%edx, %1\n\t"  \
+                     "cpuid\n\t"           \
+    : "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
+    : : "%eax","%ebx","%ecx","%edx")
 
 #ifdef HAS_RDTSCP
 #define RDTSC_STOP(cpu_c) RDTSCP(cpu_c);
@@ -85,15 +83,15 @@ void timer_start( TimerData* time )
     RDTSC(time->start);
 #endif
 #ifdef _ARCH_PPC
-	uint32_t tbl, tbu0, tbu1;
+    uint32_t tbl, tbu0, tbu1;
 
-	do {
-		__asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
-		__asm__ __volatile__ ("mftb %0" : "=r"(tbl));
-		__asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
-	} while (tbu0 != tbu1);
+    do {
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
+        __asm__ __volatile__ ("mftb %0" : "=r"(tbl));
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
+    } while (tbu0 != tbu1);
 
-	time->start.int64 = (((uint64_t)tbu0) << 32) | tbl;
+    time->start.int64 = (((uint64_t)tbu0) << 32) | tbl;
 #endif
 }
 
@@ -103,14 +101,14 @@ void timer_stop( TimerData* time )
     RDTSC_STOP(time->stop)
 #endif
 #ifdef _ARCH_PPC
-	uint32_t tbl, tbu0, tbu1;
-	do {
-		__asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
-		__asm__ __volatile__ ("mftb %0" : "=r"(tbl));
-		__asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
-	} while (tbu0 != tbu1);
+    uint32_t tbl, tbu0, tbu1;
+    do {
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
+        __asm__ __volatile__ ("mftb %0" : "=r"(tbl));
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
+    } while (tbu0 != tbu1);
 
-	time->stop.int64 = (((uint64_t)tbu0) << 32) | tbl;
+    time->stop.int64 = (((uint64_t)tbu0) << 32) | tbl;
 #endif
 }
 
