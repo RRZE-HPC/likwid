@@ -358,14 +358,14 @@ affinity_printDomains()
 {
     for ( int i=0; i < affinity_numberOfDomains; i++ )
     {
-        fprintf(stdout, "Domain %d:\n",i);
-        fprintf(stdout,"\tTag %s:",bdata(domains[i].tag));
+        fprintf(stdout, "Domain %d:\n", i);
+        fprintf(stdout, "\tTag %s:", bdata(domains[i].tag));
 
         for ( uint32_t j=0; j < domains[i].numberOfProcessors; j++ )
         {
-            fprintf(stdout," %d",domains[i].processorList[j]);
+            fprintf(stdout, " %d", domains[i].processorList[j]);
         }
-        fprintf(stdout,"\n");
+        fprintf(stdout, "\n");
         fflush(stdout);
     }
 }

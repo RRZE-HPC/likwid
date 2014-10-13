@@ -108,7 +108,7 @@ asciiBoxes_addJoinedBox(
 }
 
 void
-asciiBoxes_print(BoxContainer* container)
+asciiBoxes_print(FILE* OUTSTREAM, BoxContainer* container)
 {
     int width;
     int boxwidth=0; /* box width is inner width of box */
@@ -131,30 +131,30 @@ asciiBoxes_print(BoxContainer* container)
     boxwidth += 2;  /* add one space each side */
 
     /* top line */
-    fprintf(stdout, "+");
+    printf("+");
 
     for ( int i=0; i < (container->numColumns * (boxwidth+2) +
                 (container->numColumns+1));  /* one space between boxes */
             i++ )
     {
-        fprintf(stdout, "-");
+        printf("-");
     }
-    fprintf(stdout, "+\n");
+    printf("+\n");
 
     for ( int i=0; i < container->numLines; i++ )
     {
         /* Box top line */
-        fprintf(stdout, "| ");
+        printf("| ");
 
         for ( int j=0; j < container->numColumns; j++ )
         {
-            fprintf(stdout, "+");
+            printf("+");
 
             if ( container->boxes[i][j].width == 1 )
             {
                 for ( int k=0; k < boxwidth; k++ )
                 {
-                    fprintf(stdout, "-");
+                    printf("-");
                 }
             }
             else 
@@ -163,14 +163,14 @@ asciiBoxes_print(BoxContainer* container)
                             (container->boxes[i][j].width-1)*3);
                         k++)
                 {
-                    fprintf(stdout, "-");
+                    printf("-");
                 }
                 j += container->boxes[i][j].width-1;
             }
-            fprintf(stdout, "+ ");
+            printf("+ ");
         }
-        fprintf(stdout, "|\n");
-        fprintf(stdout, "| ");
+        printf("|\n");
+        printf("| ");
 
         /* Box label line */
         for ( int j=0; j < container->numColumns; j++ )
@@ -193,39 +193,39 @@ asciiBoxes_print(BoxContainer* container)
                         ((container->boxes[i][j].width-1)*3) -
                         blength(container->boxes[i][j].label))%2;
             }
-            fprintf(stdout, "|");
+            printf("|");
 
             for ( int k=0; k < (width+offset); k++ )
             {
-                fprintf(stdout, " ");
+                printf(" ");
             }
 
-            fprintf(stdout, "%s",container->boxes[i][j].label->data);
+            printf("%s",container->boxes[i][j].label->data);
 
             for ( int k=0; k < width; k++ )
             {
-                fprintf(stdout, " ");
+                printf(" ");
             }
-            fprintf(stdout, "| ");
+            printf("| ");
 
             if ( container->boxes[i][j].width != 1 )
             {
                 j+= container->boxes[i][j].width-1;
             }
         }
-        fprintf(stdout, "|\n");
-        fprintf(stdout, "| ");
+        printf("|\n");
+        printf("| ");
 
         /* Box bottom line */
         for ( int j=0; j < container->numColumns; j++ )
         {
-            fprintf(stdout, "+");
+            printf("+");
 
             if ( container->boxes[i][j].width == 1 )
             {
                 for ( int k=0; k < boxwidth; k++ )
                 {
-                    fprintf(stdout, "-");
+                    printf("-");
                 }
             }
             else 
@@ -234,23 +234,23 @@ asciiBoxes_print(BoxContainer* container)
                             (container->boxes[i][j].width-1)*3);
                         k++ )
                 {
-                    fprintf(stdout, "-");
+                    printf("-");
                 }
                 j+= container->boxes[i][j].width-1;
             }
-            fprintf(stdout, "+ ");
+            printf("+ ");
         }
-        fprintf(stdout, "|\n");
+        printf("|\n");
     }
 
     /* bottom line */
-    fprintf(stdout, "+");
+    printf("+");
     for ( int i=0; i < (container->numColumns * (boxwidth+2) + 
                 container->numColumns+1); i++ )
     {
-        fprintf(stdout, "-");
+        printf("-");
     }
-    fprintf(stdout, "+\n");
+    printf("+\n");
     fflush(stdout);
 }
 

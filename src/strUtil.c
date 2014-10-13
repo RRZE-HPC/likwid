@@ -635,7 +635,9 @@ bstr_to_interval(const_bstring str, struct timespec* interval)
   {
     if (pos != (blength(str)-1))
     {
-      ERROR_PLAIN_PRINT(Parsing of daemon interval failed);
+      fprintf(stderr, "You need to specify a time unit s or ms like 200ms\n");
+      msr_finalize();
+      exit(EXIT_FAILURE);
     }
 
     /* unit is ms */
@@ -665,7 +667,9 @@ bstr_to_interval(const_bstring str, struct timespec* interval)
   }
   else
   {
-    ERROR_PLAIN_PRINT(Parsing of daemon interval failed);
+    fprintf(stderr, "You need to specify a time unit s or ms like 200ms\n");
+    msr_finalize();
+    exit(EXIT_FAILURE);
   }
 }
 

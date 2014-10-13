@@ -35,7 +35,7 @@
 #include <time.h>
 
 extern void daemon_init();
-extern void daemon_start(struct timespec interval);
+extern void daemon_start(bstring str, struct timespec interval);
 extern void daemon_stop(int sig);
 extern void daemon_interrupt(int sig);
 
