@@ -102,7 +102,7 @@ threads_createGroups(int numberOfGroups)
     {
         ERROR_PRINT(Not enough threads %d to create %d groups,numThreads,numberOfGroups);
     }
-    else 
+    else
     {
         numThreadsPerGroup = numThreads / numberOfGroups;
     }
@@ -205,11 +205,11 @@ threads_join(void)
 void
 threads_destroy(int numberOfGroups)
 {
-	int i;
+    int i;
     free(threads_data);
     for(i=0;i<numberOfGroups;i++)
     {
-    	free(threads_groups[i].threadIds);
+        free(threads_groups[i].threadIds);
     }
     free(threads_groups);
     free(threads);

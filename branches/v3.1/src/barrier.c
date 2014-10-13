@@ -122,7 +122,7 @@ barrier_registerThread(BarrierData* barr, int groupId, int threadId)
 
 void
 barrier_init(int numberOfGroups) 
-{ 
+{
     maxGroupId = numberOfGroups-1;
     groups = (BarrierGroup*) malloc(numberOfGroups * sizeof(BarrierGroup));
 }
@@ -151,5 +151,5 @@ barrier_synchronize(BarrierData* barr)
 
 void barrier_destroy(void)
 {
-	free(groups);
+    free(groups);
 }

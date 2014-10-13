@@ -37,10 +37,10 @@ typedef struct {
     uint64_t totalMemory;
     uint64_t freeMemory;
     int numberOfProcessors;
-    uint32_t*  processors;
-    uint32_t*  processorsCompact;
+    uint32_t* processors;
+    uint32_t* processorsCompact;
     int numberOfDistances;
-    uint32_t*  distances;
+    uint32_t* distances;
 } NumaNode;
 
 typedef struct {

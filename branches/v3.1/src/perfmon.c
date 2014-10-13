@@ -240,9 +240,9 @@ initThread(int thread_id, int cpu_id)
 }
 
 struct cbsScan{
-	/* Parse state */
-	bstring src;
-	int line;
+    /* Parse state */
+    bstring src;
+    int line;
     LikwidResults* results;
 };
 
@@ -533,11 +533,7 @@ initResultTable(PerfmonResultTable* tableData,
 
     for (i=0; i<numRows; i++)
     {
-//        tableData->rows[i].label =
-//           bfromcstr(perfmon_set.events[i].event.name);
-
         tableData->rows[i].label = firstColumn->entry[1+i];
-
         tableData->rows[i].value =
             (double*) malloc((numColumns)*sizeof(double));
     }
@@ -573,12 +569,8 @@ initStatisticTable(PerfmonResultTable* tableData,
 
     for (i=0; i<numRows; i++)
     {
-//        tableData->rows[i].label =
-//           bfromcstr(perfmon_set.events[i].event.name);
-
         tableData->rows[i].label = firstColumn->entry[1+i];
         bcatcstr(tableData->rows[i].label," STAT");
-
         tableData->rows[i].value =
             (double*) malloc((numColumns)*sizeof(double));
     }
@@ -847,9 +839,6 @@ perfmon_logCounterResults(double time)
         {
             fprintf(OUTSTREAM, "%e ",
                     (double) (perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData) - perfmon_threadState[j][perfmon_set.events[i].index]);
-            //tmp =perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData;
-            //perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData -=
-              //perfmon_threadState[j][perfmon_set.events[i].index];
             fprintf(OUTSTREAM, "Event index %d = %d\n",i, perfmon_set.events[i].index);
             perfmon_threadState[j][perfmon_set.events[i].index] = perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData;
         }

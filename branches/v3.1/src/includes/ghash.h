@@ -59,13 +59,13 @@ typedef struct _GHashTableIter GHashTableIter;
 
 struct _GHashTableIter
 {
-  /*< private >*/
-  gpointer      dummy1;
-  gpointer      dummy2;
-  gpointer      dummy3;
-  int           dummy4;
-  gboolean      dummy5;
-  gpointer      dummy6;
+    /*< private >*/
+    gpointer      dummy1;
+    gpointer      dummy2;
+    gpointer      dummy3;
+    int           dummy4;
+    gboolean      dummy5;
+    gpointer      dummy6;
 };
 
 char* g_strdup (const char *str);

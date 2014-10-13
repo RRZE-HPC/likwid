@@ -156,18 +156,18 @@ pci_init(int initSocket_fd)
         return;
     }
 
-	socket_count = cntr;
+    socket_count = cntr;
 
-	bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
-	bcatcstr(filepath, socket_bus[0]);
-	bcatcstr(filepath, pci_DevicePath[0] );
+    bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
+    bcatcstr(filepath, socket_bus[0]);
+    bcatcstr(filepath, pci_DevicePath[0] );
 
 
     if (access(bdata(filepath),F_OK))
     {
         fprintf(stderr, "INFO\n");
-        fprintf(stderr, "       This system has no support for PCI based Uncore counters.\n");
-        fprintf(stderr, "       This means you cannot use performance groups as MEM, which require Uncore counters.\n\n");
+        fprintf(stderr, "This system has no support for PCI based Uncore counters.\n");
+        fprintf(stderr, "This means you cannot use performance groups as MEM, which require Uncore counters.\n\n");
         return;
     }
     bdestroy(filepath);
@@ -178,19 +178,19 @@ pci_init(int initSocket_fd)
         {
 
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
-			bcatcstr(filepath, socket_bus[j]);
-			bcatcstr(filepath, pci_DevicePath[i] );
-			
-			if (!access(bdata(filepath),F_OK))
-			{
-				FD[j][i] = 0;
-			}
-			else
-			{
-				fprintf(stderr, "Device %s not found, excluded it from device list\n",bdata(filepath));
-				FD[j][i] = -2;
-			}
-			bdestroy(filepath);
+            bcatcstr(filepath, socket_bus[j]);
+            bcatcstr(filepath, pci_DevicePath[i] );
+
+            if (!access(bdata(filepath),F_OK))
+            {
+                FD[j][i] = 0;
+            }
+            else
+            {
+                fprintf(stderr, "Device %s not found, excluded it from device list\n",bdata(filepath));
+                FD[j][i] = -2;
+            }
+            bdestroy(filepath);
         }
     }
 
@@ -199,9 +199,9 @@ pci_init(int initSocket_fd)
         if(geteuid() != 0)
         {
             fprintf(stderr, "WARNING\n");
-            fprintf(stderr, "       Direct access to the PCI Cfg Adressspace is only allowed for uid root!\n");
-            fprintf(stderr, "       This means you can use performance groups as MEM only as root in direct mode.\n");
-            fprintf(stderr, "       Alternatively you might want to look into (sys)daemonmode.\n\n");
+            fprintf(stderr, "Direct access to the PCI Cfg Adressspace is only allowed for uid root!\n");
+            fprintf(stderr, "This means you can use performance groups as MEM only as root in direct mode.\n");
+            fprintf(stderr, "Alternatively you might want to look into (sys)daemonmode.\n\n");
         }
     }
     else /* daemon or sysdaemon-mode */
@@ -238,7 +238,6 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg)
     int socketId = affinity_core2node_lookup[cpu];
     if ( FD[socketId][device] == -2)
     {
-        //fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
         return 0;
     }
 
@@ -254,9 +253,8 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg)
 
             if ( FD[socketId][device] < 0)
             {
-                fprintf(stderr, "ERROR in pci_read:\n    failed to open pci device %s: %s!\n",
+                fprintf(stderr, "ERROR in pci_read: failed to open pci device %s: %s!\n",
                         bdata(filepath), strerror(errno));
-                // exit(127);
             }
             bdestroy(filepath);
         }
@@ -264,7 +262,7 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg)
         if ( FD[socketId][device] > 0 &&
              pread(FD[socketId][device], &data, sizeof data, reg) != sizeof data ) 
         {
-            ERROR_PRINT("cpu %d reg %x",cpu, reg);
+            ERROR_PRINT("ERROR in pci_read: failed on CPU %d Register 0x%x", cpu, reg);
         }
 
         return data;
@@ -284,7 +282,6 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
 
     if ( FD[socketId][device] == -2)
     {
-        //fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
         return;
     }
     if (accessClient_mode == DAEMON_AM_DIRECT)
@@ -298,9 +295,8 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
 
             if ( FD[socketId][device] < 0)
             {
-                fprintf(stderr, "ERROR in pci_write:\n    failed to open pci device %s: %s!\n",
+                fprintf(stderr, "ERROR in pci_write: failed to open pci device %s: %s!\n",
                         bdata(filepath), strerror(errno));
-                // exit(127);
             }
             bdestroy(filepath);
         }
@@ -308,10 +304,8 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
         if ( FD[socketId][device] > 0 &&
              pwrite(FD[socketId][device], &data, sizeof data, reg) != sizeof data) 
         {
-            ERROR_PRINT("cpu %d reg %x",cpu, reg);
+            ERROR_PRINT("ERROR in pci_write: failed on CPU %d Register 0x%x", cpu, reg);
         }
-
-        //    printf("WRITE Device %s cpu %d reg 0x%x data 0x%x \n",bdata(filepath), cpu, reg, data);
     }
     else
     { /* daemon or sysdaemon-mode */
@@ -325,7 +319,6 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
     int socketId = affinity_core2node_lookup[cpu];
     if ( FD[socketId][device] == -2)
     {
-        //fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
         return 0;
     }
 
@@ -337,7 +330,6 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
             bcatcstr(filepath, pci_DevicePath[device] );
-            //        printf("Generate PATH = %s \n",bdata(filepath));
 
             FD[socketId][device] = open( bdata(filepath), O_RDWR);
 
@@ -345,7 +337,6 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
             {
                 fprintf(stderr, "ERROR in pci_tread:\n    failed to open pci device %s: %s!\n",
                         bdata(filepath), strerror(errno));
-                // exit(127);
             }
             bdestroy(filepath);
         }
@@ -353,9 +344,8 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
         if ( FD[socketId][device] > 0 &&
              pread(FD[socketId][device], &data, sizeof data, reg) != sizeof data ) 
         {
-            ERROR_PRINT("cpu %d reg %x",cpu, reg);
+            ERROR_PRINT("ERROR in pci_tread: failed on CPU %d Register 0x%x", cpu, reg);
         }
-        //    printf("READ Device %s cpu %d reg 0x%x data 0x%x \n",bdata(filepath), cpu, reg, data);
 
         return data;
     }
@@ -371,7 +361,6 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
     int socketId = affinity_core2node_lookup[cpu];
     if ( FD[socketId][device] == -2)
     {
-        //fprintf(stderr, "Accessing non-existent device %s%s%s\n",PCI_ROOT_PATH,socket_bus[socketId],pci_DevicePath[device]);
         return;
     }
     if (accessClient_mode == DAEMON_AM_DIRECT)
@@ -381,15 +370,13 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
             bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
             bcatcstr(filepath, pci_DevicePath[device] );
-            //        printf("Generate PATH = %s \n",bdata(filepath));
 
             FD[socketId][device] = open( bdata(filepath), O_RDWR);
 
             if ( FD[socketId][device] < 0)
             {
-                fprintf(stderr, "ERROR in pci_twrite:\n    failed to open pci device %s: %s!\n",
+                fprintf(stderr, "ERROR in pci_twrite: failed to open pci device %s: %s!\n",
                         bdata(filepath), strerror(errno));
-                //exit(127);
             }
             bdestroy(filepath);
         }
@@ -397,10 +384,8 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
         if ( FD[socketId][device] > 0 &&
              pwrite(FD[socketId][device], &data, sizeof data, reg) != sizeof data) 
         {
-            ERROR_PRINT("cpu %d reg %x",cpu, reg);
+            ERROR_PRINT("ERROR in pci_twrite: failed on CPU %d Register 0x%x", cpu, reg);
         }
-
-        //    printf("WRITE Device %s cpu %d reg 0x%x data 0x%x \n",bdata(filepath), cpu, reg, data);
     }
     else
     { /* daemon or sysdaemon-mode */

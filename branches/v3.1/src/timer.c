@@ -79,19 +79,19 @@ getCpuSpeed(void)
          ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
 #endif
 #ifdef _ARCH_PPC
-	FILE *fpipe;
-	char *command="grep timebase /proc/cpuinfo | awk '{ print $3 }'";
-	char buff[256];
+    FILE *fpipe;
+    char *command="grep timebase /proc/cpuinfo | awk '{ print $3 }'";
+    char buff[256];
 
-	if ( !(fpipe = (FILE*)popen(command,"r")) )
-	{  // If fpipe is NULL
-		perror("Problems with pipe");
-		exit(1);
-	}
+    if ( !(fpipe = (FILE*)popen(command,"r")) )
+    {  // If fpipe is NULL
+        perror("Problems with pipe");
+        exit(1);
+    }
 
-	fgets(buff, 256, fpipe);
+    fgets(buff, 256, fpipe);
 
-	return (uint64_t)   atoi(buff);
+    return (uint64_t)   atoi(buff);
 #endif
 }
 
@@ -120,7 +120,7 @@ double timer_print( TimerData* time )
     uint64_t cycles;
 
     /* clamp to zero if something goes wrong */
-   if ((time->stop.int64-baseline) < time->start.int64)
+    if ((time->stop.int64-baseline) < time->start.int64)
     {
         cycles = 0ULL;
     }

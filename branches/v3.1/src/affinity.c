@@ -88,52 +88,52 @@ treeFillNextEntries(
     int offset,
     int numberOfEntries )
 {
-  int counter = numberOfEntries;
-  TreeNode* node = tree;
-  TreeNode* thread;
+    int counter = numberOfEntries;
+    TreeNode* node = tree;
+    TreeNode* thread;
 
-  node = tree_getChildNode(node);
+    node = tree_getChildNode(node);
 
-  /* get socket node */
-  for (int i=0; i<socketId; i++)
-  {
-    node = tree_getNextNode(node);
-
-    if ( node == NULL )
+    /* get socket node */
+    for (int i=0; i<socketId; i++)
     {
-      printf("ERROR: Socket %d not existing!",i);
-      exit(EXIT_FAILURE);
+        node = tree_getNextNode(node);
+
+        if ( node == NULL )
+        {
+          printf("ERROR: Socket %d not existing!",i);
+          exit(EXIT_FAILURE);
+        }
     }
-  }
 
-  node = tree_getChildNode(node);
-  /* skip offset cores */
-  for (int i=0; i<offset; i++)
-  {
-    node = tree_getNextNode(node);
-
-    if ( node == NULL )
+    node = tree_getChildNode(node);
+    /* skip offset cores */
+    for (int i=0; i<offset; i++)
     {
-      printf("ERROR: Core %d not existing!",i);
-      exit(EXIT_FAILURE);
+        node = tree_getNextNode(node);
+
+        if ( node == NULL )
+        {
+          printf("ERROR: Core %d not existing!",i);
+          exit(EXIT_FAILURE);
+        }
     }
-  }
 
-  /* Traverse horizontal */
-  while ( node != NULL )
-  {
-    if ( !counter ) break;
-
-    thread = tree_getChildNode(node);
-
-    while ( thread != NULL )
+    /* Traverse horizontal */
+    while ( node != NULL )
     {
-      processorIds[numberOfEntries-counter] = thread->id;
-      thread = tree_getNextNode(thread);
-      counter--;
+        if ( !counter ) break;
+
+        thread = tree_getChildNode(node);
+
+        while ( thread != NULL )
+        {
+            processorIds[numberOfEntries-counter] = thread->id;
+            thread = tree_getNextNode(thread);
+            counter--;
+        }
+        node = tree_getNextNode(node);
     }
-    node = tree_getNextNode(node);
-  }
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -311,7 +311,7 @@ affinity_threadGetProcessorId()
 void
 affinity_pinThread(int processorId)
 {
-	cpu_set_t cpuset;
+    cpu_set_t cpuset;
     pthread_t thread;
 
     thread = pthread_self();
@@ -330,11 +330,11 @@ affinity_pinThread(int processorId)
 void
 affinity_pinProcess(int processorId)
 {
-	cpu_set_t cpuset;
+    cpu_set_t cpuset;
 
-	CPU_ZERO(&cpuset);
-	CPU_SET(processorId, &cpuset);
-	sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
+    CPU_ZERO(&cpuset);
+    CPU_SET(processorId, &cpuset);
+    sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
 }
 
 

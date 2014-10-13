@@ -35,7 +35,7 @@ typedef struct {
     bstring tag;
     uint32_t numberOfProcessors;
     uint32_t numberOfCores;
-    int*  processorList;
+    int* processorList;
 } AffinityDomain;
 
 

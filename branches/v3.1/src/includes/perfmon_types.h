@@ -101,10 +101,10 @@ typedef enum {
 typedef struct {
     char* key;
     PerfmonCounterIndex index;
-    PerfmonType  type;
-    uint64_t  configRegister;
-    uint64_t  counterRegister;
-    uint64_t  counterRegister2;
+    PerfmonType type;
+    uint64_t configRegister;
+    uint64_t counterRegister;
+    uint64_t counterRegister2;
     PciDeviceIndex device;
 } PerfmonCounterMap;
 
@@ -125,15 +125,15 @@ typedef struct {
 
 /* only used in westmereEX at the moment */
 typedef struct {
-    uint32_t  ctrlRegister;
-    uint32_t  statusRegister;
-    uint32_t  ovflRegister;
+    uint32_t ctrlRegister;
+    uint32_t statusRegister;
+    uint32_t ovflRegister;
 } PerfmonUnit;
 
 typedef struct {
-    int       init;
-    int       id;  /* TODO id is only used for EX type processors */
-    double    counterData;
+    int init;
+    int id;  /* TODO id is only used for EX type processors */
+    double counterData;
 } PerfmonCounter;
 
 typedef struct {
@@ -142,8 +142,8 @@ typedef struct {
 } PerfmonThread;
 
 typedef struct {
-    const char*    name;
-    const char*    limit;
+    const char* name;
+    const char* limit;
     uint16_t eventId;
     uint8_t umask;
     uint8_t cfgBits;

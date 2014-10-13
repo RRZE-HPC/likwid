@@ -92,32 +92,31 @@ static BitMask counterMask;
 
 void str2BitMask(const char* str, BitMask* mask)
 {
-  char* endptr;
-  errno = 0;
-  struct bstrList* tokens;
-  bstring q = bfromcstralloc (60, str);
-  tokens = bsplit(q,' ');
+    char* endptr;
+    errno = 0;
+    struct bstrList* tokens;
+    bstring q = bfromcstralloc (60, str);
+    tokens = bsplit(q,' ');
 
-  for (int i=0; i<tokens->qty; i++)
-  {
-      uint64_t val =  strtoull((char*) tokens->entry[i]->data, &endptr, 16);
+    for (int i=0; i<tokens->qty; i++)
+    {
+        uint64_t val =  strtoull((char*) tokens->entry[i]->data, &endptr, 16);
 
-      if ((errno == ERANGE && val == LONG_MAX )
-              || (errno != 0 && val == 0))
-      {
-          ERROR;
-      }
+        if ((errno == ERANGE && val == LONG_MAX ) || (errno != 0 && val == 0))
+        {
+            ERROR;
+        }
 
-      if (endptr == str)
-      {
-          ERROR_PLAIN_PRINT(No digits were found);
-      }
+        if (endptr == str)
+        {
+            ERROR_PLAIN_PRINT(No digits were found);
+        }
 
-      mask->mask[i] = val;
-  }
+        mask->mask[i] = val;
+    }
 
-  bstrListDestroy(tokens);
-  bdestroy(q);
+    bstrListDestroy(tokens);
+    bdestroy(q);
 }
 
 static int getProcessorID(cpu_set_t* cpu_set)

@@ -60,11 +60,11 @@ static uint64_t  memoryFraction = 80ULL;
 static void*
 allocateOnNode(size_t size, int domainId)
 {
-	char *ptr; 
+    char *ptr; 
 
-	ptr = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
+    ptr = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
 
-	if (ptr == (char *)-1)
+    if (ptr == (char *)-1)
     {
         ERROR;
     }
