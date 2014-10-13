@@ -324,10 +324,8 @@ install:
 	@mkdir -p $(LIKWIDFILTERPATH)
 	@cp -f filters/*  $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
-	@echo 
-	@echo "Please set suitable permissions and capabilities\nfor the daemon applications in $(PREFIX)/sbin"
-	@chown root $(PREFIX)/sbin/likwid-accessD
-	@chmod u+s $(PREFIX)/sbin/likwid-accessD	
+	@chown root $(ACCESSDAEMON) 
+	@chmod u+s $(ACCESSDAEMON)
 
 uninstall:
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
