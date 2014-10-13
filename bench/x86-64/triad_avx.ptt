@@ -1,0 +1,12 @@
+STREAMS 4
+TYPE DOUBLE
+FLOPS 2
+BYTES 16
+LOOP 32
+vmovapd ymm1, [STR1 + GPR1]
+vmovapd ymm2, [STR2 + GPR1]
+vmovapd ymm3, [STR3 + GPR1]
+vmulpd  ymm0, ymm1, ymm2
+vaddpd  ymm0, ymm0, ymm3
+vmovapd [STR0 + GPR1], ymm0
+
