@@ -22,6 +22,7 @@ open OUTFILE,"> $filename";
 
 if ($fileType eq 'topology') {
     my $region = 'topo';
+    my $indomain = 0;
     print OUTFILE '<node>'.$NL;
 
     while (<INFILE>) {
@@ -36,13 +37,15 @@ if ($fileType eq 'topology') {
         }
 
         if ($region eq 'topo') {
-            if (/(CPU type):\t(.*)/) {
+            if (/(CPU type):\t([\w ]*)/) {
                 print OUTFILE '<cpu>'.$2.'</cpu>'.$NL;
-            } elsif (/(Sockets):\t(.*)/) {
+            } elsif (/CPU clock:\t([\d.]) GHz/) {
+                print OUTFILE '<clock>'.$1.'</clock>'.$NL;
+            } elsif (/(Sockets):\t(\d*)/) {
                 print OUTFILE '<socketsPerNode>'.$2.'</socketsPerNode>'.$NL;
-            } elsif (/(Cores per socket):\t(.*)/) {
+            } elsif (/(Cores per socket):\t(\d*)/) {
                 print OUTFILE '<coresPerSocket>'.$2.'</coresPerSocket>'.$NL;
-            } elsif (/(Threads per core):\t(.*)/) {
+            } elsif (/(Threads per core):\t(\d*)/) {
                 print OUTFILE '<threadsPerCore>'.$2.'</threadsPerCore>'.$NL;
             } elsif (/([0-9]*)\t\t([0-9]*)\t\t([0-9]*)\t\t([0-9]*)/) {
                 #TODO Build tree for XML output from table!
@@ -68,14 +71,24 @@ if ($fileType eq 'topology') {
             }
         } elsif ($region eq 'numa') {
             if (/Domain ([0-9]*)/) {
+                if ($indomain )
+                {
+                    print OUTFILE '</domain>'.$NL;
+                }
                 print OUTFILE '<domain>'.$NL;
                 print OUTFILE '<id>'.$1.'</id>'.$NL;
-            } elsif (/Memory:.*total ([0-9.]+) MB/) {
-                print OUTFILE '<memory>'.$1.'</memory>'.$NL;
+                $indomain = 1
+            } elsif (/Memory: ([0-9.]+) MB free of total ([0-9.]+) MB/) {
+                print OUTFILE '<freememory>'.$1.'</freememory>'.$NL;
+                print OUTFILE '<totalmemory>'.$2.'</totalmemory>'.$NL;
             } elsif (/Processors:[ ]+([0-9. ]+)/) {
                 print OUTFILE '<processors>'.$1.'</processors>'.$NL;
             }
         }
+    }
+    if ($indomain)
+    {
+        print OUTFILE '</domain>'.$NL;
     }
 
     print OUTFILE '</numa>'.$NL;
@@ -117,7 +130,7 @@ if ($fileType eq 'topology') {
     die "Filter failed! Unknown application type $fileType!\n";
 }
 
-unlink($infile);
+#unlink($infile);
 close INFILE;
 close OUTFILE;
 

@@ -142,12 +142,12 @@ int main (int argc, char** argv)
     numa_init();
 
     fprintf(OUTSTREAM, HLINE);
-    fprintf(OUTSTREAM, "CPU type:\t%s \n",cpuid_info.name);
+    fprintf(OUTSTREAM, "CPU type:\t%s\n",cpuid_info.name);
 
     if (optClock)
     {
         timer_init();
-        fprintf(OUTSTREAM, "CPU clock:\t%3.2f GHz \n",  (float) timer_getCpuClock() * 1.E-09);
+        fprintf(OUTSTREAM, "CPU clock:\t%3.2f GHz\n",  (float) timer_getCpuClock() * 1.E-09);
     }
 
     /*----------------------------------------------------------------------
@@ -480,22 +480,23 @@ int main (int argc, char** argv)
     /* call filterscript if specified */
     if (!biseqcstr(filterScript,"NO"))
     {
-    	struct bstrList* tokens;
-    	tokens = bsplit(filterScript,' ');
-    	if (access(bdata(tokens->entry[0]), F_OK))
-    	{
-    		fprintf(stderr, "Cannot find filter %s!\n", bdata(tokens->entry[0]));
-    		bstrListDestroy(tokens);
-    		exit(EXIT_FAILURE);
-    	}
-    	if (access(bdata(tokens->entry[0]), X_OK))
-    	{
-    		fprintf(stderr, "Cannot execute filter %s!\n", bdata(tokens->entry[0]));
-    		bstrListDestroy(tokens);
-    		exit(EXIT_FAILURE);
-    	}
-    	bstrListDestroy(tokens);
+        struct bstrList* tokens;
+        tokens = bsplit(filterScript,' ');
+        if (access(bdata(tokens->entry[0]), F_OK))
+        {
+            fprintf(stderr, "Cannot find filter %s!\n", bdata(tokens->entry[0]));
+            bstrListDestroy(tokens);
+            exit(EXIT_FAILURE);
+        }
+        if (access(bdata(tokens->entry[0]), X_OK))
+        {
+            fprintf(stderr, "Cannot execute filter %s!\n", bdata(tokens->entry[0]));
+            bstrListDestroy(tokens);
+            exit(EXIT_FAILURE);
+        }
+        bstrListDestroy(tokens);
         bcatcstr(filterScript, " topology");
+
         if (system(bdata(filterScript)) == EOF)
         {
             fprintf(stderr, "Failed to execute filter %s!\n", bdata(filterScript));
