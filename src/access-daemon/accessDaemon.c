@@ -55,20 +55,27 @@
 #define str(x) #x
 
 #define CHECK_ERROR(func, msg)  \
-    if ((func) < 0) { syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); }
+    if ((func) < 0) { \
+        syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); \
+    }
 
 #define CHECK_FILE_ERROR(func, msg)  \
-    if ((func) == 0) { syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); }
+    if ((func) == 0) { \
+        syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); \
+    }
 
 
 #define EXIT_IF_ERROR(func, msg)  \
-    if ((func) < 0) { syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); stop_daemon(); exit(EXIT_FAILURE); }
+    if ((func) < 0) { \
+        syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); \
+        stop_daemon(); \
+        exit(EXIT_FAILURE); \
+    }
 
 
-#define CPUID                    \
-    __asm__ volatile ("cpuid"    \
-            : "=a" (eax),            \
-            "=b" (ebx)             \
+#define CPUID \
+    __asm__ volatile ("cpuid" \
+            : "=a" (eax), "=b" (ebx) \
             : "0" (eax))
 
 
@@ -536,6 +543,7 @@ int main(void)
     mode_t oldumask;
     uint32_t numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
     uint32_t model;
+    int isIntel = 1;
 
     if (!lock_check())
     {
@@ -548,62 +556,69 @@ int main(void)
         FD_MSR[i] = -1;
     }
 
+    uint32_t  eax = 0x00;
+    uint32_t  ebx = 0x00;
+    
+    CPUID;
+    if (ebx == 0x68747541U)
     {
-        uint32_t  eax = 0x00;
-        uint32_t  ebx = 0x00;
-        int isIntel = 1;
-        CPUID;
-        if (ebx == 0x68747541U)
-        {
-            isIntel = 0;
-        }
+        isIntel = 0;
+    }
 
-        eax = 0x01;
-        CPUID;
-        uint32_t family = ((eax >> 8) & 0xFU) + ((eax >> 20) & 0xFFU);
-        model  = (((eax >> 16) & 0xFU) << 4) + ((eax >> 4) & 0xFU);
+    eax = 0x01;
+    CPUID;
+    uint32_t family = ((eax >> 8) & 0xFU) + ((eax >> 20) & 0xFFU);
+    model  = (((eax >> 16) & 0xFU) << 4) + ((eax >> 4) & 0xFU);
 
-        switch (family)
-        {
-            case P6_FAMILY:
-                allowed = allowed_intel;
+    switch (family)
+    {
+        case P6_FAMILY:
+            allowed = allowed_intel;
 
-                if ((model == SANDYBRIDGE)        ||
-                        (model == SANDYBRIDGE_EP) ||
-                        (model == IVYBRIDGE)      ||
-                        (model == IVYBRIDGE_EP) )
-                {
-                    allowed = allowed_sandybridge;
-                    isPCIUncore = 1;
-                }
-                else if ((model == HASWELL) || (model == HASWELL_EX))
-                {
-                    allowed = allowed_haswell;
-                }
-                else if (model == ATOM_SILVERMONT)
-                {
-                    allowed = allowed_silvermont;
-                }
-                else if (model == WESTMERE_EX)
-                {
-                    allowed = allowed_westmereEX;
-                }
-                break;
-            case K8_FAMILY:
-            case K10_FAMILY:
-                allowed = allowed_amd;
-                break;
-            case K15_FAMILY:
-                allowed = allowed_amd15;
-                break;
-            case K16_FAMILY:
-                allowed = allowed_amd16;
+            if (isIntel && ((model == SANDYBRIDGE)        ||
+                    (model == SANDYBRIDGE_EP) ||
+                    (model == IVYBRIDGE)      ||
+                    (model == IVYBRIDGE_EP) ))
+            {
+                allowed = allowed_sandybridge;
+                isPCIUncore = 1;
+            }
+            else if (isIntel && ((model == HASWELL) || (model == HASWELL_EX)))
+            {
+                allowed = allowed_haswell;
+            }
+            else if (isIntel && (model == ATOM_SILVERMONT))
+            {
+                allowed = allowed_silvermont;
+            }
+            else if (isIntel && (model == WESTMERE_EX))
+            {
+                allowed = allowed_westmereEX;
+            }
             break;
-            default:
-                fprintf(stderr, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
-                        __FILE__, __LINE__);
-                exit(EXIT_FAILURE);
-        }
+        case K8_FAMILY:
+        case K10_FAMILY:
+            if (!isIntel) 
+            {
+                allowed = allowed_amd;
+            }
+            break;
+        case K15_FAMILY:
+            if (!isIntel) 
+            {
+                allowed = allowed_amd15;
+            }
+            break;
+        case K16_FAMILY:
+            if (!isIntel) 
+            {
+                allowed = allowed_amd16;
+            }
+            break;
+        default:
+            fprintf(stderr, "ERROR - [%s:%d] - Unsupported processor. Exiting!\n",
+                    __FILE__, __LINE__);
+            exit(EXIT_FAILURE);
     }
 
     openlog(ident, 0, LOG_USER);
