@@ -41,64 +41,82 @@
 #include <perfmon.h>
 #include <daemon.h>
 
-static int daemon_run = 0;
+static volatile int daemon_run = 0;
 static bstring eventString;
 static TimerData timeData;
+static pid_t daemonpid = 0;
 
 
 void
-daemon_init(bstring str)
+daemon_start(bstring str, struct timespec interval)
 {
-    eventString = bstrcpy(str);
-    signal(SIGINT, daemon_stop);
-    signal(SIGUSR1, daemon_interrupt);
-
-}
-
-void
-daemon_start(struct timespec interval)
-{
-    daemon_run = 1;
-    perfmon_startCounters();
-    timer_start(&timeData);
-
-    while (1)
+    daemonpid = fork();
+    if (daemonpid == 0)
     {
-        if (daemon_run)
+        eventString = bstrcpy(str);
+        signal(SIGINT, daemon_interrupt);
+        signal(SIGUSR1, daemon_interrupt);
+        daemon_run = 1;
+        perfmon_setupEventSet(eventString, NULL);
+        perfmon_startCounters();
+        timer_start(&timeData);
+
+        while (1)
         {
-            timer_stop(&timeData);
-            perfmon_readCounters();
-            perfmon_logCounterResults( timer_print(&timeData) );
-            timer_start(&timeData);
+            if (daemon_run)
+            {
+                timer_stop(&timeData);
+                perfmon_readCounters();
+                perfmon_logCounterResults( timer_print(&timeData) );
+                timer_start(&timeData);
+            }
+            else
+            {
+                break;
+            }
+            nanosleep( &interval, NULL);
         }
-        nanosleep( &interval, NULL);
+        signal(SIGINT, SIG_DFL);
+        signal(SIGUSR1, SIG_DFL);
+        exit(EXIT_SUCCESS);
     }
 }
 
 void
 daemon_stop(int sig)
 {
-    printf("DAEMON:  EXIT on %d\n", sig);
-    perfmon_stopCounters();
-    signal(SIGINT, SIG_DFL);
-    kill(getpid(), SIGINT);
+    if (daemonpid > 0)
+    {
+        printf("PARENT: KILL daemon with signal %d\n", sig);
+        kill(daemonpid, sig);
+        //perfmon_stopCounters();
+    }
 }
 
 void
 daemon_interrupt(int sig)
 {
-    if (daemon_run)
+    if (sig == SIGUSR1)
     {
-        perfmon_stopCounters();
+        if (daemon_run)
+        {
+            perfmon_stopCounters();
+            daemon_run = 0;
+            printf("DAEMON: STOP on %d\n",sig);
+            exit(EXIT_SUCCESS);
+        }
+        else
+        {
+            perfmon_setupEventSet(eventString, NULL);
+            perfmon_startCounters();
+            daemon_run = 1;
+            printf("DAEMON: START with events %s\n",bdata(eventString));
+        }
+    } else
+    {
+        printf("DAEMON: EXIT on %d\n", sig);
         daemon_run = 0;
-        printf("DAEMON:  STOP on %d\n",sig);
-    }
-    else
-    {
-        perfmon_setupEventSet(eventString, NULL);
-        perfmon_startCounters();
-        daemon_run = 1;
-        printf("DAEMON:  START\n");
+        exit(EXIT_SUCCESS);
     }
 }
 
