@@ -846,11 +846,12 @@ perfmon_logCounterResults(double time)
         for (j=0; j<perfmon_numThreads; j++)
         {
             fprintf(OUTSTREAM, "%e ",
-                    (double) (perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData) - perfmon_threadState[j][i]);
-            tmp =perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData;
-            perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData -=
-              perfmon_threadState[j][i];
-            perfmon_threadState[j][i] = tmp;
+                    (double) (perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData) - perfmon_threadState[j][perfmon_set.events[i].index]);
+            //tmp =perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData;
+            //perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData -=
+              //perfmon_threadState[j][perfmon_set.events[i].index];
+            fprintf(OUTSTREAM, "Event index %d = %d\n",i, perfmon_set.events[i].index);
+            perfmon_threadState[j][perfmon_set.events[i].index] = perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData;
         }
         fprintf(OUTSTREAM,"\n");
     }
@@ -1056,7 +1057,6 @@ perfmon_setupEventSet(bstring eventString, BitMask* counterMask)
     StrUtilEventSet eventSetConfig;
     PerfmonEvent eventSet;
     struct bstrList* subStr;
-    
 
     groupId = getGroupId(eventString, &groupSet);
     
@@ -1247,6 +1247,10 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
     {
         perfmon_threadState[i] = (double*)
             malloc(NUM_PMC * sizeof(double));
+        for(int j=0; j<NUM_PMC;j++)
+        {
+            perfmon_threadState[i][j] = 0.0;
+        }
     }
 
     OUTSTREAM = outstream;

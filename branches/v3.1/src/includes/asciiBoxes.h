@@ -37,6 +37,6 @@
 extern BoxContainer* asciiBoxes_allocateContainer(int numLines,int numColumns);
 extern void asciiBoxes_addBox(BoxContainer* container, int line, int column, bstring label);
 extern void asciiBoxes_addJoinedBox(BoxContainer* container, int line, int startColumn, int endColumn, bstring label);
-extern void asciiBoxes_print(BoxContainer* container);
+extern void asciiBoxes_print(FILE* OUTSTREAM, BoxContainer* container);
 
 #endif /*ASCIIBOXES_H*/
