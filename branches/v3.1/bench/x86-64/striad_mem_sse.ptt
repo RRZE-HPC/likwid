@@ -1,0 +1,11 @@
+STREAMS 3
+TYPE DOUBLE
+FLOPS 2
+BYTES 24
+movaps FPR5, [SCALAR]
+LOOP 2
+movaps    FPR1, [STR2 + GPR1*8]
+mulpd     FPR1, FPR5
+addpd     FPR1, [STR1 + GPR1*8]
+movntpd   [STR0 + GPR1*8], FPR1
+

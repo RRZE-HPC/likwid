@@ -1,0 +1,15 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 1
+BYTES 4
+xorps FPR1, FPR1
+xorps FPR2, FPR2
+xorps FPR3, FPR3
+xorps FPR4, FPR4
+LOOP 4
+addss    FPR1, [STR0 + GPR1 * 4]
+addss    FPR2, [STR0 + GPR1 * 4 + 4]
+addss    FPR3, [STR0 + GPR1 * 4 + 8]
+addss    FPR4, [STR0 + GPR1 * 4 + 12]
+
+
