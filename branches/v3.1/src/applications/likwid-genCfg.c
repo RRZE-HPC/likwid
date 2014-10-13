@@ -52,7 +52,7 @@
     fflush(stdout);
 
 #define VERSION_MSG \
-    fprintf(stdout, "likwid-powermeter  %d.%d \n\n",VERSION,RELEASE); \
+    fprintf(stdout, "likwid-genCfg  %d.%d \n\n",VERSION,RELEASE); \
     fflush(stdout);
 
 
