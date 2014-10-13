@@ -297,6 +297,12 @@ static void msr_read(AccessDataRecord * dRecord)
     dRecord->errorcode = ERR_NOERROR;
     dRecord->data = 0;
 
+    if (FD_MSR[cpu] == -2)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+
     if (!allowed(reg))
     {
         syslog(LOG_ERR, "attempt to read from restricted register 0x%x", reg);
@@ -321,6 +327,12 @@ static void msr_write(AccessDataRecord * dRecord)
     uint64_t data = dRecord->data;
 
     dRecord->errorcode = ERR_NOERROR;
+
+    if (FD_MSR[cpu] == -2)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
 
     if (!allowed(reg))
     {
@@ -348,10 +360,10 @@ static void pci_read(AccessDataRecord* dRecord)
     dRecord->data = 0;
 
     if (FD_PCI[socketId][device] == -2)
-	{
-		dRecord->errorcode = ERR_NODEV;
-		return;
-	}
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
     else if ( !FD_PCI[socketId][device] )
     {
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
@@ -389,11 +401,11 @@ static void pci_write(AccessDataRecord* dRecord)
     uint32_t data = (uint32_t) dRecord->data;
 
     dRecord->errorcode = ERR_NOERROR;
-	if (FD_PCI[socketId][device] == -2)
-	{
-		dRecord->errorcode = ERR_NODEV;
-		return;
-	}
+    if (FD_PCI[socketId][device] == -2)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
     else if ( !FD_PCI[socketId][device] )
     {
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
@@ -531,6 +543,11 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
+    for ( uint32_t i=0; i < numHWThreads; i++ )
+    {
+        FD_MSR[i] = -1;
+    }
+
     {
         uint32_t  eax = 0x00;
         uint32_t  ebx = 0x00;
@@ -581,7 +598,7 @@ int main(void)
                 break;
             case K16_FAMILY:
                 allowed = allowed_amd16;
-	        break;
+            break;
             default:
                 fprintf(stderr, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
                         __FILE__, __LINE__);
@@ -674,6 +691,7 @@ int main(void)
             if ( FD_MSR[i] < 0 )
             {
                 syslog(LOG_ERR, "Failed to open device file %s.",msr_file_name);
+                FD_MSR[i] = -2;
             }
         }
 
@@ -683,7 +701,7 @@ int main(void)
         {
             for (int j=0; j<MAX_NUM_NODES; j++)
             {
-            	socket_bus[j] = "N-A";
+                socket_bus[j] = "N-A";
                 for (int i=0; i<MAX_NUM_DEVICES; i++)
                 {
                     FD_PCI[j][i] = -2;
@@ -736,25 +754,25 @@ int main(void)
             }
             else
             {
-		        socket_count = cntr;
+                socket_count = cntr;
 
-		        for (int j=0; j<socket_count; j++)
-				{
-					for (int i=0; i<MAX_NUM_DEVICES; i++)
-					{
-						sprintf(pci_filepath, "%s%s%s",PCI_ROOT_PATH,socket_bus[j],pci_DevicePath[i]);
+                for (int j=0; j<socket_count; j++)
+                {
+                    for (int i=0; i<MAX_NUM_DEVICES; i++)
+                    {
+                        sprintf(pci_filepath, "%s%s%s",PCI_ROOT_PATH,socket_bus[j],pci_DevicePath[i]);
 
-						if (!access(pci_filepath,F_OK))
-						{
-							FD_PCI[j][i] = 0;
-						}
-						else
-						{
-							syslog(LOG_NOTICE, "Device %s not found, excluded it from device list\n",pci_filepath);
-						}
-					}
-				}
-			}
+                        if (!access(pci_filepath,F_OK))
+                        {
+                            FD_PCI[j][i] = 0;
+                        }
+                        else
+                        {
+                            syslog(LOG_NOTICE, "Device %s not found, excluded it from device list\n",pci_filepath);
+                        }
+                    }
+                }
+            }
         }
     }
 
