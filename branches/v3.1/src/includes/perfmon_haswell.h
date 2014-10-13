@@ -62,9 +62,9 @@ void perfmon_init_haswell(PerfmonThread *thread)
     msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL);
 
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
-    msr_write(cpu_id, MSR_UNC_CBO_0_PERFEVTSEL0, 0xAAAAAAAA);
+    msr_write(cpu_id, MSR_UNC_CBO_0_PERFEVTSEL0, 0xAA);
     flags = msr_read(cpu_id, MSR_UNC_CBO_0_PERFEVTSEL0);
-    if (flags != 0xAAAAAAAA)
+    if (flags != 0xAA)
     {
         fprintf(stdout, "The current system does not support Uncore MSRs, deactivating Uncore support\n");
         cpuid_info.supportUncore = 0;
@@ -349,8 +349,11 @@ void perfmon_readCountersThread_haswell(int thread_id)
 
     core_flags = msr_read(cpu_id, MSR_PERF_GLOBAL_CTRL);
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
-    uncore_flags = msr_read(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL);
-    msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
+    if (cpuid_info.supportUncore)
+    {
+        uncore_flags = msr_read(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL);
+        msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
+    }
 
     for ( int i=0; i<perfmon_numCountersHaswell; i++ )
     {
@@ -393,7 +396,10 @@ void perfmon_readCountersThread_haswell(int thread_id)
             }
         }
     }
-    msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, uncore_flags);
+    if (cpuid_info.supportUncore && uncore_flags > 0x0ULL)
+    {
+        msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, uncore_flags);
+    }
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, core_flags);
 }
 
