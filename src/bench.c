@@ -43,26 +43,38 @@
 #include <affinity.h>
 #include <barrier.h>
 #include <likwid.h>
+#ifdef PAPI
+#include <papi.h>
+#endif
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-//#define BARRIER pthread_barrier_wait(&threads_barrier) 
+//#define BARRIER pthread_barrier_wait(&threads_barrier)
 #define BARRIER   barrier_synchronize(&barr)
 
 #ifdef PERFMON
 #define START_PERFMON likwid_markerStartRegion("bench");
 #define STOP_PERFMON  likwid_markerStopRegion("bench");
 #define LIKWID_THREAD_INIT  likwid_markerThreadInit();
+#define EXECUTE EXECUTE_LIKWID
+#else
+#ifdef PAPI
+#define START_PERFMON(event_set) PAPI_start(event_set);
+#define STOP_PERFMON(event_set, result) PAPI_stop ( event_set ,result );
+#define LIKWID_THREAD_INIT
+#define EXECUTE EXECUTE_PAPI
 #else
 #define START_PERFMON
 #define STOP_PERFMON
 #define LIKWID_THREAD_INIT
+#define EXECUTE EXECUTE_LIKWID
+#endif
 #endif
 
-#define EXECUTE(func)   \
+#define EXECUTE_LIKWID(func)   \
     BARRIER; \
     if (data->threadId == 0) \
     { \
@@ -80,9 +92,27 @@
         timer_stop(&time); \
         data->cycles = timer_printCycles(&time); \
     } \
+    BARRIER 
+
+#define EXECUTE_PAPI(func)   \
+    BARRIER; \
+    if (data->threadId == 0) \
+    { \
+        timer_start(&time); \
+    } \
+    START_PERFMON(event_set)  \
+    for (i=0; i<  data->data.iter; i++) \
+    {   \
+    func; \
+    } \
+    BARRIER; \
+    STOP_PERFMON(event_set, &(result[0]))  \
+    if (data->threadId == 0) \
+    { \
+        timer_stop(&time); \
+        data->cycles = timer_printCycles(&time); \
+    } \
     BARRIER
-
-
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void* runTest(void* arg)
@@ -96,6 +126,43 @@ void* runTest(void* arg)
     ThreadUserData* myData;
     TimerData time;
     FuncPrototype func;
+#ifdef PAPI
+    int event_set = PAPI_NULL;
+    char groupname[50];
+    char* group_ptr = &(groupname[0]);
+    long long int result[4] = {0,0,0,0};
+    group_ptr = getenv("PAPI_BENCH");
+    PAPI_create_eventset(&event_set);
+    PAPI_add_event(event_set, PAPI_TOT_CYC);
+    fprintf(stderr, "PAPI measuring group %s\n",group_ptr);
+    // L3 group
+    if (strncmp(group_ptr,"L3",2) == 0)
+    {
+        PAPI_add_event(event_set, PAPI_L3_TCA);
+    }
+    // L2 group
+    else if (strncmp(group_ptr,"L2",2) == 0)
+    {
+        PAPI_add_event(event_set, PAPI_L2_TCA);
+    }
+    // FLOPS_AVX
+    else if (strncmp(group_ptr,"FLOPS_AVX",9) == 0)
+    {
+        PAPI_add_event(event_set, PAPI_VEC_SP);
+        PAPI_add_event(event_set, PAPI_VEC_DP);
+        PAPI_add_event(event_set, PAPI_FP_INS);
+    }
+    // FLOPS_DP
+    else if (strncmp(group_ptr,"FLOPS_DP",8) == 0)
+    {
+        PAPI_add_event(event_set, PAPI_DP_OPS);
+    }
+    // FLOPS_SP
+    else if (strncmp(group_ptr,"FLOPS_SP",8) == 0)
+    {
+        PAPI_add_event(event_set, PAPI_SP_OPS);
+    }
+#endif
 
     data = (ThreadData*) arg;
     myData = &(data->data);
@@ -111,6 +178,7 @@ void* runTest(void* arg)
 
     switch ( myData->test->type )
     {
+    	case SINGLE_RAND:
         case SINGLE:
             {
                 float* sptr;
@@ -123,6 +191,7 @@ void* runTest(void* arg)
                 }
             }
             break;
+        case DOUBLE_RAND:
         case DOUBLE:
             {
                 double* dptr;
@@ -154,10 +223,10 @@ void* runTest(void* arg)
 
     /* Up to 10 streams the following registers are used for Array ptr:
      * Size rdi
-     * in Registers: rsi  rdx  rcx  r8  r9  
+     * in Registers: rsi  rdx  rcx  r8  r9
      * passed on stack, then: r10  r11  r12  r13  r14  r15
      * If more than 10 streams are used first 5 streams are in register, above 5 a macro must be used to
-     * load them from stack 
+     * load them from stack
      * */
 
     switch ( myData->test->streams ) {
@@ -440,7 +509,24 @@ void* runTest(void* arg)
         default:
             break;
     }
-
+#ifdef PAPI
+    for(i=0;i<4;i++)
+        printf("result[%d] = %llu\n",i,result[i]);
+    double papi_result = 0.0;
+    // L2 & L3 group
+    if (strncmp(group_ptr,"L3",2) == 0 ||
+        strncmp(group_ptr,"L2",2) == 0)
+    {
+        papi_result = ((double)result[1]) * 64.0;
+    }
+    // FLOPS_AVX
+    else if (strncmp(group_ptr,"FLOPS",5) == 0)
+    {
+        printf("Determine PAPI result\n");
+        papi_result = (double) result[1]+ (double) result[2];
+    }
+    printf("Thread %d Result %f\n",threadId, papi_result);
+#endif
     pthread_exit(NULL);
 }
 
