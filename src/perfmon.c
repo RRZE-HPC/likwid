@@ -595,10 +595,8 @@ perfmon_init_maps(void)
                     break;
 
                 case HASWELL:
-                    perfmon_numCounters = perfmon_numCountersHaswell - NUM_COUNTERS_UNCORE_HASWELL;
                 case HASWELL_M1:
                 case HASWELL_M2:
-                case HASWELL_EX:
                     eventHash = haswell_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsHaswell;
                     counter_map = haswell_counter_map;

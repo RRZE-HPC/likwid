@@ -67,6 +67,8 @@ endif
 
 DYNAMIC_TARGET_LIB := liblikwid.so
 STATIC_TARGET_LIB := liblikwid.a
+LIBHWLOC = ext/hwloc/libhwloc.a
+LIBLUA = ext/lua/liblua.a
 ifeq ($(SHARED_LIBRARY),true)
 CFLAGS += $(SHARED_CFLAGS)
 LIBS += -L. -pthread -lm -lpci
@@ -118,7 +120,7 @@ docs:
 
 $(C_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(C_APPS))) $(BUILD_DIR) $(GENGROUPLOCK)  $(OBJ) $(OBJ_BENCH)
 	@echo "===>  LINKING  $@"
-	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ_BENCH) $(TARGET_LIB) $(LIBHWLOC) $(LIBS)
+	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(LIBHWLOC) $(LIBS)
 
 $(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
 	@echo "===>  ADJUSTING  $@"
@@ -141,7 +143,7 @@ $(STATIC_TARGET_LIB): $(OBJ)
 
 $(DYNAMIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE SHARED LIB  $(DYNAMIC_TARGET_LIB)"
-	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(LIBHWLOC) $(LIBLUA)
+	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) -L. -pthread -lm -lpci $(LIBHWLOC) $(LIBLUA)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  Build access daemon likwid-accessD"
@@ -239,11 +241,7 @@ install:
 	@cp -f ext/lua/liblua* $(PREFIX)/lib
 	@cp -f ext/hwloc/libhwloc* $(PREFIX)/lib
 	@chmod 755 $(PREFIX)/lib/$(PINLIB)
-	@echo "===> INSTALL access daemon to $(ACCESSDAEMON)"
-	@mkdir -p $(PREFIX)/sbin
-	@cp -f likwid-accessD $(ACCESSDAEMON)
-	@chown root:root $(ACCESSDAEMON)
-	@chmod 4755 $(ACCESSDAEMON)
+	$(DAEMON_INSTALL)
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
@@ -273,8 +271,7 @@ uninstall:
 	@rm -f $(PREFIX)/lib/liblikwid*
 	@rm -f $(PREFIX)/lib/libhwloc*
 	@rm -f $(PREFIX)/lib/liblua*
-	@echo "===> INSTALL access daemon $(ACCESSDAEMON)"
-	@rm -f $(ACCESSDAEMON)
+	$(DAEMON_REMOVE)
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
 	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(L_APPS)))
 	@echo "===> REMOVING header from $(PREFIX)/include"

@@ -12,7 +12,7 @@ ANSI_CFLAGS   =
 #ANSI_CFLAGS += -Wextra
 #ANSI_CFLAGS += -Wall
 
-CFLAGS   =  -O2 -std=c99 -Wno-format 
+CFLAGS   =  -O2 -std=c99 -Wno-format -fPIC
 FCFLAGS  = -module ./  # ifort
 #FCFLAGS  = -J ./  -fsyntax-only  #gfortran
 PASFLAGS  = x86-64
@@ -20,7 +20,7 @@ ASFLAGS  =
 CPPFLAGS =
 LFLAGS   =  -pthread 
 
-SHARED_CFLAGS = -fpic
+SHARED_CFLAGS = -fPIC
 SHARED_LFLAGS = -shared
 
 DEFINES  = -DPAGE_ALIGNMENT=4096
