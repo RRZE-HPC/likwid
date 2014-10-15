@@ -15,17 +15,21 @@ my $filename = $ARGV[0];
 my $fileType  = $ARGV[1];
 my $infile = $filename;
 
-open INFILE,"< $filename";
+if (! -e $filename)
+{
+    die "Input file does not exist!\n";
+}
+
+open INFILE,"<$filename";
 $filename =~ s/\.tmp/\.$FILTERTYPE/;
-open OUTFILE,"> $filename";
+open OUTFILE,">$filename";
 
 
 if ($fileType eq 'topology') {
     my $region = 'topo';
-    print OUTFILE '<node>'.$NL;
+    my $indomain = 0;
 
     while (<INFILE>) {
-
         if (/Cache Topology/) {
             $region = 'cache';
             print OUTFILE '<caches>'.$NL;
@@ -36,46 +40,58 @@ if ($fileType eq 'topology') {
         }
 
         if ($region eq 'topo') {
-            if (/(CPU type):\t(.*)/) {
+            if (/(CPU type):\s+([\w ]*)/) {
                 print OUTFILE '<cpu>'.$2.'</cpu>'.$NL;
-            } elsif (/(Sockets):\t(.*)/) {
+            } elsif (/CPU clock:\s+([\d.]+) GHz/) {
+                print OUTFILE '<clock>'.$1.'</clock>'.$NL;
+            } elsif (/(Sockets):\s+(\d+)/) {
                 print OUTFILE '<socketsPerNode>'.$2.'</socketsPerNode>'.$NL;
-            } elsif (/(Cores per socket):\t(.*)/) {
+            } elsif (/(Cores per socket):\s+(\d+)/) {
                 print OUTFILE '<coresPerSocket>'.$2.'</coresPerSocket>'.$NL;
-            } elsif (/(Threads per core):\t(.*)/) {
+            } elsif (/(Threads per core):\s+(\d+)/) {
                 print OUTFILE '<threadsPerCore>'.$2.'</threadsPerCore>'.$NL;
-            } elsif (/([0-9]*)\t\t([0-9]*)\t\t([0-9]*)\t\t([0-9]*)/) {
+            } elsif (/(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
                 #TODO Build tree for XML output from table!
             }
         } elsif ($region eq 'cache') {
-            if (/(Size):\t([0-9]*) ([kMB]*)/) {
+            if (/(Size):\s+(\d+) ([kMB]*)/) {
                 my $size = $2;
                 if ($3 eq 'MB') {
                     $size *= 1024;
                 }
                 print OUTFILE '<size>'.$size.'</size>'.$NL;
-            } elsif (/(Cache groups):\t*(.*)/) {
+            } elsif (/(Cache groups):\s+(.*)/) {
                 print OUTFILE '</cache>'.$NL;
-            } elsif (/(Associativity):\t*(.*)/) {
+            } elsif (/(Associativity):\s+(\d+)/) {
                 print OUTFILE '<associativity>'.$2.'</associativity>'.$NL;
-            } elsif (/(Number of sets):\t*(.*)/) {
+            } elsif (/(Number of sets):\s+(\d+)/) {
                 print OUTFILE '<sets>'.$2.'</sets>'.$NL;
-            } elsif (/(Cache line size):\t*(.*)/) {
+            } elsif (/(Cache line size):\s+(\d+)/) {
                 print OUTFILE '<linesize>'.$2.'</linesize>'.$NL;
-            } elsif (/(Level):\t*(.*)/) {
+            } elsif (/(Level):\s+(\d+)/) {
                 print OUTFILE '<cache>'.$NL;
                 print OUTFILE '<level>'.$2.'</level>'.$NL;
             }
         } elsif ($region eq 'numa') {
             if (/Domain ([0-9]*)/) {
+                if ($indomain )
+                {
+                    print OUTFILE '</domain>'.$NL;
+                }
                 print OUTFILE '<domain>'.$NL;
                 print OUTFILE '<id>'.$1.'</id>'.$NL;
-            } elsif (/Memory:.*total ([0-9.]+) MB/) {
-                print OUTFILE '<memory>'.$1.'</memory>'.$NL;
-            } elsif (/Processors:[ ]+([0-9. ]+)/) {
+                $indomain = 1
+            } elsif (/Memory: ([\d.]+) MB free of total ([\d.]+) MB/) {
+                print OUTFILE '<freememory>'.$1.'</freememory>'.$NL;
+                print OUTFILE '<totalmemory>'.$2.'</totalmemory>'.$NL;
+            } elsif (/Processors:[ ]+([\d. ]+)/) {
                 print OUTFILE '<processors>'.$1.'</processors>'.$NL;
             }
         }
+    }
+    if ($indomain)
+    {
+        print OUTFILE '</domain>'.$NL;
     }
 
     print OUTFILE '</numa>'.$NL;
@@ -85,22 +101,23 @@ if ($fileType eq 'topology') {
     my @col;
     print OUTFILE '<perfctr>'.$NL;
     while (<INFILE>) {
-        if (/Event[ ]*\|[ ]*(core.*)\|/) {
+        if (/\|[ ]*Event[ ]*\|[ ]*Counter[ ]*\|[ ]*(Core.*)\|/) {
             if (not $header) {
                 @col = split('\|',$1);
                 foreach (@col) {
-                    s/core //g;
+                    s/Core //g;
                     s/[ ]//g;
                 }
                 $header = 1;
             }
         }elsif (/STAT/) {
 
-        }elsif (/\|[ ]+([A-Z0-9_]+)[ ]+\|[ ]*(.*)\|/) {
-            my @rescol = split('\|',$2);
+        }elsif (/\|[ ]+([A-Z0-9_]+)[ ]+\|[ ]+([A-Z0-9_]+)[ ]+\|[ ]*(.*)\|/) {
+            my @rescol = split('\|',$3);
             my $id = 0;
             print OUTFILE '<result>'.$NL;
             print OUTFILE '<event>'.$1.'</event>'.$NL;
+            print OUTFILE '<counter>'.$2.'</counter>'.$NL;
             foreach (@rescol) {
                 s/[ ]//g;
                 print OUTFILE '<core>'.$NL;

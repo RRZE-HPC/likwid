@@ -77,7 +77,7 @@ if ($fileType eq 'topology') {
 } elsif ($fileType eq 'perfctr') {
     my $header = 0;
     while (<INFILE>) {
-        if (/Event[ ]*\|[ ]*(core.*)\|/) {
+        if (/\|[ ]*Event[ ]*\|[ ]*Counter[ ]*\|[ ]*(Core.*)\|/) {
             if (not $header) {
                 my @col = split('\|',$1);
                 my $numcol = $#col+1;
@@ -92,9 +92,9 @@ if ($fileType eq 'topology') {
             }
         }elsif (/STAT/) {
 
-        }elsif (/\|[ ]+([A-Z0-9_]+)[ ]+\|[ ]*(.*)\|/) {
-            my @col = split('\|',$2);
-            print OUTFILE $1;
+        }elsif (/\|[ ]+([A-Z0-9_]+)[ ]+\|[ ]+([A-Z0-9_]+)[ ]+\|[ ]*(.*)\|/) {
+            my @col = split('\|',$3);
+            print OUTFILE $1.$SEP.$2;
             foreach (@col) {
                 s/[ ]//g;
                 print OUTFILE $SEP.$_;
