@@ -1,4 +1,4 @@
-#!/home/rrze/unrz/unrz139/Work/likwid/trunk/ext/lua/lua
+#!<PREFIX>/bin/likwid-lua
 
 --[[
  * =======================================================================================
@@ -28,7 +28,8 @@
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================]]
-package.path = package.path .. ';' .. string.gsub(debug.getinfo(1).source, "^@(.+/)[^/]+$", "%1") .. '/?.lua'
+package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
+package.cpath = package.cpath .. ';<PREFIX>/lib/?.so'
 local likwid = require("likwid")
 
 local function version()

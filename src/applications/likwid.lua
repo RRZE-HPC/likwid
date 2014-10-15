@@ -1,11 +1,11 @@
 local likwid = {}
 require("liblikwid")
 
-groupfolder = "/home/rrze/unrz/unrz139/Work/likwid/trunk/groups/"
+groupfolder = "<PREFIX>/share/likwid"
 
-likwid.version = 4
-likwid.release = 0
-likwid.pinlibpath = "/usr/local/lib/liblikwidpin.so"
+likwid.version = <VERSION>
+likwid.release = <RELEASE>
+likwid.pinlibpath = "<PREFIX>/lib/liblikwidpin.so"
 likwid.dline = string.rep("=",24)
 likwid.hline =  string.rep("-",80)
 likwid.sline = string.rep("*",80)
@@ -782,56 +782,61 @@ local function print_output(groupID, groupdata, cpulist, use_csv)
     else
         likwid.printtable(tab)
     end
-    local mins = {}
-    local maxs = {}
-    local sums = {}
-    local avgs = {}
-    mins[1] = "Min"
-    maxs[1] = "Max"
-    sums[1] = "Sum"
-    avgs[1] = "Avg"
-    for i=1,num_events do
-        mins[i+1] = math.huge
-        maxs[i+1] = 0
-        sums[i+1] = 0
-        for j=0, num_threads-1 do
-            if results[i][j] < mins[i+1] then
-                mins[i+1] = results[i][j]
+    if #cpulist > 1 then
+        local mins = {}
+        local maxs = {}
+        local sums = {}
+        local avgs = {}
+        mins[1] = "Min"
+        maxs[1] = "Max"
+        sums[1] = "Sum"
+        avgs[1] = "Avg"
+        for i=1,num_events do
+            mins[i+1] = math.huge
+            maxs[i+1] = 0
+            sums[i+1] = 0
+            for j=0, num_threads-1 do
+                if results[i][j] < mins[i+1] then
+                    mins[i+1] = results[i][j]
+                end
+                if results[i][j] > maxs[i+1] then
+                    maxs[i+1] = results[i][j]
+                end
+                sums[i+1] = sums[i+1] + results[i][j]
             end
-            if results[i][j] > maxs[i+1] then
-                maxs[i+1] = results[i][j]
+            avgs[i+1] = sums[i+1] / num_threads
+            if tostring(avgs[i+1]):len() > 12 then
+                avgs[i+1] = string.format("%e",avgs[i+1])
             end
-            sums[i+1] = sums[i+1] + results[i][j]
+            if tostring(mins[i+1]):len() > 12 then
+                mins[i+1] = string.format("%e",mins[i+1])
+            end
+            if tostring(maxs[i+1]):len() > 12 then
+                maxs[i+1] = string.format("%e",maxs[i+1])
+            end
+            if tostring(sums[i+1]):len() > 12 then
+                sums[i+1] = string.format("%e",sums[i+1])
+            end
         end
-        avgs[i+1] = sums[i+1] / num_threads
-        if tostring(avgs[i+1]):len() > 12 then
-            avgs[i+1] = string.format("%e",avgs[i+1])
+        
+        for i=#tab,3,-1 do
+            table.remove(tab,i)
         end
-        if tostring(mins[i+1]):len() > 12 then
-            mins[i+1] = string.format("%e",mins[i+1])
+        table.insert(tab, sums)
+        table.insert(tab, maxs)
+        table.insert(tab, mins)
+        table.insert(tab, avgs)
+        tab[1] = {"Event"}
+        for i=0,num_events-1 do
+            table.insert(tab[1],groupdata["Events"][i]["Event"] .. " STAT")
         end
-        if tostring(maxs[i+1]):len() > 12 then
-            maxs[i+1] = string.format("%e",maxs[i+1])
-        end
-        if tostring(sums[i+1]):len() > 12 then
-            sums[i+1] = string.format("%e",sums[i+1])
-        end
-    end
-    
-    for i=#tab,3,-1 do
-        table.remove(tab,i)
-    end
-    table.insert(tab, sums)
-    table.insert(tab, maxs)
-    table.insert(tab, mins)
-    table.insert(tab, avgs)
 
-    if use_csv then
-        likwid.printcsv(tab)
-    else
-        likwid.printtable(tab)
+        if use_csv then
+            likwid.printcsv(tab)
+        else
+            likwid.printtable(tab)
+        end
     end
-
     if groupdata["Metrics"] then
     
         counterlist["time"] = likwid_getRuntimeOfGroup(groupID)* 1.E-06
@@ -861,69 +866,70 @@ local function print_output(groupID, groupdata, cpulist, use_csv)
         else
             likwid.printtable(tab)
         end
-
-        mins = {}
-        maxs = {}
-        sums = {}
-        avgs = {}
-        
-        mins[1] = "Min"
-        maxs[1] = "Max"
-        sums[1] = "Sum"
-        avgs[1] = "Avg"
-        nr_lines = #tab[1]
-        for j=2,nr_lines do
-            for i=1, num_threads do
-                if mins[j] == nil then
-                    mins[j] = math.huge
-                end
-                if maxs[j] == nil then
-                    maxs[j] = 0
-                end
-                if sums[j] == nil then
-                    sums[j] = 0
-                end
-                
-                local tmp = tonumber(tab[i+1][j])
-                if tmp ~= nil then
-                    if tmp < mins[j] then
-                        mins[j] = tmp
+        if #cpulist > 1 then
+            mins = {}
+            maxs = {}
+            sums = {}
+            avgs = {}
+            
+            mins[1] = "Min"
+            maxs[1] = "Max"
+            sums[1] = "Sum"
+            avgs[1] = "Avg"
+            nr_lines = #tab[1]
+            for j=2,nr_lines do
+                for i=1, num_threads do
+                    if mins[j] == nil then
+                        mins[j] = math.huge
                     end
-                    if tmp > maxs[j] then
-                        maxs[j] = tmp
+                    if maxs[j] == nil then
+                        maxs[j] = 0
                     end
-                    sums[j] = sums[j] + tmp
+                    if sums[j] == nil then
+                        sums[j] = 0
+                    end
+                    
+                    local tmp = tonumber(tab[i+1][j])
+                    if tmp ~= nil then
+                        if tmp < mins[j] then
+                            mins[j] = tmp
+                        end
+                        if tmp > maxs[j] then
+                            maxs[j] = tmp
+                        end
+                        sums[j] = sums[j] + tmp
+                    end
+                end
+                avgs[j] = sums[j] / num_threads
+                if tostring(avgs[j]):len() > 12 then
+                    avgs[j] = string.format("%e",avgs[j])
+                end
+                if tostring(mins[j]):len() > 12 then
+                    mins[j] = string.format("%e",mins[j])
+                end
+                if tostring(maxs[j]):len() > 12 then
+                    maxs[j] = string.format("%e",maxs[j])
+                end
+                if tostring(sums[j]):len() > 12 then
+                    sums[j] = string.format("%e",sums[j])
                 end
             end
-            avgs[j] = sums[j] / num_threads
-            if tostring(avgs[j]):len() > 12 then
-                avgs[j] = string.format("%e",avgs[j])
-            end
-            if tostring(mins[j]):len() > 12 then
-                mins[j] = string.format("%e",mins[j])
-            end
-            if tostring(maxs[j]):len() > 12 then
-                maxs[j] = string.format("%e",maxs[j])
-            end
-            if tostring(sums[j]):len() > 12 then
-                sums[j] = string.format("%e",sums[j])
-            end
-        end
 
-        tab = {}
-        tab[1] = {"Metric"}
-        for m=1,#groupdata["Metrics"] do
-            table.insert(tab[1],groupdata["Metrics"][m]["description"].." STAT" )
-        end
-        table.insert(tab, sums)
-        table.insert(tab, maxs)
-        table.insert(tab, mins)
-        table.insert(tab, avgs)
+            tab = {}
+            tab[1] = {"Metric"}
+            for m=1,#groupdata["Metrics"] do
+                table.insert(tab[1],groupdata["Metrics"][m]["description"].." STAT" )
+            end
+            table.insert(tab, sums)
+            table.insert(tab, maxs)
+            table.insert(tab, mins)
+            table.insert(tab, avgs)
 
-        if use_csv then
-            likwid.printcsv(tab)
-        else
-            likwid.printtable(tab)
+            if use_csv then
+                likwid.printcsv(tab)
+            else
+                likwid.printtable(tab)
+            end
         end
     end
 end
@@ -972,24 +978,8 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
             for t=0,nr_threads-1 do
                 local tmpList = {}
                 table.insert(tmpList, "Core "..tostring(cpulist[t+1]))
-                --[[for i, event in pairs(gdata["Events"]) do
-                    local index = 0
-                    for k,v in pairs(ctr_and_events["Counters"]) do
-                        if v["Name"] == gdata["Events"][i]["Counter"] then
-                            index = k
-                            break
-                        end
-                    end
-                end]]
                 for e=1,nr_events do
                     local index = 0
-                    --[[for k,v in pairs(ctr_and_events["Counters"]) do
-                        if v["Name"] == gdata["Events"][e-1]["Counter"] then
-                            index = k
-                            break
-                        end
-                    end]]
-                    print(r,g,e,t)
                     local tmp = results[r][g][e][t]["Value"]
                     if tmp == nil then
                         tmp = 0
@@ -1045,88 +1035,88 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                 else
                     likwid.printtable(tab)
                 end
-
-                mins = {}
-                maxs = {}
-                sums = {}
-                avgs = {}
-                
-                for col=2,nr_threads+1 do
-                    for row=2, #gdata["Metrics"]+1 do
-                        if mins[row-1] == nil then
-                            mins[row-1] = math.huge
-                        end
-                        if maxs[row-1] == nil then
-                            maxs[row-1] = 0
-                        end
-                        if sums[row-1] == nil then
-                            sums[row-1] = 0
-                        end
-                        tmp = tonumber(tab[col][row])
-                        if tmp ~= nil then
-                            if tmp < mins[row-1] then
-                                mins[row-1] = tmp
+                if #cpulist > 1 then
+                    mins = {}
+                    maxs = {}
+                    sums = {}
+                    avgs = {}
+                    
+                    for col=2,nr_threads+1 do
+                        for row=2, #gdata["Metrics"]+1 do
+                            if mins[row-1] == nil then
+                                mins[row-1] = math.huge
                             end
-                            if tmp > maxs[row-1] then
-                                maxs[row-1] = tmp
+                            if maxs[row-1] == nil then
+                                maxs[row-1] = 0
                             end
-                            sums[row-1] = sums[row-1] + tmp
-                        else
-                            mins[row-1] = 0
-                            maxs[row-1] = 0
-                            sums[row-1] = 0
+                            if sums[row-1] == nil then
+                                sums[row-1] = 0
+                            end
+                            tmp = tonumber(tab[col][row])
+                            if tmp ~= nil then
+                                if tmp < mins[row-1] then
+                                    mins[row-1] = tmp
+                                end
+                                if tmp > maxs[row-1] then
+                                    maxs[row-1] = tmp
+                                end
+                                sums[row-1] = sums[row-1] + tmp
+                            else
+                                mins[row-1] = 0
+                                maxs[row-1] = 0
+                                sums[row-1] = 0
+                            end
                         end
                     end
-                end
-                for i=1,#sums do
-                    avgs[i] = sums[i]/nr_threads
-                    if tostring(avgs[i]):len() > 12 then
-                        avgs[i] = string.format("%e",avgs[i])
+                    for i=1,#sums do
+                        avgs[i] = sums[i]/nr_threads
+                        if tostring(avgs[i]):len() > 12 then
+                            avgs[i] = string.format("%e",avgs[i])
+                        end
+                        if tostring(mins[i]):len() > 12 then
+                            mins[i] = string.format("%e",mins[i])
+                        end
+                        if tostring(maxs[i]):len() > 12 then
+                            maxs[i] = string.format("%e",maxs[i])
+                        end
+                        if tostring(sums[i]):len() > 12 then
+                            sums[i] = string.format("%e",sums[i])
+                        end
                     end
-                    if tostring(mins[i]):len() > 12 then
-                        mins[i] = string.format("%e",mins[i])
+                    
+                    tab = {}
+                    tmpList = {"Metric"}
+                    for m=1,#gdata["Metrics"] do
+                        table.insert(tmpList, gdata["Metrics"][m]["description"].." STAT")
                     end
-                    if tostring(maxs[i]):len() > 12 then
-                        maxs[i] = string.format("%e",maxs[i])
+                    table.insert(tab, tmpList)
+                    tmpList = {"Sum"}
+                    for m=1,#sums do
+                        table.insert(tmpList, sums[m])
                     end
-                    if tostring(sums[i]):len() > 12 then
-                        sums[i] = string.format("%e",sums[i])
+                    table.insert(tab, tmpList)
+                    tmpList = {"Min"}
+                    for m=1,#mins do
+                        table.insert(tmpList, mins[m])
                     end
-                end
-                
-                tab = {}
-                tmpList = {"Metric"}
-                for m=1,#gdata["Metrics"] do
-                    table.insert(tmpList, gdata["Metrics"][m]["description"].." STAT")
-                end
-                table.insert(tab, tmpList)
-                tmpList = {"Sum"}
-                for m=1,#sums do
-                    table.insert(tmpList, sums[m])
-                end
-                table.insert(tab, tmpList)
-                tmpList = {"Min"}
-                for m=1,#mins do
-                    table.insert(tmpList, mins[m])
-                end
-                table.insert(tab, tmpList)
-                tmpList = {"Max"}
-                for m=1,#maxs do
-                    table.insert(tmpList, maxs[m])
-                end
-                table.insert(tab, tmpList)
-                tmpList = {"Avg"}
-                for m=1,#avgs do
-                    table.insert(tmpList, avgs[m])
-                end
-                table.insert(tab, tmpList)
+                    table.insert(tab, tmpList)
+                    tmpList = {"Max"}
+                    for m=1,#maxs do
+                        table.insert(tmpList, maxs[m])
+                    end
+                    table.insert(tab, tmpList)
+                    tmpList = {"Avg"}
+                    for m=1,#avgs do
+                        table.insert(tmpList, avgs[m])
+                    end
+                    table.insert(tab, tmpList)
 
-                if use_csv then
-                    likwid.printcsv(tab)
-                else
-                    likwid.printtable(tab)
+                    if use_csv then
+                        likwid.printcsv(tab)
+                    else
+                        likwid.printtable(tab)
+                    end
                 end
-
             end
             print()
         end
