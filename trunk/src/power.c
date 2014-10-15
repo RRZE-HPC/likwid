@@ -75,7 +75,7 @@ power_init(int cpuId)
             break;
         case SANDYBRIDGE_EP:
         case IVYBRIDGE_EP:
-        case HASWELL_EX:
+        case HASWELL_EP:
             hasRAPL = 1;
             power_info.supportedTypes = (1<<PKG)|(1<<PP1)|(1<<DRAM);
             info_register = MSR_PKG_POWER_INFO;
