@@ -1,4 +1,4 @@
-#!/home/unrz139/likwid/trunk/ext/lua/lua
+#!<PREFIX>/bin/likwid-lua
 
 --[[
  * =======================================================================================
@@ -31,7 +31,8 @@
  * =======================================================================================]]
 
 P6_FAMILY = 6
-package.path = package.path .. ';' .. string.gsub(debug.getinfo(1).source, "^@(.+/)[^/]+$", "%1") .. '/?.lua'
+package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
+package.cpath = package.cpath .. ';<PREFIX>/lib/?.so'
 local likwid = require("likwid")
 
 local function version()
@@ -106,6 +107,7 @@ switch_interval = 5
 output = ""
 use_csv = false
 execString = nil
+outfile = nil
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid("pid"))
 
 for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
@@ -161,8 +163,9 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
         use_timeline = true
         duration = likwid.parse_time(arg)
     elseif (opt == "o") then
-        output = arg
-        io.output(arg)
+        outfile = arg
+        io.output(arg:gsub(string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$"),"tmp"))
+        print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end
     elseif (opt == "O") then
         use_csv = true
     end
@@ -441,6 +444,20 @@ elseif use_wrapper or use_stethoscope then
     end
 end
 
+if outfile then
+    local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
+    local command = "<PREFIX>/share/likwid/filter/" .. suffix 
+    if suffix ~= "txt" then
+        command = command .." ".. outfile:gsub("."..suffix,".tmp",1) .. " perfctr"
+        local f = io.popen(command)
+        local o = f:read("*a")
+        if o:len() > 0 then
+            print(string.format("Failed to executed filter script %s.",command))
+        end
+    else
+        os.rename(outfile:gsub("."..suffix,".tmp",1), outfile)
+    end
+end
 
 likwid.finalize()
 likwid.putTopology()

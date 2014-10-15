@@ -1,12 +1,13 @@
-#!/home/rrze/unrz/unrz139/Work/likwid/trunk/ext/lua/lua
+#!<PREFIX>/bin/likwid-lua
 
 --[[
  * =======================================================================================
  *
- *      Filename:  likwid-topology.lua
+ *      Filename:  likwid-genTopoCfg.lua
  *
- *      Description:  A application to determine the thread and cache topology
- *                    on x86 processors.
+ *      Description:  A application to create a file of the underlying system configuration
+ *                    that is used by likwid to avoid reading the systems architecture at
+ *                    each start.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -29,7 +30,8 @@
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================]]
-
+package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
+package.cpath = package.cpath .. ';<PREFIX>/lib/?.so'
 local likwid = require("likwid")
 
 local HLINE = string.rep("-",80)
@@ -37,19 +39,15 @@ local SLINE = string.rep("*",80)
 
 
 function version()
-    print(string.format("likwid-genCfg --  Version %d.%d",likwid.version,likwid.release))
+    print(string.format("likwid-genTopoCfg --  Version %d.%d",likwid.version,likwid.release))
 end
 
 function usage()
     version()
-    print("A tool to print the thread and cache topology on x86 CPUs.\n")
+    print("A tool to store the system's architecture to a config file for LIKWID.\n")
     print("Options:")
     print("-h\t Help message")
     print("-v\t Version information")
-    print("-c\t List cache information")
-    print("-C\t Measure processor clock")
-    print("-o\t Store output to file. (Optional: Apply text filter)")
-    print("-g\t Graphical output")
 end
 
 local cpuinfo = likwid.getCpuInfo()

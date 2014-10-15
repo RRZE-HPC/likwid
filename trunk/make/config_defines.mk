@@ -14,7 +14,7 @@ DEFINES += -DCOLOR=$(COLOR)
 endif
 
 ifeq ($(BUILDDAEMON),true)
-	DAEMON_TARGET = likwid-accessD
+DAEMON_TARGET = likwid-accessD
 endif
 
 ifeq ($(INSTRUMENT_BENCH),true)

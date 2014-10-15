@@ -1,4 +1,4 @@
-#!/home/rrze/unrz/unrz139/Work/likwid/trunk/ext/lua/lua
+#!<PREFIX>/bin/likwid-lua
 
 --[[
  * =======================================================================================
@@ -29,8 +29,10 @@
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================]]
-package.path = package.path .. ';' .. string.gsub(debug.getinfo(1).source, "^@(.+/)[^/]+$", "%1") .. '/?.lua'
+package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
+package.cpath = package.cpath .. ';<PREFIX>/lib/?.so'
 local likwid = require("likwid")
+stdout_print = print
 
 function version()
     print(string.format("likwid-topology --  Version %d.%d",likwid.version,likwid.release))
@@ -51,7 +53,7 @@ end
 print_caches = false
 print_graphical = false
 measure_clock = false
-
+outfile = nil
 
 for opt,arg in likwid.getopt(arg, "hvcCgo:V:") do
     if (opt == "h") then
@@ -69,7 +71,9 @@ for opt,arg in likwid.getopt(arg, "hvcCgo:V:") do
     elseif (opt == "g") then
         print_graphical = true
     elseif (opt == "o") then
-        io.output(arg)
+        outfile = arg
+        io.output(arg:gsub(string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$"),"tmp"))
+        print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end
     end
 end
 
@@ -251,24 +255,23 @@ if (print_graphical) then
     end
 end
 
+if outfile then
+    local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
+    local command = "<PREFIX>/share/likwid/filter/" .. suffix 
+    if suffix ~= "txt" then
+        command = command .." ".. outfile:gsub("."..suffix,".tmp",1) .. " topology"
+        --io.output("/dev/stdout")
+        local f = io.popen(command)
+        local o = f:read("*a")
+        if o:len() > 0 then
+            print(string.format("Failed to executed filter script %s.",command))
+        end
+    else
+        os.rename(outfile:gsub("."..suffix,".tmp",1), outfile)
+    end
+end
+
 likwid.putAffinityInfo()
 likwid.putNumaInfo()
 likwid.putTopology()
 likwid.putConfiguration()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
