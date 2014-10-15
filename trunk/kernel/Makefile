@@ -7,4 +7,4 @@ all:
 	chmod 666 enable_rdpmc.ko
 
 clean:
-	rm -f *.ko *.o
+	rm -f *.ko *.o modules.order Module.symvers enable_rdpmc.mod.c
