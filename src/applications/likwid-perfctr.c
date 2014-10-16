@@ -78,9 +78,11 @@ fprintf(stdout, "-M\t set how MSR registers are accessed: 0=direct, 1=msrd\n"); 
 fprintf(stdout, "-a\t list available performance groups\n"); \
 fprintf(stdout, "-e\t list available counters and events\n"); \
 fprintf(stdout, "-i\t print cpu info\n"); \
-fprintf(stdout, "-c\t processor ids to measure (required), e.g. 1,2-4,8\n"); \
-fprintf(stdout, "-C\t processor ids to measure (this variant also cares for pinning of process/threads), e.g. 1,2-4,8\n"); \
+fprintf(stdout, "-c\t processor ids to measure (required), e.g 0,3-4,8\n"); \
+fprintf(stdout, "-C\t processor ids to measure (this variant also cares for pinning of process/threads)\n"); \
+fprintf(stdout, "\t\t for -c and -C, see likwid-pin -h for details\n"); \
 fflush(stdout);
+
 
 #define VERSION_MSG \
 fprintf(stdout, "likwid-perfctr  %d.%d \n\n",VERSION,RELEASE); \
@@ -473,9 +475,6 @@ int main (int argc, char** argv)
 
             perfmon_startCounters();
         }
-
-        fprintf(OUTSTREAM,"%s\n",bdata(exeString));
-        fflush(OUTSTREAM);
 
         if (system(bdata(exeString)) == EOF)
         {

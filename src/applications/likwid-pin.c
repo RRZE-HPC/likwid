@@ -85,6 +85,13 @@
     fprintf(stdout, "3. Scatter policy among thread domain type.\n"); \
     fprintf(stdout, "Example usage scatter: likwid-pin -c M:scatter ./myApp\n"); \
     fprintf(stdout, "This will generate a thread to processor mapping scattered among all memory domains with physical cores first.\n\n");  \
+    fprintf(stdout, "4. Logical pinning.\n"); \
+    fprintf(stdout, "Example usage logical pinning: likwid-pin -c L:0,3,4 ./myApp\n"); \
+    fprintf(stdout, "This will generate a mapping containing the processors with index 0, 3 and 4 in the currently available processor list.\n");  \
+    fprintf(stdout, "If you are running inside a cpuset (taskset, cgroup) the sorted list of allowed processors is taken as processor list.\n");  \
+    fprintf(stdout, "Example usage logical pinning inside cpuset:\n"); \
+    fprintf(stdout, "taskset -c 4,7,2,1,5 likwid-pin -c L:0,2,4 ./myApp\n"); \
+    fprintf(stdout, "This maps the application to the processors 1,4,7.\n\n");  \
     fprintf(stdout, "If you ommit the -c option likwid will use all processors available on the node\n"); \
     fprintf(stdout, "with physical cores first. likwid-pin will also set OMP_NUM_THREADS with as many\n"); \
     fprintf(stdout, "threads as specified in your pin expression if OMP_NUM_THREADS is not present\n"); \

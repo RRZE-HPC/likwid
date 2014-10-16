@@ -10,6 +10,7 @@ COLOR = BLUE#NO SPACE
 
 # Path were to install likwid
 PREFIX = /usr/local#NO SPACE
+#PREFIX = /apps/likwid/3.1.1#NO SPACE
 MANPREFIX = $(PREFIX)/man#NO SPACE
 
 # For the daemon based secure msr/pci access configure
@@ -24,7 +25,7 @@ ACCESSDAEMON = $(PREFIX)/sbin/likwid-accessD#NO SPACE
 ACCESSMODE = accessdaemon#NO SPACE
 
 # Change to true to a build shared library instead of a static one
-SHARED_LIBRARY = false#NO SPACE
+SHARED_LIBRARY = true#NO SPACE
 
 # Build Fortran90 module interface for marker API. Adopt Fortran compiler
 # in ./make/include_<COMPILER>.mk if necessary. Default: ifort .
