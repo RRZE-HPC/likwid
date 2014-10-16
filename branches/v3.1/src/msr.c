@@ -208,6 +208,14 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg)
                         reg,cpu);
             }
         }
+        else if (rdpmc_works && reg >= MSR_PERF_FIXED_CTR0 && reg <= MSR_PERF_FIXED_CTR2)
+        {
+            if (__rdpmc(0x4000000ULL + (reg - MSR_PERF_FIXED_CTR0), &data) )
+            {
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n,
+                        reg,cpu);
+            }
+        }
         else
         {
             if ( pread(FD[cpu], &data, sizeof(data), reg) != sizeof(data) )
@@ -254,6 +262,14 @@ msr_read( const int cpu, uint32_t reg)
         if (rdpmc_works && reg >= MSR_PMC0 && reg <=MSR_PMC3)
         {
             if (__rdpmc(reg - MSR_PMC0, &data) )
+            {
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n,
+                        reg,cpu);
+            }
+        }
+        else if (rdpmc_works && reg >= MSR_PERF_FIXED_CTR0 && reg <= MSR_PERF_FIXED_CTR2)
+        {
+            if (__rdpmc(0x4000000ULL + (reg - MSR_PERF_FIXED_CTR0), &data) )
             {
                 ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n,
                         reg,cpu);
