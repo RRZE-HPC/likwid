@@ -87,6 +87,7 @@ static char* ivybridge_str = "Intel Core IvyBridge processor";
 static char* ivybridge_ep_str = "Intel Core IvyBridge EP processor";
 static char* sandybridge_ep_str = "Intel Core SandyBridge EP processor";
 static char* haswell_str = "Intel Core Haswell processor";
+static char* haswell_ex_str = "Intel Core Haswell EX processor";
 static char* nehalem_ex_str = "Intel Nehalem EX processor";
 static char* westmere_ex_str = "Intel Westmere EX processor";
 static char* xeon_mp_string = "Intel Xeon MP processor";
@@ -401,13 +402,14 @@ int cpuid_init (void)
 
                 case HASWELL:
 
-                case HASWELL_EX:
-
                 case HASWELL_M1:
 
                 case HASWELL_M2:
-
                     cpuid_info.name = haswell_str;
+                    break;
+
+                case HASWELL_EX:
+                    cpuid_info.name = haswell_ex_str;
                     break;
 
                 case NEHALEM_EX:
@@ -704,13 +706,15 @@ void cpuid_print (void)
     printf("\t%s\n",nehalem_bloom_str);
     printf("\t%s\n",nehalem_lynn_str);
     printf("\t%s\n",nehalem_west_str);
-    printf("\t%s\n",nehalem_ex_str);
-    printf("\t%s\n",westmere_ex_str);
+    printf("\t%s (with Uncore support)\n",nehalem_ex_str);
+    printf("\t%s (with Uncore support)\n",westmere_ex_str);
     printf("\t%s\n",sandybridge_str);
-    printf("\t%s\n",sandybridge_ep_str);
+    printf("\t%s (with Uncore support)\n",sandybridge_ep_str);
     printf("\t%s\n",ivybridge_str);
-    printf("\t%s\n",ivybridge_ep_str);
-    printf("\t%s\n",haswell_str);
+    printf("\t%s (with Uncore support)\n",ivybridge_ep_str);
+    printf("\t%s (with Uncore support)\n",haswell_str);
+    printf("\t%s (no Uncore support)\n",haswell_ex_str);
+    printf("\t%s\n",atom_silvermont_str);
     printf("\t%s\n\n",xeon_phi_string);
 
     printf("Supported AMD processors:\n");
