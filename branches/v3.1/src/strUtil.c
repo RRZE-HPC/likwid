@@ -109,11 +109,6 @@ bstr_to_cpuset_physical(uint32_t* threads,  const_bstring q)
     {
         subtokens = bsplit(tokens->entry[i],'-');
 
-        if (numThreads > MAX_NUM_THREADS)
-        {
-            ERROR_PRINT(Number Of threads %d too large, numThreads);
-        }
-
         if( subtokens->qty == 1 )
         {
             threads[numThreads] = str2int((char *) bdata(subtokens->entry[0]));
@@ -140,6 +135,10 @@ bstr_to_cpuset_physical(uint32_t* threads,  const_bstring q)
             ERROR_PLAIN_PRINT(Parse Error);
         }
         bstrListDestroy(subtokens);
+    }
+    if (numThreads > MAX_NUM_THREADS)
+    {
+        ERROR_PRINT(Number Of threads %d too large, numThreads);
     }
 
     bstrListDestroy(tokens);
@@ -251,9 +250,10 @@ bstr_to_cpuset_expression(uint32_t* threads,  const_bstring qi)
             int counter;
             int currentId = 0;
             int startId = 0;
+            int offset = 0;
             int chunksize =  str2int(bdata(subtokens->entry[2]));
             int stride =  str2int(bdata(subtokens->entry[3]));
-            domain =  affinity_getDomain(subtokens->entry[0]);
+            domain = affinity_getDomain(subtokens->entry[0]);
 
             if (!domain)
             {
@@ -264,7 +264,7 @@ bstr_to_cpuset_expression(uint32_t* threads,  const_bstring qi)
 
             if (numThreads > domain->numberOfProcessors)
             {
-                ERROR_PRINT(Invalid processor id requested. Avaialable 0-%d, 
+                ERROR_PRINT(Invalid number of processors requested. Available 0-%d,
                             domain->numberOfProcessors-1);
             }
 
@@ -279,7 +279,8 @@ bstr_to_cpuset_expression(uint32_t* threads,  const_bstring qi)
                 counter += stride;
                 if (counter >= domain->numberOfProcessors)
                 {
-                    counter = 0;
+                    offset += chunksize;
+                    counter = offset;
                 }
             }
         }
@@ -404,7 +405,7 @@ bstr_to_cpuset(int* threadsIN,  const_bstring q)
     else if (bstrchr (q, 'L') !=  BSTR_ERR)
     {
         uint32_t count = cpu_count(&cpu_set);
-        printf("Using logical numbering within cpuset %d\n",count);
+
         tokens = bsplit(q,':');
         numThreads = bstr_to_cpuset_physical(threads,tokens->entry[1]);
 
@@ -418,13 +419,19 @@ bstr_to_cpuset(int* threadsIN,  const_bstring q)
 
         for (i=0; i < numThreads; i++)
         {
-            if (!(threads[i] > count))
+            if (!(threads[i] >= count))
             {
-            threads[i] = cpuMapping[threads[i]];
+                threads[i] = cpuMapping[threads[i]];
             }
             else
             {
-            ERROR_PRINT(Request cpu out of range of max %d,count);
+                fprintf(stderr, "Available CPUs: ");
+                for (int j=0; j< num-1;j++)
+                {
+                    fprintf(stderr, "%d,", cpuMapping[j]);
+                }
+                fprintf(stderr, "%d\n", cpuMapping[num-1]);
+                ERROR_PRINT(Index %d out of range.,threads[i]);
             }
         }
         bstrListDestroy(tokens);
