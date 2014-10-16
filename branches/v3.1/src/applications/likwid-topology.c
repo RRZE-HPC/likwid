@@ -239,7 +239,7 @@ int main (int argc, char** argv)
                         cpuid_topology.cacheLevels[i].associativity);
                 fprintf(OUTSTREAM, "Number of sets:\t%d\n",
                         cpuid_topology.cacheLevels[i].sets);
-                fprintf(OUTSTREAM, "Cache line size:%d\n",
+                fprintf(OUTSTREAM, "Cache line size:\t%d\n",
                         cpuid_topology.cacheLevels[i].lineSize);
                 if(cpuid_topology.cacheLevels[i].inclusive)
                 {

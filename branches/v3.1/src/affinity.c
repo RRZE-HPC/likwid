@@ -91,7 +91,6 @@ treeFillNextEntries(
     int counter = numberOfEntries;
     TreeNode* node = tree;
     TreeNode* thread;
-
     node = tree_getChildNode(node);
 
     /* get socket node */
@@ -114,11 +113,10 @@ treeFillNextEntries(
 
         if ( node == NULL )
         {
-          printf("ERROR: Core %d not existing!",i);
+          printf("ERROR: Core %d on socket %d not existing!",i,socketId);
           exit(EXIT_FAILURE);
         }
     }
-
     /* Traverse horizontal */
     while ( node != NULL )
     {
@@ -252,7 +250,8 @@ affinity_init()
             domains[currentDomain + subCounter].processorList,
             i, offset, domains[currentDomain + subCounter].numberOfProcessors);
 
-        offset += numa_info.nodes[subCounter].numberOfProcessors;
+        offset += domains[currentDomain + subCounter].numberOfCores;
+
         subCounter++;
       }
     }

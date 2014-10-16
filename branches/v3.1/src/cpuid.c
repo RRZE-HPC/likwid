@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <sched.h>
 #include <time.h>
+#include <math.h>
 
 #include <error.h>
 #include <cpuid.h>
@@ -226,6 +227,8 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
     int maxNumLevels=0;
     uint32_t valid=1;
     CacheLevel* pool;
+    int numThreadsPerSocket = cpuid_topology.numCoresPerSocket *
+                              cpuid_topology.numThreadsPerCore;
 
     while (valid)
     {
@@ -287,14 +290,23 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
         }
 
         /* :WORKAROUND:08/13/2009 08:34:15 AM:jt: For L3 caches the value is sometimes 
-         * too large in here. Ask Intel what is wrong here!
-         * Limit threads per Socket then to the maximum possible value.*/
-        if(pool[i].threads > (int)
-                (cpuid_topology.numCoresPerSocket*
-                 cpuid_topology.numThreadsPerCore))
+         * too large in here. 
+         * See Documentation: Threads contains maximum number of threads supported
+         * by the cache.
+         * Limit threads per Socket then to the maximum possible value. If the number
+         * of threads supported by the cache does not divide the threads on the socket
+         * without remainder, the threads are adjusted to fit the multiple caches.
+         */
+
+        if(pool[i].threads > numThreadsPerSocket)
         {
-            pool[i].threads = cpuid_topology.numCoresPerSocket*
-                cpuid_topology.numThreadsPerCore;
+            pool[i].threads = numThreadsPerSocket;
+        }
+        else if (((double)numThreadsPerSocket)/((double)pool[i].threads) != 
+                  (double)(numThreadsPerSocket/pool[i].threads))
+        {
+            pool[i].threads = numThreadsPerSocket/
+                (int)ceil(((double)numThreadsPerSocket)/((double)pool[i].threads));
         }
         pool[i].inclusive = edx&0x2;
     }
