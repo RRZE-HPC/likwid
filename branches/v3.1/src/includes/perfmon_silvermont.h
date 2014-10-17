@@ -63,13 +63,9 @@ void perfmon_setupCounterThread_silvermont(
     uint32_t uflags;
     uint64_t reg = silvermont_counter_map[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
+    uint64_t fixed_flags = msr_read(cpu_id, MSR_PERF_FIXED_CTR_CTRL);
+    uint64_t orig_fixed_flags = fixed_flags;
     perfmon_threadData[thread_id].counters[index].init = TRUE;
-
-    /*if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
-    {
-        haveLock = 1;
-    }*/
-
 
     switch (silvermont_counter_map[index].type)
     {
@@ -108,6 +104,7 @@ void perfmon_setupCounterThread_silvermont(
             break;
 
         case FIXED:
+            fixed_flags |= (2ULL<<(index*4));
             break;
 
         case POWER:
@@ -116,6 +113,10 @@ void perfmon_setupCounterThread_silvermont(
         default:
             /* should never be reached */
             break;
+    }
+    if (fixed_flags != orig_fixed_flags)
+    {
+        msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags);
     }
 }
 
@@ -149,7 +150,6 @@ void perfmon_startCountersThread_silvermont(int thread_id)
                 case FIXED:
                     msr_write(cpu_id, silvermont_counter_map[i].counterRegister, 0x0ULL);
                     flags |= (1ULL<<(i+32));  /* enable fixed counter */
-                    fixed_flags |= (2ULL<<(i*4));
                     break;
 
                 case POWER:
@@ -175,10 +175,9 @@ void perfmon_startCountersThread_silvermont(int thread_id)
         printf("perfmon_start_counters: Write Register 0x%X , \
                 Flags: 0x%llX \n",MSR_UNCORE_PERF_GLOBAL_CTRL, LLU_CAST uflags);
     }
-    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
-    if (fixed_flags != 0x0ULL)
+    if (flags != 0x0ULL)
     {
-        msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags);
+        msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
     }
 }
 

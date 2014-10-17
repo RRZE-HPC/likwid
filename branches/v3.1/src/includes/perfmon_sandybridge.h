@@ -67,13 +67,13 @@ void perfmon_init_sandybridge(PerfmonThread *thread)
     msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL);
 
     /* Preinit of PERFEVSEL registers */
-    flags |= (1<<22);  /* enable flag */
-    flags |= (1<<16);  /* user mode flag */
+    //flags |= (1<<22);  /* enable flag */
+    //flags |= (1<<16);  /* user mode flag */
 
-    msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
+    /*msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
     msr_write(cpu_id, MSR_PERFEVTSEL1, flags);
     msr_write(cpu_id, MSR_PERFEVTSEL2, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL3, flags);
+    msr_write(cpu_id, MSR_PERFEVTSEL3, flags);*/
 
     /* TODO Robust implementation which also works if stuff is not there */
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
@@ -180,12 +180,11 @@ void perfmon_init_sandybridge(PerfmonThread *thread)
                 LLU_CAST reg, \
                 LLU_CAST flags); \
     } \
-if(haveLock) { \
-    uflags = pci_read(cpu_id, channel, reg);  \
-    uflags &= ~(0xFFFFU);  \
-    uflags |= (event->umask<<8) + event->eventId;  \
-    pci_write(cpu_id, channel,  reg, uflags);  \
-}
+    if(haveLock) { \
+        uflags = (1<<22); \
+        uflags |= (event->umask<<8) + event->eventId;  \
+        pci_write(cpu_id, channel,  reg, uflags);  \
+    }
 
 
 void perfmon_setupCounterThread_sandybridge(
@@ -198,6 +197,8 @@ void perfmon_setupCounterThread_sandybridge(
     uint32_t uflags;
     uint64_t reg = sandybridge_counter_map[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
+    uint64_t fixed_flags = msr_read(cpu_id, MSR_PERF_FIXED_CTR_CTRL);
+    uint64_t orig_fixed_flags = fixed_flags;
     perfmon_threadData[thread_id].counters[index].init = TRUE;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
@@ -209,8 +210,9 @@ void perfmon_setupCounterThread_sandybridge(
     {
         case PMC:
 
-            flags = msr_read(cpu_id,reg);
-            flags &= ~(0xFFFFU);   /* clear lower 16bits */
+            //flags = msr_read(cpu_id,reg);
+            //flags &= ~(0xFFFFU);   /* clear lower 16bits */
+            flags = (1<<22)|(1<<16);
 
             /* Intel with standard 8 bit event mask: [7:0] */
             flags |= (event->umask<<8) + event->eventId;
@@ -233,6 +235,7 @@ void perfmon_setupCounterThread_sandybridge(
             break;
 
         case FIXED:
+            fixed_flags |= (0x2 << (index*4));
             break;
 
         case POWER:
@@ -261,8 +264,9 @@ void perfmon_setupCounterThread_sandybridge(
             {
                 if(haveLock)
                 {
-                    uflags = pci_read(cpu_id, PCI_QPI_DEVICE_PORT_0, reg);
-                    uflags &= ~(0xFFFFU);
+                    //uflags = pci_read(cpu_id, PCI_QPI_DEVICE_PORT_0, reg);
+                    //uflags &= ~(0xFFFFU);
+                    uflags = (1<<22);
                     uflags |= (1UL<<21) + event->eventId; /* Set extension bit */
                     printf("UFLAGS 0x%x \n",uflags);
                     pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  reg, uflags);
@@ -294,8 +298,9 @@ void perfmon_setupCounterThread_sandybridge(
             {
                 if(haveLock)
                 {
-                    uflags = pci_read(cpu_id, PCI_QPI_DEVICE_PORT_1, reg);
-                    uflags &= ~(0xFFFFU);
+                    //uflags = pci_read(cpu_id, PCI_QPI_DEVICE_PORT_1, reg);
+                    //uflags &= ~(0xFFFFU);
+                    uflags = (1<<22);
                     uflags |= (1UL<<21) + event->eventId; /* Set extension bit */
                     pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  reg, uflags);
 
@@ -319,6 +324,10 @@ void perfmon_setupCounterThread_sandybridge(
         default:
             /* should never be reached */
             break;
+    }
+    if (fixed_flags != orig_fixed_flags)
+    {
+        msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags);
     }
 }
 

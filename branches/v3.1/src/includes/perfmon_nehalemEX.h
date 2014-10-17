@@ -68,16 +68,16 @@ void perfmon_init_nehalemEX(PerfmonThread *thread)
      * FIXED 0: Instructions retired
      * FIXED 1: Clocks unhalted core
      * FIXED 2: Clocks unhalted ref */
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL);
+    //msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL);
 
     /* Preinit of PERFEVSEL registers */
-    flags |= (1<<22);  /* enable flag */
-    flags |= (1<<16);  /* user mode flag */
+    //flags |= (1<<22);  /* enable flag */
+    //flags |= (1<<16);  /* user mode flag */
 
-    msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
+    /*msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
     msr_write(cpu_id, MSR_PERFEVTSEL1, flags);
     msr_write(cpu_id, MSR_PERFEVTSEL2, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL3, flags);
+    msr_write(cpu_id, MSR_PERFEVTSEL3, flags);*/
 
     /* Initialize uncore */
     /* MBOX */
@@ -540,6 +540,7 @@ void perfmon_setupCounterThread_nehalemEX(
     int haveLock = 0;
     uint64_t reg = counter_map[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
+    uint64_t fixed_flags = msr_read(cpu_id, MSR_PERF_FIXED_CTR_CTRL);
     perfmon_threadData[thread_id].counters[index].init = TRUE;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
@@ -550,8 +551,7 @@ void perfmon_setupCounterThread_nehalemEX(
     switch (counter_map[index].type)
     {
         case PMC:
-            flags = msr_read(cpu_id,reg);
-            flags &= ~(0xFFFFU);   /* clear lower 16bits */
+            flags = (1<<22)|(1<<16);
 
             /* Intel with standard 8 bit event mask: [7:0] */
             flags |= (event->umask<<8) + event->eventId;
@@ -567,6 +567,8 @@ void perfmon_setupCounterThread_nehalemEX(
             break;
 
         case FIXED:
+            fixed_flags |= (0x2<<(index*4));
+            msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags);
             break;
 
         case MBOX0:
@@ -636,6 +638,7 @@ void perfmon_setupCounterThread_nehalemEX(
         case UBOX:
             if (haveLock)
             {
+                flags = 0x0ULL;
                 flags |= (1<<22);
                 flags |= event->eventId;
                 fprintf(stderr, "Setup UBOX with value 0x%x in register 0x%x, event 0x%x \n", LLU_CAST flags, reg,event->eventId);

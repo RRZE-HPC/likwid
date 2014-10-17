@@ -73,12 +73,12 @@ void perfmon_setupCounterThread_core2(
     uint64_t flags;
     uint64_t reg = core2_counter_map[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
+    uint64_t fixed_flags = msr_read(cpu_id, MSR_PERF_FIXED_CTR_CTRL);
+    perfmon_threadData[thread_id].counters[index].init = TRUE;
 
     if ( core2_counter_map[index].type == PMC )
     {
-        perfmon_threadData[thread_id].counters[index].init = TRUE;
-        flags = msr_read(cpu_id,reg);
-        flags &= ~(0xFFFFU); 
+        flags = (1<<16)|(1<<19)|(1<<22);
 
         /* Intel with standard 8 bit event mask: [7:0] */
         flags |= (event->umask<<8) + event->eventId;
@@ -101,7 +101,8 @@ void perfmon_setupCounterThread_core2(
     }
     else if (core2_counter_map[index].type == FIXED)
     {
-        perfmon_threadData[thread_id].counters[index].init = TRUE;
+        fixed_flags |= (0x2 << (index*4));
+        msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags);
     }
 }
 

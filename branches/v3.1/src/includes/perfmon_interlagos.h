@@ -60,13 +60,13 @@ void perfmon_init_interlagos(PerfmonThread *thread)
         msr_write(cpu_id, MSR_AMD15_NB_PERFEVTSEL3, 0x0ULL);
     }
 
-    flags |= (1<<16);  /* user mode flag */
-    msr_write(cpu_id, MSR_AMD15_PERFEVTSEL0, flags);
+    //flags |= (1<<16);  /* user mode flag */
+    /*msr_write(cpu_id, MSR_AMD15_PERFEVTSEL0, flags);
     msr_write(cpu_id, MSR_AMD15_PERFEVTSEL1, flags);
     msr_write(cpu_id, MSR_AMD15_PERFEVTSEL2, flags);
     msr_write(cpu_id, MSR_AMD15_PERFEVTSEL3, flags);
     msr_write(cpu_id, MSR_AMD15_PERFEVTSEL4, flags);
-    msr_write(cpu_id, MSR_AMD15_PERFEVTSEL5, flags);
+    msr_write(cpu_id, MSR_AMD15_PERFEVTSEL5, flags);*/
 }
 
 
@@ -87,9 +87,7 @@ void perfmon_setupCounterThread_interlagos(
         return;
     }
 
-    flags = msr_read(cpu_id,reg);
-    flags &= ~(0xFFFFU); 
-
+    flags = (1<<16);
     /* AMD uses a 12 bit Event mask: [35:32][7:0] */
     flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
 

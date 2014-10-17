@@ -58,12 +58,12 @@ void perfmon_init_pm(PerfmonThread *thread)
     msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL);
 
     /* Preinit of two PMC counters */
-    flags |= (1<<16);  /* user mode flag */
-    flags |= (1<<19);  /* pin control flag */
+    //flags |= (1<<16);  /* user mode flag */
+    //flags |= (1<<19);  /* pin control flag */
     //    flags |= (1<<22);  /* enable flag */
 
-    msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL1, flags);
+    /*msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
+    msr_write(cpu_id, MSR_PERFEVTSEL1, flags);*/
 }
 
 void perfmon_setupCounterThread_pm(
@@ -76,8 +76,7 @@ void perfmon_setupCounterThread_pm(
     int cpu_id = perfmon_threadData[thread_id].processorId;
 
     perfmon_threadData[thread_id].counters[index].init = TRUE;
-    flags = msr_read(cpu_id,reg);
-    flags &= ~(0xFFFFU); 
+    flags = (1<<16)|(1<<19);
 
     /* Intel with standard 8 bit event mask: [7:0] */
     flags |= (event->umask<<8) + event->eventId;
@@ -134,7 +133,7 @@ void perfmon_stopCountersThread_pm(int thread_id)
         if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
         {
             perfmon_threadData[thread_id].counters[i].counterData =
-				msr_read(cpu_id, pm_counter_map[i].counterRegister);
+                msr_read(cpu_id, pm_counter_map[i].counterRegister);
         }
     }
 }

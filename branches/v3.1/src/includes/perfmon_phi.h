@@ -61,15 +61,14 @@ void perfmon_setupCounterThread_phi(
         PerfmonEvent* event,
         PerfmonCounterIndex index)
 {
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     uint64_t reg = phi_counter_map[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
+    perfmon_threadData[thread_id].counters[index].init = TRUE;
 
     if (phi_counter_map[index].type == PMC)
     {
-        perfmon_threadData[thread_id].counters[index].init = TRUE;
-        flags = msr_read(cpu_id,reg);
-        flags &= ~(0xFFFFU);
+        flags = (1<<22)|(1<<16);
 
         /* Intel with standard 8 bit event mask: [7:0] */
         flags |= (event->umask<<8) + event->eventId;

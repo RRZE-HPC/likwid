@@ -64,17 +64,17 @@ void perfmon_init_nehalem(PerfmonThread *thread)
      * FIXED 0: Instructions retired
      * FIXED 1: Clocks unhalted core
      * FIXED 2: Clocks unhalted ref */
-    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL);
+    //msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL);
 
     //    flags |= (1<<22);  /* enable flag */
     //    flags |= (1<<16);  /* user mode flag */
-    setBit(flags,16); /* set user mode flag */
-    setBit(flags,22); /* set enable flag */
+    //setBit(flags,16); /* set user mode flag */
+    //setBit(flags,22); /* set enable flag */
 
-    msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
+    /*msr_write(cpu_id, MSR_PERFEVTSEL0, flags);
     msr_write(cpu_id, MSR_PERFEVTSEL1, flags);
     msr_write(cpu_id, MSR_PERFEVTSEL2, flags);
-    msr_write(cpu_id, MSR_PERFEVTSEL3, flags);
+    msr_write(cpu_id, MSR_PERFEVTSEL3, flags);*/
 
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
@@ -108,16 +108,16 @@ void perfmon_init_nehalem(PerfmonThread *thread)
         msr_write(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL);
 
         /* Preinit of PERFEVSEL registers */
-        clearBit(flags,16); /* set enable flag */
+        //clearBit(flags,16); /* set enable flag */
 
-        msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL0, flags);
+        /*msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL0, flags);
         msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL1, flags);
         msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL2, flags);
         msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL3, flags);
         msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL4, flags);
         msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL5, flags);
         msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL6, flags);
-        msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL7, flags);
+        msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL7, flags);*/
     }
 }
 
@@ -128,20 +128,21 @@ void perfmon_setupCounterThread_nehalem(
         PerfmonCounterIndex index)
 {
     int haveLock = 0;
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     uint64_t reg = nehalem_counter_map[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
+    uint64_t fixed_flags = msr_read(cpu_id, MSR_PERF_FIXED_CTR_CTRL);
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
     }
 
+    perfmon_threadData[thread_id].counters[index].init = TRUE;
+
     if ( nehalem_counter_map[index].type == PMC )
     {
-        perfmon_threadData[thread_id].counters[index].init = TRUE;
-        flags = msr_read(cpu_id,reg);
-        flags &= ~(0xFFFFU);  /* clear lower 16bits */
+        flags = (1<<16)|(1<<22);
 
         /* Intel with standard 8 bit event mask: [7:0] */
         flags |= (event->umask<<8) + event->eventId;
@@ -166,9 +167,7 @@ void perfmon_setupCounterThread_nehalem(
     {
         if(haveLock)
         {
-            perfmon_threadData[thread_id].counters[index].init = TRUE;
-            flags = msr_read(cpu_id,reg);
-            flags &= ~(0xFFFFU);  /* clear lower 16bits */
+            flags = (1<<22);
 
             /* Intel with standard 8 bit event mask: [7:0] */
             flags |= (event->umask<<8) + event->eventId;
@@ -193,7 +192,8 @@ void perfmon_setupCounterThread_nehalem(
     }
     else if (nehalem_counter_map[index].type == FIXED)
     {
-        perfmon_threadData[thread_id].counters[index].init = TRUE;
+        fixed_flags |= (0x2 <<(index*4));
+        msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags);
     }
 }
 
@@ -287,11 +287,11 @@ void perfmon_stopCountersThread_nehalem(int thread_id)
     }
 
     flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
-    printf ("Status: 0x%llX \n", LLU_CAST flags);
 
     if((flags & 0x3) || (flags & (0x3ULL<<32)) )
     {
         printf ("Overflow occured \n");
+        printf ("Status: 0x%llX \n", LLU_CAST flags);
     }
 }
 

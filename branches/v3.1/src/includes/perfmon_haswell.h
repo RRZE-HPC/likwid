@@ -111,8 +111,7 @@ void perfmon_init_haswell(PerfmonThread *thread)
 #define HAS_SETUP_BOX \
     if (haveLock) \
     { \
-        flags = msr_read(cpu_id,reg); \
-        flags &= ~(0xFFFFU);   /* clear lower 16bits */ \
+        flags = (1ULL<<22)|(1ULL<<20); \
         flags |= (event->umask<<8) + event->eventId; \
         if (event->cfgBits != 0) /* set custom cfg and cmask */ \
         { \
@@ -133,6 +132,7 @@ void perfmon_setupCounterThread_haswell(
     uint64_t reg = haswell_counter_map[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
     uint64_t fixed_flags = msr_read(cpu_id, MSR_PERF_FIXED_CTR_CTRL);
+    uint64_t orig_fixed_flags = fixed_flags;
     perfmon_threadData[thread_id].counters[index].init = TRUE;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
@@ -187,7 +187,7 @@ void perfmon_setupCounterThread_haswell(
             /* should never be reached */
             break;
     }
-    if (fixed_flags != 0x0ULL)
+    if (fixed_flags != orig_fixed_flags)
     {
         msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags);
     }
