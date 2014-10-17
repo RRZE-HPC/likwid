@@ -187,7 +187,10 @@ pci_init(int initSocket_fd)
             }
             else
             {
-                fprintf(stderr, "Device %s not found, excluded it from device list\n",bdata(filepath));
+                if (j == 0)
+                {
+                    fprintf(stderr, "Device %s not found, excluded it from device list\n",pci_DevicePath[i]);
+                }
                 FD[j][i] = -2;
             }
             bdestroy(filepath);
