@@ -46,12 +46,12 @@ void perfmon_init_k10(PerfmonThread *thread)
     msr_write(cpu_id, MSR_AMD_PERFEVTSEL2, 0x0ULL);
     msr_write(cpu_id, MSR_AMD_PERFEVTSEL3, 0x0ULL);
 
-    flags |= (1<<16);  /* user mode flag */
+    //flags |= (1<<16);  /* user mode flag */
 
-    msr_write(cpu_id, MSR_AMD_PERFEVTSEL0, flags);
+    /*msr_write(cpu_id, MSR_AMD_PERFEVTSEL0, flags);
     msr_write(cpu_id, MSR_AMD_PERFEVTSEL1, flags);
     msr_write(cpu_id, MSR_AMD_PERFEVTSEL2, flags);
-    msr_write(cpu_id, MSR_AMD_PERFEVTSEL3, flags);
+    msr_write(cpu_id, MSR_AMD_PERFEVTSEL3, flags);*/
 }
 
 
@@ -65,8 +65,7 @@ void perfmon_setupCounterThread_k10(
     int cpu_id = perfmon_threadData[thread_id].processorId;
     perfmon_threadData[thread_id].counters[index].init = TRUE;
 
-    flags = msr_read(cpu_id,reg);
-    flags &= ~(0xFFFFU); 
+    flags |= (1<<16);
 
     /* AMD uses a 12 bit Event mask: [35:32][7:0] */
     flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));

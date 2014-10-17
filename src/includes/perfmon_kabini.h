@@ -57,11 +57,11 @@ void perfmon_init_kabini(PerfmonThread *thread)
         msr_write(cpu_id, MSR_AMD16_NB_PERFEVTSEL3, 0x0ULL);
     }
 
-    flags |= (1<<16);  /* user mode flag */
-    msr_write(cpu_id, MSR_AMD16_PERFEVTSEL0, flags);
+    //flags |= (1<<16);  /* user mode flag */
+    /*msr_write(cpu_id, MSR_AMD16_PERFEVTSEL0, flags);
     msr_write(cpu_id, MSR_AMD16_PERFEVTSEL1, flags);
     msr_write(cpu_id, MSR_AMD16_PERFEVTSEL2, flags);
-    msr_write(cpu_id, MSR_AMD16_PERFEVTSEL3, flags);
+    msr_write(cpu_id, MSR_AMD16_PERFEVTSEL3, flags);*/
 }
 
 
@@ -70,7 +70,7 @@ void perfmon_setupCounterThread_kabini(
         PerfmonEvent* event,
         PerfmonCounterIndex index)
 {
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     uint64_t reg = kabini_counter_map[index].configRegister;
     int cpu_id = perfmon_threadData[thread_id].processorId;
     perfmon_threadData[thread_id].counters[index].init = TRUE;
@@ -82,8 +82,10 @@ void perfmon_setupCounterThread_kabini(
         return;
     }
 
-    flags = msr_read(cpu_id,reg);
-    flags &= ~(0xFFFFU); 
+    if (kabini_counter_map[index].type == PMC)
+    {
+        flags |= (1<<16);
+    }
 
     /* AMD uses a 12 bit Event mask: [35:32][7:0] */
     flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
