@@ -82,6 +82,7 @@ int main (int argc, char** argv)
     double runtime;
     int hasDRAM = 0;
     int hasPP0 = 0;
+    int hasPP1 = 0;
     int c;
     bstring argString;
     bstring eventString = bfromcstr("CLOCK");
@@ -249,15 +250,27 @@ int main (int argc, char** argv)
     {
         hasDRAM = 1;
     }
-    if (cpuid_info.model != ATOM_SILVERMONT)
+    if ((cpuid_info.model == SANDYBRIDGE_EP) ||
+        (cpuid_info.model == SANDYBRIDGE) ||
+        (cpuid_info.model == IVYBRIDGE_EP) ||
+        (cpuid_info.model == IVYBRIDGE) ||
+        (cpuid_info.model == HASWELL))
     {
         hasPP0 = 1;
+    }
+    if ((cpuid_info.model == HASWELL) ||
+        (cpuid_info.model == SANDYBRIDGE) ||
+        (cpuid_info.model == IVYBRIDGE))
+    {
+        hasPP1 = 1;
     }
     if ((cpuid_info.model != SANDYBRIDGE) &&
         (cpuid_info.model != SANDYBRIDGE_EP)  &&
         (cpuid_info.model != IVYBRIDGE)  &&
         (cpuid_info.model != IVYBRIDGE_EP)  &&
         (cpuid_info.model != HASWELL) &&
+        (cpuid_info.model != HASWELL_M1) &&
+        (cpuid_info.model != HASWELL_M2) &&
         (cpuid_info.model != HASWELL_EX) &&
         (cpuid_info.model != ATOM_SILVERMONT))
     {
@@ -295,6 +308,7 @@ int main (int argc, char** argv)
         PowerData pDataPkg[MAX_NUM_NODES*2];
         PowerData pDataDram[MAX_NUM_NODES*2];
         PowerData pDataPP0[MAX_NUM_NODES*2];
+        PowerData pDataPP1[MAX_NUM_NODES*2];
         fprintf(stdout, "Measure on sockets: %d", threadsSockets[0]);
         for (int i=1; i<numSockets; i++)
         {
@@ -316,6 +330,7 @@ int main (int argc, char** argv)
                     int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
                     if (hasDRAM) power_start(pDataDram+i, cpuId, DRAM);
                     if (hasPP0) power_start(pDataPP0+i, cpuId, PP0);
+                    if (hasPP1) power_start(pDataPP1+i, cpuId, PP1);
                     power_start(pDataPkg+i, cpuId, PKG);
                 }
             }
@@ -333,6 +348,7 @@ int main (int argc, char** argv)
                 {
                     int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
                     power_stop(pDataPkg+i, cpuId, PKG);
+                    if (hasPP1) power_stop(pDataPP1+i, cpuId, PP1);
                     if (hasPP0) power_stop(pDataPP0+i, cpuId, PP0);
                     if (hasDRAM) power_stop(pDataDram+i, cpuId, DRAM);
                 }
@@ -419,6 +435,12 @@ int main (int argc, char** argv)
                     fprintf(stdout, "Domain: PP0 \n");
                     fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(pDataPP0+i));
                     fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(pDataPP0+i) / runtime );
+                }
+                if (hasPP1)
+                {
+                    fprintf(stdout, "Domain: PP1 \n");
+                    fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(pDataPP1+i));
+                    fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(pDataPP1+i) / runtime );
                 }
                 fprintf(stdout, "\n");
             }
