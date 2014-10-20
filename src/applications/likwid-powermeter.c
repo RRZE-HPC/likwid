@@ -244,7 +244,8 @@ int main (int argc, char** argv)
 
     if ((cpuid_info.model == SANDYBRIDGE_EP) ||
         (cpuid_info.model == IVYBRIDGE_EP) ||
-        (cpuid_info.model == HASWELL_EX))
+        (cpuid_info.model == HASWELL_EX) ||
+        (cpuid_info.model == HASWELL))
     {
         hasDRAM = 1;
     }
