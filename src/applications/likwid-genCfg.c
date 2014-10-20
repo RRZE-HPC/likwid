@@ -60,6 +60,7 @@ int main (int argc, char** argv)
 {
     FILE *file;
     char *filepath = TOSTRING(CFGFILE);
+    size_t size;
     int c;
 
     while ((c = getopt (argc, argv, "ho:v")) != -1)
@@ -100,12 +101,12 @@ int main (int argc, char** argv)
 
     if ((file = fopen(filepath, "wb")) != NULL) 
     {
-        (void) fwrite((void*) &cpuid_topology, sizeof(CpuTopology), 1, file);
+        size = fwrite((void*) &cpuid_topology, sizeof(CpuTopology), 1, file);
 
-        (void) fwrite((void*) cpuid_topology.threadPool,
+        size = fwrite((void*) cpuid_topology.threadPool,
                 sizeof(HWThread), cpuid_topology.numHWThreads, file);
 
-        (void) fwrite((void*) cpuid_topology.cacheLevels,
+        size = fwrite((void*) cpuid_topology.cacheLevels,
                 sizeof(CacheLevel), cpuid_topology.numCacheLevels, file);
 
         fclose(file);
