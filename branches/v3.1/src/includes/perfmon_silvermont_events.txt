@@ -87,6 +87,7 @@ EVENT_ICACHE                        0x80 PMC
 UMASK_ICACHE_HIT                    0x01
 UMASK_ICACHE_MISSES                 0x02
 UMASK_ICACHE_ACCESSES               0x03
+UMASK_ICACHE_IFETCH_STALL           0x04
 
 EVENT_NIP_STALL                     0xB6 PMC
 UMASK_NIP_STALL_ICACHE_MISS         0x04
