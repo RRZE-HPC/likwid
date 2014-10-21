@@ -204,8 +204,11 @@ void likwid_markerInit(void)
                     perfmon_numCountersCore = NUM_COUNTERS_CORE_CORE2;
                     break;
 
-                case ATOM_SILVERMONT:
-
+                case ATOM_SILVERMONT_C:
+                case ATOM_SILVERMONT_E:
+                case ATOM_SILVERMONT_F1:
+                case ATOM_SILVERMONT_F2:
+                case ATOM_SILVERMONT_F3:
                     power_init(0);
                     perfmon_counter_map = silvermont_counter_map;
                     perfmon_numCounters = NUM_COUNTERS_SILVERMONT;

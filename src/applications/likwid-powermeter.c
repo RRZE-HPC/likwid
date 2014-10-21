@@ -202,7 +202,11 @@ int main (int argc, char** argv)
             (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
             (cpuid_info.model == NEHALEM_LYNNFIELD) ||
             (cpuid_info.model == NEHALEM_WESTMERE) ||
-            (cpuid_info.model == ATOM_SILVERMONT))
+            (cpuid_info.model == ATOM_SILVERMONT_C) ||
+            (cpuid_info.model == ATOM_SILVERMONT_E) ||
+            (cpuid_info.model == ATOM_SILVERMONT_F1) ||
+            (cpuid_info.model == ATOM_SILVERMONT_F2) ||
+            (cpuid_info.model == ATOM_SILVERMONT_F3))
     {
         if (numSockets == 0)
         {
@@ -254,7 +258,11 @@ int main (int argc, char** argv)
         (cpuid_info.model == SANDYBRIDGE) ||
         (cpuid_info.model == IVYBRIDGE_EP) ||
         (cpuid_info.model == IVYBRIDGE) ||
-        (cpuid_info.model == HASWELL))
+        (cpuid_info.model == HASWELL) ||
+        (cpuid_info.model == ATOM_SILVERMONT_E) ||
+        (cpuid_info.model == ATOM_SILVERMONT_F1) ||
+        (cpuid_info.model == ATOM_SILVERMONT_F2) ||
+        (cpuid_info.model == ATOM_SILVERMONT_F3))
     {
         hasPP0 = 1;
     }
@@ -272,7 +280,11 @@ int main (int argc, char** argv)
         (cpuid_info.model != HASWELL_M1) &&
         (cpuid_info.model != HASWELL_M2) &&
         (cpuid_info.model != HASWELL_EX) &&
-        (cpuid_info.model != ATOM_SILVERMONT))
+        (cpuid_info.model != ATOM_SILVERMONT_C) &&
+        (cpuid_info.model != ATOM_SILVERMONT_E) &&
+        (cpuid_info.model != ATOM_SILVERMONT_F1) &&
+        (cpuid_info.model != ATOM_SILVERMONT_F2) &&
+        (cpuid_info.model != ATOM_SILVERMONT_F3))
     {
         fprintf (stderr, "RAPL not supported on this processor!\n");
         exit(EXIT_FAILURE);
