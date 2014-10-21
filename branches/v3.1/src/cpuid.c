@@ -80,6 +80,7 @@ static char* atom_45_str = "Intel Atom 45nm processor";
 static char* atom_32_str = "Intel Atom 32nm processor";
 static char* atom_22_str = "Intel Atom 22nm processor";
 static char* atom_silvermont_str = "Intel Atom (Silvermont) 22nm processor";
+static char* atom_saltwell_str = "Intel Atom (Saltwell) 32nm processor";
 static char* nehalem_bloom_str = "Intel Core Bloomfield processor";
 static char* nehalem_lynn_str = "Intel Core Lynnfield processor";
 static char* nehalem_west_str = "Intel Core Westmere processor";
@@ -280,7 +281,12 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
                     (cpuid_info.model == HASWELL_M1) ||
                     (cpuid_info.model == HASWELL_M2) ||
                     (cpuid_info.model == WESTMERE_EX) ||
-                    (cpuid_info.model == NEHALEM_EX))
+                    (cpuid_info.model == NEHALEM_EX) ||
+                    (cpuid_info.model == ATOM_SILVERMONT_C) ||
+                    (cpuid_info.model == ATOM_SILVERMONT_E) ||
+                    (cpuid_info.model == ATOM_SILVERMONT_F1) ||
+                    (cpuid_info.model == ATOM_SILVERMONT_F2) ||
+                    (cpuid_info.model == ATOM_SILVERMONT_F3))
             {
                 if (cpuid_topology.numThreadsPerCore == 1)
                 {
@@ -450,7 +456,11 @@ int cpuid_init (void)
                     cpuid_info.name = atom_22_str;
                     break;
 
-                case ATOM_SILVERMONT:
+                case ATOM_SILVERMONT_C:
+                case ATOM_SILVERMONT_E:
+                case ATOM_SILVERMONT_F1:
+                case ATOM_SILVERMONT_F2:
+                case ATOM_SILVERMONT_F3:
                     cpuid_info.name = atom_silvermont_str;
                     break;
 
@@ -727,6 +737,7 @@ void cpuid_print (void)
     printf("\t%s (with Uncore support)\n",haswell_str);
     printf("\t%s (no Uncore support)\n",haswell_ex_str);
     printf("\t%s\n",atom_silvermont_str);
+    printf("\t%s\n",atom_saltwell_str);
     printf("\t%s\n\n",xeon_phi_string);
 
     printf("Supported AMD processors:\n");

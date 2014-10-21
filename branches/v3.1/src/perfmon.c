@@ -1183,7 +1183,9 @@ perfmon_printAvailableGroups()
         if ( group_map[i].isUncore )
         {
             if ( (cpuid_info.model == SANDYBRIDGE_EP) ||
-                    (cpuid_info.model == IVYBRIDGE_EP))
+                 (cpuid_info.model == IVYBRIDGE_EP) ||
+                 (cpuid_info.model == WESTMERE_EX) ||
+                 (cpuid_info.model == NEHALEM_EX))
             {
                 fprintf(OUTSTREAM,"%s: %s\n",group_map[i].key,
                         group_map[i].info);
@@ -1307,7 +1309,11 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
                     perfmon_setupCounterThread = perfmon_setupCounterThread_core2;
                     break;
                     
-                case ATOM_SILVERMONT:
+                case ATOM_SILVERMONT_C:
+                case ATOM_SILVERMONT_E:
+                case ATOM_SILVERMONT_F1:
+                case ATOM_SILVERMONT_F2:
+                case ATOM_SILVERMONT_F3:
                     power_init(0);
                     thermal_init(0);
                     eventHash = silvermont_arch_events;

@@ -64,12 +64,16 @@ power_init(int cpuId)
             (cpuid_info.model == HASWELL) ||
             (cpuid_info.model == HASWELL_EX) ||
             (cpuid_info.model == IVYBRIDGE_EP) ||
-            (cpuid_info.model == IVYBRIDGE))
+            (cpuid_info.model == IVYBRIDGE) ||
+            (cpuid_info.model == ATOM_SILVERMONT_E) ||
+            (cpuid_info.model == ATOM_SILVERMONT_F1) ||
+            (cpuid_info.model == ATOM_SILVERMONT_F2) ||
+            (cpuid_info.model == ATOM_SILVERMONT_F3))
     {
         hasRAPL = 1;
         info_register = MSR_PKG_POWER_INFO;
     }
-    else if (cpuid_info.model == ATOM_SILVERMONT)
+    else if (cpuid_info.model == ATOM_SILVERMONT_C)
     {
         hasRAPL = 1;
         info_register = MSR_PKG_POWER_INFO_SILVERMONT;
@@ -124,7 +128,7 @@ power_init(int cpuId)
 
         flags = msr_read(cpuId, info_register);
         power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
-        if (cpuid_info.model != ATOM_SILVERMONT)
+        if (cpuid_info.model != ATOM_SILVERMONT_C)
         {
             power_info.minPower =  (double) extractBitField(flags,15,16) * power_info.powerUnit;
             power_info.maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
