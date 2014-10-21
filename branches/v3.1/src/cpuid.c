@@ -228,6 +228,7 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
     int maxNumLevels=0;
     uint32_t valid=1;
     CacheLevel* pool;
+    int threadsPerCpu = 0;
     int numThreadsPerSocket = cpuid_topology.numCoresPerSocket *
                               cpuid_topology.numThreadsPerCore;
 
@@ -263,6 +264,7 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
             pool[i].associativity *
             pool[i].lineSize;
         pool[i].threads = extractBitField(eax,10,14)+1;
+        pool[i].inclusive = edx&0x2;
 
         /* WORKAROUND cpuid reports wrong number of threads on SMT processor with SMT
          * turned off */
@@ -281,12 +283,7 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
                     (cpuid_info.model == HASWELL_M1) ||
                     (cpuid_info.model == HASWELL_M2) ||
                     (cpuid_info.model == WESTMERE_EX) ||
-                    (cpuid_info.model == NEHALEM_EX) ||
-                    (cpuid_info.model == ATOM_SILVERMONT_C) ||
-                    (cpuid_info.model == ATOM_SILVERMONT_E) ||
-                    (cpuid_info.model == ATOM_SILVERMONT_F1) ||
-                    (cpuid_info.model == ATOM_SILVERMONT_F2) ||
-                    (cpuid_info.model == ATOM_SILVERMONT_F3))
+                    (cpuid_info.model == NEHALEM_EX))
             {
                 if (cpuid_topology.numThreadsPerCore == 1)
                 {
@@ -303,7 +300,6 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
          * of threads supported by the cache does not divide the threads on the socket
          * without remainder, the threads are adjusted to fit the multiple caches.
          */
-
         if(pool[i].threads > numThreadsPerSocket)
         {
             pool[i].threads = numThreadsPerSocket;
@@ -314,8 +310,22 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
             pool[i].threads = numThreadsPerSocket/
                 (int)ceil(((double)numThreadsPerSocket)/((double)pool[i].threads));
         }
-        pool[i].inclusive = edx&0x2;
+        /* For Intel Silvermont this is not enough. It returns 4 threads and 8 cores
+         * for the L2 cache. But according to the data sheet, each 1MB L2 cache slice 
+         * is shared by 2 threads/cores.
+         */
+        else if (pool[i].level == 2 && 
+                ((cpuid_info.model == ATOM_SILVERMONT_C) ||
+                 (cpuid_info.model == ATOM_SILVERMONT_E) ||
+                 (cpuid_info.model == ATOM_SILVERMONT_F1) ||
+                 (cpuid_info.model == ATOM_SILVERMONT_F2) ||
+                 (cpuid_info.model == ATOM_SILVERMONT_F3)))
+        {
+            pool[i].threads = 2;
+        }
     }
+
+    
 
     return maxNumLevels;
 }
