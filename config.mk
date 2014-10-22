@@ -25,7 +25,7 @@ ACCESSDAEMON = $(PREFIX)/sbin/likwid-accessD#NO SPACE
 ACCESSMODE = accessdaemon#NO SPACE
 
 # Change to true to a build shared library instead of a static one
-SHARED_LIBRARY = true#NO SPACE
+SHARED_LIBRARY = false#NO SPACE
 
 # Build Fortran90 module interface for marker API. Adopt Fortran compiler
 # in ./make/include_<COMPILER>.mk if necessary. Default: ifort .
