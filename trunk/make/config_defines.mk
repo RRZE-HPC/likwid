@@ -17,6 +17,10 @@ ifeq ($(BUILDDAEMON),true)
 DAEMON_TARGET = likwid-accessD
 endif
 
+ifeq ($(BUILDFREQ),true)
+FREQ_TARGET = likwid-setFreq
+endif
+
 ifeq ($(INSTRUMENT_BENCH),true)
 DEFINES += -DPERFMON
 endif

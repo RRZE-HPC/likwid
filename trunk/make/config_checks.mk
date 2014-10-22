@@ -37,17 +37,3 @@ FORTRAN_INSTALL =
 FORTRAN_REMOVE =
 endif
 endif
-
-ifeq ($(BUILDDAEMON),true)
-DAEMON_INSTALL = @echo "===> INSTALL access daemon to $(ACCESSDAEMON)" \
-                 @mkdir -p $(PREFIX)/sbin \
-                 @cp -f likwid-accessD $(ACCESSDAEMON) \
-                 @chown root:root $(ACCESSDAEMON) \
-                 @chmod 4755 $(ACCESSDAEMON)
-DAEMON_REMOVE = @echo "===> REMOVING access daemon from $(ACCESSDAEMON)" \
-                @rm -rf $(ACCESSDAEMON)
-else
-DAEMON_INSTALL =
-DAEMON_REMOVE =
-endif
-
