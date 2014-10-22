@@ -58,8 +58,8 @@
     fprintf(OUTSTREAM, "-v\t Version information\n"); \
     fprintf(OUTSTREAM, "-c\t list cache information\n"); \
     fprintf(OUTSTREAM, "-C\t measure processor clock\n"); \
-    fprintf(OUTSTREAM, "-o\t Store output to file, with output conversation according to file suffix\n"); \
-    fprintf(OUTSTREAM, "\t Conversation scripts can be supplied in %s\n",TOSTRING(LIKWIDFILTERPATH)); \
+    fprintf(OUTSTREAM, "-o\t Store output to file, with output conversion according to file suffix\n"); \
+    fprintf(OUTSTREAM, "\t Conversion scripts can be supplied in %s\n",TOSTRING(LIKWIDFILTERPATH)); \
     fprintf(OUTSTREAM, "-g\t graphical output\n\n"); \
     fflush(OUTSTREAM);
 
@@ -70,7 +70,7 @@
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int main (int argc, char** argv)
-{ 
+{
     int optGraphical = 0;
     int optCaches = 0;
     int optClock = 0;
@@ -211,7 +211,7 @@ int main (int argc, char** argv)
                 fprintf(OUTSTREAM, "Size:\t%d kB\n",
                         cpuid_topology.cacheLevels[i].size/1024);
             }
-            else 
+            else
             {
                 fprintf(OUTSTREAM, "Size:\t%d MB\n",
                         cpuid_topology.cacheLevels[i].size/1048576);
@@ -350,7 +350,7 @@ int main (int argc, char** argv)
         fprintf(OUTSTREAM, SLINE);
 
         /* Allocate without instruction cache */
-        if ( cpuid_info.family == P6_FAMILY || cpuid_info.family == MIC_FAMILY ) 
+        if ( cpuid_info.family == P6_FAMILY || cpuid_info.family == MIC_FAMILY )
         {
             container = asciiBoxes_allocateContainer(
                     cpuid_topology.numCacheLevels,
@@ -389,7 +389,7 @@ int main (int argc, char** argv)
                     tmp++;
                     threadNode = tree_getNextNode(threadNode);
                 }
-                asciiBoxes_addBox(container, 0, j, boxLabel); 
+                asciiBoxes_addBox(container, 0, j, boxLabel);
                 j++;
                 coreNode = tree_getNextNode(coreNode);
             }
@@ -427,7 +427,7 @@ int main (int argc, char** argv)
                                 boxLabel = bformat("%dkB",
                                         cpuid_topology.cacheLevels[i].size/1024);
                             }
-                            else 
+                            else
                             {
                                 boxLabel = bformat("%dMB",
                                         cpuid_topology.cacheLevels[i].size/1048576);
@@ -448,17 +448,17 @@ int main (int argc, char** argv)
                                         lineCursor,
                                         columnCursor,
                                         columnCursor+cacheWidth,
-                                        boxLabel); 
+                                        boxLabel);
 
                                 columnCursor += sharedCores;
                             }
-                            else 
+                            else
                             {
                                 asciiBoxes_addBox(
                                         container,
                                         lineCursor,
                                         columnCursor,
-                                        boxLabel); 
+                                        boxLabel);
 
                                 columnCursor++;
                             }
