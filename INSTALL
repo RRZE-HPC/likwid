@@ -20,7 +20,7 @@ the WIKI. On 32bit systems you have to pick the GCCX86 compiler target.
 All generated files are located in the [GCC|ICC|GCCX86] build directory.
 This includes the dependency files, object files and also the
 generated source files and the pas and assembly files for likwid-bench.
-If you debug your likwid-bench benchmarks you can look at all 
+If you debug your likwid-bench benchmarks you can look at all
 intermediate build files and also the final assembly code.
 
 == Known problems ==
@@ -60,7 +60,7 @@ Check if msr device files are there with 'ls /dev/cpu/0/'. If msr device files a
 consult your distros documentation how to do so.
 
 Once you have the msr device files avilable:
-3. Adopt access rights on the msr device files for normal user. To allow everybody access you can 
+3. Adopt access rights on the msr device files for normal user. To allow everybody access you can
 use 'chmod o+rw /dev/cpu/*/msr' . This is only recommended on save single user desktop systems.
 
 As a general access to the msr registers is not desired on security sensitive
@@ -79,7 +79,11 @@ page:
 http://code.google.com/p/likwid/wiki/MSRDaemon
 
 A common solution to give access is to use the likwid-accessD and make it suid root.
-You need to carry out the following steps:
+Starting with version 3.1.3 make install will do those steps. Of course this will only
+work as long as you are root while calling make install.
+
+If for you are not root and someone else needs to install the daemon the
+following steps need to be carried out:
 
 1. Go to the directory where you installed the likwid tools.
 2. Change to the sbin directory there.
