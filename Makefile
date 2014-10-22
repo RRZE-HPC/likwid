@@ -105,10 +105,13 @@ L_APPS      =   likwid-perfctr \
 				likwid-memsweeper \
 				likwid-genTopoCfg
 L_HELPER    =   likwid.lua
+ifeq ($(BUILDFREQ),true)
+	L_APPS += likwid-setFrequencies
+endif
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(BUILD_DIR) $(EXT_TARGETS) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(FORTRAN_INTERFACE)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET)
+all: $(BUILD_DIR) $(EXT_TARGETS) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(FORTRAN_INTERFACE)  $(PINLIB) $(L_APPS) $(L_HELPER) $(C_APPS) $(DAEMON_TARGET) $(FREQ_TARGET)
 
 tags:
 	@echo "===>  GENERATE  TAGS"
@@ -118,7 +121,7 @@ docs:
 	@echo "===>  GENERATE DOXYGEN DOCS"
 	$(Q)doxygen doc/Doxyfile
 
-$(C_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(C_APPS))) $(BUILD_DIR) $(GENGROUPLOCK)  $(OBJ) $(OBJ_BENCH)
+$(C_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(C_APPS))) $(BUILD_DIR) $(OBJ) $(OBJ_BENCH)
 	@echo "===>  LINKING  $@"
 	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(LIBHWLOC) $(LIBS)
 
@@ -147,7 +150,11 @@ $(DYNAMIC_TARGET_LIB): $(OBJ)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  Build access daemon likwid-accessD"
-	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon
+	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-accessD
+
+$(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreq.c
+	@echo "===>  Build frequency daemon likwid-setFreq"
+	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-setFreq
 
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
@@ -220,6 +227,7 @@ distclean: clean
 	@rm -f $(STATIC_TARGET_LIB)
 	@rm -f $(DYNAMIC_TARGET_LIB)
 	@rm -f $(FORTRAN_INTERFACE)
+	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
 	@rm -f $(PINLIB)
 	@rm -rf doc/html
 	@rm -f tags
@@ -227,7 +235,10 @@ distclean: clean
 install:
 	@echo "===> INSTALL applications to $(PREFIX)/bin"
 	@mkdir -p $(PREFIX)/bin
-	@for APP in $(L_APPS); do \
+	for APP in $(L_APPS); do \
+		cp -f $$APP  $(PREFIX)/bin; \
+	done
+	@for APP in $(C_APPS); do \
 		cp -f $$APP  $(PREFIX)/bin; \
 	done
 	@cp ext/lua/lua $(PREFIX)/bin/likwid-lua
@@ -241,7 +252,6 @@ install:
 	@cp -f ext/lua/liblua* $(PREFIX)/lib
 	@cp -f ext/hwloc/libhwloc* $(PREFIX)/lib
 	@chmod 755 $(PREFIX)/lib/$(PINLIB)
-	$(DAEMON_INSTALL)
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
@@ -261,17 +271,34 @@ install:
 	@mkdir -p $(LIKWIDFILTERPATH)
 	@cp -f filters/*  $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
+	@[ -e $(DAEMON_TARGET) ] && echo "===> INSTALL access daemon to $(ACCESSDAEMON)"
+	@[ -e $(DAEMON_TARGET) ] && mkdir -p `dirname $(ACCESSDAEMON)`
+	@[ -e $(DAEMON_TARGET) ] && cp -f $(DAEMON_TARGET) $(ACCESSDAEMON)
+	@[ -e $(ACCESSDAEMON) ] && chown root:root $(ACCESSDAEMON)
+	@[ -e $(ACCESSDAEMON) ] && chmod 4755 $(ACCESSDAEMON)
+	@[ -e $(FREQ_TARGET) ] && echo "===> INSTALL setFrequencies tool to $(PREFIX)/sbin/$(FREQ_TARGET)"
+	@[ -e $(FREQ_TARGET) ] && mkdir -p $(PREFIX)/sbin
+	@[ -e $(FREQ_TARGET) ] && cp -f $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
+	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && chown root:root $(PREFIX)/sbin/$(FREQ_TARGET)
+	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && chmod 4755 $(PREFIX)/sbin/$(FREQ_TARGET)
+
 
 uninstall:
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
 	@rm -f $(addprefix $(PREFIX)/bin/,$(addsuffix  .lua,$(L_APPS)))
+	@for APP in $(L_APPS); do \
+		rm -f $(PREFIX)/bin/$$APP; \
+	done
+	@for APP in $(C_APPS); do \
+		rm -f $(PREFIX)/bin/$$APP; \
+	done
+	rm -rf $(PREFIX)/bin/likwid-lua
 	@echo "===> REMOVING Lua to likwid interface from $(PREFIX)/share/lua"
 	@rm -rf  $(PREFIX)/share/lua/likwid.lua
 	@echo "===> REMOVING libs from $(PREFIX)/lib"
 	@rm -f $(PREFIX)/lib/liblikwid*
 	@rm -f $(PREFIX)/lib/libhwloc*
 	@rm -f $(PREFIX)/lib/liblua*
-	$(DAEMON_REMOVE)
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
 	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(L_APPS)))
 	@echo "===> REMOVING header from $(PREFIX)/include"
@@ -279,7 +306,10 @@ uninstall:
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter and groups from $(PREFIX)/share/likwid"
 	@rm -rf  $(PREFIX)/share/likwid
-	
+	@[ -e $(ACCESSDAEMON) ] && echo "===> REMOVING access daemon from $(ACCESSDAEMON)"
+	@[ -e $(ACCESSDAEMON) ] && rm -f $(ACCESSDAEMON)
+	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && echo "===> REMOVING setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET)"
+	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && rm -f $(PREFIX)/sbin/$(FREQ_TARGET)
 
 
 
