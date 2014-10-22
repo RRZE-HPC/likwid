@@ -1,12 +1,12 @@
 # =======================================================================================
-#  
+#
 #      Filename:  Makefile
-# 
+#
 #      Description:  Central Makefile
-# 
+#
 #      Version:   <VERSION>
 #      Released:  <DATE>
-# 
+#
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
@@ -60,7 +60,7 @@ HAS_SCHEDAFFINITY = $(shell if [ $(GLIBC_VERSION) -lt 4 ]; then \
 include ./config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 INCLUDES  += -I./src/includes  -I$(BUILD_DIR)
-LIBS      += 
+LIBS      +=
 DEFINES   += -DVERSION=$(VERSION)         \
 		 -DRELEASE=$(RELEASE)                 \
 		 -DCFGFILE=$(CFG_FILE_PATH)           \
@@ -68,7 +68,7 @@ DEFINES   += -DVERSION=$(VERSION)         \
 		 -DMAX_NUM_NODES=$(MAX_NUM_NODES)     \
 		 -DHASH_TABLE_SIZE=$(HASH_TABLE_SIZE) \
 		 -DLIBLIKWIDPIN=$(LIBLIKWIDPIN)       \
-		 -DLIKWIDFILTERPATH=$(LIKWIDFILTERPATH) 
+		 -DLIKWIDFILTERPATH=$(LIKWIDFILTERPATH)
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
@@ -158,16 +158,17 @@ PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildc
 OBJ_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
 
 APPS      = likwid-perfctr    \
-		likwid-features   \
-		likwid-powermeter \
-		likwid-memsweeper \
-		likwid-topology   \
-		likwid-genCfg     \
-		likwid-pin        \
-		likwid-bench
+            likwid-features   \
+            likwid-powermeter \
+            likwid-memsweeper \
+            likwid-topology   \
+            likwid-genCfg     \
+            likwid-pin        \
+            likwid-bench
 
-PERL_APPS	= likwid-mpirun \
-			likwid-perfscope
+PERL_APPS = likwid-mpirun         \
+            likwid-setFrequencies \
+            likwid-perfscope
 
 DAEMON_APPS = $(SETFREQ_TARGET) \
 			$(DAEMON_TARGET)
@@ -204,7 +205,7 @@ $(STATIC_TARGET_LIB): $(OBJ)
 
 $(DYNAMIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE SHARED LIB  $(DYNAMIC_TARGET_LIB)"
-	$(Q)${CC} $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) -lm $(SHARED_LFLAGS) 
+	$(Q)${CC} $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) -lm $(SHARED_LFLAGS)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  Build access daemon $(DAEMON_TARGET)"
@@ -219,7 +220,7 @@ $(BUILD_DIR):
 
 $(PINLIB):
 	@echo "===>  CREATE LIB  $(PINLIB)"
-	$(Q)$(MAKE) -s -C src/pthread-overload/ $(PINLIB) 
+	$(Q)$(MAKE) -s -C src/pthread-overload/ $(PINLIB)
 
 $(GENGROUPLOCK): $(foreach directory,$(shell ls $(GROUP_DIR)), $(wildcard $(GROUP_DIR)/$(directory)/*.txt))
 	@echo "===>  GENERATE GROUP HEADERS"
@@ -291,9 +292,8 @@ install:
 		cp -f $$app $(PREFIX)/bin; \
 	done
 	@cp -f perl/feedGnuplot  $(PREFIX)/bin
-	@sed -e "s+<PREFIX>+$(PREFIX)+g" perl/likwid-setFrequencies > $(PREFIX)/bin/likwid-setFrequencies
 	@for app in $(PERL_APPS); do \
-		cp -f perl/$$app $(PREFIX)/bin; \
+		sed -e "s+<PREFIX>+$(PREFIX)+g" perl/$$app > $(PREFIX)/bin/$$app; \
 	done
 	@chmod 755 $(PREFIX)/bin/likwid-*
 	@echo "===> INSTALL daemon applications to $(PREFIX)/bin"
@@ -326,23 +326,22 @@ install:
 	@mkdir -p $(LIKWIDFILTERPATH)
 	@cp -f filters/*  $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
-	@chown root $(ACCESSDAEMON) 
+	@chown root $(ACCESSDAEMON)
 	@chmod u+s $(ACCESSDAEMON)
 
 uninstall:
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
-	@rm -f $(addprefix $(PREFIX)/bin/,$(APPS)) 
+	@rm -f $(addprefix $(PREFIX)/bin/,$(APPS))
 	@rm -f $(addprefix $(PREFIX)/bin/,$(PERL_APPS))
-	@rm -f $(PREFIX)/bin/likwid-setFrequencies
 	@rm -f $(PREFIX)/bin/feedGnuplot
 	@echo "===> REMOVING daemon applications from $(PREFIX)/sbin"
-	@rm -f $(addprefix $(PREFIX)/sbin/,$(DAEMON_APPS)) 
+	@rm -f $(addprefix $(PREFIX)/sbin/,$(DAEMON_APPS))
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
 	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(APPS)))
 	@echo "===> REMOVING headers from $(PREFIX)/include"
 	@rm -f $(PREFIX)/include/likwid*.h
 	@echo "===> REMOVING libs from $(PREFIX)/lib"
-	@rm -f $(PREFIX)/lib/$(LIKWID_LIB)* 
+	@rm -f $(PREFIX)/lib/$(LIKWID_LIB)*
 	@echo "===> REMOVING filter from $(PREFIX)/share"
 	@rm -rf  $(PREFIX)/share/likwid
 
