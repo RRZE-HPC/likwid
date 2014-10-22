@@ -139,8 +139,6 @@ void likwid_markerInit(void)
     char* eventStr = getenv("LIKWID_EVENTS");
     char* cThreadStr = getenv("LIKWID_THREADS");
     char* groupStr = getenv("LIKWID_GROUPS");
-    sscanf(getenv("LIKWID_COUNTERMASK"), "%x", &regTypeMask);
-    verbosity = atoi(getenv("LIKWID_DEBUG"));
 
     if ((modeStr != NULL) && (maskStr != NULL) && (eventStr != NULL) && (cThreadStr != NULL) && (groupStr != NULL))
     {
@@ -152,6 +150,8 @@ void likwid_markerInit(void)
         fprintf(stderr, "You have to set the -m commandline switch for likwid-perfctr\n");
         return;
     }
+    sscanf(getenv("LIKWID_COUNTERMASK"), "%x", &regTypeMask);
+    verbosity = atoi(getenv("LIKWID_DEBUG"));
     numberOfGroups = atoi(getenv("LIKWID_GROUPS"));
     if (!lock_check())
     {
