@@ -1,22 +1,22 @@
-SHORT  TLB miss rate/ratio
+SHORT Load to store ratio
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
-PMC0  DTLB_LOAD_MISSES_CAUSES_A_WALK
+PMC0  MEM_UOP_RETIRED_LOADS
+PMC1  MEM_UOP_RETIRED_STORES
 
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-L1 DTLB miss rate  PMC0/FIXC0
+Load to Store ratio PMC0/PMC1
 
 LONG
 Formulas:
-DTLB miss rate  LOAD_MISSES_CAUSES_A_WALK / INSTR_RETIRED_ANY
+Load to Store ratio = MEM_UOP_RETIRED_LOADS / MEM_UOP_RETIRED_STORES
 -
-The DTLB miss  rate gives a measure how often a TLB miss occured
-per instruction. 
+This is a metric to determine your load to store ratio.
 
