@@ -30,7 +30,7 @@
  *
  * =======================================================================================]]
 package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
-package.cpath = package.cpath .. ';<PREFIX>/lib/?.so'
+
 local likwid = require("likwid")
 stdout_print = print
 

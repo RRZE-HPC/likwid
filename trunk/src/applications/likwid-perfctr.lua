@@ -30,9 +30,7 @@
  *
  * =======================================================================================]]
 
-P6_FAMILY = 6
 package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
-package.cpath = package.cpath .. ';<PREFIX>/lib/?.so'
 local likwid = require("likwid")
 
 local function version()
@@ -257,6 +255,7 @@ if verbose > 0 then
     print(string.format("CPU model:\t%u", cpuinfo["model"]))
     print(string.format("CPU stepping:\t%u", cpuinfo["stepping"]))
     print(string.format("CPU features:\t%s", cpuinfo["features"]))
+    P6_FAMILY = 6
     if cpuinfo["family"] == P6_FAMILY and cpuinfo["perf_version"] > 0 then
         print(likwid.hline)
         print(string.format("PERFMON version:\t%u",cpuinfo["perf_version"]))
