@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_ivybridge_counters.h
+ *      Filename:  perfmon_silvermont_counters.h
  *
- *      Description: Counter header file of perfmon module for Ivy Bridge.
+ *      Description: Counter header file of perfmon module for Silvermont.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
