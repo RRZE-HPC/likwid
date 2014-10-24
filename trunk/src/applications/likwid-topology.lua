@@ -210,48 +210,58 @@ if (print_graphical) then
     print(likwid.sline)
     print("Graphical Topology")
     print(likwid.sline)
-    --print("Graphical output currently not supported by likwid-topology written in Lua")
     for socket=0,cputopo["numSockets"]-1 do
         print(string.format("Socket %d:",cputopo["topologyTree"][socket]["ID"]))
-        thread_line = "| | "
-        local box_width = 0
+        container = {}
         for core=0,cputopo["numCoresPerSocket"]-1 do
             local tmpString = ""
             for thread=0,cputopo["numThreadsPerCore"]-1 do
-                tmpString = tmpString .. tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread]) .. " "
+                if thread == 0 then
+                    tmpString = tmpString .. tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread])
+                else
+                    tmpString = tmpString .. " " .. tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread]).. " "
+                end
             end
-            if tmpString:len() > box_width then
-                box_width = tmpString:len()
+            likwid.addSimpleAsciiBox(container, 1, core+1, tmpString)
+        end
+        
+        local columnCursor = 1
+        local lineCursor = 2
+        for cache=1,cputopo["numCacheLevels"] do
+            if cputopo["cacheLevels"][cache]["type"] ~= "INSTRUCTIONCACHE" then
+                local cachesAtCurLevel = 0
+                local sharedCores = cputopo["cacheLevels"][cache]["threads"]/cputopo["numThreadsPerCore"]
+                if sharedCores >= cputopo["numCoresPerSocket"] then
+                    cachesAtCurLevel = 1
+                else
+                    cachesAtCurLevel = cputopo["numCoresPerSocket"]/sharedCores
+                end
+                columnCursor = 1
+                for cachesAtLevel=1,cachesAtCurLevel do
+                    local tmpString = ""
+                    local cacheWidth = 0
+                    if cputopo["cacheLevels"][cache]["size"] < 1048576 then
+                        tmpString = string.format("%dkB", cputopo["cacheLevels"][cache]["size"]/1024)
+                    else
+                        tmpString = string.format("%dMB", cputopo["cacheLevels"][cache]["size"]/1048576)
+                    end
+                    if sharedCores > 1 then
+                        if sharedCores > cputopo["numCoresPerSocket"] then
+                            cacheWidth = sharedCores
+                        else
+                            cacheWidth = sharedCores - 1
+                        end
+                        likwid.addJoinedAsciiBox(container, lineCursor, columnCursor,columnCursor + cacheWidth, tmpString)
+                        columnCursor = columnCursor + cacheWidth
+                    else
+                        likwid.addSimpleAsciiBox(container, lineCursor, columnCursor, tmpString)
+                        columnCursor = columnCursor + 1
+                    end
+                end
+                lineCursor = lineCursor + 1
             end
         end
-        box_width = box_width + 3
-        for core=0,cputopo["numCoresPerSocket"]-1 do
-            local tmpString = ""
-            for thread=0,cputopo["numThreadsPerCore"]-1 do
-                tmpString = tmpString .. tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread]) .. " "
-            end
-            if tmpString:len() < box_width-3 then
-                tmpString = tmpString .. string.rep(" ",box_width-3-tmpString:len())
-            end
-            thread_line = thread_line .. tmpString
-            if core ~= cputopo["numCoresPerSocket"]-1 then
-                thread_line = thread_line .. "| | "
-            end
-        end
-        thread_line = thread_line .. "| |"
-        print("+" .. string.rep("-",thread_line:len()-2) .. "+")
-        str = "| "
-        for core=0,cputopo["numCoresPerSocket"]-1 do
-            str = str .. "+" .. string.rep("-",box_width-2) .. "+ "
-        end
-        print(str .. "|")
-        print(thread_line)
-        str = "| "
-        for core=0,cputopo["numCoresPerSocket"]-1 do
-            str = str .. "+" .. string.rep("-",box_width-2) .. "+ "
-        end
-        print(str .. "|")
-        print("+" .. string.rep("-",thread_line:len()-2) .. "+")
+        likwid.printAsciiBox(container);
     end
 end
 
@@ -260,7 +270,6 @@ if outfile then
     local command = "<PREFIX>/share/likwid/filter/" .. suffix 
     if suffix ~= "txt" then
         command = command .." ".. outfile:gsub("."..suffix,".tmp",1) .. " topology"
-        --io.output("/dev/stdout")
         local f = io.popen(command)
         local o = f:read("*a")
         if o:len() > 0 then

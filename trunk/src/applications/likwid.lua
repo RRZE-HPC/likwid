@@ -1317,4 +1317,91 @@ function msr_available()
 end
 likwid.msr_available = msr_available
 
+
+function addSimpleAsciiBox(container,lineIdx, colIdx, label)
+    if container[lineIdx] == nil then
+        container[lineIdx] = {}
+    end
+    if container[lineIdx][colIdx] == nil then
+        container[lineIdx][colIdx] = {}
+    end
+    container[lineIdx][colIdx]["width"] = 1
+    container[lineIdx][colIdx]["label"] = label
+end
+likwid.addSimpleAsciiBox = addSimpleAsciiBox
+
+function addJoinedAsciiBox(container,lineIdx, startColIdx, endColIdx, label)
+    if container[lineIdx] == nil then
+        container[lineIdx] = {}
+    end
+    if container[lineIdx][startColIdx] == nil then
+        container[lineIdx][startColIdx] = {}
+    end
+    container[lineIdx][startColIdx]["width"] = endColIdx-startColIdx+1
+    container[lineIdx][startColIdx]["label"] = label
+end
+likwid.addJoinedAsciiBox = addJoinedAsciiBox
+
+function printAsciiBox(container)
+    local boxwidth = 0
+    local numLines = #container
+    local maxNumColumns = 0
+    for i=1,numLines do
+        if #container[i] > maxNumColumns then
+            maxNumColumns = #container[i]
+        end
+        for j=1,#container[i] do
+            if container[i][j]["label"]:len() > boxwidth then
+                boxwidth = container[i][j]["label"]:len()
+            end
+            if container[i][j]["width"] > 1 then
+                j = j + container[i][j]["width"]
+            end
+        end
+    end
+    boxwidth = boxwidth + 2
+    boxline = "+" .. string.rep("-",((maxNumColumns * (boxwidth+2)) + maxNumColumns+1)) .. "+"
+    print(boxline)
+    for i=1,numLines do
+        innerboxline = "| "
+        local numColumns = #container[i]
+        for j=1,numColumns do
+            innerboxline = innerboxline .. "+"
+            if container[i][j]["width"] == 1 then
+                innerboxline = innerboxline .. string.rep("-", boxwidth)
+            else
+                innerboxline = innerboxline .. string.rep("-", (container[i][j]["width"] * boxwidth + (container[i][j]["width"]-1)*3))
+                j = j + container[i][j]["width"]-1
+            end
+            innerboxline = innerboxline .. "+ "
+        end
+        
+        boxlabelline = "| "
+        for j=1,numColumns do
+            local offset = 0
+            local width = 0
+            local labellen = container[i][j]["label"]:len()
+            local boxlen = container[i][j]["width"]
+            if container[i][j]["width"] == 1 then
+                width = (boxwidth - labellen)/2;
+                offset = (boxwidth - labellen)%2;
+            else
+                width = (boxlen * boxwidth + ((boxlen-1)*3) - labellen)/2;
+                offset = (boxlen * boxwidth + ((boxlen-1)*3) - labellen)%2;
+            end
+            boxlabelline = boxlabelline .. "|" .. string.rep(" ",(width+offset))
+            boxlabelline = boxlabelline .. container[i][j]["label"]
+            boxlabelline = boxlabelline ..  string.rep(" ",(width)) .. "| "
+            if container[i][j]["width"] ~= 1 then
+                j = j + container[i][j]["width"]-1
+            end
+        end
+        print(innerboxline .. "|")
+        print(boxlabelline .. "|")
+        print(innerboxline .. "|")
+    end
+    print(boxline)
+end
+likwid.printAsciiBox = printAsciiBox
+
 return likwid
