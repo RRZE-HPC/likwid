@@ -49,6 +49,7 @@
 #include <perfmon.h>
 #include <power.h>
 #include <thermal.h>
+#include <bstrlib.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -83,19 +84,20 @@ int main (int argc, char** argv)
     int hasDRAM = 0;
     int hasPP0 = 0;
     int hasPP1 = 0;
-    int c;
+    int c, i;
     bstring argString;
     bstring eventString = bfromcstr("CLOCK");
     int numSockets=1;
     int numThreads=0;
     int threadsSockets[MAX_NUM_NODES*2];
     int threads[MAX_NUM_THREADS];
+    const AffinityDomain* socketDomains[MAX_NUM_NODES*2];
     threadsSockets[0] = 0;
 
     if (argc == 1)
     {
-    	HELP_MSG;
-    	exit (EXIT_SUCCESS);
+        HELP_MSG;
+        exit (EXIT_SUCCESS);
     }
 
     while ((c = getopt (argc, argv, "+c:hiM:ps:v")) != -1)
@@ -132,10 +134,10 @@ int main (int argc, char** argv)
                 VERSION_MSG;
                 exit (EXIT_SUCCESS);
             case '?':
-            	if (optopt == 's' || optopt == 'M' || optopt == 'c')
-            	{
-            		HELP_MSG;
-            	}
+                if (optopt == 's' || optopt == 'M' || optopt == 'c')
+                {
+                    HELP_MSG;
+                }
                 else if (isprint (optopt))
                 {
                     fprintf (stderr, "Unknown option `-%c'.\n", optopt);
@@ -160,8 +162,8 @@ int main (int argc, char** argv)
     }
     if (optClock && optind == argc)
     {
-    	fprintf(stderr,"Commandline option -p requires an executable.\n");
-    	exit(EXIT_FAILURE);
+        fprintf(stderr,"Commandline option -p requires an executable.\n");
+        exit(EXIT_FAILURE);
     }
     if (optSockets && !optStethoscope && optind == argc)
     {
@@ -179,15 +181,27 @@ int main (int argc, char** argv)
         fprintf(stderr, "CPU not supported\n");
         exit(EXIT_FAILURE);
     }
-    
     if (numSockets > cpuid_topology.numSockets)
     {
-    	fprintf(stderr, "System has only %d sockets but %d are given on commandline.\n",
-    			cpuid_topology.numSockets, numSockets);
-    	exit(EXIT_FAILURE);
+        fprintf(stderr, "System has only %d sockets but %d are given on commandline.\n",
+                        cpuid_topology.numSockets, numSockets);
+        exit(EXIT_FAILURE);
     }
 
-    numa_init(); /* consider NUMA node as power unit for the moment */
+    numa_init();
+    affinity_init();
+
+    for (c = 0; c < numSockets; c++)
+    {
+        if (threadsSockets[c] >= cpuid_topology.numSockets)
+        {
+            fprintf(stderr, "System has no socket %d\n", threadsSockets[c]);
+            exit(EXIT_FAILURE);
+        }
+        bstring socketStr = bformat("S%d",threadsSockets[c]);
+        socketDomains[threadsSockets[c]] = affinity_getDomain(socketStr);
+    }
+
     accessClient_init(&socket_fd);
     msr_init(socket_fd);
     timer_init();
@@ -214,12 +228,12 @@ int main (int argc, char** argv)
         }
         for(int i=0; i<numSockets; i++)
         {
-            power_init(numa_info.nodes[threadsSockets[i]].processors[0]);
+            power_init(socketDomains[threadsSockets[i]]->processorList[0]);
         }
     }
     else
     {
-        fprintf (stderr, "Query Turbo Mode only supported on Intel Nehalem/Westmere/SandyBridge/IvyBridge/Haswell processors!\n");
+        fprintf (stderr, "Query Turbo Mode only supported on Intel Nehalem/Westmere/SandyBridge/IvyBridge/Haswell/Silvermont processors!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -304,10 +318,12 @@ int main (int argc, char** argv)
     if (optClock)
     {
         affinity_init();
-        argString = bformat("S%u:0-%u", threadsSockets[0], cpuid_topology.numCoresPerSocket-1);
+        argString = bformat("S%u:0-%u", threadsSockets[0],
+                        socketDomains[threadsSockets[0]]->numberOfProcessors-1);
         for (int i=1; i<numSockets; i++)
         {
-            bstring tExpr = bformat("@S%u:0-%u", threadsSockets[i], cpuid_topology.numCoresPerSocket-1);
+            bstring tExpr = bformat("@S%u:0-%u", threadsSockets[i],
+                                socketDomains[threadsSockets[i]]->numberOfProcessors-1);
             bconcat(argString, tExpr);
         }
         numThreads = bstr_to_cpuset(threads, argString);
@@ -339,11 +355,11 @@ int main (int argc, char** argv)
             {
                 for (int i=0; i<numSockets; i++)
                 {
-                    int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
-                    if (hasDRAM) power_start(pDataDram+i, cpuId, DRAM);
-                    if (hasPP0) power_start(pDataPP0+i, cpuId, PP0);
-                    if (hasPP1) power_start(pDataPP1+i, cpuId, PP1);
-                    power_start(pDataPkg+i, cpuId, PKG);
+                    int cpuId = socketDomains[threadsSockets[i]]->processorList[0];
+                    if (hasDRAM) power_start(&(pDataDram[i]), cpuId, DRAM);
+                    if (hasPP0) power_start(&(pDataPP0[i]), cpuId, PP0);
+                    if (hasPP1) power_start(&(pDataPP1[i]), cpuId, PP1);
+                    power_start(&(pDataPkg[i]), cpuId, PKG);
                 }
             }
             sleep(optStethoscope);
@@ -358,11 +374,11 @@ int main (int argc, char** argv)
             {
                 for (int i=0; i<numSockets; i++)
                 {
-                    int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
-                    power_stop(pDataPkg+i, cpuId, PKG);
-                    if (hasPP1) power_stop(pDataPP1+i, cpuId, PP1);
-                    if (hasPP0) power_stop(pDataPP0+i, cpuId, PP0);
-                    if (hasDRAM) power_stop(pDataDram+i, cpuId, DRAM);
+                    int cpuId = socketDomains[threadsSockets[i]]->processorList[0];
+                    power_stop(&(pDataPkg[i]), cpuId, PKG);
+                    if (hasPP1) power_stop(&(pDataPP1[i]), cpuId, PP1);
+                    if (hasPP0) power_stop(&(pDataPP0[i]), cpuId, PP0);
+                    if (hasDRAM) power_stop(&(pDataDram[i]), cpuId, DRAM);
                 }
             }
             runtime = (double) optStethoscope;
@@ -390,10 +406,12 @@ int main (int argc, char** argv)
             {
                 for (int i=0; i<numSockets; i++)
                 {
-                    int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
-                    if (hasDRAM) power_start(pDataDram+i, cpuId, DRAM);
-                    if (hasPP0) power_start(pDataPP0+i, cpuId, PP0);
-                    power_start(pDataPkg+i, cpuId, PKG);
+                    int cpuId = socketDomains[threadsSockets[i]]->processorList[0];
+                    printf("Start Socket %d CPU %d\n",threadsSockets[i], cpuId);
+                    if (hasDRAM) power_start(&(pDataDram[i]), cpuId, DRAM);
+                    if (hasPP0) power_start(&(pDataPP0[i]), cpuId, PP0);
+                    if (hasPP1) power_start(&(pDataPP1[i]), cpuId, PP1);
+                    power_start(&(pDataPkg[i]), cpuId, PKG);
                 }
 
                 timer_start(&time);
@@ -417,10 +435,12 @@ int main (int argc, char** argv)
 
                 for (int i=0; i<numSockets; i++)
                 {
-                    int cpuId = numa_info.nodes[threadsSockets[i]].processors[0];
-                    power_stop(pDataPkg+i, cpuId, PKG);
-                    if (hasDRAM) power_stop(pDataDram+i, cpuId, DRAM);
-                    if (hasPP0) power_stop(pDataPP0+i, cpuId, PP0);
+                    int cpuId = socketDomains[threadsSockets[i]]->processorList[0];
+                    printf("Stop Socket %d CPU %d\n",threadsSockets[i], cpuId);
+                    power_stop(&(pDataPkg[i]), cpuId, PKG);
+                    if (hasDRAM) power_stop(&(pDataDram[i]), cpuId, DRAM);
+                    if (hasPP0) power_stop(&(pDataPP0[i]), cpuId, PP0);
+                    if (hasPP1) power_stop(&(pDataPP1[i]), cpuId, PP1);
                 }
                 runtime = timer_print(&time);
             }
@@ -432,27 +452,28 @@ int main (int argc, char** argv)
             fprintf(stdout, HLINE);
             for (int i=0; i<numSockets; i++)
             {
-                fprintf(stdout, "Socket %d\n",threadsSockets[i]);
+                fprintf(stdout, "Socket %d (Measured on CPU %d)\n",threadsSockets[i],
+                                    socketDomains[threadsSockets[i]]->processorList[0]);
                 fprintf(stdout, "Domain: PKG \n");
-                fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(pDataPkg+i));
-                fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(pDataPkg+i) / runtime );
+                fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(&(pDataPkg[i])));
+                fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(&(pDataPkg[i])) / runtime );
                 if (hasDRAM)
                 {
                     fprintf(stdout, "Domain: DRAM \n");
-                    fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(pDataDram+i));
-                    fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(pDataDram+i) / runtime );
+                    fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(&(pDataDram[i])));
+                    fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(&(pDataDram[i])) / runtime );
                 }
                 if (hasPP0)
                 {
                     fprintf(stdout, "Domain: PP0 \n");
-                    fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(pDataPP0+i));
-                    fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(pDataPP0+i) / runtime );
+                    fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(&(pDataPP0[i])));
+                    fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(&(pDataPP0[i])) / runtime );
                 }
                 if (hasPP1)
                 {
                     fprintf(stdout, "Domain: PP1 \n");
-                    fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(pDataPP1+i));
-                    fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(pDataPP1+i) / runtime );
+                    fprintf(stdout, "Energy consumed: %g Joules \n", power_printEnergy(&(pDataPP1[i])));
+                    fprintf(stdout, "Power consumed: %g Watts \n", power_printEnergy(&(pDataPP1[i])) / runtime );
                 }
                 fprintf(stdout, "\n");
             }
@@ -460,20 +481,23 @@ int main (int argc, char** argv)
         }
     }
 
-#if 0
+
     if ( cpuid_hasFeature(TM2) )
     {
-        thermal_init(0);
         printf("Current core temperatures:\n");
-
-        for (uint32_t i = 0; i < cpuid_topology.numCoresPerSocket; i++ )
+        for (i = 0; i < numSockets; i++)
         {
-            printf("Core %d: %u C\n",
-                    numa_info.nodes[socketId].processors[i],
-                    thermal_read(numa_info.nodes[socketId].processors[i]));
+            printf("Socket %d\n",threadsSockets[i]);
+            for (c = 0; c < socketDomains[threadsSockets[i]]->numberOfProcessors; c++ )
+            {
+                thermal_init(i);
+                printf("Core %d: %u C\n",
+                        socketDomains[threadsSockets[i]]->processorList[c],
+                        thermal_read(socketDomains[threadsSockets[i]]->processorList[c]));
+            }
         }
     }
-#endif
+
 
     msr_finalize();
     return EXIT_SUCCESS;
