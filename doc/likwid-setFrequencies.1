@@ -5,16 +5,16 @@ likwid-setFrequencies \- print and manage the clock frequency of CPU cores
 .B likwid-setFrequencies 
 .RB [\-hpl]
 .RB [ \-c
-.IR cpu_list,_socket_list_or_expression ]
+.IR <cpu_list,_socket_list_or_expression> ]
 .RB [ \-g
-.IR governor ]
+.IR <governor> ]
 .RB [ \-f
-.IR frequency ]
+.IR <frequency> ]
 .SH DESCRIPTION
 .B likwid-setFrequencies
 is a command line application to set the clock frequency of CPU cores. Since only priviledged users are allowed to change the frequency of CPU cores, the application works in combination with a daemon 
-.B likwid-setFreq
-. The daemon needs the suid permission bit to be set in order to manipulate the sysfs entries. With 
+.B likwid-setFreq.
+The daemon needs the suid permission bit to be set in order to manipulate the sysfs entries. With 
 .B likwid-setFrequencies
 the clock of all cores inside a the cpu_list or affinity domain can be set to a specific frequency or governor at once.
 .SH OPTIONS
@@ -28,14 +28,14 @@ prints the current frequencies for all CPU cores
 .B \-l
 prints all configurable frequencies
 .TP
-.B \-c
+.B \-\^c " <cpu_list,_socket_list_or_expression>
 set the affinity domain where to set the frequencies. Common are N (Node), SX (Socket X), CX (Cache Group X) and MX (Memory Group X). For detailed information about affinity domains see
 .B likwid-pin(1)
 .TP
-.B \-g
+.B \-\^g " <governor>
 set the governor of all CPU cores inside the affinity domain. Current governors are ondemand, performance, turbo. Default is ondemand
 .TP
-.B \-f
+.B \-\^f " <frequency>
 set a fixed frequency at all CPU cores inside the affinity domain. Implicitly sets userspace governor for the cores.
 
 .SH AUTHOR
