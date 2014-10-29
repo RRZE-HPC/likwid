@@ -85,7 +85,7 @@ int test_rdpmc(int flag)
     int status = 0;
     uint64_t tmp;
     struct sigaction sa;
-    memset(&sa, 0, sizeof(sigaction));
+    memset(&sa, 0, sizeof(struct sigaction));
     sigemptyset(&sa.sa_mask);
     sa.sa_sigaction = segfault_sigaction;
     sa.sa_flags   = SA_SIGINFO;
