@@ -44,6 +44,8 @@ Power =  PWR_PKG_ENERGY / runtime
 Power DRAM = PWR_DRAM_ENERGY / runtime
 MFlops/s =  (FP_COMP_OPS_EXE_SSE_FP_PACKED_SINGLE * 4 +  FP_COMP_OPS_EXE_SSE_FP_SCALAR_SINGLE) / runtime
 AVX MFlops/s =  (SIMD_FP_256_PACKED_SINGLE * 8) / runtime
+Memory Read BW [MBytes/s] 1.0E-06*(CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_RD)*64.0/time
+Memory Write BW [MBytes/s] 1.0E-06*(CAS_COUNT_WR+CAS_COUNT_WR+CAS_COUNT_WR+CAS_COUNT_WR)*64.0/time
 --
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
 Since this group is based on uncore events it is only possible to measure on
