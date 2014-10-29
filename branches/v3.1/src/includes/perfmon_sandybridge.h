@@ -401,7 +401,7 @@ void perfmon_startCountersThread_sandybridge(int thread_id)
                 case MBOXFIX:
                     if(haveLock)
                     {
-                        pci_write(cpu_id, PCI_IMC_DEVICE_CH_0,  PCI_UNC_MC_PMON_FIXED_CTL, 0x48000UL);
+                        pci_write(cpu_id, counter_map[i].device,  PCI_UNC_MC_PMON_FIXED_CTL, 0x48000UL);
                     }
                     break;
 
