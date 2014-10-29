@@ -1,15 +1,15 @@
 .TH LIKWID-POWERMETER 1 <DATE> likwid\-<VERSION>
 .SH NAME
-likwid-powermeter \- A tool to print Power and Clocking information on Intel CPUS
+likwid-powermeter \- A tool to print power and clocking information on Intel CPUs
 .SH SYNOPSIS
 .B likwid-powermeter 
 .RB [ \-vhip ]
 .RB [ \-c
-.IR socket_list ]
+.IR <socket_list> ]
 .RB [ \-s
-.IR duration_in_seconds ]
+.IR <duration_in_seconds> ]
 .RB [ \-M
-.IR access mode (0=direct, 1=accessDaemon) ]
+.IR <access_mode>]
 .SH DESCRIPTION
 .B likwid-powermeter
 is a command line application to get the energy comsumption of Intel RAPL capable processors. 
@@ -17,7 +17,8 @@ It also prints information about TDP and Turbo Mode steps supported.
 The Turbo Mode information works on all Turbo mode enabled Intel processors. The tool can be either used
 in stethoscope mode for a specified duration or as a wrapper to your application measuring your complete 
 run. RAPL works on a per package (socket) base.
-Please note that the RAPL counters are also accessible as normal events within likwid-perfctr.
+Please note that the RAPL counters are also accessible as normal events within
+.B likwid-perfctr.
 .SH OPTIONS
 .TP
 .B \-\^v
@@ -26,7 +27,7 @@ prints version information to standard output, then exits.
 .B \-\^h
 prints a help message to standard output, then exits.
 .TP
-.B \-\^c " socket_list"
+.B \-\^c " <socket_list>"
 set on which sockets the RAPL interface is accessed. comma-separated list of socket IDs
 .TP
 .B \-\^p
@@ -35,10 +36,10 @@ prints out information about dynamic clocks and CPI information on the socket me
 .B \-\^i
 prints out information TDP and Turbo mode steps
 .TP
-.B \-\^M
+.B \-\^M " <access_mode>"
 set the access method. 0 for direct access to MSR/RAPL registers, 1 for using the accessDaemon.
 .TP
-.B \-\^s
+.B \-\^s " <duration_in_seconds>
 measure the power for a specific time (default 2s)
 
 

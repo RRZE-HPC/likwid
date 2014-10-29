@@ -1,19 +1,20 @@
 .TH LIKWID-BENCH 1 <DATE> likwid\-<VERSION>
+.WARN
 .SH NAME
 likwid-bench \- low-level benchmark suite and microbenchmarking framework
 .SH SYNOPSIS
 .B likwid-bench
 .RB [\-hap]
 .RB [ \-l
-.IR testname ] 
+.IR <testname> ] 
 .RB [ \-i
-.IR iterations ]
+.IR <iterations> ]
 .RB [ \-g
-.IR number_of_workgroups ]
+.IR <number_of_workgroups> ]
 .RB [ \-t
-.IR testname ]
+.IR <testname> ]
 .RB [ \-w
-.IR workgroup_expression ]
+.IR <workgroup_expression> ]
 .SH DESCRIPTION
 .B likwid-bench
 is a benchmark suite for low-level (assembly) benchmarks to measure bandwidths and instruction throughput for specific instruction code on x86 systems. The currently included benchmark codes include common data access patterns like load and store but also calculations like vector triad and sum.
@@ -38,25 +39,25 @@ list available benchmark codes for the current system.
 .B \-\^p
 list available thread domains.
 .TP
-.B \-\^l " testname"
+.B \-\^l " <testname>"
 list properties of a benchmark code.
 .TP
-.B \-\^i " iterations"
+.B \-\^i " <iterations>"
 number of iterations to perform inside the benchmark code.
 .TP
-.B \-\^t " testname"
+.B \-\^t " <testname>"
 Name of the benchmark code to run (mandatory).
 .TP
-.B \-\^g " number_of_workgroups"
+.B \-\^g " <number_of_workgroups>"
 specify the number of workgroups to perform the benchmark code on (mandatory).
 .TP
-.B \-\^w " workgroup_expression"
+.B \-\^w " <workgroup_expression>"
 Specify the affinity domain, thread count and data set size for the current benchmarking run (mandatory).
 
 .SH WORKGROUP SYNTAX
+
 .B <thread_domain>:<size>[:<num_threads>[:<chunk_size>:<stride>]][-<streamId>:<domain_id>]
-with size in kB, MB or GB.
-Where thread domain is where threads are placed. Size is the total data set size for the benchmark. num_threads specifies how many threads are used. Threads are always placed using a compact policy in
+with size in kB, MB or GB. Where thread domain is where threads are placed. Size is the total data set size for the benchmark. num_threads specifies how many threads are used. Threads are always placed using a compact policy in
 .B likwid-bench.
 This means that per default all SMT threads are used. Optionally similar a the expression based syntax in
 .B likwid-pin

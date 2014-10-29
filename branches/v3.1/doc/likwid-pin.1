@@ -3,15 +3,13 @@
 likwid-pin \- pin a sequential or threaded application to dedicated processors
 .SH SYNOPSIS
 .B likwid-pin 
-.RB [\-vhqip]
+.RB [\-vhqipS]
 .RB [ \-c
-.IR core_list ]
+.IR <core_list> ]
 .RB [ \-s
-.IR skip_mask ]
-.RB [ \-S
-.IR Sweep_memory_before_run]
+.IR <skip_mask> ]
 .RB [ \-d
-.IR delimiter ]
+.IR <delimiter> ]
 .SH DESCRIPTION
 .B likwid-pin
 is a command line application to pin a sequential or multithreaded 
@@ -27,8 +25,8 @@ to a dedicated processor as specified in
 .PP
 Per default every generated thread is pinned to the core in the order of calls 
 to 
-.I pthread_create
-. It is possible to skip single threads using -s commandline option.
+.I pthread_create.
+It is possible to skip single threads using -s commandline option.
 .PP
 For OpenMP implementations gcc and icc compilers are explicitly supported. Others may also work.
 .B likwid-pin
@@ -67,7 +65,7 @@ prints version information to standard output, then exits.
 .B \-\^h
 prints a help message to standard output, then exits.
 .TP
-.B \-\^c " processor_list OR thread expression OR scatter policy "
+.B \-\^c " <processor_list> OR <thread_expression> OR <scatter policy> "
 specify a numerical list of processors. The list may contain multiple 
 items, separated by comma, and ranges. For example 0,3,9-11. You can also use
 logical numberings, either within a node (N), a socket (S<id>) or a numa domain (M<id>).
@@ -75,10 +73,10 @@ likwid-pin also supports logical pinning within a cpuset with a L prefix. If you
 likwid-pin will pin the threads to the processors on the node with physical cores first.
 See below for details on using a thread expression or scatter policy
 .TP
-.B \-\^s " skip_mask
+.B \-\^s " <skip_mask>
 Specify skip mask as HEX number. For each set bit the corresponding thread is skipped.
 .TP
-.B \-\^S " enable memory sweeper
+.B \-\^S
 All ccNUMA memory domains belonging to the specified threadlist will be cleaned before the run. Can solve file buffer cache problems on Linux.
 .TP
 .B \-\^p
@@ -90,7 +88,7 @@ set numa memory policy to interleave spanning all numa nodes involved in pinning
 .B \-\^q
 silent execution without output
 .TP
-.B \-\^d
+.B \-\^d " <delimiter>
 set delimiter used to output the physical processor list (-p & -c)
 
 
