@@ -38,12 +38,13 @@ ifeq ($(COMPILER),GCC)
 CFLAGS    +=  -pedantic -Wall -Wextra -std=c99
 endif
 CPPFLAGS :=  $(DEFINES) $(INCLUDES)
+Q=
 
 all: $(DAEMON_TARGET) $(SETFREQ_TARGET)
 
 $(DAEMON_TARGET): accessDaemon.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c
+	$(CC) $(ANSI_CFLAGS) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c
 
 $(SETFREQ_TARGET): setFreq.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreq.c
+	$(CC) $(ANSI_CFLAGS) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreq.c
 
