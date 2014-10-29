@@ -272,7 +272,7 @@ bstr_to_cpuset_expression(uint32_t* threads,  const_bstring qi)
             counter = 0;
             for (j=0; j<numThreads; j+=chunksize)
             {
-                for(i=0;i<chunksize;i++)
+                for(i=0;i<chunksize && j+i<numThreads ;i++)
                 {
                     threads[globalNumThreads++] = domain->processorList[counter+i];
                 }
