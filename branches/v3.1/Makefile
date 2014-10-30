@@ -300,8 +300,13 @@ install:
 	@mkdir -p $(PREFIX)/sbin
 	@for app in $(DAEMON_APPS); do \
 		cp -f $$app $(PREFIX)/sbin; \
+		if [ $(shell id -u) = "0" ]; then \
+			chown root $(PREFIX)/sbin/$$app; \
+			chmod 4775 $(PREFIX)/sbin/$$app; \
+		else \
+			echo "Only root can adjust the privileges of the daemon applications in $(PREFIX)/sbin"; \
+		fi; \
 	done
-	@chmod 755 $(PREFIX)/sbin/likwid-*
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
@@ -333,8 +338,6 @@ install:
 	@mkdir -p $(LIKWIDFILTERPATH)
 	@cp -f filters/*  $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
-	@chown root $(ACCESSDAEMON)
-	@chmod u+s $(ACCESSDAEMON)
 
 uninstall:
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
