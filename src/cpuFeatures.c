@@ -268,7 +268,7 @@ cpuFeatures_print(int cpu)
             (cpuid_info.model == NEHALEM_WESTMERE_M) ||
             (cpuid_info.model == NEHALEM_EX))
     {
-        printf("Intel Turbo Mode: \t");
+        printf("Intel Turbo Mode: \t\t");
         if (flags & (1ULL<<38)) 
         {
             PRINT_VALUE(RED,disabled);
