@@ -126,6 +126,7 @@ void* runTest(void* arg)
     ThreadUserData* myData;
     TimerData time;
     FuncPrototype func;
+    FILE* OUTSTREAM;
 #ifdef PAPI
     int event_set = PAPI_NULL;
     char groupname[50];
@@ -134,7 +135,6 @@ void* runTest(void* arg)
     group_ptr = getenv("PAPI_BENCH");
     PAPI_create_eventset(&event_set);
     PAPI_add_event(event_set, PAPI_TOT_CYC);
-    fprintf(stderr, "PAPI measuring group %s\n",group_ptr);
     // L3 group
     if (strncmp(group_ptr,"L3",2) == 0)
     {
@@ -168,6 +168,7 @@ void* runTest(void* arg)
     myData = &(data->data);
     func = myData->test->kernel;
     threadId = data->threadId;
+    OUTSTREAM = data->output;
     barrier_registerThread(&barr, 0, data->globalThreadId);
 
     /* Prepare ptrs for thread */
@@ -212,13 +213,16 @@ void* runTest(void* arg)
     sleep(1);
     LIKWID_THREAD_INIT;
     BARRIER;
-    printf("Group: %d Thread %d Global Thread %d running on core %d - Vector length %llu Offset %d\n",
-            data->groupId,
-            threadId,
-            data->globalThreadId,
-            affinity_threadGetProcessorId(),
-            LLU_CAST size,
-            offset);
+    if (OUTSTREAM)
+    {
+        fprintf(OUTSTREAM, "Group: %d Thread %d Global Thread %d running on core %d - Vector length %llu Offset %d\n",
+                data->groupId,
+                threadId,
+                data->globalThreadId,
+                affinity_threadGetProcessorId(),
+                LLU_CAST size,
+                offset);
+    }
     BARRIER;
 
     /* Up to 10 streams the following registers are used for Array ptr:
@@ -510,8 +514,6 @@ void* runTest(void* arg)
             break;
     }
 #ifdef PAPI
-    for(i=0;i<4;i++)
-        printf("result[%d] = %llu\n",i,result[i]);
     double papi_result = 0.0;
     // L2 & L3 group
     if (strncmp(group_ptr,"L3",2) == 0 ||
@@ -522,10 +524,12 @@ void* runTest(void* arg)
     // FLOPS_AVX
     else if (strncmp(group_ptr,"FLOPS",5) == 0)
     {
-        printf("Determine PAPI result\n");
         papi_result = (double) result[1]+ (double) result[2];
     }
-    printf("Thread %d Result %f\n",threadId, papi_result);
+    if (OUTSTREAM)
+    {
+        fprintf(OUTSTREAM, "Thread %d Result %f\n",threadId, papi_result);
+    }
 #endif
     pthread_exit(NULL);
 }

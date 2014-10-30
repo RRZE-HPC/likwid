@@ -353,19 +353,22 @@ affinity_getDomain(bstring domain)
 }
 
 void
-affinity_printDomains()
+affinity_printDomains(FILE* OUTSTREAM)
 {
-    for ( int i=0; i < affinity_numberOfDomains; i++ )
+    if (OUTSTREAM)
     {
-        fprintf(stdout, "Domain %d:\n", i);
-        fprintf(stdout, "\tTag %s:", bdata(domains[i].tag));
-
-        for ( uint32_t j=0; j < domains[i].numberOfProcessors; j++ )
+        for ( int i=0; i < affinity_numberOfDomains; i++ )
         {
-            fprintf(stdout, " %d", domains[i].processorList[j]);
+            fprintf(OUTSTREAM, "Domain %d:\n", i);
+            fprintf(OUTSTREAM, "\tTag %s:", bdata(domains[i].tag));
+
+            for ( uint32_t j=0; j < domains[i].numberOfProcessors; j++ )
+            {
+                fprintf(OUTSTREAM, " %d", domains[i].processorList[j]);
+            }
+            fprintf(OUTSTREAM, "\n");
+            fflush(OUTSTREAM);
         }
-        fprintf(stdout, "\n");
-        fflush(stdout);
     }
 }
 

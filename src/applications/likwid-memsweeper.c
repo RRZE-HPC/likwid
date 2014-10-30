@@ -51,8 +51,10 @@
     fprintf(stdout, "Options:\n"); \
     fprintf(stdout, "-h\t Help message\n"); \
     fprintf(stdout, "-v\t Version information\n"); \
-    fprintf(stdout, "-c\t specify NUMA domain ID to clean up\n"); \
-    fprintf(stdout, "Usage: likwid-memsweeper \n"); \
+    fprintf(stdout, "-q\t Silent without output\n"); \
+    fprintf(stdout, "-c\t Specify NUMA domain ID to clean up\n"); \
+    fprintf(stdout, "\t If no specific domain is set, all domains are swept.\n"); \
+    fprintf(stdout, "Usage:\n"); \
     fprintf(stdout, "To clean specific domain: likwid-memsweeper -c 2 \n"); \
     fflush(stdout);
 
@@ -65,9 +67,11 @@ int main (int argc, char** argv)
 {
     int domainId = -1;
     int c;
+    int optSilent = 0;
     bstring argString;
+    FILE* OUTSTREAM = stdout;
 
-    while ((c = getopt (argc, argv, "+c:hv")) != -1)
+    while ((c = getopt (argc, argv, "+c:hvq")) != -1)
     {
         switch (c)
         {
@@ -77,6 +81,10 @@ int main (int argc, char** argv)
             case 'v':
                 VERSION_MSG;
                 exit (EXIT_SUCCESS);
+            case 'q':
+                optSilent = 1;
+                OUTSTREAM = NULL;
+                break;
             case 'c':
                 if (! (argString = bSecureInput(10,optarg)))
                 {
@@ -113,11 +121,16 @@ int main (int argc, char** argv)
 
     if (domainId < 0) 
     {
-        memsweep_node();
+        memsweep_node(OUTSTREAM);
+    }
+    else if (domainId < numa_info.numberOfNodes)
+    {
+        memsweep_domain(OUTSTREAM, domainId);
     }
     else
     {
-        memsweep_domain(domainId);
+        fprintf(stderr, "Unknown NUMA domain %d\n", domainId);
+        exit(EXIT_FAILURE);
     }
 
     return EXIT_SUCCESS;

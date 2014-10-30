@@ -42,7 +42,7 @@ extern int  affinity_threadGetProcessorId();
 extern void  affinity_pinProcess(int processorId);
 extern void  affinity_pinThread(int processorId);
 extern const AffinityDomain* affinity_getDomain(bstring domain);
-extern void affinity_printDomains();
+extern void affinity_printDomains(FILE* OUTSTREAM);
 
 #endif /*AFFINITY_H*/
 
