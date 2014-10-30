@@ -76,6 +76,7 @@ allocator_finalize()
 
 void
 allocator_allocateVector(
+        FILE* OUTSTREAM,
         void** ptr,
         int alignment,
         uint64_t size,
@@ -130,10 +131,13 @@ allocator_allocateVector(
     domain = affinity_getDomain(domainString);
     affinity_pinProcess(domain->processorList[0]);
 
-    printf("Allocate: Process running on core %d - Vector length %llu Offset %d\n",
+    if (OUTSTREAM)
+    {
+        fprintf(OUTSTREAM, "Allocate: Process running on core %d - Vector length %llu Offset %d\n",
             affinity_processGetProcessorId(),
             LLU_CAST size,
             offset);
+    }
 
     switch ( type )
     {

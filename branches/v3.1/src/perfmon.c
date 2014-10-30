@@ -839,7 +839,6 @@ perfmon_logCounterResults(double time)
         {
             fprintf(OUTSTREAM, "%e ",
                     (double) (perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData) - perfmon_threadState[j][perfmon_set.events[i].index]);
-            fprintf(OUTSTREAM, "Event index %d = %d\n",i, perfmon_set.events[i].index);
             perfmon_threadState[j][perfmon_set.events[i].index] = perfmon_threadData[j].counters[perfmon_set.events[i].index].counterData;
         }
         fprintf(OUTSTREAM,"\n");

@@ -31,6 +31,7 @@
 #ifndef THREADS_TYPES_H
 #define THREADS_TYPES_H
 
+#include <stdio.h>
 #include <stdint.h>
 
 typedef struct {
@@ -42,6 +43,7 @@ typedef struct {
     int groupId;
     double time;
     uint64_t cycles;
+    FILE* output;
     ThreadUserData data;
 } ThreadData;
 

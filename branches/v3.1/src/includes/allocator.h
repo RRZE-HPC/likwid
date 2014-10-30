@@ -36,12 +36,13 @@
 
 extern void allocator_init(int numVectors);
 extern void allocator_finalize();
-extern void allocator_allocateVector(void** ptr,
-        int alignment,
-        uint64_t size,
-        int offset,
-        DataType type,
-        bstring domain);
+extern void allocator_allocateVector(FILE* OUTSTREAM,
+                                     void** ptr,
+                                     int alignment,
+                                     uint64_t size,
+                                     int offset,
+                                     DataType type,
+                                     bstring domain);
 
 #endif /*ALLOCATOR_H*/
 

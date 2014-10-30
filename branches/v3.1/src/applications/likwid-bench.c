@@ -63,6 +63,8 @@ extern void* runTest(void* arg);
     fprintf(stdout, "\n"); \
     fprintf(stdout, "Supported Options:\n"); \
     fprintf(stdout, "-h\t Help message\n"); \
+    fprintf(stdout, "-v\t Version information\n"); \
+    fprintf(stdout, "-q\t Silent without output\n"); \
     fprintf(stdout, "-a\t list available benchmarks \n"); \
     fprintf(stdout, "-p\t list available thread domains\n"); \
     fprintf(stdout, "-l <TEST>\t list properties of benchmark \n"); \
@@ -122,6 +124,7 @@ int main(int argc, char** argv)
     const TestCase* test = NULL;
     Workgroup* currentWorkgroup = NULL;
     Workgroup* groups = NULL;
+    FILE* OUTSTREAM = stdout;
 
     if (cpuid_init() == EXIT_FAILURE)
     {
@@ -138,7 +141,7 @@ int main(int argc, char** argv)
         exit(EXIT_SUCCESS);
     }
     opterr = 0;
-    while ((c = getopt (argc, argv, "g:w:t:i:l:aphv")) != -1) {
+    while ((c = getopt (argc, argv, "g:w:t:i:l:aphvq")) != -1) {
         switch (c)
         {
             case 'h':
@@ -158,14 +161,20 @@ int main(int argc, char** argv)
                 }
                 exit (EXIT_SUCCESS);
             case 'a':
-                fprintf(stdout, TESTS"\n");
-                fflush(stdout);
+                if (OUTSTREAM)
+                {
+                    fprintf(OUTSTREAM, TESTS"\n");
+                    fflush(OUTSTREAM);
+                }
                 affinity_finalize();
                 if (groups)
                 {
                     free(groups);
                 }
                 exit (EXIT_SUCCESS);
+            case 'q':
+                OUTSTREAM = NULL;
+                break;
             case 'w':
                 tmp--;
 
@@ -208,7 +217,8 @@ int main(int argc, char** argv)
                         return EXIT_FAILURE;
                     }
 
-                    allocator_allocateVector(&(currentWorkgroup->streams[i].ptr),
+                    allocator_allocateVector(OUTSTREAM,
+                            &(currentWorkgroup->streams[i].ptr),
                             PAGE_ALIGNMENT,
                             currentWorkgroup->size,
                             currentWorkgroup->streams[i].offset,
@@ -239,9 +249,12 @@ int main(int argc, char** argv)
                 if (biseqcstr(testcase,"none") || !test)
                 {
                     fprintf (stderr, "Unknown test case %s\n",optarg);
-                    fprintf(stdout, "Available test cases:\n");
-                    fprintf(stdout, TESTS"\n");
-                    fflush(stdout);
+                    if (OUTSTREAM)
+                    {
+                        fprintf(OUTSTREAM, "Available test cases:\n");
+                        fprintf(OUTSTREAM, TESTS"\n");
+                        fflush(OUTSTREAM);
+                    }
                     affinity_finalize();
                     if (groups)
                     {
@@ -251,21 +264,24 @@ int main(int argc, char** argv)
                 }
                 else
                 {
-                    fprintf(stdout, "Name: %s\n",test->name);
-                    fprintf(stdout, "Number of streams: %d\n",test->streams);
-                    fprintf(stdout, "Loop stride: %d\n",test->stride);
-                    fprintf(stdout, "Flops: %d\n",test->flops);
-                    fprintf(stdout, "Bytes: %d\n",test->bytes);
-                    switch (test->type)
+                    if (OUTSTREAM)
                     {
-                        case SINGLE:
-                            fprintf(stdout, "Data Type: Single precision float\n");
-                            break;
-                        case DOUBLE:
-                            fprintf(stdout, "Data Type: Double precision float\n");
-                            break;
+                        fprintf(OUTSTREAM, "Name: %s\n",test->name);
+                        fprintf(OUTSTREAM, "Number of streams: %d\n",test->streams);
+                        fprintf(OUTSTREAM, "Loop stride: %d\n",test->stride);
+                        fprintf(OUTSTREAM, "Flops: %d\n",test->flops);
+                        fprintf(OUTSTREAM, "Bytes: %d\n",test->bytes);
+                        switch (test->type)
+                        {
+                            case SINGLE:
+                                fprintf(OUTSTREAM, "Data Type: Single precision float\n");
+                                break;
+                            case DOUBLE:
+                                fprintf(OUTSTREAM, "Data Type: Double precision float\n");
+                                break;
+                        }
+                        fflush(OUTSTREAM);
                     }
-                    fflush(stdout);
                 }
                 bdestroy(testcase);
                 affinity_finalize();
@@ -381,7 +397,7 @@ int main(int argc, char** argv)
 
     if (optPrintDomains)
     {
-        affinity_printDomains();
+        affinity_printDomains(OUTSTREAM);
         affinity_finalize();
         allocator_finalize();
         if (groups)
@@ -399,7 +415,7 @@ int main(int argc, char** argv)
         globalNumberOfThreads += groups[i].numberOfThreads;
     }
 
-    threads_init(globalNumberOfThreads);
+    threads_init(OUTSTREAM, globalNumberOfThreads);
     threads_createGroups(numberOfWorkgroups);
 
     /* we configure global barriers only */
@@ -407,12 +423,18 @@ int main(int argc, char** argv)
     barrier_registerGroup(globalNumberOfThreads);
 
 #ifdef PERFMON
-    fprintf(stdout, "Using likwid\n");
-    fflush(stdout);
+    if (OUTSTREAM)
+    {
+        fprintf(OUTSTREAM, "Using likwid\n");
+        fflush(OUTSTREAM);
+    }
     likwid_markerInit();
 #endif
 #ifdef PAPI
-    printf("Using PAPI\n");
+    if (OUTSTREAM)
+    {
+        fprintf(OUTSTREAM, "Using PAPI\n");
+    }
     PAPI_library_init (PAPI_VER_CURRENT);
     PAPI_thread_init((unsigned long (*)(void))(omp_get_thread_num));
 #endif
@@ -443,59 +465,64 @@ int main(int argc, char** argv)
         free(myData.streams);
     }
 
-    fprintf(stdout, HLINE);
-    fprintf(stdout, "LIKWID MICRO BENCHMARK\n");
-    fprintf(stdout, "Test: %s\n",test->name);
-    fprintf(stdout, HLINE);
-    fprintf(stdout, "Using %d work groups\n",numberOfWorkgroups);
-    fprintf(stdout, "Using %d threads\n",globalNumberOfThreads);
-    fprintf(stdout, HLINE);
-    fflush(stdout);
+    if (OUTSTREAM)
+    {
+        fprintf(OUTSTREAM, HLINE);
+        fprintf(OUTSTREAM, "LIKWID MICRO BENCHMARK\n");
+        fprintf(OUTSTREAM, "Test: %s\n",test->name);
+        fprintf(OUTSTREAM, HLINE);
+        fprintf(OUTSTREAM, "Using %d work groups\n",numberOfWorkgroups);
+        fprintf(OUTSTREAM, "Using %d threads\n",globalNumberOfThreads);
+        fprintf(OUTSTREAM, HLINE);
+        fflush(OUTSTREAM);
+    }
 
     threads_create(runTest);
     threads_join();
     allocator_finalize();
-    
+
     uint32_t realSize = 0;
     uint64_t realCycles = 0;
     int current_id = 0;
-    
-    fprintf(stdout, HLINE);
-    for(j=0;j<numberOfWorkgroups;j++)
-    {
-        current_id = j*groups[j].numberOfThreads;
-        realCycles += threads_data[current_id].cycles;
-        realSize += groups[j].numberOfThreads * threads_data[current_id].data.size;
-    }
-    time = (double) realCycles / (double) timer_getCpuClock();
-    fprintf(stdout, "Cycles: %llu \n", LLU_CAST realCycles);
-    fprintf(stdout, "Iterations: %llu \n", LLU_CAST iter);
-    fprintf(stdout, "Size %d \n",  realSize );
-    fprintf(stdout, "Vectorlength: %llu \n", LLU_CAST threads_data[current_id].data.size);
-    fprintf(stdout, "Time: %e sec\n", time);
-    fprintf(stdout, "Number of Flops: %llu \n", LLU_CAST (iter * realSize *  test->flops));
-    fprintf(stdout, "MFlops/s: %.2f\n",
-            1.0E-06 * ((double) iter * realSize *  test->flops/  time));
-    fprintf(stdout, "MByte/s: %.2f\n",
-            1.0E-06 * ( (double) iter * realSize *  test->bytes/ time));
-    fprintf(stdout, "Cycles per update: %f\n",
-            ((double) realCycles / (double) (iter * numberOfWorkgroups * threads_data[current_id].numberOfThreads *  threads_data[current_id].data.size)));
 
-    switch ( test->type )
+    if (OUTSTREAM)
     {
-        case SINGLE:
-            fprintf(stdout, "Cycles per cacheline: %f\n",
-                    (16.0 * (double) realCycles / (double) (iter * realSize)));
-            break;
-        case DOUBLE:
-            fprintf(stdout, "Cycles per cacheline: %f\n",
-                    (8.0 * (double) realCycles / (double) (iter * realSize)));
-            break;
-    }
+        fprintf(OUTSTREAM, HLINE);
+        for(j=0;j<numberOfWorkgroups;j++)
+        {
+            current_id = j*groups[j].numberOfThreads;
+            realCycles += threads_data[current_id].cycles;
+            realSize += groups[j].numberOfThreads * threads_data[current_id].data.size;
+        }
+        time = (double) realCycles / (double) timer_getCpuClock();
+        fprintf(OUTSTREAM, "Cycles: %llu \n", LLU_CAST realCycles);
+        fprintf(OUTSTREAM, "Iterations: %llu \n", LLU_CAST iter);
+        fprintf(OUTSTREAM, "Size %d \n",  realSize );
+        fprintf(OUTSTREAM, "Vectorlength: %llu \n", LLU_CAST threads_data[current_id].data.size);
+        fprintf(OUTSTREAM, "Time: %e sec\n", time);
+        fprintf(OUTSTREAM, "Number of Flops: %llu \n", LLU_CAST (iter * realSize *  test->flops));
+        fprintf(OUTSTREAM, "MFlops/s: %.2f\n",
+                1.0E-06 * ((double) iter * realSize *  test->flops/  time));
+        fprintf(OUTSTREAM, "MByte/s: %.2f\n",
+                1.0E-06 * ( (double) iter * realSize *  test->bytes/ time));
+        fprintf(OUTSTREAM, "Cycles per update: %f\n",
+                ((double) realCycles / (double) (iter * numberOfWorkgroups * threads_data[current_id].numberOfThreads *  threads_data[current_id].data.size)));
 
-    
-    fprintf(stdout, HLINE);
-    fflush(stdout);
+        switch ( test->type )
+        {
+            case SINGLE:
+                fprintf(OUTSTREAM, "Cycles per cacheline: %f\n",
+                        (16.0 * (double) realCycles / (double) (iter * realSize)));
+                break;
+            case DOUBLE:
+                fprintf(OUTSTREAM, "Cycles per cacheline: %f\n",
+                        (8.0 * (double) realCycles / (double) (iter * realSize)));
+                break;
+        }
+
+        fprintf(OUTSTREAM, HLINE);
+        fflush(OUTSTREAM);
+    }
     threads_destroy(numberOfWorkgroups);
     barrier_destroy();
     

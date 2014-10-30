@@ -34,6 +34,7 @@
 #include <types.h>
 #include <pthread.h>
 #include <threads_types.h>
+#include <stdio.h>
 
 #define THREADS_BARRIER pthread_barrier_wait(&threads_barrier)
 
@@ -46,7 +47,7 @@ extern ThreadGroup* threads_groups;
  * @brief  Initialization of the thread module
  * @param  numberOfThreads  The total number of threads
  */
-extern void threads_init(int numberOfThreads);
+extern void threads_init(FILE* OUTSTREAM, int numberOfThreads);
 
 /**
  * @brief  Create all threads

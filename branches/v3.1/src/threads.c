@@ -54,7 +54,7 @@ static int numThreads = 0;
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void
-threads_init(int numberOfThreads)
+threads_init(FILE* OUTSTREAM, int numberOfThreads)
 {
     int i;
     numThreads = numberOfThreads;
@@ -68,6 +68,7 @@ threads_init(int numberOfThreads)
         threads_data[i].globalNumberOfThreads = numThreads;
         threads_data[i].globalThreadId = i;
         threads_data[i].threadId = i;
+        threads_data[i].output = OUTSTREAM;
     }
 
     pthread_barrier_init(&threads_barrier, NULL, numThreads);

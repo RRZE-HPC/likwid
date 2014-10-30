@@ -154,6 +154,7 @@ int main (int argc, char** argv)
     int numThreads=0;
     int threads[MAX_NUM_THREADS];
     char delimiter = ',';
+    FILE* OUTSTREAM = stdout;
     threads[0] = 0;
 
     if (argc ==  1) {
@@ -207,6 +208,7 @@ int main (int argc, char** argv)
                 break;
             case 'q':
                 optSilent = 1;
+                OUTSTREAM = NULL;
                 setenv("LIKWID_SILENT","true", 1);
                 break;
             case 's':
@@ -237,19 +239,22 @@ int main (int argc, char** argv)
 
     if (optPrintDomains && numThreads)
     {
-        fprintf(stdout, "%d",threads[0]);
-
-        for ( i=1; i< numThreads; i++)
+        if ((!optSilent) && (OUTSTREAM))
         {
-            fprintf(stdout, "%c%d",delimiter,threads[i]);
+            fprintf(OUTSTREAM, "%d",threads[0]);
+
+            for ( i=1; i< numThreads; i++)
+            {
+                fprintf(OUTSTREAM, "%c%d",delimiter,threads[i]);
+            }
+            fprintf(OUTSTREAM, "\n");
+            fflush(OUTSTREAM);
         }
-        fprintf(stdout, "\n");
-        fflush(stdout);
         exit (EXIT_SUCCESS);
     }
     else if ( optPrintDomains )
     {
-        affinity_printDomains();
+        affinity_printDomains(OUTSTREAM);
         exit (EXIT_SUCCESS);
     }
 
@@ -269,16 +274,22 @@ int main (int argc, char** argv)
 
     if (optInterleaved)
     {
-        fprintf(stdout, "Set mem_policy to interleaved\n");
-        fflush(stdout);
+        if ((!optSilent) && (OUTSTREAM))
+        {
+            fprintf(OUTSTREAM, "Set mem_policy to interleaved\n");
+            fflush(OUTSTREAM);
+        }
         numa_setInterleaved(threads, numThreads);
     }
 
     if (optMemSweep)
     {
-        fprintf(stdout, "Sweeping memory\n");
-        fflush(stdout);
-        memsweep_threadGroup(threads, numThreads);
+        if ((!optSilent) && (OUTSTREAM))
+        {
+            fprintf(OUTSTREAM, "Sweeping memory\n");
+            fflush(OUTSTREAM);
+        }
+        memsweep_threadGroup(OUTSTREAM, threads, numThreads);
     }
 
     if ( getenv("OMP_NUM_THREADS") == NULL )
