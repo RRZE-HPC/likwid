@@ -296,7 +296,7 @@ install:
 		sed -e "s+<PREFIX>+$(PREFIX)+g" perl/$$app > $(PREFIX)/bin/$$app; \
 	done
 	@chmod 755 $(PREFIX)/bin/likwid-*
-	@echo "===> INSTALL daemon applications to $(PREFIX)/bin"
+	@echo "===> INSTALL daemon applications to $(PREFIX)/sbin"
 	@mkdir -p $(PREFIX)/sbin
 	@for app in $(DAEMON_APPS); do \
 		cp -f $$app $(PREFIX)/sbin; \
@@ -348,6 +348,7 @@ uninstall:
 	@rm -f $(MANPREFIX)/man1/feedGnuplot.1
 	@echo "===> REMOVING headers from $(PREFIX)/include"
 	@rm -f $(PREFIX)/include/likwid*.h
+	@rm -rf $(PREFIX)/include/likwid
 	@echo "===> REMOVING libs from $(PREFIX)/lib"
 	@rm -f $(PREFIX)/lib/$(LIKWID_LIB)*
 	@echo "===> REMOVING filter from $(PREFIX)/share"
