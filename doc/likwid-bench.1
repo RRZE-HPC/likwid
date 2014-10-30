@@ -56,7 +56,7 @@ Specify the affinity domain, thread count and data set size for the current benc
 
 .SH WORKGROUP SYNTAX
 
-.B <thread_domain>:<size>[:<num_threads>[:<chunk_size>:<stride>]][-<streamId>:<domain_id>]
+.B <thread_domain>:<size> [:<num_threads>[:<chunk_size>:<stride>]] [-<streamId>:<domain_id>]
 with size in kB, MB or GB. Where thread domain is where threads are placed. Size is the total data set size for the benchmark. num_threads specifies how many threads are used. Threads are always placed using a compact policy in
 .B likwid-bench.
 This means that per default all SMT threads are used. Optionally similar a the expression based syntax in
@@ -96,8 +96,8 @@ The option INSTRUMENT_BENCH in config.mk needs to be true at compile time to use
 .PP
 .B likwid-perfctr 
 will configure and start the performance counters on socket 0 with 4 threads prior to the execution of
-.B likwid-bench
-. The performance counters are read right before and after running the benchmarking code to 
+.B likwid-bench.
+The performance counters are read right before and after running the benchmarking code to 
 minimize the interferences of the measurement.
 .IP 5. 4
 Run the copy benchmark and place the data on other socket
