@@ -80,6 +80,7 @@ int main (int argc, char** argv)
     int optClock = 0;
     int optStethoscope = 0;
     int optSockets = 0;
+    int optTemp = 0;
     double runtime;
     int hasDRAM = 0;
     int hasPP0 = 0;
@@ -100,7 +101,7 @@ int main (int argc, char** argv)
         exit (EXIT_SUCCESS);
     }
 
-    while ((c = getopt (argc, argv, "+c:hiM:ps:v")) != -1)
+    while ((c = getopt (argc, argv, "+c:hiM:ps:vt")) != -1)
     {
         switch (c)
         {
@@ -133,6 +134,9 @@ int main (int argc, char** argv)
             case 'v':
                 VERSION_MSG;
                 exit (EXIT_SUCCESS);
+            case 't':
+                optTemp = 1;
+                break;
             case '?':
                 if (optopt == 's' || optopt == 'M' || optopt == 'c')
                 {
@@ -482,7 +486,7 @@ int main (int argc, char** argv)
     }
 
 
-    if ( cpuid_hasFeature(TM2) )
+    if ( optTemp && cpuid_hasFeature(TM2))
     {
         printf("Current core temperatures:\n");
         for (i = 0; i < numSockets; i++)
