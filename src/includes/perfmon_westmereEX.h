@@ -157,12 +157,11 @@ void perfmon_init_westmereEX(PerfmonThread *thread)
     westmereEX_PMunits[UBOX].ovflRegister   = MSR_U_PMON_GLOBAL_OVF_CTRL;
 
     /* Set IDs for all CBOXes */
-    for (int i=PMC49; i<=PMC98; i+= 5)
+    int walker = 0;
+    for (int i=PMC49; i<=PMC98; i++)
     {
-        for(int j=0; j<5; j++)
-        {
-            thread->counters[i].id = j;
-        }
+        thread->counters[i].id = walker;
+        walker = (walker == 4 ? 0 : walker + 1);
     }
     westmereEX_PMunits[CBOX0].ctrlRegister   = MSR_C0_PMON_BOX_CTRL;
     westmereEX_PMunits[CBOX0].statusRegister = MSR_C0_PMON_BOX_STATUS;

@@ -1087,7 +1087,9 @@ perfmon_setupEventSet(bstring eventString, BitMask* counterMask)
         if ( group_map[groupId].isUncore )
         {
             if ( (cpuid_info.model != SANDYBRIDGE_EP) &&
-                    (cpuid_info.model != IVYBRIDGE_EP))
+                    (cpuid_info.model != IVYBRIDGE_EP) &&
+                    (cpuid_info.model != WESTMERE_EX) &&
+                    (cpuid_info.model != NEHALEM_EX))
             {
                 ERROR_PLAIN_PRINT(Uncore not supported on Desktop processors!);
                 exit(EXIT_FAILURE);
