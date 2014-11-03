@@ -250,7 +250,6 @@ bstr_to_cpuset_expression(uint32_t* threads,  const_bstring qi)
             int counter;
             int currentId = 0;
             int startId = 0;
-            int offset = 0;
             int chunksize =  str2int(bdata(subtokens->entry[2]));
             int stride =  str2int(bdata(subtokens->entry[3]));
             domain = affinity_getDomain(subtokens->entry[0]);
@@ -279,8 +278,7 @@ bstr_to_cpuset_expression(uint32_t* threads,  const_bstring qi)
                 counter += stride;
                 if (counter >= domain->numberOfProcessors)
                 {
-                    offset += chunksize;
-                    counter = offset;
+                    counter = 0;
                 }
             }
         }

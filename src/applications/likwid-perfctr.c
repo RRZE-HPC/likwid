@@ -328,7 +328,12 @@ int main (int argc, char** argv)
         {
             if(i != j && threads[i] == threads[j])
             {
-                fprintf (stderr, "ERROR: Processor list is not unique.\n");
+                fprintf (stderr, "ERROR: Processor list (%d",threads[0]);
+                for (c=1;c<numThreads;c++)
+                {
+                    fprintf (stderr, ",%d",threads[c]);
+                }
+                fprintf (stderr, ") is not unique.\n");
                 exit(EXIT_FAILURE);
             }
         }
