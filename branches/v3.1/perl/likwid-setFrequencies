@@ -57,7 +57,7 @@ sub usage
 This script allows to switch governors and set fixed
 frequencies on Linux system.
 
-usage: $0 [-hlp] [-g governor] [-d domain] [-f frequency]
+usage: $0 [-hlp] [-g governor] [-c domain] [-f frequency]
 -h          : this (help) message
 -p          : print current frequencies
 -l          : list available frequencies
@@ -172,10 +172,13 @@ if ($opt{g} eq 'turbo') {
 
 if ($opt{g}) {
     $governor = $opt{g};
-    print "Set governor in domain $domain to $governor \n";
-    foreach my $processID (@processors) {
-#    print "$SYSCMD $processID 0 $governor\n";
-        system("$SYSCMD $processID 0 $governor");
+    if (($governor ne "ondemand") and ($governor ne "performance")) {
+        print "Governor $governor not valid\n";
+    } else {
+        print "Set governor in domain $domain to $governor \n";
+        foreach my $processID (@processors) {
+            system("$SYSCMD $processID 0 $governor");
+        }
     }
 }
 
