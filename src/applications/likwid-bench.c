@@ -269,7 +269,7 @@ int main(int argc, char** argv)
                         fprintf(OUTSTREAM, "Name: %s\n",test->name);
                         fprintf(OUTSTREAM, "Number of streams: %d\n",test->streams);
                         fprintf(OUTSTREAM, "Loop stride: %d\n",test->stride);
-                        fprintf(OUTSTREAM, "Flops: %d\n",test->flops);
+                        fprintf(OUTSTREAM, "Flops: %d\n", (int) test->flops);
                         fprintf(OUTSTREAM, "Bytes: %d\n",test->bytes);
                         switch (test->type)
                         {

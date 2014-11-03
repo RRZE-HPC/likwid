@@ -38,8 +38,8 @@ static int perfmon_numGroupsNehalemEX = NUM_GROUPS_NEHALEMEX;
 static int perfmon_numArchEventsNehalemEX = NUM_ARCH_EVENTS_NEHALEMEX;
 
 /* This SUCKS: There are only subtle difference between NehalemEX
- * and Westmere EX Uncore. Still one of them is that one field is 
- * 1 bit shifted. Thank you Intel for this mess!!! Do you want 
+ * and Westmere EX Uncore. Still one of them is that one field is
+ * 1 bit shifted. Thank you Intel for this mess!!! Do you want
  * to change the register definitions for every architecture?*/
 
 
@@ -641,7 +641,7 @@ void perfmon_setupCounterThread_nehalemEX(
                 flags = 0x0ULL;
                 flags |= (1<<22);
                 flags |= event->eventId;
-                fprintf(stderr, "Setup UBOX with value 0x%x in register 0x%x, event 0x%x \n", LLU_CAST flags, reg,event->eventId);
+                fprintf(stderr, "Setup UBOX with value 0x%llx in register 0x%llx, event 0x%x \n", LLU_CAST flags, LLU_CAST reg,event->eventId);
                 msr_write(cpu_id, reg , flags);
                 VERBOSEPRINTREG(cpu_id, reg, flags, UBOX_CTRL)
             }
@@ -660,7 +660,7 @@ void perfmon_setupCounterThread_nehalemEX(
                 flags = 0x0ULL;
                 flags |= (1<<22);
                 flags |= (event->umask<<8) + event->eventId;
-                fprintf(stderr, "Setup CBOX with value 0x%x in register 0x%x, event 0x%x umask 0x%x \n", LLU_CAST flags, reg,event->eventId, event->umask);
+                fprintf(stderr, "Setup CBOX with value 0x%llx in register 0x%llx, event 0x%x umask 0x%x \n", LLU_CAST flags, LLU_CAST reg,event->eventId, event->umask);
                 msr_write(cpu_id, reg , flags);
                 VERBOSEPRINTREG(cpu_id, reg, flags, CBOX_CTRL)
             }
@@ -725,7 +725,7 @@ void perfmon_startCountersThread_nehalemEX(int thread_id)
         uflags[i] = 0x0UL;
     }
 
-    for ( int i=0; i<NUM_PMC; i++ ) 
+    for ( int i=0; i<NUM_PMC; i++ )
     {
         if (perfmon_threadData[thread_id].counters[i].init == TRUE) {
             if (westmereEX_counter_map[i].type == PMC)
@@ -761,7 +761,7 @@ void perfmon_startCountersThread_nehalemEX(int thread_id)
         for ( int i=0; i<NUM_UNITS; i++ )
         {
             /* if counters are enabled write the according box ctrl register */
-            if (uflags[i]) 
+            if (uflags[i])
             {
                 msr_write(cpu_id, westmereEX_PMunits[i].ctrlRegister, uflags[i]);
                 VERBOSEPRINTREG(cpu_id, westmereEX_PMunits[i].ctrlRegister, LLU_CAST uflags[i], BOXCTRL);
@@ -798,9 +798,9 @@ void perfmon_stopCountersThread_nehalemEX(int thread_id)
         msr_write(cpu_id, MSR_U_PMON_GLOBAL_CTRL, ubflags );
     }
 
-    for ( int i=0; i<NUM_COUNTERS_WESTMEREEX; i++ ) 
+    for ( int i=0; i<NUM_COUNTERS_WESTMEREEX; i++ )
     {
-        if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE)
         {
             if (westmereEX_counter_map[i].type > UNCORE)
             {
@@ -827,7 +827,7 @@ void perfmon_stopCountersThread_nehalemEX(int thread_id)
 #if 0
     flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
     printf ("Status: 0x%llX \n", LLU_CAST flags);
-    if((flags & 0x3) || (flags & (0x3ULL<<32)) ) 
+    if((flags & 0x3) || (flags & (0x3ULL<<32)) )
     {
         printf ("Overflow occured \n");
     }
@@ -844,9 +844,9 @@ void perfmon_readCountersThread_nehalemEX(int thread_id)
         haveLock = 1;
     }
 
-    for ( int i=0; i<NUM_COUNTERS_WESTMEREEX; i++ ) 
+    for ( int i=0; i<NUM_COUNTERS_WESTMEREEX; i++ )
     {
-        if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE)
         {
             if (westmereEX_counter_map[i].type > UNCORE)
             {

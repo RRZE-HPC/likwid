@@ -12,7 +12,7 @@ GEN_PMHEADER = ./perl/gen_events.pl
 #ANSI_CFLAGS += -Wextra
 #ANSI_CFLAGS += -Wall
 
-CFLAGS   =  -O2  -Wno-format -std=c99
+CFLAGS   =  -O2  -Wno-format -Wno-nonnull -std=c99
 FCFLAGS  = -module ./  # ifort
 #FCFLAGS  = -J ./  -fsyntax-only  #gfortran
 PASFLAGS  = x86-64
