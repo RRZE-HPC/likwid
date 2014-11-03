@@ -68,7 +68,7 @@
 #define MSR_UNCORE_PERF_GLOBAL_OVF_CTRL   0x393
 #define MSR_UNCORE_FIXED_CTR0             0x394  /* Uncore clock cycles */
 #define MSR_UNCORE_FIXED_CTR_CTRL         0x395 /*FIXME: Is this correct? */
-#define MSR_UNCORE_ADDR_OPCODE_MATCH      0x396 
+#define MSR_UNCORE_ADDR_OPCODE_MATCH      0x396
 #define MSR_UNCORE_PERFEVTSEL0         0x3C0
 #define MSR_UNCORE_PERFEVTSEL1         0x3C1
 #define MSR_UNCORE_PERFEVTSEL2         0x3C2
@@ -85,10 +85,10 @@
 #define MSR_UNCORE_PMC5                0x3B5
 #define MSR_UNCORE_PMC6                0x3B6
 #define MSR_UNCORE_PMC7                0x3B7
-/* 
- * Perfmon V4 (starting with Haswell, according to 
+/*
+ * Perfmon V4 (starting with Haswell, according to
  * Intel software developers guide also for SandyBridge,
- * IvyBridge not mentioned in this section) 
+ * IvyBridge not mentioned in this section)
  */
 #define MSR_UNC_PERF_GLOBAL_CTRL       MSR_UNCORE_PERF_GLOBAL_CTRL
 #define MSR_UNC_PERF_GLOBAL_STATUS     MSR_UNCORE_PERF_GLOBAL_STATUS
@@ -122,9 +122,9 @@
 #define MSR_MIC_PMC0                  0x020
 #define MSR_MIC_PMC1                  0x021
 #define MSR_MIC_SPFLT_CONTROL         0x02C
-#define MSR_MIC_PERF_GLOBAL_STATUS    0x02D 
-#define MSR_MIC_PERF_GLOBAL_OVF_CTRL  0x02E 
-#define MSR_MIC_PERF_GLOBAL_CTRL      0x02F 
+#define MSR_MIC_PERF_GLOBAL_STATUS    0x02D
+#define MSR_MIC_PERF_GLOBAL_OVF_CTRL  0x02E
+#define MSR_MIC_PERF_GLOBAL_CTRL      0x02F
 
 
 /* Core v1/v2 type uncore

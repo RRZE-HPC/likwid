@@ -114,11 +114,11 @@ pinPid(int cpuid, int silent)
 
     status = sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
 
-    if (status == -1) 
+    if (status == -1)
     {
         fprintf(stderr, "sched_setaffinity failed : %s \n",strerror(errno));
     }
-    else 
+    else
     {
         if(!silent)
         {

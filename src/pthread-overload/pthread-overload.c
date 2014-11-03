@@ -3,7 +3,7 @@
  *
  *      Filename:  pthread-overload.c
  *
- *      Description:  Overloaded library for pthread_create call. 
+ *      Description:  Overloaded library for pthread_create call.
  *                    Implements pinning of threads together with likwid-pin.
  *
  *      Version:   <VERSION>
@@ -171,7 +171,7 @@ pthread_create(pthread_t* thread,
         {
             break;
         }
-        if (sosearchpaths[reallpthrindex] != NULL) 
+        if (sosearchpaths[reallpthrindex] != NULL)
         {
             reallpthrindex++;
         }

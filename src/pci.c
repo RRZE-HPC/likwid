@@ -264,7 +264,7 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg)
         }
 
         if ( FD[socketId][device] > 0 &&
-             pread(FD[socketId][device], &data, sizeof data, reg) != sizeof data ) 
+             pread(FD[socketId][device], &data, sizeof data, reg) != sizeof data )
         {
             ERROR_PRINT("ERROR in pci_read: failed on CPU %d Register 0x%x", cpu, reg);
         }
@@ -307,7 +307,7 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
         }
 
         if ( FD[socketId][device] > 0 &&
-             pwrite(FD[socketId][device], &data, sizeof data, reg) != sizeof data) 
+             pwrite(FD[socketId][device], &data, sizeof data, reg) != sizeof data)
         {
             ERROR_PRINT("ERROR in pci_write: failed on CPU %d Register 0x%x", cpu, reg);
         }
@@ -347,7 +347,7 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
         }
 
         if ( FD[socketId][device] > 0 &&
-             pread(FD[socketId][device], &data, sizeof data, reg) != sizeof data ) 
+             pread(FD[socketId][device], &data, sizeof data, reg) != sizeof data )
         {
             ERROR_PRINT("ERROR in pci_tread: failed on CPU %d Register 0x%x", cpu, reg);
         }
@@ -387,7 +387,7 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
         }
 
         if ( FD[socketId][device] > 0 &&
-             pwrite(FD[socketId][device], &data, sizeof data, reg) != sizeof data) 
+             pwrite(FD[socketId][device], &data, sizeof data, reg) != sizeof data)
         {
             ERROR_PRINT("ERROR in pci_twrite: failed on CPU %d Register 0x%x", cpu, reg);
         }
