@@ -150,6 +150,7 @@ void perfmon_init_ivybridge(PerfmonThread *thread)
                 pci_write(cpu_id, PCI_IMC_DEVICE_CH_3,  PCI_UNC_MC_PMON_CTR_3_A, 0x0U);
                 pci_write(cpu_id, PCI_IMC_DEVICE_CH_3,  PCI_UNC_MC_PMON_CTR_3_B, 0x0U);
 
+#if 0
                 /* FIXME: Not yet tested/ working due to BIOS issues on test
                  * machines */
 
@@ -168,7 +169,7 @@ void perfmon_init_ivybridge(PerfmonThread *thread)
                 pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_CTL_2, uflags);
                 pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_CTL_3, uflags);
 
-#if 0
+
                 /* Cbo counters */
                 uflags = 0xF0103UL; /*enable freeze (bit 8), reset */
                 msr_write(cpu_id, MSR_UNC_C0_PMON_BOX_CTL, uflags);
