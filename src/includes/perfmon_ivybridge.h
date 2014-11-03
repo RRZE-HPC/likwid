@@ -154,7 +154,7 @@ void perfmon_init_ivybridge(PerfmonThread *thread)
                  * machines */
 
                 /* QPI registers can be zeroed with single write */
-                uflags = 0x0113UL; /*enable freeze (bit 16), freeze (bit 8), reset */
+                uflags = 0x0103UL; /* freeze (bit 8), reset */
                 pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL, uflags);
                 pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL, uflags);
                 uflags = 0x0UL;
@@ -206,8 +206,11 @@ void perfmon_init_ivybridge(PerfmonThread *thread)
     } \
     if(haveLock) { \
         uflags = (1UL<<22);\
-        uflags &= ~(0xFFFFU);  \
         uflags |= (event->umask<<8) + event->eventId;  \
+        if (event->cfgBits == 0xFF) \
+        { \
+            uflags |= (1<<21); \
+        } \
         pci_write(cpu_id, channel,  reg, uflags);  \
     }
 
@@ -464,14 +467,14 @@ void perfmon_startCountersThread_ivybridge(int thread_id)
                 case SBOX0:
                     if(haveLock)
                     {
-                        pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL, uflags);
+                        pci_write(cpu_id, PCI_QPI_DEVICE_PORT_0,  PCI_UNC_QPI_PMON_BOX_CTL, 0x0ULL);
                     }
                     break;
 
                 case SBOX1:
                     if(haveLock)
                     {
-                        pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL, uflags);
+                        pci_write(cpu_id, PCI_QPI_DEVICE_PORT_1,  PCI_UNC_QPI_PMON_BOX_CTL, 0x0ULL);
                     }
                     break;
 
@@ -559,7 +562,7 @@ if(haveLock) { \
 
 #define SBOX_STOP(NUM) \
 if(haveLock) { \
-    pci_write(cpu_id, PCI_QPI_DEVICE_PORT_##NUM ,  PCI_UNC_QPI_PMON_BOX_CTL, uflags); \
+    pci_write(cpu_id, PCI_QPI_DEVICE_PORT_##NUM ,  PCI_UNC_QPI_PMON_BOX_CTL, (1<<8)); \
     counter_result = pci_read(cpu_id, PCI_QPI_DEVICE_PORT_##NUM , ivybridge_counter_map[i].counterRegister); \
     counter_result = (counter_result<<32) + pci_read(cpu_id, PCI_QPI_DEVICE_PORT_##NUM , ivybridge_counter_map[i].counterRegister2);  \
     perfmon_threadData[thread_id].counters[i].counterData = counter_result; \
