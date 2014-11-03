@@ -470,7 +470,7 @@ int main (int argc, char** argv)
         {
             if (getenv("LIKWID_FILEPATH") == NULL)
                 setenv("LIKWID_FILEPATH",(char*) filepath->data, 1);
-
+            perfmon_setupEventSet(eventString, &counterMask);
             char* modeStr = (char*) malloc(40 * sizeof(char));
             sprintf(modeStr,"%d",accessClient_mode);
             setenv("LIKWID_MODE", modeStr, 1);
