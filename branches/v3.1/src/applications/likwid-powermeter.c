@@ -411,7 +411,6 @@ int main (int argc, char** argv)
                 for (int i=0; i<numSockets; i++)
                 {
                     int cpuId = socketDomains[threadsSockets[i]]->processorList[0];
-                    printf("Start Socket %d CPU %d\n",threadsSockets[i], cpuId);
                     if (hasDRAM) power_start(&(pDataDram[i]), cpuId, DRAM);
                     if (hasPP0) power_start(&(pDataPP0[i]), cpuId, PP0);
                     if (hasPP1) power_start(&(pDataPP1[i]), cpuId, PP1);
@@ -440,7 +439,6 @@ int main (int argc, char** argv)
                 for (int i=0; i<numSockets; i++)
                 {
                     int cpuId = socketDomains[threadsSockets[i]]->processorList[0];
-                    printf("Stop Socket %d CPU %d\n",threadsSockets[i], cpuId);
                     power_stop(&(pDataPkg[i]), cpuId, PKG);
                     if (hasDRAM) power_stop(&(pDataDram[i]), cpuId, DRAM);
                     if (hasPP0) power_stop(&(pDataPP0[i]), cpuId, PP0);
