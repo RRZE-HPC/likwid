@@ -241,6 +241,7 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg)
     int socketId = affinity_core2node_lookup[cpu];
     if ( FD[socketId][device] == -2)
     {
+        fprintf(stderr, "Trying to access non-existent PCI device (%s) for reading\n", pci_DevicePath[device]);
         return 0;
     }
 
@@ -285,6 +286,7 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
 
     if ( FD[socketId][device] == -2)
     {
+        fprintf(stderr, "Trying to access non-existent PCI device (%s) for writing\n", pci_DevicePath[device]);
         return;
     }
     if (accessClient_mode == DAEMON_AM_DIRECT)
