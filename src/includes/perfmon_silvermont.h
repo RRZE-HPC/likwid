@@ -46,11 +46,12 @@ void perfmon_init_silvermont(PerfmonThread *thread)
     /* Initialize registers */
     msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
     msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL);
+    msr_write(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL);
+    msr_write(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL);
 
     msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL);
     msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
     msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL);
-
 }
 
 void perfmon_setupCounterThread_silvermont(
@@ -95,8 +96,15 @@ void perfmon_setupCounterThread_silvermont(
             // cmask contain offset of "response type" bit
             if (event->eventId == 0xB7) 
             {
-                reg = silvermont_counter_map[index].counterRegister2;
-                flags = msr_read(cpu_id, reg);
+                if (event->umask == 0x01)
+                {
+                    reg = MSR_OFFCORE_RESP0;
+                }
+                else if (event->umask == 0x02)
+                {
+                    reg = MSR_OFFCORE_RESP1;
+                }
+                flags = 0x0ULL;
                 flags = (1<<event->cfgBits)|(1<<event->cmask);
                 msr_write(cpu_id, reg , flags);
             }
