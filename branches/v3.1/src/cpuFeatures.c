@@ -154,7 +154,7 @@ cpuFeatures_print(int cpu)
     }
     printf("Branch Trace Storage: \t\t");
 
-    if (flags & (1ULL<<11)) 
+    if (flags & (1ULL<<11))
     {
         PRINT_VALUE(RED,notsupported);
     }
@@ -164,7 +164,7 @@ cpuFeatures_print(int cpu)
     }
 
     printf("PEBS: \t\t\t\t");
-    if (flags & (1ULL<<12)) 
+    if (flags & (1ULL<<12))
     {
         PRINT_VALUE(RED,notsupported);
     }
@@ -174,7 +174,7 @@ cpuFeatures_print(int cpu)
     }
 
     printf("Intel Enhanced SpeedStep: \t");
-    if (flags & (1ULL<<16)) 
+    if (flags & (1ULL<<16))
     {
         PRINT_VALUE(GREEN,enabled);
     }
@@ -184,7 +184,7 @@ cpuFeatures_print(int cpu)
     }
 
     printf("MONITOR/MWAIT: \t\t\t");
-    if (flags & (1ULL<<18)) 
+    if (flags & (1ULL<<18))
     {
         PRINT_VALUE(GREEN,supported);
     }
@@ -194,7 +194,7 @@ cpuFeatures_print(int cpu)
     }
 
     printf("Limit CPUID Maxval: \t\t");
-    if (flags & (1ULL<<22)) 
+    if (flags & (1ULL<<22))
     {
         PRINT_VALUE(RED,enabled);
     }
@@ -204,7 +204,7 @@ cpuFeatures_print(int cpu)
     }
 
     printf("XD Bit Disable: \t\t");
-    if (flags & (1ULL<<34)) 
+    if (flags & (1ULL<<34))
     {
         PRINT_VALUE(RED,disabled);
     }
@@ -222,7 +222,7 @@ cpuFeatures_print(int cpu)
             (cpuid_info.model == CORE2_65))
     {
         printf("IP Prefetcher: \t\t\t");
-        if (flags & (1ULL<<39)) 
+        if (flags & (1ULL<<39))
         {
             PRINT_VALUE(RED,disabled);
         }
@@ -232,7 +232,7 @@ cpuFeatures_print(int cpu)
         }
 
         printf("Hardware Prefetcher: \t\t");
-        if (flags & (1ULL<<9)) 
+        if (flags & (1ULL<<9))
         {
             PRINT_VALUE(RED,disabled);
         }
@@ -241,7 +241,7 @@ cpuFeatures_print(int cpu)
             PRINT_VALUE(GREEN,enabled);
         }
         printf("Adjacent Cache Line Prefetch: \t");
-        if (flags & (1ULL<<19)) 
+        if (flags & (1ULL<<19))
         {
             PRINT_VALUE(RED,disabled);
         }
@@ -249,9 +249,9 @@ cpuFeatures_print(int cpu)
         {
             PRINT_VALUE(GREEN,enabled);
         }
-    
+
         printf("DCU Prefetcher: \t\t");
-        if (flags & (1ULL<<37)) 
+        if (flags & (1ULL<<37))
         {
             PRINT_VALUE(RED,disabled);
         }
@@ -269,11 +269,11 @@ cpuFeatures_print(int cpu)
             (cpuid_info.model == NEHALEM_EX))
     {
         printf("Intel Turbo Mode: \t\t");
-        if (flags & (1ULL<<38)) 
+        if (flags & (1ULL<<38))
         {
             PRINT_VALUE(RED,disabled);
         }
-        else 
+        else
         {
             PRINT_VALUE(GREEN,enabled);
         }
@@ -283,11 +283,11 @@ cpuFeatures_print(int cpu)
     {
 
         printf("Intel Dynamic Acceleration: \t");
-        if (flags & (1ULL<<38)) 
+        if (flags & (1ULL<<38))
         {
             PRINT_VALUE(RED,disabled);
         }
-        else 
+        else
         {
             PRINT_VALUE(GREEN,enabled);
         }
@@ -296,7 +296,7 @@ cpuFeatures_print(int cpu)
     printf(HLINE);
 }
 
-void 
+void
 cpuFeatures_enable(int cpu, CpuFeature type)
 {
     if ((cpuid_info.model == NEHALEM) ||
@@ -360,7 +360,7 @@ cpuFeatures_disable(int cpu, CpuFeature type)
     {
         uint64_t flags = msr_read(cpu, MSR_IA32_MISC_ENABLE);
 
-        switch ( type ) 
+        switch ( type )
         {
             case HW_PREFETCHER:
                 printf("HW_PREFETCHER:\t");
