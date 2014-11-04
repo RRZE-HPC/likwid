@@ -125,7 +125,7 @@ static void initThread(int , int );
     for (i=0; i<numRows; i++) \
     { \
         fc->entry[1+i] = \
-           bfromcstr(perfmon_set.events[i].event.name); } 
+           bfromcstr(perfmon_set.events[i].event.name); }
 
 #define INIT_BASIC  \
     fc = bstrListCreate(); \
@@ -380,22 +380,22 @@ readMarkerFile(bstring filename, LikwidResults** resultsRef)
 static void
 printResultTable(PerfmonResultTable * tableData)
 {
-    if (perfmon_csvoutput) 
+    if (perfmon_csvoutput)
     {
         int r, c;
-        for (c = 0; c < tableData->header->qty; c++) 
+        for (c = 0; c < tableData->header->qty; c++)
         {
             fprintf(OUTSTREAM, "%s%s", ((c == 0) ? "\n" : ","), tableData->header->entry[c]->data);
         }
         fprintf(OUTSTREAM, "%s", "\n");
 
-        for (r = 0; r < tableData->numRows; r++) 
+        for (r = 0; r < tableData->numRows; r++)
         {
             fprintf(OUTSTREAM, "%s", tableData->rows[r].label->data);
 
-            for (c = 0; c < tableData->numColumns; c++) 
+            for (c = 0; c < tableData->numColumns; c++)
             {
-                if (!isnan(tableData->rows[r].value[c])) 
+                if (!isnan(tableData->rows[r].value[c]))
                 {
                     fprintf(OUTSTREAM, ",%lf", tableData->rows[r].value[c]);
                 }
@@ -452,7 +452,7 @@ getGroupId(bstring groupStr,PerfmonGroup* group)
 
     for (int i=0; i<perfmon_numGroups; i++)
     {
-        if (biseqcstr(groupStr,group_map[i].key)) 
+        if (biseqcstr(groupStr,group_map[i].key))
         {
             *group = group_map[i].index;
             return i;
@@ -506,7 +506,7 @@ freeResultTable(PerfmonResultTable* tableData)
     free(tableData->rows);
 }
 
-static void 
+static void
 initResultTable(PerfmonResultTable* tableData,
         bstrList* firstColumn,
         int numRows,
@@ -539,7 +539,7 @@ initResultTable(PerfmonResultTable* tableData,
     }
 }
 
-static void 
+static void
 initStatisticTable(PerfmonResultTable* tableData,
         bstrList* firstColumn,
         int numRows)
@@ -822,7 +822,7 @@ perfmon_printMarkerResults(bstring filepath)
     bstrListDestroy(regionLabels);
 }
 
-void 
+void
 perfmon_logCounterResults(double time)
 {
     int i;
@@ -852,7 +852,7 @@ perfmon_logCounterResults(double time)
     fflush(OUTSTREAM);
 }
 
-void 
+void
 perfmon_printCounterResults()
 {
     int i;
@@ -972,7 +972,7 @@ EventSetup perfmon_prepareEventSetup(char* eventGroupString){
 }
 
 
-void perfmon_setupCountersForEventSet(EventSetup * setup){    
+void perfmon_setupCountersForEventSet(EventSetup * setup){
     perfmon_set = *setup->perfmon_set;
     groupSet = setup->groupSet;
     eventSetup = setup;
@@ -980,7 +980,7 @@ void perfmon_setupCountersForEventSet(EventSetup * setup){
 }
 
 void perfmon_getEventCounterValues(uint64_t * values, uint64_t * out_max, uint64_t * out_min){
-    
+
     for(int e = 0; e < perfmon_set.numberOfEvents; e++ ){
         uint64_t sum = 0;
         uint64_t min = (uint64_t) -1;
@@ -1047,7 +1047,7 @@ perfmon_setupEventSet(bstring eventString, BitMask* counterMask)
     struct bstrList* subStr;
 
     groupId = getGroupId(eventString, &groupSet);
-    
+
     if (groupSet == _NOGROUP)
     {
         subStr = bstrListCreate();
@@ -1055,7 +1055,7 @@ perfmon_setupEventSet(bstring eventString, BitMask* counterMask)
         eventBool = getEvent(subStr->entry[0], &eventSet);
         bstrListDestroy(subStr);
     }
-    
+
     if (groupSet == _NOGROUP && eventBool != FALSE)
     {
         /* eventString is a custom eventSet */
@@ -1309,7 +1309,7 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
                     perfmon_setupCounterThread = perfmon_setupCounterThread_core2;
                     break;
-                    
+
                 case ATOM_SILVERMONT_C:
                 case ATOM_SILVERMONT_E:
                 case ATOM_SILVERMONT_F1:
@@ -1333,7 +1333,6 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_silvermont;
                     perfmon_setupCounterThread = perfmon_setupCounterThread_silvermont;
                     break;
-
 
                 case CORE_DUO:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
@@ -1400,7 +1399,7 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
                     counter_map = westmereEX_counter_map;
                     perfmon_numCounters = perfmon_numCountersWestmereEX;
 
-                    initThreadArch = perfmon_init_westmereEX;                    
+                    initThreadArch = perfmon_init_westmereEX;
                     printDerivedMetrics = perfmon_printDerivedMetricsWestmereEX;
                     perfmon_getDerivedCounterValuesArch = perfmon_getDerivedCounterValuesWestmereEX;
                     logDerivedMetrics = perfmon_logDerivedMetricsWestmereEX;
@@ -1470,7 +1469,7 @@ perfmon_init(int numThreads_local, int threads[], FILE* outstream)
 
                     power_init(0); /* FIXME Static coreId is dangerous */
                     thermal_init(0);
-                    pci_init(socket_fd); 
+                    pci_init(socket_fd);
 
                     eventHash = ivybridge_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsIvybridge;
