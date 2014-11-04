@@ -1,0 +1,135 @@
+== Basic build ==
+
+1. Edit config.mk. Follow the comments there.
+   Optionally you can change compiler settings in include_[GCC|ICC|GCCX86].mk.
+   Please note that only the default compiler flags are supported and tested.
+2. make
+3. make install (required)
+4. setup access to the msr device files (see end of this document)
+
+Only the default flags set are tested. As it is not possible to test all
+compiler setting variants the Intel icc compiler is only build tested. A basic
+function test is done for the icc binary. The only variant fully tested is gcc
+with default compiler flags. It is therefore recommended to use gcc with the
+default flags. If you want to use and build the Fortran interface you can mix
+GCC with the Intel Fortran Compiler. More information on this can be found in
+the WIKI. On 32bit systems you have to pick the GCCX86 compiler target.
+
+*NOTICE*
+
+All generated files are located in the [GCC|ICC|GCCX86] build directory.
+This includes the dependency files, object files and also the
+generated source files and the pas and assembly files for likwid-bench.
+If you debug your likwid-bench benchmarks you can look at all
+intermediate build files and also the final assembly code.
+
+== Known problems ==
+
+On very old systems with old kernels (< 2.6.7) or old glibc versions likwid
+is build with reduced funtionality. This includes missing support for NUMA
+and pinning.
+
+== Additional Targets ==
+
+make clean     -  clean the object directory
+make distclean -  clean also the executables/libraries
+make uninstall -  delete installed files
+
+== Build  accessDaemon ==
+
+To build the accessDaemon:
+
+1. Set the desired default ACCESSMODE. You can overwrite this on the command line.
+2. make will also build the accessDaemon
+3. Install with
+   make install
+
+With the standard  make install target the daemon will also be installed in
+${PREFIX}/sbin . Don't forget to copy the dameon if you configured a different
+path in ACCESSDAEMON.
+
+== Setup of msr module ==
+
+likwid-perfctr, likwid-powermeter and likwid-features require the Linux msr kernel module. This module
+is part of most standard distro kernels. You have to be root to do the initial setup.
+
+Check if msr device files are there with 'ls /dev/cpu/0/'. If msr device files are not there try:
+
+1. Check if the msr module is loaded with  'lsmod | grep msr' . There should be an output.
+2. It the module is not loaded load it with  'modprobe msr' . For automatic loading at startup
+consult your distros documentation how to do so.
+
+Once you have the msr device files avilable:
+3. Adopt access rights on the msr device files for normal user. To allow everybody access you can
+use 'chmod o+rw /dev/cpu/*/msr' . This is only recommended on save single user desktop systems.
+
+As a general access to the msr registers is not desired on security sensitive
+systems you can either implement a more sophisticated access rights settings
+with e.g. setgid. A common solution used on many other device files, e.g. for
+audio, is to introduce a group and make a chown on the msr device files to that
+group. Now if you execute likwid-perfctr with setgid on that group the
+executing user can use the tool but cannot directly write or read the msr
+device files.
+
+A secure solution is to use the accessDaemon, which encapsulates the access to
+the msr device files and performs a address check for allowed registers. For
+more information how to setup and use this solution have a look at the WIKI
+page:
+
+http://code.google.com/p/likwid/wiki/MSRDaemon
+
+A common solution to give access is to use the likwid-accessD and make it suid root.
+Starting with version 3.1.3 make install will do those steps. Of course this will only
+work as long as you are root while calling make install.
+
+If for you are not root and someone else needs to install the daemon the
+following steps need to be carried out:
+
+1. Go to the directory where you installed the likwid tools.
+2. Change to the sbin directory there.
+3. Execute (as root): chown root.<some user group>  likwid-accessD
+4. Execute (as root): chmod u+s likwid-accessD
+
+
+This should be sufficient on many machines.
+You need to perform the same procedure for likwid-setFreq.
+
+=== THIS IS USUALLY NOT NECESSARY ANYMORE ==
+A demo for a root exploit involving the msr device files was published. As
+a consequence the security settings for access to the msr device files are
+tightened in recent kernels.
+Just setting the file access rights or using suid root on the access daemon is
+not sufficient anymore. You have to register your binary now to get access.
+This is only necessary if above setup dos not work.
+
+You register the necessary capability by calling
+
+sudo setcap cap_sys_rawio+ep EXECUTABLE
+
+on the executables. This is only possible on local file systems.
+The only feasable way is to register the likwid-accessD and proxy all access over it.
+=== SNIP ==
+
+If you have still problems please let me know on the likwid mailing list:
+
+http://groups.google.com/group/likwid-users
+
+== NOTICE for Intel Xeon Phi (KNC) ==
+
+If you want to use LIKWID on a Xeon Phi you have to use set MIC as COMPILER in
+config.mk. This build of LIKWID won't be binary compatible with other X86
+processors. It is required to set the default access mode to direct in
+and disable the build of likwid-accessD in config.mk.
+
+To use LIKWID you have to turn of power management on the MIC. LIKWID relies on
+RDTSC being used for wallclock time. On the MIC this is only given if power
+management is turned off. This can be configured in
+/etc/sysconfig/mic/default.conf.
+
+At the end of this file the power management is configured. The following configuration worked:
+
+    PowerManagement "cpufreq_off;corec6_off;pc3_off;pc6_off"
+
+
+
+

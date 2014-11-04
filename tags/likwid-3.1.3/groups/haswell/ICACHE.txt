@@ -1,0 +1,25 @@
+SHORT  Instruction cache miss rate/ratio
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  ICACHE_ACCESSES
+PMC1  ICACHE_MISSES
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+L1I request rate PMC0/FIXC0
+L1I miss rate PMC1/FIXC0
+L1I miss ratio PMC1/PMC0
+
+LONG
+Formulas:
+L2 request rate = ICACHE_ACCESSES / INSTR_RETIRED_ANY
+L2 miss rate  = ICACHE_MISSES / INSTR_RETIRED_ANY
+L2 miss ratio = ICACHE_MISSES / ICACHE_ACCESSES
+-
+This group measures some L1 instruction cache metrics.

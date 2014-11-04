@@ -1,0 +1,78 @@
+#!/usr/bin/perl
+use lib '../../perl';
+use strict;
+use warnings;
+use xmgrace;
+use Cwd 'abs_path';
+
+my $TEST_ROOT = abs_path('./');
+my $machine = $ARGV[0];
+my $RESULT_DIR = "$TEST_ROOT/RESULTS/$machine";
+
+chdir "$TEST_ROOT/RESULTS/$machine/tmp/";
+opendir (DIR, './') or die "Cannot open current directory: $!\n";
+
+while (defined(my $file = readdir(DIR))) {
+
+    if ($file =~ /([A-Z0-9_]+)-(.*)-marker\.dat/) {
+                my $series = [];
+                my $test = $1;
+                my $name = $2;
+
+                push @{$series}, 
+                { "title"     =>  "plain",
+                    "data file" =>  "$TEST_ROOT/RESULTS/$machine/tmp/$test-$name-plain.dat",
+                    "line" => {
+                        "type"      => "1",
+                        "color"     => "2",
+                        "linewidth" => "2",
+                        "linestyle" => "1",
+                        "pattern"   => "1",
+                    },
+                    "symbol" => {
+                        "type"      => "2",
+                        "color"     => "2",
+                        "pattern"   => "1",
+                        "linewidth" => "2",
+                        "linestyle" => "1",
+                        "size"      => "1",
+                        "fill pattern" => "1",
+                        "fill color" => "2",
+                    }
+                };
+
+                push @{$series}, 
+                { "title"     =>  "marker",
+                    "data file" =>  "$TEST_ROOT/RESULTS/$machine/tmp/$file",
+                    "line" => {
+                        "type"      => "1",
+                        "color"     => "4",
+                        "linewidth" => "2",
+                        "linestyle" => "1",
+                        "pattern"   => "1",
+                    },
+                    "symbol" => {
+                        "type"      => "3",
+                        "color"     => "4",
+                        "pattern"   => "1",
+                        "linewidth" => "2",
+                        "linestyle" => "1",
+                        "size"      => "1",
+                        "fill pattern" => "1",
+                        "fill color" => "4",
+                    }
+                };
+
+                xmgrace ({"title"           => "$test",
+                        "subtitle"          => "$name",
+                        "legend"            => "0.8,0.7",
+                        "device"            => 'PNG',
+                        "output file"       => "$RESULT_DIR/$test\_".$name.".png",
+                        "grace output file" => "$RESULT_DIR/$test\_".$name.".agr",
+                        "xaxis label"       => "run",
+                        "yaxis label"       => "MFlops/s / MBytes/s"
+                    },
+                    $series);
+    }
+}
+

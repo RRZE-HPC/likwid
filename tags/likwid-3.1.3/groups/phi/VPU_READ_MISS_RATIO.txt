@@ -1,0 +1,12 @@
+SHORT Miss ratio for VPU data read
+
+EVENTSET
+PMC0  VPU_DATA_READ
+PMC1  VPU_DATA_READ_MISS
+
+METRICS
+Runtime (RDTSC) [s] time
+Miss ratio PMC1/PMC0
+
+LONG
+Miss ratio for VPU data read

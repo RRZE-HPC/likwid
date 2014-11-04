@@ -1,0 +1,190 @@
+.TH feedGnuplot 1 <DATE> likwid\-<VERSION>
+.SH NAME
+feedGnuplot \- General purpose pipe-oriented plotting tool
+.SH SYNOPSIS
+.B likwid-setFreq 
+.IR <coreId>
+.IR <frequency>
+.IR [<governor>]
+
+.SH DESCRIPTION
+.B feedGnuplot
+is a pipe-oriented plotting frontend for GNUplot that can read internediate results and create a sort of live plot of the data.
+.B feedGnuplot
+is used by
+.B likwid-perfscope(1)
+to print performance counter data printed out by the timeline daemon mode of
+.B likwid-perfctr(1).
+The Perl script
+.B feedGnuplot
+is not written by the LIKWID Authors, it was written by Dima Kogan and published under GPL. The original web page is https://github.com/dkogan/feedgnuplot
+.SH OPTIONS
+.TP
+.B \-h
+prints a help message to standard output, then exits.#
+.TP
+.B \-\-[no]domain
+If enabled, the first element of each line is the domain variable.  If not, the point index is used.
+.TP
+.B \-\-[no]dataid
+If enabled, each data point is preceded by the ID of the data set that point corresponds to. This ID is
+interpreted as a string, NOT as just a number. If not enabled, the order of the point is used.
+.TP
+.B \-\-[no]3d
+Do [not] plot in 3D. This only makes sense with 
+.B --domain.
+Each domain here is an (x,y) tuple.
+.TP
+.B \-\-colormap
+Show a colormapped xy plot. Requires extra data for the color. zmin/zmax can be used to set the extents of the colors.
+Automatically increments extraValuesPerPoint.
+.TP
+.B \-\-[no]stream
+Do [not] display the data a point at a time, as it comes in.
+.TP
+.B \-\-[no]lines
+Do [not] draw lines to connect consecutive points.
+.TP
+.B \-\-[no]points
+Do [not] draw points.
+.TP
+.B \-\-circles
+Plot with circles. This requires a radius be specified for each point. Automatically increments extraValuesPerPoint.
+.TP
+.B \-\-xlabel " xxx
+Set x-axis label.
+.TP
+.B \-\-ylabel " xxx
+Set y-axis label.
+.TP
+.B \-\-y2label " xxx
+Set y2-axis label. Does not apply to 3d plots.
+.TP
+.B \-\-zlabel " xxx
+Set z-axis label. Only applies to 3d plots.
+.TP
+.B \-\-title " xxx
+Set the title of the plot.
+.TP
+.B \-\-legend " curveID=legend
+Set the label for a curve plot. Use this option multiple times for multiple curves. With 
+.B --dataid
+, curveID is the ID. Otherwise, it's the index of the curve, starting at 0.
+.TP
+.B \-\-autolegend
+Use the curve IDs for the legend. Titles given with
+.B --legend
+override these.
+.TP
+.B \-\-xlen " xxx
+When using 
+.B --stream
+, sets the size of the x-window to plot. Omit this or set it to 0 to plot ALL the data. Does not make sense with 3d plots. Implies
+.B --monotonic
+.TP
+.B \-\-xmin " xxx
+Set the minimal point in range for the x-axis. These are ignored in a streaming plot.
+.TP
+.B \-\-xmax " xxx
+Set the maximal point in range for the x-axis. These are ignored in a streaming plot.
+.TP
+.B \-\-ymin " xxx
+Set the minimal point in range for the y-axis.
+.TP
+.B \-\-ymax " xxx
+Set the maximal point in range for the y-axis.
+.TP
+.B \-\-y2min " xxx
+Set the minimal point in range for the y2-axis. Does not apply to 3d plots.
+.TP
+.B \-\-y2max " xxx
+Set the maximal point in range for the y2-axis. Does not apply to 3d plots.
+.TP
+.B \-\-zmin " xxx
+Set the minimal point in range for the z-axis. Only applies to 3d plots or colormaps.
+.TP
+.B \-\-zmax " xxx
+Set the maximal point in range for the z-axis. Only applies to 3d plots or colormaps.
+.TP
+.B \-\-y2 " xxx
+Plot the data specified by this curve ID on the y2 axis. Without
+.B --dataid
+, the ID is just an ordered 0-based index. Does not apply to 3d plots.
+.TP
+.B \-\-curvestyle " curveID=style
+Additional styles per curve. With
+.B --dataid
+, curveID is the ID. Otherwise, it's the index of the curve, starting at 0. Use this option multiple times for multiple curves.
+.TP
+.B \-\-curvestyleall " xxx
+Additional styles for ALL curves.
+.TP
+.B \-\-extracmds " xxx
+Additional commands. These could contain extra global styles for instance.
+.TP
+.B \-\-size " xxx
+Gnuplot size option.
+.TP
+.B \-\-square
+Plot data with aspect ratio 1. For 3D plots, this controls the aspect ratio for all 3 axes.
+.TP
+.B \-\-square_xy
+For 3D plots, set square aspect ratio for ONLY the x,y axes.
+.TP
+.B \-\-hardcopy " xxx
+If not streaming, output to a file specified here. Format inferred from filename.
+.TP
+.B \-\-maxcurves " xxx
+The maximum allowed number of curves. This is 100 by default, but can be reset with this option. This exists purely to prevent perl from allocating all of the system's memory when reading bogus data.
+.TP
+.B \-\-monotonic
+If
+.B --domain
+is given, checks to make sure that the x-coordinate in the input data is monotonically increasing.If a given x-variable is in the past, all data currently cached for this curve is purged. Without 
+.B --monotonic
+, all data is kept. Does not make sense with 3d plots. No 
+.B --monotonic
+by default.
+.TP
+.B \-\-extraValuesPerPoint " xxx
+How many extra values are given for each data point. Normally this is 0, and does not need to be specified, but sometimes we want extra data, like for colors or point sizes or error bars, etc.
+.B feedGnuplot
+options that require this (colormap, circles) automatically set it. This option is ONLY needed if unknown styles are used, with 
+.B --curvestyleall
+for instance.
+.TP
+.B \-\-dump
+Instead of printing to gnuplot, print to STDOUT. For debugging.
+
+.SH EXAMPLE
+.IP 1. 4
+Simple real-time plotting example: plot how much data is received on the wlan0 network interface in bytes/second
+.TP
+.B while true; do sleep 1; cat /proc/net/dev; done | gawk '/wlan0/ {if(b) {print $2-b; fflush()} b=$2}' | \\
+.B feedgnuplot --lines --stream --xlen 10 --ylabel 'Bytes/sec' --xlabel seconds
+.PP
+Reads the stats of the network interface 'wlan0' every second, reformats it with
+.B gawk
+and pipes the formated output into
+.B feedGnuplot
+qto create a line plot (
+.B --lines
+) of the streaming input (
+.B --stream
+). Always show the last 10 seconds (
+.B --xlen
+) and use the labels 'seconds' for the x-axis and 'Bytes/sec' for the y-axis.
+.IP 2. 4
+Simple real-time plotting example: plot the 'idle' CPU consumption against time
+.TP
+.B sar 1 -1 | awk '$1 ~ /..:..:../ && $8 ~/^[0-9\.]*$/ {print $1,$8; fflush()}' | \\
+.B feedgnuplot --stream --domain --lines --timefmt '%H:%M:%S' --set 'format x "%H:%M:%S"'
+.PP
+Reads the CPU IDLE consumption and sets the current time as x-axis key.
+
+.SH AUTHOR
+Written by Dima Kogan <dima@secretsauce.net>.
+.SH BUGS
+Report Bugs on <https://github.com/dkogan/feedgnuplot/issues>.
+.SH "SEE ALSO"
+gnuplot(1), awk(1), sar(1),  likwid-perfscope(1), likwid-perfctr(1)

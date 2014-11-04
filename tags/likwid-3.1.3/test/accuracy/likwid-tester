@@ -1,0 +1,220 @@
+#!/usr/bin/perl
+use lib '../../perl';
+use strict;
+use warnings;
+use xmgrace;
+use Cwd 'abs_path';
+use Data::Dumper;
+use File::Copy;
+
+my $domain = 'S0';
+
+my $hostname = `hostname`;
+chomp $hostname;
+my %GROUPS;
+my $TEST_ROOT = abs_path('./');
+my $RESULT_DIR   =  "$TEST_ROOT/RESULTS/$hostname";
+my $LIKWID_ROOT  =  "$TEST_ROOT/../..";
+my $PERFCTR      =  "$LIKWID_ROOT/likwid-perfctr";
+my $BENCH_PLAIN  =  "$LIKWID_ROOT/likwid-bench-plain";
+my $BENCH_MARKER =  "$LIKWID_ROOT/likwid-bench-marker";
+
+sub extract_result 
+{
+	my $type = shift;
+    my $REGEX;
+	my $REGEX_PLAIN = shift;
+	my $REGEX_MARKER = shift;
+
+	if ( $type eq 'plain' ) {
+		$REGEX = $REGEX_PLAIN;
+	}
+	elsif ($type eq 'marker') {
+		$REGEX = $REGEX_MARKER;
+	}
+
+	open (INPUT,"<out-$hostname.txt");
+	while (<INPUT>) {
+		if (/$REGEX/) {
+			return $1;
+		}
+	}
+	close INPUT;
+
+	return 0;
+}
+
+# determine capabilities of platform
+open (INPUT, "$PERFCTR -a |");
+
+while (<INPUT>) {
+    if (/(.+):/) {
+        $GROUPS{$1}='true';
+    }
+}
+
+close INPUT;
+
+mkdir $RESULT_DIR if (not -d $RESULT_DIR);
+
+
+# collect tests
+chdir ("$TEST_ROOT/TESTS") or die "Cannot change in $TEST_ROOT/TESTS $!\n";
+opendir (DIR, './') or die "Cannot open current directory: $!\n";
+my $TESTS = {};
+my $test_ptr;
+
+while (defined(my $file = readdir(DIR))) {
+    if ($file !~ /^\./) {
+        print "SCANNING $file\n";
+        open (TESTCASE, "<$file");
+        $file =~ s/.txt//;
+        $TESTS->{$file}->{benchmarks} = [];
+
+        while ( <TESTCASE> ) {
+
+            if (/REGEX_BENCH[ ](.+)/) {
+                $TESTS->{$file}->{REGEX_BENCH} = $1;
+            } elsif (/REGEX_PERF[ ](.+)/) {
+                $TESTS->{$file}->{REGEX_PERF} = $1;
+            } elsif (/TEST\s+(.+)/) {
+                push (@{ $TESTS->{$file}->{benchmarks} },
+                    {name => $1,
+                     runs => 0,
+                     variants => []});
+
+                $test_ptr = $TESTS->{$file}->{benchmarks}[-1];
+
+            } elsif (/RUNS\s+(.+)/) {
+                $test_ptr->{runs} = $1;
+            } elsif (/VARIANT\s+(.+B)\s+([0-9]+)/) {
+                push (@{ $test_ptr->{variants} },{size => $1, iter => $2});
+            }
+        }
+        close TESTCASE;
+    }
+}
+
+closedir DIR;
+chdir "$TEST_ROOT";
+
+# Read in Test set
+my %FILTER;
+open FILE,"<SET.txt";
+while ( <FILE> ) {
+    if ( not /^#/ ) {
+        chomp;
+        $FILTER{$_} = 'true';
+    }
+}
+close FILE;
+
+#run tests
+foreach my $test ( keys %$TESTS ) {
+
+    if ((exists $GROUPS{$test}) and (exists $FILTER{$test})) {
+        print "RUNNING $test : ";
+
+        foreach my $bench ( @{ $TESTS->{$test}->{benchmarks} } ) {
+            my $benchmark = $bench->{name};
+            my $runs      = $bench->{runs};
+            open (DATAFILE1, ">out-$hostname-1.dat");
+            open (DATAFILE2, ">out-$hostname-2.dat");
+            my $globalrun = 0;
+            print "$bench->{name} ";
+
+            foreach my $variant ( @{ $bench->{variants} } ) {
+                foreach ( 0 ... $runs ) {
+                    print DATAFILE1 "$globalrun ";
+                    print DATAFILE2 "$globalrun ";
+                    #print "$BENCH_PLAIN -g 1 -t $benchmark -i $variant->{iter} -w $domain:$variant->{size}:1 > out-$hostname.txt";
+                    system ("$BENCH_PLAIN -g 1 -t $benchmark -i $variant->{iter} -w $domain:$variant->{size}:1 > out-$hostname.txt");
+                    my $result = extract_result('plain',$TESTS->{$test}->{REGEX_BENCH},$TESTS->{$test}->{REGEX_PERF});
+                    print DATAFILE1 "$result\n";
+                    #print "$PERFCTR  -C E:". $domain .":0 -m -g $test $BENCH_MARKER -g 1 -t $benchmark -i $variant->{iter} -w $domain:$variant->{size}:1 > out-$hostname.txt";
+                    system ("$PERFCTR  -C E:". $domain .":1 -m -g $test $BENCH_MARKER -g 1 -t $benchmark -i $variant->{iter} -w $domain:$variant->{size}:1 > out-$hostname.txt");
+                    $result = extract_result('marker',$TESTS->{$test}->{REGEX_BENCH},$TESTS->{$test}->{REGEX_PERF});
+                    print DATAFILE2 "$result\n";
+                    $globalrun++;
+                }
+            }
+
+            close DATAFILE1;
+            close DATAFILE2;
+
+#output results
+            if (system('gracebat >/dev/null 2>&1') ) {
+                mkdir "$RESULT_DIR/tmp" if (not -d "$RESULT_DIR/tmp");
+
+                copy ("$LIKWID_ROOT/test/accuracy/out-$hostname-1.dat", "$RESULT_DIR/tmp/$test-$bench->{name}-plain.dat");
+                copy ("$LIKWID_ROOT/test/accuracy/out-$hostname-2.dat", "$RESULT_DIR/tmp/$test-$bench->{name}-marker.dat");
+
+            } else {
+
+                my $series = [];
+
+                push @{$series}, 
+                { "title"     =>  "plain",
+                    "data file" =>  "$LIKWID_ROOT/test/accuracy/out-$hostname-1.dat",
+                    "line" => {
+                        "type"      => "1",
+                        "color"     => "2",
+                        "linewidth" => "2",
+                        "linestyle" => "1",
+                        "pattern"   => "1",
+                    },
+                    "symbol" => {
+                        "type"      => "2",
+                        "color"     => "2",
+                        "pattern"   => "1",
+                        "linewidth" => "2",
+                        "linestyle" => "1",
+                        "size"      => "1",
+                        "fill pattern" => "1",
+                        "fill color" => "2",
+                    }
+                };
+
+                push @{$series}, 
+                { "title"     =>  "marker",
+                    "data file" =>  "$LIKWID_ROOT/test/accuracy/out-$hostname-2.dat",
+                    "line" => {
+                        "type"      => "1",
+                        "color"     => "4",
+                        "linewidth" => "2",
+                        "linestyle" => "1",
+                        "pattern"   => "1",
+                    },
+                    "symbol" => {
+                        "type"      => "3",
+                        "color"     => "4",
+                        "pattern"   => "1",
+                        "linewidth" => "2",
+                        "linestyle" => "1",
+                        "size"      => "1",
+                        "fill pattern" => "1",
+                        "fill color" => "4",
+                    }
+                };
+
+                xmgrace ({"title"           => "$test",
+                        "subtitle"          => "$bench->{name}",
+                        "legend"            => "0.8,0.7",
+                        "device"            => 'PNG',
+                        "output file"       => "$RESULT_DIR/$test\_".$bench->{name}.".png",
+                        "grace output file" => "$RESULT_DIR/$test\_".$bench->{name}.".agr",
+                        "xaxis label"       => "run",
+                        "yaxis label"       => "MFlops/s / MBytes/s"
+                    },
+                    $series);
+            }
+        }
+        print "\n";
+    }
+}
+
+unlink 'out-$hostname.txt';
+unlink 'out-$hostname-1.dat';
+unlink 'out-$hostname-2.dat';
+
+

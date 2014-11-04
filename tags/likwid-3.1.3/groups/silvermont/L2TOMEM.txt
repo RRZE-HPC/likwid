@@ -1,0 +1,26 @@
+SHORT L2 to Mem load cache bandwidth in MBytes/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  MEM_UOPS_RETIRED_L2_MISS_LOADS 
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+L2 to MEM load bandwidth [MBytes/s] 1.0E-06*(PMC0)*64.0/time
+L2 to MEM load data volume [GBytes] 1.0E-09*(PMC0)*64.0
+
+LONG
+Formulas:
+L2 to MEM load bandwidth [MBytes/s] = 1.0E-06*(MEM_UOPS_RETIRED_L2_MISS_LOADS)*64/time
+L2 to MEM load data volume [GBytes] = 1.0E-09*(MEM_UOPS_RETIRED_L2_MISS_LOADS)*64
+-
+Profiling group to measure L2 to MEM load cache bandwidth. The bandwidth is computed by the
+number of cacheline allocated in the L2 cache. Since there is no possibility to retrieve
+the evicted cache lines, this group measures only the load cache bandwidth.
+The group also output totally loaded data volume transfered between memory and L2.
+

@@ -1,0 +1,19 @@
+SHORT  Compute to Data Access Ratio
+
+EVENTSET
+PMC0  VPU_ELEMENTS_ACTIVE
+PMC1  DATA_READ_OR_WRITE
+
+METRICS
+Runtime (RDTSC) [s] time
+L1 compute intensity   PMC0/PMC1
+
+LONG 
+These metric is a way to measure the computational density of an
+application, or how many computations it is performing on average for each
+piece of data loaded.  L1 Compute to Data Access Ratio, should be
+used to judge suitability of an application for running on the Intel MIC
+Architecture. Applications that will perform well on the Intel® MIC
+Architecture should be vectorized, and ideally be able to perform multiple
+operations on the same pieces of data (or same cachelines).
+

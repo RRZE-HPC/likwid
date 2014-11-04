@@ -1,0 +1,30 @@
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+
+my $FILTERTYPE = 'csv';
+
+if ($#ARGV < 2) {
+    die "Filter failed! Please report bug.\n";
+}
+
+my $filename = $ARGV[0];
+my $fileType  = $ARGV[1];
+
+open INFILE,"< $filename";
+$filename =~ s/\.tmp/\.$FILTERTYPE/;
+open OUTFILE,"> $filename";
+
+
+if ($fileType eq 'topology') {
+
+
+} elsif ($fileType eq 'perfctr') {
+
+
+} else {
+    die "Filter failed! Unknown application type $fileType!\n";
+}
+
+

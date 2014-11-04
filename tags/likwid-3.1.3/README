@@ -1,0 +1,29 @@
+Likwid is a simple to install and use toolsuite of command line applications
+for performance oriented programmers. It works for Intel and AMD processors
+on the Linux operating system.
+
+It consists of:
+
+likwid-topology       - print thread and cache topology
+likwid-features       - view and toggle feature reagister on Intel processors
+likwid-perfctr        - configure and read out hardware performance counters on Intel and AMD processors
+likwid-powermeter     - read out RAPL Energy information and get info about Turbo Mode steps
+likwid-setFrequencies - read out RAPL Energy information and get info about Turbo Mode steps
+likwid-memsweeper     - cleans up filled NUMA memory domains and evicts dirty cacheline from cache hierarchy
+likwid-pin            - pin your threaded application (pthread, Intel and gcc OpenMP to dedicated processors
+likwid-bench          - Micro benchmarking platform
+likwid-gencfg         - Dumps topology information to a file
+likwid-mpirun         - Wrapper to start MPI and Hybrid MPI/OpenMP applications (Supports Intel MPI and OpenMPI)
+likwid-scope          - Frontend to the timeline mode of likwid-perfctr, plots live graphs of performance metrics
+
+For a detailed  documentation on the usage of the tools have a look at the
+likwid wiki pages at:
+
+http://code.google.com/p/likwid/wiki/Introduction
+
+If you have problems or suggestions please let us know on the likwid mailing list:
+
+http://groups.google.com/group/likwid-users
+
+
+

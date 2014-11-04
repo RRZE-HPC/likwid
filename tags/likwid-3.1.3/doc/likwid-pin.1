@@ -1,0 +1,139 @@
+.TH LIKWID-PIN 1 <DATE> likwid\-VERSION
+.SH NAME
+likwid-pin \- pin a sequential or threaded application to dedicated processors
+.SH SYNOPSIS
+.B likwid-pin 
+.RB [\-vhqipS]
+.RB [ \-c
+.IR <core_list> ]
+.RB [ \-s
+.IR <skip_mask> ]
+.RB [ \-d
+.IR <delimiter> ]
+.SH DESCRIPTION
+.B likwid-pin
+is a command line application to pin a sequential or multithreaded 
+applications to dedicated processors. It can be used as replacement for 
+.B taskset(1).
+Opposite to taskset no affinity mask but single processors are specified.
+For multithreaded applications based on the pthread library the 
+.I pthread_create
+library call is overloaded through LD_PRELOAD and each created thread is pinned
+to a dedicated processor as specified in 
+.I core_list
+.
+.PP
+Per default every generated thread is pinned to the core in the order of calls 
+to 
+.I pthread_create.
+It is possible to skip single threads using -s commandline option.
+.PP
+For OpenMP implementations gcc and icc compilers are explicitly supported. Others may also work.
+.B likwid-pin
+sets the environment variable OMP_NUM_THREADS for you if not already present.
+It will set as many threads as present in the pin expression.  Be aware that
+with pthreads the parent thread is always pinned. If you create for example 4
+threads with
+.I pthread_create 
+and do not use the parent process as worker you
+still have to provide num_threads+1 processor ids.
+.PP
+.B likwid-pin
+supports different numberings for pinning. Per default physical numbering of
+the cores is used.  This is the numbering also 
+.B likwid-topology(1)
+reports. But also logical numbering inside the node or the sockets can be used.  If using
+with a N (e.g. -c N:0-6) the cores are logical numbered over the whole node.
+Physical cores come first. If a system e.g. has 8 cores with 16 SMT threads
+with -c N:0-7 you get all physical cores.  If you specify -c N:0-15 you get all
+physical cores and all SMT threads. With S you can specify logical numberings
+inside sockets, again physical cores come first. You can mix different domains
+separated with @. E.g. -c S0:0-3@S2:2-3 you pin thread 0-3 to logical cores 0-3 on socket 0
+and threads 4-5 on logical cores 2-3 on socket 2.
+.PP
+For applications where first touch policy on numa systems cannot be employed
+.B likwid-pin
+can be used to turn on interleave memory placement. This can significantly
+speed up the performance of memory bound multithreaded codes. All numa nodes
+the user pinned threads to are used for interleaving.
+
+.SH OPTIONS
+.TP
+.B \-\^v
+prints version information to standard output, then exits.
+.TP
+.B \-\^h
+prints a help message to standard output, then exits.
+.TP
+.B \-\^c " <processor_list> OR <thread_expression> OR <scatter policy> "
+specify a numerical list of processors. The list may contain multiple 
+items, separated by comma, and ranges. For example 0,3,9-11. You can also use
+logical numberings, either within a node (N), a socket (S<id>) or a numa domain (M<id>).
+likwid-pin also supports logical pinning within a cpuset with a L prefix. If you ommit this option
+likwid-pin will pin the threads to the processors on the node with physical cores first.
+See below for details on using a thread expression or scatter policy
+.TP
+.B \-\^s " <skip_mask>
+Specify skip mask as HEX number. For each set bit the corresponding thread is skipped.
+.TP
+.B \-\^S
+All ccNUMA memory domains belonging to the specified threadlist will be cleaned before the run. Can solve file buffer cache problems on Linux.
+.TP
+.B \-\^p
+prints the available thread domains for logical pinning. If used in combination with -c, the physical processor IDs are printed to stdout.
+.TP
+.B \-\^i
+set numa memory policy to interleave spanning all numa nodes involved in pinning
+.TP
+.B \-\^q
+silent execution without output
+.TP
+.B \-\^d " <delimiter>
+set delimiter used to output the physical processor list (-p & -c)
+
+
+.SH EXAMPLE
+.IP 1. 4
+For standard pthread application:
+.TP
+.B likwid-pin -c 0,2,4-6  ./myApp
+.PP
+The parent process is pinned to processor 0. Thread 0 to processor 2, thread
+1 to processor 4, thread 2 to processor 5 and thread 3 to processor 6. If more threads
+are created than specified in the processor list, these threads are pinned to processor 0
+as fallback.
+.IP 2. 4
+For gcc OpenMP as many ids must be specified in processor list as there are threads: 
+.TP
+.B OMP_NUM_THREADS=4; likwid-pin -c 0,2,1,3  ./myApp
+.IP 3. 4
+Full control over the pinning can be achieved by specifying a skip mask.
+For example the following command skips the pinning of thread 1:
+.TP
+.B OMP_NUM_THREADS=4; likwid-pin -s 0x1 -c 0,2,1,3  ./myApp
+.IP 4. 4
+The -c switch supports the definition of threads in a specific affinity domain like
+NUMA node or cache group. The available affinity domains can be retrieved with the -p switch 
+and no further option on the commandline. The common affinity domains are N (whole Node), 
+SX (socket X), CX (cache group X) and MX (memory group X). Multiple affinity domains 
+can be set separated by @. In order to pin 2 threads on each socket of a 2-socket system:
+.TP
+.B OMP_NUM_THREADS=4; likwid-pin -c S0:0-1@S1:0-1  ./myApp
+.IP 5. 4
+Another argument definition of the -c switch allows the threads to be pinned according
+to an expression like E:N:4:1:2. The syntax is E:<thread domain>:<number of threads>(:<chunk size>:<stride>).
+The example pins 8 threads with 2 SMT threads per core on a SMT 4 machine:
+.TP
+.B OMP_NUM_THREADS=4; likwid-pin -c E:N:8:2:4  ./myApp
+.IP 6. 4
+The last alternative for the -c switch is the automatic scattering of threads on affinity domains.
+For example to scatter the threads over all memory domains in a system:
+.TP
+.B OMP_NUM_THREADS=4; likwid-pin -c M:scatter  ./myApp
+
+.SH AUTHOR
+Written by Jan Treibig <jan.treibig@gmail.com>.
+.SH BUGS
+Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+.SH "SEE ALSO"
+taskset(1), likwid-perfctr(1), likwid-features(1), likwid-powermeter(1), likwid-setFrequencies(1)

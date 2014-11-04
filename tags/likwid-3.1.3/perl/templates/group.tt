@@ -1,0 +1,208 @@
+/* GENERATED FILE: DO NOTE EDIT */
+
+#define NUM_GROUPS_[% arch FILTER upper %] [% numGroups %]
+
+[% FOREACH group IN groups %]
+static const char* group_names_[% arch FILTER ucfirst %]_[% group.name %] [] = {[% FOREACH metric IN group.metrics %] "[% metric.label %]", [% END %] NULL};
+[% END %]
+
+static PerfmonGroupMap [% arch %]_group_map[NUM_GROUPS_[% arch FILTER upper %]] = {
+[% FOREACH group IN groups %]
+    {"[% group.name %]",[% group.name %],[% group.isUncore %],"[% group.shortHelp %]","[% group.eventSet %]", 0 [% FOREACH metric IN group.metrics %] +1 [% END %], group_names_[% arch FILTER ucfirst %]_[% group.name %]
+    },
+[% END %]
+};
+
+void perfmon_getDerivedCounterValues[% arch FILTER ucfirst %](PerfmonGroup group, float * values, float * out_max, float * out_min){
+    double time = rdtscTime;
+    double inverseClock = 1.0 /(double) timer_getCpuClock();
+
+    values[0] = time;
+    out_min[0] = time;
+    out_max[0] = time;
+
+    switch ( group ) {
+    [% FOREACH group IN groups %]
+        case [% group.name %]:{
+            int threadId;
+            int counter = 0;
+            double sum,min,max;
+
+        [% FOREACH metric IN group.metrics %]
+            sum = 0;
+            min = 1e300;
+            max = 0;
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+                double cur = [% metric.rule %];
+                cur = isnan(cur) ? 0.0 : cur;
+                sum += cur;
+                max = max > cur ? max : cur;
+                min = min < cur ? min : cur;                        
+            }
+
+            values[counter] = (float) sum / perfmon_numThreads;
+            out_min[counter] = (float) min;
+            out_max[counter] = (float) max;
+            counter++;
+        [% END %]
+        return;        
+        }
+    [% END %]
+
+        default:
+            fprintf (stderr, "perfmon_getDerivedCounterValues[% arch %]: Unknown group! Exiting!\n" );
+            exit (EXIT_FAILURE);
+            break;
+    }
+}
+
+
+void
+perfmon_printDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup groupId)
+{
+    int threadId;
+    double time = rdtscTime;
+    double inverseClock = 1.0 /(double) timer_getCpuClock();
+    PerfmonResultTable tableData;
+    int numRows;
+    int numColumns = perfmon_numThreads;
+    bstring label;
+    bstrList* fc;
+    double** stat;
+    double tmpValue;
+    uint64_t cpi_instr = 0;
+    uint64_t cpi_cyc  = 0;
+    int cpi_index = 0;
+
+    switch ( groupId ) 
+    {
+[% FOREACH group IN groups %]
+        case [% group.name %]:
+            numRows = [% group.numRows %];
+            stat = (double**) malloc(numRows * sizeof(double*));
+            for (int i=0; i<numRows; i++)
+            {
+                stat[i] = (double*) malloc(4 * sizeof(double));
+                stat[i][0] = 0;
+                stat[i][1] = 0;
+                stat[i][2] = DBL_MAX;
+            }
+            INIT_BASIC;
+[% FOREACH metric IN group.metrics %]
+            bstrListAdd(fc,[% loop.count %],[% metric.label %]);
+[% END %]
+            initResultTable(&tableData, fc, numRows, numColumns);
+
+            for(threadId=0; threadId < perfmon_numThreads; threadId++)
+            {
+[% FOREACH metric IN group.metrics %]
+                tmpValue = [% metric.rule %];
+                if (!isnan(tmpValue))
+                {
+                    tableData.rows[[% loop.index %]].value[threadId] = tmpValue;
+                }
+                else
+                {
+                    tableData.rows[[% loop.index %]].value[threadId] = 0.0;
+                }
+[% IF metric.label == 'CPI' && arch == 'westmere' %]
+                cpi_instr += perfmon_getResult(threadId,"FIXC0");
+                cpi_cyc += perfmon_getResult(threadId,"FIXC1");
+                cpi_index = [% loop.index %];
+[% ELSE %]
+                stat[[% loop.index %]][0] += (double) tableData.rows[[% loop.index %]].value[threadId];
+[% END %]
+                stat[[% loop.index %]][1] =  MAX(stat[[% loop.index %]][1],(double) tableData.rows[[% loop.index %]].value[threadId]);
+                stat[[% loop.index %]][2] =  MIN(stat[[% loop.index %]][2],(double) tableData.rows[[% loop.index %]].value[threadId]);
+[% END %]
+            }
+
+            if (cpi_instr)
+            {
+                stat[cpi_index][0] = (double) cpi_cyc / (double) cpi_instr;
+            }
+                
+            break;
+[% END %]
+
+        default:
+            fprintf (stderr, "perfmon_printDerivedMetrics[% arch %]: Unknown group! Exiting!\n" );
+            exit (EXIT_FAILURE);
+            break;
+    }
+
+    printResultTable(&tableData);
+    freeResultTable(&tableData);
+
+    /* for threaded results print sum, max, min and avg */
+    if (perfmon_numThreads > 1)
+    {
+        initStatisticTable(&tableData, fc, numRows);
+        for (int i=0; i<numRows; i++)
+        {
+            stat[i][3] =  stat[i][0]/perfmon_numThreads;
+            for (int j=0; j<4; j++)
+            {
+                tableData.rows[i].value[j] = stat[i][j];
+            }
+        }
+        printResultTable(&tableData);
+        freeResultTable(&tableData);
+    }
+
+    for (int i=0; i<numRows; i++)
+    {
+        free(stat[i]);
+    }
+    free(stat);
+    bstrListDestroy(fc);
+}
+
+void
+perfmon_logDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group, double time,double timeStamp)
+{
+    int threadId;
+    double tmpValue;
+    double inverseClock = 1.0 /(double) timer_getCpuClock();
+
+    switch ( group ) 
+    {
+        [% FOREACH group IN groups %]
+        case [% group.name %]:
+
+                    [% FOREACH metric IN group.metrics %]
+                        printf("[% metric.label %] %e ",timeStamp);
+                        for(threadId=0; threadId < perfmon_numThreads; threadId++)
+                        {
+                            tmpValue = [% metric.rule %];
+                            if (!isnan(tmpValue))
+                            {
+                                printf(" %e  ", tmpValue);
+                            }
+                            else
+                            {
+                                printf(" 0.0  ");
+                            }
+                        }
+                        printf("\n");
+                    [% END %]
+            break;
+            [% END %]
+
+        default:
+                fprintf (stderr, "perfmon_printDerivedMetrics[% arch %]: Unknown group! Exiting!\n" );
+                exit (EXIT_FAILURE);
+                break;
+    }
+}
+
+
+
+static PerfmonGroupHelp [% arch %]_group_help[NUM_GROUPS_[% arch FILTER upper %]] = {
+[% FOREACH group IN groups %]
+    {"[% group.name %]","[% group.longHelp %]"},
+[% END %]
+};
+
