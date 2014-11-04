@@ -1,5 +1,18 @@
 #summary likwid changelog
 
+= Release 3.1.3 =
+
+  * Full Uncore Support for Nehalem EX and Westmere EX
+  * Atom Silvermont (Avoton + BayTrail) support
+  * Read Marker API results and derived metrics in instrumented application (Patch by Julian Kunkel)
+  * More low-level benchmarks for likwid-bench
+  * Kernel module for enabling the RDPMC instruction
+  * Use RDPMC for fixed and general purpose core-local counters if possible
+  * New undocumented but working events
+  * Support for all RAPL domains in likwid-powermeter
+  * Better PCI device lookup
+  * Lots of bug fixes
+
 = Release 3.1.2 =
   * New application likwid-setFrequencies and corresponding daemon likwid-setFreq
   * likwid-powermeter can measure multiple sockets at once
