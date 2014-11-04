@@ -692,8 +692,16 @@ void likwid_markerStopRegion(const char* regionTag)
             {
                 if ( perfmon_counter_map[i].type == POWER )
                 {
-                    results->PMcounters[i] += power_info.energyUnit *
-                        (PMcounters[i] - results->StartPMcounters[i]);
+                    if (PMcounters[i] >= results->StartPMcounters[i])
+                    {
+                        results->PMcounters[i] += power_info.energyUnit *
+                            (PMcounters[i] - results->StartPMcounters[i]);
+                    }
+                    else
+                    {
+                        results->PMcounters[i] += power_info.energyUnit *
+                            (((double)0xFFFFFFFF) - results->StartPMcounters[i] + PMcounters[i]);
+                    }
                 }
                 else
                 {
