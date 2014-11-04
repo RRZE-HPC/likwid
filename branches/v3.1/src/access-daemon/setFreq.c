@@ -1,3 +1,34 @@
+/*
+ * =======================================================================================
+ *
+ *      Filename:  setFreq.c
+ *
+ *      Description:  Wrapper for accessing setfreq kernel FS files
+ *
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
+ *
+ *      Authors:  Michael Meier, michael.meier@rrze.fau.de
+ *                Jan Treibig (jt), jan.treibig@gmail.com
+ *      Project:  likwid
+ *
+ *      Copyright (C) 2014 Jan Treibig
+ *
+ *      This program is free software: you can redistribute it and/or modify it under
+ *      the terms of the GNU General Public License as published by the Free Software
+ *      Foundation, either version 3 of the License, or (at your option) any later
+ *      version.
+ *
+ *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License along with
+ *      this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * =======================================================================================
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -56,14 +87,14 @@ int main (int argn, char** argv)
     {
         gov = argv[3];
 
-        if ((strncmp(gov,"ondemand",12)) && (strncmp(gov,"performance",12))) 
+        if ((strncmp(gov,"ondemand",12)) && (strncmp(gov,"performance",12)))
         {
             fprintf(stderr, "Invalid governor %s!\n",gov);
             return (EXIT_FAILURE);
         }
 
         f = fopen(gpath, "w");
-        if (f == NULL) 
+        if (f == NULL)
         {
             fprintf(stderr, "Unable to open path for writing\n");
             return (EXIT_FAILURE);
@@ -75,7 +106,7 @@ int main (int argn, char** argv)
     else
     {
         f = fopen(gpath, "w");
-        if (f == NULL) 
+        if (f == NULL)
         {
             fprintf(stderr, "Unable to open path for writing\n");
             return (EXIT_FAILURE);
@@ -85,7 +116,7 @@ int main (int argn, char** argv)
     }
 
     f = fopen(fpath, "w");
-    if (f == NULL) 
+    if (f == NULL)
     {
         fprintf(stderr, "Unable to open path for writing\n");
         return (EXIT_FAILURE);

@@ -10,13 +10,11 @@ COLOR = BLUE#NO SPACE
 
 # Path were to install likwid
 PREFIX = /usr/local#NO SPACE
-#PREFIX = /apps/likwid/3.1.1#NO SPACE
 MANPREFIX = $(PREFIX)/man#NO SPACE
 
 # For the daemon based secure msr/pci access configure
 # the absolute path to the msr daemon executable.
 # Usually you can leave this to the default.
-# $(PREFIX)/sbin/likwid-accessD
 ACCESSDAEMON = $(PREFIX)/sbin/likwid-accessD#NO SPACE
 
 # Set the default mode for MSR access.
