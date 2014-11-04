@@ -10,7 +10,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig 
+#      Copyright (C) 2014 Jan Treibig
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -29,8 +29,11 @@
 EVENT_INSTR_RETIRED              0x00   FIXC0
 UMASK_INSTR_RETIRED_ANY          0x00
 
-EVENT_CPU_CLK_UNHALTED           0x00   FIXC1
+EVENT_CPU_CLK_UNHALTED_CORE      0x00   FIXC1
 UMASK_CPU_CLK_UNHALTED_CORE      0x00
+
+EVENT_CPU_CLK_UNHALTED_REF       0x00   FIXC2
+UMASK_CPU_CLK_UNHALTED_REF       0x00
 
 EVENT_LOAD_BLOCK                 0x03   PMC
 UMASK_LOAD_BLOCK_STA             0x02

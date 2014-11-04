@@ -67,8 +67,9 @@ if ($fileType eq 'topology') {
         } elsif ($region eq 'numa') {
             if (/Domain ([0-9]*)/) {
                 print OUTFILE 'Domain ID'.$SEP.$1.$NL;
-            } elsif (/Memory:.*total ([0-9.]+) MB/) {
-                print OUTFILE 'Memory [MB]'.$SEP.$1.$NL;
+            } elsif (/Memory: ([0-9.]+) MB free of total ([0-9.]+) MB/) {
+                print OUTFILE 'Free Memory [MB]'.$SEP.$1.$NL;
+                print OUTFILE 'Total Memory [MB]'.$SEP.$2.$NL;
             } elsif (/(.*):\t*[ ]*(.*)/) {
                 print OUTFILE $1.$SEP.$2.$NL;
             }
@@ -77,7 +78,7 @@ if ($fileType eq 'topology') {
 } elsif ($fileType eq 'perfctr') {
     my $header = 0;
     while (<INFILE>) {
-        if (/\|[ ]*Event[ ]*\|[ ]*Counter[ ]*\|[ ]*(Core.*)\|/) {
+        if (/Event[ ]*\|[ ]*(core.*)\|/) {
             if (not $header) {
                 my @col = split('\|',$1);
                 my $numcol = $#col+1;
@@ -92,9 +93,9 @@ if ($fileType eq 'topology') {
             }
         }elsif (/STAT/) {
 
-        }elsif (/\|[ ]+([A-Z0-9_]+)[ ]+\|[ ]+([A-Z0-9_]+)[ ]+\|[ ]*(.*)\|/) {
-            my @col = split('\|',$3);
-            print OUTFILE $1.$SEP.$2;
+        }elsif (/\|[ ]+([A-Z0-9_]+)[ ]+\|[ ]*(.*)\|/) {
+            my @col = split('\|',$2);
+            print OUTFILE $1;
             foreach (@col) {
                 s/[ ]//g;
                 print OUTFILE $SEP.$_;

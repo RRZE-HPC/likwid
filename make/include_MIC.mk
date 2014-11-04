@@ -7,12 +7,12 @@ GEN_PAS = ./perl/generatePas.pl
 GEN_GROUPS = ./perl/generateGroups.pl 
 GEN_PMHEADER = ./perl/gen_events.pl 
 
-ANSI_CFLAGS   = -std=c99
-ANSI_CFLAGS += -pedantic
+#ANSI_CFLAGS   = -std=c99
+#ANSI_CFLAGS += -pedantic
 #ANSI_CFLAGS += -Wextra
 #ANSI_CFLAGS += -Wall
 
-CFLAGS   = -mmic -O0 -g -Wno-format
+CFLAGS   = -mmic -O2 -Wno-format -std=c99
 FCFLAGS  = -J ./  -fsyntax-only
 #FCFLAGS  = -module ./ 
 ASFLAGS  =  -mmic -c

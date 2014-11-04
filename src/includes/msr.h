@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -35,13 +35,13 @@
 
 /* Initializes the MSR module, trying to open either the MSR files or
  * the connection to the msr daemon. */
-extern int msr_init(int socket_fd);
+extern void msr_init(int socket_fd);
 extern void msr_finalize(void);
-extern int msr_read(int cpu, uint32_t reg, uint64_t *data);
-extern int msr_write(int cpu, uint32_t reg, uint64_t data);
+extern uint64_t msr_read(int cpu, uint32_t reg);
+extern void msr_write(int cpu, uint32_t reg, uint64_t data);
 
 /* variants for thread safe execution with a per thread socket */
-extern int msr_tread(int socket_fd, int cpu, uint32_t reg, uint64_t *data);
-extern int msr_twrite(int socket_fd, int cpu, uint32_t reg, uint64_t data);
+extern uint64_t msr_tread(int socket_fd, int cpu, uint32_t reg);
+extern void msr_twrite(int socket_fd, int cpu, uint32_t reg, uint64_t data);
 
 #endif /* MSR_H */

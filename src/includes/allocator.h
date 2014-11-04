@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  none
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -36,12 +36,13 @@
 
 extern void allocator_init(int numVectors);
 extern void allocator_finalize();
-extern void allocator_allocateVector(void** ptr,
-        int alignment,
-        uint64_t size,
-        int offset,
-        DataType type,
-        bstring domain);
+extern void allocator_allocateVector(FILE* OUTSTREAM,
+                                     void** ptr,
+                                     int alignment,
+                                     uint64_t size,
+                                     int offset,
+                                     DataType type,
+                                     bstring domain);
 
 #endif /*ALLOCATOR_H*/
 

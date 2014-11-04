@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -122,7 +122,7 @@ barrier_registerThread(BarrierData* barr, int groupId, int threadId)
 
 void
 barrier_init(int numberOfGroups) 
-{ 
+{
     maxGroupId = numberOfGroups-1;
     groups = (BarrierGroup*) malloc(numberOfGroups * sizeof(BarrierGroup));
 }
@@ -149,4 +149,7 @@ barrier_synchronize(BarrierData* barr)
     barr->offset = !barr->offset;
 }
 
-
+void barrier_destroy(void)
+{
+    free(groups);
+}

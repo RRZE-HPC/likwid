@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -34,7 +34,7 @@
 
 #include <types.h>
 #include <thermal.h>
-#include <topology.h>
+#include <cpuid.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -52,10 +52,7 @@ void thermal_init(int cpuId)
 
     if ( cpuid_hasFeature(TM2) )
     {
-        if (msr_read(cpuId, IA32_THERM_STATUS, &flags))
-        {
-            return;
-        }
+        flags = msr_read(cpuId, IA32_THERM_STATUS);
 
         if ( flags & 0x1 )
         {
@@ -69,10 +66,7 @@ void thermal_init(int cpuId)
         thermal_info.resolution =  extractBitField(flags,4,27);
 
         flags = 0ULL;
-        if (msr_read(cpuId, MSR_TEMPERATURE_TARGET, &flags))
-        {
-            return;
-        }
+        flags = msr_read(cpuId, MSR_TEMPERATURE_TARGET);
         thermal_info.activationT =  extractBitField(flags,8,16);
         thermal_info.offset = extractBitField(flags,6,24);
     }

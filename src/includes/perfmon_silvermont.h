@@ -29,181 +29,142 @@
  */
  
 #include <perfmon_silvermont_events.h>
+#include <perfmon_silvermont_groups.h>
 #include <perfmon_silvermont_counters.h>
 
 static int perfmon_numCountersSilvermont = NUM_COUNTERS_SILVERMONT;
-static int perfmon_numCoreCountersSilvermont = NUM_COUNTERS_SILVERMONT;
+static int perfmon_numGroupsSilvermont = NUM_GROUPS_SILVERMONT;
 static int perfmon_numArchEventsSilvermont = NUM_ARCH_EVENTS_SILVERMONT;
 
 
-int perfmon_init_silvermont(int cpu_id)
+void perfmon_init_silvermont(PerfmonThread *thread)
 {
     uint64_t flags = 0x0ULL;
-    if ( cpuid_info.model == ATOM_SILVERMONT )
-    {
-        lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
-    }
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
-    return 0;
+    int cpu_id = thread->processorId;
+    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
+
+    /* Initialize registers */
+    msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL);
+    msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL);
+    msr_write(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL);
+    msr_write(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL);
+
+    msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL);
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+    msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL);
 }
 
-int perfmon_setupCountersThread_silvermont(
+void perfmon_setupCounterThread_silvermont(
         int thread_id,
-        PerfmonEventSet* eventSet)
+        PerfmonEvent* event,
+        PerfmonCounterIndex index)
 {
     int haveLock = 0;
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     uint32_t uflags;
-    uint64_t fixed_flags = 0x0ULL;
-    int cpu_id = groupSet->threads[thread_id].processorId;
+    uint64_t reg = silvermont_counter_map[index].configRegister;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
+    uint64_t fixed_flags = msr_read(cpu_id, MSR_PERF_FIXED_CTR_CTRL);
+    uint64_t orig_fixed_flags = fixed_flags;
+    perfmon_threadData[thread_id].counters[index].init = TRUE;
 
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
+    switch (silvermont_counter_map[index].type)
     {
-        haveLock = 1;
-    }
+        case PMC:
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+            flags = (1<<16)|(1<<22);
+            flags &= ~(0xFFFFU);   /* clear lower 16bits */
+
+            /* Intel with standard 8 bit event mask: [7:0] */
+            flags |= (event->umask<<8) + event->eventId;
+
+
+
+            if (perfmon_verbose)
+            {
+                printf("[%d] perfmon_setup_counter PMC: Write Register 0x%llX , Flags: 0x%llX \n",
+                        cpu_id,
+                        LLU_CAST reg,
+                        LLU_CAST flags);
+            }
+            msr_write(cpu_id, reg , flags);
+
+            // Offcore event with additional configuration register
+            // We included the additional register as counterRegister2
+            // to avoid creating a new data structure
+            // cfgBits contain offset of "request type" bit
+            // cmask contain offset of "response type" bit
+            if (event->eventId == 0xB7) 
+            {
+                if (event->umask == 0x01)
+                {
+                    reg = MSR_OFFCORE_RESP0;
+                }
+                else if (event->umask == 0x02)
+                {
+                    reg = MSR_OFFCORE_RESP1;
+                }
+                flags = 0x0ULL;
+                flags = (1<<event->cfgBits)|(1<<event->cmask);
+                msr_write(cpu_id, reg , flags);
+            }
+
+            break;
+
+        case FIXED:
+            fixed_flags |= (2ULL<<(index*4));
+            break;
+
+        case POWER:
+            break;
+
+        default:
+            /* should never be reached */
+            break;
+    }
+    if (fixed_flags != orig_fixed_flags)
     {
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
+        msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags);
     }
-
-    for (int i=0;i < eventSet->numberOfEvents;i++)
-    {
-        flags = 0x0ULL;
-        RegisterIndex index = eventSet->events[i].index;
-        PerfmonEvent *event = &(eventSet->events[i].event);
-        uint64_t reg = counter_map[index].configRegister;
-        eventSet->events[i].threadCounter[thread_id].init = TRUE;
-        switch (silvermont_counter_map[index].type)
-        {
-            case PMC:
-
-                flags |= (1<<16)|(1<<22);
-
-                flags |= (event->umask<<8) + event->eventId;
-                /* For event id 0xB7 the cmask must be written in an extra register */
-                if ((event->cmask) && (event->eventId != 0xB7))
-                {
-                    flags |= (event->cmask << 24);
-                }
-
-                if (event->numberOfOptions > 0)
-                {
-                    for(int i=0;i<event->numberOfOptions;i++)
-                    {
-                        switch(event->options[i].type)
-                        {
-                            case EVENT_OPTION_EDGE:
-                                flags |= (1ULL<<18);
-                                break;
-                            case EVENT_OPTION_ANYTHREAD:
-                                flags |= (1ULL<<21);
-                                break;
-                            case EVENT_OPTION_INVERT:
-                                flags |= (1ULL<<23);
-                                break;
-                            case EVENT_OPTION_COUNT_KERNEL:
-                                flags |= (1ULL<<17);
-                                break;
-                        }
-                    }
-                }
-
-                VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, SETUP_PMC)
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
-                
-                // Offcore event with additional configuration register
-                // We included the additional register as counterRegister2
-                // to avoid creating a new data structure
-                // cfgBits contain offset of "request type" bit
-                // cmask contain offset of "response type" bit
-                if (event->eventId == 0xB7)
-                {
-                    reg = silvermont_counter_map[index].counterRegister2;
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &flags));
-                    flags = (1<<event->cfgBits)|(1<<event->cmask);
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
-                }
-                
-                break;
-
-            case FIXED:
-                fixed_flags |= (0x2 << (4*index));
-                if (event->numberOfOptions > 0)
-                {
-                    for(int i=0;i<event->numberOfOptions;i++)
-                    {
-                        switch(event->options[i].type)
-                        {
-                            case EVENT_OPTION_ANYTHREAD:
-                                fixed_flags |= (0x4 << (4*index));
-                                break;
-                            case EVENT_OPTION_COUNT_KERNEL:
-                                fixed_flags |= (0x1 << (4*index));
-                                break;
-                        }
-                    }
-                }
-                break;
-
-            case POWER:
-                break;
-
-            default:
-                /* should never be reached */
-                break;
-        }
-    }
-    if (fixed_flags > 0x0)
-    {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_FIXED_CTR_CTRL, LLU_CAST fixed_flags, SETUP_FIXED)
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags));
-    }
-    return 0;
 }
 
 
-
-
-int perfmon_startCountersThread_silvermont(int thread_id, PerfmonEventSet* eventSet)
+void perfmon_startCountersThread_silvermont(int thread_id)
 {
     int haveLock = 0;
-    uint64_t tmp;
     uint64_t flags = 0x0ULL;
     uint32_t uflags = 0x10000UL; /* Clear freeze bit */
-    int cpu_id = groupSet->threads[thread_id].processorId;
+    uint64_t fixed_flags = 0x0ULL;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
     }
 
-    for (int i=0;i < eventSet->numberOfEvents;i++)
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
+
+    for ( int i=0; i<perfmon_numCountersSilvermont; i++ )
     {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE)
         {
-            RegisterIndex index = eventSet->events[i].index;
-            uint64_t reg = counter_map[index].configRegister;
-            uint64_t counter1 = counter_map[index].counterRegister;
-            uint64_t counter2 = counter_map[index].counterRegister2;
-            switch (counter_map[index].type)
+            switch (silvermont_counter_map[i].type)
             {
                 case PMC:
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
-                    flags |= (1<<(index-OFFSET_PMC));  /* enable counter */
+                    msr_write(cpu_id, silvermont_counter_map[i].counterRegister, 0x0ULL);
+                    flags |= (1<<(i-OFFSET_PMC));  /* enable counter */
                     break;
 
                 case FIXED:
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
-                    flags |= (1ULL<<(index+32));  /* enable fixed counter */
+                    msr_write(cpu_id, silvermont_counter_map[i].counterRegister, 0x0ULL);
+                    flags |= (1ULL<<(i+32));  /* enable fixed counter */
                     break;
 
                 case POWER:
                     if(haveLock)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&tmp));
-                        eventSet->events[i].threadCounter[thread_id].startData = tmp;
+                        perfmon_threadData[thread_id].counters[i].counterData =
+                            power_read(cpu_id, silvermont_counter_map[i].counterRegister);
                     }
 
                     break;
@@ -215,79 +176,61 @@ int perfmon_startCountersThread_silvermont(int thread_id, PerfmonEventSet* event
         }
     }
 
-    /*if (perfmon_verbose)
+    if (perfmon_verbose)
     {
         printf("perfmon_start_counters: Write Register 0x%X , \
                 Flags: 0x%llX \n",MSR_PERF_GLOBAL_CTRL, LLU_CAST flags);
         printf("perfmon_start_counters: Write Register 0x%X , \
                 Flags: 0x%llX \n",MSR_UNCORE_PERF_GLOBAL_CTRL, LLU_CAST uflags);
-    }*/
-
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
-    {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, UNFREEZE_PMC_OR_FIXED)
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
     }
-
-    return 0;
+    if (flags != 0x0ULL)
+    {
+        msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags);
+    }
 }
 
-#define SVM_OVERFLOW_CHECK \
-    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) \
-    { \
-        eventSet->events[i].threadCounter[thread_id].overflows++; \
-    }
 
-int perfmon_stopCountersThread_silvermont(int thread_id, PerfmonEventSet* eventSet)
+void perfmon_stopCountersThread_silvermont(int thread_id)
 {
     uint64_t flags;
     uint32_t uflags = 0x10100UL; /* Set freeze bit */
     uint64_t counter_result = 0x0ULL;
     int haveLock = 0;
-    int cpu_id = groupSet->threads[thread_id].processorId;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
-    {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_OR_FIXED)
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-    }
+    msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL);
 
-    for (int i=0;i < eventSet->numberOfEvents;i++)
+    for ( int i=0; i < perfmon_numCountersSilvermont; i++ ) 
     {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE) 
         {
-            counter_result = 0x0ULL;
-            RegisterIndex index = eventSet->events[i].index;
-            uint64_t reg = counter_map[index].configRegister;
-            uint64_t counter1 = counter_map[index].counterRegister;
-            uint64_t counter2 = counter_map[index].counterRegister2;
-            switch (counter_map[index].type)
+            switch (silvermont_counter_map[i].type)
             {
                 case PMC:
 
                 case FIXED:
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
-                    SVM_OVERFLOW_CHECK;
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    perfmon_threadData[thread_id].counters[i].counterData =
+                        (double)msr_read(cpu_id, silvermont_counter_map[i].counterRegister);
                     break;
 
                 case POWER:
                     if(haveLock)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
-                        SVM_OVERFLOW_CHECK;
-                        eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                        perfmon_threadData[thread_id].counters[i].counterData =
+                            power_info.energyUnit *
+                            ( power_read(cpu_id, silvermont_counter_map[i].counterRegister) -
+                              perfmon_threadData[thread_id].counters[i].counterData);
                     }
                     break;
 
                 case THERMAL:
-                        CHECK_TEMP_READ_ERROR(thermal_read(cpu_id, (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                        perfmon_threadData[thread_id].counters[i].counterData =
+                             thermal_read(cpu_id);
                     break;
 
                 default:
@@ -297,64 +240,53 @@ int perfmon_stopCountersThread_silvermont(int thread_id, PerfmonEventSet* eventS
         }
     }
 
-    CHECK_MSR_READ_ERROR(msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS, &flags));
+    flags = msr_read(cpu_id,MSR_PERF_GLOBAL_STATUS);
     //    printf ("Status: 0x%llX \n", LLU_CAST flags);
     if ( (flags & 0x3) || (flags & (0x3ULL<<32)) ) 
     {
         printf ("Overflow occured \n");
     }
-    return 0;
 }
 
-int perfmon_readCountersThread_silvermont(int thread_id, PerfmonEventSet* eventSet)
+void perfmon_readCountersThread_silvermont(int thread_id)
 {
     uint64_t counter_result = 0x0ULL;
     int haveLock = 0;
-    int cpu_id = groupSet->threads[thread_id].processorId;
+    int cpu_id = perfmon_threadData[thread_id].processorId;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;
     }
 
-    for (int i=0;i < eventSet->numberOfEvents;i++)
+    for ( int i=0; i<perfmon_numCountersSilvermont; i++ )
     {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
+        if (perfmon_threadData[thread_id].counters[i].init == TRUE)
         {
-            RegisterIndex index = eventSet->events[i].index;
-            uint64_t reg = counter_map[index].configRegister;
-            uint64_t counter1 = counter_map[index].counterRegister;
-            uint64_t counter2 = counter_map[index].counterRegister2;
-            switch (counter_map[index].type)
+            if ((silvermont_counter_map[i].type == PMC) ||
+                    (silvermont_counter_map[i].type == FIXED))
             {
-                case PMC:
-
-                case FIXED:
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
-                    SVM_OVERFLOW_CHECK;
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
-                    break;
-
-                case POWER:
-                    if(haveLock)
+                perfmon_threadData[thread_id].counters[i].counterData =
+                    msr_read(cpu_id, silvermont_counter_map[i].counterRegister);
+            }
+            else
+            {
+                if(haveLock)
+                {
+                    switch (silvermont_counter_map[i].type)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
-                        SVM_OVERFLOW_CHECK;
-                        eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                        case POWER:
+                            perfmon_threadData[thread_id].counters[i].counterData =
+                                power_info.energyUnit *
+                                power_read(cpu_id, silvermont_counter_map[i].counterRegister);
+                            break;
+
+                        default:
+                            /* should never be reached */
+                            break;
                     }
-                    break;
-
-                case THERMAL:
-                        CHECK_TEMP_READ_ERROR(thermal_read(cpu_id, (uint32_t*)&counter_result));
-                        eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
-                    break;
-
-                default:
-                    /* should never be reached */
-                    break;
+                }
             }
         }
     }
-    return 0;
 }
-

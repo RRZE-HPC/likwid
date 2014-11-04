@@ -98,7 +98,7 @@ while (defined(my $file = readdir(DIR))) {
                 }
             } elsif ($line =~ /TYPE[ ]+(SINGLE|DOUBLE)/) {
                 $type = $1;
-            } elsif ($line =~ /FLOPS[ ]+([0-9]+)/) {
+            } elsif ($line =~ /FLOPS[ ]+([0-9.]+)/) {
                 $flops = $1;
             } elsif ($line =~ /BYTES[ ]+([0-9]+)/) {
                 $bytes = $1;

@@ -1,0 +1,55 @@
+.TH LIKWID-PERFSCOPE 1 <DATE> likwid\-<VERSION>
+.SH NAME
+likwid-perfscope \- Frontend for the timeline mode of
+.N likwid-perfctr(1)
+that on-the-fly generates pictures from the measurements
+.SH SYNOPSIS
+.B likwid-perfscope 
+.RB [\-h]
+.RB [ \-cores
+.IR <cpu_list> ]
+.RB [ \-freq
+.IR <frequency> ]
+.RB [ \-group
+.IR <eventset> ]
+.SH DESCRIPTION
+.B likwid-perfscope
+is a command line application written in Perl that uses the timeline daemon mode of
+.B likwid-perfctr(1)
+to create on-the-fly pictures with the current measurements. It uses the
+.B feedGnuplot(1)
+script to send the current data to gnuplot.
+.SH OPTIONS
+.TP
+.B \-h
+prints a help message to standard output, then exits.
+.TP
+.B \-\^cores " <cpu_list>
+measures the given group on given CPUs in <cpu_list>
+.TP
+.B \-\^freq " <frequency>
+reads the current performance values every <frequency>. Available suffixes are 's' and 'ms', e.g. 500ms. Default value is 1s
+.TP
+.B \-\^group " <eventset>
+defines the events and counters that should be read. Possible values can be gathered from
+.B likwid-perfctr(1).
+Default is group 'FLOPS_DP'
+
+.SH EXAMPLE
+.IP 1. 4
+Monitor double precision floating-point operations:
+.TP
+.B likwid-perfscope -group FLOPS_DP -cores 0-3 -freq 500ms
+.PP
+Executes
+.B likwid-perfctr
+on the first four cores. The values are read every 500ms are forwarded to gnuplot using the
+.B feedGnuplot
+script.
+
+.SH AUTHOR
+Written by Jan Treibig <jan.treibig@gmail.com>.
+.SH BUGS
+Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+.SH "SEE ALSO"
+likwid-perfctr(1), feedGnuplot(1), likwid-pin(1), likwid-powermeter(1), likwid-setFrequencies(1)

@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -33,7 +33,7 @@
 
 #include <types.h>
 #include <power.h>
-#include <topology.h>
+#include <cpuid.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -49,48 +49,48 @@ const uint32_t power_regs[4] = {MSR_PKG_ENERGY_STATUS,
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-int
+void
 power_init(int cpuId)
 {
     uint64_t flags;
     int hasRAPL = 0;
-    uint32_t info_register;
+    uint32_t info_register = 0x0;
 
     /* determine Turbo Mode features */
     double busSpeed;
 
-    switch (cpuid_info.model)
+    if ((cpuid_info.model == SANDYBRIDGE_EP) ||
+            (cpuid_info.model == SANDYBRIDGE) ||
+            (cpuid_info.model == HASWELL) ||
+            (cpuid_info.model == HASWELL_EX) ||
+            (cpuid_info.model == IVYBRIDGE_EP) ||
+            (cpuid_info.model == IVYBRIDGE))
     {
-        case SANDYBRIDGE:
-        case IVYBRIDGE:
-        case HASWELL:
-            hasRAPL = 1;
-            power_info.supportedTypes = (1<<PKG)|(1<<PP0);
-            info_register = MSR_PKG_POWER_INFO;
-            break;
-        case ATOM_SILVERMONT:
-            hasRAPL = 1;
-            power_info.supportedTypes = (1<<PKG);
-            info_register = MSR_PKG_POWER_INFO_SILVERMONT;
-            break;
-        case SANDYBRIDGE_EP:
-        case IVYBRIDGE_EP:
-        case HASWELL_EP:
-            hasRAPL = 1;
-            power_info.supportedTypes = (1<<PKG)|(1<<PP1)|(1<<DRAM);
-            info_register = MSR_PKG_POWER_INFO;
-            break;
+        hasRAPL = 1;
+        info_register = MSR_PKG_POWER_INFO;
+    }
+    else if (cpuid_info.model == ATOM_SILVERMONT_C)
+    {
+        hasRAPL = 1;
+        info_register = MSR_PKG_POWER_INFO_SILVERMONT;
+    }
+    else if ((cpuid_info.model == ATOM_SILVERMONT_E) ||
+             (cpuid_info.model == ATOM_SILVERMONT_F1) ||
+             (cpuid_info.model == ATOM_SILVERMONT_F2) ||
+             (cpuid_info.model == ATOM_SILVERMONT_F3))
+    {
+        hasRAPL = 1;
     }
 
     if (cpuid_info.turbo)
     {
-        CHECK_MSR_READ_ERROR(msr_read(cpuId, MSR_PLATFORM_INFO, &flags))
+        flags = msr_read(cpuId, MSR_PLATFORM_INFO);
 
         if ( hasRAPL )
         {
             busSpeed = 100.0;
         }
-        else
+        else 
         {
             busSpeed = 133.33;
         }
@@ -101,7 +101,7 @@ power_init(int cpuId)
         power_info.turbo.numSteps = cpuid_topology.numCoresPerSocket;
         power_info.turbo.steps = (double*) malloc(power_info.turbo.numSteps * sizeof(double));
 
-        CHECK_MSR_READ_ERROR(msr_read(cpuId, MSR_TURBO_RATIO_LIMIT, &flags))
+        flags = msr_read(cpuId, MSR_TURBO_RATIO_LIMIT);
 
         for (int i=0; i < power_info.turbo.numSteps; i++)
         {
@@ -123,39 +123,46 @@ power_init(int cpuId)
     /* determine RAPL parameters */
     if ( hasRAPL )
     {
-        CHECK_MSR_READ_ERROR(msr_read(cpuId, MSR_RAPL_POWER_UNIT, &flags))
+        flags = msr_read(cpuId, MSR_RAPL_POWER_UNIT);
 
         power_info.powerUnit = pow(0.5,(double) extractBitField(flags,4,0));
         power_info.energyUnit = pow(0.5,(double) extractBitField(flags,5,8));
         power_info.timeUnit = pow(0.5,(double) extractBitField(flags,4,16));
 
-        /* info_register set in the switch-case-statement at the beginning
-           because Atom Silvermont uses another register */
-        CHECK_MSR_READ_ERROR(msr_read(cpuId, info_register, &flags))
-        power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
-        if (cpuid_info.model != ATOM_SILVERMONT)
+        if (info_register != 0x0)
         {
-            power_info.minPower =  (double) extractBitField(flags,15,16) * power_info.powerUnit;
-            power_info.maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
-            power_info.maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
+            flags = msr_read(cpuId, info_register);
+            power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
+            if (cpuid_info.model != ATOM_SILVERMONT_C)
+            {
+                power_info.minPower =  (double) extractBitField(flags,15,16) * power_info.powerUnit;
+                power_info.maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
+                power_info.maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
+            }
+            else
+            {
+                power_info.minPower = 0.0;
+                power_info.maxPower = 0.0;
+                power_info.maxTimeWindow = 0.0;
+            }
         }
         else
         {
+            power_info.tdp = 0;
             power_info.minPower = 0.0;
             power_info.maxPower = 0.0;
             power_info.maxTimeWindow = 0.0;
         }
-        return hasRAPL;
     }
     else
     {
         power_info.powerUnit = 0.0;
-        return hasRAPL;
+        power_info.energyUnit = 0.0;
+        power_info.timeUnit = 0.0;
+        power_info.tdp = 0;
+        power_info.minPower = 0.0;
+        power_info.maxPower = 0.0;
+        power_info.maxTimeWindow = 0.0;
     }
 }
 
-
-PowerInfo_t get_powerInfo(void)
-{
-    return &power_info;
-}

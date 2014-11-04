@@ -9,10 +9,10 @@ my $mc = '#';
 my $cc = ' *';
 my $fc = '!';
 
-#my $VERSION   = '<VERSION>';
-#my $DATE   = '<DATE>';
-my $VERSION   = '3.1';
-my $DATE   = '5.2.2014';
+my $VERSION   = '<VERSION>';
+my $DATE   = '<DATE>';
+#my $VERSION   = '3.1.1';
+#my $DATE   = '12.2.2014';
 my $YEAR  = '2014';
 my $AUTHOR = 'Jan Treibig';
 my $LICENSE = 'gpl';

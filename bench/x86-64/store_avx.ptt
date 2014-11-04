@@ -1,0 +1,15 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 8
+vmovaps ymm1, [SCALAR]
+vmovaps ymm2, [SCALAR]
+vmovaps ymm3, [SCALAR]
+vmovaps ymm4, [SCALAR]
+LOOP 16
+#mov       GPR14, [STR0 + GPR1 * 8 + 256] 
+vmovaps    [STR0 + GPR1 * 8]     , ymm1
+vmovaps    [STR0 + GPR1 * 8 + 32], ymm2
+vmovaps    [STR0 + GPR1 * 8 + 64], ymm3
+vmovaps    [STR0 + GPR1 * 8 + 96], ymm4
+

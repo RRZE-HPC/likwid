@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -39,15 +39,24 @@
 #include <sched.h>
 #include <pthread.h>
 
-#include <likwid.h>
+#include <error.h>
+#include <types.h>
 #include <bitUtil.h>
+#include <bstrlib.h>
+#include <cpuid.h>
+#include <numa.h>
+#include <affinity.h>
 #include <lock.h>
 #include <tree.h>
+#include <accessClient.h>
+#include <msr.h>
+#include <pci.h>
+#include <power.h>
+#include <thermal.h>
 #include <timer.h>
 #include <hashTable.h>
 #include <registers.h>
-#include <error.h>
-
+#include <likwid.h>
 
 #include <perfmon_core2_counters.h>
 #include <perfmon_haswell_counters.h>
@@ -65,16 +74,15 @@
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-int socket_lock[MAX_NUM_NODES];
+static int perfmon_numCounters=0;     /* total number of counters */
+static int perfmon_numCountersCore=0; /* max index of core counters */
+static int perfmon_numCountersUncore=0; /* max index of conventional uncore counters */
+static PerfmonCounterMap* perfmon_counter_map = NULL;
+static int socket_lock[MAX_NUM_NODES];
+static int thread_socketFD[MAX_NUM_THREADS];
 static int hasPCICounters = 0;
 static int likwid_init = 0;
 static BitMask counterMask;
-static int numberOfGroups = 0;
-static int activeGroup = 0;
-static uint64_t regTypeMask = 0;
-static int threads2Cpu[MAX_NUM_THREADS];
-static int num_cpus = 0;
-
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -93,14 +101,15 @@ void str2BitMask(const char* str, BitMask* mask)
     for (int i=0; i<tokens->qty; i++)
     {
         uint64_t val =  strtoull((char*) tokens->entry[i]->data, &endptr, 16);
+
         if ((errno == ERANGE && val == LONG_MAX ) || (errno != 0 && val == 0))
         {
-          ERROR;
+            ERROR;
         }
 
         if (endptr == str)
         {
-          ERROR_PLAIN_PRINT(No digits were found);
+            ERROR_PLAIN_PRINT(No digits were found);
         }
 
         mask->mask[i] = val;
@@ -128,81 +137,224 @@ static int getProcessorID(cpu_set_t* cpu_set)
 
 void likwid_markerInit(void)
 {
-    int i;
-    int groupId;
-    int verbosity;
-    bstring bThreadStr;
-    struct bstrList* threadTokens;
-    int cpu_id = likwid_getProcessorId();
+    int cpuId = likwid_getProcessorId();
     char* modeStr = getenv("LIKWID_MODE");
     char* maskStr = getenv("LIKWID_MASK");
-    char* eventStr = getenv("LIKWID_EVENTS");
-    char* cThreadStr = getenv("LIKWID_THREADS");
-    char* groupStr = getenv("LIKWID_GROUPS");
 
-    if ((modeStr != NULL) && (maskStr != NULL) && (eventStr != NULL) && (cThreadStr != NULL) && (groupStr != NULL))
+    if ((modeStr != NULL) && (maskStr != NULL))
     {
         likwid_init = 1;
     }
     else
     {
-        fprintf(stderr, "Cannot initalize LIKWID marker API, environment variables are not set\n");
-        fprintf(stderr, "You have to set the -m commandline switch for likwid-perfctr\n");
         return;
     }
-    sscanf(getenv("LIKWID_COUNTERMASK"), "%x", &regTypeMask);
-    verbosity = atoi(getenv("LIKWID_DEBUG"));
-    numberOfGroups = atoi(getenv("LIKWID_GROUPS"));
+
     if (!lock_check())
     {
         fprintf(stderr,"Access to performance counters is locked.\n");
         exit(EXIT_FAILURE);
     }
 
-    topology_init();
+    cpuid_init();
     numa_init();
     affinity_init();
+    timer_init();
     hashTable_init();
 
-    for(int i=0; i<MAX_NUM_THREADS; i++) thread_sockets[i] = -1;
+    for(int i=0; i<MAX_NUM_THREADS; i++) thread_socketFD[i] = -1;
     for(int i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
 
-    accessClient_setaccessmode(atoi(modeStr));
-    perfmon_verbosity = verbosity;
-    /*perfmon_init(num_cpus, threads2Cpu);
-
-    activeGroup = perfmon_addEventSet(eventStr);
-    groupSet->activeGroup = activeGroup;*/
-    
-    
+    accessClient_mode = atoi(modeStr);
     str2BitMask(maskStr, &counterMask);
 
-    bThreadStr = bfromcstr(cThreadStr);
-    threadTokens = bstrListCreate();
-    threadTokens = bsplit(bThreadStr,',');
-    int threadsToCpu[threadTokens->qty];
-    for (i=0; i<threadTokens->qty; i++)
+    if (accessClient_mode != DAEMON_AM_DIRECT)
     {
-        threadsToCpu[i] = atoi(bdata(threadTokens->entry[i]));
-        if (accessClient_mode != DAEMON_AM_DIRECT)
-        {
-            accessClient_init(&thread_sockets[threadsToCpu[i]]);
-        }
+        accessClient_init(&thread_socketFD[cpuId]);
     }
-    perfmon_init(threadTokens->qty, threadsToCpu);
-    bdestroy(bThreadStr);
-    bstrListDestroy(threadTokens);
 
-    groupId = perfmon_addEventSet(eventStr);
-    accessClient_finalize(socket_fd);
-    socket_fd = -1;
-    groupSet->activeGroup = groupId;
-    for(int i=0;i<groupSet->groups[activeGroup].numberOfEvents;i++)
+    msr_init(thread_socketFD[cpuId]);
+    thermal_init(cpuId);
+
+    switch ( cpuid_info.family )
     {
-        for(int j=0;j<groupSet->numberOfThreads;j++)
-        {
-            groupSet->groups[activeGroup].events[i].threadCounter[j].init = TRUE;
-        }
+        case P6_FAMILY:
+
+            switch ( cpuid_info.model )
+            {
+                case PENTIUM_M_BANIAS:
+
+                case PENTIUM_M_DOTHAN:
+
+                    perfmon_counter_map = pm_counter_map;
+                    perfmon_numCounters = NUM_COUNTERS_PM;
+                    perfmon_numCountersCore = NUM_COUNTERS_CORE_PM;
+                    break;
+
+                case ATOM_45:
+
+                case ATOM_32:
+
+                case ATOM_22:
+
+                case ATOM:
+
+                    perfmon_counter_map = core2_counter_map;
+                    perfmon_numCounters = NUM_COUNTERS_CORE2;
+                    perfmon_numCountersCore = NUM_COUNTERS_CORE_CORE2;
+                    break;
+
+                case ATOM_SILVERMONT_C:
+                case ATOM_SILVERMONT_E:
+                case ATOM_SILVERMONT_F1:
+                case ATOM_SILVERMONT_F2:
+                case ATOM_SILVERMONT_F3:
+                    power_init(0);
+                    perfmon_counter_map = silvermont_counter_map;
+                    perfmon_numCounters = NUM_COUNTERS_SILVERMONT;
+                    perfmon_numCountersCore = NUM_COUNTERS_CORE_SILVERMONT;
+                    break;
+
+                case CORE_DUO:
+                    ERROR_PLAIN_PRINT(Unsupported Processor);
+                    break;
+
+                case XEON_MP:
+
+                case CORE2_65:
+
+                case CORE2_45:
+
+                    perfmon_counter_map = core2_counter_map;
+                    perfmon_numCounters = NUM_COUNTERS_CORE2;
+                    perfmon_numCountersCore = NUM_COUNTERS_CORE_CORE2;
+                    break;
+
+                case NEHALEM_EX:
+
+                case WESTMERE_EX:
+
+                    perfmon_counter_map = westmereEX_counter_map;
+                    perfmon_numCounters = NUM_COUNTERS_WESTMEREEX;
+                    perfmon_numCountersCore = NUM_COUNTERS_CORE_WESTMEREEX;
+                    perfmon_numCountersUncore = NUM_COUNTERS_UNCORE_WESTMEREEX;
+                    break;
+
+                case NEHALEM_BLOOMFIELD:
+
+                case NEHALEM_LYNNFIELD:
+
+                case NEHALEM_WESTMERE_M:
+
+                case NEHALEM_WESTMERE:
+
+                    perfmon_counter_map = nehalem_counter_map;
+                    perfmon_numCounters = NUM_COUNTERS_NEHALEM;
+                    perfmon_numCountersCore = NUM_COUNTERS_CORE_NEHALEM;
+                    perfmon_numCountersUncore = NUM_COUNTERS_UNCORE_NEHALEM;
+                    break;
+
+                case IVYBRIDGE:
+
+                case IVYBRIDGE_EP:
+
+                    {
+                        int socket_fd = thread_socketFD[cpuId];
+                        hasPCICounters = 1;
+                        power_init(0); /* FIXME Static coreId is dangerous */
+                        pci_init(socket_fd);
+                        perfmon_counter_map = ivybridge_counter_map;
+                        perfmon_numCounters = NUM_COUNTERS_IVYBRIDGE;
+                        perfmon_numCountersCore = NUM_COUNTERS_CORE_IVYBRIDGE;
+                        perfmon_numCountersUncore = NUM_COUNTERS_UNCORE_IVYBRIDGE;
+                    }
+                    break;
+
+                case HASWELL:
+
+                case HASWELL_EX:
+
+                case HASWELL_M1:
+
+                case HASWELL_M2:
+
+                    power_init(0); /* FIXME Static coreId is dangerous */
+
+                    perfmon_counter_map = haswell_counter_map;
+                    perfmon_numCounters = NUM_COUNTERS_HASWELL;
+                    perfmon_numCountersCore = NUM_COUNTERS_CORE_HASWELL;
+                    break;
+
+                case SANDYBRIDGE:
+
+                case SANDYBRIDGE_EP:
+
+                    {
+                        int socket_fd = thread_socketFD[cpuId];
+                        hasPCICounters = 1;
+                        power_init(0); /* FIXME Static coreId is dangerous */
+                        pci_init(socket_fd);
+                        perfmon_counter_map = sandybridge_counter_map;
+                        perfmon_numCounters = NUM_COUNTERS_SANDYBRIDGE;
+                        perfmon_numCountersCore = NUM_COUNTERS_CORE_SANDYBRIDGE;
+                        perfmon_numCountersUncore = NUM_COUNTERS_UNCORE_SANDYBRIDGE;
+                    }
+                    break;
+
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported Processor);
+                    break;
+            }
+            break;
+
+        case MIC_FAMILY:
+
+            switch ( cpuid_info.model )
+            {
+                case XEON_PHI:
+
+                    perfmon_counter_map = phi_counter_map;
+                    perfmon_numCounters = NUM_COUNTERS_PHI;
+                    perfmon_numCountersCore = NUM_COUNTERS_CORE_PHI;
+                    break;
+
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported Processor);
+                    break;
+            }
+            break;
+
+        case K8_FAMILY:
+
+            perfmon_counter_map = k10_counter_map;
+            perfmon_numCounters = NUM_COUNTERS_K10;
+            perfmon_numCountersCore = NUM_COUNTERS_CORE_K10;
+            break;
+
+        case K10_FAMILY:
+
+            perfmon_counter_map = k10_counter_map;
+            perfmon_numCounters = NUM_COUNTERS_K10;
+            perfmon_numCountersCore = NUM_COUNTERS_CORE_K10;
+            break;
+
+        case K15_FAMILY:
+
+            perfmon_counter_map = interlagos_counter_map;
+            perfmon_numCounters = NUM_COUNTERS_INTERLAGOS;
+            perfmon_numCountersCore = NUM_COUNTERS_CORE_INTERLAGOS;
+            break;
+
+        case K16_FAMILY:
+
+            perfmon_counter_map = kabini_counter_map;
+            perfmon_numCounters = NUM_COUNTERS_KABINI;
+            perfmon_numCountersCore = NUM_COUNTERS_CORE_KABINI;
+            break;
+
+        default:
+            ERROR_PLAIN_PRINT(Unsupported Processor);
+            break;
     }
 }
 
@@ -213,11 +365,14 @@ void likwid_markerThreadInit(void)
         return;
     }
 
-    int cpu_id = likwid_getProcessorId();
+    int cpuId = likwid_getProcessorId();
 
-    for(int i=0; i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
+    if (accessClient_mode != DAEMON_AM_DIRECT)
     {
-        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].init = TRUE;
+        if (thread_socketFD[cpuId] == -1)
+        {
+            accessClient_init(&thread_socketFD[cpuId]);
+        }
     }
 }
 
@@ -234,33 +389,35 @@ void likwid_markerClose(void)
     LikwidResults* results = NULL;
     int numberOfThreads;
     int numberOfRegions;
+
     if ( ! likwid_init )
     {
         return;
     }
-    numberOfGroups = atoi(getenv("LIKWID_GROUPS"));
+
     hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
 
     file = fopen(getenv("LIKWID_FILEPATH"),"w");
 
     if (file != NULL)
     {
-        fprintf(file,"%d %d %d\n",numberOfThreads,numberOfRegions, numberOfGroups);
+        fprintf(file,"%d %d\n",numberOfThreads,numberOfRegions);
+
         for (int i=0; i<numberOfRegions; i++)
         {
             fprintf(file,"%d:%s\n",i,bdata(results[i].tag));
         }
+
         for (int i=0; i<numberOfRegions; i++)
         {
             for (int j=0; j<numberOfThreads; j++)
             {
                 fprintf(file,"%d ",i);
                 fprintf(file,"%d ",j);
-                fprintf(file,"%d ",threads2Cpu[j]);
                 fprintf(file,"%u ",results[i].count[j]);
                 fprintf(file,"%e ",results[i].time[j]);
 
-                for (int k=0; k<groupSet->groups[activeGroup].numberOfEvents; k++)
+                for (int k=0; k<NUM_PMC; k++)
                 {
                     fprintf(file,"%e ",results[i].counters[j][k]);
                 }
@@ -292,53 +449,111 @@ void likwid_markerClose(void)
 
     for (int i=0; i<MAX_NUM_THREADS; i++)
     {
-        accessClient_finalize(thread_sockets[i]);
-        thread_sockets[i] = -1;
+        accessClient_finalize(thread_socketFD[i]);
+        thread_socketFD[i] = -1;
     }
 }
 
 
-int likwid_markerStartRegion(const char* regionTag)
+void likwid_markerStartRegion(const char* regionTag)
 {
     if ( ! likwid_init )
     {
-        return -EFAULT;
+        return;
     }
+
     bstring tag = bfromcstralloc(100, regionTag);
     LikwidThreadResults* results;
-    int ret;
-    int threadId;
     uint64_t res;
-    uint64_t tmp, counter_result;
-    char groupSuffix[10];
-    sprintf(groupSuffix, "-%d", activeGroup);
-    bcatcstr(tag, groupSuffix);
     int cpu_id = hashTable_get(tag, &results);
     bdestroy(tag);
-    int socket_fd = thread_sockets[cpu_id];
+    int socket_fd = thread_socketFD[cpu_id];
 
     if (accessClient_mode != DAEMON_AM_DIRECT)
     {
-        for(int i=0;i<groupSet->numberOfThreads;i++)
+        if (socket_fd == -1)
         {
-            if (cpu_id == groupSet->threads[i].processorId)
+            printf("ERROR: Invalid socket file handle on processor %d. \
+                    Did you call likwid_markerThreadInit() ?\n", cpu_id);
+        }
+    }
+
+    results->count++;
+
+    /* Core specific counters */
+    for ( int i=0; i<perfmon_numCountersCore; i++ )
+    {
+        bitMask_test(res,counterMask,i);
+        if ( res )
+        {
+            if (perfmon_counter_map[i].type != THERMAL)
             {
-                threadId = i;
-                break;
+                results->StartPMcounters[i] =
+                    (double) msr_tread(
+                            socket_fd,
+                            cpu_id,
+                            perfmon_counter_map[i].counterRegister);
             }
         }
     }
 
-    socket_fd = thread_sockets[cpu_id];
-
-    perfmon_readCountersCpu(cpu_id);
-
-    for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
+    /* Uncore specific counters */
+    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
+            lock_acquire((int*)
+                &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id))
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, START [%s] READ EVENT [%d] ID %d VALUE %llu, regionTag, cpu_id, i,
-                        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].counterData);
-        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].startData =
-            groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].counterData;
+        /* Conventional Uncore counters */
+        for ( int i=perfmon_numCountersCore; i<perfmon_numCountersUncore; i++ )
+        {
+            bitMask_test(res,counterMask,i);
+            if ( res )
+            {
+                if (perfmon_counter_map[i].type != POWER)
+                {
+                    results->StartPMcounters[i] =
+                        (double) msr_tread(
+                                socket_fd,
+                                cpu_id,
+                                perfmon_counter_map[i].counterRegister);
+                }
+                else
+                {
+                    results->StartPMcounters[i] =
+                        (double) power_tread(
+                                socket_fd,
+                                cpu_id,
+                                perfmon_counter_map[i].counterRegister);
+                }
+            }
+        }
+
+        /* PCI Uncore counters */
+        if ( hasPCICounters && (accessClient_mode != DAEMON_AM_DIRECT) )
+        {
+            for ( int i=perfmon_numCountersUncore; i<perfmon_numCounters; i++ )
+            {
+                bitMask_test(res,counterMask,i);
+                if ( res )
+                {
+                    uint64_t counter_result =
+                        pci_tread(
+                                socket_fd,
+                                cpu_id,
+                                perfmon_counter_map[i].device,
+                                perfmon_counter_map[i].counterRegister);
+
+                    counter_result = (counter_result<<32) +
+                        pci_tread(
+                                socket_fd,
+                                cpu_id,
+                                perfmon_counter_map[i].device,
+                                perfmon_counter_map[i].counterRegister2);
+
+                    results->StartPMcounters[perfmon_counter_map[i].index] =
+                        (double) counter_result;
+                }
+            }
+        }
     }
 
     timer_start(&(results->startTime));
@@ -348,52 +563,153 @@ int likwid_markerStartRegion(const char* regionTag)
     counter_result = pci_tread(socket_fd, cpu_id, channel, reg##_A); \
     counter_result = (counter_result<<32) +                          \
     pci_tread(socket_fd, cpu_id, channel, reg##_B);                  \
-    results->PMcounters[cid] += (uint64_t) counter_result - results->StartPMcounters[cid]
+    results->PMcounters[cid] += (double) counter_result - results->StartPMcounters[cid]
 
 
 /* TODO: Readout hash at the end. Compute result at the end of the function to
  * keep overhead in region low */
 
-int likwid_markerStopRegion(const char* regionTag)
+void likwid_markerStopRegion(const char* regionTag)
 {
     if (! likwid_init)
     {
-        return -EFAULT;
+        return;
     }
 
     TimerData timestamp;
     timer_stop(&timestamp);
     int cpu_id = likwid_getProcessorId();
-    int ret;
     uint64_t res;
-    uint64_t tmp, counter_result;
-    int socket_fd = thread_sockets[cpu_id];
+    int socket_fd = thread_socketFD[cpu_id];
     double PMcounters[NUM_PMC];
-    bstring tag = bfromcstr(regionTag);
-    char groupSuffix[100];
+
+    /* Core specific counters */
+    for ( int i=0; i<perfmon_numCountersCore; i++ )
+    {
+        bitMask_test(res,counterMask,i);
+        if ( res )
+        {
+            if (perfmon_counter_map[i].type != THERMAL)
+            {
+                PMcounters[i] = (double) msr_tread(
+                        socket_fd,
+                        cpu_id,
+                        perfmon_counter_map[i].counterRegister);
+            }
+            else
+            {
+                PMcounters[i] = (double) thermal_read(cpu_id);
+            }
+        }
+    }
+
+    /* Uncore specific counters */
+    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
+    {
+        /* Conventional Uncore counters */
+        for ( int i=perfmon_numCountersCore; i<perfmon_numCountersUncore; i++ )
+        {
+            bitMask_test(res,counterMask,i);
+            if ( res )
+            {
+                if (perfmon_counter_map[i].type != POWER)
+                {
+                    PMcounters[i] = (double) msr_tread(
+                            socket_fd,
+                            cpu_id,
+                            perfmon_counter_map[i].counterRegister);
+                }
+                else
+                {
+                    PMcounters[i] = (double) power_tread(
+                            socket_fd,
+                            cpu_id,
+                            perfmon_counter_map[i].counterRegister);
+                }
+            }
+        }
+
+        /* PCI Uncore counters */
+        if ( hasPCICounters && (accessClient_mode != DAEMON_AM_DIRECT) )
+        {
+            for ( int i=perfmon_numCountersUncore; i<perfmon_numCounters; i++ )
+            {
+                bitMask_test(res,counterMask,i);
+                if ( res )
+                {
+                    uint64_t counter_result =
+                        pci_tread(
+                                socket_fd,
+                                cpu_id,
+                                perfmon_counter_map[i].device,
+                                perfmon_counter_map[i].counterRegister);
+
+                    counter_result = (counter_result<<32) +
+                        pci_tread(
+                                socket_fd,
+                                cpu_id,
+                                perfmon_counter_map[i].device,
+                                perfmon_counter_map[i].counterRegister2);
+
+                    PMcounters[i] = (double) counter_result;
+                }
+            }
+        }
+    }
+
+    bstring tag = bfromcstralloc(100, regionTag);
     LikwidThreadResults* results;
-    sprintf(groupSuffix, "-%d", activeGroup);
-    bcatcstr(tag, groupSuffix);
-    
     hashTable_get(tag, &results);
     results->startTime.stop = timestamp.stop;
     results->time += timer_print(&(results->startTime));
     bdestroy(tag);
-    
-    perfmon_readCountersCpu(cpu_id);
-    for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
+
+    /* Accumulate the results */
+    /* Core counters */
+    for ( int i=0; i<perfmon_numCountersCore; i++ )
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d] ID %d VALUE %llu, regionTag, cpu_id, i,
-                        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].counterData);
-        results->PMcounters[groupSet->groups[groupSet->activeGroup].events[i].index] += perfmon_getResult(groupSet->activeGroup, i, cpu_id);
-
+        bitMask_test(res,counterMask,i);
+        if ( res )
+        {
+            if (perfmon_counter_map[i].type != THERMAL)
+            {
+                results->PMcounters[i] += (PMcounters[i] - results->StartPMcounters[i]);
+            }
+            else
+            {
+                results->PMcounters[i] = PMcounters[i];
+            }
+        }
     }
-}
 
-void likwid_switchMarkerGroup(int groupId)
-{
-    perfmon_switchActiveGroup(groupId);
-    activeGroup = groupId;
+    /* Uncore counters */
+    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
+    {
+        for ( int i=perfmon_numCountersCore; i<perfmon_numCounters; i++ )
+        {
+            bitMask_test(res,counterMask,i);
+            if ( res )
+            {
+                if ( perfmon_counter_map[i].type == POWER )
+                {
+                    if (PMcounters[i] >= results->StartPMcounters[i])
+                    {
+                        results->PMcounters[i] += power_info.energyUnit *
+                            (PMcounters[i] - results->StartPMcounters[i]);
+                    }
+                    else
+                    {
+                        results->PMcounters[i] += power_info.energyUnit *
+                            (((double)0xFFFFFFFF) - results->StartPMcounters[i] + PMcounters[i]);
+                    }
+                }
+                else
+                {
+                    results->PMcounters[i] += (PMcounters[i] - results->StartPMcounters[i]);
+                }
+            }
+        }
+    }
 }
 
 int  likwid_getProcessorId()

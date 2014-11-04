@@ -4,13 +4,13 @@
 !
 !     Description: Marker API f90 module
 !
-!      Version:   3.0
-!      Released:  29.11.2012
+!      Version:   <VERSION>
+!      Released:  <DATE>
 !
 !     Author:  Jan Treibig (jt), jan.treibig@gmail.com
 !     Project:  likwid
 !
-!      Copyright (C) 2012 Jan Treibig 
+!      Copyright (C) 2014 Jan Treibig
 !
 !      This program is free software: you can redistribute it and/or modify it under
 !      the terms of the GNU General Public License as published by the Free Software
@@ -32,22 +32,22 @@ module likwid
 
 interface
 
-  subroutine likwid_markerInit()
-  end subroutine likwid_markerInit
+    subroutine likwid_markerInit()
+    end subroutine likwid_markerInit
 
-  subroutine likwid_markerThreadInit()
-  end subroutine likwid_markerThreadInit
+    subroutine likwid_markerThreadInit()
+    end subroutine likwid_markerThreadInit
 
-  subroutine likwid_markerClose()
-  end subroutine likwid_markerClose
+    subroutine likwid_markerClose()
+    end subroutine likwid_markerClose
 
-  subroutine likwid_markerStartRegion( regionTag )
-  character(*) :: regionTag
-  end subroutine likwid_markerStartRegion
+    subroutine likwid_markerStartRegion( regionTag )
+    character(*) :: regionTag
+    end subroutine likwid_markerStartRegion
 
-  subroutine likwid_markerStopRegion( regionTag )
-  character(*) :: regionTag
-  end subroutine likwid_markerStopRegion
+    subroutine likwid_markerStopRegion( regionTag )
+    character(*) :: regionTag
+    end subroutine likwid_markerStopRegion
 
 end interface
 

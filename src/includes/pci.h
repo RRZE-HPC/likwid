@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -39,12 +39,11 @@
  * Listing for Uncore devices DEVICE.FUNCTION
  */
 
-extern int pci_init();
+extern void pci_init();
 extern void pci_finalize();
-extern int pci_checkDevice(PciDeviceIndex index, int cpu);
-extern int pci_read(int cpu, PciDeviceIndex index, uint32_t reg, uint32_t *data);
-extern int pci_write(int cpu, PciDeviceIndex index, uint32_t reg, uint32_t data);
-extern int pci_tread(int socket_fd, int cpu, PciDeviceIndex index, uint32_t reg, uint32_t *data);
-extern int pci_twrite(int socket_fd, int cpu, PciDeviceIndex index, uint32_t reg, uint32_t data);
+extern uint32_t pci_read(int cpu, PciDeviceIndex index, uint32_t reg);
+extern void pci_write(int cpu, PciDeviceIndex index, uint32_t reg, uint32_t data);
+extern uint32_t pci_tread(int socket_fd, int cpu, PciDeviceIndex index, uint32_t reg);
+extern void pci_twrite(int socket_fd, int cpu, PciDeviceIndex index, uint32_t reg, uint32_t data);
 
 #endif /* PCI_H */

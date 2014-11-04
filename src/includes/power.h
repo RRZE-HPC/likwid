@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -36,56 +36,45 @@
 #include <registers.h>
 #include <bitUtil.h>
 #include <msr.h>
-#include <error.h>
 
+extern PowerInfo power_info;
+extern  const uint32_t power_regs[4];
 
+extern void power_init(int cpuId);
+static inline void power_start(PowerData* data, int cpuId, PowerType type);
+static inline void power_stop(PowerData* data, int cpuId, PowerType type);
+static inline uint32_t power_read(int cpuId, uint64_t reg);
+static inline uint32_t power_tread(int socket_fd, int cpuId, uint64_t reg);
+static inline double power_printEnergy(PowerData* data);
 
-
-
-double
+static double
 power_printEnergy(PowerData* data)
 {
     return  (double) ((data->after - data->before) * power_info.energyUnit);
 }
 
-int
+static void
 power_start(PowerData* data, int cpuId, PowerType type)
 {
-    uint64_t result = 0;
-    data->before = 0;
-    CHECK_MSR_READ_ERROR(msr_read(cpuId, power_regs[type], &result))
-    data->before = extractBitField(result,32,0);
+    data->before = extractBitField(msr_read(cpuId, power_regs[type]),32,0);
 }
 
-int
+static void
 power_stop(PowerData* data, int cpuId, PowerType type)
 {
-    uint64_t result = 0;
-    data->after = 0;
-    CHECK_MSR_READ_ERROR(msr_read(cpuId, power_regs[type], &result))
-    data->after = extractBitField(result,32,0);
+    data->after = extractBitField(msr_read(cpuId, power_regs[type]),32,0);
 }
 
-int
-power_read(int cpuId, uint64_t reg, uint32_t *data)
+static uint32_t
+power_read(int cpuId, uint64_t reg)
 {
-    uint64_t result = 0;
-    *data = 0;
-    CHECK_MSR_READ_ERROR(msr_read(cpuId, reg, &result))
-    *data = extractBitField(result,32,0);
-    return 0;
+    return extractBitField(msr_read(cpuId, reg),32,0);
 }
 
-int
-power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
+static uint32_t
+power_tread(int socket_fd, int cpuId, uint64_t reg)
 {
-    uint64_t result = 0;
-    *data = 0;
-    CHECK_MSR_READ_ERROR(msr_tread(socket_fd, cpuId, reg, &result))
-    *data = extractBitField(result,32,0);
-    return 0;
+    return extractBitField(msr_tread(socket_fd, cpuId, reg),32,0);
 }
-
-
 
 #endif /*POWER_H*/

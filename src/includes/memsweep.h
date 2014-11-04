@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -34,7 +34,9 @@
 #include <types.h>
 
 extern void memsweep_setMemoryFraction(uint64_t fraction);
-extern void memsweep_node(void);
+extern void memsweep_node(FILE* OUTSTREAM);
+extern void memsweep_domain(FILE* OUTSTREAM, int domainId);
+extern void memsweep_threadGroup(FILE* OUTSTREAM, int* processorList, int numberOfProcessors);
 
 #endif /* MEMSWEEP_H */
 

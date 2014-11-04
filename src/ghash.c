@@ -1,20 +1,20 @@
-/* GLIB - Library of useful routines for C programming
- * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
+/*
+ * =======================================================================================
+ *      Copyright (C) 2014 Jan Treibig
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ *      This program is free software: you can redistribute it and/or modify it under
+ *      the terms of the GNU General Public License as published by the Free Software
+ *      Foundation, either version 3 of the License, or (at your option) any later
+ *      version.
  *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
+ *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ *      You should have received a copy of the GNU General Public License along with
+ *      this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * =======================================================================================
  */
 
 /*
@@ -43,30 +43,30 @@
 #define HASH_IS_TOMBSTONE(h_) ((h_) == TOMBSTONE_HASH_VALUE)
 #define HASH_IS_REAL(h_) ((h_) >= 2)
 
-#ifndef    FALSE
-#define    FALSE    (0)
+#ifndef	FALSE
+#define	FALSE	(0)
 #endif
 
-#ifndef    TRUE
-#define    TRUE    (!FALSE)
+#ifndef	TRUE
+#define	TRUE	(!FALSE)
 #endif
 
-#undef    MAX
+#undef	MAX
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 
-#undef    MIN
+#undef	MIN
 #define MIN(a, b)  (((a) < (b)) ? (a) : (b))
 
-#undef    ABS
-#define ABS(a)       (((a) < 0) ? -(a) : (a))
+#undef	ABS
+#define ABS(a)	   (((a) < 0) ? -(a) : (a))
 #define G_LIKELY(expr) (expr)
 #define G_UNLIKELY(expr) (expr)
 
 #define _G_NEW(struct_type, n_structs, func) \
         ((struct_type *) g_##func##_n ((n_structs), sizeof (struct_type)))
 
-#define g_new(struct_type, n_structs)            _G_NEW (struct_type, n_structs, malloc)
-#define g_new0(struct_type, n_structs)            _G_NEW (struct_type, n_structs, malloc0)
+#define g_new(struct_type, n_structs)			_G_NEW (struct_type, n_structs, malloc)
+#define g_new0(struct_type, n_structs)			_G_NEW (struct_type, n_structs, malloc0)
 
 struct _GHashTable
 {

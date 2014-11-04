@@ -5,7 +5,7 @@
  *
  *      Description:  Implementation of client to the access daemon.
  *                   Provides API to read and write values to MSR or
- *                   PCI Cfg Adresses. This module is used by the 
+ *                   PCI Cfg Adresses. This module is used by the
  *                   msr and pci modules.
  *
  *      Version:   <VERSION>
@@ -14,7 +14,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -50,7 +50,6 @@
 #include <error.h>
 #include <cpuid.h>
 #include <accessClient.h>
-#include <perfmon.h>
 
 int accessClient_mode = ACCESSMODE;
 
@@ -61,8 +60,7 @@ int accessClient_mode = ACCESSMODE;
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-static char* 
-accessClient_strerror(AccessErrorType det)
+static char* accessClient_strerror(AccessErrorType det)
 {
     switch (det)
     {
@@ -72,12 +70,14 @@ accessClient_strerror(AccessErrorType det)
         case ERR_OPENFAIL:   return "failed to open device file";
         case ERR_RWFAIL:     return "failed to read/write register";
         case ERR_DAEMONBUSY: return "daemon already has a same/higher priority client";
+        case ERR_LOCKED:     return "access to HPM is locked";
+        case ERR_UNSUPPORTED: return "unsupported processor";
+        case ERR_NODEV:      return "no such device";
         default:             return "UNKNOWN errorcode";
     }
 }
 
-static int 
-startDaemon(void)
+static int startDaemon(void)
 {
     /* Check the function of the daemon here */
     char* filepath;
@@ -88,29 +88,29 @@ startDaemon(void)
     size_t address_length;
     int  ret;
     pid_t pid;
-    int timeout = 10;
+    int timeout = 1000;
     int socket_fd = -1;
-
-    if (access(exeprog, X_OK))
-    {
-        ERROR_PRINT(Failed to find the daemon '%s'\n, exeprog);
-        exit(EXIT_FAILURE);
-    }
 
     if (accessClient_mode == DAEMON_AM_ACCESS_D)
     {
+        if (access(exeprog, F_OK))
+        {
+            fprintf(stderr, "Daemon '%s' cannot be found\n", exeprog);
+            exit(EXIT_FAILURE);
+        }
+        if (access(exeprog, X_OK))
+        {
+            fprintf(stderr, "Daemon '%s' not executable\n", exeprog);
+            exit(EXIT_FAILURE);
+        }
         pid = fork();
 
         if (pid == 0)
         {
             ret = execve (exeprog, newargv, newenv);
-
-            if (ret < 0)
-            {
-                //ERRNO_PRINT;
-                ERROR_PRINT(Failed to execute the daemon '%s'\n, exeprog);
-                exit(EXIT_FAILURE);
-            }
+            ERRNO_PRINT;
+            fprintf(stderr, "Failed to execute the daemon '%s' (see error above)\n", exeprog);
+            exit(EXIT_FAILURE);
         }
         else if (pid < 0)
         {
@@ -124,15 +124,14 @@ startDaemon(void)
     address_length = sizeof(address);
     snprintf(address.sun_path, sizeof(address.sun_path), "/tmp/likwid-%d", pid);
     filepath = strdup(address.sun_path);
-    if (accessClient_mode == DAEMON_AM_ACCESS_D)
-    {
-        DEBUG_PRINT(DEBUGLEV_INFO, Socket pathname is %s, filepath);
-    }
+    DEBUG_PRINT(0, "%ssocket pathname is %s\n",
+            ((accessClient_mode == DAEMON_AM_ACCESS_D) ? "Generated " : ""),
+            filepath);
 
     while (timeout > 0)
     {
         int res;
-        sleep(1);
+        usleep(1000);
         res = connect(socket_fd, (struct sockaddr *) &address, address_length);
 
         if (res == 0)
@@ -141,9 +140,9 @@ startDaemon(void)
         }
 
         timeout--;
-        DEBUG_PRINT(DEBUGLEV_INFO, Still waiting for socket %s ..., filepath);
+        DEBUG_PRINT(1, "%s\n", "Still waiting for socket...");
     }
-    
+
     if (timeout <= 0)
     {
         ERRNO_PRINT;  /* should hopefully still work, as we make no syscalls in between. */
@@ -152,9 +151,12 @@ startDaemon(void)
         fprintf(stderr, "Consult the error message above this to find out why.\n");
         fprintf(stderr, "If the error is 'no such file or directoy', \
                 it usually means that likwid-accessD just failed to start.\n");
+        fprintf(stderr, "In case the daemon itself output an error', \
+                ignore this.\n");
         exit(EXIT_FAILURE);
     }
-    DEBUG_PRINT(DEBUGLEV_INFO, Successfully opened socket %s to daemon, filepath);
+
+    DEBUG_PRINT(0, "%s\n", "Successfully opened socket to daemon.");
     free(filepath);
 
     return socket_fd;
@@ -162,20 +164,18 @@ startDaemon(void)
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void 
-accessClient_setaccessmode(int mode)
+void accessClient_setaccessmode(int mode)
 {
     if ((accessClient_mode > DAEMON_AM_ACCESS_D) || (accessClient_mode < DAEMON_AM_DIRECT))
     {
-        ERROR_PRINT(Invalid accessmode %d, accessClient_mode);
+        fprintf(stderr, "Invalid accessmode %d\n", accessClient_mode);
         exit(EXIT_FAILURE);
     }
 
     accessClient_mode = mode;
 }
 
-void 
-accessClient_init(int* socket_fd)
+void accessClient_init(int* socket_fd)
 {
     if ((accessClient_mode == DAEMON_AM_ACCESS_D))
     {
@@ -183,8 +183,7 @@ accessClient_init(int* socket_fd)
     }
 }
 
-void 
-accessClient_finalize(int socket_fd)
+void accessClient_finalize(int socket_fd)
 {
     if ( socket_fd != -1 )
     { /* Only if a socket is actually open */
@@ -196,13 +195,11 @@ accessClient_finalize(int socket_fd)
 }
 
 
-int
-accessClient_read(
+uint64_t accessClient_read(
         int socket_fd,
         const int cpu,
         const int device,
-        uint32_t reg,
-        uint64_t *result)
+        uint32_t reg)
 {
     AccessDataRecord data;
 
@@ -217,16 +214,16 @@ accessClient_read(
 
     if (data.errorcode != ERR_NOERROR)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Got error '%s' from access daemon, accessClient_strerror(data.errorcode));
-        *result = 0;
-        return -EIO;
+        fprintf(stderr, "Failed to read data through daemon: "
+                "daemon returned error %d '%s' for cpu %d reg 0x%x\n",
+                data.errorcode, accessClient_strerror(data.errorcode), cpu, reg);
+        //exit(EXIT_FAILURE);
     }
-    *result = data.data;
-    return 0;
+
+    return data.data;
 }
 
-int 
-accessClient_write(
+void accessClient_write(
         int socket_fd,
         const int cpu,
         const int device,
@@ -245,11 +242,16 @@ accessClient_write(
 
     if (data.errorcode != ERR_NOERROR)
     {
-        
-        return -EIO;
+        fprintf(stderr, "Failed to write data through daemon: "
+                "daemon returned error %d '%s' for cpu %d reg 0x%x\n",
+                data.errorcode, accessClient_strerror(data.errorcode), cpu, reg);
+        //exit(EXIT_FAILURE);
     }
 
-    return 0;
+    if (data.data != 0x00ULL)
+    {
+        ERROR_PLAIN_PRINT(daemon write failed);
+    }
 }
 
 

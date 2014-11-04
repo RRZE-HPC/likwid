@@ -12,7 +12,7 @@
  *                Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -55,36 +55,88 @@
 #define str(x) #x
 
 #define CHECK_ERROR(func, msg)  \
-    if ((func) < 0) { syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); }
+    if ((func) < 0) { \
+        syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); \
+    }
 
 #define CHECK_FILE_ERROR(func, msg)  \
-    if ((func) == 0) { syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); }
+    if ((func) == 0) { \
+        syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); \
+    }
 
 
 #define EXIT_IF_ERROR(func, msg)  \
-    if ((func) < 0) { syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); stop_daemon(); exit(EXIT_FAILURE); }
+    if ((func) < 0) { \
+        syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); \
+        stop_daemon(); \
+        exit(EXIT_FAILURE); \
+    }
 
 
-#define CPUID                    \
-    __asm__ volatile ("cpuid"    \
-            : "=a" (eax),            \
-            "=b" (ebx)             \
+#define CPUID \
+    __asm__ volatile ("cpuid" \
+            : "=a" (eax), "=b" (ebx) \
             : "0" (eax))
 
 
-#define  P6_FAMILY        0x6U
-#define  K8_FAMILY        0xFU
-#define  K10_FAMILY       0x10U
-#define  K15_FAMILY       0x15U
-#define  K16_FAMILY       0x16U
-
+/* Intel P6 */
+#define PENTIUM_M_BANIAS     0x09U
+#define PENTIUM_M_DOTHAN     0x0DU
+#define CORE_DUO             0x0EU
+#define CORE2_65             0x0FU
+#define CORE2_45             0x17U
+#define ATOM                 0x1CU
+#define ATOM_45              0x26U
+#define ATOM_32              0x36U
+#define ATOM_22              0x27U
+#define ATOM_SILVERMONT      0x4DU
+#define NEHALEM              0x1AU
+#define NEHALEM_BLOOMFIELD   0x1AU
+#define NEHALEM_LYNNFIELD    0x1EU
+#define NEHALEM_LYNNFIELD_M  0x1FU
+#define NEHALEM_WESTMERE     0x2CU
+#define NEHALEM_WESTMERE_M   0x25U
 #define SANDYBRIDGE          0x2AU
 #define SANDYBRIDGE_EP       0x2DU
-#define IVYBRIDGE            0x3AU
-#define IVYBRIDGE_EP         0x3EU
 #define HASWELL              0x3CU
 #define HASWELL_EX           0x3FU
-#define ATOM_SILVERMONT      0x4DU
+#define HASWELL_M1           0x45U
+#define HASWELL_M2           0x46U
+#define IVYBRIDGE            0x3AU
+#define IVYBRIDGE_EP         0x3EU
+#define NEHALEM_EX           0x2EU
+#define WESTMERE_EX          0x2FU
+#define XEON_MP              0x1DU
+
+/* Intel MIC */
+#define XEON_PHI           0x01U
+
+/* AMD K10 */
+#define BARCELONA      0x02U
+#define SHANGHAI       0x04U
+#define ISTANBUL       0x08U
+#define MAGNYCOURS     0x09U
+
+/* AMD K8 */
+#define OPTERON_SC_1MB  0x05U
+#define OPTERON_DC_E    0x21U
+#define OPTERON_DC_F    0x41U
+#define ATHLON64_X2     0x43U
+#define ATHLON64_X2_F   0x4BU
+#define ATHLON64_F1     0x4FU
+#define ATHLON64_F2     0x5FU
+#define ATHLON64_X2_G   0x6BU
+#define ATHLON64_G1     0x6FU
+#define ATHLON64_G2     0x7FU
+
+
+#define  P6_FAMILY        0x6U
+#define  MIC_FAMILY       0xBU
+#define  NETBURST_FAMILY  0xFFU
+#define  K15_FAMILY       0x15U
+#define  K16_FAMILY       0x16U
+#define  K10_FAMILY       0x10U
+#define  K8_FAMILY        0xFU
 
 #define PCI_ROOT_PATH    "/proc/bus/pci/"
 #define MAX_PATH_LENGTH   60
@@ -104,8 +156,24 @@ static char* filepath;
 static const char* ident = "accessD";
 static FuncPrototype allowed = NULL;
 static int FD_MSR[MAX_NUM_THREADS];
-static int FD_PCI[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
+static int FD_PCI[MAX_NUM_NODES][MAX_NUM_DEVICES];
 static int isPCIUncore = 0;
+
+static char* pci_DevicePath[MAX_NUM_DEVICES] = {
+ "13.5",   /* PCI_R3QPI_DEVICE_LINK_0 */
+ "13.6",   /* PCI_R3QPI_DEVICE_LINK_1 */
+ "13.1",   /* PCI_R2PCIE_DEVICE */
+ "10.0",   /* PCI_IMC_DEVICE_CH_0 */
+ "10.1",   /* PCI_IMC_DEVICE_CH_1 */
+ "10.4",   /* PCI_IMC_DEVICE_CH_2 */
+ "10.5",   /* PCI_IMC_DEVICE_CH_3 */
+ "0e.1",   /* PCI_HA_DEVICE */
+ "08.2",   /* PCI_QPI_DEVICE_PORT_0 */
+ "09.2",   /* PCI_QPI_DEVICE_PORT_1 */
+ "08.6",   /* PCI_QPI_MASK_DEVICE_PORT_0 */
+ "09.6",   /* PCI_QPI_MASK_DEVICE_PORT_1 */
+ "08.0",   /* PCI_QPI_MISC_DEVICE_PORT_0 */
+ "09.0" }; /* PCI_QPI_MISC_DEVICE_PORT_1 */
 
 static char pci_filepath[MAX_PATH_LENGTH];
 
@@ -145,33 +213,8 @@ static int allowed_intel(uint32_t reg)
     }
 }
 
-static int allowed_sandybridge(uint32_t reg)
-{
-    if ((allowed_intel(reg)) ||
-        (((reg & 0xF00U) == 0x600U)))
-    {
-        return 1;
-    }
-    return 0;
-}
-
-static int allowed_haswell(uint32_t reg)
-{
-    if ((allowed_intel(reg)) ||
-        (allowed_sandybridge(reg)) ||
-        (((reg & 0xF00U) == 0x700U)))
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
 static int allowed_silvermont(uint32_t reg)
 {
-
     if ( ((reg & 0x0F8U) == 0x0C0U) ||
             ((reg & 0xFF0U) == 0x180U) ||
             ((reg & 0xF00U) == 0x300U) ||
@@ -184,7 +227,69 @@ static int allowed_silvermont(uint32_t reg)
             (reg == 0x19C)  ||
             (reg == 0x1A2)  ||
             (reg == 0x1A6) ||
-            (reg != 0x1A7))
+            (reg == 0x1A6) ||
+            (reg == 0x1A7))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+static int allowed_westmereEX(uint32_t reg)
+{
+    if (allowed_intel(reg) == 1)
+    {
+        return 1;
+    }
+    else if ((reg & 0xF00) == 0xF00)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+static int allowed_sandybridge(uint32_t reg)
+{
+    if ( ((reg & 0x0F8U) == 0x0C0U) ||
+            ((reg & 0xFF0U) == 0x180U) ||
+            ((reg & 0xF00U) == 0x300U) ||
+            ((reg & 0xF00U) == 0x600U) ||
+            ((reg & 0xF00U) == 0xC00U) ||
+            ((reg & 0xF00U) == 0xD00U) ||
+            (reg == 0x1A0)  ||
+            (reg == 0x0CE)  ||
+            (reg == 0x1AD)  ||
+            (reg == 0x19C)  ||
+            (reg == 0x1A2)  ||
+            (reg == 0x1A6))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+static int allowed_haswell(uint32_t reg)
+{
+    if ( ((reg & 0x0F8U) == 0x0C0U) ||
+            ((reg & 0xFF0U) == 0x180U) ||
+            ((reg & 0xF00U) == 0x300U) ||
+            ((reg & 0xF00U) == 0xC00U) ||
+            ((reg & 0xF00U) == 0xD00U) ||
+            ((reg & 0xF00U) == 0xE00U) ||
+            ((reg & 0xF00U) == 0x600U) ||
+            ((reg & 0xF00U) == 0x700U) ||
+            (reg == 0x1A0)  ||
+            (reg == 0x0CE)  ||
+            (reg == 0x19C)  ||
+            (reg == 0x1A2)  ||
+            (reg == 0x1AD)  ||
+            (reg == 0x1A6))
     {
         return 1;
     }
@@ -242,16 +347,21 @@ static void msr_read(AccessDataRecord * dRecord)
     dRecord->errorcode = ERR_NOERROR;
     dRecord->data = 0;
 
+    if (FD_MSR[cpu] == -2)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
     if (!allowed(reg))
     {
-        syslog(LOG_ERR, "Attempt to read to restricted register 0x%x on core %u", reg, cpu);
+        syslog(LOG_ERR, "attempt to read from restricted register 0x%x", reg);
         dRecord->errorcode = ERR_RESTREG;
         return;
     }
 
     if (pread(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data))
     {
-        syslog(LOG_ERR, "Failed to read data to register 0x%x on core %u", reg, cpu);
+        syslog(LOG_ERR, "Failed to read data from msr device file on core %u", cpu);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -267,16 +377,22 @@ static void msr_write(AccessDataRecord * dRecord)
 
     dRecord->errorcode = ERR_NOERROR;
 
+    if (FD_MSR[cpu] == -2)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+
     if (!allowed(reg))
     {
-        syslog(LOG_ERR, "Attempt to write to restricted register 0x%x on core %u", reg, cpu);
+        syslog(LOG_ERR, "attempt to write to restricted register %x", reg);
         dRecord->errorcode = ERR_RESTREG;
         return;
     }
 
     if (pwrite(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data))
     {
-        syslog(LOG_ERR, "Failed to write data to register 0x%x on core %u", reg, cpu);
+        syslog(LOG_ERR, "Failed to write data to msr device file on core %u", cpu);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -292,26 +408,31 @@ static void pci_read(AccessDataRecord* dRecord)
     dRecord->errorcode = ERR_NOERROR;
     dRecord->data = 0;
 
-    if ( !FD_PCI[socketId][device] )
+    if (FD_PCI[socketId][device] == -2)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+    else if ( !FD_PCI[socketId][device] )
     {
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
         strncat(pci_filepath, socket_bus[socketId], 10);
-        strncat(pci_filepath, pci_devices[device].path, 20);
+        strncat(pci_filepath, pci_DevicePath[device], 20);
+
         FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
 
         if ( FD_PCI[socketId][device] < 0)
         {
-            syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pci_filepath, 
-                    pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
+            syslog(LOG_ERR, "Failed to open device file %s on socket %u", pci_filepath, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
     }
 
-    if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data))
+    if ( pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data))
     {
-        syslog(LOG_ERR, "Failed to read data from pci device file %s for device %s (%s) on socket %u",
-                pci_filepath,pci_types[pci_devices[device].type].name, pci_devices[device].name,socketId);
+        syslog(LOG_ERR, "Failed to read data from pci device file on socket %u device %u",
+                socketId, device);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -329,28 +450,30 @@ static void pci_write(AccessDataRecord* dRecord)
     uint32_t data = (uint32_t) dRecord->data;
 
     dRecord->errorcode = ERR_NOERROR;
-
-    if ( !FD_PCI[socketId][device] )
+    if (FD_PCI[socketId][device] == -2)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+    else if ( !FD_PCI[socketId][device] )
     {
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
         strncat(pci_filepath, socket_bus[socketId], 10);
-        strncat(pci_filepath, pci_devices[device].path, 20);
+        strncat(pci_filepath, pci_DevicePath[device], 20);
 
         FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
 
         if ( FD_PCI[socketId][device] < 0)
         {
-            syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pci_filepath, 
-                        pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
+            syslog(LOG_ERR, "Failed to open device file %s on socket %u", pci_filepath, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
     }
 
-    if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
+    if (pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
     {
-        syslog(LOG_ERR, "Failed to write data to pci device file %s for device %s (%s) on socket %u",pci_filepath, 
-                pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
+        syslog(LOG_ERR, "Failed to write data to pci device file on socket %u", socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -420,7 +543,7 @@ static void daemonize(int* parentPid)
     /* If we got a good PID, then we can exit the parent process. */
     if (pid > 0)
     {
-        exit(EXIT_SUCCESS);
+        exit(ERR_NOERROR);
     }
 
     /* At this point we are executing as the child process */
@@ -462,71 +585,89 @@ int main(void)
     mode_t oldumask;
     uint32_t numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
     uint32_t model;
-
-
-    openlog(ident, 0, LOG_USER);
+    int isIntel = 1;
 
     if (!lock_check())
     {
-        syslog(LOG_ERR,"Access to performance counters is locked.\n");
-        stop_daemon();
+        fprintf(stderr,"Access to performance counters is locked. Exiting!\n");
+        exit(EXIT_FAILURE);
     }
 
-    daemonize(&pid);
-
+    for ( uint32_t i=0; i < numHWThreads; i++ )
     {
-        uint32_t  eax = 0x00;
-        uint32_t  ebx = 0x00;
-        /*int isIntel = 1;
-        CPUID;
-        if (ebx == 0x68747541U)
-        {
-            isIntel = 0;
-        }*/
-
-        eax = 0x01;
-        CPUID;
-        uint32_t family = ((eax >> 8) & 0xFU) + ((eax >> 20) & 0xFFU);
-        model  = (((eax >> 16) & 0xFU) << 4) + ((eax >> 4) & 0xFU);
-
-        switch (family)
-        {
-            case P6_FAMILY:
-                allowed = allowed_intel;
-
-                if ((model == SANDYBRIDGE)        ||
-                        (model == SANDYBRIDGE_EP) ||
-                        (model == IVYBRIDGE)      ||
-                        (model == IVYBRIDGE_EP) )
-                {
-                    allowed = allowed_sandybridge;
-                    isPCIUncore = 1;
-                }
-                else if ((model == HASWELL) || (model == HASWELL_EX))
-                {
-                    allowed = allowed_haswell;
-                }
-                else if (model == ATOM_SILVERMONT)
-                {
-                    allowed = allowed_silvermont;
-                }
-                break;
-            case K8_FAMILY:
-            case K10_FAMILY:
-                allowed = allowed_amd;
-                break;
-            case K15_FAMILY:
-                allowed = allowed_amd15;
-                break;
-            case K16_FAMILY:
-                allowed = allowed_amd16;
-            break;
-            default:
-                syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
-                        __FILE__, __LINE__);
-                exit(EXIT_FAILURE);
-        }
+        FD_MSR[i] = -1;
     }
+
+    uint32_t  eax = 0x00;
+    uint32_t  ebx = 0x00;
+    
+    CPUID;
+    if (ebx == 0x68747541U)
+    {
+        isIntel = 0;
+    }
+
+    eax = 0x01;
+    CPUID;
+    uint32_t family = ((eax >> 8) & 0xFU) + ((eax >> 20) & 0xFFU);
+    model  = (((eax >> 16) & 0xFU) << 4) + ((eax >> 4) & 0xFU);
+
+    switch (family)
+    {
+        case P6_FAMILY:
+            allowed = allowed_intel;
+
+            if (isIntel && ((model == SANDYBRIDGE)    ||
+                            (model == SANDYBRIDGE_EP) ||
+                            (model == IVYBRIDGE)      ||
+                            (model == IVYBRIDGE_EP) ))
+            {
+                allowed = allowed_sandybridge;
+                isPCIUncore = 1;
+            }
+            else if (isIntel && ((model == HASWELL)    ||
+                                 (model == HASWELL_M1) ||
+                                 (model == HASWELL_M2) ||
+                                 (model == HASWELL_EX)))
+            {
+                allowed = allowed_haswell;
+            }
+            else if (isIntel && (model == ATOM_SILVERMONT))
+            {
+                allowed = allowed_silvermont;
+            }
+            else if (isIntel && (model == WESTMERE_EX))
+            {
+                allowed = allowed_westmereEX;
+            }
+            break;
+        case K8_FAMILY:
+        case K10_FAMILY:
+            if (!isIntel) 
+            {
+                allowed = allowed_amd;
+            }
+            break;
+        case K15_FAMILY:
+            if (!isIntel) 
+            {
+                allowed = allowed_amd15;
+            }
+            break;
+        case K16_FAMILY:
+            if (!isIntel) 
+            {
+                allowed = allowed_amd16;
+            }
+            break;
+        default:
+            fprintf(stderr, "ERROR - [%s:%d] - Unsupported processor. Exiting!\n",
+                    __FILE__, __LINE__);
+            exit(EXIT_FAILURE);
+    }
+
+    openlog(ident, 0, LOG_USER);
+    daemonize(&pid);
 
     /* setup filename for socket */
     filepath = (char*) calloc(sizeof(addr1.sun_path), 1);
@@ -596,12 +737,21 @@ int main(void)
          * NOTICE: This assumes consecutive processor Ids! */
         for ( uint32_t i=0; i < numHWThreads; i++ )
         {
+#ifdef __MIC
+            sprintf(msr_file_name,"/dev/msr%d",i);
+            if (access(msr_file_name, F_OK))
+            {
+                sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
+            }
+#else
             sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
+#endif
             FD_MSR[i] = open(msr_file_name, O_RDWR);
 
             if ( FD_MSR[i] < 0 )
             {
-                syslog(LOG_ERR, "Failed to open device files.");
+                syslog(LOG_ERR, "Failed to open device file %s.",msr_file_name);
+                FD_MSR[i] = -2;
             }
         }
 
@@ -611,9 +761,10 @@ int main(void)
         {
             for (int j=0; j<MAX_NUM_NODES; j++)
             {
-                for (int i=0; i<MAX_NUM_PCI_DEVICES; i++)
+                socket_bus[j] = "N-A";
+                for (int i=0; i<MAX_NUM_DEVICES; i++)
                 {
-                    FD_PCI[j][i] = 0;
+                    FD_PCI[j][i] = -2;
                 }
             }
 
@@ -623,11 +774,7 @@ int main(void)
             uint32_t testDevice;
             uint32_t sbus, sdevfn, svend;
             int cntr = 0;
-
-            for ( int i=0; i<MAX_NUM_NODES; i++ )
-            {
-                socket_bus[i] = "N-A";
-            }
+            int socket_count = 0;
 
             if (model == SANDYBRIDGE_EP)
             {
@@ -665,6 +812,27 @@ int main(void)
             {
                 syslog(LOG_NOTICE, "Uncore not supported on this system");
             }
+            else
+            {
+                socket_count = cntr;
+
+                for (int j=0; j<socket_count; j++)
+                {
+                    for (int i=0; i<MAX_NUM_DEVICES; i++)
+                    {
+                        sprintf(pci_filepath, "%s%s%s",PCI_ROOT_PATH,socket_bus[j],pci_DevicePath[i]);
+
+                        if (!access(pci_filepath,F_OK))
+                        {
+                            FD_PCI[j][i] = 0;
+                        }
+                        else
+                        {
+                            syslog(LOG_NOTICE, "Device %s not found, excluded it from device list\n",pci_filepath);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -678,7 +846,7 @@ int main(void)
                     __FILE__, __LINE__, strerror(errno));
             stop_daemon();
         }
-        else if ((ret == 0) && (dRecord.type != DAEMON_EXIT))
+        else if (ret == 0)
         {
             syslog(LOG_ERR, "ERROR - [%s:%d] zero read", __FILE__, __LINE__);
             stop_daemon();

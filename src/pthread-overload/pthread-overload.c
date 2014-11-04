@@ -3,7 +3,7 @@
  *
  *      Filename:  pthread-overload.c
  *
- *      Description:  Overloaded library for pthread_create call. 
+ *      Description:  Overloaded library for pthread_create call.
  *                    Implements pinning of threads together with likwid-pin.
  *
  *      Version:   <VERSION>
@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -77,6 +77,7 @@ pthread_create(pthread_t* thread,
     static int silent = 0;
     static int pin_ids[MAX_NUM_THREADS];
     static uint64_t skipMask = 0;
+    static int got_skipMask = 0;
 
 
     /* On first entry: Get Evironment Variable and initialize pin_ids */
@@ -88,17 +89,13 @@ pthread_create(pthread_t* thread,
         int i = 0;
         int ncpus = 0;
 
-        str = getenv("LIKWID_SKIP");
         if (str != NULL)
         {
             skipMask = strtoul(str, &str, 10);
-        }
-        else
-        {
-            printf("[pthread wrapper] ERROR: Environment Variabel LIKWID_SKIP not set!\n");
+            got_skipMask = 1;
         }
 
-        if ( skipMask == 0 )
+        if ( got_skipMask == 0 && skipMask == 0x0 )
         {
             dlerror();    /* Clear any existing error */
             dlsym(RTLD_DEFAULT,"__kmpc_begin");
@@ -107,17 +104,14 @@ pthread_create(pthread_t* thread,
                 skipMask = 0x1;
             }
         }
-
         if (getenv("LIKWID_SILENT") != NULL)
         {
             silent = 1;
         }
-#ifdef COLOR
         else
         {
             color_on(BRIGHT, COLOR);
         }
-#endif
 
         if (!silent)
         {
@@ -177,7 +171,7 @@ pthread_create(pthread_t* thread,
         {
             break;
         }
-        if (sosearchpaths[reallpthrindex] != NULL) 
+        if (sosearchpaths[reallpthrindex] != NULL)
         {
             reallpthrindex++;
         }

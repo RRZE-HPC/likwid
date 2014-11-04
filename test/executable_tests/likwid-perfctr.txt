@@ -1,0 +1,38 @@
+| EXIT 0 | GREP Help message
+-h | EXIT 0 | GREP Help message
+-v | EXIT 0 | GREP likwid-perfctr
+-i | EXIT 0 | GREP CPU family
+-V -c 0 hostname | EXIT 0 | GREP NOTICE
+-V | EXIT 1 | GREP You must specify at least one processor
+-g | EXIT 1 | GREP option requires an argument
+-g BRANCH -H | EXIT 0 | GREP Group BRANCH:
+-a | EXIT 0 | GREP Available groups
+-V -e | EXIT 0 | GREP This architecture
+-t 200ms | EXIT 1 | GREP You must specify at least one processor
+-c | EXIT 1 | GREP option requires an argument
+-c 0 | EXIT 1 | GREP You have to specify a program to measure as argument
+-t 200ms -c 0 | EXIT 1 | GREP Executable must be given on commandline
+-S | EXIT 1 | GREP option requires an argument
+-o | EXIT 1 | GREP option requires an argument
+-o /tmp/test | EXIT 1 | GREP Outputfile has no filetype suffix
+-o /tmp/test.txt | EXIT 1 | GREP You must specify at least one processor
+-S 1 | EXIT 1 | GREP You must specify at least one processor
+-S 1 -c 0 | EXIT 1 | GREP You have to specify a group or event set to measure using the -g option.
+-S 1 -C 0 | EXIT 1 | GREP You have to specify a group or event set to measure using the -g option.
+-S 1 -c 0 -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP Branch
+-S 1 -C 0 -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP Branch
+-S 1 -c 0,1 -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP core 1 | GREP Branch
+-S 1 -c 0-1 -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP core 1 | GREP Branch
+-S 1 -c 0,1-1 -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP core 1 | GREP Branch
+-S 1 -C 0,1 -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP core 1 | GREP Branch
+-S 1 -C 0-1 -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP core 1 | GREP Branch
+-S 1 -C 0,1-1 -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP core 1 | GREP Branch
+-S 1 -c E:N:2 -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP Branch
+-S 1 -c E:N:2:1:2 -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP Branch
+-S 1 -c M:scatter -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP Branch
+-S 1 -C E:N:2 -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP Branch
+-S 1 -C E:N:2:1:2 -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP Branch
+-S 1 -C M:scatter -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP Branch
+-c 0 -g BRANCH hostname | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP Branch
+-C 0 -g BRANCH hostname | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP Branch
+-C 0 -g BRANCH -m hostname | EXIT 1 | GREP  The marker result file could not be found

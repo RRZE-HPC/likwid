@@ -1,4 +1,3 @@
-# w
 # =======================================================================================
 #
 #      Filename:  Makefile
@@ -11,7 +10,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig
+#      Copyright (C) 2014 Jan Treibig
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -32,10 +31,26 @@ DOC_DIR     = ./doc
 GROUP_DIR   = ./groups
 FILTER_DIR  = ./filters
 MAKE_DIR    = ./make
-EXT_TARGETS = ./ext/lua ./ext/hwloc
 
 #DO NOT EDIT BELOW
 
+# determine kernel Version
+KERNEL_VERSION_MAJOR := $(shell uname -r | awk '{split($$1,a,"."); print a[1]}' | cut -d '-' -f1)
+KERNEL_VERSION := $(shell uname -r | awk  '{split($$1,a,"."); print a[2]}' | cut -d '-' -f1)
+KERNEL_VERSION_MINOR := $(shell uname -r | awk '{split($$1,a,"."); print a[3]}' | cut -d '-' -f1)
+
+HAS_MEMPOLICY = $(shell if [ $(KERNEL_VERSION) -lt 7 -a $(KERNEL_VERSION_MAJOR) -lt 3 -a $(KERNEL_VERSION_MINOR) -lt 7 ]; then \
+               echo 0;  else echo 1; \
+			   fi; )
+
+HAS_RDTSCP = $(shell  /bin/bash -c "cat /proc/cpuinfo | grep -c rdtscp")
+
+# determine glibc Version
+GLIBC_VERSION := $(shell ldd --version | grep ldd |  awk '{ print $$NF }' | awk -F. '{ print $$2 }')
+
+HAS_SCHEDAFFINITY = $(shell if [ $(GLIBC_VERSION) -lt 4 ]; then \
+               echo 0;  else echo 1; \
+			   fi; )
 
 # Dependency chains:
 # *.[ch] -> *.o -> executables
@@ -44,11 +59,16 @@ EXT_TARGETS = ./ext/lua ./ext/hwloc
 
 include ./config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
-include $(MAKE_DIR)/config_checks.mk
-include $(MAKE_DIR)/config_defines.mk
-
-INCLUDES  += -I./src/includes -I./ext/lua/includes -I./ext/hwloc/include -I$(BUILD_DIR)
+INCLUDES  += -I./src/includes  -I$(BUILD_DIR)
 LIBS      +=
+DEFINES   += -DVERSION=$(VERSION)         \
+		 -DRELEASE=$(RELEASE)                 \
+		 -DCFGFILE=$(CFG_FILE_PATH)           \
+		 -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) \
+		 -DMAX_NUM_NODES=$(MAX_NUM_NODES)     \
+		 -DHASH_TABLE_SIZE=$(HASH_TABLE_SIZE) \
+		 -DLIBLIKWIDPIN=$(LIBLIKWIDPIN)       \
+		 -DLIKWIDFILTERPATH=$(LIKWIDFILTERPATH)
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
@@ -65,96 +85,135 @@ BENCH_DIR   = ./bench/x86-64
 endif
 endif
 
-DYNAMIC_TARGET_LIB := liblikwid.so
-STATIC_TARGET_LIB := liblikwid.a
-LIBHWLOC = ext/hwloc/libhwloc.a
-LIBLUA = ext/lua/liblua.a
+LIKWID_LIB = liblikwid
 ifeq ($(SHARED_LIBRARY),true)
-CFLAGS += $(SHARED_CFLAGS)
-LIBS += -L. -pthread -lm -lpci
+CFLAGS += $(SHARED_CFLAGS) -ggdb
+DYNAMIC_TARGET_LIB := $(LIKWID_LIB).so
 TARGET_LIB := $(DYNAMIC_TARGET_LIB)
-LIBHWLOC = ext/hwloc/libhwloc.a
-LIBLUA = ext/lua/liblua.a
+LIBS += -L. -llikwid
+SHARED_LFLAGS += -lm -lpthread
 else
-LIBHWLOC = ext/hwloc/libhwloc.a
-LIBLUA = ext/lua/liblua.a
+STATIC_TARGET_LIB := $(LIKWID_LIB).a
 TARGET_LIB := $(STATIC_TARGET_LIB)
 endif
 
-ifeq ($(DEBUG),true)
-DEBUG_FLAGS = -g
-DEFINES += -DDEBUG_LIKWID
-else
-DEBUG_FLAGS =
+ifneq ($(COLOR),NONE)
+DEFINES += -DCOLOR=$(COLOR)
 endif
 
+ifneq ($(COMPILER),MIC)
+    DAEMON_TARGET = likwid-accessD
+else
+    $(info Info: Compiling for Xeon Phi. Disabling build of likwid-accessD.);
+endif
+
+ifeq ($(INSTRUMENT_BENCH),true)
+DEFINES += -DPERFMON
+endif
+
+ifeq ($(HAS_MEMPOLICY),1)
+DEFINES += -DHAS_MEMPOLICY
+else
+$(info Kernel $(KERNEL_VERSION_MAJOR).$(KERNEL_VERSION).$(KERNEL_VERSION_MINOR) has no mempolicy support! First Linux kernel with memory policies has version 2.6.7);
+endif
+
+ifeq ($(HAS_RDTSCP),0)
+$(info Building without RDTSCP timing support!);
+else
+ifneq ($(COMPILER),MIC)
+DEFINES += -DHAS_RDTSCP
+else
+    $(info Info: Compiling for Xeon Phi. Disabling RDTSCP support.);
+endif
+endif
+
+ifeq ($(HAS_SCHEDAFFINITY),1)
+DEFINES += -DHAS_SCHEDAFFINITY
+PINLIB  = liblikwidpin.so
+else
+$(info GLIBC version 2.$(GLIBC_VERSION) has no pthread_setaffinity_np support!);
+PINLIB  =
+endif
+
+DEFINES += -DACCESSDAEMON=$(ACCESSDAEMON)
+
+ifeq ($(ACCESSMODE),accessdaemon)
+ifneq ($(COMPILER),MIC)
+    DEFINES += -DACCESSMODE=1
+else
+    $(info Info: Compiling for Xeon Phi. Set accessmode to direct.);
+    DEFINES += -DACCESSMODE=0
+endif
+else
+    DEFINES += -DACCESSMODE=0
+endif
+
+SETFREQ_TARGET = likwid-setFreq
 
 VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
+OBJ      += $(patsubst $(SRC_DIR)/%.s, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.s))
 OBJ      += $(patsubst $(SRC_DIR)/%.cc, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.cc))
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
-OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
-OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)
 
-C_APPS      =   likwid-bench
-L_APPS      =   likwid-perfctr \
-				likwid-pin \
-				likwid-powermeter \
-				likwid-topology \
-				likwid-memsweeper \
-				likwid-genTopoCfg
-L_HELPER    =   likwid.lua
-ifeq ($(BUILDFREQ),true)
-	L_APPS += likwid-setFrequencies
-endif
+APPS      = likwid-perfctr    \
+            likwid-features   \
+            likwid-powermeter \
+            likwid-memsweeper \
+            likwid-topology   \
+            likwid-genCfg     \
+            likwid-pin        \
+            likwid-bench
+
+PERL_APPS = likwid-mpirun         \
+            likwid-setFrequencies \
+            likwid-perfscope
+
+DAEMON_APPS = $(SETFREQ_TARGET) \
+			$(DAEMON_TARGET)
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(BUILD_DIR) $(EXT_TARGETS) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(FORTRAN_INTERFACE)  $(PINLIB) $(L_APPS) $(L_HELPER) $(C_APPS) $(DAEMON_TARGET) $(FREQ_TARGET)
+ifneq ($(FORTRAN_INTERFACE),false)
+HAS_FORTRAN_COMPILER = $(shell $(FC) --version 2>/dev/null || echo 'NOFORTRAN' )
+ifeq ($(HAS_FORTRAN_COMPILER),NOFORTRAN)
+FORTRAN_INTERFACE=
+$(info Warning: You have selected the fortran interface in config.mk, but there seems to be no fortran compiler - not compiling it!)
+else
+FORTRAN_INTERFACE = likwid.mod
+FORTRAN_INSTALL =  @cp -f likwid.mod  $(PREFIX)/include/
+endif
+else
+FORTRAN_INTERFACE =
+FORTRAN_INSTALL =
+endif
+
+all: $(BUILD_DIR) $(GENGROUPLOCK) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(TARGET_LIB) $(APPS) $(FORTRAN_INTERFACE)  $(PINLIB)  $(DAEMON_TARGET) $(SETFREQ_TARGET)
 
 tags:
 	@echo "===>  GENERATE  TAGS"
 	$(Q)ctags -R
 
-docs:
-	@echo "===>  GENERATE DOXYGEN DOCS"
-	$(Q)doxygen doc/Doxyfile
-
-$(C_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(C_APPS))) $(BUILD_DIR) $(OBJ) $(OBJ_BENCH)
+$(APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(APPS))) $(BUILD_DIR) $(GENGROUPLOCK)  $(OBJ) $(OBJ_BENCH)
 	@echo "===>  LINKING  $@"
-	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(LIBHWLOC) $(LIBS)
-
-$(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
-	@echo "===>  ADJUSTING  $@"
-	@sed -e s/'<PREFIX>'/$(subst /,\\/,$(PREFIX))/g \
-		-e s/'<VERSION>'/$(VERSION).$(RELEASE)/g \
-		-e s/'<DATE>'/$(DATE)/g \
-		$(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$@)) > $@
-
-$(L_HELPER):
-	@echo "===>  ADJUSTING  $@"
-	@sed -e s/'<PREFIX>'/$(subst /,\\/,$(PREFIX))/g \
-		-e s/'<VERSION>'/$(VERSION)/g \
-		-e s/'<RELEASE>'/$(RELEASE)/g \
-		$(SRC_DIR)/applications/$@ > $@
+	$(Q)${CC} $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(LIBS)
 
 $(STATIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE STATIC LIB  $(STATIC_TARGET_LIB)"
-	$(Q)${AR} -crus $(STATIC_TARGET_LIB) $(OBJ) $(LIBHWLOC) $(LIBLUA)
-
+	$(Q)${AR} -crus $(STATIC_TARGET_LIB) $(OBJ)
 
 $(DYNAMIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE SHARED LIB  $(DYNAMIC_TARGET_LIB)"
-	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) -L. -pthread -lm -lpci $(LIBHWLOC) $(LIBLUA)
+	$(Q)${CC} $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) -lm $(SHARED_LFLAGS)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
-	@echo "===>  Build access daemon likwid-accessD"
-	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-accessD
+	@echo "===>  Build access daemon $(DAEMON_TARGET)"
+	$(Q)$(MAKE) -s -C  $(SRC_DIR)/access-daemon $(DAEMON_TARGET)
 
-$(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreq.c
-	@echo "===>  Build frequency daemon likwid-setFreq"
-	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-setFreq
+$(SETFREQ_TARGET): $(SRC_DIR)/access-daemon/setFreq.c
+	@echo "===>  Build frequency daemon $(SETFREQ_TARGET)"
+	$(Q)$(MAKE) -s -C  $(SRC_DIR)/access-daemon $(SETFREQ_TARGET)
 
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
@@ -173,21 +232,20 @@ $(FORTRAN_INTERFACE): $(SRC_DIR)/likwid.f90
 	$(Q)$(FC) -c  $(FCFLAGS) $<
 	@rm -f likwid.o
 
-$(EXT_TARGETS):
-	@echo "===>  ENTER  $@"
-	$(Q)$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS)
-
-
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
 	@echo "===>  COMPILE  $@"
-	$(Q)$(CC) -g -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
-	$(Q)$(CC) -g $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+	$(Q)$(CC) -c  $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
+	$(Q)$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+
+$(BUILD_DIR)/%.o:  %.s
+	@echo "===>  ASSEMBLE  $@"
+	$(Q)$(AS) $(ASFLAGS)  $< -o $@
 
 $(BUILD_DIR)/%.o:  %.cc
 	@echo "===>  COMPILE  $@"
-	$(Q)$(CXX) -c $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-	$(Q)$(CXX) $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+	$(Q)$(CXX) -c  $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+	$(Q)$(CXX) $(CXXFLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 
 $(BUILD_DIR)/%.pas:  $(BENCH_DIR)/%.ptt
@@ -207,15 +265,14 @@ ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
-.PHONY: clean distclean install uninstall $(EXT_TARGETS)
-
+.PHONY: clean distclean install uninstall
 
 .PRECIOUS: $(BUILD_DIR)/%.pas
 
 .NOTPARALLEL:
 
 
-clean: $(EXT_TARGETS)
+clean:
 	@echo "===>  CLEAN"
 	@rm -rf $(BUILD_DIR)
 	@rm -f $(GENGROUPLOCK)
@@ -223,35 +280,33 @@ clean: $(EXT_TARGETS)
 distclean: clean
 	@echo "===>  DIST CLEAN"
 	@rm -f likwid-*
-	@rm -f likwid.lua
-	@rm -f $(STATIC_TARGET_LIB)
-	@rm -f $(DYNAMIC_TARGET_LIB)
+	@rm -f $(LIKWID_LIB)*
 	@rm -f $(FORTRAN_INTERFACE)
-	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
 	@rm -f $(PINLIB)
-	@rm -rf doc/html
 	@rm -f tags
 
 install:
 	@echo "===> INSTALL applications to $(PREFIX)/bin"
 	@mkdir -p $(PREFIX)/bin
-	for APP in $(L_APPS); do \
-		cp -f $$APP  $(PREFIX)/bin; \
+	@for app in $(APPS); do \
+		cp -f $$app $(PREFIX)/bin; \
 	done
-	@for APP in $(C_APPS); do \
-		cp -f $$APP  $(PREFIX)/bin; \
+	@cp -f perl/feedGnuplot  $(PREFIX)/bin
+	@for app in $(PERL_APPS); do \
+		sed -e "s+<PREFIX>+$(PREFIX)+g" perl/$$app > $(PREFIX)/bin/$$app; \
 	done
-	@cp ext/lua/lua $(PREFIX)/bin/likwid-lua
 	@chmod 755 $(PREFIX)/bin/likwid-*
-	@echo "===> INSTALL lua to likwid interface to $(PREFIX)/share/lua"
-	@mkdir -p $(PREFIX)/share/lua
-	@cp -f likwid.lua $(PREFIX)/share/lua
-	@echo "===> INSTALL libraries to $(PREFIX)/lib"
-	@mkdir -p $(PREFIX)/lib
-	@cp -f liblikwid*  $(PREFIX)/lib
-	@cp -f ext/lua/liblua* $(PREFIX)/lib
-	@cp -f ext/hwloc/libhwloc* $(PREFIX)/lib
-	@chmod 755 $(PREFIX)/lib/$(PINLIB)
+	@echo "===> INSTALL daemon applications to $(PREFIX)/sbin"
+	@mkdir -p $(PREFIX)/sbin
+	@for app in $(DAEMON_APPS); do \
+		cp -f $$app $(PREFIX)/sbin; \
+		if [ $(shell id -u) = "0" ]; then \
+			chown root $(PREFIX)/sbin/$$app; \
+			chmod 4775 $(PREFIX)/sbin/$$app; \
+		else \
+			echo "Only root can adjust the privileges of the daemon applications in $(PREFIX)/sbin"; \
+		fi; \
+	done
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
@@ -259,57 +314,48 @@ install:
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-perfctr.1 > $(MANPREFIX)/man1/likwid-perfctr.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-powermeter.1 > $(MANPREFIX)/man1/likwid-powermeter.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-pin.1 > $(MANPREFIX)/man1/likwid-pin.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-setFrequencies.1 > $(MANPREFIX)/man1/likwid-setFrequencies.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-bench.1 > $(MANPREFIX)/man1/likwid-bench.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/feedGnuplot.1 > $(MANPREFIX)/man1/feedGnuplot.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-accessD.1 > $(MANPREFIX)/man1/likwid-accessD.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-genCfg.1 > $(MANPREFIX)/man1/likwid-genCfg.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-memsweeper.1 > $(MANPREFIX)/man1/likwid-memsweeper.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-mpirun.1 > $(MANPREFIX)/man1/likwid-mpirun.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-perfscope.1 > $(MANPREFIX)/man1/likwid-perfscope.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-setFreq.1 > $(MANPREFIX)/man1/likwid-setFreq.1
 	@chmod 644 $(MANPREFIX)/man1/likwid-*
 	@echo "===> INSTALL headers to $(PREFIX)/include"
-	@mkdir -p $(PREFIX)/include
-	@cp -f src/includes/likwid.h  $(PREFIX)/include/
+	@mkdir -p $(PREFIX)/include/likwid
+	@cp -f src/includes/likwid*.h  $(PREFIX)/include/
+	@cp -f src/includes/*  $(PREFIX)/include/likwid
+	@cp -f GCC/perfmon_group_types.h  $(PREFIX)/include/likwid
 	$(FORTRAN_INSTALL)
-	@echo "===> INSTALL groups to $(PREFIX)/share/likwid"
-	@mkdir -p $(PREFIX)/share/likwid
-	@cp -rf groups/* $(PREFIX)/share/likwid
+	@echo "===> INSTALL libraries to $(PREFIX)/lib"
+	@mkdir -p $(PREFIX)/lib
+	@cp -f $(LIKWID_LIB)*  $(PREFIX)/lib
+	@chmod 755 $(PREFIX)/lib/$(PINLIB)
 	@echo "===> INSTALL filters to $(LIKWIDFILTERPATH)"
 	@mkdir -p $(LIKWIDFILTERPATH)
 	@cp -f filters/*  $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
-	@[ -e $(DAEMON_TARGET) ] && echo "===> INSTALL access daemon to $(ACCESSDAEMON)"
-	@[ -e $(DAEMON_TARGET) ] && mkdir -p `dirname $(ACCESSDAEMON)`
-	@[ -e $(DAEMON_TARGET) ] && cp -f $(DAEMON_TARGET) $(ACCESSDAEMON)
-	@[ -e $(ACCESSDAEMON) ] && chown root:root $(ACCESSDAEMON)
-	@[ -e $(ACCESSDAEMON) ] && chmod 4755 $(ACCESSDAEMON)
-	@[ -e $(FREQ_TARGET) ] && echo "===> INSTALL setFrequencies tool to $(PREFIX)/sbin/$(FREQ_TARGET)"
-	@[ -e $(FREQ_TARGET) ] && mkdir -p $(PREFIX)/sbin
-	@[ -e $(FREQ_TARGET) ] && cp -f $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
-	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && chown root:root $(PREFIX)/sbin/$(FREQ_TARGET)
-	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && chmod 4755 $(PREFIX)/sbin/$(FREQ_TARGET)
-
 
 uninstall:
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
-	@rm -f $(addprefix $(PREFIX)/bin/,$(addsuffix  .lua,$(L_APPS)))
-	@for APP in $(L_APPS); do \
-		rm -f $(PREFIX)/bin/$$APP; \
-	done
-	@for APP in $(C_APPS); do \
-		rm -f $(PREFIX)/bin/$$APP; \
-	done
-	rm -rf $(PREFIX)/bin/likwid-lua
-	@echo "===> REMOVING Lua to likwid interface from $(PREFIX)/share/lua"
-	@rm -rf  $(PREFIX)/share/lua/likwid.lua
-	@echo "===> REMOVING libs from $(PREFIX)/lib"
-	@rm -f $(PREFIX)/lib/liblikwid*
-	@rm -f $(PREFIX)/lib/libhwloc*
-	@rm -f $(PREFIX)/lib/liblua*
+	@rm -f $(addprefix $(PREFIX)/bin/,$(APPS))
+	@rm -f $(addprefix $(PREFIX)/bin/,$(PERL_APPS))
+	@rm -f $(PREFIX)/bin/feedGnuplot
+	@echo "===> REMOVING daemon applications from $(PREFIX)/sbin"
+	@rm -f $(addprefix $(PREFIX)/sbin/,$(DAEMON_APPS))
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
-	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(L_APPS)))
-	@echo "===> REMOVING header from $(PREFIX)/include"
-	@rm -f $(PREFIX)/include/likwid.h
-	$(FORTRAN_REMOVE)
-	@echo "===> REMOVING filter and groups from $(PREFIX)/share/likwid"
+	@rm -f $(MANPREFIX)/man1/likwid-*
+	@rm -f $(MANPREFIX)/man1/feedGnuplot.1
+	@echo "===> REMOVING headers from $(PREFIX)/include"
+	@rm -f $(PREFIX)/include/likwid*.h
+	@rm -rf $(PREFIX)/include/likwid
+	@echo "===> REMOVING libs from $(PREFIX)/lib"
+	@rm -f $(PREFIX)/lib/$(LIKWID_LIB)*
+	@echo "===> REMOVING filter from $(PREFIX)/share"
 	@rm -rf  $(PREFIX)/share/likwid
-	@[ -e $(ACCESSDAEMON) ] && echo "===> REMOVING access daemon from $(ACCESSDAEMON)"
-	@[ -e $(ACCESSDAEMON) ] && rm -f $(ACCESSDAEMON)
-	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && echo "===> REMOVING setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET)"
-	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && rm -f $(PREFIX)/sbin/$(FREQ_TARGET)
 
 
 

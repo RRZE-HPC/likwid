@@ -1,0 +1,49 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 2
+BYTES 16
+INC 16
+vmovaps ymm1, [SCALAR]
+sub  GPR2, 8
+sub  STR0, 64
+sub  STR1, 64
+mov   GPR1, GPR2
+neg   GPR1
+.align 32
+1:
+vmovaps    ymm2, [STR0 + GPR1 * 8 ]
+vaddpd     ymm2, ymm2, ymm1
+vmulpd     ymm2, ymm2, ymm1
+vmovaps    ymm6, [STR0 + GPR1 * 8 ]
+vaddpd     ymm2, ymm2, ymm1
+vmulpd     ymm2, ymm2, ymm1
+#vpshufd    ymm2, ymm1, 0x1
+vmovaps    [STR1 + GPR1 * 8], ymm2
+vmovaps    ymm3, [STR0 + GPR1 * 8 + 32]
+vaddpd     ymm3, ymm3, ymm1
+vmulpd     ymm3, ymm3, ymm1
+vmovaps    ymm7, [STR0 + GPR1 * 8 + 32 ]
+vaddpd     ymm3, ymm3, ymm1
+vmulpd     ymm3, ymm3, ymm1
+#vpshufd    ymm3, ymm1, 0x1
+vmovaps    [STR1 + GPR1 * 8 + 32], ymm3
+vmovaps    ymm4, [STR0 + GPR1 * 8 + 64]
+vaddpd     ymm4, ymm4, ymm1
+vmulpd     ymm4, ymm4, ymm1
+vmovaps    ymm8, [STR0 + GPR1 * 8 + 64 ]
+vaddpd     ymm4, ymm4, ymm1
+vmulpd     ymm4, ymm4, ymm1
+#vpshufd    ymm4, ymm1, 0x1
+vmovaps    [STR1 + GPR1 * 8 + 32], ymm4
+vmovaps    ymm5, [STR0 + GPR1 * 8 + 96]
+vaddpd     ymm5, ymm5, ymm1
+vmulpd     ymm5, ymm5, ymm1
+vmovaps    ymm9, [STR0 + GPR1 * 8 + 96]
+vaddpd     ymm5, ymm5, ymm1
+vmulpd     ymm5, ymm5, ymm1
+#vpshufd    ymm5, ymm1, 0x1
+vmovaps    [STR1 + GPR1 * 8 + 96], ymm5
+add GPR1, 16
+js 1b
+
+

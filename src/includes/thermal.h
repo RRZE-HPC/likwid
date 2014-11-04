@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -35,42 +35,19 @@
 #include <registers.h>
 #include <bitUtil.h>
 #include <msr.h>
-#include <error.h>
 
+extern ThermalInfo thermal_info;
 
+extern void thermal_init(int cpuId);
+static inline uint32_t thermal_read(int cpuId);
 
-int
-thermal_read(int cpuId, uint32_t *data)
+static uint32_t
+thermal_read(int cpuId)
 {
-    uint64_t result = 0;
-    uint32_t readout = 0;
-    if (msr_read(cpuId, IA32_THERM_STATUS, &result))
-    {
-        *data = 0;
-        return -EIO;
-    }
-    readout = extractBitField(result,7,16);
-    *data = (readout == 0 ?
-                thermal_info.activationT - thermal_info.offset :
-                (thermal_info.activationT - thermal_info.offset) - readout );
-    return 0;
-}
-
-int
-thermal_tread(int socket_fd, int cpuId, uint32_t *data)
-{
-    uint64_t result = 0;
-    uint32_t readout = 0;
-    if (msr_tread(socket_fd, cpuId, IA32_THERM_STATUS, &result))
-    {
-        *data = 0;
-        return -EIO;
-    }
-    readout = extractBitField(result,7,16);
-    *data = (readout == 0 ?
-                thermal_info.activationT - thermal_info.offset :
-                (thermal_info.activationT - thermal_info.offset) - readout );
-    return 0;
+    uint32_t readout = extractBitField(msr_read(cpuId, IA32_THERM_STATUS),7,16);
+    return (readout == 0 ? 
+            thermal_info.activationT - thermal_info.offset :
+            (thermal_info.activationT-thermal_info.offset) - readout );
 }
 
 #endif /*THERMAL_H*/

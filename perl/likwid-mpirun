@@ -1,11 +1,39 @@
 #!/usr/bin/perl
+# =======================================================================================
+#
+#      Filename:  likwid-mpirun
+#
+#      Description:  Wrapper application to mpi startup mechanisms. Builds on
+#                    likwid to control affinity and has integrated perfctr support.
+#
+#      Version:   <VERSION>
+#      Released:  <DATE>
+#
+#      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+#      Project:  likwid
+#
+#      Copyright (C) 2014 Jan Treibig
+#
+#      This program is free software: you can redistribute it and/or modify it under
+#      the terms of the GNU General Public License as published by the Free Software
+#      Foundation, either version 3 of the License, or (at your option) any later
+#      version.
+#
+#      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+#      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+#      You should have received a copy of the GNU General Public License along with
+#      this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# =======================================================================================
 
 use Getopt::Long;
 ##############################
 #       CONFIGURATION        #
-##############################       
-my $LIKWIDPIN  = 'likwid-pin';
-my $LIKWIDPERF = 'likwid-perfctr';
+##############################
+my $LIKWIDPIN  = '<PREFIX>/bin/likwid-pin';
+my $LIKWIDPERF = '<PREFIX>/bin/likwid-perfctr';
 my $MPIROOT_openmpi  =  $ENV{'MPIHOME'};
 my $MPIROOT_intelmpi =  $ENV{'MPIHOME'};
 my $MPIEXEC_openmpi  = "$MPIROOT_openmpi/bin/mpiexec";
@@ -425,4 +453,4 @@ if (-e $WrapperScript and not $debug) {
     unlink ($Hostfilename);
 }
 
-# vim: foldmethod=marker foldmarker=#<#,#># 
+# vim: foldmethod=marker foldmarker=#<#,#>#

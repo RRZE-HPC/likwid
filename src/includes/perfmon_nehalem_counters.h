@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -32,7 +32,7 @@
 #define NUM_COUNTERS_UNCORE_NEHALEM 15
 #define NUM_COUNTERS_NEHALEM 15
 
-static RegisterMap nehalem_counter_map[NUM_COUNTERS_NEHALEM] = {
+static PerfmonCounterMap nehalem_counter_map[NUM_COUNTERS_NEHALEM] = {
     /* Fixed Counters: instructions retired, cycles unhalted core */
     {"FIXC0",PMC0, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR0, 0, 0},
     {"FIXC1",PMC1, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR1, 0, 0},

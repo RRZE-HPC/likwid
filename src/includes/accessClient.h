@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -33,10 +33,11 @@
 
 #include <types.h>
 
+extern int accessClient_mode;
 
 /* This needs to be called BEFORE msr_init and
  * sets how the module tries to access the MSR registers. */
-
+extern void accessClient_setaccessmode(int mode);
 
 /* This needs to be called BEFORE msr_init and
  * sets the priority the module reports to the daemon.
@@ -45,10 +46,10 @@ extern void accessClient_setlowaccesspriority(void);
 
 /* Initializes the MSR module, trying to open either the MSR files or
  * the connection to the msr daemon. */
-
+extern void accessClient_init(int* socket_fd);
 extern void accessClient_initThread(int* socket_fd);
-
-extern int accessClient_read(int socket_fd, int cpu, int device, uint32_t reg, uint64_t *data);
-extern int accessClient_write(int socket_fd, int cpu, int device, uint32_t reg, uint64_t data);
+extern void accessClient_finalize(int socket_fd);
+extern uint64_t accessClient_read(int socket_fd, int cpu, int device, uint32_t reg);
+extern void accessClient_write(int socket_fd, int cpu, int device, uint32_t reg, uint64_t data);
 
 #endif /* ACCESSCLIENT_H */

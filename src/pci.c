@@ -14,7 +14,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -50,13 +50,8 @@
 #include <bstrlib.h>
 #include <error.h>
 #include <pci.h>
-#include <topology.h>
+#include <cpuid.h>
 #include <affinity.h>
-#ifdef LIKWID_USE_HWLOC
-#include <pci_hwloc.h>
-#else
-#include <pci_proc.h>
-#endif
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 #define STRINGIFY(x) #x
@@ -66,7 +61,24 @@
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-static int FD[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
+static int socket_fd = -1;
+static int FD[MAX_NUM_NODES][MAX_NUM_DEVICES];
+
+static char* pci_DevicePath[MAX_NUM_DEVICES] = {
+ "13.5",   /* PCI_R3QPI_DEVICE_LINK_0 */
+ "13.6",   /* PCI_R3QPI_DEVICE_LINK_1 */
+ "13.1",   /* PCI_R2PCIE_DEVICE */
+ "10.0",   /* PCI_IMC_DEVICE_CH_0 */
+ "10.1",   /* PCI_IMC_DEVICE_CH_1 */
+ "10.4",   /* PCI_IMC_DEVICE_CH_2 */
+ "10.5",   /* PCI_IMC_DEVICE_CH_3 */
+ "0e.1",   /* PCI_HA_DEVICE */
+ "08.2",   /* PCI_QPI_DEVICE_PORT_0 */
+ "09.2",   /* PCI_QPI_DEVICE_PORT_1 */
+ "08.6",   /* PCI_QPI_MASK_DEVICE_PORT_0 */
+ "09.6",   /* PCI_QPI_MASK_DEVICE_PORT_1 */
+ "08.0",   /* PCI_QPI_MISC_DEVICE_PORT_0 */
+ "09.0" }; /* PCI_QPI_MISC_DEVICE_PORT_1 */
 
 /* Socket to bus mapping -- will be determined at runtime;
  * typical mappings are:
@@ -77,95 +89,107 @@ static int FD[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
  *   3                  0xff
  */
 static char* socket_bus[MAX_NUM_NODES];
+static int socket_count = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-int
+void
 pci_init(int initSocket_fd)
 {
-    uint16_t testDevice;
-    int nr_sockets = 0;
-    int i=0;
-    int j=0;
-    int ret = 0;
-    int access_flags = 0;
+    FILE *fptr;
+    char buf[1024];
+    uint32_t testDevice;
+    uint32_t sbus, sdevfn, svend;
+    int cntr = 0;
+    int active_devs = 0;
 
-    for (i=0; i<MAX_NUM_NODES; i++ )
+    for ( int j=0; j<MAX_NUM_NODES; j++ )
     {
-        socket_bus[i] = "N-A";
-        for(j=1;j<MAX_NUM_PCI_DEVICES;j++)
+        socket_bus[j] = "N-A";
+        for (int i=0; i<MAX_NUM_DEVICES; i++)
         {
-            FD[i][j] = -2;
+            FD[j][i] = 0;
         }
     }
 
-    /* PCI is only provided by Intel systems */
-    if (!cpuid_info.isIntel)
+    if (cpuid_info.model == SANDYBRIDGE_EP)
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, PCI based Uncore performance monitoring only supported on Intel systems);
-        return -ENODEV;
+        testDevice = 0x80863c44;
     }
-
-    switch (cpuid_info.model)
+    else if (cpuid_info.model == IVYBRIDGE_EP)
     {
-        case SANDYBRIDGE_EP:
-            testDevice = 0x3c44;
-            break;
-        case IVYBRIDGE_EP:
-            testDevice = 0x0e36;
-            break;
-        case HASWELL_EP:
-            testDevice = 0x2f30;
-            break;
-        default:
-            ERROR_PRINT(CPU model %s does not support PCI based Uncore performance monitoring, cpuid_info.name);
-            return -ENODEV;
-            break;
-    }
-    
-#ifdef LIKWID_USE_HWLOC
-    DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using hwloc to find pci devices);
-    ret = hwloc_pci_init(testDevice, socket_bus, &nr_sockets);
-    if (ret)
-    {
-        ERROR_PLAIN_PRINT(Using hwloc to find pci devices failed);
-        return -ENODEV;
-    }
-#else
-    DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using procfs to find pci devices);
-    ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
-#endif
-    if (ret)
-    {
-        ERROR_PLAIN_PRINT(Using procfs to find pci devices failed);
-        return -ENODEV;
-    }
-
-    if (accessClient_mode == DAEMON_AM_DIRECT)
-    {
-        access_flags = R_OK|W_OK;
+        testDevice = 0x80860e36;
     }
     else
     {
-        access_flags = F_OK;
+        /*
+        fprintf(stderr, "Unsupported architecture for pci based uncore. \
+                Thus, no support for PCI based Uncore counters.\n");
+                */
+        return;
     }
 
-    for(i=0;i<nr_sockets;i++)
+    if ( (fptr = fopen( "/proc/bus/pci/devices", "r")) == NULL )
     {
-        for(j=1;j<MAX_NUM_PCI_DEVICES;j++)
+        fprintf(stderr, "Unable to open /proc/bus/pci/devices. \
+                Thus, no support for PCI based Uncore counters.\n");
+        return;
+    }
+
+    while( fgets(buf, sizeof(buf)-1, fptr) )
+    {
+        if ( sscanf(buf, "%2x%2x %8x", &sbus, &sdevfn, &svend) == 3 &&
+             svend == testDevice )
         {
-            bstring filepath = bformat("%s%s%s",PCI_ROOT_PATH,
-                                                socket_bus[i],
-                                                pci_devices[j].path);
-            if (!access(bdata(filepath), access_flags))
+            socket_bus[cntr] = (char*)malloc(4);
+            sprintf(socket_bus[cntr++], "%02x/", sbus);
+        }
+    }
+    fclose(fptr);
+
+    if ( cntr == 0 )
+    {
+        fprintf(stderr, "Uncore not supported on this system\n");
+        return;
+    }
+
+    socket_count = cntr;
+
+    bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
+    bcatcstr(filepath, socket_bus[0]);
+    bcatcstr(filepath, pci_DevicePath[0] );
+
+
+    if (access(bdata(filepath),F_OK))
+    {
+        fprintf(stderr, "INFO\n");
+        fprintf(stderr, "This system has no support for PCI based Uncore counters.\n");
+        fprintf(stderr, "This means you cannot use performance groups as MEM, which require Uncore counters.\n\n");
+        return;
+    }
+    bdestroy(filepath);
+
+    for (int j=0; j<socket_count; j++)
+    {
+        for (int i=0; i<MAX_NUM_DEVICES; i++)
+        {
+
+            bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
+            bcatcstr(filepath, socket_bus[j]);
+            bcatcstr(filepath, pci_DevicePath[i] );
+
+            if (!access(bdata(filepath),F_OK))
             {
-                FD[i][j] = 0;
-                pci_devices[j].online = 1;
-                DEBUG_PRINT(DEBUGLEV_DETAIL, PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, i,bdata(filepath));
+                FD[j][i] = 0;
             }
+            else
+            {
+                FD[j][i] = -2;
+            }
+            bdestroy(filepath);
         }
     }
 
@@ -183,268 +207,192 @@ pci_init(int initSocket_fd)
     {
         socket_fd = initSocket_fd;
     }
-    return 0;
 }
 
 
 void
 pci_finalize()
 {
-    int i=0;
-    int j=0;
-    if (accessClient_mode != DAEMON_AM_DIRECT)
+    for (int j=0; j<socket_count; j++)
     {
-        for (i=0; i<MAX_NUM_NODES; i++)
+        for (int i=0; i<MAX_NUM_DEVICES; i++)
         {
-            for (j=1; j<MAX_NUM_PCI_DEVICES; j++)
+            if (FD[j][i] > 0)
             {
-                if (FD[i][j] > 0)
-                {
-                    close(FD[i][j]);
-                }
+                close(FD[j][i]);
             }
         }
     }
-    else
+
+    if (accessClient_mode != DAEMON_AM_DIRECT)
     {
         socket_fd = -1;
     }
 }
 
 
-int
-pci_read(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t* data)
+uint32_t
+pci_read(int cpu, PciDeviceIndex device, uint32_t reg)
 {
     int socketId = affinity_core2node_lookup[cpu];
-    bstring filepath = NULL;
-    uint64_t tmp;
-
-    if (device == PCI_NONE)
+    if ( FD[socketId][device] == -2)
     {
-        return -ENODEV;
+        fprintf(stderr, "Trying to access non-existent PCI device (%s) for reading\n", pci_DevicePath[device]);
+        return 0;
     }
 
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
-        if (FD[socketId][device] < 0)
+        uint32_t data = 0;
+        if ( !FD[socketId][device] )
         {
-            *data = 0;
-            return -ENODEV;
-        }
-        else if ( !FD[socketId][device] )
-        {
-            filepath =  bfromcstr ( PCI_ROOT_PATH );
+            bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
-            bcatcstr(filepath, pci_devices[device].path);
+            bcatcstr(filepath, pci_DevicePath[device] );
             FD[socketId][device] = open( bdata(filepath), O_RDWR);
 
             if ( FD[socketId][device] < 0)
             {
-                ERROR_PRINT(Failed to open PCI device %s at path %s\n, 
-                                pci_devices[device].name,
-                                bdata(filepath));
-                *data = 0;
-                return -EACCES;
+                fprintf(stderr, "ERROR in pci_read: failed to open pci device %s: %s!\n",
+                        bdata(filepath), strerror(errno));
             }
-            DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s, pci_devices[device].name);
+            bdestroy(filepath);
         }
 
         if ( FD[socketId][device] > 0 &&
-             pread(FD[socketId][device], &tmp, sizeof(tmp), reg) != sizeof(tmp) ) 
+             pread(FD[socketId][device], &data, sizeof data, reg) != sizeof data )
         {
-            ERROR_PRINT(Read from PCI device %s at register 0x%x failed,pci_devices[device].name, reg);
-            *data = 0;
-            return -EIO;
+            ERROR_PRINT("ERROR in pci_read: failed on CPU %d Register 0x%x", cpu, reg);
         }
+
+        return data;
     }
     else
     { /* daemon or sysdaemon-mode */
-        if (FD[socketId][device] < 0)
-        {
-            return -ENODEV;
-        }
-        if (accessClient_read(socket_fd, socketId, device, reg, &tmp))
-        {
-            ERROR_PRINT(Read from PCI device %s at register 0x%x through access daemon failed,pci_devices[device].name, reg);
-            return -EIO;
-        } 
+        return (uint32_t) accessClient_read(socket_fd, socketId, device, reg);
     }
-    *data = tmp;
-    return 0;
 }
 
 
 
-int
+void
 pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
 {
     int socketId = affinity_core2node_lookup[cpu];
-    bstring filepath = NULL;
 
-    if (device == PCI_NONE)
+    if ( FD[socketId][device] == -2)
     {
-        return -ENODEV;
+        fprintf(stderr, "Trying to access non-existent PCI device (%s) for writing\n", pci_DevicePath[device]);
+        return;
     }
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
-        if (FD[socketId][device] < 0)
+        if ( !FD[socketId][device] )
         {
-            return -ENODEV;
-        }
-        else if ( !FD[socketId][device] )
-        {
-            filepath = bfromcstr ( PCI_ROOT_PATH );
+            bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
-            bcatcstr(filepath, pci_devices[device].path );
-            
+            bcatcstr(filepath, pci_DevicePath[device] );
             FD[socketId][device] = open( bdata(filepath), O_RDWR);
 
             if ( FD[socketId][device] < 0)
             {
-                ERROR_PRINT(Failed to open PCI device %s at path %s\n, 
-                                    pci_devices[device].name,
-                                    bdata(filepath));
-                return -EACCES;
+                fprintf(stderr, "ERROR in pci_write: failed to open pci device %s: %s!\n",
+                        bdata(filepath), strerror(errno));
             }
-            DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s, pci_devices[device].name);
+            bdestroy(filepath);
         }
 
         if ( FD[socketId][device] > 0 &&
-             pwrite(FD[socketId][device], &data, sizeof data, reg) != sizeof data) 
+             pwrite(FD[socketId][device], &data, sizeof data, reg) != sizeof data)
         {
-            ERROR_PRINT(Write to PCI device %s at register 0x%x failed,pci_devices[device].name, reg);
-            return -EIO;
-        }    
+            ERROR_PRINT("ERROR in pci_write: failed on CPU %d Register 0x%x", cpu, reg);
+        }
     }
     else
     { /* daemon or sysdaemon-mode */
-        if (FD[socketId][device] < 0)
-        {
-            return -ENODEV;
-        }
-        if (accessClient_write(socket_fd, socketId, device, reg, (uint64_t) data))
-        {
-            ERROR_PRINT(Write to PCI device %s at register 0x%x through access daemon failed,pci_devices[device].name, reg);
-            return -EIO;
-        }
+        accessClient_write(socket_fd, socketId, device, reg, (uint64_t) data);
     }
-    return 0;
 }
 
-int
-pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t reg, uint32_t *data)
+uint32_t
+pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t reg)
 {
     int socketId = affinity_core2node_lookup[cpu];
-    bstring filepath = NULL;
-    uint64_t tmp;
+    if ( FD[socketId][device] == -2)
+    {
+        return 0;
+    }
+
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
-        *data = 0;
-        if (FD[socketId][device] < 0)
+        uint32_t data = 0;
+        if ( !FD[socketId][device] )
         {
-            return -ENODEV;
-        }
-        else if ( !FD[socketId][device] )
-        {
-            filepath =  bfromcstr ( PCI_ROOT_PATH );
+            bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
-            bcatcstr(filepath, pci_devices[device].path );
+            bcatcstr(filepath, pci_DevicePath[device] );
 
             FD[socketId][device] = open( bdata(filepath), O_RDWR);
 
             if ( FD[socketId][device] < 0)
             {
-                ERROR_PRINT(Failed to open PCI device %s at path %s\n, 
-                                pci_devices[device].name,
-                                bdata(filepath));
-                return -EACCES;
+                fprintf(stderr, "ERROR in pci_tread:\n    failed to open pci device %s: %s!\n",
+                        bdata(filepath), strerror(errno));
             }
-            DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s, pci_devices[device].name);
+            bdestroy(filepath);
         }
 
         if ( FD[socketId][device] > 0 &&
-             pread(FD[socketId][device], &tmp, sizeof(tmp), reg) != sizeof(tmp) ) 
+             pread(FD[socketId][device], &data, sizeof data, reg) != sizeof data )
         {
-            ERROR_PRINT(Read from PCI device %s at register 0x%x failed,pci_devices[device].name, reg);
-            *data = 0;
-            return -EIO;
+            ERROR_PRINT("ERROR in pci_tread: failed on CPU %d Register 0x%x", cpu, reg);
         }
+
+        return data;
     }
     else
     { /* daemon or sysdaemon-mode */
-        if (FD[socketId][device] < 0)
-        {
-            return -ENODEV;
-        }
-        if (accessClient_read(tsocket_fd, socketId, device, reg, &tmp))
-        {
-            ERROR_PRINT(Read from PCI device %s at register 0x%x through access daemon failed,pci_devices[device].name, reg);
-            return -EIO;
-        }
-        
+        return accessClient_read(tsocket_fd, socketId, device, reg);
     }
-    *data = tmp;
-    return 0;
 }
 
-int
+void
 pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
 {
     int socketId = affinity_core2node_lookup[cpu];
-    bstring filepath = NULL;
+    if ( FD[socketId][device] == -2)
+    {
+        return;
+    }
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
-        if (FD[socketId][device] < 0)
+        if ( !FD[socketId][device] )
         {
-            return -ENODEV;
-        }
-        else if ( !FD[socketId][device] )
-        {
-            filepath =  bfromcstr ( PCI_ROOT_PATH );
+            bstring filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
-            bcatcstr(filepath, pci_devices[device].path );
+            bcatcstr(filepath, pci_DevicePath[device] );
 
             FD[socketId][device] = open( bdata(filepath), O_RDWR);
 
             if ( FD[socketId][device] < 0)
             {
-                ERROR_PRINT(Failed to open PCI device %s at path %s\n, 
-                                pci_devices[device].name,
-                                bdata(filepath));
-                return -EACCES;
+                fprintf(stderr, "ERROR in pci_twrite: failed to open pci device %s: %s!\n",
+                        bdata(filepath), strerror(errno));
             }
-            DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s, pci_devices[device].name);
+            bdestroy(filepath);
         }
 
         if ( FD[socketId][device] > 0 &&
-             pwrite(FD[socketId][device], &data, sizeof data, reg) != sizeof data) 
+             pwrite(FD[socketId][device], &data, sizeof data, reg) != sizeof data)
         {
-            ERROR_PRINT(Write to PCI device %s at register 0x%x failed,pci_devices[device].name, reg);
-            return -EIO;
+            ERROR_PRINT("ERROR in pci_twrite: failed on CPU %d Register 0x%x", cpu, reg);
         }
     }
     else
     { /* daemon or sysdaemon-mode */
-        if (FD[socketId][device] < 0)
-        {
-            return -ENODEV;
-        }
-        if (accessClient_write(tsocket_fd, socketId, device, reg, data))
-        {
-            ERROR_PRINT(Write to PCI device %s at register 0x%x through access daemon failed,pci_devices[device].name, reg);
-            return -EIO;
-        }
+        accessClient_write(tsocket_fd, socketId, device, reg, data);
     }
-    return 0;
 }
 
-int pci_checkDevice(PciDeviceIndex index, int cpu)
-{
-    int socketId = affinity_core2node_lookup[cpu];
-    if ((index != PCI_NONE) && (FD[socketId][index] >= 0))
-    {
-        return 1;
-    }
-    return 0;
-}
+
 

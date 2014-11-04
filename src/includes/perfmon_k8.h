@@ -13,7 +13,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -31,9 +31,10 @@
  */
 
 #include <perfmon_k8_events.h>
-#include <error.h>
+#include <perfmon_k8_groups.h>
 
 
+static int perfmon_numGroupsK8 = NUM_GROUPS_K8;
 static int perfmon_numArchEventsK8 = NUM_ARCH_EVENTS_K8;
 
 

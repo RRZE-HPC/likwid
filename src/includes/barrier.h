@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -38,6 +38,11 @@
  * @param  numberOfThreads The total number of threads in the barrier
  */
 extern void barrier_init(int numberOfGroups);
+
+/**
+ * @brief  Destroy data structures of the barrier module
+ */
+extern void barrier_destroy(void);
 
 /**
  * @brief  Register a thread for a barrier

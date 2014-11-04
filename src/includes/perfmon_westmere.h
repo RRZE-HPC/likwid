@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,8 @@
  */
 
 #include <perfmon_westmere_events.h>
+#include <perfmon_westmere_groups.h>
 
+static int perfmon_numGroupsWestmere = NUM_GROUPS_WESTMERE;
 static int perfmon_numArchEventsWestmere = NUM_ARCH_EVENTS_WESTMERE;
 

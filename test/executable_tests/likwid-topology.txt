@@ -1,0 +1,11 @@
+-h | EXIT 0 | Help message
+-v | EXIT 0 | GREP likwid-topology
+-c | EXIT 0 | GREP Cache line size
+-C | EXIT 0 | GREP CPU clock
+-g | EXIT 0 | GREP +--------
+-g -v | EXIT 0 | GREP likwid-topology
+-c -g | EXIT 0 | GREP +-------- | GREP Cache line size
+-c -g -C | EXIT 0 | GREP +-------- | GREP Cache line size | GREP CPU clock
+-o | EXIT 1
+-o /tmp/out | EXIT 1 | GREP filter suffix
+-o /tmp/out.txt | EXIT 0

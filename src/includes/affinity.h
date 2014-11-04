@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -32,19 +32,17 @@
 #define AFFINITY_H
 
 #include <types.h>
-#include <likwid.h>
-
-int socket_lock[MAX_NUM_NODES];
-extern AffinityDomains affinityDomains;
 
 extern int affinity_core2node_lookup[MAX_NUM_THREADS];
+
+extern void affinity_init();
+extern void affinity_finalize();
 extern int  affinity_processGetProcessorId();
 extern int  affinity_threadGetProcessorId();
+extern void  affinity_pinProcess(int processorId);
+extern void  affinity_pinThread(int processorId);
 extern const AffinityDomain* affinity_getDomain(bstring domain);
-
-/* DEPRECATED
-extern void affinity_printDomains();*/
-
+extern void affinity_printDomains(FILE* OUTSTREAM);
 
 #endif /*AFFINITY_H*/
 

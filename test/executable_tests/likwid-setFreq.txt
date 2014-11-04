@@ -1,0 +1,6 @@
+| EXIT 1 | GREP Usage
+0 | EXIT 1 | GREP Usage
+0 0 | EXIT 1 | GREP Frequency must be greater than 0
+0 -1 | EXIT 1 | GREP Frequency must be greater than 0
+-1 -1 | EXIT 1 | GREP not a valid CPU ID. Range from 0 to
+100 0 | EXIT 1 | GREP not a valid CPU ID. Range from 0 to

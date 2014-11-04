@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -31,12 +31,13 @@
 
 #ifndef STRUTIL_H
 #define STRUTIL_H
+
 #include <bstrlib.h>
 #include <types.h>
 #include <time.h>
 
 #define CHECK_OPTION_STRING  \
-if (! (argString = bSecureInput(200,optarg))) {  \
+if (! (argString = bSecureInput(400,optarg))) {  \
     ERROR_PLAIN_PRINT(Failed to read argument string!);  \
 }
 

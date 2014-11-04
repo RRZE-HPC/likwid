@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -86,7 +86,7 @@ int hashTable_get(bstring label, LikwidThreadResults** resEntry)
         (*resEntry)->label = bstrcpy (label);
         (*resEntry)->time = 0.0;
         (*resEntry)->count = 0;
-        for (int i=0; i< NUM_PMC; i++)
+        for (int i=0; i< NUM_PMC; i++) 
         {
             (*resEntry)->PMcounters[i] = 0.0;
             (*resEntry)->StartPMcounters[i] = 0.0;

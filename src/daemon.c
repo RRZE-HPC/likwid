@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -35,214 +35,88 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/time.h>
-#include <sys/wait.h>
 #include <time.h>
 
-#include <types.h>
 #include <timer.h>
 #include <perfmon.h>
-#include <likwid.h>
-#include <error.h>
+#include <daemon.h>
 
-static int daemon_running = 0;
-static char eventString[1024];
+static volatile int daemon_run = 0;
+static bstring eventString;
 static TimerData timeData;
-static pid_t childpid;
+static pid_t daemonpid = 0;
 
-/* To be able to give useful error messages instead of just dieing without a
- * comment. Mainly happens because we get a SIGPIPE if the daemon drops us. */
-static void Signal_Handler(int sig)
-{
-    fprintf(stderr, "ERROR - [%s:%d] Signal %d caught\n", __FILE__, __LINE__, sig);
-}
 
-void daemon_intr(int sig)
+void
+daemon_start(bstring str, struct timespec interval)
 {
-    daemon_running = 0;
+    daemonpid = fork();
+    if (daemonpid == 0)
+    {
+        eventString = bstrcpy(str);
+        signal(SIGINT, daemon_interrupt);
+        signal(SIGUSR1, daemon_interrupt);
+        daemon_run = 1;
+        perfmon_setupEventSet(eventString, NULL);
+        perfmon_startCounters();
+        timer_start(&timeData);
+
+        while (1)
+        {
+            if (daemon_run)
+            {
+                timer_stop(&timeData);
+                perfmon_readCounters();
+                perfmon_logCounterResults( timer_print(&timeData) );
+                timer_start(&timeData);
+            }
+            else
+            {
+                break;
+            }
+            nanosleep( &interval, NULL);
+        }
+        signal(SIGINT, SIG_DFL);
+        signal(SIGUSR1, SIG_DFL);
+        exit(EXIT_SUCCESS);
+    }
 }
 
 void
-daemon_init(const char* str)
-{
-    struct sigaction sia;
-    sia.sa_handler = Signal_Handler;
-    sigemptyset(&sia.sa_mask);
-    sia.sa_flags = 0;
-    sigaction(SIGPIPE, &sia, NULL);
-
-    strcpy(eventString, str);
-    //signal(SIGINT, daemon_stop);
-    //signal(SIGUSR1, daemon_interrupt);
-
-}
-
-int
-daemon_start(uint64_t duration)
-{
-    int ret;
-    int group;
-    int nr_groups;
-    int nr_events;
-    int nr_threads;
-    int i,j;
-    int current_interval = 0;
-    int first_round = 1;
-    
-    ret = perfmon_startCounters();
-    if (ret < 0)
-    {
-        return -EFAULT;
-    }
-    timer_start(&timeData);
-    
-    childpid = fork();
-    daemon_running = 1;
-    if (childpid == 0)
-    {
-        nr_groups = perfmon_getNumberOfGroups();
-        if (nr_groups == 0)
-        {
-            ERROR_PLAIN_PRINT(DAEMON: No groups configured);
-            exit(1);
-        }
-        nr_threads = perfmon_getNumberOfThreads();
-        if (nr_threads == 0)
-        {
-            ERROR_PLAIN_PRINT(DAEMON: No threads configured);
-            exit(1);
-        }
-        signal(SIGUSR1, daemon_intr);
-        signal(SIGINT, daemon_intr);
-        while (daemon_running == 1)
-        {
-            timer_stop(&timeData);
-            ret = perfmon_readCounters();
-            if (ret < 0)
-            {
-                ERROR_PLAIN_PRINT(DAEMON: Failed to read counters);
-                exit(1);
-            }
-            group = perfmon_getIdOfActiveGroup();
-            if (group < 0)
-            {
-                ERROR_PLAIN_PRINT(DAEMON: Active group not configured);
-                exit(1);
-            }
-            //perfmon_logCounterResults( timer_print(&timeData) );
-            nr_events = perfmon_getNumberOfEvents(group);
-            fprintf(stderr, "%d,%d,%d,%f,", group, nr_events, nr_threads, timer_print(&timeData));
-            for(i=0;i<nr_events;i++)
-            {
-                fprintf(stderr, "%d,", i);
-                for(j = 0;j<nr_threads;j++)
-                {
-                    fprintf(stderr, "%f", perfmon_getResult(group, i, j));
-                    if ((i < nr_events) && (j < nr_threads))
-                    {
-                        fprintf(stderr, ",");
-                    }
-                }
-            }
-            fprintf(stderr,"\n");
-            if (nr_groups > 1 && !first_round)
-            {
-                group++;
-                if (group == nr_groups)
-                {
-                    group = 0;
-                }
-                current_interval = -1;
-                ret = perfmon_switchActiveGroup(group);
-                if (ret < 0)
-                {
-                    ERROR_PRINT(DAEMON: Failed to switch to group %d, group);
-                    exit(1);
-                }
-            }
-            current_interval++;
-            first_round = 0;
-            timer_start(&timeData);
-            usleep(duration);
-        }
-        signal(SIGUSR1, SIG_DFL);
-        signal(SIGINT, SIG_DFL);
-        group = perfmon_getIdOfActiveGroup();
-        if (group < 0)
-        {
-            ERROR_PLAIN_PRINT(DAEMON: Failed to get ID of active group);
-            exit(1);
-        }
-        nr_events = perfmon_getNumberOfEvents(group);
-        if (nr_events <= 0)
-        {
-            ERROR_PRINT(DAEMON: Group %d has not events configured, group);
-            exit(1);
-        }
-        fprintf(stderr, "%d,%d,%d,%f,", group, nr_events, nr_threads, timer_print(&timeData));
-        for(i=0;i<nr_events;i++)
-        {
-            fprintf(stderr, "%d,", i);
-            for(j = 0;j<nr_threads;j++)
-            {
-                fprintf(stderr, "%f", perfmon_getResult(group, i, j));
-                if ((i < nr_events) && (j < nr_threads))
-                {
-                    fprintf(stderr, ",");
-                }
-            }
-        }
-        fprintf(stderr,"\n");
-        exit(0);
-    }
-}
-
-int
 daemon_stop(int sig)
 {
-    pid_t ret;
-    int status = 0;
-    status = kill(childpid, SIGUSR1);
-    if (status < 0)
+    if (daemonpid > 0)
     {
-        ERROR_PRINT(Failed to kill daemon with SIGUSR1 signal. kill returned %d, status);
-        return status;
+        printf("PARENT: KILL daemon with signal %d\n", sig);
+        kill(daemonpid, sig);
+        //perfmon_stopCounters();
     }
-    ret = waitpid(childpid, &status, 0);
-    if (ret < 0)
-    {
-        ERROR_PRINT(Daemon process returned %d with status %d,ret, status);
-        return (int)ret;
-    }
-    
-    status = perfmon_stopCounters();
-    if (status < 0)
-    {
-        ERROR_PRINT(Failed to stop counters. LIKWID returned %d, status);
-        return status;
-    }
-    return 0;
 }
 
 void
 daemon_interrupt(int sig)
 {
-    int groupId;
-    if (daemon_running)
+    if (sig == SIGUSR1)
     {
-        daemon_running = 0;
-        kill(childpid, SIGINT);
-        perfmon_stopCounters();
-        perfmon_finalize();
-        //printf("DAEMON:  STOP on %d\n",sig);
-        kill(getpid(), SIGTERM);
-    }
-    else
+        if (daemon_run)
+        {
+            perfmon_stopCounters();
+            daemon_run = 0;
+            printf("DAEMON: STOP on %d\n",sig);
+            exit(EXIT_SUCCESS);
+        }
+        else
+        {
+            perfmon_setupEventSet(eventString, NULL);
+            perfmon_startCounters();
+            daemon_run = 1;
+            printf("DAEMON: START with events %s\n",bdata(eventString));
+        }
+    } else
     {
-        groupId = perfmon_addEventSet(eventString);
-        perfmon_setupCounters(groupId);
-        perfmon_startCounters();
-        daemon_running = 1;
-        //printf("DAEMON:  START\n");
+        printf("DAEMON: EXIT on %d\n", sig);
+        daemon_run = 0;
+        exit(EXIT_SUCCESS);
     }
 }
 

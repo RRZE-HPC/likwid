@@ -10,7 +10,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig 
+#      Copyright (C) 2014 Jan Treibig
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -27,8 +27,6 @@
 # =======================================================================================
 
 include  ../../config.mk
-include  ../../make/config_checks.mk
-include  ../../make/config_defines.mk
 include  ../../make/include_$(COMPILER).mk
 
 TARGET   = liblikwidpin.so
@@ -37,7 +35,7 @@ ifneq ($(COLOR),NONE)
 DEFINES += -DCOLOR=$(COLOR)
 endif
 
-DEFINES  += -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) -D_GNU_SOURCE
+DEFINES  += -DMAX_NUM_THREADS=$(MAX_NUM_THREADS)
 INCLUDES += -I../includes
 LIBS     += -ldl
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 

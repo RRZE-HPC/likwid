@@ -1,0 +1,30 @@
+.TH LIKWID-GENCFG 1 <DATE> likwid\-<VERSION>
+.SH NAME
+likwid-genCfg \- Get system topology and write them to file for faster LIKWID startup
+.SH SYNOPSIS
+.B likwid-genCfg
+.RB [\-hv]
+.RB [ \-o
+.IR <filename>]
+.SH DESCRIPTION
+.B likwid-genCfg
+is a command line application that stores the system's CPU and NUMA topology to
+file. LIKWID applications use this file to read in the topology fast instead of
+re-gathering all values. The default output path is /etc/likwid.cfg.
+.SH OPTIONS
+.TP
+.B \-h
+prints a help message to standard output, then exits.
+.TP
+.B \-v
+prints a version message to standard output, then exits.
+.TP
+.B \-\^o " <filename>
+sets output file path (optional)
+
+.SH AUTHOR
+Written by Thomas Roehl <thomas.roehl@gmail.com>.
+.SH BUGS
+Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+.SH "SEE ALSO"
+likwid-topology(1), likwid-perfctr(1), likwid-features(1), likwid-pin(1), likwid-powermeter(1)

@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -62,7 +62,7 @@ void likwid_markerstartregion_(char* regionTag, int len)
     }
 
     likwid_markerStartRegion( tmp );
-	free(tmp);
+    free(tmp);
 }
 
 void likwid_markerstopregion_(char* regionTag, int len)
@@ -79,6 +79,6 @@ void likwid_markerstopregion_(char* regionTag, int len)
     }
 
     likwid_markerStopRegion( tmp );
-	free(tmp);
+    free(tmp);
 }
 

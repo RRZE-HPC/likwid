@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -76,6 +76,7 @@ allocator_finalize()
 
 void
 allocator_allocateVector(
+        FILE* OUTSTREAM,
         void** ptr,
         int alignment,
         uint64_t size,
@@ -90,9 +91,11 @@ allocator_allocateVector(
     switch ( type )
     {
         case SINGLE:
+        case SINGLE_RAND:
             bytesize = (size+offset) * sizeof(float);
             break;
 
+        case DOUBLE_RAND:
         case DOUBLE:
             bytesize = (size+offset) * sizeof(double);
             break;
@@ -128,10 +131,13 @@ allocator_allocateVector(
     domain = affinity_getDomain(domainString);
     affinity_pinProcess(domain->processorList[0]);
 
-    printf("Allocate: Process running on core %d - Vector length %llu Offset %d\n",
+    if (OUTSTREAM)
+    {
+        fprintf(OUTSTREAM, "Allocate: Process running on core %d - Vector length %llu Offset %d\n",
             affinity_processGetProcessorId(),
             LLU_CAST size,
             offset);
+    }
 
     switch ( type )
     {
@@ -142,7 +148,7 @@ allocator_allocateVector(
 
                 for ( uint64_t i=0; i < size; i++ )
                 {
-                    sptr[i] = 0.0;
+                    sptr[i] = 1.0;
                 }
                 *ptr = (void*) sptr;
 
@@ -156,11 +162,38 @@ allocator_allocateVector(
 
                 for ( uint64_t i=0; i < size; i++ )
                 {
-                    dptr[i] = 0.0;
+                    dptr[i] = 1.0;
                 }
                 *ptr = (void*) dptr;
             }
             break;
+        case SINGLE_RAND:
+            {
+                srand((uint64_t)ptr);
+                float* sptr = (float*) (*ptr);
+                sptr += offset;
+
+                for ( uint64_t i=0; i < size; i++ )
+                {
+                    sptr[i] = rand()/((float)RAND_MAX)*2.0-1.0;
+                }
+                *ptr = (void*) sptr;
+            }
+            break;
+        case DOUBLE_RAND:
+            {
+                srand((uint64_t)ptr);
+                double* dptr = (double*) (*ptr);
+                dptr += offset;
+
+                for ( uint64_t i=0; i < size; i++ )
+                {
+                    dptr[i] = rand()/((double)RAND_MAX)*2.0-1.0;
+                }
+                *ptr = (void*) dptr;
+            }
+            break;
+        
     }
 }
 

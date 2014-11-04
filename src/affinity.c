@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -46,8 +47,8 @@
 #include <types.h>
 #include <numa.h>
 #include <affinity.h>
+#include <cpuid.h>
 #include <tree.h>
-#include <topology.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -62,8 +63,6 @@ int affinity_core2node_lookup[MAX_NUM_THREADS];
 
 static int  affinity_numberOfDomains = 0;
 static AffinityDomain*  domains;
-
-AffinityDomains affinityDomains;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -90,52 +89,50 @@ treeFillNextEntries(
     int offset,
     int numberOfEntries )
 {
-  int counter = numberOfEntries;
-  TreeNode* node = tree;
-  TreeNode* thread;
+    int counter = numberOfEntries;
+    TreeNode* node = tree;
+    TreeNode* thread;
+    node = tree_getChildNode(node);
 
-  node = tree_getChildNode(node);
-
-  /* get socket node */
-  for (int i=0; i<socketId; i++)
-  {
-    node = tree_getNextNode(node);
-
-    if ( node == NULL )
+    /* get socket node */
+    for (int i=0; i<socketId; i++)
     {
-      printf("ERROR: Socket %d not existing!",i);
-      exit(EXIT_FAILURE);
+        node = tree_getNextNode(node);
+
+        if ( node == NULL )
+        {
+          printf("ERROR: Socket %d not existing!",i);
+          exit(EXIT_FAILURE);
+        }
     }
-  }
 
-  node = tree_getChildNode(node);
-  /* skip offset cores */
-  for (int i=0; i<offset; i++)
-  {
-    node = tree_getNextNode(node);
-
-    if ( node == NULL )
+    node = tree_getChildNode(node);
+    /* skip offset cores */
+    for (int i=0; i<offset; i++)
     {
-      printf("ERROR: Core %d not existing!",i);
-      exit(EXIT_FAILURE);
+        node = tree_getNextNode(node);
+
+        if ( node == NULL )
+        {
+          printf("ERROR: Core %d on socket %d not existing!",i,socketId);
+          exit(EXIT_FAILURE);
+        }
     }
-  }
-
-  /* Traverse horizontal */
-  while ( node != NULL )
-  {
-    if ( !counter ) break;
-
-    thread = tree_getChildNode(node);
-
-    while ( thread != NULL )
+    /* Traverse horizontal */
+    while ( node != NULL )
     {
-      processorIds[numberOfEntries-counter] = thread->id;
-      thread = tree_getNextNode(thread);
-      counter--;
+        if ( !counter ) break;
+
+        thread = tree_getChildNode(node);
+
+        while ( thread != NULL )
+        {
+            processorIds[numberOfEntries-counter] = thread->id;
+            thread = tree_getNextNode(thread);
+            counter--;
+        }
+        node = tree_getNextNode(node);
     }
-    node = tree_getNextNode(node);
-  }
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -160,7 +157,6 @@ affinity_init()
     int numberOfProcessorsPerCache =
         cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
 
-
     /* for the cache domain take only into account last level cache and assume
      * all sockets to be uniform. */
 
@@ -169,26 +165,26 @@ affinity_init()
         (cpuid_topology.numCoresPerSocket/numberOfCoresPerCache);
 
     /* determine total number of domains */
-    numberOfDomains += numberOfSocketDomains + numberOfCacheDomains + numberOfNumaDomains;
+    if ( numberOfNumaDomains > 1 )
+    {
+        numberOfDomains += numberOfSocketDomains + numberOfCacheDomains + numberOfNumaDomains;
+    }
+    else
+    {
+        numberOfDomains += numberOfSocketDomains + numberOfCacheDomains;
+    }
     domains = (AffinityDomain*) malloc(numberOfDomains * sizeof(AffinityDomain));
     if (!domains)
     {
-        fprintf(stderr,"No more memory for %ld bytes for array of affinity domains\n",numberOfDomains * sizeof(AffinityDomain));
+        fprintf(stderr, "Cannot allocate affinity domain memory\n");
         return;
     }
 
     /* Node domain */
     domains[0].numberOfProcessors = cpuid_topology.numHWThreads;
     domains[0].numberOfCores = cpuid_topology.numSockets * cpuid_topology.numCoresPerSocket;
-    domains[0].tag = bformat("N");
     domains[0].processorList = (int*) malloc(cpuid_topology.numHWThreads*sizeof(int));
-    if (!domains[0].processorList)
-    {
-        fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
-                cpuid_topology.numHWThreads*sizeof(int), 
-                bdata(domains[0].tag));
-        return;
-    }
+    domains[0].tag = bformat("N");
     offset = 0;
 
     for (int i=0; i<numberOfSocketDomains; i++)
@@ -208,15 +204,8 @@ affinity_init()
     {
       domains[currentDomain + i].numberOfProcessors = numberOfProcessorsPerSocket;
       domains[currentDomain + i].numberOfCores =  cpuid_topology.numCoresPerSocket;
-      domains[currentDomain + i].tag = bformat("S%d", i);
       domains[currentDomain + i].processorList = (int*) malloc( domains[currentDomain + i].numberOfProcessors * sizeof(int));
-      if (!domains[currentDomain + i].processorList)   
-      {
-            fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
-                    domains[currentDomain + i].numberOfProcessors * sizeof(int), 
-                    bdata(domains[currentDomain + i].tag));
-            return;
-      }
+      domains[currentDomain + i].tag = bformat("S%d", i);
 
       treeFillNextEntries(
           cpuid_topology.topologyTree,
@@ -236,15 +225,8 @@ affinity_init()
       {
         domains[currentDomain + subCounter].numberOfProcessors = numberOfProcessorsPerCache;
         domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
-        domains[currentDomain + subCounter].tag = bformat("C%d", subCounter);
         domains[currentDomain + subCounter].processorList = (int*) malloc(numberOfProcessorsPerCache*sizeof(int));
-        if (!domains[currentDomain + subCounter].processorList)   
-        {
-            fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
-                    numberOfProcessorsPerCache*sizeof(int), 
-                    bdata(domains[currentDomain + subCounter].tag));
-            return;
-        }
+        domains[currentDomain + subCounter].tag = bformat("C%d", subCounter);
 
         treeFillNextEntries(
             cpuid_topology.topologyTree,
@@ -256,57 +238,44 @@ affinity_init()
       }
     }
 
-    /* Memory domains */
-    currentDomain += numberOfCacheDomains;
-    subCounter = 0;
-
-    for (int i=0; i < numberOfSocketDomains; i++ )
+    if ( numberOfNumaDomains > 1 )
     {
-      offset = 0;
+        /* Memory domains */
+        currentDomain += numberOfCacheDomains;
+        subCounter = 0;
 
-      for ( int j=0; j < (numberOfNumaDomains/numberOfSocketDomains); j++ )
-      {
-        domains[currentDomain + subCounter].numberOfProcessors = numa_info.nodes[subCounter].numberOfProcessors;
-        domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
-        domains[currentDomain + subCounter].tag = bformat("M%d", subCounter);
-        domains[currentDomain + subCounter].processorList = (int*) malloc(numa_info.nodes[subCounter].numberOfProcessors*sizeof(int));
-        if (!domains[currentDomain + subCounter].processorList)   
+        for (int i=0; i < numberOfSocketDomains; i++ )
         {
-            fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
-                    numa_info.nodes[subCounter].numberOfProcessors*sizeof(int), 
-                    bdata(domains[currentDomain + subCounter].tag));
-            return;
+            offset = 0;
+            for ( int j=0; j < (int)ceil((double)numberOfNumaDomains/numberOfSocketDomains); j++ )
+            {
+                domains[currentDomain + subCounter].numberOfProcessors = numa_info.nodes[subCounter].numberOfProcessors;
+                domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
+                domains[currentDomain + subCounter].processorList = (int*) malloc(numa_info.nodes[subCounter].numberOfProcessors*sizeof(int));
+                domains[currentDomain + subCounter].tag = bformat("M%d", subCounter);
+
+                treeFillNextEntries(
+                        cpuid_topology.topologyTree,
+                        domains[currentDomain + subCounter].processorList,
+                        i, offset, domains[currentDomain + subCounter].numberOfProcessors);
+
+                offset += domains[currentDomain + subCounter].numberOfCores;
+
+                subCounter++;
+            }
         }
 
-        treeFillNextEntries(
-            cpuid_topology.topologyTree,
-            domains[currentDomain + subCounter].processorList,
-            i, offset, domains[currentDomain + subCounter].numberOfProcessors);
-
-        offset += numa_info.nodes[subCounter].numberOfProcessors;
-        subCounter++;
-      }
-    }
-
-    /* This is redundant ;-). Create thread to node lookup */
-    for ( uint32_t i = 0; i < numa_info.numberOfNodes; i++ )
-    {
-        for ( int j = 0; j < numa_info.nodes[i].numberOfProcessors; j++ )
+        /* This is redundant ;-). Create thread to node lookup */
+        for ( uint32_t i = 0; i < numa_info.numberOfNodes; i++ )
         {
-            affinity_core2node_lookup[numa_info.nodes[i].processors[j]] = i;
+            for ( int j = 0; j < numa_info.nodes[i].numberOfProcessors; j++ )
+            {
+                affinity_core2node_lookup[numa_info.nodes[i].processors[j]] = i;
+            }
         }
     }
 
     affinity_numberOfDomains = numberOfDomains;
-    
-    affinityDomains.numberOfAffinityDomains = numberOfDomains;
-    affinityDomains.numberOfSocketDomains = numberOfSocketDomains;
-    affinityDomains.numberOfNumaDomains = numberOfNumaDomains;
-    affinityDomains.numberOfProcessorsPerSocket = numberOfProcessorsPerSocket;
-    affinityDomains.numberOfCacheDomains = numberOfCacheDomains;
-    affinityDomains.numberOfCoresPerCache = numberOfCoresPerCache;
-    affinityDomains.numberOfProcessorsPerCache = numberOfProcessorsPerCache;
-    affinityDomains.domains = domains;
 }
 
 
@@ -395,24 +364,22 @@ affinity_getDomain(bstring domain)
 }
 
 void
-affinity_printDomains()
+affinity_printDomains(FILE* OUTSTREAM)
 {
-    for ( int i=0; i < affinity_numberOfDomains; i++ )
+    if (OUTSTREAM)
     {
-        printf("Domain %d:\n",i);
-        printf("\tTag %s:",bdata(domains[i].tag));
-
-        for ( uint32_t j=0; j < domains[i].numberOfProcessors; j++ )
+        for ( int i=0; i < affinity_numberOfDomains; i++ )
         {
-            printf(" %d",domains[i].processorList[j]);
-        }
-        printf("\n");
-    }
-}
+            fprintf(OUTSTREAM, "Domain %d:\n", i);
+            fprintf(OUTSTREAM, "\tTag %s:", bdata(domains[i].tag));
 
-AffinityDomains_t
-get_affinityDomains(void)
-{
-    return &affinityDomains;
+            for ( uint32_t j=0; j < domains[i].numberOfProcessors; j++ )
+            {
+                fprintf(OUTSTREAM, " %d", domains[i].processorList[j]);
+            }
+            fprintf(OUTSTREAM, "\n");
+            fflush(OUTSTREAM);
+        }
+    }
 }
 

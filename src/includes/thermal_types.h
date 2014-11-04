@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -33,21 +33,13 @@
 
 #include <stdint.h>
 
-/** \addtogroup ThermalMon
- *  @{
- */
+
 typedef struct {
     uint16_t highT;
     uint32_t resolution;
     uint32_t activationT;
     uint32_t offset;
 } ThermalInfo;
-
-/** \brief Pointer for exporting the ThermalInfo data structure */
-typedef ThermalInfo* ThermalInfo_t;
-/** @}*/
-
-extern ThermalInfo thermal_info;
 
 
 #endif /*THERMAL_TYPES_H*/

@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -37,9 +37,12 @@
 #include <error.h>
 #include <types.h>
 #include <memsweep.h>
-#include <topology.h>
+#include <cpuid.h>
 #include <numa.h>
 #include <affinity.h>
+
+extern void _loadData(uint32_t size, void* ptr);
+
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -54,14 +57,14 @@ static uint64_t  memoryFraction = 80ULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static void* 
+static void*
 allocateOnNode(size_t size, int domainId)
 {
-	char *ptr; 
+    char *ptr; 
 
-	ptr = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);  
+    ptr = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
 
-	if (ptr == (char *)-1)
+    if (ptr == (char *)-1)
     {
         ERROR;
     }
@@ -71,7 +74,7 @@ allocateOnNode(size_t size, int domainId)
     return ptr;
 }
 
-static void 
+static void
 initMemory(size_t size, char* ptr, int domainId)
 {
     affinity_pinProcess(numa_info.nodes[domainId].processors[0]);
@@ -97,8 +100,20 @@ findProcessor(uint32_t nodeId, uint32_t coreId)
     return 0;
 }
 
-
-
+/* evict all dirty cachelines from last level cache */
+static void cleanupCache(FILE* OUTSTREAM, char* ptr)
+{
+#ifdef __x86_64
+    uint32_t cachesize = 2 * cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].size;
+    if (OUTSTREAM != NULL)
+    {
+        fprintf(OUTSTREAM, "Cleanup LLC using %u MB\n", cachesize / (1000000));
+    }
+    _loadData(cachesize,ptr);
+#else
+    ERROR_PLAIN_PRINT(Cleanup cache is currently only available on 64bit X86 systems.);
+#endif
+}
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -110,31 +125,35 @@ memsweep_setMemoryFraction(uint64_t fraction)
 
 
 void
-memsweep_node(void)
+memsweep_node(FILE* OUTSTREAM)
 {
     for ( uint32_t i=0; i < numa_info.numberOfNodes; i++)
     {
-        memsweep_domain(i);
+        memsweep_domain(OUTSTREAM, i);
     }
 }
 
 
 void
-memsweep_domain(int domainId)
+memsweep_domain(FILE* OUTSTREAM, int domainId)
 {
     char* ptr = NULL;
     size_t size = numa_info.nodes[domainId].totalMemory * 1024ULL * memoryFraction / 100ULL;
-    printf("Sweeping domain %d: Using %g MB of %g MB\n",
-            domainId,
-            size / (1024.0 * 1024.0),
-            numa_info.nodes[domainId].totalMemory/ 1024.0);
+    if (OUTSTREAM != NULL)
+    {
+        fprintf(OUTSTREAM, "Sweeping domain %d: Using %g MB of %g MB\n",
+                domainId,
+                size / (1000.0 * 1000.0),
+                numa_info.nodes[domainId].totalMemory/ 1000.0);
+    }
     ptr = (char*) allocateOnNode(size, domainId);
     initMemory(size, ptr, domainId);
+    cleanupCache(OUTSTREAM, ptr);
     munmap(ptr, size);
 }
 
 void
-memsweep_threadGroup(int* processorList, int numberOfProcessors)
+memsweep_threadGroup(FILE* OUTSTREAM, int* processorList, int numberOfProcessors)
 {
     for (uint32_t i=0; i<numa_info.numberOfNodes; i++)
     {
@@ -142,13 +161,10 @@ memsweep_threadGroup(int* processorList, int numberOfProcessors)
         {
             if (findProcessor(i,processorList[j]))
             {
-                memsweep_domain(i);
+                memsweep_domain(OUTSTREAM, i);
                 break;
             }
         }
     }
 }
-
-
-
 

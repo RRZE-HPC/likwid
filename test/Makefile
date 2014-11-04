@@ -1,5 +1,5 @@
 LIKWID_LIB = -L../ -llikwid 
-INCLUDES = -I../src/includes -I../ -I../GCC
+INCLUDES = -I../src/includes -I../ -I../MIC
 
 all:  testmarker testmarkerF90 stream streamM
 
@@ -7,7 +7,7 @@ testmarkerF90: chaos.F90
 	ifort $(INCLUDES)  -O3  -o $@ chaos.F90 $(LIKWID_LIB) -lpthread
 
 stream: stream.c
-	gcc -O3 $(INCLUDES) -fopenmp  -o $@  -DLIKWID_PERFMON stream.c $(LIKWID_LIB) -lm
+	icc -O3 $(INCLUDES) -mmic  -openmp  -o $@  -DLIKWID_PERFMON stream.c $(LIKWID_LIB) -lm
 
 streamM: stream.c
 	gcc -O3 $(INCLUDES) -fopenmp  -o $@  -DLIKWID_PERFMON stream.c $(LIKWID_LIB) -lm

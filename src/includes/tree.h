@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -36,7 +36,6 @@
 
 extern void tree_init(TreeNode** root, int id);
 extern void tree_print(TreeNode* nodePtr);
-extern void tree_destroy(TreeNode* nodePtr);
 extern void tree_insertNode(TreeNode* nodePtr, int id);
 extern int tree_nodeExists(TreeNode* nodePtr, int id);
 extern int tree_countChildren(TreeNode* nodePtr);

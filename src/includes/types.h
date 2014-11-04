@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -34,26 +34,27 @@
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 #include <stdint.h>
-#include <bstrlib.h>
 
 #include <accessClient_types.h>
-#include <configuration_types.h>
-#include <registers_types.h>
 #include <pci_types.h>
 #include <power_types.h>
 #include <thermal_types.h>
 #include <strUtil_types.h>
 #include <test_types.h>
+#include <barrier_types.h>
 #include <timer_types.h>
 #include <tree_types.h>
-#include <topology_types.h>
+#include <cpuid_types.h>
 #include <affinity_types.h>
+#include <threads_types.h>
+#include <cpuFeatures_types.h>
+#include <asciiBoxes_types.h>
+#include <asciiTable_types.h>
 #include <perfmon_types.h>
 #include <libperfctr_types.h>
-#include <numa_types.h>
-#include <barrier_types.h>
-#include <cpuFeatures_types.h>
 #include <multiplex_types.h>
+#include <numa_types.h>
+#include <pci_types.h>
 
 
 typedef struct {
@@ -81,8 +82,5 @@ typedef struct {
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
-
-#define likely(x)       __builtin_expect(!!(x), 1)
-#define unlikely(x)     __builtin_expect(!!(x), 0)
 
 #endif /*TYPES_H*/

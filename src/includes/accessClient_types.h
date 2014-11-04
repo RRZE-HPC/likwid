@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -34,21 +34,10 @@
 #include <stdint.h>
 
 /* This naming with AccessType and AccessMode is admittedly a bit confusing */
-/** \addtogroup AccessClient
-*  @{
-*/
-/*! \brief Enum for the access modes
-
-LIKWID supports multiple access modes to the MSR and PCI performance monitoring 
-registers. For direct access the user must have enough priviledges to access the
-MSR and PCI devices. The daemon mode forwards the operations to a daemon with 
-higher priviledges.
-*/
 typedef enum {
-    DAEMON_AM_DIRECT = 0, /*!< \brief Access performance monitoring registers directly */
-    DAEMON_AM_ACCESS_D = 1 /*!< \brief Use the access daemon to access the registers */
+    DAEMON_AM_DIRECT = 0,
+    DAEMON_AM_ACCESS_D
 } AccessMode;
-/** @}*/
 
 typedef enum {
     DAEMON_READ = 0,
@@ -80,7 +69,10 @@ typedef enum {
     ERR_RESTREG,      /* attempt to access restricted MSR */
     ERR_OPENFAIL,     /* failure to open msr files */
     ERR_RWFAIL,       /* failure to read/write msr */
-    ERR_DAEMONBUSY    /* daemon already has another client */
+    ERR_DAEMONBUSY,   /* daemon already has another client */
+    ERR_LOCKED,       /* access to HPM is locked */
+    ERR_UNSUPPORTED,   /* unsupported processor */
+    ERR_NODEV	/* No such device */
 } AccessErrorType;
 
 typedef struct {
@@ -91,7 +83,5 @@ typedef struct {
     AccessType type;
     AccessErrorType errorcode; /* Only in replies - 0 if no error. */
 } AccessDataRecord;
-
-extern int accessClient_mode;
 
 #endif /*ACCESSCLIENT_TYPES_H*/

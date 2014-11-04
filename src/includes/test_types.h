@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -38,7 +38,10 @@ typedef void (*FuncPrototype)();
 
 typedef enum {
     SINGLE = 0,
-    DOUBLE} DataType;
+    DOUBLE,
+    SINGLE_RAND,
+    DOUBLE_RAND
+} DataType;
 
 typedef enum {
     STREAM_1 = 1,
@@ -79,7 +82,8 @@ typedef enum {
     STREAM_36,
     STREAM_37,
     STREAM_38,
-    MAX_STREAMS} Pattern;
+    MAX_STREAMS
+} Pattern;
 
 typedef struct {
     char* name;
@@ -87,15 +91,15 @@ typedef struct {
     DataType type ;
     int stride;
     FuncPrototype kernel;
-    int  flops;
-    int  bytes;
+    double flops;
+    int bytes;
 } TestCase;
 
 typedef struct {
-    uint64_t   size;
-    uint32_t   iter;
+    uint64_t size;
+    uint32_t iter;
     const TestCase* test;
-    uint64_t   cycles;
+    uint64_t cycles;
     uint32_t numberOfThreads;
     int* processors;
     void** streams;
