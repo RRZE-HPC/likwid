@@ -5,11 +5,12 @@ MAKE_DIR   = ../../make
 
 include ../../config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
+LIBPCI_PATH = $(shell find /lib -name 'libpci*.so*' | head -n 1 | rev | cut -d'/' -f2- | rev)
 
 CFLAGS    = -O2 -Wall -fPIC -Wno-unused-result
 INCLUDES  = -I./include
 DEFINES   =
-LIBS      = -lm -lpci -Wl,-E
+LIBS      = -L. -L$(LIBPCI_PATH) -lm -lpci -Wl,-E
 LFLAGS    = -Wno-unused-result
 Q         ?= @
 
@@ -19,6 +20,8 @@ BUILD_DIR  = ./$(COMPILER)
 VPATH     = $(SRC_DIRS)
 FILES     = $(notdir $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c)))
 OBJ       = $(patsubst %.c, $(BUILD_DIR)/%.o, $(FILES))
+
+
 
 STATIC_LIBHWLOC = libhwloc.a
 SHARED_LIBHWLOC = libhwloc.so
