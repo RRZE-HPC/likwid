@@ -306,6 +306,11 @@ Pin thread to a CPU. Duplicate of likwid_pinThread()
 @param [in] processorId CPU ID for pinning
 */
 extern void affinity_pinThread(int processorId);
+/*! \brief Return the CPU ID where the current process runs.
+
+@return CPU ID
+*/
+int affinity_processGetProcessorId();
 /*! \brief Destroy affinity information structure
 
 Destroys the affinity information structure AffinityDomains_t. Retrieved pointers
