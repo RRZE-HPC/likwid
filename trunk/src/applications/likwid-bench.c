@@ -38,9 +38,9 @@
 #include <bstrlib.h>
 #include <types.h>
 #include <error.h>
-#include <cpuid.h>
-#include <numa.h>
-#include <affinity.h>
+//#include <topology.h>
+//#include <numa.h>
+//#include <affinity.h>
 #include <timer.h>
 #include <threads.h>
 #include <barrier.h>
@@ -101,7 +101,7 @@ copyThreadData(ThreadUserData* src,ThreadUserData* dst)
 
 int main(int argc, char** argv)
 {
-    int iter = 100;
+    uint64_t iter = 100;
     uint32_t i;
     uint32_t j;
     int globalNumberOfThreads = 0;
@@ -109,14 +109,14 @@ int main(int argc, char** argv)
     int c;
     ThreadUserData myData;
     bstring testcase = bfromcstr("none");
-    uint32_t numberOfWorkgroups = 0;
+    uint64_t numberOfWorkgroups = 0;
     int tmp = 0;
     double time;
     const TestCase* test = NULL;
     Workgroup* currentWorkgroup = NULL;
     Workgroup* groups = NULL;
 
-    if (cpuid_init() == EXIT_FAILURE)
+    if (topology_init() == EXIT_FAILURE)
     {
         ERROR_PLAIN_PRINT(Unsupported processor!);
     }
@@ -178,7 +178,7 @@ int main(int argc, char** argv)
 
                 break;
             case 'i':
-                iter =  atoi(optarg);
+                iter = LLU_CAST atol(optarg);
                 break;
             case 'l':
                 testcase = bfromcstr(optarg);
@@ -221,7 +221,7 @@ int main(int argc, char** argv)
                 optPrintDomains = 1;
                 break;
             case 'g':
-                numberOfWorkgroups =  atoi(optarg);
+                numberOfWorkgroups = LLU_CAST atol(optarg);
                 allocator_init(numberOfWorkgroups * MAX_STREAMS);
                 tmp = numberOfWorkgroups;
                 groups = (Workgroup*) malloc(numberOfWorkgroups*sizeof(Workgroup));
@@ -261,7 +261,19 @@ int main(int argc, char** argv)
 
     if (optPrintDomains)
     {
-        affinity_printDomains();
+        AffinityDomains_t affinity = get_affinityDomains();
+
+        for (i=0; i < affinity->numberOfAffinityDomains; i++ )
+        {
+            printf("Domain %d:\n",i);
+            printf("\tTag %s:",bdata(affinity->domains[i].tag));
+
+            for ( uint32_t j=0; j < affinity->domains[i].numberOfProcessors; j++ )
+            {
+                printf(" %d",affinity->domains[i].processorList[j]);
+            }
+            printf("\n");
+        }
         exit (EXIT_SUCCESS);
     }
     timer_init();
@@ -281,7 +293,7 @@ int main(int argc, char** argv)
     barrier_registerGroup(globalNumberOfThreads);
 
 #ifdef PERFMON
-    printf("Using likwid\n");
+    //printf("Using likwid\n");
     likwid_markerInit();
 #endif
 
@@ -341,6 +353,7 @@ int main(int argc, char** argv)
     printf("Number of Flops: %llu \n", LLU_CAST (numberOfWorkgroups * iter * realSize *  test->flops));
     printf("MFlops/s:\t%.2f\n",
             1.0E-06 * ((double) numberOfWorkgroups * iter * realSize *  test->flops/  time));
+    printf("Data volume:\t%llu\n", LLU_CAST (numberOfWorkgroups * iter * realSize *  test->bytes));
     printf("MByte/s:\t%.2f\n",
             1.0E-06 * ( (double) numberOfWorkgroups * iter * realSize *  test->bytes/ time));
     printf("Cycles per update:\t%f\n",
@@ -359,7 +372,7 @@ int main(int argc, char** argv)
     }
 
     printf(HLINE);
-    threads_destroy();
+    threads_destroy(numberOfWorkgroups);
     
 #ifdef PERFMON
     likwid_markerClose();
