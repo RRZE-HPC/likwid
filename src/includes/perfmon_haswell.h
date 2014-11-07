@@ -87,7 +87,7 @@ int perfmon_init_haswell(int cpu_id)
     }
 
 #define HAS_FREEZE_UNCORE_AND_RESET_CTL \
-    if (haveLock && (eventSet->regTypeMask != 0x0ULL)) \
+    if (haveLock && (eventSet->regTypeMask & ~(REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)|REG_TYPE_MASK(THERMAL)))) \
     { \
         VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31))); \
@@ -171,7 +171,7 @@ int perfmon_setupCounterThread_haswell(
                     /* Intel with standard 8 bit event mask: [7:0] */
                     flags |= (event->umask<<8) + event->eventId;
 
-                    if (event->cfgBits != 0) /* set custom cfg and cmask */
+                    if ((event->cfgBits != 0) && (event->eventId != 0xB7) && (event->eventId != 0xBB)) /* set custom cfg and cmask */
                     {
                         flags |= ((event->cmask<<8) + event->cfgBits)<<16;
                     }
@@ -205,8 +205,21 @@ int perfmon_setupCounterThread_haswell(
                             }
                         }
                     }
-                    VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, SETUP_PMC)
+                    VERBOSEPRINTREG(cpu_id, reg, LLU_CAST flags, SETUP_PMC);
                     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+
+                    if (event->eventId == 0xB7)
+                    {
+                        flags = (1<<event->cfgBits)|(1<<event->cmask);
+                        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, LLU_CAST flags, SETUP_OFFCORE_RESP0);
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_OFFCORE_RESP0, flags));
+                    }
+                    else if (event->eventId == 0xBB)
+                    {
+                        flags = (1<<event->cfgBits)|(1<<event->cmask);
+                        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST flags, SETUP_OFFCORE_RESP1);
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_OFFCORE_RESP1, flags));
+                    }
                 }
                 break;
 
@@ -416,6 +429,16 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     HAS_CHECK_CORE_OVERFLOW(index-cpuid_info.perf_num_fixed_ctr);
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_PMC)
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    if (eventSet->events[i].event.eventId == 0xB7)
+                    {
+                        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL, CLEAR_OFFCORE_RESPONSE0);
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL));
+                    }
+                    else if (eventSet->events[i].event.eventId == 0xBB)
+                    {
+                        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL, CLEAR_OFFCORE_RESPONSE0);
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL));
+                    }
                     break;
 
                 case FIXED:
