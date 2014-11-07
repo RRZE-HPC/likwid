@@ -51,15 +51,15 @@ int perfmon_init_haswellEP(int cpu_id)
 #define HASEP_FREEZE_UNCORE \
     if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
     { \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), ACTIVATE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31))); \
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), ACTIVATE_UNCORE); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<31))); \
     }
 
 #define HASEP_UNFREEZE_UNCORE \
     if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
     { \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, UNFREEZE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL)); \
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, UNFREEZE_UNCORE); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, 0x0ULL)); \
     }
 
 #define HASEP_UNFREEZE_UNCORE_AND_RESET_CTR \
@@ -81,15 +81,15 @@ int perfmon_init_haswellEP(int cpu_id)
                 } \
             } \
         } \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, UNFREEZE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL)); \
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, UNFREEZE_UNCORE); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, 0x0ULL)); \
     }
 
 #define HASEP_FREEZE_UNCORE_AND_RESET_CTL \
     if (haveLock && (eventSet->regTypeMask & ~(REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)|REG_TYPE_MASK(THERMAL)))) \
     { \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31))); \
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<31))); \
         for (int j=0; j<NUM_COUNTERS_HASWELL; j++) \
         { \
             if (eventSet->regTypeMask & REG_TYPE_MASK(counter_map[j].type)) \
@@ -332,24 +332,24 @@ int perfmon_startCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventS
     if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) \
     { \
         uint64_t ovf_values = 0x0ULL; \
-        CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, MSR_PERF_GLOBAL_STATUS, &ovf_values)); \
+        CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, &ovf_values)); \
         if (ovf_values & (1ULL<<offset)) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
         } \
-        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<offset))); \
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, (1ULL<<offset))); \
     }
 
 #define HASEP_CHECK_UNCORE_OVERFLOW(offset) \
     if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) \
     { \
         uint64_t ovf_values = 0x0ULL; \
-        CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_UNC_PERF_GLOBAL_STATUS, &ovf_values)); \
+        CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, &ovf_values)); \
         if (ovf_values & (1ULL<<offset)) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
         } \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PERF_GLOBAL_STATUS, (1ULL<<offset))); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, (1ULL<<offset))); \
     }
 
 
