@@ -114,18 +114,26 @@ int perfmon_setupCountersThread_silvermont(
                 CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
                 
                 // Offcore event with additional configuration register
-                // We included the additional register as counterRegister2
-                // to avoid creating a new data structure
                 // cfgBits contain offset of "request type" bit
                 // cmask contain offset of "response type" bit
                 if (event->eventId == 0xB7)
                 {
-                    reg = silvermont_counter_map[index].counterRegister2;
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &flags));
-                    flags = (1<<event->cfgBits)|(1<<event->cmask);
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                    reg = 0x0;
+                    if (event->umask == 0x01)
+                    {
+                        reg = MSR_OFFCORE_RESP0;
+                    }
+                    else if (event->umask == 0x02)
+                    {
+                        reg = MSR_OFFCORE_RESP1;
+                    }
+                    if (reg)
+                    {
+                        CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &flags));
+                        flags = (1<<event->cfgBits)|(1<<event->cmask);
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+                    }
                 }
-                
                 break;
 
             case FIXED:
