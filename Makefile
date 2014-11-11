@@ -55,15 +55,6 @@ BUILD_DIR  = ./$(COMPILER)
 Q         ?= @
 GENGROUPLOCK = .gengroup
 
-ifeq ($(COMPILER),MIC)
-BENCH_DIR   = ./bench/phi
-else
-ifeq ($(COMPILER),GCCX86)
-BENCH_DIR   = ./bench/x86
-else
-BENCH_DIR   = ./bench/x86-64
-endif
-endif
 
 DYNAMIC_TARGET_LIB := liblikwid.so
 STATIC_TARGET_LIB := liblikwid.a
@@ -93,11 +84,10 @@ VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
 OBJ      += $(patsubst $(SRC_DIR)/%.cc, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.cc))
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
-OBJ_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
 OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)
+BENCH_TARGET = likwid-bench
 
-C_APPS      =   likwid-bench
 L_APPS      =   likwid-perfctr \
 				likwid-pin \
 				likwid-powermeter \
@@ -111,7 +101,7 @@ endif
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(BUILD_DIR) $(EXT_TARGETS) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(FORTRAN_INTERFACE)  $(PINLIB) $(L_APPS) $(L_HELPER) $(C_APPS) $(DAEMON_TARGET) $(FREQ_TARGET)
+all: $(BUILD_DIR) $(EXT_TARGETS) $(PERFMONHEADERS) $(OBJ) $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(FORTRAN_INTERFACE)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET)
 
 tags:
 	@echo "===>  GENERATE  TAGS"
@@ -120,10 +110,6 @@ tags:
 docs:
 	@echo "===>  GENERATE DOXYGEN DOCS"
 	$(Q)doxygen doc/Doxyfile
-
-$(C_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$(C_APPS))) $(BUILD_DIR) $(OBJ) $(OBJ_BENCH)
-	@echo "===>  LINKING  $@"
-	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $@  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .c,$@)) $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(LIBHWLOC) $(LIBS)
 
 $(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
 	@echo "===>  ADJUSTING  $@"
@@ -177,6 +163,9 @@ $(EXT_TARGETS):
 	@echo "===>  ENTER  $@"
 	$(Q)$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS)
 
+$(BENCH_TARGET):
+	@echo "===>  ENTER  $@"
+	$(Q)$(MAKE) --no-print-directory -C bench $(MAKECMDGOALS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
@@ -190,18 +179,10 @@ $(BUILD_DIR)/%.o:  %.cc
 	$(Q)$(CXX) $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 
-$(BUILD_DIR)/%.pas:  $(BENCH_DIR)/%.ptt
-	@echo "===>  GENERATE BENCHMARKS"
-	$(Q)$(GEN_PAS)  $(BENCH_DIR) $(BUILD_DIR) ./perl/templates
-
 $(BUILD_DIR)/%.h:  $(SRC_DIR)/includes/%.txt
 	@echo "===>  GENERATE HEADER $@"
 	$(Q)$(GEN_PMHEADER) $< $@
 
-$(BUILD_DIR)/%.o:  $(BUILD_DIR)/%.pas
-	@echo "===>  ASSEMBLE  $@"
-	$(Q)$(PAS) -i $(PASFLAGS) -o $(BUILD_DIR)/$*.s $<  '$(DEFINES)'
-	$(Q)$(AS) $(ASFLAGS)  $(BUILD_DIR)/$*.s -o $@
 
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
@@ -215,7 +196,7 @@ endif
 .NOTPARALLEL:
 
 
-clean: $(EXT_TARGETS)
+clean: $(EXT_TARGETS) $(BENCH_TARGET)
 	@echo "===>  CLEAN"
 	@rm -rf $(BUILD_DIR)
 	@rm -f $(GENGROUPLOCK)
@@ -236,9 +217,6 @@ install:
 	@echo "===> INSTALL applications to $(PREFIX)/bin"
 	@mkdir -p $(PREFIX)/bin
 	for APP in $(L_APPS); do \
-		cp -f $$APP  $(PREFIX)/bin; \
-	done
-	@for APP in $(C_APPS); do \
 		cp -f $$APP  $(PREFIX)/bin; \
 	done
 	@cp ext/lua/lua $(PREFIX)/bin/likwid-lua

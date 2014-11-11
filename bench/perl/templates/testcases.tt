@@ -1,0 +1,19 @@
+#ifndef TESTCASES_H
+#define TESTCASES_H
+
+#include <test_types.h>
+
+[% FOREACH test IN Testcases %]
+extern void [% test.name %]();
+[% END %]
+
+#define TESTS  "[% allTests %]"
+#define NUMKERNELS [% numKernels %]
+
+static const TestCase kernels[NUMKERNELS] = {
+    [% FOREACH test IN Testcases %]
+    {"[% test.name %]" , [% test.streams %], [% test.type %], [% test.stride %], &[% test.name %], [% test.flops %], [% test.bytes %]},
+    [% END %]
+};
+
+#endif /* TESTCASES_H */
