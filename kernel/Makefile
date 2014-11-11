@@ -9,4 +9,5 @@ modules_install:
 	install -m 666 enable_rdpmc.ko /lib/modules/$(shell uname -r)/extra/
 
 clean:
-	rm -f *.ko *.o modules.order Module.symvers enable_rdpmc.mod.c
+	rm -f *.ko *.o modules.order Module.symvers enable_rdpmc.mod.c .enable_rdpmc*.cmd
+	rm -rf .tmp_versions
