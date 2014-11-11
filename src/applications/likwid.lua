@@ -51,6 +51,7 @@ likwid.startDaemon = likwid_startDaemon
 likwid.stopDaemon = likwid_stopDaemon
 likwid.startPower = likwid_startPower
 likwid.stopPower = likwid_stopPower
+likwid.calcPower = likwid_printEnergy
 likwid.initTemp = likwid_initTemp
 likwid.readTemp = likwid_readTemp
 likwid.memSweep = likwid_memSweep
