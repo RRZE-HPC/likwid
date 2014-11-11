@@ -223,7 +223,7 @@ static int lua_likwid_getNumberOfEvents(lua_State* L)
 {
     int number, groupId;
     groupId = lua_tonumber(L,1);
-    number = perfmon_getNumberOfEvents(groupId);
+    number = perfmon_getNumberOfEvents(groupId-1);
     lua_pushnumber(L,number);
     return 1;
 }
@@ -910,6 +910,14 @@ static int lua_likwid_stopPower(lua_State* L)
     return 1;
 }
 
+static int lua_likwid_printEnergy(lua_State* L)
+{
+    PowerData pwrdata;
+    pwrdata.before = lua_tonumber(L,1);
+    pwrdata.after = lua_tonumber(L,2);
+    lua_pushnumber(L,power_printEnergy(&pwrdata));
+    return 1;
+}
 
 static int lua_likwid_getCpuClock(lua_State* L)
 {
@@ -939,61 +947,63 @@ static int iusleep(lua_State* L)
 static int lua_likwid_startClock(lua_State* L)
 {
     TimerData timer;
-    uint64_t value;
+    double value;
     if (timer_isInitialized == 0)
     {
         timer_init();
         timer_isInitialized = 1;
     }
     timer_start(&timer);
-    value = ((uint64_t)timer.start.int32.hi << 32) | (uint64_t)timer.start.int32.lo;
-    lua_pushunsigned(L,value);
+    value = (double)timer.start.int64;
+    lua_pushnumber(L, value);
     return 1;
 }
 
 static int lua_likwid_stopClock(lua_State* L)
 {
     TimerData timer;
-    uint64_t value;
+    double value;
     if (timer_isInitialized == 0)
     {
         timer_init();
         timer_isInitialized = 1;
     }
     timer_stop(&timer);
-    value = ((uint64_t)timer.start.int32.hi << 32) | (uint64_t)timer.start.int32.lo;
-    lua_pushunsigned(L,value);
+    value = (double)timer.stop.int64;
+    lua_pushnumber(L, value);
     return 1;
 }
 
 static int lua_likwid_getClockCycles(lua_State* L)
 {
     TimerData timer;
-    timer.start.int64 = (uint64_t)lua_tounsigned(L,-1);
-    timer.stop.int64 = (uint64_t)lua_tounsigned(L,-2);
+    double start, stop;
+    start = lua_tonumber(L,1);
+    stop = lua_tonumber(L,2);
+    timer.start.int64 = (uint64_t)start;
+    timer.stop.int64 = (uint64_t)stop;
     if (timer_isInitialized == 0)
     {
         timer_init();
         timer_isInitialized = 1;
     }
-    
-    lua_pushunsigned(L, timer_printCycles(&timer));
+    lua_pushnumber(L, (double)timer_printCycles(&timer));
     return 1;
 }
 
 static int lua_likwid_getClock(lua_State* L)
 {
     TimerData timer;
-    double runtime;
-    uint64_t baseline;
+    double runtime, start, stop;
     if (timer_isInitialized == 0)
     {
         timer_init();
         timer_isInitialized = 1;
     }
-    baseline = timer_getBaseline();
-    timer.start.int64 = (uint64_t)lua_tounsigned(L,-1);
-    timer.stop.int64 = (uint64_t)lua_tounsigned(L,-2);
+    start = lua_tonumber(L,1);
+    stop = lua_tonumber(L,2);
+    timer.start.int64 = (uint64_t)start;
+    timer.stop.int64 = (uint64_t)stop;
     runtime = timer_print(&timer);
     lua_pushnumber(L, runtime);
     return 1;
@@ -1021,8 +1031,22 @@ static int lua_likwid_readTemp(lua_State* L)
 
 static int lua_likwid_startDaemon(lua_State* L)
 {
-    uint64_t duration = (uint64_t)luaL_checknumber(L,-1);
-    daemon_start(duration);
+    int err;
+    uint64_t duration = (uint64_t)luaL_checknumber(L,1);
+    const char* tmpString = luaL_checkstring(L, 2);
+    luaL_argcheck(L, strlen(tmpString) > 0, 2, "Empty filename not allowed");
+    err = daemon_start(duration, tmpString);
+    switch (err)
+    {
+        case -ENOENT:
+            lua_pushstring(L,"Output file cannot be opened");
+            lua_error(L);
+            return 1;
+        case -EFAULT:
+            lua_pushstring(L,"Error starting counters");
+            lua_error(L);
+            return 1;
+    }
     return 0;
 }
 
@@ -1171,6 +1195,7 @@ int luaopen_liblikwid(lua_State* L){
     // Power functions
     lua_register(L, "likwid_startPower",lua_likwid_startPower);
     lua_register(L, "likwid_stopPower",lua_likwid_stopPower);
+    lua_register(L, "likwid_printEnergy",lua_likwid_printEnergy);
     // Temperature functions
     lua_register(L, "likwid_initTemp",lua_likwid_initTemp);
     lua_register(L, "likwid_readTemp",lua_likwid_readTemp);
