@@ -1,4 +1,4 @@
-#!<PREFIX>/bin/likwid-lua
+#!ext/lua/lua
 
 --[[
  * =======================================================================================
@@ -30,7 +30,8 @@
  *
  * =======================================================================================]]
 
-package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
+--package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
+package.path = package.path .. ';./?.lua'
 local likwid = require("likwid")
 
 local function version()
@@ -368,22 +369,6 @@ end
 likwid.setupCounters(group_ids[1])
 print(likwid.hline)
 
-if use_timeline == true then
-    local cores_string = "CORES: "
-    for i, cpu in pairs(cpulist) do
-        cores_string = cores_string .. tostring(cpu) .. " "
-    end
-    print(cores_string:sub(1,cores_string:len()-1))
-    likwid.startDaemon(duration, switch_interval);
-end
-
-if use_wrapper or use_timeline then
-    execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
-    if verbose == true then
-        print(string.format("Executing: %s",execString))
-    end
-end
-
 if use_marker == true then
     likwid.setenv("LIKWID_FILEPATH", markerFile)
     likwid.setenv("LIKWID_MODE", tostring(access_mode))
@@ -397,13 +382,31 @@ if use_marker == true then
     likwid.setenv("LIKWID_THREADS", table.concat(cpulist,","))
 end
 
-if use_wrapper or use_stethoscope then
+if use_wrapper or use_timeline then
+    execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
+    if verbose == true then
+        print(string.format("Executing: %s",execString))
+    end
+end
+
+
+if use_timeline == true then
+    local cores_string = "CORES: "
+    for i, cpu in pairs(cpulist) do
+        cores_string = cores_string .. tostring(cpu) .. " "
+    end
+    print(cores_string:sub(1,cores_string:len()-1))
+end
+if not use_marker then
     local ret = likwid.startCounters()
     if ret < 0 then
         print(string.format("Error starting counters for thread %d.",ret * (-1)))
         os.exit(1)
     end
+    likwid.startDaemon(duration, markerFile);
 end
+
+
 io.stdout:flush()
 if use_wrapper or use_timeline then
     local err = os.execute(execString)
@@ -420,15 +423,15 @@ else
 end
 io.stdout:flush()
 print(likwid.hline)
-if use_wrapper or use_stethoscope then
+if not use_marker then
     local ret = likwid.stopCounters()
     if ret < 0 then
          print(string.format("Error stopping counters for thread %d.",ret * (-1)))
         os.exit(1)
     end
-elseif use_timeline then
     likwid.stopDaemon(9)
 end
+
 
 if use_marker == true then
     groups, results = likwid.getMarkerResults(markerFile, group_list, num_cpus)
@@ -439,7 +442,7 @@ if use_marker == true then
 elseif use_wrapper or use_stethoscope then
     for i, group in pairs(group_ids) do
         print(string.format("Group %d: %s", group, group_list[group]["GroupString"]))
-        likwid.print_output(group, group_list[group], cpulist, use_csv)
+        likwid.print_output(group, group_list[group], cpulist, use_csv, markerFile)
     end
 end
 
