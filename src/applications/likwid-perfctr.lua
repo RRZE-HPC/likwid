@@ -1,4 +1,4 @@
-#!ext/lua/lua
+#!<PREFIX>/bin/likiwd-lua
 
 --[[
  * =======================================================================================
@@ -30,8 +30,8 @@
  *
  * =======================================================================================]]
 
---package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
-package.path = package.path .. ';./?.lua'
+package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
+
 local likwid = require("likwid")
 
 local function version()
@@ -100,8 +100,8 @@ use_stethoscope = false
 use_timeline = false
 daemon_run = 0
 use_wrapper = false
-duration = 100000
-use_switch_interval = false
+duration = 2.E06
+use_sleep = true
 switch_interval = 5
 output = ""
 use_csv = false
@@ -157,10 +157,11 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
         use_wrapper = true
     elseif (opt == "S") then
         use_stethoscope = true
-        duration = likwid.parse_time(arg)
+        duration, use_sleep = likwid.parse_time(arg)
     elseif (opt == "t") then
         use_timeline = true
-        duration = likwid.parse_time(arg)
+        local dummy = false
+        duration, dummy = likwid.parse_time(arg)
     elseif (opt == "o") then
         outfile = arg
         io.output(arg:gsub(string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$"),"tmp"))
@@ -396,14 +397,16 @@ if use_timeline == true then
         cores_string = cores_string .. tostring(cpu) .. " "
     end
     print(cores_string:sub(1,cores_string:len()-1))
+    likwid.startDaemon(duration, markerFile);
 end
-if not use_marker then
+
+if use_wrapper or use_stethoscope then
     local ret = likwid.startCounters()
     if ret < 0 then
         print(string.format("Error starting counters for thread %d.",ret * (-1)))
         os.exit(1)
     end
-    likwid.startDaemon(duration, markerFile);
+    
 end
 
 
@@ -419,16 +422,21 @@ if use_wrapper or use_timeline then
         os.exit(1)
     end
 else
-    usleep(duration)
+    if use_sleep then
+        sleep(duration/1.E06)
+    else
+        usleep(duration)
+    end
 end
 io.stdout:flush()
 print(likwid.hline)
-if not use_marker then
+if use_wrapper or use_stethoscope then
     local ret = likwid.stopCounters()
     if ret < 0 then
          print(string.format("Error stopping counters for thread %d.",ret * (-1)))
         os.exit(1)
     end
+elseif use_timeline then
     likwid.stopDaemon(9)
 end
 
@@ -442,7 +450,7 @@ if use_marker == true then
 elseif use_wrapper or use_stethoscope then
     for i, group in pairs(group_ids) do
         print(string.format("Group %d: %s", group, group_list[group]["GroupString"]))
-        likwid.print_output(group, group_list[group], cpulist, use_csv, markerFile)
+        likwid.print_output(group, group_list[group], cpulist, use_csv)
     end
 end
 
