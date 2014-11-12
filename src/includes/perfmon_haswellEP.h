@@ -58,8 +58,8 @@ int perfmon_init_haswellEP(int cpu_id)
 #define HASEP_UNFREEZE_UNCORE \
     if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
     { \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, UNFREEZE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, 0x0ULL)); \
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<29))); \
     }
 
 #define HASEP_UNFREEZE_UNCORE_AND_RESET_CTR \
@@ -81,8 +81,8 @@ int perfmon_init_haswellEP(int cpu_id)
                 } \
             } \
         } \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, UNFREEZE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, 0x0ULL)); \
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<29))); \
     }
 
 #define HASEP_FREEZE_UNCORE_AND_RESET_CTL \
@@ -106,7 +106,7 @@ int perfmon_init_haswellEP(int cpu_id)
 #define HASEP_SETUP_BOX(id) \
     if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(id))) \
     { \
-        flags = (1ULL<<22)|(1ULL<<20); \
+        flags = (1ULL<<22); \
         flags |= (event->umask<<8) + event->eventId; \
         if (event->numberOfOptions > 0) \
         { \
@@ -119,6 +119,9 @@ int perfmon_init_haswellEP(int cpu_id)
                         break; \
                     case EVENT_OPTION_INVERT: \
                         flags |= (1ULL<<23); \
+                        break; \
+                    case EVENT_OPTION_THRESHOLD: \
+                        flags |= (event->options[j].value<<24); \
                         break; \
                     default: \
                         break; \
@@ -247,6 +250,48 @@ int perfmon_setupCounterThread_haswellEP(
                 break;
             case CBOX3:
                 HASEP_SETUP_BOX(CBOX3);
+                break;
+            case CBOX4:
+                HASEP_SETUP_BOX(CBOX4);
+                break;
+            case CBOX5:
+                HASEP_SETUP_BOX(CBOX5);
+                break;
+            case CBOX6:
+                HASEP_SETUP_BOX(CBOX6);
+                break;
+            case CBOX7:
+                HASEP_SETUP_BOX(CBOX7);
+                break;
+            case CBOX8:
+                HASEP_SETUP_BOX(CBOX8);
+                break;
+            case CBOX9:
+                HASEP_SETUP_BOX(CBOX9);
+                break;
+            case CBOX10:
+                HASEP_SETUP_BOX(CBOX10);
+                break;
+            case CBOX11:
+                HASEP_SETUP_BOX(CBOX11);
+                break;
+            case CBOX12:
+                HASEP_SETUP_BOX(CBOX12);
+                break;
+            case CBOX13:
+                HASEP_SETUP_BOX(CBOX13);
+                break;
+            case CBOX14:
+                HASEP_SETUP_BOX(CBOX14);
+                break;
+            case CBOX15:
+                HASEP_SETUP_BOX(CBOX15);
+                break;
+            case CBOX16:
+                HASEP_SETUP_BOX(CBOX16);
+                break;
+            case CBOX17:
+                HASEP_SETUP_BOX(CBOX17);
                 break;
 
             case UBOX:
@@ -484,11 +529,6 @@ int perfmon_stopCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
 
-    if (haveLock && eventSet->regTypeMask & ~(0xFULL))
-    {
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, DISABLE_UNCORE);
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, 0x0ULL));
-    }
 
     return 0;
 }
