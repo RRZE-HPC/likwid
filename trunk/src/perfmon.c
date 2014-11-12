@@ -63,8 +63,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
     int err = 0;
     int ret = FALSE;
     uint64_t tmp;
-    int check_range = (cpuid_info.supportUncore == 1 ? perfmon_numCounters : perfmon_numCoreCounters);
-    for (int i=0; i< check_range; i++)
+    for (int i=0; i< perfmon_numCounters; i++)
     {
         if (biseqcstr(reg, counter_map[i].key))
         {
