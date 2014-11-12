@@ -1033,9 +1033,9 @@ static int lua_likwid_startDaemon(lua_State* L)
 {
     int err;
     uint64_t duration = (uint64_t)luaL_checknumber(L,1);
-    const char* tmpString = luaL_checkstring(L, 2);
-    luaL_argcheck(L, strlen(tmpString) > 0, 2, "Empty filename not allowed");
-    err = daemon_start(duration, tmpString);
+    //const char* tmpString = luaL_checkstring(L, 2);
+    //luaL_argcheck(L, strlen(tmpString) > 0, 2, "Empty filename not allowed");
+    err = daemon_start(duration); //, tmpString);
     switch (err)
     {
         case -ENOENT:
