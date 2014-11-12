@@ -65,7 +65,7 @@ power_init(int cpuId)
         case IVYBRIDGE:
         case HASWELL:
             hasRAPL = 1;
-            power_info.supportedTypes = (1<<PKG)|(1<<PP0);
+            power_info.supportedTypes = (1<<PKG)|(1<<PP0)|(1<<PP1)|(1<<DRAM);
             info_register = MSR_PKG_POWER_INFO;
             break;
         case ATOM_SILVERMONT:
