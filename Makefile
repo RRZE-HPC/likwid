@@ -62,7 +62,7 @@ LIBHWLOC = ext/hwloc/libhwloc.a
 LIBLUA = ext/lua/liblua.a
 ifeq ($(SHARED_LIBRARY),true)
 CFLAGS += $(SHARED_CFLAGS)
-LIBS += -L. -pthread -lm -lpci
+LIBS += -L. -Lext/hwloc -pthread -lm -lpci
 TARGET_LIB := $(DYNAMIC_TARGET_LIB)
 LIBHWLOC = ext/hwloc/libhwloc.a
 LIBLUA = ext/lua/liblua.a
@@ -132,7 +132,7 @@ $(STATIC_TARGET_LIB): $(OBJ)
 
 $(DYNAMIC_TARGET_LIB): $(OBJ)
 	@echo "===>  CREATE SHARED LIB  $(DYNAMIC_TARGET_LIB)"
-	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) -L. -pthread -lm -lpci $(LIBHWLOC) $(LIBLUA)
+	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(LIBHWLOC) $(LIBLUA)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  Build access daemon likwid-accessD"
