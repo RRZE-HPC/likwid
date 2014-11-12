@@ -217,9 +217,26 @@ accessClient_read(
 
     if (data.errorcode != ERR_NOERROR)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Got error '%s' from access daemon, accessClient_strerror(data.errorcode));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon reading reg 0x%X at CPU %d, accessClient_strerror(data.errorcode), data.reg, data.cpu);
         *result = 0;
-        return -EIO;
+        switch (data.errorcode)
+        {
+            case ERR_RESTREG:
+                return -EPERM;
+                break;
+            case ERR_OPENFAIL:
+                return -ENODEV;
+                break;
+            case ERR_DAEMONBUSY:
+                return -EBUSY;
+                break;
+            case ERR_RWFAIL:
+                return -EIO;
+                break;
+            default:
+                return -EFAULT;
+                break;
+        }
     }
     *result = data.data;
     return 0;
@@ -245,7 +262,25 @@ accessClient_write(
 
     if (data.errorcode != ERR_NOERROR)
     {
-        
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon writing reg 0x%X at CPU %d, accessClient_strerror(data.errorcode), data.reg, data.cpu);
+        switch (data.errorcode)
+        {
+            case ERR_RESTREG:
+                return -EPERM;
+                break;
+            case ERR_OPENFAIL:
+                return -ENODEV;
+                break;
+            case ERR_DAEMONBUSY:
+                return -EBUSY;
+                break;
+            case ERR_RWFAIL:
+                return -EIO;
+                break;
+            default:
+                return -EFAULT;
+                break;
+        }
         return -EIO;
     }
 
