@@ -6,6 +6,9 @@ MAKE_DIR   = ../../make
 include ../../config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 LIBPCI_PATH = $(shell find /*/lib* -name 'libpci.so*' 2>/dev/null | head -n 1 )
+ifneq ($(LIBPCI_PATH),"")
+	LIBPCI_PATH = $(shell find /lib* -name 'libpci.so*' 2>/dev/null | head -n 1 )
+endif
 
 CFLAGS    = -O2 -Wall -fPIC
 INCLUDES  = -I./include
