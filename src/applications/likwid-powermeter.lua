@@ -57,6 +57,7 @@ local function usage()
     print("-i\t\t Print information from MSR_PKG_POWER_INFO register and Turbo mode")
     print("-s <duration>\t Set measure duration in us, ms or s. (default 2s)")
     print("-p\t\t Print dynamic clocking and CPI values")
+    print("-r\t\t Print current temperatures of all CPU cores")
     print("")
     examples()
 end
@@ -67,12 +68,13 @@ print_info = false
 use_perfctr = false
 stethoscope = false
 fahrenheit = false
+print_temp = false
 if config["daemonMode"] < 0 then
     access_mode = 1
 else
     access_mode = config["daemonMode"]
 end
-time_interval = 2
+time_interval = 2 * 1.E06
 sockets = {}
 eventString = "PWR_PKG_ENERGY:PWR0,PWR_PP0_ENERGY:PWR1,PWR_DRAM_ENERGY:PWR3"
 
@@ -81,7 +83,7 @@ cpuinfo = likwid.getCpuInfo()
 cputopo = likwid.getCpuTopology()
 numatopo = likwid.getNumaInfo()
 
-for opt,arg in likwid.getopt(arg, "c:hiM:ps:vf") do
+for opt,arg in likwid.getopt(arg, "c:hiM:ps:vft") do
     if (opt == "h") then
         usage()
         os.exit(0)
@@ -90,7 +92,7 @@ for opt,arg in likwid.getopt(arg, "c:hiM:ps:vf") do
         os.exit(0)
     elseif (opt == "c") then
         if (arg:find(",") ~= nil) then
-            sockets = arg:split(",")
+            sockets = likwid.stringsplit(arg,",")
             for i,socket in pairs(sockets) do
                 sockets[i] = tonumber(socket)
                 if (sockets[i] == nil) then
@@ -141,6 +143,8 @@ for opt,arg in likwid.getopt(arg, "c:hiM:ps:vf") do
         use_perfctr = true
     elseif (opt == "f") then
         fahrenheit = true
+    elseif (opt == "t") then
+        print_temp = true
     elseif (opt == "s") then
         time_interval = likwid.parse_time(arg)
         stethoscope = true
@@ -200,7 +204,7 @@ if (print_info) then
     os.exit(0)
 end
 
-if time_interval < power["timeUnit"]*1.E06 then
+if (stethoscope) and (time_interval < power["timeUnit"]*1.E06) then
     print("Time interval too short, minimum measurement time is "..tostring(power["timeUnit"]*1.E06).. " us")
     os.exit(1)
 end
@@ -219,107 +223,101 @@ if (use_perfctr) then
     likwid.setupCounters(group)
 end
 
+local execString = ""
+if #arg == 0 then
+    stethoscope = true
+else
+    for i=1,#arg do
+        execString = execString .. arg[i] .. " "
+    end
+end
+
+if (use_perfctr) then
+    likwid.startCounters()
+else
+    for i,socket in pairs(sockets) do
+        cpu = numatopo["nodes"][i]["processors"][1]
+        if (power["hasRAPL_PP0"]) then before1 = likwid.startPower(cpu, 1) end
+        if (power["hasRAPL_PP1"]) then before2 = likwid.startPower(cpu, 2) end
+        if (power["hasRAPL_DRAM"]) then before3 = likwid.startPower(cpu, 3) end
+        before0 = likwid.startPower(cpu, 0)
+    end
+end
+time_before = likwid.startClock()
+if (stethoscope) then
+    usleep(time_interval)
+else
+    err = os.execute(execString)
+    if (err == false) then
+        print(string.format("Failed to execute %s!",execString))
+        likwid.stopCounters()
+        likwid.finalize()
+        likwid.putNumaInfo()
+        likwid.putAffinityInfo()
+        likwid.putTopology()
+        os.exit(1)
+    end
+end
+time_after = likwid.stopClock()
+
+if (use_perfctr) then
+    likwid.stopCounters()
+    likwid.finalize()
+else
+    for i,socket in pairs(sockets) do
+        cpu = numatopo["nodes"][i]["processors"][1]
+        after0 = likwid.stopPower(cpu, 0)
+        if (power["hasRAPL_PP0"]) then after1 = likwid.stopPower(cpu, 1) end
+        if (power["hasRAPL_PP1"]) then after2 = likwid.stopPower(cpu, 2) end
+        if (power["hasRAPL_DRAM"]) then after3 = likwid.stopPower(cpu, 3) end
+    end
+end
+runtime = likwid.getClock(time_before, time_after)
+print(string.format("Runtime: %g s",runtime))
+
 for i,socket in pairs(sockets) do
     cpu = numatopo["nodes"][i]["processors"][1]
     print(string.format("Measure for socket %d on cpu %d", socket,cpu ))
-    if (stethoscope) then
-        if (use_perfctr) then
-            likwid.startCounters()
-        end
-        if (power["hasRAPL_PP0"]) then before1 = likwid.startPower(cpu, 1) end
-        if (power["hasRAPL_PP1"]) then before2 = likwid.startPower(cpu, 2) end
-        if (power["hasRAPL_DRAM"]) then before3 = likwid.startPower(cpu, 3) end
-        before0 = likwid.startPower(cpu, 0)
-        usleep(time_interval);
-        after0 = likwid.stopPower(cpu, 0)
-        if (power["hasRAPL_PP0"]) then after1 = likwid.stopPower(cpu, 1) end
-        if (power["hasRAPL_PP1"]) then after2 = likwid.stopPower(cpu, 2) end
-        if (power["hasRAPL_DRAM"]) then after3 = likwid.stopPower(cpu, 3) end
-
-        if (use_perfctr) then
-            likwid.stopCounters()
-            likwid.finalize()
-        end
-        runtime = time_interval;
-    else
-        execString = ""
-        for i, str in pairs(arg) do
-            if (str == "lua") then break end
-            execString = execString .. str .. " "
-        end
-
-        if (use_perfctr) then
-            likwid.startCounters()
-        end
-
-        if (power["hasRAPL_PP0"]) then before1 = likwid.startPower(cpu, 1) end
-        if (power["hasRAPL_PP1"]) then before2 = likwid.startPower(cpu, 2) end
-        if (power["hasRAPL_DRAM"]) then before3 = likwid.startPower(cpu, 3) end
-        before0 = likwid.startPower(cpu, 0)
-        time_before = likwid.startClock()
-
-        err = os.execute(execString)
-
-        if (err == false) then
-            print(string.format("Failed to execute %s!",execString))
-            likwid.stopCounters()
-            likwid.finalize()
-            likwid.putNumaInfo()
-            likwid.putAffinityInfo()
-            likwid.putTopology()
-            os.exit(1)
-        end
-        after0 = likwid.stopPower(cpu, 0)
-        if (power["hasRAPL_PP0"]) then after1 = likwid.stopPower(cpu, 1) end
-        if (power["hasRAPL_PP1"]) then after2 = likwid.stopPower(cpu, 2) end
-        if (power["hasRAPL_DRAM"]) then after3 = likwid.stopPower(cpu, 3) end
-        if (use_perfctr) then
-            likwid.stopCounters()
-            likwid.finalize()
-        end
-        time_after = likwid.stopClock()
-        runtime = likwid.getClock(time_before, time_after)
-    end
-    print(string.format("Runtime: %g us",runtime))
     print("Domain: PKG")
-    energy = (after0 - before0) * power["energyUnit"]
+    energy = likwid.calcPower(before0, after0)
     print(string.format("Energy consumed: %g Joules",energy))
     print(string.format("Power consumed: %g Watts",energy/runtime))
     if (power["hasRAPL_PP0"]) then
         print("Domain: PP0")
-        energy = (after1 - before1) * power["energyUnit"]
+        energy = likwid.calcPower(before1, after1)
         print(string.format("Energy consumed: %g Joules",energy));
         print(string.format("Power consumed: %g Watts",energy/runtime))
     end
     if (power["hasRAPL_PP1"]) then
         print("Domain: PP1")
-        energy = (after2 - before2) * power["energyUnit"]
+        energy = likwid.calcPower(before2, after2)
         print(string.format("Energy consumed: %g Joules",energy));
         print(string.format("Power consumed: %g Watts",energy/runtime))
     end
     if (power["hasRAPL_DRAM"]) then
         print("Domain: DRAM")
-        energy = (after3 - before3) * power["energyUnit"]
+        energy = likwid.calcPower(before3, after3)
         print(string.format("Energy consumed: %g Joules",energy));
         print(string.format("Power consumed: %g Watts",energy/runtime))
     end
-    if (string.find(cpuinfo["features"],"TM2") ~= nil) then
-        print(likwid.hline)
-        likwid.initTemp(cpu);
-        print("Current core temperatures:");
-        for i=1,cputopo["numSockets"] do
-            for j=1,(cputopo["numCoresPerSocket"]*cputopo["numThreadsPerCore"]) do
-                cpuid = numatopo["nodes"][i]["processors"][j]
-                if (fahrenheit) then
-                    print(string.format("Socket %d Core %d: %u F",numatopo["nodes"][i]["id"],cpuid, 1.8*likwid.readTemp(cpuid)+32));
-                else
-                    print(string.format("Socket %d Core %d: %u C",numatopo["nodes"][i]["id"],cpuid, likwid.readTemp(cpuid)));
-                end
+end
+if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
+    print(likwid.hline)
+    likwid.initTemp(numatopo["nodes"][1]["processors"][1]);
+    print("Current core temperatures:");
+    for i=1,cputopo["numSockets"] do
+        for j=1,(cputopo["numCoresPerSocket"]*cputopo["numThreadsPerCore"]) do
+            cpuid = numatopo["nodes"][i]["processors"][j]
+            if (fahrenheit) then
+                print(string.format("Socket %d Core %d: %u F",numatopo["nodes"][i]["id"],cpuid, 1.8*likwid.readTemp(cpuid)+32));
+            else
+                print(string.format("Socket %d Core %d: %u C",numatopo["nodes"][i]["id"],cpuid, likwid.readTemp(cpuid)));
             end
         end
     end
-    
 end
+    
+
 
 --likwid.finalize();
 likwid.putNumaInfo()
