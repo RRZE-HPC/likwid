@@ -803,7 +803,10 @@ static int lua_likwid_getPowerInfo(lua_State* L)
     if (power_isInitialized == 0)
     {
         power_hasRAPL = power_init(0);
-        power_isInitialized = 1;
+        if (power_hasRAPL)
+        {
+            power_isInitialized = 1;
+        }
     }
     power = get_powerInfo();
 

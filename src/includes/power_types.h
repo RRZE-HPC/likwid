@@ -59,6 +59,7 @@ typedef struct {
     double baseFrequency; /*!< \brief Base frequency of the CPU */
     double minFrequency; /*!< \brief Minimal frequency of the CPU */
     TurboBoost turbo; /*!< \brief Turbo boost information */
+    int hasRAPL; /*!< \brief RAPL support flag */
     double powerUnit; /*!< \brief Multiplier for power measurements */
     double energyUnit; /*!< \brief Multiplier for energy measurements */
     double timeUnit; /*!< \brief Multiplier for time information */
