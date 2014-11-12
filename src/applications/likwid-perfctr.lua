@@ -238,7 +238,7 @@ if print_group_help == true then
     os.exit(0)
 end
 
-if #event_string_list == 0 then
+if #event_string_list == 0 and not print_info then
     print("Option(s) -g <string> must be given on commandline")
     usage()
     os.exit(1)
@@ -252,7 +252,7 @@ else
     print(string.format("CPU clock:\t%3.2f GHz",likwid.getCpuClock() * 1.E-09))
 end
 
-if verbose > 0 then
+if print_info or verbose > 0 then
     print(string.format("CPU family:\t%u", cpuinfo["family"]))
     print(string.format("CPU model:\t%u", cpuinfo["model"]))
     print(string.format("CPU stepping:\t%u", cpuinfo["stepping"]))
