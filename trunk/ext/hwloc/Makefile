@@ -7,7 +7,7 @@ include ../../config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 LIBPCI_PATH = $(shell find /*/lib* -name 'libpci.so*' 2>/dev/null | head -n 1 )
 
-CFLAGS    = -O2 -Wall -fPIC -Wno-unused-result
+CFLAGS    = -O2 -Wall -fPIC
 INCLUDES  = -I./include
 DEFINES   =
 LIBS      = -L. -lm -lpci -Wl,-E
