@@ -53,105 +53,140 @@ int
 power_init(int cpuId)
 {
     uint64_t flags;
-    int hasRAPL = 0;
     uint32_t info_register;
+    int i;
+    int err;
 
     /* determine Turbo Mode features */
     double busSpeed;
 
+    power_info.baseFrequency = 0;
+    power_info.minFrequency = 0;
+    power_info.turbo.numSteps = 0;
+    power_info.powerUnit = 0;
+    power_info.energyUnit = 0;
+    power_info.timeUnit = 0;
+    power_info.minPower = 0;
+    power_info.maxPower = 0;
+    power_info.maxTimeWindow = 0;
+    power_info.tdp = 0;
+    power_info.hasRAPL = 0;
+    power_info.supportedTypes = 0x0U;
+
+    if ( power_info.hasRAPL )
+    {
+        busSpeed = 100.0;
+    }
+    else
+    {
+        busSpeed = 133.33;
+    }
+
+    if (cpuid_info.turbo)
+    {
+        err = msr_read(cpuId, MSR_PLATFORM_INFO, &flags);
+        if (err == 0)
+        {
+            power_info.baseFrequency = busSpeed * (double) extractBitField(flags,8,8);
+            power_info.minFrequency  = busSpeed * (double) extractBitField((flags>>(32)),8,8);
+
+            power_info.turbo.numSteps = cpuid_topology.numCoresPerSocket;
+            power_info.turbo.steps = (double*) malloc(power_info.turbo.numSteps * sizeof(double));
+
+            CHECK_MSR_READ_ERROR(msr_read(cpuId, MSR_TURBO_RATIO_LIMIT, &flags))
+
+            for (int i=0; i < power_info.turbo.numSteps; i++)
+            {
+                if (i < 8)
+                {
+                    power_info.turbo.steps[i] = busSpeed * (double) field64(flags,i*8, 8);
+                }
+                else
+                {
+                    power_info.turbo.steps[i] = power_info.turbo.steps[7];
+                }
+            }
+        }
+        else
+        {
+            fprintf(stderr,"Cannot gather values from MSR_PLATFORM_INFO,\n");
+        }
+    }
+    
     switch (cpuid_info.model)
     {
         case SANDYBRIDGE:
         case IVYBRIDGE:
         case HASWELL:
-            hasRAPL = 1;
+            power_info.hasRAPL = 1;
             power_info.supportedTypes = (1<<PKG)|(1<<PP0)|(1<<PP1)|(1<<DRAM);
             info_register = MSR_PKG_POWER_INFO;
             break;
         case ATOM_SILVERMONT:
-            hasRAPL = 1;
+            power_info.hasRAPL = 1;
             power_info.supportedTypes = (1<<PKG);
             info_register = MSR_PKG_POWER_INFO_SILVERMONT;
             break;
         case SANDYBRIDGE_EP:
         case IVYBRIDGE_EP:
         case HASWELL_EP:
-            hasRAPL = 1;
-            power_info.supportedTypes = (1<<PKG)|(1<<PP1)|(1<<DRAM);
+            power_info.hasRAPL = 1;
+            //power_info.supportedTypes = (1<<PKG)|(1<<PP1)|(1<<DRAM);
             info_register = MSR_PKG_POWER_INFO;
             break;
-    }
-
-    if (cpuid_info.turbo)
-    {
-        CHECK_MSR_READ_ERROR(msr_read(cpuId, MSR_PLATFORM_INFO, &flags))
-
-        if ( hasRAPL )
-        {
-            busSpeed = 100.0;
-        }
-        else
-        {
-            busSpeed = 133.33;
-        }
-
-        power_info.baseFrequency = busSpeed * (double) extractBitField(flags,8,8);
-        power_info.minFrequency  = busSpeed * (double) extractBitField((flags>>(32)),8,8);
-
-        power_info.turbo.numSteps = cpuid_topology.numCoresPerSocket;
-        power_info.turbo.steps = (double*) malloc(power_info.turbo.numSteps * sizeof(double));
-
-        CHECK_MSR_READ_ERROR(msr_read(cpuId, MSR_TURBO_RATIO_LIMIT, &flags))
-
-        for (int i=0; i < power_info.turbo.numSteps; i++)
-        {
-            if (i < 8)
-            {
-                power_info.turbo.steps[i] = busSpeed * (double) field64(flags,i*8, 8);
-            }
-            else
-            {
-                power_info.turbo.steps[i] = power_info.turbo.steps[7];
-            }
-        }
-    }
-    else
-    {
-        power_info.turbo.numSteps = 0;
+        default:
+            DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, NO RAPL SUPPORT);
+            return 0;
     }
 
     /* determine RAPL parameters */
-    if ( hasRAPL )
+    if ( power_info.hasRAPL )
     {
-        CHECK_MSR_READ_ERROR(msr_read(cpuId, MSR_RAPL_POWER_UNIT, &flags))
-
-        power_info.powerUnit = pow(0.5,(double) extractBitField(flags,4,0));
-        power_info.energyUnit = pow(0.5,(double) extractBitField(flags,5,8));
-        power_info.timeUnit = pow(0.5,(double) extractBitField(flags,4,16));
-
-        /* info_register set in the switch-case-statement at the beginning
-           because Atom Silvermont uses another register */
-        CHECK_MSR_READ_ERROR(msr_read(cpuId, info_register, &flags))
-        power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
-        if (cpuid_info.model != ATOM_SILVERMONT)
+        err = msr_read(cpuId, MSR_RAPL_POWER_UNIT, &flags);
+        if (err == 0)
         {
-            power_info.minPower =  (double) extractBitField(flags,15,16) * power_info.powerUnit;
-            power_info.maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
-            power_info.maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
+            power_info.powerUnit = pow(0.5,(double) extractBitField(flags,4,0));
+            power_info.energyUnit = pow(0.5,(double) extractBitField(flags,5,8));
+            power_info.timeUnit = pow(0.5,(double) extractBitField(flags,4,16));
+
+            /* info_register set in the switch-case-statement at the beginning
+               because Atom Silvermont uses another register */
+            err = msr_read(cpuId, info_register, &flags);
+            if (err == 0)
+            {
+                power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
+                if (cpuid_info.model != ATOM_SILVERMONT)
+                {
+                    power_info.minPower =  (double) extractBitField(flags,15,16) * power_info.powerUnit;
+                    power_info.maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
+                    power_info.maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
+                }
+            }
+            for(i = 0; i < 4; i++)
+            {
+                err = msr_read(cpuId, power_regs[i], &flags);
+                if (err == 0)
+                {
+                    power_info.supportedTypes |= (1<<i);
+                }
+                else
+                {
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL DOMAIN %d NOT SUPPORTED, i);
+                }
+            }
         }
         else
         {
-            power_info.minPower = 0.0;
-            power_info.maxPower = 0.0;
-            power_info.maxTimeWindow = 0.0;
+            fprintf(stderr,"Cannot gather values from MSR_RAPL_POWER_UNIT, deactivating RAPL support\n");
+            power_info.hasRAPL =  0;
         }
-        return hasRAPL;
+        return power_info.hasRAPL;
     }
     else
     {
-        power_info.powerUnit = 0.0;
-        return hasRAPL;
+        return power_info.hasRAPL;
     }
+    return 0;
 }
 
 

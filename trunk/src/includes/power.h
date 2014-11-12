@@ -51,39 +51,126 @@ power_printEnergy(PowerData* data)
 int
 power_start(PowerData* data, int cpuId, PowerType type)
 {
-    uint64_t result = 0;
-    data->before = 0;
-    CHECK_MSR_READ_ERROR(msr_read(cpuId, power_regs[type], &result))
-    data->before = extractBitField(result,32,0);
+    if (power_info.hasRAPL)
+    {
+        if ((power_info.supportedTypes & (1<<type)) != 0)
+        {
+            uint64_t result = 0;
+            data->before = 0;
+            CHECK_MSR_READ_ERROR(msr_read(cpuId, power_regs[type], &result))
+            data->before = extractBitField(result,32,0);
+            return 0;
+        }
+        else
+        {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL DOMAIN %d NOT SUPPORTED, type);
+            return -EFAULT;
+        }
+    }
+    else
+    {
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, NO RAPL SUPPORT);
+        return -EIO;
+    }
 }
 
 int
 power_stop(PowerData* data, int cpuId, PowerType type)
 {
-    uint64_t result = 0;
-    data->after = 0;
-    CHECK_MSR_READ_ERROR(msr_read(cpuId, power_regs[type], &result))
-    data->after = extractBitField(result,32,0);
+    if (power_info.hasRAPL)
+    {
+        if ((power_info.supportedTypes & (1<<type)) != 0)
+        {
+            uint64_t result = 0;
+            data->after = 0;
+            CHECK_MSR_READ_ERROR(msr_read(cpuId, power_regs[type], &result))
+            data->after = extractBitField(result,32,0);
+            return 0;
+        }
+        else
+        {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL DOMAIN %d NOT SUPPORTED, type);
+            return -EFAULT;
+        }
+    }
+    else
+    {
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, NO RAPL SUPPORT);
+        return -EIO;
+    }
 }
 
 int
 power_read(int cpuId, uint64_t reg, uint32_t *data)
 {
-    uint64_t result = 0;
-    *data = 0;
-    CHECK_MSR_READ_ERROR(msr_read(cpuId, reg, &result))
-    *data = extractBitField(result,32,0);
-    return 0;
+    int i;
+    PowerType type;
+
+    if (power_info.hasRAPL)
+    {
+        for (i = 0; i < 4; i++)
+        {
+            if (reg == power_regs[i])
+            {
+                type = i;
+                break;
+            }
+        }
+        if ((power_info.supportedTypes & (1<<type)) != 0)
+        {
+            uint64_t result = 0;
+            *data = 0;
+            CHECK_MSR_READ_ERROR(msr_read(cpuId, reg, &result))
+            *data = extractBitField(result,32,0);
+            return 0;
+        }
+        else
+        {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL DOMAIN %d NOT SUPPORTED, type);
+            return -EFAULT;
+        }
+    }
+    else
+    {
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, NO RAPL SUPPORT);
+        return -EIO;
+    }
 }
 
 int
 power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
 {
-    uint64_t result = 0;
-    *data = 0;
-    CHECK_MSR_READ_ERROR(msr_tread(socket_fd, cpuId, reg, &result))
-    *data = extractBitField(result,32,0);
-    return 0;
+    int i;
+    PowerType type;
+    if (power_info.hasRAPL)
+    {
+        for (i = 0; i < 4; i++)
+        {
+            if (reg == power_regs[i])
+            {
+                type = i;
+                break;
+            }
+        }
+        if ((power_info.supportedTypes & (1<<type)) != 0)
+        {
+            uint64_t result = 0;
+            *data = 0;
+            CHECK_MSR_READ_ERROR(msr_tread(socket_fd, cpuId, reg, &result))
+            *data = extractBitField(result,32,0);
+            return 0;
+        }
+        else
+        {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL DOMAIN %d NOT SUPPORTED, type);
+            return -EFAULT;
+        }
+    }
+    else
+    {
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, NO RAPL SUPPORT);
+        return -EIO;
+    }
 }
 
 
