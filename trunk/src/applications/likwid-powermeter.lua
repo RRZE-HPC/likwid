@@ -74,8 +74,9 @@ if config["daemonMode"] < 0 then
 else
     access_mode = config["daemonMode"]
 end
-time_interval = 2 * 1.E06
-sockets = {}
+time_interval = 2.E06
+use_sleep = true
+sockets = {0}
 eventString = "PWR_PKG_ENERGY:PWR0,PWR_PP0_ENERGY:PWR1,PWR_DRAM_ENERGY:PWR3"
 
 config = likwid.getConfiguration()
@@ -91,9 +92,10 @@ for opt,arg in likwid.getopt(arg, "c:hiM:ps:vft") do
         version()
         os.exit(0)
     elseif (opt == "c") then
+        sockets = {}
         if (arg:find(",") ~= nil) then
-            sockets = likwid.stringsplit(arg,",")
-            for i,socket in pairs(sockets) do
+            tmpsockets = likwid.stringsplit(arg,",")
+            for i,socket in pairs(tmpsockets) do
                 sockets[i] = tonumber(socket)
                 if (sockets[i] == nil) then
                     print("All entries of the socket list must be numbers, entry " .. socket .. " is no number.")
@@ -146,7 +148,7 @@ for opt,arg in likwid.getopt(arg, "c:hiM:ps:vft") do
     elseif (opt == "t") then
         print_temp = true
     elseif (opt == "s") then
-        time_interval = likwid.parse_time(arg)
+        time_interval, use_sleep = likwid.parse_time(arg)
         stethoscope = true
     end
 end
@@ -245,7 +247,11 @@ else
 end
 time_before = likwid.startClock()
 if (stethoscope) then
-    usleep(time_interval)
+    if (use_sleep) then
+        sleep(time_interval/1.E06)
+    else
+        usleep(time_interval)
+    end
 else
     err = os.execute(execString)
     if (err == false) then

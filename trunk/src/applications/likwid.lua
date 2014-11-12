@@ -734,6 +734,7 @@ likwid.new_groupdata = new_groupdata
 
 local function parse_time(timestr)
     local duration = 0
+    local use_sleep = false
     local s1,e1 = timestr:find("ms")
     local s2,e2 = timestr:find("us")
     if s1 ~= nil then
@@ -747,8 +748,9 @@ local function parse_time(timestr)
             os.exit(1)
         end
         duration = tonumber(timestr:sub(1,s1-1)) * 1.E06
+        use_sleep = true
     end
-    return duration
+    return duration, use_sleep
 end
 
 likwid.parse_time = parse_time
@@ -771,7 +773,7 @@ end
 
 
 local function print_output(groupID, groupdata, cpulist, use_csv)
-    local num_events = likwid_getNumberOfEvents(groupId);
+    local num_events = likwid_getNumberOfEvents(groupID);
     local num_threads = likwid_getNumberOfThreads(groupID);
     local results = {}
 
