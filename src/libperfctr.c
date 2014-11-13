@@ -140,6 +140,9 @@ void likwid_markerInit(void)
     char* eventStr = getenv("LIKWID_EVENTS");
     char* cThreadStr = getenv("LIKWID_THREADS");
     char* groupStr = getenv("LIKWID_GROUPS");
+    /* Dirty hack to avoid nonnull warnings */
+    int (*ownatoi)(const char*);
+    ownatoi = &atoi;
 
     if ((modeStr != NULL) && (maskStr != NULL) && (eventStr != NULL) && (cThreadStr != NULL) && (groupStr != NULL))
     {
@@ -184,7 +187,7 @@ void likwid_markerInit(void)
     int threadsToCpu[threadTokens->qty];
     for (i=0; i<threadTokens->qty; i++)
     {
-        threadsToCpu[i] = atoi(bdata(threadTokens->entry[i]));
+        threadsToCpu[i] = ownatoi(bdata(threadTokens->entry[i]));
         if (accessClient_mode != DAEMON_AM_DIRECT)
         {
             accessClient_init(&thread_sockets[threadsToCpu[i]]);
