@@ -51,7 +51,7 @@ int perfmon_init_haswellEP(int cpu_id)
 #define HASEP_FREEZE_UNCORE \
     if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
     { \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), ACTIVATE_UNCORE); \
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<31))); \
     }
 
@@ -65,19 +65,30 @@ int perfmon_init_haswellEP(int cpu_id)
 #define HASEP_UNFREEZE_UNCORE_AND_RESET_CTR \
     if (haveLock && (eventSet->regTypeMask & ~(REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)|REG_TYPE_MASK(THERMAL)))) \
     { \
-        for (int j=0; j<NUM_COUNTERS_HASWELL; j++) \
+        for (int j=0; j<NUM_UNITS; j++) \
         { \
-            if ((eventSet->regTypeMask & REG_TYPE_MASK(counter_map[j].type)) && (counter_map[j].type != POWER)) \
+            if (eventSet->regTypeMask & REG_TYPE_MASK(j)) \
             { \
-                if (counter_map[j].counterRegister != 0x0) \
+                if (box_map[j].ctrlRegister != 0x0ULL) \
                 { \
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[j].counterRegister, 0x0ULL)); \
-                    VERBOSEPRINTREG(cpu_id, counter_map[j].counterRegister, 0x0ULL, CLEAR_CTR); \
+                    VERBOSEPRINTREG(cpu_id, box_map[j].ctrlRegister, LLU_CAST 0x2ULL, CLEAR_CTR); \
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[j].ctrlRegister, 0x2ULL)); \
                 } \
-                if (counter_map[j].counterRegister2 != 0x0) \
+                else \
                 { \
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[j].counterRegister2, 0x0ULL)); \
-                    VERBOSEPRINTREG(cpu_id, counter_map[j].counterRegister2, 0x0ULL, CLEAR_CTR); \
+                    for (int k=0;k<perfmon_numCounters;k++) \
+                    { \
+                        if (counter_map[k].type == j) \
+                        { \
+                            VERBOSEPRINTREG(cpu_id, counter_map[k].counterRegister, 0x0ULL, CLEAR_CTR_MANUAL); \
+                            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[k].counterRegister, 0x0ULL)); \
+                            if (counter_map[k].counterRegister2 != 0x0) \
+                            { \
+                                VERBOSEPRINTREG(cpu_id, counter_map[k].counterRegister2, 0x0ULL, CLEAR_CTR_MANUAL); \
+                                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[k].counterRegister2, 0x0ULL)); \
+                            } \
+                        } \
+                    } \
                 } \
             } \
         } \
@@ -90,19 +101,30 @@ int perfmon_init_haswellEP(int cpu_id)
     { \
         VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<31))); \
-        for (int j=0; j<NUM_COUNTERS_HASWELL; j++) \
+        for (int j=0; j<NUM_UNITS; j++) \
         { \
-            if (eventSet->regTypeMask & REG_TYPE_MASK(counter_map[j].type)) \
+            if (eventSet->regTypeMask & REG_TYPE_MASK(j)) \
             { \
-                if (counter_map[j].configRegister != 0x0) \
+                if (box_map[j].ctrlRegister != 0x0ULL) \
                 { \
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[j].configRegister, 0x0ULL)); \
-                    VERBOSEPRINTREG(cpu_id, counter_map[j].configRegister, LLU_CAST 0x0ULL, CLEAR_CTL); \
+                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[j].ctrlRegister, 0x1ULL)); \
+                    VERBOSEPRINTREG(cpu_id, box_map[j].ctrlRegister, LLU_CAST 0x1ULL, CLEAR_CTL); \
+                } \
+                else \
+                { \
+                    for (int k=0;k<perfmon_numCounters;k++) \
+                    { \
+                        if (counter_map[k].type == j) \
+                        { \
+                            VERBOSEPRINTREG(cpu_id, counter_map[k].configRegister, 0x0ULL, CLEAR_CTL_MANUAL); \
+                            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[k].configRegister, 0x0ULL)); \
+                        } \
+                    } \
                 } \
             } \
         } \
     }
-// Remeber setting STATE filter for LLC event
+
 #define HASEP_SETUP_CBOX(id) \
     if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(CBOX##id))) \
     { \
@@ -180,6 +202,91 @@ int perfmon_init_haswellEP(int cpu_id)
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, flags)); \
     }
 
+#define HASEP_SETUP_SBOX(id) \
+    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(SBOX##id))) \
+    { \
+        flags = (1ULL<<22); \
+        flags |= (event->umask<<8) + event->eventId; \
+        if (event->numberOfOptions > 0) \
+        { \
+            for(int j=0;j<event->numberOfOptions;j++) \
+            { \
+                switch (event->options[j].type) \
+                { \
+                    case EVENT_OPTION_EDGE: \
+                        flags |= (1ULL<<18); \
+                        break; \
+                    case EVENT_OPTION_INVERT: \
+                        flags |= (1ULL<<23); \
+                        break; \
+                    case EVENT_OPTION_THRESHOLD: \
+                        flags |= (extractBitField(event->options[j].value,8,0)<<24); \
+                        break; \
+                    case EVENT_OPTION_TID: \
+                        flags |= (1ULL<<23); \
+                        break; \
+                } \
+            } \
+        } \
+        VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_SBOX##id); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, flags & ~(1ULL<<18))); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, flags)); \
+    }
+
+#define HASEP_SETUP_BOX(id) \
+    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(id))) \
+    { \
+        flags = (1ULL<<22)|(1ULL<<20); \
+        flags |= (event->umask<<8) + event->eventId; \
+        if (event->numberOfOptions > 0) \
+        { \
+            for(int j=0;j<event->numberOfOptions;j++) \
+            { \
+                switch (event->options[j].type) \
+                { \
+                    case EVENT_OPTION_EDGE: \
+                        flags |= (1ULL<<18); \
+                        break; \
+                    case EVENT_OPTION_INVERT: \
+                        flags |= (1ULL<<23); \
+                        break; \
+                    case EVENT_OPTION_THRESHOLD: \
+                        flags |= (extractBitField(event->options[j].value,5,0)<<24); \
+                        break; \
+                } \
+            } \
+        } \
+        VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_##id); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, flags)); \
+    }
+
+#define HASEP_SETUP_PCI_BOX(id) \
+    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(id))) \
+    { \
+        flags = (1ULL<<22)|(1ULL<<20); \
+        flags |= (event->umask<<8) + event->eventId; \
+        if (event->numberOfOptions > 0) \
+        { \
+            for(int j=0;j<event->numberOfOptions;j++) \
+            { \
+                switch (event->options[j].type) \
+                { \
+                    case EVENT_OPTION_EDGE: \
+                        flags |= (1ULL<<18); \
+                        break; \
+                    case EVENT_OPTION_INVERT: \
+                        flags |= (1ULL<<23); \
+                        break; \
+                    case EVENT_OPTION_THRESHOLD: \
+                        flags |= (extractBitField(event->options[j].value,8,0)<<24); \
+                        break; \
+                } \
+            } \
+        } \
+        VERBOSEPRINTPCIREG(cpu_id, dev, reg, flags, SETUP_##id); \
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, reg, flags)); \
+    }
+
 int perfmon_setupCounterThread_haswellEP(
         int thread_id,
         PerfmonEventSet* eventSet)
@@ -209,6 +316,7 @@ int perfmon_setupCounterThread_haswellEP(
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = counter_map[index].configRegister;
+        PciDeviceIndex dev = counter_map[index].device;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
         flags = 0x0ULL;
         switch (eventSet->events[i].type)
@@ -342,9 +450,34 @@ int perfmon_setupCounterThread_haswellEP(
                 HASEP_SETUP_CBOX(17);
                 break;
 
-            //case UBOX:
-                //HASEP_SETUP_BOX(UBOX);
-                //break;
+            case UBOX:
+                HASEP_SETUP_BOX(UBOX);
+                break;
+            case UBOXFIX:
+                flags = (1ULL<<22)|(1ULL<<20);
+                VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_UBOXFIX);
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, flags));
+                break;
+
+            case SBOX0:
+                HASEP_SETUP_SBOX(0);
+                break;
+            case SBOX1:
+                HASEP_SETUP_SBOX(1);
+                break;
+            case SBOX2:
+                HASEP_SETUP_SBOX(2);
+                break;
+            case SBOX3:
+                HASEP_SETUP_SBOX(3);
+                break;
+
+            case BBOX0:
+                HASEP_SETUP_PCI_BOX(BBOX0);
+                break;
+            case BBOX1:
+                HASEP_SETUP_PCI_BOX(BBOX1);
+                break;
 
             default:
                 /* should never be reached */
@@ -426,12 +559,12 @@ int perfmon_startCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventS
     if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) \
     { \
         uint64_t ovf_values = 0x0ULL; \
-        CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, &ovf_values)); \
+        CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, MSR_PERF_GLOBAL_STATUS, &ovf_values)); \
         if (ovf_values & (1ULL<<offset)) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
         } \
-        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, (1ULL<<offset))); \
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<offset))); \
     }
 
 #define HASEP_CHECK_UNCORE_OVERFLOW(offset) \
@@ -441,9 +574,28 @@ int perfmon_startCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventS
         CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, &ovf_values)); \
         if (ovf_values & (1ULL<<offset)) \
         { \
-            eventSet->events[i].threadCounter[thread_id].overflows++; \
+            CHECK_MSR_READ_ERROR(msr_read(cpu_id, box_map[eventSet->events[i].type].statusRegister, &ovf_values)); \
+            uint64_t looffset = getCounterTypeOffset(eventSet->events[i].index); \
+            if (ovf_values & (1ULL<<looffset)) \
+            { \
+                eventSet->events[i].threadCounter[thread_id].overflows++; \
+                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[eventSet->events[i].type].statusRegister, (1ULL<<looffset))); \
+            } \
         } \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, (1ULL<<offset))); \
+        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, (1ULL<<offset) ) ); \
+    }
+
+#define HASEP_CHECK_LOCAL_OVERFLOW \
+    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) \
+    { \
+        uint64_t ovf_values = 0x0ULL; \
+        uint64_t offset = getCounterTypeOffset(eventSet->events[i].index); \
+        CHECK_MSR_READ_ERROR(msr_read(cpu_id, box_map[eventSet->events[i].type].statusRegister, &ovf_values)); \
+        if (ovf_values & (1ULL<<offset)) \
+        { \
+            eventSet->events[i].threadCounter[thread_id].overflows++; \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[eventSet->events[i].type].statusRegister, (1ULL<<offset))); \
+        } \
     }
 
 
@@ -459,6 +611,26 @@ int perfmon_startCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventS
     { \
         VERBOSEPRINTREG(cpu_id, reg1, LLU_CAST counter_result, READ_BOX_##id) \
         CHECK_MSR_READ_ERROR(msr_tread(socket, cpu_id, reg1, &counter_result)); \
+    }
+
+#define HASEP_READ_PCI_BOX(id, reg1, reg2) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) \
+    { \
+        uint32_t tmp = 0; \
+        CHECK_PCI_READ_ERROR(pci_read(cpu_id, box_map[id].device, reg1, (uint32_t*)&counter_result)); \
+        CHECK_PCI_READ_ERROR(pci_read(cpu_id, box_map[id].device, reg2, &tmp)); \
+        counter_result = (counter_result<<32) + tmp; \
+        VERBOSEPRINTPCIREG(cpu_id, box_map[id].device, reg1, LLU_CAST counter_result, READ_PCI_BOX_##id); \
+    }
+
+#define HASEP_READ_PCI_BOX_SOCKET(socket, id, reg1, reg2) \
+    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) \
+    { \
+        uint32_t tmp = 0; \
+        CHECK_PCI_READ_ERROR(pci_tread(socket, cpu_id, box_map[id].device, reg1, (uint32_t*)&counter_result)); \
+        CHECK_PCI_READ_ERROR(pci_tread(socket, cpu_id, box_map[id].device, reg2, &tmp)); \
+        counter_result = (counter_result<<32) + tmp; \
+        VERBOSEPRINTPCIREG(cpu_id, box_map[id].device, reg1, LLU_CAST counter_result, READ_PCI_BOX_##id); \
     }
 
 int perfmon_stopCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSet)
@@ -499,6 +671,7 @@ int perfmon_stopCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
         {
             counter_result= 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
+            PciDeviceIndex dev = counter_map[index].device;
             uint64_t reg = counter_map[index].configRegister;
             uint64_t counter1 = counter_map[index].counterRegister;
             uint64_t counter2 = counter_map[index].counterRegister2;
@@ -538,105 +711,135 @@ int perfmon_stopCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
 
                 case CBOX0:
                     HASEP_READ_BOX(CBOX0, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX1:
                     HASEP_READ_BOX(CBOX1, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX2:
                     HASEP_READ_BOX(CBOX2, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX3:
                     HASEP_READ_BOX(CBOX3, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX4:
                     HASEP_READ_BOX(CBOX4, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX5:
                     HASEP_READ_BOX(CBOX5, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX6:
                     HASEP_READ_BOX(CBOX6, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX7:
                     HASEP_READ_BOX(CBOX7, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX8:
                     HASEP_READ_BOX(CBOX8, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX9:
                     HASEP_READ_BOX(CBOX9, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX10:
                     HASEP_READ_BOX(CBOX10, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX11:
                     HASEP_READ_BOX(CBOX11, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX12:
                     HASEP_READ_BOX(CBOX12, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX13:
                     HASEP_READ_BOX(CBOX13, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX14:
                     HASEP_READ_BOX(CBOX14, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX15:
                     HASEP_READ_BOX(CBOX15, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX16:
                     HASEP_READ_BOX(CBOX16, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX17:
                     HASEP_READ_BOX(CBOX17, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case UBOX:
                     HASEP_READ_BOX(UBOX, counter1);
-                    if (getCounterTypeOffset(eventSet->events[i].type) == 2)
-                    {
-                        HASEP_CHECK_UNCORE_OVERFLOW(1);
-                    }
-                    else
-                    {
-                        HASEP_CHECK_UNCORE_OVERFLOW(2);
-                    }
+                    HASEP_CHECK_UNCORE_OVERFLOW(1);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case UBOXFIX:
+                    HASEP_READ_BOX(UBOXFIX, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(0);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case SBOX0:
+                    HASEP_READ_BOX(SBOX0, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case SBOX1:
+                    HASEP_READ_BOX(SBOX1, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case SBOX2:
+                    HASEP_READ_BOX(SBOX2, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case SBOX3:
+                    HASEP_READ_BOX(SBOX3, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case BBOX0:
+                    HASEP_READ_PCI_BOX(BBOX0, counter1, counter2);
+                    HASEP_CHECK_UNCORE_OVERFLOW(21);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case BBOX1:
+                    HASEP_READ_PCI_BOX(BBOX1, counter1, counter2);
+                    HASEP_CHECK_UNCORE_OVERFLOW(22);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
@@ -695,6 +898,7 @@ int perfmon_readCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
         {
             counter_result= 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
+            PciDeviceIndex dev = counter_map[index].device;
             uint64_t reg = counter_map[index].configRegister;
             uint64_t counter1 = counter_map[index].counterRegister;
             uint64_t counter2 = counter_map[index].counterRegister2;
@@ -733,107 +937,137 @@ int perfmon_readCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
                     break;
 
                 case CBOX0:
-                    HASEP_READ_BOX(CBOX0, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX0, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX1:
-                    HASEP_READ_BOX(CBOX1, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX1, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX2:
-                    HASEP_READ_BOX(CBOX2, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX2, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX3:
-                    HASEP_READ_BOX(CBOX3, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX3, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX4:
-                    HASEP_READ_BOX(CBOX4, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX4, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX5:
-                    HASEP_READ_BOX(CBOX5, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX5, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX6:
-                    HASEP_READ_BOX(CBOX6, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX6, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX7:
-                    HASEP_READ_BOX(CBOX7, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX7, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX8:
-                    HASEP_READ_BOX(CBOX8, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX8, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX9:
-                    HASEP_READ_BOX(CBOX9, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX9, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX10:
-                    HASEP_READ_BOX(CBOX10, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX10, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX11:
-                    HASEP_READ_BOX(CBOX11, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX11, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX12:
-                    HASEP_READ_BOX(CBOX12, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX12, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX13:
-                    HASEP_READ_BOX(CBOX13, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX13, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX14:
-                    HASEP_READ_BOX(CBOX14, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX14, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX15:
-                    HASEP_READ_BOX(CBOX15, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX15, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX16:
-                    HASEP_READ_BOX(CBOX16, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX16, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX17:
-                    HASEP_READ_BOX(CBOX17, counter1);
-                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    HASEP_READ_BOX_SOCKET(read_fd, CBOX17, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case UBOX:
                     HASEP_READ_BOX_SOCKET(read_fd, UBOX, counter1);
-                    if (getCounterTypeOffset(eventSet->events[i].type) == 2)
-                    {
-                        HASEP_CHECK_UNCORE_OVERFLOW(1);
-                    }
-                    else
-                    {
-                        HASEP_CHECK_UNCORE_OVERFLOW(2);
-                    }
-                    eventSet->events[i].threadCounter[cpu_id].counterData = counter_result;
+                    HASEP_CHECK_UNCORE_OVERFLOW(1);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case UBOXFIX:
+                    HASEP_READ_BOX_SOCKET(read_fd, UBOXFIX, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(0);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case SBOX0:
+                    HASEP_READ_BOX_SOCKET(read_fd, SBOX0, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case SBOX1:
+                    HASEP_READ_BOX_SOCKET(read_fd, SBOX1, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case SBOX2:
+                    HASEP_READ_BOX_SOCKET(read_fd, SBOX2, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case SBOX3:
+                    HASEP_READ_BOX_SOCKET(read_fd, SBOX3, counter1);
+                    HASEP_CHECK_LOCAL_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case BBOX0:
+                    HASEP_READ_PCI_BOX_SOCKET(read_fd, BBOX0, counter1, counter2);
+                    HASEP_CHECK_UNCORE_OVERFLOW(21);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case BBOX1:
+                    HASEP_READ_PCI_BOX_SOCKET(read_fd, BBOX1, counter1, counter2);
+                    HASEP_CHECK_UNCORE_OVERFLOW(22);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 default:
