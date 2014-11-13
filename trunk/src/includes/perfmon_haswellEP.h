@@ -102,16 +102,25 @@ int perfmon_init_haswellEP(int cpu_id)
             } \
         } \
     }
-
-#define HASEP_SETUP_BOX(id) \
-    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(id))) \
+// Remeber setting STATE filter for LLC event
+#define HASEP_SETUP_CBOX(id) \
+    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(CBOX##id))) \
     { \
+        uint64_t filter_flags; \
+        int set_state_all = 0; \
         flags = (1ULL<<22); \
         flags |= (event->umask<<8) + event->eventId; \
+        if (event->eventId == 0x34) \
+        { \
+            set_state_all = 1; \
+        } \
         if (event->numberOfOptions > 0) \
         { \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER0, 0x0ULL)); \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER1, 0x0ULL)); \
             for(int j=0;j<event->numberOfOptions;j++) \
             { \
+                filter_flags = 0x0ULL; \
                 switch (event->options[j].type) \
                 { \
                     case EVENT_OPTION_EDGE: \
@@ -123,12 +132,51 @@ int perfmon_init_haswellEP(int cpu_id)
                     case EVENT_OPTION_THRESHOLD: \
                         flags |= (event->options[j].value<<24); \
                         break; \
+                    case EVENT_OPTION_OPCODE: \
+                        CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER1, &filter_flags)); \
+                        filter_flags |= (0x3<<27); \
+                        filter_flags |= (extractBitField(event->options[j].value,5,0) << 20);\
+                        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER1, filter_flags, SETUP_CBOX##id##_FILTER_OPCODE); \
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER1, filter_flags)); \
+                        break; \
+                    case EVENT_OPTION_NID: \
+                        CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER1, &filter_flags)); \
+                        filter_flags |= (extractBitField(event->options[j].value,16,0));\
+                        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER1, filter_flags, SETUP_CBOX##id##_FILTER_NID); \
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER1, filter_flags)); \
+                        break; \
+                    case EVENT_OPTION_STATE: \
+                        CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER0, &filter_flags)); \
+                        filter_flags |= (extractBitField(event->options[j].value,6,0) << 17);\
+                        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER0, filter_flags, SETUP_CBOX##id##_FILTER_STATE); \
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER0, filter_flags)); \
+                        set_state_all = 0; \
+                        break; \
+                    case EVENT_OPTION_TID: \
+                        CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER0, &filter_flags)); \
+                        filter_flags |= (extractBitField(event->options[j].value,6,0));\
+                        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER0, filter_flags, SETUP_CBOX##id##_FILTER_TID); \
+                        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER0, filter_flags)); \
+                        flags |= (1ULL<<19); \
+                        break; \
                     default: \
                         break; \
                 } \
             } \
         } \
-        VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_##id); \
+        else \
+        { \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER0, 0x0ULL)); \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER1, 0x0ULL)); \
+        } \
+        if (set_state_all) \
+        { \
+            CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER0, &filter_flags)); \
+            filter_flags |= (0x1F << 17);\
+            VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER0, filter_flags, SETUP_CBOX##id##_DEF_FILTER_STATE); \
+            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_V3_C##id##_PMON_BOX_FILTER0, filter_flags)); \
+        } \
+        VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_CBOX##id); \
         CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, flags)); \
     }
 
@@ -240,62 +288,63 @@ int perfmon_setupCounterThread_haswellEP(
                 break;
 
             case CBOX0:
-                HASEP_SETUP_BOX(CBOX0);
+                HASEP_SETUP_CBOX(0);
                 break;
             case CBOX1:
-                HASEP_SETUP_BOX(CBOX1);
+                HASEP_SETUP_CBOX(1);
                 break;
             case CBOX2:
-                HASEP_SETUP_BOX(CBOX2);
+                HASEP_SETUP_CBOX(2);
                 break;
             case CBOX3:
-                HASEP_SETUP_BOX(CBOX3);
+                HASEP_SETUP_CBOX(3);
                 break;
             case CBOX4:
-                HASEP_SETUP_BOX(CBOX4);
+                HASEP_SETUP_CBOX(4);
                 break;
             case CBOX5:
-                HASEP_SETUP_BOX(CBOX5);
+                HASEP_SETUP_CBOX(5);
                 break;
             case CBOX6:
-                HASEP_SETUP_BOX(CBOX6);
+                HASEP_SETUP_CBOX(6);
                 break;
             case CBOX7:
-                HASEP_SETUP_BOX(CBOX7);
+                HASEP_SETUP_CBOX(7);
                 break;
             case CBOX8:
-                HASEP_SETUP_BOX(CBOX8);
+                HASEP_SETUP_CBOX(8);
                 break;
             case CBOX9:
-                HASEP_SETUP_BOX(CBOX9);
+                HASEP_SETUP_CBOX(9);
                 break;
             case CBOX10:
-                HASEP_SETUP_BOX(CBOX10);
+                HASEP_SETUP_CBOX(10);
                 break;
             case CBOX11:
-                HASEP_SETUP_BOX(CBOX11);
+                HASEP_SETUP_CBOX(11);
                 break;
             case CBOX12:
-                HASEP_SETUP_BOX(CBOX12);
+                HASEP_SETUP_CBOX(12);
                 break;
             case CBOX13:
-                HASEP_SETUP_BOX(CBOX13);
+                HASEP_SETUP_CBOX(13);
                 break;
             case CBOX14:
-                HASEP_SETUP_BOX(CBOX14);
+                HASEP_SETUP_CBOX(14);
                 break;
             case CBOX15:
-                HASEP_SETUP_BOX(CBOX15);
+                HASEP_SETUP_CBOX(15);
                 break;
             case CBOX16:
-                HASEP_SETUP_BOX(CBOX16);
+                HASEP_SETUP_CBOX(16);
                 break;
             case CBOX17:
-                HASEP_SETUP_BOX(CBOX17);
+                HASEP_SETUP_CBOX(17);
                 break;
 
-            case UBOX:
-                HASEP_SETUP_BOX(UBOX);
+            //case UBOX:
+                //HASEP_SETUP_BOX(UBOX);
+                //break;
 
             default:
                 /* should never be reached */
@@ -507,6 +556,76 @@ int perfmon_stopCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
                     HASEP_CHECK_UNCORE_OVERFLOW(3);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
+                case CBOX4:
+                    HASEP_READ_BOX(CBOX4, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX5:
+                    HASEP_READ_BOX(CBOX5, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX6:
+                    HASEP_READ_BOX(CBOX6, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX7:
+                    HASEP_READ_BOX(CBOX7, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX8:
+                    HASEP_READ_BOX(CBOX8, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX9:
+                    HASEP_READ_BOX(CBOX9, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX10:
+                    HASEP_READ_BOX(CBOX10, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX11:
+                    HASEP_READ_BOX(CBOX11, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX12:
+                    HASEP_READ_BOX(CBOX12, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX13:
+                    HASEP_READ_BOX(CBOX13, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX14:
+                    HASEP_READ_BOX(CBOX14, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX15:
+                    HASEP_READ_BOX(CBOX15, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX16:
+                    HASEP_READ_BOX(CBOX16, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX17:
+                    HASEP_READ_BOX(CBOX17, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
 
                 case UBOX:
                     HASEP_READ_BOX(UBOX, counter1);
@@ -614,24 +733,94 @@ int perfmon_readCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
                     break;
 
                 case CBOX0:
-                    HASEP_READ_BOX_SOCKET(read_fd, CBOX0, counter1);
+                    HASEP_READ_BOX(CBOX0, counter1);
                     HASEP_CHECK_UNCORE_OVERFLOW(3);
-                    eventSet->events[i].threadCounter[cpu_id].counterData = counter_result;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX1:
-                    HASEP_READ_BOX_SOCKET(read_fd, CBOX1, counter1);
+                    HASEP_READ_BOX(CBOX1, counter1);
                     HASEP_CHECK_UNCORE_OVERFLOW(3);
-                    eventSet->events[i].threadCounter[cpu_id].counterData = counter_result;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX2:
-                    HASEP_READ_BOX_SOCKET(read_fd, CBOX2, counter1);
+                    HASEP_READ_BOX(CBOX2, counter1);
                     HASEP_CHECK_UNCORE_OVERFLOW(3);
-                    eventSet->events[i].threadCounter[cpu_id].counterData = counter_result;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case CBOX3:
-                    HASEP_READ_BOX_SOCKET(read_fd, CBOX3, counter1);
+                    HASEP_READ_BOX(CBOX3, counter1);
                     HASEP_CHECK_UNCORE_OVERFLOW(3);
-                    eventSet->events[i].threadCounter[cpu_id].counterData = counter_result;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX4:
+                    HASEP_READ_BOX(CBOX4, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX5:
+                    HASEP_READ_BOX(CBOX5, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX6:
+                    HASEP_READ_BOX(CBOX6, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX7:
+                    HASEP_READ_BOX(CBOX7, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX8:
+                    HASEP_READ_BOX(CBOX8, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX9:
+                    HASEP_READ_BOX(CBOX9, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX10:
+                    HASEP_READ_BOX(CBOX10, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX11:
+                    HASEP_READ_BOX(CBOX11, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX12:
+                    HASEP_READ_BOX(CBOX12, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX13:
+                    HASEP_READ_BOX(CBOX13, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX14:
+                    HASEP_READ_BOX(CBOX14, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX15:
+                    HASEP_READ_BOX(CBOX15, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX16:
+                    HASEP_READ_BOX(CBOX16, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case CBOX17:
+                    HASEP_READ_BOX(CBOX17, counter1);
+                    HASEP_CHECK_UNCORE_OVERFLOW(3);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case UBOX:
