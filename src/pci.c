@@ -137,12 +137,12 @@ pci_init(int initSocket_fd)
 #else
     DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using procfs to find pci devices);
     ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
-#endif
     if (ret)
     {
         ERROR_PLAIN_PRINT(Using procfs to find pci devices failed);
         return -ENODEV;
     }
+#endif
 
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {

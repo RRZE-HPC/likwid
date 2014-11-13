@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <sched.h>
 #include <pthread.h>
+#include <inttypes.h>
 
 #include <likwid.h>
 #include <bitUtil.h>
@@ -150,7 +151,7 @@ void likwid_markerInit(void)
         fprintf(stderr, "You have to set the -m commandline switch for likwid-perfctr\n");
         return;
     }
-    sscanf(getenv("LIKWID_COUNTERMASK"), "%x", &regTypeMask);
+    sscanf(getenv("LIKWID_COUNTERMASK"), "%" PRIx64, &regTypeMask);
     verbosity = atoi(getenv("LIKWID_DEBUG"));
     numberOfGroups = atoi(getenv("LIKWID_GROUPS"));
     if (!lock_check())
@@ -335,8 +336,8 @@ int likwid_markerStartRegion(const char* regionTag)
 
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, START [%s] READ EVENT [%d] ID %d VALUE %llu, regionTag, cpu_id, i,
-                        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].counterData);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, START [%s] READ EVENT [%d] ID %d VALUE %llu , regionTag, cpu_id, i,
+                        LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].counterData);
         groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].startData =
             groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].counterData;
     }
@@ -384,7 +385,7 @@ int likwid_markerStopRegion(const char* regionTag)
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d] ID %d VALUE %llu, regionTag, cpu_id, i,
-                        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].counterData);
+                        LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].counterData);
         results->PMcounters[groupSet->groups[groupSet->activeGroup].events[i].index] += perfmon_getResult(groupSet->activeGroup, i, cpu_id);
 
     }
