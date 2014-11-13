@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <inttypes.h>
 
 #include <bstrlib.h>
 #include <types.h>
@@ -115,9 +116,10 @@ int main(int argc, char** argv)
     double time;
     double cycPerUp = 0.0;
     const TestCase* test = NULL;
-    uint32_t realSize = 0;
+    uint64_t realSize = 0;
     uint64_t realCycles = 0;
     uint64_t realIter = 0;
+    uint64_t dataVol = 0;
     uint64_t cpuClock = 0;
     Workgroup* currentWorkgroup = NULL;
     Workgroup* groups = NULL;
@@ -300,7 +302,7 @@ int main(int argc, char** argv)
     printf("LIKWID MICRO BENCHMARK\n");
     printf("Test: %s\n",test->name);
     printf(HLINE);
-    printf("Using %d work groups\n",numberOfWorkgroups);
+    printf("Using %" PRIu64 " work groups\n",numberOfWorkgroups);
     printf("Using %d threads\n",globalNumberOfThreads);
     printf(HLINE);
 
@@ -369,17 +371,18 @@ int main(int argc, char** argv)
     time = (double) threads_data[0].cycles / (double) cpuClock;
     printf(HLINE);
     printf("Cycles:\t\t\t%llu\n", LLU_CAST threads_data[0].cycles);
-    printf("Iterations:\t\t%llu\n", LLU_CAST iter);
-    printf("Size:\t\t\t%llu\n",  realSize );
-    printf("Vectorlength:\t\t%llu\n", LLU_CAST threads_data[0].data.size);
+    printf("Iterations:\t\t%llu\n", LLU_CAST realIter);
+    printf("Iterations per thread:\t%llu\n",LLU_CAST threads_data[0].data.iter);
+    printf("Size:\t\t\t%" PRIu64 "\n",  realSize );
+    printf("Size per thread:\t%llu\n", LLU_CAST threads_data[0].data.size);
     printf("Time:\t\t\t%e sec\n", time);
     printf("Number of Flops:\t%llu\n", LLU_CAST (numberOfWorkgroups * iter * realSize *  test->flops));
     printf("MFlops/s:\t\t%.2f\n",
             1.0E-06 * ((double) numberOfWorkgroups * iter * realSize *  test->flops/  time));
-    printf("Data volume:\t\t%llu\n", LLU_CAST (numberOfWorkgroups * iter * realSize *  test->bytes));
+    printf("Data volume (Byte):\t%llu\n", LLU_CAST (numberOfWorkgroups * iter * realSize *  test->bytes));
     printf("MByte/s:\t\t%.2f\n",
             1.0E-06 * ( (double) numberOfWorkgroups * iter * realSize *  test->bytes/ time));
-    cycPerUp = ((double) realCycles / (double) (realIter * realSize));
+    cycPerUp = ((double) threads_data[0].cycles / (double) (threads_data[0].data.iter * threads_data[0].data.size));
     printf("Cycles per update:\t%f\n", cycPerUp);
 
     switch ( test->type )
