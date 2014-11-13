@@ -79,7 +79,9 @@ static int FD[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
 static char* socket_bus[MAX_NUM_NODES];
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
+/* Dirty hack to avoid nonull warnings */
+int (*ownaccess)(const char*, int);
+int (*ownopen)(const char*, int, ...);
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -92,6 +94,9 @@ pci_init(int initSocket_fd)
     int j=0;
     int ret = 0;
     int access_flags = 0;
+
+    ownaccess = &access;
+    ownopen = &open;
 
     for (i=0; i<MAX_NUM_NODES; i++ )
     {
@@ -160,7 +165,7 @@ pci_init(int initSocket_fd)
             bstring filepath = bformat("%s%s%s",PCI_ROOT_PATH,
                                                 socket_bus[i],
                                                 pci_devices[j].path);
-            if (!access(bdata(filepath), access_flags))
+            if (!ownaccess(bdata(filepath),access_flags))
             {
                 FD[i][j] = 0;
                 pci_devices[j].online = 1;
@@ -236,7 +241,7 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t* data)
             filepath =  bfromcstr ( PCI_ROOT_PATH );
             bcatcstr(filepath, socket_bus[socketId]);
             bcatcstr(filepath, pci_devices[device].path);
-            FD[socketId][device] = open( bdata(filepath), O_RDWR);
+            FD[socketId][device] = ownopen( bdata(filepath), O_RDWR);
 
             if ( FD[socketId][device] < 0)
             {
@@ -297,7 +302,7 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
             bcatcstr(filepath, socket_bus[socketId]);
             bcatcstr(filepath, pci_devices[device].path );
             
-            FD[socketId][device] = open( bdata(filepath), O_RDWR);
+            FD[socketId][device] = ownopen( bdata(filepath), O_RDWR);
 
             if ( FD[socketId][device] < 0)
             {
@@ -350,7 +355,7 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
             bcatcstr(filepath, socket_bus[socketId]);
             bcatcstr(filepath, pci_devices[device].path );
 
-            FD[socketId][device] = open( bdata(filepath), O_RDWR);
+            FD[socketId][device] = ownopen( bdata(filepath), O_RDWR);
 
             if ( FD[socketId][device] < 0)
             {
@@ -404,7 +409,7 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
             bcatcstr(filepath, socket_bus[socketId]);
             bcatcstr(filepath, pci_devices[device].path );
 
-            FD[socketId][device] = open( bdata(filepath), O_RDWR);
+            FD[socketId][device] = ownopen( bdata(filepath), O_RDWR);
 
             if ( FD[socketId][device] < 0)
             {
