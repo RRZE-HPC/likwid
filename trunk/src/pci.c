@@ -169,7 +169,10 @@ pci_init(int initSocket_fd)
             {
                 FD[i][j] = 0;
                 pci_devices[j].online = 1;
-                DEBUG_PRINT(DEBUGLEV_DETAIL, PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, i,bdata(filepath));
+                if (i==0)
+                {
+                    DEBUG_PRINT(DEBUGLEV_DETAIL, PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, i,bdata(filepath));
+                }
             }
         }
     }

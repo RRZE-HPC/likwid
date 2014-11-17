@@ -39,6 +39,7 @@
 PerfmonEvent* eventHash;
 RegisterMap* counter_map = NULL;
 BoxMap* box_map = NULL;
+PciDevice* pci_devices = NULL;
 int perfmon_numCounters = 0;
 int perfmon_numCoreCounters = 0;
 int perfmon_numArchEvents = 0;
@@ -73,7 +74,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             break;
         }
     }
-    if ((ret) && (counter_map[*index].type != THERMAL) && (counter_map[*index].type != POWER))
+    if ((ret) && (counter_map[*index].type != THERMAL) && (counter_map[*index].type != POWER) && (counter_map[*index].type != WBOX0FIX))
     {
         if (counter_map[*index].device == 0)
         {
@@ -128,7 +129,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             }*/
         }
     }
-    else if ((ret) && (counter_map[*index].type == POWER))
+    else if ((ret) && ((counter_map[*index].type == POWER) || (counter_map[*index].type == WBOX0FIX)))
     {
         err = msr_read(0, counter_map[*index].counterRegister, &tmp);
         if (err != 0)
@@ -582,15 +583,15 @@ perfmon_init_maps(void)
                     perfmon_numCounters = perfmon_numCountersNehalem;
                     break;
 
-                case IVYBRIDGE:
-
                 case IVYBRIDGE_EP:
+                    pci_devices = ivybridge_pci_devices;
+                    box_map = ivybridge_box_map;
+                case IVYBRIDGE:
                     eventHash = ivybridge_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsIvybridge;
                     counter_map = ivybridge_counter_map;
                     perfmon_numCounters = perfmon_numCountersIvybridge;
                     perfmon_numCoreCounters = perfmon_numCoreCountersIvybridge;
-                    box_map = ivybridge_box_map;
                     break;
 
                 case HASWELL:
@@ -611,16 +612,17 @@ perfmon_init_maps(void)
                     perfmon_numCounters = perfmon_numCountersHaswellEP;
                     perfmon_numCoreCounters = perfmon_numCoreCountersHaswellEP;
                     box_map = haswellEP_box_map;
+                    pci_devices = haswellEP_pci_devices;
                     break;
 
-                case SANDYBRIDGE:
-
                 case SANDYBRIDGE_EP:
+                    box_map = sandybridgeEP_box_map;
+                    pci_devices = sandybridgeEP_pci_devices;
+                case SANDYBRIDGE:
                     eventHash = sandybridge_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsSandybridge;
                     counter_map = sandybridge_counter_map;
                     perfmon_numCounters = perfmon_numCountersSandybridge;
-                    box_map = sandybridge_box_map;
                     perfmon_numCoreCounters = perfmon_numCoreCountersSandybridge;
                     break;
 
