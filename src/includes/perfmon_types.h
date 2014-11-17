@@ -221,6 +221,8 @@ are defined as a box. */
 extern BoxMap* box_map;
 /** \brief List of events available for the current architecture */
 extern PerfmonEvent* eventHash;
+/** \brief List of PCI devices available for the current architecture */
+extern PciDevice* pci_devices;
 /** @}*/
 
 /* perfmon datatypes */
