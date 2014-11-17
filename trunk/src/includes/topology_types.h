@@ -90,7 +90,8 @@ typedef struct {
     uint32_t stepping; /*!< \brief Stepping (version) of the CPU */
     uint64_t clock; /*!< \brief Current clock frequency of the executing CPU*/
     int      turbo; /*!< \brief Flag if CPU has a turbo mode */
-    char*  name; /*!< \brief Name of the CPU */
+    char*  osname; /*!< \brief Name of the CPU reported by OS */
+    char*  name; /*!< \brief Name of the CPU as identified by LIKWID */
     char*  short_name; /*!< \brief Short name of the CPU*/
     char*  features; /*!< \brief String with all features supported by the CPU*/
     int         isIntel; /*!< \brief Flag if it is an Intel CPU*/

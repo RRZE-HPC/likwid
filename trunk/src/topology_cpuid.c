@@ -261,6 +261,39 @@ void cpuid_printTlbTopology()
     return;
 }
 
+static void
+cpuid_set_osname(void)
+{
+    FILE *fp;
+    bstring filename;
+    bstring nameString = bformat("model name");
+    cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
+    int i;
+
+    if (NULL != (fp = fopen ("/proc/cpuinfo", "r"))) 
+    {
+        bstring src = bread ((bNread) fread, fp);
+        struct bstrList* tokens = bsplit(src,(char) '\n');
+
+        for (i=0;i<tokens->qty;i++)
+        {
+            if (binstr(tokens->entry[i],0,nameString) != BSTR_ERR)
+            {
+                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
+                 bltrimws(subtokens->entry[1]);
+                 strcpy(cpuid_info.osname, bdata(subtokens->entry[1]));
+            }
+        }
+    }
+    else
+    {
+        ERROR;
+    }
+
+    fclose(fp);
+}
+
+
 void cpuid_init_cpuInfo(void)
 {
     cpuid_info.isIntel = 1;
@@ -279,7 +312,7 @@ void cpuid_init_cpuInfo(void)
     cpuid_info.family = ((eax>>8)&0xFU) + ((eax>>20)&0xFFU);
     cpuid_info.model = (((eax>>16)&0xFU)<<4) + ((eax>>4)&0xFU);
     cpuid_info.stepping =  (eax&0xFU);
-
+    cpuid_set_osname();
     cpuid_topology.numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
     return;
 }

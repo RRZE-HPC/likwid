@@ -112,15 +112,26 @@ void hwloc_init_cpuInfo(void)
     cpuid_info.model = 0;
     cpuid_info.family = 0;
     cpuid_info.isIntel = 0;
+    cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
     for(i=0;i<obj->infos_count;i++)
     {
         if (strcmp(obj->infos[i].name ,"CPUModelNumber") == 0)
+        {
             cpuid_info.model = atoi(hwloc_obj_get_info_by_name(obj, "CPUModelNumber"));
-        if (strcmp(obj->infos[i].name, "CPUFamilyNumber") == 0)
+        }
+        else if (strcmp(obj->infos[i].name, "CPUFamilyNumber") == 0)
+        {
             cpuid_info.family = atoi(hwloc_obj_get_info_by_name(obj, "CPUFamilyNumber"));
-        if (strcmp(obj->infos[i].name, "CPUVendor") == 0 && 
+        }
+        else if (strcmp(obj->infos[i].name, "CPUVendor") == 0 && 
                 strcmp(hwloc_obj_get_info_by_name(obj, "CPUVendor"), "GenuineIntel") == 0)
+        {
             cpuid_info.isIntel = 1;
+        }
+        else if (strcmp(obj->infos[i].name ,"CPUModel") == 0)
+        {
+            strcpy(cpuid_info.osname, obj->infos[i].value);
+        }
     }
     cpuid_topology.numHWThreads = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
     get_stepping();
