@@ -12,7 +12,8 @@
 #include <tree.h>
 
 
-#define MAX_FEATURE_STRING_LENGTH 200
+#define MAX_FEATURE_STRING_LENGTH 512
+#define MAX_MODEL_STRING_LENGTH 512
 extern CpuInfo cpuid_info;
 extern CpuTopology cpuid_topology;
 extern NumaTopology numa_info;

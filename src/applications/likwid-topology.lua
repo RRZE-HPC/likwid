@@ -84,6 +84,7 @@ local numainfo = likwid.getNumaInfo()
 local affinity = likwid.getAffinityInfo()
 
 print(likwid.hline)
+print(string.format("CPU name:\t%s",cpuinfo["osname"]))
 print(string.format("CPU type:\t%s",cpuinfo["name"]))
 print(string.format("CPU stepping:\t%s",cpuinfo["stepping"]))
 if (measure_clock) then
