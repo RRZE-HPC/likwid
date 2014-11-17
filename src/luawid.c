@@ -265,6 +265,9 @@ static int lua_likwid_getCpuInfo(lua_State* L)
     lua_pushstring(L,"name");
     lua_pushstring(L,cpuinfo->name);
     lua_settable(L,-3);
+    lua_pushstring(L,"osname");
+    lua_pushstring(L,cpuinfo->osname);
+    lua_settable(L,-3);
     lua_pushstring(L,"short_name");
     lua_pushstring(L,cpuinfo->short_name);
     lua_settable(L,-3);
