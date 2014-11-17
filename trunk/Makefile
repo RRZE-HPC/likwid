@@ -289,5 +289,11 @@ uninstall:
 	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && echo "===> REMOVING setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET)"
 	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && rm -f $(PREFIX)/sbin/$(FREQ_TARGET)
 
-
+local: $(L_APPS) likwid.lua
+	@echo "===> Setting Lua scripts to run from current directory"
+	@for APP in $(L_APPS); do \
+		sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<RELEASE>/$(RELEASE)/g" -e "s+$(PREFIX)/bin/likwid-lua+$(shell pwd)/ext/lua/lua+" $$APP; \
+		chmod +x $$APP; \
+	done
+	@sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<RELEASE>/$(RELEASE)/g" -e "s+$(PREFIX)/lib+$(shell pwd)+g" -e "s+$(PREFIX)/share/likwid+$(shell pwd)/groups+g" likwid.lua;
 
