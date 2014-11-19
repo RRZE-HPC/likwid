@@ -23,6 +23,34 @@ L2CACHE: L2 cache miss rate/ratio<br>
 FLOPS_DP: Double Precision MFlops/s<br>
 DATA: Load to store ratio<br>
 
+= Group to events relation =
+Events of group MEM:<br>
+CAS_COUNT_RD<br>
+CAS_COUNT_WR<br>
+Calculate Memory Bandwidth (MByte/s): ((sum(CAS_COUNT_RD,MBOX`*`) + sum(CAS_COUNT_WR,MBOX`*`)) `*` CACHELINE_SIZE) / (MEASUREMENT_TIME `*` 1.0E6)<br>
+<br>
+Events of group FLOPS_DP:<br>
+FP_COMP_OPS_EXE_SSE_FP_PACKED_DOUBLE<br>
+FP_COMP_OPS_EXE_SSE_FP_SCALAR_DOUBLE<br>
+SIMD_FP_256_PACKED_DOUBLE<br>
+Calculate MFLOP/s: (FP_COMP_OPS_EXE_SSE_FP_SCALAR_DOUBLE + (2 `*` FP_COMP_OPS_EXE_SSE_FP_PACKED_DOUBLE) + (4 `*` SIMD_FP_256_PACKED_DOUBLE)) / (MEASUREMENT_TIME `*` 1.0E6)<br>
+<br>
+Events of group L2:<br>
+L1D_REPLACEMENT<br>
+L1D_M_EVICT<br>
+Calculate L2 Bandwidth: ((L1D_REPLACEMENT + L1D_M_EVICT) `*` CACHELINE_SIZE) / (MEASUREMENT_TIME `*` 1.0E6)<br>
+<br>
+Events of group FLOPS_SP:<br>
+FP_COMP_OPS_EXE_SSE_FP_PACKED_SINGLE<br>
+FP_COMP_OPS_EXE_SSE_FP_SCALAR_SINGLE<br>
+SIMD_FP_256_PACKED_SINGLE<br>
+Calculate MFLOP/s: (FP_COMP_OPS_EXE_SSE_FP_SCALAR_SINGLE + (2 `*` FP_COMP_OPS_EXE_SSE_FP_PACKED_SINGLE) + (4 `*` SIMD_FP_256_PACKED_SINGLE)) / (MEASUREMENT_TIME `*` 1.0E6)<br>
+<br>
+Events of group L3:<br>
+L2_LINES_IN_ALL<br>
+L2_LINES_OUT_DIRTY_ALL<br>
+Calculate L3 Bandwidth: ((L2_LINES_IN_ALL + L2_LINES_OUT_DIRTY_ALL) `*` CACHELINE_SIZE) / (MEASUREMENT_TIME `*` 1.0E6)<br>
+
 = Available verification tests =
 Not all groups can be tested for accuracy. Here only the groups are listed that can be verified. Each group is followed by the low-level benchmarks that are performed for comparison.<br>
 MEM: load, store, copy, stream, triad, update, copy_mem, triad_mem, stream_mem, store_mem<br>
@@ -464,4 +492,3 @@ http://likwid.googlecode.com/svn/wiki/images//accuracy/ivyep1/L3_update.png
 || 1MB || 36652 || 29744 || 36679 || 29777 || 36668.40 || 29757.00 ||
 || 4MB || 36339 || 29071 || 36363 || 29084 || 36356.60 || 29078.20 ||
 || 1GB || 19083 || 16817 || 19108 || 16828 || 19094.20 || 16823.20 ||
-
