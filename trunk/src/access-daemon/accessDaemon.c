@@ -184,7 +184,7 @@ static int allowed_silvermont(uint32_t reg)
             (reg == 0x19C)  ||
             (reg == 0x1A2)  ||
             (reg == 0x1A6) ||
-            (reg != 0x1A7))
+            (reg == 0x1A7))
     {
         return 1;
     }
