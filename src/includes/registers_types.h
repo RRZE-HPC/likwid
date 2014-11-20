@@ -154,6 +154,8 @@ typedef struct {
     uint8_t   isPci;
     PciDeviceIndex device;
     uint32_t  regWidth;
+    uint32_t  filterRegister1;
+    uint32_t  filterRegister2;
 } BoxMap;
 
 #endif
