@@ -71,6 +71,7 @@ static int hasPCICounters = 0;
 static int likwid_init = 0;
 static BitMask counterMask;
 static int numberOfGroups = 0;
+static int* groups;
 static int activeGroup = 0;
 static uint64_t regTypeMask = 0;
 static int threads2Cpu[MAX_NUM_THREADS];
@@ -133,7 +134,9 @@ void likwid_markerInit(void)
     int groupId;
     int verbosity;
     bstring bThreadStr;
+    bstring bEventStr;
     struct bstrList* threadTokens;
+    struct bstrList* eventStrings;
     int cpu_id = likwid_getProcessorId();
     char* modeStr = getenv("LIKWID_MODE");
     char* maskStr = getenv("LIKWID_MASK");
@@ -156,10 +159,16 @@ void likwid_markerInit(void)
     }
     sscanf(getenv("LIKWID_COUNTERMASK"), "%" PRIx64, &regTypeMask);
     verbosity = atoi(getenv("LIKWID_DEBUG"));
-    numberOfGroups = atoi(getenv("LIKWID_GROUPS"));
+    numberOfGroups = atoi(groupStr);
     if (!lock_check())
     {
         fprintf(stderr,"Access to performance counters is locked.\n");
+        exit(EXIT_FAILURE);
+    }
+    groups = malloc(numberOfGroups * sizeof(int));
+    if (!groups)
+    {
+        fprintf(stderr,"Cannot allocate space for group handling.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -188,24 +197,31 @@ void likwid_markerInit(void)
     for (i=0; i<threadTokens->qty; i++)
     {
         threadsToCpu[i] = ownatoi(bdata(threadTokens->entry[i]));
-        if (accessClient_mode != DAEMON_AM_DIRECT)
+        if ((accessClient_mode != DAEMON_AM_DIRECT) && (i>0))
         {
             accessClient_init(&thread_sockets[threadsToCpu[i]]);
         }
     }
     perfmon_init(threadTokens->qty, threadsToCpu);
+    thread_sockets[threadsToCpu[0]] = socket_fd;
     bdestroy(bThreadStr);
     bstrListDestroy(threadTokens);
 
-    groupId = perfmon_addEventSet(eventStr);
-    accessClient_finalize(socket_fd);
-    socket_fd = -1;
-    groupSet->activeGroup = groupId;
-    for(int i=0;i<groupSet->groups[activeGroup].numberOfEvents;i++)
+    
+    bEventStr = bfromcstr(eventStr);
+    eventStrings = bstrListCreate();
+    eventStrings = bsplit(bEventStr,'|');
+    for (i=0; i<eventStrings->qty; i++)
+    {
+        groups[i] = perfmon_addEventSet(bdata(eventStrings->entry[i]));
+    }
+
+    groupSet->activeGroup = 0;
+    for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
         for(int j=0;j<groupSet->numberOfThreads;j++)
         {
-            groupSet->groups[activeGroup].events[i].threadCounter[j].init = TRUE;
+            groupSet->groups[groupSet->activeGroup].events[i].threadCounter[j].init = TRUE;
         }
     }
 }
@@ -223,6 +239,23 @@ void likwid_markerThreadInit(void)
     {
         groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].init = TRUE;
     }
+}
+
+void likwid_markerNextGroup(void)
+{
+    int i;
+    int next_group;
+    int cpu_id;
+
+    if ( ! likwid_init )
+    {
+        return;
+    }
+
+    next_group = (groupSet->activeGroup + 1) % numberOfGroups;
+
+    i = perfmon_switchActiveGroup(next_group);
+    return;
 }
 
 /* File format
@@ -249,22 +282,32 @@ void likwid_markerClose(void)
 
     if (file != NULL)
     {
-        fprintf(file,"%d %d %d\n",numberOfThreads,numberOfRegions, numberOfGroups);
+        fprintf(file,"%d %d %d\n",numberOfThreads, numberOfRegions, numberOfGroups);
         for (int i=0; i<numberOfRegions; i++)
         {
+            if (results[i].count[0] == 0)
+            {
+                continue;
+            }
             fprintf(file,"%d:%s\n",i,bdata(results[i].tag));
         }
         for (int i=0; i<numberOfRegions; i++)
         {
+            if (results[i].count[0] == 0)
+            {
+                continue;
+            }
             for (int j=0; j<numberOfThreads; j++)
             {
                 fprintf(file,"%d ",i);
+                fprintf(file,"%d ",results[i].groupID);
                 fprintf(file,"%d ",j);
-                fprintf(file,"%d ",threads2Cpu[j]);
+                //fprintf(file,"%d ",threads2Cpu[j]);
                 fprintf(file,"%u ",results[i].count[j]);
                 fprintf(file,"%e ",results[i].time[j]);
+                fprintf(file,"%d ",groupSet->groups[results[i].groupID].numberOfEvents);
 
-                for (int k=0; k<groupSet->groups[activeGroup].numberOfEvents; k++)
+                for (int k=0; k<groupSet->groups[results[i].groupID].numberOfEvents; k++)
                 {
                     fprintf(file,"%e ",results[i].counters[j][k]);
                 }
@@ -315,11 +358,9 @@ int likwid_markerStartRegion(const char* regionTag)
     uint64_t res;
     uint64_t tmp, counter_result;
     char groupSuffix[10];
-    sprintf(groupSuffix, "-%d", activeGroup);
+    sprintf(groupSuffix, "-%d", groupSet->activeGroup);
     bcatcstr(tag, groupSuffix);
     int cpu_id = hashTable_get(tag, &results);
-    bdestroy(tag);
-    int socket_fd = thread_sockets[cpu_id];
 
     if (accessClient_mode != DAEMON_AM_DIRECT)
     {
@@ -333,8 +374,6 @@ int likwid_markerStartRegion(const char* regionTag)
         }
     }
 
-    socket_fd = thread_sockets[cpu_id];
-
     perfmon_readCountersCpu(cpu_id);
 
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
@@ -342,10 +381,11 @@ int likwid_markerStartRegion(const char* regionTag)
         DEBUG_PRINT(DEBUGLEV_DEVELOP, START [%s] READ EVENT [%d] ID %d VALUE %llu , regionTag, cpu_id, i,
                         LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].counterData);
         groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].startData =
-            groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].counterData;
+                groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].counterData;
     }
-
+    results->groupID = groupSet->activeGroup;
     timer_start(&(results->startTime));
+    bdestroy(tag);
 }
 
 #define READ_END_MEM_CHANNEL(channel, reg, cid)                      \
@@ -371,34 +411,28 @@ int likwid_markerStopRegion(const char* regionTag)
     int ret;
     uint64_t res;
     uint64_t tmp, counter_result;
-    int socket_fd = thread_sockets[cpu_id];
     double PMcounters[NUM_PMC];
     bstring tag = bfromcstr(regionTag);
     char groupSuffix[100];
     LikwidThreadResults* results;
-    sprintf(groupSuffix, "-%d", activeGroup);
+    sprintf(groupSuffix, "-%d", groupSet->activeGroup);
     bcatcstr(tag, groupSuffix);
-    
+
     hashTable_get(tag, &results);
-    results->startTime.stop = timestamp.stop;
+    results->startTime.stop.int64 = timestamp.stop.int64;
     results->time += timer_print(&(results->startTime));
+    results->count++;
     bdestroy(tag);
-    
+
     perfmon_readCountersCpu(cpu_id);
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d] ID %d VALUE %llu, regionTag, cpu_id, i,
                         LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].counterData);
-        results->PMcounters[groupSet->groups[groupSet->activeGroup].events[i].index] += perfmon_getResult(groupSet->activeGroup, i, cpu_id);
-
+        results->PMcounters[i] += perfmon_getResult(groupSet->activeGroup, i, cpu_id);
     }
 }
 
-void likwid_switchMarkerGroup(int groupId)
-{
-    perfmon_switchActiveGroup(groupId);
-    activeGroup = groupId;
-}
 
 int  likwid_getProcessorId()
 {

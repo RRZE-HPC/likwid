@@ -37,6 +37,7 @@ typedef struct LikwidThreadResults{
     bstring  label;
     double time;
     TimerData startTime;
+    int groupID;
     uint32_t count;
     double StartPMcounters[NUM_PMC];
     double PMcounters[NUM_PMC];
@@ -44,6 +45,7 @@ typedef struct LikwidThreadResults{
 
 typedef struct {
     bstring  tag;
+    int groupID;
     double*  time;
     uint32_t*  count;
     double** counters;

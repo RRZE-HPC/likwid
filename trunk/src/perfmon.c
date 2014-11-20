@@ -46,7 +46,7 @@ int perfmon_numArchEvents = 0;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
 int socket_fd = -1;
-int thread_sockets[MAX_NUM_THREADS];
+int thread_sockets[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = -1};
 
 PerfmonGroupSet* groupSet = NULL;
 
@@ -78,7 +78,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
     {
         if (counter_map[*index].device == 0)
         {
-            err = msr_read(0, counter_map[*index].configRegister, &tmp);
+            err = msr_read(0, counter_map[*index].counterRegister, &tmp);
             if (err != 0)
             {
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not readable on this machine,
@@ -87,7 +87,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             }
             else if (tmp == 0x0)
             {
-                err = msr_write(0, counter_map[*index].configRegister, 0x0ULL);
+                err = msr_write(0, counter_map[*index].counterRegister, 0x0ULL);
                 if (err != 0)
                 {
                     DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not writeable on this machine,
@@ -104,20 +104,36 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
         }
         else
         {
-            err = pci_read(0, counter_map[*index].device, counter_map[*index].configRegister, (uint32_t*)&tmp);
+            err = pci_read(0, box_map[counter_map[*index].type].device, counter_map[*index].counterRegister, (uint32_t*)&tmp);
             if (err != 0)
             {
-                DEBUG_PRINT(DEBUGLEV_DETAIL, PCI Counter %s not readable on this machine,
-                                             counter_map[*index].key);
+                if (err == -ENODEV)
+                {
+                    DEBUG_PRINT(DEBUGLEV_DETAIL, PCI Device %s not accessible on this machine,
+                                             pci_devices[box_map[counter_map[*index].type].device].name);
+                }
+                else
+                {
+                    DEBUG_PRINT(DEBUGLEV_DETAIL, PCI Counter %s not readable on this machine,
+                                                 counter_map[*index].key);
+                }
                 *type = NOTYPE;
             }
             else if (tmp == 0x0)
             {
-                err = pci_write(0, counter_map[*index].device, counter_map[*index].configRegister, 0x0U);
+                err = pci_write(0, box_map[counter_map[*index].type].device, counter_map[*index].counterRegister, 0x0U);
                 if (err != 0)
                 {
-                    DEBUG_PRINT(DEBUGLEV_DETAIL, PCI Counter %s not writeable on this machine,
+                    if (err == -ENODEV)
+                    {
+                        DEBUG_PRINT(DEBUGLEV_DETAIL, PCI Device %s not accessible on this machine,
+                                                 pci_devices[box_map[counter_map[*index].type].device].name);
+                    }
+                    else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_DETAIL, PCI Counter %s not writeable on this machine,
                                                  counter_map[*index].key);
+                    }
                     *type = NOTYPE;
                 }
             }
@@ -1250,7 +1266,7 @@ __perfmon_stopCounters(int groupId)
         }
     }
 
-    groupSet->groups[groupSet->activeGroup].rdtscTime += 
+    groupSet->groups[groupId].rdtscTime +=
                 timer_print(&groupSet->groups[groupId].timer);
     return 0;
 }
@@ -1381,10 +1397,21 @@ int
 perfmon_switchActiveGroup(int new_group)
 {
     int ret;
+    int i;
+    int cpu_id;
     ret = perfmon_stopCounters();
     if (ret != 0)
     {
         return ret;
+    }
+    cpu_id = likwid_getProcessorId();
+    for(i=0; i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
+    {
+        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].init = FALSE;
+    }
+    for(i=0; i<groupSet->groups[new_group].numberOfEvents;i++)
+    {
+        groupSet->groups[new_group].events[i].threadCounter[cpu_id].init = TRUE;
     }
     ret = perfmon_setupCounters(new_group);
     if (ret != 0)
@@ -1449,7 +1476,7 @@ perfmon_getMaxCounterValue(RegisterType type)
 void
 perfmon_accessClientInit(void)
 {
-    if (accessClient_mode != DAEMON_AM_DIRECT)
+    if ((accessClient_mode != DAEMON_AM_DIRECT) && (socket_fd == -1))
     {
         accessClient_init(&socket_fd);
         msr_init(socket_fd);

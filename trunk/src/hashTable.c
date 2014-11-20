@@ -174,6 +174,7 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
                 if ( regionId == NULL )
                 {
                     (*results)[currentRegion].tag = bstrcpy (threadResult->label);
+                    (*results)[currentRegion].groupID = threadResult->groupID;
                     regionIds[currentRegion] = currentRegion;
                     regionId = regionIds + currentRegion;
                     g_hash_table_insert(regionLookup, g_strdup(key), (regionIds+currentRegion));
