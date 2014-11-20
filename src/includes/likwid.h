@@ -64,12 +64,14 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #ifdef LIKWID_PERFMON
 #define LIKWID_MARKER_INIT likwid_markerInit()
 #define LIKWID_MARKER_THREADINIT likwid_markerThreadInit()
+#define LIKWID_MARKER_SWITCH likwid_markerNextGroup()
 #define LIKWID_MARKER_START(reg) likwid_markerStartRegion(reg)
 #define LIKWID_MARKER_STOP(reg) likwid_markerStopRegion(reg)
 #define LIKWID_MARKER_CLOSE likwid_markerClose()
 #else
 #define LIKWID_MARKER_INIT
 #define LIKWID_MARKER_THREADINIT
+#define LIKWID_MARKER_SWITCH
 #define LIKWID_MARKER_START(reg)
 #define LIKWID_MARKER_STOP(reg)
 #define LIKWID_MARKER_CLOSE
@@ -106,6 +108,11 @@ of LIKWID. Before you can call likwid_markerThreadInit() you have to call likwid
 
 */
 extern void likwid_markerThreadInit(void);
+/*! \brief Select next group to measure
+
+Must be called in parallel region of the application to switch group on every CPU.
+*/
+extern void likwid_markerNextGroup(void);
 /*! \brief Close LIKWID's marker API
 
 Must be called in serial region of the application. It gathers all data of regions and

@@ -293,7 +293,7 @@ if use_stethoscope == false and use_timeline == false then
     use_wrapper = true
 end
 
-if use_wrapper == true and use_timeline == false and #event_string_list > 1 then
+if use_wrapper == true and use_timeline == false and #event_string_list > 1 and not use_marker then
     use_timeline = true
 end
 
@@ -378,7 +378,7 @@ if use_marker == true then
     likwid.setenv("LIKWID_COUNTERMASK", likwid.createGroupMask(group_list[1]))
     likwid.setenv("LIKWID_CPULIST", table.concat(cpulist,","))
     likwid.setenv("LIKWID_DEBUG", tostring(verbose))
-    local str = event_string_list[1]
+    local str = table.concat(event_string_list, "|")
     likwid.setenv("LIKWID_EVENTS", str)
     likwid.setenv("LIKWID_THREADS", table.concat(cpulist,","))
 end
