@@ -211,6 +211,7 @@ msr_finalize(void)
 int
 msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
 {
+    int ret;
     if (accessClient_mode == DAEMON_AM_DIRECT) 
     {
         if (rdpmc_works && reg >= MSR_PMC0 && reg <=MSR_PMC3)
@@ -232,11 +233,11 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
     }
     else
     { /* daemon or sysdaemon-mode */
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, MSR TREAD [%d] SOCKET %d REG 0x%x, cpu, tsocket_fd, reg);
-        if (accessClient_read(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data))
+        ret = accessClient_read(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data);
+        if (ret)
         {
             ERROR_PRINT(Cannot read MSR reg 0x%x through accessDaemon on CPU %d, reg, cpu);
-            return -EIO;
+            return ret;
         }
     }
     return 0;
@@ -246,6 +247,7 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
 int 
 msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
 {
+    int ret;
     if (accessClient_mode == DAEMON_AM_DIRECT) 
     {
         if (pwrite(FD[cpu], &data, sizeof(data), reg) != sizeof(data))
@@ -257,10 +259,10 @@ msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
     }
     else
     { /* daemon or sysdaemon-mode */
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, MSR TWRITE [%d] SOCKET %d REG 0x%x, cpu, tsocket_fd, reg);
-        if (accessClient_write(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data))
+        ret = accessClient_write(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data);
+        if (ret)
         {
-            return -EIO;
+            return ret;
         }
     }
     return 0;
@@ -270,13 +272,13 @@ msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
 int
 msr_read( const int cpu, uint32_t reg, uint64_t *data)
 {
+    int ret;
     if (accessClient_mode == DAEMON_AM_DIRECT) 
     {
         if (rdpmc_works && reg >= MSR_PMC0 && reg <=MSR_PMC3)
         {
             if (__rdpmc(reg - MSR_PMC0, data) )
             {
-                //ERROR_PRINT("cpu %d reg %x",cpu, reg);
                 ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d\n,
                         reg,cpu);
                 return -EIO;
@@ -286,7 +288,6 @@ msr_read( const int cpu, uint32_t reg, uint64_t *data)
         {
             if ( pread(FD[cpu], data, sizeof(*data), reg) != sizeof(*data) )
             {
-                //ERROR_PRINT("cpu %d reg %x",cpu, reg);
                 ERROR_PRINT(Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d,
                         reg, cpu);
                 return -EIO;
@@ -295,10 +296,10 @@ msr_read( const int cpu, uint32_t reg, uint64_t *data)
     }
     else
     { /* daemon or sysdaemon-mode */
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, MSR READ [%d] SOCKET %d REG 0x%x, cpu, socket_fd,reg);
-        if (accessClient_read(socket_fd, cpu, DAEMON_AD_MSR, reg, data))
+        ret = accessClient_read(socket_fd, cpu, DAEMON_AD_MSR, reg, data);
+        if (ret)
         {
-            return -EIO;
+            return ret;
         }
     }
     return 0;
@@ -314,13 +315,11 @@ msr_write( const int cpu, uint32_t reg, uint64_t data)
         ret = pwrite(FD[cpu], &data, sizeof(data), reg);
         if (ret != sizeof(data))
         {
-            //ERROR_PRINT(Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d pwrite returned %d, reg, cpu, ret);
             return ret;
         }
     }
     else
     { /* daemon or sysdaemon-mode */
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, MSR WRITE [%d] SOCKET %d REG 0x%x, cpu, socket_fd, reg);
         ret = accessClient_write(socket_fd, cpu, DAEMON_AD_MSR, reg, data);
         if (ret)
         {
