@@ -76,7 +76,7 @@ accessClient_strerror(AccessErrorType det)
     }
 }
 
-static int 
+static int
 startDaemon(void)
 {
     /* Check the function of the daemon here */
@@ -177,7 +177,7 @@ accessClient_setaccessmode(int mode)
 void 
 accessClient_init(int* socket_fd)
 {
-    if ((accessClient_mode == DAEMON_AM_ACCESS_D))
+    if ((accessClient_mode == DAEMON_AM_ACCESS_D) && (*socket_fd == -1))
     {
         (*socket_fd) = startDaemon();
     }
