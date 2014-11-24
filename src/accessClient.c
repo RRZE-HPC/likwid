@@ -61,7 +61,7 @@ int accessClient_mode = ACCESSMODE;
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-static char* 
+static char*
 accessClient_strerror(AccessErrorType det)
 {
     switch (det)
@@ -72,7 +72,24 @@ accessClient_strerror(AccessErrorType det)
         case ERR_OPENFAIL:   return "failed to open device file";
         case ERR_RWFAIL:     return "failed to read/write register";
         case ERR_DAEMONBUSY: return "daemon already has a same/higher priority client";
+        case ERR_NODEV:      return "no such pci device";
         default:             return "UNKNOWN errorcode";
+    }
+}
+
+static int
+accessClient_errno(AccessErrorType det)
+{
+    switch (det)
+    {
+        case ERR_NOERROR:    return 0;
+        case ERR_UNKNOWN:    return -EFAULT;
+        case ERR_RESTREG:    return -EPERM;
+        case ERR_OPENFAIL:   return -ENXIO;
+        case ERR_RWFAIL:     return -EIO;
+        case ERR_DAEMONBUSY: return -EBUSY;
+        case ERR_NODEV:      return -ENODEV;
+        default:             return -EFAULT;
     }
 }
 
@@ -219,24 +236,7 @@ accessClient_read(
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon reading reg 0x%X at CPU %d, accessClient_strerror(data.errorcode), data.reg, data.cpu);
         *result = 0;
-        switch (data.errorcode)
-        {
-            case ERR_RESTREG:
-                return -EPERM;
-                break;
-            case ERR_OPENFAIL:
-                return -ENODEV;
-                break;
-            case ERR_DAEMONBUSY:
-                return -EBUSY;
-                break;
-            case ERR_RWFAIL:
-                return -EIO;
-                break;
-            default:
-                return -EFAULT;
-                break;
-        }
+        return accessClient_errno(data.errorcode);
     }
     *result = data.data;
     return 0;
@@ -263,25 +263,7 @@ accessClient_write(
     if (data.errorcode != ERR_NOERROR)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon writing reg 0x%X at CPU %d, accessClient_strerror(data.errorcode), data.reg, data.cpu);
-        switch (data.errorcode)
-        {
-            case ERR_RESTREG:
-                return -EPERM;
-                break;
-            case ERR_OPENFAIL:
-                return -ENODEV;
-                break;
-            case ERR_DAEMONBUSY:
-                return -EBUSY;
-                break;
-            case ERR_RWFAIL:
-                return -EIO;
-                break;
-            default:
-                return -EFAULT;
-                break;
-        }
-        return -EIO;
+        return accessClient_errno(data.errorcode);
     }
 
     return 0;
