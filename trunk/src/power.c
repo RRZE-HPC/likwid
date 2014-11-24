@@ -38,10 +38,6 @@
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 PowerInfo power_info;
-const uint32_t power_regs[4] = {MSR_PKG_ENERGY_STATUS,
-                                MSR_PP0_ENERGY_STATUS,
-                                MSR_PP1_ENERGY_STATUS,
-                                MSR_DRAM_ENERGY_STATUS};
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -53,7 +49,7 @@ int
 power_init(int cpuId)
 {
     uint64_t flags;
-    uint32_t info_register;
+    uint32_t info_register = MSR_PKG_POWER_INFO;
     int i;
     int err;
 
@@ -64,7 +60,7 @@ power_init(int cpuId)
     power_info.minFrequency = 0;
     power_info.turbo.numSteps = 0;
     power_info.powerUnit = 0;
-    power_info.energyUnit = 0;
+    power_info.energyUnits = NULL;
     power_info.timeUnit = 0;
     power_info.minPower = 0;
     power_info.maxPower = 0;
@@ -92,6 +88,10 @@ power_init(int cpuId)
 
             power_info.turbo.numSteps = cpuid_topology.numCoresPerSocket;
             power_info.turbo.steps = (double*) malloc(power_info.turbo.numSteps * sizeof(double));
+            if (!power_info.turbo.steps)
+            {
+                return -ENOMEM;
+            }
 
             CHECK_MSR_READ_ERROR(msr_read(cpuId, MSR_TURBO_RATIO_LIMIT, &flags))
 
@@ -118,21 +118,14 @@ power_init(int cpuId)
         case SANDYBRIDGE:
         case IVYBRIDGE:
         case HASWELL:
-            power_info.hasRAPL = 1;
-            power_info.supportedTypes = (1<<PKG)|(1<<PP0)|(1<<PP1)|(1<<DRAM);
-            info_register = MSR_PKG_POWER_INFO;
-            break;
-        case ATOM_SILVERMONT:
-            power_info.hasRAPL = 1;
-            power_info.supportedTypes = (1<<PKG);
-            info_register = MSR_PKG_POWER_INFO_SILVERMONT;
-            break;
         case SANDYBRIDGE_EP:
         case IVYBRIDGE_EP:
         case HASWELL_EP:
             power_info.hasRAPL = 1;
-            //power_info.supportedTypes = (1<<PKG)|(1<<PP1)|(1<<DRAM);
-            info_register = MSR_PKG_POWER_INFO;
+            break;
+        case ATOM_SILVERMONT:
+            power_info.hasRAPL = 1;
+            info_register = MSR_PKG_POWER_INFO_SILVERMONT;
             break;
         default:
             DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, NO RAPL SUPPORT);
@@ -142,12 +135,26 @@ power_init(int cpuId)
     /* determine RAPL parameters */
     if ( power_info.hasRAPL )
     {
+        power_info.energyUnits = (double*) malloc(NUM_POWER_DOMAINS * sizeof(double));
+        if (!power_info.energyUnits)
+        {
+            return -ENOMEM;
+        }
         err = msr_read(cpuId, MSR_RAPL_POWER_UNIT, &flags);
         if (err == 0)
         {
+            double energyUnit;
             power_info.powerUnit = pow(0.5,(double) extractBitField(flags,4,0));
-            power_info.energyUnit = pow(0.5,(double) extractBitField(flags,5,8));
+            energyUnit = pow(0.5,(double) extractBitField(flags,5,8));
             power_info.timeUnit = pow(0.5,(double) extractBitField(flags,4,16));
+            for (i = 0; i < NUM_POWER_DOMAINS; i++)
+            {
+                power_info.energyUnits[i] = energyUnit;
+            }
+            if (cpuid_info.model == HASWELL_EP)
+            {
+                power_info.energyUnits[3] = 15.3E-6;
+            }
 
             /* info_register set in the switch-case-statement at the beginning
                because Atom Silvermont uses another register */
@@ -171,7 +178,7 @@ power_init(int cpuId)
                 }
                 else
                 {
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL DOMAIN %d NOT SUPPORTED, i);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL domain %s not supported, power_names[i]);
                 }
             }
         }

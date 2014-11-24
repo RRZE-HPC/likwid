@@ -845,8 +845,14 @@ static int lua_likwid_getPowerInfo(lua_State* L)
     lua_pushstring(L,"powerUnit");
     lua_pushnumber(L,power->powerUnit);
     lua_settable(L,-3);
-    lua_pushstring(L,"energyUnit");
-    lua_pushnumber(L,power->energyUnit);
+    lua_pushstring(L,"energyUnits");
+    lua_newtable(L);
+    for(i=0;i<4;i++)
+    {
+        lua_pushnumber(L,i+1);
+        lua_pushnumber(L,power->energyUnits[i]);
+        lua_settable(L,-3);
+    }
     lua_settable(L,-3);
     lua_pushstring(L,"timeUnit");
     lua_pushnumber(L,power->timeUnit);
@@ -912,6 +918,7 @@ static int lua_likwid_printEnergy(lua_State* L)
     PowerData pwrdata;
     pwrdata.before = lua_tonumber(L,1);
     pwrdata.after = lua_tonumber(L,2);
+    pwrdata.domain = lua_tonumber(L,3);
     lua_pushnumber(L,power_printEnergy(&pwrdata));
     return 1;
 }

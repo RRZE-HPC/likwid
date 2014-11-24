@@ -1384,7 +1384,7 @@ perfmon_getResult(int groupId, int eventId, int threadId)
 
     if (counter_map[event->index].type == POWER)
     {
-        result *= power_info.energyUnit;
+        result *= power_getEnergyUnit(getCounterTypeOffset(event->index));
     }
     else if (counter_map[event->index].type == THERMAL)
     {

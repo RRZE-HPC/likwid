@@ -38,14 +38,18 @@
 #include <msr.h>
 #include <error.h>
 
+const uint32_t power_regs[NUM_POWER_DOMAINS] = {MSR_PKG_ENERGY_STATUS,
+                                MSR_PP0_ENERGY_STATUS,
+                                MSR_PP1_ENERGY_STATUS,
+                                MSR_DRAM_ENERGY_STATUS};
 
-
+const char* power_names[NUM_POWER_DOMAINS] = {"PKG", "PP0", "PP1", "DRAM"};
 
 
 double
 power_printEnergy(PowerData* data)
 {
-    return  (double) ((data->after - data->before) * power_info.energyUnit);
+    return  (double) ((data->after - data->before) * power_info.energyUnits[data->domain]);
 }
 
 int
@@ -59,17 +63,18 @@ power_start(PowerData* data, int cpuId, PowerType type)
             data->before = 0;
             CHECK_MSR_READ_ERROR(msr_read(cpuId, power_regs[type], &result))
             data->before = extractBitField(result,32,0);
+            data->domain = type;
             return 0;
         }
         else
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL DOMAIN %d NOT SUPPORTED, type);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL domain %s not supported, power_names[type]);
             return -EFAULT;
         }
     }
     else
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, NO RAPL SUPPORT);
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, No RAPL support);
         return -EIO;
     }
 }
@@ -85,17 +90,18 @@ power_stop(PowerData* data, int cpuId, PowerType type)
             data->after = 0;
             CHECK_MSR_READ_ERROR(msr_read(cpuId, power_regs[type], &result))
             data->after = extractBitField(result,32,0);
+            data->domain = type;
             return 0;
         }
         else
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL DOMAIN %d NOT SUPPORTED, type);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL domain %s not supported, power_names[type]);
             return -EFAULT;
         }
     }
     else
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, NO RAPL SUPPORT);
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, No RAPL support);
         return -EIO;
     }
 }
@@ -104,7 +110,7 @@ int
 power_read(int cpuId, uint64_t reg, uint32_t *data)
 {
     int i;
-    PowerType type;
+    PowerType type = -1;
 
     if (power_info.hasRAPL)
     {
@@ -126,13 +132,13 @@ power_read(int cpuId, uint64_t reg, uint32_t *data)
         }
         else
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL DOMAIN %d NOT SUPPORTED, type);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL domain %s not supported, power_names[type]);
             return -EFAULT;
         }
     }
     else
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, NO RAPL SUPPORT);
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, No RAPL support);
         return -EIO;
     }
 }
@@ -162,17 +168,21 @@ power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
         }
         else
         {
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL DOMAIN %d NOT SUPPORTED, type);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL domain %s not supported, power_names[type]);
             return -EFAULT;
         }
     }
     else
     {
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, NO RAPL SUPPORT);
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, No RAPL support);
         return -EIO;
     }
 }
 
-
+double
+power_getEnergyUnit(int domain)
+{
+    return power_info.energyUnits[domain];
+}
 
 #endif /*POWER_H*/

@@ -285,24 +285,24 @@ for i,socket in pairs(sockets) do
     cpu = numatopo["nodes"][i]["processors"][1]
     print(string.format("Measure for socket %d on cpu %d", socket,cpu ))
     print("Domain: PKG")
-    energy = likwid.calcPower(before0, after0)
+    energy = likwid.calcPower(before0, after0, 0)
     print(string.format("Energy consumed: %g Joules",energy))
     print(string.format("Power consumed: %g Watts",energy/runtime))
     if (power["hasRAPL_PP0"]) then
         print("Domain: PP0")
-        energy = likwid.calcPower(before1, after1)
+        energy = likwid.calcPower(before1, after1, 1)
         print(string.format("Energy consumed: %g Joules",energy));
         print(string.format("Power consumed: %g Watts",energy/runtime))
     end
     if (power["hasRAPL_PP1"]) then
         print("Domain: PP1")
-        energy = likwid.calcPower(before2, after2)
+        energy = likwid.calcPower(before2, after2, 2)
         print(string.format("Energy consumed: %g Joules",energy));
         print(string.format("Power consumed: %g Watts",energy/runtime))
     end
     if (power["hasRAPL_DRAM"]) then
         print("Domain: DRAM")
-        energy = likwid.calcPower(before3, after3)
+        energy = likwid.calcPower(before3, after3, 3)
         print(string.format("Energy consumed: %g Joules",energy));
         print(string.format("Power consumed: %g Watts",energy/runtime))
     end
