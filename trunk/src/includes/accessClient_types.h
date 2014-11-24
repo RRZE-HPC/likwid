@@ -80,7 +80,8 @@ typedef enum {
     ERR_RESTREG,      /* attempt to access restricted MSR */
     ERR_OPENFAIL,     /* failure to open msr files */
     ERR_RWFAIL,       /* failure to read/write msr */
-    ERR_DAEMONBUSY    /* daemon already has another client */
+    ERR_DAEMONBUSY,   /* daemon already has another client */
+    ERR_NODEV         /* No such device */
 } AccessErrorType;
 
 typedef struct {

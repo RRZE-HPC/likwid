@@ -83,7 +83,7 @@
 #define IVYBRIDGE            0x3AU
 #define IVYBRIDGE_EP         0x3EU
 #define HASWELL              0x3CU
-#define HASWELL_EX           0x3FU
+#define HASWELL_EP           0x3FU
 #define ATOM_SILVERMONT      0x4DU
 
 #define PCI_ROOT_PATH    "/proc/bus/pci/"
@@ -106,7 +106,7 @@ static FuncPrototype allowed = NULL;
 static int FD_MSR[MAX_NUM_THREADS];
 static int FD_PCI[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
 static int isPCIUncore = 0;
-
+static PciDevice* pci_devices = NULL;
 static char pci_filepath[MAX_PATH_LENGTH];
 
 /* Socket to bus mapping -- will be determined at runtime;
@@ -119,6 +119,76 @@ static char pci_filepath[MAX_PATH_LENGTH];
  */
 static char* socket_bus[MAX_NUM_NODES];
 
+
+static PciDevice sandybridgeEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
+ [PCI_NONE] = {NONE, NULL, NULL, NULL, 0x0, 0},
+ [PCI_R3QPI_DEVICE_LINK_0] = {R3QPI, "13.5", "PCI_R3QPI_DEVICE_LINK_0", "RBOX0", 0x3c44, 0},
+ [PCI_R3QPI_DEVICE_LINK_1] = {R3QPI, "13.6", "PCI_R3QPI_DEVICE_LINK_1", "RBOX1", 0x3c45, 0},
+ [PCI_R2PCIE_DEVICE] = {R2PCIE, "13.1", "PCI_R2PCIE_DEVICE", "PBOX0", 0x3c43, 0},
+ [PCI_IMC_DEVICE_0_CH_0] = {IMC, "10.0", "PCI_IMC_DEVICE_CH_0", "MBOX0", 0x3cb0, 0},
+ [PCI_IMC_DEVICE_0_CH_1] = {IMC, "10.1", "PCI_IMC_DEVICE_CH_1", "MBOX1", 0x3cb1, 0},
+ [PCI_IMC_DEVICE_0_CH_2] = {IMC, "10.4", "PCI_IMC_DEVICE_CH_2", "MBOX2", 0x3cb4, 0},
+ [PCI_IMC_DEVICE_0_CH_3] = {IMC, "10.5", "PCI_IMC_DEVICE_CH_3", "MBOX3", 0x3cb5, 0},
+ [PCI_HA_DEVICE_0] = {HA, "0e.1", "PCI_HA_DEVICE", "BBOX", 0x3c46, 0},
+ [PCI_QPI_DEVICE_PORT_0] = {QPI, "08.2", "PCI_QPI_DEVICE_PORT_0", "SBOX0", 0x3c41, 0},
+ [PCI_QPI_DEVICE_PORT_1] = {QPI, "09.2", "PCI_QPI_DEVICE_PORT_1", "SBOX1", 0x3c42, 0},
+ [PCI_QPI_MASK_DEVICE_PORT_0] = {QPI, "08.6", "PCI_QPI_MASK_DEVICE_PORT_0", NULL, 0x3c86, 0},
+ [PCI_QPI_MASK_DEVICE_PORT_1] = {QPI, "09.6", "PCI_QPI_MASK_DEVICE_PORT_1", NULL, 0x3c96, 0},
+ [PCI_QPI_MISC_DEVICE_PORT_0] = {QPI, "08.0", "PCI_QPI_MISC_DEVICE_PORT_0", "SBOX0FIX",0x3c80, 0},
+ [PCI_QPI_MISC_DEVICE_PORT_2] = {QPI, "09.0", "PCI_QPI_MISC_DEVICE_PORT_1", "SBOX1FIX", 0x3c91, 0},
+};
+
+
+static PciDevice ivybridgeEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
+ [PCI_NONE] = {NONE, "", "", "", 0x0, 0},
+ [PCI_R3QPI_DEVICE_LINK_0] = {R3QPI, "13.5", "PCI_R3QPI_DEVICE_LINK_0", "RBOX0", 0x0e36, 0},
+ [PCI_R3QPI_DEVICE_LINK_1] = {R3QPI, "13.6", "PCI_R3QPI_DEVICE_LINK_1", "RBOX1", 0x0e37, 0},
+ [PCI_R3QPI_DEVICE_LINK_2] = {R3QPI, "12.5", "PCI_R3QPI_DEVICE_LINK_2", "RBOX2", 0x0e3e, 0},
+ [PCI_R2PCIE_DEVICE] = {R2PCIE, "13.1", "PCI_R2PCIE_DEVICE", "PBOX0", 0x0e34, 0},
+ [PCI_IMC_DEVICE_0_CH_0] = {IMC, "10.4", "PCI_IMC_DEVICE_0_CH_0", "MBOX0", 0x0eb4, 0},
+ [PCI_IMC_DEVICE_0_CH_1] = {IMC, "10.5", "PCI_IMC_DEVICE_0_CH_1", "MBOX1", 0x0eb5, 0},
+ [PCI_IMC_DEVICE_0_CH_2] = {IMC, "10.0", "PCI_IMC_DEVICE_0_CH_2", "MBOX2", 0x0eb0, 0},
+ [PCI_IMC_DEVICE_0_CH_3] = {IMC, "10.1", "PCI_IMC_DEVICE_0_CH_3", "MBOX3", 0x0eb1, 0},
+ [PCI_HA_DEVICE_0] = {HA, "0e.1", "PCI_HA_DEVICE_0", "BBOX0", 0x0e30, 0},
+ [PCI_HA_DEVICE_1] = {HA, "1c.1", "PCI_HA_DEVICE_1", "BBOX1", 0x0e38, 0},
+ [PCI_IMC_DEVICE_1_CH_0] = {IMC, "1e.4", "PCI_IMC_DEVICE_1_CH_0", "MBOX0", 0x0ef4, 0},
+ [PCI_IMC_DEVICE_1_CH_1] = {IMC, "1e.5", "PCI_IMC_DEVICE_1_CH_1", "MBOX1", 0x0ef5, 0},
+ [PCI_IMC_DEVICE_1_CH_2] = {IMC, "1e.0", "PCI_IMC_DEVICE_1_CH_2", "MBOX2", 0x0ef0, 0},
+ [PCI_IMC_DEVICE_1_CH_3] = {IMC, "1e.1", "PCI_IMC_DEVICE_1_CH_3", "MBOX3", 0x0ef1, 0},
+ [PCI_IRP_DEVICE] = {IRP, "05.6", "PCI_IRP_DEVICE", NULL, 0x0e39, 0},
+ [PCI_QPI_DEVICE_PORT_0] = {QPI, "08.2", "PCI_QPI_DEVICE_PORT_0", "SBOX0", 0x0e32, 0},
+ [PCI_QPI_DEVICE_PORT_1] = {QPI, "09.2", "PCI_QPI_DEVICE_PORT_1", "SBOX1", 0x0e33, 0},
+ [PCI_QPI_DEVICE_PORT_2] = {QPI, "0a.2", "PCI_QPI_DEVICE_PORT_2", "SBOX2", 0x0e3a, 0},
+ [PCI_QPI_MASK_DEVICE_PORT_0] = {QPI, "08.6", "PCI_QPI_MASK_DEVICE_PORT_0", NULL, 0x0e86, 0},
+ [PCI_QPI_MASK_DEVICE_PORT_1] = {QPI, "09.6", "PCI_QPI_MASK_DEVICE_PORT_1", NULL, 0x0e96, 0},
+ [PCI_QPI_MASK_DEVICE_PORT_1] = {QPI, "0a.6", "PCI_QPI_MASK_DEVICE_PORT_2", NULL, 0x0ec6, 0},
+ [PCI_QPI_MISC_DEVICE_PORT_0] = {QPI, "08.0", "PCI_QPI_MISC_DEVICE_PORT_0/1", "SBOX01FIX",0x0e80}, 0,
+ [PCI_QPI_MISC_DEVICE_PORT_2] = {QPI, "0a.0", "PCI_QPI_MISC_DEVICE_PORT_2", "SBOX2FIX", 0x0ec0, 0},
+};
+
+static PciDevice haswellEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
+ [PCI_NONE] = {NONE, NULL, NULL, NULL, 0x0, 0},
+ [PCI_R3QPI_DEVICE_LINK_0] = {R3QPI, "0b.1", "PCI_R3QPI_DEVICE_LINK_0", "RBOX0", 0x2f36, 0},
+ [PCI_R3QPI_DEVICE_LINK_1] = {R3QPI, "0b.2", "PCI_R3QPI_DEVICE_LINK_1", "RBOX1", 0x2f37, 0},
+ [PCI_R2PCIE_DEVICE] = {R2PCIE, "10.1", "PCI_R2PCIE_DEVICE", "PBOX0", 0x2f34, 0},
+ [PCI_IMC_DEVICE_0_CH_0] = {IMC, "14.0", "PCI_IMC_DEVICE_0_CH_0", "MBOX0", 0x2fb4, 0},
+ [PCI_IMC_DEVICE_0_CH_1] = {IMC, "14.1", "PCI_IMC_DEVICE_0_CH_1", "MBOX1", 0x2fb5, 0},
+ [PCI_IMC_DEVICE_0_CH_2] = {IMC, "15.0", "PCI_IMC_DEVICE_0_CH_2", "MBOX2", 0x2fb0, 0},
+ [PCI_IMC_DEVICE_0_CH_3] = {IMC, "15.1", "PCI_IMC_DEVICE_0_CH_3", "MBOX3", 0x2fb1, 0},
+ [PCI_HA_DEVICE_0] = {HA, "12.1", "PCI_HA_DEVICE_0", "BBOX0", 0x2f30, 0},
+ [PCI_HA_DEVICE_1] = {HA, "12.5", "PCI_HA_DEVICE_1", "BBOX1", 0x2f38, 0},
+ [PCI_IMC_DEVICE_1_CH_0] = {IMC, "17.0", "PCI_IMC_DEVICE_1_CH_0", "MBOX0", 0x2fd4, 0},
+ [PCI_IMC_DEVICE_1_CH_1] = {IMC, "17.1", "PCI_IMC_DEVICE_1_CH_1", "MBOX1", 0x2fd5, 0},
+ [PCI_IMC_DEVICE_1_CH_2] = {IMC, "18.0", "PCI_IMC_DEVICE_1_CH_2", "MBOX2", 0x2fd0, 0},
+ [PCI_IMC_DEVICE_1_CH_3] = {IMC, "18.1", "PCI_IMC_DEVICE_1_CH_3", "MBOX3", 0x2fd1, 0},
+ [PCI_IRP_DEVICE] = {IRP, "05.6", "PCI_IRP_DEVICE", NULL, 0x2f39, 0},
+ [PCI_QPI_DEVICE_PORT_0] = {QPI, "08.2", "PCI_QPI_DEVICE_PORT_0", "SBOX0", 0x2f32, 0},
+ [PCI_QPI_DEVICE_PORT_1] = {QPI, "09.2", "PCI_QPI_DEVICE_PORT_1", "SBOX1", 0x2f33, 0},
+ [PCI_QPI_MASK_DEVICE_PORT_0] = {QPI, "08.6", "PCI_QPI_MASK_DEVICE_PORT_0", NULL, 0x2f86, 0},
+ [PCI_QPI_MASK_DEVICE_PORT_1] = {QPI, "09.6", "PCI_QPI_MASK_DEVICE_PORT_1", NULL, 0x2f96, 0},
+ [PCI_QPI_MISC_DEVICE_PORT_0] = {QPI, "08.0", "PCI_QPI_MISC_DEVICE_PORT_0", "SBOX0FIX", 0x2f80, 0},
+ [PCI_QPI_MISC_DEVICE_PORT_1] = {QPI, "08.0", "PCI_QPI_MISC_DEVICE_PORT_1", "SBOX1FIX", 0x2f80, 0},
+};
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -292,6 +362,12 @@ static void pci_read(AccessDataRecord* dRecord)
     dRecord->errorcode = ERR_NOERROR;
     dRecord->data = 0;
 
+    if (FD_PCI[socketId][device] == -2)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+
     if ( !FD_PCI[socketId][device] )
     {
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
@@ -329,6 +405,12 @@ static void pci_write(AccessDataRecord* dRecord)
     uint32_t data = (uint32_t) dRecord->data;
 
     dRecord->errorcode = ERR_NOERROR;
+
+    if (FD_PCI[socketId][device] == -2)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
 
     if ( !FD_PCI[socketId][device] )
     {
@@ -494,16 +576,22 @@ int main(void)
             case P6_FAMILY:
                 allowed = allowed_intel;
 
-                if ((model == SANDYBRIDGE)        ||
-                        (model == SANDYBRIDGE_EP) ||
-                        (model == IVYBRIDGE)      ||
-                        (model == IVYBRIDGE_EP) )
+                if ((model == SANDYBRIDGE) || (model == IVYBRIDGE))
+                {
+                    allowed = allowed_sandybridge;
+                }
+                else if ((model == SANDYBRIDGE_EP) || (model == IVYBRIDGE_EP))
                 {
                     allowed = allowed_sandybridge;
                     isPCIUncore = 1;
                 }
-                else if ((model == HASWELL) || (model == HASWELL_EX))
+                else if (model == HASWELL)
                 {
+                    allowed = allowed_haswell;
+                }
+                else if (model == HASWELL_EP)
+                {
+                    isPCIUncore = 1;
                     allowed = allowed_haswell;
                 }
                 else if (model == ATOM_SILVERMONT)
@@ -611,9 +699,10 @@ int main(void)
         {
             for (int j=0; j<MAX_NUM_NODES; j++)
             {
+                socket_bus[j] = "N-A";
                 for (int i=0; i<MAX_NUM_PCI_DEVICES; i++)
                 {
-                    FD_PCI[j][i] = 0;
+                    FD_PCI[j][i] = -2;
                 }
             }
 
@@ -623,19 +712,22 @@ int main(void)
             uint32_t testDevice;
             uint32_t sbus, sdevfn, svend;
             int cntr = 0;
-
-            for ( int i=0; i<MAX_NUM_NODES; i++ )
-            {
-                socket_bus[i] = "N-A";
-            }
+            int socket_count = 0;
 
             if (model == SANDYBRIDGE_EP)
             {
                 testDevice = 0x80863c44;
+                pci_devices = sandybridgeEP_pci_devices;
             }
             else if (model == IVYBRIDGE_EP)
             {
                 testDevice = 0x80860e36;
+                pci_devices = ivybridgeEP_pci_devices;
+            }
+            else if (model == HASWELL_EP)
+            {
+                testDevice = 0x80862f30;
+                pci_devices = haswellEP_pci_devices;
             }
             else
             {
@@ -664,6 +756,30 @@ int main(void)
             if ( cntr == 0 )
             {
                 syslog(LOG_NOTICE, "Uncore not supported on this system");
+            }
+            else
+            {
+                socket_count = cntr;
+                for (int j=0; j<socket_count; j++)
+                {
+                    for (int i=1; i<MAX_NUM_PCI_DEVICES; i++)
+                    {
+                        if (pci_devices[i].path)
+                        {
+                            sprintf(pci_filepath, "%s%s%s",PCI_ROOT_PATH,socket_bus[j],pci_devices[i].path);
+
+                            if (!access(pci_filepath,F_OK))
+                            {
+                                FD_PCI[j][i] = 0;
+                                pci_devices[i].online = 1;
+                            }
+                            else
+                            {
+                                syslog(LOG_NOTICE, "Device %s not found at path %s, excluded it from device list\n",pci_devices[i].name,pci_filepath);
+                            }
+                        }
+                    }
+                }
             }
         }
     }
