@@ -362,7 +362,7 @@ int hasep_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
-    flags = (1ULL<<22)|(1<<20);
+    flags = (1ULL<<22)|(1ULL<<20);
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
@@ -391,7 +391,7 @@ int hasep_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
-    flags = (1ULL<<22)|(1<<20);
+    flags = (1ULL<<22)|(1ULL<<20);
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
@@ -421,7 +421,36 @@ int hasep_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
-    flags = (1ULL<<22)|(1<<20);
+    flags = (1ULL<<22)|(1ULL<<20);
+    flags |= (event->umask<<8) + event->eventId;
+    if (event->numberOfOptions > 0)
+    {
+        for(int j=0;j<event->numberOfOptions;j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= (extractBitField(event->options[j].value,8,0)<<24);
+                    break;
+            }
+        }
+    }
+    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_PBOX);
+    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, counter_map[index].configRegister, flags));
+    return 0;
+}
+
+int hasep_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    uint64_t flags = 0x0ULL;
+    PciDeviceIndex dev = counter_map[index].device;
+    flags = (1ULL<<22)|(1ULL<<20);
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
@@ -741,6 +770,13 @@ int perfmon_setupCounterThread_haswellEP(
                 if (haveLock && pci_checkDevice(dev, cpu_id))
                 {
                     hasep_pbox_setup(cpu_id, index, event);
+                }
+
+            case RBOX0:
+            case RBOX1:
+                if (haveLock && pci_checkDevice(dev, cpu_id))
+                {
+                    hasep_rbox_setup(cpu_id, index, event);
                 }
 
             default:
@@ -1172,6 +1208,28 @@ int perfmon_stopCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
                 case PBOX:
                     HASEP_READ_PCI_BOX(PBOX, counter1, counter2);
                     HASEP_CHECK_UNCORE_OVERFLOW(29);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case IBOX0:
+                    HASEP_READ_PCI_BOX(IBOX0, counter1, counter2);
+                    HASEP_CHECK_UNCORE_OVERFLOW(34);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case IBOX1:
+                    HASEP_READ_PCI_BOX(IBOX1, counter1, counter2);
+                    HASEP_CHECK_UNCORE_OVERFLOW(34);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case RBOX0:
+                    HASEP_READ_PCI_BOX(RBOX0, counter1, counter2);
+                    HASEP_CHECK_UNCORE_OVERFLOW(27);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case RBOX1:
+                    HASEP_READ_PCI_BOX(RBOX1, counter1, counter2);
+                    HASEP_CHECK_UNCORE_OVERFLOW(28);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
