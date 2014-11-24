@@ -157,11 +157,23 @@ end
 
 
 cpulist = {}
+before = {}
+after = {}
 for i,socketId in pairs(sockets) do
     local affinityID = "S"..tostring(socketId)
     for j, domain in pairs(affinity["domains"]) do
         if domain["tag"] == affinityID then
             table.insert(cpulist,domain["processorList"][1])
+            before[domain["processorList"][1]] = {}
+            before[domain["processorList"][1]][0] = 0
+            before[domain["processorList"][1]][1] = 0
+            before[domain["processorList"][1]][2] = 0
+            before[domain["processorList"][1]][3] = 0
+            after[domain["processorList"][1]] = {}
+            after[domain["processorList"][1]][0] = 0
+            after[domain["processorList"][1]][1] = 0
+            after[domain["processorList"][1]][2] = 0
+            after[domain["processorList"][1]][3] = 0
         end
     end
 end
@@ -243,10 +255,10 @@ if (use_perfctr) then
 else
     for i,socket in pairs(sockets) do
         cpu = cpulist[i]
-        if (power["hasRAPL_PP0"]) then before1 = likwid.startPower(cpu, 1) end
-        if (power["hasRAPL_PP1"]) then before2 = likwid.startPower(cpu, 2) end
-        if (power["hasRAPL_DRAM"]) then before3 = likwid.startPower(cpu, 3) end
-        before0 = likwid.startPower(cpu, 0)
+        if (power["hasRAPL_PP0"]) then before[cpu][1] = likwid.startPower(cpu, 1) end
+        if (power["hasRAPL_PP1"]) then before[cpu][2] = likwid.startPower(cpu, 2) end
+        if (power["hasRAPL_DRAM"]) then before[cpu][3] = likwid.startPower(cpu, 3) end
+        before[cpu][0] = likwid.startPower(cpu, 0)
     end
 end
 time_before = likwid.startClock()
@@ -276,10 +288,10 @@ if (use_perfctr) then
 else
     for i,socket in pairs(sockets) do
         cpu = cpulist[i]
-        after0 = likwid.stopPower(cpu, 0)
-        if (power["hasRAPL_PP0"]) then after1 = likwid.stopPower(cpu, 1) end
-        if (power["hasRAPL_PP1"]) then after2 = likwid.stopPower(cpu, 2) end
-        if (power["hasRAPL_DRAM"]) then after3 = likwid.stopPower(cpu, 3) end
+        after[cpu][0] = likwid.stopPower(cpu, 0)
+        if (power["hasRAPL_PP0"]) then after[cpu][1] = likwid.stopPower(cpu, 1) end
+        if (power["hasRAPL_PP1"]) then after[cpu][2] = likwid.stopPower(cpu, 2) end
+        if (power["hasRAPL_DRAM"]) then after[cpu][3] = likwid.stopPower(cpu, 3) end
     end
 end
 runtime = likwid.getClock(time_before, time_after)
@@ -289,24 +301,24 @@ for i,socket in pairs(sockets) do
     cpu = cpulist[i]
     print(string.format("Measure for socket %d on cpu %d", socket,cpu ))
     print("Domain: PKG")
-    energy = likwid.calcPower(before0, after0, 0)
+    energy = likwid.calcPower(before[cpu][0], after[cpu][0], 0)
     print(string.format("Energy consumed: %g Joules",energy))
     print(string.format("Power consumed: %g Watts",energy/runtime))
     if (power["hasRAPL_PP0"]) then
         print("Domain: PP0")
-        energy = likwid.calcPower(before1, after1, 1)
+        energy = likwid.calcPower(before[cpu][1], after[cpu][1], 1)
         print(string.format("Energy consumed: %g Joules",energy));
         print(string.format("Power consumed: %g Watts",energy/runtime))
     end
     if (power["hasRAPL_PP1"]) then
         print("Domain: PP1")
-        energy = likwid.calcPower(before2, after2, 2)
+        energy = likwid.calcPower(before[cpu][2], after[cpu][2], 2)
         print(string.format("Energy consumed: %g Joules",energy));
         print(string.format("Power consumed: %g Watts",energy/runtime))
     end
     if (power["hasRAPL_DRAM"]) then
         print("Domain: DRAM")
-        energy = likwid.calcPower(before3, after3, 3)
+        energy = likwid.calcPower(before[cpu][3], after[cpu][3], 3)
         print(string.format("Energy consumed: %g Joules",energy));
         print(string.format("Power consumed: %g Watts",energy/runtime))
     end
