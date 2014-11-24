@@ -538,6 +538,12 @@ extern int power_stop(PowerData_t data, int cpuId, PowerType type);
 @return Consumed energy in Joules
 */
 extern double power_printEnergy(PowerData* data);
+/*! \brief Get energy Unit
+
+@param [in] domain RAPL domain ID
+@return Power unit of the given RAPL domain
+*/
+extern double power_getEnergyUnit(int domain);
 /** @}*/
 
 /* 
