@@ -83,6 +83,7 @@ config = likwid.getConfiguration()
 cpuinfo = likwid.getCpuInfo()
 cputopo = likwid.getCpuTopology()
 numatopo = likwid.getNumaInfo()
+affinity = likwid_getAffinityInfo()
 
 for opt,arg in likwid.getopt(arg, "c:hiM:ps:vft") do
     if (opt == "h") then
@@ -157,8 +158,11 @@ end
 
 cpulist = {}
 for i,socketId in pairs(sockets) do
-    for j, cpuId in pairs(numatopo["nodes"][i]["processors"]) do
-        table.insert(cpulist,cpuId)
+    local affinityID = "S"..tostring(socketId)
+    for j, domain in pairs(affinity["domains"]) do
+        if domain["tag"] == affinityID then
+            table.insert(cpulist,domain["processorList"][1])
+        end
     end
 end
 
@@ -238,7 +242,7 @@ if (use_perfctr) then
     likwid.startCounters()
 else
     for i,socket in pairs(sockets) do
-        cpu = numatopo["nodes"][i]["processors"][1]
+        cpu = cpulist[i]
         if (power["hasRAPL_PP0"]) then before1 = likwid.startPower(cpu, 1) end
         if (power["hasRAPL_PP1"]) then before2 = likwid.startPower(cpu, 2) end
         if (power["hasRAPL_DRAM"]) then before3 = likwid.startPower(cpu, 3) end
@@ -271,7 +275,7 @@ if (use_perfctr) then
     likwid.finalize()
 else
     for i,socket in pairs(sockets) do
-        cpu = numatopo["nodes"][i]["processors"][1]
+        cpu = cpulist[i]
         after0 = likwid.stopPower(cpu, 0)
         if (power["hasRAPL_PP0"]) then after1 = likwid.stopPower(cpu, 1) end
         if (power["hasRAPL_PP1"]) then after2 = likwid.stopPower(cpu, 2) end
@@ -282,7 +286,7 @@ runtime = likwid.getClock(time_before, time_after)
 print(string.format("Runtime: %g s",runtime))
 
 for i,socket in pairs(sockets) do
-    cpu = numatopo["nodes"][i]["processors"][1]
+    cpu = cpulist[i]
     print(string.format("Measure for socket %d on cpu %d", socket,cpu ))
     print("Domain: PKG")
     energy = likwid.calcPower(before0, after0, 0)
@@ -309,15 +313,20 @@ for i,socket in pairs(sockets) do
 end
 if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
     print(likwid.hline)
-    likwid.initTemp(numatopo["nodes"][1]["processors"][1]);
+    likwid.initTemp(cpulist[i]);
     print("Current core temperatures:");
     for i=1,cputopo["numSockets"] do
-        for j=1,(cputopo["numCoresPerSocket"]*cputopo["numThreadsPerCore"]) do
-            cpuid = numatopo["nodes"][i]["processors"][j]
-            if (fahrenheit) then
-                print(string.format("Socket %d Core %d: %u F",numatopo["nodes"][i]["id"],cpuid, 1.8*likwid.readTemp(cpuid)+32));
-            else
-                print(string.format("Socket %d Core %d: %u C",numatopo["nodes"][i]["id"],cpuid, likwid.readTemp(cpuid)));
+        local tag = "S" .. tostring(i-1)
+        for _, domain in pairs(affinity["domains"]) do
+            if domain["tag"] == tag then
+                for j=1,#domain["processorList"] do
+                    local cpuid = domain["processorList"][j]
+                    if (fahrenheit) then
+                        print(string.format("Socket %d Core %d: %u F",i-1,cpuid, 1.8*likwid.readTemp(cpuid)+32));
+                    else
+                        print(string.format("Socket %d Core %d: %u C",i-1,cpuid, likwid.readTemp(cpuid)));
+                    end
+                end
             end
         end
     end
