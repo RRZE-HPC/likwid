@@ -1336,26 +1336,24 @@ likwid.msr_available = msr_available
 
 
 function addSimpleAsciiBox(container,lineIdx, colIdx, label)
+    local box = {}
     if container[lineIdx] == nil then
         container[lineIdx] = {}
     end
-    if container[lineIdx][colIdx] == nil then
-        container[lineIdx][colIdx] = {}
-    end
-    container[lineIdx][colIdx]["width"] = 1
-    container[lineIdx][colIdx]["label"] = label
+    box["width"] = 1
+    box["label"] = label
+    table.insert(container[lineIdx], box)
 end
 likwid.addSimpleAsciiBox = addSimpleAsciiBox
 
 function addJoinedAsciiBox(container,lineIdx, startColIdx, endColIdx, label)
+    local box = {}
     if container[lineIdx] == nil then
         container[lineIdx] = {}
     end
-    if container[lineIdx][startColIdx] == nil then
-        container[lineIdx][startColIdx] = {}
-    end
-    container[lineIdx][startColIdx]["width"] = endColIdx-startColIdx+1
-    container[lineIdx][startColIdx]["label"] = label
+    box["width"] = endColIdx-startColIdx+1
+    box["label"] = label
+    table.insert(container[lineIdx], box)
 end
 likwid.addJoinedAsciiBox = addJoinedAsciiBox
 
@@ -1371,9 +1369,6 @@ function printAsciiBox(container)
             if container[i][j]["label"]:len() > boxwidth then
                 boxwidth = container[i][j]["label"]:len()
             end
-            if container[i][j]["width"] > 1 then
-                j = j + container[i][j]["width"]
-            end
         end
     end
     boxwidth = boxwidth + 2
@@ -1388,7 +1383,6 @@ function printAsciiBox(container)
                 innerboxline = innerboxline .. string.rep("-", boxwidth)
             else
                 innerboxline = innerboxline .. string.rep("-", (container[i][j]["width"] * boxwidth + (container[i][j]["width"]-1)*3))
-                j = j + container[i][j]["width"]-1
             end
             innerboxline = innerboxline .. "+ "
         end
@@ -1409,9 +1403,6 @@ function printAsciiBox(container)
             boxlabelline = boxlabelline .. "|" .. string.rep(" ",(width+offset))
             boxlabelline = boxlabelline .. container[i][j]["label"]
             boxlabelline = boxlabelline ..  string.rep(" ",(width)) .. "| "
-            if container[i][j]["width"] ~= 1 then
-                j = j + container[i][j]["width"]-1
-            end
         end
         print(innerboxline .. "|")
         print(boxlabelline .. "|")
