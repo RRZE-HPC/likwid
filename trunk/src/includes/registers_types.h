@@ -91,6 +91,7 @@ typedef enum {
     CBOX12, CBOX13, CBOX14,
     CBOX15, CBOX16, CBOX17,
     PBOX, UBOX, UBOXFIX, IBOX0, IBOX1,
+    QBOX0, QBOX1, QBOX0FIX, QBOX1FIX,
     NUM_UNITS, NOTYPE, MAX_UNITS
 } RegisterType;
 
@@ -146,6 +147,10 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [UBOXFIX] = "System Configuration box fixed counter",
     [IBOX0] = "Coherency Maintainer for IIO traffic",
     [IBOX1] = "Coherency Maintainer for IIO traffic",
+    [QBOX0] = "QPI Link Layer 0",
+    [QBOX1] = "QPI Link Layer 1",
+    [QBOX0FIX] = "QPI Link Layer rate status 0",
+    [QBOX1FIX] = "QPI Link Layer rate status 1",
     [NUM_UNITS] = "Maximally usable register types",
     [NOTYPE] = "No Type, used for skipping unavailable counters"
 };

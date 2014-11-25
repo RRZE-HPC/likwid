@@ -60,8 +60,12 @@ typedef enum {
     EVENT_OPTION_OPCODE, /*!< \brief Match opcode */
     EVENT_OPTION_MATCH0, /*!< \brief Match0 register */
     EVENT_OPTION_MATCH1, /*!< \brief Match1 register */
+    EVENT_OPTION_MATCH2, /*!< \brief Match2 register */
+    EVENT_OPTION_MATCH3, /*!< \brief Match3 register */
     EVENT_OPTION_MASK0, /*!< \brief Mask0 register */
-    EVENT_OPTION_MASK1, /*!< \brief Mask0 register */
+    EVENT_OPTION_MASK1, /*!< \brief Mask1 register */
+    EVENT_OPTION_MASK2, /*!< \brief Mask2 register */
+    EVENT_OPTION_MASK3, /*!< \brief Mask3 register */
     EVENT_OPTION_NID, /*!< \brief Set NUMA node ID */
     EVENT_OPTION_TID, /*!< \brief Set Thread ID */
     EVENT_OPTION_STATE, /*!< \brief Match for state */
@@ -98,8 +102,12 @@ extern char* eventOptionTypeName[NUM_EVENT_OPTIONS];
 #define EVENT_OPTION_OPCODE_MASK (1ULL<<EVENT_OPTION_OPCODE)
 #define EVENT_OPTION_MATCH0_MASK (1ULL<<EVENT_OPTION_MATCH0)
 #define EVENT_OPTION_MATCH1_MASK (1ULL<<EVENT_OPTION_MATCH1)
+#define EVENT_OPTION_MATCH2_MASK (1ULL<<EVENT_OPTION_MATCH2)
+#define EVENT_OPTION_MATCH3_MASK (1ULL<<EVENT_OPTION_MATCH3)
 #define EVENT_OPTION_MASK0_MASK (1ULL<<EVENT_OPTION_MASK0)
 #define EVENT_OPTION_MASK1_MASK (1ULL<<EVENT_OPTION_MASK1)
+#define EVENT_OPTION_MASK2_MASK (1ULL<<EVENT_OPTION_MASK2)
+#define EVENT_OPTION_MASK3_MASK (1ULL<<EVENT_OPTION_MASK3)
 #define EVENT_OPTION_NID_MASK (1ULL<<EVENT_OPTION_NID)
 #define EVENT_OPTION_TID_MASK (1ULL<<EVENT_OPTION_TID)
 #define EVENT_OPTION_STATE_MASK (1ULL<<EVENT_OPTION_STATE)
