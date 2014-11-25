@@ -475,6 +475,70 @@ int hasep_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     return 0;
 }
 
+int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    uint64_t flags = 0x0ULL;
+    PciDeviceIndex dev = counter_map[index].device;
+    flags = (1ULL<<22)|(1ULL<<20);
+    flags |= (event->umask<<8) + event->eventId;
+    if (event->cfgBits == 0x01)
+    {
+        flags |= (1ULL<<21);
+    }
+    if (event->numberOfOptions > 0)
+    {
+        for(int j=0;j<event->numberOfOptions;j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= (extractBitField(event->options[j].value,8,0)<<24);
+                    break;
+                case EVENT_OPTION_MATCH0:
+                    VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_V3_QPI_PMON_RX_MATCH_0, event->options[j].value, SETUP_QBOX_RX_MATCH0);
+                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_V3_QPI_PMON_RX_MATCH_0, event->options[j].value));
+                    break;
+                case EVENT_OPTION_MATCH1:
+                    VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_V3_QPI_PMON_RX_MATCH_1, event->options[j].value, SETUP_QBOX_RX_MATCH1);
+                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_V3_QPI_PMON_RX_MATCH_1, event->options[j].value));
+                    break;
+                case EVENT_OPTION_MATCH2:
+                    VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_V3_QPI_PMON_TX_MATCH_0, event->options[j].value, SETUP_QBOX_TX_MATCH0);
+                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_V3_QPI_PMON_TX_MATCH_0, event->options[j].value));
+                    break;
+                case EVENT_OPTION_MATCH3:
+                    VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_V3_QPI_PMON_TX_MATCH_1, event->options[j].value, SETUP_QBOX_TX_MATCH1);
+                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_V3_QPI_PMON_TX_MATCH_1, event->options[j].value));
+                    break;
+                case EVENT_OPTION_MASK0:
+                    VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_V3_QPI_PMON_RX_MASK_0, event->options[j].value, SETUP_QBOX_RX_MASK0);
+                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_V3_QPI_PMON_RX_MASK_0, event->options[j].value));
+                    break;
+                case EVENT_OPTION_MASK1:
+                    VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_V3_QPI_PMON_RX_MASK_1, event->options[j].value, SETUP_QBOX_RX_MASK1);
+                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_V3_QPI_PMON_RX_MASK_1, event->options[j].value));
+                    break;
+                case EVENT_OPTION_MASK2:
+                    VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_V3_QPI_PMON_TX_MASK_0, event->options[j].value, SETUP_QBOX_TX_MASK0);
+                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_V3_QPI_PMON_TX_MASK_0, event->options[j].value));
+                    break;
+                case EVENT_OPTION_MASK3:
+                    VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_V3_QPI_PMON_TX_MASK_1, event->options[j].value, SETUP_QBOX_TX_MASK1);
+                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_V3_QPI_PMON_TX_MASK_1, event->options[j].value));
+                    break;
+            }
+        }
+    }
+    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_QBOX);
+    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, counter_map[index].configRegister, flags));
+}
+
 #define HASEP_FREEZE_UNCORE \
     if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
     { \
@@ -777,6 +841,13 @@ int perfmon_setupCounterThread_haswellEP(
                 if (haveLock && pci_checkDevice(dev, cpu_id))
                 {
                     hasep_rbox_setup(cpu_id, index, event);
+                }
+
+            case QBOX0:
+            case QBOX1:
+                if (haveLock && pci_checkDevice(dev, cpu_id))
+                {
+                    hasep_qbox_setup(cpu_id, index, event);
                 }
 
             default:
@@ -1230,6 +1301,57 @@ int perfmon_stopCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
                 case RBOX1:
                     HASEP_READ_PCI_BOX(RBOX1, counter1, counter2);
                     HASEP_CHECK_UNCORE_OVERFLOW(28);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case QBOX0:
+                    HASEP_READ_PCI_BOX(QBOX0, counter1, counter2);
+                    HASEP_CHECK_UNCORE_OVERFLOW(25);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+                case QBOX1:
+                    HASEP_READ_PCI_BOX(QBOX1, counter1, counter2);
+                    HASEP_CHECK_UNCORE_OVERFLOW(26);
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case QBOX0FIX:
+                case QBOX1FIX:
+                    if (eventSet->events[i].event.eventId == 0x00)
+                    {
+                        pci_read(cpu_id, dev, counter1, (uint32_t*)&counter_result);
+                        switch(extractBitField(counter_result, 3, 0))
+                        {
+                            case 0x2:
+                                counter_result = 5.6E9;
+                                break;
+                            case 0x3:
+                                counter_result = 6.4E9;
+                                break;
+                            case 0x4:
+                                counter_result = 7.2E9;
+                                break;
+                            case 0x5:
+                                counter_result = 8.0E9;
+                                break;
+                            case 0x6:
+                                counter_result = 8.8E9;
+                                break;
+                            case 0x7:
+                                counter_result = 9.6E9;
+                                break;
+                            default:
+                                counter_result = 0;
+                                break;
+                        }
+                        
+                    }
+                    else if ((eventSet->events[i].event.eventId == 0x01) ||
+                             (eventSet->events[i].event.eventId == 0x02))
+                    {
+                        pci_read(cpu_id, dev, counter1, (uint32_t*)&counter_result);
+                        counter_result = extractBitField(counter_result, 32,0);
+                    }
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 

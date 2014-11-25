@@ -7,6 +7,7 @@
 #include <sys/types.h>
 
 
+#include <types.h>
 #include <likwid.h>
 #include <bitUtil.h>
 #include <timer.h>
@@ -57,6 +58,33 @@ int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 
 int (*initThreadArch) (int cpu_id);
 
+
+char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
+    "NONE",
+    "OPCODE",
+    "MATCH0",
+    "MATCH1",
+    "MATCH2",
+    "MATCH3",
+    "MASK0",
+    "MASK1",
+    "MASK2",
+    "MASK3",
+    "NID",
+    "TID",
+    "STATE",
+    "EDGEDETECT",
+    "THRESHOLD",
+    "INVERT",
+    "COUNT_KERNEL",
+    "ANYTHREAD",
+    "OCCUPANCY",
+    "OCCUPANCY_FILTER",
+    "OCCUPANCY_EDGEDETECT",
+    "OCCUPANCY_INVERT",
+    "IN_TRANSACTION",
+    "IN_TRANSACTION_ABORTED"
+};
 
 static int
 getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
@@ -324,6 +352,16 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
                                     event->numberOfOptions, EVENT_OPTION_MATCH1, 0);
             }
+            else if (biseqcstr(subtokens->entry[0], "match2") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_MATCH2, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "match3") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_MATCH3, 0);
+            }
             else if (biseqcstr(subtokens->entry[0], "mask0") == 1)
             {
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
@@ -333,6 +371,16 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
             {
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
                                     event->numberOfOptions, EVENT_OPTION_MASK1, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "mask2") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_MASK2, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "mask3") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_MASK3, 0);
             }
             else if (biseqcstr(subtokens->entry[0], "nid") == 1)
             {
@@ -1483,25 +1531,4 @@ perfmon_accessClientInit(void)
     }
 }
 
-char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
-    "NONE",
-    "OPCODE",
-    "MATCH0",
-    "MATCH1",
-    "MASK0",
-    "MASK1",
-    "NID",
-    "TID",
-    "STATE",
-    "EDGEDETECT",
-    "THRESHOLD",
-    "INVERT",
-    "COUNT_KERNEL",
-    "ANYTHREAD",
-    "OCCUPANCY",
-    "OCCUPANCY_FILTER",
-    "OCCUPANCY_EDGEDETECT",
-    "OCCUPANCY_INVERT",
-    "IN_TRANSACTION",
-    "IN_TRANSACTION_ABORTED"
-};
+
