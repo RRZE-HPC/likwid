@@ -282,6 +282,9 @@ int hasep_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 int hasep_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
+    int opcode_flag = 0;
+    int match0_flag = 0;
+    int match1_flag = 0;
     PciDeviceIndex dev = counter_map[index].device;
     flags = (1ULL<<22)|(1ULL<<20);
     flags |= (event->umask<<8) + event->eventId;
@@ -305,21 +308,39 @@ int hasep_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                                         extractBitField(event->options[j].value,6,0), SETUP_BBOX_OPCODE);
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_HA_PMON_OPCODEMATCH,
                                         extractBitField(event->options[j].value,6,0)));
+                    opcode_flag = 1;
                     break;
                 case EVENT_OPTION_MATCH0:
                     VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH0,
                                         (extractBitField(event->options[j].value,26,0)<<6), SETUP_BBOX_MATCH0);
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH0,
                                         (extractBitField(event->options[j].value,26,0)<<6)));
+                    match0_flag = 1;
                     break;
                 case EVENT_OPTION_MATCH1:
                     VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1,
                                         extractBitField(event->options[j].value,13,0), SETUP_BBOX_MATCH1);
                     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1,
                                         extractBitField(event->options[j].value,13,0)<<6));
+                    match1_flag = 1;
                     break;
             }
         }
+    }
+    if (!opcode_flag)
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_OPCODEMATCH, 0x0ULL, CLEAR_BBOX_OPCODE);
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_HA_PMON_OPCODEMATCH, 0x0ULL));
+    }
+    if (!match0_flag)
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH0, 0x0ULL, CLEAR_BBOX_MATCH0);
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH0, 0x0ULL));
+    }
+    if (!opcode_flag)
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1, 0x0ULL, CLEAR_BBOX_MATCH1);
+        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1, 0x0ULL));
     }
     VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_BBOX);
     CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, counter_map[index].configRegister, flags));
