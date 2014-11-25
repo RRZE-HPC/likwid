@@ -22,7 +22,7 @@
             "=d" (edx)      \
             : "0" (eax), "2" (ecx))
 
-/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */ 
+/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 
 
@@ -86,7 +86,7 @@ int hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwl
     for (i=0;i<obj->arity;i++)
     {
         walker = obj->children[i];
-        if (walker->type == type) 
+        if (walker->type == type)
         {
             if (list && *list && index)
             {
@@ -103,9 +103,9 @@ void hwloc_init_cpuInfo(void)
 {
     int i;
     hwloc_obj_t obj;
-    
+
     hwloc_topology_init(&hwloc_topology);
-    
+
     hwloc_topology_load(hwloc_topology);
     obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_SOCKET, 0);
 
@@ -123,7 +123,7 @@ void hwloc_init_cpuInfo(void)
         {
             cpuid_info.family = atoi(hwloc_obj_get_info_by_name(obj, "CPUFamilyNumber"));
         }
-        else if (strcmp(obj->infos[i].name, "CPUVendor") == 0 && 
+        else if (strcmp(obj->infos[i].name, "CPUVendor") == 0 &&
                 strcmp(hwloc_obj_get_info_by_name(obj, "CPUVendor"), "GenuineIntel") == 0)
         {
             cpuid_info.isIntel = 1;
@@ -177,13 +177,13 @@ void hwloc_init_cpuFeatures(void)
     {
         return;
     }
-    
+
     cpuid_info.featureFlags = 0;
     cpuid_info.features = (char*) malloc(MAX_FEATURE_STRING_LENGTH*sizeof(char));
     cpuid_info.features[0] = '\0';
 
     cptr = strtok(&(buf[6]),delimiter);
-    
+
     while (cptr != NULL)
     {
         if (strcmp(cptr,"ssse3") == 0)
@@ -277,7 +277,7 @@ void hwloc_init_cpuFeatures(void)
             strcat(cpuid_info.features, "FMA ");
         }
         cptr = strtok(NULL, delimiter);
-    
+
     }
 
     get_cpu_perf_data();
@@ -301,7 +301,7 @@ void hwloc_init_nodeTopology(void)
     hwloc_obj_t obj;
     int realThreadId;
     int sibling;
-    hwloc_obj_type_t socket_type = HWLOC_OBJ_NODE;
+    hwloc_obj_type_t socket_type = HWLOC_OBJ_SOCKET;
 
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
 
@@ -309,7 +309,7 @@ void hwloc_init_nodeTopology(void)
     maxNumCores = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_CORE);
     if (hwloc_get_nbobjs_by_type(hwloc_topology, socket_type) == 0)
     {
-        socket_type = HWLOC_OBJ_SOCKET;
+        socket_type = HWLOC_OBJ_NODE;
     }
     maxNumLogicalProcsPerCore = maxNumLogicalProcs/maxNumCores;
     for (uint32_t i=0; i< maxNumLogicalProcs; i++)
@@ -326,7 +326,7 @@ void hwloc_init_nodeTopology(void)
             obj = obj->parent;
         }
         hwThreadPool[realThreadId].packageId = obj->os_index;
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Socket %d, 
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Socket %d,
                             realThreadId,
                             hwThreadPool[realThreadId].threadId,
                             hwThreadPool[realThreadId].coreId,
@@ -348,7 +348,7 @@ void hwloc_init_cacheTopology(void)
     hwloc_obj_t obj;
     int depth;
     int d;
-    
+
     /* Sum up all depths with caches */
     depth = hwloc_topology_get_depth(hwloc_topology);
     for (d = 0; d < depth; d++)
@@ -363,7 +363,7 @@ void hwloc_init_cacheTopology(void)
     for(d=depth-1;d >= 0; d--)
     {
         /* We only need caches, so skip other levels */
-        if (hwloc_get_depth_type(hwloc_topology, d) != HWLOC_OBJ_CACHE) 
+        if (hwloc_get_depth_type(hwloc_topology, d) != HWLOC_OBJ_CACHE)
         {
             continue;
         }
@@ -385,7 +385,7 @@ void hwloc_init_cacheTopology(void)
                 cachePool[id].type = NOCACHE;
                 break;
         }
-    
+
         cachePool[id].associativity = obj->attr->cache.associativity;
         cachePool[id].level = obj->attr->cache.depth;
         cachePool[id].lineSize = obj->attr->cache.linesize;
@@ -400,7 +400,7 @@ void hwloc_init_cacheTopology(void)
         cachePool[id].threads = hwloc_record_objs_of_type_below_obj(
                         hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
         /* We need to read the inclusiveness from CPUID, no possibility in hwloc */
-        switch ( cpuid_info.family ) 
+        switch ( cpuid_info.family )
         {
             case MIC_FAMILY:
             case P6_FAMILY:
@@ -419,7 +419,7 @@ void hwloc_init_cacheTopology(void)
         }
         id++;
     }
-    
+
     cpuid_topology.numCacheLevels = maxNumLevels;
     cpuid_topology.cacheLevels = cachePool;
     return;
