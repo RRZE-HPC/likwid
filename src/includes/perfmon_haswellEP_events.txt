@@ -965,7 +965,7 @@ EVENT_BYPASS_IMC                        0x14 BBOX
 UMASK_BYPASS_IMC_TAKEN                  0x01
 UMASK_BYPASS_IMC_NOT_TAKEN              0x02
 
-EVENT_CONFLICT_CYCLES                   0x0B BBOX
+EVENT_CONFLICT_CYCLES                   0x0B BBOX0C1|BBOX1C1
 UMASK_CONFLICT_CYCLES                   0x00
 
 EVENT_DIRECT2CORE_COUNT                 0x11 BBOX
@@ -2180,6 +2180,10 @@ UMASK_RXL_FLITS_G2_NCB_DATA             0x04 0x01
 UMASK_RXL_FLITS_G2_NCB_NONDATA          0x08 0x01
 UMASK_RXL_FLITS_G2_NCB                  0x0C 0x01
 UMASK_RXL_FLITS_G2_NCS                  0x10 0x01
+
+EVENT_RXL_FLITS_G0                      0x01 QBOX
+UMASK_RXL_FLITS_G0_DATA                 0x02
+UMASK_RXL_FLITS_G0_NON_DATA             0x04
 
 EVENT_TXL_FLITS_G0                      0x00 QBOX
 UMASK_TXL_FLITS_G0_DATA                 0x02
