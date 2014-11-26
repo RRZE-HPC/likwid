@@ -162,16 +162,19 @@ pci_init(int initSocket_fd)
     {
         for(j=1;j<MAX_NUM_PCI_DEVICES;j++)
         {
-            bstring filepath = bformat("%s%s%s",PCI_ROOT_PATH,
-                                                socket_bus[i],
-                                                pci_devices[j].path);
-            if (!ownaccess(bdata(filepath),access_flags))
+            if (pci_devices[j].path)
             {
-                FD[i][j] = 0;
-                pci_devices[j].online = 1;
-                if (i==0)
+                bstring filepath = bformat("%s%s%s",PCI_ROOT_PATH,
+                                                    socket_bus[i],
+                                                    pci_devices[j].path);
+                if (!ownaccess(bdata(filepath),access_flags))
                 {
-                    DEBUG_PRINT(DEBUGLEV_DETAIL, PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, i,bdata(filepath));
+                    FD[i][j] = 0;
+                    pci_devices[j].online = 1;
+                    if (i==0)
+                    {
+                        DEBUG_PRINT(DEBUGLEV_DETAIL, PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, i,bdata(filepath));
+                    }
                 }
             }
         }
@@ -226,6 +229,7 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t* data)
     int socketId = affinity_core2node_lookup[cpu];
     bstring filepath = NULL;
     uint64_t tmp;
+    int err;
 
     if (device == PCI_NONE)
     {
@@ -271,10 +275,12 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t* data)
         {
             return -ENODEV;
         }
-        if (accessClient_read(socket_fd, socketId, device, reg, &tmp))
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI READ [%d] SOCKET %d DEV %s(%d) REG 0x%x, cpu, socket_fd, pci_devices[device].name,device, reg);
+        err = accessClient_read(socket_fd, socketId, device, reg, &tmp);
+        if (err)
         {
             ERROR_PRINT(Read from PCI device %s at register 0x%x through access daemon failed,pci_devices[device].name, reg);
-            return -EIO;
+            return err;
         } 
     }
     *data = tmp;
@@ -288,6 +294,7 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
 {
     int socketId = affinity_core2node_lookup[cpu];
     bstring filepath = NULL;
+    int err;
 
     if (device == PCI_NONE)
     {
@@ -330,10 +337,12 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
         {
             return -ENODEV;
         }
-        if (accessClient_write(socket_fd, socketId, device, reg, (uint64_t) data))
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI WRITE [%d] SOCKET %d DEV %s REG 0x%x, cpu, socket_fd, pci_devices[device].name, reg);
+        err = accessClient_write(socket_fd, socketId, device, reg, (uint64_t) data);
+        if (err)
         {
             ERROR_PRINT(Write to PCI device %s at register 0x%x through access daemon failed,pci_devices[device].name, reg);
-            return -EIO;
+            return err;
         }
     }
     return 0;
@@ -345,6 +354,8 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
     int socketId = affinity_core2node_lookup[cpu];
     bstring filepath = NULL;
     uint64_t tmp;
+    int err;
+
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
         *data = 0;
@@ -384,10 +395,12 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
         {
             return -ENODEV;
         }
-        if (accessClient_read(tsocket_fd, socketId, device, reg, &tmp))
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI TREAD [%d] SOCKET %d DEV %s REG 0x%x, cpu, socket_fd, pci_devices[device].name, reg);
+        err = accessClient_read(tsocket_fd, socketId, device, reg, &tmp);
+        if (err)
         {
             ERROR_PRINT(Read from PCI device %s at register 0x%x through access daemon failed,pci_devices[device].name, reg);
-            return -EIO;
+            return err;
         }
         
     }
@@ -400,6 +413,8 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
 {
     int socketId = affinity_core2node_lookup[cpu];
     bstring filepath = NULL;
+    int err;
+
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
         if (FD[socketId][device] < 0)
@@ -437,7 +452,9 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
         {
             return -ENODEV;
         }
-        if (accessClient_write(tsocket_fd, socketId, device, reg, data))
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI TWRITE [%d] SOCKET %d DEV %s REG 0x%x, cpu, socket_fd, pci_devices[device].name, reg);
+        err = accessClient_write(tsocket_fd, socketId, device, reg, data);
+        if (err)
         {
             ERROR_PRINT(Write to PCI device %s at register 0x%x through access daemon failed,pci_devices[device].name, reg);
             return -EIO;
