@@ -638,10 +638,6 @@ int main(void)
     EXIT_IF_ERROR(listen(sockfd, 1), listen failed);
     EXIT_IF_ERROR(chmod(filepath, S_IRUSR|S_IWUSR), chmod failed);
 
-    /* Restore the old umask and fs ids. */
-    (void) umask(oldumask);
-    CHECK_ERROR(setfsuid(geteuid()), setfsuid failed);
-
     socklen = sizeof(addr1);
 
     { /* Init signal handler */
@@ -676,6 +672,10 @@ int main(void)
     alarm(0);
     CHECK_ERROR(unlink(filepath), unlink of socket failed);
     syslog(LOG_NOTICE, "daemon accepted client");
+
+    /* Restore the old umask and fs ids. */
+    (void) umask(oldumask);
+    CHECK_ERROR(setfsuid(geteuid()), setfsuid failed);
 
     {
         char* msr_file_name = (char*) malloc(MAX_PATH_LENGTH * sizeof(char));
