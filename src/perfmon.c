@@ -27,7 +27,7 @@
 #include <perfmon_nehalemEX.h>
 #include <perfmon_sandybridge.h>
 #include <perfmon_ivybridge.h>
-#include <perfmon_haswell.h>
+//#include <perfmon_haswell.h>
 #include <perfmon_haswellEP.h>
 #include <perfmon_phi.h>
 #include <perfmon_k8.h>
@@ -48,6 +48,7 @@ int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
 int socket_fd = -1;
 int thread_sockets[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = -1};
+
 
 PerfmonGroupSet* groupSet = NULL;
 
@@ -648,7 +649,7 @@ perfmon_init_maps(void)
                     break;
 
                 case IVYBRIDGE_EP:
-                    pci_devices = ivybridge_pci_devices;
+                    pci_devices = ivybridgeEP_pci_devices;
                     box_map = ivybridge_box_map;
                 case IVYBRIDGE:
                     eventHash = ivybridge_arch_events;
@@ -658,17 +659,6 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersIvybridge;
                     break;
 
-                case HASWELL:
-                case HASWELL_M1:
-                case HASWELL_M2:
-                    eventHash = haswell_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsHaswell;
-                    counter_map = haswell_counter_map;
-                    perfmon_numCounters = (perfmon_numCounters == 0 ?
-                    perfmon_numCountersHaswell : perfmon_numCounters);
-                    perfmon_numCoreCounters = perfmon_numCoreCountersHaswell;
-                    box_map = haswell_box_map;
-                    break;
                 case HASWELL_EP:
                     eventHash = haswellEP_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsHaswellEP;
@@ -677,6 +667,14 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersHaswellEP;
                     box_map = haswellEP_box_map;
                     pci_devices = haswellEP_pci_devices;
+                case HASWELL:
+                case HASWELL_M1:
+                case HASWELL_M2:
+                    eventHash = haswell_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsHaswell;
+                    counter_map = haswell_counter_map;
+                    perfmon_numCounters = perfmon_numCountersHaswell;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersHaswell;
                     break;
 
                 case SANDYBRIDGE_EP:
@@ -860,26 +858,13 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_setupCountersThread = perfmon_setupCounterThread_ivybridge;
                     break;
 
+                case HASWELL_EP:
+                    pci_init(socket_fd);
                 case HASWELL:
-
-                
-
                 case HASWELL_M1:
-
                 case HASWELL_M2:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
-                    initThreadArch = perfmon_init_haswell;
-                    perfmon_startCountersThread = perfmon_startCountersThread_haswell;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_haswell;
-                    perfmon_readCountersThread = perfmon_readCountersThread_haswell;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_haswell;
-                    break;
-
-                case HASWELL_EP:
-                    initialize_power = TRUE;
-                    initialize_thermal = TRUE;
-                    pci_init(socket_fd);
                     initThreadArch = perfmon_init_haswellEP;
                     perfmon_startCountersThread = perfmon_startCountersThread_haswellEP;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_haswellEP;
@@ -887,12 +872,11 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_setupCountersThread = perfmon_setupCounterThread_haswellEP;
                     break;
 
-                case SANDYBRIDGE:
-
                 case SANDYBRIDGE_EP:
+                    pci_init(socket_fd);
+                case SANDYBRIDGE:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
-                    pci_init(socket_fd);
                     initThreadArch = perfmon_init_sandybridge;
                     perfmon_startCountersThread = perfmon_startCountersThread_sandybridge;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_sandybridge;
