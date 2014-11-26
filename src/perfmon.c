@@ -667,6 +667,7 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersHaswellEP;
                     box_map = haswellEP_box_map;
                     pci_devices = haswellEP_pci_devices;
+                    break;
                 case HASWELL:
                 case HASWELL_M1:
                 case HASWELL_M2:
