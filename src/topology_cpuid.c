@@ -27,6 +27,8 @@
 static int largest_function = 0;        
 static uint32_t eax, ebx, ecx, edx;
 
+/* Dirty hack to avoid nonull warnings */
+char* (*ownstrcpy)(char *__restrict __dest, const char *__restrict __src);
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 static int intelCpuidFunc_4(CacheLevel** cachePool)
@@ -268,6 +270,7 @@ cpuid_set_osname(void)
     bstring filename;
     bstring nameString = bformat("model name");
     cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
+    ownstrcpy = strcpy;
     int i;
 
     if (NULL != (fp = fopen ("/proc/cpuinfo", "r"))) 
@@ -281,7 +284,7 @@ cpuid_set_osname(void)
             {
                  struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                  bltrimws(subtokens->entry[1]);
-                 strcpy(cpuid_info.osname, bdata(subtokens->entry[1]));
+                 ownstrcpy(cpuid_info.osname, bdata(subtokens->entry[1]));
             }
         }
     }
