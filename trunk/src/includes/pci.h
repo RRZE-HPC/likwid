@@ -39,7 +39,7 @@
  * Listing for Uncore devices DEVICE.FUNCTION
  */
 
-extern int pci_init();
+extern int pci_init(int socket_fd);
 extern void pci_finalize();
 extern int pci_checkDevice(PciDeviceIndex index, int cpu);
 extern int pci_read(int cpu, PciDeviceIndex index, uint32_t reg, uint32_t *data);
