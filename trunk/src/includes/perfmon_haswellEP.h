@@ -46,15 +46,19 @@ static int perfmon_numCoreCountersHaswell = NUM_COUNTERS_CORE_HASWELL;
 static int perfmon_numArchEventsHaswell = NUM_ARCH_EVENTS_HASWELL;
 
 #define GET_READFD(cpu_id) \
-    int read_fd = socket_fd; \
-    if (socket_fd == -1 || thread_sockets[cpu_id] != -1) \
+    int read_fd; \
+    if (accessClient_mode != DAEMON_AM_DIRECT) \
     { \
-        read_fd = thread_sockets[cpu_id]; \
-    } \
-    if (read_fd == -1) \
-    { \
-        return -ENOENT; \
-    } \
+        read_fd = socket_fd; \
+        if (socket_fd == -1 || thread_sockets[cpu_id] != -1) \
+        { \
+            read_fd = thread_sockets[cpu_id]; \
+        } \
+        if (read_fd == -1) \
+        { \
+            return -ENOENT; \
+        } \
+    }
 
 int perfmon_init_haswellEP(int cpu_id)
 {

@@ -38,15 +38,19 @@ static int perfmon_numCoreCountersSandybridge = NUM_COUNTERS_CORE_SANDYBRIDGE;
 static int perfmon_numArchEventsSandybridge = NUM_ARCH_EVENTS_SANDYBRIDGE;
 
 #define GET_READFD(cpu_id) \
-    int read_fd = socket_fd; \
-    if (socket_fd == -1 || thread_sockets[cpu_id] != -1) \
+    int read_fd; \
+    if (accessClient_mode != DAEMON_AM_DIRECT) \
     { \
-        read_fd = thread_sockets[cpu_id]; \
-    } \
-    if (read_fd == -1) \
-    { \
-        return -ENOENT; \
-    } \
+        read_fd = socket_fd; \
+        if (socket_fd == -1 || thread_sockets[cpu_id] != -1) \
+        { \
+            read_fd = thread_sockets[cpu_id]; \
+        } \
+        if (read_fd == -1) \
+        { \
+            return -ENOENT; \
+        } \
+    }
 
 
 int perfmon_init_sandybridge(int cpu_id)

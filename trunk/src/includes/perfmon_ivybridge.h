@@ -39,15 +39,19 @@ static int perfmon_numCoreCountersIvybridge = NUM_COUNTERS_CORE_IVYBRIDGE;
 static int perfmon_numArchEventsIvybridge = NUM_ARCH_EVENTS_IVYBRIDGE;
 
 #define GET_READFD(cpu_id) \
-    int read_fd = socket_fd; \
-    if (socket_fd == -1 || thread_sockets[cpu_id] != -1) \
+    int read_fd; \
+    if (accessClient_mode != DAEMON_AM_DIRECT) \
     { \
-        read_fd = thread_sockets[cpu_id]; \
-    } \
-    if (read_fd == -1) \
-    { \
-        return -ENOENT; \
-    } \
+        read_fd = socket_fd; \
+        if (socket_fd == -1 || thread_sockets[cpu_id] != -1) \
+        { \
+            read_fd = thread_sockets[cpu_id]; \
+        } \
+        if (read_fd == -1) \
+        { \
+            return -ENOENT; \
+        } \
+    }
 
 int ivb_fixed_reset(int cpu_id)
 {
