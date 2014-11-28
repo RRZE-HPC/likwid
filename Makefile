@@ -229,7 +229,9 @@ install:
 	@cp -f liblikwid*  $(PREFIX)/lib
 	@cp -f ext/lua/liblua* $(PREFIX)/lib
 	@cp -f ext/hwloc/libhwloc* $(PREFIX)/lib
-	@chmod 755 $(PREFIX)/lib/$(PINLIB)
+	@chmod 755 $(PREFIX)/lib/liblikwid*
+	@chmod 755 $(PREFIX)/lib/liblua*
+	@chmod 755 $(PREFIX)/lib/libhwloc*
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
