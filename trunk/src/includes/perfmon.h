@@ -37,6 +37,10 @@
 #include <types.h>
 #include <likwid.h>
 
+#define FREEZE_FLAG_ONLYFREEZE 0x0ULL
+#define FREEZE_FLAG_CLEAR_CTR (1ULL<<1)
+#define FREEZE_FLAG_CLEAR_CTL (1ULL<<0)
+
 extern int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet);
