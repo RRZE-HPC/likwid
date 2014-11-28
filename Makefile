@@ -213,10 +213,33 @@ distclean: clean
 	@rm -rf doc/html
 	@rm -f tags
 
-install:
+ifeq ($(BUILDDAEMON),true)
+install_daemon:
+	@echo "===> INSTALL access daemon to $(ACCESSDAEMON)"
+	@cp -f $(DAEMON_TARGET) $(ACCESSDAEMON)
+	@chown root:root $(ACCESSDAEMON)
+	@chmod 4755 $(ACCESSDAEMON)
+else
+install_daemon:
+	@echo "===> No INSTALL of the access daemon"
+endif
+
+ifeq ($(BUILDFREQ),true)
+install_freq:
+	@echo "===> INSTALL setFrequencies tool to $(PREFIX)/sbin/$(FREQ_TARGET)"
+	@mkdir -p $(PREFIX)/sbin
+	@cp -f $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
+	@chown root:root $(PREFIX)/sbin/$(FREQ_TARGET)
+	@chmod 4755 $(PREFIX)/sbin/$(FREQ_TARGET)
+else
+install_freq:
+	@echo "===> No INSTALL of setFrequencies tool"
+endif
+
+install: install_daemon install_freq
 	@echo "===> INSTALL applications to $(PREFIX)/bin"
 	@mkdir -p $(PREFIX)/bin
-	for APP in $(L_APPS); do \
+	@for APP in $(L_APPS); do \
 		cp -f $$APP  $(PREFIX)/bin; \
 	done
 	@cp ext/lua/lua $(PREFIX)/bin/likwid-lua
@@ -251,16 +274,6 @@ install:
 	@mkdir -p $(LIKWIDFILTERPATH)
 	@cp -f filters/*  $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
-	@[ -e $(DAEMON_TARGET) ] && echo "===> INSTALL access daemon to $(ACCESSDAEMON)"
-	@[ -e $(DAEMON_TARGET) ] && mkdir -p `dirname $(ACCESSDAEMON)`
-	@[ -e $(DAEMON_TARGET) ] && cp -f $(DAEMON_TARGET) $(ACCESSDAEMON)
-	@[ -e $(ACCESSDAEMON) ] && chown root:root $(ACCESSDAEMON)
-	@[ -e $(ACCESSDAEMON) ] && chmod 4755 $(ACCESSDAEMON)
-	@[ -e $(FREQ_TARGET) ] && echo "===> INSTALL setFrequencies tool to $(PREFIX)/sbin/$(FREQ_TARGET)"
-	@[ -e $(FREQ_TARGET) ] && mkdir -p $(PREFIX)/sbin
-	@[ -e $(FREQ_TARGET) ] && cp -f $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
-	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && chown root:root $(PREFIX)/sbin/$(FREQ_TARGET)
-	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && chmod 4755 $(PREFIX)/sbin/$(FREQ_TARGET)
 
 
 uninstall:
