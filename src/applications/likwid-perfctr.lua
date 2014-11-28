@@ -403,7 +403,7 @@ end
 if use_wrapper or use_stethoscope then
     local ret = likwid.startCounters()
     if ret < 0 then
-        print(string.format("Error starting counters for thread %d.",ret * (-1)))
+        print(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
         os.exit(1)
     end
     

@@ -1,6 +1,7 @@
 local likwid = {}
 package.cpath = package.cpath .. ';<PREFIX>/lib/?.so'
 require("liblikwid")
+require("math")
 
 groupfolder = "<PREFIX>/share/likwid"
 
@@ -61,6 +62,8 @@ likwid.setenv = likwid_setenv
 likwid.getpid = likwid_getpid
 likwid.setVerbosity = likwid_setVerbosity
 likwid.access = likwid_access
+
+infinity = math.huge
 
 local function getopt(args, ostr)
     local arg, place = nil, 0;
@@ -191,8 +194,8 @@ local function calculate_metric(formula, counters_to_values)
     end
     if not err then
         result = assert(loadstring("return (" .. formula .. ")")())
-        if (result == nil) then
-            result = "Nan"
+        if (result == nil or result ~= result or result == infinity or result == -inf) then
+            result = 0
         end
     end
     return result
@@ -967,14 +970,12 @@ likwid.print_output = print_output
 local function printMarkerOutput(groups, results, groupData, cpulist)
     local nr_groups = #groups
     local ctr_and_events = likwid_getEventsAndCounters()
-    for g=1,nr_groups do
-        local gdata = groupData[g]
-        local nr_regions = #groups[g]
-        local nr_events = likwid.tablelength(gdata["Events"])
-        for r=1,nr_regions do
+
+    for g, group in pairs(groups) do
+        for r, region in pairs(groups[g]) do
             local nr_threads = likwid.tablelength(groups[g][r]["Time"])
-            if (groups[g][r] ~= nil and tablelength(groups[g][r]["Count"]) > 0) then
-                
+            local nr_events = likwid.tablelength(groupData[g]["Events"])
+            if tablelength(groups[g][r]["Count"]) > 0 then
                 print(likwid.dline)
                 str = "Group "..tostring(g)..": Region "..groups[g][r]["Name"]
                 print(str)
@@ -999,18 +1000,18 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                 tab = {}
                 tab[1] = {"Event"}
                 for e=0,nr_events-1 do
-                    table.insert(tab[1],gdata["Events"][e]["Event"])
+                    table.insert(tab[1],groupData[g]["Events"][e]["Event"])
                 end
                 tab[2] = {"Counter"}
                 for e=0,nr_events-1 do
-                    table.insert(tab[2],gdata["Events"][e]["Counter"])
+                    table.insert(tab[2],groupData[g]["Events"][e]["Counter"])
                 end
                 for t=1,nr_threads do
                     local tmpList = {}
                     table.insert(tmpList, "Core "..tostring(cpulist[t]))
                     for e=1,nr_events do
                         local index = 0
-                        local tmp = results[r][g][e][t]["Value"]
+                        local tmp = results[g][r][e][t]["Value"]
                         if tmp == nil then
                             tmp = 0
                         end
@@ -1025,24 +1026,81 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                     likwid.printtable(tab)
                 end
 
-                if likwid.tablelength(gdata["Metrics"]) > 0 then
+                if #cpulist > 1 then
+                    local mins = {}
+                    local maxs = {}
+                    local sums = {}
+                    local avgs = {}
+                    mins[1] = "Min"
+                    maxs[1] = "Max"
+                    sums[1] = "Sum"
+                    avgs[1] = "Avg"
+                    for i=1,nr_events do
+                        mins[i+1] = math.huge
+                        maxs[i+1] = 0
+                        sums[i+1] = 0
+                        for j=1, nr_threads do
+                            if results[g][r][i][j]["Value"] < mins[i+1] then
+                                mins[i+1] = results[g][r][i][j]["Value"]
+                            end
+                            if results[g][r][i][j]["Value"] > maxs[i+1] then
+                                maxs[i+1] = results[g][r][i][j]["Value"]
+                            end
+                            sums[i+1] = sums[i+1] + results[g][r][i][j]["Value"]
+                        end
+                        avgs[i+1] = sums[i+1] / nr_threads
+                        if tostring(avgs[i+1]):len() > 12 then
+                            avgs[i+1] = string.format("%e",avgs[i+1])
+                        end
+                        if tostring(mins[i+1]):len() > 12 then
+                            mins[i+1] = string.format("%e",mins[i+1])
+                        end
+                        if tostring(maxs[i+1]):len() > 12 then
+                            maxs[i+1] = string.format("%e",maxs[i+1])
+                        end
+                        if tostring(sums[i+1]):len() > 12 then
+                            sums[i+1] = string.format("%e",sums[i+1])
+                        end
+                    end
+                    
+                    for i=#tab,3,-1 do
+                        table.remove(tab,i)
+                    end
+                    table.insert(tab, sums)
+                    table.insert(tab, maxs)
+                    table.insert(tab, mins)
+                    table.insert(tab, avgs)
+                    tab[1] = {"Event"}
+                    for e=0,nr_events-1 do
+                        table.insert(tab[1],groupData[g]["Events"][e]["Event"] .. " STAT")
+                    end
+
+                    if use_csv then
+                        likwid.printcsv(tab)
+                    else
+                        likwid.printtable(tab)
+                    end
+                end
+
+
+                if likwid.tablelength(groupData[g]["Metrics"]) > 0 then
                     tab = {}
                     tmpList = {"Metric"}
-                    for m=1,#gdata["Metrics"] do
-                        table.insert(tmpList, gdata["Metrics"][m]["description"])
+                    for m=1,#groupData[g]["Metrics"] do
+                        table.insert(tmpList, groupData[g]["Metrics"][m]["description"])
                     end
                     table.insert(tab, tmpList)
                     for t=1,nr_threads do
                         counterlist = {}
                         for e=1,nr_events do
-                            counterlist[results[r][g][e][t]["Counter"]] = results[r][g][e][t]["Value"]
+                            counterlist[ results[g][r][e][t]["Counter"] ] = results[g][r][e][t]["Value"]
                         end
                         counterlist["inverseClock"] = 1.0/likwid_getCpuClock();
                         counterlist["time"] = groups[g][r]["Time"][t]
                         tmpList = {}
                         table.insert(tmpList, "Core "..tostring(cpulist[t]))
-                        for m=1,#gdata["Metrics"] do
-                            local tmp = likwid.calculate_metric(gdata["Metrics"][m]["formula"],counterlist)
+                        for m=1,#groupData[g]["Metrics"] do
+                            local tmp = likwid.calculate_metric(groupData[g]["Metrics"][m]["formula"],counterlist)
                             if tmp == nil or tostring(tmp) == "-nan" then
                                 tmp = "0"
                             elseif tostring(tmp):len() > 12 then
@@ -1058,6 +1116,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                     else
                         likwid.printtable(tab)
                     end
+                    
                     if #cpulist > 1 then
                         mins = {}
                         maxs = {}
@@ -1065,7 +1124,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                         avgs = {}
                         
                         for col=2,nr_threads+1 do
-                            for row=2, #gdata["Metrics"]+1 do
+                            for row=2, #groupData[g]["Metrics"]+1 do
                                 if mins[row-1] == nil then
                                     mins[row-1] = math.huge
                                 end
@@ -1109,8 +1168,8 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                         
                         tab = {}
                         tmpList = {"Metric"}
-                        for m=1,#gdata["Metrics"] do
-                            table.insert(tmpList, gdata["Metrics"][m]["description"].." STAT")
+                        for m=1,#groupData[g]["Metrics"] do
+                            table.insert(tmpList, groupData[g]["Metrics"][m]["description"].." STAT")
                         end
                         table.insert(tab, tmpList)
                         tmpList = {"Sum"}
@@ -1142,7 +1201,6 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                     end
                 end
             end
-            print()
         end
     end
 end
@@ -1174,7 +1232,6 @@ function getMarkerResults(filename, group_list, num_cpus)
     local ctr_and_events = likwid_getEventsAndCounters()
     local group_data = {}
     local results = {}
-    print(filename)
     local f = io.open(filename, "r")
     if f == nil then
         print("Have you called LIKWID_MARKER_CLOSE?")
@@ -1183,6 +1240,7 @@ function getMarkerResults(filename, group_list, num_cpus)
     end
     local lines = stringsplit(f:read("*all"),"\n")
     f:close()
+
     -- Read first line with general counts
     local tmpList = stringsplit(lines[1]," ")
     if #tmpList ~= 3 then
@@ -1204,15 +1262,15 @@ function getMarkerResults(filename, group_list, num_cpus)
         print("No group listed in the marker API output file")
         return {},{}
     end
-    local regions_per_group = tonumber(nr_regions)/tonumber(nr_groups)
     table.remove(lines,1)
 
     -- Read Region IDs and names from following lines
-    for r=1, nr_regions*nr_groups do
-        if (string.match(lines[1],"%d+:%a*-%d+")) then
-            results[r] = {}
-            tmpList = stringsplit(lines[1],"-")
-            g = tonumber(tmpList[#tmpList]) + 1
+    for l=1, #lines do
+        r, gname, g = string.match(lines[1],"(%d+):(%a*)-(%d+)")
+        if (r ~= nil and g ~= nil) then
+            g = g+1
+            r = r+1
+            
             if group_data[g] == nil then
                 group_data[g] = {}
             end
@@ -1220,60 +1278,54 @@ function getMarkerResults(filename, group_list, num_cpus)
                 group_data[g][r] = {}
             end
             group_data[g][r]["ID"] = g
-            results[r][g]= {}
-            table.remove(tmpList, #tmpList)
-            tmpList = stringsplit(table.concat(tmpList,"-"), ":")
-            table.remove(tmpList, 1)
-            group_data[g][r]["Name"] = table.concat(tmpList,":")
+            group_data[g][r]["Name"] = gname
             group_data[g][r]["Time"] = {}
             group_data[g][r]["Count"] = {}
+            if results[g] == nil then
+                results[g] = {}
+            end
+            if results[g][r] == nil then
+                results[g][r]= {}
+            end
             table.remove(lines, 1 )
         else
             break
         end
     end
 
-    -- Now read the remaining results lines
-    for l=1, nr_regions*nr_groups*nr_threads do
-        if (lines[l] == nil or string.len(lines[l]) == 0) then
-            break
-        end
-        tmpList = stringsplit(lines[l], " ")
-        --tableprint(tmpList)
-        r = tonumber(tmpList[1]) + 1
-        --print("Region",r)
-        table.remove(tmpList, 1 )
-        g = tonumber(tmpList[1]) + 1
-        --print("Group",g)
-        table.remove(tmpList, 1 )
-        t = tonumber(tmpList[1]) + 1
-        --print("Thread",t)
-        table.remove(tmpList, 1 )
-        --print(g,r,t)
-        group_data[g][r]["Count"][t] = tonumber(tmpList[1])
-        --print("Count",group_data[g][r]["Count"][t])
-        table.remove(tmpList, 1 )
-        time = tonumber(tmpList[1])
-        group_data[g][r]["Time"][t] = time
-        table.remove(tmpList, 1)
-        nr_events = tonumber(tmpList[1])
-        table.remove(tmpList, 1)
-
-        for c=1,nr_events do
-            if results[r][g][c] == nil then
-                results[r][g][c] = {}
+    for l, line in pairs(lines) do
+        if line:len() > 0 then
+            r, g, t, count = string.match(line,"(%d+) (%d+) (%d+) (%d+) %a*")
+            if (r ~= nil and g ~= nil and t ~= nil and count ~= nil) then
+                r = tonumber(r)+1
+                g = tonumber(g)+1
+                t = tonumber(t)+1
+                tmpList = stringsplit(line, " ")
+                table.remove(tmpList, 1)
+                table.remove(tmpList, 1)
+                table.remove(tmpList, 1)
+                table.remove(tmpList, 1)
+                time = tonumber(tmpList[1])
+                events = tonumber(tmpList[2])
+                table.remove(tmpList, 1)
+                table.remove(tmpList, 1)
+                
+                table.insert(group_data[g][r]["Time"], t, time)
+                table.insert(group_data[g][r]["Count"], t, count)
+                for c=1, events do
+                    if results[g][r][c] == nil then
+                        results[g][r][c] = {}
+                    end
+                    if results[g][r][c][t] == nil then
+                        results[g][r][c][t] = {}
+                    end
+                    local tmp = tonumber(tmpList[c])
+                    results[g][r][c][t]["Value"] = tmp
+                    results[g][r][c][t]["Counter"] = group_list[g]["Events"][c-1]["Counter"]
+                end
             end
-            if results[r][g][c][t] == nil then
-                results[r][g][c][t] = {}
-            end
-            local tmp = tonumber(tmpList[c])
-            --print(r,g,c,t)
-            results[r][g][c][t]["Value"] = tmp
-            results[r][g][c][t]["Counter"] = group_list[g]["Events"][c-1]["Counter"]
         end
     end
-
-
     return group_data, results
 end
 

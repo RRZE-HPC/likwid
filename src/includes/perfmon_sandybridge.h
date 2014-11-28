@@ -37,16 +37,30 @@ static int perfmon_numCountersSandybridge = NUM_COUNTERS_SANDYBRIDGE;
 static int perfmon_numCoreCountersSandybridge = NUM_COUNTERS_CORE_SANDYBRIDGE;
 static int perfmon_numArchEventsSandybridge = NUM_ARCH_EVENTS_SANDYBRIDGE;
 
+#define GET_READFD(cpu_id) \
+    int read_fd = socket_fd; \
+    if (socket_fd == -1 || thread_sockets[cpu_id] != -1) \
+    { \
+        read_fd = thread_sockets[cpu_id]; \
+    } \
+    if (read_fd == -1) \
+    { \
+        return -ENOENT; \
+    } \
+
 
 int perfmon_init_sandybridge(int cpu_id)
 {
     uint64_t flags = 0x0ULL;
+    GET_READFD(cpu_id);
+
     if ( cpuid_info.model == SANDYBRIDGE_EP )
     {
         lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     }
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
+
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
     return 0;
 }
 
@@ -83,6 +97,8 @@ int snb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = 0x0U;
+    GET_READFD(cpu_id);
+
     flags |= (1<<22);  /* enable flag */
     flags |= (1<<16);  /* user mode flag */
 
@@ -108,7 +124,7 @@ int snb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
     }
     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[index].configRegister, flags));
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
     return 0;
 }
 
@@ -116,6 +132,8 @@ int snb_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = 0x0U;
+    GET_READFD(cpu_id);
+
     flags = (1<<22);
     flags |= (event->umask<<8) + event->eventId;
     for(j=0;j<event->numberOfOptions;j++)
@@ -136,7 +154,7 @@ int snb_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
     }
     VERBOSEPRINTPCIREG(cpu_id, box_map[counter_map[index].type].device, counter_map[index].configRegister, LLU_CAST flags, SETUP_MBOX);
-    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[counter_map[index].type].device, counter_map[index].configRegister, flags));
+    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[counter_map[index].type].device, counter_map[index].configRegister, flags));
     return 0;
 }
 
@@ -145,6 +163,7 @@ uint32_t snb_cbox_filter(PerfmonEvent *event)
 {
     int j;
     uint32_t ret = 0x0;
+
     for(j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
@@ -219,9 +238,11 @@ int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = 0x0U;
+    GET_READFD(cpu_id);
+
     flags |= (1<<22);
     flags |= (event->umask<<8) + event->eventId;
-    
+
     if (event->numberOfOptions > 0)
     {
         uint32_t optflags = snb_cbox_filter(event);
@@ -229,10 +250,10 @@ int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         if (optflags != 0x0U)
         {
             VERBOSEPRINTREG(cpu_id, filter_reg, LLU_CAST optflags, SETUP_CBOX_FILTER);
-            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, filter_reg, optflags));
+            CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, filter_reg, optflags));
         }
     }
-    
+
     for(j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
@@ -251,7 +272,7 @@ int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
     }
     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_CBOX);
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[index].configRegister, flags));
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
     return 0;
 }
 
@@ -260,6 +281,8 @@ int snb_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = 0x0U;
+    GET_READFD(cpu_id);
+
     flags |= (1ULL<<17);
     flags |= (event->umask<<8) + event->eventId;
     for(j=0;j<event->numberOfOptions;j++)
@@ -277,7 +300,7 @@ int snb_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
     }
     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_UBOX)
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[index].configRegister, flags));
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
     return 0;
 }
 
@@ -286,6 +309,8 @@ int snb_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint32_t flags = 0x0U;
     PciDeviceIndex dev = box_map[counter_map[index].type].device;
+    GET_READFD(cpu_id);
+
     flags = (1<<22);
     flags |= (event->umask<<8) + event->eventId;
     for(j=0;j<event->numberOfOptions;j++)
@@ -304,19 +329,19 @@ int snb_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             case EVENT_OPTION_OPCODE:
                 VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_OPCODEMATCH, 
                                     LLU_CAST (event->options[j].value & 0x3F), SETUP_BBOX_OPCODE);
-                CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_HA_PMON_OPCODEMATCH,
+                CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, dev, PCI_UNC_HA_PMON_OPCODEMATCH,
                                     (event->options[j].value & 0x3F)));
                 break;
             case EVENT_OPTION_MATCH0:
                 VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH0, 
                                     LLU_CAST (extractBitField(event->options[j].value,0,26)<<5), SETUP_BBOX_MATCH0);
-                CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH0,
+                CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH0,
                                     (extractBitField(event->options[j].value,0,26)<<5)));
                 break;
             case EVENT_OPTION_MATCH1:
                 VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1,
                                     LLU_CAST extractBitField(event->options[j].value,32,14) & 0x3FFF, SETUP_BBOX_MATCH1);
-                CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1,
+                CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1,
                                     extractBitField(event->options[j].value,32,14) & 0x3FFF));
                 break;
             default:
@@ -324,7 +349,7 @@ int snb_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
     }
     VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_BBOX);
-    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev,  counter_map[index].configRegister, flags));
+    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, dev,  counter_map[index].configRegister, flags));
     return 0;
 }
 
@@ -333,6 +358,8 @@ int snb_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = 0x0U;
+    GET_READFD(cpu_id);
+
     flags = (1<<22);
     flags |= event->eventId & 0xFF;
     for(j=0;j<event->numberOfOptions;j++)
@@ -359,13 +386,13 @@ int snb_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
             case EVENT_OPTION_OCCUPANCY_FILTER:
                 VERBOSEPRINTREG(cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, LLU_CAST event->options[j].value, SETUP_WBOX_FILTER);
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, event->options[j].value));
+                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, event->options[j].value));
             default:
                 break;
         }
     }
     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_WBOX);
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[index].configRegister, flags));
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
     return 0;
 }
 
@@ -374,6 +401,8 @@ int snb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint32_t flags = 0x0U;
     PciDeviceIndex dev = box_map[counter_map[index].type].device;
+    GET_READFD(cpu_id);
+
     flags = (1<<22);
     flags |= event->cfgBits;
     flags |= (event->umask<<8) + event->eventId;
@@ -393,25 +422,25 @@ int snb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             case EVENT_OPTION_MATCH0:
                 VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_QPI_PMON_MATCH_0,
                                     event->options[j].value, SETUP_SBOX_MATCH0);
-                CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_QPI_PMON_MATCH_0,
+                CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, dev, PCI_UNC_QPI_PMON_MATCH_0,
                                     event->options[j].value));
                 break;
             case EVENT_OPTION_MATCH1:
                 VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_QPI_PMON_MATCH_1,
                                     event->options[j].value, SETUP_SBOX_MATCH1);
-                CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_QPI_PMON_MATCH_1,
+                CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, dev, PCI_UNC_QPI_PMON_MATCH_1,
                                     event->options[j].value));
                 break;
             case EVENT_OPTION_MASK0:
                 VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_QPI_PMON_MASK_0,
                                     event->options[j].value, SETUP_SBOX_MASK0);
-                CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_QPI_PMON_MASK_0,
+                CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, dev, PCI_UNC_QPI_PMON_MASK_0,
                                     event->options[j].value));
                 break;
             case EVENT_OPTION_MASK1:
                 VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_QPI_PMON_MASK_1,
                                     event->options[j].value, SETUP_SBOX_MASK1);
-                CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, PCI_UNC_QPI_PMON_MASK_1,
+                CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, dev, PCI_UNC_QPI_PMON_MASK_1,
                                     event->options[j].value));
                 break;
             default:
@@ -419,7 +448,7 @@ int snb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
     }
     VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_SBOX);
-    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev,  counter_map[index].configRegister, flags));
+    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, dev,  counter_map[index].configRegister, flags));
     return 0;
 }
 
@@ -430,6 +459,8 @@ int snb_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint32_t flags = 0x0U;
     PciDeviceIndex dev = box_map[counter_map[index].type].device;
+    GET_READFD(cpu_id);
+
     flags = (1<<22);
     flags |= (event->umask<<8) + event->eventId;
     for(j=0;j<event->numberOfOptions;j++)
@@ -450,7 +481,7 @@ int snb_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
     }
     VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_RBOX)
-    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, counter_map[index].configRegister, flags));
+    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, dev, counter_map[index].configRegister, flags));
     return 0;
 }
 
@@ -459,6 +490,8 @@ int snb_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint32_t flags = 0x0U;
     PciDeviceIndex dev = box_map[counter_map[index].type].device;
+    GET_READFD(cpu_id);
+
     flags = (1<<22);
     flags |= (event->umask<<8) + event->eventId;
     for(j=0;j<event->numberOfOptions;j++)
@@ -479,7 +512,7 @@ int snb_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
     }
     VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_PBOX)
-    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, dev, counter_map[index].configRegister, flags));
+    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, dev, counter_map[index].configRegister, flags));
     return 0;
 }
 
@@ -489,14 +522,14 @@ int snb_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(id))) \
     { \
         VERBOSEPRINTREG(cpu_id, box_map[id].ctrlRegister, 0x10101U, FREEZE_AND_RESET_CTL_BOX_##id) \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].ctrlRegister, 0x10101U)); \
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, box_map[id].ctrlRegister, 0x10101U)); \
     }
 
 #define SNB_FREEZE_BOX(id) \
     if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(id))) \
     { \
         VERBOSEPRINTREG(cpu_id, box_map[id].ctrlRegister, 0x10100U, FREEZE_AND_RESET_CTL_BOX_##id) \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].ctrlRegister, 0x10100U)); \
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, box_map[id].ctrlRegister, 0x10100U)); \
     }
 
 #define SNB_FREEZE_AND_RESET_CTL_BOX_SOCKET(id, socket) \
@@ -521,7 +554,7 @@ int snb_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         (pci_checkDevice(box_map[id].device, cpu_id) == 0)) \
     { \
         VERBOSEPRINTPCIREG(cpu_id, box_map[id].device, box_map[id].ctrlRegister, 0x10101U, FREEZE_AND_RESET_CTL_PCI_BOX_##id); \
-        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[id].device, box_map[id].ctrlRegister, 0x10101U)); \
+        CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[id].device, box_map[id].ctrlRegister, 0x10101U)); \
     }
 
 #define SNB_FREEZE_PCI_BOX(id) \
@@ -530,7 +563,7 @@ int snb_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         (pci_checkDevice(box_map[id].device, cpu_id) == 0)) \
     { \
         VERBOSEPRINTPCIREG(cpu_id, box_map[id].device, box_map[id].ctrlRegister, 0x10100U, FREEZE_PCI_BOX_##id) \
-        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[id].device, box_map[id].ctrlRegister, 0x10100U)); \
+        CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[id].device, box_map[id].ctrlRegister, 0x10100U)); \
     }
 
 #define SNB_FREEZE_AND_RESET_CTL_PCI_BOX_SOCKET(id, socket) \
@@ -558,7 +591,7 @@ int snb_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     (pci_checkDevice(PCI_IMC_DEVICE_0_CH_##number, cpu_id))) \
     { \
         VERBOSEPRINTPCIREG(cpu_id, PCI_IMC_DEVICE_0_CH_##number, PCI_UNC_MC_PMON_FIXED_CTL, 0x0U, FREEZE_MBOXFIX##number) \
-        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_0_CH_##number,  PCI_UNC_MC_PMON_FIXED_CTL, 0x0U)); \
+        CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, PCI_IMC_DEVICE_0_CH_##number,  PCI_UNC_MC_PMON_FIXED_CTL, 0x0U)); \
     }
 
 #define SNB_FREEZE_MBOXFIX_SOCKET(number, socket) \
@@ -579,8 +612,8 @@ int perfmon_setupCounterThread_sandybridge(
     uint64_t flags;
     uint64_t fixed_flags = 0x0ULL;
     uint32_t uflags;
-
     int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
@@ -589,9 +622,9 @@ int perfmon_setupCounterThread_sandybridge(
 
     if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
     {
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
     }
     SNB_FREEZE_BOX(CBOX0);
     SNB_FREEZE_BOX(CBOX1);
@@ -698,7 +731,7 @@ int perfmon_setupCounterThread_sandybridge(
                 if (haveLock)
                 {
                     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST 0x0U, SETUP_UBOXFIX)
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter_map[index].configRegister, 0x0U));
+                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, 0x0U));
                 }
                 break;
 
@@ -749,7 +782,7 @@ int perfmon_setupCounterThread_sandybridge(
     if (fixed_flags > 0x0)
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_FIXED_CTR_CTRL, LLU_CAST fixed_flags, SETUP_FIXED)
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags));
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_FIXED_CTR_CTRL, fixed_flags));
     }
     return 0;
 }
@@ -760,13 +793,13 @@ int perfmon_setupCounterThread_sandybridge(
 #define SNB_UNFREEZE_BOX(id) \
     if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) { \
         VERBOSEPRINTREG(cpu_id, box_map[id].ctrlRegister, LLU_CAST 0x0ULL, UNFREEZE_BOX_##id) \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].ctrlRegister, 0x0ULL)); \
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, box_map[id].ctrlRegister, 0x0ULL)); \
     }
 
 #define SNB_UNFREEZE_AND_RESET_CTR_BOX(id) \
     if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) { \
         VERBOSEPRINTREG(cpu_id, box_map[id].ctrlRegister, LLU_CAST 0x2ULL, UNFREEZE_BOX_##id) \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].ctrlRegister, 0x2ULL)); \
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, box_map[id].ctrlRegister, 0x2ULL)); \
     }
 
 #define SNB_UNFREEZE_BOX_SOCKET(id, socket) \
@@ -785,19 +818,19 @@ int perfmon_setupCounterThread_sandybridge(
 #define SNB_ENABLE_BOX(id, reg) \
     if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) { \
         uint64_t tmp = 0x0ULL; \
-        CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &tmp)); \
+        CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, reg, &tmp)); \
         tmp |= (1<<22); \
         VERBOSEPRINTREG(cpu_id, reg, LLU_CAST tmp, ENABLE_BOX_##id) \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, tmp)); \
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, tmp)); \
     }
 
 #define SNB_ENABLE_AND_RESET_CTR_BOX(id) \
     if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) { \
         uint64_t tmp = 0x0ULL; \
-        CHECK_MSR_READ_ERROR(msr_read(cpu_id, box_map[id].ctrlRegister, &tmp)); \
+        CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, box_map[id].ctrlRegister, &tmp)); \
         tmp |= (1<<22)|(1<<17); \
         VERBOSEPRINTREG(cpu_id, box_map[id].ctrlRegister, LLU_CAST tmp, ENABLE_AND_RESET_CTR_BOX_##id) \
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, box_map[id].ctrlRegister, tmp)); \
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, box_map[id].ctrlRegister, tmp)); \
     }
 
 // UNFREEZE(_AND_RESET_CTR)_PCI is similar to MSR UNFREEZE but for PCI devices
@@ -806,14 +839,14 @@ int perfmon_setupCounterThread_sandybridge(
                 && (pci_checkDevice(box_map[id].device, cpu_id))) \
     { \
         VERBOSEPRINTPCIREG(cpu_id, box_map[id].device, box_map[id].ctrlRegister, LLU_CAST 0x0ULL, UNFREEZE_PCI_BOX_##id) \
-        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[id].device, box_map[id].ctrlRegister, 0x0ULL)); \
+        CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[id].device, box_map[id].ctrlRegister, 0x0ULL)); \
     }
 #define SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(id) \
     if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id))) \
                 && (pci_checkDevice(box_map[id].device, cpu_id))) \
     { \
         VERBOSEPRINTPCIREG(cpu_id, box_map[id].device, box_map[id].ctrlRegister, LLU_CAST 0x2ULL, UNFREEZE_AND_RESET_CTR_PCI_BOX_##id) \
-        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[id].device, box_map[id].ctrlRegister, 0x2ULL)); \
+        CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[id].device, box_map[id].ctrlRegister, 0x2ULL)); \
     }
 
 #define SNB_UNFREEZE_PCI_BOX_SOCKET(id, socket) \
@@ -837,7 +870,7 @@ int perfmon_setupCounterThread_sandybridge(
     { \
         VERBOSEPRINTPCIREG(cpu_id, PCI_IMC_DEVICE_0_CH_##number, \
                 PCI_UNC_MC_PMON_FIXED_CTL, LLU_CAST (1<<22)|(1<<19), UNFREEZE_AND_RESET_CTR_MBOXFIX##id) \
-        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_0_CH_##number,  PCI_UNC_MC_PMON_FIXED_CTL, (1<<22)|(1<<19))); \
+        CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, PCI_IMC_DEVICE_0_CH_##number,  PCI_UNC_MC_PMON_FIXED_CTL, (1<<22)|(1<<19))); \
     }
 #define SNB_UNFREEZE_MBOXFIX(number) \
     if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX##number##FIX))) && \
@@ -845,7 +878,7 @@ int perfmon_setupCounterThread_sandybridge(
     { \
         VERBOSEPRINTPCIREG(cpu_id, PCI_IMC_DEVICE_0_CH_##number, \
                 PCI_UNC_MC_PMON_FIXED_CTL, LLU_CAST (1<<22), UNFREEZE_MBOXFIX##id) \
-        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, PCI_IMC_DEVICE_0_CH_##number,  PCI_UNC_MC_PMON_FIXED_CTL, (1<<22))); \
+        CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, PCI_IMC_DEVICE_0_CH_##number,  PCI_UNC_MC_PMON_FIXED_CTL, (1<<22))); \
     }
 
 #define SNB_UNFREEZE_AND_RESET_CTR_MBOXFIX_SOCKET(number, socket) \
@@ -872,6 +905,7 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     uint64_t flags = 0x0ULL;
     uint32_t uflags = 0x10000UL; /* Clear freeze bit */
     int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
@@ -891,19 +925,19 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
             switch (sandybridge_counter_map[index].type)
             {
                 case PMC:
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
+                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter1, 0x0ULL));
                     flags |= (1<<(index-OFFSET_PMC));  /* enable counter */
                     break;
 
                 case FIXED:
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
+                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter1, 0x0ULL));
                     flags |= (1ULL<<(index+32));  /* enable fixed counter */
                     break;
 
                 case POWER:
                     if(haveLock)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&tmp));
+                        CHECK_POWER_READ_ERROR(power_tread(read_fd, cpu_id, counter1, (uint32_t*)&tmp));
                         eventSet->events[i].threadCounter[thread_id].startData = tmp;
                     }
                     break;
@@ -914,8 +948,8 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
                 case MBOX3:
                     if (haveLock && pci_checkDevice(cpu_id, box_map[type].device))
                     {
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[type].device, counter1, 0x0ULL));
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[type].device, counter2, 0x0ULL));
+                        CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[type].device, counter1, 0x0ULL));
+                        CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[type].device, counter2, 0x0ULL));
                     }
                     break;
 
@@ -956,15 +990,15 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
                     SNB_ENABLE_AND_RESET_CTR_BOX(UBOX);
                     break;
                 case UBOXFIX:
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, counter1, 0x0ULL));
+                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter1, 0x0ULL));
                     SNB_ENABLE_BOX(UBOXFIX, reg);
                     break;
 
                 case BBOX0:
                     if (haveLock && pci_checkDevice(cpu_id, box_map[type].device))
                     {
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[type].device, counter1, 0x0ULL));
-                        CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[type].device, counter2, 0x0ULL));
+                        CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[type].device, counter1, 0x0ULL));
+                        CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[type].device, counter2, 0x0ULL));
                     }
                     break;
 
@@ -974,7 +1008,7 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
                 case WBOX1FIX:
                     if(haveLock)
                     {
-                        CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &tmp));
+                        CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter1, &tmp));
                         eventSet->events[i].threadCounter[thread_id].startData = tmp;
                     }
                     break;
@@ -988,8 +1022,8 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, UNFREEZE_PMC_OR_FIXED)
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL));
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL));
     }
     SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX0);
     SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX1);
@@ -1010,7 +1044,7 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     SNB_UNFREEZE_AND_RESET_CTR_MBOXFIX(2);
     SNB_UNFREEZE_AND_RESET_CTR_MBOXFIX(3);
     SNB_UNFREEZE_PCI_BOX(BBOX0);
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, 0x0U));
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_PCU_PMON_BOX_FILTER, 0x0U));
     SNB_UNFREEZE_AND_RESET_CTR_BOX(WBOX);
     SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(RBOX0);
     SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(RBOX1);
@@ -1024,7 +1058,7 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) \
     { \
         VERBOSEPRINTREG(cpu_id, reg1, LLU_CAST counter_result, READ_BOX_##id) \
-        CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg1, &counter_result)); \
+        CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, reg1, &counter_result)); \
     }
 
 #define SNB_READ_BOX_SOCKET(socket, reg1) \
@@ -1036,9 +1070,9 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id))) && pci_checkDevice(dev, cpu_id)) \
     { \
         uint64_t tmp = 0x0ULL; \
-        CHECK_PCI_READ_ERROR(pci_read(cpu_id, dev, reg1, (uint32_t*)&tmp)); \
+        CHECK_PCI_READ_ERROR(pci_tread(read_fd, cpu_id, dev, reg1, (uint32_t*)&tmp)); \
         counter_result = (tmp<<32); \
-        CHECK_PCI_READ_ERROR(pci_read(cpu_id, dev, reg2, (uint32_t*)&tmp)); \
+        CHECK_PCI_READ_ERROR(pci_tread(read_fd, cpu_id, dev, reg2, (uint32_t*)&tmp)); \
         counter_result += tmp; \
         VERBOSEPRINTPCIREG(cpu_id, dev, reg1, LLU_CAST counter_result, READ_PCI_BOX_##id) \
     }
@@ -1069,6 +1103,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
     uint64_t counter_result = 0x0ULL;
     int haveLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
@@ -1077,7 +1112,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
 
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
     {
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
     SNB_FREEZE_AND_RESET_CTL_BOX(CBOX0);
     SNB_FREEZE_AND_RESET_CTL_BOX(CBOX1);
@@ -1119,7 +1154,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                 case PMC:
 
                 case FIXED:
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
+                    CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter1, &counter_result));
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
@@ -1127,20 +1162,20 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                 case POWER:
                     if (haveLock)
                     {
-                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+                        CHECK_POWER_READ_ERROR(power_tread(read_fd, cpu_id, counter1, (uint32_t*)&counter_result));
                         SNB_CHECK_OVERFLOW;
                         eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     }
                     break;
 
                 case THERMAL:
-                    CHECK_MSR_READ_ERROR(thermal_read(cpu_id, (uint32_t*)&counter_result));
+                    CHECK_MSR_READ_ERROR(thermal_tread(read_fd, cpu_id, (uint32_t*)&counter_result));
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case MBOX0:
                     VERBOSEPRINTPCIREG(cpu_id, box_map[type].device, reg,  0x0U, RESET_MBOX_CTL) \
-                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[type].device, reg, 0x0U));
+                    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[type].device, reg, 0x0U));
                     SNB_READ_PCI_BOX(MBOX0, box_map[type].device, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
@@ -1148,7 +1183,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
 
                 case MBOX1:
                     VERBOSEPRINTPCIREG(cpu_id, box_map[type].device, reg,  0x0U, RESET_MBOX_CTL) \
-                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[type].device, reg, 0x0U));
+                    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[type].device, reg, 0x0U));
                     SNB_READ_PCI_BOX(MBOX1, box_map[type].device, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
@@ -1156,7 +1191,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
 
                 case MBOX2:
                     VERBOSEPRINTPCIREG(cpu_id, box_map[type].device, reg,  0x0U, RESET_MBOX_CTL) \
-                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[type].device, reg, 0x0U));
+                    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[type].device, reg, 0x0U));
                     SNB_READ_PCI_BOX(MBOX2, box_map[type].device, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
@@ -1164,7 +1199,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
 
                 case MBOX3:
                     VERBOSEPRINTPCIREG(cpu_id, box_map[type].device, reg,  0x0U, RESET_MBOX_CTL) \
-                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[type].device, reg, 0x0U));
+                    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[type].device, reg, 0x0U));
                     SNB_READ_PCI_BOX(MBOX3, box_map[type].device, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
@@ -1245,20 +1280,20 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     break;
 
                 case UBOX:
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, 0x0U));
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
+                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, 0x0U));
+                    CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter1, &counter_result));
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case UBOXFIX:
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg, 0x0U));
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, counter1, &counter_result));
+                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, 0x0U));
+                    CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter1, &counter_result));
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case BBOX0:
-                    CHECK_PCI_WRITE_ERROR(pci_write(cpu_id, box_map[type].device, reg, 0x0U));
+                    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[type].device, reg, 0x0U));
                     SNB_READ_PCI_BOX(BBOX0, box_map[type].device, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
@@ -1307,19 +1342,8 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
     int haveLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t pmc_flags = 0x0ULL;
-    int read_fd;
-    if (thread_sockets[cpu_id] != -1)
-    {
-        read_fd = thread_sockets[cpu_id];
-    }
-    else if (socket_fd != 1)
-    {
-        read_fd = socket_fd;
-    }
-    else
-    {
-        return -ENOTCONN;
-    }
+    GET_READFD(cpu_id);
+
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
         haveLock = 1;

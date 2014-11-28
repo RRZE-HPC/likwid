@@ -47,7 +47,7 @@ static int perfmon_numArchEventsHaswell = NUM_ARCH_EVENTS_HASWELL;
 
 #define GET_READFD(cpu_id) \
     int read_fd = socket_fd; \
-    if (socket_fd == -1) \
+    if (socket_fd == -1 || thread_sockets[cpu_id] != -1) \
     { \
         read_fd = thread_sockets[cpu_id]; \
     } \
@@ -1467,7 +1467,7 @@ int perfmon_readCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (eventSet->events[i].threadCounter[cpu_id].init == TRUE)
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             counter_result= 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
