@@ -219,9 +219,14 @@ install_daemon:
 	@cp -f $(DAEMON_TARGET) $(ACCESSDAEMON)
 	@chown root:root $(ACCESSDAEMON)
 	@chmod 4755 $(ACCESSDAEMON)
+uninstall_daemon:
+	@echo "===> REMOVING access daemon from $(ACCESSDAEMON)"
+	rm -f $(ACCESSDAEMON)
 else
 install_daemon:
 	@echo "===> No INSTALL of the access daemon"
+uninstall_daemon:
+	@echo "===> No UNINSTALL of the access daemon"
 endif
 
 ifeq ($(BUILDFREQ),true)
@@ -231,9 +236,14 @@ install_freq:
 	@cp -f $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
 	@chown root:root $(PREFIX)/sbin/$(FREQ_TARGET)
 	@chmod 4755 $(PREFIX)/sbin/$(FREQ_TARGET)
+uninstall_freq:
+	@echo "===> REMOVING setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET)"
+	@rm -f $(PREFIX)/sbin/$(FREQ_TARGET)
 else
 install_freq:
 	@echo "===> No INSTALL of setFrequencies tool"
+uninstall_freq:
+	@echo "===> No UNINSTALL of setFrequencies tool"
 endif
 
 install: install_daemon install_freq
@@ -241,12 +251,14 @@ install: install_daemon install_freq
 	@mkdir -p $(PREFIX)/bin
 	@for APP in $(L_APPS); do \
 		cp -f $$APP  $(PREFIX)/bin; \
+		chmod 755 $$APP; \
 	done
 	@cp ext/lua/lua $(PREFIX)/bin/likwid-lua
-	@chmod 755 $(PREFIX)/bin/likwid-*
+	@chmod 755 $(PREFIX)/bin/likwid-lua
 	@echo "===> INSTALL lua to likwid interface to $(PREFIX)/share/lua"
 	@mkdir -p $(PREFIX)/share/lua
 	@cp -f likwid.lua $(PREFIX)/share/lua
+	@chmod 755 $(PREFIX)/share/lua/likwid.lua
 	@echo "===> INSTALL libraries to $(PREFIX)/lib"
 	@mkdir -p $(PREFIX)/lib
 	@cp -f liblikwid*  $(PREFIX)/lib
@@ -266,6 +278,7 @@ install: install_daemon install_freq
 	@echo "===> INSTALL headers to $(PREFIX)/include"
 	@mkdir -p $(PREFIX)/include
 	@cp -f src/includes/likwid.h  $(PREFIX)/include/
+	@chmod 644 $(PREFIX)/include/likwid.h
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL groups to $(PREFIX)/share/likwid"
 	@mkdir -p $(PREFIX)/share/likwid
@@ -276,7 +289,7 @@ install: install_daemon install_freq
 	@chmod 755 $(LIKWIDFILTERPATH)/*
 
 
-uninstall:
+uninstall: uninstall_daemon uninstall_freq
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
 	@rm -f $(addprefix $(PREFIX)/bin/,$(addsuffix  .lua,$(L_APPS)))
 	@for APP in $(L_APPS); do \
@@ -299,10 +312,7 @@ uninstall:
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter and groups from $(PREFIX)/share/likwid"
 	@rm -rf  $(PREFIX)/share/likwid
-	@[ -e $(ACCESSDAEMON) ] && echo "===> REMOVING access daemon from $(ACCESSDAEMON)"
-	@[ -e $(ACCESSDAEMON) ] && rm -f $(ACCESSDAEMON)
-	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && echo "===> REMOVING setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET)"
-	@[ -e $(PREFIX)/sbin/$(FREQ_TARGET) ] && rm -f $(PREFIX)/sbin/$(FREQ_TARGET)
+
 
 local: $(L_APPS) likwid.lua
 	@echo "===> Setting Lua scripts to run from current directory"
