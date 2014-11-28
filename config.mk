@@ -18,14 +18,14 @@ MANPREFIX = $(PREFIX)/man#NO SPACE
 ACCESSDAEMON = $(PREFIX)/sbin/likwid-accessD#NO SPACE
 
 # Build the accessDaemon. Have a look in the WIKI for details.
-BUILDDAEMON = false#NO SPACE
+BUILDDAEMON = true#NO SPACE
 
 #Build the setFrequencies tool
 BUILDFREQ = true#NO SPACE
 # Set the default mode for MSR access.
 # This can usually be overriden on the commandline.
 # Valid values are: direct, accessdaemon
-ACCESSMODE = direct#NO SPACE
+ACCESSMODE = accessdaemon$#NO SPACE
 
 # Change to true to a build shared library instead of a static one
 SHARED_LIBRARY = true#NO SPACE
@@ -45,14 +45,14 @@ USE_HWLOC = true#NO SPACE
 
 # Usually you do not need to edit below
 MAX_NUM_THREADS = 263
-MAX_NUM_NODES = 4
+MAX_NUM_NODES = 64
 HASH_TABLE_SIZE = 20
 CFG_FILE_PATH = /etc/likwid.cfg
 
 # Versioning Information
-VERSION = 3
-RELEASE = 1
-DATE    = 5.2.2014
+VERSION = 4
+RELEASE = 0
+DATE    = 28.11.2014
 
 LIBLIKWIDPIN = $(abspath $(PREFIX)/lib/liblikwidpin.so)
 LIKWIDFILTERPATH = $(abspath $(PREFIX)/share/likwid)

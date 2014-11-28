@@ -10,7 +10,7 @@ stream: stream.c
 	gcc -O3 $(INCLUDES) -fopenmp  -o $@  -DLIKWID_PERFMON stream.c $(LIKWID_LIB) -lm
 
 streamM: stream.c
-	gcc -O3 $(INCLUDES) -fopenmp  -o $@  -DLIKWID_PERFMON stream.c $(LIKWID_LIB) -lm
+	gcc -O3 $(INCLUDES) -fopenmp  -o $@  -DMAX_NUM_THREADS=256 -DLIKWID_PERFMON stream.c $(LIKWID_LIB) -lm
 
 testmarker:
 	gcc -O3 -std=c99  $(INCLUDES) -fopenmp -DLIKWID_PERFMON  -o $@ testmarker-cnt.c $(LIKWID_LIB) -lm
@@ -21,7 +21,7 @@ testmarker-omp:
 test-mpi:
 	mpicc -DMAX_NUM_THREADS=128 -O2 -openmp -I../src/includes  -I../GCC -D_GNU_SOURCE  -o $@ MPI_pin_test.c $(LIKWID_LIB)
 
-.PHONY: clean
+.PHONY: clean streamM
 
 clean: 
 	rm -f stream streamM  testmarker testmarkerF90
