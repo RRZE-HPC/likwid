@@ -677,6 +677,7 @@ int ivb_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int ivb_uncore_freeze(int cpu_id, PerfmonEventSet* eventSet, int flags)
 {
+    uint64_t freeze_flags = 0x0ULL;
     GET_READFD(cpu_id);
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id))
     {
@@ -684,9 +685,9 @@ int ivb_uncore_freeze(int cpu_id, PerfmonEventSet* eventSet, int flags)
     }
     if (eventSet->regTypeMask & ~(0xF))
     {
-        flags |= (1ULL<<31);
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST flags, FREEZE_UNCORE);
-        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, flags));
+        freeze_flags |= (1ULL<<31);
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST freeze_flags, FREEZE_UNCORE);
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, freeze_flags));
     }
     if (flags != FREEZE_FLAG_ONLYFREEZE)
     {
@@ -718,7 +719,7 @@ int ivb_uncore_unfreeze(int cpu_id, PerfmonEventSet* eventSet, int flags)
     {
         return 0;
     }
-    if (flags != FREEZE_FLAG_ONLYFREEZE)
+    if ((flags != FREEZE_FLAG_ONLYFREEZE) && (eventSet->regTypeMask & ~(0xF)))
     {
         for (int j=UNCORE; j<NUM_UNITS; j++)
         {
