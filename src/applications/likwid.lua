@@ -194,7 +194,7 @@ local function calculate_metric(formula, counters_to_values)
     end
     if not err then
         result = assert(loadstring("return (" .. formula .. ")")())
-        if (result == nil or result ~= result or result == infinity or result == -inf) then
+        if (result == nil or result ~= result or result == infinity or result == -infinity) then
             result = 0
         end
     end
