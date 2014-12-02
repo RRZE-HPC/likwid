@@ -333,6 +333,7 @@ install:
 	@echo "===> INSTALL libraries to $(PREFIX)/lib"
 	@mkdir -p $(PREFIX)/lib
 	@cp -f $(LIKWID_LIB)*  $(PREFIX)/lib
+	@chmod 755 $(PREFIX)/lib/$(LIKWID_LIB)*
 	@chmod 755 $(PREFIX)/lib/$(PINLIB)
 	@echo "===> INSTALL filters to $(LIKWIDFILTERPATH)"
 	@mkdir -p $(LIKWIDFILTERPATH)
