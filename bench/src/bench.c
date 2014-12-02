@@ -91,7 +91,7 @@ void* runTest(void* arg)
 {
     int threadId;
     int offset;
-    size_t size;
+    size_t size, allSize;
     size_t i;
     BarrierData barr;
     ThreadData* data;
@@ -106,38 +106,12 @@ void* runTest(void* arg)
     barrier_registerThread(&barr, 0, data->globalThreadId);
 
     /* Prepare ptrs for thread */
+    allSize = myData->size;
     size = myData->size / data->numberOfThreads;
     size -= (size%myData->test->stride);
     offset = data->threadId * size;
     myData->size = size;
 
-    switch ( myData->test->type )
-    {
-        case SINGLE:
-            {
-                float* sptr;
-                for (i=0; i <  myData->test->streams; i++)
-                {
-                    sptr = (float*) myData->streams[i];
-                    sptr +=  offset;
-              //      sptr +=  size;
-                    myData->streams[i] = (float*) sptr;
-                }
-            }
-            break;
-        case DOUBLE:
-            {
-                double* dptr;
-                for (i=0; i <  myData->test->streams; i++)
-                {
-                    dptr = (double*) myData->streams[i];
-                    dptr +=  offset;
-             //       dptr +=  size;
-                    myData->streams[i] = (double*) dptr;
-                }
-            }
-            break;
-    }
 
     /* pint the thread */
     affinity_pinThread(myData->processors[threadId]);
@@ -150,7 +124,7 @@ void* runTest(void* arg)
             threadId,
             data->globalThreadId,
             affinity_threadGetProcessorId(),
-            LLU_CAST size,
+            LLU_CAST allSize,
             offset);
     BARRIER;
 
@@ -484,7 +458,6 @@ void* getIter(void* arg)
     size = myData->size / data->numberOfThreads;
     size -= (size%myData->test->stride);
     offset = data->threadId * size;
-    myData->size = size;
 
     switch ( myData->test->type )
     {
@@ -519,107 +492,107 @@ void* getIter(void* arg)
     
     switch ( myData->test->streams ) {
         case STREAM_1:
-            MEASURE(func(myData->size,myData->streams[0]));
+            MEASURE(func(size,myData->streams[0]));
             break;
         case STREAM_2:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1]));
+            MEASURE(func(size,myData->streams[0],myData->streams[1]));
             break;
         case STREAM_3:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2]));
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2]));
             break;
         case STREAM_4:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3]));
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3]));
             break;
         case STREAM_5:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4]));
             break;
         case STREAM_6:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5]));
             break;
         case STREAM_7:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6]));
             break;
         case STREAM_8:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7]));
             break;
         case STREAM_9:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8]));
             break;
         case STREAM_10:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9]));
             break;
         case STREAM_11:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10]));
             break;
         case STREAM_12:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11]));
             break;
         case STREAM_13:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12]));
             break;
         case STREAM_14:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13]));
             break;
         case STREAM_15:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14]));
             break;
         case STREAM_16:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15]));
             break;
         case STREAM_17:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
                         myData->streams[16]));
             break;
         case STREAM_18:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
                         myData->streams[16],myData->streams[17]));
             break;
         case STREAM_19:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
                         myData->streams[16],myData->streams[17],myData->streams[18]));
             break;
         case STREAM_20:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
                         myData->streams[16],myData->streams[17],myData->streams[18],myData->streams[19]));
             break;
         case STREAM_21:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -627,7 +600,7 @@ void* getIter(void* arg)
                         myData->streams[20]));
             break;
         case STREAM_22:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -635,7 +608,7 @@ void* getIter(void* arg)
                         myData->streams[20],myData->streams[21]));
             break;
         case STREAM_23:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -643,7 +616,7 @@ void* getIter(void* arg)
                         myData->streams[20],myData->streams[21],myData->streams[22]));
             break;
         case STREAM_24:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -651,7 +624,7 @@ void* getIter(void* arg)
                         myData->streams[20],myData->streams[21],myData->streams[22],myData->streams[23]));
             break;
         case STREAM_25:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -660,7 +633,7 @@ void* getIter(void* arg)
                         myData->streams[24]));
             break;
         case STREAM_26:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -669,7 +642,7 @@ void* getIter(void* arg)
                         myData->streams[24],myData->streams[25]));
             break;
         case STREAM_27:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -678,7 +651,7 @@ void* getIter(void* arg)
                         myData->streams[24],myData->streams[25],myData->streams[26]));
             break;
         case STREAM_28:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -687,7 +660,7 @@ void* getIter(void* arg)
                         myData->streams[24],myData->streams[25],myData->streams[26],myData->streams[27]));
             break;
         case STREAM_29:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -697,7 +670,7 @@ void* getIter(void* arg)
                         myData->streams[28]));
             break;
         case STREAM_30:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -707,7 +680,7 @@ void* getIter(void* arg)
                         myData->streams[28],myData->streams[29]));
             break;
         case STREAM_31:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -717,7 +690,7 @@ void* getIter(void* arg)
                         myData->streams[28],myData->streams[29],myData->streams[30]));
             break;
         case STREAM_32:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -727,7 +700,7 @@ void* getIter(void* arg)
                         myData->streams[28],myData->streams[29],myData->streams[30],myData->streams[31]));
             break;
         case STREAM_33:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -738,7 +711,7 @@ void* getIter(void* arg)
                         myData->streams[32]));
             break;
         case STREAM_34:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -749,7 +722,7 @@ void* getIter(void* arg)
                         myData->streams[32],myData->streams[33]));
             break;
         case STREAM_35:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -760,7 +733,7 @@ void* getIter(void* arg)
                         myData->streams[32],myData->streams[33],myData->streams[34]));
             break;
         case STREAM_36:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -771,7 +744,7 @@ void* getIter(void* arg)
                         myData->streams[32],myData->streams[33],myData->streams[34],myData->streams[35]));
             break;
         case STREAM_37:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
@@ -783,7 +756,7 @@ void* getIter(void* arg)
                         myData->streams[36]));
             break;
         case STREAM_38:
-            MEASURE(func(myData->size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
+            MEASURE(func(size,myData->streams[0],myData->streams[1],myData->streams[2],myData->streams[3],
                         myData->streams[4],myData->streams[5],myData->streams[6],myData->streams[7],
                         myData->streams[8],myData->streams[9],myData->streams[10],myData->streams[11],
                         myData->streams[12],myData->streams[13],myData->streams[14],myData->streams[15],
