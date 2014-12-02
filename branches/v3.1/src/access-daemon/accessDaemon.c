@@ -732,10 +732,10 @@ int main(void)
 
     {
         char* msr_file_name = (char*) malloc(MAX_PATH_LENGTH * sizeof(char));
-
+        uint32_t i;
         /* Open MSR device files for less overhead.
          * NOTICE: This assumes consecutive processor Ids! */
-        for ( uint32_t i=0; i < numHWThreads; i++ )
+        for (i =0; i < numHWThreads; i++ )
         {
 #ifdef __MIC
             sprintf(msr_file_name,"/dev/msr%d",i);
@@ -759,10 +759,11 @@ int main(void)
 
         if (isPCIUncore)
         {
-            for (int j=0; j<MAX_NUM_NODES; j++)
+            int j;
+            for (j=0; j<MAX_NUM_NODES; j++)
             {
                 socket_bus[j] = "N-A";
-                for (int i=0; i<MAX_NUM_DEVICES; i++)
+                for (i=0; i<MAX_NUM_DEVICES; i++)
                 {
                     FD_PCI[j][i] = -2;
                 }

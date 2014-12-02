@@ -299,8 +299,13 @@ void perfmon_stopCountersThread_haswell(int thread_id)
                 case POWER:
                     if(haveLock)
                     {
+                        double unit = power_info.energyUnit;
+                        if ((i == PMC11) && (cpuid_info.model == HASWELL_EX))
+                        {
+                            unit = power_info.energyUnitDRAM;
+                        }
                         perfmon_threadData[thread_id].counters[i].counterData =
-                            power_info.energyUnit *
+                            unit *
                             ( power_read(cpu_id, haswell_counter_map[i].counterRegister) -
                               perfmon_threadData[thread_id].counters[i].counterData);
                     }

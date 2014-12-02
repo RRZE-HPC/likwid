@@ -50,19 +50,28 @@ static inline double power_printEnergy(PowerData* data);
 static double
 power_printEnergy(PowerData* data)
 {
-    return  (double) ((data->after - data->before) * power_info.energyUnit);
+    if (data->type != DRAM)
+    {
+        return  (double) ((data->after - data->before) * power_info.energyUnit);
+    }
+    else
+    {
+        return  (double) ((data->after - data->before) * power_info.energyUnitDRAM);
+    }
 }
 
 static void
 power_start(PowerData* data, int cpuId, PowerType type)
 {
     data->before = extractBitField(msr_read(cpuId, power_regs[type]),32,0);
+    data->type = type;
 }
 
 static void
 power_stop(PowerData* data, int cpuId, PowerType type)
 {
     data->after = extractBitField(msr_read(cpuId, power_regs[type]),32,0);
+    data->type = type;
 }
 
 static uint32_t

@@ -127,6 +127,13 @@ power_init(int cpuId)
 
         power_info.powerUnit = pow(0.5,(double) extractBitField(flags,4,0));
         power_info.energyUnit = pow(0.5,(double) extractBitField(flags,5,8));
+        power_info.energyUnitDRAM = power_info.energyUnit;
+        if ((cpuid_info.model == HASWELL_EX) ||
+            (cpuid_info.model == HASWELL_M1) ||
+            (cpuid_info.model == HASWELL_M2))
+        {
+            power_info.energyUnitDRAM = 15.3E-6;
+        }
         power_info.timeUnit = pow(0.5,(double) extractBitField(flags,4,16));
 
         if (info_register != 0x0)

@@ -51,6 +51,7 @@ typedef struct {
     TurboBoost turbo;
     double powerUnit;
     double energyUnit;
+    double energyUnitDRAM;
     double timeUnit;
     double tdp;
     double minPower;
@@ -61,6 +62,7 @@ typedef struct {
 typedef struct {
     uint32_t before;
     uint32_t after;
+    PowerType type;
 } PowerData;
 
 
