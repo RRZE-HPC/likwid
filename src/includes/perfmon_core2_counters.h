@@ -28,15 +28,16 @@
  * =======================================================================================
  */
 
-#define NUM_COUNTERS_CORE2 4
-#define NUM_COUNTERS_CORE_CORE2 4
+#define NUM_COUNTERS_CORE2 5
+#define NUM_COUNTERS_CORE_CORE2 5
 
 static RegisterMap core2_counter_map[NUM_COUNTERS_CORE2] = {
     /* Fixed Counters: instructions retired, cycles unhalted core */
     {"FIXC0", PMC0, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR0, 0, 0},
     {"FIXC1", PMC1, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR1, 0, 0},
+    {"FIXC2", PMC2, FIXED, MSR_PERF_FIXED_CTR_CTRL, MSR_PERF_FIXED_CTR2, 0, 0},
     /* PMC Counters: 2 40bit wide */
-    {"PMC0", PMC2, PMC, MSR_PERFEVTSEL0, MSR_PMC0, 0, 0},
-    {"PMC1", PMC3, PMC, MSR_PERFEVTSEL1, MSR_PMC1, 0, 0}
+    {"PMC0", PMC3, PMC, MSR_PERFEVTSEL0, MSR_PMC0, 0, 0},
+    {"PMC1", PMC4, PMC, MSR_PERFEVTSEL1, MSR_PMC1, 0, 0},
 };
 
