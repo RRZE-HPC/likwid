@@ -735,7 +735,6 @@ bstr_to_workgroup(Workgroup* group,
     group->processorIds = (int*) malloc(group->numberOfThreads * sizeof(int));
 
     counter = chunksize;
-    printf("chunk %d stride %d\n",chunksize, stride);
 
     for (i=0; i<group->numberOfThreads; i++)
     {
