@@ -47,6 +47,10 @@
 #define MSR_PERFEVTSEL1           0x187
 #define MSR_PERFEVTSEL2           0x188
 #define MSR_PERFEVTSEL3           0x189
+#define MSR_PERFEVTSEL4           0x190
+#define MSR_PERFEVTSEL5           0x191
+#define MSR_PERFEVTSEL6           0x192
+#define MSR_PERFEVTSEL7           0x193
 #define MSR_PMC0                  0x0C1
 #define MSR_PMC1                  0x0C2
 #define MSR_PMC2                  0x0C3
