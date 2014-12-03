@@ -33,23 +33,6 @@
 
 #include <stdint.h>
 
-/* This naming with AccessType and AccessMode is admittedly a bit confusing */
-/** \addtogroup AccessClient
-*  @{
-*/
-/*! \brief Enum for the access modes
-
-LIKWID supports multiple access modes to the MSR and PCI performance monitoring 
-registers. For direct access the user must have enough priviledges to access the
-MSR and PCI devices. The daemon mode forwards the operations to a daemon with 
-higher priviledges.
-*/
-typedef enum {
-    DAEMON_AM_DIRECT = 0, /*!< \brief Access performance monitoring registers directly */
-    DAEMON_AM_ACCESS_D = 1 /*!< \brief Use the access daemon to access the registers */
-} AccessMode;
-/** @}*/
-
 typedef enum {
     DAEMON_READ = 0,
     DAEMON_WRITE,

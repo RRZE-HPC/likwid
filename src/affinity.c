@@ -42,6 +42,7 @@
 #include <time.h>
 #include <pthread.h>
 
+#include <types.h>
 #include <error.h>
 #include <types.h>
 #include <numa.h>

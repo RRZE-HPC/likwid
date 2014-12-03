@@ -16,6 +16,7 @@
 #include <lock.h>
 #include <perfmon.h>
 #include <registers.h>
+#include <topology.h>
 
 
 #include <perfmon_pm.h>
