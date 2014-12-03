@@ -79,7 +79,6 @@ use_sleep = true
 sockets = {0}
 eventString = "PWR_PKG_ENERGY:PWR0,PWR_PP0_ENERGY:PWR1,PWR_DRAM_ENERGY:PWR3"
 
-config = likwid.getConfiguration()
 cpuinfo = likwid.getCpuInfo()
 cputopo = likwid.getCpuTopology()
 numatopo = likwid.getNumaInfo()
