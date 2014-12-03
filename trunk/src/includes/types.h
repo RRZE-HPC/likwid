@@ -47,10 +47,10 @@
 #include <timer_types.h>
 #include <tree_types.h>
 #include <topology_types.h>
-#include <affinity_types.h>
+//#include <affinity_types.h>
 #include <perfmon_types.h>
 #include <libperfctr_types.h>
-#include <numa_types.h>
+//#include <numa_types.h>
 #include <barrier_types.h>
 #include <cpuFeatures_types.h>
 #include <multiplex_types.h>

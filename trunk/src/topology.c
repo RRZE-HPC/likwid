@@ -1,10 +1,12 @@
+#include <stdlib.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <sched.h>
 
 #include <likwid.h>
 
-//#include <topology.h>
+#include <topology.h>
 #include <error.h>
 #include <tree.h>
 #include <bitUtil.h>

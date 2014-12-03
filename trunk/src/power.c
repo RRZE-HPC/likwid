@@ -87,23 +87,33 @@ power_init(int cpuId)
             power_info.minFrequency  = busSpeed * (double) extractBitField((flags>>(32)),8,8);
 
             power_info.turbo.numSteps = cpuid_topology.numCoresPerSocket;
+            if (cpuid_info.model == WESTMERE_EX)
+            {
+                power_info.turbo.numSteps = 4;
+            }
             power_info.turbo.steps = (double*) malloc(power_info.turbo.numSteps * sizeof(double));
             if (!power_info.turbo.steps)
             {
                 return -ENOMEM;
             }
 
-            CHECK_MSR_READ_ERROR(msr_read(cpuId, MSR_TURBO_RATIO_LIMIT, &flags))
-
-            for (int i=0; i < power_info.turbo.numSteps; i++)
+            err = msr_read(cpuId, MSR_TURBO_RATIO_LIMIT, &flags);
+            if (err)
             {
-                if (i < 8)
+                fprintf(stderr,"Cannot gather values from MSR_TURBO_RATIO_LIMIT,\n");
+            }
+            else
+            {
+                for (int i=0; i < power_info.turbo.numSteps; i++)
                 {
-                    power_info.turbo.steps[i] = busSpeed * (double) field64(flags,i*8, 8);
-                }
-                else
-                {
-                    power_info.turbo.steps[i] = power_info.turbo.steps[7];
+                    if (i < 8)
+                    {
+                        power_info.turbo.steps[i] = busSpeed * (double) field64(flags,i*8, 8);
+                    }
+                    else
+                    {
+                        power_info.turbo.steps[i] = power_info.turbo.steps[7];
+                    }
                 }
             }
         }
@@ -112,7 +122,7 @@ power_init(int cpuId)
             fprintf(stderr,"Cannot gather values from MSR_PLATFORM_INFO,\n");
         }
     }
-    
+
     switch (cpuid_info.model)
     {
         case SANDYBRIDGE:
@@ -130,6 +140,7 @@ power_init(int cpuId)
         default:
             DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, NO RAPL SUPPORT);
             return 0;
+            break;
     }
 
     /* determine RAPL parameters */

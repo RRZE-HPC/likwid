@@ -31,8 +31,7 @@
 #ifndef LIKWID_H
 #define LIKWID_H
 
-#include <types.h>
-#include <topology.h>
+#include <stdint.h>
 #include <error.h>
 #include <bstrlib.h>
 
@@ -80,6 +79,8 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
 
 /*
 ################################################################################
@@ -160,6 +161,48 @@ another CPU after pinning but the pinning can be changed anytime with this funct
 */
 extern int  likwid_pinThread(int processorId);
 /** @}*/
+
+/* 
+################################################################################
+# Access client related functions
+################################################################################
+*/
+/** \addtogroup AccessClient Access client module
+ *  @{
+ */
+
+/*! \brief Enum for the access modes
+
+LIKWID supports multiple access modes to the MSR and PCI performance monitoring 
+registers. For direct access the user must have enough priviledges to access the
+MSR and PCI devices. The daemon mode forwards the operations to a daemon with 
+higher priviledges.
+*/
+typedef enum {
+    DAEMON_AM_DIRECT = 0, /*!< \brief Access performance monitoring registers directly */
+    DAEMON_AM_ACCESS_D = 1 /*!< \brief Use the access daemon to access the registers */
+} AccessMode;
+
+/*! \brief Set accessClient mode
+
+Sets the mode how the MSR and PCI registers should be accessed. 0 for direct access (propably root priviledges required) and 1 for accesses through the access daemon. It must be called before accessClient_init()
+@param [in] mode (0=direct, 1=daemon)
+*/
+extern void accessClient_setaccessmode(int mode);
+/*! \brief Initialize socket for communication with the access daemon
+
+Initializes the file descriptor by starting and connecting to a new access daemon.
+@param [out] socket_fd Pointer to socket file descriptor
+*/
+extern void accessClient_init(int* socket_fd);
+/*! \brief Destroy socket for communication with the access daemon
+
+Destroys the file descriptor by disconnecting and shutting down the access daemon
+@param [in] socket_fd socket file descriptor
+*/
+extern void accessClient_finalize(int socket_fd);
+/** @}*/
+
 /*
 ################################################################################
 # Config file related functions
@@ -168,6 +211,25 @@ extern int  likwid_pinThread(int processorId);
 /** \addtogroup Config Config file module
 *  @{
 */
+/*! \brief Structure holding values of the configuration file
+
+LIKWID supports the definition of runtime values in a configuration file. The 
+most important configurations in most cases are the path the access daemon and 
+the corresponding access mode. In order to avoid reading in the system topology
+at each start, a path to a topology file can be set. The other values are mostly
+used internally.
+*/
+typedef struct {
+    char* topologyCfgFileName; /*!< \brief Path to the topology file */
+    char* daemonPath; /*!< \brief Path of the access daemon */
+    AccessMode daemonMode; /*!< \brief Access mode to the MSR and PCI registers */
+    int maxNumThreads; /*!< \brief Maximum number of HW threads */
+    int maxNumNodes; /*!< \brief Maximum number of NUMA nodes */
+    int maxHashTableSize; /*!< \brief Maximal hash table size used for the marker API */
+} Configuration;
+
+/** \brief Pointer for exporting the Configuration data structure */
+typedef Configuration* Configuration_t;
 /*! \brief Read the config file of LIKWID, if it exists
 
 Search for LIKWID config file and read the values in
@@ -200,6 +262,95 @@ extern Configuration_t get_configuration(void);
 /** \addtogroup CPUTopology CPU information module
 *  @{
 */
+/*! \brief Structure with general CPU information
+
+General information covers CPU family, model, name and current clock and vendor 
+specific information like the version of Intel's performance monitoring facility.
+*/
+typedef struct {
+    uint32_t family; /*!< \brief CPU family ID*/
+    uint32_t model; /*!< \brief CPU model ID */
+    uint32_t stepping; /*!< \brief Stepping (version) of the CPU */
+    uint64_t clock; /*!< \brief Current clock frequency of the executing CPU*/
+    int      turbo; /*!< \brief Flag if CPU has a turbo mode */
+    char*  osname; /*!< \brief Name of the CPU reported by OS */
+    char*  name; /*!< \brief Name of the CPU as identified by LIKWID */
+    char*  short_name; /*!< \brief Short name of the CPU*/
+    char*  features; /*!< \brief String with all features supported by the CPU*/
+    int         isIntel; /*!< \brief Flag if it is an Intel CPU*/
+    int     supportUncore; /*!< \brief Flag if system has Uncore performance monitors */
+    uint32_t featureFlags; /*!< \brief Mask of all features supported by the CPU*/
+    uint32_t perf_version; /*!< \brief Version of Intel's performance monitoring facility */
+    uint32_t perf_num_ctr; /*!< \brief Number of general purpose core-local performance monitoring counters */
+    uint32_t perf_width_ctr; /*!< \brief Bit width of fixed and general purpose counters */
+    uint32_t perf_num_fixed_ctr; /*!< \brief Number of fixed purpose core-local performance monitoring counters */
+} CpuInfo;
+
+/*! \brief Structure with IDs of a HW thread
+
+For each HW thread this structure stores the ID of the thread inside a CPU, the
+CPU core ID of the HW thread and the CPU socket ID.
+\extends CpuTopology
+*/
+typedef struct {
+    uint32_t threadId; /*!< \brief ID of HW thread inside the CPU core */
+    uint32_t coreId; /*!< \brief ID of CPU core that executes the HW thread */
+    uint32_t packageId; /*!< \brief ID of CPU socket containing the HW thread */
+    uint32_t apicId; /*!< \brief ID of HW thread retrieved through the Advanced Programmable Interrupt Controller */
+} HWThread;
+
+/*! \brief Enum of possible caches
+
+CPU caches can have different tasks and hold different kind of data. This enum lists all shapes used in all supported CPUs
+\extends CacheLevel
+*/
+typedef enum {
+    NOCACHE=0, /*!< \brief No cache used as undef value */
+    DATACACHE, /*!< \brief Cache holding data cache lines */
+    INSTRUCTIONCACHE, /*!< \brief Cache holding instruction cache lines */
+    UNIFIEDCACHE, /*!< \brief Cache holding both instruction and data cache lines */
+    ITLB, /*!< \brief Translation Lookaside Buffer cache for instruction pages */
+    DTLB /*!< \brief Translation Lookaside Buffer cache for data pages */
+} CacheType;
+
+/*! \brief Structure describing a cache level
+
+CPUs are connected to a cache hierarchy with different amount of caches at each level. The CacheLevel structure holds general information about the cache.
+\extends CpuTopology
+*/
+typedef struct {
+    uint32_t level; /*!< \brief Level of the cache in the hierarchy */
+    CacheType type; /*!< \brief Type of the cache */
+    uint32_t associativity; /*!< \brief Amount of cache lines hold by each set */
+    uint32_t sets; /*!< \brief Amount of sets */
+    uint32_t lineSize; /*!< \brief Size in bytes of one cache line */
+    uint32_t size; /*!< \brief Size in bytes of the cache */
+    uint32_t threads; /*!< \brief Number of HW thread connected to the cache */
+    uint32_t inclusive; /*!< \brief Flag if cache is inclusive (holds also cache lines available in caches nearer to the CPU) or exclusive */
+} CacheLevel;
+
+/*! \brief Structure describing the topology of the HW threads in the system
+
+This structure describes the topology at HW thread level like the amount of HW threads, how they are distributed over the CPU sockets/packages and how the caching hierarchy is assembled.
+*/
+typedef struct {
+    uint32_t numHWThreads; /*!< \brief Amount of HW threads in the system and length of \a threadPool */
+    uint32_t numSockets; /*!< \brief Amount of CPU sockets/packages in the system */
+    uint32_t numCoresPerSocket; /*!< \brief Amount of physical cores in one CPU socket/package */
+    uint32_t numThreadsPerCore; /*!< \brief Amount of HW threads in one physical CPU core */
+    uint32_t numCacheLevels; /*!< \brief Amount of caches for each HW thread and length of \a cacheLevels */
+    HWThread* threadPool; /*!< \brief List of all HW thread descriptions */
+    CacheLevel*  cacheLevels; /*!< \brief List of all caches in the hierarchy */
+    struct treeNode* topologyTree; /*!< \brief Anchor for a tree structure describing the system topology */
+} CpuTopology;
+
+extern CpuInfo cpuid_info;
+extern CpuTopology cpuid_topology;
+
+/** \brief Pointer for exporting the CpuInfo data structure */
+typedef CpuInfo* CpuInfo_t;
+/** \brief Pointer for exporting the CpuTopology data structure */
+typedef CpuTopology* CpuTopology_t;
 /*! \brief Initialize topology information
 
 CpuInfo_t and CpuTopology_t are initialized by either HWLOC, CPUID/ProcFS or topology file if present
@@ -235,6 +386,37 @@ extern void topology_finalize(void);
 /** \addtogroup NumaTopology NUMA memory topology
  *  @{
  */
+/*! \brief CPUs in NUMA node and general information about a NUMA domain
+
+The NumaNode structure describes the topology and holds general information of a
+NUMA node. The structure is filled by calling numa_init() by either the HWLOC 
+library or by evaluating the /proc filesystem.
+\extends NumaTopology
+*/
+typedef struct {
+    uint32_t id; /*!< \brief ID of the NUMA node */
+    uint64_t totalMemory; /*!< \brief Amount of memory in the NUMA node */
+    uint64_t freeMemory; /*!< \brief Amount of free memory in the NUMA node */
+    uint32_t numberOfProcessors; /*!< \brief umber of processors covered by the NUMA node and length of \a processors */
+    uint32_t*  processors; /*!< \brief List of HW threads in the NUMA node */
+    uint32_t*  processorsCompact; /*!< \brief Currently unused */
+    uint32_t numberOfDistances; /*!< \brief Amount of distances to the other NUMA nodes in the system and self  */
+    uint32_t*  distances; /*!< \brief List of distances to the other NUMA nodes and self */
+} NumaNode;
+
+
+/*! \brief  The NumaTopology structure describes all NUMA nodes in the current system.
+*/
+typedef struct {
+    uint32_t numberOfNodes; /*!< \brief Number of NUMA nodes in the system and length of \a nodes  */
+    NumaNode* nodes; /*!< \brief List of NUMA nodes */
+} NumaTopology;
+
+extern NumaTopology numa_info;
+
+/** \brief Pointer for exporting the NumaTopology data structure */
+typedef NumaTopology* NumaTopology_t;
+
 /*! \brief Initialize NUMA information
 
 Initialize NUMA information NumaTopology_t using either HWLOC or CPUID/ProcFS. If
@@ -287,6 +469,42 @@ extern int likwid_getNumberOfNodes(void);
 /** \addtogroup AffinityDomains
  *  @{
  */
+
+/*! \brief The AffinityDomain data structure describes a single domain in the current system
+
+The AffinityDomain data structure describes a single domain in the current system. Example domains are NUMA nodes, CPU sockets/packages or LLC (Last Level Cache) cache domains.
+\extends AffinityDomains
+*/
+typedef struct {
+    bstring tag; /*!< \brief Bstring with the ID for the affinity domain. Currently possible values: N (node), SX (socket/package X), CX (LLC cache domain X) and MX (memory domain X) */
+    uint32_t numberOfProcessors; /*!< \brief Number of HW threads in the domain and length of \a processorList */
+    uint32_t numberOfCores; /*!< \brief Number of CPU cores in the domain */
+    int*  processorList; /*!< \brief List of HW thread IDs in the domain */
+} AffinityDomain;
+
+/*! \brief The AffinityDomains data structure holds different count variables describing the
+various system layers
+
+Affinity domains are for example the amount of NUMA domains, CPU sockets/packages or LLC 
+(Last Level Cache) cache domains of the current machine. Moreover a list of
+\a domains holds the processor lists for each domain that are used for
+scheduling processes to domain specific HW threads. Some amounts are duplicates
+or derivation of values in \a CpuInfo, \a CpuTopology and \a NumaTopology.
+*/
+typedef struct {
+    uint32_t numberOfSocketDomains; /*!< \brief Number of CPU sockets/packages in the system */
+    uint32_t numberOfNumaDomains; /*!< \brief Number of NUMA nodes in the system */
+    uint32_t numberOfProcessorsPerSocket; /*!< \brief Number of HW threads per socket/package in the system */
+    uint32_t numberOfCacheDomains; /*!< \brief Number of LLC caches in the system */
+    uint32_t numberOfCoresPerCache; /*!< \brief Number of HW threads per LLC cache in the system */
+    uint32_t numberOfProcessorsPerCache; /*!< \brief Number of CPU cores per LLC cache in the system */
+    uint32_t numberOfAffinityDomains; /*!< \brief Number of affinity domains in the current system  and length of \a domains array */
+    AffinityDomain* domains; /*!< \brief List of all domains in the system */
+} AffinityDomains;
+
+/** \brief Pointer for exporting the AffinityDomains data structure */
+typedef AffinityDomains* AffinityDomains_t;
+
 /*! \brief Initialize affinity information
 
 Initialize affinity information AffinityDomains_t using the data of the structures
@@ -326,34 +544,8 @@ to the structures are not valid anymore after this function call
 */
 extern void affinity_finalize();
 /** @}*/
-/* 
-################################################################################
-# Access client related functions
-################################################################################
-*/
-/** \addtogroup AccessClient Access client module
- *  @{
- */
-/*! \brief Set accessClient mode
 
-Sets the mode how the MSR and PCI registers should be accessed. 0 for direct access (propably root priviledges required) and 1 for accesses through the access daemon. It must be called before accessClient_init()
-@param [in] mode (0=direct, 1=daemon)
-*/
-extern void accessClient_setaccessmode(int mode);
-/*! \brief Initialize socket for communication with the access daemon
-
-Initializes the file descriptor by starting and connecting to a new access daemon.
-@param [out] socket_fd Pointer to socket file descriptor
-*/
-extern void accessClient_init(int* socket_fd);
-/*! \brief Destroy socket for communication with the access daemon
-
-Destroys the file descriptor by disconnecting and shutting down the access daemon
-@param [in] socket_fd socket file descriptor
-*/
-extern void accessClient_finalize(int socket_fd);
-/** @}*/
-/* 
+/*
 ################################################################################
 # Performance monitoring related functions
 ################################################################################
@@ -487,6 +679,55 @@ extern int perfmon_getNumberOfThreads(void);
 /** \addtogroup PowerMon Power and Energy monitoring module
  *  @{
  */
+
+/*! \brief Information structure of CPU's turbo mode
+\extends PowerInfo
+*/
+typedef struct {
+    int numSteps; /*!< \brief Amount of turbo mode steps/frequencies */
+    double* steps; /*!< \brief List of turbo mode steps */
+} TurboBoost;
+
+/*! \brief Information structure of CPU's power measurement facility
+*/
+typedef struct {
+    double baseFrequency; /*!< \brief Base frequency of the CPU */
+    double minFrequency; /*!< \brief Minimal frequency of the CPU */
+    TurboBoost turbo; /*!< \brief Turbo boost information */
+    int hasRAPL; /*!< \brief RAPL support flag */
+    double powerUnit; /*!< \brief Multiplier for power measurements */
+    double* energyUnits; /*!< \brief Multiplier for energy measurements */
+    double timeUnit; /*!< \brief Multiplier for time information */
+    double tdp; /*!< \brief Thermal Design Power (maximum amount of heat generated by the CPU) */
+    double minPower; /*!< \brief Minimal power consumption of the CPU */
+    double maxPower; /*!< \brief Maximal power consumption of the CPU */
+    double maxTimeWindow; /*!< \brief Minimal power measurement interval */
+    uint32_t supportedTypes;
+} PowerInfo;
+
+typedef enum {
+    PKG = 0, /*!< \brief PKG domain, mostly one CPU socket/package */
+    PP0 = 1, /*!< \brief PP0 domain, not clearly defined by Intel */
+    PP1 = 2, /*!< \brief PP1 domain, not clearly defined by Intel */
+    DRAM = 3 /*!< \brief DRAM domain, the memory modules */
+} PowerType;
+
+
+/*! \brief Power measurement data for start/stop measurements
+*/
+typedef struct {
+    int domain; /*!< \brief RAPL domain identifier */
+    uint32_t before; /*!< \brief Counter state at start */
+    uint32_t after; /*!< \brief Counter state at stop */
+} PowerData;
+
+extern PowerInfo power_info;
+
+/** \brief Pointer for exporting the PowerInfo data structure */
+typedef PowerInfo* PowerInfo_t;
+/** \brief Pointer for exporting the PowerData data structure */
+typedef PowerData* PowerData_t;
+
 /*! \brief Initialize power measurements on specific CPU
 
 Additionally, it reads basic information about the power measurements like 

@@ -4,12 +4,13 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+
 #include <lua.h>                               /* Always include this */
 #include <lauxlib.h>                           /* Always include this */
 #include <lualib.h>                            /* Always include this */
 
 #include <likwid.h>
-
+#include <tree.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -800,6 +801,11 @@ static int lua_likwid_getPowerInfo(lua_State* L)
         if (power_hasRAPL)
         {
             power_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushstring(L,"No RAPL support for current system");
+            lua_error(L);
         }
     }
     power = get_powerInfo();
