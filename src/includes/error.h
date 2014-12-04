@@ -51,13 +51,11 @@ extern int perfmon_verbosity;
     exit(EXIT_FAILURE)
 
 #define ERROR_PLAIN_PRINT(msg) \
-   fprintf(stderr,  "ERROR - [%s:%s:%d] " str(msg) "\n", __FILE__, __func__,__LINE__);  \
-   FINALIZE;
+   fprintf(stderr,  "ERROR - [%s:%s:%d] " str(msg) "\n", __FILE__, __func__,__LINE__);
 
 
 #define ERROR_PRINT(fmt, ...) \
-   fprintf(stderr,  "ERROR - [%s:%s:%d] %s.\n" str(fmt) "\n", __FILE__,  __func__,__LINE__, strerror(errno), __VA_ARGS__);  \
-   FINALIZE;
+   fprintf(stderr,  "ERROR - [%s:%s:%d] %s.\n" str(fmt) "\n", __FILE__,  __func__,__LINE__, strerror(errno), __VA_ARGS__);
 
 #define CHECK_ERROR(func, msg)  \
     if ((func) < 0) { \
