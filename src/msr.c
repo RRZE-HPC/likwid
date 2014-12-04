@@ -62,7 +62,7 @@
 #define TOSTRING(x) STRINGIFY(x)
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
-static int FD[MAX_NUM_THREADS];
+static int FD[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = -1 };
 static int rdpmc_works = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -180,6 +180,7 @@ msr_init(int initSocket_fd)
                 free(msr_file_name);
                 return -EPERM;
             }
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Opened MSR for CPU %d FD %d, i, FD[i]);
         }
         free(msr_file_name);
     }
@@ -214,7 +215,7 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
     int ret;
     if (accessClient_mode == DAEMON_AM_DIRECT) 
     {
-        if (rdpmc_works && reg >= MSR_PMC0 && reg <=MSR_PMC3)
+        if (rdpmc_works && reg >= MSR_PMC0 && reg <=MSR_PMC7)
         {
             if (__rdpmc(reg - MSR_PMC0, data) )
             {
@@ -222,22 +223,47 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
                 return -EIO;
             }
         }
+        else if (rdpmc_works && reg >= MSR_PERF_FIXED_CTR0 && reg <= MSR_PERF_FIXED_CTR2)
+        {
+            if (__rdpmc(0x4000000ULL + (reg - MSR_PERF_FIXED_CTR0), data) )
+            {
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d,reg,cpu);
+                return -EIO;
+            }
+        }
         else
         {
-            if ( pread(FD[cpu], data, sizeof(*data), reg) != sizeof(*data) )
+            if (FD[cpu] > 0)
             {
-                ERROR_PRINT(Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d, reg, cpu);
-                return -EIO;
+                ret = pread(FD[cpu], data, sizeof(*data), reg);
+                if (ret  != sizeof(*data) )
+                {
+                    ERROR_PRINT(Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d, reg, cpu);
+                    return -EIO;
+                }
+            }
+            else
+            {
+                ERROR_PRINT(MSR device for CPU %d not found, reg, cpu);
+                return -EBADFD;
             }
         }
     }
     else
     { /* daemon or sysdaemon-mode */
-        ret = accessClient_read(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data);
-        if (ret)
+        if (tsocket_fd != -1)
         {
-            ERROR_PRINT(Cannot read MSR reg 0x%x through accessDaemon on CPU %d, reg, cpu);
-            return ret;
+            ret = accessClient_read(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data);
+            if (ret)
+            {
+                ERROR_PRINT(Cannot read MSR reg 0x%x through accessDaemon on CPU %d, reg, cpu);
+                return ret;
+            }
+        }
+        else
+        {
+            ERROR_PLAIN_PRINT(Bad socket to accessDaemon);
+            return -EBADFD;
         }
     }
     return 0;
@@ -250,19 +276,36 @@ msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
     int ret;
     if (accessClient_mode == DAEMON_AM_DIRECT) 
     {
-        if (pwrite(FD[cpu], &data, sizeof(data), reg) != sizeof(data))
+        if (FD[cpu] > 0)
         {
-            ERROR_PRINT(Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n,
-                        reg, cpu);
-            return -EIO;
+            ret = pwrite(FD[cpu], &data, sizeof(data), reg);
+            if (ret != sizeof(data))
+            {
+                ERROR_PRINT(Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n,
+                            reg, cpu);
+                return -EIO;
+            }
+        }
+        else
+        {
+            ERROR_PRINT(MSR device for CPU %d not found, reg, cpu);
+            return -EBADFD;
         }
     }
     else
     { /* daemon or sysdaemon-mode */
-        ret = accessClient_write(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data);
-        if (ret)
+        if (tsocket_fd != -1)
         {
-            return ret;
+            ret = accessClient_write(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data);
+            if (ret)
+            {
+                return ret;
+            }
+        }
+        else
+        {
+            ERROR_PLAIN_PRINT(Bad socket to accessDaemon);
+            return -EBADFD;
         }
     }
     return 0;
@@ -275,7 +318,7 @@ msr_read( const int cpu, uint32_t reg, uint64_t *data)
     int ret;
     if (accessClient_mode == DAEMON_AM_DIRECT) 
     {
-        if (rdpmc_works && reg >= MSR_PMC0 && reg <=MSR_PMC3)
+        if (rdpmc_works && reg >= MSR_PMC0 && reg <=MSR_PMC7)
         {
             if (__rdpmc(reg - MSR_PMC0, data) )
             {
@@ -284,7 +327,15 @@ msr_read( const int cpu, uint32_t reg, uint64_t *data)
                 return -EIO;
             }
         }
-        else 
+        else if (rdpmc_works && reg >= MSR_PERF_FIXED_CTR0 && reg <= MSR_PERF_FIXED_CTR2)
+        {
+            if (__rdpmc(0x4000000ULL + (reg - MSR_PERF_FIXED_CTR0), data) )
+            {
+                ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d,reg,cpu);
+                return -EIO;
+            }
+        }
+        else
         {
             if ( pread(FD[cpu], data, sizeof(*data), reg) != sizeof(*data) )
             {
@@ -296,10 +347,19 @@ msr_read( const int cpu, uint32_t reg, uint64_t *data)
     }
     else
     { /* daemon or sysdaemon-mode */
-        ret = accessClient_read(socket_fd, cpu, DAEMON_AD_MSR, reg, data);
-        if (ret)
+        if (socket_fd != -1)
         {
-            return ret;
+            ret = accessClient_read(socket_fd, cpu, DAEMON_AD_MSR, reg, data);
+            if (ret)
+            {
+                ERROR_PRINT(Cannot read MSR reg 0x%x through accessDaemon on CPU %d, reg, cpu);
+                return ret;
+            }
+        }
+        else
+        {
+            ERROR_PLAIN_PRINT(Bad socket to accessDaemon);
+            return -EBADFD;
         }
     }
     return 0;
@@ -320,10 +380,18 @@ msr_write( const int cpu, uint32_t reg, uint64_t data)
     }
     else
     { /* daemon or sysdaemon-mode */
-        ret = accessClient_write(socket_fd, cpu, DAEMON_AD_MSR, reg, data);
-        if (ret)
+        if (socket_fd != -1)
         {
-            return ret;
+            ret = accessClient_write(socket_fd, cpu, DAEMON_AD_MSR, reg, data);
+            if (ret)
+            {
+                return ret;
+            }
+        }
+        else
+        {
+            ERROR_PLAIN_PRINT(Bad socket to accessDaemon);
+            return -EBADFD;
         }
     }
     return 0;
