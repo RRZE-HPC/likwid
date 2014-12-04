@@ -34,12 +34,28 @@
 #include <affinity.h>
 
 
+#define GET_READFD(cpu_id) \
+    int read_fd; \
+    if (accessClient_mode != DAEMON_AM_DIRECT) \
+    { \
+        read_fd = socket_fd; \
+        if (socket_fd == -1 || thread_sockets[cpu_id] != -1) \
+        { \
+            read_fd = thread_sockets[cpu_id]; \
+        } \
+        if (read_fd == -1) \
+        { \
+            return -ENOENT; \
+        } \
+    }
+
 static int perfmon_numCounters_pm = NUM_COUNTERS_PM;
 static int perfmon_numArchEvents_pm = NUM_ARCH_EVENTS_PM;
 
 
 int perfmon_init_pm(int cpu_id)
 {
+    return 0;
     uint64_t flags = 0x0ULL;
 
     CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL));
@@ -55,6 +71,41 @@ int perfmon_init_pm(int cpu_id)
     return 0;
 }
 
+int pm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    uint64_t flags;
+    GET_READFD(cpu_id);
+    flags = (1ULL<<16)|(1ULL<<19);
+    flags |= (event->umask<<8) + event->eventId;
+
+    if (event->numberOfOptions > 0)
+    {
+        for(int j=0;j<event->numberOfOptions;j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_COUNT_KERNEL:
+                    flags |= (1ULL<<17);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= extractBitField(event->options[j].value,8,0)<<24;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
+    return 0;
+}
+
 int perfmon_setupCounterThread_pm(int thread_id, PerfmonEventSet* eventSet)
 {
     uint64_t flags;
@@ -64,24 +115,8 @@ int perfmon_setupCounterThread_pm(int thread_id, PerfmonEventSet* eventSet)
     {
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
-        uint64_t reg = pm_counter_map[index].configRegister;
-        
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
-        CHECK_MSR_READ_ERROR(msr_read(cpu_id, reg, &flags));
-        flags &= ~(0xFFFFU); 
-
-        /* Intel with standard 8 bit event mask: [7:0] */
-        flags |= (event->umask<<8) + event->eventId;
-
-        /*if (perfmon_verbose)
-        {
-            printf("[%d] perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
-                    cpu_id,
-                    LLU_CAST reg,
-                    LLU_CAST flags);
-        }*/
-
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
+        pm_pmc_setup(cpu_id, index, event);
     }
     return 0;
 }
@@ -91,28 +126,26 @@ int perfmon_startCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
 {
     uint64_t flags = 0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, pm_counter_map[0].counterRegister , 0x0ULL));
-            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, pm_counter_map[1].counterRegister , 0x0ULL));
-
-            /* on p6 only MSR_PERFEVTSEL0 has the enable bit
-             * it enables both counters as long MSR_PERFEVTSEL1 
-             * has a valid configuration */
-            CHECK_MSR_READ_ERROR(msr_read(cpu_id, MSR_PERFEVTSEL0, &flags));
-            flags |= (1<<22);  /* enable flag */
-
-            /*if (perfmon_verbose)
-            {
-                printf("perfmon_start_counters: Write Register 0x%X , \
-                        Flags: 0x%llX \n",MSR_PERFEVTSEL0, LLU_CAST flags);
-            }*/
-
-            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, flags));
+            RegisterIndex index = eventSet->events[i].index;
+            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST flags, SETUP_PMC_CTR);
+            CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].counterRegister , 0x0ULL));
         }
+    }
+    if (eventSet->numberOfEvents > 0)
+    {
+        /* on p6 only MSR_PERFEVTSEL0 has the enable bit
+         * it enables both counters as long MSR_PERFEVTSEL1 
+         * has a valid configuration */
+        CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, MSR_PERFEVTSEL0, &flags));
+        flags |= (1<<22);
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERFEVTSEL0, flags));
+        VERBOSEPRINTREG(cpu_id, MSR_PERFEVTSEL0, LLU_CAST flags, UNFREEZE_PMC);
     }
     return 0;
 }
@@ -121,44 +154,61 @@ int perfmon_stopCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
 {
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
 
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL));
+    VERBOSEPRINTREG(cpu_id, MSR_PERFEVTSEL0, LLU_CAST 0x0ULL, FREEZE_PMC);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERFEVTSEL0, 0x0ULL));
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
         {
             RegisterIndex index = eventSet->events[i].index;
-            CHECK_MSR_READ_ERROR(msr_read(cpu_id, pm_counter_map[index].counterRegister, &counter_result));
+            CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter_map[index].counterRegister, &counter_result));
+            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, counter_result, READ_PMC);
+            if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+            {
+                eventSet->events[i].threadCounter[thread_id].overflows++;
+            }
             eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+            if (counter_map[index].configRegister != MSR_PERFEVTSEL0)
+            {
+                VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST 0x0ULL, CLEAR_PMC_CTL);
+                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, 0x0ULL));
+            }
         }
     }
     return 0;
 }
 
-/*void perfmon_printDerivedMetrics_pm(PerfmonGroup group)
+int perfmon_readCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
 {
+    uint64_t counter_result = 0x0ULL;
+    uint64_t pmc_flags = 0x0ULL;
+    int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
 
-    switch ( group )
+    CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, MSR_PERFEVTSEL0, &pmc_flags));
+    VERBOSEPRINTREG(cpu_id, MSR_PERFEVTSEL0, LLU_CAST 0x0ULL, FREEZE_PMC);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERFEVTSEL0, 0x0ULL));
+
+    for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        case FLOPS_DP:
-
-        case FLOPS_SP:
-
-        case L2:
-
-        case BRANCH:
-
-        case _NOGROUP:
-            fprintf (stderr, "The Pentium M supports only two counters. Therefore derived metrics are not computed due to missing runtime!\n" );
-            break;
-
-        default:
-            fprintf (stderr, "perfmon_printDerivedMetricsCore2: Unknown group! Exiting!\n" );
-            exit (EXIT_FAILURE);
-            break;
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
+        {
+            RegisterIndex index = eventSet->events[i].index;
+            CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter_map[index].counterRegister, &counter_result));
+            if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+            {
+                eventSet->events[i].threadCounter[thread_id].overflows++;
+            }
+            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+        }
     }
-}*/
+
+    VERBOSEPRINTREG(cpu_id, MSR_PERFEVTSEL0, pmc_flags, UNFREEZE_PMC);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERFEVTSEL0, pmc_flags));
+    return 0;
+}
 
 
