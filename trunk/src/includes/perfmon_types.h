@@ -143,7 +143,7 @@ If an option is a binary option, the value is set to 1.
 */
 typedef struct {
     EventOptionType      type; /*!< \brief Type of the option */
-    uint32_t             value; /*!< \brief Value of the option */
+    uint64_t             value; /*!< \brief Value of the option */
 } PerfmonEventOption;
 
 /*! \brief Structure specifying an performance monitoring event
@@ -159,7 +159,7 @@ typedef struct {
     uint16_t        eventId; /*!< \brief ID of the event */
     uint8_t         umask; /*!< \brief Most events need to specify a mask to limit counting */
     uint8_t         cfgBits; /*!< \brief Misc configuration bits */
-    uint8_t         cmask; /*!< \brief Misc mask bits */
+    uint64_t        cmask; /*!< \brief Misc mask bits */
     uint8_t         numberOfOptions; /*!< \brief Number of options for the event */
     uint64_t        optionMask; /*!< \brief Bitmask for fast check of set options */
     PerfmonEventOption options[NUM_EVENT_OPTIONS]; /*!< \brief List of options */
