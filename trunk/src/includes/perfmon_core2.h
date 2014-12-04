@@ -105,7 +105,7 @@ int core2_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     GET_READFD(cpu_id);
 
-    flags = (1ULL<<22)|(1ULL<<16)|(1<<19);
+    flags = (1ULL<<22)|(1ULL<<16)|(1ULL<<19);
     flags |= (event->umask<<8) + event->eventId;
     if ( event->cfgBits != 0 ) /* set custom cfg and cmask */
     {
@@ -251,6 +251,8 @@ int perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
                     CORE2_CHECK_OVERFLOW(index - cpuid_info.perf_num_fixed_ctr);
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, READ_PMC)
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    VERBOSEPRINTREG(cpu_id, reg, counter_result, CLEAR_PMC_CTL);
+                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, 0x0ULL));
                     break;
                 case FIXED:
                     CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter, &counter_result));
@@ -263,6 +265,11 @@ int perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
             }
             eventSet->events[i].threadCounter[thread_id].init = FALSE;
         }
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)))
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL, CLEAR_FIXED_CTL);
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
     }
 
     return 0;
