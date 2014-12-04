@@ -39,70 +39,93 @@ static int perfmon_numArchEventsInterlagos = NUM_ARCH_EVENTS_INTERLAGOS;
 int perfmon_init_interlagos(int cpu_id)
 {
     uint64_t flags = 0x0ULL;
+    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
+    return 0;
+}
 
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_PERFEVTSEL0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_PERFEVTSEL1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_PERFEVTSEL2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_PERFEVTSEL3, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_PERFEVTSEL4, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_PERFEVTSEL5, 0x0ULL));
+int ilg_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+{
+    uint64_t flags;
+    GET_READFD(cpu_id);
 
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
-            lock_acquire(
-                (int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id)
-       )
+    flags |= (1ULL<<16);
+    flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
+
+    if (event->numberOfOptions > 0)
     {
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_NB_PERFEVTSEL0, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_NB_PERFEVTSEL1, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_NB_PERFEVTSEL2, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_NB_PERFEVTSEL3, 0x0ULL));
+        for(int j=0;j<event->numberOfOptions;j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_COUNT_KERNEL:
+                    flags |= (1ULL<<17);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    if (extractBitField(event->options[j].value,8,0) < 0x20)
+                    {
+                        flags |= extractBitField(event->options[j].value,8,0)<<24;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
+    return 0;
+}
+
+int ilg_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+{
+    uint64_t flags;
+    GET_READFD(cpu_id);
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
     }
 
-    flags |= (1<<16);  /* user mode flag */
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_PERFEVTSEL0, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_PERFEVTSEL1, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_PERFEVTSEL2, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_PERFEVTSEL3, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_PERFEVTSEL4, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD15_PERFEVTSEL5, flags));
+    flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
+
+    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_UNCORE);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
     return 0;
 }
 
 
-int perfmon_setupCounterThread_interlagos(
-        int thread_id,
-        PerfmonEventSet* eventSet)
+int perfmon_setupCounterThread_interlagos(int thread_id, PerfmonEventSet* eventSet)
 {
     uint64_t flags;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
+    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
+    {
+        haveLock = 1;
+    }
+
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         RegisterIndex index = eventSet->events[i].index;
-        uint64_t reg = interlagos_counter_map[index].configRegister;
         PerfmonEvent *event = &(eventSet->events[i].event);
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
-        /* only one thread accesses Uncore */
-        if ( (interlagos_counter_map[index].type == UNCORE) &&
-                !(socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) )
+        switch(counter_map[index].type)
         {
-            return 0;
+            case PMC:
+                ilg_pmc_setup(cpu_id, index, event);
+                break;
+            case UNCORE:
+                ilg_uncore_setup(cpu_id, index, event);
+                break;
+            default:
+                break;
         }
-
-        CHECK_MSR_READ_ERROR(msr_read(cpu_id,reg, &flags));
-        flags &= ~(0xFFFFU); 
-
-        /* AMD uses a 12 bit Event mask: [35:32][7:0] */
-        flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
-
-        /*if (perfmon_verbose)
-        {
-            printf("[%d] perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
-                    cpu_id,
-                    LLU_CAST reg,
-                    LLU_CAST flags);
-        }*/
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
     }
     return 0;
 }
@@ -113,6 +136,7 @@ int perfmon_startCountersThread_interlagos(int thread_id, PerfmonEventSet* event
     int haveLock = 0;
     uint64_t flags;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
@@ -124,39 +148,15 @@ int perfmon_startCountersThread_interlagos(int thread_id, PerfmonEventSet* event
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterIndex index = eventSet->events[i].index;
-            if (interlagos_counter_map[index].type == PMC)
+            RegisterType type = counter_map[index].type;
+            uint32_t counter = counter_map[index].counterRegister;
+            uint32_t reg = counter_map[index].configRegister;
+            if (type == PMC || ((type == UNCORE) && (haveLock)))
             {
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, interlagos_counter_map[index].counterRegister , 0x0ULL));
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, interlagos_counter_map[index].configRegister, &flags));
+                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter, 0x0ULL));
+                CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, reg, &flags));
                 flags |= (1<<22);  /* enable flag */
-
-                /*if (perfmon_verbose) 
-                {
-                    printf("perfmon_start_counters: Write Register 0x%llX , Flags: 0x%llX \n",
-                            LLU_CAST interlagos_counter_map[index].configRegister,
-                            LLU_CAST flags);
-                }*/
-
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, interlagos_counter_map[index].configRegister , flags));
-
-            }
-            else if ( interlagos_counter_map[index].type == UNCORE )
-            {
-                if(haveLock)
-                {
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, interlagos_counter_map[index].counterRegister , 0x0ULL));
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, interlagos_counter_map[index].configRegister, &flags));
-                    flags |= (1<<22);  /* enable flag */
-
-                    /*if (perfmon_verbose)
-                    {
-                        printf("perfmon_start_counters: Write Register 0x%llX , Flags: 0x%llX \n",
-                                LLU_CAST interlagos_counter_map[index].configRegister,
-                                LLU_CAST flags);
-                    }*/
-
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, interlagos_counter_map[index].configRegister , flags));
-                }
+                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, flags));
             }
         }
     }
@@ -169,6 +169,7 @@ int perfmon_stopCountersThread_interlagos(int thread_id, PerfmonEventSet* eventS
     int haveLock = 0;
     uint64_t tmp;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
@@ -180,41 +181,16 @@ int perfmon_stopCountersThread_interlagos(int thread_id, PerfmonEventSet* eventS
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterIndex index = eventSet->events[i].index;
-            if ( interlagos_counter_map[index].type == PMC )
+            RegisterType type = counter_map[index].type;
+            uint32_t counter = counter_map[index].counterRegister;
+            uint32_t reg = counter_map[index].configRegister;
+            if (type == PMC || ((type == UNCORE) && (haveLock)))
             {
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id,interlagos_counter_map[index].configRegister, &flags));
+                CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, reg, &flags));
                 flags &= ~(1<<22);  /* clear enable flag */
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, interlagos_counter_map[index].configRegister, flags));
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, interlagos_counter_map[index].counterRegister, &tmp));
+                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, flags));
+                CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter, &tmp));
                 eventSet->events[i].threadCounter[thread_id].counterData = tmp;
-                /*if (perfmon_verbose)
-                {
-                    printf("perfmon_stop_counters: Write Register 0x%llX , Flags: 0x%llX \n",
-                            LLU_CAST interlagos_counter_map[i].configRegister,
-                            LLU_CAST flags);
-                    printf("perfmon_stop_counters: Read Register 0x%llX , Flags: 0x%llX \n",
-                            LLU_CAST interlagos_counter_map[i].counterRegister,
-                            LLU_CAST perfmon_threadData[thread_id].counters[i].counterData);
-                }*/
-
-            }
-            else if (interlagos_counter_map[index].type == UNCORE)
-            {
-                if(haveLock)
-                {
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, interlagos_counter_map[index].configRegister, &flags));
-                    flags &= ~(1<<22);  /* clear enable flag */
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, interlagos_counter_map[index].configRegister, flags));
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, interlagos_counter_map[index].counterRegister, &tmp));
-                    eventSet->events[i].threadCounter[thread_id].counterData = tmp;
-                    /*if (perfmon_verbose)
-                    {
-                        printf("perfmon_stop_counters: Write Register 0x%llX , Flags: 0x%llX \n",
-                                LLU_CAST interlagos_counter_map[i].configRegister,
-                                LLU_CAST flags);
-                    }*/
-                    
-                }
             }
         }
     }
@@ -233,23 +209,16 @@ int perfmon_readCountersThread_interlagos(int thread_id, PerfmonEventSet* eventS
         haveLock = 1;
     }
 
-
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterIndex index = eventSet->events[i].index;
-            if ( interlagos_counter_map[index].type == UNCORE )
+            RegisterType type = counter_map[index].type;
+            uint32_t counter = counter_map[index].counterRegister;
+            if (type == PMC || ((type == UNCORE) && (haveLock)))
             {
-                if ( haveLock )
-                {
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, interlagos_counter_map[index].counterRegister, &tmp));
-                    eventSet->events[i].threadCounter[thread_id].counterData = tmp;
-                }
-            }
-            else
-            {
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, interlagos_counter_map[index].counterRegister, &tmp));
+                CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter, &tmp));
                 eventSet->events[i].threadCounter[thread_id].counterData = tmp;
             }
         }
@@ -257,3 +226,29 @@ int perfmon_readCountersThread_interlagos(int thread_id, PerfmonEventSet* eventS
     return 0;
 }
 
+
+int perfmon_finalizeCountersThread_interlagos(int thread_id, PerfmonEventSet* eventSet)
+{
+    int haveLock = 0;
+    int cpu_id = groupSet->threads[thread_id].processorId;
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    {
+        haveLock = 1;
+    }
+    for (int i=0;i < eventSet->numberOfEvents;i++)
+    {
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
+        {
+            RegisterIndex index = eventSet->events[i].index;
+            RegisterType type = counter_map[index].type;
+            uint32_t reg = counter_map[index].configRegister;
+            if (type == PMC || ((type == UNCORE) && (haveLock)))
+            {
+                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, 0x0ULL));
+            }
+            eventSet->events[i].threadCounter[thread_id].init = FALSE;
+        }
+    }
+    return 0;
+}
