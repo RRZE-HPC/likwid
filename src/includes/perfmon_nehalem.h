@@ -54,86 +54,10 @@ static int perfmon_numArchEventsNehalem = NUM_ARCH_EVENTS_NEHALEM;
 
 int perfmon_init_nehalem(int cpu_id)
 {
-    uint64_t flags;
+    GET_READFD(cpu_id);
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
-    return 0;
-
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL3, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PMC3, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
-    
-
-    /* initialize fixed counters
-     * FIXED 0: Instructions retired
-     * FIXED 1: Clocks unhalted core
-     * FIXED 2: Clocks unhalted ref */
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x222ULL));
-
-    //    flags |= (1<<22);  /* enable flag */
-    //    flags |= (1<<16);  /* user mode flag */
-    setBit(flags,16); /* set user mode flag */
-    setBit(flags,22); /* set enable flag */
-
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL2, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL3, flags));
-
-
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
-            lock_acquire(
-                (int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id)
-       )
-    {
-        /* UNCORE FIXED 0: Uncore cycles */
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_FIXED_CTR_CTRL, 0x01ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_FIXED_CTR_CTRL, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_FIXED_CTR0, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL0, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL1, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL2, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL3, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL4, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL5, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL6, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL7, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PMC0, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PMC1, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PMC2, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PMC3, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PMC4, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PMC5, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PMC6, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PMC7, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_ADDR_OPCODE_MATCH, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL));
-
-        /* Preinit of PERFEVSEL registers */
-        clearBit(flags,16); /* set enable flag */
-
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL0, flags));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL1, flags));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL2, flags));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL3, flags));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL4, flags));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL5, flags));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL6, flags));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERFEVTSEL7, flags));
-    }
+    lock_acquire((int*) &tile_lock[affinity_core2tile_lookup[cpu_id]], cpu_id);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
     return 0;
 }
 
@@ -161,7 +85,13 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint64_t flags = 0x0ULL;
+    int haveLock = 0;
     GET_READFD(cpu_id);
+
+    if ((tile_lock[affinity_core2tile_lookup[cpu_id]] == cpu_id))
+    {
+        haveLock = 1;
+    }
 
     flags = (1ULL<<22)|(1ULL<<16);
     flags |= (event->umask<<8) + event->eventId;
@@ -195,14 +125,14 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     // Offcore event with additional configuration register
     // cfgBits contain offset of "request type" bit
     // cmask contain offset of "response type" bit
-    if (event->eventId == 0xB7)
+    if (haveLock && event->eventId == 0xB7)
     {
         uint64_t offcore_flags = 0x0ULL;
         offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_OFFCORE_RESP0, offcore_flags));
     }
-    if ((event->eventId == 0xBB) &&
+    if ((haveLock) && (event->eventId == 0xBB) &&
         ((cpuid_info.model == NEHALEM_WESTMERE) || (cpuid_info.model == NEHALEM_WESTMERE_M)))
     {
         uint64_t offcore_flags = 0x0ULL;
@@ -410,7 +340,7 @@ int perfmon_startCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet
         if (tmp & (1ULL<<offset)) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
-            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, (tmp & (1ULL<<offset)))); \
+            CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, (tmp & (1ULL<<offset)))); \
         } \
     }
 
@@ -422,7 +352,7 @@ int perfmon_startCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet
         if (tmp & (1ULL<<offset)) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
-            CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_UNCORE_PERF_GLOBAL_OVF_CTRL, (tmp & (1ULL<<offset)))); \
+            CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNCORE_PERF_GLOBAL_OVF_CTRL, (tmp & (1ULL<<offset)))); \
         } \
     }
 
@@ -465,8 +395,6 @@ int perfmon_stopCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
                     VERBOSEPRINTREG(cpu_id, counter, counter_result, READ_PMC);
                     NEH_CHECK_OVERFLOW(index - cpuid_info.perf_num_fixed_ctr);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
-                    VERBOSEPRINTREG(cpu_id, reg, counter_result, CLEAR_PMC_CTL);
-                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, 0x0ULL));
                     break;
                 case FIXED:
                     CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter, &counter_result));
@@ -488,24 +416,10 @@ int perfmon_stopCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
                             NEH_CHECK_UNCORE_OVERFLOW(32);
                         }
                         eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
-                        VERBOSEPRINTREG(cpu_id, reg, 0x0ULL, CLEAR_UNCORE_CTL);
-                        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, 0x0ULL));
-                        if ((eventSet->events[i].event.eventId == 0x35) &&
-                            ((cpuid_info.model == NEHALEM_WESTMERE) || (cpuid_info.model == NEHALEM_WESTMERE_M)))
-                        {
-                            VERBOSEPRINTREG(cpu_id, MSR_UNCORE_ADDR_OPCODE_MATCH, 0x0ULL, CLEAR_UNCORE_MATCH);
-                            CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNCORE_ADDR_OPCODE_MATCH, 0x0ULL));
-                        }
                     }
                     break;
             }
         }
-    }
-
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)))
-    {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL, CLEAR_FIXED_CTL);
-        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
     }
     return 0;
 }
@@ -588,6 +502,52 @@ int perfmon_readCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
     {
         VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, uncore_flags, UNFREEZE_UNCORE);
         CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, uncore_flags));
+    }
+    return 0;
+}
+
+int perfmon_finalizeCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
+{
+    int haveLock = 0;
+    int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    {
+        haveLock = 1;
+    }
+
+    for (int i=0;i < eventSet->numberOfEvents;i++)
+    {
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
+        {
+            RegisterIndex index = eventSet->events[i].index;
+            uint64_t reg = counter_map[index].configRegister;
+            VERBOSEPRINTREG(cpu_id, reg, 0x0ULL, CLEAR_CTRL);
+            CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, 0x0ULL));
+        }
+    }
+
+    VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL, CLEAR_OFFCORE_RESP0);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_OFFCORE_RESP0, 0x0ULL));
+    if ((cpuid_info.model == NEHALEM_WESTMERE) || (cpuid_info.model == NEHALEM_WESTMERE_M))
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL, CLEAR_OFFCORE_RESP1);
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_OFFCORE_RESP1, 0x0ULL));
+        VERBOSEPRINTREG(cpu_id, MSR_UNCORE_ADDR_OPCODE_MATCH, 0x0ULL, CLEAR_UNCORE_MATCH);
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNCORE_ADDR_OPCODE_MATCH, 0x0ULL));
+    }
+
+    VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, ~(0x0ULL), CLEAR_OVF_CTRL);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, ~(0x0ULL)));
+    VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, CLEAR_PMC_AND_FIXED_CTRL);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+
+    if (haveLock)
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_OVF_CTRL, ~(0x0ULL), CLEAR_UNCORE_OVF);
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNCORE_PERF_GLOBAL_OVF_CTRL, ~(0x0ULL)));
+        VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL, CLEAR_UNCORE_CTRL);
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL));
     }
     return 0;
 }

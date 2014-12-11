@@ -38,67 +38,133 @@ static int perfmon_numArchEventsKabini = NUM_ARCH_EVENTS_KABINI;
 
 int perfmon_init_kabini(int cpu_id)
 {
-    uint64_t flags = 0x0ULL;
-
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD16_PERFEVTSEL0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD16_PERFEVTSEL1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD16_PERFEVTSEL2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD16_PERFEVTSEL3, 0x0ULL));
-
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) ||
-            lock_acquire(
-                (int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id)
-       )
-    {
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD16_NB_PERFEVTSEL0, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD16_NB_PERFEVTSEL1, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD16_NB_PERFEVTSEL2, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD16_NB_PERFEVTSEL3, 0x0ULL));
-    }
-
-    flags |= (1<<16);  /* user mode flag */
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD16_PERFEVTSEL0, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD16_PERFEVTSEL1, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD16_PERFEVTSEL2, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_AMD16_PERFEVTSEL3, flags));
+    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &tile_lock[affinity_core2tile_lookup[cpu_id]], cpu_id);
     return 0;
 }
 
+
+int k16_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+{
+    uint64_t flags;
+    GET_READFD(cpu_id);
+
+    flags |= (1ULL<<16);
+    flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
+
+    if (event->numberOfOptions > 0)
+    {
+        for(int j=0;j<event->numberOfOptions;j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_COUNT_KERNEL:
+                    flags |= (1ULL<<17);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    if (extractBitField(event->options[j].value,8,0) < 0x04)
+                    {
+                        flags |= extractBitField(event->options[j].value,8,0)<<24;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
+    return 0;
+}
+
+int k16_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+{
+    uint64_t flags;
+    GET_READFD(cpu_id);
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+
+    flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
+
+    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_UNCORE);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
+    return 0;
+}
+
+int k16_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+{
+    uint64_t flags;
+    GET_READFD(cpu_id);
+
+    if (tile_lock[affinity_core2tile_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+
+    flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
+    if (event->numberOfOptions > 0)
+    {
+        for(int j=0;j<event->numberOfOptions;j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    if (extractBitField(event->options[j].value,8,0) < 0x04)
+                    {
+                        flags |= extractBitField(event->options[j].value,8,0)<<24;
+                    }
+                    break;
+                case EVENT_OPTION_TID:
+                    flags |= (~((uint64_t)extractBitField(event->options[j].value,4,0)))<<56;
+                    break;
+                case EVENT_OPTION_NID:
+                    flags |= (~((uint64_t)extractBitField(event->options[j].value,4,0)))<<48;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_CBOX);
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
+    return 0;
+}
 
 int perfmon_setupCounterThread_kabini(int thread_id, PerfmonEventSet* eventSet)
 {
     uint64_t flags;
     int cpu_id = groupSet->threads[thread_id].processorId;
-    
+    GET_READFD(cpu_id);
+
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
-        uint64_t reg = kabini_counter_map[index].configRegister;
-
-        /* only one thread accesses Uncore */
-        if ( (kabini_counter_map[index].type == UNCORE) &&
-                !(socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id) )
+        switch (counter_map[index].type)
         {
-            continue;
+            case PMC:
+                k16_pmc_setup(cpu_id, index, event);
+                break;
+            case UNCORE:
+                k16_uncore_setup(cpu_id, index, event);
+                break;
+            case CBOX0:
+                k16_cache_setup(cpu_id, index, event);
+                break;
         }
-
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
-        CHECK_MSR_READ_ERROR(msr_read(cpu_id,reg, &flags));
-        flags &= ~(0xFFFFU); 
-
-        /* AMD uses a 12 bit Event mask: [35:32][7:0] */
-        flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
-
-        /*if (perfmon_verbose)
-        {
-            printf("[%d] perfmon_setup_counter: Write Register 0x%llX , Flags: 0x%llX \n",
-                    cpu_id,
-                    LLU_CAST reg,
-                    LLU_CAST flags);
-        }*/
-
-        CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, reg , flags));
     }
     return 0;
 }
@@ -106,13 +172,19 @@ int perfmon_setupCounterThread_kabini(int thread_id, PerfmonEventSet* eventSet)
 
 int perfmon_startCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
 {
-    int haveLock = 0;
+    int haveSLock = 0;
+    int haveTLock = 0;
     uint64_t flags;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
-        haveLock = 1;
+        haveSLock = 1;
+    }
+    if ((tile_lock[affinity_core2tile_lookup[cpu_id]] == cpu_id))
+    {
+        haveTLock = 1;
     }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -120,40 +192,18 @@ int perfmon_startCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterIndex index = eventSet->events[i].index;
-            
-            if (kabini_counter_map[index].type == PMC)
+            uint32_t reg = counter_map[index].configRegister;
+            uint32_t counter = counter_map[index].counterRegister;
+            RegisterType type = counter_map[index].type;
+
+            if ((type == PMC) ||
+                ((type == UNCORE) && (haveSLock)) ||
+                ((type == CBOX0) && (haveTLock)))
             {
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, kabini_counter_map[index].counterRegister , 0x0ULL));
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, kabini_counter_map[index].configRegister, &flags));
+                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter, 0x0ULL));
+                CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, reg, &flags));
                 flags |= (1<<22);  /* enable flag */
-
-                /*if (perfmon_verbose) 
-                {
-                    printf("perfmon_start_counters: Write Register 0x%llX , Flags: 0x%llX \n",
-                            LLU_CAST kabini_counter_map[index].configRegister,
-                            LLU_CAST flags);
-                }*/
-
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, kabini_counter_map[index].configRegister , flags));
-
-            }
-            else if ( kabini_counter_map[index].type == UNCORE )
-            {
-                if(haveLock)
-                {
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, kabini_counter_map[index].counterRegister , 0x0ULL));
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, kabini_counter_map[index].configRegister, &flags));
-                    flags |= (1<<22);  /* enable flag */
-
-                    /*if (perfmon_verbose)
-                    {
-                        printf("perfmon_start_counters: Write Register 0x%llX , Flags: 0x%llX \n",
-                                LLU_CAST kabini_counter_map[index].configRegister,
-                                LLU_CAST flags);
-                    }*/
-
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, kabini_counter_map[index].configRegister , flags));
-                }
+                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, flags));
             }
         }
     }
@@ -163,13 +213,19 @@ int perfmon_startCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
 int perfmon_stopCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
 {
     uint64_t flags;
-    int haveLock = 0;
+    int haveSLock = 0;
+    int haveTLock = 0;
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
-        haveLock = 1;
+        haveSLock = 1;
+    }
+    if ((tile_lock[affinity_core2tile_lookup[cpu_id]] == cpu_id))
+    {
+        haveTLock = 1;
     }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -177,43 +233,22 @@ int perfmon_stopCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterIndex index = eventSet->events[i].index;
-            if ( kabini_counter_map[index].type == PMC )
+            uint32_t reg = counter_map[index].configRegister;
+            uint32_t counter = counter_map[index].counterRegister;
+            RegisterType type = counter_map[index].type;
+            if ((type == PMC) ||
+                ((type == UNCORE) && (haveSLock)) ||
+                ((type == CBOX0) && (haveTLock)))
             {
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id,kabini_counter_map[index].configRegister, &flags));
+                CHECK_MSR_READ_ERROR(msr_tread(read_fd, read_fd, reg, &flags));
                 flags &= ~(1<<22);  /* clear enable flag */
-                CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, kabini_counter_map[index].configRegister , flags));
-
-                /*if (perfmon_verbose)
+                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, flags));
+                CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter, &counter_result));
+                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
-                    printf("perfmon_stop_counters: Write Register 0x%llX , Flags: 0x%llX \n",
-                            LLU_CAST kabini_counter_map[index].configRegister,
-                            LLU_CAST flags);
-                    printf("perfmon_stop_counters: Read Register 0x%llX , Flags: 0x%llX \n",
-                            LLU_CAST kabini_counter_map[index].counterRegister,
-                            LLU_CAST perfmon_threadData[thread_id].counters[i].counterData);
-                }*/
-
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, kabini_counter_map[index].counterRegister, &counter_result));
-                eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
-            }
-            else if (kabini_counter_map[index].type == UNCORE)
-            {
-                if(haveLock)
-                {
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id,kabini_counter_map[index].configRegister, &flags));
-                    flags &= ~(1<<22);  /* clear enable flag */
-                    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, kabini_counter_map[index].configRegister , flags));
-
-                    /*if (perfmon_verbose)
-                    {
-                        printf("perfmon_stop_counters: Write Register 0x%llX , Flags: 0x%llX \n",
-                                LLU_CAST kabini_counter_map[index].configRegister,
-                                LLU_CAST flags);
-                    }*/
-
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, kabini_counter_map[index].counterRegister, &counter_result));
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    eventSet->events[i].threadCounter[thread_id].overflows++;
                 }
+                eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
             }
         }
     }
@@ -223,32 +258,39 @@ int perfmon_stopCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
 
 int perfmon_readCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
 {
-    int haveLock = 0;
+    int haveSLock = 0;
+    int haveTLock = 0;
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
 
     if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
     {
-        haveLock = 1;
+        haveSLock = 1;
     }
-
+    if ((tile_lock[affinity_core2tile_lookup[cpu_id]] == cpu_id))
+    {
+        haveTLock = 1;
+    }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterIndex index = eventSet->events[i].index;
-            if ( kabini_counter_map[index].type == UNCORE )
+            uint32_t reg = counter_map[index].configRegister;
+            uint32_t counter = counter_map[index].counterRegister;
+            RegisterType type = counter_map[index].type;
+            if ((type == PMC) ||
+                ((type == UNCORE) && (haveSLock)) ||
+                ((type == CBOX0) && (haveTLock)))
             {
-                if ( haveLock )
+                CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter, &counter_result));
+                VERBOSEPRINTREG(cpu_id, counter, counter_result, CLEAR_CTRL);
+                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
-                    CHECK_MSR_READ_ERROR(msr_read(cpu_id, kabini_counter_map[index].counterRegister, &counter_result));
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    eventSet->events[i].threadCounter[thread_id].overflows++;
                 }
-            }
-            else
-            {
-                CHECK_MSR_READ_ERROR(msr_read(cpu_id, kabini_counter_map[index].counterRegister, &counter_result));
                 eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
             }
         }
@@ -256,3 +298,33 @@ int perfmon_readCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
     return 0;
 }
 
+
+int perfmon_finalizeCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
+{
+    int haveSLock = 0;
+    int haveTLock = 0;
+    int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    {
+        haveSLock = 1;
+    }
+    if ((tile_lock[affinity_core2tile_lookup[cpu_id]] == cpu_id))
+    {
+        haveTLock = 1;
+    }
+    for (int i=0;i < eventSet->numberOfEvents;i++)
+    {
+        RegisterIndex index = eventSet->events[i].index;
+        RegisterType type = counter_map[index].type;
+        if ((type == PMC) ||
+            ((type == UNCORE) && (haveSLock)) ||
+            ((type == CBOX0) && (haveTLock)))
+        {
+            VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, 0x0ULL, CLEAR_CTRL);
+            CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, 0x0ULL));
+            eventSet->events[i].threadCounter[thread_id].init = FALSE;
+        }
+    }
+}

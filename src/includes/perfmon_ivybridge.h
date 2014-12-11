@@ -53,219 +53,6 @@ static int perfmon_numArchEventsIvybridge = NUM_ARCH_EVENTS_IVYBRIDGE;
         } \
     }
 
-int ivb_fixed_reset(int cpu_id)
-{
-    int i;
-    GET_READFD(cpu_id);
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_FIXED_CTR0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_FIXED_CTR1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_FIXED_CTR2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
-    return 0;
-}
-
-int ivb_pmc_reset(int cpu_id)
-{
-    GET_READFD(cpu_id);
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERFEVTSEL0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERFEVTSEL1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERFEVTSEL2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERFEVTSEL3, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PMC0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PMC1, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PMC2, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PMC3, 0x0ULL));
-    return 0;
-}
-
-int ivb_box_reset(  int cpu_id,
-                        uint32_t flags,
-                        int numIDs,
-                        RegisterType* boxes)
-{
-    GET_READFD(cpu_id);
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
-    {
-        if (!boxes)
-        {
-            return -EFAULT;
-        }
-        for (int i = 0; i < numIDs; i++)
-        {
-            if (box_map[boxes[i]].isPci &&
-                pci_checkDevice(box_map[boxes[i]].device, cpu_id))
-            {
-                if (box_map[boxes[i]].ctrlRegister != 0x0)
-                {
-                    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[boxes[i]].device,
-                                                    box_map[boxes[i]].ctrlRegister, flags));
-                }
-                if (box_map[boxes[i]].statusRegister != 0x0)
-                {
-                    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[boxes[i]].device,
-                                                    box_map[boxes[i]].statusRegister, 0x0U));
-                }
-                if ((box_map[boxes[i]].ovflRegister != 0x0) &&
-                    (box_map[boxes[i]].ovflRegister != box_map[boxes[i]].statusRegister))
-                {
-                    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[boxes[i]].device,
-                                                    box_map[boxes[i]].ovflRegister, 0x0U));
-                }
-                if (box_map[boxes[i]].filterRegister1 != 0x0)
-                {
-                    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[boxes[i]].device,
-                                                    box_map[boxes[i]].filterRegister1, 0x0U));
-                }
-                if (box_map[boxes[i]].filterRegister2 != 0x0)
-                {
-                    CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[boxes[i]].device,
-                                                    box_map[boxes[i]].filterRegister2, 0x0U));
-                }
-            }
-            else if (box_map[boxes[i]].isPci = 0)
-            {
-                if (box_map[boxes[i]].ctrlRegister != 0x0)
-                {
-                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, box_map[boxes[i]].ctrlRegister, flags));
-                }
-                if (box_map[boxes[i]].statusRegister != 0x0)
-                {
-                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, box_map[boxes[i]].statusRegister, 0x0U));
-                }
-                if ((box_map[boxes[i]].ovflRegister != 0x0) &&
-                    (box_map[boxes[i]].ovflRegister != box_map[boxes[i]].statusRegister))
-                {
-                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, box_map[boxes[i]].ovflRegister, 0x0U));
-                }
-                if (box_map[boxes[i]].filterRegister1 != 0x0)
-                {
-                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, box_map[boxes[i]].filterRegister1, 0x0U));
-                }
-                if (box_map[boxes[i]].filterRegister2 != 0x0)
-                {
-                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, box_map[boxes[i]].filterRegister2, 0x0U));
-                }
-            }
-        }
-    }
-    return 0;
-}
-
-
-int ivb_mbox_reset(int cpu_id)
-{
-    uint32_t  flags = 0x03U;
-    RegisterType boxes[4] = {MBOX0, MBOX1, MBOX2, MBOX3};
-    return ivb_box_reset(cpu_id, flags, 4, boxes);
-}
-
-int ivb_mboxfix_reset(int cpu_id)
-{
-    uint32_t flags = (1U<<19);
-    RegisterType boxes[4] = {MBOX0FIX, MBOX1FIX, MBOX2FIX, MBOX3FIX};
-    return ivb_box_reset(cpu_id, flags, 4, boxes);
-}
-
-
-int ivb_sbox_reset(int cpu_id)
-{
-    uint32_t flags = 0x03U;
-    RegisterType boxes[2] = {SBOX0, SBOX1};
-    return ivb_box_reset(cpu_id, flags, 2, boxes);
-}
-
-int ivb_ubox_reset(int cpu_id)
-{
-    uint32_t flags = (1U<<17);
-    GET_READFD(cpu_id);
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
-    {
-        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_U_PMON_CTL0, flags));
-        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_U_PMON_CTL1, flags));
-        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_U_PMON_BOX_STATUS, 0x0ULL));
-    }
-    return 0;
-}
-
-int ivb_uboxfix_reset(int cpu_id)
-{
-    uint32_t flags = (1U<<17);
-    GET_READFD(cpu_id);
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
-    {
-        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_U_UCLK_FIXED_CTL, 0x0ULL));
-        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_U_UCLK_FIXED_CTR, 0x0ULL));
-    }
-    return 0;
-}
-
-int ivb_cbox_reset(int cpu_id)
-{
-    uint32_t flags = 0x03U;
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
-    {
-        RegisterType boxes[15] = {CBOX0, CBOX1, CBOX2, CBOX3, CBOX4, CBOX5,
-                                  CBOX6, CBOX7, CBOX8, CBOX9, CBOX10, CBOX11,
-                                  CBOX12, CBOX13, CBOX14};
-        switch ( cpuid_topology.numCoresPerSocket )
-        {
-            case 14:
-                return ivb_box_reset(cpu_id, flags, 15, boxes);
-                break;
-            case 12:
-                return ivb_box_reset(cpu_id, flags, 12, boxes);
-                break;
-            case 10:
-                return ivb_box_reset(cpu_id, flags, 10, boxes);
-                break;
-            case 8:
-                return ivb_box_reset(cpu_id, flags, 8, boxes);
-                break;
-            case 6:
-                return ivb_box_reset(cpu_id, flags, 6, boxes);
-                break;
-            default:
-                return ivb_box_reset(cpu_id, flags, 4, boxes);
-                break;
-        }
-    }
-    return 0;
-}
-
-int ivb_wbox_reset(int cpu_id)
-{
-    uint32_t flags = 0x03U;
-    RegisterType boxes[1] = {WBOX};
-    return ivb_box_reset(cpu_id, flags, 1, boxes);
-}
-
-int ivb_pbox_reset(int cpu_id)
-{
-    uint32_t flags = 0x03U;
-    RegisterType boxes[1] = {PBOX};
-    return ivb_box_reset(cpu_id, flags, 1, boxes);
-}
-
-int ivb_bbox_reset(int cpu_id)
-{
-    uint32_t flags = 0x03U;
-    RegisterType boxes[2] = {BBOX0, BBOX1};
-    return ivb_box_reset(cpu_id, flags, 2, boxes);
-}
-
-int ivb_rbox_reset(int cpu_id)
-{
-    uint32_t flags = 0x03U;
-    RegisterType boxes[3] = {RBOX0, RBOX1, RBOX2};
-    return ivb_box_reset(cpu_id, flags, 3, boxes);
-}
-
 int perfmon_init_ivybridge(int cpu_id)
 {
     if ( cpuid_info.model == IVYBRIDGE_EP )
@@ -1565,3 +1352,44 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
     return 0;
 }
 
+
+int perfmon_finalizeCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSet)
+{
+    int haveLock = 0;
+    int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
+
+    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
+    {
+        haveLock = 1;
+    }
+
+    for (int i=0;i < eventSet->numberOfEvents;i++)
+    {
+        RegisterIndex index = eventSet->events[i].index;
+        PciDeviceIndex dev = counter_map[index].device;
+        uint64_t reg = counter_map[index].configRegister;
+        if (dev > 0)
+        {
+            pci_twrite(read_fd, cpu_id, dev, reg, 0x0ULL);
+        }
+        else
+        {
+            msr_twrite(read_fd, cpu_id, reg, 0x0ULL);
+        }
+        eventSet->events[i].threadCounter[thread_id].init = FALSE;
+    }
+    if (haveLock)
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_STATUS, LLU_CAST ~(0x0), CLEAR_UNCORE_OVF)
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_U_PMON_GLOBAL_STATUS, ~(0x0)));
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, CLEAR_UNCORE_CTRL)
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, 0x0ULL));
+    }
+
+    VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ~(0x0), CLEAR_GLOBAL_OVF)
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, ~(0x0)));
+    VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, CLEAR_GLOBAL_CTRL)
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+    return 0;
+}

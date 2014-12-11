@@ -57,6 +57,7 @@ int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 int (*perfmon_readCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet);
+int (*perfmon_finalizeCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 
 int (*initThreadArch) (int cpu_id);
 
@@ -565,9 +566,7 @@ perfmon_init_maps(void)
             switch ( cpuid_info.model )
             {
                 case PENTIUM_M_BANIAS:
-
                 case PENTIUM_M_DOTHAN:
-
                     eventHash = pm_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEvents_pm;
                     counter_map = pm_counter_map;
@@ -575,13 +574,9 @@ perfmon_init_maps(void)
                     break;
 
                 case ATOM_45:
-
                 case ATOM_32:
-
                 case ATOM_22:
-
                 case ATOM:
-
                     eventHash = atom_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsAtom;
                     counter_map = core2_counter_map;
@@ -601,11 +596,8 @@ perfmon_init_maps(void)
                     break;
 
                 case XEON_MP:
-
                 case CORE2_65:
-
                 case CORE2_45:
-
                     eventHash = core2_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsCore2;
                     counter_map = core2_counter_map;
@@ -613,7 +605,6 @@ perfmon_init_maps(void)
                     break;
 
                 case NEHALEM_EX:
-
                     eventHash = nehalemEX_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsNehalemEX;
                     counter_map = westmereEX_counter_map;
@@ -622,7 +613,6 @@ perfmon_init_maps(void)
                     break;
 
                 case WESTMERE_EX:
-
                     eventHash = westmereEX_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsWestmereEX;
                     counter_map = westmereEX_counter_map;
@@ -631,9 +621,8 @@ perfmon_init_maps(void)
                     break;
 
                 case NEHALEM_BLOOMFIELD:
-
                 case NEHALEM_LYNNFIELD:
-
+                case NEHALEM_LYNNFIELD_M:
                     eventHash = nehalem_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsNehalem;
                     counter_map = nehalem_counter_map;
@@ -641,7 +630,6 @@ perfmon_init_maps(void)
                     break;
 
                 case NEHALEM_WESTMERE_M:
-
                 case NEHALEM_WESTMERE:
                     eventHash = westmere_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsWestmere;
@@ -760,27 +748,25 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             switch ( cpuid_info.model )
             {
                 case PENTIUM_M_BANIAS:
-
                 case PENTIUM_M_DOTHAN:
                     initThreadArch = perfmon_init_pm;
                     perfmon_startCountersThread = perfmon_startCountersThread_pm;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_pm;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_pm;
-                    //perfmon_readCountersThread = perfmon_readCountersThread_pm;
+                    perfmon_readCountersThread = perfmon_readCountersThread_pm;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_pm;
                     break;
 
                 case ATOM_45:
-
                 case ATOM_32:
-
                 case ATOM_22:
-
                 case ATOM:
                     initThreadArch = perfmon_init_core2;
                     perfmon_startCountersThread = perfmon_startCountersThread_core2;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_core2;
                     perfmon_readCountersThread = perfmon_readCountersThread_core2;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_core2;
                     break;
 
                 case ATOM_SILVERMONT:
@@ -791,6 +777,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_silvermont;
                     perfmon_setupCountersThread = perfmon_setupCountersThread_silvermont;
                     perfmon_readCountersThread = perfmon_readCountersThread_silvermont;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_silvermont;
                     break;
 
 
@@ -799,15 +786,14 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
 
                 case XEON_MP:
-
                 case CORE2_65:
-
                 case CORE2_45:
                     initThreadArch = perfmon_init_core2;
                     perfmon_startCountersThread = perfmon_startCountersThread_core2;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
                     perfmon_readCountersThread = perfmon_readCountersThread_core2;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_core2;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_core2;
                     break;
 
                 case NEHALEM_EX:
@@ -816,6 +802,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_nehalemEX;
                     perfmon_readCountersThread = perfmon_readCountersThread_nehalemEX;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_nehalemEX;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_nehalemEX;
                     break;
 
                 case WESTMERE_EX:
@@ -824,10 +811,10 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_westmereEX;
                     perfmon_readCountersThread = perfmon_readCountersThread_westmereEX;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_westmereEX;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_westmereEX;
                     break;
 
                 case NEHALEM_BLOOMFIELD:
-
                 case NEHALEM_LYNNFIELD:
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_nehalem;
@@ -835,10 +822,10 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
                     perfmon_readCountersThread = perfmon_readCountersThread_nehalem;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_nehalem;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_nehalem;
                     break;
 
                 case NEHALEM_WESTMERE_M:
-
                 case NEHALEM_WESTMERE:
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_nehalem;
@@ -846,6 +833,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
                     perfmon_readCountersThread = perfmon_readCountersThread_nehalem;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_nehalem;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_nehalem;
                     break;
 
                 case IVYBRIDGE_EP:
@@ -858,6 +846,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_ivybridge;
                     perfmon_readCountersThread = perfmon_readCountersThread_ivybridge;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_ivybridge;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_ivybridge;
                     break;
 
                 case HASWELL_EP:
@@ -872,6 +861,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_haswellEP;
                     perfmon_readCountersThread = perfmon_readCountersThread_haswellEP;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_haswellEP;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_haswellEP;
                     break;
 
                 case SANDYBRIDGE_EP:
@@ -884,6 +874,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_sandybridge;
                     perfmon_readCountersThread = perfmon_readCountersThread_sandybridge;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_sandybridge;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_sandybridge;
                     break;
 
                 default:
@@ -902,6 +893,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_stopCountersThread = perfmon_stopCountersThread_phi;
                     perfmon_readCountersThread = perfmon_readCountersThread_phi;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_phi;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_phi;
                     break;
 
                 default:
@@ -916,6 +908,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             perfmon_stopCountersThread = perfmon_stopCountersThread_k10;
             perfmon_readCountersThread = perfmon_readCountersThread_k10;
             perfmon_setupCountersThread = perfmon_setupCounterThread_k10;
+            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_k10;
             break;
 
         case K10_FAMILY:
@@ -924,6 +917,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             perfmon_stopCountersThread = perfmon_stopCountersThread_k10;
             perfmon_readCountersThread = perfmon_readCountersThread_k10;
             perfmon_setupCountersThread = perfmon_setupCounterThread_k10;
+            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_k10;
             break;
 
         case K15_FAMILY:
@@ -932,6 +926,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             perfmon_stopCountersThread = perfmon_stopCountersThread_interlagos;
             perfmon_readCountersThread = perfmon_readCountersThread_interlagos;
             perfmon_setupCountersThread = perfmon_setupCounterThread_interlagos;
+            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_interlagos;
             break;
 
         case K16_FAMILY:
@@ -940,6 +935,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             perfmon_stopCountersThread = perfmon_stopCountersThread_kabini;
             perfmon_readCountersThread = perfmon_readCountersThread_kabini;
             perfmon_setupCountersThread = perfmon_setupCounterThread_kabini;
+            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_kabini;
            break;
 
         default:
@@ -992,7 +988,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     groupSet->numberOfActiveGroups = 0;
 
     for(i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
-    
+    for(i=0; i<MAX_NUM_THREADS; i++) tile_lock[i] = LOCK_INIT;
+
     if (accessClient_mode != DAEMON_AM_DIRECT)
     {
         accessClient_init(&socket_fd);
