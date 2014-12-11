@@ -1036,9 +1036,13 @@ void
 perfmon_finalize(void)
 {
     int group, event;
-    
+    int thread;
     for(group=0;group < groupSet->numberOfGroups; group++)
     {
+        for (thread=0;thread< groupSet->numberOfThreads; thread++)
+        {
+            perfmon_finalizeCountersThread(groupSet->threads[thread].processorId, &(groupSet->groups[group]));
+        }
         for (event=0;event < groupSet->groups[group].numberOfEvents; event++)
         {
             free(groupSet->groups[group].events[event].threadCounter);
