@@ -1029,7 +1029,6 @@ int perfmon_stopCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventS
                     }
                     break;
             }
-            CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, 0x0ULL));
         }
     }
 
@@ -1095,3 +1094,29 @@ int perfmon_readCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventS
     return 0;
 }
 
+
+int perfmon_finalizeCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventSet)
+{
+    int haveLock = 0;
+    int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    {
+        haveLock = 1;
+    }
+
+    for (int i=0;i < eventSet->numberOfEvents;i++)
+    {
+        RegisterIndex index = eventSet->events[i].index;
+        RegisterType type = counter_map[index].type;
+        uint64_t reg = counter_map[index].configRegister;
+        if ((type == PMC) || (type == FIXED) || ((haveLock) && (type > UNCORE)))
+        {
+            CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, 0x0ULL));
+        }
+    }
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_MIC_PERF_GLOBAL_OVF_CTRL, ~(0x0ULL)));
+    return 0;
+}
