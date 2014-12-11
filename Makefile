@@ -216,6 +216,7 @@ distclean: clean
 ifeq ($(BUILDDAEMON),true)
 install_daemon:
 	@echo "===> INSTALL access daemon to $(ACCESSDAEMON)"
+	@mkdir -p `dirname $(ACCESSDAEMON)`
 	@cp -f $(DAEMON_TARGET) $(ACCESSDAEMON)
 	@chown root:root $(ACCESSDAEMON)
 	@chmod 4755 $(ACCESSDAEMON)
@@ -251,7 +252,7 @@ install: install_daemon install_freq
 	@mkdir -p $(PREFIX)/bin
 	@for APP in $(L_APPS); do \
 		cp -f $$APP  $(PREFIX)/bin; \
-		chmod 755 $$APP; \
+		chmod 755 $(PREFIX)/bin/$$APP; \
 	done
 	@cp ext/lua/lua $(PREFIX)/bin/likwid-lua
 	@chmod 755 $(PREFIX)/bin/likwid-lua
@@ -278,7 +279,11 @@ install: install_daemon install_freq
 	@echo "===> INSTALL headers to $(PREFIX)/include"
 	@mkdir -p $(PREFIX)/include
 	@cp -f src/includes/likwid.h  $(PREFIX)/include/
+	@cp -f src/includes/bstrlib.h  $(PREFIX)/include/
+	@cp -f src/includes/error.h  $(PREFIX)/include/
 	@chmod 644 $(PREFIX)/include/likwid.h
+	@chmod 644 $(PREFIX)/include/bstrlib.h
+	@chmod 644 $(PREFIX)/include/error.h
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL groups to $(PREFIX)/share/likwid"
 	@mkdir -p $(PREFIX)/share/likwid
@@ -309,6 +314,8 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(L_APPS)))
 	@echo "===> REMOVING header from $(PREFIX)/include"
 	@rm -f $(PREFIX)/include/likwid.h
+	@rm -f $(PREFIX)/include/bstrlib.h
+	@rm -f $(PREFIX)/include/error.h
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter and groups from $(PREFIX)/share/likwid"
 	@rm -rf  $(PREFIX)/share/likwid
