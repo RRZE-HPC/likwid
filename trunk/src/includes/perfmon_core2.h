@@ -56,30 +56,6 @@ int perfmon_init_core2(int cpu_id)
     GET_READFD(cpu_id);
     CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
     return 0;
-    uint64_t flags = 0x0ULL;
-
-    /* Initialize registers */
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, 0x0ULL));
-
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
-    
-
-    /* always initialize fixed counters
-     * FIXED 0: Instructions retired
-     * FIXED 1: Clocks unhalted */
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x22ULL));
-
-    /* Preinit of PMC counters */
-    flags |= (1<<16);  /* user mode flag */
-    flags |= (1<<19);  /* pin control flag */
-    flags |= (1<<22);  /* enable flag */
-
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL0, flags));
-    CHECK_MSR_WRITE_ERROR(msr_write(cpu_id, MSR_PERFEVTSEL1, flags));
-    return 0;
 }
 
 
@@ -251,8 +227,6 @@ int perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
                     CORE2_CHECK_OVERFLOW(index - cpuid_info.perf_num_fixed_ctr);
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, READ_PMC)
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
-                    VERBOSEPRINTREG(cpu_id, reg, counter_result, CLEAR_PMC_CTL);
-                    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, 0x0ULL));
                     break;
                 case FIXED:
                     CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter, &counter_result));
@@ -263,13 +237,7 @@ int perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
                 default:
                     break;
             }
-            eventSet->events[i].threadCounter[thread_id].init = FALSE;
         }
-    }
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)))
-    {
-        VERBOSEPRINTREG(cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL, CLEAR_FIXED_CTL);
-        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_FIXED_CTR_CTRL, 0x0ULL));
     }
 
     return 0;
@@ -327,3 +295,23 @@ int perfmon_readCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
     return 0;
 }
 
+
+int perfmon_finalizeCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
+{
+    int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
+
+    for (int i=0;i < eventSet->numberOfEvents;i++)
+    {
+        RegisterIndex index = eventSet->events[i].index;
+        uint64_t reg = counter_map[index].configRegister;
+        VERBOSEPRINTREG(cpu_id, reg, LLU_CAST 0x0ULL, CLEAR_CTRL);
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, 0x0ULL));
+        eventSet->events[i].threadCounter[thread_id].init = FALSE;
+    }
+    VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ~(0x0), CLEAR_GLOBAL_OVF)
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, ~(0x0)));
+    VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, CLEAR_GLOBAL_CTRL)
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+    return 0;
+}

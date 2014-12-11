@@ -1126,14 +1126,14 @@ int has_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
         if (global_offset != -1)
         {
             CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id,
-                                           MSR_UNC_U_PMON_GLOBAL_STATUS,
+                                           MSR_UNC_V3_U_PMON_GLOBAL_STATUS,
                                            &ovf_values));
-            VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_STATUS, LLU_CAST ovf_values, READ_GLOBAL_OVFL);
+            VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, LLU_CAST ovf_values, READ_GLOBAL_OVFL);
             if (ovf_values & (1<<global_offset))
             {
-                VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_STATUS, LLU_CAST (1<<global_offset), CLEAR_GLOBAL_OVFL);
+                VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, LLU_CAST (1<<global_offset), CLEAR_GLOBAL_OVFL);
                 CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id,
-                                                 MSR_UNC_U_PMON_GLOBAL_STATUS,
+                                                 MSR_UNC_V3_U_PMON_GLOBAL_STATUS,
                                                  (1<<global_offset)));
                 test_local = 1;
             }
@@ -1230,7 +1230,7 @@ int perfmon_stopCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
-    HASEP_FREEZE_UNCORE_AND_RESET_CTL;
+    HASEP_FREEZE_UNCORE;
 
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -1450,6 +1450,7 @@ int perfmon_readCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
     int bit;
     uint64_t tmp = 0x0ULL;
     uint64_t flags;
+    uint64_t uncore_flags;
     int haveLock = 0;
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
@@ -1535,16 +1536,16 @@ int perfmon_readCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
                 case CBOX16:
                 case CBOX17:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, -1, getCounterTypeOffset(index));
+                                    0, -1, getCounterTypeOffset(index));
                     break;
 
                 case UBOX:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 1, getCounterTypeOffset(index));
+                                    0, 1, getCounterTypeOffset(index));
                     break;
                 case UBOXFIX:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 0, getCounterTypeOffset(index));
+                                    0, 0, getCounterTypeOffset(index));
                     break;
 
                 case SBOX0:
@@ -1552,12 +1553,12 @@ int perfmon_readCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
                 case SBOX2:
                 case SBOX3:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, -1, getCounterTypeOffset(index));
+                                    0, -1, getCounterTypeOffset(index));
                     break;
 
                 case WBOX:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 2, getCounterTypeOffset(index));
+                                    0, 2, getCounterTypeOffset(index));
                     break;
                 case WBOX0FIX:
                     if (haveLock)
@@ -1573,11 +1574,11 @@ int perfmon_readCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
 
                 case BBOX0:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 21, getCounterTypeOffset(index));
+                                    0, 21, getCounterTypeOffset(index));
                     break;
                 case BBOX1:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 22, getCounterTypeOffset(index));
+                                    0, 22, getCounterTypeOffset(index));
                     break;
 
                 case MBOX0:
@@ -1585,7 +1586,7 @@ int perfmon_readCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
                 case MBOX2:
                 case MBOX3:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 23, getCounterTypeOffset(index)+1);
+                                    0, 23, getCounterTypeOffset(index)+1);
                     break;
 
                 case MBOX4:
@@ -1593,39 +1594,39 @@ int perfmon_readCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
                 case MBOX6:
                 case MBOX7:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 24, getCounterTypeOffset(index)+1);
+                                    0, 24, getCounterTypeOffset(index)+1);
                     break;
 
                 case PBOX:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 29, getCounterTypeOffset(index));
+                                    0, 29, getCounterTypeOffset(index));
                     break;
 
                 case IBOX0:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 34, getCounterTypeOffset(index));
+                                    0, 34, getCounterTypeOffset(index));
                     break;
                 case IBOX1:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 34, getCounterTypeOffset(index)+2);
+                                    0, 34, getCounterTypeOffset(index)+2);
                     break;
 
                 case RBOX0:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 27, getCounterTypeOffset(index));
+                                    0, 27, getCounterTypeOffset(index));
                     break;
                 case RBOX1:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 28, getCounterTypeOffset(index));
+                                    0, 28, getCounterTypeOffset(index));
                     break;
 
                 case QBOX0:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 25, getCounterTypeOffset(index));
+                                    0, 25, getCounterTypeOffset(index));
                     break;
                 case QBOX1:
                     has_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, 26, getCounterTypeOffset(index));
+                                    0, 26, getCounterTypeOffset(index));
                     break;
 
                 case QBOX0FIX:
@@ -1682,5 +1683,45 @@ int perfmon_readCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSe
         CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
     }
 
+    return 0;
+}
+
+int perfmon_finalizeCountersThread_haswellEP(int thread_id, PerfmonEventSet* eventSet)
+{
+    int haveLock = 0;
+    int cpu_id = groupSet->threads[thread_id].processorId;
+    GET_READFD(cpu_id);
+
+    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
+    {
+        haveLock = 1;
+    }
+    for (int i=0;i < eventSet->numberOfEvents;i++)
+    {
+        RegisterIndex index = eventSet->events[i].index;
+        PciDeviceIndex dev = counter_map[index].device;
+        uint64_t reg = counter_map[index].configRegister;
+        if (dev > 0)
+        {
+            pci_twrite(read_fd, cpu_id, dev, reg, 0x0ULL);
+        }
+        else
+        {
+            msr_twrite(read_fd, cpu_id, reg, 0x0ULL);
+        }
+        eventSet->events[i].threadCounter[thread_id].init = FALSE;
+    }
+    if (haveLock)
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, LLU_CAST ~(0x0), CLEAR_UNCORE_OVF)
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, ~(0x0)));
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, CLEAR_UNCORE_CTRL)
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, 0x0ULL));
+    }
+
+    VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ~(0x0), CLEAR_GLOBAL_OVF)
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, ~(0x0)));
+    VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, CLEAR_GLOBAL_CTRL)
+    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     return 0;
 }

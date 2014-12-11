@@ -45,6 +45,7 @@ extern int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* event
 extern int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*perfmon_readCountersThread) (int thread_id, PerfmonEventSet* eventSet);
+extern int (*perfmon_finalizeCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 
 
 /* Internal helpers */

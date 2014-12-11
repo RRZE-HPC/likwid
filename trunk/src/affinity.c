@@ -53,6 +53,7 @@
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 int affinity_core2node_lookup[MAX_NUM_THREADS];
+int affinity_core2tile_lookup[MAX_NUM_THREADS];
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -251,7 +252,10 @@ affinity_init()
             cpuid_topology.topologyTree,
             domains[currentDomain + subCounter].processorList,
             i, offset, domains[currentDomain + subCounter].numberOfProcessors);
-
+        for (int k=0; k<numberOfCoresPerCache; k++)
+        {
+            affinity_core2tile_lookup[domains[currentDomain + subCounter].processorList[offset + k]] = subCounter;
+        }
         offset += numberOfCoresPerCache;
         subCounter++;
       }
