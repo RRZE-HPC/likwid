@@ -52,7 +52,7 @@ void thermal_init(int cpuId)
 
     if ( cpuid_hasFeature(TM2) )
     {
-        if (msr_read(cpuId, IA32_THERM_STATUS, &flags))
+        if (HPMread(cpuId, MSR_DEV, IA32_THERM_STATUS, &flags))
         {
             return;
         }
@@ -69,7 +69,7 @@ void thermal_init(int cpuId)
         thermal_info.resolution =  extractBitField(flags,4,27);
 
         flags = 0ULL;
-        if (msr_read(cpuId, MSR_TEMPERATURE_TARGET, &flags))
+        if (HPMread(cpuId, MSR_DEV, MSR_TEMPERATURE_TARGET, &flags))
         {
             return;
         }

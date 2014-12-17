@@ -178,6 +178,7 @@ typedef struct {
     uint32_t  ctrlRegister;
     uint32_t  statusRegister;
     uint32_t  ovflRegister;
+    int       ovflOffset;
     uint8_t   isPci;
     PciDeviceIndex device;
     uint32_t  regWidth;

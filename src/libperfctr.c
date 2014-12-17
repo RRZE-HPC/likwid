@@ -48,6 +48,7 @@
 #include <hashTable.h>
 #include <registers.h>
 #include <error.h>
+#include <access.h>
 
 
 #include <perfmon_core2_counters.h>
@@ -206,16 +207,17 @@ void likwid_markerInit(void)
     bThreadStr = bfromcstr(cThreadStr);
     threadTokens = bstrListCreate();
     threadTokens = bsplit(bThreadStr,',');
+
     for (i=0; i<threadTokens->qty; i++)
     {
         threads2Cpu[i] = ownatoi(bdata(threadTokens->entry[i]));
-        if ((accessClient_mode != DAEMON_AM_DIRECT) && (i>0))
+        /*if ((accessClient_mode != ACCESSMODE_DIRECT) && (i>0))
         {
             accessClient_init(&thread_sockets[threads2Cpu[i]]);
-        }
+        }*/
     }
     perfmon_init(threadTokens->qty, threads2Cpu);
-    thread_sockets[threads2Cpu[0]] = socket_fd;
+    //thread_sockets[threads2Cpu[0]] = socket_fd;
     bdestroy(bThreadStr);
     bstrListDestroy(threadTokens);
 
@@ -247,6 +249,8 @@ void likwid_markerThreadInit(void)
 
     int cpu_id = likwid_getProcessorId();
     int thread_id = getThreadID(cpu_id);
+
+    HPMaddThread(cpu_id);
 
     for(int i=0; i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {

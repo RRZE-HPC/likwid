@@ -39,7 +39,7 @@ static int perfmon_numArchEventsSandybridge = NUM_ARCH_EVENTS_SANDYBRIDGE;
 
 #define GET_READFD(cpu_id) \
     int read_fd; \
-    if (accessClient_mode != DAEMON_AM_DIRECT) \
+    if (accessClient_mode != ACCESSMODE_DIRECT) \
     { \
         read_fd = socket_fd; \
         if (socket_fd == -1 || thread_sockets[cpu_id] != -1) \
@@ -63,7 +63,6 @@ int perfmon_init_sandybridge(int cpu_id)
         lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     }
 
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, ~(0x0ULL)));
     CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PEBS_ENABLE, 0x0ULL));
     return 0;
 }
@@ -197,7 +196,7 @@ uint32_t snb_cbox_filter(PerfmonEvent *event)
                 }
                 else
                 {
-                    ERROR_PRINT(Invalid value 0x%x for opcode option, event->options[j].value);
+                    ERROR_PRINT(Invalid value 0x%llx for opcode option, LLU_CAST event->options[j].value);
                 }
                 break;
             case EVENT_OPTION_STATE:
@@ -207,7 +206,7 @@ uint32_t snb_cbox_filter(PerfmonEvent *event)
                 }
                 else
                 {
-                    ERROR_PRINT(Invalid value 0x%x for state option, event->options[j].value);
+                    ERROR_PRINT(Invalid value 0x%llx for state option, LLU_CAST event->options[j].value);
                 }
                 break;
             case EVENT_OPTION_NID:
@@ -218,7 +217,7 @@ uint32_t snb_cbox_filter(PerfmonEvent *event)
                 }
                 else
                 {
-                    ERROR_PRINT(Invalid value 0x%x for node id option, event->options[j].value);
+                    ERROR_PRINT(Invalid value 0x%llx for node id option, LLU_CAST event->options[j].value);
                 }
                 break;
             case EVENT_OPTION_TID:
@@ -228,7 +227,7 @@ uint32_t snb_cbox_filter(PerfmonEvent *event)
                 }
                 else
                 {
-                    ERROR_PRINT(Invalid value 0x%x for thread id option, event->options[j].value);
+                    ERROR_PRINT(Invalid value 0x%llx for thread id option, LLU_CAST event->options[j].value);
                 }
                 break;
             default:
@@ -943,7 +942,7 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, UNFREEZE_PMC_OR_FIXED)
         CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_CTRL, flags));
-        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x30000000FULL));
+        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, 0x300000000ULL|flags));
     }
     SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX0);
     SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX1);
@@ -1508,6 +1507,8 @@ int perfmon_finalizeCountersThread_sandybridge(int thread_id, PerfmonEventSet* e
 {
     int haveLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    uint64_t ovf_values_core = (1ULL<<63)|(1ULL<<62);
+    uint64_t ovf_values_uncore = 0x0ULL;
     GET_READFD(cpu_id);
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
@@ -1521,36 +1522,42 @@ int perfmon_finalizeCountersThread_sandybridge(int thread_id, PerfmonEventSet* e
         RegisterType type = counter_map[index].type;
         PciDeviceIndex dev = counter_map[index].device;
         uint64_t reg = counter_map[index].configRegister;
-        if (dev > 0)
+        switch(type)
         {
-            if (haveLock && (pci_checkDevice(dev, cpu_id)))
-            {
-                CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, dev, reg, 0x0ULL));
-            }
+            case PMC:
+                ovf_values_core |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));
+                break;
+            case FIXED:
+                ovf_values_core |= (1ULL<<(index+32));
+                break;
+            default:
+                if (counter_map[index].type > UNCORE)
+                {
+                    if (box_map[counter_map[index].type].ovflOffset >= 0)
+                    {
+                        ovf_values_uncore |= (1ULL<<box_map[counter_map[index].type].ovflOffset);
+                    }
+                }
+                break;
         }
-        else
+        if ((reg) && ((dev == MSR_DEV) || (haveLock)))
         {
-            if ((type == PMC) || (type == FIXED) || ((haveLock) && (type > UNCORE)))
-            {
-                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, 0x0ULL));
-            }
+            VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
         }
     }
-    for (int i=0; i<NUM_UNITS; i++)
+
+    if (haveLock && eventSet->regTypeMask & ~(0xFULL))
     {
-        if (eventSet->regTypeMask & REG_TYPE_MASK(i))
-        {
-            if (box_map[i].isPci)
-            {
-                CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL));
-                CHECK_PCI_WRITE_ERROR(pci_twrite(read_fd, cpu_id, box_map[i].device, box_map[i].ovflRegister, ~(0x0U)));
-            }
-            else
-            {
-                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, box_map[i].ctrlRegister, 0x0ULL));
-                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, box_map[i].ovflRegister, ~(0x0ULL)));
-            }
-        }
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, CLEAR_UNCORE_CTRL)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, 0x0ULL));
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, CLEAR_GLOBAL_OVF)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, CLEAR_GLOBAL_CTRL)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
     return 0;
 }

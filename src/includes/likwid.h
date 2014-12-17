@@ -179,8 +179,8 @@ MSR and PCI devices. The daemon mode forwards the operations to a daemon with
 higher priviledges.
 */
 typedef enum {
-    DAEMON_AM_DIRECT = 0, /*!< \brief Access performance monitoring registers directly */
-    DAEMON_AM_ACCESS_D = 1 /*!< \brief Use the access daemon to access the registers */
+    ACCESSMODE_DIRECT = 0, /*!< \brief Access performance monitoring registers directly */
+    ACCESSMODE_DAEMON = 1 /*!< \brief Use the access daemon to access the registers */
 } AccessMode;
 
 /*! \brief Set accessClient mode
@@ -785,6 +785,10 @@ extern double power_printEnergy(PowerData* data);
 @return Power unit of the given RAPL domain
 */
 extern double power_getEnergyUnit(int domain);
+/*! \brief Free space of power_unit
+
+*/
+extern void power_finalize(void);
 /** @}*/
 
 /* 

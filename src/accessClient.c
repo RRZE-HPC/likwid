@@ -114,7 +114,7 @@ startDaemon(void)
         exit(EXIT_FAILURE);
     }
 
-    if (accessClient_mode == DAEMON_AM_ACCESS_D)
+    if (accessClient_mode == ACCESSMODE_DAEMON)
     {
         pid = fork();
 
@@ -141,7 +141,7 @@ startDaemon(void)
     address_length = sizeof(address);
     snprintf(address.sun_path, sizeof(address.sun_path), "/tmp/likwid-%d", pid);
     filepath = strdup(address.sun_path);
-    if (accessClient_mode == DAEMON_AM_ACCESS_D)
+    if (accessClient_mode == ACCESSMODE_DAEMON)
     {
         DEBUG_PRINT(DEBUGLEV_INFO, Socket pathname is %s, filepath);
     }
@@ -182,7 +182,7 @@ startDaemon(void)
 void 
 accessClient_setaccessmode(int mode)
 {
-    if ((accessClient_mode > DAEMON_AM_ACCESS_D) || (accessClient_mode < DAEMON_AM_DIRECT))
+    if ((accessClient_mode > ACCESSMODE_DAEMON) || (accessClient_mode < ACCESSMODE_DIRECT))
     {
         ERROR_PRINT(Invalid accessmode %d, accessClient_mode);
         exit(EXIT_FAILURE);
@@ -194,7 +194,7 @@ accessClient_setaccessmode(int mode)
 void 
 accessClient_init(int* socket_fd)
 {
-    if ((accessClient_mode == DAEMON_AM_ACCESS_D) && (*socket_fd == -1))
+    if ((accessClient_mode == ACCESSMODE_DAEMON) && (*socket_fd == -1))
     {
         (*socket_fd) = startDaemon();
     }

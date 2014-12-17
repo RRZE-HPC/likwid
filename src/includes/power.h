@@ -37,6 +37,7 @@
 #include <bitUtil.h>
 #include <msr.h>
 #include <error.h>
+#include <access.h>
 
 const uint32_t power_regs[NUM_POWER_DOMAINS] = {MSR_PKG_ENERGY_STATUS,
                                 MSR_PP0_ENERGY_STATUS,
@@ -61,7 +62,7 @@ power_start(PowerData* data, int cpuId, PowerType type)
         {
             uint64_t result = 0;
             data->before = 0;
-            CHECK_MSR_READ_ERROR(msr_read(cpuId, power_regs[type], &result))
+            CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, power_regs[type], &result))
             data->before = extractBitField(result,32,0);
             data->domain = type;
             return 0;
@@ -88,7 +89,7 @@ power_stop(PowerData* data, int cpuId, PowerType type)
         {
             uint64_t result = 0;
             data->after = 0;
-            CHECK_MSR_READ_ERROR(msr_read(cpuId, power_regs[type], &result))
+            CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, power_regs[type], &result))
             data->after = extractBitField(result,32,0);
             data->domain = type;
             return 0;
@@ -126,7 +127,7 @@ power_read(int cpuId, uint64_t reg, uint32_t *data)
         {
             uint64_t result = 0;
             *data = 0;
-            CHECK_MSR_READ_ERROR(msr_read(cpuId, reg, &result))
+            CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, reg, &result))
             *data = extractBitField(result,32,0);
             return 0;
         }
@@ -162,7 +163,7 @@ power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
         {
             uint64_t result = 0;
             *data = 0;
-            CHECK_MSR_READ_ERROR(msr_tread(socket_fd, cpuId, reg, &result))
+            CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, reg, &result))
             *data = extractBitField(result,32,0);
             return 0;
         }

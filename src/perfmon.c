@@ -17,7 +17,7 @@
 #include <perfmon.h>
 #include <registers.h>
 #include <topology.h>
-
+#include <access.h>
 
 #include <perfmon_pm.h>
 #include <perfmon_atom.h>
@@ -107,78 +107,49 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
     }
     if ((ret) && (counter_map[*index].type != THERMAL) && (counter_map[*index].type != POWER) && (counter_map[*index].type != WBOX0FIX))
     {
-        if (counter_map[*index].device == 0)
+        err = HPMread(0, counter_map[*index].device, counter_map[*index].counterRegister, &tmp);
+        if (err != 0)
         {
-            err = msr_read(0, counter_map[*index].counterRegister, &tmp);
-            if (err != 0)
+            if (err == -ENODEV)
+            {
+                DEBUG_PRINT(DEBUGLEV_DETAIL, Device %s not accessible on this machine,
+                                         pci_devices[box_map[counter_map[*index].type].device].name);
+            }
+            else
             {
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not readable on this machine,
                                              counter_map[*index].key);
-                *type = NOTYPE;
             }
-            else if (tmp == 0x0)
-            {
-                err = msr_write(0, counter_map[*index].counterRegister, 0x0ULL);
-                if (err != 0)
-                {
-                    DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not writeable on this machine,
-                                                 counter_map[*index].key);
-                    *type = NOTYPE;
-                }
-            }
-            /*else
-            {
-                DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Counter %s already in use. Skipping the setup of this event,
-                                                 counter_map[*index].key);
-                *type = NOTYPE;
-            }*/
+            *type = NOTYPE;
         }
-        else
+        else if (tmp == 0x0)
         {
-            err = pci_read(0, box_map[counter_map[*index].type].device, counter_map[*index].counterRegister, (uint32_t*)&tmp);
+            err = HPMwrite(0, counter_map[*index].device, counter_map[*index].counterRegister, 0x0U);
             if (err != 0)
             {
                 if (err == -ENODEV)
                 {
-                    DEBUG_PRINT(DEBUGLEV_DETAIL, PCI Device %s not accessible on this machine,
+                    DEBUG_PRINT(DEBUGLEV_DETAIL, Device %s not accessible on this machine,
                                              pci_devices[box_map[counter_map[*index].type].device].name);
                 }
                 else
                 {
-                    DEBUG_PRINT(DEBUGLEV_DETAIL, PCI Counter %s not readable on this machine,
-                                                 counter_map[*index].key);
+                    DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not writeable on this machine,
+                                             counter_map[*index].key);
                 }
                 *type = NOTYPE;
             }
-            else if (tmp == 0x0)
-            {
-                err = pci_write(0, box_map[counter_map[*index].type].device, counter_map[*index].counterRegister, 0x0U);
-                if (err != 0)
-                {
-                    if (err == -ENODEV)
-                    {
-                        DEBUG_PRINT(DEBUGLEV_DETAIL, PCI Device %s not accessible on this machine,
-                                                 pci_devices[box_map[counter_map[*index].type].device].name);
-                    }
-                    else
-                    {
-                        DEBUG_PRINT(DEBUGLEV_DETAIL, PCI Counter %s not writeable on this machine,
-                                                 counter_map[*index].key);
-                    }
-                    *type = NOTYPE;
-                }
-            }
-            /*else
-            {
-                DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Counter %s already in use. Skipping setup of this event,
-                                                 counter_map[*index].key);
-                *type = NOTYPE;
-            }*/
         }
+        /*else
+        {
+            DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Counter %s already in use. Skipping setup of this event,
+                                             counter_map[*index].key);
+            *type = NOTYPE;
+        }*/
     }
     else if ((ret) && ((counter_map[*index].type == POWER) || (counter_map[*index].type == WBOX0FIX)))
     {
-        err = msr_read(0, counter_map[*index].counterRegister, &tmp);
+        err = HPMread(0, MSR_DEV, counter_map[*index].counterRegister, &tmp);
         if (err != 0)
         {
             DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not readable on this machine,
@@ -238,6 +209,7 @@ assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type
 {
     int found_double = -1;
     int return_index = index;
+    long long unsigned int value;
     for (int k = 0; k < index; k++)
     {
         if (event->options[k].type == type)
@@ -261,7 +233,9 @@ assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type
     }
     else
     {
-        sscanf(bdata(entry), "%x", &(event->options[index].value));
+        value = 0;
+        sscanf(bdata(entry), "%llx", &value);
+        event->options[index].value = value;
     }
     return return_index;
 }
@@ -837,7 +811,6 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
 
                 case IVYBRIDGE_EP:
-                    pci_init(socket_fd);
                 case IVYBRIDGE:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
@@ -850,7 +823,6 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
 
                 case HASWELL_EP:
-                    pci_init(socket_fd);
                 case HASWELL:
                 case HASWELL_M1:
                 case HASWELL_M2:
@@ -865,7 +837,6 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
 
                 case SANDYBRIDGE_EP:
-                    pci_init(socket_fd);
                 case SANDYBRIDGE:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
@@ -990,16 +961,15 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     for(i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
     for(i=0; i<MAX_NUM_THREADS; i++) tile_lock[i] = LOCK_INIT;
 
-    if (accessClient_mode != DAEMON_AM_DIRECT)
-    {
-        accessClient_init(&socket_fd);
-    }
+    /* Initialize maps pointer to current architecture maps */
+    perfmon_init_maps();
 
-    ret = msr_init(socket_fd);
+    /* Initialize access interface */
+    ret = HPMinit();
 
     if (ret)
     {
-        ERROR_PLAIN_PRINT(Initialization of MSR device accesses failed);
+        ERROR_PLAIN_PRINT(Cannot get access to performance counters);
         free(groupSet->threads);
         free(groupSet);
         return ret;
@@ -1007,8 +977,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
 
     timer_init();
 
-    /* Initialize maps pointer to current architecture maps */
-    perfmon_init_maps();
+    
     /* Initialize function pointer to current architecture functions */
     perfmon_init_funcs(&initialize_power, &initialize_thermal);
 
@@ -1052,9 +1021,8 @@ perfmon_finalize(void)
     
     free(groupSet->threads);
     free(groupSet);
-    msr_finalize();
-    pci_finalize();
-    accessClient_finalize(socket_fd);
+    HPMfinalize();
+    power_finalize();
     return;
 }
 
@@ -1511,7 +1479,7 @@ perfmon_getMaxCounterValue(RegisterType type)
 void
 perfmon_accessClientInit(void)
 {
-    if ((accessClient_mode != DAEMON_AM_DIRECT) && (socket_fd == -1))
+    if ((accessClient_mode != ACCESSMODE_DIRECT) && (socket_fd == -1))
     {
         accessClient_init(&socket_fd);
         msr_init(socket_fd);

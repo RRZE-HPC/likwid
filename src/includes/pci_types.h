@@ -48,7 +48,7 @@ typedef enum {
 } PciDeviceType;
 
 typedef enum {
-    PCI_NONE = 0,
+    MSR_DEV = 0,
     PCI_R3QPI_DEVICE_LINK_0,
     PCI_R3QPI_DEVICE_LINK_1,
     PCI_R3QPI_DEVICE_LINK_2,

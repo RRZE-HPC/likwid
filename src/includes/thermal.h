@@ -36,6 +36,7 @@
 #include <bitUtil.h>
 #include <msr.h>
 #include <error.h>
+#include <access.h>
 
 
 
@@ -44,7 +45,7 @@ thermal_read(int cpuId, uint32_t *data)
 {
     uint64_t result = 0;
     uint32_t readout = 0;
-    if (msr_read(cpuId, IA32_THERM_STATUS, &result))
+    if (HPMread(cpuId, MSR_DEV, IA32_THERM_STATUS, &result))
     {
         *data = 0;
         return -EIO;
@@ -61,7 +62,7 @@ thermal_tread(int socket_fd, int cpuId, uint32_t *data)
 {
     uint64_t result = 0;
     uint32_t readout = 0;
-    if (msr_tread(socket_fd, cpuId, IA32_THERM_STATUS, &result))
+    if (HPMread(cpuId, MSR_DEV, IA32_THERM_STATUS, &result))
     {
         *data = 0;
         return -EIO;

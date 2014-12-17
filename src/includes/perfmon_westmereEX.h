@@ -35,7 +35,7 @@
 
 #define GET_READFD(cpu_id) \
     int read_fd; \
-    if (accessClient_mode != DAEMON_AM_DIRECT) \
+    if (accessClient_mode != ACCESSMODE_DIRECT) \
     { \
         read_fd = socket_fd; \
         if (socket_fd == -1 || thread_sockets[cpu_id] != -1) \
