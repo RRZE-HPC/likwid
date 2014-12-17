@@ -121,7 +121,7 @@ static char* socket_bus[MAX_NUM_NODES];
 
 
 static PciDevice sandybridgeEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
- [PCI_NONE] = {NONE, NULL, NULL, NULL, 0x0, 0},
+ [MSR_DEV] = {NONE, NULL, NULL, NULL, 0x0, 0},
  [PCI_R3QPI_DEVICE_LINK_0] = {R3QPI, "13.5", "PCI_R3QPI_DEVICE_LINK_0", "RBOX0", 0x3c44, 0},
  [PCI_R3QPI_DEVICE_LINK_1] = {R3QPI, "13.6", "PCI_R3QPI_DEVICE_LINK_1", "RBOX1", 0x3c45, 0},
  [PCI_R2PCIE_DEVICE] = {R2PCIE, "13.1", "PCI_R2PCIE_DEVICE", "PBOX0", 0x3c43, 0},
@@ -140,7 +140,7 @@ static PciDevice sandybridgeEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
 
 
 static PciDevice ivybridgeEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
- [PCI_NONE] = {NONE, "", "", "", 0x0, 0},
+ [MSR_DEV] = {NONE, "", "", "", 0x0, 0},
  [PCI_R3QPI_DEVICE_LINK_0] = {R3QPI, "13.5", "PCI_R3QPI_DEVICE_LINK_0", "RBOX0", 0x0e36, 0},
  [PCI_R3QPI_DEVICE_LINK_1] = {R3QPI, "13.6", "PCI_R3QPI_DEVICE_LINK_1", "RBOX1", 0x0e37, 0},
  [PCI_R3QPI_DEVICE_LINK_2] = {R3QPI, "12.5", "PCI_R3QPI_DEVICE_LINK_2", "RBOX2", 0x0e3e, 0},
@@ -167,7 +167,7 @@ static PciDevice ivybridgeEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
 };
 
 static PciDevice haswellEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
- [PCI_NONE] = {NONE, NULL, NULL, NULL, 0x0, 0},
+ [MSR_DEV] = {NONE, NULL, NULL, NULL, 0x0, 0},
  [PCI_R3QPI_DEVICE_LINK_0] = {R3QPI, "0b.1", "PCI_R3QPI_DEVICE_LINK_0", "RBOX0", 0x2f36, 0},
  [PCI_R3QPI_DEVICE_LINK_1] = {R3QPI, "0b.2", "PCI_R3QPI_DEVICE_LINK_1", "RBOX1", 0x2f37, 0},
  [PCI_R2PCIE_DEVICE] = {R2PCIE, "10.1", "PCI_R2PCIE_DEVICE", "PBOX0", 0x2f34, 0},

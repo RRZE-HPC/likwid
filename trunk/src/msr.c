@@ -132,7 +132,7 @@ msr_init(int initSocket_fd)
     int fd = 0;
     int i = 0;
     
-    if (accessClient_mode == DAEMON_AM_DIRECT)
+    if (accessClient_mode == ACCESSMODE_DIRECT)
     {
         char* msr_file_name = (char*) malloc(MAX_LENGTH_MSR_DEV_NAME * sizeof(char));
         if (!msr_file_name)
@@ -144,12 +144,12 @@ msr_init(int initSocket_fd)
         if (access(msr_file_name, F_OK))
         {
             sprintf(msr_file_name,"/dev/cpu/0/msr");
-        }    
+        }
 #else
         sprintf(msr_file_name,"/dev/cpu/0/msr");
 #endif
         rdpmc_works = test_rdpmc(0);
-        
+
         if (access(msr_file_name, R_OK|W_OK))
         {
             ERROR_PRINT("Cannot access MSR device file %s: %s.\n"
@@ -195,7 +195,7 @@ void
 msr_finalize(void)
 {
     int i = 0;
-    if (accessClient_mode == DAEMON_AM_DIRECT)
+    if (accessClient_mode == ACCESSMODE_DIRECT)
     {
         for (i=0; i < cpuid_topology.numHWThreads; i++ )
         {
@@ -213,7 +213,7 @@ int
 msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
 {
     int ret;
-    if (accessClient_mode == DAEMON_AM_DIRECT) 
+    if (accessClient_mode == ACCESSMODE_DIRECT) 
     {
         if (rdpmc_works && reg >= MSR_PMC0 && reg <=MSR_PMC7)
         {
@@ -244,7 +244,7 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
             }
             else
             {
-                ERROR_PRINT(MSR device for CPU %d not found, reg, cpu);
+                ERROR_PRINT(MSR device for CPU %d not found, cpu);
                 return -EBADFD;
             }
         }
@@ -274,7 +274,7 @@ int
 msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
 {
     int ret;
-    if (accessClient_mode == DAEMON_AM_DIRECT) 
+    if (accessClient_mode == ACCESSMODE_DIRECT) 
     {
         if (FD[cpu] > 0)
         {
@@ -288,7 +288,7 @@ msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
         }
         else
         {
-            ERROR_PRINT(MSR device for CPU %d not found, reg, cpu);
+            ERROR_PRINT(MSR device for CPU %d not found, cpu);
             return -EBADFD;
         }
     }
@@ -316,7 +316,7 @@ int
 msr_read( const int cpu, uint32_t reg, uint64_t *data)
 {
     int ret;
-    if (accessClient_mode == DAEMON_AM_DIRECT) 
+    if (accessClient_mode == ACCESSMODE_DIRECT) 
     {
         if (rdpmc_works && reg >= MSR_PMC0 && reg <=MSR_PMC7)
         {
@@ -370,7 +370,7 @@ int
 msr_write( const int cpu, uint32_t reg, uint64_t data)
 {
     int ret;
-    if (accessClient_mode == DAEMON_AM_DIRECT) 
+    if (accessClient_mode == ACCESSMODE_DIRECT) 
     {
         ret = pwrite(FD[cpu], &data, sizeof(data), reg);
         if (ret != sizeof(data))

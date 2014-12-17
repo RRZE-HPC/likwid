@@ -3,7 +3,7 @@ package.cpath = package.cpath .. ';<PREFIX>/lib/?.so'
 require("liblikwid")
 require("math")
 
-groupfolder = "<PREFIX>/share/likwid"
+likwid.groupfolder = "<PREFIX>/share/likwid"
 
 likwid.version = <VERSION>
 likwid.release = <RELEASE>
@@ -612,7 +612,7 @@ likwid.nodestr_to_nodelist = nodestr_to_nodelist
 
 local function get_groups(architecture)
     groups = {}
-    local f = io.popen("ls " .. groupfolder .. "/" .. architecture .."/*.txt")
+    local f = io.popen("ls " .. likwid.groupfolder .. "/" .. architecture .."/*.txt")
     t = stringsplit(f:read("*a"),"\n")
     for i, a in pairs(t) do
         if a ~= "" then
@@ -633,7 +633,7 @@ local function get_groupdata(architecture, group)
     end
     if (group_exist == 0) then return end
     
-    local f = assert(io.open(groupfolder .. "/" .. architecture .. "/" .. group .. ".txt", "r"))
+    local f = assert(io.open(likwid.groupfolder .. "/" .. architecture .. "/" .. group .. ".txt", "r"))
     local t = f:read("*all")
     f:close()
     local parse_eventset = false

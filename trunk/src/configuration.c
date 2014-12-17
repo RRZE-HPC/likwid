@@ -65,11 +65,11 @@ int init_configuration(void)
         {
             if (strcmp(value, "daemon") == 0) 
             {
-                config.daemonMode = DAEMON_AM_ACCESS_D;
+                config.daemonMode = ACCESSMODE_DAEMON;
             }
             else if (strcmp(value, "direct") == 0)
             {
-                config.daemonMode = DAEMON_AM_DIRECT;
+                config.daemonMode = ACCESSMODE_DIRECT;
             }
         }
         else if (strcmp(name, "max_threads") == 0)

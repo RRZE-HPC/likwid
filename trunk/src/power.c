@@ -80,7 +80,7 @@ power_init(int cpuId)
 
     if (cpuid_info.turbo)
     {
-        err = msr_read(cpuId, MSR_PLATFORM_INFO, &flags);
+        err = HPMread(cpuId, MSR_DEV, MSR_PLATFORM_INFO, &flags);
         if (err == 0)
         {
             power_info.baseFrequency = busSpeed * (double) extractBitField(flags,8,8);
@@ -97,7 +97,7 @@ power_init(int cpuId)
                 return -ENOMEM;
             }
 
-            err = msr_read(cpuId, MSR_TURBO_RATIO_LIMIT, &flags);
+            err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT, &flags);
             if (err)
             {
                 fprintf(stderr,"Cannot gather values from MSR_TURBO_RATIO_LIMIT,\n");
@@ -151,7 +151,7 @@ power_init(int cpuId)
         {
             return -ENOMEM;
         }
-        err = msr_read(cpuId, MSR_RAPL_POWER_UNIT, &flags);
+        err = HPMread(cpuId, MSR_DEV, MSR_RAPL_POWER_UNIT, &flags);
         if (err == 0)
         {
             double energyUnit;
@@ -169,7 +169,7 @@ power_init(int cpuId)
 
             /* info_register set in the switch-case-statement at the beginning
                because Atom Silvermont uses another register */
-            err = msr_read(cpuId, info_register, &flags);
+            err = HPMread(cpuId, MSR_DEV, info_register, &flags);
             if (err == 0)
             {
                 power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
@@ -182,7 +182,7 @@ power_init(int cpuId)
             }
             for(i = 0; i < 4; i++)
             {
-                err = msr_read(cpuId, power_regs[i], &flags);
+                err = HPMread(cpuId, MSR_DEV, power_regs[i], &flags);
                 if (err == 0)
                 {
                     power_info.supportedTypes |= (1<<i);
@@ -207,6 +207,13 @@ power_init(int cpuId)
     return 0;
 }
 
+void power_finalize(void)
+{
+    if (power_info.energyUnits)
+    {
+        free(power_info.energyUnits);
+    }
+}
 
 PowerInfo_t get_powerInfo(void)
 {

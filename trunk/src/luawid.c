@@ -73,7 +73,6 @@ static int lua_likwid_setAccessMode(lua_State* L)
     flag = luaL_checknumber(L,1);
     luaL_argcheck(L, flag >= 0 && flag <= 1, 1, "invalid access mode, only 0 (direct) and 1 (accessdaemon) allowed");
     accessClient_setaccessmode(flag);
-    perfmon_accessClientInit();
     lua_pushnumber(L,0);
     return 1;
 }
