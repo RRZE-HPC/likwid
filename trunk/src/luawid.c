@@ -724,7 +724,8 @@ static int lua_likwid_getAffinityInfo(lua_State* L)
     affinity = get_affinityDomains();
     if (!affinity)
     {
-        return 0;
+        lua_pushstring(L,"Cannot initialize affinity groups");
+        lua_error(L);
     }
     lua_newtable(L);
     lua_pushstring(L,"numberOfAffinityDomains");
