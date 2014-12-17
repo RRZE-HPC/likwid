@@ -1577,13 +1577,13 @@ int perfmon_finalizeCountersThread_haswellEP(int thread_id, PerfmonEventSet* eve
                 ovf_values_core |= (1ULL<<(index+32));
                 break;
             default:
-                if (counter_map[index].type > UNCORE)
+                /*if (counter_map[index].type > UNCORE)
                 {
                     if (box_map[counter_map[index].type].ovflOffset >= 0)
                     {
                         ovf_values_uncore |= (1ULL<<box_map[counter_map[index].type].ovflOffset);
                     }
-                }
+                }*/
                 break;
         }
         if ((reg) && ((dev == MSR_DEV) || (haveLock)))
@@ -1595,10 +1595,10 @@ int perfmon_finalizeCountersThread_haswellEP(int thread_id, PerfmonEventSet* eve
     }
     if (haveLock && eventSet->regTypeMask & ~(0xFULL))
     {
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_STATUS, LLU_CAST ovf_values_uncore, CLEAR_UNCORE_OVF)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_STATUS, ovf_values_uncore));
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, CLEAR_UNCORE_CTRL)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_CTL, 0x0ULL));
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, LLU_CAST ovf_values_uncore, CLEAR_UNCORE_OVF)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, ovf_values_uncore));
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, CLEAR_UNCORE_CTRL)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, 0x0ULL));
     }
 
     if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))

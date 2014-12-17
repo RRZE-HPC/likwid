@@ -889,8 +889,7 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                 case SBOX0FIX:
                 case SBOX1FIX:
                 case SBOX2FIX:
-                    CHECK_PCI_READ_ERROR(HPMread(cpu_id, counter_map[index].device,
-                                    counter1, (uint32_t*)&counter_result));
+                    CHECK_PCI_READ_ERROR(HPMread(cpu_id, counter_map[index].device, counter1, &counter_result));
                     VERBOSEPRINTPCIREG(cpu_id, counter_map[index].device, counter1, LLU_CAST counter_result, READ_SBOX_FIXED)
                     switch (extractBitField(counter_result,3,0))
                     {
@@ -1145,8 +1144,7 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                 case SBOX0FIX:
                 case SBOX1FIX:
                 case SBOX2FIX:
-                    CHECK_PCI_READ_ERROR(HPMread(cpu_id, counter_map[index].device,
-                                    counter1, (uint32_t*)&counter_result));
+                    CHECK_PCI_READ_ERROR(HPMread(cpu_id, counter_map[index].device, counter1, &counter_result));
                     VERBOSEPRINTPCIREG(cpu_id, counter_map[index].device, counter1, LLU_CAST counter_result, READ_SBOX_FIXED)
                     switch (extractBitField(counter_result,3,0))
                     {
