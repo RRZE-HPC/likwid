@@ -41,6 +41,7 @@
 #include <sched.h>
 #include <time.h>
 #include <pthread.h>
+#include <math.h>
 
 #include <types.h>
 #include <error.h>
@@ -259,36 +260,61 @@ affinity_init()
         subCounter++;
       }
     }
-
     /* Memory domains */
     currentDomain += numberOfCacheDomains;
     subCounter = 0;
-    for (int i=0; i < numberOfSocketDomains; i++ )
+    if ((numberOfNumaDomains >= numberOfSocketDomains) && (numberOfNumaDomains > 1))
     {
-      offset = 0;
+        for (int i=0; i < numberOfSocketDomains; i++ )
+        {
+          offset = 0;
+          for ( int j=0; j < (int)ceil((double)(numberOfNumaDomains)/numberOfSocketDomains); j++ )
+          {
+            domains[currentDomain + subCounter].numberOfProcessors = numa_info.nodes[subCounter].numberOfProcessors;
+            domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
+            domains[currentDomain + subCounter].tag = bformat("M%d", subCounter);
+            domains[currentDomain + subCounter].processorList = (int*) malloc(numa_info.nodes[subCounter].numberOfProcessors*sizeof(int));
+            if (!domains[currentDomain + subCounter].processorList)
+            {
+                fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
+                        numa_info.nodes[subCounter].numberOfProcessors*sizeof(int), 
+                        bdata(domains[currentDomain + subCounter].tag));
+                return;
+            }
 
-      for ( int j=0; j < (numberOfNumaDomains/numberOfSocketDomains); j++ )
-      {
-        domains[currentDomain + subCounter].numberOfProcessors = numa_info.nodes[subCounter].numberOfProcessors;
-        domains[currentDomain + subCounter].numberOfCores =  numberOfCoresPerCache;
+            treeFillNextEntries(
+                cpuid_topology.topologyTree,
+                domains[currentDomain + subCounter].processorList,
+                i, offset, domains[currentDomain + subCounter].numberOfProcessors);
+
+            offset += numa_info.nodes[subCounter].numberOfProcessors;
+            subCounter++;
+          }
+        }
+    }
+    else
+    {
+        offset = 0;
+        int NUMAthreads = numberOfProcessorsPerSocket * numberOfSocketDomains;
+        domains[currentDomain + subCounter].numberOfProcessors = NUMAthreads;
+        domains[currentDomain + subCounter].numberOfCores =  numberOfProcessorsPerSocket;
         domains[currentDomain + subCounter].tag = bformat("M%d", subCounter);
-        domains[currentDomain + subCounter].processorList = (int*) malloc(numa_info.nodes[subCounter].numberOfProcessors*sizeof(int));
-        if (!domains[currentDomain + subCounter].processorList)   
+        domains[currentDomain + subCounter].processorList = (int*) malloc(NUMAthreads*sizeof(int));
+        if (!domains[currentDomain + subCounter].processorList)
         {
             fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
-                    numa_info.nodes[subCounter].numberOfProcessors*sizeof(int), 
+                    NUMAthreads*sizeof(int), 
                     bdata(domains[currentDomain + subCounter].tag));
             return;
         }
-
-        treeFillNextEntries(
-            cpuid_topology.topologyTree,
-            domains[currentDomain + subCounter].processorList,
-            i, offset, domains[currentDomain + subCounter].numberOfProcessors);
-
-        offset += numa_info.nodes[subCounter].numberOfProcessors;
-        subCounter++;
-      }
+        for (int i=0; i < numberOfSocketDomains; i++ )
+        {
+            treeFillNextEntries(
+                cpuid_topology.topologyTree,
+                &(domains[currentDomain + subCounter].processorList[offset]),
+                i, 0, numberOfProcessorsPerSocket);
+            offset += numberOfProcessorsPerSocket;
+        }
     }
 
     /* This is redundant ;-). Create thread to node lookup */
