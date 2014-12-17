@@ -44,7 +44,7 @@
 
 #include <types.h>
 #include <error.h>
-#include <types.h>
+#include <likwid.h>
 #include <numa.h>
 #include <affinity.h>
 #include <tree.h>
@@ -149,7 +149,7 @@ affinity_init()
     int currentDomain;
     int subCounter = 0;
     int offset = 0;
-    int numberOfSocketDomains = cpuid_topology.numSockets;;
+    int numberOfSocketDomains = cpuid_topology.numSockets;
     int numberOfNumaDomains = numa_info.numberOfNodes;
     int numberOfProcessorsPerSocket =
         cpuid_topology.numCoresPerSocket * cpuid_topology.numThreadsPerCore;
@@ -229,7 +229,6 @@ affinity_init()
     /* Cache domains */
     currentDomain += numberOfSocketDomains;
     subCounter = 0;
-
     for (int i=0; i < numberOfSocketDomains; i++ )
     {
       offset = 0;
@@ -252,10 +251,10 @@ affinity_init()
             cpuid_topology.topologyTree,
             domains[currentDomain + subCounter].processorList,
             i, offset, domains[currentDomain + subCounter].numberOfProcessors);
-        for (int k=0; k<numberOfCoresPerCache; k++)
+        /*for (int k=0; k<numberOfProcessorsPerCache; k++)
         {
             affinity_core2tile_lookup[domains[currentDomain + subCounter].processorList[offset + k]] = subCounter;
-        }
+        }*/
         offset += numberOfCoresPerCache;
         subCounter++;
       }
@@ -264,7 +263,6 @@ affinity_init()
     /* Memory domains */
     currentDomain += numberOfCacheDomains;
     subCounter = 0;
-
     for (int i=0; i < numberOfSocketDomains; i++ )
     {
       offset = 0;
