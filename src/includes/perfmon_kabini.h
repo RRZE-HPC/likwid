@@ -47,7 +47,6 @@ int perfmon_init_kabini(int cpu_id)
 int k16_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags;
-    GET_READFD(cpu_id);
 
     flags |= (1ULL<<16);
     flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
@@ -79,14 +78,13 @@ int k16_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
         }
     }
     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC);
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
+    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
     return 0;
 }
 
 int k16_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags;
-    GET_READFD(cpu_id);
 
     if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
     {
@@ -96,14 +94,13 @@ int k16_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
 
     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_UNCORE);
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
+    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
     return 0;
 }
 
 int k16_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags;
-    GET_READFD(cpu_id);
 
     if (tile_lock[affinity_core2tile_lookup[cpu_id]] != cpu_id)
     {
@@ -138,7 +135,7 @@ int k16_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
         }
     }
     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_CBOX);
-    CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, flags));
+    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
     return 0;
 }
 
@@ -146,7 +143,6 @@ int perfmon_setupCounterThread_kabini(int thread_id, PerfmonEventSet* eventSet)
 {
     uint64_t flags;
     int cpu_id = groupSet->threads[thread_id].processorId;
-    GET_READFD(cpu_id);
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -176,7 +172,6 @@ int perfmon_startCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
     int haveTLock = 0;
     uint64_t flags;
     int cpu_id = groupSet->threads[thread_id].processorId;
-    GET_READFD(cpu_id);
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
@@ -200,10 +195,10 @@ int perfmon_startCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
                 ((type == UNCORE) && (haveSLock)) ||
                 ((type == CBOX0) && (haveTLock)))
             {
-                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter, 0x0ULL));
-                CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, reg, &flags));
+                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter, 0x0ULL));
+                CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, reg, &flags));
                 flags |= (1<<22);  /* enable flag */
-                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, flags));
+                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));
             }
         }
     }
@@ -217,7 +212,6 @@ int perfmon_stopCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
     int haveTLock = 0;
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
-    GET_READFD(cpu_id);
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
     {
@@ -240,10 +234,10 @@ int perfmon_stopCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
                 ((type == UNCORE) && (haveSLock)) ||
                 ((type == CBOX0) && (haveTLock)))
             {
-                CHECK_MSR_READ_ERROR(msr_tread(read_fd, read_fd, reg, &flags));
+                CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, reg, &flags));
                 flags &= ~(1<<22);  /* clear enable flag */
-                CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, reg, flags));
-                CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter, &counter_result));
+                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));
+                CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
@@ -262,7 +256,6 @@ int perfmon_readCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
     int haveTLock = 0;
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
-    GET_READFD(cpu_id);
 
     if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
     {
@@ -285,7 +278,7 @@ int perfmon_readCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
                 ((type == UNCORE) && (haveSLock)) ||
                 ((type == CBOX0) && (haveTLock)))
             {
-                CHECK_MSR_READ_ERROR(msr_tread(read_fd, cpu_id, counter, &counter_result));
+                CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                 VERBOSEPRINTREG(cpu_id, counter, counter_result, CLEAR_CTRL);
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
@@ -304,7 +297,6 @@ int perfmon_finalizeCountersThread_kabini(int thread_id, PerfmonEventSet* eventS
     int haveSLock = 0;
     int haveTLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
-    GET_READFD(cpu_id);
 
     if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
     {
@@ -323,7 +315,7 @@ int perfmon_finalizeCountersThread_kabini(int thread_id, PerfmonEventSet* eventS
             ((type == CBOX0) && (haveTLock)))
         {
             VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, 0x0ULL, CLEAR_CTRL);
-            CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, counter_map[index].configRegister, 0x0ULL));
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, 0x0ULL));
             eventSet->events[i].threadCounter[thread_id].init = FALSE;
         }
     }
