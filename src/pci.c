@@ -126,7 +126,7 @@ pci_init(int initSocket_fd)
             testDevice = 0x2f30;
             break;
         default:
-            ERROR_PRINT(CPU model %s does not support PCI based Uncore performance monitoring, cpuid_info.name);
+            DEBUG_PRINT(DEBUGLEV_INFO,CPU model %s does not support PCI based Uncore performance monitoring, cpuid_info.name);
             return -ENODEV;
             break;
     }
