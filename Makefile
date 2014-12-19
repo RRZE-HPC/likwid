@@ -328,7 +328,7 @@ install:
 	@mkdir -p $(PREFIX)/include/likwid
 	@cp -f src/includes/likwid*.h  $(PREFIX)/include/
 	@cp -f src/includes/*  $(PREFIX)/include/likwid
-	@cp -f GCC/perfmon_group_types.h  $(PREFIX)/include/likwid
+	@cp -f $(COMPILER)/perfmon_group_types.h  $(PREFIX)/include/likwid
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL libraries to $(PREFIX)/lib"
 	@mkdir -p $(PREFIX)/lib
