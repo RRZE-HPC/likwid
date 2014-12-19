@@ -671,12 +671,16 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
 
 #define HASEP_UNFREEZE_UNCORE_AND_RESET_CTR \
-    if (haveLock && (eventSet->regTypeMask & ~(REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(POWER)))) \
+    if (haveLock && (eventSet->regTypeMask & ~(0xFULL))) \
     { \
         for (int i=0;i < eventSet->numberOfEvents;i++) \
         { \
             RegisterIndex index = eventSet->events[i].index; \
             RegisterType type = counter_map[index].type; \
+            if (type < UNCORE) \
+            { \
+                continue; \
+            } \
             PciDeviceIndex dev = counter_map[index].device; \
             VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, CLEAR_CTR_MANUAL); \
             CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL)); \
@@ -699,6 +703,10 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         { \
             RegisterIndex index = eventSet->events[i].index; \
             RegisterType type = counter_map[index].type; \
+            if (type < UNCORE) \
+            { \
+                continue; \
+            } \
             PciDeviceIndex dev = counter_map[index].device; \
             VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, 0x0ULL, CLEAR_CTL_MANUAL); \
             CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL)); \
