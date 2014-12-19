@@ -128,7 +128,7 @@ end
 likwid.tablelength = tablelength
 
 local function tableprint(T, long)
-    if T == nil or #T == 0 then
+    if T == nil or tablelength(T) == 0 then
         print("[]")
         return
     end
@@ -715,6 +715,7 @@ local function new_groupdata(eventString)
     local gdata = {}
     local num_events = 0
     gdata["Events"] = {}
+    gdata["EventString"] = eventString
     gdata["GroupString"] = eventString
     local eventslist = likwid.stringsplit(eventString,",")
     for i,e in pairs(eventslist) do
