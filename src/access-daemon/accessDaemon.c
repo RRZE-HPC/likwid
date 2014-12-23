@@ -731,21 +731,23 @@ int main(void)
     syslog(LOG_NOTICE, "daemon accepted client");
 
     {
+        int fd;
         char* msr_file_name = (char*) malloc(MAX_PATH_LENGTH * sizeof(char));
         uint32_t i;
         /* Open MSR device files for less overhead.
          * NOTICE: This assumes consecutive processor Ids! */
         for (i =0; i < numHWThreads; i++ )
         {
-#ifdef __MIC
             sprintf(msr_file_name,"/dev/msr%d",i);
-            if (access(msr_file_name, F_OK))
+            fd = open(msr_file_name, O_RDWR);
+            if (fd < 0)
             {
                 sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
             }
-#else
-            sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
-#endif
+            else
+            {
+                close(fd);
+            }
             FD_MSR[i] = open(msr_file_name, O_RDWR);
 
             if ( FD_MSR[i] < 0 )
@@ -770,6 +772,7 @@ int main(void)
             }
 
             /* determine PCI-BUSID mapping ... */
+            int fd;
             FILE *fptr;
             char buf[1024];
             uint32_t testDevice;
@@ -821,15 +824,15 @@ int main(void)
                 {
                     for (int i=0; i<MAX_NUM_DEVICES; i++)
                     {
-                        sprintf(pci_filepath, "%s%s%s",PCI_ROOT_PATH,socket_bus[j],pci_DevicePath[i]);
-
-                        if (!access(pci_filepath,F_OK))
+                        sprintf(pci_filepath, "%s%s%s", PCI_ROOT_PATH, socket_bus[j], pci_DevicePath[i]);
+                        fd = open(pci_filepath, O_RDWR);
+                        if (fd > 0)
                         {
                             FD_PCI[j][i] = 0;
                         }
                         else
                         {
-                            syslog(LOG_NOTICE, "Device %s not found, excluded it from device list\n",pci_filepath);
+                            syslog(LOG_NOTICE, "Device %s not found, excluded it from device list\n", pci_filepath);
                         }
                     }
                 }

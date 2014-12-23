@@ -126,15 +126,21 @@ msr_init(int initSocket_fd)
 {
     if (accessClient_mode == DAEMON_AM_DIRECT)
     {
+        int fd;
         char* msr_file_name = (char*) malloc(MAX_LENGTH_MSR_DEV_NAME * sizeof(char));
 
         sprintf(msr_file_name,"/dev/msr0");
-        if( access( msr_file_name, F_OK ) == -1 )
+        fd = open(msr_file_name, O_RDWR);
+        if( fd < 0)
         {
             sprintf(msr_file_name,"/dev/cpu/0/msr");
         }
-
-        if (access(msr_file_name, R_OK|W_OK))
+        else
+        {
+            close(fd);
+        }
+        fd = open(msr_file_name, O_RDWR);
+        if (fd < 0)
         {
             ERROR_PRINT(Cannot access MSR device file %s: %s.\n
                         Please check if 'msr' module is loaded and device files have correct permissions\n
@@ -142,15 +148,24 @@ msr_init(int initSocket_fd)
             free(msr_file_name);
             exit(127);
         }
+        else
+        {
+            close(fd);
+        }
         rdpmc_works = test_rdpmc(0);
 
         /* NOTICE: This assumes consecutive processor Ids! */
         for ( uint32_t i=0; i < cpuid_topology.numHWThreads; i++ )
         {
             sprintf(msr_file_name,"/dev/msr%d",i);
-            if( access( msr_file_name, F_OK ) == -1 )
+            fd = open( msr_file_name, O_RDWR );
+            if(fd < 0 )
             {
                 sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
+            }
+            else
+            {
+                close(fd);
             }
             FD[i] = open(msr_file_name, O_RDWR);
             if ( FD[i] < 0 )
