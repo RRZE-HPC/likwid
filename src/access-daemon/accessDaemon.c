@@ -690,7 +690,12 @@ int main(void)
 
             if ( FD_MSR[i] < 0 )
             {
-                syslog(LOG_ERR, "Failed to open device files.");
+                sprintf(msr_file_name,"/dev/msr%d",i);
+                FD_MSR[i] = open(msr_file_name, O_RDWR);
+                if ( FD_MSR[i] < 0 )
+                {
+                    syslog(LOG_ERR, "Failed to open device file %s.", msr_file_name);
+                }
             }
         }
 
@@ -761,18 +766,20 @@ int main(void)
             else
             {
                 socket_count = cntr;
+                int fd;
                 for (int j=0; j<socket_count; j++)
                 {
                     for (int i=1; i<MAX_NUM_PCI_DEVICES; i++)
                     {
                         if (pci_devices[i].path)
                         {
-                            sprintf(pci_filepath, "%s%s%s",PCI_ROOT_PATH,socket_bus[j],pci_devices[i].path);
-
-                            if (!access(pci_filepath,F_OK))
+                            sprintf(pci_filepath, "%s%s%s", PCI_ROOT_PATH, socket_bus[j], pci_devices[i].path);
+                            fd = open(pci_filepath, O_RDWR);
+                            if (fd > 0)
                             {
                                 FD_PCI[j][i] = 0;
                                 pci_devices[i].online = 1;
+                                close(fd);
                             }
                             else
                             {
