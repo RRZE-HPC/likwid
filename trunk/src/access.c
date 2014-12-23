@@ -35,7 +35,6 @@ int _HPMinit(int cpu_id)
     }
     else if (accessClient_mode == ACCESSMODE_DAEMON)
     {
-daemon_init:
         accessClient_init(&cpuSockets[cpu_id]);
         if (globalSocket == -1)
         {
@@ -94,13 +93,16 @@ int HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
     {
         return -ERANGE;
     }
-    if ((cpuSockets[cpu_id] >= 0) && (cpuSockets[cpu_id] != socket))
+    if (accessClient_mode == ACCESSMODE_DAEMON)
     {
-        socket = cpuSockets[cpu_id];
-    }
-    else if (socket < 0)
-    {
-        return -ENOENT;
+        if ((cpuSockets[cpu_id] >= 0) && (cpuSockets[cpu_id] != socket))
+        {
+            socket = cpuSockets[cpu_id];
+        }
+        else if (socket < 0)
+        {
+            return -ENOENT;
+        }
     }
     if (dev == MSR_DEV)
     {
@@ -128,14 +130,17 @@ int HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
         ERROR_PRINT(MSR WRITE C %d OUT OF RANGE, cpu_id);
         return -ERANGE;
     }
-    if ((cpuSockets[cpu_id] >= 0) && (cpuSockets[cpu_id] != socket))
+    if (accessClient_mode == ACCESSMODE_DAEMON)
     {
-        socket = cpuSockets[cpu_id];
-    }
-    if (socket < 0)
-    {
-        ERROR_PRINT(MSR WRITE S %d INVALID, socket);
-        return -ENOENT;
+        if ((cpuSockets[cpu_id] >= 0) && (cpuSockets[cpu_id] != socket))
+        {
+            socket = cpuSockets[cpu_id];
+        }
+        if (socket < 0)
+        {
+            ERROR_PRINT(MSR WRITE S %d INVALID, socket);
+            return -ENOENT;
+        }
     }
 
     if (dev == MSR_DEV)
