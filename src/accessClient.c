@@ -108,6 +108,11 @@ startDaemon(void)
     int timeout = 10;
     int socket_fd = -1;
 
+    if (accessClient_mode == ACCESSMODE_DIRECT)
+    {
+        return 0;
+    }
+
     if (access(exeprog, X_OK))
     {
         ERROR_PRINT(Failed to find the daemon '%s'\n, exeprog);
