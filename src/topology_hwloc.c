@@ -42,7 +42,7 @@ static int get_stepping(void)
     uint32_t eax, ebx, ecx, edx;
     eax = 0x01;
     CPUID;
-    cpuid_info.stepping = (eax&0xFU);
+    return (eax&0xFU);
 }
 
 static int get_cpu_perf_data(void)
@@ -134,7 +134,7 @@ void hwloc_init_cpuInfo(void)
         }
     }
     cpuid_topology.numHWThreads = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
-    get_stepping();
+    cpuid_info.stepping = get_stepping();
     DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
                             cpuid_info.family,
                             cpuid_info.model,

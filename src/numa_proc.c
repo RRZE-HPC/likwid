@@ -135,6 +135,10 @@ nodeProcessorList(int node, uint32_t** list)
     int unitSize = (int) 32; /* 8 nibbles */
 
     *list = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
+    if (!(*list))
+    {
+        return -ENOMEM;
+    }
 
     /* the cpumap interface should be always there */
     filename = bformat("/sys/devices/system/node/node%d/cpumap", node); 
@@ -152,12 +156,13 @@ nodeProcessorList(int node, uint32_t** list)
             if ((errno != 0 && val == LONG_MAX )
                     || (errno != 0 && val == 0)) 
             {
-                ERROR;
+                return -EFAULT;
             }
 
             if (endptr == (char*) tokens->entry[i]->data) 
             {
                 ERROR_PLAIN_PRINT(No digits were found);
+                return -EFAULT;
             }
 
             if (val != 0UL)
@@ -173,6 +178,7 @@ nodeProcessorList(int node, uint32_t** list)
                         else
                         {
                             ERROR_PRINT(Number Of threads %d too large,count);
+                            return -EFAULT;
                         }
                         count++;
                     }
@@ -206,6 +212,10 @@ nodeDistanceList(int node, int numberOfNodes, uint32_t** list)
     struct bstrList* tokens;
 
     *list = (uint32_t*) malloc(numberOfNodes * sizeof(uint32_t));
+    if (!(*list))
+    {
+        return -ENOMEM;
+    }
 
     /* the distance interface should be always there */
     filename = bformat("/sys/devices/system/node/node%d/distance", node);
@@ -225,6 +235,7 @@ nodeDistanceList(int node, int numberOfNodes, uint32_t** list)
             else
             {
                 ERROR_PRINT(Number Of nodes %d too large,count);
+                return -EFAULT;
             }
             count++;
         }
@@ -249,29 +260,36 @@ int proc_numa_init(void)
     
     if (get_mempolicy(NULL, NULL, 0, 0, 0) < 0 && errno == ENOSYS)
     {
+        numa_info.numberOfNodes = 0;
+        numa_info.nodes = NULL;
         return -1; 
     }
     /* First determine maximum number of nodes */
     setConfiguredNodes();
     numa_info.numberOfNodes = maxIdConfiguredNode+1;
     numa_info.nodes = (NumaNode*) malloc(numa_info.numberOfNodes * sizeof(NumaNode));
+    if (!numa_info.nodes)
+    {
+        return -ENOMEM;
+    }
 
     for (i=0; i<numa_info.numberOfNodes; i++)
     {
         numa_info.nodes[i].id = i;
         nodeMeminfo(i, &numa_info.nodes[i].totalMemory, &numa_info.nodes[i].freeMemory);
         numa_info.nodes[i].numberOfProcessors = nodeProcessorList(i,&numa_info.nodes[i].processors);
+        if (numa_info.nodes[i].numberOfProcessors < 0)
+        {
+            return -EFAULT;
+        }
         numa_info.nodes[i].numberOfDistances = nodeDistanceList(i, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
+        if (numa_info.nodes[i].numberOfDistances < 0)
+        {
+            return -EFAULT;
+        }
     }
     
-    if (numa_info.nodes[0].numberOfProcessors < 0)
-    {
-        return -1;
-    }
-    else
-    {
-        return 0;
-    }
+    return 0;
 }
 
 void 
