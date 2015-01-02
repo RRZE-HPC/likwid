@@ -95,6 +95,7 @@ if config["daemonMode"] < 0 then
 else
     access_mode = config["daemonMode"]
 end
+set_access_modes = false
 use_marker = false
 use_stethoscope = false
 use_timeline = false
@@ -145,6 +146,7 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
         skip_mask = arg
     elseif (opt == "M") then
         access_mode = tonumber(arg)
+        set_access_modes = true
         if (access_mode < 0 and access_mode > 1) then
             print("Access mode must be 0 for direct access and 1 for access daemon")
             os.exit(1)
@@ -352,8 +354,10 @@ for i, event_string in pairs(event_string_list) do
 end
 
 
-if likwid.setAccessClientMode(access_mode) ~= 0 then
-    os.exit(1)
+if set_access_modes then
+    if likwid.setAccessClientMode(access_mode) ~= 0 then
+        os.exit(1)
+    end
 end
 if likwid.init(num_cpus, cpulist) < 0 then
     os.exit(1)
