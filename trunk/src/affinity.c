@@ -194,14 +194,24 @@ affinity_init()
     }
     offset = 0;
 
-    for (int i=0; i<numberOfSocketDomains; i++)
+    if (numberOfSocketDomains > 1)
     {
-      treeFillNextEntries(
-          cpuid_topology.topologyTree,
-          domains[0].processorList + offset,
-          i, 0, numberOfProcessorsPerSocket);
-
-      offset += numberOfProcessorsPerSocket;
+        for (int i=0; i<numberOfSocketDomains; i++)
+        {
+          treeFillNextEntries(
+              cpuid_topology.topologyTree,
+              domains[0].processorList + offset,
+              i, 0, numberOfProcessorsPerSocket);
+    
+          offset += numberOfProcessorsPerSocket;
+        }
+    }
+    else
+    {
+        treeFillNextEntries(
+              cpuid_topology.topologyTree,
+              domains[0].processorList,
+              0, 0, domains[0].numberOfProcessors);
     }
 
     /* Socket domains */
@@ -252,10 +262,7 @@ affinity_init()
             cpuid_topology.topologyTree,
             domains[currentDomain + subCounter].processorList,
             i, offset, domains[currentDomain + subCounter].numberOfProcessors);
-        /*for (int k=0; k<numberOfProcessorsPerCache; k++)
-        {
-            affinity_core2tile_lookup[domains[currentDomain + subCounter].processorList[offset + k]] = subCounter;
-        }*/
+
         offset += numberOfCoresPerCache;
         subCounter++;
       }
@@ -342,11 +349,21 @@ affinity_init()
 void
 affinity_finalize()
 {
-    for ( int i=0; i < affinity_numberOfDomains; i++ )
+    if (!affinityDomains.domains)
     {
-        free(domains[i].processorList);
+        return;
     }
-    free(domains);
+    for ( int i=0; i < affinityDomains.numberOfAffinityDomains; i++ )
+    {
+        if (affinityDomains.domains[i].processorList)
+        {
+            free(affinityDomains.domains[i].processorList);
+        }
+    }
+    if (affinityDomains.domains)
+    {
+        free(affinityDomains.domains);
+    }
 }
 
 

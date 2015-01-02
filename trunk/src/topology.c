@@ -706,12 +706,12 @@ void topology_setupTree(void)
             tree_insertNode(currentNode, hwThreadPool[i].coreId);
         }
         currentNode = tree_getNode(currentNode, hwThreadPool[i].coreId);
-        if (!tree_nodeExists(currentNode, i))
+        if (!tree_nodeExists(currentNode, hwThreadPool[i].apicId))
         {
             /*
                printf("WARNING: Thread already exists!\n");
                */
-            tree_insertNode(currentNode, i);
+            tree_insertNode(currentNode, hwThreadPool[i].apicId);
         }
 
     }
@@ -763,6 +763,7 @@ int topology_init(void)
 void topology_finalize(void)
 {
     free(cpuid_info.features);
+    free(cpuid_info.osname);
     free(cpuid_topology.cacheLevels);
     free(cpuid_topology.threadPool);
     tree_destroy(cpuid_topology.topologyTree);

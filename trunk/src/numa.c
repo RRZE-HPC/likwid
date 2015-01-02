@@ -72,18 +72,21 @@ int
 empty_numa_init()
 {
     printf("MEMPOLICY NOT supported in kernel!\n");
+    return 0;
 }
 
 void 
 empty_numa_setInterleaved(int* processorList, int numberOfProcessors)
 {
     printf("MEMPOLICY NOT supported in kernel!\n");
+    return;
 }
 
 void
 empty_numa_membind(void* ptr, size_t size, int domainId)
 {
     printf("MBIND NOT supported in kernel!\n");
+    return;
 }
 
 
@@ -117,6 +120,7 @@ int numa_init(void)
     {
         return funcs.numa_init();
     }
+    return 0;
 }
 
 void numa_setInterleaved(int* processorList, int numberOfProcessors)
@@ -142,9 +146,19 @@ void numa_finalize(void)
     int i;
     for(i=0;i<numa_info.numberOfNodes;i++)
     {
-        free(numa_info.nodes[i].processors);
-        free(numa_info.nodes[i].distances);
+        if (numa_info.nodes[i].processors)
+        {
+            free(numa_info.nodes[i].processors);
+        }
+        if (numa_info.nodes[i].distances)
+        {
+            free(numa_info.nodes[i].distances);
+        }
     }
-    free(numa_info.nodes);
+    if (numa_info.nodes)
+    {
+        free(numa_info.nodes);
+    }
+    return;
 }
 #endif

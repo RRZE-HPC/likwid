@@ -550,34 +550,36 @@ void cpuid_init_nodeTopology(void)
 
                 for (uint32_t i=0; i<  cpuid_topology.numHWThreads; i++)
                 {
+                    int id;
                     CPU_ZERO(&set);
                     CPU_SET(i,&set);
                     sched_setaffinity(0, sizeof(cpu_set_t), &set);
 
                     eax = 0x01;
                     CPUID;
-                    hwThreadPool[i].apicId = extractBitField(ebx,8,24);
+                    id = extractBitField(ebx,8,24);
+                    hwThreadPool[id].apicId = extractBitField(ebx,8,24);
 
                     /* ThreadId is extracted from th apicId using the bit width
                      * of the number of logical processors
                      * */
-                    hwThreadPool[i].threadId =
-                        extractBitField(hwThreadPool[i].apicId,
+                    hwThreadPool[id].threadId =
+                        extractBitField(hwThreadPool[id].apicId,
                                 getBitFieldWidth(maxNumLogicalProcsPerCore),0); 
 
                     /* CoreId is extracted from th apicId using the bitWidth 
                      * of the number of logical processors as offset and the
                      * bit width of the number of cores as width
                      * */
-                    hwThreadPool[i].coreId =
-                        extractBitField(hwThreadPool[i].apicId,
+                    hwThreadPool[id].coreId =
+                        extractBitField(hwThreadPool[id].apicId,
                                 getBitFieldWidth(maxNumCores),
                                 getBitFieldWidth(maxNumLogicalProcsPerCore)); 
 
-                    hwThreadPool[i].packageId =
-                        extractBitField(hwThreadPool[i].apicId,
+                    hwThreadPool[id].packageId =
+                        extractBitField(hwThreadPool[id].apicId,
                                 8-getBitFieldWidth(maxNumLogicalProcs),
-                                getBitFieldWidth(maxNumLogicalProcs)); 
+                                getBitFieldWidth(maxNumLogicalProcs));
                 }
                 break;
 
