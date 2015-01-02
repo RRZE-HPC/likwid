@@ -1382,7 +1382,14 @@ likwid.createGroupMask = createGroupMask
 
 function msr_available()
     local ret = likwid_access("/dev/cpu/0/msr")
-    if ret == 0 then return true else return false end
+    if ret == 0 then
+        return true
+    else
+        local ret = likwid_access("/dev/msr0")
+        if ret == 0 then
+            return true
+        end
+    end
     return false
 end
 likwid.msr_available = msr_available
