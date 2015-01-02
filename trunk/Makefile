@@ -32,7 +32,7 @@ DOC_DIR     = ./doc
 GROUP_DIR   = ./groups
 FILTER_DIR  = ./filters
 MAKE_DIR    = ./make
-EXT_TARGETS = ./ext/lua ./ext/hwloc
+EXT_TARGETS = ./ext/lua
 
 #DO NOT EDIT BELOW
 
@@ -44,6 +44,11 @@ EXT_TARGETS = ./ext/lua ./ext/hwloc
 
 include ./config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
+
+DYNAMIC_TARGET_LIB := liblikwid.so
+STATIC_TARGET_LIB := liblikwid.a
+LIBLUA := ext/lua/liblua.a
+
 include $(MAKE_DIR)/config_checks.mk
 include $(MAKE_DIR)/config_defines.mk
 
@@ -55,34 +60,14 @@ BUILD_DIR  = ./$(COMPILER)
 Q         ?= @
 GENGROUPLOCK = .gengroup
 
-
-DYNAMIC_TARGET_LIB := liblikwid.so
-STATIC_TARGET_LIB := liblikwid.a
-LIBHWLOC = ext/hwloc/libhwloc.a
-LIBLUA = ext/lua/liblua.a
-ifeq ($(SHARED_LIBRARY),true)
-CFLAGS += $(SHARED_CFLAGS)
-LIBS += -L. -Lext/hwloc -pthread -lm -lpci
-TARGET_LIB := $(DYNAMIC_TARGET_LIB)
-LIBHWLOC = ext/hwloc/libhwloc.a
-LIBLUA = ext/lua/liblua.a
-else
-LIBHWLOC = ext/hwloc/libhwloc.a
-LIBLUA = ext/lua/liblua.a
-TARGET_LIB := $(STATIC_TARGET_LIB)
-endif
-
-ifeq ($(DEBUG),true)
-DEBUG_FLAGS = -g
-DEFINES += -DDEBUG_LIKWID
-else
-DEBUG_FLAGS =
-endif
-
-
 VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
 OBJ      += $(patsubst $(SRC_DIR)/%.cc, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.cc))
+ifeq ($(FILTER_HWLOC_OBJ),yes)
+OBJ := $(filter-out $(BUILD_DIR)/topology_hwloc.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/numa_hwloc.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/pci_hwloc.o,$(OBJ))
+endif
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
 OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)

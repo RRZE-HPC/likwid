@@ -12,6 +12,10 @@ DEFINES   = -DLUA_COMPAT_ALL -DLUA_USE_LINUX
 LIBS      = -lm -Wl,-E -ldl
 LFLAGS    =
 Q         ?= @
+ifeq ($(COMPILER),MIC)
+CFLAGS += -mmic
+LFLAGS += -mmic
+endif
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
