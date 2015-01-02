@@ -303,14 +303,16 @@ static int lua_likwid_getCpuTopology(lua_State* L)
     }
     if (numa_isInitialized == 0)
     {
-        numa_init();
-        numa_isInitialized = 1;
+        if (numa_init() == 0)
+        {
+            numa_isInitialized = 1;
+        }
     }
-    if (affinity_isInitialized == 0)
+    /*if (affinity_isInitialized == 0)
     {
         affinity_init();
         affinity_isInitialized = 1;
-    }
+    }*/
     cputopo = get_cpuTopology();
 
     lua_newtable(L);
@@ -588,8 +590,21 @@ static int lua_likwid_getNumaInfo(lua_State* L)
     }
     if (numa_isInitialized == 0)
     {
-        numa_init();
-        numa_isInitialized = 1;
+        if (numa_init() == 0)
+        {
+            numa_isInitialized = 1;
+        }
+        else
+        {
+            lua_newtable(L);
+            lua_pushstring(L,"numberOfNodes");
+            lua_pushunsigned(L,0);
+            lua_settable(L,-3);
+            lua_pushstring(L,"nodes");
+            lua_newtable(L);
+            lua_settable(L,-3);
+            return 1;
+        }
     }
     if (affinity_isInitialized == 0)
     {
@@ -676,8 +691,11 @@ static int lua_likwid_getNumaInfo(lua_State* L)
 
 static int lua_likwid_putNumaInfo(lua_State* L)
 {
-    numa_finalize();
-    numa_isInitialized = 0;
+    if (numa_isInitialized)
+    {
+        numa_finalize();
+        numa_isInitialized = 0;
+    }
     return 0;
 }
 
@@ -712,8 +730,10 @@ static int lua_likwid_getAffinityInfo(lua_State* L)
     }
     if (numa_isInitialized == 0)
     {
-        numa_init();
-        numa_isInitialized = 1;
+        if (numa_init() == 0)
+        {
+            numa_isInitialized = 1;
+        }
     }
     if (affinity_isInitialized == 0)
     {
@@ -781,8 +801,11 @@ static int lua_likwid_getAffinityInfo(lua_State* L)
 
 static int lua_likwid_putAffinityInfo(lua_State* L)
 {
-    affinity_finalize();
-    affinity_isInitialized = 0;
+    if (affinity_isInitialized)
+    {
+        affinity_finalize();
+        affinity_isInitialized = 0;
+    }
     return 0;
 }
 
