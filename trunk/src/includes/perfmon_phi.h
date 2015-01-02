@@ -195,7 +195,7 @@ int perfmon_finalizeCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
     {
         RegisterIndex index = eventSet->events[i].index;
         ovf_values_core |= (1ULL<<(index));
-        CHECK_MSR_WRITE_ERROR(HPMread(cpu_id, MSR_DEV, counter_map[i].configRegister, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[i].configRegister, 0x0ULL));
     }
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_CTRL, 0x0ULL));
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC_SPFLT_CONTROL, 0x0ULL));
