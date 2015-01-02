@@ -393,6 +393,7 @@ int likwid_markerStartRegion(const char* regionTag)
     results->groupID = groupSet->activeGroup;
     timer_start(&(results->startTime));
     bdestroy(tag);
+    return 0;
 }
 
 #define READ_END_MEM_CHANNEL(channel, reg, cid)                      \
@@ -439,6 +440,7 @@ int likwid_markerStopRegion(const char* regionTag)
                         LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
         results->PMcounters[i] += perfmon_getResult(groupSet->activeGroup, i, thread_id);
     }
+    return 0;
 }
 
 

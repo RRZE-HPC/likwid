@@ -654,6 +654,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_QBOX);
     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+    return 0;
 }
 
 #define HASEP_FREEZE_UNCORE \

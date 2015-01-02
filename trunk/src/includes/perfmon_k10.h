@@ -42,7 +42,7 @@ int perfmon_init_k10(int cpu_id)
 
 int k10_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
 
     flags |= (1ULL<<16);
     flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
@@ -82,7 +82,7 @@ int perfmon_setupCounterThread_k10(
         int thread_id,
         PerfmonEventSet* eventSet)
 {
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
     
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -101,7 +101,7 @@ int perfmon_setupCounterThread_k10(
 
 int perfmon_startCountersThread_k10(int thread_id, PerfmonEventSet* eventSet)
 {
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -125,7 +125,7 @@ int perfmon_startCountersThread_k10(int thread_id, PerfmonEventSet* eventSet)
 
 int perfmon_stopCountersThread_k10(int thread_id, PerfmonEventSet* eventSet)
 {
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     uint64_t tmp;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
