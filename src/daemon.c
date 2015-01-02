@@ -194,6 +194,7 @@ daemon_start(uint64_t duration)
         fprintf(stderr,"\n");
         exit(0);
     }
+    return 0;
 }
 
 int

@@ -69,7 +69,7 @@ uint32_t svm_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int svm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
 
     flags |= (1<<16)|(1<<22);
     flags |= (event->umask<<8) + event->eventId;
@@ -132,8 +132,8 @@ int perfmon_setupCountersThread_silvermont(
         PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    uint64_t flags;
-    uint32_t uflags;
+    uint64_t flags = 0x0ULL;
+    uint32_t uflags = 0x0ULL;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
@@ -246,7 +246,7 @@ int perfmon_startCountersThread_silvermont(int thread_id, PerfmonEventSet* event
 
 int perfmon_stopCountersThread_silvermont(int thread_id, PerfmonEventSet* eventSet)
 {
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     uint32_t uflags = 0x10100UL; /* Set freeze bit */
     uint64_t counter_result = 0x0ULL;
     int haveLock = 0;

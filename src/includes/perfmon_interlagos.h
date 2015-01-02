@@ -45,7 +45,7 @@ int perfmon_init_interlagos(int cpu_id)
 
 int ilg_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
 
     flags |= (1ULL<<16);
     flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
@@ -83,7 +83,7 @@ int ilg_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 
 int ilg_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
 
     if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
     {
@@ -101,7 +101,7 @@ int ilg_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 int perfmon_setupCounterThread_interlagos(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
@@ -133,7 +133,7 @@ int perfmon_setupCounterThread_interlagos(int thread_id, PerfmonEventSet* eventS
 int perfmon_startCountersThread_interlagos(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
@@ -163,7 +163,7 @@ int perfmon_startCountersThread_interlagos(int thread_id, PerfmonEventSet* event
 
 int perfmon_stopCountersThread_interlagos(int thread_id, PerfmonEventSet* eventSet)
 {
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     int haveLock = 0;
     uint64_t tmp;
     int cpu_id = groupSet->threads[thread_id].processorId;
