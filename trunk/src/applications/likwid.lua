@@ -1267,7 +1267,7 @@ function getMarkerResults(filename, group_list, num_cpus)
 
     -- Read Region IDs and names from following lines
     for l=1, #lines do
-        r, gname, g = string.match(lines[1],"(%d+):(%a*)-(%d+)")
+        r, gname, g = string.match(lines[1],"(%d+):([%a%g]*)-(%d+)")
         if (r ~= nil and g ~= nil) then
             g = g+1
             r = r+1
