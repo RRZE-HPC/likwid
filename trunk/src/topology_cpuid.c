@@ -391,17 +391,17 @@ void cpuid_init_cpuFeatures(void)
 
     if (edx & (1<<22))
     {
-        strcpy(cpuid_info.features, "ACPI ");
+        strcat(cpuid_info.features, "ACPI ");
         cpuid_info.featureFlags |= (1<<ACPI);
     }
     if (edx & (1<<23))
     {
-        strcpy(cpuid_info.features, "MMX ");
+        strcat(cpuid_info.features, "MMX ");
         cpuid_info.featureFlags |= (1<<MMX);
     }
     if (edx & (1<<25))
     {
-        strcpy(cpuid_info.features, "SSE ");
+        strcat(cpuid_info.features, "SSE ");
         cpuid_info.featureFlags |= (1<<SSE);
     }
     if (edx & (1<<26))
