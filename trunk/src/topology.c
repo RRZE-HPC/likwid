@@ -792,6 +792,8 @@ void print_supportedCPUs (void)
     printf("\t%s\n",ivybridge_str);
     printf("\t%s\n",ivybridge_ep_str);
     printf("\t%s\n",haswell_str);
+    printf("\t%s\n",haswell_ep_str);
+    printf("\t%s\n",atom_silvermont_str);
     printf("\t%s\n\n",xeon_phi_string);
 
     printf("Supported AMD processors:\n");
