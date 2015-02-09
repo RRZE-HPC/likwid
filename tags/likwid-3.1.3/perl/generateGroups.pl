@@ -57,15 +57,15 @@ while (defined(my $arch = readdir(DIR))) {
                 while (<FILE>) {
                     my $line = $_;
 
-                    if($line =~ /SHORT[ ]+(.+)/) {
+                    if($line =~ /^SHORT[ ]+(.+)/) {
                         $shortHelp = $1;
-                    } elsif ($line =~ /EVENTSET/) {
+                    } elsif ($line =~ /^EVENTSET/) {
                         $isInSet = 1;
-                    } elsif ($line =~ /METRICS/) {
+                    } elsif ($line =~ /^METRICS/) {
                         $isInSet = 0;
                         $isInMetrics = 1;
                         $eventSet =~ s/,$//;
-                    } elsif ($line =~ /LONG/) {
+                    } elsif ($line =~ /^LONG/) {
                         $isInSet = 0;
                         $isInMetrics = 0;
                         $isInLong = 1;
