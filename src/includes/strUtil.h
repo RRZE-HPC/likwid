@@ -34,12 +34,14 @@
 #include <bstrlib.h>
 #include <types.h>
 #include <time.h>
+#include <sched.h>
 
 #define CHECK_OPTION_STRING  \
 if (! (argString = bSecureInput(200,optarg))) {  \
     ERROR_PLAIN_PRINT(Failed to read argument string!);  \
 }
 
+int cpu_count(cpu_set_t* set);
 extern int str2int(const char* str);
 extern uint32_t bstr_to_cpuset_physical(uint32_t* threads,  const_bstring q);
 extern int bstr_to_cpuset(int* threads,  const_bstring str);

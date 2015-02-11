@@ -32,17 +32,17 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <sched.h>
+
 
 #include <error.h>
-#include <types.h>
-#include <bstrlib.h>
 #include <strUtil.h>
 #include <affinity.h>
 #include <topology.h>
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-static int
+
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+int
 cpu_count(cpu_set_t* set)
 {
   uint32_t i;
@@ -71,7 +71,7 @@ cpu_count(cpu_set_t* set)
   return s;
 }
 
-/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
 int str2int(const char* str)
 {
   char* endptr;
