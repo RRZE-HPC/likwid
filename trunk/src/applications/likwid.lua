@@ -654,22 +654,21 @@ local function get_groupdata(architecture, group)
             parse_long = false
         end
         local s,e = line:find("SHORT")
-        if s ~= nil then
+        if s ~= nil and s == 0 then
             linelist = stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             groupdata["ShortDescription"] = table.concat(linelist, " ")  
         end
         s,e = line:find("EVENTSET")
-        if s ~= nil then
+        if s ~= nil and s == 0 then
             parse_eventset = true
-            
         end
         s,e = line:find("METRICS")
-        if s ~= nil then
+        if s ~= nil and s == 0 then
             parse_metrics = true
         end
         s,e = line:find("LONG")
-        if s ~= nil then
+        if s ~= nil and s == 0 then
             parse_long = true
         end
         
