@@ -63,6 +63,7 @@ GENGROUPLOCK = .gengroup
 VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
 OBJ      += $(patsubst $(SRC_DIR)/%.cc, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.cc))
+OBJ      += $(patsubst $(SRC_DIR)/%.S, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.S))
 ifeq ($(FILTER_HWLOC_OBJ),yes)
 OBJ := $(filter-out $(BUILD_DIR)/topology_hwloc.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/numa_hwloc.o,$(OBJ))
@@ -78,6 +79,7 @@ L_APPS      =   likwid-perfctr \
 				likwid-powermeter \
 				likwid-topology \
 				likwid-memsweeper \
+				likwid-agent \
 				likwid-genTopoCfg
 L_HELPER    =   likwid.lua
 ifeq ($(BUILDFREQ),true)
@@ -162,6 +164,10 @@ $(BUILD_DIR)/%.o:  %.cc
 	@echo "===>  COMPILE  $@"
 	$(Q)$(CXX) -c $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CXX) $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+
+$(BUILD_DIR)/%.o:  %.S
+	@echo "===>  COMPILE  $@"
+	$(Q)$(CXX) -c $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 
 $(BUILD_DIR)/%.h:  $(SRC_DIR)/includes/%.txt
