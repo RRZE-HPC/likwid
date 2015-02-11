@@ -41,6 +41,8 @@
 #include <numa.h>
 #include <affinity.h>
 
+extern void _loadData(uint32_t size, void* ptr);
+
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 
@@ -97,7 +99,16 @@ findProcessor(uint32_t nodeId, uint32_t coreId)
     return 0;
 }
 
-
+/* evict all dirty cachelines from last level cache */
+static void cleanupCache(char* ptr)
+{
+#if defined(__x86_64) || defined(__i386__)
+    uint32_t cachesize = 2 * cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].size;
+    _loadData(cachesize,ptr);
+#else
+    ERROR_PLAIN_PRINT(Cleanup cache is currently only available on X86 systems.);
+#endif
+}
 
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -130,6 +141,7 @@ memsweep_domain(int domainId)
             numa_info.nodes[domainId].totalMemory/ 1024.0);
     ptr = (char*) allocateOnNode(size, domainId);
     initMemory(size, ptr, domainId);
+    cleanupCache(ptr);
     munmap(ptr, size);
 }
 
