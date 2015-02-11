@@ -38,7 +38,11 @@ static int perfmon_numArchEventsSilvermont = NUM_ARCH_EVENTS_SILVERMONT;
 
 int perfmon_init_silvermont(int cpu_id)
 {
-    if ( cpuid_info.model == ATOM_SILVERMONT )
+    if (( cpuid_info.model == ATOM_SILVERMONT_C ) ||
+        ( cpuid_info.model == ATOM_SILVERMONT_E ) ||
+        ( cpuid_info.model == ATOM_SILVERMONT_Z1 ) ||
+        ( cpuid_info.model == ATOM_SILVERMONT_Z2 ) ||
+        ( cpuid_info.model == ATOM_SILVERMONT_F ))
     {
         lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     }
