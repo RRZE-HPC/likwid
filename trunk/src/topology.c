@@ -551,7 +551,11 @@ int topology_setName(void)
                     cpuid_info.short_name = short_atom;
                     break;
 
-                case ATOM_SILVERMONT:
+                case ATOM_SILVERMONT_E:
+                case ATOM_SILVERMONT_C:
+                case ATOM_SILVERMONT_Z1:
+                case ATOM_SILVERMONT_Z2:
+                case ATOM_SILVERMONT_F:
                     cpuid_info.name = atom_silvermont_str;
                     cpuid_info.short_name = short_silvermont;
                     break;
@@ -738,13 +742,17 @@ int topology_init(void)
 
     if (access(config.topologyCfgFileName, R_OK))
     {
-        funcs.init_cpuInfo();
-        topology_setName();
-        funcs.init_cpuFeatures();
         cpu_set_t cpuSet;
         CPU_ZERO(&cpuSet);
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
-        funcs.init_nodeTopology();
+        funcs.init_cpuInfo(cpuSet);
+        if (cpuid_info.model == 0 || cpuid_info.family == 0)
+        {
+            cpuid_init_cpuInfo(cpuSet);
+        }
+        topology_setName();
+        funcs.init_cpuFeatures();
+        funcs.init_nodeTopology(cpuSet);
         topology_setupTree();
         funcs.init_cacheTopology();
         sched_setaffinity(0, sizeof(cpu_set_t), &cpuSet);

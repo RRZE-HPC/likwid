@@ -557,7 +557,11 @@ perfmon_init_maps(void)
                     perfmon_numCounters = perfmon_numCountersCore2;
                     break;
 
-                case ATOM_SILVERMONT:
+                case ATOM_SILVERMONT_E:
+                case ATOM_SILVERMONT_C:
+                case ATOM_SILVERMONT_Z1:
+                case ATOM_SILVERMONT_Z2:
+                case ATOM_SILVERMONT_F:
                     eventHash = silvermont_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsSilvermont;
                     counter_map = silvermont_counter_map;
@@ -743,7 +747,11 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_core2;
                     break;
 
-                case ATOM_SILVERMONT:
+                case ATOM_SILVERMONT_E:
+                case ATOM_SILVERMONT_C:
+                case ATOM_SILVERMONT_Z1:
+                case ATOM_SILVERMONT_Z2:
+                case ATOM_SILVERMONT_F:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_silvermont;

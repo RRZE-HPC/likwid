@@ -131,9 +131,13 @@ power_init(int cpuId)
         case SANDYBRIDGE_EP:
         case IVYBRIDGE_EP:
         case HASWELL_EP:
+        case ATOM_SILVERMONT_E:
+        case ATOM_SILVERMONT_Z1:
+        case ATOM_SILVERMONT_Z2:
+        case ATOM_SILVERMONT_F:
             power_info.hasRAPL = 1;
             break;
-        case ATOM_SILVERMONT:
+        ATOM_SILVERMONT_C
             power_info.hasRAPL = 1;
             info_register = MSR_PKG_POWER_INFO_SILVERMONT;
             break;
@@ -162,18 +166,20 @@ power_init(int cpuId)
             {
                 power_info.energyUnits[i] = energyUnit;
             }
-            if (cpuid_info.model == HASWELL_EP)
+            if ((cpuid_info.model == HASWELL_EX) ||
+                (cpuid_info.model == HASWELL_M1) ||
+                (cpuid_info.model == HASWELL_M2))
             {
                 power_info.energyUnits[3] = 15.3E-6;
             }
 
             /* info_register set in the switch-case-statement at the beginning
-               because Atom Silvermont uses another register */
+               because Atom Silvermont C uses another register */
             err = HPMread(cpuId, MSR_DEV, info_register, &flags);
             if (err == 0)
             {
                 power_info.tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
-                if (cpuid_info.model != ATOM_SILVERMONT)
+                if (cpuid_info.model != ATOM_SILVERMONT_C)
                 {
                     power_info.minPower =  (double) extractBitField(flags,15,16) * power_info.powerUnit;
                     power_info.maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;

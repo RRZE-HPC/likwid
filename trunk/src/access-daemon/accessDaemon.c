@@ -84,7 +84,11 @@
 #define IVYBRIDGE_EP         0x3EU
 #define HASWELL              0x3CU
 #define HASWELL_EP           0x3FU
-#define ATOM_SILVERMONT      0x4DU
+#define ATOM_SILVERMONT_E    0x37U
+#define ATOM_SILVERMONT_C    0x4DU
+#define ATOM_SILVERMONT_Z1   0x4AU
+#define ATOM_SILVERMONT_Z2   0x5AU
+#define ATOM_SILVERMONT_F    0x5DU
 
 #define PCI_ROOT_PATH    "/proc/bus/pci/"
 #define MAX_PATH_LENGTH   60
@@ -595,7 +599,11 @@ int main(void)
                     isPCIUncore = 1;
                     allowed = allowed_haswell;
                 }
-                else if (model == ATOM_SILVERMONT)
+                else if ((model == ATOM_SILVERMONT_C) ||
+                         (model == ATOM_SILVERMONT_E) ||
+                         (model == ATOM_SILVERMONT_Z1) ||
+                         (model == ATOM_SILVERMONT_Z2) ||
+                         (model == ATOM_SILVERMONT_F))
                 {
                     allowed = allowed_silvermont;
                 }
