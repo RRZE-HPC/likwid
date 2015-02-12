@@ -137,7 +137,7 @@ power_init(int cpuId)
         case ATOM_SILVERMONT_F:
             power_info.hasRAPL = 1;
             break;
-        ATOM_SILVERMONT_C
+        case ATOM_SILVERMONT_C:
             power_info.hasRAPL = 1;
             info_register = MSR_PKG_POWER_INFO_SILVERMONT;
             break;
@@ -166,7 +166,7 @@ power_init(int cpuId)
             {
                 power_info.energyUnits[i] = energyUnit;
             }
-            if ((cpuid_info.model == HASWELL_EX) ||
+            if ((cpuid_info.model == HASWELL_EP) ||
                 (cpuid_info.model == HASWELL_M1) ||
                 (cpuid_info.model == HASWELL_M2))
             {
