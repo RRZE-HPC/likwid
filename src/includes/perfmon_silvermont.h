@@ -74,6 +74,7 @@ uint32_t svm_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 int svm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
+    uint64_t offcore_flags = 0x0ULL;
 
     flags |= (1<<16)|(1<<22);
     flags |= (event->umask<<8) + event->eventId;
@@ -101,6 +102,14 @@ int svm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 case EVENT_OPTION_COUNT_KERNEL:
                     flags |= (1ULL<<17);
                     break;
+                case EVENT_OPTION_MATCH0:
+                    offcore_flags |= event->options[i].value;
+                    break;
+                case EVENT_OPTION_MATCH1:
+                    offcore_flags |= event->options[i].value;
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -121,9 +130,12 @@ int svm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
         if (reg)
         {
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, reg, &flags));
-            flags = (1<<event->cfgBits)|(1<<event->cmask);
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
+            if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
+            {
+                offcore_flags = (1<<event->cfgBits)|(1<<event->cmask);
+            }
+            VERBOSEPRINTREG(cpu_id, reg, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , offcore_flags));
         }
     }
     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
@@ -426,15 +438,21 @@ int perfmon_readCountersThread_silvermont(int thread_id, PerfmonEventSet* eventS
 
 int perfmon_finalizeCountersThread_silvermont(int thread_id, PerfmonEventSet* eventSet)
 {
+    int haveLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t ovf_values_core = (1ULL<<63)|(1ULL<<62);
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    {
+        haveLock = 1;
+    }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = counter_map[index].configRegister;
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, 0x0ULL));
+        PciDeviceIndex dev = counter_map[index].device;
         switch (counter_map[index].type)
         {
             case PMC:
@@ -443,10 +461,12 @@ int perfmon_finalizeCountersThread_silvermont(int thread_id, PerfmonEventSet* ev
                 {
                     if (event->umask == 0x1)
                     {
+                        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL, CLEAR_OFFCORE_RESP0);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, 0x0ULL));
                     }
                     else if (event->umask == 0x2)
                     {
+                        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL, CLEAR_OFFCORE_RESP1);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, 0x0ULL));
                     }
                 }
@@ -457,6 +477,12 @@ int perfmon_finalizeCountersThread_silvermont(int thread_id, PerfmonEventSet* ev
             default:
                 break;
         }
+        if ((reg) && ((dev == MSR_DEV) || (haveLock)))
+        {
+            VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
+        }
+        eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_OVF_CTRL, ovf_values_core));

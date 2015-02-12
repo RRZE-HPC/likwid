@@ -71,6 +71,7 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint64_t flags = 0x0ULL;
     int haveLock = 0;
+    uint64_t offcore_flags = 0x0ULL;
 
     if ((tile_lock[affinity_core2tile_lookup[cpu_id]] == cpu_id))
     {
@@ -79,7 +80,10 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
     flags = (1ULL<<22)|(1ULL<<16);
     flags |= (event->umask<<8) + event->eventId;
-    if (event->cfgBits != 0) /* set custom cfg and cmask */
+    /* set custom cfg and cmask */
+    if ((event->cfgBits != 0) &&
+        (event->eventId != 0xB7) &&
+        (event->eventId != 0xBB))
     {
         flags |= ((event->cmask<<8) + event->cfgBits)<<16;
     }
@@ -101,6 +105,12 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 case EVENT_OPTION_ANYTHREAD:
                     flags |= (1ULL<<21);
                     break;
+                case EVENT_OPTION_MATCH0:
+                    offcore_flags |= (event->options[j].value & 0xF);
+                    break;
+                case EVENT_OPTION_MATCH1:
+                    offcore_flags |= (event->options[j].value & 0xF)<<7;
+                    break;
                 default:
                     break;
             }
@@ -111,16 +121,20 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     // cmask contain offset of "response type" bit
     if (haveLock && event->eventId == 0xB7)
     {
-        uint64_t offcore_flags = 0x0ULL;
-        offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
+        if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
+        {
+            offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
+        }
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, offcore_flags));
     }
     if ((haveLock) && (event->eventId == 0xBB) &&
         ((cpuid_info.model == NEHALEM_WESTMERE) || (cpuid_info.model == NEHALEM_WESTMERE_M)))
     {
-        uint64_t offcore_flags = 0x0ULL;
-        offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
+        if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
+        {
+            offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
+        }
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, offcore_flags));
     }
@@ -502,8 +516,7 @@ int perfmon_finalizeCountersThread_nehalem(int thread_id, PerfmonEventSet* event
         {
             RegisterIndex index = eventSet->events[i].index;
             uint64_t reg = counter_map[index].configRegister;
-            VERBOSEPRINTREG(cpu_id, reg, 0x0ULL, CLEAR_CTRL);
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, 0x0ULL));
+            PciDeviceIndex dev = counter_map[index].device;
             switch (counter_map[index].type)
             {
                 case PMC:
@@ -532,6 +545,12 @@ int perfmon_finalizeCountersThread_nehalem(int thread_id, PerfmonEventSet* event
                 default:
                     break;
             }
+            if ((reg) && ((dev == MSR_DEV) || (haveLock)))
+            {
+                VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
+                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
+            }
+            eventSet->events[i].threadCounter[thread_id].init = FALSE;
         }
     }
 
