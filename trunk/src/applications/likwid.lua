@@ -261,8 +261,13 @@ end
 
 likwid.printtable = printtable
 
-function printcsv(tab)
+function printcsv(tab, linelength)
     local nr_columns = tablelength(tab)
+    if not linelength then
+        linelength = 6
+    elseif linelength < 6 then
+        linelength = 6
+    end
     if nr_columns == 0 then
         print("Table has no columns. Empty table?")
         return
@@ -281,6 +286,9 @@ function printcsv(tab)
             if (i ~= nr_columns) then
                 str = str .. ","
             end
+        end
+        if nr_columns < linelength then
+            str = str .. string.rep(",", linelength-nr_columns)
         end
         str = str .. "\n"
     end
@@ -653,26 +661,26 @@ local function get_groupdata(architecture, group)
             parse_metrics = false
             parse_long = false
         end
-        local s,e = line:find("SHORT")
-        if s ~= nil and s == 0 then
+
+        if line:match("^SHORT%a*") ~= nil then
             linelist = stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             groupdata["ShortDescription"] = table.concat(linelist, " ")  
         end
-        s,e = line:find("EVENTSET")
-        if s ~= nil and s == 0 then
+
+        if line:match("^EVENTSET$") ~= nil then
             parse_eventset = true
         end
-        s,e = line:find("METRICS")
-        if s ~= nil and s == 0 then
+
+        if line:match("^METRICS$") ~= nil then
             parse_metrics = true
         end
-        s,e = line:find("LONG")
-        if s ~= nil and s == 0 then
+
+        if line:match("^LONG$") ~= nil then
             parse_long = true
         end
-        
-        if parse_eventset and line:find("EVENTSET") == nil then
+
+        if parse_eventset and line:match("^EVENTSET$") == nil then
             linelist = stringsplit(line:gsub("^%s*(.-)%s*$", "%1"), "%s+", nil, "%s+")
             eventstring = linelist[2] .. ":" .. linelist[1]
             if #linelist > 2 then
@@ -687,7 +695,7 @@ local function get_groupdata(architecture, group)
             nr_events = nr_events + 1
         end
         
-        if parse_metrics and line:find("METRICS") == nil then
+        if parse_metrics and line:match("^METRICS$") == nil then
             linelist = stringsplit(line:gsub("^%s*(.-)%s*$", "%1"), "%s+", nil, "%s+")
             formula = linelist[#linelist]
             table.remove(linelist)
@@ -697,7 +705,7 @@ local function get_groupdata(architecture, group)
             nr_metrics = nr_metrics + 1
         end
         
-        if parse_long and line:find("LONG") == nil then
+        if parse_long and line:match("^LONG$") == nil then
             groupdata["LongDescription"] = groupdata["LongDescription"] .. "\n" .. line
         end
     end
@@ -775,201 +783,199 @@ local function min_max_avg(values)
 end
 
 
-local function print_output(groupID, groupdata, cpulist, use_csv)
-    local num_events = likwid_getNumberOfEvents(groupID);
-    local num_threads = likwid_getNumberOfThreads(groupID);
-    local results = {}
-
-    for i=0,num_events-1 do
-        results[i+1] = {}
-        for j=0,num_threads-1 do
-            results[i+1][j] = likwid_getResult(groupID, i, j)
-        end
-    end
+local function printOutput(groups, results, groupData, cpulist)
+    local nr_groups = #groups
+    local maxLineFields = #cpulist + 2
     
-    tab =  {}
-    tab[1] = {"Event"}
-    counterlist = {}
-    for i=0,num_events-1 do
-        table.insert(tab[1],groupdata["Events"][i]["Event"])
-    end
-    tab[2] = {"Counter"}
-    for i=0,num_events-1 do
-        table.insert(tab[2],groupdata["Events"][i]["Counter"])
-    end
-    for j=0,num_threads-1 do
-        tmpList = {"Core "..tostring(cpulist[j+1])}
-        for i=1,num_events do
-            local tmp = tostring(results[i][j])
-            if tostring(results[i][j]):len() > 12 then
-                tmp = string.format("%e", results[i][j])
-            end
-            table.insert(tmpList, tmp)
-        end
-        table.insert(tab, tmpList)
-    end
-    if use_csv then
-        likwid.printcsv(tab)
-    else
-        likwid.printtable(tab)
-    end
-    if #cpulist > 1 then
-        local mins = {}
-        local maxs = {}
-        local sums = {}
-        local avgs = {}
-        mins[1] = "Min"
-        maxs[1] = "Max"
-        sums[1] = "Sum"
-        avgs[1] = "Avg"
-        for i=1,num_events do
-            mins[i+1] = math.huge
-            maxs[i+1] = 0
-            sums[i+1] = 0
-            for j=0, num_threads-1 do
-                if results[i][j] < mins[i+1] then
-                    mins[i+1] = results[i][j]
-                end
-                if results[i][j] > maxs[i+1] then
-                    maxs[i+1] = results[i][j]
-                end
-                sums[i+1] = sums[i+1] + results[i][j]
-            end
-            avgs[i+1] = sums[i+1] / num_threads
-            if tostring(avgs[i+1]):len() > 12 then
-                avgs[i+1] = string.format("%e",avgs[i+1])
-            end
-            if tostring(mins[i+1]):len() > 12 then
-                mins[i+1] = string.format("%e",mins[i+1])
-            end
-            if tostring(maxs[i+1]):len() > 12 then
-                maxs[i+1] = string.format("%e",maxs[i+1])
-            end
-            if tostring(sums[i+1]):len() > 12 then
-                sums[i+1] = string.format("%e",sums[i+1])
-            end
-        end
-        
-        for i=#tab,3,-1 do
-            table.remove(tab,i)
-        end
-        table.insert(tab, sums)
-        table.insert(tab, maxs)
-        table.insert(tab, mins)
-        table.insert(tab, avgs)
+    for g, group in pairs(groups) do
+        local groupID = group["ID"]
+        local num_events = likwid_getNumberOfEvents(groupID);
+        local num_threads = likwid_getNumberOfThreads(groupID-1);
+
+        tab =  {}
         tab[1] = {"Event"}
+        counterlist = {}
         for i=0,num_events-1 do
-            table.insert(tab[1],groupdata["Events"][i]["Event"] .. " STAT")
+            table.insert(tab[1],groupData[groupID]["Events"][i]["Event"])
+        end
+        tab[2] = {"Counter"}
+        for i=0,num_events-1 do
+            table.insert(tab[2],groupData[groupID]["Events"][i]["Counter"])
         end
 
-        if use_csv then
-            likwid.printcsv(tab)
-        else
-            likwid.printtable(tab)
-        end
-    end
-    if groupdata["Metrics"] then
-    
-        counterlist["time"] = likwid_getRuntimeOfGroup(groupID)* 1.E-06
-        counterlist["inverseClock"] = 1.0/likwid_getCpuClock();
-        tab = {}
-        tab[1] = {"Metric"}
-        for m=1,#groupdata["Metrics"] do
-            table.insert(tab[1],groupdata["Metrics"][m]["description"] )
-        end
-        for j=0,num_threads-1 do
-            tmpList = {"Core "..tostring(cpulist[j+1])}
+        for j=1,num_threads do
+            tmpList = {"Core "..tostring(cpulist[j])}
             for i=1,num_events do
-                counterlist[groupdata["Events"][i-1]["Counter"]] = results[i][j]
-            end
-            for m=1,#groupdata["Metrics"] do
-                local tmp = calculate_metric(groupdata["Metrics"][m]["formula"], counterlist)
-                if tostring(tmp):len() > 12 then
-                    tmp = string.format("%e",tmp)
+                local tmp = tostring(results[groupID][i][j])
+                if tostring(results[groupID][i][j]):len() > 12 then
+                    tmp = string.format("%e", results[groupID][i][j])
                 end
-                table.insert(tmpList, tostring(tmp))
+                table.insert(tmpList, tmp)
             end
-            table.insert(tab,tmpList)
+            table.insert(tab, tmpList)
         end
-
         if use_csv then
-            likwid.printcsv(tab)
+            likwid.printcsv(tab, maxLineFields)
         else
             likwid.printtable(tab)
         end
         if #cpulist > 1 then
-            mins = {}
-            maxs = {}
-            sums = {}
-            avgs = {}
-            
+            local mins = {}
+            local maxs = {}
+            local sums = {}
+            local avgs = {}
             mins[1] = "Min"
             maxs[1] = "Max"
             sums[1] = "Sum"
             avgs[1] = "Avg"
-            nr_lines = #tab[1]
-            for j=2,nr_lines do
-                for i=1, num_threads do
-                    if mins[j] == nil then
-                        mins[j] = math.huge
+            for i=1,num_events do
+                mins[i+1] = math.huge
+                maxs[i+1] = 0
+                sums[i+1] = 0
+                for j=1, num_threads do
+                    if results[groupID][i][j] < mins[i+1] then
+                        mins[i+1] = results[groupID][i][j]
                     end
-                    if maxs[j] == nil then
-                        maxs[j] = 0
+                    if results[groupID][i][j] > maxs[i+1] then
+                        maxs[i+1] = results[groupID][i][j]
                     end
-                    if sums[j] == nil then
-                        sums[j] = 0
-                    end
-                    
-                    local tmp = tonumber(tab[i+1][j])
-                    if tmp ~= nil then
-                        if tmp < mins[j] then
-                            mins[j] = tmp
-                        end
-                        if tmp > maxs[j] then
-                            maxs[j] = tmp
-                        end
-                        sums[j] = sums[j] + tmp
-                    end
+                    sums[i+1] = sums[i+1] + results[groupID][i][j]
                 end
-                avgs[j] = sums[j] / num_threads
-                if tostring(avgs[j]):len() > 12 then
-                    avgs[j] = string.format("%e",avgs[j])
+                avgs[i+1] = sums[i+1] / num_threads
+                if tostring(avgs[i+1]):len() > 12 then
+                    avgs[i+1] = string.format("%e",avgs[i+1])
                 end
-                if tostring(mins[j]):len() > 12 then
-                    mins[j] = string.format("%e",mins[j])
+                if tostring(mins[i+1]):len() > 12 then
+                    mins[i+1] = string.format("%e",mins[i+1])
                 end
-                if tostring(maxs[j]):len() > 12 then
-                    maxs[j] = string.format("%e",maxs[j])
+                if tostring(maxs[i+1]):len() > 12 then
+                    maxs[i+1] = string.format("%e",maxs[i+1])
                 end
-                if tostring(sums[j]):len() > 12 then
-                    sums[j] = string.format("%e",sums[j])
+                if tostring(sums[i+1]):len() > 12 then
+                    sums[i+1] = string.format("%e",sums[i+1])
                 end
             end
-
-            tab = {}
-            tab[1] = {"Metric"}
-            for m=1,#groupdata["Metrics"] do
-                table.insert(tab[1],groupdata["Metrics"][m]["description"].." STAT" )
+            
+            for i=#tab,3,-1 do
+                table.remove(tab,i)
             end
             table.insert(tab, sums)
             table.insert(tab, maxs)
             table.insert(tab, mins)
             table.insert(tab, avgs)
+            tab[1] = {"Event"}
+            for i=0,num_events-1 do
+                table.insert(tab[1],groupData[groupID]["Events"][i]["Event"] .. " STAT")
+            end
 
             if use_csv then
-                likwid.printcsv(tab)
+                likwid.printcsv(tab, maxLineFields)
             else
                 likwid.printtable(tab)
+            end
+        end
+        if groupData[groupID]["Metrics"] then
+            counterlist["time"] = likwid_getRuntimeOfGroup(groupID)* 1.E-06
+            counterlist["inverseClock"] = 1.0/likwid_getCpuClock();
+            tab = {}
+            tab[1] = {"Metric"}
+            for m=1,#groupdata["Metrics"] do
+                table.insert(tab[1],groupData[groupID]["Metrics"][m]["description"] )
+            end
+            for j=0,num_threads-1 do
+                tmpList = {"Core "..tostring(cpulist[j+1])}
+                for i=0,num_events-1 do
+                    counterlist[groupData[groupID]["Events"][i]["Counter"]] = results[groupID][i+1][j+1]
+                end
+                for m=1,#groupdata["Metrics"] do
+                    local tmp = calculate_metric(groupData[groupID]["Metrics"][m]["formula"], counterlist)
+                    if tostring(tmp):len() > 12 then
+                        tmp = string.format("%e",tmp)
+                    end
+                    table.insert(tmpList, tostring(tmp))
+                end
+                table.insert(tab,tmpList)
+            end
+
+            if use_csv then
+                likwid.printcsv(tab, maxLineFields)
+            else
+                likwid.printtable(tab)
+            end
+            if #cpulist > 1 then
+                mins = {}
+                maxs = {}
+                sums = {}
+                avgs = {}
+                
+                mins[1] = "Min"
+                maxs[1] = "Max"
+                sums[1] = "Sum"
+                avgs[1] = "Avg"
+                nr_lines = #tab[1]
+                for j=2,nr_lines do
+                    for i=1, num_threads do
+                        if mins[j] == nil then
+                            mins[j] = math.huge
+                        end
+                        if maxs[j] == nil then
+                            maxs[j] = 0
+                        end
+                        if sums[j] == nil then
+                            sums[j] = 0
+                        end
+                        
+                        local tmp = tonumber(tab[i+1][j])
+                        if tmp ~= nil then
+                            if tmp < mins[j] then
+                                mins[j] = tmp
+                            end
+                            if tmp > maxs[j] then
+                                maxs[j] = tmp
+                            end
+                            sums[j] = sums[j] + tmp
+                        end
+                    end
+                    avgs[j] = sums[j] / num_threads
+                    if tostring(avgs[j]):len() > 12 then
+                        avgs[j] = string.format("%e",avgs[j])
+                    end
+                    if tostring(mins[j]):len() > 12 then
+                        mins[j] = string.format("%e",mins[j])
+                    end
+                    if tostring(maxs[j]):len() > 12 then
+                        maxs[j] = string.format("%e",maxs[j])
+                    end
+                    if tostring(sums[j]):len() > 12 then
+                        sums[j] = string.format("%e",sums[j])
+                    end
+                end
+
+                tab = {}
+                tab[1] = {"Metric"}
+                for m=1,#groupdata["Metrics"] do
+                    table.insert(tab[1],groupData[groupID]["Metrics"][m]["description"].." STAT" )
+                end
+                table.insert(tab, sums)
+                table.insert(tab, maxs)
+                table.insert(tab, mins)
+                table.insert(tab, avgs)
+
+                if use_csv then
+                    likwid.printcsv(tab, maxLineFields)
+                else
+                    likwid.printtable(tab)
+                end
             end
         end
     end
 end
 
-likwid.print_output = print_output
+likwid.printOutput = printOutput
 
 local function printMarkerOutput(groups, results, groupData, cpulist)
     local nr_groups = #groups
-    local ctr_and_events = likwid_getEventsAndCounters()
+    local maxLineFields = #cpulist + 2
 
     for g, group in pairs(groups) do
         for r, region in pairs(groups[g]) do
@@ -992,7 +998,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                 end
 
                 if use_csv then
-                    likwid.printcsv(tab)
+                    likwid.printcsv(tab, maxLineFields)
                 else
                     likwid.printtable(tab)
                 end
@@ -1021,7 +1027,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                 end
 
                 if use_csv then
-                    likwid.printcsv(tab)
+                    likwid.printcsv(tab, maxLineFields)
                 else
                     likwid.printtable(tab)
                 end
@@ -1076,7 +1082,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                     end
 
                     if use_csv then
-                        likwid.printcsv(tab)
+                        likwid.printcsv(tab, maxLineFields)
                     else
                         likwid.printtable(tab)
                     end
@@ -1112,7 +1118,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                     end
 
                     if use_csv then
-                        likwid.printcsv(tab)
+                        likwid.printcsv(tab, maxLineFields)
                     else
                         likwid.printtable(tab)
                     end
@@ -1194,7 +1200,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                         table.insert(tab, tmpList)
 
                         if use_csv then
-                            likwid.printcsv(tab)
+                            likwid.printcsv(tab, maxLineFields)
                         else
                             likwid.printtable(tab)
                         end
@@ -1214,11 +1220,11 @@ function getResults()
     local nr_threads = likwid_getNumberOfThreads()
     for i=1,nr_groups do
         results[i] = {}
-        local nr_events = likwid_getNumberOfEvents(i-1)
+        local nr_events = likwid_getNumberOfEvents(i)
         for j=1,nr_events do
             results[i][j] = {}
             for k=1, nr_threads do
-                results[i][j][k] = likwid_getResult(i-1,j-1,k-1)
+                results[i][j][k] = likwid_getResult(i,j-1,k-1)
             end
         end
     end
