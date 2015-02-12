@@ -452,10 +452,15 @@ if use_marker == true then
     end
     likwid.print_markerOutput(groups, results, group_list, cpulist)
 elseif use_wrapper or use_stethoscope then
-    for i, group in pairs(group_ids) do
-        print(string.format("Group %d: %s", group, group_list[group]["GroupString"]))
-        likwid.print_output(group, group_list[group], cpulist, use_csv)
+    results = likwid.getResults()
+    groups = {}
+    for g,gr in pairs(group_list) do
+        if groups[g] == nil then
+            groups[g] = {}
+        end
+        groups[g]["ID"] = g
     end
+    likwid.printOutput(groups, results, group_list, cpulist)
 end
 
 if outfile then
