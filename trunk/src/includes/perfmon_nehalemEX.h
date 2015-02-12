@@ -531,10 +531,10 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
                                     flags |= (1<<17);
                                     break;
                                 case EVENT_OPTION_MATCH0:
-                                    offcore_flags |= (event->options[j].value & 0xFF)<<7;
+                                    offcore_flags |= (event->options[j].value & 0xFF);
                                     break;
                                 case EVENT_OPTION_MATCH1:
-                                    offcore_flags |= (event->options[j].value & 0xFF);
+                                    offcore_flags |= (event->options[j].value & 0xFF)<<7;
                                     break;
                                 default:
                                     break;
@@ -543,7 +543,7 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
                     }
                     if (event->eventId == 0xB7)
                     {
-                        if (offcore_flags == 0x0ULL)
+                        if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
                         {
                             offcore_flags = ((event->cfgBits & 0xFF)<<7) | (event->cmask & 0xFF);
                         }
@@ -552,7 +552,7 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
                     }
                     if (event->eventId == 0xBB)
                     {
-                        if (offcore_flags == 0x0ULL)
+                        if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
                         {
                             offcore_flags = ((event->cfgBits & 0xFF)<<7) | (event->cmask & 0xFF);
                         }
@@ -937,8 +937,8 @@ int perfmon_finalizeCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eve
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = counter_map[index].configRegister;
-        VERBOSEPRINTREG(cpu_id, reg, LLU_CAST 0x0ULL, READ_UNCORE);
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, 0x0ULL));
+        PciDeviceIndex dev = counter_map[index].device;
+        RegisterType type = counter_map[index].type;
         switch (counter_map[index].type)
         {
             case PMC:
@@ -960,6 +960,12 @@ int perfmon_finalizeCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eve
             default:
                 break;
         }
+        if ((reg) && (((dev == MSR_DEV) && (type < UNCORE)) || (((haveLock) && (type > UNCORE)))))
+        {
+            VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
+        }
+        eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
 
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))

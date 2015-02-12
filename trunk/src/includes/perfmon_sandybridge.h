@@ -84,6 +84,7 @@ int snb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = 0x0U;
+    uint64_t offcore_flags = 0x0ULL;
 
     flags |= (1<<22);  /* enable flag */
     flags |= (1<<16);  /* user mode flag */
@@ -91,23 +92,53 @@ int snb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     /* Intel with standard 8 bit event mask: [7:0] */
     flags |= (event->umask<<8) + event->eventId;
 
-    if (event->cfgBits != 0) /* set custom cfg and cmask */
+    /* set custom cfg and cmask */
+    if ((event->cfgBits != 0) &&
+        (event->eventId != 0xB7) &&
+        (event->eventId != 0xBB))
     {
         flags |= ((event->cmask<<8) + event->cfgBits)<<16;
     }
-    for(j=0;j<event->numberOfOptions;j++)
+    if (event->numberOfOptions > 0)
     {
-        switch (event->options[j].type)
+        for(j=0;j<event->numberOfOptions;j++)
         {
-            case EVENT_OPTION_EDGE:
-                flags |= (1<<18);
-                break;
-            case EVENT_OPTION_COUNT_KERNEL:
-                flags |= (1<<17);
-                break;
-            default:
-                break;
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1<<18);
+                    break;
+                case EVENT_OPTION_COUNT_KERNEL:
+                    flags |= (1<<17);
+                    break;
+                case EVENT_OPTION_MATCH0:
+                    offcore_flags |= event->options[j].value;
+                    break;
+                case EVENT_OPTION_MATCH1:
+                    offcore_flags |= (event->options[j].value<<16);
+                    break;
+                default:
+                    break;
+            }
         }
+    }
+    if (event->eventId == 0xB7)
+    {
+        if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
+        {
+            offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
+        }
+        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, offcore_flags));
+    }
+    else if (event->eventId == 0xBB)
+    {
+        if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
+        {
+            offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
+        }
+        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, offcore_flags));
     }
     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
@@ -1499,6 +1530,16 @@ int perfmon_finalizeCountersThread_sandybridge(int thread_id, PerfmonEventSet* e
         {
             case PMC:
                 ovf_values_core |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));
+                if (eventSet->events[i].event.eventId == 0xB7)
+                {
+                    VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL, CLEAR_OFFCORE_RESP0);
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, 0x0ULL));
+                }
+                else if (eventSet->events[i].event.eventId == 0xBB)
+                {
+                    VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL, CLEAR_OFFCORE_RESP1);
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, 0x0ULL));
+                }
                 break;
             case FIXED:
                 ovf_values_core |= (1ULL<<(index+32));
