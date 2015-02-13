@@ -108,6 +108,7 @@ output = ""
 use_csv = false
 execString = nil
 outfile = nil
+gotC = false
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid("pid"))
 
 for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
@@ -131,9 +132,11 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
         likwid.setVerbosity(verbose)
     elseif (opt == "c") then
         num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
+        gotC = true
     elseif (opt == "C") then
         num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
         pin_cpus = true
+        gotC = true
     elseif (opt == "a") then
         print_groups = true
     elseif (opt == "e") then
@@ -273,9 +276,12 @@ if print_info then
     os.exit(0)
 end
 
-if num_cpus == 0 then
+if num_cpus == 0 and not gotC then
     print("Option -c <list> or -C <list> must be given on commanlikwid.dline")
     usage()
+    os.exit(1)
+elseif num_cpus == 0 and gotC then
+    print("CPUs given on commandline are not valid in current environment, maybe it's limited by a cpuset.")
     os.exit(1)
 end
 

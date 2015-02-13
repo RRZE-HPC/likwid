@@ -355,6 +355,9 @@ static int lua_likwid_getCpuTopology(lua_State* L)
         lua_pushstring(L,"apicId");
         lua_pushunsigned(L,cputopo->threadPool[i].apicId);
         lua_settable(L,-3);
+        lua_pushstring(L,"inCpuSet");
+        lua_pushunsigned(L,cputopo->threadPool[i].inCpuSet);
+        lua_settable(L,-3);
         lua_settable(L,-3);
     }
     lua_settable(L,-3);

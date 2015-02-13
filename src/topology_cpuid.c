@@ -297,10 +297,11 @@ cpuid_set_osname(void)
 }
 
 
-void cpuid_init_cpuInfo(void)
+void cpuid_init_cpuInfo(cpu_set_t cpuSet)
 {
+    int cpus_in_set = 0;
     cpuid_info.isIntel = 1;
-    
+
     eax = 0x00;
     CPUID;
 
@@ -317,6 +318,17 @@ void cpuid_init_cpuInfo(void)
     cpuid_info.stepping =  (eax&0xFU);
     cpuid_set_osname();
     cpuid_topology.numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
+    cpus_in_set = cpu_count(&cpuSet);
+    if (cpus_in_set < cpuid_topology.numHWThreads)
+    {
+        cpuid_topology.numHWThreads = cpus_in_set;
+    }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, CPU-ID CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
+                            cpuid_info.family,
+                            cpuid_info.model,
+                            cpuid_info.stepping,
+                            cpuid_info.isIntel,
+                            cpuid_topology.numHWThreads)
     return;
 }
 
@@ -448,7 +460,7 @@ void cpuid_init_cpuFeatures(void)
     return;
 }
 
-void cpuid_init_nodeTopology(void)
+void cpuid_init_nodeTopology(cpu_set_t cpuSet)
 {
     uint32_t apicId;
     uint32_t bitField;
@@ -493,6 +505,11 @@ void cpuid_init_nodeTopology(void)
             CPUID;
             apicId = edx;
             hwThreadPool[i].apicId = apicId;
+            hwThreadPool[i].inCpuSet = 0;
+            if (CPU_ISSET(i, &cpuSet))
+            {
+                hwThreadPool[i].inCpuSet = 1;
+            }
 
             for (level=0; level < 3; level++)
             {

@@ -3,6 +3,7 @@
 
 
 #include <hwloc.h>
+#include <sched.h>
 
 
 static hwloc_topology_t hwloc_topology = NULL;
@@ -11,9 +12,9 @@ int hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwl
 
 
 
-void hwloc_init_cpuInfo(void);
+void hwloc_init_cpuInfo(cpu_set_t cpuSet);
 void hwloc_init_cpuFeatures(void);
-void hwloc_init_nodeTopology(void);
+void hwloc_init_nodeTopology(cpu_set_t cpuSet);
 void hwloc_init_cacheTopology(void);
 
 

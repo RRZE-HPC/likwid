@@ -45,36 +45,6 @@ static int get_stepping(void)
     return (eax&0xFU);
 }
 
-static int get_cpu_perf_data(void)
-{
-    uint32_t eax, ebx, ecx, edx;
-    int largest_function = 0;
-    eax = 0x00;
-    CPUID;
-    largest_function = eax;
-    if (cpuid_info.family == P6_FAMILY && 0x0A <= largest_function)
-    {
-        eax = 0x0A;
-        CPUID;
-        cpuid_info.perf_version   =  (eax&0xFFU);
-        cpuid_info.perf_num_ctr   =   ((eax>>8)&0xFFU);
-        cpuid_info.perf_width_ctr =  ((eax>>16)&0xFFU);
-        cpuid_info.perf_num_fixed_ctr =  (edx&0xFU);
-
-        eax = 0x06;
-        CPUID;
-        if (eax & (1<<1))
-        {
-            cpuid_info.turbo = 1;
-        }
-        else
-        {
-            cpuid_info.turbo = 0;
-        }
-    }
-    return 0;
-}
-
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 #ifdef LIKWID_USE_HWLOC
 int hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwloc_obj_type_t type, int* index, uint32_t **list)
@@ -99,7 +69,7 @@ int hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwl
     return count;
 }
 
-void hwloc_init_cpuInfo(void)
+void hwloc_init_cpuInfo(cpu_set_t cpuSet)
 {
     int i;
     hwloc_obj_t obj;
@@ -144,148 +114,7 @@ void hwloc_init_cpuInfo(void)
     return;
 }
 
-void hwloc_init_cpuFeatures(void)
-{
-    int ret;
-    FILE* file;
-    char buf[1024];
-    char ident[30];
-    char delimiter[] = " ";
-    char* cptr;
-
-    if ( (file = fopen( "/proc/cpuinfo", "r")) == NULL )
-    {
-        fprintf(stderr, "Cannot open /proc/cpuinfo\n");
-        return;
-    }
-    ret = 0;
-    while( fgets(buf, sizeof(buf)-1, file) )
-    {
-        ret = sscanf(buf, "%s\t:", &(ident[0]));
-        if (ret != 1 || strcmp(ident,"flags") != 0)
-        {
-            continue;
-        }
-        else
-        {
-            ret = 1;
-            break;
-        }
-    }
-    fclose(file);
-    if (ret == 0)
-    {
-        return;
-    }
-
-    cpuid_info.featureFlags = 0;
-    cpuid_info.features = (char*) malloc(MAX_FEATURE_STRING_LENGTH*sizeof(char));
-    cpuid_info.features[0] = '\0';
-
-    cptr = strtok(&(buf[6]),delimiter);
-
-    while (cptr != NULL)
-    {
-        if (strcmp(cptr,"ssse3") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<SSSE3);
-            strcat(cpuid_info.features, "SSSE3 ");
-        }
-        else if (strcmp(cptr,"sse3") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<SSE3);
-            strcat(cpuid_info.features, "SSE3 ");
-        }
-        else if (strcmp(cptr,"monitor") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<MONITOR);
-            strcat(cpuid_info.features, "MONITOR ");
-        }
-        else if (strcmp(cptr,"mmx") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<MMX);
-            strcat(cpuid_info.features, "MMX ");
-        }
-        else if (strcmp(cptr,"sse") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<SSE);
-            strcat(cpuid_info.features, "SSE ");
-        }
-        else if (strcmp(cptr,"sse2") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<SSE2);
-            strcat(cpuid_info.features, "SSE2 ");
-        }
-        else if (strcmp(cptr,"acpi") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<ACPI);
-            strcat(cpuid_info.features, "ACPI ");
-        }
-        else if (strcmp(cptr,"rdtscp") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<RDTSCP);
-            strcat(cpuid_info.features, "RDTSCP ");
-        }
-        else if (strcmp(cptr,"vmx") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<VMX);
-            strcat(cpuid_info.features, "VMX ");
-        }
-        else if (strcmp(cptr,"eist") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<EIST);
-            strcat(cpuid_info.features, "EIST ");
-        }
-        else if (strcmp(cptr,"tm") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<TM);
-            strcat(cpuid_info.features, "TM ");
-        }
-        else if (strcmp(cptr,"tm2") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<TM2);
-            strcat(cpuid_info.features, "TM2 ");
-        }
-        else if (strcmp(cptr,"aes") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<AES);
-            strcat(cpuid_info.features, "AES ");
-        }
-        else if (strcmp(cptr,"rdrand") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<RDRAND);
-            strcat(cpuid_info.features, "RDRAND ");
-        }
-        else if (strcmp(cptr,"sse4_1") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<SSE41);
-            strcat(cpuid_info.features, "SSE41 ");
-        }
-        else if (strcmp(cptr,"sse4_2") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<SSE42);
-            strcat(cpuid_info.features, "SSE42 ");
-        }
-        else if (strcmp(cptr,"avx") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<AVX);
-            strcat(cpuid_info.features, "AVX ");
-        }
-        else if (strcmp(cptr,"fma") == 0)
-        {
-            cpuid_info.featureFlags |= (1<<FMA);
-            strcat(cpuid_info.features, "FMA ");
-        }
-        cptr = strtok(NULL, delimiter);
-
-    }
-
-    get_cpu_perf_data();
-
-    return;
-}
-
-void hwloc_init_nodeTopology(void)
+void hwloc_init_nodeTopology(cpu_set_t cpuSet)
 {
     uint32_t apicId;
     uint32_t bitField;
@@ -301,9 +130,25 @@ void hwloc_init_nodeTopology(void)
     hwloc_obj_t obj;
     int realThreadId;
     int sibling;
+    int poolsize = 0;
+    int threadIdx = 0;
     hwloc_obj_type_t socket_type = HWLOC_OBJ_SOCKET;
-
+    for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
+    {
+        if (CPU_ISSET(i, &cpuSet))
+        {
+            poolsize = i+1;
+        }
+    }
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
+    for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
+    {
+        hwThreadPool[i].apicId = -1;
+        hwThreadPool[i].threadId = -1;
+        hwThreadPool[i].coreId = -1;
+        hwThreadPool[i].packageId = -1;
+        hwThreadPool[i].inCpuSet = 0;
+    }
 
     maxNumLogicalProcs = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
     maxNumCores = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_CORE);
@@ -312,25 +157,31 @@ void hwloc_init_nodeTopology(void)
         socket_type = HWLOC_OBJ_NODE;
     }
     maxNumLogicalProcsPerCore = maxNumLogicalProcs/maxNumCores;
-    for (uint32_t i=0; i< maxNumLogicalProcs; i++)
+    for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
     {
         obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PU, i);
-        realThreadId = obj->os_index;
-        hwThreadPool[realThreadId].apicId = obj->os_index;
-        hwThreadPool[realThreadId].threadId = obj->sibling_rank;
+        if (!obj)
+        {
+            printf("No obj for CPU %d\n", i);
+            continue;
+        }
+        hwThreadPool[threadIdx].inCpuSet = 1;
+        hwThreadPool[threadIdx].apicId = obj->os_index;
+        hwThreadPool[threadIdx].threadId = obj->sibling_rank;
         while (obj->type != HWLOC_OBJ_CORE) {
             obj = obj->parent;
         }
-        hwThreadPool[realThreadId].coreId = obj->os_index;
+        hwThreadPool[threadIdx].coreId = obj->os_index;
         while (obj->type != socket_type) {
             obj = obj->parent;
         }
-        hwThreadPool[realThreadId].packageId = obj->os_index;
+        hwThreadPool[threadIdx].packageId = obj->os_index;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Socket %d,
-                            realThreadId,
-                            hwThreadPool[realThreadId].threadId,
-                            hwThreadPool[realThreadId].coreId,
-                            hwThreadPool[realThreadId].packageId)
+                            hwThreadPool[threadIdx].apicId,
+                            hwThreadPool[threadIdx].threadId,
+                            hwThreadPool[threadIdx].coreId,
+                            hwThreadPool[threadIdx].packageId)
+        threadIdx++;
     }
 
     cpuid_topology.threadPool = hwThreadPool;
