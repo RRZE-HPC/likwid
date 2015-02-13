@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include <topology_cpuid.h>
+#include <topology_proc.h>
 #ifdef LIKWID_USE_HWLOC
 #include <topology_hwloc.h>
 #endif
@@ -56,6 +57,9 @@ struct topology_functions {
 #define NEHALEM_EX           0x2EU
 #define WESTMERE_EX          0x2FU
 #define XEON_MP              0x1DU
+#define BROADWELL            0x3DU
+#define BROADWELL_E          0x4FU
+#define BROADWELL_F          0x56U
 
 /* Intel MIC */
 #define XEON_PHI           0x01U

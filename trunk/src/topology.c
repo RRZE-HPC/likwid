@@ -38,6 +38,8 @@ static char* ivybridge_ep_str = "Intel Core IvyBridge EN/EP/EX processor";
 static char* sandybridge_ep_str = "Intel Core SandyBridge EN/EP processor";
 static char* haswell_str = "Intel Core Haswell processor";
 static char* haswell_ep_str = "Intel Core Haswell EN/EP/EX processor";
+static char* broadwell_str = "Intel Core Broadwell processor";
+static char* broadwell_ep_str = "Intel Core Broadwell EN/EP/EX processor";
 static char* nehalem_ex_str = "Intel Nehalem EX processor";
 static char* westmere_ex_str = "Intel Westmere EX processor";
 static char* xeon_mp_string = "Intel Xeon MP processor";
@@ -69,6 +71,8 @@ static char* short_westmere = "westmere";
 static char* short_westmereEX = "westmereEX";
 static char* short_haswell = "haswell";
 static char* short_haswell_ep = "haswellEP";
+static char* short_broadwell = "broadwell";
+static char* short_broadwell_ep = "broadwellEP";
 static char* short_ivybridge = "ivybridge";
 static char* short_sandybridge = "sandybridge";
 static char* short_phi = "phi";
@@ -503,8 +507,6 @@ int topology_setName(void)
                     cpuid_info.short_name = short_ivybridge;
                     break;
 
-                
-
                 case HASWELL_EP:
                     cpuid_info.supportUncore = 1;
                     cpuid_info.name = haswell_ep_str;
@@ -515,6 +517,16 @@ int topology_setName(void)
                 case HASWELL_M2:
                     cpuid_info.name = haswell_str;
                     cpuid_info.short_name = short_haswell;
+                    break;
+
+                case BROADWELL:
+                case BROADWELL_F:
+                    cpuid_info.name = broadwell_str;
+                    cpuid_info.short_name = short_broadwell;
+                    break;
+                case BROADWELL_E:
+                    cpuid_info.name = broadwell_ep_str;
+                    cpuid_info.short_name = short_broadwell_ep;
                     break;
 
                 case NEHALEM_EX:
@@ -681,7 +693,7 @@ const struct topology_functions topology_funcs = {
     .init_cpuInfo = hwloc_init_cpuInfo,
     .init_nodeTopology = hwloc_init_nodeTopology,
     .init_cacheTopology = hwloc_init_cacheTopology,
-    .init_cpuFeatures = hwloc_init_cpuFeatures,
+    .init_cpuFeatures = proc_init_cpuFeatures,
 #endif
     .init_fileTopology = initTopologyFile,
 };
@@ -730,7 +742,7 @@ void topology_setupTree(void)
 int topology_init(void)
 {
     FILE *file;
-    const struct topology_functions funcs = topology_funcs;
+    struct topology_functions funcs = topology_funcs;
 
     if (init)
     {
@@ -745,11 +757,18 @@ int topology_init(void)
         cpu_set_t cpuSet;
         CPU_ZERO(&cpuSet);
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
-        funcs.init_cpuInfo(cpuSet);
-        if (cpuid_info.model == 0 || cpuid_info.family == 0)
+        if (cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF))
         {
-            cpuid_init_cpuInfo(cpuSet);
+            funcs.init_cpuInfo = proc_init_cpuInfo;
+            funcs.init_cpuFeatures = proc_init_cpuFeatures;
+            funcs.init_nodeTopology = proc_init_nodeTopology;
+            funcs.init_cacheTopology = proc_init_cacheTopology;
+            cpuid_topology.activeHWThreads =
+                ((cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF)) ?
+                cpu_count(&cpuSet) :
+                sysconf(_SC_NPROCESSORS_CONF));
         }
+        funcs.init_cpuInfo(cpuSet);
         topology_setName();
         funcs.init_cpuFeatures();
         funcs.init_nodeTopology(cpuSet);

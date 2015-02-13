@@ -257,7 +257,7 @@ int proc_numa_init(void)
 {
     int errno;
     uint32_t i;
-    
+
     if (get_mempolicy(NULL, NULL, 0, 0, 0) < 0 && errno == ENOSYS)
     {
         numa_info.numberOfNodes = 0;
@@ -288,7 +288,7 @@ int proc_numa_init(void)
             return -EFAULT;
         }
     }
-    
+
     return 0;
 }
 

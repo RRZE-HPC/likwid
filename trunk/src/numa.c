@@ -118,6 +118,13 @@ int numa_init(void)
 
     if (access(config.topologyCfgFileName, R_OK) && numa_info.numberOfNodes <= 0)
     {
+        cpu_set_t cpuSet;
+        CPU_ZERO(&cpuSet);
+        sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
+        if (cpuid_topology.activeHWThreads < cpuid_topology.numHWThreads)
+        {
+            return proc_numa_init();
+        }
         return funcs.numa_init();
     }
     return 0;

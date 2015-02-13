@@ -297,6 +297,7 @@ typedef struct {
     uint32_t coreId; /*!< \brief ID of CPU core that executes the HW thread */
     uint32_t packageId; /*!< \brief ID of CPU socket containing the HW thread */
     uint32_t apicId; /*!< \brief ID of HW thread retrieved through the Advanced Programmable Interrupt Controller */
+    uint32_t inCpuSet; /*!< \brief ID of HW thread inside the CPU core */
 } HWThread;
 
 /*! \brief Enum of possible caches
@@ -335,6 +336,7 @@ This structure describes the topology at HW thread level like the amount of HW t
 */
 typedef struct {
     uint32_t numHWThreads; /*!< \brief Amount of HW threads in the system and length of \a threadPool */
+    uint32_t activeHWThreads; /*!< \brief Amount of HW threads in the system and length of \a threadPool */
     uint32_t numSockets; /*!< \brief Amount of CPU sockets/packages in the system */
     uint32_t numCoresPerSocket; /*!< \brief Amount of physical cores in one CPU socket/package */
     uint32_t numThreadsPerCore; /*!< \brief Amount of HW threads in one physical CPU core */

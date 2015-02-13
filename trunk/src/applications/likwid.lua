@@ -479,9 +479,9 @@ local function cpustr_to_cpulist_logical(cpustr)
                 table.insert(cpulist,affinity["domains"][domain_idx]["processorList"][i])
             end
         else
-            --for i=0, tonumber(expr) do
-                table.insert(cpulist,affinity["domains"][domain_idx]["processorList"][tonumber(expr)])
-            --end
+            if tonumber(expr)+1 <= affinity["domains"][domain_idx]["numberOfProcessors"] then
+                table.insert(cpulist,affinity["domains"][domain_idx]["processorList"][tonumber(expr)+1])
+            end
         end
     end
     return cpulist
@@ -510,11 +510,17 @@ local function cpustr_to_cpulist_physical(cpustr)
                     return {}
                 end
                 for i=start,ende do
-                    table.insert(cpulist, i)
+                    for id, cpu in pairs(affinity["domains"][1]["processorList"]) do
+                        if i == cpu then
+                            table.insert(cpulist, i)
+                        end
+                    end
                 end
             else
-                if tonumber(expr) < tablelength(affinity["domains"][1]["processorList"]) then
-                    table.insert(cpulist, tonumber(expr))
+                for id, cpu in pairs(affinity["domains"][1]["processorList"]) do
+                    if tonumber(expr) == cpu then
+                        table.insert(cpulist, tonumber(expr))
+                    end
                 end
             end
         end
@@ -527,10 +533,18 @@ local function cpustr_to_cpulist_physical(cpustr)
             return {}
         end
         for i=start,ende do
-            table.insert(cpulist, i)
+            for id, cpu in pairs(affinity["domains"][1]["processorList"]) do
+                if i == cpu then
+                    table.insert(cpulist, i)
+                end
+            end
         end
     else
-        table.insert(cpulist, tonumber(cpustr))
+        for id, cpu in pairs(affinity["domains"][1]["processorList"]) do
+            if tonumber(cpustr) == cpu then
+                table.insert(cpulist, tonumber(cpustr))
+            end
+        end
     end
     return cpulist
 end
