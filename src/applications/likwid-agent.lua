@@ -9,9 +9,13 @@ dconfig["groupData"] ={}
 dconfig["duration"] = 1
 dconfig["groupPath"] = "/home/rrze/unrz/unrz139/TMP/likwid-base/trunk/gmon_module/groups"
 dconfig["logPath"] = nil
-dconfig["gmetricPath"] = "gmetric"
+dconfig["gmetric"] = false
+dconfig["gmetricPath"] = nil
 dconfig["gmetricConfig"] = nil
 dconfig["rrd"] = false
+dconfig["rrdPath"] = "."
+
+rrdconfig = {}
 
 
 local function read_daemon_config(filename)
@@ -28,49 +32,63 @@ local function read_daemon_config(filename)
     f:close()
 
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
-        local s,e = line:find("GROUPPATH")
-        if s ~= nil then
+
+        if line:match("^GROUPPATH%a*") ~= nil then
             local linelist = stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             dconfig["groupPath"] = linelist[1]
         end
-        local s,e = line:find("EVENTSET")
-        if s ~= nil then
+
+        if line:match("^EVENTSET%a*") ~= nil then
             local linelist = stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             table.insert(dconfig["groupStrings"], table.concat(linelist, " "))
         end
-        local s,e = line:find("DURATION")
-        if s ~= nil then
+
+        if line:match("^DURATION%a*") ~= nil then
             local linelist = stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             dconfig["duration"] = tonumber(linelist[1])
         end
-        local s,e = line:find("LOGPATH")
-        if s ~= nil then
+
+        if line:match("^LOGPATH%a*") ~= nil then
             local linelist = stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             dconfig["logPath"] = linelist[1]
         end
-        local s,e = line:find("GMETRICPATH")
-        if s ~= nil then
+
+        if line:match("^GMETRIC%s%a*") ~= nil then
+            local linelist = stringsplit(line, "%s+", nil, "%s+")
+            table.remove(linelist, 1)
+            if linelist[1] == "True" then
+                dconfig["gmetric"] = true
+            end
+        end
+
+        if line:match("^GMETRICPATH%a*") ~= nil then
             local linelist = stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             dconfig["gmetricPath"] = linelist[1]
         end
-        local s,e = line:find("GMETRICCONFIG")
-        if s ~= nil then
+
+        if line:match("^GMETRICCONFIG%a*") ~= nil then
             local linelist = stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             dconfig["gmetricConfig"] = linelist[1]
         end
-        local s,e = line:find("RRD")
-        if s ~= nil then
+
+        if line:match("^RRD%a*") ~= nil then
             local linelist = stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             if linelist[1] == "True" then
                 dconfig["rrd"] = true
             end
+        end
+
+        if line:match("^RRDPATH%a*") ~= nil then
+            local linelist = stringsplit(line, "%s+", nil, "%s+")
+            table.remove(linelist, 1)
+            dconfig["rrdPath"] = linelist[1]
         end
     end
 end
@@ -132,6 +150,9 @@ end
 
 local function gmetric(gdata, results)
     execList = {}
+    if dconfig["gmetricPath"] == nil then
+        return
+    end
     local f = io.popen("hostname -f","r")
     local hostname = f:read("*all"):gsub("^%s*(.-)%s*$", "%1")
     f:close()
@@ -163,12 +184,54 @@ local function gmetric(gdata, results)
             execStr = execStr .. " --units=\"" .. unit .."\""
         end
         execStr = execStr .. " --value=\"" .. tostring(v) .."\""
+        --os.execute(execStr)
         print(execStr)
     end
 end
 
-local function rrd(results)
-    print("RRD not implemented")
+local function normalize_rrd_string(str)
+    str = str:gsub(" ","_")
+    str = str:gsub("%(","")
+    str = str:gsub("%)","")
+    str = str:gsub("%[","")
+    str = str:gsub("%]","")
+    str = str:gsub("%/","")
+    str = str:sub(1,19)
+    return str
+end
+
+local function create_rrd(numGroups, duration, groupData)
+    local rrdname = dconfig["rrdPath"].."/".. groupData["GroupString"] .. ".rrd"
+    local rrdstring = "rrdtool create "..rrdname.." --step ".. tostring(numGroups*duration)
+    if rrdconfig[groupData["GroupString"]] == nil then
+        rrdconfig[groupData["GroupString"]] = {}
+    end
+    for i, metric in pairs(groupdata["Metrics"]) do
+        rrdstring = rrdstring .. " DS"..":" .. normalize_rrd_string(metric["description"]) ..":GAUGE:"
+        rrdstring = rrdstring ..tostring((numGroups+0.5)*duration) ..":0:U"
+        table.insert(rrdconfig[groupData["GroupString"]], metric["description"])
+    end
+    rrdstring = rrdstring .." RRA:AVERAGE:0.5:" .. tostring(60/duration)..":10"
+    rrdstring = rrdstring .." RRA:MIN:0.5:" .. tostring(60/duration)..":10"
+    rrdstring = rrdstring .." RRA:MAX:0.5:" .. tostring(60/duration)..":10"
+    --Average, min and max of hours of last day
+    rrdstring = rrdstring .." RRA:AVERAGE:0.5:" .. tostring(3600/duration)..":24"
+    rrdstring = rrdstring .." RRA:MIN:0.5:" .. tostring(3600/duration)..":24"
+    rrdstring = rrdstring .." RRA:MAX:0.5:" .. tostring(3600/duration)..":24"
+    --Average, min and max of day of last month
+    rrdstring = rrdstring .." RRA:AVERAGE:0.5:" .. tostring(86400/duration)..":31"
+    rrdstring = rrdstring .." RRA:MIN:0.5:" .. tostring(86400/duration)..":31"
+    rrdstring = rrdstring .." RRA:MAX:0.5:" .. tostring(86400/duration)..":31"
+    os.execute(rrdstring)
+end
+
+local function rrd(groupData, results)
+    local rrdname = dconfig["rrdPath"].."/".. groupData["GroupString"] .. ".rrd"
+    local rrdstring = "rrdtool update "..rrdname.." N"
+    for i, id in pairs(rrdconfig[groupData["GroupString"]]) do
+        rrdstring = rrdstring .. ":" .. tostring(results[id])
+    end
+    os.execute(rrdstring)
 end
 
 -- Read commandline arguments
@@ -224,6 +287,9 @@ end
 likwid.init(cputopo["numHWThreads"], cpulist)
 for k,v in pairs(dconfig["groupData"]) do
     local groupID = likwid.addEventSet(v["EventString"])
+    if dconfig["rrd"] then
+        create_rrd(#dconfig["groupData"], dconfig["duration"], v)
+    end
 end
 
 while true do
@@ -286,21 +352,21 @@ while true do
                 elseif func == "MAX" then
                     output[metric["description"]] = calc_sum(metric["description"], threadOutput)
                 elseif func == "ONCE" then
-                    output[desc] = threadOutput[1][metric["description"]]
+                    output[metric["description"]] = threadOutput[1][metric["description"]]
                 else
                     for thread=1, likwid.getNumberOfThreads() do
-                        output["T"..cpulist[thread] .. " " .. desc] = threadOutput[thread][metric["description"]]
+                        output["T"..cpulist[thread] .. " " .. metric["description"]] = threadOutput[thread][metric["description"]]
                     end
                 end
             end
             if dconfig["logPath"] ~= nil then
                 logger(output)
             end
-            if dconfig["gmetricPath"] ~= nil then
+            if dconfig["gmetric"] then
                 gmetric(gdata, output)
             end
             if dconfig["rrd"] then
-                rrd(output)
+                rrd(gdata, output)
             end
         end
     end
