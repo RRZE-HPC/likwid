@@ -85,7 +85,7 @@ getProcessorID(cpu_set_t* cpu_set)
     return processorId;
 }
 
-static void
+static int
 treeFillNextEntries(
     TreeNode* tree,
     int* processorIds,
@@ -133,12 +133,20 @@ treeFillNextEntries(
 
     while ( thread != NULL )
     {
-      processorIds[numberOfEntries-counter] = thread->id;
-      thread = tree_getNextNode(thread);
-      counter--;
+      if (cpuid_topology.threadPool[thread->id].inCpuSet)
+      {
+          processorIds[numberOfEntries-counter] = thread->id;
+          thread = tree_getNextNode(thread);
+          counter--;
+      }
+      else
+      {
+          thread = tree_getNextNode(thread);
+      }
     }
     node = tree_getNextNode(node);
   }
+  return numberOfEntries-counter;
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -150,6 +158,7 @@ affinity_init()
     int currentDomain;
     int subCounter = 0;
     int offset = 0;
+    int tmp;
     int numberOfSocketDomains = cpuid_topology.numSockets;
     int numberOfNumaDomains = numa_info.numberOfNodes;
     int numberOfProcessorsPerSocket =
@@ -162,7 +171,6 @@ affinity_init()
 
     int numberOfProcessorsPerCache =
         cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
-
 
     /* for the cache domain take only into account last level cache and assume
      * all sockets to be uniform. */
@@ -198,20 +206,21 @@ affinity_init()
     {
         for (int i=0; i<numberOfSocketDomains; i++)
         {
-          treeFillNextEntries(
+          tmp = treeFillNextEntries(
               cpuid_topology.topologyTree,
               domains[0].processorList + offset,
               i, 0, numberOfProcessorsPerSocket);
-    
-          offset += numberOfProcessorsPerSocket;
+        
+          offset += tmp;
         }
     }
     else
     {
-        treeFillNextEntries(
+        tmp = treeFillNextEntries(
               cpuid_topology.topologyTree,
               domains[0].processorList,
               0, 0, domains[0].numberOfProcessors);
+        domains[0].numberOfProcessors = tmp;
     }
 
     /* Socket domains */
@@ -231,10 +240,11 @@ affinity_init()
             return;
       }
 
-      treeFillNextEntries(
+      tmp = treeFillNextEntries(
           cpuid_topology.topologyTree,
           domains[currentDomain + i].processorList,
           i, 0, domains[currentDomain + i].numberOfProcessors);
+      domains[currentDomain + i].numberOfProcessors = tmp;
     }
 
     /* Cache domains */
@@ -258,12 +268,12 @@ affinity_init()
             return;
         }
 
-        treeFillNextEntries(
+        tmp = treeFillNextEntries(
             cpuid_topology.topologyTree,
             domains[currentDomain + subCounter].processorList,
             i, offset, domains[currentDomain + subCounter].numberOfProcessors);
-
-        offset += numberOfCoresPerCache;
+        domains[currentDomain + subCounter].numberOfProcessors = tmp;
+        offset += (tmp < numberOfCoresPerCache ? tmp : numberOfCoresPerCache);
         subCounter++;
       }
     }
@@ -289,11 +299,11 @@ affinity_init()
                 return;
             }
 
-            treeFillNextEntries(
+            tmp = treeFillNextEntries(
                 cpuid_topology.topologyTree,
                 domains[currentDomain + subCounter].processorList,
                 i, offset, domains[currentDomain + subCounter].numberOfProcessors);
-
+            domains[currentDomain + subCounter].numberOfProcessors = tmp;
             offset += numa_info.nodes[subCounter].numberOfProcessors;
             subCounter++;
           }
@@ -314,14 +324,16 @@ affinity_init()
                     bdata(domains[currentDomain + subCounter].tag));
             return;
         }
+        tmp = 0;
         for (int i=0; i < numberOfSocketDomains; i++ )
         {
-            treeFillNextEntries(
+            tmp += treeFillNextEntries(
                 cpuid_topology.topologyTree,
                 &(domains[currentDomain + subCounter].processorList[offset]),
                 i, 0, numberOfProcessorsPerSocket);
             offset += numberOfProcessorsPerSocket;
         }
+        domains[currentDomain + subCounter].numberOfProcessors = tmp;
     }
 
     /* This is redundant ;-). Create thread to node lookup */
