@@ -35,7 +35,7 @@
 /** \addtogroup CPUTopology
 *  @{
 */
-/* \brief Structure of a tree node
+/*! \brief Structure of a tree node
 
 This structure is used to form the tree of the system topology. The information
 describing each node is store in other places, therefore an ID is enough.
@@ -47,8 +47,7 @@ struct treeNode {
     struct treeNode* rlink; /*!< \brief List of neighbors of the current node */
 };
 
-/* \brief Shorter Name of struct treeNode
-*/
+/** \brief Shorter name for struct treeNode */
 typedef struct treeNode TreeNode;
 /** @}*/
 

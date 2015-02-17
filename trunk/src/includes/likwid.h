@@ -346,7 +346,9 @@ typedef struct {
     struct treeNode* topologyTree; /*!< \brief Anchor for a tree structure describing the system topology */
 } CpuTopology;
 
+/*! \brief Variable holding the global cpu information structure */
 extern CpuInfo cpuid_info;
+/*! \brief Variable holding the global cpu topology structure */
 extern CpuTopology cpuid_topology;
 
 /** \brief Pointer for exporting the CpuInfo data structure */
@@ -385,7 +387,7 @@ extern void topology_finalize(void);
 # NUMA related functions
 ################################################################################
 */
-/** \addtogroup NumaTopology NUMA memory topology
+/** \addtogroup NumaTopology NUMA memory topology module
  *  @{
  */
 /*! \brief CPUs in NUMA node and general information about a NUMA domain
@@ -414,6 +416,7 @@ typedef struct {
     NumaNode* nodes; /*!< \brief List of NUMA nodes */
 } NumaTopology;
 
+/*! \brief Variable holding the global NUMA information structure */
 extern NumaTopology numa_info;
 
 /** \brief Pointer for exporting the NumaTopology data structure */
@@ -468,7 +471,7 @@ extern int likwid_getNumberOfNodes(void);
 # Affinity domains related functions
 ################################################################################
 */
-/** \addtogroup AffinityDomains
+/** \addtogroup AffinityDomains Thread affinity module
  *  @{
  */
 
@@ -564,6 +567,11 @@ The access mode must already be set when calling perfmon_init()
 @return error code (0 on success, -ERRORCODE on failure)
 */
 extern int perfmon_init(int nrThreads, int threadsToCpu[]);
+/*! \brief Initialize accessClient
+
+This is only needed if hardware performance counter should be accessed simultaneously
+by multiple threads.
+*/
 extern void perfmon_accessClientInit(void);
 /*! \brief Initialize performance monitoring maps
 
@@ -575,7 +583,7 @@ perfmon_init_maps()
 extern void perfmon_init_maps(void);
 /*! \brief Add an event string to LIKWID
 
-A event string looks like <eventname>:<countername>(:<option1>:<options2>),...
+A event string looks like Eventname:Countername(:Option1:Option2:...),...
 The eventname, countername and options are checked if they are available.
 @param [in] eventCString Event string
 @return Returns the ID of the new eventSet
@@ -583,7 +591,7 @@ The eventname, countername and options are checked if they are available.
 extern int perfmon_addEventSet(char* eventCString);
 /*! \brief Setup all performance monitoring counters of an eventSet
 
-A event string looks like <eventname>:<countername>(:<option1>:<options2>),...
+A event string looks like Eventname:Countername(:Option1:Option2:...),...
 The eventname, countername and options are checked if they are available.
 @param [in] groupId (returned from perfmon_addEventSet()
 @return error code (-ENOENT if groupId is invalid and -1 if the counters of one CPU cannot be set up)
@@ -704,9 +712,11 @@ typedef struct {
     double minPower; /*!< \brief Minimal power consumption of the CPU */
     double maxPower; /*!< \brief Maximal power consumption of the CPU */
     double maxTimeWindow; /*!< \brief Minimal power measurement interval */
-    uint32_t supportedTypes;
+    uint32_t supportedTypes; /*!< \brief Bitmask to store all available RAPL domains */
 } PowerInfo;
 
+/*! \brief Enum for all supported RAPL domains
+*/
 typedef enum {
     PKG = 0, /*!< \brief PKG domain, mostly one CPU socket/package */
     PP0 = 1, /*!< \brief PP0 domain, not clearly defined by Intel */
@@ -723,6 +733,7 @@ typedef struct {
     uint32_t after; /*!< \brief Counter state at stop */
 } PowerData;
 
+/*! \brief Variable holding the global power information structure */
 extern PowerInfo power_info;
 
 /** \brief Pointer for exporting the PowerInfo data structure */
