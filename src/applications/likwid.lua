@@ -428,10 +428,12 @@ local function cpustr_to_cpulist_logical(cpustr)
     for expr_idx,expr in pairs(expression_list) do
         local s1,e1 = expr:find(":")
         if s1 == nil then 
-            e1 = -1
+            e1 = expr:len()
+            s1 = 1
         else
             if expr:sub(1,s1-1) ~= "L" then
                 domain = expr:sub(1,s1-1)
+                expr = expr:sub(s1+1)
             end
         end
         for d=1,#affinity["domains"] do
@@ -443,7 +445,7 @@ local function cpustr_to_cpulist_logical(cpustr)
         if domain_idx < 0 then
             print(string.format("System has no affinity domain %s ... skipping",domain))
         end
-        expr = expr:sub(s1+1)
+
         s1,e1 = expr:find(",")
         local s2,e2 = expr:find("-")
         if s1 ~= nil then
@@ -479,8 +481,15 @@ local function cpustr_to_cpulist_logical(cpustr)
                 table.insert(cpulist,affinity["domains"][domain_idx]["processorList"][i])
             end
         else
-            if tonumber(expr)+1 <= affinity["domains"][domain_idx]["numberOfProcessors"] then
-                table.insert(cpulist,affinity["domains"][domain_idx]["processorList"][tonumber(expr)+1])
+            s2, e2 = expr:find(":")
+            if s2 ~= nil then
+                if tonumber(expr:sub(s2+1))+1 <= affinity["domains"][domain_idx]["numberOfProcessors"] then
+                    table.insert(cpulist,affinity["domains"][domain_idx]["processorList"][tonumber(expr:sub(s2+1))+1])
+                end
+            else
+                for i, cpu in pairs(affinity["domains"][domain_idx]["processorList"]) do
+                    table.insert(cpulist,cpu)
+                end
             end
         end
     end
