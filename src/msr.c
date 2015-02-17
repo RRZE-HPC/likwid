@@ -262,7 +262,7 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
             ret = accessClient_read(tsocket_fd, cpu, DAEMON_AD_MSR, reg, data);
             if (ret)
             {
-                ERROR_PRINT(Cannot read MSR reg 0x%x through accessDaemon on CPU %d, reg, cpu);
+                //ERROR_PRINT(Cannot read MSR reg 0x%x through accessDaemon on CPU %d, reg, cpu);
                 return ret;
             }
         }
