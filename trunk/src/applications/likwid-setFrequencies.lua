@@ -29,7 +29,7 @@
  *
  * =======================================================================================]]
 
-package.path = '<PREFIX>/share/lua/?.lua;' .. package.path
+package.path = package.path .. ';' .. string.gsub(debug.getinfo(1).source, "^@(.+/)[^/]+$", "%1") .. '/?.lua'
 
 local likwid = require("likwid")
 
