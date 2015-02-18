@@ -321,6 +321,10 @@ static int lua_likwid_getCpuTopology(lua_State* L)
     lua_pushunsigned(L,cputopo->numHWThreads);
     lua_settable(L,-3);
 
+    lua_pushstring(L,"activeHWThreads");
+    lua_pushunsigned(L,cputopo->activeHWThreads);
+    lua_settable(L,-3);
+
     lua_pushstring(L,"numSockets");
     lua_pushunsigned(L,cputopo->numSockets);
     lua_settable(L,-3);
