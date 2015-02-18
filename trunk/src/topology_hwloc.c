@@ -105,12 +105,13 @@ void hwloc_init_cpuInfo(cpu_set_t cpuSet)
     }
     cpuid_topology.numHWThreads = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
     cpuid_info.stepping = get_stepping();
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d activeHWThreads %d,
                             cpuid_info.family,
                             cpuid_info.model,
                             cpuid_info.stepping,
                             cpuid_info.isIntel,
-                            cpuid_topology.numHWThreads)
+                            cpuid_topology.numHWThreads,
+                            cpuid_topology.activeHWThreads)
     return;
 }
 

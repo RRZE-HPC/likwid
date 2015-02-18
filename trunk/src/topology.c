@@ -768,6 +768,10 @@ int topology_init(void)
                 cpu_count(&cpuSet) :
                 sysconf(_SC_NPROCESSORS_CONF));
         }
+        else
+        {
+            cpuid_topology.activeHWThreads = sysconf(_SC_NPROCESSORS_CONF);
+        }
         funcs.init_cpuInfo(cpuSet);
         topology_setName();
         funcs.init_cpuFeatures();
