@@ -78,6 +78,11 @@ power_init(int cpuId)
         busSpeed = 133.33;
     }
 
+    if (!HPMinitialized())
+    {
+        HPMaddThread(cpuId);
+    }
+
     if (cpuid_info.turbo)
     {
         err = HPMread(cpuId, MSR_DEV, MSR_PLATFORM_INFO, &flags);
