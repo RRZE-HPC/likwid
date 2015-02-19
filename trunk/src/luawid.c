@@ -3,6 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/time.h>
 
 
 #include <lua.h>                               /* Always include this */
@@ -167,6 +169,24 @@ static int lua_likwid_readCounters(lua_State* L)
     return 1;
 }
 
+static int lua_likwid_switchGroup(lua_State* L)
+{
+    int ret = -1;
+    int newgroup = lua_tonumber(L,1) - 1;
+    if (newgroup >= perfmon_getNumberOfGroups())
+    {
+        newgroup = 0;
+    }
+    if (newgroup == perfmon_getIdOfActiveGroup())
+    {
+        lua_pushinteger(L, ret);
+        return 1;
+    }
+    ret = perfmon_switchActiveGroup(newgroup);
+    lua_pushinteger(L, ret);
+    return 1;
+}
+
 static int lua_likwid_finalize(lua_State* L)
 {
     perfmon_finalize();
@@ -203,10 +223,11 @@ static int lua_likwid_getIdOfActiveGroup(lua_State* L)
 
 static int lua_likwid_getRuntimeOfGroup(lua_State* L)
 {
-    int number, groupId;
+    double time;
+    int groupId;
     groupId = lua_tonumber(L,1);
-    number = perfmon_getTimeOfGroup(groupId-1);
-    lua_pushnumber(L, number);
+    time = perfmon_getTimeOfGroup(groupId-1);
+    lua_pushnumber(L, time);
     return 1;
 }
 
@@ -972,15 +993,19 @@ static int lua_likwid_getCpuClock(lua_State* L)
 static int isleep(lua_State* L)
 {
     long interval = lua_tounsigned(L,-1);
-    sleep(interval);
-    return 0;
+    int remain = 0;
+    remain = sleep(interval);
+    lua_pushinteger(L, remain);
+    return 1;
 }
 
 static int iusleep(lua_State* L)
 {
     long interval = lua_tounsigned(L,-1);
-    usleep(interval);
-    return 0;
+    int status = 0;
+    status = usleep(interval);
+    lua_pushinteger(L, status);
+    return 1;
 }
 
 static int lua_likwid_startClock(lua_State* L)
@@ -1096,6 +1121,71 @@ static int lua_likwid_stopDaemon(lua_State* L)
     return 0;
 }
 
+void  parse(char *line, char **argv)
+{
+     while (*line != '\0') {       /* if not the end of line ....... */ 
+          while (*line == ' ' || *line == '\t' || *line == '\n')
+               *line++ = '\0';     /* replace white spaces with 0    */
+          *argv++ = line;          /* save the argument position     */
+          while (*line != '\0' && *line != ' ' && 
+                 *line != '\t' && *line != '\n') 
+               line++;             /* skip the argument until ...    */
+     }
+     *argv = '\0';                 /* mark the end of argument list  */
+}
+
+static int lua_likwid_startProgram(lua_State* L)
+{
+    pid_t pid, ppid;
+    int status;
+    char *exec;
+    char  *argv[64];
+    exec = (char *)luaL_checkstring(L, 1);
+
+    parse(exec, argv);
+    ppid = getpid();
+    pid = fork();
+    if (pid < 0)
+    {
+        lua_pushinteger(L, (int)pid);
+        return 1;
+    }
+    else if ( pid == 0)
+    {
+        status = execvp(*argv, argv);
+        if (status < 0)
+        {
+            exit(1);
+        }
+        else
+        {
+            kill(ppid, SIGCHLD);
+        }
+    }
+    lua_pushnumber(L, pid);
+    return 1;
+}
+
+static int lua_likwid_checkProgram(lua_State* L)
+{
+    pid_t pid = lua_tonumber(L, 1);
+    int status;
+    if (wait(&status) == pid)
+    {
+        lua_pushboolean(L, 1);
+        return 1;
+    }
+    lua_pushboolean(L, 0);
+    return 1;
+}
+
+static int lua_likwid_killProgram(lua_State* L)
+{
+    pid_t pid = lua_tonumber(L, 1);
+    kill(pid, SIGTERM);
+    return 0;
+}
+
 
 static int lua_likwid_memSweep(lua_State* L)
 {
@@ -1200,6 +1290,7 @@ int luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_startCounters",lua_likwid_startCounters);
     lua_register(L, "likwid_stopCounters",lua_likwid_stopCounters);
     lua_register(L, "likwid_readCounters",lua_likwid_readCounters);
+    lua_register(L, "likwid_switchGroup",lua_likwid_switchGroup);
     lua_register(L, "likwid_finalize",lua_likwid_finalize);
     lua_register(L, "likwid_getEventsAndCounters", lua_likwid_getEventsAndCounters);
     // Perfmon results functions
@@ -1247,6 +1338,9 @@ int luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_setenv", lua_likwid_setenv);
     lua_register(L, "likwid_getpid", lua_likwid_getpid);
     lua_register(L, "likwid_access", lua_likwid_access);
+    lua_register(L, "likwid_startProgram", lua_likwid_startProgram);
+    lua_register(L, "likwid_checkProgram", lua_likwid_checkProgram);
+    lua_register(L, "likwid_killProgram", lua_likwid_killProgram);
     // Verbosity functions
     lua_register(L, "likwid_setVerbosity", lua_likwid_setVerbosity);
     return 0;
