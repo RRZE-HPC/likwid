@@ -1277,7 +1277,7 @@ __perfmon_stopCounters(int groupId)
         }
     }
 
-    groupSet->groups[groupId].rdtscTime +=
+    groupSet->groups[groupId].rdtscTime =
                 timer_print(&groupSet->groups[groupId].timer);
     return 0;
 }
@@ -1362,22 +1362,20 @@ perfmon_getResult(int groupId, int eventId, int threadId)
     PerfmonCounter* counter;
     if (unlikely(groupSet == NULL))
     {
-        printf("GroupSet NULL\n");
         return 0;
     }
     if (groupId < 0)
     {
-        printf("Sanitizing groupID to currently active Group\n");
         groupId = groupSet->activeGroup;
     }
     if (eventId >= groupSet->groups[groupId].numberOfEvents)
     {
-        printf("EventID greater than defined events\n");
+        printf("ERROR: EventID greater than defined events\n");
         return 0;
     }
     if (threadId >= groupSet->numberOfThreads)
     {
-        printf("ThreadID greater then defined threads\n");
+        printf("ERROR: ThreadID greater than defined threads\n");
         return 0;
     }
     event = &(groupSet->groups[groupId].events[eventId]);
@@ -1458,13 +1456,21 @@ perfmon_getNumberOfThreads(void)
 int
 perfmon_getNumberOfEvents(int groupId)
 {
+    if (groupId < 0)
+    {
+        groupId = groupSet->activeGroup;
+    }
     return groupSet->groups[groupId].numberOfEvents;
 }
 
 double
 perfmon_getTimeOfGroup(int groupId)
 {
-    return groupSet->groups[groupId].rdtscTime * 1.E06;
+    if (groupId < 0)
+    {
+        groupId = groupSet->activeGroup;
+    }
+    return groupSet->groups[groupId].rdtscTime;
 }
 
 uint64_t
