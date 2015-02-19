@@ -300,7 +300,7 @@ likwid.printcsv = printcsv
 function stringsplit(astr, sSeparator, nMax, bRegexp)
     assert(sSeparator ~= '')
     assert(nMax == nil or nMax >= 1)
-
+    if astr == nil then return {} end
     local aRecord = {}
 
     if astr:len() > 0 then
@@ -324,9 +324,46 @@ end
 
 likwid.stringsplit = stringsplit
 
+local function cpulist_sort(cpulist)
+    local newlist = {}
+    if #cpulist == 0 then
+        return newlist
+    end
+    local topo = likwid_getCpuTopology()
+    for offset=1,topo["numThreadsPerCore"] do
+        for i=0, #cpulist/2 do
+            table.insert(newlist, cpulist[(i*topo["numThreadsPerCore"])+offset])
+        end
+    end
+    return newlist
+end
+
+local function cpulist_concat(cpulist, addlist)
+    for i, add in pairs(addlist) do
+        table.insert(cpulist, add)
+    end
+    return cpulist
+end
+
+local function cpustr_valid(cpustr)
+    invalidlist = {"%.", "_", ";", "!", "§", "%$", "%%", "%&", "/", "\\",  "%(","%)","=", "?","`","´" ,"~","°","|","%^","<",">", "{","}","%[","%]","#","\'","\"", "*"}
+    for i, inval in pairs(invalidlist) do
+        local s,e = cpustr:find(inval)
+        if s ~= nil then
+            return false
+        end
+    end
+    return true
+end
+
 local function cpustr_to_cpulist_scatter(cpustr)
     local cpulist = {}
     local domain_list = {}
+    local domain_cpus = {}
+    if not cpustr_valid(cpustr) then
+        print("ERROR: Expression contains invalid characters")
+        return {}
+    end
     local s,e = cpustr:find(":")
     if s ~= nil then
         local domain = cpustr:sub(1,s-1)
@@ -335,161 +372,143 @@ local function cpustr_to_cpulist_scatter(cpustr)
         local topo = likwid_getCpuTopology()
 
         for dom,content in pairs(affinity["domains"]) do
-            s,e = dom:find(domain)
+            s,e = content["tag"]:find(domain)
             if s ~= nil then 
                 table.insert(domain_list, dom)
+                table.insert(domain_cpus, cpulist_sort(affinity["domains"][dom]["processorList"]))
             end
         end
 
         local num_domains = tablelength(domain_list)
         local domain_idx = 1
-        local threadID = 0
-        for i=0,topo["numHWThreads"]-1 do
-            table.insert(cpulist, affinity["domains"][domain_list[domain_idx]]["processorList"][threadID])
-            domain_idx = domain_idx + 1
-            if domain_idx == num_domains+1 then domain_idx = 1 end
-            if (domain_idx == 1) then threadID = threadID + 1 end
+        local threadID = 1
+        -- Adding physical cores
+        for i=1,topo["activeHWThreads"]/num_domains do
+            for idx, _ in pairs(domain_list) do
+                table.insert(cpulist, domain_cpus[idx][i])
+            end
         end
     else
-        print("Cannot parse scatter expression")
+        print("ERROR: Cannot parse scatter expression, should look something like <domain>:scatter")
         return {}
     end
     return cpulist
 end
 
+
 local function cpustr_to_cpulist_expression(cpustr)
     local cpulist = {}
+    if not cpustr_valid(cpustr) then
+        print("ERROR: Expression contains invalid characters")
+        return {}
+    end
     local affinity = likwid_getAffinityInfo()
-    local s1,e1 = cpustr:find("E:")
-    local domain_idx = -1
-    expression_list = stringsplit(cpustr:sub(e1+1,cpustr:len()),"@")
-    for expr_idx,expr in pairs(expression_list) do
-        subexpr_list = stringsplit(expr,":")
-        if tablelength(subexpr_list) == 2 then
-            domain = subexpr_list[1]
-            for d=1,#affinity["domains"] do
-                if affinity["domains"][d]["tag"] == domain then
-                    domain_idx = d
-                    break
-                end
-            end
-            s1,e1 = subexpr_list[2]:find("-")
-            local s2,e2 = subexpr_list[2]:find(",")
-            if affinity["domains"][domain_idx] == nil then
-                print("Domain "..domain.." not valid")
-                return {}
-            elseif s1 ~= nil or s2 ~= nil then
-                print("Only single count required, no list like " .. subexpr_list[2])
-                return {}
-            end
-            local count = tonumber(subexpr_list[2])
-            for i=1,count do
-                table.insert(cpulist,affinity["domains"][domain_idx]["processorList"][i])
-            end
-        elseif tablelength(subexpr_list) == 4 then
-            domain = subexpr_list[1]
-            count = tonumber(subexpr_list[2])
-            chunk = tonumber(subexpr_list[3])
-            stride = tonumber(subexpr_list[4])
-            for d=1,#affinity["domains"] do
-                if affinity["domains"][d]["tag"] == domain then
-                    domain_idx = d
-                    break
-                end
-            end
-            if affinity["domains"][domain_idx] == nil then
-                print("Domain "..domain.." not valid")
-                return {}
-            end
-            index = 1
-            for i=0,count-1 do
-                for j=0,chunk-1 do
-                    table.insert(cpulist,affinity["domains"][domain_idx]["processorList"][index+j])
-                end
-                index = index + stride
-                if (index > affinity["domains"][domain_idx]["numberOfProcessors"]) then
-                    index = 0
-                end
-            end
-        else
-            print("Cannot parse expression")
-            return {}
+    local exprlist = stringsplit(cpustr, ":")
+    table.remove(exprlist, 1)
+    local domain = 0
+
+    local tag = "X"
+    local count = 0
+    local chunk = 1
+    local stride = 1
+
+    if #exprlist == 2 then
+        tag = exprlist[1]
+        count = tonumber(exprlist[2])
+    elseif #exprlist == 4 then
+        tag = exprlist[1]
+        count = tonumber(exprlist[2])
+        chunk = tonumber(exprlist[3])
+        stride = tonumber(exprlist[4])
+    end
+    if tag == "X" or count == nil or chunk == nil or stride == nil then
+        print("ERROR: Invalid expression, cannot parse all needed values")
+        return {}
+    end
+    for domidx, domcontent in pairs(affinity["domains"]) do
+        if domcontent["tag"] == tag then
+            domain = domidx
+            break
         end
+    end
+    if domain == 0 then
+        print(string.format("ERROR: Invalid affinity domain %s", tag))
+        return {}
+    end
+
+    index = 1
+    selected = 0
+    for i=1,count do
+        for j=0, chunk-1 do
+            table.insert(cpulist, affinity["domains"][domain]["processorList"][index+j])
+            selected = selected+1
+            if (selected >= count) then break end
+        end
+        index = index + stride
+        if (index > affinity["domains"][domain]["numberOfProcessors"]) then
+            index = 1
+        end
+        if (selected >= count) then break end
     end
     return cpulist
 end
 
+
 local function cpustr_to_cpulist_logical(cpustr)
     local cpulist = {}
+    if not cpustr_valid(cpustr) then
+        print("ERROR: Expression contains invalid characters")
+        return {}
+    end
     local affinity = likwid_getAffinityInfo()
-    local domain = "N"
-    local domainIdx = -1
-    local expression_list = stringsplit(cpustr,"@")
-    for expr_idx,expr in pairs(expression_list) do
-        local s1,e1 = expr:find(":")
-        if s1 == nil then 
-            e1 = expr:len()
-            s1 = 1
-        else
-            if expr:sub(1,s1-1) ~= "L" then
-                domain = expr:sub(1,s1-1)
-                expr = expr:sub(s1+1)
-            end
+    local exprlist = stringsplit(cpustr, ":")
+    table.remove(exprlist, 1)
+    local domain = 0
+    if #exprlist ~= 2 then
+        print("ERROR: Invalid expression, should look like L:<domain>:<indexlist> or be in a cpuset")
+        return {}
+    end
+    local tag = exprlist[1]
+    local indexstr = exprlist[2]
+    for domidx, domcontent in pairs(affinity["domains"]) do
+        if domcontent["tag"] == tag then
+            domain = domidx
+            break
         end
-        for d=1,#affinity["domains"] do
-            if affinity["domains"][d]["tag"] == domain then
-                domain_idx = d
-                break
-            end
-        end
-        if domain_idx < 0 then
-            print(string.format("System has no affinity domain %s ... skipping",domain))
-        end
+    end
+    if domain == 0 then
+        print(string.format("ERROR: Invalid affinity domain %s", tag))
+        return {}
+    end
 
-        s1,e1 = expr:find(",")
-        local s2,e2 = expr:find("-")
-        if s1 ~= nil then
-            subexpr_list = stringsplit(expr,",")
-            for subexpr_index, subexpr in pairs(subexpr_list) do
-                s2,e2 = subexpr:find("-")
-                if s2 ~= nil then
-                    local tmp_list = stringsplit(subexpr,"-")
-                    local start = tonumber(tmp_list[1])
-                    local ende = tonumber(tmp_list[2])
-                    if ende >= tablelength(affinity["domains"][domain_idx]["processorList"]) then
-                        print("Expression selects too many CPUs")
-                        return {}
-                    end
-                    for i=start+1,ende+1 do
-                        table.insert(cpulist,affinity["domains"][domain_idx]["processorList"][i])
-                    end
-                else
-                    if tonumber(subexpr) < tablelength(affinity["domains"][domain_idx]["processorList"]) then
-                        table.insert(cpulist,affinity["domains"][domain_idx]["processorList"][subexpr])
-                    end
-                end
-            end
-        elseif s2 ~= nil then
-            subexpr_list = stringsplit(expr,"-")
-            local start = tonumber(subexpr_list[1])
-            local ende = tonumber(subexpr_list[2])
-            if ende >= tablelength(affinity["domains"][domain_idx]["processorList"]) then
-                print("Expression selects too many CPUs")
+    indexlist = stringsplit(indexstr, ",")
+    for i, item in pairs(indexlist) do
+        local s,e = item:find("-")
+        if s == nil then
+            if tonumber(item) > affinity["domains"][domain]["numberOfProcessors"] then
+                print(string.format("CPU index %s larger than number of processors in affinity group %s", item, tag))
+                return {}
+            elseif tonumber(item) == 0 then
+                print("ERROR: CPU indices equal to 0 are not allowed")
                 return {}
             end
-            for i=start+1,ende+1 do
-                table.insert(cpulist,affinity["domains"][domain_idx]["processorList"][i])
-            end
+            table.insert(cpulist, affinity["domains"][domain]["processorList"][tonumber(item)])
         else
-            s2, e2 = expr:find(":")
-            if s2 ~= nil then
-                if tonumber(expr:sub(s2+1))+1 <= affinity["domains"][domain_idx]["numberOfProcessors"] then
-                    table.insert(cpulist,affinity["domains"][domain_idx]["processorList"][tonumber(expr:sub(s2+1))+1])
-                end
-            else
-                for i, cpu in pairs(affinity["domains"][domain_idx]["processorList"]) do
-                    table.insert(cpulist,cpu)
-                end
+            start, ende = item:match("(%d*)-(%d*)")
+            if tonumber(start) == nil then
+                print("ERROR: CPU indices smaller than 0 are not allowed")
+                return {}
+            end
+            if tonumber(start) > tonumber(ende) then
+                print(string.format("ERROR: CPU list %s invalid, start %s is larger than end %s", item, start, ende))
+                return {}
+            end
+            if tonumber(ende) > affinity["domains"][domain]["numberOfProcessors"] then
+                print(string.format("ERROR: CPU list end %d larger than number of processors in affinity group %s", ende, tag))
+                return {}
+            end
+            for i=tonumber(start),tonumber(ende) do
+                table.insert(cpulist, affinity["domains"][domain]["processorList"][i])
             end
         end
     end
@@ -497,61 +516,63 @@ local function cpustr_to_cpulist_logical(cpustr)
 end
 
 local function cpustr_to_cpulist_physical(cpustr)
-    local cpulist = {}
-    local affinity = likwid_getAffinityInfo()
-    local s,e = cpustr:find(":")
-    if s ~= nil then
-        print("Unknown affinity domain given, ignoring domain '".. cpustr:sub(1,s-1) .. "'")
-        cpustr = cpustr:sub(s+1,cpustr:len())
+    local function present(list, check)
+        for i, item in pairs(list) do
+            if item == check then
+                return true
+            end
+        end
+        return false
     end
-    local s1,e1 = cpustr:find(",")
-    local s2,e2 = cpustr:find("-")
-    if s1 ~= nil then
-        local expression_list = stringsplit(cpustr,",")
-        for i, expr in pairs(expression_list) do
-            s2,e2 = expr:find("-")
-            if s2 ~= nil then
-                local subList = stringsplit(expr,"-")
-                local start = tonumber(subList[1])
-                local ende = tonumber(subList[2])
-                if ende >= tablelength(affinity["domains"][1]["processorList"]) then
-                    print("Expression selects too many CPUs")
+    local cpulist = {}
+    if not cpustr_valid(cpustr) then
+        print("ERROR: Expression contains invalid characters")
+        return {}
+    end
+    local affinity = likwid_getAffinityInfo()
+    local domain = 0
+    tag, indexstr = cpustr:match("^(%g+):(%g+)")
+    if tag == nil then
+        tag = "N"
+        indexstr = cpustr:match("^(%g+)")
+    end
+    for domidx, domcontent in pairs(affinity["domains"]) do
+        if domcontent["tag"] == tag then
+            domain = domidx
+            break
+        end
+    end
+    if domain == 0 then
+        print(string.format("ERROR: Invalid affinity domain %s", tag))
+        return {}
+    end
+    indexlist = stringsplit(indexstr, ",")
+    for i, item in pairs(indexlist) do
+        local s,e = item:find("-")
+        if s == nil then
+            if present(affinity["domains"][domain]["processorList"], tonumber(item)) then
+                table.insert(cpulist, tonumber(item))
+            else
+                print(string.format("ERROR: CPU %s not in affinity domain %s", item, tag))
+                return {}
+            end
+        else
+            start, ende = item:match("^(%d*)-(%d*)")
+            if tonumber(start) == nil then
+                print("ERROR: CPU indices smaller than 0 are not allowed")
+                return {}
+            end
+            if tonumber(ende) >= affinity["domains"][domain]["numberOfProcessors"] then
+                print(string.format("ERROR: CPU list end %d larger than number of processors in affinity group %s", ende, tag))
+                return {}
+            end
+            for i=tonumber(start),tonumber(ende) do
+                if present(affinity["domains"][domain]["processorList"], i) then
+                    table.insert(cpulist, i)
+                else
+                    print(string.format("ERROR: CPU %s not in affinity domain %s", i, tag))
                     return {}
                 end
-                for i=start,ende do
-                    for id, cpu in pairs(affinity["domains"][1]["processorList"]) do
-                        if i == cpu then
-                            table.insert(cpulist, i)
-                        end
-                    end
-                end
-            else
-                for id, cpu in pairs(affinity["domains"][1]["processorList"]) do
-                    if tonumber(expr) == cpu then
-                        table.insert(cpulist, tonumber(expr))
-                    end
-                end
-            end
-        end
-    elseif s2 ~= nil then
-        subList = stringsplit(cpustr,"-")
-        local start = tonumber(subList[1])
-        local ende = tonumber(subList[2])
-        if ende >= tablelength(affinity["domains"][1]["processorList"]) then
-            print("Expression selects too many CPUs")
-            return {}
-        end
-        for i=start,ende do
-            for id, cpu in pairs(affinity["domains"][1]["processorList"]) do
-                if i == cpu then
-                    table.insert(cpulist, i)
-                end
-            end
-        end
-    else
-        for id, cpu in pairs(affinity["domains"][1]["processorList"]) do
-            if tonumber(cpustr) == cpu then
-                table.insert(cpulist, tonumber(cpustr))
             end
         end
     end
@@ -560,86 +581,78 @@ end
 
 likwid.cpustr_to_cpulist_physical = cpustr_to_cpulist_physical
 
+
 local function cpustr_to_cpulist(cpustr)
+    local strlist = stringsplit(cpustr, "@")
+    local topo = likwid_getCpuTopology()
     local cpulist = {}
-    local filled = false
-    local s1,e1 = cpustr:find("N")
-    if s1 == nil then s1,e = cpustr:find("S") end
-    if s1 == nil then s1,e = cpustr:find("C") end
-    if s1 == nil then s1,e = cpustr:find("M") end
-    local s2,e2 = cpustr:find("L")
-    if s1 ~= nil then
-        s1,e1 = cpustr:find("scatter")
-        if s1 ~= nil then
-            cpulist = cpustr_to_cpulist_scatter(cpustr)
-            filled = true
+    for pos, str in pairs(strlist) do
+        if str:match("^%a*:scatter") then
+            cpulist = cpulist_concat(cpulist, cpustr_to_cpulist_scatter(str))
+        elseif str:match("^E:%a") then
+            cpulist = cpulist_concat(cpulist, cpustr_to_cpulist_expression(str))
+        elseif str:match("^L:%a") then
+            cpulist = cpulist_concat(cpulist, cpustr_to_cpulist_logical(str))
+        elseif topo["activeHWThreads"] < topo["numHWThreads"] then
+            print(string.format("INFO: You are running LIKWID in a cpuset with %d CPUs, only logical numbering allowed",topo["activeHWThreads"]))
+            if str:match("^N:") or str:match("^S%d*:") or str:match("^C%d*:") or str:match("^M%d*:") then
+                cpulist = cpulist_concat(cpulist, cpustr_to_cpulist_logical("L:"..str))
+            else
+                cpulist = cpulist_concat(cpulist, cpustr_to_cpulist_logical("L:N:"..str))
+            end
+        elseif str:match("^N:") or str:match("^S%d*:") or str:match("^C%d*:") or str:match("^M%d*:") then
+            cpulist = cpulist_concat(cpulist, cpustr_to_cpulist_physical(str))
+        else
+            local tmplist = cpustr_to_cpulist_physical(str)
+            if tmplist == {} then
+                print(string.format("ERROR: Cannot analyze string %s", str))
+            else
+                cpulist = cpulist_concat(cpulist, tmplist)
+            end
         end
-        s1,e1 = cpustr:find("E")
-        if s1 ~= nil then
-            cpulist = cpustr_to_cpulist_expression(cpustr)
-            filled = true
-        end
-        if filled == false then
-            cpulist = cpustr_to_cpulist_logical(cpustr)
-        end
-    elseif s2 ~= nil then
-        cpulist = cpustr_to_cpulist_logical(cpustr)
-    else
-        cpulist = cpustr_to_cpulist_physical(cpustr)
     end
     return tablelength(cpulist),cpulist
 end
 
 likwid.cpustr_to_cpulist = cpustr_to_cpulist
 
-
-local function nodestr_to_nodelist(cpustr)
+local function cpuexpr_to_list(cpustr, prefix)
     local cpulist = {}
-    local numainfo = likwid_getNumaInfo()
-    local s1,e1 = cpustr:find(",")
-    local s2,e2 = cpustr:find("-")
-    if s1 ~= nil then
-        local expression_list = stringsplit(cpustr,",")
-        for i, expr in pairs(expression_list) do
-            s2,e2 = expr:find("-")
-            if s2 ~= nil then
-                local subList = stringsplit(cpustr,"-")
-                local start = tonumber(subList[1])
-                local ende = tonumber(subList[2])
-                if ende >= numainfo["numberOfNodes"] then
-                    print("Expression selects too many nodes, host has ".. tablelength(numainfo)-1 .." nodes")
-                    return 0,{}
-                end
-                for i=start,ende do
-                    table.insert(cpulist, i)
-                end
-            else
-                if tonumber(expr) >= numainfo["numberOfNodes"] then
-                    print("Expression selects too many nodes, host has ".. tablelength(numainfo)-1 .." nodes")
-                    return 0,{}
-                end
+    if not cpustr_valid(cpustr) then
+        print("ERROR: Expression contains invalid characters")
+        return 0, {}
+    end
+    local affinity = likwid_getAffinityInfo()
+    local domain = 0
+    local exprlist = stringsplit(cpustr,",")
+    for i, expr in pairs(exprlist) do
+        local added = false
+        for domidx, domcontent in pairs(affinity["domains"]) do
+            if domcontent["tag"] == prefix..expr then
+                table.insert(cpulist, tonumber(expr))
+                added = true
+                break
             end
         end
-    elseif s2 ~= nil then
-        local subList = stringsplit(cpustr,"-")
-        local start = tonumber(subList[1])
-        local ende = tonumber(subList[2])
-        if ende >= numainfo["numberOfNodes"] then
-            print("Expression selects too many nodes, host has ".. tablelength(numainfo)-1 .." nodes")
-            return 0,{}
-        end
-        for i=start,ende do
-            table.insert(cpulist, i)
-        end
-    else
-        if (tonumber(cpustr) < numainfo["numberOfNodes"]) then
-            table.insert(cpulist, tonumber(cpustr))
+        if not added then
+            print(string.format("ERROR: No affinity domain with index %s%s", prefix, expr))
+            return 0, {}
         end
     end
     return tablelength(cpulist),cpulist
 end
 
+local function nodestr_to_nodelist(cpustr)
+    return cpuexpr_to_list(cpustr, "M")
+end
+
 likwid.nodestr_to_nodelist = nodestr_to_nodelist
+
+local function sockstr_to_socklist(cpustr)
+    return cpuexpr_to_list(cpustr, "S")
+end
+
+likwid.sockstr_to_socklist = sockstr_to_socklist
 
 local function get_groups(architecture)
     groups = {}
