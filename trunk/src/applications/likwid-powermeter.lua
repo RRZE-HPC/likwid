@@ -92,40 +92,9 @@ for opt,arg in likwid.getopt(arg, "c:hiM:ps:vft") do
         version()
         os.exit(0)
     elseif (opt == "c") then
-        sockets = {}
-        if (arg:find(",") ~= nil) then
-            tmpsockets = likwid.stringsplit(arg,",")
-            for i,socket in pairs(tmpsockets) do
-                sockets[i] = tonumber(socket)
-                if (sockets[i] == nil) then
-                    print("All entries of the socket list must be numbers, entry " .. socket .. " is no number.")
-                    usage()
-                    os.exit(1)
-                elseif (sockets[i] < 0) then
-                    print("Only entries greater than 0 are allowed")
-                    usage()
-                    os.exit(1)
-                elseif (sockets[i] >= cputopo["numSockets"]) then
-                    print("Socket " .. sockets[i] .. " does not exist")
-                    usage()
-                    os.exit(1)
-                end
-            end
-        else
-            local socket = tonumber(arg)
-            if (socket == nil) then
-                print("All entries of the socket list must be numbers, entry " .. socket .. " is no number.")
-                usage()
-                os.exit(1)
-            elseif (socket < 0) then
-                print("Only entries greater than 0 are allowed")
-                usage()
-                os.exit(1)
-            elseif (socket >= cputopo["numSockets"]) then
-                print("Socket " .. socket .. " does not exist")
-                os.exit(1)
-            end
-            table.insert(sockets,socket)
+        num_sockets, sockets = likwid.sockstr_to_socklist(arg)
+        if num_sockets == 0 then
+            os.exit(1)
         end
     elseif (opt == "M") then
         access_mode = tonumber(arg)
@@ -183,6 +152,9 @@ if likwid.setAccessClientMode(access_mode) ~= 0 then
 end
 
 power = likwid.getPowerInfo()
+if not power then
+    os.exit(1)
+end
 
 
 
