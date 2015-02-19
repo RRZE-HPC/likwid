@@ -87,6 +87,7 @@ avail_groups = {}
 num_avail_groups = 0
 group_list = {}
 group_ids = {}
+activeGroup = 0
 print_group_help = false
 skip_mask = "0x0"
 counter_mask = {}
@@ -101,8 +102,8 @@ use_stethoscope = false
 use_timeline = false
 daemon_run = 0
 use_wrapper = false
-duration = 2.E06
-use_sleep = true
+duration = 2.E05
+use_sleep = false
 switch_interval = 5
 output = ""
 use_csv = false
@@ -377,7 +378,8 @@ for i, event_string in pairs(event_string_list) do
     table.insert(group_ids, gid)
 end
 
-likwid.setupCounters(group_ids[1])
+activeGroup = group_ids[1]
+likwid.setupCounters(activeGroup)
 print(likwid.hline)
 
 if use_marker == true then
@@ -407,10 +409,10 @@ if use_timeline == true then
         cores_string = cores_string .. tostring(cpu) .. " "
     end
     print(cores_string:sub(1,cores_string:len()-1))
-    likwid.startDaemon(duration, markerFile);
+    --likwid.startDaemon(duration, markerFile);
 end
 
-if use_wrapper or use_stethoscope then
+if use_wrapper or use_stethoscope or use_timeline then
     local ret = likwid.startCounters()
     if ret < 0 then
         print(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
@@ -421,15 +423,48 @@ end
 
 
 io.stdout:flush()
+local int_results = {}
 if use_wrapper or use_timeline then
-    local err = os.execute(execString)
-    if (err == false or err == nil) then
+    local start = likwid.startClock()
+    local stop = 0
+    local nr_events = likwid.getNumberOfEvents(activeGroup)
+    local nr_threads = likwid.getNumberOfThreads()
+    local pid = likwid.startProgram(execString)
+    
+    if (pid < 0) then
         print("Failed to execute command: ".. execString)
         likwid.stopCounters()
         likwid.finalize()
         likwid.putTopology()
         likwid.putConfiguration()
         os.exit(1)
+    end
+    while likwid.checkProgram(pid) == false do
+        if use_timeline == true then
+            stop = likwid.stopClock()
+            likwid.readCounters()
+            local time = likwid.getClock(start, stop)
+            int_results[time] = likwid.getResults()
+            local str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(time)
+            for ig, g in pairs(int_results[time]) do
+                for ie, e in pairs(g) do
+                    for it, t in pairs(e) do
+                        str = str .. "," .. tostring(t)
+                    end
+                end
+            end
+            io.stderr:write(str.."\n")
+        end
+        if use_sleep then
+            sleep(duration/1.E06)
+        else
+            usleep(duration)
+        end
+        if use_timeline == true and #group_ids > 1 then
+            likwid.switchGroup(activeGroup + 1)
+            activeGroup = likwid.getIdOfActiveGroup()
+            nr_events = likwid.getNumberOfEvents(activeGroup)
+        end
     end
 else
     if use_sleep then
@@ -440,14 +475,12 @@ else
 end
 io.stdout:flush()
 print(likwid.hline)
-if use_wrapper or use_stethoscope then
+if use_wrapper or use_stethoscope or use_timeline then
     local ret = likwid.stopCounters()
     if ret < 0 then
          print(string.format("Error stopping counters for thread %d.",ret * (-1)))
         os.exit(1)
     end
-elseif use_timeline then
-    likwid.stopDaemon(9)
 end
 
 
@@ -457,7 +490,8 @@ if use_marker == true then
         os.exit(1)
     end
     likwid.print_markerOutput(groups, results, group_list, cpulist)
-elseif use_wrapper or use_stethoscope then
+--elseif use_wrapper or use_stethoscope then
+else
     results = likwid.getResults()
     groups = {}
     for g,gr in pairs(group_list) do

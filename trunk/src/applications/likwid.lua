@@ -23,6 +23,7 @@ likwid.setupCounters = likwid_setupCounters
 likwid.startCounters = likwid_startCounters
 likwid.stopCounters = likwid_stopCounters
 likwid.readCounters = likwid_readCounters
+likwid.switchGroup = likwid_switchGroup
 likwid.finalize = likwid_finalize
 likwid.getEventsAndCounters = likwid_getEventsAndCounters
 likwid.getResult = likwid_getResult
@@ -62,6 +63,9 @@ likwid.setenv = likwid_setenv
 likwid.getpid = likwid_getpid
 likwid.setVerbosity = likwid_setVerbosity
 likwid.access = likwid_access
+likwid.startProgram = likwid_startProgram
+likwid.checkProgram = likwid_checkProgram
+likwid.killProgram = likwid_killProgram
 
 infinity = math.huge
 
