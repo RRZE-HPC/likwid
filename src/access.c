@@ -22,6 +22,7 @@
 static int globalSocket = -1;
 static int cpuSockets[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = -1};
 static int registeredCpus = 0;
+static int init = 0;
 
 int _HPMinit(int cpu_id)
 {
@@ -46,12 +47,18 @@ int _HPMinit(int cpu_id)
             }
         }
     }
+    init = 1;
     return 0;
 }
 
 int HPMinit(void)
 {
     return _HPMinit(0);
+}
+
+int HPMinitialized(void)
+{
+    return init;
 }
 
 int HPMaddThread(int cpu_id)

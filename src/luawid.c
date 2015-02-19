@@ -834,8 +834,7 @@ static int lua_likwid_getPowerInfo(lua_State* L)
         }
         else
         {
-            lua_pushstring(L,"No RAPL support for current system");
-            lua_error(L);
+            return 0;
         }
     }
     power = get_powerInfo();
