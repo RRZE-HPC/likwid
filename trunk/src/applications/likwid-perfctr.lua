@@ -429,9 +429,11 @@ if use_wrapper or use_timeline then
     local stop = 0
     local nr_events = likwid.getNumberOfEvents(activeGroup)
     local nr_threads = likwid.getNumberOfThreads()
+    if use_wrapper and duration == 2.E05 then
+        duration = 30.E06
+    end
     local pid = likwid.startProgram(execString)
-    
-    if (pid < 0) then
+    if not pid then
         print("Failed to execute command: ".. execString)
         likwid.stopCounters()
         likwid.finalize()
@@ -439,7 +441,7 @@ if use_wrapper or use_timeline then
         likwid.putConfiguration()
         os.exit(1)
     end
-    while likwid.checkProgram(pid) == false do
+    while not likwid.checkProgram(pid) do
         if use_timeline == true then
             stop = likwid.stopClock()
             likwid.readCounters()
@@ -455,15 +457,30 @@ if use_wrapper or use_timeline then
             end
             io.stderr:write(str.."\n")
         end
-        if use_sleep then
-            sleep(duration/1.E06)
-        else
+        if (not likwid.checkProgram(pid)) and duration > 1.E06 then
+            remain = sleep(duration/1.E06)
+            if remain > 0 then
+                break
+            end
+        elseif not likwid.checkProgram(pid) then
             usleep(duration)
         end
-        if use_timeline == true and #group_ids > 1 then
+        if not likwid.checkProgram(pid) and use_timeline == true and #group_ids > 1 then
             likwid.switchGroup(activeGroup + 1)
             activeGroup = likwid.getIdOfActiveGroup()
             nr_events = likwid.getNumberOfEvents(activeGroup)
+        end
+    end
+    stop = likwid.stopClock()
+    likwid.readCounters()
+    local time = likwid.getClock(start, stop)
+    int_results[time] = likwid.getResults()
+    local str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(time)
+    for ig, g in pairs(int_results[time]) do
+        for ie, e in pairs(g) do
+            for it, t in pairs(e) do
+                str = str .. "," .. tostring(t)
+            end
         end
     end
 else

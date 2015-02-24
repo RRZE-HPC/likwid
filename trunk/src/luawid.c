@@ -1121,7 +1121,7 @@ static int lua_likwid_stopDaemon(lua_State* L)
     return 0;
 }
 
-void  parse(char *line, char **argv)
+void parse(char *line, char **argv)
 {
      while (*line != '\0') {       /* if not the end of line ....... */ 
           while (*line == ' ' || *line == '\t' || *line == '\n')
@@ -1134,12 +1134,17 @@ void  parse(char *line, char **argv)
      *argv = '\0';                 /* mark the end of argument list  */
 }
 
+static void catch_sigchild(int signo) {
+    while (0) {;}
+}
+
 static int lua_likwid_startProgram(lua_State* L)
 {
     pid_t pid, ppid;
     int status;
+    int sigstatus;
     char *exec;
-    char  *argv[64];
+    char  *argv[4096];
     exec = (char *)luaL_checkstring(L, 1);
 
     parse(exec, argv);
@@ -1147,8 +1152,7 @@ static int lua_likwid_startProgram(lua_State* L)
     pid = fork();
     if (pid < 0)
     {
-        lua_pushinteger(L, (int)pid);
-        return 1;
+        return 0;
     }
     else if ( pid == 0)
     {
@@ -1157,12 +1161,13 @@ static int lua_likwid_startProgram(lua_State* L)
         {
             exit(1);
         }
-        else
-        {
-            kill(ppid, SIGCHLD);
-        }
+        return 0;
     }
-    lua_pushnumber(L, pid);
+    else
+    {
+        signal(SIGCHLD, catch_sigchild);
+        lua_pushnumber(L, pid);
+    }
     return 1;
 }
 
@@ -1172,6 +1177,7 @@ static int lua_likwid_checkProgram(lua_State* L)
     int status;
     if (wait(&status) == pid)
     {
+        signal(SIGCHLD, SIG_DFL);
         lua_pushboolean(L, 1);
         return 1;
     }
