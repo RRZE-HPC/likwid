@@ -314,9 +314,10 @@ uninstall: uninstall_daemon uninstall_freq
 
 local: $(L_APPS) likwid.lua
 	@echo "===> Setting Lua scripts to run from current directory"
+	@PWD=$(shell pwd)
 	@for APP in $(L_APPS); do \
-		sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<RELEASE>/$(RELEASE)/g" -e "s+$(PREFIX)/bin/likwid-lua+$(shell pwd)/ext/lua/lua+" $$APP; \
+		sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<RELEASE>/$(RELEASE)/g" -e "s+$(PREFIX)/bin/likwid-lua+$(PWD)/ext/lua/lua+" -e "s+$(PREFIX)/share/lua/?.lua+$(PWD)/?.lua+" $$APP; \
 		chmod +x $$APP; \
 	done
-	@sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<RELEASE>/$(RELEASE)/g" -e "s+$(PREFIX)/lib+$(shell pwd)+g" -e "s+$(PREFIX)/share/likwid+$(shell pwd)/groups+g" likwid.lua;
+	@sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<RELEASE>/$(RELEASE)/g" -e "s+$(PREFIX)/lib+$(PWD)+g" -e "s+$(PREFIX)/share/likwid+$(PWD)/groups+g" likwid.lua;
 
