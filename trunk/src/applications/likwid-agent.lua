@@ -34,31 +34,31 @@ local function read_daemon_config(filename)
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
 
         if line:match("^GROUPPATH%a*") ~= nil then
-            local linelist = stringsplit(line, "%s+", nil, "%s+")
+            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             dconfig["groupPath"] = linelist[1]
         end
 
         if line:match("^EVENTSET%a*") ~= nil then
-            local linelist = stringsplit(line, "%s+", nil, "%s+")
+            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             table.insert(dconfig["groupStrings"], table.concat(linelist, " "))
         end
 
         if line:match("^DURATION%a*") ~= nil then
-            local linelist = stringsplit(line, "%s+", nil, "%s+")
+            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             dconfig["duration"] = tonumber(linelist[1])
         end
 
         if line:match("^LOGPATH%a*") ~= nil then
-            local linelist = stringsplit(line, "%s+", nil, "%s+")
+            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             dconfig["logPath"] = linelist[1]
         end
 
         if line:match("^GMETRIC%s%a*") ~= nil then
-            local linelist = stringsplit(line, "%s+", nil, "%s+")
+            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             if linelist[1] == "True" then
                 dconfig["gmetric"] = true
@@ -66,19 +66,19 @@ local function read_daemon_config(filename)
         end
 
         if line:match("^GMETRICPATH%a*") ~= nil then
-            local linelist = stringsplit(line, "%s+", nil, "%s+")
+            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             dconfig["gmetricPath"] = linelist[1]
         end
 
         if line:match("^GMETRICCONFIG%a*") ~= nil then
-            local linelist = stringsplit(line, "%s+", nil, "%s+")
+            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             dconfig["gmetricConfig"] = linelist[1]
         end
 
         if line:match("^RRD%a*") ~= nil then
-            local linelist = stringsplit(line, "%s+", nil, "%s+")
+            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             if linelist[1] == "True" then
                 dconfig["rrd"] = true
@@ -86,7 +86,7 @@ local function read_daemon_config(filename)
         end
 
         if line:match("^RRDPATH%a*") ~= nil then
-            local linelist = stringsplit(line, "%s+", nil, "%s+")
+            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
             dconfig["rrdPath"] = linelist[1]
         end
@@ -339,7 +339,7 @@ while true do
             output = {}
             output["Timestamp"] = os.date("%m/%d/%Y_%X",cur_time)
             for i, metric in pairs(gdata["Metrics"]) do
-                itemlist = stringsplit(metric["description"], "%s+", nil, "%s+")
+                itemlist = likwid.stringsplit(metric["description"], "%s+", nil, "%s+")
                 func = itemlist[1]
                 table.remove(itemlist, 1)
                 desc = table.concat(itemlist," ")
