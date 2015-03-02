@@ -190,7 +190,9 @@ local function calculate_metric(formula, counters_to_values)
         if c ~= "+" and c ~= "-" and  c ~= "*" and  c ~= "/" and c ~= "(" and c ~= ")" and c ~= "." and c:lower() ~= "e" then
             local tmp = tonumber(c)
             if type(tmp) ~= "number" then
+                print(c,tmp)
                 print("Not all formula entries can be substituted with measured values")
+                print("Current formula: "..formula)
                 err = true
                 break
             end
@@ -267,22 +269,11 @@ likwid.printtable = printtable
 
 function printcsv(tab, linelength)
     local nr_columns = tablelength(tab)
-    if not linelength then
-        linelength = 6
-    elseif linelength < 6 then
-        linelength = 6
-    end
     if nr_columns == 0 then
         print("Table has no columns. Empty table?")
         return
     end
     local nr_lines = tablelength(tab[1])
-    for i, col in pairs(tab) do
-        if tablelength(col) ~= nr_lines then
-            print("Not all columns have the same row count, nr_lines"..tostring(nr_lines)..", current "..tablelength(col))
-            return
-        end
-    end
     str = ""
     for j=1,nr_lines do
         for i=1,nr_columns do
@@ -822,29 +813,98 @@ local function min_max_avg(values)
     return min, max, sum/count
 end
 
+local function tableMinMaxAvgSum(inputtable, skip_cols, skip_lines)
+    local outputtable = {}
+    local nr_columns = #inputtable
+    if nr_columns == 0 then
+        return {}
+    end
+    local nr_lines = #inputtable[1]
+    if nr_lines == 0 then
+        return {}
+    end
+    minOfLine = {"Min"}
+    maxOfLine = {"Max"}
+    sumOfLine = {"Sum"}
+    avgOfLine = {"Avg"}
+    for i=skip_lines+1,nr_lines do
+        minOfLine[i-skip_lines+1] = math.huge
+        maxOfLine[i-skip_lines+1] = 0
+        sumOfLine[i-skip_lines+1] = 0
+        avgOfLine[i-skip_lines+1] = 0
+    end
+    for j=skip_cols+1,nr_columns do
+        for i=skip_lines+1, nr_lines do
+            local res = tonumber(inputtable[j][i])
+            minOfLine[i-skip_lines+1] = math.min(res, minOfLine[i-skip_lines+1])
+            maxOfLine[i-skip_lines+1] = math.max(res, maxOfLine[i-skip_lines+1])
+            sumOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1] + res
+            avgOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1]/(nr_columns-skip_cols)
+        end
+    end
+
+    local tmptable = {}
+    table.insert(tmptable, inputtable[1][1])
+    for j=2,#inputtable[1] do
+        table.insert(tmptable, inputtable[1][j].." STAT")
+    end
+    table.insert(outputtable, tmptable)
+    for i=2,skip_cols do
+        local tmptable = {}
+        table.insert(tmptable, inputtable[i][1])
+        for j=2,#inputtable[i] do
+            table.insert(tmptable, inputtable[i][j])
+        end
+        table.insert(outputtable, tmptable)
+    end
+    table.insert(outputtable, sumOfLine)
+    table.insert(outputtable, minOfLine)
+    table.insert(outputtable, maxOfLine)
+    table.insert(outputtable, avgOfLine)
+    return outputtable
+end
+
+likwid.tableMinMaxAvgSum = tableMinMaxAvgSum
 
 local function printOutput(groups, results, groupData, cpulist)
     local nr_groups = #groups
-    local maxLineFields = #cpulist + 2
+    local maxLineFields = 0
     
     for g, group in pairs(groups) do
         local groupID = group["ID"]
         local num_events = likwid_getNumberOfEvents(groupID);
         local num_threads = likwid_getNumberOfThreads(groupID-1);
+        local runtime = likwid_getRuntimeOfGroup(groupID)
 
-        tab =  {}
-        tab[1] = {"Event"}
-        counterlist = {}
-        for i=0,num_events-1 do
-            table.insert(tab[1],groupData[groupID]["Events"][i]["Event"])
+        local firsttab =  {}
+        local firsttab_combined = {}
+        local secondtab = {}
+        local secondtab_combined = {}
+        firsttab[1] = {"Event"}
+        firsttab_combined[1] = {"Event"}
+        firsttab[2] = {"Counter"}
+        firsttab_combined[2] = {"Counter"}
+        if not groupData[groupID]["Metrics"] then
+            table.insert(firsttab[1],"Runtime (RDTSC) [s]")
+            table.insert(firsttab[2],"TSC")
         end
-        tab[2] = {"Counter"}
+        
         for i=0,num_events-1 do
-            table.insert(tab[2],groupData[groupID]["Events"][i]["Counter"])
+            table.insert(firsttab[1],groupData[groupID]["Events"][i]["Event"])
+            table.insert(firsttab_combined[1],groupData[groupID]["Events"][i]["Event"] .. " STAT")
         end
+
+        for i=0,num_events-1 do
+            table.insert(firsttab[2],groupData[groupID]["Events"][i]["Counter"])
+            table.insert(firsttab_combined[2],groupData[groupID]["Events"][i]["Counter"])
+        end
+        
 
         for j=1,num_threads do
             tmpList = {"Core "..tostring(cpulist[j])}
+            if not groupData[groupID]["Metrics"] then
+                table.insert(tmpList, string.format("%e",runtime))
+            end
             for i=1,num_events do
                 local tmp = tostring(results[groupID][i][j])
                 if tostring(results[groupID][i][j]):len() > 12 then
@@ -852,13 +912,9 @@ local function printOutput(groups, results, groupData, cpulist)
                 end
                 table.insert(tmpList, tmp)
             end
-            table.insert(tab, tmpList)
+            table.insert(firsttab, tmpList)
         end
-        if use_csv then
-            likwid.printcsv(tab, maxLineFields)
-        else
-            likwid.printtable(tab)
-        end
+        
         if #cpulist > 1 then
             local mins = {}
             local maxs = {}
@@ -896,31 +952,22 @@ local function printOutput(groups, results, groupData, cpulist)
                 end
             end
             
-            for i=#tab,3,-1 do
-                table.remove(tab,i)
-            end
-            table.insert(tab, sums)
-            table.insert(tab, maxs)
-            table.insert(tab, mins)
-            table.insert(tab, avgs)
-            tab[1] = {"Event"}
-            for i=0,num_events-1 do
-                table.insert(tab[1],groupData[groupID]["Events"][i]["Event"] .. " STAT")
-            end
-
-            if use_csv then
-                likwid.printcsv(tab, maxLineFields)
-            else
-                likwid.printtable(tab)
-            end
+            table.insert(firsttab_combined, sums)
+            table.insert(firsttab_combined, maxs)
+            table.insert(firsttab_combined, mins)
+            table.insert(firsttab_combined, avgs)
         end
+        
         if groupData[groupID]["Metrics"] then
+            local counterlist = {}
             counterlist["time"] = likwid_getRuntimeOfGroup(groupID)* 1.E-06
             counterlist["inverseClock"] = 1.0/likwid_getCpuClock();
-            tab = {}
-            tab[1] = {"Metric"}
+            
+            secondtab[1] = {"Metric"}
+            secondtab_combined[1] = {"Metric"}
             for m=1,#groupdata["Metrics"] do
-                table.insert(tab[1],groupData[groupID]["Metrics"][m]["description"] )
+                table.insert(secondtab[1],groupData[groupID]["Metrics"][m]["description"] )
+                table.insert(secondtab_combined[1],groupData[groupID]["Metrics"][m]["description"].." STAT" )
             end
             for j=0,num_threads-1 do
                 tmpList = {"Core "..tostring(cpulist[j+1])}
@@ -934,14 +981,9 @@ local function printOutput(groups, results, groupData, cpulist)
                     end
                     table.insert(tmpList, tostring(tmp))
                 end
-                table.insert(tab,tmpList)
+                table.insert(secondtab,tmpList)
             end
 
-            if use_csv then
-                likwid.printcsv(tab, maxLineFields)
-            else
-                likwid.printtable(tab)
-            end
             if #cpulist > 1 then
                 mins = {}
                 maxs = {}
@@ -952,7 +994,7 @@ local function printOutput(groups, results, groupData, cpulist)
                 maxs[1] = "Max"
                 sums[1] = "Sum"
                 avgs[1] = "Avg"
-                nr_lines = #tab[1]
+                nr_lines = #secondtab[1]
                 for j=2,nr_lines do
                     for i=1, num_threads do
                         if mins[j] == nil then
@@ -964,8 +1006,8 @@ local function printOutput(groups, results, groupData, cpulist)
                         if sums[j] == nil then
                             sums[j] = 0
                         end
-                        
-                        local tmp = tonumber(tab[i+1][j])
+
+                        local tmp = tonumber(secondtab[i+1][j])
                         if tmp ~= nil then
                             if tmp < mins[j] then
                                 mins[j] = tmp
@@ -991,66 +1033,84 @@ local function printOutput(groups, results, groupData, cpulist)
                     end
                 end
 
-                tab = {}
-                tab[1] = {"Metric"}
-                for m=1,#groupdata["Metrics"] do
-                    table.insert(tab[1],groupData[groupID]["Metrics"][m]["description"].." STAT" )
-                end
-                table.insert(tab, sums)
-                table.insert(tab, maxs)
-                table.insert(tab, mins)
-                table.insert(tab, avgs)
+                table.insert(secondtab_combined, sums)
+                table.insert(secondtab_combined, maxs)
+                table.insert(secondtab_combined, mins)
+                table.insert(secondtab_combined, avgs)
 
+            end
+        end
+        maxLineFields = math.max(#firsttab, #firsttab_combined,
+                                 #secondtab, #secondtab_combined)
+        if use_csv then
+            likwid.printcsv(firsttab, maxLineFields)
+        else
+            likwid.printtable(firsttab)
+        end
+        if #cpulist > 1 then
+            if use_csv then
+                likwid.printcsv(firsttab_combined, maxLineFields)
+            else
+                likwid.printtable(firsttab_combined)
+            end
+        end
+        if groupData[groupID]["Metrics"] then
+            if use_csv then
+                likwid.printcsv(secondtab, maxLineFields)
+            else
+                likwid.printtable(secondtab)
+            end
+            if #cpulist > 1 then
                 if use_csv then
-                    likwid.printcsv(tab, maxLineFields)
+                    likwid.printcsv(secondtab_combined, maxLineFields)
                 else
-                    likwid.printtable(tab)
+                    likwid.printtable(secondtab_combined)
                 end
             end
         end
     end
 end
 
+
 likwid.printOutput = printOutput
 
 local function printMarkerOutput(groups, results, groupData, cpulist)
     local nr_groups = #groups
-    local maxLineFields = #cpulist + 2
+    local maxLineFields = 0
 
     for g, group in pairs(groups) do
         for r, region in pairs(groups[g]) do
             local nr_threads = likwid.tablelength(groups[g][r]["Time"])
             local nr_events = likwid.tablelength(groupData[g]["Events"])
             if tablelength(groups[g][r]["Count"]) > 0 then
-                print(likwid.dline)
-                str = "Group "..tostring(g)..": Region "..groups[g][r]["Name"]
-                print(str)
-                print(likwid.dline)
+                
 
-                tab = {}
-                tab[1] = {"Region Info","RDTSC Runtime [s]","call count"}
+                local infotab = {}
+                local firsttab = {}
+                local firsttab_combined = {}
+                local secondtab = {}
+                local secondtab_combined = {}
+
+                infotab[1] = {"Region Info","RDTSC Runtime [s]","call count"}
                 for thread=1, nr_threads do
                     local tmpList = {}
                     table.insert(tmpList, "Core "..tostring(cpulist[thread]))
                     table.insert(tmpList, string.format("%.6f", groups[g][r]["Time"][thread]))
                     table.insert(tmpList, tostring(groups[g][r]["Count"][thread]))
-                    table.insert(tab, tmpList)
+                    table.insert(infotab, tmpList)
                 end
 
-                if use_csv then
-                    likwid.printcsv(tab, maxLineFields)
-                else
-                    likwid.printtable(tab)
-                end
-
-                tab = {}
-                tab[1] = {"Event"}
+                firsttab[1] = {"Event"}
+                firsttab_combined[1] = {"Event"}
                 for e=0,nr_events-1 do
-                    table.insert(tab[1],groupData[g]["Events"][e]["Event"])
+                    table.insert(firsttab[1],groupData[g]["Events"][e]["Event"])
+                    table.insert(firsttab_combined[1],groupData[g]["Events"][e]["Event"].." STAT")
                 end
-                tab[2] = {"Counter"}
+                firsttab[2] = {"Counter"}
+                firsttab_combined[2] = {"Counter"}
                 for e=0,nr_events-1 do
-                    table.insert(tab[2],groupData[g]["Events"][e]["Counter"])
+                    table.insert(firsttab[2],groupData[g]["Events"][e]["Counter"])
+                    table.insert(firsttab_combined[2],groupData[g]["Events"][e]["Counter"])
                 end
                 for t=1,nr_threads do
                     local tmpList = {}
@@ -1063,13 +1123,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                         end
                         table.insert(tmpList, string.format("%e",tmp))
                     end
-                    table.insert(tab, tmpList)
-                end
-
-                if use_csv then
-                    likwid.printcsv(tab, maxLineFields)
-                else
-                    likwid.printtable(tab)
+                    table.insert(firsttab, tmpList)
                 end
 
                 if #cpulist > 1 then
@@ -1108,34 +1162,21 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                             sums[i+1] = string.format("%e",sums[i+1])
                         end
                     end
-                    
-                    for i=#tab,3,-1 do
-                        table.remove(tab,i)
-                    end
-                    table.insert(tab, sums)
-                    table.insert(tab, maxs)
-                    table.insert(tab, mins)
-                    table.insert(tab, avgs)
-                    tab[1] = {"Event"}
-                    for e=0,nr_events-1 do
-                        table.insert(tab[1],groupData[g]["Events"][e]["Event"] .. " STAT")
-                    end
 
-                    if use_csv then
-                        likwid.printcsv(tab, maxLineFields)
-                    else
-                        likwid.printtable(tab)
-                    end
+                    table.insert(firsttab_combined, sums)
+                    table.insert(firsttab_combined, maxs)
+                    table.insert(firsttab_combined, mins)
+                    table.insert(firsttab_combined, avgs)
                 end
 
 
                 if likwid.tablelength(groupData[g]["Metrics"]) > 0 then
-                    tab = {}
+
                     tmpList = {"Metric"}
                     for m=1,#groupData[g]["Metrics"] do
                         table.insert(tmpList, groupData[g]["Metrics"][m]["description"])
                     end
-                    table.insert(tab, tmpList)
+                    table.insert(secondtab, tmpList)
                     for t=1,nr_threads do
                         counterlist = {}
                         for e=1,nr_events do
@@ -1154,15 +1195,9 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                             end
                             table.insert(tmpList, tmp)
                         end
-                        table.insert(tab,tmpList)
+                        table.insert(secondtab,tmpList)
                     end
 
-                    if use_csv then
-                        likwid.printcsv(tab, maxLineFields)
-                    else
-                        likwid.printtable(tab)
-                    end
-                    
                     if #cpulist > 1 then
                         mins = {}
                         maxs = {}
@@ -1180,7 +1215,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                                 if sums[row-1] == nil then
                                     sums[row-1] = 0
                                 end
-                                tmp = tonumber(tab[col][row])
+                                tmp = tonumber(secondtab[col][row])
                                 if tmp ~= nil then
                                     if tmp < mins[row-1] then
                                         mins[row-1] = tmp
@@ -1212,37 +1247,76 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                             end
                         end
                         
-                        tab = {}
+
                         tmpList = {"Metric"}
                         for m=1,#groupData[g]["Metrics"] do
                             table.insert(tmpList, groupData[g]["Metrics"][m]["description"].." STAT")
                         end
-                        table.insert(tab, tmpList)
+                        table.insert(secondtab_combined, tmpList)
                         tmpList = {"Sum"}
                         for m=1,#sums do
                             table.insert(tmpList, sums[m])
                         end
-                        table.insert(tab, tmpList)
+                        table.insert(secondtab_combined, tmpList)
                         tmpList = {"Min"}
                         for m=1,#mins do
                             table.insert(tmpList, mins[m])
                         end
-                        table.insert(tab, tmpList)
+                        table.insert(secondtab_combined, tmpList)
                         tmpList = {"Max"}
                         for m=1,#maxs do
                             table.insert(tmpList, maxs[m])
                         end
-                        table.insert(tab, tmpList)
+                        table.insert(secondtab_combined, tmpList)
                         tmpList = {"Avg"}
                         for m=1,#avgs do
                             table.insert(tmpList, avgs[m])
                         end
-                        table.insert(tab, tmpList)
+                        table.insert(secondtab_combined, tmpList)
 
+                    end
+                end
+                maxLineFields = math.max(#infotab, #firsttab, #firsttab_combined,
+                                         #secondtab, #secondtab_combined, 2)
+                print(likwid.dline)
+                if use_csv then
+                    str = tostring(g)..","..groups[g][r]["Name"]
+                    if maxLineFields > 2 then
+                        str = str .. string.rep(",", maxLineFields-2)
+                    end
+                else
+                    str = "Group "..tostring(g)..": Region "..groups[g][r]["Name"]
+                end
+                print(str)
+                print(likwid.dline)
+                if use_csv then
+                    likwid.printcsv(infotab, maxLineFields)
+                else
+                    likwid.printtable(infotab)
+                end
+                if use_csv then
+                    likwid.printcsv(firsttab, maxLineFields)
+                else
+                    likwid.printtable(firsttab)
+                end
+                if #cpulist > 1 then
+                    if use_csv then
+                        likwid.printcsv(firsttab_combined, maxLineFields)
+                    else
+                        likwid.printtable(firsttab_combined)
+                    end
+                end
+                if likwid.tablelength(groupData[g]["Metrics"]) > 0 then
+                    if use_csv then
+                        likwid.printcsv(secondtab, maxLineFields)
+                    else
+                        likwid.printtable(secondtab)
+                    end
+                    if #cpulist > 1 then
                         if use_csv then
-                            likwid.printcsv(tab, maxLineFields)
+                            likwid.printcsv(secondtab_combined, maxLineFields)
                         else
-                            likwid.printtable(tab)
+                            likwid.printtable(secondtab_combined)
                         end
                     end
                 end
@@ -1377,7 +1451,7 @@ end
 
 likwid.getMarkerResults = getMarkerResults
 
-function createBitMask(gdata)
+local function createBitMask(gdata)
     if gdata == nil then
         return "0x0 0x0"
     end
@@ -1404,7 +1478,7 @@ end
 
 likwid.createBitMask = createBitMask
 
-function createGroupMask(gdata)
+local function createGroupMask(gdata)
     if gdata == nil then
         return "0x0"
     end
@@ -1425,7 +1499,7 @@ function createGroupMask(gdata)
 end
 likwid.createGroupMask = createGroupMask
 
-function msr_available()
+local function msr_available()
     local ret = likwid_access("/dev/cpu/0/msr")
     if ret == 0 then
         return true
@@ -1440,7 +1514,7 @@ end
 likwid.msr_available = msr_available
 
 
-function addSimpleAsciiBox(container,lineIdx, colIdx, label)
+local function addSimpleAsciiBox(container,lineIdx, colIdx, label)
     local box = {}
     if container[lineIdx] == nil then
         container[lineIdx] = {}
@@ -1451,7 +1525,7 @@ function addSimpleAsciiBox(container,lineIdx, colIdx, label)
 end
 likwid.addSimpleAsciiBox = addSimpleAsciiBox
 
-function addJoinedAsciiBox(container,lineIdx, startColIdx, endColIdx, label)
+local function addJoinedAsciiBox(container,lineIdx, startColIdx, endColIdx, label)
     local box = {}
     if container[lineIdx] == nil then
         container[lineIdx] = {}
@@ -1462,7 +1536,7 @@ function addJoinedAsciiBox(container,lineIdx, startColIdx, endColIdx, label)
 end
 likwid.addJoinedAsciiBox = addJoinedAsciiBox
 
-function printAsciiBox(container)
+local function printAsciiBox(container)
     local boxwidth = 0
     local numLines = #container
     local maxNumColumns = 0
@@ -1516,5 +1590,39 @@ function printAsciiBox(container)
     print(boxline)
 end
 likwid.printAsciiBox = printAsciiBox
+
+-- Some helpers for output file substitutions
+-- getpid already defined by Lua-C-Interface
+local function gethostname()
+    local f = io.popen("hostname -s","r")
+    local hostname = f:read("*all"):gsub("^%s*(.-)%s*$", "%1")
+    f:close()
+    return hostname
+end
+
+likwid.gethostname = gethostname
+
+local function getjid()
+    local jid = os.getenv("PBS_JOBID")
+    if jid == nil then
+        jid = "X"
+    end
+    return jid
+end
+
+likwid.getjid = getjid
+
+local function getMPIrank()
+    local rank = os.getenv("PMI_RANK")
+    if rank == nil then
+        rank = os.getenv("OMPI_COMM_WORLD_RANK")
+        if rank == nil then
+            rank = "X"
+        end
+    end
+    return rank
+end
+
+likwid.getMPIrank = getMPIrank
 
 return likwid
