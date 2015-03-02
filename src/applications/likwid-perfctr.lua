@@ -111,6 +111,7 @@ execString = nil
 outfile = nil
 gotC = false
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid("pid"))
+print_stdout = print
 
 for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
     
@@ -169,8 +170,11 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
         local dummy = false
         duration, dummy = likwid.parse_time(arg)
     elseif (opt == "o") then
-        outfile = arg
-        io.output(arg:gsub(string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$"),"tmp"))
+        outfile = arg:gsub("%%h", likwid.gethostname())
+        outfile = outfile:gsub("%%p", likwid.getpid())
+        outfile = outfile:gsub("%%j", likwid.getjid())
+        outfile = outfile:gsub("%%r", likwid.getMPIrank())
+        io.output(outfile:gsub(string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$"),"tmp"))
         print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end
     elseif (opt == "O") then
         use_csv = true
@@ -298,7 +302,7 @@ if num_cpus > 0 then
     end
 end
 
-if use_stethoscope == false and use_timeline == false then
+if use_stethoscope == false and use_timeline == false and use_marker == false then
     use_wrapper = true
 end
 
@@ -395,11 +399,9 @@ if use_marker == true then
     likwid.setenv("LIKWID_THREADS", table.concat(cpulist,","))
 end
 
-if use_wrapper or use_timeline then
-    execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
-    if verbose == true then
-        print(string.format("Executing: %s",execString))
-    end
+execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
+if verbose == true then
+    print(string.format("Executing: %s",execString))
 end
 
 
@@ -412,13 +414,10 @@ if use_timeline == true then
     --likwid.startDaemon(duration, markerFile);
 end
 
-if use_wrapper or use_stethoscope or use_timeline then
-    local ret = likwid.startCounters()
-    if ret < 0 then
-        print(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
-        os.exit(1)
-    end
-    
+local ret = likwid.startCounters()
+if ret < 0 then
+    print(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
+    os.exit(1)
 end
 
 
@@ -441,7 +440,7 @@ if use_wrapper or use_timeline then
         likwid.putConfiguration()
         os.exit(1)
     end
-    while not likwid.checkProgram(pid) do
+    while true do
         if use_timeline == true then
             stop = likwid.stopClock()
             likwid.readCounters()
@@ -457,15 +456,25 @@ if use_wrapper or use_timeline then
             end
             io.stderr:write(str.."\n")
         end
-        if (not likwid.checkProgram(pid)) and duration > 1.E06 then
+        if duration > 1.E06 then
             remain = sleep(duration/1.E06)
             if remain > 0 then
+                io.stdout:flush()
                 break
             end
-        elseif not likwid.checkProgram(pid) then
-            usleep(duration)
+        else
+            status = usleep(duration)
+            if status ~= 0 then
+                io.stdout:flush()
+                break
+            end
         end
-        if not likwid.checkProgram(pid) and use_timeline == true and #group_ids > 1 then
+        if likwid.checkProgram(pid) == false then
+            io.stdout:flush()
+            usleep(5*1.E06)
+            break
+        end
+        if use_timeline == true and #group_ids > 1 then
             likwid.switchGroup(activeGroup + 1)
             activeGroup = likwid.getIdOfActiveGroup()
             nr_events = likwid.getNumberOfEvents(activeGroup)
@@ -483,21 +492,29 @@ if use_wrapper or use_timeline then
             end
         end
     end
-else
+elseif use_stethoscope then
     if use_sleep then
         sleep(duration/1.E06)
     else
         usleep(duration)
     end
+elseif use_marker then
+    local ret = os.execute(execString)
+    if ret == nil then
+        print("Failed to execute command: ".. execString)
+        likwid.stopCounters()
+        likwid.finalize()
+        likwid.putTopology()
+        likwid.putConfiguration()
+        os.exit(1)
+    end
 end
 io.stdout:flush()
 print(likwid.hline)
-if use_wrapper or use_stethoscope or use_timeline then
-    local ret = likwid.stopCounters()
-    if ret < 0 then
-         print(string.format("Error stopping counters for thread %d.",ret * (-1)))
-        os.exit(1)
-    end
+local ret = likwid.stopCounters()
+if ret < 0 then
+     print(string.format("Error stopping counters for thread %d.",ret * (-1)))
+    os.exit(1)
 end
 
 
@@ -522,16 +539,18 @@ end
 
 if outfile then
     local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
-    local command = "<PREFIX>/share/likwid/filter/" .. suffix 
+    local command = "<PREFIX>/share/likwid/filter/" .. suffix
+    local tmpfile = outfile:gsub("."..suffix,".tmp",1)
     if suffix ~= "txt" then
-        command = command .." ".. outfile:gsub("."..suffix,".tmp",1) .. " perfctr"
+        command = command .." ".. tmpfile .. " perfctr"
         local f = io.popen(command)
         local o = f:read("*a")
         if o:len() > 0 then
-            print(string.format("Failed to executed filter script %s.",command))
+            print_stdout(string.format("Failed to executed filter script %s.",command))
         end
     else
-        os.rename(outfile:gsub("."..suffix,".tmp",1), outfile)
+        os.rename(tmpfile, outfile)
+        os.remove(tmpfile)
     end
 end
 
