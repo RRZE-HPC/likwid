@@ -1001,9 +1001,12 @@ static int isleep(lua_State* L)
 
 static int iusleep(lua_State* L)
 {
+    int status = -1;
     long interval = lua_tounsigned(L,-1);
-    int status = 0;
-    status = usleep(interval);
+    if (interval < 1000000)
+    {
+        status = usleep(interval);
+    }
     lua_pushinteger(L, status);
     return 1;
 }
@@ -1159,6 +1162,7 @@ static int lua_likwid_startProgram(lua_State* L)
         status = execvp(*argv, argv);
         if (status < 0)
         {
+            kill(ppid, SIGCHLD);
             exit(1);
         }
         return 0;
