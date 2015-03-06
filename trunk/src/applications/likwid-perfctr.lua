@@ -481,16 +481,19 @@ if use_wrapper or use_timeline then
         end
     end
     stop = likwid.stopClock()
-    likwid.readCounters()
-    local time = likwid.getClock(start, stop)
-    int_results[time] = likwid.getResults()
-    local str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(time)
-    for ig, g in pairs(int_results[time]) do
-        for ie, e in pairs(g) do
-            for it, t in pairs(e) do
-                str = str .. "," .. tostring(t)
+    if use_timeline == true then
+        likwid.readCounters()
+        local time = likwid.getClock(start, stop)
+        int_results[time] = likwid.getResults()
+        local str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(time)
+        for ig, g in pairs(int_results[time]) do
+            for ie, e in pairs(g) do
+                for it, t in pairs(e) do
+                    str = str .. "," .. tostring(t)
+                end
             end
         end
+        io.stderr:write(str.."\n")
     end
 elseif use_stethoscope then
     if use_sleep then
@@ -509,13 +512,14 @@ elseif use_marker then
         os.exit(1)
     end
 end
-io.stdout:flush()
-print(likwid.hline)
+
 local ret = likwid.stopCounters()
 if ret < 0 then
      print(string.format("Error stopping counters for thread %d.",ret * (-1)))
     os.exit(1)
 end
+io.stdout:flush()
+print(likwid.hline)
 
 
 if use_marker == true then
