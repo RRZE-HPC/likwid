@@ -80,6 +80,7 @@ L_APPS      =   likwid-perfctr \
 				likwid-topology \
 				likwid-memsweeper \
 				likwid-agent \
+				likwid-mpirun \
 				likwid-genTopoCfg
 L_HELPER    =   likwid.lua
 ifeq ($(BUILDFREQ),true)
