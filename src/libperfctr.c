@@ -353,14 +353,7 @@ void likwid_markerClose(void)
         free(results);
     }
 
-    msr_finalize();
-    pci_finalize();
-
-    for (int i=0; i<MAX_NUM_THREADS; i++)
-    {
-        accessClient_finalize(thread_sockets[i]);
-        thread_sockets[i] = -1;
-    }
+    HPMfinalize();
 }
 
 
@@ -385,10 +378,11 @@ int likwid_markerStartRegion(const char* regionTag)
 
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, START [%s] READ EVENT [%d=%d] ID %d VALUE %llu , regionTag, thread_id, cpu_id, i,
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, START [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu , regionTag, thread_id, cpu_id, i,
                         LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
         groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].startData =
                 groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
+        //results->StartPMcounters[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
     }
     results->groupID = groupSet->activeGroup;
     timer_start(&(results->startTime));
@@ -436,7 +430,7 @@ int likwid_markerStopRegion(const char* regionTag)
     perfmon_readCountersCpu(cpu_id);
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] ID %d VALUE %llu, regionTag, thread_id, cpu_id, i,
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu, regionTag, thread_id, cpu_id, i,
                         LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
         results->PMcounters[i] += perfmon_getResult(groupSet->activeGroup, i, thread_id);
     }

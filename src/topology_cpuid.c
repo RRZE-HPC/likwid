@@ -497,7 +497,7 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
     {
         for (uint32_t i=0; i < cpuid_topology.numHWThreads; i++)
         {
-
+            int id;
             CPU_ZERO(&set);
             CPU_SET(i,&set);
             sched_setaffinity(0, sizeof(cpu_set_t), &set);
@@ -505,11 +505,12 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
             ecx = 0;
             CPUID;
             apicId = edx;
-            hwThreadPool[i].apicId = apicId;
-            hwThreadPool[i].inCpuSet = 0;
-            if (CPU_ISSET(i, &cpuSet))
+            id = i;
+            hwThreadPool[id].apicId = i;
+            hwThreadPool[id].inCpuSet = 0;
+            if (CPU_ISSET(id, &cpuSet))
             {
-                hwThreadPool[i].inCpuSet = 1;
+                hwThreadPool[id].inCpuSet = 1;
             }
 
             for (level=0; level < 3; level++)
@@ -524,26 +525,29 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
                         bitField = extractBitField(apicId,
                                 currOffset,
                                 0);
-                        hwThreadPool[i].threadId = bitField;
+                        hwThreadPool[id].threadId = bitField;
                         break;
 
                     case 1:  /* Core */
                         bitField = extractBitField(apicId,
                                 currOffset-prevOffset,
                                 prevOffset);
-                        hwThreadPool[i].coreId = bitField;
+                        hwThreadPool[id].coreId = bitField;
                         break;
 
                     case 2:  /* Package */
                         bitField = extractBitField(apicId,
                                 32-prevOffset,
                                 prevOffset);
-                        hwThreadPool[i].packageId = bitField;
+                        hwThreadPool[id].packageId = bitField;
                         break;
 
                 }
                 prevOffset = currOffset;
             }
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d], i, id,
+                                    hwThreadPool[id].apicId, hwThreadPool[id].threadId,
+                                    hwThreadPool[id].coreId, hwThreadPool[id].packageId);
         }
     }
     else
@@ -575,8 +579,8 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
 
                     eax = 0x01;
                     CPUID;
-                    id = extractBitField(ebx,8,24);
-                    hwThreadPool[id].apicId = extractBitField(ebx,8,24);
+                    id = i;
+                    hwThreadPool[id].apicId = i;//extractBitField(ebx,8,24);
 
                     /* ThreadId is extracted from th apicId using the bit width
                      * of the number of logical processors
@@ -598,6 +602,9 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
                         extractBitField(hwThreadPool[id].apicId,
                                 8-getBitFieldWidth(maxNumLogicalProcs),
                                 getBitFieldWidth(maxNumLogicalProcs));
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d], i, id,
+                                    hwThreadPool[id].apicId, hwThreadPool[id].threadId,
+                                    hwThreadPool[id].coreId, hwThreadPool[id].packageId);
                 }
                 break;
 
@@ -616,18 +623,20 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
 
                 for (uint32_t i=0; i<  cpuid_topology.numHWThreads; i++)
                 {
+                    int id;
                     CPU_ZERO(&set);
                     CPU_SET(i,&set);
                     sched_setaffinity(0, sizeof(cpu_set_t), &set);
 
                     eax = 0x01;
                     CPUID;
-                    hwThreadPool[i].apicId = extractBitField(ebx,8,24);
+                    id = extractBitField(ebx,8,24);
+                    hwThreadPool[id].apicId = extractBitField(ebx,8,24);
 
                     /* ThreadId is extracted from th apicId using the bit width
                      * of the number of logical processors
                      * */
-                    hwThreadPool[i].threadId =
+                    hwThreadPool[id].threadId =
                         extractBitField(hwThreadPool[i].apicId,
                                 getBitFieldWidth(maxNumLogicalProcsPerCore),0); 
 
@@ -635,15 +644,18 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
                      * of the number of logical processors as offset and the
                      * bit width of the number of cores as width
                      * */
-                    hwThreadPool[i].coreId =
+                    hwThreadPool[id].coreId =
                         extractBitField(hwThreadPool[i].apicId,
                                 getBitFieldWidth(maxNumCores),
                                 0); 
 
-                    hwThreadPool[i].packageId =
+                    hwThreadPool[id].packageId =
                         extractBitField(hwThreadPool[i].apicId,
                                 8-getBitFieldWidth(maxNumCores),
-                                getBitFieldWidth(maxNumCores)); 
+                                getBitFieldWidth(maxNumCores));
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d], i, id,
+                                    hwThreadPool[id].apicId, hwThreadPool[id].threadId,
+                                    hwThreadPool[id].coreId, hwThreadPool[id].packageId);
                 }
                 break;
 
@@ -672,22 +684,27 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
 
                 for (uint32_t i=0; i<  cpuid_topology.numHWThreads; i++)
                 {
+                    int id;
                     CPU_ZERO(&set);
                     CPU_SET(i,&set);
                     sched_setaffinity(0, sizeof(cpu_set_t), &set);
 
                     eax = 0x01;
                     CPUID;
-                    hwThreadPool[i].apicId = extractBitField(ebx,8,24);
+                    id = extractBitField(ebx,8,24);
+                    hwThreadPool[id].apicId = extractBitField(ebx,8,24);
                     /* AMD only knows cores */
-                    hwThreadPool[i].threadId = 0;
+                    hwThreadPool[id].threadId = 0;
 
-                    hwThreadPool[i].coreId =
+                    hwThreadPool[id].coreId =
                         extractBitField(hwThreadPool[i].apicId,
                                 width, 0); 
-                    hwThreadPool[i].packageId =
+                    hwThreadPool[id].packageId =
                         extractBitField(hwThreadPool[i].apicId,
-                                (8-width), width); 
+                                (8-width), width);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d], i, id,
+                                    hwThreadPool[id].apicId, hwThreadPool[id].threadId,
+                                    hwThreadPool[id].coreId, hwThreadPool[id].packageId);
                 }
 
                 break;

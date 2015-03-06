@@ -92,6 +92,8 @@ void HPMfinalize(void)
 int HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
 {
     int socket = globalSocket;
+    uint64_t tmp = 0x0ULL;
+    int err = 0;
     if ((dev >= MAX_NUM_PCI_DEVICES) || (data == NULL))
     {
         return -EFAULT;
@@ -111,22 +113,27 @@ int HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
             return -ENOENT;
         }
     }
+    *data = 0x0ULL;
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, READ S[%d] C[%d] DEV[%d] R 0x%X, socket, cpu_id, dev, reg);
     if (dev == MSR_DEV)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, MSR READ S[%d] C[%d] R 0x%X, socket, cpu_id, reg);
-        return msr_tread(socket, cpu_id, reg, data);
+        err = msr_tread(socket, cpu_id, reg, &tmp);
+        *data = tmp;
     }
     else if (pci_checkDevice(dev, cpu_id))
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI READ S[%d] C[%d] D[%d] R 0x%X, socket, cpu_id, dev, reg);
-        return pci_tread(socket, cpu_id, dev, reg, (uint32_t*)data);
+        err = pci_tread(socket, cpu_id, dev, reg, (uint32_t*)&tmp);
+        *data = tmp;
     }
-    return 0;
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, READ S[%d] C[%d] DEV[%d] R 0x%X = 0x%llX ERR[%d], socket, cpu_id, dev, reg, tmp, err);
+    return err;
 }
 
 int HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
 {
     int socket = globalSocket;
+    int err = 0;
+    uint64_t tmp;
     if (dev >= MAX_NUM_PCI_DEVICES)
     {
         ERROR_PRINT(MSR WRITE D %d NOT VALID, dev);
@@ -149,16 +156,26 @@ int HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
             return -ENOENT;
         }
     }
-
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, WRITE S[%d] C[%d] DEV[%d] R 0x%X D 0x%llX, socket, cpu_id, dev, reg, LLU_CAST data);
     if (dev == MSR_DEV)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, MSR WRITE S[%d] C[%d] R 0x%X D 0x%llX, socket, cpu_id, reg, LLU_CAST data);
-        return msr_twrite(socket, cpu_id, reg, data);
+        err = msr_twrite(socket, cpu_id, reg, data);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, WRITE S[%d] C[%d] DEV[%d] R 0x%X D 0x%llX ERR[%d], socket, cpu_id, dev, reg, LLU_CAST data, err);
+        if (perfmon_verbosity == DEBUGLEV_DEVELOP)
+        {
+            int err2 = msr_tread(socket, cpu_id, reg, &tmp);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, VERIFY S[%d] C[%d] DEV[%d] R 0x%X D 0x%llX ERR[%d] CMP %d, socket, cpu_id, dev, reg, LLU_CAST tmp, err2, (data == tmp));
+        }
     }
     else if (pci_checkDevice(dev, cpu_id))
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI WRITE S[%d] C[%d] D[%d] R 0x%X D 0x%llX, socket, cpu_id, dev, reg, LLU_CAST data);
-        return pci_twrite(socket, cpu_id, dev, reg, data);
+        err = pci_twrite(socket, cpu_id, dev, reg, data);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, WRITE S[%d] C[%d] DEV[%d] R 0x%X D 0x%llX ERR[%d], socket, cpu_id, dev, reg, LLU_CAST data, err);
+        if (perfmon_verbosity == DEBUGLEV_DEVELOP)
+        {
+            int err2 = pci_tread(socket, cpu_id, dev, reg, (uint32_t*)&tmp);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, VERIFY S[%d] C[%d] DEV[%d] R 0x%X D 0x%llX ERR[%d] CMP %d, socket, cpu_id, dev, reg, LLU_CAST tmp, err2, (data == tmp));
+        }
     }
-    return 0;
+    return err;
 }

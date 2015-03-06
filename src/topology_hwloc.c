@@ -28,13 +28,22 @@
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static int readCacheInclusive(int level)
+static int readCacheInclusiveIntel(int level)
 {
     uint32_t eax, ebx, ecx, edx;
     eax = 0x04;
     ecx = level;
     CPUID;
     return edx & 0x2;
+}
+
+static int readCacheInclusiveAMD(int level)
+{
+    uint32_t eax, ebx, ecx, edx;
+    eax = 0x8000001D;
+    ecx = level;
+    CPUID;
+    return (edx & (0x1<<1));
 }
 
 static int get_stepping(void)
@@ -132,7 +141,7 @@ void hwloc_init_nodeTopology(cpu_set_t cpuSet)
     int realThreadId;
     int sibling;
     int poolsize = 0;
-    int threadIdx = 0;
+    int id = 0;
     hwloc_obj_type_t socket_type = HWLOC_OBJ_SOCKET;
     for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
     {
@@ -166,23 +175,26 @@ void hwloc_init_nodeTopology(cpu_set_t cpuSet)
             printf("No obj for CPU %d\n", i);
             continue;
         }
-        hwThreadPool[threadIdx].inCpuSet = 1;
-        hwThreadPool[threadIdx].apicId = obj->os_index;
-        hwThreadPool[threadIdx].threadId = obj->sibling_rank;
+        id = obj->os_index;
+        hwThreadPool[id].inCpuSet = 1;
+        hwThreadPool[id].apicId = obj->os_index;
+        hwThreadPool[id].threadId = obj->sibling_rank;
         while (obj->type != HWLOC_OBJ_CORE) {
             obj = obj->parent;
         }
-        hwThreadPool[threadIdx].coreId = obj->os_index;
+        hwThreadPool[id].coreId = obj->os_index;
         while (obj->type != socket_type) {
             obj = obj->parent;
         }
-        hwThreadPool[threadIdx].packageId = obj->os_index;
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Socket %d,
+        hwThreadPool[id].packageId = obj->os_index;
+        /*DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Socket %d,
                             hwThreadPool[threadIdx].apicId,
                             hwThreadPool[threadIdx].threadId,
                             hwThreadPool[threadIdx].coreId,
-                            hwThreadPool[threadIdx].packageId)
-        threadIdx++;
+                            hwThreadPool[threadIdx].packageId)*/
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d], i, id,
+                                    hwThreadPool[id].apicId, hwThreadPool[id].threadId,
+                                    hwThreadPool[id].coreId, hwThreadPool[id].packageId);
     }
 
     cpuid_topology.threadPool = hwThreadPool;
@@ -256,10 +268,11 @@ void hwloc_init_cacheTopology(void)
         {
             case MIC_FAMILY:
             case P6_FAMILY:
+                cachePool[id].inclusive = readCacheInclusiveIntel(cachePool[id].level);
+                break;
             case K16_FAMILY:
             case K15_FAMILY:
-                cachePool[id].inclusive = readCacheInclusive(cachePool[id].level);
-                break;
+                cachePool[id].inclusive = readCacheInclusiveAMD(cachePool[id].level);
             /* For K8 and K10 it is known that they are inclusive */
             case K8_FAMILY:
             case K10_FAMILY:

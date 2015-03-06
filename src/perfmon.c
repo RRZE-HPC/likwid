@@ -105,6 +105,11 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             break;
         }
     }
+    if (!pci_checkDevice(counter_map[*index].device, 0))
+    {
+        *type = NOTYPE;
+        return FALSE;
+    }
     if ((ret) && (counter_map[*index].type != THERMAL) && (counter_map[*index].type != POWER) && (counter_map[*index].type != WBOX0FIX))
     {
         err = HPMread(0, counter_map[*index].device, counter_map[*index].counterRegister, &tmp);
@@ -121,6 +126,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
                                              counter_map[*index].key);
             }
             *type = NOTYPE;
+            ret = FALSE;
         }
         else if (tmp == 0x0)
         {
@@ -138,10 +144,12 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
                                              counter_map[*index].key);
                 }
                 *type = NOTYPE;
+                ret = FALSE;
             }
         }
         /*else
         {
+            printf("Err %d Tmp 0x%llx\n", err, tmp);
             DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Counter %s already in use. Skipping setup of this event,
                                              counter_map[*index].key);
             *type = NOTYPE;
@@ -155,7 +163,13 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not readable on this machine,
                                          counter_map[*index].key);
             *type = NOTYPE;
+            ret = FALSE;
         }
+    }
+    else
+    {
+        *type = NOTYPE;
+        ret = FALSE;
     }
     return ret;
 }
@@ -492,42 +506,6 @@ getCounterTypeOffset(int index)
     return off;
 }
 
-/* DEPRECATED */
-void
-perfmon_printCounters(FILE* OUTSTREAM)
-{
-    fprintf(OUTSTREAM,"This architecture has %d counters.\n", perfmon_numCounters);
-    fprintf(OUTSTREAM,"Counters names:  ");
-
-    for (int i=0; i<perfmon_numCounters; i++)
-    {
-        fprintf(OUTSTREAM,"%s",counter_map[i].key);
-        if (i != perfmon_numCounters-1)
-        {
-            fprintf(OUTSTREAM,"\t");
-        }
-    }
-    fprintf(OUTSTREAM,".\n");
-}
-
-/* DEPRECATED */
-void
-perfmon_printEvents(FILE* OUTSTREAM)
-{
-    int i;
-
-    fprintf(OUTSTREAM,"This architecture has %d events.\n", perfmon_numArchEvents);
-    fprintf(OUTSTREAM,"Event tags (tag, id, umask, counters):\n");
-
-    for (i=0; i<perfmon_numArchEvents; i++)
-    {
-        fprintf(OUTSTREAM,"%s, 0x%X, 0x%X, %s \n",
-                eventHash[i].name,
-                eventHash[i].eventId,
-                eventHash[i].umask,
-                eventHash[i].limit);
-    }
-}
 
 void
 perfmon_init_maps(void)
@@ -1018,7 +996,7 @@ perfmon_finalize(void)
     {
         for (thread=0;thread< groupSet->numberOfThreads; thread++)
         {
-            perfmon_finalizeCountersThread(groupSet->threads[thread].processorId, &(groupSet->groups[group]));
+            perfmon_finalizeCountersThread(thread, &(groupSet->groups[group]));
         }
         for (event=0;event < groupSet->groups[group].numberOfEvents; event++)
         {
@@ -1133,7 +1111,7 @@ perfmon_addEventSet(char* eventCString)
         {
             if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type))
             {
-                fprintf(stderr,"Counter register %s not supported\n",bdata(
+                fprintf(stderr,"Counter register %s not supported or PCI device not available\n",bdata(
                         subtokens->entry[1]));
                 event->type = NOTYPE;
                 goto past_checks;
@@ -1360,6 +1338,7 @@ perfmon_getResult(int groupId, int eventId, int threadId)
     double result = 0.0;
     PerfmonEventSetEntry* event;
     PerfmonCounter* counter;
+    int cpu_id;
     if (unlikely(groupSet == NULL))
     {
         return 0;
@@ -1380,6 +1359,8 @@ perfmon_getResult(int groupId, int eventId, int threadId)
     }
     event = &(groupSet->groups[groupId].events[eventId]);
     counter = &(event->threadCounter[threadId]);
+    cpu_id = groupSet->threads[threadId].processorId;
+
     if (counter->overflows == 0)
     {
         result = (double) (counter->counterData - counter->startData);
@@ -1484,9 +1465,8 @@ perfmon_getMaxCounterValue(RegisterType type)
     }
     for(int i=0;i<width;i++)
     {
-        tmp |= (1<<i);
+        tmp |= (1ULL<<i);
     }
-
     return tmp;
 }
 

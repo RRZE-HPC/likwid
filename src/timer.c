@@ -44,6 +44,7 @@ static uint64_t
 getCpuSpeed(void)
 {
 #ifdef __x86_64
+    int i;
     TimerData data;
     TscCounter start;
     TscCounter stop;
@@ -53,7 +54,7 @@ getCpuSpeed(void)
     struct timezone tzp;
     struct timespec delay = { 0, 800000000 }; /* calibration time: 800 ms */
 
-    for (int i=0; i< 10; i++)
+    for (i=0; i< 10; i++)
     {
         timer_start(&data);
         timer_stop(&data);
@@ -63,7 +64,7 @@ getCpuSpeed(void)
     baseline = result;
     result = 0xFFFFFFFFFFFFFFFFULL;
 
-    for (int i=0; i< 2; i++)
+    for (i=0; i< 2; i++)
     {
         RDTSC(start);
         gettimeofday( &tv1, &tzp);

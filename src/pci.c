@@ -104,6 +104,7 @@ pci_init(int initSocket_fd)
         for(j=1;j<MAX_NUM_PCI_DEVICES;j++)
         {
             FD[i][j] = -2;
+            pci_devices[j].online = 0;
         }
     }
 
@@ -173,7 +174,7 @@ pci_init(int initSocket_fd)
                     pci_devices[j].online = 1;
                     if (i==0)
                     {
-                        DEBUG_PRINT(DEBUGLEV_DETAIL, PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, i,bdata(filepath));
+                        DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, i,bdata(filepath));
                     }
                 }
             }
@@ -395,7 +396,6 @@ pci_tread(const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t r
         {
             return -ENODEV;
         }
-        //DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI TREAD [%d] SOCKET %d DEV %s REG 0x%x, cpu, socket_fd, pci_devices[device].name, reg);
         err = accessClient_read(tsocket_fd, socketId, device, reg, &tmp);
         if (err)
         {
@@ -452,7 +452,6 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
         {
             return -ENODEV;
         }
-        //DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI TWRITE [%d] SOCKET %d DEV %s REG 0x%x, cpu, socket_fd, pci_devices[device].name, reg);
         err = accessClient_write(tsocket_fd, socketId, device, reg, data);
         if (err)
         {
@@ -466,7 +465,11 @@ pci_twrite( const int tsocket_fd, const int cpu, PciDeviceIndex device, uint32_t
 int pci_checkDevice(PciDeviceIndex index, int cpu)
 {
     int socketId = affinity_core2node_lookup[cpu];
-    if ((index != MSR_DEV) && (FD[socketId][index] >= 0))
+    if (index == MSR_DEV)
+    {
+        return 1;
+    }
+    else if ((pci_devices[index].online == 1) || (FD[socketId][index] >= 0))
     {
         return 1;
     }
