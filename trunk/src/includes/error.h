@@ -81,7 +81,7 @@ extern int perfmon_verbosity;
 #define DEBUGLEV_DEVELOP 3
 
 #define VERBOSEPRINTREG(cpuid,reg,flags,msg) \
-    if (perfmon_verbosity == DEBUGLEV_DETAIL) \
+    if (perfmon_verbosity == DEBUGLEV_DEVELOP) \
     { \
         printf("DEBUG - [%s:%d] "  str(msg) " [%d] Register 0x%llX , Flags: 0x%llX \n",  \
                 __func__, __LINE__,  (cpuid), LLU_CAST (reg), LLU_CAST (flags)); \
@@ -89,7 +89,7 @@ extern int perfmon_verbosity;
     }
     
 #define VERBOSEPRINTPCIREG(cpuid,dev,reg,flags,msg) \
-    if (perfmon_verbosity == DEBUGLEV_DETAIL) \
+    if (perfmon_verbosity == DEBUGLEV_DEVELOP) \
     { \
         printf("DEBUG - [%s:%d] "  str(msg) " [%d] Device %d Register 0x%llX , Flags: 0x%llX \n",  \
                 __func__, __LINE__,  (cpuid), dev, LLU_CAST (reg), LLU_CAST (flags)); \
