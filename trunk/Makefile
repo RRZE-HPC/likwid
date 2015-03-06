@@ -270,12 +270,8 @@ install: install_daemon install_freq
 	@chmod 644 $(MANPREFIX)/man1/likwid-*
 	@echo "===> INSTALL headers to $(PREFIX)/include"
 	@mkdir -p $(PREFIX)/include
-	@cp -f src/includes/likwid.h  $(PREFIX)/include/
-	@cp -f src/includes/bstrlib.h  $(PREFIX)/include/
-	@cp -f src/includes/error.h  $(PREFIX)/include/
-	@chmod 644 $(PREFIX)/include/likwid.h
-	@chmod 644 $(PREFIX)/include/bstrlib.h
-	@chmod 644 $(PREFIX)/include/error.h
+	@cp -f src/includes/*.h  $(PREFIX)/include/
+	@chmod 644 $(PREFIX)/include/*.h
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL groups to $(PREFIX)/share/likwid"
 	@mkdir -p $(PREFIX)/share/likwid
@@ -305,9 +301,7 @@ uninstall: uninstall_daemon uninstall_freq
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
 	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(L_APPS)))
 	@echo "===> REMOVING header from $(PREFIX)/include"
-	@rm -f $(PREFIX)/include/likwid.h
-	@rm -f $(PREFIX)/include/bstrlib.h
-	@rm -f $(PREFIX)/include/error.h
+	@rm -f $(PREFIX)/include/*.h
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter and groups from $(PREFIX)/share/likwid"
 	@rm -rf  $(PREFIX)/share/likwid
