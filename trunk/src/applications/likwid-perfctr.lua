@@ -220,8 +220,12 @@ num_avail_groups, avail_groups = likwid.get_groups(cpuinfo["short_name"])
 
 if print_groups == true then
     for i,g in pairs(avail_groups) do
-        local gdata = likwid.get_groupdata(cpuinfo["short_name"], g)
-        print(string.format("%10s\t%s",g,gdata["ShortDescription"]))
+        local gdata = likwid.get_groupdata(g)
+        if gdata ~= nil then
+            print(string.format("%10s\t%s",g,gdata["ShortDescription"]))
+        else
+            print("The groupstring "..g.." is neither a valid performance group nor a common event string")
+        end
     end
     os.exit(0)
 end
@@ -239,7 +243,7 @@ if print_group_help == true then
         end
         for i,g in pairs(avail_groups) do
             if event_string == g then
-                local gdata = likwid.get_groupdata(cpuinfo["short_name"],event_string)
+                local gdata = likwid.get_groupdata(event_string)
                 print(string.format("Group %s:",event_string))
                 print(gdata["LongDescription"])
             end
@@ -349,19 +353,14 @@ end
 
 
 for i, event_string in pairs(event_string_list) do
-    local s,e = event_string:find(":")
-    if s == nil then
-        local groupdata = likwid.get_groupdata(cpuinfo["short_name"], event_string)
-        if groupdata == nil then
-            print("Cannot read event string, it's neither a performance group nor a proper event string <event>:<counter>:<options>,...")
-            usage()
-            os.exit(1)
-        end
-        table.insert(group_list, groupdata)
-        event_string_list[i] = groupdata["EventString"]
-    else
-        table.insert(group_list, likwid.new_groupdata(event_string))
+    local groupdata = likwid.get_groupdata(event_string)
+    if groupdata == nil then
+        print("Cannot read event string, it's neither a performance group nor a proper event string <event>:<counter>:<options>,...")
+        usage()
+        os.exit(1)
     end
+    table.insert(group_list, groupdata)
+    event_string_list[i] = groupdata["EventString"]
 end
 
 
@@ -447,32 +446,25 @@ if use_wrapper or use_timeline then
             local time = likwid.getClock(start, stop)
             int_results[time] = likwid.getResults()
             local str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(time)
-            for ig, g in pairs(int_results[time]) do
-                for ie, e in pairs(g) do
-                    for it, t in pairs(e) do
-                        str = str .. "," .. tostring(t)
-                    end
+            for ie, e in pairs(int_results[time][activeGroup]) do
+                for it, t in pairs(e) do
+                    str = str .. "," .. tostring(t)
                 end
             end
             io.stderr:write(str.."\n")
         end
-        if duration > 1.E06 then
+        if duration >= 1.E06 then
             remain = sleep(duration/1.E06)
-            if remain > 0 then
+            if remain > 0 or not likwid.checkProgram() then
                 io.stdout:flush()
                 break
             end
         else
             status = usleep(duration)
-            if status ~= 0 then
+            if status ~= 0 or not likwid.checkProgram()then
                 io.stdout:flush()
                 break
             end
-        end
-        if likwid.checkProgram(pid) == false then
-            io.stdout:flush()
-            usleep(5*1.E06)
-            break
         end
         if use_timeline == true and #group_ids > 1 then
             likwid.switchGroup(activeGroup + 1)
@@ -486,11 +478,9 @@ if use_wrapper or use_timeline then
         local time = likwid.getClock(start, stop)
         int_results[time] = likwid.getResults()
         local str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(time)
-        for ig, g in pairs(int_results[time]) do
-            for ie, e in pairs(g) do
-                for it, t in pairs(e) do
-                    str = str .. "," .. tostring(t)
-                end
+        for ie, e in pairs(int_results[time][activeGroup]) do
+            for it, t in pairs(e) do
+                str = str .. "," .. tostring(t)
             end
         end
         io.stderr:write(str.."\n")

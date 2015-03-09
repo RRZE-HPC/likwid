@@ -623,10 +623,7 @@ local function setPerfStrings(perflist, cpuexprs)
     local affinity = likwid.getAffinityInfo()
     for k, perfStr in pairs(perflist) do
         local gdata = nil
-        gdata = likwid.get_groupdata(cpuinfo["short_name"], perfStr)
-        if gdata == nil then
-            gdata = likwid.new_groupdata(perfStr)
-        end
+        gdata = likwid.get_groupdata(perfStr)
         if gdata == nil then
             print("Cannot get data for group "..perfStr..". Skipping...")
         else

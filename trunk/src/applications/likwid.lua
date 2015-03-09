@@ -663,14 +663,42 @@ end
 
 likwid.get_groups = get_groups
 
-local function get_groupdata(architecture, group)
+local function new_groupdata(eventString)
+    local gdata = {}
+    local num_events = 1
+    gdata["Events"] = {}
+    gdata["EventString"] = eventString
+    gdata["GroupString"] = eventString
+    local eventslist = likwid.stringsplit(eventString,",")
+    for i,e in pairs(eventslist) do
+        eventlist = likwid.stringsplit(e,":")
+        gdata["Events"][num_events] = {}
+        gdata["Events"][num_events]["Event"] = eventlist[1]
+        gdata["Events"][num_events]["Counter"] = eventlist[2]
+        if #eventlist > 2 then
+            table.remove(eventlist, 2)
+            table.remove(eventlist, 1)
+            gdata["Events"][num_events]["Options"] = eventlist
+        end
+        num_events = num_events + 1
+    end
+    return gdata
+end
+
+likwid.new_groupdata = new_groupdata
+
+local function get_groupdata(group)
     groupdata = {}
     local group_exist = 0
+    local cpuinfo = likwid.getCpuInfo()
+    if cpuinfo == nil then return nil end
+    
+    local architecture = cpuinfo["short_name"]
     num_groups, groups = get_groups(architecture)
     for i, a in pairs(groups) do
         if (a == group) then group_exist = 1 end
     end
-    if (group_exist == 0) then return end
+    if (group_exist == 0) then return new_groupdata(group) end
     
     local f = assert(io.open(likwid.groupfolder .. "/" .. architecture .. "/" .. group .. ".txt", "r"))
     local t = f:read("*all")
@@ -683,7 +711,7 @@ local function get_groupdata(architecture, group)
     groupdata["Metrics"] = {}
     groupdata["LongDescription"] = ""
     groupdata["GroupString"] = group
-    nr_events = 0
+    nr_events = 1
     nr_metrics = 1
     for i, line in pairs(stringsplit(t,"\n")) do
         
@@ -749,29 +777,7 @@ end
 
 likwid.get_groupdata = get_groupdata
 
-local function new_groupdata(eventString)
-    local gdata = {}
-    local num_events = 0
-    gdata["Events"] = {}
-    gdata["EventString"] = eventString
-    gdata["GroupString"] = eventString
-    local eventslist = likwid.stringsplit(eventString,",")
-    for i,e in pairs(eventslist) do
-        eventlist = likwid.stringsplit(e,":")
-        gdata["Events"][num_events] = {}
-        gdata["Events"][num_events]["Event"] = eventlist[1]
-        gdata["Events"][num_events]["Counter"] = eventlist[2]
-        if #eventlist > 2 then
-            table.remove(eventlist, 2)
-            table.remove(eventlist, 1)
-            gdata["Events"][num_events]["Options"] = eventlist
-        end
-        num_events = num_events + 1
-    end
-    return gdata
-end
 
-likwid.new_groupdata = new_groupdata
 
 
 local function parse_time(timestr)
@@ -889,12 +895,12 @@ local function printOutput(groups, results, groupData, cpulist)
             table.insert(firsttab[2],"TSC")
         end
         
-        for i=0,num_events-1 do
+        for i=1,num_events do
             table.insert(firsttab[1],groupData[groupID]["Events"][i]["Event"])
             table.insert(firsttab_combined[1],groupData[groupID]["Events"][i]["Event"] .. " STAT")
         end
 
-        for i=0,num_events-1 do
+        for i=1,num_events do
             table.insert(firsttab[2],groupData[groupID]["Events"][i]["Counter"])
             table.insert(firsttab_combined[2],groupData[groupID]["Events"][i]["Counter"])
         end
@@ -969,10 +975,10 @@ local function printOutput(groups, results, groupData, cpulist)
                 table.insert(secondtab[1],groupData[groupID]["Metrics"][m]["description"] )
                 table.insert(secondtab_combined[1],groupData[groupID]["Metrics"][m]["description"].." STAT" )
             end
-            for j=0,num_threads-1 do
-                tmpList = {"Core "..tostring(cpulist[j+1])}
+            for j=1,num_threads do
+                tmpList = {"Core "..tostring(cpulist[j])}
                 for i=0,num_events-1 do
-                    counterlist[groupData[groupID]["Events"][i]["Counter"]] = results[groupID][i+1][j+1]
+                    counterlist[groupData[groupID]["Events"][i]["Counter"]] = results[groupID][i+1][j]
                 end
                 for m=1,#groupdata["Metrics"] do
                     local tmp = calculate_metric(groupData[groupID]["Metrics"][m]["formula"], counterlist)
@@ -1108,7 +1114,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                 end
                 firsttab[2] = {"Counter"}
                 firsttab_combined[2] = {"Counter"}
-                for e=0,nr_events-1 do
+                for e=1,nr_events do
                     table.insert(firsttab[2],groupData[g]["Events"][e]["Counter"])
                     table.insert(firsttab_combined[2],groupData[g]["Events"][e]["Counter"])
                 end
