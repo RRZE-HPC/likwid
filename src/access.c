@@ -13,7 +13,9 @@
 
 #include <types.h>
 #include <error.h>
-#include <cpuid.h>
+#include <topology.h>
+#include <msr.h>
+#include <pci.h>
 #include <accessClient.h>
 #include <perfmon.h>
 #include <access.h>
