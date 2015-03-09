@@ -269,14 +269,11 @@ likwid.groupfolder = dconfig["groupPath"]
 
 -- Evaluate eventSet given on commandline. If it's a group, resolve to events
 for k,v in pairs(dconfig["groupStrings"]) do
-    local s,e = v:find(":")
     local gdata = nil
-    if s == nil then
-        gdata = likwid.get_groupdata(cpuinfo["short_name"], v)
-    else
-        gdata = likwid.new_groupdata(v)
+    gdata = likwid.get_groupdata(v)
+    if gdata ~= nil then
+        table.insert(dconfig["groupData"], gdata)
     end
-    table.insert(dconfig["groupData"], gdata)
 end
 if #dconfig["groupData"] == 0 then
     print("None of the event strings can be added for current architecture.")
