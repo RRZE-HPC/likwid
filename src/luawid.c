@@ -172,7 +172,7 @@ static int lua_likwid_readCounters(lua_State* L)
 static int lua_likwid_switchGroup(lua_State* L)
 {
     int ret = -1;
-    int newgroup = lua_tonumber(L,1) - 1;
+    int newgroup = lua_tonumber(L,1)-1;
     if (newgroup >= perfmon_getNumberOfGroups())
     {
         newgroup = 0;
@@ -217,7 +217,7 @@ static int lua_likwid_getIdOfActiveGroup(lua_State* L)
 {
     int number;
     number = perfmon_getIdOfActiveGroup();
-    lua_pushnumber(L,number);
+    lua_pushnumber(L,number+1);
     return 1;
 }
 
@@ -1002,7 +1002,7 @@ static int isleep(lua_State* L)
 static int iusleep(lua_State* L)
 {
     int status = -1;
-    long interval = lua_tounsigned(L,-1);
+    unsigned long interval = lua_tounsigned(L,-1);
     if (interval < 1000000)
     {
         status = usleep(interval);
@@ -1137,8 +1137,10 @@ void parse(char *line, char **argv)
      *argv = '\0';                 /* mark the end of argument list  */
 }
 
+static volatile int program_running = 0;
+
 static void catch_sigchild(int signo) {
-    while (0) {;}
+    program_running = 0;
 }
 
 static int lua_likwid_startProgram(lua_State* L)
@@ -1152,6 +1154,7 @@ static int lua_likwid_startProgram(lua_State* L)
 
     parse(exec, argv);
     ppid = getpid();
+    program_running = 1;
     pid = fork();
     if (pid < 0)
     {
@@ -1159,6 +1162,7 @@ static int lua_likwid_startProgram(lua_State* L)
     }
     else if ( pid == 0)
     {
+        
         status = execvp(*argv, argv);
         if (status < 0)
         {
@@ -1177,15 +1181,15 @@ static int lua_likwid_startProgram(lua_State* L)
 
 static int lua_likwid_checkProgram(lua_State* L)
 {
-    pid_t pid = lua_tonumber(L, 1);
+    /*pid_t pid = lua_tonumber(L, 1);
     int status;
     if (wait(&status) == pid)
     {
         signal(SIGCHLD, SIG_DFL);
         lua_pushboolean(L, 1);
         return 1;
-    }
-    lua_pushboolean(L, 0);
+    }*/
+    lua_pushboolean(L, program_running);
     return 1;
 }
 
@@ -1193,6 +1197,7 @@ static int lua_likwid_killProgram(lua_State* L)
 {
     pid_t pid = lua_tonumber(L, 1);
     kill(pid, SIGTERM);
+    program_running = 0;
     return 0;
 }
 
