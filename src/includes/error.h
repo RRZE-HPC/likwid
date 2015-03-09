@@ -31,23 +31,18 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-#include <errno.h>
-#include <string.h>
-#include <msr.h>
-#include <pci.h>
 
-extern int perfmon_verbosity;
+#include <likwid.h>
+
+
 
 #define str(x) #x
 
-#define FINALIZE      msr_finalize(); \
-                      pci_finalize()
 
 #define ERRNO_PRINT fprintf(stderr, "ERROR - [%s:%d] %s\n", __FILE__, __LINE__, strerror(errno))
 
 #define ERROR  \
     ERRNO_PRINT; \
-    FINALIZE; \
     exit(EXIT_FAILURE)
 
 #define ERROR_PLAIN_PRINT(msg) \
@@ -71,14 +66,10 @@ extern int perfmon_verbosity;
 #define EXIT_IF_ERROR(func, msg)  \
     if ((func) < 0) {  \
         fprintf(stderr,"ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); \
-        FINALIZE; \
         exit(EXIT_FAILURE); \
     }
 
-#define DEBUGLEV_ONLY_ERROR 0
-#define DEBUGLEV_INFO 1
-#define DEBUGLEV_DETAIL 2
-#define DEBUGLEV_DEVELOP 3
+
 
 #define VERBOSEPRINTREG(cpuid,reg,flags,msg) \
     if (perfmon_verbosity == DEBUGLEV_DEVELOP) \
@@ -108,7 +99,8 @@ extern int perfmon_verbosity;
         fprintf(stdout, "DEBUG - [%s:%d] " str(msg) "\n",__func__, __LINE__);  \
         fflush(stdout); \
     }
-    
+
+
 #define CHECK_MSR_WRITE_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR write operation failed);
 #define CHECK_MSR_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR read operation failed);
 #define CHECK_PCI_WRITE_ERROR(func) CHECK_AND_RETURN_ERROR(func, PCI write operation failed);

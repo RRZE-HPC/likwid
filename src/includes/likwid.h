@@ -32,8 +32,17 @@
 #define LIKWID_H
 
 #include <stdint.h>
-#include <error.h>
+#include <errno.h>
+#include <string.h>
+
 #include <bstrlib.h>
+
+#define DEBUGLEV_ONLY_ERROR 0
+#define DEBUGLEV_INFO 1
+#define DEBUGLEV_DETAIL 2
+#define DEBUGLEV_DEVELOP 3
+
+extern int perfmon_verbosity;
 
 /** \addtogroup MarkerAPI Marker API module
 *  @{
