@@ -1059,6 +1059,7 @@ perfmon_addEventSet(char* eventCString)
 
         /* Only one group exists by now */
         groupSet->groups[0].rdtscTime = 0;
+        groupSet->groups[0].runTime = 0;
         groupSet->groups[0].numberOfEvents = 0;
     }
     
@@ -1073,6 +1074,7 @@ perfmon_addEventSet(char* eventCString)
             return -ENOMEM;
         }
         groupSet->groups[groupSet->numberOfActiveGroups].rdtscTime = 0;
+        groupSet->groups[groupSet->numberOfActiveGroups].runTime = 0;
         groupSet->groups[groupSet->numberOfActiveGroups].numberOfEvents = 0;
         DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, Allocating new group structure for group.);
     }
@@ -1257,6 +1259,7 @@ __perfmon_stopCounters(int groupId)
 
     groupSet->groups[groupId].rdtscTime =
                 timer_print(&groupSet->groups[groupId].timer);
+    groupSet->groups[groupId].runTime += groupSet->groups[groupId].rdtscTime;
     return 0;
 }
 
@@ -1451,7 +1454,7 @@ perfmon_getTimeOfGroup(int groupId)
     {
         groupId = groupSet->activeGroup;
     }
-    return groupSet->groups[groupId].rdtscTime;
+    return groupSet->groups[groupId].runTime;
 }
 
 uint64_t

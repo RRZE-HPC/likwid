@@ -202,6 +202,7 @@ typedef struct {
     PerfmonEventSetEntry* events; /*!< \brief List of eventSets */
     TimerData             timer; /*!< \brief Time information how long the counters were running */
     double                rdtscTime; /*!< \brief Evaluation of the Time information in seconds */
+    double                runTime; /*!< \brief Sum of all time information in seconds that the group was running */
     uint64_t              regTypeMask; /*!< \brief Bitmask for easy checks which types are included in the eventSet */
 } PerfmonEventSet;
 
