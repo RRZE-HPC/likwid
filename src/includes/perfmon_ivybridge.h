@@ -1495,12 +1495,13 @@ int perfmon_finalizeCountersThread_ivybridge(int thread_id, PerfmonEventSet* eve
         RegisterIndex index = eventSet->events[i].index;
         PciDeviceIndex dev = counter_map[index].device;
         uint64_t reg = counter_map[index].configRegister;
+        RegisterType type = counter_map[index].type;
         if (eventSet->events[i].type == NOTYPE)
         {
             continue;
         }
 
-        switch(counter_map[index].type)
+        switch(type)
         {
             case PMC:
                 ovf_values_core |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));
@@ -1521,7 +1522,7 @@ int perfmon_finalizeCountersThread_ivybridge(int thread_id, PerfmonEventSet* eve
             default:
                 break;
         }
-        if ((reg) && ((dev == MSR_DEV) || (haveLock && pci_checkDevice(dev, 0))))
+        if ((reg) && (((type == PMC)||(type == FIXED))||((type >= UNCORE) && (haveLock))))
         {
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
             CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
