@@ -977,8 +977,8 @@ local function printOutput(groups, results, groupData, cpulist)
             end
             for j=1,num_threads do
                 tmpList = {"Core "..tostring(cpulist[j])}
-                for i=0,num_events-1 do
-                    counterlist[groupData[groupID]["Events"][i]["Counter"]] = results[groupID][i+1][j]
+                for i=1,num_events do
+                    counterlist[groupData[groupID]["Events"][i]["Counter"]] = results[groupID][i][j]
                 end
                 for m=1,#groupdata["Metrics"] do
                     local tmp = calculate_metric(groupData[groupID]["Metrics"][m]["formula"], counterlist)
