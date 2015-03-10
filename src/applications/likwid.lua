@@ -1089,7 +1089,6 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
             local nr_threads = likwid.tablelength(groups[g][r]["Time"])
             local nr_events = likwid.tablelength(groupData[g]["Events"])
             if tablelength(groups[g][r]["Count"]) > 0 then
-                
 
                 local infotab = {}
                 local firsttab = {}
@@ -1108,7 +1107,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
 
                 firsttab[1] = {"Event"}
                 firsttab_combined[1] = {"Event"}
-                for e=0,nr_events-1 do
+                for e=1,nr_events do
                     table.insert(firsttab[1],groupData[g]["Events"][e]["Event"])
                     table.insert(firsttab_combined[1],groupData[g]["Events"][e]["Event"].." STAT")
                 end
@@ -1447,7 +1446,7 @@ function getMarkerResults(filename, group_list, num_cpus)
                     end
                     local tmp = tonumber(tmpList[c])
                     results[g][r][c][t]["Value"] = tmp
-                    results[g][r][c][t]["Counter"] = group_list[g]["Events"][c-1]["Counter"]
+                    results[g][r][c][t]["Counter"] = group_list[g]["Events"][c]["Counter"]
                 end
             end
         end
