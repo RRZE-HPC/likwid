@@ -46,6 +46,7 @@ extern int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventS
 extern int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*perfmon_readCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*perfmon_finalizeCountersThread) (int thread_id, PerfmonEventSet* eventSet);
+extern int (*initThreadArch) (int cpu_id);
 
 
 /* Internal helpers */

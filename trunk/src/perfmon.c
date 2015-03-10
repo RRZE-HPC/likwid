@@ -951,7 +951,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     perfmon_init_maps();
 
     /* Initialize access interface */
-    ret = HPMinit();
+    ret = HPMaddThread(threadsToCpu[0]);
 
     if (ret)
     {
