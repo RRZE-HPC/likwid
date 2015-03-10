@@ -105,7 +105,7 @@ startDaemon(void)
     size_t address_length;
     int  ret;
     pid_t pid;
-    int timeout = 10;
+    int timeout = 1000;
     int socket_fd = -1;
 
     if (accessClient_mode == ACCESSMODE_DIRECT)
@@ -154,7 +154,7 @@ startDaemon(void)
     while (timeout > 0)
     {
         int res;
-        sleep(1);
+        usleep(1000);
         res = connect(socket_fd, (struct sockaddr *) &address, address_length);
 
         if (res == 0)
