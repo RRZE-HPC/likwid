@@ -28,12 +28,16 @@ static int init = 0;
 
 int _HPMinit(int cpu_id)
 {
+    int ret = 0;
     if (accessClient_mode == ACCESSMODE_DIRECT)
     {
-        msr_init(0);
-        if (cpuid_info.supportUncore)
+        ret = msr_init(0);
+        if (ret == 0)
         {
-            pci_init(0);
+            if (cpuid_info.supportUncore)
+            {
+                ret = pci_init(0);
+            }
         }
     }
     else if (accessClient_mode == ACCESSMODE_DAEMON)
@@ -42,14 +46,20 @@ int _HPMinit(int cpu_id)
         if (globalSocket == -1)
         {
             globalSocket = cpuSockets[cpu_id];
-            msr_init(globalSocket);
-            if (cpuid_info.supportUncore)
+            ret = msr_init(globalSocket);
+            if (ret == 0)
             {
-                pci_init(globalSocket);
+                if (cpuid_info.supportUncore)
+                {
+                    ret = pci_init(globalSocket);
+                }
             }
         }
     }
-    init = 1;
+    if (ret == 0)
+    {
+        registeredCpus++;
+    }
     return 0;
 }
 
@@ -60,7 +70,7 @@ int HPMinit(void)
 
 int HPMinitialized(void)
 {
-    return init;
+    return registeredCpus;
 }
 
 int HPMaddThread(int cpu_id)
@@ -84,6 +94,7 @@ void HPMfinalize(void)
             {
                 close(cpuSockets[i]);
                 cpuSockets[i] = -1;
+                registeredCpus--;
             }
         }
     }
