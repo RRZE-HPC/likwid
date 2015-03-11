@@ -105,6 +105,11 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             break;
         }
     }
+    if (strcmp(bdata(reg), counter_map[*index].key) != 0)
+    {
+        *type = NOTYPE;
+        return FALSE;
+    }
     if (!pci_checkDevice(counter_map[*index].device, 0))
     {
         *type = NOTYPE;
