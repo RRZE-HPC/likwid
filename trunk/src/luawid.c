@@ -520,7 +520,7 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
     lua_newtable(L);
     lua_pushstring(L,"Counters");
     lua_newtable(L);
-    for(i=1;i<=perfmon_numCounters;i++)
+    for(i=1;i<perfmon_numCounters;i++)
     {
         optStringIndex = 0;
         optString[0] = '\0';
@@ -556,6 +556,8 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
     lua_newtable(L);
     for(i=1;i<=perfmon_numArchEvents;i++)
     {
+        optStringIndex = 0;
+        optString[0] = '\0';
         lua_pushunsigned(L,i);
         lua_newtable(L);
         lua_pushstring(L,"Name");
@@ -571,7 +573,15 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
         lua_pushstring(L,eventHash[i-1].limit);
         lua_settable(L,-3);
         lua_pushstring(L,"Options");
-        lua_pushunsigned(L,eventHash[i-1].optionMask);
+        for(int j=1; j<NUM_EVENT_OPTIONS; j++)
+        {
+            if (eventHash[i-1].optionMask & REG_TYPE_MASK(j))
+            {
+                optStringIndex += sprintf(&(optString[optStringIndex]), "%s|", eventOptionTypeName[j]);
+            }
+        }
+        optString[optStringIndex-1] = '\0';
+        lua_pushstring(L,optString);
         lua_settable(L,-3);
         lua_settable(L,-3);
     }
