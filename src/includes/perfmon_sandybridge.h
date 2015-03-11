@@ -626,13 +626,13 @@ int perfmon_setupCounterThread_sandybridge(
     for (i=0;i < eventSet->numberOfEvents;i++)
     {
         flags = 0x0ULL;
-        PerfmonEvent *event = &(eventSet->events[i].event);
-        RegisterIndex index = eventSet->events[i].index;
-        RegisterType type = counter_map[index].type;
+        RegisterType type = eventSet->events[i].type;
         if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
         {
             continue;
         }
+        PerfmonEvent *event = &(eventSet->events[i].event);
+        RegisterIndex index = eventSet->events[i].index;
         uint64_t reg = counter_map[index].configRegister;
         uint64_t filter_reg;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
@@ -974,7 +974,6 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     SNB_UNFREEZE_AND_RESET_CTR_BOX(WBOX);
     SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(RBOX0);
     SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(RBOX1);
-
     SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(PBOX);
     return 0;
 }
@@ -1445,6 +1444,18 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
 
                 case BBOX0:
                     SNB_READ_PCI_BOX(BBOX0, dev, counter1, counter2);
+                    SNB_CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case SBOX0:
+                    SNB_READ_PCI_BOX(SBOX0, dev, counter1, counter2);
+                    SNB_CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case SBOX1:
+                    SNB_READ_PCI_BOX(SBOX1, dev, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
