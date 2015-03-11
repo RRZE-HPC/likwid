@@ -198,7 +198,7 @@ if print_events == true then
     for _, counter in pairs(tab["Counters"]) do
         outstr = string.format("%s, %s", counter["Name"], counter["TypeName"]);
         if counter["Options"]:len() > 0 then
-            outstr = outstr .. string.format(", %s",string.lower(counter["Options"]))
+            outstr = outstr .. string.format(", %s",counter["Options"])
         end
         print(outstr)
     end
@@ -208,8 +208,8 @@ if print_events == true then
         outstr = eventTab["Name"] .. ", "
         outstr = outstr .. string.format("0x%X, 0x%X, ",eventTab["ID"],eventTab["UMask"])
         outstr = outstr .. eventTab["Limit"]
-        if eventTab["Options"] > 0 then
-            outstr = outstr .. ", " .. string.format("0x%X",eventTab["Options"])
+        if #eventTab["Options"] > 0 then
+            outstr = outstr .. string.format(", %s",eventTab["Options"])
         end
         print(outstr)
     end
