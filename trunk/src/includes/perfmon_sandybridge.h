@@ -633,6 +633,7 @@ int perfmon_setupCounterThread_sandybridge(
         }
         PerfmonEvent *event = &(eventSet->events[i].event);
         RegisterIndex index = eventSet->events[i].index;
+        PciDeviceIndex dev = counter_map[index].device;
         uint64_t reg = counter_map[index].configRegister;
         uint64_t filter_reg;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
@@ -658,7 +659,7 @@ int perfmon_setupCounterThread_sandybridge(
             case MBOX1:
             case MBOX2:
             case MBOX3:
-                if (haveLock && (pci_checkDevice(box_map[type].device, cpu_id)))
+                if (haveLock && (pci_checkDevice(dev, cpu_id)))
                 {
                     snb_mbox_setup(cpu_id, index, event);
                 }
@@ -704,14 +705,14 @@ int perfmon_setupCounterThread_sandybridge(
 
             case SBOX0:
             case SBOX1:
-                if (haveLock && (pci_checkDevice(box_map[type].device, cpu_id)))
+                if (haveLock && (pci_checkDevice(dev, cpu_id)))
                 {
                     snb_sbox_setup(cpu_id, index, event);
                 }
                 break;
 
             case BBOX0:
-                if (haveLock && (pci_checkDevice(box_map[type].device, cpu_id)))
+                if (haveLock && (pci_checkDevice(dev, cpu_id)))
                 {
                     snb_bbox_setup(cpu_id, index, event);
                 }
@@ -726,14 +727,14 @@ int perfmon_setupCounterThread_sandybridge(
 
             case RBOX0:
             case RBOX1:
-                if (haveLock && (pci_checkDevice(box_map[type].device, cpu_id)))
+                if (haveLock && (pci_checkDevice(dev, cpu_id)))
                 {
                     snb_rbox_setup(cpu_id, index, event);
                 }
                 break;
 
             case PBOX:
-                if (haveLock && (pci_checkDevice(box_map[type].device, cpu_id)))
+                if (haveLock && (pci_checkDevice(dev, cpu_id)))
                 {
                     snb_pbox_setup(cpu_id, index, event);
                 }
@@ -845,11 +846,12 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
             uint64_t reg = counter_map[index].configRegister;
             uint64_t counter1 = counter_map[index].counterRegister;
             uint64_t counter2 = counter_map[index].counterRegister2;
+            PciDeviceIndex dev = counter_map[index].device;
             switch (sandybridge_counter_map[index].type)
             {
                 case PMC:
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter1, 0x0ULL));
-                    flags |= (1<<(index-OFFSET_PMC));  /* enable counter */
+                    flags |= (1<<(index-cpuid_info.perf_num_fixed_ctr));  /* enable counter */
                     break;
 
                 case FIXED:
@@ -869,10 +871,10 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
                 case MBOX1:
                 case MBOX2:
                 case MBOX3:
-                    if (haveLock && pci_checkDevice(cpu_id, box_map[type].device))
+                    if (haveLock && pci_checkDevice(cpu_id, dev))
                     {
-                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, box_map[type].device, counter1, 0x0ULL));
-                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, box_map[type].device, counter2, 0x0ULL));
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter2, 0x0ULL));
                     }
                     break;
 
@@ -918,10 +920,10 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
                     break;
 
                 case BBOX0:
-                    if (haveLock && pci_checkDevice(cpu_id, box_map[type].device))
+                    if (haveLock && pci_checkDevice(cpu_id, dev))
                     {
-                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, box_map[type].device, counter1, 0x0ULL));
-                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, box_map[type].device, counter2, 0x0ULL));
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter2, 0x0ULL));
                     }
                     break;
 
@@ -1056,6 +1058,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
             counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             RegisterType type = counter_map[index].type;
+            PciDeviceIndex dev = counter_map[index].device;
             uint64_t reg = counter_map[index].configRegister;
             uint64_t counter1 = counter_map[index].counterRegister;
             uint64_t counter2 = counter_map[index].counterRegister2;
@@ -1107,29 +1110,29 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     break;
 
                 case MBOX0:
-                    VERBOSEPRINTPCIREG(cpu_id, box_map[type].device, reg,  0x0U, RESET_MBOX_CTL)
-                    SNB_READ_PCI_BOX(MBOX0, box_map[type].device, counter1, counter2);
+                    VERBOSEPRINTPCIREG(cpu_id, dev, reg,  0x0U, RESET_MBOX_CTL)
+                    SNB_READ_PCI_BOX(MBOX0, dev, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case MBOX1:
-                    VERBOSEPRINTPCIREG(cpu_id, box_map[type].device, reg,  0x0U, RESET_MBOX_CTL)
-                    SNB_READ_PCI_BOX(MBOX1, box_map[type].device, counter1, counter2);
+                    VERBOSEPRINTPCIREG(cpu_id, dev, reg,  0x0U, RESET_MBOX_CTL)
+                    SNB_READ_PCI_BOX(MBOX1, dev, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case MBOX2:
-                    VERBOSEPRINTPCIREG(cpu_id, box_map[type].device, reg,  0x0U, RESET_MBOX_CTL)
-                    SNB_READ_PCI_BOX(MBOX2, box_map[type].device, counter1, counter2);
+                    VERBOSEPRINTPCIREG(cpu_id, dev, reg,  0x0U, RESET_MBOX_CTL)
+                    SNB_READ_PCI_BOX(MBOX2, dev, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case MBOX3:
-                    VERBOSEPRINTPCIREG(cpu_id, box_map[type].device, reg,  0x0U, RESET_MBOX_CTL)
-                    SNB_READ_PCI_BOX(MBOX3, box_map[type].device, counter1, counter2);
+                    VERBOSEPRINTPCIREG(cpu_id, dev, reg,  0x0U, RESET_MBOX_CTL)
+                    SNB_READ_PCI_BOX(MBOX3, dev, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
@@ -1156,14 +1159,51 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     break;
 
                 case SBOX0:
-                    SNB_READ_PCI_BOX(SBOX0, box_map[type].device, counter1, counter2);
+                    SNB_READ_PCI_BOX(SBOX0, dev, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case SBOX1:
-                    SNB_READ_PCI_BOX(SBOX1, box_map[type].device, counter1, counter2);
+                    SNB_READ_PCI_BOX(SBOX1, dev, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case SBOX0FIX:
+                case SBOX1FIX:
+                    HPMread(cpu_id, dev, counter1, &counter_result);
+                    if (eventSet->events[i].event.eventId == 0x00)
+                    {
+                        switch(extractBitField(counter_result, 3, 0))
+                        {
+                            case 0x2:
+                                counter_result = 5.6E9;
+                                break;
+                            case 0x3:
+                                counter_result = 6.4E9;
+                                break;
+                            case 0x4:
+                                counter_result = 7.2E9;
+                                break;
+                            case 0x5:
+                                counter_result = 8.0E9;
+                                break;
+                            case 0x6:
+                                counter_result = 8.8E9;
+                                break;
+                            case 0x7:
+                                counter_result = 9.6E9;
+                                break;
+                            default:
+                                counter_result = 0;
+                                break;
+                        }
+                    }
+                    else if (eventSet->events[i].event.eventId == 0x01)
+                    {
+                        counter_result = extractBitField(counter_result, 1, 4);
+                    }
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
@@ -1220,7 +1260,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     break;
 
                 case BBOX0:
-                    SNB_READ_PCI_BOX(BBOX0, box_map[type].device, counter1, counter2);
+                    SNB_READ_PCI_BOX(BBOX0, dev, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
@@ -1240,16 +1280,16 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     break;
 
                 case RBOX0:
-                    SNB_READ_PCI_BOX(RBOX0, box_map[type].device, counter1, counter2);
+                    SNB_READ_PCI_BOX(RBOX0, dev, counter1, counter2);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case RBOX1:
-                    SNB_READ_PCI_BOX(RBOX1, box_map[type].device, counter1, counter2);
+                    SNB_READ_PCI_BOX(RBOX1, dev, counter1, counter2);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 case PBOX:
-                    SNB_READ_PCI_BOX(PBOX, box_map[type].device, counter1, counter2);
+                    SNB_READ_PCI_BOX(PBOX, dev, counter1, counter2);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 default:
@@ -1457,6 +1497,43 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                 case SBOX1:
                     SNB_READ_PCI_BOX(SBOX1, dev, counter1, counter2);
                     SNB_CHECK_OVERFLOW;
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
+                case SBOX0FIX:
+                case SBOX1FIX:
+                    HPMread(cpu_id, dev, counter1, &counter_result);
+                    if (eventSet->events[i].event.eventId == 0x00)
+                    {
+                        switch(extractBitField(counter_result, 3, 0))
+                        {
+                            case 0x2:
+                                counter_result = 5.6E9;
+                                break;
+                            case 0x3:
+                                counter_result = 6.4E9;
+                                break;
+                            case 0x4:
+                                counter_result = 7.2E9;
+                                break;
+                            case 0x5:
+                                counter_result = 8.0E9;
+                                break;
+                            case 0x6:
+                                counter_result = 8.8E9;
+                                break;
+                            case 0x7:
+                                counter_result = 9.6E9;
+                                break;
+                            default:
+                                counter_result = 0;
+                                break;
+                        }
+                    }
+                    else if (eventSet->events[i].event.eventId == 0x01)
+                    {
+                        counter_result = extractBitField(counter_result, 1, 4);
+                    }
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
