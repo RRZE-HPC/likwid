@@ -624,6 +624,11 @@ int perfmon_setupCounterThread_ivybridge(
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
+        RegisterType type = eventSet->events[i].type;
+        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+        {
+            continue;
+        }
         RegisterIndex index = eventSet->events[i].index;
         uint64_t reg = counter_map[index].configRegister;
         PciDeviceIndex dev = counter_map[index].device;
