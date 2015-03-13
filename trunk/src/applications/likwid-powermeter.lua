@@ -69,6 +69,7 @@ use_perfctr = false
 stethoscope = false
 fahrenheit = false
 print_temp = false
+verbose = 0
 if config["daemonMode"] < 0 then
     access_mode = 1
 else
@@ -84,7 +85,7 @@ cputopo = likwid.getCpuTopology()
 numatopo = likwid.getNumaInfo()
 affinity = likwid_getAffinityInfo()
 
-for opt,arg in likwid.getopt(arg, "c:hiM:ps:vft") do
+for opt,arg in likwid.getopt(arg, "V:c:hiM:ps:vft") do
     if (opt == "h") then
         usage()
         os.exit(0)
@@ -116,6 +117,9 @@ for opt,arg in likwid.getopt(arg, "c:hiM:ps:vft") do
         fahrenheit = true
     elseif (opt == "t") then
         print_temp = true
+    elseif (opt == "V") then
+        verbose = tonumber(arg)
+        likwid.setVerbosity(verbose)
     elseif (opt == "s") then
         time_interval, use_sleep = likwid.parse_time(arg)
         stethoscope = true
@@ -167,7 +171,7 @@ else
 end
 print(likwid.hline);
 
-if (print_info) then
+if print_info or verbose > 0 then
     if (power["turbo"]["numSteps"] > 0) then
         print(string.format("Base clock:\t%.2f MHz", power["baseFrequency"]))
         print(string.format("Minimal clock:\t%.2f MHz", power["minFrequency"]))
