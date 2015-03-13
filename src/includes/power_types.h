@@ -34,11 +34,8 @@
 #include <stdint.h>
 #include <likwid.h>
 
-#define NUM_POWER_DOMAINS 4
 
-
-
-extern const uint32_t power_regs[NUM_POWER_DOMAINS];
+extern uint32_t power_regs[NUM_POWER_DOMAINS];
 
 
 #endif /*POWER_TYPES_H*/

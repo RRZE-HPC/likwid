@@ -39,18 +39,38 @@
 #include <error.h>
 #include <access.h>
 
-const uint32_t power_regs[NUM_POWER_DOMAINS] = {MSR_PKG_ENERGY_STATUS,
+const char* power_names[NUM_POWER_DOMAINS] = {"PKG", "PP0", "PP1", "DRAM"};
+
+uint32_t power_regs[NUM_POWER_DOMAINS] = {MSR_PKG_ENERGY_STATUS,
                                 MSR_PP0_ENERGY_STATUS,
                                 MSR_PP1_ENERGY_STATUS,
                                 MSR_DRAM_ENERGY_STATUS};
 
-const char* power_names[NUM_POWER_DOMAINS] = {"PKG", "PP0", "PP1", "DRAM"};
+uint32_t limit_regs[NUM_POWER_DOMAINS] = {MSR_PKG_RAPL_POWER_LIMIT,
+                                MSR_PP0_RAPL_POWER_LIMIT,
+                                MSR_PP1_RAPL_POWER_LIMIT,
+                                MSR_DRAM_RAPL_POWER_LIMIT};
+
+uint32_t policy_regs[NUM_POWER_DOMAINS] = {0,
+                                MSR_PP0_ENERGY_POLICY,
+                                MSR_PP1_ENERGY_POLICY,
+                                0};
+
+uint32_t perf_regs[NUM_POWER_DOMAINS] = {MSR_PKG_PERF_STATUS,
+                                MSR_PP0_PERF_STATUS,
+                                0,
+                                MSR_DRAM_PERF_STATUS};
+
+uint32_t info_regs[NUM_POWER_DOMAINS] = {MSR_PKG_POWER_INFO,
+                                0,
+                                0,
+                                MSR_DRAM_POWER_INFO};
 
 
 double
 power_printEnergy(PowerData* data)
 {
-    return  (double) ((data->after - data->before) * power_info.energyUnits[data->domain]);
+    return  (double) ((data->after - data->before) * power_info.domains[data->domain].energyUnit);
 }
 
 int
@@ -58,7 +78,7 @@ power_start(PowerData* data, int cpuId, PowerType type)
 {
     if (power_info.hasRAPL)
     {
-        if ((power_info.supportedTypes & (1<<type)) != 0)
+        if (power_info.domains[type].supportFlags & POWER_DOMAIN_SUPPORT_STATUS)
         {
             uint64_t result = 0;
             data->before = 0;
@@ -85,7 +105,7 @@ power_stop(PowerData* data, int cpuId, PowerType type)
 {
     if (power_info.hasRAPL)
     {
-        if ((power_info.supportedTypes & (1<<type)) != 0)
+        if (power_info.domains[type].supportFlags & POWER_DOMAIN_SUPPORT_STATUS)
         {
             uint64_t result = 0;
             data->after = 0;
@@ -115,7 +135,7 @@ power_read(int cpuId, uint64_t reg, uint32_t *data)
 
     if (power_info.hasRAPL)
     {
-        for (i = 0; i < 4; i++)
+        for (i = 0; i < NUM_POWER_DOMAINS; i++)
         {
             if (reg == power_regs[i])
             {
@@ -123,7 +143,7 @@ power_read(int cpuId, uint64_t reg, uint32_t *data)
                 break;
             }
         }
-        if ((power_info.supportedTypes & (1<<type)) != 0)
+        if (power_info.domains[type].supportFlags & POWER_DOMAIN_SUPPORT_STATUS)
         {
             uint64_t result = 0;
             *data = 0;
@@ -151,7 +171,7 @@ power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
     PowerType type;
     if (power_info.hasRAPL)
     {
-        for (i = 0; i < 4; i++)
+        for (i = 0; i < NUM_POWER_DOMAINS; i++)
         {
             if (reg == power_regs[i])
             {
@@ -159,7 +179,7 @@ power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
                 break;
             }
         }
-        if ((power_info.supportedTypes & (1<<type)) != 0)
+        if (power_info.domains[type].supportFlags & POWER_DOMAIN_SUPPORT_STATUS)
         {
             uint64_t result = 0;
             *data = 0;
@@ -183,7 +203,7 @@ power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
 double
 power_getEnergyUnit(int domain)
 {
-    return power_info.energyUnits[domain];
+    return power_info.domains[domain].energyUnit;
 }
 
 #endif /*POWER_H*/
