@@ -189,10 +189,16 @@ if power["hasRAPL"] == 0 then
 end
 
 if (print_info) then
-    print(string.format("Thermal Spec Power: %g Watts",power["tdp"]))
-    print(string.format("Minimum Power: %g Watts",power["minPower"]))
-    print(string.format("Maximum Power: %g Watts",power["maxPower"]))
-    print(string.format("Maximum Time Window: %g micro sec",power["maxTimeWindow"]))
+    for i, domain in pairs(power["domains"]) do
+        if domain["supportInfo"] then
+            print(string.format("Info for RAPL domain %s:", i));
+            print(string.format("Thermal Spec Power: %g Watts",domain["tdp"]))
+            print(string.format("Minimum Power: %g Watts",domain["minPower"]))
+            print(string.format("Maximum Power: %g Watts",domain["maxPower"]))
+            print(string.format("Maximum Time Window: %g micro sec",domain["maxTimeWindow"]))
+            print()
+        end
+    end
     print(likwid.hline)
     os.exit(0)
 end
@@ -230,9 +236,9 @@ if (use_perfctr) then
 else
     for i,socket in pairs(sockets) do
         cpu = cpulist[i]
-        if (power["hasRAPL_PP0"]) then before[cpu][1] = likwid.startPower(cpu, 1) end
-        if (power["hasRAPL_PP1"]) then before[cpu][2] = likwid.startPower(cpu, 2) end
-        if (power["hasRAPL_DRAM"]) then before[cpu][3] = likwid.startPower(cpu, 3) end
+        if (power["domains"]["PP0"]["supportStatus"]) then before[cpu][1] = likwid.startPower(cpu, 1) end
+        if (power["domains"]["PP1"]["supportStatus"]) then before[cpu][2] = likwid.startPower(cpu, 2) end
+        if (power["domains"]["DRAM"]["supportStatus"]) then before[cpu][3] = likwid.startPower(cpu, 3) end
         before[cpu][0] = likwid.startPower(cpu, 0)
     end
 end
@@ -264,9 +270,9 @@ else
     for i,socket in pairs(sockets) do
         cpu = cpulist[i]
         after[cpu][0] = likwid.stopPower(cpu, 0)
-        if (power["hasRAPL_PP0"]) then after[cpu][1] = likwid.stopPower(cpu, 1) end
-        if (power["hasRAPL_PP1"]) then after[cpu][2] = likwid.stopPower(cpu, 2) end
-        if (power["hasRAPL_DRAM"]) then after[cpu][3] = likwid.stopPower(cpu, 3) end
+        if (power["domains"]["PP0"]["supportStatus"]) then after[cpu][1] = likwid.stopPower(cpu, 1) end
+        if (power["domains"]["PP1"]["supportStatus"]) then after[cpu][2] = likwid.stopPower(cpu, 2) end
+        if (power["domains"]["DRAM"]["supportStatus"]) then after[cpu][3] = likwid.stopPower(cpu, 3) end
     end
 end
 runtime = likwid.getClock(time_before, time_after)
@@ -279,19 +285,19 @@ for i,socket in pairs(sockets) do
     energy = likwid.calcPower(before[cpu][0], after[cpu][0], 0)
     print(string.format("Energy consumed: %g Joules",energy))
     print(string.format("Power consumed: %g Watts",energy/runtime))
-    if (power["hasRAPL_PP0"]) then
+    if (power["domains"]["PP0"]["supportStatus"]) then
         print("Domain: PP0")
         energy = likwid.calcPower(before[cpu][1], after[cpu][1], 1)
         print(string.format("Energy consumed: %g Joules",energy));
         print(string.format("Power consumed: %g Watts",energy/runtime))
     end
-    if (power["hasRAPL_PP1"]) then
+    if (power["domains"]["PP1"]["supportStatus"]) then
         print("Domain: PP1")
         energy = likwid.calcPower(before[cpu][2], after[cpu][2], 2)
         print(string.format("Energy consumed: %g Joules",energy));
         print(string.format("Power consumed: %g Watts",energy/runtime))
     end
-    if (power["hasRAPL_DRAM"]) then
+    if (power["domains"]["DRAM"]["supportStatus"]) then
         print("Domain: DRAM")
         energy = likwid.calcPower(before[cpu][3], after[cpu][3], 3)
         print(string.format("Energy consumed: %g Joules",energy));
@@ -321,7 +327,7 @@ end
     
 
 
---likwid.finalize();
+likwid.putPowerInfo()
 likwid.putNumaInfo()
 likwid.putAffinityInfo()
 likwid.putTopology()

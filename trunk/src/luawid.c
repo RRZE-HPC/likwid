@@ -872,36 +872,9 @@ static int lua_likwid_getPowerInfo(lua_State* L)
 
 
     lua_newtable(L);
-    if (power_hasRAPL)
-    {
-        lua_pushstring(L,"hasRAPL");
-        lua_pushboolean(L,power_hasRAPL);
-        lua_settable(L,-3);
-        if (power->supportedTypes & (1<<PKG))
-        {
-            lua_pushstring(L,"hasRAPL_PKG");
-            lua_pushboolean(L,1);
-            lua_settable(L,-3);
-        }
-        if (power->supportedTypes & (1<<PP0))
-        {
-            lua_pushstring(L,"hasRAPL_PP0");
-            lua_pushboolean(L,1);
-            lua_settable(L,-3);
-        }
-        if (power->supportedTypes & (1<<PP1))
-        {
-            lua_pushstring(L,"hasRAPL_PP1");
-            lua_pushboolean(L,1);
-            lua_settable(L,-3);
-        }
-        if (power->supportedTypes & (1<<DRAM))
-        {
-            lua_pushstring(L,"hasRAPL_DRAM");
-            lua_pushboolean(L,1);
-            lua_settable(L,-3);
-        }
-    }
+    lua_pushstring(L,"hasRAPL");
+    lua_pushboolean(L,power_hasRAPL);
+    lua_settable(L,-3);
     lua_pushstring(L,"baseFrequency");
     lua_pushnumber(L,power->baseFrequency);
     lua_settable(L,-3);
@@ -911,29 +884,8 @@ static int lua_likwid_getPowerInfo(lua_State* L)
     lua_pushstring(L,"powerUnit");
     lua_pushnumber(L,power->powerUnit);
     lua_settable(L,-3);
-    lua_pushstring(L,"energyUnits");
-    lua_newtable(L);
-    for(i=0;i<4;i++)
-    {
-        lua_pushnumber(L,i+1);
-        lua_pushnumber(L,power->energyUnits[i]);
-        lua_settable(L,-3);
-    }
-    lua_settable(L,-3);
     lua_pushstring(L,"timeUnit");
     lua_pushnumber(L,power->timeUnit);
-    lua_settable(L,-3);
-    lua_pushstring(L,"tdp");
-    lua_pushnumber(L,power->tdp);
-    lua_settable(L,-3);
-    lua_pushstring(L,"minPower");
-    lua_pushnumber(L,power->minPower);
-    lua_settable(L,-3);
-    lua_pushstring(L,"maxPower");
-    lua_pushnumber(L,power->maxPower);
-    lua_settable(L,-3);
-    lua_pushstring(L,"maxTimeWindow");
-    lua_pushnumber(L,power->maxTimeWindow);
     lua_settable(L,-3);
     
     lua_pushstring(L,"turbo");
@@ -951,8 +903,97 @@ static int lua_likwid_getPowerInfo(lua_State* L)
     }
     lua_settable(L,-3);
     lua_settable(L,-3);
+
+    lua_pushstring(L,"domains");
+    lua_newtable(L);
+    for(i=0;i<NUM_POWER_DOMAINS;i++)
+    {
+        lua_pushstring(L,power_names[i]);
+        lua_newtable(L);
+
+        lua_pushstring(L, "ID");
+        lua_pushnumber(L, power->domains[i].type);
+        lua_settable(L,-3);
+        lua_pushstring(L, "energyUnit");
+        lua_pushnumber(L, power->domains[i].energyUnit);
+        lua_settable(L,-3);
+        lua_pushstring(L,"supportStatus");
+        if (power->domains[i].supportFlags & POWER_DOMAIN_SUPPORT_STATUS)
+        {
+            lua_pushboolean(L, 1);
+        }
+        else
+        {
+            lua_pushboolean(L, 0);
+        }
+        lua_settable(L,-3);
+        lua_pushstring(L,"supportPerf");
+        if (power->domains[i].supportFlags & POWER_DOMAIN_SUPPORT_PERF)
+        {
+            lua_pushboolean(L, 1);
+        }
+        else
+        {
+            lua_pushboolean(L, 0);
+        }
+        lua_settable(L,-3);
+        lua_pushstring(L,"supportPolicy");
+        if (power->domains[i].supportFlags & POWER_DOMAIN_SUPPORT_POLICY)
+        {
+            lua_pushboolean(L, 1);
+        }
+        else
+        {
+            lua_pushboolean(L, 0);
+        }
+        lua_settable(L,-3);
+        lua_pushstring(L,"supportLimit");
+        if (power->domains[i].supportFlags & POWER_DOMAIN_SUPPORT_LIMIT)
+        {
+            lua_pushboolean(L, 1);
+        }
+        else
+        {
+            lua_pushboolean(L, 0);
+        }
+        lua_settable(L,-3);
+        if (power->domains[i].supportFlags & POWER_DOMAIN_SUPPORT_INFO)
+        {
+            lua_pushstring(L,"supportInfo");
+            lua_pushboolean(L, 1);
+            lua_settable(L,-3);
+            lua_pushstring(L,"tdp");
+            lua_pushnumber(L, power->domains[i].tdp);
+            lua_settable(L,-3);
+            lua_pushstring(L,"minPower");
+            lua_pushnumber(L, power->domains[i].minPower);
+            lua_settable(L,-3);
+            lua_pushstring(L,"maxPower");
+            lua_pushnumber(L, power->domains[i].maxPower);
+            lua_settable(L,-3);
+            lua_pushstring(L,"maxTimeWindow");
+            lua_pushnumber(L, power->domains[i].maxTimeWindow);
+            lua_settable(L,-3);
+        }
+        else
+        {
+            lua_pushstring(L,"supportInfo");
+            lua_pushboolean(L, 0);
+            lua_settable(L,-3);
+        }
+
+        lua_settable(L,-3);
+    }
+    lua_settable(L,-3);
     
+
     return 1;
+}
+
+static int lua_likwid_putPowerInfo(lua_State* L)
+{
+    power_finalize();
+    return 0;
 }
 
 static int lua_likwid_startPower(lua_State* L)
@@ -986,6 +1027,43 @@ static int lua_likwid_printEnergy(lua_State* L)
     pwrdata.after = lua_tonumber(L,2);
     pwrdata.domain = lua_tonumber(L,3);
     lua_pushnumber(L,power_printEnergy(&pwrdata));
+    return 1;
+}
+
+static int lua_likwid_power_limitGet(lua_State* L)
+{
+    int err;
+    int cpuId = lua_tonumber(L,1);
+    int domain = lua_tonumber(L,2);
+    double power = 0.0;
+    double time = 0.0;
+    err = power_limitGet(cpuId, domain, &power, &time);
+    if (err < 0)
+    {
+        lua_pushnumber(L,err);
+        return 1;
+    }
+    lua_pushnumber(L,power);
+    lua_pushnumber(L,time);
+    return 2;
+}
+
+static int lua_likwid_power_limitSet(lua_State* L)
+{
+    int cpuId = lua_tonumber(L,1);
+    int domain = lua_tonumber(L,2);
+    double power = lua_tonumber(L,3);
+    double time = lua_tonumber(L,4);
+    int clamp  = lua_tonumber(L,5);
+    lua_pushinteger(L, power_limitSet(cpuId, domain, power, time, clamp));
+    return 1;
+}
+
+static int lua_likwid_power_limitState(lua_State* L)
+{
+    int cpuId = lua_tonumber(L,1);
+    int domain = lua_tonumber(L,2);
+    lua_pushnumber(L,power_limitState(cpuId, domain));
     return 1;
 }
 
@@ -1335,6 +1413,7 @@ int luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getAffinityInfo",lua_likwid_getAffinityInfo);
     lua_register(L, "likwid_putAffinityInfo",lua_likwid_putAffinityInfo);
     lua_register(L, "likwid_getPowerInfo",lua_likwid_getPowerInfo);
+    lua_register(L, "likwid_putPowerInfo",lua_likwid_putPowerInfo);
     lua_register(L, "likwid_getOnlineDevices", lua_likwid_getOnlineDevices);
     // Timer functions
     lua_register(L, "likwid_getCpuClock",lua_likwid_getCpuClock);
@@ -1351,6 +1430,9 @@ int luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_startPower",lua_likwid_startPower);
     lua_register(L, "likwid_stopPower",lua_likwid_stopPower);
     lua_register(L, "likwid_printEnergy",lua_likwid_printEnergy);
+    lua_register(L, "likwid_powerLimitGet",lua_likwid_power_limitGet);
+    lua_register(L, "likwid_powerLimitSet",lua_likwid_power_limitSet);
+    lua_register(L, "likwid_powerLimitState",lua_likwid_power_limitState);
     // Temperature functions
     lua_register(L, "likwid_initTemp",lua_likwid_initTemp);
     lua_register(L, "likwid_readTemp",lua_likwid_readTemp);
