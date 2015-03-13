@@ -153,15 +153,14 @@ void likwid_markerInit(void)
     struct bstrList* eventStrings;
     int cpu_id = likwid_getProcessorId();
     char* modeStr = getenv("LIKWID_MODE");
-    char* maskStr = getenv("LIKWID_MASK");
     char* eventStr = getenv("LIKWID_EVENTS");
     char* cThreadStr = getenv("LIKWID_THREADS");
-    char* groupStr = getenv("LIKWID_GROUPS");
+    char* filepath = getenv("LIKWID_FILEPATH");
     /* Dirty hack to avoid nonnull warnings */
     int (*ownatoi)(const char*);
     ownatoi = &atoi;
 
-    if ((modeStr != NULL) && (maskStr != NULL) && (eventStr != NULL) && (cThreadStr != NULL) && (groupStr != NULL))
+    if ((modeStr != NULL) && (filepath != NULL) && (eventStr != NULL) && (cThreadStr != NULL))
     {
         likwid_init = 1;
     }
@@ -171,20 +170,14 @@ void likwid_markerInit(void)
         fprintf(stderr, "You have to set the -m commandline switch for likwid-perfctr\n");
         return;
     }
-    sscanf(getenv("LIKWID_COUNTERMASK"), "%" PRIx64, &regTypeMask);
+
     verbosity = atoi(getenv("LIKWID_DEBUG"));
-    numberOfGroups = atoi(groupStr);
     if (!lock_check())
     {
         fprintf(stderr,"Access to performance counters is locked.\n");
         exit(EXIT_FAILURE);
     }
-    groups = malloc(numberOfGroups * sizeof(int));
-    if (!groups)
-    {
-        fprintf(stderr,"Cannot allocate space for group handling.\n");
-        exit(EXIT_FAILURE);
-    }
+    
 
     topology_init();
     numa_init();
@@ -196,13 +189,7 @@ void likwid_markerInit(void)
 
     accessClient_setaccessmode(atoi(modeStr));
     perfmon_verbosity = verbosity;
-    /*perfmon_init(num_cpus, threads2Cpu);
 
-    activeGroup = perfmon_addEventSet(eventStr);
-    groupSet->activeGroup = activeGroup;*/
-    
-    
-    str2BitMask(maskStr, &counterMask);
 
     bThreadStr = bfromcstr(cThreadStr);
     threadTokens = bstrListCreate();
@@ -211,13 +198,8 @@ void likwid_markerInit(void)
     for (i=0; i<num_cpus; i++)
     {
         threads2Cpu[i] = ownatoi(bdata(threadTokens->entry[i]));
-        /*if ((accessClient_mode != ACCESSMODE_DIRECT) && (i>0))
-        {
-            accessClient_init(&thread_sockets[threads2Cpu[i]]);
-        }*/
     }
     perfmon_init(num_cpus, threads2Cpu);
-    //thread_sockets[threads2Cpu[0]] = socket_fd;
     bdestroy(bThreadStr);
     bstrListDestroy(threadTokens);
 
@@ -225,10 +207,19 @@ void likwid_markerInit(void)
     bEventStr = bfromcstr(eventStr);
     eventStrings = bstrListCreate();
     eventStrings = bsplit(bEventStr,'|');
+    numberOfGroups = eventStrings->qty;
+    groups = malloc(numberOfGroups * sizeof(int));
+    if (!groups)
+    {
+        fprintf(stderr,"Cannot allocate space for group handling.\n");
+        bstrListDestroy(eventStrings);
+        exit(EXIT_FAILURE);
+    }
     for (i=0; i<eventStrings->qty; i++)
     {
         groups[i] = perfmon_addEventSet(bdata(eventStrings->entry[i]));
     }
+    bstrListDestroy(eventStrings);
 
     groupSet->activeGroup = 0;
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
@@ -295,7 +286,7 @@ void likwid_markerClose(void)
     {
         return;
     }
-    numberOfGroups = atoi(getenv("LIKWID_GROUPS"));
+
     hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
 
     file = fopen(getenv("LIKWID_FILEPATH"),"w");
@@ -322,7 +313,6 @@ void likwid_markerClose(void)
                 fprintf(file,"%d ",i);
                 fprintf(file,"%d ",results[i].groupID);
                 fprintf(file,"%d ",j);
-                //fprintf(file,"%d ",threads2Cpu[j]);
                 fprintf(file,"%u ",results[i].count[j]);
                 fprintf(file,"%e ",results[i].time[j]);
                 fprintf(file,"%d ",groupSet->groups[results[i].groupID].numberOfEvents);
