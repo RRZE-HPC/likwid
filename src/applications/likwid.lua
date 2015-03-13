@@ -966,7 +966,7 @@ local function printOutput(groups, results, groupData, cpulist)
         
         if groupData[groupID]["Metrics"] then
             local counterlist = {}
-            counterlist["time"] = likwid_getRuntimeOfGroup(groupID)* 1.E-06
+            counterlist["time"] = runtime
             counterlist["inverseClock"] = 1.0/likwid_getCpuClock();
             
             secondtab[1] = {"Metric"}
@@ -1456,53 +1456,6 @@ end
 
 likwid.getMarkerResults = getMarkerResults
 
-local function createBitMask(gdata)
-    if gdata == nil then
-        return "0x0 0x0"
-    end
-    local ctr_and_events = likwid_getEventsAndCounters()
-    local bitmask_low = 0
-    local bitmask_high = 0
-    for i, tab in pairs(gdata["Events"]) do
-        for j, ctr in pairs(tab) do
-            if j == "Counter" then
-                for k, c in pairs(ctr_and_events["Counters"]) do
-                    if c["Name"] == ctr then
-                        if k-1 < 64 then
-                            bitmask_low = bitmask_low + math.pow(2,k-1)
-                        else
-                            bitmask_high = bitmask_high + math.pow(2,k-1-63)
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return "0x" .. string.format("%x",bitmask_low) .. " 0x" .. string.format("%x",bitmask_high)
-end
-
-likwid.createBitMask = createBitMask
-
-local function createGroupMask(gdata)
-    if gdata == nil then
-        return "0x0"
-    end
-    local bitmask = 0
-    local typelist = {}
-    local ctr_and_events = likwid_getEventsAndCounters()
-    for k,v in pairs(ctr_and_events["Counters"]) do
-        for i, event in pairs(gdata["Events"]) do
-            if v["Name"] == event["Counter"] then
-                typelist[v["Type"]] = math.pow(2, v["Type"])
-            end
-        end
-    end
-    for k,v in pairs(typelist) do
-        bitmask = bitmask + v
-    end
-    return "0x" .. string.format("%x",bitmask)
-end
-likwid.createGroupMask = createGroupMask
 
 local function msr_available()
     local ret = likwid_access("/dev/cpu/0/msr")
