@@ -102,7 +102,7 @@ use_stethoscope = false
 use_timeline = false
 daemon_run = 0
 use_wrapper = false
-duration = 2.E05
+duration = 2.E06
 use_sleep = false
 switch_interval = 5
 output = ""
@@ -388,10 +388,6 @@ print(likwid.hline)
 if use_marker == true then
     likwid.setenv("LIKWID_FILEPATH", markerFile)
     likwid.setenv("LIKWID_MODE", tostring(access_mode))
-    likwid.setenv("LIKWID_MASK", likwid.createBitMask(group_list[1]))
-    likwid.setenv("LIKWID_GROUPS", tostring(likwid.getNumberOfGroups()))
-    likwid.setenv("LIKWID_COUNTERMASK", likwid.createGroupMask(group_list[1]))
-    likwid.setenv("LIKWID_CPULIST", table.concat(cpulist,","))
     likwid.setenv("LIKWID_DEBUG", tostring(verbose))
     local str = table.concat(event_string_list, "|")
     likwid.setenv("LIKWID_EVENTS", str)
