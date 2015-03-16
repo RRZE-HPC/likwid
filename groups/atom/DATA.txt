@@ -3,14 +3,20 @@ SHORT Load to store ratio
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
 PMC0  L1D_CACHE_LD
 PMC1  L1D_CACHE_ST
 
 METRICS
-Runtime [s] FIXC1*inverseClock
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-Load to Store ratio PMC0/PMC1
+Load to store ratio PMC0/PMC1
 
 LONG
-Bla Bla
+Formulas:
+Load to store ratio = L1D_CACHE_LD/L1D_CACHE_ST
+-
+This is a simple metric to determine your load to store ratio.
 

@@ -7,15 +7,15 @@ PMC2  L2_CACHE_MISS_DC_FILL
 
 METRICS
 Runtime (RDTSC) [s] time
-L2 request rate   (PMC1)/PMC0
+L2 request rate   PMC1/PMC0
 L2 miss rate   PMC2/PMC0
-L2 miss ratio   PMC2/(PMC1)
+L2 miss ratio   PMC2/PMC1
 
 LONG
 Formulas:
-L2 request rate = (L2_REQUESTS_ALL)/INSTRUCTIONS_RETIRED
+L2 request rate = L2_REQUESTS_ALL/INSTRUCTIONS_RETIRED
 L2 miss rate  = L2_MISSES_ALL/INSTRUCTIONS_RETIRED
-L2 miss ratio = L2_MISSES_ALL/(L2_REQUESTS_ALL)
+L2 miss ratio = L2_MISSES_ALL/L2_REQUESTS_ALL
 -
 This group measures the locality of your data accesses with regard to the L2
 Cache. L2 request rate tells you how data intensive your code is or how many

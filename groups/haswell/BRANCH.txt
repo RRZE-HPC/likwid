@@ -19,10 +19,10 @@ Instructions per branch  FIXC0/PMC0
 
 LONG
 Formulas:
-Branch rate = BR_INST_RETIRED_ALL_BRANCHES / INSTR_RETIRED_ANY
-Branch misprediction rate =  BR_MISP_RETIRED_ALL_BRANCHES / INSTR_RETIRED_ANY
-Branch misprediction ratio = BR_MISP_RETIRED_ALL_BRANCHES / BR_INST_RETIRED_ALL_BRANCHES
-Instructions per branch = INSTR_RETIRED_ANY / BR_INST_RETIRED_ALL_BRANCHES
+Branch rate = BR_INST_RETIRED_ALL_BRANCHES/INSTR_RETIRED_ANY
+Branch misprediction rate =  BR_MISP_RETIRED_ALL_BRANCHES/INSTR_RETIRED_ANY
+Branch misprediction ratio = BR_MISP_RETIRED_ALL_BRANCHES/BR_INST_RETIRED_ALL_BRANCHES
+Instructions per branch = INSTR_RETIRED_ANY/BR_INST_RETIRED_ALL_BRANCHES
 -
 The rates state how often in average a branch or a mispredicted branch occured
 per instruction retired in total. The Branch misprediction ratio sets directly

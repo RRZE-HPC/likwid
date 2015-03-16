@@ -11,17 +11,21 @@ METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 CPI  FIXC1/FIXC0
-L2 load [MBytes/s] 1.0E-06*PMC0*64.0/time
-L2 evict [MBytes/s] 1.0E-06*PMC1*64.0/time
+L2D load bandwidth [MBytes/s]  1.0E-06*PMC0*64.0/time
+L2D load data volume [GBytes]  1.0E-09*PMC0*64.0
+L2D evict bandwidth [MBytes/s]  1.0E-06*PMC1*64.0/time
+L2D evict data volume [GBytes]  1.0E-09*PMC1*64.0
 L2 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
 L2 data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
 
 LONG
 Formulas:
-L2 Load [MBytes/s] = 1.0E-06*L1D_REPL*64/time
-L2 Evict [MBytes/s] = 1.0E-06*L1D_M_EVICT*64/time
+L2D load bandwidth [MBytes/s] = 1.0E-06*L1D_REPL*64.0/time
+L2D load data volume [GBytes] = 1.0E-09*L1D_REPL*64.0
+L2D evict bandwidth [MBytes/s] = 1.0E-06*L1D_M_EVICT*64.0/time
+L2D evict data volume [GBytes] = 1.0E-09*L1D_M_EVICT*64.0
 L2 bandwidth [MBytes/s] = 1.0E-06*(L1D_REPL+L1D_M_EVICT)*64/time
-L2 data volume [GBytes] 1.0E-09*(L1D_REPL+L1D_M_EVICT)*64.0
+L2 data volume [GBytes] = 1.0E-09*(L1D_REPL+L1D_M_EVICT)*64.0
 -
 Profiling group to measure L2 cache bandwidth. The bandwidth is
 computed by the number of cacheline allocated in the L1 and the 

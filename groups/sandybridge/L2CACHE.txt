@@ -18,9 +18,9 @@ L2 miss ratio PMC1/PMC0
 
 LONG
 Formulas:
-L2 request rate = L2_TRANS_ALL_REQUESTS / INSTR_RETIRED_ANY
-L2 miss rate  = L2_RQSTS_MISS / INSTR_RETIRED_ANY
-L2 miss ratio = L2_RQSTS_MISS / L2_TRANS_ALL_REQUESTS
+L2 request rate = L2_TRANS_ALL_REQUESTS/INSTR_RETIRED_ANY
+L2 miss rate  = L2_RQSTS_MISS/INSTR_RETIRED_ANY
+L2 miss ratio = L2_RQSTS_MISS/L2_TRANS_ALL_REQUESTS
 -
 This group measures the locality of your data accesses with regard to the
 L2 Cache. L2 request rate tells you how data intensive your code is
@@ -30,6 +30,5 @@ cachelines from memory. And finally L2 miss ratio tells you how many of your
 memory references required a cacheline to be loaded from a higher level.
 While the Data cache miss rate might be given by your algorithm you should
 try to get Data cache miss ratio as low as possible by increasing your cache reuse.
-Note: This group might need to be revised!
 
 

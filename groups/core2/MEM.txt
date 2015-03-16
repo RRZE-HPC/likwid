@@ -9,6 +9,7 @@ PMC0  BUS_TRANS_MEM_THIS_CORE_THIS_A
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 Memory bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
 Memory data volume [GBytes] 1.0E-09*PMC0*64.0
@@ -16,6 +17,6 @@ Memory data volume [GBytes] 1.0E-09*PMC0*64.0
 LONG
 Formulas:
 Memory bandwidth [MBytes/s] = 1.0E-06*BUS_TRANS_MEM_THIS_CORE_THIS_A*64/time
-Memory data volume [GBytes] 1.0E-09*BUS_TRANS_MEM_THIS_CORE_THIS_A*64.0
+Memory data volume [GBytes] = 1.0E-09*BUS_TRANS_MEM_THIS_CORE_THIS_A*64.0
 -
-Profiling group to measure memory bandwidth drawn by this core. 
+Profiling group to measure memory bandwidth drawn by this core.

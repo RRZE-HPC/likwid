@@ -16,7 +16,7 @@ L3 average access latency [cycles]  UPMC2/UPMC3
 
 LONG
 Formulas:
-L3 request rate = (UNC_READ_REQ_TO_L3_ALL)/INSTRUCTIONS_RETIRED
+L3 request rate = UNC_READ_REQ_TO_L3_ALL/INSTRUCTIONS_RETIRED
 L3 miss rate  = UNC_L3_CACHE_MISS_ALL/INSTRUCTIONS_RETIRED
 L3 miss ratio = UNC_L3_CACHE_MISS_ALL/UNC_READ_REQ_TO_L3_ALL
 L3 average access latency =  UNC_L3_LATENCY_CYCLE_COUNT/UNC_L3_LATENCY_REQUEST_COUNT
@@ -29,7 +29,7 @@ L3 miss ratio tells you how many of your memory references required a cacheline
 to be loaded from a higher level.  While the Data cache miss rate might be
 given by your algorithm you should try to get Data cache miss ratio as low as
 possible by increasing your cache reuse.  This group was inspired from the
-whitepaper -Basic Performance Measurements for AMD Athlon 64, AMD Opteron and
-AMD Phenom Processors- from Paul J. Drongowski.
+whitepaper - Basic Performance Measurements for AMD Athlon 64, AMD Opteron and
+AMD Phenom Processors - from Paul J. Drongowski.
 
 
