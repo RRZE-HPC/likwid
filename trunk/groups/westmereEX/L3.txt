@@ -12,17 +12,21 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-L3 Load [MBytes/s]  1.0E-06*PMC0*64.0/time
-L3 Evict [MBytes/s]  1.0E-06*PMC1*64.0/time
+L3 load bandwidth [MBytes/s]  1.0E-06*PMC0*64.0/time
+L3 load data volume [GBytes]  1.0E-09*PMC0*64.0
+L3 evict bandwidth [MBytes/s]  1.0E-06*PMC1*64.0/time
+L3 evict data volume [GBytes]  1.0E-09*PMC1*64.0
 L3 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
 L3 data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
 
 LONG
 Formulas:
-L3 Load [MBytes/s]  1.0E-06*L2_LINES_IN_ANY*64/time
-L3 Evict [MBytes/s]  1.0E-06*L2_LINES_OUT_DEMAND_DIRTY*64/time
-L3 bandwidth [MBytes/s] 1.0E-06*(L2_LINES_IN_ANY+L2_LINES_OUT_DEMAND_DIRTY)*64/time
-L3 data volume [GBytes] 1.0E-09*(L2_LINES_IN_ANY+L2_LINES_OUT_DEMAND_DIRTY)*64
+L3 load bandwidth [MBytes/s] = 1.0E-06*L2_LINES_IN_ANY*64.0/time
+L3 load data volume [GBytes] = 1.0E-09*L2_LINES_IN_ANY*64.0
+L3 evict bandwidth [MBytes/s] = 1.0E-06*L2_LINES_OUT_DEMAND_DIRTY*64.0/time
+L3 evict data volume [GBytes] = 1.0E-09*L2_LINES_OUT_DEMAND_DIRTY*64.0
+L3 bandwidth [MBytes/s] = 1.0E-06*(L2_LINES_IN_ANY+L2_LINES_OUT_DEMAND_DIRTY)*64/time
+L3 data volume [GBytes] = 1.0E-09*(L2_LINES_IN_ANY+L2_LINES_OUT_DEMAND_DIRTY)*64
 -
 Profiling group to measure L3 cache bandwidth. The bandwidth is
 computed by the number of cacheline allocated in the L2 and the number of

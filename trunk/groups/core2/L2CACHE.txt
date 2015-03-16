@@ -10,6 +10,7 @@ PMC1  L2_RQSTS_SELF_I_STATE
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 L2 request rate PMC0/FIXC0
 L2 miss rate PMC1/FIXC0

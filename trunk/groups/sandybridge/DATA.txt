@@ -12,11 +12,11 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-Load to Store ratio PMC0/PMC1
+Load to store ratio PMC0/PMC1
 
 LONG
 Formulas:
-Load to Store ratio = MEM_UOP_RETIRED_LOADS / MEM_UOP_RETIRED_STORES
+Load to store ratio = MEM_UOP_RETIRED_LOADS/MEM_UOP_RETIRED_STORES
 -
 This is a metric to determine your load to store ratio.
 

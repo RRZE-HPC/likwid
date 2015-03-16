@@ -1,0 +1,13 @@
+SHORT TLB Misses
+
+EVENTSET
+PMC0 LONG_DATA_PAGE_WALK
+PMC1 DATA_PAGE_WALK
+
+METRICS
+Runtime (RDTSC) [s] time
+L2 TLB Misses [misses/s] PMC0/time
+TLB Misses [misses/s] PMC1/time
+
+LONG
+TLB Misses

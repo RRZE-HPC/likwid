@@ -13,9 +13,9 @@ L3 miss ratio  PMC2/PMC1
 
 LONG
 Formulas:
-L3 request rate =  L3_READ_REQUEST_ALL_ALL_CORES / INSTRUCTIONS_RETIRED
-L3 miss rate  = L3_MISSES_ALL_ALL_CORES / INSTRUCTIONS_RETIRED
-L3 miss ratio =  L3_MISSES_ALL_ALL_CORES / L3_READ_REQUEST_ALL_ALL_CORES
+L3 request rate =  L3_READ_REQUEST_ALL_ALL_CORES/INSTRUCTIONS_RETIRED
+L3 miss rate  = L3_MISSES_ALL_ALL_CORES/INSTRUCTIONS_RETIRED
+L3 miss ratio =  L3_MISSES_ALL_ALL_CORES/L3_READ_REQUEST_ALL_ALL_CORES
 -
 This group measures the locality of your data accesses with regard to the
 L3 Cache. L3 request rate tells you how data intensive your code is

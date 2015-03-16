@@ -1,28 +1,26 @@
 SHORT L3 cache miss rate/ratio
 
 EVENTSET
-FIXC0 INSTR_RETIRED_ANY
-FIXC1 CPU_CLK_UNHALTED_CORE
-FIXC2 CPU_CLK_UNHALTED_REF
+FIXC0  INSTR_RETIRED_ANY
+FIXC1  CPU_CLK_UNHALTED_CORE
+FIXC2  CPU_CLK_UNHALTED_REF
 UPMC0  UNC_L3_HITS_ANY
 UPMC1  UNC_L3_MISS_ANY
-UPMC2  UNC_L3_LINES_IN_ANY
-UPMC3  UNC_L3_LINES_OUT_ANY
 
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-L3 request rate   UPMC0/FIXC0
+L3 request rate   (UPMC0+UPMC1)/FIXC0
 L3 miss rate   UPMC1/FIXC0
 L3 miss ratio  UPMC1/(UPMC0+UPMC1)
 
 LONG
 Formulas:
-L3 request rate  UNC_L3_HITS_ANY / INSTR_RETIRED_ANY 
-L3 miss rate   UNC_L3_MISS_ANY / INSTR_RETIRED_ANY
-L3 miss ratio  UNC_L3_MISS_ANY / (UNC_L3_HITS_ANY + UNC_L3_MISS_ANY)
+L3 request rate  (UNC_L3_HITS_ANY+UNC_L3_MISS_ANY)/INSTR_RETIRED_ANY
+L3 miss rate   UNC_L3_MISS_ANY/INSTR_RETIRED_ANY
+L3 miss ratio  UNC_L3_MISS_ANY/(UNC_L3_HITS_ANY+UNC_L3_MISS_ANY)
 -
 This group measures the locality of your data accesses with regard to the L3
 Cache. L3 request rate tells you how data intensive your code is or how many
