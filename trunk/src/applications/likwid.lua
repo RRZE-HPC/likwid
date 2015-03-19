@@ -600,7 +600,7 @@ local function cpustr_to_cpulist(cpustr)
                 cpulist = cpulist_concat(cpulist, cpustr_to_cpulist_logical("L:N:"..str))
             end
         elseif str:match("^N:") or str:match("^S%d*:") or str:match("^C%d*:") or str:match("^M%d*:") then
-            cpulist = cpulist_concat(cpulist, cpustr_to_cpulist_physical(str))
+            cpulist = cpulist_concat(cpulist, cpustr_to_cpulist_logical("L:"..str))
         else
             local tmplist = cpustr_to_cpulist_physical(str)
             if tmplist == {} then
