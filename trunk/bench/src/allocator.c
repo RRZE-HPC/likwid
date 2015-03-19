@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -43,7 +43,7 @@
 
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-
+#define LLU_CAST (unsigned long int)
 
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
@@ -105,13 +105,13 @@ allocator_allocateVector(
 
     if (errorCode)
     {
-        if (errorCode == EINVAL) 
+        if (errorCode == EINVAL)
         {
             fprintf(stderr,
                     "Alignment parameter is not a power of two\n");
             exit(EXIT_FAILURE);
         }
-        if (errorCode == ENOMEM) 
+        if (errorCode == ENOMEM)
         {
             fprintf(stderr,
                     "Insufficient memory to fulfill the request\n");
