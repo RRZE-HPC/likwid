@@ -196,7 +196,9 @@ clean: $(EXT_TARGETS) $(BENCH_TARGET)
 
 distclean: clean
 	@echo "===>  DIST CLEAN"
-	@rm -f likwid-*
+	@for APP in $(L_APPS); do \
+		rm -f $$APP; \
+	done
 	@rm -f likwid.lua
 	@rm -f $(STATIC_TARGET_LIB)
 	@rm -f $(DYNAMIC_TARGET_LIB)
