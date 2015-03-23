@@ -72,9 +72,9 @@ ifeq ($(USE_HWLOC),true)
 ifneq ($(COMPILER),MIC)
 DEFINES += -DLIKWID_USE_HWLOC
 LIBHWLOC = ext/hwloc/libhwloc.a
-LIBS += -Lext/hwloc -lpci
+LIBS += -Lext/hwloc
 EXT_TARGETS += ./ext/hwloc
-FILTER_HWLOC_OBJ = 
+FILTER_HWLOC_OBJ =
 else
 $(info Hwloc not usable on Xeon Phi, disabling);
 endif
