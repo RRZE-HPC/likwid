@@ -59,7 +59,9 @@ int get_listPosition(int ownid, bstring list)
 int fillList(int* outList, int outOffset, bstring list)
 {
     int current = 0;
+    int (*ownatoi)(const char*);
     struct bstrList* tokens = bsplit(list,',');
+    ownatoi = &atoi;
     for(int i=0;i<tokens->qty;i++)
     {
         btrimws(tokens->entry[i]);
@@ -67,7 +69,7 @@ int fillList(int* outList, int outOffset, bstring list)
         {
             if (outList)
             {
-                outList[outOffset+current] = atoi(bdata(tokens->entry[i]));
+                outList[outOffset+current] = ownatoi(bdata(tokens->entry[i]));
             }
             current++;
         }
@@ -76,7 +78,7 @@ int fillList(int* outList, int outOffset, bstring list)
             struct bstrList* range = bsplit(tokens->entry[i],'-');
             if (range->qty == 2)
             {
-                for (int j=atoi(bdata(range->entry[0]));j<=atoi(bdata(range->entry[1]));j++)
+                for (int j=ownatoi(bdata(range->entry[0]));j<=ownatoi(bdata(range->entry[1]));j++)
                 {
                     if (outList)
                     {
@@ -107,6 +109,10 @@ void proc_init_cpuInfo(cpu_set_t cpuSet)
     int HWthreads = 0;
     FILE *fp;
     bstring filename;
+    int (*ownatoi)(const char*);
+    char* (*ownstrcpy)(char*,const char*);
+    ownatoi = &atoi;
+    ownstrcpy = &strcpy;
     const_bstring countString = bformat("processor\t:");
     const_bstring modelString = bformat("model\t\t:");
     const_bstring familyString = bformat("cpu family\t:");
@@ -136,25 +142,25 @@ void proc_init_cpuInfo(cpu_set_t cpuSet)
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
-                cpuid_info.model = atoi(bdata(subtokens->entry[1]));
+                cpuid_info.model = ownatoi(bdata(subtokens->entry[1]));
             }
             else if ((cpuid_info.family == 0) && (binstr(tokens->entry[i],0,familyString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
-                cpuid_info.family = atoi(bdata(subtokens->entry[1]));
+                cpuid_info.family = ownatoi(bdata(subtokens->entry[1]));
             }
             else if (binstr(tokens->entry[i],0,steppingString) != BSTR_ERR)
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
-                cpuid_info.stepping = atoi(bdata(subtokens->entry[1]));
+                cpuid_info.stepping = ownatoi(bdata(subtokens->entry[1]));
             }
             else if (binstr(tokens->entry[i],0,nameString) != BSTR_ERR)
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
-                strcpy(cpuid_info.osname, bdata(subtokens->entry[1]));
+                ownstrcpy(cpuid_info.osname, bdata(subtokens->entry[1]));
             }
             else if (binstr(tokens->entry[i],0,vendorString) != BSTR_ERR)
             {
@@ -325,6 +331,8 @@ void proc_init_nodeTopology(cpu_set_t cpuSet)
     FILE *fp;
     bstring cpudir;
     bstring file;
+    int (*ownatoi)(const char*);
+    ownatoi = &atoi;
 
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
     for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
@@ -343,7 +351,7 @@ void proc_init_nodeTopology(cpu_set_t cpuSet)
         if (NULL != (fp = fopen (bdata(file), "r")))
         {
             bstring src = bread ((bNread) fread, fp);
-            hwThreadPool[i].coreId = atoi(bdata(src));
+            hwThreadPool[i].coreId = ownatoi(bdata(src));
             fclose(fp);
         }
         bdestroy(file);
@@ -351,7 +359,7 @@ void proc_init_nodeTopology(cpu_set_t cpuSet)
         if (NULL != (fp = fopen (bdata(file), "r")))
         {
             bstring src = bread ((bNread) fread, fp);
-            hwThreadPool[i].packageId = atoi(bdata(src));
+            hwThreadPool[i].packageId = ownatoi(bdata(src));
             fclose(fp);
         }
         bdestroy(file);
@@ -381,6 +389,8 @@ void proc_init_cacheTopology(void)
     int nrCaches = 0;
     bstring cpudir = bformat("/sys/devices/system/cpu/cpu0/cache");
     bstring levelStr;
+    int (*ownatoi)(const char*);
+    ownatoi = &atoi;
     for (int i=0;i<10;i++)
     {
         levelStr = bformat("%s/index%d/level",bdata(cpudir),i);
@@ -388,7 +398,7 @@ void proc_init_cacheTopology(void)
         {
             bstring src = bread ((bNread) fread, fp);
             int tmp = 0;
-            tmp = atoi(bdata(src));
+            tmp = ownatoi(bdata(src));
             if (tmp > maxNumLevels)
             {
                 maxNumLevels = tmp;
@@ -411,7 +421,7 @@ void proc_init_cacheTopology(void)
         if (NULL != (fp = fopen (bdata(levelStr), "r")))
         {
             bstring src = bread ((bNread) fread, fp);
-            cachePool[i].level = atoi(bdata(src));
+            cachePool[i].level = ownatoi(bdata(src));
             fclose(fp);
             bdestroy(src);
         }
@@ -453,7 +463,7 @@ void proc_init_cacheTopology(void)
             bstring src = bread ((bNread) fread, fp);
             btrimws(src);
             bdelete(src, blength(src)-1, 1);
-            cachePool[i].size = atoi(bdata(src)) * 1024;
+            cachePool[i].size = ownatoi(bdata(src)) * 1024;
             fclose(fp);
             bdestroy(src);
         }
@@ -467,7 +477,7 @@ void proc_init_cacheTopology(void)
         {
             bstring src = bread ((bNread) fread, fp);
             btrimws(src);
-            cachePool[i].associativity = atoi(bdata(src));
+            cachePool[i].associativity = ownatoi(bdata(src));
             fclose(fp);
             bdestroy(src);
         }
@@ -481,7 +491,7 @@ void proc_init_cacheTopology(void)
         {
             bstring src = bread ((bNread) fread, fp);
             btrimws(src);
-            cachePool[i].lineSize = atoi(bdata(src));
+            cachePool[i].lineSize = ownatoi(bdata(src));
             fclose(fp);
             bdestroy(src);
         }
@@ -495,7 +505,7 @@ void proc_init_cacheTopology(void)
         {
             bstring src = bread ((bNread) fread, fp);
             btrimws(src);
-            cachePool[i].sets = atoi(bdata(src));
+            cachePool[i].sets = ownatoi(bdata(src));
             fclose(fp);
             bdestroy(src);
         }

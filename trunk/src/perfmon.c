@@ -95,6 +95,8 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
     int err = 0;
     int ret = FALSE;
     uint64_t tmp;
+    int (*ownstrcmp)(const char*, const char*);
+    ownstrcmp = &strcmp;
     for (int i=0; i< perfmon_numCounters; i++)
     {
         if (biseqcstr(reg, counter_map[i].key))
@@ -105,7 +107,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             break;
         }
     }
-    if (strcmp(bdata(reg), counter_map[*index].key) != 0)
+    if (ownstrcmp(bdata(reg), counter_map[*index].key) != 0)
     {
         *type = NOTYPE;
         return FALSE;

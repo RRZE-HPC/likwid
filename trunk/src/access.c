@@ -138,7 +138,7 @@ int HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
         err = pci_tread(socket, cpu_id, dev, reg, (uint32_t*)&tmp);
         *data = tmp;
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, READ S[%d] C[%d] DEV[%d] R 0x%X = 0x%llX ERR[%d], socket, cpu_id, dev, reg, tmp, err);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, READ S[%d] C[%d] DEV[%d] R 0x%X = 0x%llX ERR[%d], socket, cpu_id, dev, reg, LLU_CAST tmp, err);
     return err;
 }
 

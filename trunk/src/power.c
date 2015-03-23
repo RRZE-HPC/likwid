@@ -312,7 +312,6 @@ int power_limitGet(int cpuId, PowerType domain, double* power, double* time)
         *power = ((double)extractBitField(flags, 15, 0)) * power_info.domains[domain].energyUnit;
         Y = extractBitField(flags, 5, 17);
         Z = extractBitField(flags, 2, 22);
-        printf("limitGet Y %lx Z %lx\n", Y,Z);
         *time = pow(2,((double)Y)) * (1.0 + (((double)Z)/4.0)) * power_info.timeUnit;
     }
     return 0;
