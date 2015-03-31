@@ -1,17 +1,16 @@
 /*
  * =======================================================================================
+ *      Filename:  strUtil.h
  *
- *      Filename:  allocator.h
- *
- *      Description:  Header File allocator Module. 
+ *      Description:  Some sting functions
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *      Project:  none
+ *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,24 +26,34 @@
  *
  * =======================================================================================
  */
+#ifndef STRUTIL_H
+#define STRUTIL_H
 
-#ifndef ALLOCATOR_H
-#define ALLOCATOR_H
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include <stdint.h>
 #include <bstrlib.h>
+#include <likwid.h>
+
 #include <test_types.h>
 
-#define LLU_CAST (unsigned long long)
+typedef struct {
+    bstring domain;
+    int offset;
+    void* ptr;
+} Stream;
 
-extern void allocator_init(int numVectors);
-extern void allocator_finalize();
-extern void allocator_allocateVector(void** ptr,
-        int alignment,
-        uint64_t size,
-        int offset,
-        DataType type,
-        bstring domain);
+typedef struct {
+    uint32_t numberOfThreads;
+    int* processorIds;
+    uint64_t size;
+    Stream* streams;
+} Workgroup;
 
-#endif /*ALLOCATOR_H*/
 
+extern void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int numberOfStreams);
+
+#endif

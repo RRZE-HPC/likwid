@@ -31,7 +31,7 @@
 #ifndef BARRIER_H
 #define BARRIER_H
 
-#include <types.h>
+#include <barrier_types.h>
 
 /**
  * @brief  Initialize the barrier module

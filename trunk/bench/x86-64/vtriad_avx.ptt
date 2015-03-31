@@ -1,0 +1,22 @@
+STREAMS 4
+TYPE DOUBLE
+FLOPS 2
+BYTES 32
+LOOP 16
+vmovaps    ymm1, [STR1 + GPR1*8]
+vmovaps    ymm2, [STR1 + GPR1*8+32]
+vmovaps    ymm3, [STR1 + GPR1*8+64]
+vmovaps    ymm4, [STR1 + GPR1*8+96]
+vmulpd    ymm1, ymm1, [STR2 + GPR1*8]
+vaddpd    ymm1, ymm1, [STR3 + GPR1*8]
+vmulpd    ymm2, ymm2, [STR2 + GPR1*8+32]
+vaddpd    ymm2, ymm2, [STR3 + GPR1*8+32]
+vmulpd    ymm3, ymm3, [STR2 + GPR1*8+64]
+vaddpd    ymm3, ymm3, [STR3 + GPR1*8+64]
+vmulpd    ymm4, ymm4, [STR2 + GPR1*8+96]
+vaddpd    ymm4, ymm4, [STR3 + GPR1*8+96]
+vmovaps    [STR0 + GPR1*8], ymm1
+vmovaps    [STR0 + GPR1*8+32], ymm2
+vmovaps    [STR0 + GPR1*8+64], ymm3
+vmovaps    [STR0 + GPR1*8+96], ymm4
+

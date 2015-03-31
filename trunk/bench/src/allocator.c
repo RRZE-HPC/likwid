@@ -33,17 +33,13 @@
 #include <stdio.h>
 #include <string.h>
 
-//#include <error.h>
-//#include <types.h>
 #include <allocator.h>
-//#include <affinity.h>
 #include <likwid.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-#define LLU_CAST (unsigned long int)
 
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */

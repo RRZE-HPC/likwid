@@ -34,7 +34,6 @@
 #include <stdio.h>
 
 #include <error.h>
-#include <types.h>
 #include <threads.h>
 
 

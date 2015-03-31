@@ -1,0 +1,23 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 1
+BYTES 8
+xorpd FPR1, FPR1
+movapd FPR2, FPR1
+movapd FPR3, FPR1
+movapd FPR4, FPR1
+movapd FPR5, FPR1
+movapd FPR6, FPR1
+movapd FPR7, FPR1
+movapd FPR8, FPR1
+LOOP 16
+addpd    FPR1, [STR0 + GPR1 * 8]
+addpd    FPR2, [STR0 + GPR1 * 8 + 16]
+addpd    FPR3, [STR0 + GPR1 * 8 + 32]
+addpd    FPR4, [STR0 + GPR1 * 8 + 48]
+addpd    FPR5, [STR0 + GPR1 * 8 + 64]
+addpd    FPR6, [STR0 + GPR1 * 8 + 80]
+addpd    FPR7, [STR0 + GPR1 * 8 + 96]
+addpd    FPR8, [STR0 + GPR1 * 8 + 112]
+
+
