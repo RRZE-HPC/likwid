@@ -32,6 +32,7 @@
 #define THREADS_TYPES_H
 
 #include <stdint.h>
+#include <test_types.h>
 
 typedef struct {
     int        globalNumberOfThreads;

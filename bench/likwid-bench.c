@@ -37,12 +37,7 @@
 #include <inttypes.h>
 
 #include <bstrlib.h>
-#include <types.h>
 #include <error.h>
-//#include <topology.h>
-//#include <numa.h>
-//#include <affinity.h>
-#include <timer.h>
 #include <threads.h>
 #include <barrier.h>
 #include <testcases.h>
@@ -119,11 +114,12 @@ int main(int argc, char** argv)
     uint64_t realSize = 0;
     uint64_t realCycles = 0;
     uint64_t realIter = 0;
-    uint64_t dataVol = 0;
     uint64_t cpuClock = 0;
     Workgroup* currentWorkgroup = NULL;
     Workgroup* groups = NULL;
     uint32_t min_runtime = 1; /* 1s */
+    bstring HLINE;
+    binsertch(HLINE, 0, 80, '-');
 
     /* Handling of command line options */
     if (argc ==  1)
@@ -243,7 +239,7 @@ int main(int argc, char** argv)
     if (optPrintDomains)
     {
         AffinityDomains_t affinity = get_affinityDomains();
-
+        printf("Number of Domains %d\n",affinity->numberOfAffinityDomains);
         for (i=0; i < affinity->numberOfAffinityDomains; i++ )
         {
             printf("Domain %d:\n",i);
@@ -298,13 +294,13 @@ int main(int argc, char** argv)
         globalNumberOfThreads += groups[i].numberOfThreads;
     }
 
-    printf(HLINE);
+    printf(bdata(HLINE));
     printf("LIKWID MICRO BENCHMARK\n");
     printf("Test: %s\n",test->name);
-    printf(HLINE);
+    printf(bdata(HLINE));
     printf("Using %" PRIu64 " work groups\n",numberOfWorkgroups);
     printf("Using %d threads\n",globalNumberOfThreads);
-    printf(HLINE);
+    printf(bdata(HLINE));
 
 
     threads_init(globalNumberOfThreads);
@@ -369,7 +365,7 @@ int main(int argc, char** argv)
 
 
     time = (double) threads_data[0].cycles / (double) cpuClock;
-    printf(HLINE);
+    printf(bdata(HLINE));
     printf("Cycles:\t\t\t%llu\n", LLU_CAST threads_data[0].cycles);
     printf("Iterations:\t\t%llu\n", LLU_CAST realIter);
     printf("Iterations per thread:\t%llu\n",LLU_CAST threads_data[0].data.iter);
@@ -395,7 +391,7 @@ int main(int argc, char** argv)
             break;
     }
 
-    printf(HLINE);
+    printf(bdata(HLINE));
     threads_destroy(numberOfWorkgroups);
     
 #ifdef PERFMON

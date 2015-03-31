@@ -31,7 +31,6 @@
 #ifndef THREADS_H
 #define THREADS_H
 
-#include <types.h>
 #include <pthread.h>
 #include <threads_types.h>
 

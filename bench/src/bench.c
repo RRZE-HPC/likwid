@@ -35,12 +35,11 @@
 #include <sys/syscall.h>
 #include <string.h>
 #include <sched.h>
-#include <types.h>
+//#include <types.h>
 #include <unistd.h>
 
-#include <timer.h>
+#include <allocator.h>
 #include <threads.h>
-#include <affinity.h>
 #include <barrier.h>
 #include <likwid.h>
 
@@ -113,8 +112,8 @@ void* runTest(void* arg)
     myData->size = size;
 
 
-    /* pint the thread */
-    affinity_pinThread(myData->processors[threadId]);
+    /* pin the thread */
+    likwid_pinThread(myData->processors[threadId]);
 
     sleep(1);
     LIKWID_THREAD_INIT;
