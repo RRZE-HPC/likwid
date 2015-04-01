@@ -224,6 +224,8 @@ int main(int argc, char** argv)
         }
     }
 
+    threads_test();
+
     if (topology_init() == EXIT_FAILURE)
     {
         ERROR_PLAIN_PRINT(Unsupported processor!);

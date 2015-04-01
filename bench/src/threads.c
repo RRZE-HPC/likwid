@@ -32,6 +32,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include <error.h>
 #include <threads.h>
@@ -50,8 +51,49 @@ static pthread_t* threads = NULL;
 static pthread_attr_t attr;
 static int numThreads = 0;
 
+/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ################## */
+static int count_characters(const char *str, char character)
+{
+    if (str == 0)
+        return 0;
+    const char *p = str;
+    int count = 0;
 
+    do {
+        if (*p == character)
+            count++;
+    } while (*(p++));
+
+    return count;
+}
+
+void* dummy_function(void* arg)
+{
+    return 0;
+}
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+
+
+int threads_test()
+{
+    int cnt = 0;
+    int err;
+    pthread_t pid;
+    int likwid_pin = count_characters(getenv("LIKWID_PIN"), ',');
+    int max_cpus = sysconf(_SC_NPROCESSORS_CONF);
+    int max = likwid_pin;
+    if (likwid_pin == 0)
+    {
+        max = max_cpus;
+    }
+    while (cnt < max) {
+        err = pthread_create(&pid, NULL, dummy_function, NULL);
+        cnt++;
+    }
+    return cnt;
+}
+
 
 void
 threads_init(int numberOfThreads)
