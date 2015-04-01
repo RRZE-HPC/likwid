@@ -42,6 +42,12 @@ extern ThreadGroup* threads_groups;
 
 
 /**
+ * @brief  Test the maximal possible thread count
+ * @return  numberOfThreads  The number of available threads
+ */
+extern int threads_test(void);
+
+/**
  * @brief  Initialization of the thread module
  * @param  numberOfThreads  The total number of threads
  */
