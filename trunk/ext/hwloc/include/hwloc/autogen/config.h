@@ -183,7 +183,7 @@ typedef uint64_t hwloc_uint64_t;
 /* The hwloc symbol prefix */
 #define HWLOC_SYM_PREFIX hwloc_
 
-#define HWLOC_HAVE_PCIUTILS 0
+#undef HWLOC_HAVE_PCIUTILS
 
 /* The hwloc symbol prefix in all caps */
 #define HWLOC_SYM_PREFIX_CAPS HWLOC_

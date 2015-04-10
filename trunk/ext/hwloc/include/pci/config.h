@@ -14,5 +14,3 @@
 #define PCI_PATH_IDS_DIR "/usr/share/misc"
 #define PCI_USE_DNS
 #define PCI_ID_DOMAIN "pci.id.ucw.cz"
-#define PCI_SHARED_LIB
-#define PCILIB_VERSION "3.1.8"
