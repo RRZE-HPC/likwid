@@ -1,16 +1,18 @@
 # =======================================================================================
-#  
+#
 #      Filename:  Makefile
-# 
+#
 #      Description:  pthread-overload Makefile
-# 
+#
 #      Version:   <VERSION>
 #      Released:  <DATE>
-# 
+#
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+#               Thomas Roehl (tr), thomas.roehl@googlemail.com
+#
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig 
+#      Copyright (C) 2013 Jan Treibig and Thomas Roehl
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -27,9 +29,10 @@
 # =======================================================================================
 
 include  ../../config.mk
+include  ../../make/include_$(COMPILER).mk
 include  ../../make/config_checks.mk
 include  ../../make/config_defines.mk
-include  ../../make/include_$(COMPILER).mk
+
 
 TARGET   = liblikwidpin.so
 
@@ -45,5 +48,5 @@ CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 all: $(TARGET)
 
 $(TARGET): pthread-overload.c
-	$(CC) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(INCLUDES) $(SHARED_CFLAGS) $(SHARED_LFLAGS) -o ../../$(TARGET) pthread-overload.c $(LIBS)
+	$(CC) -Wl,-soname,$(TARGET).$(VERSION) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(INCLUDES) $(SHARED_CFLAGS) $(SHARED_LFLAGS) -o ../../$(TARGET) pthread-overload.c $(LIBS)
 
