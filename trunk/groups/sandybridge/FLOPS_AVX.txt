@@ -4,21 +4,21 @@ EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
-PMC0  FP_256_PACKED_SINGLE
-PMC1  FP_256_PACKED_DOUBLE
+PMC0  SIMD_FP_256_PACKED_SINGLE
+PMC1  SIMD_FP_256_PACKED_DOUBLE
 
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-32b packed SP MFlops/s  1.0E-06*(PMC0*8.0)/time
-32b packed DP MFlops/s  1.0E-06*(PMC1*4.0)/time
+Packed SP MFlops/s  1.0E-06*(PMC0*8.0)/time
+Packed DP MFlops/s  1.0E-06*(PMC1*4.0)/time
 
 LONG
 Formula:
-32b packed SP MFlops/s =  (FP_256_PACKED_SINGLE*8)/ runtime
-32b packed DP MFlops/s =  (FP_256_PACKED_DOUBLE*4)/ runtime
+Packed SP MFlops/s = 1.0E-06*(SIMD_FP_256_PACKED_SINGLE*8)/runtime
+Packed DP MFlops/s = 1.0E-06*(SIMD_FP_256_PACKED_DOUBLE*4)/runtime
 -
 Packed 32b AVX flops rates. Please note that the current flop measurements on SandyBridge are
 potentially wrong. So you cannot trust these counters at the moment!

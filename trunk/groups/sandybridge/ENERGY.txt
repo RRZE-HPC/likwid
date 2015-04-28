@@ -4,6 +4,7 @@ EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
+TMP0  TEMP_CORE
 PWR0  PWR_PKG_ENERGY
 PWR1  PWR_PP0_ENERGY
 PWR3  PWR_DRAM_ENERGY
@@ -13,6 +14,7 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
+Temperature [C]  TMP0
 Energy [J]  PWR0
 Power [W] PWR0/time
 Energy PP0 [J]  PWR1
@@ -22,9 +24,9 @@ Power DRAM [W]  PWR3/time
 
 LONG
 Formula:
-Power =  PWR_PKG_ENERGY / time
-Power PP0 =  PWR_PP0_ENERGY / time
-Power DRAM =  PWR_DRAM_ENERGY / time
+Power = PWR_PKG_ENERGY/runtime
+Power PP0 = PWR_PP0_ENERGY/runtime
+Power DRAM = PWR_DRAM_ENERGY/runtime
 -
 SandyBridge implements the new RAPL interface. This interface enables to
 monitor the consumed energy on the package (socket) level.

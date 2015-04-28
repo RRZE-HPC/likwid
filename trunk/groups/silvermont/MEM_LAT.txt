@@ -1,0 +1,23 @@
+SHORT Average data read latency
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  OFFCORE_RESPONSE_0_DMND_DATA_RD_AVG_LAT
+PMC1  OFFCORE_RESPONSE_1_DMND_DATA_RD_ANY
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Average data read latency [cyc/read] PMC0/PMC1
+
+LONG
+Formulas:
+Average data read latency [cyc/read] = OFFCORE_RESPONSE_0_DMND_DATA_RD_AVG_LAT/OFFCORE_RESPONSE_1_DMND_DATA_RD_ANY
+-
+The Offcore request facility of Intel Silvermont processors can be used to determine
+the average data read latency. It includes all operations done to read data like
+snoops and hits in upper cache levels.

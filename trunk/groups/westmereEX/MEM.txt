@@ -5,9 +5,11 @@ FIXC0   INSTR_RETIRED_ANY
 FIXC1   CPU_CLK_UNHALTED_CORE
 FIXC2   CPU_CLK_UNHALTED_REF
 MBOX0C0 FVC_EV0_BBOX_CMDS_READS
-MBOX0C1 FVC_EV0_BBOX_CMDS_WRITES
+MBOX0C1 DRAM_CMD_CAS_WR_OPN
+MBOX0C2 DRAM_MISC_CAS_WR_CLS
 MBOX1C0 FVC_EV0_BBOX_CMDS_READS
-MBOX1C1 FVC_EV0_BBOX_CMDS_WRITES
+MBOX1C1 DRAM_CMD_CAS_WR_OPN
+MBOX1C2 DRAM_MISC_CAS_WR_CLS
 
 
 METRICS
@@ -16,22 +18,21 @@ Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 Memory read bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0)*64.0/time
-Memory data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0)*64.0
-Memory write bandwidth [MBytes/s] 1.0E-06*(MBOX0C1+MBOX1C1)*64.0/time
-Memory data volume [GBytes] 1.0E-09*(MBOX0C1+MBOX1C1)*64.0
-Memory bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0+MBOX0C1+MBOX1C1)*64/time
-Memory data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0+MBOX0C1+MBOX1C1)*64
+Memory read data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0)*64.0
+Memory write bandwidth [MBytes/s] 1.0E-06*(MBOX0C1+MBOX0C2+MBOX1C1+MBOX1C2)*64.0/time
+Memory write data volume [GBytes] 1.0E-09*(MBOX0C1+MBOX0C2+MBOX1C1+MBOX1C2)*64.0
+Memory bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0+MBOX0C1+MBOX1C1+MBOX0C2+MBOX1C2)*64/time
+Memory data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0+MBOX0C1+MBOX1C1+MBOX0C2+MBOX1C2)*64
 
 LONG
 Formulas:
 Memory read bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0))*64.0/time
 Memory read data volume [GBytes] = 1.0E-09*(SUM(MBOXxC0))*64.0
-Memory write bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC1))*64.0/time
-Memory write data volume [GBytes] = 1.0E-09*(SUM(MBOXxC1))*64.0
-Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0/time
-Memory data volume [GBytes] = 1.0E-09*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0
+Memory write bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC1)+SUM(MBOXxC2))*64.0/time
+Memory write data volume [GBytes] = 1.0E-09*(SUM(MBOXxC1)+SUM(MBOXxC2))*64.0
+Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0)+SUM(MBOXxC1)+SUM(MBOXxC2))*64.0/time
+Memory data volume [GBytes] = 1.0E-09*(SUM(MBOXxC0)+SUM(MBOXxC1)+SUM(MBOXxC2))*64.0
 -
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
-Addional to the bandwidth it also outputs the data volume and the remote
-traffic over QPI links to other sockets.
+Addional to the bandwidth it also outputs the data volume.
 

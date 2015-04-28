@@ -4,23 +4,23 @@ EVENTSET
 FIXC0   INSTR_RETIRED_ANY
 FIXC1   CPU_CLK_UNHALTED_CORE
 FIXC2   CPU_CLK_UNHALTED_REF
-WBOXFIX UNCORE_CYCLES
+WBOXFIX UNCORE_CLOCKTICKS
 MBOX0C0 FVC_EV0_BBOX_CMDS_READS
-MBOX0C1 FVC_EV0_BBOX_CMDS_WRITES
+MBOX0C1 DRAM_CMD_CAS_WR_OPN
 MBOX1C0 FVC_EV0_BBOX_CMDS_READS
-MBOX1C1 FVC_EV0_BBOX_CMDS_WRITES
+MBOX1C1 DRAM_CMD_CAS_WR_OPN
 
 
 METRICS
 Runtime (RDTSC) [s] time
-Runtime unhalted [s] FIXC1*inverseC lock
+Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 Uncore Clock [MHz]  1.E-06*(WBOXFIX)/time
 CPI  FIXC1/FIXC0
 Memory read bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0)*64.0/time
-Memory data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0)*64.0
+Memory read data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0)*64.0
 Memory write bandwidth [MBytes/s] 1.0E-06*(MBOX0C1+MBOX1C1)*64.0/time
-Memory data volume [GBytes] 1.0E-09*(MBOX0C1+MBOX1C1)*64.0
+Memory write data volume [GBytes] 1.0E-09*(MBOX0C1+MBOX1C1)*64.0
 Memory bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0+MBOX0C1+MBOX1C1)*64/time
 Memory data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0+MBOX0C1+MBOX1C1)*64
 
@@ -34,4 +34,9 @@ Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0/time
 Memory data volume [GBytes] = 1.0E-09*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0
 -
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
+On Nehalem EX it is not possible to measure the write operations with the
+FVC_EV0_BBOX_CMDS_WRITES event at the same time as the FVC_EV0_BBOX_CMDS_READS
+because they set contrary bits. The DRAM_CMD_CAS_WR_OPN is an alternative but
+it only measures write operations to open pages, hence writes to closed pages
+are not included here.
 
