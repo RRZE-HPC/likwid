@@ -89,6 +89,9 @@
 #define ATOM_SILVERMONT_Z1   0x4AU
 #define ATOM_SILVERMONT_Z2   0x5AU
 #define ATOM_SILVERMONT_F    0x5DU
+#define BROADWELL            0x3DU
+#define BROADWELL_E          0x4FU
+#define BROADWELL_D          0x56U
 
 #define PCI_ROOT_PATH    "/proc/bus/pci/"
 #define MAX_PATH_LENGTH   60
@@ -243,6 +246,7 @@ static int allowed_haswell(uint32_t reg)
         return 0;
     }
 }
+
 
 static int allowed_silvermont(uint32_t reg)
 {
@@ -480,7 +484,7 @@ static void Signal_Handler(int sig)
     }
 
     /* For SIGALRM we just return - we're just here to create a EINTR */
-    if ((sig == SIGTERM))
+    if (sig == SIGTERM)
     {
         stop_daemon();
     }
@@ -590,7 +594,10 @@ int main(void)
                     allowed = allowed_sandybridge;
                     isPCIUncore = 1;
                 }
-                else if (model == HASWELL)
+                else if ((model == HASWELL) ||
+                         (model == BROADWELL) ||
+                         (model == BROADWELL_D) ||
+                         (model == BROADWELL_E))
                 {
                     allowed = allowed_haswell;
                 }
