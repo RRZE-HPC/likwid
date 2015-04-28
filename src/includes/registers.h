@@ -64,6 +64,7 @@
 #define MSR_PERF_GLOBAL_STATUS    0x38E
 #define MSR_PERF_GLOBAL_OVF_CTRL  0x390
 #define MSR_PEBS_ENABLE           0x3F1
+#define MSR_PEBS_LD_LAT           0x3F6
 /* Perfmon V3 */
 #define MSR_OFFCORE_RESP0              0x1A6
 #define MSR_OFFCORE_RESP1              0x1A7
@@ -1196,6 +1197,8 @@
 #define MSR_PLATFORM_INFO               0x0CE
 #define MSR_TURBO_POWER_CURRENT_LIMIT   0x1AC
 #define MSR_TURBO_RATIO_LIMIT           0x1AD
+#define MSR_TURBO_RATIO_LIMIT1          0x1AE
+#define MSR_TURBO_RATIO_LIMIT2          0x1AF
 
 /*
  * AMD
@@ -1245,6 +1248,15 @@
 #define MSR_AMD16_PMC1                  0xC0010005
 #define MSR_AMD16_PMC2                  0xC0010006
 #define MSR_AMD16_PMC3                  0xC0010007
+
+#define MSR_AMD16_L2_PERFEVTSEL0        0xC0010230
+#define MSR_AMD16_L2_PERFEVTSEL1        0xC0010232
+#define MSR_AMD16_L2_PERFEVTSEL2        0xC0010234
+#define MSR_AMD16_L2_PERFEVTSEL3        0xC0010236
+#define MSR_AMD16_L2_PMC0               0xC0010231
+#define MSR_AMD16_L2_PMC1               0xC0010233
+#define MSR_AMD16_L2_PMC2               0xC0010235
+#define MSR_AMD16_L2_PMC3               0xC0010237
 
 #define MSR_AMD16_NB_PERFEVTSEL0        0xC0010240
 #define MSR_AMD16_NB_PERFEVTSEL1        0xC0010242

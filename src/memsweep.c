@@ -102,8 +102,9 @@ findProcessor(uint32_t nodeId, uint32_t coreId)
 /* evict all dirty cachelines from last level cache */
 static void cleanupCache(char* ptr)
 {
-#if defined(__x86_64) || defined(__i386__)
+#if defined(__x86_64__) || defined(__i386__)
     uint32_t cachesize = 2 * cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].size;
+    printf("Cleaning LLC with %g MB\n", (double)cachesize/(1024.0 * 1024.0));
     _loadData(cachesize,ptr);
 #else
     ERROR_PLAIN_PRINT(Cleanup cache is currently only available on X86 systems.);

@@ -1,16 +1,17 @@
 # =======================================================================================
-#  
+#
 #      Filename:  perfmon_haswell_events.txt
-# 
-#      Description:  Event list for Intel Ivy Bridge
-# 
+#
+#      Description:  Event list for Intel Haswell EP/EN/EX
+#
 #      Version:   <VERSION>
 #      Released:  <DATE>
-# 
+#
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+#               Thomas Roehl (tr), thomas.roehl@googlemail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2014 Jan Treibig
+#      Copyright (C) 2014 Jan Treibig and Thomas Roehl
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -102,7 +103,7 @@ UMASK_L2_RQSTS_REFERENCES        0xFF
 EVENT_L2_DEMAND_RQST_WB_HIT            0x27   PMC
 UMASK_L2_DEMAND_RQST_WB_HIT       0x50
 
-EVENT_LONGEST_LAT_CACHE_REFERENCE               0x2E   PMC
+EVENT_LONGEST_LAT_CACHE               0x2E   PMC
 UMASK_LONGEST_LAT_CACHE_REFERENCE     0x4F
 UMASK_LONGEST_LAT_CACHE_MISS          0x41
 
@@ -866,7 +867,7 @@ UMASK_RING_AD_USED_UP               0x03
 UMASK_RING_AD_USED_DOWN_EVEN        0x04
 UMASK_RING_AD_USED_DOWN_ODD         0x08
 UMASK_RING_AD_USED_DOWN             0x0C
-UMASK_RING_AD_USED_ALL              0x0F
+UMASK_RING_AD_USED_ANY              0x0F
 
 EVENT_RING_AK_USED                  0x1C CBOX
 UMASK_RING_AK_USED_UP_EVEN          0x01
@@ -875,7 +876,7 @@ UMASK_RING_AK_USED_UP               0x03
 UMASK_RING_AK_USED_DOWN_EVEN        0x04
 UMASK_RING_AK_USED_DOWN_ODD         0x08
 UMASK_RING_AK_USED_DOWN             0x0C
-UMASK_RING_AK_USED_ALL              0x0F
+UMASK_RING_AK_USED_ANY              0x0F
 
 EVENT_RING_BL_USED                  0x1D CBOX
 UMASK_RING_BL_USED_UP_EVEN          0x01
@@ -884,13 +885,13 @@ UMASK_RING_BL_USED_UP               0x03
 UMASK_RING_BL_USED_DOWN_EVEN        0x04
 UMASK_RING_BL_USED_DOWN_ODD         0x08
 UMASK_RING_BL_USED_DOWN             0x0C
-UMASK_RING_BL_USED_ALL              0x0F
+UMASK_RING_BL_USED_ANY              0x0F
 
 EVENT_RING_IV_USED                  0x1E CBOX
-UMASK_RING_BL_USED_UP               0x03
-UMASK_RING_BL_USED_DN               0x0C
-UMASK_RING_BL_USED_ANY              0x0F
-UMASK_RING_BL_USED_DOWN             0xCC
+UMASK_RING_IV_USED_UP               0x03
+UMASK_RING_IV_USED_DN               0x0C
+UMASK_RING_IV_USED_ANY              0x0F
+
 
 EVENT_COUNTER0_OCCUPANCY            0x1F CBOX
 UMASK_COUNTER0_OCCUPANCY            0x00
@@ -1112,6 +1113,7 @@ UMASK_RXR_INSERTS_AK                0x10
 UMASK_RXR_INSERTS_IV                0x20
 
 EVENT_RING_AD_USED                  0x1B SBOX
+UMASK_RING_AD_USED_ANY              0x0F
 UMASK_RING_AD_USED_UP_EVEN          0x01
 UMASK_RING_AD_USED_UP_ODD           0x02
 UMASK_RING_AD_USED_UP               0x03
@@ -1120,6 +1122,7 @@ UMASK_RING_AD_USED_DOWN_ODD         0x08
 UMASK_RING_AD_USED_DOWN             0x0C
 
 EVENT_RING_AK_USED                  0x1C SBOX
+UMASK_RING_AK_USED_ANY              0x0F
 UMASK_RING_AK_USED_UP_EVEN          0x01
 UMASK_RING_AK_USED_UP_ODD           0x02
 UMASK_RING_AK_USED_UP               0x03
@@ -1128,6 +1131,7 @@ UMASK_RING_AK_USED_DOWN_ODD         0x08
 UMASK_RING_AK_USED_DOWN             0x0C
 
 EVENT_RING_BL_USED                  0x1D SBOX
+UMASK_RING_BL_USED_ANY              0x0F
 UMASK_RING_BL_USED_UP_EVEN          0x01
 UMASK_RING_BL_USED_UP_ODD           0x02
 UMASK_RING_BL_USED_UP               0x03
@@ -1136,6 +1140,7 @@ UMASK_RING_BL_USED_DOWN_ODD         0x08
 UMASK_RING_BL_USED_DOWN             0x0C
 
 EVENT_RING_IV_USED                  0x1E SBOX
+UMASK_RING_IV_USED_ANY              0x0F
 UMASK_RING_IV_USED_UP               0x03
 UMASK_RING_IV_USED_DOWN             0x0C
 
@@ -1923,6 +1928,10 @@ EVENT_WMM_TO_RMM                        0xC0 MBOX
 UMASK_WMM_TO_RMM_LOW_THRESH             0x01
 UMASK_WMM_TO_RMM_STARVE                 0x02
 UMASK_WMM_TO_RMM_VMSE_RETRY             0x04
+
+# Undocumented event, mentioned in metrics table but not defined
+EVENT_WPQ_INSERTS                       0x20 MBOX
+UMASK_WPQ_INSERTS                       0x00
 
 EVENT_WPQ_CYCLES_FULL                   0x22 MBOX
 UMASK_WPQ_CYCLES_FULL                   0x00
@@ -2724,11 +2733,11 @@ UMASK_VNA_CREDIT_RETURNS                0x00 0x01
 EVENT_VNA_CREDIT_RETURN_OCCUPANCY       0x1B QBOX
 UMASK_VNA_CREDIT_RETURN_OCCUPANCY       0x00 0x01
 
-EVENT_QBOX_RATE_STATUS                  0x00 QBOX0FIX0|QBOX1FIX0
-UMASK_QBOX_RATE_STATUS                  0x00
+EVENT_QPI_RATE                          0x00 QBOX0FIX0|QBOX1FIX0
+UMASK_QPI_RATE                          0x00
 
-EVENT_QBOX_RX_IDLE                      0x01 QBOX0FIX1|QBOX1FIX1
-UMASK_QBOX_RX_IDLE                      0x00
+EVENT_QPI_RX_IDLE                       0x01 QBOX0FIX1|QBOX1FIX1
+UMASK_QPI_RX_IDLE                       0x00
 
-EVENT_QBOX_RX_LLR                       0x02 QBOX0FIX2|QBOX1FIX2
-UMASK_QBOX_RX_LLR                       0x00
+EVENT_QPI_RX_LLR                        0x02 QBOX0FIX2|QBOX1FIX2
+UMASK_QPI_RX_LLR                        0x00

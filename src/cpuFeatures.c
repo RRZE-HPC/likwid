@@ -60,11 +60,11 @@ CpuFeatureFlags cpuFeatureFlags;
 #define TEST_FLAG(feature,flag)  \
     if (flags & (1ULL<<(flag)))   \
     {                    \
-		cpuFeatureFlags.feature = 1; \
+        cpuFeatureFlags.feature = 1; \
     }                    \
     else                \
     {                \
-		cpuFeatureFlags.feature = 0; \
+        cpuFeatureFlags.feature = 0; \
     }
 
 
@@ -77,15 +77,15 @@ cpuFeatures_init(int cpu)
     uint64_t flags;
     ret = HPMread(cpu, MSR_DEV, MSR_IA32_MISC_ENABLE, &flags);
 
-	TEST_FLAG(fastStrings,0);
-	TEST_FLAG(thermalControl,3);
-	TEST_FLAG(perfMonitoring,7);
-	TEST_FLAG(branchTraceStorage,11);
-	TEST_FLAG(pebs,12);
-	TEST_FLAG(speedstep,16);
-	TEST_FLAG(monitor,18);
-	TEST_FLAG(cpuidMaxVal,22);
-	TEST_FLAG(xdBit,34);
+    TEST_FLAG(fastStrings,0);
+    TEST_FLAG(thermalControl,3);
+    TEST_FLAG(perfMonitoring,7);
+    TEST_FLAG(branchTraceStorage,11);
+    TEST_FLAG(pebs,12);
+    TEST_FLAG(speedstep,16);
+    TEST_FLAG(monitor,18);
+    TEST_FLAG(cpuidMaxVal,22);
+    TEST_FLAG(xdBit,34);
 
     if ((cpuid_info.model == NEHALEM) ||
             (cpuid_info.model == NEHALEM_BLOOMFIELD) ||

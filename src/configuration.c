@@ -8,7 +8,7 @@
 
 #include <configuration.h>
 
-Configuration config = {NULL,NULL,-1,0,0,0};
+Configuration config = {NULL,NULL,-1,MAX_NUM_THREADS,MAX_NUM_NODES};
 int init_config = 0;
 
 int init_configuration(void)
@@ -17,25 +17,29 @@ int init_configuration(void)
     char line[512];
     char name[128];
     char value[256];
-    char filename[512] = "";
-    
-    if (access("/usr/local/etc/likwid.cfg", R_OK) != 0)
+    char filename[1024];
+    filename[0] = '\0';
+    char preconfigured[1024];
+    preconfigured[0] = '\0';
+    sprintf(preconfigured, "%s%s",TOSTRING(INSTALL_PREFIX),"/etc/likwid.cfg");
+
+    if (access(preconfigured, R_OK) != 0)
     {
-        if (access("/etc/likwid.cfg", R_OK) != 0)
+        if (access(TOSTRING(CFGFILE), R_OK) != 0)
         {
-            if (!access("./likwid.cfg",R_OK))
+            if (!access("/etc/likwid.cfg",R_OK))
             {
-                sprintf(filename,"./likwid.cfg");
+                sprintf(filename,"%s", "/etc/likwid.cfg");
             }
         }
         else
         {
-            sprintf(filename,"/etc/likwid.cfg");
+            sprintf(filename,"%s",TOSTRING(CFGFILE));
         }
-    } 
+    }
     else
     {
-        sprintf(filename,"/usr/local/etc/likwid.cfg");
+        sprintf(filename, "%s",preconfigured);
     }
 
     if (strlen(filename) == 0)
@@ -43,6 +47,10 @@ int init_configuration(void)
         return -EFAULT;
     }
     fp = fopen(filename, "r");
+    if (fp == NULL)
+    {
+        return -EFAULT;
+    }
 
     while (fgets(line, 512, fp) != NULL) {
         if (sscanf(line,"%s = %s", name, value) != 2)
@@ -79,10 +87,6 @@ int init_configuration(void)
         else if (strcmp(name, "max_nodes") == 0)
         {
             config.maxNumNodes = atoi(value);
-        }
-        else if (strcmp(name, "max_hashtable_size") == 0)
-        {
-            config.maxHashTableSize = atoi(value);
         }
     }
     

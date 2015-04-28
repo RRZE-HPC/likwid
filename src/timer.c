@@ -34,7 +34,8 @@
 #include <sys/time.h>
 
 #include <types.h>
-#include <timer.h>
+#include <likwid.h>
+//#include <timer_types.h>
 
 static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
@@ -143,4 +144,39 @@ uint64_t timer_getBaseline( void )
     return baseline;
 }
 
+void timer_start( TimerData* time )
+{
+#ifdef __x86_64
+    RDTSC(time->start);
+#endif
+#ifdef _ARCH_PPC
+    uint32_t tbl, tbu0, tbu1;
+
+    do {
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
+        __asm__ __volatile__ ("mftb %0" : "=r"(tbl));
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
+    } while (tbu0 != tbu1);
+
+    time->start.int64 = (((uint64_t)tbu0) << 32) | tbl;
+#endif
+}
+
+
+void timer_stop( TimerData* time )
+{
+#ifdef __x86_64
+    RDTSC_STOP(time->stop)
+#endif
+#ifdef _ARCH_PPC
+    uint32_t tbl, tbu0, tbu1;
+    do {
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
+        __asm__ __volatile__ ("mftb %0" : "=r"(tbl));
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
+    } while (tbu0 != tbu1);
+
+    time->stop.int64 = (((uint64_t)tbu0) << 32) | tbl;
+#endif
+}
 

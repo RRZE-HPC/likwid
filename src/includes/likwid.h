@@ -8,10 +8,12 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Authors:  Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *                Jan Treibig (jt), jan.treibig@gmail.com,
+ *
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2015 Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -56,12 +58,20 @@ Shortcut for likwid_markerInit() if compiled with -DLIKWID_PERFMON. Otherwise no
 Shortcut for likwid_markerThreadInit() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
-\def LIKWID_MARKER_START(reg)
-Shortcut for likwid_markerStartRegion() with \a reg as regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
+\def LIKWID_MARKER_START(regionTag)
+Shortcut for likwid_markerStartRegion() with \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
-\def LIKWID_MARKER_STOP(reg)
-Shortcut for likwid_markerStopRegion() with \a reg as regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
+\def LIKWID_MARKER_STOP(regionTag)
+Shortcut for likwid_markerStopRegion() with \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
+*/
+/*!
+\def LIKWID_MARKER_GET(regionTag, nevents, events, time, count)
+Shortcut for likwid_markerGetResults() for \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
+*/
+/*!
+\def LIKWID_MARKER_SWITCH
+Shortcut for likwid_markerNextGroup() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
 \def LIKWID_MARKER_CLOSE
@@ -73,16 +83,18 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #define LIKWID_MARKER_INIT likwid_markerInit()
 #define LIKWID_MARKER_THREADINIT likwid_markerThreadInit()
 #define LIKWID_MARKER_SWITCH likwid_markerNextGroup()
-#define LIKWID_MARKER_START(reg) likwid_markerStartRegion(reg)
-#define LIKWID_MARKER_STOP(reg) likwid_markerStopRegion(reg)
+#define LIKWID_MARKER_START(regionTag) likwid_markerStartRegion(regionTag)
+#define LIKWID_MARKER_STOP(regionTag) likwid_markerStopRegion(regionTag)
 #define LIKWID_MARKER_CLOSE likwid_markerClose()
+#define LIKWID_MARKER_GET(regionTag, nevents, events, time, count) likwid_markerGetResults(regionTag, nevents, events, time, count)
 #else
 #define LIKWID_MARKER_INIT
 #define LIKWID_MARKER_THREADINIT
 #define LIKWID_MARKER_SWITCH
-#define LIKWID_MARKER_START(reg)
-#define LIKWID_MARKER_STOP(reg)
+#define LIKWID_MARKER_START(regionTag)
+#define LIKWID_MARKER_STOP(regionTag)
 #define LIKWID_MARKER_CLOSE
+#define LIKWID_MARKER_GET(regionTag, nevents, events, time, count)
 #endif
 
 #ifdef __cplusplus
@@ -146,6 +158,16 @@ in regionTag. The measurement data of the stopped region gets summed up in globa
 */
 extern int likwid_markerStopRegion(const char* regionTag);
 
+/*! \brief Get accumulated data of a code region
+
+Get the accumulated data of the current thread for the given regionTag.
+@param regionTag [in] Print data using this string
+@param nr_events [in] Length of events array
+@param events [out] Events array for the intermediate results
+@param time [out] Accumulated measurement time
+@param count [out] Call count of the code region
+*/
+extern void likwid_markerGetRegion(const char* regionTag, int nr_events, double* events, double *time, int *count);
 /* utility routines */
 /*! \brief Get CPU ID of the current process/thread
 
@@ -234,7 +256,6 @@ typedef struct {
     AccessMode daemonMode; /*!< \brief Access mode to the MSR and PCI registers */
     int maxNumThreads; /*!< \brief Maximum number of HW threads */
     int maxNumNodes; /*!< \brief Maximum number of NUMA nodes */
-    int maxHashTableSize; /*!< \brief Maximal hash table size used for the marker API */
 } Configuration;
 
 /** \brief Pointer for exporting the Configuration data structure */
@@ -549,7 +570,12 @@ extern void affinity_pinThread(int processorId);
 
 @return CPU ID
 */
-int affinity_processGetProcessorId();
+extern int affinity_processGetProcessorId();
+/*! \brief Return the CPU ID where the current thread runs.
+
+@return CPU ID
+*/
+extern int affinity_threadGetProcessorId();
 /*! \brief Destroy affinity information structure
 
 Destroys the affinity information structure AffinityDomains_t. Retrieved pointers
@@ -576,12 +602,7 @@ The access mode must already be set when calling perfmon_init()
 @return error code (0 on success, -ERRORCODE on failure)
 */
 extern int perfmon_init(int nrThreads, int threadsToCpu[]);
-/*! \brief Initialize accessClient
 
-This is only needed if hardware performance counter should be accessed simultaneously
-by multiple threads.
-*/
-extern void perfmon_accessClientInit(void);
 /*! \brief Initialize performance monitoring maps
 
 Initialize the performance monitoring maps for counters, events and Uncore boxes#
@@ -690,6 +711,70 @@ extern int perfmon_getIdOfActiveGroup(void);
 extern int perfmon_getNumberOfThreads(void);
 /** @}*/
 
+/*
+################################################################################
+# Time measurements related functions
+################################################################################
+*/
+
+/** \addtogroup TimerMon Time measurement module
+ *  @{
+ */
+
+/*! \brief Struct defining the start and stop time of a time interval
+\extends TimerData
+*/
+typedef union
+{
+    uint64_t int64; /*!< \brief Cycle count in 64 bit */
+    struct {uint32_t lo, hi;} int32; /*!< \brief Cycle count stored in two 32 bit fields */
+} TscCounter;
+
+/*! \brief Struct defining the start and stop time of a time interval
+*/
+typedef struct {
+    TscCounter start; /*!< \brief Cycles at start */
+    TscCounter stop; /*!< \brief Cycles at stop */
+} TimerData;
+
+/*! \brief Initialize timer by retrieving baseline frequency and cpu clock
+*/
+extern void timer_init( void );
+/*! \brief Return the measured interval in seconds
+
+@param [in] time Structure holding the cycle count at start and stop
+@return Time in seconds
+*/
+extern double timer_print( TimerData* time);
+/*! \brief Return the measured interval in cycles
+
+@param [in] time Structure holding the cycle count at start and stop
+@return Time in cycles
+*/
+extern uint64_t timer_printCycles( TimerData* time);
+/*! \brief Return the CPU clock determined at timer_init
+
+@return CPU clock
+*/
+extern uint64_t timer_getCpuClock( void );
+/*! \brief Return the baseline CPU clock determined at timer_init
+
+@return Baseline CPU clock
+*/
+extern uint64_t timer_getBaseline( void );
+/*! \brief Start time measurement
+
+@param [in,out] time Structure holding the cycle count at start
+*/
+extern void timer_start( TimerData* time );
+/*! \brief Stop time measurement
+
+@param [in,out] time Structure holding the cycle count at stop
+*/
+extern void timer_stop ( TimerData* time);
+
+/** @}*/
+
 /* 
 ################################################################################
 # Power measurements related functions
@@ -714,22 +799,22 @@ Flag to check in PowerDomain's supportFlag if the status msr registers are avail
 */
 #define POWER_DOMAIN_SUPPORT_STATUS (1ULL<<0)
 /*!
-\def POWER_DOMAIN_SUPPORT_STATUS
+\def POWER_DOMAIN_SUPPORT_LIMIT
 Flag to check in PowerDomain's supportFlag if the limit msr registers are available
 */
 #define POWER_DOMAIN_SUPPORT_LIMIT (1ULL<<1)
 /*!
-\def POWER_DOMAIN_SUPPORT_STATUS
+\def POWER_DOMAIN_SUPPORT_POLICY
 Flag to check in PowerDomain's supportFlag if the policy msr registers are available
 */
 #define POWER_DOMAIN_SUPPORT_POLICY (1ULL<<2)
 /*!
-\def POWER_DOMAIN_SUPPORT_STATUS
+\def POWER_DOMAIN_SUPPORT_PERF
 Flag to check in PowerDomain's supportFlag if the perf msr registers are available
 */
 #define POWER_DOMAIN_SUPPORT_PERF (1ULL<<3)
 /*!
-\def POWER_DOMAIN_SUPPORT_STATUS
+\def POWER_DOMAIN_SUPPORT_INFO
 Flag to check in PowerDomain's supportFlag if the info msr registers are available
 */
 #define POWER_DOMAIN_SUPPORT_INFO (1ULL<<4)
@@ -744,6 +829,7 @@ typedef struct {
 } TurboBoost;
 
 /*! \brief Enum for all supported RAPL domains
+\extends PowerDomain
 */
 typedef enum {
     PKG = 0, /*!< \brief PKG domain, mostly one CPU socket/package */
@@ -756,7 +842,7 @@ typedef enum {
 \extends PowerInfo
 */
 typedef struct {
-    PowerType type;
+    PowerType type; /*!< \brief Identifier which RAPL domain is managed by this struct */
     uint32_t supportFlags; /*!< \brief Bitmask which features are supported by the power domain */
     double energyUnit; /*!< \brief Multiplier for energy measurements */
     double tdp; /*!< \brief Thermal Design Power (maximum amount of heat generated by the CPU) */
@@ -850,32 +936,31 @@ extern double power_printEnergy(PowerData* data);
 @return Power unit of the given RAPL domain
 */
 extern double power_getEnergyUnit(int domain);
-/*! \brief Free space of power_unit
 
 /*! \brief Get the values of the limit register of a domain
 
-@param [in] cpu id
+@param [in] cpuId CPU ID
 @param [in] domain RAPL domain ID
-@param [out] power limit
-@param [out] time limit
+@param [out] power Power limit
+@param [out] time Time limit
 @return error code
 */
 int power_limitGet(int cpuId, PowerType domain, double* power, double* time);
 
 /*! \brief Set the values of the limit register of a domain
 
-@param [in] cpu id
+@param [in] cpuId CPU ID
 @param [in] domain RAPL domain ID
-@param [in] power limit
-@param [in] time limit
-@param [in] activate clamping (going below OS-requested power level)
+@param [in] power Power limit
+@param [in] time Time limit
+@param [in] doClamping Activate clamping (going below OS-requested power level)
 @return error code
 */
 int power_limitSet(int cpuId, PowerType domain, double power, double time, int doClamping);
 
 /*! \brief Get the state of a power limit, activated or deactivated
 
-@param [in] cpu id
+@param [in] cpuId CPU ID
 @param [in] domain RAPL domain ID
 @return state, 1 for active, 0 for inactive
 */

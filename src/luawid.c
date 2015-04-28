@@ -53,9 +53,6 @@ static int lua_likwid_getConfiguration(lua_State* L)
     lua_pushstring(L, "maxNumNodes");
     lua_pushinteger(L, config->maxNumNodes);
     lua_settable(L,-3);
-    lua_pushstring(L, "maxHashTabelSize");
-    lua_pushinteger(L, config->maxHashTableSize);
-    lua_settable(L,-3);
     return 1;
 }
 
@@ -83,7 +80,7 @@ static int lua_likwid_init(lua_State* L)
 {
     int ret;
     int nrThreads = luaL_checknumber(L,1);
-    luaL_argcheck(L, nrThreads > 0, 1, "Thread count must be greater than 0");
+    luaL_argcheck(L, nrThreads > 0, 1, "CPU count must be greater than 0");
     int cpus[nrThreads];
     if (!lua_istable(L, -1)) {
       lua_pushstring(L,"No table given as second argument");
@@ -129,7 +126,7 @@ static int lua_likwid_addEventSet(lua_State* L)
     n = lua_gettop(L);
     tmpString = luaL_checkstring(L, n);
     luaL_argcheck(L, strlen(tmpString) > 0, n, "Event string must be larger than 0");
-    
+
     groupId = perfmon_addEventSet((char*)tmpString);
     lua_pushnumber(L, groupId+1);
     return 1;
@@ -200,7 +197,7 @@ static int lua_likwid_getResult(lua_State* L)
     groupId = lua_tonumber(L,1);
     eventId = lua_tonumber(L,2);
     threadId = lua_tonumber(L,3);
-    result = perfmon_getResult(groupId-1, eventId, threadId);
+    result = perfmon_getResult(groupId-1, eventId-1, threadId-1);
     lua_pushnumber(L,result);
     return 1;
 }
@@ -520,7 +517,7 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
     lua_newtable(L);
     lua_pushstring(L,"Counters");
     lua_newtable(L);
-    for(i=1;i<perfmon_numCounters;i++)
+    for(i=1;i<=perfmon_numCounters;i++)
     {
         optStringIndex = 0;
         optString[0] = '\0';
@@ -709,15 +706,6 @@ static int lua_likwid_getNumaInfo(lua_State* L)
             lua_pushunsigned(L,numa->nodes[i].distances[j]);
             lua_settable(L,-3);
             lua_settable(L,-3);
-            /*lua_pushstring(L,"src");
-            lua_pushunsigned(L,i);
-            lua_settable(L,-3);
-            lua_pushstring(L,"dest");
-            lua_pushunsigned(L,j);
-            lua_settable(L,-3);
-            lua_pushstring(L,"distance");
-            lua_pushunsigned(L,numa->nodes[i].distances[j]);
-            lua_settable(L,-3);*/
         }
         lua_settable(L,-3);
         
@@ -1002,8 +990,8 @@ static int lua_likwid_startPower(lua_State* L)
     int cpuId = lua_tonumber(L,1);
     luaL_argcheck(L, cpuId >= 0, 1, "CPU ID must be greater than 0");
     PowerType type = (PowerType) lua_tounsigned(L,2);
-    luaL_argcheck(L, type >= PKG && type <= DRAM, 2, "Type not valid");
-    power_start(&pwrdata, cpuId, type);
+    luaL_argcheck(L, type >= PKG+1 && type <= DRAM+1, 2, "Type not valid");
+    power_start(&pwrdata, cpuId, type-1);
     lua_pushnumber(L,pwrdata.before);
     return 1;
 }
@@ -1014,8 +1002,8 @@ static int lua_likwid_stopPower(lua_State* L)
     int cpuId = lua_tonumber(L,1);
     luaL_argcheck(L, cpuId >= 0, 1, "CPU ID must be greater than 0");
     PowerType type = (PowerType) lua_tounsigned(L,2);
-    luaL_argcheck(L, type >= PKG && type <= DRAM, 2, "Type not valid");
-    power_stop(&pwrdata, cpuId, type);
+    luaL_argcheck(L, type >= PKG+1 && type <= DRAM+1, 2, "Type not valid");
+    power_stop(&pwrdata, cpuId, type-1);
     lua_pushnumber(L,pwrdata.after);
     return 1;
 }
@@ -1212,6 +1200,28 @@ static int lua_likwid_stopDaemon(lua_State* L)
     return 0;
 }
 
+static volatile int recv_sigint = 0;
+static void signal_catcher(int signo) 
+{
+    if (signo == SIGINT)
+    {
+        recv_sigint++;
+    }
+    return;
+}
+
+static int lua_likwid_catch_signal(lua_State* L)
+{
+    signal(SIGINT,signal_catcher);
+    return 0;
+}
+
+static int lua_likwid_return_signal_state(lua_State* L)
+{
+    lua_pushnumber(L, recv_sigint);
+    return 1;
+}
+
 void parse(char *line, char **argv)
 {
      while (*line != '\0') {       /* if not the end of line ....... */ 
@@ -1235,7 +1245,6 @@ static int lua_likwid_startProgram(lua_State* L)
 {
     pid_t pid, ppid;
     int status;
-    int sigstatus;
     char *exec;
     char  *argv[4096];
     exec = (char *)luaL_checkstring(L, 1);
@@ -1269,14 +1278,6 @@ static int lua_likwid_startProgram(lua_State* L)
 
 static int lua_likwid_checkProgram(lua_State* L)
 {
-    /*pid_t pid = lua_tonumber(L, 1);
-    int status;
-    if (wait(&status) == pid)
-    {
-        signal(SIGCHLD, SIG_DFL);
-        lua_pushboolean(L, 1);
-        return 1;
-    }*/
     lua_pushboolean(L, program_running);
     return 1;
 }
@@ -1292,7 +1293,7 @@ static int lua_likwid_killProgram(lua_State* L)
 
 static int lua_likwid_memSweep(lua_State* L)
 {
-    int ret;
+    int i;
     int nrThreads = luaL_checknumber(L,1);
     luaL_argcheck(L, nrThreads > 0, 1, "Thread count must be greater than 0");
     int cpus[nrThreads];
@@ -1300,10 +1301,10 @@ static int lua_likwid_memSweep(lua_State* L)
       lua_pushstring(L,"No table given as second argument");
       lua_error(L);
     }
-    for (ret = 1; ret<=nrThreads; ret++)
+    for (i = 1; i <= nrThreads; i++)
     {
-        lua_rawgeti(L,-1,ret);
-        cpus[ret-1] = lua_tounsigned(L,-1);
+        lua_rawgeti(L,-1,i);
+        cpus[i-1] = lua_tounsigned(L,-1);
         lua_pop(L,1);
     }
     memsweep_threadGroup(cpus, nrThreads);
@@ -1312,7 +1313,6 @@ static int lua_likwid_memSweep(lua_State* L)
 
 static int lua_likwid_memSweepDomain(lua_State* L)
 {
-    int ret;
     int domain = luaL_checknumber(L,1);
     luaL_argcheck(L, domain >= 0, 1, "Domain ID must be greater or equal 0");
     memsweep_domain(domain);
@@ -1321,7 +1321,6 @@ static int lua_likwid_memSweepDomain(lua_State* L)
 
 static int lua_likwid_pinProcess(lua_State* L)
 {
-    int ret;
     int cpuID = luaL_checknumber(L,-2);
     int silent = luaL_checknumber(L,-1);
     luaL_argcheck(L, cpuID >= 0, 1, "CPU ID must be greater or equal 0");
@@ -1330,7 +1329,7 @@ static int lua_likwid_pinProcess(lua_State* L)
         affinity_init();
         affinity_isInitialized = 1;
     }
-    affinity_pinThread(cpuID);
+    affinity_pinProcess(cpuID);
     if (!silent)
     {
 #ifdef COLOR
@@ -1450,5 +1449,7 @@ int luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_killProgram", lua_likwid_killProgram);
     // Verbosity functions
     lua_register(L, "likwid_setVerbosity", lua_likwid_setVerbosity);
+    lua_register(L, "likwid_catchSignal", lua_likwid_catch_signal);
+    lua_register(L, "likwid_getSignalState", lua_likwid_return_signal_state);
     return 0;
 }

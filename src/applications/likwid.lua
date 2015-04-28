@@ -3,12 +3,12 @@ package.cpath = package.cpath .. ';<PREFIX>/lib/?.so'
 require("liblikwid")
 require("math")
 
-likwid.groupfolder = "<PREFIX>/share/likwid"
+likwid.groupfolder = "<PREFIX>/share/likwid/perfgroups"
 
 likwid.version = <VERSION>
 likwid.release = <RELEASE>
 likwid.pinlibpath = "<PREFIX>/lib/liblikwidpin.so"
-likwid.dline = string.rep("=",24)
+likwid.dline = string.rep("=",80)
 likwid.hline =  string.rep("-",80)
 likwid.sline = string.rep("*",80)
 
@@ -70,10 +70,85 @@ likwid.access = likwid_access
 likwid.startProgram = likwid_startProgram
 likwid.checkProgram = likwid_checkProgram
 likwid.killProgram = likwid_killProgram
+likwid.catchSignal = likwid_catchSignal
+likwid.getSignalState = likwid_getSignalState
 
 infinity = math.huge
 
-local function getopt(args, ostr)
+
+local function getopt(args, ostrlist)
+    local arg, place,placeend = nil, 0, 0;
+    return function ()
+        if place == 0 then -- update scanning pointer
+            place = 1
+            if #args == 0 or args[1]:sub(1, 1) ~= '-' then place = 0; return nil end
+            if #args[1] >= 2 then
+                if args[1]:sub(2, 2) == '-' then
+                    if #args[1] == 2 then -- found "--"
+                        place = 0
+                        table.remove(args, 1);
+                        return nil;
+                    end
+                    place = place + 1
+                end
+                if args[1]:sub(3, 3) == '-' then
+                    place = 0
+                    table.remove(args, 1);
+                    return nil;
+                end
+                place = place + 1
+                placeend = #args[1]
+            end
+        end
+        local optopt = args[1]:sub(place, placeend)
+        place = place + 1;
+        local givopt = ""
+        local needarg = false
+        for _, ostr in pairs(ostrlist) do
+            local matchstring = "^"..ostr.."$"
+            placeend = place + #ostr -1
+            if ostr:sub(#ostr,#ostr) == ":" then
+                matchstring = "^"..ostr:sub(1,#ostr-1).."$"
+                needarg = true
+                placeend = place + #ostr -2
+            end
+            if optopt:match(matchstring) then
+                givopt = ostr
+                break
+            end
+            needarg = false
+        end
+        if givopt == "" then -- unknown option
+            if optopt == '-' then return nil end
+            if place > #args[1] then
+                table.remove(args, 1);
+                place = 0;
+            end
+            return '?';
+        end
+
+        if not needarg then -- do not need argument
+            arg = true;
+            table.remove(args, 1);
+            place = 0;
+        else -- need an argument
+            if placeend < #args[1] then -- no white space
+                arg = args[1]:sub(placeend,#args[1]);
+            else
+                table.remove(args, 1);
+                if #args == 0 then -- an option requiring argument is the last one
+                    place = 0;
+                    if givopt:sub(placeend, placeend) == ':' then return ':' end
+                    return '?';
+                else arg = args[1] end
+            end
+            table.remove(args, 1);
+            place = 0;
+        end
+        return optopt, arg;
+    end
+end
+--[[local function getopt(args, ostr)
     local arg, place = nil, 0;
     return function ()
         if place == 0 then -- update scanning pointer
@@ -122,13 +197,14 @@ local function getopt(args, ostr)
         end
         return optopt, arg;
     end
-end
+end]]
 
 likwid.getopt = getopt
 
 local function tablelength(T)
     local count = 0
     if T == nil then return count end
+    if type(T) ~= "table" then return count end
     for _ in pairs(T) do count = count + 1 end
     return count
 end
@@ -136,7 +212,7 @@ end
 likwid.tablelength = tablelength
 
 local function tableprint(T, long)
-    if T == nil or tablelength(T) == 0 then
+    if T == nil or type(T) ~= "table" or tablelength(T) == 0 then
         print("[]")
         return
     end
@@ -271,7 +347,7 @@ end
 
 likwid.printtable = printtable
 
-function printcsv(tab, linelength)
+local function printcsv(tab, linelength)
     local nr_columns = tablelength(tab)
     if nr_columns == 0 then
         print("Table has no columns. Empty table?")
@@ -296,7 +372,7 @@ end
 
 likwid.printcsv = printcsv
 
-function stringsplit(astr, sSeparator, nMax, bRegexp)
+local function stringsplit(astr, sSeparator, nMax, bRegexp)
     assert(sSeparator ~= '')
     assert(nMax == nil or nMax >= 1)
     if astr == nil then return {} end
@@ -653,10 +729,17 @@ end
 
 likwid.sockstr_to_socklist = sockstr_to_socklist
 
-local function get_groups(architecture)
+local function get_groups()
     groups = {}
-    local f = io.popen("ls " .. likwid.groupfolder .. "/" .. architecture .."/*.txt")
+    local cpuinfo = likwid.getCpuInfo()
+    if cpuinfo == nil then return 0, {} end
+    local f = io.popen("ls " .. likwid.groupfolder .. "/" .. cpuinfo["short_name"] .."/*.txt 2>/dev/null")
+    if f == nil then
+        print("Cannot read groups for architecture "..cpuinfo["short_name"])
+        return 0, {}
+    end
     t = stringsplit(f:read("*a"),"\n")
+    f:close()
     for i, a in pairs(t) do
         if a ~= "" then
             table.insert(groups,a:sub((a:match'^.*()/')+1,a:len()-4))
@@ -689,22 +772,21 @@ local function new_groupdata(eventString)
     return gdata
 end
 
-likwid.new_groupdata = new_groupdata
+--likwid.new_groupdata = new_groupdata
 
 local function get_groupdata(group)
     groupdata = {}
     local group_exist = 0
     local cpuinfo = likwid.getCpuInfo()
     if cpuinfo == nil then return nil end
-    
-    local architecture = cpuinfo["short_name"]
-    num_groups, groups = get_groups(architecture)
+
+    num_groups, groups = get_groups()
     for i, a in pairs(groups) do
         if (a == group) then group_exist = 1 end
     end
     if (group_exist == 0) then return new_groupdata(group) end
     
-    local f = assert(io.open(likwid.groupfolder .. "/" .. architecture .. "/" .. group .. ".txt", "r"))
+    local f = assert(io.open(likwid.groupfolder .. "/" .. cpuinfo["short_name"] .. "/" .. group .. ".txt", "r"))
     local t = f:read("*all")
     f:close()
     local parse_eventset = false
@@ -786,7 +868,6 @@ likwid.get_groupdata = get_groupdata
 
 local function parse_time(timestr)
     local duration = 0
-    local use_sleep = false
     local s1,e1 = timestr:find("ms")
     local s2,e2 = timestr:find("us")
     if s1 ~= nil then
@@ -800,9 +881,8 @@ local function parse_time(timestr)
             os.exit(1)
         end
         duration = tonumber(timestr:sub(1,s1-1)) * 1.E06
-        use_sleep = true
     end
-    return duration, use_sleep
+    return duration
 end
 
 likwid.parse_time = parse_time
@@ -874,7 +954,7 @@ local function tableMinMaxAvgSum(inputtable, skip_cols, skip_lines)
     return outputtable
 end
 
-likwid.tableMinMaxAvgSum = tableMinMaxAvgSum
+likwid.tableToMinMaxAvgSum = tableMinMaxAvgSum
 
 local function printOutput(groups, results, groupData, cpulist)
     local nr_groups = #groups
@@ -926,7 +1006,8 @@ local function printOutput(groups, results, groupData, cpulist)
         end
         
         if #cpulist > 1 then
-            local mins = {}
+            firsttab_combined = tableMinMaxAvgSum(firsttab, 2, 1)
+            --[[local mins = {}
             local maxs = {}
             local sums = {}
             local avgs = {}
@@ -965,7 +1046,7 @@ local function printOutput(groups, results, groupData, cpulist)
             table.insert(firsttab_combined, sums)
             table.insert(firsttab_combined, maxs)
             table.insert(firsttab_combined, mins)
-            table.insert(firsttab_combined, avgs)
+            table.insert(firsttab_combined, avgs)]]
         end
         
         if groupData[groupID]["Metrics"] then
@@ -995,7 +1076,8 @@ local function printOutput(groups, results, groupData, cpulist)
             end
 
             if #cpulist > 1 then
-                mins = {}
+                secondtab_combined = tableMinMaxAvgSum(secondtab, 1, 1)
+                --[[mins = {}
                 maxs = {}
                 sums = {}
                 avgs = {}
@@ -1046,7 +1128,7 @@ local function printOutput(groups, results, groupData, cpulist)
                 table.insert(secondtab_combined, sums)
                 table.insert(secondtab_combined, maxs)
                 table.insert(secondtab_combined, mins)
-                table.insert(secondtab_combined, avgs)
+                table.insert(secondtab_combined, avgs)]]
 
             end
         end
@@ -1136,7 +1218,8 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                 end
 
                 if #cpulist > 1 then
-                    local mins = {}
+                    firsttab_combined = tableMinMaxAvgSum(firsttab, 2, 1)
+                    --[[local mins = {}
                     local maxs = {}
                     local sums = {}
                     local avgs = {}
@@ -1175,7 +1258,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                     table.insert(firsttab_combined, sums)
                     table.insert(firsttab_combined, maxs)
                     table.insert(firsttab_combined, mins)
-                    table.insert(firsttab_combined, avgs)
+                    table.insert(firsttab_combined, avgs)]]
                 end
 
 
@@ -1208,7 +1291,8 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                     end
 
                     if #cpulist > 1 then
-                        mins = {}
+                        secondtab_combined = tableMinMaxAvgSum(firsttab, 2, 1)
+                        --[[mins = {}
                         maxs = {}
                         sums = {}
                         avgs = {}
@@ -1281,7 +1365,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                         for m=1,#avgs do
                             table.insert(tmpList, avgs[m])
                         end
-                        table.insert(secondtab_combined, tmpList)
+                        table.insert(secondtab_combined, tmpList)]]
 
                     end
                 end
@@ -1337,7 +1421,7 @@ end
 
 likwid.print_markerOutput = printMarkerOutput
 
-function getResults()
+local function getResults()
     local results = {}
     local nr_groups = likwid_getNumberOfGroups()
     local nr_threads = likwid_getNumberOfThreads()
@@ -1347,7 +1431,7 @@ function getResults()
         for j=1,nr_events do
             results[i][j] = {}
             for k=1, nr_threads do
-                results[i][j][k] = likwid_getResult(i,j-1,k-1)
+                results[i][j][k] = likwid_getResult(i,j,k)
             end
         end
     end
@@ -1356,7 +1440,7 @@ end
 
 likwid.getResults = getResults
 
-function getMarkerResults(filename, group_list, num_cpus)
+local function getMarkerResults(filename, group_list, num_cpus)
     local cpuinfo = likwid_getCpuInfo()
     local ctr_and_events = likwid_getEventsAndCounters()
     local group_data = {}

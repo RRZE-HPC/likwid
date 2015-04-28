@@ -13,6 +13,8 @@
 
 extern int maxIdConfiguredNode;
 
+extern int str2int(const char* str);
+
 struct numa_functions {
     int (*numa_init) (void);
     void (*numa_setInterleaved) (int*, int);

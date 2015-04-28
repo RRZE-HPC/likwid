@@ -65,17 +65,17 @@ for i,_ in pairs(numainfo["nodes"]) do
     end
 end
 
-for opt,arg in likwid.getopt(arg, "c:hv") do
-    if (opt == "h") then
+for opt,arg in likwid.getopt(arg, {"c:", "h", "v", "help", "version"}) do
+    if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
-    elseif (opt == "v") then
+    elseif opt == "v" or opt == "version" then
         version()
         os.exit(0)
     elseif (opt == "c") then
         num_nodes, nodes = likwid.nodestr_to_nodelist(arg)
     else
-        print("Unknown option found on commanlikwid.dline")
+        print("Unknown option found on commandline")
         usage()
         os.exit(1)
     end

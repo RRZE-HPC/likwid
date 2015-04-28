@@ -5,12 +5,13 @@
  *
  *      Filename:  likwid-mpirun.lua
  *
- *      Description:  
+ *      Description: A wrapper script to pin threads spawned by MPI processes and 
+ *                   measure hardware performance counters
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Thomas Roehl (tr), thomas.roehl@gmail.com
+ *      Author:  Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2015 Thomas Roehl
@@ -39,19 +40,19 @@ end
 local function examples()
     print("Examples:")
     print("Run 32 processes on hosts in hostlist")
-    print("$> likwid-mpirun -np 32 ./a.out")
+    print("likwid-mpirun -np 32 ./a.out")
     print("")
     print("Run 1 MPI process on each socket")
-    print("$> likwid-mpirun -nperdomain S:1 ./a.out")
+    print("likwid-mpirun -nperdomain S:1 ./a.out")
     print("Total amount of MPI processes is calculated using the number of hosts in the hostfile")
     print("")
     print("For hybrid MPI/OpenMP jobs you need to set the -pin option")
     print("Starts 2 MPI processes on each host, one on socket 0 and one on socket 1")
     print("Each MPI processes starts 2 OpenMP threads pinned to the same socket")
-    print("$> likwid-mpirun -pin S0:2_S1:2 ./a.out")
+    print("likwid-mpirun -pin S0:2_S1:2 ./a.out")
     print("")
     print("Run 2 processes on each socket and measure the MEM performance group")
-    print("$> likwid-mpirun -nperdomain S:2 -g MEM ./a.out")
+    print("likwid-mpirun -nperdomain S:2 -g MEM ./a.out")
     print("Only one process on a socket measures the Uncore/RAPL counters, the other one(s) only core-local counters")
     print("")
 end
@@ -60,12 +61,13 @@ local function usage()
     version()
     print("A wrapper script to pin threads spawned by MPI processes and measure hardware performance counters.\n")
     print("Options:")
-    print("-h/-help\t\t Help message")
-    print("-v\t\t\t Version information")
-    print("-d\t\t\t Debugging output")
+    print("-h, --help\t\t Help message")
+    print("-v, --version\t\t Version information")
+    print("-d, --debug\t\t Debugging output")
     print("-n/-np <count>\t\t Set the number of processes")
     print("-nperdomain <domain>\t Set the number of processes per node by giving an affinity domain and count")
     print("-pin <list>\t\t Specify pinning of threads. CPU expressions like likwid-pin separated with '_'")
+    print("-s, --skip <hex>\t Bitmask with threads to skip")
     print("-mpi <id>\t\t Specify which MPI should be used. Possible values: openmpi, intelmpi and mvapich2")
     print("\t\t\t If not set, module system is checked")
     print("-g/-group <perf>\t Set a likwid-perfctr conform event set for measuring on nodes")
@@ -99,6 +101,9 @@ local LIKWID_PERFCTR="<PREFIX>/bin/likwid-perfctr"
 local MPIINFO = {}
 local MPIROOT = os.getenv("MPIHOME")
 if MPIROOT == nil then
+    MPIROOT = os.getenv("MPI_ROOT")
+end
+if MPIROOT == nil then
     print("Please load a MPI module or set path to MPI solder in MPIHOME environment variable")
     print("$MPIHOME/bin/<MPI launcher> should be valid")
     os.exit(1)
@@ -126,7 +131,7 @@ local function readHostfileOpenMPI(filename)
     end
     local t = f:read("*all")
     f:close()
-    for i, line in pairs(stringsplit(t,"\n")) do
+    for i, line in pairs(likwid.stringsplit(t,"\n")) do
         if line:match("^#") == nil and line:match("^%s*$") == nil then
             hostname, slots, maxslots = line:match("^([%.%a%d]+)%s+slots=(%d*)%s+max%-slots=(%d*)")
             if not hostname then
@@ -208,7 +213,7 @@ local function readHostfileIntelMPI(filename)
     end
     local t = f:read("*all")
     f:close()
-    for i, line in pairs(stringsplit(t,"\n")) do
+    for i, line in pairs(likwid.stringsplit(t,"\n")) do
         if line:match("^#") == nil and line:match("^%s*$") == nil then
             hostname, slots = line:match("^([%.%a%d]+):(%d+)")
             if not hostname then
@@ -279,7 +284,7 @@ local function readHostfileMvapich2(filename)
     end
     local t = f:read("*all")
     f:close()
-    for i, line in pairs(stringsplit(t,"\n")) do
+    for i, line in pairs(likwid.stringsplit(t,"\n")) do
         if line:match("^#") == nil and line:match("^%s*$") == nil then
             hostname, slots, interface = line:match("^([%.%a%d]+):(%d+):([%a%d]+)")
             if not hostname then
@@ -372,7 +377,7 @@ local function readHostfilePBS(filename)
     end
     local t = f:read("*all")
     f:close()
-    for i, line in pairs(stringsplit(t,"\n")) do
+    for i, line in pairs(likwid.stringsplit(t,"\n")) do
         if line:match("^#") == nil and line:match("^%s*$") == nil then
             hostname = line:match("^([%.%a%d]+)")
             local found = false
@@ -412,13 +417,21 @@ end
 local function getMpiType()
     local mpitype = nil
     cmd = "tclsh /apps/modules/modulecmd.tcl sh list -t 2>&1"
-    local f = io.popen(cmd, 'r')
+    local f,msg,ret = io.popen(cmd, 'r')
+    if ret ~= 0 then
+        f:close()
+        cmd = os.getenv("SHELL").." -c 'module -t 2>&1'"
+        f,msg,ret = io.popen(cmd, 'r')
+        if ret ~= 0 then
+            f:close()
+        end
+    end
     if f then
         local s = assert(f:read('*a'))
         f:close()
         s = string.gsub(s, '^%s+', '')
         s = string.gsub(s, '%s+$', '')
-        for i,line in pairs(stringsplit(s, "\n")) do
+        for i,line in pairs(likwid.stringsplit(s, "\n")) do
             if line:match("^intelmpi") then
                 mpitype = "intelmpi"
                 --libmpi%a*.so
@@ -455,13 +468,21 @@ local function getOmpType()
         print("WARN: Cannot get OpenMP variant from executable, trying module system")
         cmd = "tclsh /apps/modules/modulecmd.tcl sh list -t 2>&1"
         local f = io.popen(cmd, 'r')
+        if ret ~= 0 then
+            f:close()
+            cmd = os.getenv("SHELL").." -c 'module -t 2>&1'"
+            f,msg,ret = io.popen(cmd, 'r')
+            if ret ~= 0 then
+                f:close()
+            end
+        end
         if f then
             local s = assert(f:read('*a'))
             f:close()
             s = string.gsub(s, '^%s+', '')
             s = string.gsub(s, '%s+$', '')
-            for i,line in pairs(stringsplit(s, "\n")) do
-                if line:match("^intel64") then
+            for i,line in pairs(likwid.stringsplit(s, "\n")) do
+                if line:match("^intel") then
                     omptype = "intel"
                 elseif line:match("^gnu") then
                     omptype = "gnu"
@@ -553,12 +574,14 @@ local function assignHosts(hosts, np, ppn)
 end
 
 local function calculatePinExpr(cpuexprs)
-    newexprs = {}
+    local strList = {}
     for i, expr in pairs(cpuexprs) do
-        amount, liste = likwid.cpustr_to_cpulist(expr)
-        table.insert(newexprs, table.concat(liste,","))
+        amount, list = likwid.cpustr_to_cpulist(expr)
+        for _, c in pairs(list) do
+            table.insert(strList, c)
+        end
     end
-    return newexprs
+    return {table.concat(strList,",")}
 end
 
 local function calculateCpuExprs(nperdomain, cpuexprs)
@@ -566,7 +589,7 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
     local affinity = likwid.getAffinityInfo()
     local domainlist = {}
     local newexprs = {}
-    domainname, count = nperdomain:match("(%g*):(%d+)")
+    domainname, count = nperdomain:match("[E:]*(%g*):(%d+)")
 
     for i, domain in pairs(affinity["domains"]) do
         if domain["tag"]:match(domainname.."%d*") then
@@ -596,7 +619,7 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
         table.insert(newexprs, table.concat(tmplist,","))
     end
     if debug then
-        local str = "DEBUG: Resolved NperDomain string "..nperdomain.." to: "
+        local str = "DEBUG: Resolved NperDomain string "..nperdomain.." to CPUs: "
         for i, expr in pairs(newexprs) do
             str = str .. expr .. " "
         end
@@ -621,6 +644,19 @@ local function setPerfStrings(perflist, cpuexprs)
     local grouplist = {}
     local cpuinfo = likwid.getCpuInfo()
     local affinity = likwid.getAffinityInfo()
+    local socketList = {}
+    local socketListFlags = {}
+    for i, d in pairs(affinity["domains"]) do
+        if d["tag"]:match("S%d+") then
+            local tmpList = {}
+            for j,cpu in pairs(d["processorList"]) do
+                table.insert(tmpList, cpu)
+            end
+            table.insert(socketList, tmpList)
+            table.insert(socketListFlags, 1)
+        end
+    end
+
     for k, perfStr in pairs(perflist) do
         local gdata = nil
         gdata = likwid.get_groupdata(perfStr)
@@ -633,52 +669,44 @@ local function setPerfStrings(perflist, cpuexprs)
             end
 
             for i, e in pairs(gdata["Events"]) do
-                if not e["Counter"]:match("FIXC%d") and not e["Counter"]:match("PMC%d") and not e["Counter"]:match("TMP%d") then
+                if  not e["Counter"]:match("FIXC%d") and
+                    not e["Counter"]:match("^PMC%d") and
+                    not e["Counter"]:match("TMP%d") then
                     table.insert(uncoreevents, e)
                 else
                     table.insert(coreevents, e)
                 end
             end
+            
+            local tmpSocketFlags = {}
+            for _,e in pairs(socketListFlags) do
+                table.insert(tmpSocketFlags, e)
+            end
 
-            local start = 1
-            local current_list = nil
-            local testcpu = tonumber(likwid.stringsplit(cpuexprs[1],",")[1])
-            for i,d in pairs(affinity["domains"]) do
-                if d["tag"]:match("S%d") then
-                    for j=1,d["numberOfProcessors"] do
-                        if testcpu == d["processorList"][j] then
-                            current_list = d["processorList"]
-                            break
+            for i,cpuexpr in pairs(cpuexprs) do
+                for j, cpu in pairs(likwid.stringsplit(cpuexpr,",")) do
+                    local uncore = false
+                    for sidx, socket in pairs(socketList) do
+                        local switchedFlag = false
+                        for _,c in pairs(socket) do
+                            if c == tonumber(cpu) then
+                                if tmpSocketFlags[sidx] == 1 then
+                                    table.insert(perfexprs[k], createEventString(coreevents) ..","..createEventString(uncoreevents))
+                                    tmpSocketFlags[sidx] = 0
+                                    switchedFlag = true
+                                    uncore = true
+                                    break
+                                else
+                                    table.insert(perfexprs[k], createEventString(coreevents))
+                                end
+                            end
                         end
+                        if switchedFlag then break end
                     end
-                    if current_list ~= nil then
-                        break
-                    end
+                    if uncore then break end
                 end
             end
-            if #uncoreevents > 0 then
-                perfexprs[k][1] = createEventString(coreevents) ..","..createEventString(uncoreevents)
-                start = 2
-            end
-            for i=start,#cpuexprs do
-                local found = false
-                for j=1,#current_list do
-                    if current_list[j] == cpuexprs[i] then
-                        found = true
-                    end
-                end
-                if found or #uncoreevents == 0 then
-                    perfexprs[k][i] = createEventString(coreevents)
-                else
-                    perfexprs[k][i] = createEventString(coreevents) ..","..createEventString(uncoreevents)
-                    for i,d in pairs(affinity["domains"]) do
-                        if d["tag"]:match("S%d") and cpuexprs[i] == d["processorList"][1] then
-                            current_list = d["processorList"]
-                            break
-                        end
-                    end
-                end
-            end
+
             if debug then
                 for i, expr in pairs(perfexprs[k]) do
                     print(string.format("DEBUG: Process %d measures with event set: %s", i-1, expr))
@@ -770,8 +798,9 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     f:write("#!/bin/bash\n")
     f:write("GLOBALSIZE="..glsize_var.."\n")
     f:write("GLOBALRANK="..glrank_var.."\n")
+    f:write("unset OMP_NUM_THREADS\n")
     f:write("LOCALSIZE="..losize_var.."\n\n")
-    
+
     if mpitype == "openmpi" then
         f:write("LOCALRANK=$OMPI_COMM_WORLD_LOCAL_RANK\n\n")
     else
@@ -784,9 +813,9 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     end
 
     if #perf > 0 then
-        f:write("which "..LIKWID_PERFCTR.." 1>/dev/null 2>&1\n")
+        f:write("which `basename "..LIKWID_PERFCTR.."` 1>/dev/null 2>&1\n")
     else
-        f:write("which "..LIKWID_PIN.." 1>/dev/null 2>&1\n")
+        f:write("which `basename "..LIKWID_PIN.."` 1>/dev/null 2>&1\n")
     end
     f:write("if [ $? -eq 1 ]; then\n")
     f:write("\tmodule load likwid 1>/dev/null 2>&1\n")
@@ -813,78 +842,6 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     os.execute("chmod +x "..scriptname)
 end
 
-local function getopt(args, ostrlist)
-    local arg, place,placeend = nil, 0, 0;
-    return function ()
-        if place == 0 then -- update scanning pointer
-            place = 1
-            if #args == 0 or args[1]:sub(1, 1) ~= '-' then place = 0; return nil end
-            if #args[1] >= 2 then
-                if args[1]:sub(2, 2) == '-' then
-                    if #args[1] == 2 then -- found "--"
-                        place = 0
-                        table.remove(args, 1);
-                        return nil;
-                    end
-                    place = place + 1
-                end
-                if args[1]:sub(3, 3) == '-' then
-                    place = 0
-                    table.remove(args, 1);
-                    return nil;
-                end
-                place = place + 1
-                placeend = #args[1]
-            end
-        end
-        local optopt = args[1]:sub(place, placeend)
-        place = place + 1;
-        local givopt = ""
-        local needarg = false
-        for _, ostr in pairs(ostrlist) do
-            local matchstring = "^"..ostr.."$"
-            placeend = place + #ostr -1
-            if ostr:sub(#ostr,#ostr) == ":" then
-                matchstring = "^"..ostr:sub(1,#ostr-1).."$"
-                needarg = true
-                placeend = place + #ostr -2
-            end
-            if optopt:match(matchstring) then
-                givopt = ostr
-                break
-            end
-            needarg = false
-        end
-        if givopt == "" then -- unknown option
-            if optopt == '-' then return nil end
-            if place > #args[1] then
-                table.remove(args, 1);
-                place = 0;
-            end
-            return '?';
-        end
-
-        if not needarg then -- do not need argument
-            arg = true;
-            table.remove(args, 1);
-            place = 0;
-        else -- need an argument
-            if placeend < #args[1] then -- no white space
-                arg = args[1]:sub(placeend,#args[1]);
-            else
-                table.remove(args, 1);
-                if #args == 0 then -- an option requiring argument is the last one
-                    place = 0;
-                    if givopt:sub(placeend, placeend) == ':' then return ':' end
-                    return '?';
-                else arg = args[1] end
-            end
-            table.remove(args, 1);
-            place = 0;
-        end
-        return optopt, arg;
-    end
-end
 
 local function listdir(infilepart)
     local outlist = {}
@@ -921,6 +878,7 @@ local function parseOutputFile(filename)
     for i, line in pairs(likwid.stringsplit(t, "\n")) do
         if (not line:match("^-")) and
            (not line:match("^CPU type:")) and
+           (not line:match("^CPU name:")) and
            (not line:match("^%s*$")) and
            (not line:match("STAT")) then
             if line:match("^Event") and not line:match("Sum,Min,Max,Avg") then
@@ -1000,6 +958,7 @@ local function parseMarkerOutputFile(filename)
     for i, line in pairs(likwid.stringsplit(t, "\n")) do
         if (not line:match("^-")) and
            (not line:match("^CPU type:")) and
+           (not line:match("^CPU name:")) and
            (not line:match("STAT")) then
 
             if line:match("^%s*$") then
@@ -1017,7 +976,7 @@ local function parseMarkerOutputFile(filename)
                 clock = line:match("^CPU clock:%s*([%d.]+)")
                 clock = tonumber(clock)*1.E09
             elseif parse_reg_info and line:match("^%d+,%g+") then
-                gidx, current_region = line:match("^(%d+),(%g+),")
+                gidx, current_region = line:match("^(%d+),(%g-),")
                 gidx = tonumber(gidx)
                 if results[current_region] == nil then
                     results[current_region] = {}
@@ -1079,60 +1038,6 @@ local function parseMarkerOutputFile(filename)
     return host, tonumber(rank), results, cpulist
 end
 
-function tableMinMaxAvgSum(inputtable, skip_cols, skip_lines)
-    local outputtable = {}
-    local nr_columns = #inputtable
-    if nr_columns == 0 then
-        return {}
-    end
-    local nr_lines = #inputtable[1]
-    if nr_lines == 0 then
-        return {}
-    end
-    minOfLine = {"Min"}
-    maxOfLine = {"Max"}
-    sumOfLine = {"Sum"}
-    avgOfLine = {"Avg"}
-    for i=skip_lines+1,nr_lines do
-        minOfLine[i-skip_lines+1] = math.huge
-        maxOfLine[i-skip_lines+1] = 0
-        sumOfLine[i-skip_lines+1] = 0
-        avgOfLine[i-skip_lines+1] = 0
-    end
-    for j=skip_cols+1,nr_columns do
-        for i=skip_lines+1, nr_lines do
-            if inputtable[j][i] ~= nil then
-                local res = tonumber(inputtable[j][i])
-                minOfLine[i-skip_lines+1] = math.min(res, minOfLine[i-skip_lines+1])
-                maxOfLine[i-skip_lines+1] = math.max(res, maxOfLine[i-skip_lines+1])
-                sumOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1] + res
-                avgOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1]/(nr_columns-skip_cols)
-            end
-        end
-    end
-
-
-    local tmptable = {}
-    table.insert(tmptable, inputtable[1][1])
-    for j=2,#inputtable[1] do
-        table.insert(tmptable, inputtable[1][j].." STAT")
-    end
-    table.insert(outputtable, tmptable)
-    for i=2,skip_cols do
-        local tmptable = {}
-        table.insert(tmptable, inputtable[i][1])
-        for j=2,#inputtable[i] do
-            table.insert(tmptable, inputtable[i][j])
-        end
-        table.insert(outputtable, tmptable)
-    end
-    table.insert(outputtable, sumOfLine)
-    table.insert(outputtable, minOfLine)
-    table.insert(outputtable, maxOfLine)
-    table.insert(outputtable, avgOfLine)
-    return outputtable
-end
-
 function printMpiOutput(group_list, all_results)
 
     if #group_list == 0 or likwid.tablelength(all_results) == 0 then
@@ -1155,7 +1060,7 @@ function printMpiOutput(group_list, all_results)
         if all_results[0]["results"][1]["calls"] then
             table.insert(desc, "Region calls")
         end
-        for i=0,#gdata["Events"] do
+        for i=1,#gdata["Events"] do
             table.insert(desc, gdata["Events"][i]["Event"])
         end
         table.insert(firsttab, desc)
@@ -1167,7 +1072,7 @@ function printMpiOutput(group_list, all_results)
         if all_results[0]["results"][1]["calls"] then
             table.insert(desc, "")
         end
-        for i=0,#gdata["Events"] do
+        for i=1,#gdata["Events"] do
             table.insert(desc, gdata["Events"][i]["Counter"])
         end
         table.insert(firsttab, desc)
@@ -1181,15 +1086,19 @@ function printMpiOutput(group_list, all_results)
                 if all_results[0]["results"][1]["calls"] then
                     table.insert(column, all_results[rank]["results"][gidx]["calls"][cpu])
                 end
-                for j=1,#gdata["Events"]+1 do
-                    table.insert(column, all_results[rank]["results"][gidx][j][cpu])
+                for j=1,#gdata["Events"] do
+                    if all_results[rank]["results"][gidx][j] ~= nil then
+                        table.insert(column, all_results[rank]["results"][gidx][j][cpu])
+                    else
+                        table.insert(column, 0)
+                    end
                 end
                 table.insert(firsttab, column)
             end
         end
 
         if total_threads > 1 then
-            firsttab_combined = tableMinMaxAvgSum(firsttab, 2, 1)
+            firsttab_combined = likwid.tableToMinMaxAvgSum(firsttab, 2, 1)
         end
         if gdata["Metrics"] then
             secondtab[1] = {"Metric"}
@@ -1200,9 +1109,13 @@ function printMpiOutput(group_list, all_results)
             for rank = 0, #all_results do
                 for i, cpu in pairs(all_results[rank]["cpus"]) do
                     local counterlist = {}
-                    for j=1,#gdata["Events"]+1 do
-                        local counter = gdata["Events"][j-1]["Counter"]
-                        counterlist[counter] = all_results[rank]["results"][gidx][j][cpu]
+                    for j=1,#gdata["Events"] do
+                        local counter = gdata["Events"][j]["Counter"]
+                        if all_results[rank]["results"][gidx][j] ~= nil then
+                            counterlist[counter] = all_results[rank]["results"][gidx][j][cpu]
+                        else
+                            counterlist[counter] = 0
+                        end
                     end
                     counterlist["time"] = all_results[rank]["results"][gidx]["time"][cpu]
                     counterlist["inverseClock"] = 1.0/all_results[rank]["results"]["clock"]
@@ -1219,7 +1132,7 @@ function printMpiOutput(group_list, all_results)
             end
 
             if total_threads > 1 then
-                secondtab_combined = tableMinMaxAvgSum(secondtab, 1, 1)
+                secondtab_combined = likwid.tableToMinMaxAvgSum(secondtab, 1, 1)
             end
         end
         if use_csv then
@@ -1247,9 +1160,9 @@ if #arg == 0 then
     os.exit(0)
 end
 
-for opt,arg in getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:","h","help","v","g:","group:","mpi:","omp:","d","m","O"}) do
+for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:","h","help","v","g:","group:","mpi:","omp:","d","m","O","debug","marker","version","s:","skip:"}) do
     if (type(arg) == "string") then
-        local s,e = arg:find("-");
+        local s,e = arg:find("-")
         if s == 1 then
             print(string.format("ERROR: Argmument %s to option -%s starts with invalid character -.", arg, opt))
             print("ERROR: Did you forget an argument to an option?")
@@ -1260,30 +1173,43 @@ for opt,arg in getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:","h","he
     if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
-    elseif opt == "v" then
+    elseif opt == "v" or opt == "version"then
         version()
         os.exit(0)
-    elseif opt == "d" then
+    elseif opt == "d" or opt == "debug" then
         debug = true
-    elseif opt == "m" then
+    elseif opt == "m" or opt == "marker" then
         use_marker = true
-    elseif opt == "=" then
+    elseif opt == "O" then
         use_csv = true
     elseif opt == "n" or opt == "np" then
         np = tonumber(arg)
-    elseif opt == "nperdomain"then
+    elseif opt == "nperdomain" then
         nperdomain = arg
+        local domain, count = nperdomain:match("([NSCM]%d*):(%d+)")
+        if domain == nil then
+            print("Invalid option to -nperdomain")
+            os.exit(1)
+        end
     elseif opt == "hostfile" then
         hostfile = arg
     elseif opt == "pin" then
-        cpuexprs = stringsplit(arg, "_")
+        cpuexprs = likwid.stringsplit(arg, "_")
     elseif opt == "g" or opt == "group" then
         table.insert(perf, arg)
     elseif opt == "mpi" then
         mpitype = arg
     elseif opt == "omp" then
         omptype = arg
+    elseif opt == "s" or opt == "skip" then
+        skipStr = "-s "..arg
     end
+end
+
+if MPIROOT == "" then
+    print("Please load a MPI module or set path to MPI solder in MPIHOME environment variable")
+    print("$MPIHOME/bin/<MPI launcher> should be valid")
+    os.exit(1)
 end
 
 if np == 0 and nperdomain == nil and #cpuexprs == 0 then
@@ -1337,17 +1263,19 @@ end
 
 local givenNrNodes = getNumberOfNodes(hosts)
 
-if mpitype == "intelmpi" then
-    if omptype == "intel" and givenNrNodes > 1 then
-        skipStr = '-s 0x7'
-    end
-elseif mpitype == "mvapich2" then
-    if omptype == "intel" and givenNrNodes > 1 then
-        skipStr = '-s 0x7'
-    end
-elseif mpitype == "openmpi" then
-    if omptype == "intel" then
-        skipStr = '-s 0xF'
+if skipStr == "" then
+    if mpitype == "intelmpi" then
+        if omptype == "intel" and givenNrNodes > 1 then
+            skipStr = '-s 0x7'
+        end
+    elseif mpitype == "mvapich2" then
+        if omptype == "intel" and givenNrNodes > 1 then
+            skipStr = '-s 0x7'
+        end
+    elseif mpitype == "openmpi" then
+        if omptype == "intel" then
+            skipStr = '-s 0xF'
+        end
     end
 end
 if debug and skipStr ~= "" then
@@ -1371,6 +1299,18 @@ elseif nperdomain ~= nil then
     if np == 0 then
         np = givenNrNodes * ppn
     end
+    if np < ppn then
+        if debug then
+            print("Removing additional cpu expressions to get requested number of processes")
+        end
+        for i=np+1,ppn do
+            if debug then
+                print("Remove cpuexpr: "..cpuexprs[#cpuexprs])
+            end
+            table.remove(cpuexprs, #cpuexprs)
+        end
+        ppn = np
+    end
     newhosts = assignHosts(hosts, np, ppn)
 elseif ppn > 0 and ppn <= np then
     if np % ppn ~= 0 then
@@ -1387,7 +1327,7 @@ elseif ppn > 0 and ppn <= np then
     newhosts = assignHosts(hosts, np, ppn)
 elseif ppn == 0 and np > 0 then
     ppn = np/givenNrNodes
-    cpuexprs = calculateCpuExprs("N:"..tostring(ppn), cpuexprs)
+    cpuexprs = calculateCpuExprs("E:N:"..tostring(ppn), cpuexprs)
     newhosts = assignHosts(hosts, np, ppn)
 else
     print("ERROR: Commandline settings are not supported.")
@@ -1410,6 +1350,9 @@ MPIINFO[mpitype]["writeHostfile"](newhosts, hostfilename)
 writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, outfilename)
 local env = MPIINFO[mpitype]["getEnvironment"]()
 MPIINFO[mpitype]["executeCommand"](scriptfilename, hostfilename, env, nrNodes)
+
+os.remove(scriptfilename)
+os.remove(hostfilename)
 
 infilepart = ".output_"..pid
 filelist = listdir(infilepart)

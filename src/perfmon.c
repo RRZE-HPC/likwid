@@ -28,14 +28,14 @@
 #include <perfmon_nehalemEX.h>
 #include <perfmon_sandybridge.h>
 #include <perfmon_ivybridge.h>
-//#include <perfmon_haswell.h>
-#include <perfmon_haswellEP.h>
+#include <perfmon_haswell.h>
 #include <perfmon_phi.h>
 #include <perfmon_k8.h>
 #include <perfmon_k10.h>
 #include <perfmon_interlagos.h>
 #include <perfmon_kabini.h>
 #include <perfmon_silvermont.h>
+#include <perfmon_broadwell.h>
 
 
 PerfmonEvent* eventHash;
@@ -107,7 +107,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             break;
         }
     }
-    if (ownstrcmp(bdata(reg), counter_map[*index].key) != 0)
+    if (ret && (ownstrcmp(bdata(reg), counter_map[*index].key) != 0))
     {
         *type = NOTYPE;
         return FALSE;
@@ -117,7 +117,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
         *type = NOTYPE;
         return FALSE;
     }
-    if ((ret) && (counter_map[*index].type != THERMAL) && (counter_map[*index].type != POWER) && (counter_map[*index].type != WBOX0FIX))
+    if ((ret) && (*type != THERMAL) && (*type != POWER) && (*type != WBOX0FIX))
     {
         err = HPMread(0, counter_map[*index].device, counter_map[*index].counterRegister, &tmp);
         if (err != 0)
@@ -125,7 +125,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             if (err == -ENODEV)
             {
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Device %s not accessible on this machine,
-                                         pci_devices[box_map[counter_map[*index].type].device].name);
+                                         pci_devices[box_map[*type].device].name);
             }
             else
             {
@@ -143,7 +143,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
                 if (err == -ENODEV)
                 {
                     DEBUG_PRINT(DEBUGLEV_DETAIL, Device %s not accessible on this machine,
-                                             pci_devices[box_map[counter_map[*index].type].device].name);
+                                             pci_devices[box_map[*type].device].name);
                 }
                 else
                 {
@@ -162,7 +162,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             *type = NOTYPE;
         }*/
     }
-    else if ((ret) && ((counter_map[*index].type == POWER) || (counter_map[*index].type == WBOX0FIX)))
+    else if ((ret) && ((*type == POWER) || (*type == WBOX0FIX) || (*type == THERMAL)))
     {
         err = HPMread(0, MSR_DEV, counter_map[*index].counterRegister, &tmp);
         if (err != 0)
@@ -178,23 +178,6 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
         *type = NOTYPE;
         ret = FALSE;
     }
-    return ret;
-}
-
-static int
-getEvent(bstring event_str, PerfmonEvent* event)
-{
-    int ret = FALSE;
-    for (int i=0; i< perfmon_numArchEvents; i++)
-    {
-        if (biseqcstr(event_str, eventHash[i].name))
-        {
-            *event = eventHash[i];
-            ret = TRUE;
-            break;
-        }
-    }
-
     return ret;
 }
 
@@ -222,6 +205,29 @@ checkCounter(bstring counterName, const char* limit)
     }
     bdestroy(limitString);
     bstrListDestroy(tokens);
+    return ret;
+}
+
+static int
+getEvent(bstring event_str, bstring counter_str, PerfmonEvent* event)
+{
+    int ret = FALSE;
+    int (*ownstrncmp)(const char *, const char *, size_t);
+    ownstrncmp = &strncmp;
+    for (int i=0; i< perfmon_numArchEvents; i++)
+    {
+        if (biseqcstr(event_str, eventHash[i].name))
+        {
+            if (!checkCounter(counter_str, eventHash[i].limit))
+            {
+                continue;
+            }
+            *event = eventHash[i];
+            ret = TRUE;
+            break;
+        }
+    }
+
     return ret;
 }
 
@@ -282,7 +288,6 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
 
     for (i=2;i<tokens->qty;i++)
     {
-        int insert_index = event->numberOfOptions;
         subtokens = bsplit(tokens->entry[i],'=');
         btolower(subtokens->entry[0]);
         if (subtokens->qty == 1)
@@ -529,6 +534,7 @@ perfmon_init_maps(void)
                     eventHash = pm_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEvents_pm;
                     counter_map = pm_counter_map;
+                    box_map = pm_box_map;
                     perfmon_numCounters = perfmon_numCounters_pm;
                     break;
 
@@ -540,6 +546,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsAtom;
                     counter_map = core2_counter_map;
                     perfmon_numCounters = perfmon_numCountersCore2;
+                    box_map = core2_box_map;
                     break;
 
                 case ATOM_SILVERMONT_E:
@@ -547,9 +554,11 @@ perfmon_init_maps(void)
                 case ATOM_SILVERMONT_Z1:
                 case ATOM_SILVERMONT_Z2:
                 case ATOM_SILVERMONT_F:
+                case ATOM_SILVERMONT_AIR:
                     eventHash = silvermont_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsSilvermont;
                     counter_map = silvermont_counter_map;
+                    box_map = silvermont_box_map;
                     perfmon_numCounters = perfmon_numCountersSilvermont;
                     perfmon_numCoreCounters = perfmon_numCoreCountersSilvermont;
                     break;
@@ -565,14 +574,15 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsCore2;
                     counter_map = core2_counter_map;
                     perfmon_numCounters = perfmon_numCountersCore2;
+                    box_map = core2_box_map;
                     break;
 
                 case NEHALEM_EX:
                     eventHash = nehalemEX_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsNehalemEX;
-                    counter_map = westmereEX_counter_map;
-                    perfmon_numCounters = perfmon_numCountersWestmereEX;
-                    box_map = westmereEX_box_map;
+                    counter_map = nehalemEX_counter_map;
+                    perfmon_numCounters = perfmon_numCountersNehalemEX;
+                    box_map = nehalemEX_box_map;
                     break;
 
                 case WESTMERE_EX:
@@ -590,6 +600,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsNehalem;
                     counter_map = nehalem_counter_map;
                     perfmon_numCounters = perfmon_numCountersNehalem;
+                    box_map = nehalem_box_map;
                     break;
 
                 case NEHALEM_WESTMERE_M:
@@ -598,13 +609,21 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsWestmere;
                     counter_map = nehalem_counter_map;
                     perfmon_numCounters = perfmon_numCountersNehalem;
+                    box_map = nehalem_box_map;
                     break;
 
                 case IVYBRIDGE_EP:
                     pci_devices = ivybridgeEP_pci_devices;
-                    box_map = ivybridge_box_map;
+                    box_map = ivybridgeEP_box_map;
+                    eventHash = ivybridgeEP_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsIvybridgeEP;
+                    counter_map = ivybridgeEP_counter_map;
+                    perfmon_numCounters = perfmon_numCountersIvybridgeEP;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersIvybridgeEP;
+                    break;
                 case IVYBRIDGE:
                     eventHash = ivybridge_arch_events;
+                    box_map = ivybridge_box_map;
                     perfmon_numArchEvents = perfmon_numArchEventsIvybridge;
                     counter_map = ivybridge_counter_map;
                     perfmon_numCounters = perfmon_numCountersIvybridge;
@@ -628,17 +647,36 @@ perfmon_init_maps(void)
                     counter_map = haswell_counter_map;
                     perfmon_numCounters = perfmon_numCountersHaswell;
                     perfmon_numCoreCounters = perfmon_numCoreCountersHaswell;
+                    box_map = haswell_box_map;
                     break;
 
                 case SANDYBRIDGE_EP:
-                    box_map = sandybridgeEP_box_map;
                     pci_devices = sandybridgeEP_pci_devices;
+                    box_map = sandybridgeEP_box_map;
+                    eventHash = sandybridgeEP_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsSandybridgeEP;
+                    counter_map = sandybridgeEP_counter_map;
+                    perfmon_numCounters = perfmon_numCountersSandybridgeEP;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersSandybridgeEP;
+                    break;
                 case SANDYBRIDGE:
+                    box_map = sandybridge_box_map;
                     eventHash = sandybridge_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsSandybridge;
                     counter_map = sandybridge_counter_map;
                     perfmon_numCounters = perfmon_numCountersSandybridge;
                     perfmon_numCoreCounters = perfmon_numCoreCountersSandybridge;
+                    break;
+
+                case BROADWELL:
+                case BROADWELL_E:
+                case BROADWELL_D:
+                    box_map = broadwell_box_map;
+                    eventHash = broadwell_arch_events;
+                    counter_map = broadwell_counter_map;
+                    perfmon_numArchEvents = perfmon_numArchEventsBroadwell;
+                    perfmon_numCounters = perfmon_numCountersBroadwell;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersBroadwell;
                     break;
 
                 default:
@@ -655,6 +693,7 @@ perfmon_init_maps(void)
                     eventHash = phi_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsPhi;
                     counter_map = phi_counter_map;
+                    box_map = phi_box_map;
                     perfmon_numCounters = perfmon_numCountersPhi;
                     break;
 
@@ -668,6 +707,7 @@ perfmon_init_maps(void)
             eventHash = k8_arch_events;
             perfmon_numArchEvents = perfmon_numArchEventsK8;
             counter_map = k10_counter_map;
+            box_map = k10_box_map;
             perfmon_numCounters = perfmon_numCountersK10;
             break;
 
@@ -675,6 +715,7 @@ perfmon_init_maps(void)
             eventHash = k10_arch_events;
             perfmon_numArchEvents = perfmon_numArchEventsK10;
             counter_map = k10_counter_map;
+            box_map = k10_box_map;
             perfmon_numCounters = perfmon_numCountersK10;
             break;
 
@@ -682,6 +723,7 @@ perfmon_init_maps(void)
             eventHash = interlagos_arch_events;
             perfmon_numArchEvents = perfmon_numArchEventsInterlagos;
             counter_map = interlagos_counter_map;
+            box_map = interlagos_box_map;
             perfmon_numCounters = perfmon_numCountersInterlagos;
             break;
 
@@ -689,6 +731,7 @@ perfmon_init_maps(void)
             eventHash = kabini_arch_events;
             perfmon_numArchEvents = perfmon_numArchEventsKabini;
             counter_map = kabini_counter_map;
+            box_map = kabini_box_map;
             perfmon_numCounters = perfmon_numCountersKabini;
            break;
 
@@ -737,6 +780,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                 case ATOM_SILVERMONT_Z1:
                 case ATOM_SILVERMONT_Z2:
                 case ATOM_SILVERMONT_F:
+                case ATOM_SILVERMONT_AIR:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_silvermont;
@@ -821,12 +865,12 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                 case HASWELL_M2:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
-                    initThreadArch = perfmon_init_haswellEP;
-                    perfmon_startCountersThread = perfmon_startCountersThread_haswellEP;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_haswellEP;
-                    perfmon_readCountersThread = perfmon_readCountersThread_haswellEP;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_haswellEP;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_haswellEP;
+                    initThreadArch = perfmon_init_haswell;
+                    perfmon_startCountersThread = perfmon_startCountersThread_haswell;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_haswell;
+                    perfmon_readCountersThread = perfmon_readCountersThread_haswell;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_haswell;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_haswell;
                     break;
 
                 case SANDYBRIDGE_EP:
@@ -839,6 +883,19 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_readCountersThread = perfmon_readCountersThread_sandybridge;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_sandybridge;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_sandybridge;
+                    break;
+
+                case BROADWELL:
+                case BROADWELL_E:
+                case BROADWELL_D:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_broadwell;
+                    perfmon_startCountersThread = perfmon_startCountersThread_broadwell;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_broadwell;
+                    perfmon_readCountersThread = perfmon_readCountersThread_broadwell;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_broadwell;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_broadwell;
                     break;
 
                 default:
@@ -925,6 +982,12 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         return -EINVAL;
     }
     
+    if (!lock_check())
+    {
+        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        return -EINVAL;
+    }
+    
     /* Check threadsToCpu array if only valid cpu_ids are listed */
     if (groupSet != NULL)
     {
@@ -959,7 +1022,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
 
     /* Initialize access interface */
     ret = HPMaddThread(threadsToCpu[0]);
-
     if (ret)
     {
         ERROR_PLAIN_PRINT(Cannot get access to performance counters);
@@ -967,7 +1029,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         free(groupSet);
         return ret;
     }
-
     timer_init();
 
     
@@ -1023,8 +1084,6 @@ int
 perfmon_addEventSet(char* eventCString)
 {
     int i, j;
-    int groupIndex;
-    int new_events = 0;
     bstring eventBString;
     struct bstrList* eventtokens;
     struct bstrList* subtokens;
@@ -1126,7 +1185,7 @@ perfmon_addEventSet(char* eventCString)
                 goto past_checks;
             }
 
-            if (!getEvent(subtokens->entry[0], &event->event))
+            if (!getEvent(subtokens->entry[0], subtokens->entry[1], &event->event))
             {
                 fprintf(stderr,"Event %s not found for current architecture\n",
                      bdata(subtokens->entry[0]));
@@ -1193,7 +1252,7 @@ past_checks:
 }
 
 int
-perfmon_setupCounters(int groupId)
+__perfmon_setupCountersThread(int thread_id, int groupId)
 {
     int i;
     if (groupId >= groupSet->numberOfActiveGroups)
@@ -1202,12 +1261,26 @@ perfmon_setupCounters(int groupId)
         return -ENOENT;
     }
 
+    CHECK_AND_RETURN_ERROR(perfmon_setupCountersThread(thread_id, &groupSet->groups[groupId]),
+            Setup of counters failed);
+
+    groupSet->activeGroup = groupId;
+    return 0;
+}
+
+int
+perfmon_setupCounters(int groupId)
+{
+    int i;
+    int ret = 0;
     for(i=0;i<groupSet->numberOfThreads;i++)
     {
-        CHECK_AND_RETURN_ERROR(perfmon_setupCountersThread(i, &groupSet->groups[groupId]),
-            Setup of counters failed);
+        ret = __perfmon_setupCountersThread(groupSet->threads[i].thread_id, groupId);
+        if (ret != 0)
+        {
+            return ret;
+        }
     }
-    groupSet->activeGroup = groupId;
     return 0;
 }
 
@@ -1222,10 +1295,10 @@ __perfmon_startCounters(int groupId)
     }
     for(;i<groupSet->numberOfThreads;i++)
     {
-        ret = perfmon_startCountersThread(i, &groupSet->groups[groupId]);
+        ret = perfmon_startCountersThread(groupSet->threads[i].thread_id, &groupSet->groups[groupId]);
         if (ret)
         {
-            return -i;
+            return -groupSet->threads[i].thread_id-1;
         }
     }
     timer_start(&groupSet->groups[groupId].timer);
@@ -1257,10 +1330,10 @@ __perfmon_stopCounters(int groupId)
 
     for (; i<groupSet->numberOfThreads; i++)
     {
-        ret = perfmon_stopCountersThread(i, &groupSet->groups[groupId]);
+        ret = perfmon_stopCountersThread(groupSet->threads[i].thread_id, &groupSet->groups[groupId]);
         if (ret)
         {
-            return -i;
+            return -groupSet->threads[i].thread_id-1;
         }
     }
 
@@ -1393,26 +1466,23 @@ perfmon_getResult(int groupId, int eventId, int threadId)
     return result;
 }
 
-int
-perfmon_switchActiveGroup(int new_group)
+int __perfmon_switchActiveGroupThread(int thread_id, int new_group)
 {
     int ret;
     int i;
-    int cpu_id;
     ret = perfmon_stopCounters();
     if (ret != 0)
     {
         return ret;
     }
-    cpu_id = likwid_getProcessorId();
     for(i=0; i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
-        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[cpu_id].init = FALSE;
+        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].init = FALSE;
     }
-    for(i=0; i<groupSet->groups[new_group].numberOfEvents;i++)
+    /*for(i=0; i<groupSet->groups[new_group].numberOfEvents;i++)
     {
         groupSet->groups[new_group].events[i].threadCounter[cpu_id].init = TRUE;
-    }
+    }*/
     ret = perfmon_setupCounters(new_group);
     if (ret != 0)
     {
@@ -1422,6 +1492,22 @@ perfmon_switchActiveGroup(int new_group)
     if (ret != 0)
     {
         return ret;
+    }
+    return 0;
+}
+
+int
+perfmon_switchActiveGroup(int new_group)
+{
+    int i=0;
+    int ret=0;
+    for(i=0;i<groupSet->numberOfThreads;i++)
+    {
+        ret = __perfmon_switchActiveGroupThread(groupSet->threads[i].thread_id, new_group);
+        if (ret != 0)
+        {
+            return ret;
+        }
     }
     return 0;
 }
@@ -1480,14 +1566,5 @@ perfmon_getMaxCounterValue(RegisterType type)
     return tmp;
 }
 
-void
-perfmon_accessClientInit(void)
-{
-    if ((accessClient_mode != ACCESSMODE_DIRECT) && (socket_fd == -1))
-    {
-        accessClient_init(&socket_fd);
-        msr_init(socket_fd);
-    }
-}
 
 

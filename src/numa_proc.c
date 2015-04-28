@@ -3,7 +3,7 @@
 
 #include <dirent.h>
 #include <error.h>
-#include <strUtil.h>
+//#include <strUtil.h>
 #include <unistd.h>
 #include <sys/syscall.h>
 #ifdef HAS_MEMPOLICY
@@ -278,12 +278,12 @@ int proc_numa_init(void)
         numa_info.nodes[i].id = i;
         nodeMeminfo(i, &numa_info.nodes[i].totalMemory, &numa_info.nodes[i].freeMemory);
         numa_info.nodes[i].numberOfProcessors = nodeProcessorList(i,&numa_info.nodes[i].processors);
-        if (numa_info.nodes[i].numberOfProcessors < 0)
+        if (numa_info.nodes[i].numberOfProcessors == 0)
         {
             return -EFAULT;
         }
         numa_info.nodes[i].numberOfDistances = nodeDistanceList(i, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
-        if (numa_info.nodes[i].numberOfDistances < 0)
+        if (numa_info.nodes[i].numberOfDistances == 0)
         {
             return -EFAULT;
         }

@@ -13,7 +13,7 @@
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 static int get_cpu_perf_data(void)
 {
-    uint32_t eax, ebx, ecx, edx;
+    uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     int largest_function = 0;
     eax = 0x00;
     CPUID;
@@ -95,7 +95,7 @@ int fillList(int* outList, int outOffset, bstring list)
 
 static int readCacheInclusive(int level)
 {
-    uint32_t eax, ebx, ecx, edx;
+    uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     eax = 0x04;
     ecx = level;
     CPUID;
@@ -108,11 +108,12 @@ void proc_init_cpuInfo(cpu_set_t cpuSet)
     int i;
     int HWthreads = 0;
     FILE *fp;
-    bstring filename;
+
     int (*ownatoi)(const char*);
     char* (*ownstrcpy)(char*,const char*);
     ownatoi = &atoi;
     ownstrcpy = &strcpy;
+
     const_bstring countString = bformat("processor\t:");
     const_bstring modelString = bformat("model\t\t:");
     const_bstring familyString = bformat("cpu family\t:");

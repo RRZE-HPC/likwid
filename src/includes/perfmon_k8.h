@@ -3,17 +3,19 @@
  *
  *      Filename:  perfmon_k8.h
  *
- *      Description:  Header File of perfmon module for K8 support.
+ *      Description:  Header File of perfmon module for AMD K8 support.
  *                    Configures and reads out performance counters
  *                    on x86 based architectures. Supports multi threading.
+ *                    The setup routines are similar to AMD K10
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *               Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2014 Jan Treibig and Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

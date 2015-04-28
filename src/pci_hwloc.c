@@ -19,17 +19,17 @@ hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     uint16_t testVendor = 0x8086;
     hwloc_obj_t obj;
     int flags;
-    int i,j ;
-    
+    int i;
+    char nodeset[1024];
+    int nodesetlen = 0;
     
     if (!hwloc_topology)
     {
         hwloc_topology_init(&hwloc_topology);
+        hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
+        hwloc_topology_load(hwloc_topology);
     }
-    flags = hwloc_topology_get_flags(hwloc_topology);
-    hwloc_topology_set_flags(hwloc_topology, flags | HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
-    hwloc_topology_load(hwloc_topology);
-    
+
     for(i=0;i<hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PCI_DEVICE);i++)
     {
         obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PCI_DEVICE, i);

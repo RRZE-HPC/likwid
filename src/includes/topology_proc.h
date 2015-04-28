@@ -10,8 +10,8 @@
 #include <error.h>
 #include <tree.h>
 #include <bitUtil.h>
-#include <strUtil.h>
-#include <tlb-info.h>
+//#include <strUtil.h>
+//#include <tlb-info.h>
 #include <topology.h>
 
 void proc_init_cpuInfo(cpu_set_t cpuSet);

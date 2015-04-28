@@ -54,7 +54,6 @@
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 int affinity_core2node_lookup[MAX_NUM_THREADS];
-int affinity_core2tile_lookup[MAX_NUM_THREADS];
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -433,6 +432,20 @@ affinity_pinProcess(int processorId)
 
     CPU_ZERO(&cpuset);
     CPU_SET(processorId, &cpuset);
+    sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
+}
+
+void
+affinity_pinProcesses(int cpu_count, int* processorIds)
+{
+    int i;
+    cpu_set_t cpuset;
+
+    CPU_ZERO(&cpuset);
+    for(i=0;i<cpu_count;i++)
+    {
+        CPU_SET(processorIds[i], &cpuset);
+    }
     sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
 }
 

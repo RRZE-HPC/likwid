@@ -24,7 +24,6 @@
 static int globalSocket = -1;
 static int cpuSockets[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = -1};
 static int registeredCpus = 0;
-static int init = 0;
 
 int _HPMinit(int cpu_id)
 {
@@ -75,7 +74,8 @@ int HPMinitialized(void)
 
 int HPMaddThread(int cpu_id)
 {
-    if ((cpuSockets[cpu_id] == -1) && (accessClient_mode == ACCESSMODE_DAEMON))
+    if (((cpuSockets[cpu_id] == -1) && (accessClient_mode == ACCESSMODE_DAEMON)) ||
+         (accessClient_mode == ACCESSMODE_DIRECT))
     {
         return _HPMinit(cpu_id);
     }

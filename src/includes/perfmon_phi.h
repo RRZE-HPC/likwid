@@ -66,7 +66,7 @@ int phi_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (1ULL<<21);
                     break;
                 case EVENT_OPTION_THRESHOLD:
-                    flags |= (event->options[j].value & 0xFF) <<24;
+                    flags |= (event->options[j].value & 0xFFULL) <<24;
                     break;
                 default:
                     break;
@@ -80,14 +80,18 @@ int phi_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int perfmon_setupCounterThread_phi(int thread_id, PerfmonEventSet* eventSet)
 {
-    uint64_t flags;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
+        RegisterType type = eventSet->events[i].type;
+        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+        {
+            continue;
+        }
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
-        if (phi_counter_map[index].type == PMC)
+        if (type == PMC)
         {
             phi_pmc_setup(cpu_id, index, event);
             eventSet->events[i].threadCounter[thread_id].init = TRUE;
@@ -98,7 +102,7 @@ int perfmon_setupCounterThread_phi(int thread_id, PerfmonEventSet* eventSet)
 
 int perfmon_startCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
 {
-    uint64_t flags = 0ULL;
+    uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_CTRL, 0x0ULL));
@@ -107,8 +111,13 @@ int perfmon_startCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
         {
+            RegisterType type = eventSet->events[i].type;
+            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            {
+                continue;
+            }
             RegisterIndex index = eventSet->events[i].index;
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, phi_counter_map[index].counterRegister , 0x0ULL));
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister , 0x0ULL));
             flags |= (1ULL<<(index));  /* enable counter */
         }
     }
@@ -121,7 +130,6 @@ int perfmon_startCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
 
 int perfmon_stopCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
 {
-    uint64_t flags;
     uint64_t counter_result = 0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
@@ -132,6 +140,12 @@ int perfmon_stopCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
+            RegisterType type = eventSet->events[i].type;
+            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            {
+                continue;
+            }
+            counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, phi_counter_map[index].counterRegister, &counter_result));
             if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
@@ -144,7 +158,7 @@ int perfmon_stopCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_OVF_CTRL, (1ULL<<index)));
                 }
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
         }
     }
     return 0;
@@ -153,8 +167,8 @@ int perfmon_stopCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
 int perfmon_readCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
 {
     int cpu_id = groupSet->threads[thread_id].processorId;
-    uint64_t counter_result = 0ULL;
-    uint64_t core_flags = 0ULL;
+    uint64_t counter_result = 0x0ULL;
+    uint64_t core_flags = 0x0ULL;
 
     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_CTRL, &core_flags));
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_CTRL, 0x0ULL));
@@ -164,6 +178,12 @@ int perfmon_readCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
+            RegisterType type = eventSet->events[i].type;
+            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            {
+                continue;
+            }
+            counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter_map[i].counterRegister, &counter_result));
             if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
@@ -176,7 +196,7 @@ int perfmon_readCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_MIC_PERF_GLOBAL_OVF_CTRL, (1ULL<<index)));
                 }
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
         }
     }
 
@@ -193,6 +213,11 @@ int perfmon_finalizeCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
+        RegisterType type = eventSet->events[i].type;
+        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+        {
+            continue;
+        }
         RegisterIndex index = eventSet->events[i].index;
         ovf_values_core |= (1ULL<<(index));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[i].configRegister, 0x0ULL));

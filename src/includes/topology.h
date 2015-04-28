@@ -16,7 +16,8 @@
 #define MAX_FEATURE_STRING_LENGTH 512
 #define MAX_MODEL_STRING_LENGTH 512
 
-
+extern int affinity_thread2tile_lookup[MAX_NUM_THREADS];
+extern int affinity_thread2tile_lookup[MAX_NUM_THREADS];
 struct topology_functions {
     void (*init_cpuInfo) (cpu_set_t cpuSet);
     void (*init_cpuFeatures) (void);
@@ -40,6 +41,7 @@ struct topology_functions {
 #define ATOM_SILVERMONT_Z1   0x4AU
 #define ATOM_SILVERMONT_Z2   0x5AU
 #define ATOM_SILVERMONT_F    0x5DU
+#define ATOM_SILVERMONT_AIR  0x4CU
 #define NEHALEM              0x1AU
 #define NEHALEM_BLOOMFIELD   0x1AU
 #define NEHALEM_LYNNFIELD    0x1EU
@@ -59,7 +61,7 @@ struct topology_functions {
 #define XEON_MP              0x1DU
 #define BROADWELL            0x3DU
 #define BROADWELL_E          0x4FU
-#define BROADWELL_F          0x56U
+#define BROADWELL_D          0x56U
 
 /* Intel MIC */
 #define XEON_PHI           0x01U
@@ -95,7 +97,7 @@ struct topology_functions {
 
 
 
-int cpuid_isInCpuset(void);
+extern int cpu_count(cpu_set_t* set);
 
 static inline int cpuid_hasFeature(FeatureBit bit)
 {

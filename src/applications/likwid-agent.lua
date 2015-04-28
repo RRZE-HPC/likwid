@@ -1,19 +1,24 @@
-#!/home/rrze/unrz/unrz139/Work/likwid/trunk/ext/lua/lua
+#!<PREFIX>/bin/likwid-lua
 
-package.path = package.path .. ';' .. string.gsub(debug.getinfo(1).source, "^@(.+/)[^/]+$", "%1") .. '/?.lua'
+package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
 local likwid = require("likwid")
 
 dconfig = {}
 dconfig["groupStrings"] ={}
 dconfig["groupData"] ={}
+dconfig["accessmode"] = 1
 dconfig["duration"] = 1
-dconfig["groupPath"] = "/home/rrze/unrz/unrz139/TMP/likwid-base/trunk/gmon_module/groups"
+dconfig["groupPath"] = "<PREFIX>/share/likwid/mongroups"
 dconfig["logPath"] = nil
+dconfig["logStyle"] = "log"
 dconfig["gmetric"] = false
-dconfig["gmetricPath"] = nil
+dconfig["gmetricPath"] = "gmetric"
 dconfig["gmetricConfig"] = nil
 dconfig["rrd"] = false
 dconfig["rrdPath"] = "."
+dconfig["syslog"] = false
+dconfig["syslogPrio"] = "local0.notice"
+dconfig["stdout"] = false
 
 rrdconfig = {}
 
@@ -33,82 +38,120 @@ local function read_daemon_config(filename)
 
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
 
-        if line:match("^GROUPPATH%a*") ~= nil then
-            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
-            table.remove(linelist, 1)
-            dconfig["groupPath"] = linelist[1]
-        end
+        if not line:match("^#") then
+            if line:match("^GROUPPATH%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                dconfig["groupPath"] = linelist[1]
+            end
 
-        if line:match("^EVENTSET%a*") ~= nil then
-            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
-            table.remove(linelist, 1)
-            table.insert(dconfig["groupStrings"], table.concat(linelist, " "))
-        end
+            if line:match("^EVENTSET%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                for i=#linelist,0,-1 do
+                    if linelist[i] == "" then
+                        table.remove(linelist, i)
+                    else
+                        table.insert(dconfig["groupStrings"], linelist[i])
+                    end
+                end
+            end
 
-        if line:match("^DURATION%a*") ~= nil then
-            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
-            table.remove(linelist, 1)
-            dconfig["duration"] = tonumber(linelist[1])
-        end
+            if line:match("^DURATION%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                dconfig["duration"] = tonumber(linelist[1])
+            end
 
-        if line:match("^LOGPATH%a*") ~= nil then
-            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
-            table.remove(linelist, 1)
-            dconfig["logPath"] = linelist[1]
-        end
+            if line:match("^ACCESSMODE%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                dconfig["accessmode"] = tonumber(linelist[1])
+            end
 
-        if line:match("^GMETRIC%s%a*") ~= nil then
-            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
-            table.remove(linelist, 1)
-            if linelist[1] == "True" then
-                dconfig["gmetric"] = true
+            if line:match("^LOGPATH%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                dconfig["logPath"] = linelist[1]
+            end
+
+            if line:match("^LOGSTYLE%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                if linelist[1] ~= "log" and linelist[1] ~= "update" then
+                    print("LOGSTYLE argument not valid, available are log and update. Fallback to log.")
+                else
+                    dconfig["logStyle"] = linelist[1]
+                end
+            end
+
+            if line:match("^GMETRIC%s%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                if linelist[1] == "True" then
+                    dconfig["gmetric"] = true
+                end
+            end
+
+            if line:match("^GMETRICPATH%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                dconfig["gmetricPath"] = linelist[1]
+            end
+
+            if line:match("^GMETRICCONFIG%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                dconfig["gmetricConfig"] = linelist[1]
+            end
+
+            if line:match("^RRD%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                if linelist[1] == "True" then
+                    dconfig["rrd"] = true
+                end
+            end
+
+            if line:match("^RRDPATH%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                dconfig["rrdPath"] = linelist[1]
+            end
+
+            if line:match("^SYSLOG%s%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                if linelist[1] == "True" then
+                    dconfig["syslog"] = true
+                end
+            end
+
+            if line:match("^SYSLOGPRIO%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                dconfig["syslogPrio"] = linelist[1]
             end
         end
-
-        if line:match("^GMETRICPATH%a*") ~= nil then
-            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
-            table.remove(linelist, 1)
-            dconfig["gmetricPath"] = linelist[1]
-        end
-
-        if line:match("^GMETRICCONFIG%a*") ~= nil then
-            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
-            table.remove(linelist, 1)
-            dconfig["gmetricConfig"] = linelist[1]
-        end
-
-        if line:match("^RRD%a*") ~= nil then
-            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
-            table.remove(linelist, 1)
-            if linelist[1] == "True" then
-                dconfig["rrd"] = true
-            end
-        end
-
-        if line:match("^RRDPATH%a*") ~= nil then
-            local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
-            table.remove(linelist, 1)
-            dconfig["rrdPath"] = linelist[1]
-        end
     end
-end
-
-local function calc_avg(key, results)
-    local sum = 0
-    local numThreads = likwid.getNumberOfThreads()
-    for thread=1, numThreads do
-        sum = sum + results[thread][key]
-    end
-    return sum/numThreads
 end
 
 local function calc_sum(key, results)
-    local sum = 0
+    local sum = 0.0
     local numThreads = likwid.getNumberOfThreads()
     for thread=1, numThreads do
         sum = sum + results[thread][key]
     end
     return sum
+end
+
+local function calc_avg(key, results)
+    local sum = 0.0
+    local numThreads = likwid.getNumberOfThreads()
+    for thread=1, numThreads do
+        sum = sum + results[thread][key]
+    end
+    return sum/numThreads
 end
 
 local function calc_min(key, results)
@@ -133,19 +176,80 @@ local function calc_max(key, results)
     return max
 end
 
-local function logger(results)
-    local f = io.open(dconfig["logPath"], "a")
+local function check_logfile()
+    local g = io.popen("ls "..dconfig["logPath"], "r")
+    if g == nil then
+        print("Logfile path".. dconfig["logPath"].. " does not exist.")
+        return false
+    end
+    g:close()
+    return true
+end
+
+local function logfile(groupID, results)
+    open_function = "a"
+    if dconfig["logStyle"] == "update" then
+        open_function = "w"
+    end
+    filename = "likwid."..tostring(groupID)..".log"
+    local s,e = dconfig["groupData"][groupID]["GroupString"]:find(":")
+    if not s then
+        filename = "likwid."..dconfig["groupData"][groupID]["GroupString"]..".log"
+    end
+    local f = io.open(dconfig["logPath"].."/"..filename, open_function)
     if f == nil then
-        print("Cannot open logfile ".. dconfig["logPath"])
+        print("Cannot open logfile ".. dconfig["logPath"].."/"..filename)
         return
     end
     local timestamp = results["Timestamp"]
     for k,v in pairs(results) do
         if k ~= "Timestamp" then
-            f:write(timestamp..","..k.. ","..v.."\n")
+            f:write(timestamp..","..k:gsub("%(",""):gsub("%)","").. ","..v.."\n")
         end
     end
     f:close()
+end
+
+local function check_logger()
+    cmd = "which logger"
+    local f, msg, ret = io.popen(cmd)
+    if f == nil or ret ~= 0 then
+        return false
+    end
+    f:close()
+    return true
+end
+
+local function logger(results)
+    cmd = "logger -t LIKWID "
+    if dconfig["syslogPrio"] ~= nil then
+        cm = cmd .."-p "..dconfig["syslogPrio"].." "
+    end
+    local timestamp = results["Timestamp"]
+    for k,v in pairs(results) do
+        if k ~= "Timestamp" then
+            local resultcmd = cmd .. k:gsub("%(",""):gsub("%)","") .. " " ..v
+            local f = io.popen(resultcmd)
+            if f == nil then
+                print("Cannot use logger, maybe not in $PATH")
+                return
+            end
+            f:close()
+        end
+    end
+    
+end
+
+local function check_gmetric()
+    if dconfig["gmetricPath"] == nil then
+        return false
+    end
+    local f, msg, ret = io.popen(dconfig["gmetricPath"])
+    if f == nil or ret ~= 0 then
+        return false
+    end
+    f:close()
+    return true
 end
 
 local function gmetric(gdata, results)
@@ -181,7 +285,7 @@ local function gmetric(gdata, results)
         end
         execStr = execStr .. " --name=\"" .. name .."\""
         if unit ~= nil then
-            execStr = execStr .. " --units=\"" .. unit .."\""
+            execStr = execStr .. " --unit=\"" .. unit .."\""
         end
         execStr = execStr .. " --value=\"" .. tostring(v) .."\""
         --os.execute(execStr)
@@ -200,6 +304,15 @@ local function normalize_rrd_string(str)
     return str
 end
 
+local function check_rrd()
+    local f, msg, ret = io.popen("rrdtool")
+    if f == nil or ret ~= 0 then
+        return false
+    end
+    f:close()
+    return true
+end
+
 local function create_rrd(numGroups, duration, groupData)
     local rrdname = dconfig["rrdPath"].."/".. groupData["GroupString"] .. ".rrd"
     local rrdstring = "rrdtool create "..rrdname.." --step ".. tostring(numGroups*duration)
@@ -208,7 +321,7 @@ local function create_rrd(numGroups, duration, groupData)
     end
     for i, metric in pairs(groupdata["Metrics"]) do
         rrdstring = rrdstring .. " DS"..":" .. normalize_rrd_string(metric["description"]) ..":GAUGE:"
-        rrdstring = rrdstring ..tostring((numGroups+0.5)*duration) ..":0:U"
+        rrdstring = rrdstring ..tostring(numGroups*duration) ..":0:U"
         table.insert(rrdconfig[groupData["GroupString"]], metric["description"])
     end
     rrdstring = rrdstring .." RRA:AVERAGE:0.5:" .. tostring(60/duration)..":10"
@@ -249,6 +362,45 @@ local config = likwid.getConfiguration()
 -- Read LIKWID daemon configuration file
 read_daemon_config(arg[1])
 
+if #dconfig["groupStrings"] == 0 then
+    print("No monitoring groups defined, exiting...")
+    os.exit(1)
+end
+if dconfig["duration"] == 0 then
+    print("Invalid value 0 for duration. Sanitizing to 1 second.")
+    dconfig["duration"] = 1
+end
+
+if dconfig["syslog"] then
+    if check_logger() == false then
+        print("Cannot find tool logger, disabling syslog output.")
+        dconfig["syslog"] = false
+    end
+end
+if dconfig["logPath"] then
+    if check_logfile() == false then
+        print("Cannot create logfile path "..dconfig["logPath"]..". Deactivating logfile output.")
+        dconfig["logPath"] = nil
+    end
+end
+if dconfig["gmetric"] then
+    if check_gmetric() == false then
+        print("Cannot find gmetric using path "..dconfig["gmetricPath"]..". Deactivating gmetric output.")
+        dconfig["gmetric"] = false
+    end
+end
+if dconfig["rrd"] then
+    if check_rrd() == false then
+        print("Cannot find rrdtool. Deactivating rrd output.")
+        dconfig["rrd"] = false
+    end
+end
+
+-- Activate output to stdout only if no other backend is set
+if dconfig["logPath"] == nil and dconfig["rrd"] == false and dconfig["gmetric"] == false and dconfig["syslog"] == false then
+    dconfig["stdout"] = true
+end
+
 -- Add all cpus to the cpulist
 local cpulist = {}
 for i, thread in pairs(cputopo["threadPool"]) do
@@ -256,8 +408,8 @@ for i, thread in pairs(cputopo["threadPool"]) do
 end
 
 -- Select access mode to msr devices, try configuration file first
-access_mode = config["daemonMode"]
-if access_mode < 0 then
+access_mode = dconfig["accessmode"]
+if access_mode < 0 or access_mode > 1 then
     access_mode = 1
 end
 if likwid.setAccessClientMode(access_mode) ~= 0 then
@@ -288,8 +440,8 @@ for k,v in pairs(dconfig["groupData"]) do
         create_rrd(#dconfig["groupData"], dconfig["duration"], v)
     end
 end
-
-while true do
+likwid.catchSignal()
+while likwid.getSignalState() == 0 do
 
     for groupID,gdata in pairs(dconfig["groupData"]) do
         local old_mtime = likwid_getRuntimeOfGroup(groupID)* 1.E-06
@@ -314,9 +466,9 @@ while true do
                 --print(thread, old_mtime, mtime, mtime - old_mtime)
                 threadResults[thread]["time"] = mtime - old_mtime
                 threadResults[thread]["inverseClock"] = 1.0/clock;
-                local result = likwid.getResult(groupID, event-1, thread-1)
-                if threadResults[thread][gdata["Events"][event-1]["Counter"]] == nil then
-                    threadResults[thread][gdata["Events"][event-1]["Counter"]] = result
+                local result = likwid.getResult(groupID, event, thread)
+                if threadResults[thread][gdata["Events"][event]["Counter"]] == nil then
+                    threadResults[thread][gdata["Events"][event]["Counter"]] = result
                 end
             end
         end
@@ -345,9 +497,9 @@ while true do
                 elseif func == "SUM" then
                     output[metric["description"]] = calc_sum(metric["description"], threadOutput)
                 elseif func == "MIN" then
-                    output[metric["description"]] = calc_sum(metric["description"], threadOutput)
+                    output[metric["description"]] = calc_min(metric["description"], threadOutput)
                 elseif func == "MAX" then
-                    output[metric["description"]] = calc_sum(metric["description"], threadOutput)
+                    output[metric["description"]] = calc_max(metric["description"], threadOutput)
                 elseif func == "ONCE" then
                     output[metric["description"]] = threadOutput[1][metric["description"]]
                 else
@@ -357,6 +509,9 @@ while true do
                 end
             end
             if dconfig["logPath"] ~= nil then
+                logfile(groupID, output)
+            end
+            if dconfig["syslog"] then
                 logger(output)
             end
             if dconfig["gmetric"] then
@@ -364,6 +519,12 @@ while true do
             end
             if dconfig["rrd"] then
                 rrd(gdata, output)
+            end
+            if dconfig["stdout"] then
+                for i,o in pairs(output) do
+                    print(i,o)
+                end
+                print(likwid.hline)
             end
         end
     end
