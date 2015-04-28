@@ -35,10 +35,7 @@ SHARED_LIBRARY = true#NO SPACE
 FORTRAN_INTERFACE = false#NO SPACE
 
 # Instrument likwid-bench for use with likwid-perfctr
-INSTRUMENT_BENCH = true#NO SPACE
-
-# Instrument accesses to msr registers at likwid-perfctr 
-INSTRUMENT_COUNTER = false#NO SPACE
+INSTRUMENT_BENCH = false#NO SPACE
 
 # Use Portable Hardware Locality (hwloc) instead of CPUID
 USE_HWLOC = true#NO SPACE
@@ -46,13 +43,12 @@ USE_HWLOC = true#NO SPACE
 # Usually you do not need to edit below
 MAX_NUM_THREADS = 263
 MAX_NUM_NODES = 64
-HASH_TABLE_SIZE = 20
 CFG_FILE_PATH = /etc/likwid.cfg
 
 # Versioning Information
 VERSION = 4
 RELEASE = 0
-DATE    = 28.11.2014
+DATE    = 28.04.2015
 
 LIBLIKWIDPIN = $(abspath $(PREFIX)/lib/liblikwidpin.so)
 LIKWIDFILTERPATH = $(abspath $(PREFIX)/share/likwid)

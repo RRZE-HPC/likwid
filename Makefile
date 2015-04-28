@@ -69,6 +69,9 @@ OBJ := $(filter-out $(BUILD_DIR)/topology_hwloc.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/numa_hwloc.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/pci_hwloc.o,$(OBJ))
 endif
+ifneq ($(FORTRAN_INTERFACE),true)
+OBJ := $(filter-out $(BUILD_DIR)/likwid_f90_interface.o,$(OBJ))
+endif
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
 OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)
@@ -114,12 +117,12 @@ $(L_HELPER):
 		-e s/'<RELEASE>'/$(RELEASE)/g \
 		$(SRC_DIR)/applications/$@ > $@
 
-$(STATIC_TARGET_LIB): $(OBJ)
+$(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ)
 	@echo "===>  CREATE STATIC LIB  $(STATIC_TARGET_LIB)"
 	$(Q)${AR} -crus $(STATIC_TARGET_LIB) $(OBJ) $(LIBHWLOC) $(LIBLUA)
 
 
-$(DYNAMIC_TARGET_LIB): $(OBJ)
+$(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ)
 	@echo "===>  CREATE SHARED LIB  $(DYNAMIC_TARGET_LIB)"
 	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(LIBHWLOC) $(LIBLUA)
 
@@ -143,7 +146,7 @@ $(GENGROUPLOCK): $(foreach directory,$(shell ls $(GROUP_DIR)), $(wildcard $(GROU
 	$(Q)$(GEN_GROUPS) ./groups  $(BUILD_DIR) ./perl/templates
 	$(Q)touch $(GENGROUPLOCK)
 
-$(FORTRAN_INTERFACE): $(SRC_DIR)/likwid.f90
+$(FORTRAN_IF): $(SRC_DIR)/likwid.f90
 	@echo "===>  COMPILE FORTRAN INTERFACE  $@"
 	$(Q)$(FC) -c  $(FCFLAGS) $<
 	@rm -f likwid.o
@@ -169,7 +172,7 @@ $(BUILD_DIR)/%.o:  %.cc
 
 $(BUILD_DIR)/%.o:  %.S
 	@echo "===>  COMPILE  $@"
-	$(Q)$(CXX) -c $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 
 $(BUILD_DIR)/%.h:  $(SRC_DIR)/includes/%.txt
@@ -202,7 +205,7 @@ distclean: clean
 	@rm -f likwid.lua
 	@rm -f $(STATIC_TARGET_LIB)
 	@rm -f $(DYNAMIC_TARGET_LIB)
-	@rm -f $(FORTRAN_INTERFACE)
+	@rm -f $(FORTRAN_IF_NAME)
 	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
 	@rm -f $(PINLIB)
 	@rm -rf doc/html
@@ -212,12 +215,10 @@ ifeq ($(BUILDDAEMON),true)
 install_daemon:
 	@echo "===> INSTALL access daemon to $(ACCESSDAEMON)"
 	@mkdir -p `dirname $(ACCESSDAEMON)`
-	@cp -f $(DAEMON_TARGET) $(ACCESSDAEMON)
-	@chown root:root $(ACCESSDAEMON)
-	@chmod 4755 $(ACCESSDAEMON)
+	@install -m 4775 -g root -o root $(DAEMON_TARGET) $(ACCESSDAEMON)
 uninstall_daemon:
 	@echo "===> REMOVING access daemon from $(ACCESSDAEMON)"
-	rm -f $(ACCESSDAEMON)
+	@rm -f $(ACCESSDAEMON)
 else
 install_daemon:
 	@echo "===> No INSTALL of the access daemon"
@@ -229,9 +230,7 @@ ifeq ($(BUILDFREQ),true)
 install_freq:
 	@echo "===> INSTALL setFrequencies tool to $(PREFIX)/sbin/$(FREQ_TARGET)"
 	@mkdir -p $(PREFIX)/sbin
-	@cp -f $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
-	@chown root:root $(PREFIX)/sbin/$(FREQ_TARGET)
-	@chmod 4755 $(PREFIX)/sbin/$(FREQ_TARGET)
+	@install -m 4775 -g root -o root $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
 uninstall_freq:
 	@echo "===> REMOVING setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET)"
 	@rm -f $(PREFIX)/sbin/$(FREQ_TARGET)
@@ -246,23 +245,19 @@ install: install_daemon install_freq
 	@echo "===> INSTALL applications to $(PREFIX)/bin"
 	@mkdir -p $(PREFIX)/bin
 	@for APP in $(L_APPS); do \
-		cp -f $$APP  $(PREFIX)/bin; \
-		chmod 755 $(PREFIX)/bin/$$APP; \
+		install -m 755 $$APP  $(PREFIX)/bin; \
 	done
-	@cp ext/lua/lua $(PREFIX)/bin/likwid-lua
-	@chmod 755 $(PREFIX)/bin/likwid-lua
+	@install -m 755 ext/lua/lua $(PREFIX)/bin/likwid-lua
 	@echo "===> INSTALL lua to likwid interface to $(PREFIX)/share/lua"
 	@mkdir -p $(PREFIX)/share/lua
-	@cp -f likwid.lua $(PREFIX)/share/lua
-	@chmod 755 $(PREFIX)/share/lua/likwid.lua
+	@install -m 755 likwid.lua $(PREFIX)/share/lua
 	@echo "===> INSTALL libraries to $(PREFIX)/lib"
 	@mkdir -p $(PREFIX)/lib
-	@cp -f liblikwid*  $(PREFIX)/lib
-	@cp -f ext/lua/liblua* $(PREFIX)/lib
-	@cp -f ext/hwloc/libhwloc* $(PREFIX)/lib
-	@chmod 755 $(PREFIX)/lib/liblikwid*
-	@chmod 755 $(PREFIX)/lib/liblua*
-	@chmod 755 $(PREFIX)/lib/libhwloc*
+	@install -m 755 liblikwid.so $(PREFIX)/lib
+	@install -m 644 liblikwid.a $(PREFIX)/lib
+	@install -m 644 ext/lua/liblua.a $(PREFIX)/lib
+	@install -m 755 ext/hwloc/libhwloc.so $(PREFIX)/lib
+	@install -m 644 ext/hwloc/libhwloc.a $(PREFIX)/lib
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
@@ -270,15 +265,27 @@ install: install_daemon install_freq
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-perfctr.1 > $(MANPREFIX)/man1/likwid-perfctr.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-powermeter.1 > $(MANPREFIX)/man1/likwid-powermeter.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-pin.1 > $(MANPREFIX)/man1/likwid-pin.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/feedGnuplot.1 > $(MANPREFIX)/man1/feedGnuplot.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-accessD.1 > $(MANPREFIX)/man1/likwid-accessD.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-genTopoCfg.1 > $(MANPREFIX)/man1/likwid-genTopoCfg.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-memsweeper.1 > $(MANPREFIX)/man1/likwid-memsweeper.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-mpirun.1 > $(MANPREFIX)/man1/likwid-mpirun.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-perfscope.1 > $(MANPREFIX)/man1/likwid-perfscope.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-setFreq.1 > $(MANPREFIX)/man1/likwid-setFreq.1
 	@chmod 644 $(MANPREFIX)/man1/likwid-*
 	@echo "===> INSTALL headers to $(PREFIX)/include"
 	@mkdir -p $(PREFIX)/include
-	@cp -f src/includes/*.h  $(PREFIX)/include/
-	@chmod 644 $(PREFIX)/include/*.h
+	@install -m 644 src/includes/likwid.h  $(PREFIX)/include/
 	$(FORTRAN_INSTALL)
-	@echo "===> INSTALL groups to $(PREFIX)/share/likwid"
-	@mkdir -p $(PREFIX)/share/likwid
-	@cp -rf groups/* $(PREFIX)/share/likwid
+	@echo "===> INSTALL groups to $(PREFIX)/share/likwid/perfgroups"
+	@mkdir -p $(PREFIX)/share/likwid/perfgroups
+	@cp -rf groups/* $(PREFIX)/share/likwid/perfgroups
+	@echo "===> INSTALL monitoring groups to $(PREFIX)/share/likwid/mongroups"
+	@mkdir -p $(PREFIX)/share/likwid/mongroups
+	@cp -rf monitoring/groups/* $(PREFIX)/share/likwid/mongroups
+	@echo "===> INSTALL default likwid-agent.conf to $(PREFIX)/etc"
+	@sed -e "s/<PREFIX>/$(PREFIX)/g" monitoring/likwid-agent.conf > $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
+	@chmod 600 $(PREFIX)/etc/likwid-agent.conf
 	@echo "===> INSTALL filters to $(LIKWIDFILTERPATH)"
 	@mkdir -p $(LIKWIDFILTERPATH)
 	@cp -f filters/*  $(LIKWIDFILTERPATH)
@@ -294,7 +301,7 @@ uninstall: uninstall_daemon uninstall_freq
 	@for APP in $(C_APPS); do \
 		rm -f $(PREFIX)/bin/$$APP; \
 	done
-	rm -rf $(PREFIX)/bin/likwid-lua
+	@rm -rf $(PREFIX)/bin/likwid-lua
 	@echo "===> REMOVING Lua to likwid interface from $(PREFIX)/share/lua"
 	@rm -rf  $(PREFIX)/share/lua/likwid.lua
 	@echo "===> REMOVING libs from $(PREFIX)/lib"
@@ -303,10 +310,13 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -f $(PREFIX)/lib/liblua*
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
 	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(L_APPS)))
+	@rm -f $(MANPREFIX)/man1/feedGnuplot.1
+	@rm -f $(MANPREFIX)/man1/likwid-setFreq.1
+	@rm -f $(MANPREFIX)/man1/likwid-accessD.1
 	@echo "===> REMOVING header from $(PREFIX)/include"
 	@rm -f $(PREFIX)/include/*.h
 	$(FORTRAN_REMOVE)
-	@echo "===> REMOVING filter and groups from $(PREFIX)/share/likwid"
+	@echo "===> REMOVING filter, groups and default configs from $(PREFIX)/share/likwid"
 	@rm -rf  $(PREFIX)/share/likwid
 
 
@@ -317,5 +327,6 @@ local: $(L_APPS) likwid.lua
 		sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<RELEASE>/$(RELEASE)/g" -e "s+$(PREFIX)/bin/likwid-lua+$(PWD)/ext/lua/lua+" -e "s+$(PREFIX)/share/lua/?.lua+$(PWD)/?.lua+" $$APP; \
 		chmod +x $$APP; \
 	done
-	@sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<RELEASE>/$(RELEASE)/g" -e "s+$(PREFIX)/lib+$(PWD)+g" -e "s+$(PREFIX)/share/likwid+$(PWD)/groups+g" likwid.lua;
+	@sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<RELEASE>/$(RELEASE)/g" -e "s+$(PREFIX)/lib+$(PWD)+g" -e "s+$(PREFIX)/share/likwid/perfgroups+$(PWD)/groups+g" likwid.lua;
+	@sed -i -e "s+$(PREFIX)/share/likwid/mongroups+$(PWD)/monitoring/groups+g" likwid-agent
 

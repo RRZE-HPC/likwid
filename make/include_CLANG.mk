@@ -1,24 +1,21 @@
-CC  = gcc
+CC  = clang
 FC  = ifort
 AS  = as
 AR  = ar
-PAS = ./perl/AsmGen.pl 
+PAS = ./perl/AsmGen.pl
 GEN_PAS = ./perl/generatePas.pl 
-GEN_GROUPS = ./perl/generateGroups.pl 
-GEN_PMHEADER = ./perl/gen_events.pl 
+GEN_GROUPS = ./perl/generateGroups.pl
+GEN_PMHEADER = ./perl/gen_events.pl
 
 ANSI_CFLAGS   =
-#ANSI_CFLAGS += -pedantic
-#ANSI_CFLAGS += -Wextra
-#ANSI_CFLAGS += -Wall
 
 CFLAGS   =  -O2 -std=c99 -Wno-format -fPIC
-#FCFLAGS  = -module ./  # ifort
-FCFLAGS  = -J ./  -fsyntax-only  #gfortran
+FCFLAGS  = -module ./  # ifort
+#FCFLAGS  = -J ./  -fsyntax-only  #gfortran
 PASFLAGS  = x86-64
 ASFLAGS  = 
 CPPFLAGS =
-LFLAGS   =  -pthread 
+LFLAGS   =  -pthread
 
 SHARED_CFLAGS = -fPIC
 SHARED_LFLAGS = -shared
@@ -29,5 +26,3 @@ DEFINES  += -DDEBUGLEV=0
 
 INCLUDES =
 LIBS     = -lm
-
-

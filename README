@@ -15,9 +15,9 @@ likwid-mpirun    - Wrapper to start MPI and Hybrid MPI/OpenMP applications (Supp
 likwid-scope     - Frontend to the timeline mode of likwid-perfctr, plots live graphs of performance metrics
 
 For a detailed  documentation on the usage of the tools have a look at the
-likwid wiki pages at:
+html documentation. Call
 
-http://code.google.com/p/likwid/wiki/Introduction
+make docs
 
 If you have problems or suggestions please let me know on the likwid mailing list:
 
