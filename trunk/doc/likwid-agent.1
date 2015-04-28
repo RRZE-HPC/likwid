@@ -1,0 +1,94 @@
+.TH LIKWID-AGENT 1 <DATE> likwid\-VERSION
+.SH NAME
+likwid-agent \- monitoring daemon for hardware performance counters
+.SH SYNOPSIS
+.B likwid-agent <config_file>
+.SH DESCRIPTION
+.B likwid-agent
+is a daemon application that uses
+.B likwid-perfctr(1)
+to measure hardware performance counters. The basic configuration is in a global configuration file. The configuration of the hardware event sets is done with extra files suitable for each architecture. Besides the hardware event configuration, the raw data can be transformed using formulas to interested metrics. In order to output to much data, the data can be further filtered or aggregated.
+.B likwid-agent
+provides multiple store backends like logfiles, RRD (Round Robin Database) or gmetric (Ganglia Monitoring System).
+
+.SH CONFIG FILE
+The global configuration file has the following options:
+.TP
+.B GROUPPATH <path>
+Path to the group files containing event set and output defintitions. See section
+.B GROUP FILES
+for information.
+.TP
+.B EVENTSET <group1> <group2> ...
+Space separated list of groups (without .txt) that should be monitored.
+.TP
+.B DURATION <time>
+Measurement duration in seconds.
+.TP
+.B LOGPATH <path>
+Specify a logfile.
+.TP
+.B GMETRIC <True/False>
+Activates the output to gmetric.
+.TP
+.B GMETRICPATH <path>
+Set path to the gmetric executable.
+.TP
+.B GMETRICCONFIG <path>
+Set a custom configuration file is needed for gmetric.
+.TP
+.B RRD <True/False>
+Activates the output to RRD files (Round Robin Database).
+.TP
+.B RRDPATH <path>
+Output path for the RRD files. The files are named according to the group and each output metric is saved as DS with function GAUGE. The RRD is configured with RRA entries to store average, minimum and maximum of 10 minutes for one hour, of 60 min for one day and daily data for one month.
+.TP
+.B SYSLOG <True/False>
+Activates the output to system log using logger.
+.TP
+.B SYSLOGPRIO <prio>
+Set the priority string for logger, default is 'local0.notice'.
+
+.SH GROUP FILES
+The group files are adapted performance group files as used by
+.B likwid-perfctr(1).
+This makes it easy to uses the predefined and often used performance groups as basis for the monitoring. The folder structure of for the groups is
+.B <GROUPPATH>/<SHORT_ARCH_NAME>/
+with
+.B <SHORT_ARCH_NAME>
+similar to the ones for the performance groups, like 'sandybridge' or 'haswellEP'.
+.TP
+.B SHORT <string>
+A short descriptive information about the group.
+.TP
+.B EVENTSET
+.TP
+.B <counter1> <event1>
+.TP
+.B <counter2>:<option> <event2>
+Defintion of the eventset similar to the performance groups.
+.TP
+.B METRICS
+.TP
+.B <metricname> <formula>
+.TP
+.B <filter> <metricname> <formula>
+Defintion of the output metrics. The syntax follows the
+.B METRICS
+defintion of the performance groups as used by
+.B likwid-perfctr(1).
+If no function is set at the beginning of the line,
+.B <formula>
+is evaluated for every CPU and send to the output backends. The
+.B <metricname>
+gets the prefix "T<cpuid> ". To avoid writing to much data to the backends, the data can be reduced by
+.B <filter>.
+The possible filter options are MIN, MAX, AVG, SUM, ONCE. The ONCE filter sends only the data from the first CPU to the output backends commonly used for the measurement duration.
+
+
+.SH AUTHOR
+Written by Thomas Roehl <thomas.roehl@googlemail.com>.
+.SH BUGS
+Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+.SH "SEE ALSO"
+likwid-perfctr(1), rrdtool(1), gmetric(1)

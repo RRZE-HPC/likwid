@@ -1,0 +1,28 @@
+.TH LIKWID-MEMSWEEPER 1 <DATE> likwid\-<VERSION>
+.SH NAME
+likwid-memsweeper \- A tool to clean up NUMA memory domains and last level caches.
+.SH SYNOPSIS
+.B likwid-memsweeper
+.RB [\-hv]
+.RB [ \-c
+.IR <node_list> ]
+.SH DESCRIPTION
+.B likwid-memsweeper
+is a command line application to shrink the file buffer cache by filling the NUMA domain with random pages. Moreover, the tool invalidates all cachelines in the LLC.
+.SH OPTIONS
+.TP
+.B \-h, \-\-\^help
+prints a help message to standard output, then exits.
+.TP
+.B \-v, \-\-\^version
+prints a version message to standard output, then exits.
+.TP
+.B \-\^c <node_list>
+set the NUMA domain for sweeping.
+
+.SH AUTHOR
+Written by Thomas Roehl <thomas.roehl@googlemail.com>.
+.SH BUGS
+Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+.SH "SEE ALSO"
+likwid-perfctr(1), likwid-features(1), likwid-pin(1), likwid-powermeter(1),

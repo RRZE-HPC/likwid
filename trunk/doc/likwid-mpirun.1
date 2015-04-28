@@ -1,0 +1,104 @@
+.TH LIKWID-MPIRUN 1 <DATE> likwid\-<VERSION>
+.SH NAME
+likwid-mpirun \- A tool to start and monitor MPI applications with LIKWID
+.SH SYNOPSIS
+.B likwid-memsweeper
+.RB [\-hvdOm]
+.RB [ \-n
+.IR number_of_processes ]
+.RB [ \-hostfile
+.IR filename ]
+.RB [ \-nperdomain
+.IR number_of_processes_in_domain ]
+.RB [ \-pin
+.IR expression ]
+.RB [ \-omp
+.IR omptype ]
+.RB [ \-mpi
+.IR mpitype ]
+.RB [ \-g
+.IR eventset ]
+.RB [\-\-]
+.SH DESCRIPTION
+.B likwid-mpirun
+is a command line application that wraps the vendor-specific mpirun tool and adds calls to
+.B likwid-perfctr(1)
+to the execution string. The user-given application is ran, measured and the results returned to the staring node.
+.SH OPTIONS
+.TP
+.B \-\^h,\-\-\^help
+prints a help message to standard output, then exits
+.TP
+.B \-\^v,\-\-\^version
+prints version information to standard output, then exits
+.TP
+.B \-\^d,\-\-\^debug
+prints debug messages to standard output
+.TP
+.B \-\^n,\-\^np,\-\-\^n,\-\-\^np <number_of_processes>
+specifies how many MPI processes should be started
+.TP
+.B \-\^hostfile <filename>
+specifies the nodes to schedule the MPI processes on
+.TP
+.B \-\^nperdomain <number_of_processes_in_domain>
+specifies the processes per affinity domain (see
+.B likwid-pin
+for info about affinity domains)
+.TP
+.B \-\^pin <expression>
+specifies the pinning for hybrid execution (see
+.B likwid-pin
+for info about affinity domains)
+.TP
+.B \-\^s, \-\-\^skip <mask>
+Specify skip mask as HEX number. For each set bit the corresponding thread is skipped.
+.TP
+.B \-\^omp <omptype>
+enables hybrid setup. Likwid tries to determine OpenMP type automatically. The only possible value are
+.B intel
+and
+.B gnu
+.TP
+.B \-\^mpi <mpitype>
+specifies the MPI implementation that should be used by the wrapper. Possible values are
+.B intelmpi, openmpi
+and
+.B mvapich2
+.TP
+.B \-\^m,\-\-\^marker
+activates the Marker API for the executed MPI processes
+.TP
+.B \-\^O
+prints output in CSV not ASCII tables
+.TP
+.B \-\-
+stops parsing arguments for likwid-mpirun, in order to set options for underlying MPI implementation after \-\-.
+
+.SH EXAMPLE
+.IP 1. 4
+For standard application:
+.TP
+.B likwid-mpirun -np 32 ./myApp
+.PP
+Will run 32 MPI processes, each host is filled with as much processes as written in ppn
+.IP 2. 4
+With pinning:
+.TP
+.B likwid-mpirun -np 32 -nperdomain S:2 ./myApp
+.PP
+Will start 32 MPI processes with 2 processes per socket.
+.IP 3. 4
+For hybrid runs:
+.TP
+.B likwid-mpirun -np 32 -pin M0:0-3_M1:0-3 ./myApp
+.PP
+Will start 32 MPI processes with 2 processes per node. Threads of the first process are pinned to the cores 0-3 in NUMA domain 0 (M0). The OpenMP threads of the second process are pinned to the first four cores in NUMA domain 1 (M1)
+
+
+.SH AUTHOR
+Written by Thomas Roehl <thomas.roehl@googlemail.com>.
+.SH BUGS
+Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+.SH "SEE ALSO"
+likwid-pin(1), likwid-perfctr(1), likwid-powermeter(1)
