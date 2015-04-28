@@ -175,7 +175,7 @@ void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int n
         if (group->numberOfThreads > domain->numberOfProcessors)
         {
             fprintf(stderr, "Error: Domain %s supports only up to %d threads.\n",
-                    bdata(tokens->entry[0]),domain->numberOfProcessors);
+                    bdata(tokens->entry[0]), domain->numberOfProcessors);
             exit(EXIT_FAILURE);
         }
 

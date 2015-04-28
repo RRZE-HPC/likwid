@@ -33,8 +33,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 
-#include <error.h>
+#include <errno.h>
 #include <threads.h>
 
 
@@ -142,21 +143,29 @@ threads_createGroups(int numberOfGroups)
 
     if (numThreads % numberOfGroups)
     {
-        ERROR_PRINT(Not enough threads %d to create %d groups,numThreads,numberOfGroups);
+        fprintf(stderr, "ERROR: Not enough threads %d to create %d groups\n",numThreads,numberOfGroups);
     }
     else 
     {
         numThreadsPerGroup = numThreads / numberOfGroups;
     }
 
-    threads_groups = (ThreadGroup*) malloc(numberOfGroups *
-            sizeof(ThreadGroup));
+    threads_groups = (ThreadGroup*) malloc(numberOfGroups * sizeof(ThreadGroup));
+    if (!threads_groups)
+    {
+        fprintf(stderr, "ERROR: Cannot allocate thread groups - %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
 
     for (i = 0; i < numberOfGroups; i++)
     {
         threads_groups[i].numberOfThreads = numThreadsPerGroup;
-        threads_groups[i].threadIds = (int*) malloc(numThreadsPerGroup *
-                sizeof(int));
+        threads_groups[i].threadIds = (int*) malloc(numThreadsPerGroup * sizeof(int));
+        if (!threads_groups[i].threadIds)
+        {
+            fprintf(stderr, "ERROR: Cannot allocate threadID list for thread groups - %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
 
         for (j = 0; j < numThreadsPerGroup; j++)
         {
@@ -231,15 +240,22 @@ threads_registerDataGroup(int groupId,
 }
 
 size_t
-threads_updateIterations(int groupId)
+threads_updateIterations(int groupId, size_t demandIter)
 {
     int i;
     size_t iterations = threads_data[0].data.iter;
-    iterations = (iterations < 10 ? 10 : iterations);
+    if (demandIter > 0)
+    {
+        iterations = demandIter;
+    }
+    //iterations = (iterations < 10 ? 10 : iterations);
 
     for (i = 0; i < threads_groups[groupId].numberOfThreads; i++)
     {
         threads_data[threads_groups[groupId].threadIds[i]].data.iter = iterations;
+        threads_data[threads_groups[groupId].threadIds[i]].data.cycles = 0;
+        threads_data[threads_groups[groupId].threadIds[i]].cycles = 0;
+        threads_data[threads_groups[groupId].threadIds[i]].time = 0;
     }
     return iterations;
 }
