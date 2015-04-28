@@ -30,8 +30,9 @@
 /* #####   HEADER FILE INCLUDES   ######################################### */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
-#include <error.h>
+#include <errno.h>
 #include <barrier.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
@@ -59,7 +60,7 @@ barrier_registerGroup(int numThreads)
 
     if (currentGroupId > maxGroupId)
     {
-        ERROR_PRINT(Group ID %d larger than maxGroupID %d,currentGroupId,maxGroupId);
+        fprintf(stderr, "ERROR: Group ID %d larger than maxGroupID %d\n",currentGroupId,maxGroupId);
     }
 
     groups[currentGroupId].numberOfThreads = numThreads;
@@ -70,7 +71,8 @@ barrier_registerGroup(int numThreads)
 
     if (ret < 0)
     {
-        ERROR;
+        fprintf(stderr, "ERROR: Cannot register thread group - %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
 
@@ -85,11 +87,11 @@ barrier_registerThread(BarrierData* barr, int groupId, int threadId)
     int j = 1;
     if (groupId > currentGroupId)
     {
-        ERROR_PLAIN_PRINT(Group not yet registered);
+        fprintf(stderr, "ERROR: Group not yet registered");
     }
     if (threadId > groups[groupId].numberOfThreads)
     {
-        ERROR_PRINT(Thread ID %d too large,threadId);
+        fprintf(stderr, "ERROR: Thread ID %d too large\n",threadId);
     }
 
     barr->numberOfThreads = groups[groupId].numberOfThreads;
@@ -103,7 +105,8 @@ barrier_registerThread(BarrierData* barr, int groupId, int threadId)
 
     if (ret < 0)
     {
-        ERROR;
+        fprintf(stderr, "ERROR: Cannot register thread - %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
 
@@ -124,6 +127,11 @@ barrier_init(int numberOfGroups)
 {
     maxGroupId = numberOfGroups-1;
     groups = (BarrierGroup*) malloc(numberOfGroups * sizeof(BarrierGroup));
+    if (!groups)
+    {
+        fprintf(stderr, "ERROR: Cannot allocate barrier - %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
 }
 
 void

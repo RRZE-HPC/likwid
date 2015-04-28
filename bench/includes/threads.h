@@ -90,7 +90,8 @@ extern void threads_registerDataGroup(
         ThreadUserData* data,
         threads_copyDataFunc func);
 
-extern size_t threads_updateIterations(int groupId);
+extern size_t threads_updateIterations(int groupId, size_t demandIter);
+
 /**
  * @brief  Join the threads and free pthread related data structures
  * @param

@@ -61,10 +61,13 @@ BENCH_DIR   = ./x86-64
 endif
 endif
 
-DYNAMIC_TARGET_LIB := liblikwid.so
 STATIC_TARGET_LIB := ../liblikwid.a
-LIBHWLOC := ../ext/hwloc/libhwloc.a
+STATIC_HWLOC_LIB := ../ext/hwloc/libhwloc.a
 
+BENCH_LIBS := $(STATIC_TARGET_LIB)
+ifeq ($(USE_HWLOC),true)
+BENCH_LIBS += $(STATIC_HWLOC_LIB)
+endif
 
 ifeq ($(DEBUG),true)
 DEBUG_FLAGS = -g
@@ -84,10 +87,14 @@ CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 all: $(BUILD_DIR) $(OBJ) $(OBJ_BENCH) likwid-bench_target
 
 
-likwid-bench_target:  $(BUILD_DIR) $(OBJ) $(OBJ_BENCH)
+$(STATIC_TARGET_LIB):
+	@echo "===> Building likwid"
+	make -C ..
+
+likwid-bench_target:  $(BUILD_DIR) $(OBJ) $(OBJ_BENCH) $(STATIC_TARGET_LIB)
 	@echo $(OBJ_BENCH)
 	@echo "===>  LINKING  likwid-bench"
-	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o likwid-bench  likwid-bench.c $(OBJ_BENCH) $(STATIC_TARGET_LIB) $(OBJ) $(LIBHWLOC) -lm
+	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o likwid-bench  likwid-bench.c $(OBJ_BENCH) $(OBJ) $(BENCH_LIBS) -lm
 
 
 $(BUILD_DIR):

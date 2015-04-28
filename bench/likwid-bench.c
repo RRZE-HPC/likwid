@@ -37,7 +37,7 @@
 #include <inttypes.h>
 
 #include <bstrlib.h>
-#include <error.h>
+#include <errno.h>
 #include <threads.h>
 #include <barrier.h>
 #include <testcases.h>
@@ -59,13 +59,13 @@ printf("-h\t Help message\n"); \
 printf("-a\t List available benchmarks \n"); \
 printf("-d\t Delimiter used for physical core list (default ,) \n"); \
 printf("-p\t List available thread domains\n\t or the physical ids of the cores selected by the -c expression \n"); \
-printf("-s\t Seconds to run the test minimally (default 1)\n");\
+printf("-s <TIME>\t Seconds to run the test minimally (default 1)\n");\
 printf("\t If resulting iteration count is below 10, it is normalized to 10.\n");\
 printf("-l <TEST>\t list properties of benchmark \n"); \
 printf("-t <TEST>\t type of test \n"); \
 printf("-w\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>], size in kB, MB or GB  (mandatory)\n"); \
-printf("Processors are in compact ordering.\n"); \
-printf("Usage: likwid-bench -t copy -w S0:100kB \n")
+printf("\n"); \
+printf("Usage: likwid-bench -t copy -w S0:100kB:1 \n")
 
 #define VERSION_MSG \
     printf("likwid-bench   %d.%d \n\n",VERSION,RELEASE)
@@ -112,14 +112,17 @@ int main(int argc, char** argv)
     double cycPerUp = 0.0;
     const TestCase* test = NULL;
     uint64_t realSize = 0;
-    uint64_t realCycles = 0;
     uint64_t realIter = 0;
     uint64_t cpuClock = 0;
+    uint64_t demandIter = 0;
+    TimerData itertime;
     Workgroup* currentWorkgroup = NULL;
     Workgroup* groups = NULL;
     uint32_t min_runtime = 1; /* 1s */
     bstring HLINE;
     binsertch(HLINE, 0, 80, '-');
+    int (*ownprintf)(const char *format, ...);
+    ownprintf = &printf;
 
     /* Handling of command line options */
     if (argc ==  1)
@@ -224,11 +227,11 @@ int main(int argc, char** argv)
         }
     }
 
-    threads_test();
 
-    if (topology_init() == EXIT_FAILURE)
+    if (topology_init() != EXIT_SUCCESS)
     {
-        ERROR_PLAIN_PRINT(Unsupported processor!);
+        fprintf(stderr, "Unsupported processor!\n");
+        exit(EXIT_FAILURE);
     }
     numa_init();
     affinity_init();
@@ -257,7 +260,7 @@ int main(int argc, char** argv)
     }
 
     optind = 0;
-    while ((c = getopt (argc, argv, "w:t:s:l:aphv")) != -1) 
+    while ((c = getopt (argc, argv, "w:t:s:l:i:aphv")) != -1) 
     {
         switch (c)
         {
@@ -273,7 +276,6 @@ int main(int argc, char** argv)
                         fprintf (stderr, "Stream %d: offset is not a multiple of stride!\n",i);
                         return EXIT_FAILURE;
                     }
-
                     allocator_allocateVector(&(currentWorkgroup->streams[i].ptr),
                             PAGE_ALIGNMENT,
                             currentWorkgroup->size,
@@ -296,13 +298,13 @@ int main(int argc, char** argv)
         globalNumberOfThreads += groups[i].numberOfThreads;
     }
 
-    printf(bdata(HLINE));
+    ownprintf(bdata(HLINE));
     printf("LIKWID MICRO BENCHMARK\n");
     printf("Test: %s\n",test->name);
-    printf(bdata(HLINE));
+    ownprintf(bdata(HLINE));
     printf("Using %" PRIu64 " work groups\n",numberOfWorkgroups);
     printf("Using %d threads\n",globalNumberOfThreads);
-    printf(bdata(HLINE));
+    ownprintf(bdata(HLINE));
 
 
     threads_init(globalNumberOfThreads);
@@ -323,6 +325,10 @@ int main(int argc, char** argv)
     for (i=0; i<numberOfWorkgroups; i++)
     {
         myData.iter = iter;
+        if (demandIter > 0)
+        {
+            myData.iter = demandIter;
+        }
         myData.min_runtime = min_runtime;
         myData.size = groups[i].size;
         myData.test = test;
@@ -346,13 +352,14 @@ int main(int argc, char** argv)
         free(myData.streams);
     }
 
-    
-
-    threads_create(getIter);
-    threads_join();
+    if (demandIter == 0)
+    {
+        threads_create(getIter);
+        threads_join();
+    }
     for (i=0; i<numberOfWorkgroups; i++)
     {
-        iter = threads_updateIterations(i);
+        iter = threads_updateIterations(i, demandIter);
     }
     threads_create(runTest);
     threads_join();
@@ -361,18 +368,18 @@ int main(int argc, char** argv)
     for (int i=0; i<globalNumberOfThreads; i++)
     {
         realSize += threads_data[i].data.size;
-        realCycles += threads_data[i].cycles;
         realIter += threads_data[i].data.iter;
     }
 
 
+
     time = (double) threads_data[0].cycles / (double) cpuClock;
-    printf(bdata(HLINE));
+    ownprintf(bdata(HLINE));
     printf("Cycles:\t\t\t%llu\n", LLU_CAST threads_data[0].cycles);
     printf("Iterations:\t\t%llu\n", LLU_CAST realIter);
     printf("Iterations per thread:\t%llu\n",LLU_CAST threads_data[0].data.iter);
-    printf("Size:\t\t\t%" PRIu64 "\n",  realSize );
-    printf("Size per thread:\t%llu\n", LLU_CAST threads_data[0].data.size);
+    printf("Size:\t\t\t%" PRIu64 "\n",  realSize*test->bytes );
+    printf("Size per thread:\t%llu\n", LLU_CAST threads_data[0].data.size*test->bytes);
     printf("Time:\t\t\t%e sec\n", time);
     printf("Number of Flops:\t%llu\n", LLU_CAST (numberOfWorkgroups * iter * realSize *  test->flops));
     printf("MFlops/s:\t\t%.2f\n",
@@ -393,7 +400,7 @@ int main(int argc, char** argv)
             break;
     }
 
-    printf(bdata(HLINE));
+    ownprintf(bdata(HLINE));
     threads_destroy(numberOfWorkgroups);
     
 #ifdef PERFMON

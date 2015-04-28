@@ -68,7 +68,7 @@
         timer_start(&time); \
     } \
     START_PERFMON  \
-    for (i=0; i<  data->data.iter; i++) \
+    for (i=0; i<  myData->iter; i++) \
     {   \
         func; \
     } \
