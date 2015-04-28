@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include <error.h>
-#include <strUtil.h>
+//#include <strUtil.h>
 
 #include <numa.h>
 #include <topology.h>
@@ -91,13 +91,12 @@ uint64_t getTotalNodeMem(int nodeId)
 int hwloc_findProcessor(int nodeID, int cpuID)
 {
     hwloc_obj_t obj;
-    int count, index;
     int i;
     int pu_count = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
     
     for (i=0; i<pu_count; i++)
     {
-        obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PU, i);    
+        obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PU, i);
         if (!obj)
         {
             continue;
@@ -122,7 +121,7 @@ int hwloc_numa_init(void)
     int d;
     int depth;
     int cores_per_socket;
-    hwloc_obj_t obj, tmp_obj;
+    hwloc_obj_t obj;
     const struct hwloc_distances_s* distances;
     hwloc_obj_type_t hwloc_type = HWLOC_OBJ_NODE;
 
@@ -246,7 +245,7 @@ int hwloc_numa_init(void)
     
     }
 
-    if (numa_info.nodes[0].numberOfProcessors < 0)
+    if (numa_info.nodes[0].numberOfProcessors == 0)
     {
         return -1;
     }

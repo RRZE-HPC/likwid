@@ -8,10 +8,11 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Authors:  Jan Treibig (jt), jan.treibig@gmail.com,
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig
+ *      Copyright (C) 2015 Jan Treibig, Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -40,7 +41,7 @@
 PowerInfo power_info;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
+static int power_initialized = 0;
 
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -74,6 +75,9 @@ power_init(int cpuId)
         case ATOM_SILVERMONT_Z1:
         case ATOM_SILVERMONT_Z2:
         case ATOM_SILVERMONT_F:
+        case BROADWELL:
+        case BROADWELL_E:
+        case BROADWELL_D:
             power_info.hasRAPL = 1;
             break;
         case ATOM_SILVERMONT_C:
@@ -100,6 +104,10 @@ power_init(int cpuId)
     if (!HPMinitialized())
     {
         HPMaddThread(cpuId);
+    }
+    if (power_initialized)
+    {
+        return 0;
     }
     if (cpuid_info.turbo)
     {
@@ -139,6 +147,9 @@ power_init(int cpuId)
                     }
                 }
             }
+            //TODO: Haswell EP and possibly Broadwell EP support multiple turbo 
+            //      registers besides MSR_TURBO_RATIO_LIMIT:
+            //      MSR_TURBO_RATIO_LIMIT1 and MSR_TURBO_RATIO_LIMIT2
         }
         else
         {
@@ -154,7 +165,14 @@ power_init(int cpuId)
         {
             double energyUnit;
             power_info.powerUnit = pow(0.5,(double) extractBitField(flags,4,0));
-            energyUnit = pow(0.5,(double) extractBitField(flags,5,8));
+            if (cpuid_info.model != ATOM_SILVERMONT_E)
+            {
+                energyUnit = 1.0 / (1 << ((flags >> 8) & 0x1F));
+            }
+            else
+            {
+                energyUnit = 1.0 * (1 << ((flags >> 8) & 0x1F)) / 1000000;
+            }
             power_info.timeUnit = pow(0.5,(double) extractBitField(flags,4,16));
             for (i = 0; i < NUM_POWER_DOMAINS; i++)
             {
@@ -174,7 +192,6 @@ power_init(int cpuId)
                 power_info.domains[DRAM].energyUnit = 15.3E-6;
             }
 
-            
             for(i = 0; i < NUM_POWER_DOMAINS; i++)
             {
                 err = HPMread(cpuId, MSR_DEV, power_regs[i], &flags);
@@ -194,6 +211,11 @@ power_init(int cpuId)
                     {
                         power_info.domains[i].supportFlags |= POWER_DOMAIN_SUPPORT_LIMIT;
                     }
+                    else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_INFO, Deactivating limit register for RAPL domain %s, power_names[i]);
+                        limit_regs[i] = 0x0;
+                    }
                 }
                 if (info_regs[i] != 0x0)
                 {
@@ -202,10 +224,18 @@ power_init(int cpuId)
                     {
                         power_info.domains[i].supportFlags |= POWER_DOMAIN_SUPPORT_INFO;
                         power_info.domains[i].tdp = (double) extractBitField(flags,15,0) * power_info.powerUnit;
-                        power_info.domains[i].minPower = (double) extractBitField(flags,15,16) * power_info.powerUnit;
-                        power_info.domains[i].maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
-                        power_info.domains[i].maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
+                        if (cpuid_info.model != ATOM_SILVERMONT_C)
+                        {
+                            power_info.domains[i].minPower = (double) extractBitField(flags,15,16) * power_info.powerUnit;
+                            power_info.domains[i].maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
+                            power_info.domains[i].maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
+                        }
                     }
+                    /*else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_INFO, Deactivating info register for RAPL domain %s, power_names[i]);
+                        info_regs[i] = 0x0;
+                    }*/
                 }
                 if (policy_regs[i] != 0x0)
                 {
@@ -214,6 +244,11 @@ power_init(int cpuId)
                     {
                         power_info.domains[i].supportFlags |= POWER_DOMAIN_SUPPORT_POLICY;
                     }
+                    /*else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_INFO, Deactivating policy register for RAPL domain %s, power_names[i]);
+                        policy_regs[i] = 0x0;
+                    }*/
                 }
                 if (perf_regs[i] != 0x0)
                 {
@@ -222,6 +257,11 @@ power_init(int cpuId)
                     {
                         power_info.domains[i].supportFlags |= POWER_DOMAIN_SUPPORT_PERF;
                     }
+                    /*else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_INFO, Deactivating perf register for RAPL domain %s, power_names[i]);
+                        perf_regs[i] = 0x0;
+                    }*/
                 }
             }
         }
@@ -230,6 +270,7 @@ power_init(int cpuId)
             fprintf(stderr,"Cannot gather values from MSR_RAPL_POWER_UNIT, deactivating RAPL support\n");
             power_info.hasRAPL =  0;
         }
+        power_initialized = 1;
         return power_info.hasRAPL;
     }
     else
@@ -244,7 +285,7 @@ int power_perfGet(int cpuId, PowerType domain, uint32_t* status)
 {
     int err = 0;
     *status = 0x0U;
-    if ((domain < 0) || (domain >= NUM_POWER_DOMAINS))
+    if (domain >= NUM_POWER_DOMAINS)
     {
         return -EINVAL;
     }
@@ -263,13 +304,13 @@ int power_perfGet(int cpuId, PowerType domain, uint32_t* status)
 int power_limitSet(int cpuId, PowerType domain, double power, double time, int doClamping)
 {
     int err = 0;
-    if ((domain < 0) || (domain >= NUM_POWER_DOMAINS))
+    if (domain >= NUM_POWER_DOMAINS)
     {
         return -EINVAL;
     }
     fprintf(stderr, "Not implemented\n");
     return 0;
-    uint32_t timeField = 0x0ULL;
+
     uint32_t X = (log(time) - log(power_info.timeUnit))/log(2);
     uint32_t powerField = (uint32_t)(power/(power_info.domains[domain].energyUnit));
     uint64_t flags = (powerField & 0xFFFF)|((X & (0x1F))<<17);
@@ -296,7 +337,7 @@ int power_limitGet(int cpuId, PowerType domain, double* power, double* time)
     *power = 0;
     *time = 0;
     unsigned int Y,Z;
-    if ((domain < 0) || (domain >= NUM_POWER_DOMAINS))
+    if (domain >= NUM_POWER_DOMAINS)
     {
         return -EINVAL;
     }
@@ -320,7 +361,7 @@ int power_limitGet(int cpuId, PowerType domain, double* power, double* time)
 int power_limitState(int cpuId, PowerType domain)
 {
     int err = 0;
-    if ((domain < 0) || (domain >= NUM_POWER_DOMAINS))
+    if (domain >= NUM_POWER_DOMAINS)
     {
         return -EINVAL;
     }
@@ -345,7 +386,7 @@ int power_limitState(int cpuId, PowerType domain)
 int power_limitActivate(int cpuId, PowerType domain)
 {
     int err = 0;
-    if ((domain < 0) || (domain >= NUM_POWER_DOMAINS))
+    if (domain >= NUM_POWER_DOMAINS)
     {
         return -EINVAL;
     }
@@ -397,7 +438,7 @@ int power_limitDectivate(int cpuId, PowerType domain)
 int power_policySet(int cpuId, PowerType domain, uint32_t priority)
 {
     int err = 0;
-    if ((domain < 0) || (domain >= NUM_POWER_DOMAINS))
+    if (domain >= NUM_POWER_DOMAINS)
     {
         return -EINVAL;
     }
@@ -418,7 +459,7 @@ int power_policyGet(int cpuId, PowerType domain, uint32_t* priority)
 {
     int err = 0;
     *priority = 0x0U;
-    if ((domain < 0) || (domain >= NUM_POWER_DOMAINS))
+    if (domain >= NUM_POWER_DOMAINS)
     {
         return -EINVAL;
     }

@@ -42,12 +42,13 @@ function usage()
     version()
     print("A tool to print the thread and cache topology on x86 CPUs.\n")
     print("Options:")
-    print("-h\t Help message")
-    print("-v\t Version information")
-    print("-c\t List cache information")
-    print("-C\t Measure processor clock")
-    print("-o\t Store output to file. (Optional: Apply text filter)")
-    print("-g\t Graphical output")
+    print("-h, --help\t\t Help message")
+    print("-v, --version\t\t Version information")
+    print("-V, --verbose <level>\t Set verbosity")
+    print("-c, --caches\t\t List cache information")
+    print("-C, --clock\t\t Measure processor clock")
+    print("-o, --output <file>\t Store output to file. (Optional: Apply text filter)")
+    print("-g\t\t\t Graphical output")
 end
 
 print_caches = false
@@ -55,22 +56,30 @@ print_graphical = false
 measure_clock = false
 outfile = nil
 
-for opt,arg in likwid.getopt(arg, "hvcCgo:V:") do
-    if (opt == "h") then
+for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","help","version","verbose:","clock","caches","output:"}) do
+    if (type(arg) == "string") then
+        local s,e = arg:find("-");
+        if s == 1 then
+            print(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
+            print("Did you forget an argument to an option?")
+            os.exit(1)
+        end
+    end
+    if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
-    elseif (opt == "v") then
+    elseif opt == "v" or opt == "version" then
         version()
         os.exit(0)
-    elseif (opt == "V") then
+    elseif opt == "V" or opt == "verbose" then
         likwid.setVerbosity(tonumber(arg))
-    elseif (opt == "c") then
+    elseif opt == "c" or opt == "caches" then
         print_caches = true
-    elseif (opt == "C") then
+    elseif opt == "C" or opt == "clock" then
         measure_clock = true
-    elseif (opt == "g") then
+    elseif opt == "g" then
         print_graphical = true
-    elseif (opt == "o") then
+    elseif opt == "o" or opt == "output" then
         outfile = arg
         io.output(arg:gsub(string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$"),"tmp"))
         print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end

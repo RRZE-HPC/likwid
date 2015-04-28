@@ -11,7 +11,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Thomas Roehl (tr), thomas.roehl@gmail.com
+ *      Author:  Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2014 Thomas Roehl
@@ -35,38 +35,38 @@ package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
 local likwid = require("likwid")
 
 local function version()
-    print(string.format("likwid-perfctr.lua --  Version %d.%d",likwid.version,likwid.release))
+    print(string.format("likwid-perfctr --  Version %d.%d",likwid.version,likwid.release))
 end
 
 local function examples()
     print("Examples:")
     print("Run command on CPU 2 and measure performance group TEST:")
-    print("likwid-perfctr.lua -C 2 -g TEST ./a.out")
+    print("likwid-perfctr -C 2 -g TEST ./a.out")
 end
 
 local function usage()
     version()
     print("A tool to read out performance counter registers on x86 processors\n")
     print("Options:")
-    print("-h\t\t Help message")
-    print("-v\t\t Version information")
-    print("-V <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details)")
-    print("-c <list>\t Processor ids to measure (required), e.g. 1,2-4,8")
-    print("-C <list>\t Processor ids to pin threads and measure, e.g. 1,2-4,8")
-    print("-g <string>\t Performance group or custom event set string")
-    print("-H\t\t Get group help (together with -g switch)")
-    print("-s <hex>\t Bitmask with threads to skip")
-    print("-M <0|1>\t Set how MSR registers are accessed, 0=direct, 1=msrd")
-    print("-a\t\t List available performance groups")
-    print("-e\t\t List available events and counter registers")
-    print("-i\t\t Print CPU info")
+    print("-h, --help\t\t Help message")
+    print("-v, --version\t\t Version information")
+    print("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)")
+    print("-c <list>\t\t Processor ids to measure (required), e.g. 1,2-4,8")
+    print("-C <list>\t\t Processor ids to pin threads and measure, e.g. 1,2-4,8")
+    print("-g, --group <string>\t Performance group or custom event set string")
+    print("-H\t\t\t Get group help (together with -g switch)")
+    print("-s, --skip <hex>\t Bitmask with threads to skip")
+    print("-M <0|1>\t\t Set how MSR registers are accessed, 0=direct, 1=accessDaemon")
+    print("-a\t\t\t List available performance groups")
+    print("-e\t\t\t List available events and counter registers")
+    print("-i, --info\t\t Print CPU info")
     print("Modes:")
-    print("-S <time>\t Stethoscope mode with duration in s, ms or us, e.g 20ms")
-    print("-t <time>\t Timeline mode with frequency in s, ms or us, e.g. 300ms")
-    print("-m\t\t Use Marker API inside code")
+    print("-S <time>\t\t Stethoscope mode with duration in s, ms or us, e.g 20ms")
+    print("-t <time>\t\t Timeline mode with frequency in s, ms or us, e.g. 300ms")
+    print("-m, --marker\t\t Use Marker API inside code")
     print("Output options:")
-    print("-o <file>\t Store output to file. (Optional: Apply text filter according to filename suffix)")
-    print("-O\t\t Output easily parseable CSV instead of fancy tables")
+    print("-o, --output <file>\t Store output to file. (Optional: Apply text filter according to filename suffix)")
+    print("-O\t\t\t Output easily parseable CSV instead of fancy tables")
     print("\n")
     examples()
 end
@@ -103,7 +103,6 @@ use_timeline = false
 daemon_run = 0
 use_wrapper = false
 duration = 2.E06
-use_sleep = false
 switch_interval = 5
 output = ""
 use_csv = false
@@ -112,9 +111,9 @@ outfile = nil
 gotC = false
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid("pid"))
 print_stdout = print
+likwid.catchSignal()
 
-for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
-    
+for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -123,13 +122,13 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
             os.exit(1)
         end
     end
-    if (opt == "h") then
+    if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
-    elseif (opt == "v") then
+    elseif opt == "v" or opt == "version" then
         version()
         os.exit(0)
-    elseif (opt == "V") then
+    elseif opt == "V" or opt == "verbose" then
         verbose = tonumber(arg)
         likwid.setVerbosity(verbose)
     elseif (opt == "c") then
@@ -143,11 +142,11 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
         print_groups = true
     elseif (opt == "e") then
         print_events = true
-    elseif (opt == "g") then
+    elseif opt == "g" or opt == "group" then
         table.insert(event_string_list, arg)
     elseif (opt == "H") then
         print_group_help = true
-    elseif (opt == "s") then
+    elseif opt == "s" or opt == "skip" then
         skip_mask = arg
     elseif (opt == "M") then
         access_mode = tonumber(arg)
@@ -156,20 +155,19 @@ for opt,arg in likwid.getopt(arg, "ac:C:eg:hHimM:o:OPs:S:t:vV:") do
             print("Access mode must be 0 for direct access and 1 for access daemon")
             os.exit(1)
         end
-    elseif (opt == "i") then
+    elseif opt == "i" or opt == "info" then
         print_info = true
         verbose = true
-    elseif (opt == "m") then
+    elseif opt == "m" or opt == "marker" then
         use_marker = true
         use_wrapper = true
     elseif (opt == "S") then
         use_stethoscope = true
-        duration, use_sleep = likwid.parse_time(arg)
+        duration = likwid.parse_time(arg)
     elseif (opt == "t") then
         use_timeline = true
-        local dummy = false
-        duration, dummy = likwid.parse_time(arg)
-    elseif (opt == "o") then
+        duration = likwid.parse_time(arg)
+    elseif opt == "o" or opt == "output" then
         outfile = arg:gsub("%%h", likwid.gethostname())
         outfile = outfile:gsub("%%p", likwid.getpid())
         outfile = outfile:gsub("%%j", likwid.getjid())
@@ -216,7 +214,7 @@ if print_events == true then
     os.exit(0)
 end
 
-num_avail_groups, avail_groups = likwid.get_groups(cpuinfo["short_name"])
+num_avail_groups, avail_groups = likwid.get_groups()
 
 if print_groups == true then
     for i,g in pairs(avail_groups) do
@@ -259,6 +257,7 @@ if #event_string_list == 0 and not print_info then
 end
 
 print(likwid.hline)
+print(string.format("CPU name:\t%s",cpuinfo["osname"]))
 print(string.format("CPU type:\t%s",cpuinfo["name"]))
 if (cpuinfo["clock"] > 0) then
     print(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] * 1.E-09))
@@ -326,6 +325,8 @@ if pin_cpus then
     local omp_threads = os.getenv("OMP_NUM_THREADS")
     if omp_threads == nil then
         likwid.setenv("OMP_NUM_THREADS",tostring(num_cpus))
+    elseif num_cpus > tonumber(omp_threads) then
+        print(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_cpus))
     end
     
     if num_cpus > 1 then
@@ -421,8 +422,20 @@ local int_results = {}
 if use_wrapper or use_timeline then
     local start = likwid.startClock()
     local stop = 0
+    local alltime = 0
+    local groupsums = {}
     local nr_events = likwid.getNumberOfEvents(activeGroup)
     local nr_threads = likwid.getNumberOfThreads()
+    for i,g in pairs(group_ids) do
+        groupsums[g] = {}
+        for j=1, likwid.getNumberOfEvents(g) do
+            groupsums[g][j] = {}
+            for k=1,nr_threads do
+                groupsums[g][j][k] = 0
+            end
+        end
+    end
+    
     if use_wrapper and duration == 2.E05 then
         duration = 30.E06
     end
@@ -436,19 +449,11 @@ if use_wrapper or use_timeline then
         os.exit(1)
     end
     while true do
-        if use_timeline == true then
-            stop = likwid.stopClock()
-            likwid.readCounters()
-            local time = likwid.getClock(start, stop)
-            int_results[time] = likwid.getResults()
-            local str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(time)
-            for ie, e in pairs(int_results[time][activeGroup]) do
-                for it, t in pairs(e) do
-                    str = str .. "," .. tostring(t)
-                end
-            end
-            io.stderr:write(str.."\n")
+        if likwid.getSignalState() ~= 0 then
+            likwid.killProgram()
+            break
         end
+        
         if duration >= 1.E06 then
             remain = sleep(duration/1.E06)
             if remain > 0 or not likwid.checkProgram() then
@@ -462,27 +467,47 @@ if use_wrapper or use_timeline then
                 break
             end
         end
+        if use_timeline == true then
+            stop = likwid.stopClock()
+            likwid.readCounters()
+            local time = likwid.getClock(start, stop)
+            alltime = alltime + time
+            int_results[alltime] = likwid.getResults()
+            local str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(alltime)
+            for ie, e in pairs(int_results[alltime][activeGroup]) do
+                for it, t in pairs(e) do
+                    
+                    groupsums[activeGroup][ie][it] = groupsums[activeGroup][ie][it] + t
+                    str = str .. "," .. tostring(groupsums[activeGroup][ie][it])
+                end
+            end
+            io.stderr:write(str.."\n")
+        end
         if use_timeline == true and #group_ids > 1 then
             likwid.switchGroup(activeGroup + 1)
+            likwid.readCounters()
             activeGroup = likwid.getIdOfActiveGroup()
             nr_events = likwid.getNumberOfEvents(activeGroup)
+            start = likwid.startClock()
         end
     end
     stop = likwid.stopClock()
     if use_timeline == true then
         likwid.readCounters()
         local time = likwid.getClock(start, stop)
+        alltime = alltime + time
         int_results[time] = likwid.getResults()
-        local str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(time)
+        local str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(alltime)
         for ie, e in pairs(int_results[time][activeGroup]) do
             for it, t in pairs(e) do
-                str = str .. "," .. tostring(t)
+                groupsums[activeGroup][ie][it] = groupsums[activeGroup][ie][it] + t
+                str = str .. "," .. tostring(groupsums[activeGroup][ie][it])
             end
         end
         io.stderr:write(str.."\n")
     end
 elseif use_stethoscope then
-    if use_sleep then
+    if duration >= 1.E06 then
         sleep(duration/1.E06)
     else
         usleep(duration)

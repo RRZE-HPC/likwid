@@ -51,6 +51,7 @@
 #include <cpuid.h>
 #include <accessClient.h>
 #include <perfmon.h>
+#include <configuration.h>
 
 int accessClient_mode = ACCESSMODE;
 
@@ -111,6 +112,11 @@ startDaemon(void)
     if (accessClient_mode == ACCESSMODE_DIRECT)
     {
         return 0;
+    }
+
+    if (config.daemonPath != NULL)
+    {
+        strcpy(exeprog, config.daemonPath);
     }
 
     if (access(exeprog, X_OK))
@@ -192,13 +198,16 @@ accessClient_setaccessmode(int mode)
         ERROR_PRINT(Invalid accessmode %d, accessClient_mode);
         exit(EXIT_FAILURE);
     }
-
     accessClient_mode = mode;
 }
 
 void 
 accessClient_init(int* socket_fd)
 {
+    if (config.daemonMode != -1)
+    {
+        accessClient_mode = config.daemonMode;
+    }
     if ((accessClient_mode == ACCESSMODE_DAEMON) && (*socket_fd == -1))
     {
         (*socket_fd) = startDaemon();

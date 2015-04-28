@@ -169,29 +169,32 @@ msr_init(int initSocket_fd)
         /* NOTICE: This assumes consecutive processor Ids! */
         for ( i=0; i < cpuid_topology.numHWThreads; i++ )
         {
-            sprintf(msr_file_name,"/dev/msr%d",i);
+            sprintf(msr_file_name,"/dev/msr%d",cpuid_topology.threadPool[i].apicId);
             fd = open(msr_file_name, O_RDWR); 
             if (fd < 0)
             {
-                sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
+                sprintf(msr_file_name,"/dev/cpu/%d/msr",cpuid_topology.threadPool[i].apicId);
             }
             else
             {
                 close(fd);
             }
-            FD[i] = open(msr_file_name, O_RDWR);
-            if ( FD[i] < 0 )
+            FD[cpuid_topology.threadPool[i].apicId] = open(msr_file_name, O_RDWR);
+            if ( FD[cpuid_topology.threadPool[i].threadId] < 0 )
             {
                 ERROR_PRINT(Cannot access MSR device file %s in direct mode, msr_file_name);
                 free(msr_file_name);
                 return -EPERM;
             }
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Opened MSR for CPU %d FD %d, i, FD[i]);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Opened MSR for CPU %d FD %d,
+                                        cpuid_topology.threadPool[i].apicId,
+                                        FD[cpuid_topology.threadPool[i].apicId]);
         }
         free(msr_file_name);
     }
     else
     {
+        fd = 1;
         socket_fd = initSocket_fd;
     }
     return 0;
@@ -218,25 +221,26 @@ msr_finalize(void)
 int
 msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
 {
-    int ret;
-    if (accessClient_mode == ACCESSMODE_DIRECT) 
+    int ret = 0;
+
+    if (accessClient_mode == ACCESSMODE_DIRECT)
     {
         if (rdpmc_works && reg >= MSR_PMC0 && reg <=MSR_PMC7)
         {
             if (__rdpmc(reg - MSR_PMC0, data) )
             {
-                ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d, reg, cpu);
+                //ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d, reg, cpu);
                 return -EIO;
             }
         }
-        else if (rdpmc_works && reg >= MSR_PERF_FIXED_CTR0 && reg <= MSR_PERF_FIXED_CTR2)
+        /*else if (rdpmc_works && reg >= MSR_PERF_FIXED_CTR0 && reg <= MSR_PERF_FIXED_CTR2)
         {
             if (__rdpmc(0x4000000ULL + (reg - MSR_PERF_FIXED_CTR0), data) )
             {
                 ERROR_PRINT(Cannot read MSR reg 0x%x with RDPMC instruction on CPU %d,reg,cpu);
                 return -EIO;
             }
-        }
+        }*/
         else
         {
             if (FD[cpu] > 0)
@@ -244,13 +248,13 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
                 ret = pread(FD[cpu], data, sizeof(*data), reg);
                 if (ret  != sizeof(*data) )
                 {
-                    ERROR_PRINT(Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d, reg, cpu);
+                    //ERROR_PRINT(Cannot read MSR reg 0x%x with RDMSR instruction on CPU %d, reg, cpu);
                     return -EIO;
                 }
             }
             else
             {
-                ERROR_PRINT(MSR device for CPU %d not found, cpu);
+                //ERROR_PRINT(MSR device for CPU %d not found, cpu);
                 return -EBADFD;
             }
         }
@@ -268,7 +272,7 @@ msr_tread(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t *data)
         }
         else
         {
-            ERROR_PLAIN_PRINT(Bad socket to accessDaemon);
+            //ERROR_PLAIN_PRINT(Bad socket to accessDaemon);
             return -EBADFD;
         }
     }
@@ -287,14 +291,14 @@ msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
             ret = pwrite(FD[cpu], &data, sizeof(data), reg);
             if (ret != sizeof(data))
             {
-                ERROR_PRINT(Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n,
-                            reg, cpu);
+                //ERROR_PRINT(Cannot write MSR reg 0x%x with WRMSR instruction on CPU %d\n,
+                //            reg, cpu);
                 return -EIO;
             }
         }
         else
         {
-            ERROR_PRINT(MSR device for CPU %d not found, cpu);
+            //ERROR_PRINT(MSR device for CPU %d not found, cpu);
             return -EBADFD;
         }
     }
@@ -310,7 +314,7 @@ msr_twrite(const int tsocket_fd, const int cpu, uint32_t reg, uint64_t data)
         }
         else
         {
-            ERROR_PLAIN_PRINT(Bad socket to accessDaemon);
+            //ERROR_PLAIN_PRINT(Bad socket to accessDaemon);
             return -EBADFD;
         }
     }

@@ -1,3 +1,33 @@
+/*
+ * =======================================================================================
+ *
+ *      Filename:  topology.c
+ *
+ *      Description:  Interface to the topology backends
+ *
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
+ *
+ *      Authors:  Jan Treibig (jt), jan.treibig@gmail.com,
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Project:  likwid
+ *
+ *      Copyright (C) 2015 Jan Treibig, Thomas Roehl
+ *
+ *      This program is free software: you can redistribute it and/or modify it under
+ *      the terms of the GNU General Public License as published by the Free Software
+ *      Foundation, either version 3 of the License, or (at your option) any later
+ *      version.
+ *
+ *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License along with
+ *      this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * =======================================================================================
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -10,7 +40,7 @@
 #include <error.h>
 #include <tree.h>
 #include <bitUtil.h>
-#include <strUtil.h>
+//#include <strUtil.h>
 #include <configuration.h>
 
 
@@ -18,7 +48,7 @@ static volatile int init = 0;
 CpuInfo cpuid_info;
 CpuTopology cpuid_topology;
 
-
+int affinity_thread2tile_lookup[MAX_NUM_THREADS];
 
 static char* pentium_m_b_str = "Intel Pentium M Banias processor";
 static char* pentium_m_d_str = "Intel Pentium M Dothan processor";
@@ -29,17 +59,19 @@ static char* atom_45_str = "Intel Atom 45nm processor";
 static char* atom_32_str = "Intel Atom 32nm processor";
 static char* atom_22_str = "Intel Atom 22nm processor";
 static char* atom_silvermont_str = "Intel Atom (Silvermont) processor";
+static char* atom_airmont_str = "Intel Atom (Airmont) processor";
 static char* nehalem_bloom_str = "Intel Core Bloomfield processor";
 static char* nehalem_lynn_str = "Intel Core Lynnfield processor";
 static char* nehalem_west_str = "Intel Core Westmere processor";
 static char* sandybridge_str = "Intel Core SandyBridge processor";
 static char* ivybridge_str = "Intel Core IvyBridge processor";
-static char* ivybridge_ep_str = "Intel Core IvyBridge EN/EP/EX processor";
-static char* sandybridge_ep_str = "Intel Core SandyBridge EN/EP processor";
+static char* ivybridge_ep_str = "Intel Xeon IvyBridge EN/EP/EX processor";
+static char* sandybridge_ep_str = "Intel Xeon SandyBridge EN/EP processor";
 static char* haswell_str = "Intel Core Haswell processor";
-static char* haswell_ep_str = "Intel Core Haswell EN/EP/EX processor";
+static char* haswell_ep_str = "Intel Xeon Haswell EN/EP/EX processor";
 static char* broadwell_str = "Intel Core Broadwell processor";
-static char* broadwell_ep_str = "Intel Core Broadwell EN/EP/EX processor";
+static char* broadwell_d_str = "Intel Xeon D Broadwell processor";
+static char* broadwell_ep_str = "Intel Xeon Broadwell EN/EP/EX processor";
 static char* nehalem_ex_str = "Intel Nehalem EX processor";
 static char* westmere_ex_str = "Intel Westmere EX processor";
 static char* xeon_mp_string = "Intel Xeon MP processor";
@@ -83,6 +115,34 @@ static char* short_k16 = "kabini";
 static char* short_unknown = "unknown";
 
 
+int cpu_count(cpu_set_t* set)
+{
+    uint32_t i;
+    int s = 0;
+    const __cpu_mask *p = set->__bits;
+    const __cpu_mask *end = &set->__bits[sizeof(cpu_set_t) / sizeof (__cpu_mask)];
+
+    while (p < end)
+    {
+        __cpu_mask l = *p++;
+
+        if (l == 0)
+        {
+            continue;
+        }
+
+        for (i=0; i< (sizeof(__cpu_mask)*8); i++)
+        {
+            if (l&(1UL<<i))
+            {
+                s++;
+            }
+        }
+    }
+
+    return s;
+}
+
 static void initTopologyFile(FILE* file)
 {
     size_t items;
@@ -123,6 +183,7 @@ static void initTopologyFile(FILE* file)
         if (!tree_nodeExists(currentNode, i))
         {
             tree_insertNode(currentNode, i);
+            affinity_thread2tile_lookup[hwThreadPool[i].apicId] = hwThreadPool[i].coreId;
         }
     }
 }
@@ -130,7 +191,6 @@ static void initTopologyFile(FILE* file)
 
 static int readTopologyFile(const char* filename)
 {
-    int err;
     FILE* fp;
     char structure[256];
     char field[256];
@@ -140,7 +200,6 @@ static int readTopologyFile(const char* filename)
     int numCacheLevels = -1;
     int numberOfNodes = -1;
     int* tmpNumberOfProcessors;
-    int* tmpNumberOfDistances;
     int counter;
     int i;
     uint32_t tmp, tmp1;
@@ -193,8 +252,8 @@ static int readTopologyFile(const char* filename)
 
     for(i=0;i<numberOfNodes;i++)
     {
-        numa_info.nodes[i].processors = (int*) malloc (tmpNumberOfProcessors[i] * sizeof(int));
-        numa_info.nodes[i].distances = (int*) malloc (numberOfNodes * sizeof(int));
+        numa_info.nodes[i].processors = (uint32_t*) malloc (tmpNumberOfProcessors[i] * sizeof(int));
+        numa_info.nodes[i].distances = (uint32_t*) malloc (numberOfNodes * sizeof(int));
     }
     free(tmpNumberOfProcessors);
 
@@ -520,8 +579,11 @@ int topology_setName(void)
                     break;
 
                 case BROADWELL:
-                case BROADWELL_F:
                     cpuid_info.name = broadwell_str;
+                    cpuid_info.short_name = short_broadwell;
+                    break;
+                case BROADWELL_D:
+                    cpuid_info.name = broadwell_d_str;
                     cpuid_info.short_name = short_broadwell;
                     break;
                 case BROADWELL_E:
@@ -532,13 +594,11 @@ int topology_setName(void)
                 case NEHALEM_EX:
                     cpuid_info.name = nehalem_ex_str;
                     cpuid_info.short_name = short_nehalemEX;
-                    cpuid_info.supportUncore = 1;
                     break;
 
                 case WESTMERE_EX:
                     cpuid_info.name = westmere_ex_str;
                     cpuid_info.short_name = short_westmereEX;
-                    cpuid_info.supportUncore = 1;
                     break;
 
                 case XEON_MP:
@@ -569,6 +629,10 @@ int topology_setName(void)
                 case ATOM_SILVERMONT_Z2:
                 case ATOM_SILVERMONT_F:
                     cpuid_info.name = atom_silvermont_str;
+                    cpuid_info.short_name = short_silvermont;
+                    break;
+                case ATOM_SILVERMONT_AIR:
+                    cpuid_info.name = atom_airmont_str;
                     cpuid_info.short_name = short_silvermont;
                     break;
 
@@ -728,6 +792,7 @@ void topology_setupTree(void)
                printf("WARNING: Thread already exists!\n");
                */
             tree_insertNode(currentNode, hwThreadPool[i].apicId);
+            affinity_thread2tile_lookup[hwThreadPool[i].apicId] = hwThreadPool[i].coreId;
         }
 
     }
@@ -741,7 +806,6 @@ void topology_setupTree(void)
 
 int topology_init(void)
 {
-    FILE *file;
     struct topology_functions funcs = topology_funcs;
 
     if (init)
@@ -787,6 +851,7 @@ int topology_init(void)
         topology_setupTree();
     }
 
+
     return EXIT_SUCCESS;
 }
 
@@ -825,7 +890,9 @@ void print_supportedCPUs (void)
     printf("\t%s\n",haswell_str);
     printf("\t%s\n",haswell_ep_str);
     printf("\t%s\n",atom_silvermont_str);
+    printf("\t%s\n",atom_airmont_str);
     printf("\t%s\n\n",xeon_phi_string);
+    printf("\t%s\n",broadwell_str);
 
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);
@@ -840,51 +907,6 @@ void print_supportedCPUs (void)
 }
 
 
-int cpuid_isInCpuset(void)
-{
-    int pos = 0;
-    int ret = 0;
-    bstring  cpulist;
-    bstring grepString = bformat("Cpus_allowed_list:");
-    bstring filename = bformat("/proc/%d/status",getpid());
-    FILE* fp = fopen(bdata(filename),"r");
-
-    if (fp == NULL)
-    {
-        bdestroy(filename);
-        bdestroy(grepString);
-        return 0;
-    } 
-    else
-    {
-        uint32_t tmpThreads[MAX_NUM_THREADS];
-        bstring src = bread ((bNread) fread, fp);
-        if ((pos = binstr(src,0,grepString)) != BSTR_ERR)
-        {
-            int end = bstrchrp(src, 10, pos);
-            pos = pos+blength(grepString);
-            cpulist = bmidstr(src,pos, end-pos);
-            btrimws(cpulist);
-
-            if (bstr_to_cpuset_physical(tmpThreads, cpulist) < cpuid_topology.numHWThreads)
-            {
-                ret = 1;
-                goto freeStrings;
-            }
-            else
-            {
-                ret = 0;
-                goto freeStrings;
-            }
-        }
-        return 0;
-    }
-freeStrings:
-    bdestroy(filename);  
-    bdestroy(grepString);
-    bdestroy(cpulist);
-    return ret;
-}
 
 CpuTopology_t get_cpuTopology(void)
 {

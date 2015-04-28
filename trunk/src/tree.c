@@ -80,7 +80,6 @@ tree_print(TreeNode* nodePtr)
 void
 tree_destroy(TreeNode* nodePtr)
 {
-    int level = 0;
 
     if (nodePtr != NULL)
     {

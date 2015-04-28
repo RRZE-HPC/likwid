@@ -53,26 +53,5 @@ extern int (*initThreadArch) (int cpu_id);
 extern int getCounterTypeOffset(int index);
 extern uint64_t perfmon_getMaxCounterValue(RegisterType type);
 
-#if 0
-extern void perfmon_initEventSet(StrUtilEventSet* eventSetConfig, PerfmonEventSet* set);
-extern void perfmon_setCSVMode(int v);
-extern void perfmon_printAvailableGroups(void);
-extern void perfmon_printGroupHelp(bstring group);
-extern void perfmon_init(int numThreads, int threads[],FILE* outstream);
-extern void perfmon_finalize(void);
-extern void perfmon_setupEventSet(bstring eventString, BitMask* mask);
-extern double perfmon_getEventResult(int thread, int index);
-extern int perfmon_setupEventSetC(char* eventCString, const char*** eventnames);
-extern void perfmon_setupCounters(void);
-extern void perfmon_startCounters(void);
-extern void perfmon_stopCounters(void);
-extern void perfmon_readCounters(void);
-extern double perfmon_getResult(int threadId, char* counterString);
-extern void perfmon_printMarkerResults(bstring filepath);
-extern void perfmon_logCounterResults(double time);
-extern void perfmon_printCounterResults(void);
-extern void perfmon_printCounters(void);
-extern void perfmon_printEvents(void);
-#endif
 
 #endif /*PERFMON_H*/

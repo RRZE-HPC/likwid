@@ -8,7 +8,8 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Authors:  Jan Treibig (jt), jan.treibig@gmail.com
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2013 Jan Treibig 
@@ -68,13 +69,9 @@
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 int socket_lock[MAX_NUM_NODES];
-static int hasPCICounters = 0;
 static int likwid_init = 0;
-static BitMask counterMask;
 static int numberOfGroups = 0;
 static int* groups;
-static int activeGroup = 0;
-static uint64_t regTypeMask = 0;
 static int threads2Cpu[MAX_NUM_THREADS];
 static int num_cpus = 0;
 
@@ -145,13 +142,11 @@ static int getThreadID(int cpu_id)
 void likwid_markerInit(void)
 {
     int i;
-    int groupId;
     int verbosity;
     bstring bThreadStr;
     bstring bEventStr;
     struct bstrList* threadTokens;
     struct bstrList* eventStrings;
-    int cpu_id = likwid_getProcessorId();
     char* modeStr = getenv("LIKWID_MODE");
     char* eventStr = getenv("LIKWID_EVENTS");
     char* cThreadStr = getenv("LIKWID_THREADS");
@@ -164,10 +159,14 @@ void likwid_markerInit(void)
     {
         likwid_init = 1;
     }
-    else
+    else if (likwid_init == 0)
     {
         fprintf(stderr, "Cannot initalize LIKWID marker API, environment variables are not set\n");
         fprintf(stderr, "You have to set the -m commandline switch for likwid-perfctr\n");
+        return;
+    }
+    else
+    {
         return;
     }
 
@@ -203,7 +202,6 @@ void likwid_markerInit(void)
     bdestroy(bThreadStr);
     bstrListDestroy(threadTokens);
 
-    
     bEventStr = bfromcstr(eventStr);
     eventStrings = bstrListCreate();
     eventStrings = bsplit(bEventStr,'|');
@@ -222,18 +220,11 @@ void likwid_markerInit(void)
     bstrListDestroy(eventStrings);
 
     groupSet->activeGroup = 0;
-    for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
-    {
-        for(int j=0;j<groupSet->numberOfThreads;j++)
-        {
-            groupSet->groups[groupSet->activeGroup].events[i].threadCounter[j].init = TRUE;
-        }
-    }
 }
 
 void likwid_markerThreadInit(void)
 {
-    if ( ! likwid_init )
+    if ( !likwid_init )
     {
         return;
     }
@@ -254,9 +245,8 @@ void likwid_markerNextGroup(void)
 {
     int i;
     int next_group;
-    int cpu_id;
 
-    if ( ! likwid_init )
+    if (!likwid_init)
     {
         return;
     }
@@ -343,7 +333,7 @@ void likwid_markerClose(void)
     {
         free(results);
     }
-
+    likwid_init = 0;
     HPMfinalize();
 }
 
@@ -356,9 +346,6 @@ int likwid_markerStartRegion(const char* regionTag)
     }
     bstring tag = bfromcstralloc(100, regionTag);
     LikwidThreadResults* results;
-    int ret;
-    uint64_t res;
-    uint64_t tmp, counter_result;
     char groupSuffix[10];
     sprintf(groupSuffix, "-%d", groupSet->activeGroup);
     bcatcstr(tag, groupSuffix);
@@ -373,19 +360,12 @@ int likwid_markerStartRegion(const char* regionTag)
                         LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
         groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].startData =
                 groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
-        //results->StartPMcounters[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
     }
     results->groupID = groupSet->activeGroup;
     timer_start(&(results->startTime));
     bdestroy(tag);
     return 0;
 }
-
-#define READ_END_MEM_CHANNEL(channel, reg, cid)                      \
-    counter_result = pci_tread(socket_fd, cpu_id, channel, reg##_A); \
-    counter_result = (counter_result<<32) +                          \
-    pci_tread(socket_fd, cpu_id, channel, reg##_B);                  \
-    results->PMcounters[cid] += (uint64_t) counter_result - results->StartPMcounters[cid]
 
 
 /* TODO: Readout hash at the end. Compute result at the end of the function to
@@ -400,19 +380,16 @@ int likwid_markerStopRegion(const char* regionTag)
 
     TimerData timestamp;
     timer_stop(&timestamp);
-    int cpu_id = likwid_getProcessorId();
-    int thread_id = getThreadID(cpu_id);
-    int ret;
-    uint64_t res;
-    uint64_t tmp, counter_result;
-    double PMcounters[NUM_PMC];
+    int cpu_id;
+    int thread_id;
     bstring tag = bfromcstr(regionTag);
     char groupSuffix[100];
     LikwidThreadResults* results;
     sprintf(groupSuffix, "-%d", groupSet->activeGroup);
     bcatcstr(tag, groupSuffix);
 
-    hashTable_get(tag, &results);
+    cpu_id = hashTable_get(tag, &results);
+    thread_id = getThreadID(cpu_id);
     results->startTime.stop.int64 = timestamp.stop.int64;
     results->time += timer_print(&(results->startTime));
     results->count++;
@@ -426,6 +403,58 @@ int likwid_markerStopRegion(const char* regionTag)
         results->PMcounters[i] += perfmon_getResult(groupSet->activeGroup, i, thread_id);
     }
     return 0;
+}
+
+void likwid_markerPrintRegion(const char* regionTag)
+{
+    if (! likwid_init)
+    {
+        return;
+    }
+    int cpu_id;
+    int thread_id;
+    bstring tag = bfromcstr(regionTag);
+    char groupSuffix[100];
+    LikwidThreadResults* results;
+    sprintf(groupSuffix, "-%d", groupSet->activeGroup);
+    bcatcstr(tag, groupSuffix);
+
+    cpu_id = hashTable_get(tag, &results);
+    thread_id = getThreadID(cpu_id);
+    printf("%d %s %d %f", cpu_id, bdata(tag), results->count, results->time);
+    for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
+    {
+        printf(" %f", results->PMcounters[i]);
+    }
+    printf("\n");
+    return;
+}
+
+void likwid_markerGetRegion(const char* regionTag, int nr_events, double* events, double *time, int *count)
+{
+    if (! likwid_init)
+    {
+        return;
+    }
+    int length = 0;
+    int cpu_id;
+    int thread_id;
+    bstring tag = bfromcstr(regionTag);
+    char groupSuffix[100];
+    LikwidThreadResults* results;
+    sprintf(groupSuffix, "-%d", groupSet->activeGroup);
+    bcatcstr(tag, groupSuffix);
+
+    cpu_id = hashTable_get(tag, &results);
+    thread_id = getThreadID(cpu_id);
+    *count = results->count;
+    *time = results->time;
+    length = MIN(groupSet->groups[groupSet->activeGroup].numberOfEvents, nr_events);
+    for(int i=0;i<length;i++)
+    {
+        events[i] = results->PMcounters[i];
+    }
+    return;
 }
 
 

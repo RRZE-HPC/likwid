@@ -7,7 +7,7 @@
 
 #include <tree.h>
 #include <bitUtil.h>
-#include <strUtil.h>
+//#include <strUtil.h>
 #include <tlb-info.h>
 #include <topology.h>
 
@@ -267,7 +267,6 @@ static void
 cpuid_set_osname(void)
 {
     FILE *fp;
-    bstring filename;
     bstring nameString = bformat("model name");
     cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
     ownstrcpy = strcpy;
@@ -474,7 +473,6 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
     int maxNumLogicalProcs;
     int maxNumLogicalProcsPerCore;
     int maxNumCores;
-    TreeNode* currentNode;
     int width;
     
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));

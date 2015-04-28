@@ -1,16 +1,16 @@
 # =======================================================================================
-#  
+#
 #      Filename:  perfmon_kabini_events.txt
-# 
+#
 #      Description:  Event list for AMD Kabini
-# 
+#
 #      Version:   3.0
 #      Released:  30.05.2013
-# 
+#
 #      Author: saravanan.ekanathan@amd.com
 #      Project:  likwid
 #
-#      Copyright (c) 2013, Jan Treibig
+#      Copyright (c) 2013, Jan Treibig and Thomas Roehl
 #      All rights reserved.
 #
 #      Redistribution and use in source and binary forms, with or without

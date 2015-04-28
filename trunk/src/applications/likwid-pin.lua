@@ -67,18 +67,20 @@ end
 
 local function usage()
     version()
-    print("A tool to print power and clocking information on x86 CPUs.\n")
+    print("An application to pin a program including threads.\n")
     print("Options:")
-    print("-h\t\t Help message")
-    print("-v\t\t Version information")
+    print("-h, --help\t\t Help message")
+    print("-v, --version\t\t Version information")
+    print("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)")
     print("-i\t\t Set numa interleave policy with all involved numa nodes")
-    print("-S\t\t Sweep memory in involved NUMA nodes")
+    print("-S, --sweep\t\t Sweep memory in involved NUMA nodes")
     print("-c <list>\t Comma separated processor IDs or expression")
-    print("-s <hex-mask>\t Bitmask with threads to skip")
+    print("-s, --skip <hex>\t Bitmask with threads to skip")
     print("-p\t\t Print available domains with mapping on physical IDs")
     print("\t\t If used together with -p option outputs a physical processor IDs.")
     print("-d <string>\t Delimiter used for using -p to output physical processor list, default is comma.")
-    print("-q\t\t Silent without output")
+    print("-q, --quiet\t\t Silent without output")
+    
     print("\n")
     examples()
 end
@@ -102,13 +104,16 @@ if (#arg == 0) then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, "c:d:hipqs:St:v") do
-    if (opt == "h") then
+for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t:", "v", "V:", "verbose:", "help", "version", "skip","sweep", "quiet"}) do
+    if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
-    elseif (opt == "v") then
+    elseif opt == "v" or opt == "version" then
         version()
         os.exit(0)
+    elseif opt == "V" or opt == "verbose" then
+        verbose = tonumber(arg)
+        likwid.setVerbosity(verbose)
     elseif (opt == "c") then
         if (affinity ~= nil) then
             num_threads,cpu_list = likwid.cpustr_to_cpulist(arg)
@@ -121,7 +126,7 @@ for opt,arg in likwid.getopt(arg, "c:d:hipqs:St:v") do
         end
     elseif (opt == "d") then
         delimiter = arg
-    elseif (opt == "S") then
+    elseif opt == "S" or opt == "sweep" then
         if (affinity == nil) then
             print("Option -S is not supported for unknown processor!")
             os.exit(1)
@@ -131,14 +136,14 @@ for opt,arg in likwid.getopt(arg, "c:d:hipqs:St:v") do
         interleaved_policy = true
     elseif (opt == "p") then
         print_domains = true
-    elseif (opt == "s") then
+    elseif opt == "s" or opt == "skip" then
         local s,e = arg:find("0x")
         if s == nil then
             print("Skip mask must be given in hex, hence start with 0x")
             os.exit(1)
         end
         skip_mask = arg
-    elseif (opt == "q") then
+    elseif opt == "q" or opt == "quiet" then
         likwid.setenv("LIKWID_SILENT","true")
         quiet = 1
     else
@@ -154,6 +159,7 @@ if print_domains and num_threads > 0 then
         outstr = outstr .. delimiter .. cpu
     end
     print(outstr:sub(2,outstr:len()))
+    os.exit(0)
 elseif print_domains then
     for k,v in pairs(affinity["domains"]) do
         print(string.format("Domain %d Tag %s:",k, v["tag"]))

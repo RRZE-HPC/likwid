@@ -29,7 +29,7 @@
  *
  * =======================================================================================]]
 
-package.path = package.path .. ';' .. string.gsub(debug.getinfo(1).source, "^@(.+/)[^/]+$", "%1") .. '/?.lua'
+package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
 
 local likwid = require("likwid")
 
@@ -39,24 +39,6 @@ set_command = "<PREFIX>/sbin/likwid-setFreq"
 
 function version()
     print(string.format("likwid-setFrequencies --  Version %d.%d",likwid.version,likwid.release))
-end
-
-function getAvailGovs(cpuid)
-    if (cpuid == nil) or (cpuid < 1) then
-        cpuid = 0
-    end
-    local fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_available_governors")
-    local line = fp:read("*l")
-    fp:close()
-    local avail = likwid.stringsplit(line:gsub("^%s*(.-)%s*$", "%1"), "%s+", nil, "%s+")
-    for i=1,#avail do
-        if avail[i] == "userspace" then
-            table.remove(avail, i)
-            break
-        end
-    end
-    table.insert(avail, "turbo")
-    return avail
 end
 
 function usage()
@@ -74,24 +56,14 @@ function usage()
     print("-m\t List available governors")
 end
 
-
-
-
-governor = nil
-frequency = nil
-printCurFreq = false
-printAvailFreq = false
-printAvailGovs = false
-topo = likwid.getCpuTopology()
-domain = "N:0-" .. tostring(topo["numHWThreads"]-1)
-affinity = likwid.getAffinityInfo()
-cpulist = {}
-
 function getAvailFreq(cpuid)
     if (cpuid == nil) or (cpuid < 1) then
         cpuid = 0
     end
     local fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_available_frequencies")
+    if verbosity == 3 then
+        print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_available_frequencies" )
+    end
     local line = fp:read("*l")
     fp:close()
     local tmp = likwid.stringsplit(line:gsub("^%s*(.-)%s*$", "%1"), " ", nil, " ")
@@ -99,6 +71,12 @@ function getAvailFreq(cpuid)
     local turbo = tostring(tonumber(tmp[1])/1E6)
     for i=2,#tmp do
         avail[i-1] = tostring(tonumber(tmp[i])/1E6)
+        if not avail[i-1]:match("%d.%d") then
+            avail[i-1] = avail[i-1] ..".0"
+        end
+    end
+    if verbosity == 1 then
+        print(string.format("The system provides %d scaling frequencies, frequency %s is taken as turbo mode", #avail,turbo))
     end
     return avail, turbo
 end
@@ -108,10 +86,19 @@ function getCurFreq()
     local govs = {}
     for cpuid=0,topo["numHWThreads"]-1 do
         local fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_cur_freq")
+        if verbosity == 3 then
+            print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_cur_freq" )
+        end
         local line = fp:read("*l")
         fp:close()
         freqs[cpuid] = tostring(tonumber(line)/1E6)
+        if not freqs[cpuid]:match("%d.%d") then
+            freqs[cpuid] = freqs[cpuid] ..".0"
+        end
         local fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_governor")
+        if verbosity == 3 then
+            print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_governor" )
+        end
         local line = fp:read("*l")
         fp:close()
         govs[cpuid] = line
@@ -119,18 +106,64 @@ function getCurFreq()
     return freqs, govs
 end
 
-for opt,arg in likwid.getopt(arg, "g:c:f:lphvm") do
-    if (opt == "h") then
+function getAvailGovs(cpuid)
+    if (cpuid == nil) or (cpuid < 1) then
+        cpuid = 0
+    end
+    local fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_available_governors")
+    if verbosity == 3 then
+        print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_available_governors" )
+    end
+    local line = fp:read("*l")
+    fp:close()
+    local avail = likwid.stringsplit(line:gsub("^%s*(.-)%s*$", "%1"), "%s+", nil, "%s+")
+    for i=1,#avail do
+        if avail[i] == "userspace" then
+            table.remove(avail, i)
+            break
+        end
+    end
+    table.insert(avail, "turbo")
+    if verbosity == 1 then
+        print(string.format("The system provides %d scaling governors", #avail))
+    end
+    return avail
+end
+
+local function testDriver()
+    local fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_driver")
+    if verbosity == 3 then
+        print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_driver" )
+    end
+    local line = fp:read("*l")
+    fp:close()
+    if line:match("acpi-cpufreq") then
+        return true
+    end
+    return false
+end
+
+verbosity = 3
+governor = nil
+frequency = nil
+domain = nil
+printCurFreq = false
+printAvailFreq = false
+printAvailGovs = false
+
+
+for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "help","version","freq:"}) do
+    if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
-    elseif (opt == "v") then
+    elseif opt == "v" or opt == "version" then
         version()
         os.exit(0)
     elseif (opt == "c") then
         domain = arg
     elseif (opt == "g") then
         governor = arg
-    elseif (opt == "f") then
+    elseif opt == "f" or opt == "freq" then
         frequency = arg
     elseif (opt == "p") then
         printCurFreq = true
@@ -140,8 +173,26 @@ for opt,arg in likwid.getopt(arg, "g:c:f:lphvm") do
         printAvailGovs = true
     end
 end
+if not testDriver() then
+    print("The system does not use the acpi-cpufreq driver, other drivers are not usable with likwid-setFrequencies.")
+    os.exit(1)
+end
 
+topo = likwid.getCpuTopology()
+affinity = likwid.getAffinityInfo()
+if not domain then
+    domain = "N:1-" .. tostring(topo["numHWThreads"])
+end
+cpulist = {}
 numthreads, cpulist = likwid.cpustr_to_cpulist(domain)
+if verbosity == 3 then
+    print(string.format("Given CPU expression expands to %d CPU cores:", numthreads))
+    local str = tostring(cpulist[1])
+    for i=2, numthreads  do
+        str = str .. "," .. tostring(cpulist[i])
+    end
+    print(str)
+end
 
 
 if printAvailGovs then
@@ -187,9 +238,12 @@ if frequency then
         os.exit(1)
     end
     for i=1,#cpulist do
-        local cmd = set_command .. " " .. tostring(cpulist[i]) .. " " .. frequency
+        local cmd = set_command .. " " .. tostring(cpulist[i]) .. " " .. tostring(tonumber(frequency)*1E6)
         if governor then
             cmd = cmd .. " " .. governor
+        end
+        if verbosity == 3 then
+            print("Execute: ".. cmd)
         end
         local err = os.execute(cmd)
         if err == false or err == nil then
@@ -226,9 +280,12 @@ if governor then
         if governor ~= cur_govs[cpulist[i]] then
             local cmd = set_command .. " " .. tostring(cpulist[i]) .. " "
             if governor == "turbo" then
-                cmd = cmd .. tostring(turbo*1E6)
+                cmd = cmd .. tostring(tonumber(turbo)*1E6)
             else
-                cmd = cmd .. tostring(cur_freqs[cpulist[i]]*1E6) .. " " .. governor
+                cmd = cmd .. tostring(tonumber(cur_freqs[cpulist[i]])*1E6) .. " " .. governor
+            end
+            if verbosity == 3 then
+                print("Execute: ".. cmd)
             end
             local err = os.execute(cmd)
             if err == false or err == nil then

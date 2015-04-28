@@ -9,9 +9,10 @@
  *      Released:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *               Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig and Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -41,7 +42,7 @@ static int perfmon_numArchEventsNehalem = NUM_ARCH_EVENTS_NEHALEM;
 int perfmon_init_nehalem(int cpu_id)
 {
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
-    lock_acquire((int*) &tile_lock[affinity_core2tile_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
     return 0;
 }
@@ -49,8 +50,8 @@ int perfmon_init_nehalem(int cpu_id)
 uint32_t neh_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
-    uint32_t flags = (0x2 << (4*index));
-    for(j=0;j<event->numberOfOptions;j++)
+    uint32_t flags = (1ULL<<(1+(index*4)));
+    for(j = 0; j < event->numberOfOptions; j++)
     {
         switch (event->options[j].type)
         {
@@ -73,7 +74,7 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int haveLock = 0;
     uint64_t offcore_flags = 0x0ULL;
 
-    if ((tile_lock[affinity_core2tile_lookup[cpu_id]] == cpu_id))
+    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -89,7 +90,7 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -105,11 +106,14 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 case EVENT_OPTION_ANYTHREAD:
                     flags |= (1ULL<<21);
                     break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= (event->options[j].value & 0xFFULL)<<24;
+                    break;
                 case EVENT_OPTION_MATCH0:
-                    offcore_flags |= (event->options[j].value & 0xF);
+                    offcore_flags |= (event->options[j].value & 0xFF);
                     break;
                 case EVENT_OPTION_MATCH1:
-                    offcore_flags |= (event->options[j].value & 0xF)<<7;
+                    offcore_flags |= (event->options[j].value & 0xF7)<<7;
                     break;
                 default:
                     break;
@@ -119,7 +123,7 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     // Offcore event with additional configuration register
     // cfgBits contain offset of "request type" bit
     // cmask contain offset of "response type" bit
-    if (haveLock && event->eventId == 0xB7)
+    if ((haveLock) && (event->eventId == 0xB7))
     {
         if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
         {
@@ -149,25 +153,28 @@ int neh_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     uint64_t mask_flags = 0x0ULL;
 
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id))
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
 
     flags = (1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
-    if (event->cfgBits != 0 && event->eventId != 0x35) /* set custom cfg and cmask */
+    if (event->cfgBits != 0x0 && event->eventId != 0x35) /* set custom cfg and cmask */
     {
         flags |= ((event->cmask<<8) + event->cfgBits)<<16;
     }
-    if (event->cfgBits != 0 && event->eventId == 0x35) /* set custom cfg and cmask */
+    else if (event->cfgBits != 0x0 && event->eventId == 0x35) /* set custom cfg and cmask */
     {
-        mask_flags |= ((uint64_t)event->cfgBits)<<60;
-        mask_flags |= ((uint64_t)event->cmask)<<40;
+        mask_flags |= ((uint64_t)event->cfgBits)<<61;
+        if (event->cmask != 0x0)
+        {
+            mask_flags |= ((uint64_t)event->cmask)<<40;
+        }
     }
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(j = 0; j < event->numberOfOptions; j++)
         {
             switch (event->options[j].type)
             {
@@ -180,20 +187,28 @@ int neh_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 case EVENT_OPTION_ANYTHREAD:
                     flags |= (1ULL<<21);
                     break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= (event->options[j].value & 0xFFULL)<<24;
+                    break;
                 case EVENT_OPTION_MATCH0:
-                    mask_flags |= extractBitField(event->options[j].value,40,0)<<2;
+                    mask_flags |= field64(event->options[j].value,3,37)<<2;
                     break;
                 case EVENT_OPTION_OPCODE:
-                    mask_flags |= ((uint64_t)extractBitField(event->options[j].value,8,0))<<40;
+                    mask_flags |= field64(event->options[j].value,0,8)<<40;
                     break;
                 default:
                     break;
             }
         }
     }
-    if ((mask_flags != 0x0ULL) && (event->eventId == 0x35) &&
-        ((cpuid_info.model == NEHALEM_WESTMERE) || (cpuid_info.model == NEHALEM_WESTMERE)))
+    if ((mask_flags != 0x0ULL) && (event->eventId == 0x35))
     {
+        if ((cpuid_info.model == NEHALEM_BLOOMFIELD) ||
+             (cpuid_info.model == NEHALEM_LYNNFIELD) ||
+             (cpuid_info.model == NEHALEM_LYNNFIELD_M))
+        {
+            DEBUG_PLAIN_PRINT(DEBUGLEV_ONLY_ERROR, Register documented in SDM but ADDR_OPCODE_MATCH event not documented for Nehalem architectures);
+        }
         VERBOSEPRINTREG(cpu_id, MSR_UNCORE_ADDR_OPCODE_MATCH, LLU_CAST mask_flags, SETUP_UNCORE_MATCH);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_ADDR_OPCODE_MATCH, mask_flags));
     }
@@ -205,11 +220,10 @@ int neh_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 int perfmon_setupCounterThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    uint64_t flags;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -226,12 +240,16 @@ int perfmon_setupCounterThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
+        RegisterType type = eventSet->events[i].type;
+        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+        {
+            continue;
+        }
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
-        uint64_t reg = nehalem_counter_map[index].configRegister;
 
-        switch (counter_map[index].type)
+        switch (type)
         {
             case PMC:
                 neh_pmc_setup(cpu_id, index, event);
@@ -253,6 +271,8 @@ int perfmon_setupCounterThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
                     }
                 }
                 break;
+            default:
+                break;
         }
     }
     if (fixed_flags != 0x0ULL)
@@ -271,7 +291,7 @@ int perfmon_startCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet
     int cpu_id = groupSet->threads[thread_id].processorId;
 
 
-    if ((socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id))
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -280,9 +300,14 @@ int perfmon_startCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
+            RegisterType type = eventSet->events[i].type;
+            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            {
+                continue;
+            }
             RegisterIndex index = eventSet->events[i].index;
             uint64_t counter = counter_map[index].counterRegister;
-            switch(counter_map[index].type)
+            switch(type)
             {
                 case PMC:
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter, 0x0ULL));
@@ -353,7 +378,6 @@ int perfmon_startCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet
 
 int perfmon_stopCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
 {
-    uint64_t flags;
     int haveLock = 0;
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
@@ -379,22 +403,25 @@ int perfmon_stopCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
+            RegisterType type = eventSet->events[i].type;
+            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            {
+                continue;
+            }
+            counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
-            uint64_t reg = counter_map[index].configRegister;
             uint64_t counter = counter_map[index].counterRegister;
-            switch (counter_map[index].type)
+            switch (type)
             {
                 case PMC:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                     VERBOSEPRINTREG(cpu_id, counter, counter_result, READ_PMC);
                     NEH_CHECK_OVERFLOW(index - cpuid_info.perf_num_fixed_ctr);
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case FIXED:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                     VERBOSEPRINTREG(cpu_id, counter, counter_result, READ_FIXED);
                     NEH_CHECK_OVERFLOW(index + 32);
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case UNCORE:
                     if(haveLock)
@@ -409,10 +436,12 @@ int perfmon_stopCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
                         {
                             NEH_CHECK_UNCORE_OVERFLOW(32);
                         }
-                        eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     }
                     break;
+                default:
+                    break;
             }
+            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
         }
     }
     return 0;
@@ -449,22 +478,25 @@ int perfmon_readCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
+            RegisterType type = eventSet->events[i].type;
+            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            {
+                continue;
+            }
+            counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
-            uint64_t reg = counter_map[index].configRegister;
             uint64_t counter = counter_map[index].counterRegister;
-            switch (counter_map[index].type)
+            switch (type)
             {
                 case PMC:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                     VERBOSEPRINTREG(cpu_id, counter, counter_result, READ_PMC);
                     NEH_CHECK_OVERFLOW(index - cpuid_info.perf_num_fixed_ctr);
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case FIXED:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                     VERBOSEPRINTREG(cpu_id, counter, counter_result, READ_FIXED);
                     NEH_CHECK_OVERFLOW(index + 32);
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case UNCORE:
                     if(haveLock)
@@ -479,10 +511,12 @@ int perfmon_readCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
                         {
                             NEH_CHECK_UNCORE_OVERFLOW(32);
                         }
-                        eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     }
                     break;
+                default:
+                    break;
             }
+            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
         }
     }
 
@@ -502,6 +536,7 @@ int perfmon_readCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
 int perfmon_finalizeCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
+    int haveTileLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t ovf_values_core = (1ULL<<63)|(1ULL<<62);
 
@@ -509,30 +544,39 @@ int perfmon_finalizeCountersThread_nehalem(int thread_id, PerfmonEventSet* event
     {
         haveLock = 1;
     }
+    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
+    {
+        haveTileLock = 1;
+    }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
+            RegisterType type = eventSet->events[i].type;
+            if (type == NOTYPE)
+            {
+                continue;
+            }
             RegisterIndex index = eventSet->events[i].index;
             uint64_t reg = counter_map[index].configRegister;
             PciDeviceIndex dev = counter_map[index].device;
-            switch (counter_map[index].type)
+            switch (type)
             {
                 case PMC:
                     ovf_values_core |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));
-                    if (eventSet->events[i].event.eventId == 0xB7)
+                    if ((haveTileLock) && (eventSet->events[i].event.eventId == 0xB7))
                     {
                         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL, CLEAR_OFFCORE_RESP0);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, 0x0ULL));
                     }
-                    else if ((eventSet->events[i].event.eventId == 0xBB) &&
+                    else if ((haveTileLock) && (eventSet->events[i].event.eventId == 0xBB) &&
                              ((cpuid_info.model == NEHALEM_WESTMERE) || (cpuid_info.model == NEHALEM_WESTMERE_M)))
                     {
                         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL, CLEAR_OFFCORE_RESP1);
                         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, 0x0ULL));
                     }
-                    else if ((eventSet->events[i].event.eventId == 0x35) &&
+                    else if ((haveTileLock) && (eventSet->events[i].event.eventId == 0x35) &&
                              ((cpuid_info.model == NEHALEM_WESTMERE) || (cpuid_info.model == NEHALEM_WESTMERE_M)))
                     {
                         VERBOSEPRINTREG(cpu_id, MSR_UNCORE_ADDR_OPCODE_MATCH, 0x0ULL, CLEAR_UNCORE_MATCH);
@@ -545,7 +589,7 @@ int perfmon_finalizeCountersThread_nehalem(int thread_id, PerfmonEventSet* event
                 default:
                     break;
             }
-            if ((reg) && ((dev == MSR_DEV) || (haveLock)))
+            if ((reg) && (((type == PMC)||(type == FIXED))||((type >= UNCORE) && (haveLock))))
             {
                 VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));

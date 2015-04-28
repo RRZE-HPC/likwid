@@ -37,6 +37,7 @@
 #include <sched.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
+#include <error.h>
 #include <dirent.h>
 #ifdef HAS_MEMPOLICY
 #include <linux/mempolicy.h>
@@ -47,7 +48,7 @@
 
 #include <error.h>
 #include <bstrlib.h>
-#include <strUtil.h>
+//#include <strUtil.h>
 
 #include <numa.h>
 #include <numa_proc.h>
@@ -67,6 +68,28 @@ int maxIdConfiguredNode = 0;
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+int str2int(const char* str)
+{
+    char* endptr;
+    errno = 0;
+    unsigned long val;
+    val = strtoul(str, &endptr, 10);
+
+    if ((errno == ERANGE && val == LONG_MAX)
+        || (errno != 0 && val == 0))
+    {
+        fprintf(stderr, "Value in string out of range\n");
+        return -EINVAL;
+    }
+
+    if (endptr == str)
+    {
+        fprintf(stderr, "No digits were found\n");
+        return -EINVAL;
+    }
+
+    return (int) val;
+}
 
 int
 empty_numa_init()

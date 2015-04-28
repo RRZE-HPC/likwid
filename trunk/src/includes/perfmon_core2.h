@@ -46,13 +46,15 @@ int perfmon_init_core2(int cpu_id)
 uint32_t core2_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
-    uint32_t flags = (0x2 << (4*index));
+    uint32_t flags = (1ULL<<(1+(index*4)));
     for(j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
             case EVENT_OPTION_COUNT_KERNEL:
                 flags |= (1ULL<<(index*4));
+                break;
+            default:
                 break;
         }
     }
@@ -72,7 +74,7 @@ int core2_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     if (event->numberOfOptions > 0)
     {
-        for(int j=0;j<event->numberOfOptions;j++)
+        for(j=0;j<event->numberOfOptions;j++)
         {
             switch (event->options[j].type)
             {
@@ -85,6 +87,11 @@ int core2_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 case EVENT_OPTION_INVERT:
                     flags |= (1ULL<<23);
                     break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= ((event->options[j].value & 0xFFULL)<<24);
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -93,11 +100,8 @@ int core2_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     return 0;
 }
 
-int perfmon_setupCounterThread_core2(
-        int thread_id,
-        PerfmonEventSet* eventSet)
+int perfmon_setupCounterThread_core2( int thread_id, PerfmonEventSet* eventSet)
 {
-    uint64_t flags;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
@@ -108,17 +112,23 @@ int perfmon_setupCounterThread_core2(
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
+        RegisterType type = eventSet->events[i].type;
+        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+        {
+            continue;
+        }
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
-        uint64_t reg = core2_counter_map[index].configRegister;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
-        switch (core2_counter_map[index].type)
+        switch (type)
         {
             case PMC:
                 core2_pmc_setup(cpu_id, index, event);
                 break;
             case FIXED:
                 fixed_flags |= core2_fixed_setup(cpu_id, index, event);
+                break;
+            default:
                 break;
         }
     }
@@ -139,17 +149,20 @@ int perfmon_startCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
+            RegisterType type = eventSet->events[i].type;
+            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            {
+                continue;
+            }
             RegisterIndex index = eventSet->events[i].index;
-            uint64_t reg = counter_map[index].configRegister;
             uint64_t counter = counter_map[index].counterRegister;
-
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter, 0x0ULL));
 
-            if (eventSet->events[i].type == PMC)
+            if (type == PMC)
             {
                 flags |= (1ULL<<(index - cpuid_info.perf_num_fixed_ctr));  /* enable counter */
             }
-            else if (eventSet->events[i].type == FIXED)
+            else if (type == FIXED)
             {
                 flags |= (1ULL<<(index + 32));  /* enable fixed counter */
             }
@@ -179,7 +192,6 @@ int perfmon_startCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
 
 int perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
 {
-    uint64_t flags;
     uint64_t counter_result;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
@@ -195,27 +207,30 @@ int perfmon_stopCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
+            RegisterType type = eventSet->events[i].type;
+            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            {
+                continue;
+            }
             counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
-            uint64_t reg = counter_map[index].configRegister;
             uint64_t counter = counter_map[index].counterRegister;
-            switch (eventSet->events[i].type)
+            switch (type)
             {
                 case PMC:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                     CORE2_CHECK_OVERFLOW(index - cpuid_info.perf_num_fixed_ctr);
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, READ_PMC)
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case FIXED:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                     CORE2_CHECK_OVERFLOW(index + 32);
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, READ_FIXED)
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 default:
                     break;
             }
+            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
         }
     }
 
@@ -241,26 +256,29 @@ int perfmon_readCountersThread_core2(int thread_id, PerfmonEventSet* eventSet)
         counter_result = 0x0ULL;
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
+            RegisterType type = eventSet->events[i].type;
+            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            {
+                continue;
+            }
             RegisterIndex index = eventSet->events[i].index;
-            uint64_t reg = counter_map[index].configRegister;
             uint64_t counter = counter_map[index].counterRegister;
-            switch (eventSet->events[i].type)
+            switch (type)
             {
                 case PMC:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                     CORE2_CHECK_OVERFLOW(index - cpuid_info.perf_num_fixed_ctr);
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, READ_PMC)
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 case FIXED:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                     CORE2_CHECK_OVERFLOW(index - 32);
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, READ_FIXED)
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
                 default:
                     break;
             }
+            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
         }
     }
 
@@ -281,18 +299,26 @@ int perfmon_finalizeCountersThread_core2(int thread_id, PerfmonEventSet* eventSe
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
+        RegisterType type = eventSet->events[i].type;
+        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+        {
+            continue;
+        }
         RegisterIndex index = eventSet->events[i].index;
         uint64_t reg = counter_map[index].configRegister;
-        VERBOSEPRINTREG(cpu_id, reg, LLU_CAST 0x0ULL, CLEAR_CTRL);
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, 0x0ULL));
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
-        if (eventSet->events[i].type == PMC)
+        if (type == PMC)
         {
             ovf_values_core |= (1ULL<<(index - cpuid_info.perf_num_fixed_ctr));
         }
-        else if (eventSet->events[i].type == FIXED)
+        else if (type == FIXED)
         {
             ovf_values_core |= (1ULL<<(index + 32));
+        }
+        if ((reg) && ((type == PMC)||(type == FIXED)))
+        {
+            VERBOSEPRINTREG(cpu_id, reg, LLU_CAST 0x0ULL, CLEAR_CTRL);
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, 0x0ULL));
         }
     }
     VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, CLEAR_GLOBAL_OVF)

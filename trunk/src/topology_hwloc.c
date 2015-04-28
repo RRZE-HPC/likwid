@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <error.h>
-#include <strUtil.h>
+//#include <strUtil.h>
 
 #include <topology.h>
 #ifdef LIKWID_USE_HWLOC
@@ -10,6 +10,7 @@
 #include <topology_hwloc.h>
 #endif
 
+hwloc_topology_t hwloc_topology = NULL;
 
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
@@ -30,7 +31,7 @@
 
 static int readCacheInclusiveIntel(int level)
 {
-    uint32_t eax, ebx, ecx, edx;
+    uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     eax = 0x04;
     ecx = level;
     CPUID;
@@ -39,7 +40,7 @@ static int readCacheInclusiveIntel(int level)
 
 static int readCacheInclusiveAMD(int level)
 {
-    uint32_t eax, ebx, ecx, edx;
+    uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     eax = 0x8000001D;
     ecx = level;
     CPUID;
@@ -48,7 +49,7 @@ static int readCacheInclusiveAMD(int level)
 
 static int get_stepping(void)
 {
-    uint32_t eax, ebx, ecx, edx;
+    uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     eax = 0x01;
     CPUID;
     return (eax&0xFU);
@@ -84,7 +85,7 @@ void hwloc_init_cpuInfo(cpu_set_t cpuSet)
     hwloc_obj_t obj;
 
     hwloc_topology_init(&hwloc_topology);
-
+    hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
     hwloc_topology_load(hwloc_topology);
     obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_SOCKET, 0);
 
@@ -126,20 +127,11 @@ void hwloc_init_cpuInfo(cpu_set_t cpuSet)
 
 void hwloc_init_nodeTopology(cpu_set_t cpuSet)
 {
-    uint32_t apicId;
-    uint32_t bitField;
-    int level;
-    int prevOffset = 0;
-    int currOffset = 0;
-    cpu_set_t set;
     HWThread* hwThreadPool;
     int maxNumLogicalProcs;
     int maxNumLogicalProcsPerCore;
     int maxNumCores;
-    int width;
     hwloc_obj_t obj;
-    int realThreadId;
-    int sibling;
     int poolsize = 0;
     int id = 0;
     hwloc_obj_type_t socket_type = HWLOC_OBJ_SOCKET;
@@ -208,7 +200,6 @@ void hwloc_init_cacheTopology(void)
     int maxNumLevels=0;
     int id=0;
     CacheLevel* cachePool = NULL;
-    CacheType type = DATACACHE;
     hwloc_obj_t obj;
     int depth;
     int d;

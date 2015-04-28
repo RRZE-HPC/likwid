@@ -34,9 +34,7 @@ package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
 
 local likwid = require("likwid")
 
-local HLINE = string.rep("-",80)
-local SLINE = string.rep("*",80)
-
+local filename = "/etc/likwid.cfg"
 
 function version()
     print(string.format("likwid-genTopoCfg --  Version %d.%d",likwid.version,likwid.release))
@@ -46,9 +44,29 @@ function usage()
     version()
     print("A tool to store the system's architecture to a config file for LIKWID.\n")
     print("Options:")
-    print("-h\t Help message")
-    print("-v\t Version information")
+    print("-h, --help\t Help message")
+    print("-v, --version\t Version information")
+    print("-o, --output <file>\t Use <file> instead of default "..filename)
 end
+
+for opt,arg in likwid.getopt(arg, {"h","v","help","version", "o:", "output:"}) do
+    if opt == "h" or opt == "help" then
+        usage()
+        os.exit(0)
+    elseif opt == "v" or opt == "version" then
+        version()
+        os.exit(0)
+    elseif opt == "o" or opt == "output" then
+        filename = arg
+    end
+end
+
+local file = io.open(filename, "w")
+if file == nil then
+    print("Cannot open file "..filename.." for writing")
+    os.exit(1)
+end
+
 
 local cpuinfo = likwid.getCpuInfo()
 local cputopo = likwid.getCpuTopology()
@@ -59,16 +77,15 @@ cpuinfo["clock"] = likwid.getCpuClock()
 local threadPool_order = {"threadId", "coreId", "packageId", "apicId"}
 local cacheLevels_order = {"type", "associativity", "sets", "lineSize", "size", "threads", "inclusive"}
 
-local file = io.open("./likwid.topo", "w")
-
 for field, value in pairs(cpuinfo) do
     file:write("cpuid_info " .. field .. " = " .. tostring(value).."\n")
 end
 
 for field, value in pairs(cputopo) do
     if (field ~= "threadPool" and field ~= "cacheLevels" and field ~= "topologyTree") then
-        print("cpuid_topology." .. field .. " = " .. tostring(value))
-        file:write("cpuid_topology " .. field .. " = " .. tostring(value).."\n")
+        if field ~= "activeHWThreads" then
+            file:write("cpuid_topology " .. field .. " = " .. tostring(value).."\n")
+        end
     elseif (field == "threadPool") then
         --file:write("cpuid_topology threadPool count = "..tostring(likwid.tablelength(cputopo["threadPool"])).."\n")
         for id, tab in pairs(cputopo["threadPool"]) do

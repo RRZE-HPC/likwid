@@ -6,7 +6,7 @@
 #include <sched.h>
 
 
-static hwloc_topology_t hwloc_topology = NULL;
+extern hwloc_topology_t hwloc_topology;
 
 int hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwloc_obj_type_t type, int* index, uint32_t **list);
 

@@ -63,6 +63,7 @@
 #define TOSTRING(x) STRINGIFY(x)
 
 #define PCI_ROOT_PATH  "/proc/bus/pci/"
+#define PCM_PCI_CLASS  0x1101
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -94,7 +95,6 @@ pci_init(int initSocket_fd)
     int j=0;
     int ret = 0;
     int access_flags = 0;
-
     ownaccess = &access;
     ownopen = &open;
 
@@ -104,10 +104,8 @@ pci_init(int initSocket_fd)
         for(j=1;j<MAX_NUM_PCI_DEVICES;j++)
         {
             FD[i][j] = -2;
-            pci_devices[j].online = 0;
         }
     }
-
     /* PCI is only provided by Intel systems */
     if (!cpuid_info.isIntel)
     {
@@ -131,7 +129,7 @@ pci_init(int initSocket_fd)
             return -ENODEV;
             break;
     }
-    
+
 #ifdef LIKWID_USE_HWLOC
     DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using hwloc to find pci devices);
     ret = hwloc_pci_init(testDevice, socket_bus, &nr_sockets);
@@ -176,6 +174,10 @@ pci_init(int initSocket_fd)
                     {
                         DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, i,bdata(filepath));
                     }
+                }
+                else
+                {
+                    pci_devices[j].online = 0;
                 }
             }
         }
