@@ -1,0 +1,66 @@
+The likwid-agent application is a daemon that reads hardware performance
+counters in a periodic fashion. Which counters can be measured is determined by
+the system's CPU architecture. Each architecture has its own set of events and
+corresponding counter registers. For the measurement the likwid library is used
+and interfaced through the Lua interface. The measured values can be exported in
+multiple ways like RRD, syslog or gmetric from the Ganglia Monitoring System.
+
+
+The configuration file needs to be given at startup and has the following
+format:
+GROUPPATH <PATH_TO_GROUPS> # default is set during installation
+EVENTSET <SPACE_SEPARATED_LIST_OF_GROUPS>
+DURATION <TIME_IN_SECONDS_TO_MEASURE_EACH_GROUP>
+ACCESSMODE <0/1> # 0 is direct access, 1 forward access to the accessDaemon
+LOGPATH <PATH_TO_STORE_LOGFILES> # each montitoring group creates a logfile there named likwid.<GROUP>.log
+LOGSTYLE <log/update> # log appends new lines, update clears file previously
+GMETRIC <True/False> # send measured values to Gangla
+GMETRICPATH <PATH_TO_THE_GMETRIC_EXECUTABLE>
+GMETRICCONFIG <EXTRA_CONFIG_OPTIONS_TO_GMETRIC>
+RRD <True/False> # write measured values to RRD files, one RRD per group
+RRDPATH <PATH_TO_STORE_RRD_FILES>
+SYSLOG <True/False> # write measured values to syslog
+SYSLOGPRIO <prio> # Use priority level <prio> for syslog, default is local0.notice
+
+
+
+The group files cannot lie directly in GROUPPATH, you need to create a folder
+with the short name of the architecture like sandybridge or ivybridge. This
+enables to use the same group path distributed over a set of systems with different
+CPU architecture. The format of a group file is the following:
+SHORT <SHORT_NAME_OF_THE GROUP>
+
+EVENTSET // Starts event/counter definitions
+FIXC0 INSTR_RETIRED_ANY // Measure event INSTR_RETIRED_ANY in counter FIXC0
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  L1D_REPLACEMENT
+PMC1  L2_TRANS_L1D_WB
+PMC2  L2_LINES_IN_ALL
+PMC3  L2_LINES_OUT_DEMAND_DIRTY
+
+METRICS // Starts section of derived metrics and output items
+ONCE Runtime (RDTSC) [s] time # Output runtime only once
+MIN CPI FIXC1/FIXC0 # Output the minimum of the formula FIXC1/FIXC0 named CPI
+AVG CPI FIXC1/FIXC0 # Output the average of the same formula
+MAX L2 load bandwidth [MBytes/s]  1.0E-06*PMC0*64.0/time # Calculate bandwidth and output only the maximum
+MIN L2 load data volume [GBytes]  1.0E-09*PMC0*64.0
+SUM L2 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time # Sum up all the values of all CPUs
+SUM L2 data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
+SUM L3 bandwidth [MBytes/s] 1.0E-06*(PMC2+PMC3)*64.0/time
+SUM L3 data volume [GBytes] 1.0E-09*(PMC2+PMC3)*64.0
+
+LONG
+<LONG DESCRIPTION OF THE GROUP>
+
+Possible functions are:
+ONCE: Output only once (CPU core 0), no aggregation is done
+MIN: Output the minimum of all cores
+MAX: Output the maximum of all cores
+AVG: Output the average of all cores
+SUM: Output the sum of all cores' values
+If no function is set, the values of all HW threads is written to output and
+T<ID> is written in front of the name.
+
+The output metric names can be equal, the function is glued to the output name for later separation.
+
