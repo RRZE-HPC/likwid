@@ -18,21 +18,21 @@ HAS_SCHEDAFFINITY = $(shell if [ $(GLIBC_VERSION) -lt 4 ]; then \
                echo 0;  else echo 1; \
 			   fi; )
 
-
+FORTRAN_IF_NAME := likwid.mod
 ifneq ($(FORTRAN_INTERFACE),false)
 HAS_FORTRAN_COMPILER = $(shell $(FC) --version 2>/dev/null || echo 'NOFORTRAN' )
 ifeq ($(HAS_FORTRAN_COMPILER),NOFORTRAN)
-FORTRAN_INTERFACE=
-$(info Warning: You have selected the fortran interface in config.mk, but there seems to be no fortran compiler - not compiling it!)
+FORTRAN_IF=
+$(info Warning: You have selected the fortran interface in config.mk, but there seems to be no fortran compiler $(FC) - not compiling it!)
 else
-FORTRAN_INTERFACE = likwid.mod
+FORTRAN_IF := $(FORTRAN_IF_NAME)
 FORTRAN_INSTALL = @echo "===> INSTALL fortran interface to $(PREFIX)/include/" \
                   @cp -f likwid.mod  $(PREFIX)/include/
 FORTRAN_REMOVE = @echo "===> REMOVING fortran interface from $(PREFIX)/include/" \
                  @rm -f $(PREFIX)/include/likwid.mod
 endif
 else
-FORTRAN_INTERFACE =
+FORTRAN_IF =
 FORTRAN_INSTALL =
 FORTRAN_REMOVE =
 endif
