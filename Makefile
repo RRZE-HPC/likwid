@@ -284,8 +284,8 @@ install: install_daemon install_freq
 	@mkdir -p $(PREFIX)/share/likwid/mongroups
 	@cp -rf monitoring/groups/* $(PREFIX)/share/likwid/mongroups
 	@echo "===> INSTALL default likwid-agent.conf to $(PREFIX)/etc"
-	@sed -e "s/<PREFIX>/$(PREFIX)/g" monitoring/likwid-agent.conf > $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
-	@chmod 600 $(PREFIX)/etc/likwid-agent.conf
+	@sed -e "s+<PREFIX>+$(PREFIX)+g" monitoring/likwid-agent.conf > $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
+	@chmod 600 $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
 	@echo "===> INSTALL filters to $(LIKWIDFILTERPATH)"
 	@mkdir -p $(LIKWIDFILTERPATH)
 	@cp -f filters/*  $(LIKWIDFILTERPATH)
