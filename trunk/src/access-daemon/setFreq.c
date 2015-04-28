@@ -53,7 +53,7 @@ int main (int argn, char** argv)
     {
         gov = argv[3];
 
-        if ((strncmp(gov,"ondemand",12)) && (strncmp(gov,"performance",12))) {
+        if ((strncmp(gov,"ondemand",8)) && (strncmp(gov,"performance",11))) {
             fprintf(stderr, "Invalid governor %s!\n",gov);
             return (EXIT_FAILURE);
         }
