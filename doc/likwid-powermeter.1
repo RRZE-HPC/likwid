@@ -1,13 +1,17 @@
 .TH LIKWID-POWERMETER 1 <DATE> likwid\-<VERSION>
 .SH NAME
-likwid-powermeter \- A tool to print Power and Clocking information on Intel CPUS
+likwid-powermeter \- A tool to print power and clocking information on Intel CPUs
 .SH SYNOPSIS
 .B likwid-powermeter 
-.RB [ \-vh ]
+.RB [ \-vhpitf ]
+.RB [ \-V
+.IR verbosity_level ]
 .RB [ \-c
-.IR socketId ]
+.IR socket_list ]
 .RB [ \-s
-.IR duration in seconds ]
+.IR duration ]
+.RB [ \-M
+.IR <0|1> ]
 .SH DESCRIPTION
 .B likwid-powermeter
 is a command line application to get the Energy comsumption on Intel RAPL capable processors. Currently
@@ -18,24 +22,53 @@ run. RAPL works on a per package (socket) base.
 Please note that the RAPL counters are also accessible as normal events withing likwid-perfctr.
 .SH OPTIONS
 .TP
-.B \-\^v
-prints version information to standard output, then exits.
-.TP
-.B \-\^h
+.B \-\^h,\-\-\^help
 prints a help message to standard output, then exits.
 .TP
-.B \-\^c " socketId"
-set on which socket the RAPL interface is accessed.
+.B \-\^v,\-\-\^version
+prints version information to standard output, then exits.
+.TP
+.B \-\^V, \-\-\^verbose <level>
+verbose output during execution for debugging. 0 for only errors, 1 for informational output, 2 for detailed output and 3 for developer output
+.TP
+.B \-\^c <socket_list>
+set on which socket(s) the RAPL interface is accessed. List of sockets like 0,1,2 or 0-2 are allowed.
+.TP
+.B \-\^M <0|1>
+set how MSR registers are accessed, 0=direct, 1=accessDaemon.
+.TP
+.B \-\^s <duration>
+set measure duration in us, ms or s. (default 2s)
 .TP
 .B \-\^p
-prints out information about dynamic clocks and CPI information on the socket measured.
+prints out information about dynamic clocks and CPI information on the socket(s) measured.
 .TP
-.B \-\^i
-prints out information TDP and Turbo mode steps
+.B \-\^i,\-\-\^info
+prints out information TDP and Turbo mode steps of all RAPL domains supporting it.
+.TP
+.B \-\^t
+prints out the temperature of all CPUs in the system.
+.TP
+.B \-\^f
+prints out the temperature like
+.B \-\^t
+but used Fahrenheit as temperature unit.
+
+.SH EXAMPLE
+.IP 1. 3
+Measure the power consumption for 4 seconds on socket 1
+.TP
+.B likwid-powermeter -s 4 -c 1
+.PP
+.IP 2. 3
+Use it as wrapper for an application to measure the energy for the whole execution
+.TP
+.B likwid-powermeter -c 1 ./a.out
+.PP
 
 .SH AUTHOR
-Written by Jan Treibig <jan.treibig@gmail.com>.
+Written by Thomas Roehl <thomas.roehl@googlemail.com>.
 .SH BUGS
 Report Bugs on <http://code.google.com/p/likwid/issues/list>.
 .SH "SEE ALSO"
-likwid-topology(1), likwid-perfCtr(1), likwid-pin(1),
+likwid-topology(1), likwid-perfctr(1), likwid-pin(1)

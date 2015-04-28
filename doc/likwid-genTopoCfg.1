@@ -1,0 +1,30 @@
+.TH LIKWID-GENTOPOCFG 1 <DATE> likwid\-<VERSION>
+.SH NAME
+likwid-genTopoCfg \- Get system topology and write them to file for faster LIKWID startup
+.SH SYNOPSIS
+.B likwid-genTopoCfg
+.RB [\-hv]
+.RB [ \-o
+.IR <filename>]
+.SH DESCRIPTION
+.B likwid-genTopoCfg
+is a command line application that stores the system's CPU and NUMA topology to
+file. LIKWID applications use this file to read in the topology fast instead of
+re-gathering all values.
+.SH OPTIONS
+.TP
+.B \-h, \-\-\^help
+prints a help message to standard output, then exits.
+.TP
+.B \-v, \-\-\^version
+prints a version message to standard output, then exits.
+.TP
+.B \-\^o, \-\-\^output <filename>
+sets output file path (Default: /etc/likwid-topo.cfg)
+
+.SH AUTHOR
+Written by Thomas Roehl <thomas.roehl@googlemail.com>.
+.SH BUGS
+Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+.SH "SEE ALSO"
+likwid-topology(1), likwid-perfctr(1), likwid-pin(1)

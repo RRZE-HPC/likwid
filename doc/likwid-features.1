@@ -12,7 +12,7 @@ likwid-features \- print and toggle the flags of the MSR_IA32_MISC_ENABLE model 
 .B likwid-features
 is a command line application to print the flags in the model
 specific register (MSR) MSR_IA32_MISC_ENABLE on Intel x86 processors. On Core2 processors
-it can be used to toggle the hardware prefetch flags. It does not work on AMD processors.
+it can be used to toggle the hardware prefetch flags. It does not work on AMD processors and recent Intel processors.
 For a documentation what flags are supported on which processor refer to the Intel
 Software Developer's Manual Volume 3B, Table B.2. The MSR are set individually for every core.
 The following hardware prefetchers can be toggled:

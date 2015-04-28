@@ -2,35 +2,47 @@
 .SH NAME
 likwid-topology \- print thread and cache topology
 .SH SYNOPSIS
-.B likwid-topology 
+.B likwid-topology
 .RB [\-hvgcC]
+.RB [ \-V
+.IR level ]
+.RB [ \-o
+.IR output_file ]
 .SH DESCRIPTION
 .B likwid-topology
 is a command line application to print the thread and cache
-toppology on multicore x86 processors. Used with mono spaced fonts it can
+topology on multicore x86 processors. Used with mono spaced fonts it can
 draw the processor topology of a machine in ascii art. Beyond topology
 likwid-topology determines the clock of a processor and prints detailed
 informations about the caches hierarchy.
 .SH OPTIONS
 .TP
-.B \-v
-prints version information to standard output, then exits.
-.TP
-.B \-h
+.B \-h, \-\-\^help
 prints a help message to standard output, then exits.
 .TP
+.B \-v, \-\-\^version
+prints version information to standard output, then exits.
+.TP
+.B \-V, \-\-\^verbose <level>
+sets the verbosity level of LIKWID's topology backend. Possible levels range from 0 to 3.
+.TP
 .B \-g
-prints topology information in ascii art. Best viewed with monospaced font.
+prints topology information in ASCII art. Best viewed with monospaced font.
 .TP
-.B \-c
-prints detailed informations about cache hierarchy
+.B \-c, \-\-\^caches
+prints detailed information about cache hierarchy
 .TP
-.B \-C
-measures and output the processor clock. This involves a longer runtime of likwid-topology.
+.B \-C, \-\-\^clock
+measures and output the processor clock. This involves a longer run time of likwid-topology.
+.TP
+.B \-o, \-\-\^output <file>
+write the output to file instead of stdout.
+Likwid applies filter scripts according to filename suffix.
+Currently available scripts are xml and csv.
 
 .SH AUTHOR
-Written by Jan Treibig <jan.treibig@gmail.com>.
+Written by Thomas Roehl <thomas.roehl@googlemail.com>.
 .SH BUGS
 Report Bugs on <http://code.google.com/p/likwid/issues/list>.
 .SH "SEE ALSO"
-likwid-perfCtr(1), likwid-features(1), likwid-pin(1),
+likwid-perfctr(1), likwid-features(1), likwid-pin(1),

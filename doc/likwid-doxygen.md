@@ -2,31 +2,106 @@
 
 \section Introduction
 This is an effort to develop easy to use but yet powerful performance tools for the GNU Linux operating system. While the focus of LIKWID is on x86 processors some of the tools are portable and not limited to any specific architecture. LIKWID follows the philosophy:
-    - Simple
-    - Efficient
-    - Portable
-    - Extensible
+- Simple
+- Efficient
+- Portable
+- Extensible
 
-LIKWID is not only a single tool, it is a tool suite containing the following tools:
-    - likwid-topology: A tool to display the thread and cache topology on multicore/multisocket computers
-    - likwid-perfctr : A tool to measure hardware performance counters on recent Intel and AMD processors. It can be used as wrapper application without modifying the profiled code or with a marker API to measure only parts of the code.
-    - likwid-pin : A tool to pin your threaded application without changing your code. Works for pthreads and OpenMP.
-    - likwid-bench : Benchmarking framework allowing rapid prototyping of threaded assembly kernels
-    - likwid-mpirun : Script enabling simple and flexible pinning of MPI and MPI/threaded hybrid applications. With integrated likwid-perfctr support.
-    - likwid-powermeter : Tool for accessing RAPL counters and query Turbo mode steps on Intel processor. RAPL counters are also available in likwid-perfctr.
-    - likwid-memsweeper : Tool to cleanup ccNUMA domains.
-    - likwid-features : A tool to toggle the prefetchers on Core 2 processors.
+\ref build instructions
 
-\section build Build and Install
-Likwid is build using GNU make and has no external dependencies apart from the Linux kernel, the standard C library, the PCI library and the Readline library. PCI and Readline are only required for LIKWID 4.X for gathering the PCI devices and using the Lua interpreter.
-It should build on any Linux distribution with a recent GCC compiler and 2.6 or newer kernel without any changes.
+\section Tools LIKWID Tools
+- \ref likwid-topology : A tool to display the thread and cache topology on multicore/multisocket computers.
+- \ref likwid-pin : A tool to pin your threaded application without changing your code. Works for pthreads and OpenMP.
+- \ref likwid-perfctr : A tool to measure hardware performance counters on recent Intel and AMD processors. It can be used as wrapper application without modifying the profiled code or with a marker API to measure only parts of the code.
+- \ref likwid-powermeter : A tool for accessing RAPL counters and query Turbo mode steps on Intel processor. RAPL counters are also available in \ref likwid-perfctr.
+- \ref likwid-setFrequencies : A tool to print and manage the clock frequency of CPU cores.
+- \ref likwid-agent : A monitoring agent for LIKWID with multiple output backends.
+- \ref likwid-memsweeper : A tool to cleanup ccNUMA domains and LLC caches to get a clean environment for benchmarks.
+- \ref likwid-bench : A benchmarking framework for streaming benchmark kernels written in assembly.
+- \ref likwid-genTopoCfg : A config file writer that gets system topology and writes them to file for faster LIKWID startup.
+<!-- - \ref likwid-features : A tool to toggle the prefetchers on Core 2 processors.-->
 
-There is one generic top level Makefile and one .mk configuration file for each compiler (at the moment GCC and ICC). Please note that I can only test LIKWID with gcc. ICC is only tested for basic functionality.
+Wrapper scripts using the basic likwid tools:
+- \ref likwid-mpirun : A wrapper script enabling simple and flexible pinning of MPI and MPI/threaded hybrid applications. With integrated \ref likwid-perfctr support.
+- \ref likwid-perfscope : A frontend application for the timeline mode of \ref likwid-perfctr that performs live plotting using gnuplot.
+
+LIKWID requires in most environments some daemon application to perform its operations with higher priviledges:
+- \ref likwid-accessD : Daemon to perform MSR and PCI read/write operations with higher priviledges.
+- \ref likwid-setFreq : Daemon to set the CPU frequencies with higher priviledges.
+
+Optionally, a global configuration file \ref likwid.cfg can be given to modify some basic run time parameters of LIKWID.
+
+\section Library LIKWID Library
+\subsection C_Interface C/C++ Interface
+- \ref MarkerAPI
+- \ref AccessClient
+- \ref Config
+- \ref CPUTopology
+- \ref NumaTopology
+- \ref AffinityDomains
+- \ref PerfMon
+- \ref PowerMon
+- \ref ThermalMon
+- \ref TimerMon
+- \ref Daemon
+- \ref MemSweep
+
+\subsection Lua_Interface Lua Interface
+- \ref lua_Info
+- \ref lua_InputOutput
+- \ref lua_Config
+- \ref lua_Access
+- \ref lua_CPUTopology
+- \ref lua_NumaInfo
+- \ref lua_AffinityInfo
+- \ref lua_Perfmon
+- \ref lua_PowerInfo
+- \ref lua_ThermalInfo
+- \ref lua_Timer
+- \ref lua_MemSweep
+- \ref lua_Misc (Some functionality not provided by Lua natively)
+
+\subsection Fortran90_Interface Fortran90 Interface
+- \ref Fortran_Interface
+
+\section Architectures Supported Architectures
+\subsection Architectures_Intel Intel&reg;
+- \subpage pentiumm
+- \subpage core2
+- \subpage atom
+- \subpage nehalem
+- \subpage nehalemex
+- \subpage westmere
+- \subpage westmereex
+- \subpage phi
+- \subpage silvermont
+- \subpage sandybridge
+- \subpage sandybridgeep
+- \subpage ivybridge
+- \subpage ivybridgeep
+- \subpage haswell
+- \subpage haswellep
+- \subpage broadwell
+
+\subsection Architectures_AMD AMD&reg;
+- \subpage k8
+- \subpage k10
+- \subpage interlagos
+- \subpage kabini
+*/
+
+
+/*! \page build Build and Install
+\section allg Introduction
+Likwid is build using GNU make and has no external dependencies apart from the Linux kernel and the standard C library.
+It should build on any Linux distribution with a recent GCC compiler or CLANG compiler and 2.6 or newer kernel without any changes.
+
+There is one generic top level Makefile and one .mk configuration file for each compiler (at the moment GCC, CLANG and ICC). Please note that I can only test LIKWID with GCC and CLANG. ICC is only tested for basic functionality and is not supported by us.
 
 There is one exception: If you want to use LIKWID on a Intel Xeon Phi card you have to choose the MIC as Compiler in config.mk, which is based on Intel ICC compiler.
 
 \subsection directory Directory structure
-All source files are in the src/ directory. All header files are located in src/includes/. Each application main source files are in src/applications/. All external tools, namely HWLOC and Lua, are located in ext/.
+All source files are in the src/ directory. All header files are located in src/includes/. Each application main source files are in src/applications/. All external tools, namely HWLOC and Lua, are located in ext/. The bench/ folder contains all files of the benchmarking suite of LIKWID.
 
 All build products are generated in the directory ./TAG, where TAG is the compiler configuration, default ./GCC.
 
@@ -77,4 +152,10 @@ Some newer kernels implement the so-called capabilities, a fine-grained permissi
 sudo setcap cap_sys_rawio+ep EXECUTABLE
 
 This is only possible on local file systems. A feasible way is to use the likwid-accessD for all accesses and just enable the capabilities for this one binary. This will enable the usage for all LIKWID tools and also for all instrumented binaries. If the likwid-perfctr utility should only be used in wrapper mode, it is suitable to set the capabilities for likwid-perfctr only. Please remember to set the file permission of the MSR device file to read/write for all users, even if capabilites are configured correctly.
+
+\subsubsection depends Dependencies
+Although we tried to minimize the external dependencies of LIKWID, some advanced tools or only specific tool options require external packages.<BR>
+\ref likwid-perfscope uses the Perl script \a feedGnuplot to forward the real-time data to gnuplot. \a feedGnuplot is included into LIKWID, but gnuplot itself is not.<BR>
+\ref likwid-agent provided multiple backends to output the periodically measured data. The syslog backend requires the shell tool \a logger to be installed. The <A HREF="https://oss.oetiker.ch/rrdtool/">RRD</A> backend requires \a rrdtool and the GMetric backend the \gmetric tool, part of the <A HREF="http://ganglia.sourceforge.net/">Ganglia Monitoring System</A>.<BR>
+In order to create the HTML documentation of LIKWID, the toold \a doxygen is required.
 */

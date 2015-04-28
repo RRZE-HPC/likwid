@@ -1,0 +1,163 @@
+.TH LIKWID-PERFSCOPE 1 <DATE> likwid\-<VERSION>
+.SH NAME
+likwid-perfscope \- Frontend for the timeline mode of
+.B likwid-perfctr(1)
+that generates pictures on-the-fly from the measurements
+.SH SYNOPSIS
+.B likwid-perfscope
+.RB [\-hvad]
+.RB [ \-c
+.IR <cpu_list> ]
+.RB [ \-C
+.IR <cpu_list> ]
+.RB [ \-f
+.IR <frequency> ]
+.RB [ \-g
+.IR <eventset_and_plotconfig> ]
+.B <executable>
+
+.SH DESCRIPTION
+.B likwid-perfscope
+is a command line application written in Lua that uses the timeline daemon mode of
+.B likwid-perfctr(1)
+to create on-the-fly pictures with the current measurements. It uses the
+.B feedGnuplot(1)
+script to send the current data to gnuplot. Since the plot windows are normally closed directly after the execution of the monitored applications,
+.B likwid-perfscope
+waits until Ctrl+c is pressed.
+.SH OPTIONS
+.TP
+.B \-\^h,\-\-\^help
+Prints a help message to standard output, then exits.
+.TP
+.B \-\^v,\-\-\^version
+Prints version information to standard output, then exits.
+.TP
+.B \-\^C " <cpu_list>
+Measures on given CPUs in <cpu_list>. See
+.B likwid-pin(1)
+for further information about the syntax.
+.TP
+.B \-\^C " <cpu_list>
+Measures the given group on given CPUs in <cpu_list>. See
+.B likwid-pin(1)
+for further information about the syntax. The application is pinned to that cores.
+.TP
+.B \-\^a
+List preconfigured event and plot configurations
+.TP
+.B \-\^d,\-\-\^dump
+Print the measurements of
+.B likwid-perfctr(1)
+to stdout.
+.TP
+.B \-\^f,\-\-\^freq " <frequency>
+Reads the current performance values every <frequency>. Available suffixes are 's', 'ms' or 'us, e.g. 500ms. Default value is 1s.
+.TP
+.B \-\^g,\-\-\^group " <eventset_and_plotconfig>
+Defines the events and counters that should be read. Possible values can be gathered from
+.B likwid-perfctr(1).
+You can give multiple
+.B \-\^g
+options on the commandline. They will be measured in a round-robin fashion and one plot generated per option. Moreover, the
+.B \-\^g
+option accepts config options for
+.B feedGnuplot(1),
+see section
+.B EVENTSETS
+
+
+.SH EVENTSETS
+In contrast to the \-\^g option for
+.B likwid-perfctr
+the \-\^g option for
+.B likwid-perfscope
+is extended to accept configuration options for
+.B feedGnuplot.
+There are some predefined plot configurations embedded into
+.B likwid-perfscope
+which can be listed with
+.B \-\^a
+command line option. They are filtered to show only configs that are available for your current system.
+If you need to measure and plot custom events you can set the plotting options as last entry in your eventset. The plotting config options can be set as a ':' separated list. If you select preconfigured group, you can overwrite single fields in the config like changing the title or the matching. The folling options are available:
+
+.IP 1. 4
+.B title=<string>, TITLE=<string>
+.TP
+Use the given title for the plot, use "" to enclose text with spaces and escape characters which could be interpreted by the shell. ':' are not allowed!
+.PP
+.IP 2. 4
+.B xtitle=<string>, XTITLE=<string>
+.TP
+Use the given title for the x-axis of the plot, use "" to enclose text with spaces and escape characters which could be interpreted by the shell. ':' are not allowed!
+.PP
+.IP 3. 4
+.B ytitle=<string>, YTITLE=<string>
+.TP
+Use the given title for the left y-axis of the plot, use "" to enclose text with spaces and escape characters which could be interpreted by the shell. ':' are not allowed!
+.PP
+.IP 4. 4
+.B <string>=<string>
+.TP
+All option string items that is not recognized as keyword like TITLE are used as formulas for the output. You can set multiple of those items in one option string. Each is calculated and integrated in the output plot. The first <string> is used as legend entry. The second <string> is the formula for the function.
+.PP
+.IP 5. 4
+.B y2title=<string>, Y2TITLE=<string>, y2title=<id-string>, Y2TITLE=<id-string>
+.TP
+Use the given title for the right y-axis of the plot. If no id is set, the last y2-axis is related to the last formula. If id is set, the formula with the id is used for the y2-axis. The id starts with index 1 for the first formula. Use "" to enclose text with spaces and escape characters which could be interpreted by the shell with '\'. ':' are not allowed!
+.PP
+
+.SH EXAMPLE
+.IP 1. 5
+Measure and print a preconfigured plotting configuration:
+.TP
+.B likwid-perfscope -g L3_BAND -C 0-2 -f 1s ./a.out
+.PP
+This measures the L3 bandwidth with likwid-perfctr every second on CPU cores 0,1,2 and use the plotting configuration L3_BAND. The plot will have a title and the axes are labeled properly.
+.IP 2. 5
+Measure and print a preconfigured plotting configuration:
+.TP
+.B likwid-perfscope -g L3_VOL:TITLE="My Title" -C 0 -f 1s ./a.out
+.PP
+This measures the L3 data volume with likwid-perfctr every second on CPU core 0 and use the plotting configuration L3_VOL. The title of the output plot is changed to the custom title "My Title".
+.IP 3. 5
+Custom event set with plotting configuration:
+.TP
+.B likwid-perfscope -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,CPI=FIXC0/FIXC1:YTITLE="Cycles per Instruction" -C 0 -freq 500ms ./a.out
+.PP
+Executes
+.B likwid-perfctr
+on the first core. The values for the events
+.B INSTR_RETIRED_ANY
+and
+.B CPU_CLK_UNHALTED_CORE
+are read every 500ms. The raw values are transformed using the formula
+.B FIXC0/FIXC1
+and forwarded to gnuplot using the
+.B feedGnuplot(1)
+script with the curve name 'CPI' in the legend. The y-axis is labeled with the string "Cycles per Instruction".
+IP 4. 5
+Custom event set with plotting configuration:
+.TP
+.B likwid-perfscope -g L3_VOL,CPI=FIXC0/FIXC1:Y2TITLE="2-Cycles per Instruction" -C 0 -freq 500ms ./a.out
+.PP
+This measures the L3 data volume for CPU 0 every 500 ms. Additionally, a second curve is plotted with the function
+.B FIXC0/FIXC1
+with the legend entry
+.B CPI.
+The right y-axis is labeled with
+.B 'Cycles per Instruction'
+and is associated to the second formula. The first formula is hidden in the
+.B L3_VOL
+plot group. Since the
+.B CPI
+formula is the last in the list, the curve id is not needed in the
+.B Y2TITLE
+as this is the default behavior.
+
+.SH AUTHOR
+Written by Thomas Roehl <thomas.roehl@googlemail.com>.
+.SH BUGS
+Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+.SH "SEE ALSO"
+likwid-perfctr(1), feedGnuplot(1)

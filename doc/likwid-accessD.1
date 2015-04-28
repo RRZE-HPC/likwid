@@ -1,0 +1,22 @@
+.TH LIKWID-ACCESSD 1 <DATE> likwid\-<VERSION>
+.SH NAME
+likwid-accessD \- This tool forwards the access operations from LIKWID PerfMon tools
+to the MSR  and PCI device files
+.SH DESCRIPTION
+.B likwid-accessD
+is a command line application that opens a UNIX file socket and waits for access
+operations from LIKWID tools that require access to the MSR and PCI device
+files. The MSR and PCI device files are only accessible for users with root
+privileges, therefore
+.B likwid-accessD
+requires the suid-bit set or a suitable libcap setting.
+Depending on the current system architecture,
+.B likwid-accessD
+permits only access to registers defined for the architecture.
+
+.SH AUTHOR
+Written by Thomas Roehl <thomas.roehl@googlemail.com>.
+.SH BUGS
+Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+.SH "SEE ALSO"
+likwid-perfctr(1), likwid-powermeter(1), likwid-features(1)
