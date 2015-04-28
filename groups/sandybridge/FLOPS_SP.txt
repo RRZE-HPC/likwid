@@ -6,22 +6,24 @@ FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
 PMC0  FP_COMP_OPS_EXE_SSE_FP_PACKED_SINGLE
 PMC1  FP_COMP_OPS_EXE_SSE_FP_SCALAR_SINGLE
-PMC2  FP_256_PACKED_SINGLE
+PMC2  SIMD_FP_256_PACKED_SINGLE
 
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-MFlops/s  1.0E-06*(PMC0*4.0+PMC1)/time
+MFlops/s  1.0E-06*(PMC0*4.0+PMC1+PMC2*8.0)/time
 AVX MFlops/s  1.0E-06*(PMC2*8.0)/time
 Packed MUOPS/s   1.0E-06*(PMC0+PMC2)/time
 Scalar MUOPS/s 1.0E-06*PMC1/time
 
 LONG
 Formula:
-MFlops/s =  (FP_COMP_OPS_EXE_SSE_FP_PACKED*4 +  FP_COMP_OPS_EXE_SSE_FP_SCALAR)/ runtime
-AVX MFlops/s =  (FP_256_PACKED_SINGLE*8)/ runtime
+MFlops/s = 1.0E-06*(FP_COMP_OPS_EXE_SSE_FP_PACKED*4+FP_COMP_OPS_EXE_SSE_FP_SCALAR+SIMD_FP_256_PACKED_SINGLE*8)/runtime
+AVX MFlops/s = 1.0E-06*(SIMD_FP_256_PACKED_SINGLE*8)/runtime
+Packed MUOPS/s = 1.0E-06*(FP_COMP_OPS_EXE_SSE_FP_PACKED_SINGLE+SIMD_FP_256_PACKED_SINGLE)/runtime
+Scalar MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_SCALAR_SINGLE/runtime
 -
 SSE scalar and packed single precision flop rates. Please note that the current
 flop measurements on SandyBridge are potentially wrong. So you cannot trust

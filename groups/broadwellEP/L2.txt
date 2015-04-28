@@ -1,0 +1,37 @@
+SHORT  L2 cache bandwidth in MBytes/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  L1D_REPLACEMENT
+PMC1  L2_TRANS_L1D_WB
+PMC2  ICACHE_MISSES
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+L2D load bandwidth [MBytes/s]  1.0E-06*PMC0*64.0/time
+L2D load data volume [GBytes]  1.0E-09*PMC0*64.0
+L2D evict bandwidth [MBytes/s]  1.0E-06*PMC1*64.0/time
+L2D evict data volume [GBytes]  1.0E-09*PMC1*64.0
+L2 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1+PMC2)*64.0/time
+L2 data volume [GBytes] 1.0E-09*(PMC0+PMC1+PMC2)*64.0
+
+LONG
+Formulas:
+L2D load bandwidth [MBytes/s] = 1.0E-06*L1D_REPLACEMENT*64.0/time
+L2D load data volume [GBytes] = 1.0E-09*L1D_REPLACEMENT*64.0
+L2D evict bandwidth [MBytes/s] = 1.0E-06*L2_TRANS_L1D_WB*64.0/time
+L2D evict data volume [GBytes] = 1.0E-09*L2_TRANS_L1D_WB*64.0
+L2 bandwidth [MBytes/s] = 1.0E-06*(L1D_REPLACEMENT+L2_TRANS_L1D_WB+ICACHE_MISSES)*64/time
+L2 data volume [GBytes] = 1.0E-09*(L1D_REPLACEMENT+L2_TRANS_L1D_WB+ICACHE_MISSES)*64
+-
+Profiling group to measure L2 cache bandwidth. The bandwidth is computed by the
+number of cacheline allocated in the L1 and the number of modified cachelines
+evicted from the L1. The group also output total data volume transfered between
+L2 and L1. Note that this bandwidth also includes data transfers due to a write
+allocate load on a store miss in L1 and traffic caused by misses in the
+L1 instruction cache.

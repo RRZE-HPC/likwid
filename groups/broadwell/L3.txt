@@ -1,0 +1,36 @@
+SHORT  L3 cache bandwidth in MBytes/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  L2_LINES_IN_ALL
+PMC1  L2_LINES_OUT_DEMAND_DIRTY
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+L3 load bandwidth [MBytes/s]  1.0E-06*PMC0*64.0/time
+L3 load data volume [GBytes]  1.0E-09*PMC0*64.0
+L3 evict bandwidth [MBytes/s]  1.0E-06*PMC1*64.0/time
+L3 evict data volume [GBytes]  1.0E-09*PMC1*64.0
+L3 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
+L3 data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
+
+LONG
+Formulas:
+L3 load bandwidth [MBytes/s] = 1.0E-06*L2_LINES_IN_ALL*64.0/time
+L3 load data volume [GBytes] = 1.0E-09*L2_LINES_IN_ALL*64.0
+L3 evict bandwidth [MBytes/s] = 1.0E-06*L2_LINES_OUT_DEMAND_DIRTY*64.0/time
+L3 evict data volume [GBytes] = 1.0E-09*L2_LINES_OUT_DEMAND_DIRTY*64.0
+L3 bandwidth [MBytes/s] = 1.0E-06*(L2_LINES_IN_ALL+L2_LINES_OUT_DEMAND_DIRTY)*64/time
+L3 data volume [GBytes] = 1.0E-09*(L2_LINES_IN_ALL+L2_LINES_OUT_DEMAND_DIRTY)*64
+-
+Profiling group to measure L3 cache bandwidth. The bandwidth is computed by the
+number of cacheline allocated in the L2 and the number of modified cachelines
+evicted from the L2. This group also outputs data volume transfered between the
+L3 and  measured cores L2 caches. Note that this bandwidth also includes data
+transfers due to a write allocate load on a store miss in L2.
+

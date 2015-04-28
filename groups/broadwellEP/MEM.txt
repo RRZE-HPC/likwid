@@ -56,11 +56,11 @@ Memory data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBO
 
 LONG
 Formulas:
-Memory read bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0))*64.0/runtime
+Memory read bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0))*64.0/time
 Memory read data volume [GBytes] = 1.0E-09*(SUM(MBOXxC0))*64.0
-Memory write bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC1))*64.0/runtime
+Memory write bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC1))*64.0/time
 Memory write data volume [GBytes] = 1.0E-09*(SUM(MBOXxC1))*64.0
-Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0/runtime
+Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0/time
 Memory data volume [GBytes] = 1.0E-09*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0
 -
 Profiling group to measure memory bandwidth drawn by all cores of a socket.

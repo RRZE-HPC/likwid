@@ -1,0 +1,37 @@
+SHORT QPI Link Layer data
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+QBOX0C0 QBOX_CLOCKTICKS
+QBOX1C0 QBOX_CLOCKTICKS
+QBOX0C1 DIRECT2CORE_SUCCESS_RBT_HIT
+QBOX1C1 DIRECT2CORE_SUCCESS_RBT_HIT
+QBOX0C2 TXL_FLITS_G0_DATA
+QBOX1C2 TXL_FLITS_G0_DATA
+QBOX0C3 TXL_FLITS_G0_NON_DATA
+QBOX1C3 TXL_FLITS_G0_NON_DATA
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Data from QPI to LLC [MByte] 1.E-06*(QBOX0C1+QBOX1C1)*64
+QPI data volume [MByte] 1.E-06*(QBOX0C2+QBOX1C2)*8
+QPI data bandwidth [MByte/s] 1.E-06*(QBOX0C2+QBOX1C2)*8/time
+QPI link volume [MByte] 1.E-06*(QBOX0C2+QBOX1C2+QBOX0C3+QBOX1C3)*8
+QPI link bandwidth [MByte/s] 1.E-06*(QBOX0C2+QBOX1C2+QBOX0C3+QBOX1C3)*8/time
+
+LONG
+Formula:
+Data from QPI to LLC [MByte] 1.E-06*(sum(DIRECT2CORE_SUCCESS_RBT_HIT)*64)
+QPI data volume [MByte] 1.E-06*(sum(TXL_FLITS_G0_DATA)*8)
+QPI data bandwidth [MByte/s] 1.E-06*(sum(TXL_FLITS_G0_DATA)*8)/runtime
+QPI link volume [MByte] 1.E-06*((sum(TXL_FLITS_G0_DATA)+sum(TXL_FLITS_G0_NON_DATA))*8)
+QPI link bandwidth [MByte/s] 1.E-06*((sum(TXL_FLITS_G0_DATA)+sum(TXL_FLITS_G0_NON_DATA))*8)/runtime
+--
+The Intel QPI Link Layer is responsible for packetizing requests from the caching agent (CBOXes)
+on the way out to the system interface. For Haswell EP systems, the Link Layer and the
+Ring interface is separated.
