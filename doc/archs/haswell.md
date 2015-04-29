@@ -153,7 +153,7 @@
   <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A>.</TD>
 </TR>
 </TABLE>
-<P>Another event that needs more setup is the MEM_TRANS_RETIRED_LOAD_LATENCY. The 'threshold' option is used to set a reference latency value. The events counts only the loads which take longer than the reference latency.</P>
+<P>The event MEM_TRANS_RETIRED_LOAD_LAT is not available because it needs programming of PEBS registers. PEBS is a kernel-level measurement facility. Although we can programm it from user-space, the results are always 0.</P>
 
 \anchor HAS_THERMAL
 <H2>Thermal counter</H2>

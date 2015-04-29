@@ -121,14 +121,7 @@ int hasep_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (1ULL<<21);
                     break;
                 case EVENT_OPTION_THRESHOLD:
-                    if (event->eventId != 0xCD)
-                    {
-                        flags |= (event->options[j].value & 0xFFULL) << 24;
-                    }
-                    else
-                    {
-                        latency_flags |= (event->options[j].value & 0xFFFFULL);
-                    }
+                    flags |= (event->options[j].value & 0xFFULL) << 24;
                     break;
                 case EVENT_OPTION_IN_TRANS:
                     flags |= (1ULL<<32);
@@ -165,17 +158,6 @@ int hasep_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, offcore_flags));
-    }
-    if (event->eventId == 0xCD)
-    {
-        VERBOSEPRINTREG(cpu_id, MSR_PEBS_LD_LAT, LLU_CAST latency_flags, SETUP_PMC_LAT)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_LD_LAT , latency_flags));
-        latency_flags = 0x0ULL;
-        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, &latency_flags));
-        VERBOSEPRINTREG(cpu_id, MSR_PEBS_ENABLE, LLU_CAST latency_flags, READ_PMC_LAT_CTRL)
-        latency_flags |= 1ULL<<(getCounterTypeOffset(index)+32);
-        VERBOSEPRINTREG(cpu_id, MSR_PEBS_ENABLE, LLU_CAST latency_flags, SETUP_PMC_LAT_CTRL)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, latency_flags));
     }
     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister , flags));
@@ -1737,12 +1719,6 @@ int perfmon_finalizeCountersThread_haswell(int thread_id, PerfmonEventSet* event
                     VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL, CLEAR_OFFCORE_RESP1);
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, 0x0ULL));
                 }
-                if (eventSet->events[i].event.eventId == 0xCD)
-                {
-                    VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL, CLEAR_PMC_LAT);
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_LD_LAT, 0x0ULL));
-                    clearPBS = 1;
-                }
                 break;
             case FIXED:
                 ovf_values_core |= (1ULL<<(index+32));
@@ -1785,11 +1761,6 @@ int perfmon_finalizeCountersThread_haswell(int thread_id, PerfmonEventSet* event
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, CLEAR_GLOBAL_CTRL)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
-        if (clearPBS)
-        {
-            VERBOSEPRINTREG(cpu_id, MSR_PEBS_ENABLE, LLU_CAST 0x0ULL, CLEAR_PMC_LAT_CTRL)
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
-        }
     }
     return 0;
 }
