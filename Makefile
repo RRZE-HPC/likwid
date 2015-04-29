@@ -261,6 +261,7 @@ install: install_daemon install_freq
 	@mkdir -p $(PREFIX)/lib
 	@install -m 755 liblikwid.so $(PREFIX)/lib
 	@install -m 644 liblikwid.a $(PREFIX)/lib
+	@install -m 755 liblikwidpin.so $(PREFIX)/lib
 	@install -m 644 ext/lua/liblua.a $(PREFIX)/lib
 	@install -m 755 ext/hwloc/libhwloc.so $(PREFIX)/lib
 	@install -m 644 ext/hwloc/libhwloc.a $(PREFIX)/lib
