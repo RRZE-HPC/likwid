@@ -86,6 +86,7 @@ L_APPS      =   likwid-perfctr \
 				likwid-mpirun \
 				likwid-perfscope \
 				likwid-genTopoCfg
+C_APPS      =   bench/likwid-bench
 L_HELPER    =   likwid.lua
 ifeq ($(BUILDFREQ),true)
 	L_APPS += likwid-setFrequencies
@@ -247,7 +248,12 @@ install: install_daemon install_freq
 	@for APP in $(L_APPS); do \
 		install -m 755 $$APP  $(PREFIX)/bin; \
 	done
+	@for APP in $(C_APPS); do \
+		install -m 755 $$APP  $(PREFIX)/bin; \
+	done
 	@install -m 755 ext/lua/lua $(PREFIX)/bin/likwid-lua
+	@echo "===> INSTALL helper applications"
+	@install -m 755 perl/feedGnuplot $(PREFIX)/bin
 	@echo "===> INSTALL lua to likwid interface to $(PREFIX)/share/lua"
 	@mkdir -p $(PREFIX)/share/lua
 	@install -m 755 likwid.lua $(PREFIX)/share/lua
@@ -276,6 +282,7 @@ install: install_daemon install_freq
 	@echo "===> INSTALL headers to $(PREFIX)/include"
 	@mkdir -p $(PREFIX)/include
 	@install -m 644 src/includes/likwid.h  $(PREFIX)/include/
+	@install -m 644 src/includes/bstrlib.h  $(PREFIX)/include/
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL groups to $(PREFIX)/share/likwid/perfgroups"
 	@mkdir -p $(PREFIX)/share/likwid/perfgroups
@@ -301,6 +308,7 @@ uninstall: uninstall_daemon uninstall_freq
 	@for APP in $(C_APPS); do \
 		rm -f $(PREFIX)/bin/$$APP; \
 	done
+	@rm -f $(PREFIX)/bin/feedGnuplot
 	@rm -rf $(PREFIX)/bin/likwid-lua
 	@echo "===> REMOVING Lua to likwid interface from $(PREFIX)/share/lua"
 	@rm -rf  $(PREFIX)/share/lua/likwid.lua
@@ -314,7 +322,8 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -f $(MANPREFIX)/man1/likwid-setFreq.1
 	@rm -f $(MANPREFIX)/man1/likwid-accessD.1
 	@echo "===> REMOVING header from $(PREFIX)/include"
-	@rm -f $(PREFIX)/include/*.h
+	@rm -f $(PREFIX)/include/likwid.h
+	@rm -f $(PREFIX)/include/bstrlib.h
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter, groups and default configs from $(PREFIX)/share/likwid"
 	@rm -rf  $(PREFIX)/share/likwid

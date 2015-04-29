@@ -26,10 +26,10 @@ FORTRAN_IF=
 $(info Warning: You have selected the fortran interface in config.mk, but there seems to be no fortran compiler $(FC) - not compiling it!)
 else
 FORTRAN_IF := $(FORTRAN_IF_NAME)
-FORTRAN_INSTALL = @echo "===> INSTALL fortran interface to $(PREFIX)/include/" \
-                  @cp -f likwid.mod  $(PREFIX)/include/
-FORTRAN_REMOVE = @echo "===> REMOVING fortran interface from $(PREFIX)/include/" \
-                 @rm -f $(PREFIX)/include/likwid.mod
+FORTRAN_INSTALL = @echo "===> INSTALL fortran interface to $(PREFIX)/include/"; \
+                  cp -f likwid.mod  $(PREFIX)/include/
+FORTRAN_REMOVE = @echo "===> REMOVING fortran interface from $(PREFIX)/include/"; \
+                 rm -f $(PREFIX)/include/likwid.mod
 endif
 else
 FORTRAN_IF =
