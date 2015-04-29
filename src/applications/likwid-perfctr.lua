@@ -76,6 +76,7 @@ local config = likwid.getConfiguration();
 verbose = 0
 print_groups = false
 print_events = false
+print_event = nil
 print_info = false
 cpulist = nil
 num_cpus = 0
@@ -113,7 +114,7 @@ markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid("pid"))
 print_stdout = print
 likwid.catchSignal()
 
-for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker"}) do
+for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -142,6 +143,8 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "g:", "h", "H", "i", "m
         print_groups = true
     elseif (opt == "e") then
         print_events = true
+    elseif (opt == "E") then
+        print_event = arg
     elseif opt == "g" or opt == "group" then
         table.insert(event_string_list, arg)
     elseif (opt == "H") then
@@ -208,6 +211,44 @@ if print_events == true then
         outstr = outstr .. eventTab["Limit"]
         if #eventTab["Options"] > 0 then
             outstr = outstr .. string.format(", %s",eventTab["Options"])
+        end
+        print(outstr)
+    end
+    os.exit(0)
+end
+
+if print_event ~= nil then
+    local tab = likwid.getEventsAndCounters()
+    local events = {}
+    local counters = {}
+    local outstr = ""
+    for _, eventTab in pairs(tab["Events"]) do
+        if eventTab["Name"]:match(print_event) then
+            table.insert(events, eventTab)
+        end
+    end
+    for _, counter in pairs(tab["Counters"]) do
+        for _, event in pairs(events) do
+            if counter["Name"]:match(event["Limit"]) then
+                counters[counter["Name"]] = counter
+            end
+        end
+    end
+    print(string.format("Found %d event(s) with search key %s:", #events, print_event))
+    for _, eventTab in pairs(events) do
+        outstr = eventTab["Name"] .. ", "
+        outstr = outstr .. string.format("0x%X, 0x%X, ",eventTab["ID"],eventTab["UMask"])
+        outstr = outstr .. eventTab["Limit"]
+        if #eventTab["Options"] > 0 then
+            outstr = outstr .. string.format(", %s",eventTab["Options"])
+        end
+        print(outstr)
+    end
+    print("\nUsable counter(s) for above event(s):")
+    for i, counter in pairs(counters) do
+        outstr = string.format("%s, %s", counter["Name"], counter["TypeName"]);
+        if counter["Options"]:len() > 0 then
+            outstr = outstr .. string.format(", %s",counter["Options"])
         end
         print(outstr)
     end

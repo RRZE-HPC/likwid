@@ -79,6 +79,10 @@ custom event sets. The \ref Marker_API can measure mulitple named regions and th
   <TD>Print available counters and performance events and suitable options of current processor.</TD>
 </TR>
 <TR>
+  <TD>-E &lt;pattern&gt;</TD>
+  <TD>Print available performance events matching &lt;pattern&gt; and print the usable counters for the found events.<BR>The matching is done with *&lt;pattern&gt;*, so all events matching the substring are returned.</TD>
+</TR>
+<TR>
   <TD>-o, --output &lt;file&gt;</TD>
   <TD>Store all ouput to file instead of stdout. LIKWID enables the reformatting of output files according to their suffix.<BR>You can place additional output formatters in folder <CODE>&lt;PREFIX&gt;/share/likwid</CODE>. LIKWID ships with the two filter scripts <CODE>xml</CODE> and <CODE>csv</CODE>.<BR>Moreover, there are substitutions possible in the output filename. <CODE>\%h</CODE> is replaced by the host name, <CODE>\%p</CODE> by the PID, <CODE>\%j</CODE> by the job ID of batch systems and <CODE>\%r</CODE> by the MPI rank.</TD>
 </TR>
@@ -241,5 +245,6 @@ Example Marker API call:<BR>
 
 <H2>Fortran Code</H2>
 Besides the Marker API for C/C++ programms, LIKWID offers to build a Fortran module to access the Marker API functions from Fortran. Only the Marker API calls are exported, not the whole API. In <CODE>config.mk</CODE> the variable <CODE>FORTRAN_INTERFACE</CODE> must be set to true. LIKWID's default is to use the Intel Fortran compiler to build the interface but it can be modified to use GCC's Fortran compiler in <CODE>make/include_&lt;COMPILER&gt;</CODE>.
+
 
 */
