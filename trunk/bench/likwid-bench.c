@@ -226,7 +226,11 @@ int main(int argc, char** argv)
                 HELP_MSG;
         }
     }
-
+    if ((numberOfWorkgroups == 0) && (!optPrintDomains))
+    {
+        fprintf(stderr, "At least one workgroup (-w) must be set on commandline\n");
+        exit (EXIT_FAILURE);
+    }
 
     if (topology_init() != EXIT_SUCCESS)
     {
@@ -316,7 +320,7 @@ int main(int argc, char** argv)
     cpuClock = timer_getCpuClock();
 
 #ifdef PERFMON
-    //printf("Using likwid\n");
+    printf("Using Likwid Marker API\n");
     likwid_markerInit();
 #endif
 
