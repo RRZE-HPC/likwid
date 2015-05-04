@@ -180,6 +180,11 @@ local print_configs = false
 local pinning = false
 local dump = false
 
+if #arg == 0 then
+    usage()
+    os.exit(0)
+end
+
 for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","f:","help", "version","group:","freq:","a","d","dump"}) do
     if opt == "h" or opt == "help" then
         usage()
