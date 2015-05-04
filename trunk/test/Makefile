@@ -1,5 +1,7 @@
-LIKWID_LIB = -L../ -llikwid 
-INCLUDES = -I../src/includes -I../ -I../GCC
+include ../config.mk
+
+LIKWID_LIB = -L$(PREFIX)/lib -llikwid
+INCLUDES = -I$(PREFIX)/include
 
 all:  testmarker testmarkerF90 stream streamM
 
