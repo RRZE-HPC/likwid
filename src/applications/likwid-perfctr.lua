@@ -53,6 +53,7 @@ local function usage()
     print("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)")
     print("-c <list>\t\t Processor ids to measure (required), e.g. 1,2-4,8")
     print("-C <list>\t\t Processor ids to pin threads and measure, e.g. 1,2-4,8")
+    print("\t\t\t For information about the <list> syntax, see likwid-pin")
     print("-g, --group <string>\t Performance group or custom event set string")
     print("-H\t\t\t Get group help (together with -g switch)")
     print("-s, --skip <hex>\t Bitmask with threads to skip")
@@ -114,6 +115,11 @@ markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid("pid"))
 print_stdout = print
 likwid.catchSignal()
 
+if #arg == 0 then
+    usage()
+    os.exit(0)
+end
+
 for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
@@ -171,6 +177,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         use_timeline = true
         duration = likwid.parse_time(arg)
     elseif opt == "o" or opt == "output" then
+        use_csv = true
         outfile = arg:gsub("%%h", likwid.gethostname())
         outfile = outfile:gsub("%%p", likwid.getpid())
         outfile = outfile:gsub("%%j", likwid.getjid())
@@ -190,6 +197,41 @@ if not likwid.msr_available() then
     print("Please load msr kernel module before retrying")
     os.exit(1)
 end
+
+if num_cpus == 0 and
+   not gotC and
+   not print_events and
+   print_event == nil and
+   not print_groups and
+   not print_group_help and
+   not print_info then
+    print("Option -c <list> or -C <list> must be given on commandline")
+    usage()
+    os.exit(1)
+elseif num_cpus == 0 and
+       gotC and
+       not print_events and
+       print_event == nil and
+       not print_groups and
+       not print_group_help and
+       not print_info then
+    print("CPUs given on commandline are not valid in current environment, maybe it's limited by a cpuset.")
+    os.exit(1)
+end
+
+
+if num_cpus > 0 then
+    for i,cpu1 in pairs(cpulist) do
+        for j, cpu2 in pairs(cpulist) do
+            if i ~= j and cpu1 == cpu2 then
+                print("List of CPUs is not unique, got two times CPU " .. tostring(cpu1))
+                os.exit(1)
+            end
+        end
+    end
+end
+
+
 
 if print_events == true then
     local tab = likwid.getEventsAndCounters()
@@ -325,26 +367,7 @@ if print_info then
     os.exit(0)
 end
 
-if num_cpus == 0 and not gotC then
-    print("Option -c <list> or -C <list> must be given on commanlikwid.dline")
-    usage()
-    os.exit(1)
-elseif num_cpus == 0 and gotC then
-    print("CPUs given on commandline are not valid in current environment, maybe it's limited by a cpuset.")
-    os.exit(1)
-end
 
-
-if num_cpus > 0 then
-    for i,cpu1 in pairs(cpulist) do
-        for j, cpu2 in pairs(cpulist) do
-            if i ~= j and cpu1 == cpu2 then
-                print("List of CPUs is not unique, got two times CPU " .. tostring(cpu1))
-                os.exit(1)
-            end
-        end
-    end
-end
 
 if use_stethoscope == false and use_timeline == false and use_marker == false then
     use_wrapper = true

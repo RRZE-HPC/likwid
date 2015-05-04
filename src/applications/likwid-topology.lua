@@ -55,8 +55,9 @@ print_caches = false
 print_graphical = false
 measure_clock = false
 outfile = nil
+output_csv = {}
 
-for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","help","version","verbose:","clock","caches","output:"}) do
+for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O","help","version","verbose:","clock","caches","output:"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -79,8 +80,11 @@ for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","help","version
         measure_clock = true
     elseif opt == "g" then
         print_graphical = true
+    elseif opt == "O" then
+        print_csv = true
     elseif opt == "o" or opt == "output" then
-        outfile = arg
+        print_csv = true
+        outfile = arg:gsub("%%h", likwid.gethostname())
         io.output(arg:gsub(string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$"),"tmp"))
         print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end
     end
@@ -92,80 +96,90 @@ local cputopo = likwid.getCpuTopology()
 local numainfo = likwid.getNumaInfo()
 local affinity = likwid.getAffinityInfo()
 
-print(likwid.hline)
-print(string.format("CPU name:\t%s",cpuinfo["osname"]))
-print(string.format("CPU type:\t%s",cpuinfo["name"]))
-print(string.format("CPU stepping:\t%s",cpuinfo["stepping"]))
+
+table.insert(output_csv, likwid.hline)
+table.insert(output_csv, string.format("CPU name:\t%s",cpuinfo["osname"]))
+table.insert(output_csv, string.format("CPU type:\t%s",cpuinfo["name"]))
+table.insert(output_csv, string.format("CPU stepping:\t%s",cpuinfo["stepping"]))
 if (measure_clock) then
     if cpuinfo["clock"] == 0 then
-        print(string.format("CPU clock:\t%3.2f GHz", likwid.getCpuClock() * 1.E-09))
+        table.insert(output_csv, string.format("CPU clock:\t%3.2f GHz", likwid.getCpuClock() * 1.E-09))
     else
-        print(string.format("CPU clock:\t%3.2f GHz", cpuinfo["clock"] * 1.E-09))
+        table.insert(output_csv, string.format("CPU clock:\t%3.2f GHz", cpuinfo["clock"] * 1.E-09))
     end
 end
 
-print(likwid.sline)
-print("Hardware Thread Topology")
-print(likwid.sline)
-print(string.format("Sockets:\t\t%u",cputopo["numSockets"]))
-print(string.format("Cores per socket:\t%u",cputopo["numCoresPerSocket"]))
-print(string.format("Threads per core:\t%u",cputopo["numThreadsPerCore"]))
-print(likwid.hline)
-print("HWThread\tThread\t\tCore\t\tSocket")
+table.insert(output_csv, likwid.sline)
+table.insert(output_csv, "Hardware Thread Topology")
+table.insert(output_csv, likwid.sline)
+table.insert(output_csv, string.format("Sockets:\t\t%u",cputopo["numSockets"]))
+table.insert(output_csv, string.format("Cores per socket:\t%u",cputopo["numCoresPerSocket"]))
+table.insert(output_csv, string.format("Threads per core:\t%u",cputopo["numThreadsPerCore"]))
+table.insert(output_csv, likwid.hline)
+table.insert(output_csv, "HWThread\tThread\t\tCore\t\tSocket\t\tAvailable")
 
 for cntr=0,cputopo["numHWThreads"]-1 do
-    print(string.format("%d\t\t%u\t\t%u\t\t%u",cntr,
-                        cputopo["threadPool"][cntr]["threadId"],
-                        cputopo["threadPool"][cntr]["coreId"],
-                        cputopo["threadPool"][cntr]["packageId"]))
+    if cputopo["threadPool"][cntr]["inCpuSet"] then
+        table.insert(output_csv, string.format("%d\t\t%u\t\t%u\t\t%u\t\t*",cntr,
+                            cputopo["threadPool"][cntr]["threadId"],
+                            cputopo["threadPool"][cntr]["coreId"],
+                            cputopo["threadPool"][cntr]["packageId"]))
+    else
+        table.insert(output_csv, string.format("%d\t\t%u\t\t%u\t\t%u",cntr,
+                            cputopo["threadPool"][cntr]["threadId"],
+                            cputopo["threadPool"][cntr]["coreId"],
+                            cputopo["threadPool"][cntr]["packageId"]))
+    end
 end
-print(likwid.hline)
+table.insert(output_csv, likwid.hline)
+
 
 for socket=0,cputopo["numSockets"]-1 do
-    str = string.format("Socket %d: (",cputopo["topologyTree"][socket]["ID"])
+    csv_str = string.format("Socket %d:\t\t( ",cputopo["topologyTree"][socket]["ID"])
     for core=0,cputopo["numCoresPerSocket"]-1 do
         for thread=0, cputopo["numThreadsPerCore"]-1 do
-            str = str .. " " .. tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread])
+            csv_str = csv_str ..tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread]).. ","
         end
     end
-    print(str .. " )")
+    table.insert(output_csv, csv_str:sub(1,#csv_str-1).." )")
 end
 
-print(likwid.hline .. "\n")
+table.insert(output_csv, likwid.hline)
 
-print(likwid.sline)
-print("Cache Topology")
-print(likwid.sline)
+
+table.insert(output_csv, likwid.sline)
+table.insert(output_csv, "Cache Topology")
+table.insert(output_csv, likwid.sline)
 
 for level=1,cputopo["numCacheLevels"] do
     if (cputopo["cacheLevels"][level]["type"] ~= "INSTRUCTIONCACHE") then
-        print(string.format("Level:\t%d",cputopo["cacheLevels"][level]["level"]))
+        table.insert(output_csv, string.format("Level:\t\t\t%d",cputopo["cacheLevels"][level]["level"]))
         if (cputopo["cacheLevels"][level]["size"] < 1048576) then
-            print(string.format("Size:\t%d kB",cputopo["cacheLevels"][level]["size"]/1024))
+            table.insert(output_csv, string.format("Size:\t\t\t%d kB",cputopo["cacheLevels"][level]["size"]/1024))
         else
-            print(string.format("Size:\t%d MB",cputopo["cacheLevels"][level]["size"]/1048576))
+            table.insert(output_csv, string.format("Size:\t\t\t%d MB",cputopo["cacheLevels"][level]["size"]/1048576))
         end
         
         if (print_caches) then
             if (cputopo["cacheLevels"][level]["type"] == "DATACACHE") then
-                print("Type:\tData cache")
+                table.insert(output_csv, "Type:\t\t\tData cache")
             elseif (cputopo["cacheLevels"][level]["type"] == "UNIFIEDCACHE") then
-                print("Type:\tUnified cache")
+                table.insert(output_csv, "Type:\t\t\tUnified cache")
             end
 
-            print(string.format("Associativity:\t%d",cputopo["cacheLevels"][level]["associativity"]))
-            print(string.format("Number of sets:\t%d",cputopo["cacheLevels"][level]["sets"]))
-            print(string.format("Cache line size:%d",cputopo["cacheLevels"][level]["lineSize"]))
+            table.insert(output_csv, string.format("Associativity:\t\t%d",cputopo["cacheLevels"][level]["associativity"]))
+            table.insert(output_csv, string.format("Number of sets:\t\t%d",cputopo["cacheLevels"][level]["sets"]))
+            table.insert(output_csv, string.format("Cache line size:\t%d",cputopo["cacheLevels"][level]["lineSize"]))
             
             if (cputopo["cacheLevels"][level]["inclusive"] > 0) then
-                print("Non Inclusive cache")
+                table.insert(output_csv, "Cache type:\t\tNon Inclusive")
             else
-                print("Inclusive cache")
+                table.insert(output_csv, "Cache type:\t\tInclusive")
             end
-            print(string.format("Shared among %d threads",cputopo["cacheLevels"][level]["threads"]))
+            table.insert(output_csv, string.format("Shared by threads:\t%d",cputopo["cacheLevels"][level]["threads"]))
         end
         local threads = cputopo["cacheLevels"][level]["threads"]
-        str = "Cache groups:\t( "
+        str = "Cache groups:\t\t( "
         for socket=0,cputopo["numSockets"]-1 do
             for core=0,cputopo["numCoresPerSocket"]-1 do
                 for cpu=0,cputopo["numThreadsPerCore"]-1 do
@@ -180,42 +194,72 @@ for level=1,cputopo["numCacheLevels"] do
                 end
             end
         end
-        print(str .. ")")
-        print(likwid.hline)
+        str = str .. ")"
+        table.insert(output_csv, str)
+        table.insert(output_csv, likwid.hline)
     end
 end
-print("\n")
 
-print(likwid.sline)
-print("NUMA Topology")
-print(likwid.sline)
+
+table.insert(output_csv, likwid.sline)
+table.insert(output_csv, "NUMA Topology")
+table.insert(output_csv, likwid.sline)
 
 if (numainfo["numberOfNodes"] == 0) then
-    print("NUMA is not supported on this node!")
+    table.insert(output_csv, "No NUMA")
 else
-    print(string.format("NUMA domains: %d",numainfo["numberOfNodes"]))
-    print(likwid.hline)
-    -- -2 because numberOfNodes is seen as one entry
+    table.insert(output_csv, string.format("NUMA domains:\t\t%d",numainfo["numberOfNodes"]))
+    table.insert(output_csv, likwid.hline)
     for node=1,numainfo["numberOfNodes"] do
-        print(string.format("Domain %d:",numainfo["nodes"][node]["id"]))
-        str = "Processors: "
+        table.insert(output_csv, string.format("Domain:\t\t\t%d",numainfo["nodes"][node]["id"]))
+        csv_str = "Processors:\t\t( "
         for cpu=1,numainfo["nodes"][node]["numberOfProcessors"] do
-            str = str .. " " .. numainfo["nodes"][node]["processors"][cpu]
+            csv_str = csv_str .. numainfo["nodes"][node]["processors"][cpu] .. ","
         end
-        print(str)
-        str = "Relative distance to nodes: "
+        table.insert(output_csv, csv_str:sub(1,#csv_str-1).. " )")
+        csv_str = "Distances:\t\t"
         for cpu=1,numainfo["nodes"][node]["numberOfDistances"] do
-            str = str .. " " .. numainfo["nodes"][node]["distances"][cpu][cpu-1]
+            csv_str = csv_str .. numainfo["nodes"][node]["distances"][cpu][cpu-1] .. ","
         end
-        print(str)
-        print(string.format("Memory: %g MB free of total %g MB", 
-                                tonumber(numainfo["nodes"][node]["freeMemory"]/1024.0),
-                                tonumber(numainfo["nodes"][node]["totalMemory"]/1024.0)))
-        print(likwid.hline)
+        table.insert(output_csv, csv_str:sub(1,#csv_str-1))
+        table.insert(output_csv, string.format("Free memory:\t\t%g MB",tonumber(numainfo["nodes"][node]["freeMemory"]/1024.0)))
+        table.insert(output_csv, string.format("Total memory:\t\t%g MB",tonumber(numainfo["nodes"][node]["totalMemory"]/1024.0)))
+        table.insert(output_csv, likwid.hline)
     end
 end
 
-if (print_graphical) then
+
+
+if print_csv then
+    longest_line = 0
+    local tmpList = {}
+    for i=#output_csv,1,-1 do
+        output_csv[i] = output_csv[i]:gsub("[\t]+",",")
+        output_csv[i] = output_csv[i]:gsub("%( ","")
+        output_csv[i] = output_csv[i]:gsub(" %)[%s]*",",")
+        output_csv[i] = output_csv[i]:gsub(",$","")
+        if  output_csv[i]:sub(1,1) == "*" or
+            output_csv[i]:sub(1,1) == "-" then
+            table.remove(output_csv,i)
+        end
+        tmpList = likwid.stringsplit(output_csv[i],",")
+        if #tmpList > longest_line then longest_line = #tmpList end
+    end
+    for i=1,#output_csv do
+        tmpList = likwid.stringsplit(output_csv[i],",")
+        if #tmpList < longest_line then
+            output_csv[i] = output_csv[i]..string.rep(",",longest_line-#tmpList)
+        end
+    end
+else
+    for i=1,#output_csv do
+        output_csv[i] = output_csv[i]:gsub(","," ")
+    end
+end
+
+for _,line in pairs(output_csv) do print(line) end
+
+if print_graphical and not print_csv then
     print("\n")
     print(likwid.sline)
     print("Graphical Topology")
