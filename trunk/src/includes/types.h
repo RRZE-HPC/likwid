@@ -41,16 +41,13 @@
 #include <pci_types.h>
 #include <power_types.h>
 #include <thermal_types.h>
-//#include <strUtil_types.h>
 #include <test_types.h>
-//#include <timer_types.h>
 #include <tree_types.h>
 #include <topology_types.h>
 #include <perfmon_types.h>
 #include <libperfctr_types.h>
 #include <barrier_types.h>
 #include <cpuFeatures_types.h>
-#include <multiplex_types.h>
 
 
 typedef struct {
