@@ -1219,46 +1219,6 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
 
                 if #cpulist > 1 then
                     firsttab_combined = tableMinMaxAvgSum(firsttab, 2, 1)
-                    --[[local mins = {}
-                    local maxs = {}
-                    local sums = {}
-                    local avgs = {}
-                    mins[1] = "Min"
-                    maxs[1] = "Max"
-                    sums[1] = "Sum"
-                    avgs[1] = "Avg"
-                    for i=1,nr_events do
-                        mins[i+1] = math.huge
-                        maxs[i+1] = 0
-                        sums[i+1] = 0
-                        for j=1, nr_threads do
-                            if results[g][r][i][j]["Value"] < mins[i+1] then
-                                mins[i+1] = results[g][r][i][j]["Value"]
-                            end
-                            if results[g][r][i][j]["Value"] > maxs[i+1] then
-                                maxs[i+1] = results[g][r][i][j]["Value"]
-                            end
-                            sums[i+1] = sums[i+1] + results[g][r][i][j]["Value"]
-                        end
-                        avgs[i+1] = sums[i+1] / nr_threads
-                        if tostring(avgs[i+1]):len() > 12 then
-                            avgs[i+1] = string.format("%e",avgs[i+1])
-                        end
-                        if tostring(mins[i+1]):len() > 12 then
-                            mins[i+1] = string.format("%e",mins[i+1])
-                        end
-                        if tostring(maxs[i+1]):len() > 12 then
-                            maxs[i+1] = string.format("%e",maxs[i+1])
-                        end
-                        if tostring(sums[i+1]):len() > 12 then
-                            sums[i+1] = string.format("%e",sums[i+1])
-                        end
-                    end
-
-                    table.insert(firsttab_combined, sums)
-                    table.insert(firsttab_combined, maxs)
-                    table.insert(firsttab_combined, mins)
-                    table.insert(firsttab_combined, avgs)]]
                 end
 
 
@@ -1291,82 +1251,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                     end
 
                     if #cpulist > 1 then
-                        secondtab_combined = tableMinMaxAvgSum(firsttab, 2, 1)
-                        --[[mins = {}
-                        maxs = {}
-                        sums = {}
-                        avgs = {}
-                        
-                        for col=2,nr_threads+1 do
-                            for row=2, #groupData[g]["Metrics"]+1 do
-                                if mins[row-1] == nil then
-                                    mins[row-1] = math.huge
-                                end
-                                if maxs[row-1] == nil then
-                                    maxs[row-1] = 0
-                                end
-                                if sums[row-1] == nil then
-                                    sums[row-1] = 0
-                                end
-                                tmp = tonumber(secondtab[col][row])
-                                if tmp ~= nil then
-                                    if tmp < mins[row-1] then
-                                        mins[row-1] = tmp
-                                    end
-                                    if tmp > maxs[row-1] then
-                                        maxs[row-1] = tmp
-                                    end
-                                    sums[row-1] = sums[row-1] + tmp
-                                else
-                                    mins[row-1] = 0
-                                    maxs[row-1] = 0
-                                    sums[row-1] = 0
-                                end
-                            end
-                        end
-                        for i=1,#sums do
-                            avgs[i] = sums[i]/nr_threads
-                            if tostring(avgs[i]):len() > 12 then
-                                avgs[i] = string.format("%e",avgs[i])
-                            end
-                            if tostring(mins[i]):len() > 12 then
-                                mins[i] = string.format("%e",mins[i])
-                            end
-                            if tostring(maxs[i]):len() > 12 then
-                                maxs[i] = string.format("%e",maxs[i])
-                            end
-                            if tostring(sums[i]):len() > 12 then
-                                sums[i] = string.format("%e",sums[i])
-                            end
-                        end
-                        
-
-                        tmpList = {"Metric"}
-                        for m=1,#groupData[g]["Metrics"] do
-                            table.insert(tmpList, groupData[g]["Metrics"][m]["description"].." STAT")
-                        end
-                        table.insert(secondtab_combined, tmpList)
-                        tmpList = {"Sum"}
-                        for m=1,#sums do
-                            table.insert(tmpList, sums[m])
-                        end
-                        table.insert(secondtab_combined, tmpList)
-                        tmpList = {"Min"}
-                        for m=1,#mins do
-                            table.insert(tmpList, mins[m])
-                        end
-                        table.insert(secondtab_combined, tmpList)
-                        tmpList = {"Max"}
-                        for m=1,#maxs do
-                            table.insert(tmpList, maxs[m])
-                        end
-                        table.insert(secondtab_combined, tmpList)
-                        tmpList = {"Avg"}
-                        for m=1,#avgs do
-                            table.insert(tmpList, avgs[m])
-                        end
-                        table.insert(secondtab_combined, tmpList)]]
-
+                        secondtab_combined = tableMinMaxAvgSum(secondtab, 1, 1)
                     end
                 end
                 maxLineFields = math.max(#infotab, #firsttab, #firsttab_combined,
