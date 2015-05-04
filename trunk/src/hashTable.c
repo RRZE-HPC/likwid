@@ -109,7 +109,6 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
     GHashTable* regionLookup;
 
     regionLookup = g_hash_table_new(g_str_hash, g_str_equal);
-
     /* determine number of active threads */
     for (int i=0; i<MAX_NUM_THREADS; i++)
     {
@@ -128,22 +127,50 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
 
     /* allocate data structures */
     (*results) = (LikwidResults*) malloc(numberOfRegions * sizeof(LikwidResults));
-
-    for ( uint32_t i=0; i < numberOfRegions; i++ )
+    if (!(*results))
     {
-        (*results)[i].time = (double*) malloc(numberOfThreads * sizeof(double));
-        (*results)[i].count = (uint32_t*) malloc(numberOfThreads * sizeof(uint32_t));
-        (*results)[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
-
-        for ( uint32_t j=0; j < numberOfThreads; j++ )
+        fprintf(stderr, "Failed to allocate %lu bytes for the results\n", numberOfRegions * sizeof(LikwidResults));
+    }
+    else
+    {
+        for ( uint32_t i=0; i < numberOfRegions; i++ )
         {
-            (*results)[i].time[j] = 0.0;
-            (*results)[i].count[j] = 0;
-            (*results)[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
-
-            for ( uint32_t k=0; k < NUM_PMC; k++ )
+            (*results)[i].time = (double*) malloc(numberOfThreads * sizeof(double));
+            if (!(*results)[i].time)
             {
-                (*results)[i].counters[j][k] = 0.0;
+                fprintf(stderr, "Failed to allocate %lu bytes for the time storage\n", numberOfThreads * sizeof(double));
+                break;
+            }
+            (*results)[i].count = (uint32_t*) malloc(numberOfThreads * sizeof(uint32_t));
+            if (!(*results)[i].count)
+            {
+                fprintf(stderr, "Failed to allocate %lu bytes for the count storage\n", numberOfThreads * sizeof(uint32_t));
+                break;
+            }
+            (*results)[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
+            if (!(*results)[i].counters)
+            {
+                fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage\n", numberOfThreads * sizeof(double*));
+                break;
+            }
+
+            for ( uint32_t j=0; j < numberOfThreads; j++ )
+            {
+                (*results)[i].time[j] = 0.0;
+                (*results)[i].count[j] = 0;
+                (*results)[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
+                if (!(*results)[i].counters)
+                {
+                    fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage for thread %d\n", NUM_PMC * sizeof(double), j);
+                    break;
+                }
+                else
+                {
+                    for ( uint32_t k=0; k < NUM_PMC; k++ )
+                    {
+                        (*results)[i].counters[j][k] = 0.0;
+                    }
+                }
             }
         }
     }
