@@ -188,7 +188,7 @@ affinity_init()
     }
 
     /* Node domain */
-    domains[0].numberOfProcessors = cpuid_topology.numHWThreads;
+    domains[0].numberOfProcessors = cpuid_topology.activeHWThreads;
     domains[0].numberOfCores = cpuid_topology.numSockets * cpuid_topology.numCoresPerSocket;
     domains[0].tag = bformat("N");
     domains[0].processorList = (int*) malloc(cpuid_topology.numHWThreads*sizeof(int));
