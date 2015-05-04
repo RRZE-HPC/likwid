@@ -13,8 +13,8 @@ ANSI_CFLAGS   =
 #ANSI_CFLAGS += -Wall
 
 CFLAGS   =  -O2 -std=c99 -Wno-format -fPIC
-#FCFLAGS  = -module ./  # ifort
-FCFLAGS  = -J ./  -fsyntax-only  #gfortran
+FCFLAGS  = -module ./  # ifort
+#FCFLAGS  = -J ./  -fsyntax-only  #gfortran
 PASFLAGS  = x86-64
 ASFLAGS  = 
 CPPFLAGS =
