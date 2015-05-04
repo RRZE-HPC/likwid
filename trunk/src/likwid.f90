@@ -96,13 +96,13 @@ interface
 !> \warning Experimental
   subroutine likwid_markerGetRegion( regionTag, nr_events, events, time, count )
 !> \param regionTag [in] Name for the code region for later identification
-!> \param nr_events [in] Length of the events array
+!> \param nr_events [in,out] Length of the events array
 !> \param events [out] Events array to store intermediate results
 !> \param time [out] Accumulated measurement time
 !> \param count [out] Call count of the region
   character(*) :: regionTag
   INTEGER :: nr_events
-  DOUBLE PRECISION :: events(*)
+  DOUBLE PRECISION, DIMENSION(*) :: events
   DOUBLE PRECISION :: time
   INTEGER :: count
   end subroutine likwid_markerGetRegion

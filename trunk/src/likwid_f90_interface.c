@@ -88,7 +88,7 @@ void likwid_markerstopregion_(char* regionTag, int len)
     free(tmp);
 }
 
-void likwid_markergetregion_(char* regionTag, int len, int* nr_events, double* events, double *time, int *count)
+void likwid_markergetregion_(char* regionTag, int* nr_events, double* events, double *time, int *count, int len)
 {
     char* tmp = (char*) malloc((len+1) * sizeof(char));
     strncpy(tmp, regionTag, len * sizeof(char) );
@@ -100,8 +100,7 @@ void likwid_markergetregion_(char* regionTag, int len, int* nr_events, double* e
             break;
         }
     }
-
-    likwid_markerGetRegion( tmp, *nr_events,  events, time, count);
+    likwid_markerGetRegion( tmp, nr_events,  events, time, count);
     free(tmp);
 }
 
