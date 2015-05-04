@@ -151,6 +151,11 @@ printCurFreq = false
 printAvailFreq = false
 printAvailGovs = false
 
+if #arg == 0 then
+    usage()
+    os.exit(0)
+end
+
 
 for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "help","version","freq:"}) do
     if opt == "h" or opt == "help" then
