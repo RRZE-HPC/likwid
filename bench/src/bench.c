@@ -115,9 +115,6 @@ void* runTest(void* arg)
     /* pin the thread */
     likwid_pinThread(myData->processors[threadId]);
 
-    sleep(1);
-    LIKWID_THREAD_INIT;
-    BARRIER;
     printf("Group: %d Thread %d Global Thread %d running on core %d - Vector length %llu Offset %d\n",
             data->groupId,
             threadId,
@@ -453,6 +450,7 @@ void* getIter(void* arg)
     threadId = data->threadId;
     barrier_registerThread(&barr, 0, data->globalThreadId);
 
+
     /* Prepare ptrs for thread */
     size = myData->size / data->numberOfThreads;
     size -= (size%myData->test->stride);
@@ -467,7 +465,6 @@ void* getIter(void* arg)
                 {
                     sptr = (float*) myData->streams[i];
                     sptr +=  offset;
-              //      sptr +=  size;
                     myData->streams[i] = (float*) sptr;
                 }
             }
@@ -479,16 +476,19 @@ void* getIter(void* arg)
                 {
                     dptr = (double*) myData->streams[i];
                     dptr +=  offset;
-             //       dptr +=  size;
                     myData->streams[i] = (double*) dptr;
                 }
             }
             break;
     }
 
-    /* pint the thread */
-    affinity_pinThread(myData->processors[threadId]);
-    
+    /* pin the thread */
+    likwid_pinThread(myData->processors[threadId]);
+#ifdef PERFMON
+    LIKWID_THREAD_INIT;
+    BARRIER;
+#endif
+
     switch ( myData->test->streams ) {
         case STREAM_1:
             MEASURE(func(size,myData->streams[0]));
