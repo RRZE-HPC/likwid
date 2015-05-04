@@ -47,6 +47,7 @@ function usage()
     print("-V, --verbose <level>\t Set verbosity")
     print("-c, --caches\t\t List cache information")
     print("-C, --clock\t\t Measure processor clock")
+    print("-O\t\t\t CSV output")
     print("-o, --output <file>\t Store output to file. (Optional: Apply text filter)")
     print("-g\t\t\t Graphical output")
 end
@@ -83,7 +84,10 @@ for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O","help","ver
     elseif opt == "O" then
         print_csv = true
     elseif opt == "o" or opt == "output" then
-        print_csv = true
+        local suffix = string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$")
+        if suffix ~= "txt" then
+            print_csv = true
+        end
         outfile = arg:gsub("%%h", likwid.gethostname())
         io.output(arg:gsub(string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$"),"tmp"))
         print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end
@@ -322,7 +326,7 @@ end
 if outfile then
     local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
     local command = "<PREFIX>/share/likwid/filter/" .. suffix 
-    if suffix ~= "txt" then
+    if suffix ~= "txt" and suffix ~= "csv" then
         command = command .." ".. outfile:gsub("."..suffix,".tmp",1) .. " topology"
         local f = io.popen(command)
         local o = f:read("*a")

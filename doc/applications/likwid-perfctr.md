@@ -84,7 +84,7 @@ custom event sets. The \ref Marker_API can measure mulitple named regions and th
 </TR>
 <TR>
   <TD>-o, --output &lt;file&gt;</TD>
-  <TD>Store all ouput to file instead of stdout. LIKWID enables the reformatting of output files according to their suffix.<BR>You can place additional output formatters in folder <CODE>&lt;PREFIX&gt;/share/likwid</CODE>. LIKWID ships with the two filter scripts <CODE>xml</CODE> and <CODE>csv</CODE>.<BR>Moreover, there are substitutions possible in the output filename. <CODE>\%h</CODE> is replaced by the host name, <CODE>\%p</CODE> by the PID, <CODE>\%j</CODE> by the job ID of batch systems and <CODE>\%r</CODE> by the MPI rank.</TD>
+  <TD>Store all ouput to file instead of stdout. LIKWID enables the reformatting of output files according to their suffix.<BR>You can place additional output formatters in folder <CODE>&lt;PREFIX&gt;/share/likwid/filter</CODE>. LIKWID ships with one filter script <CODE>xml</CODE> written in Perl and a Perl template for developing own output scripts. If the suffix is <CODE>.csv</CODE>, the internal CSV printer is used for file output.<BR>Moreover, there are substitutions possible in the output filename. <CODE>\%h</CODE> is replaced by the host name, <CODE>\%p</CODE> by the PID, <CODE>\%j</CODE> by the job ID of batch systems and <CODE>\%r</CODE> by the MPI rank.</TD>
 </TR>
 <TR>
   <TD>-S &lt;time&gt;</TD>
