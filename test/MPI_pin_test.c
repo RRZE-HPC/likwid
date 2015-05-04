@@ -1,13 +1,16 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <mpi.h>
+#include <sys/types.h>
+
 #ifdef _OPENMP
 extern int omp_get_num_threads();
 extern int omp_get_thread_num();
 #endif
 
-#include <affinity.h>
+#include <sched.h>
 
+#define HOST_NAME_MAX 1024
 #define MASTER(msg) \
     if (rank == 0)  printf(#msg "\n")
 
@@ -23,7 +26,7 @@ main(int argc, char **argv)
 
     MASTER(MPI started);
     MPI_Barrier(MPI_COMM_WORLD);
-    printf("Process with rank %d running on Node %s Core %d\n",rank ,host, likwid_getProcessorId());
+    printf("Process with rank %d running on Node %s Core %d\n",rank ,host, sched_getcpu());
     fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -31,12 +34,19 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #pragma omp parallel
     {
-        int coreId = likwid_getProcessorId();
+#pragma omp master
+        {
+            pid_t pid = getppid();
+            char cmd[1024];
+            sprintf(cmd, "pstree -p -H %d %d",pid, pid);
+            system(cmd);
+        }
 #pragma omp critical
         {
-            printf ("Rank %d Thread %d running on core %d \n",rank,omp_get_thread_num(), coreId);
+            printf ("Rank %d Thread %d running on core %d \n",rank,omp_get_thread_num(), sched_getcpu());
             fflush(stdout);
         }
+
     }
 
     sleep(2);
