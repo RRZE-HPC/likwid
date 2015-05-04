@@ -190,15 +190,15 @@ main()
     }
 #endif
 
-    //LIKWID_MARKER_START("init");
+    LIKWID_MARKER_START("init");
     /* Get initial value for system clock. */
-//#pragma omp parallel for
+#pragma omp parallel for
     for (j=0; j<N; j++) {
 	a[j] = 1.0;
 	b[j] = 2.0;
 	c[j] = 0.0;
 	}
-    //LIKWID_MARKER_STOP("init");
+    LIKWID_MARKER_STOP("init");
 
     printf(HLINE);
 
@@ -238,22 +238,22 @@ main()
         times[0][k] = mysecond();
 #pragma omp parallel
 	{
-        //LIKWID_MARKER_START("copy");
+        LIKWID_MARKER_START("copy");
 #pragma omp for
         for (j=0; j<N; j++)
             c[j] = a[j];
-        //LIKWID_MARKER_STOP("copy");
+        LIKWID_MARKER_STOP("copy");
 	}
         times[0][k] = mysecond() - times[0][k];
 
         times[1][k] = mysecond();
 #pragma omp parallel
 	{
-        //LIKWID_MARKER_START("scale");
+        LIKWID_MARKER_START("scale");
 #pragma omp for
         for (j=0; j<N; j++)
             b[j] = scalar*c[j];
-        //LIKWID_MARKER_STOP("scale");
+        LIKWID_MARKER_STOP("scale");
 	}
         times[1][k] = mysecond() - times[1][k];
 
@@ -268,13 +268,6 @@ main()
 	}
         times[2][k] = mysecond() - times[2][k];
 
-#ifdef _OPENMP
-#pragma omp parallel
-    {
-	LIKWID_MARKER_SWITCH;
-	}
-#endif
-
         times[3][k] = mysecond();
 #pragma omp parallel
 	{
@@ -285,12 +278,6 @@ main()
         LIKWID_MARKER_STOP("triad");
 	}
         times[3][k] = mysecond() - times[3][k];
-#ifdef _OPENMP
-#pragma omp parallel
-    {
-	LIKWID_MARKER_SWITCH;
-	}
-#endif
     }
 
     /*	--- SUMMARY --- */
