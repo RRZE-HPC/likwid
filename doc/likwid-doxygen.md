@@ -88,6 +88,15 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage k10
 - \subpage interlagos
 - \subpage kabini
+
+\section Examples Example Codes
+Using the Likwid API:
+- \ref C-likwidAPI-code
+- \ref Lua-likwidAPI-code
+
+Using the Marker API:
+- \ref C-markerAPI-code
+- \ref F-markerAPI-code
 */
 
 
@@ -156,6 +165,21 @@ This is only possible on local file systems. A feasible way is to use the likwid
 \subsubsection depends Dependencies
 Although we tried to minimize the external dependencies of LIKWID, some advanced tools or only specific tool options require external packages.<BR>
 \ref likwid-perfscope uses the Perl script \a feedGnuplot to forward the real-time data to gnuplot. \a feedGnuplot is included into LIKWID, but gnuplot itself is not.<BR>
-\ref likwid-agent provided multiple backends to output the periodically measured data. The syslog backend requires the shell tool \a logger to be installed. The <A HREF="https://oss.oetiker.ch/rrdtool/">RRD</A> backend requires \a rrdtool and the GMetric backend the \gmetric tool, part of the <A HREF="http://ganglia.sourceforge.net/">Ganglia Monitoring System</A>.<BR>
+\ref likwid-agent provided multiple backends to output the periodically measured data. The syslog backend requires the shell tool \a logger to be installed. The <A HREF="https://oss.oetiker.ch/rrdtool/">RRD</A> backend requires \a rrdtool and the GMetric backend the \a gmetric tool, part of the <A HREF="http://ganglia.sourceforge.net/">Ganglia Monitoring System</A>.<BR>
 In order to create the HTML documentation of LIKWID, the toold \a doxygen is required.
+*/
+
+/*! \page C-markerAPI-code Marker API in a C/C++ application
+\include C-markerAPI.c
+*/
+
+/*! \page F-markerAPI-code Marker API in a Fortran90 application
+\include F-markerAPI.F90
+*/
+
+/*! \page C-likwidAPI-code LIKWID API in a C/C++ application
+\include C-likwidAPI.c
+*/
+/*! \page Lua-likwidAPI-code LIKWID API in a Lua application
+\include Lua-likwidAPI.lua
 */
