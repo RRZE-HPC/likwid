@@ -274,11 +274,10 @@ void likwid_markerClose(void)
     int numberOfRegions;
     if ( ! likwid_init )
     {
+        
         return;
     }
-
     hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
-
     file = fopen(getenv("LIKWID_FILEPATH"),"w");
 
     if (file != NULL)
@@ -315,6 +314,10 @@ void likwid_markerClose(void)
             }
         }
         fclose(file);
+    }
+    else
+    {
+        fprintf(stderr, "Cannot open file %s\n", getenv("LIKWID_FILEPATH"));
     }
 
     for (int i=0;i<numberOfRegions; i++)
@@ -405,32 +408,8 @@ int likwid_markerStopRegion(const char* regionTag)
     return 0;
 }
 
-void likwid_markerPrintRegion(const char* regionTag)
-{
-    if (! likwid_init)
-    {
-        return;
-    }
-    int cpu_id;
-    int thread_id;
-    bstring tag = bfromcstr(regionTag);
-    char groupSuffix[100];
-    LikwidThreadResults* results;
-    sprintf(groupSuffix, "-%d", groupSet->activeGroup);
-    bcatcstr(tag, groupSuffix);
 
-    cpu_id = hashTable_get(tag, &results);
-    thread_id = getThreadID(cpu_id);
-    printf("%d %s %d %f", cpu_id, bdata(tag), results->count, results->time);
-    for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
-    {
-        printf(" %f", results->PMcounters[i]);
-    }
-    printf("\n");
-    return;
-}
-
-void likwid_markerGetRegion(const char* regionTag, int nr_events, double* events, double *time, int *count)
+void likwid_markerGetRegion(const char* regionTag, int* nr_events, double* events, double *time, int *count)
 {
     if (! likwid_init)
     {
@@ -449,11 +428,12 @@ void likwid_markerGetRegion(const char* regionTag, int nr_events, double* events
     thread_id = getThreadID(cpu_id);
     *count = results->count;
     *time = results->time;
-    length = MIN(groupSet->groups[groupSet->activeGroup].numberOfEvents, nr_events);
+    length = MIN(groupSet->groups[groupSet->activeGroup].numberOfEvents, *nr_events);
     for(int i=0;i<length;i++)
     {
         events[i] = results->PMcounters[i];
     }
+    *nr_events = length;
     return;
 }
 

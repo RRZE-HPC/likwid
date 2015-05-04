@@ -86,7 +86,7 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #define LIKWID_MARKER_START(regionTag) likwid_markerStartRegion(regionTag)
 #define LIKWID_MARKER_STOP(regionTag) likwid_markerStopRegion(regionTag)
 #define LIKWID_MARKER_CLOSE likwid_markerClose()
-#define LIKWID_MARKER_GET(regionTag, nevents, events, time, count) likwid_markerGetResults(regionTag, nevents, events, time, count)
+#define LIKWID_MARKER_GET(regionTag, nevents, events, time, count) likwid_markerGetRegion(regionTag, nevents, events, time, count)
 #else
 #define LIKWID_MARKER_INIT
 #define LIKWID_MARKER_THREADINIT
@@ -162,12 +162,12 @@ extern int likwid_markerStopRegion(const char* regionTag);
 
 Get the accumulated data of the current thread for the given regionTag.
 @param regionTag [in] Print data using this string
-@param nr_events [in] Length of events array
+@param nr_events [in,out] Length of events array
 @param events [out] Events array for the intermediate results
 @param time [out] Accumulated measurement time
 @param count [out] Call count of the code region
 */
-extern void likwid_markerGetRegion(const char* regionTag, int nr_events, double* events, double *time, int *count);
+extern void likwid_markerGetRegion(const char* regionTag, int* nr_events, double* events, double *time, int *count);
 /* utility routines */
 /*! \brief Get CPU ID of the current process/thread
 
