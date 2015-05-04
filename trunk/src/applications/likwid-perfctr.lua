@@ -177,7 +177,10 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         use_timeline = true
         duration = likwid.parse_time(arg)
     elseif opt == "o" or opt == "output" then
-        use_csv = true
+        local suffix = string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$")
+        if suffix ~= "txt" then
+            use_csv = true
+        end
         outfile = arg:gsub("%%h", likwid.gethostname())
         outfile = outfile:gsub("%%p", likwid.getpid())
         outfile = outfile:gsub("%%j", likwid.getjid())
@@ -620,7 +623,7 @@ if outfile then
     local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
     local command = "<PREFIX>/share/likwid/filter/" .. suffix
     local tmpfile = outfile:gsub("."..suffix,".tmp",1)
-    if suffix ~= "txt" then
+    if suffix ~= "txt" and suffix ~= "csv" then
         command = command .." ".. tmpfile .. " perfctr"
         local f = io.popen(command)
         local o = f:read("*a")

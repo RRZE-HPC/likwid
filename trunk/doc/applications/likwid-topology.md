@@ -54,8 +54,12 @@ draw the processor topology of a machine in ASCII art. Beyond topology <CODE>lik
   <TD>ASCII art output of the system's topology</TD>
 </TR>
 <TR>
+  <TD>-O</TD>
+  <TD>Print output in CSV format (conform to <A HREF="https://tools.ietf.org/html/rfc4180">RFC 4180</A>).</TD>
+</TR>
+<TR>
   <TD>-o, --output &lt;file&gt;</TD>
-  <TD>Write the output to file &lt;file&gt; instead of stdout. According to the used filename suffix, LIKWID tries to reformat the output to the specified format.<BR>By now, LIKWID ships with the two filter scripts <CODE>xml</CODE> and <CODE>csv</CODE>.</TD>
+  <TD>Write the output to file &lt;file&gt; instead of stdout. According to the used filename suffix, LIKWID tries to reformat the output to the specified format.<BR>By now, LIKWID ships with one filter script <CODE>xml</CODE> written in Perl and a Perl template for developing own output scripts. If the suffix is <CODE>.csv</CODE>, the internal CSV printer is used for file output.<BR>If <CODE>\%h</CODE> is in the filename, it is replaced by the host name.</TD>
 </TR>
 </TABLE>
 
