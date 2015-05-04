@@ -143,7 +143,7 @@ local function testDriver()
     return false
 end
 
-verbosity = 3
+verbosity = 0
 governor = nil
 frequency = nil
 domain = nil
