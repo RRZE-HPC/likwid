@@ -9,15 +9,15 @@ GEN_PMHEADER = ./perl/gen_events.pl
 
 ANSI_CFLAGS  = -std=c99 #-strict-ansi
 
-CFLAGS   =  -O1 -Wno-format -vec-report=0 -fPIC
+CFLAGS   =  -O1 -Wno-format -vec-report=0 -fPIC -pthread
 FCFLAGS  = -module ./ 
 ASFLAGS  = -gdwarf-2
 PASFLAGS  = x86-64
 CPPFLAGS =
 LFLAGS   = -pthread
 
-SHARED_CFLAGS = -fPIC
-SHARED_LFLAGS = -shared
+SHARED_CFLAGS = -fPIC -pthread
+SHARED_LFLAGS = -shared -pthread
 
 DEFINES  = -D_GNU_SOURCE
 DEFINES  += -DMAX_NUM_THREADS=128
