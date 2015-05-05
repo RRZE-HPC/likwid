@@ -37,6 +37,9 @@ INCLUDES  = -I../includes
 ifeq ($(COMPILER),GCC)
 CFLAGS    +=  -pedantic -Wall -Wextra -std=c99
 endif
+ifeq ($(COMPILER),ICC)
+CFLAGS  += -std=c99
+endif
 CPPFLAGS :=  $(DEFINES) $(INCLUDES)
 
 all: $(DAEMON_TARGET) $(SETFREQ_TARGET)
