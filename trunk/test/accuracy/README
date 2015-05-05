@@ -1,0 +1,19 @@
+LIKWID accuracy tester
+
+The likwid-accuracy.py application tests the accuracy of LIKWID's measurements. The tool is written in Python. The measurements are compared to an instrumented version of likwid-bench. By scaling the calculated likwid-bench results, it also takes write-allocates into account.
+
+Usage:
+make #build non-instrumentated and LIKWID-instrumentated versions of
+likwid-bench.
+Adjust test files in TESTS.
+Adjust test set file SET.txt or use the -s/--sets switch on commandline.
+likwid-accuracy.py #Runs the tests of all sets and saves results in folder RESULTS/<hostname>
+
+You should use some plotting option on the commandline.
+
+Options for likwid-accuracy.py:
+--pgf: Create a TeX file containing the definition of a PGF plot with suffix .tex -> .pdf
+--grace: Create grace batch file for further manipulation with XMgrace or create plot with gracebat .agr/.bat -> .png
+--gnuplot: Create GNUplot script .plot -> .jpg
+--script: Create a Bash script containing all commands to create all plots using pdflatex, gracebat and/or gnuplot.
+--scriptname: Set name for Bash script, default is $CWD/create_plots.sh
