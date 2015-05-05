@@ -51,21 +51,20 @@ extern void* getIter(void* arg);
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-#define HELP_MSG \
-    printf("Threaded Memory Hierarchy Benchmark --  Version  %d.%d \n\n",VERSION,RELEASE); \
-printf("\n"); \
-printf("Supported Options:\n"); \
-printf("-h\t Help message\n"); \
-printf("-a\t List available benchmarks \n"); \
-printf("-d\t Delimiter used for physical core list (default ,) \n"); \
-printf("-p\t List available thread domains\n\t or the physical ids of the cores selected by the -c expression \n"); \
-printf("-s <TIME>\t Seconds to run the test minimally (default 1)\n");\
-printf("\t If resulting iteration count is below 10, it is normalized to 10.\n");\
-printf("-l <TEST>\t list properties of benchmark \n"); \
-printf("-t <TEST>\t type of test \n"); \
-printf("-w\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>], size in kB, MB or GB  (mandatory)\n"); \
-printf("\n"); \
-printf("Usage: likwid-bench -t copy -w S0:100kB:1 \n")
+#define HELP_MSG printf("Threaded Memory Hierarchy Benchmark --  Version  %d.%d \n\n",VERSION,RELEASE); \
+    printf("\n"); \
+    printf("Supported Options:\n"); \
+    printf("-h\t Help message\n"); \
+    printf("-a\t List available benchmarks \n"); \
+    printf("-d\t Delimiter used for physical core list (default ,) \n"); \
+    printf("-p\t List available thread domains\n\t or the physical ids of the cores selected by the -c expression \n"); \
+    printf("-s <TIME>\t Seconds to run the test minimally (default 1)\n");\
+    printf("\t If resulting iteration count is below 10, it is normalized to 10.\n");\
+    printf("-l <TEST>\t list properties of benchmark \n"); \
+    printf("-t <TEST>\t type of test \n"); \
+    printf("-w\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>], size in kB, MB or GB  (mandatory)\n"); \
+    printf("\n"); \
+    printf("Usage: likwid-bench -t copy -w S0:100kB:1 \n")
 
 #define VERSION_MSG \
     printf("likwid-bench   %d.%d \n\n",VERSION,RELEASE)
@@ -119,8 +118,9 @@ int main(int argc, char** argv)
     Workgroup* currentWorkgroup = NULL;
     Workgroup* groups = NULL;
     uint32_t min_runtime = 1; /* 1s */
-    bstring HLINE;
+    bstring HLINE = bfromcstr("");
     binsertch(HLINE, 0, 80, '-');
+    binsertch(HLINE, 80, 1, '\n');
     int (*ownprintf)(const char *format, ...);
     ownprintf = &printf;
 
