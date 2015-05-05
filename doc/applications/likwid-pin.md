@@ -126,22 +126,21 @@ Run on CPU with ID 0 and the CPU range starting from ID 1 to ID3, hence 0,1,2,3
 </LI>
 </UL>
 <H3>Logical numbering:</H3>
-Besides the enumeration of physical CPU IDs, LIKWID supports the logical numbering inside of an affinity domain. For logical selection, the indicies inside of the desired affinity domain has to be given on the commandline. The logical numbering can be selected by prefixing the cpu expression with <CODE>L:</CODE>. The format is <CODE>L:&lt;indices&gt;</CODE> assuming affinity domain <CODE>N</CODE> or <CODE>L:&lt;affinity domain&gt;:&lt;indices&gt;</CODE>. Moreover, it is automatically activated if working inside of a CPU set (e.g. cgroups). For the examples we assume that the node affinity domain looks like this: <CODE>0,4,1,5,2,6,3,7</CODE>:
+Besides the enumeration of physical CPU IDs, LIKWID supports the logical numbering inside of an affinity domain. For logical selection, the indicies inside of the desired affinity domain has to be given on the commandline. The logical numbering can be selected by prefixing the cpu expression with <CODE>L:</CODE>. The format is <CODE>L:&lt;indices&gt;</CODE> assuming affinity domain <CODE>N</CODE> or <CODE>L:&lt;affinity domain&gt;:&lt;indices&gt;</CODE>. Moreover, it is automatically activated if working inside of a CPU set (e.g. cgroups). For the examples we assume that the node affinity domain contains the CPUs <CODE>0,4,1,5,2,6,3,7</CODE>. For the logical numbering, the list is sorted that the physical cores are listed first, hence the logical indices refer to <CODE>0,1,2,3,4,5,6,7</CODE>:
 <UL>
-<LI><CODE>-c L:1</CODE><BR>
-Run only on CPU 0, the first entry in the affinity domain <CODE>N</CODE>
+<LI><CODE>-c L:0</CODE><BR>
+Run only on CPU 0, the first entry in the <B>sorted</B> affinity domain <CODE>N</CODE>
 </LI>
-<LI><CODE>-c L:1,4</CODE><BR>
-Run on CPUs 0 and 5, the first and fifth entry in the affinity domain <CODE>N</CODE>
+<LI><CODE>-c L:0,4</CODE><BR>
+Run on CPUs 0 and 4, the first and fifth entry in the <B>sorted</B> affinity domain <CODE>N</CODE>
 </LI>
 <LI><CODE>-c L:1-3</CODE><BR>
-Run on CPUs ranging from index 1 to index 3 in the affinity domain <CODE>N</CODE>, hence CPUs 0,4,1
+Run on CPUs ranging from index 1 to index 3 in the <B>sorted</B> affinity domain <CODE>N</CODE>, hence CPUs 1,2,3.
 </LI>
 <LI><CODE>-c L:N:1,4-6</CODE><BR>
-Run on CPUs with index 1 and the range of indices from 4 to 6 in given affinity domain <CODE>N</CODE>, hence CPUs 0,5,2,6
+Run on CPUs with index 1 and the range of indices from 4 to 6 in given <B>sorted</B> affinity domain <CODE>N</CODE>, hence CPUs 1,4,5,6.
 </LI>
 </UL>
-<B>Note</B>: List indicies in Lua start with 1!
 <H3>Numbering by expression:</H3>
 The most powerful format is probably the expression format. The format combines the input values for a selection function in a convenient way. In order to activate the expression format, the CPU string must be prefixed with <CODE>E:</CODE>. The basic format is <CODE>E:&lt;affinity domain&gt;:&lt;numberOfThreads&gt;</CODE> which selects simply the given <CODE>&lt;numberOfThreads&gt;</CODE> in the supplied <CODE>&lt;affinity domain&gt;</CODE>. The extended format is <CODE>E:&lt;affinity domain&gt;:&lt;numberOfThreads&gt;:&lt;chunksize&gt;:&lt;stride&gt;</CODE> and it selects the given <CODE>&lt;numberOfThreads&gt;</CODE> in the supplied <CODE>&lt;affinity domain&gt;</CODE> but takes <CODE>&lt;chunksize&gt;</CODE> threads in row with a distance of <CODE>&lt;stride&gt;</CODE>. For the examples we assume that the node affinity domain looks like this: <CODE>0,4,1,5,2,6,3,7</CODE>:
 <UL>

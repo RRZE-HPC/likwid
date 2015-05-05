@@ -146,56 +146,7 @@ local function getopt(args, ostrlist)
         return optopt, arg;
     end
 end
---[[local function getopt(args, ostr)
-    local arg, place = nil, 0;
-    return function ()
-        if place == 0 then -- update scanning pointer
-            place = 1
-            if #args == 0 or args[1]:sub(1, 1) ~= '-' then place = 0; return nil end
-            if #args[1] >= 2 then
-                place = place + 1
-                if args[1]:sub(2, 2) == '-' then -- found "--"
-                    place = 0
-                    table.remove(args, 1);
-                    return nil;
-                end
-            end
-        end
-        local optopt = args[1]:sub(place, place);
-        place = place + 1;
-        local oli = ostr:find(optopt);
-        if optopt == ':' or oli == nil then -- unknown option
-            if optopt == '-' then return nil end
-            if place > #args[1] then
-                table.remove(args, 1);
-                place = 0;
-            end
-            return '?';
-        end
-        oli = oli + 1;
-        if ostr:sub(oli, oli) ~= ':' then -- do not need argument
-            arg = true;
-            if place > #args[1] then
-                table.remove(args, 1);
-                place = 0;
-            end
-        else -- need an argument
-            if place <= #args[1] then -- no white space
-                arg = args[1]:sub(place);
-            else
-                table.remove(args, 1);
-                if #args == 0 then -- an option requiring argument is the last one
-                    place = 0;
-                    if ostr:sub(1, 1) == ':' then return ':' end
-                    return '?';
-                else arg = args[1] end
-            end
-            table.remove(args, 1);
-            place = 0;
-        end
-        return optopt, arg;
-    end
-end]]
+
 
 likwid.getopt = getopt
 
@@ -529,6 +480,7 @@ end
 
 local function cpustr_to_cpulist_logical(cpustr)
     local cpulist = {}
+    local sorted_list = {}
     if not cpustr_valid(cpustr) then
         print("ERROR: Expression contains invalid characters")
         return {}
@@ -553,21 +505,22 @@ local function cpustr_to_cpulist_logical(cpustr)
         print(string.format("ERROR: Invalid affinity domain %s", tag))
         return {}
     end
+    sorted_list = cpulist_sort(affinity["domains"][domain]["processorList"])
 
     indexlist = stringsplit(indexstr, ",")
     for i, item in pairs(indexlist) do
         local s,e = item:find("-")
         if s == nil then
-            if tonumber(item) > affinity["domains"][domain]["numberOfProcessors"] then
+            local index = tonumber(item)+1
+            if index >= affinity["domains"][domain]["numberOfProcessors"] then
                 print(string.format("CPU index %s larger than number of processors in affinity group %s", item, tag))
                 return {}
-            elseif tonumber(item) == 0 then
-                print("ERROR: CPU indices equal to 0 are not allowed")
-                return {}
             end
-            table.insert(cpulist, affinity["domains"][domain]["processorList"][tonumber(item)])
+            table.insert(cpulist, sorted_list[index])
         else
             start, ende = item:match("(%d*)-(%d*)")
+            start = start + 1
+            ende = ende + 1
             if tonumber(start) == nil then
                 print("ERROR: CPU indices smaller than 0 are not allowed")
                 return {}
@@ -576,12 +529,12 @@ local function cpustr_to_cpulist_logical(cpustr)
                 print(string.format("ERROR: CPU list %s invalid, start %s is larger than end %s", item, start, ende))
                 return {}
             end
-            if tonumber(ende) > affinity["domains"][domain]["numberOfProcessors"] then
+            if tonumber(ende) >= #sorted_list then
                 print(string.format("ERROR: CPU list end %d larger than number of processors in affinity group %s", ende, tag))
                 return {}
             end
             for i=tonumber(start),tonumber(ende) do
-                table.insert(cpulist, affinity["domains"][domain]["processorList"][i])
+                table.insert(cpulist, sorted_list[i])
             end
         end
     end
@@ -1005,53 +958,13 @@ local function printOutput(groups, results, groupData, cpulist)
         
         if #cpulist > 1 then
             firsttab_combined = tableMinMaxAvgSum(firsttab, 2, 1)
-            --[[local mins = {}
-            local maxs = {}
-            local sums = {}
-            local avgs = {}
-            mins[1] = "Min"
-            maxs[1] = "Max"
-            sums[1] = "Sum"
-            avgs[1] = "Avg"
-            for i=1,num_events do
-                mins[i+1] = math.huge
-                maxs[i+1] = 0
-                sums[i+1] = 0
-                for j=1, num_threads do
-                    if results[groupID][i][j] < mins[i+1] then
-                        mins[i+1] = results[groupID][i][j]
-                    end
-                    if results[groupID][i][j] > maxs[i+1] then
-                        maxs[i+1] = results[groupID][i][j]
-                    end
-                    sums[i+1] = sums[i+1] + results[groupID][i][j]
-                end
-                avgs[i+1] = sums[i+1] / num_threads
-                if tostring(avgs[i+1]):len() > 12 then
-                    avgs[i+1] = string.format("%e",avgs[i+1])
-                end
-                if tostring(mins[i+1]):len() > 12 then
-                    mins[i+1] = string.format("%e",mins[i+1])
-                end
-                if tostring(maxs[i+1]):len() > 12 then
-                    maxs[i+1] = string.format("%e",maxs[i+1])
-                end
-                if tostring(sums[i+1]):len() > 12 then
-                    sums[i+1] = string.format("%e",sums[i+1])
-                end
-            end
-            
-            table.insert(firsttab_combined, sums)
-            table.insert(firsttab_combined, maxs)
-            table.insert(firsttab_combined, mins)
-            table.insert(firsttab_combined, avgs)]]
         end
-        
+
         if groupData[groupID]["Metrics"] then
             local counterlist = {}
             counterlist["time"] = runtime
             counterlist["inverseClock"] = 1.0/likwid_getCpuClock();
-            
+
             secondtab[1] = {"Metric"}
             secondtab_combined[1] = {"Metric"}
             for m=1,#groupdata["Metrics"] do
@@ -1075,64 +988,12 @@ local function printOutput(groups, results, groupData, cpulist)
 
             if #cpulist > 1 then
                 secondtab_combined = tableMinMaxAvgSum(secondtab, 1, 1)
-                --[[mins = {}
-                maxs = {}
-                sums = {}
-                avgs = {}
-                
-                mins[1] = "Min"
-                maxs[1] = "Max"
-                sums[1] = "Sum"
-                avgs[1] = "Avg"
-                nr_lines = #secondtab[1]
-                for j=2,nr_lines do
-                    for i=1, num_threads do
-                        if mins[j] == nil then
-                            mins[j] = math.huge
-                        end
-                        if maxs[j] == nil then
-                            maxs[j] = 0
-                        end
-                        if sums[j] == nil then
-                            sums[j] = 0
-                        end
-
-                        local tmp = tonumber(secondtab[i+1][j])
-                        if tmp ~= nil then
-                            if tmp < mins[j] then
-                                mins[j] = tmp
-                            end
-                            if tmp > maxs[j] then
-                                maxs[j] = tmp
-                            end
-                            sums[j] = sums[j] + tmp
-                        end
-                    end
-                    avgs[j] = sums[j] / num_threads
-                    if tostring(avgs[j]):len() > 12 then
-                        avgs[j] = string.format("%e",avgs[j])
-                    end
-                    if tostring(mins[j]):len() > 12 then
-                        mins[j] = string.format("%e",mins[j])
-                    end
-                    if tostring(maxs[j]):len() > 12 then
-                        maxs[j] = string.format("%e",maxs[j])
-                    end
-                    if tostring(sums[j]):len() > 12 then
-                        sums[j] = string.format("%e",sums[j])
-                    end
-                end
-
-                table.insert(secondtab_combined, sums)
-                table.insert(secondtab_combined, maxs)
-                table.insert(secondtab_combined, mins)
-                table.insert(secondtab_combined, avgs)]]
-
             end
         end
         maxLineFields = math.max(#firsttab, #firsttab_combined,
                                  #secondtab, #secondtab_combined)
         if use_csv then
+
             likwid.printcsv(firsttab, maxLineFields)
         else
             likwid.printtable(firsttab)

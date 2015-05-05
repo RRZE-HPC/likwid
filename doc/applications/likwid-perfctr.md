@@ -154,7 +154,7 @@ You can also use the tool \ref likwid-perfscope to print the measured values liv
 Measures the performance group <CODE>FLOPS_DP</CODE> on CPUs 0,1,2,3 for 2 seconds. This option can be used to measure application from external or to perform low-level system monitoring.
 </LI>
 
-<LI><CODE>likwid-perfctr -c S0:1\@S1:1  -g LLC_LOOKUPS_DATA_READ:CBOX0C0:STATE=0x9 -S 2s</CODE><BR>
+<LI><CODE>likwid-perfctr -c S0:0\@S1:0  -g LLC_LOOKUPS_DATA_READ:CBOX0C0:STATE=0x9 -S 2s</CODE><BR>
 Measures the event <CODE> LLC_LOOKUPS_DATA_READ</CODE> on the first CPU of socket 0 and the first CPU on socket 1 for 2 seconds using the counter 0 in CBOX 0 (LLC cache coherency engine). The counting is filtered to only lookups in the 'invalid' and 'modified' state. Look at the microarchitecture Uncore documentation for possible bitmasks. Which option is available for which counter class can be found in section \ref Architectures.
 </LI>
 </UL>
@@ -233,6 +233,7 @@ int main(int argc, char* argv[])<BR>
 &nbsp;&nbsp;return 0;<BR>
 }<BR>
 </CODE>
+The LIKWID package contains an example code: see \ref C-markerAPI-code.
 <H3>Running code</H3>
 With the help of <CODE>likwid-perfctr</CODE> the counters are configured to the selected events. The counters are also started and stopped by <CODE>likwid-perfctr</CODE>, the Marker API only reads the counters to minimize the overhead of the instrumented application. Only if you use <CODE>LIKWID_MARKER_SWITCH</CODE> the Marker API itself configures a new event set to the registers. Basically, <CODE>likwid-perfctr</CODE> exports the whole configuration needed by the Marker API through environment variables that are evaluated during <CODE>LIKWID_MARKER_INIT</CODE>. In the end, <CODE>likwid-perfctr</CODE> picks up the file with the results of the Marker API run and prints out the performance results.<BR>
 In order to build your instrumented application:<BR>
@@ -244,7 +245,8 @@ Example Marker API call:<BR>
 <BR>
 
 <H2>Fortran Code</H2>
-Besides the Marker API for C/C++ programms, LIKWID offers to build a Fortran module to access the Marker API functions from Fortran. Only the Marker API calls are exported, not the whole API. In <CODE>config.mk</CODE> the variable <CODE>FORTRAN_INTERFACE</CODE> must be set to true. LIKWID's default is to use the Intel Fortran compiler to build the interface but it can be modified to use GCC's Fortran compiler in <CODE>make/include_&lt;COMPILER&gt;</CODE>.
+Besides the Marker API for C/C++ programms, LIKWID offers to build a Fortran module to access the Marker API functions from Fortran. Only the Marker API calls are exported, not the whole API. In <CODE>config.mk</CODE> the variable <CODE>FORTRAN_INTERFACE</CODE> must be set to true. LIKWID's default is to use the Intel Fortran compiler to build the interface but it can be modified to use GCC's Fortran compiler in <CODE>make/include_&lt;COMPILER&gt;</CODE>.<BR>
+The LIKWID package contains an example code: see \ref F-markerAPI-code.
 
 
 */
