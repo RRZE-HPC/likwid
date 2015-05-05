@@ -7,17 +7,16 @@ GEN_PAS = ./perl/generatePas.pl
 GEN_GROUPS = ./perl/generateGroups.pl 
 GEN_PMHEADER = ./perl/gen_events.pl 
 
-ANSI_CFLAGS  = -strict-ansi
-ANSI_CFLAGS += -std=c99
+ANSI_CFLAGS  = -std=c99 #-strict-ansi
 
-CFLAGS   =  -O1 -Wno-format -vec-report=0
+CFLAGS   =  -O1 -Wno-format -vec-report=0 -fPIC
 FCFLAGS  = -module ./ 
 ASFLAGS  = -gdwarf-2
 PASFLAGS  = x86-64
 CPPFLAGS =
 LFLAGS   = -pthread
 
-SHARED_CFLAGS = -fpic
+SHARED_CFLAGS = -fPIC
 SHARED_LFLAGS = -shared
 
 DEFINES  = -D_GNU_SOURCE
