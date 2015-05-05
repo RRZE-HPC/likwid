@@ -291,6 +291,8 @@ install: install_daemon install_freq
 	@echo "===> INSTALL monitoring groups to $(PREFIX)/share/likwid/mongroups"
 	@mkdir -p $(PREFIX)/share/likwid/mongroups
 	@cp -rf monitoring/groups/* $(PREFIX)/share/likwid/mongroups
+	@mkdir -p $(PREFIX)/share/likwid/docs
+	@install -m 644 doc/bstrlib.txt $(PREFIX)/share/likwid/docs
 	@echo "===> INSTALL default likwid-agent.conf to $(PREFIX)/etc"
 	@sed -e "s+<PREFIX>+$(PREFIX)+g" monitoring/likwid-agent.conf > $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
 	@chmod 600 $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
@@ -327,7 +329,10 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -f $(PREFIX)/include/bstrlib.h
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter, groups and default configs from $(PREFIX)/share/likwid"
-	@rm -rf  $(PREFIX)/share/likwid
+	@rm -rf $(LIKWIDFILTERPATH)
+	@rm -rf $(PREFIX)/share/likwid/mongroups
+	@rm -rf $(PREFIX)/share/likwid/perfgroups
+	@rm -rf $(PREFIX)/share/likwid/docs
 
 
 local: $(L_APPS) likwid.lua
