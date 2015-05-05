@@ -105,9 +105,9 @@ Using the Marker API:
 Likwid is build using GNU make and has no external dependencies apart from the Linux kernel and the standard C library.
 It should build on any Linux distribution with a recent GCC compiler or CLANG compiler and 2.6 or newer kernel without any changes.
 
-There is one generic top level Makefile and one .mk configuration file for each compiler (at the moment GCC, CLANG and ICC). Please note that I can only test LIKWID with GCC and CLANG. ICC is only tested for basic functionality and is not supported by us.
+There is one generic top level Makefile and one .mk configuration file for each compiler (at the moment GCC, CLANG, ICC and MIC). Please note that I tested LIKWID with all of them. ICC is only tested for basic functionality and is not supported by us.
 
-There is one exception: If you want to use LIKWID on a Intel Xeon Phi card you have to choose the MIC as Compiler in config.mk, which is based on Intel ICC compiler.
+There is one exception: If you want to use LIKWID on a Intel Xeon Phi card you have to choose the MIC as compiler in config.mk, which is based on Intel ICC compiler.
 
 \subsection directory Directory structure
 All source files are in the src/ directory. All header files are located in src/includes/. Each application main source files are in src/applications/. All external tools, namely HWLOC and Lua, are located in ext/. The bench/ folder contains all files of the benchmarking suite of LIKWID.
@@ -166,7 +166,7 @@ This is only possible on local file systems. A feasible way is to use the likwid
 Although we tried to minimize the external dependencies of LIKWID, some advanced tools or only specific tool options require external packages.<BR>
 \ref likwid-perfscope uses the Perl script \a feedGnuplot to forward the real-time data to gnuplot. \a feedGnuplot is included into LIKWID, but gnuplot itself is not.<BR>
 \ref likwid-agent provided multiple backends to output the periodically measured data. The syslog backend requires the shell tool \a logger to be installed. The <A HREF="https://oss.oetiker.ch/rrdtool/">RRD</A> backend requires \a rrdtool and the GMetric backend the \a gmetric tool, part of the <A HREF="http://ganglia.sourceforge.net/">Ganglia Monitoring System</A>.<BR>
-In order to create the HTML documentation of LIKWID, the toold \a doxygen is required.
+In order to create the HTML documentation of LIKWID, the tool \a doxygen is required.
 */
 
 /*! \page C-markerAPI-code Marker API in a C/C++ application
