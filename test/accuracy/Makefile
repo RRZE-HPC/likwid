@@ -1,45 +1,37 @@
-# =======================================================================================
-#  
-#      Filename:  Makefile
-# 
-#      Description:  Central Makefile
-# 
-#      Version:   3.1.1
-#      Released:  12.2.2014
-# 
-#      Author:  Thomas Roehl (tr), thomas.roehl@googlemail.com
-#      Project:  likwid
-#
-#      Copyright (C) 2014 Jan Treibig
-#
-#      This program is free software: you can redistribute it and/or modify it under
-#      the terms of the GNU General Public License as published by the Free Software
-#      Foundation, either version 3 of the License, or (at your option) any later
-#      version.
-#
-#      This program is distributed in the hope that it will be useful, but WITHOUT ANY
-#      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-#      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-#
-#      You should have received a copy of the GNU General Public License along with
-#      this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# =======================================================================================
-
-LIKWID_ROOT=../..
+LIKWID_PATH=../..
+LIKWID_BENCH_PATH=../../bench
+LIKWID_APP=likwid-bench
+HOST=$(shell hostname -s)
 
 
-all: prepare
+all: clean plain marker localize_likwid
 
-prepare: 
-	sed -i -e s/'INSTRUMENT_BENCH = .*#NO SPACE'/'INSTRUMENT_BENCH = false#NO SPACE'/g $(LIKWID_ROOT)/config.mk
-	make -C $(LIKWID_ROOT) distclean
-	make -C $(LIKWID_ROOT)
-	@cp $(LIKWID_ROOT)/likwid-bench likwid-bench-plain
-	sed -i -e s/'INSTRUMENT_BENCH = .*#NO SPACE'/'INSTRUMENT_BENCH = true#NO SPACE'/g $(LIKWID_ROOT)/config.mk
-	make -C $(LIKWID_ROOT) distclean
-	make -C $(LIKWID_ROOT)
-	@cp $(LIKWID_ROOT)/likwid-bench likwid-bench-marker
-	
-run: likwid-bench-plain likwid-bench-marker likwid-tester
-	exec ./likwid-tester
+plain:
+	@echo "===> Building uninstrumented likwid-bench"
+	@sed -i -e s/'INSTRUMENT_BENCH = .*#'/'INSTRUMENT_BENCH = false#'/g $(LIKWID_PATH)/config.mk
+	@sed -i -e s/'CPPFLAGS := -DPAPI '/'CPPFLAGS := '/g $(LIKWID_PATH)/Makefile
+	@cd $(LIKWID_PATH) && make distclean >/dev/null && make >/dev/null 2>/dev/null
+	@cp $(LIKWID_BENCH_PATH)/$(LIKWID_APP) $(LIKWID_APP)-plain
+
+marker:
+	@echo "===> Building instrumented likwid-bench"
+	@sed -i -e s/'INSTRUMENT_BENCH = .*#'/'INSTRUMENT_BENCH = true#'/g $(LIKWID_PATH)/config.mk
+	@sed -i -e s/'CPPFLAGS := -DPAPI '/'CPPFLAGS := '/g $(LIKWID_PATH)/Makefile
+	@cd $(LIKWID_PATH) && make distclean >/dev/null && make >/dev/null 2>/dev/null
+	@cp $(LIKWID_BENCH_PATH)/$(LIKWID_APP) $(LIKWID_APP)-marker
+
+papi:
+	@echo "===> Building instrumented likwid-bench using PAPI API"
+	@sed -i -e s/'INSTRUMENT_BENCH = .*#'/'INSTRUMENT_BENCH = false#'/g $(LIKWID_PATH)/config.mk
+	@cp $(LIKWID_PATH)/Makefile $(LIKWID_PATH)/Makefile.orig
+	@sed -i -e s/'CPPFLAGS := '/'CPPFLAGS := -DPAPI '/g $(LIKWID_PATH)/Makefile
+	@cd $(LIKWID_PATH) && make distclean >/dev/null && make >/dev/null 2>/dev/null
+	@cp $(LIKWID_BENCH_PATH)/$(LIKWID_APP) $(LIKWID_APP)-papi
+	@mv $(LIKWID_PATH)/Makefile.orig $(LIKWID_PATH)/Makefile
+
+localize_likwid:
+	@cd $(LIKWID_PATH) && make local >/dev/null && cd - >/dev/null
+
+clean:
+	@echo "===> Cleaning old likwid-bench executables"
+	@rm -f $(LIKWID_APP)-plain $(LIKWID_APP)-marker $(LIKWID_APP)-papi
