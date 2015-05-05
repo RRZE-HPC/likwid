@@ -1011,9 +1011,10 @@ extern int thermal_tread(int socket_fd, int cpuId, uint32_t *data);
 
 Starts the timeline daemon which reads and prints the counter values after each \a duration time
 @param [in] duration Time interval in ns
+@param [in] outfile File to write the intermediate readings or NULL to write to stderr
 @return 0 on success and -EFAULT if counters cannot be started
 */
-extern int daemon_start(uint64_t duration);
+extern int daemon_start(uint64_t duration, const char* outfile);
 /*! \brief Stop timeline daemon
 
 Stop the timeline daemon using the signal \a sig

@@ -1202,33 +1202,6 @@ static int lua_likwid_readTemp(lua_State* L)
     return 1;
 }
 
-static int lua_likwid_startDaemon(lua_State* L)
-{
-    int err;
-    uint64_t duration = (uint64_t)luaL_checknumber(L,1);
-    //const char* tmpString = luaL_checkstring(L, 2);
-    //luaL_argcheck(L, strlen(tmpString) > 0, 2, "Empty filename not allowed");
-    err = daemon_start(duration); //, tmpString);
-    switch (err)
-    {
-        case -ENOENT:
-            lua_pushstring(L,"Output file cannot be opened");
-            lua_error(L);
-            return 1;
-        case -EFAULT:
-            lua_pushstring(L,"Error starting counters");
-            lua_error(L);
-            return 1;
-    }
-    return 0;
-}
-
-static int lua_likwid_stopDaemon(lua_State* L)
-{
-    int signal = lua_tointeger(L,-1);
-    daemon_stop(signal);
-    return 0;
-}
 
 static volatile int recv_sigint = 0;
 static void signal_catcher(int signo) 
@@ -1452,9 +1425,6 @@ int luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getClock",lua_likwid_getClock);
     lua_register(L, "sleep",isleep);
     lua_register(L, "usleep",iusleep);
-    // Daemon functions
-    lua_register(L, "likwid_startDaemon", lua_likwid_startDaemon);
-    lua_register(L, "likwid_stopDaemon", lua_likwid_stopDaemon);
     // Power functions
     lua_register(L, "likwid_startPower",lua_likwid_startPower);
     lua_register(L, "likwid_stopPower",lua_likwid_stopPower);

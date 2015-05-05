@@ -474,7 +474,6 @@ if use_timeline == true then
         cores_string = cores_string .. tostring(cpu) .. " "
     end
     print(cores_string:sub(1,cores_string:len()-1))
-    --likwid.startDaemon(duration, markerFile);
 end
 
 local ret = likwid.startCounters()
