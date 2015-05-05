@@ -106,12 +106,14 @@ or
 for selecting the CPUs inside the given domain. Assuming an virtual affinity domain
 .B 'P'
 that contains the CPUs
-.B 0,4,1,5,2,6,3,7
-the logical numbering
-.B L:P:1,3,5
+.B 0,4,1,5,2,6,3,7.
+After sorting it to have physical cores first we get:
+.B 0,1,2,3,4,5,6,7.
+The logical numbering
+.B L:P:0-2
 results in the selection
-.B 0,1,2.
-Please be aware that list indices start with 1!
+.B 0,1,2
+from the physical cores first list.
 .IP 3. 4
 The expression syntax enables the selection according to an selection function with variable input parameters. The format is either
 .B E:<affinity domain>:<numberOfThreads>
@@ -160,11 +162,11 @@ For selection of CPUs inside of a CPUset only the logical numbering is allowed. 
 This command pins
 .B ./myApp
 on CPU
-.B 0
+.B 4
 and the thread started by
 .B ./myApp
 on CPU
-.B 1
+.B 5
 .IP 3. 5
 A common use-case for the numbering by expression is pinning of an application on the Intel Xeon Phi coprocessor with its 60 cores each having 4 SMT threads.
 .TP
