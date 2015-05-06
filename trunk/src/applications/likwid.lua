@@ -314,7 +314,6 @@ local function printcsv(tab, linelength)
         if nr_columns < linelength then
             str = str .. string.rep(",", linelength-nr_columns)
         end
-        str = str .. "\n"
     end
     print(str)
 end
@@ -993,13 +992,14 @@ local function printOutput(groups, results, groupData, cpulist)
         maxLineFields = math.max(#firsttab, #firsttab_combined,
                                  #secondtab, #secondtab_combined)
         if use_csv then
-
+            print(string.format("TABLE,Raw,%d%s",#firsttab[1]-1,string.rep(",",maxLineFields-3)))
             likwid.printcsv(firsttab, maxLineFields)
         else
             likwid.printtable(firsttab)
         end
         if #cpulist > 1 then
             if use_csv then
+                print(string.format("TABLE,Raw Stat,%d%s",#firsttab_combined[1]-1,string.rep(",",maxLineFields-3)))
                 likwid.printcsv(firsttab_combined, maxLineFields)
             else
                 likwid.printtable(firsttab_combined)
@@ -1007,12 +1007,14 @@ local function printOutput(groups, results, groupData, cpulist)
         end
         if groupData[groupID]["Metrics"] then
             if use_csv then
+                print(string.format("TABLE,Metric,%d%s",#secondtab[1]-1,string.rep(",",maxLineFields-3)))
                 likwid.printcsv(secondtab, maxLineFields)
             else
                 likwid.printtable(secondtab)
             end
             if #cpulist > 1 then
                 if use_csv then
+                    print(string.format("TABLE,Metric Stat,%d%s",#secondtab_combined[1]-1,string.rep(",",maxLineFields-3)))
                     likwid.printcsv(secondtab_combined, maxLineFields)
                 else
                     likwid.printtable(secondtab_combined)

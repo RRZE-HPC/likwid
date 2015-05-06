@@ -132,7 +132,7 @@ Besides the enumeration of physical CPU IDs, LIKWID supports the logical numberi
 Run only on CPU 0, the first entry in the <B>sorted</B> affinity domain <CODE>N</CODE>
 </LI>
 <LI><CODE>-c L:0,4</CODE><BR>
-Run on CPUs 0 and 4, the first and fifth entry in the <B>sorted</B> affinity domain <CODE>N</CODE>
+Run on the first and fifth entry in the <B>sorted</B> affinity domain <CODE>N</CODE>
 </LI>
 <LI><CODE>-c L:1-3</CODE><BR>
 Run on CPUs ranging from index 1 to index 3 in the <B>sorted</B> affinity domain <CODE>N</CODE>, hence CPUs 1,2,3.
@@ -151,7 +151,7 @@ Selects the first entry in the node affinity domain, thus CPU 0
 Selects the first two entries in the node affinity domain, thus CPUs 0 and 4
 </LI>
 <LI><CODE>-c E:N:2:1:2</CODE><BR>
-Selects 1 CPU in a row and skips 2 entries twice, thus we get CPUs 0 and 1
+Selects 1 CPU in a row and skips 1 entries thus we get CPUs 0 and 1
 </LI>
 <LI><CODE>-c E:N:4:2:4</CODE><BR>
 Selects in total 4 CPUs, 2 in a row with a stride of 4, thus CPUs 0,4,2,6
