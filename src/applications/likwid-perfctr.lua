@@ -124,8 +124,8 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
-            print(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
-            print("Did you forget an argument to an option?")
+            print_stdout(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
+            print_stdout("Did you forget an argument to an option?")
             os.exit(1)
         end
     end
@@ -161,7 +161,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         access_mode = tonumber(arg)
         set_access_modes = true
         if (access_mode < 0 and access_mode > 1) then
-            print("Access mode must be 0 for direct access and 1 for access daemon")
+            print_stdout("Access mode must be 0 for direct access and 1 for access daemon")
             os.exit(1)
         end
     elseif opt == "i" or opt == "info" then
@@ -196,8 +196,8 @@ io.stdout:setvbuf("no")
 cpuinfo = likwid.getCpuInfo()
 
 if not likwid.msr_available() then
-    print("MSR device files not available")
-    print("Please load msr kernel module before retrying")
+    print_stdout("MSR device files not available")
+    print_stdout("Please load msr kernel module before retrying")
     os.exit(1)
 end
 
@@ -208,7 +208,7 @@ if num_cpus == 0 and
    not print_groups and
    not print_group_help and
    not print_info then
-    print("Option -c <list> or -C <list> must be given on commandline")
+    print_stdout("Option -c <list> or -C <list> must be given on commandline")
     usage()
     os.exit(1)
 elseif num_cpus == 0 and
@@ -218,7 +218,7 @@ elseif num_cpus == 0 and
        not print_groups and
        not print_group_help and
        not print_info then
-    print("CPUs given on commandline are not valid in current environment, maybe it's limited by a cpuset.")
+    print_stdout("CPUs given on commandline are not valid in current environment, maybe it's limited by a cpuset.")
     os.exit(1)
 end
 
@@ -227,7 +227,7 @@ if num_cpus > 0 then
     for i,cpu1 in pairs(cpulist) do
         for j, cpu2 in pairs(cpulist) do
             if i ~= j and cpu1 == cpu2 then
-                print("List of CPUs is not unique, got two times CPU " .. tostring(cpu1))
+                print_stdout("List of CPUs is not unique, got two times CPU " .. tostring(cpu1))
                 os.exit(1)
             end
         end
@@ -238,18 +238,18 @@ end
 
 if print_events == true then
     local tab = likwid.getEventsAndCounters()
-    print(string.format("This architecture has %d counters.", #tab["Counters"]))
+    print_stdout(string.format("This architecture has %d counters.", #tab["Counters"]))
     local outstr = "Counters names: "
-    print("Counter tags(name, type<, options>):")
+    print_stdout("Counter tags(name, type<, options>):")
     for _, counter in pairs(tab["Counters"]) do
         outstr = string.format("%s, %s", counter["Name"], counter["TypeName"]);
         if counter["Options"]:len() > 0 then
             outstr = outstr .. string.format(", %s",counter["Options"])
         end
-        print(outstr)
+        print_stdout(outstr)
     end
-    print(string.format("This architecture has %d events.",#tab["Events"]))
-    print("Event tags (tag, id, umask, counters<, options>):")
+    print_stdout(string.format("This architecture has %d events.",#tab["Events"]))
+    print_stdout("Event tags (tag, id, umask, counters<, options>):")
     for _, eventTab in pairs(tab["Events"]) do
         outstr = eventTab["Name"] .. ", "
         outstr = outstr .. string.format("0x%X, 0x%X, ",eventTab["ID"],eventTab["UMask"])
@@ -257,7 +257,7 @@ if print_events == true then
         if #eventTab["Options"] > 0 then
             outstr = outstr .. string.format(", %s",eventTab["Options"])
         end
-        print(outstr)
+        print_stdout(outstr)
     end
     os.exit(0)
 end
@@ -279,7 +279,7 @@ if print_event ~= nil then
             end
         end
     end
-    print(string.format("Found %d event(s) with search key %s:", #events, print_event))
+    print_stdout(string.format("Found %d event(s) with search key %s:", #events, print_event))
     for _, eventTab in pairs(events) do
         outstr = eventTab["Name"] .. ", "
         outstr = outstr .. string.format("0x%X, 0x%X, ",eventTab["ID"],eventTab["UMask"])
@@ -287,15 +287,15 @@ if print_event ~= nil then
         if #eventTab["Options"] > 0 then
             outstr = outstr .. string.format(", %s",eventTab["Options"])
         end
-        print(outstr)
+        print_stdout(outstr)
     end
-    print("\nUsable counter(s) for above event(s):")
+    print_stdout("\nUsable counter(s) for above event(s):")
     for i, counter in pairs(counters) do
         outstr = string.format("%s, %s", counter["Name"], counter["TypeName"]);
         if counter["Options"]:len() > 0 then
             outstr = outstr .. string.format(", %s",counter["Options"])
         end
-        print(outstr)
+        print_stdout(outstr)
     end
     os.exit(0)
 end
@@ -306,9 +306,9 @@ if print_groups == true then
     for i,g in pairs(avail_groups) do
         local gdata = likwid.get_groupdata(g)
         if gdata ~= nil then
-            print(string.format("%10s\t%s",g,gdata["ShortDescription"]))
+            print_stdout(string.format("%10s\t%s",g,gdata["ShortDescription"]))
         else
-            print("The groupstring "..g.." is neither a valid performance group nor a common event string")
+            print_stdout("The groupstring "..g.." is neither a valid performance group nor a common event string")
         end
     end
     os.exit(0)
@@ -316,20 +316,20 @@ end
 
 if print_group_help == true then
     if #event_string_list == 0 then
-        print("Group(s) must be given on commanlikwid.dline to get group help")
+        print_stdout("Group(s) must be given on commanlikwid.dline to get group help")
         os.exit(1)
     end
     for i,event_string in pairs(event_string_list) do
         local s,e = event_string:find(":")
         if s ~= nil then
-            print("Given string is no group")
+            print_stdout("Given string is no group")
             os.exit(1)
         end
         for i,g in pairs(avail_groups) do
             if event_string == g then
                 local gdata = likwid.get_groupdata(event_string)
-                print(string.format("Group %s:",event_string))
-                print(gdata["LongDescription"])
+                print_stdout(string.format("Group %s:",event_string))
+                print_stdout(gdata["LongDescription"])
             end
         end
     end
@@ -337,32 +337,32 @@ if print_group_help == true then
 end
 
 if #event_string_list == 0 and not print_info then
-    print("Option(s) -g <string> must be given on commandline")
+    print_stdout("Option(s) -g <string> must be given on commandline")
     usage()
     os.exit(1)
 end
 
-print(likwid.hline)
-print(string.format("CPU name:\t%s",cpuinfo["osname"]))
-print(string.format("CPU type:\t%s",cpuinfo["name"]))
+print_stdout(likwid.hline)
+print_stdout(string.format("CPU name:\t%s",cpuinfo["osname"]))
+print_stdout(string.format("CPU type:\t%s",cpuinfo["name"]))
 if (cpuinfo["clock"] > 0) then
-    print(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] * 1.E-09))
+    print_stdout(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] * 1.E-09))
 else
-    print(string.format("CPU clock:\t%3.2f GHz",likwid.getCpuClock() * 1.E-09))
+    print_stdout(string.format("CPU clock:\t%3.2f GHz",likwid.getCpuClock() * 1.E-09))
 end
 
 if print_info or verbose > 0 then
-    print(string.format("CPU family:\t%u", cpuinfo["family"]))
-    print(string.format("CPU model:\t%u", cpuinfo["model"]))
-    print(string.format("CPU stepping:\t%u", cpuinfo["stepping"]))
-    print(string.format("CPU features:\t%s", cpuinfo["features"]))
+    print_stdout(string.format("CPU family:\t%u", cpuinfo["family"]))
+    print_stdout(string.format("CPU model:\t%u", cpuinfo["model"]))
+    print_stdout(string.format("CPU stepping:\t%u", cpuinfo["stepping"]))
+    print_stdout(string.format("CPU features:\t%s", cpuinfo["features"]))
     P6_FAMILY = 6
     if cpuinfo["family"] == P6_FAMILY and cpuinfo["perf_version"] > 0 then
-        print(likwid.hline)
-        print(string.format("PERFMON version:\t%u",cpuinfo["perf_version"]))
-        print(string.format("PERFMON number of counters:\t%u",cpuinfo["perf_num_ctr"]))
-        print(string.format("PERFMON width of counters:\t%u",cpuinfo["perf_width_ctr"]))
-        print(string.format("PERFMON number of fixed counters:\t%u",cpuinfo["perf_num_fixed_ctr"]))
+        print_stdout(likwid.hline)
+        print_stdout(string.format("PERFMON version:\t%u",cpuinfo["perf_version"]))
+        print_stdout(string.format("PERFMON number of counters:\t%u",cpuinfo["perf_num_ctr"]))
+        print_stdout(string.format("PERFMON width of counters:\t%u",cpuinfo["perf_width_ctr"]))
+        print_stdout(string.format("PERFMON number of fixed counters:\t%u",cpuinfo["perf_num_fixed_ctr"]))
     end
 end
 
@@ -381,7 +381,7 @@ if use_wrapper == true and use_timeline == false and #event_string_list > 1 and 
 end
 
 if use_wrapper and likwid.tablelength(arg)-2 == 0 and print_info == false then
-    print("No Executable can be found on commanlikwid.dline")
+    print_stdout("No Executable can be found on commanlikwid.dline")
     usage()
     os.exit(0)
 end
@@ -393,7 +393,7 @@ if pin_cpus then
     if omp_threads == nil then
         likwid.setenv("OMP_NUM_THREADS",tostring(num_cpus))
     elseif num_cpus > tonumber(omp_threads) then
-        print(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_cpus))
+        print_stdout(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_cpus))
     end
     
     if num_cpus > 1 then
@@ -423,7 +423,7 @@ end
 for i, event_string in pairs(event_string_list) do
     local groupdata = likwid.get_groupdata(event_string)
     if groupdata == nil then
-        print("Cannot read event string, it's neither a performance group nor a proper event string <event>:<counter>:<options>,...")
+        print_stdout("Cannot read event string, it's neither a performance group nor a proper event string <event>:<counter>:<options>,...")
         usage()
         os.exit(1)
     end
@@ -451,7 +451,7 @@ end
 
 activeGroup = group_ids[1]
 likwid.setupCounters(activeGroup)
-print(likwid.hline)
+print_stdout(likwid.hline)
 
 if use_marker == true then
     likwid.setenv("LIKWID_FILEPATH", markerFile)
@@ -464,7 +464,7 @@ end
 
 execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
 if verbose == true then
-    print(string.format("Executing: %s",execString))
+    print_stdout(string.format("Executing: %s",execString))
 end
 
 
@@ -473,12 +473,12 @@ if use_timeline == true then
     for i, cpu in pairs(cpulist) do
         cores_string = cores_string .. tostring(cpu) .. " "
     end
-    print(cores_string:sub(1,cores_string:len()-1))
+    print_stdout(cores_string:sub(1,cores_string:len()-1))
 end
 
 local ret = likwid.startCounters()
 if ret < 0 then
-    print(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
+    print_stdout(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
     os.exit(1)
 end
 
@@ -507,7 +507,7 @@ if use_wrapper or use_timeline then
     end
     local pid = likwid.startProgram(execString)
     if not pid then
-        print("Failed to execute command: ".. execString)
+        print_stdout("Failed to execute command: ".. execString)
         likwid.stopCounters()
         likwid.finalize()
         likwid.putTopology()
@@ -581,7 +581,7 @@ elseif use_stethoscope then
 elseif use_marker then
     local ret = os.execute(execString)
     if ret == nil then
-        print("Failed to execute command: ".. execString)
+        print_stdout("Failed to execute command: ".. execString)
         likwid.stopCounters()
         likwid.finalize()
         likwid.putTopology()
@@ -592,11 +592,11 @@ end
 
 local ret = likwid.stopCounters()
 if ret < 0 then
-     print(string.format("Error stopping counters for thread %d.",ret * (-1)))
+    print_stdout(string.format("Error stopping counters for thread %d.",ret * (-1)))
     os.exit(1)
 end
 io.stdout:flush()
-print(likwid.hline)
+print_stdout(likwid.hline)
 
 
 if use_marker == true then
@@ -605,7 +605,6 @@ if use_marker == true then
         os.exit(1)
     end
     likwid.print_markerOutput(groups, results, group_list, cpulist)
---elseif use_wrapper or use_stethoscope then
 else
     results = likwid.getResults()
     groups = {}

@@ -102,6 +102,11 @@ local affinity = likwid.getAffinityInfo()
 
 
 table.insert(output_csv, likwid.hline)
+local lines = 3
+if measure_clock then
+    lines = 4
+end
+table.insert(output_csv, "STRUCT,Info,"..tostring(lines))
 table.insert(output_csv, string.format("CPU name:\t%s",cpuinfo["osname"]))
 table.insert(output_csv, string.format("CPU type:\t%s",cpuinfo["name"]))
 table.insert(output_csv, string.format("CPU stepping:\t%s",cpuinfo["stepping"]))
@@ -114,12 +119,14 @@ if (measure_clock) then
 end
 
 table.insert(output_csv, likwid.sline)
+table.insert(output_csv, "STRUCT,Hardware Thread Topology,3")
 table.insert(output_csv, "Hardware Thread Topology")
 table.insert(output_csv, likwid.sline)
 table.insert(output_csv, string.format("Sockets:\t\t%u",cputopo["numSockets"]))
 table.insert(output_csv, string.format("Cores per socket:\t%u",cputopo["numCoresPerSocket"]))
 table.insert(output_csv, string.format("Threads per core:\t%u",cputopo["numThreadsPerCore"]))
 table.insert(output_csv, likwid.hline)
+table.insert(output_csv, "TABLE,Topology,"..tostring(cputopo["numHWThreads"]))
 table.insert(output_csv, "HWThread\tThread\t\tCore\t\tSocket\t\tAvailable")
 
 for cntr=0,cputopo["numHWThreads"]-1 do
@@ -137,7 +144,7 @@ for cntr=0,cputopo["numHWThreads"]-1 do
 end
 table.insert(output_csv, likwid.hline)
 
-
+table.insert(output_csv, "STRUCT,Sockets,"..tostring(cputopo["numSockets"]))
 for socket=0,cputopo["numSockets"]-1 do
     csv_str = string.format("Socket %d:\t\t( ",cputopo["topologyTree"][socket]["ID"])
     for core=0,cputopo["numCoresPerSocket"]-1 do
@@ -157,6 +164,9 @@ table.insert(output_csv, likwid.sline)
 
 for level=1,cputopo["numCacheLevels"] do
     if (cputopo["cacheLevels"][level]["type"] ~= "INSTRUCTIONCACHE") then
+        lines = 3
+        if print_caches then lines = 9 end
+        table.insert(output_csv, string.format("STRUCT,Cache Topology L%d,%d", cputopo["cacheLevels"][level]["level"],lines))
         table.insert(output_csv, string.format("Level:\t\t\t%d",cputopo["cacheLevels"][level]["level"]))
         if (cputopo["cacheLevels"][level]["size"] < 1048576) then
             table.insert(output_csv, string.format("Size:\t\t\t%d kB",cputopo["cacheLevels"][level]["size"]/1024))
@@ -215,6 +225,7 @@ else
     table.insert(output_csv, string.format("NUMA domains:\t\t%d",numainfo["numberOfNodes"]))
     table.insert(output_csv, likwid.hline)
     for node=1,numainfo["numberOfNodes"] do
+        table.insert(output_csv, string.format("STRUCT,NUMA Topology %d,5",numainfo["nodes"][node]["id"]))
         table.insert(output_csv, string.format("Domain:\t\t\t%d",numainfo["nodes"][node]["id"]))
         csv_str = "Processors:\t\t( "
         for cpu=1,numainfo["nodes"][node]["numberOfProcessors"] do
@@ -243,7 +254,10 @@ if print_csv then
         output_csv[i] = output_csv[i]:gsub(" %)[%s]*",",")
         output_csv[i] = output_csv[i]:gsub(",$","")
         if  output_csv[i]:sub(1,1) == "*" or
-            output_csv[i]:sub(1,1) == "-" then
+            output_csv[i]:sub(1,1) == "-" or
+            output_csv[i]:match("^Hardware Thread Topology") or
+            output_csv[i]:match("^Cache Topology") or
+            output_csv[i]:match("^NUMA Topology") then
             table.remove(output_csv,i)
         end
         tmpList = likwid.stringsplit(output_csv[i],",")
@@ -256,8 +270,12 @@ if print_csv then
         end
     end
 else
-    for i=1,#output_csv do
+    for i=#output_csv,1,-1 do
         output_csv[i] = output_csv[i]:gsub(","," ")
+        if output_csv[i]:match("^TABLE") or
+           output_csv[i]:match("^STRUCT") then
+            table.remove(output_csv,i)
+        end
     end
 end
 

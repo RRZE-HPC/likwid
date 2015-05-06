@@ -39,16 +39,18 @@ end
 local function examples()
     print("Examples:")
     print("There are three possibilities to provide a thread to processor list:")
-    print("1. Thread list with physical or logical thread numberings and physical cores first.")
+    print("1. Thread list with physical thread IDs")
+    print("Example: likwid-pin.lua -c 0,4-6 ./myApp")
+    print("Pins the application to cores 0,4,5 and 6")
+    print("2. Thread list with logical thread numberings in physical cores first sorted list.")
     print("Example usage thread list: likwid-pin.lua -c N:0,4-6 ./myApp")
     print("You can pin with the following numberings:")
-    print("\t1. Physical numbering of OS.")
-    print("\t2. Logical numbering inside node. e.g. -c N:0-3")
-    print("\t3. Logical numbering inside socket. e.g. -c S0:0-3")
-    print("\t4. Logical numbering inside last level cache group. e.g. -c C0:0-3")
-    print("\t5. Logical numbering inside NUMA domain. e.g. -c M0:0-3")
-    print("\tYou can also mix domains separated by  @, e.g. -c S0:0-3@S1:0-3")
-    print("2. Expressions based thread list generation with compact processor numbering.")
+    print("\t2. Logical numbering inside node.\n\t   e.g. -c N:0,1,2,3 for the first 4 physical cores of the node")
+    print("\t3. Logical numbering inside socket.\n\t   e.g. -c S0:0-1 for the first 2 physical cores of the socket")
+    print("\t4. Logical numbering inside last level cache group.\n\t   e.g. -c C0:0-3  for the first 4 physical cores in the first LLC")
+    print("\t5. Logical numbering inside NUMA domain.\n\t   e.g. -c M0:0-3 for the first 4 physical cores in the first NUMA domain")
+    print("\tYou can also mix domains separated by  @,\n\te.g. -c S0:0-3@S1:0-3 for the 4 first physical cores on both sockets.")
+    print("3. Expressions based thread list generation with compact processor numbering.")
     print("Example usage expression: likwid-pin.lua -c E:N:8 ./myApp")
     print("This will generate a compact list of thread to processor mapping for the node domain")
     print("with eight threads.")
@@ -56,13 +58,13 @@ local function examples()
     print("\t1. -c E:<thread domain>:<number of threads>")
     print("\t2. -c E:<thread domain>:<number of threads>:<chunk size>:<stride>")
     print("\tFor two SMT threads per core on a SMT 4 machine use e.g. -c E:N:122:2:4")
-    print("3. Scatter policy among thread domain type.")
+    print("4. Scatter policy among thread domain type.")
     print("Example usage scatter: likwid-pin.lua -c M:scatter ./myApp")
     print("This will generate a thread to processor mapping scattered among all memory domains")
-    print("with physical cores first. If you ommit the -c option likwid will use all processors")
-    print("available on the node with physical cores first. likwid-pin will also set ")
-    print("OMP_NUM_THREADS with as many threads as specified in your pin expression if")
-    print("OMP_NUM_THREADS is not present in your environment.")
+    print("with physical cores first.")
+    print("")
+    print("likwid-pin sets OMP_NUM_THREADS with as many threads as specified")
+    print("in your pin expression if OMP_NUM_THREADS is not present in your environment.")
 end
 
 local function usage()
@@ -73,14 +75,13 @@ local function usage()
     print("-v, --version\t\t Version information")
     print("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)")
     print("-i\t\t Set numa interleave policy with all involved numa nodes")
-    print("-S, --sweep\t\t Sweep memory in involved NUMA nodes")
+    print("-S, --sweep\t\t Sweep memory and LLC of involved NUMA nodes")
     print("-c <list>\t Comma separated processor IDs or expression")
     print("-s, --skip <hex>\t Bitmask with threads to skip")
     print("-p\t\t Print available domains with mapping on physical IDs")
     print("\t\t If used together with -p option outputs a physical processor IDs.")
     print("-d <string>\t Delimiter used for using -p to output physical processor list, default is comma.")
     print("-q, --quiet\t\t Silent without output")
-    
     print("\n")
     examples()
 end
@@ -162,9 +163,9 @@ if print_domains and num_threads > 0 then
     os.exit(0)
 elseif print_domains then
     for k,v in pairs(affinity["domains"]) do
-        print(string.format("Domain %d Tag %s:",k, v["tag"]))
+        print(string.format("Domain %s:", v["tag"]))
         print("\t" .. table.concat(v["processorList"], ","))
-        print()
+        print("")
     end
     os.exit(0)
 end
@@ -186,6 +187,8 @@ end
 local omp_threads = os.getenv("OMP_NUM_THREADS")
 if omp_threads == nil then
     likwid.setenv("OMP_NUM_THREADS",tostring(num_threads))
+elseif num_threads > tonumber(omp_threads) then
+    print(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_threads))
 end
 
 

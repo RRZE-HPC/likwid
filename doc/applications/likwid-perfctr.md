@@ -96,7 +96,7 @@ custom event sets. The \ref Marker_API can measure mulitple named regions and th
 </TR>
 <TR>
   <TD>-O</TD>
-  <TD>Print output in CSV format (conform to <A HREF="https://tools.ietf.org/html/rfc4180">RFC 4180</A>).</TD>
+  <TD>Print output in CSV format (conform to <A HREF="https://tools.ietf.org/html/rfc4180">RFC 4180</A>). The output contains some markers that help to parse the output.</TD>
 </TR>
 <TR>
   <TD>-s, --skip &lt;arg&gt;</TD>
