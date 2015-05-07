@@ -97,6 +97,11 @@ Using the Likwid API:
 Using the Marker API:
 - \ref C-markerAPI-code
 - \ref F-markerAPI-code
+
+If you have problems with LIKWID:
+GitHub: https://github.com/rrze-likwid/likwid
+Bugs: https://github.com/rrze-likwid/likwid/issues
+Mailinglist: rrze-likwid@lists.fau.de
 */
 
 
@@ -154,7 +159,7 @@ As a general access to the msr registers is not desired on security sensitive sy
 
 Some distributions backported the capabilities check for the msr device to older kernels. If there are problems with accessing the msr device for older kernels with file system permissions set to read&write, please check your kernel code (arch/x86/kernel/msr.c) for the backport and set the MSR capabilities in case.
 
-A secure solution is to use the accessDaemon, which encapsulates the access to the msr device files and performs a address check for allowed registers. For more information how to setup and use this solution have a look at the WIKI page (http://code.google.com/p/likwid/w/list).
+A secure solution is to use the accessDaemon, which encapsulates the access to the msr device files and performs a address check for allowed registers. For more information how to setup and use this solution have a look at the WIKI page (https://github.com/rrze-likwid/likwid/issues).
 
 Some newer kernels implement the so-called capabilities, a fine-grained permission system that can allow access to the MSR files for common users. On the downside it may be not enough anymore to set the suid-root flag for the access daemon, the executable must be registerd at the libcap.
 
