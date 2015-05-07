@@ -418,11 +418,11 @@ local function getMpiType()
     local mpitype = nil
     cmd = "tclsh /apps/modules/modulecmd.tcl sh list -t 2>&1"
     local f,msg,ret = io.popen(cmd, 'r')
-    if ret ~= 0 then
+    if ret ~= nil then
         f:close()
         cmd = os.getenv("SHELL").." -c 'module -t 2>&1'"
         f,msg,ret = io.popen(cmd, 'r')
-        if ret ~= 0 then
+        if ret ~= nil then
             f:close()
         end
     end
@@ -691,7 +691,11 @@ local function setPerfStrings(perflist, cpuexprs)
                         for _,c in pairs(socket) do
                             if c == tonumber(cpu) then
                                 if tmpSocketFlags[sidx] == 1 then
-                                    table.insert(perfexprs[k], createEventString(coreevents) ..","..createEventString(uncoreevents))
+                                    local eventStr = createEventString(coreevents)
+                                    if #uncoreevents > 0 then
+                                        eventStr = eventStr .. ","..createEventString(uncoreevents)
+                                    end
+                                    table.insert(perfexprs[k], eventStr)
                                     tmpSocketFlags[sidx] = 0
                                     switchedFlag = true
                                     uncore = true
@@ -879,6 +883,8 @@ local function parseOutputFile(filename)
         if (not line:match("^-")) and
            (not line:match("^CPU type:")) and
            (not line:match("^CPU name:")) and
+           (not line:match("^TABLE")) and
+           (not line:match("^STRUCT")) and
            (not line:match("^%s*$")) and
            (not line:match("STAT")) then
             if line:match("^Event") and not line:match("Sum,Min,Max,Avg") then
@@ -923,7 +929,7 @@ local function parseOutputFile(filename)
                     idx = idx + 1
                 end
             elseif line:match("^CPU clock:") then
-                results["clock"] = line:match("^CPU clock:%s*([%d.]+)")
+                results["clock"] = line:match("^CPU clock:,([%d.]+)")
                 results["clock"] = tonumber(results["clock"])*1.E09
             else
                 break
@@ -1252,6 +1258,12 @@ end
 
 if not hostfile then
     hostfile = os.getenv("PBS_NODEFILE")
+    if not hostfile or hostfile == "" then
+        hostfile = os.getenv("LOADL_HOSTFILE")
+    end
+    if not hostfile or hostfile == "" then
+        hostfile = os.getenv("SLURM_HOSTFILE")
+    end
     if not hostfile or hostfile == "" then
         print("ERROR: No hostfile given and not in batch environment")
         os.exit(1)
