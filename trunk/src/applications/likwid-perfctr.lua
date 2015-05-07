@@ -297,6 +297,8 @@ if print_event ~= nil then
         end
         print_stdout(outstr)
     end
+    likwid.putTopology()
+    likwid.putConfiguration()
     os.exit(0)
 end
 
@@ -307,10 +309,10 @@ if print_groups == true then
         local gdata = likwid.get_groupdata(g)
         if gdata ~= nil then
             print_stdout(string.format("%10s\t%s",g,gdata["ShortDescription"]))
-        else
-            print_stdout("The groupstring "..g.." is neither a valid performance group nor a common event string")
         end
     end
+    likwid.putTopology()
+    likwid.putConfiguration()
     os.exit(0)
 end
 
@@ -333,12 +335,16 @@ if print_group_help == true then
             end
         end
     end
+    likwid.putTopology()
+    likwid.putConfiguration()
     os.exit(0)
 end
 
 if #event_string_list == 0 and not print_info then
     print_stdout("Option(s) -g <string> must be given on commandline")
     usage()
+    likwid.putTopology()
+    likwid.putConfiguration()
     os.exit(1)
 end
 
@@ -367,6 +373,8 @@ if print_info or verbose > 0 then
 end
 
 if print_info then
+    likwid.putTopology()
+    likwid.putConfiguration()
     os.exit(0)
 end
 
@@ -383,6 +391,8 @@ end
 if use_wrapper and likwid.tablelength(arg)-2 == 0 and print_info == false then
     print_stdout("No Executable can be found on commanlikwid.dline")
     usage()
+    likwid.putTopology()
+    likwid.putConfiguration()
     os.exit(0)
 end
 
@@ -425,6 +435,8 @@ for i, event_string in pairs(event_string_list) do
     if groupdata == nil then
         print_stdout("Cannot read event string, it's neither a performance group nor a proper event string <event>:<counter>:<options>,...")
         usage()
+        likwid.putTopology()
+        likwid.putConfiguration()
         os.exit(1)
     end
     table.insert(group_list, groupdata)
@@ -434,16 +446,23 @@ end
 
 if set_access_modes then
     if likwid.setAccessClientMode(access_mode) ~= 0 then
+        likwid.putTopology()
+        likwid.putConfiguration()
         os.exit(1)
     end
 end
 if likwid.init(num_cpus, cpulist) < 0 then
+    likwid.putTopology()
+    likwid.putConfiguration()
     os.exit(1)
 end
 
 for i, event_string in pairs(event_string_list) do
     local gid = likwid.addEventSet(event_string)
     if gid < 0 then
+        likwid.putTopology()
+        likwid.putConfiguration()
+        likwid.finalize()
         os.exit(1)
     end
     table.insert(group_ids, gid)
@@ -593,6 +612,9 @@ end
 local ret = likwid.stopCounters()
 if ret < 0 then
     print_stdout(string.format("Error stopping counters for thread %d.",ret * (-1)))
+    likwid.finalize()
+    likwid.putTopology()
+    likwid.putConfiguration()
     os.exit(1)
 end
 io.stdout:flush()
@@ -602,6 +624,9 @@ print_stdout(likwid.hline)
 if use_marker == true then
     groups, results = likwid.getMarkerResults(markerFile, group_list, num_cpus)
     if #groups == 0 and #results == 0 then
+        likwid.finalize()
+        likwid.putTopology()
+        likwid.putConfiguration()
         os.exit(1)
     end
     likwid.print_markerOutput(groups, results, group_list, cpulist)
@@ -636,5 +661,6 @@ end
 
 likwid.finalize()
 likwid.putTopology()
+likwid.putNumaInfo()
 likwid.putConfiguration()
-
+os.exit(0)
