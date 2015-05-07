@@ -68,7 +68,7 @@ void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int n
     struct bstrList* tokens;
     struct bstrList* subtokens;
     AffinityDomains_t domains;
-    AffinityDomain* domain;
+    AffinityDomain* domain = NULL;
 
     /* split the workgroup into the thread and the streams part */
     tokens = bsplit(str,'-');

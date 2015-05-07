@@ -9,9 +9,10 @@
  *      Released:  <DATE>
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *               Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2015 Jan Treibig and Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -48,7 +49,7 @@
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-//#define BARRIER pthread_barrier_wait(&threads_barrier) 
+//#define BARRIER pthread_barrier_wait(&threads_barrier)
 #define BARRIER   barrier_synchronize(&barr)
 
 #ifdef PERFMON
@@ -68,7 +69,7 @@
         timer_start(&time); \
     } \
     START_PERFMON  \
-    for (i=0; i<  myData->iter; i++) \
+    for (i=0; i<myData->iter; i++) \
     {   \
         func; \
     } \
@@ -126,10 +127,10 @@ void* runTest(void* arg)
 
     /* Up to 10 streams the following registers are used for Array ptr:
      * Size rdi
-     * in Registers: rsi  rdx  rcx  r8  r9  
+     * in Registers: rsi  rdx  rcx  r8  r9
      * passed on stack, then: r10  r11  r12  r13  r14  r15
      * If more than 10 streams are used first 5 streams are in register, above 5 a macro must be used to
-     * load them from stack 
+     * load them from stack
      * */
 
     switch ( myData->test->streams ) {
@@ -415,18 +416,20 @@ void* runTest(void* arg)
     pthread_exit(NULL);
 }
 
+
 #define MEASURE(func) \
     if (data->globalThreadId == 0) \
     { \
         timer_start(&time); \
-        timer_stop(&time); \
         i = 0; \
-        while (timer_print(&time) < data->data.min_runtime) \
+        for (i=0; i < SIZE_MAX; i++) \
         { \
             func; \
             timer_stop(&time); \
-            iterations++; \
+            if (timer_print(&time) >= (double)data->data.min_runtime) \
+                break; \
         } \
+        iterations = i;  \
     } \
     BARRIER;
 
