@@ -32,6 +32,8 @@ int main (int argn, char** argv)
     if (argn < 3 || argn > 4)
     {
         fprintf(stderr, "Usage: %s <processorID> <frequency> [<governor>] \n",argv[0]);
+        free(gpath);
+        free(fpath);
         exit(EXIT_FAILURE);
     }
 
@@ -40,12 +42,16 @@ int main (int argn, char** argv)
     if (cpuid < 0 || cpuid > numCPUs)
     {
         fprintf(stderr, "CPU %d not a valid CPU ID. Range from 0 to %d.\n",cpuid,numCPUs);
+        free(gpath);
+        free(fpath);
         exit(EXIT_FAILURE);
     }
     freq  = atoi(argv[2]);
     if (freq <= 0)
     {
         fprintf(stderr, "Frequency must be greater than 0.\n");
+        free(gpath);
+        free(fpath);
         exit(EXIT_FAILURE);
     }
 
@@ -55,6 +61,8 @@ int main (int argn, char** argv)
 
         if ((strncmp(gov,"ondemand",8)) && (strncmp(gov,"performance",11))) {
             fprintf(stderr, "Invalid governor %s!\n",gov);
+            free(gpath);
+            free(fpath);
             return (EXIT_FAILURE);
         }
         snprintf(gpath, 60, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_governor", cpuid);
@@ -62,10 +70,14 @@ int main (int argn, char** argv)
         FILE* f = fopen(gpath, "w");
         if (f == NULL) {
             fprintf(stderr, "Unable to open path for writing\n");
+            free(gpath);
+            free(fpath);
             return (EXIT_FAILURE);
         }
         fprintf(f,"%s",gov);
         fclose(f);
+        free(gpath);
+        free(fpath);
         return(EXIT_SUCCESS);
     }
 
@@ -75,6 +87,8 @@ int main (int argn, char** argv)
     FILE* f = fopen(gpath, "w");
     if (f == NULL) {
         fprintf(stderr, "Unable to open path for writing\n");
+        free(gpath);
+        free(fpath);
         return (EXIT_FAILURE);
     }
     fprintf(f,"userspace");
@@ -83,11 +97,14 @@ int main (int argn, char** argv)
     f = fopen(fpath, "w");
     if (f == NULL) {
         fprintf(stderr, "Unable to open path for writing\n");
+        free(gpath);
+        free(fpath);
         return (EXIT_FAILURE);
     }
     fprintf(f,"%d",freq);
     fclose(f);
-
+    free(gpath);
+    free(fpath);
     return(EXIT_SUCCESS);
 }
 
