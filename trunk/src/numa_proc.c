@@ -1,3 +1,34 @@
+/*
+ * =======================================================================================
+ *
+ *      Filename:  numa_proc.c
+ *
+ *      Description:  Get NUMA topology from procfs and sysfs
+ *
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
+ *
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Project:  likwid
+ *
+ *      Copyright (C) 2013 Jan Treibig and Thomas Roehl
+ *
+ *      This program is free software: you can redistribute it and/or modify it under
+ *      the terms of the GNU General Public License as published by the Free Software
+ *      Foundation, either version 3 of the License, or (at your option) any later
+ *      version.
+ *
+ *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License along with
+ *      this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * =======================================================================================
+ */
+ 
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -43,11 +74,12 @@ proc_findProcessor(uint32_t nodeId, uint32_t coreId)
 }
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-static void
+static int
 setConfiguredNodes(void)
 {
     DIR *dir;
     struct dirent *de;
+    int maxIdConfiguredNode = 0;
 
     dir = opendir("/sys/devices/system/node");
 
@@ -74,6 +106,7 @@ setConfiguredNodes(void)
         }
         closedir(dir);
     }
+    return maxIdConfiguredNode;
 }
 
 
@@ -265,8 +298,7 @@ int proc_numa_init(void)
         return -1; 
     }
     /* First determine maximum number of nodes */
-    setConfiguredNodes();
-    numa_info.numberOfNodes = maxIdConfiguredNode+1;
+    numa_info.numberOfNodes = setConfiguredNodes()+1;
     numa_info.nodes = (NumaNode*) malloc(numa_info.numberOfNodes * sizeof(NumaNode));
     if (!numa_info.nodes)
     {
