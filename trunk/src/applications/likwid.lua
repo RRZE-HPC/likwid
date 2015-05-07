@@ -513,7 +513,7 @@ local function cpustr_to_cpulist_logical(cpustr)
         local s,e = item:find("-")
         if s == nil then
             local index = tonumber(item)+1
-            if index >= affinity["domains"][domain]["numberOfProcessors"] then
+            if index > affinity["domains"][domain]["numberOfProcessors"] then
                 print(string.format("CPU index %s larger than number of processors in affinity group %s", item, tag))
                 return {}
             end
@@ -530,7 +530,7 @@ local function cpustr_to_cpulist_logical(cpustr)
                 print(string.format("ERROR: CPU list %s invalid, start %s is larger than end %s", item, start, ende))
                 return {}
             end
-            if tonumber(ende) >= #sorted_list then
+            if tonumber(ende) > #sorted_list then
                 print(string.format("ERROR: CPU list end %d larger than number of processors in affinity group %s", ende, tag))
                 return {}
             end

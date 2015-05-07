@@ -131,13 +131,13 @@ function getAvailGovs(cpuid)
 end
 
 local function testDriver()
-    local fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_driver")
+    local fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",0) .. "/cpufreq/scaling_driver")
     if verbosity == 3 then
-        print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_driver" )
+        print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",0) .. "/cpufreq/scaling_driver" )
     end
     local line = fp:read("*l")
     fp:close()
-    if line:match("acpi-cpufreq") then
+    if line == "acpi-cpufreq" then
         return true
     end
     return false
@@ -186,7 +186,7 @@ end
 topo = likwid.getCpuTopology()
 affinity = likwid.getAffinityInfo()
 if not domain then
-    domain = "N:1-" .. tostring(topo["numHWThreads"])
+    domain = "N:0-" .. tostring(topo["numHWThreads"]-1)
 end
 cpulist = {}
 numthreads, cpulist = likwid.cpustr_to_cpulist(domain)
