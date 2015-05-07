@@ -49,39 +49,46 @@
 #endif
 
 static int topology_isInitialized = 0;
+CpuInfo_t cpuinfo = NULL;
+CpuTopology_t cputopo = NULL;
+
 static int numa_isInitialized = 0;
+NumaTopology_t numainfo = NULL;
 static int affinity_isInitialized = 0;
+AffinityDomains_t affinity = NULL;
 static int perfmon_isInitialized = 0;
 static int timer_isInitialized = 0;
 static int power_isInitialized = 0;
+PowerInfo_t power;
 static int power_hasRAPL = 0;
 static int config_isInitialized = 0;
+Configuration_t configfile = NULL;
 
 
 static int lua_likwid_getConfiguration(lua_State* L)
 {
-    Configuration_t config;
+    
     if (config_isInitialized == 0)
     {
         init_configuration();
         config_isInitialized = 1;
+        configfile = get_configuration();
     }
-    config = get_configuration();
     lua_newtable(L);
     lua_pushstring(L, "topologyFile");
-    lua_pushstring(L, config->topologyCfgFileName);
+    lua_pushstring(L, configfile->topologyCfgFileName);
     lua_settable(L,-3);
     lua_pushstring(L, "daemonPath");
-    lua_pushstring(L, config->daemonPath);
+    lua_pushstring(L, configfile->daemonPath);
     lua_settable(L,-3);
     lua_pushstring(L, "daemonMode");
-    lua_pushinteger(L, (int)config->daemonMode);
+    lua_pushinteger(L, (int)configfile->daemonMode);
     lua_settable(L,-3);
     lua_pushstring(L, "maxNumThreads");
-    lua_pushinteger(L, config->maxNumThreads);
+    lua_pushinteger(L, configfile->maxNumThreads);
     lua_settable(L,-3);
     lua_pushstring(L, "maxNumNodes");
-    lua_pushinteger(L, config->maxNumNodes);
+    lua_pushinteger(L, configfile->maxNumNodes);
     lua_settable(L,-3);
     return 1;
 }
@@ -92,6 +99,7 @@ static int lua_likwid_putConfiguration(lua_State* L)
     {
         destroy_configuration();
         config_isInitialized = 0;
+        configfile = NULL;
     }
     return 0;
 }
@@ -126,11 +134,14 @@ static int lua_likwid_init(lua_State* L)
     {
         topology_init();
         topology_isInitialized = 1;
+        cpuinfo = get_cpuInfo();
+        cputopo = get_cpuTopology();
     }
     if (numa_isInitialized == 0)
     {
         numa_init();
         numa_isInitialized = 1;
+        numainfo = get_numaTopology();
     }
     if (perfmon_isInitialized == 0)
     {
@@ -153,6 +164,10 @@ static int lua_likwid_addEventSet(lua_State* L)
 {
     int groupId, n;
     const char* tmpString;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
     n = lua_gettop(L);
     tmpString = luaL_checkstring(L, n);
     luaL_argcheck(L, strlen(tmpString) > 0, n, "Event string must be larger than 0");
@@ -166,6 +181,10 @@ static int lua_likwid_setupCounters(lua_State* L)
 {
     int ret;
     int groupId = lua_tonumber(L,1);
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
     ret = perfmon_setupCounters(groupId-1);
     lua_pushnumber(L,ret);
     return 1;
@@ -175,6 +194,10 @@ static int lua_likwid_setupCounters(lua_State* L)
 static int lua_likwid_startCounters(lua_State* L)
 {
     int ret;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
     ret = perfmon_startCounters();
     lua_pushnumber(L,ret);
     return 1;
@@ -183,6 +206,10 @@ static int lua_likwid_startCounters(lua_State* L)
 static int lua_likwid_stopCounters(lua_State* L)
 {
     int ret;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
     ret = perfmon_stopCounters();
     lua_pushnumber(L,ret);
     return 1;
@@ -191,6 +218,10 @@ static int lua_likwid_stopCounters(lua_State* L)
 static int lua_likwid_readCounters(lua_State* L)
 {
     int ret;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
     ret = perfmon_readCounters();
     lua_pushnumber(L,ret);
     return 1;
@@ -200,6 +231,10 @@ static int lua_likwid_switchGroup(lua_State* L)
 {
     int ret = -1;
     int newgroup = lua_tonumber(L,1)-1;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
     if (newgroup >= perfmon_getNumberOfGroups())
     {
         newgroup = 0;
@@ -216,7 +251,36 @@ static int lua_likwid_switchGroup(lua_State* L)
 
 static int lua_likwid_finalize(lua_State* L)
 {
-    perfmon_finalize();
+    if (topology_isInitialized == 1)
+    {
+        topology_finalize();
+        topology_isInitialized = 0;
+    }
+    if (numa_isInitialized == 1)
+    {
+        numa_finalize();
+        numa_isInitialized = 0;
+    }
+    if (affinity_isInitialized == 1)
+    {
+        affinity_finalize();
+        affinity_isInitialized = 0;
+    }
+    if (topology_isInitialized == 1)
+    {
+        topology_finalize();
+        topology_isInitialized = 0;
+    }
+    if (perfmon_isInitialized == 1)
+    {
+        perfmon_finalize();
+        perfmon_isInitialized = 0;
+    }
+    if (config_isInitialized == 1)
+    {
+        destroy_configuration();
+        config_isInitialized = 0;
+    }
     return 0;
 }
 
@@ -235,6 +299,10 @@ static int lua_likwid_getResult(lua_State* L)
 static int lua_likwid_getNumberOfGroups(lua_State* L)
 {
     int number;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
     number = perfmon_getNumberOfGroups();
     lua_pushnumber(L,number);
     return 1;
@@ -243,6 +311,10 @@ static int lua_likwid_getNumberOfGroups(lua_State* L)
 static int lua_likwid_getIdOfActiveGroup(lua_State* L)
 {
     int number;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
     number = perfmon_getIdOfActiveGroup();
     lua_pushnumber(L,number+1);
     return 1;
@@ -252,6 +324,10 @@ static int lua_likwid_getRuntimeOfGroup(lua_State* L)
 {
     double time;
     int groupId;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
     groupId = lua_tonumber(L,1);
     time = perfmon_getTimeOfGroup(groupId-1);
     lua_pushnumber(L, time);
@@ -261,6 +337,10 @@ static int lua_likwid_getRuntimeOfGroup(lua_State* L)
 static int lua_likwid_getNumberOfEvents(lua_State* L)
 {
     int number, groupId;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
     groupId = lua_tonumber(L,1);
     number = perfmon_getNumberOfEvents(groupId-1);
     lua_pushnumber(L,number);
@@ -270,6 +350,10 @@ static int lua_likwid_getNumberOfEvents(lua_State* L)
 static int lua_likwid_getNumberOfThreads(lua_State* L)
 {
     int number;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
     number = perfmon_getNumberOfThreads();
     lua_pushnumber(L,number);
     return 1;
@@ -278,13 +362,12 @@ static int lua_likwid_getNumberOfThreads(lua_State* L)
 
 static int lua_likwid_getCpuInfo(lua_State* L)
 {
-    CpuInfo_t cpuinfo;
     if (topology_isInitialized == 0)
     {
         topology_init();
         topology_isInitialized = 1;
+        cpuinfo = get_cpuInfo();
     }
-    cpuinfo = get_cpuInfo();
     lua_newtable(L);
     lua_pushstring(L,"family");
     lua_pushunsigned(L,cpuinfo->family);
@@ -337,7 +420,6 @@ static int lua_likwid_getCpuInfo(lua_State* L)
 static int lua_likwid_getCpuTopology(lua_State* L)
 {
     int i;
-    CpuTopology_t cputopo;
     TreeNode* socketNode;
     int socketCount = 0;
     TreeNode* coreNode;
@@ -348,20 +430,16 @@ static int lua_likwid_getCpuTopology(lua_State* L)
     {
         topology_init();
         topology_isInitialized = 1;
+        cputopo = get_cpuTopology();
     }
     if (numa_isInitialized == 0)
     {
         if (numa_init() == 0)
         {
             numa_isInitialized = 1;
+            numainfo = get_numaTopology();
         }
     }
-    /*if (affinity_isInitialized == 0)
-    {
-        affinity_init();
-        affinity_isInitialized = 1;
-    }*/
-    cputopo = get_cpuTopology();
 
     lua_newtable(L);
 
@@ -522,18 +600,18 @@ static int lua_likwid_getCpuTopology(lua_State* L)
         lua_settable(L,-3);
     }
     lua_settable(L,-3);
-
     return 1;
 }
 
 static int lua_likwid_putTopology(lua_State* L)
 {
-    if (topology_isInitialized == 0)
+    if (topology_isInitialized == 1)
     {
-        return 0;
+        topology_finalize();
+        topology_isInitialized = 0;
+        cpuinfo = NULL;
+        cputopo = NULL;
     }
-    topology_finalize();
-    topology_isInitialized = 0;
     return 0;
 }
 
@@ -543,6 +621,10 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
     int i;
     char optString[1024];
     int optStringIndex = 0;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
     perfmon_init_maps();
     lua_newtable(L);
     lua_pushstring(L,"Counters");
@@ -647,17 +729,19 @@ static int lua_likwid_getOnlineDevices(lua_State* L)
 static int lua_likwid_getNumaInfo(lua_State* L)
 {
     uint32_t i,j;
-    NumaTopology_t numa;
     if (topology_isInitialized == 0)
     {
         topology_init();
         topology_isInitialized = 1;
+        cpuinfo = get_cpuInfo();
+        cputopo = get_cpuTopology();
     }
     if (numa_isInitialized == 0)
     {
         if (numa_init() == 0)
         {
             numa_isInitialized = 1;
+            numainfo = get_numaTopology();
         }
         else
         {
@@ -675,43 +759,44 @@ static int lua_likwid_getNumaInfo(lua_State* L)
     {
         affinity_init();
         affinity_isInitialized = 1;
+        affinity = get_affinityDomains();
     }
-    numa = get_numaTopology();
+    
     lua_newtable(L);
     lua_pushstring(L,"numberOfNodes");
-    lua_pushunsigned(L,numa->numberOfNodes);
+    lua_pushunsigned(L,numainfo->numberOfNodes);
     lua_settable(L,-3);
     
     lua_pushstring(L,"nodes");
     lua_newtable(L);
     
-    for(i=0;i<numa->numberOfNodes;i++)
+    for(i=0;i<numainfo->numberOfNodes;i++)
     {
         lua_pushinteger(L, i+1);
         lua_newtable(L);
         
         lua_pushstring(L,"id");
-        lua_pushunsigned(L,numa->nodes[i].id);
+        lua_pushunsigned(L,numainfo->nodes[i].id);
         lua_settable(L,-3);
         lua_pushstring(L,"totalMemory");
-        lua_pushunsigned(L,numa->nodes[i].totalMemory);
+        lua_pushunsigned(L,numainfo->nodes[i].totalMemory);
         lua_settable(L,-3);
         lua_pushstring(L,"freeMemory");
-        lua_pushunsigned(L,numa->nodes[i].freeMemory);
+        lua_pushunsigned(L,numainfo->nodes[i].freeMemory);
         lua_settable(L,-3);
         lua_pushstring(L,"numberOfProcessors");
-        lua_pushunsigned(L,numa->nodes[i].numberOfProcessors);
+        lua_pushunsigned(L,numainfo->nodes[i].numberOfProcessors);
         lua_settable(L,-3);
         lua_pushstring(L,"numberOfDistances");
-        lua_pushunsigned(L,numa->nodes[i].numberOfDistances);
+        lua_pushunsigned(L,numainfo->nodes[i].numberOfDistances);
         lua_settable(L,-3);
         
         lua_pushstring(L,"processors");
         lua_newtable(L);
-        for(j=0;j<numa->nodes[i].numberOfProcessors;j++)
+        for(j=0;j<numainfo->nodes[i].numberOfProcessors;j++)
         {
             lua_pushunsigned(L,j+1);
-            lua_pushunsigned(L,numa->nodes[i].processors[j]);
+            lua_pushunsigned(L,numainfo->nodes[i].processors[j]);
             lua_settable(L,-3);
         }
         lua_settable(L,-3);
@@ -728,12 +813,12 @@ static int lua_likwid_getNumaInfo(lua_State* L)
         
         lua_pushstring(L,"distances");
         lua_newtable(L);
-        for(j=0;j<numa->nodes[i].numberOfDistances;j++)
+        for(j=0;j<numainfo->nodes[i].numberOfDistances;j++)
         {
             lua_pushinteger(L,j+1);
             lua_newtable(L);
             lua_pushinteger(L,j);
-            lua_pushunsigned(L,numa->nodes[i].distances[j]);
+            lua_pushunsigned(L,numainfo->nodes[i].distances[j]);
             lua_settable(L,-3);
             lua_settable(L,-3);
         }
@@ -751,6 +836,7 @@ static int lua_likwid_putNumaInfo(lua_State* L)
     {
         numa_finalize();
         numa_isInitialized = 0;
+        numainfo = NULL;
     }
     return 0;
 }
@@ -778,26 +864,30 @@ static int lua_likwid_setMemInterleaved(lua_State* L)
 static int lua_likwid_getAffinityInfo(lua_State* L)
 {
     int i,j;
-    AffinityDomains_t affinity;
+    
     if (topology_isInitialized == 0)
     {
         topology_init();
         topology_isInitialized = 1;
+        cpuinfo = get_cpuInfo();
+        cputopo = get_cpuTopology();
     }
     if (numa_isInitialized == 0)
     {
         if (numa_init() == 0)
         {
             numa_isInitialized = 1;
+            numainfo = get_numaTopology();
         }
     }
     if (affinity_isInitialized == 0)
     {
         affinity_init();
         affinity_isInitialized = 1;
+        affinity = get_affinityDomains();
     }
 
-    affinity = get_affinityDomains();
+    
     if (!affinity)
     {
         lua_pushstring(L,"Cannot initialize affinity groups");
@@ -861,18 +951,21 @@ static int lua_likwid_putAffinityInfo(lua_State* L)
     {
         affinity_finalize();
         affinity_isInitialized = 0;
+        affinity = NULL;
     }
     return 0;
 }
 
 static int lua_likwid_getPowerInfo(lua_State* L)
 {
-    PowerInfo_t power;
+    
     int i;
     if (topology_isInitialized == 0)
     {
         topology_init();
         topology_isInitialized = 1;
+        cpuinfo = get_cpuInfo();
+        cputopo = get_cpuTopology();
     }
     if (power_isInitialized == 0)
     {
@@ -880,13 +973,13 @@ static int lua_likwid_getPowerInfo(lua_State* L)
         if (power_hasRAPL)
         {
             power_isInitialized = 1;
+            power = get_powerInfo();
         }
         else
         {
             return 0;
         }
     }
-    power = get_powerInfo();
 
 
     lua_newtable(L);
@@ -1010,7 +1103,12 @@ static int lua_likwid_getPowerInfo(lua_State* L)
 
 static int lua_likwid_putPowerInfo(lua_State* L)
 {
-    power_finalize();
+    if (power_isInitialized)
+    {
+        power_finalize();
+        power_isInitialized = 0;
+        power = NULL;
+    }
     return 0;
 }
 
@@ -1331,6 +1429,7 @@ static int lua_likwid_pinProcess(lua_State* L)
     {
         affinity_init();
         affinity_isInitialized = 1;
+        affinity = get_affinityDomains();
     }
     affinity_pinProcess(cpuID);
     if (!silent)
