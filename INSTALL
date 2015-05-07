@@ -1,96 +1,123 @@
 == Basic build ==
 
 1. Edit config.mk. Follow the comments there.
-   Optionally you can change compiler settings in include_[GCC|ICC].mk.
-   Please note that only the default compiler flags are supported and tested.
-2. make
-(2.a make likwid-bench  (if you want to build and install likwid-bench)
+   Optionally you can change compiler settings in include_[GCC|CLANG|ICC|MIC].mk.
+   Please note that only the default compiler flags GCC are supported and tested.
+2. make (Builds hwloc, lua, Likwid libraries, access daemons and likwid-bench)
 3. make install (this is required for likwid-pin and if you use the accessDaemon)
-4. setup access to the msr device files (see end of this document)
 
 Only the default flags set are tested. As it is not possible to test all
-compiler setting variants the Intel icc compiler is only build tested. A basic
-function test is done for the icc binary. The only variant fully tested is gcc
-with default compiler flags. It is therefore recommended to use gcc with the
-default flags. If you want to use and build the Fortran interface you can mix
-GCC with the Intel Fortran Compiler. More information on this can be found in
-the WIKI.
+compiler setting variants the Intel icc compiler and Clang is only build tested.
+A basic function test is done for the icc binary. The only variant fully tested
+is gcc with default compiler flags. It is therefore recommended to use gcc with
+the default flags. If you want to use and build the Fortran interface you can mix
+GCC with the Intel Fortran Compiler (default setup). You can change the Fortran
+compiler in make/include_[GCC|CLANG|ICC|MIC].mk.
 
 *NOTICE*
 
-All generated files are located in the [GCC|ICC] build directory.
-This includes the dependency files, object files and also the
-generated source files and the pas and assembly files for likwid-bench.
-If you debug your likwid-bench benchmarks you can look at all 
+All generated files are located in the [GCC|ICC|CLANG|MIC] build directory.
+This includes the dependency files, object files. The
+generated source files and the pas and assembly files for likwid-bench are build
+in bench/[GCC|ICC|CLANG|MIC].
+If you debug your likwid-bench benchmarks you can look at all
 intermediate build files and also the final assembly code.
 
 == Known problems ==
 
 On very old systems with old kernels (< 2.6.7) or old glibc versions likwid
 is build with reduced funtionality. This includes missing support for NUMA
-and pinning. 
+and pinning.
+likwid-setFrequencies can only be used if the acpi_cpufreq module is loaded. It
+is not possible to fix the frequency with the intel_pstate module.
 
 == Additional Targets ==
 
 make clean     -  clean the object directory
 make distclean -  clean also the executables/libraries
 make uninstall -  delete installed files
+make docs      -  generate html documentation using doxygen
+make local     -  set paths in Lua files to work from current directory
+                  (for testing only! Uses already installed access daemons and
+                  libraries.)
 
-== Build likwid-bench ==
+== Dependencies ==
+Most parts of the Likwid suite do not have external dependencies that need to be
+installed before you can build Likwid. If external libraries are used, they are
+shipped with Likwid.
 
-To build likwid-bench you have to explicitly call:
+Included dependencies:
+- hwloc
+- Lua
+- Perl Template toolkit
 
-make likwid-bench
+Build dependencies:
+- C compiler (commonly gcc, but clang and icc are also possible)
+- make
+- Perl
 
-This is because likwid-bench does not compile on 32bit systems.
+Runtime dependencies for likwid-perfscope:
+- gnuplot
+
+Runtime dependencies for likwid-agent (if enabled in configfile):
+- gmetric (Output to Ganglia Monitoring System)
+- rrdtool (Output to RRDs)
+- logger (Output to syslog)
+
+For the HTML documentation you further need doxygen.
 
 == Build  accessDaemon ==
 
-To build the accessDaemon:
+Change path for the accessDaemon:
 
-1. Edit config.mk and configure path in ACCESSDAEMON variable. 
-2. Set the desired default ACCESSMODE. You can overwrite this on the command line.
+1. Edit config.mk and configure path in ACCESSDAEMON variable. You can overwrite
+   it later in likwid.cfg
+2. Set the desired default ACCESSMODE. You can overwrite this on the command
+   line or likwid.cfg.
 2. make will also build the accessDaemon
-3. Install with
-   make install
+3. Install with (sudo) make install
 
-With the standard  make install target the daemon will also be installed in
-${PREFIX}/bin . Don't forget to copy the dameon if you configured a different
-path in ACCESSDAEMON.
+With the standard make install target the daemon will also be installed in
+to the path in $ACCESSDAEMON. It also sets the user to root and the suid bit.
 
 == Setup of msr module ==
 
-likwid-perfctr, likwid-powermeter and likwid-features require the Linux msr kernel module. This module
-is part of most standard distro kernels. You have to be root to do the initial setup.
+likwid-perfctr, likwid-powermeter, likwid-agent, require the Linux msr kernel
+module. This module is part of most standard distro kernels. You have to be root
+to do the initial setup.
 
-1. Check if the msr module is loaded with  'lsmod | grep msr' . There should be an output.
-2. It the module is not loaded load it with  'modprobe msr' . For automatic loading at startup
-consult your distros documentation how to do so.
-3. Adopt access rights on the msr device files for normal user. To allow everybody access you can 
-use 'chmod o+rw /dev/cpu/*/msr' . This is only recommended on save single user desktop systems.
+1. Check if the msr module is loaded with 'lsmod | grep msr'.
+   There should be an output.
+2. If the module is not loaded, load it with 'modprobe msr'. For automatic
+   loading at startup consult your distros documentation how to do so, commonly
+   by adding 'msr' to /etc/modules.
+3. Adopt access rights on the msr device files for normal user. To allow
+   everybody access you can use 'chmod o+rw /dev/cpu/*/msr'.
+   This is only recommended on save single user desktop systems and might be not
+   enough to grant access to anybody because of POSIX capabilites or other
+   security features of your distro.
 
 As a general access to the msr registers is not desired on security sensitive
-systems you can either implement a more sophisticated access rights settings
+systems, you can either implement a more sophisticated access rights settings
 with e.g. setgid. A common solution used on many other device files, e.g. for
 audio, is to introduce a group and make a chown on the msr device files to that
-group. Now if you execute likwid-perfctr with setgid on that group the
-executing user can use the tool but cannot directly write or read the msr
-device files.
+group or use dbus rules. Now if you execute likwid-perfctr with setgid on that
+group the executing user can use the tool but cannot directly write or read the
+msr device files.
 
 A secure solution is to use the accessDaemon, which encapsulates the access to
-the msr device files and performs a address check for allowed registers. For
-more information how to setup and use this solution have a look at the WIKI
-page:
-
-http://code.google.com/p/likwid/wiki/MSRDaemon
+the msr device files and performs an address check for allowed registers. For
+more information how to setup look at the HTML documentation.
 
 A demo for a root exploit involving the msr device files was published. As
 a consequence the security settings for access to the msr device files are
-tightened in recent kernels.
+tightened in recent kernels. The exploit used a specify register to alter the
+entry point for the current process to a malware. The daemon grants access only
+to hardware performance counter related registers.
 
 Just setting the file access rights or using suid root on the access daemon is
-not sufficient anymore. You have to register your binary now to get access.
-This is only necessary if above setup dos not work.
+not sufficient anymore for some distros. You have to register your binary at the
+libcap now to get access. This is only necessary if above setup does not work.
 
 You register the necessary capability by calling
 
@@ -101,7 +128,7 @@ The only feasable way is to register the likwid-accessD and proxy all access ove
 
 If you have still problems please let me know on the likwid mailing list:
 
-http://groups.google.com/group/likwid-users
+rrze-likwid@lists.fau.de
 
 
 
