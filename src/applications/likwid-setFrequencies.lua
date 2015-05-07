@@ -299,3 +299,6 @@ if governor then
         end
     end
 end
+likwid.putAffinityInfo()
+likwid.putTopology()
+os.exit(0)

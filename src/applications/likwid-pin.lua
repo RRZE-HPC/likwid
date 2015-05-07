@@ -74,13 +74,13 @@ local function usage()
     print("-h, --help\t\t Help message")
     print("-v, --version\t\t Version information")
     print("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)")
-    print("-i\t\t Set numa interleave policy with all involved numa nodes")
+    print("-i\t\t\t Set numa interleave policy with all involved numa nodes")
     print("-S, --sweep\t\t Sweep memory and LLC of involved NUMA nodes")
-    print("-c <list>\t Comma separated processor IDs or expression")
+    print("-c <list>\t\t Comma separated processor IDs or expression")
     print("-s, --skip <hex>\t Bitmask with threads to skip")
-    print("-p\t\t Print available domains with mapping on physical IDs")
-    print("\t\t If used together with -p option outputs a physical processor IDs.")
-    print("-d <string>\t Delimiter used for using -p to output physical processor list, default is comma.")
+    print("-p\t\t\t Print available domains with mapping on physical IDs")
+    print("\t\t\t If used together with -p option outputs a physical processor IDs.")
+    print("-d <string>\t\t Delimiter used for using -p to output physical processor list, default is comma.")
     print("-q, --quiet\t\t Silent without output")
     print("\n")
     examples()
@@ -108,9 +108,15 @@ end
 for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t:", "v", "V:", "verbose:", "help", "version", "skip","sweep", "quiet"}) do
     if opt == "h" or opt == "help" then
         usage()
+        likwid.putTopology()
+        likwid.putAffinityInfo()
+        likwid.putConfiguration()
         os.exit(0)
     elseif opt == "v" or opt == "version" then
         version()
+        likwid.putTopology()
+        likwid.putAffinityInfo()
+        likwid.putConfiguration()
         os.exit(0)
     elseif opt == "V" or opt == "verbose" then
         verbose = tonumber(arg)
@@ -123,6 +129,9 @@ for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t
         end
         if (num_threads == 0) then
             print("Failed to parse cpulist " .. arg)
+            likwid.putTopology()
+            likwid.putAffinityInfo()
+            likwid.putConfiguration()
             os.exit(1)
         end
     elseif (opt == "d") then
@@ -130,6 +139,9 @@ for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t
     elseif opt == "S" or opt == "sweep" then
         if (affinity == nil) then
             print("Option -S is not supported for unknown processor!")
+            likwid.putTopology()
+            likwid.putAffinityInfo()
+            likwid.putConfiguration()
             os.exit(1)
         end
         sweep_sockets = true
@@ -150,6 +162,9 @@ for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t
     else
         print("Unknown option -" .. opt .. "\n")
         usage()
+        likwid.putTopology()
+        likwid.putAffinityInfo()
+        likwid.putConfiguration()
         os.exit(0)
     end
 end
@@ -160,6 +175,9 @@ if print_domains and num_threads > 0 then
         outstr = outstr .. delimiter .. cpu
     end
     print(outstr:sub(2,outstr:len()))
+    likwid.putTopology()
+    likwid.putAffinityInfo()
+    likwid.putConfiguration()
     os.exit(0)
 elseif print_domains then
     for k,v in pairs(affinity["domains"]) do
@@ -167,6 +185,9 @@ elseif print_domains then
         print("\t" .. table.concat(v["processorList"], ","))
         print("")
     end
+    likwid.putTopology()
+    likwid.putAffinityInfo()
+    likwid.putConfiguration()
     os.exit(0)
 end
 
@@ -218,6 +239,9 @@ local err
 err = os.execute(exec)
 if (err == false) then
     print("Failed to execute command: ".. exec)
+    likwid.putTopology()
+    likwid.putAffinityInfo()
+    likwid.putConfiguration()
     os.exit(1)
 end
 
