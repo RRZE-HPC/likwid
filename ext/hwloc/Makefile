@@ -7,11 +7,15 @@ include ../../config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 
 CFLAGS    = -O2 -Wall -fPIC
-INCLUDES  = -I./include
-DEFINES   =
+INCLUDES  += -I./include
+#DEFINES   =
 LIBS      = -L. -lm -Wl,-E
-LFLAGS    = -Wno-unused-result
+LFLAGS    = -Wno-unused-result -fPIC
 Q         ?= @
+ifeq ($(COMPILER),MIC)
+CFLAGS += -mmic
+LFLAGS += -mmic
+endif
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)

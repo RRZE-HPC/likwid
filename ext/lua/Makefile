@@ -6,16 +6,13 @@ MAKE_DIR   = ../../make
 include ../../config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 
-CFLAGS    = -O2 -Wall -fPIC
-INCLUDES  = -I./includes
-DEFINES   = -DLUA_COMPAT_ALL -DLUA_USE_LINUX
-LIBS      = -lm -Wl,-E -ldl
-LFLAGS    =
+#CFLAGS    = -O2 -Wall -fPIC
+INCLUDES  += -I./includes
+DEFINES   += -DLUA_COMPAT_ALL -DLUA_USE_LINUX
+#LIBS      += -lm -Wl,-E -ldl
+#LFLAGS    =
 Q         ?= @
-ifeq ($(COMPILER),MIC)
-CFLAGS += -mmic
-LFLAGS += -mmic
-endif
+
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
