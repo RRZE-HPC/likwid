@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -191,9 +191,9 @@ int main(int argc, char** argv)
                 break;
             case 'g':
                 numberOfWorkgroups = LLU_CAST atol(optarg);
-                
+
                 tmp = numberOfWorkgroups;
-                
+
                 break;
             case 't':
                 testcase = bfromcstr(optarg);
@@ -264,7 +264,7 @@ int main(int argc, char** argv)
     }
 
     optind = 0;
-    while ((c = getopt (argc, argv, "w:t:s:l:i:aphv")) != -1) 
+    while ((c = getopt (argc, argv, "w:t:s:l:i:aphv")) != -1)
     {
         switch (c)
         {
@@ -380,11 +380,12 @@ int main(int argc, char** argv)
     time = (double) threads_data[0].cycles / (double) cpuClock;
     ownprintf(bdata(HLINE));
     printf("Cycles:\t\t\t%llu\n", LLU_CAST threads_data[0].cycles);
+    printf("CPU Clock:\t\t%llu\n", LLU_CAST cpuClock);
+    printf("Time:\t\t\t%e sec\n", time);
     printf("Iterations:\t\t%llu\n", LLU_CAST realIter);
     printf("Iterations per thread:\t%llu\n",LLU_CAST threads_data[0].data.iter);
     printf("Size:\t\t\t%" PRIu64 "\n",  realSize*test->bytes );
     printf("Size per thread:\t%llu\n", LLU_CAST threads_data[0].data.size*test->bytes);
-    printf("Time:\t\t\t%e sec\n", time);
     printf("Number of Flops:\t%llu\n", LLU_CAST (numberOfWorkgroups * iter * realSize *  test->flops));
     printf("MFlops/s:\t\t%.2f\n",
             1.0E-06 * ((double) numberOfWorkgroups * iter * realSize *  test->flops/  time));
@@ -406,7 +407,7 @@ int main(int argc, char** argv)
 
     ownprintf(bdata(HLINE));
     threads_destroy(numberOfWorkgroups);
-    
+
 #ifdef PERFMON
     likwid_markerClose();
 #endif
