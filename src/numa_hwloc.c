@@ -42,6 +42,26 @@ uint64_t getFreeNodeMem(int nodeId)
         }
         fclose(fp);
     }
+    else if (!access("/proc/meminfo", R_OK))
+    {
+        filename = bfromcstr("/proc/meminfo");
+        if (NULL != (fp = fopen (bdata(filename), "r"))) 
+        {
+            bstring src = bread ((bNread) fread, fp);
+            struct bstrList* tokens = bsplit(src,(char) '\n');
+            for (i=0;i<tokens->qty;i++)
+            {
+                if (binstr(tokens->entry[i],0,freeString) != BSTR_ERR)
+                {
+                     bstring tmp = bmidstr (tokens->entry[i], 10, blength(tokens->entry[i])-10  );
+                     bltrimws(tmp);
+                     struct bstrList* subtokens = bsplit(tmp,(char) ' ');
+                     free = str2int(bdata(subtokens->entry[0]));
+                }
+            }
+            fclose(fp);
+        }
+    }
     else
     {
         ERROR;
@@ -77,6 +97,26 @@ uint64_t getTotalNodeMem(int nodeId)
             }
         }
         fclose(fp);
+    }
+    else if (!access("/proc/meminfo", R_OK))
+    {
+        filename = bfromcstr("/proc/meminfo");
+        if (NULL != (fp = fopen (bdata(filename), "r"))) 
+        {
+            bstring src = bread ((bNread) fread, fp);
+            struct bstrList* tokens = bsplit(src,(char) '\n');
+            for (i=0;i<tokens->qty;i++)
+            {
+                if (binstr(tokens->entry[i],0,freeString) != BSTR_ERR)
+                {
+                     bstring tmp = bmidstr (tokens->entry[i], 10, blength(tokens->entry[i])-10  );
+                     bltrimws(tmp);
+                     struct bstrList* subtokens = bsplit(tmp,(char) ' ');
+                     free = str2int(bdata(subtokens->entry[0]));
+                }
+            }
+            fclose(fp);
+        }
     }
     else
     {
