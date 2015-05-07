@@ -12,7 +12,7 @@ ANSI_CFLAGS += -pedantic
 #ANSI_CFLAGS += -Wextra
 #ANSI_CFLAGS += -Wall
 
-CFLAGS   = -mmic -O0 -g -Wno-format
+CFLAGS   = -mmic -O1 -g -Wno-format -fPIC
 FCFLAGS  = -J ./  -fsyntax-only
 #FCFLAGS  = -module ./ 
 ASFLAGS  =  -mmic -c
