@@ -14,11 +14,13 @@ that performs the actual setting of CPU cores' frequency and governor.
 is a command line application that mediates the request from
 .B likwid-setFrequencies(1)
 because setting a CPU core's frequency and/or governor requires root privileges. This executable must be suid-root.
+.B likwid-setFreq
+works only with the kernel module acpi-cpufreq. The recent intel_pstate module does not allow to set fixed frequencies.
 
 
 .SH AUTHOR
 Written by Thomas Roehl <thomas.roehl@googlemail.com>.
 .SH BUGS
-Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+Report Bugs on <https://github.com/rrze-likwid/likwid/issues>.
 .SH "SEE ALSO"
 likwid-setFrequencies(1)

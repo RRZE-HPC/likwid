@@ -17,6 +17,16 @@ is a command line application to set the clock frequency of CPU cores. Since onl
 The daemon needs the suid permission bit to be set in order to manipulate the sysfs entries. With
 .B likwid-setFrequencies
 the clock of all cores inside a the cpu_list or affinity domain can be set to a specific frequency or governor at once.
+.B likwid-setFrequencies
+works only with the kernel module
+.B acpi-cpufreq.
+The recent
+.B intel_pstate
+module does not allow to set fixed frequencies. In order to deactivate
+.B intel_pstate
+add 'intel_pstate=disable' to your kernel boot commandline (commonly in grub) and load the
+.B acpi-cpufreq
+module.
 .SH OPTIONS
 .TP
 .B \-h
@@ -45,6 +55,6 @@ set a fixed frequency at all CPU cores inside the affinity domain. Implicitly se
 .SH AUTHOR
 Written by Thomas Roehl <thomas.roehl@googlemail.com>.
 .SH BUGS
-Report Bugs on <http://code.google.com/p/likwid/issues/list>.
+Report Bugs on <https://github.com/rrze-likwid/likwid/issues>.
 .SH "SEE ALSO"
 likwid-pin(1), likwid-perfctr(1), likwid-powermeter(1)
