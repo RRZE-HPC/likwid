@@ -7,9 +7,9 @@ include ../../config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 
 CFLAGS    = -O2 -Wall -fPIC
-INCLUDES  += -I./includes
-DEFINES   += -DLUA_COMPAT_ALL -DLUA_USE_LINUX
-LIBS      += -ldl
+INCLUDES  = -I./includes
+DEFINES   = -DLUA_COMPAT_ALL -DLUA_USE_LINUX
+LIBS      = -lm -Wl,-E -ldl
 #LFLAGS    =
 Q         ?= @
 ifeq ($(COMPILER),MIC)
