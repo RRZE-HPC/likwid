@@ -858,11 +858,31 @@ int topology_init(void)
 
 void topology_finalize(void)
 {
-    free(cpuid_info.features);
-    free(cpuid_info.osname);
-    free(cpuid_topology.cacheLevels);
-    free(cpuid_topology.threadPool);
-    tree_destroy(cpuid_topology.topologyTree);
+    if (cpuid_info.features != NULL)
+    {
+        free(cpuid_info.features);
+        cpuid_info.features = NULL;
+    }
+    if (cpuid_info.osname != NULL)
+    {
+        free(cpuid_info.osname);
+        cpuid_info.osname = NULL;
+    }
+    if (cpuid_topology.cacheLevels != NULL)
+    {
+        free(cpuid_topology.cacheLevels);
+        cpuid_topology.cacheLevels = NULL;
+    }
+    if (cpuid_topology.threadPool != NULL)
+    {
+        free(cpuid_topology.threadPool);
+        cpuid_topology.threadPool = NULL;
+    }
+    if (cpuid_topology.topologyTree != NULL)
+    {
+        tree_destroy(cpuid_topology.topologyTree);
+        cpuid_topology.topologyTree = NULL;
+    }
 }
 
 
