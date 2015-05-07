@@ -303,8 +303,9 @@ local function printcsv(tab, linelength)
         return
     end
     local nr_lines = tablelength(tab[1])
-    str = ""
+    local str = ""
     for j=1,nr_lines do
+        str = ""
         for i=1,nr_columns do
             str = str .. tostring(tab[i][j])
             if (i ~= nr_columns) then
@@ -314,8 +315,9 @@ local function printcsv(tab, linelength)
         if nr_columns < linelength then
             str = str .. string.rep(",", linelength-nr_columns)
         end
+        print(str)
     end
-    print(str)
+    
 end
 
 likwid.printcsv = printcsv
@@ -909,6 +911,7 @@ likwid.tableToMinMaxAvgSum = tableMinMaxAvgSum
 local function printOutput(groups, results, groupData, cpulist)
     local nr_groups = #groups
     local maxLineFields = 0
+    local cpuinfo = likwid_getCpuInfo()
     
     for g, group in pairs(groups) do
         local groupID = group["ID"]
@@ -992,6 +995,14 @@ local function printOutput(groups, results, groupData, cpulist)
         maxLineFields = math.max(#firsttab, #firsttab_combined,
                                  #secondtab, #secondtab_combined)
         if use_csv then
+            print(string.format("STRUCT,Info,3%s",string.rep(",",maxLineFields-3)))
+            print(string.format("CPU name:,%s%s", cpuinfo["osname"],string.rep(",",maxLineFields-2)))
+            print(string.format("CPU type:,%s%s", cpuinfo["name"],string.rep(",",maxLineFields-2)))
+            if cpuinfo["clock"] > 0 then
+                print(string.format("CPU clock:,%s GHz%s", cpuinfo["clock"]*1.E-09,string.rep(",",maxLineFields-2)))
+            else
+                print(string.format("CPU clock:,%s GHz%s", likwid.getCpuClock()*1.E-09,string.rep(",",maxLineFields-2)))
+            end
             print(string.format("TABLE,Raw,%d%s",#firsttab[1]-1,string.rep(",",maxLineFields-3)))
             likwid.printcsv(firsttab, maxLineFields)
         else
