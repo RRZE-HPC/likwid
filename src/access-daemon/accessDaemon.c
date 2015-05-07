@@ -124,7 +124,7 @@ static char pci_filepath[MAX_PATH_LENGTH];
  *   2                  0xbf
  *   3                  0xff
  */
-static char* socket_bus[MAX_NUM_NODES];
+static char* socket_bus[MAX_NUM_NODES] = { [0 ... (MAX_NUM_NODES-1)] = NULL};
 
 
 static PciDevice sandybridgeEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
@@ -464,6 +464,13 @@ static void stop_daemon(void)
 {
     kill_client();
     syslog(LOG_NOTICE, "daemon exiting");
+    for (int i=0;i<MAX_NUM_NODES;i++)
+    {
+        if (socket_bus[i] != NULL)
+        {
+            free(socket_bus[i]);
+        }
+    }
 
     if (sockfd != -1)
     {
