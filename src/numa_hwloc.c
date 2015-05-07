@@ -1,8 +1,37 @@
+/*
+ * =======================================================================================
+ *
+ *      Filename:  numa_hwloc.c
+ *
+ *      Description:  Interface to hwloc for NUMA topology
+ *
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
+ *
+ *      Author:  Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Project:  likwid
+ *
+ *      Copyright (C) 2015 Thomas Roehl
+ *
+ *      This program is free software: you can redistribute it and/or modify it under
+ *      the terms of the GNU General Public License as published by the Free Software
+ *      Foundation, either version 3 of the License, or (at your option) any later
+ *      version.
+ *
+ *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License along with
+ *      this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * =======================================================================================
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 
 #include <error.h>
-//#include <strUtil.h>
 
 #include <numa.h>
 #include <topology.h>
@@ -179,9 +208,7 @@ int hwloc_numa_init(void)
     {
         hwloc_type = HWLOC_OBJ_SOCKET;
         numa_info.numberOfNodes = 1;
-        maxIdConfiguredNode = 1;
-        i = 0;
-    
+
         numa_info.nodes = (NumaNode*) malloc(sizeof(NumaNode));
         if (!numa_info.nodes)
         {
@@ -189,24 +216,24 @@ int hwloc_numa_init(void)
             return -1;
         }
         
-        numa_info.nodes[i].id = i;
-        numa_info.nodes[i].numberOfProcessors = 0;
-        numa_info.nodes[i].totalMemory = getTotalNodeMem(i);
-        numa_info.nodes[i].freeMemory = getFreeNodeMem(i);
-        numa_info.nodes[i].processors = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
-        if (!numa_info.nodes[i].processors)
+        numa_info.nodes[0].id = 0;
+        numa_info.nodes[0].numberOfProcessors = 0;
+        numa_info.nodes[0].totalMemory = getTotalNodeMem(0);
+        numa_info.nodes[0].freeMemory = getFreeNodeMem(0);
+        numa_info.nodes[0].processors = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
+        if (!numa_info.nodes[0].processors)
         {
-            fprintf(stderr,"No memory to allocate %ld byte for processors array of NUMA node %d\n",MAX_NUM_THREADS * sizeof(uint32_t),i);
+            fprintf(stderr,"No memory to allocate %ld byte for processors array of NUMA node %d\n",MAX_NUM_THREADS * sizeof(uint32_t),0);
             return -1;
         }
-        numa_info.nodes[i].distances = (uint32_t*) malloc(sizeof(uint32_t));
-        if (!numa_info.nodes[i].distances)
+        numa_info.nodes[0].distances = (uint32_t*) malloc(sizeof(uint32_t));
+        if (!numa_info.nodes[0].distances)
         {
-            fprintf(stderr,"No memory to allocate %ld byte for distances array of NUMA node %d\n",sizeof(uint32_t),i);
+            fprintf(stderr,"No memory to allocate %ld byte for distances array of NUMA node %d\n",sizeof(uint32_t),0);
             return -1;
         }
-        numa_info.nodes[i].distances[i] = 10;
-        numa_info.nodes[i].numberOfDistances = 1;
+        numa_info.nodes[0].distances[0] = 10;
+        numa_info.nodes[0].numberOfDistances = 1;
         cores_per_socket = cpuid_topology.numHWThreads/cpuid_topology.numSockets;
         
         for (d=0; d<hwloc_get_nbobjs_by_type(hwloc_topology, hwloc_type); d++)
@@ -214,8 +241,8 @@ int hwloc_numa_init(void)
             obj = hwloc_get_obj_by_type(hwloc_topology, hwloc_type, d);
             /* depth is here used as index in the processors array */        
             depth = d * cores_per_socket;
-            numa_info.nodes[i].numberOfProcessors += hwloc_record_objs_of_type_below_obj(
-                    hwloc_topology, obj, HWLOC_OBJ_PU, &depth, &numa_info.nodes[i].processors);
+            numa_info.nodes[0].numberOfProcessors += hwloc_record_objs_of_type_below_obj(
+                    hwloc_topology, obj, HWLOC_OBJ_PU, &depth, &numa_info.nodes[0].processors);
         }
     }
     else
@@ -231,21 +258,24 @@ int hwloc_numa_init(void)
         for (i=0; i<numa_info.numberOfNodes; i++)
         {
             obj = hwloc_get_obj_by_depth(hwloc_topology, depth, i);
-            
+
             numa_info.nodes[i].id = obj->os_index;
-            if (obj->os_index > maxIdConfiguredNode)
-                maxIdConfiguredNode = obj->os_index;
-            if (obj->memory.local_memory == 0)
-            {
-                numa_info.nodes[i].totalMemory = getTotalNodeMem(i);
-            }
-            else
+
+            if (obj->memory.local_memory != 0)
             {
                 numa_info.nodes[i].totalMemory = (uint64_t)(obj->memory.local_memory/1024);
             }
+            else if (obj->memory.total_memory != 0)
+            {
+                numa_info.nodes[i].totalMemory = (uint64_t)(obj->memory.total_memory/1024);
+            }
+            else
+            {
+                numa_info.nodes[i].totalMemory = getTotalNodeMem(numa_info.nodes[i].id);
+            }
             
             /* freeMemory not detected by hwloc, do it the native way */
-            numa_info.nodes[i].freeMemory = getFreeNodeMem(i);
+            numa_info.nodes[i].freeMemory = getFreeNodeMem(numa_info.nodes[i].id);
             numa_info.nodes[i].processors = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
             if (!numa_info.nodes[i].processors)
             {
@@ -267,13 +297,11 @@ int hwloc_numa_init(void)
                 numa_info.nodes[i].numberOfDistances = distances->nbobjs;
                 for(d=0;d<distances->nbobjs;d++)
                 {
-                    numa_info.nodes[i].distances[d] = distances->latency[i*distances->nbobjs +d] * distances->latency_base;
+                    numa_info.nodes[i].distances[d] = distances->latency[i*distances->nbobjs + d] * distances->latency_base;
                 }
-                
             }
             else
             {
-                
                 numa_info.nodes[i].numberOfDistances = numa_info.numberOfNodes;
                 for(d=0;d<numa_info.numberOfNodes;d++)
                 {

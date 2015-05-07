@@ -3,15 +3,17 @@
  *
  *      Filename:  numa.c
  *
- *      Description:  Implementation of Linux NUMA interface
+ *      Description:  Implementation of Linux NUMA interface. Selects between hwloc and
+ *                    procfs/sysfs backends.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig and Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -62,7 +64,6 @@
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 NumaTopology numa_info = {0,NULL};
-int maxIdConfiguredNode = 0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
