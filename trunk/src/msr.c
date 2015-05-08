@@ -6,16 +6,17 @@
  *      Description:  Implementation of msr module.
  *                   Provides API to read and write values to the model
  *                   specific registers on x86 processors using the msr
- *                   sys interface of the Linux 2.6 kernel. This module 
+ *                   sys interface of the Linux 2.6 kernel. This module
  *                   is based on the msr-util tools.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com.
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig, Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -154,9 +155,9 @@ msr_init(int initSocket_fd)
         fd = open(msr_file_name, O_RDWR);   
         if (fd < 0)
         {
-            ERROR_PRINT("Cannot access MSR device file %s: %s.\n"
-                        "Please check if 'msr' module is loaded and device files have correct permissions\n"
-                        "Alternatively you might want to look into (sys)daemonmode\n",msr_file_name , strerror(errno));
+            ERROR_PRINT(Cannot access MSR device file %s: %s.,msr_file_name , strerror(errno))
+            ERROR_PLAIN_PRINT(Please check if 'msr' module is loaded and device files have correct permissions);
+            ERROR_PLAIN_PRINT(Alternatively you might want to look into (sys)daemonmode);
             free(msr_file_name);
             return -EPERM;
         }

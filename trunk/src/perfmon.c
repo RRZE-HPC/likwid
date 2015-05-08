@@ -1,3 +1,34 @@
+/*
+ * =======================================================================================
+ *
+ *      Filename:  perfmon.c
+ *
+ *      Description:  Main implementation of the performance monitoring module
+ *
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
+ *
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Project:  likwid
+ *
+ *      Copyright (C) 2013 Jan Treibig, Thomas Roehl
+ *
+ *      This program is free software: you can redistribute it and/or modify it under
+ *      the terms of the GNU General Public License as published by the Free Software
+ *      Foundation, either version 3 of the License, or (at your option) any later
+ *      version.
+ *
+ *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License along with
+ *      this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * =======================================================================================
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -79,7 +110,7 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     "EDGEDETECT",
     "THRESHOLD",
     "INVERT",
-    "COUNT_KERNEL",
+    "KERNEL",
     "ANYTHREAD",
     "OCCUPANCY",
     "OCCUPANCY_FILTER",
@@ -154,13 +185,11 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
                 ret = FALSE;
             }
         }
-        /*else
+        else
         {
-            printf("Err %d Tmp 0x%llx\n", err, tmp);
-            DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Counter %s already in use. Skipping setup of this event,
+            DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s has bits set but we ignore it,
                                              counter_map[*index].key);
-            *type = NOTYPE;
-        }*/
+        }
     }
     else if ((ret) && ((*type == POWER) || (*type == WBOX0FIX) || (*type == THERMAL)))
     {
@@ -419,9 +448,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
             {
                 continue;
             }
-            //sscanf(bdata(subtokens->entry[1]), "%x", &(event->options[event->numberOfOptions].value));
         }
-        //event->numberOfOptions++;
     }
     for(i=event->numberOfOptions-1;i>=0;i--)
     {

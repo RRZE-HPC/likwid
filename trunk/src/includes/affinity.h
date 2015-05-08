@@ -8,10 +8,11 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
+ *                Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig, Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -43,9 +44,6 @@ extern int affinity_core2node_lookup[MAX_NUM_THREADS];
 extern int affinity_processGetProcessorId();
 extern int affinity_threadGetProcessorId();
 extern const AffinityDomain* affinity_getDomain(bstring domain);
-
-/* DEPRECATED
-extern void affinity_printDomains();*/
 
 
 #endif /*AFFINITY_H*/

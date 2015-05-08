@@ -3,15 +3,15 @@
  *
  *      Filename:  perfmon_silvermont.h
  *
- *      Description:  Header file of perfmon module for Intel Atom Silvermont
+ *      Description:  Header file of perfmon module for Intel Atom (Silvermont)
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2014 Jan Treibig
+ *      Copyright (C) 2014 Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

@@ -3,15 +3,16 @@
  *
  *      Filename:  perfmon_ivybridge.h
  *
- *      Description:  Header File of perfmon module for Ivy Bridge.
+ *      Description:  Header File of perfmon module for Intel Ivy Bridge.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig, Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -111,7 +112,7 @@ int ivb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 case EVENT_OPTION_ANYTHREAD:
                     flags |= (1ULL<<21);
                     break;
-                
+
                 case EVENT_OPTION_MATCH0:
                     offcore_flags |= (event->options[j].value & 0x8FFF);
                     break;
@@ -508,7 +509,7 @@ int ivb_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     VERBOSEPRINTREG(cpu_id, box_map[type].filterRegister1,
                                     event->options[j].value & 0xFFFFFFFFULL, SETUP_WBOX_FILTER);
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV,
-                                    box_map[type].filterRegister1, 
+                                    box_map[type].filterRegister1,
                                     event->options[j].value & 0xFFFFFFFFULL));
                     break;
                 default:
@@ -777,7 +778,7 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterType type = eventSet->events[i].type;
             if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
@@ -841,7 +842,7 @@ uint64_t ivb_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, i
     PciDeviceIndex dev = counter_map[index].device;
     uint64_t counter1 = counter_map[index].counterRegister;
     uint64_t counter2 = counter_map[index].counterRegister2;
-    
+
     if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
     {
         return result;
@@ -852,6 +853,7 @@ uint64_t ivb_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, i
     }
 
     CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
+    VERBOSEPRINTPCIREG(cpu_id, dev, counter1, tmp, UNCORE_READ);
 
     if (flags & FREEZE_FLAG_CLEAR_CTR)
     {
@@ -862,7 +864,8 @@ uint64_t ivb_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, i
         result = (tmp<<32);
         tmp = 0x0ULL;
         CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter2, &tmp));
-        result |= (tmp & 0xFFFFFFFF);
+        VERBOSEPRINTPCIREG(cpu_id, dev, counter2, tmp, UNCORE_READ);
+        result += (tmp & 0xFFFFFFFF);
         if (flags & FREEZE_FLAG_CLEAR_CTR)
         {
             CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter2, 0x0U));
@@ -929,7 +932,7 @@ int ivb_uncore_overflow(int cpu_id, RegisterIndex index, PerfmonEvent *event,
                 }
                 else
                 {
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, 
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV,
                                                      box_map[type].statusRegister,
                                                      (1<<box_offset)));
                 }

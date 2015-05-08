@@ -3,13 +3,12 @@
  *
  *      Filename:  likwid.h
  *
- *      Description:  Header File of likwid marker API
+ *      Description:  Header File of likwid API
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
  *      Authors:  Thomas Roehl (tr), thomas.roehl@googlemail.com
- *                Jan Treibig (jt), jan.treibig@gmail.com,
  *
  *      Project:  likwid
  *
