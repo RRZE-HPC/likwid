@@ -8,10 +8,11 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig, Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -41,12 +42,10 @@
 #include <pci_types.h>
 #include <power_types.h>
 #include <thermal_types.h>
-#include <test_types.h>
 #include <tree_types.h>
 #include <topology_types.h>
 #include <perfmon_types.h>
 #include <libperfctr_types.h>
-#include <barrier_types.h>
 #include <cpuFeatures_types.h>
 
 

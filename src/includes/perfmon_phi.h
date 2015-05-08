@@ -3,15 +3,16 @@
  *
  *      Filename:  perfmon_phi.h
  *
- *      Description:  Header File of perfmon module for Xeon Phi.
+ *      Description:  Header File of perfmon module for Intel Xeon Phi.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig 
+ *      Copyright (C) 2013 Jan Treibig, Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

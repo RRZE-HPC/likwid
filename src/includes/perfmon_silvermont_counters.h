@@ -1,17 +1,17 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_ivybridge_counters.h
+ *      Filename:  perfmon_silvermont_counters.h
  *
- *      Description: Counter header file of perfmon module for Ivy Bridge.
+ *      Description: Counter header file of perfmon module for Intel Atom (Silvermont)
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2014 Jan Treibig
+ *      Copyright (C) 2014 Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

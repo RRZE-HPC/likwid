@@ -4,13 +4,13 @@
 #
 #      Description:  Event list for AMD Kabini
 #
-#      Version:   3.0
-#      Released:  30.05.2013
+#      Version:   <VERSION>
+#      Released:  <DATE>
 #
-#      Author: saravanan.ekanathan@amd.com
+#      Author:   saravanan.ekanathan@amd.com
 #      Project:  likwid
 #
-#      Copyright (c) 2013, Jan Treibig and Thomas Roehl
+#      Copyright (c) 2013 Jan Treibig
 #      All rights reserved.
 #
 #      Redistribution and use in source and binary forms, with or without

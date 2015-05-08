@@ -11,7 +11,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2014 Thomas Roehl

@@ -3,16 +3,16 @@
  *
  *      Filename:  perfmon_kabini_counters.h
  *
- *      Description:  Counter Header File of perfmon module for AMD Family16
+ *      Description:  Counter Header File of perfmon module for AMD Family 16
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *               Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2012 Jan Treibig and Thomas Roehl
+ *      Copyright (C) 2012 Jan Treibig, Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 Jan Treibig, Thomas Roehl
+ *      Copyright (C) 2013 Jan Treibig, Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -201,7 +201,7 @@ power_init(int cpuId)
                 }
                 else
                 {
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, RAPL domain %s not supported, power_names[i]);
+                    DEBUG_PRINT(DEBUGLEV_DETAIL, RAPL domain %s not supported, power_names[i]);
                     continue;
                 }
                 if (limit_regs[i] != 0x0)
@@ -213,7 +213,7 @@ power_init(int cpuId)
                     }
                     else
                     {
-                        DEBUG_PRINT(DEBUGLEV_INFO, Deactivating limit register for RAPL domain %s, power_names[i]);
+                        DEBUG_PRINT(DEBUGLEV_DETAIL, Deactivating limit register for RAPL domain %s, power_names[i]);
                         limit_regs[i] = 0x0;
                     }
                 }
@@ -231,11 +231,11 @@ power_init(int cpuId)
                             power_info.domains[i].maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
                         }
                     }
-                    /*else
+                    else
                     {
-                        DEBUG_PRINT(DEBUGLEV_INFO, Deactivating info register for RAPL domain %s, power_names[i]);
+                        DEBUG_PRINT(DEBUGLEV_DETAIL, Deactivating info register for RAPL domain %s, power_names[i]);
                         info_regs[i] = 0x0;
-                    }*/
+                    }
                 }
                 if (policy_regs[i] != 0x0)
                 {
@@ -244,11 +244,11 @@ power_init(int cpuId)
                     {
                         power_info.domains[i].supportFlags |= POWER_DOMAIN_SUPPORT_POLICY;
                     }
-                    /*else
+                    else
                     {
-                        DEBUG_PRINT(DEBUGLEV_INFO, Deactivating policy register for RAPL domain %s, power_names[i]);
+                        DEBUG_PRINT(DEBUGLEV_DETAIL, Deactivating policy register for RAPL domain %s, power_names[i]);
                         policy_regs[i] = 0x0;
-                    }*/
+                    }
                 }
                 if (perf_regs[i] != 0x0)
                 {
@@ -257,11 +257,11 @@ power_init(int cpuId)
                     {
                         power_info.domains[i].supportFlags |= POWER_DOMAIN_SUPPORT_PERF;
                     }
-                    /*else
+                    else
                     {
-                        DEBUG_PRINT(DEBUGLEV_INFO, Deactivating perf register for RAPL domain %s, power_names[i]);
+                        DEBUG_PRINT(DEBUGLEV_DETAIL, Deactivating perf register for RAPL domain %s, power_names[i]);
                         perf_regs[i] = 0x0;
-                    }*/
+                    }
                 }
             }
         }
@@ -280,7 +280,7 @@ power_init(int cpuId)
     return 0;
 }
 
-
+/* All functions below are experimental and probably don't work */
 int power_perfGet(int cpuId, PowerType domain, uint32_t* status)
 {
     int err = 0;

@@ -3,16 +3,16 @@
  *
  *      Filename:  perfmon_westmereEX_counters.h
  *
- *      Description: Counter Header File of perfmon module for Westmere EX.
+ *      Description: Counter Header File of perfmon module for Intel Westmere EX.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
- *               Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2014 Jan Treibig and Thomas Roehl
+ *      Copyright (C) 2014 Jan Treibig, Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

@@ -8,7 +8,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2014 Jan Treibig
