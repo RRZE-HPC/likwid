@@ -9,10 +9,11 @@
  *      Released:  <DATE>
  *
  *      Authors:  Michael Meier, michael.meier@rrze.fau.de
- *                Jan Treibig (jt), jan.treibig@gmail.com
+ *                Jan Treibig (jt), jan.treibig@gmail.com,
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2013 Jan Treibig
+ *      Copyright (C) 2015 Michael Meier, Jan Treibig, Thomas Roehl
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -386,7 +387,7 @@ static void pci_read(AccessDataRecord* dRecord)
 
         if ( FD_PCI[socketId][device] < 0)
         {
-            syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pci_filepath, 
+            syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pci_filepath,
                     pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
@@ -431,7 +432,7 @@ static void pci_write(AccessDataRecord* dRecord)
 
         if ( FD_PCI[socketId][device] < 0)
         {
-            syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pci_filepath, 
+            syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pci_filepath,
                         pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
@@ -440,7 +441,7 @@ static void pci_write(AccessDataRecord* dRecord)
 
     if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
     {
-        syslog(LOG_ERR, "Failed to write data to pci device file %s for device %s (%s) on socket %u",pci_filepath, 
+        syslog(LOG_ERR, "Failed to write data to pci device file %s for device %s (%s) on socket %u",pci_filepath,
                 pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
@@ -712,11 +713,12 @@ int main(void)
 
             if ( FD_MSR[i] < 0 )
             {
+                syslog(LOG_ERR, "Failed to open device file %s: %s, trying /dev/msr%d", msr_file_name, strerror(errno), i);
                 sprintf(msr_file_name,"/dev/msr%d",i);
                 FD_MSR[i] = open(msr_file_name, O_RDWR);
                 if ( FD_MSR[i] < 0 )
                 {
-                    syslog(LOG_ERR, "Failed to open device file %s.", msr_file_name);
+                    syslog(LOG_ERR, "Failed to open device file %s: %s.", msr_file_name, strerror(errno));
                 }
             }
         }
@@ -805,7 +807,7 @@ int main(void)
                             }
                             else
                             {
-                                syslog(LOG_NOTICE, "Device %s not found at path %s, excluded it from device list\n",pci_devices[i].name,pci_filepath);
+                                syslog(LOG_NOTICE, "Device %s not found at path %s, excluded it from device list: %s\n",pci_devices[i].name,pci_filepath, strerror(errno));
                             }
                         }
                     }
