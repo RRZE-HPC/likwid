@@ -8,7 +8,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2015 Thomas Roehl
@@ -74,6 +74,10 @@ static int lua_likwid_getConfiguration(lua_State* L)
         config_isInitialized = 1;
         configfile = get_configuration();
     }
+    if ((config_isInitialized) && (configfile == NULL))
+    {
+        configfile = get_configuration();
+    }
     lua_newtable(L);
     lua_pushstring(L, "topologyFile");
     lua_pushstring(L, configfile->topologyCfgFileName);
@@ -137,10 +141,22 @@ static int lua_likwid_init(lua_State* L)
         cpuinfo = get_cpuInfo();
         cputopo = get_cpuTopology();
     }
+    if ((topology_isInitialized) && (cpuinfo == NULL))
+    {
+        cpuinfo = get_cpuInfo();
+    }
+    if ((topology_isInitialized) && (cputopo == NULL))
+    {
+        cputopo = get_cpuTopology();
+    }
     if (numa_isInitialized == 0)
     {
         numa_init();
         numa_isInitialized = 1;
+        numainfo = get_numaTopology();
+    }
+    if ((numa_isInitialized) && (numainfo == NULL))
+    {
         numainfo = get_numaTopology();
     }
     if (perfmon_isInitialized == 0)
@@ -255,21 +271,20 @@ static int lua_likwid_finalize(lua_State* L)
     {
         topology_finalize();
         topology_isInitialized = 0;
+        cputopo = NULL;
+        cpuinfo = NULL;
     }
     if (numa_isInitialized == 1)
     {
         numa_finalize();
         numa_isInitialized = 0;
+        numainfo = NULL;
     }
     if (affinity_isInitialized == 1)
     {
         affinity_finalize();
         affinity_isInitialized = 0;
-    }
-    if (topology_isInitialized == 1)
-    {
-        topology_finalize();
-        topology_isInitialized = 0;
+        affinity = NULL;
     }
     if (perfmon_isInitialized == 1)
     {
@@ -280,6 +295,7 @@ static int lua_likwid_finalize(lua_State* L)
     {
         destroy_configuration();
         config_isInitialized = 0;
+        configfile = NULL;
     }
     return 0;
 }
@@ -368,6 +384,10 @@ static int lua_likwid_getCpuInfo(lua_State* L)
         topology_isInitialized = 1;
         cpuinfo = get_cpuInfo();
     }
+    if ((topology_isInitialized) && (cpuinfo == NULL))
+    {
+        cpuinfo = get_cpuInfo();
+    }
     lua_newtable(L);
     lua_pushstring(L,"family");
     lua_pushunsigned(L,cpuinfo->family);
@@ -432,6 +452,10 @@ static int lua_likwid_getCpuTopology(lua_State* L)
         topology_isInitialized = 1;
         cputopo = get_cpuTopology();
     }
+    if ((topology_isInitialized) && (cputopo == NULL))
+    {
+        cputopo = get_cpuTopology();
+    }
     if (numa_isInitialized == 0)
     {
         if (numa_init() == 0)
@@ -439,6 +463,10 @@ static int lua_likwid_getCpuTopology(lua_State* L)
             numa_isInitialized = 1;
             numainfo = get_numaTopology();
         }
+    }
+    if ((numa_isInitialized) && (numainfo == NULL))
+    {
+        numainfo = get_numaTopology();
     }
 
     lua_newtable(L);
@@ -736,6 +764,14 @@ static int lua_likwid_getNumaInfo(lua_State* L)
         cpuinfo = get_cpuInfo();
         cputopo = get_cpuTopology();
     }
+    if ((topology_isInitialized) && (cpuinfo == NULL))
+    {
+        cpuinfo = get_cpuInfo();
+    }
+    if ((topology_isInitialized) && (cputopo == NULL))
+    {
+        cputopo = get_cpuTopology();
+    }
     if (numa_isInitialized == 0)
     {
         if (numa_init() == 0)
@@ -755,21 +791,27 @@ static int lua_likwid_getNumaInfo(lua_State* L)
             return 1;
         }
     }
+    if ((numa_isInitialized) && (numainfo == NULL))
+    {
+        numainfo = get_numaTopology();
+    }
     if (affinity_isInitialized == 0)
     {
         affinity_init();
         affinity_isInitialized = 1;
         affinity = get_affinityDomains();
     }
-    
+    if ((affinity_isInitialized) && (affinity == NULL))
+    {
+        affinity = get_affinityDomains();
+    }
     lua_newtable(L);
     lua_pushstring(L,"numberOfNodes");
     lua_pushunsigned(L,numainfo->numberOfNodes);
     lua_settable(L,-3);
-    
+
     lua_pushstring(L,"nodes");
     lua_newtable(L);
-    
     for(i=0;i<numainfo->numberOfNodes;i++)
     {
         lua_pushinteger(L, i+1);
@@ -872,6 +914,14 @@ static int lua_likwid_getAffinityInfo(lua_State* L)
         cpuinfo = get_cpuInfo();
         cputopo = get_cpuTopology();
     }
+    if ((topology_isInitialized) && (cpuinfo == NULL))
+    {
+        cpuinfo = get_cpuInfo();
+    }
+    if ((topology_isInitialized) && (cputopo == NULL))
+    {
+        cputopo = get_cpuTopology();
+    }
     if (numa_isInitialized == 0)
     {
         if (numa_init() == 0)
@@ -880,14 +930,21 @@ static int lua_likwid_getAffinityInfo(lua_State* L)
             numainfo = get_numaTopology();
         }
     }
+    if ((numa_isInitialized) && (numainfo == NULL))
+    {
+        numainfo = get_numaTopology();
+    }
     if (affinity_isInitialized == 0)
     {
         affinity_init();
         affinity_isInitialized = 1;
         affinity = get_affinityDomains();
     }
+    if ((affinity_isInitialized) && (affinity == NULL))
+    {
+        affinity = get_affinityDomains();
+    }
 
-    
     if (!affinity)
     {
         lua_pushstring(L,"Cannot initialize affinity groups");
@@ -965,6 +1022,14 @@ static int lua_likwid_getPowerInfo(lua_State* L)
         topology_init();
         topology_isInitialized = 1;
         cpuinfo = get_cpuInfo();
+        cputopo = get_cpuTopology();
+    }
+    if ((topology_isInitialized) && (cpuinfo == NULL))
+    {
+        cpuinfo = get_cpuInfo();
+    }
+    if ((topology_isInitialized) && (cputopo == NULL))
+    {
         cputopo = get_cpuTopology();
     }
     if (power_isInitialized == 0)
