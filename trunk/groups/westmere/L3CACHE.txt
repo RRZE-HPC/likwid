@@ -18,9 +18,9 @@ L3 miss ratio  UPMC1/(UPMC0+UPMC1)
 
 LONG
 Formulas:
-L3 request rate  (UNC_L3_HITS_ANY+UNC_L3_MISS_ANY)/INSTR_RETIRED_ANY
-L3 miss rate   UNC_L3_MISS_ANY/INSTR_RETIRED_ANY
-L3 miss ratio  UNC_L3_MISS_ANY/(UNC_L3_HITS_ANY+UNC_L3_MISS_ANY)
+L3 request rate = (UNC_L3_HITS_ANY+UNC_L3_MISS_ANY)/INSTR_RETIRED_ANY
+L3 miss rate = UNC_L3_MISS_ANY/INSTR_RETIRED_ANY
+L3 miss ratio = UNC_L3_MISS_ANY/(UNC_L3_HITS_ANY+UNC_L3_MISS_ANY)
 -
 This group measures the locality of your data accesses with regard to the L3
 Cache. L3 request rate tells you how data intensive your code is or how many
