@@ -649,9 +649,15 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
     int i;
     char optString[1024];
     int optStringIndex = 0;
-    if (perfmon_isInitialized == 0)
+    if (topology_isInitialized == 0)
     {
-        return 0;
+        topology_init();
+        topology_isInitialized = 1;
+        cpuinfo = get_cpuInfo();
+    }
+    if ((topology_isInitialized) && (cpuinfo == NULL))
+    {
+        cpuinfo = get_cpuInfo();
     }
     perfmon_init_maps();
     lua_newtable(L);
