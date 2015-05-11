@@ -72,6 +72,16 @@ interface
   end subroutine likwid_markerClose
 
 !> \ingroup Fortran_Interface
+!> \brief Register a code region
+!> Initializes the hash table with an empty entry to reduce the overhead
+!> at likwid_markerStartRegion()
+  subroutine likwid_markerRegisterRegion( regionTag )
+!> \param regionTag Name for the code region for later identification
+  character(*) :: regionTag
+  end subroutine likwid_markerRegisterRegion
+
+
+!> \ingroup Fortran_Interface
 !> \brief Start the measurement for a code region
 !> Reads the currently running event set and store the results as start values.
 !> for the measurement group identified by regionTag

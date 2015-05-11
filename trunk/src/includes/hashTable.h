@@ -37,6 +37,7 @@
 #include <types.h>
 
 extern void hashTable_init();
+void hashTable_initThread(int coreID);
 extern int hashTable_get(bstring regionTag, LikwidThreadResults** result);
 extern void hashTable_finalize(int* numberOfThreads, int* numberOfRegions, LikwidResults** results);
 

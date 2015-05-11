@@ -60,6 +60,20 @@ void hashTable_init()
     }
 }
 
+void hashTable_initThread(int coreID)
+{
+    ThreadList* resPtr = threadList[coreID];
+    /* check if thread was already initialized */
+    if (resPtr == NULL)
+    {
+        resPtr = (ThreadList*) malloc(sizeof(ThreadList));
+        /* initialize structure */
+        resPtr->tid =  pthread_self();
+        resPtr->coreId  = coreID;
+        resPtr->hashTable = g_hash_table_new(g_str_hash, g_str_equal);
+        threadList[coreID] = resPtr;
+    }
+}
 
 int hashTable_get(bstring label, LikwidThreadResults** resEntry)
 {
