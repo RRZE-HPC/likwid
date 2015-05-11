@@ -1379,6 +1379,7 @@ if not use_marker then
         all_results[rank]["hostname"] = host
         all_results[rank]["results"] = results
         all_results[rank]["cpus"] = cpulist
+        os.remove(file)
     end
     printMpiOutput(grouplist, all_results)
 else
@@ -1391,6 +1392,7 @@ else
         all_results[rank]["hostname"] = host
         all_results[rank]["cpus"] = cpulist
         tmpList[rank] = results
+        os.remove(file)
     end
     for reg, _ in pairs(tmpList[0]) do
         print("Region: "..reg)
