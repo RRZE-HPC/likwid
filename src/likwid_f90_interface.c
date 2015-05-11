@@ -54,6 +54,23 @@ void likwid_markernextgroup_(void)
     likwid_markerNextGroup();
 }
 
+void likwid_markerregisterregion_(char* regionTag, int len)
+{
+    char* tmp = (char*) malloc((len+1) * sizeof(char) );
+    strncpy(tmp, regionTag, len * sizeof(char) );
+
+    for (int i=(len-1); len > 0; len--)
+    {
+        if (tmp[i] != ' ') {
+            tmp[i+1] = 0;
+            break;
+        }
+    }
+
+    likwid_markerRegisterRegion( tmp );
+    free(tmp);
+}
+
 void likwid_markerstartregion_(char* regionTag, int len)
 {
     char* tmp = (char*) malloc((len+1) * sizeof(char) );

@@ -57,6 +57,10 @@ Shortcut for likwid_markerInit() if compiled with -DLIKWID_PERFMON. Otherwise no
 Shortcut for likwid_markerThreadInit() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
+\def LIKWID_MARKER_REGISTER(regionTag)
+Shortcut for likwid_markerRegisterRegion() with \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
+*/
+/*!
 \def LIKWID_MARKER_START(regionTag)
 Shortcut for likwid_markerStartRegion() with \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
@@ -82,6 +86,7 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #define LIKWID_MARKER_INIT likwid_markerInit()
 #define LIKWID_MARKER_THREADINIT likwid_markerThreadInit()
 #define LIKWID_MARKER_SWITCH likwid_markerNextGroup()
+#define LIKWID_MARKER_REGISTER(regionTag) likwid_markerRegisterRegion(regionTag)
 #define LIKWID_MARKER_START(regionTag) likwid_markerStartRegion(regionTag)
 #define LIKWID_MARKER_STOP(regionTag) likwid_markerStopRegion(regionTag)
 #define LIKWID_MARKER_CLOSE likwid_markerClose()
@@ -90,6 +95,7 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #define LIKWID_MARKER_INIT
 #define LIKWID_MARKER_THREADINIT
 #define LIKWID_MARKER_SWITCH
+#define LIKWID_MARKER_REGISTER(regionTag)
 #define LIKWID_MARKER_START(regionTag)
 #define LIKWID_MARKER_STOP(regionTag)
 #define LIKWID_MARKER_CLOSE
@@ -140,6 +146,13 @@ Must be called in serial region of the application. It gathers all data of regio
 writes them out to a file (filepath in env variable LIKWID_FILEPATH).
 */
 extern void likwid_markerClose(void);
+/*! \brief Register a measurement region
+
+Initializes the hashTable entry in order to reduce execution time of likwid_markerStartRegion()
+@param regionTag [in] Initialize data using this string
+@return Error code
+*/
+extern int likwid_markerRegisterRegion(const char* regionTag);
 /*! \brief Start a measurement region
 
 Reads the values of all configured counters and saves the results under the name given

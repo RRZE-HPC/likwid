@@ -74,7 +74,7 @@ static int numberOfGroups = 0;
 static int* groups;
 static int threads2Cpu[MAX_NUM_THREADS];
 static int num_cpus = 0;
-
+static double mtime = 0.0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -220,6 +220,13 @@ void likwid_markerInit(void)
     bstrListDestroy(eventStrings);
 
     groupSet->activeGroup = 0;
+    TimerData timer;
+    for (i=0;i<100;i++)
+    {
+        timer_start(&timer);
+        timer_stop(&timer);
+        mtime = MAX(timer_print(&timer), mtime);
+    }
 }
 
 void likwid_markerThreadInit(void)
@@ -234,6 +241,7 @@ void likwid_markerThreadInit(void)
 
     HPMaddThread(cpu_id);
     initThreadArch(cpu_id);
+    hashTable_initThread(cpu_id);
 
     for(int i=0; i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
@@ -340,6 +348,23 @@ void likwid_markerClose(void)
     HPMfinalize();
 }
 
+int likwid_markerRegisterRegion(const char* regionTag)
+{
+    if ( ! likwid_init )
+    {
+        return -EFAULT;
+    }
+    TimerData timer;
+    bstring tag = bfromcstralloc(100, regionTag);
+    LikwidThreadResults* results;
+    char groupSuffix[10];
+    sprintf(groupSuffix, "-%d", groupSet->activeGroup);
+    bcatcstr(tag, groupSuffix);
+    int cpu_id = hashTable_get(tag, &results);;
+    bdestroy(tag);
+    return 0;
+}
+
 
 int likwid_markerStartRegion(const char* regionTag)
 {
@@ -347,14 +372,15 @@ int likwid_markerStartRegion(const char* regionTag)
     {
         return -EFAULT;
     }
+
     bstring tag = bfromcstralloc(100, regionTag);
     LikwidThreadResults* results;
     char groupSuffix[10];
     sprintf(groupSuffix, "-%d", groupSet->activeGroup);
     bcatcstr(tag, groupSuffix);
+    
     int cpu_id = hashTable_get(tag, &results);
     int thread_id = getThreadID(cpu_id);
-
     perfmon_readCountersCpu(cpu_id);
 
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
@@ -365,14 +391,12 @@ int likwid_markerStartRegion(const char* regionTag)
                 groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
     }
     results->groupID = groupSet->activeGroup;
-    timer_start(&(results->startTime));
     bdestroy(tag);
+    timer_start(&(results->startTime));
     return 0;
 }
 
 
-/* TODO: Readout hash at the end. Compute result at the end of the function to
- * keep overhead in region low */
 
 int likwid_markerStopRegion(const char* regionTag)
 {
@@ -390,15 +414,16 @@ int likwid_markerStopRegion(const char* regionTag)
     LikwidThreadResults* results;
     sprintf(groupSuffix, "-%d", groupSet->activeGroup);
     bcatcstr(tag, groupSuffix);
-
+    
     cpu_id = hashTable_get(tag, &results);
     thread_id = getThreadID(cpu_id);
     results->startTime.stop.int64 = timestamp.stop.int64;
-    results->time += timer_print(&(results->startTime));
+    results->time += (timer_print(&(results->startTime)) - mtime);
     results->count++;
     bdestroy(tag);
-
+    
     perfmon_readCountersCpu(cpu_id);
+    
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu, regionTag, thread_id, cpu_id, i,
