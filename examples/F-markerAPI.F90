@@ -37,26 +37,28 @@ program FmarkerAPI
     DOUBLE PRECISION :: time
     INTEGER :: c
     nr_events = 10
-    ! Init Marker API in serial region once in the beginning
+    ! Init Marker API in serial region once in the beginning.
     call likwid_markerInit()
 
 !$OMP PARALLEL
     ! Each thread must add itself to the Marker API, therefore must be
-    ! in parallel region
+    ! in parallel region.
     call likwid_markerthreadInit()
+    ! Optional. Register region name and initialize hash table entries.
+    call likwid_markerRegisterRegion("example")
 !$OMP END PARALLEL
 
 !$OMP PARALLEL
     print '(a,i0,a,i0,a)', "Thread ", omp_get_thread_num()," sleeps now for ", SLEEPTIME," seconds"
-    ! Start measurements inside a parallel region
+    ! Start measurements inside a parallel region.
     call likwid_markerStartRegion("example")
     ! Insert your code here
     ! Often contains an OpenMP for pragma. Regions can be nested.
     call Sleep(SLEEPTIME)
-    ! Stop measurements inside a parallel region
+    ! Stop measurements inside a parallel region.
     call likwid_markerStopRegion("example")
     print '(a,i0,a)', "Thread ", omp_get_thread_num()," wakes up again"
-    ! If multiple groups given, you can switch to the next group
+    ! If multiple groups given, you can switch to the next group.
     call likwid_markerNextGroup();
     ! If you need the performance data inside your application, use
     call likwid_markerGetRegion("example", nr_events, events, time, c)
@@ -72,7 +74,7 @@ program FmarkerAPI
 !$OMP END PARALLEL
 
 ! Close Marker API and write results to file for further evaluation done
-! by likwid-perfctr
+! by likwid-perfctr.
 call likwid_markerClose()
 
 end program FmarkerAPI
