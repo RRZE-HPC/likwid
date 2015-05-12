@@ -50,6 +50,8 @@ int main(int argc, char* argv[])
         // Each thread must add itself to the Marker API, therefore must be
         // in parallel region
         LIKWID_MARKER_THREADINIT;
+        // Optional. Register region name
+        LIKWID_MARKER_REGISTER("example");
     }
 
 
