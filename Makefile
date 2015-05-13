@@ -269,7 +269,7 @@ install: install_daemon install_freq
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-features.1 > $(MANPREFIX)/man1/likwid-features.1
-	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-perfctr.1 > $(MANPREFIX)/man1/likwid-perfctr.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<PREFIX>/$(PREFIX)/g" < $(DOC_DIR)/likwid-perfctr.1 > $(MANPREFIX)/man1/likwid-perfctr.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-powermeter.1 > $(MANPREFIX)/man1/likwid-powermeter.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-pin.1 > $(MANPREFIX)/man1/likwid-pin.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/feedGnuplot.1 > $(MANPREFIX)/man1/feedGnuplot.1
@@ -293,6 +293,8 @@ install: install_daemon install_freq
 	@cp -rf monitoring/groups/* $(PREFIX)/share/likwid/mongroups
 	@mkdir -p $(PREFIX)/share/likwid/docs
 	@install -m 644 doc/bstrlib.txt $(PREFIX)/share/likwid/docs
+	@mkdir -p $(PREFIX)/share/likwid/examples
+	@install -m 644 examples/* $(PREFIX)/share/likwid/examples
 	@echo "===> INSTALL default likwid-agent.conf to $(PREFIX)/etc"
 	@sed -e "s+<PREFIX>+$(PREFIX)+g" monitoring/likwid-agent.conf > $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
 	@chmod 600 $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
@@ -333,6 +335,7 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -rf $(PREFIX)/share/likwid/mongroups
 	@rm -rf $(PREFIX)/share/likwid/perfgroups
 	@rm -rf $(PREFIX)/share/likwid/docs
+	@rm -rf $(PREFIX)/share/likwid/examples
 
 
 local: $(L_APPS) likwid.lua
