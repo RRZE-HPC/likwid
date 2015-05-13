@@ -51,6 +51,7 @@
 #include <lock.h>
 #include <accessClient_types.h>
 
+
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 #define SA struct sockaddr
 #define str(x) #x
@@ -561,6 +562,9 @@ int main(void)
     mode_t oldumask;
     uint32_t numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
     uint32_t model;
+#ifdef REVERSE_HASWELL_PCI_SOCKETS
+    char** socket_bus_copy;
+#endif
 
 
     openlog(ident, 0, LOG_USER);
@@ -724,26 +728,12 @@ int main(void)
         }
 
         free(msr_file_name);
-
         if (isPCIUncore)
         {
-            for (int j=0; j<MAX_NUM_NODES; j++)
-            {
-                socket_bus[j] = "N-A";
-                for (int i=0; i<MAX_NUM_PCI_DEVICES; i++)
-                {
-                    FD_PCI[j][i] = -2;
-                }
-            }
-
-            /* determine PCI-BUSID mapping ... */
-            FILE *fptr;
-            char buf[1024];
-            uint32_t testDevice;
-            uint32_t sbus, sdevfn, svend;
             int cntr = 0;
             int socket_count = 0;
-
+            char buf[1024];
+            uint32_t testDevice;
             if (model == SANDYBRIDGE_EP)
             {
                 testDevice = 0x80863c44;
@@ -764,25 +754,70 @@ int main(void)
                 testDevice = 0;
                 syslog(LOG_NOTICE, "PCI Uncore not supported on this system");
             }
-
-            if ( ((fptr = fopen("/proc/bus/pci/devices", "r")) == NULL) || !testDevice)
+            if (strlen(TOSTRING(PCILIST)) == 0)
             {
-                syslog(LOG_NOTICE, "Unable to open /proc/bus/pci/devices");
+                for (int j=0; j<MAX_NUM_NODES; j++)
+                {
+                    socket_bus[j] = "N-A";
+                    for (int i=0; i<MAX_NUM_PCI_DEVICES; i++)
+                    {
+                        FD_PCI[j][i] = -2;
+                    }
+                }
+
+                /* determine PCI-BUSID mapping ... */
+                FILE *fptr;
+                uint32_t sbus, sdevfn, svend;
+
+                if ( ((fptr = fopen("/proc/bus/pci/devices", "r")) == NULL) || !testDevice)
+                {
+                    syslog(LOG_NOTICE, "Unable to open /proc/bus/pci/devices");
+                }
+                else
+                {
+                    while( fgets(buf, sizeof(buf)-1, fptr) )
+                    {
+                        if ( sscanf(buf, "%2x%2x %8x", &sbus, &sdevfn, &svend) == 3 &&
+                                svend == testDevice )
+                        {
+                            socket_bus[cntr] = (char*)malloc(4);
+                            sprintf(socket_bus[cntr++], "%02x/", sbus);
+                        }
+                    }
+                    fclose(fptr);
+                }
+#ifdef REVERSE_HASWELL_PCI_SOCKETS
+                if ((model == HASWELL_EP) && (REORDER_HASWELL_EP_SOCKETS == 1))
+                {
+                    socket_bus_copy = malloc(cntr * sizeof(char*));
+                    for (int i=0;i<cntr;i++)
+                    {
+                        socket_bus_copy[i] = (char*)malloc(4);
+                        strcpy(socket_bus_copy[i], socket_bus[cntr-1-i]);
+                    }
+                    for (int i=0;i<cntr;i++)
+                    {
+                        strcpy(socket_bus[i], socket_bus_copy[i]);
+                        free(socket_bus_copy[i]);
+                    }
+                    free(socket_bus_copy);
+                }
+#endif
             }
             else
             {
-                while( fgets(buf, sizeof(buf)-1, fptr) )
+                char delim = ' ';
+                char* ptr = NULL;
+                sprintf(buf, "%s", TOSTRING(PCILIST));
+                ptr = strtok(buf, &delim);
+                while (ptr != NULL)
                 {
-                    if ( sscanf(buf, "%2x%2x %8x", &sbus, &sdevfn, &svend) == 3 &&
-                            svend == testDevice )
-                    {
-                        socket_bus[cntr] = (char*)malloc(4);
-                        sprintf(socket_bus[cntr++], "%02x/", sbus);
-                    }
+                    socket_bus[cntr] = (char*)malloc(4);
+                    sprintf(socket_bus[cntr], "%s/", ptr);
+                    ptr = strtok(NULL, &delim);
+                    cntr++;
                 }
-                fclose(fptr);
             }
-
             if ( cntr == 0 )
             {
                 syslog(LOG_NOTICE, "Uncore not supported on this system");
@@ -805,7 +840,7 @@ int main(void)
                                 pci_devices[i].online = 1;
                                 close(fd);
                             }
-                            else
+                            else if (j==0)
                             {
                                 syslog(LOG_NOTICE, "Device %s not found at path %s, excluded it from device list: %s\n",pci_devices[i].name,pci_filepath, strerror(errno));
                             }

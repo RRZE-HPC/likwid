@@ -63,10 +63,26 @@ proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     {
         if ( sscanf(buf, "%2x%2x %4x%4x", &sbus, &sdevfn, &svend, &sdev) == 4 &&
              svend == testVendor && sdev == testDevice )
+#ifndef REVERSE_HASWELL_PCI_SOCKETS
         {
             socket_bus[cntr] = (char*)malloc(4);
             sprintf(socket_bus[cntr++], "%02x/", sbus);
         }
+#else
+        {
+            if (cpuid_info.model != HASWELL_EP)
+            {
+                socket_bus[cntr] = (char*)malloc(4);
+                sprintf(socket_bus[cntr++], "%02x/", sbus);
+            }
+            else
+            {
+                socket_bus[cpuid_topology.numSockets-cntr-1] = (char*)malloc(4);
+                sprintf(socket_bus[cpuid_topology.numSockets-cntr-1], "%02x/", sbus);
+                cntr++
+            }
+        }
+#endif
     }
     fclose(fptr);
     
