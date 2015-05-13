@@ -32,10 +32,10 @@ include  ../../make/include_$(COMPILER).mk
 DAEMON_TARGET = likwid-accessD
 SETFREQ_TARGET = likwid-setFreq
 
-DEFINES   = -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS)
+DEFINES   = -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) -DPCILIST="$(PCI_SOCKETS)"
 INCLUDES  = -I../includes
 ifeq ($(COMPILER),GCC)
-CFLAGS    +=  -pedantic -Wall -Wextra -std=c99
+CFLAGS    +=  -Wall -Wextra -std=c99
 endif
 ifeq ($(COMPILER),ICC)
 CFLAGS  += -std=c99
@@ -45,9 +45,9 @@ CPPFLAGS :=  $(DEFINES) $(INCLUDES)
 all: $(DAEMON_TARGET) $(SETFREQ_TARGET)
 
 $(DAEMON_TARGET): accessDaemon.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c
 
 $(SETFREQ_TARGET): setFreq.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreq.c
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreq.c
 
 

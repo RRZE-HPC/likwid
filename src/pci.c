@@ -131,23 +131,42 @@ pci_init(int initSocket_fd)
             break;
     }
 
+    if (strlen(TOSTRING(PCILIST)) == 0)
+    {
 #ifdef LIKWID_USE_HWLOC
-    DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using hwloc to find pci devices);
-    ret = hwloc_pci_init(testDevice, socket_bus, &nr_sockets);
-    if (ret)
-    {
-        ERROR_PLAIN_PRINT(Using hwloc to find pci devices failed);
-        return -ENODEV;
-    }
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using hwloc to find pci devices);
+        ret = hwloc_pci_init(testDevice, socket_bus, &nr_sockets);
+        if (ret)
+        {
+            ERROR_PLAIN_PRINT(Using hwloc to find pci devices failed);
+            return -ENODEV;
+        }
 #else
-    DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using procfs to find pci devices);
-    ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
-    if (ret)
-    {
-        ERROR_PLAIN_PRINT(Using procfs to find pci devices failed);
-        return -ENODEV;
-    }
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using procfs to find pci devices);
+        ret = proc_pci_init(testDevice, socket_bus, &nr_sockets);
+        if (ret)
+        {
+            ERROR_PLAIN_PRINT(Using procfs to find pci devices failed);
+            return -ENODEV;
+        }
 #endif
+    }
+    else
+    {
+        nr_sockets = 0;
+        char delim = ' ';
+        char buf[1024];
+        char* ptr = NULL;
+        sprintf(buf, "%s", TOSTRING(PCILIST));
+        ptr = strtok(buf, &delim);
+        while (ptr != NULL)
+        {
+            socket_bus[nr_sockets] = (char*)malloc(4);
+            sprintf(socket_bus[nr_sockets], "%s/", ptr);
+            ptr = strtok(NULL, &delim);
+            nr_sockets++;
+        }
+    }
 
     if (accessClient_mode == ACCESSMODE_DIRECT)
     {

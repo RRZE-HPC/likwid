@@ -67,8 +67,22 @@ hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
         }
         if ((obj->attr->pcidev.vendor_id == testVendor) && (obj->attr->pcidev.device_id == testDevice))
         {
+#ifndef REVERSE_HASWELL_PCI_SOCKETS
             socket_bus[cntr] = (char*)malloc(4);
             sprintf(socket_bus[cntr++], "%02x/", obj->attr->pcidev.bus);
+#else
+            if (cpuid_info.model != HASWELL_EP)
+            {
+                socket_bus[cntr] = (char*)malloc(4);
+                sprintf(socket_bus[cntr++], "%02x/", obj->attr->pcidev.bus);
+            }
+            else
+            {
+                socket_bus[cpuid_topology.numSockets-cntr-1] = (char*)malloc(4);
+                sprintf(socket_bus[cpuid_topology.numSockets-cntr-1], "%02x/", obj->attr->pcidev.bus);
+                cntr++;
+            }
+#endif
         }
     }
     *nrSockets = cntr;
