@@ -638,8 +638,6 @@ end
 
 local function setPerfStrings(perflist, cpuexprs)
     local uncore = false
-    local coreevents = {}
-    local uncoreevents = {}
     local perfexprs = {}
     local grouplist = {}
     local cpuinfo = likwid.getCpuInfo()
@@ -658,6 +656,8 @@ local function setPerfStrings(perflist, cpuexprs)
     end
 
     for k, perfStr in pairs(perflist) do
+        local coreevents = {}
+        local uncoreevents = {}
         local gdata = nil
         gdata = likwid.get_groupdata(perfStr)
         if gdata == nil then
@@ -780,18 +780,18 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
             if use_marker then
                 table.insert(cmd,"-m")
             end
-            table.insert(cmd,"-O")
             cpuexpr_opt = "-C"
         else
             table.insert(cmd,LIKWID_PIN)
         end
         table.insert(cmd,skipStr)
-    
         table.insert(cmd,cpuexpr_opt)
         table.insert(cmd,cpuexprs[i])
         if #perf > 0 then
-            table.insert(cmd,"-g")
-            table.insert(cmd,perfexprs[1][i])
+            for j, expr in pairs(perfexprs) do
+                table.insert(cmd,"-g")
+                table.insert(cmd,expr[i])
+            end
             table.insert(cmd,"-o")
             table.insert(cmd,outputname)
         end
@@ -847,9 +847,9 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
 end
 
 
-local function listdir(infilepart)
+local function listdir(dir, infilepart)
     local outlist = {}
-    local p = io.popen("find . -type f -name \"*"..infilepart.."*\"")
+    local p = io.popen("find "..dir.." -type f -name \"*"..infilepart.."*\"")
     for file in p:lines() do
         table.insert(outlist, file)
     end
@@ -875,7 +875,7 @@ local function parseOutputFile(filename)
         print("ERROR: Cannot open output file "..filename)
         os.exit(1)
     end
-    rank, host = filename:match("output_%d+_(%d+)_(%g+).txt")
+    rank, host = filename:match("output_%d+_(%d+)_(%g+).csv")
 
     local t = f:read("*all")
     f:close()
@@ -891,8 +891,16 @@ local function parseOutputFile(filename)
                 linelist = likwid.stringsplit(line,",")
                 table.remove(linelist,1)
                 table.remove(linelist,1)
-                for i, cpustr in pairs(linelist) do
-                    table.insert(cpulist, cpustr:match("Core (%d+)"))
+                for _, cpustr in pairs(linelist) do
+                    local test = tonumber(cpustr:match("Core (%d+)"))
+                    if test ~= nil then
+                        for _cpu in pairs(cpulist) do
+                            if tonumber(cpu) == test then test = -1 end
+                        end
+                        if test >= 0 then
+                            table.insert(cpulist, test)
+                        end
+                    end
                 end
                 gidx = gidx + 1
                 idx = 1
@@ -908,19 +916,19 @@ local function parseOutputFile(filename)
                 counter = linelist[2]
                 table.remove(linelist,1)
                 table.remove(linelist,1)
-                for i=#linelist,1,-1 do
-                    if linelist[i] == "" then
-                        table.remove(linelist, i)
+                for j=#linelist,1,-1 do
+                    if linelist[j] == "" then
+                        table.remove(linelist, j)
                     end
                 end
                 if results[gidx][idx] == nil then
                     results[gidx][idx] = {}
                 end
-                for i, value in pairs(linelist) do
+                for j, value in pairs(linelist) do
                     if event:match("[Rr]untime") then
-                        results[gidx]["time"][cpulist[i]] = tonumber(value)
+                        results[gidx]["time"][cpulist[j]] = tonumber(value)
                     else
-                        results[gidx][idx][cpulist[i]] = tonumber(value)
+                        results[gidx][idx][cpulist[j]] = tonumber(value)
                     end
                 end
                 if not event:match("[Rr]untime") then
@@ -931,8 +939,6 @@ local function parseOutputFile(filename)
             elseif line:match("^CPU clock:") then
                 results["clock"] = line:match("^CPU clock:,([%d.]+)")
                 results["clock"] = tonumber(results["clock"])*1.E09
-            else
-                break
             end
         end
     end
@@ -953,7 +959,7 @@ local function parseMarkerOutputFile(filename)
         print("ERROR: Cannot open output file "..filename)
         os.exit(1)
     end
-    rank, host = filename:match("output_%d+_(%d+)_(%g+).txt")
+    rank, host = filename:match("output_%d+_(%d+)_(%g+).csv")
     local t = f:read("*all")
     f:close()
     local parse_reg_info = false
@@ -965,21 +971,19 @@ local function parseMarkerOutputFile(filename)
         if (not line:match("^-")) and
            (not line:match("^CPU type:")) and
            (not line:match("^CPU name:")) and
+           (not line:match("^TABLE")) and
            (not line:match("STAT")) then
 
-            if line:match("^%s*$") then
-                if parse_reg_info then
-                    parse_reg_info = false
-                elseif parse_reg_output then
-                    parse_reg_output = false
-                end
-            elseif line:match("^=") and not parse_reg_info then
+            if line:match("^STRUCT,Info") and not parse_reg_info then
                 parse_reg_info = true
             elseif line:match("^Event") and not line:match("Sum,Min,Max,Avg") then
+                parse_reg_info = false
                 parse_reg_output = true
                 idx = 1
-            elseif line:match("^CPU clock:") then
-                clock = line:match("^CPU clock:%s*([%d.]+)")
+            elseif line:match("^Event") and line:match("Sum,Min,Max,Avg") then
+                parse_reg_output = false
+            elseif line:match("^CPU clock") then
+                clock = line:match("^CPU clock,([%d.]+)")
                 clock = tonumber(clock)*1.E09
             elseif parse_reg_info and line:match("^%d+,%g+") then
                 gidx, current_region = line:match("^(%d+),(%g-),")
@@ -995,9 +999,17 @@ local function parseMarkerOutputFile(filename)
             elseif parse_reg_info and line:match("^Region Info") then
                 linelist = likwid.stringsplit(line,",")
                 table.remove(linelist,1)
-                for i, cpustr in pairs(linelist) do
+                for _, cpustr in pairs(linelist) do
                     if cpustr:match("Core %d+") then
-                        table.insert(cpulist, cpustr:match("Core (%d+)"))
+                        local test = tonumber(cpustr:match("Core (%d+)"))
+                        if test ~= nil then
+                            for _,cpu in pairs(cpulist) do
+                                if test == cpu then test = -1 end
+                            end
+                            if test >= 0 then
+                                table.insert(cpulist, test)
+                            end
+                        end
                     end
                 end
             elseif parse_reg_info and line:match("^RDTSC") then
@@ -1011,10 +1023,10 @@ local function parseMarkerOutputFile(filename)
             elseif parse_reg_info and line:match("^call count") then
                 linelist = likwid.stringsplit(line,",")
                 table.remove(linelist,1)
-                for i, calls in pairs(linelist) do
+                for j, calls in pairs(linelist) do
                     if calls:match("%d+") then
                         if calls ~= "" then
-                            results[current_region][gidx]["calls"][cpulist[i]] = tonumber(calls)
+                            results[current_region][gidx]["calls"][cpulist[j]] = tonumber(calls)
                         end
                     end
                 end
@@ -1022,16 +1034,16 @@ local function parseMarkerOutputFile(filename)
                 linelist = likwid.stringsplit(line,",")
                 table.remove(linelist,1)
                 table.remove(linelist,1)
-                for i=#linelist,1,-1 do
-                    if linelist[i] == "" then
-                        table.remove(linelist, i)
+                for j=#linelist,1,-1 do
+                    if linelist[j] == "" then
+                        table.remove(linelist, j)
                     end
                 end
                 if results[current_region][gidx][idx] == nil then
                     results[current_region][gidx][idx] = {}
                 end
-                for i, value in pairs(linelist) do
-                    results[current_region][gidx][idx][cpulist[i]] = tonumber(value)
+                for j, value in pairs(linelist) do
+                    results[current_region][gidx][idx][cpulist[j]] = tonumber(value)
                 end
                 idx = idx + 1
             end
@@ -1040,7 +1052,7 @@ local function parseMarkerOutputFile(filename)
     for region, data in pairs(results) do
         results[region]["clock"] = clock
     end
-    
+
     return host, tonumber(rank), results, cpulist
 end
 
@@ -1356,7 +1368,7 @@ local nrNodes = getNumberOfNodes(newhosts)
 local pid = likwid.getpid()
 local hostfilename = string.format(".hostfile_%s.txt", pid)
 local scriptfilename = string.format(".likwidscript_%s.txt", pid)
-local outfilename = string.format(".output_%s_%%r_%%h.txt", pid)
+local outfilename = string.format(os.getenv("PWD").."/.output_%s_%%r_%%h.csv", pid)
 
 MPIINFO[mpitype]["writeHostfile"](newhosts, hostfilename)
 writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, outfilename)
@@ -1367,12 +1379,11 @@ os.remove(scriptfilename)
 os.remove(hostfilename)
 
 infilepart = ".output_"..pid
-filelist = listdir(infilepart)
+filelist = listdir(os.getenv("PWD"), infilepart)
 all_results = {}
 if not use_marker then
     for i, file in pairs(filelist) do
         local host, rank, results, cpulist = parseOutputFile(file)
-        
         if all_results[rank] == nil then
             all_results[rank] = {}
         end
