@@ -39,7 +39,7 @@ prints debug messages to standard output
 specifies how many MPI processes should be started
 .TP
 .B \-\^hostfile <filename>
-specifies the nodes to schedule the MPI processes on
+specifies the nodes to schedule the MPI processes on. If not given, the environment variables PBS_NODEFILE, LOADL_HOSTFILE and SLURM_HOSTFILE are checked.
 .TP
 .B \-\^nperdomain <number_of_processes_in_domain>
 specifies the processes per affinity domain (see

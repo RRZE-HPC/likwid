@@ -32,7 +32,7 @@ A tool to start and monitor MPI applications with LIKWID. It can be used as supp
 </TR>
 <TR>
   <TD>--hostfile &lt;file&gt;</TD>
-  <TD>Specify the file that should be used as hostfile.<BR>If not set, <CODE>likwid-mpirun</CODE> checks the <CODE>PBS_NODEFILE</CODE> environment variable</TD>
+  <TD>Specify the file that should be used as hostfile.<BR>If not set, <CODE>likwid-mpirun</CODE> checks the <CODE>PBS_NODEFILE</CODE>, <CODE>LOADL_HOSTFILE</CODE> and <CODE>SLURM_HOSTFILE</CODE> environment variable</TD>
 </TR>
 <TR>
   <TD>--pin &lt;expr&gt;</TD>
@@ -70,13 +70,13 @@ A tool to start and monitor MPI applications with LIKWID. It can be used as supp
 Runs <CODE>./a.out</CODE> with 32 MPI processes distributed over the hosts in <CODE>PBS_NODEFILE</CODE>
 </LI>
 <LI><CODE>likwid-mpirun -nperdomain S:1 ./a.out</CODE><BR>
-Runs <CODE>./a.out</CODE> using one MPI process per socket over the hosts in <CODE>PBS_NODEFILE</CODE>.<BR>The total amount of processes is calculated by &lt;numberOfSocketDomains&gt; * &lt;processCountPerDomain&gt; * &lt;hostsInHostfile&gt;
+Runs <CODE>./a.out</CODE> using one MPI process per socket over the hosts in <CODE>PBS_NODEFILE</CODE>, <CODE>LOADL_HOSTFILE</CODE> or <CODE>SLURM_HOSTFILE</CODE>.<BR>The total amount of processes is calculated by &lt;numberOfSocketDomains&gt; * &lt;processCountPerDomain&gt; * &lt;hostsInHostfile&gt;
 </LI>
 <LI><CODE>likwid-mpirun --hostfile host.list -pin S0:2_S1:2 ./a.out</CODE><BR>
 Runs <CODE>./a.out</CODE> using two MPI processes per host in <CODE>host.list</CODE>.<BR>The first MPI process on each host and its 2 threads are pinned to the first two CPUs on socket <CODE>S0</CODE>,<BR>the second MPI process on each host and its 2 threads are pinned to the first two CPUs on socket <CODE>S1</CODE>
 </LI>
 <LI><CODE>likwid-mpirun -nperdomain S:2 -g MEM ./a.out</CODE><BR>
-Runs <CODE>./a.out</CODE> with 2 MPI processes per socket on each host in <CODE>PBS_NODEFILE</CODE> and measure the <CODE>MEM</CODE> performance group<BR>
+Runs <CODE>./a.out</CODE> with 2 MPI processes per socket on each host in <CODE>PBS_NODEFILE</CODE>, <CODE>LOADL_HOSTFILE</CODE> or <CODE>SLURM_HOSTFILE</CODE> and measure the <CODE>MEM</CODE> performance group<BR>
 Only one process per socket measures the Uncore/RAPL counters, the other one(s) only core-local counters.
 </LI>
 </UL>
