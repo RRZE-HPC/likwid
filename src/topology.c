@@ -106,7 +106,9 @@ static char* short_haswell_ep = "haswellEP";
 static char* short_broadwell = "broadwell";
 static char* short_broadwell_ep = "broadwellEP";
 static char* short_ivybridge = "ivybridge";
+static char* short_ivybridge_ep = "ivybridgeEP";
 static char* short_sandybridge = "sandybridge";
+static char* short_sandybridge_ep = "sandybridgeEP";
 static char* short_phi = "phi";
 static char* short_k8 = "k8";
 static char* short_k10 = "k10";
@@ -552,7 +554,7 @@ int topology_setName(void)
                 case SANDYBRIDGE_EP:
                     cpuid_info.supportUncore = 1;
                     cpuid_info.name = sandybridge_ep_str;
-                    cpuid_info.short_name = short_sandybridge;
+                    cpuid_info.short_name = short_sandybridge_ep;
                     break;
 
                 case IVYBRIDGE:
@@ -563,7 +565,7 @@ int topology_setName(void)
                 case IVYBRIDGE_EP:
                     cpuid_info.supportUncore = 1;
                     cpuid_info.name = ivybridge_ep_str;
-                    cpuid_info.short_name = short_ivybridge;
+                    cpuid_info.short_name = short_ivybridge_ep;
                     break;
 
                 case HASWELL_EP:
