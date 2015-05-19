@@ -93,60 +93,57 @@ treeFillNextEntries(
     int offset,
     int numberOfEntries )
 {
-  int counter = numberOfEntries;
-  TreeNode* node = tree;
-  TreeNode* thread;
+    int counter = numberOfEntries;
+    TreeNode* node = tree;
+    TreeNode* thread;
+    node = tree_getChildNode(node);
 
-  node = tree_getChildNode(node);
-
-  /* get socket node */
-  for (int i=0; i<socketId; i++)
-  {
-    node = tree_getNextNode(node);
-
-    if ( node == NULL )
+    /* get socket node */
+    for (int i=0; i<socketId; i++)
     {
-      printf("ERROR: Socket %d not existing!",i);
-      exit(EXIT_FAILURE);
+        node = tree_getNextNode(node);
+
+        if ( node == NULL )
+        {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot find socket %d in topology tree, i);
+        }
     }
-  }
 
-  node = tree_getChildNode(node);
-  /* skip offset cores */
-  for (int i=0; i<offset; i++)
-  {
-    node = tree_getNextNode(node);
-
-    if ( node == NULL )
+    node = tree_getChildNode(node);
+    /* skip offset cores */
+    for (int i=0; i<offset; i++)
     {
-      printf("ERROR: Core %d not existing!",i);
-      exit(EXIT_FAILURE);
+        node = tree_getNextNode(node);
+
+        if ( node == NULL )
+        {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot find core %d in topology tree, i);
+        }
     }
-  }
 
-  /* Traverse horizontal */
-  while ( node != NULL )
-  {
-    if ( !counter ) break;
-
-    thread = tree_getChildNode(node);
-
-    while ( thread != NULL )
+    /* Traverse horizontal */
+    while ( node != NULL )
     {
-      if (cpuid_topology.threadPool[thread->id].inCpuSet)
-      {
-          processorIds[numberOfEntries-counter] = thread->id;
-          thread = tree_getNextNode(thread);
-          counter--;
-      }
-      else
-      {
-          thread = tree_getNextNode(thread);
-      }
+        if ( !counter ) break;
+
+        thread = tree_getChildNode(node);
+
+        while ( thread != NULL )
+        {
+            if (cpuid_topology.threadPool[thread->id].inCpuSet)
+            {
+                processorIds[numberOfEntries-counter] = thread->id;
+                thread = tree_getNextNode(thread);
+                counter--;
+            }
+            else
+            {
+                thread = tree_getNextNode(thread);
+            }
+        }
+        node = tree_getNextNode(node);
     }
-    node = tree_getNextNode(node);
-  }
-  return numberOfEntries-counter;
+    return numberOfEntries-counter;
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
