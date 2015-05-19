@@ -95,6 +95,10 @@ custom event sets. The \ref Marker_API can measure mulitple named regions and th
   <TD>Activates the timeline mode that reads the counters in the given frequency &lt;time&gt; during the whole run of the executable<BR>Examples for &lt;time&gt; are 1s, 250ms, 500us.</TD>
 </TR>
 <TR>
+  <TD>-T &lt;time&gt;</TD>
+  <TD>If multiple event sets are given on commandline, switch every &lt;time&gt; to next group. Default is 2s.<BR>Examples for &lt;time&gt; are 1s, 250ms, 500us.<BR>If only a single event set is given, the default read frequency is 30s to catch overflows.</TD>
+</TR>
+<TR>
   <TD>-O</TD>
   <TD>Print output in CSV format (conform to <A HREF="https://tools.ietf.org/html/rfc4180">RFC 4180</A>). The output contains some markers that help to parse the output.</TD>
 </TR>
@@ -248,5 +252,7 @@ Example Marker API call:<BR>
 Besides the Marker API for C/C++ programms, LIKWID offers to build a Fortran module to access the Marker API functions from Fortran. Only the Marker API calls are exported, not the whole API. In <CODE>config.mk</CODE> the variable <CODE>FORTRAN_INTERFACE</CODE> must be set to true. LIKWID's default is to use the Intel Fortran compiler to build the interface but it can be modified to use GCC's Fortran compiler in <CODE>make/include_&lt;COMPILER&gt;</CODE>.<BR>
 The LIKWID package contains an example code: see \ref F-markerAPI-code.
 
+<H2>Hints for the usage of the Marker API</H2>
+Since the calls to the LIKWID library are executed by your application, the runtime will raise and in specific circumstances, there are some other problems like the time measurement. You can execute <CODE>LIKWID_MARKER_THREADINIT</CODE> and <CODE>LIKWID_MARKER_START</CODE> inside the same parallel region but put a barrier between the calls to ensure that there is no big timing difference between the threads. The common way is to init LIKWID and the participating threads inside of an initialization routine, use only START and STOP in your code and close the Marker API in a finalization routine. Be aware that at the first start of a region, the thread-local hash table gets a new entry to store the measured values. If your code inside the region is short or you are executing the region only once, the overhead of creating the hash table entry can be significant compared to the execution of the region code.
 
 */

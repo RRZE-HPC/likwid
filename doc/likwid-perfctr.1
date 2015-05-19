@@ -16,6 +16,8 @@ or
 .IR timeline_frequency ]
 .RB [ \-S
 .IR monitoring_time ]
+.RB [ \-T
+.IR group_switch_frequency ]
 .RB [ \-V
 .IR verbosity ]
 .RB [ \-M
@@ -88,7 +90,10 @@ eventId:register with the the register being one of a architecture supported per
 timeline mode for time resolved measurements.
 .TP
 .B \-\^S <waittime between measurements>
-Similar to normal likwid-perfctr runs with executable sleep <waittime>
+End-to-end measurement using likwid-perfctr but sleep instead of executing an application
+.TP
+.B \-\^T <time between group switches>
+Frequency to switch groups if multiple are given on commandline, default is 2s. Value is ignored for a single event set and default frequency of 30s is used to catch overflows.
 .TP
 .B \-\^s, \-\-\^skip <mask>
 Specify skip mask as HEX number. For each set bit the corresponding thread is skipped.
@@ -140,7 +145,8 @@ Using the marker API to measure only parts of your code (this can be used both w
 .TP
 .B likwid-perfctr -m -C 0-4 -g INSTRUCTIONS_RETIRED_SSE:PMC0,CPU_CLOCKS_UNHALTED:PMC3 ./cacheBench
 .PP
-You have to link you code against liblikwid.a and use the marker API calls.
+You have to link you code against liblikwid.so and use the marker API calls.
+Examples can be found in examples folder <PREFIX>/share/likwid/examples.
 The following code snippet shows the necessary calls:
 
 .nf
@@ -149,8 +155,21 @@ The following code snippet shows the necessary calls:
 /* only one thread calls init */
 LIKWID_MARKER_INIT;
 
-/* in parallel environment */
-LIKWID_MARKER_INIT;
+/* in parallel environment.
+ * if you place it in the same parallel
+ * region as LIKWID_MARKER_START, perform a
+ * barrier between the statements to avoid
+ * timing problems.
+ */
+LIKWID_MARKER_THREADINIT;
+
+/* If you run the code region only once, register
+ * the region tag previously to reduce the overhead
+ * of START and STOP calls. Call it once for each
+ * thread in parallel environment.
+ * This call is optional, START will do the same operations.
+ */
+LIKWID_MARKER_REGISTER("name");
 
 /* Start measurement */
 LIKWID_MARKER_START("name");
