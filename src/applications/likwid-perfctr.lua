@@ -61,6 +61,7 @@ local function usage()
     print("-a\t\t\t List available performance groups")
     print("-e\t\t\t List available events and counter registers")
     print("-i, --info\t\t Print CPU info")
+    print("-T <time>\t\t Switch eventsets with given frequency")
     print("Modes:")
     print("-S <time>\t\t Stethoscope mode with duration in s, ms or us, e.g 20ms")
     print("-t <time>\t\t Timeline mode with frequency in s, ms or us, e.g. 300ms")
@@ -120,7 +121,7 @@ if #arg == 0 then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker"}) do
+for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:","T:", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -175,6 +176,8 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         duration = likwid.parse_time(arg)
     elseif (opt == "t") then
         use_timeline = true
+        duration = likwid.parse_time(arg)
+    elseif (opt == "T") then
         duration = likwid.parse_time(arg)
     elseif opt == "o" or opt == "output" then
         local suffix = string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$")
@@ -384,10 +387,6 @@ if use_stethoscope == false and use_timeline == false and use_marker == false th
     use_wrapper = true
 end
 
-if use_wrapper == true and use_timeline == false and #event_string_list > 1 and not use_marker then
-    use_timeline = true
-end
-
 if use_wrapper and likwid.tablelength(arg)-2 == 0 and print_info == false then
     print_stdout("No Executable can be found on commanlikwid.dline")
     usage()
@@ -521,9 +520,10 @@ if use_wrapper or use_timeline then
         end
     end
     
-    if use_wrapper and duration == 2.E05 then
+    if use_wrapper and #group_ids == 1 then
         duration = 30.E06
     end
+
     local pid = likwid.startProgram(execString)
     if not pid then
         print_stdout("Failed to execute command: ".. execString)
@@ -568,9 +568,8 @@ if use_wrapper or use_timeline then
             end
             io.stderr:write(str.."\n")
         end
-        if use_timeline == true and #group_ids > 1 then
+        if #group_ids > 1 then
             likwid.switchGroup(activeGroup + 1)
-            likwid.readCounters()
             activeGroup = likwid.getIdOfActiveGroup()
             nr_events = likwid.getNumberOfEvents(activeGroup)
             start = likwid.startClock()
