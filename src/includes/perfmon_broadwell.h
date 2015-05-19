@@ -74,14 +74,8 @@ uint32_t bdw_fixed_setup(RegisterIndex index, PerfmonEvent *event)
 int bdw_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
-    int haveTileLock = 0;
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
-
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
-    {
-        haveTileLock = 1;
-    }
 
     flags = (1ULL<<22)|(1ULL<<16);
     /* Intel with standard 8 bit event mask: [7:0] */
@@ -123,10 +117,10 @@ int bdw_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (1ULL<<33);
                     break;
                 case EVENT_OPTION_MATCH0:
-                    offcore_flags |= (event->options[j].value & 0x8077ULL);
+                    offcore_flags |= (event->options[j].value & 0x8FFFULL);
                     break;
                 case EVENT_OPTION_MATCH1:
-                    offcore_flags |= ((event->options[j].value & 0x3F807FULL) <<16);
+                    offcore_flags |= (event->options[j].value<<16);
                     break;
                 default:
                     break;
@@ -134,7 +128,7 @@ int bdw_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         }
     }
 
-    if ((haveTileLock) && (event->eventId == 0xB7))
+    if (event->eventId == 0xB7)
     {
         if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
         {
@@ -143,7 +137,7 @@ int bdw_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, offcore_flags));
     }
-    else if ((haveTileLock) && (event->eventId == 0xBB))
+    else if (event->eventId == 0xBB)
     {
         if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
         {
