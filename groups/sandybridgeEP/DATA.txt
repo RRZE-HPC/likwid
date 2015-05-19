@@ -1,0 +1,22 @@
+SHORT Load to store ratio
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  MEM_UOP_RETIRED_LOADS
+PMC1  MEM_UOP_RETIRED_STORES
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Load to store ratio PMC0/PMC1
+
+LONG
+Formulas:
+Load to store ratio = MEM_UOP_RETIRED_LOADS/MEM_UOP_RETIRED_STORES
+-
+This is a metric to determine your load to store ratio.
+

@@ -1,0 +1,33 @@
+SHORT Local and remote memory accesses
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0 OFFCORE_RESPONSE_0_LOCAL_DRAM
+PMC1 OFFCORE_RESPONSE_1_REMOTE_DRAM
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Local DRAM data volume [GByte]  1.E-09*PMC0*64
+Local DRAM bandwidth [MByte/s]  1.E-06*(PMC0*64)/time
+Remote DRAM data volume [GByte]  1.E-09*PMC1*64
+Remote DRAM bandwidth [MByte/s]  1.E-06*(PMC1*64)/time
+Memory data volume [GByte]  1.E-09*(PMC0+PMC1)*64
+Memory bandwidth [MByte/s]  1.E-06*((PMC0+PMC1)*64)/time
+
+LONG
+Formula:
+CPI = CPU_CLK_UNHALTED_CORE/INSTR_RETIRED_ANY
+Local DRAM data volume [GByte] = 1.E-09*OFFCORE_RESPONSE_0_LOCAL_DRAM*64
+Local DRAM bandwidth [MByte/s] = 1.E-06*(OFFCORE_RESPONSE_0_LOCAL_DRAM*64)/time
+Remote DRAM data volume [GByte] = 1.E-09*OFFCORE_RESPONSE_1_REMOTE_DRAM*64
+Remote DRAM bandwidth [MByte/s] = 1.E-06*(OFFCORE_RESPONSE_1_REMOTE_DRAM*64)/time
+Memory data volume [GByte] = 1.E-09*(OFFCORE_RESPONSE_0_LOCAL_DRAM+OFFCORE_RESPONSE_1_REMOTE_DRAM)*64
+Memory bandwidth [MByte/s] = 1.E-06*((OFFCORE_RESPONSE_0_LOCAL_DRAM+OFFCORE_RESPONSE_1_REMOTE_DRAM)*64)/time
+--
+This performance group measures the data traffic of CPU cores to local and remote
+memory.
