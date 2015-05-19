@@ -14,6 +14,7 @@ dconfig["logStyle"] = "log"
 dconfig["gmetric"] = false
 dconfig["gmetricPath"] = "gmetric"
 dconfig["gmetricConfig"] = nil
+dconfig["gmetricHasUnit"] = false
 dconfig["rrd"] = false
 dconfig["rrdPath"] = "."
 dconfig["syslog"] = false
@@ -212,8 +213,8 @@ end
 
 local function check_logger()
     cmd = "which logger"
-    local f, msg, ret = io.popen(cmd)
-    if f == nil or ret ~= 0 then
+    local f = io.popen(cmd)
+    if f == nil then
         return false
     end
     f:close()
@@ -244,9 +245,13 @@ local function check_gmetric()
     if dconfig["gmetricPath"] == nil then
         return false
     end
-    local f, msg, ret = io.popen(dconfig["gmetricPath"])
-    if f == nil or ret ~= 0 then
+    local f = io.popen(dconfig["gmetricPath"].." -h","r")
+    if f == nil then
         return false
+    end
+    local msg = f:read("*a")
+    if msg:match("units=") then
+        dconfig["gmetricHasUnit"] = true
     end
     f:close()
     return true
@@ -257,15 +262,7 @@ local function gmetric(gdata, results)
     if dconfig["gmetricPath"] == nil then
         return
     end
-    local f = io.popen("hostname -f","r")
-    local hostname = f:read("*all"):gsub("^%s*(.-)%s*$", "%1")
-    f:close()
     table.insert(execList, dconfig["gmetricPath"])
-    table.insert(execList, "-t")
-    table.insert(execList, "double")
-    table.insert(execList, "-S")
-    
-    table.insert(execList, hostname)
     if dconfig["gmetricConfig"] ~= nil then
         table.insert(execList, "-c")
         table.insert(execList, dconfig["gmetricConfig"])
@@ -276,6 +273,11 @@ local function gmetric(gdata, results)
     end
     for k,v in pairs(results) do
         local execStr = table.concat(execList, " ")
+        if k ~= "Timestamp" then
+            execStr = execStr .. " -t double "
+        else
+            execStr = execStr .. " -t string "
+        end
         local name = k
         local unit = nil
         local s,e = k:find("%[")
@@ -284,12 +286,18 @@ local function gmetric(gdata, results)
             unit = k:sub(s+1,k:len()-1):gsub("^%s*(.-)%s*$", "%1")
         end
         execStr = execStr .. " --name=\"" .. name .."\""
-        if unit ~= nil then
-            execStr = execStr .. " --unit=\"" .. unit .."\""
+        if dconfig["gmetricHasUnit"] and unit ~= nil then
+            execStr = execStr .. " --units=\"" .. unit .."\""
         end
-        execStr = execStr .. " --value=\"" .. tostring(v) .."\""
-        --os.execute(execStr)
-        print(execStr)
+        local value = tonumber(v)
+        if v ~= nil and value ~= nil then
+            execStr = execStr .. " --value=\"" .. string.format("%f", value) .."\""
+        elseif value ~= nil then
+            execStr = execStr .. " --value=\"" .. tostring(v) .."\""
+        else
+            execStr = execStr .. " --value=\"0\""
+        end
+        os.execute(execStr)
     end
 end
 
@@ -305,8 +313,8 @@ local function normalize_rrd_string(str)
 end
 
 local function check_rrd()
-    local f, msg, ret = io.popen("rrdtool")
-    if f == nil or ret ~= 0 then
+    local f = io.popen("rrdtool")
+    if f == nil then
         return false
     end
     f:close()
@@ -444,7 +452,7 @@ likwid.catchSignal()
 while likwid.getSignalState() == 0 do
 
     for groupID,gdata in pairs(dconfig["groupData"]) do
-        local old_mtime = likwid_getRuntimeOfGroup(groupID)* 1.E-06
+        local old_mtime = likwid_getRuntimeOfGroup(groupID)
         local cur_time = os.time()
         likwid.setupCounters(groupID)
 
@@ -455,7 +463,7 @@ while likwid.getSignalState() == 0 do
 
         -- temporal array collecting counter to values for each thread for metric calculation
         threadResults = {}
-        local mtime = likwid_getRuntimeOfGroup(groupID)* 1.E-06
+        local mtime = likwid_getRuntimeOfGroup(groupID)
         local clock = likwid_getCpuClock();
 
         for event=1, likwid.getNumberOfEvents(groupID) do
@@ -463,7 +471,6 @@ while likwid.getSignalState() == 0 do
                 if threadResults[thread] == nil then
                     threadResults[thread] = {}
                 end
-                --print(thread, old_mtime, mtime, mtime - old_mtime)
                 threadResults[thread]["time"] = mtime - old_mtime
                 threadResults[thread]["inverseClock"] = 1.0/clock;
                 local result = likwid.getResult(groupID, event, thread)
@@ -531,6 +538,7 @@ while likwid.getSignalState() == 0 do
 end
 
 -- Finalize likwid perfctr
+likwid.catchSignal()
 likwid.finalize()
 likwid.putConfiguration()
 likwid.putTopology()
