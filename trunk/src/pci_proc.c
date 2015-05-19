@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <fcntl.h>
 
 
 #include <types.h>
@@ -40,8 +41,42 @@
 #include <topology.h>
 #include <error.h>
 
+int getBusFromSocket(const uint32_t socket)
+{
+    int cur_bus = 0;
+    uint32_t cur_socket = 0;
+    char pci_filepath[1024];
+    int fp;
+    int ret = 0;
+    while(cur_socket <= socket)
+    {
+        sprintf(pci_filepath, "/proc/bus/pci/%02x/05.0", cur_bus);
+        fp = open(pci_filepath, O_RDONLY);
+        if (fp < 0)
+        {
+            return -1;
+        }
+        uint32_t cpubusno = 0;
+        ret = pread(fp, &cpubusno, sizeof(uint32_t), 0x108);
+        if (ret != sizeof(uint32_t))
+        {
+            close(fp);
+            return -1;
+        }
+        cur_bus = (cpubusno >> 8) & 0x0ff;
+        close(fp);
+        if(socket == cur_socket)
+            return cur_bus;
+        ++cur_socket;
+        ++cur_bus;
+        if(cur_bus > 0x0ff)
+           return -1;
+    }
 
-int 
+    return -1;
+}
+
+int
 proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
 {
     FILE *fptr;
@@ -49,7 +84,7 @@ proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     int cntr = 0;
     uint16_t testVendor = 0x8086;
     uint32_t sbus, sdevfn, svend, sdev;
-    
+    int busID;
     
 
     if ( (fptr = fopen( "/proc/bus/pci/devices", "r")) == NULL )
@@ -63,26 +98,19 @@ proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     {
         if ( sscanf(buf, "%2x%2x %4x%4x", &sbus, &sdevfn, &svend, &sdev) == 4 &&
              svend == testVendor && sdev == testDevice )
-#ifndef REVERSE_HASWELL_PCI_SOCKETS
         {
             socket_bus[cntr] = (char*)malloc(4);
-            sprintf(socket_bus[cntr++], "%02x/", sbus);
-        }
-#else
-        {
-            if (cpuid_info.model != HASWELL_EP)
+            busID = getBusFromSocket(cntr);
+            if (busID == sbus)
             {
-                socket_bus[cntr] = (char*)malloc(4);
-                sprintf(socket_bus[cntr++], "%02x/", sbus);
+                sprintf(socket_bus[cntr], "%02x/", sbus);
             }
             else
             {
-                socket_bus[cpuid_topology.numSockets-cntr-1] = (char*)malloc(4);
-                sprintf(socket_bus[cpuid_topology.numSockets-cntr-1], "%02x/", sbus);
-                cntr++
+                sprintf(socket_bus[cntr], "%02x/", busID);
             }
+            cntr++;
         }
-#endif
     }
     fclose(fptr);
     

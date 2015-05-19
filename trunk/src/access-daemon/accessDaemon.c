@@ -393,6 +393,8 @@ static void pci_read(AccessDataRecord* dRecord)
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
+        syslog(LOG_ERR, "Open device file %s for device %s (%s) on socket %u", pci_filepath,
+                    pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
     }
 
     if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data))
@@ -438,6 +440,8 @@ static void pci_write(AccessDataRecord* dRecord)
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
+        syslog(LOG_ERR, "Open device file %s for device %s (%s) on socket %u", pci_filepath,
+                    pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
     }
 
     if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
@@ -482,6 +486,41 @@ static void stop_daemon(void)
     free(filepath);
     closelog();
     exit(EXIT_SUCCESS);
+}
+
+int getBusFromSocket(const uint32_t socket)
+{
+    int cur_bus = 0;
+    uint32_t cur_socket = 0;
+    char pci_filepath[1024];
+    int fp;
+    int ret = 0;
+    while(cur_socket <= socket)
+    {
+        sprintf(pci_filepath, "%s%02x/05.0", PCI_ROOT_PATH, cur_bus);
+        fp = open(pci_filepath, O_RDONLY);
+        if (fp < 0)
+        {
+            return -1;
+        }
+        uint32_t cpubusno = 0;
+        ret = pread(fp, &cpubusno, sizeof(uint32_t), 0x108);
+        if (ret != sizeof(uint32_t))
+        {
+            close(fp);
+            return -1;
+        }
+        cur_bus = (cpubusno >> 8) & 0x0ff;
+        close(fp);
+        if(socket == cur_socket)
+            return cur_bus;
+        ++cur_socket;
+        ++cur_bus;
+        if(cur_bus > 0x0ff)
+           return -1;
+    }
+
+    return -1;
 }
 
 static void Signal_Handler(int sig)
@@ -732,92 +771,48 @@ int main(void)
         {
             int cntr = 0;
             int socket_count = 0;
-            char buf[1024];
-            uint32_t testDevice;
             if (model == SANDYBRIDGE_EP)
             {
-                testDevice = 0x80863c44;
+                //testDevice = 0x80863c44;
                 pci_devices = sandybridgeEP_pci_devices;
             }
             else if (model == IVYBRIDGE_EP)
             {
-                testDevice = 0x80860e36;
+                //testDevice = 0x80860e36;
                 pci_devices = ivybridgeEP_pci_devices;
             }
             else if (model == HASWELL_EP)
             {
-                testDevice = 0x80862f30;
+                //testDevice = 0x80862f30;
                 pci_devices = haswellEP_pci_devices;
             }
             else
             {
-                testDevice = 0;
+                //testDevice = 0;
                 syslog(LOG_NOTICE, "PCI Uncore not supported on this system");
             }
-            if (strlen(TOSTRING(PCILIST)) == 0)
-            {
-                for (int j=0; j<MAX_NUM_NODES; j++)
-                {
-                    socket_bus[j] = "N-A";
-                    for (int i=0; i<MAX_NUM_PCI_DEVICES; i++)
-                    {
-                        FD_PCI[j][i] = -2;
-                    }
-                }
 
-                /* determine PCI-BUSID mapping ... */
-                FILE *fptr;
-                uint32_t sbus, sdevfn, svend;
-
-                if ( ((fptr = fopen("/proc/bus/pci/devices", "r")) == NULL) || !testDevice)
-                {
-                    syslog(LOG_NOTICE, "Unable to open /proc/bus/pci/devices");
-                }
-                else
-                {
-                    while( fgets(buf, sizeof(buf)-1, fptr) )
-                    {
-                        if ( sscanf(buf, "%2x%2x %8x", &sbus, &sdevfn, &svend) == 3 &&
-                                svend == testDevice )
-                        {
-                            socket_bus[cntr] = (char*)malloc(4);
-                            sprintf(socket_bus[cntr++], "%02x/", sbus);
-                        }
-                    }
-                    fclose(fptr);
-                }
-#ifdef REVERSE_HASWELL_PCI_SOCKETS
-                if ((model == HASWELL_EP) && (REORDER_HASWELL_EP_SOCKETS == 1))
-                {
-                    socket_bus_copy = malloc(cntr * sizeof(char*));
-                    for (int i=0;i<cntr;i++)
-                    {
-                        socket_bus_copy[i] = (char*)malloc(4);
-                        strcpy(socket_bus_copy[i], socket_bus[cntr-1-i]);
-                    }
-                    for (int i=0;i<cntr;i++)
-                    {
-                        strcpy(socket_bus[i], socket_bus_copy[i]);
-                        free(socket_bus_copy[i]);
-                    }
-                    free(socket_bus_copy);
-                }
-#endif
-            }
-            else
+            for (int j=0; j<MAX_NUM_NODES; j++)
             {
-                char delim = ' ';
-                char* ptr = NULL;
-                sprintf(buf, "%s", TOSTRING(PCILIST));
-                ptr = strtok(buf, &delim);
-                while (ptr != NULL)
+                socket_bus[j] = "N-A";
+                for (int i=0; i<MAX_NUM_PCI_DEVICES; i++)
                 {
-                    socket_bus[cntr] = (char*)malloc(4);
-                    sprintf(socket_bus[cntr], "%s/", ptr);
-                    ptr = strtok(NULL, &delim);
-                    cntr++;
+                    FD_PCI[j][i] = -2;
                 }
             }
+
+            /* determine PCI-BUSID mapping ... */
+            int sbus = -1;
+            cntr = 0;
+            sbus = getBusFromSocket(cntr);
+            while (sbus != -1)
+            {
+                socket_bus[cntr] = (char*)malloc(4);
+                sprintf(socket_bus[cntr], "%02x/", sbus);
+                cntr++;
+                sbus = getBusFromSocket(cntr);
+            }
+
             if ( cntr == 0 )
             {
                 syslog(LOG_NOTICE, "Uncore not supported on this system");
@@ -842,7 +837,7 @@ int main(void)
                             }
                             else if (j==0)
                             {
-                                syslog(LOG_NOTICE, "Device %s not found at path %s, excluded it from device list: %s\n",pci_devices[i].name,pci_filepath, strerror(errno));
+                                syslog(LOG_NOTICE, "Device %s for socket %d not found at path %s, excluded it from device list: %s\n",pci_devices[i].name,j, pci_filepath, strerror(errno));
                             }
                         }
                     }

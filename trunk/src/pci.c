@@ -131,8 +131,6 @@ pci_init(int initSocket_fd)
             break;
     }
 
-    if (strlen(TOSTRING(PCILIST)) == 0)
-    {
 #ifdef LIKWID_USE_HWLOC
         DEBUG_PLAIN_PRINT(DEBUGLEV_DETAIL, Using hwloc to find pci devices);
         ret = hwloc_pci_init(testDevice, socket_bus, &nr_sockets);
@@ -150,23 +148,6 @@ pci_init(int initSocket_fd)
             return -ENODEV;
         }
 #endif
-    }
-    else
-    {
-        nr_sockets = 0;
-        char delim = ' ';
-        char buf[1024];
-        char* ptr = NULL;
-        sprintf(buf, "%s", TOSTRING(PCILIST));
-        ptr = strtok(buf, &delim);
-        while (ptr != NULL)
-        {
-            socket_bus[nr_sockets] = (char*)malloc(4);
-            sprintf(socket_bus[nr_sockets], "%s/", ptr);
-            ptr = strtok(NULL, &delim);
-            nr_sockets++;
-        }
-    }
 
     if (accessClient_mode == ACCESSMODE_DIRECT)
     {
@@ -192,7 +173,7 @@ pci_init(int initSocket_fd)
                     pci_devices[j].online = 1;
                     if (i==0)
                     {
-                        DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, i,bdata(filepath));
+                        DEBUG_PRINT(DEBUGLEV_DETAIL, PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, i,bdata(filepath));
                     }
                 }
                 else
@@ -298,7 +279,6 @@ pci_read(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t* data)
         {
             return -ENODEV;
         }
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI READ [%d] SOCKET %d DEV %s(%d) REG 0x%x, cpu, socket_fd, pci_devices[device].name,device, reg);
         err = accessClient_read(socket_fd, socketId, device, reg, &tmp);
         if (err)
         {
@@ -360,7 +340,6 @@ pci_write(int cpu, PciDeviceIndex device, uint32_t reg, uint32_t data)
         {
             return -ENODEV;
         }
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, PCI WRITE [%d] SOCKET %d DEV %s REG 0x%x, cpu, socket_fd, pci_devices[device].name, reg);
         err = accessClient_write(socket_fd, socketId, device, reg, (uint64_t) data);
         if (err)
         {
