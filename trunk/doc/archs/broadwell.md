@@ -143,13 +143,13 @@
 <TR>
   <TD>match0</TD>
   <TD>16 bit hex value</TD>
-  <TD>Input value masked with 0x8077 and written to bits 0-15 in the OFFCORE_RESPONSE register</TD>
+  <TD>Input value masked with 0x8FFF and written to bits 0-15 in the OFFCORE_RESPONSE register</TD>
   <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A>.</TD>
 </TR>
 <TR>
   <TD>match1</TD>
   <TD>22 bit hex value</TD>
-  <TD>Input value masked with 0x3F807F and written to bits 16-37 in the OFFCORE_RESPONSE register</TD>
+  <TD>Input value is written to bits 16-37 in the OFFCORE_RESPONSE register</TD>
   <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A>.</TD>
 </TR>
 </TABLE>

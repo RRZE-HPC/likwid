@@ -1,5 +1,7 @@
 /*! \page haswellep Intel&reg; Haswell EP/EN/EX
 
+<P>Intel&reg; Haswell EP/EN/EX use PCI-based perofmance counters for Uncore measurements. Currently, it is not possible to get the location of the counters, thus which PCI bus corresponds to which CPU socket. In order to sort the PCI busses in another way, there is a configuration variable <CODE>REVERSE_HASWELL_PCI_SOCKETS</CODE>. If this does not help, you can set the busses completely free using the <CODE>PCI_SOCKETS</CODE> variable. Explaination in config.mk.</P>
+
 <H1>Available performance monitors for the Intel&reg; Haswell EP/EN/EX microarchitecture</H1>
 <UL>
 <LI>\ref HASEP_FIXED "Fixed-purpose counters"</LI>
@@ -153,13 +155,13 @@
 <TR>
   <TD>match0</TD>
   <TD>16 bit hex value</TD>
-  <TD>Input value masked with 0x8077 and written to bits 0-15 in the OFFCORE_RESPONSE register</TD>
+  <TD>Input value masked with 0x8FFF and written to bits 0-15 in the OFFCORE_RESPONSE register</TD>
   <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A>.</TD>
 </TR>
 <TR>
   <TD>match1</TD>
   <TD>22 bit hex value</TD>
-  <TD>Input value masked with 0x3F807F and written to bits 16-37 in the OFFCORE_RESPONSE register</TD>
+  <TD>Input value is written to bits 16-37 in the OFFCORE_RESPONSE register</TD>
   <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A>.</TD>
 </TR>
 </TABLE>
