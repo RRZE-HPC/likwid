@@ -150,7 +150,14 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
     }
     if ((ret) && (*type != THERMAL) && (*type != POWER) && (*type != WBOX0FIX))
     {
-        err = HPMread(0, counter_map[*index].device, counter_map[*index].counterRegister, &tmp);
+        int check_settings = 1;
+        uint32_t reg = counter_map[*index].configRegister;
+        if (reg == 0x0)
+        {
+            reg = counter_map[*index].counterRegister;
+            check_settings = 0;
+        }
+        err = HPMread(0, counter_map[*index].device, reg, &tmp);
         if (err != 0)
         {
             if (err == -ENODEV)
@@ -168,7 +175,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
         }
         else if (tmp == 0x0)
         {
-            err = HPMwrite(0, counter_map[*index].device, counter_map[*index].counterRegister, 0x0U);
+            err = HPMwrite(0, counter_map[*index].device, reg, 0x0ULL);
             if (err != 0)
             {
                 if (err == -ENODEV)
@@ -185,7 +192,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
                 ret = FALSE;
             }
         }
-        else
+        else if (check_settings)
         {
             DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s has bits set but we ignore it,
                                              counter_map[*index].key);
