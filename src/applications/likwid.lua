@@ -356,7 +356,7 @@ local function cpulist_sort(cpulist)
     end
     local topo = likwid_getCpuTopology()
     for offset=1,topo["numThreadsPerCore"] do
-        for i=0, #cpulist/2 do
+        for i=0, #cpulist/topo["numThreadsPerCore"] do
             table.insert(newlist, cpulist[(i*topo["numThreadsPerCore"])+offset])
         end
     end
