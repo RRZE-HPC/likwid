@@ -186,6 +186,7 @@ While installation of LIKWID, the performance groups are copied to the path <COD
 \anchor Marker_API
 <H1>Marker API</H1>
 The Marker API enables measurement of user-defined code regions in order to get deeper insight what is happening at a specific point in the application. The Marker API itself has 6 commands. In order to activate the Marker API, the code must be compiled with <CODE>-DLIKWID_PERFMON</CODE>. If the code is compiled without this define, the Marker API functions perform no operation and cause no overhead. You can also run code compiled with the define without measurements but a message will be printed.<BR>
+Even pure serial applications have to call LIKWID_MARKER_THREADINIT to initialize the accessDaemon or the direct accesses.
 <H2>C/C++ Code</H2>
 <H3>Original code</H3>
 <CODE>

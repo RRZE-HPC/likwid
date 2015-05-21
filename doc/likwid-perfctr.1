@@ -155,8 +155,9 @@ The following code snippet shows the necessary calls:
 /* only one thread calls init */
 LIKWID_MARKER_INIT;
 
-/* in parallel environment.
- * if you place it in the same parallel
+/* Must be called by each thread the should 
+ * perform measurements.
+ * If you place it in the same parallel
  * region as LIKWID_MARKER_START, perform a
  * barrier between the statements to avoid
  * timing problems.
