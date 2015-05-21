@@ -76,9 +76,14 @@ int svm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags |= (1ULL<<16)|(1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
     /* For event id 0xB7 the cmask must be written in an extra register */
-    if ((event->cmask) && (event->eventId != 0xB7))
+    if ((event->cmask != 0x00) && (event->eventId != 0xB7))
     {
         flags |= (event->cmask << 24);
+    }
+    /* set custom cfgbits */
+    if ((event->cfgBits != 0x00) && (event->eventId != 0xB7))
+    {
+        flags |= (event->cfgBits << 16);
     }
 
     if (event->numberOfOptions > 0)
