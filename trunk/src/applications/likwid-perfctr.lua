@@ -538,7 +538,6 @@ if use_wrapper or use_timeline then
             likwid.killProgram()
             break
         end
-        
         if duration >= 1.E06 then
             remain = sleep(duration/1.E06)
             if remain > 0 or not likwid.checkProgram() then
@@ -572,8 +571,8 @@ if use_wrapper or use_timeline then
             likwid.switchGroup(activeGroup + 1)
             activeGroup = likwid.getIdOfActiveGroup()
             nr_events = likwid.getNumberOfEvents(activeGroup)
-            start = likwid.startClock()
         end
+        start = likwid.startClock()
     end
     stop = likwid.stopClock()
     if use_timeline == true then
