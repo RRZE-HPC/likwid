@@ -104,7 +104,6 @@ power_init(int cpuId)
     if ( power_info.hasRAPL )
     {
         busSpeed = 100.0;
-        }
     }
     else
     {
