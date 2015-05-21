@@ -76,12 +76,7 @@ int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
-    int haveTileLock = 0;
     uint64_t reg = counter_map[index].configRegister;
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
-    {
-        haveTileLock = 1;
-    }
 
     flags |= (1ULL<<22)|(1ULL<<16);
     /* Intel with standard 8 bit event mask: [7:0] */
@@ -123,7 +118,7 @@ int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    if ((haveTileLock) && (event->eventId == 0xB7))
+    if (event->eventId == 0xB7)
     {
         if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
         {

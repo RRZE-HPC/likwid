@@ -69,14 +69,9 @@ uint32_t svm_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int svm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int haveTileLock = 0;
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
 
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
-    {
-        haveTileLock = 1;
-    }
 
     flags |= (1ULL<<16)|(1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
@@ -129,7 +124,7 @@ int svm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     // Offcore event with additional configuration register
     // cfgBits contain offset of "request type" bit
     // cmask contain offset of "response type" bit
-    if ((haveTileLock) && (event->eventId == 0xB7))
+    if (event->eventId == 0xB7)
     {
         uint32_t reg = 0x0;
         if (event->umask == 0x01)

@@ -71,13 +71,7 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint64_t flags = 0x0ULL;
-    int haveLock = 0;
     uint64_t offcore_flags = 0x0ULL;
-
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
-    {
-        haveLock = 1;
-    }
 
     flags = (1ULL<<22)|(1ULL<<16);
     flags |= (event->umask<<8) + event->eventId;
@@ -123,7 +117,7 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     // Offcore event with additional configuration register
     // cfgBits contain offset of "request type" bit
     // cmask contain offset of "response type" bit
-    if ((haveLock) && (event->eventId == 0xB7))
+    if (event->eventId == 0xB7)
     {
         if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
         {
@@ -132,7 +126,7 @@ int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, offcore_flags));
     }
-    if ((haveLock) && (event->eventId == 0xBB) &&
+    if ((event->eventId == 0xBB) &&
         ((cpuid_info.model == NEHALEM_WESTMERE) || (cpuid_info.model == NEHALEM_WESTMERE_M)))
     {
         if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
