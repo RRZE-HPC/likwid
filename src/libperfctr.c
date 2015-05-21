@@ -176,7 +176,6 @@ void likwid_markerInit(void)
         fprintf(stderr,"Access to performance counters is locked.\n");
         exit(EXIT_FAILURE);
     }
-    
 
     topology_init();
     numa_init();
@@ -198,9 +197,15 @@ void likwid_markerInit(void)
     {
         threads2Cpu[i] = ownatoi(bdata(threadTokens->entry[i]));
     }
-    perfmon_init(num_cpus, threads2Cpu);
     bdestroy(bThreadStr);
     bstrListDestroy(threadTokens);
+
+    i = perfmon_init(num_cpus, threads2Cpu);
+    if (i<0)
+    {
+        fprintf(stderr,"Failed to initialize LIKWID perfmon library.\n");
+        return;
+    }
 
     bEventStr = bfromcstr(eventStr);
     eventStrings = bstrListCreate();
