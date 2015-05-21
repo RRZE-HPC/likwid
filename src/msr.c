@@ -181,7 +181,7 @@ msr_init(int initSocket_fd)
                 close(fd);
             }
             FD[cpuid_topology.threadPool[i].apicId] = open(msr_file_name, O_RDWR);
-            if ( FD[cpuid_topology.threadPool[i].threadId] < 0 )
+            if ( FD[cpuid_topology.threadPool[i].apicId] < 0 )
             {
                 ERROR_PRINT(Cannot access MSR device file %s in direct mode, msr_file_name);
                 free(msr_file_name);
