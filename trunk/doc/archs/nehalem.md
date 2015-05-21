@@ -119,7 +119,7 @@
 </TABLE>
 
 <H3>Special handling for events</H3>
-<P>The Intel&reg; Nehalem microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Nehalem microarchitecture has two of those registers. Although the PMC counters are core-local, the offcore filtering can only be done by one hardware thread attached to a shared L2 cache. LIKWID defines some events that perform the filtering according to the event name but also own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS event. Only for those events two more counter options are available:</P>
+<P>The Intel&reg; Nehalem microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Nehalem microarchitecture has one of those registers. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS event. Only for those events two more counter options are available:</P>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -131,13 +131,13 @@
   <TD>match0</TD>
   <TD>8 bit hex value</TD>
   <TD>Input value masked with 0xFF and written to bits 0-7 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and the event files at <A HREF="https://download.01.org/perfmon/NHM-EP">https://download.01.org/perfmon/NHM-EP</A>.</TD>
 </TR>
 <TR>
   <TD>match1</TD>
   <TD>8 bit hex value</TD>
   <TD>Input value masked with 0xF7 and written to bits 8-15 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and the event files at <A HREF="https://download.01.org/perfmon/NHM-EP">https://download.01.org/perfmon/NHM-EP</A>.</TD>
 </TR>
 </TABLE>
 

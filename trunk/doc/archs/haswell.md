@@ -132,7 +132,7 @@
 </TABLE>
 
 <H3>Special handling for events</H3>
-<P>The Intel&reg; Haswell microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Haswell microarchitecture has two of those registers. Although the PMC counters are core-local, the offcore filtering can only be done by one hardware thread attached to a shared L2 cache. LIKWID defines some events that perform the filtering according to the event name but also own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS and OFFCORE_RESPONSE_1_OPTIONS events. Only for those events two more counter options are available:</P>
+<P>The Intel&reg; Haswell microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Haswell microarchitecture has two of those registers. LIKWID defines some events that perform the filtering according to the event name. Although there are many bitmasks possible, LIKWID natively provides only the ones with response type ANY. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS and OFFCORE_RESPONSE_1_OPTIONS events. Only for those events two more counter options are available:</P>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -144,7 +144,7 @@
   <TD>match0</TD>
   <TD>16 bit hex value</TD>
   <TD>Input value masked with 0x8077 and written to bits 0-15 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and the event files at <A HREF="https://download.01.org/perfmon/HSW">https://download.01.org/perfmon/HSW</A>.</TD>
 </TR>
 <TR>
   <TD>match1</TD>
@@ -153,7 +153,7 @@
   <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A>.</TD>
 </TR>
 </TABLE>
-<P>The event MEM_TRANS_RETIRED_LOAD_LAT is not available because it needs programming of PEBS registers. PEBS is a kernel-level measurement facility. Although we can programm it from user-space, the results are always 0.</P>
+<P>The event MEM_TRANS_RETIRED_LOAD_LAT is not available because it needs programming of PEBS registers. PEBS is a kernel-level measurement facility. Although we can programm it from user-space, the results are always 0 and the event files at <A HREF="https://download.01.org/perfmon/HSW">https://download.01.org/perfmon/HSW</A>.</P>
 
 \anchor HAS_THERMAL
 <H2>Thermal counter</H2>
