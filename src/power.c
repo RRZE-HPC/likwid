@@ -92,14 +92,6 @@ power_init(int cpuId)
             break;
     }
 
-    if ( power_info.hasRAPL )
-    {
-        busSpeed = 100.0;
-    }
-    else
-    {
-        busSpeed = 133.33;
-    }
     perfmon_init_maps();
     if (!HPMinitialized())
     {
@@ -108,6 +100,15 @@ power_init(int cpuId)
     if (power_initialized)
     {
         return 0;
+    }
+    if ( power_info.hasRAPL )
+    {
+        busSpeed = 100.0;
+        }
+    }
+    else
+    {
+        busSpeed = 133.33;
     }
     if (cpuid_info.turbo)
     {
@@ -164,7 +165,8 @@ power_init(int cpuId)
         if (err == 0)
         {
             double energyUnit;
-            power_info.powerUnit = pow(0.5,(double) extractBitField(flags,4,0));
+            power_info.powerUnit = 1000000 / (1<<(flags & 0xF));
+            power_info.timeUnit = 1000000 / (1 << ((flags>>16) & 0xF));
             if (cpuid_info.model != ATOM_SILVERMONT_E)
             {
                 energyUnit = 1.0 / (1 << ((flags >> 8) & 0x1F));
@@ -173,7 +175,7 @@ power_init(int cpuId)
             {
                 energyUnit = 1.0 * (1 << ((flags >> 8) & 0x1F)) / 1000000;
             }
-            power_info.timeUnit = pow(0.5,(double) extractBitField(flags,4,16));
+            
             for (i = 0; i < NUM_POWER_DOMAINS; i++)
             {
                 power_info.domains[i].energyUnit = energyUnit;
