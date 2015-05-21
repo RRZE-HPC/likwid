@@ -83,6 +83,7 @@ ifneq ($(COMPILER),MIC)
 DEFINES += -DACCESSMODE=2
 else
 $(info Info: Compiling for Xeon Phi. Set accessmode to direct.);
+ACCESSMODE = direct
 DEFINES += -DACCESSMODE=0
 endif
 else
@@ -92,6 +93,7 @@ DEFINES += -DACCESSMODE=1
 else
 $(info Info: Compiling for Xeon Phi. Set accessmode to direct.);
 DEFINES += -DACCESSMODE=0
+ACCESSMODE = direct
 endif
 else
 DEFINES += -DACCESSMODE=0

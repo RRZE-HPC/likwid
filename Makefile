@@ -106,10 +106,12 @@ docs:
 
 $(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
 	@echo "===>  ADJUSTING  $@"
+	@if [ "$(ACCESSMODE)" = "direct" ]; then sed -i -e s/"access_mode = 1"/"access_mode = 0"/g $(SRC_DIR)/applications/$@.lua;fi
 	@sed -e s/'<PREFIX>'/$(subst /,\\/,$(PREFIX))/g \
 		-e s/'<VERSION>'/$(VERSION).$(RELEASE)/g \
 		-e s/'<DATE>'/$(DATE)/g \
 		$(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$@)) > $@
+	@if [ "$(ACCESSMODE)" = "direct" ]; then sed -i -e s/"access_mode = 0"/"access_mode = 1"/g $(SRC_DIR)/applications/$@.lua;fi
 
 $(L_HELPER):
 	@echo "===>  ADJUSTING  $@"
