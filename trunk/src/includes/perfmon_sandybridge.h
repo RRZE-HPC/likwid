@@ -1026,7 +1026,7 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, UNFREEZE_PMC_OR_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0x300000000ULL|flags));
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
     }
     SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX0);
     SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX1);
