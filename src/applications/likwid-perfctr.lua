@@ -30,7 +30,7 @@
  *
  * =======================================================================================]]
 
-package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
+package.path = '<PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
@@ -351,13 +351,15 @@ if #event_string_list == 0 and not print_info then
     os.exit(1)
 end
 
-print_stdout(likwid.hline)
-print_stdout(string.format("CPU name:\t%s",cpuinfo["osname"]))
-print_stdout(string.format("CPU type:\t%s",cpuinfo["name"]))
-if (cpuinfo["clock"] > 0) then
-    print_stdout(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] * 1.E-09))
-else
-    print_stdout(string.format("CPU clock:\t%3.2f GHz",likwid.getCpuClock() * 1.E-09))
+if outfile == nil then
+    print_stdout(likwid.hline)
+    print_stdout(string.format("CPU name:\t%s",cpuinfo["osname"]))
+    print_stdout(string.format("CPU type:\t%s",cpuinfo["name"]))
+    if (cpuinfo["clock"] > 0) then
+        print_stdout(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] * 1.E-09))
+    else
+        print_stdout(string.format("CPU clock:\t%3.2f GHz",likwid.getCpuClock() * 1.E-09))
+    end
 end
 
 if print_info or verbose > 0 then
@@ -469,7 +471,9 @@ end
 
 activeGroup = group_ids[1]
 likwid.setupCounters(activeGroup)
-print_stdout(likwid.hline)
+if outfile == nil then
+    print_stdout(likwid.hline)
+end
 
 if use_marker == true then
     likwid.setenv("LIKWID_FILEPATH", markerFile)
@@ -616,7 +620,9 @@ if ret < 0 then
     os.exit(1)
 end
 io.stdout:flush()
-print_stdout(likwid.hline)
+if outfile == nil then
+    print_stdout(likwid.hline)
+end
 
 
 if use_marker == true then

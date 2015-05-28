@@ -1,5 +1,5 @@
 local likwid = {}
-package.cpath = package.cpath .. ';<PREFIX>/lib/?.so'
+package.cpath = '<PREFIX>/lib/?.so;' .. package.cpath
 require("liblikwid")
 require("math")
 
@@ -922,7 +922,7 @@ local function printOutput(groups, results, groupData, cpulist)
     local nr_groups = #groups
     local maxLineFields = 0
     local cpuinfo = likwid_getCpuInfo()
-    
+    local clock = likwid.getCpuClock()
     for g, group in pairs(groups) do
         local groupID = group["ID"]
         local num_events = likwid_getNumberOfEvents(groupID);
@@ -975,7 +975,7 @@ local function printOutput(groups, results, groupData, cpulist)
         if groupData[groupID]["Metrics"] then
             local counterlist = {}
             counterlist["time"] = runtime
-            counterlist["inverseClock"] = 1.0/likwid_getCpuClock();
+            counterlist["inverseClock"] = 1.0/clock;
 
             secondtab[1] = {"Metric"}
             secondtab_combined[1] = {"Metric"}
@@ -1008,14 +1008,17 @@ local function printOutput(groups, results, groupData, cpulist)
             print(string.format("STRUCT,Info,3%s",string.rep(",",maxLineFields-3)))
             print(string.format("CPU name:,%s%s", cpuinfo["osname"],string.rep(",",maxLineFields-2)))
             print(string.format("CPU type:,%s%s", cpuinfo["name"],string.rep(",",maxLineFields-2)))
-            if cpuinfo["clock"] > 0 then
-                print(string.format("CPU clock:,%s GHz%s", cpuinfo["clock"]*1.E-09,string.rep(",",maxLineFields-2)))
-            else
-                print(string.format("CPU clock:,%s GHz%s", likwid.getCpuClock()*1.E-09,string.rep(",",maxLineFields-2)))
-            end
+            print(string.format("CPU clock:,%s GHz%s", clock*1.E-09,string.rep(",",maxLineFields-2)))
             print(string.format("TABLE,Group %d Raw,%d%s",groupID,#firsttab[1]-1,string.rep(",",maxLineFields-3)))
             likwid.printcsv(firsttab, maxLineFields)
         else
+            if outfile ~= nil then
+                print(likwid.hline)
+                print(string.format("CPU name:\t%s",cpuinfo["osname"]))
+                print(string.format("CPU type:\t%s",cpuinfo["name"]))
+                print(string.format("CPU clock:\t%3.2f GHz",clock * 1.E-09))
+                print(likwid.hline)
+            end
             print("Group "..tostring(groupID)..":")
             likwid.printtable(firsttab)
         end
@@ -1145,7 +1148,20 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                     if maxLineFields > 2 then
                         str = str .. string.rep(",", maxLineFields-2)
                     end
+                    if outfile ~= nil and g == 1 and r == 1 then
+                        print(string.format("STRUCT,Info,3%s",string.rep(",",maxLineFields-3)))
+                        print(string.format("CPU name:,%s%s", cpuinfo["osname"],string.rep(",",maxLineFields-2)))
+                        print(string.format("CPU type:,%s%s", cpuinfo["name"],string.rep(",",maxLineFields-2)))
+                        print(string.format("CPU clock:,%s GHz%s", clock*1.E-09,string.rep(",",maxLineFields-2)))
+                    end
                 else
+                    if outfile ~= nil and g == 1 and r == 1 then
+                        print(likwid.hline)
+                        print(string.format("CPU name:\t%s",cpuinfo["osname"]))
+                        print(string.format("CPU type:\t%s",cpuinfo["name"]))
+                        print(string.format("CPU clock:\t%3.2f GHz",clock * 1.E-09))
+                        print(likwid.hline)
+                    end
                     print(likwid.dline)
                     str = "Group "..tostring(g)..": Region "..groups[g][r]["Name"]
                     print(str)
