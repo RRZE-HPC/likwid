@@ -43,17 +43,21 @@ uint64_t bstr_to_doubleSize(const_bstring str, DataType type)
             break;
     }
 
-    if (biseqcstr(unit, "kB"))
+    if ((biseqcstr(unit, "kB"))||(biseqcstr(unit, "KB")))
     {
-        junk = (sizeU *1024)/bytesize;
+        junk = (sizeU *1000)/bytesize;
     }
     else if (biseqcstr(unit, "MB"))
     {
-        junk = (sizeU *1024*1024)/bytesize;
+        junk = (sizeU *1000000)/bytesize;
     }
     else if (biseqcstr(unit, "GB"))
     {
-        junk = (sizeU *1024*1024*1024)/bytesize;
+        junk = (sizeU *1000000000)/bytesize;
+    }
+    else if (biseqcstr(unit, "B"))
+    {
+        junk = (sizeU)/bytesize;
     }
 
     return junk;
