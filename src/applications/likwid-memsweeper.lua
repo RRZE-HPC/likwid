@@ -28,7 +28,7 @@
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================]]
-package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
+package.path = '<PREFIX>/share/lua/?.lua;' .. package.path
 local likwid = require("likwid")
 
 local function version()
@@ -38,11 +38,11 @@ end
 local function examples()
     print("Examples:")
     print("To clean specific domain:")
-    print("likwid-memsweeper.lua -c 2")
+    print("likwid-memsweeper -c 2")
     print("To clean a range of domains:")
-    print("likwid-memsweeper.lua -c 1-2")
+    print("likwid-memsweeper -c 1-2")
     print("To clean specific domains:")
-    print("likwid-memsweeper.lua -c 0,1-2")
+    print("likwid-memsweeper -c 0,1-2")
 
 end
 
@@ -53,7 +53,7 @@ local function usage()
     print("-h\t\t Help message")
     print("-v\t\t Version information")
     print("-c <list>\t Specify NUMA domain ID to clean up")
-    print("\n")
+    print("")
     examples()
 end
 
