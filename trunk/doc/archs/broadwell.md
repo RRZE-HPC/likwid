@@ -1,5 +1,7 @@
 /*! \page broadwell Intel&reg; Broadwell
 
+<P>This page is valid for Broadwell, Broadwell single socket server (Xeon D) and Broadwell EP/EN/EX. No Uncore support by now, no documentation is available for the Uncore counters of Broadwell</P>
+
 <H1>Available performance monitors for the Intel&reg; Broadwell microarchitecture</H1>
 <UL>
 <LI>\ref BRD_FIXED "Fixed-purpose counters"</LI>

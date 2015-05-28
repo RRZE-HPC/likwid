@@ -184,4 +184,5 @@
   <TD>PWR_DRAM_ENERGY</TD>
 </TR>
 </TABLE>
+<P>*) The PWR2 counter is often not implemented by Intel&reg; SandyBridge systems</P>
 */

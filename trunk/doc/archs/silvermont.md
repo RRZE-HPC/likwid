@@ -166,9 +166,9 @@
   <TD>PWR_PP1_ENERGY</TD>
 </TR>
 <TR>
-  <TD>PWR3</TD>
+  <TD>PWR3*</TD>
   <TD>PWR_DRAM_ENERGY</TD>
 </TR>
 </TABLE>
-
+<P>*) The PWR2 and PWR3 counter is commonly not implemented by Intel&reg; Silvermont systems</P>
 */
