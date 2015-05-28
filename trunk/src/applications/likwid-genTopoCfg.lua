@@ -30,7 +30,7 @@
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================]]
-package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
+package.path = '<PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
