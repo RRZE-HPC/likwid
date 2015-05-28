@@ -29,7 +29,7 @@
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================]]
-package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
+package.path = '<PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
@@ -145,7 +145,9 @@ local function readHostfileOpenMPI(filename)
             local found = false
             for i, host in pairs(hostlist) do
                 if host["hostname"] == hostname then
-                    host["slots"] = host["slots"] + tonumber(slots)
+                    if slots and host["slots"] then
+                        host["slots"] = host["slots"] + tonumber(slots)
+                    end
                     if maxslots and host["maxslots"] then
                         host["maxslots"] = host["maxslots"] + tonumber(maxslots)
                     end
@@ -188,13 +190,28 @@ local function getEnvironmentOpenMPI()
 end
 
 local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
+    local bindstr = ""
     if wrapperscript.sub(1,1) ~= "/" then
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
 
-    local cmd = string.format("%s -hostfile %s -np %d -npernode %d %s",
-                                MPIINFO["openmpi"]["MPIEXEC"], hostfile, np,
-                                ppn, wrapperscript)
+    local f = io.popen(string.format("%s -V", MPIINFO["openmpi"]["MPIEXEC"]), "r")
+    if f ~= nil then
+        local input = f:read("*a")
+        ver1,ver2,ver3 = input:match("(%d+)%.(%d+)%.(%d+)")
+        if ver1 == "1" then
+            if ver2 == "7" then
+                bindstr = "--bind-to none"
+            elseif ver2 == "6" then
+                bindstr = "--bind-to-none"
+            end
+        end
+        f:close()
+    end
+
+    local cmd = string.format("%s -hostfile %s %s -np %d -npernode %d %s",
+                                MPIINFO["openmpi"]["MPIEXEC"], hostfile, bindstr,
+                                np, ppn, wrapperscript)
     if debug then
         print("EXEC: "..cmd)
     end
@@ -263,12 +280,12 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
 
     if debug then
         print(string.format("EXEC: %s/bin/mpdboot -r ssh -n %d -f %s", MPIROOT, nrNodes, hostfile))
-        print(string.format("EXEC: %s/bin/mpiexec -perhost %d -np %d %s", MPIROOT, ppn, np, wrapperscript))
+        print(string.format("EXEC: %s/bin/mpiexec -perhost %d -env I_MPI_PIN 0 -np %d %s", MPIROOT, ppn, np, wrapperscript))
         print(string.format("EXEC: %s/bin/mpdallexit", MPIROOT))
     end
 
     os.execute(string.format("%s/bin/mpdboot -r ssh -n %d -f %s", MPIROOT, nrNodes, hostfile))
-    os.execute(string.format("%s/bin/mpiexec -perhost %d -np %d %s", MPIROOT, ppn, np, wrapperscript))
+    os.execute(string.format("%s/bin/mpiexec -perhost %d -env I_MPI_PIN 0 -np %d %s", MPIROOT, ppn, np, wrapperscript))
     os.execute(string.format("%s/bin/mpdallexit", MPIROOT))
 end
 
@@ -417,16 +434,12 @@ end
 local function getMpiType()
     local mpitype = nil
     cmd = "tclsh /apps/modules/modulecmd.tcl sh list -t 2>&1"
-    local f,msg,ret = io.popen(cmd, 'r')
-    if ret ~= nil then
-        f:close()
+    local f = io.popen(cmd, 'r')
+    if f == nil then
         cmd = os.getenv("SHELL").." -c 'module -t 2>&1'"
         f,msg,ret = io.popen(cmd, 'r')
-        if ret ~= nil then
-            f:close()
-        end
     end
-    if f then
+    if f ~= nil then
         local s = assert(f:read('*a'))
         f:close()
         s = string.gsub(s, '^%s+', '')
@@ -468,15 +481,12 @@ local function getOmpType()
         print("WARN: Cannot get OpenMP variant from executable, trying module system")
         cmd = "tclsh /apps/modules/modulecmd.tcl sh list -t 2>&1"
         local f = io.popen(cmd, 'r')
-        if ret ~= 0 then
+        if f ~= nil then
             f:close()
-            cmd = os.getenv("SHELL").." -c 'module -t 2>&1'"
-            f,msg,ret = io.popen(cmd, 'r')
-            if ret ~= 0 then
-                f:close()
-            end
+            cmd = os.getenv("SHELL").." -c 'module -t list 2>&1'"
+            f = io.popen(cmd, 'r')
         end
-        if f then
+        if f ~= nil then
             local s = assert(f:read('*a'))
             f:close()
             s = string.gsub(s, '^%s+', '')
@@ -500,6 +510,7 @@ local function assignHosts(hosts, np, ppn)
     tmp = np
     newhosts = {}
     current = 0
+    local break_while = false
     while tmp > 0 do
         for i, host in pairs(hosts) do
             if host["slots"] and host["slots"] >= ppn then
@@ -552,36 +563,64 @@ local function assignHosts(hosts, np, ppn)
                 current = ppn
             end
             tmp = tmp - current
-            if tmp <= 0 then
+            if tmp <= 1 then
+                break_while = true
                 break
             elseif tmp < ppn then
                 ppn = tmp
+            end
+        end
+        if break_while then
+            break
+        end
+    end
+    for i=1, #newhosts do
+        if newhosts[i] then
+            for j=i+1,#newhosts do
+                if newhosts[j] then
+                    if newhosts[i]["hostname"] == newhosts[j]["hostname"] then
+                        newhosts[i]["slots"] = newhosts[i]["slots"] + newhosts[j]["slots"]
+                        if newhosts[i]["maxslots"] ~= nil and newhosts[j]["maxslots"] ~= nil then
+                            newhosts[i]["maxslots"] = newhosts[i]["maxslots"] + newhosts[j]["maxslots"]
+                        end
+                        if newhosts[i]["slots"] > ppn then
+                            ppn = newhosts[i]["slots"]
+                        end
+                        table.remove(newhosts, j)
+                    end
+                end
             end
         end
     end
     if debug then
         print("DEBUG: Scheduling on hosts:")
         for i, h in pairs(newhosts) do
-            str = string.format("DEBUG: Host %s with %d processes (max. %d processes)",
+            if h["maxslots"] ~= nil then
+                str = string.format("DEBUG: Host %s with %d processes (max. %d processes)",
                                 h["hostname"],h["slots"],h["maxslots"])
+            else
+                str = string.format("DEBUG: Host %s with %d processes", h["hostname"],h["slots"])
+            end
             if h["interface"] then
                 str = str.. string.format(" using interface %s", h["interface"])
             end
             print(str)
         end
     end
-    return newhosts
+    return newhosts, ppn
 end
 
 local function calculatePinExpr(cpuexprs)
-    local strList = {}
+    local newexprs = {}
     for i, expr in pairs(cpuexprs) do
+        local strList = {}
         amount, list = likwid.cpustr_to_cpulist(expr)
         for _, c in pairs(list) do
             table.insert(strList, c)
         end
+        table.insert(newexprs, table.concat(strList,","))
     end
-    return {table.concat(strList,",")}
+    return newexprs
 end
 
 local function calculateCpuExprs(nperdomain, cpuexprs)
@@ -783,6 +822,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
             cpuexpr_opt = "-C"
         else
             table.insert(cmd,LIKWID_PIN)
+            table.insert(cmd,"-q")
         end
         table.insert(cmd,skipStr)
         table.insert(cmd,cpuexpr_opt)
@@ -803,6 +843,9 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     f:write("GLOBALSIZE="..glsize_var.."\n")
     f:write("GLOBALRANK="..glrank_var.."\n")
     f:write("unset OMP_NUM_THREADS\n")
+    if mpitype == "intelmpi" then
+        f:write("export I_MPI_PIN=disable\n")
+    end
     f:write("LOCALSIZE="..losize_var.."\n\n")
 
     if mpitype == "openmpi" then
@@ -810,7 +853,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     else
         local full = tostring(np - (np % ppn))
         f:write("if [ \"$GLOBALRANK\" -lt "..full.." ]; then\n")
-        f:write("\tLOCALRANK=$(($GLOBALRANK % "..losize_var.."))\n")
+        f:write("\tLOCALRANK=$(($GLOBALRANK % $LOCALSIZE))\n")
         f:write("else\n")
         f:write("\tLOCALRANK=$(($GLOBALRANK - ("..full.." - 1)))\n")
         f:write("fi\n\n")
@@ -1289,16 +1332,24 @@ local givenNrNodes = getNumberOfNodes(hosts)
 
 if skipStr == "" then
     if mpitype == "intelmpi" then
-        if omptype == "intel" and givenNrNodes > 1 then
-            skipStr = '-s 0x7'
+        if omptype == "intel" then
+            skipStr = '-s 0x3'
+        elseif omptype == "gnu" then
+            skipStr = '-s 0x1'
         end
     elseif mpitype == "mvapich2" then
         if omptype == "intel" and givenNrNodes > 1 then
             skipStr = '-s 0x7'
         end
     elseif mpitype == "openmpi" then
-        if omptype == "intel" then
-            skipStr = '-s 0xF'
+        if omptype == "intel" and givenNrNodes > 1 then
+            skipStr = '-s 0x7'
+        elseif omptype == "intel" and givenNrNodes == 1 then
+            skipStr = '-s 0x1'
+        elseif omptype == "gnu" and givenNrNodes > 1 then
+            skipStr = '-s 0x7'
+        elseif omptype == "gnu" and givenNrNodes == 1 then
+            skipStr = '-s 0x3'
         end
     end
 end
@@ -1314,9 +1365,16 @@ if #cpuexprs > 0 then
         if debug then
             print(string.format("DEBUG: No -np given , setting according to pin expression and number of available hosts"))
         end
-        np = givenNrNodes * ppn
+        np = givenNrNodes
+        ppn = #cpuexprs
     end
     newhosts = assignHosts(hosts, np, ppn)
+    if np > #cpuexprs*#newhosts then
+        print("WARN: Oversubsribing not allowed.")
+        print(string.format("WARN: You want %d processes but the pinning expression has only expressions for %d for %d hosts", np, #cpuexprs*#newhosts, #newhosts))
+        np = #cpuexprs*#newhosts
+        print(string.format("WARN: Sanizing number of processes to %d.", np))
+    end
 elseif nperdomain ~= nil then
     cpuexprs = calculateCpuExprs(nperdomain, cpuexprs)
     ppn = #cpuexprs
@@ -1325,34 +1383,46 @@ elseif nperdomain ~= nil then
     end
     if np < ppn then
         if debug then
-            print("Removing additional cpu expressions to get requested number of processes")
+            print("WARN: Removing additional cpu expressions to get requested number of processes")
         end
         for i=np+1,ppn do
             if debug then
-                print("Remove cpuexpr: "..cpuexprs[#cpuexprs])
+                print("WARN: Remove cpuexpr: "..cpuexprs[#cpuexprs])
             end
             table.remove(cpuexprs, #cpuexprs)
         end
         ppn = np
+    elseif np > (givenNrNodes * ppn) then
+        print("WARN: Oversubsribing nodes not allowed!")
+        print(string.format("WARN: You want %d processes with %d on each of the %d hosts", np, ppn, givenNrNodes))
+        np = givenNrNodes * ppn
+        print(string.format("WARN: Sanizing number of processes to %d.", np))
     end
-    newhosts = assignHosts(hosts, np, ppn)
-elseif ppn > 0 and ppn <= np then
-    if np % ppn ~= 0 then
-        print("ERROR: Number of processes not divisible by processes per node")
-        os.exit(1)
-    end
-    if np/ppn ~= givenNrNodes then
-        print(string.format("WARN: You have selected %d processes on each of the %d nodes.", ppn, givenNrNodes))
-        print(string.format("WARN: That results in %d processes in total but commandline sets %d processes.", givenNrNodes*ppn, np))
-        ppn = np/givenNrNodes
-        print(string.format("WARN: likwid-mpirun sanitizes the processes per node to %d.", ppn))
-    end
-    cpuexprs = calculateCpuExprs("N:"..tostring(ppn), cpuexprs)
-    newhosts = assignHosts(hosts, np, ppn)
+    newhosts, ppn = assignHosts(hosts, np, ppn)
 elseif ppn == 0 and np > 0 then
-    ppn = np/givenNrNodes
-    cpuexprs = calculateCpuExprs("E:N:"..tostring(ppn), cpuexprs)
-    newhosts = assignHosts(hosts, np, ppn)
+    ppn = math.floor(np/givenNrNodes)
+    if (ppn * givenNrNodes) ~= np then
+        print("WARN: Processes cannot be equally distributed")
+        print(string.format("WARN: You want %d processes on %d hosts.", np, givenNrNodes))
+        np = givenNrNodes * ppn
+        print(string.format("WARN: Sanitizing number of processes to %d", np))
+    end
+    local newexprs = calculateCpuExprs("E:N:"..tostring(ppn), cpuexprs)
+    for i, expr in pairs(newexprs) do
+        local exprlist = likwid.stringsplit(expr, ",")
+        local seclength = #exprlist/ppn
+        local offset = 0
+        for p=1, ppn do
+            local str = ""
+            for j=1, seclength do
+                str = str .. exprlist[((p-1)*seclength) + j] ..","
+            end
+            str = str:sub(1,#str-1)
+            table.insert(cpuexprs, str)
+        end
+    end
+    
+    newhosts, ppn = assignHosts(hosts, np, ppn)
 else
     print("ERROR: Commandline settings are not supported.")
     os.exit(1)
