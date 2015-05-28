@@ -7,7 +7,9 @@ This is an effort to develop easy to use but yet powerful performance tools for 
 - Portable
 - Extensible
 
-\ref build instructions
+\ref build
+
+\ref faq
 
 \section Tools LIKWID Tools
 - \ref likwid-topology : A tool to display the thread and cache topology on multicore/multisocket computers.
@@ -98,14 +100,15 @@ Using the Marker API:
 - \ref C-markerAPI-code
 - \ref F-markerAPI-code
 
-If you have problems with LIKWID:
-GitHub: https://github.com/rrze-likwid/likwid
-Bugs: https://github.com/rrze-likwid/likwid/issues
-Mailinglist: rrze-likwid@lists.fau.de
+If you have problems with LIKWID:<BR>
+GitHub: <A HREF="https://github.com/rrze-likwid/likwid">https://github.com/rrze-likwid/likwid</A><BR>
+Bugs: <A HREF="https://github.com/rrze-likwid/likwid/issues">https://github.com/rrze-likwid/likwid/issues</A><BR>
+Mailinglist: <A HREF="https://lists.fau.de/pipermail/rrze-likwid/">https://lists.fau.de/pipermail/rrze-likwid/</A><BR>
+Subscribe to mailinglist: <A HREF="https://lists.fau.de/cgi-bin/listinfo/rrze-likwid">https://lists.fau.de/cgi-bin/listinfo/rrze-likwid</A><BR>
 */
 
 
-/*! \page build Build and Install
+/*! \page build Build and install instructions
 \section allg Introduction
 Likwid is build using GNU make and has no external dependencies apart from the Linux kernel and the standard C library.
 It should build on any Linux distribution with a recent GCC compiler or CLANG compiler and 2.6 or newer kernel without any changes.
@@ -187,4 +190,39 @@ In order to create the HTML documentation of LIKWID, the tool \a doxygen is requ
 */
 /*! \page Lua-likwidAPI-code LIKWID API in a Lua application
 \include Lua-likwidAPI.lua
+*/
+
+/*! \page faq FAQ
+\section faq1 Which architectures are supported?
+LIKWID supports a range of x86 CPU architectures but likely not all. We concentrated the development effort on Intel and AMD machines. Almost all architecture code is tested. For a list of architectures see section \ref Architectures.
+
+\section faq2 Are all hardware events supported?
+LIKWID offers almost all events that are defined in the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual</A> and the <A HREF="http://developer.amd.com/resources/documentation-articles/developer-guides-manuals/">AMD&reg; BIOS and Kernel Developer’s Guides</A>. Some may be missing caused by special handling likely with additional registers. But, LIKWID also provides some events that are not documented but we do not guarantee that they count the right stuff.
+
+\section faq3 Does LIKWID support Intel's PEBS?
+No, PEBS is an interface that must be initialized at kernel level. Since LIKWID is a user-space tool, there is no possibility to maintain PEBS.
+
+\section faq4 Which unit does LIKWID use internally for B, kB, MB, GB?
+As the units imply, you get from one unit to the other by multiplying or dividing it by 1000. E.g. 1kB = 1000B. There is no kiB or MiB possible by now.
+
+\section faq5 Does LIKWID support power capping (Intel only)?
+No, by now LIKWID does not support limiting the power consumption of your machine using the RAPL interface. We added some functions but they are not exported because they need to be rechecked.
+
+\section faq6 Is LIKWID case-sensitive?
+Yes, all strings are case-sensitive. The only exception are the event options, they are case-insensitive. For upcomming versions we change to case-insensitive for all string parsing where possible.
+
+\section faq7 I have given multiple eventsets on the commandline but the values are too low? Are they multiplexed?
+LIKWID does not support multiplexing of eventsets. It rotates through its eventset list and measures each for a specific amount of time. The output contains the results of all measurements of that eventset, no interpolation to the complete runtime is done. Since most other tools that support multiplexing use linear interpolation, you can scale the results yourself with <CODE>(1.0 - (measurement_time/all_time)) * result</CODE>. As you can see, the calculation is pretty simple, but it introduces a high degree of inaccuracy. You cannot know if the operations that were performed during the measurement of the eventset are similar to the operations that were done when measureing another eventset. As a recommendation, perform the interpolation only with Marker API measurements where you know what the application does.
+
+\section faq8 Are there plans to port LIKWID to other operating systems?
+We do not really plan to port LIKWID to other operating systems. We come from the HPC world and there the main operating systems base on the Linux kernel. The latest Top500 list contains 13 systems using Unix and 1 system with Microsoft&reg; Windows.
+
+\section faq9 Are there plans to port LIKWID to other CPU architectures?
+We would like to port LIKWID to other CPU architectures that support hardware performance measurements but currently there is no time for that and we do not have other architectures than x86 inhouse. We follow the developements and if an architecture gets HPC relevant, we will likely port LIKWID to make it work. The highest probability has ARM and with lower probability we will include SPARC.
+
+\section faq10 Do you plan to introduce a graphical frontend for LIKWID?
+No, we do not!
+
+\section faq11 I want to help, were do I start?
+The best way is to talk to us at the <A HREF="https://lists.fau.de/pipermail/rrze-likwid/">mailing list</A>. There are a bunch of small work packages on our ToDo list that can be used as a good starting point for learning how LIKWID works. If you are not a programmer but you have a good idea, let us know and we will discuss it.
 */
