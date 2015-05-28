@@ -82,7 +82,7 @@ pthread_create(pthread_t* thread,
     /* On first entry: Get Evironment Variable and initialize pin_ids */
     if (ncalled == 0)
     {
-        char *str = getenv("LIKWID_SKIP");
+        char *str;
         char *token, *saveptr;
         char *delimiter = ",";
         int i = 0;
@@ -91,7 +91,7 @@ pthread_create(pthread_t* thread,
         str = getenv("LIKWID_SKIP");
         if (str != NULL)
         {
-            skipMask = strtoul(str, &str, 10);
+            skipMask = strtoul(str, &str, 16);
         }
         else
         {
