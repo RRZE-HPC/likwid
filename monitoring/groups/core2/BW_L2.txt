@@ -1,0 +1,11 @@
+SHORT Cache bandwidth
+
+EVENTSET
+PMC0  L1D_REPL
+PMC1  L1D_M_EVICT
+
+METRICS
+SUM L2 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
+
+
+LONG

@@ -1,0 +1,10 @@
+SHORT Memory bandwidth
+
+EVENTSET
+PMC0  BUS_TRANS_MEM_THIS_CORE_THIS_A
+
+METRICS
+SUM Memory bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
+
+
+LONG

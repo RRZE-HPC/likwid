@@ -1,0 +1,29 @@
+SHORT Cache and memory bandwidth
+
+EVENTSET
+PMC0  L1D_REPL
+PMC1  L1D_M_EVICT
+PMC2  L2_LINES_IN_ANY
+PMC3  L2_LINES_OUT_DEMAND_DIRTY
+MBOX0C0 FVC_EV0_BBOX_CMDS_READS
+MBOX0C1 DRAM_CMD_CAS_WR_OPN
+MBOX1C0 FVC_EV0_BBOX_CMDS_READS
+MBOX1C1 DRAM_CMD_CAS_WR_OPN
+
+
+METRICS
+SUM L2 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
+SUM L3 bandwidth [MBytes/s] 1.0E-06*(PMC2+PMC3)*64.0/time
+SUM Memory bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0+MBOX0C1+MBOX1C1)*64/time
+
+LONG
+Formula:
+L2 bandwidth [MBytes/s] = 1.0E-06*(L1D_REPL+L1D_M_EVICT)*64/time
+L3 bandwidth [MBytes/s] = 1.0E-06*(L2_LINES_IN_ANY+L2_LINES_OUT_DEMAND_DIRTY)*64/time
+Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(FVC_EV0_BBOX_CMDS_READS)+SUM(DRAM_CMD_CAS_WR_OPN))*64.0/time
+
+On Nehalem EX it is not possible to measure the write operations with the
+FVC_EV0_BBOX_CMDS_WRITES event at the same time as the FVC_EV0_BBOX_CMDS_READS
+because they set contrary bits. The DRAM_CMD_CAS_WR_OPN is an alternative but
+it only measures write operations to open pages, hence writes to closed pages
+are not included here.
