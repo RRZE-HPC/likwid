@@ -11,8 +11,8 @@ Scalar MUOPS/s 1.0E-06*(PMC1)/time
 
 LONG
 Formula:
-MFlops/s =  (EMON_SSE_SSE2_COMP_INST_RETIRED_ALL_SP$)/ runtime
-Scalar MUOPS/s =  (EMON_SSE_SSE2_COMP_INST_RETIRED_SCALAR_SP$)/ runtime
+MFlops/s =  (EMON_SSE_SSE2_COMP_INST_RETIRED_ALL_SP)/ runtime
+Scalar MUOPS/s =  (EMON_SSE_SSE2_COMP_INST_RETIRED_SCALAR_SP)/ runtime
 -
 SSE scalar and packed single precision flop rates.
 
