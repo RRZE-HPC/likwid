@@ -92,7 +92,6 @@ $(STATIC_TARGET_LIB):
 	make -C ..
 
 likwid-bench_target:  $(BUILD_DIR) $(OBJ) $(OBJ_BENCH) $(STATIC_TARGET_LIB)
-	@echo $(OBJ_BENCH)
 	@echo "===>  LINKING  likwid-bench"
 	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o likwid-bench  likwid-bench.c $(OBJ_BENCH) $(OBJ) $(BENCH_LIBS) -lm
 
