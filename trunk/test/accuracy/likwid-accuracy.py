@@ -409,7 +409,7 @@ if not only_wiki:
     script.write("#!/bin/bash\n")
 
     for group in test_set.keys():
-        perfctr_string = "%s -c S0:1 -g %s -m " % (perfctr,group,)
+        perfctr_string = "%s -c S0:0 -g %s -m " % (perfctr,group,)
         for test in test_set[group].keys():
             if test.startswith("REGEX"): continue
             file_plain = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+"_plain.dat")
