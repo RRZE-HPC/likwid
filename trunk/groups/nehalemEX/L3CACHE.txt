@@ -1,0 +1,48 @@
+SHORT L3 cache miss rate/ratio
+
+EVENTSET
+FIXC0  INSTR_RETIRED_ANY
+FIXC1  CPU_CLK_UNHALTED_CORE
+FIXC2  CPU_CLK_UNHALTED_REF
+CBOX0C0 LLC_HITS_ALL
+CBOX0C1 LLC_MISSES_ALL
+CBOX1C0 LLC_HITS_ALL
+CBOX1C1 LLC_MISSES_ALL
+CBOX2C0 LLC_HITS_ALL
+CBOX2C1 LLC_MISSES_ALL
+CBOX3C0 LLC_HITS_ALL
+CBOX3C1 LLC_MISSES_ALL
+CBOX4C0 LLC_HITS_ALL
+CBOX4C1 LLC_MISSES_ALL
+CBOX5C0 LLC_HITS_ALL
+CBOX5C1 LLC_MISSES_ALL
+CBOX6C0 LLC_HITS_ALL
+CBOX6C1 LLC_MISSES_ALL
+CBOX7C0 LLC_HITS_ALL
+CBOX7C1 LLC_MISSES_ALL
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+L3 request rate   (CBOX0C0+CBOX0C1+CBOX1C0+CBOX1C1+CBOX2C0+CBOX2C1+CBOX3C0+CBOX3C1+CBOX4C0+CBOX4C1+CBOX5C0+CBOX5C1+CBOX6C0+CBOX6C1+CBOX7C0+CBOX7C1)/FIXC0
+L3 miss rate   (CBOX0C1+CBOX1C1+CBOX1C1+CBOX1C1+CBOX1C1+CBOX1C1+CBOX1C1+CBOX1C1)/FIXC0
+L3 miss ratio  (CBOX0C1+CBOX1C1+CBOX1C1+CBOX1C1+CBOX1C1+CBOX1C1+CBOX1C1+CBOX1C1)/(CBOX0C0+CBOX0C1+CBOX1C0+CBOX1C1+CBOX2C0+CBOX2C1+CBOX3C0+CBOX3C1+CBOX4C0+CBOX4C1+CBOX5C0+CBOX5C1+CBOX6C0+CBOX6C1+CBOX7C0+CBOX7C1)
+
+LONG
+Formulas:
+L3 request rate = (SUM(LLC_HITS_ALL)+SUM(LLC_MISSES_ALL))/INSTR_RETIRED_ANY
+L3 miss rate = SUM(LLC_MISSES_ALL)/INSTR_RETIRED_ANY
+L3 miss ratio = SUM(LLC_MISSES_ALL)/(SUM(LLC_HITS_ALL)+SUM(LLC_MISSES_ALL))
+-
+This group measures the locality of your data accesses with regard to the
+L3 Cache. L3 request rate tells you how data intensive your code is
+or how many Data accesses you have in average per instruction.
+The L3 miss rate gives a measure how often it was necessary to get
+cachelines from memory. And finally L3 miss ratio tells you how many of your
+memory references required a cacheline to be loaded from a higher level.
+While the Data cache miss rate might be given by your algorithm you should
+try to get Data cache miss ratio as low as possible by increasing your cache reuse.
+
+
