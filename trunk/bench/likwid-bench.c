@@ -112,6 +112,7 @@ int main(int argc, char** argv)
     const TestCase* test = NULL;
     uint64_t realSize = 0;
     uint64_t realIter = 0;
+    uint64_t maxCycles = 0;
     uint64_t cpuClock = 0;
     uint64_t demandIter = 0;
     TimerData itertime;
@@ -373,26 +374,31 @@ int main(int argc, char** argv)
     {
         realSize += threads_data[i].data.size;
         realIter += threads_data[i].data.iter;
+        if (threads_data[i].cycles > maxCycles)
+        {
+            maxCycles = threads_data[i].cycles;
+        }
     }
 
 
 
-    time = (double) threads_data[0].cycles / (double) cpuClock;
+    time = (double) maxCycles / (double) cpuClock;
     ownprintf(bdata(HLINE));
-    printf("Cycles:\t\t\t%llu\n", LLU_CAST threads_data[0].cycles);
-    printf("CPU Clock:\t\t%llu\n", LLU_CAST cpuClock);
+    printf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
+    printf("CPU Clock:\t\t%" PRIu64 "\n", cpuClock);
     printf("Time:\t\t\t%e sec\n", time);
-    printf("Iterations:\t\t%llu\n", LLU_CAST realIter);
-    printf("Iterations per thread:\t%llu\n",LLU_CAST threads_data[0].data.iter);
+    printf("Iterations:\t\t%" PRIu64 "\n", realIter);
+    printf("Iterations per thread:\t%" PRIu64 "\n",threads_data[0].data.iter);
     printf("Size:\t\t\t%" PRIu64 "\n",  realSize*test->bytes );
-    printf("Size per thread:\t%llu\n", LLU_CAST threads_data[0].data.size*test->bytes);
-    printf("Number of Flops:\t%llu\n", LLU_CAST (numberOfWorkgroups * iter * realSize *  test->flops));
+    printf("Size per thread:\t%" PRIu64 "\n", threads_data[0].data.size*test->bytes);
+    printf("Number of Flops:\t%" PRIu64 "\n", (threads_data[0].data.iter * realSize *  test->flops));
     printf("MFlops/s:\t\t%.2f\n",
-            1.0E-06 * ((double) numberOfWorkgroups * iter * realSize *  test->flops/  time));
-    printf("Data volume (Byte):\t%llu\n", LLU_CAST (numberOfWorkgroups * iter * realSize *  test->bytes));
+            1.0E-06 * ((double) threads_data[0].data.iter * realSize *  test->flops/  time));
+    printf("Data volume (Byte):\t%llu\n", LLU_CAST (threads_data[0].data.iter * realSize *  test->bytes));
     printf("MByte/s:\t\t%.2f\n",
-            1.0E-06 * ( (double) numberOfWorkgroups * iter * realSize *  test->bytes/ time));
-    cycPerUp = ((double) threads_data[0].cycles / (double) (threads_data[0].data.iter * threads_data[0].data.size));
+            1.0E-06 * ( (double) threads_data[0].data.iter * realSize *  test->bytes/ time));
+
+    cycPerUp = ((double) maxCycles / (double) (threads_data[0].data.iter * realSize));
     printf("Cycles per update:\t%f\n", cycPerUp);
 
     switch ( test->type )
@@ -409,6 +415,7 @@ int main(int argc, char** argv)
     threads_destroy(numberOfWorkgroups);
 
 #ifdef PERFMON
+    printf("Writing Likwid Marker API results to file\n");
     likwid_markerClose();
 #endif
 

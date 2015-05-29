@@ -93,7 +93,7 @@ typedef struct {
 
 typedef struct {
     uint64_t   size;
-    uint32_t   iter;
+    uint64_t   iter;
     uint32_t   min_runtime;
     const TestCase* test;
     uint64_t   cycles;

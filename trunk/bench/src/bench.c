@@ -64,10 +64,7 @@
 
 #define EXECUTE(func)   \
     BARRIER; \
-    if (data->globalThreadId == 0) \
-    { \
-        timer_start(&time); \
-    } \
+    timer_start(&time); \
     START_PERFMON  \
     for (i=0; i<myData->iter; i++) \
     {   \
@@ -75,11 +72,8 @@
     } \
     BARRIER; \
     STOP_PERFMON  \
-    if (data->globalThreadId == 0) \
-    { \
-        timer_stop(&time); \
-        data->cycles = timer_printCycles(&time); \
-    } \
+    timer_stop(&time); \
+    data->cycles = timer_printCycles(&time); \
     BARRIER
 
 
