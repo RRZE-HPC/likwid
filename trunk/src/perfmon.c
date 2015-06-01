@@ -1137,12 +1137,12 @@ perfmon_addEventSet(char* eventCString)
 
     if (strchr(eventCString, '-') != NULL)
     {
-        ERROR_PLAIN_PRINT(Event string contains valid character -);
+        ERROR_PLAIN_PRINT(Event string contains invalid character -);
         return -EINVAL;
     }
     if (strchr(eventCString, '.') != NULL)
     {
-        ERROR_PLAIN_PRINT(Event string contains valid character .);
+        ERROR_PLAIN_PRINT(Event string contains invalid character .);
         return -EINVAL;
     }
     if (groupSet->numberOfGroups == 0)
