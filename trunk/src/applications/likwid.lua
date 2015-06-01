@@ -706,6 +706,12 @@ local function new_groupdata(eventString, isIntel)
     local gdata = {}
     local num_events = 1
     gdata["Events"] = {}
+    gdata["EventString"] = ""
+    gdata["GroupString"] = ""
+    local s,e = eventString:find(":")
+    if s == nil then
+        return gdata
+    end
     if isIntel == 1 then
         if not eventString:match("FIXC2") then
             eventString = "CPU_CLK_UNHALTED_REF:FIXC2,"..eventString
@@ -979,7 +985,7 @@ local function printOutput(groups, results, groupData, cpulist)
 
             secondtab[1] = {"Metric"}
             secondtab_combined[1] = {"Metric"}
-            for m=1,#groupdata["Metrics"] do
+            for m=1,#groupData[groupID]["Metrics"] do
                 table.insert(secondtab[1],groupData[groupID]["Metrics"][m]["description"] )
                 table.insert(secondtab_combined[1],groupData[groupID]["Metrics"][m]["description"].." STAT" )
             end
@@ -988,7 +994,7 @@ local function printOutput(groups, results, groupData, cpulist)
                 for i=1,num_events do
                     counterlist[groupData[groupID]["Events"][i]["Counter"]] = results[groupID][i][j]
                 end
-                for m=1,#groupdata["Metrics"] do
+                for m=1,#groupData[groupID]["Metrics"] do
                     local tmp = calculate_metric(groupData[groupID]["Metrics"][m]["formula"], counterlist)
                     if tostring(tmp):len() > 12 then
                         tmp = string.format("%e",tmp)
