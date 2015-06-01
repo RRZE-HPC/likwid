@@ -459,14 +459,23 @@ if likwid.init(num_cpus, cpulist) < 0 then
 end
 
 for i, event_string in pairs(event_string_list) do
-    local gid = likwid.addEventSet(event_string)
-    if gid < 0 then
-        likwid.putTopology()
-        likwid.putConfiguration()
-        likwid.finalize()
-        os.exit(1)
+    if event_string:len() > 0 then
+        local gid = likwid.addEventSet(event_string)
+        if gid < 0 then
+            likwid.putTopology()
+            likwid.putConfiguration()
+            likwid.finalize()
+            os.exit(1)
+        end
+        table.insert(group_ids, gid)
     end
-    table.insert(group_ids, gid)
+end
+if #group_ids == 0 then
+    print("ERROR: No valid eventset given on commandline. Exiting...")
+    likwid.putTopology()
+    likwid.putConfiguration()
+    likwid.finalize()
+    os.exit(1)
 end
 
 activeGroup = group_ids[1]
