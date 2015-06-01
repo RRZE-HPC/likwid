@@ -40,7 +40,7 @@ FEEDGNUPLOT="/home/rrze/unrz/unrz139/TMP/likwid-base/trunk/perl/feedGnuplot"
 local predefined_plots = {
     FLOPS_DP = {
         perfgroup = "FLOPS_DP",
-        metricmatch = "MFlops/s",
+        ymetricmatch = "MFlops/s",
         title = "Double Precision Flop Rate",
         ytitle = "MFlops/s",
         y2title = nil,
@@ -48,7 +48,7 @@ local predefined_plots = {
     },
     FLOPS_SP = {
         perfgroup = "FLOPS_SP",
-        metricmatch = "MFlops/s",
+        ymetricmatch = "MFlops/s",
         title = "Single Precision Flop Rate",
         ytitle = "MFlops/s",
         y2title = nil,
@@ -56,65 +56,60 @@ local predefined_plots = {
     },
     L2_BAND = {
         perfgroup = "L2",
-        metricmatch = "L2 bandwidth [MBytes/s]",
+        ymetricmatch = "L2 bandwidth [MBytes/s]",
         title = "L2 cache bandwidth",
         ytitle = "Bandwidth [MBytes/s]",
         y2title = nil,
         xtitle = "Time"
     },
-    L2_VOL = {
-        perfgroup = "L2",
-        metricmatch = "L2 data volume [GBytes]",
-        title = "L2 cache data volume",
-        ytitle = "Data volume [GBytes]",
-        y2title = nil,
-        xtitle = "Time"
-    },
     L3_BAND = {
         perfgroup = "L3",
-        metricmatch = "L3 bandwidth [MBytes/s]",
+        ymetricmatch = "L3 bandwidth [MBytes/s]",
         title = "L3 cache bandwidth",
         ytitle = "Bandwidth [MBytes/s]",
         y2title = nil,
         xtitle = "Time"
     },
-    L3_VOL = {
-        perfgroup = "L3",
-        metricmatch = "L3 data volume [GBytes]",
-        title = "L3 cache data volume",
-        ytitle = "Data volume [GBytes]",
-        y2title = nil,
-        xtitle = "Time"
-    },
     MEM_BAND = {
         perfgroup = "MEM",
-        metricmatch = "Memory bandwidth [MBytes/s]",
+        ymetricmatch = "Memory bandwidth [MBytes/s]",
         title = "Memory bandwidth",
         ytitle = "Bandwidth [MBytes/s]",
         y2title = nil,
         xtitle = "Time"
     },
-    MEM_VOL = {
-        perfgroup = "MEM",
-        metricmatch = "Memory data volume [GBytes]",
-        title = "Memory data volume",
-        ytitle = "Data volume [GBytes]",
+    QPI_BAND = {
+        perfgroup = "QPI",
+        ymetricmatch = "QPI data bandwidth [MByte/s]",
+        title = "QPI bandwidth",
+        ytitle = "Bandwidth [MBytes/s]",
         y2title = nil,
-        xtitle = "Time"
+        xtitle = "Time",
+        y2metricmatch = "QPI link bandwidth [MByte/s]"
     },
     POWER = {
         perfgroup = "ENERGY",
-        metricmatch = "Power [W]",
+        ymetricmatch = "Power [W]",
         title = "Consumed power",
         ytitle = "Power [W]",
-        y2title = nil,
+        y2title = "Power DRAM [W]",
+        y2metricmatch = "Power DRAM [W]",
         xtitle = "Time"
     },
     TEMP = {
         perfgroup = "ENERGY",
-        metricmatch = "Temperature [C]",
+        ymetricmatch = "Temperature [C]",
         title = "Temperature",
         ytitle = "Temperature [C]",
+        y2title = nil,
+        xtitle = "Time"
+    },
+    NUMA = {
+        perfgroup = "NUMA",
+        ymetricmatch = "Local DRAM bandwidth [MByte/s]",
+        title = "NUMA separated memory bandwidth",
+        ytitle = "Bandwidth [MBytes/s]",
+        y2metricmatch = "Remote DRAM bandwidth [MByte/s]",
         y2title = nil,
         xtitle = "Time"
     },
@@ -141,22 +136,11 @@ local function usage()
     print("-c <list>\t\t Processor ids to measure, e.g. 1,2-4,8")
     print("-C <list>\t\t Processor ids to pin threads and measure, e.g. 1,2-4,8")
     print("-g, --group <string>\t Preconfigured plot group or custom event set string with plot config. See man page for information.")
-    print("-f, --freq <time>\t Frequency in s, ms or us, e.g. 300ms, for the timeline mode of likwid-perfctr")
+    print("-t, --time <time>\t Frequency in s, ms or us, e.g. 300ms, for the timeline mode of likwid-perfctr")
     print("-d, --dump\t\t Print output as it is send to feedGnuplot.")
+    print("-p, --plotdump\t\t Use dump functionality of feedGnuplot. Plots out plot configurations plus data to directly submit to gnuplot")
     print("\n")
     examples()
-end
-
-local function copy_list(input)
-    output = {}
-    for i, item in pairs(input) do
-        if type(item) == "table" then
-            output[i] = copy_list(item)
-        else
-            output[i] = input[i]
-        end
-    end
-    return output
 end
 
 local function test_gnuplot()
@@ -179,13 +163,18 @@ local timeline = "1s"
 local print_configs = false
 local pinning = false
 local dump = false
+local plotdump = false
+local nrgroups, allgroups = likwid.get_groups()
+local mfreq = 1.0
+local plotrange = 0
+local host = nil
 
 if #arg == 0 then
     usage()
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","f:","help", "version","group:","freq:","a","d","dump"}) do
+for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","t:","r:","a","d","help", "version","group:","time:","dump","range:","plotdump","all", "host:"}) do
     if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
@@ -199,12 +188,19 @@ for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","f:","help", "version"
     elseif (opt == "C") then
         num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
         pinning = true
-    elseif opt == "f" or opt == "freq" then
+    elseif opt == "t" or opt == "time" then
         timeline = arg
+        mfreq = likwid.parse_time(timeline) * 1.E-6
     elseif opt == "d" or opt == "dump" then
         dump = true
-    elseif (opt == "a") then
+    elseif opt == "p" or opt == "plotdump" then
+        plotdump = true
+    elseif opt == "r" or opt == "range" then
+        plotrange = tonumber(arg)
+    elseif opt == "a" or opt == "all" then
         print_configs = true
+    elseif opt == "host" then
+        host = arg
     end
 end
 
@@ -215,12 +211,17 @@ if print_configs then
             if g == config["perfgroup"] then
                 print("Group "..name)
                 print("\tPerfctr group: "..config["perfgroup"])
-                print("\tMatch for metric: "..config["metricmatch"])
+                print("\tMatch for metric: "..config["ymetricmatch"])
                 print("\tTitle of plot: "..config["title"])
                 print("\tTitle of x-axis: "..config["xtitle"])
                 print("\tTitle of y-axis: "..config["ytitle"])
+                if config["y2metricmatch"] then
+                    print("\tMatch for second metric: "..config["y2metricmatch"])
+                end
                 if config["y2title"] then
                     print("\tTitle of y2-axis: "..config["y2title"])
+                elseif config["y2metricmatch"] then
+                    print("\tTitle of y2-axis: "..config["ytitle"])
                 end
                 print("")
                 break
@@ -250,11 +251,18 @@ for i, event_def in pairs(eventStrings) do
     event_string = nil
     plotgroup = nil
     plotgroupconfig = nil
+    plotdefgroup = false
     for j, preconf in pairs(predefined_plots) do
         if eventlist[1] == j then
-            event_string = preconf["perfgroup"]
-            plotgroupconfig = preconf
-            plotgroup = j
+            for j,g in pairs(allgroups) do
+                if g == preconf["perfgroup"] then
+                    event_string = preconf["perfgroup"]
+                    plotdefgroup = true
+                    plotgroupconfig = preconf
+                    plotgroup = j
+                    break;
+                end
+            end
             break;
         end
     end
@@ -263,7 +271,9 @@ for i, event_def in pairs(eventStrings) do
         table.remove(eventlist, #eventlist)
     end
     if event_string == nil then
-        event_string = table.concat(eventlist,",")
+        if plotdefgroup == false then
+            event_string = table.concat(eventlist,",")
+        end
     end
 
     local groupdata = nil
@@ -291,11 +301,19 @@ for i, event_def in pairs(eventStrings) do
         xtitle = plotgroupconfig["xtitle"]
         if plotgroupconfig["y2title"] ~= nil then
             y2title = plotgroupconfig["y2title"]
+        elseif plotgroupconfig["y2metricmatch"] ~= nil then
+            y2title = plotgroupconfig["ytitle"]
         end
         for i,mconfig in pairs(groupdata["Metrics"]) do
-            local mmatch = "%a*"..plotgroupconfig["metricmatch"]:gsub("%[","%%["):gsub("%]","%%]").."%a*"
+            local mmatch = "%a*"..plotgroupconfig["ymetricmatch"]:gsub("%[","%%["):gsub("%]","%%]").."%a*"
             if mconfig["description"]:match(mmatch) then
                 formulalist = {{name=mconfig["description"], formula=mconfig["formula"]}}
+            end
+            if plotgroupconfig["y2metricmatch"] ~= nil then
+                mmatch = "%a*"..plotgroupconfig["y2metricmatch"]:gsub("%[","%%["):gsub("%]","%%]").."%a*"
+                if mconfig["description"]:match(mmatch) then
+                    table.insert(formulalist, {name=mconfig["description"], formula=mconfig["formula"]})
+                end
             end
         end
     end
@@ -343,16 +361,25 @@ for i, event_def in pairs(eventStrings) do
     if y2funcindex then
         group_list[i]["y2funcindex"] = y2funcindex - 1
     else
-        group_list[i]["y2funcindex"] = #formulalist - 1
+        if formulalist ~= nil then
+            group_list[i]["y2funcindex"] = #formulalist - 1
+        end
     end
     if xtitle then
         group_list[i]["xtitle"] = xtitle
     end
-
-    group_list[i]["formulas"] = formulalist
+    if formulalist ~= nil then
+        group_list[i]["formulas"] = formulalist
+    else
+        group_list[i]["formulas"] = {}
+    end
 end
 
-cmd = PERFCTR
+cmd = ""
+if host ~= nil then
+    cmd = cmd .. "ssh "..host.. " \"/bin/bash -c \\\" "
+end
+cmd = cmd .. " " ..PERFCTR
 if pinning then
     cmd = cmd .. string.format(" -C %s",table.concat(cpulist,","))
 else
@@ -367,12 +394,19 @@ cmd = cmd .. " ".. table.concat(arg, " ")
 -- since io.popen can only read stdout we swap stdout and stderr
 -- application output is written to stderr, we catch stdout
 cmd = cmd .. " 3>&1 1>&2 2>&3 3>&-"
-
+if host ~= nil then
+    cmd = cmd .. " \\\" \" "
+end
 perfctr = assert (io.popen (cmd))
 
 
 for i, group in pairs(group_list) do
-    gnucmd = string.format("%s --stream --with linespoints --domain --nodataid --xmin 0", FEEDGNUPLOT)
+    gnucmd = string.format("%s --stream %f --with linespoints --domain --nodataid", FEEDGNUPLOT, mfreq/#group_list)
+    if plotrange > 0 then
+        gnucmd = gnucmd .. string.format(" --xlen %d", plotrange)
+    else
+        gnucmd = gnucmd .. " --xmin 0"
+    end
     if group["title"] ~= nil then
         if #group_list > 1 then
             gnucmd = gnucmd .. string.format(" --title %q", "Group "..i..": "..group["title"])
@@ -406,19 +440,25 @@ for i, group in pairs(group_list) do
             end
         end
     end
-    gnucmd = gnucmd .. " 1>/dev/null 2>&1"
+    if plotdump then
+        gnucmd = gnucmd .. " --dump"
+    else
+        gnucmd = gnucmd .. " 1>/dev/null 2>&1"
+    end
     group_list[i]["output"] = assert(io.popen(gnucmd,"w"))
 end
 
+
 likwid.catchSignal()
-alldata = {}
+local mtime = {}
 for i,g in pairs(group_list) do
-    alldata[i] = {}
-    alldata[i]["inverseClock"] = 1.0/likwid.getCpuClock();
     local str = "0 "
-    for j,c in pairs(g["formulas"]) do
-        str = str .."0 "
+    for k,t in pairs(cpulist) do
+        for j,c in pairs(g["formulas"]) do
+            str = str .."0 "
+        end
     end
+    mtime[i] = nil
     g["output"]:write(str.."\n")
     g["output"]:flush()
     if dump then
@@ -427,13 +467,22 @@ for i,g in pairs(group_list) do
 end
 
 
-olddata = nil
-data = nil
+olddata = {}
+oldmetric = {}
+local perfctr_exited = false
+local oldtime = 0
+local clock = likwid.getCpuClock()
 while true do
     local l = perfctr:read("*line")
-    if l == nil or l:match("^%s*$") then break end
-
+    if l == nil or l:match("^%s*$") then
+        break
+    elseif l:match("^ERROR") then
+        perfctr_exited = true
+        break
+    end
     if l:match("^%d+,%d+,%d+,[%d.]+,%d+") then
+        local data = {}
+        local diff = {}
         linelist = likwid.stringsplit(l, ",")
         group = tonumber(linelist[1])
         nr_events = tonumber(linelist[2])
@@ -444,63 +493,102 @@ while true do
         table.remove(linelist, 1)
         table.remove(linelist, 1)
 
-        if olddata == nil then
-            olddata = {}
+        for i=1,nr_events do
+            for j=1,nr_threads do
+                if data[j] == nil then data[j] = {} end
+                data[j][group_list[group]["counterlist"][i]] = tonumber(linelist[1])
+                table.remove(linelist, 1)
+            end
+        end
+
+        if time - oldtime <= mfreq + (0.1*mfreq) and time - oldtime >= mfreq - (0.1*mfreq) then
+            mtime[group] = time - oldtime
+        else
+            mtime[group] = mfreq
         end
 
         if olddata[group] == nil then
             olddata[group] = {}
-        end
-
-        alldata[group]["time"] = time
-
-        if data ~= nil then olddata[group] = copy_list(data) end
-        data = {}
-        for j=1,nr_threads do
-            data[j] = {}
-            data[j]["time"] = time
-            if not alldata[group][j] then
-                alldata[group][j] = {}
-            end
-        end
-        for i=1,nr_events do
-            for j=1,nr_threads do
-                if olddata[group][j] ~= nil then
-                    data[j][group_list[group]["counterlist"][i]] = tonumber(linelist[1]) - olddata[group][j][group_list[group]["counterlist"][i]]
+            for l1,v1 in pairs(data) do
+                diff[l1] = {}
+                olddata[group][l1] = {}
+                if type(v1) == "table" then
+                    for l2,v2 in pairs(data[l1]) do
+                        diff[l1][l2] = data[l1][l2]
+                        olddata[group][l1][l2] = data[l1][l2]
+                    end
                 else
-                    data[j][group_list[group]["counterlist"][i]] = tonumber(linelist[1])
+                    diff[l1] = data[l1]
+                    olddata[group][l1] = data[group][l1]
                 end
-                alldata[group][j][group_list[group]["counterlist"][i]] = tonumber(linelist[1])
-                table.remove(linelist, 1)
+                diff[l1]["time"] = mtime[group]
+                diff[l1]["inverseClock"] = 1.0/clock
+            end
+        else
+            for l1,v1 in pairs(data) do
+                diff[l1] = {}
+                if type(v1) == "table" then
+                    for l2,v2 in pairs(v1) do
+                        diff[l1][l2] = data[l1][l2] - olddata[group][l1][l2]
+                        olddata[group][l1][l2] = data[l1][l2]
+                    end
+                else
+                    diff[l1] = data[l1] - olddata[group][l1]
+                    olddata[group][l1] = data[group][l1]
+                end
+                diff[l1]["time"] = mtime[group]
+                diff[l1]["inverseClock"] = 1.0/clock
             end
         end
-        results = {}
-        str = tostring(alldata[group]["time"])
-        for i, thread in pairs(data) do
-            results[i] = {}
-            for j,fdesc in pairs(group_list[group]["formulas"]) do
-                results[i][j] = likwid.calculate_metric(fdesc["formula"], thread)
-                str = str .. " " ..tostring(results[i][j])
+
+
+        str = tostring(time)
+        if oldmetric[group] == nil then
+            oldmetric[group] = {}
+            for i, thread in pairs(diff) do
+                oldmetric[group][i] = {}
+                for j,fdesc in pairs(group_list[group]["formulas"]) do
+                    oldmetric[group][i][j] = likwid.calculate_metric(fdesc["formula"], thread)
+                    str = str .. " " .. tostring(oldmetric[group][i][j])
+                end
+            end
+        else
+            for i, thread in pairs(diff) do
+                for j,fdesc in pairs(group_list[group]["formulas"]) do
+                    local tmp = likwid.calculate_metric(fdesc["formula"], thread)
+                    if #group_list > 1 or fdesc["formula"]:match("(%/time)") == nil then
+                        str = str .. " " ..tostring(tmp)
+                    else
+                        if tmp - oldmetric[group][i][j] >= 0 then
+                            str = str .. " " .. tostring(tmp - oldmetric[group][i][j])
+                        else
+                            str = str .. " 0"
+                        end
+                    end
+                    oldmetric[group][i][j] = tmp
+                end
             end
         end
+        
         group_list[group]["output"]:write(str.."\n")
         group_list[group]["output"]:flush()
         if dump then
             print(tostring(group).." ".. str)
         end
+        oldtime = time
     end
 end
 
-
-while likwid.getSignalState() == 0 do
-    sleep(1)
+if perfctr_exited == false then
+    while likwid.getSignalState() == 0 do
+        sleep(1)
+    end
 end
-io.close(perfctr)
 for i, group in pairs(group_list) do
     group["output"]:write("exit\n")
     io.close(group["output"])
 end
-
+io.close(perfctr)
 
 
 
