@@ -1,0 +1,28 @@
+SHORT Ring Transfer bandwidth
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+SBOX0C0 RING_BL_USED_ANY
+SBOX1C0 RING_BL_USED_ANY
+SBOX2C0 RING_BL_USED_ANY
+SBOX3C0 RING_BL_USED_ANY
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Ring transfer bandwidth [MByte/s] 1.E-06*(SBOX0C0+SBOX1C0+SBOX2C0+SBOX3C0)*32/time
+Ring transfer data volume [GByte] 1.E-09*(SBOX0C0+SBOX1C0+SBOX2C0+SBOX3C0)*32
+
+LONG
+Formula:
+Ring transfer bandwidth [MByte/s] = 1.E-06*(SUM(SBOXxC0)*32)/time
+Ring transfer data volume [GByte] = 1.E-09*(SUM(SBOXxC0)*32)
+--
+The SBOXes manage the transfer between the socket local ring(s). For microarchitectures
+prior to Haswell, the SBOX and QBOX was similar as only a single ring was used.
+Haswell systems with a high core count assemble two rings that are connected through
+the SBOXes, the traffic between the sockets is handled by the QBOXes.
