@@ -19,12 +19,16 @@ to create on-the-fly pictures with the current measurements. It uses the <A HREF
   <TD>Print version information.</TD>
 </TR>
 <TR>
-  <TD>-a</TD>
+  <TD>-a, --all</TD>
   <TD>Print available predefined plot configurations for current processor.</TD>
 </TR>
 <TR>
   <TD>-d, --dump</TD>
   <TD>Print measurements to stdout.</TD>
+</TR>
+<TR>
+  <TD>-p, --plotdump</TD>
+  <TD>Use feedGnuplots feature to dump plot configuration and its data to stdout.</TD>
 </TR>
 <TR>
   <TD>-c &lt;arg&gt;</TD>
@@ -35,12 +39,20 @@ to create on-the-fly pictures with the current measurements. It uses the <A HREF
   <TD>Defines the CPUs that should be measured and pin the executable to the CPUs<BR>See \ref CPU_expressions on the \ref likwid-pin page for information about the syntax.</TD>
 </TR>
 <TR>
-  <TD>-f, --freq &lt;time&gt;</TD>
+  <TD>-t, --time &lt;time&gt;</TD>
   <TD>Specify the measurement time for each plot. &lt;time&gt; is handled over to \ref likwid-perfctr with the -t option. <BR>Examples for &lt;time&gt; are 1s, 250ms, 500us.</TD>
 </TR>
 <TR>
   <TD>-g, --group &lt;arg&gt;</TD>
   <TD>Specify a predefined plot with optional changes or an eventset with plot configuration. See \ref plot_configuration for details.</TD>
+</TR>
+<TR>
+  <TD>-r, --range &lt;arg&gt;</TD>
+  <TD>Specify the amount of data points that should be visible in the plots. Often refered to as sliding window.</TD>
+</TR>
+<TR>
+  <TD>--host &lt;arg&gt;</TD>
+  <TD>Connect to &lt;arg&gt; via ssh and execute likwid-perfctr and the application there. The plots are created on the local machine. Often used if measured on hosts without X11 or GnuPlot.</TD>
 </TR>
 </TABLE>
 
@@ -78,17 +90,17 @@ to create on-the-fly pictures with the current measurements. It uses the <A HREF
 
 <H1>Examples</H1>
 <UL>
-<LI><CODE>likwid-perfscope -g L3_BAND -C 0-2 -f 1s ./a.out</CODE><BR>
+<LI><CODE>likwid-perfscope -g L3_BAND -C 0-2 -t 1s ./a.out</CODE><BR>
 Pin the executable <CODE>./a.out</CODE> to CPUs 0,1,2 and use the predefined plot configuration <CODE>L3_BAND</CODE> The plot is updated ever second.
 </LI>
-<LI><CODE>likwid-perfscope -g L3_VOL:TITLE="My Title" -C S0:1 -f 500ms ./a.out</CODE><BR>
-Pin the executable <CODE>./a.out</CODE> to CPU 1 on Socket 0 and use the predefined plot configuration <CODE>L3_VOL</CODE> but change the title for the plot to "My Title".
+<LI><CODE>likwid-perfscope -g L3_BAND:TITLE="My Title" -C S0:1 -t 500ms ./a.out</CODE><BR>
+Pin the executable <CODE>./a.out</CODE> to CPU 1 on Socket 0 and use the predefined plot configuration <CODE>L3_BAND</CODE> but change the title for the plot to "My Title".
 </LI>
-<LI><CODE>likwid-perfscope -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,FORMULA=FIXC0/FIXC1:YTITLE="CPI" -C 0 -freq 2s ./a.out</CODE><BR>
-Pin the executable <CODE>./a.out</CODE> to CPUs 0 and use the custom event set <CODE>INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1</CODE>. The last event set entry specifies custom plot options. The plotted formula is <CODE>FIXC0/FIXC1</CODE> and the plot title is set to 'CPI'.
+<LI><CODE>likwid-perfscope -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,CPI=FIXC0/FIXC1:YTITLE="CPI" -C 0 --time 2s ./a.out</CODE><BR>
+Pin the executable <CODE>./a.out</CODE> to CPUs 0 and use the custom event set <CODE>INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1</CODE>. The last event set entry specifies custom plot options. The plotted formula is <CODE>FIXC0/FIXC1</CODE> and the plot title and legend entry is set to 'CPI'.
 </LI>
-<LI><CODE>likwid-perfscope -g L3_VOL,CPI=FIXC0/FIXC1:Y2TITLE="2-Cycles per Instruction" -C 0 -freq 2s ./a.out</CODE><BR>
-Pin the executable <CODE>./a.out</CODE> to CPUs 0 and use the predefined plot configuration  <CODE>L3_VOL</CODE> to measure every 2 seconds. Additionally, a formula <CODE>FIXC0/FIXC1</CODE> with the name <CODE>CPI</CODE> is given. The right y-axis is associated to the given function and labeled with <CODE>Cycles per Instruction</CODE>. The formula ID 2 is not needed in this case as the default behavior is to associate the right y-axis to the last formula given.
+<LI><CODE>likwid-perfscope -g L3_BAND,CPI=FIXC0/FIXC1:Y2TITLE="2-Cycles per Instruction" -C 0 --time 2s ./a.out</CODE><BR>
+Pin the executable <CODE>./a.out</CODE> to CPU 0 and use the predefined plot configuration  <CODE>L3_BAND</CODE> to measure every 2 seconds. Additionally, a formula <CODE>FIXC0/FIXC1</CODE> with the name <CODE>CPI</CODE> is given. The right y-axis is associated to the given function and labeled with <CODE>Cycles per Instruction</CODE>. The formula ID 2 is not needed in this case as the default behavior is to associate the right y-axis to the last formula given.
 </LI>
 </UL>
 

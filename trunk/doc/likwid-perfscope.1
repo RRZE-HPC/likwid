@@ -5,15 +5,19 @@ likwid-perfscope \- Frontend for the timeline mode of
 that generates pictures on-the-fly from the measurements
 .SH SYNOPSIS
 .B likwid-perfscope
-.RB [\-hvad]
+.RB [\-hvadp]
 .RB [ \-c
 .IR <cpu_list> ]
 .RB [ \-C
 .IR <cpu_list> ]
-.RB [ \-f
+.RB [ \-t
 .IR <frequency> ]
+.RB [ \-r
+.IR <value> ]
 .RB [ \-g
 .IR <eventset_and_plotconfig> ]
+.RB [ \-\-\^host
+.IR <hostname> ]
 .B <executable>
 
 .SH DESCRIPTION
@@ -43,7 +47,7 @@ Measures the given group on given CPUs in <cpu_list>. See
 .B likwid-pin(1)
 for further information about the syntax. The application is pinned to that cores.
 .TP
-.B \-\^a
+.B \-\^a,\-\-\^all
 List preconfigured event and plot configurations
 .TP
 .B \-\^d,\-\-\^dump
@@ -51,7 +55,7 @@ Print the measurements of
 .B likwid-perfctr(1)
 to stdout.
 .TP
-.B \-\^f,\-\-\^freq " <frequency>
+.B \-\^t,\-\-\^time " <frequency>
 Reads the current performance values every <frequency>. Available suffixes are 's', 'ms' or 'us, e.g. 500ms. Default value is 1s.
 .TP
 .B \-\^g,\-\-\^group " <eventset_and_plotconfig>
@@ -65,6 +69,16 @@ option accepts config options for
 .B feedGnuplot(1),
 see section
 .B EVENTSETS
+.TP
+.B \-\^r,\-\-\^range " <value>
+Plot only the last <value> values. Often refered to as sliding window.
+.TP
+.B \-\^p,\-\-\^plotdump
+Use the dumping feature of feedGnuplot to print out the plot configuration and its data at each timestep.
+Can be used to create file-based plots afterwards.
+.TP
+.B \-\-\^host " <hostname>
+Instead of performing likwid-perfctr on the local machine, execute it on a remote machine and plot data locally. Uses ssh and you probably need to enter the password before starting. You can also give something like user@host.
 
 
 .SH EVENTSETS
@@ -111,19 +125,19 @@ Use the given title for the right y-axis of the plot. If no id is set, the last 
 .IP 1. 5
 Measure and print a preconfigured plotting configuration:
 .TP
-.B likwid-perfscope -g L3_BAND -C 0-2 -f 1s ./a.out
+.B likwid-perfscope -g L3_BAND -C 0-2 -t 1s ./a.out
 .PP
 This measures the L3 bandwidth with likwid-perfctr every second on CPU cores 0,1,2 and use the plotting configuration L3_BAND. The plot will have a title and the axes are labeled properly.
 .IP 2. 5
 Measure and print a preconfigured plotting configuration:
 .TP
-.B likwid-perfscope -g L3_VOL:TITLE="My Title" -C 0 -f 1s ./a.out
+.B likwid-perfscope -g L2_BAND:TITLE="My Title" -C 0 -t 1s ./a.out
 .PP
-This measures the L3 data volume with likwid-perfctr every second on CPU core 0 and use the plotting configuration L3_VOL. The title of the output plot is changed to the custom title "My Title".
+This measures the L2 bandwidth with likwid-perfctr every second on CPU core 0 and use the plotting configuration L2_BAND. The title of the output plot is changed to the custom title "My Title".
 .IP 3. 5
 Custom event set with plotting configuration:
 .TP
-.B likwid-perfscope -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,CPI=FIXC0/FIXC1:YTITLE="Cycles per Instruction" -C 0 -freq 500ms ./a.out
+.B likwid-perfscope -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,CPI=FIXC0/FIXC1:YTITLE="Cycles per Instruction" -C 0 --time 500ms ./a.out
 .PP
 Executes
 .B likwid-perfctr
@@ -139,16 +153,16 @@ script with the curve name 'CPI' in the legend. The y-axis is labeled with the s
 IP 4. 5
 Custom event set with plotting configuration:
 .TP
-.B likwid-perfscope -g L3_VOL,CPI=FIXC0/FIXC1:Y2TITLE="2-Cycles per Instruction" -C 0 -freq 500ms ./a.out
+.B likwid-perfscope -g L3_BAND,CPI=FIXC0/FIXC1:Y2TITLE="2-Cycles per Instruction" -C 0 --time 500ms ./a.out
 .PP
-This measures the L3 data volume for CPU 0 every 500 ms. Additionally, a second curve is plotted with the function
+This measures the L3 bandwidth for CPU 0 every 500 ms. Additionally, a second curve is plotted with the function
 .B FIXC0/FIXC1
 with the legend entry
 .B CPI.
 The right y-axis is labeled with
 .B 'Cycles per Instruction'
 and is associated to the second formula. The first formula is hidden in the
-.B L3_VOL
+.B L3_BAND
 plot group. Since the
 .B CPI
 formula is the last in the list, the curve id is not needed in the
