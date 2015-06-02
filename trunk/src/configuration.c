@@ -38,11 +38,12 @@
 
 #include <configuration.h>
 
-Configuration config = {NULL,NULL,-1,MAX_NUM_THREADS,MAX_NUM_NODES};
+Configuration config = {NULL,NULL,NULL,-1,MAX_NUM_THREADS,MAX_NUM_NODES};
 int init_config = 0;
 
 int init_configuration(void)
 {
+    int i;
     FILE* fp;
     char line[512];
     char name[128];
@@ -51,6 +52,10 @@ int init_configuration(void)
     filename[0] = '\0';
     char preconfigured[1024];
     preconfigured[0] = '\0';
+    if (init_config == 1)
+    {
+        return 0;
+    }
     sprintf(preconfigured, "%s%s",TOSTRING(INSTALL_PREFIX),"/etc/likwid.cfg");
 
     if (access(preconfigured, R_OK) != 0)
@@ -71,12 +76,40 @@ int init_configuration(void)
     {
         sprintf(filename, "%s",preconfigured);
     }
+    if ((config.topologyCfgFileName == NULL) && (strlen(filename) == 0))
+    {
+        if (!access("/etc/likwid_topo.cfg", R_OK))
+        {
+            preconfigured[0] = '\0';
+            sprintf(preconfigured,"%s", "/etc/likwid_topo.cfg");
+        }
+        else
+        {
+            sprintf(preconfigured, "%s%s",TOSTRING(INSTALL_PREFIX),"/etc/likwid_topo.cfg");
+            if (access(preconfigured, R_OK))
+            {
+                preconfigured[0] = '\0';
+            }
+        }
+        if (preconfigured[0] != '\0')
+        {
+            config.topologyCfgFileName = (char*)malloc((strlen(preconfigured)+1) * sizeof(char));
+            strcpy(config.topologyCfgFileName, preconfigured);
+            config.topologyCfgFileName[strlen(preconfigured)] = '\0';
+        }
+    }
 
-    if (strlen(filename) == 0)
+    if ((strlen(filename) == 0) || (!access(filename, R_OK)))
     {
         return -EFAULT;
     }
-    fp = fopen(filename, "r");
+    DEBUG_PRINT(DEBUGLEV_INFO, Reading configuration from %s, filename);
+    // Copy determined config filename to struct
+    config.configFileName = malloc((strlen(filename)+1)*sizeof(char));
+    strcpy(config.configFileName, filename);
+    config.configFileName[strlen(filename)] = '\0';
+
+    fp = fopen(config.configFileName, "r");
     if (fp == NULL)
     {
         return -EFAULT;
@@ -120,15 +153,20 @@ int init_configuration(void)
         }
     }
     
+
     init_config = 1;
-    
+
     fclose(fp);
     return 0;
 }
 
 Configuration_t get_configuration(void)
 {
-    return &config;
+    if (init_config == 1)
+    {
+        return &config;
+    }
+    return NULL;
 }
 
 int destroy_configuration(void)
@@ -137,6 +175,7 @@ int destroy_configuration(void)
     {
         return -EFAULT;
     }
+    free(config.configFileName);
     free(config.topologyCfgFileName);
     free(config.daemonPath);
     init_config = 0;
