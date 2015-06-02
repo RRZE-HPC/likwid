@@ -74,7 +74,7 @@ local function usage()
 end
 
 
-local config = likwid.getConfiguration();
+local config = likwid.getConfiguration()
 verbose = 0
 print_groups = false
 print_events = false
@@ -375,15 +375,12 @@ if print_info or verbose > 0 then
         print_stdout(string.format("PERFMON width of counters:\t%u",cpuinfo["perf_width_ctr"]))
         print_stdout(string.format("PERFMON number of fixed counters:\t%u",cpuinfo["perf_num_fixed_ctr"]))
     end
-end
-
-if print_info then
+    print_stdout(likwid.hline)
+    likwid.printSupportedCPUs()
     likwid.putTopology()
     likwid.putConfiguration()
     os.exit(0)
 end
-
-
 
 if use_stethoscope == false and use_timeline == false and use_marker == false then
     use_wrapper = true

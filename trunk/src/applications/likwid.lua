@@ -43,6 +43,7 @@ likwid.putAffinityInfo = likwid_putAffinityInfo
 likwid.getPowerInfo = likwid_getPowerInfo
 likwid.putPowerInfo = likwid_putPowerInfo
 likwid.getOnlineDevices = likwid_getOnlineDevices
+likwid.printSupportedCPUs = likwid_printSupportedCPUs
 likwid.getCpuClock = likwid_getCpuClock
 likwid.startClock = likwid_startClock
 likwid.stopClock = likwid_stopClock

@@ -67,18 +67,47 @@ Configuration_t configfile = NULL;
 
 static int lua_likwid_getConfiguration(lua_State* L)
 {
-    
+    int ret = 0;
     if (config_isInitialized == 0)
     {
-        init_configuration();
-        config_isInitialized = 1;
-        configfile = get_configuration();
+        ret = init_configuration();
+        if (ret == 0)
+        {
+            config_isInitialized = 1;
+            configfile = get_configuration();
+        }
+        else
+        {
+            lua_newtable(L);
+            lua_pushstring(L, "configFile");
+            lua_pushnil(L);
+            lua_settable(L,-3);
+            lua_pushstring(L, "topologyFile");
+            lua_pushnil(L);
+            lua_settable(L,-3);
+            lua_pushstring(L, "daemonPath");
+            lua_pushnil(L);
+            lua_settable(L,-3);
+            lua_pushstring(L, "daemonMode");
+            lua_pushinteger(L, -1);
+            lua_settable(L,-3);
+            lua_pushstring(L, "maxNumThreads");
+            lua_pushinteger(L, MAX_NUM_THREADS);
+            lua_settable(L,-3);
+            lua_pushstring(L, "maxNumNodes");
+            lua_pushinteger(L, MAX_NUM_NODES);
+            lua_settable(L,-3);
+            return 1;
+        }
     }
     if ((config_isInitialized) && (configfile == NULL))
     {
         configfile = get_configuration();
     }
     lua_newtable(L);
+    lua_pushstring(L, "configFile");
+    lua_pushstring(L, configfile->configFileName);
+    lua_settable(L,-3);
     lua_pushstring(L, "topologyFile");
     lua_pushstring(L, configfile->topologyCfgFileName);
     lua_settable(L,-3);
@@ -375,6 +404,11 @@ static int lua_likwid_getNumberOfThreads(lua_State* L)
     return 1;
 }
 
+static int lua_likwid_printSupportedCPUs(lua_State* L)
+{
+    print_supportedCPUs();
+    return 0;
+}
 
 static int lua_likwid_getCpuInfo(lua_State* L)
 {
@@ -1587,6 +1621,7 @@ int luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getPowerInfo",lua_likwid_getPowerInfo);
     lua_register(L, "likwid_putPowerInfo",lua_likwid_putPowerInfo);
     lua_register(L, "likwid_getOnlineDevices", lua_likwid_getOnlineDevices);
+    lua_register(L, "likwid_printSupportedCPUs", lua_likwid_printSupportedCPUs);
     // Timer functions
     lua_register(L, "likwid_getCpuClock",lua_likwid_getCpuClock);
     lua_register(L, "likwid_startClock",lua_likwid_startClock);
