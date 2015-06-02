@@ -78,7 +78,7 @@ else
     access_mode = config["daemonMode"]
 end
 time_interval = 2.E06
-sockets = {0}
+sockets = {}
 eventString = "PWR_PKG_ENERGY:PWR0,PWR_PP0_ENERGY:PWR1,PWR_PP1_ENERGY:PWR2,PWR_DRAM_ENERGY:PWR3"
 domainList = {"PKG", "PP0", "PP1", "DRAM"}
 
@@ -141,11 +141,26 @@ end
 cpulist = {}
 before = {}
 after = {}
-for i,socketId in pairs(sockets) do
-    local affinityID = "S"..tostring(socketId)
+if #sockets > 0 then
+    for i,socketId in pairs(sockets) do
+        local affinityID = "S"..tostring(socketId)
+        for j, domain in pairs(affinity["domains"]) do
+            if domain["tag"] == affinityID then
+                table.insert(cpulist,domain["processorList"][1])
+                before[domain["processorList"][1]] = {}
+                after[domain["processorList"][1]] = {}
+                for _, id in pairs(domainList) do
+                    before[domain["processorList"][1]][id] = 0
+                    after[domain["processorList"][1]][id] = 0
+                end
+            end
+        end
+    end
+else
     for j, domain in pairs(affinity["domains"]) do
-        if domain["tag"] == affinityID then
+        if domain["tag"]:match("S%d+") then
             table.insert(cpulist,domain["processorList"][1])
+            table.insert(sockets, domain["tag"]:match("S(%d+)"))
             before[domain["processorList"][1]] = {}
             after[domain["processorList"][1]] = {}
             for _, id in pairs(domainList) do
@@ -212,8 +227,8 @@ if (print_info) then
     os.exit(0)
 end
 
-if (stethoscope) and (time_interval < power["timeUnit"]*1.E06) then
-    print("Time interval too short, minimum measurement time is "..tostring(power["timeUnit"]*1.E06).. " us")
+if (stethoscope) and (time_interval < power["timeUnit"]) then
+    print("Time interval too short, minimum measurement time is "..tostring(power["timeUnit"]).. " us")
     os.exit(1)
 end
 
