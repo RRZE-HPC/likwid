@@ -172,9 +172,9 @@ This is only possible on local file systems. A feasible way is to use the likwid
 
 \subsubsection depends Dependencies
 Although we tried to minimize the external dependencies of LIKWID, some advanced tools or only specific tool options require external packages.<BR>
-\ref likwid-perfscope uses the Perl script \a feedGnuplot to forward the real-time data to gnuplot. \a feedGnuplot is included into LIKWID, but gnuplot itself is not.<BR>
+\ref likwid-perfscope uses the Perl script <A HREF="https://github.com/dkogan/feedgnuplot">feedGnuplot</A> to forward the real-time data to gnuplot. <A HREF="https://github.com/dkogan/feedgnuplot">feedGnuplot</A> is included into LIKWID, but <A HREF="http://www.gnuplot.info/">gnuplot</A> itself is not.<BR>
 \ref likwid-agent provided multiple backends to output the periodically measured data. The syslog backend requires the shell tool \a logger to be installed. The <A HREF="https://oss.oetiker.ch/rrdtool/">RRD</A> backend requires \a rrdtool and the GMetric backend the \a gmetric tool, part of the <A HREF="http://ganglia.sourceforge.net/">Ganglia Monitoring System</A>.<BR>
-In order to create the HTML documentation of LIKWID, the tool \a doxygen is required.
+In order to create the HTML documentation of LIKWID, the tool <A HREF="www.doxygen.org">Doxygen</A> is required.
 */
 
 /*! \page C-markerAPI-code Marker API in a C/C++ application
