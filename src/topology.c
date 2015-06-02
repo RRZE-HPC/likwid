@@ -117,6 +117,7 @@ static char* short_k16 = "kabini";
 static char* short_unknown = "unknown";
 
 
+
 int cpu_count(cpu_set_t* set)
 {
     uint32_t i;
@@ -288,19 +289,19 @@ static int readTopologyFile(const char* filename)
 
                 if (strcmp(value, "threadId") == 0)
                 {
-                    cpuid_topology.threadPool[thread-1].threadId = tmp;
+                    cpuid_topology.threadPool[thread].threadId = tmp;
                 }
                 else if (strcmp(value, "coreId") == 0)
                 {
-                    cpuid_topology.threadPool[thread-1].coreId = tmp;
+                    cpuid_topology.threadPool[thread].coreId = tmp;
                 }
                 else if (strcmp(value, "packageId") == 0)
                 {
-                    cpuid_topology.threadPool[thread-1].packageId = tmp;
+                    cpuid_topology.threadPool[thread].packageId = tmp;
                 }
                 else if (strcmp(value, "apicId") == 0)
                 {
-                    cpuid_topology.threadPool[thread-1].apicId = tmp;
+                    cpuid_topology.threadPool[thread].apicId = tmp;
                 }
                 
             }
@@ -382,11 +383,17 @@ static int readTopologyFile(const char* filename)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.model = tmp;
-                
+            }
+            else if (strcmp(field, "osname") == 0)
+            {
+                strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
+                cpuid_info.osname = (char*) malloc((strlen(value)+1) * sizeof(char));
+                strncpy(cpuid_info.osname, value, strlen(value));
+                cpuid_info.osname[strlen(value)-1] = '\0';
             }
             else if (strcmp(field, "stepping") == 0)
             {
-                sscanf(line, "%s %s = %d", structure, field, &tmp);
+                sscanf(line, "%s %s = %s", structure, field, &tmp);
                 cpuid_info.stepping = tmp;
                 
             }
@@ -491,7 +498,6 @@ static int readTopologyFile(const char* filename)
             }
         }
     }
-
     fclose(fp);
 
     return 0;
@@ -848,7 +854,20 @@ int topology_init(void)
     }
     else
     {
+        cpu_set_t cpuSet;
+        CPU_ZERO(&cpuSet);
+        sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
+        DEBUG_PRINT(DEBUGLEV_INFO, Reading topology information from %s, config.topologyCfgFileName);
         readTopologyFile(config.topologyCfgFileName);
+        cpuid_topology.activeHWThreads = 0;
+        for (int i=0;i<cpuid_topology.numHWThreads;i++)
+        {
+            if (CPU_ISSET(cpuid_topology.threadPool[i].apicId, &cpuSet))
+            {
+                cpuid_topology.activeHWThreads++;
+                cpuid_topology.threadPool[i].inCpuSet = 1;
+            }
+        }
         topology_setName();
         topology_setupTree();
     }
@@ -893,7 +912,7 @@ void topology_finalize(void)
 
 void print_supportedCPUs (void)
 {
-    printf("\nSupported Intel processors:\n");
+    printf("Supported Intel processors:\n");
     printf("\t%s\n",core_2a_str);
     printf("\t%s\n",core_2b_str);
     printf("\t%s\n",xeon_mp_string);
@@ -913,8 +932,8 @@ void print_supportedCPUs (void)
     printf("\t%s\n",haswell_ep_str);
     printf("\t%s\n",atom_silvermont_str);
     printf("\t%s\n",atom_airmont_str);
-    printf("\t%s\n\n",xeon_phi_string);
-    printf("\t%s\n",broadwell_str);
+    printf("\t%s\n",xeon_phi_string);
+    printf("\t%s\n\n",broadwell_str);
 
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);
