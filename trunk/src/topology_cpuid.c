@@ -451,10 +451,39 @@ void cpuid_init_cpuFeatures(void)
         strcat(cpuid_info.features, "SSE2 ");
         cpuid_info.featureFlags |= (1<<SSE2);
     }
+    if (edx & (1<<28))
+    {
+        strcat(cpuid_info.features, "HTT ");
+        cpuid_info.featureFlags |= (1<<HTT);
+    }
     if (edx & (1<<29))
     {
         strcat(cpuid_info.features, "TM ");
         cpuid_info.featureFlags |= (1<<TM);
+    }
+
+    eax = 0x7;
+    ecx = 0x0;
+    CPUID;
+    if (ebx & (1<<5))
+    {
+        strcat(cpuid_info.features, "AVX2 ");
+        cpuid_info.featureFlags |= (1<<AVX2);
+    }
+    if (ebx & (1<<11))
+    {
+        strcat(cpuid_info.features, "RTM ");
+        cpuid_info.featureFlags |= (1<<RTM);
+    }
+    if (ebx & (1<<4))
+    {
+        strcat(cpuid_info.features, "HLE ");
+        cpuid_info.featureFlags |= (1<<HLE);
+    }
+    if (ebx & (1<<18))
+    {
+        strcat(cpuid_info.features, "RDSEED ");
+        cpuid_info.featureFlags |= (1<<RDSEED);
     }
 
     eax = 0x80000001;

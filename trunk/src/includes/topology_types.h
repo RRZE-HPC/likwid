@@ -62,7 +62,12 @@ typedef enum {
     SSE41, /*!< \brief Streaming SIMD Extensions 4.1 */
     SSE42, /*!< \brief Streaming SIMD Extensions 4.2 */
     AVX, /*!< \brief Advanced Vector Extensions */
-    FMA /*!< \brief Fused multiply-add (FMA3) */
+    FMA, /*!< \brief Fused multiply-add (FMA3) */
+    AVX2, /*!< \brief Advanced Vector Extensions 2 */
+    RTM, /*!< \brief Restricted Transactional Memory */
+    HLE, /*!< \brief Hardware Lock Elision */
+    HTT, /*!< \brief Hyper-Threading Technology */
+    RDSEED, /*!< \brief Non-deterministic random bit generator */
 } FeatureBit;
 /** @}*/
 #endif /*CPUID_TYPES_H*/
