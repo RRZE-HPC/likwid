@@ -1,7 +1,7 @@
 /*! \page lua_Info Information about LIKWID's Lua API
 <H1>How to include Lua API into own Lua applications</H1>
 <CODE>
-package.path = package.path .. ';${PATH_TO_LIKWID.LUA}/?.lua'<BR>
+package.path = package.path .. ';<PREFIX>/share/lua/?.lua'<BR>
 local likwid = require("likwid")<BR>
 </CODE>
 <P></P>
@@ -51,11 +51,15 @@ or<BR>
 <H1>Data type definition for Lua config file module in the Lua API</H1>
 \anchor lua_config
 <H2>Config file read</H2>
-<P>This structure is returned by \ref getConfiguration function<BR>The config file can be creted with \ref likwid-genTopoCfg executable</P>
+<P>This structure is returned by \ref getConfiguration function<BR>The config file can be created with \ref likwid-genTopoCfg executable. It searches the files /etc/likwid.cfg and <PREFIX>/etc/likwid.cfg. Other configuration file paths can be set in config.mk before building LIKWID.</P>
 <TABLE>
 <TR>
   <TH>Membername</TH>
   <TH>Comment</TH>
+</TR>
+<TR>
+  <TD>\a configFile</TD>
+  <TD>Path to the config file</TD>
 </TR>
 <TR>
   <TD>\a topologyFile</TD>
@@ -501,6 +505,22 @@ or<BR>
 </TR>
 </TABLE>
 
+<H2>printSupportedCPUs()</H2>
+<P>Print all Intel and AMD CPU types that are supported by Likwid</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Return</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
 
 */
 
