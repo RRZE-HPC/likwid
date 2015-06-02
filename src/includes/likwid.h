@@ -263,6 +263,7 @@ at each start, a path to a topology file can be set. The other values are mostly
 used internally.
 */
 typedef struct {
+    char* configFileName; /*!< \brief Path to the configuration file */
     char* topologyCfgFileName; /*!< \brief Path to the topology file */
     char* daemonPath; /*!< \brief Path of the access daemon */
     AccessMode daemonMode; /*!< \brief Access mode to the MSR and PCI registers */
@@ -275,8 +276,8 @@ typedef Configuration* Configuration_t;
 /*! \brief Read the config file of LIKWID, if it exists
 
 Search for LIKWID config file and read the values in
-Currently the paths /usr/local/etc/likwid.cfg, /etc/likwid.cfg and ./likwid.cfg 
-are checked
+Currently the paths /usr/local/etc/likwid.cfg, /etc/likwid.cfg and the path
+defined in config.mk are checked.
 @return error code (0 for success, -EFAULT if no file can be found)
 */
 extern int init_configuration(void);
@@ -399,7 +400,7 @@ typedef CpuInfo* CpuInfo_t;
 typedef CpuTopology* CpuTopology_t;
 /*! \brief Initialize topology information
 
-CpuInfo_t and CpuTopology_t are initialized by either HWLOC, CPUID/ProcFS or topology file if present
+CpuInfo_t and CpuTopology_t are initialized by either HWLOC, CPUID/ProcFS or topology file if present. The topology file name can be configured in the configuration file. Furthermore, the paths /etc/likwid_topo.cfg and <PREFIX>/etc/likwid_topo.cfg are checked.
 \sa CpuInfo_t and CpuTopology_t
 @return always 0
 */
@@ -423,6 +424,9 @@ Retrieved pointers to the structures are not valid anymore after this function c
 \sa CpuInfo_t and CpuTopology_t
 */
 extern void topology_finalize(void);
+/*! \brief Print all supported architectures
+*/
+extern void print_supportedCPUs(void);
 /** @}*/
 /* 
 ################################################################################
