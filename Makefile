@@ -102,7 +102,13 @@ tags:
 
 docs:
 	@echo "===>  GENERATE DOXYGEN DOCS"
+	@cp doc/lua-doxygen.md doc/lua-doxygen.md.safe
+	@cp doc/likwid-doxygen.md doc/likwid-doxygen.md.safe
+	@sed -i -e s+'<PREFIX>'+$(PREFIX)+g -e s+'<VERSION>'+$(VERSION)+g -e s+'<DATE>'+'$(DATE)'+g -e s+'<RELEASE>'+$(RELEASE)+g doc/lua-doxygen.md
+	@sed -i -e s+'<PREFIX>'+$(PREFIX)+g -e s+'<VERSION>'+$(VERSION)+g -e s+'<DATE>'+'$(DATE)'+g -e s+'<RELEASE>'+$(RELEASE)+g doc/likwid-doxygen.md
 	$(Q)doxygen doc/Doxyfile
+	@cp doc/lua-doxygen.md.safe doc/lua-doxygen.md
+	@cp doc/likwid-doxygen.md.safe doc/likwid-doxygen.md
 
 $(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
 	@echo "===>  ADJUSTING  $@"
