@@ -35,7 +35,6 @@
 
 #include <types.h>
 #include <likwid.h>
-//#include <timer_types.h>
 
 static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
@@ -53,7 +52,7 @@ getCpuSpeed(void)
     struct timeval tv1;
     struct timeval tv2;
     struct timezone tzp;
-    struct timespec delay = { 0, 800000000 }; /* calibration time: 800 ms */
+    struct timespec delay = { 0, 500000000 }; /* calibration time: 500 ms */
 
     for (i=0; i< 10; i++)
     {
@@ -100,7 +99,10 @@ getCpuSpeed(void)
 
 void timer_init( void )
 {
-    cpuClock = getCpuSpeed();
+    if (cpuClock == 0ULL)
+    {
+        cpuClock = getCpuSpeed();
+    }
 }
 
 uint64_t timer_printCycles( TimerData* time )
