@@ -252,7 +252,7 @@ void proc_init_cpuFeatures(void)
     cpuid_info.featureFlags = 0;
     cpuid_info.features = (char*) malloc(MAX_FEATURE_STRING_LENGTH*sizeof(char));
     cpuid_info.features[0] = '\0';
-
+    buf[strcspn(buf, "\n")] = '\0';
     cptr = strtok(&(buf[6]),delimiter);
 
     while (cptr != NULL)
@@ -302,7 +302,7 @@ void proc_init_cpuFeatures(void)
             cpuid_info.featureFlags |= (1<<VMX);
             strcat(cpuid_info.features, "VMX ");
         }
-        else if (strcmp(cptr,"eist") == 0)
+        else if (strcmp(cptr,"est") == 0)
         {
             cpuid_info.featureFlags |= (1<<EIST);
             strcat(cpuid_info.features, "EIST ");
@@ -330,12 +330,12 @@ void proc_init_cpuFeatures(void)
         else if (strcmp(cptr,"sse4_1") == 0)
         {
             cpuid_info.featureFlags |= (1<<SSE41);
-            strcat(cpuid_info.features, "SSE41 ");
+            strcat(cpuid_info.features, "SSE4.1 ");
         }
         else if (strcmp(cptr,"sse4_2") == 0)
         {
             cpuid_info.featureFlags |= (1<<SSE42);
-            strcat(cpuid_info.features, "SSE42 ");
+            strcat(cpuid_info.features, "SSE4.2 ");
         }
         else if (strcmp(cptr,"avx") == 0)
         {
@@ -347,8 +347,38 @@ void proc_init_cpuFeatures(void)
             cpuid_info.featureFlags |= (1<<FMA);
             strcat(cpuid_info.features, "FMA ");
         }
+        else if (strcmp(cptr,"avx2") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<AVX2);
+            strcat(cpuid_info.features, "AVX2 ");
+        }
+        else if (strcmp(cptr,"rtm") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<RTM);
+            strcat(cpuid_info.features, "RTM ");
+        }
+        else if (strcmp(cptr,"hle") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<HLE);
+            strcat(cpuid_info.features, "HLE ");
+        }
+        else if (strcmp(cptr,"rdseed") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<RDSEED);
+            strcat(cpuid_info.features, "RDSEED ");
+        }
+        else if (strcmp(cptr,"ht") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<HTT);
+            strcat(cpuid_info.features, "HTT ");
+        }
         cptr = strtok(NULL, delimiter);
+    }
 
+    if ((cpuid_info.featureFlags & (1<<SSSE3)) && !((cpuid_info.featureFlags) & (1<<SSE3)))
+    {
+        cpuid_info.featureFlags |= (1<<SSE3);
+        strcat(cpuid_info.features, "SSE3 ");
     }
 
     get_cpu_perf_data();
