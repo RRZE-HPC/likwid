@@ -217,22 +217,7 @@ if ($fileType eq 'topology') {
             }
         } elsif (/STAT/) {
 
-        }elsif (/\|[ ]+([A-Z0-9_]+)[ ]+\|[ ]+([A-Z0-9_]+)[ ]+\|[ ]*(.*)\|/) {
-            my @rescol = split('\|',$3);
-            my $id = 0;
-            print OUTFILE '<result>'.$NL;
-            print OUTFILE '<event>'.$1.'</event>'.$NL;
-            print OUTFILE '<counter>'.$2.'</counter>'.$NL;
-            foreach (@rescol) {
-                s/[ ]//g;
-                print OUTFILE '<core>'.$NL;
-                print OUTFILE '<id>'.$col[$id].'</id>'.$NL;
-                print OUTFILE '<value>'.$_.'</value>'.$NL;
-                print OUTFILE '</core>'.$NL;
-                $id++;
-            }
-            print OUTFILE '</result>'.$NL;
-        } 
+        }
     }
     print OUTFILE '</perfctr>'.$NL;
 } else {
