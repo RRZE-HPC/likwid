@@ -248,7 +248,7 @@ threads_updateIterations(int groupId, size_t demandIter)
     {
         iterations = demandIter;
     }
-    //iterations = (iterations < 10 ? 10 : iterations);
+    iterations = (iterations < 10 ? 10 : iterations);
 
     for (i = 0; i < threads_groups[groupId].numberOfThreads; i++)
     {
