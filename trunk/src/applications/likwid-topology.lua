@@ -74,7 +74,11 @@ for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O","help","ver
         version()
         os.exit(0)
     elseif opt == "V" or opt == "verbose" then
-        likwid.setVerbosity(tonumber(arg))
+        if tonumber(arg) >= 0 and tonumber(arg) <=3 then
+            likwid.setVerbosity(tonumber(arg))
+        else
+            print("Verbosity level not valid. Must be between 0 (only errors) and 3 (developer output)")
+        end
     elseif opt == "c" or opt == "caches" then
         print_caches = true
     elseif opt == "C" or opt == "clock" then
@@ -343,16 +347,29 @@ end
 
 if outfile then
     local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
-    local command = "<PREFIX>/share/likwid/filter/" .. suffix 
-    if suffix ~= "txt" and suffix ~= "csv" then
-        command = command .." ".. outfile:gsub("."..suffix,".tmp",1) .. " topology"
-        local f = io.popen(command)
-        local o = f:read("*a")
-        if o:len() > 0 then
-            print(string.format("Failed to executed filter script %s.",command))
-        end
+    local command = "<PREFIX>/share/likwid/filter/" .. suffix
+    local tmpfile = outfile:gsub("."..suffix,".tmp",1)
+    if not likwid.access(command) then
+        stdout_print("Cannot find filter script, save output in CSV format to file "..outfile)
+        os.rename(tmpfile, outfile)
     else
-        os.rename(outfile:gsub("."..suffix,".tmp",1), outfile)
+        if suffix ~= "txt" and suffix ~= "csv" then
+            command = command .." ".. tmpfile .. " topology"
+            local f = assert(io.popen(command))
+            if f ~= nil then
+                local o = f:read("*a")
+                if o:len() > 0 then
+                    stdout_print(string.format("Failed to executed filter script %s.",command))
+                end
+            else
+                stdout_print("Failed to call filter script, save output in CSV format to file "..outfile)
+                os.rename(tmpfile, outfile)
+                os.remove(tmpfile)
+            end
+        else
+            os.rename(tmpfile, outfile)
+            os.remove(tmpfile)
+        end
     end
 end
 

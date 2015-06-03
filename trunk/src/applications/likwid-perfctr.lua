@@ -656,16 +656,27 @@ if outfile then
     local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
     local command = "<PREFIX>/share/likwid/filter/" .. suffix
     local tmpfile = outfile:gsub("."..suffix,".tmp",1)
-    if suffix ~= "txt" and suffix ~= "csv" then
-        command = command .." ".. tmpfile .. " perfctr"
-        local f = io.popen(command)
-        local o = f:read("*a")
-        if o:len() > 0 then
-            print_stdout(string.format("Failed to executed filter script %s.",command))
-        end
-    else
+    if not likwid.access(command) then
+        stdout_print("Cannot find filter script, save output in CSV format to file "..outfile)
         os.rename(tmpfile, outfile)
-        os.remove(tmpfile)
+    else
+        if suffix ~= "txt" and suffix ~= "csv" then
+            command = command .." ".. tmpfile .. " perfctr"
+            local f = assert(io.popen(command))
+            if f ~= nil then
+                local o = f:read("*a")
+                if o:len() > 0 then
+                    print_stdout(string.format("Failed to executed filter script %s.",command))
+                end
+            else
+                stdout_print("Failed to call filter script, save output in CSV format to file "..outfile)
+                os.rename(tmpfile, outfile)
+                os.remove(tmpfile)
+            end
+        else
+            os.rename(tmpfile, outfile)
+            os.remove(tmpfile)
+        end
     end
 end
 
