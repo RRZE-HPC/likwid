@@ -194,7 +194,7 @@ In order to create the HTML documentation of LIKWID, the tool <A HREF="www.doxyg
 
 /*! \page faq FAQ
 \section faq1 Which architectures are supported?
-LIKWID supports a range of x86 CPU architectures but likely not all. We concentrated the development effort on Intel and AMD machines. Almost all architecture code is tested. For a list of architectures see section \ref Architectures.
+LIKWID supports a range of x86 CPU architectures but likely not all. We concentrated the development effort on Intel and AMD machines. Almost all architecture code is tested. For a list of architectures see section \ref Architectures or call <CODE>likwid-perfctr -i</CODE>.
 
 \section faq2 Are all hardware events supported?
 LIKWID offers almost all events that are defined in the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual</A> and the <A HREF="http://developer.amd.com/resources/documentation-articles/developer-guides-manuals/">AMD&reg; BIOS and Kernel Developer’s Guides</A>. Some may be missing caused by special handling likely with additional registers. But, LIKWID also provides some events that are not documented but we do not guarantee that they count the right stuff.
@@ -223,6 +223,9 @@ We would like to port LIKWID to other CPU architectures that support hardware pe
 \section faq10 Do you plan to introduce a graphical frontend for LIKWID?
 No, we do not!
 
-\section faq11 I want to help, were do I start?
+\section faq12 Why does the startup of likwid-perfctr takes so long?
+In order to get reliable time measurements, LIKWID must determine the base clock frequency of your CPU. This is done by a measurement loop that takes about 1 second. You can avoid the measurement loop by creating a topology configuration file with \ref likwid-genTopoCfg.
+
+\section faq13 I want to help, were do I start?
 The best way is to talk to us at the <A HREF="https://lists.fau.de/pipermail/rrze-likwid/">mailing list</A>. There are a bunch of small work packages on our ToDo list that can be used as a good starting point for learning how LIKWID works. If you are not a programmer but you have a good idea, let us know and we will discuss it.
 */
