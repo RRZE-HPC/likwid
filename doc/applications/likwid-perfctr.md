@@ -185,8 +185,9 @@ While installation of LIKWID, the performance groups are copied to the path <COD
 
 \anchor Marker_API
 <H1>Marker API</H1>
-The Marker API enables measurement of user-defined code regions in order to get deeper insight what is happening at a specific point in the application. The Marker API itself has 6 commands. In order to activate the Marker API, the code must be compiled with <CODE>-DLIKWID_PERFMON</CODE>. If the code is compiled without this define, the Marker API functions perform no operation and cause no overhead. You can also run code compiled with the define without measurements but a message will be printed.<BR>
-Even pure serial applications have to call LIKWID_MARKER_THREADINIT to initialize the accessDaemon or the direct accesses.
+The Marker API enables measurement of user-defined code regions in order to get deeper insight what is happening at a specific point in the application. The Marker API itself has 8 commands. In order to activate the Marker API, the code must be compiled with <CODE>-DLIKWID_PERFMON</CODE>. If the code is compiled without this define, the Marker API functions perform no operation and cause no overhead. You can also run code compiled with LIKWID_PERFMON defined without measurements but a message will be printed.<BR>
+Even pure serial applications have to call LIKWID_MARKER_THREADINIT to initialize the accessDaemon or the direct accesses.<BR>
+The names for the regions can be freely chosen but <I>whitespaces are not allowed</I>.
 <H2>C/C++ Code</H2>
 <H3>Original code</H3>
 <CODE>
@@ -238,7 +239,7 @@ int main(int argc, char* argv[])<BR>
 &nbsp;&nbsp;return 0;<BR>
 }<BR>
 </CODE>
-The LIKWID package contains an example code: see \ref C-markerAPI-code.
+The LIKWID package contains an example code: see \ref C-markerAPI-code or \ref F-markerAPI-code.
 <H3>Running code</H3>
 With the help of <CODE>likwid-perfctr</CODE> the counters are configured to the selected events. The counters are also started and stopped by <CODE>likwid-perfctr</CODE>, the Marker API only reads the counters to minimize the overhead of the instrumented application. Only if you use <CODE>LIKWID_MARKER_SWITCH</CODE> the Marker API itself configures a new event set to the registers. Basically, <CODE>likwid-perfctr</CODE> exports the whole configuration needed by the Marker API through environment variables that are evaluated during <CODE>LIKWID_MARKER_INIT</CODE>. In the end, <CODE>likwid-perfctr</CODE> picks up the file with the results of the Marker API run and prints out the performance results.<BR>
 In order to build your instrumented application:<BR>
@@ -254,6 +255,6 @@ Besides the Marker API for C/C++ programms, LIKWID offers to build a Fortran mod
 The LIKWID package contains an example code: see \ref F-markerAPI-code.
 
 <H2>Hints for the usage of the Marker API</H2>
-Since the calls to the LIKWID library are executed by your application, the runtime will raise and in specific circumstances, there are some other problems like the time measurement. You can execute <CODE>LIKWID_MARKER_THREADINIT</CODE> and <CODE>LIKWID_MARKER_START</CODE> inside the same parallel region but put a barrier between the calls to ensure that there is no big timing difference between the threads. The common way is to init LIKWID and the participating threads inside of an initialization routine, use only START and STOP in your code and close the Marker API in a finalization routine. Be aware that at the first start of a region, the thread-local hash table gets a new entry to store the measured values. If your code inside the region is short or you are executing the region only once, the overhead of creating the hash table entry can be significant compared to the execution of the region code.
+Since the calls to the LIKWID library are executed by your application, the runtime will raise and in specific circumstances, there are some other problems like the time measurement. You can execute <CODE>LIKWID_MARKER_THREADINIT</CODE> and <CODE>LIKWID_MARKER_START</CODE> inside the same parallel region but put a barrier between the calls to ensure that there is no big timing difference between the threads. The common way is to init LIKWID and the participating threads inside of an initialization routine, use only START and STOP in your code and close the Marker API in a finalization routine. Be aware that at the first start of a region, the thread-local hash table gets a new entry to store the measured values. If your code inside the region is short or you are executing the region only once, the overhead of creating the hash table entry can be significant compared to the execution of the region code. The overhead of creating the hash tables can be done in prior by using the <CODE>LIKWID_MARKER_REGISTER</CODE> function. It must be called by each thread and one time for each compute region. It is completely <I>optional</I>, <CODE>LIKWID_MARKER_START</CODE> performs the same operations.
 
 */
