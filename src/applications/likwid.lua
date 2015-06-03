@@ -1260,17 +1260,17 @@ local function getMarkerResults(filename, group_list, num_cpus)
         print(string.format("Marker file %s not in proper format",filename))
         return {}, {}
     end
-    local nr_threads = tmpList[1]
+    local nr_threads = tonumber(tmpList[1])
     if tonumber(nr_threads) ~= tonumber(num_cpus) then
         print(string.format("Marker file lists only %d cpus, but perfctr configured %d cpus", nr_threads, num_cpus))
         return {},{}
     end
-    local nr_regions = tmpList[2]
+    local nr_regions = tonumber(tmpList[2])
     if tonumber(nr_regions) == 0 then
         print("No region results can be found in marker API output file")
         return {},{}
     end
-    local nr_groups = tmpList[3]
+    local nr_groups = tonumber(tmpList[3])
     if tonumber(nr_groups) == 0 then
         print("No group listed in the marker API output file")
         return {},{}
@@ -1281,8 +1281,8 @@ local function getMarkerResults(filename, group_list, num_cpus)
     for l=1, #lines do
         r, gname, g = string.match(lines[1],"(%d+):([%a%g]*)-(%d+)")
         if (r ~= nil and g ~= nil) then
-            g = g+1
-            r = r+1
+            g = tonumber(g)+1
+            r = tonumber(r)+1
             
             if group_data[g] == nil then
                 group_data[g] = {}
