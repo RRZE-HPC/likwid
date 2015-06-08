@@ -19,7 +19,7 @@ L2 miss ratio PMC1/PMC0
 LONG
 Formulas:
 L2 request rate = L2_TRANS_ALL_REQUESTS/INSTR_RETIRED_ANY
-L2 miss rate  = L2_RQSTS_MISS/INSTR_RETIRED_ANY
+L2 miss rate = L2_RQSTS_MISS/INSTR_RETIRED_ANY
 L2 miss ratio = L2_RQSTS_MISS/L2_TRANS_ALL_REQUESTS
 -
 This group measures the locality of your data accesses with regard to the

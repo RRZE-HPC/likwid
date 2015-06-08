@@ -21,8 +21,8 @@ Power PP0 [W] PWR1/time
 
 LONG
 Formula:
-Power = PWR_PKG_ENERGY/runtime
-Power PP0 = PWR_PKG_ENERGY/runtime
+Power = PWR_PKG_ENERGY / time
+Power PP0 = PWR_PKG_ENERGY / time
 -
 Silvermont implements the new RAPL interface. This interface enables to
 monitor the consumed energy on the package (socket) level.
