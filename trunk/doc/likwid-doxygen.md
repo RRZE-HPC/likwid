@@ -103,8 +103,7 @@ Using the Marker API:
 If you have problems with LIKWID:<BR>
 GitHub: <A HREF="https://github.com/rrze-likwid/likwid">https://github.com/rrze-likwid/likwid</A><BR>
 Bugs: <A HREF="https://github.com/rrze-likwid/likwid/issues">https://github.com/rrze-likwid/likwid/issues</A><BR>
-Mailinglist: <A HREF="https://lists.fau.de/pipermail/rrze-likwid/">https://lists.fau.de/pipermail/rrze-likwid/</A><BR>
-Subscribe to mailinglist: <A HREF="https://lists.fau.de/cgi-bin/listinfo/rrze-likwid">https://lists.fau.de/cgi-bin/listinfo/rrze-likwid</A><BR>
+Mailinglist: <A HREF="http://groups.google.com/group/likwid-users">http://groups.google.com/group/likwid-users</A><BR>
 */
 
 
@@ -227,5 +226,5 @@ No, we do not!
 In order to get reliable time measurements, LIKWID must determine the base clock frequency of your CPU. This is done by a measurement loop that takes about 1 second. You can avoid the measurement loop by creating a topology configuration file with \ref likwid-genTopoCfg.
 
 \section faq13 I want to help, were do I start?
-The best way is to talk to us at the <A HREF="https://lists.fau.de/pipermail/rrze-likwid/">mailing list</A>. There are a bunch of small work packages on our ToDo list that can be used as a good starting point for learning how LIKWID works. If you are not a programmer but you have a good idea, let us know and we will discuss it.
+The best way is to talk to us at the <A HREF="http://groups.google.com/group/likwid-users">mailing list</A>. There are a bunch of small work packages on our ToDo list that can be used as a good starting point for learning how LIKWID works. If you are not a programmer but you have a good idea, let us know and we will discuss it.
 */
