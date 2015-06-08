@@ -1576,10 +1576,31 @@ static int lua_likwid_setVerbosity(lua_State* L)
 
 static int lua_likwid_access(lua_State* L)
 {
-    const char* file = (const char*)luaL_checkstring(L,-1);
+    int flags = 0;
+    const char* file = (const char*)luaL_checkstring(L, 1);
+    const char* perm = (const char*)luaL_checkstring(L, 2);
+    if (!perm)
+    {
+        flags = F_OK;
+    }
+    else
+    {
+        for (int i=0;i<strlen(perm);i++)
+        {
+            if (perm[i] == 'r') {
+                flags |= R_OK;
+            } else if (perm[i] == 'w') {
+                flags |= W_OK;
+            } else if (perm[i] == 'x') {
+                flags |= X_OK;
+            } else if (perm[i] == 'e') {
+                flags |= F_OK;
+            }
+        }
+    }
     if (file)
     {
-        lua_pushinteger(L, access(file, F_OK));
+        lua_pushinteger(L, access(file, flags));
         return 1;
     }
     lua_pushinteger(L, -1);

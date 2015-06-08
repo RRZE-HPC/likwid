@@ -85,15 +85,15 @@ local function getopt(args, ostrlist)
                 if args[1]:sub(2, 2) == '-' then
                     if #args[1] == 2 then -- found "--"
                         place = 0
-                        table.remove(args, 1);
-                        return nil;
+                        table.remove(args, 1)
+                        return args[1], nil
                     end
                     place = place + 1
                 end
                 if args[1]:sub(3, 3) == '-' then
                     place = 0
-                    table.remove(args, 1);
-                    return nil;
+                    table.remove(args, 1)
+                    return args[1], nil
                 end
                 place = place + 1
                 placeend = #args[1]
@@ -120,31 +120,31 @@ local function getopt(args, ostrlist)
         if givopt == "" then -- unknown option
             if optopt == '-' then return nil end
             if place > #args[1] then
-                table.remove(args, 1);
+                table.remove(args, 1)
                 place = 0;
             end
-            return '?';
+            return '?',  optopt;
         end
 
         if not needarg then -- do not need argument
             arg = true;
-            table.remove(args, 1);
+            table.remove(args, 1)
             place = 0;
         else -- need an argument
             if placeend < #args[1] then -- no white space
-                arg = args[1]:sub(placeend,#args[1]);
+                arg = args[1]:sub(placeend,#args[1])
             else
                 table.remove(args, 1);
                 if #args == 0 then -- an option requiring argument is the last one
-                    place = 0;
+                    place = 0
                     if givopt:sub(placeend, placeend) == ':' then return ':' end
-                    return '?';
+                    return '?', optopt
                 else arg = args[1] end
             end
-            table.remove(args, 1);
+            table.remove(args, 1)
             place = 0;
         end
-        return optopt, arg;
+        return optopt, arg
     end
 end
 
@@ -1345,12 +1345,12 @@ end
 likwid.getMarkerResults = getMarkerResults
 
 
-local function msr_available()
-    local ret = likwid_access("/dev/cpu/0/msr")
+local function msr_available(flags)
+    local ret = likwid_access("/dev/cpu/0/msr", flags)
     if ret == 0 then
         return true
     else
-        local ret = likwid_access("/dev/msr0")
+        local ret = likwid_access("/dev/msr0", flags)
         if ret == 0 then
             return true
         end
