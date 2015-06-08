@@ -74,9 +74,8 @@ for opt,arg in likwid.getopt(arg, {"c:", "h", "v", "help", "version"}) do
         os.exit(0)
     elseif (opt == "c") then
         num_nodes, nodes = likwid.nodestr_to_nodelist(arg)
-    else
-        print("Unknown option found on commandline")
-        usage()
+    elseif opt == "?" then
+        print("Invalid commandline option -"..arg)
         os.exit(1)
     end
 end

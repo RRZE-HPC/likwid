@@ -94,10 +94,14 @@ activeGroup = 0
 print_group_help = false
 skip_mask = "0x0"
 counter_mask = {}
+access_flags = "e"
 if config["daemonMode"] < 0 then
     access_mode = 1
 else
     access_mode = config["daemonMode"]
+    if access_mode == 0 then
+        access_flags = "rw"
+    end
 end
 set_access_modes = false
 use_marker = false
@@ -157,10 +161,24 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     elseif (opt == "H") then
         print_group_help = true
     elseif opt == "s" or opt == "skip" then
-        skip_mask = arg
+        if arg:match("0x[0-9A-F]") then
+            skip_mask = arg
+        else
+            if arg:match("[0-9A-F]") then
+                print("Given skip mask looks like hex, sanitizing arg to 0x"..arg)
+                skip_mask = "0x"..arg
+            else
+                print("Skip mask must be given in hex")
+            end
+        end
     elseif (opt == "M") then
         access_mode = tonumber(arg)
         set_access_modes = true
+        if access_mode == 0 then
+            access_flags = "rw"
+        else
+            access_flags = "e"
+        end
         if (access_mode < 0 and access_mode > 1) then
             print_stdout("Access mode must be 0 for direct access and 1 for access daemon")
             os.exit(1)
@@ -192,16 +210,25 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end
     elseif (opt == "O") then
         use_csv = true
+    elseif opt == "?" then
+        print("Invalid commandline option -"..arg)
+        os.exit(1)
     end
 end
 
 io.stdout:setvbuf("no")
 cpuinfo = likwid.getCpuInfo()
 
-if not likwid.msr_available() then
-    print_stdout("MSR device files not available")
-    print_stdout("Please load msr kernel module before retrying")
-    os.exit(1)
+if not likwid.msr_available(access_flags) then
+    if access_mode == 1 then
+        print_stdout("MSR device files not available")
+        print_stdout("Please load msr kernel module before retrying")
+        os.exit(1)
+    else
+        print_stdout("MSR device files not readable and writeable")
+        print_stdout("Be sure that you have enough permissions to access the MSR files directly")
+        os.exit(1)
+    end
 end
 
 if num_cpus == 0 and
@@ -321,7 +348,7 @@ end
 
 if print_group_help == true then
     if #event_string_list == 0 then
-        print_stdout("Group(s) must be given on commanlikwid.dline to get group help")
+        print_stdout("Group(s) must be given on commandline to get group help")
         os.exit(1)
     end
     for i,event_string in pairs(event_string_list) do
@@ -656,8 +683,8 @@ if outfile then
     local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
     local command = "<PREFIX>/share/likwid/filter/" .. suffix
     local tmpfile = outfile:gsub("."..suffix,".tmp",1)
-    if not likwid.access(command) then
-        stdout_print("Cannot find filter script, save output in CSV format to file "..outfile)
+    if likwid.access(command, "x") then
+        print_stdout("Cannot find filter script, save output in CSV format to file "..outfile)
         os.rename(tmpfile, outfile)
     else
         if suffix ~= "txt" and suffix ~= "csv" then
@@ -669,7 +696,7 @@ if outfile then
                     print_stdout(string.format("Failed to executed filter script %s.",command))
                 end
             else
-                stdout_print("Failed to call filter script, save output in CSV format to file "..outfile)
+                print_stdout("Failed to call filter script, save output in CSV format to file "..outfile)
                 os.rename(tmpfile, outfile)
                 os.remove(tmpfile)
             end

@@ -1264,6 +1264,9 @@ for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:",
         omptype = arg
     elseif opt == "s" or opt == "skip" then
         skipStr = "-s "..arg
+    elseif opt == "?" then
+        print("Invalid commandline option -"..arg)
+        os.exit(1)
     end
 end
 

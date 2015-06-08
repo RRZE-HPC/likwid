@@ -62,6 +62,9 @@ for opt,arg in likwid.getopt(arg, {"h","v","help","version", "o:", "output:"}) d
         os.exit(0)
     elseif opt == "o" or opt == "output" then
         filename = arg
+    elseif opt == "?" then
+        print("Invalid commandline option -"..arg)
+        os.exit(1)
     end
 end
 

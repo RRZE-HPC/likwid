@@ -176,6 +176,9 @@ for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "h
         printAvailFreq = true
     elseif (opt == "m") then
         printAvailGovs = true
+    elseif opt == "?" then
+        print("Invalid commandline option -"..arg)
+        os.exit(1)
     end
 end
 if not testDriver() then

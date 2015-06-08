@@ -133,6 +133,9 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
     elseif (opt == "s") then
         time_interval = likwid.parse_time(arg)
         stethoscope = true
+    elseif opt == "?" then
+        print("Invalid commandline option -"..arg)
+        os.exit(1)
     end
 end
 

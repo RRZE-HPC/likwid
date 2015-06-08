@@ -159,13 +159,12 @@ for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t
     elseif opt == "q" or opt == "quiet" then
         likwid.setenv("LIKWID_SILENT","true")
         quiet = 1
-    else
-        print("Unknown option -" .. opt .. "\n")
-        usage()
+    elseif opt == "?" then
+        print("Invalid commandline option -"..arg)
         likwid.putTopology()
         likwid.putAffinityInfo()
         likwid.putConfiguration()
-        os.exit(0)
+        os.exit(1)
     end
 end
 
