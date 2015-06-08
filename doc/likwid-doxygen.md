@@ -222,7 +222,7 @@ We would like to port LIKWID to other CPU architectures that support hardware pe
 \section faq10 Do you plan to introduce a graphical frontend for LIKWID?
 No, we do not!
 
-\section faq12 Why does the startup of likwid-perfctr takes so long?
+\section faq12 Why does the startup of likwid-perfctr take so long?
 In order to get reliable time measurements, LIKWID must determine the base clock frequency of your CPU. This is done by a measurement loop that takes about 1 second. You can avoid the measurement loop by creating a topology configuration file with \ref likwid-genTopoCfg.
 
 \section faq13 I want to help, were do I start?
