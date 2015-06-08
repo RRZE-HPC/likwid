@@ -124,13 +124,22 @@ int fillList(int* outList, int outOffset, bstring list)
     return current;
 }
 
-static int readCacheInclusive(int level)
+static int readCacheInclusiveIntel(int level)
 {
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     eax = 0x04;
     ecx = level;
     CPUID;
     return edx & 0x2;
+}
+
+static int readCacheInclusiveAMD(int level)
+{
+    uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
+    eax = 0x8000001D;
+    ecx = level;
+    CPUID;
+    return (edx & (0x1<<1));
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -595,9 +604,11 @@ void proc_init_cacheTopology(void)
         {
             case MIC_FAMILY:
             case P6_FAMILY:
+                cachePool[i].inclusive = readCacheInclusiveIntel(cachePool[i].level);
+                break;
             case K16_FAMILY:
             case K15_FAMILY:
-                cachePool[i].inclusive = readCacheInclusive(cachePool[i].level);
+                cachePool[i].inclusive = readCacheInclusiveAMD(cachePool[i].level);
                 break;
             /* For K8 and K10 it is known that they are inclusive */
             case K8_FAMILY:
