@@ -293,6 +293,7 @@ void hwloc_init_cacheTopology(void)
             case K16_FAMILY:
             case K15_FAMILY:
                 cachePool[id].inclusive = readCacheInclusiveAMD(cachePool[id].level);
+                break;
             /* For K8 and K10 it is known that they are inclusive */
             case K8_FAMILY:
             case K10_FAMILY:

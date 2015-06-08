@@ -95,6 +95,9 @@ for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O","help","ver
         outfile = arg:gsub("%%h", likwid.gethostname())
         io.output(arg:gsub(string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$"),"tmp"))
         print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end
+    elseif opt == "?" then
+        print("Invalid commandline option -"..arg)
+        os.exit(1)
     end
 end
 
@@ -189,7 +192,7 @@ for level=1,cputopo["numCacheLevels"] do
             table.insert(output_csv, string.format("Number of sets:\t\t%d",cputopo["cacheLevels"][level]["sets"]))
             table.insert(output_csv, string.format("Cache line size:\t%d",cputopo["cacheLevels"][level]["lineSize"]))
             
-            if (cputopo["cacheLevels"][level]["inclusive"] > 0) then
+            if (cputopo["cacheLevels"][level]["inclusive"] == 0) then
                 table.insert(output_csv, "Cache type:\t\tNon Inclusive")
             else
                 table.insert(output_csv, "Cache type:\t\tInclusive")
@@ -349,7 +352,7 @@ if outfile then
     local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
     local command = "<PREFIX>/share/likwid/filter/" .. suffix
     local tmpfile = outfile:gsub("."..suffix,".tmp",1)
-    if not likwid.access(command) then
+    if not likwid.access(command,"x") then
         stdout_print("Cannot find filter script, save output in CSV format to file "..outfile)
         os.rename(tmpfile, outfile)
     else
