@@ -13,7 +13,7 @@ PWR3  PWR_DRAM_ENERGY
 
 
 METRICS
-Runtime (RDTSC) [s] time 
+Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
@@ -34,6 +34,6 @@ Power PP0 = PWR_PP0_ENERGY / time
 Power PP1 = PWR_PP1_ENERGY / time
 Power DRAM = PWR_DRAM_ENERGY / time
 -
-Haswell implements the new RAPL interface. This interface enables to
+Broadwell implements the new RAPL interface. This interface enables to
 monitor the consumed energy on the package (socket)  and DRAM level.
 

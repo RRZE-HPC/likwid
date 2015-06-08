@@ -19,7 +19,7 @@ L2 miss ratio PMC1/PMC0
 LONG
 Formulas:
 L2 request rate = LONGEST_LAT_CACHE_REFERENCE/INSTR_RETIRED_ANY
-L2 miss rate  = LONGEST_LAT_CACHE_MISS/INSTR_RETIRED_ANY
+L2 miss rate = LONGEST_LAT_CACHE_MISS/INSTR_RETIRED_ANY
 L2 miss ratio = LONGEST_LAT_CACHE_MISS/LONGEST_LAT_CACHE_REFERENCE
 -
 This group measures the locality of your data accesses with regard to the

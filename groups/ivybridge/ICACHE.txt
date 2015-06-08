@@ -18,8 +18,8 @@ L1I miss ratio PMC1/PMC0
 
 LONG
 Formulas:
-L2 request rate = ICACHE_ACCESSES / INSTR_RETIRED_ANY
-L2 miss rate  = ICACHE_MISSES / INSTR_RETIRED_ANY
-L2 miss ratio = ICACHE_MISSES / ICACHE_ACCESSES
+L1I request rate = ICACHE_ACCESSES / INSTR_RETIRED_ANY
+L1I miss rate = ICACHE_MISSES / INSTR_RETIRED_ANY
+L1I miss ratio = ICACHE_MISSES / ICACHE_ACCESSES
 -
 This group measures some L1 instruction cache metrics.
