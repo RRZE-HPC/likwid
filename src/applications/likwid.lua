@@ -935,7 +935,10 @@ local function printOutput(groups, results, groupData, cpulist)
         local num_events = likwid_getNumberOfEvents(groupID);
         local num_threads = likwid_getNumberOfThreads(groupID-1);
         local runtime = likwid_getRuntimeOfGroup(groupID)
-
+        local groupName = groupData[groupID]["GroupString"]
+        if groupName == groupData[groupID]["EventString"] then
+            groupName = "Custom"
+        end
         local firsttab =  {}
         local firsttab_combined = {}
         local secondtab = {}
@@ -1016,7 +1019,7 @@ local function printOutput(groups, results, groupData, cpulist)
             print(string.format("CPU name:,%s%s", cpuinfo["osname"],string.rep(",",maxLineFields-2)))
             print(string.format("CPU type:,%s%s", cpuinfo["name"],string.rep(",",maxLineFields-2)))
             print(string.format("CPU clock:,%s GHz%s", clock*1.E-09,string.rep(",",maxLineFields-2)))
-            print(string.format("TABLE,Group %d Raw,%d%s",groupID,#firsttab[1]-1,string.rep(",",maxLineFields-3)))
+            print(string.format("TABLE,Group %d Raw,%s,%d%s",groupID,groupName,#firsttab[1]-1,string.rep(",",maxLineFields-4)))
             likwid.printcsv(firsttab, maxLineFields)
         else
             if outfile ~= nil then
@@ -1026,12 +1029,12 @@ local function printOutput(groups, results, groupData, cpulist)
                 print(string.format("CPU clock:\t%3.2f GHz",clock * 1.E-09))
                 print(likwid.hline)
             end
-            print("Group "..tostring(groupID)..":")
+            print("Group "..tostring(groupID)..": "..groupName)
             likwid.printtable(firsttab)
         end
         if #cpulist > 1 then
             if use_csv then
-                print(string.format("TABLE,Group %d Raw Stat,%d%s",groupID,#firsttab_combined[1]-1,string.rep(",",maxLineFields-3)))
+                print(string.format("TABLE,Group %d Raw Stat,%s,%d%s",groupID,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
                 likwid.printcsv(firsttab_combined, maxLineFields)
             else
                 likwid.printtable(firsttab_combined)
@@ -1039,14 +1042,14 @@ local function printOutput(groups, results, groupData, cpulist)
         end
         if groupData[groupID]["Metrics"] then
             if use_csv then
-                print(string.format("TABLE,Group %d Metric,%d%s",groupID,#secondtab[1]-1,string.rep(",",maxLineFields-3)))
+                print(string.format("TABLE,Group %d Metric,%s,%d%s",groupID,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-4)))
                 likwid.printcsv(secondtab, maxLineFields)
             else
                 likwid.printtable(secondtab)
             end
             if #cpulist > 1 then
                 if use_csv then
-                    print(string.format("TABLE,Group %d Metric Stat,%d%s",groupID,#secondtab_combined[1]-1,string.rep(",",maxLineFields-3)))
+                    print(string.format("TABLE,Group %d Metric Stat,%s,%d%s",groupID,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))
                     likwid.printcsv(secondtab_combined, maxLineFields)
                 else
                     likwid.printtable(secondtab_combined)
@@ -1064,6 +1067,10 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
     local maxLineFields = 0
     local clock = likwid_getCpuClock();
     for g, group in pairs(groups) do
+        local groupName = groupData[g]["GroupString"]
+        if groupName == groupData[g]["EventString"] then
+            groupName = "Custom"
+        end
         for r, region in pairs(groups[g]) do
             local nr_threads = likwid.tablelength(groups[g][r]["Time"])
             local nr_events = likwid.tablelength(groupData[g]["Events"])
@@ -1151,9 +1158,9 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                                          #secondtab, #secondtab_combined, 2)
                 
                 if use_csv then
-                    str = tostring(g)..","..groups[g][r]["Name"]
-                    if maxLineFields > 2 then
-                        str = str .. string.rep(",", maxLineFields-2)
+                    str = tostring(g)..","..groupName..","..groups[g][r]["Name"]
+                    if maxLineFields > 3 then
+                        str = str .. string.rep(",", maxLineFields-3)
                     end
                     if outfile ~= nil and g == 1 and r == 1 then
                         print(string.format("STRUCT,Info,3%s",string.rep(",",maxLineFields-3)))
@@ -1170,7 +1177,7 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                         print(likwid.hline)
                     end
                     print(likwid.dline)
-                    str = "Group "..tostring(g)..": Region "..groups[g][r]["Name"]
+                    str = "Group "..tostring(g).." "..groupName..": Region "..groups[g][r]["Name"]
                     print(str)
                     print(likwid.dline)
                 end
@@ -1184,14 +1191,14 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                     likwid.printtable(infotab)
                 end
                 if use_csv then
-                    print(string.format("TABLE,Group %d Raw,%d%s",g,#firsttab[1]-1,string.rep(",",maxLineFields-3)))
+                    print(string.format("TABLE,Group %d Raw,%s,%d%s",g,groupName,#firsttab[1]-1,string.rep(",",maxLineFields-3)))
                     likwid.printcsv(firsttab, maxLineFields)
                 else
                     likwid.printtable(firsttab)
                 end
                 if #cpulist > 1 then
                     if use_csv then
-                        print(string.format("TABLE,Group %d Raw Stat,%d%s",g,#firsttab_combined[1]-1,string.rep(",",maxLineFields-3)))
+                        print(string.format("TABLE,Group %d Raw Stat,%s,%d%s",g,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-3)))
                         likwid.printcsv(firsttab_combined, maxLineFields)
                     else
                         likwid.printtable(firsttab_combined)
@@ -1199,14 +1206,14 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                 end
                 if likwid.tablelength(groupData[g]["Metrics"]) > 0 then
                     if use_csv then
-                        print(string.format("TABLE,Group %d Metric,%d%s",g,#secondtab[1]-1,string.rep(",",maxLineFields-3)))
+                        print(string.format("TABLE,Group %d Metric,%s,%d%s",g,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-3)))
                         likwid.printcsv(secondtab, maxLineFields)
                     else
                         likwid.printtable(secondtab)
                     end
                     if #cpulist > 1 then
                         if use_csv then
-                            print(string.format("TABLE,Group %d Metric Stat,%d%s",g,#secondtab_combined[1]-1,string.rep(",",maxLineFields-3)))
+                            print(string.format("TABLE,Group %d Metric Stat,%s,%d%s",g,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-3)))
                             likwid.printcsv(secondtab_combined, maxLineFields)
                         else
                             likwid.printtable(secondtab_combined)
