@@ -74,7 +74,6 @@ static int numberOfGroups = 0;
 static int* groups;
 static int threads2Cpu[MAX_NUM_THREADS];
 static int num_cpus = 0;
-static double mtime = 0.0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -225,13 +224,6 @@ void likwid_markerInit(void)
     bstrListDestroy(eventStrings);
 
     groupSet->activeGroup = 0;
-    TimerData timer;
-    for (i=0;i<100;i++)
-    {
-        timer_start(&timer);
-        timer_stop(&timer);
-        mtime = MAX(timer_print(&timer), mtime);
-    }
 }
 
 void likwid_markerThreadInit(void)
@@ -423,7 +415,7 @@ int likwid_markerStopRegion(const char* regionTag)
     cpu_id = hashTable_get(tag, &results);
     thread_id = getThreadID(cpu_id);
     results->startTime.stop.int64 = timestamp.stop.int64;
-    results->time += (timer_print(&(results->startTime)) - mtime);
+    results->time += timer_print(&(results->startTime));
     results->count++;
     bdestroy(tag);
     
