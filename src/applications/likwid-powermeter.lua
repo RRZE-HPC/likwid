@@ -79,7 +79,6 @@ else
 end
 time_interval = 2.E06
 sockets = {}
-eventString = "PWR_PKG_ENERGY:PWR0,PWR_PP0_ENERGY:PWR1,PWR_PP1_ENERGY:PWR2,PWR_DRAM_ENERGY:PWR3"
 domainList = {"PKG", "PP0", "PP1", "DRAM"}
 
 cpuinfo = likwid.getCpuInfo()
@@ -125,6 +124,7 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
         use_perfctr = true
     elseif (opt == "f") then
         fahrenheit = true
+        print_temp = true
     elseif (opt == "t") then
         print_temp = true
     elseif opt == "V" or opt == "verbose" then
@@ -186,16 +186,17 @@ if not power then
 end
 
 
-
-print(likwid.hline);
-print(string.format("CPU name:\t%s",cpuinfo["osname"]))
-print(string.format("CPU type:\t%s",cpuinfo["name"]))
-if cpuinfo["clock"] > 0 then
-    print(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] *  1.E-09))
-else
-    print(string.format("CPU clock:\t%3.2f GHz",likwid.getCpuClock() *  1.E-09))
+if not use_perfctr then
+    print(likwid.hline);
+    print(string.format("CPU name:\t%s",cpuinfo["osname"]))
+    print(string.format("CPU type:\t%s",cpuinfo["name"]))
+    if cpuinfo["clock"] > 0 then
+        print(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] *  1.E-09))
+    else
+        print(string.format("CPU clock:\t%3.2f GHz",likwid.getCpuClock() *  1.E-09))
+    end
+    print(likwid.hline)
 end
-print(likwid.hline);
 
 if print_info or verbose > 0 then
     if (power["turbo"]["numSteps"] > 0) then
@@ -219,15 +220,14 @@ if (print_info) then
         local domain = power["domains"][dname]
         if domain["supportInfo"] then
             print(string.format("Info for RAPL domain %s:", dname));
-            print(string.format("Thermal Spec Power: %g Watts",domain["tdp"]))
-            print(string.format("Minimum Power: %g Watts",domain["minPower"]))
-            print(string.format("Maximum Power: %g Watts",domain["maxPower"]))
+            print(string.format("Thermal Spec Power: %g Watt",domain["tdp"]*1E-6))
+            print(string.format("Minimum Power: %g Watt",domain["minPower"]*1E-6))
+            print(string.format("Maximum Power: %g Watt",domain["maxPower"]*1E-6))
             print(string.format("Maximum Time Window: %g micro sec",domain["maxTimeWindow"]))
             print()
         end
     end
     print(likwid.hline)
-    os.exit(0)
 end
 
 if (stethoscope) and (time_interval < power["timeUnit"]) then
@@ -235,6 +235,7 @@ if (stethoscope) and (time_interval < power["timeUnit"]) then
     os.exit(1)
 end
 
+local execString = ""
 if (use_perfctr) then
     affinity = likwid.getAffinityInfo()
     argString = ""
@@ -244,12 +245,10 @@ if (use_perfctr) then
             argString = argString .. "@"
         end
     end
-    likwid.init(likwid.tablelength(cpulist), cpulist)
-    group = likwid.addEventSet(eventString)
-    likwid.setupCounters(group)
+    execString = string.format("<PREFIX>/bin/likwid-perfctr -C %s -g CLOCK ",argString)
 end
 
-local execString = ""
+
 if #arg == 0 then
     stethoscope = true
 else
@@ -258,62 +257,53 @@ else
     end
 end
 
-if (use_perfctr) then
-    likwid.startCounters()
-else
+if not print_info and not print_temp then
     for i,socket in pairs(sockets) do
         cpu = cpulist[i]
         for idx, dom in pairs(domainList) do
             if (power["domains"][dom]["supportStatus"]) then before[cpu][dom] = likwid.startPower(cpu, idx) end
         end
     end
-end
-time_before = likwid.startClock()
-if (stethoscope) then
-    if time_interval >= 1.E06 then
-        sleep(time_interval/1.E06)
+    time_before = likwid.startClock()
+    if (stethoscope) then
+        if time_interval >= 1.E06 then
+            sleep(time_interval/1.E06)
+        else
+            usleep(time_interval)
+        end
     else
-        usleep(time_interval)
+        err = os.execute(execString)
+        if (err == false) then
+            print(string.format("Failed to execute %s!",execString))
+            likwid.finalize()
+            os.exit(1)
+        end
     end
-else
-    err = os.execute(execString)
-    if (err == false) then
-        print(string.format("Failed to execute %s!",execString))
-        likwid.stopCounters()
-        likwid.finalize()
-        likwid.putNumaInfo()
-        likwid.putAffinityInfo()
-        likwid.putTopology()
-        os.exit(1)
-    end
-end
-time_after = likwid.stopClock()
+    time_after = likwid.stopClock()
 
-if (use_perfctr) then
-    likwid.stopCounters()
-    likwid.finalize()
-else
     for i,socket in pairs(sockets) do
         cpu = cpulist[i]
         for idx, dom in pairs(domainList) do
             if (power["domains"][dom]["supportStatus"]) then after[cpu][dom] = likwid.stopPower(cpu, idx) end
         end
     end
-end
-runtime = likwid.getClock(time_before, time_after)
-print(string.format("Runtime: %g s",runtime))
+    runtime = likwid.getClock(time_before, time_after)
+    print(likwid.hline)
+    print(string.format("Runtime: %g s",runtime))
 
-for i,socket in pairs(sockets) do
-    cpu = cpulist[i]
-    print(string.format("Measure for socket %d on CPU %d", socket,cpu ))
-    for _, dom in pairs(domainList) do
-        if power["domains"][dom]["supportStatus"] then
-            print("Domain: "..dom)
-            local energy = likwid.calcPower(before[cpu][dom], after[cpu][dom], 0)
-            print(string.format("Energy consumed: %g Joules",energy))
-            print(string.format("Power consumed: %g Watts",energy/runtime))
+    for i,socket in pairs(sockets) do
+        cpu = cpulist[i]
+        print(string.format("Measure for socket %d on CPU %d", socket,cpu ))
+        for j, dom in pairs(domainList) do
+            if power["domains"][dom]["supportStatus"] then
+                local energy = likwid.calcPower(before[cpu][dom], after[cpu][dom], 0)
+                print(string.format("Energy consumed: %g Joules",energy))
+                print(string.format("Power consumed: %g Watt",energy/runtime))
+            end
         end
+        if i < #sockets then print("") end
     end
+    print(likwid.hline)
 end
 
 if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
@@ -335,12 +325,7 @@ if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
             end
         end
     end
+    print(likwid.hline)
 end
-    
 
-
-likwid.putPowerInfo()
-likwid.putNumaInfo()
-likwid.putAffinityInfo()
-likwid.putTopology()
-likwid.putConfiguration()
+likwid.finalize()
