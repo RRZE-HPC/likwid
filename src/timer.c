@@ -39,6 +39,40 @@
 static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
 
+void (*TSTART)(TscCounter*) = NULL;
+void (*TSTOP)(TscCounter*) = NULL;
+
+static void fRDTSC(TscCounter* cpu_c)
+{
+    __asm__ volatile("xor %%eax,%%eax\n\t"           \
+    "cpuid\n\t"           \
+    "rdtsc\n\t"           \
+    "movl %%eax, %0\n\t"  \
+    "movl %%edx, %1\n\t"  \
+    : "=r" ((cpu_c)->int32.lo), "=r" ((cpu_c)->int32.hi) \
+    : : "%eax","%ebx","%ecx","%edx");
+}
+
+static void fRDTSC_CR(TscCounter* cpu_c)
+{
+    __asm__ volatile(   \
+    "rdtsc\n\t"           \
+    "movl %%eax, %0\n\t"  \
+    "movl %%edx, %1\n\t"  \
+    : "=r" ((cpu_c)->int32.lo), "=r" ((cpu_c)->int32.hi) \
+    : : "%eax","%ebx","%ecx","%edx");
+}
+
+static void fRDTSCP(TscCounter* cpu_c)
+{
+    __asm__ volatile(     \
+    "rdtscp\n\t"          \
+    "movl %%eax, %0\n\t"  \
+    "movl %%edx, %1\n\t"  \
+    "cpuid\n\t"           \
+    : "=r" ((cpu_c)->int32.lo), "=r" ((cpu_c)->int32.hi) \
+    : : "%eax","%ebx","%ecx","%edx");
+}
 
 static uint64_t
 getCpuSpeed(void)
@@ -66,10 +100,10 @@ getCpuSpeed(void)
 
     for (i=0; i< 2; i++)
     {
-        RDTSC(start);
+        TSTART(&start);
         gettimeofday( &tv1, &tzp);
         nanosleep( &delay, NULL);
-        RDTSC_STOP(stop);
+        TSTOP(&stop);
         gettimeofday( &tv2, &tzp);
 
         result = MIN(result,(stop.int64 - start.int64));
@@ -99,6 +133,18 @@ getCpuSpeed(void)
 
 void timer_init( void )
 {
+    if ((!TSTART) && (!TSTOP))
+    {
+        TSTART = fRDTSC;
+        if (cpuid_info.featureFlags & (1<<RDTSCP))
+        {
+            TSTOP = fRDTSCP;
+        }
+        else
+        {
+            TSTOP = fRDTSC_CR;
+        }
+    }
     if (cpuClock == 0ULL)
     {
         cpuClock = getCpuSpeed();
@@ -132,7 +178,6 @@ double timer_print( TimerData* time )
     {
         cycles = time->stop.int64 - time->start.int64 - baseline;
     }
-
     return  ((double) cycles / (double) cpuClock);
 }
 
@@ -149,7 +194,8 @@ uint64_t timer_getBaseline( void )
 void timer_start( TimerData* time )
 {
 #ifdef __x86_64
-    RDTSC(time->start);
+    if (TSTART)
+        TSTART(&(time->start));
 #endif
 #ifdef _ARCH_PPC
     uint32_t tbl, tbu0, tbu1;
@@ -168,7 +214,8 @@ void timer_start( TimerData* time )
 void timer_stop( TimerData* time )
 {
 #ifdef __x86_64
-    RDTSC_STOP(time->stop)
+    if (TSTOP)
+        TSTOP(&(time->stop));
 #endif
 #ifdef _ARCH_PPC
     uint32_t tbl, tbu0, tbu1;

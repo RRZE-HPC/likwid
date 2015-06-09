@@ -37,38 +37,6 @@
 
 #include <types.h>
 
-#define RDTSC(cpu_c) \
-__asm__ volatile("xor %%eax,%%eax\n\t"           \
-"cpuid\n\t"           \
-"rdtsc\n\t"           \
-"movl %%eax, %0\n\t"  \
-"movl %%edx, %1\n\t"  \
-: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
-: : "%eax","%ebx","%ecx","%edx")
-
-#define RDTSC_CR(cpu_c) \
-__asm__ volatile(   \
-"rdtsc\n\t"           \
-"movl %%eax, %0\n\t"  \
-"movl %%edx, %1\n\t"  \
-: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
-: : "%eax","%ebx","%ecx","%edx")
-
-#define RDTSCP(cpu_c) \
-__asm__ volatile(     \
-"rdtscp\n\t"          \
-"movl %%eax, %0\n\t"  \
-"movl %%edx, %1\n\t"  \
-"cpuid\n\t"           \
-: "=r" ((cpu_c).int32.lo), "=r" ((cpu_c).int32.hi) \
-: : "%eax","%ebx","%ecx","%edx")
-
-#ifdef HAS_RDTSCP
-#define RDTSC_STOP(cpu_c) RDTSCP(cpu_c);
-#else
-#define RDTSC_STOP(cpu_c) RDTSC_CR(cpu_c);
-#endif
-
 
 extern void timer_init( void );
 extern double timer_print( TimerData* );
