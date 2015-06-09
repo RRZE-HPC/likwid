@@ -1,7 +1,7 @@
 /*! \page likwid-agent <CODE>likwid-agent</CODE>
 
 <H1>Information</H1>
-<CODE>likwid-agent</CODE> is a daemon application that uses \ref likwid-perfctr to measure hardware performance counters and write them to various output backends. The basic configuration is in a global configuration file that must be given on commandline. The configuration of the hardware event sets is done with extra files suitable for each architecture. Besides the hardware event configuration, the raw data can be transformed using formulas to interested metrics. In order to output to much data, the data can be further filtered or aggregated. <CODE>likwid-agent</CODE> provides multiple store backends like logfiles, <A HREF="https://oss.oetiker.ch/rrdtool/">RRD</A> (Round Robin Database) or gmetric (<A HREF="http://ganglia.sourceforge.net/">Ganglia Monitoring System</A>).
+<CODE>likwid-agent</CODE> is a daemon application that uses \ref likwid-perfctr to measure hardware performance counters and write them to various output back-ends. The basic configuration is in a global configuration file that must be given on command line. The configuration of the hardware event sets is done with extra files suitable for each architecture. Besides the hardware event configuration, the raw data can be transformed using formulas to interested metrics. In order to output not too much data, the data can be further filtered or aggregated. <CODE>likwid-agent</CODE> provides multiple store back-ends like logfiles, <A HREF="https://oss.oetiker.ch/rrdtool/">RRD</A> (Round Robin Database) or gmetric (<A HREF="http://ganglia.sourceforge.net/">Ganglia Monitoring System</A>).
 
 <H1>Config file</H1>
 The global configuration file has the following options:
@@ -14,7 +14,7 @@ The global configuration file has the following options:
 </TR>
 <TR>
   <TD>GROUPPATH &lt;path&gt;</TD>
-  <TD>Path to the group files containing event set and output defintitions. See section <B>Group files</B> for information.</TD>
+  <TD>Path to the group files containing event set and output definitions. See section <B>Group files</B> for information.</TD>
 </TR>
 <TR>
   <TD>EVENTSET &lt;group1&gt; &lt;group2&gt; ...</TD>
@@ -42,11 +42,11 @@ The global configuration file has the following options:
 </TR>
 <TR>
   <TD>GMETRICCONFIG &lt;path&gt;</TD>
-  <TD>Activates the output to RRD files (Round Robin Database).</TD>
+  <TD>Set path to a custom gmetric config file.</TD>
 </TR>
 <TR>
   <TD>RRD &lt;True/False&gt;</TD>
-  <TD>Sets the output logfile for the measured data.</TD>
+  <TD>Activates the output to RRD files (Round Robin Database).</TD>
 </TR>
 <TR>
   <TD>RRDPATH &lt;path&gt;</TD>
@@ -63,8 +63,7 @@ The global configuration file has the following options:
 </TABLE>
 
 <H1>Group files</H1>
-The group files are adapted performance group files as used by
-.B likwid-perfctr(1).
+The group files are adapted performance group files as used by <CODE>likwid-perfctr</CODE>.
 This makes it easy to uses the predefined and often used performance groups as basis for the monitoring. The folder structure of for the groups is <CODE>&lt;GROUPPATH&gt;/&lt;SHORT_ARCH_NAME&gt;/</CODE> with &lt;SHORT_ARCH_NAME&gt; similar to the ones for the performance groups, like 'sandybridge' or 'haswellEP'.
 
 
@@ -80,12 +79,12 @@ This makes it easy to uses the predefined and often used performance groups as b
   <TD>A short descriptive information about the group.</TD>
 </TR>
 <TR>
-  <TD>EVENTSET<BR>&lt;counter1&gt; &lt;event1&gt;<BR>&lt;counter2&gt;:&lt;option&gt; &lt;event2&gt;</TD>
-  <TD>Defintion of the eventset similar to the performance groups. See performance_groups for details.</TD>
+  <TD>EVENTSET<BR>&lt;counter1&gt; &lt;event1&gt;<BR>&lt;counter2&gt;:&lt;option1&gt;:&lt;option2&gt; &lt;event2&gt;</TD>
+  <TD>Definition of the eventset similar to the performance groups. See performance_groups for details.</TD>
 </TR>
 <TR>
   <TD>METRICS<BR>&lt;metricname&gt; &lt;formula&gt;<BR>&lt;filter&gt; &lt;metricname&gt; &lt;formula&gt;</TD>
-  <TD>Defintion of the output metrics. The syntax follows the METRICS defintion of the performance groups as used by \ref likwid-perfctr . If no function is set at the beginning of the line, .B &lt;formula&gt; is evaluated for every CPU and send to the output backends. The .B &lt;metricname&gt; gets the prefix "T&lt;cpuid&gt; ". To avoid writing to much data to the backends, the data can be reduced by .B &lt;filter&gt;. The possible filter options are MIN, MAX, AVG, SUM, ONCE. The ONCE filter sends only the data from the first CPU to the output backends commonly used for the measurement duration.</TD>
+  <TD>Definition of the output metrics. The syntax follows the METRICS definition of the performance groups as used by \ref likwid-perfctr . If no function is set at the beginning of the line, &lt;formula&gt; is evaluated for every CPU and send to the output back-ends. The &lt;metricname&gt; gets the prefix "T&lt;cpuid&gt; ". To avoid writing to much data to the back-ends, the data can be reduced by &lt;filter&gt;. The possible filter options are MIN, MAX, AVG, SUM, ONCE. The ONCE filter sends only the data from the first CPU to the output back-ends commonly used for the measurement duration.</TD>
 </TR>
 
 </TABLE>
