@@ -191,6 +191,13 @@ affinity = likwid.getAffinityInfo()
 if not domain then
     domain = "N:0-" .. tostring(topo["numHWThreads"]-1)
 end
+if domain:match("[SCM]%d+") then
+    for i, dom in pairs(affinity["domains"]) do
+        if dom["tag"]:match(domain) then
+            domain = domain..":0-"..tostring(dom["numberOfProcessors"]-1)
+        end
+    end
+end
 cpulist = {}
 numthreads, cpulist = likwid.cpustr_to_cpulist(domain)
 if verbosity == 3 then
