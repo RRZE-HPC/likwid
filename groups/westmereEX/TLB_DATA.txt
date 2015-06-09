@@ -1,0 +1,35 @@
+SHORT  L1 Data TLB miss rate/ratio
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  DTLB_LOAD_MISSES_ANY
+PMC1  DTLB_MISSES_ANY
+PMC2  DTLB_LOAD_MISSES_WALK_CYCLES
+PMC3  DTLB_MISSES_WALK_CYCLES
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+L1 DTLB load misses     PMC0
+L1 DTLB load miss rate  PMC0/FIXC0
+L1 DTLB load miss duration [Cyc] PMC2/PMC0
+L1 DTLB store misses     (PMC1-PMC0)
+L1 DTLB store miss rate  (PMC1-PMC0)/FIXC0
+L1 DTLB store miss duration [Cyc] (PMC3-PMC2)/(PMC1-PMC0)
+
+LONG
+Formulas:
+L1 DTLB load misses = DTLB_LOAD_MISSES_ANY
+L1 DTLB load miss rate = DTLB_LOAD_MISSES_ANY / INSTR_RETIRED_ANY
+L1 DTLB load miss duration [Cyc] = DTLB_LOAD_MISSES_WALK_CYCLES / DTLB_LOAD_MISSES_ANY
+L1 DTLB store misses = DTLB_MISSES_ANY-DTLB_LOAD_MISSES_ANY
+L1 DTLB store miss rate = (DTLB_MISSES_ANY-DTLB_LOAD_MISSES_ANY) / INSTR_RETIRED_ANY
+L1 DTLB store miss duration [Cyc] = (DTLB_MISSES_WALK_CYCLES-DTLB_LOAD_MISSES_WALK_CYCLES) / (DTLB_MISSES_ANY-DTLB_LOAD_MISSES_ANY)
+-
+The DTLB miss rate gives a measure how often a TLB miss occured
+per instruction. The store miss calculations are done using ALL-LOADS TLB walks.
+

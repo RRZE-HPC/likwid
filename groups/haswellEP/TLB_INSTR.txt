@@ -14,14 +14,14 @@ Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 L1 ITLB misses     PMC0
 L1 ITLB miss rate  PMC0/FIXC0
-L1 ITLB miss duration PMC1
+L1 ITLB miss duration [Cyc] PMC1/PMC0
 
 
 LONG
 Formulas:
-L1 ITLB misses     ITLB_MISSES_CAUSES_A_WALK
-L1 ITLB miss rate  ITLB_MISSES_CAUSES_A_WALK / INSTR_RETIRED_ANY
-L1 ITLB miss duration ITLB_MISSES_WALK_DURATION
+L1 ITLB misses = ITLB_MISSES_CAUSES_A_WALK
+L1 ITLB miss rate = ITLB_MISSES_CAUSES_A_WALK / INSTR_RETIRED_ANY
+L1 ITLB miss duration [Cyc] = ITLB_MISSES_WALK_DURATION / ITLB_MISSES_CAUSES_A_WALK
 -
 The ITLB miss rates gives a measure how often a TLB miss occured
 per instruction. The duration measures the time in cycles how long a walk did take.
