@@ -139,6 +139,8 @@ local function usage()
     print("-t, --time <time>\t Frequency in s, ms or us, e.g. 300ms, for the timeline mode of likwid-perfctr")
     print("-d, --dump\t\t Print output as it is send to feedGnuplot.")
     print("-p, --plotdump\t\t Use dump functionality of feedGnuplot. Plots out plot configurations plus data to directly submit to gnuplot")
+    print("--host <host>\t\t Run likwid-perfctr on the selected host using SSH. Evaluation and plotting is done locally.")
+    print("\t\t\t This can be used for machines that have no gnuplot installed. All paths must be similar to the local machine.")
     print("\n")
     examples()
 end
@@ -174,7 +176,7 @@ if #arg == 0 then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","t:","r:","a","d","help", "version","group:","time:","dump","range:","plotdump","all", "host:"}) do
+for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","t:","r:","a","d","p","help", "version","group:","time:","dump","range:","plotdump","all", "host:"}) do
     if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
