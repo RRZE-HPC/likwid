@@ -25,7 +25,13 @@ likwid-memsweeper - Sweep memory of NUMA domains and evict cachelines from the
                     last level cache
 likwid-setFrequencies - Tool to control the CPU frequency
 
-See INSTALL for installation hints.
+--------------------------------------------------------------------------------
+Download, Build and Install
+--------------------------------------------------------------------------------
+You can get the releases of LIKWID at:
+http://ftp.fau.de/pub/likwid/
+
+For build and installation hints see INSTALL file
 
 --------------------------------------------------------------------------------
 Documentation
