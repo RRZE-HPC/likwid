@@ -393,7 +393,7 @@ static int readTopologyFile(const char* filename)
             }
             else if (strcmp(field, "stepping") == 0)
             {
-                sscanf(line, "%s %s = %s", structure, field, &tmp);
+                sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.stepping = tmp;
                 
             }
