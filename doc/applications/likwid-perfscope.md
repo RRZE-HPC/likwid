@@ -2,7 +2,7 @@
 
 <H1>Information</H1>
 <CODE>likwid-perfscope</CODE> is a command line application written in Lua that uses the timeline daemon mode of \ref likwid-perfctr
-to create on-the-fly pictures with the current measurements. It uses the <A HREF="https://github.com/dkogan/feedgnuplot">feedGnuplot</A> Perl script to send the current data to  <A HREF="http://www.gnuplot.info/">gnuplot</A>. In order to make it more conveniet for users, preconfigured plots of interesting metrics are embedded into <CODE>likwid-perfscope</CODE>. Since the plot windows are normally closed directly after the execution of the monitored applications, <CODE>likwid-perfscope</CODE> waits until Ctrl+c is pressed.
+to create on-the-fly pictures with the current measurements. It uses the <A HREF="https://github.com/dkogan/feedgnuplot">feedGnuplot</A> Perl script to send the current data to  <A HREF="http://www.gnuplot.info/">gnuplot</A>. In order to make it more convenient for users, preconfigured plots of interesting metrics are embedded into <CODE>likwid-perfscope</CODE>. Since the plot windows are normally closed directly after the execution of the monitored applications, <CODE>likwid-perfscope</CODE> waits until Ctrl+c is pressed.
 
 <H1>Options</H1>
 <TABLE>
