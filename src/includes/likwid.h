@@ -400,7 +400,7 @@ typedef CpuInfo* CpuInfo_t;
 typedef CpuTopology* CpuTopology_t;
 /*! \brief Initialize topology information
 
-CpuInfo_t and CpuTopology_t are initialized by either HWLOC, CPUID/ProcFS or topology file if present. The topology file name can be configured in the configuration file. Furthermore, the paths /etc/likwid_topo.cfg and <PREFIX>/etc/likwid_topo.cfg are checked.
+CpuInfo_t and CpuTopology_t are initialized by either HWLOC, CPUID/ProcFS or topology file if present. The topology file name can be configured in the configuration file. Furthermore, the paths /etc/likwid_topo.cfg and &lt;PREFIX&gt;/etc/likwid_topo.cfg are checked.
 \sa CpuInfo_t and CpuTopology_t
 @return always 0
 */

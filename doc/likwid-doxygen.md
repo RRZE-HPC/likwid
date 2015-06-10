@@ -109,65 +109,97 @@ Mailinglist: <A HREF="http://groups.google.com/group/likwid-users">http://groups
 
 /*! \page build Build and install instructions
 \section allg Introduction
-Likwid is build using GNU make and has no external dependencies apart from the Linux kernel and the standard C library.
+Likwid is build using GNU make and Perl. Besides the Linux kernel and the standard C library, all required dependencies are shipped with the archive (<A HREF="http://www.lua.org/">Lua</A> and <A HREF="http://www.open-mpi.org/projects/hwloc/">hwloc</A>).
 It should build on any Linux distribution with a recent GCC compiler or CLANG compiler and 2.6 or newer kernel without any changes.
 
-There is one generic top level Makefile and one .mk configuration file for each compiler (at the moment GCC, CLANG, ICC and MIC). Please note that I tested LIKWID with all of them. ICC is only tested for basic functionality and is not supported by us.
+There is one generic top level Makefile and one .mk configuration file for each
+compiler (at the moment GCC, CLANG and ICC). Please note that we test LIKWID only with GCC. CLANG and ICC is only tested for basic functionality.
 
 There is one exception: If you want to use LIKWID on a Intel Xeon Phi card you have to choose the MIC as compiler in config.mk, which is based on Intel ICC compiler.
 
 \subsection directory Directory structure
-All source files are in the src/ directory. All header files are located in src/includes/. Each application main source files are in src/applications/. All external tools, namely HWLOC and Lua, are located in ext/. The bench/ folder contains all files of the benchmarking suite of LIKWID.
+All source files are in the src/ directory. All header files are located in
+src/includes/ . Lua application source files are in src/applications/. All external tools, namely HWLOC and Lua, are located in ext/. The bench/ folder contains all files of the benchmarking suite of LIKWID.
 
 All build products are generated in the directory ./TAG, where TAG is the compiler configuration, default ./GCC.
 
 \subsection config Configuration
-Usually the only thing you have to configure is the PREFIX install path in the config file config.mk in the top directory.
-\subsubsection color Changing color of likwid-pin output
-Depending on the background of your terminal window you can choose a color for likwid-pin output.
-\subsubsection accessD Usage of the access daemon likwid-accessD
-Usually you can use LIKWID in the standard setup with direct access to the MSR files. If you install LIKWID on a shared system as a HPC compute cluster you may consider to use the accessDaemon. This is a proxy application which was implemented with security in mind and performs address checks for allowed access. Using the accessDaemon the measurements involve more overhead, especially if you use likwid-perfctr in timeline mode or with the marker API.
+Usually the only thing you have to configure is the PREFIX install path in the build config file config.mk in the top directory.
 
-To enable using the accessDaemon:
+\subsubsection color Changing color of <CODE>likwid-pin</CODE> output
+Depending on the background of your terminal window you can choose a color for <CODE>likwid-pin</CODE> output.
+
+\subsubsection accessD Usage of the access daemon likwid-accessD
+Usually on your own system, you can use LIKWID with direct access to the MSR files. If you install LIKWID on a shared system as a HPC compute cluster you may consider to use the access daemon. This is a proxy application which was implemented with security in mind and performs address checks for allowed access. Using the access daemon, the measurements involve more overhead, especially if you use \ref likwid-perfctr in timeline mode or with the marker API.
+
+To enable using the access daemon, configure in config.mk:
     - Set BUILDDAEMON to true
-    - Configure the path to the accessDaemon binary (usually keep default)
-    - Set the default ACCESSMODE
+    - Configure the path to the accessDaemon binary at ACCESSDAEMON
+    - Set the ACCESSMODE to accessdaemon
 
 ACCESSMODE can be direct, accessdaemon and sysdaemon (not yet officially supported). You can overwrite the default setting on the command line using the -M switch.
 
-If you want to access Uncore performance counters that are located in the PCI memory range, like they are implemented in Intel SandyBridge EP and IvyBridge EP, you have to use the access daemon or have root priviledges because access to the PCI space is only permitted for highly priviledged users.
+If you want to access Uncore performance counters that are located in the PCI memory range, like they are implemented in Intel SandyBridge EP and IvyBridge EP, you have to use the access daemon or have root privileges because access to the PCI space is only permitted for highly privileged users.
+
+\subsubsection setfreqinstall Usage of frequency daemon likwid-setFreq
+The application \ref likwid-setFrequencies uses another daemon to modify the frequency of CPUs. The daemon is build and later installed if BUILDFREQ is set to true in config.mk.
 
 \subsubsection sharedlib Build Likwid as shared library
-Per default the LIKWID library is build as a shared library. You need the library is necessary if you want to use the Marker API. You can also use the LIKWID modules directly. This is still not officially supported at the moment. In some settings it is necessary to build LIKWID as a shared library. To do so set SHARED_LIBRARY to true.
+Per default the LIKWID library is build as a shared library. You need the library if you want to use the Marker API. You can also use the LIKWID modules like <I>perfmon</I> directly. This is still not officially supported at the moment. In some settings it is necessary to build LIKWID as a shared library. To do so set SHARED_LIBRARY to true.
 
 \subsubsection instr_bench Instrument likwid-bench for usage with likwid-perfctr
-likwid-bench is instrumented for use with likwid-perfctr. This allows you to measure various metrics of your likwid-bench kernels. Enable instrumentation by setting INSTRUMENT_BENCH to true.
+\ref likwid-bench is instrumented for use with \ref likwid-perfctr. This allows you to measure various metrics of your \ref likwid-bench kernels. Enable instrumentation by setting INSTRUMENT_BENCH to true in config.mk.
 
 \subsubsection fortran Enabling Fortran interface for marker API
-If you want to use the Marker API in Fortran programs LIKWID offers a native Fortran90 interface. To enable it uncomment he FORTRAN_INTERFACE line.
+If you want to use the Marker API in Fortran programs LIKWID offers a native Fortran90 interface. To enable it set FORTRAN_INTERFACE to true in config.mk.
+
+\subsection targets Build targets
+You have to edit config.mk to configure your build and install path.
+
+The following make targets are available:
+
+- <B>make</B> - Build everything
+- <B>make likwid-bench</B> - Build likwid-bench
+- <B>make likwid-accessD</B> - Build likwid-accessD
+- <B>make likwid-setFreq</B> - Build likwid-setFreq
+- <B>make docs</B> - Create HTML documentation using doxygen
+- <B>make clean</B> - Remove the object file directory *./GCC*, keep the executables
+- <B>make distclean</B> - Remove all generated files
+- <B>make local</B> - Adjust paths in Lua scripts to work from the build directory. Requires the daemons and the pinning library to be already installed. Mainly used for testing.
+
+The build system has a working dependency tracking, therefore <B>make clean</B> is only needed if you change the Makefile configuration.
+
+\subsection installtargets Installing
+
+NOTE: The pinning functionality and the daemons only work if configured in config.mk and
+installed with <B>make install</B>. If you do not use the pinning functionality the tools
+can be used without installation.
+
+ - <B>make install</B> - Installs the executables, libraries, man pages and headers to the path you configured in config.mk.
+ - <B>make uninstall</B> - Delete all installed files.
 
 \subsection accessD Setting up access for hardware performance monitoring
-Hardware performance monitoring on x86 is configured using model-specific registers (MSR). MSR registers are special registers not part of the instruction set architecture. To read and write to these registers the x86 ISA provides special instructions. These instructions can only be executed in protected mode or in other work only kernel code can execute these instructions. Fortunately any Linux kernel 2.6 or newer provides access to these registers via a set of device files. This allows to implement all of the functionality in user space. Still it does not allow to use those more advanced features of hardware performance monitoring which require to setup interrupt service routines.
+Hardware performance monitoring on x86 is enabled using model-specific registers (MSR). MSR registers are special registers not part of the instruction set architecture. To read and write to these registers the x86 ISA provides special instructions. These instructions can only be executed in protected mode or in other words only kernel code can execute these instructions. Fortunately, any Linux kernel 2.6 or newer provides access to these registers via a set of device files. This allows to implement all of the functionality in user space. Still it does not allow to use those more advanced features of hardware performance monitoring which require to setup interrupt service routines  or kernel located memory.
 
-Per default only root has read/write access to these msr device files. In order to use the LIKWID tools, which need access to these files (likwid-perfctr and likwid-powermeter) as standard user you need to setup access rights to these files.
+Per default only root has read/write access to these msr device files. In order to use the LIKWID tools, which need access to these files (likwid-perfctr, likwid-powermeter and likwid-agent) as standard user, you need to setup access rights to these files.
 
-likwid-perfctr, likwid-powermeter and likwid-features require the Linux msr kernel module. This module is part of most standard distro kernels. You have to be root to do the initial setup.
+likwid-perfctr, likwid-powermeter and likwid-features require the Linux <CODE>msr</CODE> kernel module. This module is part of most standard distro kernels. You have to be root to do the initial setup.
 
-    - Check if the msr module is loaded with lsmod | grep msr. There should be an output.
-    - It the module is not loaded load it with modprobe msr . For automatic loading at startup consult your distros documentation how to do so.
-    - Adopt access rights on the msr device files for normal user. To allow everybody access you can use chmod o+rw /dev/cpu/*/msr . This is only recommended on single user desktop systems.
+    - Check if the <CODE>msr</CODE> module is loaded with <CODE>lsmod | grep msr</CODE>. There should be an output.
+    - It the module is not loaded, load it with <CODE>modprobe msr</CODE>. For automatic loading at startup consult your distros documentation how to do so.
+    - Adopt access rights on the MSR device files for normal user. To grant access to anyone, you can use <CODE>chmod o+rw /dev/cpu/*/msr</CODE>. This is only recommended on single user desktop systems.
 
-As a general access to the msr registers is not desired on security sensitive systems you can either implement a more sophisticated access rights settings with e.g. setgid. A common solution used on many other device files, e.g. for audio, is to introduce a group and make a chown on the msr device files to that group. Now if you execute likwid-perfctr with setgid on that group the executing user can use the tool but cannot directly write or read the msr device files.
+As in general access to MSRs is not desired on security sensitive systems, you can either implement a more sophisticated access rights settings with e.g. setgid. A common solution used on many other device files, e.g. for audio, is to introduce a group and make a <CODE>chown</CODE> on the msr device files to that group. Now if you execute likwid-perfctr with setgid on that group, the executing user can use the tool but cannot directly write or read the MSR device files.
 
-Some distributions backported the capabilities check for the msr device to older kernels. If there are problems with accessing the msr device for older kernels with file system permissions set to read&write, please check your kernel code (arch/x86/kernel/msr.c) for the backport and set the MSR capabilities in case.
+Some distributions backported the capabilities check for the msr device to older kernels. If there are problems with accessing the msr device for older kernels with file system permissions set to read&write, please check your kernel code (<CODE>arch/x86/kernel/msr.c</CODE>) for the backport and set the MSR capabilities in case.
 
-A secure solution is to use the accessDaemon, which encapsulates the access to the msr device files and performs a address check for allowed registers. For more information how to setup and use this solution have a look at the WIKI page (https://github.com/rrze-likwid/likwid/issues).
+A secure solution is to use the access daemon \ref likwid-accessD, which encapsulates the access to the MSR device files and performs a address check for allowed registers.
 
-Some newer kernels implement the so-called capabilities, a fine-grained permission system that can allow access to the MSR files for common users. On the downside it may be not enough anymore to set the suid-root flag for the access daemon, the executable must be registerd at the libcap.
+Some newer kernels implement the so-called capabilities, a fine-grained permission system that can allow access to the MSR files for common users. On the downside it may be not enough anymore to set the suid-root flag for the access daemon, the executable must be registerd at the <CODE>libcap</CODE>.
 
-sudo setcap cap_sys_rawio+ep EXECUTABLE
+<CODE>sudo setcap cap_sys_rawio+ep EXECUTABLE</CODE>
 
-This is only possible on local file systems. A feasible way is to use the likwid-accessD for all accesses and just enable the capabilities for this one binary. This will enable the usage for all LIKWID tools and also for all instrumented binaries. If the likwid-perfctr utility should only be used in wrapper mode, it is suitable to set the capabilities for likwid-perfctr only. Please remember to set the file permission of the MSR device file to read/write for all users, even if capabilites are configured correctly.
+This is only possible on local file systems. A feasible way is to use the \ref likwid-accessD for all accesses and just enable the capabilities for this one binary. This will enable the usage for all LIKWID tools and also for all instrumented binaries. If \ref likwid-perfctr utility should only be used in wrapper mode, it is suitable to set the capabilities for \ref likwid-perfctr only. Please remember to set the file permission of the MSR device files to read/write for all users, even if capabilites are configured correctly.
 
 \subsubsection depends Dependencies
 Although we tried to minimize the external dependencies of LIKWID, some advanced tools or only specific tool options require external packages.<BR>
