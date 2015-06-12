@@ -1,0 +1,23 @@
+SHORT L1 TLB misses
+
+EVENTSET
+PMC0 DATA_PAGE_WALK
+PMC1 DATA_READ_OR_WRITE
+
+METRICS
+Runtime (RDTSC) [s] time
+L1 TLB misses [misses/s] PMC0/time
+L1 TLB miss ratio PMC0/PMC1
+
+LONG
+Formulas:
+L1 TLB misses [misses/s] = DATA_PAGE_WALK/time
+L1 TLB miss ratio = DATA_PAGE_WALK/DATA_READ_OR_WRITE
+--
+This performance group measures the L1 TLB misses. A L1 TLB miss that hits the
+L2 TLB has a penelty of about 25 cycles for 4kB pages. For 2MB pages, the penelty
+for a L1 TLB miss that hits L2 TLB is about 8 cycles. The minimal L1 TLB miss ratio
+is about 1/64, so a high ratio indicates a bad spartial locality, data of a page
+is only partly accessed. It can also indicate trashing because when multiple pages
+are accessed in a loop iteration, the size and associativity is not sufficient to
+hold all pages.

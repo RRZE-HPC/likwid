@@ -1,0 +1,20 @@
+SHORT Memory read bandwidth
+
+EVENTSET
+PMC0  DATA_READ_MISS
+PMC1  HWP_L2MISS
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Memory read bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
+Memory read data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
+
+LONG
+Formulas:
+Memory read bandwidth [MBytes/s] = 1.0E-06*(L2_DATA_READ_MISS_MEM_FILL+HWP_L2MISS)*64.0/time
+Memory read data volume [GBytes] = 1.0E-09*(L2_DATA_READ_MISS_MEM_FILL+HWP_L2MISS)*64.0
+--
+Bandwidth and data volume of read operations from the memory to L2 cache. The
+metric is introduced in the book 'Intel Xeon Phi Coprocessor High-Performance
+Programming' by James Jeffers and James Reinders.

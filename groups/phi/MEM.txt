@@ -1,0 +1,18 @@
+SHORT Memory bandwidth
+
+EVENTSET
+PMC0  DATA_READ_MISS_OR_WRITE_MISS
+PMC1  DATA_CACHE_LINES_WRITTEN_BACK
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Memory bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
+Memory data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
+
+LONG
+Formulas:
+Memory bandwidth [MBytes/s] = 1.0E-06*(DATA_READ_MISS_OR_WRITE_MISS+DATA_CACHE_LINES_WRITTEN_BACK)*64.0/time
+Memory data volume [GBytes] = 1.0E-09*(DATA_READ_MISS_OR_WRITE_MISS+DATA_CACHE_LINES_WRITTEN_BACK)*64.0
+--
+Total memory bandwidth and data volume.
