@@ -6,8 +6,16 @@ PMC1  INSTRUCTIONS_EXECUTED_V_PIPE
 
 METRICS
 Runtime (RDTSC) [s] time
-VPipeRatio   PMC1/PMC0
-PairingRatio PMC1/(PMC0-PMC1)
+V-pipe ratio   PMC1/PMC0
+Pairing ratio PMC1/(PMC0-PMC1)
 
 LONG
-Pairing ratio
+Formulas:
+V-pipe ratio = INSTRUCTIONS_EXECUTED_V_PIPE/INSTRUCTIONS_EXECUTED
+Pairing ratio = INSTRUCTIONS_EXECUTED_V_PIPE/(INSTRUCTIONS_EXECUTED-INSTRUCTIONS_EXECUTED_V_PIPE)
+--
+Each hardware thread on the Xeon Phi can execute two instruction simultaneously,
+one in the U-pipe and one in the V-pipe. But this is only possible if the
+instructions can be paired. The instructions executed in paired fashion are counted
+by the event INSTRUCTIONS_EXECUTED_V_PIPE. The event INSTRUCTIONS_EXECUTED increments
+for each instruction, hence the maximal increase per cycle can be 2.

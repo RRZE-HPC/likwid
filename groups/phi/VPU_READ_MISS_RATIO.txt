@@ -1,4 +1,4 @@
-SHORT Miss ratio for VPU data read
+SHORT Miss ratio for VPU data reads
 
 EVENTSET
 PMC0  VPU_DATA_READ
@@ -6,7 +6,11 @@ PMC1  VPU_DATA_READ_MISS
 
 METRICS
 Runtime (RDTSC) [s] time
-Miss ratio PMC1/PMC0
+VPU read miss ratio PMC1/PMC0
 
 LONG
-Miss ratio for VPU data read
+Formula:
+VPU read miss ratio = PMC1/PMC0
+--
+This performance group determines the ratio between reads and reads that miss
+the cache and are issued by the VPU.

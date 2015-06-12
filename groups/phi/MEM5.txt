@@ -1,13 +1,15 @@
-SHORT L2 Snoop hits
+SHORT L2 snoop hits
 
 EVENTSET
 PMC0  SNP_HITM_L2
 
 METRICS
 Runtime (RDTSC) [s] time
-Snoop Data Bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
-Snoop Data Volume [GBytes] 1.0E-09*PMC0*64.0
+Snoop data bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
+Snoop data volume [GBytes] 1.0E-09*PMC0*64.0
 
 LONG
-Bla
+Formulas:
+Snoop data bandwidth [MBytes/s] = 1.0E-06*SNP_HITM_L2*64.0/time
+Snoop data volume [GBytes] = 1.0E-09*SNP_HITM_L2*64.0
 

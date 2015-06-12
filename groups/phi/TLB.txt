@@ -6,8 +6,18 @@ PMC1 DATA_PAGE_WALK
 
 METRICS
 Runtime (RDTSC) [s] time
-L2 TLB Misses [misses/s] PMC0/time
-TLB Misses [misses/s] PMC1/time
+L1 TLB misses [misses/s] PMC1/time
+L2 TLB misses [misses/s] PMC0/time
+L1 TLB misses per L2 TLB miss PMC1/PMC0
 
 LONG
-TLB Misses
+Formulas:
+L1 TLB misses [misses/s] = DATA_PAGE_WALK/time
+L2 TLB misses [misses/s] = LONG_DATA_PAGE_WALK/time
+L1 TLB misses per L2 TLB miss = DATA_PAGE_WALK/LONG_DATA_PAGE_WALK
+--
+Analysis of the layered TLB of the Intel Xeon Phi. According to the book
+'Intel Xeon Phi Coprocessor High-Performance Programming' by James Jeffers and
+James Reinders, a high L1 TLB misses per L2 TLB miss ratio suggests that your
+working set fits into the L2 TLB but not in L1 TLB. Using large pages may be
+beneficial.

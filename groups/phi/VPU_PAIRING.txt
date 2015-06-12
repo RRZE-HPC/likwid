@@ -1,4 +1,4 @@
-SHORT VPU Pairing ratio
+SHORT VPU pairing ratio
 
 EVENTSET
 PMC0  VPU_INSTRUCTIONS_EXECUTED
@@ -6,8 +6,15 @@ PMC1  VPU_INSTRUCTIONS_EXECUTED_V_PIPE
 
 METRICS
 Runtime (RDTSC) [s] time
-VPipeRatio   PMC1/PMC0
-PairingRatio PMC1/(PMC0-PMC1)
+V-pipe ratio   PMC1/PMC0
+Pairing ratio PMC1/(PMC0-PMC1)
 
 LONG
-VPU Pairing ratio
+Formulas:
+V-pipe ratio = VPU_INSTRUCTIONS_EXECUTED_V_PIPE/VPU_INSTRUCTIONS_EXECUTED
+Pairing ratio = VPU_INSTRUCTIONS_EXECUTED_V_PIPE/(VPU_INSTRUCTIONS_EXECUTED-VPU_INSTRUCTIONS_EXECUTED_V_PIPE)
+--
+This performance group measures the pairing ratio of vector instructions. The
+V-pipe can only execute a subset of all instruction, the main workload is done
+by the U-pipe. A higher throughput can be achieved if the pairing ratio is
+increased.

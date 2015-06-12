@@ -1,4 +1,4 @@
-SHORT VPU filling for Double
+SHORT VPU filling for double precision data
 
 EVENTSET
 PMC0  VPU_INSTRUCTIONS_EXECUTED
@@ -6,7 +6,13 @@ PMC1  VPU_ELEMENTS_ACTIVE
 
 METRICS
 Runtime (RDTSC) [s] time
-VPUFillRatio PMC0*8/PMC1
+VPU fill ratio PMC0*8/PMC1
 
 LONG
-VPU filling for Double
+Formulas:
+VPU fill ratio = VPU_INSTRUCTIONS_EXECUTED*8/VPU_ELEMENTS_ACTIVE
+--
+This performance group measures the number of vector instructions that are
+performed on each vector loaded to the VPU. It is important to increate the
+ratio to get a high throughput because memory accesses (loading data to the VPU)
+are expensive.

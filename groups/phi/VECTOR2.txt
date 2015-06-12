@@ -9,9 +9,10 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s]  PMC1*inverseClock
 
 LONG
+No derived metrics.
+--
 This group measures how efficient the processor works with
-regard to instruction throughput. Also important as a standalone
-metric is INSTRUCTIONS_RETIRED as it tells you how many instruction
-you need to execute for a task. An optimization might show very
-low CPI values but execute many more instruction for it.
+regard to vectorization instruction throughput. The event VPU_STALL_REG counts
+the VPU stalls due to data dependencies. Dependencies are read-after-write,
+write-after-write and write-after-read.
 

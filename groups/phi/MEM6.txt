@@ -1,13 +1,15 @@
-SHORT L2 Read Misses
+SHORT L2 read misses
 
 EVENTSET
 PMC0  L2_READ_MISS
 
 METRICS
 Runtime (RDTSC) [s] time
-L2 Read Data Bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
-L2 Read Data Volume [GBytes] 1.0E-09*PMC0*64.0
+L2 read data bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
+L2 read data volume [GBytes] 1.0E-09*PMC0*64.0
 
 LONG
-Bla
+Formulas:
+L2 read data bandwidth [MBytes/s] = 1.0E-06*L2_READ_MISS*64.0/time
+L2 read data volume [GBytes] = 1.0E-09*L2_READ_MISS*64.0
 

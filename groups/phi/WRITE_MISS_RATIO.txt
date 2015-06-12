@@ -1,4 +1,4 @@
-SHORT Miss ratio for data write
+SHORT Miss ratio for data writes
 
 EVENTSET
 PMC0  DATA_WRITE
@@ -6,7 +6,10 @@ PMC1  DATA_WRITE_MISS
 
 METRICS
 Runtime (RDTSC) [s] time
-Miss ratio PMC1/PMC0
+Write miss ratio PMC1/PMC0
 
 LONG
-Miss ratio for data write
+Formulas:
+Write miss ratio = DATA_WRITE_MISS/DATA_WRITE
+--
+Miss ratio for data writes.
