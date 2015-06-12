@@ -42,6 +42,14 @@ static uint64_t cpuClock = 0ULL;
 void (*TSTART)(TscCounter*) = NULL;
 void (*TSTOP)(TscCounter*) = NULL;
 
+#define CPUID                              \
+    __asm__ volatile ("cpuid"                             \
+            : "=a" (eax),     \
+            "=b" (ebx),     \
+            "=c" (ecx),     \
+            "=d" (edx)      \
+            : "0" (eax), "2" (ecx))
+
 static void fRDTSC(TscCounter* cpu_c)
 {
     __asm__ volatile("xor %%eax,%%eax\n\t"           \
@@ -133,10 +141,13 @@ getCpuSpeed(void)
 
 void timer_init( void )
 {
+    uint32_t eax,ebx,ecx,edx;
     if ((!TSTART) && (!TSTOP))
     {
         TSTART = fRDTSC;
-        if (cpuid_info.featureFlags & (1<<RDTSCP))
+        eax = 0x80000001;
+        CPUID;
+        if (edx & (1<<27))
         {
             TSTOP = fRDTSCP;
         }
