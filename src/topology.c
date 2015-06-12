@@ -611,7 +611,7 @@ int topology_setName(void)
 
                 case XEON_MP:
                     cpuid_info.name = xeon_mp_string;
-                    cpuid_info.short_name = short_unknown;
+                    cpuid_info.short_name = short_core2;
                     break;
 
                 case ATOM_45:
