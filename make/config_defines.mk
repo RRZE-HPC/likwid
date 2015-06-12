@@ -40,15 +40,6 @@ else
 $(info Kernel 2.6.$(KERNEL_VERSION) has no mempolicy support!);
 endif
 
-ifeq ($(HAS_RDTSCP),0)
-$(info Buildung without RDTSCP timing support!);
-else
-ifneq ($(COMPILER),MIC)
-DEFINES += -DHAS_RDTSCP
-else
-$(info Info: Compiling for Xeon Phi. Disabling RDTSCP support.);
-endif
-endif
 
 ifeq ($(SHARED_LIBRARY),true)
 CFLAGS += $(SHARED_CFLAGS)
