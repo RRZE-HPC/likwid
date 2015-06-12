@@ -9,7 +9,7 @@
 
 \anchor ILG_PMC
 <H2>General-purpose counters</H2>
-<P>The AMD&reg; Interlagos microarchitecture provides 6 general-purpose counters consiting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
+<P>The AMD&reg; Interlagos microarchitecture provides 6 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -78,7 +78,7 @@
 <H1>Counters available for one hardware thread per socket</H1>
 \anchor ILG_UPMC
 <H2>Northbridge general-purpose counters</H2>
-<P>The AMD&reg; Interlagos microarchitecture provides 4 general-purpose counters for the Northbridge consiting of a config and a counter register.</P>
+<P>The AMD&reg; Interlagos microarchitecture provides 4 general-purpose counters for the Northbridge consisting of a config and a counter register.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>

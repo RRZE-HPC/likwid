@@ -60,7 +60,7 @@
 
 \anchor NEHEX_PMC
 <H2>General-purpose counters</H2>
-<P>Commonly the Intel&reg; Nehalem EX microarchitecture provides 4 general-purpose counters consiting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
+<P>The Intel&reg; Nehalem EX microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -119,7 +119,7 @@
 </TABLE>
 
 <H3>Special handling for events</H3>
-<P>The Intel&reg; Nehalem EX microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Nehalem EX microarchitecture has two of those registers. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS event. Only for those events two more counter options are available:</P>
+<P>The Intel&reg; Nehalem EX microarchitecture provides measuring of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Nehalem EX microarchitecture has two of those registers. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS event. Only for those events two more counter options are available:</P>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -201,9 +201,10 @@ The Intel&reg; Nehalem EX microarchitecture has 2 memory controllers, each with 
   <TD>Extract bits 6-33 from address and set bits 0-27 in MSR_M<0,1>_PMON_ADDR_MASK register</TD>
   <TD></TD>
 </TR>
-<P>For the events THERM_TRP_DN and THERM_TRP_UP you cannot measure events for all and one specific DIMM simultaneously because they programm the same filter register MSR_M<0,1>_PMON_MSC_THR and have contrary configurations.</P>
-<P>Although the events FVC_EV<0-3> are available to measure multiple memory events, some overlap and do not allow simultaneous measureing. That's because they programm the same filter register MSR_M<0,1>_PMON_ZDP and have contrary configurations. One case are the FVC_EV<0-3>_BBOX_CMDS_READS and FVC_EV<0-3>_BBOX_CMDS_WRITES events that measure memory reads or writes but cannot be measured at the same time.</P>
-</TABLE>
+</TABLE><BR>
+<P>For the events THERM_TRP_DN and THERM_TRP_UP you cannot measure events for all and one specific DIMM simultaneously because they program the same filter register MSR_M<0,1>_PMON_MSC_THR and have contrary configurations.</P>
+<P>Although the events FVC_EV<0-3> are available to measure multiple memory events, some overlap and do not allow simultaneous measuring. That's because they program the same filter register MSR_M<0,1>_PMON_ZDP and have contrary configurations. One case are the FVC_EV<0-3>_BBOX_CMDS_READS and FVC_EV<0-3>_BBOX_CMDS_WRITES events that measure memory reads or writes but cannot be measured at the same time.</P>
+
 
 
 \anchor NEHEX_BBOX
@@ -261,7 +262,7 @@ The memory traffic in an Intel&reg; Nehalem EX system is controller by the Home 
 
 \anchor NEHEX_RBOX
 <H2>RBOX counters</H2>
-<P>The Intel&reg; Nehalem EX microarchitecture provides measurements of the crossbar rounter in the Uncore. The description from Intel&reg;:<BR>
+<P>The Intel&reg; Nehalem EX microarchitecture provides measurements of the crossbar router in the Uncore. The description from Intel&reg;:<BR>
 <I>The Crossbar Router (R-Box) is a 8 port switch/router implementing the Intel&reg; QuickPath Interconnect Link and Routing layers. The R-Box is responsible for routing and transmitting all intra- and inter-processor communication.
 </I><BR>
 The Intel&reg; Nehalem EX microarchitecture has two interfaces to the RBOX although each socket contains only one crossbar router. Each RBOX offers 8 general-purpose counters. They are exposed through the MSR interface to the operating system kernel. The RBOX setup routine is taken from Likwid 3.

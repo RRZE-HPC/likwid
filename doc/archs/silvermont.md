@@ -11,7 +11,7 @@
 <H1>Counters available for each hardware thread</H1>
 \anchor SVM_FIXED
 <H2>Fixed-purpose counters</H2>
-<P>Since the Silvermont microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event. They are core-local, hence each hardware thread has its own set of fixed counters..</P>
+<P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event. They are core-local, hence each hardware thread has its own set of fixed counters.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -55,7 +55,7 @@
 
 \anchor SVM_PMC
 <H2>General-purpose counters</H2>
-<P>The Intel&reg; Core 2 microarchitecture provides 2 general-purpose counters consiting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
+<P>The Intel&reg; Silvermont microarchitecture provides 2 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -106,7 +106,8 @@
 </TABLE>
 
 <H3>Special handling for events</H3>
-<P>The Intel&reg; Silvermont microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Silvermont microarchitecture has two of those registers. LIKWID defines some events that perform the filtering according to the event name. Although there are many bitmasks possible, LIKWID natively provides only the ones with response type ANY. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS and OFFCORE_RESPONSE_1_OPTIONS events. Only OFFCORE_RESPONSE_0_OPTIONS can be used to measure average latencies. Only for those events two more counter options are available:</P>
+<P>The Intel&reg; Silvermont microarchitecture provides measuring of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Silvermont microarchitecture has two of those registers. LIKWID defines some events that perform the filtering according to the event name. Although there are many bitmasks possible, LIKWID natively provides only the ones with response type ANY. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS and OFFCORE_RESPONSE_1_OPTIONS events. Only OFFCORE_RESPONSE_0_OPTIONS can be used to measure average latencies. Only for those events two more counter options are available:
+</P>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -145,7 +146,7 @@
 
 <H1>Counters available for one hardware thread per socket</H1>
 \anchor SVM_POWER
-<H2>Power counter</H2>
+<H2>Power counters</H2>
 <P>The Intel&reg; Silvermont microarchitecture provides measurements of the current power consumption through the RAPL interface.</P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -170,5 +171,5 @@
   <TD>PWR_DRAM_ENERGY</TD>
 </TR>
 </TABLE>
-<P>*) The PWR2 and PWR3 counter is commonly not implemented by Intel&reg; Silvermont systems</P>
+<P>*) The PWR2 and PWR3 counter is commonly not implemented by Intel&reg; Silvermont systems.</P>
 */

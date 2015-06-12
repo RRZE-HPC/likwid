@@ -8,7 +8,7 @@
 <H1>Counters available for each hardware thread</H1>
 \anchor PHI_PMC
 <H2>General-purpose counters</H2>
-<P>Commonly the Intel&reg; Xeon Phi microarchitecture provides 2 general-purpose counters consiting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
+<P>The Intel&reg; Xeon Phi microarchitecture provides 2 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>

@@ -64,7 +64,7 @@
 
 \anchor IVBEP_PMC
 <H2>General-purpose counters</H2>
-<P>Commonly the Intel&reg; IvyBridge EP/EN/EX microarchitecture provides 4 general-purpose counters consiting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
+<P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -196,7 +196,7 @@
 <P>*) The PWR2 counter is often not implemented by Intel&reg; IvyBridge systems</P>
 
 \anchor IVBEP_BBOX
-<H2>BBOX counter</H2>
+<H2>Home Agent counters</H2>
 <P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides measurements of the Home Agent (HA) in the Uncore. The description from Intel&reg;:<BR>
 <I>The HA is responsible for the protocol side of memory interactions, including coherent and non-coherent home agent protocols (as defined in the Intel&reg; QuickPath Interconnect Specification). Additionally, the HA is responsible for ordering memory reads/writes, coming in from the modular Ring, to a given address such that the iMC (memory controller).</I><BR>
 The HA hardware performance counters are exposed to the operating system through PCI interfaces. There are two of those interfaces for the HA but only for the E7-8800 v2 both are available. The name BBOX originates from the Nehalem EX Uncore monitoring where this functional unit is called BBOX.
@@ -208,19 +208,19 @@ The HA hardware performance counters are exposed to the operating system through
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>BBOX<0,1>C0</TD>
+  <TD>BBOX&lt;0,1&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>BBOX<0,1>C1</TD>
+  <TD>BBOX&lt;0,1&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>BBOX<0,1>C2</TD>
+  <TD>BBOX&lt;0,1&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>BBOX<0,1>C3</TD>
+  <TD>BBOX&lt;0,1&gt;C3</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -266,7 +266,7 @@ The HA hardware performance counters are exposed to the operating system through
 </TABLE>
 
 \anchor IVBEP_SBOX
-<H2>SBOX counter</H2>
+<H2>LLC-to-QPI interface counters</H2>
 <P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides measurements of the QPI Link layer (QPI) in the Uncore. The description from Intel&reg;:<BR>
 <I>The Intel&reg; QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface. As such, it shares responsibility with the CBo(s) as the Intel&reg; QPI caching agent(s). It is responsible for converting CBo requests to Intel&reg; QPI messages (i.e. snoop generation and data response messages from the snoop response) as well as converting/forwarding ring messages to Intel&reg; QPI packets and vice versa.On Ivy Bridge, Intel&reg; QPI is split into two separate layers. The Intel&reg; QPI LL (link layer) is responsible for generating, transmitting, and receiving packets with the Intel&reg; QPI link.
 </I><BR>
@@ -279,23 +279,23 @@ The QPI hardware performance counters are exposed to the operating system throug
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>SBOX<0,1,2>C0</TD>
+  <TD>SBOX&lt;0,1,2&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0,1,2>C1</TD>
+  <TD>SBOX&lt;0,1,2&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0,1,2>C2</TD>
+  <TD>SBOX&lt;0,1,2&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0,1,2>C3</TD>
+  <TD>SBOX&lt;0,1,2&gt;C3</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0,1,2>FIX</TD>
+  <TD>SBOX&lt;0,1,2&gt;FIX</TD>
   <TD>QPI_RATE</TD>
 </TR>
 </TABLE>
@@ -366,19 +366,19 @@ The LLC hardware performance counters are exposed to the operating system throug
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>CBOX<0-15>C0</TD>
+  <TD>CBOX&lt;0-15&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>CBOX<0-15>C1</TD>
+  <TD>CBOX&lt;0-15&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>CBOX<0-15>C2</TD>
+  <TD>CBOX&lt;0-15&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>CBOX<0-15>C3</TD>
+  <TD>CBOX&lt;0-15&gt;C3</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -406,31 +406,31 @@ The LLC hardware performance counters are exposed to the operating system throug
 <TR>
   <TD>tid</TD>
   <TD>5 bit hex value</TD>
-  <TD>Set bits 0-4 in MSR_UNC_C<0-15>_PMON_BOX_FILTER register</TD>
+  <TD>Set bits 0-4 in MSR_UNC_C&lt;0-15&gt;_PMON_BOX_FILTER register</TD>
   <TD>A description of filter capabilities can be found in the <A HREF="http://www.Intel&reg;.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v2 Uncore Manual</A>.</TD>
 </TR>
 <TR>
   <TD>state</TD>
   <TD>6 bit hex value</TD>
-  <TD>Set bits 17-22 in MSR_UNC_C<0-15>_PMON_BOX_FILTER register</TD>
+  <TD>Set bits 17-22 in MSR_UNC_C&lt;0-15&gt;_PMON_BOX_FILTER register</TD>
   <TD>M: 0x28, F: 0x10, M: 0x08, E: 0x04, S: 0x02, I: 0x01</TD>
 </TR>
 <TR>
   <TD>nid</TD>
   <TD>16 bit hex value</TD>
-  <TD>Set bits 0-15 in MSR_UNC_C<0-15>_PMON_BOX_FILTER1 register</TD>
+  <TD>Set bits 0-15 in MSR_UNC_C&lt;0-15&gt;_PMON_BOX_FILTER1 register</TD>
   <TD>Note: Node 0 has value 0x0001</TD>
 </TR>
 <TR>
   <TD>opcode</TD>
   <TD>9 bit hex value</TD>
-  <TD>Set bits 20-28 in MSR_UNC_C<0-15>_PMON_BOX_FILTER1 register</TD>
+  <TD>Set bits 20-28 in MSR_UNC_C&lt;0-15&gt;_PMON_BOX_FILTER1 register</TD>
   <TD>A table of all valid opcodes can be found in the <A HREF="http://www.Intel&reg;.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v2 Uncore Manual</A>.</TD>
 </TR>
 <TR>
   <TD>match0</TD>
   <TD>2 bit hex address</TD>
-  <TD>Set bits 30-31 in MSR_UNC_C<0-15>_PMON_BOX_FILTER1 register</TD>
+  <TD>Set bits 30-31 in MSR_UNC_C&lt;0-15&gt;_PMON_BOX_FILTER1 register</TD>
   <TD>A description of matching capabilities can be found in the <A HREF="http://www.Intel&reg;.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v2 Uncore Manual</A>.</TD>
 </TR>
 </TABLE>
@@ -440,11 +440,11 @@ The LLC hardware performance counters are exposed to the operating system throug
 
 
 \anchor IVBEP_UBOX
-<H2>UBOX counter</H2>
+<H2>Uncore management counters</H2>
 <P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides measurements of the management box in the Uncore. The description from Intel&reg;:<BR>
 <I>The UBox serves as the system configuration controller within the physical processor.
 </I><BR>
-The uncore management performance counters are exposed to the operating system through the MSR interface. The name UBOX originates from the Nehalem EX Uncore monitoring where those functional units are called UBOX.
+The Uncore management performance counters are exposed to the operating system through the MSR interface. The name UBOX originates from the Nehalem EX Uncore monitoring where those functional units are called UBOX.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -466,7 +466,7 @@ The uncore management performance counters are exposed to the operating system t
 </TR>
 </TABLE>
 
-<H3>Available Options (Only for UBOX<0,1> counters)</H3>
+<H3>Available Options (Only for UBOX&lt;0,1&gt; counters)</H3>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -489,7 +489,7 @@ The uncore management performance counters are exposed to the operating system t
 </TABLE>
 
 \anchor IVBEP_WBOX
-<H2>WBOX counter</H2>
+<H2>Power control unit counters</H2>
 <P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides measurements of the power control unit (PCU) in the Uncore. The description from Intel&reg;:<BR>
 <I>The PCU is the primary Power Controller for the physical processor package.<BR>
 The uncore implements a power control unit acting as a core/uncore power and thermal manager. It runs its firmware on an internal micro-controller and coordinates the socket’s power states.
@@ -528,7 +528,7 @@ The PCU performance counters are exposed to the operating system through the MSR
 </TR>
 </TABLE>
 
-<H3>Available Options (Only for WBOX<0-3> counters)</H3>
+<H3>Available Options (Only for WBOX&lt;0-3&gt; counters)</H3>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -588,11 +588,11 @@ The uncore management performance counters are exposed to the operating system t
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>IBOX<0,1>C0</TD>
+  <TD>IBOX&lt;0,1&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>IBOX<0,1>C1</TD>
+  <TD>IBOX&lt;0,1&gt;C1</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -634,28 +634,28 @@ The uncore management performance counters are exposed to the operating system t
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>MBOX<0-7>C0</TD>
+  <TD>MBOX&lt;0-7&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0-7>C1</TD>
+  <TD>MBOX&lt;0-7&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0-7>C2</TD>
+  <TD>MBOX&lt;0-7&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0-7>C3</TD>
+  <TD>MBOX&lt;0-7&gt;C3</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0-7>FIX</TD>
+  <TD>MBOX&lt;0-7&gt;FIX</TD>
   <TD>DRAM_CLOCKTICKS</TD>
 </TR>
 </TABLE>
 
-<H3>Available Options (Only for counter MBOX<0-7>C<0-3>)</H3>
+<H3>Available Options (Only for counter MBOX&lt;0-7&gt;C&lt;0-3&gt;)</H3>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -692,15 +692,15 @@ The R3QPI performance counters are exposed to the operating system through PCI i
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>RBOX<0,1,2>C0</TD>
+  <TD>RBOX&lt;0,1,2&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1,2>C1</TD>
+  <TD>RBOX&lt;0,1,2&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1,2>C2</TD>
+  <TD>RBOX&lt;0,1,2&gt;C2</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -732,7 +732,7 @@ The R3QPI performance counters are exposed to the operating system through PCI i
 <P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides measurements of the Ring-to-PCIe (R2PCIe) interface in the Uncore. The description from Intel&reg;:<BR>
 <I>R2PCIe represents the interface between the Ring and IIO traffic to/from PCIe.
 </I><BR>
-The R2PCIe performance counters are exposed to the operating system through a PCI interface. Independent of the system's configuration, there is only one Ring-to-PCIe interface. The name PBOX originates from the Nehalem EX Uncore monitoring where those functional units are called PBOX.
+The R2PCIe performance counters are exposed to the operating system through a PCI interface. Independent of the system's configuration, there is only one Ring-to-PCIe interface.
 </P>
 <H3>Counter and events</H3>
 <TABLE>

@@ -56,7 +56,7 @@
 
 \anchor WES_PMC
 <H2>General-purpose counters</H2>
-<P>Commonly the Intel&reg; Westmere microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
+<P>The Intel&reg; Westmere microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -121,7 +121,7 @@
 </TABLE>
 
 <H3>Special handling for events</H3>
-<P>The Intel&reg; Westmere microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Westmere microarchitecture has two of those registers. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS and OFFCORE_RESPONSE_1_OPTIONS events. Only for those events two more counter options are available:</P>
+<P>The Intel&reg; Westmere microarchitecture provides measuring of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Westmere microarchitecture has two of those registers. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS and OFFCORE_RESPONSE_1_OPTIONS events. Only for those events two more counter options are available:</P>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -146,7 +146,7 @@
 <H1>Counters available for one hardware thread per socket</H1>
 \anchor WES_UNCORE
 <H2>Uncore general-purpose counters</H2>
-<P>Commonly the Intel&reg; Westmere microarchitecture provides 7 general-purpose counters consisting of a config and a counter register. Moreover, there is a fixed-purpose counter to measure the clock of the Uncore.</P>
+<P>The Intel&reg; Westmere microarchitecture provides 8 general-purpose counters consisting of a config and a counter register. Moreover, there is a fixed-purpose counter to measure the clock of the Uncore.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>

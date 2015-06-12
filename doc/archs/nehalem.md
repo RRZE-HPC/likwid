@@ -54,7 +54,7 @@
 
 \anchor NEH_PMC
 <H2>General-purpose counters</H2>
-<P>Commonly the Intel&reg; Nehalem microarchitecture provides 4 general-purpose counters consiting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
+<P>The Intel&reg; Nehalem microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -119,7 +119,7 @@
 </TABLE>
 
 <H3>Special handling for events</H3>
-<P>The Intel&reg; Nehalem microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Nehalem microarchitecture has one of those registers. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS event. Only for those events two more counter options are available:</P>
+<P>The Intel&reg; Nehalem microarchitecture provides measuring of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Nehalem microarchitecture has one of those registers. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS event. Only for those events two more counter options are available:</P>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -144,7 +144,7 @@
 <H1>Counters available for one hardware thread per socket</H1>
 \anchor NEH_UNCORE
 <H2>Uncore general-purpose counters</H2>
-<P>Commonly the Intel&reg; Nehalem microarchitecture provides 7 general-purpose counters consisting of a config and a counter register. Moreover, there is a fixed-purpose counter to measure the clock of the Uncore.</P>
+<P>The Intel&reg; Nehalem microarchitecture provides 8 general-purpose counters consisting of a config and a counter register. Moreover, there is a fixed-purpose counter to measure the clock of the Uncore.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -229,8 +229,8 @@
 <TR>
   <TD>match0</TD>
   <TD>40 bit physical memory address</TD>
-  <TD>Documented but register only available in Westmere architecture. Extract bits 3-39 from address and write them to bits 3-39 in MSR_UNCORE_ADDR_OPCODE_MATCH register</TD>
-  <TD></TD>
+  <TD>Extract bits 3-39 from address and write them to bits 3-39 in MSR_UNCORE_ADDR_OPCODE_MATCH register</TD>
+  <TD>Documented but register only available in Westmere architecture. </TD>
 </TR>
 </TABLE>
 

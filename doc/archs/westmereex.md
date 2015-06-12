@@ -62,7 +62,7 @@
 
 \anchor WESEX_PMC
 <H2>General-purpose counters</H2>
-<P>Commonly the Intel&reg; Westmere EX microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
+<P>The Intel&reg; Westmere EX microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -120,7 +120,7 @@
 </TABLE>
 
 <H3>Special handling for events</H3>
-<P>The Intel&reg; Westmere EX microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Westmere EX microarchitecture has two of those registers. LIKWID defines some events that perform the filtering according to the event name. Although there are many bitmasks possible, LIKWID natively provides only the ones with response type ANY. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS and OFFCORE_RESPONSE_1_OPTIONS events. Only for those events two more counter options are available:</P>
+<P>The Intel&reg; Westmere EX microarchitecture provides measuring of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Westmere EX microarchitecture has two of those registers. LIKWID defines some events that perform the filtering according to the event name. Although there are many bitmasks possible, LIKWID natively provides only the ones with response type ANY. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS and OFFCORE_RESPONSE_1_OPTIONS events. Only for those events two more counter options are available:</P>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -157,27 +157,27 @@ The Intel&reg; Westmere EX microarchitecture has 2 memory controllers, each with
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>MBOX<0,1>C0</TD>
+  <TD>MBOX&lt;0,1&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0,1>C1</TD>
+  <TD>MBOX&lt;0,1&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0,1>C2</TD>
+  <TD>MBOX&lt;0,1&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0,1>C3</TD>
+  <TD>MBOX&lt;0,1&gt;C3</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0,1>C4</TD>
+  <TD>MBOX&lt;0,1&gt;C4</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0,1>C5</TD>
+  <TD>MBOX&lt;0,1&gt;C5</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -193,18 +193,19 @@ The Intel&reg; Westmere EX microarchitecture has 2 memory controllers, each with
 <TR>
   <TD>match0</TD>
   <TD>34 bit address</TD>
-  <TD>Set bits 0-33 in MSR_M<0,1>_PMON_ADDR_MATCH register</TD>
+  <TD>Set bits 0-33 in MSR_M&lt;0,1&gt;_PMON_ADDR_MATCH register</TD>
   <TD></TD>
 </TR>
 <TR>
   <TD>mask0</TD>
   <TD>60 bit hex value</TD>
-  <TD>Extract bits 6-33 from address and set bits 0-27 in MSR_M<0,1>_PMON_ADDR_MASK register</TD>
+  <TD>Extract bits 6-33 from address and set bits 0-27 in MSR_M&lt;0,1&gt;_PMON_ADDR_MASK register</TD>
   <TD></TD>
 </TR>
-<P>For the events THERM_TRP_DN and THERM_TRP_UP you cannot measure events for all and one specific DIMM simultaneously because they programm the same filter register MSR_M<0,1>_PMON_MSC_THR and have contrary configurations.</P>
-<P>Although the events FVC_EV<0-3> are available to measure multiple memory events, some overlap and do not allow simultaneous measureing. That's because they programm the same filter register MSR_M<0,1>_PMON_ZDP and have contrary configurations. One case are the FVC_EV<0-3>_BBOX_CMDS_READS and FVC_EV<0-3>_BBOX_CMDS_WRITES events that measure memory reads or writes but cannot be measured at the same time.</P>
 </TABLE>
+<P>For the events THERM_TRP_DN and THERM_TRP_UP you cannot measure events for all and one specific DIMM simultaneously because they program the same filter register MSR_M&lt;0,1&gt;_PMON_MSC_THR and have contrary configurations.</P>
+<P>Although the events FVC_EV<0-3> are available to measure multiple memory events, some overlap and do not allow simultaneous measuring. That's because they program the same filter register MSR_M&lt;0,1&gt;_PMON_ZDP and have contrary configurations. One case are the FVC_EV<0-3>_BBOX_CMDS_READS and FVC_EV<0-3>_BBOX_CMDS_WRITES events that measure memory reads or writes but cannot be measured at the same time.</P>
+
 
 
 \anchor WESEX_BBOX
@@ -221,19 +222,19 @@ The memory traffic in an Intel&reg; Westmere EX system is controller by the Home
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>BBOX<0,1>C0</TD>
+  <TD>BBOX&lt;0,1&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>BBOX<0,1>C1</TD>
+  <TD>BBOX&lt;0,1&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>BBOX<0,1>C2</TD>
+  <TD>BBOX&lt;0,1&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>BBOX<0,1>C3</TD>
+  <TD>BBOX&lt;0,1&gt;C3</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -248,23 +249,23 @@ The memory traffic in an Intel&reg; Westmere EX system is controller by the Home
 </TR>
   <TD>match0</TD>
   <TD>60 bit hex value</TD>
-  <TD>Set bits 0-59 in MSR_B<0,1>_PMON_MATCH register</TD>
+  <TD>Set bits 0-59 in MSR_B&lt;0,1&gt;_PMON_MATCH register</TD>
   <TD>For register layout and valid settings see <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e7-family-uncore-performance-programming-guide.html">Intel&reg; Xeon&reg; Processor E7 Family Uncore Performance Monitoring Guide</A></TD>
 </TR>
 <TR>
   <TD>mask0</TD>
   <TD>60 bit hex value</TD>
-  <TD>Set bits 0-59 in MSR_B<0,1>_PMON_MASK register</TD>
+  <TD>Set bits 0-59 in MSR_B&lt;0,1&gt;_PMON_MASK register</TD>
   <TD>For register layout and valid settings see <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e7-family-uncore-performance-programming-guide.html">Intel&reg; Xeon&reg; Processor E7 Family Uncore Performance Monitoring Guide</A></TD>
 </TR>
 </TABLE>
 
 \anchor WESEX_RBOX
 <H2>RBOX counters</H2>
-<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the crossbar rounter in the Uncore. The description from Intel&reg;:<BR>
+<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the crossbar router in the Uncore. The description from Intel&reg;:<BR>
 <I>The Crossbar Router (R-Box) is a 8 port switch/router implementing the Intel&reg; QuickPath Interconnect Link and Routing layers. The R-Box is responsible for routing and transmitting all intra- and inter-processor communication.
 </I><BR>
-The Intel&reg; Westmere EX microarchitecture has two interfaces to the RBOX although each socket contains only one crossbar router, RBOX0 is the left part and RBOX1 is the right part of the single RBOX. Each RBOX side offers 8 general-purpose counters. They are exposed through the MSR interface to the operating system kernel. The MBOX and RBOX setup routines are taken from Likwid 3, they are not as flexible as the newer setup routines but programming of the MBOXes and RBOXes is tedious for Westmere EX. It is not possible to specify a FVID (Fill Victim Index) for the MBOX or IPERF option for RBOXes. 
+The Intel&reg; Westmere EX microarchitecture has two interfaces to the RBOX although each socket contains only one crossbar router, RBOX0 is the left part and RBOX1 is the right part of the single RBOX. Each RBOX side offers 8 general-purpose counters. They are exposed through the MSR interface to the operating system kernel. The MBOX and RBOX setup routines are taken from Likwid 3, they are not as flexible as the newer setup routines but programming of the MBOXes and RBOXes is tedious for Westmere EX. It is not possible to specify a FVID (Fill Victim Index) for the MBOX or IPERF option for RBOXes.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -273,35 +274,35 @@ The Intel&reg; Westmere EX microarchitecture has two interfaces to the RBOX alth
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>RBOX<0,1>C0</TD>
+  <TD>RBOX&lt;0,1&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1>C1</TD>
+  <TD>RBOX&lt;0,1&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1>C2</TD>
+  <TD>RBOX&lt;0,1&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1>C3</TD>
+  <TD>RBOX&lt;0,1&gt;C3</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1>C4</TD>
+  <TD>RBOX&lt;0,1&gt;C4</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1>C5</TD>
+  <TD>RBOX&lt;0,1&gt;C5</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1>C6</TD>
+  <TD>RBOX&lt;0,1&gt;C6</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1>C7</TD>
+  <TD>RBOX&lt;0,1&gt;C7</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -388,19 +389,19 @@ The Intel&reg; Westmere EX microarchitecture has 2 SBOX instances. Each SBOX off
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>SBOX<0,1>C0</TD>
+  <TD>SBOX&lt;0,1&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0,1>C1</TD>
+  <TD>SBOX&lt;0,1&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0,1>C2</TD>
+  <TD>SBOX&lt;0,1&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0,1>C3</TD>
+  <TD>SBOX&lt;0,1&gt;C3</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -444,13 +445,13 @@ The Intel&reg; Westmere EX microarchitecture has 2 SBOX instances. Each SBOX off
 <TR>
   <TD>match0</TD>
   <TD>64 bit hex value</TD>
-  <TD>Set bit 0-63 in MSR_S<0,1>_PMON_MATCH register</TD>
+  <TD>Set bit 0-63 in MSR_S&lt;0,1&gt;_PMON_MATCH register</TD>
   <TD>For register layout and valid settings see <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e7-family-uncore-performance-programming-guide.html">Intel&reg; Xeon&reg; Processor E7 Family Uncore Performance Monitoring Guide</A></TD>
 </TR>
 <TR>
   <TD>mask0</TD>
   <TD>39 bit hex value</TD>
-  <TD>Set bit 0-38 in MSR_S<0,1>_PMON_MASK register</TD>
+  <TD>Set bit 0-38 in MSR_S&lt;0,1&gt;_PMON_MASK register</TD>
   <TD>For register layout and valid settings see <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e7-family-uncore-performance-programming-guide.html">Intel&reg; Xeon&reg; Processor E7 Family Uncore Performance Monitoring Guide</A></TD>
 </TR>
 </TABLE>

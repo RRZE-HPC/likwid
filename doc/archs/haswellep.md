@@ -1,6 +1,5 @@
 /*! \page haswellep Intel&reg; Haswell EP/EN/EX
 
-<P>Intel&reg; Haswell EP/EN/EX use PCI-based perofmance counters for Uncore measurements. Currently, it is not possible to get the location of the counters, thus which PCI bus corresponds to which CPU socket. In order to sort the PCI busses in another way, there is a configuration variable <CODE>REVERSE_HASWELL_PCI_SOCKETS</CODE>. If this does not help, you can set the busses completely free using the <CODE>PCI_SOCKETS</CODE> variable. Explaination in config.mk.</P>
 
 <H1>Available performance monitors for the Intel&reg; Haswell EP/EN/EX microarchitecture</H1>
 <UL>
@@ -67,7 +66,7 @@
 
 \anchor HASEP_PMC
 <H2>General-purpose counters</H2>
-<P>Commonly the Intel&reg; Haswell microarchitecture provides 4 general-purpose counters consiting of a config and a counter register. They are core-local.</P>
+<P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -144,7 +143,7 @@
 </TABLE>
 
 <H3>Special handling for events</H3>
-<P>The Intel&reg; Haswell microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Haswell microarchitecture has two of those registers. LIKWID defines some events that perform the filtering according to the event name. Although there are many bitmasks possible, LIKWID natively provides only the ones with response type ANY. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS and OFFCORE_RESPONSE_1_OPTIONS events. Only for those events two more counter options are available:</P>
+<P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Haswell microarchitecture has two of those registers. LIKWID defines some events that perform the filtering according to the event name. Although there are many bitmasks possible, LIKWID natively provides only the ones with response type ANY. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS and OFFCORE_RESPONSE_1_OPTIONS events. Only for those events two more counter options are available:</P>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -169,7 +168,7 @@
 
 \anchor HASEP_THERMAL
 <H2>Thermal counter</H2>
-<P>The Intel&reg; Haswell microarchitecture provides one register for the current core temperature.</P>
+<P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides one register for the current core temperature.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -185,7 +184,7 @@
 <H1>Counters available for one hardware thread per socket</H1>
 \anchor HASEP_POWER
 <H2>Power counter</H2>
-<P>The Intel&reg; Haswell microarchitecture provides measurements of the current power consumption through the RAPL interface.</P>
+<P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the current power consumption through the RAPL interface.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -212,7 +211,7 @@
 
 
 \anchor HASEP_BBOX
-<H2>BBOX counter</H2>
+<H2>Home Agent counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the Home Agent (HA) in the Uncore. The description from Intel&reg;:<BR>
 <I>The HA is responsible for the protocol side of memory interactions, including coherent and non-coherent home agent protocols (as defined in the Intel&reg;® QuickPath Interconnect Specification). Additionally, the HA is responsible for ordering memory reads/writes, coming in from the modular Ring, to a given address such that the iMC (memory controller).</I><BR>
 The HA hardware performance counters are exposed to the operating system through PCI interfaces. There are two of those interfaces for the HA. For systems where each socket has 12 or more cores, there are both HAs available. The name BBOX originates from the Nehalem EX Uncore monitoring where this functional unit is called BBOX.
@@ -224,19 +223,19 @@ The HA hardware performance counters are exposed to the operating system through
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>BBOX<0,1>C0</TD>
+  <TD>BBOX&lt;0,1&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>BBOX<0,1>C1</TD>
+  <TD>BBOX&lt;0,1&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>BBOX<0,1>C2</TD>
+  <TD>BBOX&lt;0,1&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>BBOX<0,1>C3</TD>
+  <TD>BBOX&lt;0,1&gt;C3</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -282,12 +281,12 @@ The HA hardware performance counters are exposed to the operating system through
 </TABLE>
 
 \anchor HASEP_SBOX
-<H2>SBOX counter</H2>
+<H2>Ring-to-Ring interface counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture manages the socket internal traffic through ring-based networks. Depending on the system's configuration there are multiple rings in one socket. The SBOXes organizes the traffic between the rings. The description from Intel&reg;:<BR>
 <I>The SBox manages the interface between the two Rings.<BR>
 The processor is composed of two independent rings connected via two sets of bi-directional buffered switches. Each set of bi-directional buffered switches is partitioned into two ingress/egress pairs. Further, each ingress/egress pair is associated with a ring stop on adjacent rings. This ring stop is termed an Sbo. The processor has up to 4 SBos depending on SKU. The Sbo can be simply thought of as a conduit for the ring, but must also help maintain ordering of traffic to ensure functional correctness in certain cases.
 </I><BR>
-The SBOX hardware performance counters are exposed to the operating system through the MSR interface. There are maximal four of those interfaces but not all must be present. The name SBOX originates from the Nehalem EX Uncore monitoring where the functional unit to the QPI network is called SBOX.
+The SBOX hardware performance counters are exposed to the operating system through the MSR interface. There are maximal four of those interfaces but not all must be present. The name SBOX originates from the Nehalem EX Uncore monitoring where the functional unit to the QPI network is called SBOX but it had a different duty..
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -296,19 +295,19 @@ The SBOX hardware performance counters are exposed to the operating system throu
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>SBOX<0-3>C0</TD>
+  <TD>SBOX&lt;0-3&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0-3>C1</TD>
+  <TD>SBOX&lt;0-3&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0-3>C2</TD>
+  <TD>SBOX&lt;0-3&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0-3>C3</TD>
+  <TD>SBOX&lt;0-3&gt;C3</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -347,11 +346,11 @@ The SBOX hardware performance counters are exposed to the operating system throu
 </TABLE>
 
 \anchor HASEP_QBOX
-<H2>QBOX counter</H2>
+<H2>QPI interface counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the QPI Link layer (QPI) in the Uncore. The description from Intel&reg;:<BR>
 <I>The Intel&reg; QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface. As such, it shares responsibility with the CBo(s) as the Intel&reg; QPI caching agent(s). It is responsible for converting CBo requests to Intel&reg; QPI messages (i.e. snoop generation and data response messages from the snoop response) as well as converting/forwarding ring messages to Intel&reg; QPI packets and vice versa.On Ivy Bridge, Intel&reg; QPI is split into two separate layers. The Intel&reg; QPI LL (link layer) is responsible for generating, transmitting, and receiving packets with the Intel&reg; QPI link.
 </I><BR>
-The QPI hardware performance counters are exposed to the operating system through PCI interfaces. There are two of those interfaces for the QPI. The actual amount of QBOX counters depend on the CPU core count of one socket. If your system has not all interfaces but interface 0 does not work, try the other ones. The QBOX was introduced for the Haswell EP microarchitecture, for older uncore-aware architectures the QBOX and the SBOX are the same.
+The QPI hardware performance counters are exposed to the operating system through PCI interfaces. There are two of those interfaces for the QPI. The actual amount of QBOX counters depend on the CPU core count of one socket. If your system has not all interfaces but interface 0 does not work, try the other ones. The QBOX was introduced for the Haswell EP microarchitecture, for older Uncore-aware architectures the QBOX and the SBOX are the same.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -360,36 +359,36 @@ The QPI hardware performance counters are exposed to the operating system throug
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>QBOX<0,1>C0</TD>
+  <TD>QBOX&lt;0,1&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>QBOX<0,1>C1</TD>
+  <TD>QBOX&lt;0,1&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>QBOX<0,1>C2</TD>
+  <TD>QBOX&lt;0,1&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>QBOX<0,1>C3</TD>
+  <TD>QBOX&lt;0,1&gt;C3</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>QBOX<0,1>FIX0</TD>
+  <TD>QBOX&lt;0,1&gt;FIX0</TD>
   <TD>QPI_RATE</TD>
 </TR>
 <TR>
-  <TD>QBOX<0,1>FIX1</TD>
+  <TD>QBOX&lt;0,1&gt;FIX1</TD>
   <TD>QPI_RX_IDLE</TD>
 </TR>
 <TR>
-  <TD>QBOX<0,1>FIX2</TD>
+  <TD>QBOX&lt;0,1&gt;FIX2</TD>
   <TD>QPI_RX_LLR</TD>
 </TR>
 </TABLE>
 
-<H3>Available Options (Only for QBOX<0,1>C<0,1,2,3> counters)</H3>
+<H3>Available Options (Only for QBOX&lt;0,1&gt;C&lt;0,1,2,3&gt; counters)</H3>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -460,7 +459,7 @@ The QPI hardware performance counters are exposed to the operating system throug
 </TABLE>
 
 \anchor HASEP_CBOX
-<H2>CBOX counter</H2>
+<H2>Last Level cache counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the LLC coherency engine in the Uncore. The description from Intel&reg;:<BR>
 <I>The LLC coherence engine (CBo) manages the interface between the core and the last level cache (LLC). All core transactions that access the LLC are directed from the core to a CBo via the ring interconnect. The CBo is responsible for managing data delivery from the LLC to the requesting core. It is also responsible for maintaining coherence between the cores within the socket that share the LLC; generating snoops and collecting snoop responses from the local cores when the MESIF protocol requires it.
 </I><BR>
@@ -473,19 +472,19 @@ The LLC hardware performance counters are exposed to the operating system throug
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>CBOX<0-17>C0</TD>
+  <TD>CBOX&lt;0-17&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>CBOX<0-17>C1</TD>
+  <TD>CBOX&lt;0-17&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>CBOX<0-17>C2</TD>
+  <TD>CBOX&lt;0-17&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>CBOX<0-17>C3</TD>
+  <TD>CBOX&lt;0-17&gt;C3</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -513,31 +512,31 @@ The LLC hardware performance counters are exposed to the operating system throug
 <TR>
   <TD>tid</TD>
   <TD>5 bit hex value</TD>
-  <TD>Set bits 0-4 in MSR_UNC_C<0-17>_PMON_BOX_FILTER register</TD>
+  <TD>Set bits 0-4 in MSR_UNC_C&lt;0-17&gt;_PMON_BOX_FILTER register</TD>
   <TD></TD>
 </TR>
 <TR>
   <TD>state</TD>
   <TD>6 bit hex value</TD>
-  <TD>Set bits 17-22 in MSR_UNC_C<0-17>_PMON_BOX_FILTER register</TD>
+  <TD>Set bits 17-22 in MSR_UNC_C&lt;0-17&gt;_PMON_BOX_FILTER register</TD>
   <TD>M: 0x28, F: 0x10, M: 0x08, E: 0x04, S: 0x02, I: 0x01</TD>
 </TR>
 <TR>
   <TD>nid</TD>
   <TD>16 bit hex value</TD>
-  <TD>Set bits 0-15 in MSR_UNC_C<0-17>_PMON_BOX_FILTER1 register</TD>
+  <TD>Set bits 0-15 in MSR_UNC_C&lt;0-17&gt;_PMON_BOX_FILTER1 register</TD>
   <TD>Note: Node 0 has value 0x0001</TD>
 </TR>
 <TR>
   <TD>opcode</TD>
   <TD>9 bit hex value</TD>
-  <TD>Set bits 20-28 in MSR_UNC_C<0-17>_PMON_BOX_FILTER1 register</TD>
+  <TD>Set bits 20-28 in MSR_UNC_C&lt;0-17&gt;_PMON_BOX_FILTER1 register</TD>
   <TD>A list of valid opcodes can be found in the <A HREF="http://www.Intel.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A>.</TD>
 </TR>
 <TR>
   <TD>match0</TD>
   <TD>2 bit hex address</TD>
-  <TD>Set bits 30-31 in MSR_UNC_C<0-17>_PMON_BOX_FILTER1 register</TD>
+  <TD>Set bits 30-31 in MSR_UNC_C&lt;0-17&gt;_PMON_BOX_FILTER1 register</TD>
   <TD>See the <A HREF="http://www.Intel.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for more information.</TD>
 </TR>
 </TABLE>
@@ -546,11 +545,11 @@ The LLC hardware performance counters are exposed to the operating system throug
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides an event LLC_LOOKUP which can be filtered with the 'state' option. If no 'state' is set, LIKWID sets the state to 0x1F, the default value to measure all lookups.</P>
 
 \anchor HASEP_UBOX
-<H2>UBOX counter</H2>
+<H2>Uncore management counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the management box in the Uncore. The description from Intel&reg;:<BR>
 <I>The UBox serves as the system configuration controller within the physical processor.
 </I><BR>
-The uncore management performance counters are exposed to the operating system through the MSR interface. The name UBOX originates from the Nehalem EX Uncore monitoring where those functional units are called UBOX.
+The Uncore management performance counters are exposed to the operating system through the MSR interface. The name UBOX originates from the Nehalem EX Uncore monitoring where those functional units are called UBOX.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -572,7 +571,7 @@ The uncore management performance counters are exposed to the operating system t
 </TR>
 </TABLE>
 
-<H3>Available Options (Only for UBOX<0,1> counters)</H3>
+<H3>Available Options (Only for UBOX&lt;0,1&gt; counters)</H3>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -595,12 +594,12 @@ The uncore management performance counters are exposed to the operating system t
 </TABLE>
 
 \anchor HASEP_WBOX
-<H2>WBOX counter</H2>
+<H2>Power control unit counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the power control unit (PCU) in the Uncore. The description from Intel&reg;:<BR>
 <I>The PCU is the primary Power Controller for the physical processor package.
 The uncore implements a power control unit acting as a core/uncore power and thermal manager. It runs its firmware on an internal micro-controller and coordinates the socket’s power states.
 </I><BR>
-The uncore management performance counters are exposed to the operating system through the MSR interface. The name WBOX originates from the Nehalem EX Uncore monitoring where those functional units are called WBOX.
+The Power control unit performance counters are exposed to the operating system through the MSR interface. The name WBOX originates from the Nehalem EX Uncore monitoring where those functional units are called WBOX.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -634,7 +633,7 @@ The uncore management performance counters are exposed to the operating system t
 </TR>
 </TABLE>
 
-<H3>Available Options (Only for WBOX<0-3> counters)</H3>
+<H3>Available Options (Only for WBOX&lt;0-3&gt; counters)</H3>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -681,11 +680,11 @@ The uncore management performance counters are exposed to the operating system t
 </TABLE>
 
 \anchor HASEP_IBOX
-<H2>IBOX counter</H2>
+<H2>IRP box counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the IRP box in the Uncore. The description from Intel&reg;:<BR>
 <I>IRP is responsible for maintaining coherency for IIO traffic that needs to be coherent (e.g. cross-socket P2P).
 </I><BR>
-The uncore management performance counters are exposed to the operating system through the PCI interface. The IBOX was introduced with the Intel&reg; Haswell EP/EN/EX microarchitecture.
+The uncore management performance counters are exposed to the operating system through the PCI interface. The IBOX was introduced with the Intel&reg; IvyBridge EP/EN/EX microarchitecture.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -694,11 +693,11 @@ The uncore management performance counters are exposed to the operating system t
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>IBOX<0,1>C0</TD>
+  <TD>IBOX&lt;0,1&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>IBOX<0,1>C1</TD>
+  <TD>IBOX&lt;0,1&gt;C1</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -726,12 +725,12 @@ The uncore management performance counters are exposed to the operating system t
 </TABLE>
 
 \anchor HASEP_MBOX
-<H2>MBOX counter</H2>
+<H2>Memory controller counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the integrated Memory Controllers (iMC) in the Uncore. The description from Intel&reg;:<BR>
 <I>The integrated Memory Controller provides the interface to DRAM and communicates to the rest of the uncore through the Home Agent (i.e. the iMC does not connect to the Ring).<BR>
 In conjunction with the HA, the memory controller also provides a variety of RAS features, such as ECC, lockstep, memory access retry, memory scrubbing, thermal throttling, mirroring, and rank sparing.
 </I><BR>
-The uncore management performance counters are exposed to the operating system through PCI interfaces. There may be two memory controllers in the system (E7-8800 v2). There are 4 different PCI devices per memory controller, each covering one memory channel. Each channel has 4 different general-purpose counters and one fixed counter for the DRAM clock. The four channels of the first memory controller are MBOX0-3, the four channels of the second memory controller (if available) are named MBOX4-7. The name MBOX originates from the Nehalem EX Uncore monitoring where those functional units are called MBOX.
+The integrated Memory Controllers performance counters are exposed to the operating system through PCI interfaces. There may be two memory controllers in the system (E7-8800 v2). There are 4 different PCI devices per memory controller, each covering one memory channel. Each channel has 4 different general-purpose counters and one fixed counter for the DRAM clock. The four channels of the first memory controller are MBOX0-3, the four channels of the second memory controller (if available) are named MBOX4-7. The name MBOX originates from the Nehalem EX Uncore monitoring where those functional units are called MBOX.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -740,28 +739,28 @@ The uncore management performance counters are exposed to the operating system t
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>MBOX<0-7>C0</TD>
+  <TD>MBOX&lt;0-7&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0-7>C1</TD>
+  <TD>MBOX&lt;0-7&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0-7>C2</TD>
+  <TD>MBOX&lt;0-7&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0-7>C3</TD>
+  <TD>MBOX&lt;0-7&gt;C3</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0-7>FIX</TD>
+  <TD>MBOX&lt;0-7&gt;FIX</TD>
   <TD>DRAM_CLOCKTICKS</TD>
 </TR>
 </TABLE>
 
-<H3>Available Options (Only for counter MBOX<0-7>C<0-3>)</H3>
+<H3>Available Options (Only for counter MBOX&lt;0-7&gt;C&lt;0-3&gt;)</H3>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -784,12 +783,12 @@ The uncore management performance counters are exposed to the operating system t
 </TABLE>
 
 \anchor HASEP_RBOX
-<H2>RBOX counter</H2>
+<H2>Ring-to-QPI counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the Ring-to-QPI (R3QPI) interface in the Uncore. The description from Intel&reg;:<BR>
 <I>R3QPI is the interface between the Intel&reg; QPI Link Layer, which packetizes requests, and the Ring.<BR>
 R3QPI is the interface between the ring and the Intel&reg; QPI Link Layer. It is responsible for translating between ring protocol packets and flits that are used for transmitting data across the Intel&reg; QPI interface. It performs credit checking between the local Intel&reg; QPI LL, the remote Intel&reg; QPI LL and other agents on the local ring.
 </I><BR>
-The uncore management performance counters are exposed to the operating system through PCI interfaces. Since the RBOXes manage the traffic from the LLC-connecting ring interface on the socket with the QPI interfaces (SBOXes), the amount is similar to the amount of SBOXes. See at SBOXes how many are available for which system configuration. The name RBOX originates from the Nehalem EX Uncore monitoring where those functional units are called RBOX.
+The Ring-to-QPI performance counters are exposed to the operating system through PCI interfaces. Since the RBOXes manage the traffic from the LLC-connecting ring interface on the socket with the QPI interfaces (SBOXes), the amount is similar to the amount of SBOXes. See at SBOXes how many are available for which system configuration. The name RBOX originates from the Nehalem EX Uncore monitoring where those functional units are called RBOX.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -798,15 +797,15 @@ The uncore management performance counters are exposed to the operating system t
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>RBOX<0,1,2>C0</TD>
+  <TD>RBOX&lt;0,1,2&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1,2>C1</TD>
+  <TD>RBOX&lt;0,1,2&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1,2>C2</TD>
+  <TD>RBOX&lt;0,1,2&gt;C2</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -834,11 +833,11 @@ The uncore management performance counters are exposed to the operating system t
 </TABLE>
 
 \anchor HASEP_PBOX
-<H2>PBOX counter</H2>
+<H2>Ring-to-PCIe counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the Ring-to-PCIe (R2PCIe) interface in the Uncore. The description from Intel&reg;:<BR>
 <I>R2PCIe represents the interface between the Ring and IIO traffic to/from PCIe.
 </I><BR>
-The uncore management performance counters are exposed to the operating system through a PCI interface. Independent of the system's configuration, there is only one Ring-to-PCIe interface. The name PBOX originates from the Nehalem EX Uncore monitoring where those functional units are called PBOX.
+The Ring-to-PCIe performance counters are exposed to the operating system through a PCI interface. Independent of the system's configuration, there is only one Ring-to-PCIe interface per CPU socket.
 </P>
 <H3>Counter and events</H3>
 <TABLE>

@@ -57,7 +57,7 @@
 
 \anchor BRD_PMC
 <H2>General-purpose counters</H2>
-<P>Commonly the Intel&reg; Broadwell microarchitecture provides 4 general-purpose counters consiting of a config and a counter register. They are core-local.</P>
+<P>Commonly the Intel&reg; Broadwell microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>

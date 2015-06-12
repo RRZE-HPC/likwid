@@ -63,7 +63,7 @@
 
 \anchor SNBEP_PMC
 <H2>PMC counters</H2>
-<P>Commonly the Intel&reg; SandyBridge microarchitecture provides 4 general-purpose counters consiting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
+<P>The Intel&reg; SandyBridge microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -194,7 +194,7 @@
 </TABLE>
 
 \anchor SNBEP_MBOX
-<H2>MBOX counter</H2>
+<H2>Memory controller counters</H2>
 <P>The Intel&reg; SandyBridge EP/EN microarchitecture provides measurements of the integrated Memory Controllers (iMC) in the Uncore. The description from Intel&reg;:<BR>
 <I>The integrated Memory Controller provides the interface to DRAM and communicates to the rest of the uncore through the Home Agent (i.e. the iMC does not connect to the Ring).<BR>
 In conjunction with the HA, the memory controller also provides a variety of RAS features, such as ECC, lockstep, memory access retry, memory scrubbing, thermal throttling, mirroring, and rank sparing.
@@ -208,28 +208,28 @@ The uncore management performance counters are exposed to the operating system t
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>MBOX<0-3>C0</TD>
+  <TD>MBOX&lt;0-3&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0-3>C1</TD>
+  <TD>MBOX&lt;0-3&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0-3>C2</TD>
+  <TD>MBOX&lt;0-3&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0-3>C3</TD>
+  <TD>MBOX&lt;0-3&gt;C3</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>MBOX<0-3>FIX</TD>
+  <TD>MBOX&lt;0-3&gt;FIX</TD>
   <TD>DRAM_CLOCKTICKS</TD>
 </TR>
 </TABLE>
 
-<H3>Available Options (Only for counter MBOX<0-3>C<0-3>)</H3>
+<H3>Available Options (Only for counter MBOX&lt;0-3&gt;C&lt;0-3&gt;)</H3>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -258,12 +258,12 @@ The uncore management performance counters are exposed to the operating system t
 </TABLE>
 
 \anchor SNBEP_CBOX
-<H2>CBOX counter</H2>
+<H2>Last Level cache counters</H2>
 <P>The Intel&reg; SandyBridge EP/EN microarchitecture provides measurements of the LLC coherency engine in the Uncore. The description from Intel&reg;:<BR>
 <I>The LLC coherence engine (CBo) manages the interface between the core and the last level cache (LLC). All core transactions that access the LLC are directed from the core to a CBo via the ring interconnect. The CBo is responsible for managing data delivery from the LLC to the requesting core. It is also responsible for maintaining coherence between the cores within the socket that share the
 LLC; generating snoops and collecting snoop responses from the local cores when the MESIF protocol requires it.
 </I><BR>
-The uncore management performance counters are exposed to the operating system through the MSR interface. SandyBridge EN/EP systems have maximal 8 CBOXes, each with 4 general-purpose counters. The name CBOX originates from the Nehalem EX Uncore monitoring where those functional units are called CBOX.
+The Last Level cache performance counters are exposed to the operating system through the MSR interface. SandyBridge EN/EP systems have maximal 8 CBOXes, each with 4 general-purpose counters. The name CBOX originates from the Nehalem EX Uncore monitoring where those functional units are called CBOX.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -272,19 +272,19 @@ The uncore management performance counters are exposed to the operating system t
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>CBOX<0-7>C0</TD>
+  <TD>CBOX&lt;0-7&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>CBOX<0-7>C1</TD>
+  <TD>CBOX&lt;0-7&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>CBOX<0-7>C2</TD>
+  <TD>CBOX&lt;0-7&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>CBOX<0-7>C3</TD>
+  <TD>CBOX&lt;0-7&gt;C3</TD>
   <TD>*</TD>
 </TR>
 </TABLE>
@@ -318,25 +318,25 @@ The uncore management performance counters are exposed to the operating system t
 <TR>
   <TD>opcode</TD>
   <TD>9 bit opcode identifier, see uncore performance monitoring guide for SandyBridge</TD>
-  <TD>Set bits 23-31 in CBOX filter register MSR_UNC_C<0-7>_PMON_BOX_FILTER</TD>
+  <TD>Set bits 23-31 in CBOX filter register MSR_UNC_C&lt;0-7&gt;_PMON_BOX_FILTER</TD>
   <TD>LIKWID checks whether the given value is a valid opcode. A list of all valid opcodes can be found in the <A HREF="http://www.intel.de/content/www/de/de/processors/xeon/xeon-e5-2600-uncore-guide.html">Intel&reg; E5-2600 Uncore monitoring guide</A></TD>
 </TR>
 <TR>
   <TD>state</TD>
   <TD>5 bit state representation</TD>
-  <TD>Set bits 18-22 in CBOX filter register MSR_UNC_C<0-7>_PMON_BOX_FILTER</TD>
+  <TD>Set bits 18-22 in CBOX filter register MSR_UNC_C&lt;0-7&gt;_PMON_BOX_FILTER</TD>
   <TD></TD>
 </TR>
 <TR>
   <TD>nid</TD>
   <TD>8 bit node ID</TD>
-  <TD>Set bits 10-17 in CBOX filter register MSR_UNC_C<0-7>_PMON_BOX_FILTER</TD>
+  <TD>Set bits 10-17 in CBOX filter register MSR_UNC_C&lt;0-7&gt;_PMON_BOX_FILTER</TD>
   <TD>Note that for Node ID 0 the hex value should be 0x01.</TD>
 </TR>
 <TR>
   <TD>tid</TD>
   <TD>5 bit thread ID value</TD>
-  <TD>Set bits 0-4 in CBOX filter register MSR_UNC_C<0-7>_PMON_BOX_FILTER</TD>
+  <TD>Set bits 0-4 in CBOX filter register MSR_UNC_C&lt;0-7&gt;_PMON_BOX_FILTER</TD>
   <TD>Bit 0 means physical or logical thread, bits 1-3 the core ID</TD>
 </TR>
 </TABLE>
@@ -345,7 +345,7 @@ The uncore management performance counters are exposed to the operating system t
 <P>The Intel&reg; SandyBridge EP/EN microarchitecture provides an event LLC_LOOKUP which can be filtered with the 'state' option. If no 'state' is set, LIKWID sets the state to 0x1F, the default value to measure all lookups.</P>
 
 \anchor SNBEP_UBOX
-<H2>UBOX counter</H2>
+<H2>Uncore management counters</H2>
 <P>The Intel&reg; SandyBridge EP/EN microarchitecture provides measurements of the management box in the Uncore. The description from Intel&reg;:<BR>
 <I>The UBox serves as the system configuration controller for the Intel&reg; Xeon Processor E5-2600 family uncore.<BR>
 In this capacity, the UBox acts as the central unit for a variety of functions:<BR>
@@ -355,7 +355,7 @@ In this capacity, the UBox acts as the central unit for a variety of functions:<
 <LI>The UBox serves as the system lock master used when quiescing the platform (e.g., Intel&reg; QPI bus lock).</LI>
 </UL>
 </I><BR>
-The uncore management performance counters are exposed to the operating system through the MSR interface. The name UBOX originates from the Nehalem EX Uncore monitoring where those functional units are called UBOX.
+The Uncore management performance counters are exposed to the operating system through the MSR interface. The name UBOX originates from the Nehalem EX Uncore monitoring where those functional units are called UBOX.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -377,7 +377,7 @@ The uncore management performance counters are exposed to the operating system t
 </TR>
 </TABLE>
 
-<H3>Available Options (Only for counter UBOX<0,1>)</H3>
+<H3>Available Options (Only for counter UBOX&lt;0,1&gt;)</H3>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -406,7 +406,7 @@ The uncore management performance counters are exposed to the operating system t
 </TABLE>
 
 \anchor SNBEP_SBOX
-<H2>SBOX counter</H2>
+<H2>Intel&reg; QPI Link Layer counters</H2>
 <P>The Intel&reg; SandyBridge EP/EN microarchitecture provides measurements of the QPI Link layer (QPI) in the Uncore. The description from Intel&reg;:<BR>
 <I>The Intel&reg; QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface. As such, it shares responsibility with the CBo(s) as the Intel&reg; QPI caching agent(s). It is responsible for converting CBo requests to Intel&reg; QPI messages (i.e. snoop generation and data response messages from the snoop response) as well as converting/forwarding ring
 messages to Intel&reg; QPI packets and vice versa.<BR>
@@ -422,28 +422,28 @@ The QPI hardware performance counters are exposed to the operating system throug
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>SBOX<0,1>C0</TD>
+  <TD>SBOX&lt;0,1&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0,1>C1</TD>
+  <TD>SBOX&lt;0,1&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0,1>C2</TD>
+  <TD>SBOX&lt;0,1&gt;C2</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0,1>C3</TD>
+  <TD>SBOX&lt;0,1&gt;C3</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>SBOX<0,1>FIX</TD>
+  <TD>SBOX&lt;0,1&gt;FIX</TD>
   <TD>QPI_RATE, QPI_SLOW_MODE</TD>
 </TR>
 </TABLE>
 
-<H3>Available Options (Only for counter SBOX<0,1>C<0-3>)</H3>
+<H3>Available Options (Only for counter SBOX&lt;0,1&gt;C&lt;0-3&gt;)</H3>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -607,7 +607,7 @@ The PCU performance counters are exposed to the operating system through the MSR
 </TR>
 </TABLE>
 
-<H3>Available Options (Only for WBOX<0-3> counters)</H3>
+<H3>Available Options (Only for WBOX&lt;0-3&gt; counters)</H3>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -673,15 +673,15 @@ The R3QPI performance counters are exposed to the operating system through PCI i
   <TH>Event name</TH>
 </TR>
 <TR>
-  <TD>RBOX<0,1>C0</TD>
+  <TD>RBOX&lt;0,1&gt;C0</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1>C1</TD>
+  <TD>RBOX&lt;0,1&gt;C1</TD>
   <TD>*</TD>
 </TR>
 <TR>
-  <TD>RBOX<0,1>C2</TD>
+  <TD>RBOX&lt;0,1&gt;C2</TD>
   <TD>*</TD>
 </TR>
 </TABLE>

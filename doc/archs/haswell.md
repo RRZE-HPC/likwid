@@ -55,7 +55,7 @@
 
 \anchor HAS_PMC
 <H2>General-purpose counters</H2>
-<P>Commonly the Intel&reg; Haswell microarchitecture provides 4 general-purpose counters consiting of a config and a counter register. They are core-local.</P>
+<P>The Intel&reg; Haswell microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -150,10 +150,10 @@
   <TD>match1</TD>
   <TD>22 bit hex value</TD>
   <TD>Input value is written to bits 16-37 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and the event files at <A HREF="https://download.01.org/perfmon/HSW">https://download.01.org/perfmon/HSW</A>.</TD>
 </TR>
 </TABLE>
-<P>The event MEM_TRANS_RETIRED_LOAD_LAT is not available because it needs programming of PEBS registers. PEBS is a kernel-level measurement facility. Although we can programm it from user-space, the results are always 0 and the event files at <A HREF="https://download.01.org/perfmon/HSW">https://download.01.org/perfmon/HSW</A>.</P>
+<P>The event MEM_TRANS_RETIRED_LOAD_LAT is not available because it needs programming of PEBS registers. PEBS is a kernel-level measurement facility. Although we can program it from user-space, the results are always 0.</P>
 
 \anchor HAS_THERMAL
 <H2>Thermal counter</H2>
