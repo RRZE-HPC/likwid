@@ -703,7 +703,7 @@ end
 
 likwid.get_groups = get_groups
 
-local function new_groupdata(eventString, isIntel)
+local function new_groupdata(eventString, fix_ctrs)
     local gdata = {}
     local num_events = 1
     gdata["Events"] = {}
@@ -713,14 +713,14 @@ local function new_groupdata(eventString, isIntel)
     if s == nil then
         return gdata
     end
-    if isIntel == 1 then
-        if not eventString:match("FIXC2") then
+    if fix_ctrs > 0 then
+        if not eventString:match("FIXC2") and fix_ctrs == 3 then
             eventString = "CPU_CLK_UNHALTED_REF:FIXC2,"..eventString
         end
-        if not eventString:match("FIXC1") then
+        if not eventString:match("FIXC1") and fix_ctrs >= 2 then
             eventString = "CPU_CLK_UNHALTED_CORE:FIXC1,"..eventString
         end
-        if not eventString:match("FIXC0") then
+        if not eventString:match("FIXC0") and fix_ctrs >= 1 then
             eventString = "INSTR_RETIRED_ANY:FIXC0,"..eventString
         end
     end
@@ -753,7 +753,7 @@ local function get_groupdata(group)
     for i, a in pairs(groups) do
         if (a == group) then group_exist = 1 end
     end
-    if (group_exist == 0) then return new_groupdata(group, cpuinfo["isIntel"]) end
+    if (group_exist == 0) then return new_groupdata(group, cpuinfo["perf_num_fixed_ctr"]) end
     
     local f = assert(io.open(likwid.groupfolder .. "/" .. cpuinfo["short_name"] .. "/" .. group .. ".txt", "r"))
     local t = f:read("*all")
