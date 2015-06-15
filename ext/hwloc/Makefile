@@ -1,4 +1,4 @@
-SRC_DIRS    = ./src
+SRC_DIRS    = ./hwloc
 MAKE_DIR   = ../../make
 
 #DO NOT EDIT BELOW

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013 Inria.  All rights reserved.
+ * Copyright © 2013-2014 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -43,6 +43,13 @@ extern "C" {
  * More complex differences such as adding or removing objects cannot
  * be represented in the difference structures and therefore return
  * errors.
+ *
+ * It means that there is no need to apply the difference when
+ * looking at the tree organization (how many levels, how many
+ * objects per level, what kind of objects, CPU and node sets, etc)
+ * and when binding to objects.
+ * However the difference must be applied when looking at object
+ * attributes such as the name, the memory size or info attributes.
  *
  * @{
  */
@@ -121,7 +128,7 @@ typedef union hwloc_topology_diff_u {
   struct hwloc_topology_diff_generic_s {
     /* each part of the union must start with these */
     hwloc_topology_diff_type_t type;
-    union hwloc_topology_diff_u * next;
+    union hwloc_topology_diff_u * next; /* pointer to the next element of the list, or NULL */
   } generic;
 
   /* A difference in an object attribute. */
@@ -153,20 +160,20 @@ typedef union hwloc_topology_diff_u {
  * simultaneously.
  *
  * If the difference between 2 objects is too complex to be represented
- * (for instance if some objects are added or removed), a special diff
- * entry of type HWLOC_TOPOLOGY_DIFF_TOO_COMPLEX is queued.
- * The computation of the diff does not continue under these objects.
+ * (for instance if some objects have different types, or different numbers
+ * of children), a special diff entry of type HWLOC_TOPOLOGY_DIFF_TOO_COMPLEX
+ * is queued.
+ * The computation of the diff does not continue below these objects.
  * So each such diff entry means that the difference between two subtrees
  * could not be computed.
  *
  * \return 0 if the difference can be represented properly.
  *
- * \return 0 with \p diff pointing NULL if there is no difference between
- * the topologies.
+ * \return 0 with \p diff pointing to NULL if there is no difference
+ * between the topologies.
  *
- * \return 1 if the difference is too complex (for instance if some objects are added
- * or removed), some entries in the list will be of type HWLOC_TOPOLOGY_DIFF_TOO_COMPLEX
- * and 1 is returned.
+ * \return 1 if the difference is too complex (see above). Some entries in
+ * the list will be of type HWLOC_TOPOLOGY_DIFF_TOO_COMPLEX.
  *
  * \return -1 on any other error.
  *
@@ -177,10 +184,10 @@ typedef union hwloc_topology_diff_u {
  * \note The output diff can only be exported to XML or passed to
  * hwloc_topology_diff_apply() if 0 was returned, i.e. if no entry of type
  * HWLOC_TOPOLOGY_DIFF_TOO_COMPLEX is listed.
- * 
+ *
  * \note The output diff may be modified by removing some entries from
- * the list. The removed entries should be freed by passing them as a list
- * to hwloc_topology_diff_destroy().
+ * the list. The removed entries should be freed by passing them to
+ * to hwloc_topology_diff_destroy() (possible as another list).
 */
 HWLOC_DECLSPEC int hwloc_topology_diff_build(hwloc_topology_t topology, hwloc_topology_t newtopology, unsigned long flags, hwloc_topology_diff_t *diff);
 
@@ -198,16 +205,16 @@ enum hwloc_topology_diff_apply_flags_e {
  * \p flags is an OR'ed set of hwloc_topology_diff_apply_flags_e.
  *
  * The new topology is modified in place. hwloc_topology_dup()
- * may be used to duplicate before patching.
+ * may be used to duplicate it before patching.
  *
  * If the difference cannot be applied entirely, all previous applied
- * portions are unapplied before returning.
+ * elements are unapplied before returning.
  *
  * \return 0 on success.
  *
  * \return -N if applying the difference failed while trying
  * to apply the N-th part of the difference. For instance -1
- * is returned if the very first difference portion could not
+ * is returned if the very first difference element could not
  * be applied.
  */
 HWLOC_DECLSPEC int hwloc_topology_diff_apply(hwloc_topology_t topology, hwloc_topology_diff_t diff, unsigned long flags);
