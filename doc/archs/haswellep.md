@@ -22,7 +22,7 @@
 <H1>Counters available for each hardware thread</H1>
 \anchor HASEP_FIXED
 <H2>Fixed-purpose counters</H2>
-<P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event. They are core-local.</P>
+<P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -66,7 +66,7 @@
 
 \anchor HASEP_PMC
 <H2>General-purpose counters</H2>
-<P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local.</P>
+<P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides 4 general-purpose counters consisting of a config and a counter register.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -155,16 +155,16 @@
   <TD>match0</TD>
   <TD>16 bit hex value</TD>
   <TD>Input value masked with 0x8FFF and written to bits 0-15 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and <A HREF="https://download.01.org/perfmon/SLM">https://download.01.org/perfmon/HSX</A>.</TD>
 </TR>
 <TR>
   <TD>match1</TD>
   <TD>22 bit hex value</TD>
   <TD>Input value is written to bits 16-37 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and <A HREF="https://download.01.org/perfmon/SLM">https://download.01.org/perfmon/HSX</A>.</TD>
 </TR>
 </TABLE>
-<P>The event MEM_TRANS_RETIRED_LOAD_LAT is not available because it needs programming of PEBS registers. PEBS is a kernel-level measurement facility. Although we can programm it from user-space, the results are always 0.</P>
+<P>The event MEM_TRANS_RETIRED_LOAD_LATENCY is not available because it needs programming of PEBS registers. PEBS is a kernel-level measurement facility. Although we can programm it from user-space, the results are always 0.</P>
 
 \anchor HASEP_THERMAL
 <H2>Thermal counter</H2>
@@ -213,8 +213,9 @@
 \anchor HASEP_BBOX
 <H2>Home Agent counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the Home Agent (HA) in the Uncore. The description from Intel&reg;:<BR>
-<I>The HA is responsible for the protocol side of memory interactions, including coherent and non-coherent home agent protocols (as defined in the Intel&reg;® QuickPath Interconnect Specification). Additionally, the HA is responsible for ordering memory reads/writes, coming in from the modular Ring, to a given address such that the iMC (memory controller).</I><BR>
-The HA hardware performance counters are exposed to the operating system through PCI interfaces. There are two of those interfaces for the HA. For systems where each socket has 12 or more cores, there are both HAs available. The name BBOX originates from the Nehalem EX Uncore monitoring where this functional unit is called BBOX.
+<I>Each HA is responsible for the protocol side of memory interactions, including coherent and non-coherent home agent protocols (as defined in the Intel® QuickPath Interconnect Specification). Additionally, the HA is responsible for ordering memory reads/writes, coming in from the modular Ring, to a given address such that the IMC (memory controller).
+</I><BR>
+The Home Agent performance counters are exposed to the operating system through PCI interfaces. There are two of those interfaces for the HA. For systems where each socket has 12 or more cores, there are both HAs available. The name BBOX originates from the Nehalem EX Uncore monitoring where this functional unit is called BBOX.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -348,7 +349,7 @@ The SBOX hardware performance counters are exposed to the operating system throu
 \anchor HASEP_QBOX
 <H2>QPI interface counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the QPI Link layer (QPI) in the Uncore. The description from Intel&reg;:<BR>
-<I>The Intel&reg; QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface. As such, it shares responsibility with the CBo(s) as the Intel&reg; QPI caching agent(s). It is responsible for converting CBo requests to Intel&reg; QPI messages (i.e. snoop generation and data response messages from the snoop response) as well as converting/forwarding ring messages to Intel&reg; QPI packets and vice versa.On Ivy Bridge, Intel&reg; QPI is split into two separate layers. The Intel&reg; QPI LL (link layer) is responsible for generating, transmitting, and receiving packets with the Intel&reg; QPI link.
+<I>The Intel&reg; QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface. As such, it shares responsibility with the CBo(s) as the Intel&reg; QPI caching agent(s). It is responsible for converting CBo requests to Intel&reg; QPI messages (i.e. snoop generation and data response messages from the snoop response) as well as converting/forwarding ring messages to Intel&reg; QPI packets and vice versa. On Intel&reg; Xeon processor E5 v3 family, Intel&reg; QPI is split into two separate layers. The Intel&reg; QPI LL (link layer) is responsible for generating, transmitting, and receiving packets with the Intel&reg; QPI link.
 </I><BR>
 The QPI hardware performance counters are exposed to the operating system through PCI interfaces. There are two of those interfaces for the QPI. The actual amount of QBOX counters depend on the CPU core count of one socket. If your system has not all interfaces but interface 0 does not work, try the other ones. The QBOX was introduced for the Haswell EP microarchitecture, for older Uncore-aware architectures the QBOX and the SBOX are the same.
 </P>
@@ -461,7 +462,8 @@ The QPI hardware performance counters are exposed to the operating system throug
 \anchor HASEP_CBOX
 <H2>Last Level cache counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the LLC coherency engine in the Uncore. The description from Intel&reg;:<BR>
-<I>The LLC coherence engine (CBo) manages the interface between the core and the last level cache (LLC). All core transactions that access the LLC are directed from the core to a CBo via the ring interconnect. The CBo is responsible for managing data delivery from the LLC to the requesting core. It is also responsible for maintaining coherence between the cores within the socket that share the LLC; generating snoops and collecting snoop responses from the local cores when the MESIF protocol requires it.
+<I>The LLC coherence engine (CBo) manages the interface between the core and the last level cache (LLC). All core transactions that access the LLC are directed from the core to a CBo via the ring interconnect. The CBo is responsible for managing data delivery
+from the LLC to the requesting core. It is also responsible for maintaining coherence between the cores within the socket that share the LLC; generating snoops and collecting snoop responses from the local cores when the MESIF protocol requires it.
 </I><BR>
 The LLC hardware performance counters are exposed to the operating system through the MSR interface. The maximal amount of supported coherency engines for the Intel&reg; Haswell EP/EN/EX microarchitecture is 17. E7-8800 v2 systems have all 17 engines, the E5-2600 v2 only 10 of them and the E5-1600 v2 only 6. It may be possible that your systems does not have all CBOXes, LIKWID will skip the unavailable ones in the setup phase. The name CBOX originates from the Nehalem EX Uncore monitoring where those functional units are called CBOX.
 </P>
@@ -547,7 +549,12 @@ The LLC hardware performance counters are exposed to the operating system throug
 \anchor HASEP_UBOX
 <H2>Uncore management counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the management box in the Uncore. The description from Intel&reg;:<BR>
-<I>The UBox serves as the system configuration controller within the physical processor.
+<I>The UBox serves as the system configuration controller within the physical processor. In this capacity, the UBox acts as the central unit for a variety of functions:
+<UL>
+<LI>The master for reading and writing physically distributed registers across Intel&reg; Xeon processor E5 v3 family using the Message Channel.</LI>
+<LI>The UBox is the intermediary for interrupt traffic, receiving interrupts from the system and dispatching interrupts to the appropriate core.</LI>
+<LI>The UBox serves as the system lock master used when quiescing the platform (e.g., Intel&reg; QPI bus lock).</LI>
+</UL>
 </I><BR>
 The Uncore management performance counters are exposed to the operating system through the MSR interface. The name UBOX originates from the Nehalem EX Uncore monitoring where those functional units are called UBOX.
 </P>
@@ -596,10 +603,9 @@ The Uncore management performance counters are exposed to the operating system t
 \anchor HASEP_WBOX
 <H2>Power control unit counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the power control unit (PCU) in the Uncore. The description from Intel&reg;:<BR>
-<I>The PCU is the primary Power Controller for the physical processor package.
-The uncore implements a power control unit acting as a core/uncore power and thermal manager. It runs its firmware on an internal micro-controller and coordinates the socket’s power states.
+<I>The PCU is the primary Power Controller for the Intel&reg; Xeon processor E5 v3 family. Intel&reg; Xeon processor E5 v3 family uncore implements a power control unit acting as a core/uncore power and thermal manager. It runs its firmware on an internal micro-controller and coordinates the socket’s power states.
 </I><BR>
-The Power control unit performance counters are exposed to the operating system through the MSR interface. The name WBOX originates from the Nehalem EX Uncore monitoring where those functional units are called WBOX.
+The PCU performance counters are exposed to the operating system through the MSR interface. The name WBOX originates from the Nehalem EX Uncore monitoring where those functional units are called WBOX.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -683,8 +689,9 @@ The Power control unit performance counters are exposed to the operating system 
 <H2>IRP box counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the IRP box in the Uncore. The description from Intel&reg;:<BR>
 <I>IRP is responsible for maintaining coherency for IIO traffic that needs to be coherent (e.g. cross-socket P2P).
-</I><BR>
-The uncore management performance counters are exposed to the operating system through the PCI interface. The IBOX was introduced with the Intel&reg; IvyBridge EP/EN/EX microarchitecture.
+</I>
+
+The IRP box counters are exposed to the operating system through the PCI interface. The IBOX was introduced with the Intel&reg; IvyBridge EP/EN/EX microarchitecture.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -727,7 +734,7 @@ The uncore management performance counters are exposed to the operating system t
 \anchor HASEP_MBOX
 <H2>Memory controller counters</H2>
 <P>The Intel&reg; Haswell EP/EN/EX microarchitecture provides measurements of the integrated Memory Controllers (iMC) in the Uncore. The description from Intel&reg;:<BR>
-<I>The integrated Memory Controller provides the interface to DRAM and communicates to the rest of the uncore through the Home Agent (i.e. the iMC does not connect to the Ring).<BR>
+<I>The Intel&reg; Xeon processor E5 v3 family integrated Memory Controller provides the interface to DRAM and communicates to the rest of the uncore through the Home Agent (i.e. the IMC does not connect to the Ring).<BR>
 In conjunction with the HA, the memory controller also provides a variety of RAS features, such as ECC, lockstep, memory access retry, memory scrubbing, thermal throttling, mirroring, and rank sparing.
 </I><BR>
 The integrated Memory Controllers performance counters are exposed to the operating system through PCI interfaces. There may be two memory controllers in the system (E7-8800 v2). There are 4 different PCI devices per memory controller, each covering one memory channel. Each channel has 4 different general-purpose counters and one fixed counter for the DRAM clock. The four channels of the first memory controller are MBOX0-3, the four channels of the second memory controller (if available) are named MBOX4-7. The name MBOX originates from the Nehalem EX Uncore monitoring where those functional units are called MBOX.

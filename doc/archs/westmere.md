@@ -6,13 +6,13 @@
 <UL>
 <LI>\ref WES_FIXED "Fixed-purpose counters"</LI>
 <LI>\ref WES_PMC "General-purpose counters"</LI>
-<LI>\ref WES_UNCORE "General-purpose counters for the Uncore"</LI>
+<LI>\ref WES_UNCORE "Uncore counters"</LI>
 </UL>
 
 <H1>Counters available for each hardware thread</H1>
 \anchor WES_FIXED
 <H2>Fixed-purpose counters</H2>
-<P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event. They are core-local, hence each hardware thread has its own set of fixed counters.</P>
+<P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -56,7 +56,7 @@
 
 \anchor WES_PMC
 <H2>General-purpose counters</H2>
-<P>The Intel&reg; Westmere microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
+<P>The Intel&reg; Westmere microarchitecture provides 4 general-purpose counters consisting of a config and a counter register.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -133,20 +133,20 @@
   <TD>match0</TD>
   <TD>8 bit hex value</TD>
   <TD>Input value masked with 0xFF and written to bits 0-7 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and the event files at <A HREF="https://download.01.org/perfmon/WSM-EP-SP">https://download.01.org/perfmon/WSM-EP-SP</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and <A HREF="https://download.01.org/perfmon/WSM-EP-SP">https://download.01.org/perfmon/WSM-EP-SP</A>.</TD>
 </TR>
 <TR>
   <TD>match1</TD>
   <TD>8 bit hex value</TD>
   <TD>Input value masked with 0xF7 and written to bits 8-15 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and the event files at <A HREF="https://download.01.org/perfmon/WSM-EP-SP">https://download.01.org/perfmon/WSM-EP-SP</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and <A HREF="https://download.01.org/perfmon/WSM-EP-SP">https://download.01.org/perfmon/WSM-EP-SP</A>.</TD>
 </TR>
 </TABLE>
 
 <H1>Counters available for one hardware thread per socket</H1>
 \anchor WES_UNCORE
-<H2>Uncore general-purpose counters</H2>
-<P>The Intel&reg; Westmere microarchitecture provides 8 general-purpose counters consisting of a config and a counter register. Moreover, there is a fixed-purpose counter to measure the clock of the Uncore.</P>
+<H2>Uncore counters</H2>
+<P>The Intel&reg; Westmere microarchitecture provides 8 general-purpose counters for the uncpre consisting of a config and a counter register. Moreover, there is a fixed-purpose counter to measure the clock of the uncore.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>

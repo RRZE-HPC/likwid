@@ -10,7 +10,7 @@
 
 \anchor KAB_PMC
 <H2>General-purpose counters</H2>
-<P>The AMD&reg; Kabini microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
+<P>The AMD&reg; Kabini microarchitecture provides 4 general-purpose counters consisting of a config and a counter register.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -72,7 +72,7 @@
 <H1>Counters available for one hardware thread per shared L2 cache</H1>
 \anchor KAB_CPMC
 <H2>L2 general-purpose counters</H2>
-<P>The AMD&reg; Kabini microarchitecture provides 4 general-purpose counters for measuring L2 cache events. They consist of a config and a counter register. They are tile-local, hence one hardware thread of all sharing a L2 cache can measure the events.</P>
+<P>The AMD&reg; Kabini microarchitecture provides 4 general-purpose counters for measuring L2 cache events. They consist of a config and a counter register.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>

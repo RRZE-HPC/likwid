@@ -11,7 +11,7 @@
 <H1>Counters available for each hardware thread</H1>
 \anchor HAS_FIXED
 <H2>Fixed-purpose counters</H2>
-<P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event. They are core-local.</P>
+<P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -55,7 +55,7 @@
 
 \anchor HAS_PMC
 <H2>General-purpose counters</H2>
-<P>The Intel&reg; Haswell microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local.</P>
+<P>The Intel&reg; Haswell microarchitecture provides 4 general-purpose counters consisting of a config and a counter register.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -144,16 +144,16 @@
   <TD>match0</TD>
   <TD>16 bit hex value</TD>
   <TD>Input value masked with 0x8077 and written to bits 0-15 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and the event files at <A HREF="https://download.01.org/perfmon/HSW">https://download.01.org/perfmon/HSW</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and <A HREF="https://download.01.org/perfmon/HSW">https://download.01.org/perfmon/HSW</A>.</TD>
 </TR>
 <TR>
   <TD>match1</TD>
   <TD>22 bit hex value</TD>
   <TD>Input value is written to bits 16-37 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and the event files at <A HREF="https://download.01.org/perfmon/HSW">https://download.01.org/perfmon/HSW</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and <A HREF="https://download.01.org/perfmon/HSW">https://download.01.org/perfmon/HSW</A>.</TD>
 </TR>
 </TABLE>
-<P>The event MEM_TRANS_RETIRED_LOAD_LAT is not available because it needs programming of PEBS registers. PEBS is a kernel-level measurement facility. Although we can program it from user-space, the results are always 0.</P>
+<P>The event MEM_TRANS_RETIRED_LOAD_LATENCY is not available because it needs programming of PEBS registers. PEBS is a kernel-level measurement facility. Although we can program it from user-space, the results are always 0.</P>
 
 \anchor HAS_THERMAL
 <H2>Thermal counter</H2>

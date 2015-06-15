@@ -1,6 +1,6 @@
 /*! \page westmereex Intel&reg; Westmere EX
 
-<P>The Intel&reg; Westmere EX microarchitecture has the same features as the Intel&reg; Westmere architecture. There are some additional features like a second OFFCORE_RESPONSE register and an addr/opcode matching unit for general-purpose counters in the Uncore.</P>
+<P>The Intel&reg; Westmere EX microarchitecture has the same features as the Intel&reg; Westmere architecture. There are some additional features like a second OFFCORE_RESPONSE register and an addr/opcode matching unit for general-purpose counters in the uncore.</P>
 
 <H1>Available performance monitors for the Intel&reg; Westmere EX microarchitecture</H1>
 <UL>
@@ -18,7 +18,7 @@
 <H1>Counters available for each hardware thread</H1>
 \anchor WESEX_FIXED
 <H2>Fixed-purpose counters</H2>
-<P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event. They are core-local, hence each hardware thread has its own set of fixed counters.</P>
+<P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -145,7 +145,7 @@
 <H1>Counters available for one hardware thread per socket</H1>
 \anchor WESEX_MBOX
 <H2>MBOX counters</H2>
-<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the memory controllers in the Uncore. The description from Intel&reg;:<BR>
+<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the memory controllers in the uncore. The description from Intel&reg;:<BR>
 <I>The memory controller interfaces to the Intel&reg; 7500 Scalable Memory Buffers and translates read and write commands into specific Intel&reg; Scalable Memory Interconnect (Intel&reg; SMI) operations. Intel SMI is based on the FB-DIMM architecture, but the Intel 7500 Scalable Memory Buffer is not an AMB2 device and has significant exceptions to the FB-DIMM2 architecture. The memory controller also provides a variety of RAS features, such as ECC, memory scrubbing, thermal throttling, mirroring, and DIMM sparing. Each socket has two independent memory controllers, and each memory controller has two Intel SMI channels that operate in lockstep.
 </I><BR>
 The Intel&reg; Westmere EX microarchitecture has 2 memory controllers, each with 6 general-purpose counters. They are exposed through the MSR interface to the operating system kernel. The MBOX and RBOX setup routines are taken from Likwid 3, they are not as flexible as the newer setup routines but programming of the MBOXes and RBOXes is tedious for Westmere EX. It is not possible to specify a FVID (Fill Victim Index) for the MBOX or IPERF option for RBOXes.
@@ -210,8 +210,8 @@ The Intel&reg; Westmere EX microarchitecture has 2 memory controllers, each with
 
 \anchor WESEX_BBOX
 <H2>BBOX counters</H2>
-<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the Home Agent in the Uncore. The description from Intel&reg;:<BR>
-<I>The B-Box is responsible for the protocol side of memory interactions, including coherent and non-coherent home agent protocols (as defined in the Intel® QuickPath Interconnect Specification). Additionally, the B-Box is responsible for ordering memory reads/writes to a given address such that the M-Box does not have to perform this conflict checking. All requests for memory attached to the coupled M-Box must first be ordered through the B-Box.
+<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the Home Agent in the uncore. The description from Intel&reg;:<BR>
+<I>The B-Box is responsible for the protocol side of memory interactions, including coherent and non-coherent home agent protocols (as defined in the Intel&reg; QuickPath Interconnect Specification). Additionally, the B-Box is responsible for ordering memory reads/writes to a given address such that the M-Box does not have to perform this conflict checking. All requests for memory attached to the coupled M-Box must first be ordered through the B-Box.
 </I><BR>
 The memory traffic in an Intel&reg; Westmere EX system is controller by the Home Agents. Each MBOX has a corresponding BBOX. Each BBOX offers 4 general-purpose counters. They are exposed through the MSR interface to the operating system kernel.
 </P>
@@ -250,19 +250,19 @@ The memory traffic in an Intel&reg; Westmere EX system is controller by the Home
   <TD>match0</TD>
   <TD>60 bit hex value</TD>
   <TD>Set bits 0-59 in MSR_B&lt;0,1&gt;_PMON_MATCH register</TD>
-  <TD>For register layout and valid settings see <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e7-family-uncore-performance-programming-guide.html">Intel&reg; Xeon&reg; Processor E7 Family Uncore Performance Monitoring Guide</A></TD>
+  <TD>For register layout and valid settings see <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e7-family-uncore-performance-programming-guide.html">Intel&reg; Xeon&reg; Processor E7 Family uncore Performance Monitoring Guide</A></TD>
 </TR>
 <TR>
   <TD>mask0</TD>
   <TD>60 bit hex value</TD>
   <TD>Set bits 0-59 in MSR_B&lt;0,1&gt;_PMON_MASK register</TD>
-  <TD>For register layout and valid settings see <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e7-family-uncore-performance-programming-guide.html">Intel&reg; Xeon&reg; Processor E7 Family Uncore Performance Monitoring Guide</A></TD>
+  <TD>For register layout and valid settings see <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e7-family-uncore-performance-programming-guide.html">Intel&reg; Xeon&reg; Processor E7 Family uncore Performance Monitoring Guide</A></TD>
 </TR>
 </TABLE>
 
 \anchor WESEX_RBOX
 <H2>RBOX counters</H2>
-<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the crossbar router in the Uncore. The description from Intel&reg;:<BR>
+<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the crossbar router in the uncore. The description from Intel&reg;:<BR>
 <I>The Crossbar Router (R-Box) is a 8 port switch/router implementing the Intel&reg; QuickPath Interconnect Link and Routing layers. The R-Box is responsible for routing and transmitting all intra- and inter-processor communication.
 </I><BR>
 The Intel&reg; Westmere EX microarchitecture has two interfaces to the RBOX although each socket contains only one crossbar router, RBOX0 is the left part and RBOX1 is the right part of the single RBOX. Each RBOX side offers 8 general-purpose counters. They are exposed through the MSR interface to the operating system kernel. The MBOX and RBOX setup routines are taken from Likwid 3, they are not as flexible as the newer setup routines but programming of the MBOXes and RBOXes is tedious for Westmere EX. It is not possible to specify a FVID (Fill Victim Index) for the MBOX or IPERF option for RBOXes.
@@ -309,7 +309,7 @@ The Intel&reg; Westmere EX microarchitecture has two interfaces to the RBOX alth
 
 \anchor WESEX_CBOX
 <H2>CBOX counters</H2>
-<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the LLC coherency engine in the Uncore. The description from Intel&reg;:<BR>
+<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the LLC coherency engine in the uncore. The description from Intel&reg;:<BR>
 <I>For the Intel Xeon Processor 7500 Series, the LLC coherence engine (C-Box) manages the interface between the core and the last level cache (LLC). All core transactions that access the LLC are directed from the core to a C-Box via the ring interconnect. The C-Box is responsible for managing data delivery from the LLC to the requesting core. It is also responsible for maintaining coherence between the cores within the socket that share the LLC; generating snoops and collecting snoop responses to the local cores when the MESI protocol requires it.<BR>
 The C-Box is also the gate keeper for all Intel&reg; QuickPath Interconnect (Intel&reg; QPI) messages that originate in the core and is responsible for ensuring that all Intel QuickPath Interconnect messages that pass through the socket’s LLC remain coherent.
 </I><BR>
@@ -376,7 +376,7 @@ The Intel&reg; Westmere EX microarchitecture has 10 CBOX instances. Each CBOX of
 
 \anchor WESEX_SBOX
 <H2>SBOX counters</H2>
-<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the LLC-to-QPI interface in the Uncore. The description from Intel&reg;:<BR>
+<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the LLC-to-QPI interface in the uncore. The description from Intel&reg;:<BR>
 <I>The S-Box represents the interface between the last level cache and the system interface. It manages flow control between the C and R & B-Boxes. The S-Box is broken into system bound (ring to Intel&reg; QPI) and ring bound (Intel&reg; QPI to ring) connections.<BR>
 As such, it shares responsibility with the C-Box(es) as the Intel&reg; QPI caching agent(s). It is responsible for converting C-box requests to Intel&reg; QPI messages (i.e. snoop generation and data response messages from the snoop response) as well as converting/forwarding ring messages to Intel&reg; QPI packets and vice versa.
 </I><BR>
@@ -446,19 +446,19 @@ The Intel&reg; Westmere EX microarchitecture has 2 SBOX instances. Each SBOX off
   <TD>match0</TD>
   <TD>64 bit hex value</TD>
   <TD>Set bit 0-63 in MSR_S&lt;0,1&gt;_PMON_MATCH register</TD>
-  <TD>For register layout and valid settings see <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e7-family-uncore-performance-programming-guide.html">Intel&reg; Xeon&reg; Processor E7 Family Uncore Performance Monitoring Guide</A></TD>
+  <TD>For register layout and valid settings see <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e7-family-uncore-performance-programming-guide.html">Intel&reg; Xeon&reg; Processor E7 Family uncore Performance Monitoring Guide</A></TD>
 </TR>
 <TR>
   <TD>mask0</TD>
   <TD>39 bit hex value</TD>
   <TD>Set bit 0-38 in MSR_S&lt;0,1&gt;_PMON_MASK register</TD>
-  <TD>For register layout and valid settings see <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e7-family-uncore-performance-programming-guide.html">Intel&reg; Xeon&reg; Processor E7 Family Uncore Performance Monitoring Guide</A></TD>
+  <TD>For register layout and valid settings see <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e7-family-uncore-performance-programming-guide.html">Intel&reg; Xeon&reg; Processor E7 Family uncore Performance Monitoring Guide</A></TD>
 </TR>
 </TABLE>
 
 \anchor WESEX_WBOX
 <H2>WBOX counters</H2>
-<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the power controller in the Uncore. The description from Intel&reg;:<BR>
+<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the power controller in the uncore. The description from Intel&reg;:<BR>
 <I>The W-Box is the primary Power Controller for the Intel&reg; Xeon&reg; Processor 7500 Series.
 </I><BR>
 The Intel&reg; Westmere EX microarchitecture has one WBOX and it offers 4 general-purpose counters and one fixed counter. They are exposed through the MSR interface to the operating system kernel.
@@ -520,7 +520,7 @@ The Intel&reg; Westmere EX microarchitecture has one WBOX and it offers 4 genera
 
 \anchor WESEX_UBOX
 <H2>UBOX counters</H2>
-<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the system configuration controller in the Uncore. The description from Intel&reg;:<BR>
+<P>The Intel&reg; Westmere EX microarchitecture provides measurements of the system configuration controller in the uncore. The description from Intel&reg;:<BR>
 <I>The U-Box serves as the system configuration controller for the Intel&reg; Xeon&reg; Processor E7 Family.
 </I><BR>
 The Intel&reg; Westmere EX microarchitecture has one UBOX and it offers a single general-purpose counter. It is exposed through the MSR interface to the operating system kernel.

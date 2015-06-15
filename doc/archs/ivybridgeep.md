@@ -20,7 +20,7 @@
 <H1>Counters available for each hardware thread</H1>
 \anchor IVBEP_FIXED
 <H2>Fixed-purpose counters</H2>
-<P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event. They are core-local, hence each hardware thread has its own set of fixed counters.</P>
+<P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -64,7 +64,7 @@
 
 \anchor IVBEP_PMC
 <H2>General-purpose counters</H2>
-<P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides 4 general-purpose counters consisting of a config and a counter register. They are core-local, hence each hardware thread has its own set of general-purpose counters.</P>
+<P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides 4 general-purpose counters consisting of a config and a counter register.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -141,13 +141,13 @@
   <TD>match0</TD>
   <TD>16 bit hex value</TD>
   <TD>Input value masked with 0x8FFF and written to bits 0-15 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel&reg;.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and the event files at <A HREF="https://download.01.org/perfmon/IVT">https://download.01.org/perfmon/IVT</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel&reg;.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and <A HREF="https://download.01.org/perfmon/IVT">https://download.01.org/perfmon/IVT</A>.</TD>
 </TR>
 <TR>
   <TD>match1</TD>
   <TD>16 bit hex value</TD>
   <TD>Input value is written to bits 16-37 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel&reg;.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and the event files at <A HREF="https://download.01.org/perfmon/IVT">https://download.01.org/perfmon/IVT</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel&reg;.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and <A HREF="https://download.01.org/perfmon/IVT">https://download.01.org/perfmon/IVT</A>.</TD>
 </TR>
 </TABLE>
 
@@ -199,7 +199,7 @@
 <H2>Home Agent counters</H2>
 <P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides measurements of the Home Agent (HA) in the Uncore. The description from Intel&reg;:<BR>
 <I>The HA is responsible for the protocol side of memory interactions, including coherent and non-coherent home agent protocols (as defined in the Intel&reg; QuickPath Interconnect Specification). Additionally, the HA is responsible for ordering memory reads/writes, coming in from the modular Ring, to a given address such that the iMC (memory controller).</I><BR>
-The HA hardware performance counters are exposed to the operating system through PCI interfaces. There are two of those interfaces for the HA but only for the E7-8800 v2 both are available. The name BBOX originates from the Nehalem EX Uncore monitoring where this functional unit is called BBOX.
+The HA hardware performance counters are exposed to the operating system through PCI interfaces. There are two of those interfaces for the HA but only for the E7-8800 v2 both are available. The name BBOX originates from the Nehalem EX Uncore monitoring.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -268,9 +268,9 @@ The HA hardware performance counters are exposed to the operating system through
 \anchor IVBEP_SBOX
 <H2>LLC-to-QPI interface counters</H2>
 <P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides measurements of the QPI Link layer (QPI) in the Uncore. The description from Intel&reg;:<BR>
-<I>The Intel&reg; QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface. As such, it shares responsibility with the CBo(s) as the Intel&reg; QPI caching agent(s). It is responsible for converting CBo requests to Intel&reg; QPI messages (i.e. snoop generation and data response messages from the snoop response) as well as converting/forwarding ring messages to Intel&reg; QPI packets and vice versa.On Ivy Bridge, Intel&reg; QPI is split into two separate layers. The Intel&reg; QPI LL (link layer) is responsible for generating, transmitting, and receiving packets with the Intel&reg; QPI link.
+<I>The Intel&reg; QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface. As such, it shares responsibility with the CBo(s) as the Intel&reg; QPI caching agent(s). It is responsible for converting CBo requests to Intel&reg; QPI messages (i.e. snoop generation and data response messages from the snoop response) as well as converting/forwarding ring messages to Intel&reg; QPI packets and vice versa. On Ivy Bridge, Intel&reg; QPI is split into two separate layers. The Intel&reg; QPI LL (link layer) is responsible for generating, transmitting, and receiving packets with the Intel&reg; QPI link.
 </I><BR>
-The QPI hardware performance counters are exposed to the operating system through PCI interfaces. There are two of those interfaces for the QPI. If your system has not all interfaces but interface 0 does not work, try the other one. The name SBOX originates from the Nehalem EX Uncore monitoring where this functional unit is called SBOX.
+The QPI hardware performance counters are exposed to the operating system through PCI interfaces. There are two of those interfaces for the QPI. If your system has not all interfaces but interface 0 does not work, try the other one. The name SBOX originates from the Nehalem EX Uncore monitoring.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -355,9 +355,10 @@ The QPI hardware performance counters are exposed to the operating system throug
 \anchor IVBEP_CBOX
 <H2>CBOX counter</H2>
 <P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides measurements of the LLC coherency engine in the Uncore. The description from Intel&reg;:<BR>
-<I>The LLC coherence engine (CBo) manages the interface between the core and the last level cache (LLC). All core transactions that access the LLC are directed from the core to a CBo via the ring interconnect. The CBo is responsible for managing data delivery from the LLC to the requesting core. It is also responsible for maintaining coherence between the cores within the socket that share the LLC; generating snoops and collecting snoop responses from the local cores when the MESIF protocol requires it.
+<I>The LLC coherence engine (CBo) manages the interface between the core and the last level cache (LLC). All core transactions that access the LLC are directed from the core to a CBo via the ring interconnect. The CBo is responsible for managing data delivery from the LLC to the requesting core. It is also responsible for maintaining coherence between the cores within the socket that share the LLC;
+generating snoops and collecting snoop responses from the local cores when the MESIF protocol requires it.
 </I><BR>
-The LLC hardware performance counters are exposed to the operating system through the MSR interface. The maximal amount of supported coherency engines for the Intel&reg; IvyBridge EP/EN/EX microarchitecture is 15. E7-8800 v2 systems have all 15 engines, the E5-2600 v2 only 10 of them and the E5-1600 v2 only 6. It may be possible that your systems does not have all CBOXes, LIKWID will skip the unavailable ones in the setup phase. The name CBOX originates from the Nehalem EX Uncore monitoring where those functional units are called CBOX.
+The LLC hardware performance counters are exposed to the operating system through the MSR interface. The maximal amount of supported coherency engines for the Intel&reg; IvyBridge EP/EN/EX microarchitecture is 15. E7-8800 v2 systems have all 15 engines, the E5-2600 v2 only 10 of them and the E5-1600 v2 only 6. It may be possible that your systems does not have all CBOXes, LIKWID will skip the unavailable ones in the setup phase. The name CBOX originates from the Nehalem EX Uncore monitoring.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -442,9 +443,15 @@ The LLC hardware performance counters are exposed to the operating system throug
 \anchor IVBEP_UBOX
 <H2>Uncore management counters</H2>
 <P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides measurements of the management box in the Uncore. The description from Intel&reg;:<BR>
-<I>The UBox serves as the system configuration controller within the physical processor.
+<I>
+The UBox serves as the system configuration controller within the physical processor. In this capacity, the UBox acts as the central unit for a variety of functions:
+<UL>
+<LI>The master for reading and writing physically distributed registers across physical processor using the Message Channel.</LI>
+<LI>The UBox is the intermediary for interrupt traffic, receiving interrupts from the system and dispatching interrupts to the appropriate core.</LI>
+<LI>The UBox serves as the system lock master used when quiescing the platform (e.g., Intel&reg; QPI bus lock).</LI>
+</UL>
 </I><BR>
-The Uncore management performance counters are exposed to the operating system through the MSR interface. The name UBOX originates from the Nehalem EX Uncore monitoring where those functional units are called UBOX.
+The Uncore management performance counters are exposed to the operating system through the MSR interface. The name UBOX originates from the Nehalem EX Uncore monitoring.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -491,10 +498,9 @@ The Uncore management performance counters are exposed to the operating system t
 \anchor IVBEP_WBOX
 <H2>Power control unit counters</H2>
 <P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides measurements of the power control unit (PCU) in the Uncore. The description from Intel&reg;:<BR>
-<I>The PCU is the primary Power Controller for the physical processor package.<BR>
-The uncore implements a power control unit acting as a core/uncore power and thermal manager. It runs its firmware on an internal micro-controller and coordinates the socket’s power states.
+<I>The PCU is the primary Power Controller for the physical processor package. The uncore implements a power control unit acting as a core/uncore power and thermal manager. It runs its firmware on an internal micro-controller and coordinates the socket’s power states.
 </I><BR>
-The PCU performance counters are exposed to the operating system through the MSR interface. The name WBOX originates from the Nehalem EX Uncore monitoring where those functional units are called WBOX.
+The PCU performance counters are exposed to the operating system through the MSR interface. The name WBOX originates from the Nehalem EX Uncore monitoring.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -579,7 +585,7 @@ The PCU performance counters are exposed to the operating system through the MSR
 <P>The Intel&reg; IvyBridge EP/EN/EX microarchitecture provides measurements of the IRP box in the Uncore. The description from Intel&reg;:<BR>
 <I>IRP is responsible for maintaining coherency for IIO traffic that needs to be coherent (e.g. cross-socket P2P).
 </I><BR>
-The uncore management performance counters are exposed to the operating system through the PCI interface. The IBOX was introduced with the Intel&reg; IvyBridge EP/EN/EX microarchitecture.
+The IRP box counters are exposed to the operating system through the PCI interface. The IBOX was introduced with the Intel&reg; IvyBridge EP/EN/EX microarchitecture.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
@@ -683,7 +689,7 @@ The uncore management performance counters are exposed to the operating system t
 <I>R3QPI is the interface between the Intel&reg; QPI Link Layer, which packetizes requests, and the Ring.<BR>
 R3QPI is the interface between the ring and the Intel&reg; QPI Link Layer. It is responsible for translating between ring protocol packets and flits that are used for transmitting data across the Intel&reg; QPI interface. It performs credit checking between the local Intel&reg; QPI LL, the remote Intel&reg; QPI LL and other agents on the local ring.
 </I><BR>
-The R3QPI performance counters are exposed to the operating system through PCI interfaces. Since the RBOXes manage the traffic from the LLC-connecting ring interface on the socket with the QPI interfaces (SBOXes), the amount is similar to the amount of SBOXes. See at SBOXes how many are available for which system configuration. The name RBOX originates from the Nehalem EX Uncore monitoring where those functional units are called RBOX.
+The R3QPI performance counters are exposed to the operating system through PCI interfaces. Since the RBOXes manage the traffic from the LLC-connecting ring interface on the socket with the QPI interfaces (SBOXes), the amount is similar to the amount of SBOXes. See at SBOXes how many are available for which system configuration. The name RBOX originates from the Nehalem EX Uncore monitoring.
 </P>
 <H3>Counter and events</H3>
 <TABLE>
