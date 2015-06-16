@@ -46,14 +46,41 @@ for i, cpu in pairs(cputopo.threadPool) do
     table.insert(cpus, cpu.apicId)
 end
 
-likwid.init(#cpus, cpus)
+if likwid.init(#cpus, cpus) ~= 0 then
+    print("Failed to initialize LIKWID's performance monitoring module")
+    likwid.putTopology()
+    os.exit(1)
+end
 
 local gid = likwid.addEventSet(EVENTSET)
+if gid <= 0 then
+    print(string.format("Failed to add events %s to LIKWID's performance monitoring module", EVENTSET))
+    likwid.finalize()
+    likwid.putTopology()
+    os.exit(1)
+end
 
-likwid.setupCounters(gid)
-likwid.startCounters()
+
+if likwid.setupCounters(gid) < 0 then
+    printf(string.format("Failed to setup group %d in LIKWID's performance monitoring module\n", gid))
+    likwid.finalize()
+    likwid.putTopology()
+    os.exit(1)
+end
+if likwid.startCounters() < 0 then
+    printf(string.format("Failed to start group %d in LIKWID's performance monitoring module\n", gid))
+    likwid.finalize()
+    likwid.putTopology()
+    os.exit(1)
+end
+-- Application code
 likwid.sleep(2)
-likwid.stopCounters()
+if likwid.stopCounters() < 0 then
+    printf(string.format("Failed to stop group %d in LIKWID's performance monitoring module\n", gid))
+    likwid.finalize()
+    likwid.putTopology()
+    os.exit(1)
+end
 
 
 for i,cpu in pairs(cpus) do

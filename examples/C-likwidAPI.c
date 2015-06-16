@@ -39,12 +39,18 @@
 int main(int argc, char* argv[])
 {
     int i;
+    int err;
     int* cpus;
     int gid;
     double result = 0.0;
 
     // Load the topology module and print some values.
-    topology_init();
+    err = topology_init();
+    if (err < 0)
+    {
+        printf("Failed to initialize LIKWID's topology module\n");
+        return 1;
+    }
     // CpuInfo_t contains global information like name, CPU family, ...
     CpuInfo_t info = get_cpuInfo();
     // CpuTopology_t contains information about the topology of the CPUs.
@@ -66,19 +72,53 @@ int main(int argc, char* argv[])
     //accessClient_setaccessmode(0);
 
     // Initialize the perfmon module.
-    perfmon_init(topo->numHWThreads, cpus);
+    err = perfmon_init(topo->numHWThreads, cpus);
+    if (err < 0)
+    {
+        printf("Failed to initialize LIKWID's performance monitoring module\n");
+        topology_finalize();
+        return 1;
+    }
 
     // Add eventset string to the perfmon module.
     gid = perfmon_addEventSet(EVENTSET);
+    if (gid < 0)
+    {
+        printf("Failed to add event string %s to LIKWID's performance monitoring module\n", EVENTSET);
+        perfmon_finalize();
+        topology_finalize();
+        return 1;
+    }
 
     // Setup the eventset identified by group ID (gid).
-    perfmon_setupCounters(gid);
+    err = perfmon_setupCounters(gid);
+    if (err < 0)
+    {
+        printf("Failed to setup group %d in LIKWID's performance monitoring module\n", gid);
+        perfmon_finalize();
+        topology_finalize();
+        return 1;
+    }
     // Start all counters in the previously set up event set.
-    perfmon_startCounters();
+    err = perfmon_startCounters();
+    if (err < 0)
+    {
+        printf("Failed to start counters for group %d for thread %d\n",gid, (-1*err)-1);
+        perfmon_finalize();
+        topology_finalize();
+        return 1;
+    }
     // Perform something
     sleep(2);
     // Stop all counters in the previously started event set.
-    perfmon_stopCounters();
+    err = perfmon_stopCounters();
+    if (err < 0)
+    {
+        printf("Failed to stop counters for group %d for thread %d\n",gid, (-1*err)-1);
+        perfmon_finalize();
+        topology_finalize();
+        return 1;
+    }
 
 
     // Print the result of every thread/CPU.
