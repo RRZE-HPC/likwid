@@ -9,10 +9,10 @@ testmarkerF90: chaos.F90
 	ifort $(INCLUDES)  -O3  -o $@ chaos.F90 $(LIKWID_LIB) -lpthread
 
 stream: stream.c
-	gcc -O3 $(INCLUDES) -fopenmp  -o $@  -DLIKWID_PERFMON stream.c $(LIKWID_LIB) -lm
+	gcc -O3 -std=c99 $(INCLUDES) -fopenmp  -o $@  -DLIKWID_PERFMON stream.c $(LIKWID_LIB) -lm
 
 streamM: stream.c
-	icc -O3 $(INCLUDES) -openmp  -o $@  -DLIKWID_PERFMON stream.c $(LIKWID_LIB) -lm
+	icc -O3 -std=c99 $(INCLUDES) -openmp  -o $@  -DLIKWID_PERFMON stream.c $(LIKWID_LIB) -lm
 
 testmarker:
 	gcc -O3 -std=c99  $(INCLUDES) -fopenmp -DLIKWID_PERFMON  -o $@ testmarker-cnt.c $(LIKWID_LIB) -lm
