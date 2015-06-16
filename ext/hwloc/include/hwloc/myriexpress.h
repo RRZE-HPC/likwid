@@ -1,5 +1,5 @@
 /*
- * Copyright © 2010-2013 Inria.  All rights reserved.
+ * Copyright © 2010-2014 Inria.  All rights reserved.
  * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -65,7 +65,7 @@ hwloc_mx_board_get_device_cpuset(hwloc_topology_t topology,
 
   if (out != (uint32_t) -1) {
     hwloc_obj_t obj = NULL;
-    while ((obj = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_NODE, obj)) != NULL)
+    while ((obj = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_NUMANODE, obj)) != NULL)
       if (obj->os_index == out) {
 	hwloc_bitmap_copy(set, obj->cpuset);
 	goto out;

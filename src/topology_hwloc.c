@@ -43,46 +43,10 @@ hwloc_topology_t hwloc_topology = NULL;
 
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-/* this was taken from the linux kernel */
-#define CPUID                              \
-    __asm__ volatile ("cpuid"                             \
-            : "=a" (eax),     \
-            "=b" (ebx),     \
-            "=c" (ecx),     \
-            "=d" (edx)      \
-            : "0" (eax), "2" (ecx))
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-
-
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
-static int readCacheInclusiveIntel(int level)
-{
-    uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
-    eax = 0x04;
-    ecx = level;
-    CPUID;
-    return edx & 0x2;
-}
-
-static int readCacheInclusiveAMD(int level)
-{
-    uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
-    eax = 0x8000001D;
-    ecx = level;
-    CPUID;
-    return (edx & (0x1<<1));
-}
-
-static int get_stepping(void)
-{
-    uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
-    eax = 0x01;
-    CPUID;
-    return (eax&0xFU);
-}
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 #ifdef LIKWID_USE_HWLOC
@@ -122,28 +86,20 @@ void hwloc_init_cpuInfo(cpu_set_t cpuSet)
     cpuid_info.family = 0;
     cpuid_info.isIntel = 0;
     cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
-    for(i=0;i<obj->infos_count;i++)
-    {
-        if (strcmp(obj->infos[i].name ,"CPUModelNumber") == 0)
-        {
-            cpuid_info.model = atoi(hwloc_obj_get_info_by_name(obj, "CPUModelNumber"));
-        }
-        else if (strcmp(obj->infos[i].name, "CPUFamilyNumber") == 0)
-        {
-            cpuid_info.family = atoi(hwloc_obj_get_info_by_name(obj, "CPUFamilyNumber"));
-        }
-        else if (strcmp(obj->infos[i].name, "CPUVendor") == 0 &&
-                strcmp(hwloc_obj_get_info_by_name(obj, "CPUVendor"), "GenuineIntel") == 0)
-        {
-            cpuid_info.isIntel = 1;
-        }
-        else if (strcmp(obj->infos[i].name ,"CPUModel") == 0)
-        {
-            strcpy(cpuid_info.osname, obj->infos[i].value);
-        }
-    }
+
+    const char * info;
+    if (info = hwloc_obj_get_info_by_name(obj, "CPUModelNumber"))
+        cpuid_info.model = atoi(info);
+    if (info = hwloc_obj_get_info_by_name(obj, "CPUFamilyNumber"))
+       cpuid_info.family = atoi(info);
+    if (info = hwloc_obj_get_info_by_name(obj, "CPUVendor"))
+        cpuid_info.isIntel = strcmp(info, "GenuineIntel") == 0;
+    if (info = hwloc_obj_get_info_by_name(obj, "CPUModel"))
+        strcpy(cpuid_info.osname, info);
+    if (info = hwloc_obj_get_info_by_name(obj, "CPUStepping"))
+        cpuid_info.stepping = atoi(info);
+
     cpuid_topology.numHWThreads = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
-    cpuid_info.stepping = get_stepping();
     DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d activeHWThreads %d,
                             cpuid_info.family,
                             cpuid_info.model,
@@ -283,26 +239,12 @@ void hwloc_init_cacheTopology(void)
         /* Count all HWThreads below the current cache */
         cachePool[id].threads = hwloc_record_objs_of_type_below_obj(
                         hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
-        /* We need to read the inclusiveness from CPUID, no possibility in hwloc */
-        switch ( cpuid_info.family )
-        {
-            case MIC_FAMILY:
-            case P6_FAMILY:
-                cachePool[id].inclusive = readCacheInclusiveIntel(cachePool[id].level);
-                break;
-            case K16_FAMILY:
-            case K15_FAMILY:
-                cachePool[id].inclusive = readCacheInclusiveAMD(cachePool[id].level);
-                break;
-            /* For K8 and K10 it is known that they are inclusive */
-            case K8_FAMILY:
-            case K10_FAMILY:
-                cachePool[id].inclusive = 1;
-                break;
-            default:
-                ERROR_PLAIN_PRINT(Processor is not supported);
-                break;
-        }
+
+        char* info;
+        if (info = hwloc_obj_get_info_by_name(obj, "inclusiveness"))
+            cachePool[id].inclusive = info[0]=='t';
+        else
+            ERROR_PLAIN_PRINT(Processor is not supported);
         id++;
     }
 

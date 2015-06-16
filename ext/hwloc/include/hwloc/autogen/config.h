@@ -1,8 +1,8 @@
 /* include/hwloc/autogen/config.h.  Generated from config.h.in by configure.  */
 /* -*- c -*-
  * Copyright © 2009 CNRS
- * Copyright © 2009-2010 inria.  All rights reserved.
- * Copyright © 2009-2012 Université Bordeaux 1
+ * Copyright © 2009-2014 Inria.  All rights reserved.
+ * Copyright © 2009-2012 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -134,6 +134,19 @@
 # define __hwloc_attribute_deprecated
 #endif
 
+#ifdef HWLOC_HAVE_ATTRIBUTE_MAY_ALIAS
+#define __HWLOC_HAVE_ATTRIBUTE_MAY_ALIAS HWLOC_HAVE_ATTRIBUTE_MAY_ALIAS
+#elif defined(__GNUC__)
+# define __HWLOC_HAVE_ATTRIBUTE_MAY_ALIAS (GXX_ABOVE_3_4 || GCC_ABOVE_3_3)
+#else
+# define __HWLOC_HAVE_ATTRIBUTE_MAY_ALIAS 0
+#endif
+#if __HWLOC_HAVE_ATTRIBUTE_MAY_ALIAS
+# define __hwloc_attribute_may_alias __attribute__((__may_alias__))
+#else
+# define __hwloc_attribute_may_alias
+#endif
+
 #ifdef HWLOC_C_HAVE_VISIBILITY
 # if HWLOC_C_HAVE_VISIBILITY
 #  define HWLOC_DECLSPEC __attribute__((__visibility__("default")))
@@ -182,8 +195,6 @@ typedef uint64_t hwloc_uint64_t;
 
 /* The hwloc symbol prefix */
 #define HWLOC_SYM_PREFIX hwloc_
-
-#undef HWLOC_HAVE_PCIUTILS
 
 /* The hwloc symbol prefix in all caps */
 #define HWLOC_SYM_PREFIX_CAPS HWLOC_

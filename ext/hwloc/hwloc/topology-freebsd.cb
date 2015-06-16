@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2013 Inria.  All rights reserved.
- * Copyright © 2009-2010, 2012 Université Bordeaux 1
+ * Copyright © 2009-2014 Inria.  All rights reserved.
+ * Copyright © 2009-2010, 2012 Université Bordeaux
  * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -169,8 +169,12 @@ static void
 hwloc_freebsd_node_meminfo_info(struct hwloc_topology *topology)
 {
        int mib[2] = { CTL_HW, HW_PHYSMEM };
-       size_t len = sizeof(topology->levels[0][0]->memory.local_memory);
-       sysctl(mib, 2, &topology->levels[0][0]->memory.local_memory, &len, NULL, 0);
+       unsigned long physmem;
+       size_t len = sizeof(physmem);
+       sysctl(mib, 2, &physmem, &len, NULL, 0);
+       topology->levels[0][0]->memory.local_memory = physmem;
+       /* we don't know anything about NUMA nodes in this backend.
+        * let another backend or the core move that memory to the right NUMA node */
 }
 #endif
 
@@ -192,7 +196,7 @@ hwloc_look_freebsd(struct hwloc_backend *backend)
 #endif
   hwloc_obj_add_info(topology->levels[0][0], "Backend", "FreeBSD");
   if (topology->is_thissystem)
-    hwloc_add_uname_info(topology);
+    hwloc_add_uname_info(topology, NULL);
   return 1;
 }
 
@@ -244,6 +248,7 @@ static struct hwloc_disc_component hwloc_freebsd_disc_component = {
 
 const struct hwloc_component hwloc_freebsd_component = {
   HWLOC_COMPONENT_ABI,
+  NULL, NULL,
   HWLOC_COMPONENT_TYPE_DISC,
   0,
   &hwloc_freebsd_disc_component

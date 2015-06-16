@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2012 inria.  All rights reserved.
- * Copyright © 2009-2010 Université Bordeaux 1
+ * Copyright © 2009-2015 Inria.  All rights reserved.
+ * Copyright © 2009-2010 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -32,6 +32,8 @@ hwloc_get_depth_type (hwloc_topology_t topology, unsigned depth)
       return HWLOC_OBJ_PCI_DEVICE;
     case HWLOC_TYPE_DEPTH_OS_DEVICE:
       return HWLOC_OBJ_OS_DEVICE;
+    case HWLOC_TYPE_DEPTH_MISC:
+      return HWLOC_OBJ_MISC;
     default:
       return (hwloc_obj_type_t) -1;
     }
@@ -49,6 +51,8 @@ hwloc_get_nbobjs_by_depth (struct hwloc_topology *topology, unsigned depth)
       return topology->pcidev_nbobjects;
     case HWLOC_TYPE_DEPTH_OS_DEVICE:
       return topology->osdev_nbobjects;
+    case HWLOC_TYPE_DEPTH_MISC:
+      return topology->misc_nbobjects;
     default:
       return 0;
     }
@@ -66,6 +70,8 @@ hwloc_get_obj_by_depth (struct hwloc_topology *topology, unsigned depth, unsigne
       return idx < topology->pcidev_nbobjects ? topology->pcidev_level[idx] : NULL;
     case HWLOC_TYPE_DEPTH_OS_DEVICE:
       return idx < topology->osdev_nbobjects ? topology->osdev_level[idx] : NULL;
+    case HWLOC_TYPE_DEPTH_MISC:
+      return idx < topology->misc_nbobjects ? topology->misc_level[idx] : NULL;
     default:
       return NULL;
     }
@@ -92,13 +98,10 @@ unsigned hwloc_get_closest_objs (struct hwloc_topology *topology, struct hwloc_o
       nextparent = parent->parent;
       if (!nextparent)
 	goto out;
-      if (!nextparent->cpuset || !hwloc_bitmap_isequal(parent->cpuset, nextparent->cpuset))
+      if (!hwloc_bitmap_isequal(parent->cpuset, nextparent->cpuset))
 	break;
       parent = nextparent;
     }
-
-    if (!nextparent->cpuset)
-      break;
 
     /* traverse src's objects and find those that are in nextparent and were not in parent */
     for(i=0; i<src_nbobjects; i++) {
@@ -139,12 +142,10 @@ hwloc__get_largest_objs_inside_cpuset (struct hwloc_obj *current, hwloc_const_bi
     int ret;
 
     /* split out the cpuset part corresponding to this child and see if there's anything to do */
-    if (current->children[i]->cpuset) {
-      hwloc_bitmap_and(subset, subset, current->children[i]->cpuset);
-      if (hwloc_bitmap_iszero(subset)) {
-        hwloc_bitmap_free(subset);
-        continue;
-      }
+    hwloc_bitmap_and(subset, subset, current->children[i]->cpuset);
+    if (hwloc_bitmap_iszero(subset)) {
+      hwloc_bitmap_free(subset);
+      continue;
     }
 
     ret = hwloc__get_largest_objs_inside_cpuset (current->children[i], subset, res, max);
@@ -165,7 +166,7 @@ hwloc_get_largest_objs_inside_cpuset (struct hwloc_topology *topology, hwloc_con
 {
   struct hwloc_obj *current = topology->levels[0][0];
 
-  if (!current->cpuset || !hwloc_bitmap_isincluded(set, current->cpuset))
+  if (!hwloc_bitmap_isincluded(set, current->cpuset))
     return -1;
 
   if (max <= 0)
@@ -183,8 +184,8 @@ hwloc_obj_type_string (hwloc_obj_type_t obj)
     case HWLOC_OBJ_MACHINE: return "Machine";
     case HWLOC_OBJ_MISC: return "Misc";
     case HWLOC_OBJ_GROUP: return "Group";
-    case HWLOC_OBJ_NODE: return "NUMANode";
-    case HWLOC_OBJ_SOCKET: return "Socket";
+    case HWLOC_OBJ_NUMANODE: return "NUMANode";
+    case HWLOC_OBJ_PACKAGE: return "Package";
     case HWLOC_OBJ_CACHE: return "Cache";
     case HWLOC_OBJ_CORE: return "Core";
     case HWLOC_OBJ_BRIDGE: return "Bridge";
@@ -202,8 +203,8 @@ hwloc_obj_type_of_string (const char * string)
   if (!strcasecmp(string, "Machine")) return HWLOC_OBJ_MACHINE;
   if (!strcasecmp(string, "Misc")) return HWLOC_OBJ_MISC;
   if (!strcasecmp(string, "Group")) return HWLOC_OBJ_GROUP;
-  if (!strcasecmp(string, "NUMANode") || !strcasecmp(string, "Node")) return HWLOC_OBJ_NODE;
-  if (!strcasecmp(string, "Socket")) return HWLOC_OBJ_SOCKET;
+  if (!strcasecmp(string, "NUMANode") || !strcasecmp(string, "Node")) return HWLOC_OBJ_NUMANODE;
+  if (!strcasecmp(string, "Package") || !strcasecmp(string, "Socket") /* backward compat with v1.10 */) return HWLOC_OBJ_PACKAGE;
   if (!strcasecmp(string, "Cache")) return HWLOC_OBJ_CACHE;
   if (!strcasecmp(string, "Core")) return HWLOC_OBJ_CORE;
   if (!strcasecmp(string, "PU")) return HWLOC_OBJ_PU;
@@ -211,6 +212,75 @@ hwloc_obj_type_of_string (const char * string)
   if (!strcasecmp(string, "PCIDev")) return HWLOC_OBJ_PCI_DEVICE;
   if (!strcasecmp(string, "OSDev")) return HWLOC_OBJ_OS_DEVICE;
   return (hwloc_obj_type_t) -1;
+}
+
+int
+hwloc_obj_type_sscanf(const char *string, hwloc_obj_type_t *typep, int *depthattrp, void *typeattrp, size_t typeattrsize)
+{
+  hwloc_obj_type_t type = (hwloc_obj_type_t) -1;
+  int depthattr = -1;
+  hwloc_obj_cache_type_t cachetypeattr = (hwloc_obj_cache_type_t) -1; /* unspecified */
+  char *end;
+
+  /* types without depthattr */
+  if (!hwloc_strncasecmp(string, "system", 2)) {
+    type = HWLOC_OBJ_SYSTEM;
+  } else if (!hwloc_strncasecmp(string, "machine", 2)) {
+    type = HWLOC_OBJ_MACHINE;
+  } else if (!hwloc_strncasecmp(string, "node", 1)
+	     || !hwloc_strncasecmp(string, "numa", 1)) { /* matches node and numanode */
+    type = HWLOC_OBJ_NUMANODE;
+  } else if (!hwloc_strncasecmp(string, "package", 2)
+	     || !hwloc_strncasecmp(string, "socket", 2)) { /* backward compat with v1.10 */
+    type = HWLOC_OBJ_PACKAGE;
+  } else if (!hwloc_strncasecmp(string, "core", 2)) {
+    type = HWLOC_OBJ_CORE;
+  } else if (!hwloc_strncasecmp(string, "pu", 2)) {
+    type = HWLOC_OBJ_PU;
+  } else if (!hwloc_strncasecmp(string, "misc", 2)) {
+    type = HWLOC_OBJ_MISC;
+  } else if (!hwloc_strncasecmp(string, "bridge", 2)) {
+    type = HWLOC_OBJ_BRIDGE;
+  } else if (!hwloc_strncasecmp(string, "pci", 2)) {
+    type = HWLOC_OBJ_PCI_DEVICE;
+  } else if (!hwloc_strncasecmp(string, "os", 2)) {
+    type = HWLOC_OBJ_OS_DEVICE;
+
+  /* types with depthattr */
+  } else if (!hwloc_strncasecmp(string, "cache", 2)) {
+    type = HWLOC_OBJ_CACHE;
+
+  } else if ((string[0] == 'l' || string[0] == 'L') && string[1] >= '0' && string[1] <= '9') {
+    type = HWLOC_OBJ_CACHE;
+    depthattr = strtol(string+1, &end, 10);
+    if (*end == 'd') {
+      cachetypeattr = HWLOC_OBJ_CACHE_DATA;
+    } else if (*end == 'i') {
+      cachetypeattr = HWLOC_OBJ_CACHE_INSTRUCTION;
+    } else if (*end == 'u') {
+      cachetypeattr = HWLOC_OBJ_CACHE_UNIFIED;
+    }
+
+  } else if (!hwloc_strncasecmp(string, "group", 2)) {
+    int length;
+    type = HWLOC_OBJ_GROUP;
+    length = strcspn(string, "0123456789");
+    if (length <= 5 && !hwloc_strncasecmp(string, "group", length)
+	&& string[length] >= '0' && string[length] <= '9') {
+      depthattr = strtol(string+length, &end, 10);
+    }
+  } else
+    return -1;
+
+  *typep = type;
+  if (depthattrp)
+    *depthattrp = depthattr;
+  if (typeattrp) {
+    if (type == HWLOC_OBJ_CACHE && sizeof(hwloc_obj_cache_type_t) <= typeattrsize)
+      memcpy(typeattrp, &cachetypeattr, sizeof(hwloc_obj_cache_type_t));
+  }
+
+  return 0;
 }
 
 static const char *
@@ -232,6 +302,7 @@ hwloc_pci_class_string(unsigned short class_id)
 	case 0x0105: return "ATA";
 	case 0x0106: return "SATA";
 	case 0x0107: return "SAS";
+	case 0x0108: return "NVMExp";
       }
       return "Stor";
     case 0x02:
@@ -243,6 +314,7 @@ hwloc_pci_class_string(unsigned short class_id)
 	case 0x0204: return "ISDN";
 	case 0x0205: return "WrdFip";
 	case 0x0206: return "PICMG";
+	case 0x0207: return "IB";
       }
       return "Net";
     case 0x03:
@@ -299,6 +371,7 @@ hwloc_pci_class_string(unsigned short class_id)
 	case 0x0803: return "RTC";
 	case 0x0804: return "HtPl";
 	case 0x0805: return "SD-HtPl";
+	case 0x0806: return "IOMMU";
       }
       return "Syst";
     case 0x09:
@@ -365,16 +438,15 @@ hwloc_pci_class_string(unsigned short class_id)
       return "Crypt";
     case 0x11:
       return "Signl";
+    case 0x12:
+      return "Accel";
+    case 0x13:
+      return "Instr";
     case 0xff:
       return "Oth";
   }
   return "PCI";
 }
-
-#define hwloc_memory_size_printf_value(_size, _verbose) \
-  ((_size) < (10ULL<<20) || _verbose ? (((_size)>>9)+1)>>1 : (_size) < (10ULL<<30) ? (((_size)>>19)+1)>>1 : (((_size)>>29)+1)>>1)
-#define hwloc_memory_size_printf_unit(_size, _verbose) \
-  ((_size) < (10ULL<<20) || _verbose ? "KB" : (_size) < (10ULL<<30) ? "MB" : "GB")
 
 static const char* hwloc_obj_cache_type_letter(hwloc_obj_cache_type_t type)
 {
@@ -394,8 +466,8 @@ hwloc_obj_type_snprintf(char * __hwloc_restrict string, size_t size, hwloc_obj_t
   case HWLOC_OBJ_MISC:
   case HWLOC_OBJ_SYSTEM:
   case HWLOC_OBJ_MACHINE:
-  case HWLOC_OBJ_NODE:
-  case HWLOC_OBJ_SOCKET:
+  case HWLOC_OBJ_NUMANODE:
+  case HWLOC_OBJ_PACKAGE:
   case HWLOC_OBJ_CORE:
   case HWLOC_OBJ_PU:
     return hwloc_snprintf(string, size, "%s", hwloc_obj_type_string(type));
@@ -458,10 +530,10 @@ hwloc_obj_attr_snprintf(char * __hwloc_restrict string, size_t size, hwloc_obj_t
     if (obj->memory.local_memory)
       res = hwloc_snprintf(tmp, tmplen, "%slocal=%lu%s%stotal=%lu%s",
 			   prefix,
-			   (unsigned long) hwloc_memory_size_printf_value(obj->memory.total_memory, verbose),
+			   (unsigned long) hwloc_memory_size_printf_value(obj->memory.local_memory, verbose),
 			   hwloc_memory_size_printf_unit(obj->memory.total_memory, verbose),
 			   separator,
-			   (unsigned long) hwloc_memory_size_printf_value(obj->memory.local_memory, verbose),
+			   (unsigned long) hwloc_memory_size_printf_value(obj->memory.total_memory, verbose),
 			   hwloc_memory_size_printf_unit(obj->memory.local_memory, verbose));
     else if (obj->memory.total_memory)
       res = hwloc_snprintf(tmp, tmplen, "%stotal=%lu%s",
@@ -469,11 +541,11 @@ hwloc_obj_attr_snprintf(char * __hwloc_restrict string, size_t size, hwloc_obj_t
 			   (unsigned long) hwloc_memory_size_printf_value(obj->memory.total_memory, verbose),
 			   hwloc_memory_size_printf_unit(obj->memory.total_memory, verbose));
   } else {
-    if (obj->memory.total_memory)
+    if (obj->memory.local_memory)
       res = hwloc_snprintf(tmp, tmplen, "%s%lu%s",
 			   prefix,
-			   (unsigned long) hwloc_memory_size_printf_value(obj->memory.total_memory, verbose),
-			   hwloc_memory_size_printf_unit(obj->memory.total_memory, verbose));
+			   (unsigned long) hwloc_memory_size_printf_value(obj->memory.local_memory, verbose),
+			   hwloc_memory_size_printf_unit(obj->memory.local_memory, verbose));
   }
   if (res < 0)
     return -1;
@@ -535,10 +607,14 @@ hwloc_obj_attr_snprintf(char * __hwloc_restrict string, size_t size, hwloc_obj_t
   case HWLOC_OBJ_PCI_DEVICE:
     if (verbose) {
       char linkspeed[64]= "";
+      char busid[16] = "[collapsed]";
       if (obj->attr->pcidev.linkspeed)
         snprintf(linkspeed, sizeof(linkspeed), "%slink=%.2fGB/s", separator, obj->attr->pcidev.linkspeed);
-      res = snprintf(string, size, "busid=%04x:%02x:%02x.%01x%sclass=%04x(%s)%s",
-		     obj->attr->pcidev.domain, obj->attr->pcidev.bus, obj->attr->pcidev.dev, obj->attr->pcidev.func, separator,
+      if (!hwloc_obj_get_info_by_name(obj, "lstopoCollapse"))
+	snprintf(busid, sizeof(busid), "%04x:%02x:%02x.%01x",
+		 obj->attr->pcidev.domain, obj->attr->pcidev.bus, obj->attr->pcidev.dev, obj->attr->pcidev.func);
+      res = snprintf(string, size, "busid=%s%sclass=%04x(%s)%s",
+		     busid, separator,
 		     obj->attr->pcidev.class_id, hwloc_pci_class_string(obj->attr->pcidev.class_id), linkspeed);
     }
     break;
@@ -559,6 +635,8 @@ hwloc_obj_attr_snprintf(char * __hwloc_restrict string, size_t size, hwloc_obj_t
   if (verbose) {
     unsigned i;
     for(i=0; i<obj->infos_count; i++) {
+      if (!strcmp(obj->infos[i].name, "lstopoCollapse"))
+	continue;
       if (strchr(obj->infos[i].value, ' '))
 	res = hwloc_snprintf(tmp, tmplen, "%s%s=\"%s\"",
 			     prefix,
