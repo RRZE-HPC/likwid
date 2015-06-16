@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012 Inria.  All rights reserved.
+ * Copyright © 2012-2014 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -15,8 +15,6 @@ hwloc_fake_component_instantiate(struct hwloc_disc_component *component __hwloc_
 				 const void *_data2 __hwloc_attribute_unused,
 				 const void *_data3 __hwloc_attribute_unused)
 {
-  if (hwloc_plugin_check_namespace("fake", "hwloc_backend_alloc") < 0)
-    return NULL;
   if (getenv("HWLOC_DEBUG_FAKE_COMPONENT"))
     printf("fake component instantiated\n");
   return NULL;
@@ -31,10 +29,32 @@ static struct hwloc_disc_component hwloc_fake_disc_component = {
   NULL
 };
 
+static int
+hwloc_fake_component_init(unsigned long flags)
+{
+  if (flags)
+    return -1;
+  if (hwloc_plugin_check_namespace("fake", "hwloc_backend_alloc") < 0)
+    return -1;
+  if (getenv("HWLOC_DEBUG_FAKE_COMPONENT"))
+    printf("fake component initialized\n");
+  return 0;
+}
+
+static void
+hwloc_fake_component_finalize(unsigned long flags)
+{
+  if (flags)
+    return;
+  if (getenv("HWLOC_DEBUG_FAKE_COMPONENT"))
+    printf("fake component finalized\n");
+}
+
 HWLOC_DECLSPEC extern const struct hwloc_component hwloc_fake_component; /* never linked statically in the core */
 
 const struct hwloc_component hwloc_fake_component = {
   HWLOC_COMPONENT_ABI,
+  hwloc_fake_component_init, hwloc_fake_component_finalize,
   HWLOC_COMPONENT_TYPE_DISC,
   0,
   &hwloc_fake_disc_component

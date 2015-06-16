@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2012 Inria.  All rights reserved.
- * Copyright © 2009-2013 Université Bordeaux 1
+ * Copyright © 2009-2014 Inria.  All rights reserved.
+ * Copyright © 2009-2013 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -75,7 +75,7 @@ hwloc_look_darwin(struct hwloc_backend *backend)
 
     if (nprocs == npackages * logical_per_package)
       for (i = 0; i < npackages; i++) {
-        obj = hwloc_alloc_setup_object(HWLOC_OBJ_SOCKET, i);
+        obj = hwloc_alloc_setup_object(HWLOC_OBJ_PACKAGE, i);
         obj->cpuset = hwloc_bitmap_alloc();
         for (cpu = i*logical_per_package; cpu < (i+1)*logical_per_package; cpu++)
           hwloc_bitmap_set(obj->cpuset, cpu);
@@ -190,7 +190,7 @@ hwloc_look_darwin(struct hwloc_backend *backend)
       for (i = 0; i < n; i++) {
         /* cacheconfig tells us how many cpus share it, let's iterate on each cache */
         for (j = 0; j < (nprocs / cacheconfig[i]); j++) {
-          obj = hwloc_alloc_setup_object(i?HWLOC_OBJ_CACHE:HWLOC_OBJ_NODE, j);
+          obj = hwloc_alloc_setup_object(i?HWLOC_OBJ_CACHE:HWLOC_OBJ_NUMANODE, j);
           if (!i) {
             obj->nodeset = hwloc_bitmap_alloc();
             hwloc_bitmap_set(obj->nodeset, j);
@@ -265,7 +265,7 @@ hwloc_look_darwin(struct hwloc_backend *backend)
 
   hwloc_obj_add_info(topology->levels[0][0], "Backend", "Darwin");
   if (topology->is_thissystem)
-    hwloc_add_uname_info(topology);
+    hwloc_add_uname_info(topology, NULL);
   return 1;
 }
 
@@ -300,6 +300,7 @@ static struct hwloc_disc_component hwloc_darwin_disc_component = {
 
 const struct hwloc_component hwloc_darwin_component = {
   HWLOC_COMPONENT_ABI,
+  NULL, NULL,
   HWLOC_COMPONENT_TYPE_DISC,
   0,
   &hwloc_darwin_disc_component

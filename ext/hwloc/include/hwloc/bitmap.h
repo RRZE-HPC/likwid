@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2011 inria.  All rights reserved.
- * Copyright © 2009-2012 Université Bordeaux 1
+ * Copyright © 2009-2015 Inria.  All rights reserved.
+ * Copyright © 2009-2012 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -28,13 +28,18 @@ extern "C" {
  * processors -- which may actually be hardware threads (represented
  * by ::hwloc_cpuset_t, which is a typedef for ::hwloc_bitmap_t) -- or
  * memory nodes (represented by ::hwloc_nodeset_t, which is also a
- * typedef for ::hwloc_bitmap_t).  
+ * typedef for ::hwloc_bitmap_t).
  *
  * <em>Both CPU and node sets are always indexed by OS physical number.</em>
  *
  * \note CPU sets and nodesets are described in \ref hwlocality_object_sets.
  *
  * A bitmap may be of infinite size.
+ *
+ * \note Several examples of using the bitmap API are available under the
+ * doc/examples/ directory in the source tree.
+ * Regression tests such as tests/hwloc_bitmap*.c also make intensive use
+ * of this API.
  * @{
  */
 
@@ -332,10 +337,14 @@ HWLOC_DECLSPEC int hwloc_bitmap_isequal (hwloc_const_bitmap_t bitmap1, hwloc_con
  */
 HWLOC_DECLSPEC int hwloc_bitmap_compare_first(hwloc_const_bitmap_t bitmap1, hwloc_const_bitmap_t bitmap2) __hwloc_attribute_pure;
 
-/** \brief Compare bitmaps \p bitmap1 and \p bitmap2 using their highest index.
+/** \brief Compare bitmaps \p bitmap1 and \p bitmap2 in lexicographic order.
  *
- * Higher most significant bit is higher.
+ * Lexicographic comparison of bitmaps, starting for their highest indexes.
+ * Compare last indexes first, then second, etc.
  * The empty bitmap is considered lower than anything.
+ *
+ * \note This is different from the non-existing hwloc_bitmap_compare_last()
+ * which would only compare the highest index of each bitmap.
  */
 HWLOC_DECLSPEC int hwloc_bitmap_compare(hwloc_const_bitmap_t bitmap1, hwloc_const_bitmap_t bitmap2) __hwloc_attribute_pure;
 

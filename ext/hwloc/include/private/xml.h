@@ -1,5 +1,5 @@
 /*
- * Copyright © 2009-2013 Inria.  All rights reserved.
+ * Copyright © 2009-2014 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -12,15 +12,15 @@
 
 HWLOC_DECLSPEC int hwloc__xml_verbose(void);
 
+/**************
+ * XML import *
+ **************/
+
 typedef struct hwloc__xml_import_state_s {
   struct hwloc__xml_import_state_s *parent;
 
-  int (*next_attr)(struct hwloc__xml_import_state_s * state, char **namep, char **valuep);
-  int (*find_child)(struct hwloc__xml_import_state_s * state, struct hwloc__xml_import_state_s * childstate, char **tagp);
-  int (*close_tag)(struct hwloc__xml_import_state_s * state); /* look for an explicit closing tag </name> */
-  void (*close_child)(struct hwloc__xml_import_state_s * state);
-  int (*get_content)(struct hwloc__xml_import_state_s * state, char **beginp, size_t expected_length);
-  void (*close_content)(struct hwloc__xml_import_state_s * state);
+  /* globals shared because the entire stack of states during import */
+  struct hwloc_xml_backend_data_s *global;
 
   /* opaque data used to store backend-specific data.
    * statically allocated to allow stack-allocation by the common code without knowing actual backend needs.
@@ -35,13 +35,25 @@ struct hwloc_xml_backend_data_s {
   int (*look_init)(struct hwloc_xml_backend_data_s *bdata, struct hwloc__xml_import_state_s *state);
   void (*look_failed)(struct hwloc_xml_backend_data_s *bdata);
   void (*backend_exit)(struct hwloc_xml_backend_data_s *bdata);
+  int (*next_attr)(struct hwloc__xml_import_state_s * state, char **namep, char **valuep);
+  int (*find_child)(struct hwloc__xml_import_state_s * state, struct hwloc__xml_import_state_s * childstate, char **tagp);
+  int (*close_tag)(struct hwloc__xml_import_state_s * state); /* look for an explicit closing tag </name> */
+  void (*close_child)(struct hwloc__xml_import_state_s * state);
+  int (*get_content)(struct hwloc__xml_import_state_s * state, char **beginp, size_t expected_length);
+  void (*close_content)(struct hwloc__xml_import_state_s * state);
+  char * msgprefix;
   void *data; /* libxml2 doc, or nolibxml buffer */
+  int nbnumanodes;
   struct hwloc_xml_imported_distances_s {
     hwloc_obj_t root;
     struct hwloc_distances_s distances;
     struct hwloc_xml_imported_distances_s *prev, *next;
   } *first_distances, *last_distances;
 };
+
+/**************
+ * XML export *
+ **************/
 
 typedef struct hwloc__xml_export_state_s {
   struct hwloc__xml_export_state_s *parent;
@@ -70,7 +82,7 @@ struct hwloc_xml_callbacks {
   int (*export_file)(struct hwloc_topology *topology, const char *filename);
   int (*export_buffer)(struct hwloc_topology *topology, char **xmlbuffer, int *buflen);
   void (*free_buffer)(void *xmlbuffer);
-  int (*import_diff)(const char *xmlpath, const char *xmlbuffer, int xmlbuflen, hwloc_topology_diff_t *diff, char **refnamep);
+  int (*import_diff)(struct hwloc__xml_import_state_s *state, const char *xmlpath, const char *xmlbuffer, int xmlbuflen, hwloc_topology_diff_t *diff, char **refnamep);
   int (*export_diff_file)(union hwloc_topology_diff_u *diff, const char *refname, const char *filename);
   int (*export_diff_buffer)(union hwloc_topology_diff_u *diff, const char *refname, char **xmlbuffer, int *buflen);
 };

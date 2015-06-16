@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013 Inria.  All rights reserved.
+ * Copyright © 2013-2015 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -80,10 +80,6 @@ static int hwloc_append_diff_obj_attr_string(hwloc_obj_t obj,
 	if (!newdiff)
 		return -1;
 
-	if (obj->type == HWLOC_OBJ_MISC)
-		/* TODO: add a custom level/depth for Misc */
-		return hwloc_append_diff_too_complex(obj, firstdiffp, lastdiffp);
-
 	newdiff->obj_attr.type = HWLOC_TOPOLOGY_DIFF_OBJ_ATTR;
 	newdiff->obj_attr.obj_depth = obj->depth;
 	newdiff->obj_attr.obj_index = obj->logical_index;
@@ -97,7 +93,7 @@ static int hwloc_append_diff_obj_attr_string(hwloc_obj_t obj,
 
 static int hwloc_append_diff_obj_attr_uint64(hwloc_obj_t obj,
 					     hwloc_topology_diff_obj_attr_type_t type,
-					     hwloc_uint64_t index,
+					     hwloc_uint64_t idx,
 					     hwloc_uint64_t oldvalue,
 					     hwloc_uint64_t newvalue,
 					     hwloc_topology_diff_t *firstdiffp,
@@ -108,15 +104,11 @@ static int hwloc_append_diff_obj_attr_uint64(hwloc_obj_t obj,
 	if (!newdiff)
 		return -1;
 
-	if (obj->type == HWLOC_OBJ_MISC)
-		/* TODO: add a custom level/depth for Misc */
-		return hwloc_append_diff_too_complex(obj, firstdiffp, lastdiffp);
-
 	newdiff->obj_attr.type = HWLOC_TOPOLOGY_DIFF_OBJ_ATTR;
 	newdiff->obj_attr.obj_depth = obj->depth;
 	newdiff->obj_attr.obj_index = obj->logical_index;
 	newdiff->obj_attr.diff.uint64.type = type;
-	newdiff->obj_attr.diff.uint64.index = index;
+	newdiff->obj_attr.diff.uint64.index = idx;
 	newdiff->obj_attr.diff.uint64.oldvalue = oldvalue;
 	newdiff->obj_attr.diff.uint64.newvalue = newvalue;
 	hwloc_append_diff(newdiff, firstdiffp, lastdiffp);
@@ -131,6 +123,7 @@ hwloc_diff_trees(hwloc_topology_t topo1, hwloc_obj_t obj1,
 {
 	unsigned i;
 	int err;
+	hwloc_obj_t child1, child2;
 
 	if (obj1->depth != obj2->depth)
 		goto out_too_complex;
@@ -138,6 +131,8 @@ hwloc_diff_trees(hwloc_topology_t topo1, hwloc_obj_t obj1,
 		goto out_too_complex;
 
 	if (obj1->os_index != obj2->os_index)
+		/* we could allow different os_index for non-PU non-NUMAnode objects
+		 * but it's likely useless anyway */
 		goto out_too_complex;
 
 #define _SETS_DIFFERENT(_set1, _set2) \
@@ -146,14 +141,14 @@ hwloc_diff_trees(hwloc_topology_t topo1, hwloc_obj_t obj1,
 #define SETS_DIFFERENT(_set, _obj1, _obj2) _SETS_DIFFERENT((_obj1)->_set, (_obj2)->_set)
 	if (SETS_DIFFERENT(cpuset, obj1, obj2)
 	    || SETS_DIFFERENT(complete_cpuset, obj1, obj2)
-	    || SETS_DIFFERENT(online_cpuset, obj1, obj2)
 	    || SETS_DIFFERENT(allowed_cpuset, obj1, obj2)
 	    || SETS_DIFFERENT(nodeset, obj1, obj2)
 	    || SETS_DIFFERENT(complete_nodeset, obj1, obj2)
 	    || SETS_DIFFERENT(allowed_nodeset, obj1, obj2))
 		goto out_too_complex;
 
-	/* no need to check logical_index, sibling_rank, symmetric_subtree */
+	/* no need to check logical_index, sibling_rank, symmetric_subtree,
+	 * the parents did it */
 
 	if ((!obj1->name) != (!obj2->name)
 	    || (obj1->name && strcmp(obj1->name, obj2->name))) {
@@ -179,8 +174,6 @@ hwloc_diff_trees(hwloc_topology_t topo1, hwloc_obj_t obj1,
 			return err;
 	}
 	/* ignore memory page_types */
-
-	/* ignore os_level */
 
 	/* type-specific attrs */
 	switch (obj1->type) {
@@ -242,16 +235,46 @@ hwloc_diff_trees(hwloc_topology_t topo1, hwloc_obj_t obj1,
 	/* ignore userdata */
 
 	/* children */
-	if (obj1->arity != obj2->arity)
-		goto out_too_complex;
-	for(i=0; i<obj1->arity; i++) {
-		err = hwloc_diff_trees(topo1, obj1->children[i],
-				       topo2, obj2->children[i],
+	for(child1 = obj1->first_child, child2 = obj2->first_child;
+	    child1 != NULL && child2 != NULL;
+	    child1 = child1->next_sibling, child2 = child2->next_sibling) {
+		err = hwloc_diff_trees(topo1, child1,
+				       topo2, child2,
 				       flags,
 				       firstdiffp, lastdiffp);
 		if (err < 0)
 			return err;
 	}
+	if (child1 || child2)
+		goto out_too_complex;
+
+	/* I/O children */
+	for(child1 = obj1->io_first_child, child2 = obj2->io_first_child;
+	    child1 != NULL && child2 != NULL;
+	    child1 = child1->next_sibling, child2 = child2->next_sibling) {
+		err = hwloc_diff_trees(topo1, child1,
+				       topo2, child2,
+				       flags,
+				       firstdiffp, lastdiffp);
+		if (err < 0)
+			return err;
+	}
+	if (child1 || child2)
+		goto out_too_complex;
+
+	/* misc children */
+	for(child1 = obj1->misc_first_child, child2 = obj2->misc_first_child;
+	    child1 != NULL && child2 != NULL;
+	    child1 = child1->next_sibling, child2 = child2->next_sibling) {
+		err = hwloc_diff_trees(topo1, child1,
+				       topo2, child2,
+				       flags,
+				       firstdiffp, lastdiffp);
+		if (err < 0)
+			return err;
+	}
+	if (child1 || child2)
+		goto out_too_complex;
 
 	return 0;
 
