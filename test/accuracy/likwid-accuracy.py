@@ -24,7 +24,7 @@ testlist = "SET.txt"
 testfolder = "TESTS"
 resultfolder = "RESULTS"
 hostname = socket.gethostname()
-picture_base = "http://likwid.googlecode.com/svn/wiki/images"
+picture_base = ".."
 
 gnu_colors = ["red","blue","green","black"]#,"brown", "gray","violet", "cyan", "magenta","orange","#4B0082","#800000","turquoise","#006400","yellow"]
 gnu_marks = [5,13,9,2]#,3,4,6,7,8,9,10,11,12,14,15]
@@ -100,8 +100,11 @@ def get_groups():
     for line in p.stdout.read().split("\n"):
         if line.startswith("-") or not line.strip(): continue
         if line.startswith("Available"): continue
-        name, description = line.split(":")
-        groups[name.strip()] = description.strip()
+        print(re.split("\s*", line.strip()))
+        linelist = re.split("\s+", line.strip())
+        name = linelist[0]
+        description = " ".join(linelist[1:])
+        groups[name] = description
     return groups
 
 def get_test_groups(groupdict):
@@ -154,12 +157,12 @@ def write_pgf(group, test, plain_file, correct_file, marker_file, papi_file=None
     fp.write("\\begin{axis}[xlabel={Run}, ylabel={MFlops/s / MBytes/s},title={%s\_%s},legend pos=south east,xtick=data,width=.75\\textwidth]\n" % (group.replace("_","\_"),test.replace("_","\_"),))
     fp.write("\\addplot+[red,mark=square*,mark options={draw=red, fill=red}] table {%s};\n" % (os.path.basename(plain_file),))
     fp.write("\\addlegendentry{plain};\n")
-    fp.write("\\addplot+[red,mark=*,mark options={draw=blue, fill=blue}] table {%s};\n" % (os.path.basename(correct_file),))
+    fp.write("\\addplot+[blue,mark=*,mark options={draw=blue, fill=blue}] table {%s};\n" % (os.path.basename(correct_file),))
     fp.write("\\addlegendentry{corrected};\n")
-    fp.write("\\addplot+[blue,mark=diamond*,mark options={draw=green, fill=green}] table {%s};\n" % (os.path.basename(marker_file),))
+    fp.write("\\addplot+[green,mark=diamond*,mark options={draw=green, fill=green}] table {%s};\n" % (os.path.basename(marker_file),))
     fp.write("\\addlegendentry{marker};\n")
     if papi and papi_file:
-        fp.write("\\addplot+[green,mark=triangle*,mark options={draw=black, fill=black}] table {%s};\n" % (os.path.basename(papi_file),))
+        fp.write("\\addplot+[black,mark=triangle*,mark options={draw=black, fill=black}] table {%s};\n" % (os.path.basename(papi_file),))
         fp.write("\\addlegendentry{papi};\n")
     fp.write("\\end{axis}\n")
     fp.write("\\end{tikzpicture}\n")
@@ -185,11 +188,12 @@ def write_gnuplot(group, test, plain_file, correct_file, marker_file, papi_file=
     fp.write("set terminal jpeg\n")
     fp.write("set title '%s_%s'\n" % (group, test,))
     fp.write("set output '%s'\n" % (os.path.basename(os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+".jpg")),))
-    fp.write("set xlabel 'Run'\n")
+    fp.write("set xlabel 'Size - %d runs each'\n" % (test_set[group][test]["RUNS"],))
     fp.write("set ylabel 'MFlops/s / MBytes/s'\n")
-    fp.write("set xtics 0,%d,%d\n" % (test_set[group][test]["RUNS"], test_set[group][test]["RUNS"]*len(test_set[group][test]["variants"]),))
+    #fp.write("set xtics 0,%d,%d\n" % (test_set[group][test]["RUNS"], test_set[group][test]["RUNS"]*len(test_set[group][test]["variants"]),))
+    fp.write("set xtics %d\n" % (test_set[group][test]["RUNS"]*len(test_set[group][test]["variants"]),))
     for i,variant in enumerate(test_set[group][test]["variants"]):
-        fp.write("set xtics add (\"%s\" %d)\n" % (variant, (i*test_set[group][test]["RUNS"])+3,))
+        fp.write("set xtics add (\"%s\" %f)\n" % (variant, (i*test_set[group][test]["RUNS"])+(0.5*test_set[group][test]["RUNS"]),))
     plot_string = "plot '%s' using 1:2 title 'plain' with linespoints ls 1, \\\n '%s' using 1:2 title 'corrected' with linespoints ls 2, \\\n '%s' using 1:2 title 'marker' with linespoints ls 3" % (os.path.basename(plain_file), os.path.basename(correct_file), os.path.basename(marker_file),)
     if papi and papi_file:
         plot_string += ", \\\n '%s' using 1:2 title 'papi' with linespoints ls 4\n" % (os.path.basename(papi_file),)
@@ -214,6 +218,7 @@ def write_grace(group, test, plain_file, correct_file, marker_file, papi_file=No
     if execute or script:
         plain_file = os.path.basename(plain_file)
         marker_file = os.path.basename(marker_file)
+        correct_file = os.path.basename(correct_file)
         if papi_file: papi_file = os.path.basename(papi_file)
         pngname = os.path.basename(pngname)
         agrname = os.path.basename(agrname)
@@ -315,10 +320,10 @@ for o, a in opts:
     if o in ("-h","--help"):
         usage()
         sys.exit(0)
-#    if o == "--wiki":
-#        wiki = True
-#    if o == "--only_wiki":
-#        only_wiki = True
+    if o == "--wiki":
+        wiki = True
+    if o == "--only_wiki":
+        only_wiki = True
     if o == "--papi":
         papi = True
     if o == "--pgf":
@@ -498,85 +503,91 @@ if not only_wiki:
             if papi:
                 outfp_papi.close()
                 rawfp_papi.close()
-            if out_pgf: pgf_file = write_pgf(group, test, file_plain, file_marker, file_papi, script=script)
+            if out_pgf: pgf_file = write_pgf(group, test, file_plain, file_correct, file_marker, file_papi, script=script)
             if out_gnuplot: plot_file = write_gnuplot(group, test, file_plain, file_correct, file_marker, file_papi, script=script)
-            if out_grace: grace_file = write_grace(group, test, file_plain, file_marker, file_papi, script=script)
+            if out_grace: grace_file = write_grace(group, test, file_plain, file_correct, file_marker, file_papi, script=script)
 
 
     script.close()
     os.chmod(scriptfile, stat.S_IRWXU)
-#if only_wiki:
-#    for group in test_set.keys():
-#        for test in test_set[group].keys():
-#            if test.startswith("REGEX"): continue
-#            filename = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+"_plain.dat")
-#            for i,size in enumerate(test_set[group][test]["variants"]):
-#                start = i*test_set[group][test]["RUNS"]
-#                end = (i+1)*test_set[group][test]["RUNS"]
-#                runs = test_set[group][test]["RUNS"]
-#                print "Read file %s for size %s from %d to %d" % (filename,size, start, end,)
-#                plain_set[group][test][size] = get_values_from_file(filename, start, runs)
-#                if len(plain_set[group][test][size]) == 0: plain_set[group][test][size].append(0)
-#            filename = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+"_marker.dat")
-#            for i,size in enumerate(test_set[group][test]["variants"]):
-#                start = i*test_set[group][test]["RUNS"]
-#                end = (i+1)*test_set[group][test]["RUNS"]
-#                runs = test_set[group][test]["RUNS"]
-#                print "Read file %s for size %s from %d to %d" % (filename,size, start, end,)
-#                marker_set[group][test][size] = get_values_from_file(filename, start, runs)
-#                if len(marker_set[group][test][size]) == 0: marker_set[group][test][size].append(0)
+if only_wiki:
+    for group in test_set.keys():
+        for test in test_set[group].keys():
+            if test.startswith("REGEX"): continue
+            filename = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+"_plain.dat")
+            for i,size in enumerate(test_set[group][test]["variants"]):
+                start = i*test_set[group][test]["RUNS"]
+                end = (i+1)*test_set[group][test]["RUNS"]
+                runs = test_set[group][test]["RUNS"]
+                print "Read file %s for size %s from %d to %d" % (filename,size, start, end,)
+                plain_set[group][test][size] = get_values_from_file(filename, start, runs)
+                if len(plain_set[group][test][size]) == 0: plain_set[group][test][size].append(0)
+            filename = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+"_marker.dat")
+            for i,size in enumerate(test_set[group][test]["variants"]):
+                start = i*test_set[group][test]["RUNS"]
+                end = (i+1)*test_set[group][test]["RUNS"]
+                runs = test_set[group][test]["RUNS"]
+                print "Read file %s for size %s from %d to %d" % (filename,size, start, end,)
+                marker_set[group][test][size] = get_values_from_file(filename, start, runs)
+                if len(marker_set[group][test][size]) == 0: marker_set[group][test][size].append(0)
 
 
-#if wiki or only_wiki:
-#    name, sockets, corespersocket, threadspercore = get_system_info();
-#    groups = get_groups()
-#    testable_groups = get_test_groups(groups)
-    #print groups
+if wiki or only_wiki:
+    name, sockets, corespersocket, threadspercore = get_system_info();
+    groups = get_groups()
+    testable_groups = get_test_groups(groups)
+    if testable_groups.has_key("FLOPS_DP"): del testable_groups["FLOPS_DP"]
+
+    print "# Accuracy Tests for %s\n" % (name,)
+    print "## Hardware description"
+    print "Sockets: %d<br>" % (sockets,)
+    print "Cores per socket: %d<br>" % (corespersocket,)
+    print "Threads per core: %d<br>" % (threadspercore,)
+    print "Total number of processing units: %d<br>" % (sockets * corespersocket * threadspercore)
+    print
+    print "## Available groups"
+    print "Each architecture defines a different set of performance groups. These groups help users to measure their derived metrics. Besides the event and counter defintion, a performance groups contains derived metrics that are calculated based on the measured data.<br>Here all the groups available for the %s are listed:<br>\n" % (name,)
+    print "| Name | Description |"
+    print "| ---- | ----------- |"
+    for grp in groups.keys():
+        print "| %s | %s |" % (grp, groups[grp],)
+    print
+    print "## Available verification tests"
+    print "Not all groups can be tested for accuracy. We don't have a test application for each performance group. Here only the groups are listed that can be verified. Each group is followed by the low-level benchmarks that are performed for comparison.<br>\n"
     #print testable_groups
-    #if testable_groups.has_key("FLOPS_DP"): del testable_groups["FLOPS_DP"]
-
-#    print "#summary Accuracy Tests for %s\n" % (name,)
-#    print "= Hardware description ="
-#    print "Sockets: %d<br>" % (sockets,)
-#    print "Cores per socket: %d<br>" % (corespersocket,)
-#    print "Threads per core: %d<br>" % (threadspercore,)
-#    print "Total number of processing units: %d<br>" % (sockets * corespersocket * threadspercore)
-#    print
-#    print "= Available groups ="
-#    print "Each architecture defines a different set of groups. Here all the groups available for the %s are listed:<br>" % (name,)
-#    for grp in groups.keys():
-#        print "%s: %s<br>" % (grp, groups[grp],)
-#    print
-#    print "= Available verification tests ="
-#    print "Not all groups can be tested for accuracy. Here only the groups are listed that can be verified. Each group is followed by the low-level benchmarks that are performed for comparison.<br>"
-#    #print testable_groups
-#    for grp in testable_groups.keys():
-#        print "%s: %s<br>" % (grp, ", ".join (testable_groups[grp]))
-#    print
-#    print "= Accuracy comparison ="
-#    print "For each varification group, the tests are performed twice. Once in a plain manner without measuring but calculating the resulting values and once through an instumented code with LIKWID.<br>"
-#    
-#    
-#    for grp in testable_groups.keys():
-#        print "== Verification of Group %s ==" % (grp,)
-#        for test in testable_groups[grp]:
-#            #print grp, test, test_set[grp][test]
-#            print "=== Verification of Group %s with Test %s ===" % (grp, test,)
-#            print "|| *Stream size* || *Iterations* ||"
-#            for variant in test_set[grp][test]["variants"]:
-#                print "|| %s || %s ||" % (variant, test_set[grp][test][variant], )
-#            print 
-#            print "Each data size is tested %d times, hence the first %d entries on the x-axis correspond to the %d runs for the first data size of %s and so on.<br>" % (test_set[grp][test]["RUNS"],test_set[grp][test]["RUNS"],test_set[grp][test]["RUNS"],test_set[grp][test]["variants"][0],)
-#            print "%s/accuracy/%s/%s_%s.png" % (picture_base,hostname, grp, test,)
-#            print
-#            file_plain = os.path.join(os.path.join(resultfolder,hostname),grp+"_"+test+"_plain.dat")
-#            file_marker = os.path.join(os.path.join(resultfolder,hostname),grp+"_"+test+"_marker.dat")
-#            print "|| Variant || Plain (Min) || LIKWID (Min) || Plain (Max) || LIKWID (Max) || Plain (Avg) || LIKWID (Avg) ||"
-#            for i, variant in enumerate(test_set[grp][test]["variants"]):
-#                results_plain = get_values_from_file(file_plain, i*test_set[grp][test]["RUNS"], test_set[grp][test]["RUNS"])
-#                results_marker = get_values_from_file(file_marker, i*test_set[grp][test]["RUNS"], test_set[grp][test]["RUNS"])
-#                if results_plain == []: results_plain.append(0)
-#                if results_marker == []: results_marker.append(0)
-#                print "|| %s || %d || %d || %d || %d || %d || %d ||" % (variant, min(results_plain), min(results_marker), max(results_plain), max(results_marker), int(statistics.mean(results_plain)), int(statistics.mean(results_marker)),)
-#            print
-#            print
+    print "| Group | Tests |"
+    print "|-------|-------|"
+    for grp in testable_groups.keys():
+        print "| %s | %s |" % (grp, ", ".join (testable_groups[grp]))
+    print
+    print "## Accuracy comparison"
+    print "For each varification group, the tests are performed twice. Once in a plain manner without measuring but calculating the resulting values and once through an instumented code with LIKWID.<br>\n"
+    
+    
+    for grp in testable_groups.keys():
+        print "### Verification of Group %s" % (grp,)
+        for test in testable_groups[grp]:
+            #print grp, test, test_set[grp][test]
+            print "#### Verification of Group %s with Test %s\n" % (grp, test,)
+            print "| *Stream size* | *Iterations* |"
+            print "|---------------|--------------|"
+            for variant in test_set[grp][test]["variants"]:
+                print "| %s | %s |" % (variant, test_set[grp][test][variant], )
+            print 
+            print "Each data size is tested %d times, hence the first %d entries on the x-axis correspond to the %d runs for the first data size of %s and so on.<br>\n" % (test_set[grp][test]["RUNS"],test_set[grp][test]["RUNS"],test_set[grp][test]["RUNS"],test_set[grp][test]["variants"][0],)
+            print "%s/images/%s/%s_%s.png" % (picture_base,hostname, grp, test,)
+            print
+            file_plain = os.path.join(os.path.join(resultfolder,hostname),grp+"_"+test+"_plain.dat")
+            file_marker = os.path.join(os.path.join(resultfolder,hostname),grp+"_"+test+"_marker.dat")
+            print "| Variant | Plain (Min) | LIKWID (Min) | Plain (Max) | LIKWID (Max) | Plain (Avg) | LIKWID (Avg) |"
+            print "| ------- | ------- | ------- | ------- | ------- | ------- | ------- |"
+            for i, variant in enumerate(test_set[grp][test]["variants"]):
+                results_plain = get_values_from_file(file_plain, i*test_set[grp][test]["RUNS"], test_set[grp][test]["RUNS"])
+                results_correct = get_values_from_file(file_correct, i*test_set[grp][test]["RUNS"], test_set[grp][test]["RUNS"])
+                results_marker = get_values_from_file(file_marker, i*test_set[grp][test]["RUNS"], test_set[grp][test]["RUNS"])
+                if results_plain == []: results_plain.append(0)
+                if results_marker == []: results_marker.append(0)
+                if results_correct == []: results_correct.append(0)
+                print "| %s | %d | %d | %d | %d | %d | %d |" % (variant, min(results_correct), min(results_marker), max(results_correct), max(results_marker), int(statistics.mean(results_correct)), int(statistics.mean(results_marker)),)
+            print
+            print
