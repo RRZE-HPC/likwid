@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_westmereEX_counters.h
+ *      Filename:  perfmon_nehalemEX_counters.h
  *
  *      Description: Counter Header File of perfmon module for Intel Westmere EX.
  *

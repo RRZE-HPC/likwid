@@ -1,6 +1,6 @@
 # =======================================================================================
 #
-#      Filename:  perfmon_haswell_events.txt
+#      Filename:  perfmon_haswellEP_events.txt
 #
 #      Description:  Event list for Intel Haswell EP/EN/EX
 #

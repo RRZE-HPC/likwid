@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_haswell_counters.h
+ *      Filename:  perfmon_haswellEP_counters.h
  *
- *      Description:  Counter Header File of perfmon module for Intel Haswell.
+ *      Description:  Counter Header File of perfmon module for Intel Haswell EP/EN/EX.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
