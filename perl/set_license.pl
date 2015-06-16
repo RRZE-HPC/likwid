@@ -8,14 +8,17 @@ use File::Copy;
 my $mc = '#';
 my $cc = ' *';
 my $fc = '!';
+my $lc = ' *';
 
 #my $VERSION   = '<VERSION>';
 #my $DATE   = '<DATE>';
-my $VERSION   = '3.1';
-my $DATE   = '5.2.2014';
-my $YEAR  = '2014';
-my $AUTHOR = 'Jan Treibig';
+my $VERSION   = '4.0';
+my $DATE   = '16.6.2015';
+my $YEAR  = '2015';
+my $AUTHOR = 'RRZE, University Erlangen-Nuremberg';
 my $LICENSE = 'gpl';
+
+my @SKIPLIST = ('ghash.c','ghash.h','loadData.S','bstrlib.c','bstrlib.h');
 
 sub print_copyright
 {
@@ -72,108 +75,143 @@ END
     }
 }
 
-sub wanted 
+sub wanted
 {
-	my $filename;
+    my $filename;
 
-	if (scalar(@_)) {
-		$filename = shift;
-	} else {
-		$filename = $_;
-	}
+    if (scalar(@_)) {
+        $filename = shift;
+    } else {
+        $filename = $_;
+    }
 
-	if (($filename =~ /^\./) or (-d $_)) {
-		return;
-	}
+    if (($filename =~ /^\./) or (-d $filename)) {
+        return;
+    }
 
-	my $in_copyright = 0;
-	my $in_header = 0;
-	my $style = $cc;
-	my $enter = 0;
-	open INFILE, "< $filename";
-	open OUTFILE, "> $filename.tmp";
-	print "Process $filename\n";
+    foreach my $filter ( @SKIPLIST ) {
+        if ( $filename eq $filter ) {
+            print "SKIP $filename\n";
+            return;
+        }
+    }
 
-	while( <INFILE> ) {
+    my $in_copyright = 0;
+    my $in_header = 0;
+    my $style = $cc;
+    my $enter = 0;
+    open INFILE, "< $filename";
+    open OUTFILE, "> $filename.tmp";
+    print "Process $filename\n";
 
-		if (/\/\*/ and !$enter) {
-			$style = $cc;
-			$enter = 1;
-			$in_header = 1;
-			print  OUTFILE "/*\n";
-			print  OUTFILE "$style =======================================================================================\n";
-			next;
-		} elsif (/# =/ and !$enter) {
-			$style = $mc;
-			$enter = 1;
-			$in_header = 1;
-			print  OUTFILE "$style =======================================================================================\n";
-			next;
-		} elsif (/! =/ and !$enter) {
-			$style = $fc;
-			$enter = 1;
-			$in_header = 1;
-			print  OUTFILE "$style =======================================================================================\n";
-			next;
-		} elsif (!$enter) {
-			print "Skip $filename: No header found!\n";
-			return;
-		}
+    while( <INFILE> ) {
+        # Ensure UNIX line ending
+        $_ =~ s/\cM\cJ|\cM|\cJ/\n/g;
 
-		if ($in_header) {
-			if(/Filename:[ ]+([A-za-z0-9._\-]+)/) {
-				if ($1 ne $filename) {
-					print "File name mismatch: $filename header says $1\n";
-				}
-				print  OUTFILE "$_";
-			} elsif(/Version:/) {
-				print OUTFILE  "$style      Version:   $VERSION\n";
-			} elsif(/Released:/) {
-				print  OUTFILE "$style      Released:  $DATE\n";
-			} elsif(/Company:/) {
-				#Skip company from header
-			} elsif(/Copyright/) {
-				$in_copyright = 1;
-#				print  OUTFILE "$style\n";
-				print_copyright(\*OUTFILE, $style);
-			} elsif(/# =/ or /! =/) {
-				$in_copyright = 0;
-				$in_header = 0;
-			} elsif (/\*\//) {
-				$in_copyright = 0;
-				$in_header = 0;
-				print  OUTFILE " */\n";
-			} elsif (/\* =/) {
-				# Skip initial hline
-			} else {
-				if($in_copyright eq 0) {
-					print  OUTFILE "$_";
-				}
-			}
+        if (/\/\*/ and !$enter) {
+            $style = $cc;
+            $enter = 1;
+            $in_header = 1;
+            print  OUTFILE "/*\n";
+            print  OUTFILE "$style =======================================================================================\n";
+            next;
+        } elsif (/# =/ and !$enter) {
+            $style = $mc;
+            $enter = 1;
+            $in_header = 1;
+            print  OUTFILE "$style =======================================================================================\n";
+            next;
+        } elsif (/! =/ and !$enter) {
+            $style = $fc;
+            $enter = 1;
+            $in_header = 1;
+            print  OUTFILE "$style =======================================================================================\n";
+            next;
+        } elsif (/#!/ and !$enter) {
+            $style = $lc;
+            $enter = 1;
+            $in_header = 1;
+            print  OUTFILE "$_";
+            print  OUTFILE "--[[\n";
+            print  OUTFILE "$style =======================================================================================\n";
+            next;
+        } elsif (/\-\-\[\[/ and !$enter) {
+            $style = $lc;
+            $enter = 1;
+            $in_header = 1;
+            print  OUTFILE "--[[\n";
+            print  OUTFILE "$style =======================================================================================\n";
+            next;
+        } elsif (!$enter) {
+            print "Skip $filename: No header found!\n";
+            unlink "$filename.tmp" or die  "Failed to delete file $filename\n";
+            return;
+        }
 
-		} else {
-			print  OUTFILE "$_";
-		}
-	}
+        if ($in_header) {
+            if(/Filename:[ ]+([A-za-z0-9._\-]+)/) {
+                if ($1 ne $filename) {
+                    print "File name mismatch: $filename header says $1\n";
+                }
+                print  OUTFILE "$_";
+            } elsif(/Version:/) {
+                print OUTFILE  "$style      Version:   $VERSION\n";
+            } elsif(/Released:/) {
+                print  OUTFILE "$style      Released:  $DATE\n";
+            } elsif(/Copyright/) {
+                $in_copyright = 1;
+                print_copyright(\*OUTFILE, $style);
+            } elsif(/# =/ or /! =/) {
+                $in_copyright = 0;
+                $in_header = 0;
+            } elsif (/\*\//) {
+                $in_copyright = 0;
+                $in_header = 0;
+                print  OUTFILE " */\n";
+            } elsif (/\]\]$/) {
+                $in_copyright = 0;
+                $in_header = 0;
+                print  OUTFILE "]]\n";
+            } elsif (/\* =/ or /\-\-\[\[/) {
+                # Skip initial hline
+            } else {
+                if($in_copyright eq 0) {
+                    print  OUTFILE "$_";
+                }
+            }
+        } else {
+            print  OUTFILE "$_";
+        }
+    }
 
-	close INFILE;
-	close OUTFILE;
+    close INFILE;
+    close OUTFILE;
 
-	unlink $filename or die  "Failed to delete file $filename\n";
-	copy ("$filename.tmp", $filename) or die "Copy failed\n";
-	unlink "$filename.tmp" or die  "Failed to delete file $filename\n";
+    unlink $filename or die  "Failed to delete file $filename\n";
+    copy ("$filename.tmp", $filename) or die "Copy failed\n";
+    unlink "$filename.tmp" or die  "Failed to delete file $filename\n";
 }
 
 
 if (defined $ARGV[0]) {
     my $filename = $ARGV[0];
     wanted($filename);
-	exit (0);
+    exit (0);
 }
 
 my @directories;
 push @directories, 'src';
+push @directories, 'bench/src';
+push @directories, 'bench/includes';
+push @directories, 'examples';
 
 find(\&wanted,  @directories);
+
+# single files
+wanted('Makefile');
+chdir 'bench';
+wanted('Makefile');
+wanted('likwid-bench.c');
+
 
 

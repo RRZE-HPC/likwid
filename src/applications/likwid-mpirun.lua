@@ -1,5 +1,4 @@
 #!<PREFIX>/bin/likwid-lua
-
 --[[
  * =======================================================================================
  *
@@ -11,7 +10,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2015 Thomas Roehl
