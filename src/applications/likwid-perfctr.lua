@@ -403,10 +403,10 @@ if print_info or verbose > 0 then
         print_stdout(string.format("PERFMON number of fixed counters:\t%u",cpuinfo["perf_num_fixed_ctr"]))
     end
     print_stdout(likwid.hline)
-    likwid.printSupportedCPUs()
+    if not print_info then likwid.printSupportedCPUs() end
     likwid.putTopology()
     likwid.putConfiguration()
-    os.exit(0)
+    if print_info then os.exit(0) end
 end
 
 if use_stethoscope == false and use_timeline == false and use_marker == false then
