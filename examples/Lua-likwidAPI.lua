@@ -1,19 +1,19 @@
 #!<PREFIX>/bin/likwid-lua
-
 --[[
  * =======================================================================================
+
  *
  *      Filename:  Lua-likwidAPI.lua
  *
  *      Description:  Example how to use the LIKWID API in Lua scripts
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.0
+ *      Released:  16.6.2015
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 Thomas Roehl
+ *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,7 @@
  *      You should have received a copy of the GNU General Public License along with
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- *=======================================================================================
+ * =======================================================================================
 ]]
 
 package.path = package.path .. ';<PREFIX>/share/lua/?.lua'
