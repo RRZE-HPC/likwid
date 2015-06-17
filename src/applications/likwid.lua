@@ -241,11 +241,20 @@ local function get_spaces(str, min_space, max_space)
 end
 
 local function calculate_metric(formula, counters_to_values)
-    local result = "Nan"
-    for counter,value in pairs(counters_to_values) do
-        formula = string.gsub(formula, tostring(counter), tostring(value))
+    local function cmp(a,b)
+        if a:len() > b:len() then return true end
+        return false
     end
-
+    local result = "Nan"
+    local err = false
+    local clist = {}
+    for counter,value in pairs(counters_to_values) do
+        table.insert(clist, counter)
+    end
+    table.sort(clist, cmp)
+    for _,counter in pairs(clist) do
+        formula = string.gsub(formula, tostring(counter), tostring(counters_to_values[counter]))
+    end
     for c in formula:gmatch"." do
         if c ~= "+" and c ~= "-" and  c ~= "*" and  c ~= "/" and c ~= "(" and c ~= ")" and c ~= "." and c:lower() ~= "e" then
             local tmp = tonumber(c)
@@ -259,8 +268,12 @@ local function calculate_metric(formula, counters_to_values)
         end
     end
     if not err then
-        result = assert(loadstring("return (" .. formula .. ")")())
-        if (result == nil or result ~= result or result == infinity or result == -infinity) then
+        if formula then
+            result = assert(loadstring("return (" .. formula .. ")")())
+            if (result == nil or result ~= result or result == infinity or result == -infinity) then
+                result = 0
+            end
+        else
             result = 0
         end
     end
