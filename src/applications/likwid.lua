@@ -894,10 +894,12 @@ local function min_max_avg(values)
     sum = 0.0
     count = 0
     for _, value in pairs(values) do
-        if (value < min) then min = value end
-        if (value > max) then max = value end
-        sum = sum + value
-        count = count + 1
+        if value ~= nil then
+            if (value < min) then min = value end
+            if (value > max) then max = value end
+            sum = sum + value
+            count = count + 1
+        end
     end
     return min, max, sum/count
 end
