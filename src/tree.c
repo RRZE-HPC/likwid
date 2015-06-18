@@ -170,6 +170,7 @@ tree_nodeExists(TreeNode* nodePtr, int id)
     if (nodePtr == NULL)
     {
         ERROR_PLAIN_PRINT(Node invalid);
+        return 0;
     }
 
     walker = nodePtr->llink;
@@ -198,6 +199,7 @@ tree_countChildren(TreeNode* nodePtr)
     if (nodePtr == NULL)
     {
         ERROR_PLAIN_PRINT(Node invalid);
+        return 0;
     }
     if (nodePtr->llink == NULL)
     {
@@ -223,6 +225,7 @@ tree_getNode(TreeNode* nodePtr, int id)
     if (nodePtr == NULL)
     {
         ERROR_PLAIN_PRINT(Node invalid);
+        return NULL;
     }
     if (nodePtr->llink == NULL)
     {
@@ -252,6 +255,7 @@ tree_getChildNode(TreeNode* nodePtr)
     if (nodePtr == NULL)
     {
         ERROR_PLAIN_PRINT(Node invalid);
+        return NULL;
     }
     if (nodePtr->llink == NULL)
     {

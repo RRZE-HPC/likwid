@@ -55,6 +55,7 @@ int hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwl
     int i;
     int count = 0;
     hwloc_obj_t walker;
+    if (!obj) return 0;
     if (!obj->arity) return 0;
     for (i=0;i<obj->arity;i++)
     {
@@ -85,7 +86,13 @@ void hwloc_init_cpuInfo(cpu_set_t cpuSet)
     cpuid_info.model = 0;
     cpuid_info.family = 0;
     cpuid_info.isIntel = 0;
+    cpuid_info.stepping = 0;
     cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
+    cpuid_info.osname[0] = '\0';
+    if (!obj)
+    {
+        return;
+    }
 
     const char * info;
     if (info = hwloc_obj_get_info_by_name(obj, "CPUModelNumber"))
@@ -146,10 +153,10 @@ void hwloc_init_nodeTopology(cpu_set_t cpuSet)
     maxNumLogicalProcsPerCore = maxNumLogicalProcs/maxNumCores;
     for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
     {
+        int skip = 0;
         obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PU, i);
         if (!obj)
         {
-            printf("No obj for CPU %d\n", i);
             continue;
         }
         id = obj->os_index;
@@ -158,10 +165,31 @@ void hwloc_init_nodeTopology(cpu_set_t cpuSet)
         hwThreadPool[id].threadId = obj->sibling_rank;
         while (obj->type != HWLOC_OBJ_CORE) {
             obj = obj->parent;
+            if (!obj)
+            {
+                skip = 1;
+                break;
+            }
+        }
+        if (skip)
+        {
+            hwThreadPool[id].coreId = 0;
+            hwThreadPool[id].packageId = 0;
+            continue;
         }
         hwThreadPool[id].coreId = obj->os_index;
         while (obj->type != socket_type) {
             obj = obj->parent;
+            if (!obj)
+            {
+                skip = 1;
+                break;
+            }
+        }
+        if (skip)
+        {
+            hwThreadPool[id].packageId = 0;
+            continue;
         }
         hwThreadPool[id].packageId = obj->os_index;
         /*DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Socket %d,
@@ -200,6 +228,7 @@ void hwloc_init_cacheTopology(void)
     /* Start at the bottom of the tree to get all cache levels in order */
     depth = hwloc_topology_get_depth(hwloc_topology);
     id = 0;
+    
     for(d=depth-1;d >= 0; d--)
     {
         /* We only need caches, so skip other levels */
@@ -236,15 +265,21 @@ void hwloc_init_cacheTopology(void)
             cachePool[id].sets = cachePool[id].size /
                 (cachePool[id].associativity * cachePool[id].lineSize);
         }
+
         /* Count all HWThreads below the current cache */
         cachePool[id].threads = hwloc_record_objs_of_type_below_obj(
                         hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
 
         char* info;
         if (info = hwloc_obj_get_info_by_name(obj, "inclusiveness"))
+        {
             cachePool[id].inclusive = info[0]=='t';
+        }
         else
+        {
             ERROR_PLAIN_PRINT(Processor is not supported);
+            break;
+        }
         id++;
     }
 
