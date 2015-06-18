@@ -270,9 +270,6 @@ install: install_daemon install_freq
 	@install -m 755 liblikwid.so $(PREFIX)/lib
 	@install -m 644 liblikwid.a $(PREFIX)/lib
 	@install -m 755 liblikwidpin.so $(PREFIX)/lib
-	@install -m 644 ext/lua/liblua.a $(PREFIX)/lib
-	@install -m 755 ext/hwloc/libhwloc.so $(PREFIX)/lib
-	@install -m 644 ext/hwloc/libhwloc.a $(PREFIX)/lib
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
@@ -327,8 +324,6 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -rf  $(PREFIX)/share/lua/likwid.lua
 	@echo "===> REMOVING libs from $(PREFIX)/lib"
 	@rm -f $(PREFIX)/lib/liblikwid*
-	@rm -f $(PREFIX)/lib/libhwloc*
-	@rm -f $(PREFIX)/lib/liblua*
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
 	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(L_APPS)))
 	@rm -f $(MANPREFIX)/man1/feedGnuplot.1
