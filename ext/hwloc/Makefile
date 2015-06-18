@@ -12,6 +12,11 @@ INCLUDES  += -I./include
 LIBS      = -L. -lm -Wl,-E
 LFLAGS    = -Wno-unused-result -fPIC
 Q         ?= @
+ifeq ($(DEBUG),true)
+DEBUG_FLAGS = -g
+else
+DEBUG_FLAGS =
+endif
 ifeq ($(COMPILER),MIC)
 CFLAGS += -mmic
 LFLAGS += -mmic
@@ -41,12 +46,12 @@ $(STATIC_LIBHWLOC): $(OBJ)
 	$(Q)${AR} -cq $(STATIC_LIBHWLOC) $(OBJ)
 
 $(SHARED_LIBHWLOC): $(OBJ)
-	${Q}$(CC) $(LFLAGS) -Wall -shared -fPIC -o $(SHARED_LIBHWLOC) $(OBJ) $(LIBS)
+	${Q}$(CC) $(DEBUG_FLAGS) $(LFLAGS) -Wall -shared -fPIC -o $(SHARED_LIBHWLOC) $(OBJ) $(LIBS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
-	${Q}$(CC) -c  $(CFLAGS) $(CPPFLAGS) $< -o $@
-	${Q}$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+	${Q}$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(CPPFLAGS) $< -o $@
+	${Q}$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)

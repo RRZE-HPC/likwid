@@ -12,6 +12,11 @@ DEFINES   = -DLUA_COMPAT_ALL -DLUA_USE_LINUX
 LIBS      = -lm -Wl,-E -ldl
 #LFLAGS    =
 Q         ?= @
+ifeq ($(DEBUG),true)
+DEBUG_FLAGS = -g
+else
+DEBUG_FLAGS =
+endif
 ifeq ($(COMPILER),MIC)
 CFLAGS += -mmic
 LFLAGS += -mmic
@@ -47,8 +52,8 @@ $(INTERPRETER): $(STATIC_LIBLUA) $(BUILD_DIR)/lua.o
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
-	${Q}$(CC) -c  $(CFLAGS) $(CPPFLAGS) $< -o $@
-	${Q}$(CC) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+	${Q}$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(CPPFLAGS) $< -o $@
+	${Q}$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
