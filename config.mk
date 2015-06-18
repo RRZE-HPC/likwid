@@ -40,6 +40,9 @@ INSTRUMENT_BENCH = false#NO SPACE
 # Use Portable Hardware Locality (hwloc) instead of CPUID
 USE_HWLOC = true#NO SPACE
 
+# Build LIKWID with debug flags
+DEBUG = false#NO SPACE
+
 # Usually you do not need to edit below
 MAX_NUM_THREADS = 263
 MAX_NUM_NODES = 64
