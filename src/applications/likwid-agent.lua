@@ -44,6 +44,7 @@ dconfig["gmetric"] = false
 dconfig["gmetricPath"] = "gmetric"
 dconfig["gmetricConfig"] = nil
 dconfig["gmetricHasUnit"] = false
+dconfig["gmetricHasGroup"] = false
 dconfig["rrd"] = false
 dconfig["rrdPath"] = "."
 dconfig["syslog"] = false
@@ -207,12 +208,11 @@ local function calc_max(key, results)
 end
 
 local function check_logfile()
-    local g = io.popen("ls "..dconfig["logPath"], "r")
-    if g == nil then
+    local g = os.execute("cd "..dconfig["logPath"], "r")
+    if g == false then
         print("Logfile path".. dconfig["logPath"].. " does not exist.")
         return false
     end
-    g:close()
     return true
 end
 
@@ -282,6 +282,9 @@ local function check_gmetric()
     if msg:match("units=") then
         dconfig["gmetricHasUnit"] = true
     end
+    if msg:match("group=") then
+        dconfig["gmetricHasGroup"] = true
+    end
     f:close()
     return true
 end
@@ -296,7 +299,7 @@ local function gmetric(gdata, results)
         table.insert(execList, "-c")
         table.insert(execList, dconfig["gmetricConfig"])
     end
-    if gdata["GroupString"] ~= gdata["EventString"] then
+    if dconfig["gmetricHasGroup"] and gdata["GroupString"] ~= gdata["EventString"] then
         table.insert(execList, "-g")
         table.insert(execList, gdata["GroupString"])
     end
@@ -304,29 +307,28 @@ local function gmetric(gdata, results)
         local execStr = table.concat(execList, " ")
         if k ~= "Timestamp" then
             execStr = execStr .. " -t double "
-        else
-            execStr = execStr .. " -t string "
+
+            local name = k
+            local unit = nil
+            local s,e = k:find("%[")
+            if s ~= nil then
+                name = k:sub(0,s-2):gsub("^%s*(.-)%s*$", "%1")
+                unit = k:sub(s+1,k:len()-1):gsub("^%s*(.-)%s*$", "%1")
+            end
+            execStr = execStr .. " --name=\"" .. name .."\""
+            if dconfig["gmetricHasUnit"] and unit ~= nil then
+                execStr = execStr .. " --units=\"" .. unit .."\""
+            end
+            local value = tonumber(v)
+            if v ~= nil and value ~= nil then
+                execStr = execStr .. " --value=\"" .. string.format("%f", value) .."\""
+            elseif v ~= nil then
+                execStr = execStr .. " --value=\"" .. tostring(v) .."\""
+            else
+                execStr = execStr .. " --value=\"0\""
+            end
+            os.execute(execStr)
         end
-        local name = k
-        local unit = nil
-        local s,e = k:find("%[")
-        if s ~= nil then
-            name = k:sub(0,s-1):gsub("^%s*(.-)%s*$", "%1")
-            unit = k:sub(s+1,k:len()-1):gsub("^%s*(.-)%s*$", "%1")
-        end
-        execStr = execStr .. " --name=\"" .. name .."\""
-        if dconfig["gmetricHasUnit"] and unit ~= nil then
-            execStr = execStr .. " --units=\"" .. unit .."\""
-        end
-        local value = tonumber(v)
-        if v ~= nil and value ~= nil then
-            execStr = execStr .. " --value=\"" .. string.format("%f", value) .."\""
-        elseif value ~= nil then
-            execStr = execStr .. " --value=\"" .. tostring(v) .."\""
-        else
-            execStr = execStr .. " --value=\"0\""
-        end
-        os.execute(execStr)
     end
 end
 
@@ -394,6 +396,7 @@ end
 -- Get architectural information for the current system
 local cpuinfo = likwid.getCpuInfo()
 local cputopo = likwid.getCpuTopology()
+local affinity = likwid.getAffinityInfo()
 -- Read LIKWID configuration file, mainly to avoid topology lookup
 local config = likwid.getConfiguration()
 -- Read LIKWID daemon configuration file
@@ -440,8 +443,8 @@ end
 
 -- Add all cpus to the cpulist
 local cpulist = {}
-for i, thread in pairs(cputopo["threadPool"]) do
-    table.insert(cpulist, thread["apicId"])
+for i=0, cputopo["numHWThreads"]-1 do
+    table.insert(cpulist, cputopo["threadPool"][i]["apicId"])
 end
 
 -- Select access mode to msr devices, try configuration file first
@@ -468,7 +471,7 @@ if #dconfig["groupData"] == 0 then
     print("None of the event strings can be added for current architecture.")
     os.exit(1)
 end
-
+power = likwid.getPowerInfo()
 -- Initialize likwid perfctr
 likwid.init(cputopo["numHWThreads"], cpulist)
 for k,v in pairs(dconfig["groupData"]) do
@@ -477,6 +480,7 @@ for k,v in pairs(dconfig["groupData"]) do
         create_rrd(#dconfig["groupData"], dconfig["duration"], v)
     end
 end
+
 likwid.catchSignal()
 while likwid.getSignalState() == 0 do
 
@@ -500,12 +504,23 @@ while likwid.getSignalState() == 0 do
                 if threadResults[thread] == nil then
                     threadResults[thread] = {}
                 end
-                threadResults[thread]["time"] = mtime - old_mtime
+                local time = mtime - old_mtime
+                threadResults[thread]["time"] = time
                 threadResults[thread]["inverseClock"] = 1.0/clock;
                 local result = likwid.getResult(groupID, event, thread)
                 if threadResults[thread][gdata["Events"][event]["Counter"]] == nil then
-                    threadResults[thread][gdata["Events"][event]["Counter"]] = result
+                    threadResults[thread][gdata["Events"][event]["Counter"]] = 0
                 end
+                
+                if gdata["Events"][event]["Counter"]:match("PWR%d") then
+                    dname = gdata["Events"][event]["Event"]:match("PWR_(%a+)_ENERGY")
+                    if power["domains"][dname]["supportInfo"] then
+                        if result ~= 0 and result/time > power["domains"][dname]["maxPower"]*1E-6 then
+                            result = power["domains"][dname]["tdp"]*1E-6 * time
+                        end
+                    end
+                end
+                threadResults[thread][gdata["Events"][event]["Counter"]] = result
             end
         end
 
@@ -529,18 +544,18 @@ while likwid.getSignalState() == 0 do
                 table.remove(itemlist, 1)
                 desc = table.concat(itemlist," ")
                 if func == "AVG" then
-                    output[metric["description"]] = calc_avg(metric["description"], threadOutput)
+                    output[metric["description"]:gsub(" ","_")] = calc_avg(metric["description"], threadOutput)
                 elseif func == "SUM" then
-                    output[metric["description"]] = calc_sum(metric["description"], threadOutput)
+                    output[metric["description"]:gsub(" ","_")] = calc_sum(metric["description"], threadOutput)
                 elseif func == "MIN" then
-                    output[metric["description"]] = calc_min(metric["description"], threadOutput)
+                    output[metric["description"]:gsub(" ","_")] = calc_min(metric["description"], threadOutput)
                 elseif func == "MAX" then
-                    output[metric["description"]] = calc_max(metric["description"], threadOutput)
+                    output[metric["description"]:gsub(" ","_")] = calc_max(metric["description"], threadOutput)
                 elseif func == "ONCE" then
-                    output[metric["description"]] = threadOutput[1][metric["description"]]
+                    output[metric["description"]:gsub(" ","_")] = threadOutput[1][metric["description"]]
                 else
                     for thread=1, likwid.getNumberOfThreads() do
-                        output["T"..cpulist[thread] .. " " .. metric["description"]] = threadOutput[thread][metric["description"]]
+                        output["T"..cpulist[thread] .. "_" .. metric["description"]] = threadOutput[thread][metric["description"]]
                     end
                 end
             end
