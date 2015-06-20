@@ -78,6 +78,8 @@ power_init(int cpuId)
         case BROADWELL:
         case BROADWELL_E:
         case BROADWELL_D:
+        case HASWELL_M1:
+        case HASWELL_M2:
             power_info.hasRAPL = 1;
             break;
         case ATOM_SILVERMONT_C:
