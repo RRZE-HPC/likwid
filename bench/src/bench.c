@@ -55,11 +55,9 @@
 #ifdef PERFMON
 #define START_PERFMON likwid_markerStartRegion("bench");
 #define STOP_PERFMON  likwid_markerStopRegion("bench");
-#define LIKWID_THREAD_INIT  likwid_markerThreadInit();
 #else
 #define START_PERFMON
 #define STOP_PERFMON
-#define LIKWID_THREAD_INIT
 #endif
 
 #define EXECUTE(func)   \
@@ -425,16 +423,14 @@ void* runTest(void* arg)
         } \
         iterations = i;  \
     } \
-    BARRIER;
 
 
-void* getIter(void* arg)
+void* getIterSingle(void* arg)
 {
-    int threadId;
-    int offset;
-    size_t size;
+    int threadId = 0;
+    int offset = 0;
+    size_t size = 0;
     size_t i;
-    BarrierData barr;
     ThreadData* data;
     ThreadUserData* myData;
     TimerData time;
@@ -445,46 +441,9 @@ void* getIter(void* arg)
     myData = &(data->data);
     func = myData->test->kernel;
     threadId = data->threadId;
-    barrier_registerThread(&barr, 0, data->globalThreadId);
 
+    size = myData->size;
 
-    /* Prepare ptrs for thread */
-    size = myData->size / data->numberOfThreads;
-    size -= (size%myData->test->stride);
-    offset = data->threadId * size;
-
-    switch ( myData->test->type )
-    {
-        case SINGLE:
-            {
-                float* sptr;
-                for (i=0; i <  myData->test->streams; i++)
-                {
-                    sptr = (float*) myData->streams[i];
-                    sptr +=  offset;
-                    myData->streams[i] = (float*) sptr;
-                }
-            }
-            break;
-        case DOUBLE:
-            {
-                double* dptr;
-                for (i=0; i <  myData->test->streams; i++)
-                {
-                    dptr = (double*) myData->streams[i];
-                    dptr +=  offset;
-                    myData->streams[i] = (double*) dptr;
-                }
-            }
-            break;
-    }
-
-    /* pin the thread */
-    likwid_pinThread(myData->processors[threadId]);
-#ifdef PERFMON
-    LIKWID_THREAD_INIT;
-    BARRIER;
-#endif
 
     switch ( myData->test->streams ) {
         case STREAM_1:
@@ -766,7 +725,6 @@ void* getIter(void* arg)
         default:
             break;
     }
-
     data->data.iter = iterations;
-    pthread_exit(NULL);
+    return NULL;
 }

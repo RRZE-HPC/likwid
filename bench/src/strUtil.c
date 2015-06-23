@@ -28,6 +28,7 @@
  * =======================================================================================
  */
 #include <strUtil.h>
+#include <math.h>
 
 static int str2int(const char* str)
 {
@@ -153,33 +154,30 @@ void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int n
         group->numberOfThreads = str2int(bdata(tokens->entry[2]));
         chunksize = str2int(bdata(tokens->entry[3]));
         stride = str2int(bdata(tokens->entry[4]));
-        maxNumThreads = (domain->numberOfProcessors / stride) * chunksize;
+        maxNumThreads = ceil((double)domain->numberOfProcessors / stride) * chunksize;
 
         if (group->numberOfThreads > maxNumThreads)
         {
-            fprintf(stderr, "Error: Domain %s supports only up to %d threads with used expression.\n",
-                    bdata(tokens->entry[0]), maxNumThreads);
-            exit(EXIT_FAILURE);
+            fprintf(stderr, "Warning: More threads (%d) requested than CPUs in domain %s fulfilling expression (%d).\n",
+                    group->numberOfThreads, bdata(tokens->entry[0]), maxNumThreads);
         }
 
         group->processorIds = (int*) malloc(group->numberOfThreads * sizeof(int));
 
         counter = chunksize;
 
-        for (i=0; i<group->numberOfThreads; i++)
+        counter = 0;
+        for (int j=0; j<group->numberOfThreads; j+=chunksize)
         {
-            if (counter)
+            for(i=0;i<chunksize && j+i<group->numberOfThreads ;i++)
             {
-                group->processorIds[i] = domain->processorList[currentId++];
+                group->processorIds[startId++] = domain->processorList[counter+i];
             }
-            else
+            counter += stride;
+            if (counter >= domain->numberOfProcessors)
             {
-                startId += stride;
-                currentId = startId;
-                group->processorIds[i] = domain->processorList[currentId++];
-                counter = chunksize;
+                counter = counter-domain->numberOfProcessors;
             }
-            counter--;
         }
     }
     else if (tokens->qty == 3)
@@ -206,16 +204,15 @@ void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int n
 
         if (group->numberOfThreads > domain->numberOfProcessors)
         {
-            fprintf(stderr, "Error: Domain %s supports only up to %d threads.\n",
-                    bdata(tokens->entry[0]), domain->numberOfProcessors);
-            exit(EXIT_FAILURE);
+            fprintf(stderr, "Warning: More threads (%d) requested than CPUs in domain %s (%d).\n",
+                    group->numberOfThreads, bdata(tokens->entry[0]), domain->numberOfProcessors);
         }
 
         group->processorIds = (int*) malloc(group->numberOfThreads * sizeof(int));
 
         for (i=0; i<group->numberOfThreads; i++)
         {
-            group->processorIds[i] = domain->processorList[i];
+            group->processorIds[i] = domain->processorList[i % domain->numberOfProcessors];
         }
     }
     else if (tokens->qty == 2)

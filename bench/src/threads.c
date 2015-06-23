@@ -243,7 +243,7 @@ size_t
 threads_updateIterations(int groupId, size_t demandIter)
 {
     int i;
-    size_t iterations = threads_data[0].data.iter;
+    size_t iterations = threads_data[0].data.iter * threads_groups[groupId].numberOfThreads;
     if (demandIter > 0)
     {
         iterations = demandIter;

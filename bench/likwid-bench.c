@@ -47,7 +47,7 @@
 #include <likwid.h>
 
 extern void* runTest(void* arg);
-extern void* getIter(void* arg);
+extern void* getIterSingle(void* arg);
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -320,9 +320,12 @@ int main(int argc, char** argv)
     barrier_registerGroup(globalNumberOfThreads);
     cpuClock = timer_getCpuClock();
 
-#ifdef PERFMON
-    printf("Using Likwid Marker API\n");
-    likwid_markerInit();
+#ifdef LIKWID_PERFMON
+    if (getenv("LIKWID_FILEPATH") != NULL)
+    {
+        printf("Using Likwid Marker API\n");
+        LIKWID_MARKER_INIT;
+    }
 #endif
 
 
@@ -357,15 +360,12 @@ int main(int argc, char** argv)
         free(myData.streams);
     }
 
-    if (demandIter == 0)
-    {
-        threads_create(getIter);
-        threads_join();
-    }
+    getIterSingle((void*) &threads_data[0]);
     for (i=0; i<numberOfWorkgroups; i++)
     {
         iter = threads_updateIterations(i, demandIter);
     }
+
     threads_create(runTest);
     threads_join();
     allocator_finalize();
@@ -414,9 +414,12 @@ int main(int argc, char** argv)
     ownprintf(bdata(HLINE));
     threads_destroy(numberOfWorkgroups);
 
-#ifdef PERFMON
-    printf("Writing Likwid Marker API results to file\n");
-    likwid_markerClose();
+#ifdef LIKWID_PERFMON
+    if (getenv("LIKWID_FILEPATH") != NULL)
+    {
+        printf("Writing Likwid Marker API results to file %s\n", getenv("LIKWID_FILEPATH"));
+        LIKWID_MARKER_CLOSE;
+    }
 #endif
 
     return EXIT_SUCCESS;
