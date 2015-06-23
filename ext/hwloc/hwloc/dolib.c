@@ -33,10 +33,10 @@ int main(int argc, char *argv[]) {
   if (sscanf(version, "%d:%d:%d", &current, &revision, &age) != 3)
     exit(EXIT_FAILURE);
 
-  _snprintf(name, sizeof(name), "libhwloc-%d", current - age);
+  snprintf(name, sizeof(name), "libhwloc-%d", current - age);
   printf("using soname %s\n", name);
 
-  _snprintf(s, sizeof(s), "\"%s\" /machine:%s /def:%s /name:%s /out:%s",
+  snprintf(s, sizeof(s), "\"%s\" /machine:%s /def:%s /name:%s /out:%s",
       prog, arch, def, name, lib);
   if (system(s)) {
     fprintf(stderr, "%s failed\n", s);

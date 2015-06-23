@@ -216,6 +216,7 @@ void hwloc_init_cacheTopology(void)
     hwloc_obj_t obj;
     int depth;
     int d;
+    const char* info;
 
     /* Sum up all depths with caches */
     depth = hwloc_topology_get_depth(hwloc_topology);
@@ -270,7 +271,6 @@ void hwloc_init_cacheTopology(void)
         cachePool[id].threads = hwloc_record_objs_of_type_below_obj(
                         hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
 
-        char* info;
         if (info = hwloc_obj_get_info_by_name(obj, "inclusiveness"))
         {
             cachePool[id].inclusive = info[0]=='t';
