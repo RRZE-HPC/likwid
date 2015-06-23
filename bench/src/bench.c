@@ -36,7 +36,6 @@
 #include <sys/syscall.h>
 #include <string.h>
 #include <sched.h>
-//#include <types.h>
 #include <unistd.h>
 
 #include <allocator.h>
@@ -49,27 +48,19 @@
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-//#define BARRIER pthread_barrier_wait(&threads_barrier)
 #define BARRIER   barrier_synchronize(&barr)
 
-#ifdef PERFMON
-#define START_PERFMON likwid_markerStartRegion("bench");
-#define STOP_PERFMON  likwid_markerStopRegion("bench");
-#else
-#define START_PERFMON
-#define STOP_PERFMON
-#endif
 
 #define EXECUTE(func)   \
     BARRIER; \
     timer_start(&time); \
-    START_PERFMON  \
+    LIKWID_MARKER_START("bench");  \
     for (i=0; i<myData->iter; i++) \
     {   \
         func; \
     } \
     BARRIER; \
-    STOP_PERFMON  \
+    LIKWID_MARKER_STOP("bench");  \
     timer_stop(&time); \
     data->cycles = timer_printCycles(&time); \
     BARRIER
@@ -410,19 +401,16 @@ void* runTest(void* arg)
 
 
 #define MEASURE(func) \
-    if (data->globalThreadId == 0) \
+    timer_start(&time); \
+    i = 0; \
+    for (i=0; i < SIZE_MAX; i++) \
     { \
-        timer_start(&time); \
-        i = 0; \
-        for (i=0; i < SIZE_MAX; i++) \
-        { \
-            func; \
-            timer_stop(&time); \
-            if (timer_print(&time) >= (double)data->data.min_runtime) \
-                break; \
-        } \
-        iterations = i;  \
+        func; \
+        timer_stop(&time); \
+        if (timer_print(&time) >= (double)data->data.min_runtime) \
+            break; \
     } \
+    iterations = i;  \
 
 
 void* getIterSingle(void* arg)

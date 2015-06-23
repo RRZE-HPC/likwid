@@ -225,6 +225,17 @@ void likwid_markerInit(void)
     bdestroy(bEventStr);
 
     groupSet->activeGroup = 0;
+    for (i=0; i<num_cpus; i++)
+    {
+        HPMaddThread(threads2Cpu[i]);
+        initThreadArch(threads2Cpu[i]);
+        hashTable_initThread(threads2Cpu[i]);
+        for(int j=0; j<groupSet->groups[groupSet->activeGroup].numberOfEvents;j++)
+        {
+            groupSet->groups[groupSet->activeGroup].events[j].threadCounter[i].init = TRUE;
+        }
+    }
+
 }
 
 void likwid_markerThreadInit(void)
@@ -234,7 +245,7 @@ void likwid_markerThreadInit(void)
         return;
     }
 
-    int cpu_id = likwid_getProcessorId();
+    /*int cpu_id = likwid_getProcessorId();
     int thread_id = getThreadID(cpu_id);
 
     HPMaddThread(cpu_id);
@@ -244,7 +255,7 @@ void likwid_markerThreadInit(void)
     for(int i=0; i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
         groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].init = TRUE;
-    }
+    }*/
 }
 
 void likwid_markerNextGroup(void)

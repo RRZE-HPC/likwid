@@ -324,8 +324,9 @@ int main(int argc, char** argv)
     if (getenv("LIKWID_FILEPATH") != NULL)
     {
         printf("Using Likwid Marker API\n");
-        LIKWID_MARKER_INIT;
+        
     }
+    LIKWID_MARKER_INIT;
 #endif
 
 
@@ -368,7 +369,6 @@ int main(int argc, char** argv)
 
     threads_create(runTest);
     threads_join();
-    allocator_finalize();
 
     for (int i=0; i<globalNumberOfThreads; i++)
     {
@@ -418,8 +418,8 @@ int main(int argc, char** argv)
     if (getenv("LIKWID_FILEPATH") != NULL)
     {
         printf("Writing Likwid Marker API results to file %s\n", getenv("LIKWID_FILEPATH"));
-        LIKWID_MARKER_CLOSE;
     }
+    LIKWID_MARKER_CLOSE;
 #endif
 
     return EXIT_SUCCESS;
