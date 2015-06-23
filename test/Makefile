@@ -1,7 +1,9 @@
 include ../config.mk
 
-LIKWID_LIB = -L$(PREFIX)/lib -llikwid
-INCLUDES = -I$(PREFIX)/include
+#LIKWID_LIB = -L$(PREFIX)/lib -llikwid
+#INCLUDES = -I$(PREFIX)/include
+LIKWID_LIB = -L.. -llikwid
+INCLUDES = -I../src//includes
 
 all:  testmarker testmarkerF90 stream streamM
 
@@ -23,7 +25,10 @@ testmarker-omp:
 test-mpi:
 	mpicc -O2 -fopenmp -D_GNU_SOURCE  -o $@ MPI_pin_test.c
 
-.PHONY: clean streamM test-mpi
+stream_cilk:
+	icc -g -O0 -DLIKWID_PERFMON $(INCLUDES) -o $@ stream_cilk.c $(LIKWID_LIB)
+
+.PHONY: clean stream streamM test-mpi stream_cilk
 
 clean: 
 	rm -f stream streamM  testmarker testmarkerF90 test-mpi testmarker-omp
