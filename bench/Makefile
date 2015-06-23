@@ -69,6 +69,10 @@ ifeq ($(USE_HWLOC),true)
 BENCH_LIBS += $(STATIC_HWLOC_LIB)
 endif
 
+ifeq ($(INSTRUMENT_BENCH),true)
+	DEFINES += -DLIKWID_PERFMON
+endif
+
 ifeq ($(DEBUG),true)
 DEBUG_FLAGS = -g
 DEFINES += -DDEBUG_LIKWID
