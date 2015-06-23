@@ -20,10 +20,7 @@ SHARED_CFLAGS = -fPIC -pthread
 SHARED_LFLAGS = -shared -pthread
 
 DEFINES  = -D_GNU_SOURCE
-DEFINES  += -DMAX_NUM_THREADS=128
 DEFINES  += -DPAGE_ALIGNMENT=4096
-#enable this option to build likwid-bench with marker API for likwid-perfctr
-#DEFINES  += -DPERFMON
 
 INCLUDES =
 LIBS     =
