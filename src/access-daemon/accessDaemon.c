@@ -48,6 +48,7 @@
 #include <getopt.h>
 
 #include <pci_types.h>
+#include <registers.h>
 #include <lock.h>
 #include <accessClient_types.h>
 
@@ -86,11 +87,14 @@
 #define IVYBRIDGE_EP         0x3EU
 #define HASWELL              0x3CU
 #define HASWELL_EP           0x3FU
+#define HASWELL_M1           0x45U
+#define HASWELL_M2           0x46U
 #define ATOM_SILVERMONT_E    0x37U
 #define ATOM_SILVERMONT_C    0x4DU
 #define ATOM_SILVERMONT_Z1   0x4AU
 #define ATOM_SILVERMONT_Z2   0x5AU
 #define ATOM_SILVERMONT_F    0x5DU
+#define ATOM_SILVERMONT_AIR  0x4CU
 #define BROADWELL            0x3DU
 #define BROADWELL_E          0x4FU
 #define BROADWELL_D          0x56U
@@ -104,14 +108,16 @@
  * with an external monitoring system. */
 
 /* #####   TYPE DEFINITIONS   ########### */
-typedef int (*FuncPrototype)(uint32_t);
+typedef int (*AllowedPrototype)(uint32_t);
+typedef int (*AllowedPciPrototype)(PciDeviceType, uint32_t);
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 static int sockfd = -1;
 static int connfd = -1; /* temporary in to make it compile */
 static char* filepath;
 static const char* ident = "accessD";
-static FuncPrototype allowed = NULL;
+static AllowedPrototype allowed = NULL;
+static AllowedPciPrototype allowedPci = NULL;
 static int FD_MSR[MAX_NUM_THREADS];
 static int FD_PCI[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
 static int isPCIUncore = 0;
@@ -235,6 +241,144 @@ static int allowed_sandybridge(uint32_t reg)
     return 0;
 }
 
+static int allowed_pci_sandybridge(PciDeviceType type, uint32_t reg)
+{
+    switch (type)
+    {
+        case NONE:
+            return 1;
+            break;
+        case R3QPI:
+            if ((reg == PCI_UNC_R3QPI_PMON_BOX_CTL) ||
+                (reg == PCI_UNC_R3QPI_PMON_BOX_STATUS) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTL_0) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTL_1) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTL_2) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTR_0_A) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTR_1_A) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTR_2_A) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTR_0_B) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTR_1_B) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTR_2_B))
+            {
+                return 1;
+            }
+            return 0;
+            break;
+        case R2PCIE:
+            if ((reg == PCI_UNC_R2PCIE_PMON_BOX_CTL) ||
+                (reg == PCI_UNC_R2PCIE_PMON_BOX_STATUS) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTL_0) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTL_1) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTL_2) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTL_3) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_0_A) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_1_A) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_2_A) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_3_A) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_0_B) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_1_B) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_2_B) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_3_B))
+            {
+                return 1;
+            }
+            return 0;
+            break;
+        case IMC:
+            if ((reg == PCI_UNC_MC_PMON_BOX_CTL) ||
+                (reg == PCI_UNC_MC_PMON_BOX_STATUS) ||
+                (reg == PCI_UNC_MC_PMON_CTL_0) ||
+                (reg == PCI_UNC_MC_PMON_CTL_1) ||
+                (reg == PCI_UNC_MC_PMON_CTL_2) ||
+                (reg == PCI_UNC_MC_PMON_CTL_3) ||
+                (reg == PCI_UNC_MC_PMON_CTR_0_A) ||
+                (reg == PCI_UNC_MC_PMON_CTR_1_A) ||
+                (reg == PCI_UNC_MC_PMON_CTR_2_A) ||
+                (reg == PCI_UNC_MC_PMON_CTR_3_A) ||
+                (reg == PCI_UNC_MC_PMON_CTR_0_B) ||
+                (reg == PCI_UNC_MC_PMON_CTR_1_B) ||
+                (reg == PCI_UNC_MC_PMON_CTR_2_B) ||
+                (reg == PCI_UNC_MC_PMON_CTR_3_B) ||
+                (reg == PCI_UNC_MC_PMON_FIXED_CTL) ||
+                (reg == PCI_UNC_MC_PMON_FIXED_CTR_A) ||
+                (reg == PCI_UNC_MC_PMON_FIXED_CTR_B))
+            {
+                return 1;
+            }
+            return 0;
+            break;
+        case HA:
+            if ((reg == PCI_UNC_HA_PMON_BOX_CTL) ||
+                (reg == PCI_UNC_HA_PMON_BOX_STATUS) ||
+                (reg == PCI_UNC_HA_PMON_CTL_0) ||
+                (reg == PCI_UNC_HA_PMON_CTL_1) ||
+                (reg == PCI_UNC_HA_PMON_CTL_2) ||
+                (reg == PCI_UNC_HA_PMON_CTL_3) ||
+                (reg == PCI_UNC_HA_PMON_CTR_0_A) ||
+                (reg == PCI_UNC_HA_PMON_CTR_1_A) ||
+                (reg == PCI_UNC_HA_PMON_CTR_2_A) ||
+                (reg == PCI_UNC_HA_PMON_CTR_3_A) ||
+                (reg == PCI_UNC_HA_PMON_CTR_0_B) ||
+                (reg == PCI_UNC_HA_PMON_CTR_1_B) ||
+                (reg == PCI_UNC_HA_PMON_CTR_2_B) ||
+                (reg == PCI_UNC_HA_PMON_CTR_3_B) ||
+                (reg == PCI_UNC_HA_PMON_OPCODEMATCH) ||
+                (reg == PCI_UNC_HA_PMON_ADDRMATCH0) ||
+                (reg == PCI_UNC_HA_PMON_ADDRMATCH1))
+            {
+                return 1;
+            }
+            return 0;
+            break;
+        case QPI:
+            if ((reg == PCI_UNC_QPI_PMON_BOX_CTL) ||
+                (reg == PCI_UNC_QPI_PMON_BOX_STATUS) ||
+                (reg == PCI_UNC_QPI_PMON_CTL_0) ||
+                (reg == PCI_UNC_QPI_PMON_CTL_1) ||
+                (reg == PCI_UNC_QPI_PMON_CTL_2) ||
+                (reg == PCI_UNC_QPI_PMON_CTL_3) ||
+                (reg == PCI_UNC_QPI_PMON_CTR_0_A) ||
+                (reg == PCI_UNC_QPI_PMON_CTR_1_A) ||
+                (reg == PCI_UNC_QPI_PMON_CTR_2_A) ||
+                (reg == PCI_UNC_QPI_PMON_CTR_3_A) ||
+                (reg == PCI_UNC_QPI_PMON_CTR_0_B) ||
+                (reg == PCI_UNC_QPI_PMON_CTR_1_B) ||
+                (reg == PCI_UNC_QPI_PMON_CTR_2_B) ||
+                (reg == PCI_UNC_QPI_PMON_CTR_3_B) ||
+                (reg == PCI_UNC_QPI_PMON_MASK_0) ||
+                (reg == PCI_UNC_QPI_PMON_MASK_1) ||
+                (reg == PCI_UNC_QPI_PMON_MATCH_0) ||
+                (reg == PCI_UNC_QPI_PMON_MATCH_1) ||
+                (reg == PCI_UNC_QPI_RATE_STATUS))
+            {
+                return 1;
+            }
+            return 0;
+            break;
+        case IRP:
+            if ((reg == PCI_UNC_IRP_PMON_BOX_STATUS) ||
+                (reg == PCI_UNC_IRP_PMON_BOX_CTL) ||
+                (reg == PCI_UNC_IRP0_PMON_CTL_0) ||
+                (reg == PCI_UNC_IRP0_PMON_CTL_1) ||
+                (reg == PCI_UNC_IRP0_PMON_CTR_0) ||
+                (reg == PCI_UNC_IRP0_PMON_CTR_1) ||
+                (reg == PCI_UNC_IRP1_PMON_CTL_0) ||
+                (reg == PCI_UNC_IRP1_PMON_CTL_1) ||
+                (reg == PCI_UNC_IRP1_PMON_CTR_0) ||
+                (reg == PCI_UNC_IRP1_PMON_CTR_1))
+            {
+                return 1;
+            }
+            return 0;
+            break;
+        default:
+            return 0;
+            break;
+    }
+    return 0;
+}
+
 static int allowed_haswell(uint32_t reg)
 {
     if ((allowed_intel(reg)) ||
@@ -249,6 +393,133 @@ static int allowed_haswell(uint32_t reg)
     }
 }
 
+static int allowed_pci_haswell(PciDeviceType type, uint32_t reg)
+{
+    switch (type)
+    {
+        case NONE:
+            return 1;
+            break;
+        case R3QPI:
+            if ((reg == PCI_UNC_R3QPI_PMON_BOX_CTL) ||
+                (reg == PCI_UNC_R3QPI_PMON_BOX_STATUS) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTL_0) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTL_1) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTL_2) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTR_0_A) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTR_1_A) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTR_2_A) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTR_0_B) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTR_1_B) ||
+                (reg == PCI_UNC_R3QPI_PMON_CTR_2_B))
+            {
+                return 1;
+            }
+            return 0;
+            break;
+        case R2PCIE:
+            if ((reg == PCI_UNC_R2PCIE_PMON_BOX_CTL) ||
+                (reg == PCI_UNC_R2PCIE_PMON_BOX_STATUS) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTL_0) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTL_1) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTL_2) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTL_3) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_0_A) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_1_A) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_2_A) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_3_A) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_0_B) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_1_B) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_2_B) ||
+                (reg == PCI_UNC_R2PCIE_PMON_CTR_3_B))
+            {
+                return 1;
+            }
+            return 0;
+            break;
+        case IMC:
+            if ((reg == PCI_UNC_MC_PMON_BOX_CTL) ||
+                (reg == PCI_UNC_MC_PMON_BOX_STATUS) ||
+                (reg == PCI_UNC_MC_PMON_CTL_0) ||
+                (reg == PCI_UNC_MC_PMON_CTL_1) ||
+                (reg == PCI_UNC_MC_PMON_CTL_2) ||
+                (reg == PCI_UNC_MC_PMON_CTL_3) ||
+                (reg == PCI_UNC_MC_PMON_CTR_0_A) ||
+                (reg == PCI_UNC_MC_PMON_CTR_1_A) ||
+                (reg == PCI_UNC_MC_PMON_CTR_2_A) ||
+                (reg == PCI_UNC_MC_PMON_CTR_3_A) ||
+                (reg == PCI_UNC_MC_PMON_CTR_0_B) ||
+                (reg == PCI_UNC_MC_PMON_CTR_1_B) ||
+                (reg == PCI_UNC_MC_PMON_CTR_2_B) ||
+                (reg == PCI_UNC_MC_PMON_CTR_3_B) ||
+                (reg == PCI_UNC_MC_PMON_FIXED_CTL) ||
+                (reg == PCI_UNC_MC_PMON_FIXED_CTR_A) ||
+                (reg == PCI_UNC_MC_PMON_FIXED_CTR_B))
+            {
+                return 1;
+            }
+            return 0;
+            break;
+        case HA:
+            if ((reg == PCI_UNC_HA_PMON_BOX_CTL) ||
+                (reg == PCI_UNC_HA_PMON_BOX_STATUS) ||
+                (reg == PCI_UNC_HA_PMON_CTL_0) ||
+                (reg == PCI_UNC_HA_PMON_CTL_1) ||
+                (reg == PCI_UNC_HA_PMON_CTL_2) ||
+                (reg == PCI_UNC_HA_PMON_CTL_3) ||
+                (reg == PCI_UNC_HA_PMON_CTR_0_A) ||
+                (reg == PCI_UNC_HA_PMON_CTR_1_A) ||
+                (reg == PCI_UNC_HA_PMON_CTR_2_A) ||
+                (reg == PCI_UNC_HA_PMON_CTR_3_A) ||
+                (reg == PCI_UNC_HA_PMON_CTR_0_B) ||
+                (reg == PCI_UNC_HA_PMON_CTR_1_B) ||
+                (reg == PCI_UNC_HA_PMON_CTR_2_B) ||
+                (reg == PCI_UNC_HA_PMON_CTR_3_B) ||
+                (reg == PCI_UNC_HA_PMON_OPCODEMATCH) ||
+                (reg == PCI_UNC_HA_PMON_ADDRMATCH0) ||
+                (reg == PCI_UNC_HA_PMON_ADDRMATCH1))
+            {
+                return 1;
+            }
+            return 0;
+            break;
+        case QPI:
+            if ((reg == PCI_UNC_V3_QPI_PMON_BOX_CTL) ||
+                (reg == PCI_UNC_V3_QPI_PMON_BOX_STATUS) ||
+                (reg == PCI_UNC_V3_QPI_PMON_CTL_0) ||
+                (reg == PCI_UNC_V3_QPI_PMON_CTL_1) ||
+                (reg == PCI_UNC_V3_QPI_PMON_CTL_2) ||
+                (reg == PCI_UNC_V3_QPI_PMON_CTL_3) ||
+                (reg == PCI_UNC_V3_QPI_PMON_CTR_0_A) ||
+                (reg == PCI_UNC_V3_QPI_PMON_CTR_1_A) ||
+                (reg == PCI_UNC_V3_QPI_PMON_CTR_2_A) ||
+                (reg == PCI_UNC_V3_QPI_PMON_CTR_3_A) ||
+                (reg == PCI_UNC_V3_QPI_PMON_CTR_0_B) ||
+                (reg == PCI_UNC_V3_QPI_PMON_CTR_1_B) ||
+                (reg == PCI_UNC_V3_QPI_PMON_CTR_2_B) ||
+                (reg == PCI_UNC_V3_QPI_PMON_CTR_3_B) ||
+                (reg == PCI_UNC_V3_QPI_PMON_RX_MASK_0) ||
+                (reg == PCI_UNC_V3_QPI_PMON_RX_MASK_1) ||
+                (reg == PCI_UNC_V3_QPI_PMON_RX_MATCH_0) ||
+                (reg == PCI_UNC_V3_QPI_PMON_RX_MATCH_1) ||
+                (reg == PCI_UNC_V3_QPI_PMON_TX_MASK_0) ||
+                (reg == PCI_UNC_V3_QPI_PMON_TX_MASK_1) ||
+                (reg == PCI_UNC_V3_QPI_PMON_TX_MATCH_0) ||
+                (reg == PCI_UNC_V3_QPI_PMON_TX_MATCH_1) ||
+                (reg == PCI_UNC_V3_QPI_RATE_STATUS) ||
+                (reg == PCI_UNC_V3_QPI_LINK_LLR) ||
+                (reg == PCI_UNC_V3_QPI_LINK_IDLE))
+            {
+                return 1;
+            }
+            return 0;
+            break;
+        default:
+            return 0;
+            break;
+    }
+    return 0;
+}
 
 static int allowed_silvermont(uint32_t reg)
 {
@@ -379,6 +650,15 @@ static void pci_read(AccessDataRecord* dRecord)
         return;
     }
 
+    if (allowedPci)
+    {
+        if (!allowedPci(pci_devices[device].type, reg))
+        {
+        dRecord->errorcode = ERR_RESTREG;
+        return;
+        }
+    }
+
     if ( !FD_PCI[socketId][device] )
     {
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
@@ -423,6 +703,15 @@ static void pci_write(AccessDataRecord* dRecord)
     {
         dRecord->errorcode = ERR_NODEV;
         return;
+    }
+
+    if (allowedPci)
+    {
+        if (!allowedPci(pci_devices[device].type, reg))
+        {
+        dRecord->errorcode = ERR_RESTREG;
+        return;
+        }
     }
 
     if ( !FD_PCI[socketId][device] )
@@ -643,9 +932,12 @@ int main(void)
                 else if ((model == SANDYBRIDGE_EP) || (model == IVYBRIDGE_EP))
                 {
                     allowed = allowed_sandybridge;
+                    allowedPci = allowed_pci_sandybridge;
                     isPCIUncore = 1;
                 }
                 else if ((model == HASWELL) ||
+                         (model == HASWELL_M1) ||
+                         (model == HASWELL_M2) ||
                          (model == BROADWELL) ||
                          (model == BROADWELL_D) ||
                          (model == BROADWELL_E))
@@ -656,12 +948,14 @@ int main(void)
                 {
                     isPCIUncore = 1;
                     allowed = allowed_haswell;
+                    allowedPci = allowed_pci_haswell;
                 }
                 else if ((model == ATOM_SILVERMONT_C) ||
                          (model == ATOM_SILVERMONT_E) ||
                          (model == ATOM_SILVERMONT_Z1) ||
                          (model == ATOM_SILVERMONT_Z2) ||
-                         (model == ATOM_SILVERMONT_F))
+                         (model == ATOM_SILVERMONT_F) ||
+                         (model == ATOM_SILVERMONT_AIR))
                 {
                     allowed = allowed_silvermont;
                 }

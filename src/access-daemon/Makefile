@@ -32,7 +32,7 @@ include  ../../make/include_$(COMPILER).mk
 DAEMON_TARGET = likwid-accessD
 SETFREQ_TARGET = likwid-setFreq
 
-DEFINES   = -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) -DPCILIST="$(PCI_SOCKETS)"
+DEFINES   = -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS)
 INCLUDES  = -I../includes
 ifeq ($(COMPILER),GCC)
 CFLAGS    +=  -Wall -Wextra -std=c99
