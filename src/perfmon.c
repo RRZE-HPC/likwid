@@ -1206,22 +1206,22 @@ perfmon_addEventSet(char* eventCString)
         subtokens = bsplit(eventtokens->entry[i],':');
         if (subtokens->qty < 2)
         {
-            fprintf(stderr,"Cannot parse event descriptor %s\n", bdata(eventtokens->entry[i]));
+            ERROR_PRINT(Cannot parse event descriptor %s, bdata(eventtokens->entry[i]));
             continue;
         }
         else
         {
             if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type))
             {
-                fprintf(stderr,"Counter register %s not supported or PCI device not available\n",bdata(
-                        subtokens->entry[1]));
+                DEBUG_PRINT(DEBUGLEV_INFO, Counter register %s not supported or PCI device not available,
+                            bdata(subtokens->entry[1]));
                 event->type = NOTYPE;
                 goto past_checks;
             }
 
             if (!getEvent(subtokens->entry[0], subtokens->entry[1], &event->event))
             {
-                fprintf(stderr,"Event %s not found for current architecture\n",
+                DEBUG_PRINT(DEBUGLEV_INFO, Event %s not found for current architecture,
                      bdata(subtokens->entry[0]));
                 event->type = NOTYPE;
                 goto past_checks;
@@ -1229,14 +1229,14 @@ perfmon_addEventSet(char* eventCString)
            
             if (!checkCounter(subtokens->entry[1], event->event.limit))
             {
-                fprintf(stderr,"Register %s not allowed for event %s\n",
+                DEBUG_PRINT(DEBUGLEV_INFO, Register %s not allowed for event %s,
                      bdata(subtokens->entry[1]),bdata(subtokens->entry[0]));
                 event->type = NOTYPE;
                 goto past_checks;
             }
             if (parseOptions(subtokens, &event->event, event->index) < 0)
             {
-                fprintf(stderr,"Cannot parse options in %s\n", bdata(eventtokens->entry[i]));
+                DEBUG_PRINT(DEBUGLEV_INFO, Cannot parse options in %s, bdata(eventtokens->entry[i]));
                 event->type = NOTYPE;
                 goto past_checks;
             }
