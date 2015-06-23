@@ -60,6 +60,19 @@ static char * sosearchpaths[] = {
     NULL
 };
 
+
+#ifdef COLOR
+#define color_print(format,...) do { \
+        color_on(BRIGHT, COLOR); \
+        printf(format, ##__VA_ARGS__); \
+        color_reset(); \
+    } while(0)
+#else
+#define color_print(format,...) do { \
+        printf(format, ##__VA_ARGS__); \
+    } while(0)
+#endif
+
 int
 pthread_create(pthread_t* thread,
         const pthread_attr_t* attr,
@@ -76,7 +89,8 @@ pthread_create(pthread_t* thread,
     static int overflow = 0;
     static int silent = 0;
     static int pin_ids[MAX_NUM_THREADS];
-    static uint64_t skipMask = 0;
+    static uint64_t skipMask = 0x0;
+    static int ncpus = 0;
 
 
     /* On first entry: Get Evironment Variable and initialize pin_ids */
@@ -86,19 +100,13 @@ pthread_create(pthread_t* thread,
         char *token, *saveptr;
         char *delimiter = ",";
         int i = 0;
-        int ncpus = 0;
 
         str = getenv("LIKWID_SKIP");
         if (str != NULL)
         {
             skipMask = strtoul(str, &str, 16);
         }
-        else
-        {
-            printf("[pthread wrapper] ERROR: Environment Variabel LIKWID_SKIP not set!\n");
-        }
-
-        if ( skipMask == 0 )
+        else if ( skipMask == 0x0 )
         {
             dlerror();    /* Clear any existing error */
             dlsym(RTLD_DEFAULT,"__kmpc_begin");
@@ -108,20 +116,15 @@ pthread_create(pthread_t* thread,
             }
         }
 
+
         if (getenv("LIKWID_SILENT") != NULL)
         {
             silent = 1;
         }
-#ifdef COLOR
-        else
-        {
-            color_on(BRIGHT, COLOR);
-        }
-#endif
 
         if (!silent)
         {
-            printf("[pthread wrapper] ");
+            color_print("[pthread wrapper] \n",4);
         }
 
         str = getenv("LIKWID_PIN");
@@ -142,31 +145,21 @@ pthread_create(pthread_t* thread,
         }
         else
         {
-            printf("[pthread wrapper] ERROR: Environment Variabel LIKWID_PIN not set!\n");
+            color_print("[pthread wrapper] ERROR: Environment Variabel LIKWID_PIN not set!\n");
         }
 
         if (!silent)
         {
-            printf("[pthread wrapper] PIN_MASK: ");
+            color_print("[pthread wrapper] PIN_MASK: ");
 
             for (int i=0;i<ncpus;i++)
             {
-                printf("%d->%d  ",i,pin_ids[i]);
+                color_print("%d->%d  ",i,pin_ids[i]);
             }
-            printf("\n");
-            printf("[pthread wrapper] SKIP MASK: 0x%llX\n",LLU_CAST skipMask);
+            color_print("\n[pthread wrapper] SKIP MASK: 0x%llX\n",LLU_CAST skipMask);
         }
 
         overflow = ncpus;
-    }
-    else
-    {
-#ifdef COLOR
-        if (!silent)
-        {
-            color_on(BRIGHT, COLOR);
-        }
-#endif
     }
 
     /* Handle dll related stuff */
@@ -187,7 +180,7 @@ pthread_create(pthread_t* thread,
 
     if (!handle)
     {
-        printf("%s\n", dlerror());
+        color_print("%s\n", dlerror());
         return -1;
     }
 
@@ -196,7 +189,7 @@ pthread_create(pthread_t* thread,
 
     if ((error = dlerror()) != NULL)
     {
-        printf("%s\n", error);
+        color_print("%s\n", error);
         return -2;
     }
 
@@ -211,7 +204,7 @@ pthread_create(pthread_t* thread,
         {
             if (!silent)
             {
-                printf("\tthreadid %lu -> SKIP \n", *thread);
+                color_print("\tthreadid %lu -> SKIP \n", *thread);
             }
         }
         else
@@ -224,8 +217,7 @@ pthread_create(pthread_t* thread,
             {
                 if (!silent)
                 {
-                    printf("Roundrobin placement triggered\n");
-                    printf("\tthreadid %lu -> core %d - OK", *thread, pin_ids[npinned]);
+                    color_print("Roundrobin placement triggered\n\tthreadid %lu -> core %d - OK", *thread, pin_ids[npinned]);
                 }
                 npinned = 0;
             }
@@ -233,17 +225,14 @@ pthread_create(pthread_t* thread,
             {
                 if (!silent)
                 {
-                    printf("\tthreadid %lu -> core %d - OK", *thread, pin_ids[npinned]);
+                    color_print("\tthreadid %lu -> core %d - OK", *thread, pin_ids[npinned]);
                 }
                 npinned++;
             }
 
             if (!silent)
             {
-#ifdef COLOR
-                color_reset();
-#endif
-                printf("\n");
+                color_print("\n");
             }
         }
     }

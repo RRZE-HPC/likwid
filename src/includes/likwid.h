@@ -576,6 +576,13 @@ Pin process to a CPU. Duplicate of likwid_pinProcess()
 @param [in] processorId CPU ID for pinning
 */
 extern void affinity_pinProcess(int processorId);
+/*! \brief Pin processes to a CPU
+
+Pin processes to a CPU. Creates a cpuset with the given processor IDs
+@param [in] cpu_count Number of processors in processorIds
+@param [in] processorIds Array of processor IDs
+*/
+extern void affinity_pinProcesses(int cpu_count, int* processorIds);
 /*! \brief Pin thread to a CPU
 
 Pin thread to a CPU. Duplicate of likwid_pinThread()

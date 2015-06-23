@@ -222,6 +222,7 @@ void likwid_markerInit(void)
         groups[i] = perfmon_addEventSet(bdata(eventStrings->entry[i]));
     }
     bstrListDestroy(eventStrings);
+    bdestroy(bEventStr);
 
     groupSet->activeGroup = 0;
 }

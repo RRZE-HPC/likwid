@@ -223,7 +223,12 @@ if num_threads > 1 then
 
     likwid.setenv("KMP_AFFINITY","disabled")
     likwid.setenv("LIKWID_PIN", pinString)
-    likwid.setenv("LIKWID_SKIP",skipString)
+    if os.getenv("CILK_NWORKERS") == nil then
+        likwid.setenv("CILK_NWORKERS", tostring(num_threads))
+    end
+    if skipString ~= "0x0" then
+        likwid.setenv("LIKWID_SKIP",skipString)
+    end
 
     if preload == nil then
         likwid.setenv("LD_PRELOAD",likwid.pinlibpath)
@@ -234,14 +239,26 @@ end
 
 likwid.pinProcess(cpu_list[1], quiet)
 local exec = table.concat(arg," ",1, likwid.tablelength(arg)-2)
-local err
-err = os.execute(exec)
-if (err == false) then
+local pid = likwid.startProgram(exec, num_threads, cpu_list)
+if (pid == nil) then
     print("Failed to execute command: ".. exec)
     likwid.putTopology()
     likwid.putAffinityInfo()
     likwid.putConfiguration()
     os.exit(1)
+end
+
+while true do
+    local remain = 0
+    if likwid.getSignalState() ~= 0 then
+        likwid.killProgram()
+        break
+    end
+    remain = likwid.sleep(10)
+    if remain > 0 or not likwid.checkProgram() then
+        io.stdout:flush()
+        break
+    end
 end
 
 likwid.putAffinityInfo()

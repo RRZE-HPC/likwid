@@ -443,15 +443,20 @@ if pin_cpus then
 
         likwid.setenv("KMP_AFFINITY","disabled")
         likwid.setenv("LIKWID_PIN", pinString)
-        likwid.setenv("LIKWID_SKIP",skipString)
         likwid.setenv("LIKWID_SILENT","true")
+        if os.getenv("CILK_NWORKERS") == nil then
+            likwid.setenv("CILK_NWORKERS", tostring(num_threads))
+        end
+        if skipString ~= "0x0" then
+            likwid.setenv("LIKWID_SKIP",skipString)
+        end
         if preload == nil then
             likwid.setenv("LD_PRELOAD",likwid.pinlibpath)
         else
             likwid.setenv("LD_PRELOAD",likwid.pinlibpath .. ":" .. preload)
         end
     end
-    likwid.pinProcess(cpulist[1], 1)
+    --likwid.pinProcess(cpulist[1], 1)
 end
 
 
@@ -562,7 +567,12 @@ if use_wrapper or use_timeline then
         duration = 30.E06
     end
 
-    local pid = likwid.startProgram(execString)
+    local pid = nil
+    if pin_cpus then
+        pid = likwid.startProgram(execString, #cpulist, cpulist)
+    else
+        pid = likwid.startProgram(execString, 0, cpulist)
+    end
     if not pid then
         print_stdout("Failed to execute command: ".. execString)
         likwid.stopCounters()

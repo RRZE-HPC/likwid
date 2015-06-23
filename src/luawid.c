@@ -1454,7 +1454,18 @@ static int lua_likwid_startProgram(lua_State* L)
     char *exec;
     char  *argv[4096];
     exec = (char *)luaL_checkstring(L, 1);
-
+    int nrThreads = luaL_checknumber(L,2);
+    int cpus[nrThreads];
+    if (!lua_istable(L, -1)) {
+      lua_pushstring(L,"No table given as second argument");
+      lua_error(L);
+    }
+    for (status = 1; status<=nrThreads; status++)
+    {
+        lua_rawgeti(L,-1,status);
+        cpus[status-1] = lua_tounsigned(L,-1);
+        lua_pop(L,1);
+    }
     parse(exec, argv);
     ppid = getpid();
     program_running = 1;
@@ -1465,12 +1476,15 @@ static int lua_likwid_startProgram(lua_State* L)
     }
     else if ( pid == 0)
     {
-        
+        if (nrThreads > 0)
+        {
+            affinity_pinProcesses(nrThreads, cpus);
+        }
         status = execvp(*argv, argv);
         if (status < 0)
         {
+            printf("Killing process\n");
             kill(ppid, SIGCHLD);
-            exit(1);
         }
         return 0;
     }
@@ -1481,7 +1495,6 @@ static int lua_likwid_startProgram(lua_State* L)
     }
     return 1;
 }
-
 static int lua_likwid_checkProgram(lua_State* L)
 {
     lua_pushboolean(L, program_running);
