@@ -432,6 +432,9 @@ void* getIterSingle(void* arg)
 
     size = myData->size;
 
+#ifdef DEBUG_LIKWID
+    printf("Automatic iteration count detection:");
+#endif
 
     switch ( myData->test->streams ) {
         case STREAM_1:
@@ -714,5 +717,8 @@ void* getIterSingle(void* arg)
             break;
     }
     data->data.iter = iterations;
+#ifdef DEBUG_LIKWID
+    printf(" %d iterations per thread\n", iterations);
+#endif
     return NULL;
 }

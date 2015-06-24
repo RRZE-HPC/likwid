@@ -30,10 +30,6 @@ else
 endif
 endif
 
-ifeq ($(INSTRUMENT_BENCH),true)
-DEFINES += -DPERFMON
-endif
-
 ifeq ($(HAS_MEMPOLICY),1)
 DEFINES += -DHAS_MEMPOLICY
 else

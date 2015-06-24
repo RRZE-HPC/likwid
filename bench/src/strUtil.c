@@ -257,7 +257,7 @@ void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int n
 
         if (tokens->qty < numberOfStreams)
         {
-            fprintf(stderr, "Testcase requires at least %d streams\n", numberOfStreams);
+            fprintf(stderr, "Error: Testcase requires at least %d streams\n", numberOfStreams);
         }
 
         group->streams = (Stream*) malloc(numberOfStreams * sizeof(Stream));
@@ -271,7 +271,7 @@ void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int n
                 int index = str2int(bdata(subtokens->entry[0]));
                 if (index >= numberOfStreams)
                 {
-                    fprintf(stderr, "Stream Index %d out of range\n",index);
+                    fprintf(stderr, "Error: Stream index %d out of range\n",index);
                 }
                 group->streams[index].domain = bstrcpy(subtokens->entry[1]);
                 group->streams[index].offset = str2int(bdata(subtokens->entry[2]));
@@ -281,14 +281,14 @@ void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int n
                 int index = str2int(bdata(subtokens->entry[0]));
                 if (index >= numberOfStreams)
                 {
-                    fprintf(stderr, "Stream Index %d out of range\n",index);
+                    fprintf(stderr, "Error: Stream index %d out of range\n",index);
                 }
                 group->streams[index].domain = bstrcpy(subtokens->entry[1]);
                 group->streams[index].offset = 0;
             }
             else
             {
-                fprintf(stderr, "Error in parsing event string\n");
+                fprintf(stderr, "Error: Cannot parse stream placement defintition in %s\n", bdata(str));
             }
 
             bstrListDestroy(subtokens);

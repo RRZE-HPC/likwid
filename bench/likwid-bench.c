@@ -54,17 +54,26 @@ extern void* getIterSingle(void* arg);
 #define HELP_MSG printf("Threaded Memory Hierarchy Benchmark --  Version  %d.%d \n\n",VERSION,RELEASE); \
     printf("\n"); \
     printf("Supported Options:\n"); \
-    printf("-h\t Help message\n"); \
-    printf("-a\t List available benchmarks \n"); \
-    printf("-d\t Delimiter used for physical core list (default ,) \n"); \
-    printf("-p\t List available thread domains\n\t or the physical ids of the cores selected by the -c expression \n"); \
+    printf("-h\t\t Help message\n"); \
+    printf("-a\t\t List available benchmarks \n"); \
+    printf("-d\t\t Delimiter used for physical core list (default ,) \n"); \
+    printf("-p\t\t List available thread domains\n"); \
+    printf("\t\t or the physical ids of the cores selected by the -c expression \n"); \
     printf("-s <TIME>\t Seconds to run the test minimally (default 1)\n");\
-    printf("\t If resulting iteration count is below 10, it is normalized to 10.\n");\
+    printf("\t\t If resulting iteration count is below 10, it is normalized to 10.\n");\
+    printf("-i <ITERS>\t Specify the number of iterations per thread manually. \n"); \
     printf("-l <TEST>\t list properties of benchmark \n"); \
     printf("-t <TEST>\t type of test \n"); \
-    printf("-w\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>], size in kB, MB or GB  (mandatory)\n"); \
+    printf("-w\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>]\n"); \
+    printf("\t\t <size> in kB, MB or GB  (mandatory)\n"); \
     printf("\n"); \
-    printf("Usage: likwid-bench -t copy -w S0:100kB:1 \n")
+    printf("Usage: \n"); \
+    printf("# Run the store benchmark on all CPUs of the system with a vector size of 1 GB\n"); \
+    printf("likwid-bench -t store -w S0:1GB\n"); \
+    printf("# Run the copy benchmark on one CPU at CPU socket 0 with a vector size of 100kB\n"); \
+    printf("likwid-bench -t copy -w S0:100kB:1\n"); \
+    printf("# Run the copy benchmark on one CPU at CPU socket 0 with a vector size of 100MB but place one stream on CPU socket 1\n"); \
+    printf("likwid-bench -t copy -w S0:100MB:1-0:S0,1:S1\n"); \
 
 #define VERSION_MSG \
     printf("likwid-bench   %d.%d \n\n",VERSION,RELEASE)
@@ -132,7 +141,7 @@ int main(int argc, char** argv)
         exit(EXIT_SUCCESS);
     }
 
-    while ((c = getopt (argc, argv, "w:t:s:l:aphv")) != -1) {
+    while ((c = getopt (argc, argv, "w:t:s:l:aphvi:")) != -1) {
         switch (c)
         {
             case 'h':
@@ -142,13 +151,16 @@ int main(int argc, char** argv)
                 VERSION_MSG;
                 exit (EXIT_SUCCESS);
             case 'a':
-                printf(TESTS"\n");
+                ownprintf(TESTS"\n");
                 exit (EXIT_SUCCESS);
             case 'w':
                 numberOfWorkgroups++;
                 break;
             case 's':
                 min_runtime = atoi(optarg);
+                break;
+            case 'i':
+                demandIter = strtoul(optarg, NULL, 10);
                 break;
             case 'l':
                 testcase = bfromcstr(optarg);
@@ -163,23 +175,23 @@ int main(int argc, char** argv)
 
                 if (biseqcstr(testcase,"none"))
                 {
-                    fprintf (stderr, "Unknown test case %s\n",optarg);
+                    fprintf (stderr, "Error: Unknown test case %s\n",optarg);
                     return EXIT_FAILURE;
                 }
                 else
                 {
-                    printf("Name: %s\n",test->name);
-                    printf("Number of streams: %d\n",test->streams);
-                    printf("Loop stride: %d\n",test->stride);
-                    printf("Flops: %d\n",test->flops);
-                    printf("Bytes: %d\n",test->bytes);
+                    ownprintf("Name: %s\n",test->name);
+                    ownprintf("Number of streams: %d\n",test->streams);
+                    ownprintf("Loop stride: %d\n",test->stride);
+                    ownprintf("Flops: %d\n",test->flops);
+                    ownprintf("Bytes: %d\n",test->bytes);
                     switch (test->type)
                     {
                         case SINGLE:
-                            printf("Data Type: Single precision float\n");
+                            ownprintf("Data Type: Single precision float\n");
                             break;
                         case DOUBLE:
-                            printf("Data Type: Double precision float\n");
+                            ownprintf("Data Type: Double precision float\n");
                             break;
                     }
                 }
@@ -210,7 +222,7 @@ int main(int argc, char** argv)
 
                 if (biseqcstr(testcase,"none"))
                 {
-                    fprintf (stderr, "Unknown test case %s\n",optarg);
+                    fprintf (stderr, "Error: Unknown test case %s\n",optarg);
                     return EXIT_FAILURE;
                 }
                 bdestroy(testcase);
@@ -229,13 +241,13 @@ int main(int argc, char** argv)
     }
     if ((numberOfWorkgroups == 0) && (!optPrintDomains))
     {
-        fprintf(stderr, "At least one workgroup (-w) must be set on commandline\n");
+        fprintf(stderr, "Error: At least one workgroup (-w) must be set on commandline\n");
         exit (EXIT_FAILURE);
     }
 
     if (topology_init() != EXIT_SUCCESS)
     {
-        fprintf(stderr, "Unsupported processor!\n");
+        fprintf(stderr, "Error: Unsupported processor!\n");
         exit(EXIT_FAILURE);
     }
     numa_init();
@@ -249,17 +261,17 @@ int main(int argc, char** argv)
     if (optPrintDomains)
     {
         AffinityDomains_t affinity = get_affinityDomains();
-        printf("Number of Domains %d\n",affinity->numberOfAffinityDomains);
+        ownprintf("Number of Domains %d\n",affinity->numberOfAffinityDomains);
         for (i=0; i < affinity->numberOfAffinityDomains; i++ )
         {
-            printf("Domain %d:\n",i);
-            printf("\tTag %s:",bdata(affinity->domains[i].tag));
+            ownprintf("Domain %d:\n",i);
+            ownprintf("\tTag %s:",bdata(affinity->domains[i].tag));
 
             for ( uint32_t j=0; j < affinity->domains[i].numberOfProcessors; j++ )
             {
-                printf(" %d",affinity->domains[i].processorList[j]);
+                ownprintf(" %d",affinity->domains[i].processorList[j]);
             }
-            printf("\n");
+            ownprintf("\n");
         }
         exit (EXIT_SUCCESS);
     }
@@ -278,7 +290,7 @@ int main(int argc, char** argv)
                 {
                     if (currentWorkgroup->streams[i].offset%test->stride)
                     {
-                        fprintf (stderr, "Stream %d: offset is not a multiple of stride!\n",i);
+                        fprintf (stderr, "Error: Stream %d: offset is not a multiple of stride!\n",i);
                         return EXIT_FAILURE;
                     }
                     allocator_allocateVector(&(currentWorkgroup->streams[i].ptr),
@@ -304,11 +316,11 @@ int main(int argc, char** argv)
     }
 
     ownprintf(bdata(HLINE));
-    printf("LIKWID MICRO BENCHMARK\n");
-    printf("Test: %s\n",test->name);
+    ownprintf("LIKWID MICRO BENCHMARK\n");
+    ownprintf("Test: %s\n",test->name);
     ownprintf(bdata(HLINE));
-    printf("Using %" PRIu64 " work groups\n",numberOfWorkgroups);
-    printf("Using %d threads\n",globalNumberOfThreads);
+    ownprintf("Using %" PRIu64 " work groups\n",numberOfWorkgroups);
+    ownprintf("Using %d threads\n",globalNumberOfThreads);
     ownprintf(bdata(HLINE));
 
 
@@ -323,10 +335,10 @@ int main(int argc, char** argv)
 #ifdef LIKWID_PERFMON
     if (getenv("LIKWID_FILEPATH") != NULL)
     {
-        printf("Using Likwid Marker API\n");
-        
+        ownprintf("Using Likwid Marker API\n");
     }
     LIKWID_MARKER_INIT;
+    ownprintf(bdata(HLINE));
 #endif
 
 
@@ -361,11 +373,20 @@ int main(int argc, char** argv)
         free(myData.streams);
     }
 
-    getIterSingle((void*) &threads_data[0]);
-    for (i=0; i<numberOfWorkgroups; i++)
+    if (demandIter == 0)
     {
-        iter = threads_updateIterations(i, demandIter);
+        getIterSingle((void*) &threads_data[0]);
+        for (i=0; i<numberOfWorkgroups; i++)
+        {
+            iter = threads_updateIterations(i, demandIter);
+        }
     }
+#ifdef DEBUG_LIKWID
+    else
+    {
+        ownprintf("Using manually selected iterations per thread\n");
+    }
+#endif
 
     threads_create(runTest);
     threads_join();
@@ -384,40 +405,41 @@ int main(int argc, char** argv)
 
     time = (double) maxCycles / (double) cpuClock;
     ownprintf(bdata(HLINE));
-    printf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
-    printf("CPU Clock:\t\t%" PRIu64 "\n", cpuClock);
-    printf("Time:\t\t\t%e sec\n", time);
-    printf("Iterations:\t\t%" PRIu64 "\n", realIter);
-    printf("Iterations per thread:\t%" PRIu64 "\n",threads_data[0].data.iter);
-    printf("Size:\t\t\t%" PRIu64 "\n",  realSize*test->bytes );
-    printf("Size per thread:\t%" PRIu64 "\n", threads_data[0].data.size*test->bytes);
-    printf("Number of Flops:\t%" PRIu64 "\n", (threads_data[0].data.iter * realSize *  test->flops));
-    printf("MFlops/s:\t\t%.2f\n",
+    ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
+    ownprintf("CPU Clock:\t\t%" PRIu64 "\n", cpuClock);
+    ownprintf("Time:\t\t\t%e sec\n", time);
+    ownprintf("Iterations:\t\t%" PRIu64 "\n", realIter);
+    ownprintf("Iterations per thread:\t%" PRIu64 "\n",threads_data[0].data.iter);
+    ownprintf("Size:\t\t\t%" PRIu64 "\n",  realSize*test->bytes );
+    ownprintf("Size per thread:\t%" PRIu64 "\n", threads_data[0].data.size*test->bytes);
+    ownprintf("Number of Flops:\t%" PRIu64 "\n", (threads_data[0].data.iter * realSize *  test->flops));
+    ownprintf("MFlops/s:\t\t%.2f\n",
             1.0E-06 * ((double) threads_data[0].data.iter * realSize *  test->flops/  time));
-    printf("Data volume (Byte):\t%llu\n", LLU_CAST (threads_data[0].data.iter * realSize *  test->bytes));
-    printf("MByte/s:\t\t%.2f\n",
+    ownprintf("Data volume (Byte):\t%llu\n", LLU_CAST (threads_data[0].data.iter * realSize *  test->bytes));
+    ownprintf("MByte/s:\t\t%.2f\n",
             1.0E-06 * ( (double) threads_data[0].data.iter * realSize *  test->bytes/ time));
 
     cycPerUp = ((double) maxCycles / (double) (threads_data[0].data.iter * realSize));
-    printf("Cycles per update:\t%f\n", cycPerUp);
+    ownprintf("Cycles per update:\t%f\n", cycPerUp);
 
     switch ( test->type )
     {
         case SINGLE:
-            printf("Cycles per cacheline:\t%f\n", (16.0 * cycPerUp));
+            ownprintf("Cycles per cacheline:\t%f\n", (16.0 * cycPerUp));
             break;
         case DOUBLE:
-            printf("Cycles per cacheline:\t%f\n", (8.0 * cycPerUp));
+            ownprintf("Cycles per cacheline:\t%f\n", (8.0 * cycPerUp));
             break;
     }
 
     ownprintf(bdata(HLINE));
     threads_destroy(numberOfWorkgroups);
+    allocator_finalize();
 
 #ifdef LIKWID_PERFMON
     if (getenv("LIKWID_FILEPATH") != NULL)
     {
-        printf("Writing Likwid Marker API results to file %s\n", getenv("LIKWID_FILEPATH"));
+        ownprintf("Writing Likwid Marker API results to file %s\n", getenv("LIKWID_FILEPATH"));
     }
     LIKWID_MARKER_CLOSE;
 #endif

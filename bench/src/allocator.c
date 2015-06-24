@@ -83,18 +83,35 @@ allocator_allocateVector(
 {
     int i;
     size_t bytesize = 0;
-    const AffinityDomain* domain;
+    const AffinityDomain* domain = NULL;
     int errorCode;
+    int elements = 0;
 
     switch ( type )
     {
         case SINGLE:
             bytesize = (size+offset) * sizeof(float);
+            elements = alignment / sizeof(float);
             break;
 
         case DOUBLE:
             bytesize = (size+offset) * sizeof(double);
+            elements = alignment / sizeof(double);
             break;
+    }
+
+    for (i=0;i<domains->numberOfAffinityDomains;i++)
+    {
+        if (biseq(domainString, domains->domains[i].tag))
+        {
+            domain = domains->domains + i;
+        }
+    }
+    if (!domain)
+    {
+        fprintf(stderr, "Error: Cannot use desired domain %s for vector placement, Domain %s does not exist.\n",
+                        bdata(domainString),bdata(domainString));
+        exit(EXIT_FAILURE);
     }
 
     errorCode =  posix_memalign(ptr, alignment, bytesize);
@@ -104,39 +121,32 @@ allocator_allocateVector(
         if (errorCode == EINVAL)
         {
             fprintf(stderr,
-                    "Alignment parameter is not a power of two\n");
+                    "Error: Alignment parameter is not a power of two\n");
             exit(EXIT_FAILURE);
         }
         if (errorCode == ENOMEM)
         {
             fprintf(stderr,
-                    "Insufficient memory to fulfill the request\n");
+                    "Error: Insufficient memory to fulfill the request\n");
             exit(EXIT_FAILURE);
         }
     }
 
     if ((*ptr) == NULL)
     {
-            fprintf(stderr, "posix_memalign failed!\n");
-            exit(EXIT_FAILURE);
-
+        fprintf(stderr, "Error: posix_memalign failed!\n");
+        exit(EXIT_FAILURE);
     }
 
     allocations[numberOfAllocatedVectors] = *ptr;
     numberOfAllocatedVectors++;
-    for (i=0;i<domains->numberOfAffinityDomains;i++)
-    {
-        if (biseq(domainString, domains->domains[i].tag))
-        {
-            domain = domains->domains + i;
-        }
-    }
     affinity_pinProcess(domain->processorList[0]);
-
-    printf("Allocate: Process running on core %d - Vector length %llu Offset %d\n",
+    printf("Allocate: Process running on core %d (Domain %s) - Vector length %llu Offset %d Alignment %llu\n",
             affinity_processGetProcessorId(),
+            bdata(domain->tag),
             LLU_CAST size,
-            offset);
+            offset,
+            LLU_CAST elements);
 
     switch ( type )
     {
