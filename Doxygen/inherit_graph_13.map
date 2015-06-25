@@ -1,0 +1,4 @@
+<map id="G" name="G">
+<area shape="rect" id="node1" href="$structNumaTopology.html" title="The NumaTopology structure describes all NUMA nodes in the current system." alt="" coords="7,5,116,35"/>
+<area shape="rect" id="node3" href="$structNumaNode.html" title="CPUs in NUMA node and general information about a NUMA domain." alt="" coords="165,5,253,35"/>
+</map>

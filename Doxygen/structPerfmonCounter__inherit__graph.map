@@ -1,0 +1,5 @@
+<map id="G" name="G">
+<area shape="rect" id="node2" href="$structPerfmonEventSetEntry.html" title="Structure specifying an performance monitoring event." alt="" coords="5,160,160,189"/>
+<area shape="rect" id="node4" href="$structPerfmonEventSet.html" title="Structure specifying an performance monitoring event group." alt="" coords="20,83,145,112"/>
+<area shape="rect" id="node6" href="$structPerfmonGroupSet.html" title="Structure specifying all performance monitoring event groups." alt="" coords="20,5,145,35"/>
+</map>
