@@ -140,7 +140,7 @@ int numa_init(void)
         init_configuration();
     }
 
-    if (access(config.topologyCfgFileName, R_OK) && numa_info.numberOfNodes <= 0)
+    if ((config.topologyCfgFileName == NULL)||(access(config.topologyCfgFileName, R_OK) && numa_info.numberOfNodes <= 0))
     {
         cpu_set_t cpuSet;
         CPU_ZERO(&cpuSet);

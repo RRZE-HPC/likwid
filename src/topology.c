@@ -824,7 +824,7 @@ int topology_init(void)
 
     init_configuration();
 
-    if (access(config.topologyCfgFileName, R_OK))
+    if ((config.topologyCfgFileName == NULL) || access(config.topologyCfgFileName, R_OK))
     {
         cpu_set_t cpuSet;
         CPU_ZERO(&cpuSet);
