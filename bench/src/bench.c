@@ -74,7 +74,7 @@ void* runTest(void* arg)
 {
     int threadId;
     int offset;
-    size_t size, allSize;
+    size_t size;
     size_t i;
     BarrierData barr;
     ThreadData* data;
@@ -89,22 +89,46 @@ void* runTest(void* arg)
     barrier_registerThread(&barr, 0, data->globalThreadId);
 
     /* Prepare ptrs for thread */
-    allSize = myData->size;
     size = myData->size / data->numberOfThreads;
-    size -= (size%myData->test->stride);
+    size -= (size % myData->test->stride);
     offset = data->threadId * size;
     myData->size = size;
+
+    switch ( myData->test->type )
+    {
+        case SINGLE:
+            {
+                float* sptr;
+                for (i=0; i <  myData->test->streams; i++)
+                {
+                    sptr = (float*) myData->streams[i];
+                    sptr +=  offset;
+                    myData->streams[i] = (float*) sptr;
+                }
+            }
+            break;
+        case DOUBLE:
+            {
+                double* dptr;
+                for (i=0; i <  myData->test->streams; i++)
+                {
+                    dptr = (double*) myData->streams[i];
+                    dptr +=  offset;
+                    myData->streams[i] = (double*) dptr;
+                }
+            }
+            break;
+    }
 
 
     /* pin the thread */
     likwid_pinThread(myData->processors[threadId]);
-
     printf("Group: %d Thread %d Global Thread %d running on core %d - Vector length %llu Offset %d\n",
             data->groupId,
             threadId,
             data->globalThreadId,
             affinity_threadGetProcessorId(),
-            LLU_CAST allSize,
+            LLU_CAST size,
             offset);
     BARRIER;
 
@@ -430,7 +454,7 @@ void* getIterSingle(void* arg)
     func = myData->test->kernel;
     threadId = data->threadId;
 
-    size = myData->size;
+    size = myData->size - (myData->size % myData->test->stride);
 
 #ifdef DEBUG_LIKWID
     printf("Automatic iteration count detection:");

@@ -163,6 +163,7 @@ int main(int argc, char** argv)
                 demandIter = strtoul(optarg, NULL, 10);
                 break;
             case 'l':
+                bdestroy(testcase);
                 testcase = bfromcstr(optarg);
                 for (i=0; i<NUMKERNELS; i++)
                 {

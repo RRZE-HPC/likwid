@@ -46,7 +46,7 @@
 
 static int numberOfAllocatedVectors = 0;
 static void** allocations;
-static AffinityDomains_t domains;
+static AffinityDomains_t domains = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
