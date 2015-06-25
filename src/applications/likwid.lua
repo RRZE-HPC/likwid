@@ -319,7 +319,12 @@ local function printtable(tab)
     str = "| "
     for i=1,nr_columns do
         front, back = get_spaces(tostring(tab[i][1]), min_lengths[i],max_lengths[i])
-        str = str .. front.. tostring(tab[i][1]) ..back.. " | "
+        str = str .. front.. tostring(tab[i][1]) ..back
+        if i<nr_columns then
+            str = str .. " | "
+        else
+            str = str .. " |"
+        end
     end
     print(str)
     print(hline)
@@ -328,7 +333,12 @@ local function printtable(tab)
         str = "| "
         for i=1,nr_columns do
             front, back = get_spaces(tostring(tab[i][j]), min_lengths[i],max_lengths[i])
-            str = str .. front.. tostring(tab[i][j]) ..back.. " | "
+            str = str .. front.. tostring(tab[i][j]) ..back
+            if i<nr_columns then
+                str = str .. " | "
+            else
+                str = str .. " |"
+            end
         end
         print(str)
     end
