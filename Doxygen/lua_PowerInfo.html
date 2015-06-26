@@ -169,7 +169,7 @@ If you call <a class="el" href="lua_PowerInfo.html#getPowerInfo">getPowerInfo</a
 <td>Returns </td><td>None  </td></tr>
 </table>
 <p><a class="anchor" id="startPower"></a></p>
-<h2>startPower()</h2>
+<h2>startPower(cpuID, domainID)</h2>
 <p>Start measuring given RAPL domain on given CPU </p>
 <table class="doxtable">
 <tr>
@@ -187,7 +187,7 @@ Possible values: 0=PKG, 1=PP0, 2=PP1, 3=DRAM  </td></tr>
 <td>Returns </td><td>Power value at start  </td></tr>
 </table>
 <p><a class="anchor" id="stopPower"></a></p>
-<h2>stopPower()</h2>
+<h2>stopPower(cpuID, domainID)</h2>
 <p>Stop measuring given RAPL domain on given CPU </p>
 <table class="doxtable">
 <tr>
@@ -205,7 +205,7 @@ Possible values: 0=PKG, 1=PP0, 2=PP1, 3=DRAM  </td></tr>
 <td>Returns </td><td>Power value at stop  </td></tr>
 </table>
 <p><a class="anchor" id="printEnergy"></a></p>
-<h2>printEnergy()</h2>
+<h2>printEnergy(before, after, domainID)</h2>
 <table class="doxtable">
 <tr>
 <th>Direction </th><th>Data type(s)  </th></tr>
@@ -224,7 +224,7 @@ Possible values: 0=PKG, 1=PP0, 2=PP1, 3=DRAM  </td></tr>
 <td>Returns </td><td>Power value at stop  </td></tr>
 </table>
 <p><a class="anchor" id="limitGet"></a></p>
-<h2>limitGet() (EXPERIMENTAL)</h2>
+<h2>limitGet(cpuID, domainID) (EXPERIMENTAL)</h2>
 <p>Get the current limit in the limit register of domain. The limit is defined as maximal power consumption in a time window </p>
 <table class="doxtable">
 <tr>
@@ -248,7 +248,7 @@ Possible values: 0=PKG, 1=PP0, 2=PP1, 3=DRAM  </td></tr>
 </td></tr>
 </table>
 <p><a class="anchor" id="limitSet"></a></p>
-<h2>limitSet() (EXPERIMENTAL)</h2>
+<h2>limitSet(cpuID, domainID, power, time, clamp) (EXPERIMENTAL)</h2>
 <table class="doxtable">
 <tr>
 <th>Direction </th><th>Data type(s)  </th></tr>
@@ -271,7 +271,7 @@ Possible values: 0=PKG, 1=PP0, 2=PP1, 3=DRAM  </td></tr>
 <td>Returns </td><td>Error code, 0 for success  </td></tr>
 </table>
 <p><a class="anchor" id="limitState"></a></p>
-<h2>limitState() (EXPERIMENTAL)</h2>
+<h2>limitState(cpuID, domainID) (EXPERIMENTAL)</h2>
 <p>Get the state of the limit </p>
 <table class="doxtable">
 <tr>
@@ -306,7 +306,7 @@ Possible values: 0=PKG, 1=PP0, 2=PP1, 3=DRAM  </td></tr>
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 25 2015 09:15:35 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 26 2015 16:11:00 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>

@@ -100,6 +100,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grou
 <tr><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the measured interval in seconds.  <a href="#ga507da52a0a7b4c2ea56a48f49d3a7806"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TimerMon.html#ga53c7562c4bc0def3290174c530a86829">timer_printCycles</a> (<a class="el" href="structTimerData.html">TimerData</a> *time)</td></tr>
 <tr><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the measured interval in cycles.  <a href="#ga53c7562c4bc0def3290174c530a86829"></a><br/></td></tr>
+<tr><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TimerMon.html#ga4341199d7b2a7233764431d093265938">timer_sleep</a> (unsigned long usec)</td></tr>
+<tr><td class="mdescLeft">&#160;</td><td class="mdescRight">Sleep for specified usecs.  <a href="#ga4341199d7b2a7233764431d093265938"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TimerMon.html#ga7716d38c94f85772fd227b607328e193">timer_start</a> (<a class="el" href="structTimerData.html">TimerData</a> *time)</td></tr>
 <tr><td class="mdescLeft">&#160;</td><td class="mdescRight">Start time measurement.  <a href="#ga7716d38c94f85772fd227b607328e193"></a><br/></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__TimerMon.html#gafe43c5032ed0fb74138843926c6c0d16">timer_stop</a> (<a class="el" href="structTimerData.html">TimerData</a> *time)</td></tr>
@@ -198,6 +200,31 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grou
 
 </div>
 </div>
+<a class="anchor" id="ga4341199d7b2a7233764431d093265938"></a><!-- doxytag: member="likwid.h::timer_sleep" ref="ga4341199d7b2a7233764431d093265938" args="(unsigned long usec)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int <a class="el" href="group__TimerMon.html#ga4341199d7b2a7233764431d093265938">timer_sleep</a> </td>
+          <td>(</td>
+          <td class="paramtype">unsigned long&#160;</td>
+          <td class="paramname"><em>usec</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
+<p>Sleep for specified usecs. </p>
+<dl class="params"><dt><b>Parameters:</b></dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">usec</td><td>Amount of usecs to sleep </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a class="anchor" id="ga7716d38c94f85772fd227b607328e193"></a><!-- doxytag: member="likwid.h::timer_start" ref="ga7716d38c94f85772fd227b607328e193" args="(TimerData *time)" -->
 <div class="memitem">
 <div class="memproto">
@@ -266,7 +293,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grou
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 25 2015 09:15:35 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 26 2015 16:11:00 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>

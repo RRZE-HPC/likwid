@@ -80,7 +80,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock"><h1>Data type definition for Lua miscellaneous functions module in the Lua API</h1>
 <h1>Function definitions for Lua miscellaneous functions module in the Lua API</h1>
 <p><a class="anchor" id="startProgram"></a></p>
-<h2>startProgram()</h2>
+<h2>startProgram(Exec)</h2>
 <p>Start an executable in a new thread </p>
 <table class="doxtable">
 <tr>
@@ -106,7 +106,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <td>Returns </td><td>True/False  </td></tr>
 </table>
 <p><a class="anchor" id="killProgram"></a></p>
-<h2>killProgram()</h2>
+<h2>killProgram(PID)</h2>
 <p>Kill the executable with SIGTERM </p>
 <table class="doxtable">
 <tr>
@@ -121,7 +121,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <td>Returns </td><td>None  </td></tr>
 </table>
 <p><a class="anchor" id="setenv"></a></p>
-<h2>setenv()</h2>
+<h2>setenv(Name, Value)</h2>
 <p>Set environment variable. Lua only provides getenv() </p>
 <table class="doxtable">
 <tr>
@@ -149,7 +149,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <td>Returns </td><td>PID number  </td></tr>
 </table>
 <p><a class="anchor" id="access"></a></p>
-<h2>access()</h2>
+<h2>access(Filepath, perm)</h2>
 <p>Check the file existance for a given filepath </p>
 <table class="doxtable">
 <tr>
@@ -157,7 +157,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr>
 <td>Input Parameter </td><td><table class="doxtable">
 <tr>
-<td><em>Filepath</em>  </td><td>Name of Filepath to check for existance  </td></tr>
+<td><em>Filepath</em>  </td><td>Name of Filepath to check  </td></tr>
+<tr>
+<td><em>perm</em>  </td><td>Check for specified attribute<br/>
+r: read, w: write, x: executable, e: existance  </td></tr>
 </table>
 </td></tr>
 <tr>
@@ -237,7 +240,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 25 2015 09:15:35 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 26 2015 16:11:00 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>

@@ -80,7 +80,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock"><h1>Data type definition for Lua output functions module in the Lua API</h1>
 <h1>Function definitions for Lua output functions module in the Lua API</h1>
 <p><a class="anchor" id="getopt"></a></p>
-<h2>getopt()</h2>
+<h2>getopt(commandline, optionlist)</h2>
 <p>Read commandline parameters and split them to the given options. The version LIKWID uses was originally taken from the web but extended to talk short '-o' and long options "--option". It returns an iterator for the commandline options.<br/>
 Basic usage:<br/>
  <code> for opt,arg in likwid.getopt(arg, {"n:","h"}) do<br/>
@@ -104,7 +104,8 @@ Basic usage:<br/>
 <tr>
 <td><em>commandline</em>  </td><td>Normally, Lua saves the commandline parameters in variable 'arg'  </td></tr>
 <tr>
-<td><em>optionlist</em>  </td><td>List of options that should be recognized. Options with ':' as last character need an argument  </td></tr>
+<td><em>optionlist</em>  </td><td>List of options that should be recognized. Options with ':' as last character need an argument<br/>
+Example {"h","v","cpu:"}  </td></tr>
 </table>
 </td></tr>
 <tr>
@@ -117,7 +118,7 @@ Basic usage:<br/>
 </td></tr>
 </table>
 <p><a class="anchor" id="parse_time"></a></p>
-<h2>parse_time()</h2>
+<h2>parse_time(timestr)</h2>
 <p>Parses time interval describing strings like 2s, 100ms or 250us </p>
 <table class="doxtable">
 <tr>
@@ -136,7 +137,7 @@ Basic usage:<br/>
 </td></tr>
 </table>
 <p><a class="anchor" id="printtable"></a></p>
-<h2>printtable()</h2>
+<h2>printtable(table)</h2>
 <p>Prints the given two dimensional table as fancy ASCII table. For CSV output use <a class="el" href="lua_InputOutput.html#printcsv">printcsv</a> </p>
 <table class="doxtable">
 <tr>
@@ -151,7 +152,7 @@ Basic usage:<br/>
 <td>Returns </td><td>None  </td></tr>
 </table>
 <p><a class="anchor" id="printcsv"></a></p>
-<h2>printcsv()</h2>
+<h2>printcsv(table)</h2>
 <p>Prints the given two dimensional table in CSV format. For ASCII table output see <a class="el" href="lua_InputOutput.html#printtable">printtable</a> </p>
 <table class="doxtable">
 <tr>
@@ -166,7 +167,7 @@ Basic usage:<br/>
 <td>Returns </td><td>None  </td></tr>
 </table>
 <p><a class="anchor" id="stringsplit"></a></p>
-<h2>stringsplit()</h2>
+<h2>stringsplit(str, sSeparator,( nMax, bRegexp))</h2>
 <p>Splits the given string at separating character </p>
 <table class="doxtable">
 <tr>
@@ -187,7 +188,7 @@ Basic usage:<br/>
 <td>Returns </td><td>List of <em>str</em> splitted at <em>sSeparator</em> or <em>bRegexp</em>   </td></tr>
 </table>
 <p><a class="anchor" id="printOutput"></a></p>
-<h2>printOutput()</h2>
+<h2>printOutput(groups, results, groupData, cpulist)</h2>
 <p>Prints results </p>
 <table class="doxtable">
 <tr>
@@ -208,7 +209,7 @@ Basic usage:<br/>
 <td>Returns </td><td>None  </td></tr>
 </table>
 <p><a class="anchor" id="print_markerOutput"></a></p>
-<h2>print_markerOutput()</h2>
+<h2>print_markerOutput(groups, results, groupData, cpulist)</h2>
 <p>Prints results of a Marker API run. This is different to <a class="el" href="lua_InputOutput.html#printOutput">printOutput</a> because we have to resolve the measurement regions </p>
 <table class="doxtable">
 <tr>
@@ -229,7 +230,7 @@ Basic usage:<br/>
 <td>Returns </td><td>None  </td></tr>
 </table>
 <p><a class="anchor" id="addSimpleAsciiBox"></a></p>
-<h2>addSimpleAsciiBox()</h2>
+<h2>addSimpleAsciiBox(container, lineIdx, colIdx, label)</h2>
 <p>Add a simple ASCII box with given label to box container. This function is only used by <a class="el" href="likwid-topology.html"><code>likwid-topology</code></a> </p>
 <table class="doxtable">
 <tr>
@@ -250,7 +251,7 @@ Basic usage:<br/>
 <td>Returns </td><td>None  </td></tr>
 </table>
 <p><a class="anchor" id="addJoinedAsciiBox"></a></p>
-<h2>addJoinedAsciiBox()</h2>
+<h2>addJoinedAsciiBox(container, lineIdx, startColIdx, endColIdx, label)</h2>
 <p>Add a joined ASCII box with given label to box container. Joined boxes can span the space of multiple simple boxes. This function is only used by <a class="el" href="likwid-topology.html"><code>likwid-topology</code></a> </p>
 <table class="doxtable">
 <tr>
@@ -273,7 +274,7 @@ Basic usage:<br/>
 <td>Returns </td><td>None  </td></tr>
 </table>
 <p><a class="anchor" id="printAsciiBox"></a></p>
-<h2>printAsciiBox()</h2>
+<h2>printAsciiBox(container)</h2>
 <p>Print the box container previously filled with <a class="el" href="lua_InputOutput.html#addSimpleAsciiBox">addSimpleAsciiBox</a> and <a class="el" href="lua_InputOutput.html#addJoinedAsciiBox">addJoinedAsciiBox</a>. This function is only used by <a class="el" href="likwid-topology.html"><code>likwid-topology</code></a> </p>
 <table class="doxtable">
 <tr>
@@ -305,7 +306,7 @@ Basic usage:<br/>
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 25 2015 09:15:35 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 26 2015 16:11:00 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>

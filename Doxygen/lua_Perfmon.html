@@ -181,7 +181,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </table>
 <h1>Function definitions for Lua performance monitoring module in the Lua API</h1>
 <p><a class="anchor" id="init"></a></p>
-<h2>init()</h2>
+<h2>init(nrThreads, thread2Cpus)</h2>
 <p>Initializes the Perfmon module of LIKWID, like opening the MSR files and check the PCI devices<br/>
 If in access daemon mode, a single daemon instance is started to forward measurements on all given CPUs </p>
 <table class="doxtable">
@@ -199,7 +199,7 @@ If in access daemon mode, a single daemon instance is started to forward measure
 <td>Returns </td><td>Error code, 0 for success  </td></tr>
 </table>
 <p><a class="anchor" id="addEventSet"></a></p>
-<h2>addEventSet()</h2>
+<h2>addEventSet(eventSet)</h2>
 <p>Creates the internal management structures for the given event set. Checks the registers and if needed PCI device access<br/>
 The <a class="el" href="lua_Perfmon.html#init">init</a> function as to be called previously </p>
 <table class="doxtable">
@@ -215,7 +215,7 @@ The <a class="el" href="lua_Perfmon.html#init">init</a> function as to be called
 <td>Returns </td><td>The group ID of the added event set  </td></tr>
 </table>
 <p><a class="anchor" id="setupCounters"></a></p>
-<h2>setupCounters()</h2>
+<h2>setupCounters(groupID)</h2>
 <p>Setup the config registers to measure the events defined by group </p>
 <table class="doxtable">
 <tr>
@@ -264,7 +264,7 @@ The counters will be stopped shortly and started after reading to exclude the LI
 <td>Returns </td><td>Error code, 0 for success  </td></tr>
 </table>
 <p><a class="anchor" id="switchGroup"></a></p>
-<h2>switchGroup()</h2>
+<h2>switchGroup(newgroup)</h2>
 <p>Switches the currently active group in the perfmon module. If the given group ID does not exist, it fallbacks to group ID 1. </p>
 <table class="doxtable">
 <tr>
@@ -290,7 +290,7 @@ The counters will be stopped shortly and started after reading to exclude the LI
 <td>Returns </td><td>Always 0  </td></tr>
 </table>
 <p><a class="anchor" id="getResult"></a></p>
-<h2>getResult()</h2>
+<h2>getResult(groupID, eventID, threadID)</h2>
 <p>Get result for a group, event, thread combination. All options must be given </p>
 <table class="doxtable">
 <tr>
@@ -320,7 +320,7 @@ The counters will be stopped shortly and started after reading to exclude the LI
 <td>Returns </td><td>Three-dimensional list with results. First dim. is groups, second dim. is events and third dim. are the threads  </td></tr>
 </table>
 <p><a class="anchor" id="getMarkerResults"></a></p>
-<h2>getMarkerResults()</h2>
+<h2>getMarkerResults(filename, group_list, num_cpus)</h2>
 <p>Get the results for an output file written by <a class="el" href="group__MarkerAPI.html">Marker API module</a> </p>
 <table class="doxtable">
 <tr>
@@ -383,7 +383,7 @@ The counters will be stopped shortly and started after reading to exclude the LI
 <td>Returns </td><td>ID of active group  </td></tr>
 </table>
 <p><a class="anchor" id="getRuntimeOfGroup"></a></p>
-<h2>getRuntimeOfGroup()</h2>
+<h2>getRuntimeOfGroup(groupID)</h2>
 <p>Returns the measurement time of the given groupID </p>
 <table class="doxtable">
 <tr>
@@ -398,7 +398,7 @@ The counters will be stopped shortly and started after reading to exclude the LI
 <td>Returns </td><td>Measurement time of group  </td></tr>
 </table>
 <p><a class="anchor" id="getNumberOfEvents"></a></p>
-<h2>getNumberOfEvents()</h2>
+<h2>getNumberOfEvents(groupID)</h2>
 <p>Returns the amount of events for the given groupID </p>
 <table class="doxtable">
 <tr>
@@ -430,11 +430,7 @@ The counters will be stopped shortly and started after reading to exclude the LI
 <tr>
 <th>Direction </th><th>Data type(s)  </th></tr>
 <tr>
-<td>Input Parameter </td><td><table class="doxtable">
-<tr>
-<td><em>architecture</em>  </td><td>Short name of architecture. Can be found in CPU info <a class="el" href="lua_CPUTopology.html#lua_cpuinfo">lua_cpuinfo</a> as <em>short_name</em>   </td></tr>
-</table>
-</td></tr>
+<td>Input Parameter </td><td>None  </td></tr>
 <tr>
 <td>Returns </td><td><table class="doxtable">
 <tr>
@@ -445,7 +441,7 @@ The counters will be stopped shortly and started after reading to exclude the LI
 </td></tr>
 </table>
 <p><a class="anchor" id="get_groupdata"></a></p>
-<h2>get_groupdata()</h2>
+<h2>get_groupdata(group)</h2>
 <p>Read in the performance group <em>group</em>  </p>
 <table class="doxtable">
 <tr>
@@ -481,7 +477,7 @@ The counters will be stopped shortly and started after reading to exclude the LI
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 25 2015 09:15:35 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 26 2015 16:11:00 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>

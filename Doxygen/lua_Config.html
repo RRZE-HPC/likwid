@@ -81,7 +81,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p><a class="anchor" id="lua_config"></a></p>
 <h2>Config file read</h2>
 <p>This structure is returned by <a class="el" href="lua_Config.html#getConfiguration">getConfiguration</a> function<br/>
-The config file can be created with <a class="el" href="likwid-genTopoCfg.html"><code>likwid-genTopoCfg</code></a> executable. It searches the files /etc/likwid.cfg and /mnt/opt/likwid-4.0.0_2.11/etc/likwid.cfg. Other configuration file paths can be set in config.mk before building LIKWID. </p>
+The config file can be created with <a class="el" href="likwid-genTopoCfg.html"><code>likwid-genTopoCfg</code></a> executable. It searches the files /etc/likwid.cfg and /usr/local/etc/likwid.cfg. Other configuration file paths can be set in config.mk before building LIKWID. </p>
 <table class="doxtable">
 <tr>
 <th>Membername </th><th>Comment  </th></tr>
@@ -113,7 +113,7 @@ The config file can be created with <a class="el" href="likwid-genTopoCfg.html">
 <td>Returns </td><td>List of configuration options, see <a class="el" href="lua_Config.html#lua_config">lua_config</a>  </td></tr>
 </table>
 <p><a class="anchor" id="setVerbosity"></a></p>
-<h2>setVerbosity()</h2>
+<h2>setVerbosity(verbosity)</h2>
 <p>Define and/or change the verbosity level of LIKWID </p>
 <table class="doxtable">
 <tr>
@@ -160,7 +160,7 @@ Other flags are rejected.  </td></tr>
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 25 2015 09:15:35 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 26 2015 16:11:00 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>

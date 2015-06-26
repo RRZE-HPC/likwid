@@ -391,113 +391,114 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a name="l00787"></a>00787 <span class="keyword">extern</span> uint64_t <a class="code" href="group__TimerMon.html#ga963f51a94951868578486cfbe7f39772" title="Return the baseline CPU clock determined at timer_init.">timer_getBaseline</a>( <span class="keywordtype">void</span> );
 <a name="l00792"></a>00792 <span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="group__TimerMon.html#ga7716d38c94f85772fd227b607328e193" title="Start time measurement.">timer_start</a>( <a class="code" href="structTimerData.html" title="Struct defining the start and stop time of a time interval.">TimerData</a>* time );
 <a name="l00797"></a>00797 <span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="group__TimerMon.html#gafe43c5032ed0fb74138843926c6c0d16" title="Stop time measurement.">timer_stop</a> ( <a class="code" href="structTimerData.html" title="Struct defining the start and stop time of a time interval.">TimerData</a>* time);
-<a name="l00798"></a>00798 
-<a name="l00801"></a>00801 <span class="comment">/* </span>
-<a name="l00802"></a>00802 <span class="comment">################################################################################</span>
-<a name="l00803"></a>00803 <span class="comment"># Power measurements related functions</span>
-<a name="l00804"></a>00804 <span class="comment">################################################################################</span>
-<a name="l00805"></a>00805 <span class="comment">*/</span>
-<a name="l00814"></a><a class="code" href="group__PowerMon.html#gab82bee1f904af30bd79d1437d5e1ccd5">00814</a> <span class="preprocessor">#define NUM_POWER_DOMAINS 4</span>
-<a name="l00815"></a>00815 <span class="preprocessor"></span>
-<a name="l00817"></a>00817 <span class="keyword">extern</span> <span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="group__PowerMon.html#ga6b5ddd628e893fc07a27c8f9cdd9ceb1" title="List of all RAPL domain names.">power_names</a>[<a class="code" href="group__PowerMon.html#gab82bee1f904af30bd79d1437d5e1ccd5">NUM_POWER_DOMAINS</a>];
-<a name="l00818"></a>00818 
-<a name="l00823"></a><a class="code" href="group__PowerMon.html#gaf9004de581bccde571b0c9cb5a3ce12e">00823</a> <span class="preprocessor">#define POWER_DOMAIN_SUPPORT_STATUS (1ULL&lt;&lt;0)</span>
-<a name="l00824"></a>00824 <span class="preprocessor"></span>
-<a name="l00828"></a><a class="code" href="group__PowerMon.html#ga5a41dd5accdee183ae7a323b76984332">00828</a> <span class="preprocessor">#define POWER_DOMAIN_SUPPORT_LIMIT (1ULL&lt;&lt;1)</span>
+<a name="l00802"></a>00802 <span class="keywordtype">int</span> <a class="code" href="group__TimerMon.html#ga4341199d7b2a7233764431d093265938" title="Sleep for specified usecs.">timer_sleep</a>(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> usec);
+<a name="l00803"></a>00803 
+<a name="l00806"></a>00806 <span class="comment">/* </span>
+<a name="l00807"></a>00807 <span class="comment">################################################################################</span>
+<a name="l00808"></a>00808 <span class="comment"># Power measurements related functions</span>
+<a name="l00809"></a>00809 <span class="comment">################################################################################</span>
+<a name="l00810"></a>00810 <span class="comment">*/</span>
+<a name="l00819"></a><a class="code" href="group__PowerMon.html#gab82bee1f904af30bd79d1437d5e1ccd5">00819</a> <span class="preprocessor">#define NUM_POWER_DOMAINS 4</span>
+<a name="l00820"></a>00820 <span class="preprocessor"></span>
+<a name="l00822"></a>00822 <span class="keyword">extern</span> <span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="group__PowerMon.html#ga6b5ddd628e893fc07a27c8f9cdd9ceb1" title="List of all RAPL domain names.">power_names</a>[<a class="code" href="group__PowerMon.html#gab82bee1f904af30bd79d1437d5e1ccd5">NUM_POWER_DOMAINS</a>];
+<a name="l00823"></a>00823 
+<a name="l00828"></a><a class="code" href="group__PowerMon.html#gaf9004de581bccde571b0c9cb5a3ce12e">00828</a> <span class="preprocessor">#define POWER_DOMAIN_SUPPORT_STATUS (1ULL&lt;&lt;0)</span>
 <a name="l00829"></a>00829 <span class="preprocessor"></span>
-<a name="l00833"></a><a class="code" href="group__PowerMon.html#ga430219621e9842900dadc3db13898469">00833</a> <span class="preprocessor">#define POWER_DOMAIN_SUPPORT_POLICY (1ULL&lt;&lt;2)</span>
+<a name="l00833"></a><a class="code" href="group__PowerMon.html#ga5a41dd5accdee183ae7a323b76984332">00833</a> <span class="preprocessor">#define POWER_DOMAIN_SUPPORT_LIMIT (1ULL&lt;&lt;1)</span>
 <a name="l00834"></a>00834 <span class="preprocessor"></span>
-<a name="l00838"></a><a class="code" href="group__PowerMon.html#gad418cff45c90e5c9bfa2b02c4ad9977a">00838</a> <span class="preprocessor">#define POWER_DOMAIN_SUPPORT_PERF (1ULL&lt;&lt;3)</span>
+<a name="l00838"></a><a class="code" href="group__PowerMon.html#ga430219621e9842900dadc3db13898469">00838</a> <span class="preprocessor">#define POWER_DOMAIN_SUPPORT_POLICY (1ULL&lt;&lt;2)</span>
 <a name="l00839"></a>00839 <span class="preprocessor"></span>
-<a name="l00843"></a><a class="code" href="group__PowerMon.html#ga9cf643d155710c9bc1019ba2459ed436">00843</a> <span class="preprocessor">#define POWER_DOMAIN_SUPPORT_INFO (1ULL&lt;&lt;4)</span>
+<a name="l00843"></a><a class="code" href="group__PowerMon.html#gad418cff45c90e5c9bfa2b02c4ad9977a">00843</a> <span class="preprocessor">#define POWER_DOMAIN_SUPPORT_PERF (1ULL&lt;&lt;3)</span>
 <a name="l00844"></a>00844 <span class="preprocessor"></span>
-<a name="l00845"></a>00845 
-<a name="l00849"></a><a class="code" href="structTurboBoost.html">00849</a> <span class="keyword">typedef</span> <span class="keyword">struct </span>{
-<a name="l00850"></a><a class="code" href="structTurboBoost.html#a04c5cdbb6e7670e9f24ae6cc95766e3f">00850</a>     <span class="keywordtype">int</span> <a class="code" href="structTurboBoost.html#a04c5cdbb6e7670e9f24ae6cc95766e3f" title="Amount of turbo mode steps/frequencies.">numSteps</a>; 
-<a name="l00851"></a><a class="code" href="structTurboBoost.html#afaaabf2434f246884d9b3843a5659114">00851</a>     <span class="keywordtype">double</span>* <a class="code" href="structTurboBoost.html#afaaabf2434f246884d9b3843a5659114" title="List of turbo mode steps.">steps</a>; 
-<a name="l00852"></a>00852 } <a class="code" href="structTurboBoost.html" title="Information structure of CPU&#39;s turbo mode.">TurboBoost</a>;
-<a name="l00853"></a>00853 
-<a name="l00857"></a><a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd">00857</a> <span class="keyword">typedef</span> <span class="keyword">enum</span> {
-<a name="l00858"></a><a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebdad8a111b4e103778e9867a981166bbf65">00858</a>     <a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebdad8a111b4e103778e9867a981166bbf65" title="PKG domain, mostly one CPU socket/package.">PKG</a> = 0, 
-<a name="l00859"></a><a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebda1457d9289284f0b67772e1f44b63d870">00859</a>     <a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebda1457d9289284f0b67772e1f44b63d870" title="PP0 domain, not clearly defined by Intel.">PP0</a> = 1, 
-<a name="l00860"></a><a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebda35bb01af8071540fce89d28f4c628646">00860</a>     <a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebda35bb01af8071540fce89d28f4c628646" title="PP1 domain, not clearly defined by Intel.">PP1</a> = 2, 
-<a name="l00861"></a><a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebdad878bf643570edb4fd2b3b89686b307b">00861</a>     <a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebdad878bf643570edb4fd2b3b89686b307b" title="DRAM domain, the memory modules.">DRAM</a> = 3 
-<a name="l00862"></a>00862 } <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a>;
-<a name="l00863"></a>00863 
-<a name="l00867"></a><a class="code" href="structPowerDomain.html">00867</a> <span class="keyword">typedef</span> <span class="keyword">struct </span>{
-<a name="l00868"></a><a class="code" href="structPowerDomain.html#a99e0de40f248008fb974e58a67309fee">00868</a>     <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a> <a class="code" href="structPowerDomain.html#a99e0de40f248008fb974e58a67309fee" title="Identifier which RAPL domain is managed by this struct.">type</a>; 
-<a name="l00869"></a><a class="code" href="structPowerDomain.html#ac0f13f15054a4c9f9e74fa4de6dce2fa">00869</a>     uint32_t <a class="code" href="structPowerDomain.html#ac0f13f15054a4c9f9e74fa4de6dce2fa" title="Bitmask which features are supported by the power domain.">supportFlags</a>; 
-<a name="l00870"></a><a class="code" href="structPowerDomain.html#a587b01b967b20112f671d754eb7120a7">00870</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerDomain.html#a587b01b967b20112f671d754eb7120a7" title="Multiplier for energy measurements.">energyUnit</a>; 
-<a name="l00871"></a><a class="code" href="structPowerDomain.html#a6df58aeb2c3e557d7e6b22c38170546e">00871</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerDomain.html#a6df58aeb2c3e557d7e6b22c38170546e" title="Thermal Design Power (maximum amount of heat generated by the CPU)">tdp</a>; 
-<a name="l00872"></a><a class="code" href="structPowerDomain.html#a951c077a138e8866961711e444732c32">00872</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerDomain.html#a951c077a138e8866961711e444732c32" title="Minimal power consumption of the CPU.">minPower</a>; 
-<a name="l00873"></a><a class="code" href="structPowerDomain.html#a00f471917b6861fdc94f3f4bb43c47bf">00873</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerDomain.html#a00f471917b6861fdc94f3f4bb43c47bf" title="Maximal power consumption of the CPU.">maxPower</a>; 
-<a name="l00874"></a><a class="code" href="structPowerDomain.html#ac27b77f66c6d8f5c002d54665b3a1b06">00874</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerDomain.html#ac27b77f66c6d8f5c002d54665b3a1b06" title="Minimal power measurement interval.">maxTimeWindow</a>; 
-<a name="l00875"></a>00875 } <a class="code" href="structPowerDomain.html" title="Structure describing an RAPL power domain.">PowerDomain</a>;
-<a name="l00876"></a>00876 
-<a name="l00879"></a><a class="code" href="structPowerInfo.html">00879</a> <span class="keyword">typedef</span> <span class="keyword">struct </span>{
-<a name="l00880"></a><a class="code" href="structPowerInfo.html#a51f32ab679e7588549b89a37d9b59568">00880</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerInfo.html#a51f32ab679e7588549b89a37d9b59568" title="Base frequency of the CPU.">baseFrequency</a>; 
-<a name="l00881"></a><a class="code" href="structPowerInfo.html#aaad45943f01f3e3b0f7b35325ad2a305">00881</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerInfo.html#aaad45943f01f3e3b0f7b35325ad2a305" title="Minimal frequency of the CPU.">minFrequency</a>; 
-<a name="l00882"></a><a class="code" href="structPowerInfo.html#ab25a7ac4caad308abc84262c01380769">00882</a>     <a class="code" href="structTurboBoost.html" title="Information structure of CPU&#39;s turbo mode.">TurboBoost</a> <a class="code" href="structPowerInfo.html#ab25a7ac4caad308abc84262c01380769" title="Turbo boost information.">turbo</a>; 
-<a name="l00883"></a><a class="code" href="structPowerInfo.html#a837f2650c48a67ff499aef326642aadc">00883</a>     <span class="keywordtype">int</span> <a class="code" href="structPowerInfo.html#a837f2650c48a67ff499aef326642aadc" title="RAPL support flag.">hasRAPL</a>; 
-<a name="l00884"></a><a class="code" href="structPowerInfo.html#abfe0c4cc8ce6e828ac28f559afc0b0bb">00884</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerInfo.html#abfe0c4cc8ce6e828ac28f559afc0b0bb" title="Multiplier for power measurements.">powerUnit</a>; 
-<a name="l00885"></a><a class="code" href="structPowerInfo.html#acfc689d5f9f6b2190f70361cd9c9ad78">00885</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerInfo.html#acfc689d5f9f6b2190f70361cd9c9ad78" title="Multiplier for time information.">timeUnit</a>; 
-<a name="l00886"></a><a class="code" href="structPowerInfo.html#ae7c99a3781d7ca89942dde7937cdbec0">00886</a>     <a class="code" href="structPowerDomain.html" title="Structure describing an RAPL power domain.">PowerDomain</a> domains[<a class="code" href="group__PowerMon.html#gab82bee1f904af30bd79d1437d5e1ccd5">NUM_POWER_DOMAINS</a>]; 
-<a name="l00887"></a>00887 } <a class="code" href="structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility.">PowerInfo</a>;
-<a name="l00888"></a>00888 
-<a name="l00891"></a><a class="code" href="structPowerData.html">00891</a> <span class="keyword">typedef</span> <span class="keyword">struct </span>{
-<a name="l00892"></a><a class="code" href="structPowerData.html#a37b62715b8a8509b002a0677bd48b8cd">00892</a>     <span class="keywordtype">int</span> <a class="code" href="structPowerData.html#a37b62715b8a8509b002a0677bd48b8cd" title="RAPL domain identifier.">domain</a>; 
-<a name="l00893"></a><a class="code" href="structPowerData.html#a6a955fb9e73180fbab9be120f2cd8f94">00893</a>     uint32_t <a class="code" href="structPowerData.html#a6a955fb9e73180fbab9be120f2cd8f94" title="Counter state at start.">before</a>; 
-<a name="l00894"></a><a class="code" href="structPowerData.html#a574812bdb18ecc90da308af6e1011ed0">00894</a>     uint32_t <a class="code" href="structPowerData.html#a574812bdb18ecc90da308af6e1011ed0" title="Counter state at stop.">after</a>; 
-<a name="l00895"></a>00895 } <a class="code" href="structPowerData.html" title="Power measurement data for start/stop measurements.">PowerData</a>;
-<a name="l00896"></a>00896 
-<a name="l00898"></a>00898 <span class="keyword">extern</span> <a class="code" href="structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility.">PowerInfo</a> <a class="code" href="group__PowerMon.html#ga3656c9cde236d7d27fcb1f024d798a32" title="Variable holding the global power information structure.">power_info</a>;
-<a name="l00899"></a>00899 
-<a name="l00901"></a><a class="code" href="group__PowerMon.html#ga81960db0933a4ef5cb7ca03eb90ea2d8">00901</a> <span class="keyword">typedef</span> <a class="code" href="structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility.">PowerInfo</a>* <a class="code" href="group__PowerMon.html#ga81960db0933a4ef5cb7ca03eb90ea2d8" title="Pointer for exporting the PowerInfo data structure.">PowerInfo_t</a>;
-<a name="l00903"></a><a class="code" href="group__PowerMon.html#ga646afe02c7277a9ff1b8fa94156c7ac7">00903</a> <span class="keyword">typedef</span> <a class="code" href="structPowerData.html" title="Power measurement data for start/stop measurements.">PowerData</a>* <a class="code" href="group__PowerMon.html#ga646afe02c7277a9ff1b8fa94156c7ac7" title="Pointer for exporting the PowerData data structure.">PowerData_t</a>;
+<a name="l00848"></a><a class="code" href="group__PowerMon.html#ga9cf643d155710c9bc1019ba2459ed436">00848</a> <span class="preprocessor">#define POWER_DOMAIN_SUPPORT_INFO (1ULL&lt;&lt;4)</span>
+<a name="l00849"></a>00849 <span class="preprocessor"></span>
+<a name="l00850"></a>00850 
+<a name="l00854"></a><a class="code" href="structTurboBoost.html">00854</a> <span class="keyword">typedef</span> <span class="keyword">struct </span>{
+<a name="l00855"></a><a class="code" href="structTurboBoost.html#a04c5cdbb6e7670e9f24ae6cc95766e3f">00855</a>     <span class="keywordtype">int</span> <a class="code" href="structTurboBoost.html#a04c5cdbb6e7670e9f24ae6cc95766e3f" title="Amount of turbo mode steps/frequencies.">numSteps</a>; 
+<a name="l00856"></a><a class="code" href="structTurboBoost.html#afaaabf2434f246884d9b3843a5659114">00856</a>     <span class="keywordtype">double</span>* <a class="code" href="structTurboBoost.html#afaaabf2434f246884d9b3843a5659114" title="List of turbo mode steps.">steps</a>; 
+<a name="l00857"></a>00857 } <a class="code" href="structTurboBoost.html" title="Information structure of CPU&#39;s turbo mode.">TurboBoost</a>;
+<a name="l00858"></a>00858 
+<a name="l00862"></a><a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd">00862</a> <span class="keyword">typedef</span> <span class="keyword">enum</span> {
+<a name="l00863"></a><a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebdad8a111b4e103778e9867a981166bbf65">00863</a>     <a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebdad8a111b4e103778e9867a981166bbf65" title="PKG domain, mostly one CPU socket/package.">PKG</a> = 0, 
+<a name="l00864"></a><a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebda1457d9289284f0b67772e1f44b63d870">00864</a>     <a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebda1457d9289284f0b67772e1f44b63d870" title="PP0 domain, not clearly defined by Intel.">PP0</a> = 1, 
+<a name="l00865"></a><a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebda35bb01af8071540fce89d28f4c628646">00865</a>     <a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebda35bb01af8071540fce89d28f4c628646" title="PP1 domain, not clearly defined by Intel.">PP1</a> = 2, 
+<a name="l00866"></a><a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebdad878bf643570edb4fd2b3b89686b307b">00866</a>     <a class="code" href="group__PowerMon.html#gga0d0e3226055ad5266e487b58fd01cebdad878bf643570edb4fd2b3b89686b307b" title="DRAM domain, the memory modules.">DRAM</a> = 3 
+<a name="l00867"></a>00867 } <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a>;
+<a name="l00868"></a>00868 
+<a name="l00872"></a><a class="code" href="structPowerDomain.html">00872</a> <span class="keyword">typedef</span> <span class="keyword">struct </span>{
+<a name="l00873"></a><a class="code" href="structPowerDomain.html#a99e0de40f248008fb974e58a67309fee">00873</a>     <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a> <a class="code" href="structPowerDomain.html#a99e0de40f248008fb974e58a67309fee" title="Identifier which RAPL domain is managed by this struct.">type</a>; 
+<a name="l00874"></a><a class="code" href="structPowerDomain.html#ac0f13f15054a4c9f9e74fa4de6dce2fa">00874</a>     uint32_t <a class="code" href="structPowerDomain.html#ac0f13f15054a4c9f9e74fa4de6dce2fa" title="Bitmask which features are supported by the power domain.">supportFlags</a>; 
+<a name="l00875"></a><a class="code" href="structPowerDomain.html#a587b01b967b20112f671d754eb7120a7">00875</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerDomain.html#a587b01b967b20112f671d754eb7120a7" title="Multiplier for energy measurements.">energyUnit</a>; 
+<a name="l00876"></a><a class="code" href="structPowerDomain.html#a6df58aeb2c3e557d7e6b22c38170546e">00876</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerDomain.html#a6df58aeb2c3e557d7e6b22c38170546e" title="Thermal Design Power (maximum amount of heat generated by the CPU)">tdp</a>; 
+<a name="l00877"></a><a class="code" href="structPowerDomain.html#a951c077a138e8866961711e444732c32">00877</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerDomain.html#a951c077a138e8866961711e444732c32" title="Minimal power consumption of the CPU.">minPower</a>; 
+<a name="l00878"></a><a class="code" href="structPowerDomain.html#a00f471917b6861fdc94f3f4bb43c47bf">00878</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerDomain.html#a00f471917b6861fdc94f3f4bb43c47bf" title="Maximal power consumption of the CPU.">maxPower</a>; 
+<a name="l00879"></a><a class="code" href="structPowerDomain.html#ac27b77f66c6d8f5c002d54665b3a1b06">00879</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerDomain.html#ac27b77f66c6d8f5c002d54665b3a1b06" title="Minimal power measurement interval.">maxTimeWindow</a>; 
+<a name="l00880"></a>00880 } <a class="code" href="structPowerDomain.html" title="Structure describing an RAPL power domain.">PowerDomain</a>;
+<a name="l00881"></a>00881 
+<a name="l00884"></a><a class="code" href="structPowerInfo.html">00884</a> <span class="keyword">typedef</span> <span class="keyword">struct </span>{
+<a name="l00885"></a><a class="code" href="structPowerInfo.html#a51f32ab679e7588549b89a37d9b59568">00885</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerInfo.html#a51f32ab679e7588549b89a37d9b59568" title="Base frequency of the CPU.">baseFrequency</a>; 
+<a name="l00886"></a><a class="code" href="structPowerInfo.html#aaad45943f01f3e3b0f7b35325ad2a305">00886</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerInfo.html#aaad45943f01f3e3b0f7b35325ad2a305" title="Minimal frequency of the CPU.">minFrequency</a>; 
+<a name="l00887"></a><a class="code" href="structPowerInfo.html#ab25a7ac4caad308abc84262c01380769">00887</a>     <a class="code" href="structTurboBoost.html" title="Information structure of CPU&#39;s turbo mode.">TurboBoost</a> <a class="code" href="structPowerInfo.html#ab25a7ac4caad308abc84262c01380769" title="Turbo boost information.">turbo</a>; 
+<a name="l00888"></a><a class="code" href="structPowerInfo.html#a837f2650c48a67ff499aef326642aadc">00888</a>     <span class="keywordtype">int</span> <a class="code" href="structPowerInfo.html#a837f2650c48a67ff499aef326642aadc" title="RAPL support flag.">hasRAPL</a>; 
+<a name="l00889"></a><a class="code" href="structPowerInfo.html#abfe0c4cc8ce6e828ac28f559afc0b0bb">00889</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerInfo.html#abfe0c4cc8ce6e828ac28f559afc0b0bb" title="Multiplier for power measurements.">powerUnit</a>; 
+<a name="l00890"></a><a class="code" href="structPowerInfo.html#acfc689d5f9f6b2190f70361cd9c9ad78">00890</a>     <span class="keywordtype">double</span> <a class="code" href="structPowerInfo.html#acfc689d5f9f6b2190f70361cd9c9ad78" title="Multiplier for time information.">timeUnit</a>; 
+<a name="l00891"></a><a class="code" href="structPowerInfo.html#ae7c99a3781d7ca89942dde7937cdbec0">00891</a>     <a class="code" href="structPowerDomain.html" title="Structure describing an RAPL power domain.">PowerDomain</a> domains[<a class="code" href="group__PowerMon.html#gab82bee1f904af30bd79d1437d5e1ccd5">NUM_POWER_DOMAINS</a>]; 
+<a name="l00892"></a>00892 } <a class="code" href="structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility.">PowerInfo</a>;
+<a name="l00893"></a>00893 
+<a name="l00896"></a><a class="code" href="structPowerData.html">00896</a> <span class="keyword">typedef</span> <span class="keyword">struct </span>{
+<a name="l00897"></a><a class="code" href="structPowerData.html#a37b62715b8a8509b002a0677bd48b8cd">00897</a>     <span class="keywordtype">int</span> <a class="code" href="structPowerData.html#a37b62715b8a8509b002a0677bd48b8cd" title="RAPL domain identifier.">domain</a>; 
+<a name="l00898"></a><a class="code" href="structPowerData.html#a6a955fb9e73180fbab9be120f2cd8f94">00898</a>     uint32_t <a class="code" href="structPowerData.html#a6a955fb9e73180fbab9be120f2cd8f94" title="Counter state at start.">before</a>; 
+<a name="l00899"></a><a class="code" href="structPowerData.html#a574812bdb18ecc90da308af6e1011ed0">00899</a>     uint32_t <a class="code" href="structPowerData.html#a574812bdb18ecc90da308af6e1011ed0" title="Counter state at stop.">after</a>; 
+<a name="l00900"></a>00900 } <a class="code" href="structPowerData.html" title="Power measurement data for start/stop measurements.">PowerData</a>;
+<a name="l00901"></a>00901 
+<a name="l00903"></a>00903 <span class="keyword">extern</span> <a class="code" href="structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility.">PowerInfo</a> <a class="code" href="group__PowerMon.html#ga3656c9cde236d7d27fcb1f024d798a32" title="Variable holding the global power information structure.">power_info</a>;
 <a name="l00904"></a>00904 
-<a name="l00912"></a>00912 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#ga7ee3dc358436505b184de3bcb65de696" title="Initialize power measurements on specific CPU.">power_init</a>(<span class="keywordtype">int</span> cpuId);
-<a name="l00918"></a>00918 <span class="keyword">extern</span> PowerInfo_t <a class="code" href="group__PowerMon.html#gaba3a097583fde4a6bb84459326e0fabe" title="Get a pointer to the power facility information.">get_powerInfo</a>(<span class="keywordtype">void</span>);
-<a name="l00925"></a>00925 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#ga09a270615173d7c831bbee6a851c98c7" title="Read the current power value.">power_read</a>(<span class="keywordtype">int</span> cpuId, uint64_t reg, uint32_t *data);
-<a name="l00933"></a>00933 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#ga7850010edfc54504ef01fc2fff960b36" title="Read the current power value using a specific communication socket.">power_tread</a>(<span class="keywordtype">int</span> socket_fd, <span class="keywordtype">int</span> cpuId, uint64_t reg, uint32_t *data);
-<a name="l00941"></a>00941 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#gaf2a9c48147c59d7bd3806f26bf6fad21" title="Start power measurements.">power_start</a>(PowerData_t data, <span class="keywordtype">int</span> cpuId, <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a> type);
-<a name="l00949"></a>00949 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#gaaea8fd35bd72dd392b734f809d7e5ac0" title="Stop power measurements.">power_stop</a>(PowerData_t data, <span class="keywordtype">int</span> cpuId, <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a> type);
-<a name="l00955"></a>00955 <span class="keyword">extern</span> <span class="keywordtype">double</span> <a class="code" href="group__PowerMon.html#ga5e477a6efc9057f77f1ae068252487a7" title="Print power measurements gathered by power_start() and power_stop()">power_printEnergy</a>(<a class="code" href="structPowerData.html" title="Power measurement data for start/stop measurements.">PowerData</a>* data);
-<a name="l00961"></a>00961 <span class="keyword">extern</span> <span class="keywordtype">double</span> <a class="code" href="group__PowerMon.html#gacb99bbc20386c2879e500a0a10df90c8" title="Get energy Unit.">power_getEnergyUnit</a>(<span class="keywordtype">int</span> domain);
-<a name="l00962"></a>00962 
-<a name="l00971"></a>00971 <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#ga3df0c38578b69762058f59be63db2a28" title="Get the values of the limit register of a domain.">power_limitGet</a>(<span class="keywordtype">int</span> cpuId, <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a> domain, <span class="keywordtype">double</span>* power, <span class="keywordtype">double</span>* time);
-<a name="l00972"></a>00972 
-<a name="l00982"></a>00982 <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#gab5f4da5ba518bc2bbc35c691aa652c4b" title="Set the values of the limit register of a domain.">power_limitSet</a>(<span class="keywordtype">int</span> cpuId, <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a> domain, <span class="keywordtype">double</span> power, <span class="keywordtype">double</span> time, <span class="keywordtype">int</span> doClamping);
-<a name="l00983"></a>00983 
-<a name="l00990"></a>00990 <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#gae68fdebd419be8f14702e24ef22070b8" title="Get the state of a power limit, activated or deactivated.">power_limitState</a>(<span class="keywordtype">int</span> cpuId, <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a> domain);
-<a name="l00991"></a>00991 
-<a name="l00994"></a>00994 <span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="group__PowerMon.html#ga6af17835dedb41ce76f7e1c3df37b5bf" title="Free space of power_unit.">power_finalize</a>(<span class="keywordtype">void</span>);
-<a name="l00997"></a>00997 <span class="comment">/* </span>
-<a name="l00998"></a>00998 <span class="comment">################################################################################</span>
-<a name="l00999"></a>00999 <span class="comment"># Thermal measurements related functions</span>
-<a name="l01000"></a>01000 <span class="comment">################################################################################</span>
-<a name="l01001"></a>01001 <span class="comment">*/</span>
-<a name="l01009"></a>01009 <span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="group__ThermalMon.html#gaa1f98293991f5ffbd2d8070326efd2e4" title="Initialize thermal measurements on specific CPU.">thermal_init</a>(<span class="keywordtype">int</span> cpuId);
-<a name="l01015"></a>01015 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__ThermalMon.html#ga360a7e11b64f021ed52775fbdf301f1f" title="Read the current thermal value.">thermal_read</a>(<span class="keywordtype">int</span> cpuId, uint32_t *data);
-<a name="l01022"></a>01022 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__ThermalMon.html#ga8fab5a971b666885a4c599c7e3301127" title="Read the current thermal value using a specific communication socket.">thermal_tread</a>(<span class="keywordtype">int</span> socket_fd, <span class="keywordtype">int</span> cpuId, uint32_t *data);
-<a name="l01025"></a>01025 <span class="comment">/* </span>
-<a name="l01026"></a>01026 <span class="comment">################################################################################</span>
-<a name="l01027"></a>01027 <span class="comment"># Timeline daemon related functions</span>
-<a name="l01028"></a>01028 <span class="comment">################################################################################</span>
-<a name="l01029"></a>01029 <span class="comment">*/</span>
-<a name="l01040"></a>01040 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__Daemon.html#ga8591c4cc9f2f779b57eaee14201fc10e" title="Start timeline daemon.">daemon_start</a>(uint64_t duration, <span class="keyword">const</span> <span class="keywordtype">char</span>* outfile);
-<a name="l01047"></a>01047 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__Daemon.html#ga93d301d460e85c3ca080c5a364a58fb7" title="Stop timeline daemon.">daemon_stop</a>(<span class="keywordtype">int</span> sig);
-<a name="l01050"></a>01050 <span class="comment">/* </span>
-<a name="l01051"></a>01051 <span class="comment">################################################################################</span>
-<a name="l01052"></a>01052 <span class="comment"># Memory sweeping related functions</span>
-<a name="l01053"></a>01053 <span class="comment">################################################################################</span>
-<a name="l01054"></a>01054 <span class="comment">*/</span>
-<a name="l01063"></a>01063 <span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="group__MemSweep.html#ga19c4d6f8af4846fb55f0c72b0b7fde72" title="Sweeping the memory of a NUMA node.">memsweep_domain</a>(<span class="keywordtype">int</span> domainId);
-<a name="l01070"></a>01070 <span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="group__MemSweep.html#ga641ebf315727fd4fd7b7bb6db6f5c162" title="Sweeping the memory of all NUMA nodes covered by CPU list.">memsweep_threadGroup</a>(<span class="keywordtype">int</span>* processorList, <span class="keywordtype">int</span> numberOfProcessors);
-<a name="l01072"></a>01072 <span class="preprocessor">#ifdef __cplusplus</span>
-<a name="l01073"></a>01073 <span class="preprocessor"></span>}
-<a name="l01074"></a>01074 <span class="preprocessor">#endif</span>
-<a name="l01075"></a>01075 <span class="preprocessor"></span>
-<a name="l01076"></a>01076 <span class="preprocessor">#endif </span><span class="comment">/*LIKWID_H*/</span>
+<a name="l00906"></a><a class="code" href="group__PowerMon.html#ga81960db0933a4ef5cb7ca03eb90ea2d8">00906</a> <span class="keyword">typedef</span> <a class="code" href="structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility.">PowerInfo</a>* <a class="code" href="group__PowerMon.html#ga81960db0933a4ef5cb7ca03eb90ea2d8" title="Pointer for exporting the PowerInfo data structure.">PowerInfo_t</a>;
+<a name="l00908"></a><a class="code" href="group__PowerMon.html#ga646afe02c7277a9ff1b8fa94156c7ac7">00908</a> <span class="keyword">typedef</span> <a class="code" href="structPowerData.html" title="Power measurement data for start/stop measurements.">PowerData</a>* <a class="code" href="group__PowerMon.html#ga646afe02c7277a9ff1b8fa94156c7ac7" title="Pointer for exporting the PowerData data structure.">PowerData_t</a>;
+<a name="l00909"></a>00909 
+<a name="l00917"></a>00917 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#ga7ee3dc358436505b184de3bcb65de696" title="Initialize power measurements on specific CPU.">power_init</a>(<span class="keywordtype">int</span> cpuId);
+<a name="l00923"></a>00923 <span class="keyword">extern</span> PowerInfo_t <a class="code" href="group__PowerMon.html#gaba3a097583fde4a6bb84459326e0fabe" title="Get a pointer to the power facility information.">get_powerInfo</a>(<span class="keywordtype">void</span>);
+<a name="l00930"></a>00930 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#ga09a270615173d7c831bbee6a851c98c7" title="Read the current power value.">power_read</a>(<span class="keywordtype">int</span> cpuId, uint64_t reg, uint32_t *data);
+<a name="l00938"></a>00938 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#ga7850010edfc54504ef01fc2fff960b36" title="Read the current power value using a specific communication socket.">power_tread</a>(<span class="keywordtype">int</span> socket_fd, <span class="keywordtype">int</span> cpuId, uint64_t reg, uint32_t *data);
+<a name="l00946"></a>00946 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#gaf2a9c48147c59d7bd3806f26bf6fad21" title="Start power measurements.">power_start</a>(PowerData_t data, <span class="keywordtype">int</span> cpuId, <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a> type);
+<a name="l00954"></a>00954 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#gaaea8fd35bd72dd392b734f809d7e5ac0" title="Stop power measurements.">power_stop</a>(PowerData_t data, <span class="keywordtype">int</span> cpuId, <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a> type);
+<a name="l00960"></a>00960 <span class="keyword">extern</span> <span class="keywordtype">double</span> <a class="code" href="group__PowerMon.html#ga5e477a6efc9057f77f1ae068252487a7" title="Print power measurements gathered by power_start() and power_stop()">power_printEnergy</a>(<a class="code" href="structPowerData.html" title="Power measurement data for start/stop measurements.">PowerData</a>* data);
+<a name="l00966"></a>00966 <span class="keyword">extern</span> <span class="keywordtype">double</span> <a class="code" href="group__PowerMon.html#gacb99bbc20386c2879e500a0a10df90c8" title="Get energy Unit.">power_getEnergyUnit</a>(<span class="keywordtype">int</span> domain);
+<a name="l00967"></a>00967 
+<a name="l00976"></a>00976 <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#ga3df0c38578b69762058f59be63db2a28" title="Get the values of the limit register of a domain.">power_limitGet</a>(<span class="keywordtype">int</span> cpuId, <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a> domain, <span class="keywordtype">double</span>* power, <span class="keywordtype">double</span>* time);
+<a name="l00977"></a>00977 
+<a name="l00987"></a>00987 <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#gab5f4da5ba518bc2bbc35c691aa652c4b" title="Set the values of the limit register of a domain.">power_limitSet</a>(<span class="keywordtype">int</span> cpuId, <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a> domain, <span class="keywordtype">double</span> power, <span class="keywordtype">double</span> time, <span class="keywordtype">int</span> doClamping);
+<a name="l00988"></a>00988 
+<a name="l00995"></a>00995 <span class="keywordtype">int</span> <a class="code" href="group__PowerMon.html#gae68fdebd419be8f14702e24ef22070b8" title="Get the state of a power limit, activated or deactivated.">power_limitState</a>(<span class="keywordtype">int</span> cpuId, <a class="code" href="group__PowerMon.html#ga0d0e3226055ad5266e487b58fd01cebd" title="Enum for all supported RAPL domains.">PowerType</a> domain);
+<a name="l00996"></a>00996 
+<a name="l00999"></a>00999 <span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="group__PowerMon.html#ga6af17835dedb41ce76f7e1c3df37b5bf" title="Free space of power_unit.">power_finalize</a>(<span class="keywordtype">void</span>);
+<a name="l01002"></a>01002 <span class="comment">/* </span>
+<a name="l01003"></a>01003 <span class="comment">################################################################################</span>
+<a name="l01004"></a>01004 <span class="comment"># Thermal measurements related functions</span>
+<a name="l01005"></a>01005 <span class="comment">################################################################################</span>
+<a name="l01006"></a>01006 <span class="comment">*/</span>
+<a name="l01014"></a>01014 <span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="group__ThermalMon.html#gaa1f98293991f5ffbd2d8070326efd2e4" title="Initialize thermal measurements on specific CPU.">thermal_init</a>(<span class="keywordtype">int</span> cpuId);
+<a name="l01020"></a>01020 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__ThermalMon.html#ga360a7e11b64f021ed52775fbdf301f1f" title="Read the current thermal value.">thermal_read</a>(<span class="keywordtype">int</span> cpuId, uint32_t *data);
+<a name="l01027"></a>01027 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__ThermalMon.html#ga8fab5a971b666885a4c599c7e3301127" title="Read the current thermal value using a specific communication socket.">thermal_tread</a>(<span class="keywordtype">int</span> socket_fd, <span class="keywordtype">int</span> cpuId, uint32_t *data);
+<a name="l01030"></a>01030 <span class="comment">/* </span>
+<a name="l01031"></a>01031 <span class="comment">################################################################################</span>
+<a name="l01032"></a>01032 <span class="comment"># Timeline daemon related functions</span>
+<a name="l01033"></a>01033 <span class="comment">################################################################################</span>
+<a name="l01034"></a>01034 <span class="comment">*/</span>
+<a name="l01045"></a>01045 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__Daemon.html#ga8591c4cc9f2f779b57eaee14201fc10e" title="Start timeline daemon.">daemon_start</a>(uint64_t duration, <span class="keyword">const</span> <span class="keywordtype">char</span>* outfile);
+<a name="l01052"></a>01052 <span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="group__Daemon.html#ga93d301d460e85c3ca080c5a364a58fb7" title="Stop timeline daemon.">daemon_stop</a>(<span class="keywordtype">int</span> sig);
+<a name="l01055"></a>01055 <span class="comment">/* </span>
+<a name="l01056"></a>01056 <span class="comment">################################################################################</span>
+<a name="l01057"></a>01057 <span class="comment"># Memory sweeping related functions</span>
+<a name="l01058"></a>01058 <span class="comment">################################################################################</span>
+<a name="l01059"></a>01059 <span class="comment">*/</span>
+<a name="l01068"></a>01068 <span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="group__MemSweep.html#ga19c4d6f8af4846fb55f0c72b0b7fde72" title="Sweeping the memory of a NUMA node.">memsweep_domain</a>(<span class="keywordtype">int</span> domainId);
+<a name="l01075"></a>01075 <span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="group__MemSweep.html#ga641ebf315727fd4fd7b7bb6db6f5c162" title="Sweeping the memory of all NUMA nodes covered by CPU list.">memsweep_threadGroup</a>(<span class="keywordtype">int</span>* processorList, <span class="keywordtype">int</span> numberOfProcessors);
+<a name="l01077"></a>01077 <span class="preprocessor">#ifdef __cplusplus</span>
+<a name="l01078"></a>01078 <span class="preprocessor"></span>}
+<a name="l01079"></a>01079 <span class="preprocessor">#endif</span>
+<a name="l01080"></a>01080 <span class="preprocessor"></span>
+<a name="l01081"></a>01081 <span class="preprocessor">#endif </span><span class="comment">/*LIKWID_H*/</span>
 </pre></div></div><!-- contents -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
@@ -516,7 +517,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 25 2015 09:15:35 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 26 2015 16:10:59 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>
