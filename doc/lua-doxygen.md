@@ -107,7 +107,7 @@ or<BR>
 </TABLE>
 
 \anchor setVerbosity
-<H2>setVerbosity()</H2>
+<H2>setVerbosity(verbosity)</H2>
 <P>Define and/or change the verbosity level of LIKWID</P>
 <TABLE>
 <TR>
@@ -153,7 +153,7 @@ or<BR>
 <H1>Data type definition for Lua access client module in the Lua API</H1>
 <H1>Function definitions for Lua access client module in the Lua API</H1>
 \anchor setAccessMode
-<H2>setAccessMode()</H2>
+<H2>setAccessMode(accessFlag)</H2>
 <P>Define and/or change the access mode to the MSR and PCI registers</P>
 <TABLE>
 <TR>
@@ -474,7 +474,7 @@ or<BR>
 </TABLE>
 
 \anchor cpustr_to_cpulist
-<H2>cpustr_to_cpulist()</H2>
+<H2>cpustr_to_cpulist(cpuexpression)</H2>
 <P>Resolve the given CPU expression string to a list of CPUs as available in the system</P>
 <TABLE>
 <TR>
@@ -616,7 +616,7 @@ or<BR>
 </TR>
 </TABLE>
 
-<H2>setMemInterleaved()</H2>
+<H2>setMemInterleaved(nrThreads, threads2Cpus)</H2>
 <P>Set the 'Interleaved' memory policy to allocate data only on given CPUs</P>
 <TABLE>
 <TR>
@@ -642,7 +642,7 @@ or<BR>
 </TR>
 </TABLE>
 
-<H2>nodestr_to_nodelist()</H2>
+<H2>nodestr_to_nodelist(nodeexpression)</H2>
 <P>Resolve the given node expression in NUMA affinity domain</P>
 <TABLE>
 <TR>
@@ -653,7 +653,7 @@ or<BR>
   <TD>Input Parameter</TD>
   <TD><TABLE>
     <TR>
-      <TD>\a node expression</TD>
+      <TD>\a nodeexpression</TD>
       <TD>List of CPUs in NUMA node</TD>
     </TR>
   </TABLE></TD>
@@ -673,7 +673,7 @@ or<BR>
 </TR>
 </TABLE>
 
-<H2>sockstr_to_socklist()</H2>
+<H2>sockstr_to_socklist(socketexpression)</H2>
 <P>Resolve the given socket expression in socket affinity domain</P>
 <TABLE>
 <TR>
@@ -684,7 +684,7 @@ or<BR>
   <TD>Input Parameter</TD>
   <TD><TABLE>
     <TR>
-      <TD>\a socket expression</TD>
+      <TD>\a socketexpression</TD>
       <TD>List of CPUs in socket affinity domain</TD>
     </TR>
   </TABLE></TD>
@@ -806,7 +806,7 @@ or<BR>
 </TR>
 </TABLE>
 \anchor pinProcess
-<H2>pinProcess()</H2>
+<H2>pinProcess(cpuID, silent)</H2>
 <P>Pins the current pocess to the given CPU ID</P>
 <TABLE>
 <TR>
@@ -1008,7 +1008,7 @@ or<BR>
 
 <H1>Function definitions for Lua performance monitoring module in the Lua API</H1>
 \anchor init
-<H2>init()</H2>
+<H2>init(nrThreads, thread2Cpus)</H2>
 <P>Initializes the Perfmon module of LIKWID, like opening the MSR files and check the PCI devices<BR>If in access daemon mode, a single daemon instance is started to forward measurements on all given CPUs</P>
 <TABLE>
 <TR>
@@ -1035,7 +1035,7 @@ or<BR>
 </TABLE>
 
 \anchor addEventSet
-<H2>addEventSet()</H2>
+<H2>addEventSet(eventSet)</H2>
 <P>Creates the internal management structures for the given event set. Checks the registers and if needed PCI device access<BR>The \ref init function as to be called previously</P>
 <TABLE>
 <TR>
@@ -1059,7 +1059,7 @@ or<BR>
 
 
 \anchor setupCounters
-<H2>setupCounters()</H2>
+<H2>setupCounters(groupID)</H2>
 <P>Setup the config registers to measure the events defined by group</P>
 <TABLE>
 <TR>
@@ -1136,7 +1136,7 @@ or<BR>
 </TABLE>
 
 \anchor switchGroup
-<H2>switchGroup()</H2>
+<H2>switchGroup(newgroup)</H2>
 <P>Switches the currently active group in the perfmon module. If the given group ID does not exist, it fallbacks to group ID 1.</P>
 <TABLE>
 <TR>
@@ -1177,7 +1177,7 @@ or<BR>
 </TABLE>
 
 \anchor getResult
-<H2>getResult()</H2>
+<H2>getResult(groupID, eventID, threadID)</H2>
 <P>Get result for a group, event, thread combination. All options must be given</P>
 <TABLE>
 <TR>
@@ -1226,7 +1226,7 @@ or<BR>
 </TABLE>
 
 \anchor getMarkerResults
-<H2>getMarkerResults()</H2>
+<H2>getMarkerResults(filename, group_list, num_cpus)</H2>
 <P>Get the results for an output file written by \ref MarkerAPI</P>
 <TABLE>
 <TR>
@@ -1329,7 +1329,7 @@ or<BR>
 </TABLE>
 
 \anchor getRuntimeOfGroup
-<H2>getRuntimeOfGroup()</H2>
+<H2>getRuntimeOfGroup(groupID)</H2>
 <P>Returns the measurement time of the given groupID</P>
 <TABLE>
 <TR>
@@ -1352,7 +1352,7 @@ or<BR>
 </TABLE>
 
 \anchor getNumberOfEvents
-<H2>getNumberOfEvents()</H2>
+<H2>getNumberOfEvents(groupID)</H2>
 <P>Returns the amount of events for the given groupID</P>
 <TABLE>
 <TR>
@@ -1402,12 +1402,7 @@ or<BR>
 </TR>
 <TR>
   <TD>Input Parameter</TD>
-  <TD><TABLE>
-    <TR>
-      <TD>\a architecture</TD>
-      <TD>Short name of architecture. Can be found in CPU info \ref lua_cpuinfo as \a short_name</TD>
-    </TR>
-  </TABLE></TD>
+  <TD>None</TD>
 </TR>
 <TR>
   <TD>Returns</TD>
@@ -1425,7 +1420,7 @@ or<BR>
 </TABLE>
 
 \anchor get_groupdata
-<H2>get_groupdata()</H2>
+<H2>get_groupdata(group)</H2>
 <P>Read in the performance group \a group</P>
 <TABLE>
 <TR>
@@ -1606,7 +1601,7 @@ or<BR>
 </TABLE>
 
 \anchor startPower
-<H2>startPower()</H2>
+<H2>startPower(cpuID, domainID)</H2>
 <P>Start measuring given RAPL domain on given CPU</P>
 <TABLE>
 <TR>
@@ -1633,7 +1628,7 @@ or<BR>
 </TABLE>
 
 \anchor stopPower
-<H2>stopPower()</H2>
+<H2>stopPower(cpuID, domainID)</H2>
 <P>Stop measuring given RAPL domain on given CPU</P>
 <TABLE>
 <TR>
@@ -1661,7 +1656,7 @@ or<BR>
 
 
 \anchor printEnergy
-<H2>printEnergy()</H2>
+<H2>printEnergy(before, after, domainID)</H2>
 <P></P>
 <TABLE>
 <TR>
@@ -1692,7 +1687,7 @@ or<BR>
 </TABLE>
 
 \anchor limitGet
-<H2>limitGet() (EXPERIMENTAL)</H2>
+<H2>limitGet(cpuID, domainID) (EXPERIMENTAL)</H2>
 <P>Get the current limit in the limit register of domain. The limit is defined as maximal power consumption in a time window</P>
 <TABLE>
 <TR>
@@ -1729,7 +1724,7 @@ or<BR>
 
 
 \anchor limitSet
-<H2>limitSet() (EXPERIMENTAL)</H2>
+<H2>limitSet(cpuID, domainID, power, time, clamp) (EXPERIMENTAL)</H2>
 <P></P>
 <TABLE>
 <TR>
@@ -1768,7 +1763,7 @@ or<BR>
 </TABLE>
 
 \anchor limitState
-<H2>limitState() (EXPERIMENTAL)</H2>
+<H2>limitState(cpuID, domainID) (EXPERIMENTAL)</H2>
 <P>Get the state of the limit</P>
 <TABLE>
 <TR>
@@ -1799,7 +1794,7 @@ or<BR>
 <H1>Data type definition for Lua thermal monitoring module in the Lua API</H1>
 <H1>Function definitions for Lua thermal monitoring module in the Lua API</H1>
 \anchor initTemp
-<H2>initTemp()</H2>
+<H2>initTemp(cpuID)</H2>
 <P>Initialize the thermal measurements on given CPU</P>
 <TABLE>
 <TR>
@@ -1822,7 +1817,7 @@ or<BR>
 </TABLE>
 
 \anchor initTemp
-<H2>readTemp()</H2>
+<H2>readTemp(cpuID)</H2>
 <P>Measure the temperature on given CPU</P>
 <TABLE>
 <TR>
@@ -1903,7 +1898,7 @@ or<BR>
 </TABLE>
 
 \anchor getClockCycles
-<H2>getClockCycles()</H2>
+<H2>getClockCycles(start, stop)</H2>
 <P>Return the amount of cycles between start and stop timestamps</P>
 <TABLE>
 <TR>
@@ -1930,7 +1925,7 @@ or<BR>
 </TABLE>
 
 \anchor getClock
-<H2>getClock()</H2>
+<H2>getClock(start, stop)</H2>
 <P>Return the time in seconds between start and stop timestamps</P>
 <TABLE>
 <TR>
@@ -1957,31 +1952,8 @@ or<BR>
 </TABLE>
 
 \anchor sleep
-<H2>sleep()</H2>
-<P>Sleep for specified amount of seconds</P>
-<TABLE>
-<TR>
-  <TH>Direction</TH>
-  <TH>Data type(s)</TH>
-</TR>
-<TR>
-  <TD>Input Parameter</TD>
-  <TD><TABLE>
-    <TR>
-      <TD>\a seconds</TD>
-      <TD>Sleep for seconds</TD>
-    </TR>
-  </TABLE></TD>
-</TR>
-<TR>
-  <TD>Returns</TD>
-  <TD>Remaining time to sleep. >0 if sleep is interrupted</TD>
-</TR>
-</TABLE>
-
-\anchor usleep
-<H2>usleep()</H2>
-<P>Sleep for at least the specified amount of microseconds</P>
+<H2>sleep(usecs)</H2>
+<P>Sleep for specified amount of microseconds</P>
 <TABLE>
 <TR>
   <TH>Direction</TH>
@@ -1992,15 +1964,16 @@ or<BR>
   <TD><TABLE>
     <TR>
       <TD>\a usecs</TD>
-      <TD>Sleep for microseconds. \a usec must be in range 1 to 999999</TD>
+      <TD>Sleep for seconds</TD>
     </TR>
   </TABLE></TD>
 </TR>
 <TR>
   <TD>Returns</TD>
-  <TD>Status of usleep. If interrupted the status is != 0</TD>
+  <TD>Remaining time to sleep. >0 if sleep is interrupted</TD>
 </TR>
 </TABLE>
+
 
 */
 
@@ -2008,7 +1981,7 @@ or<BR>
 <H1>Data type definition for Lua memory sweeping module in the Lua API</H1>
 <H1>Function definitions for Lua memory sweeping module in the Lua API</H1>
 \anchor memSweep
-<H2>memSweep()</H2>
+<H2>memSweep(nrThreads, Cpus)</H2>
 <P>Sweep the memory and LLC for given threads</P>
 <TABLE>
 <TR>
@@ -2035,7 +2008,7 @@ or<BR>
 </TABLE>
 
 \anchor memSweepDomain
-<H2>memSweepDomain()</H2>
+<H2>memSweepDomain(domainID)</H2>
 <P>Sweep the memory and LLC for a given NUMA domain</P>
 <TABLE>
 <TR>
@@ -2062,7 +2035,7 @@ or<BR>
 <H1>Data type definition for Lua miscellaneous functions module in the Lua API</H1>
 <H1>Function definitions for Lua miscellaneous functions module in the Lua API</H1>
 \anchor startProgram
-<H2>startProgram()</H2>
+<H2>startProgram(Exec)</H2>
 <P>Start an executable in a new thread</P>
 <TABLE>
 <TR>
@@ -2103,7 +2076,7 @@ or<BR>
 </TABLE>
 
 \anchor killProgram
-<H2>killProgram()</H2>
+<H2>killProgram(PID)</H2>
 <P>Kill the executable with SIGTERM</P>
 <TABLE>
 <TR>
@@ -2127,7 +2100,7 @@ or<BR>
 
 
 \anchor setenv
-<H2>setenv()</H2>
+<H2>setenv(Name, Value)</H2>
 <P>Set environment variable. Lua only provides getenv()</P>
 <TABLE>
 <TR>
@@ -2172,7 +2145,7 @@ or<BR>
 </TABLE>
 
 \anchor access
-<H2>access()</H2>
+<H2>access(Filepath, perm)</H2>
 <P>Check the file existance for a given filepath</P>
 <TABLE>
 <TR>
@@ -2184,7 +2157,11 @@ or<BR>
   <TD><TABLE>
     <TR>
       <TD>\a Filepath</TD>
-      <TD>Name of Filepath to check for existance</TD>
+      <TD>Name of Filepath to check</TD>
+    </TR>
+    <TR>
+      <TD>\a perm</TD>
+      <TD>Check for specified attribute<BR>r: read, w: write, x: executable, e: existance</TD>
     </TR>
   </TABLE></TD>
 </TR>
@@ -2287,7 +2264,7 @@ or<BR>
 <H1>Data type definition for Lua output functions module in the Lua API</H1>
 <H1>Function definitions for Lua output functions module in the Lua API</H1>
 \anchor getopt
-<H2>getopt()</H2>
+<H2>getopt(commandline, optionlist)</H2>
 <P>Read commandline parameters and split them to the given options. The version LIKWID uses was originally taken from the web but extended to talk short '-o' and long options "--option". It returns an iterator for the commandline options.<BR>Basic usage:<BR></P>
 <CODE>
 for opt,arg in likwid.getopt(arg, {"n:","h"}) do<BR>
@@ -2317,7 +2294,7 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
     </TR>
     <TR>
       <TD>\a optionlist</TD>
-      <TD>List of options that should be recognized. Options with ':' as last character need an argument</TD>
+      <TD>List of options that should be recognized. Options with ':' as last character need an argument<BR>Example {"h","v","cpu:"}</TD>
     </TR>
   </TABLE></TD>
 </TR>
@@ -2337,7 +2314,7 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TABLE>
 
 \anchor parse_time
-<H2>parse_time()</H2>
+<H2>parse_time(timestr)</H2>
 <P>Parses time interval describing strings like 2s, 100ms or 250us</P>
 <TABLE>
 <TR>
@@ -2365,7 +2342,7 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TABLE>
 
 \anchor printtable
-<H2>printtable()</H2>
+<H2>printtable(table)</H2>
 <P>Prints the given two dimensional table as fancy ASCII table. For CSV output use \ref printcsv</P>
 <TABLE>
 <TR>
@@ -2388,7 +2365,7 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TABLE>
 
 \anchor printcsv
-<H2>printcsv()</H2>
+<H2>printcsv(table)</H2>
 <P>Prints the given two dimensional table in CSV format. For ASCII table output see \ref printtable</P>
 <TABLE>
 <TR>
@@ -2411,7 +2388,7 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TABLE>
 
 \anchor stringsplit
-<H2>stringsplit()</H2>
+<H2>stringsplit(str, sSeparator,( nMax, bRegexp))</H2>
 <P>Splits the given string at separating character</P>
 <TABLE>
 <TR>
@@ -2446,7 +2423,7 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TABLE>
 
 \anchor printOutput
-<H2>printOutput()</H2>
+<H2>printOutput(groups, results, groupData, cpulist)</H2>
 <P>Prints results</P>
 <TABLE>
 <TR>
@@ -2481,7 +2458,7 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TABLE>
 
 \anchor print_markerOutput
-<H2>print_markerOutput()</H2>
+<H2>print_markerOutput(groups, results, groupData, cpulist)</H2>
 <P>Prints results of a Marker API run. This is different to \ref printOutput because we have to resolve the measurement regions</P>
 <TABLE>
 <TR>
@@ -2517,7 +2494,7 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 
 
 \anchor addSimpleAsciiBox
-<H2>addSimpleAsciiBox()</H2>
+<H2>addSimpleAsciiBox(container, lineIdx, colIdx, label)</H2>
 <P>Add a simple ASCII box with given label to box container. This function is only used by \ref likwid-topology</P>
 <TABLE>
 <TR>
@@ -2552,7 +2529,7 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TABLE>
 
 \anchor addJoinedAsciiBox
-<H2>addJoinedAsciiBox()</H2>
+<H2>addJoinedAsciiBox(container, lineIdx, startColIdx, endColIdx, label)</H2>
 <P>Add a joined ASCII box with given label to box container. Joined boxes can span the space of multiple simple boxes. This function is only used by \ref likwid-topology</P>
 <TABLE>
 <TR>
@@ -2591,7 +2568,7 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TABLE>
 
 \anchor printAsciiBox
-<H2>printAsciiBox()</H2>
+<H2>printAsciiBox(container)</H2>
 <P>Print the box container previously filled with \ref addSimpleAsciiBox and \ref addJoinedAsciiBox. This function is only used by \ref likwid-topology</P>
 <TABLE>
 <TR>
