@@ -50,7 +50,6 @@
 
 #include <error.h>
 #include <bstrlib.h>
-//#include <strUtil.h>
 
 #include <numa.h>
 #include <numa_proc.h>
@@ -68,7 +67,7 @@ NumaTopology numa_info = {0,NULL};
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
 int str2int(const char* str)
 {
     char* endptr;
@@ -91,6 +90,8 @@ int str2int(const char* str)
 
     return (int) val;
 }
+
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int
 empty_numa_init()
