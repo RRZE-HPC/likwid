@@ -266,11 +266,7 @@ if not print_info and not print_temp then
     end
     time_before = likwid.startClock()
     if (stethoscope) then
-        if time_interval >= 1.E06 then
-            sleep(time_interval/1.E06)
-        else
-            usleep(time_interval)
-        end
+        likwid.sleep(time_interval)
     else
         err = os.execute(execString)
         if (err == false) then

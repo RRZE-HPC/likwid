@@ -35,6 +35,7 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <time.h>
 
 
 #include <lua.h>                               /* Always include this */
@@ -1299,24 +1300,9 @@ static int lua_likwid_getCpuClock(lua_State* L)
     return 1;
 }
 
-static int isleep(lua_State* L)
+static int lua_sleep(lua_State* L)
 {
-    long interval = lua_tounsigned(L,-1);
-    int remain = 0;
-    remain = sleep(interval);
-    lua_pushinteger(L, remain);
-    return 1;
-}
-
-static int iusleep(lua_State* L)
-{
-    int status = -1;
-    unsigned long interval = lua_tounsigned(L,-1);
-    if (interval < 1000000)
-    {
-        status = usleep(interval);
-    }
-    lua_pushinteger(L, status);
+    lua_pushnumber(L, timer_sleep(lua_tounsigned(L,-1)));
     return 1;
 }
 
@@ -1662,8 +1648,7 @@ int luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_stopClock",lua_likwid_stopClock);
     lua_register(L, "likwid_getClockCycles",lua_likwid_getClockCycles);
     lua_register(L, "likwid_getClock",lua_likwid_getClock);
-    lua_register(L, "sleep",isleep);
-    lua_register(L, "usleep",iusleep);
+    lua_register(L, "sleep",lua_sleep);
     // Power functions
     lua_register(L, "likwid_startPower",lua_likwid_startPower);
     lua_register(L, "likwid_stopPower",lua_likwid_stopPower);

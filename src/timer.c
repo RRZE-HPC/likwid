@@ -27,21 +27,25 @@
  *
  * =======================================================================================
  */
-
+/* #####   HEADER FILE INCLUDES   ######################################### */
 #include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
+#include <unistd.h>
 #include <sys/time.h>
+#include <time.h>
 
 #include <types.h>
 #include <likwid.h>
-
+/* #####   EXPORTED VARIABLES   ########################################### */
+/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
+static uint64_t sleepbase = 0ULL;
 
 void (*TSTART)(TscCounter*) = NULL;
 void (*TSTOP)(TscCounter*) = NULL;
 
+/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 #define CPUID                              \
     __asm__ volatile ("cpuid"                             \
             : "=a" (eax),     \
@@ -49,6 +53,8 @@ void (*TSTOP)(TscCounter*) = NULL;
             "=c" (ecx),     \
             "=d" (edx)      \
             : "0" (eax), "2" (ecx))
+
+/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static void fRDTSC(TscCounter* cpu_c)
 {
@@ -136,6 +142,26 @@ getCpuSpeed(void)
 
     return (uint64_t)   atoi(buff);
 #endif
+}
+
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+void init_sleep()
+{
+    int status;
+    TimerData timer;
+    struct timespec req = {0,1};
+    struct timespec rem = {0,0};
+    for (int i=0; i<10; ++i)
+    {
+        timer_start(&timer);
+        status = clock_nanosleep(CLOCK_REALTIME,0,&req, &rem);
+        timer_stop(&timer);
+        if (timer_print(&timer)*1E6 > sleepbase)
+        {
+            sleepbase = timer_print(&timer)*1E6 + 2;
+        }
+    }
 }
 
 
@@ -238,5 +264,34 @@ void timer_stop( TimerData* time )
 
     time->stop.int64 = (((uint64_t)tbu0) << 32) | tbl;
 #endif
+}
+
+
+
+int timer_sleep(unsigned long usec)
+{
+    int status = -1;
+    struct timespec req;
+    struct timespec rem = {0,0};
+    if (sleepbase == 0x0ULL)
+    {
+        init_sleep();
+    }
+    if (usec >= 1E6)
+    {
+        status = sleep(usec * 1E-6);
+    }
+    else
+    {
+        req.tv_sec = 0;
+        req.tv_nsec = (usec-sleepbase)*1.E3;
+        printf("nanosleep for %llu us\n",(usec-sleepbase));
+        status = clock_nanosleep(CLOCK_REALTIME,0,&req, &rem);
+        if ((status == -1) && (errno == EINTR))
+        {
+            status = (rem.tv_sec * 1E6) + (rem.tv_nsec * 1E-3);
+        }
+    }
+    return status;
 }
 

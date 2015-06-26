@@ -795,6 +795,11 @@ extern void timer_start( TimerData* time );
 @param [in,out] time Structure holding the cycle count at stop
 */
 extern void timer_stop ( TimerData* time);
+/*! \brief Sleep for specified usecs
+
+@param [in] usec Amount of usecs to sleep
+*/
+int timer_sleep(unsigned long usec);
 
 /** @}*/
 

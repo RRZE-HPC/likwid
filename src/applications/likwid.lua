@@ -80,7 +80,6 @@ likwid.stopClock = likwid_stopClock
 likwid.getClockCycles = likwid_getClockCycles
 likwid.getClock = likwid_getClock
 likwid.sleep = sleep
-likwid.usleep = usleep
 likwid.startPower = likwid_startPower
 likwid.stopPower = likwid_stopPower
 likwid.calcPower = likwid_printEnergy

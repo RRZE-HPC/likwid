@@ -254,7 +254,7 @@ while true do
         likwid.killProgram()
         break
     end
-    remain = likwid.sleep(10)
+    remain = likwid.sleep(10E6)
     if remain > 0 or not likwid.checkProgram() then
         io.stdout:flush()
         break

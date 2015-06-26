@@ -491,7 +491,7 @@ while likwid.getSignalState() == 0 do
 
         -- Perform the measurement
         likwid.startCounters()
-        sleep(dconfig["duration"])
+        likwid.sleep(dconfig["duration"] * 1E6)
         likwid.stopCounters()
 
         -- temporal array collecting counter to values for each thread for metric calculation

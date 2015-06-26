@@ -119,6 +119,7 @@ outfile = nil
 gotC = false
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid("pid"))
 print_stdout = print
+cpuClock = 1
 likwid.catchSignal()
 
 if #arg == 0 then
@@ -379,15 +380,17 @@ if #event_string_list == 0 and not print_info then
     os.exit(1)
 end
 
+if (cpuinfo["clock"] > 0) then
+    cpuClock = cpuinfo["clock"]
+else
+    cpuClock = likwid.getCpuClock()
+end
+
 if outfile == nil then
     print_stdout(likwid.hline)
     print_stdout(string.format("CPU name:\t%s",cpuinfo["osname"]))
     print_stdout(string.format("CPU type:\t%s",cpuinfo["name"]))
-    if (cpuinfo["clock"] > 0) then
-        print_stdout(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] * 1.E-09))
-    else
-        print_stdout(string.format("CPU clock:\t%3.2f GHz",likwid.getCpuClock() * 1.E-09))
-    end
+    print_stdout(string.format("CPU clock:\t%3.2f GHz",cpuClock * 1.E-09))
 end
 
 if print_info or verbose > 0 then
@@ -586,34 +589,50 @@ if use_wrapper or use_timeline then
             likwid.killProgram()
             break
         end
-        if duration >= 1.E06 then
-            remain = sleep(duration/1.E06)
-            if remain > 0 or not likwid.checkProgram() then
-                io.stdout:flush()
-                break
-            end
-        else
-            status = usleep(duration)
-            if status ~= 0 or not likwid.checkProgram()then
-                io.stdout:flush()
-                break
-            end
+        local remain = likwid.sleep(duration)
+        if remain > 0 or not likwid.checkProgram() then
+            io.stdout:flush()
+            break
         end
         if use_timeline == true then
             stop = likwid.stopClock()
             likwid.readCounters()
             local time = likwid.getClock(start, stop)
+            lastresults = int_results[alltime]
+            print(duration, time)
             alltime = alltime + time
             int_results[alltime] = likwid.getResults()
-            local str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(alltime)
-            for ie, e in pairs(int_results[alltime][activeGroup]) do
-                for it, t in pairs(e) do
-                    
-                    groupsums[activeGroup][ie][it] = groupsums[activeGroup][ie][it] + t
-                    str = str .. "," .. tostring(groupsums[activeGroup][ie][it])
+            local str = ""
+            if #group_list[activeGroup]["Metrics"] == 0 then
+                str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(alltime)
+                for ie, e in pairs(int_results[alltime][activeGroup]) do
+                    for it, t in pairs(e) do
+                        groupsums[activeGroup][ie][it] = groupsums[activeGroup][ie][it] + t
+                        str = str .. "," .. tostring(groupsums[activeGroup][ie][it])
+                    end
                 end
+                io.stderr:write(str.."\n")
+            else
+                str = tostring(activeGroup) .. ","..tostring(#group_list[activeGroup]["Metrics"])
+                str = str .. "," .. tostring(nr_threads) .. ","..tostring(alltime)
+                for t=1,nr_threads do
+                    counterlist = {}
+                    for ie, e in pairs(int_results[alltime][activeGroup]) do
+                        if lastresults ~=nil  then
+                            counterlist[group_list[activeGroup]["Events"][ie]["Counter"]] = e[t] - lastresults[activeGroup][ie][t]
+                        else
+                            counterlist[group_list[activeGroup]["Events"][ie]["Counter"]] = e[t]
+                        end
+                    end
+                    counterlist["time"] = time
+                    counterlist["inverseClock"] = 1.0/cpuClock
+                    for m=1,#group_list[activeGroup]["Metrics"] do
+                        local formula = group_list[activeGroup]["Metrics"][m]["formula"]
+                        str = str .. "," .. tostring(likwid.calculate_metric(formula,counterlist))
+                    end
+                end
+                io.stderr:write(str.."\n")
             end
-            io.stderr:write(str.."\n")
         end
         if #group_ids > 1 then
             likwid.switchGroup(activeGroup + 1)
@@ -638,11 +657,7 @@ if use_wrapper or use_timeline then
         io.stderr:write(str.."\n")
     end
 elseif use_stethoscope then
-    if duration >= 1.E06 then
-        sleep(duration/1.E06)
-    else
-        usleep(duration)
-    end
+    likwid.sleep(duration)
 elseif use_marker then
     local ret = os.execute(execString)
     if ret == nil then

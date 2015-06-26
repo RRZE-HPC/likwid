@@ -586,7 +586,7 @@ end
 
 if perfctr_exited == false then
     while likwid.getSignalState() == 0 do
-        sleep(1)
+        likwid.sleep(1E6)
     end
 end
 for i, group in pairs(group_list) do
