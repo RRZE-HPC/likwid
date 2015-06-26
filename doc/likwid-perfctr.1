@@ -87,13 +87,13 @@ Also a custom event set can be specified by a comma separated list of events. Ea
 eventId:register with the the register being one of a architecture supported performance counter registers.
 .TP
 .B \-\^t <frequency of measurements>
-timeline mode for time resolved measurements.
+timeline mode for time resolved measurements. The time unit must be given on command line, e.g. 4s, 500ms or 900us.
 .TP
 .B \-\^S <waittime between measurements>
-End-to-end measurement using likwid-perfctr but sleep instead of executing an application
+End-to-end measurement using likwid-perfctr but sleep instead of executing an application. The time unit must be given on command line, e.g. 4s, 500ms or 900us.
 .TP
 .B \-\^T <time between group switches>
-Frequency to switch groups if multiple are given on commandline, default is 2s. Value is ignored for a single event set and default frequency of 30s is used to catch overflows.
+Frequency to switch groups if multiple are given on commandline, default is 2s. Value is ignored for a single event set and default frequency of 30s is used to catch overflows. The time unit must be given on command line, e.g. 4s, 500ms or 900us.
 .TP
 .B \-\^s, \-\-\^skip <mask>
 Specify skip mask as HEX number. For each set bit the corresponding thread is skipped.
@@ -196,11 +196,15 @@ Using likwid in timeline mode:
 .B likwid-perfctr -c 0-3 -g FLOPS_DP -t 300ms ./cacheBench > out.txt
 .PP
 This will read out the counters every 300ms on physical cores 0-3 and write the results to out.txt.
-The application is not pinned to the CPUs. The output syntax of the timeline mode is:
+The application is not pinned to the CPUs. The output syntax of the timeline
+mode is for custom event sets:
 
-.B <groupID> <numberOfEvents> <numberOfThreads> <Timestamp> <Event1_Thread1> <Event1_Thread2> ... <EventN_ThreadN>
+.B <groupID> <numberOfEvents> <numberOfThreads> <Timestamp> <Event1_Thread1> <Event2_Thread1> ... <Event1_Thread2> ... <EventN_ThreadM>
 
-For timeline mode there is a frontend application likwid-perfscope(1), which enables live plotting of selected events.
+For performance groups with metrics:
+.B <groupID> <numberOfMetrics> <numberOfThreads> <Timestamp> <Metric1_Thread1> <Metric2_Thread1> ... <Metric1_Thread2> ...<MetricN_ThreadM>
+
+For timeline mode there is a frontend application likwid-perfscope(1), which enables live plotting of selected events. Please be aware that with high frequencies (<100ms), the values differ from the real results but the behavior of them is valid. 
 
 .IP 6. 4
 Using likwid in stethoscope mode:
