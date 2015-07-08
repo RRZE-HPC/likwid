@@ -207,7 +207,7 @@ endif
 .NOTPARALLEL:
 
 
-clean: $(EXT_TARGETS) $(BENCH_TARGET)
+clean: ext_targets_clean $(BENCH_TARGET)
 	@echo "===>  CLEAN"
 	@rm -rf $(BUILD_DIR)
 	@rm -f $(GENGROUPLOCK)
