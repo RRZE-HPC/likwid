@@ -20,14 +20,14 @@ PASFLAGS  = x86-64
 CPPFLAGS =
 LFLAGS   =  -pthread -g -mmic
 
-SHARED_CFLAGS = -fpic -mmic
-SHARED_LFLAGS = -shared -mmic
+SHARED_CFLAGS = -fpic -mmic -fvisibility=hidden
+SHARED_LFLAGS = -shared -mmic -fvisibility=hidden
 
 DEFINES  = -D_GNU_SOURCE
 DEFINES  += -DPAGE_ALIGNMENT=4096
 DEFINES  += -DDEBUGLEV=0
 
 INCLUDES =
-LIBS     = -lm
+LIBS     = -lm -lrt
 
 

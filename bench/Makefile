@@ -46,6 +46,7 @@ include $(MAKE_DIR)/config_defines.mk
 #INCLUDES  += -I./includes -I../src/includes -I../ext/hwloc/include -I../$(COMPILER) -I$(BUILD_DIR)
 INCLUDES  += -I./includes -I$(BUILD_DIR)
 LIBS      +=
+CFLAGS := $(filter-out -fvisibility=hidden, $(CFLAGS))
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
@@ -61,15 +62,13 @@ BENCH_DIR   = ./x86-64
 endif
 endif
 
+SHARED_TARGET_LIB := -L.. -llikwid
 STATIC_TARGET_LIB := ../liblikwid.a
-STATIC_HWLOC_LIB := ../ext/hwloc/libhwloc.a
+TARGET_LIB = $(SHARED_TARGET_LIB)
 
-BENCH_LIBS := $(STATIC_TARGET_LIB)
-ifeq ($(USE_HWLOC),true)
-BENCH_LIBS += $(STATIC_HWLOC_LIB)
-endif
-
+BENCH_LIBS :=
 ifeq ($(INSTRUMENT_BENCH),true)
+	BENCH_LIBS += ../$(TARGET_LIB) ../$(TARGET_HWLOC_LIB) ../$(TARGET_LUA_LIB) $(LIBS)
 	DEFINES += -DLIKWID_PERFMON
 endif
 
@@ -83,7 +82,10 @@ endif
 
 VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
-
+ifeq ($(SHARED_LIBRARY),false)
+OBJ := $(filter-out $(BUILD_DIR)/bstrlib.o,$(OBJ))
+TARGET_LIB = $(STATIC_TARGET_LIB)
+endif
 OBJ_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
@@ -91,13 +93,9 @@ CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 all: $(BUILD_DIR) $(OBJ) $(OBJ_BENCH) likwid-bench_target
 
 
-$(STATIC_TARGET_LIB):
-	@echo "===> Building likwid"
-	make -C ..
-
-likwid-bench_target:  $(BUILD_DIR) $(OBJ) $(OBJ_BENCH) $(STATIC_TARGET_LIB)
+likwid-bench_target:  $(BUILD_DIR) $(OBJ) $(OBJ_BENCH)
 	@echo "===>  LINKING  likwid-bench"
-	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o likwid-bench  likwid-bench.c $(OBJ_BENCH) $(OBJ) $(BENCH_LIBS) -lm
+	${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o likwid-bench  likwid-bench.c $(TARGET_LIB) $(BENCH_LIBS) $(OBJ_BENCH) $(OBJ) $(LIBS) 
 
 
 $(BUILD_DIR):

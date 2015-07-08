@@ -127,32 +127,32 @@ Reads environment variables:
 - LIKWID_THREADS (cpu list separated by ,)
 - LIKWID_GROUPS (amount of groups)
 */
-extern void likwid_markerInit(void);
+extern void likwid_markerInit(void) __attribute__ ((visibility ("default") ));
 /*! \brief Initialize LIKWID's marker API for the current thread
 
 Must be called in parallel region of the application to set up basic data structures
 of LIKWID. Before you can call likwid_markerThreadInit() you have to call likwid_markerInit().
 
 */
-extern void likwid_markerThreadInit(void);
+extern void likwid_markerThreadInit(void) __attribute__ ((visibility ("default") ));
 /*! \brief Select next group to measure
 
 Must be called in parallel region of the application to switch group on every CPU.
 */
-extern void likwid_markerNextGroup(void);
+extern void likwid_markerNextGroup(void) __attribute__ ((visibility ("default") ));
 /*! \brief Close LIKWID's marker API
 
 Must be called in serial region of the application. It gathers all data of regions and
 writes them out to a file (filepath in env variable LIKWID_FILEPATH).
 */
-extern void likwid_markerClose(void);
+extern void likwid_markerClose(void) __attribute__ ((visibility ("default") ));
 /*! \brief Register a measurement region
 
 Initializes the hashTable entry in order to reduce execution time of likwid_markerStartRegion()
 @param regionTag [in] Initialize data using this string
 @return Error code
 */
-extern int likwid_markerRegisterRegion(const char* regionTag);
+extern int likwid_markerRegisterRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
 /*! \brief Start a measurement region
 
 Reads the values of all configured counters and saves the results under the name given
@@ -160,7 +160,7 @@ in regionTag.
 @param regionTag [in] Store data using this string
 @return Error code of start operation
 */
-extern int likwid_markerStartRegion(const char* regionTag);
+extern int likwid_markerStartRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
 /*! \brief Stop a measurement region
 
 Reads the values of all configured counters and saves the results under the name given
@@ -168,7 +168,7 @@ in regionTag. The measurement data of the stopped region gets summed up in globa
 @param regionTag [in] Store data using this string
 @return Error code of stop operation
 */
-extern int likwid_markerStopRegion(const char* regionTag);
+extern int likwid_markerStopRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
 
 /*! \brief Get accumulated data of a code region
 
@@ -179,14 +179,14 @@ Get the accumulated data of the current thread for the given regionTag.
 @param time [out] Accumulated measurement time
 @param count [out] Call count of the code region
 */
-extern void likwid_markerGetRegion(const char* regionTag, int* nr_events, double* events, double *time, int *count);
+extern void likwid_markerGetRegion(const char* regionTag, int* nr_events, double* events, double *time, int *count) __attribute__ ((visibility ("default") ));
 /* utility routines */
 /*! \brief Get CPU ID of the current process/thread
 
 Returns the ID of the CPU the current process or thread is running on.
 @return current CPU ID
 */
-extern int  likwid_getProcessorId();
+extern int  likwid_getProcessorId() __attribute__ ((visibility ("default") ));
 /*! \brief Pin the current process to given CPU
 
 Pin the current process to the given CPU ID. The process cannot be scheduled to 
@@ -194,7 +194,7 @@ another CPU after pinning but the pinning can be changed anytime with this funct
 @param [in] processorId CPU ID to pin the current process to
 @return error code (1 for success, 0 for error)
 */
-extern int  likwid_pinProcess(int processorId);
+extern int  likwid_pinProcess(int processorId) __attribute__ ((visibility ("default") ));
 /*! \brief Pin the current thread to given CPU
 
 Pin the current thread to the given CPU ID. The thread cannot be scheduled to 
@@ -202,7 +202,7 @@ another CPU after pinning but the pinning can be changed anytime with this funct
 @param [in] processorId CPU ID to pin the current thread to
 @return error code (1 for success, 0 for error)
 */
-extern int  likwid_pinThread(int processorId);
+extern int  likwid_pinThread(int processorId) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 /* 
@@ -231,19 +231,19 @@ typedef enum {
 Sets the mode how the MSR and PCI registers should be accessed. 0 for direct access (propably root priviledges required) and 1 for accesses through the access daemon. It must be called before accessClient_init()
 @param [in] mode (0=direct, 1=daemon)
 */
-extern void accessClient_setaccessmode(int mode);
+extern void accessClient_setaccessmode(int mode) __attribute__ ((visibility ("default") ));
 /*! \brief Initialize socket for communication with the access daemon
 
 Initializes the file descriptor by starting and connecting to a new access daemon.
 @param [out] socket_fd Pointer to socket file descriptor
 */
-extern void accessClient_init(int* socket_fd);
+extern void accessClient_init(int* socket_fd) __attribute__ ((visibility ("default") ));
 /*! \brief Destroy socket for communication with the access daemon
 
 Destroys the file descriptor by disconnecting and shutting down the access daemon
 @param [in] socket_fd socket file descriptor
 */
-extern void accessClient_finalize(int socket_fd);
+extern void accessClient_finalize(int socket_fd) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 /*
@@ -280,13 +280,13 @@ Currently the paths /usr/local/etc/likwid.cfg, /etc/likwid.cfg and the path
 defined in config.mk are checked.
 @return error code (0 for success, -EFAULT if no file can be found)
 */
-extern int init_configuration(void);
+extern int init_configuration(void) __attribute__ ((visibility ("default") ));
 /*! \brief Destroy the config structure
 
 Destroys the current config structure and frees all allocated memory for path names
 @return error code (0 for success, -EFAULT if config structure not initialized)
 */
-extern int destroy_configuration(void);
+extern int destroy_configuration(void) __attribute__ ((visibility ("default") ));
 
 
 /*! \brief Retrieve the config structure
@@ -295,7 +295,7 @@ Get the initialized configuration
 \sa Configuration_t
 @return Configuration_t (pointer to internal Configuration structure)
 */
-extern Configuration_t get_configuration(void);
+extern Configuration_t get_configuration(void) __attribute__ ((visibility ("default") ));
 /** @}*/
 /* 
 ################################################################################
@@ -404,29 +404,29 @@ CpuInfo_t and CpuTopology_t are initialized by either HWLOC, CPUID/ProcFS or top
 \sa CpuInfo_t and CpuTopology_t
 @return always 0
 */
-extern int topology_init(void);
+extern int topology_init(void) __attribute__ ((visibility ("default") ));
 /*! \brief Retrieve CPU topology of the current machine
 
 \sa CpuTopology_t
 @return CpuTopology_t (pointer to internal cpuid_topology structure)
 */
-extern CpuTopology_t get_cpuTopology(void);
+extern CpuTopology_t get_cpuTopology(void) __attribute__ ((visibility ("default") ));
 /*! \brief Retrieve CPU information of the current machine
 
 Get the previously initialized CPU info structure containing number of CPUs/Threads
 \sa CpuInfo_t
 @return CpuInfo_t (pointer to internal cpuid_info structure)
 */
-extern CpuInfo_t get_cpuInfo(void);
+extern CpuInfo_t get_cpuInfo(void) __attribute__ ((visibility ("default") ));
 /*! \brief Destroy topology structures CpuInfo_t and CpuTopology_t.
 
 Retrieved pointers to the structures are not valid anymore after this function call
 \sa CpuInfo_t and CpuTopology_t
 */
-extern void topology_finalize(void);
+extern void topology_finalize(void) __attribute__ ((visibility ("default") ));
 /*! \brief Print all supported architectures
 */
-extern void print_supportedCPUs(void);
+extern void print_supportedCPUs(void) __attribute__ ((visibility ("default") ));
 /** @}*/
 /* 
 ################################################################################
@@ -475,34 +475,34 @@ a topology config file is present it is read at topology_init() and fills \a Num
 \sa NumaTopology_t
 @return error code (0 for success, -1 if initialization failed)
 */
-extern int numa_init(void);
+extern int numa_init(void) __attribute__ ((visibility ("default") ));
 /*! \brief Retrieve NUMA information of the current machine
 
 Get the previously initialized NUMA info structure
 \sa NumaTopology_t
 @return NumaTopology_t (pointer to internal numa_info structure)
 */
-extern NumaTopology_t get_numaTopology(void);
+extern NumaTopology_t get_numaTopology(void) __attribute__ ((visibility ("default") ));
 /*! \brief Set memory allocation policy to interleaved
 
 Set the memory allocation policy to interleaved for given list of CPUs
 @param [in] processorList List of processors
 @param [in] numberOfProcessors Length of processor list
 */
-extern void numa_setInterleaved(int* processorList, int numberOfProcessors);
+extern void numa_setInterleaved(int* processorList, int numberOfProcessors) __attribute__ ((visibility ("default") ));
 /*! \brief Allocate memory from a specific specific NUMA node
 @param [in,out] ptr Start pointer of memory
 @param [in] size Size for the allocation
 @param [in] domainId ID of NUMA node for the allocation
 */
-extern void numa_membind(void* ptr, size_t size, int domainId);
+extern void numa_membind(void* ptr, size_t size, int domainId) __attribute__ ((visibility ("default") ));
 /*! \brief Destroy NUMA information structure
 
 Destroys the NUMA information structure NumaTopology_t. Retrieved pointers
 to the structures are not valid anymore after this function call
 \sa NumaTopology_t
 */
-extern void numa_finalize(void);
+extern void numa_finalize(void) __attribute__ ((visibility ("default") ));
 /*! \brief Retrieve the number of NUMA nodes
 
 Returns the number of NUMA nodes of the current machine. Can also be read out of
@@ -510,7 +510,7 @@ NumaTopology_t
 \sa NumaTopology_t
 @return Number of NUMA nodes
 */
-extern int likwid_getNumberOfNodes(void);
+extern int likwid_getNumberOfNodes(void) __attribute__ ((visibility ("default") ));
 /** @}*/
 /* 
 ################################################################################
@@ -562,50 +562,50 @@ Initialize affinity information AffinityDomains_t using the data of the structur
 \a CpuInfo_t, CpuTopology_t and NumaTopology_t
 \sa AffinityDomains_t
 */
-extern void affinity_init();
+extern void affinity_init() __attribute__ ((visibility ("default") ));
 /*! \brief Retrieve affinity structure
 
 Get the previously initialized affinity info structure
 \sa AffinityDomains_t
 @return AffinityDomains_t (pointer to internal affinityDomains structure)
 */
-extern AffinityDomains_t get_affinityDomains(void);
+extern AffinityDomains_t get_affinityDomains(void) __attribute__ ((visibility ("default") ));
 /*! \brief Pin process to a CPU
 
 Pin process to a CPU. Duplicate of likwid_pinProcess()
 @param [in] processorId CPU ID for pinning
 */
-extern void affinity_pinProcess(int processorId);
+extern void affinity_pinProcess(int processorId) __attribute__ ((visibility ("default") ));
 /*! \brief Pin processes to a CPU
 
 Pin processes to a CPU. Creates a cpuset with the given processor IDs
 @param [in] cpu_count Number of processors in processorIds
 @param [in] processorIds Array of processor IDs
 */
-extern void affinity_pinProcesses(int cpu_count, int* processorIds);
+extern void affinity_pinProcesses(int cpu_count, int* processorIds) __attribute__ ((visibility ("default") ));
 /*! \brief Pin thread to a CPU
 
 Pin thread to a CPU. Duplicate of likwid_pinThread()
 @param [in] processorId CPU ID for pinning
 */
-extern void affinity_pinThread(int processorId);
+extern void affinity_pinThread(int processorId) __attribute__ ((visibility ("default") ));
 /*! \brief Return the CPU ID where the current process runs.
 
 @return CPU ID
 */
-extern int affinity_processGetProcessorId();
+extern int affinity_processGetProcessorId() __attribute__ ((visibility ("default") ));
 /*! \brief Return the CPU ID where the current thread runs.
 
 @return CPU ID
 */
-extern int affinity_threadGetProcessorId();
+extern int affinity_threadGetProcessorId() __attribute__ ((visibility ("default") ));
 /*! \brief Destroy affinity information structure
 
 Destroys the affinity information structure AffinityDomains_t. Retrieved pointers
 to the structures are not valid anymore after this function call
 \sa AffinityDomains_t
 */
-extern void affinity_finalize();
+extern void affinity_finalize() __attribute__ ((visibility ("default") ));
 /** @}*/
 
 /*
@@ -624,7 +624,7 @@ The access mode must already be set when calling perfmon_init()
 @param [in] threadsToCpu List of CPUs
 @return error code (0 on success, -ERRORCODE on failure)
 */
-extern int perfmon_init(int nrThreads, int threadsToCpu[]);
+extern int perfmon_init(int nrThreads, int threadsToCpu[]) __attribute__ ((visibility ("default") ));
 
 /*! \brief Initialize performance monitoring maps
 
@@ -633,7 +633,7 @@ for the current architecture. topology_init() and numa_init() must be called bef
 perfmon_init_maps()
 \sa RegisterMap list, PerfmonEvent list and BoxMap list
 */
-extern void perfmon_init_maps(void);
+extern void perfmon_init_maps(void) __attribute__ ((visibility ("default") ));
 /*! \brief Add an event string to LIKWID
 
 A event string looks like Eventname:Countername(:Option1:Option2:...),...
@@ -641,7 +641,7 @@ The eventname, countername and options are checked if they are available.
 @param [in] eventCString Event string
 @return Returns the ID of the new eventSet
 */
-extern int perfmon_addEventSet(char* eventCString);
+extern int perfmon_addEventSet(char* eventCString) __attribute__ ((visibility ("default") ));
 /*! \brief Setup all performance monitoring counters of an eventSet
 
 A event string looks like Eventname:Countername(:Option1:Option2:...),...
@@ -649,21 +649,21 @@ The eventname, countername and options are checked if they are available.
 @param [in] groupId (returned from perfmon_addEventSet()
 @return error code (-ENOENT if groupId is invalid and -1 if the counters of one CPU cannot be set up)
 */
-extern int perfmon_setupCounters(int groupId);
+extern int perfmon_setupCounters(int groupId) __attribute__ ((visibility ("default") ));
 /*! \brief Start performance monitoring counters
 
 Start the counters that have been previously set up by perfmon_setupCounters().
 The counter registered are zeroed before enabling the counters
 @return 0 on success and -(thread_id+1) for error
 */
-extern int perfmon_startCounters(void);
+extern int perfmon_startCounters(void) __attribute__ ((visibility ("default") ));
 /*! \brief Stop performance monitoring counters 
 
 Stop the counters that have been previously started by perfmon_startCounters().
 All config registers get zeroed before reading the counter register.
 @return 0 on success and -(thread_id+1) for error
 */
-extern int perfmon_stopCounters(void);
+extern int perfmon_stopCounters(void) __attribute__ ((visibility ("default") ));
 /*! \brief Read the performance monitoring counters on all CPUs
 
 Read the counters that have been previously started by perfmon_startCounters().
@@ -671,7 +671,7 @@ The counters are stopped directly to avoid interference of LIKWID with the measu
 code. Before returning, the counters are started again.
 @return 0 on success and -(thread_id+1) for error
 */
-extern int perfmon_readCounters(void);
+extern int perfmon_readCounters(void) __attribute__ ((visibility ("default") ));
 /*! \brief Read the performance monitoring counters on one CPU
 
 Read the counters that have been previously started by perfmon_startCounters().
@@ -680,7 +680,7 @@ code. Before returning, the counters are started again. Only one CPU is read.
 @param [in] cpu_id CPU ID of the CPU that should be read
 @return 0 on success and -(thread_id+1) for error
 */
-extern int perfmon_readCountersCpu(int cpu_id);
+extern int perfmon_readCountersCpu(int cpu_id) __attribute__ ((visibility ("default") ));
 /*! \brief Switch the active eventSet to a new one
 
 Stops the currently running counters, switches the eventSet by setting up the
@@ -688,13 +688,13 @@ counters and start the counters.
 @param [in] new_group ID of group that should be switched to.
 @return 0 on success and -(thread_id+1) for error
 */
-extern int perfmon_switchActiveGroup(int new_group);
+extern int perfmon_switchActiveGroup(int new_group) __attribute__ ((visibility ("default") ));
 /*! \brief Close the perfomance monitoring facility of LIKWID
 
 Deallocates all internal data that is used during performance monitoring. Also
 the counter values are not accessible after this function.
 */
-extern void perfmon_finalize(void);
+extern void perfmon_finalize(void) __attribute__ ((visibility ("default") ));
 /*! \brief Get the results of the specified group, counter and thread
 
 Get the result of the last measurement cycle. The function takes care of happened
@@ -704,34 +704,34 @@ overflows and if the counter values need to be calculated with multipliers.
 @param [in] threadId ID of the thread/cpu that should be read
 @return The counter result
 */
-extern double perfmon_getResult(int groupId, int eventId, int threadId);
+extern double perfmon_getResult(int groupId, int eventId, int threadId) __attribute__ ((visibility ("default") ));
 /*! \brief Get the number of configured event groups
 
 @return Number of groups
 */
-extern int perfmon_getNumberOfGroups(void);
+extern int perfmon_getNumberOfGroups(void) __attribute__ ((visibility ("default") ));
 /*! \brief Get the number of configured eventSets in group
 
 @param [in] groupId ID of group
 @return Number of eventSets
 */
-extern int perfmon_getNumberOfEvents(int groupId);
+extern int perfmon_getNumberOfEvents(int groupId) __attribute__ ((visibility ("default") ));
 /*! \brief Get the measurement time a group
 
 @param [in] groupId ID of group
 @return Time in seconds the event group was measured
 */
-extern double perfmon_getTimeOfGroup(int groupId);
+extern double perfmon_getTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
 /*! \brief Get the ID of the currently set up event group
 
 @return Number of active group
 */
-extern int perfmon_getIdOfActiveGroup(void);
+extern int perfmon_getIdOfActiveGroup(void) __attribute__ ((visibility ("default") ));
 /*! \brief Get the number of threads specified at perfmon_init()
 
 @return Number of threads
 */
-extern int perfmon_getNumberOfThreads(void);
+extern int perfmon_getNumberOfThreads(void) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 /*
@@ -762,44 +762,44 @@ typedef struct {
 
 /*! \brief Initialize timer by retrieving baseline frequency and cpu clock
 */
-extern void timer_init( void );
+extern void timer_init( void ) __attribute__ ((visibility ("default") ));
 /*! \brief Return the measured interval in seconds
 
 @param [in] time Structure holding the cycle count at start and stop
 @return Time in seconds
 */
-extern double timer_print( TimerData* time);
+extern double timer_print( TimerData* time) __attribute__ ((visibility ("default") ));
 /*! \brief Return the measured interval in cycles
 
 @param [in] time Structure holding the cycle count at start and stop
 @return Time in cycles
 */
-extern uint64_t timer_printCycles( TimerData* time);
+extern uint64_t timer_printCycles( TimerData* time) __attribute__ ((visibility ("default") ));
 /*! \brief Return the CPU clock determined at timer_init
 
 @return CPU clock
 */
-extern uint64_t timer_getCpuClock( void );
+extern uint64_t timer_getCpuClock( void ) __attribute__ ((visibility ("default") ));
 /*! \brief Return the baseline CPU clock determined at timer_init
 
 @return Baseline CPU clock
 */
-extern uint64_t timer_getBaseline( void );
+extern uint64_t timer_getBaseline( void ) __attribute__ ((visibility ("default") ));
 /*! \brief Start time measurement
 
 @param [in,out] time Structure holding the cycle count at start
 */
-extern void timer_start( TimerData* time );
+extern void timer_start( TimerData* time ) __attribute__ ((visibility ("default") ));
 /*! \brief Stop time measurement
 
 @param [in,out] time Structure holding the cycle count at stop
 */
-extern void timer_stop ( TimerData* time);
+extern void timer_stop ( TimerData* time) __attribute__ ((visibility ("default") ));
 /*! \brief Sleep for specified usecs
 
 @param [in] usec Amount of usecs to sleep
 */
-int timer_sleep(unsigned long usec);
+int timer_sleep(unsigned long usec) __attribute__ ((visibility ("default") ));
 
 /** @}*/
 
@@ -914,20 +914,20 @@ minimal measurement time.
 @param [in] cpuId Initialize power facility for this CPU
 @return error code
 */
-extern int power_init(int cpuId);
+extern int power_init(int cpuId) __attribute__ ((visibility ("default") ));
 /*! \brief Get a pointer to the power facility information
 
 @return PowerInfo_t pointer
 \sa PowerInfo_t
 */
-extern PowerInfo_t get_powerInfo(void);
+extern PowerInfo_t get_powerInfo(void) __attribute__ ((visibility ("default") ));
 /*! \brief Read the current power value
 
 @param [in] cpuId Read power facility for this CPU
 @param [in] reg Power register
 @param [out] data Power data
 */
-extern int power_read(int cpuId, uint64_t reg, uint32_t *data);
+extern int power_read(int cpuId, uint64_t reg, uint32_t *data) __attribute__ ((visibility ("default") ));
 /*! \brief Read the current power value using a specific communication socket
 
 @param [in] socket_fd Communication socket for the read operation
@@ -935,7 +935,7 @@ extern int power_read(int cpuId, uint64_t reg, uint32_t *data);
 @param [in] reg Power register
 @param [out] data Power data
 */
-extern int power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data);
+extern int power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data) __attribute__ ((visibility ("default") ));
 /*! \brief Start power measurements
 
 @param [in,out] data Data structure holding start and stop values for power measurements
@@ -943,7 +943,7 @@ extern int power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data);
 @param [in] type Which type should be measured
 @return error code
 */
-extern int power_start(PowerData_t data, int cpuId, PowerType type);
+extern int power_start(PowerData_t data, int cpuId, PowerType type) __attribute__ ((visibility ("default") ));
 /*! \brief Stop power measurements
 
 @param [in,out] data Data structure holding start and stop values for power measurements
@@ -951,19 +951,19 @@ extern int power_start(PowerData_t data, int cpuId, PowerType type);
 @param [in] type Which type should be measured
 @return error code
 */
-extern int power_stop(PowerData_t data, int cpuId, PowerType type);
+extern int power_stop(PowerData_t data, int cpuId, PowerType type) __attribute__ ((visibility ("default") ));
 /*! \brief Print power measurements gathered by power_start() and power_stop()
 
 @param [in] data Data structure holding start and stop values for power measurements
 @return Consumed energy in Joules
 */
-extern double power_printEnergy(PowerData* data);
+extern double power_printEnergy(PowerData* data) __attribute__ ((visibility ("default") ));
 /*! \brief Get energy Unit
 
 @param [in] domain RAPL domain ID
 @return Power unit of the given RAPL domain
 */
-extern double power_getEnergyUnit(int domain);
+extern double power_getEnergyUnit(int domain) __attribute__ ((visibility ("default") ));
 
 /*! \brief Get the values of the limit register of a domain
 
@@ -973,7 +973,7 @@ extern double power_getEnergyUnit(int domain);
 @param [out] time Time limit
 @return error code
 */
-int power_limitGet(int cpuId, PowerType domain, double* power, double* time);
+int power_limitGet(int cpuId, PowerType domain, double* power, double* time) __attribute__ ((visibility ("default") ));
 
 /*! \brief Set the values of the limit register of a domain
 
@@ -984,7 +984,7 @@ int power_limitGet(int cpuId, PowerType domain, double* power, double* time);
 @param [in] doClamping Activate clamping (going below OS-requested power level)
 @return error code
 */
-int power_limitSet(int cpuId, PowerType domain, double power, double time, int doClamping);
+int power_limitSet(int cpuId, PowerType domain, double power, double time, int doClamping) __attribute__ ((visibility ("default") ));
 
 /*! \brief Get the state of a power limit, activated or deactivated
 
@@ -992,11 +992,11 @@ int power_limitSet(int cpuId, PowerType domain, double power, double time, int d
 @param [in] domain RAPL domain ID
 @return state, 1 for active, 0 for inactive
 */
-int power_limitState(int cpuId, PowerType domain);
+int power_limitState(int cpuId, PowerType domain) __attribute__ ((visibility ("default") ));
 
 /*! \brief Free space of power_unit
 */
-extern void power_finalize(void);
+extern void power_finalize(void) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 /* 
@@ -1011,20 +1011,20 @@ extern void power_finalize(void);
 
 @param [in] cpuId Initialize thermal facility for this CPU
 */
-extern void thermal_init(int cpuId);
+extern void thermal_init(int cpuId) __attribute__ ((visibility ("default") ));
 /*! \brief Read the current thermal value
 
 @param [in] cpuId Read thermal facility for this CPU
 @param [out] data Thermal data
 */
-extern int thermal_read(int cpuId, uint32_t *data);
+extern int thermal_read(int cpuId, uint32_t *data) __attribute__ ((visibility ("default") ));
 /*! \brief Read the current thermal value using a specific communication socket
 
 @param [in] socket_fd Communication socket for the read operation
 @param [in] cpuId Read thermal facility for this CPU
 @param [out] data Thermal data
 */
-extern int thermal_tread(int socket_fd, int cpuId, uint32_t *data);
+extern int thermal_tread(int socket_fd, int cpuId, uint32_t *data) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 /* 
@@ -1042,14 +1042,14 @@ Starts the timeline daemon which reads and prints the counter values after each 
 @param [in] outfile File to write the intermediate readings or NULL to write to stderr
 @return 0 on success and -EFAULT if counters cannot be started
 */
-extern int daemon_start(uint64_t duration, const char* outfile);
+extern int daemon_start(uint64_t duration, const char* outfile) __attribute__ ((visibility ("default") ));
 /*! \brief Stop timeline daemon
 
 Stop the timeline daemon using the signal \a sig
 @param [in] sig Signal code to kill the daemon (see signal.h for signal codes)
 @return 0 on success and the negative error code at failure
 */
-extern int daemon_stop(int sig);
+extern int daemon_stop(int sig) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 /* 
@@ -1065,14 +1065,14 @@ extern int daemon_stop(int sig);
 Sweeps (zeros) the memory of NUMA node with ID \a domainId
 @param [in] domainId NUMA node ID
 */
-extern void memsweep_domain(int domainId);
+extern void memsweep_domain(int domainId) __attribute__ ((visibility ("default") ));
 /*! \brief Sweeping the memory of all NUMA nodes covered by CPU list
 
 Sweeps (zeros) the memory of all NUMA nodes containing the CPUs in \a processorList
 @param [in] processorList List of CPU IDs
 @param [in] numberOfProcessors Number of CPUs in list
 */
-extern void memsweep_threadGroup(int* processorList, int numberOfProcessors);
+extern void memsweep_threadGroup(int* processorList, int numberOfProcessors) __attribute__ ((visibility ("default") ));
 /** @}*/
 #ifdef __cplusplus
 }

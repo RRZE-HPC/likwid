@@ -31,6 +31,7 @@ include  ../../make/include_$(COMPILER).mk
 
 DAEMON_TARGET = likwid-accessD
 SETFREQ_TARGET = likwid-setFreq
+Q         ?= @
 
 DEFINES   = -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS)
 INCLUDES  = -I../includes

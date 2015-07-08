@@ -9,6 +9,13 @@ DEFINES   += -DVERSION=$(VERSION)         \
 		 -DLIKWIDPATH=$(PREFIX) \
 		 -D_GNU_SOURCE
 
+DYNAMIC_TARGET_LIB := liblikwid.so
+STATIC_TARGET_LIB := liblikwid.a
+SHARED_LIBLUA := ext/lua/liblikwid-lua.so
+STATIC_LIBLUA := ext/lua/liblikwid-lua.a
+STATIC_LIBHWLOC = ext/hwloc/liblikwid-hwloc.a
+SHARED_LIBHWLOC = ext/hwloc/liblikwid-hwloc.so
+
 ifneq ($(COLOR),NONE)
 DEFINES += -DCOLOR=$(COLOR)
 endif
@@ -39,10 +46,14 @@ endif
 
 ifeq ($(SHARED_LIBRARY),true)
 CFLAGS += $(SHARED_CFLAGS)
-LIBS += -L. -pthread -lm
+LIBS += -L. -pthread -lm -ldl
 TARGET_LIB := $(DYNAMIC_TARGET_LIB)
+TARGET_HWLOC_LIB=$(SHARED_LIBHWLOC)
+TARGET_LUA_LIB=$(SHARED_LIBLUA)
 else
 TARGET_LIB := $(STATIC_TARGET_LIB)
+TARGET_HWLOC_LIB=$(STATIC_LIBHWLOC)
+TARGET_LUA_LIB=$(STATIC_LIBLUA)
 endif
 
 ifeq ($(HAS_SCHEDAFFINITY),1)
@@ -57,8 +68,8 @@ FILTER_HWLOC_OBJ = yes
 LIBHWLOC =
 ifeq ($(USE_HWLOC),true)
 DEFINES += -DLIKWID_USE_HWLOC
-LIBHWLOC = ext/hwloc/libhwloc.a
-LIBS += -Lext/hwloc
+LIBHWLOC_SHARED = -Lext/hwloc/ -lliblikwid-hwloc
+LIBHWLOC_STATIC = ext/hwloc/liblikwid-hwloc.a
 EXT_TARGETS += ./ext/hwloc
 FILTER_HWLOC_OBJ =
 endif

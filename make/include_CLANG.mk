@@ -3,7 +3,7 @@ FC  = ifort
 AS  = as
 AR  = ar
 PAS = ./perl/AsmGen.pl
-GEN_PAS = ./perl/generatePas.pl 
+GEN_PAS = ./perl/generatePas.pl
 GEN_GROUPS = ./perl/generateGroups.pl
 GEN_PMHEADER = ./perl/gen_events.pl
 
@@ -13,16 +13,16 @@ CFLAGS   =  -O2 -std=c99 -Wno-format -fPIC
 FCFLAGS  = -module ./  # ifort
 #FCFLAGS  = -J ./  -fsyntax-only  #gfortran
 PASFLAGS  = x86-64
-ASFLAGS  = 
+ASFLAGS  =
 CPPFLAGS =
 LFLAGS   =  -pthread
 
-SHARED_CFLAGS = -fPIC
-SHARED_LFLAGS = -shared
+SHARED_CFLAGS = -fPIC -fvisibility=hidden
+SHARED_LFLAGS = -shared -fvisibility=hidden
 
 DEFINES  = -DPAGE_ALIGNMENT=4096
 DEFINES  += -DLIKWID_MONITOR_LOCK
 DEFINES  += -DDEBUGLEV=0
 
 INCLUDES =
-LIBS     = -lm
+LIBS     = -lm -lrt

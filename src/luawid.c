@@ -1606,7 +1606,7 @@ static int lua_likwid_access(lua_State* L)
     return 1;
 }
 
-int luaopen_liblikwid(lua_State* L){
+int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     // Configuration functions
     lua_register(L, "likwid_getConfiguration", lua_likwid_getConfiguration);
     lua_register(L, "likwid_putConfiguration", lua_likwid_putConfiguration);

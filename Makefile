@@ -32,7 +32,7 @@ DOC_DIR     = ./doc
 GROUP_DIR   = ./groups
 FILTER_DIR  = ./filters
 MAKE_DIR    = ./make
-EXT_TARGETS = ./ext/lua
+EXT_TARGETS_BUILD = ./ext/lua/lua
 
 #DO NOT EDIT BELOW
 
@@ -45,15 +45,13 @@ EXT_TARGETS = ./ext/lua
 include ./config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
 
-DYNAMIC_TARGET_LIB := liblikwid.so
-STATIC_TARGET_LIB := liblikwid.a
-LIBLUA := ext/lua/liblua.a
+
 
 include $(MAKE_DIR)/config_checks.mk
 include $(MAKE_DIR)/config_defines.mk
 
 INCLUDES  += -I./src/includes -I./ext/lua/includes -I./ext/hwloc/include -I$(BUILD_DIR)
-LIBS      +=
+LIBS      += -ldl
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
@@ -94,7 +92,7 @@ endif
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(BUILD_DIR) $(EXT_TARGETS) $(PERFMONHEADERS) $(OBJ) $(STATIC_TARGET_LIB) $(DYNAMIC_TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET)
+all: $(BUILD_DIR) ext_targets_build $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET)
 
 tags:
 	@echo "===>  GENERATE  TAGS"
@@ -128,20 +126,20 @@ $(L_HELPER):
 
 $(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ)
 	@echo "===>  CREATE STATIC LIB  $(STATIC_TARGET_LIB)"
-	$(Q)${AR} -crus $(STATIC_TARGET_LIB) $(OBJ) $(LIBHWLOC) $(LIBLUA)
+	$(Q)${AR} -crus $(STATIC_TARGET_LIB) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 
 
 $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ)
 	@echo "===>  CREATE SHARED LIB  $(DYNAMIC_TARGET_LIB)"
-	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(LIBHWLOC) $(LIBLUA)
+	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,liblikwid.so $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) -Wl,-rpath=$(PREFIX)/lib $(TARGET_LUA_LIB) -Wl,-rpath=$(PREFIX)/lib
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
-	@echo "===>  Build access daemon likwid-accessD"
-	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-accessD
+	@echo "===>  BUILD access daemon likwid-accessD"
+	$(Q)$(MAKE) -s -C  $(SRC_DIR)/access-daemon likwid-accessD
 
 $(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreq.c
-	@echo "===>  Build frequency daemon likwid-setFreq"
-	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-setFreq
+	@echo "===>  BUILD frequency daemon likwid-setFreq"
+	$(Q)$(MAKE) -s -C  $(SRC_DIR)/access-daemon likwid-setFreq
 
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
@@ -160,9 +158,17 @@ $(FORTRAN_IF): $(SRC_DIR)/likwid.f90
 	$(Q)$(FC) -c  $(FCFLAGS) $<
 	@rm -f likwid.o
 
-$(EXT_TARGETS):
-	@echo "===>  ENTER  $@"
-	$(Q)$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS)
+ext_targets_build:
+	@echo "===>  ENTER  ext/lua"
+	$(Q)$(MAKE) --no-print-directory -C ext/lua
+	@echo "===>  ENTER  ext/hwloc"
+	$(Q)$(MAKE) --no-print-directory -C ext/hwloc
+
+ext_targets_clean:
+	@echo "===>  ENTER  ext/lua"
+	$(Q)$(MAKE) --no-print-directory -C ext/lua distclean
+	@echo "===>  ENTER  ext/hwloc"
+	$(Q)$(MAKE) --no-print-directory -C ext/hwloc distclean
 
 $(BENCH_TARGET):
 	@echo "===>  ENTER  $@"
@@ -267,9 +273,10 @@ install: install_daemon install_freq
 	@install -m 755 likwid.lua $(PREFIX)/share/lua
 	@echo "===> INSTALL libraries to $(PREFIX)/lib"
 	@mkdir -p $(PREFIX)/lib
-	@install -m 755 liblikwid.so $(PREFIX)/lib
-	@install -m 644 liblikwid.a $(PREFIX)/lib
+	@install -m 755 $(TARGET_LIB) $(PREFIX)/lib
 	@install -m 755 liblikwidpin.so $(PREFIX)/lib
+	@install -m 755 $(TARGET_HWLOC_LIB) $(PREFIX)/lib
+	@install -m 755 $(TARGET_LUA_LIB) $(PREFIX)/lib
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1

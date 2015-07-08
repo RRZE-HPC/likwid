@@ -2,10 +2,10 @@ CC  = gcc
 FC  = ifort
 AS  = as
 AR  = ar
-PAS = ./perl/AsmGen.pl 
-GEN_PAS = ./perl/generatePas.pl 
-GEN_GROUPS = ./perl/generateGroups.pl 
-GEN_PMHEADER = ./perl/gen_events.pl 
+PAS = ./perl/AsmGen.pl
+GEN_PAS = ./perl/generatePas.pl
+GEN_GROUPS = ./perl/generateGroups.pl
+GEN_PMHEADER = ./perl/gen_events.pl
 
 ANSI_CFLAGS   =
 #ANSI_CFLAGS += -pedantic
@@ -20,14 +20,14 @@ ASFLAGS  =
 CPPFLAGS =
 LFLAGS   =  -pthread 
 
-SHARED_CFLAGS = -fPIC
-SHARED_LFLAGS = -shared
+SHARED_CFLAGS = -fPIC -fvisibility=hidden
+SHARED_LFLAGS = -shared -fvisibility=hidden
 
 DEFINES  = -DPAGE_ALIGNMENT=4096
 DEFINES  += -DLIKWID_MONITOR_LOCK
 DEFINES  += -DDEBUGLEV=0
 
 INCLUDES =
-LIBS     = -lm
+LIBS     = -lm -lrt
 
 

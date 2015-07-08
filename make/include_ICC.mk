@@ -16,13 +16,13 @@ PASFLAGS  = x86-64
 CPPFLAGS =
 LFLAGS   = -pthread
 
-SHARED_CFLAGS = -fPIC -pthread
-SHARED_LFLAGS = -shared -pthread
+SHARED_CFLAGS = -fPIC -pthread -fvisibility=hidden
+SHARED_LFLAGS = -shared -pthread -fvisibility=hidden
 
 DEFINES  = -D_GNU_SOURCE
 DEFINES  += -DPAGE_ALIGNMENT=4096
 
 INCLUDES =
-LIBS     =
+LIBS     = -lrt
 
 
