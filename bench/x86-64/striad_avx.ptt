@@ -2,7 +2,7 @@ STREAMS 3
 TYPE DOUBLE
 FLOPS 2
 BYTES 24
-vmovaps ymm5, [SCALAR]
+vmovaps ymm5, [rip+SCALAR]
 LOOP 16
 vmovaps    ymm1, [STR1 + GPR1*8]
 vmovaps    ymm2, [STR1 + GPR1*8+32]

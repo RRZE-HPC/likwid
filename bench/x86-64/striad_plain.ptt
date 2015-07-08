@@ -2,7 +2,7 @@ STREAMS 3
 TYPE DOUBLE
 FLOPS 2
 BYTES 24
-movss FPR5, [SCALAR]
+movss FPR5, [rip+SCALAR]
 LOOP 4
 movsd    FPR1, [STR1 + GPR1*8]
 movsd    FPR2, [STR1 + GPR1*8+8]

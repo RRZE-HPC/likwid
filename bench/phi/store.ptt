@@ -2,10 +2,10 @@ STREAMS 1
 TYPE DOUBLE
 FLOPS 0
 BYTES 8
-vmovaps zmm0, [SCALAR]
-vmovaps zmm1, [SCALAR]
-vmovaps zmm2, [SCALAR]
-vmovaps zmm3, [SCALAR]
+vmovaps zmm0, [rip+SCALAR]
+vmovaps zmm1, [rip+SCALAR]
+vmovaps zmm2, [rip+SCALAR]
+vmovaps zmm3, [rip+SCALAR]
 LOOP 32
 vprefetch0 [STR0 + GPR1 * 8 + 1024]
 vmovaps    [STR0 + GPR1 * 8]     , zmm0

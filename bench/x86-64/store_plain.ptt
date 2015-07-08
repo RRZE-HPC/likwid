@@ -2,10 +2,10 @@ STREAMS 1
 TYPE DOUBLE
 FLOPS 0
 BYTES 8
-movsd FPR1, [SCALAR]
-movsd FPR2, [SCALAR]
-movsd FPR3, [SCALAR]
-movsd FPR4, [SCALAR]
+movsd FPR1, [rip+SCALAR]
+movsd FPR2, [rip+SCALAR]
+movsd FPR3, [rip+SCALAR]
+movsd FPR4, [rip+SCALAR]
 LOOP 4
 #mov       GPR14, [STR0 + GPR1 * 8 + 256] 
 movsd    [STR0 + GPR1 * 8]     , FPR1

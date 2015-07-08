@@ -2,7 +2,7 @@ STREAMS 3
 TYPE SINGLE
 FLOPS 2
 BYTES 12
-vmovaps ymm1, [SCALAR]
+vmovaps ymm1, [rip+SCALAR]
 LOOP 32
 vmovaps   ymm2, [STR1 + GPR1*4]
 vmovaps   ymm3, [STR1 + GPR1*4+32]
