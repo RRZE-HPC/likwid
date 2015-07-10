@@ -599,7 +599,6 @@ if use_wrapper or use_timeline then
             likwid.readCounters()
             local time = likwid.getClock(start, stop)
             lastresults = int_results[alltime]
-            print(duration, time)
             alltime = alltime + time
             int_results[alltime] = likwid.getResults()
             local str = ""

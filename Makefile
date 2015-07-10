@@ -32,10 +32,9 @@ DOC_DIR     = ./doc
 GROUP_DIR   = ./groups
 FILTER_DIR  = ./filters
 MAKE_DIR    = ./make
-EXT_TARGETS_BUILD = ./ext/lua/lua
+
 
 #DO NOT EDIT BELOW
-
 
 # Dependency chains:
 # *.[ch] -> *.o -> executables
@@ -44,13 +43,10 @@ EXT_TARGETS_BUILD = ./ext/lua/lua
 
 include ./config.mk
 include $(MAKE_DIR)/include_$(COMPILER).mk
-
-
-
 include $(MAKE_DIR)/config_checks.mk
 include $(MAKE_DIR)/config_defines.mk
 
-INCLUDES  += -I./src/includes -I./ext/lua/includes -I./ext/hwloc/include -I$(BUILD_DIR)
+INCLUDES  += -I./src/includes -I$(LUA_FOLDER)/includes -I$(HWLOC_FOLDER)/include -I$(BUILD_DIR)
 LIBS      += -ldl
 
 #CONFIGURE BUILD SYSTEM
@@ -73,7 +69,7 @@ endif
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
 OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)
-BENCH_TARGET = likwid-bench
+
 
 L_APPS      =   likwid-perfctr \
 				likwid-pin \
@@ -92,7 +88,7 @@ endif
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(BUILD_DIR) ext_targets_build $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET)
+all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET)
 
 tags:
 	@echo "===>  GENERATE  TAGS"
@@ -124,14 +120,14 @@ $(L_HELPER):
 		-e s/'<RELEASE>'/$(RELEASE)/g \
 		$(SRC_DIR)/applications/$@ > $@
 
-$(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ)
-	@echo "===>  CREATE STATIC LIB  $(STATIC_TARGET_LIB)"
+$(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
+	@echo "===>  CREATE STATIC LIB  $(TARGET_LIB)"
 	$(Q)${AR} -crus $(STATIC_TARGET_LIB) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 
 
-$(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ)
-	@echo "===>  CREATE SHARED LIB  $(DYNAMIC_TARGET_LIB)"
-	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,liblikwid.so $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) -Wl,-rpath=$(PREFIX)/lib $(TARGET_LUA_LIB) -Wl,-rpath=$(PREFIX)/lib
+$(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
+	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
+	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) -Wl,-rpath=$(LIBPREFIX) $(TARGET_LUA_LIB) -Wl,-rpath=$(LIBPREFIX)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
@@ -158,21 +154,17 @@ $(FORTRAN_IF): $(SRC_DIR)/likwid.f90
 	$(Q)$(FC) -c  $(FCFLAGS) $<
 	@rm -f likwid.o
 
-ext_targets_build:
-	@echo "===>  ENTER  ext/lua"
-	$(Q)$(MAKE) --no-print-directory -C ext/lua
-	@echo "===>  ENTER  ext/hwloc"
-	$(Q)$(MAKE) --no-print-directory -C ext/hwloc
+$(TARGET_LUA_LIB):
+	@echo "===>  ENTER  $(LUA_FOLDER)"
+	$(Q)$(MAKE) -s --no-print-directory -C $(LUA_FOLDER) $(MAKECMDGOALS)
 
-ext_targets_clean:
-	@echo "===>  ENTER  ext/lua"
-	$(Q)$(MAKE) --no-print-directory -C ext/lua distclean
-	@echo "===>  ENTER  ext/hwloc"
-	$(Q)$(MAKE) --no-print-directory -C ext/hwloc distclean
+$(TARGET_HWLOC_LIB):
+	@echo "===>  ENTER  $(HWLOC_FOLDER)"
+	$(Q)$(MAKE) -s --no-print-directory -C $(HWLOC_FOLDER) $(MAKECMDGOALS)
 
 $(BENCH_TARGET):
-	@echo "===>  ENTER  $@"
-	$(Q)$(MAKE) --no-print-directory -C bench $(MAKECMDGOALS)
+	@echo "===>  ENTER  $(BENCH_FOLDER)"
+	$(Q)$(MAKE) -s --no-print-directory -C $(BENCH_FOLDER) $(MAKECMDGOALS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
@@ -199,7 +191,7 @@ ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
-.PHONY: clean distclean install uninstall $(EXT_TARGETS)
+.PHONY: clean distclean install uninstall $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 
 
 .PRECIOUS: $(BUILD_DIR)/%.pas
@@ -207,12 +199,19 @@ endif
 .NOTPARALLEL:
 
 
-clean: ext_targets_clean $(BENCH_TARGET)
+clean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	@echo "===>  CLEAN"
-	@rm -rf $(BUILD_DIR)
-	@rm -f $(GENGROUPLOCK)
+	@for APP in $(L_APPS); do \
+		rm -f $$APP; \
+	done
+	@rm -f likwid.lua
+	@rm -f $(STATIC_TARGET_LIB)
+	@rm -f $(DYNAMIC_TARGET_LIB)
+	@rm -f $(PINLIB)
+	@rm -f $(FORTRAN_IF_NAME)
+	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
 
-distclean: clean
+distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	@echo "===>  DIST CLEAN"
 	@for APP in $(L_APPS); do \
 		rm -f $$APP; \
@@ -220,9 +219,11 @@ distclean: clean
 	@rm -f likwid.lua
 	@rm -f $(STATIC_TARGET_LIB)
 	@rm -f $(DYNAMIC_TARGET_LIB)
+	@rm -f $(PINLIB)
 	@rm -f $(FORTRAN_IF_NAME)
 	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
-	@rm -f $(PINLIB)
+	@rm -rf $(BUILD_DIR)
+	@rm -f $(GENGROUPLOCK)
 	@rm -rf doc/html
 	@rm -f tags
 
@@ -257,26 +258,30 @@ uninstall_freq:
 endif
 
 install: install_daemon install_freq
-	@echo "===> INSTALL applications to $(PREFIX)/bin"
-	@mkdir -p $(PREFIX)/bin
+	@echo "===> INSTALL applications to $(BINPREFIX)"
+	@mkdir -p $(BINPREFIX)
 	@for APP in $(L_APPS); do \
-		install -m 755 $$APP  $(PREFIX)/bin; \
+		install -m 755 $$APP  $(BINPREFIX); \
 	done
 	@for APP in $(C_APPS); do \
-		install -m 755 $$APP  $(PREFIX)/bin; \
+		install -m 755 $$APP  $(BINPREFIX); \
 	done
-	@install -m 755 ext/lua/lua $(PREFIX)/bin/likwid-lua
+	@install -m 755 ext/lua/lua $(BINPREFIX)/likwid-lua
 	@echo "===> INSTALL helper applications"
-	@install -m 755 perl/feedGnuplot $(PREFIX)/bin
+	@install -m 755 perl/feedGnuplot $(BINPREFIX)
 	@echo "===> INSTALL lua to likwid interface to $(PREFIX)/share/lua"
 	@mkdir -p $(PREFIX)/share/lua
 	@install -m 755 likwid.lua $(PREFIX)/share/lua
 	@echo "===> INSTALL libraries to $(PREFIX)/lib"
-	@mkdir -p $(PREFIX)/lib
-	@install -m 755 $(TARGET_LIB) $(PREFIX)/lib
-	@install -m 755 liblikwidpin.so $(PREFIX)/lib
-	@install -m 755 $(TARGET_HWLOC_LIB) $(PREFIX)/lib
-	@install -m 755 $(TARGET_LUA_LIB) $(PREFIX)/lib
+	@mkdir -p $(LIBPREFIX)
+	@install -m 755 $(TARGET_LIB) $(LIBPREFIX)/$(TARGET_LIB).$(VERSION)
+	@install -m 755 liblikwidpin.so $(LIBPREFIX)/liblikwidpin.so.$(VERSION)
+	@install -m 755 $(TARGET_HWLOC_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION)
+	@install -m 755 $(TARGET_LUA_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_LUA_LIB)).$(VERSION)
+	@cd $(LIBPREFIX) && ln -fs $(TARGET_LIB).$(VERSION) $(TARGET_LIB)
+	@cd $(LIBPREFIX) && ln -fs liblikwidpin.so.$(VERSION) liblikwidpin.so
+	@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION) $(shell basename $(TARGET_HWLOC_LIB))
+	@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION) $(shell basename $(TARGET_LUA_LIB))
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
@@ -318,19 +323,19 @@ install: install_daemon install_freq
 
 uninstall: uninstall_daemon uninstall_freq
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
-	@rm -f $(addprefix $(PREFIX)/bin/,$(addsuffix  .lua,$(L_APPS)))
+	@rm -f $(addprefix $(BINPREFIX)/,$(addsuffix  .lua,$(L_APPS)))
 	@for APP in $(L_APPS); do \
-		rm -f $(PREFIX)/bin/$$APP; \
+		rm -f $(BINPREFIX)/$$APP; \
 	done
 	@for APP in $(C_APPS); do \
-		rm -f $(PREFIX)/bin/$$APP; \
+		rm -f $(BINPREFIX)/$$APP; \
 	done
-	@rm -f $(PREFIX)/bin/feedGnuplot
-	@rm -rf $(PREFIX)/bin/likwid-lua
+	@rm -f $(BINPREFIX)/feedGnuplot
+	@rm -f $(BINPREFIX)/likwid-lua
 	@echo "===> REMOVING Lua to likwid interface from $(PREFIX)/share/lua"
 	@rm -rf  $(PREFIX)/share/lua/likwid.lua
-	@echo "===> REMOVING libs from $(PREFIX)/lib"
-	@rm -f $(PREFIX)/lib/liblikwid*
+	@echo "===> REMOVING libs from $(LIBPREFIX)"
+	@rm -f $(LIBPREFIX)/liblikwid*
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
 	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(L_APPS)))
 	@rm -f $(MANPREFIX)/man1/feedGnuplot.1
