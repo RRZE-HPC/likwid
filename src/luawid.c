@@ -1393,6 +1393,7 @@ static int lua_likwid_readTemp(lua_State* L)
 
 
 static volatile int recv_sigint = 0;
+
 static void signal_catcher(int signo) 
 {
     if (signo == SIGINT)
@@ -1466,10 +1467,10 @@ static int lua_likwid_startProgram(lua_State* L)
         {
             affinity_pinProcesses(nrThreads, cpus);
         }
+        timer_sleep(10);
         status = execvp(*argv, argv);
         if (status < 0)
         {
-            printf("Killing process\n");
             kill(ppid, SIGCHLD);
         }
         return 0;
