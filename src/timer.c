@@ -277,15 +277,14 @@ int timer_sleep(unsigned long usec)
     {
         init_sleep();
     }
-    if (usec >= 1E6)
+    if (usec >= 1000000)
     {
-        status = sleep(usec * 1E-6);
+        status = sleep(usec / 1000000);
     }
     else
     {
         req.tv_sec = 0;
         req.tv_nsec = (usec-sleepbase)*1.E3;
-        printf("nanosleep for %llu us\n",(usec-sleepbase));
         status = clock_nanosleep(CLOCK_REALTIME,0,&req, &rem);
         if ((status == -1) && (errno == EINTR))
         {
