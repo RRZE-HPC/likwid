@@ -34,22 +34,22 @@ OBJ       = $(patsubst %.c, $(BUILD_DIR)/%.o, $(FILES))
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-LIBLUA_NAME = $(shell basename $(TARGET_LUA_LIB))
+LIBLUA = $(shell basename $(TARGET_LUA_LIB))
 INTERPRETER = lua
 
-all: $(BUILD_DIR) $(OBJ)  $(TARGET_LUA_LIB) $(INTERPRETER)
+all: $(BUILD_DIR) $(OBJ)  $(LIBLUA) $(INTERPRETER)
 
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
 
 $(STATIC_LIBLUA):
-	$(Q)${AR} -cq $(LIBLUA_NAME) $(OBJ)
+	$(Q)${AR} -cq $(LIBLUA) $(OBJ)
 
 $(SHARED_LIBLUA):
-	$(Q)$(CC) $(LFLAGS) -Wl,-soname,$(LIBLUA_NAME) -shared -fPIC -o $(LIBLUA_NAME) $(OBJ) $(LIBS)
+	$(Q)$(CC) $(LFLAGS) -Wl,-soname,$(LIBLUA).$(VERSION) -shared -fPIC -o $(LIBLUA) $(OBJ) $(LIBS)
 
 $(INTERPRETER): $(SHARED_LIBLUA) $(BUILD_DIR)/lua.o
-	$(Q)$(CC) -o $@ $(LFLAGS) $(BUILD_DIR)/lua.o $(LIBLUA_NAME) -Wl,-rpath=$(PREFIX)/lib $(LIBS)
+	$(Q)$(CC) -o $@ $(LFLAGS) $(BUILD_DIR)/lua.o $(LIBLUA) -Wl,-rpath=$(PREFIX)/lib $(LIBS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
@@ -60,13 +60,14 @@ ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
-.PHONY: clean distclean $(INTERPRETER)
+.PHONY: clean distclean
 
 clean:
-	@rm -rf $(BUILD_DIR)
+	@rm -f $(TARGET) $(INTERPRETER) $(SHARED_LIBLUA) $(STATIC_LIBLUA)
 
 distclean: clean
-	@rm -f $(TARGET) $(INTERPRETER) $(shell basename $(SHARED_LIBLUA)) $(shell basename $(STATIC_LIBLUA))
+	@rm -f $(TARGET) $(INTERPRETER) $(SHARED_LIBLUA) $(STATIC_LIBLUA)
+	@rm -rf $(BUILD_DIR)
 
 
 

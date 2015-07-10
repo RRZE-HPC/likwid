@@ -86,15 +86,17 @@ OBJ := $(filter-out $(BUILD_DIR)/bstrlib.o,$(OBJ))
 TARGET_LIB = $(STATIC_TARGET_LIB)
 endif
 OBJ_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
+BENCH = $(shell basename $(BENCH_TARGET))
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
-all: $(BUILD_DIR) $(OBJ) $(OBJ_BENCH) likwid-bench_target
+all: $(BUILD_DIR) $(OBJ) $(OBJ_BENCH) $(BENCH_TARGET)
 
 
-likwid-bench_target:  $(BUILD_DIR) $(OBJ) $(OBJ_BENCH)
-	@echo "===>  LINKING  likwid-bench"
-	${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o likwid-bench  likwid-bench.c $(TARGET_LIB) $(BENCH_LIBS) $(OBJ_BENCH) $(OBJ) $(LIBS) 
+$(BENCH_TARGET): $(BENCH)
+$(BENCH): $(BUILD_DIR) $(OBJ) $(OBJ_BENCH)
+	@echo "===>  LINKING  $(BENCH)"
+	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $(BENCH) likwid-bench.c $(TARGET_LIB) $(BENCH_LIBS) $(OBJ_BENCH) $(OBJ) $(LIBS)
 
 
 $(BUILD_DIR):
@@ -131,23 +133,23 @@ endif
 
 
 clean:
-	@echo "===>  CLEAN"
+	@rm -rf likwid-bench
+
+distclean:
 	@rm -rf $(BUILD_DIR)
 	@rm -rf likwid-bench
 
-distclean: clean
-
 install:
-	@echo "===> INSTALL applications to $(PREFIX)/bin"
-	cp -f likwid-bench $(PREFIX)/bin
+	@echo "===> INSTALL applications to $(BINPREFIX)"
+	cp -f likwid-bench $(BINPREFIX)
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-bench.1 > $(MANPREFIX)/man1/likwid-bench.1
 
 
 uninstall:
-	@echo "===> REMOVING applications from $(PREFIX)/bin"
-	rm -rf $(PREFIX)/bin/likwid-bench
+	@echo "===> REMOVING applications from $(BINPREFIX)"
+	rm -rf $(BINPREFIX)/likwid-bench
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
 	@rm -f $(MANPREFIX)/man1/likwid-bench.1
 
