@@ -41,6 +41,47 @@
 Configuration config = {NULL,NULL,NULL,-1,MAX_NUM_THREADS,MAX_NUM_NODES};
 int init_config = 0;
 
+static int default_configuration(void)
+{
+    int ret;
+    char filename[1024];
+    char *fptr;
+    size_t len = 0;
+    filename[0] = '\0';
+    FILE* fp = popen("which likwid-accessD | tr -d '\n'","r");
+    if (fp == NULL)
+    {
+        goto use_hardcoded;
+    }
+    ret = getline(&fptr, &len, fp);
+    if (ret < 0)
+    {
+        fclose(fp);
+        goto use_hardcoded;
+    }
+    fclose(fp);
+    config.daemonPath = (char*)malloc((len+1) * sizeof(char));
+    strncpy(config.daemonPath, fptr, len);
+    config.daemonPath[len] = '\0';
+    init_config = 1;
+    return 0;
+use_hardcoded:
+    ret = sprintf(filename,"%s", TOSTRING(ACCESSDAEMON));
+    filename[ret] = '\0';
+    if (!access(filename, R_OK))
+    {
+        config.daemonPath = (char*)malloc((strlen(filename)+1) * sizeof(char));
+        strcpy(config.daemonPath, filename);
+        init_config = 1;
+    }
+    else
+    {
+        ERROR_PLAIN_PRINT(Unable to get path to access daemon);
+        exit(EXIT_FAILURE);
+    }
+    return 0;
+}
+
 int init_configuration(void)
 {
     int i;
@@ -101,7 +142,7 @@ int init_configuration(void)
 
     if ((strlen(filename) == 0) || (!access(filename, R_OK)))
     {
-        return -EFAULT;
+        return default_configuration();
     }
     DEBUG_PRINT(DEBUGLEV_INFO, Reading configuration from %s, filename);
     // Copy determined config filename to struct
@@ -112,7 +153,7 @@ int init_configuration(void)
     fp = fopen(config.configFileName, "r");
     if (fp == NULL)
     {
-        return -EFAULT;
+        return default_configuration();
     }
 
     while (fgets(line, 512, fp) != NULL) {
@@ -131,6 +172,14 @@ int init_configuration(void)
             config.daemonPath = (char*)malloc((strlen(value)+1) * sizeof(char));
             strcpy(config.daemonPath, value);
             config.daemonPath[strlen(value)] = '\0';
+            if (access(config.daemonPath, R_OK))
+            {
+                if (default_configuration() < 0)
+                {
+                    ERROR_PLAIN_PRINT(Unable to get path to access daemon);
+                    exit(EXIT_FAILURE);
+                }
+            }
         }
         else if (strcmp(name, "daemon_mode") == 0)
         {
@@ -175,9 +224,18 @@ int destroy_configuration(void)
     {
         return -EFAULT;
     }
-    free(config.configFileName);
-    free(config.topologyCfgFileName);
-    free(config.daemonPath);
+    if (config.configFileName != NULL)
+    {
+        free(config.configFileName);
+    }
+    if (config.topologyCfgFileName != NULL)
+    {
+        free(config.topologyCfgFileName);
+    }
+    if (config.daemonPath != NULL)
+    {
+        free(config.daemonPath);
+    }
     init_config = 0;
     return 0;
 }

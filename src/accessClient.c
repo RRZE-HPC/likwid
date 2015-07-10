@@ -101,7 +101,7 @@ startDaemon(void)
     char* filepath;
     char *newargv[] = { NULL };
     char *newenv[] = { NULL };
-    char *exeprog = TOSTRING(ACCESSDAEMON);
+    char *exeprog;
     struct sockaddr_un address;
     size_t address_length;
     int  ret;
@@ -116,7 +116,9 @@ startDaemon(void)
 
     if (config.daemonPath != NULL)
     {
-        strcpy(exeprog, config.daemonPath);
+        exeprog = malloc((strlen(config.daemonPath)+1) * sizeof(char));
+        strncpy(exeprog, config.daemonPath, strlen(config.daemonPath));
+        exeprog[strlen(config.daemonPath)] = '\0';
     }
 
     if (access(exeprog, X_OK))
@@ -128,7 +130,6 @@ startDaemon(void)
     if (accessClient_mode == ACCESSMODE_DAEMON)
     {
         pid = fork();
-
         if (pid == 0)
         {
             ret = execve (exeprog, newargv, newenv);
@@ -137,6 +138,7 @@ startDaemon(void)
             {
                 //ERRNO_PRINT;
                 ERROR_PRINT(Failed to execute the daemon '%s'\n, exeprog);
+                free(exeprog);
                 exit(EXIT_FAILURE);
             }
         }
@@ -180,11 +182,12 @@ startDaemon(void)
         fprintf(stderr, "Consult the error message above this to find out why.\n");
         fprintf(stderr, "If the error is 'no such file or directoy', \
                 it usually means that likwid-accessD just failed to start.\n");
+        free(exeprog);
         exit(EXIT_FAILURE);
     }
     DEBUG_PRINT(DEBUGLEV_INFO, Successfully opened socket %s to daemon, filepath);
     free(filepath);
-
+    free(exeprog);
     return socket_fd;
 }
 
