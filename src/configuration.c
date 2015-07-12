@@ -48,7 +48,7 @@ static int default_configuration(void)
     char *fptr;
     size_t len = 0;
     filename[0] = '\0';
-    FILE* fp = popen("which likwid-accessD | tr -d '\n'","r");
+    FILE* fp = popen("which likwid-accessD 2>/dev/null | tr -d '\n'","r");
     if (fp == NULL)
     {
         goto use_hardcoded;
