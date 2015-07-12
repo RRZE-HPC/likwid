@@ -107,7 +107,7 @@ docs:
 $(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
 	@echo "===>  ADJUSTING  $@"
 	@if [ "$(ACCESSMODE)" = "direct" ]; then sed -i -e s/"access_mode = 1"/"access_mode = 0"/g $(SRC_DIR)/applications/$@.lua;fi
-	@sed -e s/'<PREFIX>'/$(subst /,\\/,$(PREFIX))/g \
+	@sed -e s/'<INSTALLED_BINPREFIX>'/$(subst /,\\/,$(INSTALLED_BINPREFIX))/g \
 		-e s/'<VERSION>'/$(VERSION).$(RELEASE)/g \
 		-e s/'<DATE>'/$(DATE)/g \
 		$(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$@)) > $@
@@ -127,7 +127,7 @@ $(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) 
 
 $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
-	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) -Wl,-rpath=$(LIBPREFIX) $(TARGET_LUA_LIB) -Wl,-rpath=$(LIBPREFIX)
+	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) -Wl,-rpath=$(INSTALLED_LIBPREFIX) $(TARGET_LUA_LIB) -Wl,-rpath=$(INSTALLED_LIBPREFIX)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
