@@ -272,7 +272,7 @@ install: install_daemon install_freq
 	@echo "===> INSTALL lua to likwid interface to $(PREFIX)/share/lua"
 	@mkdir -p $(PREFIX)/share/lua
 	@install -m 755 likwid.lua $(PREFIX)/share/lua
-	@echo "===> INSTALL libraries to $(PREFIX)/lib"
+	@echo "===> INSTALL libraries to $(LIBPREFIX)"
 	@mkdir -p $(LIBPREFIX)
 	@install -m 755 $(TARGET_LIB) $(LIBPREFIX)/$(TARGET_LIB).$(VERSION)
 	@install -m 755 liblikwidpin.so $(LIBPREFIX)/liblikwidpin.so.$(VERSION)

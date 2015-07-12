@@ -12,6 +12,7 @@ COLOR = BLUE#NO SPACE
 PREFIX = /usr/local#NO SPACE
 MANPREFIX = $(PREFIX)/man#NO SPACE
 BINPREFIX = $(PREFIX)/bin#NO SPACE
+LIBPREFIX = $(PREFIX)/lib#NO SPACE
 # For the daemon based secure msr/pci access configure
 # the absolute path to the msr daemon executable.
 # $(PREFIX)/bin/likwid-accessD
