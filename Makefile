@@ -116,6 +116,7 @@ $(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
 $(L_HELPER):
 	@echo "===>  ADJUSTING  $@"
 	@sed -e s/'<PREFIX>'/$(subst /,\\/,$(PREFIX))/g \
+		-e s/'<INSTALLED_LIBPREFIX>'/$(subst /,\\/,$(INSTALLED_LIBPREFIX))/g \
 		-e s/'<VERSION>'/$(VERSION)/g \
 		-e s/'<RELEASE>'/$(RELEASE)/g \
 		$(SRC_DIR)/applications/$@ > $@
