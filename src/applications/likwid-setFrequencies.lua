@@ -29,12 +29,12 @@
  * =======================================================================================
 ]]
 
-package.path = '<PREFIX>/share/lua/?.lua;' .. package.path
+package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
 sys_base_path = "/sys/devices/system/cpu"
-set_command = "<PREFIX>/sbin/likwid-setFreq"
+set_command = "<INSTALLED_PREFIX>/sbin/likwid-setFreq"
 
 
 function version()

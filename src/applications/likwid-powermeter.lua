@@ -29,7 +29,7 @@
  *
  * =======================================================================================
 ]]
-package.path = '<PREFIX>/share/lua/?.lua;' .. package.path
+package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
@@ -245,7 +245,7 @@ if (use_perfctr) then
             argString = argString .. "@"
         end
     end
-    execString = string.format("<PREFIX>/bin/likwid-perfctr -C %s -g CLOCK ",argString)
+    execString = string.format("<INSTALLED_PREFIX>/bin/likwid-perfctr -C %s -g CLOCK ",argString)
 end
 
 

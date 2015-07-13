@@ -29,11 +29,11 @@
 ]]
 
 local likwid = {}
-package.cpath = '<PREFIX>/lib/?.so;' .. package.cpath
+package.cpath = '<INSTALLED_PREFIX>/lib/?.so;' .. package.cpath
 require("liblikwid")
 require("math")
 
-likwid.groupfolder = "<PREFIX>/share/likwid/perfgroups"
+likwid.groupfolder = "<INSTALLED_PREFIX>/share/likwid/perfgroups"
 
 likwid.version = <VERSION>
 likwid.release = <RELEASE>
