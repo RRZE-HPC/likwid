@@ -49,7 +49,7 @@ $(SHARED_LIBLUA):
 	$(Q)$(CC) $(LFLAGS) -Wl,-soname,$(LIBLUA).$(VERSION) -shared -fPIC -o $(LIBLUA) $(OBJ) $(LIBS)
 
 $(INTERPRETER): $(SHARED_LIBLUA) $(BUILD_DIR)/lua.o
-	$(Q)$(CC) -o $@ $(LFLAGS) $(BUILD_DIR)/lua.o $(LIBLUA) -Wl,-rpath=$(PREFIX)/lib $(LIBS)
+	$(Q)$(CC) -o $@ $(LFLAGS) $(BUILD_DIR)/lua.o $(LIBLUA) -Wl,-rpath=$(INSTALLED_LIBPREFIX) $(LIBS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c

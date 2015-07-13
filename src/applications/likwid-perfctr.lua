@@ -1,4 +1,4 @@
-#!<PREFIX>/bin/likwid-lua
+#!<INSTALLED_BINPREFIX>/likwid-lua
 --[[
  * =======================================================================================
  *
@@ -30,7 +30,7 @@
  * =======================================================================================
 ]]
 
-package.path = '<PREFIX>/share/lua/?.lua;' .. package.path
+package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
@@ -706,7 +706,7 @@ end
 
 if outfile then
     local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
-    local command = "<PREFIX>/share/likwid/filter/" .. suffix
+    local command = "<INSTALLED_PREFIX>/share/likwid/filter/" .. suffix
     local tmpfile = outfile:gsub("."..suffix,".tmp",1)
     if likwid.access(command, "x") then
         print_stdout("Cannot find filter script, save output in CSV format to file "..outfile)

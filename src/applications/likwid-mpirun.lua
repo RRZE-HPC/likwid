@@ -1,4 +1,4 @@
-#!<PREFIX>/bin/likwid-lua
+#!<INSTALLED_BINPREFIX>/likwid-lua
 --[[
  * =======================================================================================
  *
@@ -29,7 +29,7 @@
  *
  * =======================================================================================
 ]]
-package.path = '<PREFIX>/share/lua/?.lua;' .. package.path
+package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
@@ -98,8 +98,8 @@ local debug = false
 local use_marker = false
 local use_csv = false
 
-local LIKWID_PIN="<PREFIX>/bin/likwid-pin"
-local LIKWID_PERFCTR="<PREFIX>/bin/likwid-perfctr"
+local LIKWID_PIN="<INSTALLED_PREFIX>/bin/likwid-pin"
+local LIKWID_PERFCTR="<INSTALLED_PREFIX>/bin/likwid-perfctr"
 local MPIINFO = {}
 local MPIROOT = os.getenv("MPIHOME")
 if MPIROOT == nil then

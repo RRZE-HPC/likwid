@@ -1,4 +1,4 @@
-#!<PREFIX>/bin/likwid-lua
+#!<INSTALLED_BINPREFIX>/likwid-lua
 --[[
  * =======================================================================================
  *
@@ -28,7 +28,7 @@
  *
  * =======================================================================================
 ]]
-package.path = '<PREFIX>/share/lua/?.lua;' .. package.path
+package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 local likwid = require("likwid")
 
 local function version()

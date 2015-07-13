@@ -1,4 +1,4 @@
-#!<PREFIX>/bin/likwid-lua
+#!<INSTALLED_BINPREFIX>/likwid-lua
 --[[
  * =======================================================================================
  *
@@ -29,7 +29,7 @@
  * =======================================================================================
 ]]
 
-package.path = '<PREFIX>/share/lua/?.lua;' .. package.path
+package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 local likwid = require("likwid")
 
 dconfig = {}
@@ -37,7 +37,7 @@ dconfig["groupStrings"] ={}
 dconfig["groupData"] ={}
 dconfig["accessmode"] = 1
 dconfig["duration"] = 1
-dconfig["groupPath"] = "<PREFIX>/share/likwid/mongroups"
+dconfig["groupPath"] = "<INSTALLED_PREFIX>/share/likwid/mongroups"
 dconfig["logPath"] = nil
 dconfig["logStyle"] = "log"
 dconfig["gmetric"] = false
