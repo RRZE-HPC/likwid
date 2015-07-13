@@ -234,7 +234,7 @@ ifeq ($(BUILDDAEMON),true)
 install_daemon:
 	@echo "===> INSTALL access daemon to $(ACCESSDAEMON)"
 	@mkdir -p `dirname $(ACCESSDAEMON)`
-	@install -m 4775 -g root -o root $(DAEMON_TARGET) $(ACCESSDAEMON)
+	@install -m 4775 $(DAEMON_TARGET) $(ACCESSDAEMON)
 uninstall_daemon:
 	@echo "===> REMOVING access daemon from $(ACCESSDAEMON)"
 	@rm -f $(ACCESSDAEMON)
@@ -249,7 +249,7 @@ ifeq ($(BUILDFREQ),true)
 install_freq:
 	@echo "===> INSTALL setFrequencies tool to $(PREFIX)/sbin/$(FREQ_TARGET)"
 	@mkdir -p $(PREFIX)/sbin
-	@install -m 4775 -g root -o root $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
+	@install -m 4775 $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
 uninstall_freq:
 	@echo "===> REMOVING setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET)"
 	@rm -f $(PREFIX)/sbin/$(FREQ_TARGET)
