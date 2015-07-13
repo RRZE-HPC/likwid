@@ -13,9 +13,17 @@ PREFIX = /usr/local#NO SPACE
 MANPREFIX = $(PREFIX)/man#NO SPACE
 BINPREFIX = $(PREFIX)/bin#NO SPACE
 LIBPREFIX = $(PREFIX)/lib#NO SPACE
+
+# These paths are hardcoded into executables and libraries. Usually
+# they'll be the same as above, but package maintainers may want to
+# distinguish between the image directories and the final install
+# target.
 INSTALLED_PREFIX=$(PREFIX)
 INSTALLED_BINPREFIX = $(INSTALLED_PREFIX)/bin#NO SPACE
 INSTALLED_LIBPREFIX = $(INSTALLED_PREFIX)/lib#NO SPACE
+
+# chown installed tools to this user/group
+INSTALL_CHOWN = -g root -o root
 
 # For the daemon based secure msr/pci access configure
 # the absolute path to the msr daemon executable.
