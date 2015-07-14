@@ -67,14 +67,16 @@ for opt,arg in likwid.getopt(arg, {"h","v","help","version", "o:", "output:"}) d
         os.exit(1)
     end
 end
-
+if likwid.access(filename, "e") then
+    os.remove(filename)
+end
 local file = io.open(filename, "w")
 if file == nil then
     print("Cannot open file "..filename.." for writing")
     os.exit(1)
 end
 
-os.remove(filename)
+
 local cpuinfo = likwid.getCpuInfo()
 local cputopo = likwid.getCpuTopology()
 local numainfo = likwid.getNumaInfo()
