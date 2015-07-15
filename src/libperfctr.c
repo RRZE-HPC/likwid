@@ -74,6 +74,8 @@ static int numberOfGroups = 0;
 static int* groups;
 static int threads2Cpu[MAX_NUM_THREADS];
 static int num_cpus = 0;
+pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
+int seen_threads = 0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -240,11 +242,15 @@ void likwid_markerInit(void)
 
 void likwid_markerThreadInit(void)
 {
+    int myID;
     if ( !likwid_init )
     {
         return;
     }
 
+    pthread_mutex_lock(&globalLock);
+    myID = seen_threads++;
+    pthread_mutex_unlock(&globalLock);
     /*int cpu_id = likwid_getProcessorId();
     int thread_id = getThreadID(cpu_id);
 
@@ -256,6 +262,16 @@ void likwid_markerThreadInit(void)
     {
         groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].init = TRUE;
     }*/
+    if (getenv("LIKWID_PIN") != NULL)
+    {
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        sched_getaffinity(gettid(), sizeof(cpu_set_t), &cpuset);
+        if ((CPU_COUNT(&cpuset) > 1) || (likwid_getProcessorId() != threads2Cpu[myID % num_cpus]))
+        {
+            likwid_pinThread(threads2Cpu[myID % num_cpus]);
+        }
+    }
 }
 
 void likwid_markerNextGroup(void)
