@@ -73,7 +73,7 @@ static char * sosearchpaths[] = {
     } while(0)
 #endif
 
-int
+int __attribute__ ((visibility ("default") ))
 pthread_create(pthread_t* thread,
         const pthread_attr_t* attr,
         void* (*start_routine)(void *),
@@ -100,6 +100,7 @@ pthread_create(pthread_t* thread,
         char *token, *saveptr;
         char *delimiter = ",";
         int i = 0;
+        cpu_set_t cpuset;
 
         str = getenv("LIKWID_SKIP");
         if (str != NULL)
@@ -124,7 +125,7 @@ pthread_create(pthread_t* thread,
 
         if (!silent)
         {
-            color_print("[pthread wrapper] \n",4);
+            color_print("[pthread wrapper] \n");
         }
 
         str = getenv("LIKWID_PIN");
@@ -140,6 +141,13 @@ pthread_create(pthread_t* thread,
                     ncpus++;
                     pin_ids[i++] = strtoul(token, &token, 10);
                 }
+            }
+            CPU_ZERO(&cpuset);
+            CPU_SET(pin_ids[ncpus-1], &cpuset);
+            ret = sched_setaffinity(getpid(), sizeof(cpu_set_t), &cpuset);
+            if (!silent)
+            {
+                color_print("[pthread wrapper] MAIN -> %d\n",pin_ids[ncpus-1]);
             }
             ncpus--; /* last ID is the first (the process was pinned to) */
         }
