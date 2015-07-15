@@ -534,11 +534,42 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
     return event->numberOfOptions;
 }
 
+static double
+calculateResult(int groupId, int eventId, int threadId)
+{
+    PerfmonEventSetEntry* event;
+    PerfmonCounter* counter;
+    int cpu_id;
+    double result = 0.0;
+
+    event = &(groupSet->groups[groupId].events[eventId]);
+    counter = &(event->threadCounter[threadId]);
+    if (counter->overflows == 0)
+    {
+        result = (double) (counter->counterData - counter->startData);
+    }
+    else if (counter->overflows > 0)
+    {
+        result += (double) ((perfmon_getMaxCounterValue(counter_map[event->index].type) - counter->startData) + counter->counterData);
+        counter->overflows--;
+    }
+    result += (double) (counter->overflows * perfmon_getMaxCounterValue(counter_map[event->index].type));
+    if (counter_map[event->index].type == POWER)
+    {
+        result *= power_getEnergyUnit(getCounterTypeOffset(event->index));
+    }
+    else if (counter_map[event->index].type == THERMAL)
+    {
+        result = (double)counter->counterData;
+    }
+    return result;
+}
+
 int
 getCounterTypeOffset(int index)
 {
     int off = 0;
-    for (int j=index-1;j>=NUM_COUNTERS_CORE_IVYBRIDGE;j--)
+    for (int j=index-1;j>=0;j--)
     {
         if (counter_map[index].type == counter_map[j].type)
         {
@@ -1255,6 +1286,7 @@ past_checks:
             {
                 event->threadCounter[j].counterData = 0;
                 event->threadCounter[j].startData = 0;
+                event->threadCounter[j].fullData = 0.0;
                 event->threadCounter[j].overflows = 0;
                 event->threadCounter[j].init = FALSE;
             }
@@ -1353,7 +1385,9 @@ int
 __perfmon_stopCounters(int groupId)
 {
     int i = 0;
+    int j = 0;
     int ret = 0;
+    double result = 0.0;
 
     if ((groupId < 0) || (groupId >= groupSet->numberOfActiveGroups))
     {
@@ -1362,12 +1396,21 @@ __perfmon_stopCounters(int groupId)
 
     timer_stop(&groupSet->groups[groupId].timer);
 
-    for (; i<groupSet->numberOfThreads; i++)
+    for (i = 0; i<groupSet->numberOfThreads; i++)
     {
         ret = perfmon_stopCountersThread(groupSet->threads[i].thread_id, &groupSet->groups[groupId]);
         if (ret)
         {
             return -groupSet->threads[i].thread_id-1;
+        }
+    }
+    
+    for (i=0; i<perfmon_getNumberOfEvents(groupId); i++)
+    {
+        for (j=0; j<perfmon_getNumberOfThreads(); j++)
+        {
+            result = calculateResult(groupId, i, j);
+            groupSet->groups[groupId].events[i].threadCounter[j].fullData += result;
         }
     }
 
@@ -1391,12 +1434,11 @@ int
 __perfmon_readCounters(int groupId, int threadId)
 {
     int ret = 0;
-
+    int i = 0;
     if ((groupId < 0) || (groupId >= groupSet->numberOfActiveGroups))
     {
         groupId = groupSet->activeGroup;
     }
-
     if (threadId == -1)
     {
         for (threadId = 0; threadId<groupSet->numberOfThreads; threadId++)
@@ -1452,10 +1494,6 @@ int perfmon_readGroupThreadCounters(int groupId, int threadId)
 double
 perfmon_getResult(int groupId, int eventId, int threadId)
 {
-    double result = 0.0;
-    PerfmonEventSetEntry* event;
-    PerfmonCounter* counter;
-    int cpu_id;
     if (unlikely(groupSet == NULL))
     {
         return 0;
@@ -1474,30 +1512,12 @@ perfmon_getResult(int groupId, int eventId, int threadId)
         printf("ERROR: ThreadID greater than defined threads\n");
         return 0;
     }
-    event = &(groupSet->groups[groupId].events[eventId]);
-    counter = &(event->threadCounter[threadId]);
-    cpu_id = groupSet->threads[threadId].processorId;
 
-    if (counter->overflows == 0)
+    if (groupSet->groups[groupId].events[eventId].threadCounter[threadId].fullData == 0)
     {
-        result = (double) (counter->counterData - counter->startData);
+        return calculateResult(groupId, eventId, threadId);
     }
-    else if (counter->overflows > 0)
-    {
-        result += (double) ((perfmon_getMaxCounterValue(counter_map[event->index].type) - counter->startData) + counter->counterData);
-        counter->overflows--;
-    }
-    result += (double) (counter->overflows * perfmon_getMaxCounterValue(counter_map[event->index].type));
-
-    if (counter_map[event->index].type == POWER)
-    {
-        result *= power_getEnergyUnit(getCounterTypeOffset(event->index));
-    }
-    else if (counter_map[event->index].type == THERMAL)
-    {
-        result = (double)counter->counterData;
-    }
-    return result;
+    return groupSet->groups[groupId].events[eventId].threadCounter[threadId].fullData;
 }
 
 int __perfmon_switchActiveGroupThread(int thread_id, int new_group)
@@ -1513,10 +1533,6 @@ int __perfmon_switchActiveGroupThread(int thread_id, int new_group)
     {
         groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].init = FALSE;
     }
-    /*for(i=0; i<groupSet->groups[new_group].numberOfEvents;i++)
-    {
-        groupSet->groups[new_group].events[i].threadCounter[cpu_id].init = TRUE;
-    }*/
     ret = perfmon_setupCounters(new_group);
     if (ret != 0)
     {

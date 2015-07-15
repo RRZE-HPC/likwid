@@ -178,6 +178,7 @@ typedef struct {
     int         overflows; /*!< \brief Amount of overflows */
     uint64_t    startData; /*!< \brief Start data from the counter */
     uint64_t    counterData; /*!< \brief Intermediate data from the counters */
+    double    fullData; /*!< \brief Aggregated data from the counters */
 } PerfmonCounter;
 
 
