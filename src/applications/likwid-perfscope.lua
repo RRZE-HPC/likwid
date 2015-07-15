@@ -34,8 +34,8 @@ package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
-PERFCTR="/home/rrze/unrz/unrz139/TMP/likwid-base/trunk/likwid-perfctr"
-FEEDGNUPLOT="/home/rrze/unrz/unrz139/TMP/likwid-base/trunk/perl/feedGnuplot"
+PERFCTR="<INSTALLED_BINPREFIX>/likwid-perfctr"
+FEEDGNUPLOT="<INSTALLED_BINPREFIX>/feedGnuplot"
 
 local predefined_plots = {
     FLOPS_DP = {
@@ -54,7 +54,7 @@ local predefined_plots = {
         y2title = nil,
         xtitle = "Time"
     },
-    L2_BAND = {
+    L2 = {
         perfgroup = "L2",
         ymetricmatch = "L2 bandwidth [MBytes/s]",
         title = "L2 cache bandwidth",
@@ -62,7 +62,7 @@ local predefined_plots = {
         y2title = nil,
         xtitle = "Time"
     },
-    L3_BAND = {
+    L3 = {
         perfgroup = "L3",
         ymetricmatch = "L3 bandwidth [MBytes/s]",
         title = "L3 cache bandwidth",
@@ -70,7 +70,7 @@ local predefined_plots = {
         y2title = nil,
         xtitle = "Time"
     },
-    MEM_BAND = {
+    MEM = {
         perfgroup = "MEM",
         ymetricmatch = "Memory bandwidth [MBytes/s]",
         title = "Memory bandwidth",
@@ -78,7 +78,7 @@ local predefined_plots = {
         y2title = nil,
         xtitle = "Time"
     },
-    QPI_BAND = {
+    QPI = {
         perfgroup = "QPI",
         ymetricmatch = "QPI data bandwidth [MByte/s]",
         title = "QPI bandwidth",
@@ -312,12 +312,12 @@ for i, event_def in pairs(eventStrings) do
         for i,mconfig in pairs(groupdata["Metrics"]) do
             local mmatch = "%a*"..plotgroupconfig["ymetricmatch"]:gsub("%[","%%["):gsub("%]","%%]").."%a*"
             if mconfig["description"]:match(mmatch) then
-                formulalist = {{name=mconfig["description"], formula=mconfig["formula"]}}
+                formulalist = {{name=mconfig["description"], index=i}}
             end
             if plotgroupconfig["y2metricmatch"] ~= nil then
                 mmatch = "%a*"..plotgroupconfig["y2metricmatch"]:gsub("%[","%%["):gsub("%]","%%]").."%a*"
                 if mconfig["description"]:match(mmatch) then
-                    table.insert(formulalist, {name=mconfig["description"], formula=mconfig["formula"]})
+                    table.insert(formulalist, {name=mconfig["description"], index=i})
                 end
             end
         end
@@ -345,8 +345,19 @@ for i, event_def in pairs(eventStrings) do
             xtitle = estr:match("XTITLE=([%g%s]+)")
         elseif estr:match("[%g%s]+=[%g]+") then
             fname, form = estr:match("([%g%s]+)=([%g]+)")
-            if formulalist == nil then formulalist = {} end
-            table.insert(formulalist, {name=fname, formula=form})
+            if formulalist == nil then
+                formulalist = {}
+            end
+            if groupdata["Metrics"] ~= nil then
+                for i,mconfig in pairs(groupdata["Metrics"]) do
+                    if mconfig["description"]:match(fname) then
+                        table.insert(formulalist, {name=fname, index=i})
+                        break
+                    end
+                end
+            else
+                table.insert(formulalist, {name=fname, formula=form})
+            end
         end
     end
     group_list[i]["eventstring"] = event_string
@@ -445,6 +456,7 @@ for i, group in pairs(group_list) do
             end
         end
     end
+    gnucmd = gnucmd .. " --set 'key outside bmargin bottom'"
     if plotdump then
         gnucmd = gnucmd .. " --dump"
     else
@@ -499,78 +511,29 @@ while true do
         table.remove(linelist, 1)
 
         for i=1,nr_events do
+            if data[i] == nil then data[i] = {} end
             for j=1,nr_threads do
-                if data[j] == nil then data[j] = {} end
-                data[j][group_list[group]["counterlist"][i]] = tonumber(linelist[1])
+                data[i][j] = tonumber(linelist[1])
+                print(i,j,data[i][j])
                 table.remove(linelist, 1)
             end
         end
 
-        if time - oldtime <= mfreq + (0.1*mfreq) and time - oldtime >= mfreq - (0.1*mfreq) then
-            mtime[group] = time - oldtime
-        else
-            mtime[group] = mfreq
-        end
-
-        if olddata[group] == nil then
-            olddata[group] = {}
-            for l1,v1 in pairs(data) do
-                diff[l1] = {}
-                olddata[group][l1] = {}
-                if type(v1) == "table" then
-                    for l2,v2 in pairs(data[l1]) do
-                        diff[l1][l2] = data[l1][l2]
-                        olddata[group][l1][l2] = data[l1][l2]
-                    end
-                else
-                    diff[l1] = data[l1]
-                    olddata[group][l1] = data[group][l1]
-                end
-                diff[l1]["time"] = mtime[group]
-                diff[l1]["inverseClock"] = 1.0/clock
-            end
-        else
-            for l1,v1 in pairs(data) do
-                diff[l1] = {}
-                if type(v1) == "table" then
-                    for l2,v2 in pairs(v1) do
-                        diff[l1][l2] = data[l1][l2] - olddata[group][l1][l2]
-                        olddata[group][l1][l2] = data[l1][l2]
-                    end
-                else
-                    diff[l1] = data[l1] - olddata[group][l1]
-                    olddata[group][l1] = data[group][l1]
-                end
-                diff[l1]["time"] = mtime[group]
-                diff[l1]["inverseClock"] = 1.0/clock
-            end
-        end
-
-
         str = tostring(time)
-        if oldmetric[group] == nil then
-            oldmetric[group] = {}
-            for i, thread in pairs(diff) do
-                oldmetric[group][i] = {}
-                for j,fdesc in pairs(group_list[group]["formulas"]) do
-                    oldmetric[group][i][j] = likwid.calculate_metric(fdesc["formula"], thread)
-                    str = str .. " " .. tostring(oldmetric[group][i][j])
+        for f, flist in pairs(group_list[group]["formulas"]) do
+            if flist["index"] ~= nil then
+                for i=1,nr_threads do
+                    str = str .." ".. data[flist["index"]][i]
                 end
-            end
-        else
-            for i, thread in pairs(diff) do
-                for j,fdesc in pairs(group_list[group]["formulas"]) do
-                    local tmp = likwid.calculate_metric(fdesc["formula"], thread)
-                    if #group_list > 1 or fdesc["formula"]:match("(%/time)") == nil then
-                        str = str .. " " ..tostring(tmp)
-                    else
-                        if tmp - oldmetric[group][i][j] >= 0 then
-                            str = str .. " " .. tostring(tmp - oldmetric[group][i][j])
-                        else
-                            str = str .. " 0"
-                        end
+            else
+                counterlist = {}
+                counterlist["time"] = mfreq
+                counterlist["inverseClock"] = 1.0/clock
+                for i=1,nr_threads do
+                    for e=1, nr_events do
+                        counterlist[group_list[group]["counterlist"][e]] = data[e][i]
                     end
-                    oldmetric[group][i][j] = tmp
+                    str = str .." ".. tostring(likwid.calculate_metric(flist["formula"], counterlist))
                 end
             end
         end

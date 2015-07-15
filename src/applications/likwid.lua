@@ -766,15 +766,17 @@ local function new_groupdata(eventString, fix_ctrs)
         return gdata
     end
     if fix_ctrs > 0 then
-        if not eventString:match("FIXC2") and fix_ctrs == 3 then
-            eventString = "CPU_CLK_UNHALTED_REF:FIXC2,"..eventString
+        if not eventString:match("FIXC0") and fix_ctrs >= 1 then
+            eventString = eventString..",INSTR_RETIRED_ANY:FIXC0"
         end
         if not eventString:match("FIXC1") and fix_ctrs >= 2 then
-            eventString = "CPU_CLK_UNHALTED_CORE:FIXC1,"..eventString
+            eventString = eventString..",CPU_CLK_UNHALTED_CORE:FIXC1"
         end
-        if not eventString:match("FIXC0") and fix_ctrs >= 1 then
-            eventString = "INSTR_RETIRED_ANY:FIXC0,"..eventString
+        if not eventString:match("FIXC2") and fix_ctrs == 3 then
+            eventString = eventString..",CPU_CLK_UNHALTED_REF:FIXC2"
         end
+        
+        
     end
     gdata["EventString"] = eventString
     gdata["GroupString"] = eventString

@@ -407,10 +407,12 @@ if print_info or verbose > 0 then
         print_stdout(string.format("PERFMON number of fixed counters:\t%u",cpuinfo["perf_num_fixed_ctr"]))
     end
     print_stdout(likwid.hline)
-    if not print_info then likwid.printSupportedCPUs() end
-    likwid.putTopology()
-    likwid.putConfiguration()
-    if print_info then os.exit(0) end
+    if print_info then
+        likwid.printSupportedCPUs()
+        likwid.putTopology()
+        likwid.putConfiguration()
+        os.exit(0)
+    end
 end
 
 if use_stethoscope == false and use_timeline == false and use_marker == false then
@@ -425,7 +427,12 @@ if use_wrapper and likwid.tablelength(arg)-2 == 0 and print_info == false then
     os.exit(0)
 end
 
-
+if use_marker and not pin_cpus then
+    print_stdout("Warning: The Marker API requires the application to run on the selected CPUs.")
+    print_stdout("Warning: likwid-perfctr does not pin the application.")
+    print_stdout("Warning: LIKWID assumes that the application does it before the first instrumented code region is started.")
+    print_stdout("Warning: Otherwise, LIKWID throws a lot of errors and probably no results are printed.")
+end
 
 if pin_cpus then
     local omp_threads = os.getenv("OMP_NUM_THREADS")
@@ -446,7 +453,9 @@ if pin_cpus then
 
         likwid.setenv("KMP_AFFINITY","disabled")
         likwid.setenv("LIKWID_PIN", pinString)
-        likwid.setenv("LIKWID_SILENT","true")
+        if verbose == 0 then
+            likwid.setenv("LIKWID_SILENT","true")
+        end
         if os.getenv("CILK_NWORKERS") == nil then
             likwid.setenv("CILK_NWORKERS", tostring(num_threads))
         end
@@ -459,7 +468,6 @@ if pin_cpus then
             likwid.setenv("LD_PRELOAD",likwid.pinlibpath .. ":" .. preload)
         end
     end
-    --likwid.pinProcess(cpulist[1], 1)
 end
 
 
@@ -530,6 +538,13 @@ execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
 if verbose == true then
     print_stdout(string.format("Executing: %s",execString))
 end
+local ldpath = os.getenv("LD_LIBRARY_PATH")
+local libpath = likwid.pinlibpath:match("([/%g]+)/%g+.so")
+if ldpath == nil then
+    likwid.setenv("LD_LIBRARY_PATH", libpath)
+elseif not ldpath:match(libpath) then
+    likwid.setenv("LD_LIBRARY_PATH", libpath..":"..ldpath)
+end
 
 
 if use_timeline == true then
@@ -540,12 +555,8 @@ if use_timeline == true then
     print_stdout(cores_string:sub(1,cores_string:len()-1))
 end
 
-local ret = likwid.startCounters()
-if ret < 0 then
-    print_stdout(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
-    os.exit(1)
-end
 
+likwid.pinProcess(0, 1)
 
 io.stdout:flush()
 local int_results = {}
@@ -553,22 +564,14 @@ if use_wrapper or use_timeline then
     local start = likwid.startClock()
     local stop = 0
     local alltime = 0
-    local groupsums = {}
     local nr_events = likwid.getNumberOfEvents(activeGroup)
     local nr_threads = likwid.getNumberOfThreads()
-    for i,g in pairs(group_ids) do
-        groupsums[g] = {}
-        for j=1, likwid.getNumberOfEvents(g) do
-            groupsums[g][j] = {}
-            for k=1,nr_threads do
-                groupsums[g][j][k] = 0
-            end
-        end
-    end
+    local firstrun = true
     
     if use_wrapper and #group_ids == 1 then
         duration = 30.E06
     end
+    
 
     local pid = nil
     if pin_cpus then
@@ -584,6 +587,12 @@ if use_wrapper or use_timeline then
         likwid.putConfiguration()
         os.exit(1)
     end
+    local ret = likwid.startCounters()
+    if ret < 0 then
+        print_stdout(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
+        os.exit(1)
+    end
+    lastmetrics = {}
     while true do
         if likwid.getSignalState() ~= 0 then
             likwid.killProgram()
@@ -599,39 +608,60 @@ if use_wrapper or use_timeline then
             likwid.readCounters()
             local time = likwid.getClock(start, stop)
             lastresults = int_results[alltime]
+            
+            if lastmetrics[activeGroup] == nil then
+                lastmetrics[activeGroup] = {}
+            end
             alltime = alltime + time
             int_results[alltime] = likwid.getResults()
-            local str = ""
-            if #group_list[activeGroup]["Metrics"] == 0 then
-                str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(alltime)
-                for ie, e in pairs(int_results[alltime][activeGroup]) do
-                    for it, t in pairs(e) do
-                        groupsums[activeGroup][ie][it] = groupsums[activeGroup][ie][it] + t
-                        str = str .. "," .. tostring(groupsums[activeGroup][ie][it])
-                    end
-                end
-                io.stderr:write(str.."\n")
-            else
-                str = tostring(activeGroup) .. ","..tostring(#group_list[activeGroup]["Metrics"])
-                str = str .. "," .. tostring(nr_threads) .. ","..tostring(alltime)
-                for t=1,nr_threads do
-                    counterlist = {}
+            if not firstrun then
+                local str = ""
+                if group_list[activeGroup]["Metrics"] == nil or #group_list[activeGroup]["Metrics"] == 0 then
+                    str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(alltime)
                     for ie, e in pairs(int_results[alltime][activeGroup]) do
-                        if lastresults ~=nil  then
-                            counterlist[group_list[activeGroup]["Events"][ie]["Counter"]] = e[t] - lastresults[activeGroup][ie][t]
-                        else
-                            counterlist[group_list[activeGroup]["Events"][ie]["Counter"]] = e[t]
+                        for t=1,nr_threads do
+                            if lastresults ~=nil then
+                                str = str .. "," .. tostring(e[t] - lastresults[activeGroup][ie][t])
+                            else
+                                str = str .. "," .. tostring(e[t])
+                            end
                         end
                     end
-                    counterlist["time"] = time
-                    counterlist["inverseClock"] = 1.0/cpuClock
+                    io.stderr:write(str.."\n")
+                else
+                    str = tostring(activeGroup) .. ","..tostring(#group_list[activeGroup]["Metrics"])
+                    str = str .. "," .. tostring(nr_threads) .. ","..tostring(alltime)
                     for m=1,#group_list[activeGroup]["Metrics"] do
-                        local formula = group_list[activeGroup]["Metrics"][m]["formula"]
-                        str = str .. "," .. tostring(likwid.calculate_metric(formula,counterlist))
+                        if lastmetrics[activeGroup][m] == nil then
+                            lastmetrics[activeGroup][m] = {}
+                        end
+                        for t=1,nr_threads do
+                            counterlist = {}
+                            counterlist["inverseClock"] = 1.0/cpuClock
+                            counterlist["time"] = time
+                            for ie, e in pairs(int_results[alltime][activeGroup]) do
+                                local counter = group_list[activeGroup]["Events"][ie]["Counter"]
+                                if lastresults ~=nil and #group_ids == 1 then
+                                    counterlist[counter] = e[t] - lastresults[activeGroup][ie][t]
+                                else
+                                    counterlist[counter] = e[t]
+                                end
+                            end
+                            local formula = group_list[activeGroup]["Metrics"][m]["formula"]
+                            local result = likwid.calculate_metric(formula,counterlist)
+
+                            if lastmetrics[activeGroup][m][t] ~= nil and m > 4 and #group_ids > 1 then
+                                str = str .. "," .. tostring(result - lastmetrics[activeGroup][m][t])
+                            else
+                                str = str .. "," .. tostring(result)
+                            end
+                            lastmetrics[activeGroup][m][t] = result
+                        end
                     end
+                    io.stderr:write(str.."\n")
                 end
-                io.stderr:write(str.."\n")
             end
+            firstrun = false
         end
         if #group_ids > 1 then
             likwid.switchGroup(activeGroup + 1)
@@ -641,23 +671,19 @@ if use_wrapper or use_timeline then
         start = likwid.startClock()
     end
     stop = likwid.stopClock()
-    if use_timeline == true then
-        likwid.readCounters()
-        local time = likwid.getClock(start, stop)
-        alltime = alltime + time
-        int_results[time] = likwid.getResults()
-        local str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(alltime)
-        for ie, e in pairs(int_results[time][activeGroup]) do
-            for it, t in pairs(e) do
-                groupsums[activeGroup][ie][it] = groupsums[activeGroup][ie][it] + t
-                str = str .. "," .. tostring(groupsums[activeGroup][ie][it])
-            end
-        end
-        io.stderr:write(str.."\n")
-    end
 elseif use_stethoscope then
+    local ret = likwid.startCounters()
+    if ret < 0 then
+        print_stdout(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
+        os.exit(1)
+    end
     likwid.sleep(duration)
 elseif use_marker then
+    local ret = likwid.startCounters()
+    if ret < 0 then
+        print_stdout(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
+        os.exit(1)
+    end
     local ret = os.execute(execString)
     if ret == nil then
         print_stdout("Failed to execute command: ".. execString)
