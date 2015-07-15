@@ -156,7 +156,7 @@ startDaemon(void)
     filepath = strdup(address.sun_path);
     if (accessClient_mode == ACCESSMODE_DAEMON)
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Socket pathname is %s, filepath);
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Socket pathname is %s, filepath);
     }
 
     while (timeout > 0)
@@ -171,7 +171,7 @@ startDaemon(void)
         }
 
         timeout--;
-        DEBUG_PRINT(DEBUGLEV_INFO, Still waiting for socket %s ..., filepath);
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Still waiting for socket %s ..., filepath);
     }
     
     if (timeout <= 0)
@@ -185,7 +185,7 @@ startDaemon(void)
         free(exeprog);
         exit(EXIT_FAILURE);
     }
-    DEBUG_PRINT(DEBUGLEV_INFO, Successfully opened socket %s to daemon, filepath);
+    DEBUG_PRINT(DEBUGLEV_DETAIL, Successfully opened socket %s to daemon, filepath);
     free(filepath);
     free(exeprog);
     return socket_fd;
