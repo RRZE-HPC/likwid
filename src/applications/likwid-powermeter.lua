@@ -78,6 +78,7 @@ else
     access_mode = config["daemonMode"]
 end
 time_interval = 2.E06
+time_orig = "2s"
 sockets = {}
 domainList = {"PKG", "PP0", "PP1", "DRAM"}
 
@@ -132,6 +133,7 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
         likwid.setVerbosity(verbose)
     elseif (opt == "s") then
         time_interval = likwid.parse_time(arg)
+        time_orig = arg
         stethoscope = true
     elseif opt == "?" then
         print("Invalid commandline option -"..arg)
@@ -236,7 +238,7 @@ if (stethoscope) and (time_interval < power["timeUnit"]) then
 end
 
 local execString = ""
-if (use_perfctr) then
+if use_perfctr then
     affinity = likwid.getAffinityInfo()
     argString = ""
     for i,socket in pairs(sockets) do
@@ -250,7 +252,12 @@ end
 
 
 if #arg == 0 then
-    stethoscope = true
+    if use_perfctr then
+        execString = execString .. string.format(" -S %s ", time_orig)
+        stethoscope = false
+    else
+        stethoscope = true
+    end
 else
     for i=1,#arg do
         execString = execString .. arg[i] .. " "
@@ -258,49 +265,51 @@ else
 end
 
 if not print_info and not print_temp then
-    for i,socket in pairs(sockets) do
-        cpu = cpulist[i]
-        for idx, dom in pairs(domainList) do
-            if (power["domains"][dom]["supportStatus"]) then before[cpu][dom] = likwid.startPower(cpu, idx) end
+    if stethoscope then
+        for i,socket in pairs(sockets) do
+            cpu = cpulist[i]
+            for idx, dom in pairs(domainList) do
+                if (power["domains"][dom]["supportStatus"]) then before[cpu][dom] = likwid.startPower(cpu, idx) end
+            end
         end
-    end
-    time_before = likwid.startClock()
-    if (stethoscope) then
+
+        time_before = likwid.startClock()
         likwid.sleep(time_interval)
+        time_after = likwid.stopClock()
+
+        for i,socket in pairs(sockets) do
+            cpu = cpulist[i]
+            for idx, dom in pairs(domainList) do
+                if (power["domains"][dom]["supportStatus"]) then after[cpu][dom] = likwid.stopPower(cpu, idx) end
+            end
+        end
+        runtime = likwid.getClock(time_before, time_after)
+
+        print(likwid.hline)
+        print(string.format("Runtime: %g s",runtime))
+
+        for i,socket in pairs(sockets) do
+            cpu = cpulist[i]
+            print(string.format("Measure for socket %d on CPU %d", socket,cpu ))
+            for j, dom in pairs(domainList) do
+                if power["domains"][dom]["supportStatus"] then
+                    local energy = likwid.calcPower(before[cpu][dom], after[cpu][dom], 0)
+                    print(string.format("Domain %s:", dom))
+                    print(string.format("Energy consumed: %g Joules",energy))
+                    print(string.format("Power consumed: %g Watt",energy/runtime))
+                end
+            end
+            if i < #sockets then print("") end
+        end
+        print(likwid.hline)
     else
         err = os.execute(execString)
-        if (err == false) then
+        if err == false then
             print(string.format("Failed to execute %s!",execString))
             likwid.finalize()
             os.exit(1)
         end
     end
-    time_after = likwid.stopClock()
-
-    for i,socket in pairs(sockets) do
-        cpu = cpulist[i]
-        for idx, dom in pairs(domainList) do
-            if (power["domains"][dom]["supportStatus"]) then after[cpu][dom] = likwid.stopPower(cpu, idx) end
-        end
-    end
-    runtime = likwid.getClock(time_before, time_after)
-    print(likwid.hline)
-    print(string.format("Runtime: %g s",runtime))
-
-    for i,socket in pairs(sockets) do
-        cpu = cpulist[i]
-        print(string.format("Measure for socket %d on CPU %d", socket,cpu ))
-        for j, dom in pairs(domainList) do
-            if power["domains"][dom]["supportStatus"] then
-                local energy = likwid.calcPower(before[cpu][dom], after[cpu][dom], 0)
-                print(string.format("Domain %s:", dom))
-                print(string.format("Energy consumed: %g Joules",energy))
-                print(string.format("Power consumed: %g Watt",energy/runtime))
-            end
-        end
-        if i < #sockets then print("") end
-    end
-    print(likwid.hline)
 end
 
 if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
