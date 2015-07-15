@@ -235,9 +235,15 @@ if num_threads > 1 then
     else
         likwid.setenv("LD_PRELOAD",likwid.pinlibpath .. ":" .. preload)
     end
+    local ldpath = os.getenv("LD_LIBRARY_PATH")
+    local libpath = likwid.pinlibpath:match("([/%g]+)/%g+.so")
+    if ldpath == nil then
+        likwid.setenv("LD_LIBRARY_PATH", libpath)
+    elseif not ldpath:match(libpath) then
+        likwid.setenv("LD_LIBRARY_PATH", libpath..":"..ldpath)
+    end
 end
 
-likwid.pinProcess(cpu_list[1], quiet)
 local exec = table.concat(arg," ",1, likwid.tablelength(arg)-2)
 local pid = likwid.startProgram(exec, num_threads, cpu_list)
 if (pid == nil) then
