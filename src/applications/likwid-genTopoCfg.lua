@@ -81,6 +81,10 @@ local cpuinfo = likwid.getCpuInfo()
 local cputopo = likwid.getCpuTopology()
 local numainfo = likwid.getNumaInfo()
 local affinity = likwid.getAffinityInfo()
+if cpuinfo == nil or cputopo == nil or numainfo == nil or affinity == nil then
+    print("Cannot initialize topology module of LIKWID")
+    os.exit(1)
+end
 cpuinfo["clock"] = likwid.getCpuClock()
 
 local threadPool_order = {"threadId", "coreId", "packageId", "apicId"}
