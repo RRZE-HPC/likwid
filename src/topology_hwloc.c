@@ -274,7 +274,12 @@ void hwloc_init_cacheTopology(void)
         cachePool[id].threads = hwloc_record_objs_of_type_below_obj(
                         hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
 
-        if (info = hwloc_obj_get_info_by_name(obj, "inclusiveness"))
+        while (!(info = hwloc_obj_get_info_by_name(obj, "inclusiveness")) && obj->next_cousin)
+        {
+            obj = obj->next_cousin; // If some PU/core are not bindable because of cgroup, hwloc may not know the inclusiveness of some of their cache.
+        }            
+		
+        if(info)
         {
             cachePool[id].inclusive = info[0]=='t';
         }
