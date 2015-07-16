@@ -77,7 +77,7 @@ void hwloc_init_cpuInfo(cpu_set_t cpuSet)
 {
     int i;
     hwloc_obj_t obj;
-
+    setenv("HWLOC_HIDE_ERRORS", "1", 1);
     hwloc_topology_init(&hwloc_topology);
     hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
     hwloc_topology_load(hwloc_topology);
