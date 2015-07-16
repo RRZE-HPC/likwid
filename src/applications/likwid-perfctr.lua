@@ -734,7 +734,7 @@ if outfile then
     local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
     local command = "<INSTALLED_PREFIX>/share/likwid/filter/" .. suffix
     local tmpfile = outfile:gsub("."..suffix,".tmp",1)
-    if likwid.access(command, "x") then
+    if suffix ~= "csv" and likwid.access(command, "x") then
         print_stdout("Cannot find filter script, save output in CSV format to file "..outfile)
         os.rename(tmpfile, outfile)
     else
