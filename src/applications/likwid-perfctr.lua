@@ -720,14 +720,10 @@ if use_marker == true then
     likwid.print_markerOutput(groups, results, group_list, cpulist)
 else
     results = likwid.getResults()
-    groups = {}
     for g,gr in pairs(group_list) do
-        if groups[g] == nil then
-            groups[g] = {}
-        end
-        groups[g]["ID"] = g
+        gr["runtime"] = likwid.getRuntimeOfGroup(g)
     end
-    likwid.printOutput(groups, results, group_list, cpulist)
+    likwid.printOutput(results, group_list, cpulist)
 end
 
 if outfile then

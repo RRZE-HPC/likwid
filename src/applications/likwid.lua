@@ -258,7 +258,6 @@ local function calculate_metric(formula, counters_to_values)
         if c ~= "+" and c ~= "-" and  c ~= "*" and  c ~= "/" and c ~= "(" and c ~= ")" and c ~= "." and c:lower() ~= "e" then
             local tmp = tonumber(c)
             if type(tmp) ~= "number" then
-                print(c,tmp)
                 print("Not all formula entries can be substituted with measured values")
                 print("Current formula: "..formula)
                 err = true
@@ -987,16 +986,16 @@ end
 
 likwid.tableToMinMaxAvgSum = tableMinMaxAvgSum
 
-local function printOutput(groups, results, groupData, cpulist)
-    local nr_groups = #groups
+local function printOutput(results, groupData, cpulist)
+    local nr_groups = #groupData
     local maxLineFields = 0
     local cpuinfo = likwid_getCpuInfo()
     local clock = likwid.getCpuClock()
-    for g, group in pairs(groups) do
-        local groupID = group["ID"]
-        local num_events = likwid_getNumberOfEvents(groupID);
-        local num_threads = likwid_getNumberOfThreads(groupID-1);
-        local runtime = likwid_getRuntimeOfGroup(groupID)
+    for g, group in pairs(groupData) do
+        local groupID = g
+        local runtime =  group["runtime"]
+        local num_events = #results[groupID]
+        local num_threads = #cpulist
         local groupName = groupData[groupID]["GroupString"]
         if groupName == groupData[groupID]["EventString"] then
             groupName = "Custom"
@@ -1013,27 +1012,23 @@ local function printOutput(groups, results, groupData, cpulist)
             table.insert(firsttab[1],"Runtime (RDTSC) [s]")
             table.insert(firsttab[2],"TSC")
         end
-        
-        for i=1,num_events do
-            table.insert(firsttab[1],groupData[groupID]["Events"][i]["Event"])
-            table.insert(firsttab_combined[1],groupData[groupID]["Events"][i]["Event"] .. " STAT")
+
+        for e, event in pairs(groupData[groupID]["Events"]) do
+            table.insert(firsttab[1], event["Event"])
+            table.insert(firsttab[2], event["Counter"])
+            table.insert(firsttab_combined[1], event["Event"] .. " STAT")
+            table.insert(firsttab_combined[2],event["Counter"])
         end
 
-        for i=1,num_events do
-            table.insert(firsttab[2],groupData[groupID]["Events"][i]["Counter"])
-            table.insert(firsttab_combined[2],groupData[groupID]["Events"][i]["Counter"])
-        end
-        
-
-        for j=1,num_threads do
-            tmpList = {"Core "..tostring(cpulist[j])}
+        for j,cpu in pairs(cpulist) do
+            tmpList = {"Core "..tostring(cpu)}
             if not groupData[groupID]["Metrics"] then
                 table.insert(tmpList, string.format("%e",runtime))
             end
-            for i=1,num_events do
-                local tmp = tostring(results[groupID][i][j])
-                if tostring(results[groupID][i][j]):len() > 12 then
-                    tmp = string.format("%e", results[groupID][i][j])
+            for i, eresult in pairs(results[groupID]) do
+                local tmp = tostring(eresult[j])
+                if tmp:len() > 12 then
+                    tmp = string.format("%e", eresult[j])
                 end
                 table.insert(tmpList, tmp)
             end
@@ -1051,17 +1046,17 @@ local function printOutput(groups, results, groupData, cpulist)
 
             secondtab[1] = {"Metric"}
             secondtab_combined[1] = {"Metric"}
-            for m=1,#groupData[groupID]["Metrics"] do
-                table.insert(secondtab[1],groupData[groupID]["Metrics"][m]["description"] )
-                table.insert(secondtab_combined[1],groupData[groupID]["Metrics"][m]["description"].." STAT" )
+            for m, metric in pairs(groupData[groupID]["Metrics"]) do
+                table.insert(secondtab[1],metric["description"] )
+                table.insert(secondtab_combined[1],metric["description"].." STAT" )
             end
-            for j=1,num_threads do
-                tmpList = {"Core "..tostring(cpulist[j])}
-                for i=1,num_events do
-                    counterlist[groupData[groupID]["Events"][i]["Counter"]] = results[groupID][i][j]
+            for j, cpu in pairs(cpulist) do
+                tmpList = {"Core "..tostring(cpu)}
+                for i, event in pairs(groupData[groupID]["Events"]) do
+                    counterlist[event["Counter"]] = results[groupID][i][j]
                 end
-                for m=1,#groupData[groupID]["Metrics"] do
-                    local tmp = calculate_metric(groupData[groupID]["Metrics"][m]["formula"], counterlist)
+                for m, metric in pairs(groupData[groupID]["Metrics"]) do
+                    local tmp = calculate_metric(metric["formula"], counterlist)
                     if tostring(tmp):len() > 12 then
                         tmp = string.format("%e",tmp)
                     end
@@ -1121,8 +1116,8 @@ local function printOutput(groups, results, groupData, cpulist)
     end
 end
 
-
 likwid.printOutput = printOutput
+
 
 local function printMarkerOutput(groups, results, groupData, cpulist)
     local nr_groups = #groups
