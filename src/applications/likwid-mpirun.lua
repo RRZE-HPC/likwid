@@ -597,10 +597,10 @@ local function assignHosts(hosts, np, ppn)
         print("DEBUG: Scheduling on hosts:")
         for i, h in pairs(newhosts) do
             if h["maxslots"] ~= nil then
-                str = string.format("DEBUG: Host %s with %d processes (max. %d processes)",
+                str = string.format("DEBUG: Host %s with %d slots (max. %d slots)",
                                 h["hostname"],h["slots"],h["maxslots"])
             else
-                str = string.format("DEBUG: Host %s with %d processes", h["hostname"],h["slots"])
+                str = string.format("DEBUG: Host %s with %d slots", h["hostname"],h["slots"])
             end
             if h["interface"] then
                 str = str.. string.format(" using interface %s", h["interface"])
@@ -1392,9 +1392,9 @@ if #cpuexprs > 0 then
         ppn = #cpuexprs
     end
     newhosts = assignHosts(hosts, np, ppn)
-    if np > #cpuexprs*#newhosts then
+    if np > #cpuexprs*#newhosts and #perf > 0 then
         print("ERROR: Oversubsribing not allowed.")
-        print(string.format("ERROR: You want %d processes but the pinning expression has only expressions for %d processes. There are only %d hosts in the host list. Exiting", np, #cpuexprs*#newhosts, #newhosts))
+        print(string.format("ERROR: You want %d processes but the pinning expression has only expressions for %d processes. There are only %d hosts in the host list.", np, #cpuexprs*#newhosts, #newhosts))
         os.exit(1)
     end
 elseif nperdomain ~= nil then
@@ -1414,37 +1414,74 @@ elseif nperdomain ~= nil then
             table.remove(cpuexprs, #cpuexprs)
         end
         ppn = np
-    elseif np > (givenNrNodes * ppn) then
-        print("WARN: Oversubsribing nodes not allowed!")
-        print(string.format("WARN: You want %d processes with %d on each of the %d hosts", np, ppn, givenNrNodes))
-        np = givenNrNodes * ppn
-        print(string.format("WARN: Sanizing number of processes to %d.", np))
+    elseif np > (givenNrNodes * ppn) and #perf > 0 then
+        print("ERROR: Oversubsribing nodes not allowed!")
+        print(string.format("ERROR: You want %d processes with %d on each of the %d hosts", np, ppn, givenNrNodes))
+        os.exit(1)
     end
     newhosts, ppn = assignHosts(hosts, np, ppn)
 elseif ppn == 0 and np > 0 then
-    ppn = math.floor(np/givenNrNodes)
-    if (ppn * givenNrNodes) ~= np then
-        print("WARN: Processes cannot be equally distributed")
-        print(string.format("WARN: You want %d processes on %d hosts.", np, givenNrNodes))
-        np = givenNrNodes * ppn
-        print(string.format("WARN: Sanitizing number of processes to %d", np))
-    end
-    local newexprs = calculateCpuExprs("E:N:"..tostring(ppn), cpuexprs)
-    for i, expr in pairs(newexprs) do
-        local exprlist = likwid.stringsplit(expr, ",")
-        local seclength = #exprlist/ppn
-        local offset = 0
-        for p=1, ppn do
-            local str = ""
-            for j=1, seclength do
-                str = str .. exprlist[((p-1)*seclength) + j] ..","
-            end
-            str = str:sub(1,#str-1)
-            table.insert(cpuexprs, str)
+    maxnp = 0
+    maxppn = 0
+    for i, host in pairs(hosts) do
+        maxnp = maxnp + host["slots"]
+        if host["slots"] > maxppn then
+            maxppn = host["slots"]
         end
     end
     
+    if ppn == 0 then
+        ppn = 1
+    end
+    if ppn > maxppn and np > maxppn then
+        ppn = maxppn
+    elseif np < maxppn then
+        ppn = np
+    end
+    if (ppn * givenNrNodes) < np then
+        if #perf == 0 then
+            print("ERROR: Processes cannot be equally distributed")
+            print(string.format("WARN: You want %d processes on %d hosts.", np, givenNrNodes))
+            --np = givenNrNodes * ppn
+            ppn = np/givenNrNodes
+            print(string.format("WARN: Sanitizing number of processes per node to %d", ppn))
+        else
+            ppn = 0
+            os.exit(1)
+        end
+    end
+    local newexprs = calculateCpuExprs("E:N:"..tostring(ppn), cpuexprs)
+    local copynp = np
+    while copynp > 0 do
+        for i, expr in pairs(newexprs) do
+            local exprlist = likwid.stringsplit(expr, ",")
+            local seclength = math.ceil(#exprlist/ppn)
+            local offset = 0
+            for p=1, ppn do
+                local str = ""
+                for j=1, seclength do
+                    if exprlist[((p-1)*seclength) + j] then
+                        str = str .. exprlist[((p-1)*seclength) + j] ..","
+                    end
+                end
+                if str ~= "" then
+                    str = str:sub(1,#str-1)
+                    table.insert(cpuexprs, str)
+                    copynp = copynp - seclength
+                else
+                    break
+                end
+            end
+        end
+    end
+    likwid.tableprint(cpuexprs)
     newhosts, ppn = assignHosts(hosts, np, ppn)
+    if np < ppn*#newhosts then
+        np = 0
+        for i, host in pairs(newhosts) do
+            np = np + host["slots"]
+        end
+    end
 else
     print("ERROR: Commandline settings are not supported.")
     os.exit(1)
