@@ -106,10 +106,9 @@ if MPIROOT == nil then
     MPIROOT = os.getenv("MPI_ROOT")
 end
 if MPIROOT == nil then
-    print("Please load a MPI module or set path to MPI solder in MPIHOME environment variable")
-    print("$MPIHOME/bin/<MPI launcher> should be valid")
-    os.exit(1)
+    MPIROOT = ""
 end
+
 local MPIEXEC = { openmpi=MPIROOT.."/bin/mpiexec", intelmpi=MPIROOT.."/bin/mpiexec.hydra", mvapich2="mpirun"}
 
 
@@ -123,9 +122,6 @@ local function readHostfileOpenMPI(filename)
     if filename == nil or filename == "" then
         return {}
     end
-    --[[if likwid.access(filename) then
-        return {}
-    end]]
     local f = io.open(filename, "r")
     if f == nil then
         print("ERROR: Cannot open hostfile "..filename)
@@ -439,7 +435,7 @@ local function getMpiType()
     local f = io.popen(cmd, 'r')
     if f == nil then
         cmd = os.getenv("SHELL").." -c 'module -t 2>&1'"
-        f,msg,ret = io.popen(cmd, 'r')
+        f = io.popen(cmd, 'r')
     end
     if f ~= nil then
         local s = assert(f:read('*a'))
@@ -513,7 +509,7 @@ local function assignHosts(hosts, np, ppn)
     newhosts = {}
     current = 0
     local break_while = false
-    while tmp > 0 do
+    while tmp > 0 and #hosts > 0 do
         for i, host in pairs(hosts) do
             if host["slots"] and host["slots"] >= ppn then
                 if host["maxslots"] and host["maxslots"] < ppn then
@@ -529,6 +525,7 @@ local function assignHosts(hosts, np, ppn)
                                             maxslots=host["slots"],
                                             interface=host["interface"]})
                     current = ppn
+                    hosts[i] = nil
                 end
             elseif host["slots"] then
                 if host["maxslots"] then
@@ -540,6 +537,7 @@ local function assignHosts(hosts, np, ppn)
                                                 maxslots=host["maxslots"],
                                                 interface=host["interface"]})
                         current = host["maxslots"]
+                        host["maxslots"] = 0
                         hosts[i] = nil
                     else
                         print(string.format("WARN: Oversubscription for host %s.", host["hostname"]))
@@ -548,6 +546,7 @@ local function assignHosts(hosts, np, ppn)
                                             maxslots=host["maxslots"],
                                             interface=host["interface"]})
                         current = ppn
+                        
                     end
                 else
                     print(string.format("WARN: Oversubscription for host %s.", host["hostname"]))
@@ -1337,10 +1336,14 @@ local givenNrNodes = getNumberOfNodes(hosts)
 
 if skipStr == "" then
     if mpitype == "intelmpi" then
-        if omptype == "intel" then
+        if omptype == "intel" and givenNrNodes > 1 then
             skipStr = '-s 0x3'
-        elseif omptype == "gnu" then
+        elseif omptype == "intel" and givenNrNodes == 1 then
             skipStr = '-s 0x1'
+        elseif omptype == "gnu" and givenNrNodes > 1 then
+            skipStr = '-s 0x1'
+        elseif omptype == "gnu" and givenNrNodes == 1 then
+            skipStr = '-s 0x0'
         end
     elseif mpitype == "mvapich2" then
         if omptype == "intel" and givenNrNodes > 1 then
@@ -1354,7 +1357,7 @@ if skipStr == "" then
         elseif omptype == "gnu" and givenNrNodes > 1 then
             skipStr = '-s 0x7'
         elseif omptype == "gnu" and givenNrNodes == 1 then
-            skipStr = '-s 0x3'
+            skipStr = '-s 0x0'
         end
     end
 end
@@ -1362,6 +1365,16 @@ if debug and skipStr ~= "" then
     print(string.format("DEBUG: Using skip option %s to skip pinning of shepard threads", skipStr))
 end
 
+if #perf > 0 then
+    local sum_maxslots = 0
+    for i, host in pairs(hosts) do
+        sum_maxslots = sum_maxslots + host["maxslots"]
+    end
+    if np > sum_maxslots then
+        print("ERROR: Processes requested exceeds maximally available slots of given hosts. Maximal processes: "..sum_maxslots)
+        os.exit(1)
+    end
+end
 
 if #cpuexprs > 0 then
     cpuexprs = calculatePinExpr(cpuexprs)
@@ -1370,15 +1383,19 @@ if #cpuexprs > 0 then
         if debug then
             print(string.format("DEBUG: No -np given , setting according to pin expression and number of available hosts"))
         end
-        np = givenNrNodes
+        np = givenNrNodes * #cpuexprs
+        ppn = #cpuexprs
+    elseif np < #cpuexprs*givenNrNodes then
+        while np < #cpuexprs*givenNrNodes and #cpuexprs > 1 do
+            table.remove(cpuexprs)
+        end
         ppn = #cpuexprs
     end
     newhosts = assignHosts(hosts, np, ppn)
     if np > #cpuexprs*#newhosts then
-        print("WARN: Oversubsribing not allowed.")
-        print(string.format("WARN: You want %d processes but the pinning expression has only expressions for %d for %d hosts", np, #cpuexprs*#newhosts, #newhosts))
-        np = #cpuexprs*#newhosts
-        print(string.format("WARN: Sanizing number of processes to %d.", np))
+        print("ERROR: Oversubsribing not allowed.")
+        print(string.format("ERROR: You want %d processes but the pinning expression has only expressions for %d processes. There are only %d hosts in the host list. Exiting", np, #cpuexprs*#newhosts, #newhosts))
+        os.exit(1)
     end
 elseif nperdomain ~= nil then
     cpuexprs = calculateCpuExprs(nperdomain, cpuexprs)
