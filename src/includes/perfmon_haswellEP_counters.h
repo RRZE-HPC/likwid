@@ -5,8 +5,8 @@
  *
  *      Description:  Counter Header File of perfmon module for Intel Haswell EP/EN/EX.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.0
+ *      Released:  16.6.2015
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com

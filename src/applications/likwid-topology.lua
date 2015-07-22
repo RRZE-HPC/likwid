@@ -7,8 +7,8 @@
  *      Description:  A application to determine the thread and cache topology
  *                    on x86 processors.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.0
+ *      Released:  16.6.2015
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
@@ -29,6 +29,7 @@
  *
  * =======================================================================================
 ]]
+
 package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")

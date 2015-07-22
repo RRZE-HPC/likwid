@@ -7,8 +7,8 @@
  *      Description:  An application to get information about power 
  *      consumption on architectures implementing the RAPL interface.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.0
+ *      Released:  16.6.2015
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
@@ -29,6 +29,7 @@
  *
  * =======================================================================================
 ]]
+
 package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")

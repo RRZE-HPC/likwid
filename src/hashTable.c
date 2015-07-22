@@ -6,8 +6,8 @@
  *      Description: Hashtable implementation based on SGLIB.
  *                   Used for Marker API result handling.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.0
+ *      Released:  16.6.2015
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid

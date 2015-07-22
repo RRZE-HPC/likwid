@@ -6,8 +6,8 @@
  *      Description:  Header File of perfmon module for AMD K8 support.
  *                    The setup routines and registers are similar to AMD K10
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.0
+ *      Released:  16.6.2015
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com

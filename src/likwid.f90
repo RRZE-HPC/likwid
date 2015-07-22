@@ -4,8 +4,8 @@
 !
 !     Description: Marker API f90 module
 !
-!      Version:   <VERSION>
-!      Released:  <DATE>
+!      Version:   4.0
+!      Released:  16.6.2015
 !
 !     Authors:  Jan Treibig (jt), jan.treibig@gmail.com,
 !               Thomas Roehl (tr), thomas.roehl@googlemail.com

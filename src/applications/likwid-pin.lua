@@ -6,8 +6,8 @@
  *
  *      Description:  An application to pin a program including threads
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.0
+ *      Released:  16.6.2015
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
@@ -28,7 +28,9 @@
  *
  * =======================================================================================
 ]]
+
 package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
+
 
 local likwid = require("likwid")
 

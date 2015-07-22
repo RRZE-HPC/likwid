@@ -5,8 +5,8 @@
  *
  *      Description:  Header File of likwid API
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.0
+ *      Released:  16.6.2015
  *
  *      Authors:  Thomas Roehl (tr), thomas.roehl@googlemail.com
  *

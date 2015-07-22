@@ -7,8 +7,8 @@
  *      Description: A wrapper script to pin threads spawned by MPI processes and 
  *                   measure hardware performance counters
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.0
+ *      Released:  16.6.2015
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
@@ -29,6 +29,7 @@
  *
  * =======================================================================================
 ]]
+
 package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")

@@ -8,8 +8,8 @@
  *                   PCI Cfg Adresses. This module is used by the 
  *                   msr and pci modules.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.0
+ *      Released:  16.6.2015
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid

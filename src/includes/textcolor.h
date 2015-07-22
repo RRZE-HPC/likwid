@@ -7,8 +7,8 @@
  *                    Allows toggling of terminal escape sequences for 
  *                    colored text.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.0
+ *      Released:  16.6.2015
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid

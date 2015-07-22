@@ -5,8 +5,8 @@
  *
  *      Description:  Header file of perfmon module for Intel Core 2
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.0
+ *      Released:  16.6.2015
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com

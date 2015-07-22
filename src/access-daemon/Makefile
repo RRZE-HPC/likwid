@@ -4,8 +4,8 @@
 #
 #      Description:  accessDaemon Makefile
 #
-#      Version:   <VERSION>
-#      Released:  <DATE>
+#      Version:   4.0
+#      Released:  16.6.2015
 #
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid

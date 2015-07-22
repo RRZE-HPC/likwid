@@ -4,8 +4,8 @@
 !
 !      Description:  Example how to use the Fortran90 Marker API
 !
-!      Version:   <VERSION>
-!      Released:  <DATE>
+!      Version:   4.0
+!      Released:  16.6.2015
 !
 !      Author:  Thomas Roehl (tr), thomas.roehl@googlemail.com
 !      Project:  likwid
