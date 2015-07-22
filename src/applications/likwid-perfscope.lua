@@ -514,7 +514,6 @@ while true do
             if data[i] == nil then data[i] = {} end
             for j=1,nr_threads do
                 data[i][j] = tonumber(linelist[1])
-                print(i,j,data[i][j])
                 table.remove(linelist, 1)
             end
         end
