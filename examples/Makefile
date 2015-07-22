@@ -12,7 +12,7 @@ C-markerAPI-run:
 	$(PREFIX)/bin/likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -m ./C-markerAPI
 
 C-likwidAPI:
-	$(CC) -fopenmp -DLIKWID_PERFMON -I$(PREFIX)/include -L$(PREFIX)/lib C-likwidAPI.c -o C-likwidAPI -llikwid -lm
+	$(CC) -fopenmp -I$(PREFIX)/include -L$(PREFIX)/lib C-likwidAPI.c -o C-likwidAPI -llikwid -lm
 
 C-likwidAPI-run:
 	./C-likwidAPI

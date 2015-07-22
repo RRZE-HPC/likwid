@@ -30,6 +30,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include <likwid.h>
 
@@ -57,7 +58,7 @@ int main(int argc, char* argv[])
     CpuTopology_t topo = get_cpuTopology();
     printf("Likwid example on a %s with %d CPUs\n", info->name, topo->numHWThreads);
 
-    cpus = malloc(topo->numHWThreads * sizeof(int));
+    cpus = (int*)malloc(topo->numHWThreads * sizeof(int));
     if (!cpus)
         return 1;
 
