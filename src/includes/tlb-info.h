@@ -7,7 +7,7 @@
  *                    describing strings. Not used currently.
  *
  *      Version:   4.0
- *      Released:  16.6.2015
+ *      Released:  22.7.2015
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
