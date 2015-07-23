@@ -34,27 +34,27 @@
 
 #include <likwid.h>
 
-void likwid_markerinit_(void)
+void __attribute__ ((visibility ("default") )) likwid_markerinit_(void)
 {
     likwid_markerInit();
 }
 
-void likwid_markerthreadinit_(void)
+void __attribute__ ((visibility ("default") )) likwid_markerthreadinit_(void)
 {
     likwid_markerThreadInit();
 }
 
-void likwid_markerclose_(void)
+void __attribute__ ((visibility ("default") )) likwid_markerclose_(void)
 {
     likwid_markerClose();
 }
 
-void likwid_markernextgroup_(void)
+void __attribute__ ((visibility ("default") )) likwid_markernextgroup_(void)
 {
     likwid_markerNextGroup();
 }
 
-void likwid_markerregisterregion_(char* regionTag, int len)
+void __attribute__ ((visibility ("default") )) likwid_markerregisterregion_(char* regionTag, int len)
 {
     char* tmp = (char*) malloc((len+1) * sizeof(char) );
     strncpy(tmp, regionTag, len * sizeof(char) );
@@ -71,7 +71,7 @@ void likwid_markerregisterregion_(char* regionTag, int len)
     free(tmp);
 }
 
-void likwid_markerstartregion_(char* regionTag, int len)
+void __attribute__ ((visibility ("default") )) likwid_markerstartregion_(char* regionTag, int len)
 {
     char* tmp = (char*) malloc((len+1) * sizeof(char) );
     strncpy(tmp, regionTag, len * sizeof(char) );
@@ -88,7 +88,7 @@ void likwid_markerstartregion_(char* regionTag, int len)
     free(tmp);
 }
 
-void likwid_markerstopregion_(char* regionTag, int len)
+void __attribute__ ((visibility ("default") )) likwid_markerstopregion_(char* regionTag, int len)
 {
     char* tmp = (char*) malloc((len+1) * sizeof(char));
     strncpy(tmp, regionTag, len * sizeof(char) );
@@ -105,7 +105,7 @@ void likwid_markerstopregion_(char* regionTag, int len)
     free(tmp);
 }
 
-void likwid_markergetregion_(char* regionTag, int* nr_events, double* events, double *time, int *count, int len)
+void __attribute__ ((visibility ("default") )) likwid_markergetregion_(char* regionTag, int* nr_events, double* events, double *time, int *count, int len)
 {
     char* tmp = (char*) malloc((len+1) * sizeof(char));
     strncpy(tmp, regionTag, len * sizeof(char) );
