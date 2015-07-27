@@ -717,6 +717,7 @@ if use_marker == true then
         likwid.putConfiguration()
         os.exit(1)
     end
+    os.remove(markerFile)
     likwid.print_markerOutput(groups, results, group_list, cpulist)
 else
     results = likwid.getResults()
