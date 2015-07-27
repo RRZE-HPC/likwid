@@ -75,6 +75,7 @@ void* runTest(void* arg)
     int threadId;
     int offset;
     size_t size;
+    size_t vecsize;
     size_t i;
     BarrierData barr;
     ThreadData* data;
@@ -89,6 +90,7 @@ void* runTest(void* arg)
     barrier_registerThread(&barr, 0, data->globalThreadId);
 
     /* Prepare ptrs for thread */
+    vecsize = myData->size;
     size = myData->size / data->numberOfThreads;
     size -= (size % myData->test->stride);
     offset = data->threadId * size;
@@ -128,7 +130,7 @@ void* runTest(void* arg)
             threadId,
             data->globalThreadId,
             affinity_threadGetProcessorId(),
-            LLU_CAST size,
+            LLU_CAST vecsize,
             offset);
     BARRIER;
 
