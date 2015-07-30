@@ -74,7 +74,7 @@ int main (int argn, char** argv)
     numCPUs = get_numCPUs();
     if (cpuid < 0 || cpuid > numCPUs)
     {
-        fprintf(stderr, "CPU %d not a valid CPU ID. Range from 0 to %d.\n",cpuid,numCPUs);
+        fprintf(stderr, "CPU %d not a valid CPU ID. Range from 0 to %d.\n", cpuid, numCPUs);
         free(gpath);
         free(fpath);
         exit(EXIT_FAILURE);
@@ -105,7 +105,7 @@ int main (int argn, char** argv)
 
         FILE* f = fopen(gpath, "w");
         if (f == NULL) {
-            fprintf(stderr, "Unable to open path for writing\n");
+            fprintf(stderr, "Unable to open path %s for writing\n", gpath);
             free(gpath);
             free(fpath);
             return (EXIT_FAILURE);
@@ -122,7 +122,7 @@ int main (int argn, char** argv)
 
     FILE* f = fopen(gpath, "w");
     if (f == NULL) {
-        fprintf(stderr, "Unable to open path for writing\n");
+        fprintf(stderr, "Unable to open path %s for writing\n", gpath);
         free(gpath);
         free(fpath);
         return (EXIT_FAILURE);
@@ -132,7 +132,7 @@ int main (int argn, char** argv)
 
     f = fopen(fpath, "w");
     if (f == NULL) {
-        fprintf(stderr, "Unable to open path for writing\n");
+        fprintf(stderr, "Unable to open path %s for writing\n",fpath);
         free(gpath);
         free(fpath);
         return (EXIT_FAILURE);
