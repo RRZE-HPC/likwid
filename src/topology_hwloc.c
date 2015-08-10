@@ -98,15 +98,15 @@ void hwloc_init_cpuInfo(cpu_set_t cpuSet)
     }
 
     const char * info;
-    if (info = hwloc_obj_get_info_by_name(obj, "CPUModelNumber"))
+    if ((info = hwloc_obj_get_info_by_name(obj, "CPUModelNumber")))
         cpuid_info.model = atoi(info);
-    if (info = hwloc_obj_get_info_by_name(obj, "CPUFamilyNumber"))
+    if ((info = hwloc_obj_get_info_by_name(obj, "CPUFamilyNumber")))
        cpuid_info.family = atoi(info);
-    if (info = hwloc_obj_get_info_by_name(obj, "CPUVendor"))
+    if ((info = hwloc_obj_get_info_by_name(obj, "CPUVendor")))
         cpuid_info.isIntel = strcmp(info, "GenuineIntel") == 0;
-    if (info = hwloc_obj_get_info_by_name(obj, "CPUModel"))
+    if ((info = hwloc_obj_get_info_by_name(obj, "CPUModel")))
         strcpy(cpuid_info.osname, info);
-    if (info = hwloc_obj_get_info_by_name(obj, "CPUStepping"))
+    if ((info = hwloc_obj_get_info_by_name(obj, "CPUStepping")))
         cpuid_info.stepping = atoi(info);
 
     cpuid_topology.numHWThreads = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
@@ -277,8 +277,7 @@ void hwloc_init_cacheTopology(void)
         while (!(info = hwloc_obj_get_info_by_name(obj, "inclusiveness")) && obj->next_cousin)
         {
             obj = obj->next_cousin; // If some PU/core are not bindable because of cgroup, hwloc may not know the inclusiveness of some of their cache.
-        }            
-		
+        }
         if(info)
         {
             cachePool[id].inclusive = info[0]=='t';
