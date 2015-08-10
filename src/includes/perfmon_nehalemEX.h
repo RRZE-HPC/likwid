@@ -226,7 +226,7 @@ int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_M##number##_PMON_ISS, &iss_flags));   \
                     VERBOSEPRINTREG(cpu_id, MSR_M##number##_PMON_ISS, iss_flags, MBOX##number##_ISS_READ); \
                     pld_flags |= (event->umask & 0x1FULL)<<8;   \
-                    if (event->cmask & 0xFULL != 0)   \
+                    if ((event->cmask & 0xFULL) != 0)   \
                     {   \
                         iss_flags |= (event->cmask & 0x7ULL)<<7;   \
                     }   \
@@ -1218,6 +1218,8 @@ int perfmon_finalizeCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eve
                     VERBOSEPRINTREG(cpu_id, box_map[type].filterRegister2, 0x0ULL, CLEAR_MASK0);
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[type].filterRegister2, 0x0ULL));
                 }
+                break;
+            default:
                 break;
         }
         if ((reg) && (((dev == MSR_DEV) && (type < UNCORE)) || (((haveLock) && (type > UNCORE)))))
