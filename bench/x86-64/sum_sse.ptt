@@ -2,6 +2,7 @@ STREAMS 1
 TYPE DOUBLE
 FLOPS 1
 BYTES 8
+DESC Double-precision sum of a vector, optimized for SSE
 xorpd FPR1, FPR1
 movapd FPR2, FPR1
 movapd FPR3, FPR1

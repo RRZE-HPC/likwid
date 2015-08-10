@@ -1,0 +1,19 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 2
+BYTES 16
+DESC Double-precision dot product of two vectors, only scalar operations
+xorpd FPR1, FPR1
+LOOP 4
+movsd FPR2, [STR0 + GPR1 * 8]
+mulsd FPR2, [STR1 + GPR1 * 8]
+addsd FPR1, FPR2
+movsd FPR3, [STR0 + GPR1 * 8 + 8]
+mulsd FPR3, [STR1 + GPR1 * 8 + 8]
+addsd FPR1, FPR3
+movsd FPR4, [STR0 + GPR1 * 8 + 16]
+mulsd FPR4, [STR1 + GPR1 * 8 + 16]
+addsd FPR1, FPR4
+movsd FPR5, [STR0 + GPR1 * 8 + 24]
+mulsd FPR5, [STR1 + GPR1 * 8 + 24]
+addsd FPR1, FPR5

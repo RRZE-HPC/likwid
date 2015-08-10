@@ -1,0 +1,39 @@
+STREAMS 2
+TYPE SINGLE
+FLOPS 2
+BYTES 12
+DESC Single-precision linear combination of two vectors, only scalar operations
+movss FPR9, [rip+SCALAR]
+LOOP 8
+movss    FPR1, [STR0 + GPR1*4]
+movss    FPR2, [STR0 + GPR1*4 + 4]
+movss    FPR3, [STR0 + GPR1*4 + 8]
+movss    FPR4, [STR0 + GPR1*4 + 12]
+mulss    FPR1, FPR9
+addss    FPR1, [STR1 + GPR1*4]
+mulss    FPR2, FPR9
+addss    FPR2, [STR1 + GPR1*4 + 4]
+mulss    FPR3, FPR9
+addss    FPR3, [STR1 + GPR1*4 + 8]
+mulss    FPR4, FPR9
+addss    FPR4, [STR1 + GPR1*4 + 12]
+movss    FPR5, [STR0 + GPR1*4 + 16]
+movss    FPR6, [STR0 + GPR1*4 + 20]
+movss    FPR7, [STR0 + GPR1*4 + 24]
+movss    FPR8, [STR0 + GPR1*4 + 28]
+mulss    FPR5, FPR9
+addss    FPR5, [STR1 + GPR1*4 + 16]
+mulss    FPR6, FPR9
+addss    FPR6, [STR1 + GPR1*4 + 20]
+mulss    FPR7, FPR9
+addss    FPR7, [STR1 + GPR1*4 + 24]
+mulss    FPR8, FPR9
+addss    FPR8, [STR1 + GPR1*4 + 28]
+movss    [STR1 + GPR1*4], FPR1
+movss    [STR1 + GPR1*4 + 4], FPR2
+movss    [STR1 + GPR1*4 + 8], FPR3
+movss    [STR1 + GPR1*4 + 12], FPR4
+movss    [STR1 + GPR1*4 + 16], FPR5
+movss    [STR1 + GPR1*4 + 20], FPR6
+movss    [STR1 + GPR1*4 + 24], FPR7
+movss    [STR1 + GPR1*4 + 28], FPR8

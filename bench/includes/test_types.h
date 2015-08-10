@@ -89,6 +89,7 @@ typedef struct {
     FuncPrototype kernel;
     int  flops;
     int  bytes;
+    char* desc;
 } TestCase;
 
 typedef struct {

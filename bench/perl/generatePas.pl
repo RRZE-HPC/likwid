@@ -15,6 +15,7 @@ my $streams;
 my $type;
 my $flops;
 my $bytes;
+my $desc;
 my $prolog='';
 my $loop='';
 my $increment;
@@ -87,6 +88,7 @@ while (defined(my $file = readdir(DIR))) {
         $multi=0;
         $prolog='';
         $loop='';
+        $desc='';
         open FILE, "<$BenchRoot/$file";
         while (<FILE>) {
             my $line = $_;
@@ -102,6 +104,8 @@ while (defined(my $file = readdir(DIR))) {
                 $flops = $1;
             } elsif ($line =~ /BYTES[ ]+([0-9]+)/) {
                 $bytes = $1;
+            } elsif ($line =~ /DESC[ ]+([a-zA-z ,.\-_\(\)\+\*\/=]+)/) {
+                $desc = $1;
             } elsif ($line =~ /INC[ ]+([0-9]+)/) {
                 $increment = $1;
                 $skip = 1;
@@ -139,6 +143,7 @@ while (defined(my $file = readdir(DIR))) {
         $Vars->{loop} = $loop;
         $Vars->{skip} = $skip;
         $Vars->{multi} = $multi;
+        $Vars->{desc} = $desc;
 
 #print Dumper($Vars);
 
@@ -147,8 +152,9 @@ while (defined(my $file = readdir(DIR))) {
                          streams => $streams,
                          type    => $type,
                          stride  => $increment,
-                         flops   => $flops, 
-                         bytes   => $bytes});
+                         flops   => $flops,
+                         bytes   => $bytes,
+                         desc    => $desc});
     }
 }
 #print Dumper(@Testcases);
@@ -157,7 +163,7 @@ my @TestcasesSorted = sort {$a->{name} cmp $b->{name}} @Testcases;
 my $Vars;
 $Vars->{Testcases} = \@TestcasesSorted;
 $Vars->{numKernels} = $#TestcasesSorted+1;
-$Vars->{allTests} = join('\n',map {$_->{name}} @TestcasesSorted);
+$Vars->{allTests} = join('\n',map {$_->{name}." - ".$_->{desc}} @TestcasesSorted);
 $tpl->process('testcases.tt', $Vars, "$OutputDirectory/testcases.h");
 
 

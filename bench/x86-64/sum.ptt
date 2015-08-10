@@ -2,6 +2,7 @@ STREAMS 1
 TYPE SINGLE
 FLOPS 1
 BYTES 4
+DESC Single-precision sum of a vector, optimized for SSE
 xorps FPR1, FPR1
 movaps FPR2, FPR1
 movaps FPR3, FPR1

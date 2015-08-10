@@ -2,6 +2,7 @@ STREAMS 3
 TYPE SINGLE
 FLOPS 2
 BYTES 12
+DESC Double-precision stream triad A(i) = B(i)*c + C(i), optimized for AVX
 vmovaps ymm1, [rip+SCALAR]
 LOOP 32
 vmovaps   ymm2, [STR1 + GPR1*4]

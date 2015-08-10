@@ -1,0 +1,38 @@
+STREAMS 4
+TYPE SINGLE
+FLOPS 2
+BYTES 16
+DESC Single-precision triad A(i) = B(i) * C(i) + D(i), only scalar operations
+LOOP 8
+movss    FPR1, [STR1 + GPR1*4]
+movss    FPR2, [STR1 + GPR1*4 + 4]
+movss    FPR3, [STR1 + GPR1*4 + 8]
+movss    FPR4, [STR1 + GPR1*4 + 12]
+mulss    FPR1, [STR2 + GPR1*4]
+addss    FPR1, [STR3 + GPR1*4]
+movss    FPR5, [STR1 + GPR1*4 + 16]
+mulss    FPR2, [STR2 + GPR1*4 + 4]
+addss    FPR2, [STR3 + GPR1*4 + 4]
+movss    FPR6, [STR1 + GPR1*4 + 20]
+mulss    FPR3, [STR2 + GPR1*4 + 8]
+addss    FPR3, [STR3 + GPR1*4 + 8]
+movss    FPR7, [STR1 + GPR1*4 + 24]
+mulss    FPR4, [STR2 + GPR1*4 + 12]
+addss    FPR4, [STR3 + GPR1*4 + 12]
+movss    FPR8, [STR1 + GPR1*4 + 28]
+mulss    FPR5, [STR2 + GPR1*4 + 16]
+addss    FPR5, [STR3 + GPR1*4 + 16]
+mulss    FPR6, [STR2 + GPR1*4 + 20]
+addss    FPR6, [STR3 + GPR1*4 + 20]
+mulss    FPR7, [STR2 + GPR1*4 + 24]
+addss    FPR7, [STR3 + GPR1*4 + 24]
+mulss    FPR8, [STR2 + GPR1*4 + 28]
+addss    FPR8, [STR3 + GPR1*4 + 28]
+movss    [STR0 + GPR1*4], FPR1
+movss    [STR0 + GPR1*4 + 4], FPR2
+movss    [STR0 + GPR1*4 + 8], FPR3
+movss    [STR0 + GPR1*4 + 12], FPR4
+movss    [STR0 + GPR1*4 + 16], FPR5
+movss    [STR0 + GPR1*4 + 20], FPR6
+movss    [STR0 + GPR1*4 + 24], FPR7
+movss    [STR0 + GPR1*4 + 28], FPR8

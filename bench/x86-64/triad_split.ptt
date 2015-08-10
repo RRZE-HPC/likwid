@@ -2,19 +2,20 @@ STREAMS 4
 TYPE DOUBLE
 FLOPS 2
 BYTES 32
+DESC Double-precision triad A(i) = B(i) * C(i) + D(i), uses SSE but no overlapping of load, calculate and store phase
 LOOP 8
-movapd    FPR1, [STR1 + GPR1*8]
-movapd    FPR2, [STR1 + GPR1*8+16]
-movapd    FPR3, [STR1 + GPR1*8+32]
-movapd    FPR4, [STR1 + GPR1*8+48]
-movapd    FPR5, [STR2 + GPR1*8]
-movapd    FPR6, [STR3 + GPR1*8]
-movapd    FPR7, [STR2 + GPR1*8+16]
-movapd    FPR8, [STR3 + GPR1*8+16]
-movapd    FPR9, [STR2 + GPR1*8+32]
-movapd    FPR10, [STR3 + GPR1*8+32]
-movapd    FPR11, [STR2 + GPR1*8+48]
-movapd    FPR12, [STR3 + GPR1*8+48]
+movaps    FPR1, [STR1 + GPR1*8]
+movaps    FPR2, [STR1 + GPR1*8+16]
+movaps    FPR3, [STR1 + GPR1*8+32]
+movaps    FPR4, [STR1 + GPR1*8+48]
+movaps    FPR5, [STR2 + GPR1*8]
+movaps    FPR6, [STR3 + GPR1*8]
+movaps    FPR7, [STR2 + GPR1*8+16]
+movaps    FPR8, [STR3 + GPR1*8+16]
+movaps    FPR9, [STR2 + GPR1*8+32]
+movaps    FPR10, [STR3 + GPR1*8+32]
+movaps    FPR11, [STR2 + GPR1*8+48]
+movaps    FPR12, [STR3 + GPR1*8+48]
 mulpd     FPR1, FPR5
 addpd     FPR1, FPR6
 mulpd     FPR2, FPR7
@@ -23,8 +24,8 @@ mulpd     FPR3, FPR9
 addpd     FPR3, FPR10
 mulpd     FPR4, FPR11
 addpd     FPR4, FPR12
-movapd    [STR0 + GPR1*8], FPR1
-movapd    [STR0 + GPR1*8+16], FPR2
-movapd    [STR0 + GPR1*8+32], FPR3
-movapd    [STR0 + GPR1*8+48], FPR4
+movaps    [STR0 + GPR1*8], FPR1
+movaps    [STR0 + GPR1*8+16], FPR2
+movaps    [STR0 + GPR1*8+32], FPR3
+movaps    [STR0 + GPR1*8+48], FPR4
 

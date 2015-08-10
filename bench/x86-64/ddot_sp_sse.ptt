@@ -1,0 +1,13 @@
+STREAMS 2
+TYPE SINGLE
+FLOPS 2
+BYTES 8
+DESC Single-precision dot product of two vectors, optimized for SSE
+xorps FPR1, FPR1
+LOOP 8
+movaps FPR2, [STR0 + GPR1 * 4]
+mulps  FPR2, [STR1 + GPR1 * 4]
+addps  FPR1, FPR2
+movaps FPR3, [STR0 + GPR1 * 4 + 16]
+mulps  FPR3, [STR1 + GPR1 * 4 + 16]
+addps  FPR1, FPR3

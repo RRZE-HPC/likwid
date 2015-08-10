@@ -1,0 +1,14 @@
+STREAMS 2
+TYPE SINGLE
+FLOPS 2
+BYTES 12
+DESC Single-precision linear combination of two vectors, optimized for AVX
+vmovaps ymm7, [rip+SCALAR]
+LOOP 16
+vmulpd    ymm1, ymm7, [STR0 + GPR1*4]
+vaddpd    ymm1, ymm1, [STR1 + GPR1*4]
+vmulpd    ymm2, ymm7, [STR0 + GPR1*4+32]
+vaddpd    ymm2, ymm2, [STR1 + GPR1*4+32]
+vmovaps    [STR1 + GPR1*4], ymm1
+vmovaps    [STR1 + GPR1*4+32], ymm2
+

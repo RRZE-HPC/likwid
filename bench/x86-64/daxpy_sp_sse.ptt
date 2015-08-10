@@ -1,0 +1,13 @@
+STREAMS 2
+TYPE SINGLE
+FLOPS 2
+BYTES 12
+DESC Single-precision linear combination of two vectors, optimized for SSE
+movaps FPR7, [rip+SCALAR]
+LOOP 8
+vmulss    FPR1, FPR7, [STR0 + GPR1*4]
+vaddss    FPR1, FPR1, [STR1 + GPR1*4]
+vmulss    FPR2, FPR7, [STR0 + GPR1*4+16]
+vaddss    FPR2, FPR2, [STR1 + GPR1*4+16]
+movaps    [STR1 + GPR1*4], FPR1
+movaps    [STR1 + GPR1*4+16], FPR2

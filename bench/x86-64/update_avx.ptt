@@ -2,6 +2,7 @@ STREAMS 1
 TYPE DOUBLE
 FLOPS 0
 BYTES 16
+DESC Double-precision vector update, optimized for AVX
 LOOP 16
 vmovaps    ymm1, [STR0 + GPR1 * 8]
 vmovaps    [STR0 + GPR1 * 8]     , ymm1

@@ -1,0 +1,13 @@
+STREAMS 4
+TYPE SINGLE
+FLOPS 2
+BYTES 16
+DESC Single-precision triad A(i) = B(i) * C(i) + D(i), optimized for AVX
+LOOP 16
+vmovaps ymm1, [STR1 + GPR1*4]
+vmovaps ymm2, [STR2 + GPR1*4]
+vmovaps ymm3, [STR3 + GPR1*4]
+vmulps  ymm0, ymm1, ymm2
+vaddps  ymm0, ymm0, ymm3
+vmovaps [STR0 + GPR1*4], ymm0
+

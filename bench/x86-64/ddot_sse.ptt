@@ -1,0 +1,19 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 2
+BYTES 16
+DESC Double-precision dot product of two vectors, optimized for SSE
+xorpd FPR1, FPR1
+LOOP 8
+movaps FPR2, [STR0 + GPR1 * 8]
+mulpd  FPR2, [STR1 + GPR1 * 8]
+addpd  FPR1, FPR2
+movaps FPR3, [STR0 + GPR1 * 8 + 16]
+mulpd  FPR3, [STR1 + GPR1 * 8 + 16]
+addpd  FPR1, FPR3
+movaps FPR4, [STR0 + GPR1 * 8 + 32]
+mulpd  FPR4, [STR1 + GPR1 * 8 + 32]
+addpd  FPR1, FPR4
+movaps FPR5, [STR0 + GPR1 * 8 + 48]
+mulpd  FPR5, [STR1 + GPR1 * 8 + 48]
+addpd  FPR1, FPR5

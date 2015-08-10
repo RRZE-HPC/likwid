@@ -2,6 +2,7 @@ STREAMS 2
 TYPE DOUBLE
 FLOPS 0
 BYTES 16
+DESC Double-precision vector copy, uses AVX and non-temporal stores
 LOOP 32
 vmovaps    ymm1, [STR0 + GPR1 * 8]
 vmovaps    ymm2, [STR0 + GPR1 * 8 + 32]

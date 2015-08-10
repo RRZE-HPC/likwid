@@ -1,0 +1,19 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 2
+BYTES 16
+DESC Double-precision dot product of two vectors, optimized for AVX
+vxorpd ymm0, ymm0, ymm0
+LOOP 16
+vmovaps ymm1,       [STR0 + GPR1 * 8]
+vmulpd  ymm1, ymm1, [STR1 + GPR1 * 8]
+vaddpd  ymm0, ymm0, ymm1
+vmovaps ymm2,       [STR0 + GPR1 * 8 + 32]
+vmulpd  ymm2, ymm2, [STR1 + GPR1 * 8 + 32]
+vaddpd  ymm0, ymm0, ymm2
+vmovaps ymm3,       [STR0 + GPR1 * 8 + 64]
+vmulpd  ymm3, ymm3, [STR1 + GPR1 * 8 + 64]
+vaddpd  ymm0, ymm0, ymm3
+vmovaps ymm4,       [STR0 + GPR1 * 8 + 96]
+vmulpd  ymm4, ymm4, [STR1 + GPR1 * 8 + 96]
+vaddpd  ymm0, ymm0, ymm4

@@ -2,6 +2,7 @@ STREAMS 2
 TYPE DOUBLE
 FLOPS 2
 BYTES 24
+DESC Double-precision linear combination of two vectors, optimized for AVX
 vmovaps ymm7, [rip+SCALAR]
 LOOP 24
 vmulpd    ymm1, ymm7, [STR0 + GPR1*8]

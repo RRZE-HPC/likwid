@@ -2,6 +2,7 @@ STREAMS 1
 TYPE DOUBLE
 FLOPS 0
 BYTES 8
+DESC Double-precision cache line store, only stores first element of each cache line.
 movaps FPR1, [rip+SCALAR]
 movaps FPR2, [rip+SCALAR]
 movaps FPR3, [rip+SCALAR]

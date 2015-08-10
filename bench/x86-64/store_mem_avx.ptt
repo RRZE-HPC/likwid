@@ -2,6 +2,7 @@ STREAMS 1
 TYPE DOUBLE
 FLOPS 0
 BYTES 8
+DESC Double-precision store, uses AVX and non-temporal stores
 vmovaps ymm1, [rip+SCALAR]
 vmovaps ymm2, [rip+SCALAR]
 vmovaps ymm3, [rip+SCALAR]

@@ -2,6 +2,7 @@ STREAMS 1
 TYPE SINGLE
 FLOPS 1
 BYTES 4
+DESC Single-precision sum of a vector, optimized for AVX
 vxorps  ymm1, ymm1, ymm1
 vmovaps ymm2, ymm1
 vmovaps ymm3, ymm1

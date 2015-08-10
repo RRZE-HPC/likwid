@@ -2,12 +2,13 @@ STREAMS 1
 TYPE DOUBLE
 FLOPS 0
 BYTES 8
+DESC Double-precision store, optimized for AVX
 vmovaps ymm1, [rip+SCALAR]
 vmovaps ymm2, [rip+SCALAR]
 vmovaps ymm3, [rip+SCALAR]
 vmovaps ymm4, [rip+SCALAR]
 LOOP 16
-#mov       GPR14, [STR0 + GPR1 * 8 + 256] 
+#mov       GPR14, [STR0 + GPR1 * 8 + 256]
 vmovaps    [STR0 + GPR1 * 8]     , ymm1
 vmovaps    [STR0 + GPR1 * 8 + 32], ymm2
 vmovaps    [STR0 + GPR1 * 8 + 64], ymm3

@@ -2,8 +2,9 @@ STREAMS 1
 TYPE DOUBLE
 FLOPS 0
 BYTES 8
+DESC Double-precision load, optimized for AVX
 LOOP 16
-mov        GPR12, [STR0 + GPR1 * 8 + 256]
+#mov        GPR12, [STR0 + GPR1 * 8 + 256]
 vmovaps    ymm1, [STR0 + GPR1 * 8]
 vmovaps    ymm2, [STR0 + GPR1 * 8 + 32]
 vmovaps    ymm3, [STR0 + GPR1 * 8 + 64]

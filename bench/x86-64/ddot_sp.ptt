@@ -1,0 +1,19 @@
+STREAMS 2
+TYPE SINGLE
+FLOPS 2
+BYTES 8
+DESC Single-precision dot product of two vectors, only scalar operations
+xorps FPR1, FPR1
+LOOP 4
+movss FPR2, [STR0 + GPR1 * 4]
+mulss FPR2, [STR1 + GPR1 * 4]
+addss FPR1, FPR2
+movss FPR3, [STR0 + GPR1 * 4 + 4]
+mulss FPR3, [STR1 + GPR1 * 4 + 4]
+addss FPR1, FPR3
+movss FPR4, [STR0 + GPR1 * 4 + 8]
+mulss FPR4, [STR1 + GPR1 * 4 + 8]
+addss FPR1, FPR4
+movss FPR5, [STR0 + GPR1 * 4 + 12]
+mulss FPR5, [STR1 + GPR1 * 4 + 12]
+addss FPR1, FPR5
