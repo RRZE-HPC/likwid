@@ -238,6 +238,10 @@ affinity_init()
         tmp = treeFillNextEntries(cpuid_topology.topologyTree,
                                   domains[currentDomain + i].processorList,
                                   i, 0, domains[currentDomain + i].numberOfProcessors);
+        for ( int j = 0; j < domains[currentDomain + i].numberOfProcessors; j++ )
+        {
+            affinity_core2node_lookup[domains[currentDomain + i].processorList[j]] = i;
+        }
         domains[currentDomain + i].numberOfProcessors = tmp;
     }
 
@@ -331,15 +335,6 @@ affinity_init()
             offset += numberOfProcessorsPerSocket;
         }
         domains[currentDomain + subCounter].numberOfProcessors = tmp;
-    }
-
-    /* This is redundant ;-). Create thread to node lookup */
-    for ( uint32_t i = 0; i < numa_info.numberOfNodes; i++ )
-    {
-        for ( int j = 0; j < numa_info.nodes[i].numberOfProcessors; j++ )
-        {
-            affinity_core2node_lookup[numa_info.nodes[i].processors[j]] = i;
-        }
     }
 
     affinity_numberOfDomains = numberOfDomains;
