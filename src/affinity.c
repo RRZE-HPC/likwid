@@ -238,7 +238,7 @@ affinity_init()
         tmp = treeFillNextEntries(cpuid_topology.topologyTree,
                                   domains[currentDomain + i].processorList,
                                   i, 0, domains[currentDomain + i].numberOfProcessors);
-        for ( int j = 0; j < domains[currentDomain + i].numberOfProcessors; j++ )
+        for ( int j = 0; j < tmp; j++ )
         {
             affinity_core2node_lookup[domains[currentDomain + i].processorList[j]] = i;
         }
