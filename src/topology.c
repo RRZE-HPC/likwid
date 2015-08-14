@@ -72,10 +72,12 @@ static char* haswell_ep_str = "Intel Xeon Haswell EN/EP/EX processor";
 static char* broadwell_str = "Intel Core Broadwell processor";
 static char* broadwell_d_str = "Intel Xeon D Broadwell processor";
 static char* broadwell_ep_str = "Intel Xeon Broadwell EN/EP/EX processor";
+static char* skylake_str = "Intel Skylake processor"
 static char* nehalem_ex_str = "Intel Nehalem EX processor";
 static char* westmere_ex_str = "Intel Westmere EX processor";
 static char* xeon_mp_string = "Intel Xeon MP processor";
-static char* xeon_phi_string = "Intel Xeon Phi Coprocessor";
+static char* xeon_phi_string = "Intel Xeon Phi (Knights Corner) Coprocessor";
+static char* xeon_phi2_string = "Intel Xeon Phi (Knights Landing) Coprocessor";
 static char* barcelona_str = "AMD Barcelona processor";
 static char* shanghai_str = "AMD Shanghai processor";
 static char* istanbul_str = "AMD Istanbul processor";
@@ -109,7 +111,9 @@ static char* short_ivybridge = "ivybridge";
 static char* short_ivybridge_ep = "ivybridgeEP";
 static char* short_sandybridge = "sandybridge";
 static char* short_sandybridge_ep = "sandybridgeEP";
+static char* short_skylake = "skylake";
 static char* short_phi = "phi";
+static char* short_phi2 = "phi2";
 static char* short_k8 = "k8";
 static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
@@ -599,6 +603,17 @@ int topology_setName(void)
                     cpuid_info.short_name = short_broadwell_ep;
                     break;
 
+                case SKYLAKE1:
+                case SKYLAKE2:
+                    cpuid_info.name = skylake_str;
+                    cpuid_info.short_name = short_skylake;
+                    break;
+
+                case XEON_PHI2:
+                    cpuid_info.name = xeon_phi2_string;
+                    cpuid_info.short_name = short_phi2;
+                    break;
+
                 case NEHALEM_EX:
                     cpuid_info.name = nehalem_ex_str;
                     cpuid_info.short_name = short_nehalemEX;
@@ -934,6 +949,8 @@ void print_supportedCPUs (void)
     printf("\t%s\n",atom_airmont_str);
     printf("\t%s\n",xeon_phi_string);
     printf("\t%s\n\n",broadwell_str);
+    printf("\t%s\n\n",broadwell_ep_str);
+    printf("\t%s\n\n",skylake_str);
 
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);

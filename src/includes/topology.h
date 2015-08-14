@@ -93,9 +93,12 @@ struct topology_functions {
 #define BROADWELL            0x3DU
 #define BROADWELL_E          0x4FU
 #define BROADWELL_D          0x56U
+#define SKYLAKE1             0x4EU
+#define SKYLAKE2             0x5EU
 
 /* Intel MIC */
 #define XEON_PHI           0x01U
+#define XEON_PHI2          0x57U
 
 /* AMD K10 */
 #define BARCELONA      0x02U

@@ -98,6 +98,8 @@
 #define BROADWELL            0x3DU
 #define BROADWELL_E          0x4FU
 #define BROADWELL_D          0x56U
+#define SKYLAKE1             0x4EU
+#define SKYLAKE2             0x5EU
 
 #define PCI_ROOT_PATH    "/proc/bus/pci/"
 #define MAX_PATH_LENGTH   60
@@ -940,7 +942,9 @@ int main(void)
                          (model == HASWELL_M2) ||
                          (model == BROADWELL) ||
                          (model == BROADWELL_D) ||
-                         (model == BROADWELL_E))
+                         (model == BROADWELL_E) ||
+                         (model == SKYLAKE1) ||
+                         (model == SKYLAKE2))
                 {
                     allowed = allowed_haswell;
                 }

@@ -67,6 +67,7 @@
 #include <perfmon_kabini.h>
 #include <perfmon_silvermont.h>
 #include <perfmon_broadwell.h>
+#include <perfmon_skylake.h>
 
 
 PerfmonEvent* eventHash;
@@ -744,6 +745,17 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersBroadwell;
                     break;
 
+
+                case SKYLAKE1:
+                case SKYLAKE2:
+                    box_map = skylake_box_map;
+                    eventHash = skylake_arch_events;
+                    counter_map = skylake_counter_map;
+                    perfmon_numArchEvents = perfmon_numArchEventsSkylake;
+                    perfmon_numCounters = perfmon_numCountersSkylake;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersSkylake;
+                    break;
+
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
                     break;
@@ -961,6 +973,18 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_readCountersThread = perfmon_readCountersThread_broadwell;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_broadwell;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_broadwell;
+                    break;
+
+                case SKYLAKE1:
+                case SKYLAKE2:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_skylake;
+                    perfmon_startCountersThread = perfmon_startCountersThread_skylake;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_skylake;
+                    perfmon_readCountersThread = perfmon_readCountersThread_skylake;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_skylake;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_skylake;
                     break;
 
                 default:
