@@ -136,7 +136,9 @@
 #define MSR_MIC_PERF_GLOBAL_STATUS    0x02D
 #define MSR_MIC_PERF_GLOBAL_OVF_CTRL  0x02E
 #define MSR_MIC_PERF_GLOBAL_CTRL      0x02F
-
+/* Xeon Phi (Knights Landing)*/
+#define MSR_MIC2_PMC0                 0x4C1
+#define MSR_MIC2_PMC1                 0x4C2
 
 
 /* Core v1/v2 type uncore
