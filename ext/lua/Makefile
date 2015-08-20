@@ -42,10 +42,10 @@ all: $(BUILD_DIR) $(OBJ)  $(LIBLUA) $(INTERPRETER)
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
 
-$(STATIC_LIBLUA):
+$(STATIC_LIBLUA): $(OBJ)
 	$(Q)${AR} -cq $(LIBLUA) $(OBJ)
 
-$(SHARED_LIBLUA):
+$(SHARED_LIBLUA): $(OBJ)
 	$(Q)$(CC) $(LFLAGS) -Wl,-soname,$(LIBLUA).$(VERSION) -shared -fPIC -o $(LIBLUA) $(OBJ) $(LIBS)
 
 $(INTERPRETER): $(SHARED_LIBLUA) $(BUILD_DIR)/lua.o
