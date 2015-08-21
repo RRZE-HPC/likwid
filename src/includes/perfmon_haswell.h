@@ -1071,6 +1071,18 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
                         eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
                     }
                     break;
+                case QBOX0FIX:
+                case QBOX1FIX:
+                    if (haveLock && pci_checkDevice(dev, cpu_id))
+                    {
+                        if (eventSet->events[i].event.eventId != 0x00)
+                        {
+                            CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
+                            VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST tmp, START_QBOXFIX);
+                            eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                        }
+                    }
+                    break;
 
                 default:
                     break;
@@ -1416,6 +1428,7 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                              (eventSet->events[i].event.eventId == 0x02))
                     {
                         HPMread(cpu_id, dev, counter1, &counter_result);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_QBOXFIX);
                         counter_result = field64(counter_result, 0, box_map[type].regWidth);
                     }
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
@@ -1651,6 +1664,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                              (eventSet->events[i].event.eventId == 0x02))
                     {
                         HPMread(cpu_id, dev, counter1, &counter_result);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_QBOXFIX);
                         counter_result = field64(counter_result, 0, box_map[type].regWidth);
                     }
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
