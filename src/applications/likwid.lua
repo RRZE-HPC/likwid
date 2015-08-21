@@ -738,10 +738,14 @@ local function get_groups()
     local cpuinfo = likwid.getCpuInfo()
     if cpuinfo == nil then return 0, {} end
     local f = io.popen("ls " .. likwid.groupfolder .. "/" .. cpuinfo["short_name"] .."/*.txt 2>/dev/null")
-    if f == nil then
-        print("Cannot read groups for architecture "..cpuinfo["short_name"])
-        return 0, {}
+    t = stringsplit(f:read("*a"),"\n")
+    f:close()
+    for i, a in pairs(t) do
+        if a ~= "" then
+            table.insert(groups,a:sub((a:match'^.*()/')+1,a:len()-4))
+        end
     end
+    local f = io.popen("ls " ..os.getenv("HOME") .. "/.likwid/groups/" .. cpuinfo["short_name"] .."/*.txt 2>/dev/null")
     t = stringsplit(f:read("*a"),"\n")
     f:close()
     for i, a in pairs(t) do
@@ -1311,12 +1315,17 @@ local function getMarkerResults(filename, group_list, num_cpus)
     local results = {}
     local f = io.open(filename, "r")
     if f == nil then
-        print("Have you called LIKWID_MARKER_CLOSE?")
         print(string.format("Cannot find intermediate results file %s", filename))
+        print("This happens when the application exited before calling LIKWID_MARKER_CLOSE.")
         return {}, {}
     end
-    local lines = stringsplit(f:read("*all"),"\n")
+    local finput = f:read("*all")
     f:close()
+    if finput:len() == 0 then
+        print("Marker file is empty. This seems like a failure in LIKWID_MARKER_CLOSE!")
+        return {}, {}
+    end
+    local lines = stringsplit(finput,"\n")
 
     -- Read first line with general counts
     local tmpList = stringsplit(lines[1]," ")
