@@ -111,7 +111,9 @@ int ivb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 case EVENT_OPTION_ANYTHREAD:
                     flags |= (1ULL<<21);
                     break;
-
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= (event->options[j].value & 0xFFULL) << 24;
+                    break;
                 case EVENT_OPTION_MATCH0:
                     offcore_flags |= (event->options[j].value & 0x8FFF);
                     break;
