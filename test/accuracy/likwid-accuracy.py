@@ -34,8 +34,9 @@ gnu_marks = [5,13,9,2]#,3,4,6,7,8,9,10,11,12,14,15]
 
 units = { "L2" : "MByte/s", "L3" : "MByte/s", "MEM" : "MByte/s",
           "FLOPS_SP" : "MFLOP/s", "FLOPS_DP" : "MFLOP/s", "FLOPS_AVX" : "MFLOP/s",
-          "DATA": "Load/Store ratio", "BRANCH" : "Instructions per branch"}
-
+          "DATA": "Load/Store ratio", "BRANCH" : "Instructions per branch",
+          "CLOCK" : "Instructions", "UOPS" : "UOPs"}
+translate_group = {"CLOCK" : "INST_RETIRED_ANY", "UOPS" : "UOPS_RETIRED_ANY"}
 
 wiki = False
 papi = False
@@ -52,7 +53,7 @@ corrected_set = {}
 marker_set = {}
 papi_set = {}
 
-if not os.path.exists(bench_plain) or not os.path.exists(bench_marker):
+if not os.path.exists(bench_marker):
     print "Please run make before using likwid-accuracy.py"
     sys.exit(1)
 if not os.path.exists(perfctr):
@@ -160,7 +161,10 @@ def legend(file1, file2):
 
 
 def write_pgf(group, test, plain_file, marker_file, scale=0.0,papi_file=None, execute=False, script=None):
-    filename = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+".tex")
+    printgrp = group
+    if translate_group.has_key(group):
+        printgrp = translate_group[group]
+    filename = os.path.join(os.path.join(resultfolder,hostname),printgrp+"_"+test+".tex")
     sizelist = []
     sizeindex = []
     lentry = "north east"
@@ -175,7 +179,7 @@ def write_pgf(group, test, plain_file, marker_file, scale=0.0,papi_file=None, ex
     fp.write("\\begin{document}\n")
     fp.write("% cut from here\n")
     fp.write("\\begin{tikzpicture}\n")
-    fp.write("\\begin{axis}[xmin=0,xmax=%d,xlabel={Size - %d runs each}, ylabel={%s},title={Group %s - Test %s},legend pos=%s,xtick=data,width=.75\\textwidth,xticklabels={%s},xtick={%s}]\n" % (test_set[group][test]["RUNS"]*len(test_set[group][test]["variants"]),test_set[group][test]["RUNS"],units[group],group.replace("_","\_"),test.replace("_","\_"),lentry,",".join(sizelist),",".join(sizeindex)))
+    fp.write("\\begin{axis}[xmin=0,xmax=%d,xlabel={Size - %d runs each}, ylabel={%s},title={Group %s - Test %s},legend pos=%s,xtick=data,width=.75\\textwidth,xticklabels={%s},xtick={%s}]\n" % (test_set[group][test]["RUNS"]*len(test_set[group][test]["variants"]),test_set[group][test]["RUNS"],units[group],printgrp.replace("_","\_"),test.replace("_","\_"),lentry,",".join(sizelist),",".join(sizeindex)))
     fp.write("\\addplot+[red,mark=square*,mark options={draw=red, fill=red}] table {%s};\n" % (os.path.basename(plain_file),))
     fp.write("\\addlegendentry{bench};\n")
     if scale > 0.0:
@@ -203,17 +207,21 @@ def write_pgf(group, test, plain_file, marker_file, scale=0.0,papi_file=None, ex
     return filename
     
 def write_gnuplot(group, test, plain_file, marker_file, scale = 0.0, papi_file=None, execute=False, script=None):
-    filename = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+".plot")
+    printgrp = group
+    if translate_group.has_key(group):
+        printgrp = translate_group[group]
+    filename = os.path.join(os.path.join(resultfolder,hostname),printgrp+"_"+test+".plot")
     fp = open(filename,'w')
     for i,color in enumerate(gnu_colors):
         fp.write("set style line %d linetype 1 linecolor rgb '%s' lw 2 pt %s\n" % (i+1, color,gnu_marks[i]))
     fp.write("set terminal jpeg\n")
-    fp.write("set title 'Group %s - Test %s'\n" % (group, test,))
+    fp.write("set encoding utf8\n")
+    fp.write("set title 'Group %s - Test %s'\n" % (printgrp, test,))
     if legend(plain_file, marker_file) == "no":
         fp.write("set key top right\n")
     else:
         fp.write("set key bottom right\n")
-    fp.write("set output '%s'\n" % (os.path.basename(os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+".jpg")),))
+    fp.write("set output '%s'\n" % (os.path.basename(os.path.join(os.path.join(resultfolder,hostname),printgrp+"_"+test+".jpg")),))
     fp.write("set xlabel 'Size - %d runs each'\n" % (test_set[group][test]["RUNS"],))
     fp.write("set ylabel '%s'\n" % (units[group],))
     fp.write("set yrange  [0:]\n")
@@ -242,9 +250,12 @@ def write_gnuplot(group, test, plain_file, marker_file, scale = 0.0, papi_file=N
     return filename
 
 def write_grace(group, test, plain_file, correct_file, marker_file, papi_file=None, execute=False, script=None):
-    filename = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+".bat")
-    agrname = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+".agr")
-    pngname = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+".png")
+    printgrp = group
+    if translate_group.has_key(group):
+        printgrp = translate_group[group]
+    filename = os.path.join(os.path.join(resultfolder,hostname),printgrp+"_"+test+".bat")
+    agrname = os.path.join(os.path.join(resultfolder,hostname),printgrp+"_"+test+".agr")
+    pngname = os.path.join(os.path.join(resultfolder,hostname),printgrp+"_"+test+".png")
     if execute or script:
         plain_file = os.path.basename(plain_file)
         marker_file = os.path.basename(marker_file)
@@ -258,7 +269,7 @@ def write_grace(group, test, plain_file, correct_file, marker_file, papi_file=No
     out_options = "-hdevice PNG -printfile %s " % (pngname,)
     out_options += "-saveall %s" % (agrname,)
     fp = open(filename,'w')
-    fp.write("title \"Group %s - Test %s\"\n" % (group, test,))
+    fp.write("title \"Group %s - Test %s\"\n" % (printgrp, test,))
     fp.write("xaxis label \"Run\"\n")
     fp.write("xaxis label char size 1.2\n")
     fp.write("xaxis ticklabel char size 1.2\n" % (units[group],))

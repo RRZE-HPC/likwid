@@ -42,7 +42,7 @@ def get_caches():
     return level
 
 def get_important_tests():
-    important = ["L2", "L3", "MEM"]
+    important = ["L2", "L3", "MEM", "CLOCK", "UOPS"]
     adjust = []
     regular = []
     fp = open("SET.txt")
@@ -67,21 +67,17 @@ def adjust_tests(testgroup):
     if level:
         level = int(level.group(1))-1
     else:
-        level = 3
-    print testgroup, level
-    print cachesizes[level-1], cachesizes[level]
+        level = len(cachesizes)-1
     min_size = int((cachesizes[level-1] + (0.3*cachesizes[level-1]))/1024)
     max_size = int((cachesizes[level] - (0.2*cachesizes[level]))/1024)
     diff = (cachesizes[level] - cachesizes[level-1])/1024
     step = diff/5
-    print min_size+step, min_size+(2*step), min_size+(3*step), min_size+(4*step)
     i = 0
     while i < len(f):
         if not f[i].startswith("VARIANT"):
             newdata.append(f[i]+"\n")
             i+=1
         else:
-            print(f[i])
             count = 0
             for j in range(i,i+4):
                 if f[j].startswith("VARIANT"):
@@ -100,7 +96,10 @@ def adjust_tests(testgroup):
 level = get_caches()
 adjust, regular = get_important_tests()
 for testgroup in adjust:
+    print("Adjusting "+testgroup)
     adjust_tests(testgroup)
-print(regular)
+if len(regular) > 0:
+    print("Not adjusting:")
+    print(regular)
 
 
