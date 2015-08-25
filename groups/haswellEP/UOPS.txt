@@ -1,0 +1,31 @@
+SHORT UOPs execution info
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  UOPS_ISSUED_ANY
+PMC1  UOPS_EXECUTED_THREAD
+PMC2  UOPS_RETIRED_ALL
+PMC3  UOPS_ISSUED_FLAGS_MERGE
+
+
+
+METRICS
+Runtime (RDTSC) [s] time 
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Issued UOPs PMC0
+Executed UOPs PMC1
+Retired UOPs PMC2
+Wasted issued UOPs (PMC0-PMC3)-PMC1
+Wasted executed UOPs PMC1-PMC2
+
+LONG
+Formula:
+Power =  PWR_PKG_ENERGY / time
+-
+Haswell implements the new RAPL interface. This interface enables to
+monitor the consumed energy on the package (socket) level.
+
