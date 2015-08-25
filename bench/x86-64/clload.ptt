@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 0
 BYTES 8
 DESC Double-precision cache line load, only loads first element of each cache line.
+LOADS 1
+STORES 0
+INSTR_CONST 16
+INSTR_LOOP 7
+UOPS 6
 LOOP 32
 movaps       FPR1, [STR0 + GPR1 * 8]
 movaps       FPR2, [STR0 + GPR1 * 8 + 64]

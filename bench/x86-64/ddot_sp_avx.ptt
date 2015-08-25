@@ -3,6 +3,11 @@ TYPE SINGLE
 FLOPS 2
 BYTES 8
 DESC Single-precision dot product of two vectors, optimized for AVX
+LOADS 2
+STORES 0
+INSTR_CONST 17
+INSTR_LOOP 9
+UOPS 10
 vxorps ymm0, ymm0, ymm0
 LOOP 16
 vmovaps ymm1,       [STR0 + GPR1 * 4]

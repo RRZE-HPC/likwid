@@ -3,6 +3,11 @@ TYPE SINGLE
 FLOPS 1
 BYTES 4
 DESC Single-precision sum of a vector, optimized for AVX
+LOADS 1
+STORES 0
+INSTR_CONST 20
+INSTR_LOOP 7
+UOPS 10
 vxorps  ymm1, ymm1, ymm1
 vmovaps ymm2, ymm1
 vmovaps ymm3, ymm1

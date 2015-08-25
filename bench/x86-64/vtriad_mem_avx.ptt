@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 2
 BYTES 32
 DESC Double-precision triad A(i) = B(i) * C(i) + D(i), uses AVX and non-temporal stores
+LOADS 3
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 7
+UOPS 9
 LOOP 4
 vmovaps    ymm1, [STR1 + GPR1*8]
 vmulpd     ymm1, ymm1, [STR2 + GPR1*8]

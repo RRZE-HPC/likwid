@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 0
 BYTES 8
 DESC Double-precision load, optimized for SSE
+LOADS 1
+STORES 0
+INSTR_CONST 16
+INSTR_LOOP 7
+UOPS 6
 LOOP 8
 #mov       GPR12, [STR0 + GPR1 * 8 + 256]
 movaps    FPR1, [STR0 + GPR1 * 8]

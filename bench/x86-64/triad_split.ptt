@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 2
 BYTES 32
 DESC Double-precision triad A(i) = B(i) * C(i) + D(i), uses SSE but no overlapping of load, calculate and store phase
+LOADS 3
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 27
+UOPS 30
 LOOP 8
 movaps    FPR1, [STR1 + GPR1*8]
 movaps    FPR2, [STR1 + GPR1*8+16]

@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 2
 BYTES 16
 DESC Double-precision dot product of two vectors, optimized for SSE
+LOADS 2
+STORES 0
+INSTR_CONST 17
+INSTR_LOOP 15
+UOPS 18
 xorpd FPR1, FPR1
 LOOP 8
 movaps FPR2, [STR0 + GPR1 * 8]

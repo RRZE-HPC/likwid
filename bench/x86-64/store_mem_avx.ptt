@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 0
 BYTES 8
 DESC Double-precision store, uses AVX and non-temporal stores
+LOADS 0
+STORES 1
+INSTR_CONST 20
+INSTR_LOOP 7
+UOPS 10
 vmovaps ymm1, [rip+SCALAR]
 vmovaps ymm2, [rip+SCALAR]
 vmovaps ymm3, [rip+SCALAR]

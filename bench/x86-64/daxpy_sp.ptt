@@ -3,6 +3,11 @@ TYPE SINGLE
 FLOPS 2
 BYTES 12
 DESC Single-precision linear combination of two vectors, only scalar operations
+LOADS 2
+STORES 1
+INSTR_CONST 17
+INSTR_LOOP 32
+UOPS 50
 movss FPR9, [rip+SCALAR]
 LOOP 8
 movss    FPR1, [STR0 + GPR1*4]

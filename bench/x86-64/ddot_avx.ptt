@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 2
 BYTES 16
 DESC Double-precision dot product of two vectors, optimized for AVX
+LOADS 2
+STORES 0
+INSTR_CONST 17
+INSTR_LOOP 15
+UOPS 18
 vxorpd ymm0, ymm0, ymm0
 LOOP 16
 vmovaps ymm1,       [STR0 + GPR1 * 8]

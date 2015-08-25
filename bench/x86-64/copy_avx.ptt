@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 0
 BYTES 16
 DESC Double-precision vector copy, optimized for AVX
+LOADS 1
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 11
+UOPS 14
 LOOP 16
 vmovaps    ymm1, [STR0 + GPR1 * 8]
 vmovaps    ymm2, [STR0 + GPR1 * 8 + 32]

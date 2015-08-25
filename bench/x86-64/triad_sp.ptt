@@ -3,6 +3,11 @@ TYPE SINGLE
 FLOPS 2
 BYTES 16
 DESC Single-precision triad A(i) = B(i) * C(i) + D(i), only scalar operations
+LOADS 3
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 35
+UOPS 58
 LOOP 8
 movss    FPR1, [STR1 + GPR1*4]
 movss    FPR2, [STR1 + GPR1*4 + 4]

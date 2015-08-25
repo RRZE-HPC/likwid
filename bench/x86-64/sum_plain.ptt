@@ -3,6 +3,11 @@ TYPE SINGLE
 FLOPS 1
 BYTES 4
 DESC Single-precision sum of a vector, only scalar operations
+LOADS 1
+STORES 0
+INSTR_CONST 20
+INSTR_LOOP 7
+UOPS 10
 xorps FPR1, FPR1
 xorps FPR2, FPR2
 xorps FPR3, FPR3

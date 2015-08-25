@@ -3,6 +3,11 @@ TYPE SINGLE
 FLOPS 2
 BYTES 8
 DESC Single-precision dot product of two vectors, optimized for SSE
+LOADS 2
+STORES 0
+INSTR_CONST 17
+INSTR_LOOP 9
+UOPS 10
 xorps FPR1, FPR1
 LOOP 8
 movaps FPR2, [STR0 + GPR1 * 4]

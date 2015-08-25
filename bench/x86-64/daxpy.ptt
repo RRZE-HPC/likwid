@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 2
 BYTES 24
 DESC Double-precision linear combination of two vectors, only scalar operations
+LOADS 2
+STORES 1
+INSTR_CONST 17
+INSTR_LOOP 19
+UOPS 26
 movsd FPR7, [rip+SCALAR]
 LOOP 4
 movsd    FPR1, [STR0 + GPR1*8]

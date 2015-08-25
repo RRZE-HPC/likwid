@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 2
 BYTES 32
 DESC Double-precision triad A(i) = B(i) * C(i) + D(i), only scalar operations
+LOADS 3
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 19
+UOPS 30
 LOOP 4
 movsd    FPR1, [STR1 + GPR1*8]
 movsd    FPR2, [STR1 + GPR1*8+8]

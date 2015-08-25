@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 1
 BYTES 8
 DESC Double-precision sum of a vector, optimized for SSE
+LOADS 1
+STORES 0
+INSTR_CONST 24
+INSTR_LOOP 11
+UOPS 18
 xorpd FPR1, FPR1
 movapd FPR2, FPR1
 movapd FPR3, FPR1

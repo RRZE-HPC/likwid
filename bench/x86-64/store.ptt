@@ -3,6 +3,11 @@ TYPE DOUBLE
 FLOPS 0
 DESC Double-precision store, only scalar operations
 BYTES 8
+LOADS 0
+STORES 1
+INSTR_CONST 20
+INSTR_LOOP 7
+UOPS 10
 movsd FPR1, [rip+SCALAR]
 movsd FPR2, [rip+SCALAR]
 movsd FPR3, [rip+SCALAR]

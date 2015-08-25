@@ -3,11 +3,18 @@ TYPE DOUBLE
 FLOPS 0
 BYTES 8
 DESC Double-precision load, only scalar operations
-LOOP 4
-#mov       GPR12, [STR0 + GPR1 * 8 + 256]
+LOADS 1
+STORES 0
+INSTR_CONST 16
+INSTR_LOOP 11
+UOPS 10
+LOOP 8
 movsd    FPR1, [STR0 + GPR1 * 8]
 movsd    FPR2, [STR0 + GPR1 * 8 + 8]
 movsd    FPR3, [STR0 + GPR1 * 8 + 16]
 movsd    FPR4, [STR0 + GPR1 * 8 + 24]
-
+movsd    FPR5, [STR0 + GPR1 * 8 + 32]
+movsd    FPR6, [STR0 + GPR1 * 8 + 40]
+movsd    FPR7, [STR0 + GPR1 * 8 + 48]
+movsd    FPR8, [STR0 + GPR1 * 8 + 56]
 
