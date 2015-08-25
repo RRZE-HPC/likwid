@@ -128,6 +128,7 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [BBOX1] = "Home Agent box 1",
     [RBOX0] = "Routing box 0",
     [RBOX1] = "Routing box 1",
+    [RBOX2] = "Routing box 2",
     [WBOX] = "Power control box",
     [WBOX0FIX] = "Power control box fixed counter 0",
     [WBOX1FIX] = "Power control box fixed counter 1",
