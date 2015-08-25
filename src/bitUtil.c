@@ -72,18 +72,18 @@ extractBitField(uint32_t inField, uint32_t width, uint32_t offset)
 uint32_t
 getBitFieldWidth(uint32_t number)
 {
-    uint32_t fieldWidth;
+    uint32_t fieldWidth=0;
 
     number--;
     if (number == 0)
     {
         return 0;
     }
-
+#ifdef __x86_64
     __asm__ volatile ( "bsr %%eax, %%ecx\n\t"
             : "=c" (fieldWidth)
             : "a"(number));
-
+#endif
 
     return fieldWidth+1;  /* bsr returns the position, we want the width */
 }
