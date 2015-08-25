@@ -4,8 +4,9 @@ EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
-PMC0  L2_LINES_IN_ANY
-PMC1  L2_LINES_OUT_ANY
+PMC0  L2_RQSTS_MISS
+PMC1  L2_LINES_OUT_DIRTY_ANY
+
 
 METRICS
 Runtime (RDTSC) [s] time
@@ -14,8 +15,8 @@ Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 L3 load bandwidth [MBytes/s]  1.0E-06*PMC0*64.0/time
 L3 load data volume [GBytes]  1.0E-09*PMC0*64.0
-L3 evict bandwidth [MBytes/s]  1.0E-06*PMC1*64.0/time
-L3 evict data volume [GBytes]  1.0E-09*PMC1*64.0
+L3 evict bandwidth [MBytes/s]  1.0E-06*(PMC1)*64.0/time
+L3 evict data volume [GBytes]  1.0E-09*(PMC1)*64.0
 L3 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
 L3 data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
 
