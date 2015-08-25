@@ -1,0 +1,27 @@
+SHORT False sharing
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0 MEM_LOAD_UOPS_LLC_HIT_RETIRED_XSNP_HITM
+PMC2 MEM_LOAD_UOPS_RETIRED_ALL
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Local LLC false sharing [MByte] 1.E-06*PMC0*64
+Local LLC false sharing rate PMC0/PMC2
+
+LONG
+Formula:
+Local LLC false sharing [MByte] = 1.E-06*MEM_LOAD_UOPS_LLC_HIT_RETIRED_XSNP_HITM*64
+Local LLC false sharing rate = MEM_LOAD_UOPS_LLC_HIT_RETIRED_XSNP_HITM/MEM_LOAD_UOPS_RETIRED_ALL
+-
+False-sharing of cache lines can dramatically reduce the performance of an
+application. This performance group measures the L3 traffic induced by false-sharing.
+The false-sharing rate uses all memory loads as reference.
+Intel SandyBridge EP CPUs do not provide the events to measure the false-sharing
+over CPU socket boundaries.
