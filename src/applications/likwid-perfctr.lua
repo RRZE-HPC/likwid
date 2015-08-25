@@ -117,7 +117,7 @@ use_csv = false
 execString = nil
 outfile = nil
 gotC = false
-markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid("pid"))
+markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid())
 print_stdout = print
 cpuClock = 1
 likwid.catchSignal()
@@ -427,11 +427,18 @@ if use_wrapper and likwid.tablelength(arg)-2 == 0 and print_info == false then
     os.exit(0)
 end
 
-if use_marker and not pin_cpus then
-    print_stdout("Warning: The Marker API requires the application to run on the selected CPUs.")
-    print_stdout("Warning: likwid-perfctr does not pin the application.")
-    print_stdout("Warning: LIKWID assumes that the application does it before the first instrumented code region is started.")
-    print_stdout("Warning: Otherwise, LIKWID throws a lot of errors and probably no results are printed.")
+if use_marker then
+    if likwid.access(markerFile, "rw") ~= -1 then
+        print_stdout(string.format("ERROR: MarkerAPI file %s not accessible. Maybe a remaining file of another user.", markerFile))
+        print_stdout("Please purge all MarkerAPI files from /tmp.")
+        os.exit(1)
+    end
+    if not pin_cpus then
+        print_stdout("Warning: The Marker API requires the application to run on the selected CPUs.")
+        print_stdout("Warning: likwid-perfctr does not pin the application.")
+        print_stdout("Warning: LIKWID assumes that the application does it before the first instrumented code region is started.")
+        print_stdout("Warning: Otherwise, LIKWID throws a lot of errors and probably no results are printed.")
+    end
 end
 
 if pin_cpus then
@@ -711,13 +718,13 @@ end
 
 if use_marker == true then
     groups, results = likwid.getMarkerResults(markerFile, group_list, num_cpus)
+    os.remove(markerFile)
     if #groups == 0 and #results == 0 then
         likwid.finalize()
         likwid.putTopology()
         likwid.putConfiguration()
         os.exit(1)
     end
-    os.remove(markerFile)
     likwid.print_markerOutput(groups, results, group_list, cpulist)
 else
     results = likwid.getResults()
