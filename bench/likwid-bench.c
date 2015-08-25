@@ -195,6 +195,26 @@ int main(int argc, char** argv)
                             ownprintf("Data Type: Double precision float\n");
                             break;
                     }
+                    if (test->loads >= 0)
+                    {
+                        ownprintf("Load Ops: %d\n",test->loads);
+                    }
+                    if (test->stores >= 0)
+                    {
+                        ownprintf("Store Ops: %d\n",test->stores);
+                    }
+                    if (test->branches >= 0)
+                    {
+                        ownprintf("Branches: %d\n",test->branches);
+                    }
+                    if (test->instr_const >= 0)
+                    {
+                        ownprintf("Constant instructions: %d\n",test->instr_const);
+                    }
+                    if (test->instr_loop >= 0)
+                    {
+                        ownprintf("Loop instructions: %d\n",test->instr_loop);
+                    }
                 }
                 bdestroy(testcase);
                 exit (EXIT_SUCCESS);
@@ -405,17 +425,20 @@ int main(int argc, char** argv)
 
 
     time = (double) maxCycles / (double) cpuClock;
+    double loadStoreRatio = (double)test->loads/(double)test->stores;
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
     ownprintf("CPU Clock:\t\t%" PRIu64 "\n", cpuClock);
     ownprintf("Time:\t\t\t%e sec\n", time);
     ownprintf("Iterations:\t\t%" PRIu64 "\n", realIter);
     ownprintf("Iterations per thread:\t%" PRIu64 "\n",threads_data[0].data.iter);
+    ownprintf("Inner loop executions:\t%.0f\n", ((double)realSize)/((double)test->stride));
     ownprintf("Size:\t\t\t%" PRIu64 "\n",  realSize*test->bytes );
     ownprintf("Size per thread:\t%" PRIu64 "\n", threads_data[0].data.size*test->bytes);
     ownprintf("Number of Flops:\t%" PRIu64 "\n", (threads_data[0].data.iter * realSize *  test->flops));
     ownprintf("MFlops/s:\t\t%.2f\n",
             1.0E-06 * ((double) threads_data[0].data.iter * realSize *  test->flops/  time));
+    
     ownprintf("Data volume (Byte):\t%llu\n", LLU_CAST (threads_data[0].data.iter * realSize *  test->bytes));
     ownprintf("MByte/s:\t\t%.2f\n",
             1.0E-06 * ( (double) threads_data[0].data.iter * realSize *  test->bytes/ time));
@@ -431,6 +454,20 @@ int main(int argc, char** argv)
         case DOUBLE:
             ownprintf("Cycles per cacheline:\t%f\n", (8.0 * cycPerUp));
             break;
+    }
+    ownprintf("Loads per update:\t%" PRIu64 "\n", test->loads );
+    ownprintf("Stores per update:\t%" PRIu64 "\n", test->stores );
+    if ((test->loads > 0) && (test->stores > 0))
+    {
+        ownprintf("Load/store ratio:\t%.2f\n", ((double)test->loads)/((double)test->stores) );
+    }
+    if ((test->instr_loop > 0) && (test->instr_const > 0))
+    {
+        ownprintf("Instructions:\t\t%" PRIu64 "\n", LLU_CAST ((double)realSize/test->stride)*test->instr_loop*threads_data[0].data.iter + test->instr_const );
+    }
+    if (test->uops > 0)
+    {
+        ownprintf("UOPs:\t\t\t%" PRIu64 "\n", LLU_CAST ((double)realSize/test->stride)*test->uops*threads_data[0].data.iter);
     }
 
     ownprintf(bdata(HLINE));

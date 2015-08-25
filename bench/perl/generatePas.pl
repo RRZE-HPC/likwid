@@ -89,6 +89,12 @@ while (defined(my $file = readdir(DIR))) {
         $prolog='';
         $loop='';
         $desc='';
+        my $loads=-1;
+        my $stores=-1;
+        my $branches=-1;
+        my $instr=-1;
+        my $loop_instr=-1;
+        my $uops = -1;
         open FILE, "<$BenchRoot/$file";
         while (<FILE>) {
             my $line = $_;
@@ -104,6 +110,18 @@ while (defined(my $file = readdir(DIR))) {
                 $flops = $1;
             } elsif ($line =~ /BYTES[ ]+([0-9]+)/) {
                 $bytes = $1;
+            } elsif ($line =~ /LOADS[ ]+([0-9]+)/) {
+                $loads = $1;
+            } elsif ($line =~ /STORES[ ]+([0-9]+)/) {
+                $stores = $1;
+            } elsif ($line =~ /BRANCHES[ ]+([0-9]+)/) {
+                $branches = $1;
+            } elsif ($line =~ /INSTR_CONST[ ]+([0-9]+)/) {
+                $instr = $1;
+            } elsif ($line =~ /INSTR_LOOP[ ]+([0-9]+)/) {
+                $loop_instr = $1;
+            } elsif ($line =~ /UOPS[ ]+([0-9]+)/) {
+                $uops = $1;
             } elsif ($line =~ /DESC[ ]+([a-zA-z ,.\-_\(\)\+\*\/=]+)/) {
                 $desc = $1;
             } elsif ($line =~ /INC[ ]+([0-9]+)/) {
@@ -154,7 +172,13 @@ while (defined(my $file = readdir(DIR))) {
                          stride  => $increment,
                          flops   => $flops,
                          bytes   => $bytes,
-                         desc    => $desc});
+                         desc    => $desc,
+                         loads    => $loads,
+                         stores    => $stores,
+                         branches    => $branches,
+                         instr_const    => $instr,
+                         instr_loop    => $loop_instr,
+                         uops    => $uops});
     }
 }
 #print Dumper(@Testcases);
