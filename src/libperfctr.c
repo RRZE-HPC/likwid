@@ -64,7 +64,9 @@
 #include <perfmon_ivybridge_counters.h>
 #include <perfmon_westmereEX_counters.h>
 #include <perfmon_silvermont_counters.h>
-
+#include <perfmon_boardwell_counters.h>
+#include <perfmon_boardwelld_counters.h>
+#include <perfmon_skylake_counters.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -303,15 +305,27 @@ void likwid_markerClose(void)
 {
     FILE *file = NULL;
     LikwidResults* results = NULL;
-    int numberOfThreads;
-    int numberOfRegions;
+    int numberOfThreads = 0;
+    int numberOfRegions = 0;
+    char* markerfile = NULL;
     if ( ! likwid_init )
     {
-        
+        fprintf(stderr, "LIKWID not properly initialized\n");
         return;
     }
     hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
-    file = fopen(getenv("LIKWID_FILEPATH"),"w");
+    if ((numberOfThreads == 0)||(numberOfThreads == 0))
+    {
+        fprintf(stderr, "No threads or regions defined in hash table\n");
+        return;
+    }
+    markerfile = getenv("LIKWID_FILEPATH");
+    if (markerfile == NULL)
+    {
+        fprintf(stderr, "Is the application executed with LIKWID wrapper? No file path for the Marker API output defined.\n");
+        return;
+    }
+    file = fopen(markerfile,"w");
 
     if (file != NULL)
     {
@@ -347,10 +361,12 @@ void likwid_markerClose(void)
             }
         }
         fclose(file);
+        fprintf(stderr, "Wrote LIKWID Marker API output to file %s\n", markerfile);
     }
     else
     {
-        fprintf(stderr, "Cannot open file %s\n", getenv("LIKWID_FILEPATH"));
+        fprintf(stderr, "Cannot open file %s\n", markerfile);
+        fprintf(stderr, "%s", strerror(errno));
     }
 
     for (int i=0;i<numberOfRegions; i++)

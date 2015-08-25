@@ -736,7 +736,6 @@ perfmon_init_maps(void)
 
                 case BROADWELL:
                 case BROADWELL_E:
-                case BROADWELL_D:
                     box_map = broadwell_box_map;
                     eventHash = broadwell_arch_events;
                     counter_map = broadwell_counter_map;
@@ -744,7 +743,14 @@ perfmon_init_maps(void)
                     perfmon_numCounters = perfmon_numCountersBroadwell;
                     perfmon_numCoreCounters = perfmon_numCoreCountersBroadwell;
                     break;
-
+                case BROADWELL_D:
+                    box_map = broadwelld_box_map;
+                    eventHash = broadwelld_arch_events;
+                    counter_map = broadwelld_counter_map;
+                    perfmon_numArchEvents = perfmon_numArchEventsBroadwellD;
+                    perfmon_numCounters = perfmon_numCountersBroadwellD;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersBroadwellD;
+                    break;
 
                 case SKYLAKE1:
                 case SKYLAKE2:
