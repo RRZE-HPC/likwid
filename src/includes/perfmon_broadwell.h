@@ -360,7 +360,7 @@ int bdw_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!HPMcheck(dev, cpu_id))
+    if (!pci_checkDevice(dev, cpu_id))
     {
         return -ENODEV;
     }
@@ -436,7 +436,7 @@ int bdw_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!HPMcheck(dev, cpu_id))
+    if (!pci_checkDevice(dev, cpu_id))
     {
         return -ENODEV;
     }
@@ -482,7 +482,7 @@ int bdw_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!HPMcheck(counter_map[index].device, cpu_id))
+    if (!pci_checkDevice(counter_map[index].device, cpu_id))
     {
         return -ENODEV;
     }
@@ -528,7 +528,7 @@ int bdw_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!HPMcheck(counter_map[index].device, cpu_id))
+    if (!pci_checkDevice(counter_map[index].device, cpu_id))
     {
         return -ENODEV;
     }
@@ -590,7 +590,7 @@ int bdw_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 continue; \
             } \
             PciDeviceIndex dev = counter_map[index].device; \
-            if (HPMcheck(dev, cpu_id)) { \
+            if (pci_checkDevice(dev, cpu_id)) { \
                 VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, CLEAR_CTR_MANUAL); \
                 CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL)); \
                 if (counter_map[index].counterRegister2 != 0x0) \
@@ -713,7 +713,7 @@ int perfmon_setupCounterThread_broadwell(
             case MBOX5FIX:
             case MBOX6FIX:
             case MBOX7FIX:
-                if (haveLock && HPMcheck(dev, cpu_id))
+                if (haveLock && pci_checkDevice(dev, cpu_id))
                 {
                     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, ((1ULL<<20)|(1ULL<<22))))
                 }
