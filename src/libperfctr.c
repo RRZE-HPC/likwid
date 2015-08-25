@@ -52,21 +52,6 @@
 #include <access.h>
 
 #include <perfmon.h>
-#include <perfmon_core2_counters.h>
-#include <perfmon_haswell_counters.h>
-#include <perfmon_interlagos_counters.h>
-#include <perfmon_kabini_counters.h>
-#include <perfmon_k10_counters.h>
-#include <perfmon_nehalem_counters.h>
-#include <perfmon_phi_counters.h>
-#include <perfmon_pm_counters.h>
-#include <perfmon_sandybridge_counters.h>
-#include <perfmon_ivybridge_counters.h>
-#include <perfmon_westmereEX_counters.h>
-#include <perfmon_silvermont_counters.h>
-#include <perfmon_boardwell_counters.h>
-#include <perfmon_boardwelld_counters.h>
-#include <perfmon_skylake_counters.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
