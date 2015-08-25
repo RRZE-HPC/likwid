@@ -1,0 +1,22 @@
+SHORT  Recovery duration
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  INT_MISC_RECOVERY_CYCLES
+PMC1  INT_MISC_RECOVERY_COUNT
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Avg. recovery duration PMC0/PMC1
+
+LONG
+Formulas:
+Avg. recovery duration = INT_MISC_RECOVERY_CYCLES/INT_MISC_RECOVERY_COUNT
+-
+This group measures the duration of recoverys after SSE exception, memory
+disambiguation, etc...
