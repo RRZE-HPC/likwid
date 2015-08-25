@@ -55,7 +55,7 @@ void (*TSTOP)(TscCounter*) = NULL;
             : "0" (eax), "2" (ecx))
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
+#ifdef __x86_64
 static void fRDTSC(TscCounter* cpu_c)
 {
     __asm__ volatile("xor %%eax,%%eax\n\t"           \
@@ -87,6 +87,7 @@ static void fRDTSCP(TscCounter* cpu_c)
     : "=r" ((cpu_c)->int32.lo), "=r" ((cpu_c)->int32.hi) \
     : : "%eax","%ebx","%ecx","%edx");
 }
+#endif
 
 static uint64_t
 getCpuSpeed(void)
