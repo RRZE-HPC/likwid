@@ -106,6 +106,7 @@ static char* short_westmereEX = "westmereEX";
 static char* short_haswell = "haswell";
 static char* short_haswell_ep = "haswellEP";
 static char* short_broadwell = "broadwell";
+static char* short_broadwell_d = "broadwellD";
 static char* short_broadwell_ep = "broadwellEP";
 static char* short_ivybridge = "ivybridge";
 static char* short_ivybridge_ep = "ivybridgeEP";
@@ -596,7 +597,7 @@ int topology_setName(void)
                     break;
                 case BROADWELL_D:
                     cpuid_info.name = broadwell_d_str;
-                    cpuid_info.short_name = short_broadwell;
+                    cpuid_info.short_name = short_broadwell_d;
                     break;
                 case BROADWELL_E:
                     cpuid_info.name = broadwell_ep_str;
