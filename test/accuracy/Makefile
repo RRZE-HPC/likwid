@@ -4,14 +4,7 @@ LIKWID_APP=likwid-bench
 HOST=$(shell hostname -s)
 
 
-all: clean plain marker localize_likwid
-
-plain:
-	@echo "===> Building uninstrumented likwid-bench"
-	@sed -i -e s/'INSTRUMENT_BENCH = .*#'/'INSTRUMENT_BENCH = false#'/g $(LIKWID_PATH)/config.mk
-	@sed -i -e s/'CPPFLAGS := -DPAPI '/'CPPFLAGS := '/g $(LIKWID_PATH)/Makefile
-	@cd $(LIKWID_PATH) && make distclean >/dev/null && make >/dev/null 2>/dev/null
-	@cp $(LIKWID_BENCH_PATH)/$(LIKWID_APP) $(LIKWID_APP)-plain
+all: clean marker localize_likwid
 
 marker:
 	@echo "===> Building instrumented likwid-bench"
