@@ -198,7 +198,8 @@ int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint64_t flags = 0x0ULL;
-    uint64_t filter_flags;
+    uint64_t filter_flags0 = 0x0ULL;
+    uint64_t filter_flags1 = 0x0ULL;
     uint32_t filter0 = box_map[counter_map[index].type].filterRegister1;
     uint32_t filter1 = box_map[counter_map[index].type].filterRegister2;
     int set_state_all = 0;
@@ -214,8 +215,7 @@ int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         set_state_all = 1;
     }
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter0, 0x0ULL));
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter1, 0x0ULL));
+
     if (event->numberOfOptions > 0)
     {
         for(j = 0; j < event->numberOfOptions; j++)
@@ -233,48 +233,52 @@ int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (event->options[j].value & 0xFFULL) << 24;
                     break;
                 case EVENT_OPTION_OPCODE:
-                    CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, filter1, &filter_flags));
-                    filter_flags |= (0x3<<27);
-                    filter_flags |= (extractBitField(event->options[j].value,5,0) << 20);
-                    VERBOSEPRINTREG(cpu_id, filter1, filter_flags, SETUP_CBOX_FILTER_OPCODE);
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter1, filter_flags));
+                    filter_flags1 |= (0x3<<27);
+                    filter_flags1 |= (extractBitField(event->options[j].value,5,0) << 20);
                     break;
                 case EVENT_OPTION_NID:
-                    CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, filter1, &filter_flags));
-                    filter_flags |= (extractBitField(event->options[j].value,16,0));
-                    VERBOSEPRINTREG(cpu_id, filter1, filter_flags, SETUP_CBOX_FILTER_NID);
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter1, filter_flags));
+                    filter_flags1 |= (extractBitField(event->options[j].value,16,0));
                     break;
                 case EVENT_OPTION_STATE:
-                    CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, filter0, &filter_flags));
-                    filter_flags |= (extractBitField(event->options[j].value,6,0) << 17);
-                    VERBOSEPRINTREG(cpu_id, filter0, filter_flags, SETUP_CBOX_FILTER_STATE);
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter0, filter_flags));
+                    filter_flags0 |= (extractBitField(event->options[j].value,6,0) << 17);
                     set_state_all = 0;
                     break;
                 case EVENT_OPTION_TID:
-                    CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, filter0, &filter_flags));
-                    filter_flags |= (extractBitField(event->options[j].value,6,0));
-                    VERBOSEPRINTREG(cpu_id, filter0, filter_flags, SETUP_CBOX_FILTER_TID);
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter0, filter_flags));
+                    filter_flags0 |= (extractBitField(event->options[j].value,6,0));
                     flags |= (1ULL<<19);
+                    break;
+                case EVENT_OPTION_MATCH0:
+                    filter_flags1 |= (extractBitField(event->options[j].value,2,0) << 30);
                     break;
                 default:
                     break;
             }
         }
     }
+    if (filter_flags0 != 0x0ULL)
+    {
+        VERBOSEPRINTREG(cpu_id, filter0, filter_flags0, SETUP_CBOX_FILTER0);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter0, filter_flags0));
+    }
     else
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter0, 0x0ULL));
+    }
+    if (filter_flags1 != 0x0ULL)
+    {
+        VERBOSEPRINTREG(cpu_id, filter1, filter_flags1, SETUP_CBOX_FILTER1);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter1, filter_flags1));
+    }
+    else
+    {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter1, 0x0ULL));
     }
     if (set_state_all)
     {
-        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, filter0, &filter_flags));
-        filter_flags |= (0x1F << 17);
-        VERBOSEPRINTREG(cpu_id, filter0, filter_flags, SETUP_CBOX_DEF_FILTER_STATE);
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter0, filter_flags));
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, filter0, &filter_flags0));
+        filter_flags0 |= (0x1F << 17);
+        VERBOSEPRINTREG(cpu_id, filter0, filter_flags0, SETUP_CBOX_DEF_FILTER_STATE);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter0, filter_flags0));
     }
     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_CBOX);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
@@ -468,6 +472,41 @@ int bdw_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     /* Intel notes the registers must be written twice to hold, once without enable and again with enable */
     flags |= (1ULL<<22);
     VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_MBOX_TWICE);
+    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+    return 0;
+}
+
+int bdw_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    int j;
+    uint64_t flags = 0x0ULL;
+    PciDeviceIndex dev = counter_map[index].device;
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+    if (!pci_checkDevice(dev, cpu_id))
+    {
+        return -ENODEV;
+    }
+
+    flags = (1ULL<<20)|(1ULL<<22);
+    if (event->numberOfOptions > 0)
+    {
+        for(j = 0; j < event->numberOfOptions; j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_MBOX);
     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
     return 0;
 }
@@ -713,10 +752,7 @@ int perfmon_setupCounterThread_broadwell(
             case MBOX5FIX:
             case MBOX6FIX:
             case MBOX7FIX:
-                if (haveLock && pci_checkDevice(dev, cpu_id))
-                {
-                    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, ((1ULL<<20)|(1ULL<<22))))
-                }
+                bdw_mboxfix_setup(cpu_id, index, event);
                 break;
 
             case PBOX:

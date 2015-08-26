@@ -1019,6 +1019,12 @@ UMASK_UFS_TRANSITIONS_UP_RING           0x00
 EVENT_UFS_TRANSITIONS_UP_STALL          0x7B WBOX
 UMASK_UFS_TRANSITIONS_UP_STALL          0x00
 
+EVENT_CORES_IN_C3                       0x00 WBOX0FIX
+UMASK_CORES_IN_C3                       0x00
+
+EVENT_CORES_IN_C6                       0x00 WBOX1FIX
+UMASK_CORES_IN_C6                       0x00
+
 EVENT_BBOX_CLOCKTICKS                   0x00 BBOX
 UMASK_BBOX_CLOCKTICKS                   0x00
 
