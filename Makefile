@@ -182,7 +182,9 @@ $(BUILD_DIR)/%.o:  %.cc
 
 $(BUILD_DIR)/%.o:  %.S
 	@echo "===>  COMPILE  $@"
-	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+	$(Q)$(CPP) $(CPPFLAGS) $< -o $@.tmp
+	$(Q)$(AS) -c $(ASFLAGS) $@.tmp -o $@
+	@rm $@.tmp
 
 
 $(BUILD_DIR)/%.h:  $(SRC_DIR)/includes/%.txt
