@@ -210,7 +210,7 @@ extern int  likwid_pinThread(int processorId) __attribute__ ((visibility ("defau
 # Access client related functions
 ################################################################################
 */
-/** \addtogroup AccessClient Access client module
+/** \addtogroup Access Access module
  *  @{
  */
 
@@ -226,24 +226,24 @@ typedef enum {
     ACCESSMODE_DAEMON = 1 /*!< \brief Use the access daemon to access the registers */
 } AccessMode;
 
-/*! \brief Set accessClient mode
+/*! \brief Set access mode
 
-Sets the mode how the MSR and PCI registers should be accessed. 0 for direct access (propably root priviledges required) and 1 for accesses through the access daemon. It must be called before accessClient_init()
+Sets the mode how the MSR and PCI registers should be accessed. 0 for direct access (propably root priviledges required) and 1 for accesses through the access daemon. It must be called before HPMinit()
 @param [in] mode (0=direct, 1=daemon)
 */
-extern void accessClient_setaccessmode(int mode) __attribute__ ((visibility ("default") ));
-/*! \brief Initialize socket for communication with the access daemon
+extern void HPMmode(int mode) __attribute__ ((visibility ("default") ));
+/*! \brief Initialize connections
 
-Initializes the file descriptor by starting and connecting to a new access daemon.
+Initialize the connection to either the MSR/PCI files or the access daemon
 @param [out] socket_fd Pointer to socket file descriptor
 */
-extern void accessClient_init(int* socket_fd) __attribute__ ((visibility ("default") ));
-/*! \brief Destroy socket for communication with the access daemon
+extern int HPMinit() __attribute__ ((visibility ("default") ));
+/*! \brief Close connections
 
-Destroys the file descriptor by disconnecting and shutting down the access daemon
+Close the connection to either the MSR/PCI files or the access daemon
 @param [in] socket_fd socket file descriptor
 */
-extern void accessClient_finalize(int socket_fd) __attribute__ ((visibility ("default") ));
+extern void HPMfinalize() __attribute__ ((visibility ("default") ));
 /** @}*/
 
 /*

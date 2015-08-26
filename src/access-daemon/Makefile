@@ -36,7 +36,7 @@ Q         ?= @
 DEFINES   = -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS)
 INCLUDES  = -I../includes
 ifeq ($(COMPILER),GCC)
-CFLAGS    +=  -Wall -Wextra -std=c99
+CFLAGS    += -std=c99
 endif
 ifeq ($(COMPILER),ICC)
 CFLAGS  += -std=c99

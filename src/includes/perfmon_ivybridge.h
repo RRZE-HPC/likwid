@@ -31,8 +31,9 @@
 
 
 #include <perfmon_ivybridge_events.h>
-#include <perfmon_ivybridgeEP_events.h>
 #include <perfmon_ivybridge_counters.h>
+#include <perfmon_ivybridgeEP_events.h>
+#include <perfmon_ivybridgeEP_counters.h>
 #include <error.h>
 #include <affinity.h>
 #include <limits.h>
@@ -158,7 +159,7 @@ int ivb_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!pci_checkDevice(dev, cpu_id))
+    if (!HPMcheck(dev, cpu_id))
     {
         return -ENODEV;
     }
@@ -206,7 +207,7 @@ int ivb_pci_box_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!pci_checkDevice(counter_map[index].device, cpu_id))
+    if (!HPMcheck(counter_map[index].device, cpu_id))
     {
         return -ENODEV;
     }
@@ -243,7 +244,7 @@ int ivb_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!pci_checkDevice(counter_map[index].device, cpu_id))
+    if (!HPMcheck(counter_map[index].device, cpu_id))
     {
         return -ENODEV;
     }
@@ -264,7 +265,7 @@ int ivb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
     {
         return 0;
     }
-    if (!pci_checkDevice(counter_map[index].device, cpu_id))
+    if (!HPMcheck(counter_map[index].device, cpu_id))
     {
         return -ENODEV;
     }
@@ -288,7 +289,7 @@ int ivb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
                     flags |= ((event->options[j].value & 0x1FULL) << 24);
                     break;
                 case EVENT_OPTION_MATCH0:
-                    if (pci_checkDevice(filterdev, cpu_id))
+                    if (HPMcheck(filterdev, cpu_id))
                     {
                         filterreg = PCI_UNC_QPI_PMON_MATCH_0;
                         filterval = event->options[j].value & 0x8003FFF8ULL;
@@ -301,7 +302,7 @@ int ivb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
                     }
                     break;
                 case EVENT_OPTION_MATCH1:
-                    if (pci_checkDevice(filterdev, cpu_id))
+                    if (HPMcheck(filterdev, cpu_id))
                     {
                         filterreg = PCI_UNC_QPI_PMON_MATCH_1;
                         filterval = event->options[j].value & 0x000F000FULL;
@@ -314,7 +315,7 @@ int ivb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
                     }
                     break;
                 case EVENT_OPTION_MASK0:
-                    if (pci_checkDevice(filterdev, cpu_id))
+                    if (HPMcheck(filterdev, cpu_id))
                     {
                         filterreg = PCI_UNC_QPI_PMON_MASK_0;
                         filterval = event->options[j].value & 0x8003FFF8ULL;
@@ -327,7 +328,7 @@ int ivb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
                     }
                     break;
                 case EVENT_OPTION_MASK1:
-                    if (pci_checkDevice(filterdev, cpu_id))
+                    if (HPMcheck(filterdev, cpu_id))
                     {
                         filterreg = PCI_UNC_QPI_PMON_MASK_1;
                         filterval = event->options[j].value & 0x000F000FULL;
@@ -527,7 +528,7 @@ int ivb_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!pci_checkDevice(dev, cpu_id))
+    if (!HPMcheck(dev, cpu_id))
     {
         return -ENODEV;
     }
@@ -844,7 +845,7 @@ uint64_t ivb_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, i
     {
         return result;
     }
-    if (box_map[type].isPci && !pci_checkDevice(dev, cpu_id))
+    if (box_map[type].isPci && !HPMcheck(dev, cpu_id))
     {
         return result;
     }
@@ -1020,7 +1021,7 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                 case SBOX0FIX:
                 case SBOX1FIX:
                 case SBOX2FIX:
-                    if (haveLock && pci_checkDevice(dev, cpu_id))
+                    if (haveLock && HPMcheck(dev, cpu_id))
                     {
                         CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_SBOX_FIXED)
@@ -1212,7 +1213,7 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                 case SBOX0FIX:
                 case SBOX1FIX:
                 case SBOX2FIX:
-                    if (haveLock && pci_checkDevice(dev, cpu_id))
+                    if (haveLock && HPMcheck(dev, cpu_id))
                     {
                         CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_SBOX_FIXED)

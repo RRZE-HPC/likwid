@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  accessClient.h
+ *      Filename:  access_client_types.h
  *
- *      Description:  Header File accessClient Module.
+ *      Description:  Types file for access_client access module.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -28,27 +28,38 @@
  * =======================================================================================
  */
 
-#ifndef ACCESSCLIENT_H
-#define ACCESSCLIENT_H
+#ifndef ACCESSCLIENT_TYPES_H
+#define ACCESSCLIENT_TYPES_H
 
-#include <types.h>
+#include <stdint.h>
+#include <pci_types.h>
 
+typedef enum {
+    DAEMON_READ = 0,
+    DAEMON_WRITE,
+    DAEMON_CHECK,
+    DAEMON_EXIT
+} AccessType;
 
-/* This needs to be called BEFORE msr_init and
- * sets how the module tries to access the MSR registers. */
+typedef enum {
+    ERR_NOERROR = 0,  /* no error */
+    ERR_UNKNOWN,      /* unknown command */
+    ERR_RESTREG,      /* attempt to access restricted MSR */
+    ERR_OPENFAIL,     /* failure to open msr files */
+    ERR_RWFAIL,       /* failure to read/write msr */
+    ERR_DAEMONBUSY,   /* daemon already has another client */
+    ERR_NODEV         /* No such device */
+} AccessErrorType;
 
+typedef struct {
+    uint32_t cpu;
+    uint32_t reg;
+    uint64_t data;
+    PciDeviceIndex device;
+    AccessType type;
+    AccessErrorType errorcode; /* Only in replies - 0 if no error. */
+} AccessDataRecord;
 
-/* This needs to be called BEFORE msr_init and
- * sets the priority the module reports to the daemon.
- * This is a noop in any msr access mode except sysmsrd. */
-extern void accessClient_setlowaccesspriority(void);
+extern int accessClient_mode;
 
-/* Initializes the MSR module, trying to open either the MSR files or
- * the connection to the msr daemon. */
-
-extern void accessClient_initThread(int* socket_fd);
-
-extern int accessClient_read(int socket_fd, int cpu, int device, uint32_t reg, uint64_t *data);
-extern int accessClient_write(int socket_fd, int cpu, int device, uint32_t reg, uint64_t data);
-
-#endif /* ACCESSCLIENT_H */
+#endif /*ACCESSCLIENT_TYPES_H*/

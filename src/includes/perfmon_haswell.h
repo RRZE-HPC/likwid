@@ -355,7 +355,7 @@ int hasep_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!pci_checkDevice(dev, cpu_id))
+    if (!HPMcheck(dev, cpu_id))
     {
         return -ENODEV;
     }
@@ -430,7 +430,7 @@ int hasep_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!pci_checkDevice(counter_map[index].device, cpu_id))
+    if (!HPMcheck(counter_map[index].device, cpu_id))
     {
         return -ENODEV;
     }
@@ -479,7 +479,7 @@ int hasep_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!pci_checkDevice(dev, cpu_id))
+    if (!HPMcheck(dev, cpu_id))
     {
         return -ENODEV;
     }
@@ -525,7 +525,7 @@ int hasep_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!pci_checkDevice(counter_map[index].device, cpu_id))
+    if (!HPMcheck(counter_map[index].device, cpu_id))
     {
         return -ENODEV;
     }
@@ -572,7 +572,7 @@ int hasep_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!pci_checkDevice(counter_map[index].device, cpu_id))
+    if (!HPMcheck(counter_map[index].device, cpu_id))
     {
         return -ENODEV;
     }
@@ -618,7 +618,7 @@ int hasep_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    if (!pci_checkDevice(counter_map[index].device, cpu_id))
+    if (!HPMcheck(counter_map[index].device, cpu_id))
     {
         return -ENODEV;
     }
@@ -666,7 +666,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
     {
         return 0;
     }
-    if (!pci_checkDevice(counter_map[index].device, cpu_id))
+    if (!HPMcheck(counter_map[index].device, cpu_id))
     {
         return -ENODEV;
     }
@@ -693,7 +693,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
                     flags |= (event->options[j].value & 0xFFULL) << 24;
                     break;
                 case EVENT_OPTION_MATCH0:
-                    if (pci_checkDevice(filterdev, cpu_id))
+                    if (HPMcheck(filterdev, cpu_id))
                     {
                         filterreg = PCI_UNC_V3_QPI_PMON_RX_MATCH_0;
                         filterval = event->options[j].value & 0x8003FFF8ULL;
@@ -706,7 +706,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
                     }
                     break;
                 case EVENT_OPTION_MATCH1:
-                    if (pci_checkDevice(filterdev, cpu_id))
+                    if (HPMcheck(filterdev, cpu_id))
                     {
                         filterreg = PCI_UNC_V3_QPI_PMON_RX_MATCH_1;
                         filterval = event->options[j].value & 0x000F000FULL;
@@ -719,7 +719,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
                     }
                     break;
                 case EVENT_OPTION_MATCH2:
-                    if (pci_checkDevice(filterdev, cpu_id))
+                    if (HPMcheck(filterdev, cpu_id))
                     {
                         filterreg = PCI_UNC_V3_QPI_PMON_TX_MATCH_0;
                         filterval = event->options[j].value & 0x8003FFF8ULL;
@@ -732,7 +732,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
                     }
                     break;
                 case EVENT_OPTION_MATCH3:
-                    if (pci_checkDevice(filterdev, cpu_id))
+                    if (HPMcheck(filterdev, cpu_id))
                     {
                         filterreg = PCI_UNC_V3_QPI_PMON_TX_MATCH_1;
                         filterval = event->options[j].value & 0x000F000FULL;
@@ -745,7 +745,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
                     }
                     break;
                 case EVENT_OPTION_MASK0:
-                    if (pci_checkDevice(filterdev, cpu_id))
+                    if (HPMcheck(filterdev, cpu_id))
                     {
                         filterreg = PCI_UNC_V3_QPI_PMON_RX_MASK_0;
                         filterval = event->options[j].value & 0x8003FFF8ULL;
@@ -758,7 +758,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
                     }
                     break;
                 case EVENT_OPTION_MASK1:
-                    if (pci_checkDevice(filterdev, cpu_id))
+                    if (HPMcheck(filterdev, cpu_id))
                     {
                         filterreg = PCI_UNC_V3_QPI_PMON_RX_MASK_1;
                         filterval = event->options[j].value & 0x000F000FULL;
@@ -771,7 +771,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
                     }
                     break;
                 case EVENT_OPTION_MASK2:
-                    if (pci_checkDevice(filterdev, cpu_id))
+                    if (HPMcheck(filterdev, cpu_id))
                     {
                         filterreg = PCI_UNC_V3_QPI_PMON_TX_MASK_0;
                         filterval = event->options[j].value & 0x8003FFF8ULL;
@@ -784,7 +784,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
                     }
                     break;
                 case EVENT_OPTION_MASK3:
-                    if (pci_checkDevice(filterdev, cpu_id))
+                    if (HPMcheck(filterdev, cpu_id))
                     {
                         filterreg = PCI_UNC_V3_QPI_PMON_TX_MASK_0;
                         filterval = event->options[j].value & 0x000F000FULL;
@@ -836,7 +836,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
                 continue; \
             } \
             PciDeviceIndex dev = counter_map[index].device; \
-            if (pci_checkDevice(dev, cpu_id)) { \
+            if (HPMcheck(dev, cpu_id)) { \
                 VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, CLEAR_CTR_MANUAL); \
                 CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL)); \
                 if (counter_map[index].counterRegister2 != 0x0) \
@@ -864,7 +864,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
                 continue; \
             } \
             PciDeviceIndex dev = counter_map[index].device; \
-            if (pci_checkDevice(dev, cpu_id)) { \
+            if (HPMcheck(dev, cpu_id)) { \
                 VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, 0x0ULL, CLEAR_CTL_MANUAL); \
                 CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, 0x0ULL)); \
                 if ((type >= SBOX0) && (type <= SBOX3)) { \
@@ -1073,7 +1073,7 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
                     break;
                 case QBOX0FIX:
                 case QBOX1FIX:
-                    if (haveLock && pci_checkDevice(dev, cpu_id))
+                    if (haveLock && HPMcheck(dev, cpu_id))
                     {
                         if (eventSet->events[i].event.eventId != 0x00)
                         {

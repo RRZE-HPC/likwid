@@ -37,7 +37,7 @@
 #include <stdint.h>
 #include <bstrlib.h>
 
-#include <accessClient_types.h>
+#include <access_client_types.h>
 #include <registers_types.h>
 #include <pci_types.h>
 #include <power_types.h>

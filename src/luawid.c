@@ -44,6 +44,7 @@
 
 #include <likwid.h>
 #include <tree.h>
+#include <access.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -143,7 +144,7 @@ static int lua_likwid_setAccessMode(lua_State* L)
     int flag;
     flag = luaL_checknumber(L,1);
     luaL_argcheck(L, flag >= 0 && flag <= 1, 1, "invalid access mode, only 0 (direct) and 1 (accessdaemon) allowed");
-    accessClient_setaccessmode(flag);
+    HPMmode(flag);
     lua_pushnumber(L,0);
     return 1;
 }

@@ -42,8 +42,6 @@
 #include <likwid.h>
 #include <bitUtil.h>
 #include <timer.h>
-#include <msr.h>
-#include <pci.h>
 #include <lock.h>
 #include <perfmon.h>
 #include <registers.h>
@@ -144,7 +142,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
         *type = NOTYPE;
         return FALSE;
     }
-    if (!pci_checkDevice(counter_map[*index].device, 0))
+    if (!HPMcheck(counter_map[*index].device, 0))
     {
         *type = NOTYPE;
         return FALSE;
@@ -1170,8 +1168,8 @@ perfmon_finalize(void)
     
     free(groupSet->threads);
     free(groupSet);
-    HPMfinalize();
     power_finalize();
+    HPMfinalize();
     return;
 }
 

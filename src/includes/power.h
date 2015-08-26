@@ -36,7 +36,6 @@
 #include <types.h>
 #include <registers.h>
 #include <bitUtil.h>
-#include <msr.h>
 #include <error.h>
 #include <access.h>
 

@@ -47,10 +47,13 @@
 #include <sys/fsuid.h>
 #include <getopt.h>
 
-#include <pci_types.h>
+#include <types.h>
 #include <registers.h>
+#include <perfmon_haswellEP_counters.h>
+#include <perfmon_ivybridgeEP_counters.h>
+#include <perfmon_sandybridgeEP_counters.h>
+#include <perfmon_broadwelld_counters.h>
 #include <lock.h>
-#include <accessClient_types.h>
 
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
@@ -123,7 +126,7 @@ static AllowedPciPrototype allowedPci = NULL;
 static int FD_MSR[MAX_NUM_THREADS];
 static int FD_PCI[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
 static int isPCIUncore = 0;
-static PciDevice* pci_devices = NULL;
+static PciDevice* pci_devices_daemon = NULL;
 static char pci_filepath[MAX_PATH_LENGTH];
 
 /* Socket to bus mapping -- will be determined at runtime;
@@ -136,76 +139,6 @@ static char pci_filepath[MAX_PATH_LENGTH];
  */
 static char* socket_bus[MAX_NUM_NODES] = { [0 ... (MAX_NUM_NODES-1)] = NULL};
 
-
-static PciDevice sandybridgeEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
- [MSR_DEV] = {NONE, NULL, NULL, NULL, 0x0, 0},
- [PCI_R3QPI_DEVICE_LINK_0] = {R3QPI, "13.5", "PCI_R3QPI_DEVICE_LINK_0", "RBOX0", 0x3c44, 0},
- [PCI_R3QPI_DEVICE_LINK_1] = {R3QPI, "13.6", "PCI_R3QPI_DEVICE_LINK_1", "RBOX1", 0x3c45, 0},
- [PCI_R2PCIE_DEVICE] = {R2PCIE, "13.1", "PCI_R2PCIE_DEVICE", "PBOX0", 0x3c43, 0},
- [PCI_IMC_DEVICE_0_CH_0] = {IMC, "10.0", "PCI_IMC_DEVICE_CH_0", "MBOX0", 0x3cb0, 0},
- [PCI_IMC_DEVICE_0_CH_1] = {IMC, "10.1", "PCI_IMC_DEVICE_CH_1", "MBOX1", 0x3cb1, 0},
- [PCI_IMC_DEVICE_0_CH_2] = {IMC, "10.4", "PCI_IMC_DEVICE_CH_2", "MBOX2", 0x3cb4, 0},
- [PCI_IMC_DEVICE_0_CH_3] = {IMC, "10.5", "PCI_IMC_DEVICE_CH_3", "MBOX3", 0x3cb5, 0},
- [PCI_HA_DEVICE_0] = {HA, "0e.1", "PCI_HA_DEVICE", "BBOX", 0x3c46, 0},
- [PCI_QPI_DEVICE_PORT_0] = {QPI, "08.2", "PCI_QPI_DEVICE_PORT_0", "SBOX0", 0x3c41, 0},
- [PCI_QPI_DEVICE_PORT_1] = {QPI, "09.2", "PCI_QPI_DEVICE_PORT_1", "SBOX1", 0x3c42, 0},
- [PCI_QPI_MASK_DEVICE_PORT_0] = {QPI, "08.6", "PCI_QPI_MASK_DEVICE_PORT_0", NULL, 0x3c86, 0},
- [PCI_QPI_MASK_DEVICE_PORT_1] = {QPI, "09.6", "PCI_QPI_MASK_DEVICE_PORT_1", NULL, 0x3c96, 0},
- [PCI_QPI_MISC_DEVICE_PORT_0] = {QPI, "08.0", "PCI_QPI_MISC_DEVICE_PORT_0", "SBOX0FIX",0x3c80, 0},
- [PCI_QPI_MISC_DEVICE_PORT_1] = {QPI, "09.0", "PCI_QPI_MISC_DEVICE_PORT_1", "SBOX1FIX", 0x3c91, 0},
-};
-
-
-static PciDevice ivybridgeEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
- [MSR_DEV] = {NONE, "", "", "", 0x0, 0},
- [PCI_R3QPI_DEVICE_LINK_0] = {R3QPI, "13.5", "PCI_R3QPI_DEVICE_LINK_0", "RBOX0", 0x0e36, 0},
- [PCI_R3QPI_DEVICE_LINK_1] = {R3QPI, "13.6", "PCI_R3QPI_DEVICE_LINK_1", "RBOX1", 0x0e37, 0},
- [PCI_R3QPI_DEVICE_LINK_2] = {R3QPI, "12.5", "PCI_R3QPI_DEVICE_LINK_2", "RBOX2", 0x0e3e, 0},
- [PCI_R2PCIE_DEVICE] = {R2PCIE, "13.1", "PCI_R2PCIE_DEVICE", "PBOX0", 0x0e34, 0},
- [PCI_IMC_DEVICE_0_CH_0] = {IMC, "10.4", "PCI_IMC_DEVICE_0_CH_0", "MBOX0", 0x0eb4, 0},
- [PCI_IMC_DEVICE_0_CH_1] = {IMC, "10.5", "PCI_IMC_DEVICE_0_CH_1", "MBOX1", 0x0eb5, 0},
- [PCI_IMC_DEVICE_0_CH_2] = {IMC, "10.0", "PCI_IMC_DEVICE_0_CH_2", "MBOX2", 0x0eb0, 0},
- [PCI_IMC_DEVICE_0_CH_3] = {IMC, "10.1", "PCI_IMC_DEVICE_0_CH_3", "MBOX3", 0x0eb1, 0},
- [PCI_HA_DEVICE_0] = {HA, "0e.1", "PCI_HA_DEVICE_0", "BBOX0", 0x0e30, 0},
- [PCI_HA_DEVICE_1] = {HA, "1c.1", "PCI_HA_DEVICE_1", "BBOX1", 0x0e38, 0},
- [PCI_IMC_DEVICE_1_CH_0] = {IMC, "1e.4", "PCI_IMC_DEVICE_1_CH_0", "MBOX0", 0x0ef4, 0},
- [PCI_IMC_DEVICE_1_CH_1] = {IMC, "1e.5", "PCI_IMC_DEVICE_1_CH_1", "MBOX1", 0x0ef5, 0},
- [PCI_IMC_DEVICE_1_CH_2] = {IMC, "1e.0", "PCI_IMC_DEVICE_1_CH_2", "MBOX2", 0x0ef0, 0},
- [PCI_IMC_DEVICE_1_CH_3] = {IMC, "1e.1", "PCI_IMC_DEVICE_1_CH_3", "MBOX3", 0x0ef1, 0},
- [PCI_IRP_DEVICE] = {IRP, "05.6", "PCI_IRP_DEVICE", NULL, 0x0e39, 0},
- [PCI_QPI_DEVICE_PORT_0] = {QPI, "08.2", "PCI_QPI_DEVICE_PORT_0", "SBOX0", 0x0e32, 0},
- [PCI_QPI_DEVICE_PORT_1] = {QPI, "09.2", "PCI_QPI_DEVICE_PORT_1", "SBOX1", 0x0e33, 0},
- [PCI_QPI_DEVICE_PORT_2] = {QPI, "0a.2", "PCI_QPI_DEVICE_PORT_2", "SBOX2", 0x0e3a, 0},
- [PCI_QPI_MASK_DEVICE_PORT_0] = {QPI, "08.6", "PCI_QPI_MASK_DEVICE_PORT_0", NULL, 0x0e86, 0},
- [PCI_QPI_MASK_DEVICE_PORT_1] = {QPI, "09.6", "PCI_QPI_MASK_DEVICE_PORT_1", NULL, 0x0e96, 0},
- [PCI_QPI_MASK_DEVICE_PORT_2] = {QPI, "0a.6", "PCI_QPI_MASK_DEVICE_PORT_2", NULL, 0x0ec6, 0},
- [PCI_QPI_MISC_DEVICE_PORT_0] = {QPI, "08.0", "PCI_QPI_MISC_DEVICE_PORT_0/1", "SBOX01FIX",0x0e80, 0},
- [PCI_QPI_MISC_DEVICE_PORT_2] = {QPI, "0a.0", "PCI_QPI_MISC_DEVICE_PORT_2", "SBOX2FIX", 0x0ec0, 0},
-};
-
-static PciDevice haswellEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
- [MSR_DEV] = {NONE, NULL, NULL, NULL, 0x0, 0},
- [PCI_R3QPI_DEVICE_LINK_0] = {R3QPI, "0b.1", "PCI_R3QPI_DEVICE_LINK_0", "RBOX0", 0x2f36, 0},
- [PCI_R3QPI_DEVICE_LINK_1] = {R3QPI, "0b.2", "PCI_R3QPI_DEVICE_LINK_1", "RBOX1", 0x2f37, 0},
- [PCI_R2PCIE_DEVICE] = {R2PCIE, "10.1", "PCI_R2PCIE_DEVICE", "PBOX0", 0x2f34, 0},
- [PCI_IMC_DEVICE_0_CH_0] = {IMC, "14.0", "PCI_IMC_DEVICE_0_CH_0", "MBOX0", 0x2fb4, 0},
- [PCI_IMC_DEVICE_0_CH_1] = {IMC, "14.1", "PCI_IMC_DEVICE_0_CH_1", "MBOX1", 0x2fb5, 0},
- [PCI_IMC_DEVICE_0_CH_2] = {IMC, "15.0", "PCI_IMC_DEVICE_0_CH_2", "MBOX2", 0x2fb0, 0},
- [PCI_IMC_DEVICE_0_CH_3] = {IMC, "15.1", "PCI_IMC_DEVICE_0_CH_3", "MBOX3", 0x2fb1, 0},
- [PCI_HA_DEVICE_0] = {HA, "12.1", "PCI_HA_DEVICE_0", "BBOX0", 0x2f30, 0},
- [PCI_HA_DEVICE_1] = {HA, "12.5", "PCI_HA_DEVICE_1", "BBOX1", 0x2f38, 0},
- [PCI_IMC_DEVICE_1_CH_0] = {IMC, "17.0", "PCI_IMC_DEVICE_1_CH_0", "MBOX4", 0x2fd4, 0},
- [PCI_IMC_DEVICE_1_CH_1] = {IMC, "17.1", "PCI_IMC_DEVICE_1_CH_1", "MBOX5", 0x2fd5, 0},
- [PCI_IMC_DEVICE_1_CH_2] = {IMC, "18.0", "PCI_IMC_DEVICE_1_CH_2", "MBOX6", 0x2fd0, 0},
- [PCI_IMC_DEVICE_1_CH_3] = {IMC, "18.1", "PCI_IMC_DEVICE_1_CH_3", "MBOX7", 0x2fd1, 0},
- [PCI_IRP_DEVICE] = {IRP, "05.6", "PCI_IRP_DEVICE", NULL, 0x2f39, 0},
- [PCI_QPI_DEVICE_PORT_0] = {QPI, "08.2", "PCI_QPI_DEVICE_PORT_0", "SBOX0", 0x2f32, 0},
- [PCI_QPI_DEVICE_PORT_1] = {QPI, "09.2", "PCI_QPI_DEVICE_PORT_1", "SBOX1", 0x2f33, 0},
- [PCI_QPI_MASK_DEVICE_PORT_0] = {QPI, "08.6", "PCI_QPI_MASK_DEVICE_PORT_0", NULL, 0x2f86, 0},
- [PCI_QPI_MASK_DEVICE_PORT_1] = {QPI, "09.6", "PCI_QPI_MASK_DEVICE_PORT_1", NULL, 0x2f96, 0},
- [PCI_QPI_MISC_DEVICE_PORT_0] = {QPI, "08.0", "PCI_QPI_MISC_DEVICE_PORT_0", "SBOX0FIX", 0x2f80, 0},
- [PCI_QPI_MISC_DEVICE_PORT_1] = {QPI, "09.0", "PCI_QPI_MISC_DEVICE_PORT_1", "SBOX1FIX", 0x2f80, 0},
-};
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -596,9 +529,14 @@ static void msr_read(AccessDataRecord * dRecord)
     dRecord->errorcode = ERR_NOERROR;
     dRecord->data = 0;
 
+    if (FD_MSR[cpu] <= 0)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+
     if (!allowed(reg))
     {
-        syslog(LOG_ERR, "Attempt to read to restricted register 0x%x on core %u", reg, cpu);
         dRecord->errorcode = ERR_RESTREG;
         return;
     }
@@ -609,7 +547,6 @@ static void msr_read(AccessDataRecord * dRecord)
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
-
     dRecord->data = data;
 }
 
@@ -620,6 +557,12 @@ static void msr_write(AccessDataRecord * dRecord)
     uint64_t data = dRecord->data;
 
     dRecord->errorcode = ERR_NOERROR;
+    
+    if (FD_MSR[cpu] <= 0)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
 
     if (!allowed(reg))
     {
@@ -634,6 +577,19 @@ static void msr_write(AccessDataRecord * dRecord)
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
+}
+
+static void msr_check(AccessDataRecord * dRecord)
+{
+    uint32_t cpu = dRecord->cpu;
+    dRecord->errorcode = ERR_NOERROR;
+
+    if (FD_MSR[cpu] < 0)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+    return;
 }
 
 static void pci_read(AccessDataRecord* dRecord)
@@ -654,35 +610,34 @@ static void pci_read(AccessDataRecord* dRecord)
 
     if (allowedPci)
     {
-        if (!allowedPci(pci_devices[device].type, reg))
+        if (!allowedPci(pci_devices_daemon[device].type, reg))
         {
         dRecord->errorcode = ERR_RESTREG;
         return;
         }
     }
-
     if ( !FD_PCI[socketId][device] )
     {
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
         strncat(pci_filepath, socket_bus[socketId], 10);
-        strncat(pci_filepath, pci_devices[device].path, 20);
+        strncat(pci_filepath, pci_devices_daemon[device].path, 20);
         FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
 
         if ( FD_PCI[socketId][device] < 0)
         {
             syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pci_filepath,
-                    pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
+                    pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
         syslog(LOG_ERR, "Open device file %s for device %s (%s) on socket %u", pci_filepath,
-                    pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
+                    pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
     }
 
     if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data))
     {
         syslog(LOG_ERR, "Failed to read data from pci device file %s for device %s (%s) on socket %u",
-                pci_filepath,pci_types[pci_devices[device].type].name, pci_devices[device].name,socketId);
+                pci_filepath,pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name,socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -709,7 +664,7 @@ static void pci_write(AccessDataRecord* dRecord)
 
     if (allowedPci)
     {
-        if (!allowedPci(pci_devices[device].type, reg))
+        if (!allowedPci(pci_devices_daemon[device].type, reg))
         {
         dRecord->errorcode = ERR_RESTREG;
         return;
@@ -720,35 +675,47 @@ static void pci_write(AccessDataRecord* dRecord)
     {
         strncpy(pci_filepath, PCI_ROOT_PATH, 30);
         strncat(pci_filepath, socket_bus[socketId], 10);
-        strncat(pci_filepath, pci_devices[device].path, 20);
+        strncat(pci_filepath, pci_devices_daemon[device].path, 20);
 
         FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
 
         if ( FD_PCI[socketId][device] < 0)
         {
             syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pci_filepath,
-                        pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
+                        pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
         syslog(LOG_ERR, "Open device file %s for device %s (%s) on socket %u", pci_filepath,
-                    pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
+                    pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
     }
 
     if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
     {
         syslog(LOG_ERR, "Failed to write data to pci device file %s for device %s (%s) on socket %u",pci_filepath,
-                pci_types[pci_devices[device].type].name, pci_devices[device].name, socketId);
+                pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
 }
 
 
+static void pci_check(AccessDataRecord* dRecord)
+{
+    uint32_t socketId = dRecord->cpu;
+    uint32_t device = dRecord->device;
+    dRecord->errorcode = ERR_NOERROR;
+
+    if (FD_PCI[socketId][device] == -2)
+    {
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+    return;
+}
+
 static void kill_client(void)
 {
-    syslog(LOG_NOTICE, "daemon dropped client");
-
     if (connfd != -1)
     {
         CHECK_ERROR(close(connfd), socket close failed);
@@ -760,7 +727,6 @@ static void kill_client(void)
 static void stop_daemon(void)
 {
     kill_client();
-    syslog(LOG_NOTICE, "daemon exiting");
     for (int i=0;i<MAX_NUM_NODES;i++)
     {
         if (socket_bus[i] != NULL)
@@ -892,10 +858,10 @@ int main(void)
     mode_t oldumask;
     uint32_t numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
     uint32_t model;
-#ifdef REVERSE_HASWELL_PCI_SOCKETS
-    char** socket_bus_copy;
-#endif
-
+    for (int i=0;i<MAX_NUM_THREADS;i++)
+    {
+        FD_MSR[i] = -1;
+    }
 
     openlog(ident, 0, LOG_USER);
 
@@ -941,12 +907,17 @@ int main(void)
                          (model == HASWELL_M1) ||
                          (model == HASWELL_M2) ||
                          (model == BROADWELL) ||
-                         (model == BROADWELL_D) ||
                          (model == BROADWELL_E) ||
                          (model == SKYLAKE1) ||
                          (model == SKYLAKE2))
                 {
                     allowed = allowed_haswell;
+                }
+                else if (model == BROADWELL_D)
+                {
+                    allowed = allowed_haswell;
+                    isPCIUncore = 1;
+                    allowedPci = allowed_pci_haswell;
                 }
                 else if (model == HASWELL_EP)
                 {
@@ -1015,8 +986,6 @@ int main(void)
         sigaction(SIGTERM, &sia, NULL);
     }
 
-    syslog(LOG_NOTICE, "daemon started");
-
     /* setup an alarm to stop the daemon if there is no connect.*/
     alarm(15U);
 
@@ -1036,7 +1005,6 @@ int main(void)
 
     alarm(0);
     CHECK_ERROR(unlink(filepath), unlink of socket failed);
-    syslog(LOG_NOTICE, "daemon accepted client");
 
     /* Restore the old umask and fs ids. */
     (void) umask(oldumask);
@@ -1072,17 +1040,22 @@ int main(void)
             if (model == SANDYBRIDGE_EP)
             {
                 //testDevice = 0x80863c44;
-                pci_devices = sandybridgeEP_pci_devices;
+                pci_devices_daemon = sandybridgeEP_pci_devices;
             }
             else if (model == IVYBRIDGE_EP)
             {
                 //testDevice = 0x80860e36;
-                pci_devices = ivybridgeEP_pci_devices;
+                pci_devices_daemon = ivybridgeEP_pci_devices;
             }
             else if (model == HASWELL_EP)
             {
                 //testDevice = 0x80862f30;
-                pci_devices = haswellEP_pci_devices;
+                pci_devices_daemon = haswellEP_pci_devices;
+            }
+            else if (model == BROADWELL_D)
+            {
+                //testDevice = 0x80862f30;
+                pci_devices_daemon = broadwelld_pci_devices;
             }
             else
             {
@@ -1123,19 +1096,19 @@ int main(void)
                 {
                     for (int i=1; i<MAX_NUM_PCI_DEVICES; i++)
                     {
-                        if (pci_devices[i].path)
+                        if (pci_devices_daemon[i].path)
                         {
-                            sprintf(pci_filepath, "%s%s%s", PCI_ROOT_PATH, socket_bus[j], pci_devices[i].path);
+                            sprintf(pci_filepath, "%s%s%s", PCI_ROOT_PATH, socket_bus[j], pci_devices_daemon[i].path);
                             fd = open(pci_filepath, O_RDWR);
                             if (fd > 0)
                             {
                                 FD_PCI[j][i] = 0;
-                                pci_devices[i].online = 1;
+                                pci_devices_daemon[i].online = 1;
                                 close(fd);
                             }
                             else if (j==0)
                             {
-                                syslog(LOG_NOTICE, "Device %s for socket %d not found at path %s, excluded it from device list: %s\n",pci_devices[i].name,j, pci_filepath, strerror(errno));
+                                syslog(LOG_NOTICE, "Device %s for socket %d not found at path %s, excluded it from device list: %s\n",pci_devices_daemon[i].name,j, pci_filepath, strerror(errno));
                             }
                         }
                     }
@@ -1150,8 +1123,6 @@ int main(void)
 
         if (ret < 0)
         {
-            syslog(LOG_ERR, "ERROR - [%s:%d] read from client failed  - %s \n",
-                    __FILE__, __LINE__, strerror(errno));
             stop_daemon();
         }
         else if ((ret == 0) && (dRecord.type != DAEMON_EXIT))
@@ -1168,7 +1139,7 @@ int main(void)
 
         if (dRecord.type == DAEMON_READ)
         {
-            if (dRecord.device == DAEMON_AD_MSR)
+            if (dRecord.device == MSR_DEV)
             {
                 msr_read(&dRecord);
             }
@@ -1179,7 +1150,7 @@ int main(void)
         }
         else if (dRecord.type == DAEMON_WRITE)
         {
-            if (dRecord.device == DAEMON_AD_MSR)
+            if (dRecord.device == MSR_DEV)
             {
                 msr_write(&dRecord);
                 dRecord.data = 0x0ULL;
@@ -1188,6 +1159,17 @@ int main(void)
             {
                 pci_write(&dRecord);
                 dRecord.data = 0x0ULL;
+            }
+        }
+        else if (dRecord.type == DAEMON_CHECK)
+        {
+            if (dRecord.device == MSR_DEV)
+            {
+                msr_check(&dRecord);
+            }
+            else
+            {
+                pci_check(&dRecord);
             }
         }
         else if (dRecord.type == DAEMON_EXIT)
