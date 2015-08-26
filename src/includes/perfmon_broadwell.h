@@ -220,7 +220,6 @@ int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         for(j = 0; j < event->numberOfOptions; j++)
         {
-            filter_flags = 0x0ULL;
             switch (event->options[j].type)
             {
                 case EVENT_OPTION_EDGE:
