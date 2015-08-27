@@ -563,7 +563,6 @@ if use_timeline == true then
 end
 
 
-likwid.pinProcess(0, 1)
 
 io.stdout:flush()
 local int_results = {}
