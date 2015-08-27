@@ -35,7 +35,6 @@
 
 
 #include <types.h>
-#include <accessClient.h>
 #include <bstrlib.h>
 #include <affinity.h>
 #include <topology.h>
