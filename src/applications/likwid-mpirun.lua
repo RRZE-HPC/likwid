@@ -157,6 +157,15 @@ local function readHostfileOpenMPI(filename)
             end
         end
     end
+    local topo = likwid.getCpuTopology()
+    for i,host in pairs(hostlist) do
+        if host["slots"] == nil or host["slots"] == 0 then
+            host["slots"] = topo.numHWThreads
+        end
+        if host["maxslots"] == nil or host["maxslots"] == 0 then
+            host["maxslots"] = topo.numHWThreads
+        end
+    end
     return hostlist
 end
 
@@ -226,6 +235,7 @@ local function readHostfileIntelMPI(filename)
         print("ERROR: Cannot open hostfile "..filename)
         os.exit(1)
     end
+    local topo = likwid.getCpuTopology()
     local t = f:read("*all")
     f:close()
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
@@ -233,9 +243,9 @@ local function readHostfileIntelMPI(filename)
             hostname, slots = line:match("^([%.%a%d]+):(%d+)")
             if not hostname then
                 hostname = line:match("^([%.%a%d]+)")
-                slots = nil
+                slots = topo["numHWThreads"]
             end
-            table.insert(hostlist, {hostname=hostname, slots=slots})
+            table.insert(hostlist, {hostname=hostname, slots=slots, maxslots=slots})
         end
     end
     return hostlist
@@ -312,7 +322,7 @@ local function readHostfileMvapich2(filename)
                     interface = nil
                 end
             end
-            table.insert(hostlist, {hostname=hostname, slots=slots, interface=interface})
+            table.insert(hostlist, {hostname=hostname, slots=slots, maxslots=slots, interface=interface})
         end
     end
     return hostlist
