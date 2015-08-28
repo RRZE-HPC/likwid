@@ -1377,8 +1377,16 @@ end
 
 if #perf > 0 then
     local sum_maxslots = 0
+    local topo = likwid.getCpuTopology()
     for i, host in pairs(hosts) do
-        sum_maxslots = sum_maxslots + host["maxslots"]
+        if host["maxslots"] ~= nil then
+            sum_maxslots = sum_maxslots + host["maxslots"]
+        elseif host["slots"] ~= nil then
+            sum_maxslots = sum_maxslots + host["slots"]
+        else
+            sum_maxslots = sum_maxslots + topo["numHWThreads"]
+            host["slots"] = topo["numHWThreads"]
+        end
     end
     if np > sum_maxslots then
         print("ERROR: Processes requested exceeds maximally available slots of given hosts. Maximal processes: "..sum_maxslots)
