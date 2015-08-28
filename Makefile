@@ -183,7 +183,7 @@ $(BUILD_DIR)/%.o:  %.cc
 $(BUILD_DIR)/%.o:  %.S
 	@echo "===>  COMPILE  $@"
 	$(Q)$(CPP) $(CPPFLAGS) $< -o $@.tmp
-	$(Q)$(AS) -c $(ASFLAGS) $@.tmp -o $@
+	$(Q)$(AS) $(ASFLAGS) $@.tmp -o $@
 	@rm $@.tmp
 
 
