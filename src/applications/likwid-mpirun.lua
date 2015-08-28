@@ -127,6 +127,9 @@ local function readHostfileOpenMPI(filename)
         print("ERROR: Cannot open hostfile "..filename)
         os.exit(1)
     end
+    if debug then
+        print("DEBUG: Reading hostfile in openmpi style")
+    end
     local t = f:read("*all")
     f:close()
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
@@ -136,8 +139,8 @@ local function readHostfileOpenMPI(filename)
                 hostname, slots = line:match("^([%.%a%d]+)%s+slots=(%d*)")
                 if not hostname then
                     hostname = line:match("^([%.%a%d]+)")
-                    slots = nil
-                    maxslots = nil
+                    slots = 1
+                    maxslots = 1
                 end
             end
             local found = false
@@ -164,6 +167,9 @@ local function readHostfileOpenMPI(filename)
         end
         if host["maxslots"] == nil or host["maxslots"] == 0 then
             host["maxslots"] = topo.numHWThreads
+        end
+        if debug then
+            print(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
         end
     end
     return hostlist
@@ -235,6 +241,9 @@ local function readHostfileIntelMPI(filename)
         print("ERROR: Cannot open hostfile "..filename)
         os.exit(1)
     end
+    if debug then
+        print("DEBUG: Reading hostfile in intelmpi style")
+    end
     local topo = likwid.getCpuTopology()
     local t = f:read("*all")
     f:close()
@@ -246,6 +255,11 @@ local function readHostfileIntelMPI(filename)
                 slots = topo["numHWThreads"]
             end
             table.insert(hostlist, {hostname=hostname, slots=slots, maxslots=slots})
+        end
+    end
+    if debug then
+        for i, host in pairs(hostlist) do
+            print(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
         end
     end
     return hostlist
@@ -307,6 +321,9 @@ local function readHostfileMvapich2(filename)
         print("ERROR: Cannot open hostfile "..filename)
         os.exit(1)
     end
+    if debug then
+        print("DEBUG: Reading hostfile in mvapich2 style")
+    end
     local t = f:read("*all")
     f:close()
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
@@ -323,6 +340,11 @@ local function readHostfileMvapich2(filename)
                 end
             end
             table.insert(hostlist, {hostname=hostname, slots=slots, maxslots=slots, interface=interface})
+        end
+    end
+    if debug then
+        for i, host in pairs(hostlist) do
+            print(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
         end
     end
     return hostlist
@@ -400,6 +422,9 @@ local function readHostfilePBS(filename)
         print("ERROR: Cannot open hostfile "..filename)
         os.exit(1)
     end
+    if debug then
+        print("DEBUG: Reading hostfile from batch system")
+    end
     local t = f:read("*all")
     f:close()
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
@@ -409,7 +434,7 @@ local function readHostfilePBS(filename)
             for i, host in pairs(hostlist) do
                 if host["hostname"] == hostname then
                     host["slots"] = host["slots"] + 1
-                    host["maxslots"] = host["slots"]
+                    host["maxslots"] = host["maxslots"] + 1
                     found = true
                     break
                 end
@@ -417,6 +442,11 @@ local function readHostfilePBS(filename)
             if not found then
                 table.insert(hostlist, {hostname=hostname, slots=1, maxslots=1})
             end
+        end
+    end
+    if debug then
+        for i, host in pairs(hostlist) do
+            print(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
         end
     end
     return hostlist
@@ -1020,7 +1050,9 @@ local function parseMarkerOutputFile(filename)
     local parse_reg_output = false
     local current_region = nil
     local gidx = 0
+    local gname = ""
     local clock = 0
+
     for i, line in pairs(likwid.stringsplit(t, "\n")) do
         if (not line:match("^-")) and
            (not line:match("^CPU type:")) and
@@ -1036,17 +1068,18 @@ local function parseMarkerOutputFile(filename)
                 idx = 1
             elseif line:match("^Event") and line:match("Sum,Min,Max,Avg") then
                 parse_reg_output = false
-            elseif line:match("^CPU clock") then
-                clock = line:match("^CPU clock,([%d.]+)")
+            elseif line:match("^CPU clock:,") then
+                clock = line:match("^CPU clock:,([%d.]+)")
                 clock = tonumber(clock)*1.E09
             elseif parse_reg_info and line:match("^%d+,%g+") then
-                gidx, current_region = line:match("^(%d+),(%g-),")
+                gidx, gname, current_region = line:match("^(%d+),(%g+),(%g+)")
                 gidx = tonumber(gidx)
                 if results[current_region] == nil then
                     results[current_region] = {}
                 end
                 if results[current_region][gidx] == nil then
                     results[current_region][gidx] = {}
+                    results[current_region][gidx]["name"] = gname
                     results[current_region][gidx]["time"] = {}
                     results[current_region][gidx]["calls"] = {}
                 end
@@ -1378,7 +1411,17 @@ end
 if #perf > 0 then
     local sum_maxslots = 0
     local topo = likwid.getCpuTopology()
+    if debug then
+        print("DEBUG: Switch to perfctr mode, there are "..tostring(#perf).." eventsets given on the commandline")
+    end
     for i, host in pairs(hosts) do
+        if debug then
+            local str = string.format("DEBUG: Working on host %s with %d slots", host["hostname"], host["slots"])
+            if host["maxslots"] ~= nil then
+                str = str .. string.format(" and %d slots maximally", host["maxslots"])
+            end
+            print(str)
+        end
         if host["maxslots"] ~= nil then
             sum_maxslots = sum_maxslots + host["maxslots"]
         elseif host["slots"] ~= nil then
