@@ -999,9 +999,9 @@ int perfmon_setupCounterThread_haswell(
              case MBOX5FIX:
              case MBOX6FIX:
              case MBOX7FIX:
-                 if (haveLock && HPMcheck(dev, cpu_id))
+                 if (haveLock && HPMcheck(counter_map[index].device, cpu_id))
                  {
-                     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, ((1ULL<<20)|(1ULL<<22))))
+                     CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, counter_map[index].device, reg, ((1ULL<<20)|(1ULL<<22))))
                  }
                  break;
 
@@ -1291,7 +1291,7 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
-                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        if (counter_result <= eventSet->events[i].threadCounter[thread_id].counterData)
                         {
                             eventSet->events[i].threadCounter[thread_id].overflows++;
                         }
@@ -1504,8 +1504,8 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(POWER)))
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
-                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_POWER)
+                        if (counter_result <= eventSet->events[i].threadCounter[thread_id].counterData)
                         {
                             eventSet->events[i].threadCounter[thread_id].overflows++;
                         }
@@ -1515,6 +1515,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
 
                 case THERMAL:
                     CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
+                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_TEMP)
                     *current = field64(counter_result, 0, box_map[type].regWidth);
                     break;
 
@@ -1522,6 +1523,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     if (haveLock)
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_WBOXFIX)
                         if (counter_result < *current)
                         {
                             (*overflows)++;
@@ -1532,6 +1534,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
 
                 case BBOX0:
                 case BBOX1:
+                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_BBOX)
                     has_uncore_read(cpu_id, index, event, current, overflows,
                                     0, ovf_offset, getCounterTypeOffset(index));
                     break;
@@ -1544,6 +1547,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                 case MBOX5:
                 case MBOX6:
                 case MBOX7:
+                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
                     has_uncore_read(cpu_id, index, event, current, overflows,
                                     0, ovf_offset, getCounterTypeOffset(index)+1);
                     break;
@@ -1556,6 +1560,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                 case MBOX5FIX:
                 case MBOX6FIX:
                 case MBOX7FIX:
+                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOXFIX)
                     has_uncore_read(cpu_id, index, event, current, overflows,
                                     0, ovf_offset, 0);
                     break;
@@ -1602,6 +1607,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
 
                 case QBOX0FIX:
                 case QBOX1FIX:
+                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_QBOXFIX)
                     if (eventSet->events[i].event.eventId == 0x00)
                     {
                         HPMread(cpu_id, dev, counter1, &counter_result);
