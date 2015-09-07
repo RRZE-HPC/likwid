@@ -79,6 +79,7 @@ else
 end
 time_interval = 2.E06
 time_orig = "2s"
+read_interval = 30.E06
 sockets = {}
 domainList = {"PKG", "PP0", "PP1", "DRAM"}
 
@@ -274,7 +275,23 @@ if not print_info and not print_temp then
         end
 
         time_before = likwid.startClock()
-        likwid.sleep(time_interval)
+        if read_interval < time_interval then
+            while ((read_interval <= time_interval) and (time_interval > 0)) do
+                likwid.sleep(read_interval)
+                for i,socket in pairs(sockets) do
+                    cpu = cpulist[i]
+                    for idx, dom in pairs(domainList) do
+                        if (power["domains"][dom]["supportStatus"]) then after[cpu][dom] = likwid.stopPower(cpu, idx) end
+                    end
+                end
+                time_interval = time_interval - read_interval
+                if time_interval < read_interval then
+                    read_interval = time_interval
+                end
+            end
+        else
+            likwid.sleep(time_interval)
+        end
         time_after = likwid.stopClock()
 
         for i,socket in pairs(sockets) do
