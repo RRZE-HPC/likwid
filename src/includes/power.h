@@ -83,7 +83,7 @@ power_start(PowerData* data, int cpuId, PowerType type)
             uint64_t result = 0;
             data->before = 0;
             CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, power_regs[type], &result))
-            data->before = extractBitField(result,32,0);
+            data->before = field64(result, 0, 32);
             data->domain = type;
             return 0;
         }
@@ -110,7 +110,7 @@ power_stop(PowerData* data, int cpuId, PowerType type)
             uint64_t result = 0;
             data->after = 0;
             CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, power_regs[type], &result))
-            data->after = extractBitField(result,32,0);
+            data->after = field64(result, 0, 32);
             data->domain = type;
             return 0;
         }
@@ -148,7 +148,7 @@ power_read(int cpuId, uint64_t reg, uint32_t *data)
             uint64_t result = 0;
             *data = 0;
             CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, reg, &result))
-            *data = extractBitField(result,32,0);
+            *data = field64(result, 0, 32);
             return 0;
         }
         else
@@ -184,7 +184,7 @@ power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
             uint64_t result = 0;
             *data = 0;
             CHECK_MSR_READ_ERROR(HPMread(cpuId, MSR_DEV, reg, &result))
-            *data = extractBitField(result,32,0);
+            *data = field64(result, 0, 32);
             return 0;
         }
         else
