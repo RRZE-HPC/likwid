@@ -260,13 +260,11 @@ if #arg == 0 then
         stethoscope = true
     end
 else
-    for i=1,#arg do
-        execString = execString .. arg[i] .. " "
-    end
+    execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
 end
 
 if not print_info and not print_temp then
-    if stethoscope then
+    if stethoscope or (#arg > 0 and not use_perfctr) then
         for i,socket in pairs(sockets) do
             cpu = cpulist[i]
             for idx, dom in pairs(domainList) do
@@ -275,22 +273,48 @@ if not print_info and not print_temp then
         end
 
         time_before = likwid.startClock()
-        if read_interval < time_interval then
-            while ((read_interval <= time_interval) and (time_interval > 0)) do
-                likwid.sleep(read_interval)
+        if stethoscope then
+            if read_interval < time_interval then
+                while ((read_interval <= time_interval) and (time_interval > 0)) do
+                    likwid.sleep(read_interval)
+                    for i,socket in pairs(sockets) do
+                        cpu = cpulist[i]
+                        for idx, dom in pairs(domainList) do
+                            if (power["domains"][dom]["supportStatus"]) then after[cpu][dom] = likwid.stopPower(cpu, idx) end
+                        end
+                    end
+                    time_interval = time_interval - read_interval
+                    if time_interval < read_interval then
+                        read_interval = time_interval
+                    end
+                end
+            else
+                likwid.sleep(time_interval)
+            end
+        else
+            local pid = likwid.startProgram(execString, 0, {})
+            if not pid then
+                print(string.format("Failed to execute %s!",execString))
+                likwid.finalize()
+                os.exit(1)
+            end
+            while true do
+                if likwid.getSignalState() ~= 0 then
+                    likwid.killProgram()
+                    break
+                end
+                local remain = likwid.sleep(read_interval)
                 for i,socket in pairs(sockets) do
                     cpu = cpulist[i]
                     for idx, dom in pairs(domainList) do
                         if (power["domains"][dom]["supportStatus"]) then after[cpu][dom] = likwid.stopPower(cpu, idx) end
                     end
                 end
-                time_interval = time_interval - read_interval
-                if time_interval < read_interval then
-                    read_interval = time_interval
+                if remain > 0 or not likwid.checkProgram() then
+                    io.stdout:flush()
+                    break
                 end
             end
-        else
-            likwid.sleep(time_interval)
         end
         time_after = likwid.stopClock()
 
