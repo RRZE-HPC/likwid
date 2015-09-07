@@ -577,7 +577,6 @@ if use_wrapper or use_timeline then
     if use_wrapper and #group_ids == 1 then
         duration = 30.E06
     end
-    
 
     local pid = nil
     if pin_cpus then
@@ -668,6 +667,8 @@ if use_wrapper or use_timeline then
                 end
             end
             firstrun = false
+        else
+            likwid.readCounters()
         end
         if #group_ids > 1 then
             likwid.switchGroup(activeGroup + 1)
