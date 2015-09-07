@@ -112,6 +112,10 @@ int HPMinit(void)
                 registeredCpus++;
                 registeredCpuList[cpuid_topology.threadPool[i].apicId] = 1;
             }
+            else
+            {
+                return ret;
+            }
         }
     }
     return 0;

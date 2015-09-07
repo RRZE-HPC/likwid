@@ -145,11 +145,11 @@ access_x86_msr_init(const int cpu_id)
         return -ENOMEM;
     }
 
-    sprintf(msr_file_name,"/dev/msr0");
+    sprintf(msr_file_name,"/dev/msr%d", cpu_id);
     fd = open(msr_file_name, O_RDWR);
     if (fd < 0)
     {
-        sprintf(msr_file_name,"/dev/cpu/0/msr");
+        sprintf(msr_file_name,"/dev/cpu/%d/msr", cpu_id);
     }
     else
     {

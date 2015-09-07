@@ -48,6 +48,12 @@ static int default_configuration(void)
     char *fptr;
     size_t len = 0;
     filename[0] = '\0';
+    if (ACCESSMODE == 0)
+    {
+        config.daemonMode = ACCESSMODE_DIRECT;
+        init_config = 1;
+        return 0;
+    }
     FILE* fp = popen("which likwid-accessD 2>/dev/null | tr -d '\n'","r");
     if (fp == NULL)
     {
