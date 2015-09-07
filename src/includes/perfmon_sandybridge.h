@@ -918,6 +918,7 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
                 continue;
             }
             tmp = 0x0ULL;
+            eventSet->events[i].threadCounter[thread_id].startData = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             uint64_t reg = counter_map[index].configRegister;
             uint64_t counter1 = counter_map[index].counterRegister;
@@ -1154,6 +1155,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                                                         (1ULL<<(index - cpuid_info.perf_num_fixed_ctr))));
                         }
                     }
+                    VERBOSEPRINTPCIREG(cpu_id, dev, reg,  LLU_CAST counter_result, STOP_PMC);
                     break;
 
                 case FIXED:
@@ -1168,12 +1170,14 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<(index+32))));
                         }
                     }
+                    VERBOSEPRINTPCIREG(cpu_id, dev, reg,  LLU_CAST counter_result, STOP_FIXED);
                     break;
 
                 case POWER:
                     if (haveLock)
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+                        VERBOSEPRINTPCIREG(cpu_id, dev, reg,  LLU_CAST counter_result, STOP_POWER);
                         SNB_CHECK_OVERFLOW;
                     }
                     break;
@@ -1183,60 +1187,49 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     break;
 
                 case MBOX0:
-                    
                     SNB_READ_PCI_BOX(MBOX0, dev, counter1, counter2);
-                    VERBOSEPRINTPCIREG(cpu_id, dev, reg,  LLU_CAST counter_result, READ_MBOX0);
                     SNB_CHECK_OVERFLOW;
                     break;
 
                 case MBOX1:
                     SNB_READ_PCI_BOX(MBOX1, dev, counter1, counter2);
-                    VERBOSEPRINTPCIREG(cpu_id, dev, reg,  LLU_CAST counter_result, READ_MBOX1);
                     SNB_CHECK_OVERFLOW;
                     break;
 
                 case MBOX2:
                     SNB_READ_PCI_BOX(MBOX2, dev, counter1, counter2);
-                    VERBOSEPRINTPCIREG(cpu_id, dev, reg,  LLU_CAST counter_result, READ_MBOX2);
                     SNB_CHECK_OVERFLOW;
                     break;
 
                 case MBOX3:
                     SNB_READ_PCI_BOX(MBOX3, dev, counter1, counter2);
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_MBOX3);
                     SNB_CHECK_OVERFLOW;
                     break;
 
                 case MBOX0FIX:
                     SNB_READ_PCI_BOX(MBOX0FIX, dev, counter1, counter2);
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_MBOX0FIX);
                     SNB_CHECK_OVERFLOW;
                     break;
                 case MBOX1FIX:
                     SNB_READ_PCI_BOX(MBOX1FIX, dev, counter1, counter2);
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_MBOX1FIX);
                     SNB_CHECK_OVERFLOW;
                     break;
                 case MBOX2FIX:
                     SNB_READ_PCI_BOX(MBOX2FIX, dev, counter1, counter2);
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_MBOX2FIX);
                     SNB_CHECK_OVERFLOW;
                     break;
                 case MBOX3FIX:
                     SNB_READ_PCI_BOX(MBOX3FIX, dev, counter1, counter2);
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_MBOX3FIX);
                     SNB_CHECK_OVERFLOW;
                     break;
 
                 case SBOX0:
                     SNB_READ_PCI_BOX(SBOX0, dev, counter1, counter2);
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_SBOX0);
                     SNB_CHECK_OVERFLOW;
                     break;
 
                 case SBOX1:
                     SNB_READ_PCI_BOX(SBOX1, dev, counter1, counter2);
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_SBOX1);
                     SNB_CHECK_OVERFLOW;
                     break;
 
@@ -1276,18 +1269,16 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                         {
                             counter_result = extractBitField(counter_result, 1, 4);
                         }
-                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_SBOXFIX);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, STOP_SBOXFIX);
                     }
                     break;
 
                 case CBOX0:
                     SNB_READ_BOX(CBOX0, counter1);
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_CBOX0);
                     SNB_CHECK_OVERFLOW;
                     break;
                 case CBOX1:
                     SNB_READ_BOX(CBOX1, counter1);
-                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_CBOX1);
                     SNB_CHECK_OVERFLOW;
                     break;
                 case CBOX2:
@@ -1317,8 +1308,12 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
 
                 case UBOX:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
+                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, STOP_UBOX);
+                    SNB_CHECK_OVERFLOW;
+                    break;
                 case UBOXFIX:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
+                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, STOP_UBOXFIX);
                     SNB_CHECK_OVERFLOW;
                     break;
 
@@ -1333,20 +1328,25 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     break;
                 case WBOX0FIX:
                     SNB_READ_BOX(WBOX0FIX, counter1);
+                    SNB_CHECK_OVERFLOW;
                     break;
                 case WBOX1FIX:
                     SNB_READ_BOX(WBOX1FIX, counter1);
+                    SNB_CHECK_OVERFLOW;
                     break;
 
                 case RBOX0:
                     SNB_READ_PCI_BOX(RBOX0, dev, counter1, counter2);
+                    SNB_CHECK_OVERFLOW;
                     break;
                 case RBOX1:
                     SNB_READ_PCI_BOX(RBOX1, dev, counter1, counter2);
+                    SNB_CHECK_OVERFLOW;
                     break;
 
                 case PBOX:
                     SNB_READ_PCI_BOX(PBOX, dev, counter1, counter2);
+                    SNB_CHECK_OVERFLOW;
                     break;
                 default:
                     break;
@@ -1425,6 +1425,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
             {
                 case PMC:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
+                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_PMC);
                     if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                     {
                         uint64_t ovf_values = 0x0ULL;
@@ -1440,6 +1441,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
 
                 case FIXED:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
+                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_FIXED);
                     if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                     {
                         uint64_t ovf_values = 0x0ULL;
@@ -1460,6 +1462,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     if (haveLock)
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_POWER);
                         SNB_CHECK_OVERFLOW;
                     }
                     break;
@@ -1506,6 +1509,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     if (haveLock)
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, STOP_UBOX);
                         SNB_CHECK_OVERFLOW;
                     }
 
@@ -1559,6 +1563,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
 
                 case SBOX0FIX:
                 case SBOX1FIX:
+                    
                     HPMread(cpu_id, dev, counter1, &counter_result);
                     if (eventSet->events[i].event.eventId == 0x00)
                     {
@@ -1592,6 +1597,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                         counter_result = extractBitField(counter_result, 1, 4);
                     }
                     eventSet->events[i].threadCounter[thread_id].startData = 0x0ULL;
+                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_SBOXFIX);
                     break;
 
                 case WBOX:
@@ -1600,9 +1606,25 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     break;
                 case WBOX0FIX:
                     SNB_READ_BOX(WBOX0FIX, counter1);
+                    SNB_CHECK_OVERFLOW;
                     break;
                 case WBOX1FIX:
                     SNB_READ_BOX(WBOX1FIX, counter1);
+                    SNB_CHECK_OVERFLOW;
+                    break;
+
+                case RBOX0:
+                    SNB_READ_PCI_BOX(RBOX0, dev, counter1, counter2);
+                    SNB_CHECK_OVERFLOW;
+                    break;
+                case RBOX1:
+                    SNB_READ_PCI_BOX(RBOX1, dev, counter1, counter2);
+                    SNB_CHECK_OVERFLOW;
+                    break;
+
+                case PBOX:
+                    SNB_READ_PCI_BOX(PBOX, dev, counter1, counter2);
+                    SNB_CHECK_OVERFLOW;
                     break;
 
                 default:
