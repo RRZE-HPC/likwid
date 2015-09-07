@@ -1444,15 +1444,18 @@ static int lua_likwid_startProgram(lua_State* L)
     exec = (char *)luaL_checkstring(L, 1);
     int nrThreads = luaL_checknumber(L,2);
     int cpus[nrThreads];
-    if (!lua_istable(L, -1)) {
-      lua_pushstring(L,"No table given as second argument");
-      lua_error(L);
-    }
-    for (status = 1; status<=nrThreads; status++)
+    if (nrThreads > 0)
     {
-        lua_rawgeti(L,-1,status);
-        cpus[status-1] = lua_tounsigned(L,-1);
-        lua_pop(L,1);
+        if (!lua_istable(L, -1)) {
+          lua_pushstring(L,"No table given as second argument");
+          lua_error(L);
+        }
+        for (status = 1; status<=nrThreads; status++)
+        {
+            lua_rawgeti(L,-1,status);
+            cpus[status-1] = lua_tounsigned(L,-1);
+            lua_pop(L,1);
+        }
     }
     parse(exec, argv);
     ppid = getpid();
