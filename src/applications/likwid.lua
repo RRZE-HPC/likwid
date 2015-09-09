@@ -1395,9 +1395,9 @@ local function getMarkerResults(filename, group_list, num_cpus)
                 events = tonumber(tmpList[2])
                 table.remove(tmpList, 1)
                 table.remove(tmpList, 1)
-                
-                table.insert(group_data[g][r]["Time"], t, time)
-                table.insert(group_data[g][r]["Count"], t, count)
+
+                group_data[g][r]["Time"][t] = time
+                group_data[g][r]["Count"][t] = count
                 for c=1, events do
                     if results[g][r][c] == nil then
                         results[g][r][c] = {}
