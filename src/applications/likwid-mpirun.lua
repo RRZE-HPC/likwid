@@ -709,9 +709,21 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
 end
 
 local function createEventString(eventlist)
-    local str = eventlist[1]["Event"]..":"..eventlist[1]["Counter"]
+    if eventlist == nil or #eventlist == 0 then
+        print "ERROR: Empty event list. Failed to create event set string"
+        return ""
+    end
+    local str = ""
+    if eventlist[1] ~= nil and eventlist[1]["Event"] ~= nil and eventlist[1]["Counter"] ~= nil then
+        str = str .. eventlist[1]["Event"]..":"..eventlist[1]["Counter"]
+    end
     for i=2,#eventlist do
-        str = str .. ","..eventlist[i]["Event"]..":"..eventlist[i]["Counter"]
+        if eventlist[i] ~= nil and eventlist[i]["Event"] ~= nil and eventlist[i]["Counter"] ~= nil then
+            str = str .. ","..eventlist[i]["Event"]..":"..eventlist[i]["Counter"]
+        end
+    end
+    if debug then
+        print "DEBUG: Created event set string "..str
     end
     return str
 end
