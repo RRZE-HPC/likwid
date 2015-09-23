@@ -63,6 +63,7 @@
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 NumaTopology numa_info = {0,NULL};
+static int numaInitialized = 0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
@@ -135,10 +136,14 @@ const struct numa_functions numa_funcs = {
 int numa_init(void)
 {
     const struct numa_functions funcs = numa_funcs;
-
+    int ret = 0;
     if (init_config == 0)
     {
         init_configuration();
+    }
+    if (numaInitialized == 1)
+    {
+        return 0;
     }
 
     if ((config.topologyCfgFileName == NULL)||(access(config.topologyCfgFileName, R_OK) && numa_info.numberOfNodes <= 0))
@@ -148,11 +153,15 @@ int numa_init(void)
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
         if (cpuid_topology.activeHWThreads < cpuid_topology.numHWThreads)
         {
-            return proc_numa_init();
+            ret = proc_numa_init();
         }
-        return funcs.numa_init();
+        else
+        {
+            ret = funcs.numa_init();
+        }
     }
-    return 0;
+    numaInitialized = 1;
+    return ret;
 }
 
 void numa_setInterleaved(int* processorList, int numberOfProcessors)
@@ -176,6 +185,10 @@ void numa_finalize(void)
 void numa_finalize(void)
 {
     int i;
+    if (!numaInitialized)
+    {
+        return;
+    }
     for(i=0;i<numa_info.numberOfNodes;i++)
     {
         if (numa_info.nodes[i].processors)
