@@ -734,6 +734,9 @@ extern int perfmon_getIdOfActiveGroup(void) __attribute__ ((visibility ("default
 extern int perfmon_getNumberOfThreads(void) __attribute__ ((visibility ("default") ));
 /** @}*/
 
+extern void perfmon_setVerbosity(int verbose) __attribute__ ((visibility ("default") ));
+
+
 /*
 ################################################################################
 # Time measurements related functions

@@ -582,6 +582,11 @@ getCounterTypeOffset(int index)
     return off;
 }
 
+void perfmon_setVerbosity(int level)
+{
+    if ((level >= DEBUGLEV_ONLY_ERROR) && (level <= DEBUGLEV_DEVELOP))
+        perfmon_verbosity = level;
+}
 
 void
 perfmon_init_maps(void)
@@ -1114,12 +1119,13 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     perfmon_init_maps();
 
     /* Initialize access interface */
-    ret = HPMaddThread(threadsToCpu[0]);
+    ret = HPMinit();
     if (ret)
     {
         ERROR_PLAIN_PRINT(Cannot get access to performance counters);
         free(groupSet->threads);
         free(groupSet);
+        exit(EXIT_FAILURE);
         return ret;
     }
     timer_init();
