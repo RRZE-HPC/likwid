@@ -679,7 +679,6 @@ int perfmon_setupCounterThread_sandybridge(
     uint64_t flags = 0x0ULL;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
-
     if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
@@ -1027,8 +1026,8 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, UNFREEZE_PMC_OR_FIXED)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
     }
     SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX0);
     SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX1);
@@ -1127,7 +1126,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterType type = eventSet->events[i].type;
             if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
@@ -1155,7 +1154,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                                                         (1ULL<<(index - cpuid_info.perf_num_fixed_ctr))));
                         }
                     }
-                    VERBOSEPRINTPCIREG(cpu_id, dev, reg,  LLU_CAST counter_result, STOP_PMC);
+                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, STOP_PMC);
                     break;
 
                 case FIXED:
@@ -1170,14 +1169,14 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<(index+32))));
                         }
                     }
-                    VERBOSEPRINTPCIREG(cpu_id, dev, reg,  LLU_CAST counter_result, STOP_FIXED);
+                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, STOP_FIXED);
                     break;
 
                 case POWER:
                     if (haveLock)
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
-                        VERBOSEPRINTPCIREG(cpu_id, dev, reg,  LLU_CAST counter_result, STOP_POWER);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, STOP_POWER);
                         SNB_CHECK_OVERFLOW;
                     }
                     break;
@@ -1419,6 +1418,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
             counter_result = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             PciDeviceIndex dev = counter_map[index].device;
+            uint64_t reg = counter_map[index].configRegister;
             uint64_t counter1 = counter_map[index].counterRegister;
             uint64_t counter2 = counter_map[index].counterRegister2;
             switch (type)
