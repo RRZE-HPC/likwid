@@ -156,29 +156,35 @@ affinity_init()
     int subCounter = 0;
     int offset = 0;
     int tmp;
+    topology_init();
     int numberOfSocketDomains = cpuid_topology.numSockets;
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Socket domains %d, numberOfSocketDomains);
+    numa_init();
     int numberOfNumaDomains = numa_info.numberOfNodes;
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: NUMA domains %d, numberOfNumaDomains);
     int numberOfProcessorsPerSocket =
         cpuid_topology.numCoresPerSocket * cpuid_topology.numThreadsPerCore;
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPUs per socket %d, numberOfProcessorsPerSocket);
     int numberOfCacheDomains;
 
     int numberOfCoresPerCache =
         cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads/
         cpuid_topology.numThreadsPerCore;
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPU cores per LLC %d, numberOfCoresPerCache);
 
     int numberOfProcessorsPerCache =
         cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
-    int numberOfCoresPerNUMA = 
-
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPUs per LLC %d, numberOfProcessorsPerCache);
     /* for the cache domain take only into account last level cache and assume
      * all sockets to be uniform. */
 
     /* determine how many last level shared caches exist per socket */
     numberOfCacheDomains = cpuid_topology.numSockets *
         (cpuid_topology.numCoresPerSocket/numberOfCoresPerCache);
-
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Cache domains %d, numberOfCacheDomains);
     /* determine total number of domains */
     numberOfDomains += numberOfSocketDomains + numberOfCacheDomains + numberOfNumaDomains;
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: All domains %d, numberOfDomains);
     domains = (AffinityDomain*) malloc(numberOfDomains * sizeof(AffinityDomain));
     if (!domains)
     {
@@ -221,7 +227,6 @@ affinity_init()
 
     /* Socket domains */
     currentDomain = 1;
-
     for (int i=0; i < numberOfSocketDomains; i++ )
     {
         domains[currentDomain + i].numberOfProcessors = numberOfProcessorsPerSocket;
