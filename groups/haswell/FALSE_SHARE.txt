@@ -24,3 +24,5 @@ Local LLC false sharing rate = MEM_LOAD_UOPS_L3_HIT_RETIRED_XSNP_HITM/MEM_LOAD_U
 False-sharing of cache lines can dramatically reduce the performance of an
 application. This performance group measures the L3 traffic induced by false-sharing.
 The false-sharing rate uses all memory loads as reference.
+Please keep in mind that the MEM_LOAD_UOPS_L3_HIT_RETIRED_XSNP_HITM event may
+undercount by as much as 40% (Errata HSD25).

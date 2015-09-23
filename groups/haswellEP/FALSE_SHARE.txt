@@ -30,3 +30,5 @@ application. This performance group measures the L3 traffic induced by false-sha
 The false-sharing rate uses all memory loads as reference.
 For systems with multiple CPU sockets, this performance group also measures the
 false-sharing of cache lines over socket boundaries.
+Please keep in mind that the MEM_LOAD_UOPS_L3_HIT_RETIRED_XSNP_HITM event may
+undercount by as much as 40% (Errata HSW150).
