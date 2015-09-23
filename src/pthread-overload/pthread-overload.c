@@ -149,7 +149,7 @@ pthread_create(pthread_t* thread,
             {
                 color_print("[pthread wrapper] MAIN -> %d\n",pin_ids[ncpus-1]);
             }
-            ncpus--; /* last ID is the first (the process was pinned to) */
+            //ncpus--; /* last ID is the first (the process was pinned to) */
         }
         else
         {
@@ -160,7 +160,7 @@ pthread_create(pthread_t* thread,
         {
             color_print("[pthread wrapper] PIN_MASK: ");
 
-            for (int i=0;i<ncpus;i++)
+            for (int i=0;i<ncpus-1;i++)
             {
                 color_print("%d->%d  ",i,pin_ids[i]);
             }
