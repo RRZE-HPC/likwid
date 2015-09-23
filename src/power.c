@@ -99,7 +99,7 @@ power_init(int cpuId)
     perfmon_init_maps();
     if (!HPMinitialized())
     {
-        HPMaddThread(cpuId);
+        HPMinit();
     }
     if (power_initialized)
     {
