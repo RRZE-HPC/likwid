@@ -157,7 +157,7 @@ access_client_startDaemon(int cpu_id)
 
 int access_client_init(int cpu_id)
 {
-    int ret;
+    int ret = 0;
     if (cpuSockets[cpu_id] < 0)
     {
         pthread_mutex_lock(&cpuLocks[cpu_id]);

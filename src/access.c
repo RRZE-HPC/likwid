@@ -46,6 +46,7 @@
 #include <topology.h>
 #include <configuration.h>
 #include <perfmon.h>
+#include <registers.h>
 #include <access.h>
 #include <access_client.h>
 #include <access_x86.h>
@@ -109,8 +110,17 @@ int HPMinit(void)
             ret = access_init(cpuid_topology.threadPool[i].apicId);
             if (ret == 0)
             {
-                registeredCpus++;
-                registeredCpuList[cpuid_topology.threadPool[i].apicId] = 1;
+                uint64_t data = 0x0ULL;
+                ret = HPMread(cpuid_topology.threadPool[i].apicId, MSR_DEV, MSR_PLATFORM_INFO, &data);
+                if (ret == 0)
+                {
+                    registeredCpus++;
+                    registeredCpuList[cpuid_topology.threadPool[i].apicId] = 1;
+                }
+                else
+                {
+                    return ret;
+                }
             }
             else
             {
