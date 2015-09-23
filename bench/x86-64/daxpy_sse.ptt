@@ -12,13 +12,13 @@ movaps FPR7, [rip+SCALAR]
 LOOP 8
 vmulsd    FPR1, FPR7, [STR0 + GPR1*8]
 vaddsd    FPR1, FPR1, [STR1 + GPR1*8]
+movaps    [STR1 + GPR1*8], FPR1
 vmulsd    FPR2, FPR7, [STR0 + GPR1*8+16]
 vaddsd    FPR2, FPR2, [STR1 + GPR1*8+16]
-movaps    [STR1 + GPR1*8], FPR1
 movaps    [STR1 + GPR1*8+16], FPR2
 vmulsd    FPR3, FPR7, [STR0 + GPR1*8+32]
 vaddsd    FPR3, FPR3, [STR1 + GPR1*8+32]
+movaps    [STR1 + GPR1*8+32], FPR3
 vmulsd    FPR4, FPR7, [STR0 + GPR1*8+48]
 vaddsd    FPR4, FPR4, [STR1 + GPR1*8+48]
-movaps    [STR1 + GPR1*8+32], FPR3
 movaps    [STR1 + GPR1*8+48], FPR4

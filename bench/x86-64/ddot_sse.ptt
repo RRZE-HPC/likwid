@@ -5,20 +5,23 @@ BYTES 16
 DESC Double-precision dot product of two vectors, optimized for SSE
 LOADS 2
 STORES 0
-INSTR_CONST 17
+INSTR_CONST 20
 INSTR_LOOP 15
 UOPS 18
 xorpd FPR1, FPR1
+xorpd FPR6, FPR6
+xorpd FPR7, FPR7
+xorpd FPR8, FPR8
 LOOP 8
 movaps FPR2, [STR0 + GPR1 * 8]
 mulpd  FPR2, [STR1 + GPR1 * 8]
 addpd  FPR1, FPR2
 movaps FPR3, [STR0 + GPR1 * 8 + 16]
 mulpd  FPR3, [STR1 + GPR1 * 8 + 16]
-addpd  FPR1, FPR3
+addpd  FPR6, FPR3
 movaps FPR4, [STR0 + GPR1 * 8 + 32]
 mulpd  FPR4, [STR1 + GPR1 * 8 + 32]
-addpd  FPR1, FPR4
+addpd  FPR7, FPR4
 movaps FPR5, [STR0 + GPR1 * 8 + 48]
 mulpd  FPR5, [STR1 + GPR1 * 8 + 48]
-addpd  FPR1, FPR5
+addpd  FPR8, FPR5

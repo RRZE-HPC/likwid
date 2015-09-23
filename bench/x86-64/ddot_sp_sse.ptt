@@ -5,14 +5,15 @@ BYTES 8
 DESC Single-precision dot product of two vectors, optimized for SSE
 LOADS 2
 STORES 0
-INSTR_CONST 17
+INSTR_CONST 18
 INSTR_LOOP 9
 UOPS 10
 xorps FPR1, FPR1
+xorps FPR4, FPR4
 LOOP 8
 movaps FPR2, [STR0 + GPR1 * 4]
 mulps  FPR2, [STR1 + GPR1 * 4]
 addps  FPR1, FPR2
 movaps FPR3, [STR0 + GPR1 * 4 + 16]
 mulps  FPR3, [STR1 + GPR1 * 4 + 16]
-addps  FPR1, FPR3
+addps  FPR4, FPR3

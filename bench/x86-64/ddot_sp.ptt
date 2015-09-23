@@ -5,20 +5,23 @@ BYTES 8
 DESC Single-precision dot product of two vectors, only scalar operations
 LOADS 2
 STORES 0
-INSTR_CONST 17
+INSTR_CONST 20
 INSTR_LOOP 15
 UOPS 18
 xorps FPR1, FPR1
+xorps FPR6, FPR6
+xorps FPR7, FPR7
+xorps FPR8, FPR8
 LOOP 4
 movss FPR2, [STR0 + GPR1 * 4]
 mulss FPR2, [STR1 + GPR1 * 4]
 addss FPR1, FPR2
 movss FPR3, [STR0 + GPR1 * 4 + 4]
 mulss FPR3, [STR1 + GPR1 * 4 + 4]
-addss FPR1, FPR3
+addss FPR6, FPR3
 movss FPR4, [STR0 + GPR1 * 4 + 8]
 mulss FPR4, [STR1 + GPR1 * 4 + 8]
-addss FPR1, FPR4
+addss FPR7, FPR4
 movss FPR5, [STR0 + GPR1 * 4 + 12]
 mulss FPR5, [STR1 + GPR1 * 4 + 12]
-addss FPR1, FPR5
+addss FPR8, FPR5

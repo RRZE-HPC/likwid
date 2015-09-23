@@ -5,20 +5,23 @@ BYTES 16
 DESC Double-precision dot product of two vectors, optimized for AVX
 LOADS 2
 STORES 0
-INSTR_CONST 17
+INSTR_CONST 20
 INSTR_LOOP 15
 UOPS 18
 vxorpd ymm0, ymm0, ymm0
+vxorpd ymm5, ymm5, ymm5
+vxorpd ymm6, ymm6, ymm6
+vxorpd ymm7, ymm7, ymm7
 LOOP 16
 vmovaps ymm1,       [STR0 + GPR1 * 8]
 vmulpd  ymm1, ymm1, [STR1 + GPR1 * 8]
 vaddpd  ymm0, ymm0, ymm1
 vmovaps ymm2,       [STR0 + GPR1 * 8 + 32]
 vmulpd  ymm2, ymm2, [STR1 + GPR1 * 8 + 32]
-vaddpd  ymm0, ymm0, ymm2
+vaddpd  ymm5, ymm5, ymm2
 vmovaps ymm3,       [STR0 + GPR1 * 8 + 64]
 vmulpd  ymm3, ymm3, [STR1 + GPR1 * 8 + 64]
-vaddpd  ymm0, ymm0, ymm3
+vaddpd  ymm6, ymm6, ymm3
 vmovaps ymm4,       [STR0 + GPR1 * 8 + 96]
 vmulpd  ymm4, ymm4, [STR1 + GPR1 * 8 + 96]
-vaddpd  ymm0, ymm0, ymm4
+vaddpd  ymm7, ymm7, ymm4
