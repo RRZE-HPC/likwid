@@ -25,3 +25,5 @@ May count non-AVX instructions that employ 256-bit operations, including (but
 not necessarily limited to) rep string instructions that use 256-bit loads and
 stores for optimized performance, XSAVE* and XRSTOR*, and operations that
 transition the x87 FPU data registers between x87 and MMX.
+Caution: The event AVX_INSTS_CALC counts the insertf128 instruction often used
+by the Intel C compilers for (unaligned) vector loads.
