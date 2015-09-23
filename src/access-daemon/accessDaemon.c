@@ -53,6 +53,7 @@
 #include <perfmon_ivybridgeEP_counters.h>
 #include <perfmon_sandybridgeEP_counters.h>
 #include <perfmon_broadwelld_counters.h>
+#include <topology.h>
 #include <lock.h>
 
 
@@ -60,15 +61,9 @@
 #define SA struct sockaddr
 #define str(x) #x
 
-#define CHECK_ERROR(func, msg)  \
-    if ((func) < 0) { syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); }
-
 #define CHECK_FILE_ERROR(func, msg)  \
     if ((func) == 0) { syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); }
 
-
-#define EXIT_IF_ERROR(func, msg)  \
-    if ((func) < 0) { syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); stop_daemon(); exit(EXIT_FAILURE); }
 
 
 #define CPUID                    \
@@ -78,35 +73,10 @@
             : "0" (eax))
 
 
-#define  P6_FAMILY        0x6U
-#define  K8_FAMILY        0xFU
-#define  K10_FAMILY       0x10U
-#define  K15_FAMILY       0x15U
-#define  K16_FAMILY       0x16U
-
-#define SANDYBRIDGE          0x2AU
-#define SANDYBRIDGE_EP       0x2DU
-#define IVYBRIDGE            0x3AU
-#define IVYBRIDGE_EP         0x3EU
-#define HASWELL              0x3CU
-#define HASWELL_EP           0x3FU
-#define HASWELL_M1           0x45U
-#define HASWELL_M2           0x46U
-#define ATOM_SILVERMONT_E    0x37U
-#define ATOM_SILVERMONT_C    0x4DU
-#define ATOM_SILVERMONT_Z1   0x4AU
-#define ATOM_SILVERMONT_Z2   0x5AU
-#define ATOM_SILVERMONT_F    0x5DU
-#define ATOM_SILVERMONT_AIR  0x4CU
-#define BROADWELL            0x3DU
-#define BROADWELL_E          0x4FU
-#define BROADWELL_D          0x56U
-#define SKYLAKE1             0x4EU
-#define SKYLAKE2             0x5EU
 
 #define PCI_ROOT_PATH    "/proc/bus/pci/"
 #define MAX_PATH_LENGTH   60
-#define MAX_NUM_NODES    4
+//#define MAX_NUM_NODES    4
 
 /* Lock file controlled from outside which prevents likwid to start.
  * Can be used to synchronize access to the hardware counters
