@@ -60,9 +60,13 @@ static int likwid_init = 0;
 static int numberOfGroups = 0;
 static int* groups;
 static int threads2Cpu[MAX_NUM_THREADS];
+static pthread_t threads2Pthread[MAX_NUM_THREADS];
+static int realThreads2Cpu[MAX_NUM_THREADS] = { [ 0 ... (MAX_NUM_THREADS-1)] = -1};
 static int num_cpus = 0;
-pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
-int seen_threads = 0;
+static int registered_cpus = 0;
+static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
+static int use_locks = 0;
+static pthread_mutex_t threadLocks[MAX_NUM_THREADS] = { [ 0 ... (MAX_NUM_THREADS-1)] = PTHREAD_MUTEX_INITIALIZER};
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -158,7 +162,6 @@ void likwid_markerInit(void)
         return;
     }
 
-    verbosity = atoi(getenv("LIKWID_DEBUG"));
     if (!lock_check())
     {
         fprintf(stderr,"Access to performance counters is locked.\n");
@@ -174,19 +177,54 @@ void likwid_markerInit(void)
     for(int i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
 
     HPMmode(atoi(modeStr));
-    perfmon_verbosity = verbosity;
 
-
-    bThreadStr = bfromcstr(cThreadStr);
-    threadTokens = bstrListCreate();
-    threadTokens = bsplit(bThreadStr,',');
-    num_cpus = threadTokens->qty;
-    for (i=0; i<num_cpus; i++)
+    if (getenv("LIKWID_DEBUG") != NULL)
     {
-        threads2Cpu[i] = ownatoi(bdata(threadTokens->entry[i]));
+        perfmon_verbosity = atoi(getenv("LIKWID_DEBUG"));
+        verbosity = perfmon_verbosity;
     }
-    bdestroy(bThreadStr);
-    bstrListDestroy(threadTokens);
+
+    if (getenv("LIKWID_PIN") != NULL)
+    {
+        bThreadStr = bfromcstr(cThreadStr);
+        threadTokens = bstrListCreate();
+        threadTokens = bsplit(bThreadStr,',');
+        num_cpus = threadTokens->qty;
+        for (i=0; i<num_cpus; i++)
+        {
+            threads2Cpu[i] = ownatoi(bdata(threadTokens->entry[i]));
+            HPMaddThread(threads2Cpu[i]);
+        }
+        bdestroy(bThreadStr);
+        bstrListDestroy(threadTokens);
+        likwid_pinThread(threads2Cpu[0]);
+        if (getenv("OMP_NUM_THREADS") != NULL)
+        {
+            if (ownatoi(getenv("OMP_NUM_THREADS")) > num_cpus)
+            {
+                use_locks = 1;
+            }
+        }
+        if (getenv("CILK_NWORKERS") != NULL)
+        {
+            if (ownatoi(getenv("CILK_NWORKERS")) > num_cpus)
+            {
+                use_locks = 1;
+            }
+        }
+    }
+    else
+    {
+        use_locks = 1;
+        for (i=0;i<cpuid_topology.activeHWThreads; i++)
+        {
+            if (cpuid_topology.threadPool[i].inCpuSet)
+            {
+                threads2Cpu[num_cpus++] = cpuid_topology.threadPool[i].apicId;
+                HPMaddThread(threads2Cpu[num_cpus-1]);
+            }
+        }
+    }
 
     i = perfmon_init(num_cpus, threads2Cpu);
     if (i<0)
@@ -213,42 +251,40 @@ void likwid_markerInit(void)
     bstrListDestroy(eventStrings);
     bdestroy(bEventStr);
 
-    groupSet->activeGroup = 0;
     for (i=0; i<num_cpus; i++)
     {
-        HPMaddThread(threads2Cpu[i]);
+        
         initThreadArch(threads2Cpu[i]);
         hashTable_initThread(threads2Cpu[i]);
-        for(int j=0; j<groupSet->groups[groupSet->activeGroup].numberOfEvents;j++)
+        for(int j=0; j<groupSet->groups[groups[0]].numberOfEvents;j++)
         {
-            groupSet->groups[groupSet->activeGroup].events[j].threadCounter[i].init = TRUE;
+            groupSet->groups[groups[0]].events[j].threadCounter[i].init = TRUE;
         }
     }
 
+    groupSet->activeGroup = 0;
 }
 
 void likwid_markerThreadInit(void)
 {
     int myID;
+    int cpu_id;
     if ( !likwid_init )
     {
         return;
     }
-
-    pthread_mutex_lock(&globalLock);
-    myID = seen_threads++;
-    pthread_mutex_unlock(&globalLock);
-    /*int cpu_id = likwid_getProcessorId();
-    int thread_id = getThreadID(cpu_id);
-
-    HPMaddThread(cpu_id);
-    initThreadArch(cpu_id);
-    hashTable_initThread(cpu_id);
-
-    for(int i=0; i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
+    
+    if (use_locks == 1)
     {
-        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].init = TRUE;
-    }*/
+        pthread_mutex_lock(&globalLock);
+    }
+    myID = registered_cpus++;
+    threads2Pthread[myID] = pthread_self();
+    if (use_locks == 1)
+    {
+        pthread_mutex_unlock(&globalLock);
+    }
+
     if (getenv("LIKWID_PIN") != NULL)
     {
         cpu_set_t cpuset;
@@ -257,8 +293,19 @@ void likwid_markerThreadInit(void)
         if ((CPU_COUNT(&cpuset) > 1) || (likwid_getProcessorId() != threads2Cpu[myID % num_cpus]))
         {
             likwid_pinThread(threads2Cpu[myID % num_cpus]);
+            cpu_id = threads2Cpu[myID % num_cpus];
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Pin thread %lu to CPU %d\n", gettid(), cpu_id);
+        }
+        else
+        {
+            cpu_id = likwid_getProcessorId();
         }
     }
+    else
+    {
+        cpu_id = likwid_getProcessorId();
+    }
+    realThreads2Cpu[myID % num_cpus] = cpu_id;
 }
 
 void likwid_markerNextGroup(void)
@@ -295,25 +342,26 @@ void likwid_markerClose(void)
     char* markerfile = NULL;
     if ( ! likwid_init )
     {
-        fprintf(stderr, "LIKWID not properly initialized\n");
+        fprintf(stdout, "LIKWID not properly initialized\n");
         return;
     }
     hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
     if ((numberOfThreads == 0)||(numberOfThreads == 0))
     {
-        fprintf(stderr, "No threads or regions defined in hash table\n");
+        fprintf(stdout, "No threads or regions defined in hash table\n");
         return;
     }
     markerfile = getenv("LIKWID_FILEPATH");
     if (markerfile == NULL)
     {
-        fprintf(stderr, "Is the application executed with LIKWID wrapper? No file path for the Marker API output defined.\n");
+        fprintf(stdout, "Is the application executed with LIKWID wrapper? No file path for the Marker API output defined.\n");
         return;
     }
     file = fopen(markerfile,"w");
 
     if (file != NULL)
     {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, "Creating Marker file %s with %d regions, %d groups and %d threads\n", markerfile, numberOfRegions, numberOfGroups, numberOfThreads);
         fprintf(file,"%d %d %d\n",numberOfThreads, numberOfRegions, numberOfGroups);
         for (int i=0; i<numberOfRegions; i++)
         {
@@ -331,6 +379,7 @@ void likwid_markerClose(void)
             }
             for (int j=0; j<numberOfThreads; j++)
             {
+                if (results[i].count[j % num_cpus] == 0) continue;
                 fprintf(file,"%d ",i);
                 fprintf(file,"%d ",results[i].groupID);
                 fprintf(file,"%d ",j);
@@ -340,7 +389,14 @@ void likwid_markerClose(void)
 
                 for (int k=0; k<groupSet->groups[results[i].groupID].numberOfEvents; k++)
                 {
-                    fprintf(file,"%e ",results[i].counters[j][k]);
+                    if (realThreads2Cpu[j % num_cpus] != -1)
+                    {
+                        fprintf(file,"%e ",results[i].counters[j][k]);
+                    }
+                    else
+                    {
+                        fprintf(file,"0 ");
+                    }
                 }
                 fprintf(file,"\n");
             }
@@ -386,7 +442,7 @@ int likwid_markerRegisterRegion(const char* regionTag)
     char groupSuffix[10];
     sprintf(groupSuffix, "-%d", groupSet->activeGroup);
     bcatcstr(tag, groupSuffix);
-    int cpu_id = hashTable_get(tag, &results);;
+    int cpu_id = hashTable_get(tag, &results);
     bdestroy(tag);
     return 0;
 }
@@ -416,7 +472,7 @@ int likwid_markerStartRegion(const char* regionTag)
         groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].startData =
                 groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
     }
-    results->groupID = groupSet->activeGroup;
+    
     bdestroy(tag);
     timer_start(&(results->startTime));
     return 0;
@@ -433,16 +489,23 @@ int likwid_markerStopRegion(const char* regionTag)
 
     TimerData timestamp;
     timer_stop(&timestamp);
+    double result = 0.0;
     int cpu_id;
+    int myCPU = likwid_getProcessorId();
     int thread_id;
     bstring tag = bfromcstr(regionTag);
     char groupSuffix[100];
     LikwidThreadResults* results;
     sprintf(groupSuffix, "-%d", groupSet->activeGroup);
     bcatcstr(tag, groupSuffix);
+    if (use_locks == 1)
+    {
+        pthread_mutex_lock(&threadLocks[myCPU]);
+    }
     
     cpu_id = hashTable_get(tag, &results);
     thread_id = getThreadID(cpu_id);
+    results->groupID = groupSet->activeGroup;
     results->startTime.stop.int64 = timestamp.stop.int64;
     results->time += timer_print(&(results->startTime));
     results->count++;
@@ -454,7 +517,14 @@ int likwid_markerStopRegion(const char* regionTag)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu, regionTag, thread_id, cpu_id, i,
                         LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
-        results->PMcounters[i] += perfmon_getResult(groupSet->activeGroup, i, thread_id);
+        result = perfmon_getResult(groupSet->activeGroup, i, thread_id);
+        results->PMcounters[i] += result;
+        //groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].startData = 0x0ULL;
+        //groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData = 0x0ULL;
+    }
+    if (use_locks == 1)
+    {
+        pthread_mutex_unlock(&threadLocks[myCPU]);
     }
     return 0;
 }
@@ -468,6 +538,7 @@ void likwid_markerGetRegion(const char* regionTag, int* nr_events, double* event
     }
     int length = 0;
     int cpu_id;
+    int myCPU = likwid_getProcessorId();
     int thread_id;
     bstring tag = bfromcstr(regionTag);
     char groupSuffix[100];
@@ -476,7 +547,7 @@ void likwid_markerGetRegion(const char* regionTag, int* nr_events, double* event
     bcatcstr(tag, groupSuffix);
 
     cpu_id = hashTable_get(tag, &results);
-    thread_id = getThreadID(cpu_id);
+    thread_id = getThreadID(myCPU);
     *count = results->count;
     *time = results->time;
     length = MIN(groupSet->groups[groupSet->activeGroup].numberOfEvents, *nr_events);
@@ -491,11 +562,19 @@ void likwid_markerGetRegion(const char* regionTag, int* nr_events, double* event
 
 int  likwid_getProcessorId()
 {
+    int i;
     cpu_set_t  cpu_set;
     CPU_ZERO(&cpu_set);
     sched_getaffinity(gettid(),sizeof(cpu_set_t), &cpu_set);
-
-    return getProcessorID(&cpu_set);
+    if (CPU_COUNT(&cpu_set) > 1)
+    {
+        return sched_getcpu();
+    }
+    else
+    {
+        return getProcessorID(&cpu_set);
+    }
+    return -1;
 }
 
 #ifdef HAS_SCHEDAFFINITY
@@ -512,7 +591,7 @@ int  likwid_pinThread(int processorId)
 
     if (ret != 0)
     {
-        ERROR;
+        ERROR_PRINT("ERROR: Pinning of thread to CPU %d failed\n", processorId);
         return FALSE;
     }
 
@@ -532,7 +611,7 @@ int  likwid_pinProcess(int processorId)
 
     if (ret < 0)
     {
-        ERROR;
+        ERROR_PRINT("ERROR: Pinning of process to CPU %d failed\n", processorId);
         return FALSE;
     }
 
