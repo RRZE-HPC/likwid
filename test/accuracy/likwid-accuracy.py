@@ -32,7 +32,7 @@ topology_outputfile = "topology.dat"
 gnu_colors = ["red","blue","green","black"]#,"brown", "gray","violet", "cyan", "magenta","orange","#4B0082","#800000","turquoise","#006400","yellow"]
 gnu_marks = [5,13,9,2]#,3,4,6,7,8,9,10,11,12,14,15]
 
-units = { "L2" : "MByte/s", "L3" : "MByte/s", "MEM" : "MByte/s",
+units = { "L2" : "MByte/s", "L3" : "MByte/s", "MEM" : "MByte/s", "HA" : "MByte/s",
           "FLOPS_SP" : "MFLOP/s", "FLOPS_DP" : "MFLOP/s", "FLOPS_AVX" : "MFLOP/s",
           "DATA": "Load/Store ratio", "BRANCH" : "Instructions per branch",
           "CLOCK" : "Instructions", "UOPS" : "UOPs"}
@@ -130,6 +130,11 @@ def write_topology(path):
     f.write(p.stdout.read())
     f.close()
 
+def approx(in1, in2):
+    if in1 > (0.95*in2) or in1 < (1.05*in2):
+        return 1
+    return 0
+
 def legend(file1, file2):
     input1 = []
     input2 = []
@@ -156,6 +161,8 @@ def legend(file1, file2):
     if float(numbers1[0]) > float(numbers1[-1]) and float(numbers2[0]) > float(numbers2[-1]):
         return "no"
     elif float(numbers1[0]) < float(numbers1[-1]) and float(numbers2[0]) < float(numbers2[-1]):
+        return "so"
+    elif approx(float(numbers1[0]), float(numbers1[-1])) and approx(float(numbers2[0]), float(numbers2[-1])):
         return "so"
     return "no"
 
@@ -403,45 +410,55 @@ if len(sets) == 0:
     fp.close()
 for line in sets:
     if not line.strip() or line.startswith("#"): continue
-    if os.path.exists("%s/%s.txt" % (testfolder,line.strip(),)):
-        test_set[line.strip()] = {}
-        plain_set[line.strip()] = {}
-        corrected_set[line.strip()] = {}
-        marker_set[line.strip()] = {}
-        papi_set[line.strip()] = {}
-        testfp = open("%s/%s.txt" % (testfolder,line.strip(),),'r')
+    filename = "%s/%s.txt" % (testfolder,line.strip(),)
+    if os.path.exists(filename):
+        groupname = line.strip()
+        testfp = open(filename,'r')
+        for line in testfp.read().split("\n"):
+            if line.startswith("GROUP"):
+                match = re.match("^GROUP\s+(\.+)")
+                if match:
+                    groupname = match.group(1)
+                    break
+        testfp.close()
+        test_set[groupname] = {}
+        plain_set[groupname] = {}
+        corrected_set[groupname] = {}
+        marker_set[groupname] = {}
+        papi_set[groupname] = {}
+        testfp = open(filename,'r')
         test = None
         for i,testline in enumerate(testfp.read().split("\n")):
             if test and not testline.strip(): test = None
             if testline.startswith("REGEX_BENCH"):
-                test_set[line.strip()]["REGEX_BENCH"] = re.compile(" ".join(testline.split(" ")[1:]))
+                test_set[groupname]["REGEX_BENCH"] = re.compile(" ".join(testline.split(" ")[1:]))
             if testline.startswith("REGEX_PERF"):
-                test_set[line.strip()]["REGEX_PERF"] = re.compile(" ".join(testline.split(" ")[1:]))
+                test_set[groupname]["REGEX_PERF"] = re.compile(" ".join(testline.split(" ")[1:]))
             if testline.startswith("REGEX_PAPI"):
-                test_set[line.strip()]["REGEX_PAPI"] = re.compile(" ".join(testline.split(" ")[1:]))
+                test_set[groupname]["REGEX_PAPI"] = re.compile(" ".join(testline.split(" ")[1:]))
             if testline.startswith("TEST"):
                 test = testline.split(" ")[1]
-                test_set[line.strip()][test] = {}
-                test_set[line.strip()][test]["WA_FACTOR"] = 0.0
-                plain_set[line.strip()][test] = {}
-                corrected_set[line.strip()][test] = {}
-                marker_set[line.strip()][test] = {}
-                papi_set[line.strip()][test] = {}
+                test_set[groupname][test] = {}
+                test_set[groupname][test]["WA_FACTOR"] = 0.0
+                plain_set[groupname][test] = {}
+                corrected_set[groupname][test] = {}
+                marker_set[groupname][test] = {}
+                papi_set[groupname][test] = {}
             if testline.startswith("RUNS") and test:
-                test_set[line.strip()][test]["RUNS"] = int(testline.split(" ")[1])
+                test_set[groupname][test]["RUNS"] = int(testline.split(" ")[1])
             if testline.startswith("WA_FACTOR") and test:
-                test_set[line.strip()][test]["WA_FACTOR"] = float(testline.split(" ")[1])
+                test_set[groupname][test]["WA_FACTOR"] = float(testline.split(" ")[1])
             if testline.startswith("VARIANT") and test:
                 linelist = re.split("\s+",testline);
                 variant = linelist[1]
-                if not test_set[line.strip()][test].has_key("variants"):
-                    test_set[line.strip()][test]["variants"] = []
-                test_set[line.strip()][test][variant] = linelist[2]
-                test_set[line.strip()][test]["variants"].append(linelist[1])
-                plain_set[line.strip()][test][variant] = []
-                corrected_set[line.strip()][test][variant] = []
-                marker_set[line.strip()][test][variant] = []
-                papi_set[line.strip()][test][variant] = []
+                if not test_set[groupname][test].has_key("variants"):
+                    test_set[groupname][test]["variants"] = []
+                test_set[groupname][test][variant] = linelist[2]
+                test_set[groupname][test]["variants"].append(linelist[1])
+                plain_set[groupname][test][variant] = []
+                corrected_set[groupname][test][variant] = []
+                marker_set[groupname][test][variant] = []
+                papi_set[groupname][test][variant] = []
         testfp.close()
 
 
