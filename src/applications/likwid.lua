@@ -738,19 +738,23 @@ local function get_groups()
     local cpuinfo = likwid.getCpuInfo()
     if cpuinfo == nil then return 0, {} end
     local f = io.popen("ls " .. likwid.groupfolder .. "/" .. cpuinfo["short_name"] .."/*.txt 2>/dev/null")
-    t = stringsplit(f:read("*a"),"\n")
-    f:close()
-    for i, a in pairs(t) do
-        if a ~= "" then
-            table.insert(groups,a:sub((a:match'^.*()/')+1,a:len()-4))
+    if f ~= nil then
+        t = stringsplit(f:read("*a"),"\n")
+        f:close()
+        for i, a in pairs(t) do
+            if a ~= "" then
+                table.insert(groups,a:sub((a:match'^.*()/')+1,a:len()-4))
+            end
         end
     end
-    local f = io.popen("ls " ..os.getenv("HOME") .. "/.likwid/groups/" .. cpuinfo["short_name"] .."/*.txt 2>/dev/null")
-    t = stringsplit(f:read("*a"),"\n")
-    f:close()
-    for i, a in pairs(t) do
-        if a ~= "" then
-            table.insert(groups,a:sub((a:match'^.*()/')+1,a:len()-4))
+    f = io.popen("ls " ..os.getenv("HOME") .. "/.likwid/groups/" .. cpuinfo["short_name"] .."/*.txt 2>/dev/null")
+    if f ~= nil then
+        t = stringsplit(f:read("*a"),"\n")
+        f:close()
+        for i, a in pairs(t) do
+            if a ~= "" then
+                table.insert(groups,a:sub((a:match'^.*()/')+1,a:len()-4))
+            end
         end
     end
     return #groups,groups
@@ -812,7 +816,17 @@ local function get_groupdata(group)
     end
     if (group_exist == 0) then return new_groupdata(group, cpuinfo["perf_num_fixed_ctr"]) end
     
-    local f = assert(io.open(likwid.groupfolder .. "/" .. cpuinfo["short_name"] .. "/" .. group .. ".txt", "r"))
+    local f = io.open(likwid.groupfolder .. "/" .. cpuinfo["short_name"] .. "/" .. group .. ".txt", "r")
+    if f == nil then
+        f = io.open(os.getenv("HOME") .. "/.likwid/groups/" .. cpuinfo["short_name"] .."/" .. group .. ".txt", "r")
+        if f == nil then
+            print("Cannot read data for group "..group)
+            print("Tried folders:")
+            print(likwid.groupfolder .. "/" .. cpuinfo["short_name"] .. "/" .. group .. ".txt")
+            print(os.getenv("HOME") .. "/.likwid/groups/" .. cpuinfo["short_name"] .."/*.txt")
+            return groupdata
+        end
+    end
     local t = f:read("*all")
     f:close()
     local parse_eventset = false
