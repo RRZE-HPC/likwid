@@ -51,5 +51,9 @@ http://groups.google.com/group/likwid-users
 or if it is bug, add an issue at:
 https://github.com/rrze-likwid/likwid/issues
 
-
+--------------------------------------------------------------------------------
+Extras
+--------------------------------------------------------------------------------
+If you want to use the Marker API with Java, you can find the Java module here:
+https://github.com/jlewandowski/likwid-java-api
 
