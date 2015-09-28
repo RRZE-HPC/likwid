@@ -37,13 +37,9 @@
 #include <bstrlib.h>
 #include <timer.h>
 
-#define MAX_EVENT_OPTIONS 4
+#define MAX_EVENT_OPTIONS NUM_EVENT_OPTIONS
 
 /* #####   EXPORTED TYPE DEFINITIONS   #################################### */
-
-extern int socket_fd;
-extern int thread_sockets[MAX_NUM_THREADS];
-
 
 /** \addtogroup PerfMon
  *  @{

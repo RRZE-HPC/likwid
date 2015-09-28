@@ -77,10 +77,6 @@ int perfmon_numCoreCounters = 0;
 int perfmon_numArchEvents = 0;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 
-int socket_fd = -1;
-int thread_sockets[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = -1};
-
-
 PerfmonGroupSet* groupSet = NULL;
 
 int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);

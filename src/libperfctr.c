@@ -173,7 +173,6 @@ void likwid_markerInit(void)
     affinity_init();
     hashTable_init();
 
-    for(int i=0; i<MAX_NUM_THREADS; i++) thread_sockets[i] = -1;
     for(int i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
 
     HPMmode(atoi(modeStr));
