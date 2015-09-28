@@ -610,6 +610,49 @@ extern void affinity_finalize() __attribute__ ((visibility ("default") ));
 
 /*
 ################################################################################
+# CPU string parsing related functions
+################################################################################
+*/
+/** \addtogroup CPUParse CPU string parser module
+ *  @{
+ */
+
+/*! \brief Read CPU selection string and resolve to available CPU numbers
+
+Reads the CPU selection string and fills the given list with the CPU numbers
+defined in the selection string. This function is a interface function for the
+different selection modes: scatter, expression, logical and physical.
+@param [in] cpustring Selection string
+@param [out] cpulist List of CPUs
+@param [in] length Length of cpulist
+@return error code (>0 on success for the returned list length, -ERRORCODE on failure)
+*/
+extern int cpustr_to_cpulist(char* cpustring, int* cpulist, int length);
+/*! \brief Read NUMA node selection string and resolve to available NUMA node numbers
+
+Reads the NUMA node selection string and fills the given list with the NUMA node numbers
+defined in the selection string.
+@param [in] nodestr Selection string
+@param [out] nodes List of available NUMA nodes
+@param [in] length Length of NUMA node list
+@return error code (>0 on success for the returned list length, -ERRORCODE on failure)
+*/
+extern int nodestr_to_nodelist(char* nodestr, int* nodes, int length);
+/*! \brief Read CPU socket selection string and resolve to available CPU socket numbers
+
+Reads the CPU socket selection string and fills the given list with the CPU socket numbers
+defined in the selection string.
+@param [in] sockstr Selection string
+@param [out] sockets List of available CPU sockets
+@param [in] length Length of CPU socket list
+@return error code (>0 on success for the returned list length, -ERRORCODE on failure)
+*/
+extern int sockstr_to_socklist(char* sockstr, int* sockets, int length);
+
+/** @}*/
+
+/*
+################################################################################
 # Performance monitoring related functions
 ################################################################################
 */

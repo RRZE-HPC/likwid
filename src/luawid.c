@@ -36,7 +36,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <time.h>
-
+#include <sched.h>
 
 #include <lua.h>                               /* Always include this */
 #include <lauxlib.h>                           /* Always include this */
@@ -1044,6 +1044,90 @@ static int lua_likwid_getAffinityInfo(lua_State* L)
     return 1;
 }
 
+static int lua_likwid_cpustr_to_cpulist(lua_State* L)
+{
+    int ret = 0;
+    char* cpustr = (char *)luaL_checkstring(L, 1);
+    int* cpulist = (int*) malloc(MAX_NUM_THREADS * sizeof(int));
+    if (cpulist == NULL)
+    {
+        lua_pushstring(L,"Cannot allocate data for the CPU list");
+        lua_error(L);
+    }
+    ret = cpustr_to_cpulist(cpustr, cpulist, MAX_NUM_THREADS);
+    if (ret <= 0)
+    {
+        lua_pushstring(L,"Cannot parse cpustring");
+        lua_error(L);
+    }
+    lua_pushnumber(L, ret);
+    lua_newtable(L);
+    for (int i=0;i<ret;i++)
+    {
+        lua_pushunsigned(L, i+1);
+        lua_pushunsigned(L, cpulist[i]);
+        lua_settable(L,-3);
+    }
+    free(cpulist);
+    return 2;
+}
+
+static int lua_likwid_nodestr_to_nodelist(lua_State* L)
+{
+    int ret = 0;
+    char* nodestr = (char *)luaL_checkstring(L, 1);
+    int* nodelist = (int*) malloc(MAX_NUM_NODES * sizeof(int));
+    if (nodelist == NULL)
+    {
+        lua_pushstring(L,"Cannot allocate data for the node list");
+        lua_error(L);
+    }
+    ret = nodestr_to_nodelist(nodestr, nodelist, MAX_NUM_NODES);
+    if (ret <= 0)
+    {
+        lua_pushstring(L,"Cannot parse node string");
+        lua_error(L);
+    }
+    lua_pushnumber(L, ret);
+    lua_newtable(L);
+    for (int i=0;i<ret;i++)
+    {
+        lua_pushunsigned(L, i+1);
+        lua_pushunsigned(L, nodelist[i]);
+        lua_settable(L,-3);
+    }
+    free(nodelist);
+    return 2;
+}
+
+static int lua_likwid_sockstr_to_socklist(lua_State* L)
+{
+    int ret = 0;
+    char* sockstr = (char *)luaL_checkstring(L, 1);
+    int* socklist = (int*) malloc(MAX_NUM_NODES * sizeof(int));
+    if (socklist == NULL)
+    {
+        lua_pushstring(L,"Cannot allocate data for the socket list");
+        lua_error(L);
+    }
+    ret = nodestr_to_nodelist(sockstr, socklist, MAX_NUM_NODES);
+    if (ret <= 0)
+    {
+        lua_pushstring(L,"Cannot parse socket string");
+        lua_error(L);
+    }
+    lua_pushnumber(L, ret);
+    lua_newtable(L);
+    for (int i=0;i<ret;i++)
+    {
+        lua_pushunsigned(L, i+1);
+        lua_pushunsigned(L, socklist[i]);
+        lua_settable(L,-3);
+    }
+    free(socklist);
+    return 2;
+}
+
 static int lua_likwid_putAffinityInfo(lua_State* L)
 {
     if (affinity_isInitialized)
@@ -1443,7 +1527,8 @@ static int lua_likwid_startProgram(lua_State* L)
     char  *argv[4096];
     exec = (char *)luaL_checkstring(L, 1);
     int nrThreads = luaL_checknumber(L,2);
-    int cpus[nrThreads];
+    int cpus[MAX_NUM_THREADS];
+    cpu_set_t cpuset;
     if (nrThreads > 0)
     {
         if (!lua_istable(L, -1)) {
@@ -1456,6 +1541,12 @@ static int lua_likwid_startProgram(lua_State* L)
             cpus[status-1] = lua_tounsigned(L,-1);
             lua_pop(L,1);
         }
+    }
+    else
+    {
+        for (nrThreads = 0; nrThreads < cpuid_topology.numHWThreads; nrThreads++)
+            cpus[nrThreads] = cpuid_topology.threadPool[nrThreads].apicId;
+        nrThreads = cpuid_topology.numHWThreads;
     }
     parse(exec, argv);
     ppid = getpid();
@@ -1647,6 +1738,10 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_putPowerInfo",lua_likwid_putPowerInfo);
     lua_register(L, "likwid_getOnlineDevices", lua_likwid_getOnlineDevices);
     lua_register(L, "likwid_printSupportedCPUs", lua_likwid_printSupportedCPUs);
+    // CPU string parse functions
+    lua_register(L, "likwid_cpustr_to_cpulist",lua_likwid_cpustr_to_cpulist);
+    lua_register(L, "likwid_nodestr_to_nodelist",lua_likwid_nodestr_to_nodelist);
+    lua_register(L, "likwid_sockstr_to_socklist",lua_likwid_sockstr_to_socklist);
     // Timer functions
     lua_register(L, "likwid_getCpuClock",lua_likwid_getCpuClock);
     lua_register(L, "likwid_startClock",lua_likwid_startClock);
