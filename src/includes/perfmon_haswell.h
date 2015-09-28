@@ -70,6 +70,7 @@ uint32_t hasep_fixed_setup(RegisterIndex index, PerfmonEvent *event)
                 break;
             case EVENT_OPTION_ANYTHREAD:
                 flags |= (1ULL<<(2+(index*4)));
+                break;
             default:
                 break;
         }
