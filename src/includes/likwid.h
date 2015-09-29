@@ -627,7 +627,7 @@ different selection modes: scatter, expression, logical and physical.
 @param [in] length Length of cpulist
 @return error code (>0 on success for the returned list length, -ERRORCODE on failure)
 */
-extern int cpustr_to_cpulist(char* cpustring, int* cpulist, int length);
+extern int cpustr_to_cpulist(char* cpustring, int* cpulist, int length)  __attribute__ ((visibility ("default") ));
 /*! \brief Read NUMA node selection string and resolve to available NUMA node numbers
 
 Reads the NUMA node selection string and fills the given list with the NUMA node numbers
@@ -637,7 +637,7 @@ defined in the selection string.
 @param [in] length Length of NUMA node list
 @return error code (>0 on success for the returned list length, -ERRORCODE on failure)
 */
-extern int nodestr_to_nodelist(char* nodestr, int* nodes, int length);
+extern int nodestr_to_nodelist(char* nodestr, int* nodes, int length)  __attribute__ ((visibility ("default") ));
 /*! \brief Read CPU socket selection string and resolve to available CPU socket numbers
 
 Reads the CPU socket selection string and fills the given list with the CPU socket numbers
@@ -647,7 +647,7 @@ defined in the selection string.
 @param [in] length Length of CPU socket list
 @return error code (>0 on success for the returned list length, -ERRORCODE on failure)
 */
-extern int sockstr_to_socklist(char* sockstr, int* sockets, int length);
+extern int sockstr_to_socklist(char* sockstr, int* sockets, int length)  __attribute__ ((visibility ("default") ));
 
 /** @}*/
 
