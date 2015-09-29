@@ -29,6 +29,7 @@
  */
 #include <strUtil.h>
 #include <math.h>
+#include <likwid.h>
 
 static int str2int(const char* str)
 {
@@ -64,11 +65,11 @@ uint64_t bstr_to_doubleSize(const_bstring str, DataType type)
     switch (type)
     {
         case SINGLE:
-            bytesize = 4;
+            bytesize = sizeof(float);
             break;
 
         case DOUBLE:
-            bytesize = 8;
+            bytesize = sizeof(double);
             break;
     }
 
@@ -92,221 +93,167 @@ uint64_t bstr_to_doubleSize(const_bstring str, DataType type)
     return junk;
 }
 
-void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int numberOfStreams)
+
+bstring parse_workgroup(Workgroup* group, const_bstring str, DataType type)
 {
-    uint32_t i;
-    int parseStreams = 0;
-    bstring threadInfo;
-    bstring streams= bformat("0");
+    CpuTopology_t topo;
     struct bstrList* tokens;
-    struct bstrList* subtokens;
-    AffinityDomains_t domains;
-    AffinityDomain* domain = NULL;
+    bstring cpustr;
+    int numThreads = 0;
+    bstring domain;
 
-    /* split the workgroup into the thread and the streams part */
-    tokens = bsplit(str,'-');
 
+    tokens = bsplit(str,':');
     if (tokens->qty == 2)
     {
-        threadInfo = bstrcpy(tokens->entry[0]);
-        streams = bstrcpy(tokens->entry[1]);
-        parseStreams = 1;
-    }
-    else if (tokens->qty == 1)
-    {
-        threadInfo = bstrcpy(tokens->entry[0]);
-    }
-    else
-    {
-        fprintf(stderr, "Error in parsing workgroup string\n");
-    }
-
-    bstrListDestroy (tokens);
-    tokens = bsplit(threadInfo,':');
-
-    if (tokens->qty == 5)
-    {
-        uint32_t maxNumThreads;
-        int chunksize;
-        int stride;
-        int counter;
-        int currentId = 0;
-        int startId = 0;
-
-        domains = get_affinityDomains();
-        for (i = 0; i < domains->numberOfAffinityDomains; i++)
-        {
-            if (bstrcmp(domains->domains[i].tag, tokens->entry[0]) == BSTR_OK)
-            {
-                domain = &(domains->domains[i]);
-                break;
-            }
-        }
-
-        if (domain == NULL)
-        {
-            fprintf(stderr, "Error: Domain %s not available on current machine.\nTry likwid-bench -p for supported domains.",
-                bdata(tokens->entry[0]));
-            exit(EXIT_FAILURE);
-        }
-
-        group->size = bstr_to_doubleSize(tokens->entry[1], type);
-        group->numberOfThreads = str2int(bdata(tokens->entry[2]));
-        chunksize = str2int(bdata(tokens->entry[3]));
-        stride = str2int(bdata(tokens->entry[4]));
-        maxNumThreads = ceil((double)domain->numberOfProcessors / stride) * chunksize;
-
-        if (group->numberOfThreads > maxNumThreads)
-        {
-            fprintf(stderr, "Warning: More threads (%d) requested than CPUs in domain %s fulfilling expression (%d).\n",
-                    group->numberOfThreads, bdata(tokens->entry[0]), maxNumThreads);
-        }
-
-        group->processorIds = (int*) malloc(group->numberOfThreads * sizeof(int));
-
-        counter = chunksize;
-
-        counter = 0;
-        for (int j=0; j<group->numberOfThreads; j+=chunksize)
-        {
-            for(i=0;i<chunksize && j+i<group->numberOfThreads ;i++)
-            {
-                group->processorIds[startId++] = domain->processorList[counter+i];
-            }
-            counter += stride;
-            if (counter >= domain->numberOfProcessors)
-            {
-                counter = counter-domain->numberOfProcessors;
-            }
-        }
+        numThreads = topo->activeHWThreads;
+        cpustr = bformat("E:%s:%d", bdata(tokens->entry[0]), numThreads );
     }
     else if (tokens->qty == 3)
     {
-        domains = get_affinityDomains();
-        for (i = 0; i < domains->numberOfAffinityDomains; i++)
+        cpustr = bformat("E:%s:%s", bdata(tokens->entry[0]), bdata(tokens->entry[2]));
+        numThreads = str2int(bdata(tokens->entry[2]));
+        if (numThreads < 0)
         {
-            if (bstrcmp(domains->domains[i].tag, tokens->entry[0]) == BSTR_OK)
-            {
-                domain = &(domains->domains[i]);
-                break;
-            }
-        }
-
-        if (domain == NULL)
-        {
-            fprintf(stderr, "Error: Domain %s not available on current machine.\nTry likwid-bench -p for supported domains.",
-                    bdata(tokens->entry[0]));
-            exit(EXIT_FAILURE);
-        }
-
-        group->size = bstr_to_doubleSize(tokens->entry[1], type);
-        group->numberOfThreads = str2int(bdata(tokens->entry[2]));
-
-        if (group->numberOfThreads > domain->numberOfProcessors)
-        {
-            fprintf(stderr, "Warning: More threads (%d) requested than CPUs in domain %s (%d).\n",
-                    group->numberOfThreads, bdata(tokens->entry[0]), domain->numberOfProcessors);
-        }
-
-        group->processorIds = (int*) malloc(group->numberOfThreads * sizeof(int));
-
-        for (i=0; i<group->numberOfThreads; i++)
-        {
-            group->processorIds[i] = domain->processorList[i % domain->numberOfProcessors];
+            fprintf(stderr, "Cannot convert %s to integer\n", bdata(tokens->entry[2]));
+            bstrListDestroy(tokens);
+            return NULL;
         }
     }
-    else if (tokens->qty == 2)
+    else if (tokens->qty == 5)
     {
-        domains = get_affinityDomains();
-        for (i = 0; i < domains->numberOfAffinityDomains; i++)
+        cpustr = bformat("E:%s:%s:%s:%s", bdata(tokens->entry[0]),
+                                          bdata(tokens->entry[2]),
+                                          bdata(tokens->entry[3]),
+                                          bdata(tokens->entry[4]));
+        numThreads = str2int(bdata(tokens->entry[2]));
+        if (numThreads < 0)
         {
-            if (bstrcmp(domains->domains[i].tag, tokens->entry[0]) == BSTR_OK)
-            {
-                domain = &(domains->domains[i]);
-                break;
-            }
-        }
-
-        if (domain == NULL)
-        {
-            fprintf(stderr, "Error: Domain %s not available on current machine.\nTry likwid-bench -p for supported domains.",
-                            bdata(tokens->entry[0]));
-            exit(EXIT_FAILURE);
-        }
-
-        group->size = bstr_to_doubleSize(tokens->entry[1], type);
-        group->numberOfThreads = domain->numberOfProcessors;
-        group->processorIds = (int*) malloc(group->numberOfThreads * sizeof(int));
-
-        for (i=0; i<group->numberOfThreads; i++)
-        {
-            group->processorIds[i] = domain->processorList[i];
+            fprintf(stderr, "Cannot convert %s to integer\n", bdata(tokens->entry[2]));
+            bstrListDestroy(tokens);
+            return NULL;
         }
     }
     else
     {
-        fprintf(stderr, "Error in parsing workgroup string\n");
-    }
-
-    bstrListDestroy(tokens);
-
-    /* parse stream list */
-    if (parseStreams)
-    {
-        tokens = bsplit(streams,',');
-
-        if (tokens->qty < numberOfStreams)
-        {
-            fprintf(stderr, "Error: Testcase requires at least %d streams\n", numberOfStreams);
-        }
-
-        group->streams = (Stream*) malloc(numberOfStreams * sizeof(Stream));
-
-        for (i=0;i<(uint32_t) tokens->qty;i++)
-        {
-            subtokens = bsplit(tokens->entry[i],':');
-
-            if ( subtokens->qty == 3 )
-            {
-                int index = str2int(bdata(subtokens->entry[0]));
-                if (index >= numberOfStreams)
-                {
-                    fprintf(stderr, "Error: Stream index %d out of range\n",index);
-                }
-                group->streams[index].domain = bstrcpy(subtokens->entry[1]);
-                group->streams[index].offset = str2int(bdata(subtokens->entry[2]));
-            }
-            else if ( subtokens->qty == 2 )
-            {
-                int index = str2int(bdata(subtokens->entry[0]));
-                if (index >= numberOfStreams)
-                {
-                    fprintf(stderr, "Error: Stream index %d out of range\n",index);
-                }
-                group->streams[index].domain = bstrcpy(subtokens->entry[1]);
-                group->streams[index].offset = 0;
-            }
-            else
-            {
-                fprintf(stderr, "Error: Cannot parse stream placement defintition in %s\n", bdata(str));
-            }
-
-            bstrListDestroy(subtokens);
-        }
-
+        fprintf(stderr, "Misformated workgroup string\n");
         bstrListDestroy(tokens);
+        return NULL;
     }
-    else
+    group->processorIds = (int*) malloc(numThreads * sizeof(int));
+    if (group->processorIds == NULL)
     {
-        group->streams = (Stream*) malloc(numberOfStreams * sizeof(Stream));
+        fprintf(stderr, "No more memory to allocate list of processors\n");
+        bstrListDestroy(tokens);
+        return NULL;
+    }
+    group->numberOfThreads = numThreads;
+    group->size = bstr_to_doubleSize(tokens->entry[1], type);
+    if (cpustr_to_cpulist(bdata(cpustr),group->processorIds, numThreads) < 0 )
+    {
+        free(group->processorIds);
+        bstrListDestroy(tokens);
+        return NULL;
+    }
+    domain = bstrcpy(tokens->entry[0]);
+    bstrListDestroy(tokens);
+    return domain;
+}
 
-        for (i=0; i< (uint32_t)numberOfStreams; i++)
+int parse_streams(Workgroup* group, const_bstring str, int numberOfStreams)
+{
+    struct bstrList* tokens;
+    struct bstrList* subtokens;
+    tokens = bsplit(str,',');
+
+    if (tokens->qty < numberOfStreams)
+    {
+        fprintf(stderr, "Error: Testcase requires at least %d streams\n", numberOfStreams);
+    }
+
+    group->streams = (Stream*) malloc(numberOfStreams * sizeof(Stream));
+    
+    for (int i=0; i<numberOfStreams; i++)
+    {
+        subtokens = bsplit(tokens->entry[i],':');
+        if (subtokens->qty >= 2)
         {
-            group->streams[i].domain = domain->tag;
+            int index = str2int(bdata(subtokens->entry[0]));
+            if ((index < 0) && (index >= numberOfStreams))
+            {
+                free(group->streams);
+                bstrListDestroy(subtokens);
+                bstrListDestroy(tokens);
+                return -1;
+            }
+            group->streams[index].domain = bstrcpy(subtokens->entry[1]);
+            group->streams[index].offset = 0;
+            if (subtokens->qty == 3)
+            {
+                group->streams[index].offset = str2int(bdata(subtokens->entry[2]));
+                if (group->streams[index].offset < 0)
+                {
+                free(group->streams);
+                bstrListDestroy(subtokens);
+                bstrListDestroy(tokens);
+                return -1;
+                }
+            }
+        }
+        else
+        {
+            fprintf(stderr, "Error in parsing stream definition %s\n", bdata(tokens->entry[i]));
+            bstrListDestroy(subtokens);
+            bstrListDestroy(tokens);
+            free(group->streams);
+            return -1;
+        }
+    }
+
+    bstrListDestroy(subtokens);
+    bstrListDestroy(tokens);
+    return 0;
+}
+
+void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int numberOfStreams)
+{
+    int parseStreams = 0;
+    struct bstrList* tokens;
+    tokens = bsplit(str,'-');
+    bstring domain;
+    if (tokens->qty == 2)
+    {
+        domain = parse_workgroup(group, tokens->entry[0], type);
+        if (domain == NULL)
+        {
+            bstrListDestroy(tokens);
+            return;
+        }
+        parse_streams(group, tokens->entry[1], numberOfStreams);
+    }
+    else if (tokens->qty == 1)
+    {
+        domain = parse_workgroup(group, tokens->entry[0], type);
+        if (domain == NULL)
+        {
+            bstrListDestroy(tokens);
+            return;
+        }
+        group->streams = (Stream*) malloc(numberOfStreams * sizeof(Stream));
+        for (int i = 0; i< numberOfStreams; i++)
+        {
+            group->streams[i].domain = domain;
             group->streams[i].offset = 0;
         }
     }
-
+    else
+    {
+        fprintf(stderr, "Error in parsing workgroup string %s\n", bdata(str));
+        bstrListDestroy(tokens);
+        exit(EXIT_FAILURE);
+    }
+    bstrListDestroy(tokens);
     group->size /= numberOfStreams;
     return;
 }
+

@@ -44,7 +44,7 @@ include $(MAKE_DIR)/config_checks.mk
 include $(MAKE_DIR)/config_defines.mk
 
 #INCLUDES  += -I./includes -I../src/includes -I../ext/hwloc/include -I../$(COMPILER) -I$(BUILD_DIR)
-INCLUDES  += -I./includes -I$(BUILD_DIR)
+INCLUDES  += -I./includes -I$(BUILD_DIR) -I../src/includes
 LIBS      +=
 CFLAGS := $(filter-out -fvisibility=hidden, $(CFLAGS))
 
@@ -96,7 +96,7 @@ all: $(BUILD_DIR) $(OBJ) $(OBJ_BENCH) $(BENCH_TARGET)
 $(BENCH_TARGET): $(BENCH)
 $(BENCH): $(BUILD_DIR) $(OBJ) $(OBJ_BENCH)
 	@echo "===>  LINKING  $(BENCH)"
-	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS} -o $(BENCH) likwid-bench.c $(TARGET_LIB) $(BENCH_LIBS) $(OBJ_BENCH) $(OBJ) $(LIBS) -Wl,-rpath=$(INSTALLED_LIBPREFIX)
+	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS}  likwid-bench.c $(BENCH_LIBS) $(OBJ_BENCH) $(OBJ) -o $(BENCH) $(TARGET_LIB) $(LIBS)
 
 
 $(BUILD_DIR):
@@ -106,7 +106,7 @@ $(BUILD_DIR):
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
 	@echo "===>  COMPILE C $@"
-	$(Q)$(CC) -g -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
+	$(Q)$(CC) -g -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(TARGET_LIB) $< -o $@
 	$(Q)$(CC) -g $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 
