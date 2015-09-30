@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <allocator_types.h>
 #include <allocator.h>
 #include <likwid.h>
 
@@ -45,7 +46,7 @@
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int numberOfAllocatedVectors = 0;
-static void** allocations;
+static allocation* allocList;
 static AffinityDomains_t domains = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -56,7 +57,7 @@ static AffinityDomains_t domains = NULL;
 void
 allocator_init(int numVectors)
 {
-    allocations = (void**) malloc(numVectors * sizeof(void*));
+    allocList = (allocation*) malloc(numVectors * sizeof(allocation));
     domains = get_affinityDomains();
 }
 
@@ -68,8 +69,12 @@ allocator_finalize()
 
     for (i=0; i<numberOfAllocatedVectors; i++)
     {
-        free(allocations[i]);
+        free(allocList[i].ptr);
+        allocList[i].ptr = NULL;
+        allocList[i].size = 0;
+        allocList[i].offset = 0;
     }
+    numberOfAllocatedVectors = 0;
 }
 
 void
@@ -110,7 +115,7 @@ allocator_allocateVector(
     if (!domain)
     {
         fprintf(stderr, "Error: Cannot use desired domain %s for vector placement, Domain %s does not exist.\n",
-                        bdata(domainString),bdata(domainString));
+                        bdata(domainString), bdata(domainString));
         exit(EXIT_FAILURE);
     }
 
@@ -138,8 +143,12 @@ allocator_allocateVector(
         exit(EXIT_FAILURE);
     }
 
-    allocations[numberOfAllocatedVectors] = *ptr;
+    allocList[numberOfAllocatedVectors].ptr = *ptr;
+    allocList[numberOfAllocatedVectors].size = bytesize;
+    allocList[numberOfAllocatedVectors].offset = offset;
+    allocList[numberOfAllocatedVectors].type = type;
     numberOfAllocatedVectors++;
+
     affinity_pinProcess(domain->processorList[0]);
     printf("Allocate: Process running on core %d (Domain %s) - Vector length %llu Offset %d Alignment %llu\n",
             affinity_processGetProcessorId(),
