@@ -1,0 +1,3 @@
+
+The kernel module enable_rdpmc is deprecated. Please use the sysfs entry
+/sys/devices/cpu/rdpmc to enable or disable the RDPMC instruction.
