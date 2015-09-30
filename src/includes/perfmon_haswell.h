@@ -53,6 +53,7 @@ int perfmon_init_haswell(int cpu_id)
     lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
+    init_perf_event(cpu_id);
     return 0;
 }
 
@@ -77,6 +78,7 @@ uint32_t hasep_fixed_setup(RegisterIndex index, PerfmonEvent *event)
     }
     return flags;
 }
+
 
 int hasep_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
@@ -905,6 +907,11 @@ int perfmon_setupCounterThread_haswell(
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0xC00000070000000F));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
     }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(PERF)))
+    {
+        VERBOSEPRINTREG(cpu_id, 0x00ULL, 0x0ULL, FREEZE_PERF)
+        stop_all_perf_event(cpu_id);
+    }
     HASEP_FREEZE_UNCORE;
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -922,6 +929,11 @@ int perfmon_setupCounterThread_haswell(
         {
             case PMC:
                 hasep_pmc_setup(cpu_id, index, event);
+                break;
+            
+            case PERF:
+                VERBOSEPRINTREG(cpu_id, event->umask, 0x00ULL, SETUP_PERF)
+                setup_perf_event(cpu_id, event);
                 break;
 
             case FIXED:
@@ -1067,6 +1079,7 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
             RegisterIndex index = eventSet->events[i].index;
             uint64_t counter1 = counter_map[index].counterRegister;
             PciDeviceIndex dev = counter_map[index].device;
+            PerfmonEvent *event = &(eventSet->events[i].event);
             switch (type)
             {
                 case PMC:
@@ -1074,6 +1087,11 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
                     flags |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));  /* enable counter */
                     break;
 
+                case PERF:
+                    VERBOSEPRINTREG(cpu_id, event->umask, 0x00ULL, CLEAR_PERF)
+                    clear_perf_event(cpu_id, event->umask);
+                    break;
+                    
                 case FIXED:
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     flags |= (1ULL<<(index+32));  /* enable fixed counter */
@@ -1124,6 +1142,11 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<63)|(1ULL<<62)|flags));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, UNFREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(PERF)))
+    {
+        VERBOSEPRINTREG(cpu_id, 0x00, 0x00, UNFREEZE_PERF)
+        start_all_perf_event(cpu_id);
     }
 
     return 0;
@@ -1253,6 +1276,11 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(PERF)))
+    {
+        VERBOSEPRINTREG(cpu_id, 0x00, 0x00, FREEZE_PERF)
+        stop_all_perf_event(cpu_id);
+    }
     
     HASEP_FREEZE_UNCORE;
 
@@ -1290,6 +1318,13 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     *current = field64(counter_result, 0, box_map[type].regWidth);
                     break;
 
+                case PERF:
+                    read_perf_event(cpu_id, event->umask, &counter_result);
+                    *current = counter_result;
+                    VERBOSEPRINTREG(cpu_id, event->umask, LLU_CAST counter_result, READ_PERF)
+                    //close_perf_event(cpu_id, event->umask);
+                    break;
+                    
                 case POWER:
                     if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(POWER)))
                     {
@@ -1470,6 +1505,11 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, RESET_PMC_FLAGS)
     }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(PERF)))
+    {
+        VERBOSEPRINTREG(cpu_id, 0x00, 0x00, FREEZE_PERF)
+        stop_all_perf_event(cpu_id);
+    }
     HASEP_FREEZE_UNCORE;
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -1498,6 +1538,12 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     *current = field64(counter_result, 0, box_map[type].regWidth);
                     break;
 
+                case PERF:
+                    read_perf_event(cpu_id, event->umask, &counter_result);
+                    VERBOSEPRINTREG(cpu_id, event->umask, LLU_CAST counter_result, READ_PERF)
+                    *current = counter_result;
+                    break;
+                    
                 case FIXED:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                     HASEP_CHECK_CORE_OVERFLOW(index+32);
@@ -1660,6 +1706,11 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
     }
 
     HASEP_UNFREEZE_UNCORE;
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(PERF)))
+    {
+        VERBOSEPRINTREG(cpu_id, 0x00, 0x00, UNFREEZE_PERF)
+        start_all_perf_event(cpu_id);
+    }
     if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
     {
         // Erratum HSW143
@@ -1755,6 +1806,11 @@ int perfmon_finalizeCountersThread_haswell(int thread_id, PerfmonEventSet* event
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, CLEAR_GLOBAL_CTRL)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+    }
+    if (eventSet->regTypeMask & (REG_TYPE_MASK(PERF)))
+    {
+        VERBOSEPRINTREG(cpu_id, 0x00, 0x00, CLEAR_PERF)
+        finalize_perf_event(cpu_id);
     }
     return 0;
 }

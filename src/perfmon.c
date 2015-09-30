@@ -116,7 +116,7 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
 };
 
 static int
-getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
+getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int reset)
 {
     int err = 0;
     int ret = FALSE;
@@ -143,7 +143,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
         *type = NOTYPE;
         return FALSE;
     }
-    if ((ret) && (*type != THERMAL) && (*type != POWER) && (*type != WBOX0FIX))
+    if ((ret) && (*type != THERMAL) && (*type != POWER) && (*type != PERF) && (*type != WBOX0FIX))
     {
         int check_settings = 1;
         uint32_t reg = counter_map[*index].configRegister;
@@ -204,6 +204,10 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             ret = FALSE;
         }
     }
+    else if ((ret) && (*type == PERF))
+    {
+        ret = TRUE;
+    }
     else
     {
         *type = NOTYPE;
@@ -262,7 +266,7 @@ getEvent(bstring event_str, bstring counter_str, PerfmonEvent* event)
     return ret;
 }
 
-static int 
+static int
 assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type, int zero_value)
 {
     int found_double = -1;
@@ -511,7 +515,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
                     break;
                 }
             }
-            if ((threshold_set == FALSE) && (event->numberOfOptions < MAX_EVENT_OPTIONS) && 
+            if ((threshold_set == FALSE) && (event->numberOfOptions < MAX_EVENT_OPTIONS) &&
                 (edge_set == TRUE || invert_set == TRUE ))
             {
                 event->options[event->numberOfOptions].type = EVENT_OPTION_THRESHOLD;
@@ -1075,13 +1079,13 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         ERROR_PRINT(Number of threads must be greater than 0 but only %d given,nrThreads);
         return -EINVAL;
     }
-    
+
     if (!lock_check())
     {
         ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
         return -EINVAL;
     }
-    
+
     /* Check threadsToCpu array if only valid cpu_ids are listed */
     if (groupSet != NULL)
     {
@@ -1090,7 +1094,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
          */
         return -EEXIST;
     }
-    
+
     groupSet = (PerfmonGroupSet*) malloc(sizeof(PerfmonGroupSet));
     if (groupSet == NULL)
     {
@@ -1126,7 +1130,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     }
     timer_init();
 
-    
+
     /* Initialize function pointer to current architecture functions */
     perfmon_init_funcs(&initialize_power, &initialize_thermal);
 
@@ -1150,7 +1154,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     return 0;
 }
 
-void 
+void
 perfmon_finalize(void)
 {
     int group, event;
@@ -1167,7 +1171,7 @@ perfmon_finalize(void)
         }
         free(groupSet->groups[group].events);
     }
-    
+
     free(groupSet->threads);
     free(groupSet);
     power_finalize();
@@ -1175,7 +1179,7 @@ perfmon_finalize(void)
     return;
 }
 
-int 
+int
 perfmon_addEventSet(char* eventCString)
 {
     int i, j;
@@ -1223,10 +1227,10 @@ perfmon_addEventSet(char* eventCString)
         groupSet->groups[0].runTime = 0;
         groupSet->groups[0].numberOfEvents = 0;
     }
-    
+
     if (groupSet->numberOfActiveGroups == groupSet->numberOfGroups)
     {
-        
+
         groupSet->numberOfGroups++;
         groupSet->groups = (PerfmonEventSet*)realloc(groupSet->groups, groupSet->numberOfGroups*sizeof(PerfmonEventSet));
         if (groupSet->groups == NULL)
@@ -1250,7 +1254,7 @@ perfmon_addEventSet(char* eventCString)
     eventtokens = bsplit(eventBString,',');
     bdestroy(eventBString);
     eventSet->events = (PerfmonEventSetEntry*) malloc(eventtokens->qty * sizeof(PerfmonEventSetEntry));
-    
+
     if (eventSet->events == NULL)
     {
         ERROR_PRINT(Cannot allocate event list for group %d\n, groupSet->numberOfActiveGroups);
@@ -1260,7 +1264,7 @@ perfmon_addEventSet(char* eventCString)
     eventSet->regTypeMask = 0x0ULL;
 
     subtokens = bstrListCreate();
-    
+
     for(i=0;i<eventtokens->qty;i++)
     {
         event = &(eventSet->events[i]);
@@ -1272,7 +1276,7 @@ perfmon_addEventSet(char* eventCString)
         }
         else
         {
-            if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type))
+            if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type, 0))
             {
                 DEBUG_PRINT(DEBUGLEV_INFO, Counter register %s not supported or PCI device not available,
                             bdata(subtokens->entry[1]));
@@ -1287,7 +1291,7 @@ perfmon_addEventSet(char* eventCString)
                 event->type = NOTYPE;
                 goto past_checks;
             }
-           
+
             if (!checkCounter(subtokens->entry[1], event->event.limit))
             {
                 DEBUG_PRINT(DEBUGLEV_INFO, Register %s not allowed for event %s,
@@ -1301,7 +1305,7 @@ perfmon_addEventSet(char* eventCString)
                 event->type = NOTYPE;
                 goto past_checks;
             }
-            
+
             eventSet->regTypeMask |= REG_TYPE_MASK(event->type);
 past_checks:
             event->threadCounter = (PerfmonCounter*) malloc(
@@ -1434,7 +1438,7 @@ __perfmon_stopCounters(int groupId)
             return -groupSet->threads[i].thread_id-1;
         }
     }
-    
+
     for (i=0; i<perfmon_getNumberOfEvents(groupId); i++)
     {
         for (j=0; j<perfmon_getNumberOfThreads(); j++)
