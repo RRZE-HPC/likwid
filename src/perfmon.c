@@ -76,6 +76,7 @@ int perfmon_numCounters = 0;
 int perfmon_numCoreCounters = 0;
 int perfmon_numArchEvents = 0;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
+uint64_t currentConfig[NUM_PMC] = { 0 };
 
 PerfmonGroupSet* groupSet = NULL;
 
@@ -1570,11 +1571,12 @@ int __perfmon_switchActiveGroupThread(int thread_id, int new_group)
 {
     int ret;
     int i;
-    ret = perfmon_stopCounters();
-    if (ret != 0)
-    {
-        return ret;
-    }
+
+    timer_stop(&groupSet->groups[groupSet->activeGroup].timer);
+    groupSet->groups[groupSet->activeGroup].rdtscTime =
+                timer_print(&groupSet->groups[groupSet->activeGroup].timer);
+    groupSet->groups[groupSet->activeGroup].runTime += groupSet->groups[groupSet->activeGroup].rdtscTime;
+
     for(i=0; i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
         groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].init = FALSE;
