@@ -116,11 +116,11 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
 };
 
 static int
-getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
+getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int force)
 {
     int err = 0;
     int ret = FALSE;
-    uint64_t tmp;
+    uint64_t tmp = 0x0ULL;
     int (*ownstrcmp)(const char*, const char*);
     ownstrcmp = &strcmp;
     for (int i=0; i< perfmon_numCounters; i++)
@@ -168,7 +168,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             *type = NOTYPE;
             ret = FALSE;
         }
-        else if (tmp == 0x0)
+        else if (tmp == 0x0ULL)
         {
             err = HPMwrite(0, counter_map[*index].device, reg, 0x0ULL);
             if (err != 0)
@@ -186,11 +186,22 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
                 *type = NOTYPE;
                 ret = FALSE;
             }
+            check_settings = 0;
         }
-        else if (check_settings)
+        if ((check_settings) && (tmp != 0x0ULL))
         {
-            DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s has bits set but we ignore it,
-                                             counter_map[*index].key);
+            if (force == 1)
+            {
+                DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s has bits set (0x%llx) but we are forced to overwrite them,
+                                             counter_map[*index].key, tmp);
+                err = HPMwrite(0, counter_map[*index].device, reg, 0x0ULL);
+            }
+            else if (force == 0)
+            {
+                fprintf(stderr, "ERROR: The selected register %s is in use.\n", counter_map[*index].key);
+                fprintf(stderr, "Please run likwid with force option (-f, --force) to overwrite settings\n");
+                exit(EXIT_SUCCESS);
+            }
         }
     }
     else if ((ret) && ((*type == POWER) || (*type == WBOX0FIX) || (*type == THERMAL)))
@@ -1260,6 +1271,11 @@ perfmon_addEventSet(char* eventCString)
     eventSet->regTypeMask = 0x0ULL;
 
     subtokens = bstrListCreate();
+    int forceOverwrite = 0;
+    if (getenv("LIKWID_FORCE") != NULL)
+    {
+        forceOverwrite = atoi(getenv("LIKWID_FORCE"));
+    }
 
     for(i=0;i<eventtokens->qty;i++)
     {
@@ -1272,7 +1288,7 @@ perfmon_addEventSet(char* eventCString)
         }
         else
         {
-            if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type))
+            if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type, forceOverwrite))
             {
                 DEBUG_PRINT(DEBUGLEV_INFO, Counter register %s not supported or PCI device not available,
                             bdata(subtokens->entry[1]));

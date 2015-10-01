@@ -63,6 +63,7 @@ local function usage()
     print("-E <string>\t\t List available events and corresponding counters that match <string>")
     print("-i, --info\t\t Print CPU info")
     print("-T <time>\t\t Switch eventsets with given frequency")
+    print("-f, --force\t\t Force overwrite of registers if they are in use")
     print("Modes:")
     print("-S <time>\t\t Stethoscope mode with duration in s, ms or us, e.g 20ms")
     print("-t <time>\t\t Timeline mode with frequency in s, ms or us, e.g. 300ms")
@@ -116,6 +117,7 @@ output = ""
 use_csv = false
 execString = nil
 outfile = nil
+forceOverwrite = 0
 gotC = false
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid())
 print_stdout = print
@@ -127,7 +129,7 @@ if #arg == 0 then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:","T:", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker"}) do
+for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -158,6 +160,8 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         print_events = true
     elseif (opt == "E") then
         print_event = arg
+    elseif opt == "f" or opt == "force" then
+        forceOverwrite = 1
     elseif opt == "g" or opt == "group" then
         table.insert(event_string_list, arg)
     elseif (opt == "H") then
@@ -506,6 +510,7 @@ if likwid.init(num_cpus, cpulist) < 0 then
     os.exit(1)
 end
 
+likwid.setenv("LIKWID_FORCE", tostring(forceOverwrite))
 for i, event_string in pairs(event_string_list) do
     if event_string:len() > 0 then
         local gid = likwid.addEventSet(event_string)
@@ -539,6 +544,7 @@ if use_marker == true then
     local str = table.concat(event_string_list, "|")
     likwid.setenv("LIKWID_EVENTS", str)
     likwid.setenv("LIKWID_THREADS", table.concat(cpulist,","))
+    likwid.setenv("LIKWID_FORCE", "-1")
 end
 
 execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
