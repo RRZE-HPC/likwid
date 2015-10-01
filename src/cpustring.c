@@ -260,11 +260,7 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
         return -ENOMEM;
     }
     int ret = cpulist_sort(affinity->domains[domainidx].processorList, inlist, affinity->domains[domainidx].numberOfProcessors);
-    for (int i=0;i<ret;i++)
-    {
-        printf("%d ", inlist[i]);
-    }
-    printf("\n");
+
     strlist = bstrListCreate();
     strlist = bsplit(blist, ',');
     int insert = 0;
@@ -405,7 +401,7 @@ int cpustr_to_cpulist(char* cpustring, int* cpulist, int length)
     topology_init();
     CpuTopology_t cpuid_topology = get_cpuTopology();
     strlist = bsplit(bcpustr, '@');
-    
+
     int* tmpList = (int*)malloc(length * sizeof(int));
     if (tmpList == NULL)
     {
@@ -455,6 +451,19 @@ int cpustr_to_cpulist(char* cpustring, int* cpulist, int length)
                 bdestroy(newstr);
             }
         }
+        if (((bstrchrp(strlist->entry[i], 'N', 0) == 0) ||
+            (bstrchrp(strlist->entry[i], 'S', 0) == 0) ||
+            (bstrchrp(strlist->entry[i], 'C', 0) == 0) ||
+            (bstrchrp(strlist->entry[i], 'M', 0) == 0)) &&
+            (bstrchrp(strlist->entry[i], ':', 0) != BSTR_ERR))
+        {
+            bstring newstr = bformat("L:");
+            bconcat(newstr, strlist->entry[i]);
+            ret = cpustr_to_cpulist_logical(newstr, tmpList, length);
+            insert += cpulist_concat(cpulist, insert, tmpList, ret);
+            bdestroy(newstr);
+        }
+
         else
         {
             ret = cpustr_to_cpulist_physical(strlist->entry[i], tmpList, length);
