@@ -116,7 +116,7 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
 };
 
 static int
-getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int reset)
+getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
 {
     int err = 0;
     int ret = FALSE;
@@ -143,7 +143,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int rese
         *type = NOTYPE;
         return FALSE;
     }
-    if ((ret) && (*type != THERMAL) && (*type != POWER) && (*type != PERF) && (*type != WBOX0FIX))
+    if ((ret) && (*type != THERMAL) && (*type != POWER) && (*type != WBOX0FIX))
     {
         int check_settings = 1;
         uint32_t reg = counter_map[*index].configRegister;
@@ -203,10 +203,6 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int rese
             *type = NOTYPE;
             ret = FALSE;
         }
-    }
-    else if ((ret) && (*type == PERF))
-    {
-        ret = TRUE;
     }
     else
     {
@@ -1276,7 +1272,7 @@ perfmon_addEventSet(char* eventCString)
         }
         else
         {
-            if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type, 0))
+            if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type))
             {
                 DEBUG_PRINT(DEBUGLEV_INFO, Counter register %s not supported or PCI device not available,
                             bdata(subtokens->entry[1]));

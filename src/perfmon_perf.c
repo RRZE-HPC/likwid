@@ -10,6 +10,7 @@
 #include <topology.h>
 #include <error.h>
 #include <perfmon.h>
+#include <perfmon_perf.h>
 
 static int* cpu_event_fds[MAX_NUM_THREADS] = { NULL };
 

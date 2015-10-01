@@ -74,7 +74,7 @@ typedef enum {
 } RegisterIndex;
 
 typedef enum {
-    PMC = 0, PERF,FIXED, THERMAL,
+    PMC = 0, FIXED, THERMAL,
     POWER, UNCORE, MBOX0,
     MBOX1, MBOX2, MBOX3,
     MBOX4, MBOX5, MBOX6, MBOX7,
@@ -106,7 +106,6 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [PMC] = "Core-local general purpose counters",
     [FIXED] = "Fixed counters",
     [THERMAL] = "Thermal",
-    [PERF] = "Software events provided by Linux kernel",
     [POWER] = "Energy/Power counters (RAPL)",
     [UNCORE] = "Socket-local general/fixed purpose counters",
     [MBOX0] = "Memory Controller 0 Channel 0",

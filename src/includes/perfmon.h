@@ -37,7 +37,6 @@
 
 #include <types.h>
 #include <likwid.h>
-#include <perfmon_perf.h>
 
 #define FREEZE_FLAG_ONLYFREEZE 0x0ULL
 #define FREEZE_FLAG_CLEAR_CTR (1ULL<<1)

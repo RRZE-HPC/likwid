@@ -258,10 +258,6 @@ void likwid_markerInit(void)
         for(int j=0; j<groupSet->groups[groups[0]].numberOfEvents;j++)
         {
             groupSet->groups[groups[0]].events[j].threadCounter[i].init = TRUE;
-            if (groupSet->groups[groups[0]].events[j].type == PERF)
-            {
-                setup_perf_event(threads2Cpu[i], &(groupSet->groups[groups[0]].events[j].event));
-            }
         }
     }
 
