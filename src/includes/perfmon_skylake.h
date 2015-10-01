@@ -66,7 +66,12 @@ uint32_t skl_fixed_setup(RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    return flags;
+    if (flags != currentConfig[index])
+    {
+        currentConfig[index] = flags;
+        return flags;
+    }
+    return 0;
 }
 
 int skl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
@@ -145,8 +150,12 @@ int skl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, offcore_flags));
     }
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister , flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister , flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 

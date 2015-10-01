@@ -64,7 +64,12 @@ uint32_t svm_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    return flags;
+    if (flags != currentConfig[index])
+    {
+        currentConfig[index] = flags;
+        return flags;
+    }
+    return 0;
 }
 
 int svm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
@@ -150,8 +155,12 @@ int svm_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , offcore_flags));
         }
     }
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 

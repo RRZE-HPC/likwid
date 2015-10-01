@@ -70,7 +70,12 @@ uint32_t snb_fixed_setup(RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    return flags;
+    if (flags != currentConfig[index])
+    {
+        currentConfig[index] = flags;
+        return flags;
+    }
+    return 0;
 }
 
 int snb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
@@ -142,8 +147,12 @@ int snb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, offcore_flags));
     }
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -180,8 +189,12 @@ int snb_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_MBOX);
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_MBOX);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -314,8 +327,12 @@ int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_CBOX);
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_CBOX);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -349,8 +366,12 @@ int snb_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_UBOX)
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_UBOX)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -402,8 +423,12 @@ int snb_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_BBOX);
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev,  counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_BBOX);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev,  counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -449,8 +474,12 @@ int snb_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_WBOX);
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_WBOX);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -540,8 +569,12 @@ int snb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
                 break;
         }
     }
-    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_SBOX);
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev,  counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_SBOX);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev,  counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -580,8 +613,12 @@ int snb_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_RBOX)
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_RBOX)
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -618,8 +655,12 @@ int snb_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_PBOX)
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_PBOX)
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 

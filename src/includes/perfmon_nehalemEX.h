@@ -68,7 +68,12 @@ uint32_t nex_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    return flags;
+    if (flags != currentConfig[index])
+    {
+        currentConfig[index] = flags;
+        return flags;
+    }
+    return 0;
 }
 
 int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
@@ -127,9 +132,12 @@ int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, offcore_flags));
     }
-
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));
-    VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_PMC)
+    if (flags != currentConfig[index])
+    {
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));
+        VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_PMC)
+        currentConfig[index] = flags;
+    }
 
     return 0;
 }
@@ -391,8 +399,12 @@ int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 }   \
                 break;   \
         } \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));  \
-        VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_MBOX##number) \
+        if (flags != currentConfig[index]) \
+        { \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));  \
+            VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_MBOX##number) \
+            currentConfig[index] = flags; \
+        } \
     }
 
 #define NEX_SETUP_RBOX(number)  \
@@ -468,8 +480,12 @@ int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 } \
                 break; \
         } \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags)); \
-        VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_RBOX##number) \
+        if (flags != currentConfig[index]) \
+        { \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags)); \
+            VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_RBOX##number) \
+            currentConfig[index] = flags; \
+        } \
     }
 
 int nex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
@@ -504,8 +520,12 @@ int nex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
-    VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_BBOX);
+    if (flags != currentConfig[index])
+    {
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
+        VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_BBOX);
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -542,8 +562,12 @@ int nex_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
-    VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_CBOX);
+    if (flags != currentConfig[index])
+    {
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
+        VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_CBOX);
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -579,8 +603,12 @@ int nex_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
-    VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_WBOX);
+    if (flags != currentConfig[index])
+    {
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
+        VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_WBOX);
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -671,8 +699,12 @@ int nex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
-    VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_SBOX);
+    if (flags != currentConfig[index])
+    {
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
+        VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_SBOX);
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 

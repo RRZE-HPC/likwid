@@ -74,7 +74,12 @@ uint32_t bdw_fixed_setup(RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    return flags;
+    if (flags != currentConfig[index])
+    {
+        currentConfig[index] = flags;
+        return flags;
+    }
+    return 0;
 }
 
 int bdw_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
@@ -152,8 +157,12 @@ int bdw_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, offcore_flags));
     }
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister , flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister , flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -189,8 +198,12 @@ int bdw_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_UBOX);
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_UBOX);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -254,6 +267,7 @@ int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
+    
     if (filter_flags0 != 0x0ULL)
     {
         VERBOSEPRINTREG(cpu_id, filter0, filter_flags0, SETUP_CBOX_FILTER0);
@@ -272,6 +286,7 @@ int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter1, 0x0ULL));
     }
+
     if (set_state_all)
     {
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, filter0, &filter_flags0));
@@ -279,8 +294,12 @@ int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         VERBOSEPRINTREG(cpu_id, filter0, filter_flags0, SETUP_CBOX_DEF_FILTER_STATE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter0, filter_flags0));
     }
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_CBOX);
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_CBOX);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -340,13 +359,18 @@ int bdw_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
+
     if (clean_filter)
     {
         VERBOSEPRINTREG(cpu_id, filter, (event->options[j].value & 0xFFFFFFFFULL), CLEAN_WBOX_FILTER);
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter, 0x0ULL));
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter, 0x0ULL));
     }
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_WBOX);
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_WBOX);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -418,14 +442,18 @@ int bdw_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1, 0x0ULL, CLEAR_BBOX_MATCH1);
         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1, 0x0ULL));
     }
-    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_BBOX);
-    CHECK_PCI_WRITE_ERROR(HPMwrite( cpu_id, dev, counter_map[index].configRegister, flags));
-    /* Intel notes the registers must be written twice to hold, once without enable and again with enable.
-     * Not mentioned for the BBOX but we do it to be sure.
-     */
-    flags |= (1ULL<<22);
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_BBOX_TWICE);
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+    if ((flags|(1ULL<<22)) != currentConfig[index])
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_BBOX);
+        CHECK_PCI_WRITE_ERROR(HPMwrite( cpu_id, dev, counter_map[index].configRegister, flags));
+        /* Intel notes the registers must be written twice to hold, once without enable and again with enable.
+         * Not mentioned for the BBOX but we do it to be sure.
+         */
+        flags |= (1ULL<<22);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_BBOX_TWICE);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -466,12 +494,16 @@ int bdw_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_MBOX);
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
-    /* Intel notes the registers must be written twice to hold, once without enable and again with enable */
-    flags |= (1ULL<<22);
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_MBOX_TWICE);
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+    if ((flags|(1ULL<<22)) != currentConfig[index])
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_MBOX);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        /* Intel notes the registers must be written twice to hold, once without enable and again with enable */
+        flags |= (1ULL<<22);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_MBOX_TWICE);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -505,8 +537,12 @@ int bdw_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_MBOX);
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+    if (flags != currentConfig[index])
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_MBOX);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -547,12 +583,16 @@ int bdw_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_IBOX);
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
-    /* Intel notes the registers must be written twice to hold, once without enable and again with enable */
-    flags |= (1ULL<<22);
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_IBOX_TWICE);
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+    if ((flags|(1ULL<<22)) != currentConfig[index])
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_IBOX);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        /* Intel notes the registers must be written twice to hold, once without enable and again with enable */
+        flags |= (1ULL<<22);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_IBOX_TWICE);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
@@ -593,12 +633,16 @@ int bdw_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_PBOX);
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
-    /* Intel notes the registers must be written twice to hold, once without enable and again with enable */
-    flags |= (1ULL<<22);
-    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_PBOX_TWICE);
-    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+    if ((flags|(1ULL<<22)) != currentConfig[index])
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_PBOX);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        /* Intel notes the registers must be written twice to hold, once without enable and again with enable */
+        flags |= (1ULL<<22);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_PBOX_TWICE);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        currentConfig[index] = flags;
+    }
     return 0;
 }
 
