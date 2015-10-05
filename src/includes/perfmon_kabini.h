@@ -78,11 +78,11 @@ int k16_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
             }
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -97,11 +97,11 @@ int k16_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     }
 
     flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_UNCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -142,11 +142,11 @@ int k16_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
             }
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_CBOX);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }

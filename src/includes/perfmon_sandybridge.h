@@ -52,7 +52,7 @@ int perfmon_init_sandybridge(int cpu_id)
     return 0;
 }
 
-uint32_t snb_fixed_setup(RegisterIndex index, PerfmonEvent *event)
+uint32_t snb_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = (1ULL<<(1+(index*4)));
@@ -70,9 +70,9 @@ uint32_t snb_fixed_setup(RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
         return flags;
     }
     return 0;
@@ -147,11 +147,11 @@ int snb_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, offcore_flags));
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -189,11 +189,11 @@ int snb_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_MBOX);
         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -327,11 +327,11 @@ int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_CBOX);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -366,11 +366,11 @@ int snb_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_UBOX)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -423,11 +423,11 @@ int snb_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_BBOX);
         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev,  counter_map[index].configRegister, flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -474,11 +474,11 @@ int snb_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_WBOX);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -569,11 +569,11 @@ int snb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
                 break;
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_SBOX);
         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev,  counter_map[index].configRegister, flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -613,11 +613,11 @@ int snb_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_RBOX)
         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -655,11 +655,11 @@ int snb_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, LLU_CAST flags, SETUP_PBOX)
         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -783,7 +783,7 @@ int perfmon_setupCounterThread_sandybridge(
                  * FIXED 0: Instructions retired
                  * FIXED 1: Clocks unhalted core
                  * FIXED 2: Clocks unhalted ref */
-                fixed_flags |= snb_fixed_setup(index,event);
+                fixed_flags |= snb_fixed_setup(cpu_id, index,event);
                 /* Written in the end of function for all fixed purpose registers */
                 break;
 

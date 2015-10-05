@@ -42,7 +42,7 @@
 #define FREEZE_FLAG_CLEAR_CTR (1ULL<<1)
 #define FREEZE_FLAG_CLEAR_CTL (1ULL<<0)
 
-extern uint64_t currentConfig[NUM_PMC];
+extern uint64_t currentConfig[MAX_NUM_THREADS][NUM_PMC];
 
 extern int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
