@@ -51,6 +51,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 \subsection Lua_Interface Lua Interface
 - \ref lua_Info
 - \ref lua_InputOutput
+- \ref lua_Marker
 - \ref lua_Config
 - \ref lua_Access
 - \ref lua_CPUTopology
@@ -257,6 +258,9 @@ No, we do not!
 \section faq12 Why does the startup of likwid-perfctr take so long?
 In order to get reliable time measurements, LIKWID must determine the base clock frequency of your CPU. This is done by a measurement loop that takes about 1 second. You can avoid the measurement loop by creating a topology configuration file with \ref likwid-genTopoCfg.
 
-\section faq13 I want to help, were do I start?
+\section faq13 What about instruction-based sampling?
+When a counter overflows, it generates a performance monitoring interrupt (PMI) on the CPU. The problem is, that the kernel doesn't know which application running on the CPU needs to be informed about the interrupt. The perf_event interface therefore takes a PID at the opening of an event. We are still thinking about it, but no consensus until now.
+
+\section faq14 I want to help, were do I start?
 The best way is to talk to us at the <A HREF="http://groups.google.com/group/likwid-users">mailing list</A>. There are a bunch of small work packages on our ToDo list that can be used as a good starting point for learning how LIKWID works. If you are not a programmer but you have a good idea, let us know and we will discuss it.
 */

@@ -2280,6 +2280,48 @@ or<BR>
   </TABLE></TD>
 </TR>
 </TABLE>
+
+\anchor catchSignal
+<H2>catchSignal()</H2>
+<P>Add signal handlers to catch interrupting signals</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
+
+\anchor getSignalState
+<H2>getSignalState()</H2>
+<P>Check whether LIKWID received a signal.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a state</TD>
+      <TD>0 for no signal, >0 amount of signals received.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+</TABLE>
+
 */
 
 
@@ -2610,6 +2652,206 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 <TR>
   <TD>Returns</TD>
   <TD>None</TD>
+</TR>
+</TABLE>
+*/
+
+/*! \page lua_Marker Marker API functions module
+<H1>Data type definition for Lua Marker API module in the Lua API</H1>
+<H1>Function definitions for Lua Marker API module in the Lua API</H1>
+\anchor markerInit
+<H2>markerInit()</H2>
+<P>Initialize the LIKWID Marker API</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
+
+\anchor markerThreadInit
+<H2>markerThreadInit()</H2>
+<P>Initialize the Marker API for a thread. Must be called by every thread of your applications.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
+
+\anchor markerClose
+<H2>markerClose()</H2>
+<P>Finalize the LIKWID Marker API</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
+
+\anchor markerNextGroup
+<H2>markerNextGroup()</H2>
+<P>Switch to next event set. This function has only effect if you supplied multiple event sets on the command line of likwid-perfctr</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
+
+\anchor registerRegion
+<H2>registerRegion()</H2>
+<P>Register a code region in the Marker API. This is an optional function to remove the register initialization overhead at startRegion. If you don't call this function, startRegion will do the registering.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionTag</TD>
+      <TD>Identifier for the region.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a errorCode</TD>
+      <TD>0 for success, -EFAULT if LIKWID Marker API is not properly initialized.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+</TABLE>
+
+\anchor startRegion
+<H2>startRegion()</H2>
+<P>Start measurement for a code region identified by regionTag.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionTag</TD>
+      <TD>Identifier for the region.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a errorCode</TD>
+      <TD>0 for success, -EFAULT if LIKWID Marker API is not properly initialized.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+</TABLE>
+
+\anchor stopRegion
+<H2>stopRegion()</H2>
+<P>Stop measurement for a code region identified by regionTag.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionTag</TD>
+      <TD>Identifier for the region.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a errorCode</TD>
+      <TD>0 for success, -EFAULT if LIKWID Marker API is not properly initialized.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+</TABLE>
+
+\anchor getRegion
+<H2>getRegion()</H2>
+<P>Get the intermediate results for a code region identified by regionTag.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionTag</TD>
+      <TD>Identifier for the region.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a nr_events</TD>
+      <TD>Number of events in \a events list.</TD>
+    </TR>
+    <TR>
+      <TD>\a events</TD>
+      <TD>List with event results for the current thread.</TD>
+    </TR>
+    <TR>
+      <TD>\a time</TD>
+      <TD>Aggregated measurement time for the region</TD>
+    </TR>
+    <TR>
+      <TD>\a count</TD>
+      <TD>Count of region calls.</TD>
+    </TR>
+  </TABLE></TD>
 </TR>
 </TABLE>
 */
