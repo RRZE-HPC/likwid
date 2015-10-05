@@ -131,7 +131,7 @@ If you call <a class="el" href="lua_NumaInfo.html#getNumaInfo">getNumaInfo</a> f
 <tr>
 <td>Return </td><td>None  </td></tr>
 </table>
-<h2>setMemInterleaved(nrThreads, threads2Cpus)</h2>
+<h2>setMemInterleaved()</h2>
 <p>Set the 'Interleaved' memory policy to allocate data only on given CPUs </p>
 <table class="doxtable">
 <tr>
@@ -147,7 +147,7 @@ If you call <a class="el" href="lua_NumaInfo.html#getNumaInfo">getNumaInfo</a> f
 <tr>
 <td>Return </td><td>None  </td></tr>
 </table>
-<h2>nodestr_to_nodelist(nodeexpression)</h2>
+<h2>nodestr_to_nodelist()</h2>
 <p>Resolve the given node expression in NUMA affinity domain </p>
 <table class="doxtable">
 <tr>
@@ -155,7 +155,7 @@ If you call <a class="el" href="lua_NumaInfo.html#getNumaInfo">getNumaInfo</a> f
 <tr>
 <td>Input Parameter </td><td><table class="doxtable">
 <tr>
-<td><em>nodeexpression</em>  </td><td>List of CPUs in NUMA node  </td></tr>
+<td><em>node</em> expression </td><td>List of CPUs in NUMA node  </td></tr>
 </table>
 </td></tr>
 <tr>
@@ -167,7 +167,7 @@ If you call <a class="el" href="lua_NumaInfo.html#getNumaInfo">getNumaInfo</a> f
 </table>
 </td></tr>
 </table>
-<h2>sockstr_to_socklist(socketexpression)</h2>
+<h2>sockstr_to_socklist()</h2>
 <p>Resolve the given socket expression in socket affinity domain </p>
 <table class="doxtable">
 <tr>
@@ -175,7 +175,7 @@ If you call <a class="el" href="lua_NumaInfo.html#getNumaInfo">getNumaInfo</a> f
 <tr>
 <td>Input Parameter </td><td><table class="doxtable">
 <tr>
-<td><em>socketexpression</em>  </td><td>List of CPUs in socket affinity domain  </td></tr>
+<td><em>socket</em> expression </td><td>List of CPUs in socket affinity domain  </td></tr>
 </table>
 </td></tr>
 <tr>
@@ -205,7 +205,7 @@ If you call <a class="el" href="lua_NumaInfo.html#getNumaInfo">getNumaInfo</a> f
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jun 26 2015 16:11:00 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 5 2015 11:18:02 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>

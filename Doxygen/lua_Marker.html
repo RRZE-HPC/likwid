@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
-<title>LIKWID: Miscellaneous functions module</title>
+<title>LIKWID: Marker API functions module</title>
 
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
@@ -74,154 +74,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div>
 <div class="header">
   <div class="headertitle">
-<div class="title">Miscellaneous functions module </div>  </div>
+<div class="title">Marker API functions module </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><h1>Data type definition for Lua miscellaneous functions module in the Lua API</h1>
-<h1>Function definitions for Lua miscellaneous functions module in the Lua API</h1>
-<p><a class="anchor" id="startProgram"></a></p>
-<h2>startProgram()</h2>
-<p>Start an executable in a new thread </p>
-<table class="doxtable">
-<tr>
-<th>Direction </th><th>Data type(s)  </th></tr>
-<tr>
-<td>Input Parameter </td><td><table class="doxtable">
-<tr>
-<td><em>Exec</em>  </td><td>String containing the executable and its options  </td></tr>
-</table>
-</td></tr>
-<tr>
-<td>Returns </td><td>PID of newly created thread  </td></tr>
-</table>
-<p><a class="anchor" id="checkProgram"></a></p>
-<h2>checkProgram()</h2>
-<p>Check if the executable is running </p>
-<table class="doxtable">
-<tr>
-<th>Direction </th><th>Data type(s)  </th></tr>
-<tr>
-<td>Input Parameter </td><td>None  </td></tr>
-<tr>
-<td>Returns </td><td>True/False  </td></tr>
-</table>
-<p><a class="anchor" id="killProgram"></a></p>
-<h2>killProgram()</h2>
-<p>Kill the executable with SIGTERM </p>
-<table class="doxtable">
-<tr>
-<th>Direction </th><th>Data type(s)  </th></tr>
-<tr>
-<td>Input Parameter </td><td><table class="doxtable">
-<tr>
-<td><em>PID</em>  </td><td>PID to send the SIGTERM signal  </td></tr>
-</table>
-</td></tr>
-<tr>
-<td>Returns </td><td>None  </td></tr>
-</table>
-<p><a class="anchor" id="setenv"></a></p>
-<h2>setenv()</h2>
-<p>Set environment variable. Lua only provides getenv() </p>
-<table class="doxtable">
-<tr>
-<th>Direction </th><th>Data type(s)  </th></tr>
-<tr>
-<td>Input Parameter </td><td><table class="doxtable">
-<tr>
-<td><em>Name</em>  </td><td>Name of environment variable  </td></tr>
-<tr>
-<td><em>Value</em>  </td><td>Value for the environment variable  </td></tr>
-</table>
-</td></tr>
-<tr>
-<td>Returns </td><td>None  </td></tr>
-</table>
-<p><a class="anchor" id="getpid"></a></p>
-<h2>getpid()</h2>
-<p>Get the PID of the current process </p>
-<table class="doxtable">
-<tr>
-<th>Direction </th><th>Data type(s)  </th></tr>
-<tr>
-<td>Input Parameter </td><td>None  </td></tr>
-<tr>
-<td>Returns </td><td>PID number  </td></tr>
-</table>
-<p><a class="anchor" id="access"></a></p>
-<h2>access()</h2>
-<p>Check the file existance for a given filepath </p>
-<table class="doxtable">
-<tr>
-<th>Direction </th><th>Data type(s)  </th></tr>
-<tr>
-<td>Input Parameter </td><td><table class="doxtable">
-<tr>
-<td><em>Filepath</em>  </td><td>Name of Filepath to check for existance  </td></tr>
-</table>
-</td></tr>
-<tr>
-<td>Returns </td><td>PID number  </td></tr>
-</table>
-<p><a class="anchor" id="msr_available"></a></p>
-<h2>msr_available()</h2>
-<p>Check whether the msr files are available. Basically checks whether the msr kernel module is loaded properly </p>
-<table class="doxtable">
-<tr>
-<th>Direction </th><th>Data type(s)  </th></tr>
-<tr>
-<td>Input Parameter </td><td>None  </td></tr>
-<tr>
-<td>Returns </td><td>True/False  </td></tr>
-</table>
-<p><a class="anchor" id="gethostname"></a></p>
-<h2>gethostname()</h2>
-<p>Returns the hostname of the system in short format </p>
-<table class="doxtable">
-<tr>
-<th>Direction </th><th>Data type(s)  </th></tr>
-<tr>
-<td>Input Parameter </td><td>None  </td></tr>
-<tr>
-<td>Returns </td><td><table class="doxtable">
-<tr>
-<td><em>Hostname</em>  </td><td>Hostname in short format  </td></tr>
-</table>
-</td></tr>
-</table>
-<p><a class="anchor" id="getjid"></a></p>
-<h2>getjid()</h2>
-<p>Returns the job ID if running in a batch environment. Basically reads the <code>PBS_JOBID</code> environment variable </p>
-<table class="doxtable">
-<tr>
-<th>Direction </th><th>Data type(s)  </th></tr>
-<tr>
-<td>Input Parameter </td><td>None  </td></tr>
-<tr>
-<td>Returns </td><td><table class="doxtable">
-<tr>
-<td><em>Job</em> ID </td><td>Job ID or 'X' if not in batch environment  </td></tr>
-</table>
-</td></tr>
-</table>
-<p><a class="anchor" id="getMPIrank"></a></p>
-<h2>getMPIrank()</h2>
-<p>Returns the MPI rank of the current process. Basically read the <code>PMI_RANK</code> and <code>OMPI_COMM_WORLD_RANK</code> environment variables </p>
-<table class="doxtable">
-<tr>
-<th>Direction </th><th>Data type(s)  </th></tr>
-<tr>
-<td>Input Parameter </td><td>None  </td></tr>
-<tr>
-<td>Returns </td><td><table class="doxtable">
-<tr>
-<td><em>MPI</em> Rank </td><td>MPI rank or 'X' if not in MPI environment  </td></tr>
-</table>
-</td></tr>
-</table>
-<p><a class="anchor" id="catchSignal"></a></p>
-<h2>catchSignal()</h2>
-<p>Add signal handlers to catch interrupting signals </p>
+<div class="textblock"><h1>Data type definition for Lua Marker API module in the Lua API</h1>
+<h1>Function definitions for Lua Marker API module in the Lua API</h1>
+<p><a class="anchor" id="markerInit"></a></p>
+<h2>markerInit()</h2>
+<p>Initialize the LIKWID Marker API </p>
 <table class="doxtable">
 <tr>
 <th>Direction </th><th>Data type(s)  </th></tr>
@@ -230,18 +90,118 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr>
 <td>Returns </td><td>None  </td></tr>
 </table>
-<p><a class="anchor" id="getSignalState"></a></p>
-<h2>getSignalState()</h2>
-<p>Check whether LIKWID received a signal. </p>
+<p><a class="anchor" id="markerThreadInit"></a></p>
+<h2>markerThreadInit()</h2>
+<p>Initialize the Marker API for a thread. Must be called by every thread of your applications. </p>
 <table class="doxtable">
 <tr>
 <th>Direction </th><th>Data type(s)  </th></tr>
 <tr>
 <td>Input Parameter </td><td>None  </td></tr>
 <tr>
+<td>Returns </td><td>None  </td></tr>
+</table>
+<p><a class="anchor" id="markerClose"></a></p>
+<h2>markerClose()</h2>
+<p>Finalize the LIKWID Marker API </p>
+<table class="doxtable">
+<tr>
+<th>Direction </th><th>Data type(s)  </th></tr>
+<tr>
+<td>Input Parameter </td><td>None  </td></tr>
+<tr>
+<td>Returns </td><td>None  </td></tr>
+</table>
+<p><a class="anchor" id="markerNextGroup"></a></p>
+<h2>markerNextGroup()</h2>
+<p>Switch to next event set. This function has only effect if you supplied multiple event sets on the command line of likwid-perfctr </p>
+<table class="doxtable">
+<tr>
+<th>Direction </th><th>Data type(s)  </th></tr>
+<tr>
+<td>Input Parameter </td><td>None  </td></tr>
+<tr>
+<td>Returns </td><td>None  </td></tr>
+</table>
+<p><a class="anchor" id="registerRegion"></a></p>
+<h2>registerRegion()</h2>
+<p>Register a code region in the Marker API. This is an optional function to remove the register initialization overhead at startRegion. If you don't call this function, startRegion will do the registering. </p>
+<table class="doxtable">
+<tr>
+<th>Direction </th><th>Data type(s)  </th></tr>
+<tr>
+<td>Input Parameter </td><td><table class="doxtable">
+<tr>
+<td><em>regionTag</em>  </td><td>Identifier for the region.  </td></tr>
+</table>
+</td></tr>
+<tr>
 <td>Returns </td><td><table class="doxtable">
 <tr>
-<td><em>state</em>  </td><td>0 for no signal, &gt;0 amount of signals received.  </td></tr>
+<td><em>errorCode</em>  </td><td>0 for success, -EFAULT if LIKWID Marker API is not properly initialized.  </td></tr>
+</table>
+</td></tr>
+</table>
+<p><a class="anchor" id="startRegion"></a></p>
+<h2>startRegion()</h2>
+<p>Start measurement for a code region identified by regionTag. </p>
+<table class="doxtable">
+<tr>
+<th>Direction </th><th>Data type(s)  </th></tr>
+<tr>
+<td>Input Parameter </td><td><table class="doxtable">
+<tr>
+<td><em>regionTag</em>  </td><td>Identifier for the region.  </td></tr>
+</table>
+</td></tr>
+<tr>
+<td>Returns </td><td><table class="doxtable">
+<tr>
+<td><em>errorCode</em>  </td><td>0 for success, -EFAULT if LIKWID Marker API is not properly initialized.  </td></tr>
+</table>
+</td></tr>
+</table>
+<p><a class="anchor" id="stopRegion"></a></p>
+<h2>stopRegion()</h2>
+<p>Stop measurement for a code region identified by regionTag. </p>
+<table class="doxtable">
+<tr>
+<th>Direction </th><th>Data type(s)  </th></tr>
+<tr>
+<td>Input Parameter </td><td><table class="doxtable">
+<tr>
+<td><em>regionTag</em>  </td><td>Identifier for the region.  </td></tr>
+</table>
+</td></tr>
+<tr>
+<td>Returns </td><td><table class="doxtable">
+<tr>
+<td><em>errorCode</em>  </td><td>0 for success, -EFAULT if LIKWID Marker API is not properly initialized.  </td></tr>
+</table>
+</td></tr>
+</table>
+<p><a class="anchor" id="getRegion"></a></p>
+<h2>getRegion()</h2>
+<p>Get the intermediate results for a code region identified by regionTag. </p>
+<table class="doxtable">
+<tr>
+<th>Direction </th><th>Data type(s)  </th></tr>
+<tr>
+<td>Input Parameter </td><td><table class="doxtable">
+<tr>
+<td><em>regionTag</em>  </td><td>Identifier for the region.  </td></tr>
+</table>
+</td></tr>
+<tr>
+<td>Returns </td><td><table class="doxtable">
+<tr>
+<td><em>nr_events</em>  </td><td>Number of events in <em>events</em> list.  </td></tr>
+<tr>
+<td><em>events</em>  </td><td>List with event results for the current thread.  </td></tr>
+<tr>
+<td><em>time</em>  </td><td>Aggregated measurement time for the region  </td></tr>
+<tr>
+<td><em>count</em>  </td><td>Count of region calls.  </td></tr>
 </table>
 </td></tr>
 </table>

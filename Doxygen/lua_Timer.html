@@ -113,7 +113,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <td>Returns </td><td>Current timestamp  </td></tr>
 </table>
 <p><a class="anchor" id="getClockCycles"></a></p>
-<h2>getClockCycles(start, stop)</h2>
+<h2>getClockCycles()</h2>
 <p>Return the amount of cycles between start and stop timestamps </p>
 <table class="doxtable">
 <tr>
@@ -130,7 +130,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <td>Returns </td><td>Amount of cycles between start and stop  </td></tr>
 </table>
 <p><a class="anchor" id="getClock"></a></p>
-<h2>getClock(start, stop)</h2>
+<h2>getClock()</h2>
 <p>Return the time in seconds between start and stop timestamps </p>
 <table class="doxtable">
 <tr>
@@ -147,19 +147,34 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <td>Returns </td><td>Time in seconds between start and stop  </td></tr>
 </table>
 <p><a class="anchor" id="sleep"></a></p>
-<h2>sleep(usecs)</h2>
-<p>Sleep for specified amount of microseconds </p>
+<h2>sleep()</h2>
+<p>Sleep for specified amount of seconds </p>
 <table class="doxtable">
 <tr>
 <th>Direction </th><th>Data type(s)  </th></tr>
 <tr>
 <td>Input Parameter </td><td><table class="doxtable">
 <tr>
-<td><em>usecs</em>  </td><td>Sleep for seconds  </td></tr>
+<td><em>seconds</em>  </td><td>Sleep for seconds  </td></tr>
 </table>
 </td></tr>
 <tr>
 <td>Returns </td><td>Remaining time to sleep. &gt;0 if sleep is interrupted  </td></tr>
+</table>
+<p><a class="anchor" id="usleep"></a></p>
+<h2>usleep()</h2>
+<p>Sleep for at least the specified amount of microseconds </p>
+<table class="doxtable">
+<tr>
+<th>Direction </th><th>Data type(s)  </th></tr>
+<tr>
+<td>Input Parameter </td><td><table class="doxtable">
+<tr>
+<td><em>usecs</em>  </td><td>Sleep for microseconds. <em>usec</em> must be in range 1 to 999999  </td></tr>
+</table>
+</td></tr>
+<tr>
+<td>Returns </td><td>Status of usleep. If interrupted the status is != 0  </td></tr>
 </table>
 </div></div><!-- contents -->
 <!-- window showing the filter options -->
@@ -179,7 +194,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jun 26 2015 16:11:00 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 5 2015 11:18:02 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>
