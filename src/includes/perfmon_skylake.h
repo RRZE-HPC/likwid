@@ -49,7 +49,7 @@ int perfmon_init_skylake(int cpu_id)
     return 0;
 }
 
-uint32_t skl_fixed_setup(RegisterIndex index, PerfmonEvent *event)
+uint32_t skl_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = (1ULL<<(1+(index*4)));
@@ -66,9 +66,9 @@ uint32_t skl_fixed_setup(RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
         return flags;
     }
     return 0;
@@ -150,11 +150,11 @@ int skl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, offcore_flags));
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister , flags));
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -201,7 +201,7 @@ int perfmon_setupCounterThread_skylake(
                 break;
 
             case FIXED:
-                fixed_flags |= skl_fixed_setup(index, event);
+                fixed_flags |= skl_fixed_setup(cpu_id, index, event);
                 break;
 
             case POWER:

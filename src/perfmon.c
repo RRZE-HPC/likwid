@@ -76,7 +76,7 @@ int perfmon_numCounters = 0;
 int perfmon_numCoreCounters = 0;
 int perfmon_numArchEvents = 0;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
-uint64_t currentConfig[NUM_PMC] = { 0 };
+uint64_t currentConfig[MAX_NUM_THREADS][NUM_PMC] = { 0 };
 
 PerfmonGroupSet* groupSet = NULL;
 

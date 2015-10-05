@@ -68,9 +68,9 @@ uint32_t nex_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
         return flags;
     }
     return 0;
@@ -132,11 +132,11 @@ int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, offcore_flags));
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));
         VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_PMC)
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
 
     return 0;
@@ -399,11 +399,11 @@ int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 }   \
                 break;   \
         } \
-        if (flags != currentConfig[index]) \
+        if (flags != currentConfig[cpu_id][index]) \
         { \
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));  \
             VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_MBOX##number) \
-            currentConfig[index] = flags; \
+            currentConfig[cpu_id][index] = flags; \
         } \
     }
 
@@ -480,11 +480,11 @@ int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 } \
                 break; \
         } \
-        if (flags != currentConfig[index]) \
+        if (flags != currentConfig[cpu_id][index]) \
         { \
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags)); \
             VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_RBOX##number) \
-            currentConfig[index] = flags; \
+            currentConfig[cpu_id][index] = flags; \
         } \
     }
 
@@ -520,11 +520,11 @@ int nex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
         VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_BBOX);
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -562,11 +562,11 @@ int nex_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
         VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_CBOX);
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -603,11 +603,11 @@ int nex_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
         VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_WBOX);
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }
@@ -699,11 +699,11 @@ int nex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    if (flags != currentConfig[index])
+    if (flags != currentConfig[cpu_id][index])
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
         VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_SBOX);
-        currentConfig[index] = flags;
+        currentConfig[cpu_id][index] = flags;
     }
     return 0;
 }

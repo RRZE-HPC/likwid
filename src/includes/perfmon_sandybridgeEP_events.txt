@@ -789,7 +789,7 @@ EVENT_ACT_COUNT                  0x01  MBOX
 UMASK_ACT_COUNT                  0x00
 
 EVENT_CAS_COUNT                  0x04  MBOX
-UMASK_CAS_COUNT_RD_REF           0x01
+UMASK_CAS_COUNT_RD_REG           0x01
 UMASK_CAS_COUNT_RD_UNDERFILL     0x02
 UMASK_CAS_COUNT_RD               0x03
 UMASK_CAS_COUNT_WR_WMM           0x04
