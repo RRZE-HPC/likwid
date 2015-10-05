@@ -1762,6 +1762,10 @@ static int lua_likwid_getRegion(lua_State* L)
         lua_pushstring(L,"Cannot allocate memory for event data\n");
         lua_error(L);
     }
+    for (i = 0; i < nr_events; i++)
+    {
+        events[i] = 0.0;
+    }
     likwid_markerGetRegion(tag, &nr_events, events, &time, &count);
     
     lua_pushinteger(L, nr_events);
