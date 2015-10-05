@@ -1702,6 +1702,82 @@ static int lua_likwid_access(lua_State* L)
     return 1;
 }
 
+static int lua_likwid_markerInit(lua_State* L)
+{
+    likwid_markerInit();
+    return 0;
+}
+
+static int lua_likwid_markerThreadInit(lua_State* L)
+{
+    likwid_markerThreadInit();
+    return 0;
+}
+
+static int lua_likwid_markerClose(lua_State* L)
+{
+    likwid_markerClose();
+    return 0;
+}
+
+static int lua_likwid_markerNext(lua_State* L)
+{
+    likwid_markerNextGroup();
+    return 0;
+}
+
+static int lua_likwid_registerRegion(lua_State* L)
+{
+    const char* tag = (const char*)luaL_checkstring(L, -1);
+    lua_pushinteger(L, likwid_markerRegisterRegion(tag));
+    return 1;
+}
+
+static int lua_likwid_startRegion(lua_State* L)
+{
+    const char* tag = (const char*)luaL_checkstring(L, -1);
+    lua_pushinteger(L, likwid_markerStartRegion(tag));
+    return 1;
+}
+
+static int lua_likwid_stopRegion(lua_State* L)
+{
+    const char* tag = (const char*)luaL_checkstring(L, -1);
+    lua_pushinteger(L, likwid_markerStopRegion(tag));
+    return 1;
+}
+
+static int lua_likwid_getRegion(lua_State* L)
+{
+    int i = 0;
+    const char* tag = (const char*)luaL_checkstring(L, -2);
+    int nr_events = perfmon_getNumberOfEvents(perfmon_getIdOfActiveGroup());
+    double* events = NULL;
+    double time = 0.0;
+    int count = 0;
+    
+    events = (double*) malloc(nr_events * sizeof(double));
+    if (events == NULL)
+    {
+        lua_pushstring(L,"Cannot allocate memory for event data\n");
+        lua_error(L);
+    }
+    likwid_markerGetRegion(tag, &nr_events, events, &time, &count);
+    
+    lua_pushinteger(L, nr_events);
+    lua_newtable(L);
+    for (i=0;i<nr_events;i++)
+    {
+        lua_pushinteger(L, i+1);
+        lua_pushnumber(L, events[i]);
+        lua_settable(L, -3);
+    }
+    lua_pushnumber(L, time);
+    lua_pushinteger(L, count);
+    free(events);
+    return 4;
+}
+
 int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     // Configuration functions
     lua_register(L, "likwid_getConfiguration", lua_likwid_getConfiguration);
@@ -1775,5 +1851,14 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_setVerbosity", lua_likwid_setVerbosity);
     lua_register(L, "likwid_catchSignal", lua_likwid_catch_signal);
     lua_register(L, "likwid_getSignalState", lua_likwid_return_signal_state);
+    // Marker API functions
+    lua_register(L, "likwid_markerInit", lua_likwid_markerInit);
+    lua_register(L, "likwid_markerThreadInit", lua_likwid_markerThreadInit);
+    lua_register(L, "likwid_markerNextGroup", lua_likwid_markerNext);
+    lua_register(L, "likwid_markerClose", lua_likwid_markerClose);
+    lua_register(L, "likwid_registerRegion", lua_likwid_registerRegion);
+    lua_register(L, "likwid_startRegion", lua_likwid_startRegion);
+    lua_register(L, "likwid_stopRegion", lua_likwid_stopRegion);
+    lua_register(L, "likwid_getRegion", lua_likwid_getRegion);
     return 0;
 }

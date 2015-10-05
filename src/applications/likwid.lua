@@ -103,6 +103,14 @@ likwid.getSignalState = likwid_getSignalState
 likwid.cpustr_to_cpulist = likwid_cpustr_to_cpulist
 likwid.nodestr_to_nodelist = likwid_nodestr_to_nodelist
 likwid.sockstr_to_socklist = likwid_sockstr_to_socklist
+likwid.markerInit = likwid_markerInit
+likwid.markerThreadInit = likwid_markerThreadInit
+likwid.markerClose = likwid_markerClose
+likwid.markerNextGroup = likwid_markerNextGroup
+likwid.registerRegion = likwid_registerRegion
+likwid.startRegion = likwid_startRegion
+likwid.stopRegion = likwid_stopRegion
+likwid.getRegion = likwid_getRegion
 
 infinity = math.huge
 
