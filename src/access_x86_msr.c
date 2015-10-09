@@ -176,12 +176,11 @@ access_x86_msr_init(const int cpu_id)
     if (rdpmc_works_pmc < 0)
     {
         rdpmc_works_pmc = test_rdpmc(cpu_id, 0, 0);
-	//rdpmc_works_pmc = 0;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for PMC counters returned %d, rdpmc_works_pmc);
     }
     if (rdpmc_works_fixed < 0)
     {
-        rdpmc_works_fixed = test_rdpmc(cpu_id, 0x4000000ULL, 0);
+        rdpmc_works_fixed = test_rdpmc(cpu_id, (1<<30), 0);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED counters returned %d, rdpmc_works_fixed);
     }
 
@@ -237,8 +236,8 @@ access_x86_msr_read( const int cpu_id, uint32_t reg, uint64_t *data)
     }
     else if ((rdpmc_works_fixed == 1) && (reg >= MSR_PERF_FIXED_CTR0) && (reg <= MSR_PERF_FIXED_CTR2))
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED counter with RDPMC instruction with index %d, 0x4000000ULL + (reg - MSR_PERF_FIXED_CTR0));
-        if (__rdpmc(cpu_id, 0x4000000ULL + (reg - MSR_PERF_FIXED_CTR0), data) )
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Read FIXED counter with RDPMC instruction with index %d, (1<<30) + (reg - MSR_PERF_FIXED_CTR0));
+        if (__rdpmc(cpu_id, (1<<30) + (reg - MSR_PERF_FIXED_CTR0), data) )
         {
             rdpmc_works_fixed = 0;
             goto fallback;
