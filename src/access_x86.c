@@ -81,10 +81,11 @@ int access_x86_check(PciDeviceIndex dev, int cpu_id)
 {
     if (dev == MSR_DEV)
     {
-        access_x86_msr_check(dev, cpu_id);
+        return access_x86_msr_check(dev, cpu_id);
     }
     else
     {
-        access_x86_pci_check(dev, affinity_core2node_lookup[cpu_id]);
+        return access_x86_pci_check(dev, affinity_core2node_lookup[cpu_id]);
     }
+    return 0;
 }
