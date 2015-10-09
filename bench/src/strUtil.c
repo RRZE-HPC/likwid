@@ -106,6 +106,7 @@ bstring parse_workgroup(Workgroup* group, const_bstring str, DataType type)
     tokens = bsplit(str,':');
     if (tokens->qty == 2)
     {
+        topo = get_cpuTopology();
         numThreads = topo->activeHWThreads;
         cpustr = bformat("E:%s:%d", bdata(tokens->entry[0]), numThreads );
     }
