@@ -23,6 +23,22 @@ in bench/[GCC|ICC|CLANG|MIC].
 If you debug your likwid-bench benchmarks you can look at all
 intermediate build files and also the final assembly code.
 
+== Build on Xeon Phi ==
+For builds for the Xeon Phi coprocessor, the accessDaemon and the frequency
+daemon are disabled. Moreover, the access mode is set to 'direct'. This was made
+because it is important to run as few processes as possible on the Xeon Phi and
+the accessDaemon would start one process per hardware thread.
+In order to build Likwid for the Xeon Phi processor, you have to change the
+RPATHS variable in make/include_MIC.mk to point to the folder with the Intel
+libraries like libimf.so. This is crucial because when using an suid-root
+executable, the LD_LIBRARY_PATH gets lost but Likwid still needs to know where
+the Intel libraries reside.
+After installation change the owner of likwid-lua to root and set the suid-root
+bit for likwid-lua:
+chown root <BINPATH>/likwid-lua
+chmod u+s <BINPATH>/likwid-lua
+Afterwards Likwid can be used as anywhere else.
+
 == Known problems ==
 
 On very old systems with old kernels (< 2.6.7) or old glibc versions likwid
@@ -39,7 +55,8 @@ make uninstall -  delete installed files
 make docs      -  generate html documentation using doxygen
 make local     -  set paths in Lua files to work from current directory
                   (for testing only! Uses already installed access daemons and
-                  libraries.)
+                  libraries. Often you have to set the LD_LIBRARY_PATH to the
+                  contain the current folder)
 
 == Dependencies ==
 Most parts of the Likwid suite do not have external dependencies that need to be
