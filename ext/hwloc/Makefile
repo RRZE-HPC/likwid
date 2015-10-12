@@ -45,7 +45,7 @@ $(STATIC_LIBHWLOC): $(OBJ)
 	$(Q)${AR} -cq $(LIBHWLOC) $(OBJ)
 
 $(SHARED_LIBHWLOC): $(OBJ)
-	$(Q)$(CC) $(DEBUG_FLAGS) $(LFLAGS) -Wl,-soname,$(LIBHWLOC).$(VERSION)  -Wall -shared -fPIC -o $(LIBHWLOC) $(OBJ) $(LIBS)
+	$(Q)$(CC) $(DEBUG_FLAGS) $(LFLAGS) -Wl,-soname,$(LIBHWLOC).$(VERSION)  -Wall -shared -fPIC -o $(LIBHWLOC) $(OBJ) $(LIBS) $(RPATHS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c

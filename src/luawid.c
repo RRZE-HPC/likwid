@@ -1864,5 +1864,15 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_startRegion", lua_likwid_startRegion);
     lua_register(L, "likwid_stopRegion", lua_likwid_stopRegion);
     lua_register(L, "likwid_getRegion", lua_likwid_getRegion);
+#ifdef __MIC__
+    if (setuid(0) < 0)
+    {
+        printf("Cannot setuid to root\n");
+    }
+    if (seteuid(0) < 0)
+    {
+        printf("Cannot seteuid to root\n");
+    }
+#endif
     return 0;
 }

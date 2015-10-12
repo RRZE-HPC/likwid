@@ -130,7 +130,7 @@ $(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) 
 
 $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
-	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) -Wl,-rpath=$(INSTALLED_LIBPREFIX) $(TARGET_LUA_LIB) -Wl,-rpath=$(INSTALLED_LIBPREFIX)
+	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB) $(RPATHS)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
@@ -172,8 +172,8 @@ $(BENCH_TARGET):
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
 	@echo "===>  COMPILE  $@"
-	$(Q)$(CC) -g -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
-	$(Q)$(CC) -g $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
+	$(Q)$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
+	$(Q)$(CC) $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 $(BUILD_DIR)/%.o:  %.cc
 	@echo "===>  COMPILE  $@"
@@ -233,6 +233,7 @@ distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	@rm -f tags
 
 ifeq ($(BUILDDAEMON),true)
+ifneq ($(COMPILER),MIC)
 install_daemon:
 	@echo "===> INSTALL access daemon to $(ACCESSDAEMON)"
 	@mkdir -p `dirname $(ACCESSDAEMON)`
@@ -246,8 +247,15 @@ install_daemon:
 uninstall_daemon:
 	@echo "===> No UNINSTALL of the access daemon"
 endif
+else
+install_daemon:
+	@echo "===> No INSTALL of the access daemon"
+uninstall_daemon:
+	@echo "===> No UNINSTALL of the access daemon"
+endif
 
 ifeq ($(BUILDFREQ),true)
+ifneq ($(COMPILER),MIC)
 install_freq:
 	@echo "===> INSTALL setFrequencies tool to $(PREFIX)/sbin/$(FREQ_TARGET)"
 	@mkdir -p $(PREFIX)/sbin
@@ -255,6 +263,12 @@ install_freq:
 uninstall_freq:
 	@echo "===> REMOVING setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET)"
 	@rm -f $(PREFIX)/sbin/$(FREQ_TARGET)
+else
+install_freq:
+	@echo "===> No INSTALL of setFrequencies tool"
+uninstall_freq:
+	@echo "===> No UNINSTALL of setFrequencies tool"
+endif
 else
 install_freq:
 	@echo "===> No INSTALL of setFrequencies tool"
