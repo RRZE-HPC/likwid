@@ -76,7 +76,7 @@ static void fRDTSC_CR(TscCounter* cpu_c)
     : "=r" ((cpu_c)->int32.lo), "=r" ((cpu_c)->int32.hi) \
     : : "%eax","%ebx","%ecx","%edx");
 }
-
+#ifndef __MIC__
 static void fRDTSCP(TscCounter* cpu_c)
 {
     __asm__ volatile(     \
@@ -87,6 +87,7 @@ static void fRDTSCP(TscCounter* cpu_c)
     : "=r" ((cpu_c)->int32.lo), "=r" ((cpu_c)->int32.hi) \
     : : "%eax","%ebx","%ecx","%edx");
 }
+#endif
 #endif
 
 static uint64_t
@@ -174,6 +175,7 @@ void timer_init( void )
         TSTART = fRDTSC;
         eax = 0x80000001;
         CPUID;
+#ifndef __MIC__
         if (edx & (1<<27))
         {
             TSTOP = fRDTSCP;
@@ -182,6 +184,9 @@ void timer_init( void )
         {
             TSTOP = fRDTSC_CR;
         }
+#else
+        TSTOP = fRDTSC_CR;
+#endif
     }
     if (cpuClock == 0ULL)
     {
