@@ -1001,11 +1001,12 @@ end
 
 likwid.getResults = getResults
 
-local function getMarkerResults(filename, group_list, num_cpus)
+local function getMarkerResults(filename, group_list, cpulist)
     local cpuinfo = likwid_getCpuInfo()
     local ctr_and_events = likwid_getEventsAndCounters()
     local group_data = {}
     local results = {}
+    local num_cpus = #cpulist
     local f = io.open(filename, "r")
     if f == nil then
         print(string.format("Cannot find intermediate results file %s", filename))
@@ -1032,8 +1033,9 @@ local function getMarkerResults(filename, group_list, num_cpus)
         return {},{}
     end
     local nr_regions = tonumber(tmpList[2])
-    if tonumber(nr_regions) == 0 then
+    if tonumber(nr_regions) == 0 and tonumber(tmpList[1]) > 0 then
         print("No region results can be found in marker API output file")
+        print("This happens when the application runs only on different CPUs as specified for likwid-perfctr")
         return {},{}
     end
     local nr_groups = tonumber(tmpList[3])
@@ -1078,7 +1080,13 @@ local function getMarkerResults(filename, group_list, num_cpus)
             if (r ~= nil and g ~= nil and t ~= nil and count ~= nil) then
                 r = tonumber(r)+1
                 g = tonumber(g)+1
-                t = tonumber(t)+1
+                c = tonumber(t)
+                for i, cpu in pairs(cpulist) do
+                    if cpu == c then
+                        t = i
+                        break
+                    end
+                end
                 tmpList = stringsplit(line, " ")
                 table.remove(tmpList, 1)
                 table.remove(tmpList, 1)

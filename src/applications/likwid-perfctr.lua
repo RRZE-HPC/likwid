@@ -224,6 +224,7 @@ end
 
 io.stdout:setvbuf("no")
 cpuinfo = likwid.getCpuInfo()
+cputopo = likwid.getCpuTopology()
 
 if not likwid.msr_available(access_flags) then
     if access_mode == 1 then
@@ -439,9 +440,10 @@ if use_marker then
     end
     if not pin_cpus then
         print_stdout("Warning: The Marker API requires the application to run on the selected CPUs.")
-        print_stdout("Warning: likwid-perfctr does not pin the application.")
+        print_stdout("Warning: likwid-perfctr pins the application only when using the -C command line option.")
         print_stdout("Warning: LIKWID assumes that the application does it before the first instrumented code region is started.")
-        print_stdout("Warning: Otherwise, LIKWID throws a lot of errors and probably no results are printed.")
+        print_stdout("Warning: You can use the string in the environment variable LIKWID_THREADS to pin you application to")
+        print_stdout("Warning: to the CPUs specified after the -c command line option.")
     end
 end
 
@@ -723,8 +725,8 @@ end
 
 
 if use_marker == true then
-    groups, results = likwid.getMarkerResults(markerFile, group_list, num_cpus)
-    os.remove(markerFile)
+    groups, results = likwid.getMarkerResults(markerFile, group_list, cpulist)
+    --os.remove(markerFile)
     if #groups == 0 and #results == 0 then
         likwid.finalize()
         likwid.putTopology()
