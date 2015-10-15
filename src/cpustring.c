@@ -451,7 +451,7 @@ int cpustr_to_cpulist(char* cpustring, int* cpulist, int length)
                 bdestroy(newstr);
             }
         }
-        if (((bstrchrp(strlist->entry[i], 'N', 0) == 0) ||
+        else if (((bstrchrp(strlist->entry[i], 'N', 0) == 0) ||
             (bstrchrp(strlist->entry[i], 'S', 0) == 0) ||
             (bstrchrp(strlist->entry[i], 'C', 0) == 0) ||
             (bstrchrp(strlist->entry[i], 'M', 0) == 0)) &&
