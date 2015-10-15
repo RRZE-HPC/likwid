@@ -121,13 +121,11 @@ int main(int argn, char** argc)
     printf(HLINE);
 #pragma omp parallel
     {
-	LIKWID_MARKER_THREADINIT;
 #pragma omp master
 	{
 	    printf ("Number of Threads requested = %i\n",omp_get_num_threads());
 	}
-
-	printf ("Thread %d running on processor %d ....\n",omp_get_thread_num(),threadGetProcessorId());
+	printf ("Thread %d running on processor %d ....\n",omp_get_thread_num(),sched_getcpu());
     }
 #endif
 
@@ -159,6 +157,7 @@ int main(int argn, char** argc)
     time_start(&timer);
 #pragma omp parallel
     {
+	LIKWID_MARKER_START("triad_total");
         for (int k=0; k<ITER; k++)
         {
 
@@ -170,6 +169,7 @@ int main(int argn, char** argc)
             }
             LIKWID_MARKER_STOP("triad");
         }
+	LIKWID_MARKER_STOP("triad_total");
     }
     time_stop(&timer);
     triad_time = time_print(&timer)/(double)ITER;
