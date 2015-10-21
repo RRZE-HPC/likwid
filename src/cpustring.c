@@ -123,7 +123,7 @@ static int cpustr_to_cpulist_scatter(bstring bcpustr, int* cpulist, int length)
             bcstrfree(cpustring);
             return -ENOMEM;
         }
-        for (int off=0;off<=affinity->domains[suitable[0]].numberOfProcessors;off++)
+        for (int off=0;off<affinity->domains[suitable[0]].numberOfProcessors;off++)
         {
             for(int i=0;i < suitidx; i++)
             {
