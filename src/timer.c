@@ -35,12 +35,14 @@
 #include <time.h>
 
 #include <types.h>
+#include <error.h>
 #include <likwid.h>
 /* #####   EXPORTED VARIABLES   ########################################### */
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
 static uint64_t sleepbase = 0ULL;
+static uint8_t fixedFreq = 0;
 
 void (*TSTART)(TscCounter*) = NULL;
 void (*TSTOP)(TscCounter*) = NULL;
@@ -55,6 +57,29 @@ void (*TSTOP)(TscCounter*) = NULL;
             : "0" (eax), "2" (ecx))
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+static int os_timer(TscCounter* time)
+{
+    int ret;
+    struct timeval cur;
+    ret = gettimeofday(&cur, NULL);
+    if (!ret)
+    {
+        time->int64 = ((uint64_t)cur.tv_sec) * 1E6;
+        time->int64 += cur.tv_usec;
+    }
+    return ret;
+}
+
+static void os_timer_start(TscCounter* time)
+{
+    os_timer(time);
+}
+
+static void os_timer_stop(TscCounter* time)
+{
+    os_timer(time);
+}
+
 #ifdef __x86_64
 static void fRDTSC(TscCounter* cpu_c)
 {
@@ -88,6 +113,7 @@ static void fRDTSCP(TscCounter* cpu_c)
     : : "%eax","%ebx","%ecx","%edx");
 }
 #endif
+
 
 static uint64_t
 getCpuSpeed(void)
@@ -141,7 +167,46 @@ getCpuSpeed(void)
 
     fgets(buff, 256, fpipe);
 
-    return (uint64_t)   atoi(buff);
+    return ((uint64_t)   atoi(buff)) * 1000;
+#endif
+#if defined(__ARM_ARCH_7A__)
+    uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
+    TimerData data;
+    FILE *fpipe;
+    char *command="cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq";
+    char *command2="cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
+    char buff[256];
+    buff[0] = '\0';
+    char* buffptr = NULL;
+    if ( !(fpipe = (FILE*)popen(command2, "r")))
+    {
+        perror("Problems with pipe, cannot read /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
+        exit(1);
+    }
+    buffptr = fgets(buff, 256, fpipe);
+    fclose(fpipe);
+    if ((strncmp(buff, "userspace", 9) == 0) || (strncmp(buff, "performance", 11) == 0))
+    {
+        fixedFreq = 1;
+    }
+    buff[0] = '\0';
+    buffptr = NULL;
+
+    if ( !(fpipe = (FILE*)popen(command, "r")))
+    {
+        perror("Problems with pipe, cannot read /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq");
+        exit(1);
+    }
+    buffptr = fgets(buff, 256, fpipe);
+    fclose(fpipe);
+    for (int i=0;i<10;i++)
+    {
+        TSTART(&data.start);
+        TSTOP(&data.stop);
+        result = MIN(result,timer_printCycles(&data));
+    }
+    baseline = result;
+    return ((uint64_t) atoi(buff)) * 1000;
 #endif
 }
 
@@ -163,6 +228,7 @@ void init_sleep()
             sleepbase = timer_print(&timer)*1E6 + 2;
         }
     }
+    sleepbase = 0;
 }
 
 
@@ -171,6 +237,7 @@ void timer_init( void )
     uint32_t eax,ebx,ecx,edx;
     if ((!TSTART) && (!TSTOP))
     {
+#ifdef __x86_64
         TSTART = fRDTSC;
         eax = 0x80000001;
         CPUID;
@@ -182,6 +249,11 @@ void timer_init( void )
         {
             TSTOP = fRDTSC_CR;
         }
+#endif
+#if defined(__ARM_ARCH_7A__)
+        TSTART = os_timer_start;
+        TSTOP = os_timer_stop;
+#endif
     }
     if (cpuClock == 0ULL)
     {
@@ -192,31 +264,37 @@ void timer_init( void )
 uint64_t timer_printCycles( TimerData* time )
 {
     /* clamp to zero if something goes wrong */
-    if ((time->stop.int64-baseline) < time->start.int64)
+    uint64_t cycles = 0x0ULL;
+    if ((time->stop.int64-baseline) >= time->start.int64)
     {
-        return 0ULL;
+        cycles = (time->stop.int64 - time->start.int64 - baseline);
+    }
+#ifdef __ARM_ARCH_7A__
+    if (fixedFreq == 1)
+    {
+        cycles *= 1E-6 * cpuClock;
     }
     else
     {
-        return (time->stop.int64 - time->start.int64 - baseline);
+        cycles = 0x0ULL;
     }
+#endif
+    return cycles;
 }
 
 /* Return time duration in seconds */
 double timer_print( TimerData* time )
 {
-    uint64_t cycles;
-
-    /* clamp to zero if something goes wrong */
-    if ((time->stop.int64-baseline) < time->start.int64)
+    uint64_t cycles = 0x0ULL;
+    if ((time->stop.int64-baseline) >= time->start.int64)
     {
-        cycles = 0ULL;
+        cycles = (time->stop.int64 - time->start.int64 - baseline);
     }
-    else
-    {
-        cycles = time->stop.int64 - time->start.int64 - baseline;
-    }
+#ifdef __ARM_ARCH_7A__
+    return ((double) cycles) * 1E-6;
+#else
     return  ((double) cycles / (double) cpuClock);
+#endif
 }
 
 uint64_t timer_getCpuClock( void )
@@ -232,6 +310,10 @@ uint64_t timer_getBaseline( void )
 void timer_start( TimerData* time )
 {
 #ifdef __x86_64
+    if (TSTART)
+        TSTART(&(time->start));
+#endif
+#ifdef __ARM_ARCH_7A__
     if (TSTART)
         TSTART(&(time->start));
 #endif
@@ -252,6 +334,10 @@ void timer_start( TimerData* time )
 void timer_stop( TimerData* time )
 {
 #ifdef __x86_64
+    if (TSTOP)
+        TSTOP(&(time->stop));
+#endif
+#ifdef __ARM_ARCH_7A__
     if (TSTOP)
         TSTOP(&(time->stop));
 #endif

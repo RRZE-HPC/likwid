@@ -165,23 +165,28 @@ affinity_init()
     int numberOfProcessorsPerSocket =
         cpuid_topology.numCoresPerSocket * cpuid_topology.numThreadsPerCore;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPUs per socket %d, numberOfProcessorsPerSocket);
-    int numberOfCacheDomains;
+    int numberOfCacheDomains = 0;
+    int numberOfCoresPerCache = 0;
+    int numberOfProcessorsPerCache = 0;
+    if (cpuid_topology.numCacheLevels > 0)
+    {
+	DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Number of cache levels %d, cpuid_topology.numCacheLevels);
+	numberOfCoresPerCache =
+	    cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads/
+	    cpuid_topology.numThreadsPerCore;
+	DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPU cores per LLC %d, numberOfCoresPerCache);
 
-    int numberOfCoresPerCache =
-        cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads/
-        cpuid_topology.numThreadsPerCore;
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPU cores per LLC %d, numberOfCoresPerCache);
+	numberOfProcessorsPerCache =
+	    cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
+	DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPUs per LLC %d, numberOfProcessorsPerCache);
+	/* for the cache domain take only into account last level cache and assume
+	 * all sockets to be uniform. */
 
-    int numberOfProcessorsPerCache =
-        cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPUs per LLC %d, numberOfProcessorsPerCache);
-    /* for the cache domain take only into account last level cache and assume
-     * all sockets to be uniform. */
-
-    /* determine how many last level shared caches exist per socket */
-    numberOfCacheDomains = cpuid_topology.numSockets *
-        (cpuid_topology.numCoresPerSocket/numberOfCoresPerCache);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Cache domains %d, numberOfCacheDomains);
+	/* determine how many last level shared caches exist per socket */
+	numberOfCacheDomains = cpuid_topology.numSockets *
+	    (cpuid_topology.numCoresPerSocket/numberOfCoresPerCache);
+	DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Cache domains %d, numberOfCacheDomains);
+    }
     /* determine total number of domains */
     numberOfDomains += numberOfSocketDomains + numberOfCacheDomains + numberOfNumaDomains;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: All domains %d, numberOfDomains);

@@ -580,7 +580,7 @@ if use_wrapper or use_timeline then
     local nr_threads = likwid.getNumberOfThreads()
     local firstrun = true
     
-    if use_wrapper and #group_ids == 1 then
+    if use_wrapper and #group_ids == 1 and likwid.getArch() == "x86_64" then
         duration = 30.E06
     end
 

@@ -51,10 +51,10 @@ uint64_t getFreeNodeMem(int nodeId)
     uint64_t free = 0;
     bstring freeString  = bformat("MemFree:");
     int i;
-    
+
     filename = bformat("/sys/devices/system/node/node%d/meminfo", nodeId);
 
-    if (NULL != (fp = fopen (bdata(filename), "r"))) 
+    if (NULL != (fp = fopen (bdata(filename), "r")))
     {
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
@@ -74,13 +74,13 @@ uint64_t getFreeNodeMem(int nodeId)
     else if (!access("/proc/meminfo", R_OK))
     {
         filename = bfromcstr("/proc/meminfo");
-        if (NULL != (fp = fopen (bdata(filename), "r"))) 
+        if (NULL != (fp = fopen (bdata(filename), "r")))
         {
             bstring src = bread ((bNread) fread, fp);
             struct bstrList* tokens = bsplit(src,(char) '\n');
             for (i=0;i<tokens->qty;i++)
             {
-                if (binstr(tokens->entry[i],0,freeString) != BSTR_ERR)
+                if (binstr(tokens->entry[i],0,freeString) == 0)
                 {
                      bstring tmp = bmidstr (tokens->entry[i], 10, blength(tokens->entry[i])-10  );
                      bltrimws(tmp);
@@ -96,9 +96,9 @@ uint64_t getFreeNodeMem(int nodeId)
         ERROR;
     }
 
-    
+
     return free;
-    
+
 }
 
 uint64_t getTotalNodeMem(int nodeId)
@@ -110,7 +110,7 @@ uint64_t getTotalNodeMem(int nodeId)
     int i;
     filename = bformat("/sys/devices/system/node/node%d/meminfo", nodeId);
 
-    if (NULL != (fp = fopen (bdata(filename), "r"))) 
+    if (NULL != (fp = fopen (bdata(filename), "r")))
     {
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
@@ -130,7 +130,7 @@ uint64_t getTotalNodeMem(int nodeId)
     else if (!access("/proc/meminfo", R_OK))
     {
         filename = bfromcstr("/proc/meminfo");
-        if (NULL != (fp = fopen (bdata(filename), "r"))) 
+        if (NULL != (fp = fopen (bdata(filename), "r")))
         {
             bstring src = bread ((bNread) fread, fp);
             struct bstrList* tokens = bsplit(src,(char) '\n');
@@ -152,9 +152,9 @@ uint64_t getTotalNodeMem(int nodeId)
         ERROR;
     }
 
-    
+
     return free;
-    
+
 }
 
 int hwloc_findProcessor(int nodeID, int cpuID)
@@ -162,7 +162,7 @@ int hwloc_findProcessor(int nodeID, int cpuID)
     hwloc_obj_t obj;
     int i;
     int pu_count = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
-    
+
     for (i=0; i<pu_count; i++)
     {
         obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PU, i);
@@ -199,8 +199,12 @@ int hwloc_numa_init(void)
         hwloc_topology_init(&hwloc_topology);
         hwloc_topology_load(hwloc_topology);
     }
-
+#ifdef __X86_64
     numa_info.numberOfNodes = hwloc_get_nbobjs_by_type(hwloc_topology, hwloc_type);
+#endif
+#ifdef __ARM_ARCH_7A__
+    numa_info.numberOfNodes = 0;
+#endif
 
     /* If the amount of NUMA nodes == 0, there is actually no NUMA node, hence
        aggregate all sockets in the system into the single virtually created NUMA node */
@@ -215,7 +219,7 @@ int hwloc_numa_init(void)
             fprintf(stderr,"No memory to allocate %ld byte for nodes array\n",sizeof(NumaNode));
             return -1;
         }
-        
+
         numa_info.nodes[0].id = 0;
         numa_info.nodes[0].numberOfProcessors = 0;
         numa_info.nodes[0].totalMemory = getTotalNodeMem(0);
@@ -235,11 +239,11 @@ int hwloc_numa_init(void)
         numa_info.nodes[0].distances[0] = 10;
         numa_info.nodes[0].numberOfDistances = 1;
         cores_per_socket = cpuid_topology.numHWThreads/cpuid_topology.numSockets;
-        
+
         for (d=0; d<hwloc_get_nbobjs_by_type(hwloc_topology, hwloc_type); d++)
         {
             obj = hwloc_get_obj_by_type(hwloc_topology, hwloc_type, d);
-            /* depth is here used as index in the processors array */        
+            /* depth is here used as index in the processors array */
             depth = d * cores_per_socket;
             numa_info.nodes[0].numberOfProcessors += hwloc_record_objs_of_type_below_obj(
                     hwloc_topology, obj, HWLOC_OBJ_PU, &depth, &numa_info.nodes[0].processors);
@@ -273,7 +277,7 @@ int hwloc_numa_init(void)
             {
                 numa_info.nodes[i].totalMemory = getTotalNodeMem(numa_info.nodes[i].id);
             }
-            
+
             /* freeMemory not detected by hwloc, do it the native way */
             numa_info.nodes[i].freeMemory = getFreeNodeMem(numa_info.nodes[i].id);
             numa_info.nodes[i].processors = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
@@ -285,7 +289,7 @@ int hwloc_numa_init(void)
             d = 0;
             numa_info.nodes[i].numberOfProcessors = hwloc_record_objs_of_type_below_obj(
                     hwloc_topology, obj, HWLOC_OBJ_PU, &d, &numa_info.nodes[i].processors);
-            
+
             numa_info.nodes[i].distances = (uint32_t*) malloc(numa_info.numberOfNodes * sizeof(uint32_t));
             if (!numa_info.nodes[i].distances)
             {
@@ -310,7 +314,7 @@ int hwloc_numa_init(void)
             }
 
         }
-    
+
     }
 
     if (numa_info.nodes[0].numberOfProcessors == 0)
@@ -328,12 +332,12 @@ void hwloc_numa_membind(void* ptr, size_t size, int domainId)
     int ret = 0;
     hwloc_membind_flags_t flags = HWLOC_MEMBIND_STRICT|HWLOC_MEMBIND_PROCESS;
     hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
-    
+
     hwloc_bitmap_zero(nodeset);
     hwloc_bitmap_set(nodeset, domainId);
-    
+
     ret = hwloc_set_area_membind_nodeset(hwloc_topology, ptr, size, nodeset, HWLOC_MEMBIND_BIND, flags);
-    
+
     hwloc_bitmap_free(nodeset);
 
     if (ret < 0)
@@ -350,9 +354,9 @@ void hwloc_numa_setInterleaved(int* processorList, int numberOfProcessors)
     int ret = 0;
     hwloc_cpuset_t cpuset = hwloc_bitmap_alloc();
     hwloc_membind_flags_t flags = HWLOC_MEMBIND_STRICT|HWLOC_MEMBIND_PROCESS;
-    
+
     hwloc_bitmap_zero(cpuset);
-    
+
     for (i=0; i<numa_info.numberOfNodes; i++)
     {
         for (j=0; j<numberOfProcessors; j++)
@@ -363,12 +367,12 @@ void hwloc_numa_setInterleaved(int* processorList, int numberOfProcessors)
             }
         }
     }
-    
-    
+
+
     ret = hwloc_set_membind(hwloc_topology, cpuset, HWLOC_MEMBIND_INTERLEAVE, flags);
-    
+
     hwloc_bitmap_free(cpuset);
-    
+
     if (ret < 0)
     {
         ERROR;

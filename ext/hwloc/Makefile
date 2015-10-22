@@ -32,6 +32,9 @@ VPATH     = $(SRC_DIRS)
 FILES     = $(notdir $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c)))
 OBJ       = $(patsubst %.c, $(BUILD_DIR)/%.o, $(FILES))
 LIBHWLOC = $(shell basename $(TARGET_HWLOC_LIB))
+ifeq ($(COMPILER), GCCARMv7)
+OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
+endif
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 

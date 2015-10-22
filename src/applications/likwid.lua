@@ -1111,7 +1111,19 @@ end
 likwid.getMarkerResults = getMarkerResults
 
 
+local function getArch()
+    arch = ""
+    local f = io.popen("uname -m","r")
+    arch = f:read("*a"):match'^%s*(.*%S)'
+    f:close()
+    return arch
+end
+likwid.getArch = getArch
+
 local function msr_available(flags)
+    if getArch() == "armv7l" then
+        return true
+    end
     local ret = likwid_access("/dev/cpu/0/msr", flags)
     if ret == 0 then
         return true

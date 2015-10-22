@@ -123,7 +123,7 @@ static int cpustr_to_cpulist_scatter(bstring bcpustr, int* cpulist, int length)
             bcstrfree(cpustring);
             return -ENOMEM;
         }
-        for (int off=0;off<=affinity->domains[suitable[0]].numberOfProcessors;off++)
+        for (int off=0;off<affinity->domains[suitable[0]].numberOfProcessors;off++)
         {
             for(int i=0;i < suitidx; i++)
             {
@@ -451,7 +451,7 @@ int cpustr_to_cpulist(char* cpustring, int* cpulist, int length)
                 bdestroy(newstr);
             }
         }
-        if (((bstrchrp(strlist->entry[i], 'N', 0) == 0) ||
+        else if (((bstrchrp(strlist->entry[i], 'N', 0) == 0) ||
             (bstrchrp(strlist->entry[i], 'S', 0) == 0) ||
             (bstrchrp(strlist->entry[i], 'C', 0) == 0) ||
             (bstrchrp(strlist->entry[i], 'M', 0) == 0)) &&

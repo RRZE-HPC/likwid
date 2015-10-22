@@ -43,7 +43,6 @@
 #include <testcases.h>
 #include <strUtil.h>
 #include <allocator.h>
-
 #include <likwid.h>
 
 extern void* runTest(void* arg);
@@ -420,12 +419,23 @@ int main(int argc, char** argv)
         {
             maxCycles = threads_data[i].cycles;
         }
+        time += threads_data[i].time;
     }
 
 
-
-    time = (double) maxCycles / (double) cpuClock;
     double loadStoreRatio = (double)test->loads/(double)test->stores;
+#ifdef __ARM_ARCH_7A__
+    if (maxCycles > 0)
+    {
+        ownprintf("WARNING: The cycle based values are calculated using the current but fixed CPU frequency on ARMv7\n");
+    }
+    else
+    {
+        ownprintf(bdata(HLINE));
+        ownprintf("WARNING: All cycle based values will be zero on ARMv7!\n");
+        ownprintf("WARNING: The cycle count cannot be calculated because the clock frequency is not fixed.\n");
+    }
+#endif
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
     ownprintf("CPU Clock:\t\t%" PRIu64 "\n", cpuClock);
@@ -438,7 +448,7 @@ int main(int argc, char** argv)
     ownprintf("Number of Flops:\t%" PRIu64 "\n", (threads_data[0].data.iter * realSize *  test->flops));
     ownprintf("MFlops/s:\t\t%.2f\n",
             1.0E-06 * ((double) threads_data[0].data.iter * realSize *  test->flops/  time));
-    
+
     ownprintf("Data volume (Byte):\t%llu\n", LLU_CAST (threads_data[0].data.iter * realSize *  test->bytes));
     ownprintf("MByte/s:\t\t%.2f\n",
             1.0E-06 * ( (double) threads_data[0].data.iter * realSize *  test->bytes/ time));

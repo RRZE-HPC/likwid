@@ -1,4 +1,4 @@
-obj-m := enable_rdpmc.o
+obj-m := enable_arm_pmu.o
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 PWD := $(shell pwd)
 

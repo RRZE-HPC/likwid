@@ -137,7 +137,7 @@ local function testDriver()
     end
     local line = fp:read("*l")
     fp:close()
-    if line == "acpi-cpufreq" then
+    if line == "acpi-cpufreq" or line == "tegra" then
         return true
     end
     return false

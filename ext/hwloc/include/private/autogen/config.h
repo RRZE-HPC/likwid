@@ -138,12 +138,13 @@
 
 /* Define to 1 if you have the <endian.h> header file. */
 #define HAVE_ENDIAN_H 1
-
+#if !defined(__ARM_ARCH_7A__)
 /* Define to 1 if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
 
 /* Define to 1 if you have the `ffs' function. */
 #define HAVE_FFS 1
+#endif
 
 /* Define to 1 if you have the `ffsl' function. */
 #define HAVE_FFSL 1
@@ -156,12 +157,13 @@
 
 /* Define to 1 if you have the `getpagesize' function. */
 #define HAVE_GETPAGESIZE 1
-
+#if !defined(__ARM_ARCH_7A__)
 /* Define to 1 if you have the `getpid' function. */
 #define HAVE_GETPID 1
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
+#endif
 
 /* Define to 1 if the system has the type `GROUP_AFFINITY'. */
 /* #undef HAVE_GROUP_AFFINITY */
@@ -201,18 +203,20 @@
 
 /* Define to 1 if you have the <libudev.h> header file. */
 /* #undef HAVE_LIBUDEV_H */
-
+#if !defined(__ARM_ARCH_7A__)
 /* Define to 1 if you have the `localeconv' function. */
 #define HAVE_LOCALECONV 1
+#endif
 
 /* Define to 1 if you have the <locale.h> header file. */
 #define HAVE_LOCALE_H 1
 
 /* Define to 1 if the system has the type `LOGICAL_PROCESSOR_RELATIONSHIP'. */
 /* #undef HAVE_LOGICAL_PROCESSOR_RELATIONSHIP */
-
+#if !defined(__ARM_ARCH_7A__)
 /* Define to 1 if the system has the type 'long long int'. */
 #define HAVE_LONG_LONG_INT 1
+#endif
 
 /* Define to 1 if you have the <mach/mach_host.h> header file. */
 /* #undef HAVE_MACH_MACH_HOST_H */
@@ -295,12 +299,13 @@
 
 /* Define to 1 if the system has the type `RelationProcessorPackage'. */
 /* #undef HAVE_RELATIONPROCESSORPACKAGE */
-
+#if !defined(__ARM_ARCH_7A__)
 /* Define to 1 if you have the <sched.h> header file. */
 #define HAVE_SCHED_H 1
 
 /* Define to 1 if you have the `sched_yield' function. */
 #define HAVE_SCHED_YIELD 1
+#endif
 
 /* Define to 1 if you have the `setlocale' function. */
 #define HAVE_SETLOCALE 1
@@ -322,13 +327,13 @@
 
 /* Define to 1 if you have the `strncasecmp' function. */
 #define HAVE_STRNCASECMP 1
-
+#if !defined(__ARM_ARCH_7A__)
 /* Define to 1 if you have the `strtoll' function. */
 #define HAVE_STRTOLL 1
 
 /* Define to 1 if gcc's __sync builtins are available */
 #define HAVE_SYNC_BUILTINS 1
-
+#endif
 /* Define to '1' if sysctl is present and usable */
 #define HAVE_SYSCTL 1
 
@@ -360,9 +365,10 @@
 
 /* Define to 1 if you have the <sys/sysctl.h> header file. */
 #define HAVE_SYS_SYSCTL_H 1
-
+#if !defined(__ARM_ARCH_7A__)
 /* Define to 1 if you have the <sys/time.h> header file. */
 #define HAVE_SYS_TIME_H 1
+#endif
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
@@ -375,9 +381,10 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
-
+#if !defined(__ARM_ARCH_7A__)
 /* Define to 1 if the system has the type 'unsigned long long int'. */
 #define HAVE_UNSIGNED_LONG_LONG_INT 1
+#endif
 
 /* Define to 1 if you have the `uselocale' function. */
 #define HAVE_USELOCALE 1
@@ -581,9 +588,10 @@
 
 /* Define to 1 if X11 headers including Xutil.h and keysym.h are available. */
 #define HWLOC_HAVE_X11_KEYSYM 1
-
+#if !defined(__ARM_ARCH_7A__)
 /* Define to 1 if you have x86 cpuid */
 #define HWLOC_HAVE_X86_CPUID 1
+#endif
 
 /* Define to 1 if the _syscall3 macro works */
 /* #undef HWLOC_HAVE__SYSCALL3 */
@@ -605,9 +613,12 @@
 
 /* The size of `unsigned int', as computed by sizeof */
 #define HWLOC_SIZEOF_UNSIGNED_INT 4
-
+#if !defined(__ARM_ARCH_7A__)
 /* The size of `unsigned long', as computed by sizeof */
 #define HWLOC_SIZEOF_UNSIGNED_LONG 8
+#else
+#define HWLOC_SIZEOF_UNSIGNED_LONG 4
+#endif
 
 /* Define to 1 on Solaris */
 /* #undef HWLOC_SOLARIS_SYS */
@@ -638,7 +649,9 @@
 /* #undef HWLOC_X86_32_ARCH */
 
 /* Define to 1 on x86_64 */
+#if !defined(__ARM_ARCH_7A__)
 #define HWLOC_X86_64_ARCH 1
+#endif
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -669,10 +682,18 @@
 #define SIZEOF_UNSIGNED_INT 4
 
 /* The size of `unsigned long', as computed by sizeof. */
+#if !defined(__ARM_ARCH_7A__)
 #define SIZEOF_UNSIGNED_LONG 8
+#else
+#define SIZEOF_UNSIGNED_LONG 4
+#endif
 
 /* The size of `void *', as computed by sizeof. */
+#if !defined(__ARM_ARCH_7A__)
 #define SIZEOF_VOID_P 8
+#else
+#define SIZEOF_VOID_P 4
+#endif
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
@@ -704,13 +725,14 @@
 # define __EXTENSIONS__ 1
 #endif
 
-
+#if !defined(__ARM_ARCH_7A__)
 /* Define to 1 if /dev/urandom should be used for seeding the hash function */
 #define USE_URANDOM 1
 
 /* Define to 1 if CryptGenRandom should be used for seeding the hash function
    */
 #define USE_WINDOWS_CRYPTOAPI 1
+#endif
 
 /* Version number of package */
 #define VERSION "2.0.0a1-git"

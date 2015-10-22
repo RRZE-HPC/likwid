@@ -145,7 +145,11 @@ barrier_synchronize(BarrierData* barr)
     {
         while (barr->bval[barr->index[i] * 32 + barr->offset * 16] != barr->val)
         {
+#ifdef __arm__
+            __asm__ ("nop");
+#else
             __asm__ ("pause");
+#endif
         }
     }
 

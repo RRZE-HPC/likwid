@@ -63,6 +63,7 @@
     LIKWID_MARKER_STOP("bench");  \
     timer_stop(&time); \
     data->cycles = timer_printCycles(&time); \
+    data->time = timer_print(&time); \
     BARRIER
 
 

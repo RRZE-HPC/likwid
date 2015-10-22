@@ -52,14 +52,15 @@ CFLAGS := $(filter-out -fvisibility=hidden, $(CFLAGS))
 BUILD_DIR  = ./$(COMPILER)
 Q         ?= @
 
+BENCH_DIR   = ./x86-64
 ifeq ($(COMPILER),MIC)
 BENCH_DIR   = ./phi
-else
+endif
 ifeq ($(COMPILER),GCCX86)
 BENCH_DIR   = ./x86
-else
-BENCH_DIR   = ./x86-64
 endif
+ifeq ($(COMPILER),GCCARMv7)
+BENCH_DIR   = ./armv7
 endif
 
 SHARED_TARGET_LIB := -L.. -L../ext/hwloc/ -L../ext/lua -llikwid -llikwid-hwloc -llikwid-lua

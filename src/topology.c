@@ -92,6 +92,7 @@ static char* athlon64_f_str = "AMD Athlon64 (AM2) Rev F 90nm processor";
 static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
 static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
 static char* amd_k8_str = "AMD K8 architecture";
+static char* armv7l_str = "ARM 7l architecture";
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 
@@ -119,6 +120,7 @@ static char* short_k8 = "k8";
 static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
+static char* short_arm7 = "arm7";
 static char* short_unknown = "unknown";
 
 
@@ -308,14 +310,14 @@ static int readTopologyFile(const char* filename)
                 {
                     cpuid_topology.threadPool[thread].apicId = tmp;
                 }
-                
+
             }
             else if (strcmp(field, "cacheLevels") == 0)
             {
                 int level;
                 char type[128];
                 sscanf(line, "%s %s %d %s", structure, field, &level, value);
-                
+
                 cpuid_topology.cacheLevels[level-1].level = level-1;
                 if (strcmp(value, "type") == 0)
                 {
@@ -323,19 +325,19 @@ static int readTopologyFile(const char* filename)
                     if (strcmp(type, "UNIFIEDCACHE") == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].type = UNIFIEDCACHE;
-                    } 
+                    }
                     else if (strcmp(type, "DATACACHE") == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].type = DATACACHE;
-                    } 
+                    }
                     else if (strcmp(type, "INSTRUCTIONCACHE") == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].type = INSTRUCTIONCACHE;
-                    } 
+                    }
                     else if (strcmp(type, "ITLB") == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].type = ITLB;
-                    } 
+                    }
                     else if (strcmp(type, "DTLB") == 0)
                     {
                         cpuid_topology.cacheLevels[level-1].type = DTLB;
@@ -373,7 +375,7 @@ static int readTopologyFile(const char* filename)
                         cpuid_topology.cacheLevels[level-1].inclusive = tmp;
                     }
                 }
-                
+
             }
         }
         else if (strcmp(structure, "cpuid_info") == 0)
@@ -382,7 +384,7 @@ static int readTopologyFile(const char* filename)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.family = tmp;
-                
+
             }
             else if (strcmp(field, "model") == 0)
             {
@@ -400,55 +402,55 @@ static int readTopologyFile(const char* filename)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.stepping = tmp;
-                
+
             }
             else if (strcmp(field, "clock") == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.clock = tmp;
-                
+
             }
             else if (strcmp(field, "turbo") == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.turbo = tmp;
-                
+
             }
             else if (strcmp(field, "isIntel") == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.isIntel = tmp;
-                
+
             }
             else if (strcmp(field, "featureFlags") == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.featureFlags = tmp;
-                
+
             }
             else if (strcmp(field, "perf_version") == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.perf_version = tmp;
-                
+
             }
             else if (strcmp(field, "perf_num_ctr") == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.perf_num_ctr = tmp;
-                
+
             }
             else if (strcmp(field, "perf_width_ctr") == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.perf_width_ctr = tmp;
-                
+
             }
             else if (strcmp(field, "perf_num_fixed_ctr") == 0)
             {
                 sscanf(line, "%s %s = %d", structure, field, &tmp);
                 cpuid_info.perf_num_fixed_ctr = tmp;
-                
+
             }
             else if (strcmp(field, "features") == 0)
             {
@@ -464,7 +466,7 @@ static int readTopologyFile(const char* filename)
             {
                 int id;
                 sscanf(line, "%s %s %d %s", structure, field, &id, value);
-                    
+
                 if (strcmp(value,"numberOfProcessors") == 0)
                 {
                     sscanf(line, "%s %s %d %s = %d", structure, field, &id, value, &tmp);
@@ -668,7 +670,7 @@ int topology_setName(void)
             break;
 
         case MIC_FAMILY:
-            switch ( cpuid_info.model ) 
+            switch ( cpuid_info.model )
             {
                 case XEON_PHI:
                     cpuid_info.name = xeon_phi_string;
@@ -763,7 +765,20 @@ int topology_setName(void)
             cpuid_info.name = kabini_str;
             cpuid_info.short_name = short_k16;
             break;
-            
+
+	case ARMV7_FAMILY:
+	    switch (cpuid_info.model)
+	    {
+		case ARM7L:
+		    cpuid_info.name = armv7l_str;
+		    cpuid_info.short_name = short_arm7;
+		    break;
+		default:
+		    return EXIT_FAILURE;
+		    break;
+	    }
+	    break;
+
         default:
             return EXIT_FAILURE;
             break;
@@ -792,7 +807,7 @@ void topology_setupTree(void)
     uint32_t i;
     TreeNode* currentNode;
     HWThread* hwThreadPool = cpuid_topology.threadPool;
-    
+
     tree_init(&cpuid_topology.topologyTree, 0);
     for (i=0; i<  cpuid_topology.numHWThreads; i++)
     {
@@ -847,6 +862,7 @@ int topology_init(void)
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
         if (cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF))
         {
+#if !defined(__ARM_ARCH_7A__)
             funcs.init_cpuInfo = proc_init_cpuInfo;
             funcs.init_cpuFeatures = proc_init_cpuFeatures;
             funcs.init_nodeTopology = proc_init_nodeTopology;
@@ -855,6 +871,9 @@ int topology_init(void)
                 ((cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF)) ?
                 cpu_count(&cpuSet) :
                 sysconf(_SC_NPROCESSORS_CONF));
+#else
+            cpuid_topology.activeHWThreads = sysconf(_SC_NPROCESSORS_ONLN);
+#endif
         }
         else
         {

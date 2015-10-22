@@ -28,7 +28,7 @@
  *
  * =======================================================================================
  */
- 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <error.h>
@@ -94,20 +94,29 @@ void hwloc_init_cpuInfo(cpu_set_t cpuSet)
     cpuid_info.osname[0] = '\0';
     if (!obj)
     {
+        printf("No socket object\n");
         return;
     }
 
     const char * info;
+#ifdef __x86_64
     if ((info = hwloc_obj_get_info_by_name(obj, "CPUModelNumber")))
         cpuid_info.model = atoi(info);
     if ((info = hwloc_obj_get_info_by_name(obj, "CPUFamilyNumber")))
        cpuid_info.family = atoi(info);
     if ((info = hwloc_obj_get_info_by_name(obj, "CPUVendor")))
         cpuid_info.isIntel = strcmp(info, "GenuineIntel") == 0;
-    if ((info = hwloc_obj_get_info_by_name(obj, "CPUModel")))
-        strcpy(cpuid_info.osname, info);
     if ((info = hwloc_obj_get_info_by_name(obj, "CPUStepping")))
         cpuid_info.stepping = atoi(info);
+#endif
+#ifdef __ARM_ARCH_7A__
+    if ((info = hwloc_obj_get_info_by_name(obj, "CPUArchitecture")))
+       cpuid_info.family = atoi(info);
+    if ((info = hwloc_obj_get_info_by_name(obj, "CPURevision")))
+        cpuid_info.model = atoi(info);
+#endif
+    if ((info = hwloc_obj_get_info_by_name(obj, "CPUModel")))
+        strcpy(cpuid_info.osname, info);
 
     cpuid_topology.numHWThreads = hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
     DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d activeHWThreads %d,
@@ -228,11 +237,16 @@ void hwloc_init_cacheTopology(void)
         if (hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_CACHE)
             maxNumLevels++;
     }
+    if (maxNumLevels == 0)
+    {
+        cpuid_topology.numCacheLevels = 0;
+        cpuid_topology.cacheLevels = NULL;
+    }
     cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
     /* Start at the bottom of the tree to get all cache levels in order */
     depth = hwloc_topology_get_depth(hwloc_topology);
     id = 0;
-    
+
     for(d=depth-1;d >= 0; d--)
     {
         /* We only need caches, so skip other levels */

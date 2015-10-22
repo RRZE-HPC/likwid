@@ -1275,5 +1275,33 @@
 #define MSR_AMD16_NB_PMC2               0xC0010245
 #define MSR_AMD16_NB_PMC3               0xC0010247
 
+/* ARM Cortex A15 */
+#define A15_PMC0                        0x0000
+#define A15_PMC1                        0x0004
+#define A15_PMC2                        0x0008
+#define A15_PMC3                        0x000C
+#define A15_PMC4                        0x0010
+#define A15_PMC5                        0x0014
+#define A15_CYCLES                      0x007C
+#define A15_PERFEVTSEL0                 0x0400
+#define A15_PERFEVTSEL1                 0x0404
+#define A15_PERFEVTSEL2                 0x0408
+#define A15_PERFEVTSEL3                 0x040C
+#define A15_PERFEVTSEL4                 0x0410
+#define A15_PERFEVTSEL5                 0x0414
+#define A15_TYPE_SELECT                 0x047C
+#define A15_COUNT_ENABLE                0x0C00
+#define A15_COUNT_CLEAR                 0x0C20
+#define A15_INTERRUPT_ENABLE            0x0C40
+#define A15_INTERRUPT_CLEAR             0x0C60
+#define A15_OVERFLOW_FLAGS              0x0C80
+#define A15_OVERFLOW_STATUS             0x0CC0
+#define A15_SOFTWARE_INC                0x0CA0
+#define A15_PERF_CONFIG_CTRL            0x0E00
+#define A15_PERF_CONTROL_CTRL           0x0E04
+#define A15_USER_ENABLE                 0x0E08
+#define A15_EVENTS0                     0x0E20
+#define A15_EVENTS1                     0x0E24
+
 #endif /* REGISTERS_H */
 

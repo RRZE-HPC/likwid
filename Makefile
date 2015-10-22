@@ -66,6 +66,16 @@ endif
 ifneq ($(FORTRAN_INTERFACE),true)
 OBJ := $(filter-out $(BUILD_DIR)/likwid_f90_interface.o,$(OBJ))
 endif
+ifeq ($(COMPILER), GCCARMv7)
+OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/loadData.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
+else
+OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
+endif
+
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
 OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)

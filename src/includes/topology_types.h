@@ -39,7 +39,7 @@
 /*! \brief Enum of possible CPU features
 
 CPUs implement different features that likely improve application performance if
-optimized using the feature. The list contains all features that are currently 
+optimized using the feature. The list contains all features that are currently
 supported by LIKWID. LIKWID does not perform any action based on these features,
 it gathers the data only for output purposes. It is not a complete list.
 \extends CpuInfo
@@ -68,6 +68,13 @@ typedef enum {
     HLE, /*!< \brief Hardware Lock Elision */
     HTT, /*!< \brief Hyper-Threading Technology */
     RDSEED, /*!< \brief Non-deterministic random bit generator */
+    SWP, /*!< \brief Atomic read-modify-write */
+    VFP, /*!< \brief First generation SIMD */
+    NEON, /*!< \brief Second generation SIMD */
+    EDSP, /*!< \brief DSP extensions */
+    VFPV3, /*!< \brief First generation SIMD Version 3 */
+    VFPV4, /*!< \brief First generation SIMD Version 4 */
+    TLS, /*!< \brief Thread-local storage registers */
 } FeatureBit;
 /** @}*/
 #endif /*CPUID_TYPES_H*/

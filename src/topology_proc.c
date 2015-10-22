@@ -34,6 +34,7 @@
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 /* this was taken from the linux kernel */
+#ifdef __X86_64
 #define CPUID                              \
     __asm__ volatile ("cpuid"                             \
             : "=a" (eax),     \
@@ -41,9 +42,11 @@
             "=c" (ecx),     \
             "=d" (edx)      \
             : "0" (eax), "2" (ecx))
+#endif
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 static int get_cpu_perf_data(void)
 {
+#ifdef __X86_64
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     int largest_function = 0;
     eax = 0x00;
@@ -69,6 +72,7 @@ static int get_cpu_perf_data(void)
             cpuid_info.turbo = 0;
         }
     }
+#endif
     return 0;
 }
 
@@ -115,7 +119,7 @@ int fillList(int* outList, int outOffset, bstring list)
                     {
                         outList[outOffset+current] = j;
                     }
-                    
+
                     current++;
                 }
             }
@@ -123,7 +127,7 @@ int fillList(int* outList, int outOffset, bstring list)
     }
     return current;
 }
-
+#ifdef __X86_64
 static int readCacheInclusiveIntel(int level)
 {
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
@@ -141,6 +145,16 @@ static int readCacheInclusiveAMD(int level)
     CPUID;
     return (edx & (0x1<<1));
 }
+#else
+static int readCacheInclusiveIntel(int level)
+{
+    return 0;
+}
+static int readCacheInclusiveAMD(int level)
+{
+    return 0;
+}
+#endif
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 void proc_init_cpuInfo(cpu_set_t cpuSet)
@@ -169,7 +183,7 @@ void proc_init_cpuInfo(cpu_set_t cpuSet)
     cpuid_topology.numHWThreads = 0;
     cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
 
-    if (NULL != (fp = fopen ("/proc/cpuinfo", "r"))) 
+    if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
     {
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
@@ -242,7 +256,12 @@ void proc_init_cpuFeatures(void)
     while( fgets(buf, sizeof(buf)-1, file) )
     {
         ret = sscanf(buf, "%s\t:", &(ident[0]));
-        if (ret != 1 || strcmp(ident,"flags") != 0)
+#ifdef __x86_64
+        if (ret != 1 || strcmp(ident,"flags") != 0 || strcmp(ident, "Features") != 0)
+#endif
+#ifdef __ARM_ARCH_7A__
+        if (ret != 1 || strcmp(ident, "Features") != 0)
+#endif
         {
             continue;
         }
@@ -263,7 +282,6 @@ void proc_init_cpuFeatures(void)
     cpuid_info.features[0] = '\0';
     buf[strcspn(buf, "\n")] = '\0';
     cptr = strtok(&(buf[6]),delimiter);
-
     while (cptr != NULL)
     {
         if (strcmp(cptr,"ssse3") == 0)
@@ -380,6 +398,41 @@ void proc_init_cpuFeatures(void)
         {
             cpuid_info.featureFlags |= (1<<HTT);
             strcat(cpuid_info.features, "HTT ");
+        }
+        else if (strcmp(cptr,"swp") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<SWP);
+            strcat(cpuid_info.features, "SWP ");
+        }
+        else if (strcmp(cptr,"neon") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<NEON);
+            strcat(cpuid_info.features, "NEON ");
+        }
+        else if (strcmp(cptr,"vfp") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<VFP);
+            strcat(cpuid_info.features, "VFP ");
+        }
+        else if (strcmp(cptr,"vfpv3") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<VFPV3);
+            strcat(cpuid_info.features, "VFPv3 ");
+        }
+        else if (strcmp(cptr,"vfpv4") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<VFPV4);
+            strcat(cpuid_info.features, "VFPv4 ");
+        }
+        else if (strcmp(cptr,"edsp") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<EDSP);
+            strcat(cpuid_info.features, "EDSP ");
+        }
+        else if (strcmp(cptr,"tls") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<TLS);
+            strcat(cpuid_info.features, "TLS ");
         }
         cptr = strtok(NULL, delimiter);
     }

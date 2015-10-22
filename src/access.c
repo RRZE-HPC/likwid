@@ -48,8 +48,13 @@
 #include <perfmon.h>
 #include <registers.h>
 #include <access.h>
+#if defined(__x86_64__) || defined(__i386__)
 #include <access_client.h>
 #include <access_x86.h>
+#endif
+#if defined(__ARM_ARCH_7A__)
+#include <access_arm.h>
+#endif
 
 
 
@@ -71,6 +76,8 @@ void HPMmode(int mode)
 int HPMinit(void)
 {
     int ret = 0;
+    uint32_t testreg = 0x0;
+    PciDeviceIndex testdev = MSR_DEV;
     if (access_init == NULL)
     {
 #if defined(__x86_64__) || defined(__i386__)
@@ -96,6 +103,7 @@ int HPMinit(void)
             access_finalize = &access_x86_finalize;
             access_check = &access_x86_check;
         }
+        testreg = MSR_PLATFORM_INFO;
 #endif
 /*#if defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)
         DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for POWER architecture in direct mode);
@@ -105,13 +113,22 @@ int HPMinit(void)
         access_finalize = &access_power_finalize;
         access_check = &access_power_check;
 #endif*/
+#if defined(__ARM_ARCH_7A__)
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for ARMv7 architecture in direct mode);
+        access_init = &access_arm_init;
+        access_read = &access_arm_read;
+        access_write = &access_arm_write;
+        access_finalize = &access_arm_finalize;
+        access_check = &access_arm_check;
+        testreg = A15_EVENTS0;
+#endif
         for (int i=0; i<cpuid_topology.numHWThreads; i++)
         {
             ret = access_init(cpuid_topology.threadPool[i].apicId);
             if (ret == 0)
             {
                 uint64_t data = 0x0ULL;
-                ret = HPMread(cpuid_topology.threadPool[i].apicId, MSR_DEV, MSR_PLATFORM_INFO, &data);
+                ret = HPMread(cpuid_topology.threadPool[i].apicId, testdev, testreg, &data);
                 if (ret == 0)
                 {
                     registeredCpus++;

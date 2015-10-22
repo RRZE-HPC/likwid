@@ -168,6 +168,9 @@ table.insert(output_csv, likwid.hline)
 table.insert(output_csv, likwid.sline)
 table.insert(output_csv, "Cache Topology")
 table.insert(output_csv, likwid.sline)
+if cputopo["numCacheLevels"] == 0 then
+    table.insert(output_csv, "No caches found")
+end
 
 for level=1,cputopo["numCacheLevels"] do
     if (cputopo["cacheLevels"][level]["type"] ~= "INSTRUCTIONCACHE") then
