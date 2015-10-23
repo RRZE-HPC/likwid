@@ -94,7 +94,7 @@ all: $(BUILD_DIR) $(OBJ) $(OBJ_BENCH) $(BENCH_TARGET)
 
 
 $(BENCH_TARGET): $(BENCH)
-$(BENCH): $(BUILD_DIR) $(OBJ) $(OBJ_BENCH)
+$(BENCH): likwid-bench.c $(BUILD_DIR) $(OBJ) $(OBJ_BENCH)
 	@echo "===>  LINKING  $(BENCH)"
 	$(Q)${CC} $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) ${LFLAGS}  likwid-bench.c $(BENCH_LIBS) $(OBJ_BENCH) $(OBJ) -o $(BENCH) $(TARGET_LIB) $(LIBS) $(RPATHS)
 
