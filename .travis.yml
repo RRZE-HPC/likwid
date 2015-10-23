@@ -1,4 +1,9 @@
 language: c
 compiler: gcc
 install: true
-script: make
+script:
+  - make
+  - sudo make install
+  - likwid-topology -C -c -g
+  - likwid-pin -p
+  - likwid-bench -t load -w N:100MB:1
