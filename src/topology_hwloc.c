@@ -109,7 +109,7 @@ void hwloc_init_cpuInfo(cpu_set_t cpuSet)
     if ((info = hwloc_obj_get_info_by_name(obj, "CPUStepping")))
         cpuid_info.stepping = atoi(info);
 #endif
-#ifdef __ARM_ARCH_7A__
+#ifdef __arm__
     if ((info = hwloc_obj_get_info_by_name(obj, "CPUArchitecture")))
        cpuid_info.family = atoi(info);
     if ((info = hwloc_obj_get_info_by_name(obj, "CPURevision")))

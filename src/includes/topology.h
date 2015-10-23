@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#if !defined(__ARM_ARCH_7A__)
+#if defined(__x86_64) || defined(__i386__)
 #include <topology_cpuid.h>
 #endif
 #include <topology_proc.h>
@@ -121,7 +121,8 @@ struct topology_functions {
 #define ATHLON64_G2     0x7FU
 
 /* ARM */
-#define  ARM7L          0x3U
+#define  ARM7L_3          0x3U
+#define  ARM7L_5          0x5U
 
 #define  P6_FAMILY        0x6U
 #define  MIC_FAMILY       0xBU

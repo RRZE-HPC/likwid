@@ -34,7 +34,7 @@
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 /* this was taken from the linux kernel */
-#ifdef __X86_64
+#if defined(__x86_64) || defined(__i386__)
 #define CPUID                              \
     __asm__ volatile ("cpuid"                             \
             : "=a" (eax),     \
@@ -46,7 +46,7 @@
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 static int get_cpu_perf_data(void)
 {
-#ifdef __X86_64
+#if defined(__x86_64) || defined(__i386__)
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     int largest_function = 0;
     eax = 0x00;
@@ -127,7 +127,7 @@ int fillList(int* outList, int outOffset, bstring list)
     }
     return current;
 }
-#ifdef __X86_64
+#if defined(__x86_64) || defined(__i386__)
 static int readCacheInclusiveIntel(int level)
 {
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
@@ -256,10 +256,10 @@ void proc_init_cpuFeatures(void)
     while( fgets(buf, sizeof(buf)-1, file) )
     {
         ret = sscanf(buf, "%s\t:", &(ident[0]));
-#ifdef __x86_64
+#if defined(__x86_64) || defined(__i386__)
         if (ret != 1 || strcmp(ident,"flags") != 0 || strcmp(ident, "Features") != 0)
 #endif
-#ifdef __ARM_ARCH_7A__
+#ifdef __arm__
         if (ret != 1 || strcmp(ident, "Features") != 0)
 #endif
         {

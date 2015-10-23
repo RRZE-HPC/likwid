@@ -769,7 +769,8 @@ int topology_setName(void)
 	case ARMV7_FAMILY:
 	    switch (cpuid_info.model)
 	    {
-		case ARM7L:
+		case ARM7L_3:
+		case ARM7L_5:
 		    cpuid_info.name = armv7l_str;
 		    cpuid_info.short_name = short_arm7;
 		    break;
