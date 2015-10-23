@@ -48,6 +48,7 @@ void (*TSTART)(TscCounter*) = NULL;
 void (*TSTOP)(TscCounter*) = NULL;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
+#if defined(__x86_64) || defined(__i386__)
 #define CPUID                              \
     __asm__ volatile ("cpuid"                             \
             : "=a" (eax),     \
@@ -55,7 +56,7 @@ void (*TSTOP)(TscCounter*) = NULL;
             "=c" (ecx),     \
             "=d" (edx)      \
             : "0" (eax), "2" (ecx))
-
+#endif
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 static int os_timer(TscCounter* time)
 {
@@ -80,7 +81,7 @@ static void os_timer_stop(TscCounter* time)
     os_timer(time);
 }
 
-#ifdef __x86_64
+#if defined(__x86_64) || defined(__i386__)
 static void fRDTSC(TscCounter* cpu_c)
 {
     __asm__ volatile("xor %%eax,%%eax\n\t"           \
@@ -118,7 +119,7 @@ static void fRDTSCP(TscCounter* cpu_c)
 static uint64_t
 getCpuSpeed(void)
 {
-#ifdef __x86_64
+#if defined(__x86_64) || defined(__i386__)
     int i;
     TimerData data;
     TscCounter start;
@@ -169,7 +170,7 @@ getCpuSpeed(void)
 
     return ((uint64_t)   atoi(buff)) * 1000;
 #endif
-#if defined(__ARM_ARCH_7A__)
+#if defined(__arm__)
     uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
     TimerData data;
     FILE *fpipe;
@@ -237,7 +238,7 @@ void timer_init( void )
     uint32_t eax,ebx,ecx,edx;
     if ((!TSTART) && (!TSTOP))
     {
-#ifdef __x86_64
+#if defined(__x86_64) || defined(__i386__)
         TSTART = fRDTSC;
         eax = 0x80000001;
         CPUID;
@@ -250,15 +251,15 @@ void timer_init( void )
             TSTOP = fRDTSC_CR;
         }
 #endif
-#if defined(__ARM_ARCH_7A__)
+#if defined(__arm__)
         TSTART = os_timer_start;
         TSTOP = os_timer_stop;
 #endif
     }
-    if (cpuClock == 0ULL)
+    /*if (cpuClock == 0ULL)
     {
         cpuClock = getCpuSpeed();
-    }
+    }*/
 }
 
 uint64_t timer_printCycles( TimerData* time )
@@ -269,7 +270,7 @@ uint64_t timer_printCycles( TimerData* time )
     {
         cycles = (time->stop.int64 - time->start.int64 - baseline);
     }
-#ifdef __ARM_ARCH_7A__
+#if defined(__arm__)
     if (fixedFreq == 1)
     {
         cycles *= 1E-6 * cpuClock;
@@ -290,7 +291,7 @@ double timer_print( TimerData* time )
     {
         cycles = (time->stop.int64 - time->start.int64 - baseline);
     }
-#ifdef __ARM_ARCH_7A__
+#if defined(__arm__)
     return ((double) cycles) * 1E-6;
 #else
     return  ((double) cycles / (double) cpuClock);
@@ -309,11 +310,11 @@ uint64_t timer_getBaseline( void )
 
 void timer_start( TimerData* time )
 {
-#ifdef __x86_64
+#if defined(__x86_64) || defined(__i386__)
     if (TSTART)
         TSTART(&(time->start));
 #endif
-#ifdef __ARM_ARCH_7A__
+#if defined(__arm__)
     if (TSTART)
         TSTART(&(time->start));
 #endif
@@ -333,11 +334,11 @@ void timer_start( TimerData* time )
 
 void timer_stop( TimerData* time )
 {
-#ifdef __x86_64
+#if defined(__x86_64) || defined(__i386__)
     if (TSTOP)
         TSTOP(&(time->stop));
 #endif
-#ifdef __ARM_ARCH_7A__
+#if defined(__arm__)
     if (TSTOP)
         TSTOP(&(time->stop));
 #endif
