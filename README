@@ -5,6 +5,8 @@ Likwid is a simple to install and use toolsuite of command line applications
 for performance oriented programmers. It works for Intel and AMD processors
 on the Linux operating system.
 
+[![Build Status](https://travis-ci.org/RRZE-HPC/likwid.svg)](https://travis-ci.org/RRZE-HPC/likwid)
+
 It consists of:
 
 likwid-topology   - print thread, cache and NUMA topology
