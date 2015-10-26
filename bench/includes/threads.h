@@ -35,6 +35,7 @@
 #include <threads_types.h>
 
 #define THREADS_BARRIER pthread_barrier_wait(&threads_barrier)
+#define MIN_ITERATIONS 10
 
 extern pthread_barrier_t threads_barrier;
 extern ThreadData* threads_data;

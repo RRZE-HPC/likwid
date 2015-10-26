@@ -153,7 +153,7 @@ allocator_allocateVector(
     printf("Allocate: Process running on core %d (Domain %s) - Vector length %llu Offset %d Alignment %llu\n",
             affinity_processGetProcessorId(),
             bdata(domain->tag),
-            LLU_CAST size,
+            LLU_CAST bytesize,
             offset,
             LLU_CAST elements);
 

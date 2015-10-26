@@ -429,7 +429,7 @@ void* runTest(void* arg)
 #define MEASURE(func) \
     timer_start(&time); \
     i = 0; \
-    for (i=0; i < SIZE_MAX; i++) \
+    for (i=0; i < SIZE_MAX; i <<= 1) \
     { \
         func; \
         timer_stop(&time); \
@@ -457,6 +457,7 @@ void* getIterSingle(void* arg)
     threadId = data->threadId;
 
     size = myData->size - (myData->size % myData->test->stride);
+    likwid_pinThread(myData->processors[threadId]);
 
 #ifdef DEBUG_LIKWID
     printf("Automatic iteration count detection:");
@@ -745,6 +746,8 @@ void* getIterSingle(void* arg)
     data->data.iter = iterations;
 #ifdef DEBUG_LIKWID
     printf(" %d iterations per thread\n", iterations);
+    if (iterations < MIN_ITERATIONS)
+        printf("Sanitizing iterations count per thread to %d\n",MIN_ITERATIONS);
 #endif
     return NULL;
 }

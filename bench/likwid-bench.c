@@ -374,6 +374,7 @@ int main(int argc, char** argv)
         myData.min_runtime = min_runtime;
         myData.size = groups[i].size;
         myData.test = test;
+        myData.cycles = 0;
         myData.numberOfThreads = groups[i].numberOfThreads;
         myData.processors = (int*) malloc(myData.numberOfThreads * sizeof(int));
         myData.streams = (void**) malloc(test->streams * sizeof(void*));
@@ -425,7 +426,6 @@ int main(int argc, char** argv)
 
 
     time = (double) maxCycles / (double) cpuClock;
-    double loadStoreRatio = (double)test->loads/(double)test->stores;
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
     ownprintf("CPU Clock:\t\t%" PRIu64 "\n", cpuClock);

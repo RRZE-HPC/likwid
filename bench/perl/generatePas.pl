@@ -26,6 +26,11 @@ my $multi=0;
 my $BenchRoot = $ARGV[0];
 my $OutputDirectory = $ARGV[1];
 my $TemplateRoot = $ARGV[2];
+my $InputFile = "";
+if (@ARGV == 4)
+{
+    $InputFile = $ARGV[3];
+}
 my $DEBUG = 0;
 
 my $stream_lookup = {
