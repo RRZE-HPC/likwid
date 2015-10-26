@@ -163,7 +163,6 @@ void likwid_markerInit(void)
     for (i=0; i<num_cpus; i++)
     {
         threads2Cpu[i] = ownatoi(bdata(threadTokens->entry[i]));
-        HPMaddThread(threads2Cpu[i]);
     }
     bdestroy(bThreadStr);
     bstrListDestroy(threadTokens);
@@ -171,7 +170,6 @@ void likwid_markerInit(void)
     if (getenv("LIKWID_PIN") != NULL)
     {
         likwid_pinThread(threads2Cpu[0]);
-        fprintf(stderr, "Pinning app to CPU %d\n", threads2Cpu[0]);
         if (getenv("OMP_NUM_THREADS") != NULL)
         {
             if (ownatoi(getenv("OMP_NUM_THREADS")) > num_cpus)
@@ -215,7 +213,6 @@ void likwid_markerInit(void)
 
     for (i=0; i<num_cpus; i++)
     {
-        initThreadArch(threads2Cpu[i]);
         hashTable_initThread(threads2Cpu[i]);
         for(int j=0; j<groupSet->groups[groups[0]].numberOfEvents;j++)
         {

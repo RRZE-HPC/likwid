@@ -54,7 +54,7 @@
 
 
 static int registeredCpus = 0;
-static int registeredCpuList[MAX_NUM_THREADS] = { 0 };
+static int registeredCpuList[MAX_NUM_THREADS] = { [0 ... (MAX_NUM_THREADS-1)] = 0 };
 
 
 int (*access_read)(PciDeviceIndex dev, const int cpu, uint32_t reg, uint64_t *data) = NULL;
@@ -65,7 +65,10 @@ int (*access_check) (PciDeviceIndex dev, int cpu_id) = NULL;
 
 void HPMmode(int mode)
 {
-    config.daemonMode = mode;
+    if ((mode == ACCESSMODE_DIRECT) || (mode == ACCESSMODE_DAEMON))
+    {
+        config.daemonMode = mode;
+    }
 }
 
 int HPMinit(void)
@@ -97,36 +100,6 @@ int HPMinit(void)
             access_check = &access_x86_check;
         }
 #endif
-/*#if defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)
-        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for POWER architecture in direct mode);
-        access_init = &access_power_init;
-        access_read = &access_power_read;
-        access_write = &access_power_write;
-        access_finalize = &access_power_finalize;
-        access_check = &access_power_check;
-#endif*/
-        for (int i=0; i<cpuid_topology.numHWThreads; i++)
-        {
-            ret = access_init(cpuid_topology.threadPool[i].apicId);
-            if (ret == 0)
-            {
-                uint64_t data = 0x0ULL;
-                ret = HPMread(cpuid_topology.threadPool[i].apicId, MSR_DEV, MSR_PLATFORM_INFO, &data);
-                if (ret == 0)
-                {
-                    registeredCpus++;
-                    registeredCpuList[cpuid_topology.threadPool[i].apicId] = 1;
-                }
-                else
-                {
-                    return ret;
-                }
-            }
-            else
-            {
-                return ret;
-            }
-        }
     }
     return 0;
 }
@@ -139,7 +112,28 @@ int HPMinitialized(void)
 
 int HPMaddThread(int cpu_id)
 {
-    return HPMinit();
+    int ret;
+    if (registeredCpuList[cpu_id] == 0)
+    {
+        if (access_init != NULL)
+        {
+            ret = access_init(cpu_id);
+            if (ret == 0)
+            {
+                registeredCpus++;
+                registeredCpuList[cpu_id] = 1;
+            }
+            else
+            {
+                return ret;
+            }
+        }
+        else
+        {
+            return -ENODEV;
+        }
+    }
+    return 0;
 }
 
 void HPMfinalize()
@@ -172,6 +166,10 @@ int HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
     {
         return -ERANGE;
     }
+    if (registeredCpuList[cpu_id] == 0)
+    {
+        return -ENODEV;
+    }
     access_read(dev, cpu_id, reg, &tmp);
     *data = tmp;
     return err;
@@ -189,11 +187,19 @@ int HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
         ERROR_PRINT(MSR WRITE C %d OUT OF RANGE, cpu_id);
         return -ERANGE;
     }
+    if (registeredCpuList[cpu_id] == 0)
+    {
+        return -ENODEV;
+    }
     access_write(dev, cpu_id, reg, data);
     return err;
 }
 
 int HPMcheck(PciDeviceIndex dev, int cpu_id)
 {
+    if (registeredCpuList[cpu_id] == 0)
+    {
+        return -ENODEV;
+    }
     return access_check(dev, cpu_id);
 }

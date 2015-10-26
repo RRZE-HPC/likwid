@@ -1131,7 +1131,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     ret = HPMinit();
     if (ret)
     {
-        ERROR_PLAIN_PRINT(Cannot get access to performance counters);
+        ERROR_PLAIN_PRINT(Cannot set access functions);
         free(groupSet->threads);
         free(groupSet);
         exit(EXIT_FAILURE);
@@ -1147,6 +1147,10 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     /* If the arch supports it, initialize power and thermal measurements */
     for(i=0;i<nrThreads;i++)
     {
+        if (HPMaddThread(threadsToCpu[i]) != 0)
+        {
+            ERROR_PLAIN_PRINT(Cannot get access to performance counters);
+        }
         groupSet->threads[i].thread_id = i;
         groupSet->threads[i].processorId = threadsToCpu[i];
 
