@@ -124,6 +124,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
     uint64_t tmp = 0x0ULL;
     int (*ownstrcmp)(const char*, const char*);
     ownstrcmp = &strcmp;
+    int testcpu = groupSet->threads[0].processorId;
     for (int i=0; i< perfmon_numCounters; i++)
     {
         if (biseqcstr(reg, counter_map[i].key))
@@ -153,7 +154,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
             reg = counter_map[*index].counterRegister;
             check_settings = 0;
         }
-        err = HPMread(0, counter_map[*index].device, reg, &tmp);
+        err = HPMread(testcpu, counter_map[*index].device, reg, &tmp);
         if (err != 0)
         {
             if (err == -ENODEV)
@@ -171,7 +172,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
         }
         else if (tmp == 0x0ULL)
         {
-            err = HPMwrite(0, counter_map[*index].device, reg, 0x0ULL);
+            err = HPMwrite(testcpu, counter_map[*index].device, reg, 0x0ULL);
             if (err != 0)
             {
                 if (err == -ENODEV)
@@ -195,7 +196,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
             {
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s has bits set (0x%llx) but we are forced to overwrite them,
                                              counter_map[*index].key, tmp);
-                err = HPMwrite(0, counter_map[*index].device, reg, 0x0ULL);
+                err = HPMwrite(testcpu, counter_map[*index].device, reg, 0x0ULL);
             }
             else if (force == 0)
             {
@@ -207,7 +208,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
     }
     else if ((ret) && ((*type == POWER) || (*type == WBOX0FIX) || (*type == THERMAL)))
     {
-        err = HPMread(0, MSR_DEV, counter_map[*index].counterRegister, &tmp);
+        err = HPMread(testcpu, MSR_DEV, counter_map[*index].counterRegister, &tmp);
         if (err != 0)
         {
             DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not readable on this machine,
