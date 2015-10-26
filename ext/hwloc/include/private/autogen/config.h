@@ -613,13 +613,13 @@
 /* #undef HWLOC_SOLARIS_SYS */
 
 /* The hwloc symbol prefix */
-#define HWLOC_SYM_PREFIX hwloc_
+#define HWLOC_SYM_PREFIX likwid_
 
 /* The hwloc symbol prefix in all caps */
-#define HWLOC_SYM_PREFIX_CAPS HWLOC_
+#define HWLOC_SYM_PREFIX_CAPS LIKWID_
 
 /* Whether we need to re-define all the hwloc public symbols or not */
-#define HWLOC_SYM_TRANSFORM 0
+#define HWLOC_SYM_TRANSFORM 1
 
 /* Define to 1 on unsupported systems */
 /* #undef HWLOC_UNSUPPORTED_SYS */

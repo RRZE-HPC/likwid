@@ -52,14 +52,14 @@ hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
 
     if (!hwloc_topology)
     {
-        hwloc_topology_init(&hwloc_topology);
-        hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
-        hwloc_topology_load(hwloc_topology);
+        likwid_hwloc_topology_init(&hwloc_topology);
+        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
+        likwid_hwloc_topology_load(hwloc_topology);
     }
 
-    for(i = 0; i < hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PCI_DEVICE); i++)
+    for(i = 0; i < likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PCI_DEVICE); i++)
     {
-        obj = hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PCI_DEVICE, i);
+        obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PCI_DEVICE, i);
         if (obj->attr->pcidev.vendor_id != testVendor)
         {
             continue;
