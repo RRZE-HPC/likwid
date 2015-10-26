@@ -953,15 +953,15 @@ typedef PowerInfo* PowerInfo_t;
 /** \brief Pointer for exporting the PowerData data structure */
 typedef PowerData* PowerData_t;
 
-/*! \brief Initialize power measurements on specific CPU
+/*! \brief Initialize energy measurements on specific CPU
 
-Additionally, it reads basic information about the power measurements like 
+Additionally, it reads basic information about the energy measurements like 
 minimal measurement time.
-@param [in] cpuId Initialize power facility for this CPU
+@param [in] cpuId Initialize energy facility for this CPU
 @return error code
 */
 extern int power_init(int cpuId) __attribute__ ((visibility ("default") ));
-/*! \brief Get a pointer to the power facility information
+/*! \brief Get a pointer to the energy facility information
 
 @return PowerInfo_t pointer
 \sa PowerInfo_t
@@ -969,70 +969,73 @@ extern int power_init(int cpuId) __attribute__ ((visibility ("default") ));
 extern PowerInfo_t get_powerInfo(void) __attribute__ ((visibility ("default") ));
 /*! \brief Read the current power value
 
-@param [in] cpuId Read power facility for this CPU
-@param [in] reg Power register
-@param [out] data Power data
+@param [in] cpuId Read energy facility for this CPU
+@param [in] reg Energy register
+@param [out] data Energy data
 */
 extern int power_read(int cpuId, uint64_t reg, uint32_t *data) __attribute__ ((visibility ("default") ));
-/*! \brief Read the current power value using a specific communication socket
+/*! \brief Read the current energy value using a specific communication socket
 
 @param [in] socket_fd Communication socket for the read operation
-@param [in] cpuId Read power facility for this CPU
-@param [in] reg Power register
-@param [out] data Power data
+@param [in] cpuId Read energy facility for this CPU
+@param [in] reg Energy register
+@param [out] data Energy data
 */
 extern int power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data) __attribute__ ((visibility ("default") ));
-/*! \brief Start power measurements
+/*! \brief Start energy measurements
 
-@param [in,out] data Data structure holding start and stop values for power measurements
-@param [in] cpuId Start power facility for this CPU
+@param [in,out] data Data structure holding start and stop values for energy measurements
+@param [in] cpuId Start energy facility for this CPU
 @param [in] type Which type should be measured
 @return error code
 */
 extern int power_start(PowerData_t data, int cpuId, PowerType type) __attribute__ ((visibility ("default") ));
-/*! \brief Stop power measurements
+/*! \brief Stop energy measurements
 
-@param [in,out] data Data structure holding start and stop values for power measurements
-@param [in] cpuId Start power facility for this CPU
+@param [in,out] data Data structure holding start and stop values for energy measurements
+@param [in] cpuId Start energy facility for this CPU
 @param [in] type Which type should be measured
 @return error code
 */
 extern int power_stop(PowerData_t data, int cpuId, PowerType type) __attribute__ ((visibility ("default") ));
-/*! \brief Print power measurements gathered by power_start() and power_stop()
+/*! \brief Print energy measurements gathered by power_start() and power_stop()
 
-@param [in] data Data structure holding start and stop values for power measurements
+@param [in] data Data structure holding start and stop values for energy measurements
 @return Consumed energy in Joules
 */
 extern double power_printEnergy(PowerData* data) __attribute__ ((visibility ("default") ));
 /*! \brief Get energy Unit
 
 @param [in] domain RAPL domain ID
-@return Power unit of the given RAPL domain
+@return Energy unit of the given RAPL domain
 */
 extern double power_getEnergyUnit(int domain) __attribute__ ((visibility ("default") ));
 
 /*! \brief Get the values of the limit register of a domain
+NOT IMPLEMENTED
 
 @param [in] cpuId CPU ID
 @param [in] domain RAPL domain ID
-@param [out] power Power limit
+@param [out] power Energy limit
 @param [out] time Time limit
 @return error code
 */
 int power_limitGet(int cpuId, PowerType domain, double* power, double* time) __attribute__ ((visibility ("default") ));
 
 /*! \brief Set the values of the limit register of a domain
+NOT IMPLEMENTED
 
 @param [in] cpuId CPU ID
 @param [in] domain RAPL domain ID
-@param [in] power Power limit
+@param [in] power Energy limit
 @param [in] time Time limit
 @param [in] doClamping Activate clamping (going below OS-requested power level)
 @return error code
 */
 int power_limitSet(int cpuId, PowerType domain, double power, double time, int doClamping) __attribute__ ((visibility ("default") ));
 
-/*! \brief Get the state of a power limit, activated or deactivated
+/*! \brief Get the state of a energy limit, activated or deactivated
+NOT IMPLEMENTED
 
 @param [in] cpuId CPU ID
 @param [in] domain RAPL domain ID
