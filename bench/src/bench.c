@@ -427,16 +427,20 @@ void* runTest(void* arg)
 
 
 #define MEASURE(func) \
-    timer_start(&time); \
-    i = 0; \
-    for (i=0; i < SIZE_MAX; i <<= 1) \
+    iterations = 8; \
+    while (1) \
     { \
-        func; \
+        timer_start(&time); \
+        for (i=0;i<iterations;i++) \
+        { \
+            func; \
+        } \
         timer_stop(&time); \
-        if (timer_print(&time) >= (double)data->data.min_runtime) \
+        if (timer_print(&time) < (double)data->data.min_runtime) \
+            iterations = iterations << 1; \
+        else \
             break; \
     } \
-    iterations = i;  \
 
 
 void* getIterSingle(void* arg)
