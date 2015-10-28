@@ -726,7 +726,7 @@ end
 
 if use_marker == true then
     groups, results = likwid.getMarkerResults(markerFile, group_list, cpulist)
-    --os.remove(markerFile)
+    os.remove(markerFile)
     if #groups == 0 and #results == 0 then
         likwid.finalize()
         likwid.putTopology()

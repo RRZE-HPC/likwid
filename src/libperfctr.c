@@ -306,10 +306,6 @@ void likwid_markerClose(void)
         fprintf(file,"%d %d %d\n",numberOfThreads, numberOfRegions, numberOfGroups);
         for (int i=0; i<numberOfRegions; i++)
         {
-            if (results[i].count[0] == 0)
-            {
-                continue;
-            }
             fprintf(file,"%d:%s\n",i,bdata(results[i].tag));
         }
         for (int i=0; i<numberOfRegions; i++)
