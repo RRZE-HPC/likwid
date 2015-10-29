@@ -8,6 +8,7 @@ script:
   - cd test && make streamGCC && cd ..
   - /usr/local/bin/likwid-topology -c -C -g
   - /usr/local/bin/likwid-pin -p
+  - sudo modprobe msr
   - /usr/local/bin/likwid-perfctr -i
   - /usr/local/bin/likwid-perfctr -C 0,1 -g L3 test/streamGCC
   - /usr/local/bin/likwid-perfctr -C 0,1 -g L3 -m test/streamGCC
