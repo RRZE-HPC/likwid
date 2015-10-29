@@ -1,5 +1,7 @@
 language: c
 compiler: gcc
 install: true
+sudo: required
 script:
   - make && sudo make install
+  - /usr/local/bin/likwid-topology
