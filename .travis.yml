@@ -1,6 +1,7 @@
 language: c
 compiler: gcc
 install: true
+dist: trusty
 sudo: required
 script:
   - make && sudo make install
