@@ -102,6 +102,32 @@ static int getThreadID(int cpu_id)
     return -1;
 }
 
+static double
+calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int overflows)
+{
+    double result = 0.0;
+
+    if (overflows == 0)
+    {
+        result = (double) (stop - start);
+    }
+    else if (overflows > 0)
+    {
+        result += (double) ((perfmon_getMaxCounterValue(counter_map[index].type) - start) + stop);
+        overflows--;
+    }
+    result += (double) (overflows * perfmon_getMaxCounterValue(counter_map[index].type));
+    if (counter_map[index].type == POWER)
+    {
+        result *= power_getEnergyUnit(getCounterTypeOffset(index));
+    }
+    else if (counter_map[index].type == THERMAL)
+    {
+        result = (double)stop;
+    }
+    return result;
+}
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void likwid_markerInit(void)
@@ -280,6 +306,8 @@ void likwid_markerClose(void)
     int numberOfThreads = 0;
     int numberOfRegions = 0;
     char* markerfile = NULL;
+    int lineidx = 0;
+    char line[1024];
 
     if ( ! likwid_init )
     {
@@ -304,9 +332,11 @@ void likwid_markerClose(void)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Creating Marker file %s with %d regions %d groups and %d threads, markerfile, numberOfRegions, numberOfGroups, numberOfThreads);
         fprintf(file,"%d %d %d\n",numberOfThreads, numberOfRegions, numberOfGroups);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, %d %d %d, numberOfThreads, numberOfRegions, numberOfGroups);
         for (int i=0; i<numberOfRegions; i++)
         {
             fprintf(file,"%d:%s\n",i,bdata(results[i].tag));
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, %d:%s, i,bdata(results[i].tag));
         }
         for (int i=0; i<numberOfRegions; i++)
         {
@@ -318,12 +348,14 @@ void likwid_markerClose(void)
                 fprintf(file,"%u ",results[i].count[j]);
                 fprintf(file,"%e ",results[i].time[j]);
                 fprintf(file,"%d ",groupSet->groups[results[i].groupID].numberOfEvents);
-
+                lineidx = sprintf(&(line[0]), "%d %d %d %u %e %d ", i, results[i].groupID, threads2Cpu[j],results[i].count[j],results[i].time[j],groupSet->groups[results[i].groupID].numberOfEvents);
                 for (int k=0; k<groupSet->groups[results[i].groupID].numberOfEvents; k++)
                 {
                     fprintf(file,"%e ",results[i].counters[j][k]);
+                    lineidx += sprintf(&(line[lineidx]), "%e ", results[i].counters[j][k]);
                 }
                 fprintf(file,"\n");
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, %s,line);
             }
         }
         fclose(file);
@@ -401,6 +433,7 @@ int likwid_markerStartRegion(const char* regionTag)
         //groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].startData =
         //        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
         results->StartPMcounters[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
+        results->StartOverflows[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows;
     }
     
     bdestroy(tag);
@@ -451,9 +484,18 @@ int likwid_markerStopRegion(const char* regionTag)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu, regionTag, thread_id, cpu_id, i,
                         LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
-        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].startData = results->StartPMcounters[i];
-        result = perfmon_getResult(groupSet->activeGroup, i, thread_id);
-        results->PMcounters[i] += result;
+        result = calculateMarkerResult(groupSet->groups[groupSet->activeGroup].events[i].index, results->StartPMcounters[i],
+                                        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData,
+                                        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows - 
+                                        results->StartOverflows[i]);
+        if (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != THERMAL)
+        {
+            results->PMcounters[i] += result;
+        }
+        else
+        {
+            results->PMcounters[i] = result;
+        }
     }
     if (use_locks == 1)
     {

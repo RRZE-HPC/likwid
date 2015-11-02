@@ -819,7 +819,7 @@ likwid.printOutput = printOutput
 local function printMarkerOutput(groups, results, groupData, cpulist)
     local nr_groups = #groups
     local maxLineFields = 0
-    local clock = likwid_getCpuClock();
+    local clock = likwid_getCpuClock()
     for g, group in pairs(groups) do
         local groupName = groupData[g]["GroupString"]
         if groupName == groupData[g]["EventString"] then
@@ -838,11 +838,17 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
 
                 infotab[1] = {"Region Info","RDTSC Runtime [s]","call count"}
                 for thread=1, nr_threads do
-                    local tmpList = {}
-                    table.insert(tmpList, "Core "..tostring(cpulist[thread]))
-                    table.insert(tmpList, string.format("%.6f", groups[g][r]["Time"][thread]))
-                    table.insert(tmpList, tostring(groups[g][r]["Count"][thread]))
-                    table.insert(infotab, tmpList)
+                    if cpulist[thread] ~= nil and
+                       groups[g][r]["Time"][thread] ~= nil and
+                       groups[g][r]["Count"][thread] ~= nil then
+                        local tmpList = {}
+                        table.insert(tmpList, "Core "..tostring(cpulist[thread]))
+                        table.insert(tmpList, string.format("%.6f", groups[g][r]["Time"][thread]))
+                        table.insert(tmpList, tostring(groups[g][r]["Count"][thread]))
+                        table.insert(infotab, tmpList)
+                    else
+                        print(string.format("Cannot find thread %d in CPU list, in time list or in call count list", thread))
+                    end
                 end
 
                 firsttab[1] = {"Event"}
@@ -861,12 +867,15 @@ local function printMarkerOutput(groups, results, groupData, cpulist)
                     local tmpList = {}
                     table.insert(tmpList, "Core "..tostring(cpulist[t]))
                     for e=1,nr_events do
-                        local index = 0
-                        local tmp = results[g][r][e][t]["Value"]
-                        if tmp == nil then
-                            tmp = 0
+                        if results[g][r][e][t]["Value"] ~= nil then
+                            local tmp = results[g][r][e][t]["Value"]
+                            if tmp == nil then
+                                tmp = 0
+                            end
+                            table.insert(tmpList, string.format("%e",tmp))
+                        else
+                            print(string.format("Cannot find result of group %d, region %d, event %d and thread %d", g,r,e,t))
                         end
-                        table.insert(tmpList, string.format("%e",tmp))
                     end
                     table.insert(firsttab, tmpList)
                 end
@@ -1048,10 +1057,10 @@ local function getMarkerResults(filename, group_list, cpulist)
     -- Read Region IDs and names from following lines
     for l=1, #lines do
         r, gname, g = string.match(lines[1],"(%d+):([%a%g]*)-(%d+)")
-        if (r ~= nil and g ~= nil) then
+        if (r ~= nil and g ~= nil and gname ~= nil) then
             g = tonumber(g)+1
             r = tonumber(r)+1
-            
+
             if group_data[g] == nil then
                 group_data[g] = {}
             end
@@ -1088,6 +1097,10 @@ local function getMarkerResults(filename, group_list, cpulist)
                     end
                 end
                 tmpList = stringsplit(line, " ")
+                if #tmpList <= 6 then
+                    print("Line not in common format:")
+                    print(line)
+                end
                 table.remove(tmpList, 1)
                 table.remove(tmpList, 1)
                 table.remove(tmpList, 1)
@@ -1097,8 +1110,17 @@ local function getMarkerResults(filename, group_list, cpulist)
                 table.remove(tmpList, 1)
                 table.remove(tmpList, 1)
 
-                group_data[g][r]["Time"][t] = time
-                group_data[g][r]["Count"][t] = count
+                if group_data[g][r]["Time"] ~= nil then
+                    group_data[g][r]["Time"][t] = time
+                else
+                    print(string.format("Cannot store time for group %d region %d and thread %d", g,r,t))
+                end
+                if group_data[g][r]["Count"] ~= nil then
+                    group_data[g][r]["Count"][t] = count
+                else
+                    print(string.format("Cannot store count for group %d region %d and thread %d", g,r,t))
+                end
+                
                 for c=1, events do
                     if results[g][r][c] == nil then
                         results[g][r][c] = {}
@@ -1107,8 +1129,28 @@ local function getMarkerResults(filename, group_list, cpulist)
                         results[g][r][c][t] = {}
                     end
                     local tmp = tonumber(tmpList[c])
-                    results[g][r][c][t]["Value"] = tmp
-                    results[g][r][c][t]["Counter"] = group_list[g]["Events"][c]["Counter"]
+                    if results[g][r][c][t] ~= nil then
+                        if tmp ~= nil then
+                            results[g][r][c][t]["Value"] = tmp
+                        else
+                            print(string.format("Cannot read value %s to number, setting 0",tmpList[c]))
+                            results[g][r][c][t]["Value"] = 0
+                        end
+                    else
+                        print(string.format("Result list not properly initialized for group %d, region %d, event %d and thread %d",g,r,c,t))
+                        results[g][r][c][t] = {}
+                        if tmp ~= nil then
+                            results[g][r][c][t]["Value"] = tmp
+                        else
+                            print(string.format("Cannot read value %s to number, setting 0",tmpList[c]))
+                            results[g][r][c][t]["Value"] = 0
+                        end
+                    end
+                    if results[g][r][c][t] ~= nil and group_list[g]["Events"][c]["Counter"] ~= nil then
+                        results[g][r][c][t]["Counter"] = group_list[g]["Events"][c]["Counter"]
+                    else
+                        print(string.format("Cannot store counter name in results dict for group %d, region %d, event %d and thread %d", g,r,c,t))
+                    end
                 end
             end
         end
