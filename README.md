@@ -40,7 +40,7 @@ make docs
 or after installation, look at the man pages.
 
 There is also a wiki at the github page:
-https://github.com/rrze-likwid/likwid/
+https://github.com/rrze-likwid/likwid/wiki
 
 If you have problems or suggestions please let me know on the likwid mailing list:
 http://groups.google.com/group/likwid-users
