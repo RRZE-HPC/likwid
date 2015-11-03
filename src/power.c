@@ -55,6 +55,10 @@ power_init(int cpuId)
 
     /* determine Turbo Mode features */
     double busSpeed;
+    if (power_initialized)
+    {
+        return 0;
+    }
 
     power_info.baseFrequency = 0;
     power_info.minFrequency = 0;
@@ -100,10 +104,6 @@ power_init(int cpuId)
     if (!HPMinitialized())
     {
         HPMinit();
-    }
-    if (power_initialized)
-    {
-        return 0;
     }
     if ( power_info.hasRAPL )
     {
