@@ -28,6 +28,7 @@ resultfolder = "RESULTS"
 hostname = socket.gethostname()
 picture_base = ".."
 topology_outputfile = "topology.dat"
+nrThreads = 1
 
 gnu_colors = ["red","blue","green","black"]#,"brown", "gray","violet", "cyan", "magenta","orange","#4B0082","#800000","turquoise","#006400","yellow"]
 gnu_marks = [5,13,9,2]#,3,4,6,7,8,9,10,11,12,14,15]
@@ -68,6 +69,7 @@ def usage():
     print "-s/--sets:\tSpecifiy testgroups (comma separated). Can also be set in SET.txt"
 #    print "--wiki:\t\tBesides testing write out results in Google code wiki syntax"
 #    print "--only_wiki:\tDo not run benchmarks, read results from file and write out results in Google code wiki syntax"
+    print "-c <nrThreads>:\tSet number of threads. The accuracy tool uses the E notation of likwid like E:N:<nrThreads>:1:2. Default is 1 thread."
     print "Picture options:"
     print "--pgf:\t\tCreate TeX document for each test with PGFPlot"
     print "--gnuplot:\tCreate GNUPlot script for each test"
@@ -99,7 +101,7 @@ def get_test_groups(groupdict):
         setfp = open("SET.txt",'r')
         setlist = setfp.read().strip().split("\n")
         setfp.close()
-    
+
     filelist = glob.glob(testfolder+"/*.txt")
     for name in setlist:
         if name in get_groups():
@@ -113,8 +115,8 @@ def get_test_groups(groupdict):
                 if line.startswith("TEST"):
                     tests.append(line.split(" ")[1])
             groups[name] = tests
-                
-            
+
+
     return groups
 
 def write_topology(path):
@@ -212,7 +214,7 @@ def write_pgf(group, test, plain_file, marker_file, scale=0.0,papi_file=None, ex
     if script:
         script.write("pdflatex %s\n" % (os.path.basename(filename),))
     return filename
-    
+
 def write_gnuplot(group, test, plain_file, marker_file, scale = 0.0, papi_file=None, execute=False, script=None):
     printgrp = group
     if translate_group.has_key(group):
@@ -359,7 +361,7 @@ def write_grace(group, test, plain_file, correct_file, marker_file, papi_file=No
 
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hs:", ["help", "sets=","script","scriptname=","wiki","only_wiki=","pgf","gnuplot","grace","papi"])
+    opts, args = getopt.getopt(sys.argv[1:], "hs:c:", ["help", "sets=","script","scriptname=","wiki","only_wiki=","pgf","gnuplot","grace","papi"])
 except getopt.GetoptError as err:
     print str(err)
     usage()
@@ -380,6 +382,12 @@ for o, a in opts:
         hostname = a
     if o == "--papi":
         papi = True
+    if o == "-c":
+        try:
+            nrThreads = int(a)
+        except:
+            print "Argument to -c not valid. Must be a number"
+            sys.exit(1)
     if o == "--pgf":
         out_pgf = True
     if o == "--gnuplot":
@@ -478,7 +486,7 @@ if not only_wiki:
     script.write("#!/bin/bash\n")
 
     for group in test_set.keys():
-        perfctr_string = "%s -C S0:0 -g %s -m " % (perfctr,group,)
+        perfctr_string = "%s -C E:N:%d:1:2 -g %s -m " % (perfctr,nrThreads, group,)
         no_scale = False
         for test in test_set[group].keys():
             if test.startswith("REGEX"): continue
@@ -504,7 +512,7 @@ if not only_wiki:
             for size in test_set[group][test]["variants"]:
                 if size.startswith("RUNS"): continue
                 print "Size "+size+": ",
-                bench_options = "-t %s -w S0:%s:1" % (test, size,)
+                bench_options = "-t %s -w N:%s:%d" % (test, size, nrThreads)
                 for i in range(0,test_set[group][test]["RUNS"]):
                     print "*",
                     sys.stdout.flush()
