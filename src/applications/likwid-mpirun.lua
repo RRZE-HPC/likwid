@@ -693,10 +693,9 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
         end
         local tmplist = {}
         for j=1,count do
-            table.insert(tmplist, sortedlist[1])
+            table.insert(newexprs, sortedlist[1])
             table.remove(sortedlist, 1)
         end
-        table.insert(newexprs, table.concat(tmplist,","))
     end
     if debug then
         local str = "DEBUG: Resolved NperDomain string "..nperdomain.." to CPUs: "
