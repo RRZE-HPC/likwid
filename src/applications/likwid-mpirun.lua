@@ -710,7 +710,7 @@ end
 
 local function createEventString(eventlist)
     if eventlist == nil or #eventlist == 0 then
-        print "ERROR: Empty event list. Failed to create event set string"
+        print("ERROR: Empty event list. Failed to create event set string")
         return ""
     end
     local str = ""
@@ -723,7 +723,7 @@ local function createEventString(eventlist)
         end
     end
     if debug then
-        print "DEBUG: Created event set string "..str
+        print("DEBUG: Created event set string "..str)
     end
     return str
 end
