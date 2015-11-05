@@ -35,12 +35,14 @@
 #include <time.h>
 
 #include <types.h>
+#include <error.h>
 #include <likwid.h>
 /* #####   EXPORTED VARIABLES   ########################################### */
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
 static uint64_t sleepbase = 0ULL;
+static int timer_initialized = 0;
 
 void (*TSTART)(TscCounter*) = NULL;
 void (*TSTOP)(TscCounter*) = NULL;
@@ -90,6 +92,74 @@ static void fRDTSCP(TscCounter* cpu_c)
 #endif
 #endif
 
+static void _timer_start( TimerData* time )
+{
+#ifdef __x86_64
+    if (TSTART)
+        TSTART(&(time->start));
+#endif
+#ifdef _ARCH_PPC
+    uint32_t tbl, tbu0, tbu1;
+
+    do {
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
+        __asm__ __volatile__ ("mftb %0" : "=r"(tbl));
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
+    } while (tbu0 != tbu1);
+
+    time->start.int64 = (((uint64_t)tbu0) << 32) | tbl;
+#endif
+}
+
+static void _timer_stop( TimerData* time )
+{
+#ifdef __x86_64
+    if (TSTOP)
+        TSTOP(&(time->stop));
+#endif
+#ifdef _ARCH_PPC
+    uint32_t tbl, tbu0, tbu1;
+    do {
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
+        __asm__ __volatile__ ("mftb %0" : "=r"(tbl));
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
+    } while (tbu0 != tbu1);
+
+    time->stop.int64 = (((uint64_t)tbu0) << 32) | tbl;
+#endif
+}
+
+static uint64_t _timer_printCycles( TimerData* time )
+{
+    /* clamp to zero if something goes wrong */
+    if (((time->stop.int64-baseline) < time->start.int64) ||
+        (time->start.int64 == time->stop.int64))
+    {
+        return 0ULL;
+    }
+    else
+    {
+        return (time->stop.int64 - time->start.int64 - baseline);
+    }
+}
+
+/* Return time duration in seconds */
+static double _timer_print( TimerData* time )
+{
+    uint64_t cycles;
+    /* clamp to zero if something goes wrong */
+    if (((time->stop.int64-baseline) < time->start.int64) ||
+        (time->start.int64 == time->stop.int64))
+    {
+        cycles = 0ULL;
+    }
+    else
+    {
+        cycles = time->stop.int64 - time->start.int64 - baseline;
+    }
+    return  ((double) cycles / (double) cpuClock);
+}
+
 static uint64_t
 getCpuSpeed(void)
 {
@@ -106,23 +176,25 @@ getCpuSpeed(void)
 
     for (i=0; i< 10; i++)
     {
-        timer_start(&data);
-        timer_stop(&data);
-        result = MIN(result,timer_printCycles(&data));
+        _timer_start(&data);
+        _timer_stop(&data);
+        result = MIN(result,_timer_printCycles(&data));
     }
 
     baseline = result;
     result = 0xFFFFFFFFFFFFFFFFULL;
+    data.stop.int64 = 0;
+    data.start.int64 = 0;
 
     for (i=0; i< 2; i++)
     {
-        TSTART(&start);
+        _timer_start(&data);
         gettimeofday( &tv1, &tzp);
         nanosleep( &delay, NULL);
-        TSTOP(&stop);
+        _timer_stop(&data);
         gettimeofday( &tv2, &tzp);
 
-        result = MIN(result,(stop.int64 - start.int64));
+        result = MIN(result,(data.stop.int64 - data.start.int64));
     }
 
     return (result) * 1000000 /
@@ -146,6 +218,8 @@ getCpuSpeed(void)
 #endif
 }
 
+
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void init_sleep()
@@ -156,12 +230,12 @@ void init_sleep()
     struct timespec rem = {0,0};
     for (int i=0; i<10; ++i)
     {
-        timer_start(&timer);
+        _timer_start(&timer);
         status = clock_nanosleep(CLOCK_REALTIME,0,&req, &rem);
-        timer_stop(&timer);
-        if (timer_print(&timer)*1E6 > sleepbase)
+        _timer_stop(&timer);
+        if (_timer_print(&timer)*1E6 > sleepbase)
         {
-            sleepbase = timer_print(&timer)*1E6 + 2;
+            sleepbase = _timer_print(&timer)*1E6 + 2;
         }
     }
 }
@@ -170,6 +244,10 @@ void init_sleep()
 void timer_init( void )
 {
     uint32_t eax,ebx,ecx,edx;
+    if (timer_initialized == 1)
+    {
+        return;
+    }
     if ((!TSTART) && (!TSTOP))
     {
         TSTART = fRDTSC;
@@ -192,84 +270,70 @@ void timer_init( void )
     {
         cpuClock = getCpuSpeed();
     }
+    timer_initialized = 1;
 }
 
 uint64_t timer_printCycles( TimerData* time )
 {
-    /* clamp to zero if something goes wrong */
-    if ((time->stop.int64-baseline) < time->start.int64)
+    if (timer_initialized != 1)
     {
+        ERROR_PLAIN_PRINT(Timer module not properly initialized);
         return 0ULL;
     }
-    else
-    {
-        return (time->stop.int64 - time->start.int64 - baseline);
-    }
+    return _timer_printCycles(time);
 }
 
 /* Return time duration in seconds */
 double timer_print( TimerData* time )
 {
     uint64_t cycles;
-
-    /* clamp to zero if something goes wrong */
-    if ((time->stop.int64-baseline) < time->start.int64)
+    if (timer_initialized != 1)
     {
-        cycles = 0ULL;
+        ERROR_PLAIN_PRINT(Timer module not properly initialized);
+        return 0ULL;
     }
-    else
-    {
-        cycles = time->stop.int64 - time->start.int64 - baseline;
-    }
-    return  ((double) cycles / (double) cpuClock);
+    return _timer_print(time);
 }
 
 uint64_t timer_getCpuClock( void )
 {
+    if (timer_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Timer module not properly initialized);
+        return 0ULL;
+    }
     return cpuClock;
 }
 
 uint64_t timer_getBaseline( void )
 {
+    if (timer_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Timer module not properly initialized);
+        return 0ULL;
+    }
     return baseline;
 }
 
 void timer_start( TimerData* time )
 {
-#ifdef __x86_64
-    if (TSTART)
-        TSTART(&(time->start));
-#endif
-#ifdef _ARCH_PPC
-    uint32_t tbl, tbu0, tbu1;
-
-    do {
-        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
-        __asm__ __volatile__ ("mftb %0" : "=r"(tbl));
-        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
-    } while (tbu0 != tbu1);
-
-    time->start.int64 = (((uint64_t)tbu0) << 32) | tbl;
-#endif
+    if (timer_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Timer module not properly initialized);
+        return;
+    }
+    _timer_start(time);
 }
 
 
 void timer_stop( TimerData* time )
 {
-#ifdef __x86_64
-    if (TSTOP)
-        TSTOP(&(time->stop));
-#endif
-#ifdef _ARCH_PPC
-    uint32_t tbl, tbu0, tbu1;
-    do {
-        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
-        __asm__ __volatile__ ("mftb %0" : "=r"(tbl));
-        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
-    } while (tbu0 != tbu1);
-
-    time->stop.int64 = (((uint64_t)tbu0) << 32) | tbl;
-#endif
+    if (timer_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Timer module not properly initialized);
+        return;
+    }
+    _timer_stop(time);
 }
 
 
@@ -300,3 +364,23 @@ int timer_sleep(unsigned long usec)
     return status;
 }
 
+
+void timer_finalize(void)
+{
+    if (timer_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Timer module not properly initialized);
+        return;
+    }
+    baseline = 0ULL;
+    cpuClock = 0ULL;
+    TSTART = NULL;
+    TSTOP = NULL;
+    timer_initialized = 0;
+}
+
+void timer_reset( TimerData* time )
+{
+    time->start.int64 = 0;
+    time->stop.int64 = 0;
+}

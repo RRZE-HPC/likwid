@@ -57,11 +57,11 @@ static int registeredCpus = 0;
 static int registeredCpuList[MAX_NUM_THREADS] = { [0 ... (MAX_NUM_THREADS-1)] = 0 };
 
 
-int (*access_read)(PciDeviceIndex dev, const int cpu, uint32_t reg, uint64_t *data) = NULL;
-int (*access_write)(PciDeviceIndex dev, const int cpu, uint32_t reg, uint64_t data) = NULL;
-int (*access_init) (int cpu_id) = NULL;
-void (*access_finalize) (int cpu_id) = NULL;
-int (*access_check) (PciDeviceIndex dev, int cpu_id) = NULL;
+static int (*access_read)(PciDeviceIndex dev, const int cpu, uint32_t reg, uint64_t *data) = NULL;
+static int (*access_write)(PciDeviceIndex dev, const int cpu, uint32_t reg, uint64_t data) = NULL;
+static int (*access_init) (int cpu_id) = NULL;
+static void (*access_finalize) (int cpu_id) = NULL;
+static int (*access_check) (PciDeviceIndex dev, int cpu_id) = NULL;
 
 void HPMmode(int mode)
 {
@@ -101,6 +101,7 @@ int HPMinit(void)
         }
 #endif
     }
+    
     return 0;
 }
 
@@ -120,6 +121,7 @@ int HPMaddThread(int cpu_id)
             ret = access_init(cpu_id);
             if (ret == 0)
             {
+                DEBUG_PRINT(DEBUGLEV_DETAIL, Adding CPU %d to access module, cpu_id);
                 registeredCpus++;
                 registeredCpuList[cpu_id] = 1;
             }
@@ -138,18 +140,32 @@ int HPMaddThread(int cpu_id)
 
 void HPMfinalize()
 {
-    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    if (registeredCpus != 0)
     {
-        if (i >= cpuid_topology.numHWThreads)
+        for (int i=0; i<cpuid_topology.numHWThreads; i++)
         {
-            break;
-        }
-        if (registeredCpuList[i] == 1)
-        {
-            access_finalize(i);
-            registeredCpus--;
+            if (i >= cpuid_topology.numHWThreads)
+            {
+                break;
+            }
+            if (registeredCpuList[i] == 1)
+            {
+                access_finalize(i);
+                registeredCpus--;
+                registeredCpuList[i] = 0;
+            }
         }
     }
+    if (access_init != NULL)
+        access_init = NULL;
+    if (access_finalize != NULL)
+        access_finalize = NULL;
+    if (access_read != NULL)
+        access_read = NULL;
+    if (access_write != NULL)
+        access_write = NULL;
+    if (access_check != NULL)
+        access_check = NULL;
     return;
 }
 

@@ -63,6 +63,7 @@ power_init(int cpuId)
     power_info.baseFrequency = 0;
     power_info.minFrequency = 0;
     power_info.turbo.numSteps = 0;
+    power_info.turbo.steps = NULL;
     power_info.powerUnit = 0;
     power_info.timeUnit = 0;
     power_info.hasRAPL = 0;
@@ -483,10 +484,22 @@ int power_policyGet(int cpuId, PowerType domain, uint32_t* priority)
 
 void power_finalize(void)
 {
-    if (power_info.turbo.steps)
+    if (power_initialized == 0)
+    {
+        return;
+    }
+    if (power_info.turbo.steps != NULL)
     {
         free(power_info.turbo.steps);
     }
+    power_info.turbo.steps = NULL;
+    power_info.baseFrequency = 0;
+    power_info.minFrequency = 0;
+    power_info.turbo.numSteps = 0;
+    power_info.powerUnit = 0;
+    power_info.timeUnit = 0;
+    power_info.hasRAPL = 0;
+    memset(power_info.domains, 0, NUM_POWER_DOMAINS*sizeof(PowerDomain));
 }
 
 PowerInfo_t get_powerInfo(void)

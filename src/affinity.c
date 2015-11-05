@@ -65,6 +65,7 @@ int affinity_core2node_lookup[MAX_NUM_THREADS];
 
 static int  affinity_numberOfDomains = 0;
 static AffinityDomain*  domains;
+static int affinity_initialized = 0;
 
 AffinityDomains affinityDomains;
 
@@ -156,6 +157,10 @@ affinity_init()
     int subCounter = 0;
     int offset = 0;
     int tmp;
+    if (affinity_initialized == 1)
+    {
+        return;
+    }
     topology_init();
     int numberOfSocketDomains = cpuid_topology.numSockets;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Socket domains %d, numberOfSocketDomains);
@@ -356,27 +361,43 @@ affinity_init()
     affinityDomains.numberOfCoresPerCache = numberOfCoresPerCache;
     affinityDomains.numberOfProcessorsPerCache = numberOfProcessorsPerCache;
     affinityDomains.domains = domains;
+    affinity_initialized = 1;
 }
 
 
 void
 affinity_finalize()
 {
+    if (affinity_initialized == 0)
+    {
+        return;
+    }
     if (!affinityDomains.domains)
     {
         return;
     }
     for ( int i=0; i < affinityDomains.numberOfAffinityDomains; i++ )
     {
-        if (affinityDomains.domains[i].processorList)
+        if (affinityDomains.domains[i].processorList != NULL)
         {
             free(affinityDomains.domains[i].processorList);
         }
+        affinityDomains.domains[i].processorList = NULL;
     }
-    if (affinityDomains.domains)
+    if (affinityDomains.domains != NULL)
     {
         free(affinityDomains.domains);
     }
+    affinityDomains.domains = NULL;
+    affinity_numberOfDomains = 0;
+    affinityDomains.numberOfAffinityDomains = 0;
+    affinityDomains.numberOfSocketDomains = 0;
+    affinityDomains.numberOfNumaDomains = 0;
+    affinityDomains.numberOfProcessorsPerSocket = 0;
+    affinityDomains.numberOfCacheDomains = 0;
+    affinityDomains.numberOfCoresPerCache = 0;
+    affinityDomains.numberOfProcessorsPerCache = 0;
+    affinity_initialized = 0;
 }
 
 

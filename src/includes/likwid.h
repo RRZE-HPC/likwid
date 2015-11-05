@@ -119,8 +119,8 @@ extern "C" {
 /*! \brief Initialize LIKWID's marker API
 
 Must be called in serial region of the application to set up basic data structures
-of LIKWID. 
-Reads environment variables: 
+of LIKWID.
+Reads environment variables:
 - LIKWID_MODE (access mode)
 - LIKWID_MASK (event bitmask)
 - LIKWID_EVENTS (event string)
@@ -189,7 +189,7 @@ Returns the ID of the CPU the current process or thread is running on.
 extern int  likwid_getProcessorId() __attribute__ ((visibility ("default") ));
 /*! \brief Pin the current process to given CPU
 
-Pin the current process to the given CPU ID. The process cannot be scheduled to 
+Pin the current process to the given CPU ID. The process cannot be scheduled to
 another CPU after pinning but the pinning can be changed anytime with this function.
 @param [in] processorId CPU ID to pin the current process to
 @return error code (1 for success, 0 for error)
@@ -197,7 +197,7 @@ another CPU after pinning but the pinning can be changed anytime with this funct
 extern int  likwid_pinProcess(int processorId) __attribute__ ((visibility ("default") ));
 /*! \brief Pin the current thread to given CPU
 
-Pin the current thread to the given CPU ID. The thread cannot be scheduled to 
+Pin the current thread to the given CPU ID. The thread cannot be scheduled to
 another CPU after pinning but the pinning can be changed anytime with this function
 @param [in] processorId CPU ID to pin the current thread to
 @return error code (1 for success, 0 for error)
@@ -205,7 +205,7 @@ another CPU after pinning but the pinning can be changed anytime with this funct
 extern int  likwid_pinThread(int processorId) __attribute__ ((visibility ("default") ));
 /** @}*/
 
-/* 
+/*
 ################################################################################
 # Access client related functions
 ################################################################################
@@ -216,9 +216,9 @@ extern int  likwid_pinThread(int processorId) __attribute__ ((visibility ("defau
 
 /*! \brief Enum for the access modes
 
-LIKWID supports multiple access modes to the MSR and PCI performance monitoring 
+LIKWID supports multiple access modes to the MSR and PCI performance monitoring
 registers. For direct access the user must have enough priviledges to access the
-MSR and PCI devices. The daemon mode forwards the operations to a daemon with 
+MSR and PCI devices. The daemon mode forwards the operations to a daemon with
 higher priviledges.
 */
 typedef enum {
@@ -232,16 +232,22 @@ Sets the mode how the MSR and PCI registers should be accessed. 0 for direct acc
 @param [in] mode (0=direct, 1=daemon)
 */
 extern void HPMmode(int mode) __attribute__ ((visibility ("default") ));
-/*! \brief Initialize connections
+/*! \brief Initialize access module
 
-Initialize the connection to either the MSR/PCI files or the access daemon
-@param [out] socket_fd Pointer to socket file descriptor
+Initialize the module internals to either the MSR/PCI files or the access daemon
+@return error code (0 for sccess)
 */
 extern int HPMinit() __attribute__ ((visibility ("default") ));
+/*! \brief Add CPU to access module
+
+Add the given CPU to the access module. This opens the commnunication to either the MSR/PCI files or the access daemon.
+@param [in] cpu_id CPU that should be enabled for measurements
+@return error code (0 for success, -ENODEV if access cannot be initialized
+*/
+extern int HPMaddThread(int cpu_id) __attribute__ ((visibility ("default") ));
 /*! \brief Close connections
 
-Close the connection to either the MSR/PCI files or the access daemon
-@param [in] socket_fd socket file descriptor
+Close the connections to the MSR/PCI files or the access daemon
 */
 extern void HPMfinalize() __attribute__ ((visibility ("default") ));
 /** @}*/
@@ -256,8 +262,8 @@ extern void HPMfinalize() __attribute__ ((visibility ("default") ));
 */
 /*! \brief Structure holding values of the configuration file
 
-LIKWID supports the definition of runtime values in a configuration file. The 
-most important configurations in most cases are the path the access daemon and 
+LIKWID supports the definition of runtime values in a configuration file. The
+most important configurations in most cases are the path the access daemon and
 the corresponding access mode. In order to avoid reading in the system topology
 at each start, a path to a topology file can be set. The other values are mostly
 used internally.
@@ -297,7 +303,7 @@ Get the initialized configuration
 */
 extern Configuration_t get_configuration(void) __attribute__ ((visibility ("default") ));
 /** @}*/
-/* 
+/*
 ################################################################################
 # CPU topology related functions
 ################################################################################
@@ -307,7 +313,7 @@ extern Configuration_t get_configuration(void) __attribute__ ((visibility ("defa
 */
 /*! \brief Structure with general CPU information
 
-General information covers CPU family, model, name and current clock and vendor 
+General information covers CPU family, model, name and current clock and vendor
 specific information like the version of Intel's performance monitoring facility.
 */
 typedef struct {
@@ -428,7 +434,7 @@ extern void topology_finalize(void) __attribute__ ((visibility ("default") ));
 */
 extern void print_supportedCPUs(void) __attribute__ ((visibility ("default") ));
 /** @}*/
-/* 
+/*
 ################################################################################
 # NUMA related functions
 ################################################################################
@@ -439,7 +445,7 @@ extern void print_supportedCPUs(void) __attribute__ ((visibility ("default") ));
 /*! \brief CPUs in NUMA node and general information about a NUMA domain
 
 The NumaNode structure describes the topology and holds general information of a
-NUMA node. The structure is filled by calling numa_init() by either the HWLOC 
+NUMA node. The structure is filled by calling numa_init() by either the HWLOC
 library or by evaluating the /proc filesystem.
 \extends NumaTopology
 */
@@ -449,7 +455,6 @@ typedef struct {
     uint64_t freeMemory; /*!< \brief Amount of free memory in the NUMA node */
     uint32_t numberOfProcessors; /*!< \brief umber of processors covered by the NUMA node and length of \a processors */
     uint32_t*  processors; /*!< \brief List of HW threads in the NUMA node */
-    uint32_t*  processorsCompact; /*!< \brief Currently unused */
     uint32_t numberOfDistances; /*!< \brief Amount of distances to the other NUMA nodes in the system and self  */
     uint32_t*  distances; /*!< \brief List of distances to the other NUMA nodes and self */
 } NumaNode;
@@ -512,7 +517,7 @@ NumaTopology_t
 */
 extern int likwid_getNumberOfNodes(void) __attribute__ ((visibility ("default") ));
 /** @}*/
-/* 
+/*
 ################################################################################
 # Affinity domains related functions
 ################################################################################
@@ -536,7 +541,7 @@ typedef struct {
 /*! \brief The AffinityDomains data structure holds different count variables describing the
 various system layers
 
-Affinity domains are for example the amount of NUMA domains, CPU sockets/packages or LLC 
+Affinity domains are for example the amount of NUMA domains, CPU sockets/packages or LLC
 (Last Level Cache) cache domains of the current machine. Moreover a list of
 \a domains holds the processor lists for each domain that are used for
 scheduling processes to domain specific HW threads. Some amounts are duplicates
@@ -700,7 +705,7 @@ The counter registered are zeroed before enabling the counters
 @return 0 on success and -(thread_id+1) for error
 */
 extern int perfmon_startCounters(void) __attribute__ ((visibility ("default") ));
-/*! \brief Stop performance monitoring counters 
+/*! \brief Stop performance monitoring counters
 
 Stop the counters that have been previously started by perfmon_startCounters().
 All config registers get zeroed before reading the counter register.
@@ -775,10 +780,13 @@ extern int perfmon_getIdOfActiveGroup(void) __attribute__ ((visibility ("default
 @return Number of threads
 */
 extern int perfmon_getNumberOfThreads(void) __attribute__ ((visibility ("default") ));
-/** @}*/
 
+
+/*! \brief Set verbosity of LIKWID library
+
+*/
 extern void perfmon_setVerbosity(int verbose) __attribute__ ((visibility ("default") ));
-
+/** @}*/
 
 /*
 ################################################################################
@@ -821,6 +829,11 @@ extern double timer_print( TimerData* time) __attribute__ ((visibility ("default
 @return Time in cycles
 */
 extern uint64_t timer_printCycles( TimerData* time) __attribute__ ((visibility ("default") ));
+/*! \brief Reset values in TimerData
+
+@param [in] time Structure holding the cycle count at start and stop
+*/
+extern void timer_reset( TimerData* time ) __attribute__ ((visibility ("default") ));
 /*! \brief Return the CPU clock determined at timer_init
 
 @return CPU clock
@@ -845,11 +858,16 @@ extern void timer_stop ( TimerData* time) __attribute__ ((visibility ("default")
 
 @param [in] usec Amount of usecs to sleep
 */
-int timer_sleep(unsigned long usec) __attribute__ ((visibility ("default") ));
+extern int timer_sleep(unsigned long usec) __attribute__ ((visibility ("default") ));
+
+/*! \brief Finalize timer module
+
+*/
+extern void timer_finalize(void) __attribute__ ((visibility ("default") ));
 
 /** @}*/
 
-/* 
+/*
 ################################################################################
 # Power measurements related functions
 ################################################################################
@@ -955,7 +973,7 @@ typedef PowerData* PowerData_t;
 
 /*! \brief Initialize energy measurements on specific CPU
 
-Additionally, it reads basic information about the energy measurements like 
+Additionally, it reads basic information about the energy measurements like
 minimal measurement time.
 @param [in] cpuId Initialize energy facility for this CPU
 @return error code
@@ -1048,7 +1066,7 @@ int power_limitState(int cpuId, PowerType domain) __attribute__ ((visibility ("d
 extern void power_finalize(void) __attribute__ ((visibility ("default") ));
 /** @}*/
 
-/* 
+/*
 ################################################################################
 # Thermal measurements related functions
 ################################################################################
@@ -1076,7 +1094,7 @@ extern int thermal_read(int cpuId, uint32_t *data) __attribute__ ((visibility ("
 extern int thermal_tread(int socket_fd, int cpuId, uint32_t *data) __attribute__ ((visibility ("default") ));
 /** @}*/
 
-/* 
+/*
 ################################################################################
 # Timeline daemon related functions
 ################################################################################
@@ -1101,7 +1119,7 @@ Stop the timeline daemon using the signal \a sig
 extern int daemon_stop(int sig) __attribute__ ((visibility ("default") ));
 /** @}*/
 
-/* 
+/*
 ################################################################################
 # Memory sweeping related functions
 ################################################################################

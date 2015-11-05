@@ -199,11 +199,27 @@ void numa_finalize(void)
         {
             free(numa_info.nodes[i].distances);
         }
+        numa_info.nodes[i].id = 0;
+        numa_info.nodes[i].totalMemory = 0;
+        numa_info.nodes[i].freeMemory = 0;
+        numa_info.nodes[i].numberOfProcessors = 0;
+        numa_info.nodes[i].numberOfDistances = 0;
     }
     if (numa_info.nodes)
     {
         free(numa_info.nodes);
     }
+    numa_info.numberOfNodes = 0;
+    numaInitialized = 0;
     return;
+}
+
+int likwid_getNumberOfNodes()
+{
+    if (numaInitialized)
+    {
+        return numa_info.numberOfNodes;
+    }
+    return 0;
 }
 #endif

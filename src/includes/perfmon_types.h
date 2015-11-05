@@ -80,6 +80,16 @@ typedef enum {
     NUM_EVENT_OPTIONS /*!< \brief Amount of defined options */
 } EventOptionType;
 
+/*! \brief Enum of possible states of an event group
+
+List of states for event groups
+*/
+typedef enum {
+    STATE_NONE = 0, /*!< \brief Not configured, not started and not stopped */
+    STATE_SETUP, /*!< \brief The event set hold by group is configured */
+    STATE_START, /*!< \brief The event set hold by group is current running */
+} GroupState;
+
 /*! \brief List of option names
 
 List of strings for all event and counter options used for matching and output
@@ -174,7 +184,7 @@ typedef struct {
     int         overflows; /*!< \brief Amount of overflows */
     uint64_t    startData; /*!< \brief Start data from the counter */
     uint64_t    counterData; /*!< \brief Intermediate data from the counters */
-    double    fullData; /*!< \brief Aggregated data from the counters */
+    double      fullData; /*!< \brief Aggregated data from the counters */
 } PerfmonCounter;
 
 
@@ -202,6 +212,7 @@ typedef struct {
     double                rdtscTime; /*!< \brief Evaluation of the Time information in seconds */
     double                runTime; /*!< \brief Sum of all time information in seconds that the group was running */
     uint64_t              regTypeMask; /*!< \brief Bitmask for easy checks which types are included in the eventSet */
+    GroupState            state; /*!< \brief Current state of the event group (configured, started, none) */
 } PerfmonEventSet;
 
 /*! \brief Structure specifying all performance monitoring event groups
@@ -221,13 +232,13 @@ typedef struct {
 
 /** \brief List of counter with name, config register, counter registers and
 if needed PCI device */
-extern RegisterMap* counter_map;
+extern RegisterMap* counter_map __attribute__ ((visibility ("default") ));
 /** \brief List of boxes with name, config register, counter registers and if
 needed PCI device. Mainly used in Uncore handling but also core-local counters
 are defined as a box. */
-extern BoxMap* box_map;
+extern BoxMap* box_map __attribute__ ((visibility ("default") ));
 /** \brief List of events available for the current architecture */
-extern PerfmonEvent* eventHash;
+extern PerfmonEvent* eventHash __attribute__ ((visibility ("default") ));
 /** \brief List of PCI devices available for the current architecture */
 extern PciDevice* pci_devices;
 /** @}*/
