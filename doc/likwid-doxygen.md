@@ -101,8 +101,8 @@ Using the Marker API:
 - \ref F-markerAPI-code
 
 If you have problems with LIKWID:<BR>
-GitHub: <A HREF="https://github.com/rrze-likwid/likwid">https://github.com/rrze-likwid/likwid</A><BR>
-Bugs: <A HREF="https://github.com/rrze-likwid/likwid/issues">https://github.com/rrze-likwid/likwid/issues</A><BR>
+GitHub: <A HREF="https://github.com/RRZE-HPC/likwid">https://github.com/RRZE-HPC/likwid</A><BR>
+Bugs: <A HREF="https://github.com/RRZE-HPC/likwid/issues">https://github.com/RRZE-HPC/likwid/issues</A><BR>
 Mailinglist: <A HREF="http://groups.google.com/group/likwid-users">http://groups.google.com/group/likwid-users</A><BR>
 */
 
