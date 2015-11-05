@@ -298,6 +298,11 @@ static int lua_likwid_switchGroup(lua_State* L)
 
 static int lua_likwid_finalize(lua_State* L)
 {
+    if (perfmon_isInitialized == 1)
+    {
+        perfmon_finalize();
+        perfmon_isInitialized = 0;
+    }
     if (topology_isInitialized == 1)
     {
         topology_finalize();
@@ -316,11 +321,6 @@ static int lua_likwid_finalize(lua_State* L)
         affinity_finalize();
         affinity_isInitialized = 0;
         affinity = NULL;
-    }
-    if (perfmon_isInitialized == 1)
-    {
-        perfmon_finalize();
-        perfmon_isInitialized = 0;
     }
     if (config_isInitialized == 1)
     {
