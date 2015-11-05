@@ -587,24 +587,22 @@ if use_wrapper or use_timeline then
         duration = 30.E06
     end
 
+    local ret = likwid.startCounters()
+    if ret < 0 then
+        print_stdout(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
+        os.exit(1)
+    end
+
     local pid = nil
     if pin_cpus then
         pid = likwid.startProgram(execString, #cpulist, cpulist)
     else
         pid = likwid.startProgram(execString, 0, cpulist)
     end
+
     if not pid then
         print_stdout("Failed to execute command: ".. execString)
         likwid.stopCounters()
-        likwid.finalize()
-        likwid.putTopology()
-        likwid.putConfiguration()
-        os.exit(1)
-    end
-    local ret = likwid.startCounters()
-    if ret < 0 then
-        print_stdout(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
-        os.exit(1)
     end
     lastmetrics = {}
     while true do
@@ -703,11 +701,6 @@ elseif use_marker then
     local ret = os.execute(execString)
     if ret == nil then
         print_stdout("Failed to execute command: ".. execString)
-        likwid.stopCounters()
-        likwid.finalize()
-        likwid.putTopology()
-        likwid.putConfiguration()
-        os.exit(1)
     end
 end
 

@@ -303,12 +303,11 @@ static int lua_likwid_finalize(lua_State* L)
         perfmon_finalize();
         perfmon_isInitialized = 0;
     }
-    if (topology_isInitialized == 1)
+    if (affinity_isInitialized == 1)
     {
-        topology_finalize();
-        topology_isInitialized = 0;
-        cputopo = NULL;
-        cpuinfo = NULL;
+        affinity_finalize();
+        affinity_isInitialized = 0;
+        affinity = NULL;
     }
     if (numa_isInitialized == 1)
     {
@@ -316,11 +315,12 @@ static int lua_likwid_finalize(lua_State* L)
         numa_isInitialized = 0;
         numainfo = NULL;
     }
-    if (affinity_isInitialized == 1)
+    if (topology_isInitialized == 1)
     {
-        affinity_finalize();
-        affinity_isInitialized = 0;
-        affinity = NULL;
+        topology_finalize();
+        topology_isInitialized = 0;
+        cputopo = NULL;
+        cpuinfo = NULL;
     }
     if (config_isInitialized == 1)
     {
