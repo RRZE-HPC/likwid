@@ -289,7 +289,7 @@ static BoxMap ivybridgeEP_box_map[NUM_UNITS] = {
 };
 
 static PciDevice ivybridgeEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
- [MSR_DEV] = {NONE, "", "", ""},
+ [MSR_DEV] = {NODEVTYPE, "", "", ""},
  [PCI_R3QPI_DEVICE_LINK_0] = {R3QPI, "13.5", "PCI_R3QPI_DEVICE_LINK_0", "RBOX0", 0x0e36},
  [PCI_R3QPI_DEVICE_LINK_1] = {R3QPI, "13.6", "PCI_R3QPI_DEVICE_LINK_1", "RBOX1", 0x0e37},
  [PCI_R3QPI_DEVICE_LINK_2] = {R3QPI, "12.5", "PCI_R3QPI_DEVICE_LINK_2", "RBOX2", 0x0e3e},

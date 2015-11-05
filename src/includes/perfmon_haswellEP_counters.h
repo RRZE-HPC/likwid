@@ -305,7 +305,7 @@ static BoxMap haswellEP_box_map[NUM_UNITS] = {
 };
 
 static PciDevice haswellEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
- [MSR_DEV] = {NONE, "", "MSR", ""},
+ [MSR_DEV] = {NODEVTYPE, "", "MSR", ""},
  [PCI_R3QPI_DEVICE_LINK_0] = {R3QPI, "0b.1", "PCI_R3QPI_DEVICE_LINK_0", "RBOX0", 0x2F36},
  [PCI_R3QPI_DEVICE_LINK_1] = {R3QPI, "0b.2", "PCI_R3QPI_DEVICE_LINK_1", "RBOX1", 0x2F37},
  [PCI_R2PCIE_DEVICE] = {R2PCIE, "10.1", "PCI_R2PCIE_DEVICE", "PBOX0", 0x2F34},

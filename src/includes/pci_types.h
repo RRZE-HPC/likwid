@@ -38,7 +38,7 @@
 
 
 typedef enum {
-    NONE = 0,
+    NODEVTYPE = 0,
     R3QPI,
     R2PCIE,
     IMC,

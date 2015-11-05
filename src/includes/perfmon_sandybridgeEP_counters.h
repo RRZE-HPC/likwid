@@ -196,7 +196,7 @@ static BoxMap sandybridgeEP_box_map[NUM_UNITS] = {
 };
 
 static PciDevice sandybridgeEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
- [MSR_DEV] = {NONE, "", "", ""},
+ [MSR_DEV] = {NODEVTYPE, "", "", ""},
  [PCI_R3QPI_DEVICE_LINK_0] = {R3QPI, "13.5", "PCI_R3QPI_DEVICE_LINK_0", "RBOX0", 0x3c44},
  [PCI_R3QPI_DEVICE_LINK_1] = {R3QPI, "13.6", "PCI_R3QPI_DEVICE_LINK_1", "RBOX1", 0x3c45},
  [PCI_R2PCIE_DEVICE] = {R2PCIE, "13.1", "PCI_R2PCIE_DEVICE", "PBOX0", 0x3c43},
