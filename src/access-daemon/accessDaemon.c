@@ -150,7 +150,7 @@ static int allowed_pci_sandybridge(PciDeviceType type, uint32_t reg)
 {
     switch (type)
     {
-        case NONE:
+        case NODEVTYPE:
             return 1;
             break;
         case R3QPI:
@@ -302,7 +302,7 @@ static int allowed_pci_haswell(PciDeviceType type, uint32_t reg)
 {
     switch (type)
     {
-        case NONE:
+        case NODEVTYPE:
             return 1;
             break;
         case R3QPI:
