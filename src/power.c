@@ -105,6 +105,7 @@ power_init(int cpuId)
     if (!HPMinitialized())
     {
         HPMinit();
+        HPMaddThread(cpuId);
     }
     if ( power_info.hasRAPL )
     {
