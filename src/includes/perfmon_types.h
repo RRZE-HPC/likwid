@@ -232,13 +232,13 @@ typedef struct {
 
 /** \brief List of counter with name, config register, counter registers and
 if needed PCI device */
-extern RegisterMap* counter_map __attribute__ ((visibility ("default") ));
+extern RegisterMap* counter_map;
 /** \brief List of boxes with name, config register, counter registers and if
 needed PCI device. Mainly used in Uncore handling but also core-local counters
 are defined as a box. */
-extern BoxMap* box_map __attribute__ ((visibility ("default") ));
+extern BoxMap* box_map;
 /** \brief List of events available for the current architecture */
-extern PerfmonEvent* eventHash __attribute__ ((visibility ("default") ));
+extern PerfmonEvent* eventHash;
 /** \brief List of PCI devices available for the current architecture */
 extern PciDevice* pci_devices;
 /** @}*/
