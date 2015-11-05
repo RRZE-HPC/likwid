@@ -289,12 +289,6 @@ int test_perfmoninit_valid()
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    if (counter_map == NULL)
-        goto fail;
-    if (box_map == NULL)
-        goto fail;
-    if (eventHash == NULL)
-        goto fail;
     if (perfmon_getNumberOfGroups() != 0)
         goto fail;
     if (perfmon_getNumberOfThreads() != 1)
