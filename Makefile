@@ -382,4 +382,8 @@ local: $(L_APPS) likwid.lua
 	done
 	@sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<RELEASE>/$(RELEASE)/g" -e "s+$(PREFIX)/lib+$(PWD)+g" -e "s+$(PREFIX)/share/likwid/perfgroups+$(PWD)/groups+g" likwid.lua;
 	@sed -i -e "s+$(PREFIX)/share/likwid/mongroups+$(PWD)/monitoring/groups+g" likwid-agent
+	@ln -sf liblikwid.so liblikwid.so.$(VERSION)
+	@ln -sf ext/hwloc/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION)
+	@ln -sf ext/lua/liblikwid-lua.so liblikwid-lua.so.$(VERSION)
+	@echo "export LD_LIBRARY_PATH=$(PWD):$$LD_LIBRARY_PATH"
 
