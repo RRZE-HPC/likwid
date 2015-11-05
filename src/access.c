@@ -186,7 +186,7 @@ int HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
     {
         return -ENODEV;
     }
-    access_read(dev, cpu_id, reg, &tmp);
+    err = access_read(dev, cpu_id, reg, &tmp);
     *data = tmp;
     return err;
 }
@@ -207,7 +207,7 @@ int HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
     {
         return -ENODEV;
     }
-    access_write(dev, cpu_id, reg, data);
+    err = access_write(dev, cpu_id, reg, data);
     return err;
 }
 
