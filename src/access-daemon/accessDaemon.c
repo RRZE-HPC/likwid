@@ -514,6 +514,7 @@ static void msr_read(AccessDataRecord * dRecord)
     if (pread(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data))
     {
         syslog(LOG_ERR, "Failed to read data to register 0x%x on core %u", reg, cpu);
+        syslog(LOG_ERR, "%s", strerror(errno));
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
@@ -544,6 +545,7 @@ static void msr_write(AccessDataRecord * dRecord)
     if (pwrite(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data))
     {
         syslog(LOG_ERR, "Failed to write data to register 0x%x on core %u", reg, cpu);
+        syslog(LOG_ERR, "%s", strerror(errno));
         dRecord->errorcode = ERR_RWFAIL;
         return;
     }
