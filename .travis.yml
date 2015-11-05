@@ -8,8 +8,9 @@ script:
   - /usr/local/bin/likwid-topology -c -C -g
   - /usr/local/bin/likwid-pin -p
   - sudo modprobe msr
+  - ls -la /dev/cpu/*
   - make -C test streamGCC
   - /usr/local/bin/likwid-perfctr -i
-  - /usr/local/bin/likwid-perfctr -C 0,1 -g L3 -f test/streamGCC
-  - /usr/local/bin/likwid-perfctr -C 0,1 -g L3 -f -m test/streamGCC
+  - /usr/local/bin/likwid-perfctr -V 3 -C 0,1 -g L3 -f test/streamGCC
+  - /usr/local/bin/likwid-perfctr -V 3 -C 0,1 -g L3 -f -m test/streamGCC
   - /usr/local/bin/likwid-bench -t copy -w N:100MB:2
