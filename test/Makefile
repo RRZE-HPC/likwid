@@ -18,7 +18,7 @@ serial: serial.c
 	gcc -O3 -std=c99 $(LIKWID_INCLUDES) $(LIKWID_DEFINES) -o $@  serial.c $(LIKWID_LIB) -lm
 
 test-likwidAPI: test-likwidAPI.c
-	gcc -O3 -std=c99 -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) -I../src/includes -o $@  test-likwidAPI.c -L.. -llikwid -lm
+	gcc -O3 -std=c99 $(LIKWID_INCLUDES) $(LIKWID_DEFINES) -o $@  test-likwidAPI.c $(LIKWID_LIB) -lm $(RPATHS)
 
 streamICC: stream.c
 	if [ $(ICC_AVAILABLE) -ne 0 ]; then icc -O3 -std=c99 $(LIKWID_INCLUDES) -openmp  -o $@  $(LIKWID_DEFINES) stream.c $(LIKWID_LIB) -lm; fi

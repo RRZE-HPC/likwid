@@ -6,7 +6,6 @@ sudo: required
 script:
   - make && sudo make install
   - make -C test test-likwidAPI
-  - make local
   - test/test-likwidAPI
   - /usr/local/bin/likwid-topology -c -C -g
   - /usr/local/bin/likwid-pin -p

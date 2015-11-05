@@ -4,10 +4,10 @@
 #include <string.h>
 
 #include <likwid.h>
-#include <configuration.h>
-#include <access.h>
-#include <types.h>
-#include <perfmon.h>
+//#include <configuration.h>
+//#include <access.h>
+//#include <types.h>
+//#include <perfmon.h>
 
 typedef struct {
     char* testname;
