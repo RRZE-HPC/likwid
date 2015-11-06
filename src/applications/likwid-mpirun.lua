@@ -97,6 +97,7 @@ local executable = {}
 local debug = false
 local use_marker = false
 local use_csv = false
+local force = false
 
 local LIKWID_PIN="<INSTALLED_PREFIX>/bin/likwid-pin"
 local LIKWID_PERFCTR="<INSTALLED_PREFIX>/bin/likwid-perfctr"
@@ -693,7 +694,7 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
         end
         local tmplist = {}
         for j=1,count do
-            table.insert(newexprs, sortedlist[1])
+            table.insert(newexprs, tostring(sortedlist[1]))
             table.remove(sortedlist, 1)
         end
     end
@@ -875,6 +876,9 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
         else
             table.insert(cmd,LIKWID_PIN)
             table.insert(cmd,"-q")
+        end
+        if force then
+            table.insert(cmd,"-f")
         end
         table.insert(cmd,skipStr)
         table.insert(cmd,cpuexpr_opt)
@@ -1276,7 +1280,7 @@ if #arg == 0 then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:","h","help","v","g:","group:","mpi:","omp:","d","m","O","debug","marker","version","s:","skip:"}) do
+for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:","h","help","v","g:","group:","mpi:","omp:","d","m","O","debug","marker","version","s:","skip:","f"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-")
         if s == 1 then
@@ -1298,6 +1302,8 @@ for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:",
         use_marker = true
     elseif opt == "O" then
         use_csv = true
+    elseif opt == "f" then
+        force = true
     elseif opt == "n" or opt == "np" then
         np = tonumber(arg)
     elseif opt == "nperdomain" then
@@ -1546,7 +1552,6 @@ elseif ppn == 0 and np > 0 then
             end
         end
     end
-    likwid.tableprint(cpuexprs)
     newhosts, ppn = assignHosts(hosts, np, ppn)
     if np < ppn*#newhosts then
         np = 0
@@ -1585,15 +1590,19 @@ all_results = {}
 if not use_marker then
     for i, file in pairs(filelist) do
         local host, rank, results, cpulist = parseOutputFile(file)
-        if all_results[rank] == nil then
-            all_results[rank] = {}
+        if host ~= nil and rank ~= nil then
+            if all_results[rank] == nil then
+                all_results[rank] = {}
+            end
+            all_results[rank]["hostname"] = host
+            all_results[rank]["results"] = results
+            all_results[rank]["cpus"] = cpulist
+            os.remove(file)
         end
-        all_results[rank]["hostname"] = host
-        all_results[rank]["results"] = results
-        all_results[rank]["cpus"] = cpulist
-        os.remove(file)
     end
-    printMpiOutput(grouplist, all_results)
+    if #all_results > 0 then
+        printMpiOutput(grouplist, all_results)
+    end
 else
     local tmpList = {}
     for i, file in pairs(filelist) do
