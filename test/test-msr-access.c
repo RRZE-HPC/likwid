@@ -44,7 +44,7 @@ int close_msr()
 
 int read_msr()
 {
-    size_t ret;
+    ssize_t ret;
     uint64_t data = 0;
     uint32_t reg = 0x38D;
     if (msr_fd > 0)
@@ -67,7 +67,7 @@ int read_msr()
 
 int write_msr()
 {
-    size_t ret;
+    ssize_t ret;
     uint64_t data = 0;
     uint32_t reg = 0x38D;
     if (msr_fd > 0)
