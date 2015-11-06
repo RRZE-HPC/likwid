@@ -20,6 +20,9 @@ serial: serial.c
 test-likwidAPI: test-likwidAPI.c
 	gcc -O3 -std=c99 $(LIKWID_INCLUDES) $(LIKWID_DEFINES) -o $@  test-likwidAPI.c $(LIKWID_LIB) -lm $(RPATHS)
 
+test-msr-access: test-msr-access.c
+	gcc -o $@  test-msr-access.c
+
 streamICC: stream.c
 	if [ $(ICC_AVAILABLE) -ne 0 ]; then icc -O3 -std=c99 $(LIKWID_INCLUDES) -openmp  -o $@  $(LIKWID_DEFINES) stream.c $(LIKWID_LIB) -lm; fi
 
