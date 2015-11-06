@@ -1607,19 +1607,23 @@ else
     local tmpList = {}
     for i, file in pairs(filelist) do
         host, rank, results, cpulist = parseMarkerOutputFile(file)
-        if all_results[rank] == nil then
-            all_results[rank] = {}
+        if host ~= nil and rank ~= nil then
+            if all_results[rank] == nil then
+                all_results[rank] = {}
+            end
+            all_results[rank]["hostname"] = host
+            all_results[rank]["cpus"] = cpulist
+            tmpList[rank] = results
+            os.remove(file)
         end
-        all_results[rank]["hostname"] = host
-        all_results[rank]["cpus"] = cpulist
-        tmpList[rank] = results
-        os.remove(file)
     end
-    for reg, _ in pairs(tmpList[0]) do
-        print("Region: "..reg)
-        for rank,_ in pairs(all_results) do
-            all_results[rank]["results"] = tmpList[rank][reg]
+    if #all_results > 0 then
+        for reg, _ in pairs(tmpList[0]) do
+            print("Region: "..reg)
+            for rank,_ in pairs(all_results) do
+                all_results[rank]["results"] = tmpList[rank][reg]
+            end
+            printMpiOutput(grouplist, all_results)
         end
-        printMpiOutput(grouplist, all_results)
     end
 end
