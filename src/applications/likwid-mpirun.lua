@@ -948,7 +948,7 @@ end
 
 local function listdir(dir, infilepart)
     local outlist = {}
-    local p = io.popen("find "..dir.." -type f -name \"*"..infilepart.."*\"")
+    local p = io.popen("find "..dir.." -maxdepth 1 -type f -name \"*"..infilepart.."*\"")
     for file in p:lines() do
         table.insert(outlist, file)
     end
