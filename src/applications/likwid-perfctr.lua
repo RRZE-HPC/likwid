@@ -401,7 +401,7 @@ end
 if print_info or verbose > 0 then
     print_stdout(string.format("CPU family:\t%u", cpuinfo["family"]))
     print_stdout(string.format("CPU model:\t%u", cpuinfo["model"]))
-    print_stdout(string.format("CPU short name:\t%s", cpuinfo["short_name"]))
+    print_stdout(string.format("CPU short:\t%s", cpuinfo["short_name"]))
     print_stdout(string.format("CPU stepping:\t%u", cpuinfo["stepping"]))
     print_stdout(string.format("CPU features:\t%s", cpuinfo["features"]))
     P6_FAMILY = 6
@@ -602,7 +602,6 @@ if use_wrapper or use_timeline then
 
     if not pid then
         print_stdout("Failed to execute command: ".. execString)
-        likwid.stopCounters()
     end
     lastmetrics = {}
     while true do
