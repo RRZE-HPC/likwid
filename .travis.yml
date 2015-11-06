@@ -14,6 +14,7 @@ script:
   - /usr/local/bin/likwid-perfctr -i
   - /usr/local/bin/likwid-bench -t copy -w N:100MB:2
   - make -C test test-msr-access
+  - sudo test/test-msr-access
   - sudo chown root:root test/test-msr-access
   - sudo chmod u+s test/test-msr-access
   - ls -la test/test-msr-access
