@@ -13,7 +13,3 @@ script:
   - make -C test streamGCC
   - /usr/local/bin/likwid-perfctr -i
   - /usr/local/bin/likwid-bench -t copy -w N:100MB:2
-  - /usr/local/bin/likwid-perfctr -V 3 -C 0,1 -g L3 -f test/streamGCC
-  - sudo tail -n 100 /var/log/syslog
-  - /usr/local/bin/likwid-perfctr -V 3 -C 0,1 -g L3 -f -m test/streamGCC
-  - sudo tail -n 100 /var/log/syslog
