@@ -1,0 +1,24 @@
+| EXIT 0 | GREP Help message
+-h | EXIT 0 | GREP Help message
+-v | EXIT 0 | GREP likwid-bench
+-p | EXIT 0 | GREP Domain
+-a | EXIT 0 | GREP sum
+-i | EXIT 1 | GREP option requires an argument
+-i 0 | EXIT 1 | GREP Iterations must be greater than 0
+-i 100 | EXIT 1 | GREP At least one workgroup (-w) must be set on commandline
+-l | EXIT 1 | GREP option requires an argument
+-l sum | EXIT 0 | GREP Name: sum
+-l XXX | EXIT 1 | GREP Unknown test case XXX
+-t | EXIT 1 | GREP option requires an argument
+-t sum | EXIT 1 | GREP At least one workgroup (-w) must be set on commandline
+-t XXX | EXIT 1 | GREP Unknown test case XXX
+-w | EXIT 1 | GREP option requires an argument
+-w X | EXIT 1 | GREP Unknown test case. Please check likwid-bench -a for available tests
+-t sum -w X | EXIT 1 | GREP Misformated workgroup string
+-t sum -w N:1 | EXIT 1 | GREP Stream size cannot be read
+-t XXX -w N:1MB:1 | EXIT 1 | GREP Unknown test case XXX
+-w N:100kB:1 | EXIT 1 | GREP Unknown test case. Please check likwid-bench -a for available tests
+-t sum -w N:100kB:1 | EXIT 0 | GREP Number of Flops
+-t sum -w N:100kB:1 -w N:100kB:1 | EXIT 0 | GREP Number of Flops
+-t sum -w N:100kB:2:1 | EXIT 1 | GREP Misformated workgroup string
+-t sum -w N:100kB:2:1:2 | EXIT 0 | GREP Number of Flops

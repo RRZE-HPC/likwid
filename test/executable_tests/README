@@ -1,0 +1,8 @@
+Simple commandline argument evaluation tool
+
+Usage: ./tester.sh <executable>
+
+For batch testing all executables simply type make
+
+All lines in the <executable>.txt file are executed and the output evaluated.
+Only simple checks are made using grep.

@@ -1,0 +1,20 @@
+| EXIT 0 | GREP Runtime: 2
+-h | EXIT 0 | GREP Help message
+-v | EXIT 0 | GREP likwid-powermeter
+-i | EXIT 0 | GREP Base clock | GREP Power
+-c | EXIT 1 | GREP Option requires an argument
+-s | EXIT 1 | GREP Option requires an argument
+-M | EXIT 1 | GREP Option requires an argument
+-V | EXIT 1 | GREP Option requires an argument
+-V 1 | EXIT 0 | GREP Base clock | GREP Runtime: 2
+-s 1 | EXIT 1 | GREP Cannot parse time
+-s 1s | EXIT 0 | GREP Runtime: 1
+-c 0 | EXIT 0 | GREP Runtime: 2
+-p | EXIT 0 | GREP Group 1: CLOCK
+-c 0 -s 1 | EXIT 0 | GREP Cannot parse time
+-p hostname | EXIT 0 | Group 1: CLOCK
+-c 0 hostname | EXIT 0 | GREP consumed | GREP socket 0
+-M 1 | EXIT 0 | GREP Runtime: 2
+-M 0 | EXIT 1 | GREP Operation not permitted
+-t | EXIT 0 | GREP Current core temperatures: | GREP Socket 0 Core 0:
+-f | EXIT 0 | GREP Current core temperatures: | GREP Socket 0 Core 0:

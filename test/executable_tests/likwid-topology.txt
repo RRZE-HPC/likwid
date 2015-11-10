@@ -1,0 +1,14 @@
+-h | EXIT 0 | GREP Options
+-v | EXIT 0 | GREP likwid-topology
+-c | EXIT 0 | GREP Cache line size
+-C | EXIT 0 | GREP CPU clock
+-g | EXIT 0 | GREP +--------
+-V | EXIT 1 | GREP Option requires an argument
+-V 1 | EXIT 0 | grep Hardware Thread Topology
+-g -v | EXIT 0 | GREP likwid-topology
+-c -g | EXIT 0 | GREP +-------- | GREP Cache line size
+-c -g -C | EXIT 0 | GREP +-------- | GREP Cache line size | GREP CPU clock
+-O | EXIT 0 | GREP STRUCT,Info
+-o | EXIT 1 | GREP Option requires an argument
+-o /tmp/out | EXIT 0
+-o /tmp/out.txt | EXIT 0

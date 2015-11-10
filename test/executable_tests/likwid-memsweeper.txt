@@ -1,0 +1,8 @@
+| EXIT 0 | GREP Sweeping domain
+-h | EXIT 0 | GREP Help message
+-v | EXIT 0 | GREP likwid-memsweeper
+-c | EXIT 1 | GREP Option requires an argument
+-c - | EXIT 1 | GREP Cannot parse node string
+-c -1 | EXIT 1 | GREP Cannot parse node string
+-c 0 | EXIT 0 | GREP Sweeping domain
+-c 10 | EXIT 1 | GREP Cannot parse node string
