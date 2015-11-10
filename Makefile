@@ -387,3 +387,7 @@ local: $(L_APPS) likwid.lua
 	@ln -sf ext/lua/liblikwid-lua.so liblikwid-lua.so.$(VERSION)
 	@echo "export LD_LIBRARY_PATH=$(PWD):$$LD_LIBRARY_PATH"
 
+testit: test/test-likwidAPI.c
+	make -C test test-likwidAPI
+	test/test-likwidAPI
+	make -C test/executable_tests
