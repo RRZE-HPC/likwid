@@ -165,8 +165,15 @@ for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t
         likwid.putAffinityInfo()
         likwid.putConfiguration()
         os.exit(1)
+    elseif opt == "!" then
+        print("Option requires an argument")
+        likwid.putTopology()
+        likwid.putAffinityInfo()
+        likwid.putConfiguration()
+        os.exit(1)
     end
 end
+
 
 if print_domains and num_threads > 0 then
     outstr = ""
@@ -192,6 +199,10 @@ end
 
 if num_threads == 0 then
     num_threads, cpu_list = likwid.cpustr_to_cpulist("N:0-"..cputopo["numHWThreads"]-1)
+end
+if (#arg == 0) then
+    print("Executable must be given on commandline")
+    os.exit(1)
 end
 
 if interleaved_policy then
