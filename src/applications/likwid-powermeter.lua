@@ -139,6 +139,9 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
     elseif opt == "?" then
         print("Invalid commandline option -"..arg)
         os.exit(1)
+    elseif opt == "!" then
+        print("Option requires an argument")
+        os.exit(1)
     end
 end
 
@@ -355,7 +358,6 @@ end
 
 if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
     print(likwid.hline)
-    likwid.initTemp(cpulist[i]);
     print("Current core temperatures:");
     for i=1,cputopo["numSockets"] do
         local tag = "S" .. tostring(i-1)
@@ -363,10 +365,12 @@ if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
             if domain["tag"] == tag then
                 for j=1,#domain["processorList"] do
                     local cpuid = domain["processorList"][j]
+                    likwid.initTemp(cpuid);
                     if (fahrenheit) then
-                        print(string.format("Socket %d Core %d: %u F",i-1,cpuid, 1.8*likwid.readTemp(cpuid)+32));
+                        local f = 1.8*tonumber(likwid.readTemp(cpuid))+32
+                        print(string.format("Socket %d Core %d: %.0f F",i-1,cpuid, f));
                     else
-                        print(string.format("Socket %d Core %d: %u C",i-1,cpuid, likwid.readTemp(cpuid)));
+                        print(string.format("Socket %d Core %d: %.0f C",i-1,cpuid, tonumber(likwid.readTemp(cpuid))));
                     end
                 end
             end

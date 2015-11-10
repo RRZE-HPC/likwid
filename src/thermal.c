@@ -49,6 +49,8 @@ ThermalInfo thermal_info;
 void thermal_init(int cpuId)
 {
     uint64_t flags=0ULL;
+    HPMinit();
+    HPMaddThread(cpuId);
 
     if ( cpuid_hasFeature(TM2) )
     {
