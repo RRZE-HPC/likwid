@@ -178,7 +178,7 @@ local function getopt(args, ostrlist)
                 if #args == 0 then -- an option requiring argument is the last one
                     place = 0
                     if givopt:sub(placeend, placeend) == ':' then return ':' end
-                    return '?', optopt
+                    return '!', optopt
                 else arg = args[1] end
             end
             table.remove(args, 1)
