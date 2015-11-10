@@ -161,6 +161,11 @@ int main(int argc, char** argv)
                 break;
             case 'i':
                 demandIter = strtoul(optarg, NULL, 10);
+                if (demandIter <= 0)
+                {
+                    fprintf (stderr, "Error: Iterations must be greater than 0\n");
+                    return EXIT_FAILURE;
+                }
                 break;
             case 'l':
                 bdestroy(testcase);
@@ -174,7 +179,7 @@ int main(int argc, char** argv)
                     }
                 }
 
-                if (biseqcstr(testcase,"none"))
+                if (test == NULL)
                 {
                     fprintf (stderr, "Error: Unknown test case %s\n",optarg);
                     return EXIT_FAILURE;
@@ -241,7 +246,7 @@ int main(int argc, char** argv)
                     }
                 }
 
-                if (biseqcstr(testcase,"none"))
+                if (test == NULL)
                 {
                     fprintf (stderr, "Error: Unknown test case %s\n",optarg);
                     return EXIT_FAILURE;
@@ -271,13 +276,17 @@ int main(int argc, char** argv)
         fprintf(stderr, "Error: Unsupported processor!\n");
         exit(EXIT_FAILURE);
     }
+
+    if ((test == NULL) && (!optPrintDomains))
+    {
+        fprintf(stderr, "Unknown test case. Please check likwid-bench -a for available tests\n");
+        fprintf(stderr, "and select one using the -t commandline option\n");
+        exit(EXIT_FAILURE);
+    }
+
     numa_init();
     affinity_init();
     timer_init();
-
-    allocator_init(numberOfWorkgroups * MAX_STREAMS);
-    groups = (Workgroup*) malloc(numberOfWorkgroups*sizeof(Workgroup));
-    tmp = 0;
 
     if (optPrintDomains)
     {
@@ -297,6 +306,10 @@ int main(int argc, char** argv)
         exit (EXIT_SUCCESS);
     }
 
+    allocator_init(numberOfWorkgroups * MAX_STREAMS);
+    groups = (Workgroup*) malloc(numberOfWorkgroups*sizeof(Workgroup));
+    tmp = 0;
+
     optind = 0;
     while ((c = getopt (argc, argv, "w:t:s:l:i:aphv")) != -1)
     {
@@ -304,24 +317,31 @@ int main(int argc, char** argv)
         {
             case 'w':
                 currentWorkgroup = groups+tmp;
-                testcase = bfromcstr(optarg);
-                bstr_to_workgroup(currentWorkgroup, testcase, test->type, test->streams);
-                bdestroy(testcase);
-                for (i=0; i<  test->streams; i++)
+                bstring groupstr = bfromcstr(optarg);
+                i = bstr_to_workgroup(currentWorkgroup, groupstr, test->type, test->streams);
+                bdestroy(groupstr);
+                if (i == 0)
                 {
-                    if (currentWorkgroup->streams[i].offset%test->stride)
+                    for (i=0; i<  test->streams; i++)
                     {
-                        fprintf (stderr, "Error: Stream %d: offset is not a multiple of stride!\n",i);
-                        return EXIT_FAILURE;
+                        if (currentWorkgroup->streams[i].offset%test->stride)
+                        {
+                            fprintf (stderr, "Error: Stream %d: offset is not a multiple of stride!\n",i);
+                            return EXIT_FAILURE;
+                        }
+                        allocator_allocateVector(&(currentWorkgroup->streams[i].ptr),
+                                PAGE_ALIGNMENT,
+                                currentWorkgroup->size,
+                                currentWorkgroup->streams[i].offset,
+                                test->type,
+                                currentWorkgroup->streams[i].domain);
                     }
-                    allocator_allocateVector(&(currentWorkgroup->streams[i].ptr),
-                            PAGE_ALIGNMENT,
-                            currentWorkgroup->size,
-                            currentWorkgroup->streams[i].offset,
-                            test->type,
-                            currentWorkgroup->streams[i].domain);
+                    tmp++;
                 }
-                tmp++;
+                else
+                {
+                    exit(EXIT_FAILURE);
+                }
                 break;
             default:
                 continue;

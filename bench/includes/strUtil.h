@@ -54,6 +54,6 @@ typedef struct {
 } Workgroup;
 
 
-extern void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int numberOfStreams);
+extern int bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int numberOfStreams);
 
 #endif

@@ -41,13 +41,13 @@ static int str2int(const char* str)
     if ((errno == ERANGE && val == LONG_MAX)
         || (errno != 0 && val == 0))
     {
-        fprintf(stderr, "Value in string out of range\n");
+        fprintf(stderr, "Value in string %s out of range\n", str);
         return -EINVAL;
     }
 
     if (endptr == str)
     {
-        fprintf(stderr, "No digits were found\n");
+        fprintf(stderr, "No digits were found in %s\n", str);
         return -EINVAL;
     }
 
@@ -56,11 +56,25 @@ static int str2int(const char* str)
 
 uint64_t bstr_to_doubleSize(const_bstring str, DataType type)
 {
+    int ret;
     bstring unit = bmidstr(str, blength(str)-2, 2);
     bstring sizeStr = bmidstr(str, 0, blength(str)-2);
-    uint64_t sizeU = str2int(bdata(sizeStr));
+    uint64_t sizeU = 0;
     uint64_t junk = 0;
     uint64_t bytesize = 0;
+    if (blength(sizeStr) == 0)
+    {
+        return 0;
+    }
+    ret = str2int(bdata(sizeStr));
+    if (ret >= 0)
+    {
+        sizeU = str2int(bdata(sizeStr));
+    }
+    else
+    {
+        return 0;
+    }
 
     switch (type)
     {
@@ -141,6 +155,14 @@ bstring parse_workgroup(Workgroup* group, const_bstring str, DataType type)
         bstrListDestroy(tokens);
         return NULL;
     }
+
+    group->size = bstr_to_doubleSize(tokens->entry[1], type);
+    if (group->size == 0)
+    {
+        fprintf(stderr, "Stream size cannot be read, should look like <domain>:<size>\n");
+        bstrListDestroy(tokens);
+        return NULL;
+    }
     group->processorIds = (int*) malloc(numThreads * sizeof(int));
     if (group->processorIds == NULL)
     {
@@ -149,7 +171,6 @@ bstring parse_workgroup(Workgroup* group, const_bstring str, DataType type)
         return NULL;
     }
     group->numberOfThreads = numThreads;
-    group->size = bstr_to_doubleSize(tokens->entry[1], type);
     if (cpustr_to_cpulist(bdata(cpustr),group->processorIds, numThreads) < 0 )
     {
         free(group->processorIds);
@@ -216,7 +237,7 @@ int parse_streams(Workgroup* group, const_bstring str, int numberOfStreams)
     return 0;
 }
 
-void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int numberOfStreams)
+int bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int numberOfStreams)
 {
     int parseStreams = 0;
     struct bstrList* tokens;
@@ -228,7 +249,7 @@ void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int n
         if (domain == NULL)
         {
             bstrListDestroy(tokens);
-            return;
+            return 1;
         }
         parse_streams(group, tokens->entry[1], numberOfStreams);
     }
@@ -238,7 +259,7 @@ void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int n
         if (domain == NULL)
         {
             bstrListDestroy(tokens);
-            return;
+            return 1;
         }
         group->streams = (Stream*) malloc(numberOfStreams * sizeof(Stream));
         for (int i = 0; i< numberOfStreams; i++)
@@ -251,10 +272,10 @@ void bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int n
     {
         fprintf(stderr, "Error in parsing workgroup string %s\n", bdata(str));
         bstrListDestroy(tokens);
-        exit(EXIT_FAILURE);
+        return 1;
     }
     bstrListDestroy(tokens);
     group->size /= numberOfStreams;
-    return;
+    return 0;
 }
 
