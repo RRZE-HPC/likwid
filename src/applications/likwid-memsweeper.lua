@@ -77,6 +77,9 @@ for opt,arg in likwid.getopt(arg, {"c:", "h", "v", "help", "version"}) do
     elseif opt == "?" then
         print("Invalid commandline option -"..arg)
         os.exit(1)
+    elseif opt == "!" then
+        print("Option requires an argument")
+        os.exit(1)
     end
 end
 
