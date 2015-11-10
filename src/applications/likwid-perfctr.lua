@@ -204,7 +204,10 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     elseif (opt == "T") then
         duration = likwid.parse_time(arg)
     elseif opt == "o" or opt == "output" then
-        local suffix = string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$")
+        local suffix = ""
+        if string.match(arg, "%.") then
+            suffix = string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$")
+        end
         if suffix ~= "txt" then
             use_csv = true
         end
@@ -212,12 +215,15 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         outfile = outfile:gsub("%%p", likwid.getpid())
         outfile = outfile:gsub("%%j", likwid.getjid())
         outfile = outfile:gsub("%%r", likwid.getMPIrank())
-        io.output(outfile:gsub(string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$"),"tmp"))
+        io.output(outfile..".tmp")
         print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end
     elseif (opt == "O") then
         use_csv = true
     elseif opt == "?" then
         print("Invalid commandline option -"..arg)
+        os.exit(1)
+    elseif opt == "!" then
+        print("Option requires an argument")
         os.exit(1)
     end
 end
@@ -285,6 +291,7 @@ if print_events == true then
         end
         print_stdout(outstr)
     end
+    print_stdout("\n\n")
     print_stdout(string.format("This architecture has %d events.",#tab["Events"]))
     print_stdout("Event tags (tag, id, umask, counters<, options>):")
     for _, eventTab in pairs(tab["Events"]) do
@@ -300,12 +307,22 @@ if print_events == true then
 end
 
 if print_event ~= nil then
+    function case_insensitive_pattern(pattern)
+        local p = pattern:gsub("(%%?)(.)", function(percent, letter)
+            if percent ~= "" or not letter:match("%a") then
+              return percent .. letter
+            else
+                return string.format("[%s%s]", letter:lower(), letter:upper())
+            end
+        end)
+        return p
+    end
     local tab = likwid.getEventsAndCounters()
     local events = {}
     local counters = {}
     local outstr = ""
     for _, eventTab in pairs(tab["Events"]) do
-        if eventTab["Name"]:match(print_event) then
+        if eventTab["Name"]:match(case_insensitive_pattern(print_event)) then
             table.insert(events, eventTab)
         end
     end
@@ -342,6 +359,8 @@ end
 num_avail_groups, avail_groups = likwid.get_groups()
 
 if print_groups == true then
+    print_stdout(string.format("%10s\t%s","Group name", "Description"))
+    print_stdout(likwid.hline)
     for i,g in pairs(avail_groups) do
         local gdata = likwid.get_groupdata(g)
         if gdata ~= nil then
@@ -426,7 +445,7 @@ if use_stethoscope == false and use_timeline == false and use_marker == false th
 end
 
 if use_wrapper and likwid.tablelength(arg)-2 == 0 and print_info == false then
-    print_stdout("No Executable can be found on commanlikwid.dline")
+    print_stdout("No Executable can be found on commandline")
     usage()
     likwid.putTopology()
     likwid.putConfiguration()
@@ -736,10 +755,15 @@ else
 end
 
 if outfile then
-    local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
+    local suffix = ""
+    if string.match(outfile,"%.") then
+        suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
+    end
     local command = "<INSTALLED_PREFIX>/share/likwid/filter/" .. suffix
-    local tmpfile = outfile:gsub("."..suffix,".tmp",1)
-    if suffix ~= "csv" and likwid.access(command, "x") then
+    local tmpfile = outfile..".tmp"
+    if suffix == "" then
+        os.rename(tmpfile, outfile)
+    elseif suffix ~= "txt" and suffix ~= "csv" and likwid.access(command, "x") then
         print_stdout("Cannot find filter script, save output in CSV format to file "..outfile)
         os.rename(tmpfile, outfile)
     else
