@@ -83,7 +83,7 @@ use_hardcoded:
     }
     else
     {
-        ERROR_PLAIN_PRINT(Unable to get path to access daemon. Maybe your PATH environment variable does not contain the folder where you installed it?);
+        ERROR_PLAIN_PRINT(Unable to get path to access daemon. Maybe your PATH environment variable does not contain the folder where you installed it or the file was moved away / not copied to that location?);
         exit(EXIT_FAILURE);
     }
     return 0;
