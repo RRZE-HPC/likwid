@@ -88,15 +88,21 @@ for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O","help","ver
     elseif opt == "O" then
         print_csv = true
     elseif opt == "o" or opt == "output" then
-        local suffix = string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$")
+        local suffix = ""
+        if string.match(arg, "%.") then
+            suffix = string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$")
+        end
         if suffix ~= "txt" then
             print_csv = true
         end
         outfile = arg:gsub("%%h", likwid.gethostname())
-        io.output(arg:gsub(string.match(arg, ".-[^\\/]-%.?([^%.\\/]*)$"),"tmp"))
+        io.output(arg..".tmp")
         print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end
     elseif opt == "?" then
         print("Invalid commandline option -"..arg)
+        os.exit(1)
+    elseif opt == "!" then
+        print("Option requires an argument")
         os.exit(1)
     end
 end
@@ -349,10 +355,15 @@ if print_graphical and not print_csv then
 end
 
 if outfile then
-    local suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
+    local suffix = ""
+    if string.match(outfile, "%.") then
+        suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
+    end
     local command = "<INSTALLED_PREFIX>/share/likwid/filter/" .. suffix
-    local tmpfile = outfile:gsub("."..suffix,".tmp",1)
-    if not likwid.access(command,"x") then
+    local tmpfile = outfile..".tmp"
+    if suffix == "" then
+        os.rename(tmpfile, outfile)
+    elseif suffix ~= "txt" and suffix ~= "csv" and likwid.access(command,"x") then
         stdout_print("Cannot find filter script, save output in CSV format to file "..outfile)
         os.rename(tmpfile, outfile)
     else
