@@ -179,6 +179,9 @@ for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "h
     elseif opt == "?" then
         print("Invalid commandline option -"..arg)
         os.exit(1)
+    elseif opt == "!" then
+        print("Option requires an argument")
+        os.exit(1)
     end
 end
 if not testDriver() then
@@ -234,6 +237,11 @@ end
 
 if printAvailGovs or printAvailFreq or printCurFreq then
     os.exit(0)
+end
+
+if numthreads > 0 and not (frequency or governor) then
+    print("You need to set either a frequency or governor for the selected CPUs on commandline")
+    os.exit(1)
 end
 
 if frequency then
