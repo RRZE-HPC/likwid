@@ -251,7 +251,7 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
     }
     if (domainidx < 0)
     {
-        printf("Cannot find domain %s\n", bdata(bdomain));
+        fprintf(stderr, "Cannot find domain %s\n", bdata(bdomain));
         return 0;
     }
     int *inlist = malloc(affinity->domains[domainidx].numberOfProcessors * sizeof(int));
@@ -270,14 +270,30 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
         {
             struct bstrList* indexlist = bstrListCreate();
             indexlist = bsplit(strlist->entry[i], '-');
-            for (int j=atoi(bdata(indexlist->entry[0])); j<=atoi(bdata(indexlist->entry[1]));j++)
+            if (atoi(bdata(indexlist->entry[0])) <= atoi(bdata(indexlist->entry[1])))
             {
-                cpulist[insert] = inlist[j];
-                insert++;
-                if (insert == length)
+                for (int j=atoi(bdata(indexlist->entry[0])); j<=atoi(bdata(indexlist->entry[1]));j++)
                 {
-                    bstrListDestroy(indexlist);
-                    goto logical_done;
+                    cpulist[insert] = inlist[j];
+                    insert++;
+                    if (insert == length)
+                    {
+                        bstrListDestroy(indexlist);
+                        goto logical_done;
+                    }
+                }
+            }
+            else
+            {
+                for (int j=atoi(bdata(indexlist->entry[0])); j>=atoi(bdata(indexlist->entry[1]));j--)
+                {
+                    cpulist[insert] = inlist[j];
+                    insert++;
+                    if (insert == length)
+                    {
+                        bstrListDestroy(indexlist);
+                        goto logical_done;
+                    }
                 }
             }
             bstrListDestroy(indexlist);
@@ -346,21 +362,44 @@ static int cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
         {
             struct bstrList* indexlist = bstrListCreate();
             indexlist = bsplit(strlist->entry[i], '-');
-            for (int j=atoi(bdata(indexlist->entry[0])); j<=atoi(bdata(indexlist->entry[1]));j++)
+            if (atoi(bdata(indexlist->entry[0])) <= atoi(bdata(indexlist->entry[1])))
             {
-                if (cpu_in_domain(domainidx, j))
+                for (int j=atoi(bdata(indexlist->entry[0])); j<=atoi(bdata(indexlist->entry[1]));j++)
                 {
-                    cpulist[insert] = j;
-                    insert++;
-                    if (insert == length)
+                    if (cpu_in_domain(domainidx, j))
                     {
-                        bstrListDestroy(indexlist);
-                        goto physical_done;
+                        cpulist[insert] = j;
+                        insert++;
+                        if (insert == length)
+                        {
+                            bstrListDestroy(indexlist);
+                            goto physical_done;
+                        }
+                    }
+                    else
+                    {
+                        fprintf(stderr, "CPU %d not in domain %s\n", j, bdata(affinity->domains[domainidx].tag));
                     }
                 }
-                else
+            }
+            else
+            {
+                for (int j=atoi(bdata(indexlist->entry[0])); j>=atoi(bdata(indexlist->entry[1]));j--)
                 {
-                    fprintf(stderr, "CPU %d not in domain %s\n", j, bdata(affinity->domains[domainidx].tag));
+                    if (cpu_in_domain(domainidx, j))
+                    {
+                        cpulist[insert] = j;
+                        insert++;
+                        if (insert == length)
+                        {
+                            bstrListDestroy(indexlist);
+                            goto physical_done;
+                        }
+                    }
+                    else
+                    {
+                        fprintf(stderr, "CPU %d not in domain %s\n", j, bdata(affinity->domains[domainidx].tag));
+                    }
                 }
             }
             bstrListDestroy(indexlist);
