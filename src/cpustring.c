@@ -468,7 +468,7 @@ int cpustr_to_cpulist(char* cpustring, int* cpulist, int length)
         }
         else if (cpuid_topology->activeHWThreads < cpuid_topology->numHWThreads)
         {
-            fprintf(stdout, "INFO: You are running LIKWID in a cpuset with %d CPUs, only logical numbering allowed", cpuid_topology->activeHWThreads);
+            fprintf(stdout, "INFO: You are running LIKWID in a cpuset with %d CPUs, only logical numbering allowed\n", cpuid_topology->activeHWThreads);
             if (((bstrchrp(strlist->entry[i], 'N', 0) == 0) ||
                 (bstrchrp(strlist->entry[i], 'S', 0) == 0) ||
                 (bstrchrp(strlist->entry[i], 'C', 0) == 0) ||
