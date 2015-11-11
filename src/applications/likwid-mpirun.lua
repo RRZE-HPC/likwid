@@ -48,8 +48,8 @@ local function examples()
     print("")
     print("For hybrid MPI/OpenMP jobs you need to set the -pin option")
     print("Starts 2 MPI processes on each host, one on socket 0 and one on socket 1")
-    print("Each MPI processes starts 2 OpenMP threads pinned to the same socket")
-    print("likwid-mpirun -pin S0:2_S1:2 ./a.out")
+    print("Each MPI processes may start 2 OpenMP threads pinned to the first two CPUs on each socket")
+    print("likwid-mpirun -pin S0:0-1_S1:0-1 ./a.out")
     print("")
     print("Run 2 processes on each socket and measure the MEM performance group")
     print("likwid-mpirun -nperdomain S:2 -g MEM ./a.out")
@@ -75,8 +75,10 @@ local function usage()
     print("-hostfile\t\t Use custom hostfile instead of searching the environment")
     print("-g/-group <perf>\t Set a likwid-perfctr conform event set for measuring on nodes")
     print("-m/-marker\t\t Activate marker API mode")
+    print("-O\t\t\t Output easily parseable CSV instead of fancy tables")
+    print("-f\t\t\t Force overwrite of registers if they are in use. You can also use environment variable LIKWID_FORCE")
     print("")
-    print("Processes are pinned to physical CPU cores first.")
+    print("Processes are pinned to physical CPU cores first. For syntax questions see likwid-pin")
     print("")
     examples()
 end
@@ -98,6 +100,9 @@ local debug = false
 local use_marker = false
 local use_csv = false
 local force = false
+if os.getenv("LIKWID_FORCE") ~= nil then
+    force = true
+end
 
 local LIKWID_PIN="<INSTALLED_PREFIX>/bin/likwid-pin"
 local LIKWID_PERFCTR="<INSTALLED_PREFIX>/bin/likwid-perfctr"
@@ -110,7 +115,7 @@ if MPIROOT == nil then
     MPIROOT = ""
 end
 
-local MPIEXEC = { openmpi=MPIROOT.."/bin/mpiexec", intelmpi=MPIROOT.."/bin/mpiexec.hydra", mvapich2="mpirun"}
+local MPIEXEC = { openmpi=MPIROOT.."/bin/mpiexec", intelmpi=MPIROOT.."/bin/mpiexec.hydra", mvapich2="/bin/mpirun"}
 
 
 local readHostfile = nil
@@ -472,10 +477,10 @@ end
 
 local function getMpiType()
     local mpitype = nil
-    cmd = "tclsh /apps/modules/modulecmd.tcl sh list -t 2>&1"
+    cmd = "bash -c 'tclsh /apps/modules/modulecmd.tcl sh list -t' 2>&1"
     local f = io.popen(cmd, 'r')
     if f == nil then
-        cmd = os.getenv("SHELL").." -c 'module -t 2>&1'"
+        cmd = os.getenv("SHELL").." -c 'module -t list' 2>&1"
         f = io.popen(cmd, 'r')
     end
     if f ~= nil then
@@ -484,13 +489,13 @@ local function getMpiType()
         s = string.gsub(s, '^%s+', '')
         s = string.gsub(s, '%s+$', '')
         for i,line in pairs(likwid.stringsplit(s, "\n")) do
-            if line:match("^intelmpi") then
+            if line:match("[iI]ntel[mM][pP][iI]") then
                 mpitype = "intelmpi"
                 --libmpi%a*.so
-            elseif line:match("^openmpi") then
+            elseif line:match("[oO]pen[mM][pP][iI]") then
                 mpitype = "openmpi"
                 --libmpi.so
-            elseif line:match("^mvapich2") then
+            elseif line:match("mvapich2") then
                 mpitype = "mvapich2"
                 --libmpich.so
             end
@@ -518,11 +523,11 @@ local function getOmpType()
     end
     if not omptype then
         print("WARN: Cannot get OpenMP variant from executable, trying module system")
-        cmd = "tclsh /apps/modules/modulecmd.tcl sh list -t 2>&1"
+        cmd = "bash -c 'tclsh /apps/modules/modulecmd.tcl sh list -t' 2>&1"
         local f = io.popen(cmd, 'r')
         if f ~= nil then
             f:close()
-            cmd = os.getenv("SHELL").." -c 'module -t list 2>&1'"
+            cmd = os.getenv("SHELL").." -c 'module -t list' 2>&1"
             f = io.popen(cmd, 'r')
         end
         if f ~= nil then
@@ -531,9 +536,9 @@ local function getOmpType()
             s = string.gsub(s, '^%s+', '')
             s = string.gsub(s, '%s+$', '')
             for i,line in pairs(likwid.stringsplit(s, "\n")) do
-                if line:match("^intel") then
+                if line:match("[iI]ntel") then
                     omptype = "intel"
-                elseif line:match("^gnu") then
+                elseif line:match("[gG][nN][uU]") then
                     omptype = "gnu"
                 end
             end
@@ -722,9 +727,6 @@ local function createEventString(eventlist)
             str = str .. ","..eventlist[i]["Event"]..":"..eventlist[i]["Counter"]
         end
     end
-    if debug then
-        print("DEBUG: Created event set string "..str)
-    end
     return str
 end
 
@@ -877,7 +879,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
             table.insert(cmd,LIKWID_PIN)
             table.insert(cmd,"-q")
         end
-        if force then
+        if force and #perf > 0 then
             table.insert(cmd,"-f")
         end
         table.insert(cmd,skipStr)
@@ -1169,6 +1171,7 @@ function printMpiOutput(group_list, all_results)
         local secondtab = {}
         local secondtab_combined = {}
         local total_threads = 0
+        local all_counters = {}
         for rank = 0, #all_results do
             total_threads = total_threads + #all_results[rank]["cpus"]
         end
@@ -1190,7 +1193,7 @@ function printMpiOutput(group_list, all_results)
             table.insert(desc, "TSC")
         end
         if all_results[0]["results"][1]["calls"] then
-            table.insert(desc, "")
+            table.insert(desc, "CTR")
         end
         for i=1,#gdata["Events"] do
             table.insert(desc, gdata["Events"][i]["Counter"])
@@ -1207,11 +1210,12 @@ function printMpiOutput(group_list, all_results)
                     table.insert(column, all_results[rank]["results"][gidx]["calls"][cpu])
                 end
                 for j=1,#gdata["Events"] do
-                    if all_results[rank]["results"][gidx][j] ~= nil then
-                        table.insert(column, all_results[rank]["results"][gidx][j][cpu])
-                    else
-                        table.insert(column, 0)
+                    local value = 0
+                    if all_results[rank]["results"][gidx][j] and
+                       all_results[rank]["results"][gidx][j][cpu] then
+                        value = all_results[rank]["results"][gidx][j][cpu]
                     end
+                    table.insert(column, value)
                 end
                 table.insert(firsttab, column)
             end
@@ -1225,16 +1229,16 @@ function printMpiOutput(group_list, all_results)
             for j=1,#gdata["Metrics"] do
                 table.insert(secondtab[1], gdata["Metrics"][j]["description"])
             end
-            
+
             for rank = 0, #all_results do
                 for i, cpu in pairs(all_results[rank]["cpus"]) do
                     local counterlist = {}
                     for j=1,#gdata["Events"] do
                         local counter = gdata["Events"][j]["Counter"]
-                        if all_results[rank]["results"][gidx][j] ~= nil then
+                        counterlist[counter] = 0
+                        if all_results[rank]["results"][gidx][j] ~= nil and
+                           all_results[rank]["results"][gidx][j][cpu] ~= nil then
                             counterlist[counter] = all_results[rank]["results"][gidx][j][cpu]
-                        else
-                            counterlist[counter] = 0
                         end
                     end
                     counterlist["time"] = all_results[rank]["results"][gidx]["time"][cpu]
@@ -1256,12 +1260,18 @@ function printMpiOutput(group_list, all_results)
             end
         end
         if use_csv then
-            print("Group,"..tostring(gidx))
-            likwid.printcsv(firsttab)
-            if total_threads > 1 then likwid.printcsv(firsttab_combined) end
+            local maxLineFields = #firsttab
+            if #firsttab_combined > maxLineFields then maxLineFields = #firsttab_combined end
             if gdata["Metrics"] then
-                likwid.printcsv(secondtab)
-                if total_threads > 1 then likwid.printcsv(secondtab_combined) end
+                if #secondtab > maxLineFields then maxLineFields = #secondtab end
+                if #secondtab_combined > maxLineFields then maxLineFields = #secondtab_combined end
+            end
+            print("Group,"..tostring(gidx) .. string.rep(",", maxLineFields  - 2))
+            likwid.printcsv(firsttab, maxLineFields)
+            if total_threads > 1 then likwid.printcsv(firsttab_combined, maxLineFields) end
+            if gdata["Metrics"] then
+                likwid.printcsv(secondtab, maxLineFields)
+                if total_threads > 1 then likwid.printcsv(secondtab_combined, maxLineFields) end
             end
         else
             print("Group: "..tostring(gidx))
@@ -1306,6 +1316,10 @@ for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:",
         force = true
     elseif opt == "n" or opt == "np" then
         np = tonumber(arg)
+        if np == nil then
+            print("Argument for -n/-np must be a number")
+            os.exit(1)
+        end
     elseif opt == "nperdomain" then
         nperdomain = arg
         local domain, count = nperdomain:match("([NSCM]%d*):(%d+)")
@@ -1328,17 +1342,28 @@ for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:",
     elseif opt == "?" then
         print("Invalid commandline option -"..arg)
         os.exit(1)
+    elseif opt == "!" then
+        print("Option requires an argument")
+        os.exit(1)
     end
 end
 
 if MPIROOT == "" then
     print("Please load a MPI module or set path to MPI solder in MPIHOME environment variable")
     print("$MPIHOME/bin/<MPI launcher> should be valid")
+    print("For OpenMPI: $MPIHOME/bin/mpiexec")
+    print("For IntelMPI: $MPIHOME/bin/mpiexec.hydra")
+    print("For Mvapich2: $MPIHOME/bin/mpirun")
     os.exit(1)
 end
 
 if np == 0 and nperdomain == nil and #cpuexprs == 0 then
     print("ERROR: No option -n/-np, -nperdomain or -pin")
+    os.exit(1)
+end
+
+if use_marker and #perf == 0 then
+    print("ERROR: You selected the MarkerAPI feature but didn't set any events on the commandline")
     os.exit(1)
 end
 
