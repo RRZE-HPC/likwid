@@ -509,6 +509,9 @@ void likwid_markerGetRegion(const char* regionTag, int* nr_events, double* event
 {
     if (! likwid_init)
     {
+        *nr_events = 0;
+        *time = 0;
+        *count = 0;
         return;
     }
     int length = 0;
