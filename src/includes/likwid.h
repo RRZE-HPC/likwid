@@ -1094,30 +1094,6 @@ extern int thermal_read(int cpuId, uint32_t *data) __attribute__ ((visibility ("
 extern int thermal_tread(int socket_fd, int cpuId, uint32_t *data) __attribute__ ((visibility ("default") ));
 /** @}*/
 
-/*
-################################################################################
-# Timeline daemon related functions
-################################################################################
-*/
-/** \addtogroup Daemon Timeline daemon module
- *  @{
- */
-/*! \brief Start timeline daemon
-
-Starts the timeline daemon which reads and prints the counter values after each \a duration time
-@param [in] duration Time interval in ns
-@param [in] outfile File to write the intermediate readings or NULL to write to stderr
-@return 0 on success and -EFAULT if counters cannot be started
-*/
-extern int daemon_start(uint64_t duration, const char* outfile) __attribute__ ((visibility ("default") ));
-/*! \brief Stop timeline daemon
-
-Stop the timeline daemon using the signal \a sig
-@param [in] sig Signal code to kill the daemon (see signal.h for signal codes)
-@return 0 on success and the negative error code at failure
-*/
-extern int daemon_stop(int sig) __attribute__ ((visibility ("default") ));
-/** @}*/
 
 /*
 ################################################################################
