@@ -168,11 +168,14 @@ LIKWID_MARKER_THREADINIT;
  * the region tag previously to reduce the overhead
  * of START and STOP calls. Call it once for each
  * thread in parallel environment.
+ * Note: No whitespace characters are allowed in the region tags
  * This call is optional, START will do the same operations.
  */
 LIKWID_MARKER_REGISTER("name");
 
-/* Start measurement */
+/* Start measurement 
+ * Note: No whitespace characters are allowed in the region tags
+ */
 LIKWID_MARKER_START("name");
 /*
  * Your code to be measured is here
