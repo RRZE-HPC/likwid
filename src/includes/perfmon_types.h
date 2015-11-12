@@ -36,6 +36,7 @@
 
 #include <bstrlib.h>
 #include <timer.h>
+#include <inttypes.h>
 
 #define MAX_EVENT_OPTIONS NUM_EVENT_OPTIONS
 
@@ -211,7 +212,7 @@ typedef struct {
     TimerData             timer; /*!< \brief Time information how long the counters were running */
     double                rdtscTime; /*!< \brief Evaluation of the Time information in seconds */
     double                runTime; /*!< \brief Sum of all time information in seconds that the group was running */
-    uint64_t              regTypeMask; /*!< \brief Bitmask for easy checks which types are included in the eventSet */
+    __uint128_t           regTypeMask; /*!< \brief Bitmask for easy checks which types are included in the eventSet */
     GroupState            state; /*!< \brief Current state of the event group (configured, started, none) */
 } PerfmonEventSet;
 
