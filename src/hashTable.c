@@ -161,6 +161,12 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
                 fprintf(stderr, "Failed to allocate %lu bytes for the count storage\n", numberOfThreads * sizeof(uint32_t));
                 break;
             }
+            (*results)[i].cpulist = (int*) malloc(numberOfThreads * sizeof(int));
+            if (!(*results)[i].count)
+            {
+                fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n", numberOfThreads * sizeof(int));
+                break;
+            }
             (*results)[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
             if (!(*results)[i].counters)
             {
@@ -172,6 +178,7 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
             {
                 (*results)[i].time[j] = 0.0;
                 (*results)[i].count[j] = 0;
+                (*results)[i].cpulist[j] = -1;
                 (*results)[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
                 if (!(*results)[i].counters)
                 {
@@ -224,6 +231,7 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
 
                 (*results)[*regionId].count[threadId] = threadResult->count;
                 (*results)[*regionId].time[threadId] = threadResult->time;
+                (*results)[*regionId].cpulist[threadId] = threadResult->cpuID;
 
                 for ( int j=0; j < NUM_PMC; j++ )
                 {

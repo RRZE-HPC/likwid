@@ -344,11 +344,11 @@ void likwid_markerClose(void)
             {
                 fprintf(file,"%d ",i);
                 fprintf(file,"%d ",results[i].groupID);
-                fprintf(file,"%d ",threads2Cpu[j]);
+                fprintf(file,"%d ",results[i].cpulist[j]);
                 fprintf(file,"%u ",results[i].count[j]);
                 fprintf(file,"%e ",results[i].time[j]);
                 fprintf(file,"%d ",groupSet->groups[results[i].groupID].numberOfEvents);
-                lineidx = sprintf(&(line[0]), "%d %d %d %u %e %d ", i, results[i].groupID, threads2Cpu[j],results[i].count[j],results[i].time[j],groupSet->groups[results[i].groupID].numberOfEvents);
+                lineidx = sprintf(&(line[0]), "%d %d %d %u %e %d ", i, results[i].groupID,results[i].cpulist[j],results[i].count[j],results[i].time[j],groupSet->groups[results[i].groupID].numberOfEvents);
                 for (int k=0; k<groupSet->groups[results[i].groupID].numberOfEvents; k++)
                 {
                     fprintf(file,"%e ",results[i].counters[j][k]);
@@ -425,7 +425,7 @@ int likwid_markerStartRegion(const char* regionTag)
     int cpu_id = hashTable_get(tag, &results);
     int thread_id = getThreadID(cpu_id);
     perfmon_readCountersCpu(cpu_id);
-
+    results->cpuID = cpu_id;
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, START [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu , regionTag, thread_id, cpu_id, i,
