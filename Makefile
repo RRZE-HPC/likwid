@@ -323,9 +323,13 @@ install: install_daemon install_freq
 	@echo "===> INSTALL groups to $(PREFIX)/share/likwid/perfgroups"
 	@mkdir -p $(PREFIX)/share/likwid/perfgroups
 	@cp -rf groups/* $(PREFIX)/share/likwid/perfgroups
+	@chmod 755 $(PREFIX)/share/likwid/perfgroups
+	@find $(PREFIX)/share/likwid/perfgroups -name "*.txt" -exec chmod 644 {} \;
 	@echo "===> INSTALL monitoring groups to $(PREFIX)/share/likwid/mongroups"
 	@mkdir -p $(PREFIX)/share/likwid/mongroups
 	@cp -rf monitoring/groups/* $(PREFIX)/share/likwid/mongroups
+	@chmod 755 $(PREFIX)/share/likwid/mongroups
+	@find $(PREFIX)/share/likwid/mongroups -name "*.txt" -exec chmod 644 {} \;
 	@mkdir -p $(PREFIX)/share/likwid/docs
 	@install -m 644 doc/bstrlib.txt $(PREFIX)/share/likwid/docs
 	@mkdir -p $(PREFIX)/share/likwid/examples
