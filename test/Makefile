@@ -14,6 +14,9 @@ ICPC_AVAILABLE=$(shell /bin/bash -c "which icpc | wc -l")
 streamGCC: stream.c
 	gcc -O3 -std=c99 $(LIKWID_INCLUDES) $(LIKWID_DEFINES) -fopenmp  -o $@  stream.c $(LIKWID_LIB) -lm
 
+streamAPIGCC: stream-API.c
+	gcc -O3 -std=c99 $(LIKWID_INCLUDES) -fopenmp -ftree-vectorize -ffast-math -o $@  stream-API.c $(LIKWID_LIB) -lm
+
 serial: serial.c
 	gcc -O3 -std=c99 $(LIKWID_INCLUDES) $(LIKWID_DEFINES) -o $@  serial.c $(LIKWID_LIB) -lm
 
@@ -48,9 +51,9 @@ test-mpi: MPI_pin_test.c$
 stream_cilk: stream_cilk.c
 	@if [ $(ICC_AVAILABLE) -ne 0 ]; then icc -O3 $(LIKWID_DEFINES) $(LIKWID_INCLUDES) -o $@ stream_cilk.c $(LIKWID_LIB); fi
 
-.PHONY: clean streamGCC streamICC streamGCC_C11 streamICC_C11 testmarker testmarker-omp testmarkerF90 test-mpi stream_cilk serial test-likwidAPI
+.PHONY: clean streamGCC streamICC streamGCC_C11 streamICC_C11 testmarker testmarker-omp testmarkerF90 test-mpi stream_cilk serial test-likwidAPI streamAPIGCC
 
 clean: 
-	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker testmarkerF90 test-mpi testmarker-omp serial test-likwidAPI
+	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker testmarkerF90 test-mpi testmarker-omp serial test-likwidAPI streamAPIGCC
 
 
