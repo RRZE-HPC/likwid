@@ -1,4 +1,4 @@
-SHORT Single Precision MFlops/s
+SHORT Single Precision MFLOP/s
 
 EVENTSET
 PMC0  RETIRED_INSTRUCTIONS
@@ -9,15 +9,18 @@ PMC3  RETIRED_FLOPS_SINGLE_ALL
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s]  PMC1*inverseClock
-MFlops/s    1.0E-06*(PMC3)/time
+SP MFLOP/s    1.0E-06*(PMC3)/time
 CPI   PMC1/PMC0
 CPI (based on uops)   PMC1/PMC2
 IPC   PMC0/PMC1
 
 LONG
 Formulas:
-SP MFlops/s = 1.0E-06*(RETIRED_FLOPS_SINGLE_ALL)/time
+SP MFLOP/s = 1.0E-06*(RETIRED_FLOPS_SINGLE_ALL)/time
+CPI = CPU_CLOCKS_UNHALTED/RETIRED_INSTRUCTIONS
+CPI (based on uops) = CPU_CLOCKS_UNHALTED/RETIRED_UOPS
+IPC = RETIRED_INSTRUCTIONS/CPU_CLOCKS_UNHALTED
 -
-Profiling group to measure single precision flop rate.
+Profiling group to measure single precision FLOP rate.
 
 

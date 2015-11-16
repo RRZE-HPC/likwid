@@ -6,10 +6,12 @@ PMC0  HWP_L2MISS
 METRICS
 Runtime (RDTSC) [s] time
 Prefetch bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
-Prefetch volume [GBytes] 1.0E-09*PMC0*64.0
+Prefetch data volume [GBytes] 1.0E-09*PMC0*64.0
 
 LONG
 Formulas:
 Prefetch bandwidth [MBytes/s] = 1.0E-06*HWP_L2MISS*64.0/time
 Prefetch data volume [GBytes] = 1.0E-09*HWP_L2MISS*64.0
+-
+The bandwidth and data volume caused by L2 misses from the hardware prefetcher.
 

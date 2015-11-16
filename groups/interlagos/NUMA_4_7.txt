@@ -20,8 +20,8 @@ DRAM read/write local to 5 [MegaEvents/s]  1.0E-06*UNC_CPU_TO_DRAM_LOCAL_TO_1/ti
 DRAM read/write local to 6 [MegaEvents/s]  1.0E-06*UNC_CPU_TO_DRAM_LOCAL_TO_2/time
 DRAM read/write local to 7 [MegaEvents/s]  1.0E-06*UNC_CPU_TO_DRAM_LOCAL_TO_3/time
 -
-Profiling group to measure the traffic from local CPU to the different 
-DRAM NUMA nodes. This group allows to detect NUMA problems in a threaded 
+Profiling group to measure the traffic from local CPU to the different
+DRAM NUMA nodes. This group allows to detect NUMA problems in a threaded
 code. You must first determine on which memory domains your code is running.
 A code should only have significant traffic to its own memory domain.
 

@@ -1,4 +1,4 @@
-SHORT VPU filling for double precision data
+SHORT VPU filling for double precisiof data
 
 EVENTSET
 PMC0  VPU_INSTRUCTIONS_EXECUTED

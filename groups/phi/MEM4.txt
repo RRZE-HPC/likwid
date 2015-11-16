@@ -5,11 +5,13 @@ PMC0  L2_VICTIM_REQ_WITH_DATA
 
 METRICS
 Runtime (RDTSC) [s] time
-Victim data bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
+Victim bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
 Victim data volume [GBytes] 1.0E-09*PMC0*64.0
 
 LONG
 Formulas:
-Victim data bandwidth [MBytes/s] = 1.0E-06*L2_VICTIM_REQ_WITH_DATA*64.0/time
+Victim bandwidth [MBytes/s] = 1.0E-06*L2_VICTIM_REQ_WITH_DATA*64.0/time
 Victim data volume [GBytes] = 1.0E-09*L2_VICTIM_REQ_WITH_DATA*64.0
+-
+Data volume and bandwidth caused by cache line victims.
 

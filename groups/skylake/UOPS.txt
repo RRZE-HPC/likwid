@@ -20,4 +20,10 @@ Executed UOPs PMC1
 Retired UOPs PMC2
 
 LONG
-
+Formula:
+Issued UOPs = UOPS_ISSUED_ANY
+Executed UOPs = UOPS_EXECUTED_THREAD
+Retired UOPs = UOPS_RETIRED_ALL
+-
+This group returns information about the instruction pipeline. It measures the
+issued, executed and retired uOPs.

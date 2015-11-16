@@ -1,4 +1,4 @@
-SHORT  L1 Data TLB miss rate/ratio
+SHORT  L2 data TLB miss rate/ratio
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
@@ -30,6 +30,6 @@ L1 DTLB store misses = DTLB_MISSES_ANY-DTLB_LOAD_MISSES_ANY
 L1 DTLB store miss rate = (DTLB_MISSES_ANY-DTLB_LOAD_MISSES_ANY) / INSTR_RETIRED_ANY
 L1 DTLB store miss duration [Cyc] = (DTLB_MISSES_WALK_CYCLES-DTLB_LOAD_MISSES_WALK_CYCLES) / (DTLB_MISSES_ANY-DTLB_LOAD_MISSES_ANY)
 -
-The DTLB miss rate gives a measure how often a TLB miss occured
+The DTLB miss rate gives a measure how often a TLB miss occurred
 per instruction. The store miss calculations are done using ALL-LOADS TLB walks.
 

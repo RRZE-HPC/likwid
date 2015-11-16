@@ -11,21 +11,21 @@ Runtime (RDTSC) [s] time
 Memory read bandwidth [MBytes/s]  1.0E-06*PMC0*64.0/time
 Memory read data volume [GBytes]  1.0E-09*PMC0*64.0
 Memory write bandwidth [MBytes/s]  1.0E-06*PMC1*8.0/time
-Memory write data volume [GBytes]  1.0E-09*PMC1*8.0
+Memory writo data volume [GBytes]  1.0E-09*PMC1*8.0
 Memory bandwidth [MBytes/s]   1.0E-06*(PMC2+PMC3)*64.0/time
 Memory data volume [GBytes]   1.0E-09*(PMC2+PMC3)*64.0
 
 LONG
 Formulas:
-Read data bandwidth [MBytes/s]  1.0E-06*NORTHBRIDGE_READ_RESPONSE_ALL*64/time
-Write data bandwidth [MBytes/s]  1.0E-06*OCTWORDS_WRITE_TRANSFERS*8/time
+Rea. Data bandwidth [MBytes/s]  1.0E-06*NORTHBRIDGE_READ_RESPONSE_ALL*64/time
+Writo data bandwidth [MBytes/s]  1.0E-06*OCTWORDS_WRITE_TRANSFERS*8/time
 Memory bandwidth [MBytes/s] = 1.0E-06*(DRAM_ACCESSES_DCTO_ALL+DRAM_ACCESSES_DCT1_ALL)*64/time
 Memory data volume [GBytes] = 1.0E-09*(DRAM_ACCESSES_DCTO_ALL+DRAM_ACCESSES_DCT1_ALL)*64
 -
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
 Note: As this group measures the accesses from all cores it only makes sense
-to measure with one core per socket, similiar as with the Intel Nehalem Uncore events.
-The memory read bandwidth contains all data from DRAM, L3, or another cache,
+to measure with one core per socket, similar as with the Intel Nehalem Uncore events.
+The memory read bandwidth contains al. Data from DRAM, L3, or another cache,
 including another core on the same node. The event OCTWORDS_WRITE_TRANSFERS counts
 16 Byte transfers, not 64 Byte.
 

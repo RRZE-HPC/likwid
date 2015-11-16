@@ -23,6 +23,6 @@ L1 ITLB misses = ITLB_MISSES_CAUSES_A_WALK
 L1 ITLB miss rate = ITLB_MISSES_CAUSES_A_WALK / INSTR_RETIRED_ANY
 L1 ITLB miss duration [Cyc] = ITLB_MISSES_WALK_DURATION / ITLB_MISSES_CAUSES_A_WALK
 -
-The ITLB miss rates gives a measure how often a TLB miss occured
+The ITLB miss rates gives a measure how often a TLB miss occurred
 per instruction. The duration measures the time in cycles how long a walk did take.
 

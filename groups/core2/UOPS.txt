@@ -10,7 +10,7 @@ PMC1  UOPS_RETIRED_ANY
 
 
 METRICS
-Runtime (RDTSC) [s] time 
+Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
@@ -18,3 +18,5 @@ Executed UOPs PMC0
 Retired UOPs PMC1
 
 LONG
+Performance group measures the executed and retired micro ops. The difference
+between executed and retired uOPs are the speculatively executed uOPs.

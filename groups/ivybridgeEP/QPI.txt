@@ -1,4 +1,4 @@
-SHORT QPI Link Layer data
+SHORT QPI Link Laye. Data
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
@@ -31,9 +31,9 @@ QPI Speed Link 2 [GT/s] ((SBOX2C3)/time)*inverseClock*(8/1000)
 QPI Rate Link 0 [GT/s] 1.E-09*SBOX0FIX
 QPI Rate Link 1 [GT/s] 1.E-09*SBOX1FIX
 QPI Rate Link 2 [GT/s] 1.E-09*SBOX2FIX
-Data from QPI to LLC [MByte] 1.E-06*(SBOX0C0+SBOX1C0+SBOX2C0)*8
-QPI data volume [MByte] 1.E-06*(SBOX0C1+SBOX1C1+SBOX2C1)*8
-QPI data bandwidth [MByte/s] 1.E-06*(SBOX0C1+SBOX1C1+SBOX2C1)*8/time
+data from QPI to LLC [MByte] 1.E-06*(SBOX0C0+SBOX1C0+SBOX2C0)*8
+QP. Data volume [MByte] 1.E-06*(SBOX0C1+SBOX1C1+SBOX2C1)*8
+QP. Data bandwidth [MByte/s] 1.E-06*(SBOX0C1+SBOX1C1+SBOX2C1)*8/time
 QPI link volume [MByte] 1.E-06*(SBOX0C1+SBOX1C1+SBOX2C1+SBOX0C2+SBOX1C2+SBOX2C2)*8
 QPI link bandwidth [MByte/s] 1.E-06*(SBOX0C1+SBOX1C1+SBOX2C1+SBOX0C2+SBOX1C2+SBOX2C2)*8/time
 
@@ -41,9 +41,9 @@ LONG
 Formula:
 QPI Speed Link 0/1/2 [GT/s] = ((SBOX_CLOCKTICKS)/time)*clock*(8/1000)
 QPI Rate Link 0/1/2 [GT/s] = 1.E-09*(QPI_RATE)
-Data from QPI to LLC [MByte] = 1.E-06*(sum(DIRECT2CORE_SUCCESS_RBT_HIT)*64)
-QPI data volume [MByte] = 1.E-06*(sum(TXL_FLITS_G0_DATA)*8)
-QPI data bandwidth [MByte/s] = 1.E-06*(sum(TXL_FLITS_G0_DATA)*8)/runtime
+data from QPI to LLC [MByte] = 1.E-06*(sum(DIRECT2CORE_SUCCESS_RBT_HIT)*64)
+QP. Data volume [MByte] = 1.E-06*(sum(TXL_FLITS_G0_DATA)*8)
+QP. Data bandwidth [MByte/s] = 1.E-06*(sum(TXL_FLITS_G0_DATA)*8)/runtime
 QPI link volume [MByte] = 1.E-06*((sum(TXL_FLITS_G0_DATA)+sum(TXL_FLITS_G0_NON_DATA))*8)
 QPI link bandwidth [MByte/s] = 1.E-06*((sum(TXL_FLITS_G0_DATA)+sum(TXL_FLITS_G0_NON_DATA))*8)/runtime
 --

@@ -7,9 +7,10 @@ PMC1  VPU_STALL_REG
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s]  PMC1*inverseClock
+VPU stall ratio [%] 100*(VPU_STALL_REG/PMC0)
 
 LONG
-No derived metrics.
+VPU stall ratio [%] = 100*(VPU_STALL_REG/VPU_INSTRUCTIONS_EXECUTED)
 --
 This group measures how efficient the processor works with
 regard to vectorization instruction throughput. The event VPU_STALL_REG counts

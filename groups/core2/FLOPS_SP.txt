@@ -1,4 +1,4 @@
-SHORT Single Precision MFlops/s
+SHORT Single Precision MFLOP/s
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
@@ -11,13 +11,13 @@ METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 CPI  FIXC1/FIXC0
-MFlops/s 1.0E-06*(PMC0*4.0+PMC1)/time
+MFLOP/s 1.0E-06*(PMC0*4.0+PMC1)/time
 
 LONG
 Formulas:
-MFlops/s = 1.0E-06*(SIMD_COMP_INST_RETIRED_PACKED_SINGLE*4+SIMD_COMP_INST_RETIRED_SCALAR_SINGLE)/time
+MFLOP/s = 1.0E-06*(SIMD_COMP_INST_RETIRED_PACKED_SINGLE*4+SIMD_COMP_INST_RETIRED_SCALAR_SINGLE)/time
 -
-Profiling group to measure single precision SSE flops. Dont forget that your code might also execute X87 flops.
+Profiling group to measure single precision SSE FLOPs. Don't forget that your code might also execute X87 FLOPs.
 On the number of SIMD_COMP_INST_RETIRED_PACKED_SINGLE you can see how well your code was vectorized.
 
 

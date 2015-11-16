@@ -13,6 +13,7 @@ CPI  FIXC1/FIXC0
 
 LONG
 Formula:
+CPI = CPU_CLK_UNHALTED_CORE / INSTR_RETIRED_ANY
 -
-
+Most basic performance group measuring the the clock frequency of the machine.
 

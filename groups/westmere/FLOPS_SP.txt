@@ -1,4 +1,4 @@
-SHORT Single Precision MFlops/s
+SHORT Single Precision MFLOP/s
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
@@ -14,7 +14,7 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-MFlops/s 1.0E-06*(PMC0*4.0+PMC1)/time
+MFLOP/s 1.0E-06*(PMC0*4.0+PMC1)/time
 Packed MUOPS/s   1.0E-06*PMC0/time
 Scalar MUOPS/s 1.0E-06*PMC1/time
 SP MUOPS/s 1.0E-06*PMC2/time
@@ -22,14 +22,14 @@ DP MUOPS/s 1.0E-06*PMC3/time
 
 LONG
 Formula:
-MFlops/s = 1.0E-06*(FP_COMP_OPS_EXE_SSE_FP_PACKED*4+FP_COMP_OPS_EXE_SSE_FP_SCALAR)/runtime
+MFLOP/s = 1.0E-06*(FP_COMP_OPS_EXE_SSE_FP_PACKED*4+FP_COMP_OPS_EXE_SSE_FP_SCALAR)/runtime
 Packed MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_PACKED/runtime
 Scalar MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_SCALAR/runtime
 SP MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION/runtime
 DP MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION/runtime
 -
-The Nehalem has not possibility to measure MFlops if mixed precision calculations are done.
-Therefore both Single as well as Double precision are measured to ensure the correctness
+The Nehalem has no possibility to measure MFLOPs if mixed precision calculations are done.
+Therefore both single as well as double precision are measured to ensure the correctness
 of the measurements. You can check if your code was vectorized on the number of
 FP_COMP_OPS_EXE_SSE_FP_PACKED versus the  FP_COMP_OPS_EXE_SSE_FP_SCALAR.
 

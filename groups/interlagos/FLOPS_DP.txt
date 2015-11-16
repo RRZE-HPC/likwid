@@ -1,4 +1,4 @@
-SHORT Double Precision MFlops/s
+SHORT Double Precision MFLOP/s
 
 EVENTSET
 PMC0  RETIRED_INSTRUCTIONS
@@ -9,15 +9,15 @@ PMC3  RETIRED_FLOPS_DOUBLE_ALL
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s]  PMC1*inverseClock
-DP MFlops/s    1.0E-06*(PMC3)/time
+DP MFLOP/s    1.0E-06*(PMC3)/time
 CPI   PMC1/PMC0
 CPI (based on uops)   PMC1/PMC2
 IPC   PMC0/PMC1
 
 LONG
 Formulas:
-DP MFlops/s = 1.0E-06*(RETIRED_FLOPS_DOUBLE_ALL)/time
+DP MFLOP/s = 1.0E-06*(RETIRED_FLOPS_DOUBLE_ALL)/time
 -
-Profiling group to measure double precisision flop rate.
+Profiling group to measure double precisision FLOP rate.
 
 

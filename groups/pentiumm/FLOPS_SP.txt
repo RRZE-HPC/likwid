@@ -1,4 +1,4 @@
-SHORT Single Precision MFlops/s
+SHORT Single Precision MFLOP/s
 
 EVENTSET
 PMC0 EMON_SSE_SSE2_COMP_INST_RETIRED_ALL_SP
@@ -6,13 +6,13 @@ PMC1 EMON_SSE_SSE2_COMP_INST_RETIRED_SCALAR_SP
 
 METRICS
 Runtime (RDTSC) [s] time
-MFlops/s  1.0E-06*(PMC0)/time
+MFLOP/s  1.0E-06*(PMC0)/time
 Scalar MUOPS/s 1.0E-06*(PMC1)/time
 
 LONG
 Formula:
-MFlops/s =  (EMON_SSE_SSE2_COMP_INST_RETIRED_ALL_SP)/ runtime
+MFLOP/s =  (EMON_SSE_SSE2_COMP_INST_RETIRED_ALL_SP)/ runtime
 Scalar MUOPS/s =  (EMON_SSE_SSE2_COMP_INST_RETIRED_SCALAR_SP)/ runtime
 -
-SSE scalar and packed single precision flop rates.
+SSE scalar and packed single precision FLOP rates.
 

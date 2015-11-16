@@ -15,7 +15,7 @@ Formulas:
 Overall FP exception rate = FPU_EXCEPTIONS_ALL / INSTRUCTIONS_RETIRED
 FP exception rate = FPU_EXCEPTIONS_ALL / FP_INSTRUCTIONS_RETIRED_ALL
 -
-Floating point exceptions occur e.g. on the treatment of Denormals.
+Floating point exceptions occur e.g. on the treatment of denormal numbers.
 There might be a large penalty if there are too many floating point
 exceptions.
 

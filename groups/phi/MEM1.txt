@@ -10,6 +10,9 @@ L2 RFO data volume [GBytes] 1.0E-09*PMC0*64.0
 
 LONG
 Formulas:
-L2 RFO data bandwidth [MBytes/s] = 1.0E-06*L2_DATA_WRITE_MISS_MEM_FILL*64.0/time
+L2 RFO bandwidth [MBytes/s] = 1.0E-06*L2_DATA_WRITE_MISS_MEM_FILL*64.0/time
 L2 RFO data volume [GBytes] = 1.0E-09*L2_DATA_WRITE_MISS_MEM_FILL*64.0
+-
+Bandwidth and data volume fetched from memory due to a L2 data write miss. These
+fetches are commonly called write-allocate loads or read-for-ownership (RFO).
 

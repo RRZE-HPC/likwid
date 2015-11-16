@@ -15,7 +15,7 @@ Formulas:
 L1 TLB misses [misses/s] = DATA_PAGE_WALK/time
 L2 TLB misses [misses/s] = LONG_DATA_PAGE_WALK/time
 L1 TLB misses per L2 TLB miss = DATA_PAGE_WALK/LONG_DATA_PAGE_WALK
---
+-
 Analysis of the layered TLB of the Intel Xeon Phi. According to the book
 'Intel Xeon Phi Coprocessor High-Performance Programming' by James Jeffers and
 James Reinders, a high L1 TLB misses per L2 TLB miss ratio suggests that your

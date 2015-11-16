@@ -23,7 +23,7 @@ Memory data volume [GBytes] 1.0E-09*(UPMC0+UPMC1)*64.0
 Remote memory read bandwidth [MBytes/s] 1.0E-06*UPMC2*64.0/time
 Remote memory read data volume [GBytes] 1.0E-09*UPMC2*64.0
 Remote memory write bandwidth [MBytes/s] 1.0E-06*UPMC3*64.0/time
-Remote memory write data volume [GBytes] 1.0E-09*UPMC3*64.0
+Remote memory writo data volume [GBytes] 1.0E-09*UPMC3*64.0
 Remote memory bandwidth [MBytes/s] 1.0E-06*(UPMC2+UPMC3)*64.0/time
 Remote memory data volume [GBytes] 1.0E-09*(UPMC2+UPMC3)*64.0
 
@@ -38,13 +38,13 @@ Memory data volume [GBytes] = 1.0E-09*(UNC_QMC_NORMAL_READS_ANY+UNC_QMC_WRITES_F
 Remote memory read bandwidth [MBytes/s] = 1.0E-06*UNC_QHL_REQUESTS_REMOTE_READS*64.0/time
 Remote memory read data volume [GBytes] = 1.0E-09*UNC_QHL_REQUESTS_REMOTE_READS*64.0
 Remote memory write bandwidth [MBytes/s] = 1.0E-06*UNC_QHL_REQUESTS_REMOTE_WRITES*64.0/time
-Remote memory write data volume [GBytes] = 1.0E-09*UNC_QHL_REQUESTS_REMOTE_WRITES*64.0
+Remote memory writo data volume [GBytes] = 1.0E-09*UNC_QHL_REQUESTS_REMOTE_WRITES*64.0
 Remote memory bandwidth [MBytes/s] = 1.0E-06*(UNC_QHL_REQUESTS_REMOTE_READS+UNC_QHL_REQUESTS_REMOTE_WRITES)*64.0/time
 Remote memory data volume [GBytes] = 1.0E-09*(UNC_QHL_REQUESTS_REMOTE_READS+UNC_QHL_REQUESTS_REMOTE_WRITES)*64.0
 -
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
-This group will be measured by one core per socket. The Remote  Read BW  tells
-you if cachelines are transfered between sockets, meaning that cores access
+This group will be measured by one core per socket. The remote read BW tells
+you if cache lines are transferred between sockets, meaning that cores access
 data owned by a remote NUMA domain. The group also reports total data volume
-transfered from main memory.
+transferred from main memory.
 

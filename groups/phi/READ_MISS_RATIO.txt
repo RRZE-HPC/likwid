@@ -1,4 +1,4 @@
-SHORT Miss ratio for data reads
+SHORT Miss ratio fof data reads
 
 EVENTSET
 PMC0  DATA_READ

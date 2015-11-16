@@ -5,11 +5,13 @@ PMC0  L2_DATA_READ_MISS_MEM_FILL
 
 METRICS
 Runtime (RDTSC) [s] time
-L2 read data bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
+L2 read bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
 L2 read data volume [GBytes] 1.0E-09*PMC0*64.0
 
 LONG
 Formulas:
-L2 read data bandwidth [MBytes/s] = 1.0E-06*L2_DATA_READ_MISS_MEM_FILL*64.0/time
+L2 read bandwidth [MBytes/s] = 1.0E-06*L2_DATA_READ_MISS_MEM_FILL*64.0/time
 L2 read data volume [GBytes] = 1.0E-09*L2_DATA_READ_MISS_MEM_FILL*64.0
+-
+The data volume and bandwidth caused by read misses in the L2 cache.
 

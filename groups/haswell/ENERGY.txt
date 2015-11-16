@@ -35,5 +35,5 @@ Power PP1 = PWR_PP1_ENERGY / time
 Power DRAM = PWR_DRAM_ENERGY / time
 -
 Haswell implements the new RAPL interface. This interface enables to
-monitor the consumed energy on the package (socket)  and DRAM level.
+monitor the consumed energy on the package (socket) and DRAM level.
 

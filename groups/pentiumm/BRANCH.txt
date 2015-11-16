@@ -12,6 +12,6 @@ LONG
 Formulas:
 Branch misprediction ratio = BR_INST_MISSP_EXEC / BR_INST_EXEC
 -
-The rates state how often in average a branch or a mispredicted branch occured
-per instruction retired in total. The Branch misprediction ratio sets directly
+The rates state how often on average a branch or a mispredicted branch occurred
+per instruction retired in total. The branch misprediction ratio sets directly
 into relation what ratio of all branch instruction where mispredicted.

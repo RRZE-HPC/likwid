@@ -18,5 +18,5 @@ LONG
 Formulas:
 Load to store ratio = MEM_INST_RETIRED_LOADS/MEM_INST_RETIRED_STORES
 -
-This is a simple metric to determine your Load to store ratio.
+This is a simple metric to determine your load to store ratio.
 

@@ -13,7 +13,7 @@ LONG
 Formulas:
 L2 TLB misses [misses/s] = LONG_DATA_PAGE_WALK/time
 L2 TLB miss ratio = LONG_DATA_PAGE_WALK/DATA_READ_OR_WRITE
---
+-
 This performance group measures the L2 TLB misses. A L2 TLB miss has a penelty
 of at least 100 cycles, hence it is important to avoid them. A high ratio can
 indicate trashing because when multiple pages are accessed in a loop iteration,

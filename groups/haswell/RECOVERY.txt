@@ -18,5 +18,5 @@ LONG
 Formulas:
 Avg. recovery duration = INT_MISC_RECOVERY_CYCLES/INT_MISC_RECOVERY_COUNT
 -
-This group measures the duration of recoverys after SSE exception, memory
+This group measures the duration of recoveries after SSE exception, memory
 disambiguation, etc...

@@ -24,3 +24,8 @@ Formulas:
 Used cycles ratio [%] = 100*UOPS_EXECUTED_USED_CYCLES/CPU_CLK_UNHALTED_CORE
 Unused cycles ratio [%] = 100*UOPS_EXECUTED_STALL_CYCLES/CPU_CLK_UNHALTED_CORE
 Avg stall duration [cycles] = UOPS_EXECUTED_STALL_CYCLES/UOPS_EXECUTED_STALL_CYCLES:EDGEDETECT
+-
+This performance group returns the ratios of used and unused cycles regarding
+the execution stage in the pipeline. Used cycles are all cycles where uOPs are
+executed while unused cycles refer to pipeline stalls. Moreover, the group
+calculates the average stall duration in cycles.

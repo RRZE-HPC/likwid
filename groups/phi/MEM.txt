@@ -14,5 +14,5 @@ LONG
 Formulas:
 Memory bandwidth [MBytes/s] = 1.0E-06*(DATA_READ_MISS_OR_WRITE_MISS+DATA_CACHE_LINES_WRITTEN_BACK)*64.0/time
 Memory data volume [GBytes] = 1.0E-09*(DATA_READ_MISS_OR_WRITE_MISS+DATA_CACHE_LINES_WRITTEN_BACK)*64.0
---
+-
 Total memory bandwidth and data volume.

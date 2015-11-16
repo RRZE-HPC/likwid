@@ -19,8 +19,8 @@ Branch misprediction rate = RETIRED_MISPREDICTED_BRANCH_INSTR/RETIRED_INSTRUCTIO
 Branch misprediction ratio = RETIRED_MISPREDICTED_BRANCH_INSTR/RETIRED_BRANCH_INSTR
 Instructions per branch = RETIRED_INSTRUCTIONS/RETIRED_BRANCH_INSTR
 -
-The rates state how often in average a branch or a mispredicted branch occured
+The rates state how often on average a branch or a mispredicted branch occurred
 per instruction retired in total. The branch misprediction ratio sets directly
 into relation what ratio of all branch instruction where mispredicted.
-Instructions per branch is 1/Branch rate.
+Instructions per branch is 1/branch rate.
 

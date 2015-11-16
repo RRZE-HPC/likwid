@@ -29,9 +29,9 @@ Memory bandwidth [MBytes/s] = 1.0E-06*(LONGEST_LAT_CACHE_MISS+OFFCORE_RESPONSE_1
 Memory data volume [GBytes] = 1.0E-09*(LONGEST_LAT_CACHE_MISS+OFFCORE_RESPONSE_1_WB_ANY)*64
 -
 Profiling group to measure L2 to MEM load cache bandwidth. The bandwidth is computed by the
-number of cacheline allocated in the L2 cache. Since there is no possibility to retrieve
+number of cache line allocated in the L2 cache. Since there is no possibility to retrieve
 the evicted cache lines, this group measures only the load cache bandwidth. The
 writeback metrics count only modified cache lines that are written back to go to
 exclusive state
-The group also output totally load and writeback data volume transfered between memory and L2.
+The group also output totally load and writeback data volume transferred between memory and L2.
 

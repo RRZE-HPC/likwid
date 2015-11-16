@@ -1,4 +1,4 @@
-SHORT Miss ratio for data writes
+SHORT Miss ratio fof data writes
 
 EVENTSET
 PMC0  DATA_WRITE
@@ -12,4 +12,4 @@ LONG
 Formulas:
 Write miss ratio = DATA_WRITE_MISS/DATA_WRITE
 --
-Miss ratio for data writes.
+Miss ratio fof data writes.

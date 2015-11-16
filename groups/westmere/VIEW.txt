@@ -19,8 +19,8 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-DP MFlops/s (DP assumed) 1.0E-06*(PMC0*2.0+PMC1)/time
-SP MFlops/s (SP assumed) 1.0E-06*(PMC0*4.0+PMC1)/time
+DP MFLOP/s (DP assumed) 1.0E-06*(PMC0*2.0+PMC1)/time
+SP MFLOP/s (SP assumed) 1.0E-06*(PMC0*4.0+PMC1)/time
 Packed MUOPS/s   1.0E-06*PMC0/time
 Scalar MUOPS/s 1.0E-06*PMC1/time
 SP MUOPS/s 1.0E-06*PMC2/time
@@ -33,8 +33,8 @@ Remote BW [MBytes/s] 1.0E-06*(UPMC2+UPMC4)*64/time
 
 LONG
 Formula:
-DP MFlops/s =  (FP_COMP_OPS_EXE_SSE_FP_PACKED*2 +  FP_COMP_OPS_EXE_SSE_FP_SCALAR)/ runtime
-SP MFlops/s =  (FP_COMP_OPS_EXE_SSE_FP_PACKED*4 +  FP_COMP_OPS_EXE_SSE_FP_SCALAR)/ runtime
+DP MFLOP/s =  (FP_COMP_OPS_EXE_SSE_FP_PACKED*2 +  FP_COMP_OPS_EXE_SSE_FP_SCALAR)/ runtime
+SP MFLOP/s =  (FP_COMP_OPS_EXE_SSE_FP_PACKED*4 +  FP_COMP_OPS_EXE_SSE_FP_SCALAR)/ runtime
 Packed MUOPS/s   1.0E-06*FP_COMP_OPS_EXE_SSE_FP_PACKED/time
 Scalar MUOPS/s 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_SCALAR/time
 SP MUOPS/s 1.0E-06*FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION/time
@@ -45,6 +45,6 @@ Remote Read BW [MBytes/s] 1.0E-06*(UNC_QHL_REQUESTS_REMOTE_READS)*64/time
 Remote Write BW [MBytes/s] 1.0E-06*(UNC_QHL_REQUESTS_REMOTE_WRITES)*64/time
 Remote BW [MBytes/s] 1.0E-06*(UNC_QHL_REQUESTS_REMOTE_READS+UNC_QHL_REQUESTS_REMOTE_WRITES)*64/time
 -
-This is a overview group using the capabilities of westmere to measure multiple events at
+This is a overview group using the capabilities of Westmere to measure multiple events at
 the same time.
 

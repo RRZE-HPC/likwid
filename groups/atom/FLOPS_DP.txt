@@ -1,4 +1,4 @@
-SHORT Double Precision MFlops/s
+SHORT Double Precision MFLOP/s
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
@@ -9,9 +9,9 @@ PMC1  SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE
 METRICS
 Runtime [s] FIXC1*inverseClock
 CPI  FIXC1/FIXC0
-DP MFlops/s    1.0E-06*(PMC0*2.0+PMC1)/time
+DP MFLOP/s    1.0E-06*(PMC0*2.0+PMC1)/time
 
 
 LONG
-Double Precision MFlops/s Double Precision MFlops/s
+Double Precision MFLOP/s Double Precision MFLOP/s
 

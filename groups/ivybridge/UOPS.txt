@@ -24,8 +24,14 @@ Wasted executed UOPs PMC1-PMC2
 
 LONG
 Formula:
-Power =  PWR_PKG_ENERGY / time
+Issued UOPs = UOPS_ISSUED_ANY
+Executed UOPs = UOPS_EXECUTED_THREAD
+Retired UOPs = UOPS_RETIRED_ALL
+Wasted issued UOPs = (UOPS_ISSUED_ANY-UOPS_ISSUED_FLAGS_MERGE)-UOPS_EXECUTED_THREAD
+Wasted executed UOPs UOPS_EXECUTED_THREAD-UOPS_RETIRED_ALL
 -
-Haswell implements the new RAPL interface. This interface enables to
-monitor the consumed energy on the package (socket) level.
+This group returns information about the instruction pipeline. It measures the
+issued, executed and retired uOPs and returns the number of uOPs which were issued
+but not executed as well as the number of uOPs which were executed but never retired.
+The executed but not retired uOPs commonly come from speculatively executed branches.
 

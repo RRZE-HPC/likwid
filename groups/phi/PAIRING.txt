@@ -13,7 +13,7 @@ LONG
 Formulas:
 V-pipe ratio = INSTRUCTIONS_EXECUTED_V_PIPE/INSTRUCTIONS_EXECUTED
 Pairing ratio = INSTRUCTIONS_EXECUTED_V_PIPE/(INSTRUCTIONS_EXECUTED-INSTRUCTIONS_EXECUTED_V_PIPE)
---
+-
 Each hardware thread on the Xeon Phi can execute two instruction simultaneously,
 one in the U-pipe and one in the V-pipe. But this is only possible if the
 instructions can be paired. The instructions executed in paired fashion are counted

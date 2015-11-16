@@ -14,13 +14,18 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-Used cycles ratio PMC0/PMC2
-Unused cycles ratio PMC1/PMC2
+Used cycles ratio [%] 100*PMC0/PMC2
+Unused cycles ratio [%] 100*PMC1/PMC2
 Avg stall duration [cycles] PMC1/PMC3:EDGEDETECT
 
 
 LONG
 Formulas:
-Used cycles ratio = UOPS_RETIRED_USED_CYCLES/CPU_CLK_UNHALTED_CORE
-Unused cycles ratio = UOPS_RETIRED_STALL_CYCLES/CPU_CLK_UNHALTED_CORE
+Used cycles ratio [%] = 100*UOPS_RETIRED_USED_CYCLES/CPU_CLK_UNHALTED_CORE
+Unused cycles ratio [%] = 100*UOPS_RETIRED_STALL_CYCLES/CPU_CLK_UNHALTED_CORE
 Avg stall duration [cycles] = UOPS_RETIRED_STALL_CYCLES/UOPS_RETIRED_STALL_CYCLES:EDGEDETECT
+-
+This performance group returns the ratios of used and unused cycles regarding
+the retirement stage in the pipeline (re-order buffer). Used cycles are all
+cycles where uOPs are retired while unused cycles refer to pipeline stalls.
+Moreover, the group calculates the average stall duration in cycles.

@@ -5,11 +5,15 @@ PMC0  SNP_HITM_L2
 
 METRICS
 Runtime (RDTSC) [s] time
-Snoop data bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
+Snoop bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
 Snoop data volume [GBytes] 1.0E-09*PMC0*64.0
 
 LONG
 Formulas:
-Snoop data bandwidth [MBytes/s] = 1.0E-06*SNP_HITM_L2*64.0/time
+Snoop bandwidth [MBytes/s] = 1.0E-06*SNP_HITM_L2*64.0/time
 Snoop data volume [GBytes] = 1.0E-09*SNP_HITM_L2*64.0
+-
+Snoop traffic caused by HITM requests. HITM requests are L2 requests that
+are served by another core's L2 cache but the remote cache line is in modified
+state.
 

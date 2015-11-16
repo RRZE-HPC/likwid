@@ -27,8 +27,8 @@ This group measures the locality of your data accesses with regard to the
 L3 cache. The L3 request rate tells you how data intensive your code is
 or how many data accesses you have on average per instruction.
 The L3 miss rate gives a measure how often it was necessary to get
-cachelines from memory. And finally L3 miss ratio tells you how many of your
-memory references required a cacheline to be loaded from a higher level as they were not
+cache lines from memory. And finally L3 miss ratio tells you how many of your
+memory references required a cache line to be loaded from a higher level as they were not
 stored in the L3 cache.
 While the data cache miss rate might be given by your algorithm you should
 try to get data cache miss ratio as low as possible by increasing your cache reuse.

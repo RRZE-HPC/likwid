@@ -11,7 +11,7 @@ Vectorization intensity PMC1/PMC0
 LONG
 Formula:
 Vectorization intensity = VPU_ELEMENTS_ACTIVE / VPU_INSTRUCTIONS_EXECUTED
---
+-
 Vector instructions include instructions that perform floating-point
 operations, instructions that load vector registers from memory and store them
 to memory, instructions to manipulate vector mask registers, and other special

@@ -21,6 +21,11 @@ Avg stall duration [cycles] PMC1/PMC3:EDGEDETECT
 
 LONG
 Formulas:
-Used cycles ratio [%] = UOPS_ISSUED_USED_CYCLES/CPU_CLK_UNHALTED_CORE
-Unused cycles ratio [%] = UOPS_ISSUED_STALL_CYCLES/CPU_CLK_UNHALTED_CORE
+Used cycles ratio [%] = 100*UOPS_ISSUED_USED_CYCLES/CPU_CLK_UNHALTED_CORE
+Unused cycles ratio [%] = 100*UOPS_ISSUED_STALL_CYCLES/CPU_CLK_UNHALTED_CORE
 Avg stall duration [cycles] = UOPS_ISSUED_STALL_CYCLES/UOPS_ISSUED_STALL_CYCLES:EDGEDETECT
+-
+This performance group returns the ratios of used and unused cycles regarding
+the issue stage in the pipeline. Used cycles are all cycles where uOPs are
+issued while unused cycles refer to pipeline stalls. Moreover, the group
+calculates the average stall duration in cycles.

@@ -1,4 +1,4 @@
-SHORT Packed AVX MFlops/s
+SHORT Packed AVX MFLOP/s
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
@@ -12,13 +12,13 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-Packed SP MFlops/s  1.0E-06*(PMC0*8.0)/time
-Packed DP MFlops/s  1.0E-06*(PMC1*4.0)/time
+Packed SP MFLOP/s  1.0E-06*(PMC0*8.0)/time
+Packed DP MFLOP/s  1.0E-06*(PMC1*4.0)/time
 
 LONG
 Formula:
-Packed SP MFlops/s = 1.0E-06*(FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE*8)/runtime
-Packed DP MFlops/s = 1.0E-06*(FP_ARITH_INST_RETIRED_256B_PACKED_DOUBLE*4)/runtime
+Packed SP MFLOP/s = 1.0E-06*(FP_ARITH_INST_RETIRED_256B_PACKED_SINGLE*8)/runtime
+Packed DP MFLOP/s = 1.0E-06*(FP_ARITH_INST_RETIRED_256B_PACKED_DOUBLE*4)/runtime
 -
-Packed 32b AVX flops rates.
+Packed 32b AVX FLOPs rates.
 

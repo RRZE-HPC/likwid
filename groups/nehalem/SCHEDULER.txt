@@ -13,9 +13,13 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-RATIO Port 1  PMC1/PMC0
-RATIO Port 5  PMC2/PMC0
+Ratio Port 1  PMC1/PMC0
+Ratio Port 5  PMC2/PMC0
 
 LONG
+Formulas:
+Ratio Port 1 = UOPS_EXECUTED_PORT1/UOPS_EXECUTED_PORT0
+Ratio Port 5 = UOPS_EXECUTED_PORT5/UOPS_EXECUTED_PORT0
+-
 Measures how many instructions were scheduled on which issue port.
 

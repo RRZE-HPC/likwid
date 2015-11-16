@@ -1,0 +1,27 @@
+SHORT Bandwidth on the Hypertransport links
+
+EVENTSET
+PMC0  CPU_TO_DRAM_LOCAL_TO_0
+PMC1  CPU_TO_DRAM_LOCAL_TO_1
+PMC2  CPU_TO_DRAM_LOCAL_TO_2
+PMC3  CPU_TO_DRAM_LOCAL_TO_3
+
+METRICS
+Runtime (RDTSC) [s] time
+Hyper Transport link0 bandwidth [MBytes/s]  1.0E-06*PMC0*4.0/time
+Hyper Transport link1 bandwidth [MBytes/s]  1.0E-06*PMC1*4.0/time
+Hyper Transport link2 bandwidth [MBytes/s]  1.0E-06*PMC2*4.0/time
+Hyper Transport link3 bandwidth [MBytes/s]  1.0E-06*PMC3*4.0/time
+
+LONG
+Formulas:
+Hyper Transport link0 bandwidth [MBytes/s]  1.0E-06*CPU_TO_DRAM_LOCAL_TO_0*4.0/time
+Hyper Transport link1 bandwidth [MBytes/s]  1.0E-06*CPU_TO_DRAM_LOCAL_TO_1*4.0/time
+Hyper Transport link2 bandwidth [MBytes/s]  1.0E-06*CPU_TO_DRAM_LOCAL_TO_2*4.0/time
+Hyper Transport link3 bandwidth [MBytes/s]  1.0E-06*CPU_TO_DRAM_LOCAL_TO_3*4.0/time
+-
+Profiling group to measure the bandwidth over the Hypertransport links. Can be used
+to detect NUMA problems. Usually there should be only limited traffic over the QPI
+links for optimal performance.
+
+
