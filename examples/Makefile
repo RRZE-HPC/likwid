@@ -2,6 +2,9 @@
 include ../config.mk
 include ../make/include_$(COMPILER).mk
 
+LIKWID_INCLUDE ?= -I$(PREFIX)/include
+LIKWID_LIB ?= -L$(PREFIX)/lib -llikwid
+
 all: C-markerAPI C-likwidAPI F-markerAPI Lua-likwidAPI C-markerAPI-run C-likwidAPI-run F-markerAPI-run Lua-likwidAPI-run
 
 
