@@ -113,6 +113,12 @@ static int get_totalworkers()
     return __cilkrts_get_total_workers();
 }
 
+static int show_thread()
+{
+    int ID = __cilkrts_get_worker_number();
+    printf("Thread %d TID %lu CPU %d\n", ID, gettid(), sched_getcpu());
+    return 0;
+}
 
 int main(){
     int i, k;
@@ -152,12 +158,20 @@ int main(){
     time_start(&timer);
     for (k=0; k<ITER; k++)
     {
-        LIKWID_MARKER_START("copy");
+        for (i=0;i<nworkers;i++)
+        {
+            cilk_spawn LIKWID_MARKER_START("copy");
+        }
+        cilk_sync;
         cilk_for(i=0;i<SIZE;i++)
         {
             c[i] = a[i];
         }
-        LIKWID_MARKER_STOP("copy");
+        for (i=0;i<nworkers;i++)
+        {
+            cilk_spawn LIKWID_MARKER_STOP("copy");
+        }
+        cilk_sync;
     }
     time_stop(&timer);
     copy_time = time_print(&timer)/(double)ITER;
@@ -165,12 +179,20 @@ int main(){
     time_start(&timer);
     for (k=0; k<ITER; k++)
     {
-        LIKWID_MARKER_START("triad");
+        for (i=0;i<nworkers;i++)
+        {
+            cilk_spawn LIKWID_MARKER_START("triad");
+        }
+        cilk_sync;
         cilk_for(i=0;i<SIZE;i++)
         {
             a[i] = b[i] +  c[i] * d[i];
         }
-        LIKWID_MARKER_STOP("triad");
+        for (i=0;i<nworkers;i++)
+        {
+            cilk_spawn LIKWID_MARKER_STOP("triad");
+        }
+        cilk_sync;
     }
     time_stop(&timer);
     triad_time = time_print(&timer)/(double)ITER;
@@ -185,25 +207,11 @@ int main(){
                         1E-6*((4*SIZE*sizeof(double))/triad_time));
 
     printf("Main PID %d\n",getpid());
-    cilk_for(i=0;i<SIZE;i++)
-    {
-        int ID = __cilkrts_get_worker_number();
-        double sum = a[i];
-        sum += b[i];
-        sum += c[i];
-        sum += d[i];
-        if (sums[ID] == 0)
-        {
-            printf("Thread %d TID %lu CPU %d\n", __cilkrts_get_worker_number(), gettid(), threadProcessorId());
-        }
-        sums[ID] += sum;
-    }
-    cilk_sync;
     for (i=0;i<nworkers;i++)
     {
-        total += sums[i];
+        cilk_spawn show_thread();
     }
-    printf("Sum %f\n", total);
+    cilk_sync;
 
     LIKWID_MARKER_CLOSE;
 }
