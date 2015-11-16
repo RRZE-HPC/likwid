@@ -122,6 +122,9 @@ int perfmon_startCountersThread_phi(int thread_id, PerfmonEventSet* eventSet)
                 continue;
             }
             RegisterIndex index = eventSet->events[i].index;
+            eventSet->events[i].threadCounter[thread_id].startData = 0;
+            eventSet->events[i].threadCounter[thread_id].counterData = 0;
+            eventSet->events[i].threadCounter[thread_id].fullData = 0;
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister , 0x0ULL));
             flags |= (1ULL<<(index));  /* enable counter */
         }

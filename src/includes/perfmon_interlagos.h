@@ -164,6 +164,9 @@ int perfmon_startCountersThread_interlagos(int thread_id, PerfmonEventSet* event
             RegisterIndex index = eventSet->events[i].index;
             uint32_t counter = counter_map[index].counterRegister;
             uint32_t reg = counter_map[index].configRegister;
+            eventSet->events[i].threadCounter[thread_id].startData = 0;
+            eventSet->events[i].threadCounter[thread_id].counterData = 0;
+            eventSet->events[i].threadCounter[thread_id].fullData = 0;
             if (type == PMC || ((type == UNCORE) && (haveLock)))
             {
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter, 0x0ULL));

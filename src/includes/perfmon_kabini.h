@@ -212,7 +212,9 @@ int perfmon_startCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
             RegisterIndex index = eventSet->events[i].index;
             uint32_t reg = counter_map[index].configRegister;
             uint32_t counter = counter_map[index].counterRegister;
-
+            eventSet->events[i].threadCounter[thread_id].startData = 0;
+            eventSet->events[i].threadCounter[thread_id].counterData = 0;
+            eventSet->events[i].threadCounter[thread_id].fullData = 0;
             if ((type == PMC) ||
                 ((type == UNCORE) && (haveSLock)) ||
                 ((type == CBOX0) && (haveTLock)))
