@@ -1,4 +1,4 @@
-SHOR. Data cache miss rate/ratio
+SHORT Data cache miss rate/ratio
 
 EVENTSET
 PMC0  INSTRUCTIONS_RETIRED

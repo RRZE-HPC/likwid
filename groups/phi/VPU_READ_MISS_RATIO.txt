@@ -1,4 +1,4 @@
-SHORT Miss ratio for VP. Data reads
+SHORT Miss ratio for VPU data reads
 
 EVENTSET
 PMC0  VPU_DATA_READ

@@ -1,4 +1,4 @@
-SHORT  Som. Data from the CBOXes
+SHORT  Some data from the CBOXes
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
@@ -38,39 +38,39 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-L1 to L2 Load [MBytes/s] 1.0E-06*PMC0*64.0/time
-L1 to L2 Evict [MBytes/s] 1.0E-06*PMC1*64.0/time
+L1 to L2 load bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
+L1 to L2 evict bandwidth [MBytes/s] 1.0E-06*PMC1*64.0/time
 L1 to L2 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
 L1 to L2 data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
-L2 to L3 Load [MBytes/s]  1.0E-06*PMC2*64.0/time
-L2 to L3 Evict [MBytes/s]  1.0E-06*PMC3*64.0/time
+L2 to L3 load bandwidth [MBytes/s]  1.0E-06*PMC2*64.0/time
+L2 to L3 evict bandwidth [MBytes/s]  1.0E-06*PMC3*64.0/time
 L2 to L3 bandwidth [MBytes/s] 1.0E-06*(PMC2+PMC3)*64.0/time
-L2 to L2 data volume [GBytes] 1.0E-09*(PMC2+PMC3)*64.0
+L2 to L3 data volume [GBytes] 1.0E-09*(PMC2+PMC3)*64.0
 L3 avg clock [GHz] 1.E-09*(CBOX0C3+CBOX1C3+CBOX2C3+CBOX3C3+CBOX4C3+CBOX5C3+CBOX6C3+CBOX7C3)/8
-L3 to Memory bandwidth [MBytes/s] 1.0E-06*(CBOX0C1+CBOX1C1+CBOX2C1+CBOX3C1+CBOX4C1+CBOX5C1+CBOX6C1+CBOX7C1)*64.0/time
-L3 to Memory data volume [MBytes] 1.0E-06*(CBOX0C1+CBOX1C1+CBOX2C1+CBOX3C1+CBOX4C1+CBOX5C1+CBOX6C1+CBOX7C1)*64.0
-Memory Read BW [MBytes/s] 1.0E-06*(MBOX0C0+MBOX0C1+MBOX0C2+MBOX0C3)*64.0/time
-Memory Write BW [MBytes/s] 1.0E-06*(MBOX1C0+MBOX1C1+MBOX1C2+MBOX1C3)*64.0/time
-Memory BW [MBytes/s] 1.0E-06*(MBOX0C0+MBOX0C1+MBOX0C2+MBOX0C3+MBOX1C0+MBOX1C1+MBOX1C2+MBOX1C3)*64.0/time
+L3 to memory bandwidth [MBytes/s] 1.0E-06*(CBOX0C1+CBOX1C1+CBOX2C1+CBOX3C1+CBOX4C1+CBOX5C1+CBOX6C1+CBOX7C1)*64.0/time
+L3 to memory data volume [MBytes] 1.0E-06*(CBOX0C1+CBOX1C1+CBOX2C1+CBOX3C1+CBOX4C1+CBOX5C1+CBOX6C1+CBOX7C1)*64.0
+Memory read bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX0C1+MBOX0C2+MBOX0C3)*64.0/time
+Memory write bandwidth [MBytes/s] 1.0E-06*(MBOX1C0+MBOX1C1+MBOX1C2+MBOX1C3)*64.0/time
+Memory bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX0C1+MBOX0C2+MBOX0C3+MBOX1C0+MBOX1C1+MBOX1C2+MBOX1C3)*64.0/time
 Memory data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX0C1+MBOX0C2+MBOX0C3+MBOX1C0+MBOX1C1+MBOX1C2+MBOX1C3)*64.0
 
 
 LONG
 Formulas:
-L1 to L2 Load [MBytes/s] = 1.0E-06*L1D_REPLACEMENT*64/time
-L1 to L2 Evict [MBytes/s] = 1.0E-06*L1D_M_EVICT*64/time
+L1 to L2 load bandwidth [MBytes/s] = 1.0E-06*L1D_REPLACEMENT*64/time
+L1 to L2 evict bandwidth [MBytes/s] = 1.0E-06*L1D_M_EVICT*64/time
 L1 to L2 bandwidth [MBytes/s] = 1.0E-06*(L1D_REPLACEMENT+L1D_M_EVICT)*64/time
 L1 to L2 data volume [GBytes] = 1.0E-09*(L1D_REPLACEMENT+L1D_M_EVICT)*64
-L2 to L3 Load [MBytes/s]  1.0E-06*L2_LINES_IN_ALL*64/time
-L2 to L3 Evict [MBytes/s]  1.0E-06*L2_LINES_OUT_DIRTY_ALL*64/time
+L2 to L3 load bandwidth [MBytes/s]  1.0E-06*L2_LINES_IN_ALL*64/time
+L2 to L3 evict bandwidth [MBytes/s]  1.0E-06*L2_LINES_OUT_DIRTY_ALL*64/time
 L2 to L3 bandwidth [MBytes/s] 1.0E-06*(L2_LINES_IN_ALL+L2_LINES_OUT_DIRTY_ALL)*64/time
-L2 to L2 data volume [GBytes] 1.0E-09*(L2_LINES_IN_ALL+L2_LINES_OUT_DIRTY_ALL)*64
+L2 to L3 data volume [GBytes] 1.0E-09*(L2_LINES_IN_ALL+L2_LINES_OUT_DIRTY_ALL)*64
 L3 avg clock [MHz] 1.E-06*(SUM(CBOX*C3))/8
 L3 to Memory data volume [MBytes/s]  1.0E-06*(SUM(CBOX*C1))*64/time
 L3 to Memory data volume [MBytes]  1.0E-06*(SUM(CBOX*C1))*64
-Memory Read BW [MBytes/s] 1.0E-06*(CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_RD)*64.0/time
-Memory Write BW [MBytes/s] 1.0E-06*(CAS_COUNT_WR+CAS_COUNT_WR+CAS_COUNT_WR+CAS_COUNT_WR)*64.0/time
-Memory BW [MBytes/s] 1.0E-06*(CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_WR+CAS_COUNT_WR+CAS_COUNT_WR+CAS_COUNT_WR)*64.0/time
+Memory read bandwidth [MBytes/s] 1.0E-06*(CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_RD)*64.0/time
+Memory write bandwidth [MBytes/s] 1.0E-06*(CAS_COUNT_WR+CAS_COUNT_WR+CAS_COUNT_WR+CAS_COUNT_WR)*64.0/time
+Memory bandwidth [MBytes/s] 1.0E-06*(CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_WR+CAS_COUNT_WR+CAS_COUNT_WR+CAS_COUNT_WR)*64.0/time
 Memory data volume [GBytes] 1.0E-09*(CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_RD+CAS_COUNT_WR+CAS_COUNT_WR+CAS_COUNT_WR+CAS_COUNT_WR)*64.0
 -
 Group to measure cache transfers between L1 and Memory

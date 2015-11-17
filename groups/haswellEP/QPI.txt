@@ -1,4 +1,4 @@
-SHORT QPI Link Laye. Data
+SHORT QPI Link Layer data
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
@@ -19,12 +19,12 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-QPI sen. Data volume [GByte] 1.E-09*(QBOX0C2+QBOX1C2)*8
-QPI sen. Data bandwidth [MByte/s] 1.E-06*(QBOX0C2+QBOX1C2)*8/time
+QPI send data volume [GByte] 1.E-09*(QBOX0C2+QBOX1C2)*8
+QPI send data bandwidth [MByte/s] 1.E-06*(QBOX0C2+QBOX1C2)*8/time
 QPI send link volume [GByte] 1.E-09*(QBOX0C2+QBOX1C2+QBOX0C3+QBOX1C3)*8
 QPI send link bandwidth [MByte/s] 1.E-06*(QBOX0C2+QBOX1C2+QBOX0C3+QBOX1C3)*8/time
-QPI receiv. Data volume [GByte] 1.E-09*(QBOX0C0+QBOX1C0)*8
-QPI receiv. Data bandwidth [MByte/s] 1.E-06*(QBOX0C0+QBOX1C0)*8/time
+QPI receive data volume [GByte] 1.E-09*(QBOX0C0+QBOX1C0)*8
+QPI receive data bandwidth [MByte/s] 1.E-06*(QBOX0C0+QBOX1C0)*8/time
 QPI receive link volume [GByte] 1.E-09*(QBOX0C0+QBOX1C0+QBOX0C1+QBOX1C1)*8
 QPI receive link bandwidth [MByte/s] 1.E-06*(QBOX0C0+QBOX1C0+QBOX0C1+QBOX1C1)*8/time
 QPI total transfer volume [GByte] 1.E-09*(QBOX0C0+QBOX1C0+QBOX0C2+QBOX1C2+QBOX0C1+QBOX1C1+QBOX0C3+QBOX1C3)*8
@@ -32,18 +32,18 @@ QPI total bandwidth [MByte/s] 1.E-06*(QBOX0C0+QBOX1C0+QBOX0C2+QBOX1C2+QBOX0C1+QB
 
 LONG
 Formula:
-QPI sen. Data volume [GByte] = 1.E-09*(sum(TXL_FLITS_G0_DATA)*8)
-QPI sen. Data bandwidth [MByte/s] = 1.E-06*(sum(TXL_FLITS_G0_DATA)*8)/runtime
+QPI send data volume [GByte] = 1.E-09*(sum(TXL_FLITS_G0_DATA)*8)
+QPI send data bandwidth [MByte/s] = 1.E-06*(sum(TXL_FLITS_G0_DATA)*8)/runtime
 QPI send link volume [GByte] = 1.E-09*((sum(TXL_FLITS_G0_DATA)+sum(TXL_FLITS_G0_NON_DATA))*8)
 QPI send link bandwidth [MByte/s] = 1.E-06*((sum(TXL_FLITS_G0_DATA)+sum(TXL_FLITS_G0_NON_DATA))*8)/runtime
-QPI sen. Data volume [GByte] = 1.E-09*(sum(RXL_FLITS_G0_DATA)*8)
-QPI sen. Data bandwidth [MByte/s] = 1.E-06*(sum(RXL_FLITS_G0_DATA)*8)/runtime
-QPI send link volume [GByte] = 1.E-09*((sum(RXL_FLITS_G0_DATA)+sum(RXL_FLITS_G0_NON_DATA))*8)
-QPI send link bandwidth [MByte/s] = 1.E-06*((sum(RXL_FLITS_G0_DATA)+sum(RXL_FLITS_G0_NON_DATA))*8)/runtime
+QPI receive data volume [GByte] = 1.E-09*(sum(RXL_FLITS_G0_DATA)*8)
+QPI receive data bandwidth [MByte/s] = 1.E-06*(sum(RXL_FLITS_G0_DATA)*8)/runtime
+QPI receive link volume [GByte] = 1.E-09*((sum(RXL_FLITS_G0_DATA)+sum(RXL_FLITS_G0_NON_DATA))*8)
+QPI receive link bandwidth [MByte/s] = 1.E-06*((sum(RXL_FLITS_G0_DATA)+sum(RXL_FLITS_G0_NON_DATA))*8)/runtime
 QPI total transfer volume [GByte] = 1.E-09*(sum(TXL_FLITS_G0_DATA)+sum(TXL_FLITS_G0_NON_DATA)+sum(RXL_FLITS_G0_DATA)+sum(RXL_FLITS_G0_NON_DATA))*8
 QPI total bandwidth [MByte/s] = 1.E-06*(sum(TXL_FLITS_G0_DATA)+sum(TXL_FLITS_G0_NON_DATA)+sum(RXL_FLITS_G0_DATA)+sum(RXL_FLITS_G0_NON_DATA))*8/time
 --
 The Intel QPI Link Layer is responsible for packetizing requests from the caching agent (CBOXes)
 on the way out to the system interface. For Haswell EP systems, the Link Layer and the
-Ring interface is separated. The QPI link volume contains header. Data and trailer while the
-QP. Data volume counts only the# data flits.
+Ring interface is separated. The QPI link volume contains header, data and trailer while the
+QPI data volume counts only the data flits.

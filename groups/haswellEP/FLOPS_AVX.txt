@@ -19,10 +19,10 @@ Formula:
 Packed SP MFLOP/s = 1.0E-06*(AVX_INSTS_CALC*8)/runtime
 Packed DP MFLOP/s = 1.0E-06*(AVX_INSTS_CALC*4)/runtime
 -
-Packed 32b AVX FLOPs rates. Approximate counts of AVX & AVX2 256-bit instructions.
+Packed 32b AVX FLOP/s rates. Approximate counts of AVX & AVX2 256-bit instructions.
 May count non-AVX instructions that employ 256-bit operations, including (but
 not necessarily limited to) rep string instructions that use 256-bit loads and
 stores for optimized performance, XSAVE* and XRSTOR*, and operations that
-transition the x87 FP. Data registers between x87 and MMX.
+transition the x87 FPU data registers between x87 and MMX.
 Caution: The event AVX_INSTS_CALC counts the insertf128 instruction often used
 by the Intel C compilers for (unaligned) vector loads.

@@ -15,12 +15,12 @@ Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 Ring transfer bandwidth [MByte/s] 1.E-06*(SBOX0C0+SBOX1C0+SBOX2C0+SBOX3C0)*32/time
-Ring transfe. Data volume [GByte] 1.E-09*(SBOX0C0+SBOX1C0+SBOX2C0+SBOX3C0)*32
+Ring transfer data volume [GByte] 1.E-09*(SBOX0C0+SBOX1C0+SBOX2C0+SBOX3C0)*32
 
 LONG
 Formula:
 Ring transfer bandwidth [MByte/s] = 1.E-06*(SUM(SBOXxC0)*32)/time
-Ring transfe. Data volume [GByte] = 1.E-09*(SUM(SBOXxC0)*32)
+Ring transfer data volume [GByte] = 1.E-09*(SUM(SBOXxC0)*32)
 --
 The SBOXes manage the transfer between the socket local ring(s). For micro architectures
 prior to Haswell, the SBOX and QBOX was similar as only a single ring was used.

@@ -32,7 +32,7 @@ L2 data volume [GBytes] = 1.0E-09*(L1D_REPLACEMENT+L1D_M_EVICT+ICACHE_MISSES)*64
 Profiling group to measure L2 cache bandwidth. The bandwidth is computed by the
 number of cache line allocated in the L1 and the number of modified cache lines
 evicted from the L1. The group also outputs total data volume transferred between
-L2 and L1. Note that this bandwidth also include. Data transfers due to a write
+L2 and L1. Note that this bandwidth also includes data transfers due to a write
 allocate load on a store miss in L1 and cache lines transferred it the instruction
 cache.
 

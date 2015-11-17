@@ -32,6 +32,6 @@ L2 data volume [GBytes] = 1.0E-09*(L2_LINES_IN_ANY+L2_LINES_OUT_ANY)*64
 Profiling group to measure L3 cache bandwidth. The bandwidth is computed by the
 number of cache line allocated in the L2 and the number of modified cache lines
 evicted from the L2. The group also reports total data volume between L3 and
-the measured L2 cache. Note that this bandwidth also include. Data transfers
+the measured L2 cache. Note that this bandwidth also includes data transfers
 due to a write allocate load on a store miss in L2.
 

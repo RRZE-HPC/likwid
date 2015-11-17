@@ -18,7 +18,7 @@ L3 load data volume [GBytes]  1.0E-09*PMC0*64.0
 L3 evict bandwidth [MBytes/s]  1.0E-06*(PMC1+PMC2)*64.0/time
 L3 evict data volume [GBytes]  1.0E-09*(PMC1+PMC2)*64.0
 L3 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1+PMC2)*64.0/time
-L2 data volume [GBytes] 1.0E-09*(PMC0+PMC1+PMC2)*64.0
+L3 data volume [GBytes] 1.0E-09*(PMC0+PMC1+PMC2)*64.0
 
 LONG
 Formulas:
@@ -27,11 +27,11 @@ L3 load data volume [GBytes] = 1.0E-09*L2_LINES_IN_ANY*64.0
 L3 evict bandwidth [MBytes/s] = 1.0E-06*(L2_LINES_OUT_DEMAND_DIRTY+L2_LINES_OUT_PREFETCH_DIRTY)*64.0/time
 L3 evict data volume [GBytes] = 1.0E-09*(L2_LINES_OUT_DEMAND_DIRTY+L2_LINES_OUT_PREFETCH_DIRTY)*64.0
 L3 bandwidth [MBytes/s] = 1.0E-06*(L2_LINES_IN_ANY+L2_LINES_OUT_DEMAND_DIRTY+L2_LINES_OUT_PREFETCH_DIRTY)*64/time
-L2 data volume [GBytes] = 1.0E-09*(L2_LINES_IN_ANY+L2_LINES_OUT_DEMAND_DIRTY+L2_LINES_OUT_PREFETCH_DIRTY)*64
+L3 data volume [GBytes] = 1.0E-09*(L2_LINES_IN_ANY+L2_LINES_OUT_DEMAND_DIRTY+L2_LINES_OUT_PREFETCH_DIRTY)*64
 -
 Profiling group to measure L3 cache bandwidth. The bandwidth is computed by the
 number of cache line allocated in the L2 and the number of modified cache lines
 evicted from the L2. Also reports total data volume between L3 and L2 caches.
-Note that this bandwidth also include. Data transfers due to a write allocate
+Note that this bandwidth also includes data transfers due to a write allocate
 load on a store miss in L2.
 
