@@ -10,9 +10,11 @@ INSTR_LOOP 6
 UOPS 14
 movaps FPR7, [rip+SCALAR]
 LOOP 8
-vmulss    FPR1, FPR7, [STR0 + GPR1*4]
-vaddss    FPR1, FPR1, [STR1 + GPR1*4]
-movaps    [STR1 + GPR1*4], FPR1
-vmulss    FPR2, FPR7, [STR0 + GPR1*4+16]
-vaddss    FPR2, FPR2, [STR1 + GPR1*4+16]
-movaps    [STR1 + GPR1*4+16], FPR2
+movaps   FPR1, FPR7
+mulps    FPR1, [STR0 + GPR1*4]
+addps    FPR1, [STR1 + GPR1*4]
+movaps   [STR1 + GPR1*4], FPR1
+movaps   FPR2, FPR7
+mulps    FPR2, [STR0 + GPR1*4+16]
+addps    FPR2, [STR1 + GPR1*4+16]
+movaps   [STR1 + GPR1*4+16], FPR2
