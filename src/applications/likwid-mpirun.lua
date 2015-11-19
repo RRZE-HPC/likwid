@@ -112,6 +112,9 @@ if MPIROOT == nil then
     MPIROOT = os.getenv("MPI_ROOT")
 end
 if MPIROOT == nil then
+    MPIROOT = os.getenv("MPI_BASE")
+end
+if MPIROOT == nil then
     MPIROOT = ""
 end
 
