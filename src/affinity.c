@@ -239,7 +239,7 @@ affinity_init()
         domains[currentDomain + i].tag = bformat("S%d", i);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain S%d: %d HW threads on %d cores, i, domains[currentDomain + i].numberOfProcessors, domains[currentDomain + i].numberOfCores);
         domains[currentDomain + i].processorList = (int*) malloc( domains[currentDomain + i].numberOfProcessors * sizeof(int));
-        if (!domains[currentDomain + i].processorList)   
+        if (!domains[currentDomain + i].processorList)
         {
             fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
                     domains[currentDomain + i].numberOfProcessors * sizeof(int),
@@ -250,6 +250,7 @@ affinity_init()
         tmp = treeFillNextEntries(cpuid_topology.topologyTree,
                                   domains[currentDomain + i].processorList,
                                   i, 0, domains[currentDomain + i].numberOfProcessors);
+        tmp = MIN(tmp, domains[currentDomain + i].numberOfProcessors);
         for ( int j = 0; j < tmp; j++ )
         {
             affinity_core2node_lookup[domains[currentDomain + i].processorList[j]] = i;
@@ -329,9 +330,9 @@ affinity_init()
         offset = 0;
         int NUMAthreads = numberOfProcessorsPerSocket * numberOfSocketDomains;
         domains[currentDomain + subCounter].numberOfProcessors = NUMAthreads;
-        domains[currentDomain + subCounter].numberOfCores =  numberOfProcessorsPerSocket;
+        domains[currentDomain + subCounter].numberOfCores =  NUMAthreads/cpuid_topology.numThreadsPerCore;
         domains[currentDomain + subCounter].tag = bformat("M%d", subCounter);
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain C%d: %d HW threads on %d cores, subCounter, domains[currentDomain + subCounter].numberOfProcessors, domains[currentDomain + subCounter].numberOfCores);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain M%d: %d HW threads on %d cores, subCounter, domains[currentDomain + subCounter].numberOfProcessors, domains[currentDomain + subCounter].numberOfCores);
         domains[currentDomain + subCounter].processorList = (int*) malloc(NUMAthreads*sizeof(int));
         if (!domains[currentDomain + subCounter].processorList)
         {
