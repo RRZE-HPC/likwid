@@ -490,7 +490,7 @@ if pin_cpus then
             likwid.setenv("LIKWID_SILENT","true")
         end
         if os.getenv("CILK_NWORKERS") == nil then
-            likwid.setenv("CILK_NWORKERS", tostring(num_threads))
+            likwid.setenv("CILK_NWORKERS", tostring(num_cpus))
         end
         if skipString ~= "0x0" then
             likwid.setenv("LIKWID_SKIP",skipString)
