@@ -33,6 +33,9 @@
 #include <stdio.h>
 #include <string.h>
 
+char setfiles[3][100] = {"scaling_min_freq", "scaling_max_freq", "scaling_setspeed"};
+char getfiles[3][100] = {"cpuinfo_min_freq", "cpuinfo_max_freq", "cpuinfo_cur_freq"};
+
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 static int get_numCPUs()
 {
@@ -55,8 +58,10 @@ static int get_numCPUs()
 /* #####  MAIN FUNCTION DEFINITION   ################## */
 int main (int argn, char** argv)
 {
+    int i = 0;
+    int tmp;
     int cpuid;
-    int freq;
+    int freq = 0;
     int numCPUs = 0;
     char* gov;
     char* gpath = malloc(100);
@@ -90,6 +95,7 @@ int main (int argn, char** argv)
 
     if (argn == 4)
     {
+        FILE* f;
         gov = argv[3];
 
         if ((strncmp(gov,"ondemand",8)) &&
@@ -101,9 +107,35 @@ int main (int argn, char** argv)
             free(fpath);
             return (EXIT_FAILURE);
         }
-        snprintf(gpath, 60, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_governor", cpuid);
+        
+        for (i=0; i<2; i++)
+        {
+            snprintf(fpath, 99, "/sys/devices/system/cpu/cpu%d/cpufreq/%s", cpuid, getfiles[i]);
+            f = fopen(fpath, "r");
+            if (f == NULL) {
+                fprintf(stderr, "Unable to open path %s for writing\n", fpath);
+                free(gpath);
+                free(fpath);
+                return (EXIT_FAILURE);
+            }
+            tmp = fread(fpath, 100, sizeof(char), f);
+            freq = atoi(fpath);
+            fclose(f);
+            snprintf(fpath, 99, "/sys/devices/system/cpu/cpu%d/cpufreq/%s", cpuid, setfiles[i]);
+            f = fopen(fpath, "w");
+            if (f == NULL) {
+                fprintf(stderr, "Unable to open path %s for writing\n",fpath);
+                free(gpath);
+                free(fpath);
+                return (EXIT_FAILURE);
+            }
+            fprintf(f,"%d",freq);
+            fclose(f);
 
-        FILE* f = fopen(gpath, "w");
+        }
+        snprintf(gpath, 99, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_governor", cpuid);
+
+        f = fopen(gpath, "w");
         if (f == NULL) {
             fprintf(stderr, "Unable to open path %s for writing\n", gpath);
             free(gpath);
@@ -117,8 +149,7 @@ int main (int argn, char** argv)
         return(EXIT_SUCCESS);
     }
 
-    snprintf(gpath, 60, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_governor", cpuid);
-    snprintf(fpath, 60, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_setspeed", cpuid);
+    snprintf(gpath, 99, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_governor", cpuid);
 
     FILE* f = fopen(gpath, "w");
     if (f == NULL) {
@@ -127,18 +158,35 @@ int main (int argn, char** argv)
         free(fpath);
         return (EXIT_FAILURE);
     }
-    fprintf(f,"userspace");
+    if ((argn == 4) &&
+        ((strncmp(argv[3],"ondemand",8)) ||
+        (strncmp(argv[3],"performance",11)) ||
+        (strncmp(argv[3],"conservative",12)) ||
+        (strncmp(argv[3],"powersave",9))))
+    {
+        fprintf(f, argv[3]);
+        tmp = 1;
+    }
+    else
+    {
+        fprintf(f,"userspace");
+        tmp = 3;
+    }
     fclose(f);
 
-    f = fopen(fpath, "w");
-    if (f == NULL) {
-        fprintf(stderr, "Unable to open path %s for writing\n",fpath);
-        free(gpath);
-        free(fpath);
-        return (EXIT_FAILURE);
+    for (i=0;i<tmp;i++)
+    {
+        snprintf(fpath, 99, "/sys/devices/system/cpu/cpu%d/cpufreq/%s", cpuid, setfiles[i]);
+        f = fopen(fpath, "w");
+        if (f == NULL) {
+            fprintf(stderr, "Unable to open path %s for writing\n",fpath);
+            free(gpath);
+            free(fpath);
+            return (EXIT_FAILURE);
+        }
+        fprintf(f,"%d",freq);
+        fclose(f);
     }
-    fprintf(f,"%d",freq);
-    fclose(f);
     free(gpath);
     free(fpath);
     return(EXIT_SUCCESS);

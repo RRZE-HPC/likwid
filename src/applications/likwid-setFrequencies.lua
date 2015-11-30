@@ -56,20 +56,10 @@ function usage()
     print("-m\t List available governors")
 end
 
-function getAvailFreq(cpuid)
-    local min = 0
-    local max = 1000
-    if (cpuid == nil) or (cpuid < 0) then
+function getCurrentMinFreq(cpuid)
+    local min = 10000000
+    if cpuid == nil or cpuid < 0 then
         for cpuid=0,topo["numHWThreads"]-1 do
-            fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_max_freq")
-            if verbosity == 3 then
-                print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_max_freq" )
-            end
-            line = fp:read("*l")
-            if tonumber(line)/1E6 > max then
-                max = tonumber(line)/1E6
-            end
-            fp:close()
             fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_min_freq")
             if verbosity == 3 then
                 print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_min_freq" )
@@ -80,22 +70,55 @@ function getAvailFreq(cpuid)
             end
             fp:close()
         end
-        cpuid = 0
+    else
+        fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_min_freq")
+        if verbosity == 3 then
+            print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_min_freq" )
+        end
+        line = fp:read("*l")
+        if tonumber(line)/1E6 < min then
+            min = tonumber(line)/1E6
+        end
+        fp:close()
+    end
+    return min
+end
+
+function getCurrentMaxFreq(cpuid)
+    local max = 0
+    if cpuid == nil or cpuid < 0 then
+        for cpuid=0,topo["numHWThreads"]-1 do
+            fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_max_freq")
+            if verbosity == 3 then
+                print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_max_freq" )
+            end
+            line = fp:read("*l")
+            if tonumber(line)/1E6 > max then
+                max = tonumber(line)/1E6
+            end
+            fp:close()
+        end
     else
         fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_max_freq")
         if verbosity == 3 then
             print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_max_freq" )
         end
         line = fp:read("*l")
-        max = tonumber(line)/1E6
-        fp:close()
-        fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_min_freq")
-        if verbosity == 3 then
-            print("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_min_freq" )
+        if tonumber(line)/1E6 > max then
+            max = tonumber(line)/1E6
         end
-        line = fp:read("*l")
-        min = tonumber(line)/1E6
         fp:close()
+    end
+    return max
+end
+
+
+function getAvailFreq(cpuid)
+    if cpuid == nil then
+        cpuid = 0
+    end
+    if cpuid < 0 then
+        cpuid = 0
     end
     fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_available_frequencies")
     if verbosity == 3 then
@@ -107,19 +130,14 @@ function getAvailFreq(cpuid)
     local tmp = likwid.stringsplit(line:gsub("^%s*(.-)%s*$", "%1"), " ", nil, " ")
     local avail = {}
     local turbo = tonumber(tmp[1])/1E6
-    if turbo < min or turbo > max then
-        turbo = 0
-    end
     local j = 1
     for i=2,#tmp do
         local freq = tonumber(tmp[i])/1E6
-        if freq >= min and freq <= max then
-            avail[j] = tostring(freq)
-            if not avail[j]:match("%d.%d") then
-                avail[j] = avail[j] ..".0"
-            end
-            j = j + 1
+        avail[j] = tostring(freq)
+        if not avail[j]:match("%d+.%d+") then
+            avail[j] = avail[j] ..".0"
         end
+        j = j + 1
     end
     if verbosity == 1 then
         print(string.format("The system provides %d scaling frequencies, frequency %s is taken as turbo mode", #avail,turbo))
@@ -237,10 +255,10 @@ end
 
 topo = likwid.getCpuTopology()
 affinity = likwid.getAffinityInfo()
-if not domain then
+if not domain or domain == "N" then
     domain = "N:0-" .. tostring(topo["numHWThreads"]-1)
 end
-if domain:match("[SCM]%d+") then
+if domain:match("[SCM]%d") then
     for i, dom in pairs(affinity["domains"]) do
         if dom["tag"]:match(domain) then
             domain = domain..":0-"..tostring(dom["numberOfProcessors"]-1)
@@ -266,13 +284,18 @@ if printAvailGovs then
 end
 
 if printAvailFreq then
-    local freqs, turbo = getAvailFreq(nil)
     print("Available frequencies:")
+    local out = {}
+    local i = 1;
+    local freqs, turbo = getAvailFreq(nil)
     if turbo ~= "0" then
-        print(turbo .. ", " .. table.concat(freqs, ", "))
-    else
-        print(table.concat(freqs, ", "))
+        table.insert(out, turbo)
     end
+    for i=1,#freqs do
+        table.insert(out, freqs[i])
+    end
+
+    print(table.concat(out, " "))
 end
 
 if printCurFreq then
