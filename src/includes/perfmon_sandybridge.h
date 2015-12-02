@@ -43,12 +43,30 @@ static int perfmon_numCountersSandybridge = NUM_COUNTERS_SANDYBRIDGE;
 static int perfmon_numCoreCountersSandybridge = NUM_COUNTERS_CORE_SANDYBRIDGE;
 static int perfmon_numArchEventsSandybridge = NUM_ARCH_EVENTS_SANDYBRIDGE;
 
+int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
+int snbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
+int (*sandy_cbox_setup)(int, RegisterIndex, PerfmonEvent*);
 
 int perfmon_init_sandybridge(int cpu_id)
 {
+    int ret;
+    uint64_t data = 0x0ULL;
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
+    ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
+    ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, &data);
+    ret += HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
+    ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, &data);
+    if ((cpuid_info.model == SANDYBRIDGE_EP))
+    {
+        sandy_cbox_setup = snbep_cbox_setup;
+    }
+    else if ((ret == 0) && (data == 0x0ULL))
+    {
+        sandy_cbox_setup = snb_cbox_setup;
+    }
+    
     return 0;
 }
 
@@ -239,9 +257,9 @@ uint32_t snb_cbox_filter(PerfmonEvent *event)
                 }
                 break;
             case EVENT_OPTION_STATE:
-                if (event->options[j].value & 0x1F)
+                if (event->options[j].value & 0x3F)
                 {
-                    ret |= ((event->options[j].value & 0x1FULL) << 18);
+                    ret |= ((event->options[j].value & 0x3FULL) << 17);
                     set_state = 1;
                 }
                 else
@@ -284,6 +302,42 @@ uint32_t snb_cbox_filter(PerfmonEvent *event)
 }
 
 int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    int j;
+    uint32_t flags = 0x0U;
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+
+    flags |= (1ULL<<22)|(1ULL<<20);
+    flags |= (event->umask<<8) + event->eventId;
+    for(j=0;j<event->numberOfOptions;j++)
+    {
+        switch (event->options[j].type)
+        {
+            case EVENT_OPTION_EDGE:
+                flags |= (1ULL<<18);
+                break;
+            case EVENT_OPTION_INVERT:
+                flags |= (1ULL<<23);
+                break;
+            case EVENT_OPTION_THRESHOLD:
+                flags |= (event->options[j].value & 0x1FULL)<<24;
+                break;
+        }
+    }
+    if (flags != currentConfig[cpu_id][index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_CBOX);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[cpu_id][index] = flags;
+    }
+    return 0;
+}
+
+int snbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = 0x0U;
@@ -730,35 +784,43 @@ int perfmon_setupCounterThread_sandybridge(
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
     }
-    SNB_FREEZE_BOX(CBOX0);
-    SNB_FREEZE_BOX(CBOX1);
-    SNB_FREEZE_BOX(CBOX2);
-    SNB_FREEZE_BOX(CBOX3);
-    SNB_FREEZE_BOX(CBOX4);
-    SNB_FREEZE_BOX(CBOX5);
-    SNB_FREEZE_BOX(CBOX6);
-    SNB_FREEZE_BOX(CBOX7);
+    if (cpuid_info.model == SANDYBRIDGE_EP)
+    {
+        SNB_FREEZE_BOX(CBOX0);
+        SNB_FREEZE_BOX(CBOX1);
+        SNB_FREEZE_BOX(CBOX2);
+        SNB_FREEZE_BOX(CBOX3);
+        SNB_FREEZE_BOX(CBOX4);
+        SNB_FREEZE_BOX(CBOX5);
+        SNB_FREEZE_BOX(CBOX6);
+        SNB_FREEZE_BOX(CBOX7);
 
-    SNB_FREEZE_PCI_BOX(MBOX0);
-    SNB_FREEZE_PCI_BOX(MBOX1);
-    SNB_FREEZE_PCI_BOX(MBOX2);
-    SNB_FREEZE_PCI_BOX(MBOX3);
+        SNB_FREEZE_PCI_BOX(MBOX0);
+        SNB_FREEZE_PCI_BOX(MBOX1);
+        SNB_FREEZE_PCI_BOX(MBOX2);
+        SNB_FREEZE_PCI_BOX(MBOX3);
 
-    SNB_FREEZE_MBOXFIX(0);
-    SNB_FREEZE_MBOXFIX(1);
-    SNB_FREEZE_MBOXFIX(2);
-    SNB_FREEZE_MBOXFIX(3);
+        SNB_FREEZE_MBOXFIX(0);
+        SNB_FREEZE_MBOXFIX(1);
+        SNB_FREEZE_MBOXFIX(2);
+        SNB_FREEZE_MBOXFIX(3);
 
-    SNB_FREEZE_PCI_BOX(SBOX0);
-    SNB_FREEZE_PCI_BOX(SBOX1);
+        SNB_FREEZE_PCI_BOX(SBOX0);
+        SNB_FREEZE_PCI_BOX(SBOX1);
 
-    SNB_FREEZE_PCI_BOX(RBOX0);
-    SNB_FREEZE_PCI_BOX(RBOX1);
+        SNB_FREEZE_PCI_BOX(RBOX0);
+        SNB_FREEZE_PCI_BOX(RBOX1);
 
-    SNB_FREEZE_PCI_BOX(PBOX);
+        SNB_FREEZE_PCI_BOX(PBOX);
 
-    SNB_FREEZE_PCI_BOX(BBOX0);
-    SNB_FREEZE_BOX(WBOX);
+        SNB_FREEZE_PCI_BOX(BBOX0);
+        SNB_FREEZE_BOX(WBOX);
+    }
+    else
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31)));
+    }
 
     for (i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -814,7 +876,7 @@ int perfmon_setupCounterThread_sandybridge(
             case CBOX5:
             case CBOX6:
             case CBOX7:
-                snb_cbox_setup(cpu_id, index, event);
+                sandy_cbox_setup(cpu_id, index, event);
                 break;
 
             case UBOX:
@@ -822,8 +884,16 @@ int perfmon_setupCounterThread_sandybridge(
                 break;
                 
             case UBOXFIX:
-                VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST 0x0ULL, SETUP_UBOXFIX)
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, 0x0ULL));
+                if (cpuid_info.model == SANDYBRIDGE_EP)
+                {
+                    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST (1ULL<<22), SETUP_UBOXFIX)
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, (1ULL<<22)));
+                }
+                else
+                {
+                    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST (1ULL<<20)|(1ULL<<22), SETUP_UBOXFIX)
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, (1ULL<<20)|(1ULL<<22)));
+                }
                 break;
 
             case SBOX0:
@@ -1023,6 +1093,10 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
                 case CBOX5:
                 case CBOX6:
                 case CBOX7:
+                    if ((haveLock) && (cpuid_info.model == SANDYBRIDGE))
+                    {
+                        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter1, 0x0ULL));
+                    }
                     break;
 
                 case UBOX:
@@ -1073,29 +1147,37 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
     }
-    SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX0);
-    SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX1);
-    SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX2);
-    SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX3);
-    SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX4);
-    SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX5);
-    SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX6);
-    SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX7);
-    SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(SBOX0);
-    SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(SBOX1);
-    SNB_UNFREEZE_PCI_BOX(MBOX0);
-    SNB_UNFREEZE_PCI_BOX(MBOX1);
-    SNB_UNFREEZE_PCI_BOX(MBOX2);
-    SNB_UNFREEZE_PCI_BOX(MBOX3);
-    SNB_UNFREEZE_AND_RESET_CTR_MBOXFIX(0);
-    SNB_UNFREEZE_AND_RESET_CTR_MBOXFIX(1);
-    SNB_UNFREEZE_AND_RESET_CTR_MBOXFIX(2);
-    SNB_UNFREEZE_AND_RESET_CTR_MBOXFIX(3);
-    SNB_UNFREEZE_PCI_BOX(BBOX0);
-    SNB_UNFREEZE_AND_RESET_CTR_BOX(WBOX);
-    SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(RBOX0);
-    SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(RBOX1);
-    SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(PBOX);
+    if (cpuid_info.model == SANDYBRIDGE_EP)
+    {
+        SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX0);
+        SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX1);
+        SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX2);
+        SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX3);
+        SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX4);
+        SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX5);
+        SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX6);
+        SNB_UNFREEZE_AND_RESET_CTR_BOX(CBOX7);
+        SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(SBOX0);
+        SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(SBOX1);
+        SNB_UNFREEZE_PCI_BOX(MBOX0);
+        SNB_UNFREEZE_PCI_BOX(MBOX1);
+        SNB_UNFREEZE_PCI_BOX(MBOX2);
+        SNB_UNFREEZE_PCI_BOX(MBOX3);
+        SNB_UNFREEZE_AND_RESET_CTR_MBOXFIX(0);
+        SNB_UNFREEZE_AND_RESET_CTR_MBOXFIX(1);
+        SNB_UNFREEZE_AND_RESET_CTR_MBOXFIX(2);
+        SNB_UNFREEZE_AND_RESET_CTR_MBOXFIX(3);
+        SNB_UNFREEZE_PCI_BOX(BBOX0);
+        SNB_UNFREEZE_AND_RESET_CTR_BOX(WBOX);
+        SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(RBOX0);
+        SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(RBOX1);
+        SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(PBOX);
+    }
+    else
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_CTL, (1ULL<<29)));
+    }
     return 0;
 }
 
@@ -1143,30 +1225,38 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
-    SNB_FREEZE_BOX(CBOX0);
-    SNB_FREEZE_BOX(CBOX1);
-    SNB_FREEZE_BOX(CBOX2);
-    SNB_FREEZE_BOX(CBOX3);
-    SNB_FREEZE_BOX(CBOX4);
-    SNB_FREEZE_BOX(CBOX5);
-    SNB_FREEZE_BOX(CBOX6);
-    SNB_FREEZE_BOX(CBOX7);
+    if (cpuid_info.model == SANDYBRIDGE_EP)
+    {
+        SNB_FREEZE_BOX(CBOX0);
+        SNB_FREEZE_BOX(CBOX1);
+        SNB_FREEZE_BOX(CBOX2);
+        SNB_FREEZE_BOX(CBOX3);
+        SNB_FREEZE_BOX(CBOX4);
+        SNB_FREEZE_BOX(CBOX5);
+        SNB_FREEZE_BOX(CBOX6);
+        SNB_FREEZE_BOX(CBOX7);
 
-    SNB_FREEZE_PCI_BOX(MBOX0);
-    SNB_FREEZE_PCI_BOX(MBOX1);
-    SNB_FREEZE_PCI_BOX(MBOX2);
-    SNB_FREEZE_PCI_BOX(MBOX3);
+        SNB_FREEZE_PCI_BOX(MBOX0);
+        SNB_FREEZE_PCI_BOX(MBOX1);
+        SNB_FREEZE_PCI_BOX(MBOX2);
+        SNB_FREEZE_PCI_BOX(MBOX3);
 
-    SNB_FREEZE_AND_RESET_CTL_PCI_BOX(SBOX0);
-    SNB_FREEZE_AND_RESET_CTL_PCI_BOX(SBOX1);
+        SNB_FREEZE_AND_RESET_CTL_PCI_BOX(SBOX0);
+        SNB_FREEZE_AND_RESET_CTL_PCI_BOX(SBOX1);
 
-    SNB_FREEZE_AND_RESET_CTL_PCI_BOX(RBOX0);
-    SNB_FREEZE_AND_RESET_CTL_PCI_BOX(RBOX1);
+        SNB_FREEZE_AND_RESET_CTL_PCI_BOX(RBOX0);
+        SNB_FREEZE_AND_RESET_CTL_PCI_BOX(RBOX1);
 
-    SNB_FREEZE_AND_RESET_CTL_PCI_BOX(PBOX);
+        SNB_FREEZE_AND_RESET_CTL_PCI_BOX(PBOX);
 
-    SNB_FREEZE_PCI_BOX(BBOX0);
-    SNB_FREEZE_AND_RESET_CTL_BOX(WBOX);
+        SNB_FREEZE_PCI_BOX(BBOX0);
+        SNB_FREEZE_AND_RESET_CTL_BOX(WBOX);
+    }
+    else
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31)));
+    }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -1419,36 +1509,43 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, &pmc_flags));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
+    if (cpuid_info.model == SANDYBRIDGE_EP)
+    {
+        SNB_FREEZE_BOX(CBOX0);
+        SNB_FREEZE_BOX(CBOX1);
+        SNB_FREEZE_BOX(CBOX2);
+        SNB_FREEZE_BOX(CBOX3);
+        SNB_FREEZE_BOX(CBOX4);
+        SNB_FREEZE_BOX(CBOX5);
+        SNB_FREEZE_BOX(CBOX6);
+        SNB_FREEZE_BOX(CBOX7);
 
-    SNB_FREEZE_BOX(CBOX0);
-    SNB_FREEZE_BOX(CBOX1);
-    SNB_FREEZE_BOX(CBOX2);
-    SNB_FREEZE_BOX(CBOX3);
-    SNB_FREEZE_BOX(CBOX4);
-    SNB_FREEZE_BOX(CBOX5);
-    SNB_FREEZE_BOX(CBOX6);
-    SNB_FREEZE_BOX(CBOX7);
+        SNB_FREEZE_PCI_BOX(MBOX0);
+        SNB_FREEZE_PCI_BOX(MBOX1);
+        SNB_FREEZE_PCI_BOX(MBOX2);
+        SNB_FREEZE_PCI_BOX(MBOX3);
 
-    SNB_FREEZE_PCI_BOX(MBOX0);
-    SNB_FREEZE_PCI_BOX(MBOX1);
-    SNB_FREEZE_PCI_BOX(MBOX2);
-    SNB_FREEZE_PCI_BOX(MBOX3);
+        SNB_FREEZE_MBOXFIX(0);
+        SNB_FREEZE_MBOXFIX(1);
+        SNB_FREEZE_MBOXFIX(2);
+        SNB_FREEZE_MBOXFIX(3);
 
-    SNB_FREEZE_MBOXFIX(0);
-    SNB_FREEZE_MBOXFIX(1);
-    SNB_FREEZE_MBOXFIX(2);
-    SNB_FREEZE_MBOXFIX(3);
+        SNB_FREEZE_PCI_BOX(SBOX0);
+        SNB_FREEZE_PCI_BOX(SBOX1);
 
-    SNB_FREEZE_PCI_BOX(SBOX0);
-    SNB_FREEZE_PCI_BOX(SBOX1);
+        SNB_FREEZE_PCI_BOX(RBOX0);
+        SNB_FREEZE_PCI_BOX(RBOX1);
 
-    SNB_FREEZE_PCI_BOX(RBOX0);
-    SNB_FREEZE_PCI_BOX(RBOX1);
+        SNB_FREEZE_PCI_BOX(PBOX);
 
-    SNB_FREEZE_PCI_BOX(PBOX);
-
-    SNB_FREEZE_PCI_BOX(BBOX0);
-    SNB_FREEZE_BOX(WBOX);
+        SNB_FREEZE_PCI_BOX(BBOX0);
+        SNB_FREEZE_BOX(WBOX);
+    }
+    else
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31)));
+    }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -1678,36 +1775,43 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     field64(counter_result, 0, box_map[type].regWidth);
         }
     }
+    if (cpuid_info.model == SANDYBRIDGE_EP)
+    {
+        SNB_UNFREEZE_BOX(CBOX0);
+        SNB_UNFREEZE_BOX(CBOX1);
+        SNB_UNFREEZE_BOX(CBOX2);
+        SNB_UNFREEZE_BOX(CBOX3);
+        SNB_UNFREEZE_BOX(CBOX4);
+        SNB_UNFREEZE_BOX(CBOX5);
+        SNB_UNFREEZE_BOX(CBOX6);
+        SNB_UNFREEZE_BOX(CBOX7);
 
-    SNB_UNFREEZE_BOX(CBOX0);
-    SNB_UNFREEZE_BOX(CBOX1);
-    SNB_UNFREEZE_BOX(CBOX2);
-    SNB_UNFREEZE_BOX(CBOX3);
-    SNB_UNFREEZE_BOX(CBOX4);
-    SNB_UNFREEZE_BOX(CBOX5);
-    SNB_UNFREEZE_BOX(CBOX6);
-    SNB_UNFREEZE_BOX(CBOX7);
+        SNB_UNFREEZE_PCI_BOX(MBOX0);
+        SNB_UNFREEZE_PCI_BOX(MBOX1);
+        SNB_UNFREEZE_PCI_BOX(MBOX2);
+        SNB_UNFREEZE_PCI_BOX(MBOX3);
 
-    SNB_UNFREEZE_PCI_BOX(MBOX0);
-    SNB_UNFREEZE_PCI_BOX(MBOX1);
-    SNB_UNFREEZE_PCI_BOX(MBOX2);
-    SNB_UNFREEZE_PCI_BOX(MBOX3);
+        SNB_UNFREEZE_MBOXFIX(0);
+        SNB_UNFREEZE_MBOXFIX(1);
+        SNB_UNFREEZE_MBOXFIX(2);
+        SNB_UNFREEZE_MBOXFIX(3);
 
-    SNB_UNFREEZE_MBOXFIX(0);
-    SNB_UNFREEZE_MBOXFIX(1);
-    SNB_UNFREEZE_MBOXFIX(2);
-    SNB_UNFREEZE_MBOXFIX(3);
+        SNB_UNFREEZE_PCI_BOX(SBOX0);
+        SNB_UNFREEZE_PCI_BOX(SBOX1);
 
-    SNB_UNFREEZE_PCI_BOX(SBOX0);
-    SNB_UNFREEZE_PCI_BOX(SBOX1);
+        SNB_UNFREEZE_PCI_BOX(RBOX0);
+        SNB_UNFREEZE_PCI_BOX(RBOX1);
 
-    SNB_UNFREEZE_PCI_BOX(RBOX0);
-    SNB_UNFREEZE_PCI_BOX(RBOX1);
+        SNB_UNFREEZE_PCI_BOX(PBOX);
 
-    SNB_UNFREEZE_PCI_BOX(PBOX);
-
-    SNB_UNFREEZE_PCI_BOX(BBOX0);
-    SNB_UNFREEZE_BOX(WBOX);
+        SNB_UNFREEZE_PCI_BOX(BBOX0);
+        SNB_UNFREEZE_BOX(WBOX);
+    }
+    else
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<29)));
+    }
 
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
     {
