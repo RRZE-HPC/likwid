@@ -9,6 +9,6 @@
 -g | EXIT 1 | GREP Option requires an argument
 -f | EXIT 1 | GREP Option requires an argument
 -g performance | EXIT 0
--f 2.3 | EXIT 0
+-f FREQ | EXIT 0
 -c 0 -g conservative | EXIT 0
--c 0 -f 2.3 | EXIT 0
+-c 0 -f FREQ | EXIT 0

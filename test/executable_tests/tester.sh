@@ -7,6 +7,7 @@ fi
 EXECPATH=../..
 EXEC=$1
 TMPFILE=/tmp/testout
+FREQ="2.3"
 
 f_grep() {
     ARG="$1"
@@ -40,12 +41,17 @@ if [ ! -e ${EXEC}.txt ]; then
     echo "Cannot find testfile ${EXEC}.txt"
     exit 1
 fi
+if [ "${EXEC}" == "likwid-setFrequencies" ]; then
+    FREQ=$(likwid-setFrequencies -l | grep -v frequencies | awk '{print $2}')
+    CURFREQ=$(likwid-setFrequencies -p | head -n2 | tail -n 1 | rev | awk '{print $2}' | rev)
+fi
 
 while read -r LINE || [[ -n $LINE ]]; do
     if [ -z "${LINE}" ]; then continue; fi
     if [[ "${LINE}" =~ \#.* ]]; then continue; fi
 
     OPTIONS=$(echo "${LINE}" | cut -d '|' -f 1)
+    OPTIONS=${OPTIONS//'FREQ'/"${FREQ}"}
     RESULTS=$(echo "${LINE}" | cut -d '|' -f 2-)
     NUM_RESULTS="${RESULTS//[^|]}"
     EXITCODE=$(${EXEC} ${OPTIONS} 1>${TMPFILE} 2>&1  ; echo $?)
@@ -77,3 +83,6 @@ while read -r LINE || [[ -n $LINE ]]; do
 done < ${EXEC}.txt
 
 
+if [ "${EXEC}" == "likwid-setFrequencies" ]; then
+    ${EXEC} -f "${CURFREQ}"
+fi
