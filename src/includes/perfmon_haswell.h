@@ -47,13 +47,29 @@ static int perfmon_numCountersHaswell = NUM_COUNTERS_HASWELL;
 static int perfmon_numCoreCountersHaswell = NUM_COUNTERS_CORE_HASWELL;
 static int perfmon_numArchEventsHaswell = NUM_ARCH_EVENTS_HASWELL;
 
+int has_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
+int hasep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
+int (*haswell_cbox_setup)(int, RegisterIndex, PerfmonEvent *);
 
 int perfmon_init_haswell(int cpu_id)
 {
-    int i;
+    int ret;
+    uint64_t data;
     lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
+    ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
+    ret += HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data);
+    ret += HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
+    ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, &data);
+    if (cpuid_info.model == HASWELL_EP)
+    {
+        haswell_cbox_setup = hasep_cbox_setup;
+    }
+    else if ((ret == 0) && (data == 0x0ULL))
+    {
+        haswell_cbox_setup = has_cbox_setup;
+    }
     return 0;
 }
 
@@ -168,6 +184,42 @@ int hasep_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         currentConfig[cpu_id][index] = flags;
     }
     return 0;
+}
+
+int has_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    int j;
+    uint64_t flags = 0x0ULL;
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+    flags = (1ULL<<22)|(1ULL<<20);
+    flags |= (event->umask<<8) + event->eventId;
+    if (event->numberOfOptions > 0)
+    {
+        for(j = 0; j < event->numberOfOptions; j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= (event->options[j].value & 0x1FULL) << 24;
+                    break;
+            }
+        }
+    }
+    if (flags != currentConfig[cpu_id][index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_CBOX);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[cpu_id][index] = flags;
+    }
 }
 
 int hasep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
@@ -866,17 +918,36 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
 }
 
 #define HASEP_FREEZE_UNCORE \
-    if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
+    if (haveLock && eventSet->regTypeMask & ~(0xFULL) && cpuid_info.model == HASWELL_EP) \
     { \
         VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<31))); \
-    }
+    } \
+    else if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
+    { \
+        uint64_t data = 0x0ULL; \
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data)); \
+        if (!(data & (1ULL<<29))) \
+        { \
+            data &= ~(1ULL<<29); \
+            VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, data, FREEZE_UNCORE); \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, data)); \
+        } \
+    } \
 
 #define HASEP_UNFREEZE_UNCORE \
-    if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
+    if (haveLock && eventSet->regTypeMask & ~(0xFULL) && cpuid_info.model == HASWELL_EP) \
     { \
         VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE); \
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<29))); \
+    } \
+    else if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
+    { \
+        uint64_t data = 0x0ULL; \
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data)); \
+        data |= (1ULL<<29); \
+        VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, data, UNFREEZE_UNCORE); \
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, data)); \
     }
 
 #define HASEP_UNFREEZE_UNCORE_AND_RESET_CTR \
@@ -910,15 +981,13 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
                 } \
             } \
         } \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<29))); \
+        HASEP_UNFREEZE_UNCORE; \
     }
 
 #define HASEP_FREEZE_UNCORE_AND_RESET_CTL \
     if (haveLock && (eventSet->regTypeMask & ~(REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(POWER)))) \
     { \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(msr_twrite(read_fd, cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<31))); \
+        HASEP_FREEZE_UNCORE; \
         for (int i=0;i < eventSet->numberOfEvents;i++) \
         { \
             RegisterIndex index = eventSet->events[i].index; \
@@ -1017,7 +1086,7 @@ int perfmon_setupCounterThread_haswell(
             case CBOX15:
             case CBOX16:
             case CBOX17:
-                hasep_cbox_setup(cpu_id, index, event);
+                haswell_cbox_setup(cpu_id, index, event);
                 break;
 
             case UBOX:
