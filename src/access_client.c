@@ -216,12 +216,12 @@ int access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint6
             if (dev == MSR_DEV)
             {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon reading reg 0x%X at CPU %d,
-                            access_client_strerror(record.errorcode), record.reg, record.cpu);
+                            access_client_strerror(record.errorcode), reg, cpu_id);
             }
             else
             {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon reading reg 0x%X on socket %d,
-                            access_client_strerror(record.errorcode), record.reg, record.cpu);
+                            access_client_strerror(record.errorcode), reg, cpu_id);
             }
             *data = 0;
             return access_client_errno(record.errorcode);
@@ -276,12 +276,12 @@ int access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint
             if (dev == MSR_DEV)
             {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon writing reg 0x%X at CPU %d,
-                            access_client_strerror(record.errorcode), record.reg, record.cpu);
+                            access_client_strerror(record.errorcode), reg, cpu_id);
             }
             else
             {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, Got error '%s' from access daemon writing reg 0x%X on socket %d,
-                            access_client_strerror(record.errorcode), record.reg, record.cpu);
+                            access_client_strerror(record.errorcode), reg, cpu_id);
             }
             return access_client_errno(record.errorcode);
         }
