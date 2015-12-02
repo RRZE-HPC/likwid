@@ -1202,6 +1202,7 @@
 
 /* Turbo Boost Interface */
 #define MSR_IA32_MISC_ENABLE            0x1A0
+#define MSR_PREFETCH_ENABLE             0x1A4
 #define MSR_PLATFORM_INFO               0x0CE
 #define MSR_TURBO_POWER_CURRENT_LIMIT   0x1AC
 #define MSR_TURBO_RATIO_LIMIT           0x1AD
