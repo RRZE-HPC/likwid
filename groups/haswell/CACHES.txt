@@ -1,0 +1,71 @@
+SHORT Cache bandwidth in MBytes/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  L1D_REPLACEMENT
+PMC1  L1D_M_EVICT
+PMC2  L2_LINES_IN_ALL
+PMC3  L2_TRANS_L2_WB
+CBOX0C0 CACHE_LOOKUP_READ_MESI
+CBOX1C0 CACHE_LOOKUP_READ_MESI
+CBOX2C0 CACHE_LOOKUP_READ_MESI
+CBOX3C0 CACHE_LOOKUP_READ_MESI
+CBOX0C1 CACHE_LOOKUP_WRITE_MESI
+CBOX1C1 CACHE_LOOKUP_WRITE_MESI
+CBOX2C1 CACHE_LOOKUP_WRITE_MESI
+CBOX3C1 CACHE_LOOKUP_WRITE_MESI
+
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+L2 to L1 load bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
+L2 to L1 load data volume [GBytes] 1.0E-09*PMC0*64.0
+L1 to L2 evict bandwidth [MBytes/s] 1.0E-06*PMC1*64.0/time
+L1 to L2 evict data volume [GBytes] 1.0E-09*PMC1*64.0
+L1 to/from L2 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
+L1 to/from L2 data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
+L3 to L2 load bandwidth [MBytes/s]  1.0E-06*PMC2*64.0/time
+L3 to L2 load data volume [GBytes]  1.0E-09*PMC2*64.0
+L2 to L3 evict bandwidth [MBytes/s]  1.0E-06*PMC3*64.0/time
+L2 to L3 evict data volume [GBytes]  1.0E-06*PMC3*64.0
+L2 to/from L3 bandwidth [MBytes/s] 1.0E-06*(PMC2+PMC3)*64.0/time
+L2 to/from L3 data volume [GBytes] 1.0E-09*(PMC2+PMC3)*64.0
+System to L3 bandwidth [MBytes/s] 1.0E-06*(CBOX0C0+CBOX1C0+CBOX2C0+CBOX3C0)*64.0/time
+System to L3 data volume [GBytes] 1.0E-09*(CBOX0C0+CBOX1C0+CBOX2C0+CBOX3C0)*64.0
+L3 to system bandwidth [MBytes/s] 1.0E-06*(CBOX0C1+CBOX1C1+CBOX2C1+CBOX3C1)*64/time
+L3 to system data volume [GBytes] 1.0E-09*(CBOX0C1+CBOX1C1+CBOX2C1+CBOX3C1)*64
+L3 to/from system bandwidth [MBytes/s] 1.0E-06*(CBOX0C0+CBOX1C0+CBOX2C0+CBOX3C0+CBOX0C1+CBOX1C1+CBOX2C1+CBOX3C1)*64.0/time
+L3 to/from system data volume [GBytes] 1.0E-09*(CBOX0C0+CBOX1C0+CBOX2C0+CBOX3C0+CBOX0C1+CBOX1C1+CBOX2C1+CBOX3C1)*64.0
+
+LONG
+Formulas:
+L2 to L1 load bandwidth [MBytes/s] = 1.0E-06*L1D_REPLACEMENT*64/time
+L2 to L1 load data volume [GBytes] = 1.0E-09*L1D_REPLACEMENT*64
+L1 to L2 evict bandwidth [MBytes/s] = 1.0E-06*L1D_M_EVICT*64/time
+L1 to L2 evict data volume [GBytes] = 1.0E-09*L1D_M_EVICT*64
+L1 to/from L2 bandwidth [MBytes/s] = 1.0E-06*(L1D_REPLACEMENT+L1D_M_EVICT)*64/time
+L1 to/from L2 data volume [GBytes] = 1.0E-09*(L1D_REPLACEMENT+L1D_M_EVICT)*64
+L3 to L2 load bandwidth [MBytes/s] = 1.0E-06*L2_LINES_IN_ALL*64/time
+L3 to L2 load data volume [GBytes] = 1.0E-09*L2_LINES_IN_ALL*64
+L2 to L3 evict bandwidth [MBytes/s] = 1.0E-06*L2_TRANS_L2_WB*64/time
+L2 to L3 evict data volume [GBytes] = 1.0E-09*L2_TRANS_L2_WB*64
+L2 to/from L3 bandwidth [MBytes/s] = 1.0E-06*(L2_LINES_IN_ALL+L2_TRANS_L2_WB)*64/time
+L2 to/from L3 data volume [GBytes] = 1.0E-09*(L2_LINES_IN_ALL+L2_TRANS_L2_WB)*64
+System to L3 bandwidth [MBytes/s] = 1.0E-06*(SUM(CACHE_LOOKUP_READ_MESI))*64/time
+System to L3 data volume [GBytes] = 1.0E-09*(SUM(CACHE_LOOKUP_READ_MESI))*64
+L3 to system bandwidth [MBytes/s] = 1.0E-06*(SUM(CACHE_LOOKUP_WRITE_MESI))*64/time
+L3 to system data volume [GBytes] = 1.0E-09*(SUM(CACHE_LOOKUP_WRITE_MESI))*64
+L3 to/from system bandwidth [MBytes/s] = 1.0E-06*(SUM(CACHE_LOOKUP_READ_MESI)+SUM(CACHE_LOOKUP_WRITE_MESI))*64/time
+L3 to/from system data volume [GBytes] = 1.0E-09*(SUM(CACHE_LOOKUP_READ_MESI)+SUM(CACHE_LOOKUP_WRITE_MESI))*64
+-
+Group to measure cache transfers between L1 and Memory. Please notice that the
+L3 to/from system metrics contain any traffic to the system (memory,
+Intel QPI, etc.) but don't seem to handle anything because commonly memory read
+bandwidth and L3 to L2 bandwidth is higher as the memory to L3 bandwidth.
+
