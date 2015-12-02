@@ -37,6 +37,7 @@
 #include <error.h>
 #include <affinity.h>
 #include <limits.h>
+#include <topology.h>
 
 static int perfmon_numCountersIvybridgeEP = NUM_COUNTERS_IVYBRIDGEEP;
 static int perfmon_numCoreCountersIvybridgeEP = NUM_COUNTERS_CORE_IVYBRIDGEEP;
@@ -45,12 +46,29 @@ static int perfmon_numCountersIvybridge = NUM_COUNTERS_IVYBRIDGE;
 static int perfmon_numCoreCountersIvybridge = NUM_COUNTERS_CORE_IVYBRIDGE;
 static int perfmon_numArchEventsIvybridge = NUM_ARCH_EVENTS_IVYBRIDGE;
 
+int ivb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
+int ivbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
+int (*ivy_cbox_setup)(int, RegisterIndex, PerfmonEvent*);
 
 int perfmon_init_ivybridge(int cpu_id)
 {
+    int ret;
+    uint64_t data = 0x0ULL;
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
+    ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
+    ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, &data);
+    ret += HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
+    ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, &data);
+    if ((cpuid_info.model == IVYBRIDGE_EP))
+    {
+        ivy_cbox_setup = ivbep_cbox_setup;
+    }
+    else if ((ret == 0) && (data == 0x0ULL))
+    {
+        ivy_cbox_setup = ivb_cbox_setup;
+    }
     return 0;
 }
 
@@ -383,6 +401,43 @@ int ivb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
+    flags = (1ULL<<22)|(1ULL<<20);
+    flags |= (event->umask<<8) + event->eventId;
+    if (event->numberOfOptions > 0)
+    {
+        for (int j=0;j < event->numberOfOptions; j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= ((event->options[j].value & 0x1FULL) << 24);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+            }
+        }
+    }
+    if (flags != currentConfig[cpu_id][index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_CBOX);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[cpu_id][index] = flags;
+    }
+    return 0;
+}
+
+int ivbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    uint32_t flags = 0x0UL;
+    uint64_t mask = 0x0ULL;
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
     flags = (1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
@@ -460,7 +515,11 @@ int ivb_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return 0;
     }
-    flags = (1ULL<<22)|(1ULL<<20)|(1ULL<<17);
+    flags = (1ULL<<22)|(1ULL<<20);
+    if (cpuid_info.model == IVYBRIDGE_EP)
+    {
+        flags |= (1ULL<<17);
+    }
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
@@ -473,6 +532,12 @@ int ivb_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     break;
                 case EVENT_OPTION_THRESHOLD:
                     flags |= ((event->options[j].value & 0x1F) << 24);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    if (cpuid_info.model == IVYBRIDGE)
+                    {
+                        flags |= (1ULL<<23);
+                    }
                     break;
                 default:
                     break;
@@ -604,14 +669,15 @@ int ivb_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int ivb_uncore_freeze(int cpu_id, PerfmonEventSet* eventSet, int flags)
 {
+    uint32_t freeze_reg = (cpuid_info.model == IVYBRIDGE_EP ? MSR_UNC_U_PMON_GLOBAL_CTL : MSR_UNC_PERF_GLOBAL_CTRL);
     if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
     if (eventSet->regTypeMask & ~(0xF))
     {
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), FREEZE_UNCORE);
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_CTL, (1ULL<<31)));
+        VERBOSEPRINTREG(cpu_id, freeze_reg, LLU_CAST (1ULL<<31), FREEZE_UNCORE);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, freeze_reg, (1ULL<<31)));
     }
     if ((flags != FREEZE_FLAG_ONLYFREEZE) && (eventSet->regTypeMask & ~(0xF)))
     {
@@ -639,6 +705,8 @@ int ivb_uncore_freeze(int cpu_id, PerfmonEventSet* eventSet, int flags)
 
 int ivb_uncore_unfreeze(int cpu_id, PerfmonEventSet* eventSet, int flags)
 {
+    uint32_t unfreeze_reg = (cpuid_info.model == IVYBRIDGE_EP ? MSR_UNC_U_PMON_GLOBAL_CTL : MSR_UNC_PERF_GLOBAL_CTRL);
+    uint32_t ovf_reg = (cpuid_info.model == IVYBRIDGE_EP ? MSR_UNC_U_PMON_GLOBAL_STATUS : MSR_UNC_PERF_GLOBAL_OVF_CTRL);
     if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -666,10 +734,10 @@ int ivb_uncore_unfreeze(int cpu_id, PerfmonEventSet* eventSet, int flags)
     }
     if (eventSet->regTypeMask & ~(0xF))
     {
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_STATUS, LLU_CAST 0x0ULL, CLEAR_UNCORE_OVF)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_STATUS, 0x0ULL));
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE);
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_CTL, (1ULL<<29)));
+        VERBOSEPRINTREG(cpu_id, ovf_reg, LLU_CAST 0x0ULL, CLEAR_UNCORE_OVF)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, ovf_reg, 0x0ULL));
+        VERBOSEPRINTREG(cpu_id, unfreeze_reg, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, unfreeze_reg, (1ULL<<29)));
     }
     return 0;
 }
@@ -775,7 +843,7 @@ int perfmon_setupCounterThread_ivybridge(
             case CBOX12:
             case CBOX13:
             case CBOX14:
-                ivb_cbox_setup(cpu_id, index, event);
+                ivy_cbox_setup(cpu_id, index, event);
                 break;
 
             case UBOX:
