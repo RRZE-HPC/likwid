@@ -106,7 +106,7 @@ end
 
 local LIKWID_PIN="<INSTALLED_PREFIX>/bin/likwid-pin"
 local LIKWID_PERFCTR="<INSTALLED_PREFIX>/bin/likwid-perfctr"
-local MPIINFO = {}
+
 local MPIROOT = os.getenv("MPIHOME")
 if MPIROOT == nil then
     MPIROOT = os.getenv("MPI_ROOT")
@@ -118,12 +118,11 @@ if MPIROOT == nil then
     MPIROOT = ""
 end
 
-local MPIEXEC = { openmpi=MPIROOT.."/bin/mpiexec", intelmpi=MPIROOT.."/bin/mpiexec.hydra", mvapich2="/bin/mpirun"}
-
-
 local readHostfile = nil
 local writeHostfile = nil
 local getEnvironment = nil
+local executeCommand = nil
+local mpiexecutable = nil
 
 
 local function readHostfileOpenMPI(filename)
@@ -217,7 +216,7 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
 
-    local f = io.popen(string.format("%s -V", MPIINFO["openmpi"]["MPIEXEC"]), "r")
+    local f = io.popen(string.format("%s -V", mpiexecutable), "r")
     if f ~= nil then
         local input = f:read("*a")
         ver1,ver2,ver3 = input:match("(%d+)%.(%d+)%.(%d+)")
@@ -232,7 +231,7 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
     end
 
     local cmd = string.format("%s -hostfile %s %s -np %d -npernode %d %s",
-                                MPIINFO["openmpi"]["MPIEXEC"], hostfile, bindstr,
+                                mpiexecutable, hostfile, bindstr,
                                 np, ppn, wrapperscript)
     if debug then
         print("EXEC: "..cmd)
@@ -302,22 +301,48 @@ local function getEnvironmentIntelMPI()
 end
 
 local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
+    local use_hydra = true
     if wrapperscript.sub(1,1) ~= "/" then
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
     if hostfile.sub(1,1) ~= "/" then
         hostfile = os.getenv("PWD").."/"..hostfile
     end
-
-    if debug then
-        print(string.format("EXEC: %s/bin/mpdboot -r ssh -n %d -f %s", MPIROOT, nrNodes, hostfile))
-        print(string.format("EXEC: %s/bin/mpiexec -perhost %d -env I_MPI_PIN 0 -np %d %s", MPIROOT, ppn, np, wrapperscript))
-        print(string.format("EXEC: %s/bin/mpdallexit", MPIROOT))
+    local path = ""
+    local f = io.popen(string.format("dirname %s", mpiexecutable))
+    if f ~= nil then
+        path = f:read("*line")
+        f:close()
+    end
+    if likwid.access(string.format("%s/mpdboot", path), "x") == 0 then
+        use_hydra = false
+    end
+    for i, env in pairs({"MPIHOME", "MPI_HOME", "MPI_ROOT", "MPI_BASE"}) do
+        if likwid.access(string.format("%s/bin/mpdboot", os.getenv(env)), "x") == 0 then
+            use_hydra = false
+            path = string.format("%s/bin",os.getenv(env))
+            break
+        end
     end
 
-    os.execute(string.format("%s/bin/mpdboot -r ssh -n %d -f %s", MPIROOT, nrNodes, hostfile))
-    os.execute(string.format("%s/bin/mpiexec -perhost %d -env I_MPI_PIN 0 -np %d %s", MPIROOT, ppn, np, wrapperscript))
-    os.execute(string.format("%s/bin/mpdallexit", MPIROOT))
+    if debug then
+        if use_hydra == false then
+            print(string.format("EXEC: %s/mpdboot -r ssh -n %d -f %s", path, nrNodes, hostfile))
+            print(string.format("EXEC: %s/mpiexec -perhost %d -env I_MPI_PIN 0 -np %d %s", path, ppn, np, wrapperscript))
+            print(string.format("EXEC: %s/mpdallexit", path))
+        else
+            print(string.format("%s -genv I_MPI_PIN 0 -f %s -np %d -perhost %d %s",mpiexecutable, hostfile, np, ppn, wrapperscript))
+        end
+    end
+
+    --os.execute(string.format("%s -genv I_MPI_PIN 0 -f %s -np %d -perhost %d %s",mpiexecutable, hostfile, np, ppn, wrapperscript))
+    if use_hydra == false then
+        os.execute(string.format("%s/mpdboot -r ssh -n %d -f %s", path, nrNodes, hostfile))
+        os.execute(string.format("%s/mpiexec -perhost %d -env I_MPI_PIN 0 -np %d %s", path, ppn, np, wrapperscript))
+        os.execute(string.format("%s/mpdallexit", path))
+    else
+        os.execute(string.format("%s -genv I_MPI_PIN 0 -f %s -np %d -perhost %d %s",mpiexecutable, hostfile, np, ppn, wrapperscript))
+    end
 end
 
 local function readHostfileMvapich2(filename)
@@ -396,7 +421,7 @@ local function executeMvapich2(wrapperscript, hostfile, env, nrNodes)
         hostfile = os.getenv("PWD").."/"..hostfile
     end
     local cmd = string.format("%s -f %s -np %d -ppn %d %s",
-                                MPIINFO["mvapich2"]["MPIEXEC"], hostfile,
+                                mpiexecutable, hostfile,
                                 np, ppn, wrapperscript)
     if debug then
         print("EXEC: "..cmd)
@@ -404,22 +429,6 @@ local function executeMvapich2(wrapperscript, hostfile, env, nrNodes)
     os.execute(cmd)
 end
 
-MPIINFO =      { openmpi={ MPIEXEC=MPIROOT.."/bin/mpiexec",
-                            readHostfile = readHostfileOpenMPI,
-                            writeHostfile = writeHostfileOpenMPI,
-                            getEnvironment = getEnvironmentOpenMPI,
-                            executeCommand = executeOpenMPI},
-                  intelmpi={MPIEXEC=MPIROOT.."/bin/mpiexec",
-                            readHostfile = readHostfileIntelMPI,
-                            writeHostfile = writeHostfileIntelMPI,
-                            getEnvironment = getEnvironmentIntelMPI,
-                            executeCommand = executeIntelMPI},
-                  mvapich2={MPIEXEC=MPIROOT.."/bin/mpiexec.hydra",
-                            readHostfile = readHostfileMvapich2,
-                            writeHostfile = writeHostfileMvapich2,
-                            getEnvironment = getEnvironmentMvapich2,
-                            executeCommand = executeMvapich2}
-                }
 
 local function readHostfilePBS(filename)
     local hostlist = {}
@@ -504,44 +513,116 @@ local function getMpiType()
             end
         end
     end
+    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun"}) do
+        f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
+        if f ~= nil then
+            local s = f:read('*line')
+            if s ~= nil then
+                f:close()
+                f = io.popen(string.format("%s --help 2>/dev/null", s), 'r')
+                if f ~= nil then
+                    out = f:read("*a")
+                    b,e = out:find("Intel")
+                    if (b ~= nil) then
+                        mpitype = "intelmpi"
+                        break
+                    end
+                    b,e = out:find("OpenRTE")
+                    if (b ~= nil) then
+                        mpitype = "openmpi"
+                        break
+                    end
+                    b,e = out:find("MPICH")
+                    if (b ~= nil) then
+                        mpitype = "mvapich2"
+                        break
+                    else
+                        b,e = out:find("MVAPICH2")
+                        if (b ~= nil) then
+                            mpitype = "mvapich2"
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
     if not mpitype then
         print("WARN: No supported MPI loaded in module system")
     end
     return mpitype
 end
 
+local function getMpiExec(mpitype)
+    testing = {}
+    if mpitype == "intelmpi" then
+        testing = {"mpiexec.hydra", "mpiexec"}
+        executeCommand = executeIntelMPI
+        readHostfile = readHostfileIntelMPI
+        writeHostfile = writeHostfileIntelMPI
+        getEnvironment = getEnvironmentIntelMPI
+    elseif mpitype == "openmpi" then
+        testing = {"mpiexec", "mpirun"}
+        executeCommand = executeOpenMPI
+        readHostfile = readHostfileOpenMPI
+        writeHostfile = writeHostfileOpenMPI
+        getEnvironment = getEnvironmentOpenMPI
+    elseif mpitype == "mvapich2" then
+        testing = {"mpiexec", "mpirun"}
+        executeCommand = executeMvapich2
+        readHostfile = readHostfileMvapich2
+        writeHostfile = writeHostfileMvapich2
+        getEnvironment = getEnvironmentMvapich2
+    end
+    
+    for i, exec in pairs(testing) do
+        f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
+        if f ~= nil then
+            local s = f:read('*line')
+            if s ~= nil then
+                mpiexecutable = s
+            end
+        end
+    end
+end
+
 local function getOmpType()
     local cmd = string.format("ldd `which %s`", executable[1])
-    local f = assert(io.popen(cmd, 'r'))
-    local s = assert(f:read('*a'))
-    f:close()
-    for i,line in pairs(likwid.stringsplit(s, "\n")) do
-        if line:match("libgomp.so") then
-            omptype = "gnu"
-            break
-        elseif line:match("libiomp%d*.so") then
-            omptype = "intel"
-            break
+    local f = io.popen(cmd, 'r')
+    if f ~= nil then
+        cmd = string.format("ldd %s", executable[1])
+        f = io.popen(cmd, 'r')
+    end
+    if f ~= nil then
+        local s = f:read('*a')
+        f:close()
+        for i,line in pairs(likwid.stringsplit(s, "\n")) do
+            if line:match("libgomp.so") then
+                omptype = "gnu"
+                break
+            elseif line:match("libiomp%d*.so") then
+                omptype = "intel"
+                break
+            end
         end
     end
     if not omptype then
         print("WARN: Cannot get OpenMP variant from executable, trying module system")
         cmd = "bash -c 'tclsh /apps/modules/modulecmd.tcl sh list -t' 2>&1"
         local f = io.popen(cmd, 'r')
-        if f ~= nil then
-            f:close()
+        if f == nil then
             cmd = os.getenv("SHELL").." -c 'module -t list' 2>&1"
             f = io.popen(cmd, 'r')
         end
         if f ~= nil then
-            local s = assert(f:read('*a'))
+            local s = f:read('*a')
             f:close()
             s = string.gsub(s, '^%s+', '')
             s = string.gsub(s, '%s+$', '')
             for i,line in pairs(likwid.stringsplit(s, "\n")) do
                 if line:match("[iI]ntel") then
                     omptype = "intel"
-                elseif line:match("[gG][nN][uU]") then
+                elseif line:match("[gG][nN][uU]") or line:match("[gG][cC][cC]")then
                     omptype = "gnu"
                 end
             end
@@ -818,6 +899,24 @@ local function setPerfStrings(perflist, cpuexprs)
     return perfexprs, grouplist
 end
 
+local function checkLikwid()
+    local f = io.popen("which likwid-pin 2>/dev/null", "r")
+    if f ~= nil then
+        local s = f:read("*line")
+        if s ~= nil and s ~= LIKWID_PIN then
+            LIKWID_PIN = s
+        end
+        f:close()
+    end
+    f = io.popen("which likwid-perfctr 2>/dev/null", "r")
+    if f ~= nil then
+        local s = f:read("*line")
+        if s ~= nil and s ~= LIKWID_PERFCTR then
+            LIKWID_PERFCTR = s
+        end
+        f:close()
+    end
+end
 
 local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     if scriptname == nil or scriptname == "" then
@@ -1351,14 +1450,6 @@ for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:",
     end
 end
 
-if MPIROOT == "" then
-    print("Please load a MPI module or set path to MPI solder in MPIHOME environment variable")
-    print("$MPIHOME/bin/<MPI launcher> should be valid")
-    print("For OpenMPI: $MPIHOME/bin/mpiexec")
-    print("For IntelMPI: $MPIHOME/bin/mpiexec.hydra")
-    print("For Mvapich2: $MPIHOME/bin/mpirun")
-    os.exit(1)
-end
 
 if np == 0 and nperdomain == nil and #cpuexprs == 0 then
     print("ERROR: No option -n/-np, -nperdomain or -pin")
@@ -1371,10 +1462,23 @@ if use_marker and #perf == 0 then
 end
 
 for i=1,#arg do
-    table.insert(executable, arg[i])
+    local item = arg[i]
+    local f = io.popen(string.format("which %s", arg[i]))
+    if f ~= nil then
+        item = f:read("*line")
+        f:close()
+    end
+    if item ~= nil then
+        table.insert(executable, item)
+    else
+        table.insert(executable, arg[i])
+    end
 end
 if #executable == 0 then
     print("ERROR: No executable given on commandline")
+    os.exit(1)
+elseif os.execute(string.format("ls %s 1>/dev/null 2>&1", executable[1])) == 0 then
+    print("ERROR: Cannot find executable given on commandline")
     os.exit(1)
 else
     if debug then
@@ -1389,7 +1493,13 @@ if mpitype == nil then
     end
 end
 if mpitype ~= "intelmpi" and mpitype ~= "mvapich2" and mpitype ~= "openmpi" then
-    print("ERROR: Unknown MPI given. Possible values: openmpi, intelmpi, mvapich2")
+    print("ERROR: Cannot determine current MPI implementation. likwid-mpirun checks for openmpi, intelmpi and mvapich2")
+    os.exit(1)
+end
+
+getMpiExec(mpitype)
+if (mpiexecutable == nil) then
+    print(string.format("Cannot find executable for determined MPI implementation %s", mpitype))
     os.exit(1)
 end
 
@@ -1417,7 +1527,7 @@ if not hostfile then
     end
     hosts = readHostfilePBS(hostfile)
 else
-    hosts = MPIINFO[mpitype]["readHostfile"](hostfile)
+    hosts = readHostfile(hostfile)
 end
 
 local givenNrNodes = getNumberOfNodes(hosts)
@@ -1604,10 +1714,12 @@ local hostfilename = string.format(".hostfile_%s.txt", pid)
 local scriptfilename = string.format(".likwidscript_%s.txt", pid)
 local outfilename = string.format(os.getenv("PWD").."/.output_%s_%%r_%%h.csv", pid)
 
-MPIINFO[mpitype]["writeHostfile"](newhosts, hostfilename)
+checkLikwid()
+
+writeHostfile(newhosts, hostfilename)
 writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, outfilename)
-local env = MPIINFO[mpitype]["getEnvironment"]()
-MPIINFO[mpitype]["executeCommand"](scriptfilename, hostfilename, env, nrNodes)
+local env = getEnvironment()
+executeCommand(scriptfilename, hostfilename, env, nrNodes)
 
 os.remove(scriptfilename)
 os.remove(hostfilename)
@@ -1628,7 +1740,7 @@ if not use_marker then
             os.remove(file)
         end
     end
-    if #all_results > 0 then
+    if likwid.tablelength(all_results) > 0 then
         printMpiOutput(grouplist, all_results)
     end
 else
@@ -1645,7 +1757,7 @@ else
             os.remove(file)
         end
     end
-    if #all_results > 0 then
+    if likwid.tablelength(all_results) > 0 then
         for reg, _ in pairs(tmpList[0]) do
             print("Region: "..reg)
             for rank,_ in pairs(all_results) do
