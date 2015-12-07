@@ -45,16 +45,21 @@ if [ "${EXEC}" == "likwid-setFrequencies" ]; then
     FREQ=$(likwid-setFrequencies -l | grep -v frequencies | awk '{print $2}')
     CURFREQ=$(likwid-setFrequencies -p | head -n2 | tail -n 1 | rev | awk '{print $2}' | rev)
 fi
+if [ "${EXEC}" == "likwid-mpirun" ]; then
+    if [ -z "$(which mpiexec)" ] && [ -z "$(which mpiexec.hydra)" ] && [ -z "$(which mpirun)" ]; then
+        echo "Cannot find MPI implementation, neither mpiexec, mpiexec.hydra nor mpirun can be found in any directory in PATH"
+        exit 1
+    fi
+fi
 
 while read -r LINE || [[ -n $LINE ]]; do
     if [ -z "${LINE}" ]; then continue; fi
     if [[ "${LINE}" =~ \#.* ]]; then continue; fi
-
     OPTIONS=$(echo "${LINE}" | cut -d '|' -f 1)
     OPTIONS=${OPTIONS//'FREQ'/"${FREQ}"}
     RESULTS=$(echo "${LINE}" | cut -d '|' -f 2-)
     NUM_RESULTS="${RESULTS//[^|]}"
-    EXITCODE=$(${EXEC} ${OPTIONS} 1>${TMPFILE} 2>&1  ; echo $?)
+    EXITCODE=$(${EXECPATH}/${EXEC} ${OPTIONS} 1>${TMPFILE} 2>&1 </dev/null; echo $?)
     STATE=0
     for ((i=1;i<=${#NUM_RESULTS}+1;i++)); do
         RESULT=$(echo ${RESULTS} | cut -d '|' -f ${i})

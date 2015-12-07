@@ -6,3 +6,6 @@ For batch testing all executables simply type make
 
 All lines in the <executable>.txt file are executed and the output evaluated.
 Only simple checks are made using grep.
+
+for testing likwid-mpirun, Intel MPI must be present on your system. It only
+tests the command line options and runs only on the local host.
