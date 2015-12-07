@@ -585,9 +585,22 @@ end
 if use_timeline == true then
     local cores_string = "CORES: "
     for i, cpu in pairs(cpulist) do
-        cores_string = cores_string .. tostring(cpu) .. " "
+        cores_string = cores_string .. tostring(cpu) .. "|"
     end
-    print_stdout(cores_string:sub(1,cores_string:len()-1))
+    io.stderr:write("# "..cores_string:sub(1,cores_string:len()-1).."\n")
+    for gid, group in pairs(group_list) do
+        local strlist = {}
+        if group["Metrics"] == nil then
+            for i,e in pairs(group["Events"]) do
+                table.insert(strlist, e["Event"])
+            end
+        else
+            for i,e in pairs(group["Metrics"]) do
+                table.insert(strlist, e["description"])
+            end
+        end
+        io.stderr:write("# "..table.concat(strlist, "|").."\n")
+    end
 end
 
 
@@ -635,7 +648,8 @@ if use_wrapper or use_timeline then
         end
         if use_timeline == true then
             stop = likwid.stopClock()
-            likwid.readCounters()
+            --likwid.readCounters()
+            likwid.stopCounters()
             local time = likwid.getClock(start, stop)
             lastresults = int_results[alltime]
             
@@ -680,7 +694,8 @@ if use_wrapper or use_timeline then
                             local formula = group_list[activeGroup]["Metrics"][m]["formula"]
                             local result = likwid.calculate_metric(formula,counterlist)
 
-                            if lastmetrics[activeGroup][m][t] ~= nil and m > 4 and #group_ids > 1 then
+                            if lastmetrics[activeGroup][m][t] ~= nil and
+                               #group_ids > 1 then
                                 str = str .. "," .. tostring(result - lastmetrics[activeGroup][m][t])
                             else
                                 str = str .. "," .. tostring(result)
@@ -692,6 +707,7 @@ if use_wrapper or use_timeline then
                 end
             end
             firstrun = false
+            likwid.startCounters()
         else
             likwid.readCounters()
         end
@@ -746,7 +762,7 @@ if use_marker == true then
         os.exit(1)
     end
     likwid.print_markerOutput(groups, results, group_list, cpulist)
-else
+elseif use_timeline == false then
     results = likwid.getResults()
     for g,gr in pairs(group_list) do
         gr["runtime"] = likwid.getRuntimeOfGroup(g)
