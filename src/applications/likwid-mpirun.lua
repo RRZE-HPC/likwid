@@ -587,7 +587,7 @@ local function getMpiExec(mpitype)
 end
 
 local function getOmpType()
-    local cmd = string.format("ldd `which %s`", executable[1])
+    local cmd = string.format("ldd `which %s` 2>/dev/null", executable[1])
     local f = io.popen(cmd, 'r')
     if f ~= nil then
         cmd = string.format("ldd %s", executable[1])
@@ -1462,17 +1462,7 @@ if use_marker and #perf == 0 then
 end
 
 for i=1,#arg do
-    local item = arg[i]
-    local f = io.popen(string.format("which %s", arg[i]))
-    if f ~= nil then
-        item = f:read("*line")
-        f:close()
-    end
-    if item ~= nil then
-        table.insert(executable, item)
-    else
-        table.insert(executable, arg[i])
-    end
+    table.insert(executable, arg[i])
 end
 if #executable == 0 then
     print("ERROR: No executable given on commandline")
@@ -1481,6 +1471,11 @@ elseif os.execute(string.format("ls %s 1>/dev/null 2>&1", executable[1])) == 0 t
     print("ERROR: Cannot find executable given on commandline")
     os.exit(1)
 else
+    local f = io.popen(string.format("which %s 2>/dev/null", executable[1]))
+    if f ~= nil then
+        executable[1] = f:read("*line")
+        f:close()
+    end
     if debug then
         print("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
     end
