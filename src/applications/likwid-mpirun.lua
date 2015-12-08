@@ -880,12 +880,18 @@ local function setPerfStrings(perflist, cpuexprs)
                                     break
                                 else
                                     table.insert(perfexprs[k], createEventString(coreevents))
+                                    switchedFlag = true
+                                    uncore = true
                                 end
                             end
                         end
-                        if switchedFlag then break end
+                        if switchedFlag then
+                            break
+                        end
                     end
-                    if uncore then break end
+                    if uncore then
+                        break
+                    end
                 end
             end
 
