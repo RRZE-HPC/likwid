@@ -885,13 +885,9 @@ local function setPerfStrings(perflist, cpuexprs)
                                 end
                             end
                         end
-                        if switchedFlag then
-                            break
-                        end
+                        if switchedFlag then break end
                     end
-                    if uncore then
-                        break
-                    end
+                    if uncore then break end
                 end
             end
 
@@ -1088,6 +1084,10 @@ local function parseOutputFile(filename)
 
     local t = f:read("*all")
     f:close()
+    if t:len() == 0 then
+        print("Error Output file "..filename.." is empty")
+        os.exit(1)
+    end
     for i, line in pairs(likwid.stringsplit(t, "\n")) do
         if (not line:match("^-")) and
            (not line:match("^CPU type:")) and
@@ -1654,12 +1654,13 @@ elseif ppn == 0 and np > 0 then
         ppn = maxppn
     elseif np < maxppn then
         ppn = np
+    elseif maxppn == np then
+        ppn = maxppn
     end
     if (ppn * givenNrNodes) < np then
         if #perf == 0 then
             print("ERROR: Processes cannot be equally distributed")
             print(string.format("WARN: You want %d processes on %d hosts.", np, givenNrNodes))
-            --np = givenNrNodes * ppn
             ppn = np/givenNrNodes
             print(string.format("WARN: Sanitizing number of processes per node to %d", ppn))
         else
