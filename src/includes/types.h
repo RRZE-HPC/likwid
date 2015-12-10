@@ -46,7 +46,6 @@
 #include <topology_types.h>
 #include <perfmon_types.h>
 #include <libperfctr_types.h>
-#include <cpuFeatures_types.h>
 
 
 typedef struct {
