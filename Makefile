@@ -78,6 +78,7 @@ L_APPS      =   likwid-perfctr \
 				likwid-memsweeper \
 				likwid-agent \
 				likwid-mpirun \
+				likwid-features \
 				likwid-perfscope \
 				likwid-genTopoCfg
 C_APPS      =   bench/likwid-bench
