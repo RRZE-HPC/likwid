@@ -120,7 +120,9 @@ static int allowed_intel(uint32_t reg)
             ((reg & 0xF00U) == 0xC00U) ||
             ((reg & 0xF00U) == 0xD00U) ||
             ((reg & 0xF00U) == 0xE00U) ||
+            ((reg & 0xF00U) == 0xF00U) ||
             (reg == 0x1A0)  ||
+            (reg == 0x1A4)  ||
             (reg == 0x0CE)  ||
             (reg == 0x19C)  ||
             (reg == 0x1A2)  ||
