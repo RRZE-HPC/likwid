@@ -111,6 +111,16 @@ likwid.registerRegion = likwid_registerRegion
 likwid.startRegion = likwid_startRegion
 likwid.stopRegion = likwid_stopRegion
 likwid.getRegion = likwid_getRegion
+likwid.initCpuFeatures = likwid_cpuFeaturesInit
+likwid.getCpuFeatures = likwid_cpuFeaturesGet
+likwid.enableCpuFeatures = likwid_cpuFeaturesEnable
+likwid.disableCpuFeatures = likwid_cpuFeaturesDisable
+
+likwid.cpuFeatures = { [0]="HW_PREFETCHER", [1]="CL_PREFETCHER", [2]="DCU_PREFETCHER", [3]="IP_PREFETCHER",
+                        [4]="FAST_STRINGS", [5]="THERMAL_CONTROL", [6]="PERF_MON", [7]="FERR_MULTIPLEX",
+                        [8]="BRANCH_TRACE_STORAGE", [9]="XTPR_MESSAGE", [10]="PEBS", [11]="SPEEDSTEP",
+                        [12]="MONITOR", [13]="SPEEDSTEP_LOCK", [14]="CPUID_MAX_VAL", [15]="XD_BIT",
+                        [16]="DYN_ACCEL", [17]="TURBO_MODE", [18]="TM2" }
 
 infinity = math.huge
 

@@ -37,17 +37,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-
+#include <errno.h>
 #include <types.h>
 #include <access.h>
 #include <topology.h>
 #include <registers.h>
 #include <textcolor.h>
-#include <cpuFeatures.h>
+#include <likwid.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
-CpuFeatureFlags cpuFeatureFlags;
+static uint64_t cpuFeatureMask[MAX_NUM_THREADS] = {0x0ULL};
+static int features_initialized = 0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -59,315 +60,501 @@ CpuFeatureFlags cpuFeatureFlags;
 
 #define TEST_FLAG(feature,flag)  \
     if (flags & (1ULL<<(flag)))   \
-    {                    \
-        cpuFeatureFlags.feature = 1; \
-    }                    \
-    else                \
-    {                \
-        cpuFeatureFlags.feature = 0; \
+    { \
+        cpuFeatureMask[cpu] |= (1ULL<<feature); \
+    } \
+    else \
+    { \
+        cpuFeatureMask[cpu] &= ~(1ULL<<feature); \
     }
 
+#define TEST_FLAG_INV(feature,flag)  \
+    if (flags & (1ULL<<(flag)))   \
+    { \
+        cpuFeatureMask[cpu] &= ~(1ULL<<feature); \
+    } \
+    else \
+    { \
+        cpuFeatureMask[cpu] |= (1ULL<<feature); \
+    }
 
-/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+#define IF_FLAG(feature) (cpuFeatureMask[cpu] & (1ULL<<feature))
 
-void
-cpuFeatures_init(int cpu)
+
+/* #####   FUNCTIONS  -  LOCAL TO THIS SOURCE FILE   ######################### */
+static void cpuFeatures_update(int cpu)
 {
     int ret;
-    uint64_t flags;
+    uint64_t flags = 0x0ULL;
     ret = HPMread(cpu, MSR_DEV, MSR_IA32_MISC_ENABLE, &flags);
+    if (ret != 0)
+    {
+        fprintf(stderr, "Cannot read register 0x%X on cpu %d: err %d\n", MSR_IA32_MISC_ENABLE, cpu, ret);
+    }
 
-    TEST_FLAG(fastStrings,0);
-    TEST_FLAG(thermalControl,3);
-    TEST_FLAG(perfMonitoring,7);
-    TEST_FLAG(branchTraceStorage,11);
-    TEST_FLAG(pebs,12);
-    TEST_FLAG(speedstep,16);
-    TEST_FLAG(monitor,18);
-    TEST_FLAG(cpuidMaxVal,22);
-    TEST_FLAG(xdBit,34);
+    /*cpuFeatureFlags.fastStrings = 0;
+    cpuFeatureFlags.thermalControl = 0;
+    cpuFeatureFlags.perfMonitoring = 0;
+    cpuFeatureFlags.hardwarePrefetcher = 0;
+    cpuFeatureFlags.ferrMultiplex = 0;
+    cpuFeatureFlags.branchTraceStorage = 0;
+    cpuFeatureFlags.pebs = 0;
+    cpuFeatureFlags.speedstep = 0;
+    cpuFeatureFlags.monitor = 0;
+    cpuFeatureFlags.clPrefetcher = 0;
+    cpuFeatureFlags.speedstepLock = 0;
+    cpuFeatureFlags.cpuidMaxVal = 0;
+    cpuFeatureFlags.xdBit = 0;
+    cpuFeatureFlags.dcuPrefetcher = 0;
+    cpuFeatureFlags.dynamicAcceleration = 0;
+    cpuFeatureFlags.turboMode = 0;
+    cpuFeatureFlags.ipPrefetcher = 0;*/
+
+    TEST_FLAG(FEAT_FAST_STRINGS,0);
+    TEST_FLAG(FEAT_THERMAL_CONTROL,3);
+    TEST_FLAG(FEAT_PERF_MON,7);
+    TEST_FLAG_INV(FEAT_BRANCH_TRACE_STORAGE,11);
+    TEST_FLAG_INV(FEAT_PEBS,12);
+    TEST_FLAG(FEAT_SPEEDSTEP,16);
+    TEST_FLAG(FEAT_MONITOR,18);
+    TEST_FLAG(FEAT_CPUID_MAX_VAL,22);
+    TEST_FLAG_INV(FEAT_XTPR_MESSAGE, 23);
+    TEST_FLAG_INV(FEAT_XD_BIT,34);
+
+    if ((cpuid_info.model == CORE2_45) ||
+        (cpuid_info.model == CORE2_65))
+    {
+        TEST_FLAG_INV(FEAT_HW_PREFETCHER,9);
+        TEST_FLAG(FEAT_FERR_MULTIPLEX,10);
+        TEST_FLAG(FEAT_TM2,13);
+        TEST_FLAG_INV(FEAT_CL_PREFETCHER,19);
+        TEST_FLAG(FEAT_SPEEDSTEP_LOCK,20);
+        TEST_FLAG_INV(FEAT_DCU_PREFETCHER,37);
+        TEST_FLAG_INV(FEAT_DYN_ACCEL,38);
+        TEST_FLAG_INV(FEAT_IP_PREFETCHER,39);
+    }
+    else if ((cpuid_info.model == NEHALEM) ||
+             (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
+             (cpuid_info.model == NEHALEM_LYNNFIELD) ||
+             (cpuid_info.model == NEHALEM_WESTMERE) ||
+             (cpuid_info.model == NEHALEM_WESTMERE_M) ||
+             (cpuid_info.model == NEHALEM_EX) ||
+             (cpuid_info.model == WESTMERE_EX) ||
+             (cpuid_info.model == ATOM_SILVERMONT_E) ||
+             (cpuid_info.model == ATOM_SILVERMONT_C) ||
+             (cpuid_info.model == ATOM_SILVERMONT_Z1) ||
+             (cpuid_info.model == ATOM_SILVERMONT_Z2) ||
+             (cpuid_info.model == ATOM_SILVERMONT_F) ||
+             (cpuid_info.model == ATOM_SILVERMONT_AIR) ||
+             (cpuid_info.model == SANDYBRIDGE) ||
+             (cpuid_info.model == SANDYBRIDGE_EP) ||
+             (cpuid_info.model == IVYBRIDGE) ||
+             (cpuid_info.model == IVYBRIDGE_EP) ||
+             (cpuid_info.model == HASWELL) ||
+             (cpuid_info.model == HASWELL_M1) ||
+             (cpuid_info.model == HASWELL_M2) ||
+             (cpuid_info.model == HASWELL_EP) ||
+             (cpuid_info.model == BROADWELL) ||
+             (cpuid_info.model == BROADWELL_D) ||
+             (cpuid_info.model == BROADWELL_E) ||
+             (cpuid_info.model == SKYLAKE1) ||
+             (cpuid_info.model == SKYLAKE2))
+    {
+        TEST_FLAG_INV(FEAT_TURBO_MODE,38);
+    }
 
     if ((cpuid_info.model == NEHALEM) ||
             (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
             (cpuid_info.model == NEHALEM_LYNNFIELD) ||
             (cpuid_info.model == NEHALEM_WESTMERE) ||
             (cpuid_info.model == NEHALEM_WESTMERE_M) ||
-            (cpuid_info.model == NEHALEM_EX))
+            (cpuid_info.model == NEHALEM_EX) ||
+            (cpuid_info.model == WESTMERE_EX) ||
+            (cpuid_info.model == SANDYBRIDGE) ||
+            (cpuid_info.model == SANDYBRIDGE_EP) ||
+            (cpuid_info.model == IVYBRIDGE) ||
+            (cpuid_info.model == IVYBRIDGE_EP) ||
+            (cpuid_info.model == HASWELL) ||
+            (cpuid_info.model == HASWELL_M1) ||
+            (cpuid_info.model == HASWELL_M2) ||
+            (cpuid_info.model == HASWELL_EP) ||
+            (cpuid_info.model == BROADWELL) ||
+            (cpuid_info.model == BROADWELL_D) ||
+            (cpuid_info.model == BROADWELL_E) ||
+            (cpuid_info.model == SKYLAKE1) ||
+            (cpuid_info.model == SKYLAKE2))
     {
-        /*Nehalem */
-        TEST_FLAG(turboMode,38);
-        TEST_FLAG(hardwarePrefetcher,9);
-        TEST_FLAG(clPrefetcher,19);
-        TEST_FLAG(dcuPrefetcher,37);
-        TEST_FLAG(ipPrefetcher,39);
+        ret = HPMread(cpu, MSR_DEV, MSR_PREFETCH_ENABLE, &flags);
+        if (ret != 0)
+        {
+            fprintf(stderr, "Cannot read register 0x%X on cpu %d: err %d\n", MSR_PREFETCH_ENABLE, cpu, ret);
+        }
+        TEST_FLAG_INV(FEAT_IP_PREFETCHER,3);
+        TEST_FLAG_INV(FEAT_DCU_PREFETCHER,2);
+        TEST_FLAG_INV(FEAT_CL_PREFETCHER,1);
+        TEST_FLAG_INV(FEAT_HW_PREFETCHER,0);
     }
-    else if ((cpuid_info.model == CORE2_45) ||
-            (cpuid_info.model == CORE2_65))
+}
+
+static char* cpuFeatureNames[CPUFEATURES_MAX] = {
+    [FEAT_HW_PREFETCHER] = "Hardware Prefetcher",
+    [FEAT_IP_PREFETCHER] = "IP Prefetcher",
+    [FEAT_DCU_PREFETCHER] = "DCU Pretecher",
+    [FEAT_CL_PREFETCHER] = "Adjacent Cache Line Prefetcher",
+    [FEAT_FAST_STRINGS] = "Fast-Strings",
+    [FEAT_THERMAL_CONTROL] = "Automatic Thermal Control Circuit",
+    [FEAT_PERF_MON] = "Performance Monitoring",
+    [FEAT_BRANCH_TRACE_STORAGE] = "Branch Trace Storage",
+    [FEAT_PEBS] = "Precise Event Based Sampling (PEBS)",
+    [FEAT_SPEEDSTEP] = "Enhanced Intel SpeedStep Technology",
+    [FEAT_MONITOR] = "MONITOR/MWAIT",
+    [FEAT_CPUID_MAX_VAL] = "Limit CPUID Maxval",
+    [FEAT_XD_BIT] = "Execute Disable Bit",
+    [FEAT_TURBO_MODE] = "Intel Turbo Mode",
+    [FEAT_DYN_ACCEL] = "Intel Dynamic Acceleration",
+    [FEAT_FERR_MULTIPLEX] = "FERR# Multiplexing",
+    [FEAT_XTPR_MESSAGE] = "xTPR Message",
+    [FEAT_TM2] = "Thermal Monitoring 2",
+    [FEAT_SPEEDSTEP_LOCK] = "Enhanced Intel SpeedStep Technology Select Lock",
+};
+
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+void
+cpuFeatures_init()
+{
+    int i;
+    if (features_initialized)
     {
-        /*Core 2*/
-        TEST_FLAG(hardwarePrefetcher,9);
-        TEST_FLAG(ferrMultiplex,10);
-        TEST_FLAG(clPrefetcher,19);
-        TEST_FLAG(speedstepLock,20);
-        TEST_FLAG(dcuPrefetcher,37);
-        TEST_FLAG(dynamicAcceleration,38);
-        TEST_FLAG(ipPrefetcher,39);
+        return;
     }
 
-    /*
-    printf("FLAGS: 0x%llX \n",flags);
-    */
+    topology_init();
+    if (!HPMinitialized())
+    {
+        HPMinit();
+        
+    }
+    for (i = 0; i < cpuid_topology.numHWThreads; i++)
+    {
+        HPMaddThread(cpuid_topology.threadPool[i].apicId);
+        cpuFeatures_update(cpuid_topology.threadPool[i].apicId);
+    }
+
+    
+    features_initialized = 1;
 }
 
 void
 cpuFeatures_print(int cpu)
 {
-    int ret;
-    uint64_t flags;
-    ret = HPMread(cpu, MSR_DEV, MSR_IA32_MISC_ENABLE, &flags);
+    int i;
+    uint64_t flags = 0x0ULL;
+    if (!features_initialized)
+    {
+        return;
+    }
+    cpuFeatures_update(cpu);
 
     printf(HLINE);
-    printf("Fast-Strings: \t\t\t");
-    if (flags & 1)
+    for (i=0;i<CPUFEATURES_MAX; i++)
     {
-        PRINT_VALUE(GREEN,enabled);
+        if ((cpuid_info.model != CORE2_45) &&
+            (cpuid_info.model != CORE2_65) &&
+            ((i == FEAT_FERR_MULTIPLEX) ||
+             (i == FEAT_DYN_ACCEL) ||
+             (i == FEAT_SPEEDSTEP_LOCK) ||
+             (i == FEAT_TM2)))
+        {
+            continue;
+        }
+        printf("%-48s: ",cpuFeatureNames[i]);
+        if (IF_FLAG(i))
+        {
+            PRINT_VALUE(GREEN, enabled);
+        }
+        else
+        {
+            PRINT_VALUE(RED,disabled);
+        }
     }
-    else
-    {
-        PRINT_VALUE(RED,disabled);
-    }
+    printf(HLINE);
+}
 
-    printf("Automatic Thermal Control: \t");
-    if (flags & (1ULL<<3))
+int
+cpuFeatures_enable(int cpu, CpuFeature type, int print)
+{
+    int ret;
+    uint64_t flags;
+    uint32_t reg = MSR_IA32_MISC_ENABLE;
+    int newOffsets = 0;
+    if (IF_FLAG(type))
     {
-        PRINT_VALUE(GREEN,enabled);
+        return 0;
     }
-    else
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-
-    printf("Performance monitoring: \t");
-    if (flags & (1ULL<<7))
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-    else
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    printf("Branch Trace Storage: \t\t");
-
-    if (flags & (1ULL<<11)) 
-    {
-        PRINT_VALUE(RED,notsupported);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,supported);
-    }
-
-    printf("PEBS: \t\t\t\t");
-    if (flags & (1ULL<<12)) 
-    {
-        PRINT_VALUE(RED,notsupported);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,supported);
-    }
-
-    printf("Intel Enhanced SpeedStep: \t");
-    if (flags & (1ULL<<16)) 
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-    else
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-
-    printf("MONITOR/MWAIT: \t\t\t");
-    if (flags & (1ULL<<18)) 
-    {
-        PRINT_VALUE(GREEN,supported);
-    }
-    else
-    {
-        PRINT_VALUE(RED,notsupported);
-    }
-
-    printf("Limit CPUID Maxval: \t\t");
-    if (flags & (1ULL<<22)) 
-    {
-        PRINT_VALUE(RED,enabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,disabled);
-    }
-
-    printf("XD Bit Disable: \t\t");
-    if (flags & (1ULL<<34)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("IP Prefetcher: \t\t\t");
-    if (flags & (1ULL<<39)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("Hardware Prefetcher: \t\t");
-    if (flags & (1ULL<<9)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("Adjacent Cache Line Prefetch: \t");
-    if (flags & (1ULL<<19)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
-    printf("DCU Prefetcher: \t\t");
-    if (flags & (1ULL<<37)) 
-    {
-        PRINT_VALUE(RED,disabled);
-    }
-    else
-    {
-        PRINT_VALUE(GREEN,enabled);
-    }
-
     if ((cpuid_info.model == NEHALEM) ||
             (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
             (cpuid_info.model == NEHALEM_LYNNFIELD) ||
             (cpuid_info.model == NEHALEM_WESTMERE) ||
             (cpuid_info.model == NEHALEM_WESTMERE_M) ||
-            (cpuid_info.model == NEHALEM_EX))
+            (cpuid_info.model == NEHALEM_EX) ||
+            (cpuid_info.model == WESTMERE_EX) ||
+            (cpuid_info.model == SANDYBRIDGE) ||
+            (cpuid_info.model == SANDYBRIDGE_EP) ||
+            (cpuid_info.model == IVYBRIDGE) ||
+            (cpuid_info.model == IVYBRIDGE_EP) ||
+            (cpuid_info.model == HASWELL) ||
+            (cpuid_info.model == HASWELL_M1) ||
+            (cpuid_info.model == HASWELL_M2) ||
+            (cpuid_info.model == HASWELL_EP) ||
+            (cpuid_info.model == BROADWELL) ||
+            (cpuid_info.model == BROADWELL_D) ||
+            (cpuid_info.model == BROADWELL_E) ||
+            (cpuid_info.model == SKYLAKE1) ||
+            (cpuid_info.model == SKYLAKE2))
     {
-        printf("Intel Turbo Mode: \t");
-        if (flags & (1ULL<<38)) 
-        {
-            PRINT_VALUE(RED,disabled);
-        }
-        else 
-        {
-            PRINT_VALUE(GREEN,enabled);
-        }
+        reg = MSR_PREFETCH_ENABLE;
+        newOffsets = 1;
     }
-    else if ((cpuid_info.model == CORE2_45) ||
-            (cpuid_info.model == CORE2_65))
+    ret = HPMread(cpu, MSR_DEV, reg, &flags);
+    if (ret != 0)
     {
-
-        printf("Intel Dynamic Acceleration: \t");
-        if (flags & (1ULL<<38)) 
-        {
-            PRINT_VALUE(RED,disabled);
-        }
-        else 
-        {
-            PRINT_VALUE(GREEN,enabled);
-        }
+        fprintf(stderr, "Cannot read register 0x%X for CPU %d to activate feature %s\n", reg, cpu, cpuFeatureNames[type]);
+        return ret;
     }
-
-    printf(HLINE);
-}
-
-void 
-cpuFeatures_enable(int cpu, CpuFeature type)
-{
-    int ret;
-    uint64_t flags; 
-    ret = HPMread(cpu, MSR_DEV, MSR_IA32_MISC_ENABLE, &flags);
-
+    ret = 0;
     switch ( type )
     {
-        case HW_PREFETCHER:
-            printf("HW_PREFETCHER:\t");
-            flags &= ~(1ULL<<9);
+        case FEAT_HW_PREFETCHER:
+            if (print)
+                printf("HW_PREFETCHER:\t");
+            if (newOffsets)
+            {
+                flags &= ~(1ULL<<0);
+            }
+            else
+            {
+                flags &= ~(1ULL<<9);
+            }
             break;
 
-        case CL_PREFETCHER:
-            printf("CL_PREFETCHER:\t");
-            flags &= ~(1ULL<<19);
+        case FEAT_CL_PREFETCHER:
+            if (print)
+                printf("CL_PREFETCHER:\t");
+            if (newOffsets)
+            {
+                flags &= ~(1ULL<<1);
+            }
+            else
+            {
+                flags &= ~(1ULL<<19);
+            }
             break;
 
-        case DCU_PREFETCHER:
-            printf("DCU_PREFETCHER:\t");
-            flags &= ~(1ULL<<37);
+        case FEAT_DCU_PREFETCHER:
+            if (print)
+                printf("DCU_PREFETCHER:\t");
+            if (newOffsets)
+            {
+                flags &= ~(1ULL<<2);
+            }
+            else
+            {
+                flags &= ~(1ULL<<37);
+            }
             break;
 
-        case IP_PREFETCHER:
-            printf("IP_PREFETCHER:\t");
-            flags &= ~(1ULL<<39);
+        case FEAT_IP_PREFETCHER:
+            if (print)
+                printf("IP_PREFETCHER:\t");
+            if (newOffsets)
+            {
+                flags &= ~(1ULL<<3);
+            }
+            else
+            {
+                flags &= ~(1ULL<<39);
+            }
             break;
 
         default:
-            printf("ERROR: CpuFeature not supported!\n");
+            printf("\nERROR: Processor feature '%s' cannot be enabled!\n", cpuFeatureNames[type]);
+            ret = -EINVAL;
             break;
     }
-    PRINT_VALUE(GREEN,enabled);
-    printf("\n");
+    if (ret != 0)
+    {
+        return ret;
+    }
 
-    HPMwrite(cpu, MSR_DEV, MSR_IA32_MISC_ENABLE, flags);
+    ret = HPMwrite(cpu, MSR_DEV, reg, flags);
+    if (ret == 0)
+    {
+        if (print)
+        {
+            PRINT_VALUE(GREEN,enabled);
+        }
+    }
+    else
+    {
+        if (print)
+        {
+            PRINT_VALUE(RED,failed);
+        }
+    }
+    cpuFeatures_update(cpu);
+    return 0;
 }
 
 
-void
-cpuFeatures_disable(int cpu, CpuFeature type)
+int
+cpuFeatures_disable(int cpu, CpuFeature type, int print)
 {
     int ret;
     uint64_t flags;
-    ret = HPMread(cpu, MSR_DEV, MSR_IA32_MISC_ENABLE, &flags);
-
-    switch ( type ) 
+    uint32_t reg = MSR_IA32_MISC_ENABLE;
+    int newOffsets = 0;
+    if (!IF_FLAG(type))
     {
-        case HW_PREFETCHER:
-            printf("HW_PREFETCHER:\t");
-            flags |= (1ULL<<9);
+        return 0;
+    }
+    if ((cpuid_info.model == NEHALEM) ||
+            (cpuid_info.model == NEHALEM_BLOOMFIELD) ||
+            (cpuid_info.model == NEHALEM_LYNNFIELD) ||
+            (cpuid_info.model == NEHALEM_WESTMERE) ||
+            (cpuid_info.model == NEHALEM_WESTMERE_M) ||
+            (cpuid_info.model == NEHALEM_EX) ||
+            (cpuid_info.model == WESTMERE_EX) ||
+            (cpuid_info.model == SANDYBRIDGE) ||
+            (cpuid_info.model == SANDYBRIDGE_EP) ||
+            (cpuid_info.model == IVYBRIDGE) ||
+            (cpuid_info.model == IVYBRIDGE_EP) ||
+            (cpuid_info.model == HASWELL) ||
+            (cpuid_info.model == HASWELL_M1) ||
+            (cpuid_info.model == HASWELL_M2) ||
+            (cpuid_info.model == HASWELL_EP) ||
+            (cpuid_info.model == BROADWELL) ||
+            (cpuid_info.model == BROADWELL_D) ||
+            (cpuid_info.model == BROADWELL_E) ||
+            (cpuid_info.model == SKYLAKE1) ||
+            (cpuid_info.model == SKYLAKE2))
+    {
+        reg = MSR_PREFETCH_ENABLE;
+        newOffsets = 1;
+    }
+    ret = HPMread(cpu, MSR_DEV, reg, &flags);
+    if (ret != 0)
+    {
+        fprintf(stderr, "Reading register 0x%X on CPU %d failed\n", reg, cpu);
+        return ret;
+    }
+    ret = 0;
+    switch ( type )
+    {
+        case FEAT_HW_PREFETCHER:
+            if (print)
+                printf("HW_PREFETCHER:\t");
+            if (newOffsets)
+            {
+                flags |= (1ULL<<0);
+            }
+            else
+            {
+                flags |= (1ULL<<9);
+            }
             break;
 
-        case CL_PREFETCHER:
-            printf("CL_PREFETCHER:\t");
-            flags |= (1ULL<<19);
+        case FEAT_CL_PREFETCHER:
+            if (print)
+                printf("CL_PREFETCHER:\t");
+            if (newOffsets)
+            {
+                flags |= (1ULL<<1);
+            }
+            else
+            {
+                flags |= (1ULL<<19);
+            }
             break;
 
-        case DCU_PREFETCHER:
-            printf("DCU_PREFETCHER:\t");
-            flags |= (1ULL<<37);
+        case FEAT_DCU_PREFETCHER:
+            if (print)
+                printf("DCU_PREFETCHER:\t");
+            if (newOffsets)
+            {
+                flags |= (1ULL<<2);
+            }
+            else
+            {
+                flags |= (1ULL<<37);
+            }
             break;
 
-        case IP_PREFETCHER:
-            printf("IP_PREFETCHER:\t");
-            flags |= (1ULL<<39);
+        case FEAT_IP_PREFETCHER:
+            if (print)
+                printf("IP_PREFETCHER:\t");
+            if (newOffsets)
+            {
+                flags |= (1ULL<<3);
+            }
+            else
+            {
+                flags |= (1ULL<<39);
+            }
             break;
 
         default:
-            printf("ERROR: CpuFeature not supported!\n");
+            printf("ERROR: Processor feature '%s' cannot be disabled!\n", cpuFeatureNames[type]);
+            ret = -EINVAL;
             break;
     }
-    PRINT_VALUE(RED,disabled);
-    printf("\n");
+    if (ret != 0)
+    {
+        return ret;
+    }
 
-    HPMwrite(cpu, MSR_DEV, MSR_IA32_MISC_ENABLE, flags);
+    ret = HPMwrite(cpu, MSR_DEV, reg, flags);
+    if (ret != 0)
+    {
+        if (print)
+        {
+            PRINT_VALUE(RED,failed);
+        }
+        ret = -EFAULT;
+    }
+    else
+    {
+        if (print)
+        {
+            PRINT_VALUE(RED,disabled);
+        }
+        ret = 0;
+    }
+    cpuFeatures_update(cpu);
+    return ret;
 }
 
+int cpuFeatures_get(int cpu, CpuFeature type)
+{
+    if ((type >= FEAT_HW_PREFETCHER) && (type < CPUFEATURES_MAX))
+    {
+        if (IF_FLAG(type))
+        {
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+    return -EINVAL;
+}
+
+char* cpuFeatures_name(CpuFeature type)
+{
+    if ((type >= FEAT_HW_PREFETCHER) && (type < CPUFEATURES_MAX))
+    {
+        return cpuFeatureNames[type];
+    }
+    return NULL;
+}

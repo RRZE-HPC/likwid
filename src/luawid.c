@@ -1782,6 +1782,58 @@ static int lua_likwid_getRegion(lua_State* L)
     return 4;
 }
 
+static int lua_likwid_cpuFeatures_init(lua_State* L)
+{
+    cpuFeatures_init();
+    return 0;
+}
+
+static int lua_likwid_cpuFeatures_print(lua_State* L)
+{
+    int cpu = lua_tointeger(L,-1);
+    cpuFeatures_print(cpu);
+    return 0;
+}
+
+static int lua_likwid_cpuFeatures_get(lua_State* L)
+{
+    int cpu = lua_tointeger(L,-2);
+    CpuFeature feature = lua_tointeger(L,-1);
+    lua_pushinteger(L, cpuFeatures_get(cpu, feature));
+    return 1;
+}
+
+static int lua_likwid_cpuFeatures_name(lua_State* L)
+{
+    char* name = NULL;
+    CpuFeature feature = lua_tounsigned(L,-1);
+    name = cpuFeatures_name(feature);
+    if (name != NULL)
+    {
+        lua_pushstring(L, name);
+        return 1;
+    }
+    return 0;
+}
+
+static int lua_likwid_cpuFeatures_enable(lua_State* L)
+{
+    int cpu = lua_tointeger(L,-3);
+    CpuFeature feature = lua_tointeger(L,-2);
+    int verbose = lua_tointeger(L,-1);
+    lua_pushinteger(L, cpuFeatures_enable(cpu, feature, verbose));
+    return 1;
+}
+
+static int lua_likwid_cpuFeatures_disable(lua_State* L)
+{
+    int cpu = lua_tointeger(L,-3);
+    CpuFeature feature = lua_tointeger(L,-2);
+    int verbose = lua_tointeger(L,-1);
+    lua_pushinteger(L, cpuFeatures_disable(cpu, feature, verbose));
+    return 1;
+}
+
 int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     // Configuration functions
     lua_register(L, "likwid_getConfiguration", lua_likwid_getConfiguration);
@@ -1864,6 +1916,11 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_startRegion", lua_likwid_startRegion);
     lua_register(L, "likwid_stopRegion", lua_likwid_stopRegion);
     lua_register(L, "likwid_getRegion", lua_likwid_getRegion);
+    // CPU feature manipulation functions
+    lua_register(L, "likwid_cpuFeaturesInit", lua_likwid_cpuFeatures_init);
+    lua_register(L, "likwid_cpuFeaturesGet", lua_likwid_cpuFeatures_get);
+    lua_register(L, "likwid_cpuFeaturesEnable", lua_likwid_cpuFeatures_enable);
+    lua_register(L, "likwid_cpuFeaturesDisable", lua_likwid_cpuFeatures_disable);
 #ifdef __MIC__
     if (setuid(0) < 0)
     {

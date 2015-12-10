@@ -1117,6 +1117,83 @@ Sweeps (zeros) the memory of all NUMA nodes containing the CPUs in \a processorL
 */
 extern void memsweep_threadGroup(int* processorList, int numberOfProcessors) __attribute__ ((visibility ("default") ));
 /** @}*/
+
+/*
+################################################################################
+# CPU feature related functions
+################################################################################
+*/
+/** \addtogroup CpuFeatures Retrieval and manipulation of processor features
+ *  @{
+ */
+
+typedef enum {
+    FEAT_HW_PREFETCHER=0, /*!< \brief Hardware prefetcher */
+    FEAT_CL_PREFETCHER, /*!< \brief Adjacent cache line prefetcher */
+    FEAT_DCU_PREFETCHER, /*!< \brief DCU L1 data cache prefetcher */
+    FEAT_IP_PREFETCHER, /*!< \brief IP L1 data cache prefetcher */
+    FEAT_FAST_STRINGS, /*!< \brief Fast-strings feature */
+    FEAT_THERMAL_CONTROL, /*!< \brief Automatic Thermal Control Circuit */
+    FEAT_PERF_MON, /*!< \brief Hardware performance monitoring */
+    FEAT_FERR_MULTIPLEX, /*!< \brief FERR# Multiplexing, must be 1 for XAPIC interrupt model */
+    FEAT_BRANCH_TRACE_STORAGE, /*!< \brief Branch Trace Storage */
+    FEAT_XTPR_MESSAGE, /*!< \brief xTPR Message to set processor priority */
+    FEAT_PEBS, /*!< \brief Precise Event Based Sampling (PEBS) */
+    FEAT_SPEEDSTEP, /*!< \brief Enhanced Intel SpeedStep Technology to reduce energy consumption*/
+    FEAT_MONITOR, /*!< \brief MONITOR/MWAIT feature to monitor write-back stores*/
+    FEAT_SPEEDSTEP_LOCK, /*!< \brief Enhanced Intel SpeedStep Technology Select Lock */
+    FEAT_CPUID_MAX_VAL, /*!< \brief Limit CPUID Maxval */
+    FEAT_XD_BIT, /*!< \brief Execute Disable Bit */
+    FEAT_DYN_ACCEL, /*!< \brief Intel Dynamic Acceleration */
+    FEAT_TURBO_MODE, /*!< \brief Intel Turbo Mode */
+    FEAT_TM2, /*!< \brief Thermal Monitoring 2 */
+    CPUFEATURES_MAX 
+} CpuFeature;
+
+/*! \brief Initialize the internal feature variables for all CPUs
+
+Initialize the internal feature variables for all CPUs
+*/
+extern void cpuFeatures_init() __attribute__ ((visibility ("default") ));
+/*! \brief Print state of all CPU features for a given CPU
+
+Print state of all CPU features for a given CPU
+@param [in] cpu CPU ID
+*/
+extern void cpuFeatures_print(int cpu) __attribute__ ((visibility ("default") ));
+/*! \brief Get state of a CPU feature for a given CPU
+
+Get state of a CPU feature for a given CPU
+@param [in] cpu CPU ID
+@param [in] type CPU feature
+@return State of CPU feature (1=enabled, 0=disabled)
+*/
+extern int cpuFeatures_get(int cpu, CpuFeature type)  __attribute__ ((visibility ("default") ));
+/*! \brief Get the name of a CPU feature
+
+Get the name of a CPU feature
+@param [in] type CPU feature
+@return Name of the CPU feature or NULL if feature is not available
+*/
+extern char* cpuFeatures_name(CpuFeature type)  __attribute__ ((visibility ("default") ));
+/*! \brief Enable a CPU feature for a specific CPU
+
+Enable a CPU feature for a specific CPU. Only the state of the prefetchers can be changed, all other features return -EINVAL
+@param [in] cpu CPU ID
+@param [in] type CPU feature
+@return Status of operation (0=success, all others are erros, either by MSR access or invalid feature)
+*/
+extern int cpuFeatures_enable(int cpu, CpuFeature type, int print) __attribute__ ((visibility ("default") ));
+/*! \brief Disable a CPU feature for a specific CPU
+
+Disable a CPU feature for a specific CPU. Only the state of the prefetchers can be changed, all other features return -EINVAL
+@param [in] cpu CPU ID
+@param [in] type CPU feature
+@return Status of operation (0=success, all others are erros, either by MSR access or invalid feature)
+*/
+extern int cpuFeatures_disable(int cpu, CpuFeature type, int print) __attribute__ ((visibility ("default") ));
+/** @}*/
+
 #ifdef __cplusplus
 }
 #endif
