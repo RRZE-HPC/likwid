@@ -215,7 +215,7 @@ def write_pgf(group, test, plain_file, marker_file, scale=0.0,papi_file=None, ex
         script.write("pdflatex %s\n" % (os.path.basename(filename),))
     return filename
 
-def write_gnuplot(group, test, plain_file, marker_file, scale = 0.0, papi_file=None, execute=False, script=None):
+def write_gnuplot(group, test, plain_file, marker_file, scale = 1.0, papi_file=None, execute=False, script=None):
     printgrp = group
     if translate_group.has_key(group):
         printgrp = translate_group[group]
