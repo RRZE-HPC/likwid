@@ -10,6 +10,7 @@ GCC_C11_SUPPORT_MAJOR=$(shell /bin/bash -c "g++ -v 2>&1 | grep -o -E '([0-9])\.'
 GCC_C11_SUPPORT_MINOR=$(shell /bin/bash -c "g++ -v 2>&1 | grep -o -E '\.([0-9])\.' | head -n 1 | tr -d '[:punct:]'")
 ICC_AVAILABLE=$(shell /bin/bash -c "which icc | wc -l")
 ICPC_AVAILABLE=$(shell /bin/bash -c "which icpc | wc -l")
+TBB_AVAILABLE=$(shell /bin/bash -c "ldconfig -v 2>/dev/null | grep libtbb.so | wc -l")
 
 streamGCC: stream.c
 	gcc -O3 -std=c99 $(LIKWID_INCLUDES) $(LIKWID_DEFINES) -fopenmp  -o $@  stream.c $(LIKWID_LIB) -lm
@@ -51,9 +52,15 @@ test-mpi: MPI_pin_test.c$
 stream_cilk: stream_cilk.c
 	@if [ $(ICC_AVAILABLE) -ne 0 ]; then icc -O3 $(LIKWID_DEFINES) $(LIKWID_INCLUDES) -o $@ stream_cilk.c $(LIKWID_LIB); fi
 
-.PHONY: clean streamGCC streamICC streamGCC_C11 streamICC_C11 testmarker testmarker-omp testmarkerF90 test-mpi stream_cilk serial test-likwidAPI streamAPIGCC
+testTBBGCC:
+	@if [ $(TBB_AVAILABLE) -ne 0 ]; then g++ -O3 $(LIKWID_DEFINES) $(LIKWID_INCLUDES) -o $@ testTBB.cc -ltbb $(LIKWID_LIB); fi
 
-clean: 
-	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker testmarkerF90 test-mpi testmarker-omp serial test-likwidAPI streamAPIGCC
+testTBBICC:
+	@if [ $(TBB_AVAILABLE) -ne 0 -a $(ICPC_AVAILABLE) -ne 0 ]; then icpc -O3 $(LIKWID_DEFINES) $(LIKWID_INCLUDES) -o $@ testTBB.cc -ltbb $(LIKWID_LIB); else echo "Either TBB or ICPC missing"; fi
+
+.PHONY: clean streamGCC streamICC streamGCC_C11 streamICC_C11 testmarker testmarker-omp testmarkerF90 test-mpi stream_cilk serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC
+
+clean:
+	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker testmarkerF90 test-mpi testmarker-omp serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC
 
 
