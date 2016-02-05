@@ -39,7 +39,7 @@ BUILDFREQ = true#NO SPACE
 # Set the default mode for MSR access.
 # This can usually be overriden on the commandline.
 # Valid values are: direct, accessdaemon
-ACCESSMODE = accessdaemon$#NO SPACE
+ACCESSMODE = accessdaemon#NO SPACE
 
 # Change to true to a build shared library instead of a static one
 SHARED_LIBRARY = true#NO SPACE
