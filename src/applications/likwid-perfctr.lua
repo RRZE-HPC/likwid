@@ -94,7 +94,7 @@ group_list = {}
 group_ids = {}
 activeGroup = 0
 print_group_help = false
-skip_mask = "0x0"
+skip_mask = nil
 counter_mask = {}
 access_flags = "e"
 if config["daemonMode"] < 0 then
@@ -474,31 +474,40 @@ if pin_cpus then
     elseif num_cpus > tonumber(omp_threads) then
         print_stdout(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_cpus))
     end
-    
+    if os.getenv("CILK_NWORKERS") == nil then
+        likwid.setenv("CILK_NWORKERS", tostring(num_cpus))
+    end
+    if skip_mask then
+        skipString = 
+        likwid.setenv("LIKWID_SKIP",skip_mask)
+    end
+    likwid.setenv("KMP_AFFINITY","disabled")
+
+    if verbose == 0 then
+        likwid.setenv("LIKWID_SILENT","true")
+    end
+
     if num_cpus > 1 then
-        local preload = os.getenv("LD_PRELOAD")
         local pinString = tostring(cpulist[2])
         for i=3,likwid.tablelength(cpulist) do
             pinString = pinString .. "," .. cpulist[i]
         end
         pinString = pinString .. "," .. cpulist[1]
-        skipString = skip_mask
-
-        likwid.setenv("KMP_AFFINITY","disabled")
         likwid.setenv("LIKWID_PIN", pinString)
-        if verbose == 0 then
-            likwid.setenv("LIKWID_SILENT","true")
-        end
-        if os.getenv("CILK_NWORKERS") == nil then
-            likwid.setenv("CILK_NWORKERS", tostring(num_cpus))
-        end
-        if skipString ~= "0x0" then
-            likwid.setenv("LIKWID_SKIP",skipString)
-        end
+
+        local preload = os.getenv("LD_PRELOAD")
         if preload == nil then
             likwid.setenv("LD_PRELOAD",likwid.pinlibpath)
         else
             likwid.setenv("LD_PRELOAD",likwid.pinlibpath .. ":" .. preload)
+        end
+    elseif num_cpus == 1 then
+        print(cpulist[1])
+        likwid.setenv("LIKWID_PIN", cpulist[1])
+        if verbose == 0 then
+            likwid.pinProcess(cpulist[1], 0)
+        else
+            likwid.pinProcess(cpulist[1], 1)
         end
     end
 end

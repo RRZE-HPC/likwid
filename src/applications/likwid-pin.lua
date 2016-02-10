@@ -92,7 +92,7 @@ sweep_sockets = false
 interleaved_policy = false
 print_domains = false
 cpu_list = {}
-skip_mask = "0x0"
+skip_mask = nil
 affinity = nil
 num_threads = 0
 
@@ -222,25 +222,24 @@ elseif num_threads > tonumber(omp_threads) then
     print(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_threads))
 end
 
+likwid.setenv("KMP_AFFINITY","disabled")
+
+if os.getenv("CILK_NWORKERS") == nil then
+    likwid.setenv("CILK_NWORKERS", tostring(num_threads))
+end
+if skip_mask then
+    likwid.setenv("LIKWID_SKIP", skip_mask)
+end
 
 if num_threads > 1 then
-    local preload = os.getenv("LD_PRELOAD")
     local pinString = tostring(cpu_list[2])
     for i=3,likwid.tablelength(cpu_list) do
         pinString = pinString .. "," .. cpu_list[i]
     end
     pinString = pinString .. "," .. cpu_list[1]
-    skipString = skip_mask
-
-    likwid.setenv("KMP_AFFINITY","disabled")
     likwid.setenv("LIKWID_PIN", pinString)
-    if os.getenv("CILK_NWORKERS") == nil then
-        likwid.setenv("CILK_NWORKERS", tostring(num_threads))
-    end
-    if skipString ~= "0x0" then
-        likwid.setenv("LIKWID_SKIP",skipString)
-    end
 
+    local preload = os.getenv("LD_PRELOAD")
     if preload == nil then
         likwid.setenv("LD_PRELOAD",likwid.pinlibpath)
     else
@@ -253,6 +252,9 @@ if num_threads > 1 then
     elseif not ldpath:match(libpath) then
         likwid.setenv("LD_LIBRARY_PATH", libpath..":"..ldpath)
     end
+else
+    likwid.setenv("LIKWID_PIN", cpu_list[1])
+    likwid.pinProcess(cpu_list[1], quiet)
 end
 
 local exec = table.concat(arg," ",1, likwid.tablelength(arg)-2)

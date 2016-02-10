@@ -87,6 +87,7 @@ pthread_create(pthread_t* thread,
     static int npinned = 0;
     static int ncalled = 0;
     static int overflow = 0;
+    static int overflowed = 0;
     static int silent = 0;
     static int pin_ids[MAX_NUM_THREADS];
     static uint64_t skipMask = 0x0;
@@ -167,7 +168,7 @@ pthread_create(pthread_t* thread,
             color_print("\n[pthread wrapper] SKIP MASK: 0x%llX\n",LLU_CAST skipMask);
         }
 
-        overflow = ncpus;
+        overflow = ncpus-1;
     }
 
     /* Handle dll related stuff */
@@ -218,24 +219,28 @@ pthread_create(pthread_t* thread,
         else
         {
             CPU_ZERO(&cpuset);
-            CPU_SET(pin_ids[npinned], &cpuset);
+            CPU_SET(pin_ids[npinned%ncpus], &cpuset);
             pthread_setaffinity_np(*thread, sizeof(cpu_set_t), &cpuset);
-
-            if (npinned == overflow)
+            if ((npinned == overflow) && (!overflowed))
             {
                 if (!silent)
                 {
-                    color_print("Roundrobin placement triggered\n\tthreadid %lu -> core %d - OK", *thread, pin_ids[npinned]);
+                    color_print("Roundrobin placement triggered\n\tthreadid %lu -> core %d - OK", *thread, pin_ids[npinned%ncpus]);
                 }
-                npinned = 0;
+                overflowed = 1;
+                npinned = (npinned+1)%ncpus;
             }
             else
             {
                 if (!silent)
                 {
-                    color_print("\tthreadid %lu -> core %d - OK", *thread, pin_ids[npinned]);
+                    color_print("\tthreadid %lu -> core %d - OK", *thread, pin_ids[npinned%ncpus]);
                 }
                 npinned++;
+                if ((npinned >= ncpus) && (overflowed))
+                {
+                    npinned = 0;
+                }
             }
 
             if (!silent)
