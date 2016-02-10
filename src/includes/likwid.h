@@ -883,7 +883,7 @@ Amount of currently supported RAPL domains
 #define NUM_POWER_DOMAINS 4
 /*! \brief List of all RAPL domain names
 */
-extern const char* power_names[NUM_POWER_DOMAINS];
+extern const char* power_names[NUM_POWER_DOMAINS] __attribute__ ((visibility ("default") ));
 
 /*!
 \def POWER_DOMAIN_SUPPORT_STATUS
