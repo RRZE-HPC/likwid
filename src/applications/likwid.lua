@@ -57,11 +57,20 @@ likwid.switchGroup = likwid_switchGroup
 likwid.finalize = likwid_finalize
 likwid.getEventsAndCounters = likwid_getEventsAndCounters
 likwid.getResult = likwid_getResult
+likwid.getMetric = likwid_getMetric
 likwid.getNumberOfGroups = likwid_getNumberOfGroups
 likwid.getRuntimeOfGroup = likwid_getRuntimeOfGroup
 likwid.getIdOfActiveGroup = likwid_getIdOfActiveGroup
 likwid.getNumberOfEvents = likwid_getNumberOfEvents
 likwid.getNumberOfThreads = likwid_getNumberOfThreads
+likwid.getNumberOfMetrics = likwid_getNumberOfMetrics
+likwid.getNameOfMetric = likwid_getNameOfMetric
+likwid.getNameOfEvent = likwid_getNameOfEvent
+likwid.getNameOfCounter = likwid_getNameOfCounter
+likwid.getNameOfGroup = likwid_getNameOfGroup
+likwid.getGroups = likwid_getGroups
+likwid.getShortInfoOfGroup = likwid_getShortInfoOfGroup
+likwid.getLongInfoOfGroup = likwid_getLongInfoOfGroup
 likwid.getCpuInfo = likwid_getCpuInfo
 likwid.getCpuTopology = likwid_getCpuTopology
 likwid.putTopology = likwid_putTopology
@@ -115,6 +124,16 @@ likwid.initCpuFeatures = likwid_cpuFeaturesInit
 likwid.getCpuFeatures = likwid_cpuFeaturesGet
 likwid.enableCpuFeatures = likwid_cpuFeaturesEnable
 likwid.disableCpuFeatures = likwid_cpuFeaturesDisable
+likwid.readMarkerFile = likwid_readMarkerFile
+likwid.markerNumRegions = likwid_markerNumRegions
+likwid.markerRegionGroup = likwid_markerRegionGroup
+likwid.markerRegionTag = likwid_markerRegionTag
+likwid.markerRegionEvents = likwid_markerRegionEvents
+likwid.markerRegionThreads = likwid_markerRegionThreads
+likwid.markerRegionTime = likwid_markerRegionTime
+likwid.markerRegionCount = likwid_markerRegionCount
+likwid.markerRegionResult = likwid_markerRegionResult
+likwid.markerRegionMetric = likwid_markerRegionMetric
 
 likwid.cpuFeatures = { [0]="HW_PREFETCHER", [1]="CL_PREFETCHER", [2]="DCU_PREFETCHER", [3]="IP_PREFETCHER",
                         [4]="FAST_STRINGS", [5]="THERMAL_CONTROL", [6]="PERF_MON", [7]="FERR_MULTIPLEX",
@@ -693,85 +712,85 @@ end
 
 likwid.tableToMinMaxAvgSum = tableMinMaxAvgSum
 
-local function printOutput(results, groupData, cpulist)
-    local nr_groups = #groupData
+local function printOutput(results, metrics, cpulist, region)
     local maxLineFields = 0
     local cpuinfo = likwid_getCpuInfo()
     local clock = likwid.getCpuClock()
-    for g, group in pairs(groupData) do
-        local groupID = g
-        local runtime =  group["runtime"]
-        local num_events = #results[groupID]
-        local num_threads = #cpulist
-        local groupName = groupData[groupID]["GroupString"]
-        if groupName == groupData[groupID]["EventString"] then
-            groupName = "Custom"
-        end
-        local firsttab =  {}
+    local regionName = likwid.markerRegionTag(region)
+    for g, group in pairs(results) do
+        local infotab = {}
+        local firsttab = {}
         local firsttab_combined = {}
         local secondtab = {}
         local secondtab_combined = {}
+        local runtime = likwid.getRuntimeOfGroup(g)
+        local groupName = likwid.getNameOfGroup(g)
+        if region ~= nil then
+            infotab[1] = {"Region Info","RDTSC Runtime [s]","call count"}
+            for c, cpu in pairs(cpulist) do
+                local tmpList = {}
+                table.insert(tmpList, "Core "..tostring(cpu))
+                table.insert(tmpList, string.format("%.6f", likwid.markerRegionTime(region, c)))
+                table.insert(tmpList, tostring(likwid.markerRegionCount(region, c)))
+                table.insert(infotab, tmpList)
+            end
+        end
         firsttab[1] = {"Event"}
         firsttab_combined[1] = {"Event"}
         firsttab[2] = {"Counter"}
         firsttab_combined[2] = {"Counter"}
-        if not groupData[groupID]["Metrics"] then
+        if likwid.getNumberOfMetrics(g) == 0 then
             table.insert(firsttab[1],"Runtime (RDTSC) [s]")
             table.insert(firsttab[2],"TSC")
         end
-
-        for e, event in pairs(groupData[groupID]["Events"]) do
-            table.insert(firsttab[1], event["Event"])
-            table.insert(firsttab[2], event["Counter"])
-            table.insert(firsttab_combined[1], event["Event"] .. " STAT")
-            table.insert(firsttab_combined[2],event["Counter"])
+        for e, event in pairs(group) do
+            eventname = likwid.getNameOfEvent(g, e)
+            countername = likwid.getNameOfCounter(g, e)
+            table.insert(firsttab[1], eventname)
+            table.insert(firsttab[2], countername)
+            table.insert(firsttab_combined[1], eventname .. " STAT")
+            table.insert(firsttab_combined[2], countername)
         end
-
-        for j,cpu in pairs(cpulist) do
-            tmpList = {"Core "..tostring(cpu)}
-            if not groupData[groupID]["Metrics"] then
-                table.insert(tmpList, string.format("%e",runtime))
+        for c, cpu in pairs(cpulist) do
+            local tmpList = {"Core "..tostring(cpu)}
+            if likwid.getNumberOfMetrics(g) == 0 then
+                if region == nil then
+                    table.insert(tmpList, string.format("%e", runtime))
+                else
+                    table.insert(tmpList, string.format("%e", likwid.markerRegionTime(region, c)))
+                end
             end
-            for i, eresult in pairs(results[groupID]) do
-                local tmp = tostring(eresult[j])
+            
+            for e, event in pairs(group) do
+                local tmp = tostring(event[c])
                 if tmp:len() > 12 then
-                    tmp = string.format("%e", eresult[j])
+                    tmp = string.format("%e", event[c])
                 end
                 table.insert(tmpList, tmp)
             end
             table.insert(firsttab, tmpList)
         end
-        
         if #cpulist > 1 then
             firsttab_combined = tableMinMaxAvgSum(firsttab, 2, 1)
         end
-
-        if groupData[groupID]["Metrics"] then
-            local counterlist = {}
-            counterlist["time"] = runtime
-            counterlist["inverseClock"] = 1.0/clock;
-
+        if likwid.getNumberOfMetrics(g) > 0 then
             secondtab[1] = {"Metric"}
             secondtab_combined[1] = {"Metric"}
-            for m, metric in pairs(groupData[groupID]["Metrics"]) do
-                table.insert(secondtab[1],metric["description"] )
-                table.insert(secondtab_combined[1],metric["description"].." STAT" )
+            for m=1, likwid.getNumberOfMetrics(g) do
+                table.insert(secondtab[1], likwid.getNameOfMetric(g, m))
+                table.insert(secondtab_combined[1], likwid.getNameOfMetric(g, m).." STAT" )
             end
-            for j, cpu in pairs(cpulist) do
-                tmpList = {"Core "..tostring(cpu)}
-                for i, event in pairs(groupData[groupID]["Events"]) do
-                    counterlist[event["Counter"]] = results[groupID][i][j]
-                end
-                for m, metric in pairs(groupData[groupID]["Metrics"]) do
-                    local tmp = calculate_metric(metric["formula"], counterlist)
-                    if tostring(tmp):len() > 12 then
-                        tmp = string.format("%e",tmp)
+            for c, cpu in pairs(cpulist) do
+                local tmpList = {"Core "..tostring(cpu)}
+                for m=1, likwid.getNumberOfMetrics(g) do
+                    local tmp = tostring(metrics[g][m][c])
+                    if tmp:len() > 12 then
+                        tmp = string.format("%e", metrics[g][m][c])
                     end
-                    table.insert(tmpList, tostring(tmp))
+                    table.insert(tmpList, tmp)
                 end
-                table.insert(secondtab,tmpList)
+                table.insert(secondtab, tmpList)
             end
-
             if #cpulist > 1 then
                 secondtab_combined = tableMinMaxAvgSum(secondtab, 1, 1)
             end
@@ -783,7 +802,14 @@ local function printOutput(results, groupData, cpulist)
             print(string.format("CPU name:,%s%s", cpuinfo["osname"],string.rep(",",maxLineFields-2)))
             print(string.format("CPU type:,%s%s", cpuinfo["name"],string.rep(",",maxLineFields-2)))
             print(string.format("CPU clock:,%s GHz%s", clock*1.E-09,string.rep(",",maxLineFields-2)))
-            print(string.format("TABLE,Group %d Raw,%s,%d%s",groupID,groupName,#firsttab[1]-1,string.rep(",",maxLineFields-4)))
+            if region == nil then
+                print(string.format("TABLE,Group %d Raw,%s,%d%s",g,groupName,#firsttab[1]-1,string.rep(",",maxLineFields-4)))
+            else
+                print(string.format("TABLE,Region %s,Group %d Raw,%s,%d%s",regionName,g,groupName,#firsttab[1]-1,string.rep(",",maxLineFields-5)))
+            end
+            if #infotab > 0 then
+                likwid.printcsv(infotab, maxLineFields)
+            end
             likwid.printcsv(firsttab, maxLineFields)
         else
             if outfile ~= nil then
@@ -793,27 +819,46 @@ local function printOutput(results, groupData, cpulist)
                 print(string.format("CPU clock:\t%3.2f GHz",clock * 1.E-09))
                 print(likwid.hline)
             end
-            print("Group "..tostring(groupID)..": "..groupName)
+            if region == nil then
+                print("Group "..tostring(g)..": "..groupName)
+            else
+                print("Region "..regionName..", Group "..tostring(g)..": "..groupName)
+            end
+            if #infotab > 0 then
+                likwid.printtable(infotab)
+            end
             likwid.printtable(firsttab)
         end
         if #cpulist > 1 then
             if use_csv then
-                print(string.format("TABLE,Group %d Raw Stat,%s,%d%s",groupID,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
+                if region == nil then
+                    print(string.format("TABLE,Group %d Raw Stat,%s,%d%s",g,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
+                else
+                    print(string.format("TABLE,Region %s,Group %d Raw Stat,%s,%d%s",regionName, g,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                end
                 likwid.printcsv(firsttab_combined, maxLineFields)
             else
                 likwid.printtable(firsttab_combined)
             end
         end
-        if groupData[groupID]["Metrics"] then
+        if likwid.getNumberOfMetrics(g) > 0 then
             if use_csv then
-                print(string.format("TABLE,Group %d Metric,%s,%d%s",groupID,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-4)))
+                if region == nil then
+                    print(string.format("TABLE,Group %d Metric,%s,%d%s",g,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-4)))
+                else
+                    print(string.format("TABLE,Region %s,Group %d Metric,%s,%d%s",regionName,g,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-5)))
+                end
                 likwid.printcsv(secondtab, maxLineFields)
             else
                 likwid.printtable(secondtab)
             end
             if #cpulist > 1 then
                 if use_csv then
-                    print(string.format("TABLE,Group %d Metric Stat,%s,%d%s",groupID,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))
+                    if region == nil then
+                        print(string.format("TABLE,Group %d Metric Stat,%s,%d%s",g,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))
+                    else
+                        print(string.format("TABLE,Region %s,Group %d Metric Stat,%s,%d%s",regionName,g,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                    end
                     likwid.printcsv(secondtab_combined, maxLineFields)
                 else
                     likwid.printtable(secondtab_combined)
@@ -826,180 +871,6 @@ end
 likwid.printOutput = printOutput
 
 
-local function printMarkerOutput(groups, results, groupData, cpulist)
-    local nr_groups = #groups
-    local maxLineFields = 0
-    local clock = likwid_getCpuClock()
-    for g, group in pairs(groups) do
-        local groupName = groupData[g]["GroupString"]
-        if groupName == groupData[g]["EventString"] then
-            groupName = "Custom"
-        end
-        for r, region in pairs(groups[g]) do
-            local nr_threads = likwid.tablelength(groups[g][r]["Time"])
-            local nr_events = likwid.tablelength(groupData[g]["Events"])
-            if tablelength(groups[g][r]["Count"]) > 0 then
-
-                local infotab = {}
-                local firsttab = {}
-                local firsttab_combined = {}
-                local secondtab = {}
-                local secondtab_combined = {}
-
-                infotab[1] = {"Region Info","RDTSC Runtime [s]","call count"}
-                for thread=1, nr_threads do
-                    if cpulist[thread] ~= nil and
-                       groups[g][r]["Time"][thread] ~= nil and
-                       groups[g][r]["Count"][thread] ~= nil then
-                        local tmpList = {}
-                        table.insert(tmpList, "Core "..tostring(cpulist[thread]))
-                        table.insert(tmpList, string.format("%.6f", groups[g][r]["Time"][thread]))
-                        table.insert(tmpList, tostring(groups[g][r]["Count"][thread]))
-                        table.insert(infotab, tmpList)
-                    else
-                        print(string.format("Cannot find thread %d in CPU list, in time list or in call count list", thread))
-                    end
-                end
-
-                firsttab[1] = {"Event"}
-                firsttab_combined[1] = {"Event"}
-                for e=1,nr_events do
-                    table.insert(firsttab[1],groupData[g]["Events"][e]["Event"])
-                    table.insert(firsttab_combined[1],groupData[g]["Events"][e]["Event"].." STAT")
-                end
-                firsttab[2] = {"Counter"}
-                firsttab_combined[2] = {"Counter"}
-                for e=1,nr_events do
-                    table.insert(firsttab[2],groupData[g]["Events"][e]["Counter"])
-                    table.insert(firsttab_combined[2],groupData[g]["Events"][e]["Counter"])
-                end
-                for t=1,nr_threads do
-                    local tmpList = {}
-                    table.insert(tmpList, "Core "..tostring(cpulist[t]))
-                    for e=1,nr_events do
-                        if results[g][r][e][t]["Value"] ~= nil then
-                            local tmp = results[g][r][e][t]["Value"]
-                            if tmp == nil then
-                                tmp = 0
-                            end
-                            table.insert(tmpList, string.format("%e",tmp))
-                        else
-                            print(string.format("Cannot find result of group %d, region %d, event %d and thread %d", g,r,e,t))
-                        end
-                    end
-                    table.insert(firsttab, tmpList)
-                end
-
-                if #cpulist > 1 then
-                    firsttab_combined = tableMinMaxAvgSum(firsttab, 2, 1)
-                end
-
-
-                if likwid.tablelength(groupData[g]["Metrics"]) > 0 then
-
-                    tmpList = {"Metric"}
-                    for m=1,#groupData[g]["Metrics"] do
-                        table.insert(tmpList, groupData[g]["Metrics"][m]["description"])
-                    end
-                    table.insert(secondtab, tmpList)
-                    for t=1,nr_threads do
-                        counterlist = {}
-                        for e=1,nr_events do
-                            counterlist[ results[g][r][e][t]["Counter"] ] = results[g][r][e][t]["Value"]
-                        end
-                        counterlist["inverseClock"] = 1.0/clock
-                        counterlist["time"] = groups[g][r]["Time"][t]
-                        tmpList = {}
-                        table.insert(tmpList, "Core "..tostring(cpulist[t]))
-                        for m=1,#groupData[g]["Metrics"] do
-                            local tmp = likwid.calculate_metric(groupData[g]["Metrics"][m]["formula"],counterlist)
-                            if tmp == nil or tostring(tmp) == "-nan" then
-                                tmp = "0"
-                            elseif tostring(tmp):len() > 12 then
-                                tmp = string.format("%e",tmp)
-                            end
-                            table.insert(tmpList, tmp)
-                        end
-                        table.insert(secondtab,tmpList)
-                    end
-
-                    if #cpulist > 1 then
-                        secondtab_combined = tableMinMaxAvgSum(secondtab, 1, 1)
-                    end
-                end
-                maxLineFields = math.max(#infotab, #firsttab, #firsttab_combined,
-                                         #secondtab, #secondtab_combined, 2)
-                
-                if use_csv then
-                    str = tostring(g)..","..groupName..","..groups[g][r]["Name"]
-                    if maxLineFields > 3 then
-                        str = str .. string.rep(",", maxLineFields-3)
-                    end
-                    if outfile ~= nil and g == 1 and r == 1 then
-                        print(string.format("STRUCT,Info,3%s",string.rep(",",maxLineFields-3)))
-                        print(string.format("CPU name:,%s%s", cpuinfo["osname"],string.rep(",",maxLineFields-2)))
-                        print(string.format("CPU type:,%s%s", cpuinfo["name"],string.rep(",",maxLineFields-2)))
-                        print(string.format("CPU clock:,%s GHz%s", clock*1.E-09,string.rep(",",maxLineFields-2)))
-                    end
-                else
-                    if outfile ~= nil and g == 1 and r == 1 then
-                        print(likwid.hline)
-                        print(string.format("CPU name:\t%s",cpuinfo["osname"]))
-                        print(string.format("CPU type:\t%s",cpuinfo["name"]))
-                        print(string.format("CPU clock:\t%3.2f GHz",clock * 1.E-09))
-                        print(likwid.hline)
-                    end
-                    print(likwid.dline)
-                    str = "Group "..tostring(g).." "..groupName..": Region "..groups[g][r]["Name"]
-                    print(str)
-                    print(likwid.dline)
-                end
-                
-                if use_csv then
-                    print(string.format("STRUCT,Info,5%s",string.rep(",",maxLineFields-3)))
-                    print(str)
-                    likwid.printcsv(infotab, maxLineFields)
-                    print(string.format("CPU clock,%f MHz%s",clock*1.E-9,string.rep(",",maxLineFields-2)))
-                else
-                    likwid.printtable(infotab)
-                end
-                if use_csv then
-                    print(string.format("TABLE,Group %d Raw,%s,%d%s",g,groupName,#firsttab[1]-1,string.rep(",",maxLineFields-3)))
-                    likwid.printcsv(firsttab, maxLineFields)
-                else
-                    likwid.printtable(firsttab)
-                end
-                if #cpulist > 1 then
-                    if use_csv then
-                        print(string.format("TABLE,Group %d Raw Stat,%s,%d%s",g,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-3)))
-                        likwid.printcsv(firsttab_combined, maxLineFields)
-                    else
-                        likwid.printtable(firsttab_combined)
-                    end
-                end
-                if likwid.tablelength(groupData[g]["Metrics"]) > 0 then
-                    if use_csv then
-                        print(string.format("TABLE,Group %d Metric,%s,%d%s",g,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-3)))
-                        likwid.printcsv(secondtab, maxLineFields)
-                    else
-                        likwid.printtable(secondtab)
-                    end
-                    if #cpulist > 1 then
-                        if use_csv then
-                            print(string.format("TABLE,Group %d Metric Stat,%s,%d%s",g,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-3)))
-                            likwid.printcsv(secondtab_combined, maxLineFields)
-                        else
-                            likwid.printtable(secondtab_combined)
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
-
-likwid.print_markerOutput = printMarkerOutput
 
 local function getResults()
     local results = {}
@@ -1020,152 +891,58 @@ end
 
 likwid.getResults = getResults
 
-local function getMarkerResults(filename, group_list, cpulist)
-    local cpuinfo = likwid_getCpuInfo()
-    local ctr_and_events = likwid_getEventsAndCounters()
-    local group_data = {}
+local function getMetrics()
     local results = {}
-    local num_cpus = #cpulist
-    local f = io.open(filename, "r")
-    if f == nil then
-        print(string.format("Cannot find intermediate results file %s", filename))
-        print("This happens when the application exited before calling LIKWID_MARKER_CLOSE.")
-        return {}, {}
-    end
-    local finput = f:read("*all")
-    f:close()
-    if finput:len() == 0 then
-        print("Marker file is empty. This seems like a failure in LIKWID_MARKER_CLOSE!")
-        return {}, {}
-    end
-    local lines = stringsplit(finput,"\n")
-
-    -- Read first line with general counts
-    local tmpList = stringsplit(lines[1]," ")
-    if #tmpList ~= 3 then
-        print(string.format("Marker file %s not in proper format",filename))
-        return {}, {}
-    end
-    local nr_threads = tonumber(tmpList[1])
-    if tonumber(nr_threads) ~= tonumber(num_cpus) then
-        print(string.format("Marker file lists only %d cpus, but perfctr configured %d cpus", nr_threads, num_cpus))
-        return {},{}
-    end
-    local nr_regions = tonumber(tmpList[2])
-    if tonumber(nr_regions) == 0 and tonumber(tmpList[1]) > 0 then
-        print("No region results can be found in marker API output file")
-        print("This happens when the application runs only on different CPUs as specified for likwid-perfctr")
-        return {},{}
-    end
-    local nr_groups = tonumber(tmpList[3])
-    if tonumber(nr_groups) == 0 then
-        print("No group listed in the marker API output file")
-        return {},{}
-    end
-    table.remove(lines,1)
-
-    -- Read Region IDs and names from following lines
-    for l=1, #lines do
-        r, gname, g = string.match(lines[1],"(%d+):([%a%g]*)-(%d+)")
-        if (r ~= nil and g ~= nil and gname ~= nil) then
-            g = tonumber(g)+1
-            r = tonumber(r)+1
-
-            if group_data[g] == nil then
-                group_data[g] = {}
+    local nr_groups = likwid_getNumberOfGroups()
+    local nr_threads = likwid_getNumberOfThreads()
+    for i=1,nr_groups do
+        results[i] = {}
+        local nr_metrics = likwid_getNumberOfMetrics(i)
+        for j=1,nr_metrics do
+            results[i][j] = {}
+            for k=1, nr_threads do
+                results[i][j][k] = likwid_getMetric(i,j, k)
             end
-            if group_data[g][r] == nil then
-                group_data[g][r] = {}
-            end
-            group_data[g][r]["ID"] = g
-            group_data[g][r]["Name"] = gname
-            group_data[g][r]["Time"] = {}
-            group_data[g][r]["Count"] = {}
-            if results[g] == nil then
-                results[g] = {}
-            end
-            if results[g][r] == nil then
-                results[g][r]= {}
-            end
-            table.remove(lines, 1 )
-        else
-            break
         end
     end
+    return results
+end
 
-    for l, line in pairs(lines) do
-        if line:len() > 0 then
-            r, g, t, count = string.match(line,"(%d+) (%d+) (%d+) (%d+) %a*")
-            if (r ~= nil and g ~= nil and t ~= nil and count ~= nil) then
-                r = tonumber(r)+1
-                g = tonumber(g)+1
-                c = tonumber(t)
-                for i, cpu in pairs(cpulist) do
-                    if cpu == c then
-                        t = i
-                        break
-                    end
-                end
-                tmpList = stringsplit(line, " ")
-                if #tmpList <= 6 then
-                    print("Line not in common format:")
-                    print(line)
-                end
-                table.remove(tmpList, 1)
-                table.remove(tmpList, 1)
-                table.remove(tmpList, 1)
-                table.remove(tmpList, 1)
-                time = tonumber(tmpList[1])
-                events = tonumber(tmpList[2])
-                table.remove(tmpList, 1)
-                table.remove(tmpList, 1)
+likwid.getMetrics = getMetrics
 
-                if group_data[g][r]["Time"] ~= nil then
-                    group_data[g][r]["Time"][t] = time
-                else
-                    print(string.format("Cannot store time for group %d region %d and thread %d", g,r,t))
-                end
-                if group_data[g][r]["Count"] ~= nil then
-                    group_data[g][r]["Count"][t] = count
-                else
-                    print(string.format("Cannot store count for group %d region %d and thread %d", g,r,t))
-                end
-                
-                for c=1, events do
-                    if results[g][r][c] == nil then
-                        results[g][r][c] = {}
-                    end
-                    if results[g][r][c][t] == nil then
-                        results[g][r][c][t] = {}
-                    end
-                    local tmp = tonumber(tmpList[c])
-                    if results[g][r][c][t] ~= nil then
-                        if tmp ~= nil then
-                            results[g][r][c][t]["Value"] = tmp
-                        else
-                            print(string.format("Cannot read value %s to number, setting 0",tmpList[c]))
-                            results[g][r][c][t]["Value"] = 0
-                        end
-                    else
-                        print(string.format("Result list not properly initialized for group %d, region %d, event %d and thread %d",g,r,c,t))
-                        results[g][r][c][t] = {}
-                        if tmp ~= nil then
-                            results[g][r][c][t]["Value"] = tmp
-                        else
-                            print(string.format("Cannot read value %s to number, setting 0",tmpList[c]))
-                            results[g][r][c][t]["Value"] = 0
-                        end
-                    end
-                    if results[g][r][c][t] ~= nil and group_list[g]["Events"][c]["Counter"] ~= nil then
-                        results[g][r][c][t]["Counter"] = group_list[g]["Events"][c]["Counter"]
-                    else
-                        print(string.format("Cannot store counter name in results dict for group %d, region %d, event %d and thread %d", g,r,c,t))
-                    end
+local function getMarkerResults(filename, cpulist)
+    local cpuinfo = likwid.getCpuInfo()
+    likwid.readMarkerFile(filename)
+    results = {}
+    metrics = {}
+    for i=1, likwid.markerNumRegions() do
+        local regionName = likwid.markerRegionTag(i)
+        local groupID = likwid.markerRegionGroup(i)
+        local groupName = likwid.markerRegionGroup(i)
+        local regionThreads = likwid.markerRegionThreads(i)
+        results[i] = {}
+        metrics[i] = {}
+        results[i][groupID] = {}
+        metrics[i][groupID] = {}
+        for k=1, likwid.markerRegionEvents(i) do
+            local eventName = likwid.getNameOfEvent(groupID, k)
+            local counterName = likwid.getNameOfCounter(groupID, k)
+            results[i][groupID][k] = {}
+            for j=1, regionThreads do
+                results[i][groupID][k][j] = likwid.markerRegionResult(i,k,j)
+            end
+        end
+        if likwid.getNumberOfMetrics(groupID) > 0 then
+            for k=1, likwid.getNumberOfMetrics(likwid.markerRegionGroup(i)) do
+                local metricName = likwid.getNameOfMetric(groupID, k)
+                metrics[i][groupID][k] = {}
+                for j=1, regionThreads do
+                    metrics[i][groupID][k][j] = likwid.markerRegionMetric(i,k,j)
                 end
             end
         end
     end
-    return group_data, results
+    return results, metrics
 end
 
 likwid.getMarkerResults = getMarkerResults

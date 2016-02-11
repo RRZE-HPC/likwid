@@ -664,6 +664,14 @@ extern int sockstr_to_socklist(char* sockstr, int* sockets, int length)  __attri
 /** \addtogroup PerfMon Performance monitoring module
  *  @{
  */
+/*! \brief Get all groups
+
+Checks the configured performance group path for the current architecture and
+returns all found group names
+@return List of group names
+*/
+extern int perfmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos) __attribute__ ((visibility ("default") ));
+
 /*! \brief Initialize performance monitoring facility
 
 Initialize the performance monitoring feature by creating basic data structures.
@@ -753,6 +761,16 @@ overflows and if the counter values need to be calculated with multipliers.
 @return The counter result
 */
 extern double perfmon_getResult(int groupId, int eventId, int threadId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the metric result of the specified group, counter and thread
+
+Get the metric result of the last measurement cycle. It reads all raw results for the given groupId and threadId.
+@param [in] groupId ID of the group that should be read
+@param [in] metricId ID of the metric that should be calculated
+@param [in] threadId ID of the thread/cpu that should be read
+@return The metric result
+*/
+extern double perfmon_getMetric(int groupId, int metricId, int threadId) __attribute__ ((visibility ("default") ));
+
 /*! \brief Get the number of configured event groups
 
 @return Number of groups
@@ -764,7 +782,7 @@ extern int perfmon_getNumberOfGroups(void) __attribute__ ((visibility ("default"
 @return Number of eventSets
 */
 extern int perfmon_getNumberOfEvents(int groupId) __attribute__ ((visibility ("default") ));
-/*! \brief Get the measurement time a group
+/*! \brief Get the accumulated measurement time a group
 
 @param [in] groupId ID of group
 @return Time in seconds the event group was measured
@@ -786,6 +804,127 @@ extern int perfmon_getNumberOfThreads(void) __attribute__ ((visibility ("default
 
 */
 extern void perfmon_setVerbosity(int verbose) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the event name of the specified group and event
+
+Get the metric name as defined in the performance group file
+@param [in] groupId ID of the group that should be read
+@param [in] eventId ID of the event that should be returned
+@return The event name or NULL in case of failure
+*/
+extern char* perfmon_getEventName(int groupId, int eventId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the counter name of the specified group and event
+
+Get the counter name as defined in the performance group file
+@param [in] groupId ID of the group that should be read
+@param [in] eventId ID of the event of which the counter should be returned
+@return The counter name or NULL in case of failure
+*/
+extern char* perfmon_getCounterName(int groupId, int eventId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the name group
+
+Get the name of group. Either it is the name of the performance group or "Custom"
+@param [in] groupId ID of the group that should be read
+@return The group name or NULL in case of failure
+*/
+extern char* perfmon_getGroupName(int groupId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the metric name of the specified group and metric
+
+Get the metric name as defined in the performance group file
+@param [in] groupId ID of the group that should be read
+@param [in] metricId ID of the metric that should be calculated
+@return The metric name or NULL in case of failure
+*/
+extern char* perfmon_getMetricName(int groupId, int metricId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the short informational string of the specified group
+
+Returns the short information string as defined by performance groups or "Custom"
+in case of custom event sets
+@param [in] groupId ID of the group that should be read
+@return The short information or NULL in case of failure
+*/
+extern char* perfmon_getGroupInfoShort(int groupId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the long descriptive string of the specified group
+
+Returns the long descriptive string as defined by performance groups or NULL
+in case of custom event sets
+@param [in] groupId ID of the group that should be read
+@return The long description or NULL in case of failure
+*/
+extern char* perfmon_getGroupInfoLong(int groupId) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the number of configured metrics for group
+
+@param [in] groupId ID of group
+@return Number of metrics
+*/
+extern int perfmon_getNumberOfMetrics(int groupId) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the last measurement time a group
+
+@param [in] groupId ID of group
+@return Time in seconds the event group was measured the last time
+*/
+extern double perfmon_getLastTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the number of threads specified at perfmon_init()
+@param [in] filename Filename with Marker API results
+@return 0 or negative error number
+*/
+extern int perfmon_readMarkerFile(const char* filename) __attribute__ ((visibility ("default") ));
+/*! \brief Get the number of regions listed in Marker API result file
+
+@return Number of regions
+*/
+extern int perfmon_getNumberOfRegions() __attribute__ ((visibility ("default") ));
+/*! \brief Get the groupID of a region
+
+@param [in] region ID of region
+@return Group ID of region
+*/
+extern int perfmon_getGroupOfRegion(int region) __attribute__ ((visibility ("default") ));
+/*! \brief Get the tag of a region
+@param [in] region ID of region
+@return tag of region
+*/
+char* perfmon_getTagOfRegion(int region) __attribute__ ((visibility ("default") ));
+/*! \brief Get the number of events of a region
+@param [in] region ID of region
+@return Number of events of region
+*/
+int perfmon_getEventsOfRegion(int region) __attribute__ ((visibility ("default") ));
+/*! \brief Get the number of threads of a region
+@param [in] region ID of region
+@return Number of threads of region
+*/
+int perfmon_getThreadsOfRegion(int region) __attribute__ ((visibility ("default") ));
+/*! \brief Get the accumulated measurement time of a region for a thread
+@param [in] region ID of region
+@param [in] thread ID of thread
+@return Measurement time of a region for a thread
+*/
+double perfmon_getTimeOfRegion(int region, int thread) __attribute__ ((visibility ("default") ));
+/*! \brief Get the call count of a region for a thread
+@param [in] region ID of region
+@param [in] thread ID of thread
+@return Call count of a region for a thread
+*/
+int perfmon_getCountOfRegion(int region, int thread) __attribute__ ((visibility ("default") ));
+/*! \brief Get the event result of a region for an event and thread
+@param [in] region ID of region
+@param [in] event ID of event
+@param [in] thread ID of thread
+@return Result of a region for an event and thread
+*/
+double perfmon_getResultOfRegionThread(int region, int event, int thread) __attribute__ ((visibility ("default") ));
+/*! \brief Get the metric result of a region for a metric and thread
+@param [in] region ID of region
+@param [in] metricId ID of metric
+@param [in] threadId ID of thread
+@return Metric result of a region for a thread
+*/
+double perfmon_getMetricOfRegionThread(int region, int metricId, int threadId) __attribute__ ((visibility ("default") ));
+
 /** @}*/
 
 /*

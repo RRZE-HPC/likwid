@@ -137,6 +137,7 @@ local function usage()
     print("-C <list>\t\t Processor ids to pin threads and measure, e.g. 1,2-4,8")
     print("-g, --group <string>\t Preconfigured plot group or custom event set string with plot config. See man page for information.")
     print("-t, --time <time>\t Frequency in s, ms or us, e.g. 300ms, for the timeline mode of likwid-perfctr")
+    print("-f, --force\t\t Overwrite counter configuration although already in use")
     print("-d, --dump\t\t Print output as it is send to feedGnuplot.")
     print("-p, --plotdump\t\t Use dump functionality of feedGnuplot. Plots out plot configurations plus data to directly submit to gnuplot")
     print("--host <host>\t\t Run likwid-perfctr on the selected host using SSH. Evaluation and plotting is done locally.")
@@ -170,13 +171,14 @@ local nrgroups, allgroups = likwid.get_groups()
 local mfreq = 1.0
 local plotrange = 0
 local host = nil
+local force = false
 
 if #arg == 0 then
     usage()
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","t:","r:","a","d","p","help", "version","group:","time:","dump","range:","plotdump","all", "host:"}) do
+for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","t:","r:","a","d","p","f","help", "version","group:","time:","dump","range:","plotdump","all", "host:", "force"}) do
     if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
@@ -203,6 +205,8 @@ for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","t:","r:","a","d","p",
         print_configs = true
     elseif opt == "host" then
         host = arg
+    elseif opt == "f" or opt == "force" then
+        force = true
     elseif opt == "?" then
         print("Invalid commandline option -"..arg)
         os.exit(1)
@@ -400,6 +404,9 @@ if pinning then
     cmd = cmd .. string.format(" -C %s",table.concat(cpulist,","))
 else
     cmd = cmd .. string.format(" -c %s",table.concat(cpulist,","))
+end
+if force then
+    cmd = cmd .. " -f"
 end
 cmd = cmd .. string.format(" -t %s", timeline)
 

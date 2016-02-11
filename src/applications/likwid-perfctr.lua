@@ -356,16 +356,12 @@ if print_event ~= nil then
     os.exit(0)
 end
 
-num_avail_groups, avail_groups = likwid.get_groups()
-
+avail_groups = likwid.getGroups()
 if print_groups == true then
-    print_stdout(string.format("%10s\t%s","Group name", "Description"))
+    print_stdout(string.format("%11s\t%s","Group name", "Description"))
     print_stdout(likwid.hline)
     for i,g in pairs(avail_groups) do
-        local gdata = likwid.get_groupdata(g)
-        if gdata ~= nil then
-            print_stdout(string.format("%10s\t%s",g,gdata["ShortDescription"]))
-        end
+        print_stdout(string.format("%11s\t%s",g["Name"], g["Info"]))
     end
     likwid.putTopology()
     likwid.putConfiguration()
@@ -384,10 +380,9 @@ if print_group_help == true then
             os.exit(1)
         end
         for i,g in pairs(avail_groups) do
-            if event_string == g then
-                local gdata = likwid.get_groupdata(event_string)
-                print_stdout(string.format("Group %s:",event_string))
-                print_stdout(gdata["LongDescription"])
+            if event_string == g["Name"] then
+                print_stdout(string.format("Group %s:",g["Name"]))
+                print_stdout(g["Long"])
             end
         end
     end
@@ -467,6 +462,10 @@ if use_marker then
     end
 end
 
+if verbose == 0 then
+    likwid.setenv("LIKWID_SILENT","true")
+end
+
 if pin_cpus then
     local omp_threads = os.getenv("OMP_NUM_THREADS")
     if omp_threads == nil then
@@ -478,14 +477,9 @@ if pin_cpus then
         likwid.setenv("CILK_NWORKERS", tostring(num_cpus))
     end
     if skip_mask then
-        skipString = 
         likwid.setenv("LIKWID_SKIP",skip_mask)
     end
     likwid.setenv("KMP_AFFINITY","disabled")
-
-    if verbose == 0 then
-        likwid.setenv("LIKWID_SILENT","true")
-    end
 
     if num_cpus > 1 then
         local pinString = tostring(cpulist[2])
@@ -502,9 +496,8 @@ if pin_cpus then
             likwid.setenv("LD_PRELOAD",likwid.pinlibpath .. ":" .. preload)
         end
     elseif num_cpus == 1 then
-        print(cpulist[1])
         likwid.setenv("LIKWID_PIN", cpulist[1])
-        if verbose == 0 then
+        if verbose > 0 then
             likwid.pinProcess(cpulist[1], 0)
         else
             likwid.pinProcess(cpulist[1], 1)
@@ -514,7 +507,7 @@ end
 
 
 
-for i, event_string in pairs(event_string_list) do
+--[[for i, event_string in pairs(event_string_list) do
     local groupdata = likwid.get_groupdata(event_string)
     if groupdata == nil then
         print_stdout("Cannot read event string, it's neither a performance group nor a proper event string <event>:<counter>:<options>,...")
@@ -525,7 +518,7 @@ for i, event_string in pairs(event_string_list) do
     end
     table.insert(group_list, groupdata)
     event_string_list[i] = groupdata["EventString"]
-end
+end]]
 
 
 if set_access_modes then
@@ -615,7 +608,7 @@ end
 
 
 io.stdout:flush()
-local int_results = {}
+local groupTime = {}
 if use_wrapper or use_timeline then
     local start = likwid.startClock()
     local stop = 0
@@ -644,7 +637,8 @@ if use_wrapper or use_timeline then
     if not pid then
         print_stdout("Failed to execute command: ".. execString)
     end
-    lastmetrics = {}
+    start = likwid.startClock()
+    groupTime[activeGroup] = 0
     while true do
         if likwid.getSignalState() ~= 0 then
             likwid.killProgram()
@@ -660,62 +654,20 @@ if use_wrapper or use_timeline then
             --likwid.readCounters()
             likwid.stopCounters()
             local time = likwid.getClock(start, stop)
-            lastresults = int_results[alltime]
-            
-            if lastmetrics[activeGroup] == nil then
-                lastmetrics[activeGroup] = {}
+            print(time)
+            if likwid.getNumberOfMetrics(activeGroup) == 0 then
+                results = likwid.getResults()
+            else
+                results = likwid.getMetrics()
             end
-            alltime = alltime + time
-            int_results[alltime] = likwid.getResults()
-            if not firstrun then
-                local str = ""
-                if group_list[activeGroup]["Metrics"] == nil or #group_list[activeGroup]["Metrics"] == 0 then
-                    str = tostring(activeGroup) .. ","..tostring(nr_events) .. "," .. tostring(nr_threads) .. ","..tostring(alltime)
-                    for ie, e in pairs(int_results[alltime][activeGroup]) do
-                        for t=1,nr_threads do
-                            if lastresults ~=nil then
-                                str = str .. "," .. tostring(e[t] - lastresults[activeGroup][ie][t])
-                            else
-                                str = str .. "," .. tostring(e[t])
-                            end
-                        end
-                    end
-                    io.stderr:write(str.."\n")
-                else
-                    str = tostring(activeGroup) .. ","..tostring(#group_list[activeGroup]["Metrics"])
-                    str = str .. "," .. tostring(nr_threads) .. ","..tostring(alltime)
-                    for m=1,#group_list[activeGroup]["Metrics"] do
-                        if lastmetrics[activeGroup][m] == nil then
-                            lastmetrics[activeGroup][m] = {}
-                        end
-                        for t=1,nr_threads do
-                            counterlist = {}
-                            counterlist["inverseClock"] = 1.0/cpuClock
-                            counterlist["time"] = time
-                            for ie, e in pairs(int_results[alltime][activeGroup]) do
-                                local counter = group_list[activeGroup]["Events"][ie]["Counter"]
-                                if lastresults ~=nil and #group_ids == 1 then
-                                    counterlist[counter] = e[t] - lastresults[activeGroup][ie][t]
-                                else
-                                    counterlist[counter] = e[t]
-                                end
-                            end
-                            local formula = group_list[activeGroup]["Metrics"][m]["formula"]
-                            local result = likwid.calculate_metric(formula,counterlist)
-
-                            if lastmetrics[activeGroup][m][t] ~= nil and
-                               #group_ids > 1 then
-                                str = str .. "," .. tostring(result - lastmetrics[activeGroup][m][t])
-                            else
-                                str = str .. "," .. tostring(result)
-                            end
-                            lastmetrics[activeGroup][m][t] = result
-                        end
-                    end
-                    io.stderr:write(str.."\n")
+            str = tostring(activeGroup) .. " "..tostring(#results[activeGroup]).." "..tostring(#cpulist).." "..tostring(time)
+            for i,l1 in pairs(results[activeGroup]) do
+                for j, value in pairs(l1) do
+                    str = str .. " " .. tostring(value)
                 end
             end
-            firstrun = false
+            print(str)
+            groupTime[activeGroup] = time
             likwid.startCounters()
         else
             likwid.readCounters()
@@ -723,9 +675,12 @@ if use_wrapper or use_timeline then
         if #group_ids > 1 then
             likwid.switchGroup(activeGroup + 1)
             activeGroup = likwid.getIdOfActiveGroup()
+            if groupTime[activeGroup] == nil then
+                groupTime[activeGroup] = 0
+            end
             nr_events = likwid.getNumberOfEvents(activeGroup)
         end
-        start = likwid.startClock()
+        
     end
     stop = likwid.stopClock()
 elseif use_stethoscope then
@@ -762,21 +717,19 @@ end
 
 
 if use_marker == true then
-    groups, results = likwid.getMarkerResults(markerFile, group_list, cpulist)
-    os.remove(markerFile)
-    if #groups == 0 and #results == 0 then
-        likwid.finalize()
-        likwid.putTopology()
-        likwid.putConfiguration()
-        os.exit(1)
+    results, metrics = likwid.getMarkerResults(markerFile, cpulist)
+    if #results == 0 then
+        print_stdout("No regions could be found in Marker API result file")
+    else
+        for r=1, #results do
+            likwid.printOutput(results[r], metrics[r], cpulist, r)
+        end
     end
-    likwid.print_markerOutput(groups, results, group_list, cpulist)
+    os.remove(markerFile)
 elseif use_timeline == false then
     results = likwid.getResults()
-    for g,gr in pairs(group_list) do
-        gr["runtime"] = likwid.getRuntimeOfGroup(g)
-    end
-    likwid.printOutput(results, group_list, cpulist)
+    metrics = likwid.getMetrics()
+    likwid.printOutput(results, metrics, cpulist, nil)
 end
 
 if outfile then

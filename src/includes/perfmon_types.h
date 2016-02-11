@@ -37,6 +37,7 @@
 #include <bstrlib.h>
 #include <timer.h>
 #include <inttypes.h>
+#include <perfgroup.h>
 
 #define MAX_EVENT_OPTIONS NUM_EVENT_OPTIONS
 
@@ -214,6 +215,7 @@ typedef struct {
     double                runTime; /*!< \brief Sum of all time information in seconds that the group was running */
     __uint128_t           regTypeMask; /*!< \brief Bitmask for easy checks which types are included in the eventSet */
     GroupState            state; /*!< \brief Current state of the event group (configured, started, none) */
+    GroupInfo             group; /*!< \brief Structure holding the performance group information */
 } PerfmonEventSet;
 
 /*! \brief Structure specifying all performance monitoring event groups
