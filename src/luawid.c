@@ -343,6 +343,19 @@ static int lua_likwid_getResult(lua_State* L)
     return 1;
 }
 
+static int lua_likwid_getMetric(lua_State* L)
+{
+    int groupId, metricId, threadId;
+    double result = 0;
+    groupId = lua_tonumber(L,1);
+    metricId = lua_tonumber(L,2);
+    threadId = lua_tonumber(L,3);
+    result = perfmon_getMetric(groupId-1, metricId-1, threadId-1);
+    lua_pushnumber(L,result);
+    return 1;
+}
+
+
 static int lua_likwid_getNumberOfGroups(lua_State* L)
 {
     int number;
@@ -403,6 +416,134 @@ static int lua_likwid_getNumberOfThreads(lua_State* L)
     }
     number = perfmon_getNumberOfThreads();
     lua_pushnumber(L,number);
+    return 1;
+}
+
+static int lua_likwid_getNameOfEvent(lua_State* L)
+{
+    int eventId, groupId;
+    char* tmp;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    eventId = lua_tonumber(L,2);
+    tmp = perfmon_getEventName(groupId-1, eventId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int lua_likwid_getNameOfCounter(lua_State* L)
+{
+    int eventId, groupId;
+    char* tmp;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    eventId = lua_tonumber(L,2);
+    tmp = perfmon_getCounterName(groupId-1, eventId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int lua_likwid_getNumberOfMetrics(lua_State* L)
+{
+    int number, groupId;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    number = perfmon_getNumberOfMetrics(groupId-1);
+    lua_pushnumber(L,number);
+    return 1;
+}
+
+static int lua_likwid_getNameOfMetric(lua_State* L)
+{
+    int metricId, groupId;
+    char* tmp;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    metricId = lua_tonumber(L,2);
+    tmp = perfmon_getMetricName(groupId-1, metricId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int lua_likwid_getNameOfGroup(lua_State* L)
+{
+    int groupId;
+    char* tmp;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    tmp = perfmon_getGroupName(groupId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int lua_likwid_getShortInfoOfGroup(lua_State* L)
+{
+    int groupId;
+    char* tmp;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    tmp = perfmon_getGroupInfoShort(groupId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int lua_likwid_getLongInfoOfGroup(lua_State* L)
+{
+    int groupId;
+    char* tmp;
+    if (perfmon_isInitialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    tmp = perfmon_getGroupInfoLong(groupId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int lua_likwid_getGroups(lua_State* L)
+{
+    int i, ret;
+    char** tmp, **infos, **longs;
+    if (topology_isInitialized == 0)
+    {
+        topology_init();
+    }
+    ret = perfmon_getGroups(&tmp, &infos, &longs);
+    lua_newtable(L);
+    for (i=0;i<ret;i++)
+    {
+        lua_pushunsigned(L, i+1);
+        lua_newtable(L);
+        lua_pushstring(L, "Name");
+        lua_pushstring(L, tmp[i]);
+        lua_settable(L,-3);
+        lua_pushstring(L, "Info");
+        lua_pushstring(L, infos[i]);
+        lua_settable(L,-3);
+        lua_pushstring(L, "Long");
+        lua_pushstring(L, longs[i]);
+        lua_settable(L,-3);
+        lua_settable(L,-3);
+    }
     return 1;
 }
 
@@ -1168,6 +1309,7 @@ static int lua_likwid_getPowerInfo(lua_State* L)
     {
         affinity = get_affinityDomains();
     }
+
     if (power_isInitialized == 0)
     {
         power_hasRAPL = power_init(0);
@@ -1851,6 +1993,81 @@ static int lua_likwid_cpuFeatures_disable(lua_State* L)
     return 1;
 }
 
+static int lua_likwid_markerFile_read(lua_State* L)
+{
+    const char* filename = (const char*)luaL_checkstring(L, -1);
+    perfmon_readMarkerFile(filename);
+    return 0;
+}
+
+static int lua_likwid_markerNumRegions(lua_State* L)
+{
+    lua_pushinteger(L, perfmon_getNumberOfRegions());
+    return 1;
+}
+
+static int lua_likwid_markerRegionGroup(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushinteger(L, perfmon_getGroupOfRegion(region-1)+1);
+    return 1;
+}
+
+static int lua_likwid_markerRegionTag(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushstring(L, perfmon_getTagOfRegion(region-1));
+    return 1;
+}
+
+static int lua_likwid_markerRegionEvents(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushinteger(L, perfmon_getEventsOfRegion(region-1));
+    return 1;
+}
+
+static int lua_likwid_markerRegionThreads(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushinteger(L, perfmon_getThreadsOfRegion(region-1));
+    return 1;
+}
+
+static int lua_likwid_markerRegionTime(lua_State* L)
+{
+    int region = lua_tointeger(L,-2);
+    int thread = lua_tointeger(L,-1);
+    lua_pushnumber(L, perfmon_getTimeOfRegion(region-1, thread-1));
+    return 1;
+}
+
+static int lua_likwid_markerRegionCount(lua_State* L)
+{
+    int region = lua_tointeger(L,-2);
+    int thread = lua_tointeger(L,-1);
+    lua_pushinteger(L, perfmon_getCountOfRegion(region-1, thread-1));
+    return 1;
+}
+
+static int lua_likwid_markerRegionResult(lua_State* L)
+{
+    int region = lua_tointeger(L,-3);
+    int event = lua_tointeger(L,-2);
+    int thread = lua_tointeger(L,-1);
+    lua_pushnumber(L, perfmon_getResultOfRegionThread(region-1, event-1, thread-1));
+    return 1;
+}
+
+static int lua_likwid_markerRegionMetric(lua_State* L)
+{
+    int region = lua_tointeger(L,-3);
+    int metric = lua_tointeger(L,-2);
+    int thread = lua_tointeger(L,-1);
+    lua_pushnumber(L, perfmon_getMetricOfRegionThread(region-1, metric-1, thread-1));
+    return 1;
+}
+
 int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     // Configuration functions
     lua_register(L, "likwid_getConfiguration", lua_likwid_getConfiguration);
@@ -1869,11 +2086,20 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getEventsAndCounters", lua_likwid_getEventsAndCounters);
     // Perfmon results functions
     lua_register(L, "likwid_getResult",lua_likwid_getResult);
+    lua_register(L, "likwid_getMetric",lua_likwid_getMetric);
     lua_register(L, "likwid_getNumberOfGroups",lua_likwid_getNumberOfGroups);
     lua_register(L, "likwid_getRuntimeOfGroup", lua_likwid_getRuntimeOfGroup);
     lua_register(L, "likwid_getIdOfActiveGroup",lua_likwid_getIdOfActiveGroup);
     lua_register(L, "likwid_getNumberOfEvents",lua_likwid_getNumberOfEvents);
+    lua_register(L, "likwid_getNumberOfMetrics",lua_likwid_getNumberOfMetrics);
     lua_register(L, "likwid_getNumberOfThreads",lua_likwid_getNumberOfThreads);
+    lua_register(L, "likwid_getNameOfEvent",lua_likwid_getNameOfEvent);
+    lua_register(L, "likwid_getNameOfCounter",lua_likwid_getNameOfCounter);
+    lua_register(L, "likwid_getNameOfMetric",lua_likwid_getNameOfMetric);
+    lua_register(L, "likwid_getNameOfGroup",lua_likwid_getNameOfGroup);
+    lua_register(L, "likwid_getGroups",lua_likwid_getGroups);
+    lua_register(L, "likwid_getShortInfoOfGroup",lua_likwid_getShortInfoOfGroup);
+    lua_register(L, "likwid_getLongInfoOfGroup",lua_likwid_getLongInfoOfGroup);
     // Topology functions
     lua_register(L, "likwid_getCpuInfo",lua_likwid_getCpuInfo);
     lua_register(L, "likwid_getCpuTopology",lua_likwid_getCpuTopology);
@@ -1938,6 +2164,17 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_cpuFeaturesGet", lua_likwid_cpuFeatures_get);
     lua_register(L, "likwid_cpuFeaturesEnable", lua_likwid_cpuFeatures_enable);
     lua_register(L, "likwid_cpuFeaturesDisable", lua_likwid_cpuFeatures_disable);
+    // Marker API related functions
+    lua_register(L, "likwid_readMarkerFile", lua_likwid_markerFile_read);
+    lua_register(L, "likwid_markerNumRegions", lua_likwid_markerNumRegions);
+    lua_register(L, "likwid_markerRegionGroup", lua_likwid_markerRegionGroup);
+    lua_register(L, "likwid_markerRegionTag", lua_likwid_markerRegionTag);
+    lua_register(L, "likwid_markerRegionEvents", lua_likwid_markerRegionEvents);
+    lua_register(L, "likwid_markerRegionThreads", lua_likwid_markerRegionThreads);
+    lua_register(L, "likwid_markerRegionTime", lua_likwid_markerRegionTime);
+    lua_register(L, "likwid_markerRegionCount", lua_likwid_markerRegionCount);
+    lua_register(L, "likwid_markerRegionResult", lua_likwid_markerRegionResult);
+    lua_register(L, "likwid_markerRegionMetric", lua_likwid_markerRegionMetric);
 #ifdef __MIC__
     if (setuid(0) < 0)
     {

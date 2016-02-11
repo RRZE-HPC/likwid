@@ -263,7 +263,11 @@ if #arg == 0 then
         stethoscope = true
     end
 else
-    execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
+    if use_perfctr then
+        execString = execString .. table.concat(arg," ",1, likwid.tablelength(arg)-2)
+    else
+        execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
+    end
 end
 
 if not print_info and not print_temp then

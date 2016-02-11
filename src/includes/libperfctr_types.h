@@ -48,6 +48,8 @@ typedef struct LikwidThreadResults{
 typedef struct {
     bstring  tag;
     int groupID;
+    int threadCount;
+    int eventCount;
     double*  time;
     uint32_t*  count;
     int* cpulist;

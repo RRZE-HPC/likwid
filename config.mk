@@ -70,4 +70,4 @@ DATE    = 28.04.2015
 
 LIBLIKWIDPIN = $(abspath $(PREFIX)/lib/liblikwidpin.so)
 LIKWIDFILTERPATH = $(abspath $(PREFIX)/share/likwid/filter)
-
+LIKWIDGROUPPATH = $(abspath $(PREFIX)/share/likwid/perfgroups)

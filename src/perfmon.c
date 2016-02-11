@@ -47,6 +47,7 @@
 #include <registers.h>
 #include <topology.h>
 #include <access.h>
+#include <perfgroup.h>
 
 #include <perfmon_pm.h>
 #include <perfmon_atom.h>
@@ -80,6 +81,8 @@ int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 uint64_t currentConfig[MAX_NUM_THREADS][NUM_PMC] = { 0 };
 
 PerfmonGroupSet* groupSet = NULL;
+LikwidResults* markerResults = NULL;
+int markerRegions = 0;
 
 int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
@@ -1231,7 +1234,7 @@ perfmon_finalize(void)
 int
 perfmon_addEventSet(char* eventCString)
 {
-    int i, j;
+    int i, j, err;
     bstring eventBString;
     struct bstrList* eventtokens;
     struct bstrList* subtokens;
@@ -1246,7 +1249,7 @@ perfmon_addEventSet(char* eventCString)
 
     if (eventCString == NULL)
     {
-        DEBUG_PLAIN_PRINT(1, Event string is empty. Trying environment variable LIKWID_EVENTS);
+        DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, Event string is empty. Trying environment variable LIKWID_EVENTS);
         eventCString = getenv("LIKWID_EVENTS");
         if (eventCString == NULL)
         {
@@ -1301,7 +1304,28 @@ perfmon_addEventSet(char* eventCString)
                     groupSet->numberOfActiveGroups+1,
                     groupSet->numberOfGroups+1);
 
-    eventBString = bfromcstr(eventCString);
+    if (strchr(eventCString, ':') == NULL)
+    {
+        err = read_group(TOSTRING(GROUPPATH), cpuid_info.short_name,
+                         eventCString,
+                         &groupSet->groups[groupSet->numberOfActiveGroups].group);
+        if (err)
+        {
+            ERROR_PRINT(Cannot read performance group %s, eventCString);
+            return err;
+        }
+    }
+    else
+    {
+        err = custom_group(eventCString, &groupSet->groups[groupSet->numberOfActiveGroups].group);
+        if (err)
+        {
+            ERROR_PRINT(Cannot transform %s to performance group, eventCString);
+            return err;
+        }
+    }
+
+    eventBString = bfromcstr(get_eventStr(&groupSet->groups[groupSet->numberOfActiveGroups].group));
     eventtokens = bstrListCreate();
     eventtokens = bsplit(eventBString,',');
     bdestroy(eventBString);
@@ -1625,6 +1649,9 @@ __perfmon_readCounters(int groupId, int threadId)
     {
         return -EINVAL;
     }
+    timer_stop(&groupSet->groups[groupId].timer);
+    groupSet->groups[groupId].rdtscTime = timer_print(&groupSet->groups[groupId].timer);
+    groupSet->groups[groupId].runTime += groupSet->groups[groupId].rdtscTime;
     if (threadId == -1)
     {
         for (threadId = 0; threadId<groupSet->numberOfThreads; threadId++)
@@ -1644,6 +1671,7 @@ __perfmon_readCounters(int groupId, int threadId)
             return -threadId-1;
         }
     }
+    timer_start(&groupSet->groups[groupId].timer);
     return 0;
 }
 
@@ -1669,7 +1697,12 @@ int perfmon_readCountersCpu(int cpu_id)
             break;
         }
     }
-    return perfmon_readCountersThread(thread_id, &groupSet->groups[groupSet->activeGroup]);
+    timer_stop(&groupSet->groups[groupSet->activeGroup].timer);
+    groupSet->groups[groupSet->activeGroup].rdtscTime = timer_print(&groupSet->groups[groupSet->activeGroup].timer);
+    groupSet->groups[groupSet->activeGroup].runTime += groupSet->groups[groupSet->activeGroup].rdtscTime;
+    i = perfmon_readCountersThread(thread_id, &groupSet->groups[groupSet->activeGroup]);
+    timer_start(&groupSet->groups[groupSet->activeGroup].timer);
+    return i;
 }
 
 int perfmon_readGroupCounters(int groupId)
@@ -1719,6 +1752,50 @@ perfmon_getResult(int groupId, int eventId, int threadId)
     }
     return groupSet->groups[groupId].events[eventId].threadCounter[threadId].fullData;
 }
+
+double
+perfmon_getMetric(int groupId, int metricId, int threadId)
+{
+    int e;
+    double result;
+    CounterList clist;
+    if (unlikely(groupSet == NULL))
+    {
+        return 0;
+    }
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return 0;
+    }
+    if (groupSet->numberOfActiveGroups == 0)
+    {
+        return 0;
+    }
+    if ((groupId < 0) && (groupSet->activeGroup >= 0))
+    {
+        groupId = groupSet->activeGroup;
+    }
+    if (groupSet->groups[groupId].group.nmetrics == 0)
+    {
+        return 0.0;
+    }
+    timer_init();
+    init_clist(&clist);
+    for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
+    {
+        add_to_clist(&clist,groupSet->groups[groupId].group.counters[e],
+                     //counter_map[groupSet->groups[groupId].events[e].index].key,
+                     perfmon_getResult(groupId, e, threadId));
+    }
+    add_to_clist(&clist, "time", perfmon_getLastTimeOfGroup(groupId));
+    //printf("Current clock %ld\n", timer_getCpuClock());
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCpuClock());
+    result = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist);
+    destroy_clist(&clist);
+    return result;
+}
+
 
 int __perfmon_switchActiveGroupThread(int thread_id, int new_group)
 {
@@ -1844,6 +1921,21 @@ perfmon_getTimeOfGroup(int groupId)
     return groupSet->groups[groupId].runTime;
 }
 
+double
+perfmon_getLastTimeOfGroup(int groupId)
+{
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (groupId < 0)
+    {
+        groupId = groupSet->activeGroup;
+    }
+    return groupSet->groups[groupId].rdtscTime;
+}
+
 uint64_t
 perfmon_getMaxCounterValue(RegisterType type)
 {
@@ -1860,5 +1952,509 @@ perfmon_getMaxCounterValue(RegisterType type)
     return tmp;
 }
 
+char* perfmon_getEventName(int groupId, int eventId)
+{
+    if (unlikely(groupSet == NULL))
+    {
+        return NULL;
+    }
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return NULL;
+    }
+    if (groupSet->numberOfActiveGroups == 0)
+    {
+        return NULL;
+    }
+    if ((groupId < 0) && (groupSet->activeGroup >= 0))
+    {
+        groupId = groupSet->activeGroup;
+    }
+    if ((groupSet->groups[groupId].group.nevents == 0) ||
+        (eventId > groupSet->groups[groupId].group.nevents))
+    {
+        return NULL;
+    }
+    return groupSet->groups[groupId].group.events[eventId];
+}
+
+char* perfmon_getCounterName(int groupId, int eventId)
+{
+    if (unlikely(groupSet == NULL))
+    {
+        return NULL;
+    }
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return NULL;
+    }
+    if (groupSet->numberOfActiveGroups == 0)
+    {
+        return NULL;
+    }
+    if ((groupId < 0) && (groupSet->activeGroup >= 0))
+    {
+        groupId = groupSet->activeGroup;
+    }
+    if ((groupSet->groups[groupId].group.nevents == 0) ||
+        (eventId > groupSet->groups[groupId].group.nevents))
+    {
+        return NULL;
+    }
+    return groupSet->groups[groupId].group.counters[eventId];
+}
+
+char* perfmon_getMetricName(int groupId, int metricId)
+{
+    if (unlikely(groupSet == NULL))
+    {
+        return NULL;
+    }
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return NULL;
+    }
+    if (groupSet->numberOfActiveGroups == 0)
+    {
+        return NULL;
+    }
+    if ((groupId < 0) && (groupSet->activeGroup >= 0))
+    {
+        groupId = groupSet->activeGroup;
+    }
+    if (groupSet->groups[groupId].group.nmetrics == 0)
+    {
+        return NULL;
+    }
+    return groupSet->groups[groupId].group.metricnames[metricId];
+}
+
+char* perfmon_getGroupName(int groupId)
+{
+    if (unlikely(groupSet == NULL))
+    {
+        return NULL;
+    }
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return NULL;
+    }
+    if (groupSet->numberOfActiveGroups == 0)
+    {
+        return NULL;
+    }
+    if ((groupId < 0) && (groupSet->activeGroup >= 0))
+    {
+        groupId = groupSet->activeGroup;
+    }
+    return groupSet->groups[groupId].group.groupname;
+}
+
+char* perfmon_getGroupInfoShort(int groupId)
+{
+    if (unlikely(groupSet == NULL))
+    {
+        return NULL;
+    }
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return NULL;
+    }
+    if (groupSet->numberOfActiveGroups == 0)
+    {
+        return NULL;
+    }
+    if ((groupId < 0) && (groupSet->activeGroup >= 0))
+    {
+        groupId = groupSet->activeGroup;
+    }
+    return groupSet->groups[groupId].group.shortinfo;
+}
+
+char* perfmon_getGroupInfoLong(int groupId)
+{
+    if (unlikely(groupSet == NULL))
+    {
+        return NULL;
+    }
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return NULL;
+    }
+    if (groupSet->numberOfActiveGroups == 0)
+    {
+        return NULL;
+    }
+    if ((groupId < 0) && (groupSet->activeGroup >= 0))
+    {
+        groupId = groupSet->activeGroup;
+    }
+    return groupSet->groups[groupId].group.longinfo;
+}
+
+int perfmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
+{
+    int ret;
+    ret = get_groups(TOSTRING(GROUPPATH), cpuid_info.short_name, groups, shortinfos, longinfos);
+    return ret;
+}
+
+int perfmon_getNumberOfMetrics(int groupId)
+{
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (groupId < 0)
+    {
+        groupId = groupSet->activeGroup;
+    }
+    return groupSet->groups[groupId].group.nmetrics;
+}
+
+void perfmon_printMarkerResults()
+{
+    int i,j, k;
+    for (i=0; i<markerRegions; i++)
+    {
+        printf("Region %d : %s\n", i, bdata(markerResults[i].tag));
+        printf("Group %d\n", markerResults[i].groupID);
+        for (j=0;j<markerResults[i].threadCount; j++)
+        {
+            printf("Thread %d on CPU %d\n", j, markerResults[i].cpulist[j]);
+            printf("\t Measurement time %f sec\n", markerResults[i].time[j]);
+            printf("\t Call count %d\n", markerResults[i].count[j]);
+            for(k=0;k<markerResults[i].eventCount;k++)
+            {
+                printf("\t Event %d : %f\n", k, markerResults[i].counters[j][k]);
+            }
+        }
+    }
+}
+
+int perfmon_getNumberOfRegions()
+{
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (markerResults == NULL)
+    {
+        return 0;
+    }
+    return markerRegions;
+}
 
 
+int perfmon_getGroupOfRegion(int region)
+{
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= markerRegions)
+    {
+        return -EINVAL;
+    }
+    if (markerResults == NULL)
+    {
+        return 0;
+    }
+    return markerResults[region].groupID;
+}
+
+char* perfmon_getTagOfRegion(int region)
+{
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return NULL;
+    }
+    if (region < 0 || region >= markerRegions)
+    {
+        return NULL;
+    }
+    if (markerResults == NULL)
+    {
+        return NULL;
+    }
+    return bdata(markerResults[region].tag);
+}
+
+
+int perfmon_getEventsOfRegion(int region)
+{
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= markerRegions)
+    {
+        return -EINVAL;
+    }
+    if (markerResults == NULL)
+    {
+        return 0;
+    }
+    return markerResults[region].eventCount;
+}
+
+
+int perfmon_getThreadsOfRegion(int region)
+{
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= markerRegions)
+    {
+        return -EINVAL;
+    }
+    if (markerResults == NULL)
+    {
+        return 0;
+    }
+    return markerResults[region].threadCount;
+}
+
+
+double perfmon_getTimeOfRegion(int region, int thread)
+{
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= markerRegions)
+    {
+        return -EINVAL;
+    }
+    if (thread < 0 || thread >= groupSet->numberOfThreads)
+    {
+        return -EINVAL;
+    }
+    if (markerResults == NULL || markerResults[region].time == NULL)
+    {
+        return 0.0;
+    }
+    return markerResults[region].time[thread];
+}
+
+int perfmon_getCountOfRegion(int region, int thread)
+{
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= markerRegions)
+    {
+        return -EINVAL;
+    }
+    if (thread < 0 || thread >= groupSet->numberOfThreads)
+    {
+        return -EINVAL;
+    }
+    if (markerResults == NULL || markerResults[region].count == NULL)
+    {
+        return 0.0;
+    }
+    return markerResults[region].count[thread];
+}
+
+double perfmon_getResultOfRegionThread(int region, int event, int thread)
+{
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= markerRegions)
+    {
+        return -EINVAL;
+    }
+    if (thread < 0 || thread >= groupSet->numberOfThreads)
+    {
+        return -EINVAL;
+    }
+    if (markerResults == NULL)
+    {
+        return 0;
+    }
+    if (event < 0 || event >= markerResults[region].eventCount)
+    {
+        return -EINVAL;
+    }
+    return markerResults[region].counters[thread][event];
+}
+
+double
+perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
+{
+    int e, err;
+    double result;
+    CounterList clist;
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= markerRegions)
+    {
+        return -EINVAL;
+    }
+    if (threadId < 0 || threadId >= groupSet->numberOfThreads)
+    {
+        return -EINVAL;
+    }
+    if (markerResults == NULL)
+    {
+        return 0.0;
+    }
+    if (metricId < 0 || metricId >= groupSet->groups[markerResults[region].groupID].group.nmetrics)
+    {
+        return -EINVAL;
+    }
+    timer_init();
+    init_clist(&clist);
+    for (e=0;e<markerResults[region].eventCount;e++)
+    {
+        err = add_to_clist(&clist,
+                     counter_map[groupSet->groups[markerResults[region].groupID].events[e].index].key,
+                     perfmon_getResultOfRegionThread(region, e, threadId));
+        if (err)
+        {
+            printf("Cannot add counter %s to counter list for metric calculation\n",
+                    counter_map[groupSet->groups[markerResults[region].groupID].events[e].index].key);
+            destroy_clist(&clist);
+            return 0;
+        }
+    }
+    add_to_clist(&clist, "time", perfmon_getTimeOfRegion(region, threadId));
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCpuClock());
+
+    result = calc_metric(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId], &clist);
+    if (result < 0)
+    {
+        ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId]);
+    }
+    destroy_clist(&clist);
+    return result;
+}
+
+int perfmon_readMarkerFile(const char* filename)
+{
+    FILE* fp;
+    int i;
+    char buf[2048];
+    char *ptr;
+    int cpus, groups, regions;
+    
+    if (filename == NULL)
+    {
+        return -EINVAL;
+    }
+    if (access(filename, R_OK))
+    {
+        return -EINVAL;
+    }
+    fp = fopen(filename, "r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "Error opening file %s\n", filename);
+    }
+    ptr = fgets(buf, sizeof(buf), fp);
+    sscanf(buf, "%d %d %d", &cpus, &regions, &groups);
+    //markerResults = malloc(regions * sizeof(LikwidResults));
+    markerResults = realloc(markerResults, regions * sizeof(LikwidResults));
+    if (markerResults == NULL)
+    {
+        fprintf(stderr, "Failed to allocate %lu bytes for the marker results storage\n", regions * sizeof(LikwidResults));
+        return -ENOMEM;
+    }
+    markerRegions = regions;
+    groupSet->numberOfThreads = cpus;
+    for ( uint32_t i=0; i < regions; i++ )
+    {
+        markerResults[i].threadCount = cpus;
+        markerResults[i].time = (double*) malloc(cpus * sizeof(double));
+        if (!markerResults[i].time)
+        {
+            fprintf(stderr, "Failed to allocate %lu bytes for the time storage\n", cpus * sizeof(double));
+            break;
+        }
+        markerResults[i].count = (uint32_t*) malloc(cpus * sizeof(uint32_t));
+        if (!markerResults[i].count)
+        {
+            fprintf(stderr, "Failed to allocate %lu bytes for the count storage\n", cpus * sizeof(uint32_t));
+            break;
+        }
+        markerResults[i].cpulist = (int*) malloc(cpus * sizeof(int));
+        if (!markerResults[i].count)
+        {
+            fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n", cpus * sizeof(int));
+            break;
+        }
+        markerResults[i].counters = (double**) malloc(cpus * sizeof(double*));
+        if (!markerResults[i].counters)
+        {
+            fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage\n", cpus * sizeof(double*));
+            break;
+        }
+    }
+    while (fgets(buf, sizeof(buf), fp))
+    {
+        if (strchr(buf,':'))
+        {
+            int regionid, groupid;
+            char regiontag[100];
+            sscanf(buf, "%d:%s-%d", &regionid, regiontag, &groupid);
+            snprintf(regiontag, strlen(buf)-4, "%s", &(buf[2]));
+            markerResults[regionid].groupID = groupid;
+            markerResults[regionid].tag = bfromcstr(regiontag);
+        }
+        else
+        {
+            int regionid, groupid, cpu, count, nevents;
+            int cpuidx, eventidx;
+            double time = 0;
+            char remain[1024];
+            sscanf(buf, "%d %d %d %d %lf %d %[^\t\n]", &regionid, &groupid, &cpu, &count, &time, &nevents, remain);
+            for (int i=0; i<groupSet->numberOfThreads; i++)
+            {
+                if (groupSet->threads[i].processorId == cpu)
+                {
+                    cpuidx = i;
+                    break;
+                }
+            }
+            markerResults[regionid].eventCount = nevents;
+            markerResults[regionid].time[cpuidx] = time;
+            markerResults[regionid].count[cpuidx] = count;
+            markerResults[regionid].cpulist[cpuidx] = cpu;
+            markerResults[regionid].counters[cpuidx] = malloc(nevents * sizeof(double));
+
+            eventidx = 0;
+            ptr = strtok(remain, " ");
+            while (ptr != NULL && eventidx < nevents)
+            {
+                sscanf(ptr, "%lf", &(markerResults[regionid].counters[cpuidx][eventidx]));
+                ptr = strtok(NULL, " ");
+                eventidx++;
+            }
+        }
+    }
+    fclose(fp);
+    return 0;
+}
