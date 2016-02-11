@@ -1158,9 +1158,26 @@ static int lua_likwid_getPowerInfo(lua_State* L)
     {
         cputopo = get_cpuTopology();
     }
+    if (affinity_isInitialized == 0)
+    {
+        affinity_init();
+        affinity_isInitialized = 1;
+        affinity = get_affinityDomains();
+    }
+    if ((affinity_isInitialized) && (affinity == NULL))
+    {
+        affinity = get_affinityDomains();
+    }
     if (power_isInitialized == 0)
     {
         power_hasRAPL = power_init(0);
+        for(i=0;i<affinity->numberOfAffinityDomains;i++)
+        {
+            if (bstrchrp(affinity->domains[i].tag, 'S', 0) != BSTR_ERR)
+            {
+                HPMaddThread(affinity->domains[i].processorList[0]);
+            }
+        }
         if (power_hasRAPL)
         {
             power_isInitialized = 1;
