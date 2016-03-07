@@ -651,10 +651,8 @@ if use_wrapper or use_timeline then
         end
         if use_timeline == true then
             stop = likwid.stopClock()
-            --likwid.readCounters()
             likwid.stopCounters()
             local time = likwid.getClock(start, stop)
-            print(time)
             if likwid.getNumberOfMetrics(activeGroup) == 0 then
                 results = likwid.getResults()
             else
@@ -666,7 +664,7 @@ if use_wrapper or use_timeline then
                     str = str .. " " .. tostring(value)
                 end
             end
-            print(str)
+            io.stderr:write(str.."\n")
             groupTime[activeGroup] = time
             likwid.startCounters()
         else
