@@ -38,7 +38,7 @@
 
 #include <configuration.h>
 
-Configuration config = {NULL,NULL,NULL,-1,MAX_NUM_THREADS,MAX_NUM_NODES};
+Configuration config = {NULL,NULL,TOSTRING(GROUPPATH),NULL,-1,MAX_NUM_THREADS,MAX_NUM_NODES};
 int init_config = 0;
 
 static int default_configuration(void)

@@ -272,6 +272,7 @@ typedef struct {
     char* configFileName; /*!< \brief Path to the configuration file */
     char* topologyCfgFileName; /*!< \brief Path to the topology file */
     char* daemonPath; /*!< \brief Path of the access daemon */
+    char* groupPath; /*!< \brief Path of default performance group directory */
     AccessMode daemonMode; /*!< \brief Access mode to the MSR and PCI registers */
     int maxNumThreads; /*!< \brief Maximum number of HW threads */
     int maxNumNodes; /*!< \brief Maximum number of NUMA nodes */
