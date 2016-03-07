@@ -2331,7 +2331,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     for (e=0;e<markerResults[region].eventCount;e++)
     {
         err = add_to_clist(&clist,
-                     counter_map[groupSet->groups[markerResults[region].groupID].events[e].index].key,
+                     groupSet->groups[markerResults[region].groupID].group.counters[e],
                      perfmon_getResultOfRegionThread(region, e, threadId));
         if (err)
         {
