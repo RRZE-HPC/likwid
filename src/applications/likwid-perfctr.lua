@@ -115,6 +115,7 @@ duration = 2.E06
 switch_interval = 5
 output = ""
 use_csv = false
+print_stats = false
 execString = nil
 outfile = nil
 forceOverwrite = 0
@@ -129,7 +130,7 @@ if #arg == 0 then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force"}) do
+for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -219,6 +220,8 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end
     elseif (opt == "O") then
         use_csv = true
+    elseif (opt == "stats") then
+        print_stats = true
     elseif opt == "?" then
         print("Invalid commandline option -"..arg)
         os.exit(1)
@@ -720,14 +723,14 @@ if use_marker == true then
         print_stdout("No regions could be found in Marker API result file")
     else
         for r=1, #results do
-            likwid.printOutput(results[r], metrics[r], cpulist, r)
+            likwid.printOutput(results[r], metrics[r], cpulist, r, print_stats)
         end
     end
     os.remove(markerFile)
 elseif use_timeline == false then
     results = likwid.getResults()
     metrics = likwid.getMetrics()
-    likwid.printOutput(results, metrics, cpulist, nil)
+    likwid.printOutput(results, metrics, cpulist, nil, print_stats)
 end
 
 if outfile then

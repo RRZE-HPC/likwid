@@ -712,7 +712,7 @@ end
 
 likwid.tableToMinMaxAvgSum = tableMinMaxAvgSum
 
-local function printOutput(results, metrics, cpulist, region)
+local function printOutput(results, metrics, cpulist, region, stats)
     local maxLineFields = 0
     local cpuinfo = likwid_getCpuInfo()
     local clock = likwid.getCpuClock()
@@ -770,7 +770,7 @@ local function printOutput(results, metrics, cpulist, region)
             end
             table.insert(firsttab, tmpList)
         end
-        if #cpulist > 1 then
+        if #cpulist > 1 or stats == true then
             firsttab_combined = tableMinMaxAvgSum(firsttab, 2, 1)
         end
         if likwid.getNumberOfMetrics(g) > 0 then
@@ -791,7 +791,7 @@ local function printOutput(results, metrics, cpulist, region)
                 end
                 table.insert(secondtab, tmpList)
             end
-            if #cpulist > 1 then
+            if #cpulist > 1 or stats == true  then
                 secondtab_combined = tableMinMaxAvgSum(secondtab, 1, 1)
             end
         end
@@ -829,7 +829,7 @@ local function printOutput(results, metrics, cpulist, region)
             end
             likwid.printtable(firsttab)
         end
-        if #cpulist > 1 then
+        if #cpulist > 1 or stats == true then
             if use_csv then
                 if region == nil then
                     print(string.format("TABLE,Group %d Raw Stat,%s,%d%s",g,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
@@ -852,7 +852,7 @@ local function printOutput(results, metrics, cpulist, region)
             else
                 likwid.printtable(secondtab)
             end
-            if #cpulist > 1 then
+            if #cpulist > 1 or stats == true then
                 if use_csv then
                     if region == nil then
                         print(string.format("TABLE,Group %d Metric Stat,%s,%d%s",g,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))
