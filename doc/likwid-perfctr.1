@@ -3,7 +3,7 @@
 likwid-perfctr \- configure and read out hardware performance counters on x86 CPUs
 .SH SYNOPSIS
 .B likwid-perfctr 
-.RB [\-vhHmaie]
+.RB [\-vhHmaief]
 .RB [ \-c
 .IR core_list ]
 .RB [ \-C
@@ -26,6 +26,8 @@ or
 .IR output_file ]
 .RB [ \-s
 .IR skip_mask ]
+.RB [ \-E
+.IR search_str ]
 .SH DESCRIPTION
 .B likwid-perfctr
 is a lightweight command line application to configure and read out hardware performance monitoring data
@@ -97,6 +99,12 @@ Frequency to switch groups if multiple are given on commandline, default is 2s. 
 .TP
 .B \-\^s, \-\-\^skip <mask>
 Specify skip mask as HEX number. For each set bit the corresponding thread is skipped.
+.TP
+.B \-\^f, \-\-\^force
+Force writing of registers even if they are in use.
+.TP
+.B \-\^E <search_str>
+Print only events and corresponding counters matching <search_str>
 
 .SH EXAMPLE
 Because 
@@ -146,7 +154,7 @@ Using the marker API to measure only parts of your code (this can be used both w
 .B likwid-perfctr -m -C 0-4 -g INSTRUCTIONS_RETIRED_SSE:PMC0,CPU_CLOCKS_UNHALTED:PMC3 ./cacheBench
 .PP
 You have to link you code against liblikwid.so and use the marker API calls.
-Examples can be found in examples folder <PREFIX>/share/likwid/examples.
+Examples can be found in examples folder <INSTALLEDPREFIX>/share/likwid/examples.
 The following code snippet shows the necessary calls:
 
 .nf

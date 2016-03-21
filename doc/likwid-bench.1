@@ -15,6 +15,8 @@ likwid-bench \- low-level benchmark suite and microbenchmarking framework
 .IR <testname> ]
 .RB [ \-d
 .IR <delimiter> ]
+.RB [ \-i
+.IR <iterations> ]
 .SH DESCRIPTION
 .B likwid-bench
 is a benchmark suite for low-level (assembly) benchmarks to measure bandwidths and instruction throughput for specific instruction code on x86 systems. The currently included benchmark codes include common data access patterns like load and store but also calculations like vector triad and sum.
@@ -54,7 +56,7 @@ Specify the affinity domain, thread count and data set size for the current benc
 list properties of a benchmark code.
 .TP
 .B \-\^i <iterations>
-Set the number of iterations (optional)
+Set the number of iterations per thread (optional)
 
 .SH WORKGROUP SYNTAX
 
@@ -103,7 +105,7 @@ Run the
 .B triad
 benchmark code with explicitly
 .B 100
-iterations with
+iterations per thread with
 .B 2
 threads on the socket 0 (
 .B S0

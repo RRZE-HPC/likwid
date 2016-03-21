@@ -90,7 +90,7 @@ is extended to accept configuration options for
 .B feedGnuplot.
 There are some predefined plot configurations embedded into
 .B likwid-perfscope
-which can be listed with
+which can be listed with the
 .B \-\^a
 command line option. They are filtered to show only configs that are available for your current system.
 If you need to measure and plot custom events you can set the plotting options as last entry in your eventset. The plotting config options can be set as a ':' separated list. If you select preconfigured group, you can overwrite single fields in the config like changing the title or the matching. The folling options are available:
@@ -125,15 +125,15 @@ Use the given title for the right y-axis of the plot. If no id is set, the last 
 .IP 1. 5
 Measure and print a preconfigured plotting configuration:
 .TP
-.B likwid-perfscope -g L3_BAND -C 0-2 -t 1s ./a.out
+.B likwid-perfscope -g L3 -C 0-2 -t 1s ./a.out
 .PP
-This measures the L3 bandwidth with likwid-perfctr every second on CPU cores 0,1,2 and use the plotting configuration L3_BAND. The plot will have a title and the axes are labeled properly.
+This measures the L3 bandwidth with likwid-perfctr every second on CPU cores 0,1,2 and use the plotting configuration L3. The plot will have a title and the axes are labeled properly.
 .IP 2. 5
 Measure and print a preconfigured plotting configuration:
 .TP
-.B likwid-perfscope -g L2_BAND:TITLE="My Title" -C 0 -t 1s ./a.out
+.B likwid-perfscope -g L2:TITLE="My Title" -C 0 -t 1s ./a.out
 .PP
-This measures the L2 bandwidth with likwid-perfctr every second on CPU core 0 and use the plotting configuration L2_BAND. The title of the output plot is changed to the custom title "My Title".
+This measures the L2 bandwidth with likwid-perfctr every second on CPU core 0 and use the plotting configuration L2. The title of the output plot is changed to the custom title "My Title".
 .IP 3. 5
 Custom event set with plotting configuration:
 .TP
@@ -153,7 +153,7 @@ script with the curve name 'CPI' in the legend. The y-axis is labeled with the s
 IP 4. 5
 Custom event set with plotting configuration:
 .TP
-.B likwid-perfscope -g L3_BAND,CPI=FIXC0/FIXC1:Y2TITLE="2-Cycles per Instruction" -C 0 --time 500ms ./a.out
+.B likwid-perfscope -g L3,CPI=FIXC0/FIXC1:Y2TITLE="2-Cycles per Instruction" -C 0 --time 500ms ./a.out
 .PP
 This measures the L3 bandwidth for CPU 0 every 500 ms. Additionally, a second curve is plotted with the function
 .B FIXC0/FIXC1
@@ -162,7 +162,7 @@ with the legend entry
 The right y-axis is labeled with
 .B 'Cycles per Instruction'
 and is associated to the second formula. The first formula is hidden in the
-.B L3_BAND
+.B L3
 plot group. Since the
 .B CPI
 formula is the last in the list, the curve id is not needed in the
