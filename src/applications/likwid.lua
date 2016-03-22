@@ -29,7 +29,7 @@
 ]]
 
 local likwid = {}
-package.cpath = '<INSTALLED_PREFIX>/lib/?.so;' .. package.cpath
+package.cpath = '<INSTALLED_LIBPREFIX>/?.so;' .. package.cpath
 require("liblikwid")
 require("math")
 
@@ -57,7 +57,9 @@ likwid.switchGroup = likwid_switchGroup
 likwid.finalize = likwid_finalize
 likwid.getEventsAndCounters = likwid_getEventsAndCounters
 likwid.getResult = likwid_getResult
+likwid.getLastResult = likwid_getLastResult
 likwid.getMetric = likwid_getMetric
+likwid.getLastMetric = likwid_getLastMetric
 likwid.getNumberOfGroups = likwid_getNumberOfGroups
 likwid.getRuntimeOfGroup = likwid_getRuntimeOfGroup
 likwid.getIdOfActiveGroup = likwid_getIdOfActiveGroup
@@ -84,6 +86,7 @@ likwid.putPowerInfo = likwid_putPowerInfo
 likwid.getOnlineDevices = likwid_getOnlineDevices
 likwid.printSupportedCPUs = likwid_printSupportedCPUs
 likwid.getCpuClock = likwid_getCpuClock
+likwid.getCycleClock = likwid_getCycleClock
 likwid.startClock = likwid_startClock
 likwid.stopClock = likwid_stopClock
 likwid.getClockCycles = likwid_getClockCycles
@@ -891,6 +894,25 @@ end
 
 likwid.getResults = getResults
 
+local function getLastResults()
+    local results = {}
+    local nr_groups = likwid_getNumberOfGroups()
+    local nr_threads = likwid_getNumberOfThreads()
+    for i=1,nr_groups do
+        results[i] = {}
+        local nr_events = likwid_getNumberOfEvents(i)
+        for j=1,nr_events do
+            results[i][j] = {}
+            for k=1, nr_threads do
+                results[i][j][k] = likwid_getLastResult(i,j,k)
+            end
+        end
+    end
+    return results
+end
+
+likwid.getLastResults = getLastResults
+
 local function getMetrics()
     local results = {}
     local nr_groups = likwid_getNumberOfGroups()
@@ -909,6 +931,25 @@ local function getMetrics()
 end
 
 likwid.getMetrics = getMetrics
+
+local function getLastMetrics()
+    local results = {}
+    local nr_groups = likwid_getNumberOfGroups()
+    local nr_threads = likwid_getNumberOfThreads()
+    for i=1,nr_groups do
+        results[i] = {}
+        local nr_metrics = likwid_getNumberOfMetrics(i)
+        for j=1,nr_metrics do
+            results[i][j] = {}
+            for k=1, nr_threads do
+                results[i][j][k] = likwid_getLastMetric(i,j, k)
+            end
+        end
+    end
+    return results
+end
+
+likwid.getLastMetrics = getLastMetrics
 
 local function getMarkerResults(filename, cpulist)
     local cpuinfo = likwid.getCpuInfo()
