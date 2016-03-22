@@ -53,15 +53,15 @@
 
 #define EXECUTE(func)   \
     BARRIER; \
-    timer_start(&time); \
     LIKWID_MARKER_START("bench");  \
+    timer_start(&time); \
     for (i=0; i<myData->iter; i++) \
     {   \
         func; \
     } \
     BARRIER; \
-    LIKWID_MARKER_STOP("bench");  \
     timer_stop(&time); \
+    LIKWID_MARKER_STOP("bench");  \
     data->cycles = timer_printCycles(&time); \
     BARRIER
 
@@ -92,9 +92,10 @@ void* runTest(void* arg)
     /* Prepare ptrs for thread */
     vecsize = myData->size;
     size = myData->size / data->numberOfThreads;
+    myData->size = size;
     size -= (size % myData->test->stride);
     offset = data->threadId * size;
-    myData->size = size;
+    
 
     switch ( myData->test->type )
     {
