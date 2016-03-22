@@ -28,7 +28,7 @@ or how many data accesses you have on average per instruction.
 The data cache miss rate gives a measure how often it was necessary to get
 cache lines from higher levels of the memory hierarchy. And finally
 data cache miss ratio tells you how many of your memory references required
-a cache line to be loaded from a higher level. While the# data cache miss rate 
+a cache line to be loaded from a higher level. While the# data cache miss rate
 might be given by your algorithm you should try to get data cache miss ratio
 as low as possible by increasing your cache reuse.
 

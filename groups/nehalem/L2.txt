@@ -30,7 +30,7 @@ L2 bandwidth [MBytes/s] = 1.0E-06*(L1D_REPL+L1D_M_EVICT+L1I_MISSES)*64/time
 L2 data volume [GBytes] = 1.0E-09*(L1D_REPL+L1D_M_EVICT+L1I_MISSES)*64
 -
 Profiling group to measure L2 cache bandwidth. The bandwidth is
-computed by the number of cache line allocated in the L1 and the 
+computed by the number of cache line allocated in the L1 and the
 number of modified cache lines evicted from the L1. Also reports on
 total data volume transferred between L2 and L1 cache.
 Note that this bandwidth also includes data transfers due to a

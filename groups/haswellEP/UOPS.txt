@@ -12,7 +12,7 @@ PMC3  UOPS_ISSUED_FLAGS_MERGE
 
 
 METRICS
-Runtime (RDTSC) [s] time 
+Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
