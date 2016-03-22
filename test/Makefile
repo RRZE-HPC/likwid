@@ -1,7 +1,7 @@
 include ../config.mk
 
 LIKWID_LIB ?= -L$(PREFIX)/lib -llikwid
-LIKWID_INCLUDES ?= -I$(PREFIX)/include
+LIKWID_INCLUDE ?= -I$(PREFIX)/include
 LIKWID_DEFINES ?= -DLIKWID_PERFMON
 
 all:  streamGCC
@@ -13,22 +13,22 @@ ICPC_AVAILABLE=$(shell /bin/bash -c "which icpc | wc -l")
 TBB_AVAILABLE=$(shell /bin/bash -c "ldconfig -v 2>/dev/null | grep libtbb.so | wc -l")
 
 streamGCC: stream.c
-	gcc -O3 -std=c99 $(LIKWID_INCLUDES) $(LIKWID_DEFINES) -fopenmp  -o $@  stream.c $(LIKWID_LIB) -lm
+	gcc -O3 -std=c99 $(LIKWID_INCLUDE) $(LIKWID_DEFINES) -fopenmp  -o $@  stream.c $(LIKWID_LIB) -lm
 
 streamAPIGCC: stream-API.c
-	gcc -O3 -std=c99 $(LIKWID_INCLUDES) -fopenmp -ftree-vectorize -ffast-math -o $@  stream-API.c $(LIKWID_LIB) -lm
+	gcc -O3 -std=c99 $(LIKWID_INCLUDE) -fopenmp -ftree-vectorize -ffast-math -o $@  stream-API.c $(LIKWID_LIB) -lm
 
 serial: serial.c
-	gcc -O3 -std=c99 $(LIKWID_INCLUDES) $(LIKWID_DEFINES) -o $@  serial.c $(LIKWID_LIB) -lm
+	gcc -O3 -std=c99 $(LIKWID_INCLUDE) $(LIKWID_DEFINES) -o $@  serial.c $(LIKWID_LIB) -lm
 
 test-likwidAPI: test-likwidAPI.c
-	gcc -O3 -std=c99 $(LIKWID_INCLUDES) $(LIKWID_DEFINES) -o $@  test-likwidAPI.c $(LIKWID_LIB) -lm $(RPATHS)
+	gcc -O3 -std=c99 $(LIKWID_INCLUDE) $(LIKWID_DEFINES) -o $@  test-likwidAPI.c $(LIKWID_LIB) -lm
 
 test-msr-access: test-msr-access.c
 	gcc -o $@  test-msr-access.c
 
 streamICC: stream.c
-	if [ $(ICC_AVAILABLE) -ne 0 ]; then icc -O3 -std=c99 $(LIKWID_INCLUDES) -openmp  -o $@  $(LIKWID_DEFINES) stream.c $(LIKWID_LIB) -lm; fi
+	if [ $(ICC_AVAILABLE) -ne 0 ]; then icc -O3 -xHost -std=c99 $(LIKWID_INCLUDES) -openmp  -o $@  $(LIKWID_DEFINES) stream.c $(LIKWID_LIB) -lm; fi
 
 streamGCC_C11: stream.cc
 	@if [ $(GCC_C11_SUPPORT_MAJOR) -eq 4  -a  $(GCC_C11_SUPPORT_MINOR) -gt 8 ]; then g++ -O3 -std=c++11 -pthread -o $@ $(LIKWID_DEFINES) stream.cc $(LIKWID_LIB) -lm; fi
