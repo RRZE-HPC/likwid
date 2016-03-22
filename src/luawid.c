@@ -343,6 +343,18 @@ static int lua_likwid_getResult(lua_State* L)
     return 1;
 }
 
+static int lua_likwid_getLastResult(lua_State* L)
+{
+    int groupId, eventId, threadId;
+    double result = 0;
+    groupId = lua_tonumber(L,1);
+    eventId = lua_tonumber(L,2);
+    threadId = lua_tonumber(L,3);
+    result = perfmon_getLastResult(groupId-1, eventId-1, threadId-1);
+    lua_pushnumber(L,result);
+    return 1;
+}
+
 static int lua_likwid_getMetric(lua_State* L)
 {
     int groupId, metricId, threadId;
@@ -355,6 +367,17 @@ static int lua_likwid_getMetric(lua_State* L)
     return 1;
 }
 
+static int lua_likwid_getLastMetric(lua_State* L)
+{
+    int groupId, metricId, threadId;
+    double result = 0;
+    groupId = lua_tonumber(L,1);
+    metricId = lua_tonumber(L,2);
+    threadId = lua_tonumber(L,3);
+    result = perfmon_getLastMetric(groupId-1, metricId-1, threadId-1);
+    lua_pushnumber(L,result);
+    return 1;
+}
 
 static int lua_likwid_getNumberOfGroups(lua_State* L)
 {
@@ -1544,6 +1567,17 @@ static int lua_likwid_getCpuClock(lua_State* L)
     return 1;
 }
 
+static int lua_likwid_getCycleClock(lua_State* L)
+{
+    if (timer_isInitialized == 0)
+    {
+        timer_init();
+        timer_isInitialized = 1;
+    }
+    lua_pushnumber(L,timer_getCycleClock());
+    return 1;
+}
+
 static int lua_sleep(lua_State* L)
 {
     lua_pushnumber(L, timer_sleep(lua_tounsigned(L,-1)));
@@ -2086,7 +2120,9 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getEventsAndCounters", lua_likwid_getEventsAndCounters);
     // Perfmon results functions
     lua_register(L, "likwid_getResult",lua_likwid_getResult);
+    lua_register(L, "likwid_getLastResult",lua_likwid_getLastResult);
     lua_register(L, "likwid_getMetric",lua_likwid_getMetric);
+    lua_register(L, "likwid_getLastMetric",lua_likwid_getLastMetric);
     lua_register(L, "likwid_getNumberOfGroups",lua_likwid_getNumberOfGroups);
     lua_register(L, "likwid_getRuntimeOfGroup", lua_likwid_getRuntimeOfGroup);
     lua_register(L, "likwid_getIdOfActiveGroup",lua_likwid_getIdOfActiveGroup);
@@ -2119,6 +2155,7 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_sockstr_to_socklist",lua_likwid_sockstr_to_socklist);
     // Timer functions
     lua_register(L, "likwid_getCpuClock",lua_likwid_getCpuClock);
+    lua_register(L, "likwid_getCycleClock",lua_likwid_getCycleClock);
     lua_register(L, "likwid_startClock",lua_likwid_startClock);
     lua_register(L, "likwid_stopClock",lua_likwid_stopClock);
     lua_register(L, "likwid_getClockCycles",lua_likwid_getClockCycles);
