@@ -8,7 +8,7 @@ STORES 1
 INSTR_CONST 16
 INSTR_LOOP 11
 UOPS 14
-LOOP 32
+LOOP 16
 vmovaps    ymm1, [STR0 + GPR1 * 8]
 vmovaps    ymm2, [STR0 + GPR1 * 8 + 32]
 vmovaps    ymm3, [STR0 + GPR1 * 8 + 64]
