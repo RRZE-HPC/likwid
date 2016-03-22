@@ -8,10 +8,21 @@ STORES 1
 INSTR_CONST 17
 INSTR_LOOP 7
 UOPS 8
-movaps FPR5, [rip+SCALAR]
-LOOP 2
-movaps    FPR1, [STR2 + GPR1*8]
-mulpd     FPR1, FPR5
-addpd     FPR1, [STR1 + GPR1*8]
-movntpd   [STR0 + GPR1*8], FPR1
-
+movsd FPR5, [rip+SCALAR]
+LOOP 4
+movsd    FPR1, [STR1 + GPR1*8]
+movsd    FPR2, [STR1 + GPR1*8+8]
+movsd    FPR3, [STR1 + GPR1*8+16]
+movsd    FPR4, [STR1 + GPR1*8+24]
+mulsd    FPR1, FPR5
+addsd    FPR1, [STR2 + GPR1*8]
+mulsd    FPR2, FPR5
+addsd    FPR2, [STR2 + GPR1*8+8]
+mulsd    FPR3, FPR5
+addsd    FPR3, [STR2 + GPR1*8+16]
+mulsd    FPR4, FPR5
+addsd    FPR4, [STR2 + GPR1*8+24]
+movntdq   [STR0 + GPR1*8], FPR1
+movntdq   [STR0 + GPR1*8+8], FPR2
+movntdq   [STR0 + GPR1*8+16], FPR3
+movntdq   [STR0 + GPR1*8+24], FPR4

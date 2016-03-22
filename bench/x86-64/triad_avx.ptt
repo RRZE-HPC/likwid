@@ -6,13 +6,23 @@ DESC Double-precision triad A(i) = B(i) * C(i) + D(i), optimized for AVX
 LOADS 3
 STORES 1
 INSTR_CONST 16
-INSTR_LOOP 9
-UOPS 9
-LOOP 4
-vmovaps ymm1, [STR1 + GPR1*8]
-vmovaps ymm2, [STR2 + GPR1*8]
-vmovaps ymm3, [STR3 + GPR1*8]
-vmulpd  ymm0, ymm1, ymm2
-vaddpd  ymm0, ymm0, ymm3
-vmovaps [STR0 + GPR1*8], ymm0
+INSTR_LOOP 19
+UOPS 30
+LOOP 16
+vmovaps    ymm1, [STR1 + GPR1*8]
+vmovaps    ymm2, [STR1 + GPR1*8+32]
+vmovaps    ymm3, [STR1 + GPR1*8+64]
+vmovaps    ymm4, [STR1 + GPR1*8+96]
+vmulpd    ymm1, ymm1, [STR2 + GPR1*8]
+vaddpd    ymm1, ymm1, [STR3 + GPR1*8]
+vmulpd    ymm2, ymm2, [STR2 + GPR1*8+32]
+vaddpd    ymm2, ymm2, [STR3 + GPR1*8+32]
+vmulpd    ymm3, ymm3, [STR2 + GPR1*8+64]
+vaddpd    ymm3, ymm3, [STR3 + GPR1*8+64]
+vmulpd    ymm4, ymm4, [STR2 + GPR1*8+96]
+vaddpd    ymm4, ymm4, [STR3 + GPR1*8+96]
+vmovaps    [STR0 + GPR1*8], ymm1
+vmovaps    [STR0 + GPR1*8+32], ymm2
+vmovaps    [STR0 + GPR1*8+64], ymm3
+vmovaps    [STR0 + GPR1*8+96], ymm4
 
