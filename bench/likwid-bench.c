@@ -122,7 +122,8 @@ int main(int argc, char** argv)
     uint64_t realSize = 0;
     uint64_t realIter = 0;
     uint64_t maxCycles = 0;
-    uint64_t cpuClock = 0;
+    uint64_t minCycles = UINT64_MAX;
+    uint64_t cyclesClock = 0;
     uint64_t demandIter = 0;
     TimerData itertime;
     Workgroup* currentWorkgroup = NULL;
@@ -371,7 +372,7 @@ int main(int argc, char** argv)
     /* we configure global barriers only */
     barrier_init(1);
     barrier_registerGroup(globalNumberOfThreads);
-    cpuClock = timer_getCpuClock();
+    cyclesClock = timer_getCycleClock();
 
 #ifdef LIKWID_PERFMON
     if (getenv("LIKWID_FILEPATH") != NULL)
@@ -441,14 +442,19 @@ int main(int argc, char** argv)
         {
             maxCycles = threads_data[i].cycles;
         }
+        if (threads_data[i].cycles < minCycles)
+        {
+            minCycles = threads_data[i].cycles;
+        }
     }
 
 
 
-    time = (double) maxCycles / (double) cpuClock;
+    time = (double) maxCycles / (double) cyclesClock;
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
-    ownprintf("CPU Clock:\t\t%" PRIu64 "\n", cpuClock);
+    ownprintf("CPU Clock:\t\t%" PRIu64 "\n", timer_getCpuClock());
+    ownprintf("Cycle Clock:\t\t%" PRIu64 "\n", cyclesClock);
     ownprintf("Time:\t\t\t%e sec\n", time);
     ownprintf("Iterations:\t\t%" PRIu64 "\n", realIter);
     ownprintf("Iterations per thread:\t%" PRIu64 "\n",threads_data[0].data.iter);
