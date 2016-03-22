@@ -6,7 +6,7 @@ DESC Single-precision linear combination of two vectors, optimized for AVX
 LOADS 2
 STORES 1
 INSTR_CONST 17
-INSTR_LOOP 6
+INSTR_LOOP 9
 UOPS 14
 vmovaps ymm7, [rip+SCALAR]
 LOOP 16
