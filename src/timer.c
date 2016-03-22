@@ -41,6 +41,7 @@
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
+static uint64_t cyclesClock = 0ULL;
 static uint64_t sleepbase = 0ULL;
 static int timer_initialized = 0;
 
@@ -157,10 +158,10 @@ static double _timer_print( TimerData* time )
     {
         cycles = time->stop.int64 - time->start.int64 - baseline;
     }
-    return  ((double) cycles / (double) cpuClock);
+    return  ((double) cycles / (double) cyclesClock);
 }
 
-static uint64_t
+static void
 getCpuSpeed(void)
 {
 #ifdef __x86_64
@@ -197,13 +198,15 @@ getCpuSpeed(void)
         result = MIN(result,(data.stop.int64 - data.start.int64));
     }
 
-    return (result) * 1000000 /
+    cpuClock = (result) * 1000000 /
         (((uint64_t)tv2.tv_sec * 1000000 + tv2.tv_usec) -
          ((uint64_t)tv1.tv_sec * 1000000 + tv1.tv_usec));
+    cyclesClock = cpuClock;
 #endif
 #ifdef _ARCH_PPC
     FILE *fpipe;
     char *command="grep timebase /proc/cpuinfo | awk '{ print $3 }'";
+    char *command2="grep clock /proc/cpuinfo | head -n 1 | awk '{ print $3 }'";
     char buff[256];
 
     if ( !(fpipe = (FILE*)popen(command,"r")) )
@@ -214,7 +217,17 @@ getCpuSpeed(void)
 
     fgets(buff, 256, fpipe);
 
-    return (uint64_t)   atoi(buff);
+    cyclesClock = (uint64_t)   atoi(buff);
+    if ( !(fpipe = (FILE*)popen(command2,"r")) )
+    {  // If fpipe is NULL
+        perror("Problems with pipe");
+        exit(1);
+    }
+
+    fgets(buff, 256, fpipe);
+
+    cpuClock = (uint64_t)   atoi(buff);
+    cpuClock *= 1E6;
 #endif
 }
 
@@ -268,7 +281,7 @@ void timer_init( void )
     }
     if (cpuClock == 0ULL)
     {
-        cpuClock = getCpuSpeed();
+        getCpuSpeed();
     }
     timer_initialized = 1;
 }
@@ -303,6 +316,16 @@ uint64_t timer_getCpuClock( void )
         return 0ULL;
     }
     return cpuClock;
+}
+
+uint64_t timer_getCycleClock( void )
+{
+    if (timer_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Timer module not properly initialized);
+        return 0ULL;
+    }
+    return cyclesClock;
 }
 
 uint64_t timer_getBaseline( void )
