@@ -212,6 +212,13 @@ int custom_group(char* eventStr, GroupInfo* ginfo)
         goto cleanup;
     }
     sprintf(ginfo->shortinfo, "%s", "Custom");
+    ginfo->longinfo = malloc(7 * sizeof(char));
+    if (ginfo->longinfo == NULL)
+    {
+        err = -ENOMEM;
+        goto cleanup;
+    }
+    sprintf(ginfo->longinfo, "%s", "Custom");
     ginfo->groupname = malloc(7 * sizeof(char));
     if (ginfo->groupname == NULL)
     {
