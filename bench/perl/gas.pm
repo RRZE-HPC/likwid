@@ -176,11 +176,11 @@ sub loop_exit
   my $step = shift;
 
   if ($main::ISA eq 'x86') {
-    print "add eax, $step\n";
-    print "cmp eax, edi\n";
+    print "addq eax, $step\n";
+    print "cmpq eax, edi\n";
   } elsif ($main::ISA eq 'x86-64') {
-    print "add rax, $step\n";
-    print "cmp rax, rdi\n";
+    print "addq rax, $step\n";
+    print "cmpq rax, rdi\n";
   }
   if ($MODE eq 'GLOBAL') {
     print "jl $symbolname\n";
