@@ -10,7 +10,7 @@ include $(MAKE_DIR)/config_defines.mk
 
 CFLAGS    = -O2 -Wall -fPIC
 INCLUDES  = -I./includes
-DEFINES   = -DLUA_COMPAT_ALL -DLUA_USE_LINUX
+DEFINES   = -DLUA_COMPAT_ALL -DLUA_COMPAT_5_2 -DLUA_USE_LINUX
 LIBS      = -lm -Wl,-E -ldl
 
 Q         ?= @
