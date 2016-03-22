@@ -1,0 +1,24 @@
+STREAMS 3
+TYPE SINGLE
+FLOPS 2
+BYTES 12
+DESC Single-precision stream triad A(i) = B(i)*c + C(i), optimized for AVX FMAs and non-temporal stores
+LOADS 2
+STORES 1
+INSTR_CONST 17
+INSTR_LOOP 15
+UOPS 22
+vmovaps ymm1, [rip+SCALAR]
+LOOP 32
+vmovaps   ymm2, [STR1 + GPR1*4]
+vmovaps   ymm3, [STR1 + GPR1*4+32]
+vmovaps   ymm4, [STR1 + GPR1*4+64]
+vmovaps   ymm5, [STR1 + GPR1*4+96]
+vfmadd213ps ymm2, ymm1, [STR2 + GPR1*4]
+vfmadd213ps ymm3, ymm1, [STR2 + GPR1*4+32]
+vfmadd213ps ymm4, ymm1, [STR2 + GPR1*4+64]
+vfmadd213ps ymm5, ymm1, [STR2 + GPR1*4+96]
+vmovntps   [STR0 + GPR1*4], ymm2
+vmovntps   [STR0 + GPR1*4+32], ymm3
+vmovntps   [STR0 + GPR1*4+64], ymm4
+vmovntps   [STR0 + GPR1*4+96], ymm5

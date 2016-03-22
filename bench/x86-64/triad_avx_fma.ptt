@@ -1,0 +1,27 @@
+STREAMS 4
+TYPE DOUBLE
+FLOPS 2
+BYTES 32
+DESC Double-precision triad A(i) = B(i) * C(i) + D(i), optimized for AVX FMAs
+LOADS 3
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 19
+UOPS 26
+LOOP 16
+vmovaps    ymm1, [STR1 + GPR1*8]
+vmovaps    ymm2, [STR1 + GPR1*8+32]
+vmovaps    ymm3, [STR1 + GPR1*8+64]
+vmovaps    ymm4, [STR1 + GPR1*8+96]
+vmovaps    ymm5, [STR2 + GPR1*8]
+vmovaps    ymm6, [STR2 + GPR1*8+32]
+vmovaps    ymm7, [STR2 + GPR1*8+64]
+vmovaps    ymm8, [STR2 + GPR1*8+96]
+vfmadd213pd ymm1, ymm5, [STR3 + GPR1*8]
+vfmadd213pd ymm2, ymm6, [STR3 + GPR1*8+32]
+vfmadd213pd ymm3, ymm7, [STR3 + GPR1*8+64]
+vfmadd213pd ymm4, ymm8, [STR3 + GPR1*8+96]
+vmovaps [STR0 + GPR1*8], ymm1
+vmovaps [STR0 + GPR1*8+32], ymm2
+vmovaps [STR0 + GPR1*8+64], ymm3
+vmovaps [STR0 + GPR1*8+96], ymm4

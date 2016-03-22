@@ -1,0 +1,27 @@
+STREAMS 4
+TYPE SINGLE
+FLOPS 2
+BYTES 16
+DESC Single-precision triad A(i) = B(i) * C(i) + D(i), optimized for SSE and non-temporal stores
+LOADS 3
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 19
+UOPS 30
+LOOP 16
+movaps    FPR1, [STR1 + GPR1*4]
+movaps    FPR2, [STR1 + GPR1*4+16]
+movaps    FPR3, [STR1 + GPR1*4+32]
+movaps    FPR4, [STR1 + GPR1*4+48]
+mulps     FPR1, [STR2 + GPR1*4]
+addps     FPR1, [STR3 + GPR1*4]
+mulps     FPR2, [STR2 + GPR1*4+16]
+addps     FPR2, [STR3 + GPR1*4+16]
+mulps     FPR3, [STR2 + GPR1*4+32]
+addps     FPR3, [STR3 + GPR1*4+32]
+mulps     FPR4, [STR2 + GPR1*4+48]
+addps     FPR4, [STR3 + GPR1*4+48]
+movntps    [STR0 + GPR1*4], FPR1
+movntps    [STR0 + GPR1*4+16], FPR2
+movntps    [STR0 + GPR1*4+32], FPR3
+movntps    [STR0 + GPR1*4+48], FPR4

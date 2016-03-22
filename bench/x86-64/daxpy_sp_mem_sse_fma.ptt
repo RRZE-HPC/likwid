@@ -1,0 +1,24 @@
+STREAMS 2
+TYPE SINGLE
+FLOPS 2
+BYTES 12
+DESC Single-precision linear combination of two vectors, optimized for SSE FMAs and non-temporal stores
+LOADS 2
+STORES 1
+INSTR_CONST 17
+INSTR_LOOP 15
+UOPS 22
+movaps FPR7, [rip+SCALAR]
+LOOP 32
+movaps   FPR1, [STR0 + GPR1*4]
+movaps   FPR2, [STR0 + GPR1*4+32]
+movaps   FPR3, [STR0 + GPR1*4+64]
+movaps   FPR4, [STR0 + GPR1*4+96]
+vfmadd213ps FPR1, FPR7, [STR1 + GPR1*4]
+vfmadd213ps FPR2, FPR7, [STR1 + GPR1*4+32]
+vfmadd213ps FPR3, FPR7, [STR1 + GPR1*4+64]
+vfmadd213ps FPR4, FPR7, [STR1 + GPR1*4+96]
+movntps   [STR1 + GPR1*4], FPR1
+movntps   [STR1 + GPR1*4+32], FPR2
+movntps   [STR1 + GPR1*4+64], FPR3
+movntps   [STR1 + GPR1*4+96], FPR4
