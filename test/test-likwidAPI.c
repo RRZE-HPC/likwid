@@ -15,8 +15,15 @@ typedef struct {
     int result;
 } test;
 
-static char eventset_ok[] = "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1";
-static char eventset_option[] = "CPU_CLK_UNHALTED_CORE:FIXC1:ANYTHREAD";
+static char eventset_ok[] = "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,CPU_CLK_UNHALTED_REF:FIXC2";
+static char event1_ok[] = "INSTR_RETIRED_ANY";
+static char event2_ok[] = "CPU_CLK_UNHALTED_CORE";
+static char event3_ok[] = "CPU_CLK_UNHALTED_REF";
+static char ctr1_ok[] = "FIXC0";
+static char ctr2_ok[] = "FIXC1";
+static char ctr3_ok[] = "FIXC2";
+static char eventset_option[] = "INSTR_RETIRED_ANY:FIXC0:ANYTHREAD,CPU_CLK_UNHALTED_CORE:FIXC1:ANYTHREAD,CPU_CLK_UNHALTED_REF:FIXC2:ANYTHREAD";
+static int isIntel = 0;
 
 int test_initconfig()
 {
@@ -166,7 +173,7 @@ int test_topologyinit()
 
         }
     }
-
+    isIntel = cpuinfo->isIntel;
     topology_finalize();
     return 1;
 fail:
@@ -340,44 +347,78 @@ int test_perfmonaddeventset()
         return 1;
     }
     int ret = perfmon_init(1, &cpu);
-    if (ret != 0)
+    if (ret != 0) {
+        printf("Perfmon init failed\n");
         goto fail;
-    if (perfmon_getNumberOfGroups() != 0)
+    }
+    if (perfmon_getNumberOfGroups() != 0) {
+        printf("Perfmon number of groups != 0\n");
         goto fail;
-    if (perfmon_getNumberOfThreads() != 1)
+    }
+    if (perfmon_getNumberOfThreads() != 1) {
+        printf("Perfmon number of threads != 1\n");
         goto fail;
-    if (perfmon_getIdOfActiveGroup() != -1)
+    }
+    if (perfmon_getIdOfActiveGroup() != -1) {
+        printf("Perfmon id of active group != -1\n");
         goto fail;
+    }
     ret = perfmon_addEventSet(eventset_ok);
-    if (ret != 0)
+    if (ret != 0) {
+        printf("Perfmon addEventSet(ok) failed\n");
         goto fail;
-    if (perfmon_getNumberOfGroups() != 1)
+    }
+    if (perfmon_getNumberOfGroups() != 1) {
+        printf("Perfmon number of groups != 1\n");
         goto fail;
-    if (perfmon_getNumberOfEvents(ret) != 2)
+    }
+    if (perfmon_getNumberOfEvents(ret) != 3) {
+        printf("Perfmon number of events != 3\n");
         goto fail;
-    if (perfmon_getIdOfActiveGroup() != -1)
+    }
+    if (perfmon_getIdOfActiveGroup() != -1) {
+        printf("Perfmon id of active group != -1\n");
         goto fail;
+    }
     ret = perfmon_addEventSet(eventset_option);
-    if (ret != 1)
+    if (ret != 1) {
+        printf("Perfmon addEventSet(options) failed\n");
         goto fail;
-    if (perfmon_getNumberOfGroups() != 2)
+    }
+    if (perfmon_getNumberOfGroups() != 2) {
+        printf("Perfmon number of groups != 2\n");
         goto fail;
-    if (perfmon_getNumberOfEvents(ret) != 1)
+    }
+    if (perfmon_getNumberOfEvents(ret) != 3) {
+        printf("Perfmon number of events != 3\n");
         goto fail;
-    if (perfmon_getIdOfActiveGroup() != -1)
+    }
+    if (perfmon_getIdOfActiveGroup() != -1) {
+        printf("Perfmon id of active group != -1\n");
         goto fail;
+    }
     ret = perfmon_addEventSet(eventset_fail1);
-    if (ret >= 0)
+    if (ret >= 0) {
+        printf("Perfmon addEventSet(fail1) failed\n");
         goto fail;
-    if (perfmon_getNumberOfGroups() != 2)
+    }
+    if (perfmon_getNumberOfGroups() != 2) {
+        printf("Perfmon number of groups != 2\n");
         goto fail;
+    }
     ret = perfmon_addEventSet(eventset_fail2);
-    if (ret >= 0)
+    if (ret >= 0) {
+        printf("Perfmon addEventSet(fail2) failed\n");
         goto fail;
-    if (perfmon_getNumberOfGroups() != 2)
+    }
+    if (perfmon_getNumberOfGroups() != 2) {
+        printf("Perfmon number of groups != 2\n");
         goto fail;
-    if (perfmon_getIdOfActiveGroup() != -1)
+    }
+    if (perfmon_getIdOfActiveGroup() != -1) {
+        printf("Perfmon id of active group != -1\n");
         goto fail;
+    }
     perfmon_finalize();
     affinity_finalize();
     topology_finalize();
@@ -396,6 +437,204 @@ int test_perfmonaddeventset_noinit()
         goto fail;
     return 1;
 fail:
+    return 0;
+}
+
+int test_perfmoncustomgroup()
+{
+    CpuInfo_t cpuinfo;
+    int cpu = 0;
+    topology_init();
+    cpuinfo = get_cpuInfo();
+    int ret = perfmon_init(1, &cpu);
+    if (ret != 0) {
+        printf("Perfmon init failed\n");
+        goto fail;
+    }
+    ret = perfmon_addEventSet(eventset_ok);
+    if (ret != 0) {
+        printf("Perfmon addEventSet(ok) failed\n");
+        goto fail;
+    }
+    if (perfmon_getNumberOfEvents(ret) != 3) {
+        printf("Perfmon number of events != 3\n");
+        goto fail;
+    }
+    if (perfmon_getNumberOfMetrics(ret) != 0) {
+        printf("Perfmon number of metrics != 0\n");
+        goto fail;
+    }
+    if (strcmp(perfmon_getEventName(ret, 0), event1_ok) != 0)
+    {
+        goto fail;
+    }
+    if (strcmp(perfmon_getEventName(ret, 1), event2_ok) != 0)
+    {
+        goto fail;
+    }
+    if (strcmp(perfmon_getEventName(ret, 2), event3_ok) != 0)
+    {
+        goto fail;
+    }
+    if (strcmp(perfmon_getCounterName(ret, 0), ctr1_ok) != 0)
+    {
+        goto fail;
+    }
+    if (strcmp(perfmon_getCounterName(ret, 1), ctr2_ok) != 0)
+    {
+        goto fail;
+    }
+    if (strcmp(perfmon_getCounterName(ret, 2), ctr3_ok) != 0)
+    {
+        goto fail;
+    }
+
+    if (strcmp(perfmon_getGroupName(ret), "Custom") != 0)
+    {
+        goto fail;
+    }
+    if (strcmp(perfmon_getGroupInfoShort(ret), "Custom") != 0)
+    {
+        goto fail;
+    }
+    if (strcmp(perfmon_getGroupInfoLong(ret), "Custom") != 0)
+    {
+        goto fail;
+    }
+    if (perfmon_getLastTimeOfGroup(ret) != 0)
+    {
+        goto fail;
+    }
+    perfmon_finalize();
+    affinity_finalize();
+    topology_finalize();
+    return 1;
+fail:
+    perfmon_finalize();
+    affinity_finalize();
+    topology_finalize();
+    return 0;
+}
+
+int test_perfmongetgroups()
+{
+    int i;
+    topology_init();
+    char** glist = NULL;
+    char** slist = NULL;
+    char** llist = NULL;
+    int ret = perfmon_getGroups(&glist, &slist, &llist);
+    if (ret <= 0)
+    {
+        goto fail;
+    }
+    for (i=0; i< ret; i++)
+    {
+        if (strcmp(glist[i], "") == 0)
+            goto fail;
+        if (strcmp(slist[i], "") == 0)
+            goto fail;
+        if (strcmp(llist[i], "") == 0)
+            goto fail;
+    }
+    free(glist);
+    free(slist);
+    free(llist);
+    topology_finalize();
+    return 1;
+fail:
+    if (glist)
+        free(glist);
+    if (slist)
+        free(slist);
+    if (llist)
+        free(llist);
+    topology_finalize();
+    return 0;
+}
+
+int test_perfmonperfgroup()
+{
+    CpuInfo_t cpuinfo;
+	int i;
+    int cpu = 0;
+    topology_init();
+    cpuinfo = get_cpuInfo();
+    int ret = perfmon_init(1, &cpu);
+    if (ret != 0) {
+        printf("Perfmon init failed\n");
+        goto fail;
+    }
+	char** glist = NULL;
+    char** slist = NULL;
+    char** llist = NULL;
+    ret = perfmon_getGroups(&glist, &slist, &llist);
+    if (ret <= 0)
+    {
+        goto fail;
+	}
+	ret = perfmon_addEventSet(glist[0]);
+    if (ret != 0) {
+        printf("Perfmon addEventSet(%s) failed\n", glist[0]);
+        goto fail;
+    }
+	if (perfmon_getNumberOfEvents(ret) == 0) {
+        printf("Perfmon number of events == 0\n");
+        goto fail;
+    }
+    if (perfmon_getNumberOfMetrics(ret) == 0) {
+        printf("Perfmon number of metrics == 0\n");
+        goto fail;
+    }
+	for (i=0; i<perfmon_getNumberOfEvents(ret); i++) {
+		if (strcmp(perfmon_getEventName(ret, i), "") == 0)
+			goto fail;
+		if (strcmp(perfmon_getCounterName(ret, i), "") == 0)
+			goto fail;
+	}
+	if (strcmp(perfmon_getGroupName(ret), "Custom") == 0)
+    {
+        goto fail;
+    }
+    if (strcmp(perfmon_getGroupInfoShort(ret), "Custom") == 0)
+    {
+        goto fail;
+    }
+    if (strcmp(perfmon_getGroupInfoLong(ret), "Custom") == 0)
+    {
+        goto fail;
+    }
+	if (perfmon_getLastTimeOfGroup(ret) != 0)
+    {
+        goto fail;
+    }
+    if (perfmon_getTimeOfGroup(ret) != 0)
+    {
+        goto fail;
+    }
+	for (i=0; i<perfmon_getNumberOfMetrics(ret); i++) {
+		if (strcmp(perfmon_getMetricName(ret, i), "") == 0)
+			goto fail;
+		if (perfmon_getMetric(ret, i, 0) != 0.0)
+			goto fail;
+	}
+	free(glist);
+    free(slist);
+    free(llist);
+    perfmon_finalize();
+    affinity_finalize();
+    topology_finalize();
+    return 1;
+fail:
+    if (glist)
+        free(glist);
+    if (slist)
+        free(slist);
+    if (llist)
+        free(llist);
+    perfmon_finalize();
+    affinity_finalize();
+    topology_finalize();
     return 0;
 }
 
@@ -424,7 +663,7 @@ int test_perfmonsetup()
     group1 = ret;
     if (perfmon_getNumberOfGroups() != 1)
         goto fail;
-    if (perfmon_getNumberOfEvents(group1) != 2)
+    if (perfmon_getNumberOfEvents(group1) != 3)
         goto fail;
     ret = perfmon_setupCounters(group1);
     if (ret != 0)
@@ -439,9 +678,9 @@ int test_perfmonsetup()
         goto fail;
     if (perfmon_getNumberOfGroups() != 2)
         goto fail;
-    if (perfmon_getNumberOfEvents(group1) != 2)
+    if (perfmon_getNumberOfEvents(group1) != 3)
         goto fail;
-    if (perfmon_getNumberOfEvents(group2) != 1)
+    if (perfmon_getNumberOfEvents(group2) != 3)
         goto fail;
     perfmon_finalize();
     topology_finalize();
@@ -559,7 +798,7 @@ int test_perfmonsetup_noadd()
     topology_finalize();
     return 1;
 fail:
-   
+
     perfmon_finalize();
     topology_finalize();
     return 0;
@@ -900,7 +1139,7 @@ int test_perfmonresult()
     ret = perfmon_setupCounters(group);
     if (ret != 0)
         goto fail;
-    
+
     ret = perfmon_startCounters();
     if (ret != 0)
         goto fail;
@@ -1099,6 +1338,9 @@ static test testlist[] = {
     {"Test setting up an event set without initialization", test_perfmonsetup_noinit, 1},
     {"Test starting an event set without initialization", test_perfmonstart_noinit, 1},
     {"Test setting up an event set without adding one", test_perfmonsetup_noadd, 1},
+	{"Test getting all performance groups", test_perfmongetgroups, 1},
+    {"Test setting up a custom event set and test group handling", test_perfmoncustomgroup, 1},
+	{"Test setting up a performance group and test group handling", test_perfmonperfgroup, 1},
     {"Test starting an event set without adding one", test_perfmonstart_noadd, 1},
     {"Test stopping an event set", test_perfmonstop, 1},
     {"Test stopping an event set without initialization", test_perfmonstop_noinit, 1},
@@ -1130,6 +1372,7 @@ static test testlist[] = {
 int main()
 {
     int i = 0;
+    fclose(stderr);
     while (testlist[i].testfunc != NULL)
     {
         printf("%s:\t", testlist[i].testname);
