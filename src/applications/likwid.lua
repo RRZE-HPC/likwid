@@ -1069,9 +1069,9 @@ local function printAsciiBox(container)
                 width = (boxlen * boxwidth + ((boxlen-1)*3) - labellen)/2;
                 offset = (boxlen * boxwidth + ((boxlen-1)*3) - labellen)%2;
             end
-            boxlabelline = boxlabelline .. "|" .. string.rep(" ",(width+offset))
+            boxlabelline = boxlabelline .. "|" .. string.rep(" ", math.floor(width+offset))
             boxlabelline = boxlabelline .. container[i][j]["label"]
-            boxlabelline = boxlabelline ..  string.rep(" ",(width)) .. "| "
+            boxlabelline = boxlabelline ..  string.rep(" ",math.floor(width)) .. "| "
         end
         print(innerboxline .. "|")
         print(boxlabelline .. "|")
