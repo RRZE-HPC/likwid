@@ -56,18 +56,20 @@ local predefined_plots = {
     },
     L2 = {
         perfgroup = "L2",
-        ymetricmatch = "L2 bandwidth [MBytes/s]",
+        ymetricmatch = "L2D load bandwidth [MBytes/s]",
         title = "L2 cache bandwidth",
         ytitle = "Bandwidth [MBytes/s]",
-        y2title = nil,
+        y2metricmatch = "L2D evict bandwidth [MBytes/s]",
+        y2title = "Bandwidth [MBytes/s]",
         xtitle = "Time"
     },
     L3 = {
         perfgroup = "L3",
-        ymetricmatch = "L3 bandwidth [MBytes/s]",
+        ymetricmatch = "L3 load bandwidth [MBytes/s]",
         title = "L3 cache bandwidth",
         ytitle = "Bandwidth [MBytes/s]",
-        y2title = nil,
+        y2title = "Bandwidth [MBytes/s]",
+        y2metricmatch = "L3 evict bandwidth [MBytes/s]",
         xtitle = "Time"
     },
     MEM = {
@@ -87,10 +89,10 @@ local predefined_plots = {
         xtitle = "Time",
         y2metricmatch = "QPI link bandwidth [MByte/s]"
     },
-    POWER = {
+    ENERGY = {
         perfgroup = "ENERGY",
         ymetricmatch = "Power [W]",
-        title = "Consumed power",
+        title = "Consumed energy",
         ytitle = "Power [W]",
         y2title = "Power DRAM [W]",
         y2metricmatch = "Power DRAM [W]",
@@ -504,10 +506,10 @@ while true do
         perfctr_exited = true
         break
     end
-    if l:match("^%d+,%d+,%d+,[%d.]+,%d+") then
+    if l:match("^%d+ %d+ %d+ [%d.]+ %d+") then
         local data = {}
         local diff = {}
-        linelist = likwid.stringsplit(l, ",")
+        linelist = likwid.stringsplit(l, " ")
         group = tonumber(linelist[1])
         nr_events = tonumber(linelist[2])
         nr_threads = tonumber(linelist[3])
