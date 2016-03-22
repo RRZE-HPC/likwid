@@ -754,7 +754,7 @@ the counter values are not accessible after this function.
 extern void perfmon_finalize(void) __attribute__ ((visibility ("default") ));
 /*! \brief Get the results of the specified group, counter and thread
 
-Get the result of the last measurement cycle. The function takes care of happened
+Get the result of all measurement cycles. The function takes care of happened
 overflows and if the counter values need to be calculated with multipliers.
 @param [in] groupId ID of the group that should be read
 @param [in] eventId ID of the event that should be read
@@ -762,7 +762,26 @@ overflows and if the counter values need to be calculated with multipliers.
 @return The counter result
 */
 extern double perfmon_getResult(int groupId, int eventId, int threadId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the last results of the specified group, counter and thread
+
+Get the result of the last measurement cycle. The function takes care of happened
+overflows and if the counter values need to be calculated with multipliers.
+@param [in] groupId ID of the group that should be read
+@param [in] eventId ID of the event that should be read
+@param [in] threadId ID of the thread/cpu that should be read
+@return The counter result
+*/
+extern double perfmon_getLastResult(int groupId, int eventId, int threadId) __attribute__ ((visibility ("default") ));
 /*! \brief Get the metric result of the specified group, counter and thread
+
+Get the metric result of all measurement cycles. It reads all raw results for the given groupId and threadId.
+@param [in] groupId ID of the group that should be read
+@param [in] metricId ID of the metric that should be calculated
+@param [in] threadId ID of the thread/cpu that should be read
+@return The metric result
+*/
+extern double perfmon_getMetric(int groupId, int metricId, int threadId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the last metric result of the specified group, counter and thread
 
 Get the metric result of the last measurement cycle. It reads all raw results for the given groupId and threadId.
 @param [in] groupId ID of the group that should be read
@@ -770,7 +789,7 @@ Get the metric result of the last measurement cycle. It reads all raw results fo
 @param [in] threadId ID of the thread/cpu that should be read
 @return The metric result
 */
-extern double perfmon_getMetric(int groupId, int metricId, int threadId) __attribute__ ((visibility ("default") ));
+extern double perfmon_getLastMetric(int groupId, int metricId, int threadId) __attribute__ ((visibility ("default") ));
 
 /*! \brief Get the number of configured event groups
 
@@ -979,6 +998,11 @@ extern void timer_reset( TimerData* time ) __attribute__ ((visibility ("default"
 @return CPU clock
 */
 extern uint64_t timer_getCpuClock( void ) __attribute__ ((visibility ("default") ));
+/*! \brief Return the cycles clock determined at timer_init
+
+@return cycle clock
+*/
+extern uint64_t timer_getCycleClock( void ) __attribute__ ((visibility ("default") ));
 /*! \brief Return the baseline CPU clock determined at timer_init
 
 @return Baseline CPU clock
