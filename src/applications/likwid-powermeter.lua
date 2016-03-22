@@ -251,7 +251,7 @@ if use_perfctr then
             argString = argString .. "@"
         end
     end
-    execString = string.format("<INSTALLED_PREFIX>/bin/likwid-perfctr -C %s -g CLOCK ",argString)
+    execString = string.format("<INSTALLED_PREFIX>/bin/likwid-perfctr -C %s -f -g CLOCK ",argString)
 end
 
 
