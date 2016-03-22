@@ -1800,7 +1800,7 @@ double
 perfmon_getMetric(int groupId, int metricId, int threadId)
 {
     int e;
-    double result;
+    double result = 0;
     CounterList clist;
     if (unlikely(groupSet == NULL))
     {
@@ -1834,7 +1834,11 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     add_to_clist(&clist, "time", perfmon_getLastTimeOfGroup(groupId));
     //printf("Current clock %ld\n", timer_getCpuClock());
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCpuClock());
-    result = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist);
+    e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
+    if (e < 0)
+    {
+        ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
+    }
     destroy_clist(&clist);
     return result;
 }
@@ -1843,7 +1847,7 @@ double
 perfmon_getLastMetric(int groupId, int metricId, int threadId)
 {
     int e;
-    double result;
+    double result = 0;
     CounterList clist;
     if (unlikely(groupSet == NULL))
     {
@@ -1875,7 +1879,11 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     }
     add_to_clist(&clist, "time", perfmon_getLastTimeOfGroup(groupId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCpuClock());
-    result = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist);
+    e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
+    if (e < 0)
+    {
+        ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
+    }
     destroy_clist(&clist);
     return result;
 }
@@ -2427,9 +2435,8 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     }
     add_to_clist(&clist, "time", perfmon_getTimeOfRegion(region, threadId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCpuClock());
-
-    result = calc_metric(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId], &clist);
-    if (result < 0)
+    err = calc_metric(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId], &clist, &result);
+    if (err < 0)
     {
         ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId]);
     }

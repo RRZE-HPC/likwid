@@ -828,14 +828,14 @@ void destroy_clist(CounterList* clist)
 }
 
 
-double calc_metric(char* formula, CounterList* clist)
+int calc_metric(char* formula, CounterList* clist, double *result)
 {
     int i,l_cname, l_remain, l_str, l_value;
     char* fcopy, *fcopy2;
     char vcopy[512];
     int size;
     char* ptr, *copyptr;
-    double result;
+
     if ((formula == NULL) || (clist == NULL))
         return (double)-EINVAL;
     // get current string length
@@ -885,12 +885,11 @@ double calc_metric(char* formula, CounterList* clist)
         free(fcopy2);
         return 0.0;
     }
-
     // now we can calculate the formula
-    result = calculate_infix(fcopy);
+    i = calculate_infix(fcopy, result);
     free(fcopy);
     free(fcopy2);
-    return result;
+    return i;
 }
 
 

@@ -22,7 +22,7 @@ void dpush(double f)
     }
     else
     {
-        printf("error:stack full, cant push %g\n",f);
+        printf("error: value stack full, cant push %g\n",f);
     }
 }
 
@@ -34,8 +34,8 @@ double dpop(void)
     }
     else
     {
-        printf("error: stack empty\n");
-        return -1;
+        printf("error: value stack empty\n");
+        return 0;
     }
 }
 
@@ -49,7 +49,7 @@ void oppush(int f)
     }
     else
     {
-        printf("error:stack full, cant push %d\n",f);
+        printf("error: op stack full, cant push %d\n",f);
     }
 }
 
@@ -90,13 +90,17 @@ void _calc_infix(int op)
     }
 }
 
-double calculate_infix(char* finfix)
+int calculate_infix(char* finfix, double *result)
 {
     int i = 0;
     char* ptr;
     double num1, num2;
     char op;
-
+    if (result == NULL)
+        return -1;
+    *result = 0;
+    if (finfix[0] == '\0')
+        return -1;
 
     // evaluate
     while ( finfix[i] != '\0')
@@ -143,10 +147,10 @@ double calculate_infix(char* finfix)
     {
         _calc_infix(op);
     }
-    num1 = dpop();
+    *result = dpop();
     opsptr = 0;
     dsptr = 0;
-    return num1;
+    return 0;
 }
 
 

@@ -2,6 +2,6 @@
 #define CALCULATOR_H
 
 
-double calculate_infix(char* finfix);
+int calculate_infix(char* finfix, double *result);
 
 #endif
