@@ -246,7 +246,6 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
             PciDeviceIndex dev = counter_map[index].device;
             eventSet->events[i].threadCounter[thread_id].startData = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
-            eventSet->events[i].threadCounter[thread_id].fullData = 0;
             switch (type)
             {
                 case PMC:
@@ -272,6 +271,7 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
                 default:
                     break;
             }
+            eventSet->events[i].threadCounter[thread_id].counterData = eventSet->events[i].threadCounter[thread_id].startData;
         }
     }
 

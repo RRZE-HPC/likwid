@@ -120,7 +120,6 @@ int perfmon_startCountersThread_pm(int thread_id, PerfmonEventSet* eventSet)
             RegisterIndex index = eventSet->events[i].index;
             eventSet->events[i].threadCounter[thread_id].startData = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
-            eventSet->events[i].threadCounter[thread_id].fullData = 0;
             VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST 0x0ULL, SETUP_PMC_CTR);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister , 0x0ULL));
         }

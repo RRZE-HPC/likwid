@@ -900,7 +900,6 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
             uint64_t counter1 = counter_map[index].counterRegister;
             eventSet->events[i].threadCounter[thread_id].startData = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
-            eventSet->events[i].threadCounter[thread_id].fullData = 0;
             switch (type)
             {
                 case PMC:
@@ -931,6 +930,7 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
                 default:
                     break;
             }
+            eventSet->events[i].threadCounter[thread_id].counterData = eventSet->events[i].threadCounter[thread_id].startData;
         }
     }
 

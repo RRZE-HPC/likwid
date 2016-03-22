@@ -967,7 +967,6 @@ int perfmon_startCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventS
             uint64_t counter1 = counter_map[index].counterRegister;
             eventSet->events[i].threadCounter[thread_id].startData = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
-            eventSet->events[i].threadCounter[thread_id].fullData = 0;
             switch (type)
             {
                 case PMC:

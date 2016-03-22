@@ -1206,17 +1206,18 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
             PciDeviceIndex dev = counter_map[index].device;
             eventSet->events[i].threadCounter[thread_id].startData = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
-            eventSet->events[i].threadCounter[thread_id].fullData = 0;
             switch (type)
             {
                 case PMC:
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     flags |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));  /* enable counter */
+                    VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, START_PMC);
                     break;
 
                 case FIXED:
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     flags |= (1ULL<<(index+32));  /* enable fixed counter */
+                    VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, START_FIXED);
                     break;
 
                 case POWER:
@@ -1253,6 +1254,7 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
                 default:
                     break;
             }
+            eventSet->events[i].threadCounter[thread_id].counterData = eventSet->events[i].threadCounter[thread_id].startData;
         }
     }
 
