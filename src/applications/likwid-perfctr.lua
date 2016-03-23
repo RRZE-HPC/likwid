@@ -472,12 +472,12 @@ end
 if pin_cpus then
     local omp_threads = os.getenv("OMP_NUM_THREADS")
     if omp_threads == nil then
-        likwid.setenv("OMP_NUM_THREADS",tostring(num_cpus))
+        likwid.setenv("OMP_NUM_THREADS",tostring(math.tointeger(num_cpus)))
     elseif num_cpus > tonumber(omp_threads) then
         print_stdout(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_cpus))
     end
     if os.getenv("CILK_NWORKERS") == nil then
-        likwid.setenv("CILK_NWORKERS", tostring(num_cpus))
+        likwid.setenv("CILK_NWORKERS", tostring(math.tointeger(num_cpus)))
     end
     if skip_mask then
         likwid.setenv("LIKWID_SKIP",skip_mask)
@@ -485,11 +485,11 @@ if pin_cpus then
     likwid.setenv("KMP_AFFINITY","disabled")
 
     if num_cpus > 1 then
-        local pinString = tostring(cpulist[2])
+        local pinString = tostring(math.tointeger(cpulist[2]))
         for i=3,likwid.tablelength(cpulist) do
-            pinString = pinString .. "," .. cpulist[i]
+            pinString = pinString .. "," .. tostring(math.tointeger(cpulist[i]))
         end
-        pinString = pinString .. "," .. cpulist[1]
+        pinString = pinString .. "," .. tostring(math.tointeger(cpulist[1]))
         likwid.setenv("LIKWID_PIN", pinString)
 
         local preload = os.getenv("LD_PRELOAD")
@@ -499,7 +499,7 @@ if pin_cpus then
             likwid.setenv("LD_PRELOAD",likwid.pinlibpath .. ":" .. preload)
         end
     elseif num_cpus == 1 then
-        likwid.setenv("LIKWID_PIN", cpulist[1])
+        likwid.setenv("LIKWID_PIN", tostring(math.tointeger(cpulist[1])))
         if verbose > 0 then
             likwid.pinProcess(cpulist[1], 0)
         else

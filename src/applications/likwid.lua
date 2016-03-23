@@ -765,7 +765,12 @@ local function printOutput(results, metrics, cpulist, region, stats)
             end
             
             for e, event in pairs(group) do
-                local tmp = tostring(event[c])
+                local tmp = ""
+                if math.tointeger(event[c]) == nil then
+                    tmp = tostring(event[c])
+                else
+                    tmp = tostring(math.tointeger(event[c]))
+                end
                 if tmp:len() > 12 then
                     tmp = string.format("%e", event[c])
                 end
@@ -786,7 +791,13 @@ local function printOutput(results, metrics, cpulist, region, stats)
             for c, cpu in pairs(cpulist) do
                 local tmpList = {"Core "..tostring(cpu)}
                 for m=1, likwid.getNumberOfMetrics(g) do
-                    local tmp = tostring(metrics[g][m][c])
+                    local tmp = ""
+                    if math.tointeger(metrics[g][m][c]) == nil then
+                        tmp = tostring(metrics[g][m][c])
+                    else
+                        tmp = tostring(math.tointeger(metrics[g][m][c]))
+                    end
+                    --local tmp = tostring(metrics[g][m][c])
                     if tmp:len() > 12 then
                         tmp = string.format("%e", metrics[g][m][c])
                     end
