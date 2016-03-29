@@ -170,14 +170,14 @@ access_x86_pci_init(const int socket)
             bstring filepath = bformat("%s%s%s",PCI_ROOT_PATH,
                                                 socket_bus[socket],
                                                 pci_devices[j].path);
-            if (!ownaccess(bdata(filepath),X_OK))
+            if (!ownaccess(bdata(filepath),F_OK))
             {
                 FD[socket][j] = 0;
                 pci_devices[j].online = 1;
                 if (access_x86_initialized == 0)
                 {
                     DEBUG_PRINT(DEBUGLEV_DETAIL, PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, socket,bdata(filepath));
-                    if (!ownaccess(bdata(filepath),R_OK|W_OK))
+                    if (ownaccess(bdata(filepath),R_OK|W_OK))
                     {
                         ERROR_PRINT(PCI device %s (%d) online for socket %d at path %s but not accessible, pci_devices[j].name,j, socket,bdata(filepath));
                     }
@@ -300,7 +300,7 @@ access_x86_pci_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_
 
 int access_x86_pci_check(PciDeviceIndex dev, int socket)
 {
-    if (index == MSR_DEV)
+    if (dev == MSR_DEV)
     {
         return 1;
     }

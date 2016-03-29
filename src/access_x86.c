@@ -44,7 +44,7 @@ int access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t
     {
         if (access_x86_pci_check(dev, affinity_core2node_lookup[cpu_id]))
         {
-            err = access_x86_pci_read(affinity_core2node_lookup[cpu_id], dev, reg, &tmp);
+            err = access_x86_pci_read(dev, affinity_core2node_lookup[cpu_id], reg, &tmp);
             *data = tmp;
         }
     }
@@ -62,7 +62,7 @@ int access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_
     {
         if (access_x86_pci_check(dev, affinity_core2node_lookup[cpu_id]))
         {
-            err = access_x86_pci_write(affinity_core2node_lookup[cpu_id], dev, reg, data);
+            err = access_x86_pci_write(dev, affinity_core2node_lookup[cpu_id], reg, data);
         }
     }
     return err;
