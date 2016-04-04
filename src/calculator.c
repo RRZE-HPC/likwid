@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <stdio.h>
-#include <errno.h>
+#include <error.h>
 #include <string.h>
 #include <stdint.h>
 
@@ -22,7 +22,7 @@ void dpush(double f)
     }
     else
     {
-        printf("error: value stack full, cant push %g\n",f);
+        ERROR_PRINT(Error: value stack full cant push %g, f);
     }
 }
 
@@ -34,7 +34,7 @@ double dpop(void)
     }
     else
     {
-        printf("error: value stack empty\n");
+        ERROR_PLAIN_PRINT(Error: value stack empty);
         return 0;
     }
 }
@@ -49,7 +49,7 @@ void oppush(int f)
     }
     else
     {
-        printf("error: op stack full, cant push %d\n",f);
+        ERROR_PRINT(Error: op stack full cant push %d, f);
     }
 }
 
@@ -66,28 +66,28 @@ int oppop(void)
 }
 
 
-void _calc_infix(int op)
+double _calc_infix(int op, double num1, double num2)
 {
-    double num1 = dpop();
-    double num2 = dpop();
-    
+    double res = 0.0;
+
     switch(op){
         case '+' :
-            dpush(num1 + num2);
+            res = num1 + num2;
             break;
         case '-' :
-            dpush(num1 - num2);
+            res = num1 - num2;
             break;
         case '*' :
-            dpush(num1 * num2);
+            res = num1 * num2;
             break;
         case '/' :
-            dpush(num2 / num1);
+            res = num2 / num1;
             break;
         case -1 :
             printf("opstack empty\n");
             break;
     }
+    return res;
 }
 
 int calculate_infix(char* finfix, double *result)
@@ -96,11 +96,12 @@ int calculate_infix(char* finfix, double *result)
     char* ptr;
     double num1, num2;
     char op;
+    
     if (result == NULL)
-        return -1;
+        return -EINVAL;
     *result = 0;
     if (finfix[0] == '\0')
-        return -1;
+        return -EINVAL;
 
     // evaluate
     while ( finfix[i] != '\0')
@@ -135,7 +136,10 @@ int calculate_infix(char* finfix, double *result)
             case ' ':
             case '\0':
                 op = oppop();
-                _calc_infix(op);
+                num1 = dpop();
+                num2 = dpop();
+                num1 = _calc_infix(op, num1, num2);
+                dpush(num1);
                 break;
                 
             default:
@@ -145,7 +149,10 @@ int calculate_infix(char* finfix, double *result)
     }
     while((op = oppop()) > 0)
     {
-        _calc_infix(op);
+        num1 = dpop();
+        num2 = dpop();
+        num1 = _calc_infix(op, num1, num2);
+        dpush(num1);
     }
     *result = dpop();
     opsptr = 0;
