@@ -805,9 +805,7 @@ int add_to_clist(CounterList* clist, char* counter, double result)
     {
         return -ENOMEM;
     }
-    //strncpy(clist->cnames[clist->counters], counter, strlen(counter));
     sprintf(clist->cnames[clist->counters],"%s", counter);
-    //clist->cnames[clist->counters][strlen(counter)] = '\0';
     clist->cvalues[clist->counters] = result;
     clist->counters++;
     return 0;
@@ -835,9 +833,10 @@ int calc_metric(char* formula, CounterList* clist, double *result)
     char vcopy[512];
     int size;
     char* ptr, *copyptr;
+    *result = 0.0;
 
     if ((formula == NULL) || (clist == NULL))
-        return (double)-EINVAL;
+        return -EINVAL;
     // get current string length
     size = strlen(formula);
     // iterate over counter list and extend string length if stringified counter
@@ -850,12 +849,12 @@ int calc_metric(char* formula, CounterList* clist, double *result)
     // alloc a new string where is enough space
     fcopy = malloc(size * sizeof(char));
     if (fcopy == NULL)
-        return (double)-ENOMEM;
+        return -ENOMEM;
     fcopy2 = malloc(size * sizeof(char));
     if (fcopy2 == NULL)
     {
         free(fcopy);
-        return (double)-ENOMEM;
+        return -ENOMEM;
     }
     // copy orginal formula to new space
     strcpy(fcopy, formula);
@@ -883,7 +882,8 @@ int calc_metric(char* formula, CounterList* clist, double *result)
         fprintf(stderr, "%s\n", fcopy);
         free(fcopy);
         free(fcopy2);
-        return 0.0;
+        *result = 0.0;
+        return -EINVAL;
     }
     // now we can calculate the formula
     i = calculate_infix(fcopy, result);
@@ -891,50 +891,3 @@ int calc_metric(char* formula, CounterList* clist, double *result)
     free(fcopy2);
     return i;
 }
-
-
-/*int main(void)
-{
-    int i, size;
-    groupInfo ginfo;
-    counterList clist;
-    char** glist;
-    char** ilist;
-    char** llist;
-    char* estr;
-    double result1 = 0, result2 = 0;
-    size = get_groups("/home/rrze/unrz/unrz139/Work/likwid/groups", "haswell", &glist, &ilist, &llist);
-    for (i=0; i<size; i++)
-    {
-        read_group("/home/rrze/unrz/unrz139/Work/likwid/groups", "haswell", glist[i], &ginfo);
-        estr = get_shortInfo(&ginfo);
-        printf("%s: %s\n", glist[i], estr);
-        free(estr);
-        return_group(&ginfo);
-    }
-    free(glist);
-    read_group("/home/rrze/unrz/unrz139/Work/likwid/groups", "haswell", "L3", &ginfo);
-    estr = get_eventStr(&ginfo);
-    printf("Eventstr: %s\n", estr);
-    free(estr);
-    estr = get_shortInfo(&ginfo);
-    printf("Short Info: %s\n", estr);
-    free(estr);
-    init_clist(&clist);
-    for (i=0; i<ginfo.nevents; i++)
-    {
-        add_to_clist(&clist, ginfo.counters[i], i+100);
-    }
-    add_to_clist(&clist, "time", 1.004);
-    add_to_clist(&clist, "inverseClock", 0.0000042);
-    for (i=0;i<ginfo.nmetrics;i++)
-    {
-        result2 = calc_metric(ginfo.metricformulas[i], &clist);
-        printf("%s: %g\n", ginfo.metricnames[i], result2);
-    }
-    destroy_clist(&clist);
-    return_group(&ginfo);
-    
-    
-    return 0;
-}*/
