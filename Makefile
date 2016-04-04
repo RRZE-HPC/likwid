@@ -66,6 +66,9 @@ endif
 ifneq ($(FORTRAN_INTERFACE),true)
 OBJ := $(filter-out $(BUILD_DIR)/likwid_f90_interface.o,$(OBJ))
 endif
+ifneq ($(HAS_PERFEVENT),0)
+OBJ := $(filter-out $(BUILD_DIR)/likwid_f90_interface.o,$(OBJ))
+endif
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
 OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)
