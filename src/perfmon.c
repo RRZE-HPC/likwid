@@ -1828,12 +1828,10 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
     {
         add_to_clist(&clist,groupSet->groups[groupId].group.counters[e],
-                     //counter_map[groupSet->groups[groupId].events[e].index].key,
                      perfmon_getResult(groupId, e, threadId));
     }
     add_to_clist(&clist, "time", perfmon_getLastTimeOfGroup(groupId));
-    //printf("Current clock %ld\n", timer_getCpuClock());
-    add_to_clist(&clist, "inverseClock", 1.0/timer_getCpuClock());
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
     if (e < 0)
     {
@@ -1878,7 +1876,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
                      perfmon_getLastResult(groupId, e, threadId));
     }
     add_to_clist(&clist, "time", perfmon_getLastTimeOfGroup(groupId));
-    add_to_clist(&clist, "inverseClock", 1.0/timer_getCpuClock());
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
     if (e < 0)
     {
@@ -2434,7 +2432,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
         }
     }
     add_to_clist(&clist, "time", perfmon_getTimeOfRegion(region, threadId));
-    add_to_clist(&clist, "inverseClock", 1.0/timer_getCpuClock());
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     err = calc_metric(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId], &clist, &result);
     if (err < 0)
     {
