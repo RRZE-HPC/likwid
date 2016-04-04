@@ -354,6 +354,36 @@ uint64_t timer_getCpuClock( void )
     return cpuClock;
 }
 
+uint64_t timer_getCpuClockCurrent( int cpu_id )
+{
+    int err;
+    uint64_t clock = 0x0ULL;
+    FILE *fpipe;
+    char cmd[256];
+    char buff[256];
+    char* eptr, *rptr;
+
+    sprintf(buff, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_cur_freq", cpu_id);
+    if (access(buff, R_OK))
+    {
+        ERROR_PRINT(File %s not readable, buff);
+        return clock;
+    }
+    sprintf(cmd, "cat %s", buff);
+    if ( !(fpipe = (FILE*)popen(cmd,"r")) )
+    {  // If fpipe is NULL
+        ERROR_PRINT(Problems reading cpu frequency of CPU %d, cpu_id);
+        return clock;
+    }
+
+    rptr = fgets(buff, 256, fpipe);
+    if (rptr != NULL)
+    {
+        clock = strtoull(buff, &eptr, 10);
+    }
+    return clock *1E3;
+}
+
 uint64_t timer_getCycleClock( void )
 {
     if (timer_initialized != 1)

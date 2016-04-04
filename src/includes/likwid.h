@@ -998,6 +998,11 @@ extern void timer_reset( TimerData* time ) __attribute__ ((visibility ("default"
 @return CPU clock
 */
 extern uint64_t timer_getCpuClock( void ) __attribute__ ((visibility ("default") ));
+/*! \brief Return the current CPU clock read from sysfs
+
+@return CPU clock
+*/
+extern uint64_t timer_getCpuClockCurrent( int cpu_id ) __attribute__ ((visibility ("default") ));
 /*! \brief Return the cycles clock determined at timer_init
 
 @return cycle clock
