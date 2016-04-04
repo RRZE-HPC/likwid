@@ -182,9 +182,9 @@ for level=1,cputopo["numCacheLevels"] do
         table.insert(output_csv, string.format("STRUCT,Cache Topology L%d,%d", cputopo["cacheLevels"][level]["level"],lines))
         table.insert(output_csv, string.format("Level:\t\t\t%d",cputopo["cacheLevels"][level]["level"]))
         if (cputopo["cacheLevels"][level]["size"] < 1048576) then
-            table.insert(output_csv, string.format("Size:\t\t\t%d kB",cputopo["cacheLevels"][level]["size"]/1024))
+            table.insert(output_csv, string.format("Size:\t\t\t%.0f kB",cputopo["cacheLevels"][level]["size"]/1024))
         else
-            table.insert(output_csv, string.format("Size:\t\t\t%d MB",cputopo["cacheLevels"][level]["size"]/1048576))
+            table.insert(output_csv, string.format("Size:\t\t\t%.0f MB",cputopo["cacheLevels"][level]["size"]/1048576))
         end
         
         if (print_caches) then
