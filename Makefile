@@ -66,9 +66,6 @@ endif
 ifneq ($(FORTRAN_INTERFACE),true)
 OBJ := $(filter-out $(BUILD_DIR)/likwid_f90_interface.o,$(OBJ))
 endif
-ifneq ($(HAS_PERFEVENT),0)
-OBJ := $(filter-out $(BUILD_DIR)/likwid_f90_interface.o,$(OBJ))
-endif
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
 OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)
@@ -134,7 +131,7 @@ $(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) 
 
 $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
-	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(DYNAMIC_TARGET_LIB).$(VERSION).$(RELEASE) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB) $(RPATHS)
+	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB) $(RPATHS)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
@@ -216,11 +213,7 @@ clean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	@rm -f likwid.lua
 	@rm -f $(STATIC_TARGET_LIB)
 	@rm -f $(DYNAMIC_TARGET_LIB)
-	@rm -f $(DYNAMIC_TARGET_LIB).$(VERSION).$(RELEASE)
-	@rm -f $(DYNAMIC_TARGET_LIB).$(VERSION)
 	@rm -f $(PINLIB)
-	@rm -f $(PINLIB).$(VERSION).$(RELEASE)
-	@rm -f $(PINLIB).$(VERSION)
 	@rm -f $(FORTRAN_IF_NAME)
 	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
 
@@ -232,12 +225,8 @@ distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	@rm -f likwid.lua
 	@rm -f $(STATIC_TARGET_LIB)
 	@rm -f $(DYNAMIC_TARGET_LIB)
-	@rm -f $(DYNAMIC_TARGET_LIB).$(VERSION).$(RELEASE)
-	@rm -f $(DYNAMIC_TARGET_LIB).$(VERSION)
 	@rm -f $(PINLIB)
 	@rm -f $(FORTRAN_IF_NAME)
-	@rm -f $(PINLIB).$(VERSION).$(RELEASE)
-	@rm -f $(PINLIB).$(VERSION)
 	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
 	@rm -rf $(BUILD_DIR)
 	@rm -f $(GENGROUPLOCK)
@@ -291,6 +280,7 @@ endif
 install: install_daemon install_freq
 	@echo "===> INSTALL applications to $(BINPREFIX)"
 	@mkdir -p $(BINPREFIX)
+	@chmod 775 $(BINPREFIX)
 	@for APP in $(L_APPS); do \
 		install -m 755 $$APP  $(BINPREFIX); \
 	done
@@ -302,16 +292,22 @@ install: install_daemon install_freq
 	@install -m 755 perl/feedGnuplot $(BINPREFIX)
 	@echo "===> INSTALL lua to likwid interface to $(PREFIX)/share/lua"
 	@mkdir -p $(PREFIX)/share/lua
+	@chmod 775 $(PREFIX)/share/lua
 	@install -m 755 likwid.lua $(PREFIX)/share/lua
 	@echo "===> INSTALL libraries to $(LIBPREFIX)"
 	@mkdir -p $(LIBPREFIX)
-	@install -m 755 $(TARGET_LIB) $(LIBPREFIX)/$(TARGET_LIB)
-	@install -m 755 $(PINLIB) $(LIBPREFIX)/$(PINLIB)
-	@install -m 755 $(TARGET_HWLOC_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB))
-	@install -m 755 $(TARGET_LUA_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_LUA_LIB))
-	@/sbin/ldconfig
+	@chmod 775 $(LIBPREFIX)
+	@install -m 755 $(TARGET_LIB) $(LIBPREFIX)/$(TARGET_LIB).$(VERSION)
+	@install -m 755 liblikwidpin.so $(LIBPREFIX)/liblikwidpin.so.$(VERSION)
+	@install -m 755 $(TARGET_HWLOC_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION)
+	@install -m 755 $(TARGET_LUA_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_LUA_LIB)).$(VERSION)
+	@cd $(LIBPREFIX) && ln -fs $(TARGET_LIB).$(VERSION) $(TARGET_LIB)
+	@cd $(LIBPREFIX) && ln -fs liblikwidpin.so.$(VERSION) liblikwidpin.so
+	@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION) $(shell basename $(TARGET_HWLOC_LIB))
+	@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION) $(shell basename $(TARGET_LUA_LIB))
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
+	@chmod 775 $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s+<PREFIX>+$(PREFIX)+g" < $(DOC_DIR)/likwid-perfctr.1 > $(MANPREFIX)/man1/likwid-perfctr.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-powermeter.1 > $(MANPREFIX)/man1/likwid-powermeter.1
@@ -327,28 +323,35 @@ install: install_daemon install_freq
 	@chmod 644 $(MANPREFIX)/man1/likwid-*
 	@echo "===> INSTALL headers to $(PREFIX)/include"
 	@mkdir -p $(PREFIX)/include
+	@chmod 775 $(PREFIX)/include
 	@install -m 644 src/includes/likwid.h  $(PREFIX)/include/
 	@install -m 644 src/includes/bstrlib.h  $(PREFIX)/include/
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL groups to $(PREFIX)/share/likwid/perfgroups"
 	@mkdir -p $(PREFIX)/share/likwid/perfgroups
+	@chmod 775 $(PREFIX)/share/likwid
+	@chmod 775 $(PREFIX)/share/likwid/perfgroups
 	@cp -rf groups/* $(PREFIX)/share/likwid/perfgroups
-	@chmod 755 $(PREFIX)/share/likwid/perfgroups
+	@chmod 775 $(PREFIX)/share/likwid/perfgroups/*
 	@find $(PREFIX)/share/likwid/perfgroups -name "*.txt" -exec chmod 644 {} \;
 	@echo "===> INSTALL monitoring groups to $(PREFIX)/share/likwid/mongroups"
 	@mkdir -p $(PREFIX)/share/likwid/mongroups
+	@chmod 775 $(PREFIX)/share/likwid/mongroups
 	@cp -rf monitoring/groups/* $(PREFIX)/share/likwid/mongroups
-	@chmod 755 $(PREFIX)/share/likwid/mongroups
+	@chmod 775 $(PREFIX)/share/likwid/mongroups/*
 	@find $(PREFIX)/share/likwid/mongroups -name "*.txt" -exec chmod 644 {} \;
 	@mkdir -p $(PREFIX)/share/likwid/docs
+	@chmod 775 $(PREFIX)/share/likwid/docs
 	@install -m 644 doc/bstrlib.txt $(PREFIX)/share/likwid/docs
 	@mkdir -p $(PREFIX)/share/likwid/examples
+	@chmod 775 $(PREFIX)/share/likwid/examples
 	@install -m 644 examples/* $(PREFIX)/share/likwid/examples
 	@echo "===> INSTALL default likwid-agent.conf to $(PREFIX)/etc"
 	@sed -e "s+<PREFIX>+$(PREFIX)+g" monitoring/likwid-agent.conf > $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
 	@chmod 644 $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
 	@echo "===> INSTALL filters to $(LIKWIDFILTERPATH)"
 	@mkdir -p $(LIKWIDFILTERPATH)
+	@chmod 755 $(LIKWIDFILTERPATH)
 	@cp -f filters/*  $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
 
@@ -385,7 +388,6 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -rf $(PREFIX)/share/likwid/docs
 	@rm -rf $(PREFIX)/share/likwid/examples
 	@rm -rf $(PREFIX)/share/likwid
-	@/sbin/ldconfig
 
 
 local: $(L_APPS) likwid.lua
