@@ -35,11 +35,9 @@ Q         ?= @
 
 DEFINES   += -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) -DMAX_NUM_NODES=$(MAX_NUM_NODES)
 INCLUDES  = -I../includes
-ifeq ($(COMPILER),GCC)
-CFLAGS    += -std=c99
-endif
-ifeq ($(COMPILER),ICC)
-CFLAGS  += -std=c99
+CFLAGS    += -std=c99 -fPIC
+ifeq ($(COMPILER),GCCX86)
+CFLAGS    +=  -m32
 endif
 CPPFLAGS :=  $(DEFINES) $(INCLUDES)
 

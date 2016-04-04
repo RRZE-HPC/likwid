@@ -30,17 +30,9 @@
  */
 
 #include <topology_proc.h>
-
+#include <cpuid.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-/* this was taken from the linux kernel */
-#define CPUID                              \
-    __asm__ volatile ("cpuid"                             \
-            : "=a" (eax),     \
-            "=b" (ebx),     \
-            "=c" (ecx),     \
-            "=d" (edx)      \
-            : "0" (eax), "2" (ecx))
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 static int get_cpu_perf_data(void)
 {

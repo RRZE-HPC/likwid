@@ -176,8 +176,8 @@ sub loop_exit
   my $step = shift;
 
   if ($main::ISA eq 'x86') {
-    print "addq eax, $step\n";
-    print "cmpq eax, edi\n";
+    print "add eax, $step\n";
+    print "cmp eax, edi\n";
   } elsif ($main::ISA eq 'x86-64') {
     print "addq rax, $step\n";
     print "cmpq rax, rdi\n";

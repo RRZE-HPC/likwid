@@ -11,7 +11,7 @@ ANSI_CFLAGS   = -std=c99
 #ANSI_CFLAGS += -Wextra
 #ANSI_CFLAGS += -Wall
 
-CFLAGS   =  -O2 -g -m32 -Wno-format
+CFLAGS   =  -O2 -g -m32 -Wno-format -fPIC
 FCFLAGS  = -J ./  -fsyntax-only
 PASFLAGS  = x86
 ASFLAGS  = --32 -g

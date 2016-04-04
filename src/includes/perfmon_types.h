@@ -214,7 +214,11 @@ typedef struct {
     TimerData             timer; /*!< \brief Time information how long the counters were running */
     double                rdtscTime; /*!< \brief Evaluation of the Time information in seconds */
     double                runTime; /*!< \brief Sum of all time information in seconds that the group was running */
+#ifdef __x86_64
     __uint128_t           regTypeMask; /*!< \brief Bitmask for easy checks which types are included in the eventSet */
+#else
+    uint64_t              regTypeMask; /*!< \brief Bitmask for easy checks which types are included in the eventSet */
+#endif
     GroupState            state; /*!< \brief Current state of the event group (configured, started, none) */
     GroupInfo             group; /*!< \brief Structure holding the performance group information */
 } PerfmonEventSet;

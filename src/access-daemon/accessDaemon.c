@@ -54,6 +54,7 @@
 #include <perfmon_sandybridgeEP_counters.h>
 #include <perfmon_broadwelld_counters.h>
 #include <topology.h>
+#include <cpuid.h>
 #include <lock.h>
 
 
@@ -66,11 +67,6 @@
 
 
 
-#define CPUID                    \
-    __asm__ volatile ("cpuid"    \
-            : "=a" (eax),            \
-            "=b" (ebx)             \
-            : "0" (eax))
 
 
 
@@ -850,6 +846,8 @@ int main(void)
     {
         uint32_t  eax = 0x00;
         uint32_t  ebx = 0x00;
+        uint32_t  ecx = 0x00;
+        uint32_t  edx = 0x00;
         /*int isIntel = 1;
         CPUID;
         if (ebx == 0x68747541U)

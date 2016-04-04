@@ -37,6 +37,7 @@
 #include <types.h>
 #include <error.h>
 #include <likwid.h>
+#include <cpuid.h>
 /* #####   EXPORTED VARIABLES   ########################################### */
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 static uint64_t baseline = 0ULL;
@@ -49,16 +50,10 @@ void (*TSTART)(TscCounter*) = NULL;
 void (*TSTOP)(TscCounter*) = NULL;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-#define CPUID                              \
-    __asm__ volatile ("cpuid"                             \
-            : "=a" (eax),     \
-            "=b" (ebx),     \
-            "=c" (ecx),     \
-            "=d" (edx)      \
-            : "0" (eax), "2" (ecx))
+
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-#ifdef __x86_64
+#if defined(__x86_64)
 static void fRDTSC(TscCounter* cpu_c)
 {
     __asm__ volatile("xor %%eax,%%eax\n\t"           \
@@ -93,9 +88,50 @@ static void fRDTSCP(TscCounter* cpu_c)
 #endif
 #endif
 
+#if defined(__i386__)
+static void fRDTSC(TscCounter* cpu_c)
+{
+    uint64_t tmp;
+    __asm__ volatile( \
+    "xchgl %%ebx, %2\n\t"  \
+    "xor %%eax,%%eax\n\t" \
+    "cpuid\n\t"           \
+    "rdtsc\n\t"           \
+    "movl %%eax, %0\n\t"  \
+    "movl %%edx, %1\n\t"  \
+    "xchgl %2, %%ebx\n\t"  \
+    : "=r" ((cpu_c)->int32.lo), "=r" ((cpu_c)->int32.hi), "=m" (tmp) \
+    : : "%eax","%ecx","%edx");
+}
+
+static void fRDTSC_CR(TscCounter* cpu_c)
+{
+    __asm__ volatile(     \
+    "rdtsc\n\t"           \
+    "movl %%eax, %0\n\t"  \
+    "movl %%edx, %1\n\t"  \
+    : "=r" ((cpu_c)->int32.lo), "=r" ((cpu_c)->int32.hi) \
+    : : "%eax","%edx");
+}
+#ifndef __MIC__
+static void fRDTSCP(TscCounter* cpu_c)
+{
+    uint64_t tmp;
+    __asm__ volatile(     \
+    "rdtscp\n\t"          \
+    "movl %%eax, %0\n\t"  \
+    "movl %%edx, %1\n\t"  \
+    "xchgl %%ebx, %2\n\t"  \
+    "cpuid\n\t"           \
+    "xchgl %2, %%ebx\n\t"  \
+    : "=r" ((cpu_c)->int32.lo), "=r" ((cpu_c)->int32.hi), "=m" (tmp) \
+    : : "%eax","%ecx","%edx");
+}
+#endif
+#endif
 static void _timer_start( TimerData* time )
 {
-#ifdef __x86_64
+#if defined(__x86_64) || defined(__i386__)
     if (TSTART)
         TSTART(&(time->start));
 #endif
@@ -114,7 +150,7 @@ static void _timer_start( TimerData* time )
 
 static void _timer_stop( TimerData* time )
 {
-#ifdef __x86_64
+#if defined(__x86_64) || defined(__i386__)
     if (TSTOP)
         TSTOP(&(time->stop));
 #endif
@@ -164,7 +200,7 @@ static double _timer_print( TimerData* time )
 static void
 getCpuSpeed(void)
 {
-#ifdef __x86_64
+#if defined(__x86_64) || defined(__i386__)
     int i;
     TimerData data;
     TscCounter start;
