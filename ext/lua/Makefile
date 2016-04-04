@@ -46,7 +46,7 @@ $(STATIC_LIBLUA): $(OBJ)
 	$(Q)${AR} -cq $(LIBLUA) $(OBJ)
 
 $(SHARED_LIBLUA): $(OBJ)
-	$(Q)$(CC) $(LFLAGS) -Wl,-soname,$(LIBLUA).$(VERSION) -shared -fPIC -o $(LIBLUA) $(OBJ) $(LIBS)
+	$(Q)$(CC) $(LFLAGS) -Wl,-soname,$(LIBLUA).$(VERSION).$(RELEASE) -shared -fPIC -o $(LIBLUA) $(OBJ) $(LIBS)
 
 $(INTERPRETER): $(LIBLUA) $(BUILD_DIR)/lua.o
 	$(Q)$(CC) -o $@ $(LFLAGS) $(BUILD_DIR)/lua.o $(LIBLUA) $(RPATHS) $(LIBS)
@@ -63,10 +63,10 @@ endif
 .PHONY: clean distclean
 
 clean:
-	@rm -f $(TARGET) $(INTERPRETER) $(SHARED_LIBLUA) $(STATIC_LIBLUA)
+	@rm -f $(TARGET) $(INTERPRETER) $(SHARED_LIBLUA) $(STATIC_LIBLUA) $(LIBLUA).$(VERSION).$(RELEASE) $(LIBLUA).$(VERSION)
 
 distclean: clean
-	@rm -f $(TARGET) $(INTERPRETER) $(SHARED_LIBLUA) $(STATIC_LIBLUA)
+	@rm -f $(TARGET) $(INTERPRETER) $(SHARED_LIBLUA) $(STATIC_LIBLUA) $(LIBLUA).$(VERSION).$(RELEASE) $(LIBLUA).$(VERSION)
 	@rm -rf $(BUILD_DIR)
 
 

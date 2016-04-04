@@ -34,7 +34,7 @@ include  ../../make/config_checks.mk
 include  ../../make/config_defines.mk
 
 
-TARGET   = liblikwidpin.so
+TARGET   = $(PINLIB)
 
 ifneq ($(COLOR),NONE)
 DEFINES += -DCOLOR=$(COLOR)
@@ -48,5 +48,5 @@ CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 all: $(TARGET)
 
 $(TARGET): pthread-overload.c
-	$(CC) -Wl,-soname,$(TARGET).$(VERSION) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(INCLUDES) $(SHARED_CFLAGS) $(SHARED_LFLAGS) -o ../../$(TARGET) pthread-overload.c $(LIBS)
+	$(CC) -Wl,-soname,$(TARGET).$(VERSION).$(RELEASE) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(INCLUDES) $(SHARED_CFLAGS) $(SHARED_LFLAGS) -o ../../$(TARGET) pthread-overload.c $(LIBS)
 

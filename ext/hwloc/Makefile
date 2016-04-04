@@ -45,7 +45,7 @@ $(STATIC_LIBHWLOC): $(OBJ)
 	$(Q)${AR} -cq $(LIBHWLOC) $(OBJ)
 
 $(SHARED_LIBHWLOC): $(OBJ)
-	$(Q)$(CC) $(DEBUG_FLAGS) $(LFLAGS) -Wl,-soname,$(LIBHWLOC).$(VERSION)  -Wall -shared -fPIC -o $(LIBHWLOC) $(OBJ) $(LIBS) $(RPATHS)
+	$(Q)$(CC) $(DEBUG_FLAGS) $(LFLAGS) -Wl,-soname,$(LIBHWLOC).$(VERSION).$(RELEASE)  -Wall -shared -fPIC -o $(LIBHWLOC) $(OBJ) $(LIBS) $(RPATHS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
@@ -59,10 +59,10 @@ endif
 .PHONY: clean distclean
 
 clean:
-	@rm -f $(TARGET) $(SHARED_LIBHWLOC) $(STATIC_LIBHWLOC)
+	@rm -f $(TARGET) $(SHARED_LIBHWLOC) $(STATIC_LIBHWLOC) $(LIBHWLOC).$(VERSION).$(RELEASE) $(LIBHWLOC).$(VERSION)
 
 distclean: clean
-	@rm -f $(TARGET) $(SHARED_LIBHWLOC) $(STATIC_LIBHWLOC)
+	@rm -f $(TARGET) $(SHARED_LIBHWLOC) $(STATIC_LIBHWLOC) $(LIBHWLOC).$(VERSION).$(RELEASE) $(LIBHWLOC).$(VERSION)
 	@rm -rf $(BUILD_DIR)
 
 

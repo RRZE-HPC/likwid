@@ -131,7 +131,7 @@ $(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) 
 
 $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
-	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB) $(RPATHS)
+	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(DYNAMIC_TARGET_LIB).$(VERSION).$(RELEASE) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB) $(RPATHS)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
@@ -213,7 +213,11 @@ clean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	@rm -f likwid.lua
 	@rm -f $(STATIC_TARGET_LIB)
 	@rm -f $(DYNAMIC_TARGET_LIB)
+	@rm -f $(DYNAMIC_TARGET_LIB).$(VERSION).$(RELEASE)
+	@rm -f $(DYNAMIC_TARGET_LIB).$(VERSION)
 	@rm -f $(PINLIB)
+	@rm -f $(PINLIB).$(VERSION).$(RELEASE)
+	@rm -f $(PINLIB).$(VERSION)
 	@rm -f $(FORTRAN_IF_NAME)
 	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
 
@@ -225,8 +229,12 @@ distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	@rm -f likwid.lua
 	@rm -f $(STATIC_TARGET_LIB)
 	@rm -f $(DYNAMIC_TARGET_LIB)
+	@rm -f $(DYNAMIC_TARGET_LIB).$(VERSION).$(RELEASE)
+	@rm -f $(DYNAMIC_TARGET_LIB).$(VERSION)
 	@rm -f $(PINLIB)
 	@rm -f $(FORTRAN_IF_NAME)
+	@rm -f $(PINLIB).$(VERSION).$(RELEASE)
+	@rm -f $(PINLIB).$(VERSION)
 	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
 	@rm -rf $(BUILD_DIR)
 	@rm -f $(GENGROUPLOCK)
@@ -294,14 +302,11 @@ install: install_daemon install_freq
 	@install -m 755 likwid.lua $(PREFIX)/share/lua
 	@echo "===> INSTALL libraries to $(LIBPREFIX)"
 	@mkdir -p $(LIBPREFIX)
-	@install -m 755 $(TARGET_LIB) $(LIBPREFIX)/$(TARGET_LIB).$(VERSION)
-	@install -m 755 liblikwidpin.so $(LIBPREFIX)/liblikwidpin.so.$(VERSION)
-	@install -m 755 $(TARGET_HWLOC_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION)
-	@install -m 755 $(TARGET_LUA_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_LUA_LIB)).$(VERSION)
-	@cd $(LIBPREFIX) && ln -fs $(TARGET_LIB).$(VERSION) $(TARGET_LIB)
-	@cd $(LIBPREFIX) && ln -fs liblikwidpin.so.$(VERSION) liblikwidpin.so
-	@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION) $(shell basename $(TARGET_HWLOC_LIB))
-	@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION) $(shell basename $(TARGET_LUA_LIB))
+	@install -m 755 $(TARGET_LIB) $(LIBPREFIX)/$(TARGET_LIB)
+	@install -m 755 $(PINLIB) $(LIBPREFIX)/$(PINLIB)
+	@install -m 755 $(TARGET_HWLOC_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB))
+	@install -m 755 $(TARGET_LUA_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_LUA_LIB))
+	@/sbin/ldconfig
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
@@ -377,6 +382,7 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -rf $(PREFIX)/share/likwid/docs
 	@rm -rf $(PREFIX)/share/likwid/examples
 	@rm -rf $(PREFIX)/share/likwid
+	@/sbin/ldconfig
 
 
 local: $(L_APPS) likwid.lua
