@@ -324,6 +324,10 @@ install: install_daemon install_freq
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-perfscope.1 > $(MANPREFIX)/man1/likwid-perfscope.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-setFreq.1 > $(MANPREFIX)/man1/likwid-setFreq.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-features.1 > $(MANPREFIX)/man1/likwid-features.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-bench.1 > $(MANPREFIX)/man1/likwid-bench.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-agent.1 > $(MANPREFIX)/man1/likwid-agent.1
+	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-setFrequencies.1 > $(MANPREFIX)/man1/likwid-setFrequencies.1
+	@sed -e "s/.TH LUA/.TH LIKWID-LUA/g" -e "s/lua - Lua interpreter/likwid-lua - Lua interpreter included in LIKWID/g" -e "s/.B lua/.B likwid-lua/g" -e "s/.BR luac (1)//g" $(DOC_DIR)/likwid-lua.1 > $(MANPREFIX)/man1/likwid-lua.1
 	@chmod 644 $(MANPREFIX)/man1/likwid-*
 	@echo "===> INSTALL headers to $(PREFIX)/include"
 	@mkdir -p $(PREFIX)/include
@@ -381,6 +385,8 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -f $(MANPREFIX)/man1/feedGnuplot.1
 	@rm -f $(MANPREFIX)/man1/likwid-setFreq.1
 	@rm -f $(MANPREFIX)/man1/likwid-accessD.1
+	@rm -f $(MANPREFIX)/man1/likwid-lua.1
+	@rm -f $(MANPREFIX)/man1/likwid-bench.1
 	@echo "===> REMOVING header from $(PREFIX)/include"
 	@rm -f $(PREFIX)/include/likwid.h
 	@rm -f $(PREFIX)/include/bstrlib.h
