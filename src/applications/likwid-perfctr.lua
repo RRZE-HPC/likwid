@@ -71,6 +71,7 @@ local function usage()
     print("Output options:")
     print("-o, --output <file>\t Store output to file. (Optional: Apply text filter according to filename suffix)")
     print("-O\t\t\t Output easily parseable CSV instead of fancy tables")
+    print("--stats\t\t\t Always print statistics table")
     print("\n")
     examples()
 end
