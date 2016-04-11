@@ -766,7 +766,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
             
             for e, event in pairs(group) do
                 local tmp = ""
-                if math.tointeger(event[c]) == nil then
+                if math.tointeger(event[c]) ~= event[c] then
                     tmp = tostring(event[c])
                 else
                     tmp = tostring(math.tointeger(event[c]))
@@ -792,7 +792,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
                 local tmpList = {"Core "..tostring(cpu)}
                 for m=1, likwid.getNumberOfMetrics(g) do
                     local tmp = ""
-                    if math.tointeger(metrics[g][m][c]) == nil then
+                    if math.tointeger(metrics[g][m][c]) ~= metrics[g][m][c] then
                         tmp = tostring(metrics[g][m][c])
                     else
                         tmp = tostring(math.tointeger(metrics[g][m][c]))
