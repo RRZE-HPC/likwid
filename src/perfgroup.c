@@ -1,3 +1,34 @@
+/*
+ * =======================================================================================
+ *
+ *      Filename:  perfgroup.c
+ *
+ *      Description:  Handler for performance groups and event sets
+ *
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
+ *
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
+ *                Thomas Roehl (tr), thomas.roehl@gmail.com
+ *      Project:  likwid
+ *
+ *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *
+ *      This program is free software: you can redistribute it and/or modify it under
+ *      the terms of the GNU General Public License as published by the Free Software
+ *      Foundation, either version 3 of the License, or (at your option) any later
+ *      version.
+ *
+ *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License along with
+ *      this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * =======================================================================================
+ */
+
 #include <stdlib.h>
 #include <sys/types.h>
 #include <stdio.h>
@@ -345,6 +376,7 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
     FILE* fp;
     int i, s, e, err = 0;
     char buf[512];
+    const_bstring sep = bformat(" ");
     GroupFileSections sec = GROUP_NONE;
     if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL))
         return -EINVAL;
@@ -391,6 +423,7 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
         free(fullpath);
         return -EACCES;
     }
+    struct bstrList * linelist = bstrListCreate();
     while (fgets (buf, sizeof(buf), fp)) {
         if ((strlen(buf) == 0) || (buf[0] == '#'))
             continue;
@@ -428,12 +461,23 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
         if (sec == GROUP_EVENTSET)
         {
             i = 0;
-            while (buf[i] == ' ') {i++;}
-            if (buf[i] == '\n')
+            bstring bbuf = bfromcstr(buf);
+            btrimws(bbuf);
+            if (blength(bbuf) == 0)
             {
                 sec = GROUP_NONE;
                 continue;
             }
+            linelist = bsplit(bbuf, ' ');
+            for (i=0; i<linelist->qty; i++)
+                btrimws(linelist->entry[i]);
+            bbuf = bstrcpy(linelist->entry[0]);
+            for (i=1; i<linelist->qty; i++)
+            {
+                if (blength(linelist->entry[i]) > 0)
+                    bconcat(bbuf, bformat(" %s", bdata(linelist->entry[i])));
+            }
+
             ginfo->events = realloc(ginfo->events, (ginfo->nevents + 1) * sizeof(char*));
             if (ginfo->events == NULL)
             {
@@ -446,47 +490,46 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
                 err = -ENOMEM;
                 goto cleanup;
             }
-            i=0;
-            while(buf[i] == ' ') {i++;}
-            s = i;
-            for (; i< strlen(buf); i++)
-            {
-                if (buf[i] == ' ')
-                {
-                    e = i;
-                    break;
-                }
-            }
-            ginfo->counters[ginfo->nevents] = malloc((e-s+1) * sizeof(char));
+
+            linelist = bsplit(bbuf, ' ');
+            for (i=0; i<linelist->qty; i++)
+                btrimws(linelist->entry[i]);
+            ginfo->counters[ginfo->nevents] = malloc((blength(linelist->entry[0])) * sizeof(char));
             if (ginfo->counters[ginfo->nevents] == NULL)
             {
                 err = -ENOMEM;
                 goto cleanup;
             }
-            sprintf(ginfo->counters[ginfo->nevents], "%.*s", e-s, &(buf[s]));
-            i = e;
-            while(buf[i] == ' ') {i++;}
-            s = i;
-            e = strlen(buf)-1;
-            ginfo->events[ginfo->nevents] = malloc((e-s+1) * sizeof(char));
+            ginfo->events[ginfo->nevents] = malloc(blength(linelist->entry[1]) * sizeof(char));
             if (ginfo->events[ginfo->nevents] == NULL)
             {
                 err = -ENOMEM;
                 goto cleanup;
             }
-            sprintf(ginfo->events[ginfo->nevents], "%.*s", e-s, &(buf[s]));
-            
+            sprintf(ginfo->counters[ginfo->nevents], "%s", bdata(linelist->entry[0]));
+            sprintf(ginfo->events[ginfo->nevents], "%s", bdata(linelist->entry[1]));
+            bdestroy(bbuf);
             ginfo->nevents++;
             continue;
         }
         else if (sec == GROUP_METRICS)
         {
             i = 0;
-            while (buf[i] == ' ') {i++;}
-            if (buf[i] == '\n')
+            bstring bbuf = bfromcstr(buf);
+            btrimws(bbuf);
+            if (blength(bbuf) == 0)
             {
                 sec = GROUP_NONE;
                 continue;
+            }
+            linelist = bsplit(bbuf, ' ');
+            for (i=0; i<linelist->qty; i++)
+                btrimws(linelist->entry[i]);
+            bbuf = bstrcpy(linelist->entry[0]);
+            for (i=1; i<linelist->qty; i++)
+            {
+                if (blength(linelist->entry[i]) > 0)
+                    bconcat(bbuf, bformat(" %s", bdata(linelist->entry[i])));
             }
             ginfo->metricformulas = realloc(ginfo->metricformulas, (ginfo->nmetrics + 1) * sizeof(char*));
             if (ginfo->metricformulas == NULL)
@@ -501,32 +544,28 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
                 goto cleanup;
             }
             
-            i = strlen(buf)-1;
-            e = i;
-            
-            while (buf[i] != ' ') {i--;}
-            while (buf[i] == ' ') {i++;}
-            s = i;
-            ginfo->metricformulas[ginfo->nmetrics] = malloc((e-s+1) * sizeof(char));
+            linelist = bsplit(bbuf, ' ');
+            ginfo->metricformulas[ginfo->nmetrics] = malloc(blength(linelist->entry[linelist->qty - 1]) * sizeof(char));
             if (ginfo->metricformulas[ginfo->nmetrics] == NULL)
             {
                 err = -ENOMEM;
                 goto cleanup;
             }
-            sprintf(ginfo->metricformulas[ginfo->nmetrics], "%.*s", e-s, &(buf[s]));
-            i = s;
-            while(buf[i] == ' ') {i--;}
-            e = i-1;
-            while (buf[e] == ' ') {e--;}
-            e++;
-            ginfo->metricnames[ginfo->nmetrics] = malloc((e+1) * sizeof(char));
+            ginfo->metricnames[ginfo->nmetrics] = malloc(((blength(bbuf)-blength(linelist->entry[linelist->qty - 1]))) * sizeof(char));
             if (ginfo->metricnames[ginfo->nmetrics] == NULL)
             {
                 err = -ENOMEM;
                 goto cleanup;
             }
-            sprintf(ginfo->metricnames[ginfo->nmetrics], "%.*s", e, buf);
-            
+            sprintf(ginfo->metricformulas[ginfo->nmetrics], "%s", bdata(linelist->entry[linelist->qty - 1]));
+            bbuf = bstrcpy(linelist->entry[0]);
+            for (i=1; i<linelist->qty - 1; i++)
+            {
+                if (blength(linelist->entry[i]) > 0)
+                    bconcat(bbuf, bformat(" %s", bdata(linelist->entry[i])));
+            }
+            sprintf(ginfo->metricnames[ginfo->nmetrics], "%s", bdata(bbuf));
+            bdestroy(bbuf);
             ginfo->nmetrics++;
             continue;
         }
@@ -539,11 +578,11 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
                 err = -ENOMEM;
                 goto cleanup;
             }
-            //strncpy(&(ginfo->longinfo[s]), buf, strlen(buf));
             sprintf(&(ginfo->longinfo[s]), "%.*s", (int)strlen(buf), buf);
             continue;
         }
     }
+    bstrListDestroy(linelist);
     fclose(fp);
     free(fullpath);
     return 0;
@@ -828,7 +867,7 @@ void destroy_clist(CounterList* clist)
 
 int calc_metric(char* formula, CounterList* clist, double *result)
 {
-    int i,l_cname, l_remain, l_str, l_value;
+    int i=0,l_cname, l_remain, l_str, l_value;
     char* fcopy, *fcopy2;
     char vcopy[512];
     int size;
