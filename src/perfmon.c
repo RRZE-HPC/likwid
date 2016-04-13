@@ -1880,6 +1880,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
     if (e < 0)
     {
+        errno = EIO;
         ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
     }
     destroy_clist(&clist);
