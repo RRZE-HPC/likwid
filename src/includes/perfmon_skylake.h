@@ -66,12 +66,7 @@ uint32_t skl_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[cpu_id][index])
-    {
-        currentConfig[cpu_id][index] = flags;
-        return flags;
-    }
-    return 0;
+    return flags;
 }
 
 int skl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
@@ -211,7 +206,7 @@ int perfmon_setupCounterThread_skylake(
                 break;
         }
     }
-    if (fixed_flags > 0x0ULL)
+    if ((fixed_flags > 0x0ULL))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_FIXED_CTR_CTRL, LLU_CAST fixed_flags, SETUP_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_FIXED_CTR_CTRL, fixed_flags));

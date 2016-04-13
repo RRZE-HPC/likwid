@@ -64,12 +64,7 @@ uint32_t neh_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[cpu_id][index])
-    {
-        currentConfig[cpu_id][index] = flags;
-        return flags;
-    }
-    return 0;
+    return flags;
 }
 
 int neh_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)

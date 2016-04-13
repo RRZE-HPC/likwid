@@ -59,12 +59,7 @@ uint32_t core2_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
         }
     }
-    if (flags != currentConfig[cpu_id][index])
-    {
-        currentConfig[cpu_id][index] = flags;
-        return flags;
-    }
-    return 0;
+    return flags;
 }
 
 int core2_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
