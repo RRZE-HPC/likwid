@@ -236,6 +236,7 @@ int main(int argc, char** argv)
 
                 break;
             case 't':
+                bdestroy(testcase);
                 testcase = bfromcstr(optarg);
 
                 for (i=0; i<NUMKERNELS; i++)
@@ -291,6 +292,7 @@ int main(int argc, char** argv)
 
     if (optPrintDomains)
     {
+        bdestroy(testcase);
         AffinityDomains_t affinity = get_affinityDomains();
         ownprintf("Number of Domains %d\n",affinity->numberOfAffinityDomains);
         for (i=0; i < affinity->numberOfAffinityDomains; i++ )
@@ -497,8 +499,9 @@ int main(int argc, char** argv)
     }
 
     ownprintf(bdata(HLINE));
-    threads_destroy(numberOfWorkgroups);
+    threads_destroy(numberOfWorkgroups, test->streams);
     allocator_finalize();
+    workgroups_destroy(&groups, numberOfWorkgroups, test->streams);
 
 #ifdef LIKWID_PERFMON
     if (getenv("LIKWID_FILEPATH") != NULL)
@@ -508,6 +511,7 @@ int main(int argc, char** argv)
     LIKWID_MARKER_CLOSE;
 #endif
 
+    bdestroy(HLINE);
     return EXIT_SUCCESS;
 }
 

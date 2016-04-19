@@ -103,7 +103,8 @@ uint64_t bstr_to_doubleSize(const_bstring str, DataType type)
     {
         junk = (sizeU)/bytesize;
     }
-
+    bdestroy(unit);
+    bdestroy(sizeStr);
     return junk;
 }
 
@@ -178,6 +179,7 @@ bstring parse_workgroup(Workgroup* group, const_bstring str, DataType type)
         return NULL;
     }
     domain = bstrcpy(tokens->entry[0]);
+    bdestroy(cpustr);
     bstrListDestroy(tokens);
     return domain;
 }
@@ -191,10 +193,16 @@ int parse_streams(Workgroup* group, const_bstring str, int numberOfStreams)
     if (tokens->qty < numberOfStreams)
     {
         fprintf(stderr, "Error: Testcase requires at least %d streams\n", numberOfStreams);
+        bstrListDestroy(tokens);
+        return -1;
     }
 
     group->streams = (Stream*) malloc(numberOfStreams * sizeof(Stream));
-    
+    if (group->streams == NULL)
+    {
+        bstrListDestroy(tokens);
+        return -1;
+    }
     for (int i=0; i<numberOfStreams; i++)
     {
         subtokens = bsplit(tokens->entry[i],':');
@@ -230,9 +238,9 @@ int parse_streams(Workgroup* group, const_bstring str, int numberOfStreams)
             free(group->streams);
             return -1;
         }
+        bstrListDestroy(subtokens);
     }
 
-    bstrListDestroy(subtokens);
     bstrListDestroy(tokens);
     return 0;
 }
@@ -252,6 +260,7 @@ int bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int nu
             return 1;
         }
         parse_streams(group, tokens->entry[1], numberOfStreams);
+        bdestroy(domain);
     }
     else if (tokens->qty == 1)
     {
@@ -262,11 +271,17 @@ int bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int nu
             return 1;
         }
         group->streams = (Stream*) malloc(numberOfStreams * sizeof(Stream));
+        if (group->streams == NULL)
+        {
+            bstrListDestroy(tokens);
+            return 1;
+        }
         for (int i = 0; i< numberOfStreams; i++)
         {
-            group->streams[i].domain = domain;
+            group->streams[i].domain = bstrcpy(domain);
             group->streams[i].offset = 0;
         }
+        bdestroy(domain);
     }
     else
     {
@@ -279,3 +294,22 @@ int bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int nu
     return 0;
 }
 
+void workgroups_destroy(Workgroup** groupList, int numberOfGroups, int numberOfStreams)
+{
+    int i = 0, j = 0;
+    if (groupList == NULL)
+        return;
+    if (*groupList == NULL)
+        return;
+    Workgroup* list = *groupList;
+    for (i = 0; i < numberOfGroups; i++)
+    {
+        free(list[i].processorIds);
+        for (j = 0; j < numberOfStreams; j++)
+        {
+            bdestroy(list[i].streams[j].domain);
+        }
+        free(list[i].streams);
+    }
+    free(list);
+}

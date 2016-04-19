@@ -423,6 +423,7 @@ void* runTest(void* arg)
         default:
             break;
     }
+    free(barr.index);
     pthread_exit(NULL);
 }
 

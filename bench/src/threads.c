@@ -242,7 +242,7 @@ threads_registerDataGroup(int groupId,
 size_t
 threads_updateIterations(int groupId, size_t demandIter)
 {
-    int i;
+    int i = 0;
     size_t iterations = threads_data[0].data.iter;
     if (demandIter > 0)
     {
@@ -263,7 +263,7 @@ threads_updateIterations(int groupId, size_t demandIter)
 void
 threads_join(void)
 {
-    int i;
+    int i = 0;
 
     for(i=0; i < numThreads; i++)
     {
@@ -272,14 +272,20 @@ threads_join(void)
 }
 
 void
-threads_destroy(int numberOfGroups)
+threads_destroy(int numberOfGroups, int numberOfStreams)
 {
-    int i;
+    int i = 0, j = 0;
     pthread_attr_destroy(&attr);
     pthread_barrier_destroy(&threads_barrier);
-    free(threads_data);
+    
+    
     for(i=0;i<numberOfGroups;i++)
     {
+        for (j = 0; j < threads_groups[i].numberOfThreads; j++)
+        {
+            free(threads_data[threads_groups[i].threadIds[j]].data.processors);
+            free(threads_data[threads_groups[i].threadIds[j]].data.streams);
+        }
         free(threads_groups[i].threadIds);
     }
     free(threads_groups);

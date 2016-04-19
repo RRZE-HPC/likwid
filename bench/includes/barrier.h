@@ -52,6 +52,7 @@ extern void barrier_registerThread(BarrierData* barr, int groupsId, int threadId
  * @param  numberOfThreads Total number of threads in the barrier
  */
 extern void  barrier_synchronize(BarrierData* barr);
+extern void  barrier_destroy(BarrierData* barr);
 
 
 #endif /*BARRIER_H*/

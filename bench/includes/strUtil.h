@@ -55,5 +55,6 @@ typedef struct {
 
 
 extern int bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int numberOfStreams);
+extern void workgroups_destroy(Workgroup** groupList, int numberOfGroups, int numberOfStreams);
 
 #endif

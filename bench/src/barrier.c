@@ -156,4 +156,12 @@ barrier_synchronize(BarrierData* barr)
     barr->offset = !barr->offset;
 }
 
-
+void barrier_destroy(BarrierData* barr)
+{
+    if (currentGroupId > maxGroupId)
+    {
+        fprintf(stderr, "ERROR: Group ID %d larger than maxGroupID %d\n",currentGroupId,maxGroupId);
+    }
+    free(barr->index);
+    free(groups[currentGroupId].groupBval);
+}

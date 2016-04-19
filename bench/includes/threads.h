@@ -103,7 +103,7 @@ extern void threads_join(void);
  * @brief  Free memory of thread data structures
  * @param  numberOfGroups The number of groups to destroy
  */
-extern void threads_destroy(int numberOfGroups);
+extern void threads_destroy(int numberOfGroups, int numberOfStreams);
 
 /**
  * @brief  Create Thread groups
