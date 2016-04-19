@@ -173,6 +173,7 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
     }
     dp = opendir(fullpath);
     i = 0;
+    
     while (ep = readdir(dp))
     {
         if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
@@ -186,9 +187,8 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
                 s = sprintf((*groupnames)[i], "%.*s", (int)(strlen(ep->d_name)-4), ep->d_name);
                 (*groupnames)[i][s] = '\0';
                 fp = fopen(fullpath,"r");
-                struct bstrList * linelist;
+                
                 while (fgets (buf, sizeof(buf), fp)) {
-                    
                     bstring bbuf = bfromcstr(buf);
                     btrimws(bbuf);
                     if ((blength(bbuf) == 0) || (buf[0] == '#'))
@@ -198,36 +198,50 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
                     }
                     if (bstrncmp(bbuf, SHORT, 5) == 0)
                     {
-                        linelist = bsplit(bbuf, ' ');
+                        struct bstrList * linelist = bsplit(bbuf, ' ');
+                        bstring sinfo;
                         if (linelist->qty == 1)
                         {
                             fprintf(stderr,"Cannot read SHORT section in groupfile %s",fullpath);
                             bdestroy(bbuf);
+                            bstrListDestroy(linelist);
                             continue;
                         }
-                        for (j=0;j<linelist->qty; j++)
+                        s = 1;
+                        for (j=s;j<linelist->qty; j++)
                         {
                             btrimws(linelist->entry[j]);
-                            if (blength(linelist->entry[j]) > 0)
-                                s += blength(linelist->entry[j]);
+                            if (blength(linelist->entry[j]) == 0)
+                                s += 1;
+                            else
+                                break;
                         }
-                        (*groupshort)[i] = malloc(s * sizeof(char));
+                        btrimws(linelist->entry[s]);
+                        sinfo = bformat("%s", bdata(linelist->entry[s]));
+                        for (j=s+1;j<linelist->qty; j++)
+                        {
+                            btrimws(linelist->entry[j]);
+                            bstring tmp = bformat(" %s", bdata(linelist->entry[j]));
+                            bconcat(sinfo, tmp);
+                            bdestroy(tmp);
+                        }
+
+                        (*groupshort)[i] = malloc((blength(sinfo)+1) * sizeof(char));
                         if ((*groupshort)[i] == NULL)
                         {
                             bdestroy(SHORT);
                             bdestroy(LONG);
                             bdestroy(bbuf);
+                            bdestroy(sinfo);
                             free(homepath);
                             free(fullpath);
+                            bstrListDestroy(linelist);
                             return -ENOMEM;
                         }
-                        s = 0;
-                        s = sprintf((*groupshort)[i], "%s", linelist->entry[1]);
-                        for (j=2;j<linelist->qty; j++)
-                        {
-                            s += sprintf(&((*groupshort)[i][s]), "%s", linelist->entry[j]);
-                        }
+                        s = sprintf((*groupshort)[i], "%s", bdata(sinfo));
                         (*groupshort)[i][s] = '\0';
+                        bstrListDestroy(linelist);
+                        bdestroy(sinfo);
                     }
                     else if (bstrncmp(bbuf, LONG, 4) == 0)
                     {
@@ -251,7 +265,7 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
                     }
                 }
                 fclose(fp);
-                bstrListDestroy(linelist);
+                
                 i++;
             }
             bdestroy(long_info);
@@ -280,7 +294,6 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
                     s = sprintf((*groupnames)[i], "%.*s", (int)(strlen(ep->d_name)-4), ep->d_name);
                     (*groupnames)[i][s] = '\0';
                     fp = fopen(homepath,"r");
-                    struct bstrList * linelist;
                     while (fgets (buf, sizeof(buf), fp)) {
                         
                         bstring bbuf = bfromcstr(buf);
@@ -292,35 +305,50 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
                         }
                         if (bstrncmp(bbuf, SHORT, 5) == 0)
                         {
-                            linelist = bsplit(bbuf, ' ');
+                            struct bstrList * linelist = bsplit(bbuf, ' ');
+                            bstring sinfo;
                             if (linelist->qty == 1)
                             {
-                                fprintf(stderr,"Cannot read SHORT section in groupfile %s",homepath);
+                                fprintf(stderr,"Cannot read SHORT section in groupfile %s",fullpath);
                                 bdestroy(bbuf);
+                                bstrListDestroy(linelist);
                                 continue;
                             }
-                            for (j=0;j<linelist->qty; j++)
+                            s = 1;
+                            for (j=s;j<linelist->qty; j++)
                             {
                                 btrimws(linelist->entry[j]);
-                                if (blength(linelist->entry[j]) > 0)
-                                    s += blength(linelist->entry[j]);
+                                if (blength(linelist->entry[j]) == 0)
+                                    s += 1;
+                                else
+                                    break;
                             }
-                            (*groupshort)[i] = malloc(s * sizeof(char));
+                            btrimws(linelist->entry[s]);
+                            sinfo = bformat("%s", bdata(linelist->entry[s]));
+                            for (j=s+1;j<linelist->qty; j++)
+                            {
+                                btrimws(linelist->entry[j]);
+                                bstring tmp = bformat(" %s", bdata(linelist->entry[j]));
+                                bconcat(sinfo, tmp);
+                                bdestroy(tmp);
+                            }
+
+                            (*groupshort)[i] = malloc((blength(sinfo)+1) * sizeof(char));
                             if ((*groupshort)[i] == NULL)
                             {
                                 bdestroy(SHORT);
                                 bdestroy(LONG);
                                 bdestroy(bbuf);
+                                bdestroy(sinfo);
                                 free(homepath);
                                 free(fullpath);
+                                bstrListDestroy(linelist);
                                 return -ENOMEM;
                             }
-                            s = 0;
-                            s = sprintf((*groupshort)[i], "%s", linelist->entry[1]);
-                            for (j=2;j<linelist->qty; j++)
-                            {
-                                s += sprintf(&((*groupshort)[i][s]), " %s", linelist->entry[j]);
-                            }
+                            s = sprintf((*groupshort)[i], "%s", bdata(sinfo));
+                            (*groupshort)[i][s] = '\0';
+                            bstrListDestroy(linelist);
+                            bdestroy(sinfo);
                         }
                         else if (bstrncmp(bbuf, LONG, 4) == 0)
                         {
@@ -344,7 +372,6 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
                         }
                     }
                     fclose(fp);
-                    bstrListDestroy(linelist);
                     i++;
                 }
                 bdestroy(long_info);
