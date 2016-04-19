@@ -849,14 +849,14 @@ int main(void)
         uint32_t  ecx = 0x00;
         uint32_t  edx = 0x00;
         /*int isIntel = 1;
-        CPUID;
+        CPUID(eax, ebx, ecx, edx);
         if (ebx == 0x68747541U)
         {
             isIntel = 0;
         }*/
 
         eax = 0x01;
-        CPUID;
+        CPUID(eax, ebx, ecx, edx);
         uint32_t family = ((eax >> 8) & 0xFU) + ((eax >> 20) & 0xFFU);
         model  = (((eax >> 16) & 0xFU) << 4) + ((eax >> 4) & 0xFU);
 
