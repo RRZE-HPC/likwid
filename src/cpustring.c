@@ -60,7 +60,7 @@ static int cpuexpr_to_list(bstring bcpustr, bstring prefix, int* list, int lengt
     CpuTopology_t cpuid_topology = get_cpuTopology();
     affinity_init();
     AffinityDomains_t affinity = get_affinityDomains();
-    struct bstrList* strlist = bstrListCreate();
+    struct bstrList* strlist;
     strlist = bsplit(bcpustr, ',');
     int oldinsert = 0;
     int insert = 0;
@@ -160,7 +160,7 @@ static int cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int lengt
         fprintf(stderr, "Not a valid CPU expression\n");
         return 0;
     }
-    struct bstrList* strlist = bstrListCreate();
+    struct bstrList* strlist;
     strlist = bsplit(bcpustr, ':');
     if (strlist->qty == 3)
     {
@@ -187,6 +187,7 @@ static int cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int lengt
     if (domainidx < 0)
     {
         fprintf(stderr, "Cannot find domain %s\n", bdata(bdomain));
+        bdestroy(bdomain);
         bstrListDestroy(strlist);
         return 0;
     }
@@ -209,9 +210,11 @@ static int cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int lengt
         if (insert >= count)
             goto expression_done;
     }
+    bdestroy(bdomain);
     bstrListDestroy(strlist);
     return 0;
 expression_done:
+    bdestroy(bdomain);
     bstrListDestroy(strlist);
     return insert;
 }
@@ -225,12 +228,13 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
     int domainidx = -1;
     bstring bdomain;
     bstring blist;
+    struct bstrList* strlist;
     if (bstrchrp(bcpustr, 'L', 0) != 0)
     {
         fprintf(stderr, "Not a valid CPU expression\n");
         return 0;
     }
-    struct bstrList* strlist = bstrListCreate();
+
     strlist = bsplit(bcpustr, ':');
     if (strlist->qty != 3)
     {
@@ -252,23 +256,26 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
     if (domainidx < 0)
     {
         fprintf(stderr, "Cannot find domain %s\n", bdata(bdomain));
+        bdestroy(bdomain);
+        bdestroy(blist);
         return 0;
     }
     int *inlist = malloc(affinity->domains[domainidx].numberOfProcessors * sizeof(int));
     if (inlist == NULL)
     {
+        bdestroy(bdomain);
+        bdestroy(blist);
         return -ENOMEM;
     }
     int ret = cpulist_sort(affinity->domains[domainidx].processorList, inlist, affinity->domains[domainidx].numberOfProcessors);
 
-    strlist = bstrListCreate();
     strlist = bsplit(blist, ',');
     int insert = 0;
     for (int i=0; i< strlist->qty; i++)
     {
         if (bstrchrp(strlist->entry[i], '-', 0) != BSTR_ERR)
         {
-            struct bstrList* indexlist = bstrListCreate();
+            struct bstrList* indexlist;
             indexlist = bsplit(strlist->entry[i], '-');
             if (atoi(bdata(indexlist->entry[0])) <= atoi(bdata(indexlist->entry[1])))
             {
@@ -309,8 +316,10 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
         }
     }
 logical_done:
-    free(inlist);
+    bdestroy(bdomain);
+    bdestroy(blist);
     bstrListDestroy(strlist);
+    free(inlist);
     return insert;
 }
 
@@ -325,9 +334,9 @@ static int cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
     bstring bdomain;
     bstring blist;
     int domainidx = -1;
+    struct bstrList* strlist;
     if (bstrchrp(bcpustr, ':', 0) != BSTR_ERR)
     {
-        struct bstrList* strlist = bstrListCreate();
         strlist = bsplit(bcpustr, ':');
         bdomain = bstrcpy(strlist->entry[0]);
         blist = bstrcpy(strlist->entry[1]);
@@ -353,14 +362,14 @@ static int cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
         bdestroy(blist);
         return 0;
     }
-    struct bstrList* strlist = bstrListCreate();
+
     strlist = bsplit(blist, ',');
     int insert = 0;
     for (int i=0;i< strlist->qty; i++)
     {
         if (bstrchrp(strlist->entry[i], '-', 0) != BSTR_ERR)
         {
-            struct bstrList* indexlist = bstrListCreate();
+            struct bstrList* indexlist;
             indexlist = bsplit(strlist->entry[i], '-');
             if (atoi(bdata(indexlist->entry[0])) <= atoi(bdata(indexlist->entry[1])))
             {
@@ -435,7 +444,7 @@ int cpustr_to_cpulist(char* cpustring, int* cpulist, int length)
     int len = 0;
     int ret = 0;
     bstring bcpustr = bfromcstr(cpustring);
-    struct bstrList* strlist = bstrListCreate();
+    struct bstrList* strlist;
     bstring scattercheck = bformat("scatter");
     topology_init();
     CpuTopology_t cpuid_topology = get_cpuTopology();
@@ -510,6 +519,8 @@ int cpustr_to_cpulist(char* cpustring, int* cpulist, int length)
         }
     }
     free(tmpList);
+    bdestroy(bcpustr);
+    bdestroy(scattercheck);
     bstrListDestroy(strlist);
     return insert;
 }
@@ -521,6 +532,7 @@ int nodestr_to_nodelist(char* nodestr, int* nodes, int length)
     bstring bnodestr = bfromcstr(nodestr);
     ret = cpuexpr_to_list(bnodestr, prefix, nodes, length);
     bdestroy(bnodestr);
+    bdestroy(prefix);
     return ret;
 }
 
@@ -531,5 +543,6 @@ int sockstr_to_socklist(char* sockstr, int* sockets, int length)
     bstring bsockstr = bfromcstr(sockstr);
     ret = cpuexpr_to_list(bsockstr, prefix, sockets, length);
     bdestroy(bsockstr);
+    bdestroy(prefix);
     return ret;
 }

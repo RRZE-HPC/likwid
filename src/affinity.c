@@ -381,6 +381,7 @@ affinity_finalize()
     {
         if (affinityDomains.domains[i].processorList != NULL)
         {
+            bdestroy(affinityDomains.domains[i].tag);
             free(affinityDomains.domains[i].processorList);
         }
         affinityDomains.domains[i].processorList = NULL;

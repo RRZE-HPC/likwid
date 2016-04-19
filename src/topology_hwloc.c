@@ -295,6 +295,14 @@ void hwloc_init_cacheTopology(void)
     return;
 }
 
+void hwloc_close(void)
+{
+    if (hwloc_topology)
+    {
+        hwloc_topology_destroy(hwloc_topology);
+    }
+}
+
 #else
 
 void hwloc_init_cpuInfo(void)

@@ -183,7 +183,6 @@ void likwid_markerInit(void)
     }
 
     bThreadStr = bfromcstr(cThreadStr);
-    threadTokens = bstrListCreate();
     threadTokens = bsplit(bThreadStr,',');
     num_cpus = threadTokens->qty;
     for (i=0; i<num_cpus; i++)
@@ -220,7 +219,6 @@ void likwid_markerInit(void)
     }
 
     bEventStr = bfromcstr(eventStr);
-    eventStrings = bstrListCreate();
     eventStrings = bsplit(bEventStr,'|');
     numberOfGroups = eventStrings->qty;
     groups = malloc(numberOfGroups * sizeof(int));
@@ -534,6 +532,7 @@ void likwid_markerGetRegion(const char* regionTag, int* nr_events, double* event
         events[i] = results->PMcounters[i];
     }
     *nr_events = length;
+    bdestroy(tag);
     return;
 }
 

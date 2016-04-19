@@ -777,11 +777,13 @@ const struct topology_functions topology_funcs = {
     .init_cpuFeatures = cpuid_init_cpuFeatures,
     .init_nodeTopology = cpuid_init_nodeTopology,
     .init_cacheTopology = cpuid_init_cacheTopology,
+    .close_topology = NULL,
 #else
     .init_cpuInfo = hwloc_init_cpuInfo,
     .init_nodeTopology = hwloc_init_nodeTopology,
     .init_cacheTopology = hwloc_init_cacheTopology,
     .init_cpuFeatures = proc_init_cpuFeatures,
+    .close_topology = hwloc_close,
 #endif
     .init_fileTopology = initTopologyFile,
 };
@@ -800,6 +802,7 @@ void topology_setupTree(void)
         if (!tree_nodeExists(cpuid_topology.topologyTree,
                     hwThreadPool[i].packageId))
         {
+            //printf("Insert Socket %d\n", hwThreadPool[i].packageId);
             tree_insertNode(cpuid_topology.topologyTree,
                     hwThreadPool[i].packageId);
         }
@@ -807,6 +810,7 @@ void topology_setupTree(void)
                 hwThreadPool[i].packageId);
         if (!tree_nodeExists(currentNode, hwThreadPool[i].coreId))
         {
+            //printf("Insert Core %d at Socket %d\n", hwThreadPool[i].coreId, hwThreadPool[i].packageId);
             tree_insertNode(currentNode, hwThreadPool[i].coreId);
         }
         currentNode = tree_getNode(currentNode, hwThreadPool[i].coreId);
@@ -815,6 +819,7 @@ void topology_setupTree(void)
             /*
                printf("WARNING: Thread already exists!\n");
                */
+            //printf("Insert HWThread %d from Core %d at Socket %d\n", hwThreadPool[i].apicId, hwThreadPool[i].coreId, hwThreadPool[i].packageId);
             tree_insertNode(currentNode, hwThreadPool[i].apicId);
             affinity_thread2tile_lookup[hwThreadPool[i].apicId] = hwThreadPool[i].coreId;
         }
@@ -899,6 +904,7 @@ int topology_init(void)
 
 void topology_finalize(void)
 {
+    struct topology_functions funcs = topology_funcs;
     if (!topology_initialized)
     {
         return;
@@ -927,6 +933,10 @@ void topology_finalize(void)
     {
         tree_destroy(cpuid_topology.topologyTree);
         cpuid_topology.topologyTree = NULL;
+    }
+    if (topology_funcs.close_topology != NULL)
+    {
+        topology_funcs.close_topology();
     }
     cpuid_info.family = 0;
     cpuid_info.model = 0;

@@ -39,19 +39,19 @@ static int get_cpu_perf_data(void)
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     int largest_function = 0;
     eax = 0x00;
-    CPUID;
+    CPUID(eax, ebx, ecx, edx);
     largest_function = eax;
     if (cpuid_info.family == P6_FAMILY && 0x0A <= largest_function)
     {
         eax = 0x0A;
-        CPUID;
+        CPUID(eax, ebx, ecx, edx);
         cpuid_info.perf_version   =  (eax&0xFFU);
         cpuid_info.perf_num_ctr   =   ((eax>>8)&0xFFU);
         cpuid_info.perf_width_ctr =  ((eax>>16)&0xFFU);
         cpuid_info.perf_num_fixed_ctr =  (edx&0xFU);
 
         eax = 0x06;
-        CPUID;
+        CPUID(eax, ebx, ecx, edx);
         if (eax & (1<<1))
         {
             cpuid_info.turbo = 1;
@@ -121,7 +121,7 @@ static int readCacheInclusiveIntel(int level)
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     eax = 0x04;
     ecx = level;
-    CPUID;
+    CPUID(eax, ebx, ecx, edx);
     return edx & 0x2;
 }
 
@@ -130,7 +130,7 @@ static int readCacheInclusiveAMD(int level)
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     eax = 0x8000001D;
     ecx = level;
-    CPUID;
+    CPUID(eax, ebx, ecx, edx);
     return (edx & (0x1<<1));
 }
 

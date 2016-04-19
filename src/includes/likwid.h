@@ -629,7 +629,7 @@ Reads the CPU selection string and fills the given list with the CPU numbers
 defined in the selection string. This function is a interface function for the
 different selection modes: scatter, expression, logical and physical.
 @param [in] cpustring Selection string
-@param [out] cpulist List of CPUs
+@param [in,out] cpulist List of CPUs
 @param [in] length Length of cpulist
 @return error code (>0 on success for the returned list length, -ERRORCODE on failure)
 */
@@ -669,9 +669,18 @@ extern int sockstr_to_socklist(char* sockstr, int* sockets, int length)  __attri
 
 Checks the configured performance group path for the current architecture and
 returns all found group names
-@return List of group names
+@return Amount of found performance groups
 */
 extern int perfmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos) __attribute__ ((visibility ("default") ));
+
+/*! \brief Free all group information
+
+@param [in] nrgroups Number of groups
+@param [in] groups List of group names
+@param [in] shortinfos List of short information string about group
+@param [in] longinfos List of long information string about group
+*/
+extern void perfmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos) __attribute__ ((visibility ("default") ));
 
 /*! \brief Initialize performance monitoring facility
 
@@ -887,11 +896,14 @@ extern int perfmon_getNumberOfMetrics(int groupId) __attribute__ ((visibility ("
 */
 extern double perfmon_getLastTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
 
-/*! \brief Get the number of threads specified at perfmon_init()
+/*! \brief Read the output file of the Marker API
 @param [in] filename Filename with Marker API results
 @return 0 or negative error number
 */
 extern int perfmon_readMarkerFile(const char* filename) __attribute__ ((visibility ("default") ));
+/*! \brief Free space for read in Marker API file
+*/
+extern void perfmon_destroyMarkerResults() __attribute__ ((visibility ("default") ));
 /*! \brief Get the number of regions listed in Marker API result file
 
 @return Number of regions

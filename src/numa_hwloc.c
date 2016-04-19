@@ -67,12 +67,17 @@ uint64_t getFreeNodeMem(int nodeId)
                  bltrimws(tmp);
                  struct bstrList* subtokens = bsplit(tmp,(char) ' ');
                  free = str2int(bdata(subtokens->entry[0]));
+                 bdestroy(tmp);
+                 bstrListDestroy(subtokens);
             }
         }
+        bstrListDestroy(tokens);
+        bdestroy(src);
         fclose(fp);
     }
     else if (!access("/proc/meminfo", R_OK))
     {
+        bdestroy(filename);
         filename = bfromcstr("/proc/meminfo");
         if (NULL != (fp = fopen (bdata(filename), "r"))) 
         {
@@ -86,75 +91,92 @@ uint64_t getFreeNodeMem(int nodeId)
                      bltrimws(tmp);
                      struct bstrList* subtokens = bsplit(tmp,(char) ' ');
                      free = str2int(bdata(subtokens->entry[0]));
+                     bdestroy(tmp);
+                     bstrListDestroy(subtokens);
                 }
             }
+            bstrListDestroy(tokens);
+            bdestroy(src);
             fclose(fp);
         }
     }
     else
     {
+        bdestroy(freeString);
+        bdestroy(filename);
         ERROR;
     }
-
-    
+    bdestroy(freeString);
+    bdestroy(filename);
     return free;
     
 }
 
 uint64_t getTotalNodeMem(int nodeId)
 {
-    FILE *fp;
-    bstring filename;
-    uint64_t free = 0;
-    bstring freeString  = bformat("MemTotal:");
     int i;
-    filename = bformat("/sys/devices/system/node/node%d/meminfo", nodeId);
+    FILE *fp;
+    uint64_t total = 0;
+    bstring totalString  = bformat("MemTotal:");
+    bstring sysfilename = bformat("/sys/devices/system/node/node%d/meminfo", nodeId);
+    bstring procfilename = bformat("/proc/meminfo");
 
-    if (NULL != (fp = fopen (bdata(filename), "r"))) 
+    if (NULL != (fp = fopen (bdata(sysfilename), "r"))) 
     {
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
 
         for (i=0;i<tokens->qty;i++)
         {
-            if (binstr(tokens->entry[i],0,freeString) != BSTR_ERR)
+            if (binstr(tokens->entry[i],0,totalString) != BSTR_ERR)
             {
                  bstring tmp = bmidstr (tokens->entry[i], 18, blength(tokens->entry[i])-18  );
                  bltrimws(tmp);
                  struct bstrList* subtokens = bsplit(tmp,(char) ' ');
-                 free = str2int(bdata(subtokens->entry[0]));
+                 total = str2int(bdata(subtokens->entry[0]));
+                 bdestroy(tmp);
+                 bstrListDestroy(subtokens);
             }
         }
+        bstrListDestroy(tokens);
+        bdestroy(src);
         fclose(fp);
     }
-    else if (!access("/proc/meminfo", R_OK))
+    else if (!access(bdata(procfilename), R_OK))
     {
-        filename = bfromcstr("/proc/meminfo");
-        if (NULL != (fp = fopen (bdata(filename), "r"))) 
+        if (NULL != (fp = fopen (bdata(procfilename), "r"))) 
         {
             bstring src = bread ((bNread) fread, fp);
             struct bstrList* tokens = bsplit(src,(char) '\n');
             for (i=0;i<tokens->qty;i++)
             {
-                if (binstr(tokens->entry[i],0,freeString) != BSTR_ERR)
+                if (binstr(tokens->entry[i],0,totalString) != BSTR_ERR)
                 {
                      bstring tmp = bmidstr (tokens->entry[i], 10, blength(tokens->entry[i])-10  );
                      bltrimws(tmp);
                      struct bstrList* subtokens = bsplit(tmp,(char) ' ');
-                     free = str2int(bdata(subtokens->entry[0]));
+                     total = str2int(bdata(subtokens->entry[0]));
+                     bdestroy(tmp);
+                     bstrListDestroy(subtokens);
                 }
             }
+            bstrListDestroy(tokens);
+            bdestroy(src);
             fclose(fp);
         }
     }
     else
     {
+        bdestroy(totalString);
+        bdestroy(sysfilename);
+        bdestroy(procfilename);
         ERROR;
     }
 
-    
-    return free;
-    
+    bdestroy(totalString);
+    bdestroy(sysfilename);
+    bdestroy(procfilename);
+    return total;
 }
 
 int likwid_hwloc_findProcessor(int nodeID, int cpuID)

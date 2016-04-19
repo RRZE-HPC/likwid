@@ -92,6 +92,7 @@ int (*perfmon_finalizeCountersThread) (int thread_id, PerfmonEventSet* eventSet)
 
 int (*initThreadArch) (int cpu_id);
 
+void perfmon_delEventSet(int groupID);
 
 char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     "NONE",
@@ -238,7 +239,6 @@ checkCounter(bstring counterName, const char* limit)
     int ret = FALSE;
     bstring limitString = bfromcstr(limit);
 
-    tokens = bstrListCreate();
     tokens = bsplit(limitString,'|');
     for(i=0; i<tokens->qty; i++)
     {
@@ -329,11 +329,9 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
 
     if (tokens->qty-2 > MAX_EVENT_OPTIONS)
     {
-        bstrListDestroy(tokens);
         return -ERANGE;
     }
 
-    subtokens = bstrListCreate();
 
     for (i=2;i<tokens->qty;i++)
     {
@@ -469,6 +467,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
                 continue;
             }
         }
+        bstrListDestroy(subtokens);
     }
     for(i=event->numberOfOptions-1;i>=0;i--)
     {
@@ -543,7 +542,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
         }
     }
 
-    bstrListDestroy(subtokens);
+    
     return event->numberOfOptions;
 }
 
@@ -1213,8 +1212,11 @@ perfmon_finalize(void)
         }
         if (groupSet->groups[group].events != NULL)
             free(groupSet->groups[group].events);
+        perfmon_delEventSet(group);
         groupSet->groups[group].state = STATE_NONE;
     }
+    if (groupSet->groups != NULL)
+        free(groupSet->groups);
     if (groupSet->threads != NULL)
         free(groupSet->threads);
     groupSet->activeGroup = -1;
@@ -1223,6 +1225,10 @@ perfmon_finalize(void)
     for (group=0; group < MAX_NUM_THREADS; group++)
     {
         memset(currentConfig[group], 0, NUM_PMC * sizeof(uint64_t));
+    }
+    if (markerResults != NULL)
+    {
+        perfmon_destroyMarkerResults();
     }
     power_finalize();
     HPMfinalize();
@@ -1237,7 +1243,6 @@ perfmon_addEventSet(char* eventCString)
     int i, j, err;
     bstring eventBString;
     struct bstrList* eventtokens;
-    struct bstrList* subtokens;
     PerfmonEventSet* eventSet;
     PerfmonEventSetEntry* event;
     char* cstringcopy;
@@ -1324,11 +1329,12 @@ perfmon_addEventSet(char* eventCString)
             return err;
         }
     }
-
-    eventBString = bfromcstr(get_eventStr(&groupSet->groups[groupSet->numberOfActiveGroups].group));
-    eventtokens = bstrListCreate();
+    char * evstr = get_eventStr(&groupSet->groups[groupSet->numberOfActiveGroups].group);
+    eventBString = bfromcstr(evstr);
     eventtokens = bsplit(eventBString,',');
+    free(evstr);
     bdestroy(eventBString);
+
     eventSet = &(groupSet->groups[groupSet->numberOfActiveGroups]);
     eventSet->events = (PerfmonEventSetEntry*) malloc(eventtokens->qty * sizeof(PerfmonEventSetEntry));
     if (eventSet->events == NULL)
@@ -1338,21 +1344,21 @@ perfmon_addEventSet(char* eventCString)
     }
     eventSet->numberOfEvents = 0;
     eventSet->regTypeMask = 0x0ULL;
-    
+
 
     int forceOverwrite = 0;
     if (getenv("LIKWID_FORCE") != NULL)
     {
         forceOverwrite = atoi(getenv("LIKWID_FORCE"));
     }
-    subtokens = bstrListCreate();
     for(i=0;i<eventtokens->qty;i++)
     {
         event = &(eventSet->events[i]);
-        subtokens = bsplit(eventtokens->entry[i],':');
+        struct bstrList* subtokens = bsplit(eventtokens->entry[i],':');
         if (subtokens->qty < 2)
         {
             ERROR_PRINT(Cannot parse event descriptor %s, bdata(eventtokens->entry[i]));
+            bstrListDestroy(subtokens);
             continue;
         }
         else
@@ -1395,6 +1401,7 @@ past_checks:
             if (event->threadCounter == NULL)
             {
                 ERROR_PRINT(Cannot allocate counter for all threads in group %d,groupSet->numberOfActiveGroups);
+                //bstrListDestroy(subtokens);
                 continue;
             }
             for(j=0;j<groupSet->numberOfThreads;j++)
@@ -1417,8 +1424,8 @@ past_checks:
                         groupSet->numberOfActiveGroups);
             }
         }
+        bstrListDestroy(subtokens);
     }
-    bstrListDestroy(subtokens);
     bstrListDestroy(eventtokens);
     if ((eventSet->numberOfEvents > 0) && (eventSet->regTypeMask != 0x0ULL))
     {
@@ -1431,6 +1438,15 @@ past_checks:
         fprintf(stderr,"No event in given event string can be configured\n");
         return -EINVAL;
     }
+}
+
+void
+perfmon_delEventSet(int groupID)
+{
+    if (groupID >= groupSet->numberOfGroups || groupID < 0)
+        return;
+    return_group(&groupSet->groups[groupID].group);
+    return;
 }
 
 int
@@ -1802,6 +1818,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     int e;
     double result = 0;
     CounterList clist;
+    char* teststr = malloc(1024 * sizeof(char));
     if (unlikely(groupSet == NULL))
     {
         return 0;
@@ -1820,6 +1837,10 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
         groupId = groupSet->activeGroup;
     }
     if (groupSet->groups[groupId].group.nmetrics == 0)
+    {
+        return 0.0;
+    }
+    if ((metricId < 0) || (metricId >= groupSet->groups[groupId].group.nmetrics))
     {
         return 0.0;
     }
@@ -1865,6 +1886,10 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
         groupId = groupSet->activeGroup;
     }
     if (groupSet->groups[groupId].group.nmetrics == 0)
+    {
+        return 0.0;
+    }
+    if ((metricId < 0) || (metricId >= groupSet->groups[groupId].group.nmetrics))
     {
         return 0.0;
     }
@@ -2194,6 +2219,11 @@ int perfmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
     int ret;
     ret = get_groups(TOSTRING(GROUPPATH), cpuid_info.short_name, groups, shortinfos, longinfos);
     return ret;
+}
+
+void perfmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos)
+{
+    return_groups(nrgroups, groups, shortinfos, longinfos);
 }
 
 int perfmon_getNumberOfMetrics(int groupId)
@@ -2547,4 +2577,24 @@ int perfmon_readMarkerFile(const char* filename)
     }
     fclose(fp);
     return 0;
+}
+
+void perfmon_destroyMarkerResults()
+{
+    int i = 0, j = 0;
+    if (markerResults != NULL)
+    {
+        for (i = 0; i < markerRegions; i++)
+        {
+            free(markerResults[i].time);
+            free(markerResults[i].count);
+            free(markerResults[i].cpulist);
+            for (j = 0; j < markerResults[i].threadCount; j++)
+            {
+                free(markerResults[i].counters[j]);
+            }
+            bdestroy(markerResults[i].tag);
+        }
+        free(markerResults);
+    }
 }

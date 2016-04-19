@@ -55,6 +55,7 @@ struct topology_functions {
     void (*init_nodeTopology) (cpu_set_t cpuSet);
     void (*init_cacheTopology) (void);
     void (*init_fileTopology) (FILE*);
+    void (*close_topology) (void);
 };
 
 /* Intel P6 */

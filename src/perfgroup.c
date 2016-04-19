@@ -38,27 +38,41 @@
 #include <unistd.h>
 #include <dirent.h>
 
+#include <error.h>
 #include <perfgroup.h>
 #include <calculator.h>
 #include <likwid.h>
 
 int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** groupshort, char*** grouplong)
 {
-    int i, j;
-    int fsize;
-    DIR *dp;
-    FILE* fp;
-    char buf[256];
-    struct dirent *ep;
+    int i = 0, j = 0, s = 0;
+    int fsize = 0, hsize = 0;
+    DIR *dp = NULL;
+    FILE* fp = NULL;
+    char buf[256] = { [0 ... 255] = '\0' };
+    struct dirent *ep = NULL;
     *groupnames = NULL;
     *groupshort = NULL;
     *grouplong = NULL;
+    int search_home = 1;
+    bstring SHORT = bformat("SHORT");
+    bstring LONG = bformat("LONG");
     int read_long = 0;
     if ((grouppath == NULL)||(architecture == NULL)||(groupnames == NULL))
         return -EINVAL;
     char* fullpath = malloc((strlen(grouppath)+strlen(architecture)+50) * sizeof(char));
     if (fullpath == NULL)
     {
+        bdestroy(SHORT);
+        bdestroy(LONG);
+        return -ENOMEM;
+    }
+    char* homepath = malloc((strlen(getenv("HOME"))+strlen(architecture)+50) * sizeof(char));
+    if (homepath == NULL)
+    {
+        free(fullpath);
+        bdestroy(SHORT);
+        bdestroy(LONG);
         return -ENOMEM;
     }
     fsize = sprintf(fullpath, "%s/%s", grouppath, architecture);
@@ -67,163 +81,312 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
     {
         printf("Cannot open directory %s\n", fullpath);
         free(fullpath);
+        free(homepath);
+        bdestroy(SHORT);
+        bdestroy(LONG);
         return -EACCES;
     }
+    i = 0;
+    s = 0;
+    while (ep = readdir(dp))
+    {
+        if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
+        {
+            i++;
+            if (strlen(ep->d_name)-4 > s)
+                s = strlen(ep->d_name)-4;
+        }
+    }
+    closedir(dp);
+    hsize = sprintf(homepath, "%s/.likwid/groups/%s", getenv("HOME"), architecture);
+    dp = opendir(homepath);
+    if (dp == NULL)
+    {
+        search_home = 0;
+    }
+    if (search_home)
+    {
+        while (ep = readdir(dp))
+        {
+            if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
+            {
+                i++;
+                if (strlen(ep->d_name)-4 > s)
+                    s = strlen(ep->d_name)-4;
+            }
+        }
+        closedir(dp);
+    }
+
+    *groupnames = malloc(i * sizeof(char**));
+    if (*groupnames == NULL)
+    {
+        free(fullpath);
+        free(homepath);
+        bdestroy(SHORT);
+        bdestroy(LONG);
+        return -ENOMEM;
+    }
+    *groupshort = malloc(i * sizeof(char**));
+    if (*groupshort == NULL)
+    {
+        free(*groupnames);
+        *groupnames = NULL;
+        free(fullpath);
+        free(homepath);
+        bdestroy(SHORT);
+        bdestroy(LONG);
+        return -ENOMEM;
+    }
+    *grouplong = malloc(i * sizeof(char**));
+    if (*grouplong == NULL)
+    {
+        free(*groupnames);
+        *groupnames = NULL;
+        free(*groupshort);
+        *groupshort = NULL;
+        free(fullpath);
+        free(homepath);
+        bdestroy(SHORT);
+        bdestroy(LONG);
+        return -ENOMEM;
+    }
+    for (j=0; j < i; j++)
+    {
+        (*grouplong)[i] == NULL;
+        (*groupshort)[i] == NULL;
+        (*groupnames)[j] = malloc((s+1) * sizeof(char));
+        if ((*groupnames)[j] == NULL)
+        {
+            free(*groupnames);
+            *groupnames = NULL;
+            free(*groupshort);
+            *groupshort = NULL;
+            free(*grouplong);
+            *grouplong = NULL;
+            free(fullpath);
+            free(homepath);
+            bdestroy(SHORT);
+            bdestroy(LONG);
+            return -ENOMEM;
+        }
+    }
+    dp = opendir(fullpath);
     i = 0;
     while (ep = readdir(dp))
     {
         if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
         {
             read_long = 0;
+            bstring long_info = bfromcstr("");;
             sprintf(&(fullpath[fsize]), "/%s", ep->d_name);
             if (!access(fullpath, R_OK))
             {
-                *groupnames = realloc(*groupnames, (i+1) * sizeof(char*));
-                if (*groupnames == NULL)
-                {
-                    free(fullpath);
-                    return -ENOMEM;
-                }
-                (*groupnames)[i] = malloc((strlen(ep->d_name)-4) * sizeof(char));
-                if ((*groupnames)[i] == NULL)
-                {
-                    free(fullpath);
-                    return -ENOMEM;
-                }
-                *groupshort = realloc(*groupshort, (i+1) * sizeof(char*));
-                if (*groupshort == NULL)
-                {
-                    free(fullpath);
-                    return -ENOMEM;
-                }
-                *grouplong = realloc(*grouplong, (i+1) * sizeof(char*));
-                if (*grouplong == NULL)
-                {
-                    free(fullpath);
-                    return -ENOMEM;
-                }
                 (*grouplong)[i] = NULL;
-                sprintf((*groupnames)[i], "%.*s", (int)(strlen(ep->d_name)-4), ep->d_name);
+                s = sprintf((*groupnames)[i], "%.*s", (int)(strlen(ep->d_name)-4), ep->d_name);
+                (*groupnames)[i][s] = '\0';
                 fp = fopen(fullpath,"r");
+                struct bstrList * linelist;
                 while (fgets (buf, sizeof(buf), fp)) {
-                    if ((strlen(buf) == 0) || (buf[0] == '#'))
-                        continue;
-                    if (strncmp("SHORT", buf, 5) == 0)
+                    
+                    bstring bbuf = bfromcstr(buf);
+                    btrimws(bbuf);
+                    if ((blength(bbuf) == 0) || (buf[0] == '#'))
                     {
-                        for (j=5; j < strlen(buf); j++)
+                        bdestroy(bbuf);
+                        continue;
+                    }
+                    if (bstrncmp(bbuf, SHORT, 5) == 0)
+                    {
+                        linelist = bsplit(bbuf, ' ');
+                        if (linelist->qty == 1)
                         {
-                            if (buf[j] == ' ')
-                                continue;
-                            break;
+                            fprintf(stderr,"Cannot read SHORT section in groupfile %s",fullpath);
+                            bdestroy(bbuf);
+                            continue;
                         }
-                        (*groupshort)[i] = malloc(strlen(&(buf[j])) * sizeof(char));
+                        for (j=0;j<linelist->qty; j++)
+                        {
+                            btrimws(linelist->entry[j]);
+                            if (blength(linelist->entry[j]) > 0)
+                                s += blength(linelist->entry[j]);
+                        }
+                        (*groupshort)[i] = malloc(s * sizeof(char));
                         if ((*groupshort)[i] == NULL)
                         {
+                            bdestroy(SHORT);
+                            bdestroy(LONG);
+                            bdestroy(bbuf);
+                            free(homepath);
                             free(fullpath);
                             return -ENOMEM;
                         }
-                        sprintf((*groupshort)[i], "%.*s", (int)strlen(&(buf[j]))-1, &(buf[j]));
-                        continue;
+                        s = 0;
+                        s = sprintf((*groupshort)[i], "%s", linelist->entry[1]);
+                        for (j=2;j<linelist->qty; j++)
+                        {
+                            s += sprintf(&((*groupshort)[i][s]), "%s", linelist->entry[j]);
+                        }
+                        (*groupshort)[i][s] = '\0';
                     }
-                    else if (strncmp("LONG", buf, 4) == 0)
+                    else if (bstrncmp(bbuf, LONG, 4) == 0)
                     {
                         read_long = 1;
-                        j = 0;
-                        continue;
                     }
-                    else if (read_long == 1)
+                    else if ((read_long == 1) && (bstrncmp(bbuf, LONG, 4) != 0))
                     {
-                        if ((*grouplong)[i] == NULL)
-                            (*grouplong)[i] = malloc((strlen(buf)+1) * sizeof(char));
-                        else
-                            (*grouplong)[i] = realloc((*grouplong)[i], (strlen((*grouplong)[i])+strlen(buf)+1) * sizeof(char));
-                        if ((*grouplong)[i] == NULL)
-                        {
-                            free(fullpath);
-                            return -ENOMEM;
-                        }
-                        j += sprintf(&((*grouplong)[i][j]), "%s", buf);
+                        bstring tmp = bfromcstr(buf);
+                        bconcat(long_info, tmp);
+                        bdestroy(tmp);
+                    }
+                    bdestroy(bbuf);
+                }
+                if (read_long)
+                {
+                    (*grouplong)[i] = malloc((blength(long_info) + 1) * sizeof(char) );
+                    if ((*grouplong)[i] != NULL)
+                    {
+                        j = sprintf((*grouplong)[i], "%s", bdata(long_info));
+                        (*grouplong)[i][j] = '\0';
                     }
                 }
                 fclose(fp);
+                bstrListDestroy(linelist);
                 i++;
             }
+            bdestroy(long_info);
         }
     }
     closedir(dp);
-    fsize = sprintf(fullpath, "%s/.likwid/groups/%s", getenv("HOME"), architecture);
-    dp = opendir(fullpath);
-    if (dp == NULL)
+    if (!search_home)
     {
-        free(fullpath);
-        if (i > 0)
-            return i;
-        else
-            return -EACCES;
+        bdestroy(SHORT);
+        bdestroy(LONG);
+        return i;
     }
-    while (ep = readdir(dp))
+    else
     {
-        if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
+        dp = opendir(homepath);
+        while (ep = readdir(dp))
         {
-            sprintf(&(fullpath[fsize]), "/%s", ep->d_name);
-            if (!access(fullpath, R_OK))
+            if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
             {
-                *groupnames = realloc(*groupnames, (i+1) * sizeof(char*));
-                (*groupnames)[i] = malloc((strlen(ep->d_name)-4) * sizeof(char));
-                *groupshort = realloc(*groupshort, (i+1) * sizeof(char*));
-                *grouplong = realloc(*grouplong, (i+1) * sizeof(char*));
-                (*grouplong)[i] = NULL;
                 read_long = 0;
-                sprintf((*groupnames)[i], "%.*s", (int)(strlen(ep->d_name)-4), ep->d_name);
-                fp = fopen(fullpath,"r");
-                while (fgets (buf, sizeof(buf), fp)) {
-                    if ((strlen(buf) == 0) || (buf[0] == '#'))
-                        continue;
-
-                    if (strncmp("SHORT", buf, 5) == 0)
-                    {
-                        for (j=5; j < strlen(buf); j++)
+                bstring long_info = bfromcstr("");;
+                sprintf(&(homepath[hsize]), "/%s", ep->d_name);
+                if (!access(homepath, R_OK))
+                {
+                    (*grouplong)[i] = NULL;
+                    s = sprintf((*groupnames)[i], "%.*s", (int)(strlen(ep->d_name)-4), ep->d_name);
+                    (*groupnames)[i][s] = '\0';
+                    fp = fopen(homepath,"r");
+                    struct bstrList * linelist;
+                    while (fgets (buf, sizeof(buf), fp)) {
+                        
+                        bstring bbuf = bfromcstr(buf);
+                        btrimws(bbuf);
+                        if ((blength(bbuf) == 0) || (buf[0] == '#'))
                         {
-                            if (buf[j] == ' ')
-                                continue;
-                            break;
+                            bdestroy(bbuf);
+                            continue;
                         }
-                        (*groupshort)[i] = malloc(strlen(&(buf[j])) * sizeof(char));
-                        sprintf((*groupshort)[i], "%.*s", (int)strlen(&(buf[j]))-1, &(buf[j]));
-                        continue;
+                        if (bstrncmp(bbuf, SHORT, 5) == 0)
+                        {
+                            linelist = bsplit(bbuf, ' ');
+                            if (linelist->qty == 1)
+                            {
+                                fprintf(stderr,"Cannot read SHORT section in groupfile %s",homepath);
+                                bdestroy(bbuf);
+                                continue;
+                            }
+                            for (j=0;j<linelist->qty; j++)
+                            {
+                                btrimws(linelist->entry[j]);
+                                if (blength(linelist->entry[j]) > 0)
+                                    s += blength(linelist->entry[j]);
+                            }
+                            (*groupshort)[i] = malloc(s * sizeof(char));
+                            if ((*groupshort)[i] == NULL)
+                            {
+                                bdestroy(SHORT);
+                                bdestroy(LONG);
+                                bdestroy(bbuf);
+                                free(homepath);
+                                free(fullpath);
+                                return -ENOMEM;
+                            }
+                            s = 0;
+                            s = sprintf((*groupshort)[i], "%s", linelist->entry[1]);
+                            for (j=2;j<linelist->qty; j++)
+                            {
+                                s += sprintf(&((*groupshort)[i][s]), " %s", linelist->entry[j]);
+                            }
+                        }
+                        else if (bstrncmp(bbuf, LONG, 4) == 0)
+                        {
+                            read_long = 1;
+                        }
+                        else if ((read_long == 1) && (bstrncmp(bbuf, LONG, 4) != 0))
+                        {
+                            bstring tmp = bfromcstr(buf);
+                            bconcat(long_info, tmp);
+                            bdestroy(tmp);
+                        }
+                        bdestroy(bbuf);
                     }
-                    if (strncmp("LONG", buf, 4) == 0)
+                    if (read_long)
                     {
-                        read_long = 1;
-                        j = 0;
+                        (*grouplong)[i] = malloc((blength(long_info) + 1) * sizeof(char) );
+                        if ((*grouplong)[i] != NULL)
+                        {
+                            j = sprintf((*grouplong)[i], "%s", bdata(long_info));
+                            (*grouplong)[i][j] = '\0';
+                        }
                     }
-                    if (read_long == 1)
-                    {
-                        if ((*grouplong)[i] == NULL)
-                            (*grouplong)[i] = malloc((strlen(buf)+1) * sizeof(char));
-                        else
-                            (*grouplong)[i] = realloc((*grouplong)[i], (strlen((*grouplong)[i])+strlen(buf)+1) * sizeof(char));
-                        j += sprintf(&((*grouplong)[i][j]), "%s", buf);
-                    }
+                    fclose(fp);
+                    bstrListDestroy(linelist);
+                    i++;
                 }
-                fclose(fp);
-                i++;
+                bdestroy(long_info);
             }
         }
+        closedir(dp);
     }
-    closedir(dp);
+    bdestroy(SHORT);
+    bdestroy(LONG);
     free(fullpath);
+    free(homepath);
     return i;
 }
+
+void return_groups(int groups, char** groupnames, char** groupshort, char** grouplong)
+{
+    int i;
+    for (i = 0; i <groups; i++)
+    {
+        if (groupnames[i])
+            free(groupnames[i]);
+        if (groupshort[i])
+            free(groupshort[i]);
+        if (grouplong[i])
+            free(grouplong[i]);
+    }
+    if (groupnames)
+        free(groupnames);
+    if (groupshort)
+        free(groupshort);
+    if (grouplong)
+        free(grouplong);
+}
+
 
 
 int custom_group(char* eventStr, GroupInfo* ginfo)
 {
-    int i;
+    int i, j;
     int err = 0;
-    char *ptr, *ptr2, *split_ptr;
-    char delim[] = ",";
-    char *eventCopy = NULL;
+    char delim = ',';
+    bstring edelim = bformat(":");
     int has_fix0 = 0;
     int has_fix1 = 0;
     int has_fix2 = 0;
@@ -235,6 +398,11 @@ int custom_group(char* eventStr, GroupInfo* ginfo)
     ginfo->metricformulas = NULL;
     ginfo->metricnames = NULL;
     ginfo->longinfo = NULL;
+    bstring eventBstr;
+    struct bstrList * eventList;
+    bstring fix0 = bformat("FIXC0");
+    bstring fix1 = bformat("FIXC1");
+    bstring fix2 = bformat("FIXC2");
     
     ginfo->shortinfo = malloc(7 * sizeof(char));
     if (ginfo->shortinfo == NULL)
@@ -257,111 +425,123 @@ int custom_group(char* eventStr, GroupInfo* ginfo)
         goto cleanup;
     }
     sprintf(ginfo->groupname, "%s", "Custom");
+    
+    eventBstr = bfromcstr(eventStr);
+    eventList = bsplit(eventBstr, delim);
+    ginfo->nevents = eventList->qty;
 
-    eventCopy = malloc((strlen(eventStr)+1)* sizeof(char));
-    if (eventCopy == NULL)
+    if (binstr(eventBstr, 0, fix0) > 0)
+    {
+        has_fix0 = 1;
+    }
+    else
+    {
+        ginfo->nevents++;
+    }
+    if (binstr(eventBstr, 0, fix1) > 0)
+    {
+        has_fix1 = 1;
+    }
+    else
+    {
+        ginfo->nevents++;
+    }
+    if (binstr(eventBstr, 0, fix2) > 0)
+    {
+        has_fix2 = 1;
+    }
+    else
+    {
+        ginfo->nevents++;
+    }
+    bdestroy(eventBstr);
+
+    ginfo->events = malloc(ginfo->nevents * sizeof(char*));
+    if (ginfo->events == NULL)
     {
         err = -ENOMEM;
+        bstrListDestroy(eventList);
         goto cleanup;
     }
-
-    strcpy(eventCopy, eventStr);
-    if (strstr(eventCopy, "FIXC0"))
-        has_fix0 = 1;
-    if (strstr(eventCopy, "FIXC1"))
-        has_fix1 = 1;
-    if (strstr(eventCopy, "FIXC2"))
-        has_fix2 = 1;
-    
-    ptr = strtok(eventCopy, delim);
-    while (ptr != NULL)
+    ginfo->counters = malloc(ginfo->nevents * sizeof(char*));
+    if (ginfo->counters == NULL)
     {
-        ginfo->events = realloc(ginfo->events, (ginfo->nevents + 1) * sizeof(char*));
-        if (ginfo->events == NULL)
-        {
-            err = -ENOMEM;
-            goto cleanup;
-        }
-        ginfo->counters = realloc(ginfo->counters, (ginfo->nevents + 1) * sizeof(char*));
-        if (ginfo->counters == NULL)
-        {
-            err = -ENOMEM;
-            goto cleanup;
-        }
-        split_ptr = strchr(ptr, ':');
-        ginfo->events[ginfo->nevents] = malloc((strlen(ptr)-strlen(split_ptr)+2)*sizeof(char));
-        ginfo->counters[ginfo->nevents] = malloc((strlen(split_ptr)+2)*sizeof(char));
-        snprintf(ginfo->events[ginfo->nevents], strlen(ptr)-strlen(split_ptr)+1, "%s", ptr);
-        sprintf(ginfo->counters[ginfo->nevents], "%s",split_ptr+1);
-        ginfo->nevents++;
-        ptr = strtok(NULL, delim);
+        err = -ENOMEM;
+        bstrListDestroy(eventList);
+        goto cleanup;
     }
+    for (i = 0; i< eventList->qty; i++)
+    {
+        int s;
+        struct bstrList * elist;
+        elist = bsplit(eventList->entry[i], ':');
+        ginfo->events[i] = malloc((blength(elist->entry[0]) + 1) * sizeof(char));
+        if (ginfo->events[i] == NULL)
+        {
+            bstrListDestroy(elist);
+            err = -ENOMEM;
+            goto cleanup;
+        }
+        bstring ctr = bstrcpy(elist->entry[1]);
+        if (elist->qty > 2)
+        {
+            for (j = 2; j < elist->qty; j++)
+            {
+                bconcat(ctr, edelim);
+                bconcat(ctr, elist->entry[j]);
+            }
+        }
+        ginfo->counters[i] = malloc((blength(ctr) + 1) * sizeof(char));
+        if (ginfo->counters[i] == NULL)
+        {
+            bstrListDestroy(elist);
+            bdestroy(ctr);
+            err = -ENOMEM;
+            goto cleanup;
+        }
+        sprintf(ginfo->events[i], "%s", bdata(elist->entry[0]));
+        snprintf(ginfo->counters[i], blength(ctr)+1, "%s", bdata(ctr));
+        bdestroy(ctr);
+        bstrListDestroy(elist);
+    }
+    i = eventList->qty;
     if (!has_fix0)
     {
-        ginfo->events = realloc(ginfo->events, (ginfo->nevents + 1) * sizeof(char*));
-        if (ginfo->events == NULL)
-        {
-            err = -ENOMEM;
-            goto cleanup;
-        }
-        ginfo->counters = realloc(ginfo->counters, (ginfo->nevents + 1) * sizeof(char*));
-        if (ginfo->counters == NULL)
-        {
-            err = -ENOMEM;
-            goto cleanup;
-        }
-        ginfo->events[ginfo->nevents] = malloc(18 * sizeof(char));
-        ginfo->counters[ginfo->nevents] = malloc(6 * sizeof(char));
-        sprintf(ginfo->events[ginfo->nevents], "%s", "INSTR_RETIRED_ANY");
-        sprintf(ginfo->counters[ginfo->nevents], "%s", "FIXC0");
-        ginfo->nevents++;
+        ginfo->events[i] = malloc(18 * sizeof(char));
+        ginfo->counters[i] = malloc(6 * sizeof(char));
+        sprintf(ginfo->events[i], "%s", "INSTR_RETIRED_ANY");
+        sprintf(ginfo->counters[i], "%s", "FIXC0");
+        i++;
     }
     if (!has_fix1)
     {
-        ginfo->events = realloc(ginfo->events, (ginfo->nevents + 1) * sizeof(char*));
-        if (ginfo->events == NULL)
-        {
-            err = -ENOMEM;
-            goto cleanup;
-        }
-        ginfo->counters = realloc(ginfo->counters, (ginfo->nevents + 1) * sizeof(char*));
-        if (ginfo->counters == NULL)
-        {
-            err = -ENOMEM;
-            goto cleanup;
-        }
-        ginfo->events[ginfo->nevents] = malloc(22 * sizeof(char));
-        ginfo->counters[ginfo->nevents] = malloc(6 * sizeof(char));
-        sprintf(ginfo->events[ginfo->nevents], "%s", "CPU_CLK_UNHALTED_CORE");
-        sprintf(ginfo->counters[ginfo->nevents], "%s", "FIXC1");
-        ginfo->nevents++;
+        ginfo->events[i] = malloc(22 * sizeof(char));
+        ginfo->counters[i] = malloc(6 * sizeof(char));
+        sprintf(ginfo->events[i], "%s", "CPU_CLK_UNHALTED_CORE");
+        sprintf(ginfo->counters[i], "%s", "FIXC1");
+        i++;
     }
     if (!has_fix2)
     {
-        ginfo->events = realloc(ginfo->events, (ginfo->nevents + 1) * sizeof(char*));
-        if (ginfo->events == NULL)
-        {
-            err = -ENOMEM;
-            goto cleanup;
-        }
-        ginfo->counters = realloc(ginfo->counters, (ginfo->nevents + 1) * sizeof(char*));
-        if (ginfo->counters == NULL)
-        {
-            err = -ENOMEM;
-            goto cleanup;
-        }
-        ginfo->events[ginfo->nevents] = malloc(21 * sizeof(char));
-        ginfo->counters[ginfo->nevents] = malloc(6 * sizeof(char));
-        sprintf(ginfo->events[ginfo->nevents], "%s", "CPU_CLK_UNHALTED_REF");
-        sprintf(ginfo->counters[ginfo->nevents], "%s", "FIXC2");
-        ginfo->nevents++;
+        ginfo->events[i] = malloc(21 * sizeof(char));
+        ginfo->counters[i] = malloc(6 * sizeof(char));
+        sprintf(ginfo->events[i], "%s", "CPU_CLK_UNHALTED_REF");
+        sprintf(ginfo->counters[i], "%s", "FIXC2");
+        i++;
     }
 
-    free(eventCopy);
+    bstrListDestroy(eventList);
+    bdestroy(fix0);
+    bdestroy(fix1);
+    bdestroy(fix2);
+    bdestroy(edelim);
     return 0;
 cleanup:
-    if (eventCopy != NULL)
-        free(eventCopy);
+    bstrListDestroy(eventList);
+    bdestroy(fix0);
+    bdestroy(fix1);
+    bdestroy(fix2);
+    bdestroy(edelim);
     if (ginfo->shortinfo != NULL)
         free(ginfo->shortinfo);
     if (ginfo->events != NULL)
@@ -376,25 +556,27 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
     FILE* fp;
     int i, s, e, err = 0;
     char buf[512];
-    const_bstring sep = bformat(" ");
     GroupFileSections sec = GROUP_NONE;
     if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL))
         return -EINVAL;
 
-    char* fullpath = malloc((strlen(grouppath)+strlen(architecture)+strlen(groupname)+100)*sizeof(char));
-    if (fullpath == NULL)
-        return -ENOMEM;
-    i = sprintf(fullpath, "%s/%s/%s.txt", grouppath,architecture, groupname);
-    fullpath[i] = '\0';
+    bstring fullpath;
+    //char* fullpath = malloc((strlen(grouppath)+strlen(architecture)+strlen(groupname)+100)*sizeof(char));
+    //if (fullpath == NULL)
+    //    return -ENOMEM;
+    //i = sprintf(fullpath, "%s/%s/%s.txt", grouppath,architecture, groupname);
+    //fullpath[i] = '\0';
+    fullpath = bformat("%s/%s/%s.txt", grouppath,architecture, groupname);
 
-    if (access(fullpath, R_OK))
+    if (access(bdata(fullpath), R_OK))
     {
-        i = sprintf(fullpath, "%s/.likwid/groups/%s/%s.txt", getenv("HOME"), architecture, groupname);
-        fullpath[i] = '\0';
-        if (access(fullpath, R_OK))
+        DEBUG_PRINT(DEBUGLEV_INFO, Cannot read group file %s. Trying $HOME/.likwid/groups/%s/%s, bdata(fullpath), architecture, groupname);
+        bdestroy(fullpath);
+        fullpath = bformat("%s/.likwid/groups/%s/%s.txt", getenv("HOME"),architecture, groupname);
+        if (access(bdata(fullpath), R_OK))
         {
-            printf("Cannot read group file %s\n", fullpath);
-            free(fullpath);
+            DEBUG_PRINT(DEBUGLEV_INFO, Cannot read group file %s, bdata(fullpath));
+            bdestroy(fullpath);
             return -EACCES;
         }
     }
@@ -407,23 +589,24 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
     ginfo->metricformulas = NULL;
     ginfo->metricnames = NULL;
     ginfo->longinfo = NULL;
-
-    ginfo->groupname = malloc(strlen(groupname)*sizeof(char));
+    ginfo->groupname = (char*)malloc((strlen(groupname)+10)*sizeof(char));
     if (ginfo->groupname == NULL)
     {
         err = -ENOMEM;
         goto cleanup;
     }
-    strcpy(ginfo->groupname, groupname);
-    
-    fp = fopen(fullpath, "r");
+    //strncpy(ginfo->groupname, groupname, strlen(groupname));
+    i = sprintf(ginfo->groupname, "%s", groupname);
+    ginfo->groupname[i] = '\0';
+
+    fp = fopen(bdata(fullpath), "r");
     if (fp == NULL)
     {
         free(ginfo->groupname);
-        free(fullpath);
+        bdestroy(fullpath);
         return -EACCES;
     }
-    struct bstrList * linelist = bstrListCreate();
+    struct bstrList * linelist;
     while (fgets (buf, sizeof(buf), fp)) {
         if ((strlen(buf) == 0) || (buf[0] == '#'))
             continue;
@@ -465,42 +648,92 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
             btrimws(bbuf);
             if (blength(bbuf) == 0)
             {
+                bdestroy(bbuf);
                 sec = GROUP_NONE;
                 continue;
             }
             linelist = bsplit(bbuf, ' ');
             for (i=0; i<linelist->qty; i++)
                 btrimws(linelist->entry[i]);
+            bdestroy(bbuf);
             bbuf = bstrcpy(linelist->entry[0]);
             for (i=1; i<linelist->qty; i++)
             {
                 if (blength(linelist->entry[i]) > 0)
-                    bconcat(bbuf, bformat(" %s", bdata(linelist->entry[i])));
+                {
+                    bstring tmp = bformat(" %s", bdata(linelist->entry[i]));
+                    bconcat(bbuf, tmp);
+                    bdestroy(tmp);
+                }
             }
-
-            ginfo->events = realloc(ginfo->events, (ginfo->nevents + 1) * sizeof(char*));
             if (ginfo->events == NULL)
             {
-                err = -ENOMEM;
-                goto cleanup;
+                ginfo->events = (char**)malloc(sizeof(char*));
+                if (ginfo->events == NULL)
+                {
+                    err = -ENOMEM;
+                    bdestroy(bbuf);
+                    goto cleanup;
+                }
             }
-            ginfo->counters = realloc(ginfo->counters, (ginfo->nevents + 1) * sizeof(char*));
+            else
+            {
+                char** tmp = NULL;
+                tmp = realloc(ginfo->events, (ginfo->nevents + 1) * sizeof(char*));
+                if (tmp == NULL)
+                {
+                    free(ginfo->events);
+                    bdestroy(bbuf);
+                    err = -ENOMEM;
+                    goto cleanup;
+                }
+                else
+                {
+                    ginfo->events = tmp;
+                    tmp = NULL;
+                }
+            }
             if (ginfo->counters == NULL)
             {
-                err = -ENOMEM;
-                goto cleanup;
+                ginfo->counters = (char**)malloc(sizeof(char*));
+                if (ginfo->counters == NULL)
+                {
+                    err = -ENOMEM;
+                    bdestroy(bbuf);
+                    goto cleanup;
+                }
             }
+            else
+            {
+                char** tmp = NULL;
+                tmp = realloc(ginfo->counters, (ginfo->nevents + 1) * sizeof(char*));
+                if (tmp == NULL)
+                {
+                    free(ginfo->counters);
+                    bdestroy(bbuf);
+                    err = -ENOMEM;
+                    goto cleanup;
+                }
+                else
+                {
+                    ginfo->counters = tmp;
+                    tmp = NULL;
+                }
+            }
+            bstrListDestroy(linelist);
+            
 
             linelist = bsplit(bbuf, ' ');
+            bdestroy(bbuf);
             for (i=0; i<linelist->qty; i++)
                 btrimws(linelist->entry[i]);
-            ginfo->counters[ginfo->nevents] = malloc((blength(linelist->entry[0])) * sizeof(char));
+            ginfo->counters[ginfo->nevents] = malloc((blength(linelist->entry[0])+1) * sizeof(char));
             if (ginfo->counters[ginfo->nevents] == NULL)
             {
                 err = -ENOMEM;
                 goto cleanup;
             }
-            ginfo->events[ginfo->nevents] = malloc(blength(linelist->entry[1]) * sizeof(char));
+            ginfo->events[ginfo->nevents] = malloc((blength(linelist->entry[1])+1) * sizeof(char));
             if (ginfo->events[ginfo->nevents] == NULL)
             {
                 err = -ENOMEM;
@@ -508,8 +741,9 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
             }
             sprintf(ginfo->counters[ginfo->nevents], "%s", bdata(linelist->entry[0]));
             sprintf(ginfo->events[ginfo->nevents], "%s", bdata(linelist->entry[1]));
-            bdestroy(bbuf);
+            
             ginfo->nevents++;
+            bstrListDestroy(linelist);
             continue;
         }
         else if (sec == GROUP_METRICS)
@@ -519,75 +753,112 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
             btrimws(bbuf);
             if (blength(bbuf) == 0)
             {
+                bdestroy(bbuf);
                 sec = GROUP_NONE;
                 continue;
             }
             linelist = bsplit(bbuf, ' ');
             for (i=0; i<linelist->qty; i++)
                 btrimws(linelist->entry[i]);
+            bdestroy(bbuf);
             bbuf = bstrcpy(linelist->entry[0]);
             for (i=1; i<linelist->qty; i++)
             {
                 if (blength(linelist->entry[i]) > 0)
-                    bconcat(bbuf, bformat(" %s", bdata(linelist->entry[i])));
+                {
+                    bstring tmp = bformat(" %s", bdata(linelist->entry[i]));
+                    bconcat(bbuf, tmp);
+                    bdestroy(tmp);
+                }
             }
-            ginfo->metricformulas = realloc(ginfo->metricformulas, (ginfo->nmetrics + 1) * sizeof(char*));
-            if (ginfo->metricformulas == NULL)
+            char** tmp;
+            tmp = realloc(ginfo->metricformulas, (ginfo->nmetrics + 1) * sizeof(char*));
+            if (tmp == NULL)
             {
+                free(ginfo->metricformulas);
+                bdestroy(bbuf);
+                bstrListDestroy(linelist);
                 err = -ENOMEM;
                 goto cleanup;
             }
-            ginfo->metricnames = realloc(ginfo->metricnames, (ginfo->nmetrics + 1) * sizeof(char*));
-            if (ginfo->metricnames == NULL)
+            else
             {
+                ginfo->metricformulas = tmp;
+            }
+            tmp = realloc(ginfo->metricnames, (ginfo->nmetrics + 1) * sizeof(char*));
+            if (tmp == NULL)
+            {
+                free(ginfo->metricnames);
+                bdestroy(bbuf);
+                bstrListDestroy(linelist);
                 err = -ENOMEM;
                 goto cleanup;
             }
-            
+            else
+            {
+                ginfo->metricnames = tmp;
+            }
+            bstrListDestroy(linelist);
             linelist = bsplit(bbuf, ' ');
-            ginfo->metricformulas[ginfo->nmetrics] = malloc(blength(linelist->entry[linelist->qty - 1]) * sizeof(char));
+            ginfo->metricformulas[ginfo->nmetrics] = malloc((blength(linelist->entry[linelist->qty - 1])+1) * sizeof(char));
             if (ginfo->metricformulas[ginfo->nmetrics] == NULL)
             {
                 err = -ENOMEM;
+                bdestroy(bbuf);
+                bstrListDestroy(linelist);
                 goto cleanup;
             }
-            ginfo->metricnames[ginfo->nmetrics] = malloc(((blength(bbuf)-blength(linelist->entry[linelist->qty - 1]))) * sizeof(char));
+            ginfo->metricnames[ginfo->nmetrics] = malloc(((blength(bbuf)-blength(linelist->entry[linelist->qty - 1]))+1) * sizeof(char));
             if (ginfo->metricnames[ginfo->nmetrics] == NULL)
             {
                 err = -ENOMEM;
+                bdestroy(bbuf);
+                bstrListDestroy(linelist);
                 goto cleanup;
             }
+            bdestroy(bbuf);
             sprintf(ginfo->metricformulas[ginfo->nmetrics], "%s", bdata(linelist->entry[linelist->qty - 1]));
             bbuf = bstrcpy(linelist->entry[0]);
             for (i=1; i<linelist->qty - 1; i++)
             {
                 if (blength(linelist->entry[i]) > 0)
-                    bconcat(bbuf, bformat(" %s", bdata(linelist->entry[i])));
+                {
+                    bstring tmp = bformat(" %s", bdata(linelist->entry[i]));
+                    bconcat(bbuf, tmp);
+                    bdestroy(tmp);
+                }
             }
             sprintf(ginfo->metricnames[ginfo->nmetrics], "%s", bdata(bbuf));
             bdestroy(bbuf);
+            bstrListDestroy(linelist);
             ginfo->nmetrics++;
             continue;
         }
         else if (sec == GROUP_LONG)
         {
             s = (ginfo->longinfo == NULL ? 0 : strlen(ginfo->longinfo));
-            ginfo->longinfo = realloc(ginfo->longinfo, (s + strlen(buf) + 3) * sizeof(char));
-            if (ginfo->longinfo == NULL)
+            char *tmp;
+            tmp = realloc(ginfo->longinfo, (s + strlen(buf) + 3) * sizeof(char));
+            if (tmp == NULL)
             {
+                free(ginfo->longinfo);
                 err = -ENOMEM;
                 goto cleanup;
+            }
+            else
+            {
+                ginfo->longinfo = tmp;
             }
             sprintf(&(ginfo->longinfo[s]), "%.*s", (int)strlen(buf), buf);
             continue;
         }
     }
-    bstrListDestroy(linelist);
+    //bstrListDestroy(linelist);
     fclose(fp);
-    free(fullpath);
+    bdestroy(fullpath);
     return 0;
 cleanup:
-    free(fullpath);
+    bdestroy(fullpath);
     if (ginfo->groupname)
         free(ginfo->groupname);
     if (ginfo->shortinfo)
@@ -659,6 +930,15 @@ char* get_eventStr(GroupInfo* ginfo)
     size += sprintf(&(string[size]), "%s:%s", ginfo->events[ginfo->nevents-1], ginfo->counters[ginfo->nevents-1]);
     string[size] = '\0';
     return string;
+}
+
+void put_eventStr(char* eventset)
+{
+    if (eventset != NULL)
+    {
+        free(eventset);
+        eventset = NULL;
+    }
 }
 
 int add_event(GroupInfo* ginfo, char* event, char* counter)
@@ -742,6 +1022,15 @@ char* get_shortInfo(GroupInfo* ginfo)
     return NULL;
 }
 
+void put_shortInfo(char* sinfo)
+{
+    if (sinfo != NULL)
+    {
+        free(sinfo);
+        sinfo = NULL;
+    }
+}
+
 int set_shortInfo(GroupInfo* ginfo, char* shortInfo)
 {
     if ((ginfo == NULL) || (shortInfo == NULL))
@@ -764,6 +1053,15 @@ char* get_longInfo(GroupInfo* ginfo)
         return lstr;
     }
     return NULL;
+}
+
+void put_longInfo(char* linfo)
+{
+    if (linfo != NULL)
+    {
+        free(linfo);
+        linfo = NULL;
+    }
 }
 
 int set_longInfo(GroupInfo* ginfo, char* longInfo)
@@ -796,6 +1094,8 @@ void return_group(GroupInfo* ginfo)
             if (ginfo->events[i])
                 free(ginfo->events[i]);
         }
+        free(ginfo->counters);
+        free(ginfo->events);
     }
     if (ginfo->nmetrics > 0)
     {
@@ -806,6 +1106,8 @@ void return_group(GroupInfo* ginfo)
             if (ginfo->metricnames[i])
                 free(ginfo->metricnames[i]);
         }
+        free(ginfo->metricformulas);
+        free(ginfo->metricnames);
     }
     ginfo->groupname = NULL;
     ginfo->shortinfo = NULL;
@@ -867,66 +1169,34 @@ void destroy_clist(CounterList* clist)
 
 int calc_metric(char* formula, CounterList* clist, double *result)
 {
-    int i=0,l_cname, l_remain, l_str, l_value;
-    char* fcopy, *fcopy2;
-    char vcopy[512];
-    int size;
-    char* ptr, *copyptr;
+    int i=0;
     *result = 0.0;
 
     if ((formula == NULL) || (clist == NULL))
         return -EINVAL;
-    // get current string length
-    size = strlen(formula);
-    // iterate over counter list and extend string length if stringified counter
-    // value is longer as the counter name
-    for (i=0;i<clist->counters;i++)
-    {
-        sprintf(vcopy, "%.20f", clist->cvalues[i]);
-        size += (strlen(vcopy) > strlen(clist->cnames[i]) ? strlen(vcopy)-strlen(clist->cnames[i]) : 0);
-    }
-    // alloc a new string where is enough space
-    fcopy = malloc(size * sizeof(char));
-    if (fcopy == NULL)
-        return -ENOMEM;
-    fcopy2 = malloc(size * sizeof(char));
-    if (fcopy2 == NULL)
-    {
-        free(fcopy);
-        return -ENOMEM;
-    }
-    // copy orginal formula to new space
-    strcpy(fcopy, formula);
+
+    bstring f = bfromcstr(formula);
+
 
     // try to replace each counter name in clist
     for(i=0;i<clist->counters;i++)
     {
         // if we find the counter name, replace it with the value
-        while ((ptr = strstr(fcopy,clist->cnames[i])) != NULL)
-        {
-            l_cname = strlen(clist->cnames[i]);
-            l_str = strlen(fcopy);
-            l_remain = strlen(ptr);
-            l_value = sprintf(vcopy, "%.20f", clist->cvalues[i]);
-            
-            // do the replacement
-            sprintf(fcopy2, "%.*s%s%s", l_str-l_remain, fcopy, vcopy, ptr+l_cname);
-            strcpy(fcopy, fcopy2);
-        }
+        bstring c = bfromcstr(clist->cnames[i]);
+        bstring v = bformat("%.20f", clist->cvalues[i]);
+        bfindreplace(f, c, v, 0);
+        bdestroy(c);
+        bdestroy(v);
     }
-    ptr = strpbrk(fcopy, "aAbBcCdDfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ,_:;!'§$%&=?^°´`#<>");
-    if (ptr != NULL)
+    bstring test = bfromcstr("aAbBcCdDfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ,_:;!'§$&=?°´`#<>");
+    if (binchr(f, 0, test) != BSTR_ERR)
     {
         fprintf(stderr, "Not all counter names in formula can be substituted\n");
-        fprintf(stderr, "%s\n", fcopy);
-        free(fcopy);
-        free(fcopy2);
-        *result = 0.0;
-        return -EINVAL;
+        fprintf(stderr, "%s\n", bdata(f));
     }
+    bdestroy(test);
     // now we can calculate the formula
-    i = calculate_infix(fcopy, result);
-    free(fcopy);
-    free(fcopy2);
+    i = calculate_infix(bdata(f), result);
+    bdestroy(f);
     return i;
 }

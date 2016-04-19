@@ -134,6 +134,8 @@ nodeMeminfo(int node, uint64_t* totalMemory, uint64_t* freeMemory)
                  bltrimws(tmp);
                  struct bstrList* subtokens = bsplit(tmp,(char) ' ');
                  *totalMemory = str2int(bdata(subtokens->entry[0]));
+                 bstrListDestroy(subtokens);
+                 bdestroy(tmp);
             }
             else if (binstr(tokens->entry[i],0,freeString) != BSTR_ERR)
             {
@@ -141,14 +143,23 @@ nodeMeminfo(int node, uint64_t* totalMemory, uint64_t* freeMemory)
                  bltrimws(tmp);
                  struct bstrList* subtokens = bsplit(tmp,(char) ' ');
                  *freeMemory = str2int(bdata(subtokens->entry[0]));
+                 bstrListDestroy(subtokens);
+                 bdestroy(tmp);
             }
         }
+        bdestroy(src);
+        bstrListDestroy(tokens);
     }
     else
     {
+        bdestroy(filename);
+        bdestroy(totalString);
+        bdestroy(freeString);
         ERROR;
     }
-
+    bdestroy(filename);
+    bdestroy(totalString);
+    bdestroy(freeString);
     fclose(fp);
 }
 

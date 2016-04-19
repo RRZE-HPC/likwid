@@ -117,6 +117,8 @@ typedef enum
 } Error;
 
 typedef char* token;
+token* calcTokens = NULL;
+int nrCalcTokens = 0;
 
 typedef double number;
 
@@ -157,6 +159,8 @@ token num2Str(number num)
     snprintf(str, 39, "%.20f", num);
     return str;
 }
+
+
 
 inline number toRadians(number degrees)
 {
@@ -202,7 +206,8 @@ token doFunc(token input, token function)
         result = log(num);
     else if(strcmp(function, "exp") == 0)
         result = exp(num);
-
+    printf("Free %s\n", function);
+    free(function);
     return num2Str(result);
 }
 
@@ -264,8 +269,8 @@ int doOp(token loperand, token op, token roperand, token *result)
             }
             break;
     }
-    /* Added by Thomas Roehl */
     *result = num2Str(ret);
+    calcTokens[nrCalcTokens++] = *result;
     return err;
 }
 
@@ -426,6 +431,7 @@ token tokenizeNumber(char *str)
 int tokenize(char *str, char *(**tokensRef))
 {
     char** tokens = NULL;
+    char** tmp = NULL;
     char* ptr = str;
     char ch = '\0';
     int numTokens = 0;
@@ -608,7 +614,15 @@ int tokenize(char *str, char *(**tokensRef))
             newToken = malloc((strlen(tmpToken)+1) * sizeof(char));
             strcpy(newToken, tmpToken);
             newToken[strlen(tmpToken)] = '\0';
-            tokens = (char**)realloc(tokens, numTokens * sizeof(char*));
+            tmp = (char**)realloc(tokens, numTokens * sizeof(char*));
+            if (tmp == NULL)
+            {
+                *tokensRef = NULL;
+                free(tmpToken);
+                return 0;
+            }
+            tokens = tmp;
+            tmp = NULL;
             tokens[numTokens - 1] = newToken;
         }
     }
@@ -672,6 +686,7 @@ int evalStackPush(Stack *s, token val)
                 token operand, res;
                 operand = (token)stackPop(s);
                 res = doFunc(operand, val);
+                //free(operand);
                 stackPush(s, res);
             }
             break;
@@ -689,7 +704,6 @@ int evalStackPush(Stack *s, token val)
                     // Evaluate
                     /* Added return value by Thomas Roehl (Thomas.Roehl@fau.de) */
                     ret = doOp(l, val, r, &res);
-
                     // Push result
                     stackPush(s, res);
                 }
@@ -714,7 +728,7 @@ int postfix(token *tokens, int numTokens, Stack *output)
     Stack operators;
     int i;
     int err = 0;
-    stackInit(&operators);
+    stackInit(&operators, 2*numTokens);
     for(i = 0; i < numTokens; i++)
     {
         // From Wikipedia/Shunting-yard_algorithm:
@@ -748,7 +762,9 @@ int postfix(token *tokens, int numTokens, Stack *output)
                         && err == 0)
                     {
                         //printf("Moving operator from operator stack to output stack\n");
-                        err = evalStackPush(output, stackPop(&operators));
+                        token t = (token)stackPop(&operators);
+                        err = evalStackPush(output, t);
+                        //free(t);
                     }
                     if(stackSize(&operators) > 0
                         && tokenType((token)stackTop(&operators)) != lparen)
@@ -758,7 +774,8 @@ int postfix(token *tokens, int numTokens, Stack *output)
                         //raise(parenMismatch);
                     }
                     //printf("Removing left paren from operator stack\n");
-                    stackPop(&operators); // Discard lparen
+                    token t = stackPop(&operators); // Discard lparen
+                    //free(t);
                 }
                 break;
             case addop:
@@ -780,7 +797,9 @@ int postfix(token *tokens, int numTokens, Stack *output)
                         && err == 0)
                     {
                         //printf("Moving operator from operator stack to output stack\n");
-                        err = evalStackPush(output, stackPop(&operators));
+                        token t = (token)stackPop(&operators);
+                        err = evalStackPush(output, t);
+                        //free(t);
                     }
                     //printf("Adding operator to operator stack\n");
                     stackPush(&operators, tokens[i]);
@@ -807,7 +826,9 @@ int postfix(token *tokens, int numTokens, Stack *output)
                         && err == 0)
                     {
                         //printf("Moving operator from operator stack to output stack\n");
-                        err = evalStackPush(output, stackPop(&operators));
+                        token t = (token)stackPop(&operators);
+                        err = evalStackPush(output, t);
+                        //free(t);
                     }
                     if(stackSize(&operators) > 0
                         && tokenType((token)stackTop(&operators)) != lparen)
@@ -817,7 +838,9 @@ int postfix(token *tokens, int numTokens, Stack *output)
                         //raise(parenMismatch);
                     }
                     //printf("Removing left paren from operator stack\n");
-                    stackPop(&operators); // Discard lparen
+                    token t = (token)stackPop(&operators);
+                    //stackPop(&operators); // Discard lparen
+                    //free(t);
                 }
                 break;
         }
@@ -839,9 +862,11 @@ int postfix(token *tokens, int numTokens, Stack *output)
             err = -1;
         }
         //printf("Moving operator from operator stack to output stack\n");
-        err = evalStackPush(output, stackPop(&operators));
+        token t = (token)stackPop(&operators);
+        err = evalStackPush(output, t);
+        //free(t);
     }
-    //stackFree(&operators);
+    stackFree(&operators);
     return err;
 }
 
@@ -855,8 +880,15 @@ int calculate_infix(char* finfix, double *result)
     *result = 0;
     token* tokens = NULL;
     Stack expr;
+    calcTokens = malloc(100 * sizeof(token));
+    if (calcTokens == NULL)
+    {
+        ret = -1;
+        *result = NAN;
+    }
+    memset(calcTokens, 0, 100 * sizeof(token));
     int numTokens = tokenize(finfix, &tokens);
-    stackInit(&expr);
+    stackInit(&expr, 2*numTokens);
     ret = postfix(tokens, numTokens, &expr);
     if ((stackSize(&expr) != 1) || (ret < 0))
     {
@@ -869,9 +901,16 @@ int calculate_infix(char* finfix, double *result)
     }
     ret = 0;
 calcerror:
-    for(i = 0; i < numTokens; i++)
+    for (i=0;i<nrCalcTokens; i++)
     {
-        if (tokens[i] != NULL)
+        if (calcTokens[i] != NULL)
+            free(calcTokens[i]);
+    }
+    free(calcTokens);
+    calcTokens = NULL;
+    for (i=0;i<numTokens;i++)
+    {
+        if (tokens[i])
         {
             free(tokens[i]);
         }

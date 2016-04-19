@@ -43,9 +43,9 @@ int init_config = 0;
 
 static int default_configuration(void)
 {
-    int ret;
-    char filename[1024];
-    char *fptr;
+    int ret = 0;
+    char filename[1024] = { [0 ... 1023] = '\0' };
+    char *fptr = NULL;
     size_t len = 0;
     filename[0] = '\0';
     if (ACCESSMODE == 0)
@@ -64,11 +64,15 @@ static int default_configuration(void)
     if (ret < 0)
     {
         fclose(fp);
+        if (fptr)
+            free(fptr);
         goto use_hardcoded;
     }
     config.daemonPath = (char*)malloc((len+1) * sizeof(char));
     strncpy(config.daemonPath, fptr, len);
     config.daemonPath[len] = '\0';
+    if (fptr)
+        free(fptr);
     init_config = 1;
     fclose(fp);
     return 0;

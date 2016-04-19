@@ -46,6 +46,7 @@ void hwloc_init_cpuInfo(cpu_set_t cpuSet);
 void hwloc_init_cpuFeatures(void);
 void hwloc_init_nodeTopology(cpu_set_t cpuSet);
 void hwloc_init_cacheTopology(void);
+void hwloc_close(void);
 
 
 #endif

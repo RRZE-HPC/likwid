@@ -38,6 +38,7 @@
 #include <error.h>
 #include <likwid.h>
 #include <cpuid.h>
+
 /* #####   EXPORTED VARIABLES   ########################################### */
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 static uint64_t baseline = 0ULL;
@@ -292,7 +293,7 @@ void init_sleep()
 
 void timer_init( void )
 {
-    uint32_t eax,ebx,ecx,edx;
+    uint32_t eax = 0x0,ebx = 0x0,ecx = 0x0,edx = 0x0;
     if (timer_initialized == 1)
     {
         return;
@@ -301,7 +302,7 @@ void timer_init( void )
     {
         TSTART = fRDTSC;
         eax = 0x80000001;
-        CPUID;
+        CPUID (eax, ebx, ecx, edx);
 #ifndef __MIC__
         if (edx & (1<<27))
         {

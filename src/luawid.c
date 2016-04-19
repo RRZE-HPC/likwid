@@ -2034,6 +2034,12 @@ static int lua_likwid_markerFile_read(lua_State* L)
     return 0;
 }
 
+static int lua_likwid_markerFile_destroy(lua_State* L)
+{
+    perfmon_destroyMarkerResults();
+    return 0;
+}
+
 static int lua_likwid_markerNumRegions(lua_State* L)
 {
     lua_pushinteger(L, perfmon_getNumberOfRegions());
@@ -2203,6 +2209,7 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_cpuFeaturesDisable", lua_likwid_cpuFeatures_disable);
     // Marker API related functions
     lua_register(L, "likwid_readMarkerFile", lua_likwid_markerFile_read);
+    lua_register(L, "likwid_destroyMarkerFile", lua_likwid_markerFile_destroy);
     lua_register(L, "likwid_markerNumRegions", lua_likwid_markerNumRegions);
     lua_register(L, "likwid_markerRegionGroup", lua_likwid_markerRegionGroup);
     lua_register(L, "likwid_markerRegionTag", lua_likwid_markerRegionTag);

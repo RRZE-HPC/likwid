@@ -44,11 +44,15 @@ static char* groupFileSectionNames[5] = {
 };
 
 extern int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** groupshort, char*** grouplong);
+extern void return_groups(int groups, char** groupnames, char** groupshort, char** grouplong);
 extern int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* ginfo);
 extern int custom_group(char* eventStr, GroupInfo* ginfo);
 extern char* get_eventStr(GroupInfo* ginfo);
+void put_eventStr(char* eventset);
 extern char* get_shortInfo(GroupInfo* ginfo);
+void put_shortInfo(char* sinfo);
 extern char* get_longInfo(GroupInfo* ginfo);
+void put_longInfo(char* linfo);
 extern void return_group(GroupInfo* ginfo);
 
 extern void init_clist(CounterList* clist);

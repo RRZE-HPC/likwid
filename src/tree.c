@@ -34,12 +34,35 @@
 #include <error.h>
 #include <tree.h>
 
+/* #####   FUNCTION DEFINITIONS  -  INTERNAL FUNCTIONS   ################## */
+void _tree_destroy(TreeNode* nodePtr)
+{
+    if (nodePtr == NULL)
+        return;
+    if (nodePtr->rlink)
+    {
+        _tree_destroy(nodePtr->rlink);
+        free(nodePtr->rlink);
+    }
+    if (nodePtr->llink)
+    {
+        _tree_destroy(nodePtr->llink);
+        free(nodePtr->llink);
+    }
+    return;
+}
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void
 tree_init(TreeNode** root, int id)
 {
     *root = (TreeNode*) malloc(sizeof(TreeNode));
+    if (!(*root))
+    {
+        *root = NULL;
+        return;
+    }
     (*root)->id = id;
     (*root)->llink = NULL;
     (*root)->rlink = NULL;
@@ -53,8 +76,8 @@ tree_print(TreeNode* nodePtr)
   if (nodePtr != NULL)
   {
 
-    TreeNode* digger;
-    TreeNode* walker;
+    TreeNode* digger = NULL;
+    TreeNode* walker = NULL;
 
     digger = nodePtr->llink;
 
@@ -77,53 +100,42 @@ tree_print(TreeNode* nodePtr)
   }
 }
 
+
 void
 tree_destroy(TreeNode* nodePtr)
 {
 
     if (nodePtr != NULL)
     {
-
-        TreeNode* digger;
-        TreeNode* walker;
-        TreeNode* tmp;
-
-        digger = nodePtr->llink;
-
-        while (digger != NULL)
-        {
-            walker = digger->rlink;
-
-            while (walker != NULL)
-            {
-                tmp = walker;
-                walker = walker->rlink;
-                free(tmp);
-            }
-            tmp = digger;
-            digger = digger->llink;
-            free(tmp);
-        }
+        _tree_destroy(nodePtr);
+        free(nodePtr);
     }
 }
 
 void
 tree_insertNode(TreeNode* nodePtr, int id)
 {
-    TreeNode* currentNode;
-    TreeNode* tmpNode;
+    TreeNode* currentNode = NULL;
+    TreeNode* tmpNode = NULL;
+    TreeNode* newNode = NULL;
 
     if (nodePtr == NULL)
     {
         ERROR_PLAIN_PRINT(Node invalid);
     }
 
+    newNode = (TreeNode*) malloc(sizeof(TreeNode));
+    if (!newNode)
+    {
+        return;
+    }
+    newNode->id = id;
+    newNode->llink = NULL;
+    newNode->rlink = NULL;
+
     if (nodePtr->llink == NULL)
     {
-        nodePtr->llink = (TreeNode*) malloc(sizeof(TreeNode));
-        nodePtr->llink->id = id;
-        nodePtr->llink->llink = NULL;
-        nodePtr->llink->rlink = NULL;
+        nodePtr->llink = newNode;
     }
     else
     {
@@ -134,29 +146,21 @@ tree_insertNode(TreeNode* nodePtr, int id)
             if (id < currentNode->rlink->id)
             {
                 tmpNode = currentNode->rlink;
-                currentNode->rlink = (TreeNode*) malloc(sizeof(TreeNode));
-                currentNode->rlink->id = id;
-                currentNode->rlink->llink = NULL;
+                currentNode->rlink = newNode;
                 currentNode->rlink->rlink = tmpNode;
                 return;
             }
             currentNode = currentNode->rlink;
         }
 
-
         if (id > currentNode->id)
         {
-            currentNode->rlink = (TreeNode*) malloc(sizeof(TreeNode));
-            currentNode->rlink->id = id;
-            currentNode->rlink->llink = NULL;
-            currentNode->rlink->rlink = NULL;
+            currentNode->rlink = newNode;
         }
         else
         {
             tmpNode = currentNode;
-            nodePtr->llink = (TreeNode*) malloc(sizeof(TreeNode));
-            nodePtr->llink->id = id;
-            nodePtr->llink->llink = NULL;
+            nodePtr->llink = newNode;
             nodePtr->llink->rlink = tmpNode;
         }
     }
