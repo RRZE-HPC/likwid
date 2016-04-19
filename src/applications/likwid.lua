@@ -128,6 +128,7 @@ likwid.getCpuFeatures = likwid_cpuFeaturesGet
 likwid.enableCpuFeatures = likwid_cpuFeaturesEnable
 likwid.disableCpuFeatures = likwid_cpuFeaturesDisable
 likwid.readMarkerFile = likwid_readMarkerFile
+likwid.destroyMarkerFile = likwid_destroyMarkerFile
 likwid.markerNumRegions = likwid_markerNumRegions
 likwid.markerRegionGroup = likwid_markerRegionGroup
 likwid.markerRegionTag = likwid_markerRegionTag
