@@ -196,7 +196,8 @@ static int lua_likwid_init(lua_State* L)
         if (ret != 0)
         {
             lua_pushstring(L,"Cannot initialize likwid perfmon");
-            lua_error(L);
+            perfmon_finalize();
+            lua_pushinteger(L,ret);
             return 1;
         }
         perfmon_isInitialized = 1;
@@ -551,24 +552,30 @@ static int lua_likwid_getGroups(lua_State* L)
         topology_init();
     }
     ret = perfmon_getGroups(&tmp, &infos, &longs);
-    lua_newtable(L);
-    for (i=0;i<ret;i++)
+    if (ret > 0)
     {
-        lua_pushinteger(L, (lua_Integer)( i+1));
         lua_newtable(L);
-        lua_pushstring(L, "Name");
-        lua_pushstring(L, tmp[i]);
-        lua_settable(L,-3);
-        lua_pushstring(L, "Info");
-        lua_pushstring(L, infos[i]);
-        lua_settable(L,-3);
-        lua_pushstring(L, "Long");
-        lua_pushstring(L, longs[i]);
-        lua_settable(L,-3);
-        lua_settable(L,-3);
+        for (i=0;i<ret;i++)
+        {
+            lua_pushinteger(L, (lua_Integer)( i+1));
+            lua_newtable(L);
+            lua_pushstring(L, "Name");
+            lua_pushstring(L, tmp[i]);
+            lua_settable(L,-3);
+            lua_pushstring(L, "Info");
+            lua_pushstring(L, infos[i]);
+            lua_settable(L,-3);
+            lua_pushstring(L, "Long");
+            lua_pushstring(L, longs[i]);
+            lua_settable(L,-3);
+            lua_settable(L,-3);
+        }
+        perfmon_returnGroups(ret, tmp, infos, longs);
+        return 1;
     }
-    return 1;
+    return 0;
 }
+
 
 static int lua_likwid_printSupportedCPUs(lua_State* L)
 {
