@@ -45,19 +45,6 @@ void stackInit(Stack *s, int size)
 
 void stackPush(Stack *s, void* val)
 {
-    /*void ** tmp;
-    if(s->top + 1 >= s->size) // If stack is full
-    {
-        (s->size)++;
-        tmp = (void**)realloc(s->content, s->size * sizeof(void*));
-        if (tmp == NULL)
-        {
-            free(s->content);
-            return;
-        }
-        s->content = tmp;
-    }*/
-
     (s->top)++;
     s->content[s->top] = val;
 }
@@ -85,7 +72,8 @@ int stackSize(Stack *s)
 
 void stackFree(Stack *s)
 {
-    free(s->content);
+    if (s->content)
+        free(s->content);
     s->content = NULL;
     s->size = 0;
     s->top = -1;

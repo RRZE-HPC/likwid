@@ -270,7 +270,6 @@ int doOp(token loperand, token op, token roperand, token *result)
             break;
     }
     *result = num2Str(ret);
-    calcTokens[nrCalcTokens++] = *result;
     return err;
 }
 
@@ -706,6 +705,8 @@ int evalStackPush(Stack *s, token val)
                     ret = doOp(l, val, r, &res);
                     // Push result
                     stackPush(s, res);
+                    calcTokens[nrCalcTokens] = res;
+                    nrCalcTokens++;
                 }
                 else
                 {
@@ -880,13 +881,14 @@ int calculate_infix(char* finfix, double *result)
     *result = 0;
     token* tokens = NULL;
     Stack expr;
-    calcTokens = malloc(100 * sizeof(token));
+    nrCalcTokens = 0;
+    calcTokens = (token*)malloc(10 * sizeof(token));
     if (calcTokens == NULL)
     {
         ret = -1;
         *result = NAN;
     }
-    memset(calcTokens, 0, 100 * sizeof(token));
+    memset(calcTokens, NULL, 10 * sizeof(token));
     int numTokens = tokenize(finfix, &tokens);
     stackInit(&expr, 2*numTokens);
     ret = postfix(tokens, numTokens, &expr);
@@ -906,8 +908,10 @@ calcerror:
         if (calcTokens[i] != NULL)
             free(calcTokens[i]);
     }
-    free(calcTokens);
+    if (calcTokens)
+        free(calcTokens);
     calcTokens = NULL;
+    nrCalcTokens = 0;
     for (i=0;i<numTokens;i++)
     {
         if (tokens[i])

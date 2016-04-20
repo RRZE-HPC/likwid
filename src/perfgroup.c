@@ -1156,18 +1156,22 @@ void init_clist(CounterList* clist)
 
 int add_to_clist(CounterList* clist, char* counter, double result)
 {
+    char** tmpnames;
+    double* tmpvalues;
     if ((clist == NULL)||(counter == NULL))
         return -EINVAL;
-    clist->cnames = realloc(clist->cnames, (clist->counters + 1) * sizeof(char*));
-    if (clist->cnames == NULL)
+    tmpnames = realloc(clist->cnames, (clist->counters + 1) * sizeof(char*));
+    if (tmpnames == NULL)
     {
         return -ENOMEM;
     }
-    clist->cvalues = realloc(clist->cvalues, (clist->counters + 1) * sizeof(double));
-    if (clist->cvalues == NULL)
+    clist->cnames = tmpnames;
+    tmpvalues = realloc(clist->cvalues, (clist->counters + 1) * sizeof(double));
+    if (tmpvalues == NULL)
     {
         return -ENOMEM;
     }
+    clist->cvalues = tmpvalues;
     clist->cnames[clist->counters] = malloc((strlen(counter)+2)*sizeof(char));
     if (clist->cnames[clist->counters] == NULL)
     {
