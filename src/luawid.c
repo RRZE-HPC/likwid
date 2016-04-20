@@ -45,6 +45,7 @@
 #include <likwid.h>
 #include <tree.h>
 #include <access.h>
+#include <bstrlib.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -854,8 +855,7 @@ static int lua_likwid_putTopology(lua_State* L)
 static int lua_likwid_getEventsAndCounters(lua_State* L)
 {
     int i;
-    char optString[1024];
-    int optStringIndex = 0;
+    
     if (topology_isInitialized == 0)
     {
         topology_init();
@@ -872,8 +872,7 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
     lua_newtable(L);
     for(i=1;i<=perfmon_numCounters;i++)
     {
-        optStringIndex = 0;
-        optString[0] = '\0';
+        bstring optString = bfromcstr("");
         lua_pushinteger(L, (lua_Integer)(i));
         lua_newtable(L);
         lua_pushstring(L,"Name");
@@ -884,11 +883,12 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
         {
             if (counter_map[i-1].optionMask & REG_TYPE_MASK(j))
             {
-                optStringIndex += sprintf(&(optString[optStringIndex]), "%s|", eventOptionTypeName[j]);
+                bstring tmp = bformat("%s|", eventOptionTypeName[j]);
+                bconcat(optString, tmp);
+                bdestroy(tmp);
             }
         }
-        optString[optStringIndex-1] = '\0';
-        lua_pushstring(L,optString);
+        lua_pushstring(L,bdata(optString));
         lua_settable(L,-3);
         lua_pushstring(L,"Type");
         lua_pushinteger(L, (lua_Integer)( counter_map[i-1].type));
@@ -900,14 +900,14 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
         lua_pushinteger(L, (lua_Integer)(counter_map[i-1].index));
         lua_settable(L,-3);
         lua_settable(L,-3);
+        bdestroy(optString);
     }
     lua_settable(L,-3);
     lua_pushstring(L,"Events");
     lua_newtable(L);
     for(i=1;i<=perfmon_numArchEvents;i++)
     {
-        optStringIndex = 0;
-        optString[0] = '\0';
+        bstring optString = bfromcstr("");
         lua_pushinteger(L, (lua_Integer)(i));
         lua_newtable(L);
         lua_pushstring(L,"Name");
@@ -927,13 +927,15 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
         {
             if (eventHash[i-1].optionMask & REG_TYPE_MASK(j))
             {
-                optStringIndex += sprintf(&(optString[optStringIndex]), "%s|", eventOptionTypeName[j]);
+                bstring tmp = bformat("%s|", eventOptionTypeName[j]);
+                bconcat(optString, tmp);
+                bdestroy(tmp);
             }
         }
-        optString[optStringIndex-1] = '\0';
-        lua_pushstring(L,optString);
+        lua_pushstring(L,bdata(optString));
         lua_settable(L,-3);
         lua_settable(L,-3);
+        bdestroy(optString);
     }
     lua_settable(L,-3);
     return 1;
@@ -1724,7 +1726,7 @@ static int lua_likwid_startProgram(lua_State* L)
     pid_t pid, ppid;
     int status;
     char *exec;
-    char  *argv[4096];
+    char *argv[4096];
     exec = (char *)luaL_checkstring(L, 1);
     int nrThreads = luaL_checknumber(L,2);
     int cpus[MAX_NUM_THREADS];
