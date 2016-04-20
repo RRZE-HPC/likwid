@@ -1037,7 +1037,8 @@ int main(void)
 
             for (int j=0; j<MAX_NUM_NODES; j++)
             {
-                socket_bus[j] = "N-A";
+                socket_bus[j] = (char*)malloc(4);
+                sprintf(socket_bus[j], "N-A");
                 for (int i=0; i<MAX_NUM_PCI_DEVICES; i++)
                 {
                     FD_PCI[j][i] = -2;
@@ -1050,7 +1051,6 @@ int main(void)
             sbus = getBusFromSocket(cntr);
             while (sbus != -1)
             {
-                socket_bus[cntr] = (char*)malloc(4);
                 sprintf(socket_bus[cntr], "%02x/", sbus);
                 cntr++;
                 sbus = getBusFromSocket(cntr);
