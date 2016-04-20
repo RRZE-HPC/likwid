@@ -888,7 +888,7 @@ int calculate_infix(char* finfix, double *result)
         ret = -1;
         *result = NAN;
     }
-    memset(calcTokens, NULL, 10 * sizeof(token));
+    memset(calcTokens, 0, 10 * sizeof(token));
     int numTokens = tokenize(finfix, &tokens);
     stackInit(&expr, 2*numTokens);
     ret = postfix(tokens, numTokens, &expr);
