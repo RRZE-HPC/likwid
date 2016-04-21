@@ -243,9 +243,12 @@ int destroy_configuration(void)
     {
         free(config.topologyCfgFileName);
     }
-    if (config.daemonPath != NULL)
+    if (config.daemonMode != ACCESSMODE_DIRECT)
     {
-        free(config.daemonPath);
+        if (config.daemonPath != NULL)
+        {
+            free(config.daemonPath);
+        }
     }
     init_config = 0;
     return 0;
