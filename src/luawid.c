@@ -191,6 +191,11 @@ static int lua_likwid_init(lua_State* L)
     {
         numainfo = get_numaTopology();
     }
+    if (timer_isInitialized == 0)
+    {
+        timer_init();
+        timer_isInitialized = 1;
+    }
     if (perfmon_isInitialized == 0)
     {
         ret = perfmon_init(nrThreads, &(cpus[0]));
@@ -323,6 +328,11 @@ static int lua_likwid_finalize(lua_State* L)
         topology_isInitialized = 0;
         cputopo = NULL;
         cpuinfo = NULL;
+    }
+    if (timer_isInitialized == 1)
+    {
+        timer_finalize();
+        timer_isInitialized = 0;
     }
     if (config_isInitialized == 1)
     {
