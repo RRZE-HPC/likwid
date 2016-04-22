@@ -354,6 +354,7 @@ if not print_info and not print_temp then
         err = os.execute(execString)
         if err == false then
             print(string.format("Failed to execute %s!",execString))
+            likwid.putPowerInfo()
             likwid.finalize()
             os.exit(1)
         end
@@ -383,4 +384,5 @@ if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
     print(likwid.hline)
 end
 
+likwid.putPowerInfo()
 likwid.finalize()
