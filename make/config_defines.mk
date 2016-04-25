@@ -93,6 +93,10 @@ endif
 else
 ifeq ($(ACCESSMODE),accessdaemon)
 ifneq ($(COMPILER),MIC)
+ifneq ($(BUILDDAEMON),true)
+$(info Info: Compiling with accessdaemon access mode but without building the access daemon.);
+$(info Info: Make sure an accessdaemon is installed and the paths ACCESSDAEMON and INSTALLED_ACCESSDAEMON point to it);
+endif
 DEFINES += -DACCESSMODE=1
 else
 $(info Info: Compiling for Xeon Phi. Set accessmode to direct.);
