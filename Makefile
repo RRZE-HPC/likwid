@@ -412,6 +412,9 @@ local: $(L_APPS) likwid.lua
 	@ln -sf liblikwid.so liblikwid.so.$(VERSION)
 	@ln -sf ext/hwloc/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION)
 	@ln -sf ext/lua/liblikwid-lua.so liblikwid-lua.so.$(VERSION)
+	@ln -sf liblikwid.so liblikwid.so.$(VERSION).$(RELEASE)
+	@ln -sf ext/hwloc/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION).$(RELEASE)
+	@ln -sf ext/lua/liblikwid-lua.so liblikwid-lua.so.$(VERSION).$(RELEASE)
 	@echo "export LD_LIBRARY_PATH=$(PWD):$$LD_LIBRARY_PATH"
 
 testit: test/test-likwidAPI.c
