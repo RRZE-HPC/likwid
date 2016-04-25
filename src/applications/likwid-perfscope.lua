@@ -58,17 +58,17 @@ local predefined_plots = {
         perfgroup = "L2",
         ymetricmatch = "L2D load bandwidth [MBytes/s]",
         title = "L2 cache bandwidth",
-        ytitle = "Bandwidth [MBytes/s]",
+        ytitle = "Load Bandwidth [MBytes/s]",
         y2metricmatch = "L2D evict bandwidth [MBytes/s]",
-        y2title = "Bandwidth [MBytes/s]",
+        y2title = "Evict Bandwidth [MBytes/s]",
         xtitle = "Time"
     },
     L3 = {
         perfgroup = "L3",
         ymetricmatch = "L3 load bandwidth [MBytes/s]",
         title = "L3 cache bandwidth",
-        ytitle = "Bandwidth [MBytes/s]",
-        y2title = "Bandwidth [MBytes/s]",
+        ytitle = "Load Bandwidth [MBytes/s]",
+        y2title = "Evict Bandwidth [MBytes/s]",
         y2metricmatch = "L3 evict bandwidth [MBytes/s]",
         xtitle = "Time"
     },
@@ -259,6 +259,7 @@ end
 
 for i, event_def in pairs(eventStrings) do
     local eventlist = likwid.stringsplit(event_def,",")
+
     event_string = nil
     plotgroup = nil
     plotgroupconfig = nil
@@ -328,7 +329,8 @@ for i, event_def in pairs(eventStrings) do
             end
         end
     end
-    for j,estr in pairs(likwid.stringsplit(outopts, ":")) do
+
+    --[[for j,estr in pairs(likwid.stringsplit(outopts, ":")) do
         if estr:match("^title=([%g%s]+)") then
             title = estr:match("^title=([%g%s]+)")
         elseif estr:match("^TITLE=([%g%s]+)") then
@@ -365,7 +367,8 @@ for i, event_def in pairs(eventStrings) do
                 table.insert(formulalist, {name=fname, formula=form})
             end
         end
-    end
+    end]]
+
     group_list[i]["eventstring"] = event_string
     group_list[i]["counterlist"] = {}
     for k=1,#groupdata["Events"] do
@@ -502,9 +505,6 @@ while true do
     local l = perfctr:read("*line")
     if l == nil or l:match("^%s*$") then
         break
-    elseif l:match("^ERROR") then
-        perfctr_exited = true
-        break
     end
     if l:match("^%d+ %d+ %d+ [%d.]+ %d+") then
         local data = {}
@@ -532,16 +532,6 @@ while true do
             if flist["index"] ~= nil then
                 for i=1,nr_threads do
                     str = str .." ".. data[flist["index"]][i]
-                end
-            else
-                counterlist = {}
-                counterlist["time"] = mfreq
-                counterlist["inverseClock"] = 1.0/clock
-                for i=1,nr_threads do
-                    for e=1, nr_events do
-                        counterlist[group_list[group]["counterlist"][e]] = data[e][i]
-                    end
-                    str = str .." ".. tostring(likwid.calculate_metric(flist["formula"], counterlist))
                 end
             end
         end
