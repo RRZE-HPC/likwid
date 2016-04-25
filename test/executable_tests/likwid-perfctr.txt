@@ -40,6 +40,6 @@
 -S 1s -C M:scatter -g BRANCH | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP Branch
 -c 0 -g BRANCH hostname | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP Branch
 -C 0 -g BRANCH hostname | EXIT 0 | GREP Measuring group BRANCH | GREP core 0 | GREP Branch
--C 0 -g BRANCH -m hostname | EXIT 1 | GREP Cannot find intermediate results file
+-C 0 -g BRANCH -m hostname | EXIT 1 | GREP No regions
 -C 0 -g BRANCH -t 200ms hostname | EXIT 0 | GREP CORES: 0
 -C 0 -g BRANCH -m ../streamGCC | EXIT 0 | GREP Region triad | GREP Region copy

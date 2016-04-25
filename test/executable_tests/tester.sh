@@ -4,7 +4,7 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-EXECPATH=../..
+EXECPATH=/usr/local/bin
 EXEC=$1
 TMPFILE=/tmp/testout
 FREQ="2.3"
