@@ -882,14 +882,14 @@ int calculate_infix(char* finfix, double *result)
     token* tokens = NULL;
     Stack expr;
     nrCalcTokens = 0;
-    calcTokens = (token*)malloc(10 * sizeof(token));
+    int numTokens = tokenize(finfix, &tokens);
+    calcTokens = (token*)malloc(2 * numTokens * sizeof(token));
     if (calcTokens == NULL)
     {
         ret = -1;
         *result = NAN;
     }
-    memset(calcTokens, 0, 10 * sizeof(token));
-    int numTokens = tokenize(finfix, &tokens);
+    memset(calcTokens, 0, 2 * numTokens * sizeof(token));
     stackInit(&expr, 2*numTokens);
     ret = postfix(tokens, numTokens, &expr);
     if ((stackSize(&expr) != 1) || (ret < 0))
