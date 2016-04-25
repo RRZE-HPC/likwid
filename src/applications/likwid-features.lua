@@ -86,8 +86,13 @@ for opt,arg in likwid.getopt(arg, {"h","v","l","c:","e:","d:","a","help","versio
     elseif opt == "a" or opt == "all" then
         print("Available features:")
         for i=0,likwid.tablelength(likwid.cpuFeatures)-1 do
-            print(string.format("\t%s",likwid.cpuFeatures[i]))
+            if likwid.cpuFeatures[i]:match("PREFETCHER") then
+                print(string.format("\t%s*",likwid.cpuFeatures[i]))
+            else
+                print(string.format("\t%s",likwid.cpuFeatures[i]))
+            end
         end
+        print("Modifiable features are marked with *")
         os.exit(0)
     elseif opt == "e" or opt == "enable" then
         local tmp = likwid.stringsplit(arg, ",")
@@ -165,9 +170,9 @@ if #enableList > 0 then
         for j, f in pairs(enableList) do
             local ret = likwid.enableCpuFeatures(c, f, 1)
             if ret == 0 then
-                print(string.format("Enabled %s", likwid.cpuFeatures[f]))
+                print(string.format("Enabled %s for CPU %d", likwid.cpuFeatures[f], c))
             else
-                print(string.format("Failed %s", likwid.cpuFeatures[f]))
+                print(string.format("Failed %s for CPU %d", likwid.cpuFeatures[f], c))
             end
         end
     end
@@ -177,9 +182,9 @@ if #disableList > 0 then
         for j, f in pairs(disableList) do
             local ret = likwid.disableCpuFeatures(c, f, 1)
             if ret == 0 then
-                print(string.format("Disabled %s", likwid.cpuFeatures[f]))
+                print(string.format("Disabled %s for CPU %d", likwid.cpuFeatures[f], c))
             else
-                print(string.format("Failed %s", likwid.cpuFeatures[f]))
+                print(string.format("Failed %s for CPU %d", likwid.cpuFeatures[f], c))
             end
         end
     end
