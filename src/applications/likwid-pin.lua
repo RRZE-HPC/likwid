@@ -267,18 +267,7 @@ if (pid == nil) then
     os.exit(1)
 end
 
-while true do
-    local remain = 0
-    if likwid.getSignalState() ~= 0 then
-        likwid.killProgram()
-        break
-    end
-    remain = likwid.sleep(10E6)
-    if remain > 0 or not likwid.checkProgram() then
-        io.stdout:flush()
-        break
-    end
-end
+likwid.waitpid(pid)
 
 likwid.putAffinityInfo()
 likwid.putTopology()
