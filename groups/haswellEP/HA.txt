@@ -22,7 +22,7 @@ CPI  FIXC1/FIXC0
 Memory read bandwidth [MBytes/s] 1.0E-06*(BBOX0C0+BBOX1C0+BBOX0C1+BBOX1C1)*64.0/time
 Memory read data volume [GBytes] 1.0E-09*(BBOX0C0+BBOX1C0+BBOX0C1+BBOX1C1)*64.0
 Memory write bandwidth [MBytes/s] 1.0E-06*(BBOX0C2+BBOX1C2)*64.0/time
-Memory writo data volume [GBytes] 1.0E-09*(BBOX0C2+BBOX1C2)*64.0
+Memory write data volume [GBytes] 1.0E-09*(BBOX0C2+BBOX1C2)*64.0
 Memory bandwidth [MBytes/s] 1.0E-06*(BBOX0C0+BBOX1C0+BBOX0C1+BBOX1C1+BBOX0C2+BBOX1C2)*64.0/time
 Memory data volume [GBytes] 1.0E-09*(BBOX0C0+BBOX1C0+BBOX0C1+BBOX1C1+BBOX0C2+BBOX1C2)*64.0
 
@@ -31,7 +31,7 @@ Formulas:
 Memory read bandwidth [MBytes/s] = 1.0E-06*(SUM(IMC_READS_NORMAL)+SUM(BYPASS_IMC_TAKEN))*64.0/time
 Memory read data volume [GBytes] = 1.0E-09*(SUM(IMC_READS_NORMAL)+SUM(BYPASS_IMC_TAKEN))*64.0
 Memory write bandwidth [MBytes/s] = 1.0E-06*(SUM(IMC_WRITES_ALL))*64.0/time
-Memory writo data volume [GBytes] = 1.0E-09*(SUM(IMC_WRITES_ALL))*64.0
+Memory write data volume [GBytes] = 1.0E-09*(SUM(IMC_WRITES_ALL))*64.0
 Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(IMC_READS_NORMAL) + SUM(BYPASS_IMC_TAKEN) + SUM(IMC_WRITES_ALL))*64.0/time
 Memory data volume [GBytes] = 1.0E-09*(SUM(IMC_READS_NORMAL) + SUM(BYPASS_IMC_TAKEN) + SUM(IMC_WRITES_ALL))*64.0
 -

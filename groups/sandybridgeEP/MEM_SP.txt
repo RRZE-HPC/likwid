@@ -34,7 +34,7 @@ Scalar MUOPS/s 1.0E-06*PMC1/time
 Memory read bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0)*64.0/time
 Memory read data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0)*64.0
 Memory write bandwidth [MBytes/s] 1.0E-06*(MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1)*64.0/time
-Memory writo data volume [GBytes] 1.0E-09*(MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1)*64.0
+Memory write data volume [GBytes] 1.0E-09*(MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1)*64.0
 Memory bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1)*64.0/time
 Memory data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1)*64.0
 
@@ -49,7 +49,7 @@ Scalar MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_SCALAR_SINGLE/runtime
 Memory read bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0))*64.0/time
 Memory read data volume [GBytes] = 1.0E-09*(SUM(MBOXxC0))*64.0
 Memory write bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC1))*64.0/time
-Memory writo data volume [GBytes] = 1.0E-09*(SUM(MBOXxC1))*64.0
+Memory write data volume [GBytes] = 1.0E-09*(SUM(MBOXxC1))*64.0
 Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0/time
 Memory data volume [GBytes] = 1.0E-09*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0
 --

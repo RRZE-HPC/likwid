@@ -11,7 +11,7 @@ Runtime (RDTSC) [s] time
 Memory read bandwidth [MBytes/s]  1.0E-06*PMC0*64.0/time
 Memory read data volume [GBytes]  1.0E-09*PMC0*64.0
 Memory write bandwidth [MBytes/s]  1.0E-06*PMC1*8.0/time
-Memory writo data volume [GBytes]  1.0E-09*PMC1*8.0
+Memory write data volume [GBytes]  1.0E-09*PMC1*8.0
 Memory bandwidth [MBytes/s]   1.0E-06*(PMC2+PMC3)*64.0/time
 Memory data volume [GBytes]   1.0E-09*(PMC2+PMC3)*64.0
 
@@ -20,7 +20,7 @@ Formulas:
 Memory read bandwidth [MBytes/s] = 1.0E-06*NORTHBRIDGE_READ_RESPONSE_ALL*64/time
 Memory read data volume [GBytes] = 1.0E-09*NORTHBRIDGE_READ_RESPONSE_ALL*64
 Memory write bandwidth [MBytes/s] = 1.0E-06*OCTWORDS_WRITE_TRANSFERS*8/time
-Memory writo data volume [GBytes] = 1.0E-09*OCTWORDS_WRITE_TRANSFERS*8
+Memory write data volume [GBytes] = 1.0E-09*OCTWORDS_WRITE_TRANSFERS*8
 Memory bandwidth [MBytes/s] = 1.0E-06*(DRAM_ACCESSES_DCTO_ALL+DRAM_ACCESSES_DCT1_ALL)*64/time
 Memory data volume [GBytes] = 1.0E-09*(DRAM_ACCESSES_DCTO_ALL+DRAM_ACCESSES_DCT1_ALL)*64
 -

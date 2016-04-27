@@ -8,12 +8,12 @@ PMC1  SNP_HITM_L2
 METRICS
 Runtime (RDTSC) [s] time
 Memory write bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
-Memory writo data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
+Memory write data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
 
 LONG
 Formulas:
 Memory write bandwidth [MBytes/s] = 1.0E-06*(L2_VICTIM_REQ_WITH_DATA+SNP_HITM_L2)*64.0/time
-Memory writo data volume [GBytes] = 1.0E-09*(L2_VICTIM_REQ_WITH_DATA+SNP_HITM_L2)*64.0
+Memory write data volume [GBytes] = 1.0E-09*(L2_VICTIM_REQ_WITH_DATA+SNP_HITM_L2)*64.0
 -
 Bandwidth and data volume of write operations from the L2 cache to memory. The
 metric is introduced in the book 'Intel Xeon Phi Coprocessor High-Performance
