@@ -317,7 +317,7 @@ if not print_info and not print_temp then
                         if (power["domains"][dom]["supportStatus"]) then after[cpu][dom] = likwid.stopPower(cpu, idx) end
                     end
                 end
-                if remain > 0 or not likwid.checkProgram() then
+                if remain > 0 or not likwid.checkProgram(pid) then
                     io.stdout:flush()
                     break
                 end
