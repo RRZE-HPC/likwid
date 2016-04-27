@@ -1791,6 +1791,15 @@ static int lua_likwid_startProgram(lua_State* L)
 }
 static int lua_likwid_checkProgram(lua_State* L)
 {
+    if (lua_gettop(L) == 1)
+    {
+        int status;
+        pid_t retpid;
+        pid_t pid = lua_tonumber(L, 1);
+        retpid = waitpid(pid, &status, WNOHANG);
+        if (retpid == pid)
+            program_running = 0;
+    }
     lua_pushboolean(L, program_running);
     return 1;
 }
@@ -1803,6 +1812,13 @@ static int lua_likwid_killProgram(lua_State* L)
     return 0;
 }
 
+static int lua_likwid_waitwid(lua_State* L)
+{
+    int status;
+    pid_t pid = lua_tonumber(L, 1);
+    waitpid(pid, &status, 0);
+    return 0;
+}
 
 static int lua_likwid_memSweep(lua_State* L)
 {
@@ -2208,10 +2224,11 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_startProgram", lua_likwid_startProgram);
     lua_register(L, "likwid_checkProgram", lua_likwid_checkProgram);
     lua_register(L, "likwid_killProgram", lua_likwid_killProgram);
-    // Verbosity functions
-    lua_register(L, "likwid_setVerbosity", lua_likwid_setVerbosity);
     lua_register(L, "likwid_catchSignal", lua_likwid_catch_signal);
     lua_register(L, "likwid_getSignalState", lua_likwid_return_signal_state);
+    lua_register(L, "likwid_waitwid", lua_likwid_waitwid);
+    // Verbosity functions
+    lua_register(L, "likwid_setVerbosity", lua_likwid_setVerbosity);
     // Marker API functions
     lua_register(L, "likwid_markerInit", lua_likwid_markerInit);
     lua_register(L, "likwid_markerThreadInit", lua_likwid_markerThreadInit);

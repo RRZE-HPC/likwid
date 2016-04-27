@@ -112,6 +112,7 @@ likwid.checkProgram = likwid_checkProgram
 likwid.killProgram = likwid_killProgram
 likwid.catchSignal = likwid_catchSignal
 likwid.getSignalState = likwid_getSignalState
+likwid.waitpid = likwid_waitwid
 likwid.cpustr_to_cpulist = likwid_cpustr_to_cpulist
 likwid.nodestr_to_nodelist = likwid_nodestr_to_nodelist
 likwid.sockstr_to_socklist = likwid_sockstr_to_socklist
