@@ -117,6 +117,9 @@ typedef enum
 } Error;
 
 typedef char* token;
+/* Added by Thomas Roehl (Thomas.Roehl@fau.de) to keep track of the
+ * intermediate calculation results to free them in the end
+ */
 token* calcTokens = NULL;
 int nrCalcTokens = 0;
 
@@ -705,6 +708,9 @@ int evalStackPush(Stack *s, token val)
                     ret = doOp(l, val, r, &res);
                     // Push result
                     stackPush(s, res);
+                    /* Added by Thomas Roehl (Thomas.Roehl@fau.de)
+                     * Keeping track of the intermediate results
+                     */
                     calcTokens[nrCalcTokens] = res;
                     nrCalcTokens++;
                 }
