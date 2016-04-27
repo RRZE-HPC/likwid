@@ -649,7 +649,7 @@ if use_wrapper or use_timeline then
             break
         end
         local remain = likwid.sleep(duration)
-        if remain > 0 or not likwid.checkProgram() then
+        if remain > 0 or not likwid.checkProgram(pid) then
             io.stdout:flush()
             break
         end
