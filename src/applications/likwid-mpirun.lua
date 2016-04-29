@@ -216,7 +216,7 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
 
-    local f = io.popen(string.format("%s -V", mpiexecutable), "r")
+    local f = io.popen(string.format("%s -V 2>&1", mpiexecutable), "r")
     if f ~= nil then
         local input = f:read("*a")
         ver1,ver2,ver3 = input:match("(%d+)%.(%d+)%.(%d+)")
@@ -470,6 +470,87 @@ local function readHostfilePBS(filename)
     return hostlist
 end
 
+local function readHostfileSlurm(hostlist)
+    nperhost = tonumber(os.getenv("SLURM_TASKS_PER_NODE"):match("(%d+)"))
+    if hostlist and nperhost then
+        hostfile = write_hostlist_to_file(hostlist, nperhost)
+        hosts = readHostfilePBS(hostfile)
+        os.remove(hostfile)
+    end
+    return hosts
+end
+
+function write_hostlist_to_file(hostlist, nperhost)
+    if hostlist == "" then
+        return {}
+    end
+    outlist = {}
+    list = likwid.stringsplit(hostlist, ",")
+    for i, item in pairs(list) do
+        if not item:match("%[") then
+            table.insert(outlist, item)
+        else
+            prefixzeros = 0
+            
+            host, start, ende,remain = item:match("(%w+)%[(%d+)-(%d+)%]([%w%d%[%]-]*)")
+            if host and start and ende then
+                if tonumber(start) ~= 0 then
+                    for j=1,#start do
+                        if start:sub(j,j+1) == '0' then
+                            prefixzeros = prefixzeros + 1
+                        end
+                    end
+                end
+                if start and ende then
+                    for j=start,ende do
+                        newh = host..string.rep("0", prefixzeros)..tostring(math.tointeger(j))
+                        if remain then
+                            newh = newh .. remain
+                        end
+                        table.insert(outlist, newh)
+                    end
+                end
+            end
+        end
+    end
+    fname = string.format("/tmp/hostlist.%d", likwid.getpid())
+    f = io.open(fname, "w")
+    if f ~= nil then
+        for i=1,#outlist do
+            for j=1, nperhost do
+                f:write(outlist[i].."\n")
+            end
+        end
+        f:close()
+    end
+    return fname
+end
+
+local function writeHostfileSlurm(hostlist, filename)
+    l = {}
+    
+    for i, h in pairs(hostlist) do
+        table.insert(l, h["hostname"])
+    end
+    print("SLURM_NODELIST", table.concat(l,","))
+    likwid.setenv("SLURM_NODELIST", table.concat(l,","))
+end
+
+local function getEnvironmentSlurm()
+    return {}
+end
+
+local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
+    if wrapperscript.sub(1,1) ~= "/" then
+        wrapperscript = os.getenv("PWD").."/"..wrapperscript
+    end
+    
+    local exec = string.format("srun -N %d --ntasks-per-node=%d --cpu_bind=none %s", nrNodes, ppn, wrapperscript)
+    if debug then
+        print("EXEC: "..exec)
+    end
+    os.execute(exec)
+end
 local function getNumberOfNodes(hostlist)
     local n = 0
     for i, h in pairs(hostlist) do
@@ -489,6 +570,9 @@ end
 
 local function getMpiType()
     local mpitype = nil
+    if os.getenv("SLURM_JOB_ID") ~= nil then
+        return "slurm"
+    end
     cmd = "bash -c 'tclsh /apps/modules/modulecmd.tcl sh list -t' 2>&1"
     local f = io.popen(cmd, 'r')
     if f == nil then
@@ -573,6 +657,12 @@ local function getMpiExec(mpitype)
         readHostfile = readHostfileMvapich2
         writeHostfile = writeHostfileMvapich2
         getEnvironment = getEnvironmentMvapich2
+    elseif mpitype == "slurm" then
+        testing = {"srun"}
+        executeCommand = executeSlurm
+        readHostfile = readHostfileSlurm
+        writeHostfile = writeHostfileSlurm
+        getEnvironment = getEnvironmentSlurm
     end
     
     for i, exec in pairs(testing) do
@@ -593,6 +683,8 @@ local function getOmpType()
         cmd = string.format("ldd %s", executable[1])
         f = io.popen(cmd, 'r')
     end
+    omptype = nil
+    dyn_linked = true
     if f ~= nil then
         local s = f:read('*a')
         f:close()
@@ -603,10 +695,14 @@ local function getOmpType()
             elseif line:match("libiomp%d*.so") then
                 omptype = "intel"
                 break
+            elseif line:match("not a dynamic executable") then
+                omptype = "none"
+                dyn_linked = false
+                break
             end
         end
     end
-    if not omptype then
+    if not omptype and dyn_linked == false then
         print("WARN: Cannot get OpenMP variant from executable, trying module system")
         cmd = "bash -c 'tclsh /apps/modules/modulecmd.tcl sh list -t' 2>&1"
         local f = io.popen(cmd, 'r')
@@ -631,6 +727,9 @@ local function getOmpType()
             print("WARN: No supported OpenMP loaded in module system")
         end
     end
+    if omptype == "none" then
+        return nil
+    end
     return omptype
 end
 
@@ -638,6 +737,14 @@ local function assignHosts(hosts, np, ppn)
     tmp = np
     newhosts = {}
     current = 0
+    if debug then
+        print(string.format("Assign %d processes with %d per node to %d hosts", np, ppn, #hosts))
+        print("Available hosts for scheduling:")
+        print("Host", "Slots", "MaxSlots", "Interface")
+        for i, h in pairs(hosts) do
+            print (h["hostname"], h["slots"], h["maxslots"],"", h["interface"])
+        end
+    end
     local break_while = false
     while tmp > 0 and #hosts > 0 do
         for i, host in pairs(hosts) do
@@ -647,6 +754,9 @@ local function assignHosts(hosts, np, ppn)
                                             slots=host["maxslots"],
                                             maxslots=host["maxslots"],
                                             interface=host["interface"]})
+                    if debug then
+                        print(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], host["maxslots"]))
+                    end
                     current = host["maxslots"]
                     hosts[i] = nil
                 else
@@ -654,6 +764,9 @@ local function assignHosts(hosts, np, ppn)
                                             slots=ppn,
                                             maxslots=host["slots"],
                                             interface=host["interface"]})
+                    if debug then
+                        print(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], ppn))
+                    end
                     current = ppn
                     hosts[i] = nil
                 end
@@ -691,10 +804,13 @@ local function assignHosts(hosts, np, ppn)
                                         slots=ppn,
                                         maxslots=host["slots"],
                                         interface=host["interface"]})
+                if debug then
+                    print(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], ppn))
+                end
                 current = ppn
             end
             tmp = tmp - current
-            if tmp <= 1 then
+            if tmp < 1 then
                 break_while = true
                 break
             elseif tmp < ppn then
@@ -941,12 +1057,16 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
         losize_var = "$OMPI_COMM_WORLD_LOCAL_SIZE"
     elseif mpitype == "intelmpi" then
         glrank_var = "${PMI_RANK:-$(($GLOBALSIZE * 2))}"
-        glsize_var = tostring(np)
-        losize_var = tostring(ppn)
+        glsize_var = tostring(math.tointeger(np))
+        losize_var = tostring(math.tointeger(ppn))
     elseif mpitype == "mvapich2" then
         glrank_var = "${PMI_RANK:-$(($GLOBALSIZE * 2))}"
-        glsize_var = tostring(np)
-        losize_var = tostring(ppn)
+        glsize_var = tostring(math.tointeger(np))
+        losize_var = tostring(math.tointeger(ppn))
+    elseif mpitype == "slurm" then
+        glrank_var = "${PMI_RANK:-$(($GLOBALSIZE * 2))}"
+        glsize_var = tostring(math.tointeger(np))
+        losize_var = "$MPI_LOCALNRANKS"
     else
         print("Invalid MPI vendor "..mpitype)
         return
@@ -954,9 +1074,9 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
 
     local taillength = np % ppn
     if taillength ~= 0 then
-        local full = tostring(np -taillength)
-        table.insert(oversubscripted, "if [ $GLOBALRANK >= "..full.." ]; then\n")
-        table.insert(oversubscripted, "\tLOCALRANK=$($GLOBALRANK - "..full..")\n")
+        local full = tostring(math.tointeger(np -taillength))
+        table.insert(oversubscripted, "if [ $GLOBALRANK >= "..tostring(math.tointeger(full)).." ]; then\n")
+        table.insert(oversubscripted, "\tLOCALRANK=$($GLOBALRANK - "..tostring(math.tointeger(full))..")\n")
         table.insert(oversubscripted, "fi\n")
     end
 
@@ -1001,7 +1121,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
         commands[i] = table.concat(cmd, " ")
     end
 
-    f:write("#!/bin/bash\n")
+    f:write("#!/bin/bash -l\n")
     f:write("GLOBALSIZE="..glsize_var.."\n")
     f:write("GLOBALRANK="..glrank_var.."\n")
     f:write("unset OMP_NUM_THREADS\n")
@@ -1012,12 +1132,14 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
 
     if mpitype == "openmpi" then
         f:write("LOCALRANK=$OMPI_COMM_WORLD_LOCAL_RANK\n\n")
+    elseif mpitype  == "slurm" then
+        f:write("LOCALRANK=$MPI_LOCALRANKID\n\n")
     else
-        local full = tostring(np - (np % ppn))
-        f:write("if [ \"$GLOBALRANK\" -lt "..full.." ]; then\n")
+        local full = tostring(math.tointeger(np - (np % ppn)))
+        f:write("if [ \"$GLOBALRANK\" -lt "..tostring(math.tointeger(full)).." ]; then\n")
         f:write("\tLOCALRANK=$(($GLOBALRANK % $LOCALSIZE))\n")
         f:write("else\n")
-        f:write("\tLOCALRANK=$(($GLOBALRANK - ("..full.." - 1)))\n")
+        f:write("\tLOCALRANK=$(($GLOBALRANK - ("..tostring(math.tointeger(full)).." - 1)))\n")
         f:write("fi\n\n")
     end
 
@@ -1182,7 +1304,6 @@ local function parseMarkerOutputFile(filename)
         if (not line:match("^-")) and
            (not line:match("^CPU type:")) and
            (not line:match("^CPU name:")) and
-           (not line:match("^TABLE")) and
            (not line:match("STAT")) then
 
             if line:match("^STRUCT,Info") and not parse_reg_info then
@@ -1196,9 +1317,9 @@ local function parseMarkerOutputFile(filename)
             elseif line:match("^CPU clock:,") then
                 clock = line:match("^CPU clock:,([%d.]+)")
                 clock = tonumber(clock)*1.E09
-            elseif parse_reg_info and line:match("^%d+,%g+") then
-                gidx, gname, current_region = line:match("^(%d+),(%g+),(%g+)")
-                gidx = tonumber(gidx)
+            elseif parse_reg_info and line:match("TABLE,Region (%g+),Group (%d+) Raw,(%g+),") then
+                current_region, gidx, gname  = line:match("TABLE,Region (%g+),Group (%d+) Raw,(%g+),")
+                gidx = tonumber(gidx)+1
                 if results[current_region] == nil then
                     results[current_region] = {}
                 end
@@ -1244,20 +1365,22 @@ local function parseMarkerOutputFile(filename)
                 end
             elseif parse_reg_output then
                 linelist = likwid.stringsplit(line,",")
-                table.remove(linelist,1)
-                table.remove(linelist,1)
-                for j=#linelist,1,-1 do
-                    if linelist[j] == "" then
-                        table.remove(linelist, j)
+                if linelist[2] ~= "TSC" then
+                    table.remove(linelist,1)
+                    table.remove(linelist,1)
+                    for j=#linelist,1,-1 do
+                        if linelist[j] == "" then
+                            table.remove(linelist, j)
+                        end
                     end
+                    if results[current_region][gidx][idx] == nil then
+                        results[current_region][gidx][idx] = {}
+                    end
+                    for j, value in pairs(linelist) do
+                        results[current_region][gidx][idx][cpulist[j]] = tonumber(value)
+                    end
+                    idx = idx + 1
                 end
-                if results[current_region][gidx][idx] == nil then
-                    results[current_region][gidx][idx] = {}
-                end
-                for j, value in pairs(linelist) do
-                    results[current_region][gidx][idx][cpulist[j]] = tonumber(value)
-                end
-                idx = idx + 1
             end
         end
     end
@@ -1268,8 +1391,52 @@ local function parseMarkerOutputFile(filename)
     return host, tonumber(rank), results, cpulist
 end
 
-function printMpiOutput(group_list, all_results)
 
+function percentile_table(inputtable, skip_cols, skip_lines)
+    local function percentile(sorted_valuelist, k)
+        index = tonumber(k)/100.0 * #sorted_valuelist
+        if index - math.floor(index) >= 0.5 then
+            index = math.ceil(index)
+        else
+            index = math.floor(index)
+        end
+        return tonumber(sorted_valuelist[index])
+    end
+    local outputtable = {}
+    local ncols = #inputtable
+    if ncols == 0 then
+        return outputtable
+    end
+    local nlines = #inputtable[1]
+    if nlines == 0 then
+        return outputtable
+    end
+    perc25 = {"%ile 25"}
+    perc50 = {"%ile 50"}
+    perc75 = {"%ile 75"}
+    for i=skip_lines+1,nlines do
+        perc25[i-skip_lines+1] = 0
+        perc50[i-skip_lines+1] = 0
+        perc75[i-skip_lines+1] = 0
+    end
+    for l=skip_lines+1,nlines do
+        valuelist = {}
+        for c=skip_cols+1, ncols do
+            table.insert(valuelist, inputtable[c][l])
+        end
+        table.sort(valuelist)
+        perc25[l-skip_lines+1] = likwid.num2str(percentile(valuelist, 25))
+        perc50[l-skip_lines+1] = likwid.num2str(percentile(valuelist, 50))
+        perc75[l-skip_lines+1] = likwid.num2str(percentile(valuelist, 75))
+    end
+    table.insert(outputtable, perc25)
+    table.insert(outputtable, perc50)
+    table.insert(outputtable, perc75)
+    return outputtable
+end
+
+function printMpiOutput(group_list, all_results, regionname)
+    region = regionname or nil
     if #group_list == 0 or likwid.tablelength(all_results) == 0 then
         return
     end
@@ -1318,10 +1485,10 @@ function printMpiOutput(group_list, all_results)
                     table.insert(column, all_results[rank]["results"][gidx]["calls"][cpu])
                 end
                 for j=1,#gdata["Events"] do
-                    local value = 0
+                    local value = "0"
                     if all_results[rank]["results"][gidx][j] and
                        all_results[rank]["results"][gidx][j][cpu] then
-                        value = all_results[rank]["results"][gidx][j][cpu]
+                        value = likwid.num2str(all_results[rank]["results"][gidx][j][cpu])
                     end
                     table.insert(column, value)
                 end
@@ -1353,11 +1520,8 @@ function printMpiOutput(group_list, all_results)
                     counterlist["inverseClock"] = 1.0/all_results[rank]["results"]["clock"]
                     tmpList = {all_results[rank]["hostname"]..":"..tostring(rank)..":"..tostring(cpu)}
                     for j=1,#groupdata["Metrics"] do
-                        local tmp = likwid.calculate_metric(gdata["Metrics"][j]["formula"], counterlist)
-                        if tostring(tmp):len() > 12 then
-                            tmp = string.format("%e",tmp)
-                        end
-                        table.insert(tmpList, tostring(tmp))
+                        local tmp = likwid.num2str(likwid.calculate_metric(gdata["Metrics"][j]["formula"], counterlist))
+                        table.insert(tmpList, tmp)
                     end
                     table.insert(secondtab,tmpList)
                 end
@@ -1365,6 +1529,10 @@ function printMpiOutput(group_list, all_results)
 
             if total_threads > 1 then
                 secondtab_combined = likwid.tableToMinMaxAvgSum(secondtab, 1, 1)
+                local tmp = percentile_table(secondtab, 1, 1)
+                for i, col in pairs(tmp) do
+                    table.insert(secondtab_combined, col)
+                end
             end
         end
         if use_csv then
@@ -1374,6 +1542,9 @@ function printMpiOutput(group_list, all_results)
                 if #secondtab > maxLineFields then maxLineFields = #secondtab end
                 if #secondtab_combined > maxLineFields then maxLineFields = #secondtab_combined end
             end
+            if region then
+                print("Region,"..tostring(region).. string.rep(",", maxLineFields  - 2))
+            end
             print("Group,"..tostring(gidx) .. string.rep(",", maxLineFields  - 2))
             likwid.printcsv(firsttab, maxLineFields)
             if total_threads > 1 then likwid.printcsv(firsttab_combined, maxLineFields) end
@@ -1382,6 +1553,9 @@ function printMpiOutput(group_list, all_results)
                 if total_threads > 1 then likwid.printcsv(secondtab_combined, maxLineFields) end
             end
         else
+            if region then
+                print("Region: "..tostring(region))
+            end
             print("Group: "..tostring(gidx))
             likwid.printtable(firsttab)
             if total_threads > 1 then likwid.printtable(firsttab_combined) end
@@ -1391,6 +1565,14 @@ function printMpiOutput(group_list, all_results)
             end
         end
     end
+end
+
+
+
+function cpuCount()
+    cputopo = likwid.getCpuTopology()
+    local cpus = cputopo["activeHWThreads"]
+    return cpus
 end
 
 if #arg == 0 then
@@ -1493,8 +1675,8 @@ if mpitype == nil then
         print("DEBUG: Using MPI implementation "..mpitype)
     end
 end
-if mpitype ~= "intelmpi" and mpitype ~= "mvapich2" and mpitype ~= "openmpi" then
-    print("ERROR: Cannot determine current MPI implementation. likwid-mpirun checks for openmpi, intelmpi and mvapich2")
+if mpitype ~= "intelmpi" and mpitype ~= "mvapich2" and mpitype ~= "openmpi" and mpitype ~= "slurm" then
+    print("ERROR: Cannot determine current MPI implementation. likwid-mpirun checks for openmpi, intelmpi and mvapich2 or if running in a SLURM environment")
     os.exit(1)
 end
 
@@ -1515,18 +1697,19 @@ if omptype == nil then
 end
 
 if not hostfile then
-    hostfile = os.getenv("PBS_NODEFILE")
-    if not hostfile or hostfile == "" then
+    if os.getenv("PBS_NODEFILE") ~= nil then
+        hostfile = os.getenv("PBS_NODEFILE")
+        hosts = readHostfilePBS(hostfile)
+    elseif os.getenv("LOADL_HOSTFILE") ~= nil then
         hostfile = os.getenv("LOADL_HOSTFILE")
+        hosts = readHostfilePBS(hostfile)
+    elseif mpitype == "slurm" and os.getenv("SLURM_NODELIST") ~= nil then
+        hostlist = os.getenv("SLURM_NODELIST")
+        hosts = readHostfileSlurm(hostlist)
+    else
+        local cpus = cpuCount()
+        table.insert(hosts, {hostname='localhost', slots=cpus, maxslots=cpus})
     end
-    if not hostfile or hostfile == "" then
-        hostfile = os.getenv("SLURM_HOSTFILE")
-    end
-    if not hostfile or hostfile == "" then
-        print("ERROR: No hostfile given and not in batch environment")
-        os.exit(1)
-    end
-    hosts = readHostfilePBS(hostfile)
 else
     hosts = readHostfile(hostfile)
 end
@@ -1595,6 +1778,8 @@ end
 
 if #cpuexprs > 0 then
     cpuexprs = calculatePinExpr(cpuexprs)
+    likwid.tableprint(cpuexprs)
+    print(#cpuexprs)
     ppn = #cpuexprs
     if np == 0 then
         if debug then
@@ -1604,6 +1789,7 @@ if #cpuexprs > 0 then
         ppn = #cpuexprs
     elseif np < #cpuexprs*givenNrNodes then
         while np < #cpuexprs*givenNrNodes and #cpuexprs > 1 do
+            print("remove")
             table.remove(cpuexprs)
         end
         ppn = #cpuexprs
@@ -1747,6 +1933,7 @@ if not use_marker then
     end
 else
     local tmpList = {}
+    local cpuCount = 0
     for i, file in pairs(filelist) do
         host, rank, results, cpulist = parseMarkerOutputFile(file)
         if host ~= nil and rank ~= nil then
@@ -1755,17 +1942,17 @@ else
             end
             all_results[rank]["hostname"] = host
             all_results[rank]["cpus"] = cpulist
+            cpuCount = cpuCount + #cpulist
             tmpList[rank] = results
             os.remove(file)
         end
     end
     if likwid.tablelength(all_results) > 0 then
         for reg, _ in pairs(tmpList[0]) do
-            print("Region: "..reg)
             for rank,_ in pairs(all_results) do
                 all_results[rank]["results"] = tmpList[rank][reg]
             end
-            printMpiOutput(grouplist, all_results)
+            printMpiOutput(grouplist, all_results, reg)
         end
     end
 end
