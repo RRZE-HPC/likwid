@@ -41,7 +41,7 @@
 #define LOCK_INIT -1
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
-#define LIKWIDLOCK  /tmp/likwid.lock
+#define LIKWIDLOCK  /var/run/likwid.lock
 
 static inline int lock_acquire(int* var, int newval)
 {
