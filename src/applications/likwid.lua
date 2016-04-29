@@ -312,7 +312,7 @@ local function calculate_metric(formula, counters_to_values)
     end
     if not err then
         if formula then
-            result = assert(loadstring("return (" .. formula .. ")")())
+            result = assert(load("return (" .. formula .. ")")())
             if (result == nil or result ~= result or result == infinity or result == -infinity) then
                 result = 0
             end
@@ -640,7 +640,22 @@ end
 
 likwid.parse_time = parse_time
 
+local function num2str(value)
+    local tmp = "0"
+    if value ~= 0 then
+        if tostring(value):match("%.0$") or value == math.tointeger(value) then
+            tmp = tostring(math.tointeger(value))
+        elseif string.format("%.4f", value):len() < 12 and
+            tonumber(string.format("%.4f", value)) ~= 0 then
+            tmp = string.format("%.4f", value)
+        else
+            tmp = string.format("%e", value)
+        end
+    end
+    return tmp
+end
 
+likwid.num2str = num2str
 
 local function min_max_avg(values)
     min = math.huge
@@ -692,6 +707,12 @@ local function tableMinMaxAvgSum(inputtable, skip_cols, skip_lines)
             end
             avgOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1]/(nr_columns-skip_cols)
         end
+    end
+    for i=2,#minOfLine do
+        minOfLine[i] = likwid.num2str(minOfLine[i])
+        maxOfLine[i] = likwid.num2str(maxOfLine[i])
+        sumOfLine[i] = likwid.num2str(sumOfLine[i])
+        avgOfLine[i] = likwid.num2str(avgOfLine[i])
     end
 
     local tmptable = {}
@@ -767,15 +788,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
             end
             
             for e, event in pairs(group) do
-                local tmp = ""
-                if math.tointeger(event[c]) ~= event[c] then
-                    tmp = tostring(event[c])
-                else
-                    tmp = tostring(math.tointeger(event[c]))
-                end
-                if tmp:len() > 12 then
-                    tmp = string.format("%e", event[c])
-                end
+                local tmp = tostring(likwid.num2str(event[c]))
                 table.insert(tmpList, tmp)
             end
             table.insert(firsttab, tmpList)
@@ -793,16 +806,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
             for c, cpu in pairs(cpulist) do
                 local tmpList = {"Core "..tostring(cpu)}
                 for m=1, likwid.getNumberOfMetrics(g) do
-                    local tmp = ""
-                    if math.tointeger(metrics[g][m][c]) ~= metrics[g][m][c] then
-                        tmp = tostring(metrics[g][m][c])
-                    else
-                        tmp = tostring(math.tointeger(metrics[g][m][c]))
-                    end
-                    --local tmp = tostring(metrics[g][m][c])
-                    if tmp:len() > 12 then
-                        tmp = string.format("%e", metrics[g][m][c])
-                    end
+                    local tmp = tostring(likwid.num2str(metrics[g][m][c]))
                     table.insert(tmpList, tmp)
                 end
                 table.insert(secondtab, tmpList)
