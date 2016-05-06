@@ -33,6 +33,12 @@ C-likwidAPI:
 C-likwidAPI-run: C-likwidAPI
 	./C-likwidAPI
 
+C-internalMarkerAPI:
+	$(CC) -g -fopenmp -DLIKWID_PERFMON -I$(PREFIX)/include -L$(PREFIX)/lib C-internalMarkerAPI.c -o C-internalMarkerAPI -llikwid -lm
+
+C-internalMarkerAPI-run: C-internalMarkerAPI
+	OMP_NUM_THREADS=3 ./C-internalMarkerAPI
+
 monitoring:
 	$(CC) -I$(PREFIX)/include -L$(PREFIX)/lib monitoring.c -o monitoring -llikwid -lm
 
@@ -53,6 +59,6 @@ Lua-likwidAPI-run: Lua-likwidAPI
 	./Lua-likwidAPI
 
 clean:
-	rm -f C-markerAPI C-likwidAPI F-markerAPI Lua-likwidAPI monitoring
+	rm -f C-markerAPI C-likwidAPI F-markerAPI Lua-likwidAPI monitoring C-internalMarkerAPI
 
-.PHONY: clean C-markerAPI C-likwidAPI F-markerAPI Lua-likwidAPI monitoring
+.PHONY: clean C-markerAPI C-likwidAPI F-markerAPI Lua-likwidAPI monitoring C-internalMarkerAPI
