@@ -18,7 +18,7 @@ FCFLAGS  = -module ./  # ifort
 PASFLAGS  = x86-64
 ASFLAGS  = 
 CPPFLAGS =
-LFLAGS   =  -pthread 
+LFLAGS   =  -pthread
 
 SHARED_CFLAGS = -fPIC -fvisibility=hidden
 SHARED_LFLAGS = -shared -fvisibility=hidden
