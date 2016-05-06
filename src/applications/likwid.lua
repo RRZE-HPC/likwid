@@ -976,7 +976,6 @@ local function getMarkerResults(filename, cpulist)
     for i=1, likwid.markerNumRegions() do
         local regionName = likwid.markerRegionTag(i)
         local groupID = likwid.markerRegionGroup(i)
-        local groupName = likwid.markerRegionGroup(i)
         local regionThreads = likwid.markerRegionThreads(i)
         results[i] = {}
         metrics[i] = {}
