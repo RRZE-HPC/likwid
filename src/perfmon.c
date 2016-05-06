@@ -1815,7 +1815,7 @@ perfmon_getLastResult(int groupId, int eventId, int threadId)
 double
 perfmon_getMetric(int groupId, int metricId, int threadId)
 {
-    int e;
+    int e = 0;
     double result = 0;
     CounterList clist;
     char* teststr = malloc(1024 * sizeof(char));
@@ -1865,7 +1865,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
 double
 perfmon_getLastMetric(int groupId, int metricId, int threadId)
 {
-    int e;
+    int e = 0;
     double result = 0;
     CounterList clist;
     if (unlikely(groupSet == NULL))
@@ -1915,8 +1915,8 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
 
 int __perfmon_switchActiveGroupThread(int thread_id, int new_group)
 {
-    int ret;
-    int i;
+    int ret = 0;
+    int i = 0;
     GroupState state;
     if (perfmon_initialized != 1)
     {
@@ -1961,8 +1961,8 @@ int __perfmon_switchActiveGroupThread(int thread_id, int new_group)
 int
 perfmon_switchActiveGroup(int new_group)
 {
-    int i=0;
-    int ret=0;
+    int i = 0;
+    int ret = 0;
     for(i=0;i<groupSet->numberOfThreads;i++)
     {
         ret = __perfmon_switchActiveGroupThread(groupSet->threads[i].thread_id, new_group);
@@ -2216,7 +2216,7 @@ char* perfmon_getGroupInfoLong(int groupId)
 
 int perfmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
 {
-    int ret;
+    int ret = 0;
     ret = get_groups(TOSTRING(GROUPPATH), cpuid_info.short_name, groups, shortinfos, longinfos);
     return ret;
 }
@@ -2242,7 +2242,7 @@ int perfmon_getNumberOfMetrics(int groupId)
 
 void perfmon_printMarkerResults()
 {
-    int i,j, k;
+    int i = 0, j = 0, k = 0;
     for (i=0; i<markerRegions; i++)
     {
         printf("Region %d : %s\n", i, bdata(markerResults[i].tag));
@@ -2328,6 +2328,20 @@ int perfmon_getEventsOfRegion(int region)
         return 0;
     }
     return markerResults[region].eventCount;
+}
+
+int perfmon_getMetricsOfRegion(int region)
+{
+    
+    if (region < 0 || region >= markerRegions)
+    {
+        return -EINVAL;
+    }
+    if (markerResults == NULL)
+    {
+        return 0;
+    }
+    return perfmon_getNumberOfMetrics(markerResults[region].groupID);
 }
 
 
@@ -2423,8 +2437,8 @@ double perfmon_getResultOfRegionThread(int region, int event, int thread)
 double
 perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
 {
-    int e, err;
-    double result;
+    int e = 0, err = 0;
+    double result = 0.0;
     CounterList clist;
     if (perfmon_initialized != 1)
     {
@@ -2475,11 +2489,12 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
 
 int perfmon_readMarkerFile(const char* filename)
 {
-    FILE* fp;
-    int i;
+    FILE* fp = NULL;
+    int i = 0;
     char buf[2048];
-    char *ptr;
-    int cpus, groups, regions;
+    buf[0] = '\0';
+    char *ptr = NULL;
+    int cpus = 0, groups = 0, regions = 0;
     
     if (filename == NULL)
     {
@@ -2537,8 +2552,9 @@ int perfmon_readMarkerFile(const char* filename)
     {
         if (strchr(buf,':'))
         {
-            int regionid, groupid;
+            int regionid = 0, groupid = 0;
             char regiontag[100];
+            regiontag[0] = '\0';
             sscanf(buf, "%d:%s-%d", &regionid, regiontag, &groupid);
             snprintf(regiontag, strlen(buf)-4, "%s", &(buf[2]));
             markerResults[regionid].groupID = groupid;
@@ -2546,10 +2562,11 @@ int perfmon_readMarkerFile(const char* filename)
         }
         else
         {
-            int regionid, groupid, cpu, count, nevents;
-            int cpuidx, eventidx;
+            int regionid = 0, groupid = 0, cpu = 0, count = 0, nevents = 0;
+            int cpuidx = 0, eventidx = 0;
             double time = 0;
             char remain[1024];
+            remain[0] = '\0';
             sscanf(buf, "%d %d %d %d %lf %d %[^\t\n]", &regionid, &groupid, &cpu, &count, &time, &nevents, remain);
             for (int i=0; i<groupSet->numberOfThreads; i++)
             {
@@ -2593,6 +2610,7 @@ void perfmon_destroyMarkerResults()
             {
                 free(markerResults[i].counters[j]);
             }
+            free(markerResults[i].counters);
             bdestroy(markerResults[i].tag);
         }
         free(markerResults);
