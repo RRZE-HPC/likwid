@@ -76,6 +76,7 @@ int get_listPosition(int ownid, bstring list)
             return i;
         }
     }
+    bstrListDestroy(tokens);
     return -1;
 }
 
@@ -111,8 +112,10 @@ int fillList(int* outList, int outOffset, bstring list)
                     current++;
                 }
             }
+            bstrListDestroy(range);
         }
     }
+    bstrListDestroy(tokens);
     return current;
 }
 
@@ -137,9 +140,9 @@ static int readCacheInclusiveAMD(int level)
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 void proc_init_cpuInfo(cpu_set_t cpuSet)
 {
-    int i;
+    int i = 0;
     int HWthreads = 0;
-    FILE *fp;
+    FILE *fp = NULL;
 
     int (*ownatoi)(const char*);
     char* (*ownstrcpy)(char*,const char*);
@@ -165,6 +168,8 @@ void proc_init_cpuInfo(cpu_set_t cpuSet)
     {
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
+        bdestroy(src);
+        fclose(fp);
         for (i=0;i<tokens->qty;i++)
         {
             if (binstr(tokens->entry[i],0,countString) != BSTR_ERR)
@@ -439,6 +444,7 @@ void proc_init_nodeTopology(cpu_set_t cpuSet)
                             hwThreadPool[i].threadId,
                             hwThreadPool[i].coreId,
                             hwThreadPool[i].packageId)
+        bdestroy(cpudir);
     }
     cpuid_topology.threadPool = hwThreadPool;
     return;
@@ -612,6 +618,7 @@ void proc_init_cacheTopology(void)
                 break;
         }
     }
+    bdestroy(cpudir);
     cpuid_topology.numCacheLevels = nrCaches;
     cpuid_topology.cacheLevels = cachePool;
     return;
