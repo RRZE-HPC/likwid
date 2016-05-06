@@ -237,12 +237,18 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
                 {
                     (*results)[*regionId].counters[threadId][j] = threadResult->PMcounters[j];
                 }
+                bdestroy(threadResult->label);
+                free(threadResult);
             }
 
             threadId++;
+            g_hash_table_destroy(resPtr->hashTable);
+            free(resPtr);
+            threadList[core] = NULL;
         }
     }
-
+    g_hash_table_destroy(regionLookup);
+    regionLookup = NULL;
     (*numThreads) = numberOfThreads;
     (*numRegions) = numberOfRegions;
 }
