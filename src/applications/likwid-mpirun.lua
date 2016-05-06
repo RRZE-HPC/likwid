@@ -107,17 +107,6 @@ end
 local LIKWID_PIN="<INSTALLED_PREFIX>/bin/likwid-pin"
 local LIKWID_PERFCTR="<INSTALLED_PREFIX>/bin/likwid-perfctr"
 
-local MPIROOT = os.getenv("MPIHOME")
-if MPIROOT == nil then
-    MPIROOT = os.getenv("MPI_ROOT")
-end
-if MPIROOT == nil then
-    MPIROOT = os.getenv("MPI_BASE")
-end
-if MPIROOT == nil then
-    MPIROOT = ""
-end
-
 local readHostfile = nil
 local writeHostfile = nil
 local getEnvironment = nil
@@ -325,23 +314,32 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
         end
     end
 
+    local envstr = ""
+    for i, e in pairs(env) do
+        if use_hydra then
+            envstr = envstr .. string.format("-genv %s %s ", i, e)
+        else
+            envstr = envstr .. string.format("-env %s %s ", i, e)
+        end
+    end
+
     if debug then
         if use_hydra == false then
             print(string.format("EXEC: %s/mpdboot -r ssh -n %d -f %s", path, nrNodes, hostfile))
-            print(string.format("EXEC: %s/mpiexec -perhost %d -env I_MPI_PIN 0 -np %d %s", path, ppn, np, wrapperscript))
+            print(string.format("EXEC: %s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
             print(string.format("EXEC: %s/mpdallexit", path))
         else
-            print(string.format("%s -genv I_MPI_PIN 0 -f %s -np %d -perhost %d %s",mpiexecutable, hostfile, np, ppn, wrapperscript))
+            print(string.format("%s %s -f %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
         end
     end
 
     --os.execute(string.format("%s -genv I_MPI_PIN 0 -f %s -np %d -perhost %d %s",mpiexecutable, hostfile, np, ppn, wrapperscript))
     if use_hydra == false then
         os.execute(string.format("%s/mpdboot -r ssh -n %d -f %s", path, nrNodes, hostfile))
-        os.execute(string.format("%s/mpiexec -perhost %d -env I_MPI_PIN 0 -np %d %s", path, ppn, np, wrapperscript))
+        os.execute(string.format("%s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
         os.execute(string.format("%s/mpdallexit", path))
     else
-        os.execute(string.format("%s -genv I_MPI_PIN 0 -f %s -np %d -perhost %d %s",mpiexecutable, hostfile, np, ppn, wrapperscript))
+        os.execute(string.format("%s %s -f %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
     end
 end
 
@@ -420,9 +418,15 @@ local function executeMvapich2(wrapperscript, hostfile, env, nrNodes)
     if hostfile.sub(1,1) ~= "/" then
         hostfile = os.getenv("PWD").."/"..hostfile
     end
-    local cmd = string.format("%s -f %s -np %d -ppn %d %s",
+
+    local envstr = ""
+    for i, e in pairs(env) do
+        envstr = envstr .. string.format("%s=%s ", i, e)
+    end
+
+    local cmd = string.format("%s -f %s -np %d -ppn %d %s %s",
                                 mpiexecutable, hostfile,
-                                np, ppn, wrapperscript)
+                                np, ppn, envstr, wrapperscript)
     if debug then
         print("EXEC: "..cmd)
     end
@@ -585,10 +589,10 @@ local function getMpiType()
         s = string.gsub(s, '^%s+', '')
         s = string.gsub(s, '%s+$', '')
         for i,line in pairs(likwid.stringsplit(s, "\n")) do
-            if line:match("[iI]ntel[mM][pP][iI]") then
+            if line:match("[iI]ntel[mM][pP][iI]") or (line:match("[iI]ntel") and line:match("[mM][pP][iI]")) then
                 mpitype = "intelmpi"
                 --libmpi%a*.so
-            elseif line:match("[oO]pen[mM][pP][iI]") then
+            elseif line:match("[oO]pen[mM][pP][iI]") or (line:match("[oO]pen") and line:match("[mM][pP][iI]")) then
                 mpitype = "openmpi"
                 --libmpi.so
             elseif line:match("mvapich2") then
@@ -716,9 +720,9 @@ local function getOmpType()
             s = string.gsub(s, '^%s+', '')
             s = string.gsub(s, '%s+$', '')
             for i,line in pairs(likwid.stringsplit(s, "\n")) do
-                if line:match("[iI]ntel") then
+                if line:match("[iI]ntel") or line:match("[iI][cC][cC]") then
                     omptype = "intel"
-                elseif line:match("[gG][nN][uU]") or line:match("[gG][cC][cC]")then
+                elseif line:match("[gG][nN][uU]") or line:match("[gG][cC][cC]") then
                     omptype = "gnu"
                 end
             end
@@ -1903,6 +1907,11 @@ local scriptfilename = string.format(".likwidscript_%s.txt", pid)
 local outfilename = string.format(os.getenv("PWD").."/.output_%s_%%r_%%h.csv", pid)
 
 checkLikwid()
+
+if writeHostfile == nil or writeWrapScript == nil or getEnvironment == nil or executeCommand == nil then
+    print("ERROR: Initialization for MPI specific functions failed")
+    os.exit(1)
+end
 
 writeHostfile(newhosts, hostfilename)
 writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, outfilename)
