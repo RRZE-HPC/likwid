@@ -373,6 +373,7 @@ void likwid_markerClose(void)
         free(results[i].time);
         bdestroy(results[i].tag);
         free(results[i].count);
+        free(results[i].cpulist);
         free(results[i].counters);
     }
 
