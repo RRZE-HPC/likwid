@@ -274,6 +274,8 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
     closedir(dp);
     if (!search_home)
     {
+        free(homepath);
+        free(fullpath);
         bdestroy(SHORT);
         bdestroy(LONG);
         return i;
