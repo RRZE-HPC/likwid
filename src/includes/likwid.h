@@ -925,6 +925,11 @@ char* perfmon_getTagOfRegion(int region) __attribute__ ((visibility ("default") 
 @return Number of events of region
 */
 int perfmon_getEventsOfRegion(int region) __attribute__ ((visibility ("default") ));
+/*! \brief Get the number of metrics of a region
+@param [in] region ID of region
+@return Number of metrics of region
+*/
+int perfmon_getMetricsOfRegion(int region) __attribute__ ((visibility ("default") ));
 /*! \brief Get the number of threads of a region
 @param [in] region ID of region
 @return Number of threads of region
