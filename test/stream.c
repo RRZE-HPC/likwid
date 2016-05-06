@@ -143,9 +143,11 @@ int main(int argn, char** argc)
         for (int k=0; k<ITER; k++)
         {
             LIKWID_MARKER_START("copy");
+#pragma simd
 #pragma omp for
             for (int j=0; j<SIZE; j++)
             {
+            
                 c[j] = a[j];
             }
             LIKWID_MARKER_STOP("copy");
@@ -162,9 +164,11 @@ int main(int argn, char** argc)
         {
 
             LIKWID_MARKER_START("triad");
+#pragma simd
 #pragma omp for
             for (int j=0; j<SIZE; j++)
             {
+
                 a[j] = b[j] +  c[j] * d[j];
             }
             LIKWID_MARKER_STOP("triad");
@@ -186,6 +190,10 @@ int main(int argn, char** argc)
 
 
     LIKWID_MARKER_CLOSE;
+    free(a);
+    free(b);
+    free(c);
+    free(d);
     return 0;
 }
 
