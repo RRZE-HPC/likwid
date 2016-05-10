@@ -120,6 +120,8 @@ $(L_HELPER):
 	@sed -e s/'<PREFIX>'/$(subst /,\\/,$(PREFIX))/g \
 		-e s/'<INSTALLED_LIBPREFIX>'/$(subst /,\\/,$(INSTALLED_LIBPREFIX))/g \
 		-e s/'<INSTALLED_PREFIX>'/$(subst /,\\/,$(INSTALLED_PREFIX))/g \
+		-e s/'<LIKWIDGROUPPATH>'/$(subst /,\\/,$(LIKWIDGROUPPATH))/g \
+		-e s/'<LIBLIKWIDPIN>'/$(subst /,\\/,$(LIBLIKWIDPIN))/g \
 		-e s/'<VERSION>'/$(VERSION)/g \
 		-e s/'<RELEASE>'/$(RELEASE)/g \
 		$(SRC_DIR)/applications/$@ > $@
@@ -197,7 +199,7 @@ ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
-.PHONY: clean distclean install uninstall $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
+.PHONY: clean distclean install uninstall help $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 
 
 .PRECIOUS: $(BUILD_DIR)/%.pas
@@ -239,19 +241,34 @@ install_daemon:
 	@echo "===> INSTALL access daemon to $(ACCESSDAEMON)"
 	@mkdir -p `dirname $(ACCESSDAEMON)`
 	@install -m 4775 $(INSTALL_CHOWN) $(DAEMON_TARGET) $(ACCESSDAEMON)
+move_daemon:
+	@echo "===> MOVE access daemon from $(ACCESSDAEMON) to $(INSTALLED_ACCESSDAEMON)"
+	@mkdir -p `dirname $(INSTALLED_ACCESSDAEMON)`
+	@install -m 4775 $(INSTALL_CHOWN) $(ACCESSDAEMON) $(INSTALLED_ACCESSDAEMON)
 uninstall_daemon:
 	@echo "===> REMOVING access daemon from $(ACCESSDAEMON)"
 	@rm -f $(ACCESSDAEMON)
+uninstall_daemon_moved:
+	@echo "===> REMOVING access daemon from $(INSTALLED_ACCESSDAEMON)"
+	@rm -f $(INSTALLED_ACCESSDAEMON)
 else
 install_daemon:
 	@echo "===> No INSTALL of the access daemon"
+move_daemon:
+	@echo "===> No MOVE of the access daemon"
 uninstall_daemon:
+	@echo "===> No UNINSTALL of the access daemon"
+uninstall_daemon_moved:
 	@echo "===> No UNINSTALL of the access daemon"
 endif
 else
 install_daemon:
 	@echo "===> No INSTALL of the access daemon"
+move_daemon:
+	@echo "===> No MOVE of the access daemon"
 uninstall_daemon:
+	@echo "===> No UNINSTALL of the access daemon"
+uninstall_daemon_moved:
 	@echo "===> No UNINSTALL of the access daemon"
 endif
 
@@ -261,19 +278,34 @@ install_freq:
 	@echo "===> INSTALL setFrequencies tool to $(PREFIX)/sbin/$(FREQ_TARGET)"
 	@mkdir -p $(PREFIX)/sbin
 	@install -m 4775 $(INSTALL_CHOWN) $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
+move_freq:
+	@echo "===> MOVE setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET) to $(INSTALLED_PREFIX)/sbin/$(FREQ_TARGET)"
+	@mkdir -p $(INSTALLED_PREFIX)/sbin
+	@install -m 4775 $(INSTALL_CHOWN) $(PREFIX)/sbin/$(FREQ_TARGET) $(INSTALLED_PREFIX)/sbin/$(FREQ_TARGET)
 uninstall_freq:
 	@echo "===> REMOVING setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET)"
 	@rm -f $(PREFIX)/sbin/$(FREQ_TARGET)
+uninstall_freq_moved:
+	@echo "===> REMOVING setFrequencies tool from $(INSTALLED_PREFIX)/sbin/$(FREQ_TARGET)"
+	@rm -f $(INSTALLED_PREFIX)/sbin/$(FREQ_TARGET)
 else
 install_freq:
 	@echo "===> No INSTALL of setFrequencies tool"
+move_freq:
+	@echo "===> No MOVE of setFrequencies tool"
 uninstall_freq:
+	@echo "===> No UNINSTALL of setFrequencies tool"
+uninstall_freq_moved:
 	@echo "===> No UNINSTALL of setFrequencies tool"
 endif
 else
 install_freq:
 	@echo "===> No INSTALL of setFrequencies tool"
+move_freq:
+	@echo "===> No MOVE of setFrequencies tool"
 uninstall_freq:
+	@echo "===> No UNINSTALL of setFrequencies tool"
+uninstall_freq_moved:
 	@echo "===> No UNINSTALL of setFrequencies tool"
 endif
 
@@ -288,7 +320,7 @@ install: install_daemon install_freq
 		install -m 755 $$APP  $(BINPREFIX); \
 	done
 	@install -m 755 ext/lua/lua $(BINPREFIX)/likwid-lua
-	@echo "===> INSTALL helper applications"
+	@echo "===> INSTALL helper applications to $(BINPREFIX)"
 	@install -m 755 perl/feedGnuplot $(BINPREFIX)
 	@echo "===> INSTALL lua to likwid interface to $(PREFIX)/share/lua"
 	@mkdir -p $(PREFIX)/share/lua
@@ -354,13 +386,84 @@ install: install_daemon install_freq
 	@mkdir -p $(PREFIX)/share/likwid/examples
 	@chmod 775 $(PREFIX)/share/likwid/examples
 	@install -m 644 examples/* $(PREFIX)/share/likwid/examples
-	@echo "===> INSTALL default likwid-agent.conf to $(PREFIX)/etc"
+	@echo "===> INSTALL default likwid-agent.conf to $(PREFIX)/share/likwid/mongroups"
 	@sed -e "s+<PREFIX>+$(PREFIX)+g" monitoring/likwid-agent.conf > $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
 	@chmod 644 $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
-	@echo "===> INSTALL filters to $(LIKWIDFILTERPATH)"
+	@echo "===> INSTALL filters to $(abspath $(PREFIX)/share/likwid/filter)"
+	@mkdir -p $(abspath $(PREFIX)/share/likwid/filter)
+	@chmod 755 $(abspath $(PREFIX)/share/likwid/filter)
+	@cp -f filters/*  $(abspath $(PREFIX)/share/likwid/filter)
+	@chmod 755 $(abspath $(PREFIX)/share/likwid/filter)/*
+
+
+move: move_daemon move_freq
+	@echo "===> MOVE applications from $(BINPREFIX) to $(INSTALLED_BINPREFIX)"
+	@mkdir -p $(INSTALLED_BINPREFIX)
+	@chmod 775 $(INSTALLED_BINPREFIX)
+	@for APP in $(L_APPS); do \
+		install -m 755 $(BINPREFIX)/$$APP  $(INSTALLED_BINPREFIX); \
+	done
+	@for APP in $(C_APPS); do \
+		install -m 755 $(BINPREFIX)/`basename $$APP`  $(INSTALLED_BINPREFIX); \
+	done
+	@install -m 755 $(BINPREFIX)/likwid-lua $(INSTALLED_BINPREFIX)/likwid-lua
+	@echo "===> MOVE helper applications from $(BINPREFIX) to $(INSTALLED_BINPREFIX)"
+	@install -m 755 $(BINPREFIX)/feedGnuplot $(INSTALLED_BINPREFIX)
+	@echo "===> MOVE lua to likwid interface from $(PREFIX)/share/lua to $(INSTALLED_PREFIX)/share/lua"
+	@mkdir -p $(INSTALLED_PREFIX)/share/lua
+	@chmod 775 $(INSTALLED_PREFIX)/share/lua
+	@install -m 755 $(PREFIX)/share/lua/likwid.lua $(INSTALLED_PREFIX)/share/lua
+	@echo "===> MOVE libraries from $(LIBPREFIX) to $(INSTALLED_LIBPREFIX)"
+	@mkdir -p $(INSTALLED_LIBPREFIX)
+	@chmod 775 $(INSTALLED_LIBPREFIX)
+	@install -m 755 $(LIBPREFIX)/$(TARGET_LIB).$(VERSION).$(RELEASE) $(INSTALLED_LIBPREFIX)/$(TARGET_LIB).$(VERSION).$(RELEASE)
+	@install -m 755 $(LIBPREFIX)/$(PINLIB).$(VERSION).$(RELEASE) $(INSTALLED_LIBPREFIX)/$(PINLIB).$(VERSION).$(RELEASE)
+	@install -m 755 $(LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE) $(INSTALLED_LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE)
+	@install -m 755 $(LIBPREFIX)/$(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(INSTALLED_LIBPREFIX)/$(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE)
+	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(TARGET_LIB).$(VERSION).$(RELEASE) $(TARGET_LIB)
+	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(TARGET_LIB).$(VERSION).$(RELEASE) $(TARGET_LIB).$(VERSION)
+	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(PINLIB).$(VERSION).$(RELEASE) $(PINLIB)
+	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(PINLIB).$(VERSION).$(RELEASE) $(PINLIB).$(VERSION)
+	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_HWLOC_LIB))
+	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION)
+	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB))
+	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB)).$(VERSION)
+	@echo "===> MOVE man pages from $(MANPREFIX)/man1 to $(INSTALLED_MANPREFIX)/man1"
+	@mkdir -p $(INSTALLED_MANPREFIX)/man1
+	@chmod 775 $(INSTALLED_MANPREFIX)/man1
+	@install -m 644 $(MANPREFIX)/man1/*.1 $(INSTALLED_MANPREFIX)/man1
+	@echo "===> MOVE headers from $(PREFIX)/include to $(INSTALLED_PREFIX)/include"
+	@mkdir -p $(INSTALLED_PREFIX)/include
+	@chmod 775 $(INSTALLED_PREFIX)/include
+	@install -m 644 $(PREFIX)/include/likwid.h $(INSTALLED_PREFIX)/include/likwid.h
+	@install -m 644 $(PREFIX)/include/bstrlib.h $(INSTALLED_PREFIX)/include/bstrlib.h
+	@if [ -e $(PREFIX)/include/likwid.mod ]; then install $(PREFIX)/include/likwid.mod $(INSTALLED_PREFIX)/include/likwid.mod; fi
+	@echo "===> MOVE groups from $(PREFIX)/share/likwid/perfgroups to $(INSTALLED_PREFIX)/share/likwid/perfgroups"
+	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/perfgroups
+	@chmod 775 $(INSTALLED_PREFIX)/share/likwid
+	@chmod 775 $(INSTALLED_PREFIX)/share/likwid/perfgroups
+	@cp -rf $(PREFIX)/share/likwid/perfgroups/* $(INSTALLED_PREFIX)/share/likwid/perfgroups
+	@chmod 775 $(INSTALLED_PREFIX)/share/likwid/perfgroups/*
+	@find $(INSTALLED_PREFIX)/share/likwid/perfgroups -name "*.txt" -exec chmod 644 {} \;
+	@echo "===> MOVE monitoring groups from $(PREFIX)/share/likwid/mongroups to $(INSTALLED_PREFIX)/share/likwid/mongroups"
+	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/mongroups
+	@chmod 775 $(INSTALLED_PREFIX)/share/likwid/mongroups
+	@cp -rf $(PREFIX)/share/likwid/mongroups/* $(INSTALLED_PREFIX)/share/likwid/mongroups
+	@chmod 775 $(INSTALLED_PREFIX)/share/likwid/mongroups/*
+	@find $(INSTALLED_PREFIX)/share/likwid/mongroups -name "*.txt" -exec chmod 644 {} \;
+	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/docs
+	@chmod 775 $(INSTALLED_PREFIX)/share/likwid/docs
+	@install -m 644 $(PREFIX)/share/likwid/docs/bstrlib.txt $(INSTALLED_PREFIX)/share/likwid/docs
+	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/examples
+	@chmod 775 $(INSTALLED_PREFIX)/share/likwid/examples
+	@install -m 644 examples/* $(INSTALLED_PREFIX)/share/likwid/examples
+	@echo "===> MOVE default likwid-agent.conf from $(PREFIX)/share/likwid/mongroups to $(INSTALLED_PREFIX)/share/likwid/mongroups"
+	@install $(PREFIX)/share/likwid/mongroups/likwid-agent.conf $(INSTALLED_PREFIX)/share/likwid/mongroups/likwid-agent.conf
+	@chmod 644 $(INSTALLED_PREFIX)/share/likwid/mongroups/likwid-agent.conf
+	@echo "===> MOVE filters from $(abspath $(PREFIX)/share/likwid/filter) to $(LIKWIDFILTERPATH)"
 	@mkdir -p $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)
-	@cp -f filters/*  $(LIKWIDFILTERPATH)
+	@cp -f $(abspath $(PREFIX)/share/likwid/filter)/* $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
 
 
@@ -392,13 +495,47 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -f $(PREFIX)/include/bstrlib.h
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter, groups and default configs from $(PREFIX)/share/likwid"
-	@rm -rf $(LIKWIDFILTERPATH)
+	@rm -rf $(abspath $(PREFIX)/share/likwid/filter)
 	@rm -rf $(PREFIX)/share/likwid/mongroups
 	@rm -rf $(PREFIX)/share/likwid/perfgroups
 	@rm -rf $(PREFIX)/share/likwid/docs
 	@rm -rf $(PREFIX)/share/likwid/examples
 	@rm -rf $(PREFIX)/share/likwid
 
+uninstall_moved: uninstall_daemon_moved uninstall_freq_moved
+	@echo "===> REMOVING applications from $(INSTALLED_PREFIX)/bin"
+	@rm -f $(addprefix $(INSTALLED_BINPREFIX)/,$(addsuffix  .lua,$(L_APPS)))
+	@for APP in $(L_APPS); do \
+		rm -f $(INSTALLED_BINPREFIX)/$$APP; \
+	done
+	@for APP in $(C_APPS); do \
+		rm -f $(INSTALLED_BINPREFIX)/$$APP; \
+	done
+	@rm -f $(INSTALLED_BINPREFIX)/feedGnuplot
+	@rm -f $(INSTALLED_BINPREFIX)/likwid-lua
+	@rm -f $(INSTALLED_BINPREFIX)/likwid-bench
+	@echo "===> REMOVING Lua to likwid interface from $(INSTALLED_PREFIX)/share/lua"
+	@rm -rf  $(INSTALLED_PREFIX)/share/lua/likwid.lua
+	@echo "===> REMOVING libs from $(INSTALLED_LIBPREFIX)"
+	@rm -f $(INSTALLED_LIBPREFIX)/liblikwid*
+	@echo "===> REMOVING man pages from $(INSTALLED_MANPREFIX)/man1"
+	@rm -f $(addprefix $(INSTALLED_MANPREFIX)/man1/,$(addsuffix  .1,$(L_APPS)))
+	@rm -f $(INSTALLED_MANPREFIX)/man1/feedGnuplot.1
+	@rm -f $(INSTALLED_MANPREFIX)/man1/likwid-setFreq.1
+	@rm -f $(INSTALLED_MANPREFIX)/man1/likwid-accessD.1
+	@rm -f $(INSTALLED_MANPREFIX)/man1/likwid-lua.1
+	@rm -f $(INSTALLED_MANPREFIX)/man1/likwid-bench.1
+	@echo "===> REMOVING header from $(INSTALLED_PREFIX)/include"
+	@rm -f $(INSTALLED_PREFIX)/include/likwid.h
+	@rm -f $(INSTALLED_PREFIX)/include/bstrlib.h
+	$(FORTRAN_REMOVE)
+	@echo "===> REMOVING filter, groups and default configs from $(INSTALLED_PREFIX)/share/likwid"
+	@rm -rf $(LIKWIDFILTERPATH)
+	@rm -rf $(INSTALLED_PREFIX)/share/likwid/mongroups
+	@rm -rf $(INSTALLED_PREFIX)/share/likwid/perfgroups
+	@rm -rf $(INSTALLED_PREFIX)/share/likwid/docs
+	@rm -rf $(INSTALLED_PREFIX)/share/likwid/examples
+	@rm -rf $(INSTALLED_PREFIX)/share/likwid
 
 local: $(L_APPS) likwid.lua
 	@echo "===> Setting Lua scripts to run from current directory"
@@ -421,3 +558,32 @@ testit: test/test-likwidAPI.c
 	make -C test test-likwidAPI
 	test/test-likwidAPI
 	make -C test/executable_tests
+
+help:
+	@echo "Help for building LIKWID:"
+	@echo
+	@echo "Common make targets:"
+	@echo "- make : build anything (integrate already compiled files)"
+	@echo "- make clean : clean library and executables, keep compiled files"
+	@echo "- make distclean : clean anything"
+	@echo "- make docs : Build documentation (requires Doxygen)"
+	@echo "- make install : Copy compiled files to $(PREFIX)"
+	@echo "- make move : Copy files from $(PREFIX) to $(INSTALLED_PREFIX)"
+	@echo "- make uninstall : Delete files from $(PREFIX)"
+	@echo "- make uninstall_moved : Delete files from $(INSTALLED_PREFIX)"
+	@echo
+	@echo "Compiler selection can be done in config.mk at COMPILER:"
+	@echo "- GCC : Use GCC for C code and Intel Fortran compiler for Fortran interface (default)"
+	@echo "- GCCX86 : Use GCC for C code. No Fortran compiler set (only for 32 bit builds)"
+	@echo "- CLANG: Use CLANG for C code and Intel Fortran compiler for Fortran interface (unsupported, may fail)"
+	@echo "- ICC: Use Intel C compiler for C code and Intel Fortran compiler for Fortran interface (unsupported, may fail)"
+	@echo "- MIC: Build for Intel Xeon Phi. Use Intel C compiler for C code and\n       Intel Fortran compiler for Fortran interface (unsupported)"
+	@echo
+	@echo "LIKWID runs only in INSTALLED_PREFIX = $(INSTALLED_PREFIX)"
+	@echo "You can change it in config.mk, but it is recommended to keep INSTALLED_PREFIX = PREFIX"
+	@echo "The PREFIX is used for temporary install directories (e.g. for packaging)."
+	@echo "LIKWID will not run in PREFIX, it has to be in INSTALLED_PREFIX."
+	@echo "The common configuration is INSTALLED_PREFIX = PREFIX, so changing PREFIX is enough."
+	@echo "If PREFIX and INSTALLED_PREFIX differ, you have to move anything after 'make install' to"
+	@echo "the INSTALLED_PREFIX. You can also use 'make move' which does the job for you."
+	

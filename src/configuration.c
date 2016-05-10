@@ -108,7 +108,7 @@ int init_configuration(void)
     {
         return 0;
     }
-    sprintf(preconfigured, "%s%s",TOSTRING(INSTALL_PREFIX),"/etc/likwid.cfg");
+    sprintf(preconfigured, "%s%s",TOSTRING(INSTALL_PREFIX),TOSTRING(CFGFILE));
 
     if (access(preconfigured, R_OK) != 0)
     {
@@ -128,16 +128,17 @@ int init_configuration(void)
     {
         sprintf(filename, "%s",preconfigured);
     }
+    
     if ((config.topologyCfgFileName == NULL) && (strlen(filename) == 0))
     {
-        if (!access("/etc/likwid_topo.cfg", R_OK))
+        if (!access(TOSTRING(TOPOFILE), R_OK))
         {
             preconfigured[0] = '\0';
-            sprintf(preconfigured,"%s", "/etc/likwid_topo.cfg");
+            sprintf(preconfigured,"%s", TOSTRING(TOPOFILE));
         }
         else
         {
-            sprintf(preconfigured, "%s%s",TOSTRING(INSTALL_PREFIX),"/etc/likwid_topo.cfg");
+            sprintf(preconfigured, "%s%s",TOSTRING(INSTALL_PREFIX),TOSTRING(TOPOFILE));
             if (access(preconfigured, R_OK))
             {
                 preconfigured[0] = '\0';
@@ -164,9 +165,10 @@ int init_configuration(void)
     fp = fopen(config.configFileName, "r");
     if (fp == NULL)
     {
+        DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, Using compile-time configuration)
         return default_configuration();
     }
-
+    DEBUG_PRINT(DEBUGLEV_INFO, Reading configuration from %s, filename)
     while (fgets(line, 512, fp) != NULL) {
         if (sscanf(line,"%s = %s", name, value) != 2)
         {

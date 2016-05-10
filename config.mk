@@ -10,6 +10,11 @@ COLOR = BLUE#NO SPACE
 
 # Path were to install likwid
 PREFIX = /usr/local#NO SPACE
+
+#################################################################
+# Common users do not need to change values below this comment! #
+#################################################################
+
 MANPREFIX = $(PREFIX)/man#NO SPACE
 BINPREFIX = $(PREFIX)/bin#NO SPACE
 LIBPREFIX = $(PREFIX)/lib#NO SPACE
@@ -18,24 +23,29 @@ LIBPREFIX = $(PREFIX)/lib#NO SPACE
 # they'll be the same as above, but package maintainers may want to
 # distinguish between the image directories and the final install
 # target.
-INSTALLED_PREFIX=$(PREFIX)
+# Keep in mind that the access and setFreq daemon need enough
+# privileges that may be deleted when copying the files to
+# the INTSTALLED_PREFIX
+INSTALLED_PREFIX = $(PREFIX)#NO SPACE
 INSTALLED_BINPREFIX = $(INSTALLED_PREFIX)/bin#NO SPACE
 INSTALLED_LIBPREFIX = $(INSTALLED_PREFIX)/lib#NO SPACE
 
 # chown installed tools to this user/group
+# if you change anything here, make sure that the user/group can access
+# the MSR devices and (on Intel) the PCI devices.
 INSTALL_CHOWN = -g root -o root
 
 # For the daemon based secure msr/pci access configure
 # the absolute path to the msr daemon executable.
-# $(PREFIX)/bin/likwid-accessD
+# $(INSTALLED_PREFIX)/bin/likwid-accessD
 ACCESSDAEMON = $(PREFIX)/sbin/likwid-accessD#NO SPACE
 INSTALLED_ACCESSDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-accessD#NO SPACE
 
 # Build the accessDaemon. Have a look in the WIKI for details.
 BUILDDAEMON = true#NO SPACE
-
 #Build the setFrequencies tool
 BUILDFREQ = true#NO SPACE
+
 # Set the default mode for MSR access.
 # This can usually be overriden on the commandline.
 # Valid values are: direct, accessdaemon
@@ -51,23 +61,25 @@ FORTRAN_INTERFACE = false#NO SPACE
 # Instrument likwid-bench for use with likwid-perfctr
 INSTRUMENT_BENCH = false#NO SPACE
 
-# Use Portable Hardware Locality (hwloc) instead of CPUID
+# Use recommended Portable Hardware Locality (hwloc) instead of CPUID
 USE_HWLOC = true#NO SPACE
 
 # Build LIKWID with debug flags
 DEBUG = false#NO SPACE
 
-# Usually you do not need to edit below
-RPATHS = -Wl,-rpath=$(INSTALLED_LIBPREFIX)
+# Basic configuration (compiled into library, can be changed by creating
+# a proper config file at CFG_FILE_PATH)
 MAX_NUM_THREADS = 263
 MAX_NUM_NODES = 64
 CFG_FILE_PATH = /etc/likwid.cfg
+TOPO_FILE_PATH = /etc/likwid_topo.cfg
 
 # Versioning Information
 VERSION = 4
 RELEASE = 0
 DATE    = 28.04.2015
 
-LIBLIKWIDPIN = $(abspath $(PREFIX)/lib/liblikwidpin.so)
-LIKWIDFILTERPATH = $(abspath $(PREFIX)/share/likwid/filter)
-LIKWIDGROUPPATH = $(abspath $(PREFIX)/share/likwid/perfgroups)
+RPATHS = -Wl,-rpath=$(INSTALLED_LIBPREFIX)
+LIBLIKWIDPIN = $(abspath $(INSTALLED_PREFIX)/lib/liblikwidpin.so.$(VERSION).$(RELEASE))
+LIKWIDFILTERPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/filter)
+LIKWIDGROUPPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/perfgroups)

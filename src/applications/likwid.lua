@@ -33,11 +33,11 @@ package.cpath = '<INSTALLED_LIBPREFIX>/?.so;' .. package.cpath
 require("liblikwid")
 require("math")
 
-likwid.groupfolder = "<INSTALLED_PREFIX>/share/likwid/perfgroups"
+likwid.groupfolder = "<LIKWIDGROUPPATH>"
 
 likwid.version = <VERSION>
 likwid.release = <RELEASE>
-likwid.pinlibpath = "<INSTALLED_LIBPREFIX>/liblikwidpin.so"
+likwid.pinlibpath = "<LIBLIKWIDPIN>"
 likwid.dline = string.rep("=",80)
 likwid.hline =  string.rep("-",80)
 likwid.sline = string.rep("*",80)
