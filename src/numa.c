@@ -146,7 +146,13 @@ int numa_init(void)
         return 0;
     }
 
-    if ((config.topologyCfgFileName == NULL)||(access(config.topologyCfgFileName, R_OK) && numa_info.numberOfNodes <= 0))
+    if ((config.topologyCfgFileName != NULL) && (!access(config.topologyCfgFileName, R_OK)) && (numa_info.nodes != NULL))
+    {
+        /* If we read in the topology file, the NUMA related stuff is already initialized */
+        numaInitialized = 1;
+        return 0;
+    }
+    else
     {
         cpu_set_t cpuSet;
         CPU_ZERO(&cpuSet);
@@ -159,8 +165,9 @@ int numa_init(void)
         {
             ret = funcs.numa_init();
         }
+        if (ret == 0)
+            numaInitialized = 1;
     }
-    numaInitialized = 1;
     return ret;
 }
 

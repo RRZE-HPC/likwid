@@ -70,10 +70,13 @@ for opt,arg in likwid.getopt(arg, {"h","v","help","version", "o:", "output:"}) d
         os.exit(1)
     end
 end
-if likwid.access(filename, "e") then
-    os.remove(filename)
+local file = io.open(filename, "r")
+if file ~= nil then
+    print("File "..filename.." exists, please delete it first.")
+    file:close()
+    os.exit(1)
 end
-local file = io.open(filename, "w")
+file = io.open(filename, "w")
 if file == nil then
     print("Cannot open file "..filename.." for writing")
     os.exit(1)
@@ -88,6 +91,7 @@ if cpuinfo == nil or cputopo == nil or numainfo == nil or affinity == nil then
     print("Cannot initialize topology module of LIKWID")
     os.exit(1)
 end
+print(string.format("Writing new topology file %s", filename))
 cpuinfo["clock"] = likwid.getCpuClock()
 
 local threadPool_order = {"threadId", "coreId", "packageId", "apicId"}

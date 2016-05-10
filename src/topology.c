@@ -233,6 +233,12 @@ static int readTopologyFile(const char* filename)
             break;
         }
     }
+    if (numHWThreads < 0 || numCacheLevels < 0 || numberOfNodes < 0)
+    {
+        ERROR_PRINT(Cannot read topology information from file %s, filename);
+        fclose(fp);
+        return -1;
+    }
 
     tmpNumberOfProcessors = (int*) malloc(numberOfNodes *sizeof(int));
     fseek(fp, 0, SEEK_SET);
@@ -835,6 +841,8 @@ void topology_setupTree(void)
 
 int topology_init(void)
 {
+    int ret = 0;
+    cpu_set_t cpuSet;
     struct topology_functions funcs = topology_funcs;
 
     if (topology_initialized)
@@ -850,7 +858,7 @@ int topology_init(void)
 
     if ((config.topologyCfgFileName == NULL) || access(config.topologyCfgFileName, R_OK))
     {
-        cpu_set_t cpuSet;
+standard_init:
         CPU_ZERO(&cpuSet);
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
         if (cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF))
@@ -878,11 +886,12 @@ int topology_init(void)
     }
     else
     {
-        cpu_set_t cpuSet;
         CPU_ZERO(&cpuSet);
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
         DEBUG_PRINT(DEBUGLEV_INFO, Reading topology information from %s, config.topologyCfgFileName);
-        readTopologyFile(config.topologyCfgFileName);
+        ret = readTopologyFile(config.topologyCfgFileName);
+        if (ret < 0)
+            goto standard_init;
         cpuid_topology.activeHWThreads = 0;
         for (int i=0;i<cpuid_topology.numHWThreads;i++)
         {

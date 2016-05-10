@@ -379,9 +379,9 @@ affinity_finalize()
     }
     for ( int i=0; i < affinityDomains.numberOfAffinityDomains; i++ )
     {
+        bdestroy(affinityDomains.domains[i].tag);
         if (affinityDomains.domains[i].processorList != NULL)
         {
-            bdestroy(affinityDomains.domains[i].tag);
             free(affinityDomains.domains[i].processorList);
         }
         affinityDomains.domains[i].processorList = NULL;
