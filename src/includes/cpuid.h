@@ -13,6 +13,7 @@
 # define EBX_REG "=b"
 #endif
 
+#ifndef __clang__
 #define CPUID(eax,ebx,ecx,edx)                            \
     __asm__ volatile(".ifnc %%ebx,%3 ; movl  %%ebx,%3 ; .endif  \n\t" \
                      "cpuid                                     \n\t" \
@@ -20,6 +21,9 @@
                      : "=a" (eax), "=c" (ecx), "=d" (edx), EBX_REG (ebx) \
                      : "a" (eax), "c" (ecx) \
                      )
-
+#else
+#define CPUID(eax,ebx,ecx,edx)         \
+    __asm__ volatile("cpuid" : "=a" (eax), "=c" (ecx), "=d" (edx), EBX_REG (ebx) : "a" (eax), "c" (ecx) );
+#endif
 
 #endif
