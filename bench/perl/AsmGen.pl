@@ -125,9 +125,9 @@ SREG         : /GPR[0-9]+/i
 COMMENT     : /#.*/
 {'skip'}
 
-type: SINGLE 
+type: SINGLE
      |DOUBLE
-	 |INT
+     |INT
 
 align: ALIGN <commit> NUMBER
 {

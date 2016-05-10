@@ -110,6 +110,17 @@ void* runTest(void* arg)
                 }
             }
             break;
+        case INT:
+            {
+                int* sptr;
+                for (i=0; i <  myData->test->streams; i++)
+                {
+                    sptr = (int*) myData->streams[i];
+                    sptr +=  offset;
+                    myData->streams[i] = (int*) sptr;
+                }
+            }
+            break;
         case DOUBLE:
             {
                 double* dptr;

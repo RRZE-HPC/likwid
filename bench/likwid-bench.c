@@ -194,6 +194,9 @@ int main(int argc, char** argv)
                     ownprintf("Bytes: %d\n",test->bytes);
                     switch (test->type)
                     {
+                        case INT:
+                            ownprintf("Data Type: Integer\n");
+                            break;
                         case SINGLE:
                             ownprintf("Data Type: Single precision float\n");
                             break;
@@ -476,6 +479,7 @@ int main(int argc, char** argv)
 
     switch ( test->type )
     {
+        case INT:
         case SINGLE:
             ownprintf("Cycles per cacheline:\t%f\n", (16.0 * cycPerUp));
             break;
