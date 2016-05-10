@@ -85,6 +85,10 @@ uint64_t bstr_to_doubleSize(const_bstring str, DataType type)
         case DOUBLE:
             bytesize = sizeof(double);
             break;
+
+        case INT:
+            bytesize = sizeof(int);
+            break;
     }
 
     if ((biseqcstr(unit, "kB"))||(biseqcstr(unit, "KB")))

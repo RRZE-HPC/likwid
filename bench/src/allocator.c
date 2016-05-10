@@ -94,6 +94,11 @@ allocator_allocateVector(
 
     switch ( type )
     {
+        case INT:
+            bytesize = (size+offset) * sizeof(int);
+            elements = alignment / sizeof(int);
+            break;
+
         case SINGLE:
             bytesize = (size+offset) * sizeof(float);
             elements = alignment / sizeof(float);
@@ -159,6 +164,20 @@ allocator_allocateVector(
 
     switch ( type )
     {
+        case INT:
+            {
+                int* sptr = (int*) (*ptr);
+                sptr += offset;
+
+                for ( uint64_t i=0; i < size; i++ )
+                {
+                    sptr[i] = 1;
+                }
+                *ptr = (void*) sptr;
+
+            }
+            break;
+
         case SINGLE:
             {
                 float* sptr = (float*) (*ptr);

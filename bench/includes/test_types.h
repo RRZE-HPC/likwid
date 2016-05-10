@@ -38,7 +38,8 @@ typedef void (*FuncPrototype)();
 
 typedef enum {
     SINGLE = 0,
-    DOUBLE} DataType;
+    DOUBLE,
+    INT} DataType;
 
 typedef enum {
     STREAM_1 = 1,
