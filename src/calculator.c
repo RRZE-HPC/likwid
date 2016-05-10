@@ -425,11 +425,6 @@ Symbol tokenType(token tk)
     return ret;
 }
 
-token tokenizeNumber(char *str)
-{
-    ;
-}
-
 int tokenize(char *str, char *(**tokensRef))
 {
     char** tokens = NULL;

@@ -215,6 +215,7 @@ int has_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
+    return 0;
 }
 
 int hasep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
