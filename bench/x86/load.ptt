@@ -2,12 +2,21 @@ STREAMS 1
 TYPE DOUBLE
 FLOPS 0
 BYTES 8
+DESC Double-precision load, only scalar operations
+LOADS 1
+STORES 0
+INSTR_CONST 16
+INSTR_LOOP 11
+UOPS 10
 mov GPR6, ARG1
 mov GPR2, STR0
 LOOP 8
-movaps    FPR1, [GPR2 + GPR1 * 8]
-movaps    FPR2, [GPR2 + GPR1 * 8 + 16]
-movaps    FPR3, [GPR2 + GPR1 * 8 + 32]
-movaps    FPR4, [GPR2 + GPR1 * 8 + 48]
-
+movsd    FPR1, [GPR2 + GPR1 * 8]
+movsd    FPR2, [GPR2 + GPR1 * 8 + 8]
+movsd    FPR3, [GPR2 + GPR1 * 8 + 16]
+movsd    FPR4, [GPR2 + GPR1 * 8 + 24]
+movsd    FPR5, [GPR2 + GPR1 * 8 + 32]
+movsd    FPR6, [GPR2 + GPR1 * 8 + 40]
+movsd    FPR7, [GPR2 + GPR1 * 8 + 48]
+movsd    FPR8, [GPR2 + GPR1 * 8 + 56]
 

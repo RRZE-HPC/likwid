@@ -487,8 +487,8 @@ int main(int argc, char** argv)
             ownprintf("Cycles per cacheline:\t%f\n", (8.0 * cycPerUp));
             break;
     }
-    ownprintf("Loads per update:\t%" PRIu64 "\n", test->loads );
-    ownprintf("Stores per update:\t%" PRIu64 "\n", test->stores );
+    ownprintf("Loads per update:\t%ld\n", test->loads );
+    ownprintf("Stores per update:\t%ld\n", test->stores );
     if ((test->loads > 0) && (test->stores > 0))
     {
         ownprintf("Load/store ratio:\t%.2f\n", ((double)test->loads)/((double)test->stores) );

@@ -1,16 +1,22 @@
 STREAMS 1
 TYPE DOUBLE
 FLOPS 0
+DESC Double-precision store, only scalar operations
 BYTES 8
-movaps FPR1, [SCALAR]
-movaps FPR2, [SCALAR]
-movaps FPR3, [SCALAR]
-movaps FPR4, [SCALAR]
+LOADS 0
+STORES 1
+INSTR_CONST 22
+INSTR_LOOP 7
+UOPS 10
+movsd FPR1, [SCALAR]
+movsd FPR2, [SCALAR]
+movsd FPR3, [SCALAR]
+movsd FPR4, [SCALAR]
 mov    GPR6, ARG1
 mov  GPR2, STR0
-LOOP 8
-movaps    [GPR2 + GPR1 * 8]     , FPR1
-movaps    [GPR2 + GPR1 * 8 + 16], FPR2
-movaps    [GPR2 + GPR1 * 8 + 32], FPR3
-movaps    [GPR2 + GPR1 * 8 + 48], FPR4
+LOOP 4
+movsd    [GPR2 + GPR1 * 8]     , FPR1
+movsd    [GPR2 + GPR1 * 8 + 8], FPR2
+movsd    [GPR2 + GPR1 * 8 + 16], FPR3
+movsd    [GPR2 + GPR1 * 8 + 24], FPR4
 
