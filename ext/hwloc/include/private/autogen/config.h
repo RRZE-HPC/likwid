@@ -609,9 +609,10 @@
 /* The size of `unsigned long', as computed by sizeof */
 #ifdef __x86_64
 #define HWLOC_SIZEOF_UNSIGNED_LONG 8
-#endif
+#else
 #if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__)
 #define HWLOC_SIZEOF_UNSIGNED_LONG 4
+#endif
 #endif
 
 /* Define to 1 on Solaris */
@@ -639,14 +640,15 @@
 /* Define to 1 on WINDOWS */
 /* #undef HWLOC_WIN_SYS */
 
-/* Define to 1 on x86_32 */
-#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__)
-#define HWLOC_X86_32_ARCH 1
-#endif
 
 /* Define to 1 on x86_64 */
 #ifdef __x86_64
 #define HWLOC_X86_64_ARCH 1
+#else
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__)
+/* Define to 1 on x86_32 */
+#define HWLOC_X86_32_ARCH 1
+#endif
 #endif
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
