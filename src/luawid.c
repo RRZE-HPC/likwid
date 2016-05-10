@@ -2256,14 +2256,8 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_markerRegionResult", lua_likwid_markerRegionResult);
     lua_register(L, "likwid_markerRegionMetric", lua_likwid_markerRegionMetric);
 #ifdef __MIC__
-    if (setuid(0) < 0)
-    {
-        printf("Cannot setuid to root\n");
-    }
-    if (seteuid(0) < 0)
-    {
-        printf("Cannot seteuid to root\n");
-    }
+    setuid(0);
+    seteuid(0);
 #endif
     return 0;
 }

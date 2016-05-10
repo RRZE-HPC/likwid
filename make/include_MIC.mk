@@ -19,7 +19,7 @@ ASFLAGS  =  -mmic -c -x assembler
 PASFLAGS  = x86-64
 CPPFLAGS =
 LFLAGS   =  -pthread -g -mmic
-RPATHS += -Wl,-rpath=$(HOME)/miclibs
+RPATHS += -Wl,-rpath=$(INSTALLED_LIBPREFIX)
 
 SHARED_CFLAGS = -fpic -mmic -fvisibility=hidden
 SHARED_LFLAGS = -shared -mmic -fvisibility=hidden
