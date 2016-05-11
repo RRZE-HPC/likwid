@@ -1,5 +1,5 @@
 CC  = icc
-FC  = gfortran
+FC  = ifort
 AS  = icc
 AR  = ar
 PAS = ./perl/AsmGen.pl 
@@ -19,7 +19,6 @@ ASFLAGS  =  -mmic -c -x assembler
 PASFLAGS  = x86-64
 CPPFLAGS =
 LFLAGS   =  -pthread -g -mmic
-RPATHS += -Wl,-rpath=$(INSTALLED_LIBPREFIX)
 
 SHARED_CFLAGS = -fpic -mmic -fvisibility=hidden
 SHARED_LFLAGS = -shared -mmic -fvisibility=hidden
@@ -31,4 +30,8 @@ DEFINES  += -DDEBUGLEV=0
 INCLUDES =
 LIBS     = -lm -lrt
 
-
+# colon seperated list of paths to search for libs at runtime on Phi file system
+MIC_LIB_RPATHS = /opt/intel/compilers_and_libraries_2016.1.150/linux/compiler/lib/mic
+ifneq (strip $(MIC_LIB_RPATHS),)
+RPATHS += -Wl,-rpath=$(MIC_LIB_RPATHS)
+endif 

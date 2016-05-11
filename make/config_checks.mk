@@ -19,7 +19,7 @@ HAS_SCHEDAFFINITY = $(shell if [ $(GLIBC_VERSION) -lt 4 ]; then \
 
 INST_PREFIX := $(INSTALLED_PREFIX)
 ifneq "$(PREFIX)" "$(INST_PREFIX)"
-$(info Warning: PREFIX and INSTALLED_PREFIX differ, be aware that you have to move stuff after make install from $(PREFIX) to $(INSTALLED_PREFIX). You can use make move for this.)
+$(info Info: PREFIX and INSTALLED_PREFIX differ, be aware that you have to move stuff after make install from $(PREFIX) to $(INSTALLED_PREFIX). You can use make move for this.)
 endif
 
 FORTRAN_IF_NAME := likwid.mod

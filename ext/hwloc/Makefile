@@ -12,7 +12,7 @@ CFLAGS    = -O2 -Wall -fPIC -fvisibility=hidden
 INCLUDES  += -I./include
 #DEFINES   =
 LIBS      = -L. -lm
-LFLAGS    = -Wno-unused-result -fPIC -fvisibility=hidden
+LFLAGS    = -fPIC -fvisibility=hidden
 Q         ?= @
 DEFINES := $(filter-out -DVERSION=$(VERSION),$(DEFINES))
 ifeq ($(DEBUG),true)
@@ -23,6 +23,10 @@ endif
 ifeq ($(COMPILER),MIC)
 CFLAGS += -mmic
 LFLAGS += -mmic
+endif
+ifeq ($(COMPILER),GCC)
+CFLAGS += -Wno-unused-result
+LFLAGS += -Wno-unused-result
 endif
 
 #CONFIGURE BUILD SYSTEM

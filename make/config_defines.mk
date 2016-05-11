@@ -87,7 +87,7 @@ ifeq ($(ACCESSMODE),sysdaemon)
 ifneq ($(COMPILER),MIC)
 DEFINES += -DACCESSMODE=2
 else
-$(info Info: Compiling for Xeon Phi. Set accessmode to direct.);
+$(info Info: Compiling for Xeon Phi. Changing accessmode to direct.);
 ACCESSMODE = direct
 DEFINES += -DACCESSMODE=0
 endif
@@ -100,7 +100,7 @@ $(info Info: Make sure an accessdaemon is installed and the paths ACCESSDAEMON a
 endif
 DEFINES += -DACCESSMODE=1
 else
-$(info Info: Compiling for Xeon Phi. Set accessmode to direct.);
+$(info Info: Compiling for Xeon Phi. Changing accessmode to direct.);
 DEFINES += -DACCESSMODE=0
 ACCESSMODE = direct
 endif
