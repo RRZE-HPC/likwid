@@ -98,10 +98,10 @@ int main (int argn, char** argv)
         FILE* f;
         gov = argv[3];
 
-        if ((strncmp(gov,"ondemand",8)) &&
-            (strncmp(gov,"performance",11)) &&
-            (strncmp(gov,"conservative",12)) &&
-            (strncmp(gov,"powersave",9))) {
+        if ((strncmp(gov,"ondemand",8) != 0) &&
+            (strncmp(gov,"performance",11) != 0) &&
+            (strncmp(gov,"conservative",12) != 0) &&
+            (strncmp(gov,"powersave",9) != 0)) {
             fprintf(stderr, "Invalid governor %s!\n",gov);
             free(gpath);
             free(fpath);
@@ -159,17 +159,17 @@ int main (int argn, char** argv)
         return (EXIT_FAILURE);
     }
     if ((argn == 4) &&
-        ((strncmp(argv[3],"ondemand",8)) ||
-        (strncmp(argv[3],"performance",11)) ||
-        (strncmp(argv[3],"conservative",12)) ||
-        (strncmp(argv[3],"powersave",9))))
+        ((strncmp(argv[3],"ondemand",8) == 0) ||
+        (strncmp(argv[3],"performance",11) == 0) ||
+        (strncmp(argv[3],"conservative",12) == 0) ||
+        (strncmp(argv[3],"powersave",9) == 0)))
     {
-        fprintf(f, argv[3]);
+        fprintf(f, "%s", argv[3]);
         tmp = 1;
     }
     else
     {
-        fprintf(f,"userspace");
+        fprintf(f, "%s", "userspace");
         tmp = 3;
     }
     fclose(f);

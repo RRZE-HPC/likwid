@@ -71,7 +71,7 @@
 
 
 #define PCI_ROOT_PATH    "/proc/bus/pci/"
-#define MAX_PATH_LENGTH   60
+#define MAX_PATH_LENGTH   80
 //#define MAX_NUM_NODES    4
 
 /* Lock file controlled from outside which prevents likwid to start.
@@ -588,9 +588,7 @@ static void pci_read(AccessDataRecord* dRecord)
     }
     if ( !FD_PCI[socketId][device] )
     {
-        strncpy(pci_filepath, PCI_ROOT_PATH, 30);
-        strncat(pci_filepath, socket_bus[socketId], 10);
-        strncat(pci_filepath, pci_devices_daemon[device].path, 20);
+        snprintf(pci_filepath, MAX_PATH_LENGTH-1, "%s%s%s", PCI_ROOT_PATH, socket_bus[socketId], pci_devices_daemon[device].path);
         FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
 
         if ( FD_PCI[socketId][device] < 0)
@@ -643,9 +641,7 @@ static void pci_write(AccessDataRecord* dRecord)
 
     if ( !FD_PCI[socketId][device] )
     {
-        strncpy(pci_filepath, PCI_ROOT_PATH, 30);
-        strncat(pci_filepath, socket_bus[socketId], 10);
-        strncat(pci_filepath, pci_devices_daemon[device].path, 20);
+        snprintf(pci_filepath, MAX_PATH_LENGTH-1, "%s%s%s", PCI_ROOT_PATH, socket_bus[socketId], pci_devices_daemon[device].path);
 
         FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
 
@@ -724,7 +720,7 @@ int getBusFromSocket(const uint32_t socket)
     int ret = 0;
     while(cur_socket <= socket)
     {
-        sprintf(pci_filepath, "%s%02x/05.0", PCI_ROOT_PATH, cur_bus);
+        snprintf(pci_filepath, MAX_PATH_LENGTH-1, "%s%02x/05.0", PCI_ROOT_PATH, cur_bus);
         fp = open(pci_filepath, O_RDONLY);
         if (fp < 0)
         {
@@ -1033,6 +1029,7 @@ int main(void)
             {
                 //testDevice = 0;
                 syslog(LOG_NOTICE, "PCI Uncore not supported on this system");
+                goto LOOP;
             }
 
             for (int j=0; j<MAX_NUM_NODES; j++)
@@ -1088,7 +1085,7 @@ int main(void)
             }
         }
     }
-
+LOOP:
     while (1)
     {
         ret = read(connfd, (void*) &dRecord, sizeof(AccessDataRecord));

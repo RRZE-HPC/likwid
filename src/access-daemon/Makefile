@@ -35,7 +35,7 @@ Q         ?= @
 
 DEFINES   += -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) -DMAX_NUM_NODES=$(MAX_NUM_NODES)
 INCLUDES  = -I../includes
-CFLAGS    += -std=c99 -fPIC
+CFLAGS    += -std=c99 -fPIC -pie -fPIE -fstack-protector
 ifeq ($(COMPILER),GCCX86)
 CFLAGS    +=  -m32
 endif
