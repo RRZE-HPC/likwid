@@ -249,9 +249,10 @@ fallback:
         if (FD[cpu_id] > 0)
         {
             DEBUG_PRINT(DEBUGLEV_DEVELOP, Read MSR counter 0x%X with RDMSR instruction on CPU %d, reg, cpu_id);
-            if ( pread(FD[cpu_id], data, sizeof(*data), reg) != sizeof(*data) )
+            ret = pread(FD[cpu_id], data, sizeof(*data), reg);
+            if ( ret != sizeof(*data) )
             {
-                return -EIO;
+                return ret;
             }
         }
     }
