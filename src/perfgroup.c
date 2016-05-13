@@ -31,6 +31,7 @@
 
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -43,6 +44,18 @@
 #include <calculator.h>
 #include <likwid.h>
 
+int isdir(char* dirname)
+{
+    struct stat st;
+    if (NULL == dirname) {
+        return 0;
+    }
+    if (access(dirname, R_OK) != 0)
+        return 0;
+    stat(dirname, &st);
+    return S_ISDIR(st.st_mode) ? 1 : 0;
+}
+
 int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** groupshort, char*** grouplong)
 {
     int i = 0, j = 0, s = 0;
@@ -54,7 +67,7 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
     *groupnames = NULL;
     *groupshort = NULL;
     *grouplong = NULL;
-    int search_home = 1;
+    int search_home = 0;
     bstring SHORT = bformat("SHORT");
     bstring LONG = bformat("LONG");
     int read_long = 0;
@@ -76,10 +89,22 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
         return -ENOMEM;
     }
     fsize = sprintf(fullpath, "%s/%s", grouppath, architecture);
-    dp = opendir(fullpath);
-    if (dp == NULL)
+    if (isdir(fullpath))
     {
-        printf("Cannot open directory %s\n", fullpath);
+        dp = opendir(fullpath);
+        if (dp == NULL)
+        {
+            printf("Cannot open directory %s\n", fullpath);
+            free(fullpath);
+            free(homepath);
+            bdestroy(SHORT);
+            bdestroy(LONG);
+            return -EACCES;
+        }
+    }
+    else
+    {
+        printf("Cannot access directory %s\n", fullpath);
         free(fullpath);
         free(homepath);
         bdestroy(SHORT);
@@ -99,23 +124,27 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
     }
     closedir(dp);
     hsize = sprintf(homepath, "%s/.likwid/groups/%s", getenv("HOME"), architecture);
-    dp = opendir(homepath);
-    if (dp == NULL)
+    if (isdir(homepath))
     {
-        search_home = 0;
-    }
-    if (search_home)
-    {
-        while (ep = readdir(dp))
+        search_home = 1;
+        dp = opendir(homepath);
+        if (dp == NULL)
         {
-            if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
-            {
-                i++;
-                if (strlen(ep->d_name)-4 > s)
-                    s = strlen(ep->d_name)-4;
-            }
+            search_home = 0;
         }
-        closedir(dp);
+        if (search_home)
+        {
+            while (ep = readdir(dp))
+            {
+                if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
+                {
+                    i++;
+                    if (strlen(ep->d_name)-4 > s)
+                        s = strlen(ep->d_name)-4;
+                }
+            }
+            closedir(dp);
+        }
     }
 
     *groupnames = malloc(i * sizeof(char**));
@@ -432,6 +461,7 @@ int custom_group(char* eventStr, GroupInfo* ginfo)
     bstring fix0 = bformat("FIXC0");
     bstring fix1 = bformat("FIXC1");
     bstring fix2 = bformat("FIXC2");
+    DEBUG_PRINT(DEBUGLEV_INFO, Creating custom group for event string %s, eventStr);
     
     ginfo->shortinfo = malloc(7 * sizeof(char));
     if (ginfo->shortinfo == NULL)
@@ -589,26 +619,26 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
     if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL))
         return -EINVAL;
 
-    bstring fullpath;
-    //char* fullpath = malloc((strlen(grouppath)+strlen(architecture)+strlen(groupname)+100)*sizeof(char));
-    //if (fullpath == NULL)
-    //    return -ENOMEM;
-    //i = sprintf(fullpath, "%s/%s/%s.txt", grouppath,architecture, groupname);
-    //fullpath[i] = '\0';
-    fullpath = bformat("%s/%s/%s.txt", grouppath,architecture, groupname);
+    bstring fullpath = bformat("%s/%s/%s.txt", grouppath,architecture, groupname);
+    bstring homepath = bformat("%s/.likwid/groups/%s/%s.txt", getenv("HOME"),architecture, groupname);
 
     if (access(bdata(fullpath), R_OK))
     {
-        DEBUG_PRINT(DEBUGLEV_INFO, Cannot read group file %s. Trying $HOME/.likwid/groups/%s/%s, bdata(fullpath), architecture, groupname);
-        bdestroy(fullpath);
-        fullpath = bformat("%s/.likwid/groups/%s/%s.txt", getenv("HOME"),architecture, groupname);
-        if (access(bdata(fullpath), R_OK))
+        DEBUG_PRINT(DEBUGLEV_INFO, Cannot read group file %s. Trying %s, bdata(fullpath), bdata(homepath));
+        if (access(bdata(homepath), R_OK))
         {
-            DEBUG_PRINT(DEBUGLEV_INFO, Cannot read group file %s, bdata(fullpath));
+            ERROR_PRINT(Cannot read group file %s.txt. Searched in %s and %s, groupname, bdata(fullpath), bdata(homepath));
             bdestroy(fullpath);
-            return -EACCES;
+            bdestroy(homepath);
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            fullpath = bstrcpy(homepath);
         }
     }
+
+    DEBUG_PRINT(DEBUGLEV_INFO, Reading group %s from %s, groupname, bdata(fullpath));
 
     ginfo->shortinfo = NULL;
     ginfo->nevents = 0;
@@ -633,6 +663,7 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
     {
         free(ginfo->groupname);
         bdestroy(fullpath);
+        bdestroy(homepath);
         return -EACCES;
     }
     struct bstrList * linelist;
@@ -884,9 +915,11 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
     }
     //bstrListDestroy(linelist);
     fclose(fp);
+    bdestroy(homepath);
     bdestroy(fullpath);
     return 0;
 cleanup:
+    bdestroy(homepath);
     bdestroy(fullpath);
     if (ginfo->groupname)
         free(ginfo->groupname);
