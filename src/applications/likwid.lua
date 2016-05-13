@@ -45,6 +45,7 @@ likwid.sline = string.rep("*",80)
 
 
 likwid.getConfiguration = likwid_getConfiguration
+likwid.setGroupPath = likwid_setGroupPath
 likwid.putConfiguration = likwid_putConfiguration
 likwid.setAccessClientMode = likwid_setAccessClientMode
 likwid.init = likwid_init
@@ -134,6 +135,7 @@ likwid.markerNumRegions = likwid_markerNumRegions
 likwid.markerRegionGroup = likwid_markerRegionGroup
 likwid.markerRegionTag = likwid_markerRegionTag
 likwid.markerRegionEvents = likwid_markerRegionEvents
+likwid.markerRegionCpulist = likwid_markerRegionCpulist
 likwid.markerRegionThreads = likwid_markerRegionThreads
 likwid.markerRegionTime = likwid_markerRegionTime
 likwid.markerRegionCount = likwid_markerRegionCount
@@ -743,6 +745,12 @@ local function printOutput(results, metrics, cpulist, region, stats)
     local cpuinfo = likwid_getCpuInfo()
     local clock = likwid.getCpuClock()
     local regionName = likwid.markerRegionTag(region)
+    local regionThreads = likwid.markerRegionThreads(region)
+    local cur_cpulist = cpulist
+    if region ~= nil then
+        cur_cpulist = likwid.markerRegionCpulist(region)
+    end
+
     for g, group in pairs(results) do
         local infotab = {}
         local firsttab = {}
@@ -753,7 +761,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
         local groupName = likwid.getNameOfGroup(g)
         if region ~= nil then
             infotab[1] = {"Region Info","RDTSC Runtime [s]","call count"}
-            for c, cpu in pairs(cpulist) do
+            for c, cpu in pairs(cur_cpulist) do
                 local tmpList = {}
                 table.insert(tmpList, "Core "..tostring(cpu))
                 table.insert(tmpList, string.format("%.6f", likwid.markerRegionTime(region, c)))
@@ -777,7 +785,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
             table.insert(firsttab_combined[1], eventname .. " STAT")
             table.insert(firsttab_combined[2], countername)
         end
-        for c, cpu in pairs(cpulist) do
+        for c, cpu in pairs(cur_cpulist) do
             local tmpList = {"Core "..tostring(cpu)}
             if likwid.getNumberOfMetrics(g) == 0 then
                 if region == nil then
@@ -803,7 +811,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
                 table.insert(secondtab[1], likwid.getNameOfMetric(g, m))
                 table.insert(secondtab_combined[1], likwid.getNameOfMetric(g, m).." STAT" )
             end
-            for c, cpu in pairs(cpulist) do
+            for c, cpu in pairs(cur_cpulist) do
                 local tmpList = {"Core "..tostring(cpu)}
                 for m=1, likwid.getNumberOfMetrics(g) do
                     local tmp = tostring(likwid.num2str(metrics[g][m][c]))
@@ -849,7 +857,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
             end
             likwid.printtable(firsttab)
         end
-        if #cpulist > 1 or stats == true then
+        if #cur_cpulist > 1 or stats == true then
             if use_csv then
                 if region == nil then
                     print(string.format("TABLE,Group %d Raw Stat,%s,%d%s",g,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
@@ -872,7 +880,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
             else
                 likwid.printtable(secondtab)
             end
-            if #cpulist > 1 or stats == true then
+            if #cur_cpulist > 1 or stats == true then
                 if use_csv then
                     if region == nil then
                         print(string.format("TABLE,Group %d Metric Stat,%s,%d%s",g,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))

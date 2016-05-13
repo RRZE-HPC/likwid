@@ -152,8 +152,7 @@ void likwid_markerInit(void)
     }
     else if (likwid_init == 0)
     {
-        fprintf(stderr, "Cannot initalize LIKWID marker API, environment variables are not set\n");
-        fprintf(stderr, "You have to set the -m commandline switch for likwid-perfctr\n");
+        fprintf(stderr, "Running without Marker API. Activate Marker API set -m on commandline.\n");
         return;
     }
     else
@@ -241,6 +240,7 @@ void likwid_markerInit(void)
         for(int j=0; j<groupSet->groups[groups[0]].numberOfEvents;j++)
         {
             groupSet->groups[groups[0]].events[j].threadCounter[i].init = TRUE;
+            groupSet->groups[groups[0]].state = STATE_START;
         }
     }
 
@@ -309,7 +309,6 @@ void likwid_markerClose(void)
 
     if ( ! likwid_init )
     {
-        fprintf(stderr, "LIKWID not properly initialized\n");
         return;
     }
     hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
@@ -431,6 +430,7 @@ int likwid_markerStartRegion(const char* regionTag)
                         LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
         //groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].startData =
         //        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
+        
         results->StartPMcounters[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
         results->StartOverflows[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows;
     }
@@ -476,9 +476,9 @@ int likwid_markerStopRegion(const char* regionTag)
     results->time += timer_print(&(results->startTime));
     results->count++;
     bdestroy(tag);
-    
+
     perfmon_readCountersCpu(cpu_id);
-    
+
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu, regionTag, thread_id, cpu_id, i,

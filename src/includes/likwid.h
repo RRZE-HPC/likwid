@@ -303,6 +303,15 @@ Get the initialized configuration
 @return Configuration_t (pointer to internal Configuration structure)
 */
 extern Configuration_t get_configuration(void) __attribute__ ((visibility ("default") ));
+
+/*! \brief Set group path in the config struction
+
+Set group path in the config struction. The path must be a directory.
+@param [in] path
+@return error code (0 for success, -ENOMEM if reallocation failed, -ENOTDIR if no directoy)
+*/
+int config_setGroupPath(char* path);
+
 /** @}*/
 /*
 ################################################################################
@@ -747,6 +756,24 @@ code. Before returning, the counters are started again. Only one CPU is read.
 @return 0 on success and -(thread_id+1) for error
 */
 extern int perfmon_readCountersCpu(int cpu_id) __attribute__ ((visibility ("default") ));
+/*! \brief Read the performance monitoring counters of all threads in a group
+
+Read the counters that have been previously started by perfmon_startCounters().
+The counters are stopped directly to avoid interference of LIKWID with the measured
+code. Before returning, the counters are started again.
+@param [in] groupId Read the counters for all threads taking part in group
+@return 0 on success and -(thread_id+1) for error
+*/
+extern int perfmon_readGroupCounters(int groupId) __attribute__ ((visibility ("default") ));
+/*! \brief Read the performance monitoring counters of on thread in a group
+
+Read the counters that have been previously started by perfmon_startCounters().
+The counters are stopped directly to avoid interference of LIKWID with the measured
+code. Before returning, the counters are started again. Only one thread's CPU is read.
+@param [in] groupId Read the counters for on thread taking part in group
+@return 0 on success and -(thread_id+1) for error
+*/
+extern int perfmon_readGroupThreadCounters(int groupId, int threadId) __attribute__ ((visibility ("default") ));
 /*! \brief Switch the active eventSet to a new one
 
 Stops the currently running counters, switches the eventSet by setting up the
@@ -935,6 +962,13 @@ int perfmon_getMetricsOfRegion(int region) __attribute__ ((visibility ("default"
 @return Number of threads of region
 */
 int perfmon_getThreadsOfRegion(int region) __attribute__ ((visibility ("default") ));
+/*! \brief Get the cpulist of a region
+@param [in] region ID of region
+@param [in] count Length of cpulist array
+@param [in] cpulist cpulist array
+@return Number of threads of region or count, whatever is lower
+*/
+int perfmon_getCpulistOfRegion(int region, int count, int* cpulist)  __attribute__ ((visibility ("default") ));
 /*! \brief Get the accumulated measurement time of a region for a thread
 @param [in] region ID of region
 @param [in] thread ID of thread

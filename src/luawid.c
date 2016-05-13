@@ -91,14 +91,17 @@ static int lua_likwid_getConfiguration(lua_State* L)
             lua_pushstring(L, "daemonPath");
             lua_pushnil(L);
             lua_settable(L,-3);
+            lua_pushstring(L, "groupPath");
+            lua_pushnil(L);
+            lua_settable(L,-3);
             lua_pushstring(L, "daemonMode");
             lua_pushinteger(L, -1);
             lua_settable(L,-3);
             lua_pushstring(L, "maxNumThreads");
-            lua_pushinteger(L, MAX_NUM_THREADS);
+            lua_pushinteger(L, 0);
             lua_settable(L,-3);
             lua_pushstring(L, "maxNumNodes");
-            lua_pushinteger(L, MAX_NUM_NODES);
+            lua_pushinteger(L, 0);
             lua_settable(L,-3);
             return 1;
         }
@@ -116,6 +119,9 @@ static int lua_likwid_getConfiguration(lua_State* L)
     lua_settable(L,-3);
     lua_pushstring(L, "daemonPath");
     lua_pushstring(L, configfile->daemonPath);
+    lua_settable(L,-3);
+    lua_pushstring(L, "groupPath");
+    lua_pushstring(L, configfile->groupPath);
     lua_settable(L,-3);
     lua_pushstring(L, "daemonMode");
     lua_pushinteger(L, (int)configfile->daemonMode);
@@ -136,6 +142,28 @@ static int lua_likwid_putConfiguration(lua_State* L)
         destroy_configuration();
         config_isInitialized = 0;
         configfile = NULL;
+    }
+    return 0;
+}
+
+static int lua_likwid_setGroupPath(lua_State* L)
+{
+    int ret;
+    const char* tmpString;
+    if (config_isInitialized == 0)
+    {
+        ret = init_configuration();
+        if (ret == 0)
+        {
+            config_isInitialized = 1;
+        }
+    }
+    tmpString = luaL_checkstring(L, 1);
+    ret = config_setGroupPath((char*)tmpString);
+    if (ret < 0)
+    {
+        lua_pushstring(L,"Cannot set group path");
+        lua_error(L);
     }
     return 0;
 }
@@ -2109,6 +2137,47 @@ static int lua_likwid_markerRegionThreads(lua_State* L)
     return 1;
 }
 
+static int lua_likwid_markerRegionCpulist(lua_State* L)
+{
+    int i = 0;
+    int region = lua_tointeger(L,-1);
+    int* cpulist;
+    int regionCPUs = 0;
+    if (topology_isInitialized == 0)
+    {
+        topology_init();
+        topology_isInitialized = 1;
+        cpuinfo = get_cpuInfo();
+        cputopo = get_cpuTopology();
+    }
+    if ((topology_isInitialized) && (cpuinfo == NULL))
+    {
+        cpuinfo = get_cpuInfo();
+    }
+    if ((topology_isInitialized) && (cputopo == NULL))
+    {
+        cputopo = get_cpuTopology();
+    }
+    cpulist = (int*)malloc(cputopo->numHWThreads * sizeof(int));
+    if (cpulist == NULL)
+    {
+        return 0;
+    }
+    regionCPUs = perfmon_getCpulistOfRegion(region-1, cputopo->numHWThreads, cpulist);
+    if (regionCPUs > 0)
+    {
+        lua_newtable(L);
+        for (i=0; i < regionCPUs; i++)
+        {
+            lua_pushinteger(L, i+1);
+            lua_pushinteger(L, cpulist[i]);
+            lua_settable(L, -3);
+        }
+        return 1;
+    }
+    return 0;
+}
+
 static int lua_likwid_markerRegionTime(lua_State* L)
 {
     int region = lua_tointeger(L,-2);
@@ -2146,6 +2215,7 @@ static int lua_likwid_markerRegionMetric(lua_State* L)
 int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     // Configuration functions
     lua_register(L, "likwid_getConfiguration", lua_likwid_getConfiguration);
+    lua_register(L, "likwid_setGroupPath", lua_likwid_setGroupPath);
     lua_register(L, "likwid_putConfiguration", lua_likwid_putConfiguration);
     // Perfmon functions
     //lua_register(L, "accessClient_setaccessmode",lua_accessClient_setaccessmode);
@@ -2251,6 +2321,7 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_markerRegionTag", lua_likwid_markerRegionTag);
     lua_register(L, "likwid_markerRegionEvents", lua_likwid_markerRegionEvents);
     lua_register(L, "likwid_markerRegionThreads", lua_likwid_markerRegionThreads);
+    lua_register(L, "likwid_markerRegionCpulist", lua_likwid_markerRegionCpulist);
     lua_register(L, "likwid_markerRegionTime", lua_likwid_markerRegionTime);
     lua_register(L, "likwid_markerRegionCount", lua_likwid_markerRegionCount);
     lua_register(L, "likwid_markerRegionResult", lua_likwid_markerRegionResult);

@@ -1171,6 +1171,11 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         groupSet->threads[i].thread_id = i;
         groupSet->threads[i].processorId = threadsToCpu[i];
 
+        if (HPMcheck(MSR_DEV, threadsToCpu[i]) == 0)
+        {
+            fprintf(stderr, "Cannot get access to MSRs. Please check permissions to the MSRs\n");
+            exit(EXIT_FAILURE);
+        }
         if (initialize_power == TRUE)
         {
             power_init(threadsToCpu[i]);
@@ -1655,6 +1660,7 @@ __perfmon_readCounters(int groupId, int threadId)
 {
     int ret = 0;
     int i = 0, j = 0;
+    double result = 0.0;
     if (perfmon_initialized != 1)
     {
         ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
@@ -1683,6 +1689,8 @@ __perfmon_readCounters(int groupId, int threadId)
             for (j=0; j < groupSet->groups[groupId].numberOfEvents; j++)
             {
                 groupSet->groups[groupId].events[j].threadCounter[threadId].lastResult = (double)calculateResult(groupId, j, threadId);
+                groupSet->groups[groupId].events[j].threadCounter[threadId].lastResult = result;
+                groupSet->groups[groupId].events[j].threadCounter[threadId].fullResult += result;
             }
         }
     }
@@ -1696,6 +1704,8 @@ __perfmon_readCounters(int groupId, int threadId)
         for (j=0; j < groupSet->groups[groupId].numberOfEvents; j++)
         {
             groupSet->groups[groupId].events[j].threadCounter[threadId].lastResult = (double)calculateResult(groupId, j, threadId);
+            groupSet->groups[groupId].events[j].threadCounter[threadId].lastResult = result;
+            groupSet->groups[groupId].events[j].threadCounter[threadId].fullResult += result;
         }
 }
     timer_start(&groupSet->groups[groupId].timer);
@@ -1710,7 +1720,7 @@ int perfmon_readCounters(void)
 int perfmon_readCountersCpu(int cpu_id)
 {
     int i;
-    int thread_id = 0;
+    int thread_id = -1;
     if (perfmon_initialized != 1)
     {
         ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
@@ -1724,21 +1734,22 @@ int perfmon_readCountersCpu(int cpu_id)
             break;
         }
     }
-    timer_stop(&groupSet->groups[groupSet->activeGroup].timer);
-    groupSet->groups[groupSet->activeGroup].rdtscTime = timer_print(&groupSet->groups[groupSet->activeGroup].timer);
-    groupSet->groups[groupSet->activeGroup].runTime += groupSet->groups[groupSet->activeGroup].rdtscTime;
-    i = perfmon_readCountersThread(thread_id, &groupSet->groups[groupSet->activeGroup]);
-    timer_start(&groupSet->groups[groupSet->activeGroup].timer);
+    if (thread_id < 0)
+    {
+        ERROR_PRINT(Failed to read counters for CPU %d, cpu_id);
+        return -thread_id;
+    }
+    i = __perfmon_readCounters(groupSet->activeGroup, thread_id);
     return i;
 }
 
 int perfmon_readGroupCounters(int groupId)
 {
-    return __perfmon_readCounters(groupId,-1);
+    return __perfmon_readCounters(groupId, -1);
 }
 int perfmon_readGroupThreadCounters(int groupId, int threadId)
 {
-    return __perfmon_readCounters(groupId,threadId);
+    return __perfmon_readCounters(groupId, threadId);
 }
 
 
@@ -1949,7 +1960,7 @@ int __perfmon_switchActiveGroupThread(int thread_id, int new_group)
     {
         return ret;
     }
-    if (state == STATE_START)
+    if (groupSet->groups[groupSet->activeGroup].state == STATE_SETUP)
     {
         ret = perfmon_startCounters();
         if (ret != 0)
@@ -2367,6 +2378,33 @@ int perfmon_getThreadsOfRegion(int region)
     return markerResults[region].threadCount;
 }
 
+int perfmon_getCpulistOfRegion(int region, int count, int* cpulist)
+{
+    int i;
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (region < 0 || region >= markerRegions)
+    {
+        return -EINVAL;
+    }
+    if (markerResults == NULL)
+    {
+        return 0;
+    }
+    if (cpulist == NULL)
+    {
+        return -EINVAL;
+    }
+    for (i=0; i< MIN(count, markerResults[region].threadCount); i++)
+    {
+        cpulist[i] = markerResults[region].cpulist[i];
+    }
+    return MIN(count, markerResults[region].threadCount);
+}
+
 
 double perfmon_getTimeOfRegion(int region, int thread)
 {
@@ -2423,17 +2461,21 @@ double perfmon_getResultOfRegionThread(int region, int event, int thread)
     {
         return -EINVAL;
     }
-    if (thread < 0 || thread >= groupSet->numberOfThreads)
-    {
-        return -EINVAL;
-    }
     if (markerResults == NULL)
     {
         return 0;
     }
+    if (thread < 0 || thread >= markerResults[region].threadCount)
+    {
+        return -EINVAL;
+    }
     if (event < 0 || event >= markerResults[region].eventCount)
     {
         return -EINVAL;
+    }
+    if (markerResults[region].counters[thread] == NULL)
+    {
+        return 0.0;
     }
     return markerResults[region].counters[thread][event];
 }
@@ -2453,13 +2495,13 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     {
         return -EINVAL;
     }
-    if (threadId < 0 || threadId >= groupSet->numberOfThreads)
-    {
-        return -EINVAL;
-    }
     if (markerResults == NULL)
     {
         return 0.0;
+    }
+    if (threadId < 0 || threadId >= markerResults[region].threadCount)
+    {
+        return -EINVAL;
     }
     if (metricId < 0 || metricId >= groupSet->groups[markerResults[region].groupID].group.nmetrics)
     {
@@ -2522,10 +2564,17 @@ int perfmon_readMarkerFile(const char* filename)
         fprintf(stderr, "Failed to allocate %lu bytes for the marker results storage\n", regions * sizeof(LikwidResults));
         return -ENOMEM;
     }
+    int* regionCPUs = (int*)malloc(regions * sizeof(int));
+    if (regionCPUs == NULL)
+    {
+        fprintf(stderr, "Failed to allocate %lu bytes for temporal cpu count storage\n", regions * sizeof(int));
+        return -ENOMEM;
+    }
     markerRegions = regions;
     groupSet->numberOfThreads = cpus;
     for ( uint32_t i=0; i < regions; i++ )
     {
+        regionCPUs[i] = 0;
         markerResults[i].threadCount = cpus;
         markerResults[i].time = (double*) malloc(cpus * sizeof(double));
         if (!markerResults[i].time)
@@ -2572,30 +2621,32 @@ int perfmon_readMarkerFile(const char* filename)
             char remain[1024];
             remain[0] = '\0';
             sscanf(buf, "%d %d %d %d %lf %d %[^\t\n]", &regionid, &groupid, &cpu, &count, &time, &nevents, remain);
-            for (int i=0; i<groupSet->numberOfThreads; i++)
+            if (cpu >= 0)
             {
-                if (groupSet->threads[i].processorId == cpu)
-                {
-                    cpuidx = i;
-                    break;
-                }
-            }
-            markerResults[regionid].eventCount = nevents;
-            markerResults[regionid].time[cpuidx] = time;
-            markerResults[regionid].count[cpuidx] = count;
-            markerResults[regionid].cpulist[cpuidx] = cpu;
-            markerResults[regionid].counters[cpuidx] = malloc(nevents * sizeof(double));
+                cpuidx = regionCPUs[regionid];
+                markerResults[regionid].cpulist[cpuidx] = cpu;
+                markerResults[regionid].eventCount = nevents;
+                markerResults[regionid].time[cpuidx] = time;
+                markerResults[regionid].count[cpuidx] = count;
+                markerResults[regionid].counters[cpuidx] = malloc(nevents * sizeof(double));
 
-            eventidx = 0;
-            ptr = strtok(remain, " ");
-            while (ptr != NULL && eventidx < nevents)
-            {
-                sscanf(ptr, "%lf", &(markerResults[regionid].counters[cpuidx][eventidx]));
-                ptr = strtok(NULL, " ");
-                eventidx++;
+                eventidx = 0;
+                ptr = strtok(remain, " ");
+                while (ptr != NULL && eventidx < nevents)
+                {
+                    sscanf(ptr, "%lf", &(markerResults[regionid].counters[cpuidx][eventidx]));
+                    ptr = strtok(NULL, " ");
+                    eventidx++;
+                }
+                regionCPUs[regionid]++;
             }
         }
     }
+    for ( uint32_t i=0; i < regions; i++ )
+    {
+        markerResults[i].threadCount = regionCPUs[i];
+    }
+    free(regionCPUs);
     fclose(fp);
     return 0;
 }
