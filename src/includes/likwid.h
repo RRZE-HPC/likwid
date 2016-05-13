@@ -310,7 +310,7 @@ Set group path in the config struction. The path must be a directory.
 @param [in] path
 @return error code (0 for success, -ENOMEM if reallocation failed, -ENOTDIR if no directoy)
 */
-int config_setGroupPath(char* path);
+extern int config_setGroupPath(char* path) __attribute__ ((visibility ("default") ));
 
 /** @}*/
 /*
@@ -946,55 +946,55 @@ extern int perfmon_getGroupOfRegion(int region) __attribute__ ((visibility ("def
 @param [in] region ID of region
 @return tag of region
 */
-char* perfmon_getTagOfRegion(int region) __attribute__ ((visibility ("default") ));
+extern char* perfmon_getTagOfRegion(int region) __attribute__ ((visibility ("default") ));
 /*! \brief Get the number of events of a region
 @param [in] region ID of region
 @return Number of events of region
 */
-int perfmon_getEventsOfRegion(int region) __attribute__ ((visibility ("default") ));
+extern int perfmon_getEventsOfRegion(int region) __attribute__ ((visibility ("default") ));
 /*! \brief Get the number of metrics of a region
 @param [in] region ID of region
 @return Number of metrics of region
 */
-int perfmon_getMetricsOfRegion(int region) __attribute__ ((visibility ("default") ));
+extern int perfmon_getMetricsOfRegion(int region) __attribute__ ((visibility ("default") ));
 /*! \brief Get the number of threads of a region
 @param [in] region ID of region
 @return Number of threads of region
 */
-int perfmon_getThreadsOfRegion(int region) __attribute__ ((visibility ("default") ));
+extern int perfmon_getThreadsOfRegion(int region) __attribute__ ((visibility ("default") ));
 /*! \brief Get the cpulist of a region
 @param [in] region ID of region
 @param [in] count Length of cpulist array
 @param [in] cpulist cpulist array
 @return Number of threads of region or count, whatever is lower
 */
-int perfmon_getCpulistOfRegion(int region, int count, int* cpulist)  __attribute__ ((visibility ("default") ));
+extern int perfmon_getCpulistOfRegion(int region, int count, int* cpulist)  __attribute__ ((visibility ("default") ));
 /*! \brief Get the accumulated measurement time of a region for a thread
 @param [in] region ID of region
 @param [in] thread ID of thread
 @return Measurement time of a region for a thread
 */
-double perfmon_getTimeOfRegion(int region, int thread) __attribute__ ((visibility ("default") ));
+extern double perfmon_getTimeOfRegion(int region, int thread) __attribute__ ((visibility ("default") ));
 /*! \brief Get the call count of a region for a thread
 @param [in] region ID of region
 @param [in] thread ID of thread
 @return Call count of a region for a thread
 */
-int perfmon_getCountOfRegion(int region, int thread) __attribute__ ((visibility ("default") ));
+extern int perfmon_getCountOfRegion(int region, int thread) __attribute__ ((visibility ("default") ));
 /*! \brief Get the event result of a region for an event and thread
 @param [in] region ID of region
 @param [in] event ID of event
 @param [in] thread ID of thread
 @return Result of a region for an event and thread
 */
-double perfmon_getResultOfRegionThread(int region, int event, int thread) __attribute__ ((visibility ("default") ));
+extern double perfmon_getResultOfRegionThread(int region, int event, int thread) __attribute__ ((visibility ("default") ));
 /*! \brief Get the metric result of a region for a metric and thread
 @param [in] region ID of region
 @param [in] metricId ID of metric
 @param [in] threadId ID of thread
 @return Metric result of a region for a thread
 */
-double perfmon_getMetricOfRegionThread(int region, int metricId, int threadId) __attribute__ ((visibility ("default") ));
+extern double perfmon_getMetricOfRegionThread(int region, int metricId, int threadId) __attribute__ ((visibility ("default") ));
 
 /** @}*/
 
