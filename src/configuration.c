@@ -33,13 +33,19 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 
 
 #include <configuration.h>
 
-Configuration config = {NULL,NULL,TOSTRING(GROUPPATH),NULL,-1,MAX_NUM_THREADS,MAX_NUM_NODES};
+Configuration config = {NULL,NULL,NULL,NULL,-1,MAX_NUM_THREADS,MAX_NUM_NODES};
 int init_config = 0;
+
+static int daemonPath_len = 0;
+static int groupPath_len = 0;
 
 static int default_configuration(void)
 {
@@ -55,6 +61,13 @@ static int default_configuration(void)
         return 0;
     }
     config.daemonMode = ACCESSMODE_DAEMON;
+    
+    groupPath_len = strlen(TOSTRING(GROUPPATH))+10;
+    config.groupPath = malloc(groupPath_len+1);
+    ret = snprintf(config.groupPath, groupPath_len, "%s", TOSTRING(GROUPPATH));
+    config.groupPath[ret] = '\0';
+    
+    
     FILE* fp = popen("which likwid-accessD 2>/dev/null | tr -d '\n'","r");
     if (fp == NULL)
     {
@@ -174,6 +187,10 @@ int init_configuration(void)
         {
             continue;
         }
+        if (strncmp(name, "#", 1) == 0)
+        {
+            continue;
+        }
         if (strcmp(name, "topology_file") == 0)
         {
             config.topologyCfgFileName = (char*)malloc((strlen(value)+1) * sizeof(char));
@@ -192,6 +209,22 @@ int init_configuration(void)
                     ERROR_PLAIN_PRINT(Unable to get path to access daemon);
                     exit(EXIT_FAILURE);
                 }
+            }
+        }
+        else if (strcmp(name, "groupPath") == 0)
+        {
+            struct stat st;
+            stat(value, &st);
+            if (S_ISDIR(st.st_mode))
+            {
+                config.groupPath = (char*)malloc((strlen(value)+1) * sizeof(char));
+                strcpy(config.groupPath, value);
+                config.groupPath[strlen(value)] = '\0';
+            }
+            else
+            {
+                ERROR_PRINT(Path to group files %s is not a directory, value);
+                exit(EXIT_FAILURE);
             }
         }
         else if (strcmp(name, "daemon_mode") == 0)
@@ -241,6 +274,10 @@ int destroy_configuration(void)
     {
         free(config.configFileName);
     }
+    if (config.groupPath != NULL)
+    {
+        free(config.groupPath);
+    }
     if (config.topologyCfgFileName != NULL)
     {
         free(config.topologyCfgFileName);
@@ -254,4 +291,38 @@ int destroy_configuration(void)
     }
     init_config = 0;
     return 0;
+}
+
+int config_setGroupPath(char* path)
+{
+    int ret = 0;
+    struct stat st;
+    char* new;
+    stat(path, &st);
+    if (S_ISDIR(st.st_mode))
+    {
+        if (strlen(path)+1 > groupPath_len)
+        {
+            new = malloc(strlen(path)+1);
+            if (new == NULL)
+            {
+                printf("Cannot allocate space for new group path\n");
+                return -ENOMEM;
+            }
+            ret = sprintf(new, "%s", path);
+            new[ret] = '\0';
+            if (config.groupPath)
+                free(config.groupPath);
+            config.groupPath = new;
+            groupPath_len = strlen(path);
+        }
+        else
+        {
+            ret = snprintf(config.groupPath, groupPath_len, "%s", path);
+            config.groupPath[ret] = '\0';
+        }
+        return 0;
+    }
+    printf("Given path is no directory\n");
+    return -ENOTDIR;
 }

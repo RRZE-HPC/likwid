@@ -1246,11 +1246,13 @@ perfmon_addEventSet(char* eventCString)
     PerfmonEventSet* eventSet;
     PerfmonEventSetEntry* event;
     char* cstringcopy;
+    Configuration_t config;
     if (perfmon_initialized != 1)
     {
         ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
         return -EINVAL;
     }
+    config = get_configuration();
 
     if (eventCString == NULL)
     {
@@ -1311,7 +1313,7 @@ perfmon_addEventSet(char* eventCString)
 
     if (strchr(eventCString, ':') == NULL)
     {
-        err = read_group(TOSTRING(GROUPPATH), cpuid_info.short_name,
+        err = read_group(config->groupPath, cpuid_info.short_name,
                          eventCString,
                          &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err)
@@ -2217,7 +2219,9 @@ char* perfmon_getGroupInfoLong(int groupId)
 int perfmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
 {
     int ret = 0;
-    ret = get_groups(TOSTRING(GROUPPATH), cpuid_info.short_name, groups, shortinfos, longinfos);
+    init_configuration();
+    Configuration_t config = get_configuration();
+    ret = get_groups(config->groupPath, cpuid_info.short_name, groups, shortinfos, longinfos);
     return ret;
 }
 
