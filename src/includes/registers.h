@@ -96,16 +96,16 @@
  * Intel software developers guide also for SandyBridge,
  * IvyBridge not mentioned in this section)
  */
-#define MSR_UNC_PERF_GLOBAL_CTRL       MSR_UNCORE_PERF_GLOBAL_CTRL
-#define MSR_UNC_PERF_GLOBAL_STATUS     MSR_UNCORE_PERF_GLOBAL_STATUS
-#define MSR_UNC_PERF_GLOBAL_OVF_CTRL   MSR_UNCORE_PERF_GLOBAL_OVF_CTRL
-#define MSR_UNC_PERF_FIXED_CTRL        MSR_UNCORE_FIXED_CTR0
-#define MSR_UNC_PERF_FIXED_CTR         MSR_UNCORE_FIXED_CTR_CTRL
-#define MSR_UNC_ARB_PERFEVTSEL0        MSR_UNCORE_PMC2
-#define MSR_UNC_ARB_PERFEVTSEL1        MSR_UNCORE_PMC3
-#define MSR_UNC_ARB_CTR0               MSR_UNCORE_PMC0
-#define MSR_UNC_ARB_CTR1               MSR_UNCORE_PMC1
-#define MSR_UNC_CBO_CONFIG             MSR_UNCORE_ADDR_OPCODE_MATCH
+#define MSR_UNC_PERF_GLOBAL_CTRL       0x391
+#define MSR_UNC_PERF_GLOBAL_STATUS     0x392
+#define MSR_UNC_PERF_GLOBAL_OVF_CTRL   0x393
+#define MSR_UNC_PERF_FIXED_CTRL        0x394
+#define MSR_UNC_PERF_FIXED_CTR         0x395
+#define MSR_UNC_ARB_PERFEVTSEL0        0x3B2
+#define MSR_UNC_ARB_PERFEVTSEL1        0x3B3
+#define MSR_UNC_ARB_CTR0               0x3B0
+#define MSR_UNC_ARB_CTR1               0x3B1
+#define MSR_UNC_CBO_CONFIG             0x396
 #define MSR_UNC_CBO_0_PERFEVTSEL0      0x700
 #define MSR_UNC_CBO_0_PERFEVTSEL1      0x701
 #define MSR_UNC_CBO_0_CTR0             0x706
@@ -123,9 +123,37 @@
 #define MSR_UNC_CBO_3_CTR0             0x736
 #define MSR_UNC_CBO_3_CTR1             0x737
 /* Perfmon V4 starting with Skylake */
-#define MSR_PERF_GLOBAL_STATUS_SET    0x391
-#define MSR_PERF_GLOBAL_INUSE         0x392
-#define MSR_PEBS_FRONTEND             0x3F7
+#define MSR_V4_PERF_GLOBAL_STATUS       0x38E
+#define MSR_V4_PERF_GLOBAL_STATUS_SET   0x391
+#define MSR_V4_PERF_GLOBAL_STATUS_RESET 0x390
+#define MSR_V4_PERF_GLOBAL_INUSE        0x392
+#define MSR_V4_PEBS_FRONTEND            0x3F7
+#define MSR_V4_UNC_PERF_GLOBAL_CTRL     0xE01
+#define MSR_V4_UNC_PERF_GLOBAL_STATUS   0xE02
+#define MSR_V4_UNC_PERF_FIXED_CTRL      0x394
+#define MSR_V4_UNC_PERF_FIXED_CTR       0x395
+#define MSR_V4_ARB_PERF_FIXED_CTRL0      0x3B2
+#define MSR_V4_ARB_PERF_FIXED_CTR0       0x3B0
+#define MSR_V4_ARB_PERF_FIXED_CTRL1      0x3B3
+#define MSR_V4_ARB_PERF_FIXED_CTR1       0x3B1
+#define MSR_V4_C0_PERF_FIXED_CTRL0      0x700
+#define MSR_V4_C0_PERF_FIXED_CTR0       0x706
+#define MSR_V4_C0_PERF_FIXED_CTRL1      0x701
+#define MSR_V4_C0_PERF_FIXED_CTR1       0x707
+#define MSR_V4_C1_PERF_FIXED_CTRL0      0x710
+#define MSR_V4_C1_PERF_FIXED_CTR0       0x716
+#define MSR_V4_C1_PERF_FIXED_CTRL1      0x711
+#define MSR_V4_C1_PERF_FIXED_CTR1       0x717
+#define MSR_V4_C2_PERF_FIXED_CTRL0      0x720
+#define MSR_V4_C2_PERF_FIXED_CTR0       0x726
+#define MSR_V4_C2_PERF_FIXED_CTRL1      0x721
+#define MSR_V4_C2_PERF_FIXED_CTR1       0x727
+#define MSR_V4_C3_PERF_FIXED_CTRL0      0x730
+#define MSR_V4_C3_PERF_FIXED_CTR0       0x736
+#define MSR_V4_C3_PERF_FIXED_CTRL1      0x731
+#define MSR_V4_C3_PERF_FIXED_CTR1       0x737
+/* V4 Uncore registers the same as in V3 */
+
 /* Xeon Phi */
 #define MSR_MIC_TSC                   0x010
 #define MSR_MIC_PERFEVTSEL0           0x028
@@ -139,6 +167,7 @@
 /* Xeon Phi (Knights Landing)*/
 #define MSR_MIC2_PMC0                 0x4C1
 #define MSR_MIC2_PMC1                 0x4C2
+#define MSR_MIC2_TURBO_RATIO_LIMIT    0x1AD
 
 
 /* Core v1/v2 type uncore
@@ -1192,6 +1221,9 @@
 #define MSR_DRAM_ENERGY_STATUS          0x619
 #define MSR_DRAM_PERF_STATUS            0x61B
 #define MSR_DRAM_POWER_INFO             0x61C
+#define MSR_PLATFORM_ENERGY_STATUS      0x64D
+#define MSR_PLATFORM_POWER_LIMIT        0x65C
+
 /* Intel Silvermont's RAPL registers */
 #define MSR_PKG_POWER_INFO_SILVERMONT   0x66E
 
@@ -1208,7 +1240,16 @@
 #define MSR_TURBO_RATIO_LIMIT           0x1AD
 #define MSR_TURBO_RATIO_LIMIT1          0x1AE
 #define MSR_TURBO_RATIO_LIMIT2          0x1AF
+#define MSR_TURBO_RATIO_LIMIT3          0x1AC
 
+/* MISC Intel register */
+#define MSR_MPERF                       0xE7
+#define MSR_APERF                       0xE8
+#define MSR_PPERF                       0x64E
+#define MSR_WEIGHTED_CORE_C0            0x658
+#define MSR_ANY_CORE_C0                 0x659
+#define MSR_ANY_GFXE_C0                 0x65A
+#define MSR_CORE_GFXE_OVERLAP_C0        0x65B
 /*
  * AMD
  */
