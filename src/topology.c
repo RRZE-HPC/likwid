@@ -60,6 +60,7 @@ static char* atom_32_str = "Intel Atom 32nm processor";
 static char* atom_22_str = "Intel Atom 22nm processor";
 static char* atom_silvermont_str = "Intel Atom (Silvermont) processor";
 static char* atom_airmont_str = "Intel Atom (Airmont) processor";
+static char* atom_goldmont_str = "Intel Atom (Goldmont) processor";
 static char* nehalem_bloom_str = "Intel Core Bloomfield processor";
 static char* nehalem_lynn_str = "Intel Core Lynnfield processor";
 static char* nehalem_west_str = "Intel Core Westmere processor";
@@ -99,6 +100,7 @@ static char* short_core2 = "core2";
 static char* short_atom = "atom";
 static char* short_pm = "pentiumm";
 static char* short_silvermont = "silvermont";
+static char* short_goldmont = "goldmont";
 static char* short_nehalem = "nehalem";
 static char* short_nehalemEX = "nehalemEX";
 static char* short_westmere = "westmere";
@@ -665,6 +667,10 @@ int topology_setName(void)
                     cpuid_info.name = atom_airmont_str;
                     cpuid_info.short_name = short_silvermont;
                     break;
+                case ATOM_SILVERMONT_GOLD:
+                    cpuid_info.name = atom_goldmont_str;
+                    cpuid_info.short_name = short_goldmont;
+                    break;
 
                 default:
                     cpuid_info.name = unknown_intel_str;
@@ -998,6 +1004,7 @@ void print_supportedCPUs (void)
     printf("\t%s\n",haswell_ep_str);
     printf("\t%s\n",atom_silvermont_str);
     printf("\t%s\n",atom_airmont_str);
+    printf("\t%s\n",atom_goldmont_str);
     printf("\t%s\n",xeon_phi_string);
     printf("\t%s\n",broadwell_str);
     printf("\t%s\n",broadwell_d_str);
