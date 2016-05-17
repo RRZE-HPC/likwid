@@ -684,14 +684,14 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
     }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        RegisterIndex index = eventSet->events[i].index;
-        PciDeviceIndex dev = counter_map[index].device;
-        uint64_t reg = counter_map[index].configRegister;
         RegisterType type = eventSet->events[i].type;
-        if (type == NOTYPE)
+        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
         {
             continue;
         }
+        RegisterIndex index = eventSet->events[i].index;
+        PciDeviceIndex dev = counter_map[index].device;
+        uint64_t reg = counter_map[index].configRegister;
         switch (type)
         {
             case PMC:

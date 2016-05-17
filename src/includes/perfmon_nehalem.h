@@ -558,7 +558,7 @@ int perfmon_finalizeCountersThread_nehalem(int thread_id, PerfmonEventSet* event
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterType type = eventSet->events[i].type;
-            if (type == NOTYPE)
+            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
             {
                 continue;
             }

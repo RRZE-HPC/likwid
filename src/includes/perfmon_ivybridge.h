@@ -1459,14 +1459,14 @@ int perfmon_finalizeCountersThread_ivybridge(int thread_id, PerfmonEventSet* eve
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
-            RegisterIndex index = eventSet->events[i].index;
-            PciDeviceIndex dev = counter_map[index].device;
-            uint64_t reg = counter_map[index].configRegister;
             RegisterType type = eventSet->events[i].type;
-            if (eventSet->events[i].type == NOTYPE)
+            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
             {
                 continue;
             }
+            RegisterIndex index = eventSet->events[i].index;
+            PciDeviceIndex dev = counter_map[index].device;
+            uint64_t reg = counter_map[index].configRegister;
 
             switch(type)
             {
