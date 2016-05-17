@@ -53,6 +53,7 @@
 #include <perfmon_ivybridgeEP_counters.h>
 #include <perfmon_sandybridgeEP_counters.h>
 #include <perfmon_broadwelld_counters.h>
+#include <perfmon_broadwellEP_counters.h>
 #include <topology.h>
 #include <cpuid.h>
 #include <lock.h>
@@ -875,7 +876,6 @@ int main(void)
                          (model == HASWELL_M1) ||
                          (model == HASWELL_M2) ||
                          (model == BROADWELL) ||
-                         (model == BROADWELL_E) ||
                          (model == SKYLAKE1) ||
                          (model == SKYLAKE2))
                 {
@@ -888,6 +888,12 @@ int main(void)
                     allowedPci = allowed_pci_haswell;
                 }
                 else if (model == HASWELL_EP)
+                {
+                    isPCIUncore = 1;
+                    allowed = allowed_haswell;
+                    allowedPci = allowed_pci_haswell;
+                }
+                else if (model == BROADWELL_E)
                 {
                     isPCIUncore = 1;
                     allowed = allowed_haswell;
@@ -1024,6 +1030,11 @@ int main(void)
             {
                 //testDevice = 0x80862f30;
                 pci_devices_daemon = broadwelld_pci_devices;
+            }
+            else if (model == BROADWELL_E)
+            {
+                //testDevice = 0x80862f30;
+                pci_devices_daemon = broadwellEP_pci_devices;
             }
             else
             {
