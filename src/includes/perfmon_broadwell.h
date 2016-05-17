@@ -32,6 +32,8 @@
 #include <perfmon_broadwell_counters.h>
 #include <perfmon_broadwelld_events.h>
 #include <perfmon_broadwelld_counters.h>
+#include <perfmon_broadwellEP_events.h>
+#include <perfmon_broadwellEP_counters.h>
 #include <error.h>
 #include <affinity.h>
 #include <limits.h>
@@ -47,6 +49,9 @@ static int perfmon_numCountersBroadwellD = NUM_COUNTERS_BROADWELLD;
 static int perfmon_numCoreCountersBroadwellD = NUM_COUNTERS_CORE_BROADWELLD;
 static int perfmon_numArchEventsBroadwellD = NUM_ARCH_EVENTS_BROADWELLD;
 
+static int perfmon_numCountersBroadwellEP = NUM_COUNTERS_BROADWELLEP;
+static int perfmon_numCoreCountersBroadwellEP = NUM_COUNTERS_CORE_BROADWELLEP;
+static int perfmon_numArchEventsBroadwellEP = NUM_ARCH_EVENTS_BROADWELLEP;
 
 int perfmon_init_broadwell(int cpu_id)
 {
@@ -223,6 +228,10 @@ int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         set_state_all = 1;
     }
+    if ((event->eventId == 0x13 || event->eventId == 0x11) && (event->umask & 0x2ULL))
+    {
+        fprintf(stderr, "IRQ_REJECTED should not be Ored with the other umasks.");
+    }
 
     if (event->numberOfOptions > 0)
     {
@@ -387,7 +396,7 @@ int bdw_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         return -ENODEV;
     }
 
-    flags |= (1ULL<<20);
+    flags = (1ULL<<22)|(1ULL<<20);
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
@@ -437,15 +446,9 @@ int bdw_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         VERBOSEPRINTPCIREG(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1, 0x0ULL, CLEAR_BBOX_MATCH1);
         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, PCI_UNC_HA_PMON_ADDRMATCH1, 0x0ULL));
     }
-    if ((flags|(1ULL<<22)) != currentConfig[cpu_id][index])
+    if (flags != currentConfig[cpu_id][index])
     {
-        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_BBOX);
-        CHECK_PCI_WRITE_ERROR(HPMwrite( cpu_id, dev, counter_map[index].configRegister, flags));
-        /* Intel notes the registers must be written twice to hold, once without enable and again with enable.
-         * Not mentioned for the BBOX but we do it to be sure.
-         */
-        flags |= (1ULL<<22);
-        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_BBOX_TWICE);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_BBOX);
         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -467,7 +470,7 @@ int bdw_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         return -ENODEV;
     }
 
-    flags = (1ULL<<20);
+    flags = (1ULL<<20)|(1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
@@ -489,13 +492,9 @@ int bdw_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    if ((flags|(1ULL<<22)) != currentConfig[cpu_id][index])
+    if (flags != currentConfig[cpu_id][index])
     {
-        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_MBOX);
-        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
-        /* Intel notes the registers must be written twice to hold, once without enable and again with enable */
-        flags |= (1ULL<<22);
-        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_MBOX_TWICE);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_MBOX);
         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -556,7 +555,7 @@ int bdw_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         return -ENODEV;
     }
 
-    flags = (1ULL<<20);
+    flags = (1ULL<<20)|(1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
     {
@@ -578,13 +577,9 @@ int bdw_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    if ((flags|(1ULL<<22)) != currentConfig[cpu_id][index])
+    if (flags != currentConfig[cpu_id][index])
     {
-        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_IBOX);
-        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
-        /* Intel notes the registers must be written twice to hold, once without enable and again with enable */
-        flags |= (1ULL<<22);
-        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_IBOX_TWICE);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_IBOX);
         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -635,6 +630,268 @@ int bdw_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         /* Intel notes the registers must be written twice to hold, once without enable and again with enable */
         flags |= (1ULL<<22);
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_PBOX_TWICE);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        currentConfig[cpu_id][index] = flags;
+    }
+    return 0;
+}
+
+int bdw_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    int j;
+    uint64_t flags = 0x0ULL;
+    PciDeviceIndex dev = counter_map[index].device;
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+    if (!HPMcheck(counter_map[index].device, cpu_id))
+    {
+        return -ENODEV;
+    }
+
+    flags = (1ULL<<20);
+    flags |= (event->umask<<8) + event->eventId;
+    if (event->numberOfOptions > 0)
+    {
+        for(j = 0; j < event->numberOfOptions; j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= (event->options[j].value & 0xFFULL) << 24;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    if ((flags|(1ULL<<22)) != currentConfig[cpu_id][index])
+    {
+        VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].configRegister, flags, SETUP_PBOX);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        /* Intel notes the registers must be written twice to hold, once without enable and again with enable */
+        flags |= (1ULL<<22);
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_PBOX_TWICE);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        currentConfig[cpu_id][index] = flags;
+    }
+    return 0;
+}
+
+int bdw_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    int j;
+    uint64_t flags = 0x0ULL;
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+    if (!HPMcheck(counter_map[index].device, cpu_id))
+    {
+        return -ENODEV;
+    }
+
+    flags |= (event->umask<<8) + event->eventId;
+    if (event->numberOfOptions > 0)
+    {
+        for(j = 0; j < event->numberOfOptions; j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_TID:
+                    flags |= (1ULL<<19);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= ((event->options[j].value & 0xFFULL)<<24);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+    if ((flags|(1ULL<<22)) != currentConfig[cpu_id][index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_SBOX);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, counter_map[index].device, counter_map[index].configRegister, flags));
+        flags |= (1ULL<<22);
+        /* Due to an issue found with the Intel® Xeon® Processor E5 and E7 v4 Product Families
+         * hardware, it will be necessary to write each control register twice in a row in order for
+         * the Event Select field to take hold. It is recommended that SW perform the first write
+         * with the enable bit set to 0 followed by a write of the same control register value but
+         * with the enable bit set to 1.*/
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_SBOX_TWICE);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, counter_map[index].device, counter_map[index].configRegister, flags));
+        currentConfig[cpu_id][index] = flags;
+    }
+    return 0;
+}
+
+int bdw_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDeviceIndex filterdev)
+{
+    int j;
+    uint64_t flags = 0x0ULL;
+    uint64_t filterreg;
+    uint64_t filterval = 0x0ULL;
+    PciDeviceIndex dev = counter_map[index].device;
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+    if (!HPMcheck(counter_map[index].device, cpu_id))
+    {
+        return -ENODEV;
+    }
+
+    flags = (1ULL<<20)|(1ULL<<22);
+    flags |= (event->umask<<8) + event->eventId;
+    if (event->cfgBits == 0x01)
+    {
+        flags |= (1ULL<<21);
+    }
+    if (event->numberOfOptions > 0)
+    {
+        for(j = 0; j < event->numberOfOptions; j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= (event->options[j].value & 0xFFULL) << 24;
+                    break;
+                case EVENT_OPTION_MATCH0:
+                    if (HPMcheck(filterdev, cpu_id))
+                    {
+                        filterreg = PCI_UNC_V3_QPI_PMON_RX_MATCH_0;
+                        filterval = event->options[j].value & 0x8003FFF8ULL;
+                        VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, SETUP_QBOX_RX_MATCH0);
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
+                    }
+                    else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Filtering for counter %s cannot be applied. PCI device not available, counter_map[index].key);
+                    }
+                    break;
+                case EVENT_OPTION_MATCH1:
+                    if (HPMcheck(filterdev, cpu_id))
+                    {
+                        filterreg = PCI_UNC_V3_QPI_PMON_RX_MATCH_1;
+                        filterval = event->options[j].value & 0x000F000FULL;
+                        VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, SETUP_QBOX_RX_MATCH1);
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
+                    }
+                    else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Filtering for counter %s cannot be applied. PCI device not available, counter_map[index].key);
+                    }
+                    break;
+                case EVENT_OPTION_MATCH2:
+                    if (HPMcheck(filterdev, cpu_id))
+                    {
+                        filterreg = PCI_UNC_V3_QPI_PMON_TX_MATCH_0;
+                        filterval = event->options[j].value & 0x8003FFF8ULL;
+                        VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, SETUP_QBOX_TX_MATCH0);
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
+                    }
+                    else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Filtering for counter %s cannot be applied. PCI device not available, counter_map[index].key);
+                    }
+                    break;
+                case EVENT_OPTION_MATCH3:
+                    if (HPMcheck(filterdev, cpu_id))
+                    {
+                        filterreg = PCI_UNC_V3_QPI_PMON_TX_MATCH_1;
+                        filterval = event->options[j].value & 0x000F000FULL;
+                        VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, SETUP_QBOX_TX_MATCH1);
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
+                    }
+                    else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Filtering for counter %s cannot be applied. PCI device not available, counter_map[index].key);
+                    }
+                    break;
+                case EVENT_OPTION_MASK0:
+                    if (HPMcheck(filterdev, cpu_id))
+                    {
+                        filterreg = PCI_UNC_V3_QPI_PMON_RX_MASK_0;
+                        filterval = event->options[j].value & 0x8003FFF8ULL;
+                        VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, SETUP_QBOX_RX_MASK0);
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
+                    }
+                    else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Filtering for counter %s cannot be applied. PCI device not available, counter_map[index].key);
+                    }
+                    break;
+                case EVENT_OPTION_MASK1:
+                    if (HPMcheck(filterdev, cpu_id))
+                    {
+                        filterreg = PCI_UNC_V3_QPI_PMON_RX_MASK_1;
+                        filterval = event->options[j].value & 0x000F000FULL;
+                        VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, SETUP_QBOX_RX_MASK1);
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
+                    }
+                    else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Filtering for counter %s cannot be applied. PCI device not available, counter_map[index].key);
+                    }
+                    break;
+                case EVENT_OPTION_MASK2:
+                    if (HPMcheck(filterdev, cpu_id))
+                    {
+                        filterreg = PCI_UNC_V3_QPI_PMON_TX_MASK_0;
+                        filterval = event->options[j].value & 0x8003FFF8ULL;
+                        VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, SETUP_QBOX_TX_MASK0);
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
+                    }
+                    else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Filtering for counter %s cannot be applied. PCI device not available, counter_map[index].key);
+                    }
+                    break;
+                case EVENT_OPTION_MASK3:
+                    if (HPMcheck(filterdev, cpu_id))
+                    {
+                        filterreg = PCI_UNC_V3_QPI_PMON_TX_MASK_0;
+                        filterval = event->options[j].value & 0x000F000FULL;
+                        VERBOSEPRINTPCIREG(cpu_id, filterdev, filterreg, filterval, SETUP_QBOX_TX_MASK1);
+                        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, filterreg, filterval));
+                    }
+                    else
+                    {
+                        DEBUG_PRINT(DEBUGLEV_ONLY_ERROR, Filtering for counter %s cannot be applied. PCI device not available, counter_map[index].key);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    if (flags != currentConfig[cpu_id][index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_QBOX);
         CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
         currentConfig[cpu_id][index] = flags;
     }
@@ -802,6 +1059,28 @@ int perfmon_setupCounterThread_broadwell(
                 bdw_ibox_setup(cpu_id, index, event);
                 break;
 
+            case RBOX0:
+            case RBOX1:
+                bdw_rbox_setup(cpu_id, index, event);
+                break;
+
+            case SBOX0:
+            case SBOX1:
+            case SBOX2:
+            case SBOX3:
+                bdw_sbox_setup(cpu_id, index, event);
+                break;
+
+            case QBOX0:
+                bdw_qbox_setup(cpu_id, index, event, PCI_QPI_MASK_DEVICE_PORT_0);
+                break;
+            case QBOX1:
+                bdw_qbox_setup(cpu_id, index, event, PCI_QPI_MASK_DEVICE_PORT_1);
+                break;
+            case QBOX2:
+                bdw_qbox_setup(cpu_id, index, event, PCI_QPI_MASK_DEVICE_PORT_2);
+                break;
+
             default:
                 break;
         }
@@ -927,7 +1206,6 @@ int bdw_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
         }
     }
     result = field64(result, 0, box_map[type].regWidth);
-
     if (result < *cur_result)
     {
         uint64_t ovf_values = 0x0ULL;
@@ -1054,7 +1332,7 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
 
                 case BBOX0:
                 case BBOX1:
-                    bdw_uncore_read(cpu_id, index, event, current, overflows,
+                    bdw_uncore_read(cpu_id, index, event, &counter_result, overflows,
                                     FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                     break;
 
@@ -1066,7 +1344,7 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                 case MBOX5:
                 case MBOX6:
                 case MBOX7:
-                    bdw_uncore_read(cpu_id, index, event, current, overflows,
+                    bdw_uncore_read(cpu_id, index, event, &counter_result, overflows,
                                     FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index)+1);
                     break;
 
@@ -1078,12 +1356,12 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                 case MBOX5FIX:
                 case MBOX6FIX:
                 case MBOX7FIX:
-                    bdw_uncore_read(cpu_id, index, event, current, overflows,
+                    bdw_uncore_read(cpu_id, index, event, &counter_result, overflows,
                                     FREEZE_FLAG_CLEAR_CTR, ovf_offset, 0);
                     break;
 
                 case IBOX1:
-                    bdw_uncore_read(cpu_id, index, event, current, overflows,
+                    bdw_uncore_read(cpu_id, index, event, &counter_result, overflows,
                                     FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index)+2);
                     break;
 
@@ -1108,7 +1386,24 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                 case CBOX13:
                 case CBOX14:
                 case CBOX15:
-                    bdw_uncore_read(cpu_id, index, event, current, overflows,
+                case CBOX16:
+                case CBOX17:
+                case CBOX18:
+                case CBOX19:
+                case CBOX20:
+                case CBOX21:
+                case CBOX22:
+                case CBOX23:
+                case RBOX0:
+                case RBOX1:
+                case SBOX0:
+                case SBOX1:
+                case SBOX2:
+                case SBOX3:
+                case QBOX0:
+                case QBOX1:
+                case QBOX2:
+                    bdw_uncore_read(cpu_id, index, event, &counter_result, overflows,
                                     FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                     break;
 
@@ -1249,6 +1544,15 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                 case CBOX13:
                 case CBOX14:
                 case CBOX15:
+                case RBOX0:
+                case RBOX1:
+                case SBOX0:
+                case SBOX1:
+                case SBOX2:
+                case SBOX3:
+                case QBOX0:
+                case QBOX1:
+                case QBOX2:
                     bdw_uncore_read(cpu_id, index, event, current, overflows,
                                     0, ovf_offset, getCounterTypeOffset(index));
                     break;
@@ -1288,14 +1592,14 @@ int perfmon_finalizeCountersThread_broadwell(int thread_id, PerfmonEventSet* eve
     }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        RegisterIndex index = eventSet->events[i].index;
-        PciDeviceIndex dev = counter_map[index].device;
-        uint64_t reg = counter_map[index].configRegister;
         RegisterType type = eventSet->events[i].type;
-        if (type == NOTYPE)
+        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
         {
             continue;
         }
+        RegisterIndex index = eventSet->events[i].index;
+        PciDeviceIndex dev = counter_map[index].device;
+        uint64_t reg = counter_map[index].configRegister;
         switch (type)
         {
             case PMC:
