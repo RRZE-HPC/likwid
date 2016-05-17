@@ -1150,6 +1150,18 @@ int perfmon_startCountersThread_broadwell(int thread_id, PerfmonEventSet* eventS
                         eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
                     }
                     break;
+                case QBOX0FIX:
+                case QBOX1FIX:
+                    if (haveLock && HPMcheck(dev, cpu_id))
+                    {
+                        if (eventSet->events[i].event.eventId != 0x00)
+                        {
+                            CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
+                            VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST tmp, START_QBOXFIX);
+                            eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                        }
+                    }
+                    break;
 
                 default:
                     break;
@@ -1407,6 +1419,48 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                                     FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                     break;
 
+                case QBOX0FIX:
+                case QBOX1FIX:
+                case QBOX2FIX:
+                    if (eventSet->events[i].event.eventId == 0x00)
+                    {
+                        HPMread(cpu_id, dev, counter1, &counter_result);
+                        switch(extractBitField(counter_result, 3, 0))
+                        {
+                            case 0x2:
+                                counter_result = 5.6E9;
+                                break;
+                            case 0x3:
+                                counter_result = 6.4E9;
+                                break;
+                            case 0x4:
+                                counter_result = 7.2E9;
+                                break;
+                            case 0x5:
+                                counter_result = 8.0E9;
+                                break;
+                            case 0x6:
+                                counter_result = 8.8E9;
+                                break;
+                            case 0x7:
+                                counter_result = 9.6E9;
+                                break;
+                            default:
+                                counter_result = 0;
+                                break;
+                        }
+                        
+                    }
+                    else if ((eventSet->events[i].event.eventId == 0x01) ||
+                             (eventSet->events[i].event.eventId == 0x02))
+                    {
+                        HPMread(cpu_id, dev, counter1, &counter_result);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_QBOXFIX);
+                        counter_result = field64(counter_result, 0, box_map[type].regWidth);
+                    }
+                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    break;
+
                 default:
                     break;
             }
@@ -1464,12 +1518,14 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                     BDW_CHECK_CORE_OVERFLOW(index-cpuid_info.perf_num_fixed_ctr);
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_PMC)
+                    *current = field64(counter_result, 0, box_map[type].regWidth);
                     break;
 
                 case FIXED:
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                     BDW_CHECK_CORE_OVERFLOW(index+32);
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_FIXED)
+                    *current = field64(counter_result, 0, box_map[type].regWidth);
                     break;
 
                 case POWER:
@@ -1481,17 +1537,13 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                         {
                             eventSet->events[i].threadCounter[thread_id].overflows++;
                         }
+                        *current = field64(counter_result, 0, box_map[type].regWidth);
                     }
                     break;
 
                 case THERMAL:
                     CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
-                    break;
-
-                case BBOX0:
-                case BBOX1:
-                    bdw_uncore_read(cpu_id, index, event, current, overflows,
-                                    0, ovf_offset, getCounterTypeOffset(index));
+                    *current = field64(counter_result, 0, box_map[type].regWidth);
                     break;
 
                 case MBOX0:
@@ -1523,6 +1575,8 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                                     0, ovf_offset, getCounterTypeOffset(index)+2);
                     break;
 
+                case BBOX0:
+                case BBOX1:
                 case PBOX:
                 case IBOX0:
                 case WBOX:
@@ -1557,11 +1611,50 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                                     0, ovf_offset, getCounterTypeOffset(index));
                     break;
 
+                case QBOX0FIX:
+                case QBOX1FIX:
+                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_QBOXFIX)
+                    if (eventSet->events[i].event.eventId == 0x00)
+                    {
+                        HPMread(cpu_id, dev, counter1, &counter_result);
+                        switch(extractBitField(counter_result, 3, 0))
+                        {
+                            case 0x2:
+                                counter_result = 5.6E9;
+                                break;
+                            case 0x3:
+                                counter_result = 6.4E9;
+                                break;
+                            case 0x4:
+                                counter_result = 7.2E9;
+                                break;
+                            case 0x5:
+                                counter_result = 8.0E9;
+                                break;
+                            case 0x6:
+                                counter_result = 8.8E9;
+                                break;
+                            case 0x7:
+                                counter_result = 9.6E9;
+                                break;
+                            default:
+                                counter_result = 0;
+                                break;
+                        }
+                        
+                    }
+                    else if ((eventSet->events[i].event.eventId == 0x01) ||
+                             (eventSet->events[i].event.eventId == 0x02))
+                    {
+                        HPMread(cpu_id, dev, counter1, &counter_result);
+                        counter_result = field64(counter_result, 0, box_map[type].regWidth);
+                    }
+                    *current = counter_result;
+                    break;
 
                 default:
                     break;
             }
-            eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
         }
     }
     BDW_UNFREEZE_UNCORE;
