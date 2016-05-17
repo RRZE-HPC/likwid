@@ -743,6 +743,84 @@
 #define MSR_UNC_V3_C17_PMON_CTR2           0xF1A
 #define MSR_UNC_V3_C17_PMON_CTR3           0xF1B
 
+#define MSR_UNC_V3_C18_PMON_BOX_CTL        0xF20
+#define MSR_UNC_V3_C18_PMON_BOX_STATUS     0xF27
+#define MSR_UNC_V3_C18_PMON_BOX_FILTER0    0xF25
+#define MSR_UNC_V3_C18_PMON_BOX_FILTER1    0xF26
+#define MSR_UNC_V3_C18_PMON_CTL0           0xF21
+#define MSR_UNC_V3_C18_PMON_CTL1           0xF22
+#define MSR_UNC_V3_C18_PMON_CTL2           0xF23
+#define MSR_UNC_V3_C18_PMON_CTL3           0xF24
+#define MSR_UNC_V3_C18_PMON_CTR0           0xF28
+#define MSR_UNC_V3_C18_PMON_CTR1           0xF29
+#define MSR_UNC_V3_C18_PMON_CTR2           0xF2A
+#define MSR_UNC_V3_C18_PMON_CTR3           0xF2B
+
+#define MSR_UNC_V3_C19_PMON_BOX_CTL        0xF30
+#define MSR_UNC_V3_C19_PMON_BOX_STATUS     0xF37
+#define MSR_UNC_V3_C19_PMON_BOX_FILTER0    0xF35
+#define MSR_UNC_V3_C19_PMON_BOX_FILTER1    0xF36
+#define MSR_UNC_V3_C19_PMON_CTL0           0xF31
+#define MSR_UNC_V3_C19_PMON_CTL1           0xF32
+#define MSR_UNC_V3_C19_PMON_CTL2           0xF33
+#define MSR_UNC_V3_C19_PMON_CTL3           0xF34
+#define MSR_UNC_V3_C19_PMON_CTR0           0xF38
+#define MSR_UNC_V3_C19_PMON_CTR1           0xF39
+#define MSR_UNC_V3_C19_PMON_CTR2           0xF3A
+#define MSR_UNC_V3_C19_PMON_CTR3           0xF3B
+
+#define MSR_UNC_V3_C20_PMON_BOX_CTL        0xF40
+#define MSR_UNC_V3_C20_PMON_BOX_STATUS     0xF47
+#define MSR_UNC_V3_C20_PMON_BOX_FILTER0    0xF45
+#define MSR_UNC_V3_C20_PMON_BOX_FILTER1    0xF46
+#define MSR_UNC_V3_C20_PMON_CTL0           0xF41
+#define MSR_UNC_V3_C20_PMON_CTL1           0xF42
+#define MSR_UNC_V3_C20_PMON_CTL2           0xF43
+#define MSR_UNC_V3_C20_PMON_CTL3           0xF44
+#define MSR_UNC_V3_C20_PMON_CTR0           0xF48
+#define MSR_UNC_V3_C20_PMON_CTR1           0xF49
+#define MSR_UNC_V3_C20_PMON_CTR2           0xF4A
+#define MSR_UNC_V3_C20_PMON_CTR3           0xF4B
+
+#define MSR_UNC_V3_C21_PMON_BOX_CTL        0xF50
+#define MSR_UNC_V3_C21_PMON_BOX_STATUS     0xF57
+#define MSR_UNC_V3_C21_PMON_BOX_FILTER0    0xF55
+#define MSR_UNC_V3_C21_PMON_BOX_FILTER1    0xF56
+#define MSR_UNC_V3_C21_PMON_CTL0           0xF51
+#define MSR_UNC_V3_C21_PMON_CTL1           0xF52
+#define MSR_UNC_V3_C21_PMON_CTL2           0xF53
+#define MSR_UNC_V3_C21_PMON_CTL3           0xF54
+#define MSR_UNC_V3_C21_PMON_CTR0           0xF58
+#define MSR_UNC_V3_C21_PMON_CTR1           0xF59
+#define MSR_UNC_V3_C21_PMON_CTR2           0xF5A
+#define MSR_UNC_V3_C21_PMON_CTR3           0xF5B
+
+#define MSR_UNC_V3_C22_PMON_BOX_CTL        0xF60
+#define MSR_UNC_V3_C22_PMON_BOX_STATUS     0xF67
+#define MSR_UNC_V3_C22_PMON_BOX_FILTER0    0xF65
+#define MSR_UNC_V3_C22_PMON_BOX_FILTER1    0xF66
+#define MSR_UNC_V3_C22_PMON_CTL0           0xF61
+#define MSR_UNC_V3_C22_PMON_CTL1           0xF62
+#define MSR_UNC_V3_C22_PMON_CTL2           0xF63
+#define MSR_UNC_V3_C22_PMON_CTL3           0xF64
+#define MSR_UNC_V3_C22_PMON_CTR0           0xF68
+#define MSR_UNC_V3_C22_PMON_CTR1           0xF69
+#define MSR_UNC_V3_C22_PMON_CTR2           0xF6A
+#define MSR_UNC_V3_C22_PMON_CTR3           0xF6B
+
+#define MSR_UNC_V3_C23_PMON_BOX_CTL        0xF70
+#define MSR_UNC_V3_C23_PMON_BOX_STATUS     0xF77
+#define MSR_UNC_V3_C23_PMON_BOX_FILTER0    0xF75
+#define MSR_UNC_V3_C23_PMON_BOX_FILTER1    0xF76
+#define MSR_UNC_V3_C23_PMON_CTL0           0xF71
+#define MSR_UNC_V3_C23_PMON_CTL1           0xF72
+#define MSR_UNC_V3_C23_PMON_CTL2           0xF73
+#define MSR_UNC_V3_C23_PMON_CTL3           0xF74
+#define MSR_UNC_V3_C23_PMON_CTR0           0xF78
+#define MSR_UNC_V3_C23_PMON_CTR1           0xF79
+#define MSR_UNC_V3_C23_PMON_CTR2           0xF7A
+#define MSR_UNC_V3_C23_PMON_CTR3           0xF7B
+
 /* Sbox */
 #define MSR_UNC_V3_S0_PMON_BOX_CTL         0x720
 #define MSR_UNC_V3_S0_PMON_BOX_STATUS      0x725

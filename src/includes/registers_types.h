@@ -70,6 +70,8 @@ typedef enum {
     PMC187, PMC188, PMC189, PMC190, PMC191, PMC192,
     PMC193, PMC194, PMC195, PMC196, PMC197, PMC198,
     PMC199, PMC200, PMC201, PMC202, PMC203, PMC204,
+    PMC205, PMC206, PMC207, PMC208, PMC209, PMC210,
+    PMC211, PMC212, PMC213, PMC214, PMC215, PMC216,
     NUM_PMC
 } RegisterIndex;
 
@@ -93,12 +95,14 @@ typedef enum {
     CBOX9, CBOX10, CBOX11,
     CBOX12, CBOX13, CBOX14,
     CBOX15, CBOX16, CBOX17,
+    CBOX18, CBOX19, CBOX20,
+    CBOX21, CBOX22, CBOX23,
     PBOX,
     UBOX,
     UBOXFIX,
     IBOX0, IBOX1,
-    QBOX0, QBOX1,
-    QBOX0FIX, QBOX1FIX,
+    QBOX0, QBOX1, QBOX2,
+    QBOX0FIX, QBOX1FIX, QBOX2FIX,
     NUM_UNITS, NOTYPE, MAX_UNITS
 } RegisterType;
 
@@ -158,6 +162,12 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [CBOX15] = "Caching Agent box 15",
     [CBOX16] = "Caching Agent box 16",
     [CBOX17] = "Caching Agent box 17",
+    [CBOX18] = "Caching Agent box 18",
+    [CBOX19] = "Caching Agent box 19",
+    [CBOX20] = "Caching Agent box 20",
+    [CBOX21] = "Caching Agent box 21",
+    [CBOX22] = "Caching Agent box 22",
+    [CBOX23] = "Caching Agent box 23",
     [PBOX] = "Physical Layer box",
     [UBOX] = "System Configuration box",
     [UBOXFIX] = "System Configuration box fixed counter",
