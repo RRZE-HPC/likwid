@@ -140,6 +140,12 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
             break;
         }
     }
+    if (ret == FALSE)
+    {
+        fprintf(stderr, "ERROR: Counter %s not available\n",bdata(reg));
+        *type = NOTYPE;
+        return FALSE;
+    }
     if (ret && (ownstrcmp(bdata(reg), counter_map[*index].key) != 0))
     {
         *type = NOTYPE;
@@ -553,6 +559,8 @@ calculateResult(int groupId, int eventId, int threadId)
     PerfmonCounter* counter;
     int cpu_id;
     double result = 0.0;
+    if (groupSet->groups[groupId].events[eventId].type == NOTYPE)
+        return result;
 
     event = &(groupSet->groups[groupId].events[eventId]);
     counter = &(event->threadCounter[threadId]);
@@ -751,7 +759,6 @@ perfmon_init_maps(void)
                     break;
 
                 case BROADWELL:
-                case BROADWELL_E:
                     box_map = broadwell_box_map;
                     eventHash = broadwell_arch_events;
                     counter_map = broadwell_counter_map;
@@ -766,6 +773,14 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsBroadwellD;
                     perfmon_numCounters = perfmon_numCountersBroadwellD;
                     perfmon_numCoreCounters = perfmon_numCoreCountersBroadwellD;
+                    break;
+                case BROADWELL_E:
+                    box_map = broadwellEP_box_map;
+                    eventHash = broadwellEP_arch_events;
+                    counter_map = broadwellEP_counter_map;
+                    perfmon_numArchEvents = perfmon_numArchEventsBroadwellEP;
+                    perfmon_numCounters = perfmon_numCountersBroadwellEP;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersBroadwellEP;
                     break;
 
                 case SKYLAKE1:
