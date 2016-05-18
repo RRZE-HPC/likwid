@@ -1237,32 +1237,49 @@ int calc_metric(char* formula, CounterList* clist, double *result)
 {
     int i=0;
     *result = 0.0;
+    int fail = 0;
+    int maxstrlen = 0, minstrlen = 10000;
 
     if ((formula == NULL) || (clist == NULL))
         return -EINVAL;
 
     bstring f = bfromcstr(formula);
-
-
-    // try to replace each counter name in clist
     for(i=0;i<clist->counters;i++)
     {
-        // if we find the counter name, replace it with the value
-        bstring c = bfromcstr(clist->cnames[i]);
-        bstring v = bformat("%.20f", clist->cvalues[i]);
-        bfindreplace(f, c, v, 0);
-        bdestroy(c);
-        bdestroy(v);
+        if (strlen(clist->cnames[i]) > maxstrlen)
+            maxstrlen = strlen(clist->cnames[i]);
+        if (strlen(clist->cnames[i]) < minstrlen)
+            minstrlen = strlen(clist->cnames[i]);
+    }
+
+    // try to replace each counter name in clist
+    while (maxstrlen >= minstrlen)
+    {
+        for(i=0;i<clist->counters;i++)
+        {
+            if (strlen(clist->cnames[i]) != maxstrlen)
+                continue;
+            // if we find the counter name, replace it with the value
+            bstring c = bfromcstr(clist->cnames[i]);
+            bstring v = bformat("%.20f", clist->cvalues[i]);
+            bfindreplace(f, c, v, 0);
+            bdestroy(c);
+            bdestroy(v);
+        }
+        maxstrlen--;
     }
     bstring test = bfromcstr("aAbBcCdDfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ,_:;!'§$&=?°´`#<>");
     if (binchr(f, 0, test) != BSTR_ERR)
     {
         fprintf(stderr, "Not all counter names in formula can be substituted\n");
         fprintf(stderr, "%s\n", bdata(f));
+        i = -EINVAL;
+        fail = 1;
     }
     bdestroy(test);
     // now we can calculate the formula
-    i = calculate_infix(bdata(f), result);
+    if (!fail)
+        i = calculate_infix(bdata(f), result);
     bdestroy(f);
     return i;
 }
