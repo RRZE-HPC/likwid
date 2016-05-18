@@ -174,7 +174,7 @@ static int lua_likwid_setAccessMode(lua_State* L)
     flag = luaL_checknumber(L,1);
     luaL_argcheck(L, flag >= 0 && flag <= 1, 1, "invalid access mode, only 0 (direct) and 1 (accessdaemon) allowed");
     HPMmode(flag);
-    lua_pushnumber(L,0);
+    lua_pushinteger(L,0);
     return 1;
 }
 
@@ -255,7 +255,7 @@ static int lua_likwid_addEventSet(lua_State* L)
     luaL_argcheck(L, strlen(tmpString) > 0, n, "Event string must be larger than 0");
 
     groupId = perfmon_addEventSet((char*)tmpString);
-    lua_pushnumber(L, groupId+1);
+    lua_pushinteger(L, groupId+1);
     return 1;
 }
 
@@ -268,7 +268,7 @@ static int lua_likwid_setupCounters(lua_State* L)
         return 0;
     }
     ret = perfmon_setupCounters(groupId-1);
-    lua_pushnumber(L,ret);
+    lua_pushinteger(L,ret);
     return 1;
 }
 
@@ -281,7 +281,7 @@ static int lua_likwid_startCounters(lua_State* L)
         return 0;
     }
     ret = perfmon_startCounters();
-    lua_pushnumber(L,ret);
+    lua_pushinteger(L,ret);
     return 1;
 }
 
@@ -293,7 +293,7 @@ static int lua_likwid_stopCounters(lua_State* L)
         return 0;
     }
     ret = perfmon_stopCounters();
-    lua_pushnumber(L,ret);
+    lua_pushinteger(L,ret);
     return 1;
 }
 
@@ -305,7 +305,7 @@ static int lua_likwid_readCounters(lua_State* L)
         return 0;
     }
     ret = perfmon_readCounters();
-    lua_pushnumber(L,ret);
+    lua_pushinteger(L,ret);
     return 1;
 }
 
@@ -427,7 +427,7 @@ static int lua_likwid_getNumberOfGroups(lua_State* L)
         return 0;
     }
     number = perfmon_getNumberOfGroups();
-    lua_pushnumber(L,number);
+    lua_pushinteger(L,number);
     return 1;
 }
 
@@ -439,7 +439,7 @@ static int lua_likwid_getIdOfActiveGroup(lua_State* L)
         return 0;
     }
     number = perfmon_getIdOfActiveGroup();
-    lua_pushnumber(L,number+1);
+    lua_pushinteger(L,number+1);
     return 1;
 }
 
@@ -466,7 +466,7 @@ static int lua_likwid_getNumberOfEvents(lua_State* L)
     }
     groupId = lua_tonumber(L,1);
     number = perfmon_getNumberOfEvents(groupId-1);
-    lua_pushnumber(L,number);
+    lua_pushinteger(L,number);
     return 1;
 }
 
@@ -478,7 +478,7 @@ static int lua_likwid_getNumberOfThreads(lua_State* L)
         return 0;
     }
     number = perfmon_getNumberOfThreads();
-    lua_pushnumber(L,number);
+    lua_pushinteger(L,number);
     return 1;
 }
 
@@ -521,7 +521,7 @@ static int lua_likwid_getNumberOfMetrics(lua_State* L)
     }
     groupId = lua_tonumber(L,1);
     number = perfmon_getNumberOfMetrics(groupId-1);
-    lua_pushnumber(L,number);
+    lua_pushinteger(L,number);
     return 1;
 }
 
