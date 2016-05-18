@@ -1908,7 +1908,7 @@ local outfilename = string.format(os.getenv("PWD").."/.output_%s_%%r_%%h.csv", p
 
 checkLikwid()
 
-if writeHostfile == nil or writeWrapScript == nil or getEnvironment == nil or executeCommand == nil then
+if writeHostfile == nil or getEnvironment == nil or executeCommand == nil then
     print("ERROR: Initialization for MPI specific functions failed")
     os.exit(1)
 end
