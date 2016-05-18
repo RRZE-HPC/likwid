@@ -32,12 +32,13 @@
 package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 local likwid = require("likwid")
 
+local base_groupPath = "<INSTALLED_PREFIX>/share/likwid/mongroups"
 dconfig = {}
 dconfig["groupStrings"] ={}
 dconfig["groupData"] ={}
 dconfig["accessmode"] = 1
 dconfig["duration"] = 1
-dconfig["groupPath"] = "<INSTALLED_PREFIX>/share/likwid/mongroups"
+dconfig["groupPath"] = ""
 dconfig["logPath"] = nil
 dconfig["logStyle"] = "log"
 dconfig["gmetric"] = false
@@ -404,6 +405,12 @@ read_daemon_config(arg[1])
 
 -- Set force mode, we are monitoring exclusively
 likwid.setenv("LIKWID_FORCE","1")
+
+if dconfig["groupPath"] ~= "" then
+    likwid.setGroupPath(dconfig["groupPath"])
+else
+    dconfig["groupPath"] = base_groupPath
+end
 
 if #dconfig["groupStrings"] == 0 then
     print("No monitoring groups defined, exiting...")
