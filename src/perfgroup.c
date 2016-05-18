@@ -630,7 +630,7 @@ int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* 
             ERROR_PRINT(Cannot read group file %s.txt. Searched in %s and %s, groupname, bdata(fullpath), bdata(homepath));
             bdestroy(fullpath);
             bdestroy(homepath);
-            exit(EXIT_FAILURE);
+            return -EACCES;
         }
         else
         {
