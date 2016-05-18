@@ -53,11 +53,23 @@ static int perfmon_numCountersBroadwellEP = NUM_COUNTERS_BROADWELLEP;
 static int perfmon_numCoreCountersBroadwellEP = NUM_COUNTERS_CORE_BROADWELLEP;
 static int perfmon_numArchEventsBroadwellEP = NUM_ARCH_EVENTS_BROADWELLEP;
 
+int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
+int bdwep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
+int (*broadwell_cbox_setup)(int, RegisterIndex, PerfmonEvent *);
+
 int perfmon_init_broadwell(int cpu_id)
 {
     lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
+    if ((cpuid_info.model == BROADWELL_E) || (cpuid_info.model == BROADWELL_D))
+    {
+        broadwell_cbox_setup = bdwep_cbox_setup;
+    }
+    else
+    {
+        broadwell_cbox_setup = bdw_cbox_setup;
+    }
     return 0;
 }
 
@@ -208,6 +220,43 @@ int bdw_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 }
 
 int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    int j;
+    uint64_t flags = 0x0ULL;
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+    flags = (1ULL<<22)|(1ULL<<20);
+    flags |= (event->umask<<8) + event->eventId;
+    if (event->numberOfOptions > 0)
+    {
+        for(j = 0; j < event->numberOfOptions; j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= (event->options[j].value & 0x1FULL) << 24;
+                    break;
+            }
+        }
+    }
+    if (flags != currentConfig[cpu_id][index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_CBOX);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[cpu_id][index] = flags;
+    }
+    return 0;
+}
+
+int bdwep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint64_t flags = 0x0ULL;
@@ -1015,7 +1064,7 @@ int perfmon_setupCounterThread_broadwell(
             case CBOX13:
             case CBOX14:
             case CBOX15:
-                bdw_cbox_setup(cpu_id, index, event);
+                broadwell_cbox_setup(cpu_id, index, event);
                 break;
 
             case BBOX0:
