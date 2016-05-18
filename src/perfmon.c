@@ -1884,6 +1884,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
     if (e < 0)
     {
+        result = 0.0;
         ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
     }
     destroy_clist(&clist);
@@ -1933,7 +1934,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
     if (e < 0)
     {
-        errno = EIO;
+        result = 0.0;
         ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
     }
     destroy_clist(&clist);
