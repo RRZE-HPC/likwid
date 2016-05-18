@@ -402,6 +402,9 @@ local config = likwid.getConfiguration()
 -- Read LIKWID daemon configuration file
 read_daemon_config(arg[1])
 
+-- Set force mode, we are monitoring exclusively
+likwid.setenv("LIKWID_FORCE","1")
+
 if #dconfig["groupStrings"] == 0 then
     print("No monitoring groups defined, exiting...")
     os.exit(1)
@@ -459,32 +462,21 @@ end
 -- Select group directory for monitoring
 likwid.groupfolder = dconfig["groupPath"]
 
--- Evaluate eventSet given on commandline. If it's a group, resolve to events
-for k,v in pairs(dconfig["groupStrings"]) do
-    local gdata = nil
-    gdata = likwid.get_groupdata(v)
-    if gdata ~= nil then
-        table.insert(dconfig["groupData"], gdata)
-    end
-end
-if #dconfig["groupData"] == 0 then
-    print("None of the event strings can be added for current architecture.")
-    os.exit(1)
-end
 power = likwid.getPowerInfo()
 -- Initialize likwid perfctr
 likwid.init(cputopo["numHWThreads"], cpulist)
-for k,v in pairs(dconfig["groupData"]) do
-    local groupID = likwid.addEventSet(v["EventString"])
+for k,v in pairs(dconfig["groupStrings"]) do
+    local groupID = likwid.addEventSet(v)
+    table.insert(dconfig["groupData"], groupID, v)
     if dconfig["rrd"] then
-        create_rrd(#dconfig["groupData"], dconfig["duration"], v)
+        create_rrd(#dconfig["groupStrings"], dconfig["duration"], v)
     end
 end
 
 likwid.catchSignal()
 while likwid.getSignalState() == 0 do
 
-    for groupID,gdata in pairs(dconfig["groupData"]) do
+    for groupID,gname in pairs(dconfig["groupData"]) do
         local old_mtime = likwid_getRuntimeOfGroup(groupID)
         local cur_time = os.time()
         likwid.setupCounters(groupID)
@@ -494,68 +486,40 @@ while likwid.getSignalState() == 0 do
         likwid.sleep(dconfig["duration"] * 1E6)
         likwid.stopCounters()
 
-        -- temporal array collecting counter to values for each thread for metric calculation
-        threadResults = {}
-        local mtime = likwid_getRuntimeOfGroup(groupID)
-        local clock = likwid_getCpuClock();
 
-        for event=1, likwid.getNumberOfEvents(groupID) do
-            for thread=1, likwid.getNumberOfThreads() do
-                if threadResults[thread] == nil then
-                    threadResults[thread] = {}
-                end
-                local time = mtime - old_mtime
-                threadResults[thread]["time"] = time
-                threadResults[thread]["inverseClock"] = 1.0/clock;
-                local result = likwid.getResult(groupID, event, thread)
-                if threadResults[thread][gdata["Events"][event]["Counter"]] == nil then
-                    threadResults[thread][gdata["Events"][event]["Counter"]] = 0
-                end
-                
-                if gdata["Events"][event]["Counter"]:match("PWR%d") then
-                    dname = gdata["Events"][event]["Event"]:match("PWR_(%a+)_ENERGY")
-                    if power["domains"][dname]["supportInfo"] then
-                        if result ~= 0 and result/time > power["domains"][dname]["maxPower"]*1E-6 then
-                            result = power["domains"][dname]["tdp"]*1E-6 * time
-                        end
-                    end
-                end
-                threadResults[thread][gdata["Events"][event]["Counter"]] = result
-            end
-        end
-
-
-        if gdata["Metrics"] then
+        if likwid.getNumberOfMetrics(groupID) > 0 then
             local threadOutput = {}
-            for i, metric in pairs(gdata["Metrics"]) do
+            for i=1, likwid.getNumberOfMetrics(groupID) do
+                local metricdesc = likwid.getNameOfMetric(groupID, i)
                 for thread=1, likwid.getNumberOfThreads() do
                     if threadOutput[thread] == nil then
                         threadOutput[thread] = {}
                     end
-                    local result = likwid.calculate_metric(metric["formula"], threadResults[thread])
-                    threadOutput[thread][metric["description"]] = result
+                    --local result = likwid.calculate_metric(metric["formula"], threadResults[thread])
+                    threadOutput[thread][metricdesc] = likwid.getLastMetric(groupID, i, thread)
                 end
             end
             output = {}
             output["Timestamp"] = os.date("%m/%d/%Y_%X",cur_time)
-            for i, metric in pairs(gdata["Metrics"]) do
-                itemlist = likwid.stringsplit(metric["description"], "%s+", nil, "%s+")
+            for i=1, likwid.getNumberOfMetrics(groupID) do
+                local metricdesc = likwid.getNameOfMetric(groupID, i)
+                itemlist = likwid.stringsplit(metricdesc, "%s+", nil, "%s+")
                 func = itemlist[1]
                 table.remove(itemlist, 1)
                 desc = table.concat(itemlist," ")
                 if func == "AVG" then
-                    output[metric["description"]:gsub(" ","_")] = calc_avg(metric["description"], threadOutput)
+                    output[metricdesc:gsub(" ","_")] = calc_avg(metricdesc, threadOutput)
                 elseif func == "SUM" then
-                    output[metric["description"]:gsub(" ","_")] = calc_sum(metric["description"], threadOutput)
+                    output[metricdesc:gsub(" ","_")] = calc_sum(metricdesc, threadOutput)
                 elseif func == "MIN" then
-                    output[metric["description"]:gsub(" ","_")] = calc_min(metric["description"], threadOutput)
+                    output[metricdesc:gsub(" ","_")] = calc_min(metricdesc, threadOutput)
                 elseif func == "MAX" then
-                    output[metric["description"]:gsub(" ","_")] = calc_max(metric["description"], threadOutput)
+                    output[metricdesc:gsub(" ","_")] = calc_max(metricdesc, threadOutput)
                 elseif func == "ONCE" then
-                    output[metric["description"]:gsub(" ","_")] = threadOutput[1][metric["description"]]
+                    output[metricdesc:gsub(" ","_")] = threadOutput[1][metricdesc]
                 else
                     for thread=1, likwid.getNumberOfThreads() do
-                        output["T"..cpulist[thread] .. "_" .. metric["description"]] = threadOutput[thread][metric["description"]]
+                        output["T"..cpulist[thread] .. "_" .. metricdesc] = threadOutput[thread][metricdesc]
                     end
                 end
             end
