@@ -91,3 +91,6 @@ done < ${EXEC}.txt
 if [ "${EXEC}" == "likwid-setFrequencies" ]; then
     ${EXEC} -f "${CURFREQ}"
 fi
+
+rm -f /tmp/topo.txt /tmp/test /tmp/test.txt /tmp/out.txt /tmp/out
+
