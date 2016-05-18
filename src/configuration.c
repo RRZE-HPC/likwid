@@ -81,18 +81,29 @@ static int default_configuration(void)
             free(fptr);
         goto use_hardcoded;
     }
-    config.daemonPath = (char*)malloc((len+1) * sizeof(char));
-    strncpy(config.daemonPath, fptr, len);
-    config.daemonPath[len] = '\0';
-    if (fptr)
-        free(fptr);
+    if (!access(fptr, X_OK))
+    {
+        config.daemonPath = (char*)malloc((len+1) * sizeof(char));
+        strncpy(config.daemonPath, fptr, len);
+        config.daemonPath[len] = '\0';
+        if (fptr)
+            free(fptr);
+    }
+    else
+    {
+        fprintf(stderr, "Found access daemon at %s but it is not executable, using compiled in daemon path.\n", fptr);
+        fclose(fp);
+        if (fptr)
+            free(fptr);
+        goto use_hardcoded;
+    }
     init_config = 1;
     fclose(fp);
     return 0;
 use_hardcoded:
     ret = sprintf(filename,"%s", TOSTRING(ACCESSDAEMON));
     filename[ret] = '\0';
-    if (!access(filename, R_OK))
+    if (!access(filename, X_OK))
     {
         config.daemonPath = (char*)malloc((strlen(filename)+1) * sizeof(char));
         strcpy(config.daemonPath, filename);
