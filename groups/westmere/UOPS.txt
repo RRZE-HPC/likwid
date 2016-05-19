@@ -6,7 +6,8 @@ FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
 PMC0  UOPS_ISSUED_ANY
 PMC1  UOPS_EXECUTED_THREAD
-PMC3  UOPS_RETIRED_ANY
+PMC2  UOPS_RETIRED_ALL
+PMC3  UOPS_ISSUED_FUSED
 
 
 
@@ -16,21 +17,19 @@ Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 Issued UOPs PMC0
+Merged UOPs PMC3
 Executed UOPs PMC1
-Retired UOPs PMC3
-
+Retired UOPs PMC2
 
 LONG
 Formula:
 Issued UOPs = UOPS_ISSUED_ANY
+Merged UOPs = UOPS_ISSUED_FUSED
 Executed UOPs = UOPS_EXECUTED_THREAD
-Retired UOPs = UOPS_RETIRED_ANY
+Retired UOPs = UOPS_RETIRED_ALL
 -
-This performance group measures the UOP execution through the different units
-in the CPUs pipeline. At first the instructions are decoded (no event) before
-they are issued to the reservation station. When all data for the execution of
-the UOP is available, the UOP is executed by one of the six dispatch ports.
-After execution, the UOP is queued in the reorder buffer in order to wait until
-the retirement of all other UOPs that formed the original instruction. When all
-UOPs are retired, the instruction is marked as retired.
+This group returns information about the instruction pipeline. It measures the
+issued, executed and retired uOPs and returns the number of uOPs which were issued
+but not executed as well as the number of uOPs which were executed but never retired.
+The executed but not retired uOPs commonly come from speculatively executed branches.
 
