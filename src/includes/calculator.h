@@ -3,7 +3,7 @@
  *
  *      Filename:  calculator.h
  *
- *      Description:  Handler infix calculator
+ *      Description:  Header file for infix calculator
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>

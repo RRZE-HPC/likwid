@@ -3,8 +3,8 @@
  *
  *      Filename:  hashTable.h
  *
- *      Description:  Header File hashtable Module. 
- *                    Wrapper for HAshTable data structure holding thread
+ *      Description:  Header File hashtable Module.
+ *                    Wrapper for HashTable data structure holding thread
  *                    specific region information.
  *
  *      Version:   <VERSION>
