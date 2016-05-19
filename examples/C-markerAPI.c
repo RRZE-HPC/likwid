@@ -5,13 +5,13 @@
  *
  *      Description:  Example how to use the C/C++ Marker API
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.1
+ *      Released:  19.5.2016
  *
  *      Author:  Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
