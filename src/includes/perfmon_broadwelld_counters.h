@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_broadwell_counters.h
+ *      Filename:  perfmon_broadwellD_counters.h
  *
- *      Description:  Counter Header File of perfmon module for Broadwell.
+ *      Description:  Counter Header File of perfmon module for Broadwell D.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>

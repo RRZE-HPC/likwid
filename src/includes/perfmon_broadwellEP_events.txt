@@ -1,8 +1,8 @@
 # =======================================================================================
 #
-#      Filename:  perfmon_broadwelld_events.txt
+#      Filename:  perfmon_broadwellEP_events.txt
 #
-#      Description:  Event list for Intel Broadwell D
+#      Description:  Event list for Intel Broadwell EP/EN/EX.
 #
 #      Version:   <VERSION>
 #      Released:  <DATE>
@@ -542,8 +542,12 @@ UMASK_MEM_LOAD_UOPS_L3_HIT_RETIRED_XSNP_HIT  0x02
 UMASK_MEM_LOAD_UOPS_L3_HIT_RETIRED_XSNP_HITM 0x04
 UMASK_MEM_LOAD_UOPS_L3_HIT_RETIRED_XSNP_NONE 0x08
 
-EVENT_MEM_LOAD_UOPS_L3_MISS_RETIRED            0xD3   PMC
-UMASK_MEM_LOAD_UOPS_L3_MISS_RETIRED_LOCAL_DRAM 0x01
+EVENT_MEM_LOAD_UOPS_L3_MISS_RETIRED                 0xD3   PMC
+UMASK_MEM_LOAD_UOPS_L3_MISS_RETIRED_LOCAL_DRAM      0x01
+UMASK_MEM_LOAD_UOPS_L3_MISS_RETIRED_LOCAL_DRAM      0x01
+UMASK_MEM_LOAD_UOPS_L3_MISS_RETIRED_REMOTE_DRAM     0x04
+UMASK_MEM_LOAD_UOPS_L3_MISS_RETIRED_REMOTE_HITM     0x10
+UMASK_MEM_LOAD_UOPS_L3_MISS_RETIRED_REMOTE_FWD      0x20
 
 EVENT_BACLEARS                0xE6 PMC
 UMASK_BACLEARS_ANY            0x1F
