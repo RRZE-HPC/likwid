@@ -1,0 +1,40 @@
+SHORT Main memory bandwidth in MBytes/s seen from Home agent
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+BBOX0C0 IMC_READS_NORMAL
+BBOX0C1 BYPASS_IMC_TAKEN
+BBOX0C2 IMC_WRITES_ALL
+BBOX1C0 IMC_READS_NORMAL
+BBOX1C1 BYPASS_IMC_TAKEN
+BBOX1C2 IMC_WRITES_ALL
+
+
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Memory read bandwidth [MBytes/s] 1.0E-06*(BBOX0C0+BBOX1C0+BBOX0C1+BBOX1C1)*64.0/time
+Memory read data volume [GBytes] 1.0E-09*(BBOX0C0+BBOX1C0+BBOX0C1+BBOX1C1)*64.0
+Memory write bandwidth [MBytes/s] 1.0E-06*(BBOX0C2+BBOX1C2)*64.0/time
+Memory write data volume [GBytes] 1.0E-09*(BBOX0C2+BBOX1C2)*64.0
+Memory bandwidth [MBytes/s] 1.0E-06*(BBOX0C0+BBOX1C0+BBOX0C1+BBOX1C1+BBOX0C2+BBOX1C2)*64.0/time
+Memory data volume [GBytes] 1.0E-09*(BBOX0C0+BBOX1C0+BBOX0C1+BBOX1C1+BBOX0C2+BBOX1C2)*64.0
+
+LONG
+Formulas:
+Memory read bandwidth [MBytes/s] = 1.0E-06*(SUM(IMC_READS_NORMAL)+SUM(BYPASS_IMC_TAKEN))*64.0/time
+Memory read data volume [GBytes] = 1.0E-09*(SUM(IMC_READS_NORMAL)+SUM(BYPASS_IMC_TAKEN))*64.0
+Memory write bandwidth [MBytes/s] = 1.0E-06*(SUM(IMC_WRITES_ALL))*64.0/time
+Memory write data volume [GBytes] = 1.0E-09*(SUM(IMC_WRITES_ALL))*64.0
+Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(IMC_READS_NORMAL) + SUM(BYPASS_IMC_TAKEN) + SUM(IMC_WRITES_ALL))*64.0/time
+Memory data volume [GBytes] = 1.0E-09*(SUM(IMC_READS_NORMAL) + SUM(BYPASS_IMC_TAKEN) + SUM(IMC_WRITES_ALL))*64.0
+-
+This group derives the same metrics as the MEM group but use the events of the
+Home Agent, a central unit that is responsible for the protocol side of memory
+interactions.
