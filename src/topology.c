@@ -1004,7 +1004,6 @@ void print_supportedCPUs (void)
     printf("\t%s\n",haswell_ep_str);
     printf("\t%s\n",atom_silvermont_str);
     printf("\t%s\n",atom_airmont_str);
-    printf("\t%s\n",atom_goldmont_str);
     printf("\t%s\n",xeon_phi_string);
     printf("\t%s\n",broadwell_str);
     printf("\t%s\n",broadwell_d_str);
