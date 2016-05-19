@@ -10,15 +10,15 @@ my $cc = ' *';
 my $fc = '!';
 my $lc = ' *';
 
-my $VERSION   = '<VERSION>';
-my $DATE   = '<DATE>';
-#my $VERSION   = '4.0';
-#my $DATE   = '16.6.2015';
-my $YEAR  = '2015';
+#my $VERSION   = '<VERSION>';
+#my $DATE   = '<DATE>';
+my $VERSION   = '4.1';
+my $DATE   = '19.5.2016';
+my $YEAR  = '2016';
 my $AUTHOR = 'RRZE, University Erlangen-Nuremberg';
 my $LICENSE = 'gpl';
 
-my @SKIPLIST = ('ghash.c','ghash.h','loadData.S','bstrlib.c','bstrlib.h');
+my @SKIPLIST = ('ghash.c','ghash.h','loadData.S','bstrlib.c','bstrlib.h', 'calculator_stack.h', 'calculator_stack.c');
 
 sub print_copyright
 {

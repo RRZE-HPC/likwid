@@ -7,13 +7,13 @@
  *      Description:  A application to determine the thread and cache topology
  *                    on x86 processors.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.1
+ *      Released:  19.5.2016
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
