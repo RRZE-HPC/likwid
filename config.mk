@@ -76,8 +76,8 @@ TOPO_FILE_PATH = /etc/likwid_topo.cfg
 
 # Versioning Information
 VERSION = 4
-RELEASE = 0
-DATE    = 28.04.2015
+RELEASE = 1
+DATE    = 19.05.2016
 
 RPATHS = -Wl,-rpath=$(INSTALLED_LIBPREFIX)
 LIBLIKWIDPIN = $(abspath $(INSTALLED_PREFIX)/lib/liblikwidpin.so.$(VERSION).$(RELEASE))
