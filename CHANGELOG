@@ -1,0 +1,59 @@
+
+
+# Changelog 4.1.0
+- Support for Intel Skylake (Core + Uncore)
+- Support for Intel Broadwell (Core + Uncore)
+- Support for Intel Broadwell D (Core + Uncore)
+- Support for Intel Broadwell EP/EN/EX (Core + Uncore)
+- Support for Intel Airmont (Core)
+- Uncore support for Intel SandyBridge, IvyBridge and Haswell
+- Performance group and event set handling in library
+- Internal calculator for derived metrics
+- Improvement of Marker API
+- Get results/metrics of last measurement cycle
+- Fixed most memory leaks
+- Respect 'Intel PMU sharing guide'
+- Update of internal Lua to 5.3
+- More examples (C++11 threads,Cilk+, TBB)
+- Test suite for executables and library
+- Accuracy checker supports multiple CPUs
+- Security checked access daemon
+- Likwid-bench supports Integer benchmarks
+- Likwid-bench selects interation count automatically
+- Likwid-bench has new FMA related benchmarks
+- Likwid-mpirun supports SLURM job scheduler
+- New tool likwid-features
+
+# Changelog 4.0.1
+- likwid-bench: Iteration determination is done serially
+- likwid-bench: Manual selection of iterations possible
+- likwid-perfctr: Set cpuset to all CPUs not only the first
+- likwid-pin: Set cpuset to all CPUs not only the first
+- likwid-accuracy.py: Enhanced plotting functions, use only instrumented likwid-bench
+- likwid-accessD: Check for allowed register for PCI accesses
+- Add models HASWELL_M1 (0x45) and HASWELL_M2 (0x46) to likwid-powermeter and likwid-accessD
+- New test application using Cilk and Marker API
+- New test application using C++11 threads and Marker API
+- likwid-agent: gmetric version check for --group option and s/\s*/_/ in metric names
+- likwid-powermeter: Print RAPL domain name
+- Marker API: Initialize access already at likwid_markerInit()
+- Marker API: likwid_markerThreadInit() only pins if not already pinned
+
+# Changelog 4.0.0
+
+- Support for Intel Broadwell
+- Uncore support for all Uncore-aware architectures
+    - Nehalem (EX)
+    - Westmere (EX)
+    - SandyBridge EP
+    - IvyBridge EP
+    - Haswell EP
+- Measure multiple event sets in a round-robin fashion (no multiplexing!)
+- Event options to filter the counter increments
+- Whole LIKWID functionality is exposed as API for C/C++ and Lua
+- New functions in the Marker API to switch event sets and get intermediate results
+- Topology code relies on hwloc. CPUID is still included but only as fallback
+- Most LIKWID applications are written in Lua (only exception likwid-bench)
+- Monitoring daemon likwid-agent with multiple output backends
+- More performance groups
+
