@@ -37,7 +37,7 @@ streamGCC_C11: stream.cc
 streamICC_C11: stream.cc
 	@if [ $(ICPC_AVAILABLE) -ne 0 ]; then icpc -restrict -O3 -std=c++11 -pthread -o $@ $(LIKWID_DEFINES) stream.cc $(LIKWID_LIB) -lm; fi
 
-testmarker: testmarker-cnt.c
+testmarker-cnt: testmarker-cnt.c
 	gcc -O3 -std=c99  $(LIKWID_INCLUDES) -fopenmp $(LIKWID_DEFINES) -o $@ testmarker-cnt.c $(LIKWID_LIB) -lm
 
 testmarker-omp: testmarker-omp.c
@@ -58,9 +58,9 @@ testTBBGCC:
 testTBBICC:
 	@if [ $(TBB_AVAILABLE) -ne 0 -a $(ICPC_AVAILABLE) -ne 0 ]; then icpc -O3 $(LIKWID_DEFINES) $(LIKWID_INCLUDES) -o $@ testTBB.cc -ltbb $(LIKWID_LIB); else echo "Either TBB or ICPC missing"; fi
 
-.PHONY: clean streamGCC streamICC streamGCC_C11 streamICC_C11 testmarker testmarker-omp testmarkerF90 test-mpi stream_cilk serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC
+.PHONY: clean streamGCC streamICC streamGCC_C11 streamICC_C11 testmarker-cnt testmarker-omp testmarkerF90 test-mpi stream_cilk serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC
 
 clean:
-	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker testmarkerF90 test-mpi testmarker-omp serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC
+	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker-cnt testmarkerF90 test-mpi testmarker-omp serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC
 
 
