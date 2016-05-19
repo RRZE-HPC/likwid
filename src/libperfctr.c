@@ -152,7 +152,7 @@ void likwid_markerInit(void)
     }
     else if (likwid_init == 0)
     {
-        fprintf(stderr, "Running without Marker API. Activate Marker API set -m on commandline.\n");
+        fprintf(stderr, "Running without Marker API. Activate Marker API with -m on commandline.\n");
         return;
     }
     else
