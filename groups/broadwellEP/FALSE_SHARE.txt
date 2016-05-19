@@ -14,11 +14,15 @@ Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 Local LLC false sharing [MByte] 1.E-06*PMC0*64
 Local LLC false sharing rate PMC0/PMC2
+Remote LLC false sharing [MByte] 1.E-06*PMC1*64
+Remote LLC false sharing rate PMC1/PMC2
 
 LONG
 Formula:
 Local LLC false sharing [MByte] = 1.E-06*MEM_LOAD_UOPS_L3_HIT_RETIRED_XSNP_HITM*64
 Local LLC false sharing rate = MEM_LOAD_UOPS_L3_HIT_RETIRED_XSNP_HITM/MEM_UOPS_RETIRED_LOADS_ALL
+Remote LLC false sharing [MByte] = 1.E-06*MEM_LOAD_UOPS_L3_MISS_RETIRED_REMOTE_HITM*64
+Remote LLC false sharing rate = MEM_LOAD_UOPS_L3_MISS_RETIRED_REMOTE_HITM/MEM_LOAD_UOPS_RETIRED_ALL
 -
 False-sharing of cache lines can dramatically reduce the performance of an
 application. This performance group measures the L3 traffic induced by false-sharing.
