@@ -293,6 +293,7 @@ end
 
 local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
     local use_hydra = true
+    local mpi_connect = "ssh"
     if wrapperscript.sub(1,1) ~= "/" then
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
@@ -327,10 +328,13 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
     for i,e in pairs(mpiopts) do
         envstr = envstr .. string.format("%s ",e)
     end
+    if likwid.getenv("LIKWID_MPI_CONNECT") ~= nil then
+        mpi_connect = likwid.getenv("LIKWID_MPI_CONNECT")
+    end
 
     if debug then
         if use_hydra == false then
-            print(string.format("EXEC: %s/mpdboot -r ssh -n %d -f %s", path, nrNodes, hostfile))
+            print(string.format("EXEC: %s/mpdboot -r %s -n %d -f %s", path, mpi_connect, nrNodes, hostfile))
             print(string.format("EXEC: %s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
             print(string.format("EXEC: %s/mpdallexit", path))
         else
@@ -340,7 +344,7 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
 
     --os.execute(string.format("%s -genv I_MPI_PIN 0 -f %s -np %d -perhost %d %s",mpiexecutable, hostfile, np, ppn, wrapperscript))
     if use_hydra == false then
-        os.execute(string.format("%s/mpdboot -r ssh -n %d -f %s", path, nrNodes, hostfile))
+        os.execute(string.format("%s/mpdboot -r %s -n %d -f %s", path, mpi_connect, nrNodes, hostfile))
         os.execute(string.format("%s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
         os.execute(string.format("%s/mpdallexit", path))
     else
