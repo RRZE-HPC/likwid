@@ -96,6 +96,7 @@ local mpitype = nil
 local omptype = nil
 local skipStr = ""
 local executable = {}
+local mpiopts = {}
 local debug = false
 local use_marker = false
 local use_csv = false
@@ -220,9 +221,9 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
         f:close()
     end
 
-    local cmd = string.format("%s -hostfile %s %s -np %d -npernode %d %s",
+    local cmd = string.format("%s -hostfile %s %s -np %d -npernode %d %s %s",
                                 mpiexecutable, hostfile, bindstr,
-                                np, ppn, wrapperscript)
+                                np, ppn, table.concat(mpiopts, ' '), wrapperscript)
     if debug then
         print("EXEC: "..cmd)
     end
@@ -322,6 +323,9 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
         else
             envstr = envstr .. string.format("-env %s %s ", i, e)
         end
+    end
+    for i,e in pairs(mpiopts) do
+        envstr = envstr .. string.format("%s ",e)
     end
 
     if debug then
@@ -425,9 +429,9 @@ local function executeMvapich2(wrapperscript, hostfile, env, nrNodes)
         envstr = envstr .. string.format("%s=%s ", i, e)
     end
 
-    local cmd = string.format("%s -f %s -np %d -ppn %d %s %s",
+    local cmd = string.format("%s -f %s -np %d -ppn %d %s %s %s",
                                 mpiexecutable, hostfile,
-                                np, ppn, envstr, wrapperscript)
+                                np, ppn, envstr, table.concat(mpiopts, ' '), wrapperscript)
     if debug then
         print("EXEC: "..cmd)
     end
@@ -550,12 +554,14 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
     
-    local exec = string.format("srun -N %d --ntasks-per-node=%d --cpu_bind=none %s", nrNodes, ppn, wrapperscript)
+    local exec = string.format("srun -N %d --ntasks-per-node=%d --cpu_bind=none %s %s",
+                                nrNodes, ppn, table.concat(mpiopts, ' '), wrapperscript)
     if debug then
         print("EXEC: "..exec)
     end
     os.execute(exec)
 end
+
 local function getNumberOfNodes(hostlist)
     local n = 0
     for i, h in pairs(hostlist) do
@@ -1654,8 +1660,16 @@ if use_marker and #perf == 0 then
     os.exit(1)
 end
 
+local test_mpiOpts = false
 for i=1,#arg do
-    table.insert(executable, arg[i])
+    if arg[i] == '--' then
+        test_mpiOpts = true
+    end
+    if not test_mpiOpts then
+        table.insert(executable, arg[i])
+    elseif arg[i] ~= '--' then
+        table.insert(mpiopts, arg[i])
+    end
 end
 if #executable == 0 then
     print("ERROR: No executable given on commandline")
@@ -1672,6 +1686,9 @@ else
     if debug then
         print("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
     end
+end
+if #mpiopts > 0 and debug then
+    print("DEBUG: MPI options given on commandline: "..table.concat(mpiopts, " "))
 end
 
 if mpitype == nil then
