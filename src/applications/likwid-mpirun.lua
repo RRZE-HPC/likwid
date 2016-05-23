@@ -113,7 +113,7 @@ local writeHostfile = nil
 local getEnvironment = nil
 local executeCommand = nil
 local mpiexecutable = nil
-local hostpattern = "([%.%a%d_-])+"
+local hostpattern = "([%.%a%d_-]+)"
 
 
 local function readHostfileOpenMPI(filename)
