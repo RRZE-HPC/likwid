@@ -112,6 +112,7 @@ local writeHostfile = nil
 local getEnvironment = nil
 local executeCommand = nil
 local mpiexecutable = nil
+local hostpattern = "([%.%a%d_-])+"
 
 
 local function readHostfileOpenMPI(filename)
@@ -131,11 +132,11 @@ local function readHostfileOpenMPI(filename)
     f:close()
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
         if line:match("^#") == nil and line:match("^%s*$") == nil then
-            hostname, slots, maxslots = line:match("^([%.%a%d]+)%s+slots=(%d*)%s+max%-slots=(%d*)")
+            hostname, slots, maxslots = line:match("^"..hostpattern.."%s+slots=(%d*)%s+max%-slots=(%d*)")
             if not hostname then
-                hostname, slots = line:match("^([%.%a%d]+)%s+slots=(%d*)")
+                hostname, slots = line:match("^"..hostpattern.."%s+slots=(%d*)")
                 if not hostname then
-                    hostname = line:match("^([%.%a%d]+)")
+                    hostname = line:match("^"..hostpattern)
                     slots = 1
                     maxslots = 1
                 end
@@ -246,9 +247,9 @@ local function readHostfileIntelMPI(filename)
     f:close()
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
         if line:match("^#") == nil and line:match("^%s*$") == nil then
-            hostname, slots = line:match("^([%.%a%d]+):(%d+)")
+            hostname, slots = line:match("^"..hostpattern..":(%d+)")
             if not hostname then
-                hostname = line:match("^([%.%a%d]+)")
+                hostname = line:match("^"..hostpattern)
                 slots = topo["numHWThreads"]
             end
             table.insert(hostlist, {hostname=hostname, slots=slots, maxslots=slots})
@@ -360,11 +361,11 @@ local function readHostfileMvapich2(filename)
     f:close()
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
         if line:match("^#") == nil and line:match("^%s*$") == nil then
-            hostname, slots, interface = line:match("^([%.%a%d]+):(%d+):([%a%d]+)")
+            hostname, slots, interface = line:match("^"..hostpattern..":(%d+):([%a%d]+)")
             if not hostname then
-                hostname, slots = line:match("^([%.%a%d]+):(%d+)")
+                hostname, slots = line:match("^"..hostpattern..":(%d+)")
                 if not hostname then
-                    hostname = line:match("^([%.%a%d]+)")
+                    hostname = line:match("^"..hostpattern)
                     slots = 1
                     interface = nil
                 else
@@ -451,7 +452,7 @@ local function readHostfilePBS(filename)
     f:close()
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
         if line:match("^#") == nil and line:match("^%s*$") == nil then
-            hostname = line:match("^([%.%a%d]+)")
+            hostname = line:match("^"..hostpattern)
             local found = false
             for i, host in pairs(hostlist) do
                 if host["hostname"] == hostname then
@@ -496,7 +497,7 @@ function write_hostlist_to_file(hostlist, nperhost)
         else
             prefixzeros = 0
             
-            host, start, ende,remain = item:match("(%w+)%[(%d+)-(%d+)%]([%w%d%[%]-]*)")
+            host, start, ende,remain = item:match("(%a+)%[(%d+)-(%d+)%]([%w%d%[%]-]*)")
             if host and start and ende then
                 if tonumber(start) ~= 0 then
                     for j=1,#start do
