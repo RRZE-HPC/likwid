@@ -63,6 +63,7 @@ likwid.getMetric = likwid_getMetric
 likwid.getLastMetric = likwid_getLastMetric
 likwid.getNumberOfGroups = likwid_getNumberOfGroups
 likwid.getRuntimeOfGroup = likwid_getRuntimeOfGroup
+likwid.getLastTimeOfGroup = likwid_getLastTimeOfGroup
 likwid.getIdOfActiveGroup = likwid_getIdOfActiveGroup
 likwid.getNumberOfEvents = likwid_getNumberOfEvents
 likwid.getNumberOfThreads = likwid_getNumberOfThreads
@@ -860,9 +861,9 @@ local function printOutput(results, metrics, cpulist, region, stats)
         if #cur_cpulist > 1 or stats == true then
             if use_csv then
                 if region == nil then
-                    print(string.format("TABLE,Group %d Raw Stat,%s,%d%s",g,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
+                    print(string.format("TABLE,Group %d Raw STAT,%s,%d%s",g,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
                 else
-                    print(string.format("TABLE,Region %s,Group %d Raw Stat,%s,%d%s",regionName, g,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                    print(string.format("TABLE,Region %s,Group %d Raw STAT,%s,%d%s",regionName, g,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-5)))
                 end
                 likwid.printcsv(firsttab_combined, maxLineFields)
             else
@@ -883,9 +884,9 @@ local function printOutput(results, metrics, cpulist, region, stats)
             if #cur_cpulist > 1 or stats == true then
                 if use_csv then
                     if region == nil then
-                        print(string.format("TABLE,Group %d Metric Stat,%s,%d%s",g,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))
+                        print(string.format("TABLE,Group %d Metric STAT,%s,%d%s",g,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))
                     else
-                        print(string.format("TABLE,Region %s,Group %d Metric Stat,%s,%d%s",regionName,g,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                        print(string.format("TABLE,Region %s,Group %d Metric STAT,%s,%d%s",regionName,g,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-5)))
                     end
                     likwid.printcsv(secondtab_combined, maxLineFields)
                 else
