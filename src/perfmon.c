@@ -1365,7 +1365,11 @@ perfmon_addEventSet(char* eventCString)
         return -ENOMEM;
     }
     eventSet->numberOfEvents = 0;
+#ifdef __x86_64
+    eventSet->regTypeMask = ((__uint128_t)0x0ULL<<64)|0x0ULL;
+#else
     eventSet->regTypeMask = 0x0ULL;
+#endif
 
 
     int forceOverwrite = 0;
@@ -1798,6 +1802,8 @@ perfmon_getResult(int groupId, int eventId, int threadId)
         printf("ERROR: ThreadID greater than defined threads\n");
         return 0;
     }
+    if (groupSet->groups[groupId].events[eventId].type == NOTYPE)
+        return 0;
 
     if (groupSet->groups[groupId].events[eventId].threadCounter[threadId].fullResult == 0)
     {
@@ -1836,6 +1842,8 @@ perfmon_getLastResult(int groupId, int eventId, int threadId)
         printf("ERROR: ThreadID greater than defined threads\n");
         return 0;
     }
+    if (groupSet->groups[groupId].events[eventId].type == NOTYPE)
+        return 0;
 
     return groupSet->groups[groupId].events[eventId].threadCounter[threadId].lastResult;
 }

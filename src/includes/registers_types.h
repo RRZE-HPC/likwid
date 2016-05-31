@@ -181,7 +181,11 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [NOTYPE] = "No Type, used for skipping unavailable counters"
 };
 
-#define REG_TYPE_MASK(type) (type < NUM_UNITS ? (0x1ULL<<type) : 0x0ULL)
+#ifdef __x86_64
+#define REG_TYPE_MASK(type) (type < NUM_UNITS ? (((__uint128_t)1ULL)<<type) : (((__uint128_t)0ULL)<<64|0ULL))
+#else
+#define REG_TYPE_MASK(type) (type < NUM_UNITS ? (1ULL<<type) : (0x0ULL)
+#endif
 
 typedef struct {
     char*               key;
