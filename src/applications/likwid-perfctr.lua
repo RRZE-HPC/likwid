@@ -613,6 +613,7 @@ end
 
 io.stdout:flush()
 local groupTime = {}
+local exitvalue = 0
 if use_wrapper or use_timeline then
     local start = likwid.startClock()
     local stop = 0
@@ -649,7 +650,8 @@ if use_wrapper or use_timeline then
             break
         end
         local remain = likwid.sleep(duration)
-        if remain > 0 or not likwid.checkProgram(pid) then
+        exitvalue = likwid.checkProgram(pid)
+        if remain > 0 or exitvalue >= 0 then
             io.stdout:flush()
             break
         end
@@ -671,6 +673,7 @@ if use_wrapper or use_timeline then
             end
             io.stderr:write(str.."\n")
             groupTime[activeGroup] = time
+            likwid.setupCounters(activeGroup)
             likwid.startCounters()
         else
             likwid.readCounters()
@@ -702,6 +705,7 @@ elseif use_marker then
     local ret = os.execute(execString)
     if ret == nil then
         print_stdout("Failed to execute command: ".. execString)
+        exitvalue = 1
     end
 end
 
@@ -711,7 +715,7 @@ if ret < 0 then
     likwid.finalize()
     likwid.putTopology()
     likwid.putConfiguration()
-    os.exit(1)
+    os.exit(exitvalue)
 end
 io.stdout:flush()
 if outfile == nil then
@@ -772,4 +776,4 @@ likwid.finalize()
 likwid.putTopology()
 likwid.putNumaInfo()
 likwid.putConfiguration()
-os.exit(0)
+os.exit(exitvalue)

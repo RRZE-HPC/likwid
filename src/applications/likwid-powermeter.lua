@@ -270,6 +270,7 @@ else
     end
 end
 
+local exitvalue = 0
 if not print_info and not print_temp then
     if stethoscope or (#arg > 0 and not use_perfctr) then
         for i,socket in pairs(sockets) do
@@ -317,7 +318,8 @@ if not print_info and not print_temp then
                         if (power["domains"][dom]["supportStatus"]) then after[cpu][dom] = likwid.stopPower(cpu, idx) end
                     end
                 end
-                if remain > 0 or not likwid.checkProgram(pid) then
+                exitvalue = likwid.checkProgram(pid)
+                if remain > 0 or exitvalue >= 0 then
                     io.stdout:flush()
                     break
                 end
@@ -386,3 +388,4 @@ end
 
 likwid.putPowerInfo()
 likwid.finalize()
+os.exit(exitvalue)

@@ -267,9 +267,9 @@ if (pid == nil) then
     os.exit(1)
 end
 
-likwid.waitpid(pid)
+local exitvalue = likwid.waitpid(pid)
 
 likwid.putAffinityInfo()
 likwid.putTopology()
 likwid.putConfiguration()
-os.exit(0)
+os.exit(exitvalue)

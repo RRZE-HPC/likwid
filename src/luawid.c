@@ -1753,10 +1753,9 @@ void parse(char *line, char **argv)
      *argv = '\0';                 /* mark the end of argument list  */
 }
 
-static volatile int program_running = 0;
 
 static void catch_sigchild(int signo) {
-    program_running = 0;
+    ;;
 }
 
 static int lua_likwid_startProgram(lua_State* L)
@@ -1790,7 +1789,6 @@ static int lua_likwid_startProgram(lua_State* L)
     }
     parse(exec, argv);
     ppid = getpid();
-    program_running = 1;
     pid = fork();
     if (pid < 0)
     {
@@ -1819,6 +1817,7 @@ static int lua_likwid_startProgram(lua_State* L)
 }
 static int lua_likwid_checkProgram(lua_State* L)
 {
+    int ret = -1;
     if (lua_gettop(L) == 1)
     {
         int status;
@@ -1826,9 +1825,12 @@ static int lua_likwid_checkProgram(lua_State* L)
         pid_t pid = lua_tonumber(L, 1);
         retpid = waitpid(pid, &status, WNOHANG);
         if (retpid == pid)
-            program_running = 0;
+        {
+            if (WIFEXITED(status))
+                ret = WEXITSTATUS(status);
+        }
     }
-    lua_pushboolean(L, program_running);
+    lua_pushinteger(L, ret);
     return 1;
 }
 
@@ -1836,16 +1838,22 @@ static int lua_likwid_killProgram(lua_State* L)
 {
     pid_t pid = lua_tonumber(L, 1);
     kill(pid, SIGTERM);
-    program_running = 0;
     return 0;
 }
 
-static int lua_likwid_waitwid(lua_State* L)
+static int lua_likwid_waitpid(lua_State* L)
 {
     int status;
+    int ret = -1;
     pid_t pid = lua_tonumber(L, 1);
-    waitpid(pid, &status, 0);
-    return 0;
+    pid_t retpid = waitpid(pid, &status, 0);
+    if (pid == retpid)
+    {
+        if (WIFEXITED(status))
+            ret = WEXITSTATUS(status);
+    }
+    lua_pushinteger(L, ret);
+    return 1;
 }
 
 static int lua_likwid_memSweep(lua_State* L)
@@ -2296,7 +2304,7 @@ int __attribute__ ((visibility ("default") )) luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_killProgram", lua_likwid_killProgram);
     lua_register(L, "likwid_catchSignal", lua_likwid_catch_signal);
     lua_register(L, "likwid_getSignalState", lua_likwid_return_signal_state);
-    lua_register(L, "likwid_waitwid", lua_likwid_waitwid);
+    lua_register(L, "likwid_waitpid", lua_likwid_waitpid);
     // Verbosity functions
     lua_register(L, "likwid_setVerbosity", lua_likwid_setVerbosity);
     // Marker API functions

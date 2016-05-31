@@ -227,7 +227,8 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
     if debug then
         print("EXEC: "..cmd)
     end
-    os.execute(cmd)
+    local ret = os.execute(cmd)
+    return ret
 end
 
 local function readHostfileIntelMPI(filename)
@@ -343,13 +344,17 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
     end
 
     --os.execute(string.format("%s -genv I_MPI_PIN 0 -f %s -np %d -perhost %d %s",mpiexecutable, hostfile, np, ppn, wrapperscript))
+    local ret = 0
     if use_hydra == false then
-        os.execute(string.format("%s/mpdboot -r %s -n %d -f %s", path, mpi_connect, nrNodes, hostfile))
-        os.execute(string.format("%s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
+        ret = os.execute(string.format("%s/mpdboot -r %s -n %d -f %s", path, mpi_connect, nrNodes, hostfile))
+        if ret == 0 then
+            ret = os.execute(string.format("%s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
+        end
         os.execute(string.format("%s/mpdallexit", path))
     else
-        os.execute(string.format("%s %s -f %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
+        ret = os.execute(string.format("%s %s -f %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
     end
+    return ret
 end
 
 local function readHostfileMvapich2(filename)
@@ -439,7 +444,8 @@ local function executeMvapich2(wrapperscript, hostfile, env, nrNodes)
     if debug then
         print("EXEC: "..cmd)
     end
-    os.execute(cmd)
+    local ret = os.execute(cmd)
+    return ret
 end
 
 
@@ -563,7 +569,8 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
     if debug then
         print("EXEC: "..exec)
     end
-    os.execute(exec)
+    local ret = os.execute(exec)
+    return ret
 end
 
 local function getNumberOfNodes(hostlist)
@@ -1751,7 +1758,7 @@ if skipStr == "" then
         elseif omptype == "gnu" and givenNrNodes > 1 then
             skipStr = '-s 0x1'
         elseif omptype == "gnu" and givenNrNodes == 1 then
-            skipStr = '-s 0x0'
+            skipStr = '-s 0x1'
         end
     elseif mpitype == "mvapich2" then
         if omptype == "intel" and givenNrNodes > 1 then
@@ -1938,7 +1945,7 @@ end
 writeHostfile(newhosts, hostfilename)
 writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, outfilename)
 local env = getEnvironment()
-executeCommand(scriptfilename, hostfilename, env, nrNodes)
+local exitvalue = executeCommand(scriptfilename, hostfilename, env, nrNodes)
 
 os.remove(scriptfilename)
 os.remove(hostfilename)
@@ -1987,3 +1994,4 @@ else
         end
     end
 end
+os.exit(exitvalue)
