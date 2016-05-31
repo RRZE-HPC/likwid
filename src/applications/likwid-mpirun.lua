@@ -347,10 +347,8 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
     local ret = 0
     if use_hydra == false then
         ret = os.execute(string.format("%s/mpdboot -r %s -n %d -f %s", path, mpi_connect, nrNodes, hostfile))
-        if ret == 0 then
-            ret = os.execute(string.format("%s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
-        end
-        os.execute(string.format("%s/mpdallexit", path))
+        ret = os.execute(string.format("%s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
+        ret = os.execute(string.format("%s/mpdallexit", path))
     else
         ret = os.execute(string.format("%s %s -f %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
     end
@@ -1341,7 +1339,7 @@ local function parseMarkerOutputFile(filename)
                 clock = tonumber(clock)*1.E09
             elseif parse_reg_info and line:match("TABLE,Region (%g+),Group (%d+) Raw,(%g+),") then
                 current_region, gidx, gname  = line:match("TABLE,Region (%g+),Group (%d+) Raw,(%g+),")
-                gidx = tonumber(gidx)+1
+                gidx = tonumber(gidx)
                 if results[current_region] == nil then
                     results[current_region] = {}
                 end
@@ -1758,7 +1756,7 @@ if skipStr == "" then
         elseif omptype == "gnu" and givenNrNodes > 1 then
             skipStr = '-s 0x1'
         elseif omptype == "gnu" and givenNrNodes == 1 then
-            skipStr = '-s 0x1'
+            skipStr = '-s 0x0'
         end
     elseif mpitype == "mvapich2" then
         if omptype == "intel" and givenNrNodes > 1 then
@@ -1986,11 +1984,11 @@ else
         end
     end
     if likwid.tablelength(all_results) > 0 then
-        for reg, _ in pairs(tmpList[0]) do
+        for region, _ in pairs(tmpList[0]) do
             for rank,_ in pairs(all_results) do
-                all_results[rank]["results"] = tmpList[rank][reg]
+                all_results[rank]["results"] = tmpList[rank][region]
             end
-            printMpiOutput(grouplist, all_results, reg)
+            printMpiOutput(grouplist, all_results, region)
         end
     end
 end
