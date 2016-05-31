@@ -329,8 +329,8 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
     for i,e in pairs(mpiopts) do
         envstr = envstr .. string.format("%s ",e)
     end
-    if likwid.getenv("LIKWID_MPI_CONNECT") ~= nil then
-        mpi_connect = likwid.getenv("LIKWID_MPI_CONNECT")
+    if os.getenv("LIKWID_MPI_CONNECT") ~= nil then
+        mpi_connect = os.getenv("LIKWID_MPI_CONNECT")
     end
 
     if debug then
