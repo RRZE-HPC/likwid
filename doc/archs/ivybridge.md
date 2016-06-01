@@ -6,6 +6,8 @@
 <LI>\ref IVB_PMC "General-purpose counters"</LI>
 <LI>\ref IVB_THERMAL "Thermal counters"</LI>
 <LI>\ref IVB_POWER "Power measurement counters"</LI>
+<LI>\ref IVB_UBOX "Uncore global counters"</LI>
+<LI>\ref IVB_CBOX "Last level cache counters"</LI>
 </UL>
 
 <H1>Counters available for each hardware thread</H1>
@@ -185,6 +187,103 @@
 </TR>
 </TABLE>
 <P>*) The PWR2 counter is often not implemented by Intel&reg; IvyBridge systems</P>
+
+\anchor IVB_UBOX
+<H2>Uncore global counters</H2>
+<P>The Intel&reg; IvyBridge microarchitecture provides measurements for the global uncore.</P>
+<H3>Counter and events</H3>
+<TABLE>
+<TR>
+  <TH>Counter name</TH>
+  <TH>Event name</TH>
+</TR>
+<TR>
+  <TD>UBOX0</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>UBOX1</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>UBOXFIX</TD>
+  <TD>UNCORE_CLOCK</TD>
+</TR>
+</TABLE>
+<H3>Available Options</H3>
+<TABLE>
+<TR>
+  <TH>Option</TH>
+  <TH>Argument</TH>
+  <TH>Description</TH>
+  <TH>Comment</TH>
+</TR>
+<TR>
+  <TD>edgedetect</TD>
+  <TD>N</TD>
+  <TD>Set bit 18 in config register</TD>
+  <TD></TD>
+</TR>
+<TR>
+  <TD>threshold</TD>
+  <TD>8 bit hex value</TD>
+  <TD>Set bits 24-28 in config register</TD>
+  <TD></TD>
+</TR>
+<TR>
+  <TD>invert</TD>
+  <TD>N</TD>
+  <TD>Set bit 23 in config register</TD>
+  <TD></TD>
+</TR>
+</TABLE>
+
+\anchor IVB_CBOX
+<H2>Last level cache counters</H2>
+<P>The Intel&reg; IvyBridge microarchitecture provides measurements for the last level cache segments.</P>
+<H3>Counter and events</H3>
+<TABLE>
+<TR>
+  <TH>Counter name</TH>
+  <TH>Event name</TH>
+</TR>
+<TR>
+  <TD>CBOX&lt;0-3&gt;C0</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>CBOX&lt;0-3&gt;C1</TD>
+  <TD>*</TD>
+</TR>
+</TABLE>
+<H3>Available Options</H3>
+<TABLE>
+<TR>
+  <TH>Option</TH>
+  <TH>Argument</TH>
+  <TH>Description</TH>
+  <TH>Comment</TH>
+</TR>
+<TR>
+  <TD>edgedetect</TD>
+  <TD>N</TD>
+  <TD>Set bit 18 in config register</TD>
+  <TD></TD>
+</TR>
+<TR>
+  <TD>threshold</TD>
+  <TD>8 bit hex value</TD>
+  <TD>Set bits 24-28 in config register</TD>
+  <TD></TD>
+</TR>
+<TR>
+  <TD>invert</TD>
+  <TD>N</TD>
+  <TD>Set bit 23 in config register</TD>
+  <TD></TD>
+</TR>
+</TABLE>
+
 */
 
 

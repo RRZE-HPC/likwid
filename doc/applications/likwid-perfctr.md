@@ -103,8 +103,16 @@ custom event sets. The \ref Marker_API can measure mulitple named regions and th
   <TD>Print output in CSV format (conform to <A HREF="https://tools.ietf.org/html/rfc4180">RFC 4180</A>). The output contains some markers that help to parse the output.</TD>
 </TR>
 <TR>
+  <TD>-f, --force</TD>
+  <TD>Configure events even if the counter registers are already in use.</TD>
+</TR>
+<TR>
   <TD>-s, --skip &lt;arg&gt;</TD>
   <TD>'arg' must be a bitmask in hex. Threads with the ID equal to a set bit in bitmask will be skipped during pinning<BR>Example: 0x1 = Thread 0 is skipped.</TD>
+</TR>
+<TR>
+  <TD>--stats</TD>
+  <TD>Always print the statistics table.</TD>
 </TR>
 </TABLE>
 

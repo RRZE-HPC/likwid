@@ -413,49 +413,49 @@ The QPI hardware performance counters are exposed to the operating system throug
   <TD>match0</TD>
   <TD>32 bit hex address</TD>
   <TD>Input value masked with 0x8003FFF8 and written to bits 0-31 in the PCI_UNC_V3_QPI_PMON_RX_MATCH_0 register of PCI device</TD>
-  <TD>This option matches the receive side. Check <A HREF="http://www.Intel.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
+  <TD>This option matches the receive side. Check <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e5-v3-uncore-performance-monitoring.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
 </TR>
 <TR>
   <TD>match1</TD>
   <TD>20 bit hex address</TD>
   <TD>Input value masked with 0x000F000F and written to bits 0-19 in the PCI_UNC_V3_QPI_PMON_RX_MATCH_1 register of PCI device</TD>
-  <TD>This option matches the receive side. Check <A HREF="http://www.Intel.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
+  <TD>This option matches the receive side. Check <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e5-v3-uncore-performance-monitoring.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
 </TR>
 <TR>
   <TD>match2</TD>
   <TD>32 bit hex address</TD>
   <TD>Input value masked with 0x8003FFF8 and written to bits 0-31 in the PCI_UNC_V3_QPI_PMON_TX_MATCH_0 register of PCI device</TD>
-  <TD>This option matches the transmit side. Check <A HREF="http://www.Intel.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
+  <TD>This option matches the transmit side. Check <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e5-v3-uncore-performance-monitoring.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
 </TR>
 <TR>
   <TD>match3</TD>
   <TD>20 bit hex address</TD>
   <TD>Input value masked with 0x000F000F and written to bits 0-19 in the PCI_UNC_V3_QPI_PMON_TX_MATCH_1 register of PCI device</TD>
-  <TD>This option matches the transmit side. Check <A HREF="http://www.Intel.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
+  <TD>This option matches the transmit side. Check <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e5-v3-uncore-performance-monitoring.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
 </TR>
 <TR>
   <TD>mask0</TD>
   <TD>32 bit hex address</TD>
   <TD>Input value masked with 0x8003FFF8 and written to bits 0-31 in the PCI_UNC_V3_QPI_PMON_RX_MASK_0 register of PCI device</TD>
-  <TD>This option masks the receive side. Check <A HREF="http://www.Intel.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
+  <TD>This option masks the receive side. Check <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e5-v3-uncore-performance-monitoring.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
 </TR>
 <TR>
   <TD>mask1</TD>
   <TD>20 bit hex address</TD>
   <TD>Input value masked with 0x000F000F and written to bits 0-19 in the PCI_UNC_V3_QPI_PMON_RX_MASK_1 register of PCI device</TD>
-  <TD>This option masks the receive side. Check <A HREF="http://www.Intel.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
+  <TD>This option masks the receive side. Check <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e5-v3-uncore-performance-monitoring.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
 </TR>
 <TR>
   <TD>mask2</TD>
   <TD>32 bit hex address</TD>
   <TD>Input value masked with 0x8003FFF8 and written to bits 0-31 in the PCI_UNC_V3_QPI_PMON_TX_MASK_0 register of PCI device</TD>
-  <TD>This option masks the transmit side. Check <A HREF="http://www.Intel.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
+  <TD>This option masks the transmit side. Check <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e5-v3-uncore-performance-monitoring.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
 </TR>
 <TR>
   <TD>mask3</TD>
   <TD>20 bit hex address</TD>
   <TD>Input value masked with 0x000F000F and written to bits 0-19 in the PCI_UNC_V3_QPI_PMON_TX_MASK_1 register of PCI device</TD>
-  <TD>This option masks the transmit side. Check <A HREF="http://www.Intel.de/content/www/de/de/processors/xeon/xeon-e5-2600-v2-uncore-manual.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
+  <TD>This option masks the transmit side. Check <A HREF="http://www.intel.com/content/www/us/en/processors/xeon/xeon-e5-v3-uncore-performance-monitoring.html">Intel&reg; Xeon E5-2600 v3 Uncore Manual</A> for bit fields.</TD>
 </TR>
 </TABLE>
 

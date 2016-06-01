@@ -24,6 +24,10 @@
   <TD>List all available thread affinity domains</TD>
 </TR>
 <TR>
+  <TD>-i &lt;iters&gt;</TD>
+  <TD>Use &lt;iters&gt; iterations of the benchmark kernel</TD>
+</TR>
+<TR>
   <TD>-d &lt;delim&gt;</TD>
   <TD>Use &lt;delim&gt; instead of ',' for the output of -p</TD>
 </TR>

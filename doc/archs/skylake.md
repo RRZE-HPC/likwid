@@ -1,17 +1,19 @@
-/*! \page sandybridge Intel&reg; SandyBridge
+/*! \page skylake Intel&reg; Skylake
 
-<H1>Available performance monitors for the Intel&reg; SandyBridge microarchitecture</H1>
+<P>This page is valid for Skylake. The Skylake microarchitecture supports the UBOX and the CBOX Uncore devices.</P>
+
+<H1>Available performance monitors for the Intel&reg; Skylake microarchitecture</H1>
 <UL>
-<LI>\ref SNB_FIXED "Fixed-purpose counters"</LI>
-<LI>\ref SNB_PMC "General-purpose counters"</LI>
-<LI>\ref SNB_THERMAL "Thermal counters"</LI>
-<LI>\ref SNB_POWER "Power measurement counters"</LI>
-<LI>\ref SNB_UBOX "Uncore global counters"</LI>
-<LI>\ref SNB_CBOX "Last level cache counters"</LI>
+<LI>\ref SKL_FIXED "Fixed-purpose counters"</LI>
+<LI>\ref SKL_PMC "General-purpose counters"</LI>
+<LI>\ref SKL_THERMAL "Thermal counters"</LI>
+<LI>\ref SKL_POWER "Power measurement counters"</LI>
+<LI>\ref SKL_UBOX "Uncore global counters"</LI>
+<LI>\ref SKL_CBOX "Last level cache counters"</LI>
 </UL>
 
 <H1>Counters available for each hardware thread</H1>
-\anchor SNB_FIXED
+\anchor SKL_FIXED
 <H2>Fixed-purpose counters</H2>
 <P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event.</P>
 <H3>Counter and events</H3>
@@ -55,9 +57,9 @@
 </TR>
 </TABLE>
 
-\anchor SNB_PMC
+\anchor SKL_PMC
 <H2>General-purpose counters</H2>
-<P>The Intel&reg; SandyBridge microarchitecture provides 4 general-purpose counters consisting of a config and a counter register.</P>
+<P>Commonly the Intel&reg; Skylake microarchitecture provides 4 general-purpose counters consisting of a config and a counter register.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -119,11 +121,22 @@
   <TD>Set bit 23 in config register</TD>
   <TD></TD>
 </TR>
+<TR>
+  <TD>in_transaction</TD>
+  <TD>N</TD>
+  <TD>Set bit 32 in config register</TD>
+  <TD>Only available if Intel&reg; Transactional Synchronization Extensions are available</TD>
+</TR>
+<TR>
+  <TD>in_transaction_aborted</TD>
+  <TD>N</TD>
+  <TD>Set bit 33 in config register</TD>
+  <TD>Only counter PMC2 and only if Intel&reg; Transactional Synchronization Extensions are available</TD>
+</TR>
 </TABLE>
 
 <H3>Special handling for events</H3>
-<P>The Intel&reg; SandyBridge microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; SandyBridge microarchitecture has two of those registers. LIKWID defines some events that perform the filtering according to the event name. Although there are many bitmasks possible, LIKWID natively provides only the ones with response type ANY. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS and OFFCORE_RESPONSE_1_OPTIONS events. Only for those events two more counter options are available:
-</P>
+<P>The Intel&reg; Skylake microarchitecture provides measureing of offcore events in PMC counters. Therefore the stream of offcore events must be filtered using the OFFCORE_RESPONSE registers. The Intel&reg; Skylake microarchitecture has two of those registers. LIKWID defines some events that perform the filtering according to the event name. Although there are many bitmasks possible, LIKWID natively provides only the ones with response type ANY. Own filtering can be applied with the OFFCORE_RESPONSE_0_OPTIONS and OFFCORE_RESPONSE_1_OPTIONS events. Only for those events two more counter options are available:</P>
 <TABLE>
 <TR>
   <TH>Option</TH>
@@ -135,19 +148,20 @@
   <TD>match0</TD>
   <TD>16 bit hex value</TD>
   <TD>Input value masked with 0x8FFF and written to bits 0-15 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel&reg;&reg;.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg;&reg;&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and <A HREF="https://download.01.org/perfmon/SNB">https://download.01.org/perfmon/SNB</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and <A HREF="https://download.01.org/perfmon/SKL">https://download.01.org/perfmon/SKL</A>.</TD>
 </TR>
 <TR>
   <TD>match1</TD>
   <TD>22 bit hex value</TD>
   <TD>Input value is written to bits 16-37 in the OFFCORE_RESPONSE register</TD>
-  <TD>Check the <A HREF="http://www.Intel&reg;&reg;.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg;&reg;&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and <A HREF="https://download.01.org/perfmon/SNB">https://download.01.org/perfmon/SNB</A>.</TD>
+  <TD>Check the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual, Vol. 3, Chapter Performance Monitoring</A> and <A HREF="https://download.01.org/perfmon/SKL">https://download.01.org/perfmon/SKL</A>.</TD>
 </TR>
 </TABLE>
+<P>The event MEM_TRANS_RETIRED_LOAD_LATENCY is not available because it needs programming of PEBS registers. PEBS is a kernel-level measurement facility for performance monitoring. Although we can program it from user-space, the results are always 0.</P>
 
-\anchor SNB_THERMAL
+\anchor SKL_THERMAL
 <H2>Thermal counter</H2>
-<P>The Intel&reg; SandyBridge microarchitecture provides one register for the current core temperature.</P>
+<P>The Intel&reg; Skylake microarchitecture provides one register for the current core temperature.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -161,9 +175,9 @@
 </TABLE>
 
 <H1>Counters available for one hardware thread per socket</H1>
-\anchor SNB_POWER
+\anchor SKL_POWER
 <H2>Power counter</H2>
-<P>The Intel&reg; SandyBridge microarchitecture provides measurements of the current power consumption through the RAPL interface.</P>
+<P>The Intel&reg; Skylake microarchitecture provides measurements of the current power consumption through the RAPL interface.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -179,7 +193,7 @@
   <TD>PWR_PP0_ENERGY</TD>
 </TR>
 <TR>
-  <TD>PWR2*</TD>
+  <TD>PWR2</TD>
   <TD>PWR_PP1_ENERGY</TD>
 </TR>
 <TR>
@@ -187,11 +201,10 @@
   <TD>PWR_DRAM_ENERGY</TD>
 </TR>
 </TABLE>
-<P>*) The PWR2 counter is often not implemented by Intel&reg; SandyBridge systems</P>
 
-\anchor SNB_UBOX
+\anchor SKL_UBOX
 <H2>Uncore global counters</H2>
-<P>The Intel&reg; SandyBridge microarchitecture provides measurements for the global uncore.</P>
+<P>The Intel&reg; Skylake microarchitecture provides measurements for the global uncore.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -211,37 +224,11 @@
   <TD>UNCORE_CLOCK</TD>
 </TR>
 </TABLE>
-<H3>Available Options</H3>
-<TABLE>
-<TR>
-  <TH>Option</TH>
-  <TH>Argument</TH>
-  <TH>Description</TH>
-  <TH>Comment</TH>
-</TR>
-<TR>
-  <TD>edgedetect</TD>
-  <TD>N</TD>
-  <TD>Set bit 18 in config register</TD>
-  <TD></TD>
-</TR>
-<TR>
-  <TD>threshold</TD>
-  <TD>8 bit hex value</TD>
-  <TD>Set bits 24-28 in config register</TD>
-  <TD></TD>
-</TR>
-<TR>
-  <TD>invert</TD>
-  <TD>N</TD>
-  <TD>Set bit 23 in config register</TD>
-  <TD></TD>
-</TR>
-</TABLE>
 
-\anchor SNB_CBOX
+
+\anchor SKL_CBOX
 <H2>Last level cache counters</H2>
-<P>The Intel&reg; SandyBridge microarchitecture provides measurements for the last level cache segments.</P>
+<P>The Intel&reg; Skylake microarchitecture provides measurements for the last level cache segments.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>

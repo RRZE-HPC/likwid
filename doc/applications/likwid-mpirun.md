@@ -62,6 +62,10 @@ A tool to start and monitor MPI applications with LIKWID. It can be used as supp
   <TD>-O</TD>
   <TD>Print results in CSV format (conform to <A HREF="https://tools.ietf.org/html/rfc4180">RFC 4180</A>)</TD>
 </TR>
+<TR>
+  <TD>-f</TD>
+  <TD>Configure events even if the counter is already in use.</TD>
+</TR>
 </TABLE>
 
 <H1>Examples</H1>

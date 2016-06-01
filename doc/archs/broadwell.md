@@ -1,17 +1,19 @@
 /*! \page broadwell Intel&reg; Broadwell
 
-<P>This page is valid for Broadwell, Broadwell single socket server (Xeon D) and Broadwell EP/EN/EX. No Uncore support by now, no documentation is available for the Uncore counters of Broadwell</P>
+<P>This page is valid for Broadwell. The Broadwell microarchitecture supports the UBOX and the CBOX Uncore devices.</P>
 
 <H1>Available performance monitors for the Intel&reg; Broadwell microarchitecture</H1>
 <UL>
-<LI>\ref BRD_FIXED "Fixed-purpose counters"</LI>
-<LI>\ref BRD_PMC "General-purpose counters"</LI>
-<LI>\ref BRD_THERMAL "Thermal counters"</LI>
-<LI>\ref BRD_POWER "Power measurement counters"</LI>
+<LI>\ref BDW_FIXED "Fixed-purpose counters"</LI>
+<LI>\ref BDW_PMC "General-purpose counters"</LI>
+<LI>\ref BDW_THERMAL "Thermal counters"</LI>
+<LI>\ref BDW_POWER "Power measurement counters"</LI>
+<LI>\ref BDW_UBOX "Uncore global counters"</LI>
+<LI>\ref BDW_CBOX "Last level cache counters"</LI>
 </UL>
 
 <H1>Counters available for each hardware thread</H1>
-\anchor BRD_FIXED
+\anchor BDW_FIXED
 <H2>Fixed-purpose counters</H2>
 <P>Since the Core2 microarchitecture, Intel&reg; provides a set of fixed-purpose counters. Each can measure only one specific event.</P>
 <H3>Counter and events</H3>
@@ -55,7 +57,7 @@
 </TR>
 </TABLE>
 
-\anchor BRD_PMC
+\anchor BDW_PMC
 <H2>General-purpose counters</H2>
 <P>Commonly the Intel&reg; Broadwell microarchitecture provides 4 general-purpose counters consisting of a config and a counter register.</P>
 <H3>Counter and events</H3>
@@ -157,9 +159,9 @@
 </TABLE>
 <P>The event MEM_TRANS_RETIRED_LOAD_LATENCY is not available because it needs programming of PEBS registers. PEBS is a kernel-level measurement facility for performance monitoring. Although we can program it from user-space, the results are always 0.</P>
 
-\anchor BRD_THERMAL
+\anchor BDW_THERMAL
 <H2>Thermal counter</H2>
-<P>The Intel&reg; Haswell microarchitecture provides one register for the current core temperature.</P>
+<P>The Intel&reg; Broadwell microarchitecture provides one register for the current core temperature.</P>
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -173,7 +175,7 @@
 </TABLE>
 
 <H1>Counters available for one hardware thread per socket</H1>
-\anchor BRD_POWER
+\anchor BDW_POWER
 <H2>Power counter</H2>
 <P>The Intel&reg; Broadwell microarchitecture provides measurements of the current power consumption through the RAPL interface.</P>
 <H3>Counter and events</H3>
@@ -200,4 +202,99 @@
 </TR>
 </TABLE>
 
+\anchor BDW_UBOX
+<H2>Uncore global counters</H2>
+<P>The Intel&reg; Broadwell microarchitecture provides measurements for the global uncore.</P>
+<H3>Counter and events</H3>
+<TABLE>
+<TR>
+  <TH>Counter name</TH>
+  <TH>Event name</TH>
+</TR>
+<TR>
+  <TD>UBOX0</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>UBOX1</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>UBOXFIX</TD>
+  <TD>UNCORE_CLOCK</TD>
+</TR>
+</TABLE>
+<H3>Available Options</H3>
+<TABLE>
+<TR>
+  <TH>Option</TH>
+  <TH>Argument</TH>
+  <TH>Description</TH>
+  <TH>Comment</TH>
+</TR>
+<TR>
+  <TD>edgedetect</TD>
+  <TD>N</TD>
+  <TD>Set bit 18 in config register</TD>
+  <TD></TD>
+</TR>
+<TR>
+  <TD>threshold</TD>
+  <TD>8 bit hex value</TD>
+  <TD>Set bits 24-28 in config register</TD>
+  <TD></TD>
+</TR>
+<TR>
+  <TD>invert</TD>
+  <TD>N</TD>
+  <TD>Set bit 23 in config register</TD>
+  <TD></TD>
+</TR>
+</TABLE>
+
+\anchor BDW_CBOX
+<H2>Last level cache counters</H2>
+<P>The Intel&reg; Broadwell microarchitecture provides measurements for the last level cache segments.</P>
+<H3>Counter and events</H3>
+<TABLE>
+<TR>
+  <TH>Counter name</TH>
+  <TH>Event name</TH>
+</TR>
+<TR>
+  <TD>CBOX&lt;0-3&gt;C0</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>CBOX&lt;0-3&gt;C1</TD>
+  <TD>*</TD>
+</TR>
+</TABLE>
+<H3>Available Options</H3>
+<TABLE>
+<TR>
+  <TH>Option</TH>
+  <TH>Argument</TH>
+  <TH>Description</TH>
+  <TH>Comment</TH>
+</TR>
+<TR>
+  <TD>edgedetect</TD>
+  <TD>N</TD>
+  <TD>Set bit 18 in config register</TD>
+  <TD></TD>
+</TR>
+<TR>
+  <TD>threshold</TD>
+  <TD>8 bit hex value</TD>
+  <TD>Set bits 24-28 in config register</TD>
+  <TD></TD>
+</TR>
+<TR>
+  <TD>invert</TD>
+  <TD>N</TD>
+  <TD>Set bit 23 in config register</TD>
+  <TD></TD>
+</TR>
+</TABLE>
 */

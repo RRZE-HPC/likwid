@@ -129,6 +129,29 @@ or<BR>
 </TR>
 </TABLE>
 
+\anchor setGroupPath
+<H2>setGroupPath(path)</H2>
+<P>Change the path to the performance group files.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a path</TD>
+      <TD>Path to group files</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
+
 \anchor putConfiguration
 <H2>putConfiguration()</H2>
 <P>Frees the C-structures that were created by \ref getConfiguration function.</P>
@@ -786,7 +809,7 @@ or<BR>
 </TR>
 <TR>
   <TD>Returns</TD>
-  <TD>NUMA Info \ref lua_affinityinfo</TD>
+  <TD>Affinity Info \ref lua_affinityinfo</TD>
 </TR>
 </TABLE>
 <H2>putAffinityInfo()</H2>
@@ -1006,6 +1029,37 @@ or<BR>
 </TR>
 </TABLE>
 
+\anchor lua_groupinfo
+<H2>Info about performance groups</H2>
+<P>This structure is returned by \ref getGroups function</P>
+<TABLE>
+<TR>
+  <TH>Membername</TH>
+  <TH>Comment</TH>
+</TR>
+<TR>
+  <TD>\a Index</TD>
+  <TD><TABLE>
+    <TR>
+      <TH>Membername</TH>
+      <TH>Comment</TH>
+    </TR>
+    <TR>
+      <TD>Name</TD>
+      <TD>Name of performance group</TD>
+    </TR>
+    <TR>
+      <TD>Info</TD>
+      <TD>Short description of the performance group</TD>
+    </TR>
+    <TR>
+      <TD>Long</TD>
+      <TD>Long description of the performance group</TD>
+    </TR>
+    </TABLE></TD>
+</TR>
+</TABLE>
+
 <H1>Function definitions for Lua performance monitoring module in the Lua API</H1>
 \anchor init
 <H2>init(nrThreads, thread2Cpus)</H2>
@@ -1176,6 +1230,24 @@ or<BR>
 </TR>
 </TABLE>
 
+\anchor finalize
+<H2>finalize()</H2>
+<P>Destroy internal structures and clean all used registers</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Always 0</TD>
+</TR>
+</TABLE>
+
 \anchor getResult
 <H2>getResult(groupID, eventID, threadID)</H2>
 <P>Get result for a group, event, thread combination. All options must be given</P>
@@ -1207,27 +1279,9 @@ or<BR>
 </TR>
 </TABLE>
 
-\anchor getResults
-<H2>getResults()</H2>
-<P>Get all results for all group, event, thread combinations</P>
-<TABLE>
-<TR>
-  <TH>Direction</TH>
-  <TH>Data type(s)</TH>
-</TR>
-<TR>
-  <TD>Input Parameter</TD>
-  <TD>None</TD>
-</TR>
-<TR>
-  <TD>Returns</TD>
-  <TD>Three-dimensional list with results. First dim. is groups, second dim. is events and third dim. are the threads</TD>
-</TR>
-</TABLE>
-
-\anchor getMarkerResults
-<H2>getMarkerResults(filename, group_list, num_cpus)</H2>
-<P>Get the results for an output file written by \ref MarkerAPI</P>
+\anchor getLastResult
+<H2>getLastResult(groupID, eventID, threadID)</H2>
+<P>Get result for a group, event, thread combination of the last measurement cycle. All options must be given</P>
 <TABLE>
 <TR>
   <TH>Direction</TH>
@@ -1237,24 +1291,89 @@ or<BR>
   <TD>Input Parameter</TD>
   <TD><TABLE>
     <TR>
-      <TD>\a filename</TD>
-      <TD>Filename written by \ref MarkerAPI</TD>
+      <TD>\a groupID</TD>
+      <TD>Return result from group defined by \a groupID</TD>
     </TR>
     <TR>
-      <TD>\a group_list</TD>
-      <TD>List of defined groups</TD>
+      <TD>\a eventID</TD>
+      <TD>Return result for event with \a eventID. Position in string given to \ref addEventSet function</TD>
     </TR>
     <TR>
-      <TD>\a num_cpus</TD>
-      <TD>Amount of defined CPUs. Is used just used for checking if the \ref MarkerAPI run is valid. If LIKWID_MARKER_THREADINIT is not called properly the tests will fail</TD>
+      <TD>\a threadID</TD>
+      <TD>Return result for thread with \a threadID as defined by the \a thread2Cpus input parameter for \ref init function</TD>
     </TR>
   </TABLE></TD>
 </TR>
 <TR>
   <TD>Returns</TD>
-  <TD>Four-dimensional list with results. First dim. is groups, second dim. is management regions, and third dim. are the events and fourth dim. are the threads</TD>
+  <TD>Result</TD>
 </TR>
 </TABLE>
+
+\anchor getMetric
+<H2>getMetric(groupID, metricID, threadID)</H2>
+<P>Get the derived metric result for a group, metric, thread combination. All options must be given</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>Return result from group defined by \a groupID</TD>
+    </TR>
+    <TR>
+      <TD>\a metricID</TD>
+      <TD>Return result for metric with \a metricID.</TD>
+    </TR>
+    <TR>
+      <TD>\a threadID</TD>
+      <TD>Return result for thread with \a threadID as defined by the \a thread2Cpus input parameter for \ref init function</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Result</TD>
+</TR>
+</TABLE>
+
+\anchor getLastMetric
+<H2>getLastMetric(groupID, metricID, threadID)</H2>
+<P>Get the derived metric result for a group, metric, thread combination of the last measurement cycle. All options must be given</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>Return result from group defined by \a groupID</TD>
+    </TR>
+    <TR>
+      <TD>\a eventID</TD>
+      <TD>Return result for event with \a metricID.</TD>
+    </TR>
+    <TR>
+      <TD>\a threadID</TD>
+      <TD>Return result for thread with \a threadID as defined by the \a thread2Cpus input parameter for \ref init function</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Result</TD>
+</TR>
+</TABLE>
+
+
+
 
 \anchor getEventsAndCounters
 <H2>getEventsAndCounters()</H2>
@@ -1364,13 +1483,36 @@ or<BR>
   <TD><TABLE>
     <TR>
       <TD>\a groupID</TD>
-      <TD>Return the measurement time for group defined by \a groupID</TD>
+      <TD>Return the number of events in group defined by \a groupID</TD>
     </TR>
   </TABLE></TD>
 </TR>
 <TR>
   <TD>Returns</TD>
   <TD>Amount of events in group</TD>
+</TR>
+</TABLE>
+
+\anchor getNumberOfMetrics
+<H2>getNumberOfMetrics(groupID)</H2>
+<P>Returns the amount of metrics for the given groupID</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>Return the number of derived metrics for group defined by \a groupID</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Amount of metrics in group</TD>
 </TR>
 </TABLE>
 
@@ -1392,8 +1534,158 @@ or<BR>
 </TR>
 </TABLE>
 
-\anchor get_groups
-<H2>get_groups()</H2>
+\anchor getNameOfEvent
+<H2>getNameOfEvent(groupID, eventID)</H2>
+<P>Returns the name of an event in a configured event set</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>Return event name from group defined by \a groupID</TD>
+    </TR>
+    <TR>
+      <TD>\a eventID</TD>
+      <TD>Return event name for event with \a eventID.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Name of event</TD>
+</TR>
+</TABLE>
+
+\anchor getNameOfCounter
+<H2>getNameOfCounter(groupID, eventID)</H2>
+<P>Returns the name of counter in a configured event set</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>Return counter name from group defined by \a groupID</TD>
+    </TR>
+    <TR>
+      <TD>\a eventID</TD>
+      <TD>Return counter name for event with \a eventID.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Name of counter</TD>
+</TR>
+</TABLE>
+
+\anchor getNameOfMetric
+<H2>getNameOfMetric(groupID, metricID)</H2>
+<P>Returns the name of a derived metric in a configured performance group</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>Return metric name from group defined by \a groupID</TD>
+    </TR>
+    <TR>
+      <TD>\a metricID</TD>
+      <TD>Return metric name for event with \a metricID.</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Name of derived metric</TD>
+</TR>
+</TABLE>
+
+\anchor getNameOfGroup
+<H2>getNameOfGroup(groupID)</H2>
+<P>Returns the name of a configured performance group or 'Custom' for own event sets</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>Return name of group defined by \a groupID</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Name of group</TD>
+</TR>
+</TABLE>
+
+\anchor getShortInfoOfGroup
+<H2>getShortInfoOfGroup(groupID)</H2>
+<P>Returns the short info string of a configured performance group or 'Custom' for own event sets</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>Return short description of a group defined by \a groupID</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Short description of a group</TD>
+</TR>
+</TABLE>
+
+\anchor getLongInfoOfGroup
+<H2>getLongInfoOfGroup(groupID)</H2>
+<P>Returns the long info string of a configured performance group or 'Custom' for own event sets</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a groupID</TD>
+      <TD>Return long description of a group defined by \a groupID</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Long description of a group</TD>
+</TR>
+</TABLE>
+
+\anchor getGroups
+<H2>getGroups()</H2>
 <P>Returns a list of all performance groups in \a groupfolder</P>
 <TABLE>
 <TR>
@@ -1406,16 +1698,7 @@ or<BR>
 </TR>
 <TR>
   <TD>Returns</TD>
-  <TD><TABLE>
-    <TR>
-      <TD>\a numerOfGroups</TD>
-      <TD>Amount of groups in \a groupfolder for given \a architecture</TD>
-    </TR>
-    <TR>
-      <TD>\a groups</TD>
-      <TD>List with the names of all performance groups in \a groupfolder for given \a architecture</TD>
-    </TR>
-  </TABLE></TD>
+  <TD>List of performance groups, see \ref lua_groupinfo for structure</TD>
 </TR>
 </TABLE>
 
@@ -1444,6 +1727,296 @@ or<BR>
       <TD>Structure with all group information found for the performance group \a group, see \ref lua_groupdata</TD>
     </TR>
   </TABLE></TD>
+</TR>
+</TABLE>
+
+\anchor readMarkerFile
+<H2>readMarkerFile(filename)</H2>
+<P>Get the results for an output file written by \ref MarkerAPI</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a filename</TD>
+      <TD>Filename written by \ref MarkerAPI</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>No return value</TD>
+</TR>
+</TABLE>
+
+\anchor destroyMarkerFile
+<H2>destroyMarkerFile()</H2>
+<P>Destroy all results previously read in from the \ref MarkerAPI</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>No return value</TD>
+</TR>
+</TABLE>
+
+\anchor markerNumRegions
+<H2>markerNumRegions()</H2>
+<P>Get the number of regions defined in the file previously read in with \ref readMarkerFile</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Amount of regions</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionGroup
+<H2>markerRegionGroup(regionID)</H2>
+<P>Get the group ID of a region read in with \ref readMarkerFile</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>Region ID to get group ID from</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Group ID for the region</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionTag
+<H2>markerRegionTag(regionID)</H2>
+<P>Get the region name of a region read in with \ref readMarkerFile</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>Region ID to get the name from</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Region name</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionEvents
+<H2>markerRegionEvents(regionID)</H2>
+<P>Get the number of events of a region read in with \ref readMarkerFile</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>Region ID to get the event count from</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Number of events</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionThreads
+<H2>markerRegionThreads(regionID)</H2>
+<P>Get the number of thread participating in a region read in with \ref readMarkerFile</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>Region ID to get the thread count from</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Number of threads</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionCpulist
+<H2>markerRegionCpulist(regionID)</H2>
+<P>Get a list of CPUs participating in a region read in with \ref readMarkerFile</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>Region ID to get the thread count from</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>List with CPU IDs</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionTime
+<H2>markerRegionTime(regionID, threadID)</H2>
+<P>Get the accumulated measurement time for a region read in with \ref readMarkerFile</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>Region ID to get the time from</TD>
+    </TR>
+    <TR>
+      <TD>\a threadID</TD>
+      <TD>Thread ID to get the time from</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Measurement time</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionCount
+<H2>markerRegionCount(regionID, threadID)</H2>
+<P>Get the call count for a region read in with \ref readMarkerFile</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>Region ID to get the call count from</TD>
+    </TR>
+    <TR>
+      <TD>\a threadID</TD>
+      <TD>Thread ID to get the call count from</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Call count</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionResult
+<H2>markerRegionResult(regionID, eventID, threadID)</H2>
+<P>Get the result for a region and thread read in with \ref readMarkerFile</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>Region ID to get the result</TD>
+    </TR>
+    <TR>
+      <TD>\a eventID</TD>
+      <TD>Event ID to get the result</TD>
+    </TR>
+    <TR>
+      <TD>\a threadID</TD>
+      <TD>Thread ID to get the result</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Result</TD>
+</TR>
+</TABLE>
+
+\anchor markerRegionMetric
+<H2>markerRegionMetric(regionID, metricID, threadID)</H2>
+<P>Get the derived metric result for a region read in with \ref readMarkerFile</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a regionID</TD>
+      <TD>Region ID to get the derived metric result</TD>
+    </TR>
+    <TR>
+      <TD>\a metricID</TD>
+      <TD>Metric ID to get the derived metric result</TD>
+    </TR>
+    <TR>
+      <TD>\a threadID</TD>
+      <TD>Thread ID to get the derived metric result</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Metric result</TD>
 </TR>
 </TABLE>
 
@@ -1543,7 +2116,7 @@ or<BR>
         </TR>
         <TR>
           <TD>tdp</TD>
-          <TD>Thermal Design Power<BR>Only if supportInfo is set</TD>
+          <TD>Thermal Design Power<BR>Only if supportInfo is set<BR>Only if supportInfo is set</TD>
         </TR>
         <TR>
           <TD>minPower</TD>
@@ -1816,7 +2389,7 @@ or<BR>
 </TR>
 </TABLE>
 
-\anchor initTemp
+\anchor readTemp
 <H2>readTemp(cpuID)</H2>
 <P>Measure the temperature on given CPU</P>
 <TABLE>
@@ -1858,6 +2431,24 @@ or<BR>
 <TR>
   <TD>Returns</TD>
   <TD>Clock speed in Hz</TD>
+</TR>
+</TABLE>
+
+\anchor getCycleClock
+<H2>getCycleClock()</H2>
+<P>Returns the clock speed of the time stamp counter</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Cycle clock speed in Hz</TD>
 </TR>
 </TABLE>
 
@@ -2098,6 +2689,65 @@ or<BR>
 </TR>
 </TABLE>
 
+\anchor waitpid
+<H2>waitpid(PID)</H2>
+<P>Wait until the state of the program referenced by PID has a changed state. Blocking.</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a PID</TD>
+      <TD>PID to check status</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
+
+\anchor catchSignal
+<H2>catchSignal()</H2>
+<P>Add signal handler for SIGINT</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
+
+\anchor getSignalState
+<H2>getSignalState()</H2>
+<P>Check whether SIGINT signal was received</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Amount of received SIGINT signals</TD>
+</TR>
+</TABLE>
+
 
 \anchor setenv
 <H2>setenv(Name, Value)</H2>
@@ -2257,7 +2907,112 @@ or<BR>
   </TABLE></TD>
 </TR>
 </TABLE>
+
+
+
 */
+
+/*! \page lua_cpuFeatures Module to read and manipulate CPU features
+<H1>Data type definition for Lua output functions module in the Lua API</H1>
+<H1>Function definitions for Lua output functions module in the Lua API</H1>
+\anchor cpuFeaturesInit
+<H2>cpuFeaturesInit()</H2>
+<P>Initialize the internal structures to enable CPU features module</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
+
+\anchor cpuFeaturesGet
+<H2>cpuFeaturesGet(cpuID, featID)</H2>
+<P>Get feature state</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to read feature state</TD>
+    </TR>
+    <TR>
+      <TD>\a featID</TD>
+      <TD>ID of a feature</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
+
+\anchor cpuFeaturesEnable
+<H2>cpuFeaturesEnable(cpuID, featID)</H2>
+<P>Enable feature for CPU</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to enable the feature</TD>
+    </TR>
+    <TR>
+      <TD>\a featID</TD>
+      <TD>ID of a feature</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>0 for success, all others are erros, either by MSR access or invalid feature</TD>
+</TR>
+</TABLE>
+
+\anchor cpuFeaturesDisable
+<H2>cpuFeaturesDisable(cpuID, featID)</H2>
+<P>Disable feature for CPU</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to disable the feature</TD>
+    </TR>
+    <TR>
+      <TD>\a featID</TD>
+      <TD>ID of a feature</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>0 for success, all others are erros, either by MSR access or invalid feature</TD>
+</TR>
+</TABLE>
 
 
 /*! \page lua_InputOutput Input and output functions module
@@ -2422,8 +3177,81 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TR>
 </TABLE>
 
+\anchor getResults
+<H2>getResults()</H2>
+<P>Get all results for all group, event, thread combinations</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Three-dimensional list with results. First dim. is groups, second dim. is events and third dim. are the threads</TD>
+</TR>
+</TABLE>
+
+\anchor getLastResults
+<H2>getLastResults()</H2>
+<P>Get the results of the last measurement cycle for all group, event, thread combinations</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Three-dimensional list with results. First dim. is groups, second dim. is events and third dim. are the threads</TD>
+</TR>
+</TABLE>
+
+\anchor getMetrics
+<H2>getMetrics()</H2>
+<P>Get all derived metric results for all group, metric, thread combinations</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Three-dimensional list with derived metric results. First dim. is groups, second dim. is metrics and third dim. are the threads</TD>
+</TR>
+</TABLE>
+
+\anchor getLastMetrics
+<H2>getLastMetrics()</H2>
+<P>Get the derived metric results of the last measurement cycle for all group, metric, thread combinations</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Three-dimensional list with derived metric results. First dim. is groups, second dim. is metrics and third dim. are the threads</TD>
+</TR>
+</TABLE>
+
+
 \anchor printOutput
-<H2>printOutput(groups, results, groupData, cpulist)</H2>
+<H2>printOutput(results, metrics, cpulist, region, stats)</H2>
 <P>Prints results</P>
 <TABLE>
 <TR>
@@ -2434,20 +3262,24 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
   <TD>Input Parameter</TD>
   <TD><TABLE>
     <TR>
-      <TD>\a groups</TD>
-      <TD>List of groups for printing</TD>
-    </TR>
-    <TR>
       <TD>\a results</TD>
-      <TD>List of results as returned by \ref getResults function</TD>
+      <TD>List of results with format list[ngroups][nevents][nthreads]</TD>
     </TR>
     <TR>
-      <TD>\a groupData</TD>
-      <TD>List of group data structures</TD>
+      <TD>\a metrics</TD>
+      <TD>List of metric results with format list[ngroups][nmetrics][nthreads]</TD>
     </TR>
     <TR>
       <TD>\a cpulist</TD>
       <TD>List of thread ID to CPU ID relations</TD>
+    </TR>
+    <TR>
+      <TD>\a region</TD>
+      <TD>Name of region or 'nil' for no region</TD>
+    </TR>
+    <TR>
+      <TD>\a stats</TD>
+      <TD>Print statistics table for one CPU</TD>
     </TR>
   </TABLE></TD>
 </TR>
@@ -2457,40 +3289,6 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TR>
 </TABLE>
 
-\anchor print_markerOutput
-<H2>print_markerOutput(groups, results, groupData, cpulist)</H2>
-<P>Prints results of a Marker API run. This is different to \ref printOutput because we have to resolve the measurement regions</P>
-<TABLE>
-<TR>
-  <TH>Direction</TH>
-  <TH>Data type(s)</TH>
-</TR>
-<TR>
-  <TD>Input Parameter</TD>
-  <TD><TABLE>
-    <TR>
-      <TD>\a groups</TD>
-      <TD>List of groups for printing</TD>
-    </TR>
-    <TR>
-      <TD>\a results</TD>
-      <TD>List of results as returned by \ref getMarkerResults function</TD>
-    </TR>
-    <TR>
-      <TD>\a groupData</TD>
-      <TD>List of group data structures</TD>
-    </TR>
-    <TR>
-      <TD>\a cpulist</TD>
-      <TD>List of thread ID to CPU ID relations</TD>
-    </TR>
-  </TABLE></TD>
-</TR>
-<TR>
-  <TD>Returns</TD>
-  <TD>None</TD>
-</TR>
-</TABLE>
 
 
 \anchor addSimpleAsciiBox

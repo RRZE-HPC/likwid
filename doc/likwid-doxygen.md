@@ -21,7 +21,7 @@ This is an effort to develop easy to use but yet powerful performance tools for 
 - \ref likwid-memsweeper : A tool to cleanup ccNUMA domains and LLC caches to get a clean environment for benchmarks.
 - \ref likwid-bench : A benchmarking framework for streaming benchmark kernels written in assembly.
 - \ref likwid-genTopoCfg : A config file writer that gets system topology and writes them to file for faster LIKWID startup.
-<!-- - \ref likwid-features : A tool to toggle the prefetchers on Core 2 processors.-->
+- \ref likwid-features : A tool to toggle the prefetchers and print available CPU features.
 
 Wrapper scripts using the basic likwid tools:
 - \ref likwid-mpirun : A wrapper script enabling simple and flexible pinning of MPI and MPI/threaded hybrid applications. With integrated \ref likwid-perfctr support.
@@ -36,17 +36,18 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 \section Library LIKWID Library
 \subsection C_Interface C/C++ Interface
 - \ref MarkerAPI
-- \ref AccessClient
+- \ref Access
 - \ref Config
 - \ref CPUTopology
 - \ref NumaTopology
 - \ref AffinityDomains
+- \ref CPUParse
 - \ref PerfMon
 - \ref PowerMon
 - \ref ThermalMon
 - \ref TimerMon
-- \ref Daemon
 - \ref MemSweep
+- \ref CpuFeatures
 
 \subsection Lua_Interface Lua Interface
 - \ref lua_Info
@@ -61,6 +62,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \ref lua_ThermalInfo
 - \ref lua_Timer
 - \ref lua_MemSweep
+- \ref lua_cpuFeatures
 - \ref lua_Misc (Some functionality not provided by Lua natively)
 
 \subsection Fortran90_Interface Fortran90 Interface
@@ -84,6 +86,9 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage haswell
 - \subpage haswellep
 - \subpage broadwell
+- \subpage broadwelld
+- \subpage broadwellep
+- \subpage skylake
 
 \subsection Architectures_AMD AMD&reg;
 - \subpage k8
@@ -126,7 +131,7 @@ All build products are generated in the directory ./TAG, where TAG is the compil
 \subsection config Configuration
 Usually the only thing you have to configure is the PREFIX install path in the build config file config.mk in the top directory.
 
-\subsubsection color Changing color of <CODE>likwid-pin</CODE> output
+\subsubsection color Changing color of likwid-pin output
 Depending on the background of your terminal window you can choose a color for <CODE>likwid-pin</CODE> output.
 
 \subsubsection accessD Usage of the access daemon likwid-accessD
@@ -175,8 +180,10 @@ NOTE: The pinning functionality and the daemons only work if configured in confi
 installed with <B>make install</B>. If you do not use the pinning functionality the tools
 can be used without installation.
 
- - <B>make install</B> - Installs the executables, libraries, man pages and headers to the path you configured in config.mk.
- - <B>make uninstall</B> - Delete all installed files.
+ - <B>make install</B> - Installs the executables, libraries, man pages and headers to the path you configured in config.mk (<CODE>PREFIX</CODE>).
+ - <B>make uninstall</B> - Delete all installed files under <CODE>PREFIX</CODE>.
+  - <B>make move</B> - Copy the executables, libraries, man pages and headers from <CODE>PREFIX</CODE> in config.mk to <CODE>INSTALLED_PREFIX</CODE>.
+ - <B>make uninstall_moved</B> - Delete all installed files under <CODE>INSTALLED_PREFIX</CODE>.
 
 \subsection accessD Setting up access for hardware performance monitoring
 Hardware performance monitoring on x86 is enabled using model-specific registers (MSR). MSR registers are special registers not part of the instruction set architecture. To read and write to these registers the x86 ISA provides special instructions. These instructions can only be executed in protected mode or in other words only kernel code can execute these instructions. Fortunately, any Linux kernel 2.6 or newer provides access to these registers via a set of device files. This allows to implement all of the functionality in user space. Still it does not allow to use those more advanced features of hardware performance monitoring which require to setup interrupt service routines  or kernel located memory.
@@ -254,9 +261,18 @@ We would like to port LIKWID to other CPU architectures that support hardware pe
 \section faq10 Do you plan to introduce a graphical frontend for LIKWID?
 No, we do not!
 
-\section faq12 Why does the startup of likwid-perfctr take so long?
+\section faq11 Why does the startup of likwid-perfctr take so long?
 In order to get reliable time measurements, LIKWID must determine the base clock frequency of your CPU. This is done by a measurement loop that takes about 1 second. You can avoid the measurement loop by creating a topology configuration file with \ref likwid-genTopoCfg.
 
-\section faq13 I want to help, were do I start?
+\section faq12 What about the security issue found with the MSR device files (CVE-2013-0268)? Can someone use the access daemon to exploit this
+No it is not possible. At the current state, the access daemon only allows accesses to performance counter MSRs and not to MSRs like SYSENTER_EIP_MSR that are used in the exploit. Consequently, the access daemon cannot be used to exploit the security issue CVE-2013-0268.
+
+\section faq13 I get messages like "Counter register FOO not supported or PCI device not available", what does it mean?
+Every time an event set is added to LIKWID, it checks whether the registers are accessible. If not, such a message is printed. In most cases, this is not a failure, it is just informing you that the counter will be skipped later at the measurements. It happens more often with the predefined performance groups because they are created for a maximally equipped machine. If your system has e.g. less memory channels than the maximal possible, not all MBOX registers will work but the counts will be valid because the counts of the non-existant register are commonly handled by another register.
+
+\section faq14 Likwid reports something like 'ERROR: The selected register XYZ is in use'. What causes this and is the -f/--force option safe?
+Some time ago, Intel release a document Intel PMU sharing guide which lists some checks that should be performed before programming the hardware performance counters. Starting with commit 8efa0ec46a30438e1b85eac3ba31ebe0b7a03303 LIKWID now checks the counters and exits if one of the selected counters is in use. When you set on command line <CODE>-f</CODE> or <CODE>--force</CODE> or set the environment variable <CODE>LIKWID_FORCE</CODE>, LIKWID ignores the already running counter and clears it. On Linux system this commonly occurs for the FIXC0 which is used by the Linux kernel in the NMI watchdog. Until now we havn't seen problems clearing the FIXC0 counter although used by the NMI watchdog. If you are not sure about that, you can deactivate the NMI watchdog with <CODE>sysctl -w kernel.nmi_watchdog=0</CODE> until reboot or instantly by writing <CODE>kernel.nmi_watchdog = 0</CODE> into <CODE>/etc/sysctl.conf</CODE>.
+
+\section faq15 I want to help, were do I start?
 The best way is to talk to us at the <A HREF="http://groups.google.com/group/likwid-users">mailing list</A>. There are a bunch of small work packages on our ToDo list that can be used as a good starting point for learning how LIKWID works. If you are not a programmer but you have a good idea, let us know and we will discuss it.
 */

@@ -74,7 +74,7 @@ For applications where first touch policy on NUMA systems cannot be employed <CO
   <TD>'arg' must be a bitmask in hex. Threads with the ID equal to a set bit in bitmask will be skipped during pinning<BR>Example: 0x1 = Thread 0 is skipped.</TD>
 </TR>
 <TR>
-  <TD>-d</TD>
+  <TD>-d &lt;delim&gt;</TD>
   <TD>Set the delimiter for the output of -p. Default is ','</TD>
 </TR>
 </TABLE>
