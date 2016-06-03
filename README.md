@@ -14,6 +14,7 @@ It consists of:
 - likwid-powermeter: read out RAPL Energy information and get info about Turbo mode steps
 - likwid-pin: pin your threaded application (pthread, Intel and gcc OpenMP to dedicated processors)
 - likwid-bench: Micro benchmarking platform
+- likwid-features: Print and manipulate cpu features like hardware prefetchers
 - likwid-genTopoCfg: Dumps topology information to a file
 - likwid-mpirun: Wrapper to start MPI and Hybrid MPI/OpenMP applications (Supports Intel MPI, OpenMPI and MPICH)
 - likwid-perfscope: Frontend to the timeline mode of likwid-perfctr, plots live graphs of performance metrics using gnuplot
