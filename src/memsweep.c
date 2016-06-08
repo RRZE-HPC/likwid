@@ -104,7 +104,8 @@ static void cleanupCache(char* ptr)
 {
 #if defined(__x86_64__) || defined(__i386__)
     uint32_t cachesize = 2 * cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].size;
-    printf("Cleaning LLC with %g MB\n", (double)cachesize/(1024.0 * 1024.0));
+    if (getenv("LIKWID_SILENT") == NULL)
+        printf("Cleaning LLC with %g MB\n", (double)cachesize/(1024.0 * 1024.0));
     _loadData(cachesize,ptr);
 #else
     ERROR_PLAIN_PRINT(Cleanup cache is currently only available on X86 systems.);
@@ -136,10 +137,13 @@ memsweep_domain(int domainId)
 {
     char* ptr = NULL;
     size_t size = numa_info.nodes[domainId].totalMemory * 1024ULL * memoryFraction / 100ULL;
-    printf("Sweeping domain %d: Using %g MB of %g MB\n",
-            domainId,
-            size / (1024.0 * 1024.0),
-            numa_info.nodes[domainId].totalMemory/ 1024.0);
+    if (getenv("LIKWID_SILENT") == NULL)
+    {
+        printf("Sweeping domain %d: Using %g MB of %g MB\n",
+                domainId,
+                size / (1024.0 * 1024.0),
+                numa_info.nodes[domainId].totalMemory/ 1024.0);
+    }
     ptr = (char*) allocateOnNode(size, domainId);
     initMemory(size, ptr, domainId);
     cleanupCache(ptr);
