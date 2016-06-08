@@ -1707,7 +1707,7 @@ __perfmon_readCounters(int groupId, int threadId)
             }
             for (j=0; j < groupSet->groups[groupId].numberOfEvents; j++)
             {
-                groupSet->groups[groupId].events[j].threadCounter[threadId].lastResult = (double)calculateResult(groupId, j, threadId);
+                result = (double)calculateResult(groupId, j, threadId);
                 groupSet->groups[groupId].events[j].threadCounter[threadId].lastResult = result;
                 groupSet->groups[groupId].events[j].threadCounter[threadId].fullResult += result;
             }
@@ -1722,7 +1722,7 @@ __perfmon_readCounters(int groupId, int threadId)
         }
         for (j=0; j < groupSet->groups[groupId].numberOfEvents; j++)
         {
-            groupSet->groups[groupId].events[j].threadCounter[threadId].lastResult = (double)calculateResult(groupId, j, threadId);
+            result = (double)calculateResult(groupId, j, threadId);
             groupSet->groups[groupId].events[j].threadCounter[threadId].lastResult = result;
             groupSet->groups[groupId].events[j].threadCounter[threadId].fullResult += result;
         }
