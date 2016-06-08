@@ -184,16 +184,16 @@ if print_domains and num_threads > 0 then
     for i, cpu in pairs(cpu_list) do
         outstr = outstr .. delimiter .. cpu
     end
-    print(outstr:sub(2,outstr:len()))
+    print_stdout(outstr:sub(2,outstr:len()))
     likwid.putTopology()
     likwid.putAffinityInfo()
     likwid.putConfiguration()
     os.exit(0)
 elseif print_domains then
     for k,v in pairs(affinity["domains"]) do
-        print(string.format("Domain %s:", v["tag"]))
-        print("\t" .. table.concat(v["processorList"], ","))
-        print("")
+        print_stdout(string.format("Domain %s:", v["tag"]))
+        print_stdout("\t" .. table.concat(v["processorList"], ","))
+        print_stdout("")
     end
     likwid.putTopology()
     likwid.putAffinityInfo()
