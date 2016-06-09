@@ -746,13 +746,6 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
                 ovf_values_core |= (1ULL<<(index+32));
                 break;
             default:
-                /*if (counter_map[index].type > UBOXFIX)
-                {
-                    if (box_map[counter_map[index].type].ovflOffset >= 0)
-                    {
-                        ovf_values_UBOXFIX |= (1ULL<<box_map[counter_map[index].type].ovflOffset);
-                    }
-                }*/
                 break;
         }
         if ((reg) && (((type == PMC)||(type == FIXED))||((type >= UBOXFIX) && (haveLock))))
@@ -771,10 +764,10 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
     }
     if (haveLock && eventSet->regTypeMask & ~(0xFULL))
     {
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, LLU_CAST ovf_values_UBOXFIX, CLEAR_UBOXFIX_OVF)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, ovf_values_UBOXFIX));
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, CLEAR_UBOXFIX_CTRL)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, 0x0ULL));
+        VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_STATUS, LLU_CAST 0x0ULL, CLEAR_UNCORE_STATUS)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_STATUS, 0x0ULL));
+        VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, CLEAR_UNCORE_CTRL)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL));
     }
 
     if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
