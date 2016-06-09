@@ -674,6 +674,7 @@ extern int sockstr_to_socklist(char* sockstr, int* sockets, int length)  __attri
 /** \addtogroup PerfMon Performance monitoring module
  *  @{
  */
+
 /*! \brief Get all groups
 
 Checks the configured performance group path for the current architecture and
@@ -770,7 +771,8 @@ extern int perfmon_readGroupCounters(int groupId) __attribute__ ((visibility ("d
 Read the counters that have been previously started by perfmon_startCounters().
 The counters are stopped directly to avoid interference of LIKWID with the measured
 code. Before returning, the counters are started again. Only one thread's CPU is read.
-@param [in] groupId Read the counters for on thread taking part in group
+@param [in] groupId Read the counters defined in group identified with groupId
+@param [in] threadId Read the counters for the thread
 @return 0 on success and -(thread_id+1) for error
 */
 extern int perfmon_readGroupThreadCounters(int groupId, int threadId) __attribute__ ((visibility ("default") ));
@@ -1346,7 +1348,8 @@ extern void memsweep_threadGroup(int* processorList, int numberOfProcessors) __a
 /** \addtogroup CpuFeatures Retrieval and manipulation of processor features
  *  @{
  */
-
+/*! \brief Enumeration of all CPU related features.
+*/
 typedef enum {
     FEAT_HW_PREFETCHER=0, /*!< \brief Hardware prefetcher */
     FEAT_CL_PREFETCHER, /*!< \brief Adjacent cache line prefetcher */
@@ -1401,6 +1404,7 @@ extern char* cpuFeatures_name(CpuFeature type)  __attribute__ ((visibility ("def
 Enable a CPU feature for a specific CPU. Only the state of the prefetchers can be changed, all other features return -EINVAL
 @param [in] cpu CPU ID
 @param [in] type CPU feature
+@param [in] print Print outcome of operation
 @return Status of operation (0=success, all others are erros, either by MSR access or invalid feature)
 */
 extern int cpuFeatures_enable(int cpu, CpuFeature type, int print) __attribute__ ((visibility ("default") ));
@@ -1409,6 +1413,7 @@ extern int cpuFeatures_enable(int cpu, CpuFeature type, int print) __attribute__
 Disable a CPU feature for a specific CPU. Only the state of the prefetchers can be changed, all other features return -EINVAL
 @param [in] cpu CPU ID
 @param [in] type CPU feature
+@param [in] print Print outcome of operation
 @return Status of operation (0=success, all others are erros, either by MSR access or invalid feature)
 */
 extern int cpuFeatures_disable(int cpu, CpuFeature type, int print) __attribute__ ((visibility ("default") ));
