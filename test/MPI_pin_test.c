@@ -68,10 +68,12 @@ main(int argc, char **argv)
             sprintf(cmd, "pstree -p -H %d %d",pid, pid);
             system(cmd);
         }
+#ifdef _OPENMP
 #pragma omp critical
         {
-            printf ("Rank %d Thread %d running on core %d/%d with pid %d and tid %d\n",rank,omp_get_thread_num(), sched_getcpu(),get_cpu_id(), getpid(),gettid());
+            printf ("Rank %d Thread %d running on Node %s core %d/%d with pid %d and tid %d\n",rank,omp_get_thread_num(), host, sched_getcpu(),get_cpu_id(), getpid(),gettid());
         }
+#endif
 
     }
 
