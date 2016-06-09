@@ -424,7 +424,7 @@ for line in sets:
         testfp = open(filename,'r')
         for line in testfp.read().split("\n"):
             if line.startswith("GROUP"):
-                match = re.match("^GROUP\s+(\.+)")
+                match = re.match("^GROUP\s+(\.+)", line)
                 if match:
                     groupname = match.group(1)
                     break
@@ -486,7 +486,7 @@ if not only_wiki:
     script.write("#!/bin/bash\n")
 
     for group in test_set.keys():
-        perfctr_string = "%s -C E:N:%d:1:2 -g %s -m " % (perfctr,nrThreads, group,)
+        perfctr_string = "%s -f -C E:N:%d:1:2 -g %s -m " % (perfctr,nrThreads, group,)
         no_scale = False
         for test in test_set[group].keys():
             if test.startswith("REGEX"): continue
