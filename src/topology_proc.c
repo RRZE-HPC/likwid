@@ -409,10 +409,10 @@ void proc_init_nodeTopology(cpu_set_t cpuSet)
         hwThreadPool[i].threadId = -1;
         hwThreadPool[i].coreId = -1;
         hwThreadPool[i].packageId = -1;
-        hwThreadPool[i].inCpuSet = 1;
-        if (!CPU_ISSET(i, &cpuSet))
+        hwThreadPool[i].inCpuSet = 0;
+        if (CPU_ISSET(i, &cpuSet))
         {
-            hwThreadPool[i].inCpuSet = 0;
+            hwThreadPool[i].inCpuSet = 1;
         }
         cpudir = bformat("/sys/devices/system/cpu/cpu%d/topology",i);
         file = bformat("%s/core_id", bdata(cpudir));
@@ -439,11 +439,12 @@ void proc_init_nodeTopology(cpu_set_t cpuSet)
             fclose(fp);
         }
         bdestroy(file);
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC Thread Pool PU %d Thread %d Core %d Socket %d,
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC Thread Pool PU %d Thread %d Core %d Socket %d inCpuSet %d,
                             hwThreadPool[i].apicId,
                             hwThreadPool[i].threadId,
                             hwThreadPool[i].coreId,
-                            hwThreadPool[i].packageId)
+                            hwThreadPool[i].packageId,
+                            hwThreadPool[i].inCpuSet)
         bdestroy(cpudir);
     }
     cpuid_topology.threadPool = hwThreadPool;

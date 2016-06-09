@@ -145,7 +145,7 @@ table.insert(output_csv, "TABLE,Topology,"..tostring(cputopo["numHWThreads"]))
 table.insert(output_csv, "HWThread\tThread\t\tCore\t\tSocket\t\tAvailable")
 
 for cntr=0,cputopo["numHWThreads"]-1 do
-    if cputopo["threadPool"][cntr]["inCpuSet"] then
+    if cputopo["threadPool"][cntr]["inCpuSet"] == 1 then
         table.insert(output_csv, string.format("%d\t\t%u\t\t%u\t\t%u\t\t*",cntr,
                             cputopo["threadPool"][cntr]["threadId"],
                             cputopo["threadPool"][cntr]["coreId"],
