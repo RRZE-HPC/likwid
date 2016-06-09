@@ -154,6 +154,47 @@ int skl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     return 0;
 }
 
+int skl_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    int j;
+    uint64_t flags = 0x0ULL;
+
+    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+
+    flags = (1ULL<<22)|(1ULL<<20);
+    flags |= (event->umask<<8) + event->eventId;
+    if (event->numberOfOptions > 0)
+    {
+        for(j = 0; j < event->numberOfOptions; j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= (event->options[j].value & 0x1FULL) << 24;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    if (flags != currentConfig[cpu_id][index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_UBOX);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[cpu_id][index] = flags;
+    }
+    return 0;
+}
+
 int skl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
@@ -253,13 +294,7 @@ int perfmon_setupCounterThread_skylake(
                 }
                 break;
             case UBOX:
-                if (haveLock)
-                {
-                    uint64_t uflags = 0x0ULL;
-                    uflags |= (1ULL<<20)|(1ULL<<22);
-                    VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, uflags, CLEAR_UBOX)
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, uflags));
-                }
+                skl_ubox_setup(cpu_id, index, event);
                 break;
             case CBOX0:
             case CBOX1:
