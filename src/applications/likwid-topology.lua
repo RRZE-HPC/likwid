@@ -32,24 +32,26 @@
 package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
-stdout_print = print
+
+print_stdout = print
+print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
 
 function version()
-    print(string.format("likwid-topology --  Version %d.%d",likwid.version,likwid.release))
+    io.stdout:write(string.format("likwid-topology --  Version %d.%d\n",likwid.version,likwid.release))
 end
 
 function usage()
     version()
-    print("A tool to print the thread and cache topology on x86 CPUs.\n")
-    print("Options:")
-    print("-h, --help\t\t Help message")
-    print("-v, --version\t\t Version information")
-    print("-V, --verbose <level>\t Set verbosity")
-    print("-c, --caches\t\t List cache information")
-    print("-C, --clock\t\t Measure processor clock")
-    print("-O\t\t\t CSV output")
-    print("-o, --output <file>\t Store output to file. (Optional: Apply text filter)")
-    print("-g\t\t\t Graphical output")
+    io.stdout:write("A tool to print the thread and cache topology on x86 CPUs.\n\n")
+    io.stdout:write("Options:\n")
+    io.stdout:write("-h, --help\t\t Help message\n")
+    io.stdout:write("-v, --version\t\t Version information\n")
+    io.stdout:write("-V, --verbose <level>\t Set verbosity\n")
+    io.stdout:write("-c, --caches\t\t List cache information\n")
+    io.stdout:write("-C, --clock\t\t Measure processor clock\n")
+    io.stdout:write("-O\t\t\t CSV output\n")
+    io.stdout:write("-o, --output <file>\t Store output to file. (Optional: Apply text filter)\n")
+    io.stdout:write("-g\t\t\t Graphical output\n")
 end
 
 print_caches = false
@@ -62,8 +64,8 @@ for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O","help","ver
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
-            print(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
-            print("Did you forget an argument to an option?")
+            print_stderr(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
+            print_stderr("Did you forget an argument to an option?")
             os.exit(1)
         end
     end
@@ -77,7 +79,7 @@ for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O","help","ver
         if tonumber(arg) >= 0 and tonumber(arg) <=3 then
             likwid.setVerbosity(tonumber(arg))
         else
-            print("Verbosity level not valid. Must be between 0 (only errors) and 3 (developer output)")
+            print_stderr("Verbosity level not valid. Must be between 0 (only errors) and 3 (developer output)")
         end
     elseif opt == "c" or opt == "caches" then
         print_caches = true
@@ -99,10 +101,10 @@ for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O","help","ver
         io.output(arg..".tmp")
         print = function(...) for k,v in pairs({...}) do io.write(v .. "\n") end end
     elseif opt == "?" then
-        print("Invalid commandline option -"..arg)
+        print_stderr("Invalid commandline option -"..arg)
         os.exit(1)
     elseif opt == "!" then
-        print("Option requires an argument")
+        print_stderr("Option requires an argument")
         os.exit(1)
     end
 end
@@ -295,12 +297,12 @@ end
 for _,line in pairs(output_csv) do print(line) end
 
 if print_graphical and not print_csv then
-    print("\n")
-    print(likwid.sline)
-    print("Graphical Topology")
-    print(likwid.sline)
+    print_stdout("\n")
+    print_stdout(likwid.sline)
+    print_stdout("Graphical Topology")
+    print_stdout(likwid.sline)
     for socket=0,cputopo["numSockets"]-1 do
-        print(string.format("Socket %d:",cputopo["topologyTree"][socket]["ID"]))
+        print_stdout(string.format("Socket %d:",cputopo["topologyTree"][socket]["ID"]))
         container = {}
         for core=0,cputopo["numCoresPerSocket"]-1 do
             local tmpString = ""

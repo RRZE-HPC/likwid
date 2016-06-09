@@ -33,53 +33,56 @@ package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
+print_stdout = print
+print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
+
 local function version()
-    print(string.format("likwid-mpirun --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-mpirun --  Version %d.%d",likwid.version,likwid.release))
 end
 
 local function examples()
-    print("Examples:")
-    print("Run 32 processes on hosts in hostlist")
-    print("likwid-mpirun -np 32 ./a.out")
-    print("")
-    print("Run 1 MPI process on each socket")
-    print("likwid-mpirun -nperdomain S:1 ./a.out")
-    print("Total amount of MPI processes is calculated using the number of hosts in the hostfile")
-    print("")
-    print("For hybrid MPI/OpenMP jobs you need to set the -pin option")
-    print("Starts 2 MPI processes on each host, one on socket 0 and one on socket 1")
-    print("Each MPI processes may start 2 OpenMP threads pinned to the first two CPUs on each socket")
-    print("likwid-mpirun -pin S0:0-1_S1:0-1 ./a.out")
-    print("")
-    print("Run 2 processes on each socket and measure the MEM performance group")
-    print("likwid-mpirun -nperdomain S:2 -g MEM ./a.out")
-    print("Only one process on a socket measures the Uncore/RAPL counters, the other one(s) only core-local counters")
-    print("")
+    print_stdout("Examples:")
+    print_stdout("Run 32 processes on hosts in hostlist")
+    print_stdout("likwid-mpirun -np 32 ./a.out")
+    print_stdout("")
+    print_stdout("Run 1 MPI process on each socket")
+    print_stdout("likwid-mpirun -nperdomain S:1 ./a.out")
+    print_stdout("Total amount of MPI processes is calculated using the number of hosts in the hostfile")
+    print_stdout("")
+    print_stdout("For hybrid MPI/OpenMP jobs you need to set the -pin option")
+    print_stdout("Starts 2 MPI processes on each host, one on socket 0 and one on socket 1")
+    print_stdout("Each MPI processes may start 2 OpenMP threads pinned to the first two CPUs on each socket")
+    print_stdout("likwid-mpirun -pin S0:0-1_S1:0-1 ./a.out")
+    print_stdout("")
+    print_stdout("Run 2 processes on each socket and measure the MEM performance group")
+    print_stdout("likwid-mpirun -nperdomain S:2 -g MEM ./a.out")
+    print_stdout("Only one process on a socket measures the Uncore/RAPL counters, the other one(s) only core-local counters")
+    print_stdout("")
 end
 
 local function usage()
     version()
-    print("A wrapper script to pin threads spawned by MPI processes and measure hardware performance counters.\n")
-    print("Options:")
-    print("-h, --help\t\t Help message")
-    print("-v, --version\t\t Version information")
-    print("-d, --debug\t\t Debugging output")
-    print("-n/-np <count>\t\t Set the number of processes")
-    print("-nperdomain <domain>\t Set the number of processes per node by giving an affinity domain and count")
-    print("-pin <list>\t\t Specify pinning of threads. CPU expressions like likwid-pin separated with '_'")
-    print("-s, --skip <hex>\t Bitmask with threads to skip")
-    print("-mpi <id>\t\t Specify which MPI should be used. Possible values: openmpi, intelmpi and mvapich2")
-    print("\t\t\t If not set, module system is checked")
-    print("-omp <id>\t\t Specify which OpenMP should be used. Possible values: gnu and intel")
-    print("\t\t\t Only required for statically linked executables.")
-    print("-hostfile\t\t Use custom hostfile instead of searching the environment")
-    print("-g/-group <perf>\t Set a likwid-perfctr conform event set for measuring on nodes")
-    print("-m/-marker\t\t Activate marker API mode")
-    print("-O\t\t\t Output easily parseable CSV instead of fancy tables")
-    print("-f\t\t\t Force overwrite of registers if they are in use. You can also use environment variable LIKWID_FORCE")
-    print("")
-    print("Processes are pinned to physical CPU cores first. For syntax questions see likwid-pin")
-    print("")
+    print_stdout("A wrapper script to pin threads spawned by MPI processes and measure hardware performance counters.\n")
+    print_stdout("Options:")
+    print_stdout("-h, --help\t\t Help message")
+    print_stdout("-v, --version\t\t Version information")
+    print_stdout("-d, --debug\t\t Debugging output")
+    print_stdout("-n/-np <count>\t\t Set the number of processes")
+    print_stdout("-nperdomain <domain>\t Set the number of processes per node by giving an affinity domain and count")
+    print_stdout("-pin <list>\t\t Specify pinning of threads. CPU expressions like likwid-pin separated with '_'")
+    print_stdout("-s, --skip <hex>\t Bitmask with threads to skip")
+    print_stdout("-mpi <id>\t\t Specify which MPI should be used. Possible values: openmpi, intelmpi and mvapich2")
+    print_stdout("\t\t\t If not set, module system is checked")
+    print_stdout("-omp <id>\t\t Specify which OpenMP should be used. Possible values: gnu and intel")
+    print_stdout("\t\t\t Only required for statically linked executables.")
+    print_stdout("-hostfile\t\t Use custom hostfile instead of searching the environment")
+    print_stdout("-g/-group <perf>\t Set a likwid-perfctr conform event set for measuring on nodes")
+    print_stdout("-m/-marker\t\t Activate marker API mode")
+    print_stdout("-O\t\t\t Output easily parseable CSV instead of fancy tables")
+    print_stdout("-f\t\t\t Force overwrite of registers if they are in use. You can also use environment variable LIKWID_FORCE")
+    print_stdout("")
+    print_stdout("Processes are pinned to physical CPU cores first. For syntax questions see likwid-pin")
+    print_stdout("")
     examples()
 end
 
@@ -123,11 +126,11 @@ local function readHostfileOpenMPI(filename)
     end
     local f = io.open(filename, "r")
     if f == nil then
-        print("ERROR: Cannot open hostfile "..filename)
+        print_stderr("ERROR: Cannot open hostfile "..filename)
         os.exit(1)
     end
     if debug then
-        print("DEBUG: Reading hostfile in openmpi style")
+        print_stdout("DEBUG: Reading hostfile in openmpi style")
     end
     local t = f:read("*all")
     f:close()
@@ -168,7 +171,7 @@ local function readHostfileOpenMPI(filename)
             host["maxslots"] = topo.numHWThreads
         end
         if debug then
-            print(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
+            print_stdout(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
         end
     end
     return hostlist
@@ -181,7 +184,7 @@ local function writeHostfileOpenMPI(hostlist, filename)
 
     local f = io.open(filename, "w")
     if f == nil then
-        print("ERROR: Cannot open hostfile "..filename)
+        print_stderr("ERROR: Cannot open hostfile "..filename)
         os.exit(1)
     end
     for i, hostcontent in pairs(hostlist) do
@@ -225,7 +228,7 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
                                 mpiexecutable, hostfile, bindstr,
                                 np, ppn, table.concat(mpiopts, ' '), wrapperscript)
     if debug then
-        print("EXEC: "..cmd)
+        print_stdout("EXEC: "..cmd)
     end
     local ret = os.execute(cmd)
     return ret
@@ -238,11 +241,11 @@ local function readHostfileIntelMPI(filename)
     end
     local f = io.open(filename, "r")
     if f == nil then
-        print("ERROR: Cannot open hostfile "..filename)
+        print_stderr("ERROR: Cannot open hostfile "..filename)
         os.exit(1)
     end
     if debug then
-        print("DEBUG: Reading hostfile in intelmpi style")
+        print_stdout("DEBUG: Reading hostfile in intelmpi style")
     end
     local topo = likwid.getCpuTopology()
     local t = f:read("*all")
@@ -259,7 +262,7 @@ local function readHostfileIntelMPI(filename)
     end
     if debug then
         for i, host in pairs(hostlist) do
-            print(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
+            print_stdout(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
         end
     end
     return hostlist
@@ -272,7 +275,7 @@ local function writeHostfileIntelMPI(hostlist, filename)
 
     local f = io.open(filename, "w")
     if f == nil then
-        print("ERROR: Cannot open hostfile "..filename)
+        print_stderr("ERROR: Cannot open hostfile "..filename)
         os.exit(1)
     end
     for i, hostcontent in pairs(hostlist) do
@@ -335,11 +338,11 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
 
     if debug then
         if use_hydra == false then
-            print(string.format("EXEC: %s/mpdboot -r %s -n %d -f %s", path, mpi_connect, nrNodes, hostfile))
-            print(string.format("EXEC: %s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
-            print(string.format("EXEC: %s/mpdallexit", path))
+            print_stdout(string.format("EXEC: %s/mpdboot -r %s -n %d -f %s", path, mpi_connect, nrNodes, hostfile))
+            print_stdout(string.format("EXEC: %s/mpiexec -perhost %d %s -np %d %s", path, ppn, envstr, np, wrapperscript))
+            print_stdout(string.format("EXEC: %s/mpdallexit", path))
         else
-            print(string.format("%s %s -f %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
+            print_stdout(string.format("%s %s -f %s -np %d -perhost %d %s",mpiexecutable, envstr, hostfile, np, ppn, wrapperscript))
         end
     end
 
@@ -362,11 +365,11 @@ local function readHostfileMvapich2(filename)
     end
     local f = io.open(filename, "r")
     if f == nil then
-        print("ERROR: Cannot open hostfile "..filename)
+        print_stderr("ERROR: Cannot open hostfile "..filename)
         os.exit(1)
     end
     if debug then
-        print("DEBUG: Reading hostfile in mvapich2 style")
+        print_stdout("DEBUG: Reading hostfile in mvapich2 style")
     end
     local t = f:read("*all")
     f:close()
@@ -388,7 +391,7 @@ local function readHostfileMvapich2(filename)
     end
     if debug then
         for i, host in pairs(hostlist) do
-            print(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
+            print_stdout(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
         end
     end
     return hostlist
@@ -401,7 +404,7 @@ local function writeHostfileMvapich2(hostlist, filename)
 
     local f = io.open(filename, "w")
     if f == nil then
-        print("ERROR: Cannot open hostfile "..filename)
+        print_stderr("ERROR: Cannot open hostfile "..filename)
         os.exit(1)
     end
     for i, hostcontent in pairs(hostlist) do
@@ -440,7 +443,7 @@ local function executeMvapich2(wrapperscript, hostfile, env, nrNodes)
                                 mpiexecutable, hostfile,
                                 np, ppn, envstr, table.concat(mpiopts, ' '), wrapperscript)
     if debug then
-        print("EXEC: "..cmd)
+        print_stdout("EXEC: "..cmd)
     end
     local ret = os.execute(cmd)
     return ret
@@ -454,11 +457,11 @@ local function readHostfilePBS(filename)
     end
     local f = io.open(filename, "r")
     if f == nil then
-        print("ERROR: Cannot open hostfile "..filename)
+        print_stderr("ERROR: Cannot open hostfile "..filename)
         os.exit(1)
     end
     if debug then
-        print("DEBUG: Reading hostfile from batch system")
+        print_stdout("DEBUG: Reading hostfile from batch system")
     end
     local t = f:read("*all")
     f:close()
@@ -481,7 +484,7 @@ local function readHostfilePBS(filename)
     end
     if debug then
         for i, host in pairs(hostlist) do
-            print(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
+            print_stdout(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
         end
     end
     return hostlist
@@ -549,7 +552,6 @@ local function writeHostfileSlurm(hostlist, filename)
     for i, h in pairs(hostlist) do
         table.insert(l, h["hostname"])
     end
-    print("SLURM_NODELIST", table.concat(l,","))
     likwid.setenv("SLURM_NODELIST", table.concat(l,","))
 end
 
@@ -565,7 +567,7 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
     local exec = string.format("srun -N %d --ntasks-per-node=%d --cpu_bind=none %s %s",
                                 nrNodes, ppn, table.concat(mpiopts, ' '), wrapperscript)
     if debug then
-        print("EXEC: "..exec)
+        print_stdout("EXEC: "..exec)
     end
     local ret = os.execute(exec)
     return ret
@@ -652,7 +654,7 @@ local function getMpiType()
         end
     end
     if not mpitype then
-        print("WARN: No supported MPI loaded in module system")
+        print_stderr("WARN: No supported MPI loaded in module system")
     end
     return mpitype
 end
@@ -723,7 +725,7 @@ local function getOmpType()
         end
     end
     if not omptype and dyn_linked == false then
-        print("WARN: Cannot get OpenMP variant from executable, trying module system")
+        print_stderr("WARN: Cannot get OpenMP variant from executable, trying module system")
         cmd = "bash -c 'tclsh /apps/modules/modulecmd.tcl sh list -t' 2>&1"
         local f = io.popen(cmd, 'r')
         if f == nil then
@@ -744,7 +746,7 @@ local function getOmpType()
             end
         end
         if not omptype then
-            print("WARN: No supported OpenMP loaded in module system")
+            print_stderr("WARN: No supported OpenMP loaded in module system")
         end
     end
     if omptype == "none" then
@@ -758,11 +760,11 @@ local function assignHosts(hosts, np, ppn)
     newhosts = {}
     current = 0
     if debug then
-        print(string.format("Assign %d processes with %d per node to %d hosts", np, ppn, #hosts))
-        print("Available hosts for scheduling:")
-        print("Host", "Slots", "MaxSlots", "Interface")
+        print_stdout(string.format("Assign %d processes with %d per node to %d hosts", np, ppn, #hosts))
+        print_stdout("Available hosts for scheduling:")
+        print_stdout("Host", "Slots", "MaxSlots", "Interface")
         for i, h in pairs(hosts) do
-            print (h["hostname"], h["slots"], h["maxslots"],"", h["interface"])
+            print_stdout (h["hostname"], h["slots"], h["maxslots"],"", h["interface"])
         end
     end
     local break_while = false
@@ -775,7 +777,7 @@ local function assignHosts(hosts, np, ppn)
                                             maxslots=host["maxslots"],
                                             interface=host["interface"]})
                     if debug then
-                        print(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], host["maxslots"]))
+                        print_stdout(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], host["maxslots"]))
                     end
                     current = host["maxslots"]
                     hosts[i] = nil
@@ -785,7 +787,7 @@ local function assignHosts(hosts, np, ppn)
                                             maxslots=host["slots"],
                                             interface=host["interface"]})
                     if debug then
-                        print(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], ppn))
+                        print_stdout(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], ppn))
                     end
                     current = ppn
                     hosts[i] = nil
@@ -793,7 +795,7 @@ local function assignHosts(hosts, np, ppn)
             elseif host["slots"] then
                 if host["maxslots"] then
                     if host["maxslots"] < ppn then
-                        print(string.format("WARN: Oversubscription for host %s needed, but max-slots set to %d.",
+                        print_stderr(string.format("WARN: Oversubscription for host %s needed, but max-slots set to %d.",
                                                 host["hostname"], host["maxslots"]))
                         table.insert(newhosts, {hostname=host["hostname"],
                                                 slots=host["maxslots"],
@@ -803,7 +805,7 @@ local function assignHosts(hosts, np, ppn)
                         host["maxslots"] = 0
                         hosts[i] = nil
                     else
-                        print(string.format("WARN: Oversubscription for host %s.", host["hostname"]))
+                        print_stderr(string.format("WARN: Oversubscription for host %s.", host["hostname"]))
                         table.insert(newhosts, {hostname=host["hostname"],
                                             slots=ppn,
                                             maxslots=host["maxslots"],
@@ -812,7 +814,7 @@ local function assignHosts(hosts, np, ppn)
                         
                     end
                 else
-                    print(string.format("WARN: Oversubscription for host %s.", host["hostname"]))
+                    print_stderr(string.format("WARN: Oversubscription for host %s.", host["hostname"]))
                     table.insert(newhosts, {hostname=host["hostname"],
                                         slots=ppn,
                                         maxslots=host["slots"],
@@ -825,7 +827,7 @@ local function assignHosts(hosts, np, ppn)
                                         maxslots=host["slots"],
                                         interface=host["interface"]})
                 if debug then
-                    print(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], ppn))
+                    print_stdout(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], ppn))
                 end
                 current = ppn
             end
@@ -860,7 +862,7 @@ local function assignHosts(hosts, np, ppn)
         end
     end
     if debug then
-        print("DEBUG: Scheduling on hosts:")
+        print_stdout("DEBUG: Scheduling on hosts:")
         for i, h in pairs(newhosts) do
             if h["maxslots"] ~= nil then
                 str = string.format("DEBUG: Host %s with %d slots (max. %d slots)",
@@ -871,7 +873,7 @@ local function assignHosts(hosts, np, ppn)
             if h["interface"] then
                 str = str.. string.format(" using interface %s", h["interface"])
             end
-            print(str)
+            print_stdout(str)
         end
     end
     return newhosts, ppn
@@ -907,7 +909,7 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
         for i, idx in pairs(domainlist) do
             str = str .. affinity["domains"][idx]["tag"] .. " "
         end
-        print(str)
+        print_stdout(str)
     end
 
     for i, domidx in pairs(domainlist) do
@@ -928,14 +930,14 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
         for i, expr in pairs(newexprs) do
             str = str .. expr .. " "
         end
-        print(str)
+        print_stdout(str)
     end
     return newexprs
 end
 
 local function createEventString(eventlist)
     if eventlist == nil or #eventlist == 0 then
-        print("ERROR: Empty event list. Failed to create event set string")
+        print_stderr("ERROR: Empty event list. Failed to create event set string")
         return ""
     end
     local str = ""
@@ -975,7 +977,7 @@ local function setPerfStrings(perflist, cpuexprs)
         local gdata = nil
         gdata = likwid.get_groupdata(perfStr)
         if gdata == nil then
-            print("Cannot get data for group "..perfStr..". Skipping...")
+            print_stderr("Cannot get data for group "..perfStr..". Skipping...")
         else
             table.insert(grouplist, gdata)
             if perfexprs[k] == nil then
@@ -1029,7 +1031,7 @@ local function setPerfStrings(perflist, cpuexprs)
 
             if debug then
                 for i, expr in pairs(perfexprs[k]) do
-                    print(string.format("DEBUG: Process %d measures with event set: %s", i-1, expr))
+                    print_stdout(string.format("DEBUG: Process %d measures with event set: %s", i-1, expr))
                 end
             end
         end
@@ -1088,7 +1090,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
         glsize_var = tostring(math.tointeger(np))
         losize_var = "$MPI_LOCALNRANKS"
     else
-        print("Invalid MPI vendor "..mpitype)
+        print_stderr("Invalid MPI vendor "..mpitype)
         return
     end
 
@@ -1102,7 +1104,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
 
     local f = io.open(scriptname, "w")
     if f == nil then
-        print("ERROR: Cannot open hostfile "..scriptname)
+        print_stderr("ERROR: Cannot open hostfile "..scriptname)
         os.exit(1)
     end
 
@@ -1174,14 +1176,14 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
 
     f:write("if [ \"$LOCALRANK\" -eq 0 ]; then\n")
     if debug then
-        print("NODE_EXEC: "..commands[1])
+        print_stdout("NODE_EXEC: "..commands[1])
     end
     f:write("\t"..commands[1].."\n")
 
     for i=2,#commands do
         f:write("elif [ \"$LOCALRANK\" -eq "..tostring(i-1).." ]; then\n")
         if debug then
-            print("NODE_EXEC: "..commands[i])
+            print_stdout("NODE_EXEC: "..commands[i])
         end
         f:write("\t"..commands[i].."\n")
     end
@@ -1219,7 +1221,7 @@ local function parseOutputFile(filename)
     local results = {}
     local f = io.open(filename, "r")
     if f == nil then
-        print("ERROR: Cannot open output file "..filename)
+        print_stderr("ERROR: Cannot open output file "..filename)
         os.exit(1)
     end
     rank, host = filename:match("output_%d+_(%d+)_(%g+).csv")
@@ -1227,7 +1229,7 @@ local function parseOutputFile(filename)
     local t = f:read("*all")
     f:close()
     if t:len() == 0 then
-        print("Error Output file "..filename.." is empty")
+        print_stderr("Error Output file "..filename.." is empty")
         os.exit(1)
     end
     for i, line in pairs(likwid.stringsplit(t, "\n")) do
@@ -1307,7 +1309,7 @@ local function parseMarkerOutputFile(filename)
     local results = {}
     local f = io.open(filename, "r")
     if f == nil then
-        print("ERROR: Cannot open output file "..filename)
+        print_stderr("ERROR: Cannot open output file "..filename)
         os.exit(1)
     end
     rank, host = filename:match("output_%d+_(%d+)_(%g+).csv")
@@ -1563,9 +1565,9 @@ function printMpiOutput(group_list, all_results, regionname)
                 if #secondtab_combined > maxLineFields then maxLineFields = #secondtab_combined end
             end
             if region then
-                print("Region,"..tostring(region).. string.rep(",", maxLineFields  - 2))
+                print_stdout("Region,"..tostring(region).. string.rep(",", maxLineFields  - 2))
             end
-            print("Group,"..tostring(gidx) .. string.rep(",", maxLineFields  - 2))
+            print_stdout("Group,"..tostring(gidx) .. string.rep(",", maxLineFields  - 2))
             likwid.printcsv(firsttab, maxLineFields)
             if total_threads > 1 then likwid.printcsv(firsttab_combined, maxLineFields) end
             if gdata["Metrics"] then
@@ -1574,9 +1576,9 @@ function printMpiOutput(group_list, all_results, regionname)
             end
         else
             if region then
-                print("Region: "..tostring(region))
+                print_stdout("Region: "..tostring(region))
             end
-            print("Group: "..tostring(gidx))
+            print_stdout("Group: "..tostring(gidx))
             likwid.printtable(firsttab)
             if total_threads > 1 then likwid.printtable(firsttab_combined) end
             if gdata["Metrics"] then
@@ -1604,8 +1606,8 @@ for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:",
     if (type(arg) == "string") then
         local s,e = arg:find("-")
         if s == 1 then
-            print(string.format("ERROR: Argmument %s to option -%s starts with invalid character -.", arg, opt))
-            print("ERROR: Did you forget an argument to an option?")
+            print_stderr(string.format("ERROR: Argmument %s to option -%s starts with invalid character -.", arg, opt))
+            print_stderr("ERROR: Did you forget an argument to an option?")
             os.exit(1)
         end
     end
@@ -1627,14 +1629,14 @@ for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:",
     elseif opt == "n" or opt == "np" then
         np = tonumber(arg)
         if np == nil then
-            print("Argument for -n/-np must be a number")
+            print_stderr("Argument for -n/-np must be a number")
             os.exit(1)
         end
     elseif opt == "nperdomain" then
         nperdomain = arg
         local domain, count = nperdomain:match("([NSCM]%d*):(%d+)")
         if domain == nil then
-            print("Invalid option to -nperdomain")
+            print_stderr("Invalid option to -nperdomain")
             os.exit(1)
         end
     elseif opt == "hostfile" then
@@ -1650,22 +1652,22 @@ for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:",
     elseif opt == "s" or opt == "skip" then
         skipStr = "-s "..arg
     elseif opt == "?" then
-        print("Invalid commandline option -"..arg)
+        print_stderr("Invalid commandline option -"..arg)
         os.exit(1)
     elseif opt == "!" then
-        print("Option requires an argument")
+        print_stderr("Option requires an argument")
         os.exit(1)
     end
 end
 
 
 if np == 0 and nperdomain == nil and #cpuexprs == 0 then
-    print("ERROR: No option -n/-np, -nperdomain or -pin")
+    print_stderr("ERROR: No option -n/-np, -nperdomain or -pin")
     os.exit(1)
 end
 
 if use_marker and #perf == 0 then
-    print("ERROR: You selected the MarkerAPI feature but didn't set any events on the commandline")
+    print_stderr("ERROR: You selected the MarkerAPI feature but didn't set any events on the commandline")
     os.exit(1)
 end
 
@@ -1681,10 +1683,10 @@ for i=1,#arg do
     end
 end
 if #executable == 0 then
-    print("ERROR: No executable given on commandline")
+    print_stderr("ERROR: No executable given on commandline")
     os.exit(1)
 elseif os.execute(string.format("ls %s 1>/dev/null 2>&1", executable[1])) == 0 then
-    print("ERROR: Cannot find executable given on commandline")
+    print_stderr("ERROR: Cannot find executable given on commandline")
     os.exit(1)
 else
     local f = io.popen(string.format("which %s 2>/dev/null", executable[1]))
@@ -1693,38 +1695,38 @@ else
         f:close()
     end
     if debug then
-        print("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
+        print_stdout("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
     end
 end
 if #mpiopts > 0 and debug then
-    print("DEBUG: MPI options given on commandline: "..table.concat(mpiopts, " "))
+    print_stdout("DEBUG: MPI options given on commandline: "..table.concat(mpiopts, " "))
 end
 
 if mpitype == nil then
     mpitype = getMpiType()
     if debug then
-        print("DEBUG: Using MPI implementation "..mpitype)
+        print_stdout("DEBUG: Using MPI implementation "..mpitype)
     end
 end
 if mpitype ~= "intelmpi" and mpitype ~= "mvapich2" and mpitype ~= "openmpi" and mpitype ~= "slurm" then
-    print("ERROR: Cannot determine current MPI implementation. likwid-mpirun checks for openmpi, intelmpi and mvapich2 or if running in a SLURM environment")
+    print_stderr("ERROR: Cannot determine current MPI implementation. likwid-mpirun checks for openmpi, intelmpi and mvapich2 or if running in a SLURM environment")
     os.exit(1)
 end
 
 getMpiExec(mpitype)
 if (mpiexecutable == nil) then
-    print(string.format("Cannot find executable for determined MPI implementation %s", mpitype))
+    print_stderr(string.format("Cannot find executable for determined MPI implementation %s", mpitype))
     os.exit(1)
 end
 
 if omptype == nil then
     omptype = getOmpType()
     if debug and omptype ~= nil then
-        print("DEBUG: Using OpenMP implementation "..omptype)
+        print_stdout("DEBUG: Using OpenMP implementation "..omptype)
     end
 end
 if omptype == nil then
-    print("WARN: Cannot extract OpenMP vendor from executable or commandline, assuming no OpenMP")
+    print_stderr("WARN: Cannot extract OpenMP vendor from executable or commandline, assuming no OpenMP")
 end
 
 if not hostfile then
@@ -1775,14 +1777,14 @@ if skipStr == "" then
     end
 end
 if debug and skipStr ~= "" then
-    print(string.format("DEBUG: Using skip option %s to skip pinning of shepard threads", skipStr))
+    print_stdout(string.format("DEBUG: Using skip option %s to skip pinning of shepard threads", skipStr))
 end
 
 if #perf > 0 then
     local sum_maxslots = 0
     local topo = likwid.getCpuTopology()
     if debug then
-        print("DEBUG: Switch to perfctr mode, there are "..tostring(#perf).." eventsets given on the commandline")
+        print_stdout("DEBUG: Switch to perfctr mode, there are "..tostring(#perf).." eventsets given on the commandline")
     end
     for i, host in pairs(hosts) do
         if debug then
@@ -1790,7 +1792,7 @@ if #perf > 0 then
             if host["maxslots"] ~= nil then
                 str = str .. string.format(" and %d slots maximally", host["maxslots"])
             end
-            print(str)
+            print_stdout(str)
         end
         if host["maxslots"] ~= nil then
             sum_maxslots = sum_maxslots + host["maxslots"]
@@ -1802,33 +1804,30 @@ if #perf > 0 then
         end
     end
     if np > sum_maxslots then
-        print("ERROR: Processes requested exceeds maximally available slots of given hosts. Maximal processes: "..sum_maxslots)
+        print_stderr("ERROR: Processes requested exceeds maximally available slots of given hosts. Maximal processes: "..sum_maxslots)
         os.exit(1)
     end
 end
 
 if #cpuexprs > 0 then
     cpuexprs = calculatePinExpr(cpuexprs)
-    likwid.tableprint(cpuexprs)
-    print(#cpuexprs)
     ppn = #cpuexprs
     if np == 0 then
         if debug then
-            print(string.format("DEBUG: No -np given , setting according to pin expression and number of available hosts"))
+            print_stdout(string.format("DEBUG: No -np given , setting according to pin expression and number of available hosts"))
         end
         np = givenNrNodes * #cpuexprs
         ppn = #cpuexprs
     elseif np < #cpuexprs*givenNrNodes then
         while np < #cpuexprs*givenNrNodes and #cpuexprs > 1 do
-            print("remove")
             table.remove(cpuexprs)
         end
         ppn = #cpuexprs
     end
     newhosts = assignHosts(hosts, np, ppn)
     if np > #cpuexprs*#newhosts and #perf > 0 then
-        print("ERROR: Oversubsribing not allowed.")
-        print(string.format("ERROR: You want %d processes but the pinning expression has only expressions for %d processes. There are only %d hosts in the host list.", np, #cpuexprs*#newhosts, #newhosts))
+        print_stderr("ERROR: Oversubsribing not allowed.")
+        print_stderr(string.format("ERROR: You want %d processes but the pinning expression has only expressions for %d processes. There are only %d hosts in the host list.", np, #cpuexprs*#newhosts, #newhosts))
         os.exit(1)
     end
 elseif nperdomain ~= nil then
@@ -1839,18 +1838,18 @@ elseif nperdomain ~= nil then
     end
     if np < ppn then
         if debug then
-            print("WARN: Removing additional cpu expressions to get requested number of processes")
+            print_stderr("WARN: Removing additional cpu expressions to get requested number of processes")
         end
         for i=np+1,ppn do
             if debug then
-                print("WARN: Remove cpuexpr: "..cpuexprs[#cpuexprs])
+                print_stderr("WARN: Remove cpuexpr: "..cpuexprs[#cpuexprs])
             end
             table.remove(cpuexprs, #cpuexprs)
         end
         ppn = np
     elseif np > (givenNrNodes * ppn) and #perf > 0 then
-        print("ERROR: Oversubsribing nodes not allowed!")
-        print(string.format("ERROR: You want %d processes with %d on each of the %d hosts", np, ppn, givenNrNodes))
+        print_stderr("ERROR: Oversubsribing nodes not allowed!")
+        print_stderr(string.format("ERROR: You want %d processes with %d on each of the %d hosts", np, ppn, givenNrNodes))
         os.exit(1)
     end
     newhosts, ppn = assignHosts(hosts, np, ppn)
@@ -1876,10 +1875,10 @@ elseif ppn == 0 and np > 0 then
     end
     if (ppn * givenNrNodes) < np then
         if #perf == 0 then
-            print("ERROR: Processes cannot be equally distributed")
-            print(string.format("WARN: You want %d processes on %d hosts.", np, givenNrNodes))
+            print_stderr("ERROR: Processes cannot be equally distributed")
+            print_stderr(string.format("WARN: You want %d processes on %d hosts.", np, givenNrNodes))
             ppn = np/givenNrNodes
-            print(string.format("WARN: Sanitizing number of processes per node to %d", ppn))
+            print_stderr(string.format("WARN: Sanitizing number of processes per node to %d", ppn))
         else
             ppn = 0
             os.exit(1)
@@ -1917,7 +1916,7 @@ elseif ppn == 0 and np > 0 then
         end
     end
 else
-    print("ERROR: Commandline settings are not supported.")
+    print_stderr("ERROR: Commandline settings are not supported.")
     os.exit(1)
 end
 
@@ -1936,7 +1935,7 @@ local outfilename = string.format(os.getenv("PWD").."/.output_%s_%%r_%%h.csv", p
 checkLikwid()
 
 if writeHostfile == nil or getEnvironment == nil or executeCommand == nil then
-    print("ERROR: Initialization for MPI specific functions failed")
+    print_stderr("ERROR: Initialization for MPI specific functions failed")
     os.exit(1)
 end
 

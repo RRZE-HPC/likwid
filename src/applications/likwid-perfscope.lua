@@ -34,6 +34,9 @@ package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
+print_stdout = print
+print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
+
 PERFCTR="<INSTALLED_BINPREFIX>/likwid-perfctr"
 FEEDGNUPLOT="<INSTALLED_BINPREFIX>/feedGnuplot"
 
@@ -118,33 +121,33 @@ local predefined_plots = {
 }
 
 local function version()
-    print(string.format("likwid-perfscope --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-perfscope --  Version %d.%d",likwid.version,likwid.release))
 end
 
 local function examples()
-    print("Examples:")
-    print("Run command on CPU 2 and measure performance group TEST:")
-    print("likwid-perfscope -C 2 -g TEST -f 1s ./a.out")
+    print_stdout("Examples:")
+    print_stdout("Run command on CPU 2 and measure performance group TEST:")
+    print_stdout("likwid-perfscope -C 2 -g TEST -f 1s ./a.out")
 end
 
 local function usage()
     version()
-    print("A tool to generate pictures on-the-fly from likwid-perfctr measurements\n")
-    print("Options:")
-    print("-h, --help\t\t Help message")
-    print("-v, --version\t\t Version information")
-    print("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)")
-    print("-a\t\t\t Print all preconfigured plot configurations for the current system.")
-    print("-c <list>\t\t Processor ids to measure, e.g. 1,2-4,8")
-    print("-C <list>\t\t Processor ids to pin threads and measure, e.g. 1,2-4,8")
-    print("-g, --group <string>\t Preconfigured plot group or custom event set string with plot config. See man page for information.")
-    print("-t, --time <time>\t Frequency in s, ms or us, e.g. 300ms, for the timeline mode of likwid-perfctr")
-    print("-f, --force\t\t Overwrite counter configuration although already in use")
-    print("-d, --dump\t\t Print output as it is send to feedGnuplot.")
-    print("-p, --plotdump\t\t Use dump functionality of feedGnuplot. Plots out plot configurations plus data to directly submit to gnuplot")
-    print("--host <host>\t\t Run likwid-perfctr on the selected host using SSH. Evaluation and plotting is done locally.")
-    print("\t\t\t This can be used for machines that have no gnuplot installed. All paths must be similar to the local machine.")
-    print("\n")
+    print_stdout("A tool to generate pictures on-the-fly from likwid-perfctr measurements\n")
+    print_stdout("Options:")
+    print_stdout("-h, --help\t\t Help message")
+    print_stdout("-v, --version\t\t Version information")
+    print_stdout("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)")
+    print_stdout("-a\t\t\t Print all preconfigured plot configurations for the current system.")
+    print_stdout("-c <list>\t\t Processor ids to measure, e.g. 1,2-4,8")
+    print_stdout("-C <list>\t\t Processor ids to pin threads and measure, e.g. 1,2-4,8")
+    print_stdout("-g, --group <string>\t Preconfigured plot group or custom event set string with plot config. See man page for information.")
+    print_stdout("-t, --time <time>\t Frequency in s, ms or us, e.g. 300ms, for the timeline mode of likwid-perfctr")
+    print_stdout("-f, --force\t\t Overwrite counter configuration although already in use")
+    print_stdout("-d, --dump\t\t Print output as it is send to feedGnuplot.")
+    print_stdout("-p, --plotdump\t\t Use dump functionality of feedGnuplot. Plots out plot configurations plus data to directly submit to gnuplot")
+    print_stdout("--host <host>\t\t Run likwid-perfctr on the selected host using SSH. Evaluation and plotting is done locally.")
+    print_stdout("\t\t\t This can be used for machines that have no gnuplot installed. All paths must be similar to the local machine.")
+    print_stdout("\n")
     examples()
 end
 
@@ -210,7 +213,10 @@ for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","t:","r:","a","d","p",
     elseif opt == "f" or opt == "force" then
         force = true
     elseif opt == "?" then
-        print("Invalid commandline option -"..arg)
+        print_stderr("Invalid commandline option -"..arg)
+        os.exit(1)
+    elseif opt == "!" then
+        print_stderr("Option requires an argument")
         os.exit(1)
     end
 end
@@ -220,21 +226,21 @@ if print_configs then
     for name, config in pairs(predefined_plots) do
         for i,g in pairs(all_groups) do
             if g == config["perfgroup"] then
-                print("Group "..name)
-                print("\tPerfctr group: "..config["perfgroup"])
-                print("\tMatch for metric: "..config["ymetricmatch"])
-                print("\tTitle of plot: "..config["title"])
-                print("\tTitle of x-axis: "..config["xtitle"])
-                print("\tTitle of y-axis: "..config["ytitle"])
+                print_stdout("Group "..name)
+                print_stdout("\tPerfctr group: "..config["perfgroup"])
+                print_stdout("\tMatch for metric: "..config["ymetricmatch"])
+                print_stdout("\tTitle of plot: "..config["title"])
+                print_stdout("\tTitle of x-axis: "..config["xtitle"])
+                print_stdout("\tTitle of y-axis: "..config["ytitle"])
                 if config["y2metricmatch"] then
-                    print("\tMatch for second metric: "..config["y2metricmatch"])
+                    print_stdout("\tMatch for second metric: "..config["y2metricmatch"])
                 end
                 if config["y2title"] then
-                    print("\tTitle of y2-axis: "..config["y2title"])
+                    print_stdout("\tTitle of y2-axis: "..config["y2title"])
                 elseif config["y2metricmatch"] then
-                    print("\tTitle of y2-axis: "..config["ytitle"])
+                    print_stdout("\tTitle of y2-axis: "..config["ytitle"])
                 end
-                print("")
+                print_stdout("")
                 break
             end
         end
@@ -243,17 +249,17 @@ if print_configs then
 end
 
 if not test_gnuplot() then
-    print("GnuPlot not available")
+    print_stderr("GnuPlot not available")
     os.exit(1)
 end
 
 if num_cpus == 0 then
-    print("ERROR: CPU string must be given")
+    print_stderr("ERROR: CPU string must be given")
     os.exit(1)
 end
 
 if #arg == 0 then
-    print("ERROR: Executable must be given on commandline")
+    print_stderr("ERROR: Executable must be given on commandline")
     os.exit(1)
 end
 
@@ -291,7 +297,7 @@ for i, event_def in pairs(eventStrings) do
     local groupdata = nil
     groupdata = likwid.get_groupdata(event_string)
     if groupdata == nil then
-        print("Cannot read event string, it's neither a performance group nor a proper event string <event>:<counter>:<options>,...")
+        print_stderr("Cannot read event string, it's neither a performance group nor a proper event string <event>:<counter>:<options>,...")
         usage()
         os.exit(1)
     end
@@ -491,7 +497,7 @@ for i,g in pairs(group_list) do
     g["output"]:write(str.."\n")
     g["output"]:flush()
     if dump then
-        print(tostring(i).." ".. str)
+        print_stdout(tostring(i).." ".. str)
     end
 end
 
@@ -539,7 +545,7 @@ while true do
         group_list[group]["output"]:write(str.."\n")
         group_list[group]["output"]:flush()
         if dump then
-            print(tostring(group).." ".. str)
+            print_stdout(tostring(group).." ".. str)
         end
         oldtime = time
     end

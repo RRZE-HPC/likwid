@@ -33,34 +33,37 @@ package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
+print_stdout = print
+print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
+
 local function version()
-    print(string.format("likwid-powermeter --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-powermeter --  Version %d.%d",likwid.version,likwid.release))
 end
 
 local function examples()
-    print("Examples:")
-    print("Measure the power consumption for 4 seconds on socket 1")
-    print("likwid-powermeter -s 4 -c 1")
-    print("")
-    print("Use it as wrapper for an application to measure the energy for the whole execution")
-    print("likwid-powermeter -c 1 ./a.out")
+    print_stdout("Examples:")
+    print_stdout("Measure the power consumption for 4 seconds on socket 1")
+    print_stdout("likwid-powermeter -s 4 -c 1")
+    print_stdout("")
+    print_stdout("Use it as wrapper for an application to measure the energy for the whole execution")
+    print_stdout("likwid-powermeter -c 1 ./a.out")
 end
 
 local function usage()
     version()
-    print("A tool to print power and clocking information on x86 CPUs.\n")
-    print("Options:")
-    print("-h, --help\t Help message")
-    print("-v, --version\t Version information")
-    print("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)")
-    print("-M <0|1>\t\t Set how MSR registers are accessed, 0=direct, 1=accessDaemon")
-    print("-c <list>\t\t Specify sockets to measure")
-    print("-i, --info\t Print information from MSR_PKG_POWER_INFO register and Turbo mode")
-    print("-s <duration>\t Set measure duration in us, ms or s. (default 2s)")
-    print("-p\t\t Print dynamic clocking and CPI values, uses likwid-perfctr")
-    print("-t\t\t Print current temperatures of all CPU cores")
-    print("-f\t\t Print current temperatures in Fahrenheit")
-    print("")
+    print_stdout("A tool to print power and clocking information on x86 CPUs.\n")
+    print_stdout("Options:")
+    print_stdout("-h, --help\t Help message")
+    print_stdout("-v, --version\t Version information")
+    print_stdout("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)")
+    print_stdout("-M <0|1>\t\t Set how MSR registers are accessed, 0=direct, 1=accessDaemon")
+    print_stdout("-c <list>\t\t Specify sockets to measure")
+    print_stdout("-i, --info\t Print information from MSR_PKG_POWER_INFO register and Turbo mode")
+    print_stdout("-s <duration>\t Set measure duration in us, ms or s. (default 2s)")
+    print_stdout("-p\t\t Print dynamic clocking and CPI values, uses likwid-perfctr")
+    print_stdout("-t\t\t Print current temperatures of all CPU cores")
+    print_stdout("-f\t\t Print current temperatures in Fahrenheit")
+    print_stdout("")
     examples()
 end
 
@@ -92,8 +95,8 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
-            print(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
-            print("Did you forget an argument to an option?")
+            print_stderr(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
+            print_stderr("Did you forget an argument to an option?")
             os.exit(1)
         end
     end
@@ -111,11 +114,11 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
     elseif (opt == "M") then
         access_mode = tonumber(arg)
         if (access_mode == nil) then
-            print("Access mode (-M) must be an number")
+            print_stderr("Access mode (-M) must be an number")
             usage()
             os.exit(1)
         elseif (access_mode < 0) or (access_mode > 1) then
-            print(string.format("Access mode (-M) %d not valid.",access_mode))
+            print_stderr(string.format("Access mode (-M) %d not valid.",access_mode))
             usage()
             os.exit(1)
         end
@@ -137,10 +140,10 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
         time_orig = arg
         stethoscope = true
     elseif opt == "?" then
-        print("Invalid commandline option -"..arg)
+        print_stderr("Invalid commandline option -"..arg)
         os.exit(1)
     elseif opt == "!" then
-        print("Option requires an argument")
+        print_stderr("Option requires an argument")
         os.exit(1)
     end
 end
@@ -187,37 +190,37 @@ end
 
 power = likwid.getPowerInfo()
 if not power then
-    print(string.format("The %s does not support reading power data",cpuinfo["name"]))
+    print_stderr(string.format("The %s does not support reading power data",cpuinfo["name"]))
     os.exit(1)
 end
 
 
 if not use_perfctr then
-    print(likwid.hline);
-    print(string.format("CPU name:\t%s",cpuinfo["osname"]))
-    print(string.format("CPU type:\t%s",cpuinfo["name"]))
+    print_stdout(likwid.hline);
+    print_stdout(string.format("CPU name:\t%s",cpuinfo["osname"]))
+    print_stdout(string.format("CPU type:\t%s",cpuinfo["name"]))
     if cpuinfo["clock"] > 0 then
-        print(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] *  1.E-09))
+        print_stdout(string.format("CPU clock:\t%3.2f GHz",cpuinfo["clock"] *  1.E-09))
     else
-        print(string.format("CPU clock:\t%3.2f GHz",likwid.getCpuClock() *  1.E-09))
+        print_stdout(string.format("CPU clock:\t%3.2f GHz",likwid.getCpuClock() *  1.E-09))
     end
-    print(likwid.hline)
+    print_stdout(likwid.hline)
 end
 
 if print_info or verbose > 0 then
     if (power["turbo"]["numSteps"] > 0) then
-        print(string.format("Base clock:\t%.2f MHz", power["baseFrequency"]))
-        print(string.format("Minimal clock:\t%.2f MHz", power["minFrequency"]))
-        print("Turbo Boost Steps:")
+        print_stdout(string.format("Base clock:\t%.2f MHz", power["baseFrequency"]))
+        print_stdout(string.format("Minimal clock:\t%.2f MHz", power["minFrequency"]))
+        print_stdout("Turbo Boost Steps:")
         for i,step in pairs(power["turbo"]["steps"]) do
-            print(string.format("C%d %.2f MHz",i-1,power["turbo"]["steps"][i]))
+            print_stdout(string.format("C%d %.2f MHz",i-1,power["turbo"]["steps"][i]))
         end
     end
-    print(likwid.hline)
+    print_stdout(likwid.hline)
 end
 
 if power["hasRAPL"] == 0 then
-    print("Measuring power is not supported on this machine")
+    print_stderr("Measuring power is not supported on this machine")
     os.exit(1)
 end
 
@@ -225,19 +228,19 @@ if (print_info) then
     for i, dname in pairs(domainList) do
         local domain = power["domains"][dname]
         if domain["supportInfo"] then
-            print(string.format("Info for RAPL domain %s:", dname));
-            print(string.format("Thermal Spec Power: %g Watt",domain["tdp"]*1E-6))
-            print(string.format("Minimum Power: %g Watt",domain["minPower"]*1E-6))
-            print(string.format("Maximum Power: %g Watt",domain["maxPower"]*1E-6))
-            print(string.format("Maximum Time Window: %g micro sec",domain["maxTimeWindow"]))
-            print()
+            print_stdout(string.format("Info for RAPL domain %s:", dname));
+            print_stdout(string.format("Thermal Spec Power: %g Watt",domain["tdp"]*1E-6))
+            print_stdout(string.format("Minimum Power: %g Watt",domain["minPower"]*1E-6))
+            print_stdout(string.format("Maximum Power: %g Watt",domain["maxPower"]*1E-6))
+            print_stdout(string.format("Maximum Time Window: %g micro sec",domain["maxTimeWindow"]))
+            print_stdout()
         end
     end
-    print(likwid.hline)
+    print_stdout(likwid.hline)
 end
 
 if (stethoscope) and (time_interval < power["timeUnit"]) then
-    print("Time interval too short, minimum measurement time is "..tostring(power["timeUnit"]).. " us")
+    print_stderr("Time interval too short, minimum measurement time is "..tostring(power["timeUnit"]).. " us")
     os.exit(1)
 end
 
@@ -302,7 +305,7 @@ if not print_info and not print_temp then
         else
             local pid = likwid.startProgram(execString, 0, {})
             if not pid then
-                print(string.format("Failed to execute %s!",execString))
+                print_stderr(string.format("Failed to execute %s!",execString))
                 likwid.finalize()
                 os.exit(1)
             end
@@ -335,27 +338,27 @@ if not print_info and not print_temp then
         end
         runtime = likwid.getClock(time_before, time_after)
 
-        print(likwid.hline)
-        print(string.format("Runtime: %g s",runtime))
+        print_stdout(likwid.hline)
+        print_stdout(string.format("Runtime: %g s",runtime))
 
         for i,socket in pairs(sockets) do
             cpu = cpulist[i]
-            print(string.format("Measure for socket %d on CPU %d", socket,cpu ))
+            print_stdout(string.format("Measure for socket %d on CPU %d", socket,cpu ))
             for j, dom in pairs(domainList) do
                 if power["domains"][dom]["supportStatus"] then
                     local energy = likwid.calcPower(before[cpu][dom], after[cpu][dom], 0)
-                    print(string.format("Domain %s:", dom))
-                    print(string.format("Energy consumed: %g Joules",energy))
-                    print(string.format("Power consumed: %g Watt",energy/runtime))
+                    print_stdout(string.format("Domain %s:", dom))
+                    print_stdout(string.format("Energy consumed: %g Joules",energy))
+                    print_stdout(string.format("Power consumed: %g Watt",energy/runtime))
                 end
             end
-            if i < #sockets then print("") end
+            if i < #sockets then print_stdout("") end
         end
-        print(likwid.hline)
+        print_stdout(likwid.hline)
     else
         err = os.execute(execString)
         if err == false then
-            print(string.format("Failed to execute %s!",execString))
+            print_stderr(string.format("Failed to execute %s!",execString))
             likwid.putPowerInfo()
             likwid.finalize()
             os.exit(1)
@@ -364,8 +367,8 @@ if not print_info and not print_temp then
 end
 
 if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
-    print(likwid.hline)
-    print("Current core temperatures:");
+    print_stdout(likwid.hline)
+    print_stdout("Current core temperatures:");
     for i=1,cputopo["numSockets"] do
         local tag = "S" .. tostring(i-1)
         for _, domain in pairs(affinity["domains"]) do
@@ -375,15 +378,15 @@ if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
                     likwid.initTemp(cpuid);
                     if (fahrenheit) then
                         local f = 1.8*tonumber(likwid.readTemp(cpuid))+32
-                        print(string.format("Socket %d Core %d: %.0f F",i-1,cpuid, f));
+                        print_stdout(string.format("Socket %d Core %d: %.0f F",i-1,cpuid, f));
                     else
-                        print(string.format("Socket %d Core %d: %.0f C",i-1,cpuid, tonumber(likwid.readTemp(cpuid))));
+                        print_stdout(string.format("Socket %d Core %d: %.0f C",i-1,cpuid, tonumber(likwid.readTemp(cpuid))));
                     end
                 end
             end
         end
     end
-    print(likwid.hline)
+    print_stdout(likwid.hline)
 end
 
 likwid.putPowerInfo()

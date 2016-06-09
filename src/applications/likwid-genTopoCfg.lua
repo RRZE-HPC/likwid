@@ -34,23 +34,26 @@ package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
+print_stdout = print
+print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
+
 local filename = "<INSTALLED_PREFIX>/etc/likwid_topo.cfg"
 
 function version()
-    print(string.format("likwid-genTopoCfg --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-genTopoCfg --  Version %d.%d",likwid.version,likwid.release))
 end
 
 function usage()
     version()
-    print("A tool to store the system's architecture to a config file for LIKWID.\n")
-    print("Options:")
-    print("-h, --help\t\t Help message")
-    print("-v, --version\t\t Version information")
-    print("-o, --output <file>\t Use <file> instead of default "..filename)
-    print("\t\t\t Likwid searches at startup per default:")
-    print("\t\t\t /etc/likwid_topo.cfg and <INSTALLED_PREFIX>/etc/likwid_topo.cfg")
-    print("\t\t\t Another location can be configured in the configuration file /etc/likwid.cfg,")
-    print("\t\t\t <INSTALLED_PREFIX>/etc/likwid.cfg or the path defined at the build process of Likwid.")
+    print_stdout("A tool to store the system's architecture to a config file for LIKWID.\n")
+    print_stdout("Options:")
+    print_stdout("-h, --help\t\t Help message")
+    print_stdout("-v, --version\t\t Version information")
+    print_stdout("-o, --output <file>\t Use <file> instead of default "..filename)
+    print_stdout("\t\t\t Likwid searches at startup per default:")
+    print_stdout("\t\t\t /etc/likwid_topo.cfg and <INSTALLED_PREFIX>/etc/likwid_topo.cfg")
+    print_stdout("\t\t\t Another location can be configured in the configuration file /etc/likwid.cfg,")
+    print_stdout("\t\t\t <INSTALLED_PREFIX>/etc/likwid.cfg or the path defined at the build process of Likwid.")
 end
 
 for opt,arg in likwid.getopt(arg, {"h","v","help","version", "o:", "output:"}) do
@@ -63,22 +66,22 @@ for opt,arg in likwid.getopt(arg, {"h","v","help","version", "o:", "output:"}) d
     elseif opt == "o" or opt == "output" then
         filename = arg
     elseif opt == "?" then
-        print("Invalid commandline option -"..arg)
+        print_stderr("Invalid commandline option -"..arg)
         os.exit(1)
     elseif opt == "!" then
-        print("Option requires an argument")
+        print_stderr("Option requires an argument")
         os.exit(1)
     end
 end
 local file = io.open(filename, "r")
 if file ~= nil then
-    print("File "..filename.." exists, please delete it first.")
+    print_stderr("File "..filename.." exists, please delete it first.")
     file:close()
     os.exit(1)
 end
 file = io.open(filename, "w")
 if file == nil then
-    print("Cannot open file "..filename.." for writing")
+    print_stderr("Cannot open file "..filename.." for writing")
     os.exit(1)
 end
 
@@ -88,10 +91,10 @@ local cputopo = likwid.getCpuTopology()
 local numainfo = likwid.getNumaInfo()
 local affinity = likwid.getAffinityInfo()
 if cpuinfo == nil or cputopo == nil or numainfo == nil or affinity == nil then
-    print("Cannot initialize topology module of LIKWID")
+    print_stderr("Cannot initialize topology module of LIKWID")
     os.exit(1)
 end
-print(string.format("Writing new topology file %s", filename))
+print_stdout(string.format("Writing new topology file %s", filename))
 cpuinfo["clock"] = likwid.getCpuClock()
 
 local threadPool_order = {"threadId", "coreId", "packageId", "apicId"}

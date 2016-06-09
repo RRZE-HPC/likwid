@@ -32,24 +32,27 @@ package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
+print_stdout = print
+print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
+
 function version()
-    print(string.format("likwid-features --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-features --  Version %d.%d",likwid.version,likwid.release))
 end
 
 function usage()
     version()
-    print("A tool list and modify the states of CPU features.\n")
-    print("Options:")
-    print("-h, --help\t\t Help message")
-    print("-v, --version\t\t Version information")
-    print("-a, --all\t\t List all available features")
-    print("-l, --list\t\t List features and state for given CPUs")
-    print("-c, --cpus <list>\t Perform operations on given CPUs")
-    print("-e, --enable <list>\t List of features that should be enabled")
-    print("-d, --disable <list>\t List of features that should be disabled")
-    print()
-    print("Currently modifiable features:")
-    print("HW_PREFETCHER, CL_PREFETCHER, DCU_PREFETCHER, IP_PREFETCHER")
+    print_stdout("A tool list and modify the states of CPU features.\n")
+    print_stdout("Options:")
+    print_stdout("-h, --help\t\t Help message")
+    print_stdout("-v, --version\t\t Version information")
+    print_stdout("-a, --all\t\t List all available features")
+    print_stdout("-l, --list\t\t List features and state for given CPUs")
+    print_stdout("-c, --cpus <list>\t Perform operations on given CPUs")
+    print_stdout("-e, --enable <list>\t List of features that should be enabled")
+    print_stdout("-d, --disable <list>\t List of features that should be disabled")
+    print_stdout()
+    print_stdout("Currently modifiable features:")
+    print_stdout("HW_PREFETCHER, CL_PREFETCHER, DCU_PREFETCHER, IP_PREFETCHER")
 end
 
 if #arg == 0 then
@@ -68,8 +71,8 @@ for opt,arg in likwid.getopt(arg, {"h","v","l","c:","e:","d:","a","help","versio
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
-            print(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
-            print("Did you forget an argument to an option?")
+            print_stderr(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
+            print_stderr("Did you forget an argument to an option?")
             os.exit(1)
         end
     end
@@ -84,15 +87,15 @@ for opt,arg in likwid.getopt(arg, {"h","v","l","c:","e:","d:","a","help","versio
     elseif opt == "l" or opt == "list" then
         listFeatures = true
     elseif opt == "a" or opt == "all" then
-        print("Available features:")
+        print_stdout("Available features:")
         for i=0,likwid.tablelength(likwid.cpuFeatures)-1 do
             if likwid.cpuFeatures[i]:match("PREFETCHER") then
-                print(string.format("\t%s*",likwid.cpuFeatures[i]))
+                print_stdout(string.format("\t%s*",likwid.cpuFeatures[i]))
             else
-                print(string.format("\t%s",likwid.cpuFeatures[i]))
+                print_stdout(string.format("\t%s",likwid.cpuFeatures[i]))
             end
         end
-        print("Modifiable features are marked with *")
+        print_stdout("Modifiable features are marked with *")
         os.exit(0)
     elseif opt == "e" or opt == "enable" then
         local tmp = likwid.stringsplit(arg, ",")
@@ -113,10 +116,10 @@ for opt,arg in likwid.getopt(arg, {"h","v","l","c:","e:","d:","a","help","versio
             end
         end
     elseif opt == "?" then
-        print("Invalid commandline option -"..arg)
+        print_stderr("Invalid commandline option -"..arg)
         os.exit(1)
     elseif opt == "!" then
-        print("Option requires an argument")
+        print_stderr("Option requires an argument")
         os.exit(1)
     end
 end
@@ -128,7 +131,7 @@ if listFeatures and #cpulist > 0 then
     for j, c in pairs(cpulist) do
         str = str..string.format("CPU %d\t",c)
     end
-    print(str)
+    print_stdout(str)
     str = ""
     for i=0,likwid.tablelength(likwid.cpuFeatures)-1 do
         str = likwid.cpuFeatures[i]..string.rep(" ",string.len("BRANCH_TRACE_STORAGE")-string.len(likwid.cpuFeatures[i])+2)
@@ -139,10 +142,10 @@ if listFeatures and #cpulist > 0 then
                 str = str .. "off\t"
             end
         end
-        print(str)
+        print_stdout(str)
     end
 elseif #cpulist == 0 then
-    print("Need CPU to list current feature state")
+    print_stderr("Need CPU to list current feature state")
     os.exit(1)
 end
 
@@ -150,7 +153,7 @@ if #enableList > 0 and #disableList > 0 then
     for i,e in pairs(enableList) do
         for j, d in pairs(disableList) do
             if (e == d) then
-                print(string.format("Feature %s is in enable and disable list, doing nothing for feature", e))
+                print_stderr(string.format("Feature %s is in enable and disable list, doing nothing for feature", e))
                 table.insert(skipList, e)
             end
         end
@@ -170,9 +173,9 @@ if #enableList > 0 then
         for j, f in pairs(enableList) do
             local ret = likwid.enableCpuFeatures(c, f, 1)
             if ret == 0 then
-                print(string.format("Enabled %s for CPU %d", likwid.cpuFeatures[f], c))
+                print_stdout(string.format("Enabled %s for CPU %d", likwid.cpuFeatures[f], c))
             else
-                print(string.format("Failed %s for CPU %d", likwid.cpuFeatures[f], c))
+                print_stdout(string.format("Failed %s for CPU %d", likwid.cpuFeatures[f], c))
             end
         end
     end
@@ -182,9 +185,9 @@ if #disableList > 0 then
         for j, f in pairs(disableList) do
             local ret = likwid.disableCpuFeatures(c, f, 1)
             if ret == 0 then
-                print(string.format("Disabled %s for CPU %d", likwid.cpuFeatures[f], c))
+                print_stdout(string.format("Disabled %s for CPU %d", likwid.cpuFeatures[f], c))
             else
-                print(string.format("Failed %s for CPU %d", likwid.cpuFeatures[f], c))
+                print_stdout(string.format("Failed %s for CPU %d", likwid.cpuFeatures[f], c))
             end
         end
     end

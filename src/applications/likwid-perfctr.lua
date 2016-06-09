@@ -34,45 +34,54 @@ package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
 
+print_stdout = print
+print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
+
 local function version()
-    print(string.format("likwid-perfctr --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-perfctr --  Version %d.%d",likwid.version,likwid.release))
 end
 
 local function examples()
-    print("Examples:")
-    print("Run command on CPU 2 and measure performance group TEST:")
-    print("likwid-perfctr -C 2 -g TEST ./a.out")
+    io.stdout:write("Examples:\n")
+    io.stdout:write("List all performance groups:\n")
+    io.stdout:write("likwid-perfctr -a\n")
+    io.stdout:write("List all events and counters:\n")
+    io.stdout:write("likwid-perfctr -e\n")
+    io.stdout:write("List all events and suitable counters for events with 'L2' in them:\n")
+    io.stdout:write("likwid-perfctr -E L2\n")
+    io.stdout:write("Run command on CPU 2 and measure performance group TEST:\n")
+    io.stdout:write("likwid-perfctr -C 2 -g TEST ./a.out\n")
 end
 
 local function usage()
     version()
-    print("A tool to read out performance counter registers on x86 processors\n")
-    print("Options:")
-    print("-h, --help\t\t Help message")
-    print("-v, --version\t\t Version information")
-    print("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)")
-    print("-c <list>\t\t Processor ids to measure (required), e.g. 1,2-4,8")
-    print("-C <list>\t\t Processor ids to pin threads and measure, e.g. 1,2-4,8")
-    print("\t\t\t For information about the <list> syntax, see likwid-pin")
-    print("-g, --group <string>\t Performance group or custom event set string")
-    print("-H\t\t\t Get group help (together with -g switch)")
-    print("-s, --skip <hex>\t Bitmask with threads to skip")
-    print("-M <0|1>\t\t Set how MSR registers are accessed, 0=direct, 1=accessDaemon")
-    print("-a\t\t\t List available performance groups")
-    print("-e\t\t\t List available events and counter registers")
-    print("-E <string>\t\t List available events and corresponding counters that match <string>")
-    print("-i, --info\t\t Print CPU info")
-    print("-T <time>\t\t Switch eventsets with given frequency")
-    print("-f, --force\t\t Force overwrite of registers if they are in use")
-    print("Modes:")
-    print("-S <time>\t\t Stethoscope mode with duration in s, ms or us, e.g 20ms")
-    print("-t <time>\t\t Timeline mode with frequency in s, ms or us, e.g. 300ms")
-    print("-m, --marker\t\t Use Marker API inside code")
-    print("Output options:")
-    print("-o, --output <file>\t Store output to file. (Optional: Apply text filter according to filename suffix)")
-    print("-O\t\t\t Output easily parseable CSV instead of fancy tables")
-    print("--stats\t\t\t Always print statistics table")
-    print("\n")
+    io.stdout:write("A tool to read out performance counter registers on x86 processors\n\n")
+    io.stdout:write("Options:\n")
+    io.stdout:write("-h, --help\t\t Help message\n")
+    io.stdout:write("-v, --version\t\t Version information\n")
+    io.stdout:write("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)\n")
+    io.stdout:write("-c <list>\t\t Processor ids to measure (required), e.g. 1,2-4,8\n")
+    io.stdout:write("-C <list>\t\t Processor ids to pin threads and measure, e.g. 1,2-4,8\n")
+    io.stdout:write("\t\t\t For information about the <list> syntax, see likwid-pin\n")
+    io.stdout:write("-g, --group <string>\t Performance group or custom event set string\n")
+    io.stdout:write("-H\t\t\t Get group help (together with -g switch)\n")
+    io.stdout:write("-s, --skip <hex>\t Bitmask with threads to skip\n")
+    io.stdout:write("-M <0|1>\t\t Set how MSR registers are accessed, 0=direct, 1=accessDaemon\n")
+    io.stdout:write("-a\t\t\t List available performance groups\n")
+    io.stdout:write("-e\t\t\t List available events and counter registers\n")
+    io.stdout:write("-E <string>\t\t List available events and corresponding counters that match <string>\n")
+    io.stdout:write("-i, --info\t\t Print CPU info\n")
+    io.stdout:write("-T <time>\t\t Switch eventsets with given frequency\n")
+    io.stdout:write("-f, --force\t\t Force overwrite of registers if they are in use\n")
+    io.stdout:write("Modes:")
+    io.stdout:write("-S <time>\t\t Stethoscope mode with duration in s, ms or us, e.g 20ms\n")
+    io.stdout:write("-t <time>\t\t Timeline mode with frequency in s, ms or us, e.g. 300ms\n")
+    io.stdout:write("-m, --marker\t\t Use Marker API inside code\n")
+    io.stdout:write("Output options:\n")
+    io.stdout:write("-o, --output <file>\t Store output to file. (Optional: Apply text filter according to filename suffix)\n")
+    io.stdout:write("-O\t\t\t Output easily parseable CSV instead of fancy tables\n")
+    io.stdout:write("--stats\t\t\t Always print statistics table\n")
+    io.stdout:write("\n")
     examples()
 end
 
@@ -122,7 +131,6 @@ outfile = nil
 forceOverwrite = 0
 gotC = false
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid())
-print_stdout = print
 cpuClock = 1
 likwid.catchSignal()
 
@@ -135,16 +143,22 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
-            print_stdout(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
-            print_stdout("Did you forget an argument to an option?")
+            print_stderr(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
+            print_stderr("Did you forget an argument to an option?")
             os.exit(1)
         end
     end
     if opt == "h" or opt == "help" then
         usage()
+        if likwid.access(outfile..".tmp", "e") == 0 then
+            os.remove(outfile..".tmp")
+        end
         os.exit(0)
     elseif opt == "v" or opt == "version" then
         version()
+        if likwid.access(outfile..".tmp", "e") == 0 then
+            os.remove(outfile..".tmp")
+        end
         os.exit(0)
     elseif opt == "V" or opt == "verbose" then
         verbose = tonumber(arg)
@@ -173,10 +187,10 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
             skip_mask = arg
         else
             if arg:match("[0-9A-F]") then
-                print("Given skip mask looks like hex, sanitizing arg to 0x"..arg)
+                print_stderr("Given skip mask looks like hex, sanitizing arg to 0x"..arg)
                 skip_mask = "0x"..arg
             else
-                print("Skip mask must be given in hex")
+                print_stderr("Skip mask must be given in hex")
             end
         end
     elseif (opt == "M") then
@@ -189,6 +203,9 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         end
         if (access_mode < 0 and access_mode > 1) then
             print_stdout("Access mode must be 0 for direct access and 1 for access daemon")
+            if likwid.access(outfile..".tmp", "e") == 0 then
+                os.remove(outfile..".tmp")
+            end
             os.exit(1)
         end
     elseif opt == "i" or opt == "info" then
@@ -224,10 +241,16 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     elseif (opt == "stats") then
         print_stats = true
     elseif opt == "?" then
-        print("Invalid commandline option -"..arg)
+        print_stderr("Invalid commandline option -"..arg)
+        if likwid.access(outfile..".tmp", "e") == 0 then
+            os.remove(outfile..".tmp")
+        end
         os.exit(1)
     elseif opt == "!" then
-        print("Option requires an argument")
+        print_stderr("Option requires an argument")
+        if likwid.access(outfile..".tmp", "e") == 0 then
+            os.remove(outfile..".tmp")
+        end
         os.exit(1)
     end
 end
@@ -238,12 +261,18 @@ cputopo = likwid.getCpuTopology()
 
 if not likwid.msr_available(access_flags) then
     if access_mode == 1 then
-        print_stdout("MSR device files not available")
-        print_stdout("Please load msr kernel module before retrying")
+        print_stderr("MSR device files not available")
+        print_stderr("Please load msr kernel module before retrying")
+        if likwid.access(outfile..".tmp", "e") == 0 then
+            os.remove(outfile..".tmp")
+        end
         os.exit(1)
     else
-        print_stdout("MSR device files not readable and writeable")
-        print_stdout("Be sure that you have enough permissions to access the MSR files directly")
+        print_stderr("MSR device files not readable and writeable")
+        print_stderr("Be sure that you have enough permissions to access the MSR files directly")
+        if likwid.access(outfile..".tmp", "e") == 0 then
+            os.remove(outfile..".tmp")
+        end
         os.exit(1)
     end
 end
@@ -255,8 +284,11 @@ if num_cpus == 0 and
    not print_groups and
    not print_group_help and
    not print_info then
-    print_stdout("Option -c <list> or -C <list> must be given on commandline")
+    print_stderr("Option -c <list> or -C <list> must be given on commandline")
     usage()
+    if likwid.access(outfile..".tmp", "e") == 0 then
+        os.remove(outfile..".tmp")
+    end
     os.exit(1)
 elseif num_cpus == 0 and
        gotC and
@@ -265,7 +297,10 @@ elseif num_cpus == 0 and
        not print_groups and
        not print_group_help and
        not print_info then
-    print_stdout("CPUs given on commandline are not valid in current environment, maybe it's limited by a cpuset.")
+    print_stderr("CPUs given on commandline are not valid in current environment, maybe it's limited by a cpuset.")
+    if likwid.access(outfile..".tmp", "e") == 0 then
+        os.remove(outfile..".tmp")
+    end
     os.exit(1)
 end
 
@@ -274,7 +309,10 @@ if num_cpus > 0 then
     for i,cpu1 in pairs(cpulist) do
         for j, cpu2 in pairs(cpulist) do
             if i ~= j and cpu1 == cpu2 then
-                print_stdout("List of CPUs is not unique, got two times CPU " .. tostring(cpu1))
+                print_stderr("List of CPUs is not unique, got two times CPU " .. tostring(cpu1))
+                if likwid.access(outfile..".tmp", "e") == 0 then
+                    os.remove(outfile..".tmp")
+                end
                 os.exit(1)
             end
         end
@@ -396,7 +434,7 @@ if print_group_help == true then
 end
 
 if #event_string_list == 0 and not print_info then
-    print_stdout("Option(s) -g <string> must be given on commandline")
+    print_stderr("Option(s) -g <string> must be given on commandline")
     usage()
     likwid.putTopology()
     likwid.putConfiguration()
@@ -444,7 +482,7 @@ if use_stethoscope == false and use_timeline == false and use_marker == false th
 end
 
 if use_wrapper and likwid.tablelength(arg)-2 == 0 and print_info == false then
-    print_stdout("No Executable can be found on commandline")
+    print_stderr("No Executable can be found on commandline")
     usage()
     likwid.putTopology()
     likwid.putConfiguration()
@@ -453,16 +491,16 @@ end
 
 if use_marker then
     if likwid.access(markerFile, "rw") ~= -1 then
-        print_stdout(string.format("ERROR: MarkerAPI file %s not accessible. Maybe a remaining file of another user.", markerFile))
-        print_stdout("Please purge all MarkerAPI files from /tmp.")
+        print_stderr(string.format("ERROR: MarkerAPI file %s not accessible. Maybe a remaining file of another user.", markerFile))
+        print_stderr("Please purge all MarkerAPI files from /tmp.")
         os.exit(1)
     end
     if not pin_cpus then
-        print_stdout("Warning: The Marker API requires the application to run on the selected CPUs.")
-        print_stdout("Warning: likwid-perfctr pins the application only when using the -C command line option.")
-        print_stdout("Warning: LIKWID assumes that the application does it before the first instrumented code region is started.")
-        print_stdout("Warning: You can use the string in the environment variable LIKWID_THREADS to pin you application to")
-        print_stdout("Warning: to the CPUs specified after the -c command line option.")
+        print_stderr("Warning: The Marker API requires the application to run on the selected CPUs.")
+        print_stderr("Warning: likwid-perfctr pins the application only when using the -C command line option.")
+        print_stderr("Warning: LIKWID assumes that the application does it before the first instrumented code region is started.")
+        print_stderr("Warning: You can use the string in the environment variable LIKWID_THREADS to pin you application to")
+        print_stderr("Warning: to the CPUs specified after the -c command line option.")
     end
 end
 
@@ -475,7 +513,7 @@ if pin_cpus then
     if omp_threads == nil then
         likwid.setenv("OMP_NUM_THREADS",tostring(math.tointeger(num_cpus)))
     elseif num_cpus > tonumber(omp_threads) then
-        print_stdout(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_cpus))
+        print_stderr(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_cpus))
     end
     if os.getenv("CILK_NWORKERS") == nil then
         likwid.setenv("CILK_NWORKERS", tostring(math.tointeger(num_cpus)))
@@ -552,7 +590,7 @@ for i, event_string in pairs(event_string_list) do
     end
 end
 if #group_ids == 0 then
-    print("ERROR: No valid eventset given on commandline. Exiting...")
+    print_stderr("ERROR: No valid eventset given on commandline. Exiting...")
     likwid.putTopology()
     likwid.putConfiguration()
     likwid.finalize()
@@ -593,7 +631,7 @@ if use_timeline == true then
     for i, cpu in pairs(cpulist) do
         cores_string = cores_string .. tostring(cpu) .. "|"
     end
-    io.stderr:write("# "..cores_string:sub(1,cores_string:len()-1).."\n")
+    print_stderr("# "..cores_string:sub(1,cores_string:len()-1).."\n")
     for gid, group in pairs(group_list) do
         local strlist = {}
         if group["Metrics"] == nil then
@@ -605,7 +643,7 @@ if use_timeline == true then
                 table.insert(strlist, e["description"])
             end
         end
-        io.stderr:write("# "..table.concat(strlist, "|").."\n")
+        print_stderr("# "..table.concat(strlist, "|").."\n")
     end
 end
 
@@ -628,7 +666,7 @@ if use_wrapper or use_timeline then
 
     local ret = likwid.startCounters()
     if ret < 0 then
-        print_stdout(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
+        print_stderr(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
         os.exit(1)
     end
 
@@ -640,7 +678,7 @@ if use_wrapper or use_timeline then
     end
 
     if not pid then
-        print_stdout("Failed to execute command: ".. execString)
+        print_stderr("Failed to execute command: ".. execString)
     end
     start = likwid.startClock()
     groupTime[activeGroup] = 0
@@ -692,26 +730,26 @@ if use_wrapper or use_timeline then
 elseif use_stethoscope then
     local ret = likwid.startCounters()
     if ret < 0 then
-        print_stdout(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
+        print_stderr(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
         os.exit(1)
     end
     likwid.sleep(duration)
 elseif use_marker then
     local ret = likwid.startCounters()
     if ret < 0 then
-        print_stdout(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
+        print_stderr(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
         os.exit(1)
     end
     local ret = os.execute(execString)
     if ret == nil then
-        print_stdout("Failed to execute command: ".. execString)
+        print_stderr("Failed to execute command: ".. execString)
         exitvalue = 1
     end
 end
 
 local ret = likwid.stopCounters()
 if ret < 0 then
-    print_stdout(string.format("Error stopping counters for thread %d.",ret * (-1)))
+    print_stderr(string.format("Error stopping counters for thread %d.",ret * (-1)))
     likwid.finalize()
     likwid.putTopology()
     likwid.putConfiguration()
@@ -726,7 +764,7 @@ end
 if use_marker == true then
     results, metrics = likwid.getMarkerResults(markerFile, cpulist)
     if #results == 0 then
-        print_stdout("No regions could be found in Marker API result file")
+        print_stderr("No regions could be found in Marker API result file")
     else
         for r=1, #results do
             likwid.printOutput(results[r], metrics[r], cpulist, r, print_stats)
@@ -749,7 +787,7 @@ if outfile then
     if suffix == "" then
         os.rename(tmpfile, outfile)
     elseif suffix ~= "txt" and suffix ~= "csv" and likwid.access(command, "x") then
-        print_stdout("Cannot find filter script, save output in CSV format to file "..outfile)
+        print_stderr("Cannot find filter script, save output in CSV format to file "..outfile)
         os.rename(tmpfile, outfile)
     else
         if suffix ~= "txt" and suffix ~= "csv" then
@@ -758,10 +796,10 @@ if outfile then
             if f ~= nil then
                 local o = f:read("*a")
                 if o:len() > 0 then
-                    print_stdout(string.format("Failed to executed filter script %s.",command))
+                    print_stderr(string.format("Failed to executed filter script %s.",command))
                 end
             else
-                print_stdout("Failed to call filter script, save output in CSV format to file "..outfile)
+                print_stderr("Failed to call filter script, save output in CSV format to file "..outfile)
                 os.rename(tmpfile, outfile)
                 os.remove(tmpfile)
             end

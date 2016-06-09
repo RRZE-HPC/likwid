@@ -31,29 +31,32 @@
 package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 local likwid = require("likwid")
 
+print_stdout = print
+print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
+
 local function version()
-    print(string.format("likwid-memsweeper --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-memsweeper --  Version %d.%d",likwid.version,likwid.release))
 end
 
 local function examples()
-    print("Examples:")
-    print("To clean specific domain:")
-    print("likwid-memsweeper -c 2")
-    print("To clean a range of domains:")
-    print("likwid-memsweeper -c 1-2")
-    print("To clean specific domains:")
-    print("likwid-memsweeper -c 0,1-2")
+    print_stdout("Examples:")
+    print_stdout("To clean specific domain:")
+    print_stdout("likwid-memsweeper -c 2")
+    print_stdout("To clean a range of domains:")
+    print_stdout("likwid-memsweeper -c 1-2")
+    print_stdout("To clean specific domains:")
+    print_stdout("likwid-memsweeper -c 0,1-2")
 
 end
 
 local function usage()
     version()
-    print("A tool clean up NUMA memory domains.\n")
-    print("Options:")
-    print("-h\t\t Help message")
-    print("-v\t\t Version information")
-    print("-c <list>\t Specify NUMA domain ID to clean up")
-    print("")
+    print_stdout("A tool clean up NUMA memory domains.\n")
+    print_stdout("Options:")
+    print_stdout("-h\t\t Help message")
+    print_stdout("-v\t\t Version information")
+    print_stdout("-c <list>\t Specify NUMA domain ID to clean up")
+    print_stdout("")
     examples()
 end
 
@@ -75,10 +78,10 @@ for opt,arg in likwid.getopt(arg, {"c:", "h", "v", "help", "version"}) do
     elseif (opt == "c") then
         num_nodes, nodes = likwid.nodestr_to_nodelist(arg)
     elseif opt == "?" then
-        print("Invalid commandline option -"..arg)
+        print_stderr("Invalid commandline option -"..arg)
         os.exit(1)
     elseif opt == "!" then
-        print("Option requires an argument")
+        print_stderr("Option requires an argument")
         os.exit(1)
     end
 end
