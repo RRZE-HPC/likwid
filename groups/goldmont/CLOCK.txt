@@ -1,0 +1,23 @@
+SHORT Power and Energy consumption
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PWR0  PWR_PKG_ENERGY
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Energy [J]  PWR0
+Power [W] PWR0/time
+
+LONG
+Formula:
+Power =  PWR_PKG_ENERGY / time
+-
+Silvermont implements the new RAPL interface. This interface enables to
+monitor the consumed energy on the package (socket) level.
+

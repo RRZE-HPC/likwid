@@ -65,6 +65,7 @@
 #include <perfmon_interlagos.h>
 #include <perfmon_kabini.h>
 #include <perfmon_silvermont.h>
+#include <perfmon_goldmont.h>
 #include <perfmon_broadwell.h>
 #include <perfmon_skylake.h>
 
@@ -653,6 +654,15 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersSilvermont;
                     break;
 
+                case ATOM_SILVERMONT_GOLD:
+                    eventHash = goldmont_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsGoldmont;
+                    counter_map = goldmont_counter_map;
+                    box_map = goldmont_box_map;
+                    perfmon_numCounters = perfmon_numCountersGoldmont;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersGoldmont;
+                    break;
+
                 case CORE_DUO:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
                     break;
@@ -905,6 +915,16 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_silvermont;
                     break;
 
+                case ATOM_SILVERMONT_GOLD:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_goldmont;
+                    perfmon_startCountersThread = perfmon_startCountersThread_goldmont;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_goldmont;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_goldmont;
+                    perfmon_readCountersThread = perfmon_readCountersThread_goldmont;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_goldmont;
+                    break;
 
                 case CORE_DUO:
                     ERROR_PLAIN_PRINT(Unsupported Processor);

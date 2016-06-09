@@ -146,6 +146,7 @@ static void cpuFeatures_update(int cpu)
              (cpuid_info.model == ATOM_SILVERMONT_Z2) ||
              (cpuid_info.model == ATOM_SILVERMONT_F) ||
              (cpuid_info.model == ATOM_SILVERMONT_AIR) ||
+             (cpuid_info.model == ATOM_SILVERMONT_GOLD) ||
              (cpuid_info.model == SANDYBRIDGE) ||
              (cpuid_info.model == SANDYBRIDGE_EP) ||
              (cpuid_info.model == IVYBRIDGE) ||
@@ -182,7 +183,8 @@ static void cpuFeatures_update(int cpu)
             (cpuid_info.model == BROADWELL_D) ||
             (cpuid_info.model == BROADWELL_E) ||
             (cpuid_info.model == SKYLAKE1) ||
-            (cpuid_info.model == SKYLAKE2))
+            (cpuid_info.model == SKYLAKE2) ||
+            (cpuid_info.model == ATOM_SILVERMONT_GOLD))
     {
         ret = HPMread(cpu, MSR_DEV, MSR_PREFETCH_ENABLE, &flags);
         if (ret != 0)
@@ -311,7 +313,8 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == BROADWELL_D) ||
             (cpuid_info.model == BROADWELL_E) ||
             (cpuid_info.model == SKYLAKE1) ||
-            (cpuid_info.model == SKYLAKE2))
+            (cpuid_info.model == SKYLAKE2) ||
+            (cpuid_info.model == ATOM_SILVERMONT_GOLD))
     {
         reg = MSR_PREFETCH_ENABLE;
         newOffsets = 1;
@@ -437,7 +440,8 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == BROADWELL_D) ||
             (cpuid_info.model == BROADWELL_E) ||
             (cpuid_info.model == SKYLAKE1) ||
-            (cpuid_info.model == SKYLAKE2))
+            (cpuid_info.model == SKYLAKE2) ||
+            (cpuid_info.model == ATOM_SILVERMONT_GOLD))
     {
         reg = MSR_PREFETCH_ENABLE;
         newOffsets = 1;

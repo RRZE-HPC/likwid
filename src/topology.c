@@ -1009,6 +1009,7 @@ void print_supportedCPUs (void)
     printf("\t%s\n",broadwell_d_str);
     printf("\t%s\n",broadwell_ep_str);
     printf("\t%s\n",skylake_str);
+    printf("\t%s\n",atom_goldmont_str);
     printf("\n");
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);
