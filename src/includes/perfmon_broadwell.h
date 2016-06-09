@@ -305,7 +305,7 @@ int bdwep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     filter_flags1 |= (extractBitField(event->options[j].value,16,0));
                     break;
                 case EVENT_OPTION_STATE:
-                    filter_flags0 |= (extractBitField(event->options[j].value,6,0) << 17);
+                    filter_flags0 |= (extractBitField(event->options[j].value,7,0) << 17);
                     set_state_all = 0;
                     break;
                 case EVENT_OPTION_TID:
