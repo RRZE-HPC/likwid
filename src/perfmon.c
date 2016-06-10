@@ -1547,7 +1547,7 @@ perfmon_setupCounters(int groupId)
 int
 __perfmon_startCounters(int groupId)
 {
-    int i = 0;
+    int i = 0, j = 0;
     int ret = 0;
     if (groupSet->groups[groupId].state != STATE_SETUP)
     {
@@ -1555,6 +1555,8 @@ __perfmon_startCounters(int groupId)
     }
     for(;i<groupSet->numberOfThreads;i++)
     {
+        for (j=0; j<perfmon_getNumberOfEvents(groupId); j++)
+            groupSet->groups[groupId].events[j].threadCounter[i].overflows = 0;
         ret = perfmon_startCountersThread(groupSet->threads[i].thread_id, &groupSet->groups[groupId]);
         if (ret)
         {
@@ -1632,7 +1634,7 @@ __perfmon_stopCounters(int groupId)
     {
         for (j=0; j<perfmon_getNumberOfThreads(); j++)
         {
-            result = calculateResult(groupId, i, j);
+            result = (double)calculateResult(groupId, i, j);
             groupSet->groups[groupId].events[i].threadCounter[j].lastResult = result;
             groupSet->groups[groupId].events[i].threadCounter[j].fullResult += result;
         }
@@ -1727,9 +1729,15 @@ __perfmon_readCounters(int groupId, int threadId)
             }
             for (j=0; j < groupSet->groups[groupId].numberOfEvents; j++)
             {
-                result = (double)calculateResult(groupId, j, threadId);
-                groupSet->groups[groupId].events[j].threadCounter[threadId].lastResult = result;
-                groupSet->groups[groupId].events[j].threadCounter[threadId].fullResult += result;
+                if (groupSet->groups[groupId].events[j].type != NOTYPE)
+                {
+                    result = (double)calculateResult(groupId, j, threadId);
+                    groupSet->groups[groupId].events[j].threadCounter[threadId].lastResult = result;
+                    groupSet->groups[groupId].events[j].threadCounter[threadId].fullResult += result;
+                    groupSet->groups[groupId].events[j].threadCounter[threadId].startData = 
+                        groupSet->groups[groupId].events[j].threadCounter[threadId].counterData;
+                    groupSet->groups[groupId].events[j].threadCounter[threadId].overflows = 0;
+                }
             }
         }
     }
@@ -1745,6 +1753,9 @@ __perfmon_readCounters(int groupId, int threadId)
             result = (double)calculateResult(groupId, j, threadId);
             groupSet->groups[groupId].events[j].threadCounter[threadId].lastResult = result;
             groupSet->groups[groupId].events[j].threadCounter[threadId].fullResult += result;
+            groupSet->groups[groupId].events[j].threadCounter[threadId].startData =
+                groupSet->groups[groupId].events[j].threadCounter[threadId].counterData;
+            groupSet->groups[groupId].events[j].threadCounter[threadId].overflows = 0;
         }
 }
     timer_start(&groupSet->groups[groupId].timer);
@@ -1825,7 +1836,14 @@ perfmon_getResult(int groupId, int eventId, int threadId)
     if (groupSet->groups[groupId].events[eventId].type == NOTYPE)
         return 0;
 
-    if (groupSet->groups[groupId].events[eventId].threadCounter[threadId].fullResult == 0)
+    if ((groupSet->groups[groupId].events[eventId].threadCounter[threadId].fullResult == 0) ||
+        (groupSet->groups[groupId].events[eventId].type == THERMAL) ||
+        (groupSet->groups[groupId].events[eventId].type == QBOX0FIX) ||
+        (groupSet->groups[groupId].events[eventId].type == QBOX1FIX) ||
+        (groupSet->groups[groupId].events[eventId].type == QBOX2FIX) ||
+        (groupSet->groups[groupId].events[eventId].type == SBOX0FIX) ||
+        (groupSet->groups[groupId].events[eventId].type == SBOX1FIX) ||
+        (groupSet->groups[groupId].events[eventId].type == SBOX2FIX))
     {
         return groupSet->groups[groupId].events[eventId].threadCounter[threadId].lastResult;
     }
@@ -1907,13 +1925,13 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
         add_to_clist(&clist,groupSet->groups[groupId].group.counters[e],
                      perfmon_getResult(groupId, e, threadId));
     }
-    add_to_clist(&clist, "time", perfmon_getLastTimeOfGroup(groupId));
+    add_to_clist(&clist, "time", perfmon_getTimeOfGroup(groupId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
     if (e < 0)
     {
         result = 0.0;
-        ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
+        //ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
     }
     destroy_clist(&clist);
     return result;
@@ -1963,7 +1981,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     if (e < 0)
     {
         result = 0.0;
-        ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
+        //ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
     }
     destroy_clist(&clist);
     return result;
