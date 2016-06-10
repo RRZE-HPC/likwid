@@ -592,9 +592,9 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
     if ((haveLock) && (eventSet->regTypeMask & ~(0xFULL)))
     {
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, &uflags));
-        VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, LLU_CAST uflags, SAFE_UBOXFIX_FLAGS)
+        VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, LLU_CAST uflags, SAFE_UNCORE_FLAGS)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL));
-        VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL, RESET_UBOXFIX_FLAGS)
+        VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL, RESET_UNCORE_FLAGS)
     }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -672,6 +672,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                         SKL_CHECK_UNCORE_OVERFLOW(box_map[type].ovflOffset);
                         *current = field64(counter_result, 0, box_map[type].regWidth);
+                        uflags |= (1ULL<<(type-CBOX0));
                     }
                     break;
 
@@ -687,8 +688,8 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
         {
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_STATUS, counter_result));
         }
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags));
-        VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags, RESET_UBOXFIX_FLAGS)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29)));
+        VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29), RESTORE_UNCORE_FLAGS)
     }
 
     if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
