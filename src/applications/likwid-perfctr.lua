@@ -122,7 +122,7 @@ use_timeline = false
 daemon_run = 0
 use_wrapper = false
 duration = 2.E06
-switch_interval = 5
+overflow_interval = 2.E06
 output = ""
 use_csv = false
 print_stats = false
@@ -150,24 +150,48 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     end
     if opt == "h" or opt == "help" then
         usage()
-        if likwid.access(outfile..".tmp", "e") == 0 then
+        if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
             os.remove(outfile..".tmp")
         end
         os.exit(0)
     elseif opt == "v" or opt == "version" then
         version()
-        if likwid.access(outfile..".tmp", "e") == 0 then
+        if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
             os.remove(outfile..".tmp")
         end
         os.exit(0)
     elseif opt == "V" or opt == "verbose" then
-        verbose = tonumber(arg)
-        likwid.setVerbosity(verbose)
+        if arg ~= nil and tonumber(arg) ~= nil then
+            verbose = tonumber(arg)
+            likwid.setVerbosity(verbose)
+        else
+            print_stderr("Option requires an argument")
+            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
+                os.remove(outfile..".tmp")
+            end
+            os.exit(1)
+        end
     elseif (opt == "c") then
-        num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
+        if arg ~= nil then
+            num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
+        else
+            print_stderr("Option requires an argument")
+            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
+                os.remove(outfile..".tmp")
+            end
+            os.exit(1)
+        end
         gotC = true
     elseif (opt == "C") then
-        num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
+        if arg ~= nil then
+            num_cpus, cpulist = likwid.cpustr_to_cpulist(arg)
+        else
+            print_stderr("Option requires an argument")
+            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
+                os.remove(outfile..".tmp")
+            end
+            os.exit(1)
+        end
         pin_cpus = true
         gotC = true
     elseif (opt == "a") then
@@ -175,7 +199,15 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     elseif (opt == "e") then
         print_events = true
     elseif (opt == "E") then
-        print_event = arg
+        if arg ~= nil then
+            print_event = arg
+        else
+            print_stderr("Option requires an argument")
+            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
+                os.remove(outfile..".tmp")
+            end
+            os.exit(1)
+        end
     elseif opt == "f" or opt == "force" then
         forceOverwrite = 1
     elseif opt == "g" or opt == "group" then
@@ -203,7 +235,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         end
         if (access_mode < 0 and access_mode > 1) then
             print_stdout("Access mode must be 0 for direct access and 1 for access daemon")
-            if likwid.access(outfile..".tmp", "e") == 0 then
+            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
                 os.remove(outfile..".tmp")
             end
             os.exit(1)
@@ -216,12 +248,36 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         use_wrapper = true
     elseif (opt == "S") then
         use_stethoscope = true
-        duration = likwid.parse_time(arg)
+        if arg ~= nil and arg:match("%d+s") then
+            duration = likwid.parse_time(arg)
+        else
+            print_stderr("Option requires an argument")
+            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
+                os.remove(outfile..".tmp")
+            end
+            os.exit(1)
+        end
     elseif (opt == "t") then
         use_timeline = true
-        duration = likwid.parse_time(arg)
+        if arg ~= nil and arg:match("%d+s") then
+            duration = likwid.parse_time(arg)
+        else
+            print_stderr("Option requires an argument")
+            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
+                os.remove(outfile..".tmp")
+            end
+            os.exit(1)
+        end
     elseif (opt == "T") then
-        duration = likwid.parse_time(arg)
+        if arg ~= nil and arg:match("%d+s") then
+            duration = likwid.parse_time(arg)
+        else
+            print_stderr("Option requires an argument")
+            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
+                os.remove(outfile..".tmp")
+            end
+            os.exit(1)
+        end
     elseif opt == "o" or opt == "output" then
         local suffix = ""
         if string.match(arg, "%.") then
@@ -242,13 +298,13 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         print_stats = true
     elseif opt == "?" then
         print_stderr("Invalid commandline option -"..arg)
-        if likwid.access(outfile..".tmp", "e") == 0 then
+        if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
             os.remove(outfile..".tmp")
         end
         os.exit(1)
     elseif opt == "!" then
         print_stderr("Option requires an argument")
-        if likwid.access(outfile..".tmp", "e") == 0 then
+        if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
             os.remove(outfile..".tmp")
         end
         os.exit(1)
@@ -477,6 +533,23 @@ if print_info or verbose > 0 then
     end
 end
 
+if use_marker == true and use_timeline == true then
+    print_stderr("Cannot run Marker API and Timeline mode simultaneously")
+    likwid.putTopology()
+    likwid.putConfiguration()
+    os.exit(0)
+elseif use_marker == true and use_stethoscope == true then
+    print_stderr("Cannot run Marker API and Stethoscope mode simultaneously")
+    likwid.putTopology()
+    likwid.putConfiguration()
+    os.exit(0)
+elseif use_timeline == true and use_stethoscope == true then
+    print_stderr("Cannot run Timeline and Stethoscope mode simultaneously")
+    likwid.putTopology()
+    likwid.putConfiguration()
+    os.exit(0)
+end
+
 if use_stethoscope == false and use_timeline == false and use_marker == false then
     use_wrapper = true
 end
@@ -576,7 +649,9 @@ if likwid.init(num_cpus, cpulist) < 0 then
     os.exit(1)
 end
 
-likwid.setenv("LIKWID_FORCE", tostring(forceOverwrite))
+if os.getenv("LIKWID_FORCE") == nil or (forceOverwrite == 1 and os.getenv("LIKWID_FORCE") ~= tostring(forceOverwrite)) then
+    likwid.setenv("LIKWID_FORCE", tostring(forceOverwrite))
+end
 for i, event_string in pairs(event_string_list) do
     if event_string:len() > 0 then
         local gid = likwid.addEventSet(event_string)
@@ -695,7 +770,7 @@ if use_wrapper or use_timeline then
         end
         if use_timeline == true then
             stop = likwid.stopClock()
-            likwid.stopCounters()
+            likwid.readCounters()
             
             local time = likwid.getClock(start, stop)
             if likwid.getNumberOfMetrics(activeGroup) == 0 then
@@ -711,8 +786,6 @@ if use_wrapper or use_timeline then
             end
             io.stderr:write(str.."\n")
             groupTime[activeGroup] = time
-            likwid.setupCounters(activeGroup)
-            likwid.startCounters()
         else
             likwid.readCounters()
         end
