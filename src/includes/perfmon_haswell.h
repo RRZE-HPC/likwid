@@ -1571,10 +1571,11 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                              (eventSet->events[i].event.eventId == 0x02))
                     {
                         HPMread(cpu_id, dev, counter1, &counter_result);
-                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_QBOXFIX);
                         counter_result = field64(counter_result, 0, box_map[type].regWidth);
                     }
+                    VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_QBOXFIX);
                     eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
+                    eventSet->events[i].threadCounter[thread_id].startData = 0;
                     break;
 
                 default:
@@ -1652,8 +1653,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_POWER)
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
-                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST eventSet->events[i].threadCounter[thread_id].startData, OVERFLOW_POWER_START)
-                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_POWER_STOP)
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_POWER)
                             eventSet->events[i].threadCounter[thread_id].overflows++;
                         }
                         *current = field64(counter_result, 0, box_map[type].regWidth);
