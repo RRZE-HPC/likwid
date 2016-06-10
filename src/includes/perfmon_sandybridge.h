@@ -1397,6 +1397,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                         {
                             counter_result = extractBitField(counter_result, 1, 4);
                         }
+                        eventSet->events[i].threadCounter[thread_id].startData = 0;
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, STOP_SBOXFIX);
                     }
                     break;
