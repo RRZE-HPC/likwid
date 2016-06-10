@@ -248,7 +248,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         use_wrapper = true
     elseif (opt == "S") then
         use_stethoscope = true
-        if arg ~= nil and arg:match("%d+s") then
+        if arg ~= nil and arg:match("%d%a?+s") then
             duration = likwid.parse_time(arg)
         else
             print_stderr("Option requires an argument")
@@ -259,7 +259,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         end
     elseif (opt == "t") then
         use_timeline = true
-        if arg ~= nil and arg:match("%d+s") then
+        if arg ~= nil and arg:match("%d+%a?s") then
             duration = likwid.parse_time(arg)
         else
             print_stderr("Option requires an argument")
@@ -269,7 +269,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
             os.exit(1)
         end
     elseif (opt == "T") then
-        if arg ~= nil and arg:match("%d+s") then
+        if arg ~= nil and arg:match("%d+%a?s") then
             duration = likwid.parse_time(arg)
         else
             print_stderr("Option requires an argument")
