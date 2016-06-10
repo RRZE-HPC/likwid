@@ -1470,44 +1470,45 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
 
                 case QBOX0FIX:
                 case QBOX1FIX:
-                case QBOX2FIX:
-                    if (eventSet->events[i].event.eventId == 0x00)
+                    if (haveLock)
                     {
                         HPMread(cpu_id, dev, counter1, &counter_result);
-                        switch(extractBitField(counter_result, 3, 0))
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_QBOXFIX)
+                        eventSet->events[i].threadCounter[thread_id].startData = 0;
+                        if (eventSet->events[i].event.eventId == 0x00)
                         {
-                            case 0x2:
-                                counter_result = 5.6E9;
-                                break;
-                            case 0x3:
-                                counter_result = 6.4E9;
-                                break;
-                            case 0x4:
-                                counter_result = 7.2E9;
-                                break;
-                            case 0x5:
-                                counter_result = 8.0E9;
-                                break;
-                            case 0x6:
-                                counter_result = 8.8E9;
-                                break;
-                            case 0x7:
-                                counter_result = 9.6E9;
-                                break;
-                            default:
-                                counter_result = 0;
-                                break;
+                            switch(extractBitField(counter_result, 3, 0))
+                            {
+                                case 0x2:
+                                    counter_result = 5.6E9;
+                                    break;
+                                case 0x3:
+                                    counter_result = 6.4E9;
+                                    break;
+                                case 0x4:
+                                    counter_result = 7.2E9;
+                                    break;
+                                case 0x5:
+                                    counter_result = 8.0E9;
+                                    break;
+                                case 0x6:
+                                    counter_result = 8.8E9;
+                                    break;
+                                case 0x7:
+                                    counter_result = 9.6E9;
+                                    break;
+                                default:
+                                    counter_result = 0;
+                                    break;
+                            }
+                            
                         }
-                        
+                        else if ((eventSet->events[i].event.eventId == 0x01) ||
+                                 (eventSet->events[i].event.eventId == 0x02))
+                        {
+                            counter_result = field64(counter_result, 0, box_map[type].regWidth);
+                        }
                     }
-                    else if ((eventSet->events[i].event.eventId == 0x01) ||
-                             (eventSet->events[i].event.eventId == 0x02))
-                    {
-                        HPMread(cpu_id, dev, counter1, &counter_result);
-                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_QBOXFIX);
-                        counter_result = field64(counter_result, 0, box_map[type].regWidth);
-                    }
-                    eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
                     break;
 
                 default:
@@ -1662,43 +1663,46 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
 
                 case QBOX0FIX:
                 case QBOX1FIX:
-                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_QBOXFIX)
-                    if (eventSet->events[i].event.eventId == 0x00)
+                    if (haveLock)
                     {
-                        HPMread(cpu_id, dev, counter1, &counter_result);
-                        switch(extractBitField(counter_result, 3, 0))
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_QBOXFIX)
+                        if (eventSet->events[i].event.eventId == 0x00)
                         {
-                            case 0x2:
-                                counter_result = 5.6E9;
-                                break;
-                            case 0x3:
-                                counter_result = 6.4E9;
-                                break;
-                            case 0x4:
-                                counter_result = 7.2E9;
-                                break;
-                            case 0x5:
-                                counter_result = 8.0E9;
-                                break;
-                            case 0x6:
-                                counter_result = 8.8E9;
-                                break;
-                            case 0x7:
-                                counter_result = 9.6E9;
-                                break;
-                            default:
-                                counter_result = 0;
-                                break;
+                            HPMread(cpu_id, dev, counter1, &counter_result);
+                            switch(extractBitField(counter_result, 3, 0))
+                            {
+                                case 0x2:
+                                    counter_result = 5.6E9;
+                                    break;
+                                case 0x3:
+                                    counter_result = 6.4E9;
+                                    break;
+                                case 0x4:
+                                    counter_result = 7.2E9;
+                                    break;
+                                case 0x5:
+                                    counter_result = 8.0E9;
+                                    break;
+                                case 0x6:
+                                    counter_result = 8.8E9;
+                                    break;
+                                case 0x7:
+                                    counter_result = 9.6E9;
+                                    break;
+                                default:
+                                    counter_result = 0;
+                                    break;
+                            }
+                            
                         }
-                        
+                        else if ((eventSet->events[i].event.eventId == 0x01) ||
+                                 (eventSet->events[i].event.eventId == 0x02))
+                        {
+                            HPMread(cpu_id, dev, counter1, &counter_result);
+                            counter_result = field64(counter_result, 0, box_map[type].regWidth);
+                        }
+                        *current = counter_result;
                     }
-                    else if ((eventSet->events[i].event.eventId == 0x01) ||
-                             (eventSet->events[i].event.eventId == 0x02))
-                    {
-                        HPMread(cpu_id, dev, counter1, &counter_result);
-                        counter_result = field64(counter_result, 0, box_map[type].regWidth);
-                    }
-                    *current = counter_result;
                     break;
 
                 default:
