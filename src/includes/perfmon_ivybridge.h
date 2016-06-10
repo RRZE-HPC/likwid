@@ -662,7 +662,7 @@ int ivb_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 }
 
 
-int ivb_uncore_freeze(int cpu_id, PerfmonEventSet* eventSet, int flags)
+int ivb_uncore_freeze(int cpu_id, PerfmonEventSet* eventSet)
 {
     uint32_t freeze_reg = (cpuid_info.model == IVYBRIDGE_EP ? MSR_UNC_U_PMON_GLOBAL_CTL : MSR_UNC_PERF_GLOBAL_CTRL);
     if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
@@ -674,58 +674,16 @@ int ivb_uncore_freeze(int cpu_id, PerfmonEventSet* eventSet, int flags)
         VERBOSEPRINTREG(cpu_id, freeze_reg, LLU_CAST (1ULL<<31), FREEZE_UNCORE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, freeze_reg, (1ULL<<31)));
     }
-    if ((flags != FREEZE_FLAG_ONLYFREEZE) && (eventSet->regTypeMask & ~(0xF)))
-    {
-        for (int j=UNCORE; j<NUM_UNITS; j++)
-        {
-            if (eventSet->regTypeMask & REG_TYPE_MASK(j))
-            {
-                if ((box_map[j].ctrlRegister != 0x0) && (box_map[j].isPci))
-                {
-                    DEBUG_PRINT(DEBUGLEV_DETAIL, Clearing %s registers of %s, (flags == FREEZE_FLAG_CLEAR_CTL ? "control" : "counter"), RegisterTypeNames[j]);
-                    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, box_map[j].device,
-                                                    box_map[j].ctrlRegister, flags));
-                }
-                else if (box_map[j].ctrlRegister != 0x0)
-                {
-                    DEBUG_PRINT(DEBUGLEV_DETAIL, Clearing %s registers of %s, (flags == FREEZE_FLAG_CLEAR_CTL ? "control" : "counter"), RegisterTypeNames[j]);
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV,
-                                                     box_map[j].ctrlRegister, flags));
-                }
-            }
-        }
-    }
     return 0;
 }
 
-int ivb_uncore_unfreeze(int cpu_id, PerfmonEventSet* eventSet, int flags)
+int ivb_uncore_unfreeze(int cpu_id, PerfmonEventSet* eventSet)
 {
     uint32_t unfreeze_reg = (cpuid_info.model == IVYBRIDGE_EP ? MSR_UNC_U_PMON_GLOBAL_CTL : MSR_UNC_PERF_GLOBAL_CTRL);
     uint32_t ovf_reg = (cpuid_info.model == IVYBRIDGE_EP ? MSR_UNC_U_PMON_GLOBAL_STATUS : MSR_UNC_PERF_GLOBAL_OVF_CTRL);
     if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
     {
         return 0;
-    }
-    if ((flags != FREEZE_FLAG_ONLYFREEZE) && (eventSet->regTypeMask & ~(0xF)))
-    {
-        for (int j=UNCORE; j<NUM_UNITS; j++)
-        {
-            if (eventSet->regTypeMask & REG_TYPE_MASK(j))
-            {
-                if ((box_map[j].ctrlRegister != 0x0) && (box_map[j].isPci))
-                {
-                    DEBUG_PRINT(DEBUGLEV_DETAIL, Clearing %s registers of %s, (flags == FREEZE_FLAG_CLEAR_CTL ? "control" : "counter"), RegisterTypeNames[j]);
-                    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, box_map[j].device,
-                                                    box_map[j].ctrlRegister, flags));
-                }
-                else if (box_map[j].ctrlRegister != 0x0)
-                {
-                    DEBUG_PRINT(DEBUGLEV_DETAIL, Clearing %s registers of %s, (flags == FREEZE_FLAG_CLEAR_CTL ? "control" : "counter"), RegisterTypeNames[j]);
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV,
-                                                     box_map[j].ctrlRegister, flags));
-                }
-            }
-        }
     }
     if (eventSet->regTypeMask & ~(0xF))
     {
@@ -757,7 +715,7 @@ int perfmon_setupCounterThread_ivybridge(
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
 
-    ivb_uncore_freeze(cpu_id, eventSet, FREEZE_FLAG_ONLYFREEZE);
+    ivb_uncore_freeze(cpu_id, eventSet);
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -893,6 +851,7 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
             tmp = 0x0ULL;
             RegisterIndex index = eventSet->events[i].index;
             uint64_t counter1 = counter_map[index].counterRegister;
+            uint64_t counter2 = counter_map[index].counterRegister2;
             eventSet->events[i].threadCounter[thread_id].startData = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
             switch (type)
@@ -923,13 +882,22 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
                     break;
 
                 default:
+                    if (eventSet->regTypeMask & REG_TYPE_MASK(type))
+                    {
+                        if (counter1 != 0x0)
+                        {
+                            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, box_map[type].device, counter1, 0x0ULL));
+                            if (counter2 != 0x0)
+                                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, box_map[type].device, counter2, 0x0ULL));
+                        }
+                    }
                     break;
             }
             eventSet->events[i].threadCounter[thread_id].counterData = eventSet->events[i].threadCounter[thread_id].startData;
         }
     }
 
-    ivb_uncore_unfreeze(cpu_id, eventSet, FREEZE_FLAG_CLEAR_CTR);
+    ivb_uncore_unfreeze(cpu_id, eventSet);
 
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
     {
@@ -1065,7 +1033,7 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
-    ivb_uncore_freeze(cpu_id, eventSet, FREEZE_FLAG_CLEAR_CTL);
+    ivb_uncore_freeze(cpu_id, eventSet);
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -1160,6 +1128,7 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                                 break;
                         }
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_SBOX_FIXED_REAL)
+                        eventSet->events[i].threadCounter[thread_id].startData = 0;
                     }
                     break;
 
@@ -1257,7 +1226,7 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, &pmc_flags));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
-    ivb_uncore_freeze(cpu_id, eventSet, FREEZE_FLAG_ONLYFREEZE);
+    ivb_uncore_freeze(cpu_id, eventSet);
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -1327,29 +1296,36 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     {
                         CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_SBOX_FIXED)
-                        switch (extractBitField(counter_result,3,0))
+                        if (eventSet->events[i].event.eventId == 0x00)
                         {
-                            case 0x2:
-                                counter_result = 5600000000ULL;
-                                break;
-                            case 0x3:
-                                counter_result = 6400000000ULL;
-                                break;
-                            case 0x4:
-                                counter_result = 7200000000ULL;
-                                break;
-                            case 0x5:
-                                counter_result = 8000000000ULL;
-                                break;
-                            case 0x6:
-                                counter_result = 8800000000ULL;
-                                break;
-                            case 0x7:
-                                counter_result = 9600000000ULL;
-                                break;
-                            default:
-                                counter_result = 0x0ULL;
-                                break;
+                            switch (extractBitField(counter_result,3,0))
+                            {
+                                case 0x2:
+                                    counter_result = 5600000000ULL;
+                                    break;
+                                case 0x3:
+                                    counter_result = 6400000000ULL;
+                                    break;
+                                case 0x4:
+                                    counter_result = 7200000000ULL;
+                                    break;
+                                case 0x5:
+                                    counter_result = 8000000000ULL;
+                                    break;
+                                case 0x6:
+                                    counter_result = 8800000000ULL;
+                                    break;
+                                case 0x7:
+                                    counter_result = 9600000000ULL;
+                                    break;
+                                default:
+                                    counter_result = 0x0ULL;
+                                    break;
+                            }
+                        }
+                        else if (eventSet->events[i].event.eventId == 0x01)
+                        {
+                            counter_result = extractBitField(counter_result,1,4);
                         }
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_SBOX_FIXED_REAL)
                         eventSet->events[i].threadCounter[thread_id].startData = 0;
@@ -1430,7 +1406,7 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
         }
     }
 
-    ivb_uncore_unfreeze(cpu_id, eventSet, FREEZE_FLAG_ONLYFREEZE);
+    ivb_uncore_unfreeze(cpu_id, eventSet);
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, pmc_flags));
