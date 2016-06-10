@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  access.c
+ *      Filename:  access_client.c
  *
  *      Description:  Interface to the access daemon for the access module.
  *

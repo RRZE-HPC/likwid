@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  access.h
+ *      Filename:  access_client.h
  *
  *      Description:  Header file for interface to the access daemon for the access module.
  *
