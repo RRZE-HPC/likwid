@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  pci.c
+ *      Filename:  access_x86_pci.c
  *
  *      Description:  Implementation of pci module.
  *                   Provides API to read and write values to the hardware

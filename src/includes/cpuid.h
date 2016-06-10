@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  configuration.h
+ *      Filename:  cpuid.h
  *
  *      Description:  Common macro definition for CPUID instruction
  *

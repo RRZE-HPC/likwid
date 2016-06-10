@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  configuration.h
+ *      Filename:  perfgroup.h
  *
  *      Description:  Header File of performance group and event set handler
  *

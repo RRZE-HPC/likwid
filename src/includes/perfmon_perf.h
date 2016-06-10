@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_ivybridgeEP_counters.h
+ *      Filename:  perfmon_perf.h
  *
  *      Description: Header file of example perfmon module for software events using
  *                   the perf_event interface
