@@ -257,7 +257,7 @@ local function readHostfileIntelMPI(filename)
                 hostname = line:match("^"..hostpattern)
                 slots = topo["numHWThreads"]
             end
-            table.insert(hostlist, {hostname=hostname, slots=slots, maxslots=slots})
+            table.insert(hostlist, {hostname=hostname, slots=tonumber(slots), maxslots=tonumber(slots)})
         end
     end
     if debug then
@@ -386,7 +386,7 @@ local function readHostfileMvapich2(filename)
                     interface = nil
                 end
             end
-            table.insert(hostlist, {hostname=hostname, slots=slots, maxslots=slots, interface=interface})
+            table.insert(hostlist, {hostname=hostname, slots=tonumber(slots), maxslots=tonumber(slots), interface=interface})
         end
     end
     if debug then
@@ -793,7 +793,7 @@ local function assignHosts(hosts, np, ppn)
                     hosts[i] = nil
                 end
             elseif host["slots"] then
-                if host["maxslots"] then
+                --[[if host["maxslots"] then
                     if host["maxslots"] < ppn then
                         print_stderr(string.format("WARN: Oversubscription for host %s needed, but max-slots set to %d.",
                                                 host["hostname"], host["maxslots"]))
@@ -820,7 +820,9 @@ local function assignHosts(hosts, np, ppn)
                                         maxslots=host["slots"],
                                         interface=host["interface"]})
                     current = ppn
-                end
+                end]]
+                print_stderr(string.format("ERROR: Oversubscription required. Host %s has only %s slots but %d needed per host", host["hostname"], host["slots"], ppn))
+                os.exit(1)
             else
                 table.insert(newhosts, {hostname=host["hostname"],
                                         slots=ppn,
@@ -1146,7 +1148,11 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     f:write("#!/bin/bash -l\n")
     f:write("GLOBALSIZE="..glsize_var.."\n")
     f:write("GLOBALRANK="..glrank_var.."\n")
-    f:write("unset OMP_NUM_THREADS\n")
+    if os.getenv("OMP_NUM_THREADS") == nil then
+        f:write("unset OMP_NUM_THREADS\n")
+    else
+        f:write(string.format("export OMP_NUM_THREADS=%s\n", os.getenv("OMP_NUM_THREADS")))
+    end
     if mpitype == "intelmpi" then
         f:write("export I_MPI_PIN=disable\n")
     end
@@ -1749,36 +1755,7 @@ end
 
 local givenNrNodes = getNumberOfNodes(hosts)
 
-if skipStr == "" then
-    if mpitype == "intelmpi" then
-        if omptype == "intel" and givenNrNodes > 1 then
-            skipStr = '-s 0x3'
-        elseif omptype == "intel" and givenNrNodes == 1 then
-            skipStr = '-s 0x1'
-        elseif omptype == "gnu" and givenNrNodes > 1 then
-            skipStr = '-s 0x1'
-        elseif omptype == "gnu" and givenNrNodes == 1 then
-            skipStr = '-s 0x0'
-        end
-    elseif mpitype == "mvapich2" then
-        if omptype == "intel" and givenNrNodes > 1 then
-            skipStr = '-s 0x7'
-        end
-    elseif mpitype == "openmpi" then
-        if omptype == "intel" and givenNrNodes > 1 then
-            skipStr = '-s 0x7'
-        elseif omptype == "intel" and givenNrNodes == 1 then
-            skipStr = '-s 0x1'
-        elseif omptype == "gnu" and givenNrNodes > 1 then
-            skipStr = '-s 0x7'
-        elseif omptype == "gnu" and givenNrNodes == 1 then
-            skipStr = '-s 0x0'
-        end
-    end
-end
-if debug and skipStr ~= "" then
-    print_stdout(string.format("DEBUG: Using skip option %s to skip pinning of shepard threads", skipStr))
-end
+
 
 if #perf > 0 then
     local sum_maxslots = 0
@@ -1811,6 +1788,14 @@ end
 
 if #cpuexprs > 0 then
     cpuexprs = calculatePinExpr(cpuexprs)
+    if debug then
+        str = "["
+        for i, expr in pairs(cpuexprs) do
+            str = str .. "["..expr.."], "
+        end
+        str = str:sub(1,str:len()-2) .. "]"
+        print_stdout("DEBUG: Evaluated CPU expressions: ".. str)
+    end
     ppn = #cpuexprs
     if np == 0 then
         if debug then
@@ -1819,9 +1804,16 @@ if #cpuexprs > 0 then
         np = givenNrNodes * #cpuexprs
         ppn = #cpuexprs
     elseif np < #cpuexprs*givenNrNodes then
-        while np < #cpuexprs*givenNrNodes and #cpuexprs > 1 do
-            table.remove(cpuexprs)
+        while np < #cpuexprs*givenNrNodes and #hosts > 1 do
+            table.remove(hosts)
+            givenNrNodes = getNumberOfNodes(hosts)
         end
+        if #hosts == 1 and np < #cpuexprs then
+            while np < #cpuexprs do
+                table.remove(cpuexprs)
+            end
+        end
+        np = #cpuexprs*givenNrNodes
         ppn = #cpuexprs
     end
     newhosts = assignHosts(hosts, np, ppn)
@@ -1926,6 +1918,45 @@ if #perf > 0 then
 end
 
 local nrNodes = getNumberOfNodes(newhosts)
+if np > #cpuexprs*nrNodes then
+    np = #cpuexprs*nrNodes
+elseif np < #cpuexprs then
+    while np < #cpuexprs do
+        table.remove(cpuexprs)
+    end
+    ppn = #cpuexprs
+end
+
+if skipStr == "" then
+    if mpitype == "intelmpi" then
+        if omptype == "intel" and nrNodes > 1 then
+            skipStr = '-s 0x3'
+        elseif omptype == "intel" and nrNodes == 1 then
+            skipStr = '-s 0x3'
+        elseif omptype == "gnu" and nrNodes > 1 then
+            skipStr = '-s 0x1'
+        elseif omptype == "gnu" and nrNodes == 1 then
+            skipStr = '-s 0x0'
+        end
+    elseif mpitype == "mvapich2" then
+        if omptype == "intel" and nrNodes > 1 then
+            skipStr = '-s 0x7'
+        end
+    elseif mpitype == "openmpi" then
+        if omptype == "intel" and nrNodes > 1 then
+            skipStr = '-s 0x7'
+        elseif omptype == "intel" and nrNodes == 1 then
+            skipStr = '-s 0x1'
+        elseif omptype == "gnu" and nrNodes > 1 then
+            skipStr = '-s 0x7'
+        elseif omptype == "gnu" and nrNodes == 1 then
+            skipStr = '-s 0x0'
+        end
+    end
+end
+if debug and skipStr ~= "" then
+    print_stdout(string.format("DEBUG: Using skip option %s to skip pinning of shepard threads", skipStr))
+end
 
 local pid = likwid.getpid()
 local hostfilename = string.format(".hostfile_%s.txt", pid)
