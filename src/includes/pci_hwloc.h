@@ -6,7 +6,7 @@
  *      Description:  Header File hwloc based PCI lookup backend
  *
  *      Version:   4.1
- *      Released:  19.5.2016
+ *      Released:  13.6.2016
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

@@ -13,12 +13,13 @@ my $lc = ' *';
 #my $VERSION   = '<VERSION>';
 #my $DATE   = '<DATE>';
 my $VERSION   = '4.1';
-my $DATE   = '19.5.2016';
+my $DATE   = '13.6.2016';
 my $YEAR  = '2016';
 my $AUTHOR = 'RRZE, University Erlangen-Nuremberg';
 my $LICENSE = 'gpl';
 
-my @SKIPLIST = ('ghash.c','ghash.h','loadData.S','bstrlib.c','bstrlib.h', 'calculator_stack.h', 'calculator_stack.c');
+my @SKIPLIST = ('ghash.c','ghash.h','loadData.S','bstrlib.c','bstrlib.h',
+    'calculator_stack.h', 'calculator_stack.c', 'calculator.c');
 
 sub print_copyright
 {

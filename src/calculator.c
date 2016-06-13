@@ -30,7 +30,7 @@
  *      Some changes done for the integration in LIKWID, see inline comments
  *
  *      Version:   4.1
- *      Released:  19.5.2016
+ *      Released:  13.6.2016
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Roehl (tr), thomas.roehl@gmail.com
@@ -481,7 +481,7 @@ int tokenize(char *str, char *(**tokensRef))
                             // Assemble rest of number
                             for(; // Don't change len
                                 *ptr // There is a next character and it is not null
-                                && len <= MAXTOKENLENGTH 
+                                && len <= MAXTOKENLENGTH
                                 && (type(*ptr) == digit // The next character is a digit
                                      || ((type(*ptr) == decimal // Or the next character is a decimal
                                          && hasDecimal == 0)) // But we have not added a decimal
@@ -544,11 +544,11 @@ int tokenize(char *str, char *(**tokensRef))
                     }
 
                     // Assemble rest of number
-                    /* Added support for signed exponents in scientific notation 
+                    /* Added support for signed exponents in scientific notation
                      * by Thomas Roehl (Thomas.Roehl@fau.de) as required for LIKWID */
                     for(; // Don't change len
                         *ptr // There is a next character and it is not null
-                        && len <= MAXTOKENLENGTH 
+                        && len <= MAXTOKENLENGTH
                         && (type(*ptr) == digit // The next character is a digit
                              || ((type(*ptr) == decimal // Or the next character is a decimal
                                  && hasDecimal == false)) // But we have not added a decimal
