@@ -1,3 +1,9 @@
+# Changelog 4.1.1
+- Fix for Uncore handling for EP/EN/EX systems
+- Minor fix for Uncore handling for Intel desktop systems
+- Fix in generic readCounters function
+- Support for Intel Goldmont (untested)
+- Fixes for likwid-mpirun
 
 
 # Changelog 4.1.0
