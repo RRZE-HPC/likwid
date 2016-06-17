@@ -1433,8 +1433,6 @@ int perfmon_finalizeCountersThread_ivybridge(int thread_id, PerfmonEventSet* eve
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
-        {
             RegisterType type = eventSet->events[i].type;
             if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
             {
@@ -1473,7 +1471,7 @@ int perfmon_finalizeCountersThread_ivybridge(int thread_id, PerfmonEventSet* eve
                 CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
             }
             eventSet->events[i].threadCounter[thread_id].init = FALSE;
-        }
+       
     }
     if (haveLock && eventSet->regTypeMask & ~(0xFULL))
     {
