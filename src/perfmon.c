@@ -1517,6 +1517,11 @@ perfmon_setupCounters(int groupId)
 {
     int i;
     int ret = 0;
+    if (!lock_check())
+    {
+        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        return -ENOLCK;
+    }
     if (perfmon_initialized != 1)
     {
         ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
@@ -1526,12 +1531,13 @@ perfmon_setupCounters(int groupId)
     {
         return -EINVAL;
     }
+
     if (groupId >= groupSet->numberOfActiveGroups)
     {
         ERROR_PRINT(Group %d does not exist in groupSet, groupId);
         return -ENOENT;
     }
-    
+
     for(i=0;i<groupSet->numberOfThreads;i++)
     {
         ret = __perfmon_setupCountersThread(groupSet->threads[i].thread_id, groupId);
@@ -1552,6 +1558,11 @@ __perfmon_startCounters(int groupId)
     if (groupSet->groups[groupId].state != STATE_SETUP)
     {
         return -EINVAL;
+    }
+    if (!lock_check())
+    {
+        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        return -ENOLCK;
     }
     for(;i<groupSet->numberOfThreads;i++)
     {
@@ -1618,6 +1629,12 @@ __perfmon_stopCounters(int groupId)
     int j = 0;
     int ret = 0;
     double result = 0.0;
+
+    if (!lock_check())
+    {
+        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        return -ENOLCK;
+    }
 
     timer_stop(&groupSet->groups[groupId].timer);
 
@@ -1892,7 +1909,6 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     int e = 0;
     double result = 0;
     CounterList clist;
-    char* teststr = malloc(1024 * sizeof(char));
     if (unlikely(groupSet == NULL))
     {
         return 0;

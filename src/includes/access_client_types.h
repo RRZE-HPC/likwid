@@ -48,7 +48,8 @@ typedef enum {
     ERR_OPENFAIL,     /* failure to open msr files */
     ERR_RWFAIL,       /* failure to read/write msr */
     ERR_DAEMONBUSY,   /* daemon already has another client */
-    ERR_NODEV         /* No such device */
+    ERR_NODEV,        /* No such device */
+    ERR_LOCKED        /* Global lock is set */
 } AccessErrorType;
 
 typedef struct {

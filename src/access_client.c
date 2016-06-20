@@ -68,6 +68,7 @@ access_client_strerror(AccessErrorType det)
         case ERR_RWFAIL:     return "failed to read/write register";
         case ERR_DAEMONBUSY: return "daemon already has a same/higher priority client";
         case ERR_NODEV:      return "no such pci device";
+        case ERR_LOCKED:     return "access to registers is locked";
         default:             return "UNKNOWN errorcode";
     }
 }

@@ -80,6 +80,7 @@ RELEASE = 1
 DATE    = 19.05.2016
 
 RPATHS = -Wl,-rpath=$(INSTALLED_LIBPREFIX)
+LIKWIDLOCKPATH = /var/run/likwid.lock
 LIBLIKWIDPIN = $(abspath $(INSTALLED_PREFIX)/lib/liblikwidpin.so.$(VERSION).$(RELEASE))
 LIKWIDFILTERPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/filter)
 LIKWIDGROUPPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/perfgroups)

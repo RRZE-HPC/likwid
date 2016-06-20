@@ -41,7 +41,6 @@
 #define LOCK_INIT -1
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
-#define LIKWIDLOCK  /var/run/likwid.lock
 
 static inline int lock_acquire(int* var, int newval)
 {
@@ -60,40 +59,41 @@ static int lock_check(void)
 
     if ((lock_handle = open(filepath, O_RDONLY )) == -1 )
     {
-    if (errno == ENOENT)
-    {
-        /* There is no lock file. Proceed. */
-        result = 1;
-    }
-    else if (errno == EACCES)
-    {
-        /* There is a lock file. We cannot open it. */
-        result = 0;
-    }
-    else 
-    {
-        /* Another error occured. Proceed. */
-        result = 1;
-    }
+        if (errno == ENOENT)
+        {
+            /* There is no lock file. Proceed. */
+            result = 1;
+        }
+        else if (errno == EACCES)
+        {
+            /* There is a lock file. We cannot open it. */
+            result = 0;
+        }
+        else 
+        {
+            /* Another error occured. Proceed. */
+            result = 1;
+        }
     }
     else
     {
-    /* There is a lock file and we can open it. Check if we own it. */
-    stat(filepath, &buf);
+        /* There is a lock file and we can open it. Check if we own it. */
+        stat(filepath, &buf);
 
-    if ( buf.st_uid == getuid() )  /* Succeed, we own the lock */
-    {
-        result = 1;
-    }
-    else  /* we are not the owner */
-    {
-        result = 0;
-    }
+        if ( buf.st_uid == getuid() )  /* Succeed, we own the lock */
+        {
+            result = 1;
+        }
+        else  /* we are not the owner */
+        {
+
+            result = 0;
+        }
     }
 
     if (lock_handle)
     {
-    close(lock_handle);
+        close(lock_handle);
     }
 
     return result;

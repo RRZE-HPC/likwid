@@ -498,6 +498,13 @@ static void msr_read(AccessDataRecord * dRecord)
     dRecord->errorcode = ERR_NOERROR;
     dRecord->data = 0;
 
+    if (!lock_check())
+    {
+        syslog(LOG_ERR,"Access to performance counters is locked.\n");
+        dRecord->errorcode = ERR_LOCKED;
+        return;
+    }
+
     if (FD_MSR[cpu] <= 0)
     {
         dRecord->errorcode = ERR_NODEV;
@@ -527,7 +534,14 @@ static void msr_write(AccessDataRecord * dRecord)
     uint64_t data = dRecord->data;
 
     dRecord->errorcode = ERR_NOERROR;
-    
+
+    if (!lock_check())
+    {
+        syslog(LOG_ERR,"Access to performance counters is locked.\n");
+        dRecord->errorcode = ERR_LOCKED;
+        return;
+    }
+
     if (FD_MSR[cpu] <= 0)
     {
         dRecord->errorcode = ERR_NODEV;
@@ -572,6 +586,13 @@ static void pci_read(AccessDataRecord* dRecord)
 
     dRecord->errorcode = ERR_NOERROR;
     dRecord->data = 0;
+
+    if (!lock_check())
+    {
+        syslog(LOG_ERR,"Access to performance counters is locked.\n");
+        dRecord->errorcode = ERR_LOCKED;
+        return;
+    }
 
     if (FD_PCI[socketId][device] == -2)
     {
@@ -624,6 +645,13 @@ static void pci_write(AccessDataRecord* dRecord)
     uint32_t data = (uint32_t) dRecord->data;
 
     dRecord->errorcode = ERR_NOERROR;
+
+    if (!lock_check())
+    {
+        syslog(LOG_ERR,"Access to performance counters is locked.\n");
+        dRecord->errorcode = ERR_LOCKED;
+        return;
+    }
 
     if (FD_PCI[socketId][device] == -2)
     {
