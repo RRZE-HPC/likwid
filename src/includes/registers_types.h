@@ -178,7 +178,7 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [QBOX0FIX] = "QPI Link Layer rate status 0",
     [QBOX1FIX] = "QPI Link Layer rate status 1",
     [NUM_UNITS] = "Maximally usable register types",
-    [NOTYPE] = "No Type, used for skipping unavailable counters"
+    [NOTYPE] = "Counter not available on the current system"
 };
 
 #ifdef __x86_64

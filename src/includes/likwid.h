@@ -710,6 +710,14 @@ perfmon_init_maps()
 \sa RegisterMap list, PerfmonEvent list and BoxMap list
 */
 extern void perfmon_init_maps(void) __attribute__ ((visibility ("default") ));
+/*! \brief Check the performance monitoring maps whether counters and events are available
+
+Checks each counter and event in the performance monitoring maps for their availibility on
+the current system. topology_init(), numa_init() and perfmon_init_maps() must be called before calling
+perfmon_check_counter_map().
+\sa RegisterMap list, PerfmonEvent list and BoxMap list
+*/
+extern void perfmon_check_counter_map(int cpu_id) __attribute__ ((visibility ("default") ));
 /*! \brief Add an event string to LIKWID
 
 A event string looks like Eventname:Countername(:Option1:Option2:...),...

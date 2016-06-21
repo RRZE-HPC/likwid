@@ -48,6 +48,7 @@
 #include <topology.h>
 #include <access.h>
 #include <perfgroup.h>
+#include <cpuid.h>
 
 #include <perfmon_pm.h>
 #include <perfmon_atom.h>
@@ -79,6 +80,7 @@ int perfmon_numCoreCounters = 0;
 int perfmon_numArchEvents = 0;
 int perfmon_initialized = 0;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
+int maps_checked = 0;
 uint64_t currentConfig[MAX_NUM_THREADS][NUM_PMC] = { 0 };
 
 PerfmonGroupSet* groupSet = NULL;
@@ -131,8 +133,11 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
     int (*ownstrcmp)(const char*, const char*);
     ownstrcmp = &strcmp;
     int testcpu = groupSet->threads[0].processorId;
+    int firstpmcindex = -1;
     for (int i=0; i< perfmon_numCounters; i++)
     {
+        if (counter_map[i].type && firstpmcindex < 0)
+            firstpmcindex = i;
         if (biseqcstr(reg, counter_map[i].key))
         {
             *index = counter_map[i].index;
@@ -141,20 +146,28 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
             break;
         }
     }
-    if (ret == FALSE)
+    if (*type == PMC && (*index - firstpmcindex) > cpuid_info.perf_num_ctr)
     {
-        fprintf(stderr, "ERROR: Counter %s not available\n",bdata(reg));
+        fprintf(stderr, "WARNING: Counter %s is only available with deactivated HyperThreading. Counter results defaults to 0.\n",bdata(reg));
+        *type = NOTYPE;
+        return FALSE;
+    }
+    if (ret == FALSE || (ret == TRUE && *type == NOTYPE))
+    {
+        DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s not available on the current system. Counter results defaults to 0.,bdata(reg));
         *type = NOTYPE;
         return FALSE;
     }
     if (ret && (ownstrcmp(bdata(reg), counter_map[*index].key) != 0))
     {
+        DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s does not exist ,bdata(reg));
         *type = NOTYPE;
         return FALSE;
     }
     err = HPMcheck(counter_map[*index].device, 0);
     if (!err)
     {
+        DEBUG_PRINT(DEBUGLEV_INFO, WARNING: The device for counter %s does not exist ,bdata(reg));
         *type = NOTYPE;
         return FALSE;
     }
@@ -610,10 +623,92 @@ void perfmon_setVerbosity(int level)
         perfmon_verbosity = level;
 }
 
+void perfmon_check_counter_map(int cpu_id)
+{
+    int own_hpm = 0;
+    if (perfmon_numCounters == 0 || perfmon_numArchEvents == 0)
+    {
+        ERROR_PLAIN_PRINT(Counter and event maps not initialized.);
+        return;
+    }
+    if (maps_checked)
+        return;
+    if (!HPMinitialized())
+    {
+        HPMinit();
+        HPMaddThread(cpu_id);
+        own_hpm = 1;
+    }
+    int startpmcindex = -1;
+    for (int i=0;i<perfmon_numCounters;i++)
+    {
+        if (counter_map[i].type == NOTYPE)
+            continue;
+        if (counter_map[i].type == PMC && startpmcindex < 0)
+        {
+            startpmcindex = i;
+        }
+        if (counter_map[i].type == PMC && (counter_map[i].index - counter_map[startpmcindex].index) >= cpuid_info.perf_num_ctr)
+        {
+            counter_map[i].type = NOTYPE;
+            counter_map[i].optionMask = 0x0ULL;
+        }
+        if (HPMcheck(counter_map[i].device, cpu_id))
+        {
+            uint32_t reg = counter_map[i].configRegister;
+            uint64_t tmp = 0x0ULL;
+            if (reg == 0x0U)
+                reg = counter_map[i].counterRegister;
+            int err = HPMread(cpu_id, counter_map[i].device, reg, &tmp);
+            if (err)
+            {
+                counter_map[i].type = NOTYPE;
+                counter_map[i].optionMask = 0x0ULL;
+            }
+        }
+        else
+        {
+            counter_map[i].type = NOTYPE;
+            counter_map[i].optionMask = 0x0ULL;
+        }
+    }
+    if (own_hpm)
+        HPMfinalize();
+    for (int i=0; i<perfmon_numArchEvents; i++)
+    {
+        int found = 0;
+        bstring estr = bfromcstr(eventHash[i].name);
+        if (i > 0 && strlen(eventHash[i-1].limit) != 0 && strcmp(eventHash[i-1].limit, eventHash[i].limit) == 0)
+            continue;
+        for (int j=0;j<perfmon_numCounters; j++)
+        {
+            if (counter_map[j].type == NOTYPE)
+                continue;
+            PerfmonEvent event;
+            bstring cstr = bfromcstr(counter_map[j].key);
+            
+            if (getEvent(estr, cstr, &event))
+            {
+                found = 1;
+                break;
+            }
+            bdestroy(cstr);
+        }
+        bdestroy(estr);
+        if (!found)
+        {
+            eventHash[i].limit = "";
+        }
+    }
+    maps_checked = 1;
+}
+
 void
 perfmon_init_maps(void)
 {
-    box_map = NULL;
+    uint32_t eax, ebx, ecx, edx;
+    if (eventHash != NULL && counter_map != NULL && box_map != NULL && perfmon_numCounters > 0 && perfmon_numArchEvents > 0)
+        return;
     switch ( cpuid_info.family )
     {
         case P6_FAMILY:
@@ -1114,6 +1209,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 }
 
 
+
 int
 perfmon_init(int nrThreads, int threadsToCpu[])
 {
@@ -1176,8 +1272,6 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     for(i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
     for(i=0; i<MAX_NUM_THREADS; i++) tile_lock[i] = LOCK_INIT;
 
-    /* Initialize maps pointer to current architecture maps */
-    perfmon_init_maps();
 
     /* Initialize access interface */
     ret = HPMinit();
@@ -1191,6 +1285,8 @@ perfmon_init(int nrThreads, int threadsToCpu[])
     }
     timer_init();
 
+    /* Initialize maps pointer to current architecture maps */
+    perfmon_init_maps();
 
     /* Initialize function pointer to current architecture functions */
     perfmon_init_funcs(&initialize_power, &initialize_thermal);
@@ -1211,6 +1307,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
             fprintf(stderr, "Cannot get access to MSRs. Please check permissions to the MSRs\n");
             exit(EXIT_FAILURE);
         }
+
         if (initialize_power == TRUE)
         {
             power_init(threadsToCpu[i]);
@@ -1221,6 +1318,7 @@ perfmon_init(int nrThreads, int threadsToCpu[])
         }
         initThreadArch(threadsToCpu[i]);
     }
+    
     perfmon_initialized = 1;
     return 0;
 }
@@ -1411,8 +1509,6 @@ perfmon_addEventSet(char* eventCString)
         {
             if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type, forceOverwrite))
             {
-                DEBUG_PRINT(DEBUGLEV_INFO, Counter register %s not supported or PCI device not available,
-                            bdata(subtokens->entry[1]));
                 event->type = NOTYPE;
                 goto past_checks;
             }

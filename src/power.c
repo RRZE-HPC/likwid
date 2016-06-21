@@ -109,6 +109,7 @@ power_init(int cpuId)
         HPMinit();
         HPMaddThread(cpuId);
     }
+
     if ( power_info.hasRAPL )
     {
         busSpeed = 100.0;
