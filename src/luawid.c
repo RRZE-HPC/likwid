@@ -905,11 +905,14 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
         cpuinfo = get_cpuInfo();
     }
     perfmon_init_maps();
+    perfmon_check_counter_map(0);
     lua_newtable(L);
     lua_pushstring(L,"Counters");
     lua_newtable(L);
     for(i=1;i<=perfmon_numCounters;i++)
     {
+        if (counter_map[i-1].type == NOTYPE)
+            continue;
         bstring optString = bfromcstr("");
         lua_pushinteger(L, (lua_Integer)(i));
         lua_newtable(L);
@@ -945,6 +948,8 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
     lua_newtable(L);
     for(i=1;i<=perfmon_numArchEvents;i++)
     {
+        if (strlen(eventHash[i-1].limit) == 0)
+            continue;
         bstring optString = bfromcstr("");
         lua_pushinteger(L, (lua_Integer)(i));
         lua_newtable(L);
@@ -970,12 +975,14 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
                 bdestroy(tmp);
             }
         }
+        bdelete(optString, blength(optString)-1, 1);
         lua_pushstring(L,bdata(optString));
         lua_settable(L,-3);
         lua_settable(L,-3);
         bdestroy(optString);
     }
     lua_settable(L,-3);
+    HPMfinalize();
     return 1;
 }
 
