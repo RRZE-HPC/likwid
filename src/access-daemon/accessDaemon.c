@@ -95,6 +95,7 @@ static int FD_PCI[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
 static int isPCIUncore = 0;
 static PciDevice* pci_devices_daemon = NULL;
 static char pci_filepath[MAX_PATH_LENGTH];
+static int num_pmc_counters = 0;
 
 /* Socket to bus mapping -- will be determined at runtime;
  * typical mappings are:
@@ -111,8 +112,9 @@ static char* socket_bus[MAX_NUM_NODES] = { [0 ... (MAX_NUM_NODES-1)] = NULL};
 
 static int allowed_intel(uint32_t reg)
 {
-    if ( ((reg & 0x0F8U) == 0x0C0U) ||
-            ((reg & 0xFF0U) == 0x180U) ||
+    if ( ((reg & 0x0F0U) == 0x0C0U) ||
+            ((reg & 0x190U) == 0x180U) ||
+            ((reg & 0x190U) == 0x190U && num_pmc_counters > 4) ||
             ((reg & 0xF00U) == 0x300U) ||
             ((reg & 0xF00U) == 0xC00U) ||
             ((reg & 0xF00U) == 0xD00U) ||
@@ -513,6 +515,7 @@ static void msr_read(AccessDataRecord * dRecord)
 
     if (!allowed(reg))
     {
+        syslog(LOG_ERR, "Access to register 0x%X not allowed\n", reg);
         dRecord->errorcode = ERR_RESTREG;
         return;
     }
@@ -884,6 +887,9 @@ int main(void)
         CPUID(eax, ebx, ecx, edx);
         uint32_t family = ((eax >> 8) & 0xFU) + ((eax >> 20) & 0xFFU);
         model  = (((eax >> 16) & 0xFU) << 4) + ((eax >> 4) & 0xFU);
+        eax = 0x0A;
+        CPUID(eax, ebx, ecx, edx);
+        num_pmc_counters = (int)((eax>>8)&0xFFU);
 
         switch (family)
         {
