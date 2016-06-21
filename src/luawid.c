@@ -929,6 +929,7 @@ static int lua_likwid_getEventsAndCounters(lua_State* L)
                 bdestroy(tmp);
             }
         }
+        bdelete(optString, blength(optString)-1, 1);
         lua_pushstring(L,bdata(optString));
         lua_settable(L,-3);
         lua_pushstring(L,"Type");
