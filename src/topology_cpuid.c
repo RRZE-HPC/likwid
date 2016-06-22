@@ -490,7 +490,11 @@ void cpuid_init_cpuFeatures(void)
         cpuid_info.featureFlags |= (1<<RDTSCP);
     }
 
-    cpuid_info.perf_version   =  0;
+    cpuid_info.perf_version = 0;
+    cpuid_info.perf_num_ctr = 0;
+    cpuid_info.perf_width_ctr = 0;
+    cpuid_info.perf_num_fixed_ctr = 0;
+    cpuid_info.turbo = 0;
     if( cpuid_info.family == P6_FAMILY && 0x0A <= largest_function)
     {
         eax = 0x0A;
@@ -505,10 +509,6 @@ void cpuid_init_cpuFeatures(void)
         if (eax & (1<<1))
         {
             cpuid_info.turbo = 1;
-        }
-        else
-        {
-            cpuid_info.turbo = 0;
         }
     }
 
