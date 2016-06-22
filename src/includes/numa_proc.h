@@ -33,7 +33,7 @@
 
 extern int proc_numa_init(void);
 extern void proc_numa_membind(void* ptr, size_t size, int domainId);
-extern void proc_numa_setInterleaved(int* processorList, int numberOfProcessors);
+extern void proc_numa_setInterleaved(const int* processorList, int numberOfProcessors);
 
 
 #endif

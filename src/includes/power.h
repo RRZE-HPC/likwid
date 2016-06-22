@@ -68,7 +68,7 @@ uint32_t info_regs[NUM_POWER_DOMAINS] = {MSR_PKG_POWER_INFO,
 
 
 double
-power_printEnergy(PowerData* data)
+power_printEnergy(const PowerData* data)
 {
     return  (double) ((data->after - data->before) * power_info.domains[data->domain].energyUnit);
 }

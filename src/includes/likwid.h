@@ -310,7 +310,7 @@ Set group path in the config struction. The path must be a directory.
 @param [in] path
 @return error code (0 for success, -ENOMEM if reallocation failed, -ENOTDIR if no directoy)
 */
-extern int config_setGroupPath(char* path) __attribute__ ((visibility ("default") ));
+extern int config_setGroupPath(const char* path) __attribute__ ((visibility ("default") ));
 
 /** @}*/
 /*
@@ -504,7 +504,7 @@ Set the memory allocation policy to interleaved for given list of CPUs
 @param [in] processorList List of processors
 @param [in] numberOfProcessors Length of processor list
 */
-extern void numa_setInterleaved(int* processorList, int numberOfProcessors) __attribute__ ((visibility ("default") ));
+extern void numa_setInterleaved(const int* processorList, int numberOfProcessors) __attribute__ ((visibility ("default") ));
 /*! \brief Allocate memory from a specific specific NUMA node
 @param [in,out] ptr Start pointer of memory
 @param [in] size Size for the allocation
@@ -597,7 +597,7 @@ Pin processes to a CPU. Creates a cpuset with the given processor IDs
 @param [in] cpu_count Number of processors in processorIds
 @param [in] processorIds Array of processor IDs
 */
-extern void affinity_pinProcesses(int cpu_count, int* processorIds) __attribute__ ((visibility ("default") ));
+extern void affinity_pinProcesses(int cpu_count, const int* processorIds) __attribute__ ((visibility ("default") ));
 /*! \brief Pin thread to a CPU
 
 Pin thread to a CPU. Duplicate of likwid_pinThread()
@@ -642,7 +642,7 @@ different selection modes: scatter, expression, logical and physical.
 @param [in] length Length of cpulist
 @return error code (>0 on success for the returned list length, -ERRORCODE on failure)
 */
-extern int cpustr_to_cpulist(char* cpustring, int* cpulist, int length)  __attribute__ ((visibility ("default") ));
+extern int cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)  __attribute__ ((visibility ("default") ));
 /*! \brief Read NUMA node selection string and resolve to available NUMA node numbers
 
 Reads the NUMA node selection string and fills the given list with the NUMA node numbers
@@ -652,7 +652,7 @@ defined in the selection string.
 @param [in] length Length of NUMA node list
 @return error code (>0 on success for the returned list length, -ERRORCODE on failure)
 */
-extern int nodestr_to_nodelist(char* nodestr, int* nodes, int length)  __attribute__ ((visibility ("default") ));
+extern int nodestr_to_nodelist(const char* nodestr, int* nodes, int length)  __attribute__ ((visibility ("default") ));
 /*! \brief Read CPU socket selection string and resolve to available CPU socket numbers
 
 Reads the CPU socket selection string and fills the given list with the CPU socket numbers
@@ -662,7 +662,7 @@ defined in the selection string.
 @param [in] length Length of CPU socket list
 @return error code (>0 on success for the returned list length, -ERRORCODE on failure)
 */
-extern int sockstr_to_socklist(char* sockstr, int* sockets, int length)  __attribute__ ((visibility ("default") ));
+extern int sockstr_to_socklist(const char* sockstr, int* sockets, int length)  __attribute__ ((visibility ("default") ));
 
 /** @}*/
 
@@ -700,7 +700,7 @@ The access mode must already be set when calling perfmon_init()
 @param [in] threadsToCpu List of CPUs
 @return error code (0 on success, -ERRORCODE on failure)
 */
-extern int perfmon_init(int nrThreads, int threadsToCpu[]) __attribute__ ((visibility ("default") ));
+extern int perfmon_init(int nrThreads, const int* threadsToCpu) __attribute__ ((visibility ("default") ));
 
 /*! \brief Initialize performance monitoring maps
 
@@ -725,7 +725,7 @@ The eventname, countername and options are checked if they are available.
 @param [in] eventCString Event string
 @return Returns the ID of the new eventSet
 */
-extern int perfmon_addEventSet(char* eventCString) __attribute__ ((visibility ("default") ));
+extern int perfmon_addEventSet(const char* eventCString) __attribute__ ((visibility ("default") ));
 /*! \brief Setup all performance monitoring counters of an eventSet
 
 A event string looks like Eventname:Countername(:Option1:Option2:...),...
@@ -975,7 +975,7 @@ extern int perfmon_getThreadsOfRegion(int region) __attribute__ ((visibility ("d
 /*! \brief Get the cpulist of a region
 @param [in] region ID of region
 @param [in] count Length of cpulist array
-@param [in] cpulist cpulist array
+@param [in] cpulist cpulist array  // TODO: out?
 @return Number of threads of region or count, whatever is lower
 */
 extern int perfmon_getCpulistOfRegion(int region, int count, int* cpulist)  __attribute__ ((visibility ("default") ));
@@ -1042,13 +1042,13 @@ extern void timer_init( void ) __attribute__ ((visibility ("default") ));
 @param [in] time Structure holding the cycle count at start and stop
 @return Time in seconds
 */
-extern double timer_print( TimerData* time) __attribute__ ((visibility ("default") ));
+extern double timer_print( const TimerData* time) __attribute__ ((visibility ("default") ));
 /*! \brief Return the measured interval in cycles
 
 @param [in] time Structure holding the cycle count at start and stop
 @return Time in cycles
 */
-extern uint64_t timer_printCycles( TimerData* time) __attribute__ ((visibility ("default") ));
+extern uint64_t timer_printCycles( const TimerData* time) __attribute__ ((visibility ("default") ));
 /*! \brief Reset values in TimerData
 
 @param [in] time Structure holding the cycle count at start and stop
@@ -1251,7 +1251,7 @@ extern int power_stop(PowerData_t data, int cpuId, PowerType type) __attribute__
 @param [in] data Data structure holding start and stop values for energy measurements
 @return Consumed energy in Joules
 */
-extern double power_printEnergy(PowerData* data) __attribute__ ((visibility ("default") ));
+extern double power_printEnergy(const PowerData* data) __attribute__ ((visibility ("default") ));
 /*! \brief Get energy Unit
 
 @param [in] domain RAPL domain ID
@@ -1345,7 +1345,7 @@ Sweeps (zeros) the memory of all NUMA nodes containing the CPUs in \a processorL
 @param [in] processorList List of CPU IDs
 @param [in] numberOfProcessors Number of CPUs in list
 */
-extern void memsweep_threadGroup(int* processorList, int numberOfProcessors) __attribute__ ((visibility ("default") ));
+extern void memsweep_threadGroup(const int* processorList, int numberOfProcessors) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 /*

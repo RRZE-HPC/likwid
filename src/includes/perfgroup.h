@@ -73,10 +73,10 @@ static char* groupFileSectionNames[5] = {
     "LONG"
 };
 
-extern int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** groupshort, char*** grouplong);
+extern int get_groups(const char* grouppath, const char* architecture, char*** groupnames, char*** groupshort, char*** grouplong);
 extern void return_groups(int groups, char** groupnames, char** groupshort, char** grouplong);
-extern int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* ginfo);
-extern int custom_group(char* eventStr, GroupInfo* ginfo);
+extern int read_group(const char* grouppath, const char* architecture, const char* groupname, GroupInfo* ginfo);
+extern int custom_group(const char* eventStr, GroupInfo* ginfo);
 extern char* get_eventStr(GroupInfo* ginfo);
 void put_eventStr(char* eventset);
 extern char* get_shortInfo(GroupInfo* ginfo);

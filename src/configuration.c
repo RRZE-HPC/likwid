@@ -304,7 +304,7 @@ int destroy_configuration(void)
     return 0;
 }
 
-int config_setGroupPath(char* path)
+int config_setGroupPath(const char* path)
 {
     int ret = 0;
     struct stat st;

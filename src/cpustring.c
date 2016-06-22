@@ -467,7 +467,7 @@ physical_done:
     return insert;
 }
 
-int cpustr_to_cpulist(char* cpustring, int* cpulist, int length)
+int cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
 {
     int insert = 0;
     int len = 0;
@@ -554,7 +554,7 @@ int cpustr_to_cpulist(char* cpustring, int* cpulist, int length)
     return insert;
 }
 
-int nodestr_to_nodelist(char* nodestr, int* nodes, int length)
+int nodestr_to_nodelist(const char* nodestr, int* nodes, int length)
 {
     int ret = 0;
     bstring prefix = bformat("M");
@@ -565,7 +565,7 @@ int nodestr_to_nodelist(char* nodestr, int* nodes, int length)
     return ret;
 }
 
-int sockstr_to_socklist(char* sockstr, int* sockets, int length)
+int sockstr_to_socklist(const char* sockstr, int* sockets, int length)
 {
     int ret = 0;
     bstring prefix = bformat("S");

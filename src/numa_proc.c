@@ -336,7 +336,7 @@ int proc_numa_init(void)
 }
 
 void 
-proc_numa_setInterleaved(int* processorList, int numberOfProcessors)
+proc_numa_setInterleaved(const int* processorList, int numberOfProcessors)
 {
     long i;
     int j;
