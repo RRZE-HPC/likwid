@@ -136,7 +136,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
     int firstpmcindex = -1;
     for (int i=0; i< perfmon_numCounters; i++)
     {
-        if (counter_map[i].type && firstpmcindex < 0)
+        if (counter_map[i].type == PMC && firstpmcindex < 0)
             firstpmcindex = i;
         if (biseqcstr(reg, counter_map[i].key))
         {
@@ -643,7 +643,9 @@ void perfmon_check_counter_map(int cpu_id)
     for (int i=0;i<perfmon_numCounters;i++)
     {
         if (counter_map[i].type == NOTYPE)
+        {
             continue;
+        }
         if (counter_map[i].type == PMC && startpmcindex < 0)
         {
             startpmcindex = i;
