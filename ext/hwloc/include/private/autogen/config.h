@@ -330,7 +330,7 @@
 #define HAVE_SYNC_BUILTINS 1
 
 /* Define to '1' if sysctl is present and usable */
-#define HAVE_SYSCTL 1
+/* #undef HAVE_SYSCTL */
 
 /* Define to '1' if sysctlbyname is present and usable */
 /* #undef HAVE_SYSCTLBYNAME */
@@ -359,7 +359,7 @@
 #define HAVE_SYS_STAT_H 1
 
 /* Define to 1 if you have the <sys/sysctl.h> header file. */
-#define HAVE_SYS_SYSCTL_H 1
+/* #undef HAVE_SYS_SYSCTL_H */
 
 /* Define to 1 if you have the <sys/time.h> header file. */
 #define HAVE_SYS_TIME_H 1
