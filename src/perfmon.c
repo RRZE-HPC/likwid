@@ -636,7 +636,11 @@ void perfmon_check_counter_map(int cpu_id)
     if (!HPMinitialized())
     {
         HPMinit();
-        HPMaddThread(cpu_id);
+        if (HPMaddThread(cpu_id) != 0)
+        {
+            ERROR_PLAIN_PRINT(Cannot check counters without access to performance counters)
+            return;
+        }
         own_hpm = 1;
     }
     int startpmcindex = -1;

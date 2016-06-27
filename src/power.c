@@ -107,7 +107,12 @@ power_init(int cpuId)
     if (!HPMinitialized())
     {
         HPMinit();
-        HPMaddThread(cpuId);
+        err = HPMaddThread(cpuId);
+        if (err != 0)
+        {
+            ERROR_PLAIN_PRINT(Cannot get access to RAPL counters)
+            return err;
+        }
     }
 
     if ( power_info.hasRAPL )

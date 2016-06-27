@@ -50,7 +50,8 @@ void thermal_init(int cpuId)
 {
     uint64_t flags=0ULL;
     HPMinit();
-    HPMaddThread(cpuId);
+    if (HPMaddThread(cpuId) < 0)
+        fprintf(stderr, "Cannot initialize access to registers on CPU %d\n", cpuId);
 
     if ( cpuid_hasFeature(TM2) )
     {

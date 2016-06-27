@@ -66,7 +66,11 @@
 #define CHECK_FILE_ERROR(func, msg)  \
     if ((func) == 0) { syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); }
 
-
+#define LOG_AND_EXIT_IF_ERROR(func, msg)  \
+    if ((func) < 0) {  \
+        syslog(LOG_ERR, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno)); \
+        exit(EXIT_FAILURE); \
+    }
 
 
 
@@ -965,7 +969,7 @@ int main(void)
     snprintf(filepath, sizeof(addr1.sun_path), "/tmp/likwid-%d", pid);
 
     /* get a socket */
-    EXIT_IF_ERROR(sockfd = socket(AF_LOCAL, SOCK_STREAM, 0), socket failed);
+    LOG_AND_EXIT_IF_ERROR(sockfd = socket(AF_LOCAL, SOCK_STREAM, 0), socket failed);
 
     /* initialize socket data structure */
     bzero(&addr1, sizeof(addr1));
@@ -978,9 +982,9 @@ int main(void)
     CHECK_ERROR(setfsuid(getuid()), setfsuid failed);
 
     /* bind and listen on socket */
-    EXIT_IF_ERROR(bind(sockfd, (SA*) &addr1, sizeof(addr1)), bind failed);
-    EXIT_IF_ERROR(listen(sockfd, 1), listen failed);
-    EXIT_IF_ERROR(chmod(filepath, S_IRUSR|S_IWUSR), chmod failed);
+    LOG_AND_EXIT_IF_ERROR(bind(sockfd, (SA*) &addr1, sizeof(addr1)), bind failed);
+    LOG_AND_EXIT_IF_ERROR(listen(sockfd, 1), listen failed);
+    LOG_AND_EXIT_IF_ERROR(chmod(filepath, S_IRUSR|S_IWUSR), chmod failed);
 
     socklen = sizeof(addr1);
 
@@ -1196,7 +1200,7 @@ LOOP:
             dRecord.errorcode = ERR_UNKNOWN;
         }
 
-        EXIT_IF_ERROR(write(connfd, (void*) &dRecord, sizeof(AccessDataRecord)), write failed);
+        LOG_AND_EXIT_IF_ERROR(write(connfd, (void*) &dRecord, sizeof(AccessDataRecord)), write failed);
     }
 
     /* never reached */

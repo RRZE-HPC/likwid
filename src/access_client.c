@@ -192,6 +192,12 @@ int access_client_init(int cpu_id)
     {
         pthread_mutex_lock(&cpuLocks[cpu_id]);
         cpuSockets[cpu_id] = access_client_startDaemon(cpu_id);
+        if (cpuSockets[cpu_id] < 0)
+        {
+            ERROR_PRINT(Start of access daemon failed for CPU %d, cpu_id);
+            pthread_mutex_unlock(&cpuLocks[cpu_id]);
+            return -EREMOTEIO;
+        }
         cpuSockets_open++;
         pthread_mutex_unlock(&cpuLocks[cpu_id]);
         if (globalSocket == -1)

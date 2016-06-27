@@ -235,12 +235,17 @@ cpuFeatures_init()
     if (!HPMinitialized())
     {
         HPMinit();
-        
-    }
-    for (i = 0; i < cpuid_topology.numHWThreads; i++)
-    {
-        HPMaddThread(cpuid_topology.threadPool[i].apicId);
-        cpuFeatures_update(cpuid_topology.threadPool[i].apicId);
+    
+        for (i = 0; i < cpuid_topology.numHWThreads; i++)
+        {
+            i = HPMaddThread(cpuid_topology.threadPool[i].apicId);
+            if (i != 0)
+            {
+                ERROR_PRINT(Cannot get access to register CPU feature register on CPU %d, cpuid_topology.threadPool[i].apicId);
+                return;
+            }
+            cpuFeatures_update(cpuid_topology.threadPool[i].apicId);
+        }
     }
 
     
