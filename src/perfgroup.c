@@ -182,8 +182,6 @@ int get_groups(const char* grouppath, const char* architecture, char*** groupnam
     }
     for (j=0; j < i; j++)
     {
-        (*grouplong)[i] == NULL;  // TODO: no effect?
-        (*groupshort)[i] == NULL;
         (*groupnames)[j] = malloc((s+1) * sizeof(char));
         if ((*groupnames)[j] == NULL)
         {
