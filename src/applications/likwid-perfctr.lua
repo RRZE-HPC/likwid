@@ -35,7 +35,7 @@ package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 local likwid = require("likwid")
 
 print_stdout = print
-print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
+print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end io.stderr:flush() end
 
 local function version()
     print_stdout(string.format("likwid-perfctr --  Version %d.%d",likwid.version,likwid.release))
@@ -754,52 +754,57 @@ if use_wrapper or use_timeline then
 
     if not pid then
         print_stderr("Failed to execute command: ".. execString)
-    end
-    start = likwid.startClock()
-    groupTime[activeGroup] = 0
-    while true do
-        if likwid.getSignalState() ~= 0 then
-            likwid.killProgram()
-            break
-        end
-        local remain = likwid.sleep(duration)
-        exitvalue = likwid.checkProgram(pid)
-        if remain > 0 or exitvalue >= 0 then
-            io.stdout:flush()
-            break
-        end
-        if use_timeline == true then
-            stop = likwid.stopClock()
-            likwid.readCounters()
-            
-            local time = likwid.getClock(start, stop)
-            if likwid.getNumberOfMetrics(activeGroup) == 0 then
-                results = likwid.getLastResults()
-            else
-                results = likwid.getLastMetrics()
+        likwid.putTopology()
+        likwid.putNumaInfo()
+        likwid.putConfiguration()
+        os.exit(1)
+    else
+        start = likwid.startClock()
+        groupTime[activeGroup] = 0
+        while true do
+            if likwid.getSignalState() ~= 0 then
+                likwid.killProgram()
+                break
             end
-            str = tostring(math.tointeger(activeGroup)) .. " "..tostring(#results[activeGroup]).." "..tostring(#cpulist).." "..tostring(time)
-            for i,l1 in pairs(results[activeGroup]) do
-                for j, value in pairs(l1) do
-                    str = str .. " " .. tostring(value)
+            local remain = likwid.sleep(duration)
+            exitvalue = likwid.checkProgram(pid)
+            if remain > 0 or exitvalue >= 0 then
+                io.stdout:flush()
+                break
+            end
+            if use_timeline == true then
+                stop = likwid.stopClock()
+                likwid.readCounters()
+                
+                local time = likwid.getClock(start, stop)
+                if likwid.getNumberOfMetrics(activeGroup) == 0 then
+                    results = likwid.getLastResults()
+                else
+                    results = likwid.getLastMetrics()
                 end
+                str = tostring(math.tointeger(activeGroup)) .. " "..tostring(#results[activeGroup]).." "..tostring(#cpulist).." "..tostring(time)
+                for i,l1 in pairs(results[activeGroup]) do
+                    for j, value in pairs(l1) do
+                        str = str .. " " .. tostring(value)
+                    end
+                end
+                io.stderr:write(str.."\n")
+                groupTime[activeGroup] = time
+            else
+                likwid.readCounters()
             end
-            io.stderr:write(str.."\n")
-            groupTime[activeGroup] = time
-        else
-            likwid.readCounters()
-        end
-        if #group_ids > 1 then
-            likwid.switchGroup(activeGroup + 1)
-            activeGroup = likwid.getIdOfActiveGroup()
-            if groupTime[activeGroup] == nil then
-                groupTime[activeGroup] = 0
+            if #group_ids > 1 then
+                likwid.switchGroup(activeGroup + 1)
+                activeGroup = likwid.getIdOfActiveGroup()
+                if groupTime[activeGroup] == nil then
+                    groupTime[activeGroup] = 0
+                end
+                nr_events = likwid.getNumberOfEvents(activeGroup)
             end
-            nr_events = likwid.getNumberOfEvents(activeGroup)
+            
         end
-        
+        stop = likwid.stopClock()
     end
-    stop = likwid.stopClock()
 elseif use_stethoscope then
     local ret = likwid.startCounters()
     if ret < 0 then
