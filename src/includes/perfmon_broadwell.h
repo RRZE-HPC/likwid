@@ -1134,6 +1134,14 @@ int perfmon_setupCounterThread_broadwell(
                 break;
         }
     }
+    for (int i=UNCORE;i<NUM_UNITS;i++)
+    {
+        if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(i))) && box_map[i].ctrlRegister != 0x0)
+        {
+            VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, CLEAR_UNCORE_BOX_CTRL);
+            HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
+        }
+    }
     if (fixed_flags > 0x0ULL)
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_FIXED_CTR_CTRL, LLU_CAST fixed_flags, SETUP_FIXED)

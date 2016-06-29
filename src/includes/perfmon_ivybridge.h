@@ -50,6 +50,11 @@ int ivb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int ivbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int (*ivy_cbox_setup)(int, RegisterIndex, PerfmonEvent*);
 
+int ivb_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    return 0;
+}
+
 int perfmon_init_ivybridge(int cpu_id)
 {
     int ret;
@@ -57,17 +62,21 @@ int perfmon_init_ivybridge(int cpu_id)
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
     HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL);
-    ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
-    ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, &data);
-    ret += HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
-    ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, &data);
+    
     if ((cpuid_info.model == IVYBRIDGE_EP))
     {
         ivy_cbox_setup = ivbep_cbox_setup;
     }
-    else if ((ret == 0) && (data == 0x0ULL))
+    else
     {
-        ivy_cbox_setup = ivb_cbox_setup;
+        ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
+        ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, &data);
+        ret += HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
+        ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, &data);
+        if ((ret == 0) && (data == 0x0ULL))
+            ivy_cbox_setup = ivb_cbox_setup;
+        else
+            ivy_cbox_setup = ivb_cbox_nosetup;
     }
     return 0;
 }
@@ -727,7 +736,7 @@ int perfmon_setupCounterThread_ivybridge(
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
-        switch (eventSet->events[i].type)
+        switch (type)
         {
             case PMC:
                 ivb_pmc_setup(cpu_id, index, event);
@@ -752,6 +761,7 @@ int perfmon_setupCounterThread_ivybridge(
             case RBOX0:
             case RBOX1:
                 ivb_pci_box_setup(cpu_id, index, event);
+                
                 break;
 
             case BBOX0:
@@ -816,6 +826,14 @@ int perfmon_setupCounterThread_ivybridge(
 
             default:
                 break;
+        }
+    }
+    for (int i=UNCORE;i<NUM_UNITS;i++)
+    {
+        if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(i))) && box_map[i].ctrlRegister != 0x0)
+        {
+            VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, CLEAR_UNCORE_BOX_CTRL);
+            HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
         }
     }
     if (fixed_flags > 0x0)
