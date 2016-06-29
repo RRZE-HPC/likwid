@@ -975,7 +975,7 @@ extern int perfmon_getThreadsOfRegion(int region) __attribute__ ((visibility ("d
 /*! \brief Get the cpulist of a region
 @param [in] region ID of region
 @param [in] count Length of cpulist array
-@param [in] cpulist cpulist array  // TODO: out?
+@param [in,out] cpulist cpulist array
 @return Number of threads of region or count, whatever is lower
 */
 extern int perfmon_getCpulistOfRegion(int region, int count, int* cpulist)  __attribute__ ((visibility ("default") ));
