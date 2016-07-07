@@ -151,7 +151,7 @@ memsweep_domain(int domainId)
 }
 
 void
-memsweep_threadGroup(int* processorList, int numberOfProcessors)
+memsweep_threadGroup(const int* processorList, int numberOfProcessors)
 {
     for (uint32_t i=0; i<numa_info.numberOfNodes; i++)
     {

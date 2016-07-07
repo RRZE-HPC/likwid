@@ -1217,7 +1217,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
 
 int
-perfmon_init(int nrThreads, int threadsToCpu[])
+perfmon_init(int nrThreads, const int* threadsToCpu)
 {
     int i;
     int ret;
@@ -1382,7 +1382,7 @@ perfmon_finalize(void)
 }
 
 int
-perfmon_addEventSet(char* eventCString)
+perfmon_addEventSet(const char* eventCString)
 {
     int i, j, err;
     bstring eventBString;

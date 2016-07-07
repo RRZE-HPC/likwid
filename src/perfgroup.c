@@ -56,7 +56,7 @@ int isdir(char* dirname)
     return S_ISDIR(st.st_mode) ? 1 : 0;
 }
 
-int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** groupshort, char*** grouplong)
+int get_groups(const char* grouppath, const char* architecture, char*** groupnames, char*** groupshort, char*** grouplong)
 {
     int i = 0, j = 0, s = 0;
     int fsize = 0, hsize = 0;
@@ -182,8 +182,6 @@ int get_groups(char* grouppath, char* architecture, char*** groupnames, char*** 
     }
     for (j=0; j < i; j++)
     {
-        (*grouplong)[i] == NULL;
-        (*groupshort)[i] == NULL;
         (*groupnames)[j] = malloc((s+1) * sizeof(char));
         if ((*groupnames)[j] == NULL)
         {
@@ -439,7 +437,7 @@ void return_groups(int groups, char** groupnames, char** groupshort, char** grou
 
 
 
-int custom_group(char* eventStr, GroupInfo* ginfo)
+int custom_group(const char* eventStr, GroupInfo* ginfo)
 {
     int i, j;
     int err = 0;
@@ -610,7 +608,7 @@ cleanup:
     return err;
 }
 
-int read_group(char* grouppath, char* architecture, char* groupname, GroupInfo* ginfo)
+int read_group(const char* grouppath, const char* architecture, const char* groupname, GroupInfo* ginfo)
 {
     FILE* fp;
     int i, s, e, err = 0;
