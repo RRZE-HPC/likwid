@@ -30,6 +30,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #include <likwid.h>
 
@@ -43,13 +44,16 @@ static int cpulist_sort(int* incpus, int* outcpus, int length)
     {
         return -1;
     }
-    for (int off=0;off < cpuid_topology->numThreadsPerCore;off++)
+    int inner_loop = ceil((double)length/cpuid_topology->numThreadsPerCore);
+    for (int off = 0; off < cpuid_topology->numThreadsPerCore; off++)
     {
-        for (int i=0; i<length/cpuid_topology->numThreadsPerCore;i++)
+        for (int i = 0; i < inner_loop; i++)
         {
             outcpus[insert] = incpus[(i*cpuid_topology->numThreadsPerCore)+off];
             insert++;
         }
+        if (insert == length)
+            break;
     }
     return insert;
 }
@@ -296,6 +300,7 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
         bdestroy(blist);
         return -ENOMEM;
     }
+
     int ret = cpulist_sort(affinity->domains[domainidx].processorList, inlist, affinity->domains[domainidx].numberOfProcessors);
 
     strlist = bsplit(blist, ',');
@@ -336,7 +341,7 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
         }
         else
         {
-            cpulist[insert] = inlist[atoi(bdata(strlist->entry[i]))];
+            cpulist[insert] = inlist[atoi(bdata(strlist->entry[i])) % ret];
             insert++;
             if (insert == length)
             {

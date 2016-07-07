@@ -366,7 +366,7 @@ if num_cpus > 0 then
         for j, cpu2 in pairs(cpulist) do
             if i ~= j and cpu1 == cpu2 then
                 print_stderr("List of CPUs is not unique, got two times CPU " .. tostring(cpu1))
-                if likwid.access(outfile..".tmp", "e") == 0 then
+                if outfile and likwid.access(outfile..".tmp", "e") == 0 then
                     os.remove(outfile..".tmp")
                 end
                 os.exit(1)
