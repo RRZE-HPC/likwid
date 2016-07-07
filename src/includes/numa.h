@@ -47,7 +47,7 @@ extern int str2int(const char* str);
 
 struct numa_functions {
     int (*numa_init) (void);
-    void (*numa_setInterleaved) (int*, int);
+    void (*numa_setInterleaved) (const int*, int);
     void (*numa_membind) (void*, size_t, int);
 };
 

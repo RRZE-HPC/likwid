@@ -167,7 +167,7 @@ static void _timer_stop( TimerData* time )
 #endif
 }
 
-static uint64_t _timer_printCycles( TimerData* time )
+static uint64_t _timer_printCycles( const TimerData* time )
 {
     /* clamp to zero if something goes wrong */
     if (((time->stop.int64-baseline) < time->start.int64) ||
@@ -182,7 +182,7 @@ static uint64_t _timer_printCycles( TimerData* time )
 }
 
 /* Return time duration in seconds */
-static double _timer_print( TimerData* time )
+static double _timer_print( const TimerData* time )
 {
     uint64_t cycles;
     /* clamp to zero if something goes wrong */
@@ -323,7 +323,7 @@ void timer_init( void )
     timer_initialized = 1;
 }
 
-uint64_t timer_printCycles( TimerData* time )
+uint64_t timer_printCycles( const TimerData* time )
 {
     if (timer_initialized != 1)
     {
@@ -334,7 +334,7 @@ uint64_t timer_printCycles( TimerData* time )
 }
 
 /* Return time duration in seconds */
-double timer_print( TimerData* time )
+double timer_print( const TimerData* time )
 {
     uint64_t cycles;
     if (timer_initialized != 1)

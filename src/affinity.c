@@ -461,7 +461,7 @@ affinity_pinProcess(int processorId)
 }
 
 void
-affinity_pinProcesses(int cpu_count, int* processorIds)
+affinity_pinProcesses(int cpu_count, const int* processorIds)
 {
     int i;
     cpu_set_t cpuset;

@@ -102,7 +102,7 @@ empty_numa_init()
 }
 
 void 
-empty_numa_setInterleaved(int* processorList, int numberOfProcessors)
+empty_numa_setInterleaved(const int* processorList, int numberOfProcessors)
 {
     printf("MEMPOLICY NOT supported in kernel!\n");
     return;
@@ -171,7 +171,7 @@ int numa_init(void)
     return ret;
 }
 
-void numa_setInterleaved(int* processorList, int numberOfProcessors)
+void numa_setInterleaved(const int* processorList, int numberOfProcessors)
 {
     const struct numa_functions funcs = numa_funcs;
     return funcs.numa_setInterleaved(processorList, numberOfProcessors);

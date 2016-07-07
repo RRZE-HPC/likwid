@@ -39,8 +39,8 @@
 
 
 extern void timer_init( void );
-extern double timer_print( TimerData* );
-extern uint64_t timer_printCycles( TimerData* );
+extern double timer_print( const TimerData* );
+extern uint64_t timer_printCycles( const TimerData* );
 extern uint64_t timer_getCpuClock( void );
 extern uint64_t timer_getCpuClockCurrent( int cpu_id );
 extern uint64_t timer_getCycleClock( void );
