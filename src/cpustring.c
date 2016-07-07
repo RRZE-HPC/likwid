@@ -288,7 +288,14 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
     }
     if (domainidx < 0)
     {
-        fprintf(stderr, "Cannot find domain %s\n", bdata(bdomain));
+        fprintf(stderr, "ERROR: Cannot find domain %s\n", bdata(bdomain));
+        bdestroy(bdomain);
+        bdestroy(blist);
+        return 0;
+    }
+    if (length > affinity->domains[domainidx].numberOfProcessors)
+    {
+        fprintf(stderr, "ERROR: CPU string %s cannot be evaluated, domain %s has not suffcient CPUs (available CPUs: %d)\n", bdata(bcpustr), bdata(bdomain), affinity->domains[domainidx].numberOfProcessors);
         bdestroy(bdomain);
         bdestroy(blist);
         return 0;
