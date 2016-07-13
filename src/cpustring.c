@@ -264,7 +264,7 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
     struct bstrList* strlist;
     if (bstrchrp(bcpustr, 'L', 0) != 0)
     {
-        fprintf(stderr, "Not a valid CPU expression\n");
+        fprintf(stderr, "ERROR: Not a valid CPU expression\n");
         return 0;
     }
 
@@ -293,13 +293,7 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
         bdestroy(blist);
         return 0;
     }
-    if (length > affinity->domains[domainidx].numberOfProcessors)
-    {
-        fprintf(stderr, "ERROR: CPU string %s cannot be evaluated, domain %s has not suffcient CPUs (available CPUs: %d)\n", bdata(bcpustr), bdata(bdomain), affinity->domains[domainidx].numberOfProcessors);
-        bdestroy(bdomain);
-        bdestroy(blist);
-        return 0;
-    }
+
     int *inlist = malloc(affinity->domains[domainidx].numberOfProcessors * sizeof(int));
     if (inlist == NULL)
     {
@@ -312,6 +306,10 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
 
     strlist = bsplit(blist, ',');
     int insert = 0;
+    int insert_offset = 0;
+    int inlist_offset = 0;
+    int inlist_idx = 0;
+    int require = 0;
     for (int i=0; i< strlist->qty; i++)
     {
         if (bstrchrp(strlist->entry[i], '-', 0) != BSTR_ERR)
@@ -320,27 +318,61 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
             indexlist = bsplit(strlist->entry[i], '-');
             if (atoi(bdata(indexlist->entry[0])) <= atoi(bdata(indexlist->entry[1])))
             {
-                for (int j=atoi(bdata(indexlist->entry[0])); j<=atoi(bdata(indexlist->entry[1]));j++)
+                require += atoi(bdata(indexlist->entry[1])) - atoi(bdata(indexlist->entry[0])) + 1;
+            }
+            else
+            {
+                require += atoi(bdata(indexlist->entry[0])) - atoi(bdata(indexlist->entry[1])) + 1;
+            }
+        }
+        else
+        {
+            require++;
+        }
+    }
+    if (require > ret && getenv("LIKWID_SILENT") == NULL)
+    {
+        fprintf(stderr, "WARN: Selected affinity domain %s has only %d hardware threads, but selection string evaluates to %d threads.\n", bdata(affinity->domains[domainidx].tag), ret, require);
+        fprintf(stderr, "      This results in multiple threads on the same hardware thread.\n");
+    }
+logical_redo:
+    for (int i=0; i< strlist->qty; i++)
+    {
+        if (bstrchrp(strlist->entry[i], '-', 0) != BSTR_ERR)
+        {
+            struct bstrList* indexlist;
+            indexlist = bsplit(strlist->entry[i], '-');
+            if (atoi(bdata(indexlist->entry[0])) <= atoi(bdata(indexlist->entry[1])))
+            {
+                for (int j=atoi(bdata(indexlist->entry[0])); j<=atoi(bdata(indexlist->entry[1])) && (insert_offset+insert < require);j++)
                 {
-                    cpulist[insert] = inlist[j];
+                    cpulist[insert_offset + insert] = inlist[inlist_idx % ret];
                     insert++;
-                    if (insert == length)
+                    inlist_idx++;
+                    if (insert == ret)
                     {
                         bstrListDestroy(indexlist);
-                        goto logical_done;
+                        if (insert == require)
+                            goto logical_done;
+                        else
+                            goto logical_redo;
                     }
                 }
             }
             else
             {
-                for (int j=atoi(bdata(indexlist->entry[0])); j>=atoi(bdata(indexlist->entry[1]));j--)
+                for (int j=atoi(bdata(indexlist->entry[0])); j>=atoi(bdata(indexlist->entry[1])) && (insert_offset+insert < require);j--)
                 {
-                    cpulist[insert] = inlist[j];
+                    cpulist[insert_offset + insert] = inlist[inlist_idx % ret];
                     insert++;
-                    if (insert == length)
+                    inlist_idx++;
+                    if (insert == ret)
                     {
                         bstrListDestroy(indexlist);
-                        goto logical_done;
+                        if (insert == require)
+                            goto logical_done;
+                        else
+                            goto logical_redo;
                     }
                 }
             }
@@ -348,11 +380,14 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
         }
         else
         {
-            cpulist[insert] = inlist[atoi(bdata(strlist->entry[i])) % ret];
+            cpulist[insert_offset + insert] = inlist[atoi(bdata(strlist->entry[i])) % ret];
             insert++;
-            if (insert == length)
+            if (insert == ret)
             {
-                goto logical_done;
+                if (insert == require)
+                    goto logical_done;
+                else
+                    goto logical_redo;
             }
         }
     }
@@ -361,7 +396,7 @@ logical_done:
     bdestroy(blist);
     bstrListDestroy(strlist);
     free(inlist);
-    return insert;
+    return require;
 }
 
 
