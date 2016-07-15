@@ -229,11 +229,11 @@ void hwloc_init_nodeTopology(cpu_set_t cpuSet)
             hwThreadPool[id].packageId = 0;
         }
         DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Socket %d inCpuSet %d,
-                            hwThreadPool[i].apicId,
-                            hwThreadPool[i].threadId,
-                            hwThreadPool[i].coreId,
-                            hwThreadPool[i].packageId,
-                            hwThreadPool[i].inCpuSet)
+                            hwThreadPool[id].apicId,
+                            hwThreadPool[id].threadId,
+                            hwThreadPool[id].coreId,
+                            hwThreadPool[id].packageId,
+                            hwThreadPool[id].inCpuSet)
     }
 
     cpuid_topology.threadPool = hwThreadPool;
