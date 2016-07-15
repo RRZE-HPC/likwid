@@ -70,6 +70,7 @@ int get_groups(const char* grouppath, const char* architecture, char*** groupnam
     int search_home = 0;
     bstring SHORT = bformat("SHORT");
     bstring LONG = bformat("LONG");
+    const_bstring REQUIRE = bformat("REQUIRE_NOHT");
     int read_long = 0;
     if ((grouppath == NULL)||(architecture == NULL)||(groupnames == NULL))
         return -EINVAL;
@@ -200,6 +201,7 @@ int get_groups(const char* grouppath, const char* architecture, char*** groupnam
     }
     dp = opendir(fullpath);
     i = 0;
+    int skip_group = 0;
     
     while (ep = readdir(dp))
     {
@@ -270,6 +272,13 @@ int get_groups(const char* grouppath, const char* architecture, char*** groupnam
                         bstrListDestroy(linelist);
                         bdestroy(sinfo);
                     }
+                    else if (bstrncmp(bbuf, REQUIRE, blength(REQUIRE)) == 0)
+                    {
+                        if (cpuid_topology.numThreadsPerCore > 1)
+                        {
+                            skip_group = 1;
+                        }
+                    }
                     else if (bstrncmp(bbuf, LONG, 4) == 0)
                     {
                         read_long = 1;
@@ -292,11 +301,19 @@ int get_groups(const char* grouppath, const char* architecture, char*** groupnam
                     }
                 }
                 fclose(fp);
-                
+                if (skip_group)
+                {
+                    free((*groupshort)[i]);
+                    free((*grouplong)[i]);
+                    (*groupnames)[i][0] = '\0';
+                    goto skip_cur_def_group;
+                }
                 i++;
             }
             bdestroy(long_info);
         }
+skip_cur_def_group:
+        skip_group = 0;
     }
     closedir(dp);
     if (!search_home)
@@ -379,6 +396,14 @@ int get_groups(const char* grouppath, const char* architecture, char*** groupnam
                             bstrListDestroy(linelist);
                             bdestroy(sinfo);
                         }
+                        else if (bstrncmp(bbuf, REQUIRE, blength(REQUIRE)) == 0)
+                        {
+                            if (cpuid_topology.numThreadsPerCore > 1)
+                            {
+                                skip_group = 1;
+                                
+                            }
+                        }
                         else if (bstrncmp(bbuf, LONG, 4) == 0)
                         {
                             read_long = 1;
@@ -401,10 +426,21 @@ int get_groups(const char* grouppath, const char* architecture, char*** groupnam
                         }
                     }
                     fclose(fp);
+                    if (skip_group)
+                    {
+                        if ((*groupshort)[i])
+                            free((*groupshort)[i]);
+                        if ((*grouplong)[i])
+                            free((*grouplong)[i]);
+                        (*groupnames)[i][0] = '\0';
+                        goto skip_cur_home_group;
+                    }
                     i++;
                 }
                 bdestroy(long_info);
             }
+skip_cur_home_group:
+        skip_group = 0;
         }
         closedir(dp);
     }
@@ -614,6 +650,7 @@ int read_group(const char* grouppath, const char* architecture, const char* grou
     int i, s, e, err = 0;
     char buf[512];
     GroupFileSections sec = GROUP_NONE;
+    const_bstring REQUIRE = bformat("REQUIRE_NOHT");
     if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL))
         return -EINVAL;
 
@@ -680,6 +717,15 @@ int read_group(const char* grouppath, const char* architecture, const char* grou
             }
             ginfo->shortinfo = malloc(strlen(&(buf[i])) * sizeof(char));
             sprintf(ginfo->shortinfo, "%.*s", (int)strlen(&(buf[i]))-1, &(buf[i]));
+            continue;
+        }
+        else if (strncmp(bdata(REQUIRE), buf, blength(REQUIRE)) == 0)
+        {
+            if (cpuid_topology.numThreadsPerCore > 1)
+            {
+                err = -ENODEV;
+                goto cleanup;
+            }
             continue;
         }
         else if (strncmp(groupFileSectionNames[GROUP_EVENTSET], buf, strlen(groupFileSectionNames[GROUP_EVENTSET])) == 0)
@@ -945,6 +991,15 @@ cleanup:
                 free(ginfo->metricnames[i]);
         }
     }
+    /*ginfo->shortinfo = NULL;
+    ginfo->nevents = 0;
+    ginfo->events = NULL;
+    ginfo->counters = NULL;
+    ginfo->nmetrics = 0;
+    ginfo->metricformulas = NULL;
+    ginfo->metricnames = NULL;
+    ginfo->longinfo = NULL;
+    ginfo->groupname = NULL;*/
     return err;
 }
 

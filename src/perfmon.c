@@ -1460,7 +1460,17 @@ perfmon_addEventSet(const char* eventCString)
         err = read_group(config->groupPath, cpuid_info.short_name,
                          eventCString,
                          &groupSet->groups[groupSet->numberOfActiveGroups].group);
-        if (err)
+        if (err == -EACCES)
+        {
+            ERROR_PRINT(Access to performance group %s not allowed, eventCString);
+            return err;
+        }
+        else if (err == -ENODEV)
+        {
+            ERROR_PRINT(Performance group %s only available with deactivated HyperThreading, eventCString);
+            return err;
+        }
+        else if (err < 0)
         {
             ERROR_PRINT(Cannot read performance group %s, eventCString);
             return err;
@@ -2717,9 +2727,11 @@ int perfmon_readMarkerFile(const char* filename)
 {
     FILE* fp = NULL;
     int i = 0;
+    int ret = 0;
     char buf[2048];
     buf[0] = '\0';
     char *ptr = NULL;
+    int nr_regions = 0;
     int cpus = 0, groups = 0, regions = 0;
     
     if (filename == NULL)
@@ -2736,7 +2748,12 @@ int perfmon_readMarkerFile(const char* filename)
         fprintf(stderr, "Error opening file %s\n", filename);
     }
     ptr = fgets(buf, sizeof(buf), fp);
-    sscanf(buf, "%d %d %d", &cpus, &regions, &groups);
+    ret = sscanf(buf, "%d %d %d", &cpus, &regions, &groups);
+    if (ret != 3)
+    {
+        fprintf(stderr, "Marker file missformatted.\n");
+        return -EINVAL;
+    }
     //markerResults = malloc(regions * sizeof(LikwidResults));
     markerResults = realloc(markerResults, regions * sizeof(LikwidResults));
     if (markerResults == NULL)
@@ -2785,13 +2802,25 @@ int perfmon_readMarkerFile(const char* filename)
     {
         if (strchr(buf,':'))
         {
-            int regionid = 0, groupid = 0;
+            int regionid = 0, groupid = -1;
             char regiontag[100];
+            char* ptr = NULL;
+            char* colonptr = NULL;
             regiontag[0] = '\0';
-            sscanf(buf, "%d:%s-%d", &regionid, regiontag, &groupid);
-            snprintf(regiontag, strlen(buf)-4, "%s", &(buf[2]));
+            ret = sscanf(buf, "%d:%s", &regionid, regiontag);
+
+            ptr = strchr(regiontag,'-');
+            colonptr = strchr(buf,':');
+            if (ret != 2 || ptr == NULL || colonptr == NULL)
+            {
+                fprintf(stderr, "Line %s not a valid region description\n", buf);
+                continue;
+            }
+            groupid = atoi(ptr+1);
+            snprintf(regiontag, strlen(regiontag)-strlen(ptr)+1, "%s", &(buf[colonptr-buf+1]));
             markerResults[regionid].groupID = groupid;
             markerResults[regionid].tag = bfromcstr(regiontag);
+            nr_regions++;
         }
         else
         {
@@ -2800,7 +2829,12 @@ int perfmon_readMarkerFile(const char* filename)
             double time = 0;
             char remain[1024];
             remain[0] = '\0';
-            sscanf(buf, "%d %d %d %d %lf %d %[^\t\n]", &regionid, &groupid, &cpu, &count, &time, &nevents, remain);
+            ret = sscanf(buf, "%d %d %d %d %lf %d %[^\t\n]", &regionid, &groupid, &cpu, &count, &time, &nevents, remain);
+            if (ret != 7)
+            {
+                fprintf(stderr, "Line %s not a valid region values line\n", buf);
+                continue;
+            }
             if (cpu >= 0)
             {
                 cpuidx = regionCPUs[regionid];
@@ -2828,7 +2862,7 @@ int perfmon_readMarkerFile(const char* filename)
     }
     free(regionCPUs);
     fclose(fp);
-    return 0;
+    return nr_regions;
 }
 
 void perfmon_destroyMarkerResults()

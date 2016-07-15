@@ -979,7 +979,12 @@ likwid.getLastMetrics = getLastMetrics
 
 local function getMarkerResults(filename, cpulist)
     local cpuinfo = likwid.getCpuInfo()
-    likwid.readMarkerFile(filename)
+    local ret = likwid.readMarkerFile(filename)
+    if ret < 0 then
+        return nil, nil
+    elseif ret == 0 then
+        return {}, {}
+    end
     results = {}
     metrics = {}
     for i=1, likwid.markerNumRegions() do

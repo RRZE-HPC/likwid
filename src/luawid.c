@@ -255,7 +255,10 @@ static int lua_likwid_addEventSet(lua_State* L)
     luaL_argcheck(L, strlen(tmpString) > 0, n, "Event string must be larger than 0");
 
     groupId = perfmon_addEventSet((char*)tmpString);
-    lua_pushinteger(L, groupId+1);
+    if (groupId >= 0)
+        lua_pushinteger(L, groupId+1);
+    else
+        lua_pushinteger(L, groupId);
     return 1;
 }
 
@@ -2109,8 +2112,9 @@ static int lua_likwid_cpuFeatures_disable(lua_State* L)
 static int lua_likwid_markerFile_read(lua_State* L)
 {
     const char* filename = (const char*)luaL_checkstring(L, -1);
-    perfmon_readMarkerFile(filename);
-    return 0;
+    int ret = perfmon_readMarkerFile(filename);
+    lua_pushinteger(L, ret);
+    return 1;
 }
 
 static int lua_likwid_markerFile_destroy(lua_State* L)

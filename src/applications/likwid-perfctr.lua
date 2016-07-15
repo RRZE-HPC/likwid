@@ -840,15 +840,21 @@ end
 
 
 if use_marker == true then
-    results, metrics = likwid.getMarkerResults(markerFile, cpulist)
-    if #results == 0 then
-        print_stderr("No regions could be found in Marker API result file")
-    else
-        for r=1, #results do
-            likwid.printOutput(results[r], metrics[r], cpulist, r, print_stats)
+    if likwid.access(markerFile, "e") >= 0 then
+        results, metrics = likwid.getMarkerResults(markerFile, cpulist)
+        if not results then
+            print_stderr("Failure reading Marker API result file.")
+        elseif #results == 0 then
+            print_stderr("No regions could be found in Marker API result file.")
+        else
+            for r=1, #results do
+                likwid.printOutput(results[r], metrics[r], cpulist, r, print_stats)
+            end
         end
+        os.remove(markerFile)
+    else
+        print_stderr("Marker API result file does not exist. This may happen if the application has not called LIKWID_MARKER_CLOSE.")
     end
-    os.remove(markerFile)
 elseif use_timeline == false then
     results = likwid.getResults()
     metrics = likwid.getMetrics()
