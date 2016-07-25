@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,14 +28,18 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
 #include <likwid.h>
 
+/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static int cpulist_sort(int* incpus, int* outcpus, int length)
+static int
+cpulist_sort(int* incpus, int* outcpus, int length)
 {
     int insert = 0;
     topology_init();
@@ -58,7 +62,8 @@ static int cpulist_sort(int* incpus, int* outcpus, int length)
     return insert;
 }
 
-static int cpulist_concat(int* cpulist, int startidx, int* addlist, int addlength)
+static int
+cpulist_concat(int* cpulist, int startidx, int* addlist, int addlength)
 {
     int count = 0;
     if (addlength <= 0)
@@ -73,7 +78,8 @@ static int cpulist_concat(int* cpulist, int startidx, int* addlist, int addlengt
     return count;
 }
 
-static int cpu_in_domain(int domainidx, int cpu)
+static int
+cpu_in_domain(int domainidx, int cpu)
 {
     affinity_init();
     AffinityDomains_t affinity = get_affinityDomains();
@@ -87,7 +93,8 @@ static int cpu_in_domain(int domainidx, int cpu)
     return 0;
 }
 
-static int cpuexpr_to_list(bstring bcpustr, bstring prefix, int* list, int length)
+static int
+cpuexpr_to_list(bstring bcpustr, bstring prefix, int* list, int length)
 {
     topology_init();
     CpuTopology_t cpuid_topology = get_cpuTopology();
@@ -124,7 +131,8 @@ list_done:
     return insert;
 }
 
-static int cpustr_to_cpulist_scatter(bstring bcpustr, int* cpulist, int length)
+static int
+cpustr_to_cpulist_scatter(bstring bcpustr, int* cpulist, int length)
 {
     topology_init();
     CpuTopology_t cpuid_topology = get_cpuTopology();
@@ -177,7 +185,8 @@ scatter_done:
     return 0;
 }
 
-static int cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int length)
+static int
+cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int length)
 {
     topology_init();
     CpuTopology_t cpuid_topology = get_cpuTopology();
@@ -252,7 +261,8 @@ expression_done:
     return insert;
 }
 
-static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
+static int
+cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
 {
     topology_init();
     CpuTopology_t cpuid_topology = get_cpuTopology();
@@ -302,7 +312,8 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
         return -ENOMEM;
     }
 
-    int ret = cpulist_sort(affinity->domains[domainidx].processorList, inlist, affinity->domains[domainidx].numberOfProcessors);
+    int ret = cpulist_sort(affinity->domains[domainidx].processorList,
+            inlist, affinity->domains[domainidx].numberOfProcessors);
 
     strlist = bsplit(blist, ',');
     int insert = 0;
@@ -332,7 +343,9 @@ static int cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
     }
     if (require > ret && getenv("LIKWID_SILENT") == NULL)
     {
-        fprintf(stderr, "WARN: Selected affinity domain %s has only %d hardware threads, but selection string evaluates to %d threads.\n", bdata(affinity->domains[domainidx].tag), ret, require);
+        fprintf(stderr,
+                "WARN: Selected affinity domain %s has only %d hardware threads, but selection string evaluates to %d threads.\n",
+                bdata(affinity->domains[domainidx].tag), ret, require);
         fprintf(stderr, "      This results in multiple threads on the same hardware thread.\n");
     }
 logical_redo:
@@ -361,7 +374,8 @@ logical_redo:
             }
             else
             {
-                for (int j=atoi(bdata(indexlist->entry[0])); j>=atoi(bdata(indexlist->entry[1])) && (insert_offset+insert < require);j--)
+                for (int j=atoi(bdata(indexlist->entry[0]));
+                        j>=atoi(bdata(indexlist->entry[1])) && (insert_offset+insert < require); j--)
                 {
                     cpulist[insert_offset + insert] = inlist[inlist_idx % ret];
                     insert++;
@@ -399,9 +413,8 @@ logical_done:
     return require;
 }
 
-
-
-static int cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
+static int
+cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
 {
     topology_init();
     CpuTopology_t cpuid_topology = get_cpuTopology();
@@ -514,7 +527,10 @@ physical_done:
     return insert;
 }
 
-int cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+int
+cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
 {
     int insert = 0;
     int len = 0;
@@ -553,7 +569,9 @@ int cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
         }
         else if (cpuid_topology->activeHWThreads < cpuid_topology->numHWThreads)
         {
-            fprintf(stdout, "INFO: You are running LIKWID in a cpuset with %d CPUs, only logical numbering allowed\n", cpuid_topology->activeHWThreads);
+            fprintf(stdout,
+                    "INFO: You are running LIKWID in a cpuset with %d CPUs, only logical numbering allowed\n",
+                    cpuid_topology->activeHWThreads);
             if (((bstrchrp(strlist->entry[i], 'N', 0) == 0) ||
                 (bstrchrp(strlist->entry[i], 'S', 0) == 0) ||
                 (bstrchrp(strlist->entry[i], 'C', 0) == 0) ||
@@ -601,7 +619,8 @@ int cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
     return insert;
 }
 
-int nodestr_to_nodelist(const char* nodestr, int* nodes, int length)
+int
+nodestr_to_nodelist(const char* nodestr, int* nodes, int length)
 {
     int ret = 0;
     bstring prefix = bformat("M");
@@ -612,7 +631,8 @@ int nodestr_to_nodelist(const char* nodestr, int* nodes, int length)
     return ret;
 }
 
-int sockstr_to_socklist(const char* sockstr, int* sockets, int length)
+int
+sockstr_to_socklist(const char* sockstr, int* sockets, int length)
 {
     int ret = 0;
     bstring prefix = bformat("S");
@@ -622,3 +642,4 @@ int sockstr_to_socklist(const char* sockstr, int* sockets, int length)
     bdestroy(prefix);
     return ret;
 }
+

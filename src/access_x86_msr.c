@@ -16,7 +16,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -56,19 +56,23 @@
 #ifdef LIKWID_PROFILE_COUNTER_READ
 #include <timer.h>
 #endif
+
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
+
 #define MAX_LENGTH_MSR_DEV_NAME  20
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
+
 static int FD[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = -1 };
 static int rdpmc_works_pmc = -1;
 static int rdpmc_works_fixed = -1;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static inline int __rdpmc(int cpu_id, int counter, uint64_t* value)
+static inline int
+__rdpmc(int cpu_id, int counter, uint64_t* value)
 {
     unsigned low, high;
     cpu_set_t cpuset, current;
@@ -82,17 +86,20 @@ static inline int __rdpmc(int cpu_id, int counter, uint64_t* value)
     return 0;
 }
 
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
 //Needed for rdpmc check
-void segfault_sigaction(int signal, siginfo_t *si, void *arg)
+void
+segfault_sigaction(int signal, siginfo_t *si, void *arg)
 {
     exit(1);
 }
 
-int test_rdpmc(int cpu_id, uint64_t value, int flag)
+int
+test_rdpmc(int cpu_id, uint64_t value, int flag)
 {
     int ret;
     int pid;
-
 
     pid = fork();
 
@@ -115,23 +122,23 @@ int test_rdpmc(int cpu_id, uint64_t value, int flag)
             usleep(100);
         }
         exit(0);
-    } else {
+    }
+    else
+    {
         int status = 0;
         int waiting = 0;
         waiting = waitpid(pid, &status, 0);
         if ((waiting < 0) || (WEXITSTATUS(status) != 0))
         {
             ret = 0;
-        } else 
+        }
+        else
         {
             ret = 1;
         }
     }
     return ret;
 }
-
-/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
-
 
 int
 access_x86_msr_init(const int cpu_id)
@@ -146,7 +153,7 @@ access_x86_msr_init(const int cpu_id)
     }
     msr_file_name = (char*) malloc(MAX_LENGTH_MSR_DEV_NAME * sizeof(char));
     if (!msr_file_name)
-    {    
+    {
         return -ENOMEM;
     }
 
@@ -185,7 +192,7 @@ access_x86_msr_init(const int cpu_id)
     }
 
     sprintf(msr_file_name,"/dev/msr%d",cpu_id);
-    fd = open(msr_file_name, O_RDWR); 
+    fd = open(msr_file_name, O_RDWR);
     if (fd < 0)
     {
         sprintf(msr_file_name,"/dev/cpu/%d/msr",cpu_id);
@@ -218,7 +225,6 @@ access_x86_msr_finalize(const int cpu_id)
         FD[cpu_id] = 0;
     }
 }
-
 
 int
 access_x86_msr_read( const int cpu_id, uint32_t reg, uint64_t *data)
@@ -286,3 +292,4 @@ int access_x86_msr_check(PciDeviceIndex dev, int cpu_id)
     }
     return 0;
 }
+

@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,6 +28,8 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -41,7 +43,9 @@
 #include <topology_hwloc.h>
 #include <error.h>
 
-int 
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+int
 hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
 {
     int cntr = 0;
@@ -79,3 +83,4 @@ hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
 
     return 0;
 }
+

@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,6 +27,8 @@
  *
  * =======================================================================================
  */
+
+/* #####   HEADER FILE INCLUDES   ######################################### */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -52,18 +54,20 @@
 #include <access_x86.h>
 
 
+/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int registeredCpus = 0;
 static int registeredCpuList[MAX_NUM_THREADS] = { [0 ... (MAX_NUM_THREADS-1)] = 0 };
-
-
 static int (*access_read)(PciDeviceIndex dev, const int cpu, uint32_t reg, uint64_t *data) = NULL;
 static int (*access_write)(PciDeviceIndex dev, const int cpu, uint32_t reg, uint64_t data) = NULL;
 static int (*access_init) (int cpu_id) = NULL;
 static void (*access_finalize) (int cpu_id) = NULL;
 static int (*access_check) (PciDeviceIndex dev, int cpu_id) = NULL;
 
-void HPMmode(int mode)
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+void
+HPMmode(int mode)
 {
     if ((mode == ACCESSMODE_DIRECT) || (mode == ACCESSMODE_DAEMON))
     {
@@ -71,7 +75,8 @@ void HPMmode(int mode)
     }
 }
 
-int HPMinit(void)
+int
+HPMinit(void)
 {
     int ret = 0;
     if (access_init == NULL)
@@ -101,17 +106,18 @@ int HPMinit(void)
         }
 #endif
     }
-    
+
     return 0;
 }
 
-
-int HPMinitialized(void)
+int
+HPMinitialized(void)
 {
     return registeredCpus;
 }
 
-int HPMaddThread(int cpu_id)
+int
+HPMaddThread(int cpu_id)
 {
     int ret;
     if (registeredCpuList[cpu_id] == 0)
@@ -138,7 +144,8 @@ int HPMaddThread(int cpu_id)
     return 0;
 }
 
-void HPMfinalize()
+void
+HPMfinalize()
 {
     if (registeredCpus != 0)
     {
@@ -169,7 +176,8 @@ void HPMfinalize()
     return;
 }
 
-int HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
+int
+HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
 {
     uint64_t tmp = 0x0ULL;
     *data = 0x0ULL;
@@ -191,7 +199,8 @@ int HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
     return err;
 }
 
-int HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
+int
+HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
 {
     int err = 0;
     if (dev >= MAX_NUM_PCI_DEVICES)
@@ -211,7 +220,8 @@ int HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
     return err;
 }
 
-int HPMcheck(PciDeviceIndex dev, int cpu_id)
+int
+HPMcheck(PciDeviceIndex dev, int cpu_id)
 {
     if (registeredCpuList[cpu_id] == 0)
     {
@@ -219,3 +229,4 @@ int HPMcheck(PciDeviceIndex dev, int cpu_id)
     }
     return access_check(dev, cpu_id);
 }
+

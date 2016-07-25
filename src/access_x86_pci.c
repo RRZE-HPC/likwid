@@ -15,7 +15,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -60,6 +60,7 @@
 #endif
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
+
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
@@ -83,6 +84,7 @@ static int nr_sockets = 0;
 static char* socket_bus[MAX_NUM_NODES] = { [0 ... (MAX_NUM_NODES-1)] = "N-A"};
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+
 /* Dirty hack to avoid nonull warnings */
 int (*ownaccess)(const char*, int);
 int (*ownopen)(const char*, int, ...);
@@ -162,7 +164,6 @@ access_x86_pci_init(const int socket)
 #endif
     }
 
-
     for(int j=1;j<MAX_NUM_PCI_DEVICES;j++)
     {
         if ((pci_devices[j].path != NULL) && (FD[socket][j] == -2))
@@ -176,7 +177,8 @@ access_x86_pci_init(const int socket)
                 pci_devices[j].online = 1;
                 if (access_x86_initialized == 0)
                 {
-                    DEBUG_PRINT(DEBUGLEV_DETAIL, PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, socket,bdata(filepath));
+                    DEBUG_PRINT(DEBUGLEV_DETAIL,
+                            PCI device %s (%d) online for socket %d at path %s, pci_devices[j].name,j, socket,bdata(filepath));
                     if (ownaccess(bdata(filepath),R_OK|W_OK))
                     {
                         ERROR_PRINT(PCI device %s (%d) online for socket %d at path %s but not accessible, pci_devices[j].name,j, socket,bdata(filepath));
@@ -194,7 +196,6 @@ access_x86_pci_init(const int socket)
     return 0;
 }
 
-
 void
 access_x86_pci_finalize(const int socket)
 {
@@ -206,7 +207,6 @@ access_x86_pci_finalize(const int socket)
         }
     }
 }
-
 
 int
 access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t *data)
@@ -234,7 +234,7 @@ access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t
 
         if ( FD[socket][dev] < 0)
         {
-            ERROR_PRINT(Failed to open PCI device %s at path %s\n, 
+            ERROR_PRINT(Failed to open PCI device %s at path %s\n,
                             pci_devices[dev].name,
                             bdata(filepath));
             *data = 0ULL;
@@ -244,7 +244,7 @@ access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t
     }
 
     if ( FD[socket][dev] > 0 &&
-         pread(FD[socket][dev], &tmp, sizeof(tmp), reg) != sizeof(tmp) ) 
+         pread(FD[socket][dev], &tmp, sizeof(tmp), reg) != sizeof(tmp) )
     {
         ERROR_PRINT(Read from PCI device %s at register 0x%x failed, pci_devices[dev].name, reg);
         *data = 0ULL;
@@ -253,8 +253,6 @@ access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t
     *data = (uint64_t)tmp;
     return 0;
 }
-
-
 
 int
 access_x86_pci_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t data)
@@ -276,12 +274,11 @@ access_x86_pci_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_
         filepath = bfromcstr ( PCI_ROOT_PATH );
         bcatcstr(filepath, socket_bus[socket]);
         bcatcstr(filepath, pci_devices[dev].path );
-        
         FD[socket][dev] = ownopen( bdata(filepath), O_RDWR);
 
         if ( FD[socket][dev] < 0)
         {
-            ERROR_PRINT(Failed to open PCI device %s at path %s\n, 
+            ERROR_PRINT(Failed to open PCI device %s at path %s\n,
                                 pci_devices[dev].name,
                                 bdata(filepath));
             return -EACCES;
@@ -298,7 +295,8 @@ access_x86_pci_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_
     return 0;
 }
 
-int access_x86_pci_check(PciDeviceIndex dev, int socket)
+int
+access_x86_pci_check(PciDeviceIndex dev, int socket)
 {
     if (dev == MSR_DEV)
     {

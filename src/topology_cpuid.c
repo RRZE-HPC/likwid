@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,13 +29,14 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sched.h>
 #include <unistd.h>
 
 #include <error.h>
-
 #include <tree.h>
 #include <bitUtil.h>
 #include <tlb-info.h>
@@ -43,17 +44,21 @@
 #include <cpuid.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
+
 #define MAX_CACHE_LEVELS 4
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
-static int largest_function = 0;        
+
+static int largest_function = 0;
 static uint32_t eax, ebx, ecx, edx;
 
 /* Dirty hack to avoid nonull warnings */
 char* (*ownstrcpy)(char *__restrict __dest, const char *__restrict __src);
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-static int intelCpuidFunc_4(CacheLevel** cachePool)
+
+static int
+intelCpuidFunc_4(CacheLevel** cachePool)
 {
     int i;
     int level=0;
@@ -77,7 +82,7 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
     *cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
     pool = *cachePool;
 
-    for (i=0; i < maxNumLevels; i++) 
+    for (i=0; i < maxNumLevels; i++)
     {
         eax = 0x04;
         ecx = i;
@@ -119,7 +124,7 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
             }
         }
 
-        /* :WORKAROUND:08/13/2009 08:34:15 AM:jt: For L3 caches the value is sometimes 
+        /* :WORKAROUND:08/13/2009 08:34:15 AM:jt: For L3 caches the value is sometimes
          * too large in here. Ask Intel what is wrong here!
          * Limit threads per Socket then to the maximum possible value.*/
         if(pool[i].threads > (int)
@@ -131,11 +136,11 @@ static int intelCpuidFunc_4(CacheLevel** cachePool)
         }
         pool[i].inclusive = edx&0x2;
     }
-
     return maxNumLevels;
 }
 
-static uint32_t amdGetAssociativity(uint32_t flag)
+static uint32_t
+amdGetAssociativity(uint32_t flag)
 {
     uint32_t asso= 0;
 
@@ -193,13 +198,12 @@ static uint32_t amdGetAssociativity(uint32_t flag)
             break;
     }
     return asso;
-
 }
-
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void cpuid_printTlbTopology()
+void
+cpuid_printTlbTopology()
 {
     int i;
     uint32_t loop = 1;
@@ -208,8 +212,6 @@ void cpuid_printTlbTopology()
     {
         eax = 0x02;
         CPUID(eax, ebx, ecx, edx);
-    
-    
         loop = extractBitField(eax,8,0);
         for(i=1;i<loop;i++)
         {
@@ -280,7 +282,7 @@ void cpuid_printTlbTopology()
         printf("L2ITlb4KAssoc: 0x%x\n",extractBitField(eax,4,12));
         printf("L2ITlb4KAssoc_c: %d\n",amdGetAssociativity(extractBitField(eax,4,12)));
         printf("L2ITlb4KSize: 0x%x\n",extractBitField(eax,12,0));
-    }        
+    }
     return;
 }
 
@@ -294,7 +296,7 @@ cpuid_set_osname(void)
     ownstrcpy = strcpy;
     int i;
 
-    if (NULL != (fp = fopen ("/proc/cpuinfo", "r"))) 
+    if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
     {
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
@@ -321,8 +323,8 @@ cpuid_set_osname(void)
     fclose(fp);
 }
 
-
-void cpuid_init_cpuInfo(cpu_set_t cpuSet)
+void
+cpuid_init_cpuInfo(cpu_set_t cpuSet)
 {
     int cpus_in_set = 0;
     cpuid_info.isIntel = 1;
@@ -358,7 +360,8 @@ void cpuid_init_cpuInfo(cpu_set_t cpuSet)
     return;
 }
 
-void cpuid_init_cpuFeatures(void)
+void
+cpuid_init_cpuFeatures(void)
 {
     eax = 0x01;
     CPUID(eax, ebx, ecx, edx);
@@ -515,7 +518,8 @@ void cpuid_init_cpuFeatures(void)
     return;
 }
 
-void cpuid_init_nodeTopology(cpu_set_t cpuSet)
+void
+cpuid_init_nodeTopology(cpu_set_t cpuSet)
 {
     uint32_t apicId;
     uint32_t bitField;
@@ -529,10 +533,7 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
     int maxNumLogicalProcsPerCore;
     int maxNumCores;
     int width;
-    
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
-    
-    
     /* check if 0x0B cpuid leaf is supported */
     if (largest_function >= 0x0B)
     {
@@ -620,7 +621,6 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
                 ecx = 0;
                 CPUID(eax, ebx, ecx, edx);
                 maxNumCores = extractBitField(eax,6,26)+1;
-
                 maxNumLogicalProcsPerCore = maxNumLogicalProcs/maxNumCores;
 
                 for (uint32_t i=0; i<  cpuid_topology.numHWThreads; i++)
@@ -640,21 +640,22 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
                      * */
                     hwThreadPool[id].threadId =
                         extractBitField(hwThreadPool[id].apicId,
-                                getBitFieldWidth(maxNumLogicalProcsPerCore),0); 
+                                getBitFieldWidth(maxNumLogicalProcsPerCore),0);
 
-                    /* CoreId is extracted from th apicId using the bitWidth 
+                    /* CoreId is extracted from th apicId using the bitWidth
                      * of the number of logical processors as offset and the
                      * bit width of the number of cores as width
                      * */
                     hwThreadPool[id].coreId =
                         extractBitField(hwThreadPool[id].apicId,
                                 getBitFieldWidth(maxNumCores),
-                                getBitFieldWidth(maxNumLogicalProcsPerCore)); 
+                                getBitFieldWidth(maxNumLogicalProcsPerCore));
 
                     hwThreadPool[id].packageId =
                         extractBitField(hwThreadPool[id].apicId,
                                 8-getBitFieldWidth(maxNumLogicalProcs),
                                 getBitFieldWidth(maxNumLogicalProcs));
+
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, I[%d] ID[%d] APIC[%d] T[%d] C[%d] P [%d], i, id,
                                     hwThreadPool[id].apicId, hwThreadPool[id].threadId,
                                     hwThreadPool[id].coreId, hwThreadPool[id].packageId);
@@ -691,16 +692,16 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
                      * */
                     hwThreadPool[id].threadId =
                         extractBitField(hwThreadPool[i].apicId,
-                                getBitFieldWidth(maxNumLogicalProcsPerCore),0); 
+                                getBitFieldWidth(maxNumLogicalProcsPerCore),0);
 
-                    /* CoreId is extracted from th apicId using the bitWidth 
+                    /* CoreId is extracted from th apicId using the bitWidth
                      * of the number of logical processors as offset and the
                      * bit width of the number of cores as width
                      * */
                     hwThreadPool[id].coreId =
                         extractBitField(hwThreadPool[i].apicId,
                                 getBitFieldWidth(maxNumCores),
-                                0); 
+                                0);
 
                     hwThreadPool[id].packageId =
                         extractBitField(hwThreadPool[i].apicId,
@@ -734,7 +735,6 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
                 maxNumLogicalProcs =  extractBitField(ebx,8,16);
                 maxNumCores = extractBitField(ecx,8,0)+1;
 
-
                 for (uint32_t i=0; i<  cpuid_topology.numHWThreads; i++)
                 {
                     int id;
@@ -751,7 +751,7 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
 
                     hwThreadPool[id].coreId =
                         extractBitField(hwThreadPool[i].apicId,
-                                width, 0); 
+                                width, 0);
                     hwThreadPool[id].packageId =
                         extractBitField(hwThreadPool[i].apicId,
                                 (8-width), width);
@@ -764,19 +764,18 @@ void cpuid_init_nodeTopology(cpu_set_t cpuSet)
         }
     }
     cpuid_topology.threadPool = hwThreadPool;
-    
     return;
 }
 
-
-void cpuid_init_cacheTopology(void)
+void
+cpuid_init_cacheTopology(void)
 {
     int maxNumLevels=0;
     int id=0;
     CacheLevel* cachePool = NULL;
     CacheType type = DATACACHE;
 
-    switch ( cpuid_info.family ) 
+    switch ( cpuid_info.family )
     {
         case MIC_FAMILY:
 
@@ -792,7 +791,6 @@ void cpuid_init_cacheTopology(void)
             }
 
             break;
-
         case K8_FAMILY:
             maxNumLevels = 2;
             cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
@@ -816,7 +814,7 @@ void cpuid_init_cacheTopology(void)
             CPUID(eax, ebx, ecx, edx);
             cachePool[1].level = 2;
             cachePool[1].type = UNIFIEDCACHE;
-            cachePool[1].associativity = 
+            cachePool[1].associativity =
                 amdGetAssociativity(extractBitField(ecx,4,12));
             cachePool[1].lineSize = extractBitField(ecx,8,0);
             cachePool[1].size =  extractBitField(ecx,16,16) * 1024;
@@ -829,8 +827,6 @@ void cpuid_init_cacheTopology(void)
             cachePool[1].inclusive = 1;
 
             break;
-
-
         case K10_FAMILY:
             /* FIXME: Adds one level for the instruction cache on Intel
              * This fixes the level for the cores
@@ -894,7 +890,6 @@ void cpuid_init_cacheTopology(void)
             cachePool[2].inclusive = 1;
 
             break;
-
         case K16_FAMILY:
 
         case K15_FAMILY:
@@ -925,15 +920,13 @@ void cpuid_init_cacheTopology(void)
                 id++;
             }
             break;
-
         default:
             ERROR_PLAIN_PRINT(Processor is not supported);
             break;
     }
-    
 
     cpuid_topology.numCacheLevels = maxNumLevels;
     cpuid_topology.cacheLevels = cachePool;
-    
     return;
 }
+

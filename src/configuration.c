@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,6 +28,8 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -37,17 +39,22 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-
-
 #include <configuration.h>
+
+/* #####   EXPORTED VARIABLES   ########################################### */
 
 Configuration config = {NULL,NULL,NULL,NULL,-1,MAX_NUM_THREADS,MAX_NUM_NODES};
 int init_config = 0;
 
+/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
+
 static int daemonPath_len = 0;
 static int groupPath_len = 0;
 
-static int default_configuration(void)
+/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+
+static int
+default_configuration(void)
 {
     int ret = 0;
     char filename[1024] = { [0 ... 1023] = '\0' };
@@ -61,13 +68,11 @@ static int default_configuration(void)
         return 0;
     }
     config.daemonMode = ACCESSMODE_DAEMON;
-    
     groupPath_len = strlen(TOSTRING(GROUPPATH))+10;
     config.groupPath = malloc(groupPath_len+1);
     ret = snprintf(config.groupPath, groupPath_len, "%s", TOSTRING(GROUPPATH));
     config.groupPath[ret] = '\0';
-    
-    
+
     FILE* fp = popen("which likwid-accessD 2>/dev/null | tr -d '\n'","r");
     if (fp == NULL)
     {
@@ -117,7 +122,10 @@ use_hardcoded:
     return 0;
 }
 
-int init_configuration(void)
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+int
+init_configuration(void)
 {
     int i;
     FILE* fp;
@@ -152,7 +160,7 @@ int init_configuration(void)
     {
         sprintf(filename, "%s",preconfigured);
     }
-    
+
     if ((config.topologyCfgFileName == NULL) && (strlen(filename) == 0))
     {
         if (!access(TOSTRING(TOPOFILE), R_OK))
@@ -259,14 +267,14 @@ int init_configuration(void)
         }
     }
 
-
     init_config = 1;
 
     fclose(fp);
     return 0;
 }
 
-Configuration_t get_configuration(void)
+Configuration_t
+get_configuration(void)
 {
     if (init_config == 1)
     {
@@ -275,7 +283,8 @@ Configuration_t get_configuration(void)
     return NULL;
 }
 
-int destroy_configuration(void)
+int
+destroy_configuration(void)
 {
     if (init_config == 0)
     {
@@ -304,7 +313,8 @@ int destroy_configuration(void)
     return 0;
 }
 
-int config_setGroupPath(const char* path)
+int
+config_setGroupPath(const char* path)
 {
     int ret = 0;
     struct stat st;
@@ -337,3 +347,4 @@ int config_setGroupPath(const char* path)
     printf("Given path is no directory\n");
     return -ENOTDIR;
 }
+

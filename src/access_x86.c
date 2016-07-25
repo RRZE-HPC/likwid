@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,6 +27,9 @@
  *
  * =======================================================================================
  */
+
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -34,7 +37,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
-
 
 #include <types.h>
 #include <error.h>
@@ -45,9 +47,10 @@
 #include <access_x86_pci.h>
 #include <affinity.h>
 
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-
-int access_x86_init(int cpu_id)
+int
+access_x86_init(int cpu_id)
 {
     int ret = access_x86_msr_init(cpu_id);
     if (ret == 0)
@@ -60,7 +63,8 @@ int access_x86_init(int cpu_id)
     return ret;
 }
 
-int access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *data)
+int
+access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *data)
 {
     int err;
     uint64_t tmp = 0x0ULL;
@@ -80,7 +84,8 @@ int access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t
     return err;
 }
 
-int access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t data)
+int
+access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t data)
 {
     int err;
     if (dev == MSR_DEV)
@@ -97,7 +102,8 @@ int access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_
     return err;
 }
 
-void access_x86_finalize(int cpu_id)
+void
+access_x86_finalize(int cpu_id)
 {
     access_x86_msr_finalize(cpu_id);
     if (cpuid_info.supportUncore)
@@ -106,7 +112,8 @@ void access_x86_finalize(int cpu_id)
     }
 }
 
-int access_x86_check(PciDeviceIndex dev, int cpu_id)
+int
+access_x86_check(PciDeviceIndex dev, int cpu_id)
 {
     if (dev == MSR_DEV)
     {
@@ -118,3 +125,4 @@ int access_x86_check(PciDeviceIndex dev, int cpu_id)
     }
     return 0;
 }
+

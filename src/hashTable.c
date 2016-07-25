@@ -12,7 +12,7 @@
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,8 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -41,18 +43,20 @@
 #include <hashTable.h>
 #include <likwid.h>
 
+/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
+
 typedef struct {
     pthread_t tid;
     uint32_t coreId;
     GHashTable* hashTable;
 } ThreadList;
 
-
 static ThreadList* threadList[MAX_NUM_THREADS];
 
-/* ======================================================================== */
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void hashTable_init()
+void
+hashTable_init()
 {
     for (int i=0; i<MAX_NUM_THREADS; i++)
     {
@@ -60,7 +64,8 @@ void hashTable_init()
     }
 }
 
-void hashTable_initThread(int coreID)
+void
+hashTable_initThread(int coreID)
 {
     ThreadList* resPtr = threadList[coreID];
     /* check if thread was already initialized */
@@ -75,7 +80,8 @@ void hashTable_initThread(int coreID)
     }
 }
 
-int hashTable_get(bstring label, LikwidThreadResults** resEntry)
+int
+hashTable_get(bstring label, LikwidThreadResults** resEntry)
 {
     int coreID = likwid_getProcessorId();
     ThreadList* resPtr = threadList[coreID];
@@ -115,7 +121,8 @@ int hashTable_get(bstring label, LikwidThreadResults** resEntry)
     return coreID;
 }
 
-void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
+void
+hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
 {
     int threadId = 0;
     uint32_t numberOfThreads = 0;
@@ -143,7 +150,8 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
     (*results) = (LikwidResults*) malloc(numberOfRegions * sizeof(LikwidResults));
     if (!(*results))
     {
-        fprintf(stderr, "Failed to allocate %lu bytes for the results\n", numberOfRegions * sizeof(LikwidResults));
+        fprintf(stderr, "Failed to allocate %lu bytes for the results\n",
+                numberOfRegions * sizeof(LikwidResults));
     }
     else
     {
@@ -152,25 +160,29 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
             (*results)[i].time = (double*) malloc(numberOfThreads * sizeof(double));
             if (!(*results)[i].time)
             {
-                fprintf(stderr, "Failed to allocate %lu bytes for the time storage\n", numberOfThreads * sizeof(double));
+                fprintf(stderr, "Failed to allocate %lu bytes for the time storage\n",
+                        numberOfThreads * sizeof(double));
                 break;
             }
             (*results)[i].count = (uint32_t*) malloc(numberOfThreads * sizeof(uint32_t));
             if (!(*results)[i].count)
             {
-                fprintf(stderr, "Failed to allocate %lu bytes for the count storage\n", numberOfThreads * sizeof(uint32_t));
+                fprintf(stderr, "Failed to allocate %lu bytes for the count storage\n",
+                        numberOfThreads * sizeof(uint32_t));
                 break;
             }
             (*results)[i].cpulist = (int*) malloc(numberOfThreads * sizeof(int));
             if (!(*results)[i].count)
             {
-                fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n", numberOfThreads * sizeof(int));
+                fprintf(stderr, "Failed to allocate %lu bytes for the cpulist storage\n",
+                        numberOfThreads * sizeof(int));
                 break;
             }
             (*results)[i].counters = (double**) malloc(numberOfThreads * sizeof(double*));
             if (!(*results)[i].counters)
             {
-                fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage\n", numberOfThreads * sizeof(double*));
+                fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage\n",
+                        numberOfThreads * sizeof(double*));
                 break;
             }
 
@@ -182,7 +194,8 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
                 (*results)[i].counters[j] = (double*) malloc(NUM_PMC * sizeof(double));
                 if (!(*results)[i].counters)
                 {
-                    fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage for thread %d\n", NUM_PMC * sizeof(double), j);
+                    fprintf(stderr, "Failed to allocate %lu bytes for the counter result storage for thread %d\n",
+                            NUM_PMC * sizeof(double), j);
                     break;
                 }
                 else
@@ -206,10 +219,8 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
         if (resPtr != NULL)
         {
             LikwidThreadResults* threadResult  = NULL;
-
             GHashTableIter iter;
             gpointer key, value;
-
             g_hash_table_iter_init (&iter, resPtr->hashTable);
 
             /* iterate over all regions in thread */
@@ -252,5 +263,4 @@ void hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** result
     (*numThreads) = numberOfThreads;
     (*numRegions) = numberOfRegions;
 }
-
 

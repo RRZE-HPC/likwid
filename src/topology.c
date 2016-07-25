@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,6 +28,9 @@
  *
  * =======================================================================================
  */
+
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -43,13 +46,9 @@
 //#include <strUtil.h>
 #include <configuration.h>
 
+/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int topology_initialized = 0;
-CpuInfo cpuid_info;
-CpuTopology cpuid_topology;
-
-int affinity_thread2tile_lookup[MAX_NUM_THREADS];
-
 static char* pentium_m_b_str = "Intel Pentium M Banias processor";
 static char* pentium_m_d_str = "Intel Pentium M Dothan processor";
 static char* core_duo_str = "Intel Core Duo processor";
@@ -123,9 +122,16 @@ static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
 static char* short_unknown = "unknown";
 
+/* #####  EXPORTED VARIABLES  ########################################## */
 
+CpuInfo cpuid_info;
+CpuTopology cpuid_topology;
+int affinity_thread2tile_lookup[MAX_NUM_THREADS];
 
-int cpu_count(cpu_set_t* set)
+/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+
+static int
+cpu_count(cpu_set_t* set)
 {
     uint32_t i;
     int s = 0;
@@ -149,11 +155,11 @@ int cpu_count(cpu_set_t* set)
             }
         }
     }
-
     return s;
 }
 
-static void initTopologyFile(FILE* file)
+static void
+initTopologyFile(FILE* file)
 {
     size_t items;
     HWThread* hwThreadPool;
@@ -198,8 +204,8 @@ static void initTopologyFile(FILE* file)
     }
 }
 
-
-static int readTopologyFile(const char* filename)
+static int
+readTopologyFile(const char* filename)
 {
     FILE* fp;
     char structure[256];
@@ -516,7 +522,10 @@ static int readTopologyFile(const char* filename)
     return 0;
 }
 
-int topology_setName(void)
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+int
+topology_setName(void)
 {
     switch ( cpuid_info.family )
     {
@@ -783,7 +792,8 @@ int topology_setName(void)
     return EXIT_SUCCESS;
 }
 
-const struct topology_functions topology_funcs = {
+const struct
+topology_functions topology_funcs = {
 #ifndef LIKWID_USE_HWLOC
     .init_cpuInfo = cpuid_init_cpuInfo,
     .init_cpuFeatures = cpuid_init_cpuFeatures,
@@ -845,7 +855,8 @@ void topology_setupTree(void)
     return;
 }
 
-int topology_init(void)
+int
+topology_init(void)
 {
     int ret = 0;
     cpu_set_t cpuSet;
@@ -917,7 +928,8 @@ standard_init:
 }
 
 
-void topology_finalize(void)
+void
+topology_finalize(void)
 {
     struct topology_functions funcs = topology_funcs;
     if (!topology_initialized)
@@ -978,11 +990,8 @@ void topology_finalize(void)
     topology_initialized = 0;
 }
 
-
-
-
-
-void print_supportedCPUs (void)
+void
+print_supportedCPUs (void)
 {
     printf("Supported Intel processors:\n");
     printf("\t%s\n",core_2a_str);
@@ -1024,18 +1033,20 @@ void print_supportedCPUs (void)
     printf("\n");
 }
 
-
-
-CpuTopology_t get_cpuTopology(void)
+CpuTopology_t
+get_cpuTopology(void)
 {
     return &cpuid_topology;
 }
 
-CpuInfo_t get_cpuInfo(void)
+CpuInfo_t
+get_cpuInfo(void)
 {
     return &cpuid_info;
 }
-NumaTopology_t get_numaTopology(void)
+
+NumaTopology_t
+get_numaTopology(void)
 {
     return &numa_info;
 }

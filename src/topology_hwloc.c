@@ -12,7 +12,7 @@
  *
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,9 @@
  *
  * =======================================================================================
  */
- 
+
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <error.h>
@@ -39,18 +41,20 @@
 #include <topology_hwloc.h>
 #endif
 
+/* #####  EXPORTED VARIABLESE   ########################################### */
+
 hwloc_topology_t hwloc_topology = NULL;
 
-
-/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-
-/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
-
-/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
 #ifdef LIKWID_USE_HWLOC
-int likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t obj, hwloc_obj_type_t type, int* index, uint32_t **list)
+int
+likwid_hwloc_record_objs_of_type_below_obj(
+        hwloc_topology_t t,
+        hwloc_obj_t obj,
+        hwloc_obj_type_t type,
+        int* index,
+        uint32_t **list)
 {
     int i;
     int count = 0;
@@ -73,7 +77,8 @@ int likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology_t t, hwloc_obj_t o
     return count;
 }
 
-void hwloc_init_cpuInfo(cpu_set_t cpuSet)
+void
+hwloc_init_cpuInfo(cpu_set_t cpuSet)
 {
     int i;
     hwloc_obj_t obj;
@@ -120,7 +125,8 @@ void hwloc_init_cpuInfo(cpu_set_t cpuSet)
     return;
 }
 
-void hwloc_init_nodeTopology(cpu_set_t cpuSet)
+void
+hwloc_init_nodeTopology(cpu_set_t cpuSet)
 {
     HWThread* hwThreadPool;
     int maxNumLogicalProcs;
@@ -241,8 +247,8 @@ void hwloc_init_nodeTopology(cpu_set_t cpuSet)
     return;
 }
 
-
-void hwloc_init_cacheTopology(void)
+void
+hwloc_init_cacheTopology(void)
 {
     int maxNumLevels=0;
     int id=0;
@@ -263,7 +269,6 @@ void hwloc_init_cacheTopology(void)
     /* Start at the bottom of the tree to get all cache levels in order */
     depth = likwid_hwloc_topology_get_depth(hwloc_topology);
     id = 0;
-    
     for(d=depth-1;d >= 0; d--)
     {
         /* We only need caches, so skip other levels */
@@ -326,17 +331,17 @@ void hwloc_init_cacheTopology(void)
     return;
 }
 
-void hwloc_close(void)
+void
+hwloc_close(void)
 {
     if (hwloc_topology)
     {
         hwloc_topology_destroy(hwloc_topology);
     }
 }
-
 #else
-
-void hwloc_init_cpuInfo(void)
+void
+hwloc_init_cpuInfo(void)
 {
     return;
 }

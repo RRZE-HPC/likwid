@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,8 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -36,7 +38,6 @@
 #include <float.h>
 #include <unistd.h>
 #include <sys/types.h>
-
 
 #include <types.h>
 #include <likwid.h>
@@ -70,6 +71,7 @@
 #include <perfmon_broadwell.h>
 #include <perfmon_skylake.h>
 
+/* #####   EXPORTED VARIABLES   ########################################### */
 
 PerfmonEvent* eventHash = NULL;
 RegisterMap* counter_map = NULL;
@@ -94,7 +96,6 @@ int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 int (*perfmon_finalizeCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 
 int (*initThreadArch) (int cpu_id);
-
 void perfmon_delEventSet(int groupID);
 
 char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
@@ -124,6 +125,8 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     "IN_TRANSACTION_ABORTED"
 };
 
+/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+
 static int
 getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int force)
 {
@@ -148,7 +151,10 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
     }
     if (*type == PMC && (*index - firstpmcindex) > cpuid_info.perf_num_ctr)
     {
-        fprintf(stderr, "WARNING: Counter %s is only available with deactivated HyperThreading. Counter results defaults to 0.\n",bdata(reg));
+        fprintf(stderr,
+                "WARNING: Counter %s is only available with deactivated HyperThreading. Counter results defaults to 0.\n",
+                bdata(reg));
+
         *type = NOTYPE;
         return FALSE;
     }
@@ -562,7 +568,6 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
         }
     }
 
-    
     return event->numberOfOptions;
 }
 
@@ -584,7 +589,8 @@ calculateResult(int groupId, int eventId, int threadId)
     }
     else if (counter->overflows > 0)
     {
-        result += (double) ((perfmon_getMaxCounterValue(counter_map[event->index].type) - counter->startData) + counter->counterData);
+        result += (double) ((perfmon_getMaxCounterValue(counter_map[event->index].type) -
+                    counter->startData) + counter->counterData);
         counter->overflows--;
     }
     result += (double) (counter->overflows * perfmon_getMaxCounterValue(counter_map[event->index].type));
@@ -617,13 +623,15 @@ getCounterTypeOffset(int index)
     return off;
 }
 
-void perfmon_setVerbosity(int level)
+void
+perfmon_setVerbosity(int level)
 {
     if ((level >= DEBUGLEV_ONLY_ERROR) && (level <= DEBUGLEV_DEVELOP))
         perfmon_verbosity = level;
 }
 
-void perfmon_check_counter_map(int cpu_id)
+void
+perfmon_check_counter_map(int cpu_id)
 {
     int own_hpm = 0;
     if (perfmon_numCounters == 0 || perfmon_numArchEvents == 0)
@@ -692,7 +700,6 @@ void perfmon_check_counter_map(int cpu_id)
                 continue;
             PerfmonEvent event;
             bstring cstr = bfromcstr(counter_map[j].key);
-            
             if (getEvent(estr, cstr, &event))
             {
                 found = 1;
@@ -1214,8 +1221,6 @@ perfmon_init_funcs(int* init_power, int* init_temp)
     *init_temp = initialize_thermal;
 }
 
-
-
 int
 perfmon_init(int nrThreads, const int* threadsToCpu)
 {
@@ -1324,7 +1329,6 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         }
         initThreadArch(threadsToCpu[i]);
     }
-    
     perfmon_initialized = 1;
     return 0;
 }
@@ -1344,7 +1348,6 @@ perfmon_finalize(void)
     }
     for(group=0;group < groupSet->numberOfActiveGroups; group++)
     {
-        
         for (thread=0;thread< groupSet->numberOfThreads; thread++)
         {
             perfmon_finalizeCountersThread(thread, &(groupSet->groups[group]));
@@ -1504,7 +1507,6 @@ perfmon_addEventSet(const char* eventCString)
 #else
     eventSet->regTypeMask = 0x0ULL;
 #endif
-
 
     int forceOverwrite = 0;
     if (getenv("LIKWID_FORCE") != NULL)
@@ -1775,7 +1777,8 @@ __perfmon_stopCounters(int groupId)
     return 0;
 }
 
-int perfmon_stopCounters(void)
+int
+perfmon_stopCounters(void)
 {
     if (perfmon_initialized != 1)
     {
@@ -1798,7 +1801,8 @@ int perfmon_stopCounters(void)
     return __perfmon_stopCounters(groupSet->activeGroup);
 }
 
-int perfmon_stopGroupCounters(int groupId)
+int
+perfmon_stopGroupCounters(int groupId)
 {
     if (perfmon_initialized != 1)
     {
@@ -1863,7 +1867,7 @@ __perfmon_readCounters(int groupId, int threadId)
                     result = (double)calculateResult(groupId, j, threadId);
                     groupSet->groups[groupId].events[j].threadCounter[threadId].lastResult = result;
                     groupSet->groups[groupId].events[j].threadCounter[threadId].fullResult += result;
-                    groupSet->groups[groupId].events[j].threadCounter[threadId].startData = 
+                    groupSet->groups[groupId].events[j].threadCounter[threadId].startData =
                         groupSet->groups[groupId].events[j].threadCounter[threadId].counterData;
                     groupSet->groups[groupId].events[j].threadCounter[threadId].overflows = 0;
                 }
@@ -1891,12 +1895,14 @@ __perfmon_readCounters(int groupId, int threadId)
     return 0;
 }
 
-int perfmon_readCounters(void)
+int
+perfmon_readCounters(void)
 {
     return __perfmon_readCounters(-1,-1);
 }
 
-int perfmon_readCountersCpu(int cpu_id)
+int
+perfmon_readCountersCpu(int cpu_id)
 {
     int i;
     int thread_id = -1;
@@ -1922,15 +1928,17 @@ int perfmon_readCountersCpu(int cpu_id)
     return i;
 }
 
-int perfmon_readGroupCounters(int groupId)
+int
+perfmon_readGroupCounters(int groupId)
 {
     return __perfmon_readCounters(groupId, -1);
 }
-int perfmon_readGroupThreadCounters(int groupId, int threadId)
+
+int
+perfmon_readGroupThreadCounters(int groupId, int threadId)
 {
     return __perfmon_readCounters(groupId, threadId);
 }
-
 
 double
 perfmon_getResult(int groupId, int eventId, int threadId)
@@ -2115,8 +2123,8 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     return result;
 }
 
-
-int __perfmon_switchActiveGroupThread(int thread_id, int new_group)
+int
+__perfmon_switchActiveGroupThread(int thread_id, int new_group)
 {
     int ret = 0;
     int i = 0;
@@ -2271,7 +2279,8 @@ perfmon_getMaxCounterValue(RegisterType type)
     return tmp;
 }
 
-char* perfmon_getEventName(int groupId, int eventId)
+char*
+perfmon_getEventName(int groupId, int eventId)
 {
     if (unlikely(groupSet == NULL))
     {
@@ -2298,7 +2307,8 @@ char* perfmon_getEventName(int groupId, int eventId)
     return groupSet->groups[groupId].group.events[eventId];
 }
 
-char* perfmon_getCounterName(int groupId, int eventId)
+char*
+perfmon_getCounterName(int groupId, int eventId)
 {
     if (unlikely(groupSet == NULL))
     {
@@ -2325,7 +2335,8 @@ char* perfmon_getCounterName(int groupId, int eventId)
     return groupSet->groups[groupId].group.counters[eventId];
 }
 
-char* perfmon_getMetricName(int groupId, int metricId)
+char*
+perfmon_getMetricName(int groupId, int metricId)
 {
     if (unlikely(groupSet == NULL))
     {
@@ -2351,7 +2362,8 @@ char* perfmon_getMetricName(int groupId, int metricId)
     return groupSet->groups[groupId].group.metricnames[metricId];
 }
 
-char* perfmon_getGroupName(int groupId)
+char*
+perfmon_getGroupName(int groupId)
 {
     if (unlikely(groupSet == NULL))
     {
@@ -2373,7 +2385,8 @@ char* perfmon_getGroupName(int groupId)
     return groupSet->groups[groupId].group.groupname;
 }
 
-char* perfmon_getGroupInfoShort(int groupId)
+char*
+perfmon_getGroupInfoShort(int groupId)
 {
     if (unlikely(groupSet == NULL))
     {
@@ -2395,7 +2408,8 @@ char* perfmon_getGroupInfoShort(int groupId)
     return groupSet->groups[groupId].group.shortinfo;
 }
 
-char* perfmon_getGroupInfoLong(int groupId)
+char*
+perfmon_getGroupInfoLong(int groupId)
 {
     if (unlikely(groupSet == NULL))
     {
@@ -2417,7 +2431,8 @@ char* perfmon_getGroupInfoLong(int groupId)
     return groupSet->groups[groupId].group.longinfo;
 }
 
-int perfmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
+int
+perfmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
 {
     int ret = 0;
     init_configuration();
@@ -2426,12 +2441,14 @@ int perfmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
     return ret;
 }
 
-void perfmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos)
+void
+perfmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos)
 {
     return_groups(nrgroups, groups, shortinfos, longinfos);
 }
 
-int perfmon_getNumberOfMetrics(int groupId)
+int
+perfmon_getNumberOfMetrics(int groupId)
 {
     if (perfmon_initialized != 1)
     {
@@ -2445,7 +2462,8 @@ int perfmon_getNumberOfMetrics(int groupId)
     return groupSet->groups[groupId].group.nmetrics;
 }
 
-void perfmon_printMarkerResults()
+void
+perfmon_printMarkerResults()
 {
     int i = 0, j = 0, k = 0;
     for (i=0; i<markerRegions; i++)
@@ -2465,7 +2483,8 @@ void perfmon_printMarkerResults()
     }
 }
 
-int perfmon_getNumberOfRegions()
+int
+perfmon_getNumberOfRegions()
 {
     if (perfmon_initialized != 1)
     {
@@ -2479,8 +2498,8 @@ int perfmon_getNumberOfRegions()
     return markerRegions;
 }
 
-
-int perfmon_getGroupOfRegion(int region)
+int
+perfmon_getGroupOfRegion(int region)
 {
     if (perfmon_initialized != 1)
     {
@@ -2498,7 +2517,8 @@ int perfmon_getGroupOfRegion(int region)
     return markerResults[region].groupID;
 }
 
-char* perfmon_getTagOfRegion(int region)
+char*
+perfmon_getTagOfRegion(int region)
 {
     if (perfmon_initialized != 1)
     {
@@ -2516,8 +2536,8 @@ char* perfmon_getTagOfRegion(int region)
     return bdata(markerResults[region].tag);
 }
 
-
-int perfmon_getEventsOfRegion(int region)
+int
+perfmon_getEventsOfRegion(int region)
 {
     if (perfmon_initialized != 1)
     {
@@ -2535,9 +2555,9 @@ int perfmon_getEventsOfRegion(int region)
     return markerResults[region].eventCount;
 }
 
-int perfmon_getMetricsOfRegion(int region)
+int
+perfmon_getMetricsOfRegion(int region)
 {
-    
     if (region < 0 || region >= markerRegions)
     {
         return -EINVAL;
@@ -2549,8 +2569,8 @@ int perfmon_getMetricsOfRegion(int region)
     return perfmon_getNumberOfMetrics(markerResults[region].groupID);
 }
 
-
-int perfmon_getThreadsOfRegion(int region)
+int
+perfmon_getThreadsOfRegion(int region)
 {
     if (perfmon_initialized != 1)
     {
@@ -2568,7 +2588,8 @@ int perfmon_getThreadsOfRegion(int region)
     return markerResults[region].threadCount;
 }
 
-int perfmon_getCpulistOfRegion(int region, int count, int* cpulist)
+int
+perfmon_getCpulistOfRegion(int region, int count, int* cpulist)
 {
     int i;
     if (perfmon_initialized != 1)
@@ -2595,8 +2616,8 @@ int perfmon_getCpulistOfRegion(int region, int count, int* cpulist)
     return MIN(count, markerResults[region].threadCount);
 }
 
-
-double perfmon_getTimeOfRegion(int region, int thread)
+double
+perfmon_getTimeOfRegion(int region, int thread)
 {
     if (perfmon_initialized != 1)
     {
@@ -2618,7 +2639,8 @@ double perfmon_getTimeOfRegion(int region, int thread)
     return markerResults[region].time[thread];
 }
 
-int perfmon_getCountOfRegion(int region, int thread)
+int
+perfmon_getCountOfRegion(int region, int thread)
 {
     if (perfmon_initialized != 1)
     {
@@ -2640,7 +2662,8 @@ int perfmon_getCountOfRegion(int region, int thread)
     return markerResults[region].count[thread];
 }
 
-double perfmon_getResultOfRegionThread(int region, int event, int thread)
+double
+perfmon_getResultOfRegionThread(int region, int event, int thread)
 {
     if (perfmon_initialized != 1)
     {
@@ -2723,7 +2746,8 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     return result;
 }
 
-int perfmon_readMarkerFile(const char* filename)
+int
+perfmon_readMarkerFile(const char* filename)
 {
     FILE* fp = NULL;
     int i = 0;
@@ -2733,7 +2757,7 @@ int perfmon_readMarkerFile(const char* filename)
     char *ptr = NULL;
     int nr_regions = 0;
     int cpus = 0, groups = 0, regions = 0;
-    
+
     if (filename == NULL)
     {
         return -EINVAL;
@@ -2865,7 +2889,8 @@ int perfmon_readMarkerFile(const char* filename)
     return nr_regions;
 }
 
-void perfmon_destroyMarkerResults()
+void
+perfmon_destroyMarkerResults()
 {
     int i = 0, j = 0;
     if (markerResults != NULL)
@@ -2885,3 +2910,4 @@ void perfmon_destroyMarkerResults()
         free(markerResults);
     }
 }
+

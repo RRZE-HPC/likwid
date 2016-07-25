@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -59,7 +59,6 @@ int affinity_core2node_lookup[MAX_NUM_THREADS];
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define gettid() syscall(SYS_gettid)
-
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -284,6 +283,7 @@ affinity_init()
                                       domains[currentDomain + subCounter].processorList,
                                       i, offset,
                                       domains[currentDomain + subCounter].numberOfProcessors);
+
             domains[currentDomain + subCounter].numberOfProcessors = tmp;
             offset += (tmp < numberOfCoresPerCache ? tmp : numberOfCoresPerCache);
             subCounter++;
@@ -301,12 +301,20 @@ affinity_init()
             {
                 domains[currentDomain + subCounter].numberOfProcessors =
                                 numa_info.nodes[subCounter].numberOfProcessors;
+
                 domains[currentDomain + subCounter].numberOfCores =
                                 numa_info.nodes[subCounter].numberOfProcessors/cpuid_topology.numThreadsPerCore;
+
                 domains[currentDomain + subCounter].tag = bformat("M%d", subCounter);
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain M%d: %d HW threads on %d cores, subCounter, domains[currentDomain + subCounter].numberOfProcessors, domains[currentDomain + subCounter].numberOfCores);
+
+                DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                        Affinity domain M%d: %d HW threads on %d cores,
+                        subCounter, domains[currentDomain + subCounter].numberOfProcessors,
+                        domains[currentDomain + subCounter].numberOfCores);
+
                 domains[currentDomain + subCounter].processorList =
                                 (int*) malloc(numa_info.nodes[subCounter].numberOfProcessors*sizeof(int));
+
                 if (!domains[currentDomain + subCounter].processorList)
                 {
                     fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
@@ -332,12 +340,18 @@ affinity_init()
         domains[currentDomain + subCounter].numberOfProcessors = NUMAthreads;
         domains[currentDomain + subCounter].numberOfCores =  NUMAthreads/cpuid_topology.numThreadsPerCore;
         domains[currentDomain + subCounter].tag = bformat("M%d", subCounter);
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain M%d: %d HW threads on %d cores, subCounter, domains[currentDomain + subCounter].numberOfProcessors, domains[currentDomain + subCounter].numberOfCores);
+
+        DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                Affinity domain M%d: %d HW threads on %d cores,
+                subCounter, domains[currentDomain + subCounter].numberOfProcessors,
+                domains[currentDomain + subCounter].numberOfCores);
+
         domains[currentDomain + subCounter].processorList = (int*) malloc(NUMAthreads*sizeof(int));
+
         if (!domains[currentDomain + subCounter].processorList)
         {
             fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
-                    NUMAthreads*sizeof(int), 
+                    NUMAthreads*sizeof(int),
                     bdata(domains[currentDomain + subCounter].tag));
             return;
         }
@@ -364,7 +378,6 @@ affinity_init()
     affinityDomains.domains = domains;
     affinity_initialized = 1;
 }
-
 
 void
 affinity_finalize()
@@ -402,7 +415,6 @@ affinity_finalize()
     affinity_initialized = 0;
 }
 
-
 int
 affinity_processGetProcessorId()
 {
@@ -418,7 +430,6 @@ affinity_processGetProcessorId()
 
     return getProcessorID(&cpu_set);
 }
-
 
 int
 affinity_threadGetProcessorId()
@@ -449,7 +460,6 @@ affinity_pinThread(int processorId)
 }
 #endif
 
-
 void
 affinity_pinProcess(int processorId)
 {
@@ -473,7 +483,6 @@ affinity_pinProcesses(int cpu_count, const int* processorIds)
     }
     sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
 }
-
 
 const AffinityDomain*
 affinity_getDomain(bstring domain)

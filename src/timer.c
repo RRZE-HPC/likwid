@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,9 @@
  *
  * =======================================================================================
  */
+
 /* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -39,8 +41,8 @@
 #include <likwid.h>
 #include <cpuid.h>
 
-/* #####   EXPORTED VARIABLES   ########################################### */
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
+
 static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
 static uint64_t cyclesClock = 0ULL;
@@ -50,12 +52,10 @@ static int timer_initialized = 0;
 void (*TSTART)(TscCounter*) = NULL;
 void (*TSTOP)(TscCounter*) = NULL;
 
-/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-
-
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 #if defined(__x86_64)
-static void fRDTSC(TscCounter* cpu_c)
+static void
+fRDTSC(TscCounter* cpu_c)
 {
     __asm__ volatile("xor %%eax,%%eax\n\t"           \
     "cpuid\n\t"           \
@@ -66,7 +66,8 @@ static void fRDTSC(TscCounter* cpu_c)
     : : "%eax","%ebx","%ecx","%edx");
 }
 
-static void fRDTSC_CR(TscCounter* cpu_c)
+static void
+fRDTSC_CR(TscCounter* cpu_c)
 {
     __asm__ volatile(   \
     "rdtsc\n\t"           \
@@ -76,7 +77,8 @@ static void fRDTSC_CR(TscCounter* cpu_c)
     : : "%eax","%ebx","%ecx","%edx");
 }
 #ifndef __MIC__
-static void fRDTSCP(TscCounter* cpu_c)
+static void
+fRDTSCP(TscCounter* cpu_c)
 {
     __asm__ volatile(     \
     "rdtscp\n\t"          \
@@ -90,7 +92,8 @@ static void fRDTSCP(TscCounter* cpu_c)
 #endif
 
 #if defined(__i386__)
-static void fRDTSC(TscCounter* cpu_c)
+static void
+fRDTSC(TscCounter* cpu_c)
 {
     uint64_t tmp;
     __asm__ volatile( \
@@ -105,7 +108,8 @@ static void fRDTSC(TscCounter* cpu_c)
     : : "%eax","%ecx","%edx");
 }
 
-static void fRDTSC_CR(TscCounter* cpu_c)
+static void
+fRDTSC_CR(TscCounter* cpu_c)
 {
     __asm__ volatile(     \
     "rdtsc\n\t"           \
@@ -115,7 +119,8 @@ static void fRDTSC_CR(TscCounter* cpu_c)
     : : "%eax","%edx");
 }
 #ifndef __MIC__
-static void fRDTSCP(TscCounter* cpu_c)
+static void
+fRDTSCP(TscCounter* cpu_c)
 {
     uint64_t tmp;
     __asm__ volatile(     \
@@ -130,7 +135,8 @@ static void fRDTSCP(TscCounter* cpu_c)
 }
 #endif
 #endif
-static void _timer_start( TimerData* time )
+static void
+_timer_start( TimerData* time )
 {
 #if defined(__x86_64) || defined(__i386__)
     if (TSTART)
@@ -149,7 +155,8 @@ static void _timer_start( TimerData* time )
 #endif
 }
 
-static void _timer_stop( TimerData* time )
+static void
+_timer_stop( TimerData* time )
 {
 #if defined(__x86_64) || defined(__i386__)
     if (TSTOP)
@@ -167,7 +174,8 @@ static void _timer_stop( TimerData* time )
 #endif
 }
 
-static uint64_t _timer_printCycles( const TimerData* time )
+static uint64_t
+_timer_printCycles( const TimerData* time )
 {
     /* clamp to zero if something goes wrong */
     if (((time->stop.int64-baseline) < time->start.int64) ||
@@ -182,7 +190,8 @@ static uint64_t _timer_printCycles( const TimerData* time )
 }
 
 /* Return time duration in seconds */
-static double _timer_print( const TimerData* time )
+static double
+_timer_print( const TimerData* time )
 {
     uint64_t cycles;
     /* clamp to zero if something goes wrong */
@@ -268,11 +277,10 @@ getCpuSpeed(void)
 #endif
 }
 
-
-
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void init_sleep()
+void
+init_sleep()
 {
     int status;
     TimerData timer;
@@ -290,8 +298,8 @@ void init_sleep()
     }
 }
 
-
-void timer_init( void )
+void
+timer_init( void )
 {
     uint32_t eax = 0x0,ebx = 0x0,ecx = 0x0,edx = 0x0;
     if (timer_initialized == 1)
@@ -323,7 +331,8 @@ void timer_init( void )
     timer_initialized = 1;
 }
 
-uint64_t timer_printCycles( const TimerData* time )
+uint64_t
+timer_printCycles( const TimerData* time )
 {
     if (timer_initialized != 1)
     {
@@ -334,7 +343,8 @@ uint64_t timer_printCycles( const TimerData* time )
 }
 
 /* Return time duration in seconds */
-double timer_print( const TimerData* time )
+double
+timer_print( const TimerData* time )
 {
     uint64_t cycles;
     if (timer_initialized != 1)
@@ -345,7 +355,8 @@ double timer_print( const TimerData* time )
     return _timer_print(time);
 }
 
-uint64_t timer_getCpuClock( void )
+uint64_t
+timer_getCpuClock( void )
 {
     if (timer_initialized != 1)
     {
@@ -355,7 +366,8 @@ uint64_t timer_getCpuClock( void )
     return cpuClock;
 }
 
-uint64_t timer_getCpuClockCurrent( int cpu_id )
+uint64_t
+timer_getCpuClockCurrent( int cpu_id )
 {
     int err;
     uint64_t clock = 0x0ULL;
@@ -385,7 +397,8 @@ uint64_t timer_getCpuClockCurrent( int cpu_id )
     return clock *1E3;
 }
 
-uint64_t timer_getCycleClock( void )
+uint64_t
+timer_getCycleClock( void )
 {
     if (timer_initialized != 1)
     {
@@ -395,7 +408,8 @@ uint64_t timer_getCycleClock( void )
     return cyclesClock;
 }
 
-uint64_t timer_getBaseline( void )
+uint64_t
+timer_getBaseline( void )
 {
     if (timer_initialized != 1)
     {
@@ -405,7 +419,8 @@ uint64_t timer_getBaseline( void )
     return baseline;
 }
 
-void timer_start( TimerData* time )
+void
+timer_start( TimerData* time )
 {
     if (timer_initialized != 1)
     {
@@ -415,8 +430,8 @@ void timer_start( TimerData* time )
     _timer_start(time);
 }
 
-
-void timer_stop( TimerData* time )
+void
+timer_stop( TimerData* time )
 {
     if (timer_initialized != 1)
     {
@@ -426,9 +441,8 @@ void timer_stop( TimerData* time )
     _timer_stop(time);
 }
 
-
-
-int timer_sleep(unsigned long usec)
+int
+timer_sleep(unsigned long usec)
 {
     int status = -1;
     struct timespec req;
@@ -454,8 +468,8 @@ int timer_sleep(unsigned long usec)
     return status;
 }
 
-
-void timer_finalize(void)
+void
+timer_finalize(void)
 {
     if (timer_initialized != 1)
     {
@@ -469,8 +483,10 @@ void timer_finalize(void)
     timer_initialized = 0;
 }
 
-void timer_reset( TimerData* time )
+void
+timer_reset( TimerData* time )
 {
     time->start.int64 = 0;
     time->stop.int64 = 0;
 }
+

@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,12 +29,15 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <topology_proc.h>
 #include <cpuid.h>
 
-/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-static int get_cpu_perf_data(void)
+
+static int
+get_cpu_perf_data(void)
 {
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     int largest_function = 0;
@@ -69,7 +72,8 @@ static int get_cpu_perf_data(void)
     return 0;
 }
 
-int get_listPosition(int ownid, bstring list)
+static int
+get_listPosition(int ownid, bstring list)
 {
     bstring ownStr = bformat("%d",ownid);
     struct bstrList* tokens = bsplit(list,(char) ',');
@@ -85,7 +89,8 @@ int get_listPosition(int ownid, bstring list)
     return -1;
 }
 
-int fillList(int* outList, int outOffset, bstring list)
+static int
+fillList(int* outList, int outOffset, bstring list)
 {
     int current = 0;
     int (*ownatoi)(const char*);
@@ -113,7 +118,6 @@ int fillList(int* outList, int outOffset, bstring list)
                     {
                         outList[outOffset+current] = j;
                     }
-                    
                     current++;
                 }
             }
@@ -124,7 +128,8 @@ int fillList(int* outList, int outOffset, bstring list)
     return current;
 }
 
-static int readCacheInclusiveIntel(int level)
+static int
+readCacheInclusiveIntel(int level)
 {
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     eax = 0x04;
@@ -143,7 +148,9 @@ static int readCacheInclusiveAMD(int level)
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
-void proc_init_cpuInfo(cpu_set_t cpuSet)
+
+void
+proc_init_cpuInfo(cpu_set_t cpuSet)
 {
     int i = 0;
     int HWthreads = 0;
@@ -169,7 +176,7 @@ void proc_init_cpuInfo(cpu_set_t cpuSet)
     cpuid_topology.numHWThreads = 0;
     cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
 
-    if (NULL != (fp = fopen ("/proc/cpuinfo", "r"))) 
+    if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
     {
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
@@ -226,7 +233,8 @@ void proc_init_cpuInfo(cpu_set_t cpuSet)
     return;
 }
 
-void proc_init_cpuFeatures(void)
+void
+proc_init_cpuFeatures(void)
 {
     int ret;
     FILE* file;
@@ -396,9 +404,8 @@ void proc_init_cpuFeatures(void)
     return;
 }
 
-
-
-void proc_init_nodeTopology(cpu_set_t cpuSet)
+void
+proc_init_nodeTopology(cpu_set_t cpuSet)
 {
     HWThread* hwThreadPool;
     FILE *fp;
@@ -456,7 +463,8 @@ void proc_init_nodeTopology(cpu_set_t cpuSet)
     return;
 }
 
-void proc_init_cacheTopology(void)
+void
+proc_init_cacheTopology(void)
 {
     FILE *fp;
     CacheLevel* cachePool = NULL;

@@ -12,7 +12,7 @@
  *               Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,32 +29,41 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <string.h>
 
 #include <likwid.h>
 
-void __attribute__ ((visibility ("default") )) likwid_markerinit_(void)
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+void __attribute__ ((visibility ("default") ))
+likwid_markerinit_(void)
 {
     likwid_markerInit();
 }
 
-void __attribute__ ((visibility ("default") )) likwid_markerthreadinit_(void)
+void __attribute__ ((visibility ("default") ))
+likwid_markerthreadinit_(void)
 {
     likwid_markerThreadInit();
 }
 
-void __attribute__ ((visibility ("default") )) likwid_markerclose_(void)
+void __attribute__ ((visibility ("default") ))
+likwid_markerclose_(void)
 {
     likwid_markerClose();
 }
 
-void __attribute__ ((visibility ("default") )) likwid_markernextgroup_(void)
+void __attribute__ ((visibility ("default") ))
+likwid_markernextgroup_(void)
 {
     likwid_markerNextGroup();
 }
 
-void __attribute__ ((visibility ("default") )) likwid_markerregisterregion_(char* regionTag, int len)
+void __attribute__ ((visibility ("default") ))
+likwid_markerregisterregion_(char* regionTag, int len)
 {
     char* tmp = (char*) malloc((len+1) * sizeof(char) );
     strncpy(tmp, regionTag, len * sizeof(char) );
@@ -71,7 +80,8 @@ void __attribute__ ((visibility ("default") )) likwid_markerregisterregion_(char
     free(tmp);
 }
 
-void __attribute__ ((visibility ("default") )) likwid_markerstartregion_(char* regionTag, int len)
+void __attribute__ ((visibility ("default") ))
+likwid_markerstartregion_(char* regionTag, int len)
 {
     char* tmp = (char*) malloc((len+1) * sizeof(char) );
     strncpy(tmp, regionTag, len * sizeof(char) );
@@ -88,7 +98,8 @@ void __attribute__ ((visibility ("default") )) likwid_markerstartregion_(char* r
     free(tmp);
 }
 
-void __attribute__ ((visibility ("default") )) likwid_markerstopregion_(char* regionTag, int len)
+void __attribute__ ((visibility ("default") ))
+likwid_markerstopregion_(char* regionTag, int len)
 {
     char* tmp = (char*) malloc((len+1) * sizeof(char));
     strncpy(tmp, regionTag, len * sizeof(char) );
@@ -105,7 +116,14 @@ void __attribute__ ((visibility ("default") )) likwid_markerstopregion_(char* re
     free(tmp);
 }
 
-void __attribute__ ((visibility ("default") )) likwid_markergetregion_(char* regionTag, int* nr_events, double* events, double *time, int *count, int len)
+void __attribute__ ((visibility ("default") ))
+likwid_markergetregion_(
+        char* regionTag,
+        int* nr_events,
+        double* events,
+        double *time,
+        int *count,
+        int len)
 {
     char* tmp = (char*) malloc((len+1) * sizeof(char));
     strncpy(tmp, regionTag, len * sizeof(char) );

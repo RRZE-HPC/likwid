@@ -11,7 +11,7 @@
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,7 @@
  */
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -41,29 +42,24 @@
 #include <numa.h>
 #include <affinity.h>
 
-extern void _loadData(uint32_t size, void* ptr);
-
 /* #####   EXPORTED VARIABLES   ########################################### */
 
+extern void _loadData(uint32_t size, void* ptr);
 
-/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-
-
-/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
+/* #####   LOCAL VARIABLES   ############################################## */
 
 static uint64_t  memoryFraction = 80ULL;
 
-
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static void* 
+static void*
 allocateOnNode(size_t size, int domainId)
 {
-	char *ptr; 
+    char *ptr;
 
-	ptr = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);  
+    ptr = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
 
-	if (ptr == (char *)-1)
+    if (ptr == (char *)-1)
     {
         ERROR;
     }
@@ -73,7 +69,7 @@ allocateOnNode(size_t size, int domainId)
     return ptr;
 }
 
-static void 
+static void
 initMemory(size_t size, char* ptr, int domainId)
 {
     affinity_pinProcess(numa_info.nodes[domainId].processors[0]);
@@ -100,7 +96,8 @@ findProcessor(uint32_t nodeId, uint32_t coreId)
 }
 
 /* evict all dirty cachelines from last level cache */
-static void cleanupCache(char* ptr)
+static void
+cleanupCache(char* ptr)
 {
 #if defined(__x86_64__) || defined(__i386__)
     uint32_t cachesize = 2 * cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].size;
@@ -112,7 +109,6 @@ static void cleanupCache(char* ptr)
 #endif
 }
 
-
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void
@@ -120,7 +116,6 @@ memsweep_setMemoryFraction(uint64_t fraction)
 {
     memoryFraction = fraction;
 }
-
 
 void
 memsweep_node(void)
@@ -130,7 +125,6 @@ memsweep_node(void)
         memsweep_domain(i);
     }
 }
-
 
 void
 memsweep_domain(int domainId)
@@ -165,7 +159,4 @@ memsweep_threadGroup(const int* processorList, int numberOfProcessors)
         }
     }
 }
-
-
-
 

@@ -15,7 +15,7 @@
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -52,7 +52,6 @@ static int features_initialized = 0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-
 #define PRINT_VALUE(color,string)  \
     color_on(BRIGHT,(color));      \
     printf(#string"\n");            \
@@ -80,9 +79,10 @@ static int features_initialized = 0;
 
 #define IF_FLAG(feature) (cpuFeatureMask[cpu] & (1ULL<<feature))
 
-
 /* #####   FUNCTIONS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-static void cpuFeatures_update(int cpu)
+
+static void
+cpuFeatures_update(int cpu)
 {
     int ret;
     uint64_t flags = 0x0ULL;
@@ -189,7 +189,9 @@ static void cpuFeatures_update(int cpu)
         ret = HPMread(cpu, MSR_DEV, MSR_PREFETCH_ENABLE, &flags);
         if (ret != 0)
         {
-            fprintf(stderr, "Cannot read register 0x%X on cpu %d: err %d\n", MSR_PREFETCH_ENABLE, cpu, ret);
+            fprintf(stderr,
+                    "Cannot read register 0x%X on cpu %d: err %d\n",
+                    MSR_PREFETCH_ENABLE, cpu, ret);
         }
         TEST_FLAG_INV(FEAT_IP_PREFETCHER,3);
         TEST_FLAG_INV(FEAT_DCU_PREFETCHER,2);
@@ -198,7 +200,8 @@ static void cpuFeatures_update(int cpu)
     }
 }
 
-static char* cpuFeatureNames[CPUFEATURES_MAX] = {
+static char*
+cpuFeatureNames[CPUFEATURES_MAX] = {
     [FEAT_HW_PREFETCHER] = "Hardware Prefetcher",
     [FEAT_IP_PREFETCHER] = "IP Prefetcher",
     [FEAT_DCU_PREFETCHER] = "DCU Pretecher",
@@ -235,7 +238,7 @@ cpuFeatures_init()
     if (!HPMinitialized())
     {
         HPMinit();
-    
+
         for (i = 0; i < cpuid_topology.numHWThreads; i++)
         {
             i = HPMaddThread(cpuid_topology.threadPool[i].apicId);
@@ -248,7 +251,6 @@ cpuFeatures_init()
         }
     }
 
-    
     features_initialized = 1;
 }
 
@@ -414,7 +416,6 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
     return 0;
 }
 
-
 int
 cpuFeatures_disable(int cpu, CpuFeature type, int print)
 {
@@ -543,7 +544,8 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
     return ret;
 }
 
-int cpuFeatures_get(int cpu, CpuFeature type)
+int
+cpuFeatures_get(int cpu, CpuFeature type)
 {
     if ((type >= FEAT_HW_PREFETCHER) && (type < CPUFEATURES_MAX))
     {
@@ -559,7 +561,8 @@ int cpuFeatures_get(int cpu, CpuFeature type)
     return -EINVAL;
 }
 
-char* cpuFeatures_name(CpuFeature type)
+char*
+cpuFeatures_name(CpuFeature type)
 {
     if ((type >= FEAT_HW_PREFETCHER) && (type < CPUFEATURES_MAX))
     {
@@ -567,3 +570,4 @@ char* cpuFeatures_name(CpuFeature type)
     }
     return NULL;
 }
+

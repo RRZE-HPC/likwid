@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,9 @@
  *
  * =======================================================================================
  */
- 
+
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -44,11 +46,6 @@
 #include <numa.h>
 #include <topology.h>
 
-/* #####   EXPORTED VARIABLES   ########################################### */
-
-
-
-
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #ifdef HAS_MEMPOLICY
@@ -57,8 +54,9 @@
 #define mbind(start, len, nmask, maxnode, flags) syscall(SYS_mbind,(start),len,MPOL_BIND,(nmask),maxnode,flags)
 #endif
 
-/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
-int
+/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+
+static int
 proc_findProcessor(uint32_t nodeId, uint32_t coreId)
 {
     int i;
@@ -73,7 +71,6 @@ proc_findProcessor(uint32_t nodeId, uint32_t coreId)
     return 0;
 }
 
-/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 static int
 setConfiguredNodes(void)
 {
@@ -83,13 +80,13 @@ setConfiguredNodes(void)
 
     dir = opendir("/sys/devices/system/node");
 
-    if (!dir) 
+    if (!dir)
     {
         maxIdConfiguredNode = 0;
     }
     else
     {
-        while ((de = readdir(dir)) != NULL) 
+        while ((de = readdir(dir)) != NULL)
         {
             int nd;
             if (strncmp(de->d_name, "node", 4))
@@ -109,7 +106,6 @@ setConfiguredNodes(void)
     return maxIdConfiguredNode;
 }
 
-
 static void
 nodeMeminfo(int node, uint64_t* totalMemory, uint64_t* freeMemory)
 {
@@ -121,7 +117,7 @@ nodeMeminfo(int node, uint64_t* totalMemory, uint64_t* freeMemory)
 
     filename = bformat("/sys/devices/system/node/node%d/meminfo", node);
 
-    if (NULL != (fp = fopen (bdata(filename), "r"))) 
+    if (NULL != (fp = fopen (bdata(filename), "r")))
     {
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
@@ -185,11 +181,10 @@ nodeProcessorList(int node, uint32_t** list)
     }
 
     /* the cpumap interface should be always there */
-    filename = bformat("/sys/devices/system/node/node%d/cpumap", node); 
+    filename = bformat("/sys/devices/system/node/node%d/cpumap", node);
 
-    if (NULL != (fp = fopen (bdata(filename), "r"))) 
+    if (NULL != (fp = fopen (bdata(filename), "r")))
     {
-
         src = bread ((bNread) fread, fp);
         tokens = bsplit(src,',');
 
@@ -198,12 +193,12 @@ nodeProcessorList(int node, uint32_t** list)
             val = strtoul((char*) tokens->entry[i]->data, &endptr, 16);
 
             if ((errno != 0 && val == LONG_MAX )
-                    || (errno != 0 && val == 0)) 
+                    || (errno != 0 && val == 0))
             {
                 return -EFAULT;
             }
 
-            if (endptr == (char*) tokens->entry[i]->data) 
+            if (endptr == (char*) tokens->entry[i]->data)
             {
                 ERROR_PLAIN_PRINT(No digits were found);
                 return -EFAULT;
@@ -234,18 +229,16 @@ nodeProcessorList(int node, uint32_t** list)
         bstrListDestroy(tokens);
         bdestroy(src);
         bdestroy(filename);
-        fclose(fp); 
+        fclose(fp);
 
         /* FIXME: CPU list here is not physical cores first but numerical sorted */
-
-
         return count;
     }
 
     /* something went wrong */
     return -1;
 }
- 
+
 static int
 nodeDistanceList(int node, int numberOfNodes, uint32_t** list)
 {
@@ -306,7 +299,7 @@ int proc_numa_init(void)
     {
         numa_info.numberOfNodes = 0;
         numa_info.nodes = NULL;
-        return -1; 
+        return -1;
     }
     /* First determine maximum number of nodes */
     numa_info.numberOfNodes = setConfiguredNodes()+1;
@@ -335,7 +328,7 @@ int proc_numa_init(void)
     return 0;
 }
 
-void 
+void
 proc_numa_setInterleaved(const int* processorList, int numberOfProcessors)
 {
     long i;
@@ -381,3 +374,4 @@ proc_numa_membind(void* ptr, size_t size, int domainId)
         ERROR;
     }
 }
+

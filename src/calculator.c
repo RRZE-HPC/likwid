@@ -43,7 +43,7 @@
  *                Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -60,6 +60,8 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,16 +69,19 @@
 #include <getopt.h>
 #include <calculator_stack.h>
 
+/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
+
 #define bool char
 #define true 1
 #define false 0
-
 #define PI 3.141592653589793
 
 /* Added by Thomas Roehl (Thomas.Roehl@fau.de) to reduce reallocs by allocating a temporary
  * token for parsing as well as for transforming a number to a string.
  */
 #define MAXTOKENLENGTH 512
+
+/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 typedef enum
 {
@@ -125,7 +130,10 @@ int nrCalcTokens = 0;
 
 typedef double number;
 
-void raise(Error err)
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+void
+raise(Error err)
 {
     char* msg;
     switch(err)
@@ -143,19 +151,22 @@ void raise(Error err)
     printf("\tError: %s\n", msg);
 }
 
-inline unsigned int toDigit(char ch)
+inline unsigned int
+toDigit(char ch)
 {
     return ch - '0';
 }
 
-number buildNumber(token str)
+number
+buildNumber(token str)
 {
     number result = 0;
     result = strtod(str, NULL);
     return result;
 }
 
-token num2Str(number num)
+token
+num2Str(number num)
 {
     /* Increased precision by Thomas Roehl (Thomas.Roehl@fau.de) as required for LIKWID */
     token str = (token)malloc((MAXTOKENLENGTH+1)*sizeof(char));
@@ -163,19 +174,20 @@ token num2Str(number num)
     return str;
 }
 
-
-
-inline number toRadians(number degrees)
+inline number
+toRadians(number degrees)
 {
     return degrees * PI / 180.0;
 }
 
-inline number toDegrees(number radians)
+inline number
+toDegrees(number radians)
 {
     return radians * 180.0 / PI;
 }
 
-token doFunc(token input, token function)
+token
+doFunc(token input, token function)
 {
     number num = buildNumber(input);
     number result = num;
@@ -214,7 +226,8 @@ token doFunc(token input, token function)
     return num2Str(result);
 }
 
-int doOp(token loperand, token op, token roperand, token *result)
+int
+doOp(token loperand, token op, token roperand, token *result)
 {
     /* Added by Thomas Roehl (Thomas.Roehl@fau.de) to return
      * errors from calculation like devide-by-zero, ... */
@@ -276,8 +289,8 @@ int doOp(token loperand, token op, token roperand, token *result)
     return err;
 }
 
-
-Symbol type(char ch)
+Symbol
+type(char ch)
 {
     Symbol result;
     switch(ch)
@@ -382,7 +395,8 @@ Symbol type(char ch)
     return result;
 }
 
-bool isFunction(token tk)
+bool
+isFunction(token tk)
 {
     return (strcmp(tk, "abs") == 0
         || strcmp(tk, "floor") == 0
@@ -402,7 +416,8 @@ bool isFunction(token tk)
         || strcmp(tk, "exp") == 0);
 }
 
-Symbol tokenType(token tk)
+Symbol
+tokenType(token tk)
 {
     Symbol ret = type(*tk);
     switch(ret)
@@ -425,7 +440,8 @@ Symbol tokenType(token tk)
     return ret;
 }
 
-int tokenize(char *str, char *(**tokensRef))
+int
+tokenize(char *str, char *(**tokensRef))
 {
     char** tokens = NULL;
     char** tmp = NULL;
@@ -488,7 +504,7 @@ int tokenize(char *str, char *(**tokensRef))
                             // Assemble rest of number
                             for(; // Don't change len
                                 *ptr // There is a next character and it is not null
-                                && len <= MAXTOKENLENGTH 
+                                && len <= MAXTOKENLENGTH
                                 && (type(*ptr) == digit // The next character is a digit
                                      || ((type(*ptr) == decimal // Or the next character is a decimal
                                          && hasDecimal == 0)) // But we have not added a decimal
@@ -551,11 +567,11 @@ int tokenize(char *str, char *(**tokensRef))
                     }
 
                     // Assemble rest of number
-                    /* Added support for signed exponents in scientific notation 
+                    /* Added support for signed exponents in scientific notation
                      * by Thomas Roehl (Thomas.Roehl@fau.de) as required for LIKWID */
                     for(; // Don't change len
                         *ptr // There is a next character and it is not null
-                        && len <= MAXTOKENLENGTH 
+                        && len <= MAXTOKENLENGTH
                         && (type(*ptr) == digit // The next character is a digit
                              || ((type(*ptr) == decimal // Or the next character is a decimal
                                  && hasDecimal == false)) // But we have not added a decimal
@@ -629,7 +645,8 @@ int tokenize(char *str, char *(**tokensRef))
     return numTokens;
 }
 
-bool leftAssoc(token op)
+bool
+leftAssoc(token op)
 {
     bool ret;
     switch(tokenType(op))
@@ -645,7 +662,8 @@ bool leftAssoc(token op)
     return ret;
 }
 
-int precedence(token op1, token op2)
+int
+precedence(token op1, token op2)
 {
     int ret;
 
@@ -667,7 +685,8 @@ int precedence(token op1, token op2)
     return ret;
 }
 
-int evalStackPush(Stack *s, token val)
+int
+evalStackPush(Stack *s, token val)
 {
     /* Added by Thomas Roehl (Thomas.Roehl@fau.de) to return
      * calculation errors. Function now returns an int.
@@ -725,7 +744,8 @@ int evalStackPush(Stack *s, token val)
     return ret;
 }
 
-int postfix(token *tokens, int numTokens, Stack *output)
+int
+postfix(token *tokens, int numTokens, Stack *output)
 {
     Stack operators;
     int i;
@@ -793,7 +813,9 @@ int postfix(token *tokens, int numTokens, Stack *output)
                      *     push op1 onto the stack
                      */
                     while(stackSize(&operators) > 0
-                        && (tokenType((char*)stackTop(&operators)) == addop || tokenType((char*)stackTop(&operators)) == multop || tokenType((char*)stackTop(&operators)) == expop)
+                        && (tokenType((char*)stackTop(&operators)) == addop ||
+                            tokenType((char*)stackTop(&operators)) == multop ||
+                            tokenType((char*)stackTop(&operators)) == expop)
                         && ((leftAssoc(tokens[i]) && precedence(tokens[i], (char*)stackTop(&operators)) <= 0)
                             || (!leftAssoc(tokens[i]) && precedence(tokens[i], (char*)stackTop(&operators)) < 0))
                         && err == 0)
@@ -818,9 +840,12 @@ int postfix(token *tokens, int numTokens, Stack *output)
                 {
                     /*
                      * If the token is a right paren:
-                     *     Until the token at the top of the stack is a left paren, pop operators off the stack onto the output queue
-                     *     Pop the left paren from the stack, but not onto the output queue
-                     *     If the stack runs out without finding a left paren, then there are mismatched parens
+                     *     Until the token at the top of the stack is a left
+                     *     paren, pop operators off the stack onto the output
+                     *     queue Pop the left paren from the stack, but not
+                     *     onto the output queue If the stack runs out without
+                     *     finding a left paren, then there are mismatched
+                     *     parens
                      */
                     while(stackSize(&operators) > 0
                         && tokenType((token)stackTop(&operators)) != lparen
@@ -851,9 +876,9 @@ int postfix(token *tokens, int numTokens, Stack *output)
     }
     /*
      * When there are no more tokens to read:
-     *     While there are still operator tokens on the stack:
-     *         If the operator token on the top of the stack is a paren, then there are mismatched parens
-     *         Pop the operator onto the output queue
+     *     While there are still operator tokens on the stack: If the operator
+     *     token on the top of the stack is a paren, then there are mismatched
+     *     parens Pop the operator onto the output queue
      */
     while(stackSize(&operators) > 0)
     {
@@ -872,10 +897,9 @@ int postfix(token *tokens, int numTokens, Stack *output)
     return err;
 }
 
-
-
 /* Added by Thomas Roehl (Thomas.Roehl@fau.de) as interface for LIKWID */
-int calculate_infix(char* finfix, double *result)
+int
+calculate_infix(char* finfix, double *result)
 {
     int i;
     int ret = 0;
@@ -929,5 +953,4 @@ calcerror:
     stackFree(&expr);
     return ret;
 }
-
 

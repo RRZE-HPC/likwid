@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,11 +28,12 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <fcntl.h>
-
 
 #include <types.h>
 #include <bstrlib.h>
@@ -40,7 +41,10 @@
 #include <topology.h>
 #include <error.h>
 
-int getBusFromSocket(const uint32_t socket)
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+int
+getBusFromSocket(const uint32_t socket)
 {
     int cur_bus = 0;
     uint32_t cur_socket = 0;
@@ -84,7 +88,6 @@ proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     uint16_t testVendor = 0x8086;
     uint32_t sbus, sdevfn, svend, sdev;
     int busID;
-    
 
     if ( (fptr = fopen( "/proc/bus/pci/devices", "r")) == NULL )
     {
@@ -112,14 +115,12 @@ proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
         }
     }
     fclose(fptr);
-    
     *nrSockets = cntr;
-    
     if ( cntr == 0 )
     {
         //fprintf(stderr, "Uncore not supported on this system\n");
         return -ENODEV;
     }
-    
     return 0;
 }
+

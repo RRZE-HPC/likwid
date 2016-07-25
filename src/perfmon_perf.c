@@ -12,7 +12,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,8 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -42,7 +44,12 @@
 #include <perfmon.h>
 #include <perfmon_perf.h>
 
+/* #####   LOCAL VARIABLES   ############################################## */
+
 static int* cpu_event_fds[MAX_NUM_THREADS] = { NULL };
+
+
+/* #####   EXPORTED VARIABLES   ########################################### */
 
 const uint64_t configList[MAX_SW_EVENTS] = {
     [0x00] = PERF_COUNT_SW_CPU_CLOCK,
@@ -56,9 +63,15 @@ const uint64_t configList[MAX_SW_EVENTS] = {
     [0x08] = PERF_COUNT_SW_EMULATION_FAULTS,
 };
 
+/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+
 static long
-perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
-                int cpu, int group_fd, unsigned long flags)
+perf_event_open(
+        struct perf_event_attr *hw_event,
+        pid_t pid,
+        int cpu,
+        int group_fd,
+        unsigned long flags)
 {
     int ret;
 
@@ -67,7 +80,10 @@ perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
     return ret;
 }
 
-int init_perf_event(int cpu_id)
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+int
+init_perf_event(int cpu_id)
 {
     if (cpu_event_fds[cpu_id] == NULL)
     {
@@ -81,7 +97,8 @@ int init_perf_event(int cpu_id)
     return 0;
 }
 
-int setup_perf_event(int cpu_id, PerfmonEvent* event)
+int
+setup_perf_event(int cpu_id, PerfmonEvent* event)
 {
     struct perf_event_attr attr;
     if (event == NULL)
@@ -127,7 +144,8 @@ int setup_perf_event(int cpu_id, PerfmonEvent* event)
     return 0;
 }
 
-int read_perf_event(int cpu_id, uint64_t eventID, uint64_t *data)
+int
+read_perf_event(int cpu_id, uint64_t eventID, uint64_t *data)
 {
     int ret = 0;
     long long tmp = 0;
@@ -148,7 +166,8 @@ int read_perf_event(int cpu_id, uint64_t eventID, uint64_t *data)
     return 0;
 }
 
-int stop_perf_event(int cpu_id, uint64_t eventID)
+int
+stop_perf_event(int cpu_id, uint64_t eventID)
 {
     if ((cpu_event_fds[cpu_id] != NULL) && (cpu_event_fds[cpu_id][eventID] != -1))
     {
@@ -161,7 +180,8 @@ int stop_perf_event(int cpu_id, uint64_t eventID)
     return 0;
 }
 
-int stop_all_perf_event(int cpu_id)
+int
+stop_all_perf_event(int cpu_id)
 {
     if (cpu_event_fds[cpu_id] != NULL)
     {
@@ -176,7 +196,8 @@ int stop_all_perf_event(int cpu_id)
     return 0;
 }
 
-int clear_perf_event(int cpu_id, uint64_t eventID)
+int
+clear_perf_event(int cpu_id, uint64_t eventID)
 {
     if ((cpu_event_fds[cpu_id] != NULL) && (cpu_event_fds[cpu_id][eventID] != -1))
     {
@@ -189,7 +210,8 @@ int clear_perf_event(int cpu_id, uint64_t eventID)
     return 0;
 }
 
-int clear_all_perf_event(int cpu_id)
+int
+clear_all_perf_event(int cpu_id)
 {
     if (cpu_event_fds[cpu_id] != NULL)
     {
@@ -204,7 +226,8 @@ int clear_all_perf_event(int cpu_id)
     return 0;
 }
 
-int start_perf_event(int cpu_id, uint64_t eventID)
+int
+start_perf_event(int cpu_id, uint64_t eventID)
 {
     if ((cpu_event_fds[cpu_id] != NULL) && (cpu_event_fds[cpu_id][eventID] != -1))
     {
@@ -217,7 +240,8 @@ int start_perf_event(int cpu_id, uint64_t eventID)
     return 0;
 }
 
-int start_all_perf_event(int cpu_id)
+int
+start_all_perf_event(int cpu_id)
 {
     if (cpu_event_fds[cpu_id] != NULL)
     {
@@ -232,7 +256,8 @@ int start_all_perf_event(int cpu_id)
     return 0;
 }
 
-int close_perf_event(int cpu_id, uint64_t eventID)
+int
+close_perf_event(int cpu_id, uint64_t eventID)
 {
     if ((cpu_event_fds[cpu_id] != NULL) && (cpu_event_fds[cpu_id][eventID] != -1))
     {
@@ -242,7 +267,8 @@ int close_perf_event(int cpu_id, uint64_t eventID)
     return 0;
 }
 
-int finalize_perf_event(int cpu_id)
+int
+finalize_perf_event(int cpu_id)
 {
     if (cpu_event_fds[cpu_id] != NULL)
     {
@@ -255,6 +281,6 @@ int finalize_perf_event(int cpu_id)
         }
         free(cpu_event_fds[cpu_id]);
     }
-    
     return 0;
 }
+

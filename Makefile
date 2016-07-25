@@ -1,4 +1,3 @@
-#
 # =======================================================================================
 #
 #      Filename:  Makefile
@@ -11,7 +10,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig
+#      Copyright (C) 2016 Jan Treibig
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -130,7 +129,6 @@ $(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) 
 	@echo "===>  CREATE STATIC LIB  $(TARGET_LIB)"
 	$(Q)${AR} -crus $(STATIC_TARGET_LIB) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 
-
 $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
 	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION).$(RELEASE) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB) $(RPATHS)
@@ -189,11 +187,9 @@ $(BUILD_DIR)/%.o:  %.S
 	$(Q)$(AS) $(ASFLAGS) $@.tmp -o $@
 	@rm $@.tmp
 
-
 $(BUILD_DIR)/%.h:  $(SRC_DIR)/includes/%.txt
 	@echo "===>  GENERATE HEADER $@"
 	$(Q)$(GEN_PMHEADER) $< $@
-
 
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
@@ -201,11 +197,9 @@ endif
 
 .PHONY: clean distclean install uninstall help $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 
-
 .PRECIOUS: $(BUILD_DIR)/%.pas
 
 .NOTPARALLEL:
-
 
 clean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	@echo "===>  CLEAN"
@@ -395,7 +389,6 @@ install: install_daemon install_freq
 	@cp -f filters/*  $(abspath $(PREFIX)/share/likwid/filter)
 	@chmod 755 $(abspath $(PREFIX)/share/likwid/filter)/*
 
-
 move: move_daemon move_freq
 	@echo "===> MOVE applications from $(BINPREFIX) to $(INSTALLED_BINPREFIX)"
 	@mkdir -p $(INSTALLED_BINPREFIX)
@@ -465,7 +458,6 @@ move: move_daemon move_freq
 	@chmod 755 $(LIKWIDFILTERPATH)
 	@cp -f $(abspath $(PREFIX)/share/likwid/filter)/* $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
-
 
 uninstall: uninstall_daemon uninstall_freq
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
@@ -586,4 +578,4 @@ help:
 	@echo "The common configuration is INSTALLED_PREFIX = PREFIX, so changing PREFIX is enough."
 	@echo "If PREFIX and INSTALLED_PREFIX differ, you have to move anything after 'make install' to"
 	@echo "the INSTALLED_PREFIX. You can also use 'make move' which does the job for you."
-	
+

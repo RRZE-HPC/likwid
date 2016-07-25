@@ -13,7 +13,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,7 @@
  *
  * =======================================================================================
  */
+
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
 #include <stdlib.h>
@@ -62,14 +63,17 @@
 
 
 /* #####   EXPORTED VARIABLES   ########################################### */
+
 NumaTopology numa_info = {0,NULL};
+
+/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
+
 static int numaInitialized = 0;
 
-/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-/* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
-/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-int str2int(const char* str)
+int
+str2int(const char* str)
 {
     char* endptr;
     errno = 0;
@@ -92,8 +96,6 @@ int str2int(const char* str)
     return (int) val;
 }
 
-/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
-
 int
 empty_numa_init()
 {
@@ -101,7 +103,7 @@ empty_numa_init()
     return 0;
 }
 
-void 
+void
 empty_numa_setInterleaved(const int* processorList, int numberOfProcessors)
 {
     printf("MEMPOLICY NOT supported in kernel!\n");
@@ -114,7 +116,6 @@ empty_numa_membind(void* ptr, size_t size, int domainId)
     printf("MBIND NOT supported in kernel!\n");
     return;
 }
-
 
 const struct numa_functions numa_funcs = {
 #ifndef HAS_MEMPOLICY
@@ -132,8 +133,8 @@ const struct numa_functions numa_funcs = {
 #endif
 };
 
-
-int numa_init(void)
+int
+numa_init(void)
 {
     const struct numa_functions funcs = numa_funcs;
     int ret = 0;
@@ -171,25 +172,29 @@ int numa_init(void)
     return ret;
 }
 
-void numa_setInterleaved(const int* processorList, int numberOfProcessors)
+void
+numa_setInterleaved(const int* processorList, int numberOfProcessors)
 {
     const struct numa_functions funcs = numa_funcs;
     return funcs.numa_setInterleaved(processorList, numberOfProcessors);
 }
 
-void numa_membind(void* ptr, size_t size, int domainId)
+void
+numa_membind(void* ptr, size_t size, int domainId)
 {
     const struct numa_functions funcs = numa_funcs;
     return funcs.numa_membind(ptr, size, domainId);
 }
 
 #ifndef HAS_MEMPOLICY
-void numa_finalize(void)
+void
+numa_finalize(void)
 {
     return;
 }
 #else
-void numa_finalize(void)
+void
+numa_finalize(void)
 {
     int i;
     if (!numaInitialized)
@@ -221,7 +226,8 @@ void numa_finalize(void)
     return;
 }
 
-int likwid_getNumberOfNodes()
+int
+likwid_getNumberOfNodes()
 {
     if (numaInitialized)
     {

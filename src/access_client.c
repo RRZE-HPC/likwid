@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,6 +27,9 @@
  *
  * =======================================================================================
  */
+
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -49,6 +52,7 @@
 #include <affinity.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
+
 static int globalSocket = -1;
 static int cpuSockets_open = 0;
 static int cpuSockets[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = -1};
@@ -56,6 +60,7 @@ static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t cpuLocks[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = PTHREAD_MUTEX_INITIALIZER };
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+
 static char*
 access_client_strerror(AccessErrorType det)
 {
@@ -166,7 +171,7 @@ access_client_startDaemon(int cpu_id)
         timeout--;
         DEBUG_PRINT(DEBUGLEV_INFO, Still waiting for socket %s ..., filepath);
     }
-    
+
     if (timeout <= 0)
     {
         ERRNO_PRINT;  /* should hopefully still work, as we make no syscalls in between. */
@@ -185,7 +190,8 @@ access_client_startDaemon(int cpu_id)
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-int access_client_init(int cpu_id)
+int
+access_client_init(int cpu_id)
 {
     int ret = 0;
     if (cpuSockets[cpu_id] < 0)
@@ -210,7 +216,8 @@ int access_client_init(int cpu_id)
     return ret;
 }
 
-int access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *data)
+int
+access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *data)
 {
     int ret;
     int socket = globalSocket;
@@ -271,7 +278,8 @@ int access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint6
     return 0;
 }
 
-int access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t data)
+int
+access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t data)
 {
     int socket = globalSocket;
     int ret;
@@ -329,7 +337,8 @@ int access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint
     return 0;
 }
 
-void access_client_finalize(int cpu_id)
+void
+access_client_finalize(int cpu_id)
 {
     AccessDataRecord record;
     if (cpuSockets[cpu_id] > 0)
@@ -346,7 +355,8 @@ void access_client_finalize(int cpu_id)
     }
 }
 
-int access_client_check(PciDeviceIndex dev, int cpu_id)
+int
+access_client_check(PciDeviceIndex dev, int cpu_id)
 {
     int socket = globalSocket;
     pthread_mutex_t* lockptr = &globalLock;
@@ -377,3 +387,4 @@ int access_client_check(PciDeviceIndex dev, int cpu_id)
     }
     return 0;
 }
+

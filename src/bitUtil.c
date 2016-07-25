@@ -11,7 +11,7 @@
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,14 +27,13 @@
  *
  * =======================================================================================
  */
+
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 
 #include <types.h>
 #include <bitUtil.h>
-
-/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
-
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 uint64_t
@@ -49,17 +48,17 @@ field32(uint32_t value, int start, int length)
     return (value >> start) & (~0U >> (32 - length));
 }
 
-uint32_t 
+uint32_t
 extractBitField(uint32_t inField, uint32_t width, uint32_t offset)
 {
     uint32_t bitMask;
     uint32_t outField;
 
-    if ((offset+width) == 32) 
+    if ((offset+width) == 32)
     {
         bitMask = (0xFFFFFFFF<<offset);
     }
-    else 
+    else
     {
         bitMask = (0xFFFFFFFF<<offset) ^ (0xFFFFFFFF<<(offset+width));
 
@@ -87,5 +86,4 @@ getBitFieldWidth(uint32_t number)
 
     return fieldWidth+1;  /* bsr returns the position, we want the width */
 }
-
 

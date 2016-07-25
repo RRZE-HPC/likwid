@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,6 +28,9 @@
  *
  * =======================================================================================
  */
+
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -40,9 +43,9 @@
 
 PowerInfo power_info;
 
-/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-static int power_initialized = 0;
+/* #####   LOCAL VARIABLES   ############################################## */
 
+static int power_initialized = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -161,7 +164,7 @@ power_init(int cpuId)
                     }
                 }
             }
-            //TODO: Haswell EP and possibly Broadwell EP support multiple turbo 
+            //TODO: Haswell EP and possibly Broadwell EP support multiple turbo
             //      registers besides MSR_TURBO_RATIO_LIMIT:
             //      MSR_TURBO_RATIO_LIMIT1 and MSR_TURBO_RATIO_LIMIT2
         }
@@ -188,7 +191,6 @@ power_init(int cpuId)
             {
                 energyUnit = 1.0 * (1 << ((flags >> 8) & 0x1F)) / 1000000;
             }
-            
             for (i = 0; i < NUM_POWER_DOMAINS; i++)
             {
                 power_info.domains[i].energyUnit = energyUnit;
@@ -199,7 +201,6 @@ power_init(int cpuId)
                 power_info.domains[i].maxPower = 0.0;
                 power_info.domains[i].maxTimeWindow = 0.0;
             }
-            
             if ((cpuid_info.model == HASWELL_EP) ||
                 (cpuid_info.model == HASWELL_M1) ||
                 (cpuid_info.model == HASWELL_M2))
@@ -296,7 +297,8 @@ power_init(int cpuId)
 }
 
 /* All functions below are experimental and probably don't work */
-int power_perfGet(int cpuId, PowerType domain, uint32_t* status)
+int
+power_perfGet(int cpuId, PowerType domain, uint32_t* status)
 {
     int err = 0;
     *status = 0x0U;
@@ -316,7 +318,8 @@ int power_perfGet(int cpuId, PowerType domain, uint32_t* status)
     return 0;
 }
 
-int power_limitSet(int cpuId, PowerType domain, double power, double time, int doClamping)
+int
+power_limitSet(int cpuId, PowerType domain, double power, double time, int doClamping)
 {
     int err = 0;
     if (domain >= NUM_POWER_DOMAINS)
@@ -346,7 +349,8 @@ int power_limitSet(int cpuId, PowerType domain, double power, double time, int d
     return 0;
 }
 
-int power_limitGet(int cpuId, PowerType domain, double* power, double* time)
+int
+power_limitGet(int cpuId, PowerType domain, double* power, double* time)
 {
     int err = 0;
     *power = 0;
@@ -373,7 +377,8 @@ int power_limitGet(int cpuId, PowerType domain, double* power, double* time)
     return 0;
 }
 
-int power_limitState(int cpuId, PowerType domain)
+int
+power_limitState(int cpuId, PowerType domain)
 {
     int err = 0;
     if (domain >= NUM_POWER_DOMAINS)
@@ -398,7 +403,8 @@ int power_limitState(int cpuId, PowerType domain)
     return 0;
 }
 
-int power_limitActivate(int cpuId, PowerType domain)
+int
+power_limitActivate(int cpuId, PowerType domain)
 {
     int err = 0;
     if (domain >= NUM_POWER_DOMAINS)
@@ -426,7 +432,8 @@ int power_limitActivate(int cpuId, PowerType domain)
     return 0;
 }
 
-int power_limitDectivate(int cpuId, PowerType domain)
+int
+power_limitDectivate(int cpuId, PowerType domain)
 {
     int err = 0;
     uint64_t flags = 0x0ULL;
@@ -450,7 +457,8 @@ int power_limitDectivate(int cpuId, PowerType domain)
     return 0;
 }
 
-int power_policySet(int cpuId, PowerType domain, uint32_t priority)
+int
+power_policySet(int cpuId, PowerType domain, uint32_t priority)
 {
     int err = 0;
     if (domain >= NUM_POWER_DOMAINS)
@@ -470,7 +478,8 @@ int power_policySet(int cpuId, PowerType domain, uint32_t priority)
     return 0;
 }
 
-int power_policyGet(int cpuId, PowerType domain, uint32_t* priority)
+int
+power_policyGet(int cpuId, PowerType domain, uint32_t* priority)
 {
     int err = 0;
     *priority = 0x0U;
@@ -490,8 +499,8 @@ int power_policyGet(int cpuId, PowerType domain, uint32_t* priority)
     return 0;
 }
 
-
-void power_finalize(void)
+void
+power_finalize(void)
 {
     if (power_initialized == 0)
     {
@@ -511,7 +520,9 @@ void power_finalize(void)
     memset(power_info.domains, 0, NUM_POWER_DOMAINS*sizeof(PowerDomain));
 }
 
-PowerInfo_t get_powerInfo(void)
+PowerInfo_t
+get_powerInfo(void)
 {
     return &power_info;
 }
+

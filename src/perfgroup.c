@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,8 @@
  * =======================================================================================
  */
 
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -44,7 +46,10 @@
 #include <calculator.h>
 #include <likwid.h>
 
-int isdir(char* dirname)
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+int
+isdir(char* dirname)
 {
     struct stat st;
     if (NULL == dirname) {
@@ -56,7 +61,13 @@ int isdir(char* dirname)
     return S_ISDIR(st.st_mode) ? 1 : 0;
 }
 
-int get_groups(const char* grouppath, const char* architecture, char*** groupnames, char*** groupshort, char*** grouplong)
+int
+get_groups(
+        const char* grouppath,
+        const char* architecture,
+        char*** groupnames,
+        char*** groupshort,
+        char*** grouplong)
 {
     int i = 0, j = 0, s = 0;
     int fsize = 0, hsize = 0;
@@ -202,7 +213,7 @@ int get_groups(const char* grouppath, const char* architecture, char*** groupnam
     dp = opendir(fullpath);
     i = 0;
     int skip_group = 0;
-    
+
     while (ep = readdir(dp))
     {
         if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
@@ -216,7 +227,7 @@ int get_groups(const char* grouppath, const char* architecture, char*** groupnam
                 s = sprintf((*groupnames)[i], "%.*s", (int)(strlen(ep->d_name)-4), ep->d_name);
                 (*groupnames)[i][s] = '\0';
                 fp = fopen(fullpath,"r");
-                
+
                 while (fgets (buf, sizeof(buf), fp)) {
                     bstring bbuf = bfromcstr(buf);
                     btrimws(bbuf);
@@ -341,7 +352,6 @@ skip_cur_def_group:
                     (*groupnames)[i][s] = '\0';
                     fp = fopen(homepath,"r");
                     while (fgets (buf, sizeof(buf), fp)) {
-                        
                         bstring bbuf = bfromcstr(buf);
                         btrimws(bbuf);
                         if ((blength(bbuf) == 0) || (buf[0] == '#'))
@@ -401,7 +411,6 @@ skip_cur_def_group:
                             if (cpuid_topology.numThreadsPerCore > 1)
                             {
                                 skip_group = 1;
-                                
                             }
                         }
                         else if (bstrncmp(bbuf, LONG, 4) == 0)
@@ -451,7 +460,8 @@ skip_cur_home_group:
     return i;
 }
 
-void return_groups(int groups, char** groupnames, char** groupshort, char** grouplong)
+void
+return_groups(int groups, char** groupnames, char** groupshort, char** grouplong)
 {
     int i;
     for (i = 0; i <groups; i++)
@@ -470,8 +480,6 @@ void return_groups(int groups, char** groupnames, char** groupshort, char** grou
     if (grouplong)
         free(grouplong);
 }
-
-
 
 int custom_group(const char* eventStr, GroupInfo* ginfo)
 {
@@ -496,7 +504,6 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
     bstring fix1 = bformat("FIXC1");
     bstring fix2 = bformat("FIXC2");
     DEBUG_PRINT(DEBUGLEV_INFO, Creating custom group for event string %s, eventStr);
-    
     ginfo->shortinfo = malloc(7 * sizeof(char));
     if (ginfo->shortinfo == NULL)
     {
@@ -518,7 +525,6 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
         goto cleanup;
     }
     sprintf(ginfo->groupname, "%s", "Custom");
-    
     eventBstr = bfromcstr(eventStr);
     eventList = bsplit(eventBstr, delim);
     ginfo->nevents = eventList->qty;
@@ -644,7 +650,12 @@ cleanup:
     return err;
 }
 
-int read_group(const char* grouppath, const char* architecture, const char* groupname, GroupInfo* ginfo)
+int
+read_group(
+        const char* grouppath,
+        const char* architecture,
+        const char* groupname,
+        GroupInfo* ginfo)
 {
     FILE* fp;
     int i, s, e, err = 0;
@@ -825,8 +836,6 @@ int read_group(const char* grouppath, const char* architecture, const char* grou
                 }
             }
             bstrListDestroy(linelist);
-            
-
             linelist = bsplit(bbuf, ' ');
             bdestroy(bbuf);
             for (i=0; i<linelist->qty; i++)
@@ -845,7 +854,6 @@ int read_group(const char* grouppath, const char* architecture, const char* grou
             }
             sprintf(ginfo->counters[ginfo->nevents], "%s", bdata(linelist->entry[0]));
             sprintf(ginfo->events[ginfo->nevents], "%s", bdata(linelist->entry[1]));
-            
             ginfo->nevents++;
             bstrListDestroy(linelist);
             continue;
@@ -1003,7 +1011,8 @@ cleanup:
     return err;
 }
 
-int new_group(GroupInfo* ginfo)
+int
+new_group(GroupInfo* ginfo)
 {
     if (!ginfo)
         return -EINVAL;
@@ -1019,7 +1028,8 @@ int new_group(GroupInfo* ginfo)
     return 0;
 }
 
-char* get_eventStr(GroupInfo* ginfo)
+char*
+get_eventStr(GroupInfo* ginfo)
 {
     int i;
     char* string;
@@ -1047,7 +1057,8 @@ char* get_eventStr(GroupInfo* ginfo)
     return string;
 }
 
-void put_eventStr(char* eventset)
+void
+put_eventStr(char* eventset)
 {
     if (eventset != NULL)
     {
@@ -1056,7 +1067,8 @@ void put_eventStr(char* eventset)
     }
 }
 
-int add_event(GroupInfo* ginfo, char* event, char* counter)
+int
+add_event(GroupInfo* ginfo, char* event, char* counter)
 {
     if ((!ginfo) || (!event) || (!counter))
         return -EINVAL;
@@ -1078,7 +1090,8 @@ int add_event(GroupInfo* ginfo, char* event, char* counter)
     return 0;
 }
 
-int add_metric(GroupInfo* ginfo, char* mname, char* mcalc)
+int
+add_metric(GroupInfo* ginfo, char* mname, char* mcalc)
 {
     if ((!ginfo) || (!mname) || (!mcalc))
         return -EINVAL;
@@ -1101,7 +1114,8 @@ int add_metric(GroupInfo* ginfo, char* mname, char* mcalc)
 }
 
 
-char* get_groupName(GroupInfo* ginfo)
+char*
+get_groupName(GroupInfo* ginfo)
 {
     if ((ginfo != NULL) && (ginfo->groupname != NULL))
     {
@@ -1113,7 +1127,8 @@ char* get_groupName(GroupInfo* ginfo)
     return NULL;
 }
 
-int set_groupName(GroupInfo* ginfo, char* groupName)
+int
+set_groupName(GroupInfo* ginfo, char* groupName)
 {
     if ((ginfo == NULL) || (groupName == NULL))
         return -EINVAL;
@@ -1125,7 +1140,8 @@ int set_groupName(GroupInfo* ginfo, char* groupName)
     return 0;
 }
 
-char* get_shortInfo(GroupInfo* ginfo)
+char*
+get_shortInfo(GroupInfo* ginfo)
 {
     if ((ginfo != NULL) && (ginfo->shortinfo != NULL))
     {
@@ -1137,7 +1153,8 @@ char* get_shortInfo(GroupInfo* ginfo)
     return NULL;
 }
 
-void put_shortInfo(char* sinfo)
+void
+put_shortInfo(char* sinfo)
 {
     if (sinfo != NULL)
     {
@@ -1146,7 +1163,8 @@ void put_shortInfo(char* sinfo)
     }
 }
 
-int set_shortInfo(GroupInfo* ginfo, char* shortInfo)
+int
+set_shortInfo(GroupInfo* ginfo, char* shortInfo)
 {
     if ((ginfo == NULL) || (shortInfo == NULL))
         return -EINVAL;
@@ -1158,7 +1176,8 @@ int set_shortInfo(GroupInfo* ginfo, char* shortInfo)
     return 0;
 }
 
-char* get_longInfo(GroupInfo* ginfo)
+char*
+get_longInfo(GroupInfo* ginfo)
 {
     if ((ginfo != NULL) && (ginfo->longinfo != NULL))
     {
@@ -1170,7 +1189,8 @@ char* get_longInfo(GroupInfo* ginfo)
     return NULL;
 }
 
-void put_longInfo(char* linfo)
+void
+put_longInfo(char* linfo)
 {
     if (linfo != NULL)
     {
@@ -1179,7 +1199,8 @@ void put_longInfo(char* linfo)
     }
 }
 
-int set_longInfo(GroupInfo* ginfo, char* longInfo)
+int
+set_longInfo(GroupInfo* ginfo, char* longInfo)
 {
     if ((ginfo == NULL) || (longInfo == NULL))
         return -EINVAL;
@@ -1191,7 +1212,8 @@ int set_longInfo(GroupInfo* ginfo, char* longInfo)
     return 0;
 }
 
-void return_group(GroupInfo* ginfo)
+void
+return_group(GroupInfo* ginfo)
 {
     int i;
     if (ginfo->groupname)
@@ -1235,14 +1257,16 @@ void return_group(GroupInfo* ginfo)
     ginfo->nmetrics = 0;
 }
 
-void init_clist(CounterList* clist)
+void
+init_clist(CounterList* clist)
 {
     clist->counters = 0;
     clist->cnames = NULL;
     clist->cvalues = NULL;
 }
 
-int add_to_clist(CounterList* clist, char* counter, double result)
+int
+add_to_clist(CounterList* clist, char* counter, double result)
 {
     char** tmpnames;
     double* tmpvalues;
@@ -1271,7 +1295,8 @@ int add_to_clist(CounterList* clist, char* counter, double result)
     return 0;
 }
 
-void destroy_clist(CounterList* clist)
+void
+destroy_clist(CounterList* clist)
 {
     int i;
     if (clist != NULL)
@@ -1285,8 +1310,8 @@ void destroy_clist(CounterList* clist)
     }
 }
 
-
-int calc_metric(char* formula, CounterList* clist, double *result)
+int
+calc_metric(char* formula, CounterList* clist, double *result)
 {
     int i=0;
     *result = 0.0;
@@ -1336,3 +1361,4 @@ int calc_metric(char* formula, CounterList* clist, double *result)
     bdestroy(f);
     return i;
 }
+
