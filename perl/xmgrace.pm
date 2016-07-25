@@ -14,12 +14,12 @@
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License, v2, as
 #   published by the Free Software Foundation
-#  
+#
 #   This program is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
-#  
+#
 #   You should have received a copy of the GNU General Public License
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -38,106 +38,106 @@ my $Y_MAX=0;
 
 sub xmgrace
 {
-	my ($global_opts, $datasets, $outputs);
-	my $global_options = shift;
-	my $data_sets = shift;
-	my $world = determine_world_coords($data_sets);
+    my ($global_opts, $datasets, $outputs);
+    my $global_options = shift;
+    my $data_sets = shift;
+    my $world = determine_world_coords($data_sets);
 
-	my $x_ticks = {'axis' => 'x', 'major' => 0, 'minor ticks' => 0};
-	my $y_ticks = {'axis' => 'y', 'major' => 0, 'minor ticks' => 0};
+    my $x_ticks = {'axis' => 'x', 'major' => 0, 'minor ticks' => 0};
+    my $y_ticks = {'axis' => 'y', 'major' => 0, 'minor ticks' => 0};
 
-	determine_ticks($X_MAX,$x_ticks);
-	determine_ticks($Y_MAX,$y_ticks);
+    determine_ticks($X_MAX,$x_ticks);
+    determine_ticks($Y_MAX,$y_ticks);
 
-	$outputs = "-hdevice $global_options->{'device'} -printfile $global_options->{'output file'} ";
-	$outputs .= "-saveall $global_options->{'grace output file'}";
-	$global_opts = "-autoscale none -world $world";
-	open FILE,'>tmp.bat';
-	print FILE "title \"$global_options->{'title'}\"\n";
-	print FILE "subtitle \"$global_options->{'subtitle'}\"\n";
-	print FILE "xaxis label  \"$global_options->{'xaxis label'}\"\n";
-	print FILE "xaxis tick major  $x_ticks->{'major'}\n";
-	print FILE "xaxis tick minor ticks $x_ticks->{'minor ticks'}\n";
-	print FILE "yaxis label  \"$global_options->{'yaxis label'}\"\n";
-	print FILE "yaxis tick major  $y_ticks->{'major'}\n";
-	print FILE "yaxis tick minor ticks $y_ticks->{'minor ticks'}\n";
-	print FILE "legend  $global_options->{'legend'}\n";
-	$datasets = ' ';
+    $outputs = "-hdevice $global_options->{'device'} -printfile $global_options->{'output file'} ";
+    $outputs .= "-saveall $global_options->{'grace output file'}";
+    $global_opts = "-autoscale none -world $world";
+    open FILE,'>tmp.bat';
+    print FILE "title \"$global_options->{'title'}\"\n";
+    print FILE "subtitle \"$global_options->{'subtitle'}\"\n";
+    print FILE "xaxis label  \"$global_options->{'xaxis label'}\"\n";
+    print FILE "xaxis tick major  $x_ticks->{'major'}\n";
+    print FILE "xaxis tick minor ticks $x_ticks->{'minor ticks'}\n";
+    print FILE "yaxis label  \"$global_options->{'yaxis label'}\"\n";
+    print FILE "yaxis tick major  $y_ticks->{'major'}\n";
+    print FILE "yaxis tick minor ticks $y_ticks->{'minor ticks'}\n";
+    print FILE "legend  $global_options->{'legend'}\n";
+    $datasets = ' ';
 
-	my $num_graphs=0;
-	foreach my $dataset (@{$data_sets}) {
-		my $tag = "s$num_graphs";
-		$datasets .= "-nxy $dataset->{'data file'} ";
-		print FILE "$tag legend \"$dataset->{'title'}\"\n";
-		print FILE "$tag symbol $dataset->{'symbol'}->{'type'}\n";
-		print FILE "$tag symbol size $dataset->{'symbol'}->{'size'}\n";
-		print FILE "$tag symbol color $dataset->{'symbol'}->{'color'}\n";
-		print FILE "$tag symbol pattern $dataset->{'symbol'}->{'pattern'}\n";
-		print FILE "$tag symbol fill color $dataset->{'symbol'}->{'fill color'}\n";
-		print FILE "$tag symbol fill pattern $dataset->{'symbol'}->{'fill pattern'}\n";
-		print FILE "$tag symbol linewidth $dataset->{'symbol'}->{'linewidth'}\n";
-		print FILE "$tag symbol linestyle $dataset->{'symbol'}->{'linestyle'}\n";
-		print FILE "$tag line type $dataset->{'line'}->{'type'}\n";
-		print FILE "$tag line color $dataset->{'line'}->{'color'}\n";
-		print FILE "$tag line linestyle $dataset->{'line'}->{'linestyle'}\n";
-		print FILE "$tag line linewidth $dataset->{'line'}->{'linewidth'}\n";
-		print FILE "$tag line pattern $dataset->{'line'}->{'pattern'}\n";
-		$num_graphs++;
-	}
+    my $num_graphs=0;
+    foreach my $dataset (@{$data_sets}) {
+        my $tag = "s$num_graphs";
+        $datasets .= "-nxy $dataset->{'data file'} ";
+        print FILE "$tag legend \"$dataset->{'title'}\"\n";
+        print FILE "$tag symbol $dataset->{'symbol'}->{'type'}\n";
+        print FILE "$tag symbol size $dataset->{'symbol'}->{'size'}\n";
+        print FILE "$tag symbol color $dataset->{'symbol'}->{'color'}\n";
+        print FILE "$tag symbol pattern $dataset->{'symbol'}->{'pattern'}\n";
+        print FILE "$tag symbol fill color $dataset->{'symbol'}->{'fill color'}\n";
+        print FILE "$tag symbol fill pattern $dataset->{'symbol'}->{'fill pattern'}\n";
+        print FILE "$tag symbol linewidth $dataset->{'symbol'}->{'linewidth'}\n";
+        print FILE "$tag symbol linestyle $dataset->{'symbol'}->{'linestyle'}\n";
+        print FILE "$tag line type $dataset->{'line'}->{'type'}\n";
+        print FILE "$tag line color $dataset->{'line'}->{'color'}\n";
+        print FILE "$tag line linestyle $dataset->{'line'}->{'linestyle'}\n";
+        print FILE "$tag line linewidth $dataset->{'line'}->{'linewidth'}\n";
+        print FILE "$tag line pattern $dataset->{'line'}->{'pattern'}\n";
+        $num_graphs++;
+    }
 
 #     print "EXE LINE: gracebat $global_opts $datasets -param tmp.bat $outputs\n"; 
-	close FILE;
-	system ("gracebat $global_opts $datasets -param tmp.bat $outputs");
-	unlink 'tmp.bat';
+    close FILE;
+    system ("gracebat $global_opts $datasets -param tmp.bat $outputs");
+    unlink 'tmp.bat';
 }
 
 sub determine_world_coords
 {
-	my $data_sets = shift;
-	my $x_min = 0;
-	my $y_min = 0;
-	my $x_max = 0;
-	my $y_max = 0.;
-	my @x, @y;
+    my $data_sets = shift;
+    my $x_min = 0;
+    my $y_min = 0;
+    my $x_max = 0;
+    my $y_max = 0.;
+    my @x, @y;
 
-	foreach my $dataset (@{$data_sets}) {
-		open FILE, "<$dataset->{'data file'}";
+    foreach my $dataset (@{$data_sets}) {
+        open FILE, "<$dataset->{'data file'}";
 
-		@x = ();
-		@y = ();
+        @x = ();
+        @y = ();
 
-		while (<FILE>) {
-			/([\d\.]+)[ ]+([\d\.]+)/;
+        while (<FILE>) {
+            /([\d\.]+)[ ]+([\d\.]+)/;
 
-			push @x, $1;
-			push @y, $2;
-		}
-		close FILE;
+            push @x, $1;
+            push @y, $2;
+        }
+        close FILE;
 
-		@x = sort { $a <=> $b } @x;
-		@y = sort { $a <=> $b } @y;
+        @x = sort { $a <=> $b } @x;
+        @y = sort { $a <=> $b } @y;
 
-		$x_max = $x[-1] if ($x[-1] > $x_max);
-		$y_max = $y[-1] if ($y[-1] > $y_max);
-	}
+        $x_max = $x[-1] if ($x[-1] > $x_max);
+        $y_max = $y[-1] if ($y[-1] > $y_max);
+    }
 
-	$x_max += $x_max * 0.1;
-	$y_max += $y_max * 0.1;
+    $x_max += $x_max * 0.1;
+    $y_max += $y_max * 0.1;
 
-	$X_MAX = $x_max; $Y_MAX = $y_max;
-	# We base all axes on zero for the moment
-	return "0 0 $x_max $y_max";
+    $X_MAX = $x_max; $Y_MAX = $y_max;
+    # We base all axes on zero for the moment
+    return "0 0 $x_max $y_max";
 }
 
-sub determine_ticks 
+sub determine_ticks
 {
-	my $range_max = shift;
-	my $tick_ptr = shift;
+    my $range_max = shift;
+    my $tick_ptr = shift;
 
-	if ($tick_ptr->{'axis'} eq 'x') {
-			$tick_ptr->{'major'} = 25;
-			$tick_ptr->{'minor ticks'} = 5;
-	}
+    if ($tick_ptr->{'axis'} eq 'x') {
+        $tick_ptr->{'major'} = 25;
+        $tick_ptr->{'minor ticks'} = 5;
+    }
 
     if ($tick_ptr->{'axis'} eq 'y') {
         if ($range_max < 10000) {
@@ -177,33 +177,33 @@ This module is roughly based on the Chart::Graph::Xmgrace module.
     use xmgrace;
 
     xmgrace ({"title"         => "$plot->{title}",
-	    "subtitle"        => "$plot->{subtitle}",
-	    "legend"          => "0.7,0.25",
-	    "output file"     => "$RESULT_TARGET/plot/eps/$plot->{title}.eps",
-	    "grace output file" => "$RESULT_TARGET/plot/agr/$plot->{title}.agr",
-	    "xaxis label"     => "number of processors",
-	    "yaxis label"     => "$PLOT_CONFIG->{$plot->{title}}->{YAXIS}"
-	},
-	[ { "title"     =>  "$SYSTEM",
-	    "data file" =>  "$RESULT_TARGET/plot/data/$plot->{title}.dat",
-	    "line" => {
-		"type"      => "1",
-		"color"     => "1",
-		"linewidth" => "2",
-		"linestyle" => "1",
-		"pattern"   => "1",
-	    },
-	    "symbol" => {
-		"type"      => "2",
-		"color"     => "1",
-		"pattern"   => "1",
-		"linewidth" => "2",
-		"linestyle" => "1",
-		"size"      => "1",
-		"fill pattern" => "1",
-		"fill color"=> "1",
-	    }
-	}]);
+        "subtitle"        => "$plot->{subtitle}",
+        "legend"          => "0.7,0.25",
+        "output file"     => "$RESULT_TARGET/plot/eps/$plot->{title}.eps",
+        "grace output file" => "$RESULT_TARGET/plot/agr/$plot->{title}.agr",
+        "xaxis label"     => "number of processors",
+        "yaxis label"     => "$PLOT_CONFIG->{$plot->{title}}->{YAXIS}"
+    },
+    [ { "title"     =>  "$SYSTEM",
+        "data file" =>  "$RESULT_TARGET/plot/data/$plot->{title}.dat",
+        "line" => {
+        "type"      => "1",
+        "color"     => "1",
+        "linewidth" => "2",
+        "linestyle" => "1",
+        "pattern"   => "1",
+        },
+        "symbol" => {
+        "type"      => "2",
+        "color"     => "1",
+        "pattern"   => "1",
+        "linewidth" => "2",
+        "linestyle" => "1",
+        "size"      => "1",
+        "fill pattern" => "1",
+        "fill color"=> "1",
+        }
+    }]);
 
 =head1 OPTION TABLES
 

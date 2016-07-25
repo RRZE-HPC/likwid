@@ -1,4 +1,31 @@
 #!/usr/bin/perl
+# =======================================================================================
+#
+#      Filename:  generatePas.pl
+#
+#      Description:  Converter from ptt to pas file format.
+#
+#      Version:   <VERSION>
+#      Released:  <DATE>
+#
+#      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+#      Project:  likwid
+#
+#      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+#
+#      This program is free software: you can redistribute it and/or modify it under
+#      the terms of the GNU General Public License as published by the Free Software
+#      Foundation, either version 3 of the License, or (at your option) any later
+#      version.
+#
+#      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+#      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+#      You should have received a copy of the GNU General Public License along with
+#      this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# =======================================================================================
 
 use lib 'util';
 use strict;
@@ -79,7 +106,7 @@ my $stream_lookup = {
 opendir (DIR, "./$BenchRoot") or die "Cannot open bench directory: $!\n";
 my $tpl = Template->new({
         INCLUDE_PATH => ["$TemplateRoot"]
-        });
+    });
 
 while (defined(my $file = readdir(DIR))) {
     if ($file !~ /^\./) {
@@ -172,18 +199,18 @@ while (defined(my $file = readdir(DIR))) {
 
         $tpl->process('bench.tt', $Vars, "$OutputDirectory/$name.pas");
         push(@Testcases,{name    => $name,
-                         streams => $streams,
-                         type    => $type,
-                         stride  => $increment,
-                         flops   => $flops,
-                         bytes   => $bytes,
-                         desc    => $desc,
-                         loads    => $loads,
-                         stores    => $stores,
-                         branches    => $branches,
-                         instr_const    => $instr,
-                         instr_loop    => $loop_instr,
-                         uops    => $uops});
+                streams => $streams,
+                type    => $type,
+                stride  => $increment,
+                flops   => $flops,
+                bytes   => $bytes,
+                desc    => $desc,
+                loads    => $loads,
+                stores    => $stores,
+                branches    => $branches,
+                instr_const    => $instr,
+                instr_loop    => $loop_instr,
+                uops    => $uops});
     }
 }
 #print Dumper(@Testcases);

@@ -12,7 +12,7 @@
  *
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -105,7 +105,6 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 
 /*
@@ -1378,7 +1377,7 @@ typedef enum {
     FEAT_DYN_ACCEL, /*!< \brief Intel Dynamic Acceleration */
     FEAT_TURBO_MODE, /*!< \brief Intel Turbo Mode */
     FEAT_TM2, /*!< \brief Thermal Monitoring 2 */
-    CPUFEATURES_MAX 
+    CPUFEATURES_MAX
 } CpuFeature;
 
 /*! \brief Initialize the internal feature variables for all CPUs

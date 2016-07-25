@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -35,9 +35,6 @@
 #include <errno.h>
 #include <barrier.h>
 
-/* #####   EXPORTED VARIABLES   ########################################### */
-
-
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define CACHELINE_SIZE 64
@@ -47,9 +44,6 @@
 static BarrierGroup* groups;
 static int currentGroupId = 0;
 static int maxGroupId = 0;
-
-/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -66,7 +60,7 @@ barrier_registerGroup(int numThreads)
     groups[currentGroupId].numberOfThreads = numThreads;
     ret = posix_memalign(
             (void**) &groups[currentGroupId].groupBval,
-            CACHELINE_SIZE, 
+            CACHELINE_SIZE,
             numThreads * 32 * sizeof(int));
 
     if (ret < 0)
@@ -74,7 +68,6 @@ barrier_registerGroup(int numThreads)
         fprintf(stderr, "ERROR: Cannot register thread group - %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
-
 
     return currentGroupId++;
 }
@@ -108,7 +101,6 @@ barrier_registerThread(BarrierData* barr, int groupId, int threadId)
         fprintf(stderr, "ERROR: Cannot register thread - %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
-
 
     barr->index[0] = threadId;
 
@@ -165,3 +157,4 @@ void barrier_destroy(BarrierData* barr)
     free(barr->index);
     free(groups[currentGroupId].groupBval);
 }
+

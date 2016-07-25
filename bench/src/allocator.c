@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -37,20 +37,11 @@
 #include <allocator.h>
 #include <likwid.h>
 
-/* #####   EXPORTED VARIABLES   ########################################### */
-
-
-/* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-
-
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int numberOfAllocatedVectors = 0;
 static allocation* allocList;
 static AffinityDomains_t domains = NULL;
-
-/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 

@@ -3,7 +3,7 @@
  *
  *      Filename:  allocator.h
  *
- *      Description:  Header File allocator Module. 
+ *      Description:  Header File allocator Module.
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  none
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef ALLOCATOR_H
 #define ALLOCATOR_H
 
@@ -47,4 +46,3 @@ extern void allocator_allocateVector(void** ptr,
         bstring domain);
 
 #endif /*ALLOCATOR_H*/
-

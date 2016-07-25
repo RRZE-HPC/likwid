@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -453,8 +453,6 @@ int main(int argc, char** argv)
         }
     }
 
-
-
     time = (double) maxCycles / (double) cyclesClock;
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
@@ -469,8 +467,8 @@ int main(int argc, char** argv)
     ownprintf("Number of Flops:\t%" PRIu64 "\n", (threads_data[0].data.iter * realSize *  test->flops));
     ownprintf("MFlops/s:\t\t%.2f\n",
             1.0E-06 * ((double) threads_data[0].data.iter * realSize *  test->flops/  time));
-    
-    ownprintf("Data volume (Byte):\t%llu\n", LLU_CAST (threads_data[0].data.iter * realSize *  test->bytes));
+    ownprintf("Data volume (Byte):\t%llu\n",
+            LLU_CAST (threads_data[0].data.iter * realSize *  test->bytes));
     ownprintf("MByte/s:\t\t%.2f\n",
             1.0E-06 * ( (double) threads_data[0].data.iter * realSize *  test->bytes/ time));
 
@@ -495,11 +493,13 @@ int main(int argc, char** argv)
     }
     if ((test->instr_loop > 0) && (test->instr_const > 0))
     {
-        ownprintf("Instructions:\t\t%" PRIu64 "\n", LLU_CAST ((double)realSize/test->stride)*test->instr_loop*threads_data[0].data.iter + test->instr_const );
+        ownprintf("Instructions:\t\t%" PRIu64 "\n",
+                LLU_CAST ((double)realSize/test->stride)*test->instr_loop*threads_data[0].data.iter + test->instr_const );
     }
     if (test->uops > 0)
     {
-        ownprintf("UOPs:\t\t\t%" PRIu64 "\n", LLU_CAST ((double)realSize/test->stride)*test->uops*threads_data[0].data.iter);
+        ownprintf("UOPs:\t\t\t%" PRIu64 "\n",
+                LLU_CAST ((double)realSize/test->stride)*test->uops*threads_data[0].data.iter);
     }
 
     ownprintf(bdata(HLINE));

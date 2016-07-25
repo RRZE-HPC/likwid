@@ -11,7 +11,7 @@
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com.
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,11 +27,17 @@
  *
  * =======================================================================================
  */
+
+/* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <strUtil.h>
 #include <math.h>
 #include <likwid.h>
 
-static int str2int(const char* str)
+/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ################## */
+
+static int
+str2int(const char* str)
 {
     char* endptr;
     errno = 0;
@@ -54,7 +60,10 @@ static int str2int(const char* str)
     return (int) val;
 }
 
-uint64_t bstr_to_doubleSize(const_bstring str, DataType type)
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+uint64_t
+bstr_to_doubleSize(const_bstring str, DataType type)
 {
     int ret;
     bstring unit = bmidstr(str, blength(str)-2, 2);
@@ -112,15 +121,14 @@ uint64_t bstr_to_doubleSize(const_bstring str, DataType type)
     return junk;
 }
 
-
-bstring parse_workgroup(Workgroup* group, const_bstring str, DataType type)
+bstring
+parse_workgroup(Workgroup* group, const_bstring str, DataType type)
 {
     CpuTopology_t topo;
     struct bstrList* tokens;
     bstring cpustr;
     int numThreads = 0;
     bstring domain;
-
 
     tokens = bsplit(str,':');
     if (tokens->qty == 2)
@@ -188,7 +196,8 @@ bstring parse_workgroup(Workgroup* group, const_bstring str, DataType type)
     return domain;
 }
 
-int parse_streams(Workgroup* group, const_bstring str, int numberOfStreams)
+int
+parse_streams(Workgroup* group, const_bstring str, int numberOfStreams)
 {
     struct bstrList* tokens;
     struct bstrList* subtokens;
@@ -249,7 +258,8 @@ int parse_streams(Workgroup* group, const_bstring str, int numberOfStreams)
     return 0;
 }
 
-int bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int numberOfStreams)
+int
+bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int numberOfStreams)
 {
     int parseStreams = 0;
     struct bstrList* tokens;
@@ -298,7 +308,8 @@ int bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int nu
     return 0;
 }
 
-void workgroups_destroy(Workgroup** groupList, int numberOfGroups, int numberOfStreams)
+void
+workgroups_destroy(Workgroup** groupList, int numberOfGroups, int numberOfStreams)
 {
     int i = 0, j = 0;
     if (groupList == NULL)
@@ -317,3 +328,4 @@ void workgroups_destroy(Workgroup** groupList, int numberOfGroups, int numberOfS
     }
     free(list);
 }
+

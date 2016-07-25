@@ -10,7 +10,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -52,7 +52,6 @@ typedef struct {
     uint64_t size;
     Stream* streams;
 } Workgroup;
-
 
 extern int bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int numberOfStreams);
 extern void workgroups_destroy(Workgroup** groupList, int numberOfGroups, int numberOfStreams);

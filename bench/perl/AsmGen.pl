@@ -1,4 +1,32 @@
 #!/usr/bin/perl -w
+# =======================================================================================
+#
+#      Filename:  AsmGen.pl
+#
+#      Description:  Parser for internal high level assembly syntax.
+#
+#      Version:   <VERSION>
+#      Released:  <DATE>
+#
+#      Author:  Jan Treibig (jt), jan.treibig@gmail.com
+#      Project:  likwid
+#
+#      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+#
+#      This program is free software: you can redistribute it and/or modify it under
+#      the terms of the GNU General Public License as published by the Free Software
+#      Foundation, either version 3 of the License, or (at your option) any later
+#      version.
+#
+#      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+#      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+#      You should have received a copy of the GNU General Public License along with
+#      this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# =======================================================================================
+
 use strict;
 no strict "refs";
 use warnings;
@@ -30,42 +58,42 @@ $::RD_AUTOACTION = q { [@item[0..$#item]] };
 
 sub init
 {
-	getopts( "$OPT_STRING", \%OPT ) or usage();
-	if ($OPT{h}) { usage(); };
-	if ($OPT{v}) { $VERBOSE = 1;}
-	if ($OPT{d}) { $DEBUG = 1;}
+    getopts( "$OPT_STRING", \%OPT ) or usage();
+    if ($OPT{h}) { usage(); };
+    if ($OPT{v}) { $VERBOSE = 1;}
+    if ($OPT{d}) { $DEBUG = 1;}
 
-	if (! $ARGV[0]) {
-		die "ERROR: Please specify a input file!\n\nCall script with argument -h for help.\n";
-	}
+    if (! $ARGV[0]) {
+        die "ERROR: Please specify a input file!\n\nCall script with argument -h for help.\n";
+    }
 
-	$INPUTFILE = $ARGV[0];
-	$CPP_ARGS = $ARGV[1] if ($ARGV[1]);
+    $INPUTFILE = $ARGV[0];
+    $CPP_ARGS = $ARGV[1] if ($ARGV[1]);
 
-	if ($INPUTFILE =~ /.pas$/) {
-		$INPUTFILE =~ s/\.pas//; 
-	} else {
-		die "ERROR: Input file must have pas ending!\n";
-	}
-	if ($OPT{o}) { 
-		$OUTPUTFILE = $OPT{o};
-	}else {
-		$OUTPUTFILE = "$INPUTFILE.s";
-	}
-	if ($OPT{i}) { 
-		$ISA = $OPT{i};
-		print "INFO: Using isa $ISA.\n\n" if ($VERBOSE);
-	} else {
-		print "INFO: No isa specified.\n Using default $ISA.\n\n" if ($VERBOSE);
-	}
-	if ($OPT{a}) { 
-		$AS = $OPT{a};
-		print "INFO: Using as $AS.\n\n" if ($VERBOSE);
-	} else {
-		print "INFO: No as specified.\n Using default $AS.\n\n" if ($VERBOSE);
-	}
+    if ($INPUTFILE =~ /.pas$/) {
+        $INPUTFILE =~ s/\.pas//; 
+    } else {
+        die "ERROR: Input file must have pas ending!\n";
+    }
+    if ($OPT{o}) { 
+        $OUTPUTFILE = $OPT{o};
+    }else {
+        $OUTPUTFILE = "$INPUTFILE.s";
+    }
+    if ($OPT{i}) { 
+        $ISA = $OPT{i};
+        print "INFO: Using isa $ISA.\n\n" if ($VERBOSE);
+    } else {
+        print "INFO: No isa specified.\n Using default $ISA.\n\n" if ($VERBOSE);
+    }
+    if ($OPT{a}) { 
+        $AS = $OPT{a};
+        print "INFO: Using as $AS.\n\n" if ($VERBOSE);
+    } else {
+        print "INFO: No as specified.\n Using default $AS.\n\n" if ($VERBOSE);
+    }
 
-  as::isa_init();
+    as::isa_init();
 }
 
 sub usage
@@ -219,7 +247,7 @@ expression:  align
             |loop
             |timer
             |mode
-			|ASMCODE
+            |ASMCODE
 { $item[1] }
 
 instruction : define_data
@@ -244,9 +272,9 @@ print "INFO: Calling cpp with arguments $CPP_ARGS.\n" if ($VERBOSE);
 my $text = `cpp -x assembler-with-cpp $CPP_ARGS $INPUTFILE.pas`;
 
 if ($OPT{p}) {
-	open FILE,">$INPUTFILE.Pas";
-	print FILE $text;
-	close FILE;
+    open FILE,">$INPUTFILE.Pas";
+    print FILE $text;
+    close FILE;
 }
 
 open STDOUT,">$OUTPUTFILE";
@@ -257,28 +285,28 @@ my $parse_tree = $parser->startrule($text) or print STDERR "ERROR: Syntax Error\
 tree_exec($parse_tree);
 
 if ($DEBUG) {
-	open FILE,'>parse_tree.txt';
-	print FILE Dumper $parse_tree,"\n";
-	close FILE;
+    open FILE,'>parse_tree.txt';
+    print FILE Dumper $parse_tree,"\n";
+    close FILE;
 }
 
 print "$as::AS->{FOOTER}\n";
 
-sub tree_exec 
+sub tree_exec
 {
-	my $tree = shift;
+    my $tree = shift;
 
-	foreach my $node (@$tree) {
-		if ($node !~ /^skip|^instruction|^expression|^loop/) {
-			if (ref($node) eq 'ARRAY')  {
-				tree_exec($node);
-			}else {
-				if (ref($node) eq 'HASH') {
-					&{$node->{FUNC}}(@{$node->{ARGS}});
-				}
-			}
-		}
-	}
+    foreach my $node (@$tree) {
+        if ($node !~ /^skip|^instruction|^expression|^loop/) {
+            if (ref($node) eq 'ARRAY')  {
+                tree_exec($node);
+            }else {
+                if (ref($node) eq 'HASH') {
+                    &{$node->{FUNC}}(@{$node->{ARGS}});
+                }
+            }
+        }
+    }
 }
 
 

@@ -25,7 +25,7 @@ perfmon_printDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group)
     uint64_t cpi_cyc  = 0;
     int cpi_index = 0;
 
-    switch ( group ) 
+    switch ( group )
     {
 [% FOREACH group IN groups %]
         case [% group.name %]:
@@ -72,7 +72,7 @@ perfmon_printDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group)
             {
                 stat[cpi_index][0] = (double) cpi_cyc / (double) cpi_instr;
             }
-                
+
             break;
 [% END %]
 
@@ -85,7 +85,7 @@ perfmon_printDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group)
     printResultTable(&tableData);
     freeResultTable(&tableData);
 
-    // for threaded results print sum, max, min and avg 
+    // for threaded results print sum, max, min and avg
     if (perfmon_numThreads > 1)
     {
         initStatisticTable(&tableData, fc, numRows);
@@ -116,7 +116,7 @@ perfmon_logDerivedMetrics[% arch FILTER ucfirst %](PerfmonGroup group, double ti
     double tmpValue;
     double inverseClock = 1.0 /(double) timer_getCpuClock();
 
-    switch ( group ) 
+    switch ( group )
     {
         [% FOREACH group IN groups %]
         case [% group.name %]:

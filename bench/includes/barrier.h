@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef BARRIER_H
 #define BARRIER_H
 
@@ -53,6 +52,5 @@ extern void barrier_registerThread(BarrierData* barr, int groupsId, int threadId
  */
 extern void  barrier_synchronize(BarrierData* barr);
 extern void  barrier_destroy(BarrierData* barr);
-
 
 #endif /*BARRIER_H*/

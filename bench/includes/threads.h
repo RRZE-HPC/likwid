@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef THREADS_H
 #define THREADS_H
 
@@ -71,7 +70,7 @@ extern void threads_registerDataAll(
 
 /**
  * @brief  Register User thread data for one thread
- * @param  threadId thread Id 
+ * @param  threadId thread Id
  * @param  data  Reference to the user data structo
  * @param  func  Optional function pointer to copy data
  */

@@ -12,7 +12,7 @@
  *               Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,6 +28,7 @@
  *
  * =======================================================================================
  */
+
 /* #####   HEADER FILE INCLUDES   ######################################### */
 
 #include <pthread.h>
@@ -43,13 +44,10 @@
 #include <barrier.h>
 #include <likwid.h>
 
-/* #####   EXPORTED VARIABLES   ########################################### */
-
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define BARRIER   barrier_synchronize(&barr)
-
 
 #define EXECUTE(func)   \
     BARRIER; \
@@ -66,11 +64,10 @@
     BARRIER
 
 
-
-
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void* runTest(void* arg)
+void*
+runTest(void* arg)
 {
     int threadId;
     int offset;
@@ -95,7 +92,6 @@ void* runTest(void* arg)
     myData->size = size;
     size -= (size % myData->test->stride);
     offset = data->threadId * size;
-    
 
     switch ( myData->test->type )
     {
@@ -133,7 +129,6 @@ void* runTest(void* arg)
             }
             break;
     }
-
 
     /* pin the thread */
     likwid_pinThread(myData->processors[threadId]);
@@ -438,7 +433,6 @@ void* runTest(void* arg)
     pthread_exit(NULL);
 }
 
-
 #define MEASURE(func) \
     iterations = 8; \
     while (1) \
@@ -455,8 +449,8 @@ void* runTest(void* arg)
             break; \
     } \
 
-
-void* getIterSingle(void* arg)
+void*
+getIterSingle(void* arg)
 {
     int threadId = 0;
     int offset = 0;
@@ -768,3 +762,4 @@ void* getIterSingle(void* arg)
 #endif
     return NULL;
 }
+

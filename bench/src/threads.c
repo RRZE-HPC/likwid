@@ -11,7 +11,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -38,8 +38,6 @@
 #include <errno.h>
 #include <threads.h>
 
-
-
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 pthread_barrier_t threads_barrier;
@@ -53,7 +51,9 @@ static pthread_attr_t attr;
 static int numThreads = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ################## */
-static int count_characters(const char *str, char character)
+
+static int
+count_characters(const char *str, char character)
 {
     if (str == 0)
         return 0;
@@ -68,15 +68,16 @@ static int count_characters(const char *str, char character)
     return count;
 }
 
-void* dummy_function(void* arg)
+void*
+dummy_function(void* arg)
 {
     return 0;
 }
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-
-
-int threads_test()
+int
+threads_test()
 {
     int cnt = 0;
     int err;
@@ -119,7 +120,7 @@ threads_init(int numberOfThreads)
 }
 
 
-void 
+void
 threads_create(void *(*startRoutine)(void*))
 {
     int i;
@@ -133,7 +134,7 @@ threads_create(void *(*startRoutine)(void*))
     }
 }
 
-void 
+void
 threads_createGroups(int numberOfGroups)
 {
     int i;
@@ -145,7 +146,7 @@ threads_createGroups(int numberOfGroups)
     {
         fprintf(stderr, "ERROR: Not enough threads %d to create %d groups\n",numThreads,numberOfGroups);
     }
-    else 
+    else
     {
         numThreadsPerGroup = numThreads / numberOfGroups;
     }
@@ -179,7 +180,7 @@ threads_createGroups(int numberOfGroups)
 }
 
 
-void 
+void
 threads_registerDataAll(ThreadUserData* data, threads_copyDataFunc func)
 {
     int i;
@@ -277,8 +278,7 @@ threads_destroy(int numberOfGroups, int numberOfStreams)
     int i = 0, j = 0;
     pthread_attr_destroy(&attr);
     pthread_barrier_destroy(&threads_barrier);
-    
-    
+
     for(i=0;i<numberOfGroups;i++)
     {
         for (j = 0; j < threads_groups[i].numberOfThreads; j++)
@@ -291,3 +291,4 @@ threads_destroy(int numberOfGroups, int numberOfStreams)
     free(threads_groups);
     free(threads);
 }
+

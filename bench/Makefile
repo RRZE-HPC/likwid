@@ -11,7 +11,7 @@
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2013 Jan Treibig
+#      Copyright (C) 2016 Jan Treibig
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -31,8 +31,6 @@ SRC_DIR     = ./src
 MAKE_DIR    = ../make
 
 #DO NOT EDIT BELOW
-
-
 # Dependency chains:
 # *.[ch] -> *.o -> executables
 # *.ptt -> *.pas -> *.s -> *.o -> executables
@@ -77,7 +75,6 @@ DEFINES += -DDEBUG_LIKWID
 else
 DEBUG_FLAGS =
 endif
-
 
 VPATH     = $(SRC_DIR)
 OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
@@ -126,11 +123,9 @@ endif
 
 .PHONY: clean distclean install uninstall
 
-
 .PRECIOUS: $(BUILD_DIR)/%.pas
 
 .NOTPARALLEL:
-
 
 clean:
 	@rm -rf likwid-bench
@@ -152,6 +147,4 @@ uninstall:
 	rm -rf $(BINPREFIX)/likwid-bench
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
 	@rm -f $(MANPREFIX)/man1/likwid-bench.1
-
-
 
