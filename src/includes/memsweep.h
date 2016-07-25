@@ -12,7 +12,7 @@
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef MEMSWEEP_H
 #define MEMSWEEP_H
 
@@ -38,4 +37,3 @@ extern void memsweep_setMemoryFraction(uint64_t fraction);
 extern void memsweep_node(void);
 
 #endif /* MEMSWEEP_H */
-

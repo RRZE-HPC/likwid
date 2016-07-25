@@ -12,7 +12,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef LIKWID_NUMA
 #define LIKWID_NUMA
 
@@ -40,9 +39,6 @@
 #include <numa_hwloc.h>
 #include <numa_proc.h>
 
-
-
-
 extern int str2int(const char* str);
 
 struct numa_functions {
@@ -50,9 +46,5 @@ struct numa_functions {
     void (*numa_setInterleaved) (const int*, int);
     void (*numa_membind) (void*, size_t, int);
 };
-
-
-
-
 
 #endif

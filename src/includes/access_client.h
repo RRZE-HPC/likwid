@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,9 +27,8 @@
  *
  * =======================================================================================
  */
-#ifndef LIKWID_ACCESS_CLIENT_H
-#define LIKWID_ACCESS_CLIENT_H
-
+#ifndef ACCESS_CLIENT_H
+#define ACCESS_CLIENT_H
 
 int access_client_init(int cpu_id);
 int access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *data);
@@ -37,4 +36,4 @@ int access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint
 void access_client_finalize(int cpu_id);
 int access_client_check(PciDeviceIndex dev, int cpu_id);
 
-#endif
+#endif /* ACCESS_CLIENT_H */

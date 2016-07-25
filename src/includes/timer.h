@@ -16,7 +16,7 @@
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -37,7 +37,6 @@
 
 #include <types.h>
 
-
 extern void timer_init( void );
 extern double timer_print( const TimerData* );
 extern uint64_t timer_printCycles( const TimerData* );
@@ -48,9 +47,5 @@ extern uint64_t timer_getBaseline( void );
 
 extern void timer_start( TimerData* );
 extern void timer_stop ( TimerData* );
-
-
-
-
 
 #endif /* TIMER_H */

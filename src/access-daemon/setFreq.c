@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,9 @@
  *
  * =======================================================================================
  */
+
 /* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -37,7 +39,9 @@ char setfiles[3][100] = {"scaling_min_freq", "scaling_max_freq", "scaling_setspe
 char getfiles[3][100] = {"cpuinfo_min_freq", "cpuinfo_max_freq", "cpuinfo_cur_freq"};
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-static int get_numCPUs()
+
+static int
+get_numCPUs()
 {
     int cpucount = 0;
     char line[1024];
@@ -56,7 +60,9 @@ static int get_numCPUs()
 }
 
 /* #####  MAIN FUNCTION DEFINITION   ################## */
-int main (int argn, char** argv)
+
+int
+main (int argn, char** argv)
 {
     int i = 0;
     int tmp;
@@ -107,7 +113,7 @@ int main (int argn, char** argv)
             free(fpath);
             return (EXIT_FAILURE);
         }
-        
+
         for (i=0; i<2; i++)
         {
             snprintf(fpath, 99, "/sys/devices/system/cpu/cpu%d/cpufreq/%s", cpuid, getfiles[i]);
@@ -191,5 +197,4 @@ int main (int argn, char** argv)
     free(fpath);
     return(EXIT_SUCCESS);
 }
-
 

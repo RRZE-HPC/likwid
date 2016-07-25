@@ -13,7 +13,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,7 +29,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef CPUID_TYPES_H
 #define CPUID_TYPES_H
 
@@ -39,7 +38,7 @@
 /*! \brief Enum of possible CPU features
 
 CPUs implement different features that likely improve application performance if
-optimized using the feature. The list contains all features that are currently 
+optimized using the feature. The list contains all features that are currently
 supported by LIKWID. LIKWID does not perform any action based on these features,
 it gathers the data only for output purposes. It is not a complete list.
 \extends CpuInfo

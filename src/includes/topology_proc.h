@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,9 +27,8 @@
  *
  * =======================================================================================
  */
-
-#ifndef LIKWID_TOPOLOGY_PROC
-#define LIKWID_TOPOLOGY_PROC
+#ifndef TOPOLOGY_PROC_H
+#define TOPOLOGY_PROC_H
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -47,5 +46,4 @@ void proc_init_cpuFeatures(void);
 void proc_init_nodeTopology(cpu_set_t cpuSet);
 void proc_init_cacheTopology(void);
 
-
-#endif
+#endif /* TOPOLOGY_PROC_H */

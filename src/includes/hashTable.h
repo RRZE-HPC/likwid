@@ -13,7 +13,7 @@
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,7 +29,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef HASHTABLE_H
 #define HASHTABLE_H
 
@@ -40,6 +39,5 @@ extern void hashTable_init();
 void hashTable_initThread(int coreID);
 extern int hashTable_get(bstring regionTag, LikwidThreadResults** result);
 extern void hashTable_finalize(int* numberOfThreads, int* numberOfRegions, LikwidResults** results);
-
 
 #endif /*CPUID_H*/

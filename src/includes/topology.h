@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,9 +28,8 @@
  *
  * =======================================================================================
  */
-
-#ifndef LIKWID_TOPOLOGY
-#define LIKWID_TOPOLOGY
+#ifndef TOPOLOGY_H
+#define TOPOLOGY_H
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -42,7 +41,6 @@
 #endif
 #include <types.h>
 #include <tree.h>
-
 
 #define MAX_FEATURE_STRING_LENGTH 512
 #define MAX_MODEL_STRING_LENGTH 512
@@ -129,10 +127,6 @@ struct topology_functions {
 #define  K10_FAMILY       0x10U
 #define  K8_FAMILY        0xFU
 
-
-
-
-
 extern int cpu_count(cpu_set_t* set);
 
 static inline int cpuid_hasFeature(FeatureBit bit)
@@ -140,5 +134,4 @@ static inline int cpuid_hasFeature(FeatureBit bit)
       return (cpuid_info.featureFlags & (1<<bit));
 }
 
-
-#endif
+#endif /* TOPOLOGY_H */

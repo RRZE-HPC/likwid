@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,14 +27,11 @@
  *
  * =======================================================================================
  */
-
-
 #ifndef LIKWID_NUMA_HWLOC
 #define LIKWID_NUMA_HWLOC
 
 extern int hwloc_numa_init(void);
 extern void hwloc_numa_membind(void* ptr, size_t size, int domainId);
 extern void hwloc_numa_setInterleaved(int* processorList, int numberOfProcessors);
-
 
 #endif

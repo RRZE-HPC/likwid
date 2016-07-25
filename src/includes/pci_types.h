@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,14 +28,10 @@
  *
  * =======================================================================================
  */
-
-
 #ifndef PCI_TYPES_H
 #define PCI_TYPES_H
 
 #include <stdint.h>
-
-
 
 typedef enum {
     NODEVTYPE = 0,
@@ -91,7 +87,6 @@ typedef struct {
     char* desc;
 } PciType;
 
-
 static PciType pci_types[MAX_NUM_PCI_TYPES] = {
     [R3QPI] = {"R3QPI", "R3QPI is the interface between the Intel QPI Link Layer and the Ring."},
     [R2PCIE] = {"R2PCIE", "R2PCIe represents the interface between the Ring and IIO traffic to/from PCIe."},
@@ -100,4 +95,5 @@ static PciType pci_types[MAX_NUM_PCI_TYPES] = {
     [QPI] = {"QPI", "The Intel QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface."},
     [IRP] = {"IRP", "IRP is responsible for maintaining coherency for IIO traffic e.g. crosssocket P2P."}
 };
+
 #endif /*PCI_TYPES_H*/

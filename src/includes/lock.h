@@ -11,7 +11,7 @@
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -42,15 +42,15 @@
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
-static inline int lock_acquire(int* var, int newval)
+static inline int
+lock_acquire(int* var, int newval)
 {
     int oldval = LOCK_INIT;
     return __sync_bool_compare_and_swap (var, oldval, newval);
 }
 
-
-
-static int lock_check(void)
+static int
+lock_check(void)
 {
     struct stat buf;
     int lock_handle = -1;
@@ -69,7 +69,7 @@ static int lock_check(void)
             /* There is a lock file. We cannot open it. */
             result = 0;
         }
-        else 
+        else
         {
             /* Another error occured. Proceed. */
             result = 1;

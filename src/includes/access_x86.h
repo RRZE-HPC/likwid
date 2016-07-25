@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,8 +27,8 @@
  *
  * =======================================================================================
  */
-#ifndef LIKWID_ACCESS_X86_H
-#define LIKWID_ACCESS_X86_H
+#ifndef ACCESS_X86_H
+#define ACCESS_X86_H
 
 #include <types.h>
 
@@ -38,5 +38,4 @@ int access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_
 void access_x86_finalize(int cpu_id);
 int access_x86_check(PciDeviceIndex dev, int cpu_id);
 
-
-#endif
+#endif /* ACCESS_X86_H */

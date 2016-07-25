@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef LIKWID_CPUID_H
 #define LIKWID_CPUID_H
 
@@ -35,7 +34,6 @@
  * Kernel version 3.19
  * File: arch/x86/boot/cpuflags.c
 */
-
 
 #if defined(__i386__) && defined(__PIC__)
 # define EBX_REG "=r"

@@ -3,7 +3,7 @@
  *
  *      Filename:  bitUtil.h
  *
- *      Description:  Header File bitUtil Module. 
+ *      Description:  Header File bitUtil Module.
  *                    Helper routines for dealing with bit manipulations
  *
  *      Version:   <VERSION>
@@ -12,7 +12,7 @@
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef BITUTIL_H
 #define BITUTIL_H
 
@@ -65,6 +64,5 @@ extern uint32_t getBitFieldWidth(uint32_t number);
 
 #define bitMask_toString(_string,_mask)  \
     sprintf(_string,"%llX %llX", LLU_CAST (_mask).mask[0], LLU_CAST (_mask).mask[1]);
-
 
 #endif /*BITUTIL_H*/

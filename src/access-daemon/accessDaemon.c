@@ -13,7 +13,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,7 +29,9 @@
  *
  * =======================================================================================
  */
+
 /* #####   HEADER FILE INCLUDES   ######################################### */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -58,8 +60,8 @@
 #include <cpuid.h>
 #include <lock.h>
 
-
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
+
 #define SA struct sockaddr
 #define str(x) #x
 
@@ -72,9 +74,6 @@
         exit(EXIT_FAILURE); \
     }
 
-
-
-
 #define PCI_ROOT_PATH    "/proc/bus/pci/"
 #define MAX_PATH_LENGTH   80
 //#define MAX_NUM_NODES    4
@@ -84,10 +83,12 @@
  * with an external monitoring system. */
 
 /* #####   TYPE DEFINITIONS   ########### */
+
 typedef int (*AllowedPrototype)(uint32_t);
 typedef int (*AllowedPciPrototype)(PciDeviceType, uint32_t);
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
+
 static int sockfd = -1;
 static int connfd = -1; /* temporary in to make it compile */
 static char* filepath;
@@ -111,10 +112,10 @@ static int num_pmc_counters = 0;
  */
 static char* socket_bus[MAX_NUM_NODES] = { [0 ... (MAX_NUM_NODES-1)] = NULL};
 
-
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static int allowed_intel(uint32_t reg)
+static int
+allowed_intel(uint32_t reg)
 {
     if ( ((reg & 0x0F0U) == 0x0C0U) ||
             ((reg & 0x190U) == 0x180U) ||
@@ -141,7 +142,8 @@ static int allowed_intel(uint32_t reg)
     }
 }
 
-static int allowed_sandybridge(uint32_t reg)
+static int
+allowed_sandybridge(uint32_t reg)
 {
     if ((allowed_intel(reg)) ||
         (((reg & 0xF00U) == 0x600U)))
@@ -151,7 +153,8 @@ static int allowed_sandybridge(uint32_t reg)
     return 0;
 }
 
-static int allowed_pci_sandybridge(PciDeviceType type, uint32_t reg)
+static int
+allowed_pci_sandybridge(PciDeviceType type, uint32_t reg)
 {
     switch (type)
     {
@@ -289,7 +292,8 @@ static int allowed_pci_sandybridge(PciDeviceType type, uint32_t reg)
     return 0;
 }
 
-static int allowed_haswell(uint32_t reg)
+static int
+allowed_haswell(uint32_t reg)
 {
     if ((allowed_intel(reg)) ||
         (allowed_sandybridge(reg)) ||
@@ -303,7 +307,8 @@ static int allowed_haswell(uint32_t reg)
     }
 }
 
-static int allowed_pci_haswell(PciDeviceType type, uint32_t reg)
+static int
+allowed_pci_haswell(PciDeviceType type, uint32_t reg)
 {
     switch (type)
     {
@@ -431,7 +436,8 @@ static int allowed_pci_haswell(PciDeviceType type, uint32_t reg)
     return 0;
 }
 
-static int allowed_silvermont(uint32_t reg)
+static int
+allowed_silvermont(uint32_t reg)
 {
 
     if ( ((reg & 0x0F8U) == 0x0C0U) ||
@@ -456,7 +462,8 @@ static int allowed_silvermont(uint32_t reg)
     }
 }
 
-static int allowed_amd(uint32_t reg)
+static int
+allowed_amd(uint32_t reg)
 {
     if ( (reg & 0xFFFFFFF0U) == 0xC0010000U)
     {
@@ -468,7 +475,8 @@ static int allowed_amd(uint32_t reg)
     }
 }
 
-static int allowed_amd15(uint32_t reg)
+static int
+allowed_amd15(uint32_t reg)
 {
     if ( ((reg & 0xFFFFFFF0U) == 0xC0010000U) ||
             ((reg & 0xFFFFFFF0U) == 0xC0010200U) ||
@@ -482,7 +490,8 @@ static int allowed_amd15(uint32_t reg)
     }
 }
 
-static int allowed_amd16(uint32_t reg)
+static int
+allowed_amd16(uint32_t reg)
 {
     if ( ((reg & 0xFFFFFFF0U) == 0xC0010000U) ||
             ((reg & 0xFFFFFFF8U) == 0xC0010240U))
@@ -495,7 +504,8 @@ static int allowed_amd16(uint32_t reg)
     }
 }
 
-static void msr_read(AccessDataRecord * dRecord)
+static void
+msr_read(AccessDataRecord * dRecord)
 {
     uint64_t data;
     uint32_t cpu = dRecord->cpu;
@@ -534,7 +544,8 @@ static void msr_read(AccessDataRecord * dRecord)
     dRecord->data = data;
 }
 
-static void msr_write(AccessDataRecord * dRecord)
+static void
+msr_write(AccessDataRecord * dRecord)
 {
     uint32_t cpu = dRecord->cpu;
     uint32_t reg = dRecord->reg;
@@ -571,7 +582,8 @@ static void msr_write(AccessDataRecord * dRecord)
     }
 }
 
-static void msr_check(AccessDataRecord * dRecord)
+static void
+msr_check(AccessDataRecord * dRecord)
 {
     uint32_t cpu = dRecord->cpu;
     dRecord->errorcode = ERR_NOERROR;
@@ -584,7 +596,8 @@ static void msr_check(AccessDataRecord * dRecord)
     return;
 }
 
-static void pci_read(AccessDataRecord* dRecord)
+static void
+pci_read(AccessDataRecord* dRecord)
 {
     uint32_t socketId = dRecord->cpu;
     uint32_t reg = dRecord->reg;
@@ -642,9 +655,8 @@ static void pci_read(AccessDataRecord* dRecord)
     dRecord->data = (uint64_t) data;
 }
 
-
-
-static void pci_write(AccessDataRecord* dRecord)
+static void
+pci_write(AccessDataRecord* dRecord)
 {
     uint32_t socketId = dRecord->cpu;
     uint32_t reg = dRecord->reg;
@@ -701,8 +713,8 @@ static void pci_write(AccessDataRecord* dRecord)
     }
 }
 
-
-static void pci_check(AccessDataRecord* dRecord)
+static void
+pci_check(AccessDataRecord* dRecord)
 {
     uint32_t socketId = dRecord->cpu;
     uint32_t device = dRecord->device;
@@ -716,7 +728,8 @@ static void pci_check(AccessDataRecord* dRecord)
     return;
 }
 
-static void kill_client(void)
+static void
+kill_client(void)
 {
     if (connfd != -1)
     {
@@ -726,7 +739,8 @@ static void kill_client(void)
     connfd = -1;
 }
 
-static void stop_daemon(void)
+static void
+stop_daemon(void)
 {
     kill_client();
     for (int i=0;i<MAX_NUM_NODES;i++)
@@ -747,7 +761,8 @@ static void stop_daemon(void)
     exit(EXIT_SUCCESS);
 }
 
-int getBusFromSocket(const uint32_t socket)
+static int
+getBusFromSocket(const uint32_t socket)
 {
     int cur_bus = 0;
     uint32_t cur_socket = 0;
@@ -782,7 +797,8 @@ int getBusFromSocket(const uint32_t socket)
     return -1;
 }
 
-static void Signal_Handler(int sig)
+static void
+Signal_Handler(int sig)
 {
     if (sig == SIGPIPE)
     {
@@ -797,7 +813,8 @@ static void Signal_Handler(int sig)
     }
 }
 
-static void daemonize(int* parentPid)
+static void
+daemonize(int* parentPid)
 {
     pid_t pid, sid;
 
@@ -1206,3 +1223,4 @@ LOOP:
     /* never reached */
     return EXIT_SUCCESS;
 }
+

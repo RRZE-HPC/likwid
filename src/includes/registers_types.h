@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef REGISTERS_TYPES_H
 #define REGISTERS_TYPES_H
 
@@ -210,4 +209,4 @@ typedef struct {
     uint32_t  filterRegister2;
 } BoxMap;
 
-#endif
+#endif /* REGISTERS_TYPES_H */

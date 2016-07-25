@@ -3,8 +3,8 @@
  *
  *      Filename:  textcolor.h
  *
- *      Description:  Header File textcolor Module. 
- *                    Allows toggling of terminal escape sequences for 
+ *      Description:  Header File textcolor Module.
+ *                    Allows toggling of terminal escape sequences for
  *                    colored text.
  *
  *      Version:   <VERSION>
@@ -13,7 +13,7 @@
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -29,7 +29,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef TEXTCOLOR_H
 #define TEXTCOLOR_H
 
@@ -53,7 +52,8 @@
 static void color_on(int attr, int fg);
 static void color_reset(void);
 
-static void color_on(int attr, int fg)
+static void
+color_on(int attr, int fg)
 {
     char command[13];
 
@@ -61,7 +61,8 @@ static void color_on(int attr, int fg)
     printf("%s", command);
 }
 
-static void color_reset()
+static void
+color_reset()
 {
     char command[13];
 

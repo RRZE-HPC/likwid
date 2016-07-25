@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef AFFINITY_H
 #define AFFINITY_H
 
@@ -40,11 +39,8 @@ int tile_lock[MAX_NUM_THREADS];
 extern AffinityDomains affinityDomains;
 
 extern int affinity_core2node_lookup[MAX_NUM_THREADS];
-
 extern int affinity_processGetProcessorId();
 extern int affinity_threadGetProcessorId();
 extern const AffinityDomain* affinity_getDomain(bstring domain);
 
-
 #endif /*AFFINITY_H*/
-

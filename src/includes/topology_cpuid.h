@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,9 +28,8 @@
  *
  * =======================================================================================
  */
-
-#ifndef LIKWID_TOPOLOGY_CPUID
-#define LIKWID_TOPOLOGY_CPUID
+#ifndef TOPOLOGY_CPUID_H
+#define TOPOLOGY_CPUID_H
 
 #include <sched.h>
 
@@ -39,5 +38,4 @@ void cpuid_init_cpuFeatures(void);
 void cpuid_init_nodeTopology(cpu_set_t cpuSet);
 void cpuid_init_cacheTopology(void);
 
-
-#endif
+#endif /* TOPOLOGY_CPUID_H */

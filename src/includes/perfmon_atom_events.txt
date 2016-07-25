@@ -11,7 +11,7 @@
 #                Thomas Roehl (tr), thomas.roehl@googlemail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+#      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -34,10 +34,10 @@ EVENT_CPU_CLK_UNHALTED           0x00   FIXC1
 UMASK_CPU_CLK_UNHALTED_CORE      0x00
 
 EVENT_BACLEARS                                        0xE6 PMC
-UMASK_BACLEARS_ANY                                    0x01 
+UMASK_BACLEARS_ANY                                    0x01
 
 EVENT_BOGUS_BR                                        0xE4 PMC
-UMASK_BOGUS_BR                                        0x01 
+UMASK_BOGUS_BR                                        0x01
 
 EVENT_BR_INST_RETIRED            0xC4   PMC
 UMASK_BR_INST_RETIRED_ANY        0x00

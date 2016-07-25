@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,10 +28,8 @@
  *
  * =======================================================================================
  */
-
 #ifndef TYPES_H
 #define TYPES_H
-
 
 /* #####   HEADER FILE INCLUDES   ######################################### */
 #include <stdint.h>
@@ -46,7 +44,6 @@
 #include <topology_types.h>
 #include <perfmon_types.h>
 #include <libperfctr_types.h>
-
 
 typedef struct {
     uint64_t mask[2];

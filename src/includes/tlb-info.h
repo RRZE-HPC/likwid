@@ -12,7 +12,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,8 +28,6 @@
  *
  * =======================================================================================
  */
-
-
 #ifndef TLB_INFO_H
 #define TLB_INFO_H
 
@@ -85,5 +83,6 @@ static char* intel_tlb_info[256] = {
     [240] = "64-Byte prefetching",
     [241] = "128-Byte prefetching",
     [242 ... 255] = NULL
-}; 
-#endif
+};
+
+#endif /* TLB_INFO_H */

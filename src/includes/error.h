@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,17 +28,12 @@
  *
  * =======================================================================================
  */
-
 #ifndef ERROR_H
 #define ERROR_H
 
-
 #include <likwid.h>
 
-
-
 #define str(x) #x
-
 
 #define ERRNO_PRINT fprintf(stderr, "ERROR - [%s:%d] %s\n", __FILE__, __LINE__, strerror(errno))
 
@@ -48,7 +43,6 @@
 
 #define ERROR_PLAIN_PRINT(msg) \
    fprintf(stderr,  "ERROR - [%s:%s:%d] " str(msg) "\n", __FILE__, __func__,__LINE__);
-
 
 #define ERROR_PRINT(fmt, ...) \
    fprintf(stderr,  "ERROR - [%s:%s:%d] %s.\n" str(fmt) "\n", __FILE__,  __func__,__LINE__, strerror(errno), __VA_ARGS__);
@@ -70,8 +64,6 @@
         exit(EXIT_FAILURE); \
     }
 
-
-
 #define VERBOSEPRINTREG(cpuid,reg,flags,msg) \
     if (perfmon_verbosity >= DEBUGLEV_DETAIL) \
     { \
@@ -79,7 +71,7 @@
                 __func__, __LINE__,  (cpuid), LLU_CAST (reg), LLU_CAST (flags)); \
         fflush(stdout);  \
     }
-    
+
 #define VERBOSEPRINTPCIREG(cpuid,dev,reg,flags,msg) \
     if (perfmon_verbosity >= DEBUGLEV_DETAIL) \
     { \
@@ -100,7 +92,6 @@
         fprintf(stdout, "DEBUG - [%s:%d] " str(msg) "\n",__func__, __LINE__);  \
         fflush(stdout); \
     }
-
 
 #define CHECK_MSR_WRITE_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR write operation failed);
 #define CHECK_MSR_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR read operation failed);

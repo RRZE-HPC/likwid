@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,10 +27,8 @@
  *
  * =======================================================================================
  */
-
 #ifndef PERFGROUP_H
 #define PERFGROUP_H
-
 
  /*! \brief The groupInfo data structure describes a performance group
 
@@ -91,4 +89,4 @@ extern void destroy_clist(CounterList* clist);
 
 extern int calc_metric(char* formula, CounterList* clist, double *result);
 
-#endif
+#endif /* PERFGROUP_H */

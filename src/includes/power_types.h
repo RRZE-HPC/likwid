@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,15 +28,12 @@
  *
  * =======================================================================================
  */
-
 #ifndef POWER_TYPES_H
 #define POWER_TYPES_H
 
 #include <stdint.h>
 #include <likwid.h>
 
-
 extern uint32_t power_regs[NUM_POWER_DOMAINS];
-
 
 #endif /*POWER_TYPES_H*/

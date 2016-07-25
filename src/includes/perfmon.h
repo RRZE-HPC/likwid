@@ -14,7 +14,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -30,10 +30,8 @@
  *
  * =======================================================================================
  */
-
 #ifndef PERFMON_H
 #define PERFMON_H
-
 
 #include <types.h>
 #include <likwid.h>
@@ -51,10 +49,8 @@ extern int (*perfmon_readCountersThread) (int thread_id, PerfmonEventSet* eventS
 extern int (*perfmon_finalizeCountersThread) (int thread_id, PerfmonEventSet* eventSet);
 extern int (*initThreadArch) (int cpu_id);
 
-
 /* Internal helpers */
 extern int getCounterTypeOffset(int index);
 extern uint64_t perfmon_getMaxCounterValue(RegisterType type);
-
 
 #endif /*PERFMON_H*/

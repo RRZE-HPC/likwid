@@ -3,7 +3,7 @@
  *
  *      Filename:  tree.h
  *
- *      Description:  Header File tree Module. 
+ *      Description:  Header File tree Module.
  *                    Implements a simple tree data structure.
  *
  *      Version:   <VERSION>
@@ -12,7 +12,7 @@
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef TREE_H
 #define TREE_H
 

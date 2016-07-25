@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -27,8 +27,8 @@
  *
  * =======================================================================================
  */
-#ifndef LIKWID_ACCESS_X86_MSR_H
-#define LIKWID_ACCESS_X86_MSR_H
+#ifndef ACCESS_X86_MSR_H
+#define ACCESS_X86_MSR_H
 
 #include <types.h>
 
@@ -38,4 +38,4 @@ int access_x86_msr_read(const int cpu, uint32_t reg, uint64_t *data);
 int access_x86_msr_write(const int cpu, uint32_t reg, uint64_t data);
 int access_x86_msr_check(PciDeviceIndex dev, int cpu_id);
 
-#endif
+#endif /* ACCESS_X86_MSR_H */

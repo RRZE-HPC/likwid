@@ -12,7 +12,7 @@
 #
 #      Project:  likwid
 #
-#      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+#      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -43,7 +43,7 @@ endif
 DEFINES  += -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) -D_GNU_SOURCE
 INCLUDES += -I../includes
 LIBS     += -ldl
-CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES) 
+CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
 all: $(TARGET)
 

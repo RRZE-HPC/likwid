@@ -12,7 +12,7 @@
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -92,7 +92,6 @@ pthread_create(pthread_t* thread,
     static int pin_ids[MAX_NUM_THREADS];
     static uint64_t skipMask = 0x0;
     static int ncpus = 0;
-
 
     /* On first entry: Get Evironment Variable and initialize pin_ids */
     if (ncalled == 0)

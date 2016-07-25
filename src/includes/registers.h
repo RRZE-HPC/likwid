@@ -12,7 +12,7 @@
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,6 @@
  *
  * =======================================================================================
  */
-
 #ifndef REGISTERS_H
 #define REGISTERS_H
 
@@ -91,8 +90,8 @@
 #define MSR_UNCORE_PMC5                0x3B5
 #define MSR_UNCORE_PMC6                0x3B6
 #define MSR_UNCORE_PMC7                0x3B7
-/* 
- * Perfmon V3 (starting with Haswell, according to 
+/*
+ * Perfmon V3 (starting with Haswell, according to
  * Intel software developers guide also for SandyBridge,
  * IvyBridge not mentioned in this section)
  */
@@ -1331,7 +1330,6 @@
 /*
  * AMD
  */
-
 #define MSR_AMD_PERFEVTSEL0           0xC0010000
 #define MSR_AMD_PERFEVTSEL1           0xC0010001
 #define MSR_AMD_PERFEVTSEL2           0xC0010002
@@ -1396,4 +1394,3 @@
 #define MSR_AMD16_NB_PMC3               0xC0010247
 
 #endif /* REGISTERS_H */
-
