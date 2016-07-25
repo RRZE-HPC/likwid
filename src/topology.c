@@ -130,34 +130,6 @@ int affinity_thread2tile_lookup[MAX_NUM_THREADS];
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static int
-cpu_count(cpu_set_t* set)
-{
-    uint32_t i;
-    int s = 0;
-    const __cpu_mask *p = set->__bits;
-    const __cpu_mask *end = &set->__bits[sizeof(cpu_set_t) / sizeof (__cpu_mask)];
-
-    while (p < end)
-    {
-        __cpu_mask l = *p++;
-
-        if (l == 0)
-        {
-            continue;
-        }
-
-        for (i=0; i< (sizeof(__cpu_mask)*8); i++)
-        {
-            if (l&(1UL<<i))
-            {
-                s++;
-            }
-        }
-    }
-    return s;
-}
-
 static void
 initTopologyFile(FILE* file)
 {
@@ -523,6 +495,35 @@ readTopologyFile(const char* filename)
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+int
+cpu_count(cpu_set_t* set)
+{
+    uint32_t i;
+    int s = 0;
+    const __cpu_mask *p = set->__bits;
+    const __cpu_mask *end = &set->__bits[sizeof(cpu_set_t) / sizeof (__cpu_mask)];
+
+    while (p < end)
+    {
+        __cpu_mask l = *p++;
+
+        if (l == 0)
+        {
+            continue;
+        }
+
+        for (i=0; i< (sizeof(__cpu_mask)*8); i++)
+        {
+            if (l&(1UL<<i))
+            {
+                s++;
+            }
+        }
+    }
+    return s;
+}
+
 
 int
 topology_setName(void)
