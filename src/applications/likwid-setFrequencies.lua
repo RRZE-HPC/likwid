@@ -12,7 +12,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -129,7 +129,6 @@ function getAvailFreq(cpuid)
     end
     line = fp:read("*l")
     fp:close()
-    
     local tmp = likwid.stringsplit(line:gsub("^%s*(.-)%s*$", "%1"), " ", nil, " ")
     local avail = {}
     local turbo = tonumber(tmp[1])/1E6
@@ -337,7 +336,6 @@ if frequency then
             print_stderr(string.format("Frequency %s not available for CPU %d! Please select one of\n%s", frequency, cpulist[i], table.concat(freqs, ", ")))
             os.exit(1)
         end
-    
         local cmd = set_command .. " " .. tostring(cpulist[i]) .. " " .. tostring(tonumber(frequency)*1E6)
         if governor then
             cmd = cmd .. " " .. governor

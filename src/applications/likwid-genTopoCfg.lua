@@ -14,7 +14,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -116,7 +116,6 @@ for field, value in pairs(cputopo) do
             for k,v in pairs(threadPool_order) do
                 file:write(str..tostring(v).." = "..tostring(tab[v]).."\n")
             end
-            
         end
     elseif (field == "cacheLevels") then
         for id, tab in pairs(cputopo["cacheLevels"]) do
@@ -124,7 +123,6 @@ for field, value in pairs(cputopo) do
             for k,v in pairs(cacheLevels_order) do
                 file:write(str..tostring(v).." = "..tostring(tab[v]).."\n")
             end
-            
         end
     end
 end
@@ -135,8 +133,8 @@ for field, value in pairs(numainfo["nodes"]) do
         if id ~= "processors" and id ~= "distances" then
             file:write("numa_info nodes "..tostring(field).." "..tostring(id).." = "..tostring(tab).."\n")
         elseif id == "processors" then
-            for k,v in pairs(tab) do 
-                str = str..","..tostring(v) 
+            for k,v in pairs(tab) do
+                str = str..","..tostring(v)
                 file:write("numa_info nodes "..tostring(field).." "..tostring(id).." "..tostring(k).." = "..tostring(v).."\n")
             end
         elseif id == "distances" then

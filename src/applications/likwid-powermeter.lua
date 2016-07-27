@@ -4,7 +4,7 @@
  *
  *      Filename:  likwid-powermeter.lua
  *
- *      Description:  An application to get information about power 
+ *      Description:  An application to get information about power
  *      consumption on architectures implementing the RAPL interface.
  *
  *      Version:   <VERSION>
@@ -13,7 +13,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -122,7 +122,6 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
             usage()
             os.exit(1)
         end
-        
     elseif opt == "i" or opt == "info" then
         print_info = true
     elseif (opt == "p") then

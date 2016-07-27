@@ -4,7 +4,7 @@
  *
  *      Filename:  likwid-mpirun.lua
  *
- *      Description: A wrapper script to pin threads spawned by MPI processes and 
+ *      Description: A wrapper script to pin threads spawned by MPI processes and
  *                   measure hardware performance counters
  *
  *      Version:   <VERSION>
@@ -13,7 +13,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -511,7 +511,6 @@ function write_hostlist_to_file(hostlist, nperhost)
             table.insert(outlist, item)
         else
             prefixzeros = 0
-            
             host, start, ende,remain = item:match("(%a+)%[(%d+)-(%d+)%]([%w%d%[%]-]*)")
             if host and start and ende then
                 if tonumber(start) ~= 0 then
@@ -548,7 +547,6 @@ end
 
 local function writeHostfileSlurm(hostlist, filename)
     l = {}
-    
     for i, h in pairs(hostlist) do
         table.insert(l, h["hostname"])
     end
@@ -563,7 +561,6 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
     if wrapperscript.sub(1,1) ~= "/" then
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
-    
     local exec = string.format("srun -N %d --ntasks-per-node=%d --cpu_bind=none %s %s",
                                 nrNodes, ppn, table.concat(mpiopts, ' '), wrapperscript)
     if debug then
@@ -686,7 +683,6 @@ local function getMpiExec(mpitype)
         writeHostfile = writeHostfileSlurm
         getEnvironment = getEnvironmentSlurm
     end
-    
     for i, exec in pairs(testing) do
         f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
         if f ~= nil then
@@ -811,7 +807,6 @@ local function assignHosts(hosts, np, ppn)
                                             maxslots=host["maxslots"],
                                             interface=host["interface"]})
                         current = ppn
-                        
                     end
                 else
                     print_stderr(string.format("WARN: Oversubscription for host %s.", host["hostname"]))
@@ -995,7 +990,6 @@ local function setPerfStrings(perflist, cpuexprs)
                     table.insert(coreevents, e)
                 end
             end
-            
             local tmpSocketFlags = {}
             for _,e in pairs(socketListFlags) do
                 table.insert(tmpSocketFlags, e)
@@ -1196,7 +1190,6 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     f:write("else\n")
     f:write("\techo \"Unknown local rank $LOCALRANK\"\n")
     f:write("fi\n")
-    
     f:close()
     os.execute("chmod +x "..scriptname)
 end
@@ -1311,7 +1304,6 @@ local function parseMarkerOutputFile(filename)
     local eventlist = {}
     local counterlist = {}
     local idx = 1
-    
     local results = {}
     local f = io.open(filename, "r")
     if f == nil then
@@ -1595,8 +1587,6 @@ function printMpiOutput(group_list, all_results, regionname)
     end
 end
 
-
-
 function cpuCount()
     cputopo = likwid.getCpuTopology()
     local cpus = cputopo["activeHWThreads"]
@@ -1854,7 +1844,6 @@ elseif ppn == 0 and np > 0 then
             maxppn = host["slots"]
         end
     end
-    
     if ppn == 0 then
         ppn = 1
     end

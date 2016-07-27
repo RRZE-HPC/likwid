@@ -13,7 +13,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -734,7 +734,7 @@ if use_wrapper or use_timeline then
     local nr_events = likwid.getNumberOfEvents(activeGroup)
     local nr_threads = likwid.getNumberOfThreads()
     local firstrun = true
-    
+
     if use_wrapper and #group_ids == 1 then
         duration = 30.E06
     end
@@ -775,7 +775,6 @@ if use_wrapper or use_timeline then
             if use_timeline == true then
                 stop = likwid.stopClock()
                 likwid.readCounters()
-                
                 local time = likwid.getClock(start, stop)
                 if likwid.getNumberOfMetrics(activeGroup) == 0 then
                     results = likwid.getLastResults()
@@ -801,7 +800,6 @@ if use_wrapper or use_timeline then
                 end
                 nr_events = likwid.getNumberOfEvents(activeGroup)
             end
-            
         end
         stop = likwid.stopClock()
     end

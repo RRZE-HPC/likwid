@@ -11,7 +11,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -361,7 +361,6 @@ local function printtable(tab)
     end
     hline = hline .. "+"
     print(hline)
-    
     str = "| "
     for i=1,nr_columns do
         front, back = get_spaces(tostring(tab[i][1]), min_lengths[i],max_lengths[i])
@@ -374,7 +373,6 @@ local function printtable(tab)
     end
     print(str)
     print(hline)
-    
     for j=2,nr_lines do
         str = "| "
         for i=1,nr_columns do
@@ -417,7 +415,6 @@ local function printcsv(tab, linelength)
         end
         print(str)
     end
-    
 end
 
 likwid.printcsv = printcsv
@@ -498,8 +495,6 @@ local function new_groupdata(eventString, fix_ctrs)
         if not eventString:match("FIXC2") and fix_ctrs == 3 then
             eventString = eventString..",CPU_CLK_UNHALTED_REF:FIXC2"
         end
-        
-        
     end
     gdata["EventString"] = eventString
     gdata["GroupString"] = eventString
@@ -531,7 +526,6 @@ local function get_groupdata(group)
         if (a == group) then group_exist = 1 end
     end
     if (group_exist == 0) then return new_groupdata(group, cpuinfo["perf_num_fixed_ctr"]) end
-    
     local f = io.open(likwid.groupfolder .. "/" .. cpuinfo["short_name"] .. "/" .. group .. ".txt", "r")
     if f == nil then
         f = io.open(os.getenv("HOME") .. "/.likwid/groups/" .. cpuinfo["short_name"] .."/" .. group .. ".txt", "r")
@@ -556,7 +550,6 @@ local function get_groupdata(group)
     nr_events = 1
     nr_metrics = 1
     for i, line in pairs(stringsplit(t,"\n")) do
-        
         if (parse_eventset or parse_metrics or parse_long) and line:len() == 0 then
             parse_eventset = false
             parse_metrics = false
@@ -566,7 +559,7 @@ local function get_groupdata(group)
         if line:match("^SHORT%a*") ~= nil then
             linelist = stringsplit(line, "%s+", nil, "%s+")
             table.remove(linelist, 1)
-            groupdata["ShortDescription"] = table.concat(linelist, " ")  
+            groupdata["ShortDescription"] = table.concat(linelist, " ")
         end
 
         if line:match("^EVENTSET$") ~= nil then
@@ -595,7 +588,6 @@ local function get_groupdata(group)
             groupdata["Events"][nr_events]["Counter"] = linelist[1]:gsub("^%s*(.-)%s*$", "%1")
             nr_events = nr_events + 1
         end
-        
         if parse_metrics and line:match("^METRICS$") == nil then
             linelist = stringsplit(line:gsub("^%s*(.-)%s*$", "%1"), "%s+", nil, "%s+")
             formula = linelist[#linelist]
@@ -605,22 +597,16 @@ local function get_groupdata(group)
             groupdata["Metrics"][nr_metrics]["formula"] = formula
             nr_metrics = nr_metrics + 1
         end
-        
         if parse_long and line:match("^LONG$") == nil then
             groupdata["LongDescription"] = groupdata["LongDescription"] .. "\n" .. line
         end
     end
     groupdata["LongDescription"] = groupdata["LongDescription"]:sub(2)
     groupdata["EventString"] = groupdata["EventString"]:sub(2)
-    
     return groupdata
-    
 end
 
 likwid.get_groupdata = get_groupdata
-
-
-
 
 local function parse_time(timestr)
     local duration = 0
@@ -795,7 +781,6 @@ local function printOutput(results, metrics, cpulist, region, stats)
                     table.insert(tmpList, string.format("%e", likwid.markerRegionTime(region, c)))
                 end
             end
-            
             for e, event in pairs(group) do
                 local tmp = tostring(likwid.num2str(event[c]))
                 table.insert(tmpList, tmp)
@@ -1085,7 +1070,6 @@ local function printAsciiBox(container)
             end
             innerboxline = innerboxline .. "+ "
         end
-        
         boxlabelline = "| "
         for j=1,numColumns do
             local offset = 0
