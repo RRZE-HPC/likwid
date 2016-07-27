@@ -14,7 +14,7 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-MFLOP/s 1.0E-06*(PMC0*4.0+PMC1)/time
+SP MFLOP/s 1.0E-06*(PMC0*4.0+PMC1)/time
 Packed MUOPS/s   1.0E-06*PMC0/time
 Scalar MUOPS/s 1.0E-06*PMC1/time
 SP MUOPS/s 1.0E-06*PMC2/time
