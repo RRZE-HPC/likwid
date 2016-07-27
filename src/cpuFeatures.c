@@ -228,7 +228,6 @@ cpuFeatureNames[CPUFEATURES_MAX] = {
 void
 cpuFeatures_init()
 {
-    int i;
     if (features_initialized)
     {
         return;
@@ -239,10 +238,10 @@ cpuFeatures_init()
     {
         HPMinit();
 
-        for (i = 0; i < cpuid_topology.numHWThreads; i++)
+        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
         {
-            i = HPMaddThread(cpuid_topology.threadPool[i].apicId);
-            if (i != 0)
+            int ret = HPMaddThread(cpuid_topology.threadPool[i].apicId);
+            if (ret != 0)
             {
                 ERROR_PRINT(Cannot get access to register CPU feature register on CPU %d, cpuid_topology.threadPool[i].apicId);
                 return;
@@ -257,7 +256,6 @@ cpuFeatures_init()
 void
 cpuFeatures_print(int cpu)
 {
-    int i;
     uint64_t flags = 0x0ULL;
     if (!features_initialized)
     {
@@ -266,7 +264,7 @@ cpuFeatures_print(int cpu)
     cpuFeatures_update(cpu);
 
     printf(HLINE);
-    for (i=0;i<CPUFEATURES_MAX; i++)
+    for (int i=0; i<CPUFEATURES_MAX; i++)
     {
         if ((cpuid_info.model != CORE2_45) &&
             (cpuid_info.model != CORE2_65) &&
@@ -326,6 +324,7 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
         reg = MSR_PREFETCH_ENABLE;
         newOffsets = 1;
     }
+
     ret = HPMread(cpu, MSR_DEV, reg, &flags);
     if (ret != 0)
     {
