@@ -13,7 +13,7 @@
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -188,7 +188,7 @@ for level=1,cputopo["numCacheLevels"] do
         else
             table.insert(output_csv, string.format("Size:\t\t\t%.0f MB",cputopo["cacheLevels"][level]["size"]/1048576))
         end
-        
+
         if (print_caches) then
             if (cputopo["cacheLevels"][level]["type"] == "DATACACHE") then
                 table.insert(output_csv, "Type:\t\t\tData cache")
@@ -199,7 +199,7 @@ for level=1,cputopo["numCacheLevels"] do
             table.insert(output_csv, string.format("Associativity:\t\t%d",cputopo["cacheLevels"][level]["associativity"]))
             table.insert(output_csv, string.format("Number of sets:\t\t%d",cputopo["cacheLevels"][level]["sets"]))
             table.insert(output_csv, string.format("Cache line size:\t%d",cputopo["cacheLevels"][level]["lineSize"]))
-            
+
             if (cputopo["cacheLevels"][level]["inclusive"] == 0) then
                 table.insert(output_csv, "Cache type:\t\tNon Inclusive")
             else
@@ -315,7 +315,7 @@ if print_graphical and not print_csv then
             end
             likwid.addSimpleAsciiBox(container, 1, core+1, tmpString)
         end
-        
+
         local columnCursor = 1
         local lineCursor = 2
         for cache=1,cputopo["numCacheLevels"] do
@@ -332,9 +332,9 @@ if print_graphical and not print_csv then
                     local tmpString = ""
                     local cacheWidth = 0
                     if cputopo["cacheLevels"][cache]["size"] < 1048576 then
-                        tmpString = string.format("%dkB", cputopo["cacheLevels"][cache]["size"]/1024)
+                        tmpString = string.format("%.0f kB", cputopo["cacheLevels"][cache]["size"]/1024)
                     else
-                        tmpString = string.format("%dMB", cputopo["cacheLevels"][cache]["size"]/1048576)
+                        tmpString = string.format("%.0f MB", cputopo["cacheLevels"][cache]["size"]/1048576)
                     end
                     if sharedCores > 1 then
                         if sharedCores > cputopo["numCoresPerSocket"] then
