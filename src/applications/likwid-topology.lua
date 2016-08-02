@@ -332,9 +332,9 @@ if print_graphical and not print_csv then
                     local tmpString = ""
                     local cacheWidth = 0
                     if cputopo["cacheLevels"][cache]["size"] < 1048576 then
-                        tmpString = string.format("%dkB", cputopo["cacheLevels"][cache]["size"]/1024)
+                        tmpString = string.format("%.0f kB", cputopo["cacheLevels"][cache]["size"]/1024)
                     else
-                        tmpString = string.format("%dMB", cputopo["cacheLevels"][cache]["size"]/1048576)
+                        tmpString = string.format("%.0f MB", cputopo["cacheLevels"][cache]["size"]/1048576)
                     end
                     if sharedCores > 1 then
                         if sharedCores > cputopo["numCoresPerSocket"] then

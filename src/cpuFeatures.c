@@ -52,7 +52,6 @@ static int features_initialized = 0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-
 #define PRINT_VALUE(color,string)  \
     color_on(BRIGHT,(color));      \
     printf(#string"\n");            \
@@ -80,9 +79,10 @@ static int features_initialized = 0;
 
 #define IF_FLAG(feature) (cpuFeatureMask[cpu] & (1ULL<<feature))
 
-
 /* #####   FUNCTIONS  -  LOCAL TO THIS SOURCE FILE   ######################### */
-static void cpuFeatures_update(int cpu)
+
+static void
+cpuFeatures_update(int cpu)
 {
     int ret;
     uint64_t flags = 0x0ULL;
@@ -189,7 +189,9 @@ static void cpuFeatures_update(int cpu)
         ret = HPMread(cpu, MSR_DEV, MSR_PREFETCH_ENABLE, &flags);
         if (ret != 0)
         {
-            fprintf(stderr, "Cannot read register 0x%X on cpu %d: err %d\n", MSR_PREFETCH_ENABLE, cpu, ret);
+            fprintf(stderr,
+                    "Cannot read register 0x%X on cpu %d: err %d\n",
+                    MSR_PREFETCH_ENABLE, cpu, ret);
         }
         TEST_FLAG_INV(FEAT_IP_PREFETCHER,3);
         TEST_FLAG_INV(FEAT_DCU_PREFETCHER,2);
@@ -198,7 +200,8 @@ static void cpuFeatures_update(int cpu)
     }
 }
 
-static char* cpuFeatureNames[CPUFEATURES_MAX] = {
+static char*
+cpuFeatureNames[CPUFEATURES_MAX] = {
     [FEAT_HW_PREFETCHER] = "Hardware Prefetcher",
     [FEAT_IP_PREFETCHER] = "IP Prefetcher",
     [FEAT_DCU_PREFETCHER] = "DCU Pretecher",
@@ -225,7 +228,6 @@ static char* cpuFeatureNames[CPUFEATURES_MAX] = {
 void
 cpuFeatures_init()
 {
-    int i;
     if (features_initialized)
     {
         return;
@@ -235,22 +237,25 @@ cpuFeatures_init()
     if (!HPMinitialized())
     {
         HPMinit();
-        
-    }
-    for (i = 0; i < cpuid_topology.numHWThreads; i++)
-    {
-        HPMaddThread(cpuid_topology.threadPool[i].apicId);
-        cpuFeatures_update(cpuid_topology.threadPool[i].apicId);
+
+        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        {
+            int ret = HPMaddThread(cpuid_topology.threadPool[i].apicId);
+            if (ret != 0)
+            {
+                ERROR_PRINT(Cannot get access to register CPU feature register on CPU %d, cpuid_topology.threadPool[i].apicId);
+                return;
+            }
+            cpuFeatures_update(cpuid_topology.threadPool[i].apicId);
+        }
     }
 
-    
     features_initialized = 1;
 }
 
 void
 cpuFeatures_print(int cpu)
 {
-    int i;
     uint64_t flags = 0x0ULL;
     if (!features_initialized)
     {
@@ -259,7 +264,7 @@ cpuFeatures_print(int cpu)
     cpuFeatures_update(cpu);
 
     printf(HLINE);
-    for (i=0;i<CPUFEATURES_MAX; i++)
+    for (int i=0; i<CPUFEATURES_MAX; i++)
     {
         if ((cpuid_info.model != CORE2_45) &&
             (cpuid_info.model != CORE2_65) &&
@@ -319,6 +324,7 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
         reg = MSR_PREFETCH_ENABLE;
         newOffsets = 1;
     }
+
     ret = HPMread(cpu, MSR_DEV, reg, &flags);
     if (ret != 0)
     {
@@ -408,7 +414,6 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
     cpuFeatures_update(cpu);
     return 0;
 }
-
 
 int
 cpuFeatures_disable(int cpu, CpuFeature type, int print)
@@ -538,7 +543,8 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
     return ret;
 }
 
-int cpuFeatures_get(int cpu, CpuFeature type)
+int
+cpuFeatures_get(int cpu, CpuFeature type)
 {
     if ((type >= FEAT_HW_PREFETCHER) && (type < CPUFEATURES_MAX))
     {
@@ -554,7 +560,8 @@ int cpuFeatures_get(int cpu, CpuFeature type)
     return -EINVAL;
 }
 
-char* cpuFeatures_name(CpuFeature type)
+char*
+cpuFeatures_name(CpuFeature type)
 {
     if ((type >= FEAT_HW_PREFETCHER) && (type < CPUFEATURES_MAX))
     {
@@ -562,3 +569,4 @@ char* cpuFeatures_name(CpuFeature type)
     }
     return NULL;
 }
+
