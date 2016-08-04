@@ -35,7 +35,7 @@ package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 local likwid = require("likwid")
 
 print_stdout = print
-print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
+print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end io.stderr:flush() end
 
 local function version()
     print_stdout(string.format("likwid-perfctr --  Version %d.%d",likwid.version,likwid.release))
@@ -754,6 +754,10 @@ if use_wrapper or use_timeline then
 
     if not pid then
         print_stderr("Failed to execute command: ".. execString)
+        likwid.putTopology()
+        likwid.putNumaInfo()
+        likwid.putConfiguration()
+        os.exit(1)
     end
     start = likwid.startClock()
     groupTime[activeGroup] = 0
