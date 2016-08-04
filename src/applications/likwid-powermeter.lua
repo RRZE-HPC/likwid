@@ -346,7 +346,7 @@ if not print_info and not print_temp then
             print_stdout(string.format("Measure for socket %d on CPU %d", socket,cpu ))
             for j, dom in pairs(domainList) do
                 if power["domains"][dom]["supportStatus"] then
-                    local energy = likwid.calcPower(before[cpu][dom], after[cpu][dom], 0)
+                    local energy = likwid.calcPower(before[cpu][dom], after[cpu][dom], j-1)
                     print_stdout(string.format("Domain %s:", dom))
                     print_stdout(string.format("Energy consumed: %g Joules",energy))
                     print_stdout(string.format("Power consumed: %g Watt",energy/runtime))
