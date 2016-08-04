@@ -42,6 +42,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <pthread.h>
+#include <sys/syscall.h>
 
 #include <types.h>
 #include <error.h>
@@ -51,9 +52,12 @@
 #include <configuration.h>
 #include <affinity.h>
 
+#define gettid() syscall(SYS_gettid)
+
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int globalSocket = -1;
+static pid_t masterPid = 0;
 static int cpuSockets_open = 0;
 static int cpuSockets[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = -1};
 static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
@@ -194,6 +198,10 @@ int
 access_client_init(int cpu_id)
 {
     int ret = 0;
+    if (masterPid != 0 && gettid() == masterPid)
+    {
+        return 0;
+    }
     if (cpuSockets[cpu_id] < 0)
     {
         pthread_mutex_lock(&cpuLocks[cpu_id]);
@@ -210,6 +218,7 @@ access_client_init(int cpu_id)
         {
             pthread_mutex_lock(&globalLock);
             globalSocket = cpuSockets[cpu_id];
+            masterPid = gettid();
             pthread_mutex_unlock(&globalLock);
         }
     }
