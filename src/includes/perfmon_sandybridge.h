@@ -45,6 +45,7 @@ static int perfmon_numArchEventsSandybridge = NUM_ARCH_EVENTS_SANDYBRIDGE;
 
 int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int snbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
+int sandy_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int (*sandy_cbox_setup)(int, RegisterIndex, PerfmonEvent*);
 
 int perfmon_init_sandybridge(int cpu_id)
@@ -66,7 +67,11 @@ int perfmon_init_sandybridge(int cpu_id)
     {
         sandy_cbox_setup = snb_cbox_setup;
     }
-    
+    else
+    {
+        sandy_cbox_setup = sandy_cbox_nosetup;
+    }
+
     return 0;
 }
 
@@ -211,6 +216,11 @@ int snb_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     return 0;
 }
 
+
+int sandy_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    return 0;
+}
 
 uint32_t snb_cbox_filter(PerfmonEvent *event)
 {
@@ -877,7 +887,7 @@ int perfmon_setupCounterThread_sandybridge(
             case UBOX:
                 snb_ubox_setup(cpu_id, index, event);
                 break;
-                
+
             case UBOXFIX:
                 if (cpuid_info.model == SANDYBRIDGE_EP)
                 {
@@ -924,7 +934,15 @@ int perfmon_setupCounterThread_sandybridge(
                 break;
         }
     }
-    
+    for (int i=UNCORE;i<NUM_UNITS;i++)
+    {
+        if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(i))) && box_map[i].ctrlRegister != 0x0)
+        {
+            VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, CLEAR_UNCORE_BOX_CTRL);
+            HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
+        }
+    }
+
     if (fixed_flags > 0x0)
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_FIXED_CTR_CTRL, LLU_CAST fixed_flags, SETUP_FIXED)
@@ -1700,7 +1718,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
 
                 case SBOX0FIX:
                 case SBOX1FIX:
-                    
+
                     HPMread(cpu_id, dev, counter1, &counter_result);
                     if (eventSet->events[i].event.eventId == 0x00)
                     {
@@ -1876,7 +1894,17 @@ int perfmon_finalizeCountersThread_sandybridge(int thread_id, PerfmonEventSet* e
         }
     }
 
-
+    if (haveLock && eventSet->regTypeMask & ~(0xFULL))
+    {
+        for (int i=UNCORE;i<NUM_UNITS;i++)
+        {
+            if ((eventSet->regTypeMask & (REG_TYPE_MASK(i))) && box_map[i].ctrlRegister != 0x0)
+            {
+                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, CLEAR_UNCORE_BOX_CTRL);
+                HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
+            }
+        }
+    }
     if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, CLEAR_GLOBAL_OVF)

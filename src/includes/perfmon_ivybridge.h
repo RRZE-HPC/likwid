@@ -48,6 +48,7 @@ static int perfmon_numArchEventsIvybridge = NUM_ARCH_EVENTS_IVYBRIDGE;
 
 int ivb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int ivbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
+int ivy_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int (*ivy_cbox_setup)(int, RegisterIndex, PerfmonEvent*);
 
 int perfmon_init_ivybridge(int cpu_id)
@@ -68,6 +69,10 @@ int perfmon_init_ivybridge(int cpu_id)
     else if ((ret == 0) && (data == 0x0ULL))
     {
         ivy_cbox_setup = ivb_cbox_setup;
+    }
+    else
+    {
+        ivy_cbox_setup = ivy_cbox_nosetup;
     }
     return 0;
 }
@@ -387,6 +392,12 @@ int ivb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
     }
     return 0;
 }
+
+int ivy_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    return 0;
+}
+
 
 int ivb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
@@ -727,7 +738,7 @@ int perfmon_setupCounterThread_ivybridge(
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
-        switch (eventSet->events[i].type)
+        switch (type)
         {
             case PMC:
                 ivb_pmc_setup(cpu_id, index, event);
@@ -816,6 +827,14 @@ int perfmon_setupCounterThread_ivybridge(
 
             default:
                 break;
+        }
+    }
+    for (int i=UNCORE;i<NUM_UNITS;i++)
+    {
+        if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(i))) && box_map[i].ctrlRegister != 0x0)
+        {
+            VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, CLEAR_UNCORE_BOX_CTRL);
+            HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
         }
     }
     if (fixed_flags > 0x0)
@@ -1481,6 +1500,14 @@ int perfmon_finalizeCountersThread_ivybridge(int thread_id, PerfmonEventSet* eve
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_STATUS, 0x0ULL));
         VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, CLEAR_UNCORE_CTRL)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_CTL, 0x0ULL));
+        for (int i=UNCORE;i<NUM_UNITS;i++)
+        {
+            if ((eventSet->regTypeMask & (REG_TYPE_MASK(i))) && box_map[i].ctrlRegister != 0x0)
+            {
+                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, CLEAR_UNCORE_BOX_CTRL);
+                HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
+            }
+        }
     }
 
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))

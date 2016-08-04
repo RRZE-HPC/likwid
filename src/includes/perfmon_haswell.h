@@ -1164,6 +1164,14 @@ int perfmon_setupCounterThread_haswell(
                 break;
         }
     }
+    for (int i=UNCORE;i<NUM_UNITS;i++)
+    {
+        if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(i))) && box_map[i].ctrlRegister != 0x0)
+        {
+            VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, CLEAR_UNCORE_BOX_CTRL);
+            HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
+        }
+    }
     if (fixed_flags > 0x0ULL)
     {
         // Erratum HSW143
@@ -1255,7 +1263,7 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
     }
 
     HASEP_UNFREEZE_UNCORE_AND_RESET_CTR;
-    
+
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST (1ULL<<63)|(1ULL<<62)|flags, CLEAR_PMC_AND_FIXED_OVERFLOW)
@@ -1565,7 +1573,7 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                                 counter_result = 0;
                                 break;
                         }
-                        
+
                     }
                     else if ((eventSet->events[i].event.eventId == 0x01) ||
                              (eventSet->events[i].event.eventId == 0x02))
@@ -1782,7 +1790,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                                 counter_result = 0;
                                 break;
                         }
-                        
+
                     }
                     else if ((eventSet->events[i].event.eventId == 0x01) ||
                              (eventSet->events[i].event.eventId == 0x02))
