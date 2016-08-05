@@ -226,6 +226,14 @@ int access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint6
         return -ENOENT;
     }
 
+    if (cpuSockets[cpu_id] < 0 && gettid() != masterPid)
+    {
+        pthread_mutex_lock(&cpuLocks[cpu_id]);
+        cpuSockets[cpu_id] = access_client_startDaemon(cpu_id);
+        cpuSockets_open++;
+        pthread_mutex_unlock(&cpuLocks[cpu_id]);
+    }
+
     if ((cpuSockets[cpu_id] >= 0) && (cpuSockets[cpu_id] != globalSocket))
     {
         socket = cpuSockets[cpu_id];
@@ -285,6 +293,14 @@ int access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint
     if (cpuSockets_open == 0)
     {
         return -ENOENT;
+    }
+
+    if (cpuSockets[cpu_id] < 0 && gettid() != masterPid)
+    {
+        pthread_mutex_lock(&cpuLocks[cpu_id]);
+        cpuSockets[cpu_id] = access_client_startDaemon(cpu_id);
+        cpuSockets_open++;
+        pthread_mutex_unlock(&cpuLocks[cpu_id]);
     }
 
     if ((cpuSockets[cpu_id] >= 0) && (cpuSockets[cpu_id] != socket))
