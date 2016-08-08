@@ -378,7 +378,6 @@ int perfmon_stopCountersThread_goldmont(int thread_id, PerfmonEventSet* eventSet
                     break;
             }
         }
-        eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
 
     return 0;
@@ -532,6 +531,13 @@ int perfmon_finalizeCountersThread_goldmont(int thread_id, PerfmonEventSet* even
             if ((type >= SBOX0) && (type <= SBOX3))
             {
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
+            }
+            VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, CLEAR_CTR);
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
+            if (counter_map[index].counterRegister2 != 0x0)
+            {
+                VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL, CLEAR_CTR);
+                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));
             }
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;

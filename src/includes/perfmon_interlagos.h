@@ -295,6 +295,8 @@ int perfmon_finalizeCountersThread_interlagos(int thread_id, PerfmonEventSet* ev
         {
             VERBOSEPRINTREG(cpu_id, reg, LLU_CAST 0x0ULL, CLEAR_CTRL);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, 0x0ULL));
+            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST 0x0ULL, CLEAR_CTR);
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }

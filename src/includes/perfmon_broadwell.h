@@ -1524,7 +1524,6 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
             }
             *current = field64(counter_result, 0, box_map[type].regWidth);
         }
-        eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
 
 
@@ -1782,6 +1781,13 @@ int perfmon_finalizeCountersThread_broadwell(int thread_id, PerfmonEventSet* eve
             ovf_values_uncore = 0x0ULL;
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
+            VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, CLEAR_CTR);
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
+            if (counter_map[index].counterRegister2 != 0x0)
+            {
+                VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL, CLEAR_CTR);
+                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));
+            }
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
@@ -1792,6 +1798,24 @@ int perfmon_finalizeCountersThread_broadwell(int thread_id, PerfmonEventSet* eve
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, ovf_values_uncore));
         VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST 0x0ULL, CLEAR_UNCORE_CTRL)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, 0x0ULL));
+        for (int i=UNCORE;i<NUM_UNITS;i++)
+        {
+            if ((eventSet->regTypeMask & (REG_TYPE_MASK(i))) && box_map[i].ctrlRegister != 0x0)
+            {
+                VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, CLEAR_UNCORE_BOX_CTRL);
+                HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
+                if (box_map[i].filterRegister1)
+                {
+                    VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].filterRegister1, 0x0ULL, CLEAR_FILTER);
+                    HPMwrite(cpu_id, box_map[i].device, box_map[i].filterRegister1, 0x0ULL);
+                }
+                if (box_map[i].filterRegister2)
+                {
+                    VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].filterRegister2, 0x0ULL, CLEAR_FILTER);
+                    HPMwrite(cpu_id, box_map[i].device, box_map[i].filterRegister2, 0x0ULL);
+                }
+            }
+        }
     }
 
     if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
