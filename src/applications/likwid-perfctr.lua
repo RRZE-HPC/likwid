@@ -248,7 +248,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         use_wrapper = true
     elseif (opt == "S") then
         use_stethoscope = true
-        if arg ~= nil and arg:match("%d%a?+s") then
+        if arg ~= nil and arg:match("%d+%a?s") then
             duration = likwid.parse_time(arg)
         else
             print_stderr("Option requires an argument")
