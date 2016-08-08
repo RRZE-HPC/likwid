@@ -6,7 +6,7 @@
  *      Description:  Implementation of frequency daemon
  *
  *      Version:   4.1
- *      Released:  13.6.2016
+ *      Released:  8.8.2016
  *
  *      Authors:  Jan Treibig (jt), jan.treibig@gmail.com,
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com

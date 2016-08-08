@@ -6,7 +6,7 @@
  *      Description:  Interface to the hwloc based topology backend
  *
  *      Version:   4.1
- *      Released:  13.6.2016
+ *      Released:  8.8.2016
  *
  *      Authors:  Thomas Roehl (tr), thomas.roehl@googlemail.com
  *

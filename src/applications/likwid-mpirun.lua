@@ -8,7 +8,7 @@
  *                   measure hardware performance counters
  *
  *      Version:   4.1
- *      Released:  13.6.2016
+ *      Released:  8.8.2016
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

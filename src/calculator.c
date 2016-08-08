@@ -6,7 +6,6 @@
  *      Description:  Infix calculator
  *
  *      Author:   Brandon Mills (bm), mills.brandont@gmail.com
- *      Project:  likwid
  *
  *      Copyright (C) 2016 Brandon Mills
  *
@@ -34,7 +33,7 @@
  *      Some changes done for the integration in LIKWID, see inline comments
  *
  *      Version:   4.1
- *      Released:  13.6.2016
+ *      Released:  8.8.2016
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Roehl (tr), thomas.roehl@gmail.com

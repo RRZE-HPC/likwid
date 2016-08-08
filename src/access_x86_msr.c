@@ -10,7 +10,7 @@
  *                   is based on the msr-util tools.
  *
  *      Version:   4.1
- *      Released:  13.6.2016
+ *      Released:  8.8.2016
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com.
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
