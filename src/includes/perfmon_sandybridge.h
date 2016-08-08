@@ -1835,45 +1835,55 @@ int perfmon_finalizeCountersThread_sandybridge(int thread_id, PerfmonEventSet* e
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
+        RegisterType type = eventSet->events[i].type;
+        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
         {
-            RegisterType type = eventSet->events[i].type;
-            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
-            {
-                continue;
-            }
-            RegisterIndex index = eventSet->events[i].index;
-            PciDeviceIndex dev = counter_map[index].device;
-            uint64_t reg = counter_map[index].configRegister;
-            switch(type)
-            {
-                case PMC:
-                    ovf_values_core |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));
-                    if ((haveTileLock) && (eventSet->events[i].event.eventId == 0xB7))
-                    {
-                        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL, CLEAR_OFFCORE_RESP0);
-                        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, 0x0ULL));
-                    }
-                    else if ((haveTileLock) && (eventSet->events[i].event.eventId == 0xBB))
-                    {
-                        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL, CLEAR_OFFCORE_RESP1);
-                        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, 0x0ULL));
-                    }
-                    break;
-                case FIXED:
-                    ovf_values_core |= (1ULL<<(index+32));
-                    break;
-                default:
-                    break;
-            }
-            if ((reg) &&
-                (((type == PMC)||(type == FIXED)) || ((type >= UNCORE) && (haveLock) && (HPMcheck(dev, cpu_id)))))
-            {
-                VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
-            }
-            eventSet->events[i].threadCounter[thread_id].init = FALSE;
+            continue;
         }
+        RegisterIndex index = eventSet->events[i].index;
+        PciDeviceIndex dev = counter_map[index].device;
+        uint64_t reg = counter_map[index].configRegister;
+        switch(type)
+        {
+            case PMC:
+                ovf_values_core |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));
+                if ((haveTileLock) && (eventSet->events[i].event.eventId == 0xB7))
+                {
+                    VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL, CLEAR_OFFCORE_RESP0);
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, 0x0ULL));
+                }
+                else if ((haveTileLock) && (eventSet->events[i].event.eventId == 0xBB))
+                {
+                    VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL, CLEAR_OFFCORE_RESP1);
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, 0x0ULL));
+                }
+                break;
+            case FIXED:
+                ovf_values_core |= (1ULL<<(index+32));
+                break;
+            default:
+                break;
+        }
+        if ((reg) &&
+            (((type == PMC)||(type == FIXED)) || ((type >= UNCORE) && (haveLock) && (HPMcheck(dev, cpu_id)))))
+        {
+            VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
+            if (type >= SBOX0 && type <= SBOX3)
+                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
+            VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL, CLEAR_CTR);
+            CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
+            if (type >= SBOX0 && type <= SBOX3)
+                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister, 0x0ULL));
+            if (counter_map[index].counterRegister2 != 0x0)
+            {
+                VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL, CLEAR_CTR);
+                CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));
+                if (type >= SBOX0 && type <= SBOX3)
+                    CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));
+            }
+        }
+        eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
 
     if (haveLock && eventSet->regTypeMask & ~(0xFULL))
@@ -1884,6 +1894,18 @@ int perfmon_finalizeCountersThread_sandybridge(int thread_id, PerfmonEventSet* e
             {
                 VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, CLEAR_UNCORE_BOX_CTRL);
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
+                if (i >= SBOX0 && i <= SBOX3)
+                    HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
+                if (box_map[i].filterRegister1 != 0x0)
+                {
+                    VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].filterRegister1, 0x0ULL, CLEAR_FILTER);
+                    HPMwrite(cpu_id, box_map[i].device, box_map[i].filterRegister1, 0x0ULL);
+                }
+                if (box_map[i].filterRegister2 != 0x0)
+                {
+                    VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].filterRegister2, 0x0ULL, CLEAR_FILTER);
+                    HPMwrite(cpu_id, box_map[i].device, box_map[i].filterRegister2, 0x0ULL);
+                }
             }
         }
     }

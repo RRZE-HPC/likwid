@@ -219,6 +219,8 @@ int perfmon_finalizeCountersThread_k10(int thread_id, PerfmonEventSet* eventSet)
         {
             VERBOSEPRINTREG(cpu_id, reg, 0x0ULL, CLEAR_CTRL);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, 0x0ULL));
+            VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, 0x0ULL, CLEAR_CTR);
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].counterRegister, 0x0ULL));
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
