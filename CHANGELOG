@@ -1,3 +1,11 @@
+# Changelog 4.1.2
+- Fix for likwid-powermeter: Use proper energy unit
+- Fix for performance groups for Intel Broadwell (D/EP): DATA and FALSE_SHARE
+- Reduce number of started access daemons
+- Clean Uncore unit local control registers (needed for simultaneous use of LIKWID 3 and 4)
+- Clean config, filter and counter registers at *_finalize function
+- Fix for likwid-features and likwid-perfctr
+
 # Changelog 4.1.1
 - Fix for Uncore handling for EP/EN/EX systems
 - Minor fix for Uncore handling for Intel desktop systems
