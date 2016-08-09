@@ -41,6 +41,7 @@ typedef enum {
     HA,
     QPI,
     IRP,
+    EDC,
     MAX_NUM_PCI_TYPES
 } PciDeviceType;
 
@@ -70,6 +71,22 @@ typedef enum {
     PCI_IMC_DEVICE_1_CH_2,
     PCI_IMC_DEVICE_1_CH_3,
     PCI_IRP_DEVICE,
+    PCI_EDC0_UCLK_DEVICE,
+    PCI_EDC0_DCLK_DEVICE,
+    PCI_EDC1_UCLK_DEVICE,
+    PCI_EDC1_DCLK_DEVICE,
+    PCI_EDC2_UCLK_DEVICE,
+    PCI_EDC2_DCLK_DEVICE,
+    PCI_EDC3_UCLK_DEVICE,
+    PCI_EDC3_DCLK_DEVICE,
+    PCI_EDC4_UCLK_DEVICE,
+    PCI_EDC4_DCLK_DEVICE,
+    PCI_EDC5_UCLK_DEVICE,
+    PCI_EDC5_DCLK_DEVICE,
+    PCI_EDC6_UCLK_DEVICE,
+    PCI_EDC6_DCLK_DEVICE,
+    PCI_EDC7_UCLK_DEVICE,
+    PCI_EDC7_DCLK_DEVICE,
     MAX_NUM_PCI_DEVICES
 } PciDeviceIndex;
 
@@ -93,7 +110,8 @@ static PciType pci_types[MAX_NUM_PCI_TYPES] = {
     [IMC] = {"IMC", "The integrated Memory Controller provides the interface to DRAM and communicates to the rest of the uncore through the Home Agent."},
     [HA] = {"HA", "The HA is responsible for the protocol side of memory interactions."},
     [QPI] = {"QPI", "The Intel QPI Link Layer is responsible for packetizing requests from the caching agent on the way out to the system interface."},
-    [IRP] = {"IRP", "IRP is responsible for maintaining coherency for IIO traffic e.g. crosssocket P2P."}
+    [IRP] = {"IRP", "IRP is responsible for maintaining coherency for IIO traffic e.g. crosssocket P2P."},
+    [EDC] = {"EDC", "The Embedded DRAM controller is used for high bandwidth memory on the Xeon Phi (KNL)."},
 };
 
 #endif /*PCI_TYPES_H*/

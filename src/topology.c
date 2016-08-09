@@ -115,7 +115,7 @@ static char* short_sandybridge = "sandybridge";
 static char* short_sandybridge_ep = "sandybridgeEP";
 static char* short_skylake = "skylake";
 static char* short_phi = "phi";
-static char* short_phi2 = "phi2";
+static char* short_phi2 = "knl";
 static char* short_k8 = "k8";
 static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
@@ -628,7 +628,7 @@ topology_setName(void)
                     cpuid_info.short_name = short_skylake;
                     break;
 
-                case XEON_PHI2:
+                case XEON_PHI_KNL:
                     cpuid_info.name = xeon_phi2_string;
                     cpuid_info.short_name = short_phi2;
                     break;

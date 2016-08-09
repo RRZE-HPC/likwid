@@ -1,0 +1,21 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 0
+BYTES 16
+DESC Double-precision vector copy, optimized for AVX-512
+LOADS 1
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 11
+UOPS 14
+LOOP 32
+vmovapd    zmm1, [STR0 + GPR1 * 8]
+vmovapd    zmm2, [STR0 + GPR1 * 8 + 64]
+vmovapd    zmm3, [STR0 + GPR1 * 8 + 128]
+vmovapd    zmm4, [STR0 + GPR1 * 8 + 192]
+vmovapd    [STR1 + GPR1 * 8]     , zmm1
+vmovapd    [STR1 + GPR1 * 8 + 64], zmm2
+vmovapd    [STR1 + GPR1 * 8 + 128], zmm3
+vmovapd    [STR1 + GPR1 * 8 + 192], zmm4
+
+

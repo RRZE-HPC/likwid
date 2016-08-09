@@ -98,7 +98,7 @@ struct topology_functions {
 
 /* Intel MIC */
 #define XEON_PHI           0x01U
-#define XEON_PHI2          0x57U
+#define XEON_PHI_KNL       0x57U
 
 /* AMD K10 */
 #define BARCELONA      0x02U

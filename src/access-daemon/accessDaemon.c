@@ -56,6 +56,7 @@
 #include <perfmon_sandybridgeEP_counters.h>
 #include <perfmon_broadwelld_counters.h>
 #include <perfmon_broadwellEP_counters.h>
+#include <perfmon_knl_counters.h>
 #include <topology.h>
 #include <cpuid.h>
 #include <lock.h>
@@ -462,8 +463,140 @@ allowed_silvermont(uint32_t reg)
     }
 }
 
-static int
-allowed_amd(uint32_t reg)
+static int allowed_knl(uint32_t reg)
+{
+    if (allowed_silvermont(reg))
+        return 1;
+    else
+    {
+        if (((reg & 0xF00U) == 0x700U) ||
+            ((reg & 0xF00U) == 0xE00U) ||
+            ((reg & 0xF00U) == 0xF00U))
+            return 1;
+    }
+    return 0;
+}
+
+static int allowed_pci_knl(PciDeviceType type, uint32_t reg)
+{
+    switch(type)
+    {
+	case EDC:
+	    if ((reg == PCI_MIC2_EDC_U_CTR0_A) ||
+		(reg == PCI_MIC2_EDC_U_CTR0_B) ||
+	        (reg == PCI_MIC2_EDC_U_CTR1_A) ||
+		(reg == PCI_MIC2_EDC_U_CTR1_B) ||
+	        (reg == PCI_MIC2_EDC_U_CTR2_A) ||
+		(reg == PCI_MIC2_EDC_U_CTR2_B) ||
+	        (reg == PCI_MIC2_EDC_U_CTR3_A) ||
+		(reg == PCI_MIC2_EDC_U_CTR3_B) ||
+		(reg == PCI_MIC2_EDC_U_CTRL0) ||
+		(reg == PCI_MIC2_EDC_U_CTRL1) ||
+		(reg == PCI_MIC2_EDC_U_CTRL2) ||
+		(reg == PCI_MIC2_EDC_U_CTRL3) ||
+		(reg == PCI_MIC2_EDC_U_BOX_CTRL) ||
+		(reg == PCI_MIC2_EDC_U_BOX_STATUS) ||
+		(reg == PCI_MIC2_EDC_U_FIXED_CTR_A) ||
+		(reg == PCI_MIC2_EDC_U_FIXED_CTR_B) ||
+		(reg == PCI_MIC2_EDC_U_FIXED_CTRL) ||
+	        (reg == PCI_MIC2_EDC_D_CTR0_A) ||
+		(reg == PCI_MIC2_EDC_D_CTR0_B) ||
+	        (reg == PCI_MIC2_EDC_D_CTR1_A) ||
+		(reg == PCI_MIC2_EDC_D_CTR1_B) ||
+	        (reg == PCI_MIC2_EDC_D_CTR2_A) ||
+		(reg == PCI_MIC2_EDC_D_CTR2_B) ||
+	        (reg == PCI_MIC2_EDC_D_CTR3_A) ||
+		(reg == PCI_MIC2_EDC_D_CTR3_B) ||
+		(reg == PCI_MIC2_EDC_D_CTRL0) ||
+		(reg == PCI_MIC2_EDC_D_CTRL1) ||
+		(reg == PCI_MIC2_EDC_D_CTRL2) ||
+		(reg == PCI_MIC2_EDC_D_CTRL3) ||
+		(reg == PCI_MIC2_EDC_D_BOX_CTRL) ||
+		(reg == PCI_MIC2_EDC_D_BOX_STATUS) ||
+		(reg == PCI_MIC2_EDC_D_FIXED_CTR_A) ||
+		(reg == PCI_MIC2_EDC_D_FIXED_CTR_B) ||
+		(reg == PCI_MIC2_EDC_D_FIXED_CTRL))
+	    {
+		return 1;
+	    }
+	    break;
+	case IMC:
+	    if ((reg == PCI_MIC2_MC_U_CTR0_A) ||
+		(reg == PCI_MIC2_MC_U_CTR0_B) ||
+	        (reg == PCI_MIC2_MC_U_CTR1_A) ||
+		(reg == PCI_MIC2_MC_U_CTR1_B) ||
+	        (reg == PCI_MIC2_MC_U_CTR2_A) ||
+		(reg == PCI_MIC2_MC_U_CTR2_B) ||
+	        (reg == PCI_MIC2_MC_U_CTR3_A) ||
+		(reg == PCI_MIC2_MC_U_CTR3_B) ||
+		(reg == PCI_MIC2_MC_U_CTRL0) ||
+		(reg == PCI_MIC2_MC_U_CTRL1) ||
+		(reg == PCI_MIC2_MC_U_CTRL2) ||
+		(reg == PCI_MIC2_MC_U_CTRL3) ||
+		(reg == PCI_MIC2_MC_U_BOX_CTRL) ||
+		(reg == PCI_MIC2_MC_U_BOX_STATUS) ||
+		(reg == PCI_MIC2_MC_U_FIXED_CTR_A) ||
+		(reg == PCI_MIC2_MC_U_FIXED_CTR_B) ||
+		(reg == PCI_MIC2_MC_U_FIXED_CTRL) ||
+	        (reg == PCI_MIC2_MC_D_CTR0_A) ||
+		(reg == PCI_MIC2_MC_D_CTR0_B) ||
+	        (reg == PCI_MIC2_MC_D_CTR1_A) ||
+		(reg == PCI_MIC2_MC_D_CTR1_B) ||
+	        (reg == PCI_MIC2_MC_D_CTR2_A) ||
+		(reg == PCI_MIC2_MC_D_CTR2_B) ||
+	        (reg == PCI_MIC2_MC_D_CTR3_A) ||
+		(reg == PCI_MIC2_MC_D_CTR3_B) ||
+		(reg == PCI_MIC2_MC_D_CTRL0) ||
+		(reg == PCI_MIC2_MC_D_CTRL1) ||
+		(reg == PCI_MIC2_MC_D_CTRL2) ||
+		(reg == PCI_MIC2_MC_D_CTRL3) ||
+		(reg == PCI_MIC2_MC_D_BOX_CTRL) ||
+		(reg == PCI_MIC2_MC_D_BOX_STATUS) ||
+		(reg == PCI_MIC2_MC_D_FIXED_CTR_A) ||
+		(reg == PCI_MIC2_MC_D_FIXED_CTR_B) ||
+		(reg == PCI_MIC2_MC_D_FIXED_CTRL))
+	    {
+		return 1;
+	    }
+	    break;
+	case R2PCIE:
+	    if ((reg == PCI_MIC2_M2PCIE_CTR0_A) ||
+		(reg == PCI_MIC2_M2PCIE_CTR0_B) ||
+		(reg == PCI_MIC2_M2PCIE_CTR1_A) ||
+                (reg == PCI_MIC2_M2PCIE_CTR1_B) ||
+		(reg == PCI_MIC2_M2PCIE_CTR2_A) ||
+                (reg == PCI_MIC2_M2PCIE_CTR2_B) ||
+		(reg == PCI_MIC2_M2PCIE_CTR3_A) ||
+                (reg == PCI_MIC2_M2PCIE_CTR3_B) ||
+		(reg == PCI_MIC2_M2PCIE_CTRL0) ||
+		(reg == PCI_MIC2_M2PCIE_CTRL1) ||
+		(reg == PCI_MIC2_M2PCIE_CTRL2) ||
+		(reg == PCI_MIC2_M2PCIE_CTRL3) ||
+		(reg == PCI_MIC2_M2PCIE_BOX_CTRL) ||
+		(reg == PCI_MIC2_M2PCIE_BOX_STATUS))
+	    {
+		return 1;
+	    }
+	    break;
+	case IRP:
+	    if ((reg == PCI_MIC2_IRP_CTR0) ||
+		(reg == PCI_MIC2_IRP_CTR1) ||
+		(reg == PCI_MIC2_IRP_CTRL0) ||
+		(reg == PCI_MIC2_IRP_CTRL1) ||
+		(reg == PCI_MIC2_IRP_BOX_CTRL) ||
+		(reg == PCI_MIC2_IRP_BOX_STATUS))
+	    {
+		return 1;
+	    }
+	    break;
+	default:
+	    break;
+
+    }
+    return 0;
+}
+
+static int allowed_amd(uint32_t reg)
 {
     if ( (reg & 0xFFFFFFF0U) == 0xC0010000U)
     {
@@ -967,6 +1100,12 @@ int main(void)
                 {
                     allowed = allowed_silvermont;
                 }
+                else if (model == XEON_PHI_KNL)
+                {
+                    allowed = allowed_knl;
+                    isPCIUncore = 1;
+                    allowedPci = allowed_pci_knl;
+                }
                 break;
             case K8_FAMILY:
             case K10_FAMILY:
@@ -1094,6 +1233,10 @@ int main(void)
             {
                 //testDevice = 0x80862f30;
                 pci_devices_daemon = broadwellEP_pci_devices;
+            }
+            else if (model == XEON_PHI_KNL)
+            {
+                pci_devices_daemon = knl_pci_devices;
             }
             else
             {

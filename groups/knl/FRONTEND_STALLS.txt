@@ -1,0 +1,24 @@
+SHORT Frontend stalls 
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  NO_ALLOC_CYCLES_ALL
+PMC1  NO_ALLOC_CYCLES_ALL_COUNT
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Frontend stalls PMC1
+Avg. frontend stall duration [cyc] PMC0/PMC1
+Frontend stall ratio PMC0/FIXC1
+
+LONG
+Formulas:
+-
+Frontend stalls = NO_ALLOC_CYCLES_ALL
+Avg. frontend stall duration [cyc] = NO_ALLOC_CYCLES_ALL/NO_ALLOC_CYCLES_ALL_COUNT
+Frontend stall ratio = NO_ALLOC_CYCLES_ALL/CPU_CLK_UNHALTED_CORE

@@ -1,0 +1,30 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 1
+BYTES 8
+DESC Double-precision sum of a vector, optimized for AVX-512
+LOADS 1
+STORES 0
+INSTR_CONST 24
+INSTR_LOOP 11
+UOPS 18
+vxorpd FPR9, FPR9, FPR9
+vxorpd FPR1, FPR1, FPR1
+vmovapd FPR2, FPR1
+vmovapd FPR3, FPR1
+vmovapd FPR4, FPR1
+vmovapd FPR5, FPR1
+vmovapd FPR6, FPR1
+vmovapd FPR7, FPR1
+vmovapd FPR8, FPR1
+LOOP 64
+vaddpd    FPR1, FPR1, [STR0 + GPR1 * 8]
+vaddpd    FPR2, FPR2, [STR0 + GPR1 * 8 + 64]
+vaddpd    FPR3, FPR3, [STR0 + GPR1 * 8 + 128]
+vaddpd    FPR4, FPR4, [STR0 + GPR1 * 8 + 192]
+vaddpd    FPR5, FPR5, [STR0 + GPR1 * 8 + 256]
+vaddpd    FPR6, FPR6, [STR0 + GPR1 * 8 + 320]
+vaddpd    FPR7, FPR7, [STR0 + GPR1 * 8 + 384]
+vaddpd    FPR8, FPR8, [STR0 + GPR1 * 8 + 448]
+
+

@@ -62,6 +62,7 @@
 #include <perfmon_ivybridge.h>
 #include <perfmon_haswell.h>
 #include <perfmon_phi.h>
+#include <perfmon_knl.h>
 #include <perfmon_k8.h>
 #include <perfmon_k10.h>
 #include <perfmon_interlagos.h>
@@ -911,6 +912,14 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersSkylake;
                     break;
 
+                case XEON_PHI_KNL:
+                    eventHash = knl_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsKNL;
+                    counter_map = knl_counter_map;
+                    box_map = knl_box_map;
+                    perfmon_numCounters = perfmon_numCountersKNL;
+                    break;
+
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
                     break;
@@ -1150,6 +1159,17 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_readCountersThread = perfmon_readCountersThread_skylake;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_skylake;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_skylake;
+                    break;
+
+                case XEON_PHI_KNL:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_knl;
+                    perfmon_startCountersThread = perfmon_startCountersThread_knl;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_knl;
+                    perfmon_readCountersThread = perfmon_readCountersThread_knl;
+                    perfmon_setupCountersThread = perfmon_setupCountersThread_knl; 
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_knl;
                     break;
 
                 default:

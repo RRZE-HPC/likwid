@@ -1,0 +1,25 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 2
+BYTES 24
+DESC Double-precision linear combination of two vectors, optimized for AVX-512
+LOADS 2
+STORES 1
+INSTR_CONST 17
+INSTR_LOOP 21
+UOPS 38
+vmovapd zmm7, [rip+SCALAR]
+LOOP 32
+vmulpd    zmm1, zmm7, [STR0 + GPR1*8]
+vaddpd    zmm1, zmm1, [STR1 + GPR1*8]
+vmulpd    zmm2, zmm7, [STR0 + GPR1*8+64]
+vaddpd    zmm2, zmm2, [STR1 + GPR1*8+64]
+vmovapd    [STR1 + GPR1*8], zmm1
+vmovapd    [STR1 + GPR1*8+64], zmm2
+vmulpd    zmm3, zmm7, [STR0 + GPR1*8+128]
+vaddpd    zmm3, zmm3, [STR1 + GPR1*8+128]
+vmulpd    zmm4, zmm7, [STR0 + GPR1*8+192]
+vaddpd    zmm4, zmm4, [STR1 + GPR1*8+192]
+vmovapd    [STR1 + GPR1*8+128], zmm3
+vmovapd    [STR1 + GPR1*8+192], zmm4
+

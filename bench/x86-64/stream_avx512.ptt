@@ -1,0 +1,29 @@
+STREAMS 3
+TYPE DOUBLE
+FLOPS 2
+BYTES 24
+DESC Double-precision stream triad A(i) = B(i)*c + C(i), optimized for AVX-512
+LOADS 2
+STORES 1
+INSTR_CONST 17
+INSTR_LOOP 19
+UOPS 26
+vmovapd zmm5, [rip+SCALAR]
+LOOP 32
+vmovapd    zmm1, [STR1 + GPR1*8]
+vmovapd    zmm2, [STR1 + GPR1*8+64]
+vmovapd    zmm3, [STR1 + GPR1*8+128]
+vmovapd    zmm4, [STR1 + GPR1*8+192]
+vmulpd     zmm1, zmm1, zmm5
+vaddpd     zmm1, zmm1, [STR2 + GPR1*8]
+vmulpd     zmm2, zmm2, zmm5
+vaddpd     zmm2, zmm2, [STR2 + GPR1*8+64]
+vmulpd     zmm3, zmm3, zmm5
+vaddpd     zmm3, zmm3, [STR2 + GPR1*8+128]
+vmulpd     zmm4, zmm4, zmm5
+vaddpd     zmm4, zmm4, [STR2 + GPR1*8+192]
+vmovapd    [STR0 + GPR1*8]   , zmm1
+vmovapd    [STR0 + GPR1*8+64], zmm2
+vmovapd    [STR0 + GPR1*8+128], zmm3
+vmovapd    [STR0 + GPR1*8+192], zmm4
+

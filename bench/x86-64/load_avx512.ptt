@@ -1,0 +1,18 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 8
+DESC Double-precision load, optimized for AVX-512
+LOADS 1
+STORES 0
+INSTR_CONST 16
+INSTR_LOOP 7
+UOPS 6
+LOOP 32
+#mov        GPR12, [STR0 + GPR1 * 8 + 256]
+vmovapd    zmm1, [STR0 + GPR1 * 8]
+vmovapd    zmm2, [STR0 + GPR1 * 8 + 64]
+vmovapd    zmm3, [STR0 + GPR1 * 8 + 128]
+vmovapd    zmm4, [STR0 + GPR1 * 8 + 192]
+
+

@@ -1,0 +1,25 @@
+SHORT UOP retirement stalls 
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  UOPS_RETIRED_STALLED_CYCLES
+PMC1  UOPS_RETIRED_STALLS
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Number of stalls PMC1
+Avg. stall duration [cyc] PMC0/PMC1
+Stall ratio PMC0/FIXC1
+
+LONG
+Number of stalls = UOPS_RETIRED_STALLS
+Avg. stall duration [cyc] = UOPS_RETIRED_STALLED_CYCLES/UOPS_RETIRED_STALLS
+Stall ratio = UOPS_RETIRED_STALLED_CYCLES/CPU_CLK_UNHALTED_CORE
+Formulas:
+-
+This group measures stalls in the UOP retirement. 

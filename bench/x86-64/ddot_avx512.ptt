@@ -1,0 +1,23 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 2
+BYTES 16
+DESC Double-precision dot product of two vectors, optimized for AVX-512
+LOADS 2
+STORES 0
+INSTR_CONST 20
+INSTR_LOOP 15
+UOPS 18
+LOOP 32
+vmovapd zmm1,       [STR0 + GPR1 * 8]
+vmulpd  zmm1, zmm1, [STR1 + GPR1 * 8]
+vaddpd  zmm0, zmm0, zmm1
+vmovapd zmm2,       [STR0 + GPR1 * 8 + 64]
+vmulpd  zmm2, zmm2, [STR1 + GPR1 * 8 + 64]
+vaddpd  zmm5, zmm5, zmm2
+vmovapd zmm3,       [STR0 + GPR1 * 8 + 128]
+vmulpd  zmm3, zmm3, [STR1 + GPR1 * 8 + 128]
+vaddpd  zmm6, zmm6, zmm3
+vmovapd zmm4,       [STR0 + GPR1 * 8 + 192]
+vmulpd  zmm4, zmm4, [STR1 + GPR1 * 8 + 192]
+vaddpd  zmm7, zmm7, zmm4

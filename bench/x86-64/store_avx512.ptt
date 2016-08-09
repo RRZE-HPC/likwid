@@ -1,0 +1,20 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 8
+DESC Double-precision store, optimized for AVX-512
+LOADS 0
+STORES 1
+INSTR_CONST 20
+INSTR_LOOP 7
+UOPS 10
+vmovapd zmm1, [rip+SCALAR]
+vmovapd zmm2, [rip+SCALAR]
+vmovapd zmm3, [rip+SCALAR]
+vmovapd zmm4, [rip+SCALAR]
+LOOP 32
+vmovapd    [STR0 + GPR1 * 8]     , zmm1
+vmovapd    [STR0 + GPR1 * 8 + 64], zmm2
+vmovapd    [STR0 + GPR1 * 8 + 128], zmm3
+vmovapd    [STR0 + GPR1 * 8 + 192], zmm4
+

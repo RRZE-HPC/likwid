@@ -1,0 +1,27 @@
+SHORT  L1 Instruction TLB miss rate/ratio
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  PAGE_WALKS_ITLB_COUNT
+PMC1  PAGE_WALKS_ITLB_CYCLES
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+L1 ITLB misses     PMC0
+L1 ITLB miss rate  PMC0/FIXC0
+L1 ITLB miss duration [Cyc] PMC1/PMC0
+
+
+LONG
+Formulas:
+L1 ITLB misses = PAGE_WALKS_ITLB_COUNT
+L1 ITLB miss rate = PAGE_WALKS_ITLB_COUNT / INSTR_RETIRED_ANY
+L1 ITLB miss duration [Cyc] = PAGE_WALKS_ITLB_CYCLES / PAGE_WALKS_ITLB_COUNT
+-
+The ITLB miss rates gives a measure how often a TLB miss occurred
+per instruction. The duration measures the time in cycles how long a walk did take.

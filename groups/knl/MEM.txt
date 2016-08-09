@@ -1,0 +1,37 @@
+SHORT Memory load bandwidth in MBytes/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  LONGEST_LAT_CACHE_MISS
+PMC1  OFFCORE_RESPONSE_1_WB_ANY
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Memory read bandwidth [MBytes/s] 1.0E-06*(PMC0)*64.0/time
+Memory read data volume [GBytes] 1.0E-09*(PMC0)*64.0
+Memory writeback bandwidth [MBytes/s] 1.0E-06*(PMC1)*64.0/time
+Memory writeback data volume [GBytes] 1.0E-09*(PMC1)*64.0
+Memory bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
+Memory data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
+
+LONG
+Formulas:
+Memory read bandwidth [MBytes/s] = 1.0E-06*(LONGEST_LAT_CACHE_MISS)*64/time
+Memory read data volume [GBytes] = 1.0E-09*(LONGEST_LAT_CACHE_MISS)*64
+Memory writeback bandwidth [MBytes/s] = 1.0E-06*(OFFCORE_RESPONSE_1_WB_ANY)*64/time
+Memory writeback data volume [GBytes] = 1.0E-09*(OFFCORE_RESPONSE_1_WB_ANY)*64
+Memory bandwidth [MBytes/s] = 1.0E-06*(LONGEST_LAT_CACHE_MISS+OFFCORE_RESPONSE_1_WB_ANY)*64/time
+Memory data volume [GBytes] = 1.0E-09*(LONGEST_LAT_CACHE_MISS+OFFCORE_RESPONSE_1_WB_ANY)*64
+-
+Profiling group to measure L2 to MEM load cache bandwidth. The bandwidth is computed by the
+number of cache line allocated in the L2 cache. Since there is no possibility to retrieve
+the evicted cache lines, this group measures only the load cache bandwidth. The
+writeback metrics count only modified cache lines that are written back to go to
+exclusive state
+The group also output totally load and writeback data volume transferred between memory and L2.
+
