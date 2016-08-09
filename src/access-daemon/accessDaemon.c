@@ -640,8 +640,10 @@ pci_read(AccessDataRecord* dRecord)
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
+#ifdef DEBUG_LIKWID
         syslog(LOG_ERR, "Open device file %s for device %s (%s) on socket %u", pci_filepath,
                     pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
+#endif
     }
 
     if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data))
@@ -700,8 +702,10 @@ pci_write(AccessDataRecord* dRecord)
             dRecord->errorcode = ERR_OPENFAIL;
             return;
         }
+#ifdef DEBUG_LIKWID
         syslog(LOG_ERR, "Open device file %s for device %s (%s) on socket %u", pci_filepath,
                     pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
+#endif
     }
 
     if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
@@ -1141,10 +1145,12 @@ int main(void)
                                 pci_devices_daemon[i].online = 1;
                                 close(fd);
                             }
+#ifdef DEBUG_LIKWID
                             else if (j==0)
                             {
                                 syslog(LOG_NOTICE, "Device %s for socket %d not found at path %s, excluded it from device list: %s\n",pci_devices_daemon[i].name,j, pci_filepath, strerror(errno));
                             }
+#endif
                         }
                     }
                 }
