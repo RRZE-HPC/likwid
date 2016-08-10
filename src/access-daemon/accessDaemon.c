@@ -138,7 +138,8 @@ static int allowed_intel(uint32_t reg)
 static int allowed_sandybridge(uint32_t reg)
 {
     if ((allowed_intel(reg)) ||
-        (((reg & 0xF00U) == 0x600U)))
+        (((reg & 0xF00U) == 0x600U)) ||
+        (((reg & 0xF00U) == 0x700U)))
     {
         return 1;
     }
@@ -527,7 +528,7 @@ static void msr_write(AccessDataRecord * dRecord)
     uint64_t data = dRecord->data;
 
     dRecord->errorcode = ERR_NOERROR;
-    
+
     if (FD_MSR[cpu] <= 0)
     {
         dRecord->errorcode = ERR_NODEV;
@@ -879,24 +880,24 @@ int main(void)
                          (model == SKYLAKE1) ||
                          (model == SKYLAKE2))
                 {
-                    allowed = allowed_haswell;
+                    allowed = allowed_sandybridge;
                 }
                 else if (model == BROADWELL_D)
                 {
-                    allowed = allowed_haswell;
+                    allowed = allowed_sandybridge;
                     isPCIUncore = 1;
                     allowedPci = allowed_pci_haswell;
                 }
                 else if (model == HASWELL_EP)
                 {
                     isPCIUncore = 1;
-                    allowed = allowed_haswell;
+                    allowed = allowed_sandybridge;
                     allowedPci = allowed_pci_haswell;
                 }
                 else if (model == BROADWELL_E)
                 {
                     isPCIUncore = 1;
-                    allowed = allowed_haswell;
+                    allowed = allowed_sandybridge;
                     allowedPci = allowed_pci_haswell;
                 }
                 else if ((model == ATOM_SILVERMONT_C) ||
