@@ -746,10 +746,14 @@ if use_wrapper or use_timeline then
     end
 
     local pid = nil
-    if pin_cpus then
-        pid = likwid.startProgram(execString, #cpulist, cpulist)
+    if execString:len() > 0 then
+        if pin_cpus then
+            pid = likwid.startProgram(execString, #cpulist, cpulist)
+        else
+            pid = likwid.startProgram(execString, 0, cpulist)
+        end
     else
-        pid = likwid.startProgram(execString, 0, cpulist)
+        pid = likwid.getpid()
     end
 
     if not pid then
@@ -763,14 +767,18 @@ if use_wrapper or use_timeline then
     groupTime[activeGroup] = 0
     while true do
         if likwid.getSignalState() ~= 0 then
-            likwid.killProgram()
+            if execString:len() > 0 then
+                likwid.killProgram()
+            end
             break
         end
         local remain = likwid.sleep(duration)
         exitvalue = likwid.checkProgram(pid)
         if remain > 0 or exitvalue >= 0 then
             io.stdout:flush()
-            break
+            if execString:len() > 0 then
+                break
+            end
         end
         if use_timeline == true then
             stop = likwid.stopClock()
