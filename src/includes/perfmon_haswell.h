@@ -47,9 +47,15 @@ static int perfmon_numCountersHaswell = NUM_COUNTERS_HASWELL;
 static int perfmon_numCoreCountersHaswell = NUM_COUNTERS_CORE_HASWELL;
 static int perfmon_numArchEventsHaswell = NUM_ARCH_EVENTS_HASWELL;
 
+int has_did_cbox_check = 0;
 int has_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int hasep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int (*haswell_cbox_setup)(int, RegisterIndex, PerfmonEvent *);
+
+int has_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    return 0;
+}
 
 int perfmon_init_haswell(int cpu_id)
 {
@@ -58,17 +64,25 @@ int perfmon_init_haswell(int cpu_id)
     lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
-    ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
-    ret += HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data);
-    ret += HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
-    ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, &data);
+    
     if (cpuid_info.model == HASWELL_EP)
     {
         haswell_cbox_setup = hasep_cbox_setup;
+        has_did_cbox_check = 1;
     }
-    else if ((ret == 0) && (data == 0x0ULL))
+    else if ((cpuid_info.model == HASWELL || cpuid_info.model == HASWELL_M1 || cpuid_info.model == HASWELL_M1) &&
+             socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id &&
+             has_did_cbox_check == 0)
     {
-        haswell_cbox_setup = has_cbox_setup;
+        ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
+        ret += HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data);
+        ret += HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
+        ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, &data);
+        if ((ret == 0) && (data == 0x0ULL))
+            haswell_cbox_setup = has_cbox_setup;
+        else
+            haswell_cbox_setup = has_cbox_nosetup;
+        has_did_cbox_check = 1;
     }
     return 0;
 }

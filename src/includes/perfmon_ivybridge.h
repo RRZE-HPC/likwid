@@ -46,6 +46,7 @@ static int perfmon_numCountersIvybridge = NUM_COUNTERS_IVYBRIDGE;
 static int perfmon_numCoreCountersIvybridge = NUM_COUNTERS_CORE_IVYBRIDGE;
 static int perfmon_numArchEventsIvybridge = NUM_ARCH_EVENTS_IVYBRIDGE;
 
+int ivb_did_cbox_test = 0;
 int ivb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int ivbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int (*ivy_cbox_setup)(int, RegisterIndex, PerfmonEvent*);
@@ -62,12 +63,14 @@ int perfmon_init_ivybridge(int cpu_id)
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
     HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL);
-    
     if ((cpuid_info.model == IVYBRIDGE_EP))
     {
         ivy_cbox_setup = ivbep_cbox_setup;
+        ivb_did_cbox_test = 1;
     }
-    else
+    else if (cpuid_info.model == IVYBRIDGE && 
+             socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id &&
+             ivb_did_cbox_test == 0)
     {
         ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
         ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, &data);
@@ -77,6 +80,7 @@ int perfmon_init_ivybridge(int cpu_id)
             ivy_cbox_setup = ivb_cbox_setup;
         else
             ivy_cbox_setup = ivb_cbox_nosetup;
+        ivb_did_cbox_test = 1;
     }
     return 0;
 }

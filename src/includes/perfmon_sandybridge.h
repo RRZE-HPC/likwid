@@ -43,9 +43,15 @@ static int perfmon_numCountersSandybridge = NUM_COUNTERS_SANDYBRIDGE;
 static int perfmon_numCoreCountersSandybridge = NUM_COUNTERS_CORE_SANDYBRIDGE;
 static int perfmon_numArchEventsSandybridge = NUM_ARCH_EVENTS_SANDYBRIDGE;
 
+int snb_did_cbox_test = 0;
 int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int snbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int (*sandy_cbox_setup)(int, RegisterIndex, PerfmonEvent*);
+
+int snb_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    return 0;
+}
 
 int perfmon_init_sandybridge(int cpu_id)
 {
@@ -54,17 +60,25 @@ int perfmon_init_sandybridge(int cpu_id)
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
-    ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
-    ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, &data);
-    ret += HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
-    ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, &data);
+    
     if ((cpuid_info.model == SANDYBRIDGE_EP))
     {
         sandy_cbox_setup = snbep_cbox_setup;
+        snb_did_cbox_test = 1;
     }
-    else if ((ret == 0) && (data == 0x0ULL))
+    else if (cpuid_info.model == SANDYBRIDGE &&
+             socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id &&
+             snb_did_cbox_test == 0)
     {
-        sandy_cbox_setup = snb_cbox_setup;
+        ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
+        ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, &data);
+        ret += HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
+        ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, &data);
+        if ((ret == 0) && (data == 0x0ULL))
+            sandy_cbox_setup = snb_cbox_setup;
+        else
+            sandy_cbox_setup = snb_cbox_nosetup;
+        snb_did_cbox_test = 1;
     }
     
     return 0;

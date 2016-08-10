@@ -53,22 +53,41 @@ static int perfmon_numCountersBroadwellEP = NUM_COUNTERS_BROADWELLEP;
 static int perfmon_numCoreCountersBroadwellEP = NUM_COUNTERS_CORE_BROADWELLEP;
 static int perfmon_numArchEventsBroadwellEP = NUM_ARCH_EVENTS_BROADWELLEP;
 
+static int bdw_did_cbox_check = 0;
 int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int bdwep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int (*broadwell_cbox_setup)(int, RegisterIndex, PerfmonEvent *);
 
+int bdw_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    return 0;
+}
+
 int perfmon_init_broadwell(int cpu_id)
 {
+    int ret;
+    uint64_t data;
     lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
     if ((cpuid_info.model == BROADWELL_E) || (cpuid_info.model == BROADWELL_D))
     {
         broadwell_cbox_setup = bdwep_cbox_setup;
+        bdw_did_cbox_check = 1;
     }
-    else
+    else if (cpuid_info.model == BROADWELL &&
+             socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id &&
+             bdw_did_cbox_check == 0)
     {
-        broadwell_cbox_setup = bdw_cbox_setup;
+        ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
+        ret += HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data);
+        ret += HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, 0x0ULL);
+        ret += HPMread(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, &data);
+        if ((ret == 0) && (data == 0x0ULL))
+            broadwell_cbox_setup = bdw_cbox_setup;
+        else
+            broadwell_cbox_setup = bdw_cbox_nosetup;
+        bdw_did_cbox_check = 1;
     }
     return 0;
 }
