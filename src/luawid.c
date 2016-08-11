@@ -2418,7 +2418,7 @@ static int
 lua_likwid_getAvailGovs(lua_State* L)
 {
     const int cpu_id = lua_tointeger(L,-1);
-    char* avail = freq_getAvailGovs(cpu_id)
+    char* avail = freq_getAvailGovs(cpu_id);
     if (avail)
         lua_pushstring(L, avail);
     else
