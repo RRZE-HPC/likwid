@@ -274,6 +274,7 @@ getCpuSpeed(void)
 
     cpuClock = (uint64_t)   atoi(buff);
     cpuClock *= 1E6;
+    pclose(fpipe);
 #endif
 }
 
