@@ -61,6 +61,12 @@ default_configuration(void)
     char *fptr = NULL;
     size_t len = 0;
     filename[0] = '\0';
+
+    groupPath_len = strlen(TOSTRING(GROUPPATH))+10;
+    config.groupPath = malloc(groupPath_len+1);
+    ret = snprintf(config.groupPath, groupPath_len, "%s", TOSTRING(GROUPPATH));
+    config.groupPath[ret] = '\0';
+
     if (ACCESSMODE == 0)
     {
         config.daemonMode = ACCESSMODE_DIRECT;
@@ -68,10 +74,6 @@ default_configuration(void)
         return 0;
     }
     config.daemonMode = ACCESSMODE_DAEMON;
-    groupPath_len = strlen(TOSTRING(GROUPPATH))+10;
-    config.groupPath = malloc(groupPath_len+1);
-    ret = snprintf(config.groupPath, groupPath_len, "%s", TOSTRING(GROUPPATH));
-    config.groupPath[ret] = '\0';
 
     FILE* fp = popen("which likwid-accessD 2>/dev/null | tr -d '\n'","r");
     if (fp == NULL)
