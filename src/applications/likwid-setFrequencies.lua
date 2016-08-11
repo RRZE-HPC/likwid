@@ -53,13 +53,15 @@ function usage()
     print_stdout("-c dom\t Likwid thread domain which to apply settings (default are all CPUs)")
     print_stdout("\t See likwid-pin -h for details")
     print_stdout("-g gov\t Set governor (" .. table.concat(getAvailGovs(nil), ", ") .. ") (set to ondemand if omitted)")
-    print_stdout("-f freq\t Set fixed frequency, implicitly sets userspace governor")
+    print_stdout("-f/--freq freq\t Set current frequency, implicitly sets userspace governor")
+    print_stdout("-x/--min freq\t Set minimal frequency")
+    print_stdout("-y/--max freq\t Set maximal frequency")
     print_stdout("-p\t Print current frequencies")
     print_stdout("-l\t List available frequencies")
     print_stdout("-m\t List available governors")
 end
 
-function getCurrentMinFreq(cpuid)
+--[[function getCurrentMinFreq(cpuid)
     local min = 10000000
     if cpuid == nil or cpuid < 0 then
         for cpuid=0,topo["numHWThreads"]-1 do
@@ -207,11 +209,13 @@ local function testDriver()
         return true
     end
     return false
-end
+end]]
 
 verbosity = 0
 governor = nil
 frequency = nil
+min_freq = nil
+max_freq = nil
 domain = nil
 printCurFreq = false
 printAvailFreq = false
@@ -223,7 +227,7 @@ if #arg == 0 then
 end
 
 
-for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "help","version","freq:"}) do
+for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "x:", "y:", "help","version","freq:", "min:", "max:"}) do
     if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
@@ -236,6 +240,10 @@ for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "h
         governor = arg
     elseif opt == "f" or opt == "freq" then
         frequency = arg
+    elseif opt == "x" or opt == "min" then
+        min_freq = arg
+    elseif opt == "y" or opt == "max" then
+        max_freq = arg
     elseif (opt == "p") then
         printCurFreq = true
     elseif (opt == "l") then
@@ -250,7 +258,7 @@ for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "h
         os.exit(1)
     end
 end
-if not testDriver() then
+if likwid.getDriver() ~= "acpi-cpufreq" then
     print_stderr("The system does not use the acpi-cpufreq driver, other drivers are not usable with likwid-setFrequencies.")
     os.exit(1)
 end
@@ -280,33 +288,25 @@ end
 
 
 if printAvailGovs then
-    local govs = getAvailGovs(nil)
+    local govs = likwid.getAvailGovs(0)
     print_stdout("Available governors:")
-    print_stdout(table.concat(govs, ", "))
+    print_stdout(string.format("%s %s", table.concat(govs, " "), "turbo"))
 end
 
 if printAvailFreq then
+    local freqs, turbo = likwid.getAvailFreq(0)
     print_stdout("Available frequencies:")
-    local out = {}
-    local i = 1;
-    local freqs, turbo = getAvailFreq(nil)
-    if turbo ~= "0" then
-        table.insert(out, turbo)
-    end
-    for i=1,#freqs do
-        table.insert(out, freqs[i])
-    end
-
-    print_stdout(table.concat(out, " "))
+    print_stdout(string.format("%s %s", turbo, table.concat(freqs, " ")))
 end
 
 if printCurFreq then
     print_stdout("Current frequencies:")
-    local freqs = {}
-    local govs = {}
-    freqs, govs = getCurFreq()
     for i=1,#cpulist do
-        print_stdout(string.format("CPU %d: governor %12s frequency %5s GHz",cpulist[i],govs[cpulist[i]], freqs[cpulist[i]]))
+        gov = likwid.getGovernor(cpulist[i])
+        freq = tonumber(likwid.getCpuClockCurrent(cpulist[i]))/1E9
+        min = tonumber(likwid.getCpuClockMin(cpulist[i]))/1E9
+        max = tonumber(likwid.getCpuClockMax(cpulist[i]))/1E9
+        print_stdout(string.format("CPU %d: governor %12s min/cur/max %s/%s/%s GHz",cpulist[i], gov, min, freq, max))
     end
 end
 
@@ -314,16 +314,68 @@ if printAvailGovs or printAvailFreq or printCurFreq then
     os.exit(0)
 end
 
-if numthreads > 0 and not (frequency or governor) then
-    print_stderr("You need to set either a frequency or governor for the selected CPUs on commandline")
+if numthreads > 0 and not (frequency or min_freq or max_freq or governor) then
+    print_stderr("ERROR: You need to set either a frequency or governor for the selected CPUs on commandline")
     os.exit(1)
+end
+
+if min_freq and max_freq and min_freq > max_freq then
+    print_stderr("ERROR: Minimal frequency higher than maximal frequency.")
+    os.exit(1)
+end
+if min_freq and max_freq and max_freq < min_freq then
+    print_stderr("ERROR: Maximal frequency below than minimal frequency.")
+    os.exit(1)
+end
+
+
+local availfreqs, availturbo = likwid.getAvailFreq(cpulist[i])
+
+if min_freq then
+    for i=1,#cpulist do
+        local valid_freq = false
+        for k,v in pairs(availfreqs) do
+            if (min_freq == v) then
+                valid_freq = true
+                break
+            end
+        end
+        if min_freq == turbo then
+            valid_freq = true
+        end
+        if not valid_freq then
+            print_stderr(string.format("ERROR: Frequency %s not available for CPU %d! Please select one of\n%s", min_freq, cpulist[i], table.concat(availfreqs, ", ")))
+            os.exit(1)
+        end
+        local f = likwid.setCpuClockMin(cpulist[i], tonumber(min_freq)*1E6)
+    end
+end
+
+if max_freq then
+    for i=1,#cpulist do
+        local valid_freq = false
+        for k,v in pairs(availfreqs) do
+            if (max_freq == v) then
+                valid_freq = true
+                break
+            end
+        end
+        if max_freq == turbo then
+            valid_freq = true
+        end
+        if not valid_freq then
+            print_stderr(string.format("ERROR: Frequency %s not available for CPU %d! Please select one of\n%s", max_freq, cpulist[i], table.concat(availfreqs, ", ")))
+            os.exit(1)
+        end
+        local f = likwid.setCpuClockMax(cpulist[i], tonumber(max_freq)*1E6)
+    end
 end
 
 if frequency then
     for i=1,#cpulist do
-        local freqs, turbo = getAvailFreq(cpulist[i])
+        
         local valid_freq = false
-        for k,v in pairs(freqs) do
+        for k,v in pairs(availfreqs) do
             if (frequency == v) then
                 valid_freq = true
                 break
@@ -333,30 +385,20 @@ if frequency then
             valid_freq = true
         end
         if not valid_freq then
-            print_stderr(string.format("Frequency %s not available for CPU %d! Please select one of\n%s", frequency, cpulist[i], table.concat(freqs, ", ")))
+            print_stderr(string.format("ERROR: Frequency %s not available for CPU %d! Please select one of\n%s", frequency, cpulist[i], table.concat(availfreqs, ", ")))
             os.exit(1)
         end
-        local cmd = set_command .. " " .. tostring(cpulist[i]) .. " " .. tostring(tonumber(frequency)*1E6)
-        if governor then
-            cmd = cmd .. " " .. governor
-        end
-        if verbosity == 3 then
-            print_stdout("Execute: ".. cmd)
-        end
-        local err = os.execute(cmd)
-        if err == false or err == nil then
-            print_stderr("Failed to set frequency for CPU "..tostring(cpulist[i]))
-        end
-    end
-    if governor then
-        governor = nil
+        local f = likwid.setCpuClockCurrent(cpulist[i], tonumber(frequency)*1E6)
     end
 end
 
 if governor then
-    local govs = getAvailGovs(nil)
-    local freqs, turbo = getAvailFreq(nil)
-    local cur_freqs, cur_govs = getCurFreq()
+    local govs = likwid.getAvailGovs(cpulist[1])
+    local cur_govs = {}
+    for i,c in pairs(cpulist) do
+        table.insert(cur_govs, likwid.getGovernor(cpulist[1]))
+    end
+    
     local valid_gov = false
     for k,v in pairs(govs) do
         if (governor == v) then
@@ -371,24 +413,12 @@ if governor then
         end
     end
     if not valid_gov then
-        print_stderr(string.format("Governor %s not available! Please select one of\n%s", governor, table.concat(govs, ", ")))
+        print_stderr(string.format("ERROR: Governor %s not available! Please select one of\n%s", governor, table.concat(govs, ", ")))
         os.exit(1)
     end
     for i=1,#cpulist do
-        if governor ~= cur_govs[cpulist[i]] then
-            local cmd = set_command .. " " .. tostring(cpulist[i]) .. " "
-            if governor == "turbo" then
-                cmd = cmd .. tostring(tonumber(turbo)*1E6)
-            else
-                cmd = cmd .. tostring(tonumber(cur_freqs[cpulist[i]])*1E6) .. " " .. governor
-            end
-            if verbosity == 3 then
-                print_stdout("Execute: ".. cmd)
-            end
-            local err = os.execute(cmd)
-            if err == false or err == nil then
-                print_stderr("Failed to set governor for CPU "..tostring(cpulist[i]))
-            end
+        if governor ~= cur_govs[i] then
+            local f = likwid.setGovernor(cpulist[i], governor)
         end
     end
 end

@@ -48,6 +48,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \ref TimerMon
 - \ref MemSweep
 - \ref CpuFeatures
+- \ref CpuFreq
 
 \subsection Lua_Interface Lua Interface
 - \ref lua_Info
@@ -63,6 +64,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \ref lua_Timer
 - \ref lua_MemSweep
 - \ref lua_cpuFeatures
+- \ref lua_CpuFreq
 - \ref lua_Misc (Some functionality not provided by Lua natively)
 
 \subsection Fortran90_Interface Fortran90 Interface

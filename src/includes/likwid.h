@@ -1425,6 +1425,98 @@ Disable a CPU feature for a specific CPU. Only the state of the prefetchers can 
 extern int cpuFeatures_disable(int cpu, CpuFeature type, int print) __attribute__ ((visibility ("default") ));
 /** @}*/
 
+
+/*
+################################################################################
+# CPU frequency related functions
+################################################################################
+*/
+/** \addtogroup CpuFreq Retrieval and manipulation of processor clock frequencies
+ *  @{
+ */
+/*! \brief Get the current clock frequency of a core
+
+Get the current clock frequency of a core
+@param [in] cpu_id CPU ID
+@return Frequency or 0 in case of errors
+*/
+extern uint64_t freq_getCpuClockCurrent(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/*! \brief Set the current clock frequency of a core
+
+Set the current clock frequency of a core
+@param [in] cpu_id CPU ID
+@param [in] freq Frequency in kHz
+@return Frequency or 0 in case of errors
+*/
+extern uint64_t freq_setCpuClockCurrent(const int cpu_id, const uint64_t freq) __attribute__ ((visibility ("default") ));
+/*! \brief Get the maximal clock frequency of a core
+
+Get the maximal clock frequency of a core
+@param [in] cpu_id CPU ID
+@return Frequency or 0 in case of errors
+*/
+extern uint64_t freq_getCpuClockMax(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/*! \brief Set the maximal clock frequency of a core
+
+Set the maximal clock frequency of a core
+@param [in] cpu_id CPU ID
+@param [in] freq Frequency in kHz
+@return Frequency or 0 in case of errors
+*/
+extern uint64_t freq_setCpuClockMax(const int cpu_id, const uint64_t freq) __attribute__ ((visibility ("default") ));
+/*! \brief Get the minimal clock frequency of a core
+
+Get the minimal clock frequency of a core
+@param [in] cpu_id CPU ID
+@return Frequency or 0 in case of errors
+*/
+extern uint64_t freq_getCpuClockMin(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/*! \brief Set the minimal clock frequency of a core
+
+Set the minimal clock frequency of a core
+@param [in] cpu_id CPU ID
+@param [in] freq Frequency in kHz
+@return Frequency or 0 in case of errors
+*/
+extern uint64_t freq_setCpuClockMin(const int cpu_id, const uint64_t freq) __attribute__ ((visibility ("default") ));
+/*! \brief Get the frequency governor of a core
+
+Get the frequency governor of a core. The returned string must be freed by the caller.
+@param [in] cpu_id CPU ID
+@return Governor or NULL in case of errors
+*/
+extern char * freq_getGovernor(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/*! \brief Set the frequency governor of a core
+
+Set the frequency governor of a core.
+@param [in] cpu_id CPU ID
+@param [in] gov Governor
+@return 1 or 0 in case of errors
+*/
+extern int freq_setGovernor(const int cpu_id, const char* gov) __attribute__ ((visibility ("default") ));
+/*! \brief Get the available frequencies of a core
+
+Get the available frequencies of a core. The returned string must be freed by the caller.
+@param [in] cpu_id CPU ID
+@return String with available frequencies or NULL in case of errors
+*/
+extern char * freq_getAvailFreq(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/*! \brief Get the available frequency governors of a core
+
+Get the available frequency governors of a core. The returned string must be freed by the caller.
+@param [in] cpu_id CPU ID
+@return String with available frequency governors or NULL in case of errors
+*/
+extern char * freq_getAvailGovs(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/*! \brief Get the name of the currently active cpufreq driver
+
+Get the name of the currently active cpufreq driver. The returned string must be freed by the caller.
+@param [in] cpu_id CPU ID
+@return String with active cpufreq driver or NULL in case of errors
+*/
+extern char * freq_getDriver(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/** @}*/
+
 #ifdef __cplusplus
 }
 #endif

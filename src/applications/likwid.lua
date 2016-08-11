@@ -142,6 +142,15 @@ likwid.markerRegionTime = likwid_markerRegionTime
 likwid.markerRegionCount = likwid_markerRegionCount
 likwid.markerRegionResult = likwid_markerRegionResult
 likwid.markerRegionMetric = likwid_markerRegionMetric
+likwid.getCpuClockCurrent = likwid_getCpuClockCurrent
+likwid.setCpuClockCurrent = likwid_setCpuClockCurrent
+likwid.getCpuClockMin = likwid_getCpuClockMin
+likwid.setCpuClockMin = likwid_setCpuClockMin
+likwid.getCpuClockMax = likwid_getCpuClockMax
+likwid.setCpuClockMax = likwid_setCpuClockMax
+likwid.getGovernor = likwid_getGovernor
+likwid.setGovernor = likwid_setGovernor
+likwid.getDriver = likwid_getDriver
 
 likwid.cpuFeatures = { [0]="HW_PREFETCHER", [1]="CL_PREFETCHER", [2]="DCU_PREFETCHER", [3]="IP_PREFETCHER",
                         [4]="FAST_STRINGS", [5]="THERMAL_CONTROL", [6]="PERF_MON", [7]="FERR_MULTIPLEX",
@@ -1128,5 +1137,37 @@ local function getMPIrank()
 end
 
 likwid.getMPIrank = getMPIrank
+
+
+local function llikwid_getAvailFreq(cpu)
+    local freq_str = likwid_getAvailFreq(cpu)
+    local freqs = {}
+    if not freq_str then
+        return freqs, 0
+    end
+    for item in freq_str:gmatch("[%d%.]+") do
+        table.insert(freqs, item)
+    end
+    local turbo = freqs[1]
+    table.remove(freqs, 1)
+    return freqs, turbo
+end
+
+likwid.getAvailFreq = llikwid_getAvailFreq
+
+local function llikwid_getAvailGovs(cpu)
+    local gov_str = likwid_getAvailGovs(cpu)
+    local govs = {}
+    if not gov_str then
+        return govs
+    end
+    for item in gov_str:gmatch("%a+") do
+        table.insert(govs, item)
+    end
+    return govs
+end
+
+likwid.getAvailGovs = llikwid_getAvailGovs
+
 
 return likwid

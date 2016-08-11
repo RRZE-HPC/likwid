@@ -3014,6 +3014,279 @@ or<BR>
 </TR>
 </TABLE>
 
+/*! \page lua_CpuFreq CPU frequency manipulation module
+<H1>Data type definition for Lua CPU frequency manipulation module in the Lua API</H1>
+<H1>Function definitions for Lua CPU frequency manipulation module in the Lua API</H1>
+\anchor getCpuClockCurrent
+<H2>getCpuClockCurrent(cpuID)</H2>
+<P>Get the current CPU clock frequency</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to get clock speed</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Frequency for success, 0 in case of errors.</TD>
+</TR>
+</TABLE>
+
+\anchor setCpuClockCurrent
+<H2>setCpuClockCurrent(cpuID, freq)</H2>
+<P>Set the current CPU clock frequency</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to set clock speed</TD>
+    </TR>
+    <TR>
+      <TD>\a freq</TD>
+      <TD>CPU frequency in kHz</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Frequency for success, 0 in case of errors.</TD>
+</TR>
+</TABLE>
+
+\anchor getCpuClockMin
+<H2>getCpuClockMin(cpuID)</H2>
+<P>Get the minimal CPU clock frequency</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to get minimal clock speed</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Frequency for success, 0 in case of errors.</TD>
+</TR>
+</TABLE>
+
+\anchor setCpuClockMin
+<H2>setCpuClockMin(cpuID, freq)</H2>
+<P>Set the minimal CPU clock frequency</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to set minimal clock speed</TD>
+    </TR>
+    <TR>
+      <TD>\a freq</TD>
+      <TD>CPU frequency in kHz</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Frequency for success, 0 in case of errors.</TD>
+</TR>
+</TABLE>
+
+\anchor getCpuClockMax
+<H2>getCpuClockMax(cpuID)</H2>
+<P>Get the maximal CPU clock frequency</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to get maximal clock speed</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Frequency for success, 0 in case of errors.</TD>
+</TR>
+</TABLE>
+
+\anchor setCpuClockMax
+<H2>setCpuClockMax(cpuID, freq)</H2>
+<P>Set the maximal CPU clock frequency</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to set maximal clock speed</TD>
+    </TR>
+    <TR>
+      <TD>\a freq</TD>
+      <TD>CPU frequency in kHz</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Frequency for success, 0 in case of errors.</TD>
+</TR>
+</TABLE>
+
+\anchor getGovernor
+<H2>getGovernor(cpuID)</H2>
+<P>Get the current CPU frequency governor</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to get the current CPU frequency governor</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Governor for success, nil in case of errors.</TD>
+</TR>
+</TABLE>
+
+\anchor setGovernor
+<H2>setGovernor(cpuID, gov)</H2>
+<P>Set the current CPU frequency governor</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to set the current CPU frequency governor</TD>
+    </TR>
+    <TR>
+      <TD>\a gov</TD>
+      <TD>Governor name</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>1 for success, 0 in case of errors.</TD>
+</TR>
+</TABLE>
+
+\anchor getDriver
+<H2>getDriver(cpuID)</H2>
+<P>Get the current cpufreq driver</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to get the current cpufreq driver</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>Driver for success, nil in case of errors.</TD>
+</TR>
+</TABLE>
+
+\anchor getAvailFreq
+<H2>getAvailFreq(cpuID)</H2>
+<P>Get all available CPU frequency settings</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to get the CPU frequency settings</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>frequency list + turbo value at success, {} and 0 in case of errors.</TD>
+</TR>
+</TABLE>
+
+\anchor getAvailGovs
+<H2>getAvailGovs(cpuID)</H2>
+<P>Get all available CPU frequency governors</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a cpuID</TD>
+      <TD>CPU to get the CPU frequency governors</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>governor list at success, {} in case of errors.</TD>
+</TR>
+</TABLE>
+
+*/
 
 /*! \page lua_InputOutput Input and output functions module
 <H1>Data type definition for Lua output functions module in the Lua API</H1>
