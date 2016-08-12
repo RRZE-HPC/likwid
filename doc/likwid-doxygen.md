@@ -91,6 +91,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage broadwelld
 - \subpage broadwellep
 - \subpage skylake
+- \subpage phi_knl
 
 \subsection Architectures_AMD AMD&reg;
 - \subpage k8

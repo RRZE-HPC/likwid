@@ -6,8 +6,20 @@ that performs the actual setting of CPU cores' frequency and governor.
 .SH SYNOPSIS
 .B likwid-setFreq
 .IR <coreId>
-.IR <frequency>
-.IR [<governor>]
+.IR <command>
+.IR <frequency|governor>
+
+.SH OPTIONS
+.TP
+.B <command>
+Valid commands are
+.B cur
+,
+.B min
+,
+.B max
+and
+.B gov
 
 .SH DESCRIPTION
 .B likwid-setFreq

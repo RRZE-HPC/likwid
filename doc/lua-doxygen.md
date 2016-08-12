@@ -1,7 +1,7 @@
 /*! \page lua_Info Information about LIKWID's Lua API
 <H1>How to include Lua API into own Lua applications</H1>
 <CODE>
-package.path = package.path .. ';<PREFIX>/share/lua/?.lua'<BR>
+package.path = package.path .. ';/usr/local/share/lua/?.lua'<BR>
 local likwid = require("likwid")<BR>
 </CODE>
 <P></P>
@@ -51,7 +51,7 @@ or<BR>
 <H1>Data type definition for Lua config file module in the Lua API</H1>
 \anchor lua_config
 <H2>Config file read</H2>
-<P>This structure is returned by \ref getConfiguration function<BR>The config file can be created with \ref likwid-genTopoCfg executable. It searches the files /etc/likwid.cfg and <PREFIX>/etc/likwid.cfg. Other configuration file paths can be set in config.mk before building LIKWID.</P>
+<P>This structure is returned by \ref getConfiguration function<BR>The config file can be created with \ref likwid-genTopoCfg executable. It searches the files /etc/likwid.cfg and /usr/local/etc/likwid.cfg. Other configuration file paths can be set in config.mk before building LIKWID.</P>
 <TABLE>
 <TR>
   <TH>Membername</TH>

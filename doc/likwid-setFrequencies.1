@@ -10,6 +10,10 @@ likwid-setFrequencies \- print and manage the clock frequency of CPU cores
 .IR <governor> ]
 .RB [ \-f,\-\-\^freq
 .IR <frequency> ]
+.RB [ \-x,\-\-\^min
+.IR <min_freq> ]
+.RB [ \-y,\-\-\^max
+.IR <max_freq> ]
 .SH DESCRIPTION
 .B likwid-setFrequencies
 is a command line application to set the clock frequency of CPU cores. Since only priviledged users are allowed to change the frequency of CPU cores, the application works in combination with a daemon
@@ -51,6 +55,12 @@ set the governor of all CPU cores inside the affinity domain. Current governors 
 .TP
 .B \-\^f, \-\-\^freq <frequency>
 set a fixed frequency at all CPU cores inside the affinity domain. Implicitly sets userspace governor for the cores.
+.TP
+.B \-\^x, \-\-\^min <min_freq>
+set a fixed minimal frequency at all CPU cores inside the affinity domain. Can be used in combination with a dynamic governor.
+.TP
+.B \-\^y, \-\-\^max <max_freq>
+set a fixed maximal frequency at all CPU cores inside the affinity domain. Can be used in combination with a dynamic governor.
 
 .SH AUTHOR
 Written by Thomas Roehl <thomas.roehl@googlemail.com>.

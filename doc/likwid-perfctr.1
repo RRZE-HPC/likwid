@@ -28,6 +28,7 @@ or
 .IR skip_mask ]
 .RB [ \-E
 .IR search_str ]
+.RB [ \-\-stats ]
 .SH DESCRIPTION
 .B likwid-perfctr
 is a lightweight command line application to configure and read out hardware performance monitoring data
@@ -105,6 +106,9 @@ Force writing of registers even if they are in use.
 .TP
 .B \-\^E <search_str>
 Print only events and corresponding counters matching <search_str>
+.TP
+.B \-\-\^stats
+Always print statistics table
 
 .SH EXAMPLE
 Because 
