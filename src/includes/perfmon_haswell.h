@@ -933,7 +933,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
         VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<31))); \
     } \
-    else if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
+    else if (haveLock && eventSet->regTypeMask & ~(0xFULL) && haswell_cbox_setup == has_cbox_setup) \
     { \
         uint64_t data = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data)); \
@@ -951,7 +951,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
         VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE); \
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<29))); \
     } \
-    else if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
+    else if (haveLock && eventSet->regTypeMask & ~(0xFULL) && haswell_cbox_setup == has_cbox_setup) \
     { \
         uint64_t data = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data)); \
@@ -1330,17 +1330,20 @@ int has_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
         uint64_t ovf_values = 0x0ULL;
         int global_offset = box_map[type].ovflOffset;
         int test_local = 0;
+        uint32_t global_status_reg = MSR_UNC_V3_U_PMON_GLOBAL_STATUS;
+        if (cpuid_info.model == HASWELL)
+            global_status_reg = MSR_UNC_PERF_GLOBAL_STATUS;
         if (global_offset != -1)
         {
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV,
-                                           MSR_UNC_V3_U_PMON_GLOBAL_STATUS,
+                                           global_status_reg,
                                            &ovf_values));
-            VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, LLU_CAST ovf_values, READ_GLOBAL_OVFL);
+            VERBOSEPRINTREG(cpu_id, global_status_reg, LLU_CAST ovf_values, READ_GLOBAL_OVFL);
             if (ovf_values & (1<<global_offset))
             {
-                VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, LLU_CAST (1<<global_offset), CLEAR_GLOBAL_OVFL);
+                VERBOSEPRINTREG(cpu_id, global_status_reg, LLU_CAST (1<<global_offset), CLEAR_GLOBAL_OVFL);
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV,
-                                                 MSR_UNC_V3_U_PMON_GLOBAL_STATUS,
+                                                 global_status_reg,
                                                  (1<<global_offset)));
                 test_local = 1;
             }

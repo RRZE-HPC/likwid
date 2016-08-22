@@ -825,7 +825,7 @@ int perfmon_setupCounterThread_sandybridge(
         SNB_FREEZE_PCI_BOX(BBOX0);
         SNB_FREEZE_BOX(WBOX);
     }
-    else
+    else if (cpuid_info.model == SANDYBRIDGE && sandy_cbox_setup == snb_cbox_setup)
     {
         VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31)));
@@ -1182,7 +1182,7 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
         SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(RBOX1);
         SNB_UNFREEZE_AND_RESET_CTR_PCI_BOX(PBOX);
     }
-    else
+    else if (cpuid_info.model == SANDYBRIDGE && sandy_cbox_setup == snb_cbox_setup)
     {
         VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_CTL, (1ULL<<29)));
@@ -1261,7 +1261,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
         SNB_FREEZE_PCI_BOX(BBOX0);
         SNB_FREEZE_AND_RESET_CTL_BOX(WBOX);
     }
-    else
+    else if (cpuid_info.model == SANDYBRIDGE && sandy_cbox_setup == snb_cbox_setup)
     {
         VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31)));
@@ -1551,7 +1551,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
         SNB_FREEZE_PCI_BOX(BBOX0);
         SNB_FREEZE_BOX(WBOX);
     }
-    else
+    else if (cpuid_info.model == SANDYBRIDGE && sandy_cbox_setup == snb_cbox_setup)
     {
         VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31)));
@@ -1817,7 +1817,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
         SNB_UNFREEZE_PCI_BOX(BBOX0);
         SNB_UNFREEZE_BOX(WBOX);
     }
-    else
+    else if (cpuid_info.model == SANDYBRIDGE && sandy_cbox_setup == snb_cbox_setup)
     {
         VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<29)));

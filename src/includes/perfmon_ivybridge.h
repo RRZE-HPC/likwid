@@ -677,7 +677,19 @@ int ivb_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int ivb_uncore_freeze(int cpu_id, PerfmonEventSet* eventSet)
 {
-    uint32_t freeze_reg = (cpuid_info.model == IVYBRIDGE_EP ? MSR_UNC_U_PMON_GLOBAL_CTL : MSR_UNC_PERF_GLOBAL_CTRL);
+    uint32_t freeze_reg = 0x0;
+    if (cpuid_info.model == IVYBRIDGE_EP)
+    {
+        freeze_reg = MSR_UNC_U_PMON_GLOBAL_CTL;
+    }
+    else if (cpuid_info.model == IVYBRIDGE && ivy_cbox_setup == ivb_cbox_setup)
+    {
+        freeze_reg = MSR_UNC_PERF_GLOBAL_CTRL;
+    }
+    else
+    {
+        return 0;
+    }
     if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -692,8 +704,22 @@ int ivb_uncore_freeze(int cpu_id, PerfmonEventSet* eventSet)
 
 int ivb_uncore_unfreeze(int cpu_id, PerfmonEventSet* eventSet)
 {
-    uint32_t unfreeze_reg = (cpuid_info.model == IVYBRIDGE_EP ? MSR_UNC_U_PMON_GLOBAL_CTL : MSR_UNC_PERF_GLOBAL_CTRL);
-    uint32_t ovf_reg = (cpuid_info.model == IVYBRIDGE_EP ? MSR_UNC_U_PMON_GLOBAL_STATUS : MSR_UNC_PERF_GLOBAL_OVF_CTRL);
+    uint32_t unfreeze_reg = 0x0;
+    uint32_t ovf_reg = 0x0;
+    if (cpuid_info.model == IVYBRIDGE_EP)
+    {
+        unfreeze_reg = MSR_UNC_U_PMON_GLOBAL_CTL;
+        ovf_reg = MSR_UNC_U_PMON_GLOBAL_STATUS;
+    }
+    else if (cpuid_info.model == IVYBRIDGE && ivy_cbox_setup == ivb_cbox_setup)
+    {
+        unfreeze_reg = MSR_UNC_PERF_GLOBAL_CTRL;
+        ovf_reg = MSR_UNC_PERF_GLOBAL_OVF_CTRL;
+    }
+    else
+    {
+        return 0;
+    }
     if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -727,8 +753,10 @@ int perfmon_setupCounterThread_ivybridge(
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
-
-    ivb_uncore_freeze(cpu_id, eventSet);
+    if (eventSet->regTypeMask & ~(0xF))
+    {
+        ivb_uncore_freeze(cpu_id, eventSet);
+    }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -919,7 +947,10 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
         }
     }
 
-    ivb_uncore_unfreeze(cpu_id, eventSet);
+    if (eventSet->regTypeMask & ~(0xF))
+    {
+        ivb_uncore_unfreeze(cpu_id, eventSet);
+    }
 
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
     {
@@ -1055,7 +1086,11 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
-    ivb_uncore_freeze(cpu_id, eventSet);
+    if (eventSet->regTypeMask & ~(0xF))
+    {
+        ivb_uncore_freeze(cpu_id, eventSet);
+    }
+
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -1247,7 +1282,10 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, &pmc_flags));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
-    ivb_uncore_freeze(cpu_id, eventSet);
+    if (eventSet->regTypeMask & ~(0xF))
+    {
+        ivb_uncore_freeze(cpu_id, eventSet);
+    }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -1427,7 +1465,11 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
         }
     }
 
-    ivb_uncore_unfreeze(cpu_id, eventSet);
+    if (eventSet->regTypeMask & ~(0xF))
+    {
+        ivb_uncore_unfreeze(cpu_id, eventSet);
+    }
+
     if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, pmc_flags));

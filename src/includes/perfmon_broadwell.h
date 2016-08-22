@@ -967,18 +967,37 @@ int bdw_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
 }
 
 #define BDW_FREEZE_UNCORE \
-    if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
+    if (haveLock && eventSet->regTypeMask & ~(0xFULL) && (cpuid_info.model == BROADWELL_E || cpuid_info.model == BROADWELL_D)) \
     { \
         VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<31))); \
-    }
+    } \
+    else if (haveLock && eventSet->regTypeMask & ~(0xFULL) && cpuid_info.model == BROADWELL) \
+    { \
+        uint64_t data = 0x0ULL; \
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data)); \
+        if (!(data & (1ULL<<29))) \
+        { \
+            data &= ~(1ULL<<29); \
+            VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, data, FREEZE_UNCORE); \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, data)); \
+        } \
+    } \
 
 #define BDW_UNFREEZE_UNCORE \
-    if (haveLock && eventSet->regTypeMask & ~(0xFULL)) \
+    if (haveLock && eventSet->regTypeMask & ~(0xFULL) && (cpuid_info.model == BROADWELL_E || cpuid_info.model == BROADWELL_D)) \
     { \
         VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE); \
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<29))); \
-    }
+    } \
+    else if (haveLock && eventSet->regTypeMask & ~(0xFULL) && cpuid_info.model == BROADWELL) \
+    { \
+        uint64_t data = 0x0ULL; \
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data)); \
+        data |= (1ULL<<29);\
+        VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, data, FREEZE_UNCORE); \
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, data)); \
+    } \
 
 #define BDW_UNFREEZE_UNCORE_AND_RESET_CTR \
     if (haveLock && (eventSet->regTypeMask & ~(0xFULL))) \
@@ -1002,8 +1021,7 @@ int bdw_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
                 } \
             } \
         } \
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE); \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<29))); \
+        BDW_UNFREEZE_UNCORE; \
     }
 
 int perfmon_setupCounterThread_broadwell(
@@ -1299,17 +1317,20 @@ int bdw_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
         uint64_t ovf_values = 0x0ULL;
         int global_offset = box_map[type].ovflOffset;
         int test_local = 0;
+        uint32_t global_status_reg = MSR_UNC_V3_U_PMON_GLOBAL_STATUS;
+        if (cpuid_info.model == BROADWELL)
+            global_status_reg = MSR_UNC_PERF_GLOBAL_STATUS;
         if (global_offset != -1)
         {
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV,
-                                           MSR_UNC_V3_U_PMON_GLOBAL_STATUS,
+                                           global_status_reg,
                                            &ovf_values));
-            VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, LLU_CAST ovf_values, READ_GLOBAL_OVFL);
+            VERBOSEPRINTREG(cpu_id, global_status_reg, LLU_CAST ovf_values, READ_GLOBAL_OVFL);
             if (ovf_values & (1<<global_offset))
             {
-                VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_STATUS, LLU_CAST (1<<global_offset), CLEAR_GLOBAL_OVFL);
+                VERBOSEPRINTREG(cpu_id, global_status_reg, LLU_CAST (1<<global_offset), CLEAR_GLOBAL_OVFL);
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV,
-                                                 MSR_UNC_V3_U_PMON_GLOBAL_STATUS,
+                                                 global_status_reg,
                                                  (1<<global_offset)));
                 test_local = 1;
             }
@@ -1351,6 +1372,19 @@ int bdw_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
             eventSet->events[i].threadCounter[thread_id].overflows++; \
         } \
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<offset))); \
+    }
+
+#define BDW_CHECK_LOCAL_OVERFLOW \
+    if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData) \
+    { \
+        uint64_t ovf_values = 0x0ULL; \
+        uint64_t offset = getCounterTypeOffset(eventSet->events[i].index); \
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, &ovf_values)); \
+        if (ovf_values & (1ULL<<offset)) \
+        { \
+            eventSet->events[i].threadCounter[thread_id].overflows++; \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, (1ULL<<offset))); \
+        } \
     }
 
 int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSet)
