@@ -1,0 +1,29 @@
+SHORT Cycle Activities
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0 CYCLE_ACTIVITY_STALLS_L2_PENDING
+PMC1 CYCLE_ACTIVITY_STALLS_LDM_PENDING
+PMC2 CYCLE_ACTIVITY_STALLS_L1D_PENDING
+PMC3 CYCLE_ACTIVITY_CYCLES_NO_EXECUTE
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Cycles without execution [%] PMC3/FIXC1*100
+Cycles without execution due to L1D [%] PMC2/FIXC1*100
+Cycles without execution due to L2 [%] PMC0/FIXC1*100
+Cycles without execution due to memory [%] PMC1/FIXC1*100
+
+LONG
+Cycles without execution [%] = CYCLE_ACTIVITY_CYCLES_NO_EXECUTE/CPU_CLK_UNHALTED_CORE*100
+Cycles with stalls due to L1D [%] = CYCLE_ACTIVITY_CYCLES_L1D_PENDING/CPU_CLK_UNHALTED_CORE*100
+Cycles with stalls due to L2 [%] = CYCLE_ACTIVITY_CYCLES_L2_PENDING/CPU_CLK_UNHALTED_CORE*100
+Cycles without execution due to memory [%] = CYCLE_ACTIVITY_STALLS_LDM_PENDING/CPU_CLK_UNHALTED_CORE*100
+--
+This performance group measures the stalls caused by data traffic in the cache
+hierarchy.
