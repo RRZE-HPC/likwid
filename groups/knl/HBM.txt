@@ -1,0 +1,32 @@
+SHORT Memory bandwidth in MBytes/s for High Bandwidth Memory (HBM)
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0:MATCH0=0x4908:MATCH1=0x3F8060 OFFCORE_RESPONSE_0_OPTIONS
+PMC1:MATCH0=0x32F7:MATCH1=0x3F8060 OFFCORE_RESPONSE_1_OPTIONS
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Memory read bandwidth [MBytes/s] 1.0E-06*(PMC1:MATCH0=0x32F7:MATCH1=0x3F8060)*64.0/time
+Memory read data volume [GBytes] 1.0E-09*(PMC1:MATCH0=0x32F7:MATCH1=0x3F8060)*64.0
+Memory writeback bandwidth [MBytes/s] 1.0E-06*(PMC0:MATCH0=0x4908:MATCH1=0x3F8060)*64.0/time
+Memory writeback data volume [GBytes] 1.0E-09*(PMC0:MATCH0=0x4908:MATCH1=0x3F8060)*64.0
+Memory bandwidth [MBytes/s] 1.0E-06*(PMC0:MATCH0=0x4908:MATCH1=0x3F8060+PMC1:MATCH0=0x32F7:MATCH1=0x3F8060)*64.0/time
+Memory data volume [GBytes] 1.0E-09*(PMC0:MATCH0=0x4908:MATCH1=0x3F8060+PMC1:MATCH0=0x32F7:MATCH1=0x3F8060)*64.0
+
+LONG
+Formulas:
+Memory read bandwidth [MBytes/s] = 1.0E-06*(sum(EDC_RPQ_INSERTS))*64/time
+Memory read data volume [GBytes] = 1.0E-09*(sum(EDC_RPQ_INSERTS))*64
+Memory writeback bandwidth [MBytes/s] = 1.0E-06*(sum(EDC_WPQ_INSERTS))*64/time
+Memory writeback data volume [GBytes] = 1.0E-09*(sum(EDC_WPQ_INSERTS))*64
+Memory bandwidth [MBytes/s] = 1.0E-06*(sum(EDC_RPQ_INSERTS)+sum(EDC_WPQ_INSERTS))*64/time
+Memory data volume [GBytes] = 1.0E-09*(sum(EDC_RPQ_INSERTS)+sum(EDC_WPQ_INSERTS))*64
+-
+Profiling group to measure data transfers from and to the high bandwidth memory (HBM).
+

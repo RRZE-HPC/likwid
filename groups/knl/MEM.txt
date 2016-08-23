@@ -1,32 +1,46 @@
-SHORT Memory load bandwidth in MBytes/s
+SHORT Memory bandwidth in MBytes/s
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
-PMC0  LONGEST_LAT_CACHE_MISS
-PMC1  OFFCORE_RESPONSE_1_WB_ANY
+MBOX0C0 MC_CAS_READS
+MBOX0C1 MC_CAS_WRITES
+MBOX1C0 MC_CAS_READS
+MBOX1C1 MC_CAS_WRITES
+MBOX2C0 MC_CAS_READS
+MBOX2C1 MC_CAS_WRITES
+MBOX3C0 MC_CAS_READS
+MBOX3C1 MC_CAS_WRITES
+MBOX4C0 MC_CAS_READS
+MBOX4C1 MC_CAS_WRITES
+MBOX5C0 MC_CAS_READS
+MBOX5C1 MC_CAS_WRITES
+MBOX6C0 MC_CAS_READS
+MBOX6C1 MC_CAS_WRITES
+MBOX7C0 MC_CAS_READS
+MBOX7C1 MC_CAS_WRITES
 
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-Memory read bandwidth [MBytes/s] 1.0E-06*(PMC0)*64.0/time
-Memory read data volume [GBytes] 1.0E-09*(PMC0)*64.0
-Memory writeback bandwidth [MBytes/s] 1.0E-06*(PMC1)*64.0/time
-Memory writeback data volume [GBytes] 1.0E-09*(PMC1)*64.0
-Memory bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
-Memory data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
+Memory read bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0+MBOX6C0+MBOX7C0)*64.0/time
+Memory read data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0+MBOX6C0+MBOX7C0)*64.0
+Memory writeback bandwidth [MBytes/s] 1.0E-06*(MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1+MBOX6C1+MBOX7C1)*64.0/time
+Memory writeback data volume [GBytes] 1.0E-09*(MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1+MBOX6C1+MBOX7C1)*64.0
+Memory bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0+MBOX6C0+MBOX7C0+MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1+MBOX6C1+MBOX7C1)*64.0/time
+Memory data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0+MBOX6C0+MBOX7C0+MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1+MBOX6C1+MBOX7C1)*64.0
 
 LONG
 Formulas:
-Memory read bandwidth [MBytes/s] = 1.0E-06*(LONGEST_LAT_CACHE_MISS)*64/time
-Memory read data volume [GBytes] = 1.0E-09*(LONGEST_LAT_CACHE_MISS)*64
-Memory writeback bandwidth [MBytes/s] = 1.0E-06*(OFFCORE_RESPONSE_1_WB_ANY)*64/time
-Memory writeback data volume [GBytes] = 1.0E-09*(OFFCORE_RESPONSE_1_WB_ANY)*64
-Memory bandwidth [MBytes/s] = 1.0E-06*(LONGEST_LAT_CACHE_MISS+OFFCORE_RESPONSE_1_WB_ANY)*64/time
-Memory data volume [GBytes] = 1.0E-09*(LONGEST_LAT_CACHE_MISS+OFFCORE_RESPONSE_1_WB_ANY)*64
+Memory read bandwidth [MBytes/s] = 1.0E-06*(sum(MC_CAS_READS))*64/time
+Memory read data volume [GBytes] = 1.0E-09*(sum(MC_CAS_READS))*64
+Memory writeback bandwidth [MBytes/s] = 1.0E-06*(sum(MC_CAS_WRITES))*64/time
+Memory writeback data volume [GBytes] = 1.0E-09*(sum(MC_CAS_WRITES))*64
+Memory bandwidth [MBytes/s] = 1.0E-06*(sum(MC_CAS_READS)+sum(MC_CAS_WRITES))*64/time
+Memory data volume [GBytes] = 1.0E-09*(sum(MC_CAS_READS)+sum(MC_CAS_WRITES))*64
 -
 Profiling group to measure L2 to MEM load cache bandwidth. The bandwidth is computed by the
 number of cache line allocated in the L2 cache. Since there is no possibility to retrieve
