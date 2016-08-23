@@ -27,7 +27,7 @@
  *
  * =======================================================================================
  */
- 
+
 #include <perfmon_knl_events.h>
 #include <perfmon_knl_counters.h>
 
@@ -323,7 +323,7 @@ int knl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
             }
         }
     }
-    
+
     if (filter_flags0 != 0x0ULL)
     {
         VERBOSEPRINTREG(cpu_id, filter0, filter_flags0, SETUP_CBOX_FILTER0);
@@ -461,7 +461,7 @@ int perfmon_setupCountersThread_knl(
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = counter_map[index].configRegister;
-	PciDeviceIndex dev = counter_map[index].device;
+        PciDeviceIndex dev = counter_map[index].device;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
         switch (type)
         {
@@ -838,7 +838,7 @@ int perfmon_stopCountersThread_knl(int thread_id, PerfmonEventSet* eventSet)
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
+        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterType type = eventSet->events[i].type;
             if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
@@ -978,13 +978,13 @@ int perfmon_stopCountersThread_knl(int thread_id, PerfmonEventSet* eventSet)
                 case EDBOX7FIX:
                     if (haveLock)
                     {
-			uint64_t tmp = 0x0ULL;
+                        uint64_t tmp = 0x0ULL;
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
-			VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_FIXED_BOX_1);
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_FIXED_BOX_1);
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter2, &tmp));
-			VERBOSEPRINTPCIREG(cpu_id, dev, counter2, LLU_CAST tmp , READ_FIXED_BOX_1);
-			counter_result = (counter_result<<32)|tmp;
-			counter_result = field64(counter_result, 0, box_map[type].regWidth);	
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter2, LLU_CAST tmp , READ_FIXED_BOX_1);
+                        counter_result = (counter_result<<32)|tmp;
+                        counter_result = field64(counter_result, 0, box_map[type].regWidth);
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
                             eventSet->events[i].threadCounter[thread_id].overflows++;
@@ -1134,7 +1134,7 @@ int perfmon_readCountersThread_knl(int thread_id, PerfmonEventSet* eventSet)
                 case UBOX:
                 case PBOX:
                     knl_uncore_read(cpu_id, index, event, &counter_result, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
+                                    FREEZE_FLAG_ONLYFREEZE, ovf_offset, getCounterTypeOffset(index));
                     break;
 
                 case MBOX0FIX:
