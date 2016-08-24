@@ -132,8 +132,15 @@ allowed_intel(uint32_t reg)
             (reg == 0x19C)  ||
             (reg == 0x1A2)  ||
             (reg == 0x1AD)  ||
+            (reg == 0x1AE)  ||
+            (reg == 0x1AF)  ||
+            (reg == 0x1AC)  ||
             (reg == 0x1A6)  ||
-            (reg == 0x1A7))
+            (reg == 0x1A7)  ||
+            (reg == 0x620)  ||
+            (reg == 0xCD)   ||
+            (reg == 0x1B0)  ||
+            (reg == 0x1B1))
     {
         return 1;
     }
