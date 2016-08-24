@@ -36,6 +36,7 @@
 #include <error.h>
 
 #include <topology.h>
+#include <affinity.h>
 #ifdef LIKWID_USE_HWLOC
 #include <hwloc.h>
 #include <topology_hwloc.h>
@@ -205,6 +206,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             {
                 hwThreadPool[id].coreId = 0;
                 hwThreadPool[id].packageId = 0;
+                affinity_thread2core_lookup[hwThreadPool[id].apicId] = hwThreadPool[id].coreId;
                 continue;
             }
             hwThreadPool[id].coreId = obj->os_index;
@@ -213,6 +215,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
         {
             hwThreadPool[id].coreId = hwThreadPool[id].apicId % maxNumCoresPerSocket;
         }
+        affinity_thread2core_lookup[hwThreadPool[id].apicId] = hwThreadPool[id].coreId;
         if (maxNumSockets > 1)
         {
             while (obj->type != socket_type) {

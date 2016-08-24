@@ -848,11 +848,17 @@ void topology_setupTree(void)
         }
 
     }
-    cpuid_topology.numSockets = tree_countChildren(cpuid_topology.topologyTree);
+    i = tree_countChildren(cpuid_topology.topologyTree);
+    if (cpuid_topology.numSockets == 0)
+        cpuid_topology.numSockets = i;
     currentNode = tree_getChildNode(cpuid_topology.topologyTree);
-    cpuid_topology.numCoresPerSocket = tree_countChildren(currentNode);
+    i = tree_countChildren(currentNode);
+    if (cpuid_topology.numCoresPerSocket == 0)
+        cpuid_topology.numCoresPerSocket = i;
     currentNode = tree_getChildNode(currentNode);
-    cpuid_topology.numThreadsPerCore = tree_countChildren(currentNode);
+    i = tree_countChildren(currentNode);
+    if (cpuid_topology.numThreadsPerCore == 0)
+        cpuid_topology.numThreadsPerCore = i;
     return;
 }
 
@@ -898,8 +904,8 @@ standard_init:
         topology_setName();
         funcs.init_cpuFeatures();
         funcs.init_nodeTopology(cpuSet);
-        topology_setupTree();
         funcs.init_cacheTopology();
+        topology_setupTree();
         sched_setaffinity(0, sizeof(cpu_set_t), &cpuSet);
     }
     else

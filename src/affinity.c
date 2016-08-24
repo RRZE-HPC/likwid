@@ -55,6 +55,7 @@
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 int affinity_core2node_lookup[MAX_NUM_THREADS];
+int affinity_thread2core_lookup[MAX_NUM_THREADS];
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 

@@ -42,6 +42,7 @@
 #include <tlb-info.h>
 #include <topology.h>
 #include <cpuid.h>
+#include <affinity.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -587,6 +588,7 @@ cpuid_init_nodeTopology(cpu_set_t cpuSet)
                                 currOffset-prevOffset,
                                 prevOffset);
                         hwThreadPool[id].coreId = bitField;
+                        affinity_thread2core_lookup[hwThreadPool[id].apicId] = hwThreadPool[id].coreId;
                         break;
 
                     case 2:  /* Package */

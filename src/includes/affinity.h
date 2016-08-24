@@ -35,10 +35,12 @@
 #include <likwid.h>
 
 int socket_lock[MAX_NUM_NODES];
+int core_lock[MAX_NUM_THREADS];
 int tile_lock[MAX_NUM_THREADS];
 extern AffinityDomains affinityDomains;
 
 extern int affinity_core2node_lookup[MAX_NUM_THREADS];
+extern int affinity_thread2core_lookup[MAX_NUM_THREADS];
 extern int affinity_processGetProcessorId();
 extern int affinity_threadGetProcessorId();
 extern const AffinityDomain* affinity_getDomain(bstring domain);

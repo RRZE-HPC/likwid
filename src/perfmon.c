@@ -1301,7 +1301,11 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     groupSet->activeGroup = -1;
 
     for(i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
-    for(i=0; i<MAX_NUM_THREADS; i++) tile_lock[i] = LOCK_INIT;
+    for(i=0; i<MAX_NUM_THREADS; i++)
+    {
+        tile_lock[i] = LOCK_INIT;
+        core_lock[i] = LOCK_INIT;
+    }
 
 
     /* Initialize access interface */
@@ -1326,9 +1330,11 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     /* If the arch supports it, initialize power and thermal measurements */
     for(i=0;i<nrThreads;i++)
     {
-        if (HPMaddThread(threadsToCpu[i]) != 0)
+        if ((ret = HPMaddThread(threadsToCpu[i])) != 0)
         {
             ERROR_PLAIN_PRINT(Cannot get access to performance counters);
+            free(groupSet);
+            return ret;
         }
         groupSet->threads[i].thread_id = i;
         groupSet->threads[i].processorId = threadsToCpu[i];

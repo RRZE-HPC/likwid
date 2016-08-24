@@ -56,6 +56,7 @@
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 int socket_lock[MAX_NUM_NODES];
+int core_lock[MAX_NUM_THREADS];
 static int likwid_init = 0;
 static int numberOfGroups = 0;
 static int* groups;
