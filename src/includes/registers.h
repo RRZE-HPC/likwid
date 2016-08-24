@@ -1902,6 +1902,9 @@
 #define MSR_ANY_CORE_C0                 0x659
 #define MSR_ANY_GFXE_C0                 0x65A
 #define MSR_CORE_GFXE_OVERLAP_C0        0x65B
+#define MSR_UNCORE_FREQ                 0x620
+#define MSR_FSB_FREQ                    0xCD
+#define MSR_ENERGY_PERF_BIAS            0x1B0
 /*
  * AMD
  */
