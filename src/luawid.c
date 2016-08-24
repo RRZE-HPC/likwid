@@ -1471,6 +1471,15 @@ lua_likwid_getPowerInfo(lua_State* L)
     lua_pushstring(L,"timeUnit");
     lua_pushnumber(L,power->timeUnit);
     lua_settable(L,-3);
+    lua_pushstring(L,"minUncoreFreq");
+    lua_pushnumber(L,power->uncoreMinFreq);
+    lua_settable(L,-3);
+    lua_pushstring(L,"maxUncoreFreq");
+    lua_pushnumber(L,power->uncoreMaxFreq);
+    lua_settable(L,-3);
+    lua_pushstring(L,"perfBias");
+    lua_pushnumber(L,power->perfBias);
+    lua_settable(L,-3);
     lua_pushstring(L,"turbo");
     lua_newtable(L);
     lua_pushstring(L,"numSteps");

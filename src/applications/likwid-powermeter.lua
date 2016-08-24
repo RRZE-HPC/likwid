@@ -235,6 +235,16 @@ if (print_info) then
             print_stdout()
         end
     end
+    if power["minUncoreFreq"] > 0 and power["maxUncoreFreq"] > 0 then
+        print_stdout("Info about Uncore:")
+        print_stdout(string.format("Minimal Uncore frequency: %g MHz", power["minUncoreFreq"]))
+        print_stdout(string.format("Maximal Uncore frequency: %g MHz", power["maxUncoreFreq"]))
+        print_stdout()
+    end
+    if power["perfBias"] then
+        print_stdout(string.format("Performance energy bias: %.0f (0=highest performance, 15 = lowest energy)", power["perfBias"]))
+        print_stdout()
+    end
     print_stdout(likwid.hline)
 end
 
