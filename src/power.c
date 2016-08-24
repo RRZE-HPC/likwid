@@ -70,6 +70,9 @@ power_init(int cpuId)
     power_info.powerUnit = 0;
     power_info.timeUnit = 0;
     power_info.hasRAPL = 0;
+    power_info.uncoreMinFreq = 0;
+    power_info.uncoreMaxFreq = 0;
+    power_info.perfBias = 0;
 
     switch (cpuid_info.model)
     {
@@ -119,6 +122,7 @@ power_init(int cpuId)
         }
     }
 
+
     if ( power_info.hasRAPL )
     {
         busSpeed = 100.0;
@@ -165,9 +169,42 @@ power_init(int cpuId)
                     }
                 }
             }
-            //TODO: Haswell EP and possibly Broadwell EP support multiple turbo
-            //      registers besides MSR_TURBO_RATIO_LIMIT:
-            //      MSR_TURBO_RATIO_LIMIT1 and MSR_TURBO_RATIO_LIMIT2
+            if (power_info.turbo.numSteps > 8)
+            {
+                err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT1, &flags);
+                if (!err)
+                {
+                    for (int i=8; i < power_info.turbo.numSteps; i++)
+                    {
+                        if (i < 16)
+                        {
+                            power_info.turbo.steps[i] = busSpeed * (double) field64(flags,i*8, 8);
+                        }
+                        else
+                        {
+                            power_info.turbo.steps[i] = power_info.turbo.steps[15];
+                        }
+                    }
+                }
+            }
+            if (power_info.turbo.numSteps > 16)
+            {
+                err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT2, &flags);
+                if (!err)
+                {
+                    for (int i=16; i < power_info.turbo.numSteps; i++)
+                    {
+                        if (i < 24)
+                        {
+                            power_info.turbo.steps[i] = busSpeed * (double) field64(flags,i*8, 8);
+                        }
+                        else
+                        {
+                            power_info.turbo.steps[i] = power_info.turbo.steps[23];
+                        }
+                    }
+                }
+            }
         }
         else
         {
@@ -286,6 +323,18 @@ power_init(int cpuId)
         {
             fprintf(stderr,"Cannot gather values from MSR_RAPL_POWER_UNIT, deactivating RAPL support\n");
             power_info.hasRAPL =  0;
+        }
+
+        err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &flags);
+        if (err == 0)
+        {
+            power_info.uncoreMinFreq = ((double)((flags >> 8) & 0xFFULL)) * busSpeed;
+            power_info.uncoreMaxFreq = ((double)(flags & 0xFF)) * busSpeed;
+        }
+        err = HPMread(cpuId, MSR_DEV, MSR_ENERGY_PERF_BIAS, &flags);
+        if (err == 0)
+        {
+            power_info.perfBias = flags & 0xF;
         }
         power_initialized = 1;
         return power_info.hasRAPL;
@@ -518,6 +567,8 @@ power_finalize(void)
     power_info.powerUnit = 0;
     power_info.timeUnit = 0;
     power_info.hasRAPL = 0;
+    power_info.uncoreMinFreq = 0;
+    power_info.uncoreMaxFreq = 0;
     memset(power_info.domains, 0, NUM_POWER_DOMAINS*sizeof(PowerDomain));
 }
 

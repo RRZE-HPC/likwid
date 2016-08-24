@@ -1180,6 +1180,9 @@ typedef struct {
     int hasRAPL; /*!< \brief RAPL support flag */
     double powerUnit; /*!< \brief Multiplier for power measurements */
     double timeUnit; /*!< \brief Multiplier for time information */
+    double uncoreMinFreq; /*!< \brief Minimal uncore frequency */
+    double uncoreMaxFreq; /*!< \brief Maximal uncore frequency */
+    uint8_t perfBias; /*!< \brief Performance energy bias */
     PowerDomain domains[NUM_POWER_DOMAINS]; /*!< \brief List of power domains */
 } PowerInfo;
 
