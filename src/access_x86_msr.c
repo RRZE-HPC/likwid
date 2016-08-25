@@ -161,7 +161,16 @@ access_x86_msr_init(const int cpu_id)
     fd = open(msr_file_name, O_RDWR);
     if (fd < 0)
     {
-        sprintf(msr_file_name,"/dev/cpu/%d/msr", cpu_id);
+        sprintf(msr_file_name,"/dev/cpu/%d/msr_safe", cpu_id);
+        fd = open(msr_file_name, O_RDWR);
+        if (fd < 0)
+        {
+            sprintf(msr_file_name,"/dev/cpu/%d/msr", cpu_id);
+        }
+        else
+        {
+            close(fd);
+        }
     }
     else
     {
