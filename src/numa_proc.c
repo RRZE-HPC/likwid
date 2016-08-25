@@ -294,6 +294,7 @@ int proc_numa_init(void)
 {
     int errno;
     uint32_t i;
+    uint64_t nrCPUs = 0;
 
     if (get_mempolicy(NULL, NULL, 0, 0, 0) < 0 && errno == ENOSYS)
     {
@@ -314,7 +315,8 @@ int proc_numa_init(void)
         numa_info.nodes[i].id = i;
         nodeMeminfo(i, &numa_info.nodes[i].totalMemory, &numa_info.nodes[i].freeMemory);
         numa_info.nodes[i].numberOfProcessors = nodeProcessorList(i,&numa_info.nodes[i].processors);
-        if (numa_info.nodes[i].numberOfProcessors == 0)
+        nrCPUs += numa_info.nodes[i].numberOfProcessors;
+        if (numa_info.nodes[i].numberOfProcessors == 0 && nrCPUs != cpuid_topology.activeHWThreads)
         {
             return -EFAULT;
         }
