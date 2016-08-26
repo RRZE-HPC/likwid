@@ -16,6 +16,11 @@ GLIBC_VERSION := $(shell ldd --version | grep ldd |  awk '{ print $$NF }' | awk 
 HAS_SCHEDAFFINITY = $(shell if [ $(GLIBC_VERSION) -lt 4 ]; then \
                echo 0;  else echo 1; \
 			   fi; )
+ENOUGH_CPUS = $(shell [ $(shell grep processor /proc/cpuinfo | wc -l) -le $(MAX_NUM_THREADS) ] && echo True )
+
+ifneq ($(ENOUGH_CPUS), True)
+$(info Warning: $(ENOUGH_CPUS) The MAX_NUM_THREADS variable must be larger or equal to the available CPUs. Currently, LIKWID is configured for $(MAX_NUM_THREADS) CPUs, but there are $(INSTALLED_CPUS) CPUs in the systen)
+endif
 
 INST_PREFIX := $(INSTALLED_PREFIX)
 ifneq "$(PREFIX)" "$(INST_PREFIX)"
