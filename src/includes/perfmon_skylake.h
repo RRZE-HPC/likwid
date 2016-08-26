@@ -246,14 +246,14 @@ int perfmon_setupCounterThread_skylake(
         haveLock = 1;
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0xC00000070000000F));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
     }
-    if (haveLock && eventSet->regTypeMask & ~(0xFULL))
+    if (haveLock && MEASURE_UNCORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_UBOXFIX)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL));
@@ -263,7 +263,7 @@ int perfmon_setupCounterThread_skylake(
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         RegisterType type = eventSet->events[i].type;
-        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+        if (!TESTTYPE(eventSet, type))
         {
             continue;
         }
@@ -332,7 +332,7 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterType type = eventSet->events[i].type;
-            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            if (!TESTTYPE(eventSet, type))
             {
                 continue;
             }
@@ -394,13 +394,13 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
         }
     }
 
-    if ((haveLock) && (eventSet->regTypeMask & ~(0xFULL)))
+    if ((haveLock) && MEASURE_UNCORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29), UNFREEZE_UBOXFIX)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29)));
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST (1ULL<<63)|(1ULL<<62)|flags, CLEAR_PMC_AND_FIXED_OVERFLOW)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<63)|(1ULL<<62)|flags));
@@ -459,12 +459,12 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
         haveLock = 1;
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
-    if ((haveLock) && (eventSet->regTypeMask & ~(0xFULL)))
+    if ((haveLock) && MEASURE_UNCORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_UBOXFIX)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL));
@@ -475,7 +475,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterType type = eventSet->events[i].type;
-            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            if (!TESTTYPE(eventSet, type))
             {
                 continue;
             }
@@ -503,7 +503,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                     break;
 
                 case POWER:
-                    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(POWER)))
+                    if (haveLock)
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
@@ -554,7 +554,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
-    if ((haveLock) && (eventSet->regTypeMask & ~(0xFULL)))
+    if ((haveLock) && MEASURE_UNCORE(eventSet))
     {
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_STATUS, &counter_result));
         if (counter_result != 0x0ULL)
@@ -581,7 +581,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
         haveLock = 1;
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+    if (MEASURE_CORE(eventSet))
     {
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, &flags));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, SAFE_PMC_FLAGS)
@@ -589,7 +589,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, RESET_PMC_FLAGS)
     }
 
-    if ((haveLock) && (eventSet->regTypeMask & ~(0xFULL)))
+    if ((haveLock) && MEASURE_UNCORE(eventSet))
     {
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, &uflags));
         VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, LLU_CAST uflags, SAFE_UNCORE_FLAGS)
@@ -603,7 +603,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
         {
             counter_result= 0x0ULL;
             RegisterType type = eventSet->events[i].type;
-            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            if (!TESTTYPE(eventSet, type))
             {
                 continue;
             }
@@ -630,7 +630,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                     break;
 
                 case POWER:
-                    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(POWER)))
+                    if (haveLock)
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
@@ -681,7 +681,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
             }
         }
     }
-    if ((haveLock) && (eventSet->regTypeMask & ~(0xFULL)))
+    if ((haveLock) && MEASURE_UNCORE(eventSet))
     {
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_STATUS, &counter_result));
         if (counter_result != 0x0ULL)
@@ -692,7 +692,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
         VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29), RESTORE_UNCORE_FLAGS)
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, RESTORE_PMC_FLAGS)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
@@ -721,7 +721,7 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         RegisterType type = eventSet->events[i].type;
-        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+        if (!TESTTYPE(eventSet, type))
         {
             continue;
         }
@@ -770,7 +770,7 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
-    if (haveLock && eventSet->regTypeMask & ~(0xFULL))
+    if (haveLock && MEASURE_UNCORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_STATUS, LLU_CAST 0x0ULL, CLEAR_UNCORE_STATUS)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_STATUS, 0x0ULL));
@@ -778,7 +778,7 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL));
         for (int i=UNCORE;i<NUM_UNITS;i++)
         {
-            if ((eventSet->regTypeMask & (REG_TYPE_MASK(i))) && box_map[i].ctrlRegister != 0x0)
+            if (TESTTYPE(eventSet, i) && box_map[i].ctrlRegister != 0x0)
             {
                 VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, CLEAR_UNCORE_BOX_CTRL);
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
@@ -796,7 +796,7 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
         }
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, CLEAR_GLOBAL_OVF)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));

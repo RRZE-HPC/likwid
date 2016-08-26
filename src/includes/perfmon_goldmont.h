@@ -168,7 +168,7 @@ int perfmon_setupCounterThread_goldmont(
         haveLock = 1;
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
@@ -179,7 +179,7 @@ int perfmon_setupCounterThread_goldmont(
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         RegisterType type = eventSet->events[i].type;
-        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+        if (!TESTTYPE(eventSet, type))
         {
             continue;
         }
@@ -231,7 +231,7 @@ int perfmon_startCountersThread_goldmont(int thread_id, PerfmonEventSet* eventSe
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterType type = eventSet->events[i].type;
-            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            if (!TESTTYPE(eventSet, type))
             {
                 continue;
             }
@@ -270,7 +270,7 @@ int perfmon_startCountersThread_goldmont(int thread_id, PerfmonEventSet* eventSe
         }
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST (1ULL<<63)|(1ULL<<62)|flags, CLEAR_PMC_AND_FIXED_OVERFLOW)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<63)|(1ULL<<62)|flags));
@@ -318,7 +318,7 @@ int perfmon_stopCountersThread_goldmont(int thread_id, PerfmonEventSet* eventSet
         haveLock = 1;
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
@@ -329,7 +329,7 @@ int perfmon_stopCountersThread_goldmont(int thread_id, PerfmonEventSet* eventSet
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterType type = eventSet->events[i].type;
-            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            if (!TESTTYPE(eventSet, type))
             {
                 continue;
             }
@@ -357,7 +357,7 @@ int perfmon_stopCountersThread_goldmont(int thread_id, PerfmonEventSet* eventSet
                     break;
 
                 case POWER:
-                    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(POWER)))
+                    if (haveLock)
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
@@ -397,7 +397,7 @@ int perfmon_readCountersThread_goldmont(int thread_id, PerfmonEventSet* eventSet
         haveLock = 1;
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+    if (MEASURE_CORE(eventSet))
     {
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, &flags));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, SAFE_PMC_FLAGS)
@@ -411,7 +411,7 @@ int perfmon_readCountersThread_goldmont(int thread_id, PerfmonEventSet* eventSet
         {
             counter_result= 0x0ULL;
             RegisterType type = eventSet->events[i].type;
-            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            if (!TESTTYPE(eventSet, type))
             {
                 continue;
             }
@@ -438,7 +438,7 @@ int perfmon_readCountersThread_goldmont(int thread_id, PerfmonEventSet* eventSet
                     break;
 
                 case POWER:
-                    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(POWER)))
+                    if (haveLock)
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
@@ -457,7 +457,7 @@ int perfmon_readCountersThread_goldmont(int thread_id, PerfmonEventSet* eventSet
         }
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, RESTORE_PMC_FLAGS)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
@@ -485,7 +485,7 @@ int perfmon_finalizeCountersThread_goldmont(int thread_id, PerfmonEventSet* even
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         RegisterType type = eventSet->events[i].type;
-        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+        if (!TESTTYPE(eventSet, type))
         {
             continue;
         }
@@ -528,7 +528,7 @@ int perfmon_finalizeCountersThread_goldmont(int thread_id, PerfmonEventSet* even
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST ovf_values_core, CLEAR_GLOBAL_OVF)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));

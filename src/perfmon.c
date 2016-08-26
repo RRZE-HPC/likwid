@@ -1168,7 +1168,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_startCountersThread = perfmon_startCountersThread_knl;
                     perfmon_stopCountersThread = perfmon_stopCountersThread_knl;
                     perfmon_readCountersThread = perfmon_readCountersThread_knl;
-                    perfmon_setupCountersThread = perfmon_setupCountersThread_knl; 
+                    perfmon_setupCountersThread = perfmon_setupCountersThread_knl;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_knl;
                     break;
 
@@ -1529,7 +1529,11 @@ perfmon_addEventSet(const char* eventCString)
     }
     eventSet->numberOfEvents = 0;
 #ifdef __x86_64
-    eventSet->regTypeMask = ((__uint128_t)0x0ULL<<64)|0x0ULL;
+//    eventSet->regTypeMask = ((__uint128_t)0x0ULL<<64)|0x0ULL;
+    eventSet->regTypeMask1 = 0x0ULL;
+    eventSet->regTypeMask2 = 0x0ULL;
+    eventSet->regTypeMask3 = 0x0ULL;
+    eventSet->regTypeMask4 = 0x0ULL;
 #else
     eventSet->regTypeMask = 0x0ULL;
 #endif
@@ -1579,7 +1583,7 @@ perfmon_addEventSet(const char* eventCString)
                 goto past_checks;
             }
 
-            eventSet->regTypeMask |= REG_TYPE_MASK(event->type);
+            SETTYPE(eventSet, event->type);
 past_checks:
             event->threadCounter = (PerfmonCounter*) malloc(
                 groupSet->numberOfThreads * sizeof(PerfmonCounter));
@@ -1613,7 +1617,11 @@ past_checks:
         bstrListDestroy(subtokens);
     }
     bstrListDestroy(eventtokens);
-    if ((eventSet->numberOfEvents > 0) && (eventSet->regTypeMask != 0x0ULL))
+    if ((eventSet->numberOfEvents > 0) &&
+        ((eventSet->regTypeMask1 != 0x0ULL) ||
+        (eventSet->regTypeMask2 != 0x0ULL) ||
+        (eventSet->regTypeMask3 != 0x0ULL) ||
+        (eventSet->regTypeMask4 != 0x0ULL)))
     {
         eventSet->state = STATE_NONE;
         groupSet->numberOfActiveGroups++;

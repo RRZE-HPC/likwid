@@ -253,11 +253,41 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [NOTYPE] = "No Type, used for skipping unavailable counters"
 };
 
-#ifdef __x86_64
-#define REG_TYPE_MASK(type) (type < NUM_UNITS ? (((__uint128_t)1ULL)<<type) : (((__uint128_t)0ULL)<<64|0ULL))
-#else
-#define REG_TYPE_MASK(type) (type < NUM_UNITS ? (1ULL<<type) : (0x0ULL))
-#endif
+#define REG_TYPE_MASK(type) (type < NUM_UNITS ? ((1ULL)<<(type)) : 0x0ULL)
+
+#define TESTTYPE(eventset, type) \
+        (((type) >= 0 && (type) <= 63 ? eventset->regTypeMask1 & (1ULL<<(type)) : \
+        ((type) >= 64 && (type) <= 127 ? eventset->regTypeMask2 & (1ULL<<((type)-64)) : \
+        ((type) >= 128 && (type) <= 191 ? eventset->regTypeMask3 & (1ULL<<((type)-128)) : \
+        ((type) >= 192 && (type) <= 255 ? eventset->regTypeMask4 & (1ULL<<((type)-192)) : 0x0ULL)))))
+
+#define SETTYPE(eventset, type) \
+        if ((type) >= 0 && (type) <= 63) \
+        { \
+            eventset->regTypeMask1 |= (1ULL<<(type)); \
+        } \
+        else if ((type) >= 64 && (type) <= 127) \
+        { \
+            eventset->regTypeMask2 |= (1ULL<<((type)-64)); \
+        } \
+        else if ((type) >= 128 && (type) <= 191) \
+        { \
+            eventset->regTypeMask3 |= (1ULL<<((type)-128)); \
+        } \
+        else if ((type) >= 192 && (type) <= 255) \
+        { \
+            eventset->regTypeMask4 |= (1ULL<<((type)-192)); \
+        } \
+        else \
+        { \
+            ERROR_PRINT(Cannot set out-of-bounds type %d, (type)); \
+        }
+#define MEASURE_CORE(eventset) \
+        (eventset->regTypeMask1 & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
+
+#define MEASURE_UNCORE(eventset) \
+        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(POWER)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4)
+
 
 typedef struct {
     char*               key;

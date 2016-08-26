@@ -709,7 +709,7 @@ int nex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 }
 
 #define NEX_FREEZE_UNCORE \
-    if (haveLock && (eventSet->regTypeMask & ~(0xF))) \
+    if (haveLock && MEASURE_UNCORE(eventSet)) \
     { \
         uint64_t tmp = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_CTRL, &tmp)); \
@@ -736,18 +736,18 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
     {
         haveTileLock = 1;
     }
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(PMC)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
 
-    if (haveLock && (eventSet->regTypeMask & ~(0xFULL)))
+    if (haveLock && MEASURE_UNCORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_U_PMON_GLOBAL_CTRL, 0x0ULL, FREEZE_UNCORE)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_CTRL, 0x0ULL));
     }
-    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX0))))
+    if (haveLock && TESTTYPE(eventSet, MBOX0))
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_M0_PMON_TIMESTAMP, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_M0_PMON_DSP, 0x0ULL));
@@ -758,7 +758,7 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_M0_PMON_PLD, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_M0_PMON_ZDP, 0x0ULL));
     }
-    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(MBOX1))))
+    if (haveLock && TESTTYPE(eventSet, MBOX1))
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_M1_PMON_TIMESTAMP, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_M1_PMON_DSP, 0x0ULL));
@@ -769,7 +769,7 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_M1_PMON_PLD, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_M1_PMON_ZDP, 0x0ULL));
     }
-    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(RBOX0))))
+    if (haveLock && TESTTYPE(eventSet, RBOX0))
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_R0_PMON_IPERF0_P0, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_R0_PMON_IPERF0_P1, 0x0ULL));
@@ -784,7 +784,7 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_R0_PMON_QLX_P2, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_R0_PMON_QLX_P3, 0x0ULL));
     }
-    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(RBOX1))))
+    if (haveLock && TESTTYPE(eventSet, RBOX1))
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_R1_PMON_IPERF0_P0, 0x0ULL));
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_R1_PMON_IPERF0_P1, 0x0ULL));
@@ -803,7 +803,7 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         RegisterType type = eventSet->events[i].type;
-        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+        if (!TESTTYPE(eventSet, type))
         {
             continue;
         }
@@ -860,17 +860,18 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
                 break;
 
             case WBOX0FIX:
-                if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(WBOX0FIX)))
+                if (haveLock && TESTTYPE(eventSet, WBOX0FIX))
                 {
                     flags = 0x1ULL;
+                    RegisterType newtype = WBOX;
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg , flags));
                     VERBOSEPRINTREG(cpu_id, reg, flags, SETUP_WBOXFIX)
-                    eventSet->regTypeMask |= REG_TYPE_MASK(WBOX);
+                    SETTYPE(eventSet, newtype);
                 }
                 break;
 
             case UBOX:
-                if (haveLock && eventSet->regTypeMask & (REG_TYPE_MASK(UBOX)))
+                if (haveLock && TESTTYPE(eventSet, UBOX))
                 {
                     flags |= (1ULL<<22); /* set enable bit */
                     flags |= event->eventId;
@@ -907,7 +908,7 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
 }
 
 #define NEX_RESET_ALL_UNCORE_COUNTERS \
-    if (haveLock && (eventSet->regTypeMask & ~(0xF))) \
+    if (haveLock && MEASURE_UNCORE(eventSet)) \
     { \
         uint64_t tmp = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_CTRL, &tmp)); \
@@ -918,7 +919,7 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
     }
 
 #define NEX_UNFREEZE_UNCORE \
-    if (haveLock && (eventSet->regTypeMask & ~(0xF))) \
+    if (haveLock && MEASURE_UNCORE(eventSet)) \
     { \
         uint64_t tmp = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_CTRL, &tmp)); \
@@ -928,7 +929,7 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
     }
 
 #define NEX_UNFREEZE_BOX(id, flags) \
-    if (haveLock && (eventSet->regTypeMask & (REG_TYPE_MASK(id)))) \
+    if (haveLock && TESTTYPE(eventSet, id)) \
     { \
         VERBOSEPRINTREG(cpu_id, box_map[id].ctrlRegister, LLU_CAST flags, UNFREEZE_BOX); \
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ctrlRegister, flags)); \
@@ -954,7 +955,7 @@ int perfmon_startCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventS
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE) 
         {
             RegisterType type = eventSet->events[i].type;
-            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            if (!TESTTYPE(eventSet, type))
             {
                 continue;
             }
@@ -973,13 +974,13 @@ int perfmon_startCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventS
                     core_ctrl_flags |= (1ULL<<(index+32));
                     break;
                 case WBOX0FIX:
-                    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(WBOX0FIX)))
+                    if (haveLock && TESTTYPE(eventSet, WBOX0FIX))
                     {
                         uflags[WBOX] |= (1ULL<<31);
                     }
                     break;
                 default:
-                    if (haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(counter_map[index].type)))
+                    if (haveLock && TESTTYPE(eventSet, counter_map[index].type))
                     {
                         uflags[counter_map[index].type] |= (1<<getCounterTypeOffset(index));
                     }
@@ -1002,7 +1003,7 @@ int perfmon_startCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventS
     NEX_UNFREEZE_UNCORE;
 
     /* Finally enable counters */
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST core_ctrl_flags, GLOBAL_CTRL);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, core_ctrl_flags));
@@ -1046,7 +1047,7 @@ int perfmon_stopCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
         haveLock = 1;
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST 0x0ULL, FREEZE_PMC_AND_FIXED);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
@@ -1058,7 +1059,7 @@ int perfmon_stopCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterType type = eventSet->events[i].type;
-            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            if (!TESTTYPE(eventSet, type))
             {
                 continue;
             }
@@ -1078,7 +1079,7 @@ int perfmon_stopCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
                     VERBOSEPRINTREG(cpu_id, counter_map[index].counterRegister, LLU_CAST counter_result, READ_FIXED);
                     break;
                 default:
-                    if(haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(counter_map[index].type)))
+                    if (haveLock && TESTTYPE(eventSet, counter_map[index].type))
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter_map[index].counterRegister, &counter_result));
                         NEX_CHECK_UNCORE_OVERFLOW(counter_map[index].type, getCounterTypeOffset(index));
@@ -1105,7 +1106,7 @@ int perfmon_readCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
         haveLock = 1;
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
+    if (MEASURE_CORE(eventSet))
     {
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, &core_ctrl_flags));
     }
@@ -1116,7 +1117,7 @@ int perfmon_readCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
         {
             RegisterType type = eventSet->events[i].type;
-            if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+            if (!TESTTYPE(eventSet, type))
             {
                 continue;
             }
@@ -1136,7 +1137,7 @@ int perfmon_readCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, READ_FIXED);
                     break;
                 default:
-                    if(haveLock && (eventSet->regTypeMask & REG_TYPE_MASK(counter_map[index].type)))
+                    if (haveLock && TESTTYPE(eventSet, counter_map[index].type))
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                         NEX_CHECK_UNCORE_OVERFLOW(counter_map[index].type, getCounterTypeOffset(index));
@@ -1149,7 +1150,7 @@ int perfmon_readCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
     }
 
     NEX_UNFREEZE_UNCORE;
-    if ((eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED))) && (core_ctrl_flags != 0x0ULL))
+    if ((MEASURE_CORE(eventSet)) && (core_ctrl_flags != 0x0ULL))
     {
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, core_ctrl_flags));
     }
@@ -1174,7 +1175,7 @@ int perfmon_finalizeCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eve
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         RegisterType type = eventSet->events[i].type;
-        if (!(eventSet->regTypeMask & (REG_TYPE_MASK(type))))
+        if (!TESTTYPE(eventSet, type))
         {
             continue;
         }
@@ -1265,7 +1266,7 @@ int perfmon_finalizeCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eve
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
 
-    if (eventSet->regTypeMask & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
+    if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core, CLEAR_OVF_CTRL);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, ovf_values_core));
@@ -1273,7 +1274,7 @@ int perfmon_finalizeCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eve
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
 
-    if (haveLock && (eventSet->regTypeMask & ~(0xFULL)))
+    if (haveLock && MEASURE_UNCORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_U_PMON_GLOBAL_OVF_CTRL, 0x0ULL, CLEAR_UNCORE_OVF);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_OVF_CTRL, 0x0ULL));
@@ -1281,7 +1282,7 @@ int perfmon_finalizeCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eve
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_CTRL, 0x0ULL));
         for (int i=UNCORE;i<NUM_UNITS;i++)
         {
-            if ((eventSet->regTypeMask & (REG_TYPE_MASK(i))) && box_map[i].ctrlRegister != 0x0)
+            if (TESTTYPE(eventSet, i) && box_map[i].ctrlRegister != 0x0)
             {
                 VERBOSEPRINTPCIREG(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL, CLEAR_UNCORE_BOX_CTRL);
                 HPMwrite(cpu_id, box_map[i].device, box_map[i].ctrlRegister, 0x0ULL);
