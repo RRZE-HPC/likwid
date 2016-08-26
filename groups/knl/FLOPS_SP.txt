@@ -12,16 +12,23 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-MFLOP/s (SP assumed) 1.0E-06*(PMC1*8.0+PMC2)/time
+MFLOP/s (SP SSE assumed) 1.0E-06*(PMC1*4.0+PMC0)/time
+MFLOP/s (SP AVX assumed) 1.0E-06*(PMC1*8.0+PMC0)/time
+MFLOP/s (SP AVX512 assumed) 1.0E-06*(PMC1*16.0+PMC0)/time
 Packed MUOPS/s   1.0E-06*(PMC1)/time
 Scalar MUOPS/s 1.0E-06*PMC0/time
 
 LONG
 Formula:
-MFLOP/s (SP assumed) = 1.0E-06*(UOPS_RETIRED_PACKED_SIMD*8+UOPS_RETIRED_SCALAR_SIMD)/runtime
+MFLOP/s (SP SSE assumed) = 1.0E-06*(UOPS_RETIRED_PACKED_SIMD*4+UOPS_RETIRED_SCALAR_SIMD)/runtime
+MFLOP/s (SP AVX assumed) = 1.0E-06*(UOPS_RETIRED_PACKED_SIMD*8+UOPS_RETIRED_SCALAR_SIMD)/runtime
+MFLOP/s (SP AVX512 assumed) = 1.0E-06*(UOPS_RETIRED_PACKED_SIMD*16+UOPS_RETIRED_SCALAR_SIMD)/runtime
 Packed MUOPS/s = 1.0E-06*(UOPS_RETIRED_PACKED_SIMD)/runtime
 Scalar MUOPS/s = 1.0E-06*UOPS_RETIRED_SCALAR_SIMD/runtime
 -
 AVX/SSE scalar and packed single precision FLOP rates. The Xeon Phi (Knights Landing) provides
 no possibility to differentiate between double and single precision FLOP/s. Therefore, we only
-assume that the printed MFLOP/s value is for single-precision code.
+assume that the printed MFLOP/s value is for single-precision code. Moreover, there is no way
+to distinguish between SSE, AVX or AVX512 packed SIMD operations. Therefore, this group prints
+out the MFLOP/s for different SIMD techniques.
+WARNING: The events also count for integer arithmetics
