@@ -316,7 +316,7 @@ int proc_numa_init(void)
         nodeMeminfo(i, &numa_info.nodes[i].totalMemory, &numa_info.nodes[i].freeMemory);
         numa_info.nodes[i].numberOfProcessors = nodeProcessorList(i,&numa_info.nodes[i].processors);
         nrCPUs += numa_info.nodes[i].numberOfProcessors;
-        if (numa_info.nodes[i].numberOfProcessors == 0 && nrCPUs != cpuid_topology.numHWThreads)
+        if (numa_info.nodes[i].numberOfProcessors == 0 && nrCPUs != cpuid_topology.activeHWThreads)
         {
             return -EFAULT;
         }
