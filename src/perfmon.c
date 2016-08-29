@@ -2867,7 +2867,7 @@ perfmon_readMarkerFile(const char* filename)
             regiontag[0] = '\0';
             ret = sscanf(buf, "%d:%s", &regionid, regiontag);
 
-            ptr = strchr(regiontag,'-');
+            ptr = strrchr(regiontag,'-');
             colonptr = strchr(buf,':');
             if (ret != 2 || ptr == NULL || colonptr == NULL)
             {
