@@ -248,19 +248,33 @@ hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
                 {
                     (*results)[*regionId].counters[threadId][j] = threadResult->PMcounters[j];
                 }
-                bdestroy(threadResult->label);
-                free(threadResult);
+                //bdestroy(threadResult->label);
+                //free(threadResult);
             }
 
             threadId++;
-            g_hash_table_destroy(resPtr->hashTable);
+            /*g_hash_table_destroy(resPtr->hashTable);
             free(resPtr);
-            threadList[core] = NULL;
+            threadList[core] = NULL;*/
         }
     }
     g_hash_table_destroy(regionLookup);
     regionLookup = NULL;
     (*numThreads) = numberOfThreads;
     (*numRegions) = numberOfRegions;
+}
+
+void __attribute__((destructor (102))) hashTable_finalizeDestruct(void)
+{
+    for (int core=0; core<MAX_NUM_THREADS; core++)
+    {
+        ThreadList* resPtr = threadList[core];
+        if (resPtr != NULL)
+        {
+            g_hash_table_destroy(resPtr->hashTable);
+            free(resPtr);
+            threadList[core] = NULL;
+        }
+    }
 }
 

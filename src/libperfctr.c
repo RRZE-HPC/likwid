@@ -69,11 +69,14 @@ static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 static int use_locks = 0;
 static pthread_mutex_t threadLocks[MAX_NUM_THREADS] = { [ 0 ... (MAX_NUM_THREADS-1)] = PTHREAD_MUTEX_INITIALIZER};
 
+
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define gettid() syscall(SYS_gettid)
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+
+
 
 static int
 getProcessorID(cpu_set_t* cpu_set)
@@ -149,7 +152,7 @@ likwid_markerInit(void)
     int (*ownatoi)(const char*);
     ownatoi = &atoi;
 
-    if ((modeStr != NULL) && (filepath != NULL) && (eventStr != NULL) && (cThreadStr != NULL))
+    if ((modeStr != NULL) && (filepath != NULL) && (eventStr != NULL) && (cThreadStr != NULL) && likwid_init == 0)
     {
         likwid_init = 1;
     }
@@ -376,6 +379,20 @@ likwid_markerClose(void)
         fprintf(stderr, "%s", strerror(errno));
     }
 
+}
+
+void __attribute__((destructor (101))) likwid_markerCloseDestruct(void)
+{
+    LikwidResults* results = NULL;
+    int numberOfThreads = 0;
+    int numberOfRegions = 0;
+    if (!likwid_init)
+        return;
+    hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
+    if ((numberOfThreads == 0)||(numberOfThreads == 0))
+    {
+        return;
+    }
     for (int i=0;i<numberOfRegions; i++)
     {
         for (int j=0;j<numberOfThreads; j++)
