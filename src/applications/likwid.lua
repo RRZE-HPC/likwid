@@ -998,9 +998,9 @@ local function getMarkerResults(filename, cpulist)
             end
         end
         if likwid.getNumberOfMetrics(groupID) > 0 then
-            for k=1, likwid.getNumberOfMetrics(likwid.markerRegionGroup(i)) do
+            for k=1, likwid.getNumberOfMetrics(groupID) do
                 local metricName = likwid.getNameOfMetric(groupID, k)
-                metrics[i][groupID][k] = {}
+                metrics[i][likwid.markerRegionGroup(i)][k] = {}
                 for j=1, regionThreads do
                     metrics[i][groupID][k][j] = likwid.markerRegionMetric(i,k,j)
                 end
