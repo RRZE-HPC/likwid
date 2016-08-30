@@ -319,14 +319,14 @@ if not likwid.msr_available(access_flags) then
     if access_mode == 1 then
         print_stderr("MSR device files not available")
         print_stderr("Please load msr kernel module before retrying")
-        if likwid.access(outfile..".tmp", "e") == 0 then
+        if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
             os.remove(outfile..".tmp")
         end
         os.exit(1)
     else
         print_stderr("MSR device files not readable and writeable")
         print_stderr("Be sure that you have enough permissions to access the MSR files directly")
-        if likwid.access(outfile..".tmp", "e") == 0 then
+        if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
             os.remove(outfile..".tmp")
         end
         os.exit(1)
@@ -342,7 +342,7 @@ if num_cpus == 0 and
    not print_info then
     print_stderr("Option -c <list> or -C <list> must be given on commandline")
     usage()
-    if likwid.access(outfile..".tmp", "e") == 0 then
+    if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
         os.remove(outfile..".tmp")
     end
     os.exit(1)
@@ -354,7 +354,7 @@ elseif num_cpus == 0 and
        not print_group_help and
        not print_info then
     print_stderr("CPUs given on commandline are not valid in current environment, maybe it's limited by a cpuset.")
-    if likwid.access(outfile..".tmp", "e") == 0 then
+    if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
         os.remove(outfile..".tmp")
     end
     os.exit(1)
