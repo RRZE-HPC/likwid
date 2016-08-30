@@ -160,10 +160,10 @@ end
 table.insert(output_csv, likwid.hline)
 
 table.insert(output_csv, "STRUCT,Sockets,"..tostring(cputopo["numSockets"]))
-for socket=0,cputopo["numSockets"]-1 do
+for socket=0, #cputopo["topologyTree"] do
     csv_str = string.format("Socket %d:\t\t( ",cputopo["topologyTree"][socket]["ID"])
-    for core=0,cputopo["numCoresPerSocket"]-1 do
-        for thread=0, cputopo["numThreadsPerCore"]-1 do
+    for core = 0, #cputopo["topologyTree"][socket]["Childs"] do
+        for thread = 0, #cputopo["topologyTree"][socket]["Childs"][core]["Childs"] do
             csv_str = csv_str ..tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread]).. ","
         end
     end
@@ -209,9 +209,9 @@ for level=1,cputopo["numCacheLevels"] do
         end
         local threads = cputopo["cacheLevels"][level]["threads"]
         str = "Cache groups:\t\t( "
-        for socket=0,cputopo["numSockets"]-1 do
-            for core=0,cputopo["numCoresPerSocket"]-1 do
-                for cpu=0,cputopo["numThreadsPerCore"]-1 do
+        for socket=0, #cputopo["topologyTree"] do
+            for core = 0, #cputopo["topologyTree"][socket]["Childs"] do
+                for cpu = 0, #cputopo["topologyTree"][socket]["Childs"][core]["Childs"] do
                     if (threads ~= 0) then
                         str = str .. cputopo["topologyTree"][socket]["Childs"][core]["Childs"][cpu] .. " "
                         threads = threads - 1
@@ -301,12 +301,12 @@ if print_graphical and not print_csv then
     print_stdout(likwid.sline)
     print_stdout("Graphical Topology")
     print_stdout(likwid.sline)
-    for socket=0,cputopo["numSockets"]-1 do
+    for socket=0, #cputopo["topologyTree"] do
         print_stdout(string.format("Socket %d:",cputopo["topologyTree"][socket]["ID"]))
         container = {}
-        for core=0,cputopo["numCoresPerSocket"]-1 do
+        for core = 0, #cputopo["topologyTree"][socket]["Childs"] do
             local tmpString = ""
-            for thread=0,cputopo["numThreadsPerCore"]-1 do
+            for thread = 0, #cputopo["topologyTree"][socket]["Childs"][core]["Childs"] do
                 if thread == 0 then
                     tmpString = tmpString .. tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread])
                 else
