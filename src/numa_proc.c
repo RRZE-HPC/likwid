@@ -292,7 +292,7 @@ nodeDistanceList(int node, int numberOfNodes, uint32_t** list)
 
 int proc_numa_init(void)
 {
-    int errno;
+    int err = 0;
     uint32_t i;
     uint64_t nrCPUs = 0;
 
@@ -318,16 +318,23 @@ int proc_numa_init(void)
         nrCPUs += numa_info.nodes[i].numberOfProcessors;
         if (numa_info.nodes[i].numberOfProcessors == 0 && nrCPUs != cpuid_topology.activeHWThreads)
         {
-            return -EFAULT;
+            err = -EFAULT;
+            break;
         }
         numa_info.nodes[i].numberOfDistances = nodeDistanceList(i, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
         if (numa_info.nodes[i].numberOfDistances == 0)
         {
-            return -EFAULT;
+            err = -EFAULT;
+            break;
         }
     }
+    for (; i<numa_info.numberOfNodes; i++)
+    {
+        numa_info.nodes[i].numberOfProcessors = 0;
+        numa_info.nodes[i].numberOfDistances = nodeDistanceList(i, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
+    }
 
-    return 0;
+    return err;
 }
 
 void
