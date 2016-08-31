@@ -112,6 +112,11 @@ endif
 
 ifeq ($(DEBUG),true)
 DEBUG_FLAGS = -g
+DEBUG_CFLAGS := $(filter-out -O0, $(CFLAGS))
+DEBUG_CFLAGS := $(filter-out -O1, $(DEBUG_CFLAGS))
+DEBUG_CFLAGS := $(filter-out -O2, $(DEBUG_CFLAGS))
+DEBUG_CFLAGS := $(filter-out -O3, $(DEBUG_CFLAGS))
+CFLAGS = -O0 $(DEBUG_CFLAGS)
 DEFINES += -DDEBUG_LIKWID
 else
 DEBUG_FLAGS =
