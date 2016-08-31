@@ -12,11 +12,16 @@ ANSI_CFLAGS   =
 #ANSI_CFLAGS += -Wextra
 #ANSI_CFLAGS += -Wall
 
-CFLAGS   =  -O2 -std=c99 -Wno-format -fPIC
+ifeq ($(DEBUG),true)
+CFLAGS   =  -O0
+else
+CFLAGS   =  -O2
+endif
+CFLAGS  += -std=c99 -Wno-format -fPIC
 FCFLAGS  = -module ./  # ifort
 #FCFLAGS  = -J ./  -fsyntax-only  #gfortran
 PASFLAGS  = x86-64
-ASFLAGS  = 
+ASFLAGS  =
 CPPFLAGS =
 LFLAGS   =  -pthread
 
