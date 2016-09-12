@@ -57,3 +57,10 @@ https://github.com/jlewandowski/likwid-java-api
 - For Python you can find an interface to the LIKWID API here:
 https://github.com/TomTheBear/likwid-python-api
 
+--------------------------------------------------------------------------------
+Survey
+--------------------------------------------------------------------------------
+We opened a survey at the user mailing list to get a feeling who uses LIKWID and how.
+Moreover we would be interested if you are missing a feature or what annoys you when using LIKWID.
+Link to the survey:
+https://groups.google.com/forum/#!topic/likwid-users/F7TDho3k7ps
