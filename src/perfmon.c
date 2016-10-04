@@ -228,7 +228,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
             if (force == 1)
             {
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s has bits set (0x%llx) but we are forced to overwrite them,
-                                             counter_map[*index].key, tmp);
+                                             counter_map[*index].key, LLU_CAST tmp);
                 err = HPMwrite(testcpu, counter_map[*index].device, reg, 0x0ULL);
             }
             else if ((force == 0) && ((*type != FIXED)&&(*type != THERMAL)&&(*type != POWER)&&(*type != WBOX0FIX)))
@@ -1330,9 +1330,11 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     /* If the arch supports it, initialize power and thermal measurements */
     for(i=0;i<nrThreads;i++)
     {
-        if ((ret = HPMaddThread(threadsToCpu[i])) != 0)
+        ret = HPMaddThread(threadsToCpu[i]);
+        if (ret != 0)
         {
             ERROR_PLAIN_PRINT(Cannot get access to performance counters);
+            free(groupSet->threads);
             free(groupSet);
             return ret;
         }
@@ -1342,6 +1344,8 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         if (HPMcheck(MSR_DEV, threadsToCpu[i]) == 0)
         {
             fprintf(stderr, "Cannot get access to MSRs. Please check permissions to the MSRs\n");
+            free(groupSet->threads);
+            free(groupSet);
             exit(EXIT_FAILURE);
         }
 
