@@ -9,8 +9,8 @@ GEN_PMHEADER = ./perl/gen_events.pl
 
 ANSI_CFLAGS  = -std=c99 #-strict-ansi
 
-CFLAGS   =  -O1 -Wno-format -vec-report=0 -fPIC -pthread
-FCFLAGS  = -module ./ 
+CFLAGS   =  -Ofast -fPIC -pthread
+FCFLAGS  = -module ./
 ASFLAGS  = -gdwarf-2
 PASFLAGS  = x86-64
 CPPFLAGS =
@@ -25,4 +25,8 @@ DEFINES  += -DPAGE_ALIGNMENT=4096
 INCLUDES =
 LIBS     = -lrt
 
-
+# colon seperated list of paths to search for libs at runtime on Xeon Phi file system
+ICC_LIB_RPATHS =
+ifneq (strip $(ICC_LIB_RPATHS),)
+RPATHS += -Wl,-rpath=$(ICC_LIB_RPATHS)
+endif
