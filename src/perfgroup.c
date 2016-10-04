@@ -46,6 +46,8 @@
 #include <calculator.h>
 #include <likwid.h>
 
+static int totalgroups = 0;
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int
@@ -60,6 +62,47 @@ isdir(char* dirname)
     stat(dirname, &st);
     return S_ISDIR(st.st_mode) ? 1 : 0;
 }
+
+void
+return_groups(int groups, char** groupnames, char** groupshort, char** grouplong)
+{
+    int i;
+    int freegroups = (totalgroups < groups ? groups : totalgroups);
+    for (i = 0; i <freegroups; i++)
+    {
+        free(groupnames[i]);
+        groupnames[i] = NULL;
+        if (i < groups)
+        {
+            if (groupshort[i] != NULL)
+            {
+                free(groupshort[i]);
+                groupshort[i] = NULL;
+            }
+            if (grouplong[i] != NULL)
+            {
+                free(grouplong[i]);
+                grouplong[i] = NULL;
+            }
+        }
+    }
+    if (groupnames != NULL)
+    {
+        free(groupnames);
+        groupnames = NULL;
+    }
+    if (groupshort != NULL)
+    {
+        free(groupshort);
+        groupshort = NULL;
+    }
+    if (grouplong != NULL)
+    {
+        free(grouplong);
+        grouplong = NULL;
+    }
+}
+
 
 int
 get_groups(
@@ -81,7 +124,7 @@ get_groups(
     int search_home = 0;
     bstring SHORT = bformat("SHORT");
     bstring LONG = bformat("LONG");
-    const_bstring REQUIRE = bformat("REQUIRE_NOHT");
+    bstring REQUIRE = bformat("REQUIRE_NOHT");
     int read_long = 0;
     if ((grouppath == NULL)||(architecture == NULL)||(groupnames == NULL))
         return -EINVAL;
@@ -90,6 +133,7 @@ get_groups(
     {
         bdestroy(SHORT);
         bdestroy(LONG);
+        bdestroy(REQUIRE);
         return -ENOMEM;
     }
     char* homepath = malloc((strlen(getenv("HOME"))+strlen(architecture)+50) * sizeof(char));
@@ -98,6 +142,7 @@ get_groups(
         free(fullpath);
         bdestroy(SHORT);
         bdestroy(LONG);
+        bdestroy(REQUIRE);
         return -ENOMEM;
     }
     fsize = sprintf(fullpath, "%s/%s", grouppath, architecture);
@@ -111,6 +156,7 @@ get_groups(
             free(homepath);
             bdestroy(SHORT);
             bdestroy(LONG);
+            bdestroy(REQUIRE);
             return -EACCES;
         }
     }
@@ -121,6 +167,7 @@ get_groups(
         free(homepath);
         bdestroy(SHORT);
         bdestroy(LONG);
+        bdestroy(REQUIRE);
         return -EACCES;
     }
     i = 0;
@@ -129,7 +176,7 @@ get_groups(
     {
         if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
         {
-            i++;
+            totalgroups++;
             if (strlen(ep->d_name)-4 > s)
                 s = strlen(ep->d_name)-4;
         }
@@ -150,7 +197,7 @@ get_groups(
             {
                 if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
                 {
-                    i++;
+                    totalgroups++;
                     if (strlen(ep->d_name)-4 > s)
                         s = strlen(ep->d_name)-4;
                 }
@@ -158,17 +205,18 @@ get_groups(
             closedir(dp);
         }
     }
-
-    *groupnames = malloc(i * sizeof(char**));
+    *groupnames = malloc(totalgroups * sizeof(char**));
     if (*groupnames == NULL)
     {
         free(fullpath);
         free(homepath);
         bdestroy(SHORT);
         bdestroy(LONG);
+        bdestroy(REQUIRE);
         return -ENOMEM;
     }
-    *groupshort = malloc(i * sizeof(char**));
+    memset(*groupnames, 0, totalgroups * sizeof(char**));
+    *groupshort = malloc(totalgroups * sizeof(char**));
     if (*groupshort == NULL)
     {
         free(*groupnames);
@@ -177,9 +225,11 @@ get_groups(
         free(homepath);
         bdestroy(SHORT);
         bdestroy(LONG);
+        bdestroy(REQUIRE);
         return -ENOMEM;
     }
-    *grouplong = malloc(i * sizeof(char**));
+    memset(*groupshort, 0, totalgroups * sizeof(char**));
+    *grouplong = malloc(totalgroups * sizeof(char**));
     if (*grouplong == NULL)
     {
         free(*groupnames);
@@ -190,13 +240,19 @@ get_groups(
         free(homepath);
         bdestroy(SHORT);
         bdestroy(LONG);
+        bdestroy(REQUIRE);
         return -ENOMEM;
     }
-    for (j=0; j < i; j++)
+    memset(*grouplong, 0, totalgroups * sizeof(char**));
+    for (j=0; j < totalgroups; j++)
     {
         (*groupnames)[j] = malloc((s+1) * sizeof(char));
         if ((*groupnames)[j] == NULL)
         {
+            for (s=0; s<j; s++)
+            {
+                free((*groupnames)[s]);
+            }
             free(*groupnames);
             *groupnames = NULL;
             free(*groupshort);
@@ -207,6 +263,7 @@ get_groups(
             free(homepath);
             bdestroy(SHORT);
             bdestroy(LONG);
+            bdestroy(REQUIRE);
             return -ENOMEM;
         }
     }
@@ -219,7 +276,7 @@ get_groups(
         if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
         {
             read_long = 0;
-            bstring long_info = bfromcstr("");;
+            bstring long_info = bfromcstr("");
             sprintf(&(fullpath[fsize]), "/%s", ep->d_name);
             if (!access(fullpath, R_OK))
             {
@@ -273,9 +330,12 @@ get_groups(
                             bdestroy(LONG);
                             bdestroy(bbuf);
                             bdestroy(sinfo);
+                            bdestroy(REQUIRE);
                             free(homepath);
                             free(fullpath);
+                            bdestroy(long_info);
                             bstrListDestroy(linelist);
+                            return_groups(i, *groupnames, *groupshort, *grouplong);
                             return -ENOMEM;
                         }
                         s = sprintf((*groupshort)[i], "%s", bdata(sinfo));
@@ -304,6 +364,7 @@ get_groups(
                 }
                 if (read_long)
                 {
+
                     (*grouplong)[i] = malloc((blength(long_info) + 1) * sizeof(char) );
                     if ((*grouplong)[i] != NULL)
                     {
@@ -314,9 +375,18 @@ get_groups(
                 fclose(fp);
                 if (skip_group)
                 {
-                    free((*groupshort)[i]);
-                    free((*grouplong)[i]);
+                    if ((*grouplong)[i] != NULL)
+                    {
+                        free((*grouplong)[i]);
+                        (*grouplong)[i] = NULL;
+                    }
+                    if ((*groupshort)[i] != NULL)
+                    {
+                        free((*groupshort)[i]);
+                        (*groupshort)[i] = NULL;
+                    }
                     (*groupnames)[i][0] = '\0';
+                    bdestroy(long_info);
                     goto skip_cur_def_group;
                 }
                 i++;
@@ -329,9 +399,20 @@ skip_cur_def_group:
     closedir(dp);
     if (!search_home)
     {
+        if (i==0)
+            return_groups(totalgroups, *groupnames, *groupshort, *grouplong);
+        /*else if (i < totalgroups)
+        {
+            for (s=i;s<totalgroups;s++)
+            {
+                (*grouplong)[i] = NULL;
+                (*groupshort)[i] = NULL;
+            }
+        }*/
         free(homepath);
         free(fullpath);
         bdestroy(SHORT);
+        bdestroy(REQUIRE);
         bdestroy(LONG);
         return i;
     }
@@ -388,17 +469,19 @@ skip_cur_def_group:
                                 bconcat(sinfo, tmp);
                                 bdestroy(tmp);
                             }
-
                             (*groupshort)[i] = malloc((blength(sinfo)+1) * sizeof(char));
                             if ((*groupshort)[i] == NULL)
                             {
                                 bdestroy(SHORT);
                                 bdestroy(LONG);
+                                bdestroy(REQUIRE);
                                 bdestroy(bbuf);
                                 bdestroy(sinfo);
                                 free(homepath);
                                 free(fullpath);
                                 bstrListDestroy(linelist);
+                                bdestroy(long_info);
+                                return_groups(i, *groupnames, *groupshort, *grouplong);
                                 return -ENOMEM;
                             }
                             s = sprintf((*groupshort)[i], "%s", bdata(sinfo));
@@ -438,10 +521,16 @@ skip_cur_def_group:
                     if (skip_group)
                     {
                         if ((*groupshort)[i])
+                        {
                             free((*groupshort)[i]);
+                            (*groupshort)[i] = NULL;
+                        }
                         if ((*grouplong)[i])
+                        {
                             free((*grouplong)[i]);
-                        (*groupnames)[i][0] = '\0';
+                            (*grouplong)[i] = NULL;
+                        }
+                        bdestroy(long_info);
                         goto skip_cur_home_group;
                     }
                     i++;
@@ -453,33 +542,27 @@ skip_cur_home_group:
         }
         closedir(dp);
     }
+    if (i==0)
+        return_groups(totalgroups, *groupnames, *groupshort, *grouplong);
+/*    else if (i < totalgroups)
+    {
+        for (s=i;s<totalgroups;s++)
+        {
+            printf("Setting NULL for group %d\n", s);
+            (*groupnames)[i] = NULL;
+            (*grouplong)[i] = NULL;
+            (*groupshort)[i] = NULL;
+        }
+    }*/
     bdestroy(SHORT);
     bdestroy(LONG);
+    bdestroy(REQUIRE);
     free(fullpath);
     free(homepath);
     return i;
 }
 
-void
-return_groups(int groups, char** groupnames, char** groupshort, char** grouplong)
-{
-    int i;
-    for (i = 0; i <groups; i++)
-    {
-        if (groupnames[i])
-            free(groupnames[i]);
-        if (groupshort[i])
-            free(groupshort[i]);
-        if (grouplong[i])
-            free(grouplong[i]);
-    }
-    if (groupnames)
-        free(groupnames);
-    if (groupshort)
-        free(groupshort);
-    if (grouplong)
-        free(grouplong);
-}
+
 
 int custom_group(const char* eventStr, GroupInfo* ginfo)
 {
@@ -661,7 +744,7 @@ read_group(
     int i, s, e, err = 0;
     char buf[512];
     GroupFileSections sec = GROUP_NONE;
-    const_bstring REQUIRE = bformat("REQUIRE_NOHT");
+    bstring REQUIRE = bformat("REQUIRE_NOHT");
     if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL))
         return -EINVAL;
 
@@ -674,6 +757,7 @@ read_group(
         if (access(bdata(homepath), R_OK))
         {
             ERROR_PRINT(Cannot read group file %s.txt. Searched in %s and %s, groupname, bdata(fullpath), bdata(homepath));
+            bdestroy(REQUIRE);
             bdestroy(fullpath);
             bdestroy(homepath);
             return -EACCES;
@@ -967,10 +1051,12 @@ read_group(
     }
     //bstrListDestroy(linelist);
     fclose(fp);
+    bdestroy(REQUIRE);
     bdestroy(homepath);
     bdestroy(fullpath);
     return 0;
 cleanup:
+    bdestroy(REQUIRE);
     bdestroy(homepath);
     bdestroy(fullpath);
     if (ginfo->groupname)
