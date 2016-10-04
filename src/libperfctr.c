@@ -140,6 +140,7 @@ likwid_markerInit(void)
 {
     int i;
     int verbosity;
+    int setinit = 0;
     bstring bThreadStr;
     bstring bEventStr;
     struct bstrList* threadTokens;
@@ -154,7 +155,7 @@ likwid_markerInit(void)
 
     if ((modeStr != NULL) && (filepath != NULL) && (eventStr != NULL) && (cThreadStr != NULL) && likwid_init == 0)
     {
-        likwid_init = 1;
+        setinit = 1;
     }
     else if (likwid_init == 0)
     {
@@ -219,7 +220,7 @@ likwid_markerInit(void)
     i = perfmon_init(num_cpus, threads2Cpu);
     if (i<0)
     {
-        fprintf(stderr,"Failed to initialize LIKWID perfmon library.\n");
+        //fprintf(stderr,"Failed to initialize LIKWID perfmon library.\n");
         return;
     }
 
@@ -249,7 +250,10 @@ likwid_markerInit(void)
             groupSet->groups[groups[0]].state = STATE_START;
         }
     }
-
+    if (setinit)
+    {
+        likwid_init = 1;
+    }
     groupSet->activeGroup = 0;
 }
 
@@ -429,7 +433,7 @@ likwid_markerRegisterRegion(const char* regionTag)
     bcatcstr(tag, groupSuffix);
     int cpu_id = hashTable_get(tag, &results);
     bdestroy(tag);
-    return 0;
+    return HPMaddThread(cpu_id);
 }
 
 int
