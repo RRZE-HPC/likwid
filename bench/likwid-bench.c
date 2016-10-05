@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <inttypes.h>
+#include <math.h>
 
 #include <bstrlib.h>
 #include <errno.h>
@@ -191,10 +192,9 @@ int main(int argc, char** argv)
                 else
                 {
                     ownprintf("Name: %s\n",test->name);
+                    ownprintf("Description: %s\n",test->desc);
                     ownprintf("Number of streams: %d\n",test->streams);
                     ownprintf("Loop stride: %d\n",test->stride);
-                    ownprintf("Flops: %d\n",test->flops);
-                    ownprintf("Bytes: %d\n",test->bytes);
                     switch (test->type)
                     {
                         case INT:
@@ -206,6 +206,23 @@ int main(int argc, char** argv)
                         case DOUBLE:
                             ownprintf("Data Type: Double precision float\n");
                             break;
+                    }
+                    ownprintf("Flops per element: %d\n",test->flops);
+                    ownprintf("Bytes per element: %d\n",test->bytes);
+                    if (test->loads > 0 && test->stores > 0)
+                    {
+                        double ratio = (double)test->loads/(double)(test->stores+test->loads);
+                        double load_bytes = ((double)test->bytes) * ratio;
+                        ownprintf("Load bytes per element: %.0f\n", load_bytes);
+                        ownprintf("Store bytes per element: %.0f\n",((double)test->bytes) - load_bytes);
+                    }
+                    else if (test->loads >= 0 && test->stores == 0)
+                    {
+                        ownprintf("Load bytes per element: %d\n",test->bytes);
+                    }
+                    else if (test->loads == 0 && test->stores > 0)
+                    {
+                        ownprintf("Store bytes per element: %d\n",test->bytes);
                     }
                     if (test->loads >= 0)
                     {
@@ -226,6 +243,10 @@ int main(int argc, char** argv)
                     if (test->instr_loop >= 0)
                     {
                         ownprintf("Loop instructions: %d\n",test->instr_loop);
+                    }
+                    if (test->uops >= 0)
+                    {
+                        ownprintf("Loop micro Ops (\u03BCOPs): %d\n",test->uops);
                     }
                 }
                 bdestroy(testcase);
@@ -329,8 +350,13 @@ int main(int argc, char** argv)
                 bstring groupstr = bfromcstr(optarg);
                 i = bstr_to_workgroup(currentWorkgroup, groupstr, test->type, test->streams);
                 bdestroy(groupstr);
+                size_t newsize = 0;
+                size_t stride = test->stride;
+                int nrThreads = currentWorkgroup->numberOfThreads;
+                size_t orig_size = currentWorkgroup->size;
                 if (i == 0)
                 {
+                    int warn_once = 1;
                     for (i=0; i<  test->streams; i++)
                     {
                         if (currentWorkgroup->streams[i].offset%test->stride)
@@ -338,12 +364,22 @@ int main(int argc, char** argv)
                             fprintf (stderr, "Error: Stream %d: offset is not a multiple of stride!\n",i);
                             return EXIT_FAILURE;
                         }
+                        if ((int)(floor(orig_size/currentWorkgroup->numberOfThreads)) % test->stride)
+                        {
+                            newsize = (((int)(floor(orig_size/nrThreads))/stride)*(stride))*nrThreads;
+                            if (warn_once)
+                            {
+                                fprintf (stderr, "Warning: Sanitizing vector length to a multiple of the loop stride %d and thread count %d from %d elements (%d bytes) to %d elements (%d bytes)\n",stride, nrThreads, orig_size, orig_size*test->bytes, newsize, newsize*test->bytes);
+                                warn_once = 0;
+                            }
+                        }
                         allocator_allocateVector(&(currentWorkgroup->streams[i].ptr),
-                                PAGE_ALIGNMENT,
-                                currentWorkgroup->size,
-                                currentWorkgroup->streams[i].offset,
-                                test->type,
-                                currentWorkgroup->streams[i].domain);
+                                                    PAGE_ALIGNMENT,
+                                                    newsize,
+                                                    currentWorkgroup->streams[i].offset,
+                                                    test->type,
+                                                    test->stride,
+                                                    currentWorkgroup->streams[i].domain);
                     }
                     tmp++;
                 }
@@ -351,6 +387,8 @@ int main(int argc, char** argv)
                 {
                     exit(EXIT_FAILURE);
                 }
+                if (newsize != currentWorkgroup->size)
+                    currentWorkgroup->size = newsize;
                 break;
             default:
                 continue;
@@ -464,8 +502,8 @@ int main(int argc, char** argv)
     ownprintf("Time:\t\t\t%e sec\n", time);
     ownprintf("Iterations:\t\t%" PRIu64 "\n", realIter);
     ownprintf("Iterations per thread:\t%" PRIu64 "\n",threads_data[0].data.iter);
-    ownprintf("Inner loop executions:\t%.0f\n", ((double)realSize)/((double)test->stride));
-    ownprintf("Size:\t\t\t%" PRIu64 "\n",  realSize*test->bytes );
+    ownprintf("Inner loop executions:\t%d\n", (int)(((double)realSize)/((double)test->stride*globalNumberOfThreads)));
+    ownprintf("Size (Byte):\t\t\t%" PRIu64 "\n",  realSize*test->bytes );
     ownprintf("Size per thread:\t%" PRIu64 "\n", threads_data[0].data.size*test->bytes);
     ownprintf("Number of Flops:\t%" PRIu64 "\n", (threads_data[0].data.iter * realSize *  test->flops));
     ownprintf("MFlops/s:\t\t%.2f\n",
@@ -490,6 +528,21 @@ int main(int argc, char** argv)
     }
     ownprintf("Loads per update:\t%ld\n", test->loads );
     ownprintf("Stores per update:\t%ld\n", test->stores );
+    if (test->loads > 0 && test->stores > 0)
+    {
+        double ratio = (double)test->loads/(double)(test->stores+test->loads);
+        double load_bytes = ((double)test->bytes) * ratio;
+        ownprintf("Load bytes per element:\t%.0f\n", load_bytes);
+        ownprintf("Store bytes per elem.:\t%.0f\n",((double)test->bytes) - load_bytes);
+    }
+    else if (test->loads >= 0 && test->stores == 0)
+    {
+        ownprintf("Load bytes per element:\t%d\n",test->bytes);
+    }
+    else if (test->loads == 0 && test->stores > 0)
+    {
+        ownprintf("Store bytes per element:\t%d\n",test->bytes);
+    }
     if ((test->loads > 0) && (test->stores > 0))
     {
         ownprintf("Load/store ratio:\t%.2f\n", ((double)test->loads)/((double)test->stores) );

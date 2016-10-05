@@ -44,7 +44,6 @@
 #include <barrier.h>
 #include <likwid.h>
 
-
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define BARRIER   barrier_synchronize(&barr)
@@ -87,11 +86,15 @@ runTest(void* arg)
     barrier_registerThread(&barr, 0, data->globalThreadId);
 
     /* Prepare ptrs for thread */
-    vecsize = myData->size;
+    vecsize = myData->size / data->numberOfThreads;
     size = myData->size / data->numberOfThreads;
-    myData->size = size;
+    
     size -= (size % myData->test->stride);
+    myData->size = size;
     offset = data->threadId * size;
+    //printf("Orig size %lu Size %lu\n", myData->size / data->numberOfThreads, size);
+    if (size != vecsize && data->threadId == 0)
+        printf("Sanitizing vector length to a multiple of the loop stride from %d elements (%d bytes) to %d elements (%d bytes)\n", vecsize, vecsize*myData->test->bytes, size, size*myData->test->bytes);
 
     switch ( myData->test->type )
     {
@@ -137,7 +140,7 @@ runTest(void* arg)
             threadId,
             data->globalThreadId,
             affinity_threadGetProcessorId(),
-            LLU_CAST vecsize,
+            LLU_CAST size,
             offset);
     BARRIER;
 
@@ -454,7 +457,7 @@ getIterSingle(void* arg)
 {
     int threadId = 0;
     int offset = 0;
-    size_t size = 0;
+    size_t size = 0, vecsize = 0;
     size_t i;
     ThreadData* data;
     ThreadUserData* myData;
@@ -467,7 +470,13 @@ getIterSingle(void* arg)
     func = myData->test->kernel;
     threadId = data->threadId;
 
-    size = myData->size - (myData->size % myData->test->stride);
+    //size = myData->size - (myData->size % myData->test->stride);
+    vecsize = myData->size;
+    size = myData->size / data->numberOfThreads;
+    
+    size -= (size % myData->test->stride);
+    offset = data->threadId * size;
+
     likwid_pinThread(myData->processors[threadId]);
 
 #ifdef DEBUG_LIKWID

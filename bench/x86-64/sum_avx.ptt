@@ -8,23 +8,22 @@ STORES 0
 INSTR_CONST 24
 INSTR_LOOP 11
 UOPS 18
-vxorpd FPR9, FPR9, FPR9
-vxorpd FPR1, FPR1, FPR1
-vmovapd FPR2, FPR1
-vmovapd FPR3, FPR1
-vmovapd FPR4, FPR1
-vmovapd FPR5, FPR1
-vmovapd FPR6, FPR1
-vmovapd FPR7, FPR1
-vmovapd FPR8, FPR1
+vxorpd ymm1, ymm1, ymm1
+vmovapd ymm2, ymm1
+vmovapd ymm3, ymm1
+vmovapd ymm4, ymm1
+vmovapd ymm5, ymm1
+vmovapd ymm6, ymm1
+vmovapd ymm7, ymm1
+vmovapd ymm8, ymm1
 LOOP 32
-vaddpd    FPR1, FPR1, [STR0 + GPR1 * 8]
-vaddpd    FPR2, FPR2, [STR0 + GPR1 * 8 + 32]
-vaddpd    FPR3, FPR3, [STR0 + GPR1 * 8 + 64]
-vaddpd    FPR4, FPR4, [STR0 + GPR1 * 8 + 96]
-vaddpd    FPR5, FPR5, [STR0 + GPR1 * 8 + 128]
-vaddpd    FPR6, FPR6, [STR0 + GPR1 * 8 + 160]
-vaddpd    FPR7, FPR7, [STR0 + GPR1 * 8 + 192]
-vaddpd    FPR8, FPR8, [STR0 + GPR1 * 8 + 224]
+vaddpd    ymm1, ymm1, [STR0 + GPR1 * 8]
+vaddpd    ymm2, ymm2, [STR0 + GPR1 * 8 + 32]
+vaddpd    ymm3, ymm3, [STR0 + GPR1 * 8 + 64]
+vaddpd    ymm4, ymm4, [STR0 + GPR1 * 8 + 96]
+vaddpd    ymm5, ymm5, [STR0 + GPR1 * 8 + 128]
+vaddpd    ymm6, ymm6, [STR0 + GPR1 * 8 + 160]
+vaddpd    ymm7, ymm7, [STR0 + GPR1 * 8 + 192]
+vaddpd    ymm8, ymm8, [STR0 + GPR1 * 8 + 224]
 
 
