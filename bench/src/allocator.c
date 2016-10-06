@@ -204,6 +204,5 @@ allocator_allocateVector(
             }
             break;
     }
-    return size;
 }
 
