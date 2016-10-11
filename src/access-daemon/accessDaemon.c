@@ -1040,6 +1040,7 @@ int main(void)
     }
 
     daemonize(&pid);
+    syslog(LOG_INFO, "AccessDaemon runs with UID %d, eUID %d\n", getuid(), geteuid());
 
     {
         uint32_t  eax = 0x00;
