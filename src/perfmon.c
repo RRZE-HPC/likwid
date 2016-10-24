@@ -904,6 +904,8 @@ perfmon_init_maps(void)
 
                 case SKYLAKE1:
                 case SKYLAKE2:
+                case KABYLAKE1:
+                case KABYLAKE2:
                     box_map = skylake_box_map;
                     eventHash = skylake_arch_events;
                     counter_map = skylake_counter_map;
@@ -1151,6 +1153,8 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
                 case SKYLAKE1:
                 case SKYLAKE2:
+                case KABYLAKE1:
+                case KABYLAKE2:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_skylake;

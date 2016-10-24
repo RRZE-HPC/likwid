@@ -155,7 +155,8 @@ allowed_sandybridge(uint32_t reg)
 {
     if ((allowed_intel(reg)) ||
         (((reg & 0xF00U) == 0x600U)) ||
-        (((reg & 0xF00U) == 0x700U)))
+        (((reg & 0xF00U) == 0x700U)) ||
+        (reg == MSR_ALT_PEBS))
     {
         return 1;
     }
@@ -1082,7 +1083,9 @@ int main(void)
                          (model == HASWELL_M2) ||
                          (model == BROADWELL) ||
                          (model == SKYLAKE1) ||
-                         (model == SKYLAKE2))
+                         (model == SKYLAKE2) ||
+                         (model == KABYLAKE1) ||
+                         (model == KABYLAKE2))
                 {
                     allowed = allowed_sandybridge;
                 }
