@@ -24,10 +24,6 @@ ifeq ($(COMPILER),MIC)
 CFLAGS += -mmic
 LFLAGS += -mmic
 endif
-ifeq ($(COMPILER),GCC)
-CFLAGS += -Wno-unused-result
-LFLAGS += -Wno-unused-result
-endif
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
