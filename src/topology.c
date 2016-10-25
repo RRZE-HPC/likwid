@@ -73,6 +73,7 @@ static char* broadwell_str = "Intel Core Broadwell processor";
 static char* broadwell_d_str = "Intel Xeon D Broadwell processor";
 static char* broadwell_ep_str = "Intel Xeon Broadwell EN/EP/EX processor";
 static char* skylake_str = "Intel Skylake processor";
+static char* kabylake_str = "Intel Kabylake processor";
 static char* nehalem_ex_str = "Intel Nehalem EX processor";
 static char* westmere_ex_str = "Intel Westmere EX processor";
 static char* xeon_mp_string = "Intel Xeon MP processor";
@@ -114,6 +115,7 @@ static char* short_ivybridge_ep = "ivybridgeEP";
 static char* short_sandybridge = "sandybridge";
 static char* short_sandybridge_ep = "sandybridgeEP";
 static char* short_skylake = "skylake";
+static char* short_kabylake = "skylake";
 static char* short_phi = "phi";
 static char* short_phi2 = "knl";
 static char* short_k8 = "k8";
@@ -625,6 +627,12 @@ topology_setName(void)
                 case SKYLAKE1:
                 case SKYLAKE2:
                     cpuid_info.name = skylake_str;
+                    cpuid_info.short_name = short_skylake;
+                    break;
+
+                case KABYLAKE1:
+                case KABYLAKE2:
+                    cpuid_info.name = kabylake_str;
                     cpuid_info.short_name = short_skylake;
                     break;
 

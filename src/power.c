@@ -95,6 +95,8 @@ power_init(int cpuId)
         case HASWELL_M2:
         case SKYLAKE1:
         case SKYLAKE2:
+        case KABYLAKE1:
+        case KABYLAKE2:
         case XEON_PHI_KNL:
             power_info.hasRAPL = 1;
             break;

@@ -95,6 +95,8 @@ struct topology_functions {
 #define BROADWELL_D          0x56U
 #define SKYLAKE1             0x4EU
 #define SKYLAKE2             0x5EU
+#define KABYLAKE1            0x8EU
+#define KABYLAKE2            0x9EU
 
 /* Intel MIC */
 #define XEON_PHI           0x01U

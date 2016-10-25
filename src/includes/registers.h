@@ -1905,6 +1905,7 @@
 #define MSR_UNCORE_FREQ                 0x620
 #define MSR_FSB_FREQ                    0xCD
 #define MSR_ENERGY_PERF_BIAS            0x1B0
+#define MSR_ALT_PEBS                    0x39C
 /*
  * AMD
  */
