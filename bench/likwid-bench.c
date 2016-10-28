@@ -122,6 +122,7 @@ int main(int argc, char** argv)
     int tmp = 0;
     double time;
     double cycPerUp = 0.0;
+    double cycPerCL = 0.0;
     const TestCase* test = NULL;
     uint64_t realSize = 0;
     uint64_t realIter = 0;
@@ -503,7 +504,7 @@ int main(int argc, char** argv)
     ownprintf("Iterations:\t\t%" PRIu64 "\n", realIter);
     ownprintf("Iterations per thread:\t%" PRIu64 "\n",threads_data[0].data.iter);
     ownprintf("Inner loop executions:\t%d\n", (int)(((double)realSize)/((double)test->stride*globalNumberOfThreads)));
-    ownprintf("Size (Byte):\t\t\t%" PRIu64 "\n",  realSize*test->bytes );
+    ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize*test->bytes );
     ownprintf("Size per thread:\t%" PRIu64 "\n", threads_data[0].data.size*test->bytes);
     ownprintf("Number of Flops:\t%" PRIu64 "\n", (threads_data[0].data.iter * realSize *  test->flops));
     ownprintf("MFlops/s:\t\t%.2f\n",
@@ -513,19 +514,21 @@ int main(int argc, char** argv)
     ownprintf("MByte/s:\t\t%.2f\n",
             1.0E-06 * ( (double) threads_data[0].data.iter * realSize *  test->bytes/ time));
 
-    cycPerUp = ((double) maxCycles / (double) (threads_data[0].data.iter * realSize));
-    ownprintf("Cycles per update:\t%f\n", cycPerUp);
-
+    //cycPerUp = ((double) maxCycles / (double) (threads_data[0].data.iter * realSize));
+    cycPerCL = ((double) maxCycles / (double) (threads_data[0].data.iter*realSize*test->bytes)) * 64.0;
+    
     switch ( test->type )
     {
         case INT:
         case SINGLE:
-            ownprintf("Cycles per cacheline:\t%f\n", (16.0 * cycPerUp));
+            cycPerUp = cycPerCL/16.0;
             break;
         case DOUBLE:
-            ownprintf("Cycles per cacheline:\t%f\n", (8.0 * cycPerUp));
+            cycPerUp = cycPerCL/8.0;
             break;
     }
+    ownprintf("Cycles per update:\t%f\n", cycPerUp);
+    ownprintf("Cycles per cacheline:\t%f\n", cycPerCL);
     ownprintf("Loads per update:\t%ld\n", test->loads );
     ownprintf("Stores per update:\t%ld\n", test->stores );
     if (test->loads > 0 && test->stores > 0)
