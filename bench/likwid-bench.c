@@ -374,6 +374,10 @@ int main(int argc, char** argv)
                                 warn_once = 0;
                             }
                         }
+                        else
+                        {
+                            newsize = orig_size;
+                        }
                         allocator_allocateVector(&(currentWorkgroup->streams[i].ptr),
                                                     PAGE_ALIGNMENT,
                                                     newsize,
