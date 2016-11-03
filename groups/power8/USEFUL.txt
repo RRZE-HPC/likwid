@@ -1,8 +1,7 @@
 SHORT Rate of useful instructions
 
 EVENTSET
-PMC1  PM_INST_CMPL
-PMC3  PM_INST_DISP
+PMC1  PM_INST_DISP
 PMC4  PM_RUN_INST_CMPL
 PMC5  PM_RUN_CYC
 PURR  PURR_STATE
@@ -10,7 +9,7 @@ SPURR SPURR_STATE
 
 METRICS
 CPI  PMC5/PMC4
-Useful instr. rate PMC1/PMC3*100.0
+Useful instr. rate PMC4/PMC1*100.0
 Processor Utilization SPURR/PURR
 
 
