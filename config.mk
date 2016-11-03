@@ -1,6 +1,7 @@
 # Please have a look in INSTALL and the WIKI for details on
 # configuration options setup steps.
-# supported: GCC, CLANG, ICC, MIC (ICC), GCCX86 (for 32bit systems)
+# supported: GCC, CLANG, ICC, MIC (ICC), GCCX86 (for 32bit systems),
+#            GCCPOWER (for POWER8 systems)
 COMPILER = GCC#NO SPACE
 
 # Define the color of the likwid-pin output

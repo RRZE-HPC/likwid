@@ -1,0 +1,19 @@
+SHORT Completion stalls (group 2)
+
+EVENTSET
+PMC0 PM_CMPLU_STALL
+PMC1 PM_CMPLU_STALL_LSU
+PMC2 PM_CMPLU_STALL_FLUSH
+PMC3 PM_CMPLU_STALL_BRU
+PMC4 PM_RUN_INST_CMPL
+PMC5 PM_RUN_CYC
+
+METRICS
+CPI  PMC5/PMC4
+Stall cycles PMC0
+Stall cycles by load/store unit PMC1
+Stall cycles by pipeline flush PMC2
+Stall cycles by branch unit PMC3
+
+
+LONG

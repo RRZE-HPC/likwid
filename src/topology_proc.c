@@ -36,7 +36,7 @@
 #include <cpuid.h>
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
 static int
 get_cpu_perf_data(void)
 {
@@ -72,6 +72,7 @@ get_cpu_perf_data(void)
     }
     return 0;
 }
+#endif
 
 static int
 get_listPosition(int ownid, bstring list)
@@ -81,7 +82,15 @@ get_listPosition(int ownid, bstring list)
     for(int i=0;i<tokens->qty;i++)
     {
         btrimws(tokens->entry[i]);
-        if (bstrcmp(ownStr, tokens->entry[i]) == BSTR_OK)
+        if (bstrchrp(tokens->entry[i], '-', 0) != BSTR_ERR)
+        {
+            struct bstrList* subtokens = bsplit(tokens->entry[i],(char) '-');
+            int start = atoi(bdata(subtokens->entry[0]));
+            int end = atoi(bdata(subtokens->entry[1])); 
+            if (ownid >= start && ownid <= end)
+                return (ownid - start);
+        }
+        else if (bstrcmp(ownStr, tokens->entry[i]) == BSTR_OK)
         {
             return i;
         }
@@ -130,6 +139,23 @@ fillList(int* outList, int outOffset, bstring list)
 }
 
 static int
+fillListFromMap(int* outList, int outOffset, bstring list)
+{
+    int current = 0;
+    unsigned long bitmap = strtoul(bdata(list), NULL, 16);
+    for (int i=0; i< sizeof(unsigned long)*8; i++)
+    {
+        if (bitmap & (1UL<<i))
+        {
+            if (outList)
+                outList[outOffset+current] = i;
+            current++;
+        }
+    }
+    return current;
+}   
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
+static int
 readCacheInclusiveIntel(int level)
 {
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
@@ -147,6 +173,16 @@ static int readCacheInclusiveAMD(int level)
     CPUID(eax, ebx, ecx, edx);
     return (edx & (0x1<<1));
 }
+#else
+static int readCacheInclusiveIntel(int level)
+{
+    return 0;
+}
+static int readCacheInclusiveAMD(int level)
+{
+    return 0;
+}
+#endif
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -163,16 +199,26 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
     ownstrcpy = &strcpy;
 
     const_bstring countString = bformat("processor\t:");
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     const_bstring modelString = bformat("model\t\t:");
-    const_bstring familyString = bformat("cpu family\t:");
     const_bstring steppingString = bformat("stepping\t:");
+    const_bstring nameString = bformat("model name\t:");
+#endif
+#ifdef _ARCH_PPC
+    const_bstring modelString = bformat("cpu\t\t:");
+    const_bstring steppingString = bformat("revision\t:");
+    const_bstring nameString = bformat("machine\t\t:");
+#endif
+    const_bstring familyString = bformat("cpu family\t:");
     const_bstring vendorString = bformat("vendor_id\t:");
     const_bstring vendorIntelString = bformat("GenuineIntel");
-    const_bstring nameString = bformat("model name\t:");
 
     cpuid_info.isIntel = 0;
     cpuid_info.model = 0;
     cpuid_info.family = 0;
+#ifdef _ARCH_PPC
+    cpuid_info.family = PPC_FAMILY;
+#endif
     cpuid_info.stepping = 0;
     cpuid_topology.numHWThreads = 0;
     cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
@@ -189,6 +235,7 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
             {
                 HWthreads++;
             }
+#ifndef _ARCH_PPC
             else if ((cpuid_info.model == 0) && (binstr(tokens->entry[i],0,modelString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
@@ -222,6 +269,33 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
                     cpuid_info.isIntel = 1;
                 }
             }
+#else
+            else if ((cpuid_info.model == 0) && (binstr(tokens->entry[i],0,modelString) != BSTR_ERR))
+            {
+                const_bstring power8str = bformat("POWER8");
+                const_bstring power7str = bformat("POWER8");
+                if (binstr(tokens->entry[i],0, power8str) != BSTR_ERR)
+                {
+                    cpuid_info.model = POWER8;
+                }
+                else if (binstr(tokens->entry[i],0, power7str) != BSTR_ERR)
+                {
+                    cpuid_info.model = POWER7;
+                }
+            }
+            else if (binstr(tokens->entry[i],0,steppingString) != BSTR_ERR)
+            {
+                struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
+                bltrimws(subtokens->entry[1]);
+                cpuid_info.stepping = ownatoi(bdata(subtokens->entry[1]));
+            }
+            else if (binstr(tokens->entry[i],0,nameString) != BSTR_ERR)
+            {
+                struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
+                bltrimws(subtokens->entry[1]);
+                ownstrcpy(cpuid_info.osname, bdata(subtokens->entry[1]));
+            }
+#endif
         }
         cpuid_topology.numHWThreads = HWthreads;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
@@ -400,8 +474,9 @@ proc_init_cpuFeatures(void)
         cpuid_info.featureFlags |= (1<<SSE3);
         strcat(cpuid_info.features, "SSE3 ");
     }
-
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     get_cpu_perf_data();
+#endif
     return;
 }
 
@@ -613,6 +688,19 @@ proc_init_cacheTopology(void)
             bdestroy(src);
         }
         bdestroy(levelStr);
+        if (cachePool[i].threads == 0)
+        {
+            levelStr = bformat("%s/index%d/shared_cpu_map",bdata(cpudir),i);
+            if (NULL != (fp = fopen (bdata(levelStr), "r")))
+            {
+                bstring src = bread ((bNread) fread, fp);
+                btrimws(src);
+                cachePool[i].threads = fillListFromMap(NULL, 0, src);
+                fclose(fp);
+                bdestroy(src);
+            }
+            bdestroy(levelStr);
+        }
 
         switch ( cpuid_info.family )
         {
@@ -628,6 +716,9 @@ proc_init_cacheTopology(void)
             case K8_FAMILY:
             case K10_FAMILY:
                 cachePool[i].inclusive = 1;
+                break;
+            case PPC_FAMILY:
+                cachePool[i].inclusive = 0;
                 break;
             default:
                 ERROR_PLAIN_PRINT(Processor is not supported);

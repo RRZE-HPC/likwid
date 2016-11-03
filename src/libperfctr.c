@@ -459,6 +459,7 @@ likwid_markerStartRegion(const char* regionTag)
     int thread_id = getThreadID(cpu_id);
     perfmon_readCountersCpu(cpu_id);
     results->cpuID = cpu_id;
+    results->state = REGION_RUNNING;
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, START [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu,
@@ -510,6 +511,7 @@ likwid_markerStopRegion(const char* regionTag)
     results->startTime.stop.int64 = timestamp.stop.int64;
     results->time += timer_print(&(results->startTime));
     results->count++;
+    results->state = REGION_STOPPED;
     bdestroy(tag);
 
     perfmon_readCountersCpu(cpu_id);
@@ -518,10 +520,16 @@ likwid_markerStopRegion(const char* regionTag)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu, regionTag, thread_id, cpu_id, i,
                         LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
+        if (groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData < results->StartPMcounters[i])
+            groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows++;
+        int overflows = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows - results->StartOverflows[i];
         result = calculateMarkerResult(groupSet->groups[groupSet->activeGroup].events[i].index, results->StartPMcounters[i],
                                         groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData,
-                                        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows -
-                                        results->StartOverflows[i]);
+                                        overflows);
+        if ( overflows > 0)
+        {
+            hashTable_updateOverflows(cpu_id, i, overflows);
+        }
         if (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != THERMAL)
         {
             results->PMcounters[i] += result;

@@ -31,9 +31,21 @@ package as;
 use Data::Dumper;
 use isax86;
 use isax86_64;
+use isappc64;
 
-$AS = { HEADER     => '.intel_syntax noprefix',
-        FOOTER     => ''};
+sub init
+{
+    if ($main::ISA eq 'x86') {
+        $AS = { HEADER     => '.intel_syntax noprefix',
+                FOOTER     => ''};
+    } elsif ($main::ISA eq 'x86_64') {
+        $AS = { HEADER     => '.intel_syntax noprefix',
+                FOOTER     => ''};
+    } elsif ($main::ISA eq 'ppc64') {
+        $AS = { HEADER     => '',
+                FOOTER     => ''};
+    }
+}
 
 $LOCAL = {};
 $MODE = 'GLOBAL';
@@ -44,6 +56,7 @@ my $STACKPTR;
 my $BASEPTR;
 my $REG;
 my $ARG;
+my $ALIGN='64';
 
 sub emit_code
 {
@@ -88,11 +101,10 @@ sub function_entry
         print ".text\n";
     }
 
-    print ".globl $symbolname\n";
-    print ".type $symbolname, \@function\n";
-    print "$symbolname :\n";
-
     if ($main::ISA eq 'x86') {
+        print ".globl $symbolname\n";
+        print ".type $symbolname, \@function\n";
+        print "$symbolname :\n";
         print "push ebp\n";
         print "mov ebp, esp\n";
         $distance = $allocate * $WORDLENGTH;
@@ -101,6 +113,9 @@ sub function_entry
         print "push esi\n";
         print "push edi\n";
     } elsif ($main::ISA eq 'x86-64') {
+        print ".globl $symbolname\n";
+        print ".type $symbolname, \@function\n";
+        print "$symbolname :\n";
         print "push rbp\n";
         print "mov rbp, rsp\n";
         $distance = $allocate * $WORDLENGTH;
@@ -110,6 +125,22 @@ sub function_entry
         print "push r13\n";
         print "push r14\n";
         print "push r15\n";
+    } elsif ($main::ISA eq 'ppc64') {
+        #if ($main::ISA eq 'ppc64') {
+            print ".set r0,0; .set SP,1; .set RTOC,2; .set r3,3; .set r4,4;\n";
+            print ".set r5,5; .set r6,6; .set r7,7; .set r8,8; .set r9,9; .set r10,10\n";
+            print ".set x0,0; .set x1,1; .set x2,2; .set x3,3; .set x4,4\n";
+            print ".set x5,5; .set x6,6; .set x7,7; .set x8,8; .set x9,9;\n";
+            #}
+        print ".abiversion 2\n";
+        print ".section    \".toc\",\"aw\"\n";
+        print ".section    \".text\"\n";
+        print ".align 2\n";
+        print ".globl $symbolname\n";
+        print ".type $symbolname, \@function\n";
+        print "$symbolname :\n";
+        print ".L.$symbolname:\n";
+        print ".localentry $symbolname, .-$symbolname\n";
     }
 }
 
@@ -125,6 +156,8 @@ sub function_exit
         print "pop ebx\n";
         print "mov  esp, ebp\n";
         print "pop ebp\n";
+        print "ret\n";
+        print ".size $symbolname, .-$symbolname\n";
     } elsif ($main::ISA eq 'x86-64') {
         print "pop r15\n";
         print "pop r14\n";
@@ -133,9 +166,13 @@ sub function_exit
         print "pop rbx\n";
         print "mov  rsp, rbp\n";
         print "pop rbp\n";
+        print "ret\n";
+        print ".size $symbolname, .-$symbolname\n";
+    } elsif ($main::ISA eq 'ppc64') {
+        print "blr\n";
+        print ".size $symbolname, .-$symbolname\n";
     }
-    print "ret\n";
-    print ".size $symbolname, .-$symbolname\n";
+    #print ".size $symbolname, .-$symbolname\n";
     print "\n";
 }
 
@@ -149,7 +186,7 @@ sub define_data
         $CURRENT_SECTION = 'data';
         print ".data\n";
     }
-    print ".align 64\n";
+    print ".align $ALIGN\n";
     print "$symbolname:\n";
     if ($type eq 'DOUBLE') {
         print ".double $value, $value, $value, $value, $value, $value, $value, $value\n"
@@ -170,7 +207,7 @@ sub define_offset
         $CURRENT_SECTION = 'data';
         print ".data\n";
     }
-    print ".align 16\n";
+    print ".align $ALIGN\n";
     print "$symbolname:\n";
     print ".int $value\n";
 }
@@ -184,14 +221,22 @@ sub loop_entry
 
     if ($main::ISA eq 'x86') {
         print "xor   eax, eax\n";
+        print ".align $ALIGN\n";
+        if ($MODE eq 'GLOBAL') {
+            print "$symbolname :\n";
+        } else {
+            print "1:\n";
+        }
     } elsif ($main::ISA eq 'x86-64') {
         print "xor   rax, rax\n";
-    }
-    print ".align 16\n";
-    if ($MODE eq 'GLOBAL') {
-        print "$symbolname :\n";
-    }else {
-        print "1:\n";
+        print ".align $ALIGN\n";
+        if ($MODE eq 'GLOBAL') {
+            print "$symbolname :\n";
+        } else {
+            print "1:\n";
+        }
+    } elsif ($main::ISA eq 'ppc64') {
+        print "$symbolname:\n";
     }
 
 }
@@ -205,16 +250,24 @@ sub loop_exit
     if ($main::ISA eq 'x86') {
         print "add eax, $step\n";
         print "cmp eax, edi\n";
+        if ($MODE eq 'GLOBAL') {
+            print "jl $symbolname\n";
+        } else {
+            print "jl 1b\n";
+        }
+        print "\n";
     } elsif ($main::ISA eq 'x86-64') {
-        print "addq rax, $step\n";
-        print "cmpq rax, rdi\n";
+        print "add rax, $step\n";
+        print "cmp rax, rdi\n";
+        if ($MODE eq 'GLOBAL') {
+            print "jl $symbolname\n";
+        } else {
+            print "jl 1b\n";
+        }
+        print "\n";
+    } elsif ($main::ISA eq 'ppc64') {
+        print "bdnz $symbolname\n";
     }
-    if ($MODE eq 'GLOBAL') {
-        print "jl $symbolname\n";
-    }else {
-        print "jl 1b\n";
-    }
-    print "\n";
 }
 
 sub isa_init
@@ -225,12 +278,27 @@ sub isa_init
         $BASEPTR = $isax86::BASEPTR_X86 ;
         $REG = $isax86::REG_X86;
         $ARG = $isax86::ARG_X86 ;
+        $AS = { HEADER     => '.intel_syntax noprefix',
+                FOOTER     => ''};
+        $ALIGN = '64';
     } elsif ($main::ISA eq 'x86-64') {
         $WORDLENGTH = $isax86_64::WORDLENGTH_X86_64;
         $STACKPTR = $isax86_64::STACKPTR_X86_64 ;
         $BASEPTR = $isax86_64::BASEPTR_X86_64 ;
         $REG = $isax86_64::REG_X86_64;
         $ARG = $isax86_64::ARG_X86_64 ;
+        $AS = { HEADER     => '.intel_syntax noprefix',
+                FOOTER     => ''};
+        $ALIGN = '64';
+    } elsif ($main::ISA eq 'ppc64') {
+        $WORDLENGTH = $isappc64::WORDLENGTH_PPC64;
+        $STACKPTR = $isappc64::STACKPTR_PPC64 ;
+        $BASEPTR = $isappc64::BASEPTR_PPC64 ;
+        $REG = $isappc64::REG_PPC64;
+        $ARG = $isappc64::ARG_PPC64 ;
+        $AS = { HEADER     => '',
+                FOOTER     => ''};
+        $ALIGN = '16';
     }
 }
 

@@ -51,7 +51,12 @@
 #include <registers.h>
 #include <access.h>
 #include <access_client.h>
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
 #include <access_x86.h>
+#endif
+#ifdef _ARCH_PPC
+#include <access_power.h>
+#endif
 
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
@@ -81,14 +86,13 @@ HPMinit(void)
     int ret = 0;
     if (access_init == NULL)
     {
-#if defined(__x86_64__) || defined(__i386__)
         if (config.daemonMode == -1)
         {
             config.daemonMode = ACCESSMODE_DAEMON;
         }
         if (config.daemonMode == ACCESSMODE_DAEMON)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for x86 architecture in daemon mode);
+            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for daemon mode);
             access_init = &access_client_init;
             access_read = &access_client_read;
             access_write = &access_client_write;
@@ -97,16 +101,25 @@ HPMinit(void)
         }
         else if (config.daemonMode == ACCESSMODE_DIRECT)
         {
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
             DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for x86 architecture in direct mode);
             access_init = &access_x86_init;
             access_read = &access_x86_read;
             access_write = &access_x86_write;
             access_finalize = &access_x86_finalize;
             access_check = &access_x86_check;
-        }
 #endif
-    }
+#ifdef _ARCH_PPC
+            DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for power architecture in direct mode);
+            access_init = &access_power_init;
+            access_read = &access_power_read;
+            access_write = &access_power_write;
+            access_finalize = &access_power_finalize;
+            access_check = &access_power_check;
+#endif
+        }
 
+    }
     return 0;
 }
 

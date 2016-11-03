@@ -32,8 +32,14 @@
 
 #include <bstrlib.h>
 
+typedef enum {
+    REGION_STOPPED = 0,
+    REGION_RUNNING = 1,
+} LikwidThreadState;
+
 typedef struct LikwidThreadResults{
     bstring  label;
+    LikwidThreadState state;
     double time;
     TimerData startTime;
     int groupID;

@@ -1,0 +1,40 @@
+STREAMS 3
+TYPE DOUBLE
+DESC Double-precision add, only scalar operations
+FLOPS 1
+BYTES 24
+LOADS 2
+STORES 1
+INSTR_LOOP 19
+INSTR_CONST 5
+UOPS 19
+
+li r10, 4           # four elements per loop iteration
+divd r10, r3, r10   # r3 holds loop limit, divide by elements per loop iteration
+mtctr r10           # move to count register
+
+LOOP 4
+
+lfd     1, 0(STR0)
+lfd     2, 0(STR1)
+fadd    0, 1, 2
+stfd    0, 0(STR2)
+
+lfd     4, 8(STR0)
+lfd     5, 8(STR1)
+fadd    3, 4, 5
+stfd    3, 8(STR2)
+
+lfd     7, 16(STR0)
+lfd     8, 16(STR1)
+fadd    6, 7, 8
+stfd    6, 16(STR2)
+
+lfd     10, 24(STR0)
+lfd     11, 24(STR1)
+fadd    9, 10, 11
+stfd    9, 24(STR2)
+
+addi STR0, STR0, 32
+addi STR1, STR1, 32
+addi STR2, STR2, 32

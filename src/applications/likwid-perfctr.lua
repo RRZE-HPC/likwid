@@ -5,7 +5,7 @@
  *      Filename:  likwid-perfctr.lua
  *
  *      Description:  An application to read out performance counter registers
- *                    on x86 processors
+ *                    on x86 and POWER processors
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -55,7 +55,7 @@ end
 
 local function usage()
     version()
-    io.stdout:write("A tool to read out performance counter registers on x86 processors\n\n")
+    io.stdout:write("A tool to read out performance counter registers on x86 and POWER processors\n\n")
     io.stdout:write("Options:\n")
     io.stdout:write("-h, --help\t\t Help message\n")
     io.stdout:write("-v, --version\t\t Version information\n")
@@ -66,7 +66,7 @@ local function usage()
     io.stdout:write("-g, --group <string>\t Performance group or custom event set string\n")
     io.stdout:write("-H\t\t\t Get group help (together with -g switch)\n")
     io.stdout:write("-s, --skip <hex>\t Bitmask with threads to skip\n")
-    io.stdout:write("-M <0|1>\t\t Set how MSR registers are accessed, 0=direct, 1=accessDaemon\n")
+    io.stdout:write("-M <0|1>\t\t Set how registers are accessed, 0=direct, 1=accessDaemon\n")
     io.stdout:write("-a\t\t\t List available performance groups\n")
     io.stdout:write("-e\t\t\t List available events and counter registers\n")
     io.stdout:write("-E <string>\t\t List available events and corresponding counters that match <string>\n")

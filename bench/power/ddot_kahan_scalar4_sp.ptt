@@ -1,0 +1,85 @@
+STREAMS 2
+TYPE SINGLE
+FLOPS 2
+BYTES 8
+
+li r10, 6           # sixteen (4x4) elements per loop iteration
+divd r10, r3, r10   # r3 holds loop limit, divide by elements per loop iteration
+mtctr r10           # move to count register
+
+# set accumulation registers to zero
+fsubs     0, 0, 0
+fsubs     1, 1, 1
+fsubs     2, 2, 2
+fsubs     3, 3, 3
+fsubs     4, 4, 4
+fsubs     5, 5, 5
+
+# set c registers to zero
+fsubs     6, 6, 6
+fsubs     7, 7, 7
+fsubs     8, 8, 8
+fsubs     9, 9, 9
+fsubs     10, 10, 10
+fsubs     11, 11, 11
+
+LOOP 6
+# load A[i]
+lfs      12, 0(STR0)
+lfs      13, 4(STR0)
+lfs      14, 8(STR0)
+lfs      15, 12(STR0)
+lfs      16, 16(STR0)
+lfs      17, 20(STR0)
+
+# load B[i]
+lfs      18, 0(STR1)
+lfs      19, 4(STR1)
+lfs      20, 8(STR1)
+lfs      21, 12(STR1)
+lfs      22, 16(STR1)
+lfs      23, 20(STR1)
+
+# y = A[i]*B[i]-c
+# fmsub FRT,FRA,FRC,FRB --> FRT <- [(FRA)×(FRC)] - (FRB)
+fmsubs  6, 12, 18, 6
+fmsubs  7, 13, 19, 7
+fmsubs  8, 14, 20, 8
+fmsubs  9, 15, 21, 9
+fmsubs  10, 16, 22, 10
+fmsubs  11, 17, 23, 11
+
+# t = sum + y
+fadds     24, 0, 6
+fadds     25, 1, 7
+fadds     26, 2, 8
+fadds     27, 3, 9
+fadds     28, 4, 10 
+fadds     29, 5, 11
+
+# tmp = t - sum; we can writewrite registers holding 'sum'
+fsubs     0, 24, 0
+fsubs     1, 25, 1
+fsubs     2, 26, 2
+fsubs     3, 27, 3
+fsubs     4, 28, 4
+fsubs     5, 29, 5
+
+# c = tmp - y = (t - sum) - y; we can overwrite register holding 'y'
+fsubs     6, 0, 6
+fsubs     7, 1, 7
+fsubs     8, 2, 8
+fsubs     9, 3, 9
+fsubs     10, 4, 10
+fsubs     11, 5, 11 
+
+# sum = t
+fmr     0, 24
+fmr     1, 25
+fmr     2, 26
+fmr     3, 27
+fmr     4, 28
+fmr     5, 29
+
+addi STR0, STR0, 24
+addi STR1, STR1, 24

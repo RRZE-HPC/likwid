@@ -91,7 +91,7 @@ fRDTSCP(TscCounter* cpu_c)
 #endif
 #endif
 
-#if defined(__i386__)
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__)
 static void
 fRDTSC(TscCounter* cpu_c)
 {
@@ -135,14 +135,11 @@ fRDTSCP(TscCounter* cpu_c)
 }
 #endif
 #endif
+
+#if defined(_ARCH_PPC)
 static void
-_timer_start( TimerData* time )
+TIMER(TscCounter* cpu_c)
 {
-#if defined(__x86_64) || defined(__i386__)
-    if (TSTART)
-        TSTART(&(time->start));
-#endif
-#ifdef _ARCH_PPC
     uint32_t tbl, tbu0, tbu1;
 
     do {
@@ -151,27 +148,23 @@ _timer_start( TimerData* time )
         __asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
     } while (tbu0 != tbu1);
 
-    time->start.int64 = (((uint64_t)tbu0) << 32) | tbl;
+    (cpu_c)->int64 = (((uint64_t)tbu0) << 32) | tbl;
+}
 #endif
+
+
+static void
+_timer_start( TimerData* time )
+{
+    if (TSTART)
+        TSTART(&(time->start));
 }
 
 static void
 _timer_stop( TimerData* time )
 {
-#if defined(__x86_64) || defined(__i386__)
     if (TSTOP)
         TSTOP(&(time->stop));
-#endif
-#ifdef _ARCH_PPC
-    uint32_t tbl, tbu0, tbu1;
-    do {
-        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
-        __asm__ __volatile__ ("mftb %0" : "=r"(tbl));
-        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
-    } while (tbu0 != tbu1);
-
-    time->stop.int64 = (((uint64_t)tbu0) << 32) | tbl;
-#endif
 }
 
 static uint64_t
@@ -210,7 +203,7 @@ _timer_print( const TimerData* time )
 static void
 getCpuSpeed(void)
 {
-#if defined(__x86_64) || defined(__i386__)
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     int i;
     TimerData data;
     TscCounter start;
@@ -250,7 +243,8 @@ getCpuSpeed(void)
     cyclesClock = cpuClock;
 #endif
 #ifdef _ARCH_PPC
-    FILE *fpipe;
+    FILE *fpipe = NULL;
+    char *ptr = NULL;
     char *command="grep timebase /proc/cpuinfo | awk '{ print $3 }'";
     char *command2="grep clock /proc/cpuinfo | head -n 1 | awk '{ print $3 }'";
     char buff[256];
@@ -261,7 +255,7 @@ getCpuSpeed(void)
         exit(1);
     }
 
-    fgets(buff, 256, fpipe);
+    ptr = fgets(buff, 256, fpipe);
 
     cyclesClock = (uint64_t)   atoi(buff);
     if ( !(fpipe = (FILE*)popen(command2,"r")) )
@@ -270,7 +264,7 @@ getCpuSpeed(void)
         exit(1);
     }
 
-    fgets(buff, 256, fpipe);
+    ptr = fgets(buff, 256, fpipe);
 
     cpuClock = (uint64_t)   atoi(buff);
     cpuClock *= 1E6;
@@ -309,6 +303,7 @@ timer_init( void )
     }
     if ((!TSTART) && (!TSTOP))
     {
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
         TSTART = fRDTSC;
         eax = 0x80000001;
         CPUID (eax, ebx, ecx, edx);
@@ -323,6 +318,11 @@ timer_init( void )
         }
 #else
         TSTOP = fRDTSC_CR;
+#endif
+#endif
+#ifdef _ARCH_PPC
+        TSTART = TIMER;
+        TSTOP = TIMER;
 #endif
     }
     if (cpuClock == 0ULL)

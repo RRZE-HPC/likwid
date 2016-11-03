@@ -30,6 +30,7 @@ include  ../../config.mk
 include  ../../make/include_$(COMPILER).mk
 
 DAEMON_TARGET = likwid-accessD
+DAEMON_SOURCE = accessDaemon.c
 SETFREQ_TARGET = likwid-setFreq
 Q         ?= @
 
@@ -39,12 +40,15 @@ CFLAGS    += -std=c99 -fPIC -pie -fPIE -fstack-protector
 ifeq ($(COMPILER),GCCX86)
 CFLAGS    +=  -m32
 endif
+ifeq ($(COMPILER),GCCPOWER)
+DAEMON_SOURCE := accessDaemon_power.c
+endif
 CPPFLAGS :=  $(DEFINES) $(INCLUDES)
 
 all: $(DAEMON_TARGET) $(SETFREQ_TARGET)
 
-$(DAEMON_TARGET): accessDaemon.c
-	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c
+$(DAEMON_TARGET): $(DAEMON_SOURCE)
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) $(DAEMON_SOURCE)
 
 $(SETFREQ_TARGET): setFreq.c
 	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreq.c

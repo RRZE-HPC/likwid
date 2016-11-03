@@ -1,0 +1,45 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 1
+BYTES 8
+
+li r10, 8           # four elements per loop iteration
+divd r10, r3, r10   # r3 holds loop limit, divide by elements per loop iteration
+mtctr r10           # move to count register
+
+fsub 0, 0, 0
+fsub 1, 1, 1
+fsub 2, 2, 2
+fsub 3, 3, 3
+fsub 4, 4, 4
+fsub 5, 5, 5
+fsub 6, 6, 6
+fsub 7, 7, 7
+
+LOOP 8
+
+lfd     10, 0(STR0)
+fadd    0, 0, 10 
+
+lfd     11, 8(STR0)
+fadd    1, 1, 11
+
+lfd     12, 16(STR0)
+fadd    2, 2, 12
+
+lfd     13, 24(STR0)
+fadd    3, 3, 13
+
+lfd     14, 32(STR0)
+fadd    4, 4, 14
+
+lfd     15, 40(STR0)
+fadd    5, 5, 15
+
+lfd     16, 48(STR0)
+fadd    6, 6, 16
+
+lfd     17, 56(STR0)
+fadd    7, 7, 17
+
+addi STR0, STR0, 64

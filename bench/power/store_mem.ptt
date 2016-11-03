@@ -1,0 +1,19 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 8
+lfdx      FPR1, 0, STR0
+li      GPR5, 8
+li      GPR6, 16
+li      GPR7, 24
+LOOP 8
+stfdx     FPR1, 0, STR0
+stfdx     FPR1, STR0, GPR5
+stfdx     FPR1, STR0, GPR6
+stfdx     FPR1, STR0, GPR7
+addi      STR0, STR0, 32
+stfdx     FPR1, 0, STR0
+stfdx     FPR1, STR0, GPR5
+stfdx     FPR1, STR0, GPR6
+stfdx     FPR1, STR0, GPR7
+addi      STR0, STR0, 32

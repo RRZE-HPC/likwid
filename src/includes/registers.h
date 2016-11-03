@@ -1972,4 +1972,20 @@
 #define MSR_AMD16_NB_PMC2               0xC0010245
 #define MSR_AMD16_NB_PMC3               0xC0010247
 
+/* IBM POWER8 */
+#define IBM_MMCR0			0x0
+#define IBM_MMCR1			0x1
+#define IBM_MMCRA			0x2
+#define IBM_MMCRC			0x3
+#define IBM_PMC0			0x4
+#define IBM_PMC1			0x5
+#define IBM_PMC2			0x6
+#define IBM_PMC3			0x7
+#define IBM_PMC4			0x8
+#define IBM_PMC5			0x9
+#define IBM_PIR				0xA
+#define IBM_PURR			0xB
+#define IBM_SPURR			0xC
+#define IBM_DSCR			0xD
+
 #endif /* REGISTERS_H */

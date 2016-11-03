@@ -56,7 +56,15 @@ else
 ifeq ($(COMPILER),GCCX86)
 BENCH_DIR   = ./x86
 else
+ifeq ($(COMPILER),GCCPOWER)
+BENCH_DIR   = ./power
+else
+ifeq ($(COMPILER),XLC)
+BENCH_DIR   = ./power
+else
 BENCH_DIR   = ./x86-64
+endif
+endif
 endif
 endif
 

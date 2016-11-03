@@ -93,8 +93,10 @@ static char* athlon64_f_str = "AMD Athlon64 (AM2) Rev F 90nm processor";
 static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
 static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
 static char* amd_k8_str = "AMD K8 architecture";
+static char* power8_str = "POWER8 architecture";
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
+static char* unknown_power_str = "Unknown POWER Processor";
 
 static char* short_core2 = "core2";
 static char* short_atom = "atom";
@@ -122,6 +124,7 @@ static char* short_k8 = "k8";
 static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
+static char* short_power8 = "power8";
 static char* short_unknown = "unknown";
 
 /* #####  EXPORTED VARIABLES  ########################################## */
@@ -794,6 +797,20 @@ topology_setName(void)
             cpuid_info.short_name = short_k16;
             break;
 
+        case PPC_FAMILY:
+            switch(cpuid_info.model)
+            {
+                case POWER8:
+                    cpuid_info.name = power8_str;
+                    cpuid_info.short_name = short_power8;
+                    break;
+                default:
+                    cpuid_info.name = unknown_power_str;
+                    cpuid_info.short_name = short_unknown;
+                    break;
+           }
+           break;
+            
         default:
             return EXIT_FAILURE;
             break;

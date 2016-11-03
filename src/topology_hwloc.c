@@ -104,6 +104,7 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     }
 
     const char * info;
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUModelNumber")))
         cpuid_info.model = atoi(info);
     if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUFamilyNumber")))
@@ -114,7 +115,20 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
         strcpy(cpuid_info.osname, info);
     if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUStepping")))
         cpuid_info.stepping = atoi(info);
-
+#endif
+#ifdef _ARCH_PPC
+    if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUModel")))
+    {
+        if (strncmp(info, "POWER8", 6) == 0)
+        {
+            cpuid_info.model = POWER8;
+            cpuid_info.family = PPC_FAMILY;
+            cpuid_info.isIntel = 0;
+            strcpy(cpuid_info.osname, info);
+            cpuid_info.stepping = 0;
+        }
+    }
+#endif
     cpuid_topology.numHWThreads = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
     DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d activeHWThreads %d,
                             cpuid_info.family,
@@ -217,7 +231,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             continue;
         }
         hwThreadPool[id].coreId = obj->os_index;
-#if defined(__x86_64) || defined(__i386__)
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
         if (maxNumLogicalProcsPerCore == 1 && cpuid_info.isIntel == 0)
         {
             hwThreadPool[id].coreId = hwThreadPool[id].apicId % maxNumCoresPerSocket;
@@ -314,6 +328,15 @@ hwloc_init_cacheTopology(void)
         cachePool[id].lineSize = obj->attr->cache.linesize;
         cachePool[id].size = obj->attr->cache.size;
         cachePool[id].sets = 0;
+#ifdef _ARCH_PPC
+        if ((cpuid_info.family == PPC_FAMILY) && (cpuid_info.model == POWER8))
+        {
+            if (cachePool[id].lineSize == 0)
+                cachePool[id].lineSize = 128;
+            if (cachePool[id].associativity == 0)
+                cachePool[id].associativity = 8;
+        }
+#endif
         if ((cachePool[id].associativity * cachePool[id].lineSize) != 0)
         {
             cachePool[id].sets = cachePool[id].size /
@@ -323,7 +346,7 @@ hwloc_init_cacheTopology(void)
         /* Count all HWThreads below the current cache */
         cachePool[id].threads = likwid_hwloc_record_objs_of_type_below_obj(
                         hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
-#if defined(__x86_64) || defined(__i386__)
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
         while (!(info = likwid_hwloc_obj_get_info_by_name(obj, "inclusiveness")) && obj->next_cousin)
         {
             obj = obj->next_cousin; // If some PU/core are not bindable because of cgroup, hwloc may not know the inclusiveness of some of their cache.

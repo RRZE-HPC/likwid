@@ -41,6 +41,7 @@
 #include <bstrlib.h>
 #include <types.h>
 #include <hashTable.h>
+#include <error.h>
 #include <likwid.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
@@ -263,6 +264,23 @@ hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
     (*numThreads) = numberOfThreads;
     (*numRegions) = numberOfRegions;
 }
+
+void hashTable_updateOverflows(int coreID, int ctr, int overflows)
+{
+    GHashTableIter i;
+    gpointer k, v;
+    g_hash_table_iter_init(&i, threadList[coreID]->hashTable);
+    while(g_hash_table_iter_next(&i, &k, &v) == TRUE)
+    {
+        LikwidThreadResults *res = (LikwidThreadResults *)v;
+        if (res->state == REGION_RUNNING)
+        {
+            DEBUG_PRINT(DEBUGLEV_DETAIL, Adding %d overflows to region %s, overflows, (char*)k);
+            res->StartOverflows[ctr] -= overflows;
+        }
+    }
+}
+
 
 void __attribute__((destructor (102))) hashTable_finalizeDestruct(void)
 {

@@ -607,7 +607,7 @@
 #define HWLOC_SIZEOF_UNSIGNED_INT 4
 
 /* The size of `unsigned long', as computed by sizeof */
-#ifdef __x86_64
+#if defined(__x86_64) || defined(_ARCH_PPC)
 #define HWLOC_SIZEOF_UNSIGNED_LONG 8
 #else
 #if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__)
@@ -628,7 +628,9 @@
 #define HWLOC_SYM_TRANSFORM 1
 
 /* Define to 1 on unsupported systems */
-/* #undef HWLOC_UNSUPPORTED_SYS */
+#ifdef _ARCH_PPC
+#define HWLOC_UNSUPPORTED_SYS 1
+#endif
 
 /* Define to 1 if ncurses works, preferred over curses */
 /* #undef HWLOC_USE_NCURSES */

@@ -120,6 +120,9 @@ struct topology_functions {
 #define ATHLON64_G1     0x6FU
 #define ATHLON64_G2     0x7FU
 
+/* POWER */
+#define POWER7		0x7U
+#define POWER8		0x8U
 
 #define  P6_FAMILY        0x6U
 #define  MIC_FAMILY       0xBU
@@ -128,6 +131,7 @@ struct topology_functions {
 #define  K16_FAMILY       0x16U
 #define  K10_FAMILY       0x10U
 #define  K8_FAMILY        0xFU
+#define  PPC_FAMILY       0x42U
 
 extern int cpu_count(cpu_set_t* set);
 

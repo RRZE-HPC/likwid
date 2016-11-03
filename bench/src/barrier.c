@@ -139,7 +139,12 @@ barrier_synchronize(BarrierData* barr)
     {
         while (barr->bval[barr->index[i] * 32 + barr->offset * 16] != barr->val)
         {
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
             __asm__ ("pause");
+#endif
+#ifdef _ARCH_PCC
+            __asm__ ("noop");
+#endif
         }
     }
 

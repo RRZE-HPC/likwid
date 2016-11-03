@@ -12,6 +12,8 @@ static const struct hwloc_component * hwloc_static_components[] = {
 //  &hwloc_xml_nolibxml_component,
   &hwloc_linux_component,
   &hwloc_linuxpci_component,
+#if defined(__x86_64__) || defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__)
   &hwloc_x86_component,
+#endif
   NULL
 };

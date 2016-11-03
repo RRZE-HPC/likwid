@@ -71,6 +71,9 @@
 #include <perfmon_goldmont.h>
 #include <perfmon_broadwell.h>
 #include <perfmon_skylake.h>
+#ifdef _ARCH_PPC
+#include <perfmon_power8.h>
+#endif
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -150,6 +153,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
             break;
         }
     }
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     if (*type == PMC && (*index - firstpmcindex) > cpuid_info.perf_num_ctr)
     {
         fprintf(stderr,
@@ -159,6 +163,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
         *type = NOTYPE;
         return FALSE;
     }
+#endif
     if (ret == FALSE || (ret == TRUE && *type == NOTYPE))
     {
         DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s not available on the current system. Counter results defaults to 0.,bdata(reg));
@@ -663,11 +668,13 @@ perfmon_check_counter_map(int cpu_id)
         {
             startpmcindex = i;
         }
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
         if (counter_map[i].type == PMC && (counter_map[i].index - counter_map[startpmcindex].index) >= cpuid_info.perf_num_ctr)
         {
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
         }
+#endif
         if (HPMcheck(counter_map[i].device, cpu_id))
         {
             uint32_t reg = counter_map[i].configRegister;
@@ -977,6 +984,15 @@ perfmon_init_maps(void)
             box_map = kabini_box_map;
             perfmon_numCounters = perfmon_numCountersKabini;
            break;
+#ifdef _ARCH_PPC
+        case PPC_FAMILY:
+            eventHash = power8_arch_events;
+            counter_map = power8_counter_map;
+            box_map = power8_box_map;
+            perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER8;
+            perfmon_numCounters = NUM_COUNTERS_POWER8;
+            break;
+#endif
 
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);
@@ -1236,6 +1252,16 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             perfmon_setupCountersThread = perfmon_setupCounterThread_kabini;
             perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_kabini;
            break;
+#ifdef _ARCH_PPC
+        case PPC_FAMILY:
+            initThreadArch = perfmon_init_power8;
+            perfmon_startCountersThread = perfmon_startCountersThread_power8;
+            perfmon_stopCountersThread = perfmon_stopCountersThread_power8;
+            perfmon_readCountersThread = perfmon_readCountersThread_power8;
+            perfmon_setupCountersThread = perfmon_setupCounterThread_power8;
+            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_power8;
+	    break;
+#endif
 
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);
@@ -1507,6 +1533,11 @@ perfmon_addEventSet(const char* eventCString)
             ERROR_PRINT(Performance group %s only available with deactivated HyperThreading, eventCString);
             return err;
         }
+	else if (err == -ENOMEM)
+	{
+	    ERROR_PLAIN_PRINT(Cannot allocate enough memory for the performance group);
+            return err;
+	}
         else if (err < 0)
         {
             ERROR_PRINT(Cannot read performance group %s, eventCString);
@@ -1536,15 +1567,15 @@ perfmon_addEventSet(const char* eventCString)
         return -ENOMEM;
     }
     eventSet->numberOfEvents = 0;
-#ifdef __x86_64
+//#ifdef __x86_64
 //    eventSet->regTypeMask = ((__uint128_t)0x0ULL<<64)|0x0ULL;
     eventSet->regTypeMask1 = 0x0ULL;
     eventSet->regTypeMask2 = 0x0ULL;
     eventSet->regTypeMask3 = 0x0ULL;
     eventSet->regTypeMask4 = 0x0ULL;
-#else
-    eventSet->regTypeMask = 0x0ULL;
-#endif
+//#else
+//    eventSet->regTypeMask = 0x0ULL;
+//#endif
 
     int forceOverwrite = 0;
     if (getenv("LIKWID_FORCE") != NULL)
@@ -2310,11 +2341,12 @@ perfmon_getMaxCounterValue(RegisterType type)
 {
     int width = 48;
     uint64_t tmp = 0x0ULL;
+    int i = 0;
     if (box_map && (box_map[type].regWidth > 0))
     {
         width = box_map[type].regWidth;
     }
-    for(int i=0;i<width;i++)
+    for(i=0;i<width;i++)
     {
         tmp |= (1ULL<<i);
     }

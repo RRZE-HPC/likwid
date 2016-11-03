@@ -1,0 +1,30 @@
+STREAMS 3
+TYPE DOUBLE
+FLOPS 2
+BYTES 24
+li GPR6, 16
+li GPR7, 32
+li GPR8, 48
+ld  GPR10, SCALAR@got(2)
+lxvd2x  FPR2, 0, GPR10
+LOOP 8
+lxvd2x  FPR1, 0, STR0
+lxvd2x  FPR5, 0, STR1
+xvmaddmdp FPR1, FPR2, FPR5
+stxvd2x  FPR1, 0, STR2
+lxvd2x  FPR2, STR0, GPR6
+lxvd2x  FPR6, STR1, GPR6
+xvmaddmdp FPR2, FPR2, FPR6
+stxvd2x  FPR2, STR2, GPR6
+lxvd2x  FPR3, STR0, GPR7
+lxvd2x  FPR7, STR1, GPR7
+xvmaddmdp FPR3, FPR2, FPR7
+stxvd2x  FPR3, STR2, GPR7
+lxvd2x  FPR4, STR0, GPR8
+lxvd2x  FPR8, STR1, GPR8
+xvmaddmdp FPR4, FPR2, FPR8
+stxvd2x  FPR4, STR2, GPR8
+addi    STR0, STR0, 64
+addi    STR1, STR1, 64
+addi     STR2, STR2, 64
+

@@ -1,0 +1,8 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 8
+LOOP 1
+lfdx     FPR1, 0, STR0
+addi     STR0, STR0, 8
+
