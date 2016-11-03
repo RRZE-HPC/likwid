@@ -583,9 +583,15 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
     ginfo->longinfo = NULL;
     bstring eventBstr;
     struct bstrList * eventList;
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bstring fix0 = bformat("FIXC0");
     bstring fix1 = bformat("FIXC1");
     bstring fix2 = bformat("FIXC2");
+#endif
+#ifdef _ARCH_PPC
+    bstring fix0 = bformat("PMC4");
+    bstring fix1 = bformat("PMC5");
+#endif
     DEBUG_PRINT(DEBUGLEV_INFO, Creating custom group for event string %s, eventStr);
     ginfo->shortinfo = malloc(7 * sizeof(char));
     if (ginfo->shortinfo == NULL)
@@ -628,6 +634,7 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
     {
         ginfo->nevents++;
     }
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     if (binstr(eventBstr, 0, fix2) > 0)
     {
         has_fix2 = 1;
@@ -636,6 +643,7 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
     {
         ginfo->nevents++;
     }
+#endif
     bdestroy(eventBstr);
 
     ginfo->events = malloc(ginfo->nevents * sizeof(char*));
@@ -687,6 +695,7 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
         bstrListDestroy(elist);
     }
     i = eventList->qty;
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     if (!has_fix0)
     {
         ginfo->events[i] = malloc(18 * sizeof(char));
@@ -711,18 +720,40 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
         sprintf(ginfo->counters[i], "%s", "FIXC2");
         i++;
     }
-
+#endif
+#ifdef _ARCH_PPC
+    if (!has_fix0)
+    {
+        ginfo->events[i] = malloc(18 * sizeof(char));
+        ginfo->counters[i] = malloc(6 * sizeof(char));
+        sprintf(ginfo->events[i], "%s", "PM_RUN_INST_CMPL");
+        sprintf(ginfo->counters[i], "%s", "PMC4");
+        i++;
+    } 
+    if (!has_fix1)
+    {
+        ginfo->events[i] = malloc(22 * sizeof(char));
+        ginfo->counters[i] = malloc(6 * sizeof(char));
+        sprintf(ginfo->events[i], "%s", "PM_RUN_CYC");
+        sprintf(ginfo->counters[i], "%s", "PMC5");
+        i++;
+    }
+#endif
     bstrListDestroy(eventList);
     bdestroy(fix0);
     bdestroy(fix1);
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bdestroy(fix2);
+#endif
     bdestroy(edelim);
     return 0;
 cleanup:
     bstrListDestroy(eventList);
     bdestroy(fix0);
     bdestroy(fix1);
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bdestroy(fix2);
+#endif
     bdestroy(edelim);
     if (ginfo->shortinfo != NULL)
         free(ginfo->shortinfo);
