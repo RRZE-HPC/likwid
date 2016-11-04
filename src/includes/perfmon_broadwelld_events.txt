@@ -162,6 +162,8 @@ UMASK_EPT_WALK_CYCLES            0x10
 
 EVENT_L1D                        0x51   PMC
 UMASK_L1D_REPLACEMENT            0x01
+# Undocumented event. Tested to count as accurate as L2_TRANS_L1D_WB
+UMASK_L1D_M_EVICT                0x04
 
 EVENT_TX_MEM                                        0x54 PMC
 UMASK_TX_MEM_ABORT_CONFLICT                         0x01
