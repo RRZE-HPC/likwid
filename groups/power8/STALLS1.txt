@@ -1,19 +1,23 @@
 SHORT Completion stalls (group 1)
 
 EVENTSET
-PMC0 PM_CMPLU_STALL
+PMC0 PM_CMPLU_STALL_THRD
 PMC1 PM_CMPLU_STALL_DCACHE_MISS
 PMC2 PM_CMPLU_STALL_COQ_FULL
-PMC3 PM_CMPLU_STALL_DMISS_L3MISS
+PMC3 PM_CMPLU_STALL
 PMC4 PM_RUN_INST_CMPL
 PMC5 PM_RUN_CYC
 
 METRICS
+Runtime time
 CPI  PMC5/PMC4
-Completion stall cycles PMC0
+Completion stall cycles PMC3
+Stall cycles by thread conflict PMC0
+Stall ratio by thread conflict [%] PMC0/PMC3*100
 Stall cycles by d-cache miss PMC1
+Stall ratio by d-cache miss [%] PMC1/PMC3*100
 Stall cycles by full castout queue PMC2
-Stall cycles by L3 miss PMC3
+Stall ratio by full castout queue [%] PMC2/PMC3*100
 
 
 LONG
