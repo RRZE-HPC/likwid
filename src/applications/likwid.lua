@@ -1169,5 +1169,16 @@ end
 
 likwid.getAvailGovs = llikwid_getAvailGovs
 
+local function llikwid_getArch()
+    arch = nil
+    local f = io.popen("uname -m")
+    if f ~= nil then
+        arch = f:read("*l")
+        f:close()
+    end
+    return arch
+end
+
+likwid.getArch = llikwid_getArch
 
 return likwid
