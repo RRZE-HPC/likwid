@@ -616,10 +616,12 @@ topology_setName(void)
                     cpuid_info.short_name = short_broadwell;
                     break;
                 case BROADWELL_D:
+                    cpuid_info.supportUncore = 1;
                     cpuid_info.name = broadwell_d_str;
                     cpuid_info.short_name = short_broadwell_d;
                     break;
                 case BROADWELL_E:
+                    cpuid_info.supportUncore = 1;
                     cpuid_info.name = broadwell_ep_str;
                     cpuid_info.short_name = short_broadwell_ep;
                     break;
@@ -637,6 +639,7 @@ topology_setName(void)
                     break;
 
                 case XEON_PHI_KNL:
+                    cpuid_info.supportUncore = 1;
                     cpuid_info.name = xeon_phi2_string;
                     cpuid_info.short_name = short_phi2;
                     break;

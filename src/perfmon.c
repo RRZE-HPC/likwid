@@ -886,6 +886,7 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersBroadwell;
                     break;
                 case BROADWELL_D:
+                    pci_devices = broadwelld_pci_devices;
                     box_map = broadwelld_box_map;
                     eventHash = broadwelld_arch_events;
                     counter_map = broadwelld_counter_map;
@@ -894,6 +895,7 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersBroadwellD;
                     break;
                 case BROADWELL_E:
+                    pci_devices = broadwellEP_pci_devices;
                     box_map = broadwellEP_box_map;
                     eventHash = broadwellEP_arch_events;
                     counter_map = broadwellEP_counter_map;
@@ -915,6 +917,7 @@ perfmon_init_maps(void)
                     break;
 
                 case XEON_PHI_KNL:
+                    pci_devices = knl_pci_devices;
                     eventHash = knl_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsKNL;
                     counter_map = knl_counter_map;
