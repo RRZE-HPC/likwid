@@ -315,23 +315,6 @@ io.stdout:setvbuf("no")
 cpuinfo = likwid.getCpuInfo()
 cputopo = likwid.getCpuTopology()
 
-if not likwid.msr_available(access_flags) then
-    if access_mode == 1 then
-        print_stderr("MSR device files not available")
-        print_stderr("Please load msr kernel module before retrying")
-        if outfile and likwid.access(outfile..".tmp", "e") == 0 then
-            os.remove(outfile..".tmp")
-        end
-        os.exit(1)
-    else
-        print_stderr("MSR device files not readable and writeable")
-        print_stderr("Be sure that you have enough permissions to access the MSR files directly")
-        if outfile and likwid.access(outfile..".tmp", "e") == 0 then
-            os.remove(outfile..".tmp")
-        end
-        os.exit(1)
-    end
-end
 
 if num_cpus == 0 and
    not gotC and
@@ -643,6 +626,7 @@ if set_access_modes then
         os.exit(1)
     end
 end
+
 if likwid.init(num_cpus, cpulist) < 0 then
     likwid.putTopology()
     likwid.putConfiguration()

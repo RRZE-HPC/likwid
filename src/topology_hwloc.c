@@ -209,34 +209,35 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
                 affinity_thread2core_lookup[hwThreadPool[id].apicId] = hwThreadPool[id].coreId;
                 continue;
             }
-            hwThreadPool[id].coreId = obj->os_index;
         }
-        else
+        if (skip)
+        {
+            hwThreadPool[id].coreId = 0;
+            hwThreadPool[id].packageId = 0;
+            continue;
+        }
+        hwThreadPool[id].coreId = obj->os_index;
+#if defined(__x86_64) || defined(__i386__)
+        if (maxNumLogicalProcsPerCore == 1 && cpuid_info.isIntel == 0)
         {
             hwThreadPool[id].coreId = hwThreadPool[id].apicId % maxNumCoresPerSocket;
         }
+#endif
         affinity_thread2core_lookup[hwThreadPool[id].apicId] = hwThreadPool[id].coreId;
-        if (maxNumSockets > 1)
-        {
-            while (obj->type != socket_type) {
-                obj = obj->parent;
-                if (!obj)
-                {
-                    skip = 1;
-                    break;
-                }
-            }
-            if (skip)
+        while (obj->type != socket_type) {
+            obj = obj->parent;
+            if (!obj)
             {
-                hwThreadPool[id].packageId = 0;
-                continue;
+                skip = 1;
+                break;
             }
-            hwThreadPool[id].packageId = obj->os_index;
         }
-        else
+        if (skip)
         {
             hwThreadPool[id].packageId = 0;
+            continue;
         }
+        hwThreadPool[id].packageId = obj->os_index;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Socket %d inCpuSet %d,
                             hwThreadPool[id].apicId,
                             hwThreadPool[id].threadId,
@@ -246,7 +247,9 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     }
 
     cpuid_topology.threadPool = hwThreadPool;
-
+    cpuid_topology.numThreadsPerCore = maxNumLogicalProcsPerCore;
+    cpuid_topology.numCoresPerSocket = maxNumCoresPerSocket;
+    cpuid_topology.numSockets = maxNumSockets;
     return;
 }
 
@@ -279,6 +282,14 @@ hwloc_init_cacheTopology(void)
         {
             continue;
         }
+        cachePool[id].level = 0;
+        cachePool[id].type = NOCACHE;
+        cachePool[id].associativity = 0;
+        cachePool[id].lineSize = 0;
+        cachePool[id].size = 0;
+        cachePool[id].sets = 0;
+        cachePool[id].inclusive = 0;
+        cachePool[id].threads = 0;
         /* Get the cache object */
         obj = likwid_hwloc_get_obj_by_depth(hwloc_topology, d, 0);
         /* All caches have this attribute, so safe to access */
@@ -312,7 +323,7 @@ hwloc_init_cacheTopology(void)
         /* Count all HWThreads below the current cache */
         cachePool[id].threads = likwid_hwloc_record_objs_of_type_below_obj(
                         hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
-
+#if defined(__x86_64) || defined(__i386__)
         while (!(info = likwid_hwloc_obj_get_info_by_name(obj, "inclusiveness")) && obj->next_cousin)
         {
             obj = obj->next_cousin; // If some PU/core are not bindable because of cgroup, hwloc may not know the inclusiveness of some of their cache.
@@ -323,9 +334,16 @@ hwloc_init_cacheTopology(void)
         }
         else
         {
-            ERROR_PLAIN_PRINT(Processor is not supported);
+            DEBUG_PLAIN_PRINT(DEBUGLEV_ONLY_ERROR, Processor is not supported);
             break;
         }
+#endif
+#if defined(_ARCH_PPC)
+        cachePool[id].inclusive = 0;
+#endif
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Cache Pool ID %d Level %d Size %d,
+                                      id, cachePool[id].level,
+                                      cachePool[id].size);
         id++;
     }
 

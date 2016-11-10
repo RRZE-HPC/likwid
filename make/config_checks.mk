@@ -29,7 +29,7 @@ endif
 
 FORTRAN_IF_NAME := likwid.mod
 ifneq ($(FORTRAN_INTERFACE),false)
-HAS_FORTRAN_COMPILER = $(shell $(FC) --version 2>/dev/null || echo 'NOFORTRAN' )
+HAS_FORTRAN_COMPILER := $(shell $(FC) --version 2>/dev/null || echo 'NOFORTRAN' )
 ifeq ($(HAS_FORTRAN_COMPILER),NOFORTRAN)
 FORTRAN_IF=
 $(info Warning: You have selected the fortran interface in config.mk, but there seems to be no fortran compiler $(FC) - not compiling it!)

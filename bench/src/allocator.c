@@ -68,6 +68,26 @@ allocator_finalize()
     numberOfAllocatedVectors = 0;
 }
 
+size_t
+allocator_dataTypeLength(DataType type)
+{
+    switch (type)
+    {
+        case INT:
+            return sizeof(int);
+            break;
+        case SINGLE:
+            return sizeof(float);
+            break;
+        case DOUBLE:
+            return sizeof(double);
+            break;
+        default:
+            return 0;
+    }
+    return 0;
+}
+
 void
 allocator_allocateVector(
         void** ptr,
@@ -75,6 +95,7 @@ allocator_allocateVector(
         uint64_t size,
         int offset,
         DataType type,
+        int stride,
         bstring domainString)
 {
     int i;
@@ -83,23 +104,9 @@ allocator_allocateVector(
     int errorCode;
     int elements = 0;
 
-    switch ( type )
-    {
-        case INT:
-            bytesize = (size+offset) * sizeof(int);
-            elements = alignment / sizeof(int);
-            break;
-
-        case SINGLE:
-            bytesize = (size+offset) * sizeof(float);
-            elements = alignment / sizeof(float);
-            break;
-
-        case DOUBLE:
-            bytesize = (size+offset) * sizeof(double);
-            elements = alignment / sizeof(double);
-            break;
-    }
+    size_t typesize = allocator_dataTypeLength(type);
+    bytesize = (size+offset) * typesize;
+    elements = alignment / typesize;
 
     for (i=0;i<domains->numberOfAffinityDomains;i++)
     {
@@ -146,9 +153,10 @@ allocator_allocateVector(
     numberOfAllocatedVectors++;
 
     affinity_pinProcess(domain->processorList[0]);
-    printf("Allocate: Process running on core %d (Domain %s) - Vector length %llu Offset %d Alignment %llu\n",
+    printf("Allocate: Process running on core %d (Domain %s) - Vector length %llu/%llu Offset %d Alignment %llu\n",
             affinity_processGetProcessorId(),
             bdata(domain->tag),
+            LLU_CAST size,
             LLU_CAST bytesize,
             offset,
             LLU_CAST elements);

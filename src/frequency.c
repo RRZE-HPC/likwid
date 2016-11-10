@@ -247,7 +247,7 @@ char * freq_getGovernor(const int cpu_id )
     FILE *f = NULL;
     char cmd[256];
     char buff[256];
-    char* eptr = NULL;
+    char* eptr = NULL, *sptr = NULL;
 
     sprintf(buff, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_governor", cpu_id);
     f = fopen(buff, "r");
@@ -266,7 +266,8 @@ char * freq_getGovernor(const int cpu_id )
         {
             return NULL;
         }
-        strcpy(eptr, bdata(bbuff));
+        sptr = bdata(bbuff);
+        strcpy(eptr, sptr);
         return eptr;
     }
     return NULL;
@@ -310,7 +311,7 @@ char * freq_getAvailFreq(const int cpu_id )
     char cmd[256];
     char buff[256];
     char tmp[10];
-    char *eptr = NULL, *rptr = NULL;
+    char *eptr = NULL, *rptr = NULL, *sptr = NULL;
     double d = 0.0;
     bstring bbuff;
 
@@ -336,12 +337,13 @@ char * freq_getAvailFreq(const int cpu_id )
             fclose(f);
             return NULL;
         }
-        d = strtod(bdata(freq_list->entry[0]), NULL);
+        sptr = bdata(freq_list->entry[0]);
+        d = strtod(sptr, NULL);
         j = sprintf(eptr, "%.3f", d * 1E-6);
         for (i=1; i< freq_list->qty; i++)
         {
-            
-            d = strtod(bdata(freq_list->entry[i]), NULL);
+            sptr = bdata(freq_list->entry[i]);
+            d = strtod(sptr, NULL);
             sprintf(tmp, " %.3f", d * 1E-6);
             for (k= strlen(tmp)-1; k >= 0; k--)
             {

@@ -123,6 +123,12 @@ access_x86_pci_init(const int socket)
             case BROADWELL_D:
                 testDevice = 0x6f30;
                 break;
+            case BROADWELL_E:
+                testDevice = 0x6f30;
+                break;
+            case XEON_PHI_KNL:
+                testDevice = 0x7843;
+                break;
             default:
                 DEBUG_PRINT(DEBUGLEV_INFO,CPU model %s does not support PCI based Uncore performance monitoring, cpuid_info.name);
                 return -ENODEV;

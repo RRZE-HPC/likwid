@@ -33,6 +33,7 @@
 #include <strUtil.h>
 #include <math.h>
 #include <likwid.h>
+#include <allocator.h>
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ################## */
 
@@ -85,20 +86,7 @@ bstr_to_doubleSize(const_bstring str, DataType type)
         return 0;
     }
 
-    switch (type)
-    {
-        case SINGLE:
-            bytesize = sizeof(float);
-            break;
-
-        case DOUBLE:
-            bytesize = sizeof(double);
-            break;
-
-        case INT:
-            bytesize = sizeof(int);
-            break;
-    }
+    bytesize = allocator_dataTypeLength(type);
 
     if ((biseqcstr(unit, "kB"))||(biseqcstr(unit, "KB")))
     {

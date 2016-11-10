@@ -124,6 +124,7 @@ getTotalNodeMem(int nodeId)
     bstring totalString  = bformat("MemTotal:");
     bstring sysfilename = bformat("/sys/devices/system/node/node%d/meminfo", nodeId);
     bstring procfilename = bformat("/proc/meminfo");
+    char *sptr = bdata(procfilename);
 
     if (NULL != (fp = fopen (bdata(sysfilename), "r")))
     {
@@ -146,7 +147,7 @@ getTotalNodeMem(int nodeId)
         bdestroy(src);
         fclose(fp);
     }
-    else if (!access(bdata(procfilename), R_OK))
+    else if (!access(sptr, R_OK))
     {
         if (NULL != (fp = fopen (bdata(procfilename), "r")))
         {

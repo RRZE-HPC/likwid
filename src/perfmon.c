@@ -228,7 +228,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
             if (force == 1)
             {
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s has bits set (0x%llx) but we are forced to overwrite them,
-                                             counter_map[*index].key, tmp);
+                                             counter_map[*index].key, LLU_CAST tmp);
                 err = HPMwrite(testcpu, counter_map[*index].device, reg, 0x0ULL);
             }
             else if ((force == 0) && ((*type != FIXED)&&(*type != THERMAL)&&(*type != POWER)&&(*type != WBOX0FIX)))
@@ -886,6 +886,7 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersBroadwell;
                     break;
                 case BROADWELL_D:
+                    pci_devices = broadwelld_pci_devices;
                     box_map = broadwelld_box_map;
                     eventHash = broadwelld_arch_events;
                     counter_map = broadwelld_counter_map;
@@ -894,6 +895,7 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersBroadwellD;
                     break;
                 case BROADWELL_E:
+                    pci_devices = broadwellEP_pci_devices;
                     box_map = broadwellEP_box_map;
                     eventHash = broadwellEP_arch_events;
                     counter_map = broadwellEP_counter_map;
@@ -904,6 +906,8 @@ perfmon_init_maps(void)
 
                 case SKYLAKE1:
                 case SKYLAKE2:
+                case KABYLAKE1:
+                case KABYLAKE2:
                     box_map = skylake_box_map;
                     eventHash = skylake_arch_events;
                     counter_map = skylake_counter_map;
@@ -913,6 +917,7 @@ perfmon_init_maps(void)
                     break;
 
                 case XEON_PHI_KNL:
+                    pci_devices = knl_pci_devices;
                     eventHash = knl_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsKNL;
                     counter_map = knl_counter_map;
@@ -1151,6 +1156,8 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
                 case SKYLAKE1:
                 case SKYLAKE2:
+                case KABYLAKE1:
+                case KABYLAKE2:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_skylake;
@@ -1330,9 +1337,11 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     /* If the arch supports it, initialize power and thermal measurements */
     for(i=0;i<nrThreads;i++)
     {
-        if ((ret = HPMaddThread(threadsToCpu[i])) != 0)
+        ret = HPMaddThread(threadsToCpu[i]);
+        if (ret != 0)
         {
             ERROR_PLAIN_PRINT(Cannot get access to performance counters);
+            free(groupSet->threads);
             free(groupSet);
             return ret;
         }
@@ -1342,6 +1351,8 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         if (HPMcheck(MSR_DEV, threadsToCpu[i]) == 0)
         {
             fprintf(stderr, "Cannot get access to MSRs. Please check permissions to the MSRs\n");
+            free(groupSet->threads);
+            free(groupSet);
             exit(EXIT_FAILURE);
         }
 

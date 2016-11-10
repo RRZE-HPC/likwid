@@ -151,7 +151,8 @@ access_client_startDaemon(int cpu_id)
     }
     else if (pid < 0)
     {
-        ERROR_PLAIN_PRINT(Failed to fork);
+        ERROR_PRINT(Failed to fork access daemon for CPU %d, cpu_id);
+        return pid;
     }
 
     EXIT_IF_ERROR(socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0), socket() failed);
@@ -173,7 +174,7 @@ access_client_startDaemon(int cpu_id)
         }
 
         timeout--;
-        DEBUG_PRINT(DEBUGLEV_INFO, Still waiting for socket %s ..., filepath);
+        DEBUG_PRINT(DEBUGLEV_INFO, Still waiting for socket %s for CPU %d..., filepath, cpu_id);
     }
 
     if (timeout <= 0)
@@ -208,9 +209,9 @@ access_client_init(int cpu_id)
         cpuSockets[cpu_id] = access_client_startDaemon(cpu_id);
         if (cpuSockets[cpu_id] < 0)
         {
-            ERROR_PRINT(Start of access daemon failed for CPU %d, cpu_id);
+            //ERROR_PRINT(Start of access daemon failed for CPU %d, cpu_id);
             pthread_mutex_unlock(&cpuLocks[cpu_id]);
-            return -EREMOTEIO;
+            return cpuSockets[cpu_id];
         }
         cpuSockets_open++;
         pthread_mutex_unlock(&cpuLocks[cpu_id]);

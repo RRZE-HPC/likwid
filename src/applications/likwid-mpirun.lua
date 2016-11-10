@@ -215,7 +215,7 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
         local input = f:read("*a")
         ver1,ver2,ver3 = input:match("(%d+)%.(%d+)%.(%d+)")
         if ver1 == "1" then
-            if ver2 == "7" then
+            if tonumber(ver2) >= 7 then
                 bindstr = "--bind-to none"
             elseif ver2 == "6" then
                 bindstr = "--bind-to-none"
@@ -1678,20 +1678,34 @@ for i=1,#arg do
         table.insert(mpiopts, arg[i])
     end
 end
+
 if #executable == 0 then
     print_stderr("ERROR: No executable given on commandline")
     os.exit(1)
-elseif os.execute(string.format("ls %s 1>/dev/null 2>&1", executable[1])) == 0 then
-    print_stderr("ERROR: Cannot find executable given on commandline")
-    os.exit(1)
 else
-    local f = io.popen(string.format("which %s 2>/dev/null", executable[1]))
-    if f ~= nil then
-        executable[1] = f:read("*line")
-        f:close()
+    local do_which = false
+    local found = false
+    if likwid.access(executable[1], "x") == -1 then
+        do_which = true
+    else
+        found = true
     end
-    if debug then
-        print_stdout("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
+    if not found then
+        if do_which then
+            local f = io.popen(string.format("which %s 2>/dev/null", executable[1]))
+            if f ~= nil then
+                executable[1] = f:read("*line")
+                f:close()
+                found = true
+            end
+            if debug then
+                print_stdout("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
+            end
+        end
+    end
+    if not found then
+        print_stderr("ERROR: Cannot find executable given on commandline")
+        os.exit(1)
     end
 end
 if #mpiopts > 0 and debug then
