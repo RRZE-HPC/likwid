@@ -243,7 +243,10 @@ power_init(int cpuId)
             }
             if ((cpuid_info.model == HASWELL_EP) ||
                 (cpuid_info.model == HASWELL_M1) ||
-                (cpuid_info.model == HASWELL_M2))
+                (cpuid_info.model == HASWELL_M2) ||
+                (cpuid_info.model == BROADWELL_D) ||
+                (cpuid_info.model == BROADWELL_E) ||
+                (cpuid_info.model == XEON_PHI_KNL))
             {
                 power_info.domains[DRAM].energyUnit = 15.3E-6;
             }

@@ -280,7 +280,7 @@ access_x86_msr_write( const int cpu_id, uint32_t reg, uint64_t data)
     int ret;
     if (FD[cpu_id] > 0)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Write MSR counter 0x%X with WRMSR instruction on CPU %d data 0x%X, reg, cpu_id, data);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Write MSR counter 0x%X with WRMSR instruction on CPU %d data 0x%lX, reg, cpu_id, data);
         ret = pwrite(FD[cpu_id], &data, sizeof(data), reg);
         if (ret != sizeof(data))
         {

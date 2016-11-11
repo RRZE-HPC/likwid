@@ -1005,8 +1005,8 @@ int bdw_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
         for (int i=0;i < eventSet->numberOfEvents;i++) \
         { \
             RegisterIndex index = eventSet->events[i].index; \
-            RegisterType type = counter_map[index].type; \
-            if ((type < UNCORE) || (type == WBOX0FIX)) \
+            RegisterType type = eventSet->events[i].type; \
+            if ((type < UNCORE) || (type == WBOX0FIX) || (type == NOTYPE)) \
             { \
                 continue; \
             } \
