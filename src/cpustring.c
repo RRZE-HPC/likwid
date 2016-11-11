@@ -237,11 +237,11 @@ cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int length)
     int insert = 0;
     for (int i=0;i<count;i++)
     {
-        for (int j=0;j<chunk && offset+j<affinity->domains[domainidx].numberOfProcessors;j++)
+        for (int j=0; j<chunk && offset+j<affinity->domains[domainidx].numberOfProcessors;j++)
         {
             cpulist[insert] = affinity->domains[domainidx].processorList[offset + j];
             insert++;
-            if (insert == length)
+            if (insert == length || insert == count)
                 goto expression_done;
         }
         offset += stride;
