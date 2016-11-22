@@ -151,6 +151,12 @@ likwid.setCpuClockMax = likwid_setCpuClockMax
 likwid.getGovernor = likwid_getGovernor
 likwid.setGovernor = likwid_setGovernor
 likwid.getDriver = likwid_getDriver
+likwid.getuid = likwid_getuid
+likwid.geteuid = likwid_geteuid
+likwid.setuid = likwid_setuid
+likwid.seteuid = likwid_seteuid
+likwid.setresuid = likwid_setresuid
+likwid.setresuser = likwid_setresuser
 
 likwid.cpuFeatures = { [0]="HW_PREFETCHER", [1]="CL_PREFETCHER", [2]="DCU_PREFETCHER", [3]="IP_PREFETCHER",
                         [4]="FAST_STRINGS", [5]="THERMAL_CONTROL", [6]="PERF_MON", [7]="FERR_MULTIPLEX",

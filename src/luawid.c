@@ -39,6 +39,8 @@
 #include <sys/time.h>
 #include <time.h>
 #include <sched.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include <lua.h>                               /* Always include this */
 #include <lauxlib.h>                           /* Always include this */
@@ -2447,7 +2449,112 @@ lua_likwid_getDriver(lua_State* L)
     return 1;
 }
 
+static int
+lua_likwid_getuid(lua_State* L)
+{
+    int r = geteuid();
+    lua_pushnumber(L, r);
+    return 1;
+}
 
+static int
+lua_likwid_geteuid(lua_State* L)
+{
+    int r = geteuid();
+    lua_pushnumber(L, r);
+    return 1;
+}
+
+static int
+lua_likwid_setuid(lua_State* L)
+{
+    int id = (int) lua_tonumber(L, 1);
+    int r = setuid((uid_t) id);
+    if (r == 0)
+    {
+        lua_pushboolean(L, 1);
+    }
+    else
+    {
+        lua_pushboolean(L, 0);
+    }
+    return 1;
+}
+
+static int
+lua_likwid_seteuid(lua_State* L)
+{
+    int id = (int) lua_tonumber(L, 1);
+    int r = seteuid((uid_t) id);
+    if (r == 0)
+    {
+        lua_pushboolean(L, 1);
+    }
+    else
+    {
+        lua_pushboolean(L, 0);
+    }
+    return 1;
+}
+
+static int
+lua_likwid_setresuid(lua_State* L)
+{
+    int ruid = (int) lua_tonumber(L, 1);
+    int euid = (int) lua_tonumber(L, 2);
+    int suid = (int) lua_tonumber(L, 3);
+    int r = setresuid((uid_t)ruid, (uid_t)euid, (uid_t)suid);
+    if (r == 0)
+    {
+        lua_pushboolean(L, 1);
+    }
+    else
+    {
+        lua_pushboolean(L, 0);
+    }
+    return 1;
+}
+
+static int
+lua_likwid_setresuser(lua_State* L)
+{
+    const char* ruser = (const char*) luaL_checkstring(L, 1);
+    const char* euser = (const char*) luaL_checkstring(L, 2);
+    const char* suser = (const char*) luaL_checkstring(L, 3);
+    struct passwd *p;
+    p = getpwnam(ruser);
+    if ( p == NULL )
+    {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    uid_t ruid = p->pw_uid;
+    p = getpwnam(euser);
+    if ( p == NULL )
+    {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    uid_t euid = p->pw_uid;
+    p = getpwnam(suser);
+    if ( p == NULL )
+    {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    uid_t suid = p->pw_uid;
+
+    int r = setresuid(ruid, euid, suid);
+    if (r == 0)
+    {
+        lua_pushboolean(L, 1);
+    }
+    else
+    {
+        lua_pushboolean(L, 0);
+    }
+    return 1;
+}
 
 
 
@@ -2580,6 +2687,13 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getAvailFreq", lua_likwid_getAvailFreq);
     lua_register(L, "likwid_getAvailGovs", lua_likwid_getAvailGovs);
     lua_register(L, "likwid_getDriver", lua_likwid_getDriver);
+    // setuid&friends
+    lua_register(L, "likwid_getuid", lua_likwid_getuid);
+    lua_register(L, "likwid_geteuid", lua_likwid_geteuid);
+    lua_register(L, "likwid_setuid", lua_likwid_setuid);
+    lua_register(L, "likwid_seteuid", lua_likwid_seteuid);
+    lua_register(L, "likwid_setresuid", lua_likwid_setresuid);
+    lua_register(L, "likwid_setresuser", lua_likwid_setresuser);
 #ifdef __MIC__
     setuid(0);
     seteuid(0);
