@@ -1550,6 +1550,7 @@ perfmon_addEventSet(const char* eventCString)
 #endif
 
     int forceOverwrite = 0;
+    int valid_events = 0;
     if (getenv("LIKWID_FORCE") != NULL)
     {
         forceOverwrite = atoi(getenv("LIKWID_FORCE"));
@@ -1614,10 +1615,12 @@ past_checks:
                 event->threadCounter[j].overflows = 0;
                 event->threadCounter[j].init = FALSE;
             }
+
             eventSet->numberOfEvents++;
 
             if (event->type != NOTYPE)
             {
+                valid_events++;
                 DEBUG_PRINT(DEBUGLEV_INFO,
                         Added event %s for counter %s to group %d,
                         event->event.name,
@@ -1628,7 +1631,12 @@ past_checks:
         bstrListDestroy(subtokens);
     }
     bstrListDestroy(eventtokens);
-    if ((eventSet->numberOfEvents > 0) &&
+    int fixed_counters = 0;
+    if (cpuid_info.isIntel)
+    {
+        fixed_counters = cpuid_info.perf_num_fixed_ctr;
+    }
+    if ((valid_events > fixed_counters) &&
         ((eventSet->regTypeMask1 != 0x0ULL) ||
         (eventSet->regTypeMask2 != 0x0ULL) ||
         (eventSet->regTypeMask3 != 0x0ULL) ||
@@ -1640,7 +1648,10 @@ past_checks:
     }
     else
     {
-        fprintf(stderr,"No event in given event string can be configured\n");
+        fprintf(stderr,"ERROR: No event in given event string can be configured.\n");
+        fprintf(stderr,"       Either the events or counters do not exist for the\n");
+        fprintf(stderr,"       current architecture. If event options are set, they might\n");
+        fprintf(stderr,"       be invalid.\n");
         return -EINVAL;
     }
 }
