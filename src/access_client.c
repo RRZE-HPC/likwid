@@ -159,7 +159,7 @@ access_client_startDaemon(int cpu_id)
 
     address.sun_family = AF_LOCAL;
     address_length = sizeof(address);
-    snprintf(address.sun_path, sizeof(address.sun_path), "/tmp/likwid-%d", pid);
+    snprintf(address.sun_path, sizeof(address.sun_path), TOSTRING(LIKWIDSOCKETBASE) "-%d", pid);
     filepath = strdup(address.sun_path);
 
     while (timeout > 0)

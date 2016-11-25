@@ -1142,7 +1142,7 @@ int main(void)
 
     /* setup filename for socket */
     filepath = (char*) calloc(sizeof(addr1.sun_path), 1);
-    snprintf(filepath, sizeof(addr1.sun_path), "/tmp/likwid-%d", pid);
+    snprintf(filepath, sizeof(addr1.sun_path), TOSTRING(LIKWIDSOCKETBASE) "-%d", pid);
 
     /* get a socket */
     LOG_AND_EXIT_IF_ERROR(sockfd = socket(AF_LOCAL, SOCK_STREAM, 0), socket failed);
