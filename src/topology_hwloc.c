@@ -129,13 +129,13 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
 void
 hwloc_init_nodeTopology(cpu_set_t cpuSet)
 {
-    HWThread* hwThreadPool;
-    int maxNumLogicalProcs;
-    int maxNumLogicalProcsPerCore;
-    int maxNumCores;
-    int maxNumSockets;
-    int maxNumCoresPerSocket;
-    hwloc_obj_t obj;
+    HWThread* hwThreadPool = NULL;
+    int maxNumLogicalProcs = 0;
+    int maxNumLogicalProcsPerCore = 0;
+    int maxNumCores = 0;
+    int maxNumSockets = 0;
+    int maxNumCoresPerSocket = 0;
+    hwloc_obj_t obj = NULL;
     int poolsize = 0;
     int nr_sockets = 1;
     int id = 0;
@@ -220,7 +220,22 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
 #if defined(__x86_64) || defined(__i386__)
         if (maxNumLogicalProcsPerCore == 1 && cpuid_info.isIntel == 0)
         {
-            hwThreadPool[id].coreId = hwThreadPool[id].apicId % maxNumCoresPerSocket;
+            if (id == 0)
+            {
+                hwThreadPool[id].coreId = hwThreadPool[id].apicId;
+            }
+            else
+            {
+                if (hwThreadPool[id].apicId == hwThreadPool[id-1].apicId + 1 &&
+                    hwThreadPool[id].packageId == hwThreadPool[id-1].packageId)
+                {
+                    hwThreadPool[id].coreId = hwThreadPool[id].apicId % maxNumCoresPerSocket;
+                }
+                else
+                {
+                    hwThreadPool[id].coreId = hwThreadPool[id].apicId;
+                }
+            }
         }
 #endif
         affinity_thread2core_lookup[hwThreadPool[id].apicId] = hwThreadPool[id].coreId;
@@ -332,7 +347,7 @@ hwloc_init_cacheTopology(void)
         {
             cachePool[id].inclusive = info[0]=='t';
         }
-        else
+        else if (cpuid_info.isIntel)
         {
             DEBUG_PLAIN_PRINT(DEBUGLEV_ONLY_ERROR, Processor is not supported);
             break;
