@@ -216,7 +216,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             hwThreadPool[id].packageId = 0;
             continue;
         }
-        hwThreadPool[id].coreId = obj->os_index;
+        hwThreadPool[id].coreId = obj->logical_index;
 #if defined(__x86_64) || defined(__i386__)
         if (maxNumLogicalProcsPerCore == 1 && cpuid_info.isIntel == 0)
         {
