@@ -1632,10 +1632,14 @@ past_checks:
     }
     bstrListDestroy(eventtokens);
     int fixed_counters = 0;
-    if (cpuid_info.isIntel)
+    char fix[] = "FIXC";
+    char* ptr;
+    ptr = strstr(eventCString, fix);
+    if (cpuid_info.isIntel && !ptr)
     {
         fixed_counters = cpuid_info.perf_num_fixed_ctr;
     }
+
     if ((valid_events > fixed_counters) &&
         ((eventSet->regTypeMask1 != 0x0ULL) ||
         (eventSet->regTypeMask2 != 0x0ULL) ||
