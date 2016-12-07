@@ -40,6 +40,7 @@
 #include <sched.h>
 #include <pthread.h>
 #include <inttypes.h>
+#include <signal.h>
 
 #include <likwid.h>
 #include <bitUtil.h>
@@ -61,14 +62,20 @@ static int likwid_init = 0;
 static int numberOfGroups = 0;
 static int* groups;
 static int threads2Cpu[MAX_NUM_THREADS];
-static pthread_t threads2Pthread[MAX_NUM_THREADS];
+static pthread_t mainThread;
 static int realThreads2Cpu[MAX_NUM_THREADS] = { [ 0 ... (MAX_NUM_THREADS-1)] = -1};
 static int num_cpus = 0;
 static int registered_cpus = 0;
 static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 static int use_locks = 0;
 static pthread_mutex_t threadLocks[MAX_NUM_THREADS] = { [ 0 ... (MAX_NUM_THREADS-1)] = PTHREAD_MUTEX_INITIALIZER};
-
+static bstring lastStartedRegions[MAX_NUM_THREADS];
+static int ovf_secs = 0;
+static int ovf_usecs = 50000;
+static int ovf_started = 0;
+static int nest_level[MAX_NUM_THREADS] = { [ 0 ... (MAX_NUM_THREADS-1)] = 0};
+static LikwidThreadResults ovf_data;
+static int ovf_checks = 0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -76,6 +83,7 @@ static pthread_mutex_t threadLocks[MAX_NUM_THREADS] = { [ 0 ... (MAX_NUM_THREADS
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
+void likwid_overflowRead(int sig);
 
 
 static int
@@ -119,9 +127,8 @@ calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int ov
     else if (overflows > 0)
     {
         result += (double) ((perfmon_getMaxCounterValue(counter_map[index].type) - start) + stop);
-        overflows--;
+        result += (double) ((overflows-1) * perfmon_getMaxCounterValue(counter_map[index].type));
     }
-    result += (double) (overflows * perfmon_getMaxCounterValue(counter_map[index].type));
     if (counter_map[index].type == POWER)
     {
         result *= power_getEnergyUnit(getCounterTypeOffset(index));
@@ -131,6 +138,67 @@ calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int ov
         result = (double)stop;
     }
     return result;
+}
+
+static unsigned int
+usalarm (unsigned int secs, unsigned int usecs)
+{
+    struct itimerval old, new;
+    new.it_interval.tv_usec = 0;
+    new.it_interval.tv_sec = 0;
+    new.it_value.tv_usec = (long int) usecs;
+    new.it_value.tv_sec = (long int) secs;
+    if (setitimer (ITIMER_REAL, &new, &old) < 0)
+        return 0;
+    else
+        return old.it_value.tv_sec;
+}
+
+void
+likwid_overflowRead(int sig)
+{
+    if (! likwid_init)
+    {
+        return;
+    }
+
+    perfmon_readCounters();
+
+    ovf_checks++;
+    signal(SIGALRM, likwid_overflowRead);
+    usalarm(ovf_secs, ovf_usecs);
+    return;
+}
+
+static void
+measure_ovfl_int()
+{
+    for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
+        ovf_data.PMcounters[i] = 0.0;
+#ifdef _ARCH_PPC
+    double mem[4000000];
+    for (int i=0;i<4000000;i++)
+        mem[i] = i;
+    if (mem[2000000] < 0)
+        return;
+    perfmon_readCountersCpu(threads2Cpu[0]);
+    for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
+    {
+        ovf_data.StartPMcounters[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[0].counterData;
+    }
+    timer_start(&ovf_data.startTime);
+    likwid_overflowRead(0);
+    likwid_overflowRead(0);
+    likwid_overflowRead(0);
+    likwid_overflowRead(0);
+    usalarm(0,0);
+    timer_stop(&ovf_data.startTime);
+    perfmon_readCountersCpu(threads2Cpu[0]);
+    for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
+    {
+        ovf_data.PMcounters[i] = (double)(groupSet->groups[groupSet->activeGroup].events[i].threadCounter[0].counterData - ovf_data.StartPMcounters[i]);
+    }
+#endif
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -177,6 +245,7 @@ likwid_markerInit(void)
     numa_init();
     affinity_init();
     hashTable_init();
+    mainThread = pthread_self();
 
     for(int i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
 
@@ -194,6 +263,7 @@ likwid_markerInit(void)
     for (i=0; i<num_cpus; i++)
     {
         threads2Cpu[i] = ownatoi(bdata(threadTokens->entry[i]));
+        realThreads2Cpu[i] = threads2Cpu[i];
     }
     bdestroy(bThreadStr);
     bstrListDestroy(threadTokens);
@@ -255,6 +325,7 @@ likwid_markerInit(void)
         likwid_init = 1;
     }
     groupSet->activeGroup = 0;
+    measure_ovfl_int();
 }
 
 void
@@ -299,6 +370,7 @@ likwid_markerNextGroup(void)
     {
         i = perfmon_switchActiveGroup(next_group);
     }
+    measure_ovfl_int();
     return;
 }
 
@@ -436,6 +508,8 @@ likwid_markerRegisterRegion(const char* regionTag)
     return HPMaddThread(cpu_id);
 }
 
+
+
 int
 likwid_markerStartRegion(const char* regionTag)
 {
@@ -457,25 +531,38 @@ likwid_markerStartRegion(const char* regionTag)
 
     int cpu_id = hashTable_get(tag, &results);
     int thread_id = getThreadID(cpu_id);
+
     perfmon_readCountersCpu(cpu_id);
     results->cpuID = cpu_id;
     results->state = REGION_RUNNING;
+    lastStartedRegions[thread_id] = bstrcpy(tag);
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, START [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu,
                 regionTag, thread_id, cpu_id, i,
                 LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
-        //groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].startData =
-        //        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
 
         results->StartPMcounters[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
-        results->StartOverflows[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows;
+        results->LastPMcounters[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
+        results->StartOverflows[i] = 0; 
     }
+
+
+    if (!ovf_started && pthread_equal(mainThread, pthread_self()))
+    {
+        ovf_started = 1;
+        ovf_checks = 0;
+        signal(SIGALRM, likwid_overflowRead);
+        usalarm(ovf_secs, ovf_usecs);
+    }
+    nest_level[thread_id]++;
 
     bdestroy(tag);
     timer_start(&(results->startTime));
     return 0;
 }
+
+
 
 int
 likwid_markerStopRegion(const char* regionTag)
@@ -488,12 +575,13 @@ likwid_markerStopRegion(const char* regionTag)
     TimerData timestamp;
     timer_stop(&timestamp);
     double result = 0.0;
-    int cpu_id;
+    int cpu_id = 0, ovf_scale = ovf_checks;
     int myCPU = likwid_getProcessorId();
     if (getThreadID(myCPU) < 0)
     {
         return -EFAULT;
     }
+    usalarm(0, 0);
     int thread_id;
     bstring tag = bfromcstr(regionTag);
     char groupSuffix[100];
@@ -510,9 +598,19 @@ likwid_markerStopRegion(const char* regionTag)
     results->groupID = groupSet->activeGroup;
     results->startTime.stop.int64 = timestamp.stop.int64;
     results->time += timer_print(&(results->startTime));
+    if (thread_id == 0)
+    {
+        results->time -= (((double)ovf_scale)/4) * timer_print(&(ovf_data.startTime));
+    }
     results->count++;
     results->state = REGION_STOPPED;
-    bdestroy(tag);
+    nest_level[thread_id]--;
+    if (nest_level[thread_id] == 0 && pthread_equal(mainThread, pthread_self()))
+    {
+        usalarm(0,0);
+        ovf_started = 0;
+        ovf_checks = 0;
+    }
 
     perfmon_readCountersCpu(cpu_id);
 
@@ -520,25 +618,33 @@ likwid_markerStopRegion(const char* regionTag)
     {
         DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu, regionTag, thread_id, cpu_id, i,
                         LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
-        if (groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData < results->StartPMcounters[i])
-            groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows++;
-        int overflows = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows - results->StartOverflows[i];
+        if (groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData < results->LastPMcounters[i])
+            results->StopOverflows[i]++;
+        int overflows = results->StopOverflows[i] - results->StartOverflows[i];
         result = calculateMarkerResult(groupSet->groups[groupSet->activeGroup].events[i].index, results->StartPMcounters[i],
                                         groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData,
                                         overflows);
         if ( overflows > 0)
         {
-            hashTable_updateOverflows(cpu_id, i, overflows);
+            hashTable_updateOverflows(cpu_id, i, overflows, tag);
         }
-        if (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != THERMAL)
-        {
-            results->PMcounters[i] += result;
-        }
-        else
+        if (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type == THERMAL)
         {
             results->PMcounters[i] = result;
         }
+        else if (thread_id == 0)
+        {
+            if (ovf_scale > 0 && result - ((((double)ovf_scale)/4) * ovf_data.PMcounters[i]) > 0)
+                results->PMcounters[i] += result - ((((double)ovf_scale)/4) * ovf_data.PMcounters[i]);
+            else
+                results->PMcounters[i] += result;
+        }
+        else
+        {
+            results->PMcounters[i] += result;
+        }
     }
+    bdestroy(tag);
     if (use_locks == 1)
     {
         pthread_mutex_unlock(&threadLocks[myCPU]);

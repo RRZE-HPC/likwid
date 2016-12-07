@@ -45,8 +45,10 @@ typedef struct LikwidThreadResults{
     int groupID;
     int cpuID;
     uint32_t count;
-    double StartPMcounters[NUM_PMC];
+    uint64_t StartPMcounters[NUM_PMC];
+    uint64_t LastPMcounters[NUM_PMC];
     int StartOverflows[NUM_PMC];
+    int StopOverflows[NUM_PMC];
     double PMcounters[NUM_PMC];
 } LikwidThreadResults;
 

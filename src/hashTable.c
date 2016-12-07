@@ -265,7 +265,7 @@ hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
     (*numRegions) = numberOfRegions;
 }
 
-void hashTable_updateOverflows(int coreID, int ctr, int overflows)
+void hashTable_updateOverflows(int coreID, int ctr, int overflows, bstring cur_region)
 {
     GHashTableIter i;
     gpointer k, v;
@@ -273,10 +273,10 @@ void hashTable_updateOverflows(int coreID, int ctr, int overflows)
     while(g_hash_table_iter_next(&i, &k, &v) == TRUE)
     {
         LikwidThreadResults *res = (LikwidThreadResults *)v;
-        if (res->state == REGION_RUNNING)
+        if (res->state == REGION_RUNNING && strcmp(k, bdata(cur_region)) != 0)
         {
-            DEBUG_PRINT(DEBUGLEV_DETAIL, Adding %d overflows to region %s, overflows, (char*)k);
-            res->StartOverflows[ctr] -= overflows;
+            DEBUG_PRINT(DEBUGLEV_DETAIL, Adding overflow to region %s for ctr %d, (char*)k, ctr);
+            res->StartOverflows[ctr] -= 1;
         }
     }
 }
