@@ -121,8 +121,13 @@ use_stethoscope = false
 use_timeline = false
 daemon_run = 0
 use_wrapper = false
-duration = 2.E06
-overflow_interval = 2.E06
+arch = likwid.getArch()
+if arch == "x86_64" or arch == "i386" then
+    duration = 2.E06
+elseif arch:match("ppc64") then
+    duration = 3.E05
+end
+
 output = ""
 use_csv = false
 print_stats = false
@@ -245,7 +250,6 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         verbose = true
     elseif opt == "m" or opt == "marker" then
         use_marker = true
-        use_wrapper = true
     elseif (opt == "S") then
         use_stethoscope = true
         if arg ~= nil and arg:match("%d+%a?s") then
@@ -720,7 +724,11 @@ if use_wrapper or use_timeline then
     local firstrun = true
 
     if use_wrapper and #group_ids == 1 then
-        duration = 30.E06
+        if arch == "x86_64" or arch == "i386" then
+            duration = 30.E06
+        elseif arch:match("ppc64") then
+            duration = 3.E05
+        end
     end
 
     local ret = likwid.startCounters()
