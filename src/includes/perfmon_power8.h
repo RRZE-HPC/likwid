@@ -73,58 +73,51 @@ uint64_t power8_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     int j = 0;
     uint64_t flags = 0x0ULL;
     uint64_t pmcsel = event->eventId;
-    /*if (event->umask >= 6 && event->umask <= 9 && event->umask & 0x7)
-    {
-	return flags;
-    }*/
+
     int pmc_num = getCounterTypeOffset(index); 
     if (pmc_num > 3)
-	return 0;
-    /*printf("Counter PMC%d\n", pmc_num);
-    printf("EventID: 0x%X\n", event->eventId);
-    printf("Umask: 0x%X\n", event->umask);
-    printf("CfgBits: 0x%X\n", event->cfgBits);
-    printf("Cmask: 0x%X\n", event->cmask);*/
+        return 0;
+
     for(j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
         {
-	    case EVENT_OPTION_EDGE:
-		pmcsel |= (1<<7);
-		DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with flag EDGE_DETECT, pmc_num);
-		break;
-	}
+            case EVENT_OPTION_EDGE:
+                pmcsel |= (1<<7);
+                DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with flag EDGE_DETECT, pmc_num);
+                break;
+        }
     }
     flags |= ((pmcsel & MMCR1_PMCSEL_MASK) << MMCR1_PMCSEL_SHIFT(pmc_num));
     flags |= (((uint64_t)event->umask & MMCR1_UNIT_MASK) << MMCR1_UNIT_SHIFT(pmc_num)); 
     if (event->cfgBits != 0x0)
     {
     
-	if (event->cfgBits & 0x4)
-	{
-	    DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with flag DC_RLD_QUAL, pmc_num);
-	    flags |= 1ULL<<MMCR1_DC_QUAL_SHIFT;
-	}
-	if (event->cfgBits & 0x2)
-	{
-	    DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with flag IC_RLD_QUAL, pmc_num);
-	    flags |= 1ULL<<MMCR1_IC_QUAL_SHIFT;
-	}
-	if (event->cfgBits & 0x10 && pmc_num >= 0 && pmc_num <=3)
-	{
-	    DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with flag COMBINE, pmc_num);
-	    flags |= 1ULL << MMCR1_COMBINE_SHIFT(pmc_num);
-	}
+    if (event->cfgBits & 0x4)
+    {
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with flag DC_RLD_QUAL, pmc_num);
+        flags |= 1ULL<<MMCR1_DC_QUAL_SHIFT;
+    }
+    if (event->cfgBits & 0x2)
+    {
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with flag IC_RLD_QUAL, pmc_num);
+        flags |= 1ULL<<MMCR1_IC_QUAL_SHIFT;
+    }
+    if (event->cfgBits & 0x10 && pmc_num >= 0 && pmc_num <=3)
+    {
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with flag COMBINE, pmc_num);
+        flags |= 1ULL << MMCR1_COMBINE_SHIFT(pmc_num);
+    }
     }
     // The cmask contains the FAB match bits (MMCR1 bits 20-27) 
     if (event->cmask != 0x0 && (event->cmask >> 63) == 0)
     {
-	DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with flag FAB_MATCH, pmc_num);
-	flags |= (event->cmask & MMCR1_FAB_MASK) << MMCR1_FAB_SHIFT;
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with flag FAB_MATCH, pmc_num);
+        flags |= (event->cmask & MMCR1_FAB_MASK) << MMCR1_FAB_SHIFT;
     }
     else if (event->cmask != 0x0)
     {
-	DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with thresholds. Currently noop,  pmc_num);		
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with thresholds. Currently noop,  pmc_num);		
     } 
     DEBUG_PRINT(DEBUGLEV_DETAIL, Setup PMC %d with flags 0x%lx, pmc_num, flags);
     return flags;
@@ -141,7 +134,6 @@ uint64_t power8_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     VERBOSEPRINTREG(cpu_id, IBM_MMCR0, LLU_CAST flags, FREEZE); \
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, IBM_MMCR0, flags)); 
 
-    
 //    flags = 0x0ULL; \
 //    CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, IBM_MMCR0, &flags)); \
 //    VERBOSEPRINTREG(cpu_id, IBM_MMCR0, LLU_CAST flags, BEFORE_UNFREEZE); \
@@ -156,11 +148,9 @@ uint64_t power8_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 #define POWER8_CHECK_CORE_OVERFLOW(index) \
     if (*current < eventSet->events[i].threadCounter[thread_id].startData) \
     { \
-	DEBUG_PRINT(DEBUGLEV_DETAIL, OVERFLOW_IN_REGISTER %s, counter_map[index].key); \
-	eventSet->events[i].threadCounter[thread_id].overflows++; \
-    } 
-	
-    
+        DEBUG_PRINT(DEBUGLEV_DETAIL, OVERFLOW_IN_REGISTER %s, counter_map[index].key); \
+        eventSet->events[i].threadCounter[thread_id].overflows++; \
+    }
 
 int perfmon_setupCounterThread_power8(
         int thread_id,
