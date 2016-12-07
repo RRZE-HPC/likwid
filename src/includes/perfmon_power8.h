@@ -239,7 +239,7 @@ int perfmon_startCountersThread_power8(int thread_id, PerfmonEventSet* eventSet)
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &flags));
                         VERBOSEPRINTREG(cpu_id, counter1, flags, START_PMC)
-                        eventSet->events[i].threadCounter[thread_id].startData = flags;
+                        eventSet->events[i].threadCounter[thread_id].startData = field64(flags, 0, box_map[type].regWidth);
                     }
                     break;
             }
@@ -282,19 +282,10 @@ int perfmon_stopCountersThread_power8(int thread_id, PerfmonEventSet* eventSet)
             switch (type)
             {
                 case PMC:
-                    if (pmc_num <= 5)
-                    {
-                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST field64(counter_result, 1, box_map[type].regWidth), STOP_PMC)
-                        *current = field64(counter_result, 1, box_map[type].regWidth);
-                        POWER8_CHECK_CORE_OVERFLOW(index);
-                    }
-                    else
-                    {
-                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
-                        VERBOSEPRINTREG(cpu_id, counter1, counter_result, STOP_PMC);
-                        *current = counter_result;
-                    }
+                    CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
+                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST field64(counter_result, 0, box_map[type].regWidth), STOP_PMC)
+                    *current = field64(counter_result, 0, box_map[type].regWidth);
+                    POWER8_CHECK_CORE_OVERFLOW(index);
                     break;
                 default:
                     break;
@@ -338,18 +329,10 @@ int perfmon_readCountersThread_power8(int thread_id, PerfmonEventSet* eventSet)
             switch (type)
             {
                 case PMC:
-                    if (pmc_num <= 5)
-                    {
-                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST field64(counter_result, 1, box_map[type].regWidth), READ_PMC)
-                        *current = field64(counter_result, 1, box_map[type].regWidth);
-                        POWER8_CHECK_CORE_OVERFLOW(index);
-                    }
-                    else
-                    {
-                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
-                        VERBOSEPRINTREG(cpu_id, counter1, counter_result, READ_PMC);
-                    }
+                    CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
+                    VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST field64(counter_result, 0, box_map[type].regWidth), READ_PMC)
+                    *current = field64(counter_result, 0, box_map[type].regWidth);
+                    POWER8_CHECK_CORE_OVERFLOW(index);
                     break;
                 default:
                     break;
