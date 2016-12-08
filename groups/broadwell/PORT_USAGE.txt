@@ -44,3 +44,7 @@ Port7 usage ratio UOPS_EXECUTED_PORT_PORT_7/SUM(UOPS_EXECUTED_PORT_PORT_*)
 This group measures the execution port utilization in a CPU core. The group can
 only be measured when HyperThreading is disabled because only then each CPU core
 can program eight counters.
+Please be aware that the counters PMC4-7 are broken on Intel Broadwell. They
+don't increment if either user- or kernel-level filtering is applied. User-level
+filtering is default in LIKWID, hence kernel-level filtering is added
+automatically for PMC4-7. The returned counts can be much higher.

@@ -151,6 +151,12 @@ likwid.setCpuClockMax = likwid_setCpuClockMax
 likwid.getGovernor = likwid_getGovernor
 likwid.setGovernor = likwid_setGovernor
 likwid.getDriver = likwid_getDriver
+likwid.getuid = likwid_getuid
+likwid.geteuid = likwid_geteuid
+likwid.setuid = likwid_setuid
+likwid.seteuid = likwid_seteuid
+likwid.setresuid = likwid_setresuid
+likwid.setresuser = likwid_setresuser
 
 likwid.cpuFeatures = { [0]="HW_PREFETCHER", [1]="CL_PREFETCHER", [2]="DCU_PREFETCHER", [3]="IP_PREFETCHER",
                         [4]="FAST_STRINGS", [5]="THERMAL_CONTROL", [6]="PERF_MON", [7]="FERR_MULTIPLEX",
@@ -285,9 +291,12 @@ local function get_spaces(str, min_space, max_space)
     local length = str:len()
     local back = 0
     local front = 0
-    back = math.ceil((max_space-str:len()) /2)
+    if tonumber(str) == nil or (str:len() == 1 and not str:match("0")) then
+        back = math.ceil((max_space-str:len()) /2)
+    else
+        back = 0
+    end
     front = max_space - back - str:len()
-
     if (front < back) then
         local tmp = front
         front = back
@@ -372,7 +381,7 @@ local function printtable(tab)
     print(hline)
     str = "| "
     for i=1,nr_columns do
-        front, back = get_spaces(tostring(tab[i][1]), min_lengths[i],max_lengths[i])
+        front, back = get_spaces(tostring(tab[i][1]), min_lengths[i], max_lengths[i])
         str = str .. front.. tostring(tab[i][1]) ..back
         if i<nr_columns then
             str = str .. " | "

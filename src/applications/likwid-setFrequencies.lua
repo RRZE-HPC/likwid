@@ -59,6 +59,10 @@ function usage()
     print_stdout("-p\t Print current frequencies")
     print_stdout("-l\t List available frequencies")
     print_stdout("-m\t List available governors")
+    print_stdout("")
+    print_stdout("In order to set the highest frequency, use the governor 'turbo'. This sets the")
+    print_stdout("minimal frequency to the available minimum, the maximal and current frequency")
+    print_stdout("to the turbo related frequency. The governor is set to 'performance'.")
 end
 
 --[[function getCurrentMinFreq(cpuid)
@@ -329,7 +333,17 @@ if min_freq and max_freq and max_freq < min_freq then
 end
 
 
+
 local availfreqs, availturbo = likwid.getAvailFreq(cpulist[i])
+if governor == "turbo" then
+    if not min_freq then
+        min_freq = availfreqs[#availfreqs]
+    end
+    if not max_freq or max_freq < availturbo then
+        max_freq = availturbo
+    end
+    frequency = availturbo
+end
 
 if min_freq then
     for i=1,#cpulist do
@@ -340,11 +354,11 @@ if min_freq then
                 break
             end
         end
-        if min_freq == turbo then
+        if min_freq == availturbo then
             valid_freq = true
         end
         if not valid_freq then
-            print_stderr(string.format("ERROR: Frequency %s not available for CPU %d! Please select one of\n%s", min_freq, cpulist[i], table.concat(availfreqs, ", ")))
+            print_stderr(string.format("ERROR: Selected min. frequency %s not available for CPU %d! Please select one of\n%s", min_freq, cpulist[i], table.concat(availfreqs, ", ")))
             os.exit(1)
         end
         local f = likwid.setCpuClockMin(cpulist[i], tonumber(min_freq)*1E6)
@@ -360,11 +374,11 @@ if max_freq then
                 break
             end
         end
-        if max_freq == turbo then
+        if max_freq == availturbo then
             valid_freq = true
         end
         if not valid_freq then
-            print_stderr(string.format("ERROR: Frequency %s not available for CPU %d! Please select one of\n%s", max_freq, cpulist[i], table.concat(availfreqs, ", ")))
+            print_stderr(string.format("ERROR: Selected max. frequency %s not available for CPU %d! Please select one of\n%s", max_freq, cpulist[i], table.concat(availfreqs, ", ")))
             os.exit(1)
         end
         local f = likwid.setCpuClockMax(cpulist[i], tonumber(max_freq)*1E6)
@@ -381,11 +395,11 @@ if frequency then
                 break
             end
         end
-        if frequency == turbo then
+        if frequency == availturbo then
             valid_freq = true
         end
         if not valid_freq then
-            print_stderr(string.format("ERROR: Frequency %s not available for CPU %d! Please select one of\n%s", frequency, cpulist[i], table.concat(availfreqs, ", ")))
+            print_stderr(string.format("ERROR: Selected frequency %s not available for CPU %d! Please select one of\n%s", frequency, cpulist[i], table.concat(availfreqs, ", ")))
             os.exit(1)
         end
         local f = likwid.setCpuClockCurrent(cpulist[i], tonumber(frequency)*1E6)
@@ -406,10 +420,12 @@ if governor then
             break
         end
     end
-    if governor == "turbo" and turbo ~= "0" then
+    local cur_freqs = {}
+    if governor == "turbo" and availturbo ~= "0" then
         valid_gov = true
+        governor = "performance"
         for i=1,#cpulist do
-            cur_freqs[cpulist[i]] = turbo
+            cur_freqs[cpulist[i]] = availturbo
         end
     end
     if not valid_gov then

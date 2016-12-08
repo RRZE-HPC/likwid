@@ -159,7 +159,7 @@ access_client_startDaemon(int cpu_id)
 
     address.sun_family = AF_LOCAL;
     address_length = sizeof(address);
-    snprintf(address.sun_path, sizeof(address.sun_path), "/tmp/likwid-%d", pid);
+    snprintf(address.sun_path, sizeof(address.sun_path), TOSTRING(LIKWIDSOCKETBASE) "-%d", pid);
     filepath = strdup(address.sun_path);
 
     while (timeout > 0)
@@ -180,11 +180,10 @@ access_client_startDaemon(int cpu_id)
     if (timeout <= 0)
     {
         ERRNO_PRINT;  /* should hopefully still work, as we make no syscalls in between. */
-        fprintf(stderr, "Exiting due to timeout: The socket file at '%s' \
-                could not be opened within 10 seconds.\n", filepath);
-        fprintf(stderr, "Consult the error message above this to find out why.\n");
-        fprintf(stderr, "If the error is 'no such file or directoy', \
-                it usually means that likwid-accessD just failed to start.\n");
+        fprintf(stderr, "Exiting due to timeout: The socket file at '%s' could not be\n", filepath);
+        fprintf(stderr, "opened within 10 seconds. Consult the error message above\n");
+        fprintf(stderr, "this to find out why. If the error is 'no such file or directoy',\n");
+        fprintf(stderr, "it usually means that likwid-accessD just failed to start.\n");
         exit(EXIT_FAILURE);
     }
     DEBUG_PRINT(DEBUGLEV_INFO, Successfully opened socket %s to daemon for CPU %d, filepath, cpu_id);

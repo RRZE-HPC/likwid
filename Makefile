@@ -32,6 +32,7 @@ GROUP_DIR   = ./groups
 FILTER_DIR  = ./filters
 MAKE_DIR    = ./make
 
+Q         ?= @
 
 #DO NOT EDIT BELOW
 
@@ -135,18 +136,18 @@ $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB)
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
-	$(Q)$(MAKE) -s -C  $(SRC_DIR)/access-daemon likwid-accessD
+	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-accessD
 
 $(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreq.c
 	@echo "===>  BUILD frequency daemon likwid-setFreq"
-	$(Q)$(MAKE) -s -C  $(SRC_DIR)/access-daemon likwid-setFreq
+	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-setFreq
 
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
 
 $(PINLIB):
 	@echo "===>  CREATE LIB  $(PINLIB)"
-	$(Q)$(MAKE) -s -C src/pthread-overload/ $(PINLIB)
+	$(Q)$(MAKE) -C src/pthread-overload/ $(PINLIB)
 
 $(GENGROUPLOCK): $(foreach directory,$(shell ls $(GROUP_DIR)), $(wildcard $(GROUP_DIR)/$(directory)/*.txt))
 	@echo "===>  GENERATE GROUP HEADERS"
@@ -160,15 +161,15 @@ $(FORTRAN_IF): $(SRC_DIR)/likwid.f90
 
 $(TARGET_LUA_LIB):
 	@echo "===>  ENTER  $(LUA_FOLDER)"
-	$(Q)$(MAKE) -s --no-print-directory -C $(LUA_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) --no-print-directory -C $(LUA_FOLDER) $(MAKECMDGOALS)
 
 $(TARGET_HWLOC_LIB):
 	@echo "===>  ENTER  $(HWLOC_FOLDER)"
-	$(Q)$(MAKE) -s --no-print-directory -C $(HWLOC_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) --no-print-directory -C $(HWLOC_FOLDER) $(MAKECMDGOALS)
 
 $(BENCH_TARGET):
 	@echo "===>  ENTER  $(BENCH_FOLDER)"
-	$(Q)$(MAKE) -s --no-print-directory -C $(BENCH_FOLDER) $(MAKECMDGOALS)
+	$(Q)$(MAKE) --no-print-directory -C $(BENCH_FOLDER) $(MAKECMDGOALS)
 
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c

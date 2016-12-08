@@ -57,6 +57,7 @@ static int bdw_did_cbox_check = 0;
 int bdw_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int bdwep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int (*broadwell_cbox_setup)(int, RegisterIndex, PerfmonEvent *);
+int print_ht_warn_once = 1;
 
 int bdw_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
@@ -129,6 +130,19 @@ int bdw_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         (event->eventId != 0xBB))
     {
         flags |= ((event->cmask<<8) + event->cfgBits)<<16;
+    }
+
+    if (getCounterTypeOffset(index) >= 4)
+    {
+        if (print_ht_warn_once)
+        {
+            fprintf(stderr, "WARNING: PMC4-7 on Intel Broadwell systems requires KERNEL option to work\n", getCounterTypeOffset(index));
+            fprintf(stderr, "         properly. The KERNEL option is added automatically for PMC4-7.\n");
+            fprintf(stderr, "         Be aware that the events also count during kernel execution and may\n");
+            fprintf(stderr, "         be higher than expected.\n");
+            print_ht_warn_once = 0;
+        }
+        flags |= (1ULL<<17);
     }
 
     if (event->numberOfOptions > 0)
@@ -1032,6 +1046,7 @@ int perfmon_setupCounterThread_broadwell(
     uint64_t flags;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    print_ht_warn_once = 1;
 
     if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
     {
