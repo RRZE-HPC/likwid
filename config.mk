@@ -64,6 +64,10 @@ INSTRUMENT_BENCH = false#NO SPACE
 # Use recommended Portable Hardware Locality (hwloc) instead of CPUID
 USE_HWLOC = true#NO SPACE
 
+# Use Linux perf_event interface for measurements. Does not support thermal or
+# energy (RAPL) readings.
+USE_PERF_EVENT = false#NO SPACE
+
 # Build LIKWID with debug flags
 DEBUG = false#NO SPACE
 

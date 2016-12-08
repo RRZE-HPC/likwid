@@ -72,6 +72,10 @@
 #include <perfmon_broadwell.h>
 #include <perfmon_skylake.h>
 
+#ifdef LIKWID_USE_PERFEVENT
+#include <perfmon_perfevent.h>
+#endif
+
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 PerfmonEvent* eventHash = NULL;
@@ -129,19 +133,12 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static int
-getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int force)
+getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
 {
-    int err = 0;
     int ret = FALSE;
-    uint64_t tmp = 0x0ULL;
-    int (*ownstrcmp)(const char*, const char*);
-    ownstrcmp = &strcmp;
-    int testcpu = groupSet->threads[0].processorId;
-    int firstpmcindex = -1;
+
     for (int i=0; i< perfmon_numCounters; i++)
     {
-        if (counter_map[i].type == PMC && firstpmcindex < 0)
-            firstpmcindex = i;
         if (biseqcstr(reg, counter_map[i].key))
         {
             *index = counter_map[i].index;
@@ -150,76 +147,92 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
             break;
         }
     }
-    if (*type == PMC && (*index - firstpmcindex) > cpuid_info.perf_num_ctr)
+    return ret;
+}
+
+static RegisterType
+checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
+{
+    int err = 0;
+    uint64_t tmp = 0x0ULL;
+    RegisterType type = oldtype;
+    int (*ownstrcmp)(const char*, const char*);
+    ownstrcmp = &strcmp;
+    int testcpu = groupSet->threads[0].processorId;
+    int firstpmcindex = -1;
+
+    for (int i=0; i< perfmon_numCounters; i++)
+    {
+        if (counter_map[i].type == PMC && firstpmcindex < 0)
+        {
+            firstpmcindex = i;
+            break;
+        }
+    }
+
+    if (type == PMC && (index - firstpmcindex) > cpuid_info.perf_num_ctr)
     {
         fprintf(stderr,
                 "WARNING: Counter %s is only available with deactivated HyperThreading. Counter results defaults to 0.\n",
                 bdata(reg));
-
-        *type = NOTYPE;
-        return FALSE;
+        return NOTYPE;
     }
-    if (ret == FALSE || (ret == TRUE && *type == NOTYPE))
+    if (type == NOTYPE)
     {
         DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s not available on the current system. Counter results defaults to 0.,bdata(reg));
-        *type = NOTYPE;
-        return FALSE;
+        return NOTYPE;
     }
-    if (ret && (ownstrcmp(bdata(reg), counter_map[*index].key) != 0))
+    if (ownstrcmp(bdata(reg), counter_map[index].key) != 0)
     {
         DEBUG_PRINT(DEBUGLEV_INFO, WARNING: Counter %s does not exist ,bdata(reg));
-        *type = NOTYPE;
-        return FALSE;
+        return NOTYPE;
     }
-    err = HPMcheck(counter_map[*index].device, 0);
+    err = HPMcheck(counter_map[index].device, 0);
     if (!err)
     {
         DEBUG_PRINT(DEBUGLEV_INFO, WARNING: The device for counter %s does not exist ,bdata(reg));
-        *type = NOTYPE;
-        return FALSE;
+        return NOTYPE;
     }
-    if ((ret) && (*type != THERMAL) && (*type != POWER) && (*type != WBOX0FIX))
+    if ((type != THERMAL) && (type != POWER) && (type != WBOX0FIX))
     {
         int check_settings = 1;
-        uint32_t reg = counter_map[*index].configRegister;
+        uint32_t reg = counter_map[index].configRegister;
         if (reg == 0x0)
         {
-            reg = counter_map[*index].counterRegister;
+            reg = counter_map[index].counterRegister;
             check_settings = 0;
         }
-        err = HPMread(testcpu, counter_map[*index].device, reg, &tmp);
+        err = HPMread(testcpu, counter_map[index].device, reg, &tmp);
         if (err != 0)
         {
             if (err == -ENODEV)
             {
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Device %s not accessible on this machine,
-                                         pci_devices[box_map[*type].device].name);
+                                         pci_devices[box_map[type].device].name);
             }
             else
             {
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not readable on this machine,
-                                             counter_map[*index].key);
+                                             counter_map[index].key);
             }
-            *type = NOTYPE;
-            ret = FALSE;
+            type = NOTYPE;
         }
         else if (tmp == 0x0ULL)
         {
-            err = HPMwrite(testcpu, counter_map[*index].device, reg, 0x0ULL);
+            err = HPMwrite(testcpu, counter_map[index].device, reg, 0x0ULL);
             if (err != 0)
             {
                 if (err == -ENODEV)
                 {
                     DEBUG_PRINT(DEBUGLEV_DETAIL, Device %s not accessible on this machine,
-                                             pci_devices[box_map[*type].device].name);
+                                             pci_devices[box_map[type].device].name);
                 }
                 else
                 {
                     DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not writeable on this machine,
-                                             counter_map[*index].key);
+                                             counter_map[index].key);
                 }
-                *type = NOTYPE;
-                ret = FALSE;
+                type = NOTYPE;
             }
             check_settings = 0;
         }
@@ -228,34 +241,32 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type, int forc
             if (force == 1)
             {
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s has bits set (0x%llx) but we are forced to overwrite them,
-                                             counter_map[*index].key, LLU_CAST tmp);
-                err = HPMwrite(testcpu, counter_map[*index].device, reg, 0x0ULL);
+                                             counter_map[index].key, LLU_CAST tmp);
+                err = HPMwrite(testcpu, counter_map[index].device, reg, 0x0ULL);
             }
-            else if ((force == 0) && ((*type != FIXED)&&(*type != THERMAL)&&(*type != POWER)&&(*type != WBOX0FIX)))
+            else if ((force == 0) && ((type != FIXED)&&(type != THERMAL)&&(type != POWER)&&(type != WBOX0FIX)))
             {
-                fprintf(stderr, "ERROR: The selected register %s is in use.\n", counter_map[*index].key);
+                fprintf(stderr, "ERROR: The selected register %s is in use.\n", counter_map[index].key);
                 fprintf(stderr, "Please run likwid with force option (-f, --force) to overwrite settings\n");
                 exit(EXIT_SUCCESS);
             }
         }
     }
-    else if ((ret) && ((*type == POWER) || (*type == WBOX0FIX) || (*type == THERMAL)))
+    else if ((type == POWER) || (type == WBOX0FIX) || (type == THERMAL))
     {
-        err = HPMread(testcpu, MSR_DEV, counter_map[*index].counterRegister, &tmp);
+        err = HPMread(testcpu, MSR_DEV, counter_map[index].counterRegister, &tmp);
         if (err != 0)
         {
             DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s not readable on this machine,
-                                         counter_map[*index].key);
-            *type = NOTYPE;
-            ret = FALSE;
+                                         counter_map[index].key);
+            type = NOTYPE;
         }
     }
     else
     {
-        *type = NOTYPE;
-        ret = FALSE;
+        type = NOTYPE;
     }
-    return ret;
+    return type;
 }
 
 static int
@@ -993,6 +1004,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 {
     int initialize_power = FALSE;
     int initialize_thermal = FALSE;
+#ifndef LIKWID_USE_PERFEVENT
     switch ( cpuid_info.family )
     {
         case P6_FAMILY:
@@ -1244,6 +1256,14 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             ERROR_PLAIN_PRINT(Unsupported Processor);
             break;
     }
+#else
+    initThreadArch = perfmon_init_perfevent;
+    perfmon_startCountersThread = perfmon_startCountersThread_perfevent;
+    perfmon_stopCountersThread = perfmon_stopCountersThread_perfevent;
+    perfmon_readCountersThread = perfmon_readCountersThread_perfevent;
+    perfmon_setupCountersThread = perfmon_setupCountersThread_perfevent;
+    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_perfevent;
+#endif
     *init_power = initialize_power;
     *init_temp = initialize_thermal;
 }
@@ -1316,6 +1336,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
 
 
     /* Initialize access interface */
+#ifndef LIKWID_USE_PERFEVENT
     ret = HPMinit();
     if (ret)
     {
@@ -1325,6 +1346,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         exit(EXIT_FAILURE);
         return ret;
     }
+#endif
     timer_init();
 
     /* Initialize maps pointer to current architecture maps */
@@ -1337,6 +1359,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     /* If the arch supports it, initialize power and thermal measurements */
     for(i=0;i<nrThreads;i++)
     {
+#ifndef LIKWID_USE_PERFEVENT
         ret = HPMaddThread(threadsToCpu[i]);
         if (ret != 0)
         {
@@ -1345,8 +1368,6 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             free(groupSet);
             return ret;
         }
-        groupSet->threads[i].thread_id = i;
-        groupSet->threads[i].processorId = threadsToCpu[i];
 
         if (HPMcheck(MSR_DEV, threadsToCpu[i]) == 0)
         {
@@ -1355,6 +1376,9 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             free(groupSet);
             exit(EXIT_FAILURE);
         }
+#endif
+        groupSet->threads[i].thread_id = i;
+        groupSet->threads[i].processorId = threadsToCpu[i];
 
         if (initialize_power == TRUE)
         {
@@ -1415,7 +1439,9 @@ perfmon_finalize(void)
         perfmon_destroyMarkerResults();
     }
     power_finalize();
+#ifndef LIKWID_USE_PERFEVENT
     HPMfinalize();
+#endif
     perfmon_initialized = 0;
     groupSet = NULL;
     return;
@@ -1567,11 +1593,19 @@ perfmon_addEventSet(const char* eventCString)
         }
         else
         {
-            if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type, forceOverwrite))
+            if (!getIndexAndType(subtokens->entry[1], &event->index, &event->type))
             {
                 event->type = NOTYPE;
                 goto past_checks;
             }
+#ifndef LIKWID_USE_PERFEVENT
+            event->type = checkAccess(subtokens->entry[1], event->index, event->type, forceOverwrite);
+            if (event->type == NOTYPE)
+            {
+                DEBUG_PRINT(DEBUGLEV_INFO, Cannot access counter register %s, bdata(subtokens->entry[1]));
+                goto past_checks;
+            }
+#endif
 
             if (!getEvent(subtokens->entry[0], subtokens->entry[1], &event->event))
             {
@@ -1580,7 +1614,7 @@ perfmon_addEventSet(const char* eventCString)
                 event->type = NOTYPE;
                 goto past_checks;
             }
-
+#ifndef LIKWID_USE_PERFEVENT
             if (!checkCounter(subtokens->entry[1], event->event.limit))
             {
                 DEBUG_PRINT(DEBUGLEV_INFO, Register %s not allowed for event %s,
@@ -1588,6 +1622,7 @@ perfmon_addEventSet(const char* eventCString)
                 event->type = NOTYPE;
                 goto past_checks;
             }
+#endif
             if (parseOptions(subtokens, &event->event, event->index) < 0)
             {
                 DEBUG_PRINT(DEBUGLEV_INFO, Cannot parse options in %s, bdata(eventtokens->entry[i]));
