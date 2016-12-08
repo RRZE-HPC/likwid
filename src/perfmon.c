@@ -2168,7 +2168,6 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     sock_cpu = socket_lock[affinity_core2node_lookup[cpu]];
     if (cpu != sock_cpu)
     {
-        printf("CPU %d -> Socket CPU %d\n", cpu, sock_cpu);
         for (e=0; e<groupSet->numberOfThreads; e++)
         {
             if (groupSet->threads[e].processorId == sock_cpu)
@@ -2896,6 +2895,39 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     }
     add_to_clist(&clist, "time", perfmon_getTimeOfRegion(region, threadId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
+    add_to_clist(&clist, "true", 1);
+    add_to_clist(&clist, "false", 0);
+    int cpu = 0, sock_cpu = 0;
+    for (e=0; e<groupSet->numberOfThreads; e++)
+    {
+        if (groupSet->threads[e].thread_id == threadId)
+        {
+            cpu = groupSet->threads[e].processorId;
+        }
+    }
+    sock_cpu = socket_lock[affinity_core2node_lookup[cpu]];
+    if (cpu != sock_cpu)
+    {
+        for (e=0; e<groupSet->numberOfThreads; e++)
+        {
+            if (groupSet->threads[e].processorId == sock_cpu)
+            {
+                sock_cpu = groupSet->threads[e].thread_id;
+            }
+        }
+        for (e=0;e<markerResults[region].eventCount;e++)
+        {
+            if (perfmon_isUncoreCounter(groupSet->groups[markerResults[region].groupID].group.counters[e]) &&
+                !perfmon_isUncoreCounter(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId]))
+            {
+                err = update_clist(&clist,groupSet->groups[markerResults[region].groupID].group.counters[e], perfmon_getResultOfRegionThread(region, e, sock_cpu));
+                if (err < 0)
+                {
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[markerResults[region].groupID].group.counters[e], threadId);
+                }
+            }
+        }
+    }
     err = calc_metric(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId], &clist, &result);
     if (err < 0)
     {
