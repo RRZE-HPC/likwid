@@ -1046,12 +1046,12 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
             switch (type)
             {
                 case PMC:
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter1, 0x0ULL));
-                    flags |= (1<<(index-cpuid_info.perf_num_fixed_ctr));  /* enable counter */
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
+                    flags |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));  /* enable counter */
                     break;
 
                 case FIXED:
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter1, 0x0ULL));
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     flags |= (1ULL<<(index+32));  /* enable fixed counter */
                     break;
 
@@ -1152,6 +1152,7 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, UNFREEZE_PMC_OR_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, 0x0ULL));
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, UNFREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, flags));
     }
     if (MEASURE_UNCORE(eventSet) && cpuid_info.model == SANDYBRIDGE_EP)
@@ -1230,6 +1231,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
 
     if (MEASURE_CORE(eventSet))
     {
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
     }
     if (MEASURE_UNCORE(eventSet) && cpuid_info.model == SANDYBRIDGE_EP)
@@ -1515,7 +1517,9 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
     if (MEASURE_CORE(eventSet))
     {
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, &pmc_flags));
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST pmc_flags, SAFE_PMC_FLAGS)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, 0x0ULL));
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, RESET_PMC_FLAGS)
     }
     if (MEASURE_UNCORE(eventSet) && cpuid_info.model == SANDYBRIDGE_EP)
     {
@@ -1823,6 +1827,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
 
     if (MEASURE_CORE(eventSet))
     {
+        VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST pmc_flags, RESTORE_PMC_FLAGS)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_CTRL, pmc_flags));
     }
 

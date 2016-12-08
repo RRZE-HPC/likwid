@@ -136,7 +136,7 @@ int bdw_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         if (print_ht_warn_once)
         {
-            fprintf(stderr, "WARNING: PMC4-7 on Intel Broadwell systems requires KERNEL option to work\n", getCounterTypeOffset(index));
+            fprintf(stderr, "WARNING: PMC4-7 on Intel Broadwell systems requires KERNEL option to work\n");
             fprintf(stderr, "         properly. The KERNEL option is added automatically for PMC4-7.\n");
             fprintf(stderr, "         Be aware that the events also count during kernel execution and may\n");
             fprintf(stderr, "         be higher than expected.\n");
