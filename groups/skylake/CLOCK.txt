@@ -6,11 +6,13 @@ FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
 PWR0  PWR_PKG_ENERGY
 PWR3  PWR_DRAM_ENERGY
+UBOXFIX UNCORE_CLOCK
 
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+Uncore Clock [MHz] 1.E-06*UBOXFIX/time
 CPI  FIXC1/FIXC0
 Energy [J]  PWR0
 Power [W] PWR0/time
@@ -21,6 +23,7 @@ LONG
 Formula:
 Power =  PWR_PKG_ENERGY / time
 Power DRAM =  PWR_DRAM_ENERGY / time
+Uncore Clock [MHz] = 1.E-06 * UNCORE_CLOCK / time
 -
 Skylake implements the RAPL interface. This interface enables to
 monitor the consumed energy on the package (socket) and DRAM level.
