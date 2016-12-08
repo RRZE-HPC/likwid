@@ -85,6 +85,7 @@ extern void return_group(GroupInfo* ginfo);
 
 extern void init_clist(CounterList* clist);
 extern int add_to_clist(CounterList* clist, char* counter, double result);
+extern int update_clist(CounterList* clist, char* counter, double result);
 extern void destroy_clist(CounterList* clist);
 
 extern int calc_metric(char* formula, CounterList* clist, double *result);

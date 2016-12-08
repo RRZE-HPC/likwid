@@ -1381,6 +1381,29 @@ add_to_clist(CounterList* clist, char* counter, double result)
     return 0;
 }
 
+int
+update_clist(CounterList* clist, char* counter, double result)
+{
+    int i;
+    int found = 0;
+    if ((clist == NULL)||(counter == NULL))
+        return -EINVAL;
+    for (i=0; i< clist->counters; i++)
+    {
+        if (strcmp(clist->cnames[i], counter) == 0)
+        {
+            clist->cvalues[i] = result;
+            found = 1;
+            break;
+        }
+    }
+    if (!found)
+    {
+        return -ENOENT;
+    }
+    return 0;
+}
+
 void
 destroy_clist(CounterList* clist)
 {

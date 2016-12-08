@@ -2000,6 +2000,38 @@ perfmon_readGroupThreadCounters(int groupId, int threadId)
     return __perfmon_readCounters(groupId, threadId);
 }
 
+int
+perfmon_isUncoreCounter(char* counter)
+{
+    char fix[] = "FIXC";
+    char pmc[] = "PMC";
+    char upmc[] = "UPMC";
+    char tmp[] = "TMP";
+    char *ptr = NULL;
+    ptr = strstr(counter, fix);
+    if (ptr)
+    {
+        return 0;
+    }
+    ptr = NULL;
+    ptr = strstr(counter, tmp);
+    if (ptr)
+    {
+        return 0;
+    }
+    ptr = NULL;
+    ptr = strstr(counter, pmc);
+    if (ptr)
+    {
+        ptr = strstr(counter, upmc);
+        if (!ptr)
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 double
 perfmon_getResult(int groupId, int eventId, int threadId)
 {
@@ -2123,6 +2155,40 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     }
     add_to_clist(&clist, "time", perfmon_getTimeOfGroup(groupId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
+    add_to_clist(&clist, "true", 1);
+    add_to_clist(&clist, "false", 0);
+    int cpu = 0, sock_cpu = 0, err = 0;
+    for (e=0; e<groupSet->numberOfThreads; e++)
+    {
+        if (groupSet->threads[e].thread_id == threadId)
+        {
+            cpu = groupSet->threads[e].processorId;
+        }
+    }
+    sock_cpu = socket_lock[affinity_core2node_lookup[cpu]];
+    if (cpu != sock_cpu)
+    {
+        printf("CPU %d -> Socket CPU %d\n", cpu, sock_cpu);
+        for (e=0; e<groupSet->numberOfThreads; e++)
+        {
+            if (groupSet->threads[e].processorId == sock_cpu)
+            {
+                sock_cpu = groupSet->threads[e].thread_id;
+            }
+        }
+        for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
+        {
+            if (perfmon_isUncoreCounter(groupSet->groups[groupId].group.counters[e]) &&
+                !perfmon_isUncoreCounter(groupSet->groups[groupId].group.metricformulas[metricId]))
+            {
+                err = update_clist(&clist,groupSet->groups[groupId].group.counters[e], perfmon_getResult(groupId, e, sock_cpu));
+                if (err < 0)
+                {
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
+                }
+            }
+        }
+    }
     e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
     if (e < 0)
     {
@@ -2173,6 +2239,39 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     }
     add_to_clist(&clist, "time", perfmon_getLastTimeOfGroup(groupId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
+    add_to_clist(&clist, "true", 1);
+    add_to_clist(&clist, "false", 0);
+    int cpu = 0, sock_cpu = 0, err = 0;
+    for (e=0; e<groupSet->numberOfThreads; e++)
+    {
+        if (groupSet->threads[e].thread_id == threadId)
+        {
+            cpu = groupSet->threads[e].processorId;
+        }
+    }
+    sock_cpu = socket_lock[affinity_core2node_lookup[cpu]];
+    if (cpu != sock_cpu)
+    {
+        for (e=0; e<groupSet->numberOfThreads; e++)
+        {
+            if (groupSet->threads[e].processorId == sock_cpu)
+            {
+                sock_cpu = groupSet->threads[e].thread_id;
+            }
+        }
+        for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
+        {
+            if (perfmon_isUncoreCounter(groupSet->groups[groupId].group.counters[e]) &&
+                !perfmon_isUncoreCounter(groupSet->groups[groupId].group.metricformulas[metricId]))
+            {
+                err = update_clist(&clist,groupSet->groups[groupId].group.counters[e], perfmon_getLastResult(groupId, e, sock_cpu));
+                if (err < 0)
+                {
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
+                }
+            }
+        }
+    }
     e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
     if (e < 0)
     {
