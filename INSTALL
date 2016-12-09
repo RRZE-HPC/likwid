@@ -148,6 +148,20 @@ over it.
 If you have still problems please let me know on the likwid mailing list:
 http://groups.google.com/group/likwid-users
 
+== Building LIKWID with perf_event kernel backend ==
+When setting USE_PERF_EVENT in config.mk, the perf_event kernel interface is
+used to programm the counters instead of the way through the msr kernel module
+and PCI devices. The event and counter lists are the same.
+The perf_event interface handles the counter allocation itself, thus the counters
+provided to LIKWID might not be the ones perf_event uses internally.
+The support is tested for the core-local fixed- and general-purpose counters. The
+paranoid setting requires to be 1 or less.
+It is also able to use it for Uncore counters but the support is experimental
+and requires a paranoid setting of 0 or less.
+Currently no counter options are supported.
+
+paranoid setting: /proc/sys/kernel/perf_event_paranoid
+
 
 == Linking applications with LIKWID lib ==
 Commonly the LIKWID C library can be used as all other libraries by setting the
