@@ -197,11 +197,11 @@ access_client_startDaemon(int cpu_id)
 int
 access_client_init(int cpu_id)
 {
-    if (cpuSockets[cpu_id] > 0)
+    if (masterPid != 0 && gettid() == masterPid)
     {
         return 0;
     }
-    if (cpuSockets[cpu_id] < 0 && (gettid() != masterPid || masterPid == 0))
+    if (cpuSockets[cpu_id] < 0)
     {
         pthread_mutex_lock(&cpuLocks[cpu_id]);
         cpuSockets[cpu_id] = access_client_startDaemon(cpu_id);
