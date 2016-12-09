@@ -1343,7 +1343,6 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         ERROR_PLAIN_PRINT(Cannot set access functions);
         free(groupSet->threads);
         free(groupSet);
-        exit(EXIT_FAILURE);
         return ret;
     }
 #endif
@@ -1369,12 +1368,13 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             return ret;
         }
 
-        if (HPMcheck(MSR_DEV, threadsToCpu[i]) == 0)
+        ret = HPMcheck(MSR_DEV, threadsToCpu[i]);
+        if (ret != 1)
         {
             fprintf(stderr, "Cannot get access to MSRs. Please check permissions to the MSRs\n");
             free(groupSet->threads);
             free(groupSet);
-            exit(EXIT_FAILURE);
+            return -EACCES;
         }
 #endif
         groupSet->threads[i].thread_id = i;
