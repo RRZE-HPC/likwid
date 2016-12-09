@@ -48,6 +48,7 @@
 typedef struct {
     pthread_t tid;
     uint32_t coreId;
+    uint32_t hashIndex;
     GHashTable* hashTable;
 } ThreadList;
 
@@ -75,6 +76,7 @@ hashTable_initThread(int coreID)
         /* initialize structure */
         resPtr->tid =  pthread_self();
         resPtr->coreId  = coreID;
+        resPtr->hashIndex = 0;
         resPtr->hashTable = g_hash_table_new(g_str_hash, g_str_equal);
         threadList[coreID] = resPtr;
     }
@@ -93,6 +95,7 @@ hashTable_get(bstring label, LikwidThreadResults** resEntry)
         /* initialize structure */
         resPtr->tid =  pthread_self();
         resPtr->coreId  = coreID;
+        resPtr->hashIndex = 0;
         resPtr->hashTable = g_hash_table_new(g_str_hash, g_str_equal);
         threadList[coreID] = resPtr;
     }
@@ -106,6 +109,7 @@ hashTable_get(bstring label, LikwidThreadResults** resEntry)
         (*resEntry)->label = bstrcpy (label);
         (*resEntry)->time = 0.0;
         (*resEntry)->count = 0;
+        (*resEntry)->index = resPtr->hashIndex++;
         for (int i=0; i< NUM_PMC; i++)
         {
             (*resEntry)->PMcounters[i] = 0.0;
@@ -210,7 +214,6 @@ hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
     }
 
     uint32_t regionIds[numberOfRegions];
-    uint32_t currentRegion = 0;
 
     for (int core=0; core<MAX_NUM_THREADS; core++)
     {
@@ -229,15 +232,20 @@ hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
                 threadResult = (LikwidThreadResults*) value;
                 uint32_t* regionId = (uint32_t*) g_hash_table_lookup(regionLookup, key);
 
-                /* is region not yet registered */
+                /* is region not yet registered, this is the case for the first
+                 * processed CPU core that has a hash table.
+                 */
                 if ( regionId == NULL )
                 {
-                    (*results)[currentRegion].tag = bstrcpy (threadResult->label);
-                    (*results)[currentRegion].groupID = threadResult->groupID;
-                    regionIds[currentRegion] = currentRegion;
-                    regionId = regionIds + currentRegion;
-                    g_hash_table_insert(regionLookup, g_strdup(key), (regionIds+currentRegion));
-                    currentRegion++;
+                    (*results)[threadResult->index].tag = bstrcpy (threadResult->label);
+                    (*results)[threadResult->index].groupID = threadResult->groupID;
+                    regionIds[threadResult->index] = threadResult->index;
+                    regionId = regionIds + threadResult->index;
+                    /* The region id is added to a temporary hash table with the
+                     * region label as key to get it back for all following
+                     * threads.
+                     */
+                    g_hash_table_insert(regionLookup, g_strdup(key), (regionIds+threadResult->index));
                 }
 
                 (*results)[*regionId].count[threadId] = threadResult->count;
@@ -248,14 +256,9 @@ hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
                 {
                     (*results)[*regionId].counters[threadId][j] = threadResult->PMcounters[j];
                 }
-                //bdestroy(threadResult->label);
-                //free(threadResult);
             }
 
             threadId++;
-            /*g_hash_table_destroy(resPtr->hashTable);
-            free(resPtr);
-            threadList[core] = NULL;*/
         }
     }
     g_hash_table_destroy(regionLookup);
