@@ -321,7 +321,7 @@ install: install_daemon install_freq
 	@echo "===> INSTALL lua to likwid interface to $(PREFIX)/share/lua"
 	@mkdir -p $(PREFIX)/share/lua
 	@chmod 775 $(PREFIX)/share/lua
-	@install -m 755 likwid.lua $(PREFIX)/share/lua
+	@install -m 644 likwid.lua $(PREFIX)/share/lua
 	@echo "===> INSTALL libraries to $(LIBPREFIX)"
 	@mkdir -p $(LIBPREFIX)
 	@chmod 775 $(LIBPREFIX)
@@ -408,7 +408,7 @@ move: move_daemon move_freq
 	@echo "===> MOVE lua to likwid interface from $(PREFIX)/share/lua to $(INSTALLED_PREFIX)/share/lua"
 	@mkdir -p $(INSTALLED_PREFIX)/share/lua
 	@chmod 775 $(INSTALLED_PREFIX)/share/lua
-	@install -m 755 $(PREFIX)/share/lua/likwid.lua $(INSTALLED_PREFIX)/share/lua
+	@install -m 644 $(PREFIX)/share/lua/likwid.lua $(INSTALLED_PREFIX)/share/lua
 	@echo "===> MOVE libraries from $(LIBPREFIX) to $(INSTALLED_LIBPREFIX)"
 	@mkdir -p $(INSTALLED_LIBPREFIX)
 	@chmod 775 $(INSTALLED_LIBPREFIX)
