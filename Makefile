@@ -69,6 +69,7 @@ endif
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
 OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)
+FILTERS := $(filter-out ./filters/README,$(wildcard ./filters/*))
 
 
 L_APPS      =   likwid-perfctr \
@@ -387,8 +388,9 @@ install: install_daemon install_freq
 	@echo "===> INSTALL filters to $(abspath $(PREFIX)/share/likwid/filter)"
 	@mkdir -p $(abspath $(PREFIX)/share/likwid/filter)
 	@chmod 755 $(abspath $(PREFIX)/share/likwid/filter)
-	@cp -f filters/*  $(abspath $(PREFIX)/share/likwid/filter)
-	@chmod 755 $(abspath $(PREFIX)/share/likwid/filter)/*
+	@for F in $(FILTERS); do \
+		install -m 755 $$F  $(abspath $(PREFIX)/share/likwid/filter); \
+	done
 
 move: move_daemon move_freq
 	@echo "===> MOVE applications from $(BINPREFIX) to $(INSTALLED_BINPREFIX)"
