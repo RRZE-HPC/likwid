@@ -43,7 +43,7 @@ if [ ! -e ${EXEC}.txt ]; then
 fi
 if [ "${EXEC}" == "likwid-setFrequencies" ]; then
     FREQ=$(likwid-setFrequencies -l | grep -v frequencies | awk '{print $2}')
-    CURFREQ=$(likwid-setFrequencies -p | head -n2 | tail -n 1 | rev | awk '{print $2}' | rev)
+    CURFREQ=$(likwid-setFrequencies -p | head -n2 | tail -n 1 | rev | awk '{print $2}' | rev | awk -F'/' '{print $2}')
 fi
 if [ "${EXEC}" == "likwid-mpirun" ]; then
     if [ -z "$(which mpiexec)" ] && [ -z "$(which mpiexec.hydra)" ] && [ -z "$(which mpirun)" ]; then
