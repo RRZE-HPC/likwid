@@ -1435,19 +1435,18 @@ lua_likwid_getPowerInfo(lua_State* L)
     {
         affinity = get_affinityDomains();
     }
-
     if (power_isInitialized == 0)
     {
         power_hasRAPL = power_init(0);
-        for(i=0;i<affinity->numberOfAffinityDomains;i++)
+        if (power_hasRAPL > 0)
         {
-            if (bstrchrp(affinity->domains[i].tag, 'S', 0) != BSTR_ERR)
+            for(i=0;i<affinity->numberOfAffinityDomains;i++)
             {
-                HPMaddThread(affinity->domains[i].processorList[0]);
+                if (bstrchrp(affinity->domains[i].tag, 'S', 0) != BSTR_ERR)
+                {
+                    HPMaddThread(affinity->domains[i].processorList[0]);
+                }
             }
-        }
-        if (power_hasRAPL)
-        {
             power_isInitialized = 1;
             power = get_powerInfo();
         }
