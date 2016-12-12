@@ -46,8 +46,12 @@ include $(MAKE_DIR)/include_$(COMPILER).mk
 include $(MAKE_DIR)/config_checks.mk
 include $(MAKE_DIR)/config_defines.mk
 
-INCLUDES  += -I./src/includes -I$(LUA_FOLDER)/includes -I$(HWLOC_FOLDER)/include -I$(BUILD_DIR)
+INCLUDES  += -I./src/includes -I$(LUA_INCLUDE_DIR) -I$(HWLOC_FOLDER)/include -I$(BUILD_DIR)
 LIBS      += -ldl
+
+ifeq ($(LUA_INTERNAL),false)
+LIBS      += -l$(LUA_LIB_NAME)
+endif
 
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
@@ -114,6 +118,9 @@ $(L_APPS):  $(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$(L_APPS)))
 		-e s/'<VERSION>'/$(VERSION).$(RELEASE)/g \
 		-e s/'<DATE>'/$(DATE)/g \
 		$(addprefix $(SRC_DIR)/applications/,$(addsuffix  .lua,$@)) > $@
+	@if [ "$(LUA_INTERNAL)" = "false" ]; then \
+		sed -i -e s+"$(subst /,\\/,$(INSTALLED_BINPREFIX))/likwid-lua"+"$(LUA_BIN)/$(LUA_LIB_NAME)"+ $@; \
+	fi
 	@if [ "$(ACCESSMODE)" = "direct" ]; then sed -i -e s/"access_mode = 0"/"access_mode = 1"/g $(SRC_DIR)/applications/$@.lua;fi
 
 $(L_HELPER):
@@ -160,9 +167,14 @@ $(FORTRAN_IF): $(SRC_DIR)/likwid.f90
 	$(Q)$(FC) -c  $(FCFLAGS) $<
 	@rm -f likwid.o
 
+ifeq ($(LUA_INTERNAL),true)
 $(TARGET_LUA_LIB):
 	@echo "===>  ENTER  $(LUA_FOLDER)"
 	$(Q)$(MAKE) --no-print-directory -C $(LUA_FOLDER) $(MAKECMDGOALS)
+else
+$(TARGET_LUA_LIB):
+	@echo "===>  EXTERNAL LUA"
+endif
 
 $(TARGET_HWLOC_LIB):
 	@echo "===>  ENTER  $(HWLOC_FOLDER)"
@@ -315,7 +327,9 @@ install: install_daemon install_freq
 	@for APP in $(C_APPS); do \
 		install -m 755 $$APP  $(BINPREFIX); \
 	done
-	@install -m 755 ext/lua/lua $(BINPREFIX)/likwid-lua
+	@if [ "$(LUA_INTERNAL)" = "true" ]; then \
+		install -m 755 ext/lua/lua $(BINPREFIX)/$(LUA_LIB_NAME); \
+	fi
 	@echo "===> INSTALL helper applications to $(BINPREFIX)"
 	@install -m 755 perl/feedGnuplot $(BINPREFIX)
 	@echo "===> INSTALL lua to likwid interface to $(PREFIX)/share/lua"
@@ -328,15 +342,19 @@ install: install_daemon install_freq
 	@install -m 755 $(TARGET_LIB) $(LIBPREFIX)/$(TARGET_LIB).$(VERSION).$(RELEASE)
 	@install -m 755 liblikwidpin.so $(LIBPREFIX)/liblikwidpin.so.$(VERSION).$(RELEASE)
 	@install -m 755 $(TARGET_HWLOC_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE)
-	@install -m 755 $(TARGET_LUA_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE)
+	@if [ "$(LUA_INTERNAL)" = "true" ]; then \
+		install -m 755 $(TARGET_LUA_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE); \
+	fi
 	@cd $(LIBPREFIX) && ln -fs $(TARGET_LIB).$(VERSION).$(RELEASE) $(TARGET_LIB)
 	@cd $(LIBPREFIX) && ln -fs $(TARGET_LIB).$(VERSION).$(RELEASE) $(TARGET_LIB).$(VERSION)
 	@cd $(LIBPREFIX) && ln -fs $(PINLIB).$(VERSION).$(RELEASE) $(PINLIB)
 	@cd $(LIBPREFIX) && ln -fs $(PINLIB).$(VERSION).$(RELEASE) $(PINLIB).$(VERSION)
 	@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_HWLOC_LIB))
 	@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION)
-	@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB))
-	@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB)).$(VERSION)
+	@if [ "$(LUA_INTERNAL)" = "true" ]; then \
+		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB)); \
+		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB)).$(VERSION); \
+	fi
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
 	@chmod 775 $(MANPREFIX)/man1
