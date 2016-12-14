@@ -205,7 +205,11 @@ lua_likwid_init(lua_State* L)
     for (ret = 1; ret<=nrThreads; ret++)
     {
         lua_rawgeti(L,-1,ret);
+#if LUA_VERSION_NUM == 501
+        cpus[ret-1] = ((lua_Integer)lua_tointeger(L,-1));
+#else
         cpus[ret-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
+#endif
         lua_pop(L,1);
     }
     if (topology_isInitialized == 0)
@@ -1200,7 +1204,11 @@ lua_likwid_setMemInterleaved(lua_State* L)
     for (ret = 1; ret<=nrThreads; ret++)
     {
         lua_rawgeti(L,-1,ret);
+#if LUA_VERSION_NUM == 501
+        cpus[ret-1] = ((lua_Integer)lua_tointeger(L,-1));
+#else
         cpus[ret-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
+#endif
         lua_pop(L,1);
     }
     numa_setInterleaved(cpus, nrThreads);
@@ -1600,7 +1608,11 @@ lua_likwid_startPower(lua_State* L)
     PowerData pwrdata;
     int cpuId = lua_tonumber(L,1);
     luaL_argcheck(L, cpuId >= 0, 1, "CPU ID must be greater than 0");
+#if LUA_VERSION_NUM == 501
+    PowerType type = (PowerType) ((lua_Integer)lua_tointeger(L,2));
+#else
     PowerType type = (PowerType) ((lua_Unsigned)lua_tointegerx(L,2, NULL));
+#endif
     luaL_argcheck(L, type >= PKG+1 && type <= DRAM+1, 2, "Type not valid");
     power_start(&pwrdata, cpuId, type-1);
     lua_pushnumber(L,pwrdata.before);
@@ -1613,7 +1625,11 @@ lua_likwid_stopPower(lua_State* L)
     PowerData pwrdata;
     int cpuId = lua_tonumber(L,1);
     luaL_argcheck(L, cpuId >= 0, 1, "CPU ID must be greater than 0");
+#if LUA_VERSION_NUM == 501
+    PowerType type = (PowerType) ((lua_Integer)lua_tointeger(L,2));
+#else
     PowerType type = (PowerType) ((lua_Unsigned)lua_tointegerx(L,2, NULL));
+#endif
     luaL_argcheck(L, type >= PKG+1 && type <= DRAM+1, 2, "Type not valid");
     power_stop(&pwrdata, cpuId, type-1);
     lua_pushnumber(L,pwrdata.after);
@@ -1698,7 +1714,11 @@ lua_likwid_getCycleClock(lua_State* L)
 static int
 lua_sleep(lua_State* L)
 {
+#if LUA_VERSION_NUM == 501
+    lua_pushnumber(L, timer_sleep(((lua_Integer)lua_tointeger(L,-1))));
+#else
     lua_pushnumber(L, timer_sleep(((lua_Unsigned)lua_tointegerx(L,-1, NULL))));
+#endif
     return 1;
 }
 
@@ -1774,7 +1794,11 @@ lua_likwid_getClock(lua_State* L)
 static int
 lua_likwid_initTemp(lua_State* L)
 {
+#if LUA_VERSION_NUM == 501
+    int cpuid = ((lua_Integer)lua_tointeger(L,-1));
+#else
     int cpuid = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
+#endif
     thermal_init(cpuid);
     return 0;
 }
@@ -1782,7 +1806,11 @@ lua_likwid_initTemp(lua_State* L)
 static int
 lua_likwid_readTemp(lua_State* L)
 {
+#if LUA_VERSION_NUM == 501
+    int cpuid = ((lua_Integer)lua_tointeger(L,-1));
+#else
     int cpuid = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
+#endif
     uint32_t data;
     if (thermal_read(cpuid, &data)) {
         lua_pushstring(L,"Cannot read thermal data");
@@ -1861,7 +1889,11 @@ lua_likwid_startProgram(lua_State* L)
         for (status = 1; status<=nrThreads; status++)
         {
             lua_rawgeti(L,-1,status);
+#if LUA_VERSION_NUM == 501
+            cpus[status-1] = ((lua_Integer)lua_tointeger(L,-1));
+#else
             cpus[status-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
+#endif
             lua_pop(L,1);
         }
     }
@@ -1958,7 +1990,11 @@ lua_likwid_memSweep(lua_State* L)
     for (i = 1; i <= nrThreads; i++)
     {
         lua_rawgeti(L,-1,i);
+#if LUA_VERSION_NUM == 501
+        cpus[i-1] = ((lua_Integer)lua_tointeger(L,-1));
+#else
         cpus[i-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
+#endif
         lua_pop(L,1);
     }
     memsweep_threadGroup(cpus, nrThreads);
@@ -2175,7 +2211,11 @@ static int
 lua_likwid_cpuFeatures_name(lua_State* L)
 {
     char* name = NULL;
+#if LUA_VERSION_NUM == 501
+    CpuFeature feature = ((lua_Integer)lua_tointeger(L,-1));
+#else
     CpuFeature feature = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
+#endif
     name = cpuFeatures_name(feature);
     if (name != NULL)
     {
