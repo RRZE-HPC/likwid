@@ -677,7 +677,7 @@ if verbose == true then
     print_stdout(string.format("Executing: %s",execString))
 end
 local ldpath = os.getenv("LD_LIBRARY_PATH")
-local libpath = likwid.pinlibpath:match("([/%g]+)/%g+.so")
+local libpath = string.match(likwid.pinlibpath, "([/%a%d]+)/[%a%s%d]*")
 if ldpath == nil then
     likwid.setenv("LD_LIBRARY_PATH", libpath)
 elseif not ldpath:match(libpath) then

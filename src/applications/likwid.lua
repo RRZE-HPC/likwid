@@ -33,6 +33,8 @@ package.cpath = '<INSTALLED_LIBPREFIX>/?.so;' .. package.cpath
 require("liblikwid")
 require("math")
 
+if not math.tointeger then math.tointeger = function(x) return math.floor(tonumber(x)) or nil end end
+
 likwid.groupfolder = "<LIKWIDGROUPPATH>"
 
 likwid.version = <VERSION>
