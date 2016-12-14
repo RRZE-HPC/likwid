@@ -85,7 +85,7 @@ L1 to/from L2 data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
 L3 to L2 load bandwidth [MBytes/s]  1.0E-06*PMC2*64.0/time
 L3 to L2 load data volume [GBytes]  1.0E-09*PMC2*64.0
 L2 to L3 evict bandwidth [MBytes/s]  1.0E-06*PMC3*64.0/time
-L2 to L3 evict data volume [GBytes]  1.0E-06*PMC3*64.0
+L2 to L3 evict data volume [GBytes]  1.0E-09*PMC3*64.0
 L2 to/from L3 bandwidth [MBytes/s] 1.0E-06*(PMC2+PMC3)*64.0/time
 L2 to/from L3 data volume [GBytes] 1.0E-09*(PMC2+PMC3)*64.0
 System to L3 bandwidth [MBytes/s] 1.0E-06*(CBOX0C0+CBOX1C0+CBOX2C0+CBOX3C0+CBOX4C0+CBOX5C0+CBOX6C0+CBOX7C0+CBOX8C0+CBOX9C0+CBOX10C0+CBOX11C0+CBOX12C0+CBOX13C0+CBOX14C0+CBOX15C0+CBOX16C0+CBOX17C0+CBOX18C0+CBOX19C0+CBOX20C0+CBOX21C0)*64.0/time
