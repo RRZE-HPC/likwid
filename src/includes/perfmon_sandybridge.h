@@ -1183,8 +1183,8 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     }
     else if (MEASURE_UNCORE(eventSet) && cpuid_info.model == SANDYBRIDGE && sandy_cbox_setup == snb_cbox_setup)
     {
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_U_PMON_GLOBAL_CTL, (1ULL<<29)));
+        VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, (1ULL<<29)));
     }
     return 0;
 }
@@ -1263,8 +1263,8 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
     }
     else if (MEASURE_UNCORE(eventSet) && cpuid_info.model == SANDYBRIDGE && sandy_cbox_setup == snb_cbox_setup)
     {
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31)));
+        VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, (1ULL<<31)));
     }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -1555,8 +1555,8 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
     }
     else if (MEASURE_UNCORE(eventSet) && cpuid_info.model == SANDYBRIDGE && sandy_cbox_setup == snb_cbox_setup)
     {
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<31)));
+        VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<31), FREEZE_UNCORE)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, (1ULL<<31)));
     }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
@@ -1821,8 +1821,8 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
     }
     else if (MEASURE_UNCORE(eventSet) && cpuid_info.model == SANDYBRIDGE && sandy_cbox_setup == snb_cbox_setup)
     {
-        VERBOSEPRINTREG(cpu_id, MSR_UNC_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_PERF_GLOBAL_CTRL, (1ULL<<29)));
+        VERBOSEPRINTREG(cpu_id, MSR_UNCORE_PERF_GLOBAL_CTRL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, (1ULL<<29)));
     }
 
     if (MEASURE_CORE(eventSet))
