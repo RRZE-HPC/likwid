@@ -518,17 +518,15 @@ int main(int argc, char** argv)
     ownprintf("MByte/s:\t\t%.2f\n",
             1.0E-06 * ( (double) threads_data[0].data.iter * realSize *  test->bytes/ time));
 
-    //cycPerUp = ((double) maxCycles / (double) (threads_data[0].data.iter * realSize));
-    cycPerCL = ((double) maxCycles / (double) (threads_data[0].data.iter*realSize*test->bytes)) * 64.0;
-    
+    cycPerCL = ((double) maxCycles / (double) (threads_data[0].data.iter*(realSize/test->streams)* 8 / 64.0));
     switch ( test->type )
     {
         case INT:
         case SINGLE:
-            cycPerUp = cycPerCL/16.0;
+            cycPerUp = cycPerCL/(16.0*test->streams);
             break;
         case DOUBLE:
-            cycPerUp = cycPerCL/8.0;
+            cycPerUp = cycPerCL/(8.0*test->streams);
             break;
     }
     ownprintf("Cycles per update:\t%f\n", cycPerUp);
