@@ -42,8 +42,8 @@ if [ ! -e ${EXEC}.txt ]; then
     exit 1
 fi
 if [ "${EXEC}" == "likwid-setFrequencies" ]; then
-    FREQ=$(likwid-setFrequencies -l | grep -v frequencies | awk '{print $2}')
-    CURFREQ=$(likwid-setFrequencies -p | head -n2 | tail -n 1 | rev | awk '{print $2}' | rev | awk -F'/' '{print $2}')
+    FREQ=$(${EXECPATH}/likwid-setFrequencies -l | grep -v frequencies | awk '{print $2}')
+    CURFREQ=$(${EXECPATH}/likwid-setFrequencies -p | head -n2 | tail -n 1 | rev | awk '{print $2}' | rev | awk -F'/' '{print $2}')
 fi
 if [ "${EXEC}" == "likwid-mpirun" ]; then
     if [ -z "$(which mpiexec)" ] && [ -z "$(which mpiexec.hydra)" ] && [ -z "$(which mpirun)" ]; then
@@ -89,7 +89,7 @@ done < ${EXEC}.txt
 
 
 if [ "${EXEC}" == "likwid-setFrequencies" ]; then
-    ${EXEC} -f "${CURFREQ}"
+    ${EXECPATH}/${EXEC} -f "${CURFREQ}"
 fi
 
 rm -f /tmp/topo.txt /tmp/test /tmp/test.txt /tmp/out.txt /tmp/out
