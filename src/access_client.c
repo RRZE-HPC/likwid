@@ -128,7 +128,7 @@ access_client_startDaemon(int cpu_id)
         ERROR_PRINT(Failed to find the daemon '%s'\n, exeprog);
         exit(EXIT_FAILURE);
     }
-
+    DEBUG_PRINT(DEBUGLEV_INFO, Starting daemon %s, exeprog);
     pid = fork();
 
     if (pid == 0)
@@ -234,6 +234,7 @@ access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t 
     AccessDataRecord record;
     record.cpu = cpu_id;
     record.device = MSR_DEV;
+    record.errorcode = ERR_OPENFAIL;
 
     if (cpuSockets_open == 0)
     {
@@ -304,6 +305,7 @@ access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t
     record.cpu = cpu_id;
     record.device = MSR_DEV;
     pthread_mutex_t* lockptr = &globalLock;
+    record.errorcode = ERR_OPENFAIL;
 
     if (cpuSockets_open == 0)
     {
@@ -391,6 +393,7 @@ access_client_check(PciDeviceIndex dev, int cpu_id)
     record.cpu = cpu_id;
     record.device = dev;
     record.type = DAEMON_CHECK;
+    record.errorcode = ERR_OPENFAIL;
     if (dev != MSR_DEV)
     {
         record.cpu = affinity_core2node_lookup[cpu_id];
