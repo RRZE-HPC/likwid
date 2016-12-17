@@ -40,6 +40,6 @@
 -S 1s -C M:scatter -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
 -c 0 -g BRANCH -f hostname | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
 -C 0 -g BRANCH -f hostname | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
--C 0 -g BRANCH -f -m hostname | EXIT 1 | GREP No regions
+-C 0 -g BRANCH -f -m hostname | EXIT 1 | GREP Marker API result file does not exist
 -C 0 -g BRANCH -f -t 200ms hostname | EXIT 0 | GREP CORES: 0
 -C 0 -g BRANCH -f -m ../streamGCC | EXIT 0 | GREP Region triad | GREP Region copy

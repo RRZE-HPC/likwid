@@ -1992,7 +1992,7 @@ int test_timersleep()
     }
     if (timer_print(&timer) > 1.1E6*1E-6)
     {
-        printf("Sleeping too long. timer is %f instead of 1 s\n", 2E6*1E-6, timer_print(&timer));
+        printf("Sleeping too long. timer is %f instead of 1 s\n", timer_print(&timer));
         goto fail;
     }
     timer_finalize();

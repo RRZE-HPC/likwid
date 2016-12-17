@@ -358,27 +358,32 @@ end
 
 if outfile then
     local suffix = ""
-    if string.match(outfile, "%.") then
+    if string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$") then
         suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
     end
     local command = "<INSTALLED_PREFIX>/share/likwid/filter/" .. suffix
     local tmpfile = outfile..".tmp"
     if suffix == "" then
         os.rename(tmpfile, outfile)
-    elseif suffix ~= "txt" and suffix ~= "csv" and likwid.access(command,"x") then
-        stdout_print("Cannot find filter script, save output in CSV format to file "..outfile)
+    elseif suffix ~= "txt" and suffix ~= "csv" and not likwid.access(command,"x") then
+        print_stderr("Cannot find filter script, save output in CSV format to file "..outfile)
         os.rename(tmpfile, outfile)
     else
         if suffix ~= "txt" and suffix ~= "csv" then
             command = command .." ".. tmpfile .. " topology"
-            local f = assert(io.popen(command))
+            local f = assert(io.popen(command), "r")
             if f ~= nil then
                 local o = f:read("*a")
                 if o:len() > 0 then
-                    stdout_print(string.format("Failed to executed filter script %s.",command))
+                    print_stderr(string.format("Failed to executed filter script %s.",command))
+                else
+                    os.rename(outfile.."."..suffix, outfile)
+                    if not likwid.access(tmpfile, "e") then
+                        os.remove(tmpfile)
+                    end
                 end
             else
-                stdout_print("Failed to call filter script, save output in CSV format to file "..outfile)
+                print_stderr("Failed to call filter script, save output in CSV format to file "..outfile)
                 os.rename(tmpfile, outfile)
                 os.remove(tmpfile)
             end

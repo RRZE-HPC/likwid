@@ -1381,6 +1381,29 @@ add_to_clist(CounterList* clist, char* counter, double result)
     return 0;
 }
 
+int
+update_clist(CounterList* clist, char* counter, double result)
+{
+    int i;
+    int found = 0;
+    if ((clist == NULL)||(counter == NULL))
+        return -EINVAL;
+    for (i=0; i< clist->counters; i++)
+    {
+        if (strcmp(clist->cnames[i], counter) == 0)
+        {
+            clist->cvalues[i] = result;
+            found = 1;
+            break;
+        }
+    }
+    if (!found)
+    {
+        return -ENOENT;
+    }
+    return 0;
+}
+
 void
 destroy_clist(CounterList* clist)
 {
@@ -1401,7 +1424,6 @@ calc_metric(char* formula, CounterList* clist, double *result)
 {
     int i=0;
     *result = 0.0;
-    int fail = 0;
     int maxstrlen = 0, minstrlen = 10000;
 
     if ((formula == NULL) || (clist == NULL))
@@ -1432,18 +1454,8 @@ calc_metric(char* formula, CounterList* clist, double *result)
         }
         maxstrlen--;
     }
-    bstring test = bfromcstr("aAbBcCdDfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ,_:;!'§$&=?°´`#<>");
-    if (binchr(f, 0, test) != BSTR_ERR)
-    {
-        fprintf(stderr, "Not all counter names in formula can be substituted\n");
-        fprintf(stderr, "%s\n", bdata(f));
-        i = -EINVAL;
-        fail = 1;
-    }
-    bdestroy(test);
     // now we can calculate the formula
-    if (!fail)
-        i = calculate_infix(bdata(f), result);
+    i = calculate_infix(bdata(f), result);
     bdestroy(f);
     return i;
 }

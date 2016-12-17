@@ -1,0 +1,14 @@
+== Filter scripts ==
+A filter script is used by LIKWID to transform the output of likwid-perfctr and
+likwid-topology from CSV (RFC 4180) to the desired format.
+
+The filter scripts have to follow some rules to be integrated into LIKWID:
+ - The name of the script must be equal to the resulting file suffix, e.g. xml
+   for transformation to XML.
+ - No output to stdout. All output to stdout is interpreted by the scripts as
+   failure. If you want to print something use stderr.
+ - A script must handle both likwid-perfctr and likwid-topology, the scripts
+   call the script like this: <script> <input file> <perfctr|topology>
+
+For implementing a new filter script written in Perl you can use the code
+skeleton <SRC>/filters/template.

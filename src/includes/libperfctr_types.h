@@ -34,6 +34,7 @@
 
 typedef struct LikwidThreadResults{
     bstring  label;
+    uint32_t index;
     double time;
     TimerData startTime;
     int groupID;

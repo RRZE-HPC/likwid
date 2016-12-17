@@ -3,6 +3,7 @@
 1. Edit config.mk. Follow the comments there.
    Optionally you can change compiler settings in include_[GCC|CLANG|ICC|MIC].mk.
    Please note that only the default compiler flags GCC are supported and tested.
+   For 32 bit builds the only supported compiler setting is GCCX86.
 2. make (Builds hwloc, lua, Likwid libraries, access daemons and likwid-bench)
 3. make install (this is required for likwid-pin and if you use the accessDaemon)
 
@@ -16,18 +17,18 @@ compiler in make/include_[GCC|CLANG|ICC|MIC].mk.
 
 *NOTICE*
 
-All generated files are located in the [GCC|ICC|CLANG|MIC] build directory.
+All generated files are located in the [GCC|ICC|CLANG|MIC|GCCX86] build directory.
 This includes the dependency files, object files. The
 generated source files and the pas and assembly files for likwid-bench are build
-in bench/[GCC|ICC|CLANG|MIC].
+in bench/[GCC|ICC|CLANG|MIC|GCCX86].
 If you debug your likwid-bench benchmarks you can look at all
 intermediate build files and also the final assembly code.
 
-== Build on Xeon Phi ==
-For builds for the Xeon Phi coprocessor, the accessDaemon and the frequency
-daemon are disabled. Moreover, the access mode is set to 'direct'. This was made
-because it is important to run as few processes as possible on the Xeon Phi and
-the accessDaemon would start one process per hardware thread.
+== Build on Xeon Phi (Knights Corner) ==
+For builds for the Xeon Phi (Knights Corner) coprocessor, the accessDaemon and
+the frequency daemon are disabled. Moreover, the access mode is set to 'direct'.
+This was made because it is important to run as few processes as possible on the
+Xeon Phi and the accessDaemon would start one process per hardware thread.
 In order to build Likwid for the Xeon Phi processor, you have to change the
 RPATHS variable in make/include_MIC.mk to point to the folder with the Intel
 libraries like libimf.so. This is crucial because when using an suid-root
@@ -140,13 +141,40 @@ You register the necessary capability by calling
 
 sudo setcap cap_sys_rawio+ep EXECUTABLE
 
-on the executables. This is only possible on local file systems.
-The only feasable way is to register the likwid-accessD and proxy all access over it.
+on the executables. Not all file systems support capabilities.
+The only feasable way is to register the likwid-accessD and proxy all access
+over it.
 
 If you have still problems please let me know on the likwid mailing list:
 http://groups.google.com/group/likwid-users
 
+== Building LIKWID with perf_event kernel backend ==
+When setting USE_PERF_EVENT in config.mk, the perf_event kernel interface is
+used to programm the counters instead of the way through the msr kernel module
+and PCI devices. The event and counter lists are the same.
+The perf_event interface handles the counter allocation itself, thus the counters
+provided to LIKWID might not be the ones perf_event uses internally.
+The support is tested for the core-local fixed- and general-purpose counters. The
+paranoid setting requires to be 1 or less.
+It is also able to use it for Uncore counters but the support is experimental
+and requires a paranoid setting of 0 or less.
+Currently no counter options are supported.
+
+paranoid setting: /proc/sys/kernel/perf_event_paranoid
 
 
+== Linking applications with LIKWID lib ==
+Commonly the LIKWID C library can be used as all other libraries by setting the
+include (-I) and library path (-L) and add -llikwid to the command line.
 
+==== Internal hwloc library ====
+The included hwloc library shouldn't make a problem as all hwloc functions are
+prefixed with 'likwid_'.
+
+==== Internal Lua library and interpreter ====
+The included Lua libray might cause problems because the functions are not
+renamed and might interfere with the other Lua library functions.
+Maybe it works if the versions of Lua are the same (5.3.2).
+The Lua interpreter is renamed at installation to likwid-lua, so does not
+overwrite other interpreters.
 

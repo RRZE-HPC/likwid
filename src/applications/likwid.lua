@@ -33,6 +33,8 @@ package.cpath = '<INSTALLED_LIBPREFIX>/?.so;' .. package.cpath
 require("liblikwid")
 require("math")
 
+if not math.tointeger then math.tointeger = function(x) return math.floor(tonumber(x)) or nil end end
+
 likwid.groupfolder = "<LIKWIDGROUPPATH>"
 
 likwid.version = <VERSION>
@@ -291,7 +293,7 @@ local function get_spaces(str, min_space, max_space)
     local length = str:len()
     local back = 0
     local front = 0
-    if tonumber(str) == nil or (str:len() == 1 and not str:match("0")) then
+    if tonumber(str) == nil then
         back = math.ceil((max_space-str:len()) /2)
     else
         back = 0

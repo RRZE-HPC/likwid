@@ -83,6 +83,10 @@ local function usage()
     print_stdout("")
     print_stdout("Processes are pinned to physical CPU cores first. For syntax questions see likwid-pin")
     print_stdout("")
+    print_stdout("For CPU selection and which MPI rank measures Uncore counters the system topology")
+    print_stdout("of the current system is used. There is currently no possibility to overcome this")
+    print_stdout("limitation by providing a topology file or similar.")
+    print_stdout("")
     examples()
 end
 

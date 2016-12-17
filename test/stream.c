@@ -59,10 +59,10 @@ getProcessorID(cpu_set_t* cpu_set)
 
     for (processorId=0;processorId<128;processorId++)
     {
-	if (CPU_ISSET(processorId,cpu_set))
-	{
-	    break;
-	}
+        if (CPU_ISSET(processorId,cpu_set))
+        {
+            break;
+        }
     }
     return processorId;
 }
@@ -84,18 +84,18 @@ void allocate_vector(double** ptr, uint64_t size)
 
     if (errorCode)
     {
-	if (errorCode == EINVAL)
-	{
-	    fprintf(stderr,
-		    "Alignment parameter is not a power of two\n");
-	    exit(EXIT_FAILURE);
-	}
-	if (errorCode == ENOMEM)
-	{
-	    fprintf(stderr,
-		    "Insufficient memory to fulfill the request\n");
-	    exit(EXIT_FAILURE);
-	}
+    if (errorCode == EINVAL)
+    {
+        fprintf(stderr,
+            "Alignment parameter is not a power of two\n");
+        exit(EXIT_FAILURE);
+    }
+    if (errorCode == ENOMEM)
+    {
+        fprintf(stderr,
+            "Insufficient memory to fulfill the request\n");
+        exit(EXIT_FAILURE);
+    }
     }
 }
 
@@ -103,8 +103,9 @@ void allocate_vector(double** ptr, uint64_t size)
 int main(int argn, char** argc)
 {
     double *a,*b,*c,*d;
+    double scalar = 3.0;
     TimeData timer;
-    double triad_time, copy_time;
+    double triad_time, copy_time, scale_time, add_time;
 
     allocate_vector(&a, SIZE);
     allocate_vector(&b, SIZE);
@@ -122,19 +123,20 @@ int main(int argn, char** argc)
 #pragma omp parallel
     {
 #pragma omp master
-	{
-	    printf ("Number of Threads requested = %i\n",omp_get_num_threads());
-	}
-	printf ("Thread %d running on processor %d ....\n",omp_get_thread_num(),sched_getcpu());
+    {
+        printf ("Number of Threads requested = %i\n",omp_get_num_threads());
     }
+    printf ("Thread %d running on processor %d ....\n",omp_get_thread_num(),sched_getcpu());
+    }
+    printf(HLINE);
 #endif
 
 #pragma omp parallel for
     for (int j=0; j<SIZE; j++) {
-	a[j] = 1.0;
-	b[j] = 2.0;
-	c[j] = 0.0;
-	d[j] = 1.0;
+        a[j] = 1.0;
+        b[j] = 2.0;
+        c[j] = 0.0;
+        d[j] = 1.0;
     }
 
     time_start(&timer);
@@ -147,7 +149,6 @@ int main(int argn, char** argc)
 #pragma omp for
             for (int j=0; j<SIZE; j++)
             {
-            
                 c[j] = a[j];
             }
             LIKWID_MARKER_STOP("copy");
@@ -159,7 +160,45 @@ int main(int argn, char** argc)
     time_start(&timer);
 #pragma omp parallel
     {
-	LIKWID_MARKER_START("triad_total");
+        for (int k=0; k<ITER; k++)
+        {
+
+            LIKWID_MARKER_START("scale");
+#pragma simd
+#pragma omp for
+            for (int j=0; j<SIZE; j++)
+            {
+                b[j] = scalar * c[j];
+            }
+            LIKWID_MARKER_STOP("scale");
+        }
+    }
+    time_stop(&timer);
+    scale_time = time_print(&timer)/(double)ITER;
+
+    time_start(&timer);
+#pragma omp parallel
+    {
+        for (int k=0; k<ITER; k++)
+        {
+
+            LIKWID_MARKER_START("add");
+#pragma simd
+#pragma omp for
+            for (int j=0; j<SIZE; j++)
+            {
+                c[j] = a[j] + b[j];
+            }
+            LIKWID_MARKER_STOP("add");
+        }
+    }
+    time_stop(&timer);
+    add_time = time_print(&timer)/(double)ITER;
+
+    time_start(&timer);
+#pragma omp parallel
+    {
+        LIKWID_MARKER_START("triad_total");
         for (int k=0; k<ITER; k++)
         {
 
@@ -173,7 +212,7 @@ int main(int argn, char** argc)
             }
             LIKWID_MARKER_STOP("triad");
         }
-	LIKWID_MARKER_STOP("triad_total");
+        LIKWID_MARKER_STOP("triad_total");
     }
     time_stop(&timer);
     triad_time = time_print(&timer)/(double)ITER;
@@ -183,10 +222,21 @@ int main(int argn, char** argc)
                         1E-6*(2*SIZE*sizeof(double)),
                         copy_time,
                         1E-6*((2*SIZE*sizeof(double))/copy_time));
-    printf("Processed %.1f Mbyte at triad benchmark in %.4f seconds: %.2f MByte/s\n",
+    printf("Processed %.1f Mbyte at scale benchmark in %.4f seconds: %.2f MByte/s %.2f MFLOP/s\n",
+                        1E-6*(2*SIZE*sizeof(double)),
+                        scale_time,
+                        1E-6*((2*SIZE*sizeof(double))/scale_time),
+                        1E-6*(SIZE/scale_time));
+    printf("Processed %.1f Mbyte at add benchmark in %.4f seconds: %.2f MByte/s %.2f MFLOP/s\n",
+                        1E-6*(3*SIZE*sizeof(double)),
+                        add_time,
+                        1E-6*((3*SIZE*sizeof(double))/add_time),
+                        1E-6*(SIZE/add_time));
+    printf("Processed %.1f Mbyte at triad benchmark in %.4f seconds: %.2f MByte/s %.2f MFLOP/s\n",
                         1E-6*(4*SIZE*sizeof(double)),
                         triad_time,
-                        1E-6*((4*SIZE*sizeof(double))/triad_time));
+                        1E-6*((4*SIZE*sizeof(double))/triad_time),
+                        1E-6*((2*SIZE)/triad_time));
 
 
     LIKWID_MARKER_CLOSE;

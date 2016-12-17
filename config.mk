@@ -11,6 +11,13 @@ COLOR = BLUE#NO SPACE
 # Path were to install likwid
 PREFIX = /usr/local#NO SPACE
 
+# uncomment to optionally set external lua@5.3:
+# default is use internally provide lua
+#LUA_INCLUDE_DIR = /usr/include/lua5.2#NO SPACE
+#LUA_LIB_DIR = /usr/lib/x86_64-linux-gnu#NO SPACE
+#LUA_LIB_NAME = lua5.2#NO SPACE, executable is assumed to have the same name
+#LUA_BIN = /usr/bin#NO SPACE
+
 #################################################################
 # Common users do not need to change values below this comment! #
 #################################################################
@@ -63,6 +70,10 @@ INSTRUMENT_BENCH = false#NO SPACE
 
 # Use recommended Portable Hardware Locality (hwloc) instead of CPUID
 USE_HWLOC = true#NO SPACE
+
+# Use Linux perf_event interface for measurements. Does not support thermal or
+# energy (RAPL) readings.
+USE_PERF_EVENT = false#NO SPACE
 
 # Build LIKWID with debug flags
 DEBUG = false#NO SPACE
