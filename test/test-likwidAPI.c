@@ -206,7 +206,9 @@ int test_numainit()
 {
     int i = 0;
     topology_init();
+    CpuInfo_t cpuinfo = get_cpuInfo();
     numa_init();
+    int valid = 0, filled_domains = 0;
     NumaTopology_t numainfo = get_numaTopology();
     if (numainfo == NULL)
         goto fail;
@@ -216,17 +218,38 @@ int test_numainit()
         goto fail;
     for (i = 0; i < likwid_getNumberOfNodes(); i++)
     {
+        valid = 1;
         if (numainfo->nodes[i].totalMemory == 0)
-            goto fail;
+        {
+            valid = 0;
+            fprintf(stderr, "WARNING: NUMA domain %d: totalMemory = 0\n", numainfo->nodes[i].id);
+        }
         if (numainfo->nodes[i].freeMemory == 0)
-            goto fail;
+        {
+            valid = 0;
+            fprintf(stderr, "WARNING: NUMA domain %d: freeMemory = 0\n", numainfo->nodes[i].id);
+        }
         if (numainfo->nodes[i].numberOfProcessors == 0)
-            goto fail;
+        {
+            valid = 0;
+            fprintf(stderr, "WARNING: NUMA domain %d: numberOfProcessors = 0\n", numainfo->nodes[i].id);
+        }
         if (numainfo->nodes[i].numberOfDistances == 0)
-            goto fail;
+        {
+            valid = 0;
+            fprintf(stderr, "WARNING: NUMA domain %d: numberOfDistances = 0\n", numainfo->nodes[i].id);
+        }
         if (numainfo->nodes[i].numberOfDistances != likwid_getNumberOfNodes())
+        {
+            valid = 0;
+        }
+        if (valid)
+            filled_domains++;
+        else if (strcmp(cpuinfo->short_name, "knl") != 0)
             goto fail;
     }
+    if (strcmp(cpuinfo->short_name, "knl") != 0 && likwid_getNumberOfNodes() % filled_domains != 0)
+        goto fail;
     numa_finalize();
     topology_finalize();
     return 1;
@@ -239,7 +262,9 @@ fail:
 int test_affinityinit()
 {
     int i = 0;
+    int valid = 0, filled_domains = 0;
     topology_init();
+    CpuInfo_t cpuinfo = get_cpuInfo();
     CpuTopology_t cputopo = get_cpuTopology();
     numa_init();
     affinity_init();
@@ -266,14 +291,34 @@ int test_affinityinit()
         goto fail;
     for (i = 0; i < doms->numberOfAffinityDomains; i++)
     {
+        valid = 1;
         if (doms->domains[i].numberOfProcessors == 0)
-            goto fail;
+        {
+            valid = 0;
+            fprintf(stderr, "WARNING: Affinity domain %d: numberOfProcessors = 0\n", i);
+        }
         if (doms->domains[i].numberOfCores == 0)
-            goto fail;
+        {
+            valid = 0;
+            fprintf(stderr, "WARNING: Affinity domain %d: numberOfCores = 0\n", i);
+        }
         if (doms->domains[i].numberOfProcessors < doms->domains[i].numberOfCores)
-            goto fail;
+        {
+            valid = 0;
+            fprintf(stderr, "WARNING: Affinity domain %d: numberOfProcessors < doms->domains[i].numberOfCores\n", i);
+        }
         if (doms->domains[i].processorList == NULL)
+        {
+            valid = 0;
+            fprintf(stderr, "WARNING: Affinity domain %d: processorList == NULL\n", i);
+        }
+        if (valid)
+            filled_domains++;
+        else if (strcmp(cpuinfo->short_name, "knl") != 0)
+        {
+            fprintf(stderr, "Domain %s failed\n", bdata(doms->domains[i].tag));
             goto fail;
+        }
     }
     affinity_finalize();
     topology_finalize();
@@ -340,20 +385,27 @@ int test_cpustring_expression()
 
 int test_cpustring_scatter()
 {
-    int test[100];
-    int len = 100;
+    CpuTopology_t cputopo = get_cpuTopology();
+    int len = cputopo->numHWThreads;
+    int *test = (int*) malloc(len * sizeof(int));
+    if (!test)
+    {
+        return 0;
+    }
     int ret = cpustr_to_cpulist("S:scatter", test, len);
     if (ret < 0)
     {
         if (verbose) printf("Returned %d\n", ret);
+        free(test);
         return 0;
     }
-    CpuTopology_t cputopo = get_cpuTopology();
     if (ret != cputopo->numHWThreads)
     {
         if (verbose) printf("Returned with %d not enough CPUs (%d)\n", ret, cputopo->numHWThreads);
+        free(test);
         return 0;
     }
+    free(test);
     return 1;
 }
 
