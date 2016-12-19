@@ -28,7 +28,8 @@ Download, Build and Install
 You can get the releases of LIKWID at:
 http://ftp.fau.de/pub/likwid/
 
-For build and installation hints see INSTALL file
+For build and installation hints see INSTALL file or check the build instructions
+page in the wiki https://github.com/RRZE-HPC/likwid/wiki/Build
 
 --------------------------------------------------------------------------------
 Documentation
