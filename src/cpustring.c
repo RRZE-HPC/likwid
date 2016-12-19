@@ -134,6 +134,7 @@ list_done:
 static int
 cpustr_to_cpulist_scatter(bstring bcpustr, int* cpulist, int length)
 {
+    int max_procs = 0;
     topology_init();
     CpuTopology_t cpuid_topology = get_cpuTopology();
     affinity_init();
@@ -151,25 +152,42 @@ cpustr_to_cpulist_scatter(bstring bcpustr, int* cpulist, int length)
         }
         for (int i=0; i<affinity->numberOfAffinityDomains; i++)
         {
-            if (bstrchrp(affinity->domains[i].tag, cpustring[0], 0) != BSTR_ERR)
+            if (bstrchrp(affinity->domains[i].tag, cpustring[0], 0) != BSTR_ERR &&
+                affinity->domains[i].numberOfProcessors > 0)
             {
                 suitable[suitidx] = i;
                 suitidx++;
+                if (affinity->domains[i].numberOfProcessors > max_procs)
+                    max_procs = affinity->domains[i].numberOfProcessors;
             }
         }
-        int* sortedList = (int*) malloc(affinity->domains[suitable[0]].numberOfProcessors * sizeof(int));
-        if (!sortedList)
+        int** sLists = (int**) malloc(suitidx * sizeof(int*));
+        if (!sLists)
         {
             free(suitable);
             bcstrfree(cpustring);
             return -ENOMEM;
         }
-        for (int off=0;off<affinity->domains[suitable[0]].numberOfProcessors;off++)
+        for (int i = 0; i< suitidx; i++)
+        {
+            sLists[i] = (int*) malloc(max_procs * sizeof(int));
+            if (!sLists[i])
+            {
+                free(suitable);
+                for (int j=0; i<i; j++)
+                {
+                    free(sLists[j]);
+                }
+                bcstrfree(cpustring);
+                return -ENOMEM;
+            }
+            cpulist_sort(affinity->domains[suitable[i]].processorList, sLists[i], affinity->domains[suitable[i]].numberOfProcessors);
+        }
+        for (int off=0;off<max_procs;off++)
         {
             for(int i=0;i < suitidx; i++)
             {
-                cpulist_sort(affinity->domains[suitable[i]].processorList, sortedList, affinity->domains[suitable[i]].numberOfProcessors);
-                cpulist[insert] = sortedList[off];
+                cpulist[insert] = sLists[i][off];
                 insert++;
                 if (insert == length)
                     goto scatter_done;
@@ -177,7 +195,11 @@ cpustr_to_cpulist_scatter(bstring bcpustr, int* cpulist, int length)
         }
 scatter_done:
         bcstrfree(cpustring);
-        free(sortedList);
+        for (int i = 0; i< suitidx; i++)
+        {
+            free(sLists[i]);
+        }
+        free(sLists);
         free(suitable);
         return insert;
     }
