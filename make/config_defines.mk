@@ -13,6 +13,7 @@ DEFINES   += -DVERSION=$(VERSION)         \
 
 DYNAMIC_TARGET_LIB := liblikwid.so
 STATIC_TARGET_LIB := liblikwid.a
+PWD ?= $(shell pwd)
 # LUA:
 ifdef LUA_INCLUDE_DIR
 LUA_INTERNAL := false#NO SPACE
