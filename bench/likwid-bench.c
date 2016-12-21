@@ -543,10 +543,12 @@ int main(int argc, char** argv)
     else if (test->loads >= 0 && test->stores == 0)
     {
         ownprintf("Load bytes per element:\t%d\n",test->bytes);
+        ownprintf("Store bytes per elem.:\t0\n");
     }
     else if (test->loads == 0 && test->stores > 0)
     {
-        ownprintf("Store bytes per element:\t%d\n",test->bytes);
+        ownprintf("Load bytes per element:\t0\n");
+        ownprintf("Store bytes per elem.:\t%d\n",test->bytes);
     }
     if ((test->loads > 0) && (test->stores > 0))
     {
