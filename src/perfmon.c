@@ -1450,7 +1450,7 @@ perfmon_finalize(void)
 int
 perfmon_addEventSet(const char* eventCString)
 {
-    int i, j, err;
+    int i, j, err, isPerfGroup = 0;
     bstring eventBString;
     struct bstrList* eventtokens;
     PerfmonEventSet* eventSet;
@@ -1541,6 +1541,7 @@ perfmon_addEventSet(const char* eventCString)
             ERROR_PRINT(Cannot read performance group %s, eventCString);
             return err;
         }
+        isPerfGroup = 1;
     }
     else
     {
@@ -1675,7 +1676,7 @@ past_checks:
         fixed_counters = cpuid_info.perf_num_fixed_ctr;
     }
 
-    if ((valid_events > fixed_counters) &&
+    if (((valid_events > fixed_counters) || isPerfGroup) &&
         ((eventSet->regTypeMask1 != 0x0ULL) ||
         (eventSet->regTypeMask2 != 0x0ULL) ||
         (eventSet->regTypeMask3 != 0x0ULL) ||
