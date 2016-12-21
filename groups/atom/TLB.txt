@@ -6,11 +6,16 @@ FIXC1 CPU_CLK_UNHALTED_CORE
 PMC0  DATA_TLB_MISSES_DTLB_MISS
 
 METRICS
-Runtime [s] FIXC1*inverseClock
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
 CPI  FIXC1/FIXC0
 DTLB misses       PMC0
 DTLB miss rate    PMC0/FIXC0
 
 LONG
+Formulas:
+DTLB misses = DATA_TLB_MISSES_DTLB_MISS
+DTLB miss rate = DATA_TLB_MISSES_DTLB_MISS/INSTR_RETIRED_ANY
+--
 The DTLB miss rate gives a measure how often a TLB miss occurred per instruction.
 

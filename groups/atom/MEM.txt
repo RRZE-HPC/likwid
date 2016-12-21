@@ -3,13 +3,11 @@ SHORT Main memory bandwidth in MBytes/s
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
-FIXC2 CPU_CLK_UNHALTED_REF
 PMC0  BUS_TRANS_MEM_THIS_CORE_THIS_A
 
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
-Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 Memory bandwidth [MBytes/s] 1.0E-06*PMC0*64.0/time
 Memory data volume [GBytes] 1.0E-09*PMC0*64.0
