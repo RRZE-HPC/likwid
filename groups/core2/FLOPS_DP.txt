@@ -11,11 +11,11 @@ METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 CPI  FIXC1/FIXC0
-MFLOP/s    1.0E-06*(PMC0*2.0+PMC1)/time
+DP MFLOP/s    1.0E-06*(PMC0*2.0+PMC1)/time
 
 LONG
 Formulas:
-MFLOP/s = 1.0E-06*(SIMD_COMP_INST_RETIRED_PACKED_DOUBLE*2+SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE)/time
+DP MFLOP/s = 1.0E-06*(SIMD_COMP_INST_RETIRED_PACKED_DOUBLE*2+SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE)/time
 -
 Profiling group to measure double SSE FLOPs. Don't forget that your code might also execute X87 FLOPs.
 On the number of SIMD_COMP_INST_RETIRED_PACKED_DOUBLE you can see how well your code was vectorized.
