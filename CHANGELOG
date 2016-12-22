@@ -1,3 +1,29 @@
+# Changelog 4.2.0
+- Support for Intel Xeon Phi (Knights Landing): Core, Uncore, RAPL
+- Support for Uncore counters of some desktop chips (SandyBridge, IvyBridge,
+  Haswell, Broadwell and Skylake)
+- Basic support for Linux perf_event interface instead of native access.
+  Currently only core-local counters working, Uncore is experimental
+- Support to build against a existing Lua installation (5.1 - 5.3 tested)
+- Support for CPU frequency manipulation, Lua interface updated
+- Access module checks for LLNL's msr_safe kernel module
+- Support for counter registers that are only available when
+  HyperThreading is off
+- Fix for non-HyperThreading counters (PMC4-7) on Intel Broadwell
+- Socket measurements can be used for all cores on the socket in
+  metric formulas.
+- likwid-perfctr: Timeline mode without executable runs until user presses Ctrl+c
+- likwid-perfctr: New CYCLE_ACTIVITY groups
+- likwid-perfctr: New PORT_USAGE groups (only with deactivated HyperThreading)
+- likwid-perfctr: Regions are sorted in output as they are executed by the code
+- likwid-powermeter: Read Uncore frequency settings and performance energy bias
+- likwid-powermeter: Update of energy unit for DRAM domain for Intel
+                     Broadwell D/EP and Intel Xeon Phi (Knights Landing)
+- likwid-bench: Fix for 'cycles per update' metric
+- likwid-bench: Vector lengths are sanitized for thread count and loop stride
+- likwid-topology: Increase robustness
+- likwid-mpirun: Some fixes
+
 # Changelog 4.1.2
 - Fix for likwid-powermeter: Use proper energy unit
 - Fix for performance groups for Intel Broadwell (D/EP): DATA and FALSE_SHARE
