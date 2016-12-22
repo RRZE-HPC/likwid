@@ -7,8 +7,8 @@
  *      Description:  An application to use the timeline mode of likwid-perfctr to generate
  *                    realtime plots using feedGnuplot
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.2
+ *      Released:  22.12.2016
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

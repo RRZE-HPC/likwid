@@ -5,8 +5,8 @@
  *
  *      Description:  Interface to the procfs/sysfs based topology backend
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.2
+ *      Released:  22.12.2016
  *
  *      Authors:  Jan Treibig (jt), jan.treibig@gmail.com,
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com

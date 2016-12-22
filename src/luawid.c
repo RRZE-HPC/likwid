@@ -5,8 +5,8 @@
  *
  *      Description:  C part of the Likwid Lua interface
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.2
+ *      Released:  22.12.2016
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

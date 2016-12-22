@@ -7,8 +7,8 @@
  *      Description: A wrapper script to pin threads spawned by MPI processes and
  *                   measure hardware performance counters
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.2
+ *      Released:  22.12.2016
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

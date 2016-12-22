@@ -5,8 +5,8 @@
  *
  *      Description:  Header file for the interface to x86 PCI functions for the access module.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.2
+ *      Released:  22.12.2016
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

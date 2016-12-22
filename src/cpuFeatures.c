@@ -9,8 +9,8 @@
  *                  Allows to turn on and off the Hardware prefetcher
  *                  available.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.2
+ *      Released:  22.12.2016
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid

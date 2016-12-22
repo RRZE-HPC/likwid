@@ -5,8 +5,8 @@
  *
  *      Description:  Implementation of access daemon.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.2
+ *      Released:  22.12.2016
  *
  *      Authors:  Michael Meier, michael.meier@rrze.fau.de
  *                Jan Treibig (jt), jan.treibig@gmail.com,

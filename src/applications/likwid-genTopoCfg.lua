@@ -8,8 +8,8 @@
  *                    that is used by likwid to avoid reading the systems architecture at
  *                    each start.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.2
+ *      Released:  22.12.2016
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
