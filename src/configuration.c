@@ -66,7 +66,7 @@ default_configuration(void)
     config.groupPath = malloc(groupPath_len+1);
     ret = snprintf(config.groupPath, groupPath_len, "%s", TOSTRING(GROUPPATH));
     config.groupPath[ret] = '\0';
-
+#ifndef LIKWID_USE_PERFEVENT
     if (ACCESSMODE == 0)
     {
         config.daemonMode = ACCESSMODE_DIRECT;
@@ -104,8 +104,9 @@ default_configuration(void)
             free(fptr);
         goto use_hardcoded;
     }
-    init_config = 1;
     fclose(fp);
+#endif
+    init_config = 1;
     return 0;
 use_hardcoded:
     ret = sprintf(filename,"%s", TOSTRING(ACCESSDAEMON));
@@ -118,11 +119,11 @@ use_hardcoded:
     }
     else
     {
-	if (getenv("LIKWID_NO_ACCESS") == NULL)
-	{
-        ERROR_PLAIN_PRINT(Unable to get path to access daemon. Maybe your PATH environment variable does not contain the folder where you installed it or the file was moved away / not copied to that location?);
-        exit(EXIT_FAILURE);
-	}
+        if (getenv("LIKWID_NO_ACCESS") == NULL)
+        {
+            ERROR_PLAIN_PRINT(Unable to get path to access daemon. Maybe your PATH environment variable does not contain the folder where you installed it or the file was moved away / not copied to that location?);
+            exit(EXIT_FAILURE);
+        }
     }
     return 0;
 }

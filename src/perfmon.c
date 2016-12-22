@@ -653,6 +653,7 @@ perfmon_check_counter_map(int cpu_id)
     }
     if (maps_checked)
         return;
+#ifndef LIKWID_USE_PERFEVENT
     if (!HPMinitialized())
     {
         HPMinit();
@@ -663,6 +664,7 @@ perfmon_check_counter_map(int cpu_id)
         }
         own_hpm = 1;
     }
+#endif
     int startpmcindex = -1;
     for (int i=0;i<perfmon_numCounters;i++)
     {
@@ -679,6 +681,7 @@ perfmon_check_counter_map(int cpu_id)
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
         }
+#ifndef LIKWID_USE_PERFEVENT
         if (HPMcheck(counter_map[i].device, cpu_id))
         {
             uint32_t reg = counter_map[i].configRegister;
@@ -697,6 +700,7 @@ perfmon_check_counter_map(int cpu_id)
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
         }
+#endif
     }
     if (own_hpm)
         HPMfinalize();
@@ -1602,6 +1606,14 @@ perfmon_addEventSet(const char* eventCString)
 #ifndef LIKWID_USE_PERFEVENT
             event->type = checkAccess(subtokens->entry[1], event->index, event->type, forceOverwrite);
             if (event->type == NOTYPE)
+            {
+                DEBUG_PRINT(DEBUGLEV_INFO, Cannot access counter register %s, bdata(subtokens->entry[1]));
+                goto past_checks;
+            }
+#else
+            char* path = translate_types[counter_map[event->index].type];
+            struct stat st;
+            if (path == NULL || stat(path, &st) != 0)
             {
                 DEBUG_PRINT(DEBUGLEV_INFO, Cannot access counter register %s, bdata(subtokens->entry[1]));
                 goto past_checks;
