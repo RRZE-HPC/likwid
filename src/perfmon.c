@@ -1570,15 +1570,11 @@ perfmon_addEventSet(const char* eventCString)
         return -ENOMEM;
     }
     eventSet->numberOfEvents = 0;
-#ifdef __x86_64
-//    eventSet->regTypeMask = ((__uint128_t)0x0ULL<<64)|0x0ULL;
+
     eventSet->regTypeMask1 = 0x0ULL;
     eventSet->regTypeMask2 = 0x0ULL;
     eventSet->regTypeMask3 = 0x0ULL;
     eventSet->regTypeMask4 = 0x0ULL;
-#else
-    eventSet->regTypeMask = 0x0ULL;
-#endif
 
     int forceOverwrite = 0;
     int valid_events = 0;
