@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 Introduction
 --------------------------------------------------------------------------------
+
 Likwid is a simple to install and use toolsuite of command line applications
 for performance oriented programmers. It works for Intel and AMD processors
 on the Linux operating system.
