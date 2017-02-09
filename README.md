@@ -65,3 +65,11 @@ We opened a survey at the user mailing list to get a feeling who uses LIKWID and
 Moreover we would be interested if you are missing a feature or what annoys you when using LIKWID.
 Link to the survey:
 https://groups.google.com/forum/#!topic/likwid-users/F7TDho3k7ps
+
+--------------------------------------------------------------------------------
+Funding
+--------------------------------------------------------------------------------
+
+Likwid development was funded by BMBF Germany under the FEPA project, grant 01IH13009.
+
+<div align=center><img src="https://raw.githubusercontent.com/wiki/RRZE-HPC/likwid/images/BMBF.png" alt="BMBF logo"/></div>
