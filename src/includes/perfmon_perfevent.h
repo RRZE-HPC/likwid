@@ -47,6 +47,8 @@ static int informed_paranoid = 0;
 static int running_group = -1;
 
 static char* translate_types[NUM_UNITS] = {
+    [FIXED] = "/sys/bus/event_source/devices/cpu",
+    [PMC] = "/sys/bus/event_source/devices/cpu",
     [MBOX0] = "/sys/bus/event_source/devices/uncore_imc_0",
     [MBOX1] = "/sys/bus/event_source/devices/uncore_imc_1",
     [MBOX2] = "/sys/bus/event_source/devices/uncore_imc_2",
@@ -59,6 +61,22 @@ static char* translate_types[NUM_UNITS] = {
     [CBOX5] = "/sys/bus/event_source/devices/uncore_cbox_5",
     [CBOX6] = "/sys/bus/event_source/devices/uncore_cbox_6",
     [CBOX7] = "/sys/bus/event_source/devices/uncore_cbox_7",
+    [CBOX8] = "/sys/bus/event_source/devices/uncore_cbox_8",
+    [CBOX9] = "/sys/bus/event_source/devices/uncore_cbox_9",
+    [CBOX10] = "/sys/bus/event_source/devices/uncore_cbox_10",
+    [CBOX11] = "/sys/bus/event_source/devices/uncore_cbox_11",
+    [CBOX12] = "/sys/bus/event_source/devices/uncore_cbox_12",
+    [CBOX13] = "/sys/bus/event_source/devices/uncore_cbox_13",
+    [CBOX14] = "/sys/bus/event_source/devices/uncore_cbox_14",
+    [CBOX15] = "/sys/bus/event_source/devices/uncore_cbox_15",
+    [CBOX16] = "/sys/bus/event_source/devices/uncore_cbox_16",
+    [CBOX17] = "/sys/bus/event_source/devices/uncore_cbox_17",
+    [CBOX18] = "/sys/bus/event_source/devices/uncore_cbox_18",
+    [CBOX19] = "/sys/bus/event_source/devices/uncore_cbox_19",
+    [CBOX20] = "/sys/bus/event_source/devices/uncore_cbox_20",
+    [CBOX21] = "/sys/bus/event_source/devices/uncore_cbox_21",
+    [CBOX22] = "/sys/bus/event_source/devices/uncore_cbox_22",
+    [CBOX23] = "/sys/bus/event_source/devices/uncore_cbox_23",
     [BBOX0] = "/sys/bus/event_source/devices/uncore_ha",
     [WBOX] = "/sys/bus/event_source/devices/uncore_pcu",
     [SBOX0] = "/sys/bus/event_source/devices/uncore_qpi_0",
@@ -295,7 +313,7 @@ int perfmon_setupCountersThread_perfevent(
             cpu_event_fds[cpu_id][index] = perf_event_open(&attr, 0, cpu_id, -1, 0);
             if (cpu_event_fds[cpu_id][index] < 0)
             {
-                fprintf(stderr, "Setup of event %s failed: %s\n", event->name, strerror(errno));
+                fprintf(stderr, "Setup of event %s on CPU %d failed: %s\n", event->name, cpu_id, strerror(errno));
                 fprintf(stderr, "Config of event 0x%X\n", attr.config);
                 fprintf(stderr, "Type of event 0x%X\n", attr.type);
                 continue;

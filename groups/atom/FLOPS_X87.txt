@@ -6,10 +6,13 @@ FIXC1 CPU_CLK_UNHALTED_CORE
 PMC0  X87_COMP_OPS_EXE_ANY_AR
 
 METRICS
-Runtime [s] FIXC1*inverseClock
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
 CPI  FIXC1/FIXC0
 X87 MFLOP/s  1.0E-06*PMC0/time
 
 LONG
-X87 MFLOP/s
+X87 MFLOP/s = 1.0E-06*X87_COMP_OPS_EXE_ANY_AR/runtime
+--
+The MFLOP/s made with X87 instructions
 

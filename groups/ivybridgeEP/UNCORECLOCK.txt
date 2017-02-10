@@ -29,7 +29,7 @@ MBOX3FIX DRAM_CLOCKTICKS
 SBOX0C0 SBOX_CLOCKTICKS
 SBOX1C0 SBOX_CLOCKTICKS
 SBOX2C0 SBOX_CLOCKTICKS
-UBOXFIX UBOX_CLOCKTICKS
+UBOXFIX UNCORE_CLOCK
 BBOX0C0 BBOX_CLOCKTICKS
 BBOX1C0 BBOX_CLOCKTICKS
 WBOX0 WBOX_CLOCKTICKS
@@ -43,6 +43,7 @@ METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+UBOX Frequency [GHz] 1.E-09*UBOXFIX/(FIXC1*inverseClock)
 CBOX0 Frequency [GHz] 1.E-09*CBOX0C0/(FIXC1*inverseClock)
 CBOX1 Frequency [GHz] 1.E-09*CBOX1C0/(FIXC1*inverseClock)
 CBOX2 Frequency [GHz] 1.E-09*CBOX2C0/(FIXC1*inverseClock)
@@ -69,7 +70,6 @@ MBOX3FIX Frequency [GHz] 1.E-09*MBOX3FIX/(FIXC1*inverseClock)
 SBOX0 Frequency [GHz] 1.E-09*SBOX0C0/(FIXC1*inverseClock)
 SBOX1 Frequency [GHz] 1.E-09*SBOX1C0/(FIXC1*inverseClock)
 SBOX2 Frequency [GHz] 1.E-09*SBOX2C0/(FIXC1*inverseClock)
-UBOX Frequency [GHz] 1.E-09*UBOXFIX/(FIXC1*inverseClock)
 BBOX0 Frequency [GHz] 1.E-09*BBOX0C0/(FIXC1*inverseClock)
 BBOX1 Frequency [GHz] 1.E-09*BBOX1C0/(FIXC1*inverseClock)
 WBOX Frequency [GHz] 1.E-09*WBOX0/(FIXC1*inverseClock)
@@ -82,3 +82,15 @@ IBOX Frequency [GHz] 1.E-09*IBOX0/(FIXC1*inverseClock)
 
 LONG
 Formulas:
+UBOX Frequency [GHz] = 1.E-09*UNCORE_CLOCK/(CPU_CLK_UNHALTED_CORE*inverseClock)
+CBOX[0-14] Frequency [GHz] = 1.E-09*CBOX_CLOCKTICKS/(CPU_CLK_UNHALTED_CORE*inverseClock)
+MBOX[0-3] Frequency [GHz] = 1.E-09*DRAM_CLOCKTICKS/(CPU_CLK_UNHALTED_CORE*inverseClock)
+MBOX[0-3]FIX Frequency [GHz] = 1.E-09*DRAM_CLOCKTICKS/(CPU_CLK_UNHALTED_CORE*inverseClock)
+SBOX[0-2] Frequency [GHz] = 1.E-09*SBOX_CLOCKTICKS/(CPU_CLK_UNHALTED_CORE*inverseClock)
+BBOX[0-1] Frequency [GHz] = 1.E-09*BBOX_CLOCKTICKS/(CPU_CLK_UNHALTED_CORE*inverseClock)
+RBOX[0-2] Frequency [GHz] = 1.E-09*RBOX_CLOCKTICKS/(CPU_CLK_UNHALTED_CORE*inverseClock)
+WBOX Frequency [GHz] = 1.E-09*WBOX_CLOCKTICKS/(CPU_CLK_UNHALTED_CORE*inverseClock)
+PBOX Frequency [GHz] = 1.E-09*PBOX_CLOCKTICKS/(CPU_CLK_UNHALTED_CORE*inverseClock)
+IBOX Frequency [GHz] = 1.E-09*IBOX_CLOCKTICKS/(CPU_CLK_UNHALTED_CORE*inverseClock)
+--
+A Overview over the frequencies of all Uncore units.

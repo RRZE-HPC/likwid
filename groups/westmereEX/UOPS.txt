@@ -5,8 +5,7 @@ FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
 PMC0  UOPS_ISSUED_ANY
-PMC1  UOPS_EXECUTED_THREAD
-PMC2  UOPS_RETIRED_ALL
+PMC2  UOPS_RETIRED_ANY
 PMC3  UOPS_ISSUED_FUSED
 
 
@@ -18,15 +17,13 @@ Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 Issued UOPs PMC0
 Merged UOPs PMC3
-Executed UOPs PMC1
 Retired UOPs PMC2
 
 LONG
 Formula:
 Issued UOPs = UOPS_ISSUED_ANY
 Merged UOPs = UOPS_ISSUED_FUSED
-Executed UOPs = UOPS_EXECUTED_THREAD
-Retired UOPs = UOPS_RETIRED_ALL
+Retired UOPs = UOPS_RETIRED_ANY
 -
 This group returns information about the instruction pipeline. It measures the
 issued, executed and retired uOPs and returns the number of uOPs which were issued

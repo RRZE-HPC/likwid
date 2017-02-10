@@ -15,9 +15,9 @@ Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 Memory read bandwidth [MBytes/s] 1.0E-06*UPMC0*64.0/time
-Memory data volume [GBytes] 1.0E-09*UPMC0*64.0
+Memory read data volume [GBytes] 1.0E-09*UPMC0*64.0
 Memory write bandwidth [MBytes/s] 1.0E-06*UPMC1*64.0/time
-Memory data volume [GBytes] 1.0E-09*UPMC1*64.0
+Memory write data volume [GBytes] 1.0E-09*UPMC1*64.0
 Memory bandwidth [MBytes/s] 1.0E-06*(UPMC0+UPMC1)*64.0/time
 Memory data volume [GBytes] 1.0E-09*(UPMC0+UPMC1)*64.0
 Remote memory read bandwidth [MBytes/s] 1.0E-06*UPMC2*64.0/time
@@ -30,9 +30,9 @@ Remote memory data volume [GBytes] 1.0E-09*(UPMC2+UPMC3)*64.0
 LONG
 Formulas:
 Memory read bandwidth [MBytes/s] = 1.0E-06*UNC_QMC_NORMAL_READS_ANY*64.0/time
-Memory data volume [GBytes] = 1.0E-09*UNC_QMC_NORMAL_READS_ANY*64.0
+Memory read data volume [GBytes] = 1.0E-09*UNC_QMC_NORMAL_READS_ANY*64.0
 Memory write bandwidth [MBytes/s] = 1.0E-06*UNC_QMC_WRITES_FULL_ANY*64.0/time
-Memory data volume [GBytes] = 1.0E-09*UNC_QMC_WRITES_FULL_ANY*64.0
+Memory write data volume [GBytes] = 1.0E-09*UNC_QMC_WRITES_FULL_ANY*64.0
 Memory bandwidth [MBytes/s] = 1.0E-06*(UNC_QMC_NORMAL_READS_ANY+UNC_QMC_WRITES_FULL_ANY)*64.0/time
 Memory data volume [GBytes] = 1.0E-09*(UNC_QMC_NORMAL_READS_ANY+UNC_QMC_WRITES_FULL_ANY)*64.0
 Remote memory read bandwidth [MBytes/s] = 1.0E-06*UNC_QHL_REQUESTS_REMOTE_READS*64.0/time
