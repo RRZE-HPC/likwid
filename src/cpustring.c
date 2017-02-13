@@ -381,9 +381,9 @@ logical_redo:
             {
                 for (int j=atoi(bdata(indexlist->entry[0])); j<=atoi(bdata(indexlist->entry[1])) && (insert_offset+insert < require);j++)
                 {
+                    inlist_idx = j;
                     cpulist[insert_offset + insert] = inlist[inlist_idx % ret];
                     insert++;
-                    inlist_idx++;
                     if (insert == ret)
                     {
                         bstrListDestroy(indexlist);
@@ -399,9 +399,9 @@ logical_redo:
                 for (int j=atoi(bdata(indexlist->entry[0]));
                         j>=atoi(bdata(indexlist->entry[1])) && (insert_offset+insert < require); j--)
                 {
+                    inlist_idx = j;
                     cpulist[insert_offset + insert] = inlist[inlist_idx % ret];
                     insert++;
-                    inlist_idx++;
                     if (insert == ret)
                     {
                         bstrListDestroy(indexlist);
