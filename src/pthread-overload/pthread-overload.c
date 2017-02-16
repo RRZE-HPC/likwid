@@ -40,6 +40,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -92,6 +93,8 @@ pthread_create(pthread_t* thread,
     static int pin_ids[MAX_NUM_THREADS];
     static uint64_t skipMask = 0x0;
     static int ncpus = 0;
+    static long online_cpus = 0;
+    online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
 
     /* On first entry: Get Evironment Variable and initialize pin_ids */
     if (ncalled == 0)
@@ -210,6 +213,10 @@ pthread_create(pthread_t* thread,
 
         if ((ncalled<64) && (skipMask&(1ULL<<(ncalled))))
         {
+            CPU_ZERO(&cpuset);
+            for (int i=0; i<online_cpus; i++)
+                CPU_SET(i, &cpuset);
+            pthread_setaffinity_np(*thread, sizeof(cpu_set_t), &cpuset);
             if (!silent)
             {
                 color_print("\tthreadid %lu -> SKIP \n", *thread);
