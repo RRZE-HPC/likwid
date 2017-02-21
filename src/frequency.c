@@ -40,7 +40,11 @@
 
 #include <bstrlib.h>
 #include <likwid.h>
+#include <types.h>
 #include <error.h>
+#include <topology.h>
+#include <access.h>
+#include <registers.h>
 
 #include <frequency.h>
 
@@ -435,4 +439,299 @@ char * freq_getDriver(const int cpu_id )
     }
     fclose(f);
     return eptr;
+}
+
+int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
+{
+    int err = 0;
+    int own_hpm = 0;
+    int cpuId = -1;
+    uint64_t f = freq;
+    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    {
+        if (cpuid_topology.threadPool[i].packageId == socket_id)
+        {
+            cpuId = cpuid_topology.threadPool[i].apicId;
+            break;
+        }
+    }
+    if (cpuId < 0)
+    {
+        fprintf(stderr, "Unknown socket ID %d\n", socket_id);
+        return -ENODEV;
+    }
+    char* avail = freq_getAvailFreq(cpuId);
+    char* ptr = NULL;
+    for (int i=strlen(avail)-1;i>=0;i--)
+    {
+        if (avail[i] == ' ')
+            break;
+        ptr = &(avail[i]);
+    }
+    double d = atof(ptr);
+    d *= 1000;
+    if (freq < (uint64_t)d)
+    {
+        fprintf(stderr, "Given frequency %llu MHz lower than system limit of %.0f MHz\n", f, d);
+        return -EINVAL;
+    }
+    free(avail);
+
+    if (!HPMinitialized())
+    {
+        HPMinit();
+        own_hpm = 1;
+        err = HPMaddThread(cpuId);
+        if (err != 0)
+        {
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            return err;
+        }
+    }
+
+    err = power_init(cpuId);
+    if (err < 0)
+    {
+        fprintf(stderr, "Cannot initialize power module on CPU %d\n", cpuId);
+        return err;
+    }
+    d = power_info.turbo.steps[0];
+    if (freq > (uint64_t)d)
+    {
+        fprintf(stderr, "Given frequency %llu MHz higher than system limit of %.0f MHz\n", f, d);
+        return -EINVAL;
+    }
+
+    if (power_info.hasRAPL)
+    {
+        f /= 100;
+    }
+    else
+    {
+        f /= 133;
+    }
+
+    uint64_t tmp = 0x0ULL;
+    err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
+    if (err)
+    {
+        fprintf(stderr, "Cannot read register 0x%X on CPU %d\n", MSR_UNCORE_FREQ, cpuId);
+        return err;
+    }
+    tmp &= ~(0xFF00);
+    tmp |= (f<<8);
+    err = HPMwrite(cpuId, MSR_DEV, MSR_UNCORE_FREQ, tmp);
+    if (err)
+    {
+        fprintf(stderr, "Cannot write register 0x%X on CPU %d\n", MSR_UNCORE_FREQ, cpuId);
+        return err;
+    }
+
+    if (own_hpm)
+        HPMfinalize();
+    return 0;
+}
+
+uint64_t freq_getUncoreFreqMin(const int socket_id)
+{
+    int err = 0;
+    int own_hpm = 0;
+    int cpuId = -1;
+    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    {
+        if (cpuid_topology.threadPool[i].packageId == socket_id)
+        {
+            cpuId = cpuid_topology.threadPool[i].apicId;
+            break;
+        }
+    }
+    if (cpuId < 0)
+    {
+        fprintf(stderr, "Unknown socket ID %d\n", socket_id);
+        return 0;
+    }
+    if (!HPMinitialized())
+    {
+        HPMinit();
+        own_hpm = 1;
+        err = HPMaddThread(cpuId);
+        if (err != 0)
+        {
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            return 0;
+        }
+    }
+
+    err = power_init(cpuId);
+    if (err < 0)
+    {
+        fprintf(stderr, "Cannot initialize power module on CPU %d\n", cpuId);
+        return 0;
+    }
+
+
+    uint64_t tmp = 0x0ULL;
+    err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
+    if (err)
+    {
+        fprintf(stderr, "Cannot read register 0x%X on CPU %d\n", MSR_UNCORE_FREQ, cpuId);
+        return 0;
+    }
+    tmp = (tmp>>8) & 0xFFULL;
+    if (power_info.hasRAPL)
+    {
+        tmp *= 100;
+    }
+    else
+    {
+        tmp *= 133;
+    }
+
+    if (own_hpm)
+        HPMfinalize();
+    return tmp;
+}
+
+int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
+{
+    int err = 0;
+    int own_hpm = 0;
+    int cpuId = -1;
+    uint64_t f = freq;
+    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    {
+        if (cpuid_topology.threadPool[i].packageId == socket_id)
+        {
+            cpuId = cpuid_topology.threadPool[i].apicId;
+            break;
+        }
+    }
+    if (cpuId < 0)
+    {
+        fprintf(stderr, "Unknown socket ID %d\n", socket_id);
+        return -ENODEV;
+    }
+    char* avail = freq_getAvailFreq(cpuId);
+    char* ptr = NULL;
+    for (int i=strlen(avail)-1;i>=0;i--)
+    {
+        if (avail[i] == ' ')
+            break;
+        ptr = &(avail[i]);
+    }
+    double d = atof(ptr);
+    d *= 1000;
+    if (freq < (uint64_t)d)
+    {
+        fprintf(stderr, "Given frequency %llu MHz lower than system limit of %.0f MHz\n", f, d);
+        return -EINVAL;
+    }
+    free(avail);
+    if (!HPMinitialized())
+    {
+        HPMinit();
+        own_hpm = 1;
+        err = HPMaddThread(cpuId);
+        if (err != 0)
+        {
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            return err;
+        }
+    }
+    err = power_init(cpuId);
+    if (err < 0)
+    {
+        fprintf(stderr, "Cannot initialize power module on CPU %d\n", cpuId);
+        return err;
+    }
+    d = power_info.turbo.steps[0];
+    if (freq > (uint64_t)d)
+    {
+        fprintf(stderr, "Given frequency %llu MHz higher than system limit of %.0f MHz\n", f, d);
+        return -EINVAL;
+    }
+    if (power_info.hasRAPL)
+    {
+        f /= 100;
+    }
+    else
+    {
+        f /= 133;
+    }
+
+    uint64_t tmp = 0x0ULL;
+    err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
+    if (err)
+    {
+        fprintf(stderr, "Cannot read register 0x%X on CPU %d\n", MSR_UNCORE_FREQ, cpuId);
+        return err;
+    }
+    tmp &= ~(0xFFULL);
+    tmp |= (f & 0xFFULL);
+    err = HPMwrite(cpuId, MSR_DEV, MSR_UNCORE_FREQ, tmp);
+    if (err)
+    {
+        fprintf(stderr, "Cannot write register 0x%X on CPU %d\n", MSR_UNCORE_FREQ, cpuId);
+        return err;
+    }
+    if (own_hpm)
+        HPMfinalize();
+    return 0;
+}
+
+uint64_t freq_getUncoreFreqMax(const int socket_id)
+{
+    int err = 0;
+    int own_hpm = 0;
+    int cpuId = -1;
+    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    {
+        if (cpuid_topology.threadPool[i].packageId == socket_id)
+        {
+            cpuId = cpuid_topology.threadPool[i].apicId;
+            break;
+        }
+    }
+    if (cpuId < 0)
+    {
+        fprintf(stderr, "Unknown socket ID %d\n", socket_id);
+        return 0;
+    }
+    if (!HPMinitialized())
+    {
+        HPMinit();
+        own_hpm = 1;
+        err = HPMaddThread(cpuId);
+        if (err != 0)
+        {
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            return 0;
+        }
+    }
+    err = power_init(cpuId);
+    if (err < 0)
+    {
+        fprintf(stderr, "Cannot initialize power module on CPU %d\n", cpuId);
+        return 0;
+    }
+
+    uint64_t tmp = 0x0ULL;
+    err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
+    if (err)
+    {
+        fprintf(stderr, "Cannot write register 0x%X on CPU %d\n", MSR_UNCORE_FREQ, cpuId);
+        return 0;
+    }
+    tmp = tmp & 0xFFULL;
+    if (power_info.hasRAPL)
+    {
+        tmp *= 100;
+    }
+    else
+    {
+        tmp *= 133;
+    }
+    if (own_hpm)
+        HPMfinalize();
+    return tmp;
 }

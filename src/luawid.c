@@ -2489,6 +2489,44 @@ lua_likwid_getDriver(lua_State* L)
 }
 
 static int
+lua_likwid_setUncoreFreqMin(lua_State* L)
+{
+    const int socket_id = lua_tointeger(L,-2);
+    const uint64_t freq = lua_tointeger(L,-1);
+    int err = freq_setUncoreFreqMin(socket_id, freq);
+    lua_pushinteger(L, err);
+    return 1;
+}
+
+static int
+lua_likwid_getUncoreFreqMin(lua_State* L)
+{
+    const int socket_id = lua_tointeger(L,-1);
+    uint64_t freq = freq_getUncoreFreqMin(socket_id);
+    lua_pushinteger(L, freq);
+    return 1;
+}
+
+static int
+lua_likwid_setUncoreFreqMax(lua_State* L)
+{
+    const int socket_id = lua_tointeger(L,-1);
+    const uint64_t freq = lua_tointeger(L,-2);
+    int err = freq_setUncoreFreqMax(socket_id, freq);
+    lua_pushinteger(L, err);
+    return 1;
+}
+
+static int
+lua_likwid_getUncoreFreqMax(lua_State* L)
+{
+    const int socket_id = lua_tointeger(L,-1);
+    uint64_t freq = freq_getUncoreFreqMax(socket_id);
+    lua_pushinteger(L, freq);
+    return 1;
+}
+
+static int
 lua_likwid_getuid(lua_State* L)
 {
     int r = geteuid();
@@ -2726,6 +2764,10 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getAvailFreq", lua_likwid_getAvailFreq);
     lua_register(L, "likwid_getAvailGovs", lua_likwid_getAvailGovs);
     lua_register(L, "likwid_getDriver", lua_likwid_getDriver);
+    lua_register(L, "likwid_setUncoreFreqMin", lua_likwid_setUncoreFreqMin);
+    lua_register(L, "likwid_getUncoreFreqMin", lua_likwid_getUncoreFreqMin);
+    lua_register(L, "likwid_setUncoreFreqMax", lua_likwid_setUncoreFreqMax);
+    lua_register(L, "likwid_getUncoreFreqMax", lua_likwid_getUncoreFreqMax);
     // setuid&friends
     lua_register(L, "likwid_getuid", lua_likwid_getuid);
     lua_register(L, "likwid_geteuid", lua_likwid_geteuid);

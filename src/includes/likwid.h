@@ -1518,6 +1518,40 @@ Get the name of the currently active cpufreq driver. The returned string must be
 @return String with active cpufreq driver or NULL in case of errors
 */
 extern char * freq_getDriver(const int cpu_id ) __attribute__ ((visibility ("default") ));
+
+/*! \brief Set the minimal Uncore frequency
+
+Set the minimal Uncore frequency. Since the ranges are not documented, valid frequencies are from minimal CPU clock to maximal Turbo clock. If selecting a frequency at the borders, please check the result with the UNCORE_CLOCK event to be effective.
+@param [in] socket_id ID of socket
+@param [in] freq Frequency in MHz
+@return 0 for success, -ERROR at failure
+*/
+extern int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the minimal Uncore frequency
+
+Get the minimal Uncore frequency.
+@param [in] socket_id ID of socket
+@return frequency in MHz or 0 at failure
+*/
+extern uint64_t freq_getUncoreFreqMin(const int socket_id) __attribute__ ((visibility ("default") ));
+
+/*! \brief Set the maximal Uncore frequency
+
+Set the maximal Uncore frequency. Since the ranges are not documented, valid frequencies are from minimal CPU clock to maximal Turbo clock. If selecting a frequency at the borders, please check the result with the UNCORE_CLOCK event to be effective.
+@param [in] socket_id ID of socket
+@param [in] freq Frequency in MHz
+@return 0 for success, -ERROR at failure
+*/
+extern int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the maximal Uncore frequency
+
+Get the maximal Uncore frequency.
+@param [in] socket_id ID of socket
+@return frequency in MHz or 0 at failure
+*/
+extern uint64_t freq_getUncoreFreqMax(const int socket_id) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 #ifdef __cplusplus
