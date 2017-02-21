@@ -40,6 +40,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -92,6 +93,9 @@ pthread_create(pthread_t* thread,
     static int pin_ids[MAX_NUM_THREADS];
     static uint64_t skipMask = 0x0;
     static int ncpus = 0;
+    static long online_cpus = 0;
+    static int shepard = 0;
+    online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
 
     /* On first entry: Get Evironment Variable and initialize pin_ids */
     if (ncalled == 0)
@@ -107,16 +111,6 @@ pthread_create(pthread_t* thread,
         {
             skipMask = strtoul(str, &str, 16);
         }
-        else if ( skipMask == 0x0 )
-        {
-            dlerror();    /* Clear any existing error */
-            dlsym(RTLD_DEFAULT,"__kmpc_begin");
-
-            if (( dlerror()) == NULL)  {
-                skipMask = 0x1;
-            }
-        }
-
 
         if (getenv("LIKWID_SILENT") != NULL)
         {
@@ -169,6 +163,27 @@ pthread_create(pthread_t* thread,
 
         overflow = ncpus-1;
     }
+    Dl_info info;
+    if (dladdr(start_routine, &info) > 0)
+    {
+        FILE* fpipe;
+        char cmd[512];
+        char buff[512];
+        buff[0] = '\0';
+        sprintf(cmd, "nm %s 2>/dev/null | grep %x ", info.dli_fname, ((void*)start_routine) - info.dli_fbase);
+        if ( !(fpipe = (FILE*)popen(cmd,"r")) )
+        {  // If fpipe is NULL
+            fprintf(stderr, "Problems");
+        }
+        char* t = fgets(buff, 512, fpipe);
+        char* tmp = strstr(buff, "monitor");
+        if (tmp != NULL)
+        {
+            shepard = 1;
+            skipMask |= 1ULL<<(ncalled);
+        }
+        pclose(fpipe);
+    }
 
     /* Handle dll related stuff */
     do
@@ -210,9 +225,17 @@ pthread_create(pthread_t* thread,
 
         if ((ncalled<64) && (skipMask&(1ULL<<(ncalled))))
         {
+            CPU_ZERO(&cpuset);
+            for (int i=0; i<online_cpus; i++)
+                CPU_SET(i, &cpuset);
+            pthread_setaffinity_np(*thread, sizeof(cpu_set_t), &cpuset);
             if (!silent)
             {
-                color_print("\tthreadid %lu -> SKIP \n", *thread);
+                if (shepard)
+                    color_print("\tthreadid %lu -> SKIP SHEPARD\n", *thread);
+                else
+                    color_print("\tthreadid %lu -> SKIP \n", *thread);
+                shepard = 0;
             }
         }
         else

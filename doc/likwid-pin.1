@@ -175,6 +175,12 @@ A common use-case for the numbering by expression is pinning of an application o
 This command schedules one thread per physical CPU core for
 .B ./myApp.
 
+.SH IMPORTANT NOTICE
+The detection of shepard threads works for Intel's/LLVM OpenMP runtime (>=12.0), for GCC's OpenMP runtime as well as for PGI's OpenMP runtime. If you encounter problems with pinning,
+please set a proper skip mask to skip the not-detected shepard threads.
+Intel OpenMP runtime 11.0/11.1 requires to set a skip mask of
+.B 0x1.
+
 .SH AUTHOR
 Written by Thomas Roehl <thomas.roehl@googlemail.com>.
 .SH BUGS

@@ -248,11 +248,11 @@ ifneq ($(COMPILER),MIC)
 install_daemon:
 	@echo "===> INSTALL access daemon to $(ACCESSDAEMON)"
 	@mkdir -p `dirname $(ACCESSDAEMON)`
-	@install -m 4775 $(INSTALL_CHOWN) $(DAEMON_TARGET) $(ACCESSDAEMON)
+	@install -m 4755 $(INSTALL_CHOWN) $(DAEMON_TARGET) $(ACCESSDAEMON)
 move_daemon:
 	@echo "===> MOVE access daemon from $(ACCESSDAEMON) to $(INSTALLED_ACCESSDAEMON)"
 	@mkdir -p `dirname $(INSTALLED_ACCESSDAEMON)`
-	@install -m 4775 $(INSTALL_CHOWN) $(ACCESSDAEMON) $(INSTALLED_ACCESSDAEMON)
+	@install -m 4755 $(INSTALL_CHOWN) $(ACCESSDAEMON) $(INSTALLED_ACCESSDAEMON)
 uninstall_daemon:
 	@echo "===> REMOVING access daemon from $(ACCESSDAEMON)"
 	@rm -f $(ACCESSDAEMON)
@@ -285,11 +285,11 @@ ifneq ($(COMPILER),MIC)
 install_freq:
 	@echo "===> INSTALL setFrequencies tool to $(PREFIX)/sbin/$(FREQ_TARGET)"
 	@mkdir -p $(PREFIX)/sbin
-	@install -m 4775 $(INSTALL_CHOWN) $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
+	@install -m 4755 $(INSTALL_CHOWN) $(FREQ_TARGET) $(PREFIX)/sbin/$(FREQ_TARGET)
 move_freq:
 	@echo "===> MOVE setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET) to $(INSTALLED_PREFIX)/sbin/$(FREQ_TARGET)"
 	@mkdir -p $(INSTALLED_PREFIX)/sbin
-	@install -m 4775 $(INSTALL_CHOWN) $(PREFIX)/sbin/$(FREQ_TARGET) $(INSTALLED_PREFIX)/sbin/$(FREQ_TARGET)
+	@install -m 4755 $(INSTALL_CHOWN) $(PREFIX)/sbin/$(FREQ_TARGET) $(INSTALLED_PREFIX)/sbin/$(FREQ_TARGET)
 uninstall_freq:
 	@echo "===> REMOVING setFrequencies tool from $(PREFIX)/sbin/$(FREQ_TARGET)"
 	@rm -f $(PREFIX)/sbin/$(FREQ_TARGET)
@@ -320,7 +320,7 @@ endif
 install: install_daemon install_freq
 	@echo "===> INSTALL applications to $(BINPREFIX)"
 	@mkdir -p $(BINPREFIX)
-	@chmod 775 $(BINPREFIX)
+	@chmod 755 $(BINPREFIX)
 	@for APP in $(L_APPS); do \
 		install -m 755 $$APP  $(BINPREFIX); \
 	done
@@ -334,11 +334,11 @@ install: install_daemon install_freq
 	@install -m 755 perl/feedGnuplot $(BINPREFIX)
 	@echo "===> INSTALL lua to likwid interface to $(PREFIX)/share/lua"
 	@mkdir -p $(PREFIX)/share/lua
-	@chmod 775 $(PREFIX)/share/lua
+	@chmod 755 $(PREFIX)/share/lua
 	@install -m 644 likwid.lua $(PREFIX)/share/lua
 	@echo "===> INSTALL libraries to $(LIBPREFIX)"
 	@mkdir -p $(LIBPREFIX)
-	@chmod 775 $(LIBPREFIX)
+	@chmod 755 $(LIBPREFIX)
 	@install -m 755 $(TARGET_LIB) $(LIBPREFIX)/$(TARGET_LIB).$(VERSION).$(RELEASE)
 	@install -m 755 liblikwidpin.so $(LIBPREFIX)/liblikwidpin.so.$(VERSION).$(RELEASE)
 	@install -m 755 $(TARGET_HWLOC_LIB) $(LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE)
@@ -357,7 +357,7 @@ install: install_daemon install_freq
 	fi
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
-	@chmod 775 $(MANPREFIX)/man1
+	@chmod 755 $(MANPREFIX)/man1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-topology.1 > $(MANPREFIX)/man1/likwid-topology.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s+<PREFIX>+$(PREFIX)+g" < $(DOC_DIR)/likwid-perfctr.1 > $(MANPREFIX)/man1/likwid-perfctr.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" < $(DOC_DIR)/likwid-powermeter.1 > $(MANPREFIX)/man1/likwid-powermeter.1
@@ -377,28 +377,28 @@ install: install_daemon install_freq
 	@chmod 644 $(MANPREFIX)/man1/likwid-*
 	@echo "===> INSTALL headers to $(PREFIX)/include"
 	@mkdir -p $(PREFIX)/include
-	@chmod 775 $(PREFIX)/include
+	@chmod 755 $(PREFIX)/include
 	@install -m 644 src/includes/likwid.h  $(PREFIX)/include/
 	@install -m 644 src/includes/bstrlib.h  $(PREFIX)/include/
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL groups to $(PREFIX)/share/likwid/perfgroups"
 	@mkdir -p $(PREFIX)/share/likwid/perfgroups
-	@chmod 775 $(PREFIX)/share/likwid
-	@chmod 775 $(PREFIX)/share/likwid/perfgroups
+	@chmod 755 $(PREFIX)/share/likwid
+	@chmod 755 $(PREFIX)/share/likwid/perfgroups
 	@cp -rf groups/* $(PREFIX)/share/likwid/perfgroups
-	@chmod 775 $(PREFIX)/share/likwid/perfgroups/*
+	@chmod 755 $(PREFIX)/share/likwid/perfgroups/*
 	@find $(PREFIX)/share/likwid/perfgroups -name "*.txt" -exec chmod 644 {} \;
 	@echo "===> INSTALL monitoring groups to $(PREFIX)/share/likwid/mongroups"
 	@mkdir -p $(PREFIX)/share/likwid/mongroups
-	@chmod 775 $(PREFIX)/share/likwid/mongroups
+	@chmod 755 $(PREFIX)/share/likwid/mongroups
 	@cp -rf monitoring/groups/* $(PREFIX)/share/likwid/mongroups
-	@chmod 775 $(PREFIX)/share/likwid/mongroups/*
+	@chmod 755 $(PREFIX)/share/likwid/mongroups/*
 	@find $(PREFIX)/share/likwid/mongroups -name "*.txt" -exec chmod 644 {} \;
 	@mkdir -p $(PREFIX)/share/likwid/docs
-	@chmod 775 $(PREFIX)/share/likwid/docs
+	@chmod 755 $(PREFIX)/share/likwid/docs
 	@install -m 644 doc/bstrlib.txt $(PREFIX)/share/likwid/docs
 	@mkdir -p $(PREFIX)/share/likwid/examples
-	@chmod 775 $(PREFIX)/share/likwid/examples
+	@chmod 755 $(PREFIX)/share/likwid/examples
 	@install -m 644 examples/* $(PREFIX)/share/likwid/examples
 	@echo "===> INSTALL default likwid-agent.conf to $(PREFIX)/share/likwid/mongroups"
 	@sed -e "s+<PREFIX>+$(PREFIX)+g" monitoring/likwid-agent.conf > $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
@@ -413,7 +413,7 @@ install: install_daemon install_freq
 move: move_daemon move_freq
 	@echo "===> MOVE applications from $(BINPREFIX) to $(INSTALLED_BINPREFIX)"
 	@mkdir -p $(INSTALLED_BINPREFIX)
-	@chmod 775 $(INSTALLED_BINPREFIX)
+	@chmod 755 $(INSTALLED_BINPREFIX)
 	@for APP in $(L_APPS); do \
 		install -m 755 $(BINPREFIX)/$$APP  $(INSTALLED_BINPREFIX); \
 	done
@@ -425,11 +425,11 @@ move: move_daemon move_freq
 	@install -m 755 $(BINPREFIX)/feedGnuplot $(INSTALLED_BINPREFIX)
 	@echo "===> MOVE lua to likwid interface from $(PREFIX)/share/lua to $(INSTALLED_PREFIX)/share/lua"
 	@mkdir -p $(INSTALLED_PREFIX)/share/lua
-	@chmod 775 $(INSTALLED_PREFIX)/share/lua
+	@chmod 755 $(INSTALLED_PREFIX)/share/lua
 	@install -m 644 $(PREFIX)/share/lua/likwid.lua $(INSTALLED_PREFIX)/share/lua
 	@echo "===> MOVE libraries from $(LIBPREFIX) to $(INSTALLED_LIBPREFIX)"
 	@mkdir -p $(INSTALLED_LIBPREFIX)
-	@chmod 775 $(INSTALLED_LIBPREFIX)
+	@chmod 755 $(INSTALLED_LIBPREFIX)
 	@install -m 755 $(LIBPREFIX)/$(TARGET_LIB).$(VERSION).$(RELEASE) $(INSTALLED_LIBPREFIX)/$(TARGET_LIB).$(VERSION).$(RELEASE)
 	@install -m 755 $(LIBPREFIX)/$(PINLIB).$(VERSION).$(RELEASE) $(INSTALLED_LIBPREFIX)/$(PINLIB).$(VERSION).$(RELEASE)
 	@install -m 755 $(LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE) $(INSTALLED_LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE)
@@ -444,32 +444,32 @@ move: move_daemon move_freq
 	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB)).$(VERSION)
 	@echo "===> MOVE man pages from $(MANPREFIX)/man1 to $(INSTALLED_MANPREFIX)/man1"
 	@mkdir -p $(INSTALLED_MANPREFIX)/man1
-	@chmod 775 $(INSTALLED_MANPREFIX)/man1
+	@chmod 755 $(INSTALLED_MANPREFIX)/man1
 	@install -m 644 $(MANPREFIX)/man1/*.1 $(INSTALLED_MANPREFIX)/man1
 	@echo "===> MOVE headers from $(PREFIX)/include to $(INSTALLED_PREFIX)/include"
 	@mkdir -p $(INSTALLED_PREFIX)/include
-	@chmod 775 $(INSTALLED_PREFIX)/include
+	@chmod 755 $(INSTALLED_PREFIX)/include
 	@install -m 644 $(PREFIX)/include/likwid.h $(INSTALLED_PREFIX)/include/likwid.h
 	@install -m 644 $(PREFIX)/include/bstrlib.h $(INSTALLED_PREFIX)/include/bstrlib.h
 	@if [ -e $(PREFIX)/include/likwid.mod ]; then install $(PREFIX)/include/likwid.mod $(INSTALLED_PREFIX)/include/likwid.mod; fi
 	@echo "===> MOVE groups from $(PREFIX)/share/likwid/perfgroups to $(INSTALLED_PREFIX)/share/likwid/perfgroups"
 	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/perfgroups
-	@chmod 775 $(INSTALLED_PREFIX)/share/likwid
-	@chmod 775 $(INSTALLED_PREFIX)/share/likwid/perfgroups
+	@chmod 755 $(INSTALLED_PREFIX)/share/likwid
+	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/perfgroups
 	@cp -rf $(PREFIX)/share/likwid/perfgroups/* $(INSTALLED_PREFIX)/share/likwid/perfgroups
-	@chmod 775 $(INSTALLED_PREFIX)/share/likwid/perfgroups/*
+	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/perfgroups/*
 	@find $(INSTALLED_PREFIX)/share/likwid/perfgroups -name "*.txt" -exec chmod 644 {} \;
 	@echo "===> MOVE monitoring groups from $(PREFIX)/share/likwid/mongroups to $(INSTALLED_PREFIX)/share/likwid/mongroups"
 	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/mongroups
-	@chmod 775 $(INSTALLED_PREFIX)/share/likwid/mongroups
+	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/mongroups
 	@cp -rf $(PREFIX)/share/likwid/mongroups/* $(INSTALLED_PREFIX)/share/likwid/mongroups
-	@chmod 775 $(INSTALLED_PREFIX)/share/likwid/mongroups/*
+	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/mongroups/*
 	@find $(INSTALLED_PREFIX)/share/likwid/mongroups -name "*.txt" -exec chmod 644 {} \;
 	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/docs
-	@chmod 775 $(INSTALLED_PREFIX)/share/likwid/docs
+	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/docs
 	@install -m 644 $(PREFIX)/share/likwid/docs/bstrlib.txt $(INSTALLED_PREFIX)/share/likwid/docs
 	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/examples
-	@chmod 775 $(INSTALLED_PREFIX)/share/likwid/examples
+	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/examples
 	@install -m 644 examples/* $(INSTALLED_PREFIX)/share/likwid/examples
 	@echo "===> MOVE default likwid-agent.conf from $(PREFIX)/share/likwid/mongroups to $(INSTALLED_PREFIX)/share/likwid/mongroups"
 	@install $(PREFIX)/share/likwid/mongroups/likwid-agent.conf $(INSTALLED_PREFIX)/share/likwid/mongroups/likwid-agent.conf
