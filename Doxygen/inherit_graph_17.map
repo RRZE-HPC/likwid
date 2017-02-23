@@ -1,4 +1,0 @@
-<map id="G" name="G">
-<area shape="rect" id="node1" href="$structTimerData.html" title="Struct defining the start and stop time of a time interval." alt="" coords="5,5,88,35"/>
-<area shape="rect" id="node3" href="$unionTscCounter.html" title="Struct defining the start and stop time of a time interval." alt="" coords="136,5,227,35"/>
-</map>

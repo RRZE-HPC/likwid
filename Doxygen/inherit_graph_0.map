@@ -1,4 +1,4 @@
-<map id="G" name="G">
-<area shape="rect" id="node1" href="$structAffinityDomains.html" title="The AffinityDomains data structure holds different count variables describing the various system laye..." alt="" coords="5,5,120,35"/>
-<area shape="rect" id="node3" href="$structAffinityDomain.html" title="The AffinityDomain data structure describes a single domain in the current system." alt="" coords="169,5,276,35"/>
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$structAffinityDomains.html" title="The AffinityDomains data structure holds different count variables describing the various system laye..." alt="" coords="5,5,120,32"/>
+<area shape="rect" id="node2" href="$structAffinityDomain.html" title="The AffinityDomain data structure describes a single domain in the current system. " alt="" coords="168,5,276,32"/>
 </map>

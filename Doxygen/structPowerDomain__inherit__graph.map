@@ -1,3 +1,3 @@
-<map id="G" name="G">
-<area shape="rect" id="node2" href="$structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility." alt="" coords="17,5,97,35"/>
+<map id="PowerDomain" name="PowerDomain">
+<area shape="rect" id="node2" href="$structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility. " alt="" coords="17,5,98,32"/>
 </map>

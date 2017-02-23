@@ -1,10 +1,10 @@
-<map id="G" name="G">
-<area shape="rect" id="node2" href="$structPerfmonGroupSet.html" title="Structure specifying all performance monitoring event groups." alt="" coords="8,213,133,243"/>
-<area shape="rect" id="node8" href="$structPerfmonEventSetEntry.html" title="Structure specifying an performance monitoring event." alt="" coords="157,213,312,243"/>
-<area shape="rect" id="node5" href="$structPerfmonThread.html" title="Structure specifying thread to CPU relation." alt="" coords="5,309,115,339"/>
-<area shape="rect" id="node11" href="$structPerfmonCounter.html" title="Structure describing performance monitoring counter data." alt="" coords="144,309,261,339"/>
-<area shape="rect" id="node14" href="$structPerfmonEvent.html" title="Structure specifying an performance monitoring event." alt="" coords="296,309,400,339"/>
-<area shape="rect" id="node17" href="$structPerfmonEventOption.html" title="Structure specifying event/counter options and their value." alt="" coords="276,405,417,435"/>
-<area shape="rect" id="node20" href="$structTimerData.html" title="Struct defining the start and stop time of a time interval." alt="" coords="212,5,295,35"/>
-<area shape="rect" id="node22" href="$unionTscCounter.html" title="Struct defining the start and stop time of a time interval." alt="" coords="252,117,343,147"/>
+<map id="PerfmonEventSet" name="PerfmonEventSet">
+<area shape="rect" id="node2" href="$structPerfmonGroupSet.html" title="Structure specifying all performance monitoring event groups. " alt="" coords="8,199,135,225"/>
+<area shape="rect" id="node4" href="$structPerfmonEventSetEntry.html" title="Structure specifying an performance monitoring event. " alt="" coords="159,199,315,225"/>
+<area shape="rect" id="node3" href="$structPerfmonThread.html" title="Structure specifying thread to CPU relation. " alt="" coords="5,288,116,315"/>
+<area shape="rect" id="node5" href="$structPerfmonCounter.html" title="Structure describing performance monitoring counter data. " alt="" coords="146,288,263,315"/>
+<area shape="rect" id="node6" href="$structPerfmonEvent.html" title="Structure specifying an performance monitoring event. " alt="" coords="297,288,403,315"/>
+<area shape="rect" id="node7" href="$structPerfmonEventOption.html" title="Structure specifying event/counter options and their value. " alt="" coords="279,377,421,404"/>
+<area shape="rect" id="node8" href="$structTimerData.html" title="Struct defining the start and stop time of a time interval. " alt="" coords="214,5,297,32"/>
+<area shape="rect" id="node9" href="$unionTscCounter.html" title="Struct defining the start and stop time of a time interval. " alt="" coords="254,109,345,136"/>
 </map>

@@ -1,5 +1,5 @@
-<map id="G" name="G">
-<area shape="rect" id="node2" href="$structCpuTopology.html" title="Structure describing the topology of the HW threads in the system." alt="" coords="59,107,157,136"/>
-<area shape="rect" id="node4" href="$structHWThread.html" title="Structure with IDs of a HW thread." alt="" coords="5,203,91,232"/>
-<area shape="rect" id="node8" href="$structCacheLevel.html" title="Structure describing a cache level." alt="" coords="124,203,215,232"/>
+<map id="treeNode" name="treeNode">
+<area shape="rect" id="node2" href="$structCpuTopology.html" title="Structure describing the topology of the HW threads in the system. " alt="" coords="59,97,157,124"/>
+<area shape="rect" id="node3" href="$structHWThread.html" title="Structure with IDs of a HW thread. " alt="" coords="5,187,91,213"/>
+<area shape="rect" id="node4" href="$structCacheLevel.html" title="Structure describing a cache level. " alt="" coords="124,187,215,213"/>
 </map>

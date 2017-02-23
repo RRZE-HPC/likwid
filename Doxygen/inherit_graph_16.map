@@ -1,5 +1,4 @@
-<map id="G" name="G">
-<area shape="rect" id="node1" href="$structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility." alt="" coords="7,32,87,61"/>
-<area shape="rect" id="node3" href="$structPowerDomain.html" title="Structure describing an RAPL power domain." alt="" coords="136,5,240,35"/>
-<area shape="rect" id="node5" href="$structTurboBoost.html" title="Information structure of CPU&#39;s turbo mode." alt="" coords="144,59,232,88"/>
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$structTimerData.html" title="Struct defining the start and stop time of a time interval. " alt="" coords="5,5,88,32"/>
+<area shape="rect" id="node2" href="$unionTscCounter.html" title="Struct defining the start and stop time of a time interval. " alt="" coords="136,5,227,32"/>
 </map>

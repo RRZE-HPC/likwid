@@ -1,7 +1,7 @@
-<map id="G" name="G">
-<area shape="rect" id="node7" href="$structPerfmonCounter.html" title="Structure describing performance monitoring counter data." alt="" coords="5,237,123,267"/>
-<area shape="rect" id="node9" href="$structPerfmonEvent.html" title="Structure specifying an performance monitoring event." alt="" coords="147,237,251,267"/>
-<area shape="rect" id="node2" href="$structPerfmonEventSet.html" title="Structure specifying an performance monitoring event group." alt="" coords="68,83,193,112"/>
-<area shape="rect" id="node4" href="$structPerfmonGroupSet.html" title="Structure specifying all performance monitoring event groups." alt="" coords="68,5,193,35"/>
-<area shape="rect" id="node11" href="$structPerfmonEventOption.html" title="Structure specifying event/counter options and their value." alt="" coords="128,315,269,344"/>
+<map id="PerfmonEventSetEntry" name="PerfmonEventSetEntry">
+<area shape="rect" id="node4" href="$structPerfmonCounter.html" title="Structure describing performance monitoring counter data. " alt="" coords="5,229,123,256"/>
+<area shape="rect" id="node5" href="$structPerfmonEvent.html" title="Structure specifying an performance monitoring event. " alt="" coords="146,229,251,256"/>
+<area shape="rect" id="node2" href="$structPerfmonEventSet.html" title="Structure specifying an performance monitoring event group. " alt="" coords="68,80,193,107"/>
+<area shape="rect" id="node3" href="$structPerfmonGroupSet.html" title="Structure specifying all performance monitoring event groups. " alt="" coords="67,5,194,32"/>
+<area shape="rect" id="node6" href="$structPerfmonEventOption.html" title="Structure specifying event/counter options and their value. " alt="" coords="127,304,270,331"/>
 </map>

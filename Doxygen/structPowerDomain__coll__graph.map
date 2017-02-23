@@ -1,4 +1,4 @@
-<map id="G" name="G">
-<area shape="rect" id="node2" href="$structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility." alt="" coords="17,101,97,131"/>
-<area shape="rect" id="node4" href="$structTurboBoost.html" title="Information structure of CPU&#39;s turbo mode." alt="" coords="13,197,101,227"/>
+<map id="PowerDomain" name="PowerDomain">
+<area shape="rect" id="node2" href="$structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility. " alt="" coords="17,95,98,121"/>
+<area shape="rect" id="node3" href="$structTurboBoost.html" title="Information structure of CPU&#39;s turbo mode. " alt="" coords="13,184,102,211"/>
 </map>
