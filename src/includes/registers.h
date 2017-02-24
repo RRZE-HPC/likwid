@@ -131,26 +131,26 @@
 #define MSR_V4_UNC_PERF_GLOBAL_STATUS   0xE02
 #define MSR_V4_UNC_PERF_FIXED_CTRL      0x394
 #define MSR_V4_UNC_PERF_FIXED_CTR       0x395
-#define MSR_V4_ARB_PERF_FIXED_CTRL0      0x3B2
-#define MSR_V4_ARB_PERF_FIXED_CTR0       0x3B0
-#define MSR_V4_ARB_PERF_FIXED_CTRL1      0x3B3
-#define MSR_V4_ARB_PERF_FIXED_CTR1       0x3B1
-#define MSR_V4_C0_PERF_FIXED_CTRL0      0x700
-#define MSR_V4_C0_PERF_FIXED_CTR0       0x706
-#define MSR_V4_C0_PERF_FIXED_CTRL1      0x701
-#define MSR_V4_C0_PERF_FIXED_CTR1       0x707
-#define MSR_V4_C1_PERF_FIXED_CTRL0      0x710
-#define MSR_V4_C1_PERF_FIXED_CTR0       0x716
-#define MSR_V4_C1_PERF_FIXED_CTRL1      0x711
-#define MSR_V4_C1_PERF_FIXED_CTR1       0x717
-#define MSR_V4_C2_PERF_FIXED_CTRL0      0x720
-#define MSR_V4_C2_PERF_FIXED_CTR0       0x726
-#define MSR_V4_C2_PERF_FIXED_CTRL1      0x721
-#define MSR_V4_C2_PERF_FIXED_CTR1       0x727
-#define MSR_V4_C3_PERF_FIXED_CTRL0      0x730
-#define MSR_V4_C3_PERF_FIXED_CTR0       0x736
-#define MSR_V4_C3_PERF_FIXED_CTRL1      0x731
-#define MSR_V4_C3_PERF_FIXED_CTR1       0x737
+#define MSR_V4_ARB_PERF_CTRL0           0x3B2
+#define MSR_V4_ARB_PERF_CTR0            0x3B0
+#define MSR_V4_ARB_PERF_CTRL1           0x3B3
+#define MSR_V4_ARB_PERF_CTR1            0x3B1
+#define MSR_V4_C0_PERF_CTRL0            0x700
+#define MSR_V4_C0_PERF_CTR0             0x706
+#define MSR_V4_C0_PERF_CTRL1            0x701
+#define MSR_V4_C0_PERF_CTR1             0x707
+#define MSR_V4_C1_PERF_CTRL0            0x710
+#define MSR_V4_C1_PERF_CTR0             0x716
+#define MSR_V4_C1_PERF_CTRL1            0x711
+#define MSR_V4_C1_PERF_CTR1             0x717
+#define MSR_V4_C2_PERF_CTRL0            0x720
+#define MSR_V4_C2_PERF_CTR0             0x726
+#define MSR_V4_C2_PERF_CTRL1            0x721
+#define MSR_V4_C2_PERF_CTR1             0x727
+#define MSR_V4_C3_PERF_CTRL0            0x730
+#define MSR_V4_C3_PERF_CTR0             0x736
+#define MSR_V4_C3_PERF_CTRL1            0x731
+#define MSR_V4_C3_PERF_CTR1             0x737
 /* V4 Uncore registers the same as in V3 */
 
 /* Xeon Phi */
