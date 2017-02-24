@@ -480,7 +480,8 @@ static int allowed_knl(uint32_t reg)
     {
         if (((reg & 0xF00U) == 0x700U) ||
             ((reg & 0xF00U) == 0xE00U) ||
-            ((reg & 0xF00U) == 0xF00U))
+            ((reg & 0xF00U) == 0xF00U) ||
+            (reg == MSR_PREFETCH_ENABLE))
             return 1;
     }
     return 0;

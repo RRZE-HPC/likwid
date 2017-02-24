@@ -202,6 +202,19 @@ cpuFeatures_update(int cpu)
         TEST_FLAG_INV(FEAT_CL_PREFETCHER,1);
         TEST_FLAG_INV(FEAT_HW_PREFETCHER,0);
     }
+    
+    if (cpuid_info.model == XEON_PHI_KNL)
+    {
+        ret = HPMread(cpu, MSR_DEV, MSR_PREFETCH_ENABLE, &flags);
+        if (ret != 0)
+        {
+            fprintf(stderr,
+                    "Cannot read register 0x%X on cpu %d: err %d\n",
+                    MSR_PREFETCH_ENABLE, cpu, ret);
+        }
+        TEST_FLAG_INV(FEAT_DCU_PREFETCHER,0);
+        TEST_FLAG_INV(FEAT_HW_PREFETCHER,1);
+    }
 }
 
 static char*
@@ -226,6 +239,9 @@ cpuFeatureNames[CPUFEATURES_MAX] = {
     [FEAT_TM2] = "Thermal Monitoring 2",
     [FEAT_SPEEDSTEP_LOCK] = "Enhanced Intel SpeedStep Technology Select Lock",
 };
+
+static char*
+cpuFeatureNamesFixed[CPUFEATURES_MAX] = {};
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -299,6 +315,7 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
     uint64_t flags;
     uint32_t reg = MSR_IA32_MISC_ENABLE;
     int newOffsets = 0;
+    int knlOffsets = 0;
     if (IF_FLAG(type))
     {
         return 0;
@@ -330,6 +347,17 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
         reg = MSR_PREFETCH_ENABLE;
         newOffsets = 1;
     }
+    if (cpuid_info.model == XEON_PHI_KNL)
+    {
+        reg = MSR_PREFETCH_ENABLE;
+        knlOffsets = 1;
+        if (type == FEAT_CL_PREFETCHER ||
+            type == FEAT_IP_PREFETCHER)
+        {
+            fprintf(stderr, "CL_PREFETCHER and IP_PREFETCHER not available on Intel Xeon Phi (KNL)");
+            return 0;
+        }
+    }
 
     ret = HPMread(cpu, MSR_DEV, reg, &flags);
     if (ret != 0)
@@ -346,6 +374,10 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
             if (newOffsets)
             {
                 flags &= ~(1ULL<<0);
+            }
+            else if (knlOffsets)
+            {
+                flags &= ~(1ULL<<1);
             }
             else
             {
@@ -372,6 +404,10 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
             if (newOffsets)
             {
                 flags &= ~(1ULL<<2);
+            }
+            else if (knlOffsets)
+            {
+                flags &= ~(1ULL<<0);
             }
             else
             {
@@ -428,6 +464,7 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
     uint64_t flags;
     uint32_t reg = MSR_IA32_MISC_ENABLE;
     int newOffsets = 0;
+    int knlOffsets = 1;
     if (!IF_FLAG(type))
     {
         return 0;
@@ -459,6 +496,17 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
         reg = MSR_PREFETCH_ENABLE;
         newOffsets = 1;
     }
+    if (cpuid_info.model == XEON_PHI_KNL)
+    {
+        reg = MSR_PREFETCH_ENABLE;
+        knlOffsets = 1;
+        if (type == FEAT_CL_PREFETCHER ||
+            type == FEAT_IP_PREFETCHER)
+        {
+            fprintf(stderr, "CL_PREFETCHER and IP_PREFETCHER not available on Intel Xeon Phi (KNL)");
+            return 0;
+        }
+    }
     ret = HPMread(cpu, MSR_DEV, reg, &flags);
     if (ret != 0)
     {
@@ -474,6 +522,10 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
             if (newOffsets)
             {
                 flags |= (1ULL<<0);
+            }
+            else if (knlOffsets)
+            {
+                flags |= (1ULL<<1);
             }
             else
             {
@@ -500,6 +552,10 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
             if (newOffsets)
             {
                 flags |= (1ULL<<2);
+            }
+            else if (knlOffsets)
+            {
+                flags |= (1ULL<<0);
             }
             else
             {
