@@ -349,8 +349,8 @@ hwloc_init_cacheTopology(void)
         }
         else if (cpuid_info.isIntel)
         {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_ONLY_ERROR, Processor is not supported);
-            break;
+            DEBUG_PLAIN_PRINT(DEBUGLEV_ONLY_ERROR, Cannot read cache inclusiveness);
+            cachePool[id].inclusive = 0;
         }
 #endif
 #if defined(_ARCH_PPC)
