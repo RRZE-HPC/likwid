@@ -91,6 +91,7 @@ struct topology_functions {
 #define WESTMERE_EX          0x2FU
 #define XEON_MP              0x1DU
 #define BROADWELL            0x3DU
+#define BROADWELL_E3         0x47U
 #define BROADWELL_E          0x4FU
 #define BROADWELL_D          0x56U
 #define SKYLAKE1             0x4EU
