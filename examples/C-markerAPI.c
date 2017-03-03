@@ -30,6 +30,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include <omp.h>
 #include <likwid.h>
@@ -38,7 +39,7 @@
 
 int main(int argc, char* argv[])
 {
-    int i;
+    int i, g;
     int nevents = 10;
     double events[10];
     double time;
@@ -54,29 +55,34 @@ int main(int argc, char* argv[])
         LIKWID_MARKER_REGISTER("example");
     }
 
-
-    #pragma omp parallel
+    // perfmon_getNumberOfGroups is not part of the MarkerAPI,
+    // it belongs to the normal LIKWID API. But the MarkerAPI
+    // has no function to get the number of configured groups.
+    for (g=0;g < perfmon_getNumberOfGroups(); g++)
     {
-        printf("Thread %d sleeps now for %d seconds\n", omp_get_thread_num(), SLEEPTIME);
-        // Start measurements inside a parallel region
-        LIKWID_MARKER_START("example");
-        // Insert your code here.
-        // Often contains an OpenMP for pragma. Regions can be nested.
-        sleep(SLEEPTIME);
-        // Stop measurements inside a parallel region
-        LIKWID_MARKER_STOP("example");
-        printf("Thread %d wakes up again\n", omp_get_thread_num());
-        // If multiple groups given, you can switch to the next group
-        LIKWID_MARKER_SWITCH;
-        // If you need the performance data inside your application, use
-        LIKWID_MARKER_GET("example", &nevents, events, &time, &count);
-        // where events is an array of doubles with nevents entries,
-        // time is a double* and count an int*.
-        printf("Region example measures %d events, total measurement time is %f\n", nevents, time);
-        printf("The region was called %d times\n", count);
-        for (i = 0; i < nevents; i++)
+        #pragma omp parallel
         {
-            printf("Event %d: %f\n", i, events[i]);
+            printf("Thread %d sleeps now for %d seconds\n", omp_get_thread_num(), SLEEPTIME);
+            // Start measurements inside a parallel region
+            LIKWID_MARKER_START("example");
+            // Insert your code here.
+            // Often contains an OpenMP for pragma. Regions can be nested.
+            sleep(SLEEPTIME);
+            // Stop measurements inside a parallel region
+            LIKWID_MARKER_STOP("example");
+            printf("Thread %d wakes up again\n", omp_get_thread_num());
+            // If you need the performance data inside your application, use
+            LIKWID_MARKER_GET("example", &nevents, events, &time, &count);
+            // where events is an array of doubles with nevents entries,
+            // time is a double* and count an int*.
+            printf("Region example measures %d events, total measurement time is %f\n", nevents, time);
+            printf("The region was called %d times\n", count);
+            for (i = 0; i < nevents; i++)
+            {
+                printf("Event %d: %f\n", i, events[i]);
+            }
+            // If multiple groups given, you can switch to the next group
+            LIKWID_MARKER_SWITCH;
         }
     }
 
