@@ -893,6 +893,7 @@ perfmon_init_maps(void)
                     break;
 
                 case BROADWELL:
+                case BROADWELL_E3:
                     box_map = broadwell_box_map;
                     eventHash = broadwell_arch_events;
                     counter_map = broadwell_counter_map;
@@ -1158,6 +1159,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
 
                 case BROADWELL:
+                case BROADWELL_E3:
                 case BROADWELL_E:
                 case BROADWELL_D:
                     initialize_power = TRUE;

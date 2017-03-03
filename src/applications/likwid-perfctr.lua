@@ -245,7 +245,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         verbose = true
     elseif opt == "m" or opt == "marker" then
         use_marker = true
-        use_wrapper = true
+        --use_wrapper = true
     elseif (opt == "S") then
         use_stethoscope = true
         if arg ~= nil and arg:match("%d+%a?s") then

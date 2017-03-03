@@ -70,6 +70,7 @@ static char* sandybridge_ep_str = "Intel Xeon SandyBridge EN/EP processor";
 static char* haswell_str = "Intel Core Haswell processor";
 static char* haswell_ep_str = "Intel Xeon Haswell EN/EP/EX processor";
 static char* broadwell_str = "Intel Core Broadwell processor";
+static char* broadwell_e3_str = "Intel Xeon E3 Broadwell processor";
 static char* broadwell_d_str = "Intel Xeon D Broadwell processor";
 static char* broadwell_ep_str = "Intel Xeon Broadwell EN/EP/EX processor";
 static char* skylake_str = "Intel Skylake processor";
@@ -613,6 +614,10 @@ topology_setName(void)
 
                 case BROADWELL:
                     cpuid_info.name = broadwell_str;
+                    cpuid_info.short_name = short_broadwell;
+                    break;
+                case BROADWELL_E3:
+                    cpuid_info.name = broadwell_e3_str;
                     cpuid_info.short_name = short_broadwell;
                     break;
                 case BROADWELL_D:

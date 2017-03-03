@@ -1082,6 +1082,7 @@ int main(void)
                          (model == HASWELL_M1) ||
                          (model == HASWELL_M2) ||
                          (model == BROADWELL) ||
+                         (model == BROADWELL_E3) ||
                          (model == SKYLAKE1) ||
                          (model == SKYLAKE2) ||
                          (model == KABYLAKE1) ||

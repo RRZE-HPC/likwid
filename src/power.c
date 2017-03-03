@@ -89,6 +89,7 @@ power_init(int cpuId)
         case ATOM_SILVERMONT_AIR:
         case ATOM_SILVERMONT_GOLD:
         case BROADWELL:
+        case BROADWELL_E3:
         case BROADWELL_E:
         case BROADWELL_D:
         case HASWELL_M1:

@@ -156,6 +156,7 @@ cpuFeatures_update(int cpu)
              (cpuid_info.model == HASWELL_M2) ||
              (cpuid_info.model == HASWELL_EP) ||
              (cpuid_info.model == BROADWELL) ||
+             (cpuid_info.model == BROADWELL_E3) ||
              (cpuid_info.model == BROADWELL_D) ||
              (cpuid_info.model == BROADWELL_E) ||
              (cpuid_info.model == SKYLAKE1) ||
@@ -182,6 +183,7 @@ cpuFeatures_update(int cpu)
             (cpuid_info.model == HASWELL_M2) ||
             (cpuid_info.model == HASWELL_EP) ||
             (cpuid_info.model == BROADWELL) ||
+            (cpuid_info.model == BROADWELL_E3) ||
             (cpuid_info.model == BROADWELL_D) ||
             (cpuid_info.model == BROADWELL_E) ||
             (cpuid_info.model == SKYLAKE1) ||
@@ -319,6 +321,7 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == HASWELL_M2) ||
             (cpuid_info.model == HASWELL_EP) ||
             (cpuid_info.model == BROADWELL) ||
+            (cpuid_info.model == BROADWELL_E3) ||
             (cpuid_info.model == BROADWELL_D) ||
             (cpuid_info.model == BROADWELL_E) ||
             (cpuid_info.model == SKYLAKE1) ||
@@ -448,6 +451,7 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == HASWELL_M2) ||
             (cpuid_info.model == HASWELL_EP) ||
             (cpuid_info.model == BROADWELL) ||
+            (cpuid_info.model == BROADWELL_E3) ||
             (cpuid_info.model == BROADWELL_D) ||
             (cpuid_info.model == BROADWELL_E) ||
             (cpuid_info.model == SKYLAKE1) ||
