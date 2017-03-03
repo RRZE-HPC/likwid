@@ -93,6 +93,7 @@ struct topology_functions {
 #define BROADWELL            0x3DU
 #define BROADWELL_E          0x4FU
 #define BROADWELL_D          0x56U
+#define BROADWELL_E3         0x47U
 #define SKYLAKE1             0x4EU
 #define SKYLAKE2             0x5EU
 #define KABYLAKE1            0x8EU
