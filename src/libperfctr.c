@@ -254,7 +254,10 @@ likwid_markerInit(void)
     {
         likwid_init = 1;
     }
+    threads2Pthread[registered_cpus] = pthread_self();
+    printf("Pthread %d = %lu\n", registered_cpus, pthread_self());
     registered_cpus++;
+    
     groupSet->activeGroup = 0;
 #ifdef LIKWID_USE_PERFEVENT
     perfmon_setupCounters(groupSet->activeGroup);
@@ -265,14 +268,27 @@ likwid_markerInit(void)
 void
 likwid_markerThreadInit(void)
 {
-    int myID;
+    int myID = 0, i = 0;
+    pthread_t t;
     if ( !likwid_init )
     {
         return;
     }
 
     pthread_mutex_lock(&globalLock);
-    myID = registered_cpus++;
+    t = pthread_self();
+    for (i=0; i<registered_cpus; i++)
+    {
+        if (pthread_equal(t, threads2Pthread[i]))
+        {
+            t = 0;
+        }
+    }
+    if (t != 0)
+    {
+        threads2Pthread[registered_cpus] = t;
+        myID = registered_cpus++;
+    }
     pthread_mutex_unlock(&globalLock);
 
     if (getenv("LIKWID_PIN") != NULL)
