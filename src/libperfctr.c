@@ -283,7 +283,7 @@ likwid_markerThreadInit(void)
         if ((CPU_COUNT(&cpuset) > 1) || (likwid_getProcessorId() != threads2Cpu[myID % num_cpus]))
         {
             likwid_pinThread(threads2Cpu[myID % num_cpus]);
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, Pin thread %lu to CPU %d, currently %d, gettid(), threads2Cpu[myID % num_cpus], sched_getcpu());
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Pin thread %lu to CPU %d currently %d, gettid(), threads2Cpu[myID % num_cpus], sched_getcpu());
         }
     }
 }
