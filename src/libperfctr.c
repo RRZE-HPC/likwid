@@ -254,6 +254,7 @@ likwid_markerInit(void)
     {
         likwid_init = 1;
     }
+    registered_cpus++;
     groupSet->activeGroup = 0;
 #ifdef LIKWID_USE_PERFEVENT
     perfmon_setupCounters(groupSet->activeGroup);
@@ -282,7 +283,7 @@ likwid_markerThreadInit(void)
         if ((CPU_COUNT(&cpuset) > 1) || (likwid_getProcessorId() != threads2Cpu[myID % num_cpus]))
         {
             likwid_pinThread(threads2Cpu[myID % num_cpus]);
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Pin thread %lu to CPU %d\n", gettid(), threads2Cpu[myID % num_cpus]);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Pin thread %lu to CPU %d, currently %d, gettid(), threads2Cpu[myID % num_cpus], sched_getcpu());
         }
     }
 }
@@ -301,6 +302,7 @@ likwid_markerNextGroup(void)
     next_group = (groupSet->activeGroup + 1) % numberOfGroups;
     if (next_group != groupSet->activeGroup)
     {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Switch from group %d to group %d, groupSet->activeGroup, next_group);
         i = perfmon_switchActiveGroup(next_group);
     }
     return;
