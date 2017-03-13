@@ -73,8 +73,12 @@ if likwid.startCounters() < 0 then
     likwid.putTopology()
     os.exit(1)
 end
+
+
 -- Application code
 likwid.sleep(2)
+
+
 if likwid.stopCounters() < 0 then
     printf(string.format("Failed to stop group %d in LIKWID's performance monitoring module\n", gid))
     likwid.finalize()
@@ -89,5 +93,4 @@ for i,cpu in pairs(cpus) do
 end
 
 
-likwid.putTopology()
 likwid.finalize()
