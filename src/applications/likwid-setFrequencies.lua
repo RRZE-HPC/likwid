@@ -56,6 +56,7 @@ function usage()
     print_stdout("-f/--freq freq\t Set current frequency, implicitly sets userspace governor")
     print_stdout("-x/--min freq\t Set minimal frequency")
     print_stdout("-y/--max freq\t Set maximal frequency")
+    print_stdout("-F\t Pin CPU to frequency (sets min, max and cur frequency)")
     print_stdout("-p\t Print current frequencies")
     print_stdout("-l\t List available frequencies")
     print_stdout("-m\t List available governors")
@@ -65,155 +66,6 @@ function usage()
     print_stdout("to the turbo related frequency. The governor is set to 'performance'.")
 end
 
---[[function getCurrentMinFreq(cpuid)
-    local min = 10000000
-    if cpuid == nil or cpuid < 0 then
-        for cpuid=0,topo["numHWThreads"]-1 do
-            fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_min_freq")
-            if verbosity == 3 then
-                print_stdout("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_min_freq" )
-            end
-            line = fp:read("*l")
-            if tonumber(line)/1E6 < min then
-                min = tonumber(line)/1E6
-            end
-            fp:close()
-        end
-    else
-        fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_min_freq")
-        if verbosity == 3 then
-            print_stdout("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_min_freq" )
-        end
-        line = fp:read("*l")
-        if tonumber(line)/1E6 < min then
-            min = tonumber(line)/1E6
-        end
-        fp:close()
-    end
-    return min
-end
-
-function getCurrentMaxFreq(cpuid)
-    local max = 0
-    if cpuid == nil or cpuid < 0 then
-        for cpuid=0,topo["numHWThreads"]-1 do
-            fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_max_freq")
-            if verbosity == 3 then
-                print_stdout("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_max_freq" )
-            end
-            line = fp:read("*l")
-            if tonumber(line)/1E6 > max then
-                max = tonumber(line)/1E6
-            end
-            fp:close()
-        end
-    else
-        fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_max_freq")
-        if verbosity == 3 then
-            print_stdout("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_max_freq" )
-        end
-        line = fp:read("*l")
-        if tonumber(line)/1E6 > max then
-            max = tonumber(line)/1E6
-        end
-        fp:close()
-    end
-    return max
-end
-
-
-function getAvailFreq(cpuid)
-    if cpuid == nil then
-        cpuid = 0
-    end
-    if cpuid < 0 then
-        cpuid = 0
-    end
-    fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_available_frequencies")
-    if verbosity == 3 then
-        print_stdout("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_available_frequencies" )
-    end
-    line = fp:read("*l")
-    fp:close()
-    local tmp = likwid.stringsplit(line:gsub("^%s*(.-)%s*$", "%1"), " ", nil, " ")
-    local avail = {}
-    local turbo = tonumber(tmp[1])/1E6
-    local j = 1
-    for i=2,#tmp do
-        local freq = tonumber(tmp[i])/1E6
-        avail[j] = tostring(freq)
-        if not avail[j]:match("%d+.%d+") then
-            avail[j] = avail[j] ..".0"
-        end
-        j = j + 1
-    end
-    if verbosity == 1 then
-        print_stdout(string.format("The system provides %d scaling frequencies, frequency %s is taken as turbo mode", #avail,turbo))
-    end
-    return avail, tostring(turbo)
-end
-
-function getCurFreq()
-    local freqs = {}
-    local govs = {}
-    for cpuid=0,topo["numHWThreads"]-1 do
-        local fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_cur_freq")
-        if verbosity == 3 then
-            print_stdout("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_cur_freq" )
-        end
-        local line = fp:read("*l")
-        fp:close()
-        freqs[cpuid] = tostring(tonumber(line)/1E6)
-        if not freqs[cpuid]:match("%d.%d") then
-            freqs[cpuid] = freqs[cpuid] ..".0"
-        end
-        local fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_governor")
-        if verbosity == 3 then
-            print_stdout("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_governor" )
-        end
-        local line = fp:read("*l")
-        fp:close()
-        govs[cpuid] = line
-    end
-    return freqs, govs
-end
-
-function getAvailGovs(cpuid)
-    if (cpuid == nil) or (cpuid < 1) then
-        cpuid = 0
-    end
-    local fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_available_governors")
-    if verbosity == 3 then
-        print_stdout("Reading "..sys_base_path .. "/" .. string.format("cpu%d",cpuid) .. "/cpufreq/scaling_available_governors" )
-    end
-    local line = fp:read("*l")
-    fp:close()
-    local avail = likwid.stringsplit(line:gsub("^%s*(.-)%s*$", "%1"), "%s+", nil, "%s+")
-    for i=1,#avail do
-        if avail[i] == "userspace" then
-            table.remove(avail, i)
-            break
-        end
-    end
-    table.insert(avail, "turbo")
-    if verbosity == 1 then
-        print_stdout(string.format("The system provides %d scaling governors", #avail))
-    end
-    return avail
-end
-
-local function testDriver()
-    local fp = io.open(sys_base_path .. "/" .. string.format("cpu%d",0) .. "/cpufreq/scaling_driver")
-    if verbosity == 3 then
-        print_stdout("Reading "..sys_base_path .. "/" .. string.format("cpu%d",0) .. "/cpufreq/scaling_driver" )
-    end
-    local line = fp:read("*l")
-    fp:close()
-    if line == "acpi-cpufreq" then
-        return true
-    end
-    return false
-end]]
 
 verbosity = 0
 governor = nil
@@ -231,7 +83,7 @@ if #arg == 0 then
 end
 
 
-for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "x:", "y:", "help","version","freq:", "min:", "max:"}) do
+for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "x:", "y:", "help","version","freq:", "min:", "max:", "F:"}) do
     if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
@@ -247,6 +99,10 @@ for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "x
     elseif opt == "x" or opt == "min" then
         min_freq = arg
     elseif opt == "y" or opt == "max" then
+        max_freq = arg
+    elseif opt == "F" then
+        frequency = arg
+        min_freq = arg
         max_freq = arg
     elseif (opt == "p") then
         printCurFreq = true
