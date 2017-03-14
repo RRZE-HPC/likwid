@@ -9,7 +9,7 @@
 
 double sum = 0, a[SIZE], b[SIZE], c[SIZE];
 
-main()
+int main(int argc, char* argv[])
 {
     int i, j ;
     double alpha = 3.14;
@@ -21,11 +21,11 @@ main()
         b[i] = 1.0;
         c[i] = (double) i;
     }
+    LIKWID_MARKER_INIT;
 
 //    likwid_pinProcess(2);
-    printf("Running on core %d\n", likwid_getProcessorId());
+    printf("Main running on core %d\n", likwid_getProcessorId());
 
-    LIKWID_MARKER_INIT;
 
 /****************************************************/
 #pragma omp parallel
@@ -34,7 +34,7 @@ main()
         char* label = malloc(40*sizeof(char));
         int threadId = omp_get_thread_num();
 //        likwid_pinThread(threadId);
-        printf("Running on core %d\n", likwid_getProcessorId());
+        printf("Thread running on core %d\n", likwid_getProcessorId());
 
         for (int counter=1; counter< 3; counter++)
         {
