@@ -1088,7 +1088,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     elseif mpitype == "slurm" then
         glrank_var = "${PMI_RANK:-$(($GLOBALSIZE * 2))}"
         glsize_var = tostring(math.tointeger(np))
-        losize_var = "$MPI_LOCALNRANKS"
+        losize_var = "${MPI_LOCALNRANKS:-$SLURM_NTASKS_PER_NODE}"
     else
         print_stderr("Invalid MPI vendor "..mpitype)
         return
@@ -1159,7 +1159,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     if mpitype == "openmpi" then
         f:write("LOCALRANK=$OMPI_COMM_WORLD_LOCAL_RANK\n\n")
     elseif mpitype  == "slurm" then
-        f:write("LOCALRANK=$MPI_LOCALRANKID\n\n")
+        f:write("LOCALRANK=${MPI_LOCALRANKID:-$SLURM_LOCALID}\n\n")
     else
         local full = tostring(math.tointeger(np - (np % ppn)))
         f:write("if [ \"$GLOBALRANK\" -lt "..tostring(math.tointeger(full)).." ]; then\n")
