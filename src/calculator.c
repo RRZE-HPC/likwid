@@ -147,7 +147,7 @@ void raise(Error err)
             msg = "Function input missing";
             break;
     }
-    printf("\tError: %s\n", msg);
+    //printf("\tError: %s\n", msg);
 }
 
 inline unsigned int
