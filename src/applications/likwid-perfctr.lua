@@ -76,6 +76,10 @@ local function usage()
     io.stdout:write("Modes:")
     io.stdout:write("-S <time>\t\t Stethoscope mode with duration in s, ms or us, e.g 20ms\n")
     io.stdout:write("-t <time>\t\t Timeline mode with frequency in s, ms or us, e.g. 300ms\n")
+    io.stdout:write("\t\t\t The output format (to stderr) is:\n")
+    io.stdout:write("\t\t\t <groupID> <nrEvents> <nrThreads> <Timestamp> <Event1_Thread1> <Event1_Thread2> ... <EventN_ThreadN>\n")
+    io.stdout:write("\t\t\t or\n")
+    io.stdout:write("\t\t\t <groupID> <nrEvents> <nrThreads> <Timestamp> <Metric1_Thread1> <Metric1_Thread2> ... <MetricN_ThreadN>\n")
     io.stdout:write("-m, --marker\t\t Use Marker API inside code\n")
     io.stdout:write("Output options:\n")
     io.stdout:write("-o, --output <file>\t Store output to file. (Optional: Apply text filter according to filename suffix)\n")
@@ -690,16 +694,16 @@ if use_timeline == true then
     for i, cpu in pairs(cpulist) do
         cores_string = cores_string .. tostring(cpu) .. "|"
     end
-    print_stderr("# "..cores_string:sub(1,cores_string:len()-1).."\n")
-    for gid, group in pairs(group_list) do
+    print_stderr("# "..cores_string:sub(1,cores_string:len()-1))
+    for i, gid in pairs(group_ids) do
         local strlist = {}
-        if group["Metrics"] == nil then
-            for i,e in pairs(group["Events"]) do
-                table.insert(strlist, e["Event"])
+        if likwid.getNumberOfMetrics(gid) == 0 then
+            for e=1,likwid.getNumberOfEvents(gid) do
+                table.insert(strlist, likwid.getNameOfEvent(gid, e))
             end
         else
-            for i,e in pairs(group["Metrics"]) do
-                table.insert(strlist, e["description"])
+            for m=1,likwid.getNumberOfMetrics(gid) do
+                table.insert(strlist, likwid.getNameOfMetric(gid, m))
             end
         end
         print_stderr("# "..table.concat(strlist, "|").."\n")
