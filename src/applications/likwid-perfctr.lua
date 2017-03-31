@@ -443,10 +443,14 @@ end
 
 avail_groups = likwid.getGroups()
 if print_groups == true then
-    print_stdout(string.format("%11s\t%s","Group name", "Description"))
-    print_stdout(likwid.hline)
-    for i,g in pairs(avail_groups) do
-        print_stdout(string.format("%11s\t%s",g["Name"], g["Info"]))
+    if avail_groups then
+        print_stdout(string.format("%11s\t%s","Group name", "Description"))
+        print_stdout(likwid.hline)
+        for i,g in pairs(avail_groups) do
+            print_stdout(string.format("%11s\t%s",g["Name"], g["Info"]))
+        end
+    else
+        print_stdout(string.format("No groups defined for %s",cpuinfo["name"]))
     end
     likwid.putTopology()
     likwid.putConfiguration()
