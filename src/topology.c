@@ -94,6 +94,8 @@ static char* athlon64_f_str = "AMD Athlon64 (AM2) Rev F 90nm processor";
 static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
 static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
 static char* amd_k8_str = "AMD K8 architecture";
+static char* amd_zen_str = "AMD Zen architecture";
+static char* amd_zen_ryzen_str = "AMD Zen (Ryzen) architecture";
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 
@@ -123,6 +125,8 @@ static char* short_k8 = "k8";
 static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
+static char* short_zen = "zen";
+static char* short_zen_ryzen = "ryzen";
 static char* short_unknown = "unknown";
 
 /* #####  EXPORTED VARIABLES  ########################################## */
@@ -800,6 +804,20 @@ topology_setName(void)
         case K16_FAMILY:
             cpuid_info.name = kabini_str;
             cpuid_info.short_name = short_k16;
+            break;
+
+        case ZEN_FAMILY:
+            switch ( cpuid_info.model )
+            {
+                case ZEN_RYZEN:
+                    cpuid_info.name = amd_zen_ryzen_str;
+                    cpuid_info.short_name = short_zen_ryzen;
+                    break;
+                default:
+                    cpuid_info.name = amd_zen_str;
+                    cpuid_info.short_name = short_zen;
+                    break;
+            }
             break;
 
         default:

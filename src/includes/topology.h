@@ -120,11 +120,13 @@ struct topology_functions {
 #define ATHLON64_X2_G   0x6BU
 #define ATHLON64_G1     0x6FU
 #define ATHLON64_G2     0x7FU
+#define ZEN_RYZEN       0x01
 
 
 #define  P6_FAMILY        0x6U
 #define  MIC_FAMILY       0xBU
 #define  NETBURST_FAMILY  0xFFU
+#define  ZEN_FAMILY       0x17
 #define  K15_FAMILY       0x15U
 #define  K16_FAMILY       0x16U
 #define  K10_FAMILY       0x10U
