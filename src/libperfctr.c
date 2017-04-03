@@ -255,7 +255,6 @@ likwid_markerInit(void)
         likwid_init = 1;
     }
     threads2Pthread[registered_cpus] = pthread_self();
-    printf("Pthread %d = %lu\n", registered_cpus, pthread_self());
     registered_cpus++;
     
     groupSet->activeGroup = 0;
