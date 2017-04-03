@@ -612,29 +612,32 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
     eventList = bsplit(eventBstr, delim);
     ginfo->nevents = eventList->qty;
 
-    if (binstr(eventBstr, 0, fix0) > 0)
+    if (cpuid_info.isIntel)
     {
-        has_fix0 = 1;
-    }
-    else
-    {
-        ginfo->nevents++;
-    }
-    if (binstr(eventBstr, 0, fix1) > 0)
-    {
-        has_fix1 = 1;
-    }
-    else
-    {
-        ginfo->nevents++;
-    }
-    if (binstr(eventBstr, 0, fix2) > 0)
-    {
-        has_fix2 = 1;
-    }
-    else
-    {
-        ginfo->nevents++;
+        if (binstr(eventBstr, 0, fix0) > 0)
+        {
+            has_fix0 = 1;
+        }
+        else
+        {
+            ginfo->nevents++;
+        }
+        if (binstr(eventBstr, 0, fix1) > 0)
+        {
+            has_fix1 = 1;
+        }
+        else
+        {
+            ginfo->nevents++;
+        }
+        if (binstr(eventBstr, 0, fix2) > 0)
+        {
+            has_fix2 = 1;
+        }
+        else
+        {
+            ginfo->nevents++;
+        }
     }
     bdestroy(eventBstr);
 
@@ -687,29 +690,32 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
         bstrListDestroy(elist);
     }
     i = eventList->qty;
-    if (!has_fix0)
+    if (cpuid_info.isIntel)
     {
-        ginfo->events[i] = malloc(18 * sizeof(char));
-        ginfo->counters[i] = malloc(6 * sizeof(char));
-        sprintf(ginfo->events[i], "%s", "INSTR_RETIRED_ANY");
-        sprintf(ginfo->counters[i], "%s", "FIXC0");
-        i++;
-    }
-    if (!has_fix1)
-    {
-        ginfo->events[i] = malloc(22 * sizeof(char));
-        ginfo->counters[i] = malloc(6 * sizeof(char));
-        sprintf(ginfo->events[i], "%s", "CPU_CLK_UNHALTED_CORE");
-        sprintf(ginfo->counters[i], "%s", "FIXC1");
-        i++;
-    }
-    if (!has_fix2)
-    {
-        ginfo->events[i] = malloc(21 * sizeof(char));
-        ginfo->counters[i] = malloc(6 * sizeof(char));
-        sprintf(ginfo->events[i], "%s", "CPU_CLK_UNHALTED_REF");
-        sprintf(ginfo->counters[i], "%s", "FIXC2");
-        i++;
+        if (!has_fix0)
+        {
+            ginfo->events[i] = malloc(18 * sizeof(char));
+            ginfo->counters[i] = malloc(6 * sizeof(char));
+            sprintf(ginfo->events[i], "%s", "INSTR_RETIRED_ANY");
+            sprintf(ginfo->counters[i], "%s", "FIXC0");
+            i++;
+        }
+        if (!has_fix1)
+        {
+            ginfo->events[i] = malloc(22 * sizeof(char));
+            ginfo->counters[i] = malloc(6 * sizeof(char));
+            sprintf(ginfo->events[i], "%s", "CPU_CLK_UNHALTED_CORE");
+            sprintf(ginfo->counters[i], "%s", "FIXC1");
+            i++;
+        }
+        if (!has_fix2)
+        {
+            ginfo->events[i] = malloc(21 * sizeof(char));
+            ginfo->counters[i] = malloc(6 * sizeof(char));
+            sprintf(ginfo->events[i], "%s", "CPU_CLK_UNHALTED_REF");
+            sprintf(ginfo->counters[i], "%s", "FIXC2");
+            i++;
+        }
     }
 
     bstrListDestroy(eventList);
