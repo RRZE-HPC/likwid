@@ -108,6 +108,7 @@ likwid.memSweep = likwid_memSweep
 likwid.memSweepDomain = likwid_memSweepDomain
 likwid.pinProcess = likwid_pinProcess
 likwid.setenv = likwid_setenv
+likwid.unsetenv = likwid_unsetenv
 likwid.getpid = likwid_getpid
 likwid.setVerbosity = likwid_setVerbosity
 likwid.access = likwid_access

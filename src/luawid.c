@@ -120,29 +120,39 @@ lua_likwid_getConfiguration(lua_State* L)
     {
         configfile = get_configuration();
     }
-    lua_newtable(L);
-    lua_pushstring(L, "configFile");
-    lua_pushstring(L, configfile->configFileName);
-    lua_settable(L,-3);
-    lua_pushstring(L, "topologyFile");
-    lua_pushstring(L, configfile->topologyCfgFileName);
-    lua_settable(L,-3);
-    lua_pushstring(L, "daemonPath");
-    lua_pushstring(L, configfile->daemonPath);
-    lua_settable(L,-3);
-    lua_pushstring(L, "groupPath");
-    lua_pushstring(L, configfile->groupPath);
-    lua_settable(L,-3);
-    lua_pushstring(L, "daemonMode");
-    lua_pushinteger(L, (int)configfile->daemonMode);
-    lua_settable(L,-3);
-    lua_pushstring(L, "maxNumThreads");
-    lua_pushinteger(L, configfile->maxNumThreads);
-    lua_settable(L,-3);
-    lua_pushstring(L, "maxNumNodes");
-    lua_pushinteger(L, configfile->maxNumNodes);
-    lua_settable(L,-3);
-    return 1;
+    if (configfile)
+    {
+        lua_newtable(L);
+        lua_pushstring(L, "configFile");
+        if (configfile->configFileName != NULL)
+            lua_pushstring(L, configfile->configFileName);
+        else
+            lua_pushnil(L);
+        lua_settable(L,-3);
+        lua_pushstring(L, "topologyFile");
+        lua_pushstring(L, configfile->topologyCfgFileName);
+        lua_settable(L,-3);
+        lua_pushstring(L, "daemonPath");
+        if (configfile->daemonPath != NULL)
+            lua_pushstring(L, configfile->daemonPath);
+        else
+            lua_pushnil(L);
+        lua_settable(L,-3);
+        lua_pushstring(L, "groupPath");
+        lua_pushstring(L, configfile->groupPath);
+        lua_settable(L,-3);
+        lua_pushstring(L, "daemonMode");
+        lua_pushinteger(L, (int)configfile->daemonMode);
+        lua_settable(L,-3);
+        lua_pushstring(L, "maxNumThreads");
+        lua_pushinteger(L, configfile->maxNumThreads);
+        lua_settable(L,-3);
+        lua_pushstring(L, "maxNumNodes");
+        lua_pushinteger(L, configfile->maxNumNodes);
+        lua_settable(L,-3);
+        return 1;
+    }
+    return 0;
 }
 
 static int
@@ -2047,6 +2057,14 @@ lua_likwid_setenv(lua_State* L)
 }
 
 static int
+lua_likwid_unsetenv(lua_State* L)
+{
+    const char* element = (const char*)luaL_checkstring(L, -1);
+    unsetenv(element);
+    return 0;
+}
+
+static int
 lua_likwid_getpid(lua_State* L)
 {
     lua_pushinteger(L, (lua_Integer)(getpid()));
@@ -2715,6 +2733,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_pinProcess", lua_likwid_pinProcess);
     // Helper functions
     lua_register(L, "likwid_setenv", lua_likwid_setenv);
+    lua_register(L, "likwid_unsetenv", lua_likwid_unsetenv);
     lua_register(L, "likwid_getpid", lua_likwid_getpid);
     lua_register(L, "likwid_access", lua_likwid_access);
     lua_register(L, "likwid_startProgram", lua_likwid_startProgram);

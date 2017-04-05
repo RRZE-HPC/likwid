@@ -89,6 +89,14 @@ local function usage()
     examples()
 end
 
+local function close_and_exit(code)
+    likwid.putTopology()
+    likwid.putAffinityInfo()
+    likwid.putConfiguration()
+    likwid.unsetenv("LIKWID_NO_ACCESS")
+    os.exit(code)
+end
+
 delimiter = ','
 quiet = 0
 sweep_sockets = false
@@ -99,7 +107,7 @@ skip_mask = nil
 affinity = nil
 num_threads = 0
 
-
+likwid.setenv("LIKWID_NO_ACCESS", "1")
 config = likwid.getConfiguration()
 cputopo = likwid.getCpuTopology()
 affinity = likwid.getAffinityInfo()
@@ -112,16 +120,10 @@ end
 for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t:", "v", "V:", "verbose:", "help", "version", "skip","sweep", "quiet"}) do
     if opt == "h" or opt == "help" then
         usage()
-        likwid.putTopology()
-        likwid.putAffinityInfo()
-        likwid.putConfiguration()
-        os.exit(0)
+        close_and_exit(0)
     elseif opt == "v" or opt == "version" then
         version()
-        likwid.putTopology()
-        likwid.putAffinityInfo()
-        likwid.putConfiguration()
-        os.exit(0)
+        close_and_exit(0)
     elseif opt == "V" or opt == "verbose" then
         verbose = tonumber(arg)
         likwid.setVerbosity(verbose)
@@ -133,20 +135,14 @@ for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t
         end
         if (num_threads == 0) then
             print_stderr("Failed to parse cpulist " .. arg)
-            likwid.putTopology()
-            likwid.putAffinityInfo()
-            likwid.putConfiguration()
-            os.exit(1)
+            close_and_exit(1)
         end
     elseif (opt == "d") then
         delimiter = arg
     elseif opt == "S" or opt == "sweep" then
         if (affinity == nil) then
             print_stderr("Option -S is not supported for unknown processor!")
-            likwid.putTopology()
-            likwid.putAffinityInfo()
-            likwid.putConfiguration()
-            os.exit(1)
+            close_and_exit(1)
         end
         sweep_sockets = true
     elseif (opt == "i") then
@@ -157,7 +153,7 @@ for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t
         local s,e = arg:find("0x")
         if s == nil then
             print_stderr("Skip mask must be given in hex, hence start with 0x")
-            os.exit(1)
+            close_and_exit(1)
         end
         skip_mask = arg
     elseif opt == "q" or opt == "quiet" then
@@ -165,16 +161,10 @@ for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t
         quiet = 1
     elseif opt == "?" then
         print_stderr("Invalid commandline option -"..arg)
-        likwid.putTopology()
-        likwid.putAffinityInfo()
-        likwid.putConfiguration()
-        os.exit(1)
+        close_and_exit(1)
     elseif opt == "!" then
         print_stderr("Option requires an argument")
-        likwid.putTopology()
-        likwid.putAffinityInfo()
-        likwid.putConfiguration()
-        os.exit(1)
+        close_and_exit(1)
     end
 end
 
@@ -185,20 +175,14 @@ if print_domains and num_threads > 0 then
         outstr = outstr .. delimiter .. cpu
     end
     print_stdout(outstr:sub(2,outstr:len()))
-    likwid.putTopology()
-    likwid.putAffinityInfo()
-    likwid.putConfiguration()
-    os.exit(0)
+    close_and_exit(1)
 elseif print_domains then
     for k,v in pairs(affinity["domains"]) do
         print_stdout(string.format("Domain %s:", v["tag"]))
         print_stdout("\t" .. table.concat(v["processorList"], ","))
         print_stdout("")
     end
-    likwid.putTopology()
-    likwid.putAffinityInfo()
-    likwid.putConfiguration()
-    os.exit(0)
+    close_and_exit(1)
 end
 
 if num_threads == 0 then
@@ -206,7 +190,7 @@ if num_threads == 0 then
 end
 if (#arg == 0) then
     print_stderr("Executable must be given on commandline")
-    os.exit(1)
+    close_and_exit(1)
 end
 
 if interleaved_policy then
@@ -269,10 +253,7 @@ local exec = table.concat(arg," ",1, likwid.tablelength(arg)-2)
 local pid = likwid.startProgram(exec, num_threads, cpu_list)
 if (pid == nil) then
     print_stderr("Failed to execute command: ".. exec)
-    likwid.putTopology()
-    likwid.putAffinityInfo()
-    likwid.putConfiguration()
-    os.exit(1)
+    close_and_exit(1)
 end
 
 local exitvalue = likwid.waitpid(pid)
@@ -280,4 +261,4 @@ local exitvalue = likwid.waitpid(pid)
 likwid.putAffinityInfo()
 likwid.putTopology()
 likwid.putConfiguration()
-os.exit(exitvalue)
+close_and_exit(exitvalue)

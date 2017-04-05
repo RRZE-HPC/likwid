@@ -109,6 +109,7 @@ for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O","help","ver
     end
 end
 
+likwid.setenv("LIKWID_NO_ACCESS", "1")
 local config = likwid.getConfiguration()
 local cpuinfo = likwid.getCpuInfo()
 local cputopo = likwid.getCpuTopology()
@@ -398,4 +399,5 @@ likwid.putAffinityInfo()
 likwid.putNumaInfo()
 likwid.putTopology()
 likwid.putConfiguration()
+likwid.unsetenv("LIKWID_NO_ACCESS")
 os.exit(0)
