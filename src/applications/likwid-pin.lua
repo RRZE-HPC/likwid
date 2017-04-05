@@ -182,7 +182,7 @@ elseif print_domains then
         print_stdout("\t" .. table.concat(v["processorList"], ","))
         print_stdout("")
     end
-    close_and_exit(1)
+    close_and_exit(0)
 end
 
 if num_threads == 0 then
