@@ -32,6 +32,14 @@ http://ftp.fau.de/pub/likwid/
 For build and installation hints see INSTALL file or check the build instructions
 page in the wiki https://github.com/RRZE-HPC/likwid/wiki/Build
 
+For quick install:
+```
+$ tar -xjf likwid-<VERSION>.tar.bz2
+$ cd likwid-<VERSION>
+$ vi config.mk (configure build, e.g. change installation prefix)
+$ make
+$ sudo make install
+```
 --------------------------------------------------------------------------------
 Documentation
 --------------------------------------------------------------------------------
@@ -71,6 +79,6 @@ https://groups.google.com/forum/#!topic/likwid-users/F7TDho3k7ps
 Funding
 --------------------------------------------------------------------------------
 
-Likwid development was funded by BMBF Germany under the FEPA project, grant 01IH13009.
+LIKWID development was funded by BMBF Germany under the FEPA project, grant 01IH13009.
 
 <div align=center><img src="https://raw.githubusercontent.com/wiki/RRZE-HPC/likwid/images/BMBF.png" alt="BMBF logo"/></div>
