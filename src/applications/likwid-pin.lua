@@ -175,7 +175,7 @@ if print_domains and num_threads > 0 then
         outstr = outstr .. delimiter .. cpu
     end
     print_stdout(outstr:sub(2,outstr:len()))
-    close_and_exit(1)
+    close_and_exit(0)
 elseif print_domains then
     for k,v in pairs(affinity["domains"]) do
         print_stdout(string.format("Domain %s:", v["tag"]))
