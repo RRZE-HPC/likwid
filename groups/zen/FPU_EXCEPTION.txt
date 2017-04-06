@@ -1,0 +1,21 @@
+SHORT   Floating point exceptions
+
+EVENTSET
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  RETIRED_FP_INSTRUCTIONS_ALL
+PMC2  FPU_EXCEPTION_ALL
+
+METRICS
+Runtime (RDTSC) [s] time
+Overall FP exception rate  PMC2/PMC0
+FP exception rate    PMC2/PMC1
+
+LONG
+Formulas:
+Overall FP exception rate = FPU_EXCEPTIONS_ALL / RETIRED_INSTRUCTIONS
+FP exception rate = FPU_EXCEPTIONS_ALL / FP_INSTRUCTIONS_RETIRED_ALL
+-
+Floating point exceptions occur e.g. on the treatment of denormal numbers.
+There might be a large penalty if there are too many floating point
+exceptions.
+

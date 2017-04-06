@@ -647,6 +647,20 @@ allowed_amd16(uint32_t reg)
     }
 }
 
+static int
+allowed_amd17(uint32_t reg)
+{
+    if ((allowed_amd16(reg)) ||
+       ((reg & 0xC0010230U) == 0xC0010230U))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 static void
 msr_read(AccessDataRecord * dRecord)
 {
@@ -1134,7 +1148,10 @@ int main(void)
                 break;
             case K16_FAMILY:
                 allowed = allowed_amd16;
-            break;
+                break;
+            case ZEN_FAMILY:
+                allowed = allowed_amd17;
+                break;
             default:
                 syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
                         __FILE__, __LINE__);

@@ -71,6 +71,7 @@
 #include <perfmon_goldmont.h>
 #include <perfmon_broadwell.h>
 #include <perfmon_skylake.h>
+#include <perfmon_zen.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -170,7 +171,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         }
     }
 
-    if (type == PMC && (index - firstpmcindex) > cpuid_info.perf_num_ctr)
+    if (cpuid_info.isIntel && type == PMC && (index - firstpmcindex) > cpuid_info.perf_num_ctr)
     {
         fprintf(stderr,
                 "WARNING: Counter %s is only available with deactivated HyperThreading. Counter results defaults to 0.\n",
@@ -676,7 +677,9 @@ perfmon_check_counter_map(int cpu_id)
         {
             startpmcindex = i;
         }
-        if (counter_map[i].type == PMC && (counter_map[i].index - counter_map[startpmcindex].index) >= cpuid_info.perf_num_ctr)
+        if (cpuid_info.isIntel &&
+            counter_map[i].type == PMC &&
+            (counter_map[i].index - counter_map[startpmcindex].index) >= cpuid_info.perf_num_ctr)
         {
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
@@ -995,7 +998,15 @@ perfmon_init_maps(void)
             counter_map = kabini_counter_map;
             box_map = kabini_box_map;
             perfmon_numCounters = perfmon_numCountersKabini;
-           break;
+            break;
+
+        case ZEN_FAMILY:
+            eventHash = zen_arch_events;
+            perfmon_numArchEvents = perfmon_numArchEventsZen;
+            counter_map = zen_counter_map;
+            box_map = zen_box_map;
+            perfmon_numCounters = perfmon_numCountersZen;
+            break;
 
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);
@@ -1256,7 +1267,16 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             perfmon_readCountersThread = perfmon_readCountersThread_kabini;
             perfmon_setupCountersThread = perfmon_setupCounterThread_kabini;
             perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_kabini;
-           break;
+            break;
+
+        case ZEN_FAMILY:
+            initThreadArch = perfmon_init_zen;
+            perfmon_startCountersThread = perfmon_startCountersThread_zen;
+            perfmon_stopCountersThread = perfmon_stopCountersThread_zen;
+            perfmon_readCountersThread = perfmon_readCountersThread_zen;
+            perfmon_setupCountersThread = perfmon_setupCounterThread_zen;
+            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen;
+            break;
 
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);

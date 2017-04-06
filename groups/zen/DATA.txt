@@ -1,0 +1,16 @@
+SHORT Load to store ratio
+
+EVENTSET
+PMC0  LS_DISPATCH_LOADS
+PMC1  LS_DISPATCH_STORES
+
+METRICS
+Runtime (RDTSC) [s] time
+Load to store ratio PMC0/PMC1
+
+LONG
+Formulas:
+Load to store ratio = LS_DISPATCH_LOADS/LS_DISPATCH_STORES
+-
+This is a simple metric to determine your load to store ratio.
+
