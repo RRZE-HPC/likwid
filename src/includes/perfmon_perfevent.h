@@ -374,6 +374,7 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, RESET_COUNTER);
         }
     }
+    return 0;
 }
 
 int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSet)
@@ -401,6 +402,7 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_ENABLE, 0);
         }
     }
+    return 0;
 }
 
 int perfmon_finalizeCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSet)
