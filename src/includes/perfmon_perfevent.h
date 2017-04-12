@@ -310,10 +310,29 @@ int perfmon_setupCountersThread_perfevent(
         }
         if (ret == 0)
         {
-            cpu_event_fds[cpu_id][index] = perf_event_open(&attr, 0, cpu_id, -1, 0);
+            pid_t pid = 0;
+            unsigned long flags = 0;
+
+            for (int j = 0; j < event->numberOfOptions; j++)
+            {
+                switch (event->options[j].type)
+                {
+                    case EVENT_OPTION_PERF_PID:
+                        pid = event->options[j].value;
+                        break;
+                    case EVENT_OPTION_PERF_FLAGS:
+                        flags = event->options[j].value;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            cpu_event_fds[cpu_id][index] = perf_event_open(&attr, pid, cpu_id, -1, flags);
             if (cpu_event_fds[cpu_id][index] < 0)
             {
                 fprintf(stderr, "Setup of event %s on CPU %d failed: %s\n", event->name, cpu_id, strerror(errno));
+                fprintf(stderr, "perf_event_open: pid=%d, flags=%d\n", pid, flags);
                 fprintf(stderr, "Config of event 0x%X\n", attr.config);
                 fprintf(stderr, "Type of event 0x%X\n", attr.type);
                 continue;

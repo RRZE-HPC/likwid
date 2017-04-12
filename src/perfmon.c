@@ -129,6 +129,10 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     "OCCUPANCY_INVERT",
     "IN_TRANSACTION",
     "IN_TRANSACTION_ABORTED"
+#ifdef LIKWID_USE_PERFEVENT
+    ,"PERF_PID"
+    ,"PERF_FLAGS"
+#endif
 };
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -501,6 +505,18 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
                                     event->numberOfOptions, EVENT_OPTION_OCCUPANCY_FILTER, 0);
             }
+#ifdef LIKWID_USE_PERFEVENT
+            else if (biseqcstr(subtokens->entry[0], "perf_pid") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_PERF_PID, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "perf_flags") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_PERF_FLAGS, 0);
+            }
+#endif
             else
             {
                 continue;
@@ -510,7 +526,11 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
     }
     for(i=event->numberOfOptions-1;i>=0;i--)
     {
+#ifdef LIKWID_USE_PERFEVENT
+        if (event->options[i].type != EVENT_OPTION_PERF_PID && event->options[i].type != EVENT_OPTION_PERF_FLAGS && !(OPTIONS_TYPE_MASK(event->options[i].type) & (counter_map[index].optionMask|event->optionMask)))
+#else
         if (!(OPTIONS_TYPE_MASK(event->options[i].type) & (counter_map[index].optionMask|event->optionMask)))
+#endif
         {
             DEBUG_PRINT(DEBUGLEV_INFO,Removing Option %s not valid for register %s,
                         eventOptionTypeName[event->options[i].type],

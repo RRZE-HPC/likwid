@@ -79,6 +79,10 @@ typedef enum {
     EVENT_OPTION_OCCUPANCY_INVERT, /*!< \brief Invert filter for occupancy counting */
     EVENT_OPTION_IN_TRANS, /*!< \brief Count events during transactions */
     EVENT_OPTION_IN_TRANS_ABORT, /*!< \brief Count events that aborted during transactions */
+#ifdef LIKWID_USE_PERFEVENT
+    EVENT_OPTION_PERF_PID, /*!< \brief PID parameter to use in the perf_event_open call */
+    EVENT_OPTION_PERF_FLAGS, /*!< \brief FLAGS parameters to use in the perf_event_open call */
+#endif
     NUM_EVENT_OPTIONS /*!< \brief Amount of defined options */
 } EventOptionType;
 
