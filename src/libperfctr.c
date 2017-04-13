@@ -179,9 +179,9 @@ likwid_markerInit(void)
     hashTable_init();
 
     for(int i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
-#ifndef LIKWID_USE_PERFEVENT
+//#ifndef LIKWID_USE_PERFEVENT
     HPMmode(atoi(modeStr));
-#endif
+//#endif
     if (getenv("LIKWID_DEBUG") != NULL)
     {
         perfmon_verbosity = atoi(getenv("LIKWID_DEBUG"));
@@ -258,10 +258,10 @@ likwid_markerInit(void)
     registered_cpus++;
     
     groupSet->activeGroup = 0;
-#ifdef LIKWID_USE_PERFEVENT
+//#ifdef LIKWID_USE_PERFEVENT
     perfmon_setupCounters(groupSet->activeGroup);
     perfmon_startCounters();
-#endif
+//#endif
 }
 
 void
@@ -454,11 +454,11 @@ likwid_markerRegisterRegion(const char* regionTag)
     bcatcstr(tag, groupSuffix);
     int cpu_id = hashTable_get(tag, &results);
     bdestroy(tag);
-#ifdef LIKWID_USE_PERFEVENT
+//#ifdef LIKWID_USE_PERFEVENT
     return HPMaddThread(cpu_id);
-#else
-    return 0;
-#endif
+//#else
+//    return 0;
+//#endif
 }
 
 int
