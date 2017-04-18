@@ -32,6 +32,12 @@
 
 #include <bstrlib.h>
 
+typedef enum LikwidThreadStates {
+    MARKER_STATE_NEW,
+    MARKER_STATE_START,
+    MARKER_STATE_STOP
+} LikwidThreadStates;
+
 typedef struct LikwidThreadResults{
     bstring  label;
     uint32_t index;
@@ -43,6 +49,7 @@ typedef struct LikwidThreadResults{
     double StartPMcounters[NUM_PMC];
     int StartOverflows[NUM_PMC];
     double PMcounters[NUM_PMC];
+    LikwidThreadStates state;
 } LikwidThreadResults;
 
 typedef struct {
