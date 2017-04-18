@@ -1855,6 +1855,22 @@ lua_likwid_return_signal_state(lua_State* L)
     return 1;
 }
 
+static int
+lua_likwid_send_signal(lua_State* L)
+{
+    int err = 0;
+#if LUA_VERSION_NUM == 501
+    pid_t pid = ((lua_Integer)lua_tointeger(L,1));
+    int signal = ((lua_Integer)lua_tointeger(L,2));
+#else
+    pid_t pid = ((lua_Unsigned)lua_tointegerx(L,1, NULL));
+    int signal = ((lua_Unsigned)lua_tointegerx(L,2, NULL));
+#endif
+    err = kill(pid, signal);
+    lua_pushnumber(L, err);
+    return 1;
+}
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void
@@ -2742,6 +2758,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_catchSignal", lua_likwid_catch_signal);
     lua_register(L, "likwid_getSignalState", lua_likwid_return_signal_state);
     lua_register(L, "likwid_waitpid", lua_likwid_waitpid);
+    lua_register(L, "likwid_sendSignal", lua_likwid_send_signal);
     // Verbosity functions
     lua_register(L, "likwid_setVerbosity", lua_likwid_setVerbosity);
     // Marker API functions

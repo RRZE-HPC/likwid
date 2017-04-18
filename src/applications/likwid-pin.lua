@@ -213,7 +213,7 @@ if omp_threads == nil then
 elseif num_threads > tonumber(omp_threads) and quiet == 0 then
     print_stdout(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_threads))
 end
-if tonumber(omp_threads) < num_threads then
+if omp_threads and tonumber(omp_threads) < num_threads then
     num_threads = tonumber(omp_threads)
 end
 

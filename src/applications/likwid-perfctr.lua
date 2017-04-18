@@ -582,6 +582,12 @@ if pin_cpus then
     elseif num_cpus > tonumber(omp_threads) then
         print_stderr(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_cpus))
     end
+    if omp_threads and tonumber(omp_threads) < num_cpus then
+        num_cpus = tonumber(omp_threads)
+        for i=#cpulist,num_cpus+1,-1 do
+            cpulist[i] = nil
+        end
+    end
     if os.getenv("CILK_NWORKERS") == nil then
         likwid.setenv("CILK_NWORKERS", tostring(math.tointeger(num_cpus)))
     end
