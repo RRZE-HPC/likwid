@@ -50,6 +50,9 @@
 
 #include <likwid.h>
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 extern void* runTest(void* arg);
 extern void* getIterSingle(void* arg);
 
@@ -80,7 +83,7 @@ extern void* getIterSingle(void* arg);
     printf("likwid-bench -t copy -w S0:100MB:1-0:S0,1:S1\n"); \
 
 #define VERSION_MSG \
-    printf("likwid-bench   %d.%d \n\n",VERSION,RELEASE)
+    printf("likwid-bench -- Version %d.%d.%d\n",VERSION,RELEASE,MINORVERSION); \
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ############ */
 

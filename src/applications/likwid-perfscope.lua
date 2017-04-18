@@ -121,7 +121,7 @@ local predefined_plots = {
 }
 
 local function version()
-    print_stdout(string.format("likwid-perfscope --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-perfscope -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
 local function examples()

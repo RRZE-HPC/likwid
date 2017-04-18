@@ -38,7 +38,7 @@ print_stdout = print
 print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end io.stderr:flush() end
 
 local function version()
-    print_stdout(string.format("likwid-perfctr --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-perfctr -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
 local function examples()
@@ -136,6 +136,7 @@ forceOverwrite = 0
 gotC = false
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid())
 cpuClock = 1
+execpid = false
 likwid.catchSignal()
 
 if #arg == 0 then
@@ -143,7 +144,7 @@ if #arg == 0 then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats"}) do
+for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats", "execpid"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -202,6 +203,8 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         print_groups = true
     elseif (opt == "e") then
         print_events = true
+    elseif (opt == "execpid") then
+        execpid = true
     elseif (opt == "E") then
         if arg ~= nil then
             print_event = arg
@@ -611,7 +614,15 @@ if pin_cpus then
     end
 end
 
-
+if use_marker == true then
+    likwid.setenv("LIKWID_FILEPATH", markerFile)
+    likwid.setenv("LIKWID_MODE", tostring(access_mode))
+    likwid.setenv("LIKWID_DEBUG", tostring(verbose))
+    local str = table.concat(event_string_list, "|")
+    likwid.setenv("LIKWID_EVENTS", str)
+    likwid.setenv("LIKWID_THREADS", table.concat(cpulist,","))
+    likwid.setenv("LIKWID_FORCE", "-1")
+end
 
 --[[for i, event_string in pairs(event_string_list) do
     local groupdata = likwid.get_groupdata(event_string)
@@ -641,11 +652,47 @@ if likwid.init(num_cpus, cpulist) < 0 then
     os.exit(1)
 end
 
+execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
+if verbose == true then
+    print_stdout(string.format("Executing: %s",execString))
+end
+local ldpath = os.getenv("LD_LIBRARY_PATH")
+local libpath = string.match(likwid.pinlibpath, "([/%a%d]+)/[%a%s%d]*")
+if ldpath == nil then
+    likwid.setenv("LD_LIBRARY_PATH", libpath)
+elseif not ldpath:match(libpath) then
+    likwid.setenv("LD_LIBRARY_PATH", libpath..":"..ldpath)
+end
+
+
+
+local pid = nil
+if execString:len() > 0 then
+    if pin_cpus then
+        pid = likwid.startProgram(execString, #cpulist, cpulist)
+    else
+        pid = likwid.startProgram(execString, 0, cpulist)
+    end
+end
+if not pid and execString:len() > 0 then
+    print_stderr("Failed to execute command: ".. execString)
+    likwid.putTopology()
+    likwid.putNumaInfo()
+    likwid.putConfiguration()
+    os.exit(1)
+elseif execString:len() > 0 then
+    likwid.sendSignal(pid, 19)
+end
+
+
 if os.getenv("LIKWID_FORCE") == nil or (forceOverwrite == 1 and os.getenv("LIKWID_FORCE") ~= tostring(forceOverwrite)) then
     likwid.setenv("LIKWID_FORCE", tostring(forceOverwrite))
 end
 for i, event_string in pairs(event_string_list) do
     if event_string:len() > 0 then
+        if execpid then
+            event_string = event_string..string.format(":PERF_PID=%d", pid)
+        end
         local gid = likwid.addEventSet(event_string)
         if gid < 0 then
             likwid.putTopology()
@@ -670,27 +717,9 @@ if outfile == nil then
     print_stdout(likwid.hline)
 end
 
-if use_marker == true then
-    likwid.setenv("LIKWID_FILEPATH", markerFile)
-    likwid.setenv("LIKWID_MODE", tostring(access_mode))
-    likwid.setenv("LIKWID_DEBUG", tostring(verbose))
-    local str = table.concat(event_string_list, "|")
-    likwid.setenv("LIKWID_EVENTS", str)
-    likwid.setenv("LIKWID_THREADS", table.concat(cpulist,","))
-    likwid.setenv("LIKWID_FORCE", "-1")
-end
 
-execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
-if verbose == true then
-    print_stdout(string.format("Executing: %s",execString))
-end
-local ldpath = os.getenv("LD_LIBRARY_PATH")
-local libpath = string.match(likwid.pinlibpath, "([/%a%d]+)/[%a%s%d]*")
-if ldpath == nil then
-    likwid.setenv("LD_LIBRARY_PATH", libpath)
-elseif not ldpath:match(libpath) then
-    likwid.setenv("LD_LIBRARY_PATH", libpath..":"..ldpath)
-end
+
+
 
 
 if use_timeline == true then
@@ -737,70 +766,55 @@ if use_wrapper or use_timeline then
         os.exit(1)
     end
 
-    local pid = nil
-    if execString:len() > 0 then
-        if pin_cpus then
-            pid = likwid.startProgram(execString, #cpulist, cpulist)
-        else
-            pid = likwid.startProgram(execString, 0, cpulist)
-        end
-    else
-        pid = likwid.getpid()
-    end
+    likwid.sendSignal(pid, 18)
 
-    if not pid then
-        print_stderr("Failed to execute command: ".. execString)
-        likwid.putTopology()
-        likwid.putNumaInfo()
-        likwid.putConfiguration()
-        os.exit(1)
-    else
-        start = likwid.startClock()
-        groupTime[activeGroup] = 0
-        while true do
-            if likwid.getSignalState() ~= 0 then
-                if execString:len() > 0 then
-                    likwid.killProgram()
-                end
+    
+    start = likwid.startClock()
+    groupTime[activeGroup] = 0
+    while true do
+        if likwid.getSignalState() ~= 0 then
+            if execString:len() > 0 then
+                likwid.killProgram()
+            end
+            break
+        end
+        local remain = likwid.sleep(duration)
+        exitvalue = likwid.checkProgram(pid)
+        if remain > 0 or exitvalue >= 0 then
+            io.stdout:flush()
+            if execString:len() > 0 then
                 break
             end
-            local remain = likwid.sleep(duration)
-            exitvalue = likwid.checkProgram(pid)
-            if remain > 0 or exitvalue >= 0 then
-                io.stdout:flush()
-                if execString:len() > 0 then
-                    break
-                end
-            end
-            if use_timeline == true then
-                stop = likwid.stopClock()
-                likwid.readCounters()
-                local time = likwid.getClock(start, stop)
-                if likwid.getNumberOfMetrics(activeGroup) == 0 then
-                    results = likwid.getLastResults()
-                else
-                    results = likwid.getLastMetrics()
-                end
-                str = tostring(math.tointeger(activeGroup)) .. " "..tostring(#results[activeGroup]).." "..tostring(#cpulist).." "..tostring(time)
-                for i,l1 in pairs(results[activeGroup]) do
-                    for j, value in pairs(l1) do
-                        str = str .. " " .. tostring(value)
-                    end
-                end
-                io.stderr:write(str.."\n")
-                groupTime[activeGroup] = time
-            else
-                likwid.readCounters()
-            end
-            if #group_ids > 1 then
-                likwid.switchGroup(activeGroup + 1)
-                activeGroup = likwid.getIdOfActiveGroup()
-                if groupTime[activeGroup] == nil then
-                    groupTime[activeGroup] = 0
-                end
-                nr_events = likwid.getNumberOfEvents(activeGroup)
-            end
         end
+        if use_timeline == true then
+            stop = likwid.stopClock()
+            likwid.readCounters()
+            local time = likwid.getClock(start, stop)
+            if likwid.getNumberOfMetrics(activeGroup) == 0 then
+                results = likwid.getLastResults()
+            else
+                results = likwid.getLastMetrics()
+            end
+            str = tostring(math.tointeger(activeGroup)) .. " "..tostring(#results[activeGroup]).." "..tostring(#cpulist).." "..tostring(time)
+            for i,l1 in pairs(results[activeGroup]) do
+                for j, value in pairs(l1) do
+                    str = str .. " " .. tostring(value)
+                end
+            end
+            io.stderr:write(str.."\n")
+            groupTime[activeGroup] = time
+        else
+            likwid.readCounters()
+        end
+        if #group_ids > 1 then
+            likwid.switchGroup(activeGroup + 1)
+            activeGroup = likwid.getIdOfActiveGroup()
+            if groupTime[activeGroup] == nil then
+                groupTime[activeGroup] = 0
+            end
+            nr_events = likwid.getNumberOfEvents(activeGroup)
+        end
+
         stop = likwid.stopClock()
     end
 elseif use_stethoscope then
@@ -816,11 +830,13 @@ elseif use_marker then
         print_stderr(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
         os.exit(1)
     end]]
-    local ret = os.execute(execString)
+    --[[local ret = os.execute(execString)
     if ret == nil then
         print_stderr("Failed to execute command: ".. execString)
         exitvalue = 1
-    end
+    end]]
+    likwid.sendSignal(pid, 18)
+    exitvalue = likwid.waitpid(pid)
 end
 
 if not use_marker then

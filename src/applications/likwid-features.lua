@@ -44,7 +44,7 @@ if cpuinfo["short_name"] == "knl" then
 end
 
 function version()
-    print_stdout(string.format("likwid-features --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-features -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
 function usage()

@@ -36,7 +36,7 @@ print_stdout = print
 print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
 
 local function version()
-    print_stdout(string.format("likwid-pin.lua --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-pin -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
 local function examples()
@@ -212,6 +212,9 @@ if omp_threads == nil then
     likwid.setenv("OMP_NUM_THREADS",tostring(math.tointeger(num_threads)))
 elseif num_threads > tonumber(omp_threads) and quiet == 0 then
     print_stdout(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_threads))
+end
+if tonumber(omp_threads) < num_threads then
+    num_threads = tonumber(omp_threads)
 end
 
 likwid.setenv("KMP_AFFINITY","disabled")

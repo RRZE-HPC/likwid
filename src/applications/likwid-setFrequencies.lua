@@ -41,7 +41,7 @@ set_command = "<INSTALLED_PREFIX>/sbin/likwid-setFreq"
 
 
 function version()
-    print_stdout(string.format("likwid-setFrequencies --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-setFrequencies -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
 function usage()

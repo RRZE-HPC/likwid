@@ -42,6 +42,9 @@
 #define DEBUGLEV_DETAIL 2
 #define DEBUGLEV_DEVELOP 3
 
+#define LIKWID_VERSION "VERSION.RELEASE.MINORVERSION"
+#define LIKWID_COMMIT GITCOMMIT
+
 extern int perfmon_verbosity;
 
 /** \addtogroup MarkerAPI Marker API module

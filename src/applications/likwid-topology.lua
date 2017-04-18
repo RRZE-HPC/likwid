@@ -37,7 +37,7 @@ print_stdout = print
 print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
 
 function version()
-    io.stdout:write(string.format("likwid-topology --  Version %d.%d\n",likwid.version,likwid.release))
+    io.stdout:write(string.format("likwid-topology -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
 function usage()

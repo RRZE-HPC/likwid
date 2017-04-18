@@ -88,6 +88,7 @@ TOPO_FILE_PATH = /etc/likwid_topo.cfg
 # Versioning Information
 VERSION = 4
 RELEASE = 2
+MINOR = 0
 DATE    = 22.12.2016
 
 RPATHS = -Wl,-rpath=$(INSTALLED_LIBPREFIX)

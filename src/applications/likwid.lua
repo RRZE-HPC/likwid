@@ -39,6 +39,8 @@ likwid.groupfolder = "<LIKWIDGROUPPATH>"
 
 likwid.version = <VERSION>
 likwid.release = <RELEASE>
+likwid.minor = <MINOR>
+likwid.commit = "<GITCOMMIT>"
 likwid.pinlibpath = "<LIBLIKWIDPIN>"
 likwid.dline = string.rep("=",80)
 likwid.hline =  string.rep("-",80)
@@ -118,6 +120,7 @@ likwid.killProgram = likwid_killProgram
 likwid.catchSignal = likwid_catchSignal
 likwid.getSignalState = likwid_getSignalState
 likwid.waitpid = likwid_waitpid
+likwid.sendSignal = likwid_sendSignal
 likwid.cpustr_to_cpulist = likwid_cpustr_to_cpulist
 likwid.nodestr_to_nodelist = likwid_nodestr_to_nodelist
 likwid.sockstr_to_socklist = likwid_sockstr_to_socklist
@@ -170,6 +173,13 @@ likwid.cpuFeatures = { [0]="HW_PREFETCHER", [1]="CL_PREFETCHER", [2]="DCU_PREFET
                         [8]="BRANCH_TRACE_STORAGE", [9]="XTPR_MESSAGE", [10]="PEBS", [11]="SPEEDSTEP",
                         [12]="MONITOR", [13]="SPEEDSTEP_LOCK", [14]="CPUID_MAX_VAL", [15]="XD_BIT",
                         [16]="DYN_ACCEL", [17]="TURBO_MODE", [18]="TM2" }
+
+likwid.signals = { [1] = "SIGHUP", [2] = "SIGINT", [3] = "SIGQUIT", [4] = "SIGILL",
+                   [5] = "SIGTRAP", [6] = "SIGABRT", [7] = "SIGBUS", [8] = "SIGFPE",
+                   [9] = "SIGKILL", [10] = "SIGUSR1", [11] = "SIGSEGV", [12] = "SIGUSR2",
+                   [13] = "SIGPIPE", [14] = "SIGALRM", [15] = "SIGTERM", [16] = "SIGSTKFLT",
+                   [17] = "SIGCHLD", [18] = "SIGCONT", [19] = "SIGSTOP", [20] = "SIGTSTP",
+                   [21] = "SIGTTIN", [22] = "SIGTTOU"}
 
 infinity = math.huge
 
