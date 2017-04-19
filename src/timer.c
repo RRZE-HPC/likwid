@@ -424,7 +424,8 @@ timer_init( void )
 uint64_t
 timer_printCycles( const TimerData* time )
 {
-    if (timer_initialized != 1)
+    if (
+    timer_initialized != 1)
     {
         ERROR_PLAIN_PRINT(Timer module not properly initialized);
         return 0ULL;

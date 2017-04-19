@@ -497,9 +497,24 @@ int main(int argc, char** argv)
         {
             minCycles = threads_data[i].cycles;
         }
+        time += threads_data[i].time;
     }
-
+#if defined(__x86_64) || defined(__i386__)
     time = (double) maxCycles / (double) cyclesClock;
+#endif
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+    if (maxCycles > 0)
+    {
+        ownprintf("WARNING: The cycle based values are calculated using the current but fixed CPU frequency on ARM\n");
+    }
+    else
+    {
+        ownprintf(bdata(HLINE));
+        ownprintf("WARNING: All cycle based values will be zero on ARM!\n");
+        ownprintf("WARNING: The cycle count cannot be calculated because the clock frequency is not fixed.\n");
+    }
+#endif
+
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
     ownprintf("CPU Clock:\t\t%" PRIu64 "\n", timer_getCpuClock());
