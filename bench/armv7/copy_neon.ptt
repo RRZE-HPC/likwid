@@ -1,0 +1,22 @@
+STREAMS 2
+TYPE SINGLE
+FLOPS 0
+BYTES 8
+DESC Single-precision vector copy, optimized for NEON
+LOADS 1
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 11
+UOPS 8
+mov r5, r1
+mov r6, r2
+LOOP 16
+
+vld1.32 {d0-d1}, [r5,:128]!
+vst1.32 {d0-d1}, [r6,:128]!
+vld1.32 {d2-d3}, [r5,:128]!
+vst1.32 {d2-d3}, [r6,:128]!
+vld1.32 {d4-d5}, [r5,:128]!
+vst1.32 {d4-d5}, [r6,:128]!
+vld1.32 {d6-d7}, [r5,:128]!
+vst1.32 {d6-d7}, [r6,:128]!
