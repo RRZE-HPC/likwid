@@ -8,11 +8,11 @@ include $(MAKE_DIR)/include_$(COMPILER).mk
 include $(MAKE_DIR)/config_checks.mk
 include $(MAKE_DIR)/config_defines.mk
 
-CFLAGS    = -O2 -Wall -fPIC -fvisibility=hidden
+#CFLAGS    = -O2 -Wall -fPIC -fvisibility=hidden
 INCLUDES  += -I./include
 #DEFINES   =
 LIBS      = -L. -lm
-LFLAGS    = -fPIC -fvisibility=hidden
+#LFLAGS    = -fPIC -fvisibility=hidden
 Q         ?= @
 DEFINES := $(filter-out -DVERSION=$(VERSION),$(DEFINES))
 ifeq ($(DEBUG),true)
