@@ -37,7 +37,7 @@ print_stdout = print
 print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
 
 local function version()
-    print_stdout(string.format("likwid-mpirun --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-mpirun -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
 local function examples()
@@ -1088,7 +1088,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     elseif mpitype == "slurm" then
         glrank_var = "${PMI_RANK:-$(($GLOBALSIZE * 2))}"
         glsize_var = tostring(math.tointeger(np))
-        losize_var = "$MPI_LOCALNRANKS"
+        losize_var = "${MPI_LOCALNRANKS:-$SLURM_NTASKS_PER_NODE}"
     else
         print_stderr("Invalid MPI vendor "..mpitype)
         return
@@ -1159,7 +1159,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     if mpitype == "openmpi" then
         f:write("LOCALRANK=$OMPI_COMM_WORLD_LOCAL_RANK\n\n")
     elseif mpitype  == "slurm" then
-        f:write("LOCALRANK=$MPI_LOCALRANKID\n\n")
+        f:write("LOCALRANK=${MPI_LOCALRANKID:-$SLURM_LOCALID}\n\n")
     else
         local full = tostring(math.tointeger(np - (np % ppn)))
         f:write("if [ \"$GLOBALRANK\" -lt "..tostring(math.tointeger(full)).." ]; then\n")

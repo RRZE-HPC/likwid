@@ -31,12 +31,20 @@
 package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 
 local likwid = require("likwid")
+local cpuinfo = likwid.getCpuInfo()
 
 print_stdout = print
 print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
 
+GENERAL_FEATURES = {"HW_PREFETCHER", "CL_PREFETCHER", "DCU_PREFETCHER", "IP_PREFETCHER"}
+KNL_FEATURES = {"HW_PREFETCHER", "DCU_PREFETCHER"}
+FEATURES = GENERAL_FEATURES
+if cpuinfo["short_name"] == "knl" then
+    FEATURES = KNL_FEATURES
+end
+
 function version()
-    print_stdout(string.format("likwid-features --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-features -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
 function usage()
@@ -52,7 +60,7 @@ function usage()
     print_stdout("-d, --disable <list>\t List of features that should be disabled")
     print_stdout()
     print_stdout("Currently modifiable features:")
-    print_stdout("HW_PREFETCHER, CL_PREFETCHER, DCU_PREFETCHER, IP_PREFETCHER")
+    print_stdout(table.concat(FEATURES, ", "))
 end
 
 if #arg == 0 then
@@ -89,7 +97,14 @@ for opt,arg in likwid.getopt(arg, {"h","v","l","c:","e:","d:","a","help","versio
     elseif opt == "a" or opt == "all" then
         print_stdout("Available features:")
         for i=0,likwid.tablelength(likwid.cpuFeatures)-1 do
-            if likwid.cpuFeatures[i]:match("PREFETCHER") then
+            local found = false
+            for j, f in pairs(FEATURES) do
+                if likwid.cpuFeatures[i] == f then
+                    found = true
+                    break
+                end
+            end
+            if found then
                 print_stdout(string.format("\t%s*",likwid.cpuFeatures[i]))
             else
                 print_stdout(string.format("\t%s",likwid.cpuFeatures[i]))

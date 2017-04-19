@@ -179,9 +179,9 @@ likwid_markerInit(void)
     hashTable_init();
 
     for(int i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
-#ifndef LIKWID_USE_PERFEVENT
+//#ifndef LIKWID_USE_PERFEVENT
     HPMmode(atoi(modeStr));
-#endif
+//#endif
     if (getenv("LIKWID_DEBUG") != NULL)
     {
         perfmon_verbosity = atoi(getenv("LIKWID_DEBUG"));
@@ -254,24 +254,40 @@ likwid_markerInit(void)
     {
         likwid_init = 1;
     }
+    threads2Pthread[registered_cpus] = pthread_self();
+    registered_cpus++;
+    
     groupSet->activeGroup = 0;
-#ifdef LIKWID_USE_PERFEVENT
+//#ifdef LIKWID_USE_PERFEVENT
     perfmon_setupCounters(groupSet->activeGroup);
     perfmon_startCounters();
-#endif
+//#endif
 }
 
 void
 likwid_markerThreadInit(void)
 {
-    int myID;
+    int myID = 0, i = 0;
+    pthread_t t;
     if ( !likwid_init )
     {
         return;
     }
 
     pthread_mutex_lock(&globalLock);
-    myID = registered_cpus++;
+    t = pthread_self();
+    for (i=0; i<registered_cpus; i++)
+    {
+        if (pthread_equal(t, threads2Pthread[i]))
+        {
+            t = 0;
+        }
+    }
+    if (t != 0)
+    {
+        threads2Pthread[registered_cpus] = t;
+        myID = registered_cpus++;
+    }
     pthread_mutex_unlock(&globalLock);
 
     if (getenv("LIKWID_PIN") != NULL)
@@ -282,7 +298,7 @@ likwid_markerThreadInit(void)
         if ((CPU_COUNT(&cpuset) > 1) || (likwid_getProcessorId() != threads2Cpu[myID % num_cpus]))
         {
             likwid_pinThread(threads2Cpu[myID % num_cpus]);
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "Pin thread %lu to CPU %d\n", gettid(), threads2Cpu[myID % num_cpus]);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Pin thread %lu to CPU %d currently %d, gettid(), threads2Cpu[myID % num_cpus], sched_getcpu());
         }
     }
 }
@@ -301,6 +317,7 @@ likwid_markerNextGroup(void)
     next_group = (groupSet->activeGroup + 1) % numberOfGroups;
     if (next_group != groupSet->activeGroup)
     {
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Switch from group %d to group %d, groupSet->activeGroup, next_group);
         i = perfmon_switchActiveGroup(next_group);
     }
     return;
@@ -323,13 +340,14 @@ likwid_markerClose(void)
     char* markerfile = NULL;
     int lineidx = 0;
     char line[1024];
+    int* validRegions = NULL;
 
     if ( ! likwid_init )
     {
         return;
     }
     hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
-    if ((numberOfThreads == 0)||(numberOfThreads == 0))
+    if ((numberOfThreads == 0)||(numberOfRegions == 0))
     {
         fprintf(stderr, "No threads or regions defined in hash table\n");
         return;
@@ -341,33 +359,68 @@ likwid_markerClose(void)
                 "Is the application executed with LIKWID wrapper? No file path for the Marker API output defined.\n");
         return;
     }
+    validRegions = (int*)malloc(numberOfRegions*sizeof(int));
+    if (!validRegions)
+    {
+        return;
+    }
+    for (int i=0; i<numberOfRegions; i++)
+    {
+        validRegions[i] = 0;
+    }
     file = fopen(markerfile,"w");
 
     if (file != NULL)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP,
-                Creating Marker file %s with %d regions %d groups and %d threads,
-                markerfile, numberOfRegions, numberOfGroups, numberOfThreads);
-        fprintf(file,"%d %d %d\n",numberOfThreads, numberOfRegions, numberOfGroups);
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, %d %d %d, numberOfThreads, numberOfRegions, numberOfGroups);
-
-        for (int i=0; i<numberOfRegions; i++)
-        {
-            fprintf(file,"%d:%s\n",i,bdata(results[i].tag));
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, %d:%s, i,bdata(results[i].tag));
-        }
+        int newNumberOfRegions = 0;
+        int newRegionID = 0;
         for (int i=0; i<numberOfRegions; i++)
         {
             for (int j=0; j<numberOfThreads; j++)
             {
-                fprintf(file,"%d ",i);
+                validRegions[i] += results[i].count[j];
+            }
+            if (validRegions[i] > 0)
+                newNumberOfRegions++;
+            else
+                fprintf(stderr, "WARN: Skipping region %s for evaluation.\n", bdata(results[i].tag));
+        }
+        if (newNumberOfRegions < numberOfRegions)
+        {
+            fprintf(stderr, "WARN: Regions are skipped because:\n");
+            fprintf(stderr, "      - The region was only registered\n");
+            fprintf(stderr, "      - The region was started but never stopped\n");
+            fprintf(stderr, "      - The region was never started but stopped\n");
+        }
+        DEBUG_PRINT(DEBUGLEV_DEVELOP,
+                Creating Marker file %s with %d regions %d groups and %d threads,
+                markerfile, newNumberOfRegions, numberOfGroups, numberOfThreads);
+        fprintf(file,"%d %d %d\n",numberOfThreads, newNumberOfRegions, numberOfGroups);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, %d %d %d, numberOfThreads, newNumberOfRegions, numberOfGroups);
+
+        for (int i=0; i<numberOfRegions; i++)
+        {
+            if (validRegions[i] == 0)
+                continue;
+            fprintf(file,"%d:%s\n",newRegionID,bdata(results[i].tag));
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, %d:%s, newRegionID,bdata(results[i].tag));
+            newRegionID++;
+        }
+        newRegionID = 0;
+        for (int i=0; i<numberOfRegions; i++)
+        {
+            if (validRegions[i] == 0)
+                continue;
+            for (int j=0; j<numberOfThreads; j++)
+            {
+                fprintf(file,"%d ",newRegionID);
                 fprintf(file,"%d ",results[i].groupID);
                 fprintf(file,"%d ",results[i].cpulist[j]);
                 fprintf(file,"%u ",results[i].count[j]);
                 fprintf(file,"%e ",results[i].time[j]);
                 fprintf(file,"%d ",groupSet->groups[results[i].groupID].numberOfEvents);
                 lineidx = sprintf(&(line[0]), "%d %d %d %u %e %d ",
-                        i, results[i].groupID,results[i].cpulist[j],results[i].count[j],
+                        newRegionID, results[i].groupID,results[i].cpulist[j],results[i].count[j],
                         results[i].time[j],groupSet->groups[results[i].groupID].numberOfEvents);
 
                 for (int k=0; k<groupSet->groups[results[i].groupID].numberOfEvents; k++)
@@ -378,6 +431,7 @@ likwid_markerClose(void)
                 fprintf(file,"\n");
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, %s,line);
             }
+            newRegionID++;
         }
         fclose(file);
     }
@@ -386,7 +440,7 @@ likwid_markerClose(void)
         fprintf(stderr, "Cannot open file %s\n", markerfile);
         fprintf(stderr, "%s", strerror(errno));
     }
-
+    free(validRegions);
 }
 
 void __attribute__((destructor (101))) likwid_markerCloseDestruct(void)
@@ -437,11 +491,11 @@ likwid_markerRegisterRegion(const char* regionTag)
     bcatcstr(tag, groupSuffix);
     int cpu_id = hashTable_get(tag, &results);
     bdestroy(tag);
-#ifdef LIKWID_USE_PERFEVENT
+//#ifdef LIKWID_USE_PERFEVENT
     return HPMaddThread(cpu_id);
-#else
-    return 0;
-#endif
+//#else
+//    return 0;
+//#endif
 }
 
 int
@@ -465,6 +519,10 @@ likwid_markerStartRegion(const char* regionTag)
 
     int cpu_id = hashTable_get(tag, &results);
     int thread_id = getThreadID(cpu_id);
+    if (results->state == MARKER_STATE_START)
+    {
+        fprintf(stderr, "WARN: Region %s was already started\n", regionTag);
+    }
     perfmon_readCountersCpu(cpu_id);
     results->cpuID = cpu_id;
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
@@ -478,6 +536,7 @@ likwid_markerStartRegion(const char* regionTag)
         results->StartPMcounters[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
         results->StartOverflows[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows;
     }
+    results->state = MARKER_STATE_START;
 
     bdestroy(tag);
     timer_start(&(results->startTime));
@@ -514,6 +573,11 @@ likwid_markerStopRegion(const char* regionTag)
 
     cpu_id = hashTable_get(tag, &results);
     thread_id = getThreadID(cpu_id);
+    if (results->state != MARKER_STATE_START)
+    {
+        fprintf(stderr, "WARN: Stopping an unknown/not-started region %s\n", regionTag);
+        return -EFAULT;
+    }
     results->groupID = groupSet->activeGroup;
     results->startTime.stop.int64 = timestamp.stop.int64;
     results->time += timer_print(&(results->startTime));
@@ -539,6 +603,7 @@ likwid_markerStopRegion(const char* regionTag)
             results->PMcounters[i] = result;
         }
     }
+    results->state = MARKER_STATE_STOP;
     if (use_locks == 1)
     {
         pthread_mutex_unlock(&threadLocks[myCPU]);

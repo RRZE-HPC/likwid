@@ -71,6 +71,7 @@
 #include <perfmon_goldmont.h>
 #include <perfmon_broadwell.h>
 #include <perfmon_skylake.h>
+#include <perfmon_zen.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -128,6 +129,10 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     "OCCUPANCY_INVERT",
     "IN_TRANSACTION",
     "IN_TRANSACTION_ABORTED"
+#ifdef LIKWID_USE_PERFEVENT
+    ,"PERF_PID"
+    ,"PERF_FLAGS"
+#endif
 };
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -170,7 +175,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         }
     }
 
-    if (type == PMC && (index - firstpmcindex) > cpuid_info.perf_num_ctr)
+    if (cpuid_info.isIntel && type == PMC && (index - firstpmcindex) > cpuid_info.perf_num_ctr)
     {
         fprintf(stderr,
                 "WARNING: Counter %s is only available with deactivated HyperThreading. Counter results defaults to 0.\n",
@@ -500,6 +505,18 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
                                     event->numberOfOptions, EVENT_OPTION_OCCUPANCY_FILTER, 0);
             }
+#ifdef LIKWID_USE_PERFEVENT
+            else if (biseqcstr(subtokens->entry[0], "perf_pid") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_PERF_PID, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "perf_flags") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_PERF_FLAGS, 0);
+            }
+#endif
             else
             {
                 continue;
@@ -509,7 +526,11 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
     }
     for(i=event->numberOfOptions-1;i>=0;i--)
     {
+#ifdef LIKWID_USE_PERFEVENT
+        if (event->options[i].type != EVENT_OPTION_PERF_PID && event->options[i].type != EVENT_OPTION_PERF_FLAGS && !(OPTIONS_TYPE_MASK(event->options[i].type) & (counter_map[index].optionMask|event->optionMask)))
+#else
         if (!(OPTIONS_TYPE_MASK(event->options[i].type) & (counter_map[index].optionMask|event->optionMask)))
+#endif
         {
             DEBUG_PRINT(DEBUGLEV_INFO,Removing Option %s not valid for register %s,
                         eventOptionTypeName[event->options[i].type],
@@ -676,7 +697,9 @@ perfmon_check_counter_map(int cpu_id)
         {
             startpmcindex = i;
         }
-        if (counter_map[i].type == PMC && (counter_map[i].index - counter_map[startpmcindex].index) >= cpuid_info.perf_num_ctr)
+        if (cpuid_info.isIntel &&
+            counter_map[i].type == PMC &&
+            (counter_map[i].index - counter_map[startpmcindex].index) >= cpuid_info.perf_num_ctr)
         {
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
@@ -893,6 +916,7 @@ perfmon_init_maps(void)
                     break;
 
                 case BROADWELL:
+                case BROADWELL_E3:
                     box_map = broadwell_box_map;
                     eventHash = broadwell_arch_events;
                     counter_map = broadwell_counter_map;
@@ -994,7 +1018,15 @@ perfmon_init_maps(void)
             counter_map = kabini_counter_map;
             box_map = kabini_box_map;
             perfmon_numCounters = perfmon_numCountersKabini;
-           break;
+            break;
+
+        case ZEN_FAMILY:
+            eventHash = zen_arch_events;
+            perfmon_numArchEvents = perfmon_numArchEventsZen;
+            counter_map = zen_counter_map;
+            box_map = zen_box_map;
+            perfmon_numCounters = perfmon_numCountersZen;
+            break;
 
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);
@@ -1160,6 +1192,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                 case BROADWELL:
                 case BROADWELL_E:
                 case BROADWELL_D:
+                case BROADWELL_E3:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_broadwell;
@@ -1254,7 +1287,16 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             perfmon_readCountersThread = perfmon_readCountersThread_kabini;
             perfmon_setupCountersThread = perfmon_setupCounterThread_kabini;
             perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_kabini;
-           break;
+            break;
+
+        case ZEN_FAMILY:
+            initThreadArch = perfmon_init_zen;
+            perfmon_startCountersThread = perfmon_startCountersThread_zen;
+            perfmon_stopCountersThread = perfmon_stopCountersThread_zen;
+            perfmon_readCountersThread = perfmon_readCountersThread_zen;
+            perfmon_setupCountersThread = perfmon_setupCounterThread_zen;
+            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen;
+            break;
 
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);

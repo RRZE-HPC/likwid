@@ -514,6 +514,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_POWER)
                             eventSet->events[i].threadCounter[thread_id].overflows++;
                         }
                         *current = field64(counter_result, 0, box_map[type].regWidth);
@@ -638,12 +639,13 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                     if (haveLock)
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_POWER)
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_POWER)
                             eventSet->events[i].threadCounter[thread_id].overflows++;
                         }
-                        eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+                        *current = field64(counter_result, 0, box_map[type].regWidth);
                     }
                     break;
 
@@ -712,7 +714,7 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
     int haveTileLock = 0;
     int clearPBS = 0;
     uint64_t ovf_values_core = (1ULL<<63)|(1ULL<<62);
-    uint64_t ovf_values_UBOXFIX = 0x0ULL;
+    uint64_t ovf_values_uncore = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
@@ -756,9 +758,9 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
         }
         if ((reg) && (((type == PMC)||(type == FIXED))||((type >= UBOXFIX) && (haveLock))))
         {
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, reg, &ovf_values_UBOXFIX));
-            VERBOSEPRINTPCIREG(cpu_id, dev, reg, ovf_values_UBOXFIX, SHOW_CTL);
-            ovf_values_UBOXFIX = 0x0ULL;
+            CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, reg, &ovf_values_uncore));
+            VERBOSEPRINTPCIREG(cpu_id, dev, reg, ovf_values_uncore, SHOW_CTL);
+            ovf_values_uncore = 0x0ULL;
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, 0x0ULL, CLEAR_CTL);
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, reg, 0x0ULL));
             if ((type >= SBOX0) && (type <= SBOX3))
@@ -772,6 +774,11 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
                 VERBOSEPRINTPCIREG(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL, CLEAR_CTR);
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].counterRegister2, 0x0ULL));
             }
+        }
+        else
+        {
+            CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, reg, &ovf_values_uncore));
+            VERBOSEPRINTPCIREG(cpu_id, dev, reg, ovf_values_uncore, DEL_FAILED);
         }
         eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }

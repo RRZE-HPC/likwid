@@ -847,7 +847,7 @@ int knl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
         } \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, (1ULL<<offset))); \
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<offset))); \
     }
 
 int perfmon_stopCountersThread_knl(int thread_id, PerfmonEventSet* eventSet)

@@ -37,7 +37,7 @@ print_stdout = print
 print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
 
 local function version()
-    print_stdout(string.format("likwid-powermeter --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-powermeter -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
 local function examples()
@@ -266,7 +266,7 @@ if use_perfctr then
     execString = string.format("<INSTALLED_PREFIX>/bin/likwid-perfctr -C %s -f -g CLOCK ",argString)
 end
 
-
+local execList = {}
 if #arg == 0 then
     if use_perfctr then
         execString = execString .. string.format(" -S %s ", time_orig)
@@ -275,10 +275,13 @@ if #arg == 0 then
         stethoscope = true
     end
 else
+    for i=1, likwid.tablelength(arg)-2 do
+        table.insert(execList, arg[i])
+    end
     if use_perfctr then
-        execString = execString .. table.concat(arg," ",1, likwid.tablelength(arg)-2)
+        execString = execString .. table.concat(execList," ")
     else
-        execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
+        execString = table.concat(execList," ")
     end
 end
 
@@ -312,9 +315,9 @@ if not print_info and not print_temp then
                 likwid.sleep(time_interval)
             end
         else
-            local pid = likwid.startProgram(execString, 0, {})
+            local pid = likwid.startProgram(table.concat(execList," "), 0, {})
             if not pid then
-                print_stderr(string.format("Failed to execute %s!",execString))
+                print_stderr(string.format("Failed to execute %s!",table.concat(execList," ")))
                 likwid.finalize()
                 os.exit(1)
             end
@@ -365,9 +368,9 @@ if not print_info and not print_temp then
         end
         print_stdout(likwid.hline)
     else
-        err = os.execute(execString)
+        err = os.execute(table.concat(execList," "))
         if err == false then
-            print_stderr(string.format("Failed to execute %s!",execString))
+            print_stderr(string.format("Failed to execute %s!",table.concat(execList," ")))
             likwid.putPowerInfo()
             likwid.finalize()
             os.exit(1)

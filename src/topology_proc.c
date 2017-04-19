@@ -622,6 +622,7 @@ proc_init_cacheTopology(void)
                 break;
             case K16_FAMILY:
             case K15_FAMILY:
+            case ZEN_FAMILY:
                 cachePool[i].inclusive = readCacheInclusiveAMD(cachePool[i].level);
                 break;
             /* For K8 and K10 it is known that they are inclusive */

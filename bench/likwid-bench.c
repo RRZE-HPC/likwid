@@ -50,6 +50,9 @@
 
 #include <likwid.h>
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 extern void* runTest(void* arg);
 extern void* getIterSingle(void* arg);
 
@@ -80,7 +83,7 @@ extern void* getIterSingle(void* arg);
     printf("likwid-bench -t copy -w S0:100MB:1-0:S0,1:S1\n"); \
 
 #define VERSION_MSG \
-    printf("likwid-bench   %d.%d \n\n",VERSION,RELEASE)
+    printf("likwid-bench -- Version %d.%d.%d\n",VERSION,RELEASE,MINORVERSION); \
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE  ############ */
 
@@ -518,18 +521,30 @@ int main(int argc, char** argv)
     ownprintf("MByte/s:\t\t%.2f\n",
             1.0E-06 * ( (double) threads_data[0].data.iter * realSize *  test->bytes/ time));
 
-    cycPerCL = ((double) maxCycles / (double) (threads_data[0].data.iter*(realSize/test->streams)* 8 / 64.0));
-    switch ( test->type )
+
+    size_t destsize = 0;
+    size_t datasize = 0;
+    double perUpFactor = 0.0;
+    switch (test->type)
     {
         case INT:
+            datasize = test->bytes/sizeof(int);
+            destsize = test->bytes/test->streams;
+            perUpFactor = (64.0/sizeof(int));
+            break;
         case SINGLE:
-            cycPerUp = cycPerCL/(16.0*test->streams);
+            datasize = test->bytes/sizeof(float);
+            destsize = test->bytes/test->streams;
+            perUpFactor = (64.0/sizeof(float));
             break;
         case DOUBLE:
-            cycPerUp = cycPerCL/(8.0*test->streams);
+            datasize = test->bytes/sizeof(double);
+            destsize = test->bytes/test->streams;
+            perUpFactor = (64.0/sizeof(double));
             break;
     }
-    ownprintf("Cycles per update:\t%f\n", cycPerUp);
+    cycPerCL = (double) maxCycles/(threads_data[0].data.iter*realSize*destsize/64);
+    ownprintf("Cycles per update:\t%f\n", cycPerCL/perUpFactor);
     ownprintf("Cycles per cacheline:\t%f\n", cycPerCL);
     ownprintf("Loads per update:\t%ld\n", test->loads );
     ownprintf("Stores per update:\t%ld\n", test->stores );

@@ -40,7 +40,7 @@ print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n
 local filename = "<INSTALLED_PREFIX>/etc/likwid_topo.cfg"
 
 function version()
-    print_stdout(string.format("likwid-genTopoCfg --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-genTopoCfg -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
 function usage()

@@ -83,6 +83,19 @@ hashTable_initThread(int coreID)
 }
 
 int
+hashTable_test(bstring label)
+{
+    int coreID = likwid_getProcessorId();
+    LikwidThreadResults* resEntry = NULL;
+    ThreadList* resPtr = threadList[coreID];
+    resEntry = g_hash_table_lookup(resPtr->hashTable, (gpointer) bdata(label));
+    if (resEntry != NULL)
+        return 1;
+    return 0;
+}
+
+
+int
 hashTable_get(bstring label, LikwidThreadResults** resEntry)
 {
     int coreID = likwid_getProcessorId();
@@ -110,6 +123,7 @@ hashTable_get(bstring label, LikwidThreadResults** resEntry)
         (*resEntry)->time = 0.0;
         (*resEntry)->count = 0;
         (*resEntry)->index = resPtr->hashIndex++;
+        (*resEntry)->state = MARKER_STATE_NEW;
         for (int i=0; i< NUM_PMC; i++)
         {
             (*resEntry)->PMcounters[i] = 0.0;
@@ -141,7 +155,6 @@ hashTable_finalize(int* numThreads, int* numRegions, LikwidResults** results)
         {
             numberOfThreads++;
             uint32_t threadNumberOfRegions = g_hash_table_size(threadList[i]->hashTable);
-
             /*  Determine maximum number of regions */
             if (numberOfRegions < threadNumberOfRegions)
             {

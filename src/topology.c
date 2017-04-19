@@ -71,6 +71,7 @@ static char* haswell_str = "Intel Core Haswell processor";
 static char* haswell_ep_str = "Intel Xeon Haswell EN/EP/EX processor";
 static char* broadwell_str = "Intel Core Broadwell processor";
 static char* broadwell_d_str = "Intel Xeon D Broadwell processor";
+static char* broadwell_e3_str = "Intel Xeon E3 Broadwell processor";
 static char* broadwell_ep_str = "Intel Xeon Broadwell EN/EP/EX processor";
 static char* skylake_str = "Intel Skylake processor";
 static char* kabylake_str = "Intel Kabylake processor";
@@ -93,6 +94,7 @@ static char* athlon64_f_str = "AMD Athlon64 (AM2) Rev F 90nm processor";
 static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
 static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
 static char* amd_k8_str = "AMD K8 architecture";
+static char* amd_zen_str = "AMD K17 (Zen) architecture";
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 
@@ -122,6 +124,7 @@ static char* short_k8 = "k8";
 static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
+static char* short_zen = "zen";
 static char* short_unknown = "unknown";
 
 /* #####  EXPORTED VARIABLES  ########################################## */
@@ -615,6 +618,10 @@ topology_setName(void)
                     cpuid_info.name = broadwell_str;
                     cpuid_info.short_name = short_broadwell;
                     break;
+                case BROADWELL_E3:
+                    cpuid_info.name = broadwell_e3_str;
+                    cpuid_info.short_name = short_broadwell;
+                    break;
                 case BROADWELL_D:
                     cpuid_info.supportUncore = 1;
                     cpuid_info.name = broadwell_d_str;
@@ -795,6 +802,11 @@ topology_setName(void)
         case K16_FAMILY:
             cpuid_info.name = kabini_str;
             cpuid_info.short_name = short_k16;
+            break;
+
+        case ZEN_FAMILY:
+            cpuid_info.name = amd_zen_str;
+            cpuid_info.short_name = short_zen;
             break;
 
         default:
@@ -1037,6 +1049,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",broadwell_ep_str);
     printf("\t%s\n",skylake_str);
     printf("\t%s\n",atom_goldmont_str);
+    printf("\t%s\n",xeon_phi2_string);
     printf("\n");
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);

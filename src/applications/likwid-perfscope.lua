@@ -121,7 +121,7 @@ local predefined_plots = {
 }
 
 local function version()
-    print_stdout(string.format("likwid-perfscope --  Version %d.%d",likwid.version,likwid.release))
+    print_stdout(string.format("likwid-perfscope -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
 end
 
 local function examples()
@@ -220,6 +220,10 @@ for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","t:","r:","a","d","p",
         os.exit(1)
     end
 end
+local execList = {}
+for i=1, likwid.tablelength(arg)-2 do
+    table.insert(execList, arg[i])
+end
 
 if print_configs then
     local num_groups, all_groups = likwid.get_groups()
@@ -258,7 +262,7 @@ if num_cpus == 0 then
     os.exit(1)
 end
 
-if #arg == 0 then
+if #execList == 0 then
     print_stderr("ERROR: Executable must be given on commandline")
     os.exit(1)
 end
@@ -424,18 +428,21 @@ cmd = cmd .. string.format(" -t %s", timeline)
 for i, group in pairs(group_list) do
     cmd = cmd .. " -g "..group["eventstring"]
 end
-cmd = cmd .. " ".. table.concat(arg, " ")
+cmd = cmd .. " ".. table.concat(execList, " ")
 -- since io.popen can only read stdout we swap stdout and stderr
 -- application output is written to stderr, we catch stdout
 cmd = cmd .. " 3>&1 1>&2 2>&3 3>&-"
 if host ~= nil then
     cmd = cmd .. " \\\" \" "
 end
-perfctr = assert (io.popen (cmd))
+
 
 
 for i, group in pairs(group_list) do
     gnucmd = string.format("%s --stream %f --with linespoints --domain --nodataid", FEEDGNUPLOT, mfreq/#group_list)
+    extracmds = {'set xtics font \",10\"', 'set ytics font \",10\"', 'set y2tics font \",10\"',
+                 'set bmargin 10', 'set key font \",12\"' }
+    gnucmd =  gnucmd .. " --geometry \"1280,1024\""
     if plotrange > 0 then
         gnucmd = gnucmd .. string.format(" --xlen %d", plotrange)
     else
@@ -443,21 +450,27 @@ for i, group in pairs(group_list) do
     end
     if group["title"] ~= nil then
         if #group_list > 1 then
-            gnucmd = gnucmd .. string.format(" --title %q", "Group "..i..": "..group["title"])
+            --gnucmd = gnucmd .. string.format(" --title %q", "Group "..i..": "..group["title"])
+            table.insert(extracmds, string.format("set title 'Group %d: %s' font \",12\"", i, group["title"]))
         else
-            gnucmd = gnucmd .. string.format(" --title %q", group["title"])
+            --gnucmd = gnucmd .. string.format(" --title %q", group["title"])
+            table.insert(extracmds, string.format("set title %q font \",12\"", group["title"]))
         end
     end
     if group["xtitle"] ~= nil then
-        gnucmd = gnucmd .. string.format(" --xlabel %q", group["xtitle"])
+        --gnucmd = gnucmd .. string.format(" --xlabel %q", group["xtitle"])
+        table.insert(extracmds, string.format("set xlabel %q font \",12\"", group["xtitle"]))
     else
-        gnucmd = gnucmd .. string.format(" --xlabel %q", "Time")
+        --gnucmd = gnucmd .. string.format(" --xlabel %q", "Time")
+        table.insert(extracmds, "set xlabel 'Time' font \",12\"")
     end
     if group["ytitle"] ~= nil then
-        gnucmd = gnucmd .. string.format(" --ylabel %q", group["ytitle"])
+        --gnucmd = gnucmd .. string.format(" --ylabel %q", group["ytitle"])
+        table.insert(extracmds, string.format("set ylabel %q font \",12\"", group["ytitle"]))
     end
     if group["y2title"] ~= nil then
-        gnucmd = gnucmd .. string.format(" --y2 %d --y2label %q", group["y2funcindex"], group["y2title"])
+        gnucmd = gnucmd .. string.format(" --y2 %d", group["y2funcindex"])
+        table.insert(extracmds, string.format("set y2label %q font \",12\"", group["y2title"]))
     end
     if group["formulas"] then
         if #cpulist == 1 then
@@ -475,6 +488,7 @@ for i, group in pairs(group_list) do
         end
     end
     gnucmd = gnucmd .. " --set 'key outside bmargin bottom'"
+    gnucmd = gnucmd .. string.format(" --extracmds '%s'", table.concat(extracmds, ";"))
     if plotdump then
         gnucmd = gnucmd .. " --dump"
     else
@@ -501,7 +515,7 @@ for i,g in pairs(group_list) do
     end
 end
 
-
+perfctr = assert (io.popen (cmd))
 olddata = {}
 oldmetric = {}
 local perfctr_exited = false
@@ -509,7 +523,7 @@ local oldtime = 0
 local clock = likwid.getCpuClock()
 while true do
     local l = perfctr:read("*line")
-    if l == nil or l:match("^%s*$") then
+    if l == nil then
         break
     end
     if l:match("^%d+ %d+ %d+ [%d.]+ %d+") then

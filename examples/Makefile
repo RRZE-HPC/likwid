@@ -2,10 +2,13 @@
 include ../config.mk
 include ../make/include_$(COMPILER).mk
 
+LIKWID_BINDIR ?= $(PREFIX)/bin
 LIKWID_INCLUDE ?= -I$(PREFIX)/include
-LIKWID_LIB ?= -L$(PREFIX)/lib -llikwid
+LIKWID_LIBDIR ?= -L$(PREFIX)/lib
+LIKWID_LIB ?= -llikwid
+LIKWID_DEFINES ?= -DLIKWID_PERFMON
 
-all: C-markerAPI C-likwidAPI F-markerAPI Lua-likwidAPI C-markerAPI-run C-likwidAPI-run F-markerAPI-run Lua-likwidAPI-run
+all: C-markerAPI C-likwidAPI F-markerAPI Lua-likwidAPI C-markerAPI-run C-likwidAPI-run Lua-likwidAPI-run F-markerAPI-run
 
 help:
 	@echo "Help message for examples included in LIKWID"
@@ -22,34 +25,34 @@ help:
 	@echo "To run the built example append '-run' to the name and add it to make: make C-likwidAPI-run"
 
 C-markerAPI:
-	$(CC) -fopenmp -DLIKWID_PERFMON -I$(PREFIX)/include -L$(PREFIX)/lib C-markerAPI.c -o C-markerAPI -llikwid -lm
+	$(CC) -fopenmp $(LIKWID_DEFINES) $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) C-markerAPI.c -o C-markerAPI $(LIKWID_LIB) -lm
 
 C-markerAPI-run: C-markerAPI
-	$(PREFIX)/bin/likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -m ./C-markerAPI
+	$(LIKWID_BINDIR)/likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -m ./C-markerAPI
 
 C-likwidAPI:
-	$(CC) -fopenmp -I$(PREFIX)/include -L$(PREFIX)/lib C-likwidAPI.c -o C-likwidAPI -llikwid -lm
+	$(CC) -fopenmp $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) C-likwidAPI.c -o C-likwidAPI $(LIKWID_LIB) -lm
 
 C-likwidAPI-run: C-likwidAPI
 	./C-likwidAPI
 
 C-internalMarkerAPI:
-	$(CC) -g -fopenmp -DLIKWID_PERFMON -I$(PREFIX)/include -L$(PREFIX)/lib C-internalMarkerAPI.c -o C-internalMarkerAPI -llikwid -lm
+	$(CC) -g -fopenmp $(LIKWID_DEFINES) $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) C-internalMarkerAPI.c -o C-internalMarkerAPI $(LIKWID_LIB) -lm
 
 C-internalMarkerAPI-run: C-internalMarkerAPI
 	OMP_NUM_THREADS=3 ./C-internalMarkerAPI
 
 monitoring:
-	$(CC) -I$(PREFIX)/include -L$(PREFIX)/lib monitoring.c -o monitoring -llikwid -lm
+	$(CC) $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) monitoring.c -o monitoring $(LIKWID_LIB) -lm
 
 monitoring-run: monitoring
 	./monitoring
 
-F-markerAPI:
-	$(FC) -fopenmp -DLIKWID_PERFMON -I$(PREFIX) -L$(PREFIX) F-markerAPI.F90 -o F-markerAPI -llikwid -lm
-
+F-markerAPI: F-markerAPI.F90
+	@if [ -x $(FC) ]; then $(FC) -fopenmp $(LIKWID_DEFINES) $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) F-markerAPI.F90 -o F-markerAPI $(LIKWID_LIB) -lm; else echo "No Fortran compiler found"; fi
 F-markerAPI-run: F-markerAPI
-	$(PREFIX)/bin/likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -m ./F-markerAPI
+	@if [ -x F-markerAPI ]; then $(LIKWID_BINDIR)/likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -m ./F-markerAPI; else echo "No executable F-markerAPI found"; fi
+
 
 Lua-likwidAPI:
 	sed -e "s+<PREFIX>+$(PREFIX)+g" Lua-likwidAPI.lua > Lua-likwidAPI

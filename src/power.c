@@ -91,6 +91,7 @@ power_init(int cpuId)
         case BROADWELL:
         case BROADWELL_E:
         case BROADWELL_D:
+        case BROADWELL_E3:
         case HASWELL_M1:
         case HASWELL_M2:
         case SKYLAKE1:

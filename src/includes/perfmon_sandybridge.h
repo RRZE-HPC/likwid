@@ -1282,6 +1282,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
             uint64_t reg = counter_map[index].configRegister;
             uint64_t counter1 = counter_map[index].counterRegister;
             uint64_t counter2 = counter_map[index].counterRegister2;
+            uint64_t* current = &(eventSet->events[i].threadCounter[thread_id].counterData);
             switch (type)
             {
                 case PMC:
@@ -1320,7 +1321,12 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, STOP_POWER);
-                        SNB_CHECK_OVERFLOW;
+                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        {
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_POWER)
+                            eventSet->events[i].threadCounter[thread_id].overflows++;
+                        }
+                        *current = field64(counter_result, 0, box_map[type].regWidth);
                     }
                     break;
 
@@ -1574,6 +1580,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
             uint64_t reg = counter_map[index].configRegister;
             uint64_t counter1 = counter_map[index].counterRegister;
             uint64_t counter2 = counter_map[index].counterRegister2;
+            uint64_t* current = &(eventSet->events[i].threadCounter[thread_id].counterData);
             switch (type)
             {
                 case PMC:
@@ -1616,7 +1623,12 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
                         VERBOSEPRINTPCIREG(cpu_id, dev, counter1,  LLU_CAST counter_result, READ_POWER);
-                        SNB_CHECK_OVERFLOW;
+                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        {
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_POWER)
+                            eventSet->events[i].threadCounter[thread_id].overflows++;
+                        }
+                        *current = field64(counter_result, 0, box_map[type].regWidth);
                     }
                     break;
 

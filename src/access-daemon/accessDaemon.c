@@ -480,7 +480,8 @@ static int allowed_knl(uint32_t reg)
     {
         if (((reg & 0xF00U) == 0x700U) ||
             ((reg & 0xF00U) == 0xE00U) ||
-            ((reg & 0xF00U) == 0xF00U))
+            ((reg & 0xF00U) == 0xF00U) ||
+            (reg == MSR_PREFETCH_ENABLE))
             return 1;
     }
     return 0;
@@ -637,6 +638,20 @@ allowed_amd16(uint32_t reg)
 {
     if ( ((reg & 0xFFFFFFF0U) == 0xC0010000U) ||
             ((reg & 0xFFFFFFF8U) == 0xC0010240U))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+static int
+allowed_amd17(uint32_t reg)
+{
+    if ((allowed_amd16(reg)) ||
+       ((reg & 0xC0010230U) == 0xC0010230U))
     {
         return 1;
     }
@@ -1082,6 +1097,7 @@ int main(void)
                          (model == HASWELL_M1) ||
                          (model == HASWELL_M2) ||
                          (model == BROADWELL) ||
+                         (model == BROADWELL_E3) ||
                          (model == SKYLAKE1) ||
                          (model == SKYLAKE2) ||
                          (model == KABYLAKE1) ||
@@ -1132,7 +1148,10 @@ int main(void)
                 break;
             case K16_FAMILY:
                 allowed = allowed_amd16;
-            break;
+                break;
+            case ZEN_FAMILY:
+                allowed = allowed_amd17;
+                break;
             default:
                 syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
                         __FILE__, __LINE__);

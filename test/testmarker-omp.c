@@ -1,5 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <omp.h>
+#include <unistd.h>
 
 #include <likwid.h>
 
@@ -7,7 +10,7 @@
 
 double sum = 0, a[SIZE], b[SIZE], c[SIZE];
 
-main()
+int main(int argc, char* argv[])
 {
     double alpha = 3.14;
 
@@ -35,7 +38,7 @@ main()
         for (int j = 0; j < 10; j++)
         {
 
-        LIKWID_MARKER_START("plain");
+            LIKWID_MARKER_START("plain");
             for (int k = 0; k < (threadId+1); k++)  {
                 for (int i = 0; i < SIZE; i++) 
                 {
@@ -44,7 +47,7 @@ main()
                 }
             }
 
-        LIKWID_MARKER_STOP("plain");
+            LIKWID_MARKER_STOP("plain");
         }
         printf("Flops performed plain: %g\n",(double)10*SIZE*3);
         /****************************************************/

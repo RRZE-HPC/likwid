@@ -76,7 +76,7 @@ int perfmon_init_broadwell(int cpu_id)
         broadwell_cbox_setup = bdwep_cbox_setup;
         bdw_did_cbox_check = 1;
     }
-    else if (cpuid_info.model == BROADWELL &&
+    else if ((cpuid_info.model == BROADWELL || cpuid_info.model == BROADWELL_E3) &&
              socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id &&
              bdw_did_cbox_check == 0)
     {
@@ -986,7 +986,7 @@ int bdw_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
         VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<31), FREEZE_UNCORE); \
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<31))); \
     } \
-    else if (haveLock && MEASURE_UNCORE(eventSet) && cpuid_info.model == BROADWELL) \
+    else if (haveLock && MEASURE_UNCORE(eventSet) && (cpuid_info.model == BROADWELL || cpuid_info.model == BROADWELL_E3)) \
     { \
         uint64_t data = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data)); \
@@ -1004,7 +1004,7 @@ int bdw_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
         VERBOSEPRINTREG(cpu_id, MSR_UNC_V3_U_PMON_GLOBAL_CTL, LLU_CAST (1ULL<<29), UNFREEZE_UNCORE); \
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNC_V3_U_PMON_GLOBAL_CTL, (1ULL<<29))); \
     } \
-    else if (haveLock && MEASURE_UNCORE(eventSet) && cpuid_info.model == BROADWELL) \
+    else if (haveLock && MEASURE_UNCORE(eventSet) && (cpuid_info.model == BROADWELL || cpuid_info.model == BROADWELL_E3)) \
     { \
         uint64_t data = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_CTRL, &data)); \
@@ -1459,6 +1459,7 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_POWER)
                             eventSet->events[i].threadCounter[thread_id].overflows++;
                         }
                     }
@@ -1658,9 +1659,10 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                     if (haveLock)
                     {
                         CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
-                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_POWER)
                         if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                         {
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_POWER)
                             eventSet->events[i].threadCounter[thread_id].overflows++;
                         }
                         *current = field64(counter_result, 0, box_map[type].regWidth);

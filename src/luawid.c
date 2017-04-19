@@ -120,29 +120,39 @@ lua_likwid_getConfiguration(lua_State* L)
     {
         configfile = get_configuration();
     }
-    lua_newtable(L);
-    lua_pushstring(L, "configFile");
-    lua_pushstring(L, configfile->configFileName);
-    lua_settable(L,-3);
-    lua_pushstring(L, "topologyFile");
-    lua_pushstring(L, configfile->topologyCfgFileName);
-    lua_settable(L,-3);
-    lua_pushstring(L, "daemonPath");
-    lua_pushstring(L, configfile->daemonPath);
-    lua_settable(L,-3);
-    lua_pushstring(L, "groupPath");
-    lua_pushstring(L, configfile->groupPath);
-    lua_settable(L,-3);
-    lua_pushstring(L, "daemonMode");
-    lua_pushinteger(L, (int)configfile->daemonMode);
-    lua_settable(L,-3);
-    lua_pushstring(L, "maxNumThreads");
-    lua_pushinteger(L, configfile->maxNumThreads);
-    lua_settable(L,-3);
-    lua_pushstring(L, "maxNumNodes");
-    lua_pushinteger(L, configfile->maxNumNodes);
-    lua_settable(L,-3);
-    return 1;
+    if (configfile)
+    {
+        lua_newtable(L);
+        lua_pushstring(L, "configFile");
+        if (configfile->configFileName != NULL)
+            lua_pushstring(L, configfile->configFileName);
+        else
+            lua_pushnil(L);
+        lua_settable(L,-3);
+        lua_pushstring(L, "topologyFile");
+        lua_pushstring(L, configfile->topologyCfgFileName);
+        lua_settable(L,-3);
+        lua_pushstring(L, "daemonPath");
+        if (configfile->daemonPath != NULL)
+            lua_pushstring(L, configfile->daemonPath);
+        else
+            lua_pushnil(L);
+        lua_settable(L,-3);
+        lua_pushstring(L, "groupPath");
+        lua_pushstring(L, configfile->groupPath);
+        lua_settable(L,-3);
+        lua_pushstring(L, "daemonMode");
+        lua_pushinteger(L, (int)configfile->daemonMode);
+        lua_settable(L,-3);
+        lua_pushstring(L, "maxNumThreads");
+        lua_pushinteger(L, configfile->maxNumThreads);
+        lua_settable(L,-3);
+        lua_pushstring(L, "maxNumNodes");
+        lua_pushinteger(L, configfile->maxNumNodes);
+        lua_settable(L,-3);
+        return 1;
+    }
+    return 0;
 }
 
 static int
@@ -1845,6 +1855,22 @@ lua_likwid_return_signal_state(lua_State* L)
     return 1;
 }
 
+static int
+lua_likwid_send_signal(lua_State* L)
+{
+    int err = 0;
+#if LUA_VERSION_NUM == 501
+    pid_t pid = ((lua_Integer)lua_tointeger(L,1));
+    int signal = ((lua_Integer)lua_tointeger(L,2));
+#else
+    pid_t pid = ((lua_Unsigned)lua_tointegerx(L,1, NULL));
+    int signal = ((lua_Unsigned)lua_tointegerx(L,2, NULL));
+#endif
+    err = kill(pid, signal);
+    lua_pushnumber(L, err);
+    return 1;
+}
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void
@@ -2043,6 +2069,14 @@ lua_likwid_setenv(lua_State* L)
     const char* element = (const char*)luaL_checkstring(L, -2);
     const char* value = (const char*)luaL_checkstring(L, -1);
     setenv(element, value, 1);
+    return 0;
+}
+
+static int
+lua_likwid_unsetenv(lua_State* L)
+{
+    const char* element = (const char*)luaL_checkstring(L, -1);
+    unsetenv(element);
     return 0;
 }
 
@@ -2489,6 +2523,44 @@ lua_likwid_getDriver(lua_State* L)
 }
 
 static int
+lua_likwid_setUncoreFreqMin(lua_State* L)
+{
+    const int socket_id = lua_tointeger(L,-2);
+    const uint64_t freq = lua_tointeger(L,-1);
+    int err = freq_setUncoreFreqMin(socket_id, freq);
+    lua_pushinteger(L, err);
+    return 1;
+}
+
+static int
+lua_likwid_getUncoreFreqMin(lua_State* L)
+{
+    const int socket_id = lua_tointeger(L,-1);
+    uint64_t freq = freq_getUncoreFreqMin(socket_id);
+    lua_pushinteger(L, freq);
+    return 1;
+}
+
+static int
+lua_likwid_setUncoreFreqMax(lua_State* L)
+{
+    const int socket_id = lua_tointeger(L,-1);
+    const uint64_t freq = lua_tointeger(L,-2);
+    int err = freq_setUncoreFreqMax(socket_id, freq);
+    lua_pushinteger(L, err);
+    return 1;
+}
+
+static int
+lua_likwid_getUncoreFreqMax(lua_State* L)
+{
+    const int socket_id = lua_tointeger(L,-1);
+    uint64_t freq = freq_getUncoreFreqMax(socket_id);
+    lua_pushinteger(L, freq);
+    return 1;
+}
+
+static int
 lua_likwid_getuid(lua_State* L)
 {
     int r = geteuid();
@@ -2677,6 +2749,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_pinProcess", lua_likwid_pinProcess);
     // Helper functions
     lua_register(L, "likwid_setenv", lua_likwid_setenv);
+    lua_register(L, "likwid_unsetenv", lua_likwid_unsetenv);
     lua_register(L, "likwid_getpid", lua_likwid_getpid);
     lua_register(L, "likwid_access", lua_likwid_access);
     lua_register(L, "likwid_startProgram", lua_likwid_startProgram);
@@ -2685,6 +2758,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_catchSignal", lua_likwid_catch_signal);
     lua_register(L, "likwid_getSignalState", lua_likwid_return_signal_state);
     lua_register(L, "likwid_waitpid", lua_likwid_waitpid);
+    lua_register(L, "likwid_sendSignal", lua_likwid_send_signal);
     // Verbosity functions
     lua_register(L, "likwid_setVerbosity", lua_likwid_setVerbosity);
     // Marker API functions
@@ -2726,6 +2800,10 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getAvailFreq", lua_likwid_getAvailFreq);
     lua_register(L, "likwid_getAvailGovs", lua_likwid_getAvailGovs);
     lua_register(L, "likwid_getDriver", lua_likwid_getDriver);
+    lua_register(L, "likwid_setUncoreFreqMin", lua_likwid_setUncoreFreqMin);
+    lua_register(L, "likwid_getUncoreFreqMin", lua_likwid_getUncoreFreqMin);
+    lua_register(L, "likwid_setUncoreFreqMax", lua_likwid_setUncoreFreqMax);
+    lua_register(L, "likwid_getUncoreFreqMax", lua_likwid_getUncoreFreqMax);
     // setuid&friends
     lua_register(L, "likwid_getuid", lua_likwid_getuid);
     lua_register(L, "likwid_geteuid", lua_likwid_geteuid);

@@ -1,0 +1,32 @@
+SHORT Data cache miss rate/ratio
+
+EVENTSET
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  DATA_CACHE_ACCESSES
+PMC2  DATA_CACHE_REFILLS_ALL
+PMC3  DATA_CACHE_REFILLS_NB_ALL
+
+METRICS
+Runtime (RDTSC) [s] time
+data cache misses PMC2+PMC3
+data cache request rate PMC1/PMC0
+data cache miss rate (PMC2+PMC3)/PMC0
+data cache miss ratio (PMC2+PMC3)/PMC1
+
+LONG
+Formulas:
+data cache misses = DATA_CACHE_REFILLS_ALL + DATA_CACHE_REFILLS_NB_ALL
+data cache request rate = DATA_CACHE_ACCESSES / RETIRED_INSTRUCTIONS
+data cache miss rate = (DATA_CACHE_REFILLS_ALL + DATA_CACHE_REFILLS_NB_ALL)/RETIRED_INSTRUCTIONS
+data cache miss ratio = (DATA_CACHE_REFILLS_ALL + DATA_CACHE_REFILLS_NB_ALL)/DATA_CACHE_ACCESSES
+-
+This group measures the locality of your data accesses with regard to the
+L1 cache. Data cache request rate tells you how data intensive your code is
+or how many data accesses you have on average per instruction.
+The data cache miss rate gives a measure how often it was necessary to get
+cache lines from higher levels of the memory hierarchy. And finally
+data cache miss ratio tells you how many of your memory references required
+a cache line to be loaded from a higher level. While the# data cache miss rate
+might be given by your algorithm you should try to get data cache miss ratio
+as low as possible by increasing your cache reuse.
+
