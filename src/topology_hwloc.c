@@ -187,15 +187,15 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
         cpuid_info.stepping = atoi(info);
 #endif
 #ifdef __ARM_ARCH_7A__
-    if ((info = hwloc_obj_get_info_by_name(obj, "CPUArchitecture")))
+    if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUArchitecture")))
        cpuid_info.family = atoi(info);
-    if ((info = hwloc_obj_get_info_by_name(obj, "CPURevision")))
+    if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPURevision")))
         cpuid_info.model = atoi(info);
 #endif
 #ifdef __ARM_ARCH_8A
     parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping);
 #endif
-    if ((info = hwloc_obj_get_info_by_name(obj, "CPUModel")))
+    if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUModel")))
         strcpy(cpuid_info.osname, info);
 
     cpuid_topology.numHWThreads = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
