@@ -811,11 +811,6 @@ elseif use_stethoscope then
     end
     likwid.sleep(duration)
 elseif use_marker then
-    local ret = likwid.startCounters()
-    if ret < 0 then
-        print_stderr(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
-        os.exit(1)
-    end
     local ret = os.execute(execString)
     if ret == nil then
         print_stderr("Failed to execute command: ".. execString)
@@ -823,13 +818,15 @@ elseif use_marker then
     end
 end
 
-local ret = likwid.stopCounters()
-if ret < 0 then
-    print_stderr(string.format("Error stopping counters for thread %d.",ret * (-1)))
-    likwid.finalize()
-    likwid.putTopology()
-    likwid.putConfiguration()
-    os.exit(exitvalue)
+if not use_marker then
+    local ret = likwid.stopCounters()
+    if ret < 0 then
+        print_stderr(string.format("Error stopping counters for thread %d.",ret * (-1)))
+        likwid.finalize()
+        likwid.putTopology()
+        likwid.putConfiguration()
+        os.exit(exitvalue)
+    end
 end
 io.stdout:flush()
 if outfile == nil then
