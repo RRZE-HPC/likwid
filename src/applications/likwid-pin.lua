@@ -93,7 +93,6 @@ local function close_and_exit(code)
     likwid.putTopology()
     likwid.putAffinityInfo()
     likwid.putConfiguration()
-    likwid.unsetenv("LIKWID_NO_ACCESS")
     os.exit(code)
 end
 
