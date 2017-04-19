@@ -414,11 +414,11 @@ timer_init( void )
         TSTOP = os_timer_stop;
 #endif
     }
+    timer_initialized = 1;
     if (cpuClock == 0ULL)
     {
         getCpuSpeed();
     }
-    timer_initialized = 1;
 }
 
 uint64_t
