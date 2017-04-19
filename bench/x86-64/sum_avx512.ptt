@@ -8,8 +8,7 @@ STORES 0
 INSTR_CONST 24
 INSTR_LOOP 11
 UOPS 18
-vxorpd zmm9, zmm9, zmm9
-vxorpd zmm1, zmm1, zmm1
+vpxorq zmm1, zmm1, zmm1
 vmovapd zmm2, zmm1
 vmovapd zmm3, zmm1
 vmovapd zmm4, zmm1
