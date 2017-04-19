@@ -317,6 +317,10 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         os.exit(1)
     end
 end
+local execList = {}
+for i=1, likwid.tablelength(arg)-2 do
+    table.insert(execList, arg[i])
+end
 
 io.stdout:setvbuf("no")
 cpuinfo = likwid.getCpuInfo()
@@ -658,9 +662,9 @@ if likwid.init(num_cpus, cpulist) < 0 then
     os.exit(1)
 end
 
-execString = table.concat(arg," ",1, likwid.tablelength(arg)-2)
-if verbose == true then
-    print_stdout(string.format("Executing: %s",execString))
+
+if verbose > 0 then
+    print_stdout(string.format("Executing: %s",table.concat(execList," ")))
 end
 local ldpath = os.getenv("LD_LIBRARY_PATH")
 local libpath = string.match(likwid.pinlibpath, "([/%a%d]+)/[%a%s%d]*")
@@ -673,20 +677,21 @@ end
 
 
 local pid = nil
-if execString:len() > 0 then
+if #execList > 0 then
+    local execString = table.concat(execList," ")
     if pin_cpus then
         pid = likwid.startProgram(execString, #cpulist, cpulist)
     else
         pid = likwid.startProgram(execString, 0, cpulist)
     end
 end
-if not pid and execString:len() > 0 then
-    print_stderr("Failed to execute command: ".. execString)
+if not pid and #execList > 0 then
+    print_stderr(string.format("Failed to execute command: %s", table.concat(execList," ")))
     likwid.putTopology()
     likwid.putNumaInfo()
     likwid.putConfiguration()
     os.exit(1)
-elseif execString:len() > 0 then
+elseif #execList > 0 then
     likwid.sendSignal(pid, 19)
 end
 
@@ -779,7 +784,7 @@ if use_wrapper or use_timeline then
     groupTime[activeGroup] = 0
     while true do
         if likwid.getSignalState() ~= 0 then
-            if execString:len() > 0 then
+            if #execList > 0 then
                 likwid.killProgram()
             end
             break
@@ -788,7 +793,7 @@ if use_wrapper or use_timeline then
         exitvalue = likwid.checkProgram(pid)
         if remain > 0 or exitvalue >= 0 then
             io.stdout:flush()
-            if execString:len() > 0 then
+            if #execList > 0 then
                 break
             end
         end
@@ -831,16 +836,6 @@ elseif use_stethoscope then
     end
     likwid.sleep(duration)
 elseif use_marker then
-    --[[local ret = likwid.startCounters()
-    if ret < 0 then
-        print_stderr(string.format("Error starting counters for cpu %d.",cpulist[ret * (-1)]))
-        os.exit(1)
-    end]]
-    --[[local ret = os.execute(execString)
-    if ret == nil then
-        print_stderr("Failed to execute command: ".. execString)
-        exitvalue = 1
-    end]]
     likwid.sendSignal(pid, 18)
     exitvalue = likwid.waitpid(pid)
 end

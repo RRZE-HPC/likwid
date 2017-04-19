@@ -167,6 +167,10 @@ for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t
         close_and_exit(1)
     end
 end
+local execList = {}
+for i=1, likwid.tablelength(arg)-2 do
+    table.insert(execList, arg[i])
+end
 
 
 if print_domains and num_threads > 0 then
@@ -252,10 +256,10 @@ else
     likwid.pinProcess(cpu_list[1], quiet)
 end
 
-local exec = table.concat(arg," ",1, likwid.tablelength(arg)-2)
+local exec = table.concat(execList," ")
 local pid = likwid.startProgram(exec, num_threads, cpu_list)
 if (pid == nil) then
-    print_stderr("Failed to execute command: ".. exec)
+    print_stderr("Failed to execute command: ".. table.concat(execList," "))
     close_and_exit(1)
 end
 

@@ -220,6 +220,10 @@ for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","t:","r:","a","d","p",
         os.exit(1)
     end
 end
+local execList = {}
+for i=1, likwid.tablelength(arg)-2 do
+    table.insert(execList, arg[i])
+end
 
 if print_configs then
     local num_groups, all_groups = likwid.get_groups()
@@ -258,7 +262,7 @@ if num_cpus == 0 then
     os.exit(1)
 end
 
-if #arg == 0 then
+if #execList == 0 then
     print_stderr("ERROR: Executable must be given on commandline")
     os.exit(1)
 end
@@ -424,7 +428,7 @@ cmd = cmd .. string.format(" -t %s", timeline)
 for i, group in pairs(group_list) do
     cmd = cmd .. " -g "..group["eventstring"]
 end
-cmd = cmd .. " ".. table.concat(arg, " ")
+cmd = cmd .. " ".. table.concat(execList, " ")
 -- since io.popen can only read stdout we swap stdout and stderr
 -- application output is written to stderr, we catch stdout
 cmd = cmd .. " 3>&1 1>&2 2>&3 3>&-"
