@@ -120,29 +120,39 @@ lua_likwid_getConfiguration(lua_State* L)
     {
         configfile = get_configuration();
     }
-    lua_newtable(L);
-    lua_pushstring(L, "configFile");
-    lua_pushstring(L, configfile->configFileName);
-    lua_settable(L,-3);
-    lua_pushstring(L, "topologyFile");
-    lua_pushstring(L, configfile->topologyCfgFileName);
-    lua_settable(L,-3);
-    lua_pushstring(L, "daemonPath");
-    lua_pushstring(L, configfile->daemonPath);
-    lua_settable(L,-3);
-    lua_pushstring(L, "groupPath");
-    lua_pushstring(L, configfile->groupPath);
-    lua_settable(L,-3);
-    lua_pushstring(L, "daemonMode");
-    lua_pushinteger(L, (int)configfile->daemonMode);
-    lua_settable(L,-3);
-    lua_pushstring(L, "maxNumThreads");
-    lua_pushinteger(L, configfile->maxNumThreads);
-    lua_settable(L,-3);
-    lua_pushstring(L, "maxNumNodes");
-    lua_pushinteger(L, configfile->maxNumNodes);
-    lua_settable(L,-3);
-    return 1;
+    if (configfile)
+    {
+        lua_newtable(L);
+        lua_pushstring(L, "configFile");
+        if (configfile->configFileName != NULL)
+            lua_pushstring(L, configfile->configFileName);
+        else
+            lua_pushnil(L);
+        lua_settable(L,-3);
+        lua_pushstring(L, "topologyFile");
+        lua_pushstring(L, configfile->topologyCfgFileName);
+        lua_settable(L,-3);
+        lua_pushstring(L, "daemonPath");
+        if (configfile->daemonPath != NULL)
+            lua_pushstring(L, configfile->daemonPath);
+        else
+            lua_pushnil(L);
+        lua_settable(L,-3);
+        lua_pushstring(L, "groupPath");
+        lua_pushstring(L, configfile->groupPath);
+        lua_settable(L,-3);
+        lua_pushstring(L, "daemonMode");
+        lua_pushinteger(L, (int)configfile->daemonMode);
+        lua_settable(L,-3);
+        lua_pushstring(L, "maxNumThreads");
+        lua_pushinteger(L, configfile->maxNumThreads);
+        lua_settable(L,-3);
+        lua_pushstring(L, "maxNumNodes");
+        lua_pushinteger(L, configfile->maxNumNodes);
+        lua_settable(L,-3);
+        return 1;
+    }
+    return 0;
 }
 
 static int
