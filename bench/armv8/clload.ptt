@@ -1,0 +1,12 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 8
+DESC Double-precision cache line load
+LOADS 1
+STORES 0
+INSTR_CONST 16
+INSTR_LOOP 1
+UOPS 1
+LOOP 8
+ldr     GPR4, [STR0, GPR6, lsl 3]
