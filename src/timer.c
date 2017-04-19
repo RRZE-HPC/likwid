@@ -47,12 +47,37 @@ static uint64_t baseline = 0ULL;
 static uint64_t cpuClock = 0ULL;
 static uint64_t cyclesClock = 0ULL;
 static uint64_t sleepbase = 0ULL;
+static uint8_t fixedFreq = 0;
 static int timer_initialized = 0;
 
 void (*TSTART)(TscCounter*) = NULL;
 void (*TSTOP)(TscCounter*) = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+static int os_timer(TscCounter* time)
+{
+    int ret;
+    struct timeval cur;
+    ret = gettimeofday(&cur, NULL);
+    if (!ret)
+    {
+        time->int64 = ((uint64_t)cur.tv_sec) * 1E6;
+        time->int64 += cur.tv_usec;
+    }
+    return ret;
+}
+
+static void os_timer_start(TscCounter* time)
+{
+    os_timer(time);
+}
+
+static void os_timer_stop(TscCounter* time)
+{
+    os_timer(time);
+}
+
+
 #if defined(__x86_64)
 static void
 fRDTSC(TscCounter* cpu_c)
@@ -138,7 +163,7 @@ fRDTSCP(TscCounter* cpu_c)
 static void
 _timer_start( TimerData* time )
 {
-#if defined(__x86_64) || defined(__i386__)
+#if defined(__x86_64) || defined(__i386__) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
     if (TSTART)
         TSTART(&(time->start));
 #endif
@@ -158,7 +183,7 @@ _timer_start( TimerData* time )
 static void
 _timer_stop( TimerData* time )
 {
-#if defined(__x86_64) || defined(__i386__)
+#if defined(__x86_64) || defined(__i386__) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
     if (TSTOP)
         TSTOP(&(time->stop));
 #endif
@@ -177,16 +202,29 @@ _timer_stop( TimerData* time )
 static uint64_t
 _timer_printCycles( const TimerData* time )
 {
+    uint64_t cycles = 0x0ULL;
     /* clamp to zero if something goes wrong */
     if (((time->stop.int64-baseline) < time->start.int64) ||
         (time->start.int64 == time->stop.int64))
     {
-        return 0ULL;
+        cycles = 0ULL;
     }
     else
     {
-        return (time->stop.int64 - time->start.int64 - baseline);
+        cycles = (time->stop.int64 - time->start.int64 - baseline);
     }
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+    if (fixedFreq == 1)
+    {
+        cycles *= 1E-6 * cpuClock;
+    }
+    else
+    {
+        cycles = 0x0ULL;
+    }
+#endif
+    return cycles;
+
 }
 
 /* Return time duration in seconds */
@@ -204,7 +242,12 @@ _timer_print( const TimerData* time )
     {
         cycles = time->stop.int64 - time->start.int64 - baseline;
     }
-    return  ((double) cycles / (double) cyclesClock);
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+    return ((double) cycles) * 1E-6;
+#else
+    return  ((double) cycles / (double) cpuClock);
+#endif
+
 }
 
 static void
@@ -276,6 +319,46 @@ getCpuSpeed(void)
     cpuClock *= 1E6;
     pclose(fpipe);
 #endif
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+    uint64_t result = 0xFFFFFFFFFFFFFFFFULL;
+    TimerData data;
+    FILE *fpipe;
+    char *command="cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq";
+    char *command2="cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor";
+    char buff[256];
+    buff[0] = '\0';
+    char* buffptr = NULL;
+    if ( !(fpipe = (FILE*)popen(command2, "r")))
+    {
+        perror("Problems with pipe, cannot read /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
+        exit(1);
+    }
+    buffptr = fgets(buff, 256, fpipe);
+    fclose(fpipe);
+    if ((strncmp(buff, "userspace", 9) == 0) || (strncmp(buff, "performance", 11) == 0))
+    {
+        fixedFreq = 1;
+    }
+    buff[0] = '\0';
+    buffptr = NULL;
+
+    if ( !(fpipe = (FILE*)popen(command, "r")))
+    {
+        perror("Problems with pipe, cannot read /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq");
+        exit(1);
+    }
+    buffptr = fgets(buff, 256, fpipe);
+    fclose(fpipe);
+    for (int i=0;i<10;i++)
+    {
+        TSTART(&data.start);
+        TSTOP(&data.stop);
+        result = MIN(result,timer_printCycles(&data));
+    }
+    baseline = result;
+    cpuClock = ((uint64_t) atoi(buff)) * 1000;
+#endif
+
 }
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -309,6 +392,7 @@ timer_init( void )
     }
     if ((!TSTART) && (!TSTOP))
     {
+#if defined(__x86_64) || defined(__i386__)
         TSTART = fRDTSC;
         eax = 0x80000001;
         CPUID (eax, ebx, ecx, edx);
@@ -323,6 +407,11 @@ timer_init( void )
         }
 #else
         TSTOP = fRDTSC_CR;
+#endif
+#endif
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+        TSTART = os_timer_start;
+        TSTOP = os_timer_stop;
 #endif
     }
     if (cpuClock == 0ULL)

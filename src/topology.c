@@ -96,6 +96,8 @@ static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
 static char* amd_k8_str = "AMD K8 architecture";
 static char* amd_zen_str = "AMD Zen architecture";
 static char* amd_zen_ryzen_str = "AMD Zen (Ryzen) architecture";
+static char* armv7l_str = "ARM 7l architecture";
+static char* armv8_str = "ARM 8 architecture";
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 
@@ -127,6 +129,8 @@ static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
 static char* short_zen = "zen";
 static char* short_zen_ryzen = "ryzen";
+static char* short_arm7 = "arm7";
+static char* short_arm8 = "arm8";
 static char* short_unknown = "unknown";
 
 /* #####  EXPORTED VARIABLES  ########################################## */
@@ -819,6 +823,32 @@ topology_setName(void)
                     break;
             }
             break;
+        case ARMV7_FAMILY:
+            switch (cpuid_info.model)
+            {
+                case ARM7L:
+                    cpuid_info.name = armv7l_str;
+                    cpuid_info.short_name = short_arm7;
+                    break;
+                default:
+                    return EXIT_FAILURE;
+                    break;
+            }
+            break;
+        case ARMV8_FAMILY:
+            switch (cpuid_info.model)
+            {
+                case CORTEX_A57_1:
+                    cpuid_info.name = armv8_str;
+                    cpuid_info.short_name = short_arm8;
+                    break;
+                default:
+                    return EXIT_FAILURE;
+                    break;
+            }
+            break;
+
+
 
         default:
             return EXIT_FAILURE;

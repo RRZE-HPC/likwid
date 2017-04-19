@@ -50,8 +50,16 @@
 #include <perfmon.h>
 #include <registers.h>
 #include <access.h>
+#if defined(__x86_64__) || defined(__i386__)
 #include <access_client.h>
 #include <access_x86.h>
+#endif
+#if defined(__ARM_ARCH_7A__)
+#include <access_armv7.h>
+#endif
+#if defined(__ARM_ARCH_8A)
+#include <access_armv8.h>
+#endif
 
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
@@ -79,6 +87,8 @@ int
 HPMinit(void)
 {
     int ret = 0;
+    uint32_t testreg = 0x0;
+    PciDeviceIndex testdev = MSR_DEV;
     if (access_init == NULL)
     {
 #if defined(__x86_64__) || defined(__i386__)
@@ -104,7 +114,48 @@ HPMinit(void)
             access_finalize = &access_x86_finalize;
             access_check = &access_x86_check;
         }
+        testreg = MSR_PLATFORM_INFO;
 #endif
+#if defined(__ARM_ARCH_7A__)
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for ARMv7 architecture in direct mode);
+        access_init = &access_armv7_init;
+        access_read = &access_armv7_read;
+        access_write = &access_armv7_write;
+        access_finalize = &access_armv7_finalize;
+        access_check = &access_armv7_check;
+        testreg = A15_EVENTS0;
+#endif
+#if defined(__ARM_ARCH_8A)
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for ARMv8 architecture in direct mode);
+        access_init = &access_armv8_init;
+        access_read = &access_armv8_read;
+        access_write = &access_armv8_write;
+        access_finalize = &access_armv8_finalize;
+        access_check = &access_armv8_check;
+        testreg = A57_EVENTS0;
+#endif
+        for (int i=0; i<cpuid_topology.numHWThreads; i++)
+        {
+            ret = access_init(cpuid_topology.threadPool[i].apicId);
+            if (ret == 0)
+            {
+                uint64_t data = 0x0ULL;
+                ret = HPMread(cpuid_topology.threadPool[i].apicId, testdev, testreg, &data);
+                if (ret == 0)
+                {
+                    registeredCpus++;
+                    registeredCpuList[cpuid_topology.threadPool[i].apicId] = 1;
+                }
+                else
+                {
+                    return ret;
+                }
+            }
+            else
+            {
+                return ret;
+            }
+        }
     }
 
     return 0;

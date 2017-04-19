@@ -41,10 +41,26 @@ endif
 
 ifeq ($(BUILDDAEMON),true)
 ifneq ($(COMPILER),MIC)
+ifneq ($(COMPILER), GCCARMv7)
+ifneq ($(COMPILER), GCCARMv8)
     DAEMON_TARGET = likwid-accessD
+else
+    $(info Info: Compiling for ARMv8. Disabling build of likwid-accessD.);
+    DAEMON_TARGET =
+    ACCESSMODE = direct
+    BUILDDAEMON = false
+endif
+else
+    $(info Info: Compiling for ARMv7. Disabling build of likwid-accessD.);
+    DAEMON_TARGET =
+    ACCESSMODE = direct
+    BUILDDAEMON = false
+endif
 else
     $(info Info: Compiling for Xeon Phi. Disabling build of likwid-accessD.);
     DAEMON_TARGET =
+    ACCESSMODE = direct
+    BUILDDAEMON = false
 endif
 endif
 

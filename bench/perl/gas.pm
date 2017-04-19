@@ -31,6 +31,7 @@ package as;
 use Data::Dumper;
 use isax86;
 use isax86_64;
+use isaarmv8;
 
 $AS = { HEADER     => '.intel_syntax noprefix',
         FOOTER     => ''};
@@ -89,7 +90,11 @@ sub function_entry
     }
 
     print ".globl $symbolname\n";
-    print ".type $symbolname, \@function\n";
+    if ($main::ISA eq 'ARMv7' or $main::ISA eq 'ARMv8') {
+        print ".type $symbolname, %function\n";
+    } else {
+        print ".type $symbolname, \@function\n";
+    }
     print "$symbolname :\n";
 
     if ($main::ISA eq 'x86') {
@@ -110,6 +115,11 @@ sub function_entry
         print "push r13\n";
         print "push r14\n";
         print "push r15\n";
+    } elsif ($main::ISA eq 'ARMv7') {
+        print "push     {r4-r7, lr}\n";
+        print "add      r7, sp, #12\n";
+        print "push     {r8, r10, r11}\n";
+        print "vstmdb   sp!, {d8-d15}\n";
     }
 }
 
@@ -125,6 +135,7 @@ sub function_exit
         print "pop ebx\n";
         print "mov  esp, ebp\n";
         print "pop ebp\n";
+        print "ret\n";
     } elsif ($main::ISA eq 'x86-64') {
         print "pop r15\n";
         print "pop r14\n";
@@ -133,8 +144,15 @@ sub function_exit
         print "pop rbx\n";
         print "mov  rsp, rbp\n";
         print "pop rbp\n";
+        print "ret\n";
+    } elsif ($main::ISA eq 'ARMv7') {
+        print "vldmia   sp!, {d8-d15}\n";
+        print "pop      {r8, r10, r11}\n";
+        print "pop      {r4-r7, pc}\n";
+    } elsif ($main::ISA eq 'ARMv8') {
+        print ".exit:\n";
+        print "\tret\n";
     }
-    print "ret\n";
     print ".size $symbolname, .-$symbolname\n";
     print "\n";
 }
@@ -149,14 +167,17 @@ sub define_data
         $CURRENT_SECTION = 'data';
         print ".data\n";
     }
-    print ".align 64\n";
-    print "$symbolname:\n";
-    if ($type eq 'DOUBLE') {
-        print ".double $value, $value, $value, $value, $value, $value, $value, $value\n"
-    } elsif ($type eq 'SINGLE') {
-        print ".single $value, $value, $value, $value, $value, $value, $value, $value\n"
-    } elsif ($type eq 'INT') {
-        print ".int $value, $value\n"
+    if  ($main::ISA ne 'ARMv7' and $main::ISA ne 'ARMv8')
+    {
+        print ".align 64\n";
+        print "$symbolname:\n";
+        if ($type eq 'DOUBLE') {
+            print ".double $value, $value, $value, $value, $value, $value, $value, $value\n"
+        } elsif ($type eq 'SINGLE') {
+            print ".single $value, $value, $value, $value, $value, $value, $value, $value\n"
+        } elsif ($type eq 'INT') {
+            print ".int $value, $value\n"
+        }
     }
 }
 
@@ -170,7 +191,11 @@ sub define_offset
         $CURRENT_SECTION = 'data';
         print ".data\n";
     }
-    print ".align 16\n";
+    if ($main::ISA eq 'ARMv7' or $main::ISA eq 'ARMv8') {
+        print ".align 2\n";
+    } else {
+        print ".align 16\n";
+    }
     print "$symbolname:\n";
     print ".int $value\n";
 }
@@ -186,11 +211,24 @@ sub loop_entry
         print "xor   eax, eax\n";
     } elsif ($main::ISA eq 'x86-64') {
         print "xor   rax, rax\n";
+    } elsif ($main::ISA eq 'ARMv7') {
+        print "mov   r4, #0\n";
+    } elsif ($main::ISA eq 'ARMv8') {
+        print "\tmov   x6, 0\n";
+        print ".loop:\n";
+        print "\tcmp w0, w6\n";
+        print "\tblt .exit\n";
     }
-    print ".align 16\n";
+    if ($main::ISA eq 'ARMv7') {
+        print ".align 2\n";
+    } elsif ($main::ISA eq 'ARMv8') {
+        print "\n";
+    } else {
+        print ".align 16\n";
+    }
     if ($MODE eq 'GLOBAL') {
         print "$symbolname :\n";
-    }else {
+    } elsif ($main::ISA ne 'ARMv8') {
         print "1:\n";
     }
 
@@ -208,11 +246,23 @@ sub loop_exit
     } elsif ($main::ISA eq 'x86-64') {
         print "addq rax, $step\n";
         print "cmpq rax, rdi\n";
+    } elsif ($main::ISA eq 'ARMv7') {
+        print "add r4, #$step\n";
+        print "cmp r4, r0\n";
+    } elsif ($main::ISA eq 'ARMv8') {
+        print "\tadd x6, x6, $step\n";
+        print "\tb .loop\n";
     }
     if ($MODE eq 'GLOBAL') {
         print "jl $symbolname\n";
     }else {
-        print "jl 1b\n";
+        if ($main::ISA eq 'ARMv7') {
+            print "blt 1b\n";
+        } elsif ($main::ISA eq 'ARMv8') {
+            print "\n";
+        } else {
+            print "jl 1b\n";
+        }
     }
     print "\n";
 }
@@ -225,12 +275,32 @@ sub isa_init
         $BASEPTR = $isax86::BASEPTR_X86 ;
         $REG = $isax86::REG_X86;
         $ARG = $isax86::ARG_X86 ;
+        $AS = { HEADER     => '.intel_syntax noprefix',
+                FOOTER     => '' };
     } elsif ($main::ISA eq 'x86-64') {
         $WORDLENGTH = $isax86_64::WORDLENGTH_X86_64;
         $STACKPTR = $isax86_64::STACKPTR_X86_64 ;
         $BASEPTR = $isax86_64::BASEPTR_X86_64 ;
         $REG = $isax86_64::REG_X86_64;
         $ARG = $isax86_64::ARG_X86_64 ;
+        $AS = { HEADER     => '.intel_syntax noprefix',
+                FOOTER     => '' };
+    } elsif ($main::ISA eq 'ARMv7') {
+        $WORDLENGTH = $isaarmv7::WORDLENGTH_ARMv7;
+        $STACKPTR = $isaarmv7::STACKPTR_ARMv7 ;
+        $BASEPTR = $isaarmv7::BASEPTR_ARMv7 ;
+        $REG = $isaarmv7::REG_ARMv7;
+        $ARG = $isaarmv7::ARG_ARMv7 ;
+        $AS = { HEADER     => '.cpu    cortex-a15\n.fpu    neon-v',
+                FOOTER     => '' };
+    } elsif ($main::ISA eq 'ARMv8') {
+        $WORDLENGTH = $isaarmv8::WORDLENGTH_ARMv8;
+        $STACKPTR = $isaarmv8::STACKPTR_ARMv8 ;
+        $BASEPTR = $isaarmv8::BASEPTR_ARMv8 ;
+        $REG = $isaarmv8::REG_ARMv8;
+        $ARG = $isaarmv8::ARG_ARMv8 ;
+        $AS = { HEADER     => '.cpu    generic+fp+simd',
+                FOOTER     => '' };
     }
 }
 

@@ -1,0 +1,18 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 2
+BYTES 16
+DESC Double-precision dot product of two vectors, only scalar operations
+LOADS 2
+STORES 0
+INSTR_CONST 5
+INSTR_LOOP 3
+UOPS 3
+fmov d4, XZR 
+LOOP 1
+fmov d5, STR0
+fmov d6, STR1
+fmul  d5, d5, d6
+fadd     d4, d4, d5 
+add STR0, STR0, 64
+add STR1, STR1, 64

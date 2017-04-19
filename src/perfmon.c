@@ -71,6 +71,8 @@
 #include <perfmon_goldmont.h>
 #include <perfmon_broadwell.h>
 #include <perfmon_skylake.h>
+#include <perfmon_a15.h>
+#include <perfmon_a57.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -997,6 +999,20 @@ perfmon_init_maps(void)
             perfmon_numCounters = perfmon_numCountersKabini;
            break;
 
+        case ARMV7_FAMILY:
+            eventHash = a15_arch_events;
+            perfmon_numArchEvents = perfmon_numArchEventsA15;
+            counter_map = a15_counter_map;
+            box_map = a15_box_map;
+            perfmon_numCounters = perfmon_numCountersA15;
+            break;
+        case ARMV8_FAMILY:
+            eventHash = a57_arch_events;
+            perfmon_numArchEvents = perfmon_numArchEventsA57;
+            counter_map = a57_counter_map;
+            box_map = a57_box_map;
+            perfmon_numCounters = perfmon_numCountersA57;
+            break;
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);
             break;
@@ -1256,6 +1272,20 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             perfmon_readCountersThread = perfmon_readCountersThread_kabini;
             perfmon_setupCountersThread = perfmon_setupCounterThread_kabini;
             perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_kabini;
+           break;
+        case ARMV7_FAMILY:
+            initThreadArch = perfmon_init_a15;
+            perfmon_setupCountersThread = perfmon_setupCounterThread_a15;
+            perfmon_startCountersThread = perfmon_startCountersThread_a15;
+            perfmon_stopCountersThread = perfmon_stopCountersThread_a15;
+            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_a15;
+           break;
+        case ARMV8_FAMILY:
+            initThreadArch = perfmon_init_a57;
+            perfmon_setupCountersThread = perfmon_setupCounterThread_a57;
+            perfmon_startCountersThread = perfmon_startCountersThread_a57;
+            perfmon_stopCountersThread = perfmon_stopCountersThread_a57;
+            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_a57;
            break;
 
         default:

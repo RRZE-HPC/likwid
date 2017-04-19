@@ -1,0 +1,13 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 0
+BYTES 16
+DESC Double-precision vector copy
+LOADS 1
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 11
+UOPS 8
+LOOP 1
+ldr     GPR4, [STR0, GPR6, lsl 3]
+str     GPR4, [STR1, GPR6, lsl 3]

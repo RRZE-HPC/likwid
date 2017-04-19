@@ -34,7 +34,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A__)
 #include <topology_cpuid.h>
+#endif
 #include <topology_proc.h>
 #ifdef LIKWID_USE_HWLOC
 #include <topology_hwloc.h>
@@ -122,6 +124,9 @@ struct topology_functions {
 #define ATHLON64_G2     0x7FU
 #define ZEN_RYZEN       0x01
 
+/* ARM */
+#define  ARM7L          0x3U
+#define  CORTEX_A57_1   0x1U
 
 #define  P6_FAMILY        0x6U
 #define  MIC_FAMILY       0xBU
@@ -131,6 +136,8 @@ struct topology_functions {
 #define  K16_FAMILY       0x16U
 #define  K10_FAMILY       0x10U
 #define  K8_FAMILY        0xFU
+#define  ARMV7_FAMILY     0x7U
+#define  ARMV8_FAMILY     0x8U
 
 extern int cpu_count(cpu_set_t* set);
 

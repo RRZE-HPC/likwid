@@ -67,6 +67,13 @@ typedef enum {
     HLE, /*!< \brief Hardware Lock Elision */
     HTT, /*!< \brief Hyper-Threading Technology */
     RDSEED, /*!< \brief Non-deterministic random bit generator */
+    SWP, /*!< \brief Atomic read-modify-write */
+    VFP, /*!< \brief First generation SIMD */
+    NEON, /*!< \brief Second generation SIMD */
+    EDSP, /*!< \brief DSP extensions */
+    VFPV3, /*!< \brief First generation SIMD Version 3 */
+    VFPV4, /*!< \brief First generation SIMD Version 4 */
+    TLS, /*!< \brief Thread-local storage registers */
 } FeatureBit;
 /** @}*/
 #endif /*CPUID_TYPES_H*/

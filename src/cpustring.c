@@ -224,7 +224,7 @@ cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int length)
         fprintf(stderr, "Not a valid CPU expression\n");
         return 0;
     }
-    struct bstrList* strlist;
+    struct bstrList* strlist = bstrListCreate();
     strlist = bsplit(bcpustr, ':');
     if (strlist->qty == 3)
     {
