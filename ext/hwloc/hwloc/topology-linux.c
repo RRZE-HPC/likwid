@@ -47,7 +47,15 @@ struct hwloc_linux_backend_data_s {
 #ifdef HAVE_LIBUDEV_H
   struct udev *udev; /* Global udev context */
 #endif
-
+  int is_amd_with_CU;
+  int is_knl;
+  enum {
+    HWLOC_LINUX_ARCH_X86, /* x86 32 or 64bits, including k1om (KNC) */
+    HWLOC_LINUX_ARCH_IA64,
+    HWLOC_LINUX_ARCH_ARM,
+    HWLOC_LINUX_ARCH_POWER,
+    HWLOC_LINUX_ARCH_UNKNOWN
+} arch;
   struct utsname utsname; /* fields contain \0 when unknown */
 
   int deprecated_classlinks_model; /* -2 if never tried, -1 if unknown, 0 if new (device contains class/name), 1 if old (device contains class:name) */
@@ -2980,7 +2988,8 @@ look_sysfscpu(struct hwloc_topology *topology,
     {
       hwloc_bitmap_t packageset, coreset, bookset, threadset, savedcoreset;
       unsigned mypackageid, mycoreid, mybookid;
-      int threadwithcoreid = 0;
+      //int threadwithcoreid = 0;
+      int threadwithcoreid = data->is_amd_with_CU ? -1 : 0;
 
       /* look at the package */
       mypackageid = 0; /* shut-up the compiler */
@@ -3076,7 +3085,7 @@ package_done:
 	siblingcoreid = mycoreid;
 	sprintf(str, "%s/cpu%d/topology/core_id", path, siblingid);
 	hwloc_parse_sysfs_unsigned(str, &siblingcoreid, data->root_fd);
-	threadwithcoreid = (siblingcoreid != mycoreid);
+	//threadwithcoreid = (siblingcoreid != mycoreid);
 	hwloc_bitmap_free(set);
        }
        if (hwloc_bitmap_first(coreset) == i || threadwithcoreid) {
@@ -3846,6 +3855,24 @@ hwloc_gather_system_info(struct hwloc_topology *topology,
       fclose(file);
     }
   }
+
+#if (defined HWLOC_X86_32_ARCH) || (defined HWLOC_X86_64_ARCH) /* does not cover KNC */
+  if (topology->is_thissystem)
+    data->arch = HWLOC_LINUX_ARCH_X86;
+#endif
+  if (data->arch == HWLOC_LINUX_ARCH_UNKNOWN && *data->utsname.machine) {
+    if (!strcmp(data->utsname.machine, "x86_64")
+	|| (data->utsname.machine[0] == 'i' && !strcmp(data->utsname.machine+2, "86"))
+	|| !strcmp(data->utsname.machine, "k1om"))
+      data->arch = HWLOC_LINUX_ARCH_X86;
+    else if (!strncmp(data->utsname.machine, "arm", 3))
+      data->arch = HWLOC_LINUX_ARCH_ARM;
+    else if (!strncmp(data->utsname.machine, "ppc", 3)
+	     || !strncmp(data->utsname.machine, "power", 5))
+      data->arch = HWLOC_LINUX_ARCH_POWER;
+    else if (!strcmp(data->utsname.machine, "ia64"))
+      data->arch = HWLOC_LINUX_ARCH_IA64;
+  }
 }
 
 static int
@@ -3910,6 +3937,29 @@ hwloc_look_linuxfs(struct hwloc_backend *backend)
       struct hwloc_obj_info_s *global_infos = NULL;
       unsigned global_infos_count = 0;
       int numprocs = hwloc_linux_parse_cpuinfo(data, "/proc/cpuinfo", &Lprocs, &global_infos, &global_infos_count);
+      if (data->arch == HWLOC_LINUX_ARCH_X86 && numprocs > 0) {
+      unsigned i;
+      const char *cpuvendor = NULL, *cpufamilynumber = NULL, *cpumodelnumber = NULL;
+      for(i=0; i<Lprocs[0].infos_count; i++) {
+	if (!strcmp(Lprocs[0].infos[i].name, "CPUVendor")) {
+	  cpuvendor = Lprocs[0].infos[i].value;
+	} else if (!strcmp(Lprocs[0].infos[i].name, "CPUFamilyNumber")) {
+	  cpufamilynumber = Lprocs[0].infos[i].value;
+	} else if (!strcmp(Lprocs[0].infos[i].name, "CPUModelNumber")) {
+	  cpumodelnumber = Lprocs[0].infos[i].value;
+	}
+      }
+      if (cpuvendor && !strcmp(cpuvendor, "GenuineIntel")
+	  && cpufamilynumber && !strcmp(cpufamilynumber, "6")
+	  && cpumodelnumber && (!strcmp(cpumodelnumber, "87")
+	  || !strcmp(cpumodelnumber, "133")))
+	data->is_knl = 1;
+      if (cpuvendor && !strcmp(cpuvendor, "AuthenticAMD")
+	  && cpufamilynumber
+	  && (!strcmp(cpufamilynumber, "21")
+	      || !strcmp(cpufamilynumber, "22")))
+	data->is_amd_with_CU = 1;
+}
       if (numprocs <= 0)
 	Lprocs = NULL;
       if (look_sysfscpu(topology, data, "/sys/bus/cpu/devices", Lprocs, numprocs) < 0)
@@ -4829,6 +4879,8 @@ hwloc_linux_component_instantiate(struct hwloc_disc_component *component,
   backend->disable = hwloc_linux_backend_disable;
 
   /* default values */
+  data->is_amd_with_CU = 0;
+  data->is_knl = 0;
   data->is_real_fsroot = 1;
   if (!fsroot_path)
     fsroot_path = "/";
