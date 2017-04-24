@@ -44,8 +44,8 @@ static int perfmon_numArchEventsWestmereEX = NUM_ARCH_EVENTS_WESTMEREEX;
 
 int perfmon_init_westmereEX(int cpu_id)
 {
-    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
-    lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
     return 0;
 }
@@ -150,7 +150,7 @@ int wex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     RegisterType type = counter_map[index].type;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -191,7 +191,7 @@ int wex_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     uint64_t reg = counter_map[index].configRegister;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -233,7 +233,7 @@ int wex_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t reg = counter_map[index].configRegister;
     int j;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -276,7 +276,7 @@ int wex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int write_mm_cfg = 0;
     RegisterType type = counter_map[index].type;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -346,7 +346,7 @@ int wex_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint64_t flags = 0x0ULL;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -386,7 +386,7 @@ int wex_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t subflags2 = 0x0ULL;
     int number;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -638,7 +638,7 @@ int wex_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t subflags = 0x0ULL;
     int number;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -729,7 +729,7 @@ int wex_uncore_freeze(int cpu_id, PerfmonEventSet* eventSet, int flags)
 {
     uint64_t freeze_flags = 0x0ULL;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -774,7 +774,7 @@ int wex_uncore_unfreeze(int cpu_id, PerfmonEventSet* eventSet, int flags)
 {
     uint64_t unfreeze_flags = 0x0ULL;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -827,7 +827,7 @@ int perfmon_setupCounterThread_westmereEX(int thread_id, PerfmonEventSet* eventS
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint32_t uflags[NUM_UNITS] = { [0 ... NUM_UNITS-1] = 0x0U };
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -1032,7 +1032,7 @@ int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* event
     uint64_t core_ctrl_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -1151,7 +1151,7 @@ int perfmon_stopCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventS
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -1210,7 +1210,7 @@ int perfmon_readCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventS
     uint64_t counter_result = 0x0ULL;
     uint64_t core_ctrl_flags = 0x0ULL;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -1278,11 +1278,11 @@ int perfmon_finalizeCountersThread_westmereEX(int thread_id, PerfmonEventSet* ev
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t ovf_values_core = (1ULL<<63)|(1ULL<<62);
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
+    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
     {
         haveTileLock = 1;
     }

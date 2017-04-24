@@ -43,8 +43,8 @@ static int perfmon_numArchEventsSkylake = NUM_ARCH_EVENTS_SKYLAKE;
 
 int perfmon_init_skylake(int cpu_id)
 {
-    lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
-    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
     return 0;
 }
@@ -164,7 +164,7 @@ int skl_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint64_t flags = 0x0ULL;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -204,7 +204,7 @@ int skl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint64_t flags = 0x0ULL;
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -246,7 +246,7 @@ int perfmon_setupCounterThread_skylake(
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -327,7 +327,7 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
     uint64_t tmp = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -459,7 +459,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -582,7 +582,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -717,11 +717,11 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
     uint64_t ovf_values_uncore = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
+    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
     {
         haveTileLock = 1;
     }

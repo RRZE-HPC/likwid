@@ -39,8 +39,8 @@ static int perfmon_numArchEventsKabini = NUM_ARCH_EVENTS_KABINI;
 
 int perfmon_init_kabini(int cpu_id)
 {
-    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
-    lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     return 0;
 }
 
@@ -91,7 +91,7 @@ int k16_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -110,7 +110,7 @@ int k16_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
 
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] != cpu_id)
+    if (tile_lock[affinity_thread2core_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -191,11 +191,11 @@ int perfmon_startCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
     uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveSLock = 1;
     }
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
+    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
     {
         haveTLock = 1;
     }
@@ -236,11 +236,11 @@ int perfmon_stopCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveSLock = 1;
     }
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
+    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
     {
         haveTLock = 1;
     }
@@ -285,11 +285,11 @@ int perfmon_readCountersThread_kabini(int thread_id, PerfmonEventSet* eventSet)
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveSLock = 1;
     }
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
+    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
     {
         haveTLock = 1;
     }
@@ -331,11 +331,11 @@ int perfmon_finalizeCountersThread_kabini(int thread_id, PerfmonEventSet* eventS
     int haveTLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveSLock = 1;
     }
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
+    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
     {
         haveTLock = 1;
     }

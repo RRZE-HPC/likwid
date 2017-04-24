@@ -41,8 +41,8 @@ static int perfmon_numArchEventsNehalem = NUM_ARCH_EVENTS_NEHALEM;
 
 int perfmon_init_nehalem(int cpu_id)
 {
-    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
-    lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
     return 0;
 }
@@ -151,7 +151,7 @@ int neh_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     uint64_t mask_flags = 0x0ULL;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -225,7 +225,7 @@ int perfmon_setupCounterThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -293,7 +293,7 @@ int perfmon_startCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet
     int cpu_id = groupSet->threads[thread_id].processorId;
 
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -386,7 +386,7 @@ int perfmon_stopCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
     uint64_t counter_result = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -459,7 +459,7 @@ int perfmon_readCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet)
     uint64_t pmc_flags = 0x0ULL;
     uint64_t uncore_flags = 0x0ULL;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -544,11 +544,11 @@ int perfmon_finalizeCountersThread_nehalem(int thread_id, PerfmonEventSet* event
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t ovf_values_core = (1ULL<<63)|(1ULL<<62);
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
+    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
     {
         haveTileLock = 1;
     }

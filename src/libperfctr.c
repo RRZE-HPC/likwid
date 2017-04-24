@@ -50,7 +50,7 @@
 #include <registers.h>
 #include <error.h>
 #include <access.h>
-
+#include <affinity.h>
 #include <perfmon.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
@@ -179,6 +179,11 @@ likwid_markerInit(void)
     hashTable_init();
 
     for(int i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
+    for(int i=0; i<MAX_NUM_THREADS; i++)
+    {
+        core_lock[i] = LOCK_INIT;
+        sharedl3_lock[i] = LOCK_INIT;
+    }
 //#ifndef LIKWID_USE_PERFEVENT
     HPMmode(atoi(modeStr));
 //#endif

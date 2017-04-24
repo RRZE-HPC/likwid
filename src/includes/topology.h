@@ -45,8 +45,8 @@
 #define MAX_FEATURE_STRING_LENGTH 512
 #define MAX_MODEL_STRING_LENGTH 512
 
-extern int affinity_thread2tile_lookup[MAX_NUM_THREADS];
-extern int affinity_thread2tile_lookup[MAX_NUM_THREADS];
+extern int affinity_thread2core_lookup[MAX_NUM_THREADS];
+extern int affinity_thread2core_lookup[MAX_NUM_THREADS];
 struct topology_functions {
     void (*init_cpuInfo) (cpu_set_t cpuSet);
     void (*init_cpuFeatures) (void);

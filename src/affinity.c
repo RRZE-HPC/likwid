@@ -54,8 +54,10 @@
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
-int affinity_core2node_lookup[MAX_NUM_THREADS];
+int affinity_thread2socket_lookup[MAX_NUM_THREADS];
 int affinity_thread2core_lookup[MAX_NUM_THREADS];
+int affinity_thread2sharedl3_lookup[MAX_NUM_THREADS];
+int affinity_thread2numa_lookup[MAX_NUM_THREADS];
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -206,7 +208,7 @@ affinity_init()
     if (!domains[0].processorList)
     {
         fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
-                cpuid_topology.numHWThreads*sizeof(int), 
+                cpuid_topology.numHWThreads*sizeof(int),
                 bdata(domains[0].tag));
         return;
     }
@@ -253,7 +255,8 @@ affinity_init()
         tmp = MIN(tmp, domains[currentDomain + i].numberOfProcessors);
         for ( int j = 0; j < tmp; j++ )
         {
-            affinity_core2node_lookup[domains[currentDomain + i].processorList[j]] = i;
+            affinity_thread2socket_lookup[domains[currentDomain + i].processorList[j]] = i;
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2socket_lookup[%d] = %d, domains[currentDomain + i].processorList[j], i);
         }
         domains[currentDomain + i].numberOfProcessors = tmp;
     }
@@ -272,7 +275,7 @@ affinity_init()
             domains[currentDomain + subCounter].tag = bformat("C%d", subCounter);
             DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain C%d: %d HW threads on %d cores, subCounter, domains[currentDomain + subCounter].numberOfProcessors, domains[currentDomain + subCounter].numberOfCores);
             domains[currentDomain + subCounter].processorList = (int*) malloc(numberOfProcessorsPerCache*sizeof(int));
-            if (!domains[currentDomain + subCounter].processorList)   
+            if (!domains[currentDomain + subCounter].processorList)
             {
                 fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
                         numberOfProcessorsPerCache*sizeof(int),
@@ -284,6 +287,11 @@ affinity_init()
                                       domains[currentDomain + subCounter].processorList,
                                       i, offset,
                                       domains[currentDomain + subCounter].numberOfProcessors);
+            for ( int j = 0; j < tmp; j++ )
+            {
+                affinity_thread2sharedl3_lookup[domains[currentDomain + subCounter].processorList[j]] = subCounter;
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2sharedl3_lookup[%d] = %d, domains[currentDomain + subCounter].processorList[j], subCounter);
+            }
 
             domains[currentDomain + subCounter].numberOfProcessors = tmp;
             offset += (tmp < numberOfCoresPerCache ? tmp : numberOfCoresPerCache);
@@ -328,6 +336,11 @@ affinity_init()
                                           domains[currentDomain + subCounter].processorList,
                                           i, offset,
                                           domains[currentDomain + subCounter].numberOfProcessors);
+                for ( int j = 0; j < tmp; j++ )
+                {
+                    affinity_thread2numa_lookup[domains[currentDomain + subCounter].processorList[j]] = subCounter;
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2numa_lookup[%d] = %d, domains[currentDomain + subCounter].processorList[j], subCounter);
+                }
                 domains[currentDomain + subCounter].numberOfProcessors = tmp;
                 offset += domains[currentDomain + subCounter].numberOfCores;
                 subCounter++;
@@ -364,6 +377,11 @@ affinity_init()
                 &(domains[currentDomain + subCounter].processorList[offset]),
                 i, 0, numberOfProcessorsPerSocket);
             offset += numberOfProcessorsPerSocket;
+        }
+        for ( int j = 0; j < tmp; j++ )
+        {
+            affinity_thread2numa_lookup[domains[currentDomain + subCounter].processorList[j]] = subCounter;
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2numa_lookup[%d] = %d, domains[currentDomain + subCounter].processorList[j], subCounter);
         }
         domains[currentDomain + subCounter].numberOfProcessors = tmp;
     }

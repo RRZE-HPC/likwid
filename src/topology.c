@@ -131,7 +131,7 @@ static char* short_unknown = "unknown";
 
 CpuInfo cpuid_info;
 CpuTopology cpuid_topology;
-int affinity_thread2tile_lookup[MAX_NUM_THREADS];
+int affinity_thread2core_lookup[MAX_NUM_THREADS];
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -176,7 +176,8 @@ initTopologyFile(FILE* file)
         if (!tree_nodeExists(currentNode, i))
         {
             tree_insertNode(currentNode, i);
-            affinity_thread2tile_lookup[hwThreadPool[i].apicId] = hwThreadPool[i].coreId;
+            affinity_thread2core_lookup[hwThreadPool[i].apicId] = hwThreadPool[i].coreId;
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2core_lookup[%d] = %d, hwThreadPool[i].apicId, hwThreadPool[i].coreId);
         }
     }
 }
@@ -867,7 +868,8 @@ void topology_setupTree(void)
                */
             //printf("Insert HWThread %d from Core %d at Socket %d\n", hwThreadPool[i].apicId, hwThreadPool[i].coreId, hwThreadPool[i].packageId);
             tree_insertNode(currentNode, hwThreadPool[i].apicId);
-            affinity_thread2tile_lookup[hwThreadPool[i].apicId] = hwThreadPool[i].coreId;
+            affinity_thread2core_lookup[hwThreadPool[i].apicId] = hwThreadPool[i].coreId;
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2core_lookup[%d] = %d, hwThreadPool[i].apicId, hwThreadPool[i].coreId);
         }
 
     }

@@ -57,8 +57,8 @@ int perfmon_init_sandybridge(int cpu_id)
 {
     int ret;
     uint64_t data = 0x0ULL;
-    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
-    lock_acquire((int*) &tile_lock[affinity_thread2tile_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
     
     if ((cpuid_info.model == SANDYBRIDGE_EP))
@@ -67,7 +67,7 @@ int perfmon_init_sandybridge(int cpu_id)
         snb_did_cbox_test = 1;
     }
     else if (cpuid_info.model == SANDYBRIDGE &&
-             socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id &&
+             socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id &&
              snb_did_cbox_test == 0)
     {
         ret = HPMwrite(cpu_id, MSR_DEV, MSR_UNC_CBO_0_PERFEVTSEL0, 0x0ULL);
@@ -188,7 +188,7 @@ int snb_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint32_t flags = 0x0U;
     PciDeviceIndex dev = counter_map[index].device;
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -315,7 +315,7 @@ int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint32_t flags = 0x0U;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -351,7 +351,7 @@ int snbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint32_t flags = 0x0U;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -405,7 +405,7 @@ int snb_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint32_t flags = 0x0U;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -444,7 +444,7 @@ int snb_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint32_t flags = 0x0U;
     uint64_t match = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -501,7 +501,7 @@ int snb_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint32_t flags = 0x0U;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -551,7 +551,7 @@ int snb_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDevi
     int j;
     uint32_t flags = 0x0U;
     PciDeviceIndex dev = counter_map[index].device;
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -648,7 +648,7 @@ int snb_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint32_t flags = 0x0U;
     PciDeviceIndex dev = counter_map[index].device;
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -690,7 +690,7 @@ int snb_pbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint32_t flags = 0x0U;
     PciDeviceIndex dev = counter_map[index].device;
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -783,7 +783,7 @@ int perfmon_setupCounterThread_sandybridge(
     uint64_t flags = 0x0ULL;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -1020,7 +1020,7 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
     uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -1224,7 +1224,7 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
     int haveLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -1515,7 +1515,7 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t pmc_flags = 0x0ULL;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -1853,11 +1853,11 @@ int perfmon_finalizeCountersThread_sandybridge(int thread_id, PerfmonEventSet* e
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t ovf_values_core = (1ULL<<63)|(1ULL<<62);
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
-    if (tile_lock[affinity_thread2tile_lookup[cpu_id]] == cpu_id)
+    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
     {
         haveTileLock = 1;
     }

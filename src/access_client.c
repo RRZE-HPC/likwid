@@ -257,7 +257,7 @@ access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t 
 
     if (dev != MSR_DEV)
     {
-        record.cpu = affinity_core2node_lookup[cpu_id];
+        record.cpu = affinity_thread2socket_lookup[cpu_id];
         record.device = dev;
     }
     if (socket != -1)
@@ -328,7 +328,7 @@ access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t
 
     if (dev != MSR_DEV)
     {
-        record.cpu = affinity_core2node_lookup[cpu_id];
+        record.cpu = affinity_thread2socket_lookup[cpu_id];
         record.device = dev;
     }
     if (socket != -1)
@@ -396,7 +396,7 @@ access_client_check(PciDeviceIndex dev, int cpu_id)
     record.errorcode = ERR_OPENFAIL;
     if (dev != MSR_DEV)
     {
-        record.cpu = affinity_core2node_lookup[cpu_id];
+        record.cpu = affinity_thread2socket_lookup[cpu_id];
     }
     if ((cpuSockets[cpu_id] > 0) && (cpuSockets[cpu_id] != globalSocket))
     {

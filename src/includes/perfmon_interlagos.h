@@ -39,7 +39,7 @@ static int perfmon_numArchEventsInterlagos = NUM_ARCH_EVENTS_INTERLAGOS;
 
 int perfmon_init_interlagos(int cpu_id)
 {
-    lock_acquire((int*) &socket_lock[affinity_core2node_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
     return 0;
 }
 
@@ -89,7 +89,7 @@ int ilg_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] != cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
     }
@@ -110,7 +110,7 @@ int perfmon_setupCounterThread_interlagos(int thread_id, PerfmonEventSet* eventS
     int haveLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -147,7 +147,7 @@ int perfmon_startCountersThread_interlagos(int thread_id, PerfmonEventSet* event
     uint64_t flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -185,7 +185,7 @@ int perfmon_stopCountersThread_interlagos(int thread_id, PerfmonEventSet* eventS
     uint64_t tmp;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -236,7 +236,7 @@ int perfmon_readCountersThread_interlagos(int thread_id, PerfmonEventSet* eventS
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t tmp;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }
@@ -278,7 +278,7 @@ int perfmon_finalizeCountersThread_interlagos(int thread_id, PerfmonEventSet* ev
     int haveLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
-    if (socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
         haveLock = 1;
     }

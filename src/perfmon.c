@@ -1291,6 +1291,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
         case ZEN_FAMILY:
             initThreadArch = perfmon_init_zen;
+            initialize_power = TRUE;
             perfmon_startCountersThread = perfmon_startCountersThread_zen;
             perfmon_stopCountersThread = perfmon_stopCountersThread_zen;
             perfmon_readCountersThread = perfmon_readCountersThread_zen;
@@ -1378,6 +1379,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     {
         tile_lock[i] = LOCK_INIT;
         core_lock[i] = LOCK_INIT;
+        sharedl3_lock[i] = LOCK_INIT;
     }
 
 
@@ -2251,7 +2253,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
-    sock_cpu = socket_lock[affinity_core2node_lookup[cpu]];
+    sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
         for (e=0; e<groupSet->numberOfThreads; e++)
@@ -2334,7 +2336,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
-    sock_cpu = socket_lock[affinity_core2node_lookup[cpu]];
+    sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
         for (e=0; e<groupSet->numberOfThreads; e++)
@@ -2991,7 +2993,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
-    sock_cpu = socket_lock[affinity_core2node_lookup[cpu]];
+    sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
         for (e=0; e<groupSet->numberOfThreads; e++)

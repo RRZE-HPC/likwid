@@ -57,7 +57,7 @@ access_x86_init(int cpu_id)
     {
         if (cpuid_info.supportUncore)
         {
-            ret = access_x86_pci_init(affinity_core2node_lookup[cpu_id]);
+            ret = access_x86_pci_init(affinity_thread2socket_lookup[cpu_id]);
         }
     }
     return ret;
@@ -75,9 +75,9 @@ access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *da
     }
     else
     {
-        if (access_x86_pci_check(dev, affinity_core2node_lookup[cpu_id]))
+        if (access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]))
         {
-            err = access_x86_pci_read(dev, affinity_core2node_lookup[cpu_id], reg, &tmp);
+            err = access_x86_pci_read(dev, affinity_thread2socket_lookup[cpu_id], reg, &tmp);
             *data = tmp;
         }
     }
@@ -94,9 +94,9 @@ access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t da
     }
     else
     {
-        if (access_x86_pci_check(dev, affinity_core2node_lookup[cpu_id]))
+        if (access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]))
         {
-            err = access_x86_pci_write(dev, affinity_core2node_lookup[cpu_id], reg, data);
+            err = access_x86_pci_write(dev, affinity_thread2socket_lookup[cpu_id], reg, data);
         }
     }
     return err;
@@ -108,7 +108,7 @@ access_x86_finalize(int cpu_id)
     access_x86_msr_finalize(cpu_id);
     if (cpuid_info.supportUncore)
     {
-        access_x86_pci_finalize(affinity_core2node_lookup[cpu_id]);
+        access_x86_pci_finalize(affinity_thread2socket_lookup[cpu_id]);
     }
 }
 
@@ -121,7 +121,7 @@ access_x86_check(PciDeviceIndex dev, int cpu_id)
     }
     else
     {
-        return access_x86_pci_check(dev, affinity_core2node_lookup[cpu_id]);
+        return access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]);
     }
     return 0;
 }
