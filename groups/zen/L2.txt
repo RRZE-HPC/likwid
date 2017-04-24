@@ -1,19 +1,19 @@
 SHORT L2 cache bandwidth in MBytes/s
 
 EVENTSET
-PMC0  DATA_CACHE_REFILLS_ALL
+PMC0  DATA_CACHE_ACCESSES
 PMC2  CPU_CLOCKS_UNHALTED
 
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s]   PMC2*inverseClock
-L2D load bandwidth [MBytes/s]  1.0E-06*PMC0*64.0/time
-L2D load data volume [GBytes]  1.0E-09*PMC0*64.0
+L2D load bandwidth [MBytes/s]  1.0E-06*PMC0*8.0/time
+L2D load data volume [GBytes]  1.0E-09*PMC0*8.0
 
 LONG
 Formulas:
-L2D load bandwidth [MBytes/s] = 1.0E-06*DATA_CACHE_REFILLS_ALL*64.0/time
-L2D load data volume [GBytes] = 1.0E-09*DATA_CACHE_REFILLS_ALL*64.0
+L2D load bandwidth [MBytes/s] = 1.0E-06*DATA_CACHE_ACCESSES*8.0/time
+L2D load data volume [GBytes] = 1.0E-09*DATA_CACHE_ACCESSES*8.0
 -
 Profiling group to measure L2 cache bandwidth. The bandwidth is
 computed by the number of cache line loaded from L2 to L1. Evicted
