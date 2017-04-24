@@ -65,7 +65,7 @@ Extras
 - If you want to use the Marker API with Java, you can find the Java module here:
 https://github.com/jlewandowski/likwid-java-api
 - For Python you can find an interface to the LIKWID API here:
-https://github.com/TomTheBear/likwid-python-api
+https://github.com/RRZE-HPC/pylikwid
 
 --------------------------------------------------------------------------------
 Survey
