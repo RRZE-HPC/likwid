@@ -1063,6 +1063,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",magnycours_str);
     printf("\t%s\n",interlagos_str);
     printf("\t%s\n",kabini_str);
+    printf("\t%s\n",amd_zen_str);
     printf("\n");
 }
 
