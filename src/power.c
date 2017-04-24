@@ -55,6 +55,8 @@ power_init(int cpuId)
     uint64_t flags;
     int i;
     int err;
+    uint32_t unit_reg = MSR_RAPL_POWER_UNIT;
+    int numDomains = NUM_POWER_DOMAINS;
 
     /* determine Turbo Mode features */
     double busSpeed;
@@ -74,43 +76,69 @@ power_init(int cpuId)
     power_info.uncoreMaxFreq = 0;
     power_info.perfBias = 0;
 
-    switch (cpuid_info.model)
+    switch (cpuid_info.family)
     {
-        case SANDYBRIDGE:
-        case IVYBRIDGE:
-        case HASWELL:
-        case SANDYBRIDGE_EP:
-        case IVYBRIDGE_EP:
-        case HASWELL_EP:
-        case ATOM_SILVERMONT_E:
-        case ATOM_SILVERMONT_Z1:
-        case ATOM_SILVERMONT_Z2:
-        case ATOM_SILVERMONT_F:
-        case ATOM_SILVERMONT_AIR:
-        case ATOM_SILVERMONT_GOLD:
-        case BROADWELL:
-        case BROADWELL_E:
-        case BROADWELL_D:
-        case BROADWELL_E3:
-        case HASWELL_M1:
-        case HASWELL_M2:
-        case SKYLAKE1:
-        case SKYLAKE2:
-        case KABYLAKE1:
-        case KABYLAKE2:
-        case XEON_PHI_KNL:
-            power_info.hasRAPL = 1;
+        case P6_FAMILY:
+            switch (cpuid_info.model)
+            {
+                case SANDYBRIDGE:
+                case IVYBRIDGE:
+                case HASWELL:
+                case SANDYBRIDGE_EP:
+                case IVYBRIDGE_EP:
+                case HASWELL_EP:
+                case ATOM_SILVERMONT_E:
+                case ATOM_SILVERMONT_Z1:
+                case ATOM_SILVERMONT_Z2:
+                case ATOM_SILVERMONT_F:
+                case ATOM_SILVERMONT_AIR:
+                case ATOM_SILVERMONT_GOLD:
+                case BROADWELL:
+                case BROADWELL_E:
+                case BROADWELL_D:
+                case BROADWELL_E3:
+                case HASWELL_M1:
+                case HASWELL_M2:
+                case SKYLAKE1:
+                case SKYLAKE2:
+                case KABYLAKE1:
+                case KABYLAKE2:
+                case XEON_PHI_KNL:
+                    power_info.hasRAPL = 1;
+                    break;
+                case ATOM_SILVERMONT_C:
+                    power_info.hasRAPL = 1;
+                    /* The info_regs list needs an update for Silvermont Type C
+                       because it uses another info register */
+                    info_regs[PKG] = MSR_PKG_POWER_INFO_SILVERMONT;
+                    break;
+
+                default:
+                    DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, NO RAPL SUPPORT);
+                    return 0;
+                    break;
+            }
             break;
-        case ATOM_SILVERMONT_C:
-            power_info.hasRAPL = 1;
-            /* The info_regs list needs an update for Silvermont Type C
-               because it uses another info register */
-            info_regs[PKG] = MSR_PKG_POWER_INFO_SILVERMONT;
-            break;
-        default:
-            DEBUG_PLAIN_PRINT(DEBUGLEV_INFO, NO RAPL SUPPORT);
-            return 0;
-            break;
+        case ZEN_FAMILY:
+            if (cpuid_info.model == ZEN_RYZEN)
+            {
+                cpuid_info.turbo = 0;
+                power_info.hasRAPL = 1;
+                numDomains = 2;
+                unit_reg = MSR_AMD17_RAPL_POWER_UNIT;
+                power_names[0] = "CORE";
+                power_names[1] = "PKG";
+                power_regs[0] = MSR_AMD17_RAPL_CORE_STATUS;
+                power_regs[1] = MSR_AMD17_RAPL_PKG_STATUS;
+
+                for (i = 0; i< NUM_POWER_DOMAINS; i++)
+                {
+                    limit_regs[i] = 0x0;
+                    policy_regs[i] = 0x0;
+                    perf_regs[i] = 0x0;
+                    info_regs[i] = 0x0;
+                }
+            }
     }
 
     perfmon_init_maps();
@@ -218,7 +246,7 @@ power_init(int cpuId)
     /* determine RAPL parameters */
     if ( power_info.hasRAPL )
     {
-        err = HPMread(cpuId, MSR_DEV, MSR_RAPL_POWER_UNIT, &flags);
+        err = HPMread(cpuId, MSR_DEV, unit_reg, &flags);
         if (err == 0)
         {
             double energyUnit;
@@ -232,7 +260,7 @@ power_init(int cpuId)
             {
                 energyUnit = 1.0 * (1 << ((flags >> 8) & 0x1F)) / 1000000;
             }
-            for (i = 0; i < NUM_POWER_DOMAINS; i++)
+            for (i = 0; i < numDomains; i++)
             {
                 power_info.domains[i].energyUnit = energyUnit;
                 power_info.domains[i].type = i;
@@ -252,7 +280,7 @@ power_init(int cpuId)
                 power_info.domains[DRAM].energyUnit = 15.3E-6;
             }
 
-            for(i = 0; i < NUM_POWER_DOMAINS; i++)
+            for(i = 0; i < numDomains; i++)
             {
                 err = HPMread(cpuId, MSR_DEV, power_regs[i], &flags);
                 if (err == 0)
@@ -327,20 +355,23 @@ power_init(int cpuId)
         }
         else
         {
-            fprintf(stderr,"Cannot gather values from MSR_RAPL_POWER_UNIT, deactivating RAPL support\n");
+            fprintf(stderr,"Cannot gather values from unit register 0x%X, deactivating RAPL support\n", unit_reg);
             power_info.hasRAPL =  0;
         }
 
-        err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &flags);
-        if (err == 0)
+        if (cpuid_info.isIntel)
         {
-            power_info.uncoreMinFreq = ((double)((flags >> 8) & 0xFFULL)) * busSpeed;
-            power_info.uncoreMaxFreq = ((double)(flags & 0xFF)) * busSpeed;
-        }
-        err = HPMread(cpuId, MSR_DEV, MSR_ENERGY_PERF_BIAS, &flags);
-        if (err == 0)
-        {
-            power_info.perfBias = flags & 0xF;
+            err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &flags);
+            if (err == 0)
+            {
+                power_info.uncoreMinFreq = ((double)((flags >> 8) & 0xFFULL)) * busSpeed;
+                power_info.uncoreMaxFreq = ((double)(flags & 0xFF)) * busSpeed;
+            }
+            err = HPMread(cpuId, MSR_DEV, MSR_ENERGY_PERF_BIAS, &flags);
+            if (err == 0)
+            {
+                power_info.perfBias = flags & 0xF;
+            }
         }
         power_initialized = 1;
         return power_info.hasRAPL;
