@@ -192,6 +192,11 @@ affinity_init()
     /* determine total number of domains */
     numberOfDomains += numberOfSocketDomains + numberOfCacheDomains + numberOfNumaDomains;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: All domains %d, numberOfDomains);
+    for (int i=0; i< cpuid_topology.numHWThreads; i++)
+    {
+        affinity_thread2core_lookup[cpuid_topology.threadPool[i].apicId] = cpuid_topology.threadPool[i].coreId;
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2core_lookup[%d] = %d, cpuid_topology.threadPool[i].apicId, cpuid_topology.threadPool[i].coreId);
+    }
     domains = (AffinityDomain*) malloc(numberOfDomains * sizeof(AffinityDomain));
     if (!domains)
     {

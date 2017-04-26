@@ -206,7 +206,6 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             {
                 hwThreadPool[id].coreId = 0;
                 hwThreadPool[id].packageId = 0;
-                affinity_thread2core_lookup[hwThreadPool[id].apicId] = hwThreadPool[id].coreId;
                 continue;
             }
         }
@@ -238,7 +237,6 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             }
         }
 #endif
-        affinity_thread2core_lookup[hwThreadPool[id].apicId] = hwThreadPool[id].coreId;
         while (obj->type != socket_type) {
             obj = obj->parent;
             if (!obj)

@@ -131,7 +131,6 @@ static char* short_unknown = "unknown";
 
 CpuInfo cpuid_info;
 CpuTopology cpuid_topology;
-int affinity_thread2core_lookup[MAX_NUM_THREADS];
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -176,8 +175,6 @@ initTopologyFile(FILE* file)
         if (!tree_nodeExists(currentNode, i))
         {
             tree_insertNode(currentNode, i);
-            affinity_thread2core_lookup[hwThreadPool[i].apicId] = hwThreadPool[i].coreId;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2core_lookup[%d] = %d, hwThreadPool[i].apicId, hwThreadPool[i].coreId);
         }
     }
 }
@@ -868,8 +865,6 @@ void topology_setupTree(void)
                */
             //printf("Insert HWThread %d from Core %d at Socket %d\n", hwThreadPool[i].apicId, hwThreadPool[i].coreId, hwThreadPool[i].packageId);
             tree_insertNode(currentNode, hwThreadPool[i].apicId);
-            affinity_thread2core_lookup[hwThreadPool[i].apicId] = hwThreadPool[i].coreId;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2core_lookup[%d] = %d, hwThreadPool[i].apicId, hwThreadPool[i].coreId);
         }
 
     }
@@ -912,10 +907,6 @@ standard_init:
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
         if (cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF))
         {
-            funcs.init_cpuInfo = proc_init_cpuInfo;
-            funcs.init_cpuFeatures = proc_init_cpuFeatures;
-            funcs.init_nodeTopology = proc_init_nodeTopology;
-            funcs.init_cacheTopology = proc_init_cacheTopology;
             cpuid_topology.activeHWThreads =
                 ((cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF)) ?
                 cpu_count(&cpuSet) :

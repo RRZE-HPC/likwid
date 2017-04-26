@@ -433,7 +433,6 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         {
             bstring src = bread ((bNread) fread, fp);
             hwThreadPool[i].coreId = ownatoi(bdata(src));
-            affinity_thread2core_lookup[hwThreadPool[i].apicId] = hwThreadPool[i].coreId;
             fclose(fp);
         }
         bdestroy(file);

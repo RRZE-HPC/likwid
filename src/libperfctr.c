@@ -55,8 +55,6 @@
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-int socket_lock[MAX_NUM_NODES];
-int core_lock[MAX_NUM_THREADS];
 static int likwid_init = 0;
 static int numberOfGroups = 0;
 static int* groups;
@@ -178,12 +176,6 @@ likwid_markerInit(void)
     affinity_init();
     hashTable_init();
 
-    for(int i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
-    for(int i=0; i<MAX_NUM_THREADS; i++)
-    {
-        core_lock[i] = LOCK_INIT;
-        sharedl3_lock[i] = LOCK_INIT;
-    }
 //#ifndef LIKWID_USE_PERFEVENT
     HPMmode(atoi(modeStr));
 //#endif
@@ -261,7 +253,7 @@ likwid_markerInit(void)
     }
     threads2Pthread[registered_cpus] = pthread_self();
     registered_cpus++;
-    
+
     groupSet->activeGroup = 0;
 //#ifdef LIKWID_USE_PERFEVENT
     perfmon_setupCounters(groupSet->activeGroup);
