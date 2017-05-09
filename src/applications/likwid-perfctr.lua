@@ -782,6 +782,10 @@ if use_wrapper or use_timeline then
     
     start = likwid.startClock()
     groupTime[activeGroup] = 0
+    timeline_delim = " "
+    if use_csv then
+        timeline_delim = ","
+    end
     while true do
         if likwid.getSignalState() ~= 0 then
             if #execList > 0 then
@@ -806,13 +810,19 @@ if use_wrapper or use_timeline then
             else
                 results = likwid.getLastMetrics()
             end
-            str = tostring(math.tointeger(activeGroup)) .. " "..tostring(#results[activeGroup]).." "..tostring(#cpulist).." "..tostring(time)
+            local outList = {}
+            table.insert(outList, tostring(math.tointeger(activeGroup)))
+            table.insert(outList, tostring(#results[activeGroup]))
+            table.insert(outList, tostring(#cpulist))
+            table.insert(outList, tostring(time))
+            --str = tostring(math.tointeger(activeGroup)) .. timeline_delim..tostring(#results[activeGroup])..timeline_delim..tostring(#cpulist)..timeline_delim..tostring(time)
             for i,l1 in pairs(results[activeGroup]) do
                 for j, value in pairs(l1) do
-                    str = str .. " " .. tostring(value)
+                    --str = str .. timeline_delim .. tostring(value)
+                    table.insert(outList, tostring(value))
                 end
             end
-            io.stderr:write(str.."\n")
+            io.stderr:write(table.concat(outList, timeline_delim).."\n")
             groupTime[activeGroup] = time
         else
             likwid.readCounters()
