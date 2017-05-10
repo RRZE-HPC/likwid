@@ -336,6 +336,10 @@ affinity_init()
                             bdata(domains[currentDomain + subCounter].tag));
                     return;
                 }
+                if (offset >= cpuid_topology.numCoresPerSocket*cpuid_topology.numSockets)
+                {
+                    continue;
+                }
 
                 tmp = treeFillNextEntries(cpuid_topology.topologyTree,
                                           domains[currentDomain + subCounter].processorList,
