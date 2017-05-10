@@ -817,10 +817,10 @@ topology_setName(void)
 const struct
 topology_functions topology_funcs = {
 #ifndef LIKWID_USE_HWLOC
-    .init_cpuInfo = cpuid_init_cpuInfo,
-    .init_cpuFeatures = cpuid_init_cpuFeatures,
-    .init_nodeTopology = cpuid_init_nodeTopology,
-    .init_cacheTopology = cpuid_init_cacheTopology,
+    .init_cpuInfo = proc_init_cpuInfo,
+    .init_cpuFeatures = proc_init_cpuFeatures,
+    .init_nodeTopology = proc_init_nodeTopology,
+    .init_cacheTopology = proc_init_cacheTopology,
     .close_topology = NULL,
 #else
     .init_cpuInfo = hwloc_init_cpuInfo,

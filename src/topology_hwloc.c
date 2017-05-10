@@ -59,6 +59,9 @@ likwid_hwloc_record_objs_of_type_below_obj(
 {
     int i;
     int count = 0;
+    cpu_set_t cpuSet;
+    CPU_ZERO(&cpuSet);
+    sched_getaffinity(0, sizeof(cpu_set_t), &cpuSet);
     hwloc_obj_t walker;
     if (!obj) return 0;
     if (!obj->arity) return 0;
@@ -67,11 +70,14 @@ likwid_hwloc_record_objs_of_type_below_obj(
         walker = obj->children[i];
         if (walker->type == type)
         {
-            if (list && *list && index)
+            if (CPU_ISSET(walker->os_index, &cpuSet))
             {
-                (*list)[(*index)++] = walker->os_index;
+                if (list && *list && index)
+                {
+                    (*list)[(*index)++] = walker->os_index;
+                }
+                count++;
             }
-            count++;
         }
         count += likwid_hwloc_record_objs_of_type_below_obj(t, walker, type, index, list);
     }
