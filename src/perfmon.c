@@ -324,7 +324,7 @@ getEvent(bstring event_str, bstring counter_str, PerfmonEvent* event)
 }
 
 static int
-assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type, int zero_value)
+assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type)
 {
     int found_double = -1;
     int return_index = index;
@@ -346,7 +346,7 @@ assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type
         return_index++;
     }
     event->options[index].type = type;
-    if (zero_value)
+    if (blength(entry) == 0)
     {
         event->options[index].value = 0;
     }
@@ -374,156 +374,154 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
     {
         return -ERANGE;
     }
-
+    bstring empty = bformat("");
 
     for (i=2;i<tokens->qty;i++)
     {
         subtokens = bsplit(tokens->entry[i],'=');
         btolower(subtokens->entry[0]);
-        if (subtokens->qty == 1)
+        if (subtokens->qty >= 1 && subtokens->qty <= 2)
         {
+            bstring arg = empty;
+            if (subtokens->qty == 2)
+                arg = subtokens->entry[1];
             if (biseqcstr(subtokens->entry[0], "edgedetect") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_EDGE, 1);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_EDGE);
             }
             else if (biseqcstr(subtokens->entry[0], "invert") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_INVERT, 1);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_INVERT);
             }
             else if (biseqcstr(subtokens->entry[0], "kernel") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_COUNT_KERNEL, 1);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_COUNT_KERNEL);
             }
             else if (biseqcstr(subtokens->entry[0], "anythread") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_ANYTHREAD, 1);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_ANYTHREAD);
             }
             else if (biseqcstr(subtokens->entry[0], "occ_edgedetect") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_OCCUPANCY_EDGE, 1);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_OCCUPANCY_EDGE);
             }
             else if (biseqcstr(subtokens->entry[0], "occ_invert") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_OCCUPANCY_INVERT, 1);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_OCCUPANCY_INVERT);
             }
             else if (biseqcstr(subtokens->entry[0], "in_trans") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_IN_TRANS, 1);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_IN_TRANS);
             }
             else if (biseqcstr(subtokens->entry[0], "in_trans_aborted") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_IN_TRANS_ABORT, 1);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_IN_TRANS_ABORT);
             }
-            else
+            else if (biseqcstr(subtokens->entry[0], "opcode") == 1)
             {
-                continue;
-            }
-            event->options[event->numberOfOptions].value = 0;
-        }
-        else if (subtokens->qty == 2)
-        {
-            if (biseqcstr(subtokens->entry[0], "opcode") == 1)
-            {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_OPCODE, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_OPCODE);
             }
             else if (biseqcstr(subtokens->entry[0], "match0") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_MATCH0, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_MATCH0);
             }
             else if (biseqcstr(subtokens->entry[0], "match1") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_MATCH1, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_MATCH1);
             }
             else if (biseqcstr(subtokens->entry[0], "match2") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_MATCH2, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_MATCH2);
             }
             else if (biseqcstr(subtokens->entry[0], "match3") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_MATCH3, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_MATCH3);
             }
             else if (biseqcstr(subtokens->entry[0], "mask0") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_MASK0, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_MASK0);
             }
             else if (biseqcstr(subtokens->entry[0], "mask1") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_MASK1, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_MASK1);
             }
             else if (biseqcstr(subtokens->entry[0], "mask2") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_MASK2, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_MASK2);
             }
             else if (biseqcstr(subtokens->entry[0], "mask3") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_MASK3, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_MASK3);
             }
             else if (biseqcstr(subtokens->entry[0], "nid") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_NID, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_NID);
             }
             else if (biseqcstr(subtokens->entry[0], "tid") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_TID, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_TID);
             }
             else if (biseqcstr(subtokens->entry[0], "state") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_STATE, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_STATE);
             }
             else if (biseqcstr(subtokens->entry[0], "threshold") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_THRESHOLD, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_THRESHOLD);
             }
             else if (biseqcstr(subtokens->entry[0], "occupancy") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_OCCUPANCY, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_OCCUPANCY);
             }
             else if (biseqcstr(subtokens->entry[0], "occ_filter") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_OCCUPANCY_FILTER, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_OCCUPANCY_FILTER);
             }
 #ifdef LIKWID_USE_PERFEVENT
             else if (biseqcstr(subtokens->entry[0], "perf_pid") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_PERF_PID, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_PERF_PID);
             }
             else if (biseqcstr(subtokens->entry[0], "perf_flags") == 1)
             {
-                event->numberOfOptions = assignOption(event, subtokens->entry[1],
-                                    event->numberOfOptions, EVENT_OPTION_PERF_FLAGS, 0);
+                event->numberOfOptions = assignOption(event, arg,
+                                    event->numberOfOptions, EVENT_OPTION_PERF_FLAGS);
             }
 #endif
             else
             {
+                DEBUG_PRINT(DEBUGLEV_INFO, Event option %s unknown, bdata(subtokens->entry[0]));
                 continue;
             }
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding option %s with value %s to counter %s, bdata(subtokens->entry[0]), (blength(arg) == 0 ? "1" : bdata(arg)), counter_map[index].key);
         }
         bstrListDestroy(subtokens);
     }
+    bdestroy(empty);
     for(i=event->numberOfOptions-1;i>=0;i--)
     {
 #ifdef LIKWID_USE_PERFEVENT
