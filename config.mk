@@ -1,7 +1,7 @@
 # Please have a look in INSTALL and the WIKI for details on
 # configuration options setup steps.
-# supported: GCC, CLANG, ICC, MIC (ICC), GCCX86 (for 32bit systems)
-COMPILER = GCC#NO SPACE
+# supported: GCC, CLANG, ICC, MIC (ICC), GCCX86 (for 32bit systems), GCCARMv8
+COMPILER = GCCARMv8#NO SPACE
 
 # Define the color of the likwid-pin output
 # Can be NONE, BLACK, RED, GREEN, YELLOW, BLUE,
