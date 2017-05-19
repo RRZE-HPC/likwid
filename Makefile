@@ -85,6 +85,7 @@ OBJ := $(filter-out $(BUILD_DIR)/loadData.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_armv7.o,$(OBJ))
 endif
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
