@@ -33,7 +33,7 @@ void access_armv8_finalize(int cpu_id)
 
 int access_armv8_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *data)
 {
-#if defined(__ARM_ARCH_8A)
+//#if defined(__ARM_ARCH_8A)
 
     int ret = 0;
     uint64_t tmp = 0x0ULL;
@@ -163,7 +163,7 @@ int access_armv8_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64
             tmp = (uint64_t)tmp32;
             break;
         case A57_PERFEVTSEL0:
-            __asm__ volatile("MRS %0, pmevtyper0_el0" : "=&r"(tmp32) ::);
+            __asm__ volatile("MRS %0, PMEVTYPER0_EL0" : "=r"(tmp32) ::);
             DEBUG_PRINT(DEBUGLEV_DEVELOP, Read counter register %d: %lx, A57_PERFEVTSEL0, tmp32);
             tmp = (uint64_t)tmp32;
             break;
@@ -241,13 +241,13 @@ int access_armv8_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64
     *data = tmp;
     sched_setaffinity(gettid(), sizeof(cpu_set_t), &current);
     return 0;
-#endif
+//#endif
     return 1;
 }
 
 int access_armv8_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t data)
 {
-#if defined(__ARM_ARCH_8A)
+//#if defined(__ARM_ARCH_8A)
 
     int ret = 0;
     uint64_t tmp = data;
@@ -413,7 +413,7 @@ int access_armv8_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint6
 #endif
     ret = sched_setaffinity(gettid(), sizeof(cpu_set_t), &current);
 
-#endif
+//#endif
     return 0;
 }
 

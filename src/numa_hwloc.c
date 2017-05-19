@@ -231,7 +231,7 @@ hwloc_numa_init(void)
 #ifdef __X86_64
     numa_info.numberOfNodes = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, hwloc_type);
 #endif
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__)
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
     numa_info.numberOfNodes = 0;
 #endif
 
@@ -239,7 +239,7 @@ hwloc_numa_init(void)
        aggregate all sockets in the system into the single virtually created NUMA node */
     if (numa_info.numberOfNodes == 0)
     {
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__)
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
         hwloc_type = HWLOC_OBJ_NODE;
 #else
         hwloc_type = HWLOC_OBJ_SOCKET;

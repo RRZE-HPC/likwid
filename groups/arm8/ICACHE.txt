@@ -1,0 +1,24 @@
+SHORT  Instruction cache miss rate/ratio
+
+EVENTSET
+PMC0  INST_RETIRED
+PMC1  CPU_CYCLES
+PMC2  L1I_CACHE
+PMC3  L1I_CACHE_REFILL
+
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC1/PMC0
+L1I request rate PMC2/PMC0
+L1I miss rate PMC3/PMC0
+L1I miss ratio PMC3/PMC2
+
+LONG
+Formulas:
+CPI = CPU_CYCLES/INST_RETIRED
+L1I request rate = L1I_CACHE / INST_RETIRED
+L1I miss rate = L1I_CACHE_REFILL / INST_RETIRED
+L1I miss ratio = L1I_CACHE_REFILL / L1I_CACHE
+-
+This group measures some L1 instruction cache metrics.

@@ -140,14 +140,15 @@ HPMinit(void)
             if (ret == 0)
             {
                 uint64_t data = 0x0ULL;
+		registeredCpuList[cpuid_topology.threadPool[i].apicId] = 1;
                 ret = HPMread(cpuid_topology.threadPool[i].apicId, testdev, testreg, &data);
                 if (ret == 0)
                 {
                     registeredCpus++;
-                    registeredCpuList[cpuid_topology.threadPool[i].apicId] = 1;
                 }
                 else
                 {
+		    registeredCpuList[cpuid_topology.threadPool[i].apicId] = 0;
                     return ret;
                 }
             }
@@ -243,9 +244,9 @@ HPMread(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t* data)
     }
     if (registeredCpuList[cpu_id] == 0)
     {
-        return -ENODEV;
+        return -ENODEV; 
     }
-    err = access_read(dev, cpu_id, reg, &tmp);
+    err = access_read(dev, cpu_id, reg, &tmp); 
     *data = tmp;
     return err;
 }

@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A__)
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
 #include <topology_cpuid.h>
 #endif
 #include <topology_proc.h>

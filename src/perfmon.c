@@ -172,7 +172,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         }
     }
 
-    if (type == PMC && (index - firstpmcindex) > cpuid_info.perf_num_ctr)
+    if (type == PMC && (index - firstpmcindex) > cpuid_info.perf_num_ctr && cpuid_info.isIntel)
     {
         fprintf(stderr,
                 "WARNING: Counter %s is only available with deactivated HyperThreading. Counter results defaults to 0.\n",
@@ -678,7 +678,7 @@ perfmon_check_counter_map(int cpu_id)
         {
             startpmcindex = i;
         }
-        if (counter_map[i].type == PMC && (counter_map[i].index - counter_map[startpmcindex].index) >= cpuid_info.perf_num_ctr)
+        if (counter_map[i].type == PMC && (counter_map[i].index - counter_map[startpmcindex].index) >= cpuid_info.perf_num_ctr && cpuid_info.isIntel)
         {
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;

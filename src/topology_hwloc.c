@@ -78,6 +78,11 @@ int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping)
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 f = ownatoi(bdata(subtokens->entry[1]));
+   		const_bstring aarch64String = bformat("AArch64");
+		if (f == 0 && binstr(subtokens->entry[1],0,aarch64String) != BSTR_ERR)
+		{
+		    f = ARMV8_FAMILY;
+		} 
                 bstrListDestroy(subtokens);
             }
             else if ((s == 0) && (binstr(tokens->entry[i],0,steppingString) != BSTR_ERR))
@@ -253,6 +258,26 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     {
         maxNumCoresPerSocket = likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology, obj, HWLOC_OBJ_CORE, NULL, NULL);
     }
+#ifdef __ARM_ARCH_8A
+    /*
+	 FIXME: to walk around the misleading socket information (By Jianbin)
+    */
+    int need_fix = 0;
+    for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
+    {
+	if(hwThreadPool[i].packageId == -1)
+	{
+	    hwThreadPool[i].packageId = 0;
+	    need_fix = 1;
+	}
+
+    }
+    if(need_fix == 1)
+    {
+	maxNumSockets = 1;
+	maxNumCoresPerSocket = maxNumCores;
+    }
+#endif
     obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_CORE, 0);
     if (obj)
     {
@@ -299,7 +324,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             hwThreadPool[id].packageId = 0;
             continue;
         }
-#ifdef __ARM_ARCH_8A__
+#ifdef __ARM_ARCH_8A
         hwThreadPool[id].coreId = hwThreadPool[id].apicId;
 #else
         hwThreadPool[id].coreId = obj->logical_index;
@@ -339,7 +364,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             hwThreadPool[id].packageId = 0;
             continue;
         }
-#ifdef __ARM_ARCH_8A__
+#ifdef __ARM_ARCH_8A
         hwThreadPool[id].packageId = 0;
 #else
         hwThreadPool[id].packageId = obj->os_index;
