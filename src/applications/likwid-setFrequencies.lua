@@ -52,15 +52,19 @@ function usage()
     print_stdout("-v\t Version information")
     print_stdout("-c dom\t Likwid thread domain which to apply settings (default are all CPUs)")
     print_stdout("\t See likwid-pin -h for details")
-    print_stdout("-g gov\t Set governor (" .. table.concat(likwid.getAvailGovs(nil), ", ") .. ") (set to ondemand if omitted)")
-    print_stdout("-f/--freq freq\t Set current CPU frequency, implicitly sets userspace governor")
+    print_stdout("-g gov\t Set governor (" .. table.concat(likwid.getAvailGovs(nil), ", ") .. ")")
+    print_stdout("-f/--freq freq\t Set current, minimal and maximal CPU frequency")
+    print_stdout("-p\t Print current frequencies (CPUs + Uncore)")
+    print_stdout("-l\t List available CPU frequencies")
+    print_stdout("-m\t List available CPU governors")
+    print_stdout("")
+    print_stdout("-F/--Freq freq\t Set current CPU frequency")
     print_stdout("-x/--min freq\t Set minimal CPU frequency")
     print_stdout("-y/--max freq\t Set maximal CPU frequency")
     print_stdout("--umin freq\t Set minimal Uncore frequency")
     print_stdout("--umax freq\t Set maximal Uncore frequency")
-    print_stdout("-p\t Print current frequencies (CPUs + Uncore)")
-    print_stdout("-l\t List available CPU frequencies")
-    print_stdout("-m\t List available CPU governors")
+    print_stdout("")
+    print_stdout("The options -f, -F, -x and -y set the userspace governor implicitly.")
     print_stdout("")
     print_stdout("In order to set the highest frequency, use the governor 'turbo'. This sets the")
     print_stdout("minimal frequency to the available minimum, the maximal and current frequency")
@@ -86,7 +90,7 @@ if #arg == 0 then
 end
 
 
-for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "x:", "y:", "help","version","freq:", "min:", "max:", "umin:", "umax:"}) do
+for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:","F:", "l", "p", "h", "v", "m", "x:", "y:", "help","version","freq:", "min:", "max:", "umin:", "umax:", "Freq:"}) do
     if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
@@ -102,6 +106,10 @@ for opt,arg in likwid.getopt(arg, {"g:", "c:", "f:", "l", "p", "h", "v", "m", "x
     elseif opt == "x" or opt == "min" then
         min_freq = arg
     elseif opt == "y" or opt == "max" then
+        max_freq = arg
+    elseif opt == "F" or opt == "Freq" then
+        frequency = arg
+        min_freq = arg
         max_freq = arg
     elseif opt == "umin" then
         min_u_freq = arg
@@ -216,7 +224,7 @@ if printAvailGovs or printAvailFreq or printCurFreq then
     os.exit(0)
 end
 
-if numthreads > 0 and not (frequency or min_freq or max_freq or governor or min_u_freq) then
+if numthreads > 0 and not (frequency or min_freq or max_freq or governor or min_u_freq or max_u_freq) then
     print_stderr("ERROR: You need to set either a frequency or governor for the selected CPUs on commandline")
     os.exit(1)
 end
