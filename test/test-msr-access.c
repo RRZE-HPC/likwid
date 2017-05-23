@@ -91,6 +91,8 @@ int write_msr()
 int main()
 {
     int ret = 0;
+    setuid(0);
+    seteuid(0);
     if (check_msr()) return 1;
     if (open_msr()) return 1;
     if (read_msr()) return 1;
