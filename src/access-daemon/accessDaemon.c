@@ -654,6 +654,7 @@ allowed_amd17(uint32_t reg)
         (reg >= 0xC0010230 && reg <= 0xC001023B) ||
         (reg >= 0xC0010299 && reg <= 0xC001029B) ||
         (reg >= 0xC00000E7 && reg <= 0xC00000E9) ||
+        (reg >= 0xC0010240 && reg <= 0xC0010247) ||
         (reg == 0xC0010015) ||
         (reg == 0xC0010010) ||
         (reg == 0xC0000080))

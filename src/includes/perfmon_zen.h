@@ -151,6 +151,25 @@ int k17_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     return 0;
 }
 
+int k17_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+{
+    uint64_t flags = 0x0ULL;
+
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+
+    flags |= ((uint64_t)(event->eventId>>8)<<32) + (event->umask<<8) + (event->eventId & ~(0xF00U));
+    if (flags != currentConfig[cpu_id][index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_UNCORE);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, counter_map[index].configRegister, flags));
+        currentConfig[cpu_id][index] = flags;
+    }
+    return 0;
+}
+
 int perfmon_setupCounterThread_zen(int thread_id, PerfmonEventSet* eventSet)
 {
     int cpu_id = groupSet->threads[thread_id].processorId;
@@ -177,6 +196,10 @@ int perfmon_setupCounterThread_zen(int thread_id, PerfmonEventSet* eventSet)
                 break;
             case FIXED:
                 fixed_flags |= k17_fixed_setup(cpu_id, index, event);
+                break;
+            case UNCORE:
+                k17_uncore_setup(cpu_id, index, event);
+                break;
             default:
                 break;
         }
@@ -232,6 +255,7 @@ int perfmon_startCountersThread_zen(int thread_id, PerfmonEventSet* eventSet)
             eventSet->events[i].threadCounter[thread_id].startData = 0;
             eventSet->events[i].threadCounter[thread_id].counterData = 0;
             if ((type == PMC) ||
+                ((type == UNCORE) && (haveSLock)) ||
                 ((type == CBOX0) && (haveL3Lock)))
             {
                 VERBOSEPRINTREG(cpu_id, counter, LLU_CAST 0x0ULL, RESET_CTR);
@@ -299,6 +323,7 @@ int perfmon_stopCountersThread_zen(int thread_id, PerfmonEventSet* eventSet)
             uint32_t reg = counter_map[index].configRegister;
             uint32_t counter = counter_map[index].counterRegister;
             if ((type == PMC) ||
+                ((type == UNCORE) && (haveSLock)) ||
                 ((type == CBOX0) && (haveL3Lock)))
             {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, reg, &flags));
@@ -380,6 +405,7 @@ int perfmon_readCountersThread_zen(int thread_id, PerfmonEventSet* eventSet)
             uint32_t counter = counter_map[index].counterRegister;
             uint64_t* current = &(eventSet->events[i].threadCounter[thread_id].counterData);
             if ((type == PMC) ||
+                ((type == UNCORE) && (haveSLock)) ||
                 ((type == CBOX0) && (haveL3Lock)))
             {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
@@ -450,6 +476,7 @@ int perfmon_finalizeCountersThread_zen(int thread_id, PerfmonEventSet* eventSet)
         }
         RegisterIndex index = eventSet->events[i].index;
         if ((type == PMC) ||
+            ((type == UNCORE) && (haveSLock)) ||
             ((type == CBOX0) && (haveL3Lock)))
         {
             if (counter_map[index].configRegister != 0x0)
