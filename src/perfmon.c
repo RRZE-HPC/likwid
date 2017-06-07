@@ -730,7 +730,10 @@ perfmon_check_counter_map(int cpu_id)
         int found = 0;
         bstring estr = bfromcstr(eventHash[i].name);
         if (i > 0 && strlen(eventHash[i-1].limit) != 0 && strcmp(eventHash[i-1].limit, eventHash[i].limit) == 0)
+        {
+            bdestroy(estr);
             continue;
+        }
         for (int j=0;j<perfmon_numCounters; j++)
         {
             if (counter_map[j].type == NOTYPE)
@@ -740,6 +743,7 @@ perfmon_check_counter_map(int cpu_id)
             if (getEvent(estr, cstr, &event))
             {
                 found = 1;
+                bdestroy(cstr);
                 break;
             }
             bdestroy(cstr);
