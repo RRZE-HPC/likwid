@@ -19,8 +19,8 @@ Energy [J]  PWR0
 Power [W] PWR0/time
 Energy PP0 [J]  PWR1
 Power PP0 [W] PWR1/time
-Energy DRAM [J]  PWR1
-Power DRAM [W] PWR1/time
+Energy DRAM [J]  PWR3
+Power DRAM [W] PWR3/time
 
 LONG
 Formula:
