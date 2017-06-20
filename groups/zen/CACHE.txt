@@ -1,6 +1,9 @@
 SHORT Data cache miss rate/ratio
 
 EVENTSET
+FIXC0 INST_RETIRED_ANY
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
 PMC0  RETIRED_INSTRUCTIONS
 PMC1  DATA_CACHE_ACCESSES
 PMC2  DATA_CACHE_REFILLS_ALL
@@ -8,6 +11,9 @@ PMC3  DATA_CACHE_REFILLS_NB_ALL
 
 METRICS
 Runtime (RDTSC) [s] time
+Runtime unhalted [s]   FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI   FIXC1/FIXC0
 data cache misses PMC2+PMC3
 data cache request rate PMC1/PMC0
 data cache miss rate (PMC2+PMC3)/PMC0

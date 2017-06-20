@@ -1,6 +1,9 @@
 SHORT Instruction cache miss rate/ratio
 
 EVENTSET
+FIXC0 INST_RETIRED_ANY
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
 PMC0  ICACHE_FETCHES
 PMC1  ICACHE_L2_REFILLS
 PMC2  ICACHE_SYSTEM_REFILLS
@@ -8,6 +11,9 @@ PMC3  RETIRED_INSTRUCTIONS
 
 METRICS
 Runtime (RDTSC) [s] time
+Runtime unhalted [s]   FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI   FIXC1/FIXC0
 L1I request rate   PMC0/PMC3
 L1I miss rate    (PMC1+PMC2)/PMC3
 L1I miss ratio   (PMC1+PMC2)/PMC0

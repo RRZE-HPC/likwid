@@ -13,7 +13,7 @@ METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s]   FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
-CPI   FIXC0/FIXC1
+CPI   FIXC1/FIXC0
 Energy Core [J]  PWR0
 Power Core [W] PWR0/time
 Energy PKG [J]  PWR1
