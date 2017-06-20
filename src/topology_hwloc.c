@@ -70,14 +70,11 @@ likwid_hwloc_record_objs_of_type_below_obj(
         walker = obj->children[i];
         if (walker->type == type)
         {
-            if (CPU_ISSET(walker->os_index, &cpuSet))
+            if (list && *list && index)
             {
-                if (list && *list && index)
-                {
-                    (*list)[(*index)++] = walker->os_index;
-                }
-                count++;
+                (*list)[(*index)++] = walker->os_index;
             }
+            count++;
         }
         count += likwid_hwloc_record_objs_of_type_below_obj(t, walker, type, index, list);
     }
