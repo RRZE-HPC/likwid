@@ -39,6 +39,8 @@
 #include <numa_hwloc.h>
 #include <numa_proc.h>
 
+extern int numaInitialized;
+
 extern int str2int(const char* str);
 
 struct numa_functions {

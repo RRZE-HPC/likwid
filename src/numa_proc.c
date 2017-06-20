@@ -295,6 +295,8 @@ int proc_numa_init(void)
     int err = 0;
     uint32_t i;
     uint64_t nrCPUs = 0;
+    if (numaInitialized > 0 || numa_info.numberOfNodes > 0)
+        return 0;
 
     if (get_mempolicy(NULL, NULL, 0, 0, 0) < 0 && errno == ENOSYS)
     {
@@ -333,7 +335,8 @@ int proc_numa_init(void)
         numa_info.nodes[i].numberOfProcessors = 0;
         numa_info.nodes[i].numberOfDistances = nodeDistanceList(i, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
     }
-
+    if (err == 0)
+        numaInitialized = 1;
     return err;
 }
 

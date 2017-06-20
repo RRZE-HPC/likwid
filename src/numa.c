@@ -68,7 +68,7 @@ NumaTopology numa_info = {0,NULL};
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-static int numaInitialized = 0;
+int numaInitialized = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
