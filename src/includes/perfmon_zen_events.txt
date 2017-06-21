@@ -33,8 +33,14 @@ UMASK_INST_RETIRED_ANY                      0x00
 EVENT_ACTUAL_CPU_CLOCK                      0x02 FIXC1
 UMASK_ACTUAL_CPU_CLOCK                      0x00
 
+EVENT_APERF                                 0x02 FIXC1
+UMASK_APERF                                 0x00
+
 EVENT_MAX_CPU_CLOCK                         0x03 FIXC2
 UMASK_MAX_CPU_CLOCK                         0x00
+
+EVENT_MPERF                                 0x03 FIXC2
+UMASK_MPERF                                 0x00
 
 # Core-local Events
 

@@ -91,7 +91,7 @@ static RegisterMap zen_counter_map[NUM_COUNTERS_ZEN] = {
 };
 
 static BoxMap zen_box_map[NUM_UNITS] = {
-    [FIXED] = {0, 0, 0, 0, 0, 0, 48},
+    [FIXED] = {0, 0, 0, 0, 0, 0, 64},
     [PMC] = {0, 0, 0, 0, 0, 0, 48},
     [CBOX0] = {0, 0, 0, 0, 0, 0, 48},
     [UNCORE] = {0, 0, 0, 0, 0, 0, 48},

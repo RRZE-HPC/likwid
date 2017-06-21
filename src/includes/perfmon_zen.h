@@ -282,6 +282,7 @@ int perfmon_startCountersThread_zen(int thread_id, PerfmonEventSet* eventSet)
                 eventSet->events[i].threadCounter[thread_id].startData = field64(flags, 0, box_map[type].regWidth);
                 VERBOSEPRINTREG(cpu_id, counter, LLU_CAST field64(flags, 0, box_map[type].regWidth), START_FIXED);
             }
+            eventSet->events[i].threadCounter[thread_id].counterData = eventSet->events[i].threadCounter[thread_id].startData;
         }
     }
     return 0;
@@ -332,11 +333,11 @@ int perfmon_stopCountersThread_zen(int thread_id, PerfmonEventSet* eventSet)
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, reg, flags));
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
                 VERBOSEPRINTREG(cpu_id, reg, LLU_CAST counter_result, READ_CTR);
-                if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                if (field64(counter_result, 0, box_map[type].regWidth) < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
+                    VERBOSEPRINTREG(cpu_id, reg, LLU_CAST counter_result, OVERFLOW);
                 }
-                eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
             }
             else if (type == POWER)
             {
@@ -345,25 +346,27 @@ int perfmon_stopCountersThread_zen(int thread_id, PerfmonEventSet* eventSet)
                 if (counter == MSR_AMD17_RAPL_CORE_STATUS && (!haveCLock))
                     continue;
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
+                counter_result = field64(counter_result, 0, box_map[type].regWidth);
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, OVERFLOW_POWER)
                 }
-                eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
-                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST field64(flags, 0, box_map[type].regWidth), STOP_POWER);
+
+                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, STOP_POWER);
             }
             else if (type == FIXED)
             {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
+                counter_result = field64(counter_result, 0, box_map[type].regWidth);
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
                     VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, OVERFLOW_FIXED)
                 }
-                eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
-                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST field64(counter_result, 0, box_map[type].regWidth), STOP_FIXED);
+                VERBOSEPRINTREG(cpu_id, counter, LLU_CAST counter_result, STOP_FIXED);
             }
+            eventSet->events[i].threadCounter[thread_id].counterData = counter_result;
         }
     }
     return 0;
@@ -409,7 +412,7 @@ int perfmon_readCountersThread_zen(int thread_id, PerfmonEventSet* eventSet)
                 ((type == CBOX0) && (haveL3Lock)))
             {
                 CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter, &counter_result));
-                VERBOSEPRINTREG(cpu_id, counter, counter_result, READ_CTRL);
+                VERBOSEPRINTREG(cpu_id, counter, counter_result, READ_CTR);
                 if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
                 {
                     eventSet->events[i].threadCounter[thread_id].overflows++;
