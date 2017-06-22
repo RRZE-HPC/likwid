@@ -106,11 +106,9 @@ cpu_list = {}
 skip_mask = nil
 affinity = nil
 num_threads = 0
+cpustr = nil
+verbose = 0
 
-likwid.setenv("LIKWID_NO_ACCESS", "1")
-config = likwid.getConfiguration()
-cputopo = likwid.getCpuTopology()
-affinity = likwid.getAffinityInfo()
 
 if (#arg == 0) then
     usage()
@@ -128,22 +126,10 @@ for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t
         verbose = tonumber(arg)
         likwid.setVerbosity(verbose)
     elseif (opt == "c") then
-        if (affinity ~= nil) then
-            num_threads,cpu_list = likwid.cpustr_to_cpulist(arg)
-        else
-            num_threads,cpu_list = likwid.cpustr_to_cpulist_physical(arg)
-        end
-        if (num_threads == 0) then
-            print_stderr("Failed to parse cpulist " .. arg)
-            close_and_exit(1)
-        end
+        cpustr = arg
     elseif (opt == "d") then
         delimiter = arg
     elseif opt == "S" or opt == "sweep" then
-        if (affinity == nil) then
-            print_stderr("Option -S is not supported for unknown processor!")
-            close_and_exit(1)
-        end
         sweep_sockets = true
     elseif (opt == "i") then
         interleaved_policy = true
@@ -172,6 +158,29 @@ for i=1, likwid.tablelength(arg)-2 do
     table.insert(execList, arg[i])
 end
 
+likwid.setenv("LIKWID_NO_ACCESS", "1")
+config = likwid.getConfiguration()
+cputopo = likwid.getCpuTopology()
+numainfo = likwid.getNumaInfo()
+affinity = likwid.getAffinityInfo()
+
+if cpustr ~= nil then
+    if not (cpustr:match(",$") or cpustr:match("-$") or cpustr:match("^-") or cpustr:match("^,")) then
+        if (affinity ~= nil) then
+            num_threads,cpu_list = likwid.cpustr_to_cpulist(cpustr)
+        else
+            num_threads,cpu_list = likwid.cpustr_to_cpulist_physical(cpustr)
+        end
+    end
+    if (num_threads <= 0) then
+        print_stderr("Failed to parse cpulist " .. cpustr)
+        close_and_exit(1)
+    end
+    if verbose > 0 and quiet == 0 then
+        print_stdout("Evaluated CPU string to CPUs: ".. table.concat(cpu_list, ","))
+    end
+end
+
 
 if print_domains and num_threads > 0 then
     outstr = ""
@@ -198,14 +207,18 @@ if (#arg == 0) then
 end
 
 if interleaved_policy then
-    if quiet == 0 then
-        print_stdout("Set mem_policy to interleaved")
+    if numainfo["numberOfNodes"] > 1 then
+        if verbose > 0 and quiet == 0 then
+            print_stdout("Set mem_policy to interleaved")
+        end
+        likwid.setMemInterleaved(num_threads, cpu_list)
+    else
+        print_stdout("No need to set mem_policy to interleaved, only one NUMA node available")
     end
-    likwid.setMemInterleaved(num_threads, cpu_list)
 end
 
 if sweep_sockets then
-    if quiet == 0 then
+    if verbose > 0 and quiet == 0 then
         print_stdout("Sweeping memory")
     end
     likwid.memSweep(num_threads, cpu_list)
@@ -214,7 +227,7 @@ end
 local omp_threads = os.getenv("OMP_NUM_THREADS")
 if omp_threads == nil then
     likwid.setenv("OMP_NUM_THREADS",tostring(math.tointeger(num_threads)))
-elseif num_threads > tonumber(omp_threads) and quiet == 0 then
+elseif num_threads > tonumber(omp_threads) and (quiet == 0 and verbose > 0) then
     print_stdout(string.format("Environment variable OMP_NUM_THREADS already set to %s but %d cpus required", omp_threads,num_threads))
 end
 if omp_threads and tonumber(omp_threads) < num_threads then
@@ -257,6 +270,14 @@ else
 end
 
 local exec = table.concat(execList," ")
+if verbose > 0 and quiet == 0 then
+    print_stdout("Running: " .. exec)
+    mask = 0
+    for _, c in pairs(cpu_list) do
+        mask = mask | (1<<c)
+    end
+    print_stdout(string.format("Using %d thread(s) (cpuset: 0x%x)", num_threads, mask))
+end
 local pid = likwid.startProgram(exec, num_threads, cpu_list)
 if (pid == nil) then
     print_stderr("Failed to execute command: ".. table.concat(execList," "))
