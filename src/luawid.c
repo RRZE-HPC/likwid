@@ -950,7 +950,7 @@ lua_likwid_putTopology(lua_State* L)
 static int
 lua_likwid_getEventsAndCounters(lua_State* L)
 {
-    int i;
+    int i = 0, insert = 1;
 
     if (topology_isInitialized == 0)
     {
@@ -972,7 +972,7 @@ lua_likwid_getEventsAndCounters(lua_State* L)
         if (counter_map[i-1].type == NOTYPE)
             continue;
         bstring optString = bfromcstr("");
-        lua_pushinteger(L, (lua_Integer)(i));
+        lua_pushinteger(L, (lua_Integer)(insert));
         lua_newtable(L);
         lua_pushstring(L,"Name");
         lua_pushstring(L,counter_map[i-1].key);
@@ -1001,7 +1001,9 @@ lua_likwid_getEventsAndCounters(lua_State* L)
         lua_settable(L,-3);
         lua_settable(L,-3);
         bdestroy(optString);
+        insert++;
     }
+    insert = 1;
     lua_settable(L,-3);
     lua_pushstring(L,"Events");
     lua_newtable(L);
@@ -1010,7 +1012,7 @@ lua_likwid_getEventsAndCounters(lua_State* L)
         if (strlen(eventHash[i-1].limit) == 0)
             continue;
         bstring optString = bfromcstr("");
-        lua_pushinteger(L, (lua_Integer)(i));
+        lua_pushinteger(L, (lua_Integer)(insert));
         lua_newtable(L);
         lua_pushstring(L,"Name");
         lua_pushstring(L,eventHash[i-1].name);
@@ -1039,6 +1041,7 @@ lua_likwid_getEventsAndCounters(lua_State* L)
         lua_settable(L,-3);
         lua_settable(L,-3);
         bdestroy(optString);
+        insert++;
     }
     lua_settable(L,-3);
     HPMfinalize();
