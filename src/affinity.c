@@ -331,6 +331,13 @@ affinity_init()
                             bdata(domains[currentDomain + subCounter].tag));
                     return;
                 }
+                // Skip memory domain if all CPUs are already attached to others
+                // This happens for example on Intel Xeon Phi (KNL) where the
+                // NUMA domains of the MCDRAM don't have CPUs attached.
+                if (offset >= cpuid_topology.numCoresPerSocket*cpuid_topology.numSockets)
+                {
+                    continue;
+                }
 
                 tmp = treeFillNextEntries(cpuid_topology.topologyTree,
                                           domains[currentDomain + subCounter].processorList, 0,
