@@ -222,6 +222,8 @@ hwloc_numa_init(void)
     hwloc_obj_t obj;
     const struct hwloc_distances_s* distances;
     hwloc_obj_type_t hwloc_type = HWLOC_OBJ_NODE;
+    if (numaInitialized > 0 || numa_info.numberOfNodes > 0)
+        return 0;
 
     if (!hwloc_topology)
     {
@@ -349,6 +351,7 @@ hwloc_numa_init(void)
     }
     else
     {
+        numaInitialized = 1;
         return 0;
     }
 }
