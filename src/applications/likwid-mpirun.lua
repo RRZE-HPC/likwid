@@ -1277,14 +1277,14 @@ local function parseOutputFile(filename)
                         table.remove(linelist, j)
                     end
                 end
-                if results[gidx][idx] == nil then
-                    results[gidx][idx] = {}
+                if results[gidx][counter] == nil then
+                    results[gidx][counter] = {}
                 end
                 for j, value in pairs(linelist) do
                     if event:match("[Rr]untime") then
                         results[gidx]["time"][cpulist[j]] = tonumber(value)
                     else
-                        results[gidx][idx][cpulist[j]] = tonumber(value)
+                        results[gidx][counter][cpulist[j]] = tonumber(value)
                     end
                 end
                 if not event:match("[Rr]untime") then
@@ -1387,9 +1387,11 @@ local function parseMarkerOutputFile(filename)
                         end
                     end
                 end
-            elseif parse_reg_output then
+            elseif parse_reg_output and not line:match("^%s*$") then
                 linelist = likwid.stringsplit(line,",")
                 if linelist[2] ~= "TSC" then
+                    event = linelist[1]
+                    counter = linelist[2]
                     table.remove(linelist,1)
                     table.remove(linelist,1)
                     for j=#linelist,1,-1 do
@@ -1397,11 +1399,11 @@ local function parseMarkerOutputFile(filename)
                             table.remove(linelist, j)
                         end
                     end
-                    if results[current_region][gidx][idx] == nil then
-                        results[current_region][gidx][idx] = {}
+                    if results[current_region][gidx][counter] == nil then
+                        results[current_region][gidx][counter] = {}
                     end
                     for j, value in pairs(linelist) do
-                        results[current_region][gidx][idx][cpulist[j]] = tonumber(value)
+                        results[current_region][gidx][counter][cpulist[j]] = tonumber(value)
                     end
                     idx = idx + 1
                 end
@@ -1510,9 +1512,10 @@ function printMpiOutput(group_list, all_results, regionname)
                 end
                 for j=1,#gdata["Events"] do
                     local value = "0"
-                    if all_results[rank]["results"][gidx][j] and
-                       all_results[rank]["results"][gidx][j][cpu] then
-                        value = likwid.num2str(all_results[rank]["results"][gidx][j][cpu])
+                    cname = gdata["Events"][j]["Counter"]
+                    if all_results[rank]["results"][gidx][cname] and
+                       all_results[rank]["results"][gidx][cname][cpu] then
+                        value = likwid.num2str(all_results[rank]["results"][gidx][cname][cpu])
                     end
                     table.insert(column, value)
                 end
@@ -1535,9 +1538,9 @@ function printMpiOutput(group_list, all_results, regionname)
                     for j=1,#gdata["Events"] do
                         local counter = gdata["Events"][j]["Counter"]
                         counterlist[counter] = 0
-                        if all_results[rank]["results"][gidx][j] ~= nil and
-                           all_results[rank]["results"][gidx][j][cpu] ~= nil then
-                            counterlist[counter] = all_results[rank]["results"][gidx][j][cpu]
+                        if all_results[rank]["results"][gidx][counter] ~= nil and
+                           all_results[rank]["results"][gidx][counter][cpu] ~= nil then
+                            counterlist[counter] = all_results[rank]["results"][gidx][counter][cpu]
                         end
                     end
                     counterlist["time"] = all_results[rank]["results"][gidx]["time"][cpu]
