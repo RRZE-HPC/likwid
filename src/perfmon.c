@@ -590,6 +590,7 @@ calculateResult(int groupId, int eventId, int threadId)
     PerfmonCounter* counter;
     int cpu_id;
     double result = 0.0;
+    uint64_t maxValue = 0ULL;
     if (groupSet->groups[groupId].events[eventId].type == NOTYPE)
         return result;
 
@@ -601,11 +602,13 @@ calculateResult(int groupId, int eventId, int threadId)
     }
     else if (counter->overflows > 0)
     {
-        result += (double) ((perfmon_getMaxCounterValue(counter_map[event->index].type) -
-                    counter->startData) + counter->counterData);
-        counter->overflows--;
+        maxValue = perfmon_getMaxCounterValue(counter_map[event->index].type);
+        result += (double) ((maxValue - counter->startData) + counter->counterData);
+        if (counter->overflows > 1)
+        {
+            result += (double) ((counter->overflows-1) * maxValue);
+        }
     }
-    result += (double) (counter->overflows * perfmon_getMaxCounterValue(counter_map[event->index].type));
     if (counter_map[event->index].type == POWER)
     {
         result *= power_getEnergyUnit(getCounterTypeOffset(event->index));
