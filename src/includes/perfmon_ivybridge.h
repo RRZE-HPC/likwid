@@ -68,7 +68,7 @@ int perfmon_init_ivybridge(int cpu_id)
         ivy_cbox_setup = ivbep_cbox_setup;
         ivb_did_cbox_test = 1;
     }
-    else if (cpuid_info.model == IVYBRIDGE && 
+    else if (cpuid_info.model == IVYBRIDGE &&
              socket_lock[affinity_core2node_lookup[cpu_id]] == cpu_id &&
              ivb_did_cbox_test == 0)
     {
@@ -924,6 +924,14 @@ int perfmon_startCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventS
                         eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
                     }
                     break;
+                case WBOX0FIX:
+                case WBOX1FIX:
+                    if (haveLock)
+                    {
+                        CHECK_PCI_READ_ERROR(HPMread(cpu_id, counter_map[index].device, counter1, &tmp));
+                        eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                    }
+                    break;
 
                 default:
                     if (type >= UNCORE && haveLock)
@@ -1208,6 +1216,17 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     counter_result = ivb_uncore_read(cpu_id, index, event, FREEZE_FLAG_CLEAR_CTR);
                     ivb_uncore_overflow(cpu_id, index, event, overflows, counter_result,
                                         *current, box_map[type].ovflOffset, 0);
+                    break;
+                case WBOX0FIX:
+                case WBOX1FIX:
+                    if (haveLock)
+                    {
+                        CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
+                        if (counter_result < *current)
+                        {
+                            (*overflows)++;
+                        }
+                    }
                     break;
 
                 case IBOX1:
