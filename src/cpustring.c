@@ -39,6 +39,19 @@
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static int
+check_and_atoi(char* s)
+{
+    int i = 0;
+    int len = strlen(s);
+    for (i = 0; i < len ; i++)
+    {
+        if (s[i] < '0' || s[i] > '9')
+            return -1;
+    }
+    return atoi(s);
+}
+
+static int
 cpulist_sort(int* incpus, int* outcpus, int length)
 {
     int insert = 0;
@@ -104,6 +117,7 @@ cpuexpr_to_list(bstring bcpustr, bstring prefix, int* list, int length)
     strlist = bsplit(bcpustr, ',');
     int oldinsert = 0;
     int insert = 0;
+    int tmp = 0;
     for (int i=0;i < strlist->qty; i++)
     {
         bstring newstr = bstrcpy(prefix);
@@ -113,8 +127,12 @@ cpuexpr_to_list(bstring bcpustr, bstring prefix, int* list, int length)
         {
             if (bstrcmp(affinity->domains[j].tag, newstr) == 0)
             {
-                list[insert] = atoi(bdata(strlist->entry[i]));
-                insert++;
+                tmp = check_and_atoi(bdata(strlist->entry[i]));
+                if (tmp >= 0)
+                {
+                    list[insert] = tmp;
+                    insert++;
+                }
                 if (insert == length)
                     goto list_done;
                 break;
@@ -131,19 +149,32 @@ list_done:
     return insert;
 }
 
+
 static int
-cpustr_to_cpulist_scatter(bstring bcpustr, int* cpulist, int length)
+cpustr_to_cpulist_method(bstring bcpustr, int* cpulist, int length)
 {
     int max_procs = 0;
+    int given_procs = 0;
     topology_init();
     CpuTopology_t cpuid_topology = get_cpuTopology();
     affinity_init();
     AffinityDomains_t affinity = get_affinityDomains();
+    bstring scattercheck = bformat("scatter");
+    bstring balancedcheck = bformat("balanced");
+    bstring cbalancedcheck = bformat("cbalanced");
     char* cpustring = bstr2cstr(bcpustr, '\0');
     if (bstrchrp(bcpustr, ':', 0) != BSTR_ERR)
     {
         int insert = 0;
         int suitidx = 0;
+        struct bstrList* parts = bstrListCreate();
+        parts = bsplit(bcpustr, ':');
+        if (parts->qty == 3)
+        {
+            int tmp = check_and_atoi(bdata(parts->entry[2]));
+            if (tmp > 0)
+                given_procs = tmp;
+        }
         int* suitable = (int*)malloc(affinity->numberOfAffinityDomains*sizeof(int));
         if (!suitable)
         {
@@ -152,7 +183,7 @@ cpustr_to_cpulist_scatter(bstring bcpustr, int* cpulist, int length)
         }
         for (int i=0; i<affinity->numberOfAffinityDomains; i++)
         {
-            if (bstrchrp(affinity->domains[i].tag, cpustring[0], 0) != BSTR_ERR &&
+            if (binstr(affinity->domains[i].tag, 0, parts->entry[0]) != BSTR_ERR &&
                 affinity->domains[i].numberOfProcessors > 0)
             {
                 suitable[suitidx] = i;
@@ -174,7 +205,7 @@ cpustr_to_cpulist_scatter(bstring bcpustr, int* cpulist, int length)
             if (!sLists[i])
             {
                 free(suitable);
-                for (int j=0; i<i; j++)
+                for (int j=0; j<i; j++)
                 {
                     free(sLists[j]);
                 }
@@ -183,17 +214,125 @@ cpustr_to_cpulist_scatter(bstring bcpustr, int* cpulist, int length)
             }
             cpulist_sort(affinity->domains[suitable[i]].processorList, sLists[i], affinity->domains[suitable[i]].numberOfProcessors);
         }
-        for (int off=0;off<max_procs;off++)
+        if (binstr(bcpustr, 0, scattercheck) != BSTR_ERR)
         {
-            for(int i=0;i < suitidx; i++)
+            if (given_procs > 0)
+                length = given_procs;
+            for (int off=0;off<max_procs;off++)
             {
-                cpulist[insert] = sLists[i][off];
-                insert++;
-                if (insert == length)
-                    goto scatter_done;
+                for(int i=0;i < suitidx; i++)
+                {
+                    cpulist[insert] = sLists[i][off];
+                    insert++;
+                    if (insert == length)
+                        goto method_done;
+                }
             }
         }
-scatter_done:
+        else if (binstr(bcpustr, 0, cbalancedcheck) != BSTR_ERR)
+        {
+            if (given_procs > 0)
+                length = given_procs;
+            else
+                length = max_procs * suitidx;
+            int per_domain = length/suitidx;
+            int remain = length % suitidx;
+            int coresAllDomains = (max_procs*suitidx)/cpuid_topology->numThreadsPerCore;
+            int coresPerDomain = coresAllDomains/suitidx;
+            int threadsPerCore = cpuid_topology->numThreadsPerCore;
+            if ((per_domain+remain) > coresPerDomain)
+            {
+                for(int i=0;i < suitidx; i++)
+                {
+                    int with_ht = ((per_domain+remain)-coresPerDomain)*threadsPerCore;
+                    for (int j = 0; j < with_ht; j++)
+                    {
+                        int cpu = affinity->domains[suitable[i]].processorList[j];
+                        cpulist[insert] = cpu;
+                        insert++;
+                        for (int k=0; k< max_procs;k++)
+                        {
+                            if (sLists[i][k] == cpu)
+                            {
+                                sLists[i][k] = -1;
+                                break;
+                            }
+                        }
+                    }
+                    int wo_ht = (per_domain+remain) - with_ht;
+                    for (int j = 0; j < wo_ht; j++)
+                    {
+                        if (sLists[i][j] >= 0)
+                        {
+                            if (remain > 0)
+                            {
+                                remain--;
+                            }
+                            int cpu = sLists[i][j];
+                            cpulist[insert] = cpu;
+                            insert++;
+                            for (int k=0; k< max_procs;k++)
+                            {
+                                if (sLists[i][k] == cpu)
+                                {
+                                    sLists[i][k] = -1;
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            wo_ht++;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for(int i=0;i < suitidx; i++)
+                {
+                    int new_domain = per_domain;
+                    if (remain > 0)
+                    {
+                        new_domain++;
+                        remain--;
+                    }
+                    for (int j = 0; j < new_domain; j++)
+                    {
+                        cpulist[insert] = sLists[i][j];
+                        insert++;
+                        if (insert == length)
+                            goto method_done;
+                    }
+                }
+            }
+        }
+        else if (binstr(bcpustr, 0, balancedcheck) != BSTR_ERR)
+        {
+            if (given_procs > 0)
+                length = given_procs;
+            else
+                length = max_procs * suitidx;
+            int per_domain = length/suitidx;
+            int remain = length % suitidx;
+            for(int i=0;i < suitidx; i++)
+            {
+                int new_domain = per_domain;
+                if (remain > 0)
+                {
+                    new_domain++;
+                    remain--;
+                }
+                for (int j = 0; j < new_domain; j++)
+                {
+                    cpulist[insert] = affinity->domains[suitable[i]].processorList[j];
+                    insert++;
+                    if (insert == length)
+                        goto method_done;
+                }
+            }
+        }
+method_done:
         bcstrfree(cpustring);
         for (int i = 0; i< suitidx; i++)
         {
@@ -202,6 +341,10 @@ scatter_done:
         free(sLists);
         free(suitable);
         return insert;
+    }
+    else
+    {
+        fprintf(stderr, "Not a valid CPU expression\n");
     }
     bcstrfree(cpustring);
     return 0;
@@ -219,6 +362,7 @@ cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int length)
     int count = 0;
     int stride = 0;
     int chunk = 0;
+    int off = 0;
     if (bstrchrp(bcpustr, 'E', 0) != 0)
     {
         fprintf(stderr, "Not a valid CPU expression\n");
@@ -229,16 +373,31 @@ cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int length)
     if (strlist->qty == 3)
     {
         bdomain = bstrcpy(strlist->entry[1]);
-        count = atoi(bdata(strlist->entry[2]));
+        count = check_and_atoi(bdata(strlist->entry[2]));
         stride = 1;
         chunk = 1;
     }
     else if (strlist->qty == 5)
     {
         bdomain = bstrcpy(strlist->entry[1]);
-        count = atoi(bdata(strlist->entry[2]));
-        chunk = atoi(bdata(strlist->entry[3]));
-        stride = atoi(bdata(strlist->entry[4]));
+        count = check_and_atoi(bdata(strlist->entry[2]));
+        chunk = check_and_atoi(bdata(strlist->entry[3]));
+        stride = check_and_atoi(bdata(strlist->entry[4]));
+    }
+    else if (strlist->qty == 6)
+    {
+        bdomain = bstrcpy(strlist->entry[1]);
+        count = check_and_atoi(bdata(strlist->entry[2]));
+        chunk = check_and_atoi(bdata(strlist->entry[3]));
+        stride = check_and_atoi(bdata(strlist->entry[4]));
+        off = check_and_atoi(bdata(strlist->entry[5]));
+    }
+    if (count < 0 || chunk < 0 || stride < 0 || off < 0)
+    {
+        fprintf(stderr, "CPU expression contains non-numerical characters\n");
+        bdestroy(bdomain);
+        bstrListDestroy(strlist);
+        return 0;
     }
     for (int i=0; i<affinity->numberOfAffinityDomains; i++)
     {
@@ -261,13 +420,13 @@ cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int length)
     {
         for (int j=0; j<chunk && offset+j<affinity->domains[domainidx].numberOfProcessors;j++)
         {
-            cpulist[insert] = affinity->domains[domainidx].processorList[offset + j];
+            cpulist[insert] = affinity->domains[domainidx].processorList[off + offset + j];
             insert++;
             if (insert == length || insert == count)
                 goto expression_done;
         }
         offset += stride;
-        if (offset >= affinity->domains[domainidx].numberOfProcessors)
+        if (off+offset >= affinity->domains[domainidx].numberOfProcessors)
         {
             offset = 0;
         }
@@ -349,14 +508,24 @@ cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
         {
             struct bstrList* indexlist;
             indexlist = bsplit(strlist->entry[i], '-');
-            if (atoi(bdata(indexlist->entry[0])) <= atoi(bdata(indexlist->entry[1])))
+            int start = check_and_atoi(bdata(indexlist->entry[0]));
+            int end = check_and_atoi(bdata(indexlist->entry[1]));
+            if (start < 0 || end < 0)
             {
-                require += atoi(bdata(indexlist->entry[1])) - atoi(bdata(indexlist->entry[0])) + 1;
+                fprintf(stderr, "CPU expression %s contains non-numerical characters\n",
+                                 bdata(strlist->entry[i]));
+                bstrListDestroy(indexlist);
+                continue;
+            }
+            if (start <= end)
+            {
+                require += end - start + 1;
             }
             else
             {
-                require += atoi(bdata(indexlist->entry[0])) - atoi(bdata(indexlist->entry[1])) + 1;
+                require += start - end + 1;
             }
+            bstrListDestroy(indexlist);
         }
         else
         {
@@ -368,7 +537,7 @@ cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
         fprintf(stderr,
                 "WARN: Selected affinity domain %s has only %d hardware threads, but selection string evaluates to %d threads.\n",
                 bdata(affinity->domains[domainidx].tag), ret, require);
-        fprintf(stderr, "      This results in multiple threads on the same hardware thread.\n");
+        fprintf(stderr, "     This results in multiple threads on the same hardware thread.\n");
     }
 logical_redo:
     for (int i=0; i< strlist->qty; i++)
@@ -377,9 +546,18 @@ logical_redo:
         {
             struct bstrList* indexlist;
             indexlist = bsplit(strlist->entry[i], '-');
-            if (atoi(bdata(indexlist->entry[0])) <= atoi(bdata(indexlist->entry[1])))
+            int start = check_and_atoi(bdata(indexlist->entry[0]));
+            int end = check_and_atoi(bdata(indexlist->entry[1]));
+            if (start < 0 || end < 0)
             {
-                for (int j=atoi(bdata(indexlist->entry[0])); j<=atoi(bdata(indexlist->entry[1])) && (insert_offset+insert < require);j++)
+                fprintf(stderr, "CPU expression %s contains non-numerical characters\n",
+                                 bdata(strlist->entry[i]));
+                bstrListDestroy(indexlist);
+                continue;
+            }
+            if (start <= end)
+            {
+                for (int j=start; j<=end && (insert_offset+insert < require); j++)
                 {
                     inlist_idx = j;
                     cpulist[insert_offset + insert] = inlist[inlist_idx % ret];
@@ -396,8 +574,16 @@ logical_redo:
             }
             else
             {
-                for (int j=atoi(bdata(indexlist->entry[0]));
-                        j>=atoi(bdata(indexlist->entry[1])) && (insert_offset+insert < require); j--)
+                int start = check_and_atoi(bdata(indexlist->entry[0]));
+                int end = check_and_atoi(bdata(indexlist->entry[1]));
+                if (start < 0 || end < 0)
+                {
+                    fprintf(stderr, "CPU expression %s contains non-numerical characters\n",
+                                     bdata(strlist->entry[i]));
+                    bstrListDestroy(indexlist);
+                    continue;
+                }
+                for (int j=start; j>=end && (insert_offset+insert < require); j--)
                 {
                     inlist_idx = j;
                     cpulist[insert_offset + insert] = inlist[inlist_idx % ret];
@@ -416,7 +602,13 @@ logical_redo:
         }
         else
         {
-            cpulist[insert_offset + insert] = inlist[atoi(bdata(strlist->entry[i])) % ret];
+            int cpu = check_and_atoi(bdata(strlist->entry[i]));
+            if (cpu < 0)
+            {
+                fprintf(stderr, "CPU expression %s contains non-numerical characters\n",
+                                 bdata(strlist->entry[i]));
+            }
+            cpulist[insert_offset + insert] = inlist[cpu % ret];
             insert++;
             if (insert == ret)
             {
@@ -482,9 +674,18 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
         {
             struct bstrList* indexlist;
             indexlist = bsplit(strlist->entry[i], '-');
-            if (atoi(bdata(indexlist->entry[0])) <= atoi(bdata(indexlist->entry[1])))
+            int start = check_and_atoi(bdata(indexlist->entry[0]));
+            int end = check_and_atoi(bdata(indexlist->entry[1]));
+            if (start < 0 || end < 0)
             {
-                for (int j=atoi(bdata(indexlist->entry[0])); j<=atoi(bdata(indexlist->entry[1]));j++)
+                fprintf(stderr, "CPU expression %s contains non-numerical characters\n",
+                                 bdata(strlist->entry[i]));
+                bstrListDestroy(indexlist);
+                continue;
+            }
+            if (start <= end)
+            {
+                for (int j = start; j <= end; j++)
                 {
                     if (cpu_in_domain(domainidx, j))
                     {
@@ -504,7 +705,7 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
             }
             else
             {
-                for (int j=atoi(bdata(indexlist->entry[0])); j>=atoi(bdata(indexlist->entry[1]));j--)
+                for (int j = start; j >= end; j--)
                 {
                     if (cpu_in_domain(domainidx, j))
                     {
@@ -526,8 +727,13 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
         }
         else
         {
-            int cpu = atoi(bdata(strlist->entry[i]));
-            if (cpu_in_domain(domainidx, cpu))
+            int cpu = check_and_atoi(bdata(strlist->entry[i]));
+            if (cpu < 0)
+            {
+                fprintf(stderr, "CPU expression %s contains non-numerical characters\n",
+                                 bdata(strlist->entry[i]));
+            }
+            else if (cpu_in_domain(domainidx, cpu))
             {
                 cpulist[insert] = cpu;
                 insert++;
@@ -560,6 +766,7 @@ cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
     bstring bcpustr = bfromcstr(cpustring);
     struct bstrList* strlist;
     bstring scattercheck = bformat("scatter");
+    bstring balancedcheck = bformat("balanced");
     topology_init();
     CpuTopology_t cpuid_topology = get_cpuTopology();
     strlist = bsplit(bcpustr, '@');
@@ -574,9 +781,10 @@ cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
     }
     for (int i=0; i< strlist->qty; i++)
     {
-        if (binstr(strlist->entry[i], 0, scattercheck) != BSTR_ERR)
+        if (binstr(strlist->entry[i], 0, scattercheck) != BSTR_ERR ||
+            binstr(strlist->entry[i], 0, balancedcheck) != BSTR_ERR)
         {
-            ret = cpustr_to_cpulist_scatter(strlist->entry[i], tmpList, length);
+            ret = cpustr_to_cpulist_method(strlist->entry[i], tmpList, length);
             insert += cpulist_concat(cpulist, insert, tmpList, ret);
         }
         else if (bstrchrp(strlist->entry[i], 'E', 0) == 0)
