@@ -1982,7 +1982,6 @@ __perfmon_readCounters(int groupId, int threadId)
                     groupSet->groups[groupId].events[j].threadCounter[threadId].fullResult += result;
                     groupSet->groups[groupId].events[j].threadCounter[threadId].startData =
                         groupSet->groups[groupId].events[j].threadCounter[threadId].counterData;
-                    groupSet->groups[groupId].events[j].threadCounter[threadId].overflows = 0;
                 }
             }
         }
@@ -2001,7 +2000,6 @@ __perfmon_readCounters(int groupId, int threadId)
             groupSet->groups[groupId].events[j].threadCounter[threadId].fullResult += result;
             groupSet->groups[groupId].events[j].threadCounter[threadId].startData =
                 groupSet->groups[groupId].events[j].threadCounter[threadId].counterData;
-            groupSet->groups[groupId].events[j].threadCounter[threadId].overflows = 0;
         }
 }
     timer_start(&groupSet->groups[groupId].timer);
