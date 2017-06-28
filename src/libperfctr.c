@@ -111,17 +111,20 @@ static double
 calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int overflows)
 {
     double result = 0.0;
-
+    uint64_t maxValue = 0ULL;
     if (overflows == 0)
     {
         result = (double) (stop - start);
     }
     else if (overflows > 0)
     {
-        result += (double) ((perfmon_getMaxCounterValue(counter_map[index].type) - start) + stop);
-        overflows--;
+        maxValue = perfmon_getMaxCounterValue(counter_map[index].type);
+        result += (double) ((maxValue - start) + stop);
+        if (overflows > 1)
+        {
+            result += (double) ((overflows-1) * maxValue);
+        }
     }
-    result += (double) (overflows * perfmon_getMaxCounterValue(counter_map[index].type));
     if (counter_map[index].type == POWER)
     {
         result *= power_getEnergyUnit(getCounterTypeOffset(index));
