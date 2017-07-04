@@ -6,8 +6,8 @@
  *
  *      Description:  A monitoring daemon for hardware performance counters.
  *
- *      Version:   4.2
- *      Released:  22.12.2016
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
  *      Project:  likwid
@@ -46,6 +46,7 @@ dconfig["gmetricPath"] = "gmetric"
 dconfig["gmetricConfig"] = nil
 dconfig["gmetricHasUnit"] = false
 dconfig["gmetricHasGroup"] = false
+dconfig["gmetricGroup"] = nil
 dconfig["rrd"] = false
 dconfig["rrdPath"] = "."
 dconfig["syslog"] = false
@@ -137,6 +138,12 @@ local function read_daemon_config(filename)
                 dconfig["gmetricConfig"] = linelist[1]
             end
 
+            if line:match("^GMETRICGROUP%a*") ~= nil then
+                local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
+                table.remove(linelist, 1)
+                dconfig["gmetricGroup"] = linelist[1]
+            end
+
             if line:match("^RRD%a*") ~= nil then
                 local linelist = likwid.stringsplit(line, "%s+", nil, "%s+")
                 table.remove(linelist, 1)
@@ -223,9 +230,9 @@ local function logfile(groupID, results)
         open_function = "w"
     end
     filename = "likwid."..tostring(groupID)..".log"
-    local s,e = dconfig["groupData"][groupID]["GroupString"]:find(":")
+    local s,e = dconfig["groupStrings"][groupID]:find(":")
     if not s then
-        filename = "likwid."..dconfig["groupData"][groupID]["GroupString"]..".log"
+        filename = "likwid."..dconfig["groupStrings"][groupID]..".log"
     end
     local f = io.open(dconfig["logPath"].."/"..filename, open_function)
     if f == nil then
@@ -289,7 +296,7 @@ local function check_gmetric()
     return true
 end
 
-local function gmetric(gdata, results)
+local function gmetric(gid, results)
     execList = {}
     if dconfig["gmetricPath"] == nil then
         return
@@ -299,9 +306,14 @@ local function gmetric(gdata, results)
         table.insert(execList, "-c")
         table.insert(execList, dconfig["gmetricConfig"])
     end
-    if dconfig["gmetricHasGroup"] and gdata["GroupString"] ~= gdata["EventString"] then
-        table.insert(execList, "-g")
-        table.insert(execList, gdata["GroupString"])
+    if dconfig["gmetricHasGroup"] then
+        if dconfig["gmetricGroup"] ~= nil then
+            table.insert(execList, "-g")
+            table.insert(execList, dconfig["gmetricGroup"])
+        elseif not dconfig["groupStrings"][gid]:match(":") then
+            table.insert(execList, "-g")
+            table.insert(execList, dconfig["groupStrings"][gid])
+        end
     end
     for k,v in pairs(results) do
         local execStr = table.concat(execList, " ")
@@ -345,43 +357,56 @@ end
 
 local function check_rrd()
     local f = io.popen("rrdtool")
+    if f ~= nil then
+        f:close()
+        return true
+    end
+    dconfig["rrd"] = false
+    return false
+end
+
+local function tointstring(value)
+    return string.format("%.0f", tonumber(value))
+end
+
+local function rrd(gid, results)
+    local rrdname = dconfig["rrdPath"].."/".. dconfig["groupStrings"][gid] .. ".rrd"
+    local f = io.open(rrdname, "r")
+    local timestamp = results["Timestamp"]
+    if rrdconfig[gid] == nil then
+        rrdconfig[gid] = {}
+        for k,v in pairs(results) do
+            if not k:match("Timestamp") then
+                table.insert(rrdconfig[gid], k)
+            end
+        end
+    end
     if f == nil then
-        return false
+        local numGroups = #dconfig["groupStrings"]
+        local duration = dconfig["duration"]
+        local rrdstring = "rrdtool create "..rrdname.." --step ".. tointstring(numGroups*duration)
+        for i=1,#rrdconfig[gid] do
+            local v = rrdconfig[gid][i]
+            rrdstring = rrdstring .. " DS"..":" .. normalize_rrd_string(v) ..":GAUGE:"
+            rrdstring = rrdstring ..tointstring(numGroups*duration) ..":0:U"
+        end
+        rrdstring = rrdstring .." RRA:AVERAGE:0.5:" .. tointstring(60/duration)..":10"
+        rrdstring = rrdstring .." RRA:MIN:0.5:" .. tointstring(60/duration)..":10"
+        rrdstring = rrdstring .." RRA:MAX:0.5:" .. tointstring(60/duration)..":10"
+        --Average, min and max of hours of last day
+        rrdstring = rrdstring .." RRA:AVERAGE:0.5:" .. tointstring(3600/duration)..":24"
+        rrdstring = rrdstring .." RRA:MIN:0.5:" .. tointstring(3600/duration)..":24"
+        rrdstring = rrdstring .." RRA:MAX:0.5:" .. tointstring(3600/duration)..":24"
+        --Average, min and max of day of last month
+        rrdstring = rrdstring .." RRA:AVERAGE:0.5:" .. tointstring(86400/duration)..":31"
+        rrdstring = rrdstring .." RRA:MIN:0.5:" .. tointstring(86400/duration)..":31"
+        rrdstring = rrdstring .." RRA:MAX:0.5:" .. tointstring(86400/duration)..":31"
+        os.execute(rrdstring)
     end
-    f:close()
-    return true
-end
-
-local function create_rrd(numGroups, duration, groupData)
-    local rrdname = dconfig["rrdPath"].."/".. groupData["GroupString"] .. ".rrd"
-    local rrdstring = "rrdtool create "..rrdname.." --step ".. tostring(numGroups*duration)
-    if rrdconfig[groupData["GroupString"]] == nil then
-        rrdconfig[groupData["GroupString"]] = {}
-    end
-    for i, metric in pairs(groupdata["Metrics"]) do
-        rrdstring = rrdstring .. " DS"..":" .. normalize_rrd_string(metric["description"]) ..":GAUGE:"
-        rrdstring = rrdstring ..tostring(numGroups*duration) ..":0:U"
-        table.insert(rrdconfig[groupData["GroupString"]], metric["description"])
-    end
-    rrdstring = rrdstring .." RRA:AVERAGE:0.5:" .. tostring(60/duration)..":10"
-    rrdstring = rrdstring .." RRA:MIN:0.5:" .. tostring(60/duration)..":10"
-    rrdstring = rrdstring .." RRA:MAX:0.5:" .. tostring(60/duration)..":10"
-    --Average, min and max of hours of last day
-    rrdstring = rrdstring .." RRA:AVERAGE:0.5:" .. tostring(3600/duration)..":24"
-    rrdstring = rrdstring .." RRA:MIN:0.5:" .. tostring(3600/duration)..":24"
-    rrdstring = rrdstring .." RRA:MAX:0.5:" .. tostring(3600/duration)..":24"
-    --Average, min and max of day of last month
-    rrdstring = rrdstring .." RRA:AVERAGE:0.5:" .. tostring(86400/duration)..":31"
-    rrdstring = rrdstring .." RRA:MIN:0.5:" .. tostring(86400/duration)..":31"
-    rrdstring = rrdstring .." RRA:MAX:0.5:" .. tostring(86400/duration)..":31"
-    os.execute(rrdstring)
-end
-
-local function rrd(groupData, results)
-    local rrdname = dconfig["rrdPath"].."/".. groupData["GroupString"] .. ".rrd"
     local rrdstring = "rrdtool update "..rrdname.." N"
-    for i, id in pairs(rrdconfig[groupData["GroupString"]]) do
-        rrdstring = rrdstring .. ":" .. tostring(results[id])
+    for i=1,#rrdconfig[gid] do
+        local v = rrdconfig[gid][i]
+        rrdstring = rrdstring .. ":" .. tostring(results[v])
     end
     os.execute(rrdstring)
 end
@@ -474,9 +499,6 @@ likwid.init(cputopo["numHWThreads"], cpulist)
 for k,v in pairs(dconfig["groupStrings"]) do
     local groupID = likwid.addEventSet(v)
     table.insert(dconfig["groupData"], groupID, v)
-    if dconfig["rrd"] then
-        create_rrd(#dconfig["groupStrings"], dconfig["duration"], v)
-    end
 end
 
 likwid.catchSignal()
@@ -536,10 +558,10 @@ while likwid.getSignalState() == 0 do
                 logger(output)
             end
             if dconfig["gmetric"] then
-                gmetric(gdata, output)
+                gmetric(groupID, output)
             end
             if dconfig["rrd"] then
-                rrd(gdata, output)
+                rrd(groupID, output)
             end
             if dconfig["stdout"] then
                 for i,o in pairs(output) do
@@ -556,3 +578,4 @@ likwid.catchSignal()
 likwid.finalize()
 likwid.putConfiguration()
 likwid.putTopology()
+
