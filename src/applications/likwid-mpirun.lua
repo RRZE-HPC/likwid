@@ -509,44 +509,28 @@ function write_hostlist_to_file(hostlist, nperhost)
         return {}
     end
     outlist = {}
-    list = likwid.stringsplit(hostlist, ",")
-    for i, item in pairs(list) do
-        if not item:match("%[") then
-            table.insert(outlist, item)
-        else
-            prefixzeros = 0
-            host, start, ende,remain = item:match("(%a+)%[(%d+)-(%d+)%]([%w%d%[%]-]*)")
-            if host and start and ende then
-                if tonumber(start) ~= 0 then
-                    for j=1,#start do
-                        if start:sub(j,j+1) == '0' then
-                            prefixzeros = prefixzeros + 1
-                        end
-                    end
-                end
-                if start and ende then
-                    for j=start,ende do
-                        newh = host..string.rep("0", prefixzeros)..tostring(math.tointeger(j))
-                        if remain then
-                            newh = newh .. remain
-                        end
-                        table.insert(outlist, newh)
-                    end
-                end
-            end
-        end
-    end
-    fname = string.format("/tmp/hostlist.%d", likwid.getpid())
-    f = io.open(fname, "w")
+    cmd = string.format("scontrol show hostname %s", hostlist)
+    f = io.popen(cmd, 'r')
     if f ~= nil then
-        for i=1,#outlist do
-            for j=1, nperhost do
-                f:write(outlist[i].."\n")
-            end
-        end
+        local s = assert(f:read('*a'))
         f:close()
+        for i,line in pairs(likwid.stringsplit(s, "\n")) do
+            table.insert(outlist, line)
+        end
+        fname = string.format("/tmp/hostlist.%d", likwid.getpid())
+        f = io.open(fname, "w")
+        if f ~= nil then
+            for i=1,#outlist do
+                for j=1, nperhost do
+                    f:write(outlist[i].."\n")
+                end
+            end
+            f:close()
+        end
+        return fname
+    else
+        print_stderr("ERROR: Cannot transform SLURM hostlist to list of hosts")
     end
-    return fname
 end
 
 local function writeHostfileSlurm(hostlist, filename)
@@ -554,7 +538,14 @@ local function writeHostfileSlurm(hostlist, filename)
     for i, h in pairs(hostlist) do
         table.insert(l, h["hostname"])
     end
-    likwid.setenv("SLURM_NODELIST", table.concat(l,","))
+    cmd = string.format("scontrol show hostlist %s", table.concat(l,","))
+    f = io.popen(cmd, 'r')
+    if f ~= nil then
+        likwid.setenv("SLURM_NODELIST", f:read('*a'))
+        f:close()
+    else
+        print_stderr("ERROR: Cannot transform list of hosts to SLURM hostlist format")
+    end
 end
 
 local function getEnvironmentSlurm()
