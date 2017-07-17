@@ -101,6 +101,7 @@ power_init(int cpuId)
                 case HASWELL_M2:
                 case SKYLAKE1:
                 case SKYLAKE2:
+                case SKYLAKEX:
                 case KABYLAKE1:
                 case KABYLAKE2:
                 case XEON_PHI_KNL:
@@ -275,6 +276,7 @@ power_init(int cpuId)
                 (cpuid_info.model == HASWELL_M2) ||
                 (cpuid_info.model == BROADWELL_D) ||
                 (cpuid_info.model == BROADWELL_E) ||
+                (cpuid_info.model == SKYLAKEX) ||
                 (cpuid_info.model == XEON_PHI_KNL))
             {
                 power_info.domains[DRAM].energyUnit = 15.3E-6;

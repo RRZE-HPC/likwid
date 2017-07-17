@@ -161,6 +161,7 @@ cpuFeatures_update(int cpu)
              (cpuid_info.model == BROADWELL_E) ||
              (cpuid_info.model == SKYLAKE1) ||
              (cpuid_info.model == SKYLAKE2) ||
+             (cpuid_info.model == SKYLAKEX) ||
              (cpuid_info.model == KABYLAKE1) ||
              (cpuid_info.model == KABYLAKE2))
     {
@@ -188,6 +189,7 @@ cpuFeatures_update(int cpu)
             (cpuid_info.model == BROADWELL_E) ||
             (cpuid_info.model == SKYLAKE1) ||
             (cpuid_info.model == SKYLAKE2) ||
+            (cpuid_info.model == SKYLAKEX) ||
             (cpuid_info.model == KABYLAKE1) ||
             (cpuid_info.model == KABYLAKE2) ||
             (cpuid_info.model == ATOM_SILVERMONT_GOLD))
@@ -204,7 +206,7 @@ cpuFeatures_update(int cpu)
         TEST_FLAG_INV(FEAT_CL_PREFETCHER,1);
         TEST_FLAG_INV(FEAT_HW_PREFETCHER,0);
     }
-    
+
     if (cpuid_info.model == XEON_PHI_KNL)
     {
         ret = HPMread(cpu, MSR_DEV, MSR_PREFETCH_ENABLE, &flags);
@@ -343,6 +345,7 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == BROADWELL_E) ||
             (cpuid_info.model == SKYLAKE1) ||
             (cpuid_info.model == SKYLAKE2) ||
+            (cpuid_info.model == SKYLAKEX) ||
             (cpuid_info.model == KABYLAKE1) ||
             (cpuid_info.model == KABYLAKE2) ||
             (cpuid_info.model == ATOM_SILVERMONT_GOLD))
@@ -493,6 +496,7 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == BROADWELL_E) ||
             (cpuid_info.model == SKYLAKE1) ||
             (cpuid_info.model == SKYLAKE2) ||
+            (cpuid_info.model == SKYLAKEX) ||
             (cpuid_info.model == KABYLAKE1) ||
             (cpuid_info.model == KABYLAKE2) ||
             (cpuid_info.model == ATOM_SILVERMONT_GOLD))
