@@ -308,7 +308,7 @@ access_x86_pci_check(PciDeviceIndex dev, int socket)
     {
         return 1;
     }
-    else if ((pci_devices[dev].online == 1) || (FD[socket][dev] >= 0))
+    else if ((pci_devices[dev].online == 1) || (FD[socket][dev] > 0))
     {
         return 1;
     }
