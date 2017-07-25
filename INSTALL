@@ -25,6 +25,8 @@ If you debug your likwid-bench benchmarks you can look at all
 intermediate build files and also the final assembly code.
 
 == Build on Xeon Phi (Knights Corner) ==
+This section is _only_ for Knights Corner, for Knights Landing use default
+installation method!
 For builds for the Xeon Phi (Knights Corner) coprocessor, the accessDaemon and
 the frequency daemon are disabled. Moreover, the access mode is set to 'direct'.
 This was made because it is important to run as few processes as possible on the
