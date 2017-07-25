@@ -169,6 +169,12 @@ access_x86_msr_init(const int cpu_id)
         }
         else
         {
+            if(geteuid() != 0 && cpuid_info.supportUncore)
+            {
+                fprintf(stdout, "Using msr_safe kernel module. Currently, this deactivates the\n");
+                fprintf(stdout, "PCI-based Uncore monitoring.\n");
+                cpuid_info.supportUncore = 0;
+            }
             close(fd);
         }
     }
