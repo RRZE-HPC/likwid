@@ -738,7 +738,7 @@ if use_timeline == true then
     for i, cpu in pairs(cpulist) do
         cores_string = cores_string .. tostring(cpu) .. "|"
     end
-    print_stderr("# "..cores_string:sub(1,cores_string:len()-1))
+    print("# "..cores_string:sub(1,cores_string:len()-1))
     for i, gid in pairs(group_ids) do
         local strlist = {}
         if likwid.getNumberOfMetrics(gid) == 0 then
@@ -750,7 +750,7 @@ if use_timeline == true then
                 table.insert(strlist, likwid.getNameOfMetric(gid, m))
             end
         end
-        print_stderr("# "..table.concat(strlist, "|").."\n")
+        print("# "..table.concat(strlist, "|"))
     end
 end
 
@@ -815,14 +815,12 @@ if use_wrapper or use_timeline then
             table.insert(outList, tostring(#results[activeGroup]))
             table.insert(outList, tostring(#cpulist))
             table.insert(outList, tostring(time))
-            --str = tostring(math.tointeger(activeGroup)) .. timeline_delim..tostring(#results[activeGroup])..timeline_delim..tostring(#cpulist)..timeline_delim..tostring(time)
             for i,l1 in pairs(results[activeGroup]) do
                 for j, value in pairs(l1) do
-                    --str = str .. timeline_delim .. tostring(value)
                     table.insert(outList, tostring(value))
                 end
             end
-            io.stderr:write(table.concat(outList, timeline_delim).."\n")
+            print(table.concat(outList, timeline_delim))
             groupTime[activeGroup] = time
         else
             likwid.readCounters()

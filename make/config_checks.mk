@@ -27,6 +27,10 @@ ifneq "$(PREFIX)" "$(INST_PREFIX)"
 $(info Info: PREFIX and INSTALLED_PREFIX differ, be aware that you have to move stuff after make install from $(PREFIX) to $(INSTALLED_PREFIX). You can use make move for this.)
 endif
 
+ifneq ($(SHARED_LIBRARY),true)
+$(info Warning: When building as static library, you cannot use the Lua scripts as they require a shared library. You can still link your application to the library.)
+endif
+
 FORTRAN_IF_NAME := likwid.mod
 ifneq ($(FORTRAN_INTERFACE),false)
 HAS_FORTRAN_COMPILER := $(shell $(FC) --version 2>/dev/null || echo 'NOFORTRAN' )

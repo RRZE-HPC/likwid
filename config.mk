@@ -87,9 +87,9 @@ TOPO_FILE_PATH = /etc/likwid_topo.cfg
 
 # Versioning Information
 VERSION = 4
-RELEASE = 2
-MINOR = 1
-DATE    = 25.07.2017
+RELEASE = 3
+MINOR = 0
+DATE    = 03.08.2017
 
 RPATHS = -Wl,-rpath=$(INSTALLED_LIBPREFIX)
 LIKWIDLOCKPATH = /var/run/likwid.lock
