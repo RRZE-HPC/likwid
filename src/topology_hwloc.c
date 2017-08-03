@@ -59,9 +59,6 @@ likwid_hwloc_record_objs_of_type_below_obj(
 {
     int i;
     int count = 0;
-    cpu_set_t cpuSet;
-    CPU_ZERO(&cpuSet);
-    sched_getaffinity(0, sizeof(cpu_set_t), &cpuSet);
     hwloc_obj_t walker;
     if (!obj) return 0;
     if (!obj->arity) return 0;

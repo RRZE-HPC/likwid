@@ -31,5 +31,6 @@
 #define PCI_HWLOC_H
 
 extern int hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets);
+extern int sysfs_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets);
 
 #endif

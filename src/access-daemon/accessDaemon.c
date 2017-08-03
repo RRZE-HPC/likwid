@@ -48,6 +48,7 @@
 #include <unistd.h>
 #include <sys/fsuid.h>
 #include <getopt.h>
+#include <dirent.h>
 
 #include <types.h>
 #include <registers.h>
@@ -57,6 +58,7 @@
 #include <perfmon_broadwelld_counters.h>
 #include <perfmon_broadwellEP_counters.h>
 #include <perfmon_knl_counters.h>
+#include <perfmon_skylakeX_counters.h>
 #include <topology.h>
 #include <cpuid.h>
 #include <lock.h>
@@ -98,6 +100,7 @@ static AllowedPrototype allowed = NULL;
 static AllowedPciPrototype allowedPci = NULL;
 static int FD_MSR[MAX_NUM_THREADS];
 static int FD_PCI[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
+static int bus_map[MAX_NUM_NODES];
 static int isPCIUncore = 0;
 static PciDevice* pci_devices_daemon = NULL;
 static char pci_filepath[MAX_PATH_LENGTH];
@@ -606,6 +609,84 @@ static int allowed_pci_knl(PciDeviceType type, uint32_t reg)
     return 0;
 }
 
+static int allowed_skx(uint32_t reg)
+{
+    if (allowed_sandybridge(reg))
+        return 1;
+    else
+    {
+        syslog(LOG_ERR, "Testing 0x%X %d %d\n", reg, (reg & 0xF00U), (reg & 0xA00U));
+        if (((reg & 0xF00U) == 0x700U) ||
+            ((reg & 0xF00U) == 0xE00U) ||
+            ((reg & 0xF00U) == 0xF00U) ||
+            (reg == MSR_PREFETCH_ENABLE) ||
+            ((reg & 0xA00U) == 0xA00U))
+            return 1;
+    }   
+    return 0;
+}
+
+
+static int allowed_pci_skx(PciDeviceType type, uint32_t reg)
+{
+    switch(type)
+    {
+        case HA:
+            if ((reg == MSR_UNC_SKX_M2M_PMON_CTL0)||
+                (reg == MSR_UNC_SKX_M2M_PMON_CTL1)||
+                (reg == MSR_UNC_SKX_M2M_PMON_CTL2)||
+                (reg == MSR_UNC_SKX_M2M_PMON_CTL3)||
+                (reg == MSR_UNC_SKX_M2M_PMON_CTR0) ||
+                (reg == MSR_UNC_SKX_M2M_PMON_CTR1) ||
+                (reg == MSR_UNC_SKX_M2M_PMON_CTR2) ||
+                (reg == MSR_UNC_SKX_M2M_PMON_CTR3) ||
+                (reg == MSR_UNC_SKX_M2M_PMON_BOX_CTL) ||
+                (reg == MSR_UNC_SKX_M2M_PMON_BOX_STATUS))
+                return 1;
+            break;
+        case IMC:
+            if ((reg == PCI_UNC_SKX_MC_PMON_CTL0) ||
+                (reg == PCI_UNC_SKX_MC_PMON_CTL1) ||
+                (reg == PCI_UNC_SKX_MC_PMON_CTL2) ||
+                (reg == PCI_UNC_SKX_MC_PMON_CTL3) ||
+                (reg == PCI_UNC_SKX_MC_PMON_CTR0) ||
+                (reg == PCI_UNC_SKX_MC_PMON_CTR1) ||
+                (reg == PCI_UNC_SKX_MC_PMON_CTR2) ||
+                (reg == PCI_UNC_SKX_MC_PMON_CTR3) ||
+                (reg == PCI_UNC_SKX_MC_PMON_FIXED_CTL) ||
+                (reg == PCI_UNC_SKX_MC_PMON_FIXED_CTR) ||
+                (reg == PCI_UNC_SKX_MC_PMON_BOX_CTL) ||
+                (reg == PCI_UNC_SKX_MC_PMON_BOX_STATUS))
+                return 1;
+            break;
+        case QPI:
+            if ((reg == MSR_UNC_SKX_UPI_PMON_CTL0) ||
+                (reg == MSR_UNC_SKX_UPI_PMON_CTL1) ||
+                (reg == MSR_UNC_SKX_UPI_PMON_CTL2) ||
+                (reg == MSR_UNC_SKX_UPI_PMON_CTL3) ||
+                (reg == MSR_UNC_SKX_UPI_PMON_CTR0) ||
+                (reg == MSR_UNC_SKX_UPI_PMON_CTR1) ||
+                (reg == MSR_UNC_SKX_UPI_PMON_CTR2) ||
+                (reg == MSR_UNC_SKX_UPI_PMON_CTR3) ||
+                (reg == MSR_UNC_SKX_UPI_PMON_BOX_CTL) ||
+                (reg == MSR_UNC_SKX_UPI_PMON_BOX_STATUS))
+                return 1;
+            break;
+        case R3QPI:
+            if ((reg == MSR_UNC_SKX_M3UPI_PMON_CTL0) ||
+                (reg == MSR_UNC_SKX_M3UPI_PMON_CTL1) ||
+                (reg == MSR_UNC_SKX_M3UPI_PMON_CTL2) ||
+                (reg == MSR_UNC_SKX_M3UPI_PMON_CTR0) ||
+                (reg == MSR_UNC_SKX_M3UPI_PMON_CTR1) ||
+                (reg == MSR_UNC_SKX_M3UPI_PMON_CTR2) ||
+                (reg == MSR_UNC_SKX_M3UPI_PMON_BOX_CTL) ||
+                (reg == MSR_UNC_SKX_M3UPI_PMON_BOX_STATUS))
+                return 1;
+            break;
+    }
+    return 0;
+}
+
 static int allowed_amd(uint32_t reg)
 {
     if ( (reg & 0xFFFFFFF0U) == 0xC0010000U)
@@ -763,6 +844,59 @@ msr_check(AccessDataRecord * dRecord)
     return;
 }
 
+static int
+getBusFromSocket(PciDevice* dev, int socket, char** filepath)
+{
+    int cur_bus = 0;
+    uint32_t cur_socket = socket;
+    char pci_filepath[1024];
+    int fp;
+    int ret = 0;
+    while(socket >= 0)
+    {
+        while (cur_bus <= 255)
+        {
+            snprintf(pci_filepath, 1023, "/proc/bus/pci/%02x/%s", cur_bus, dev->path);
+            fp = open(pci_filepath, O_RDONLY);
+            if (fp < 0)
+            {
+                cur_bus++;
+                continue;
+            }
+            if (fp > 0)
+            {
+                uint32_t indev = 0;
+                ret = pread(fp, &indev, sizeof(uint32_t), 0x0);
+                indev = (indev >> 16);
+                if (indev != dev->devid)
+                {
+                    cur_bus++;
+                    continue;
+                }
+            }
+            if (fp > 0 && socket > 0)
+            {
+                cur_bus++;
+                socket--;
+                close(fp);
+                continue;
+            }
+            
+            break;
+        }
+        socket--;
+    }
+    if (fp > 0)
+    {
+        if (filepath)
+            strncpy(*filepath, pci_filepath, strlen(pci_filepath));
+        close(fp);
+        return cur_socket;
+    }
+    return -1;
+}
+
+
 static void
 pci_read(AccessDataRecord* dRecord)
 {
@@ -770,6 +904,7 @@ pci_read(AccessDataRecord* dRecord)
     uint32_t reg = dRecord->reg;
     uint32_t device = dRecord->device;
     uint32_t data;
+    char* pcipath = NULL;
 
     dRecord->errorcode = ERR_NOERROR;
     dRecord->data = 0;
@@ -791,37 +926,48 @@ pci_read(AccessDataRecord* dRecord)
     {
         if (!allowedPci(pci_devices_daemon[device].type, reg))
         {
-        dRecord->errorcode = ERR_RESTREG;
-        return;
+            dRecord->errorcode = ERR_RESTREG;
+            return;
         }
     }
     if ( !FD_PCI[socketId][device] )
     {
-        snprintf(pci_filepath, MAX_PATH_LENGTH-1, "%s%s%s", PCI_ROOT_PATH, socket_bus[socketId], pci_devices_daemon[device].path);
-        FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
-
-        if ( FD_PCI[socketId][device] < 0)
+        //snprintf(pci_filepath, MAX_PATH_LENGTH-1, "%s%s%s", PCI_ROOT_PATH, socket_bus[socketId], pci_devices_daemon[device].path);
+        pcipath = malloc(1024 * sizeof(char));
+        memset(pcipath, '\0', 1024 * sizeof(char));
+        int sid = getBusFromSocket(&(pci_devices_daemon[device]), socketId, &pcipath);
+        if (sid == socketId)
         {
-            syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pci_filepath,
-                    pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
-            dRecord->errorcode = ERR_OPENFAIL;
-            return;
-        }
 #ifdef DEBUG_LIKWID
-        syslog(LOG_ERR, "Open device file %s for device %s (%s) on socket %u", pci_filepath,
-                    pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
+            syslog(LOG_ERR, "Open device file %s for device %s (%s) on socket %u", pcipath,
+                        pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
 #endif
+            FD_PCI[socketId][device] = open( pcipath, O_RDWR);
+
+            if ( FD_PCI[socketId][device] < 0)
+            {
+                syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pcipath, pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
+                dRecord->errorcode = ERR_OPENFAIL;
+                if (pcipath)
+                    free(pcipath);
+                return;
+            }
+        }
     }
 
     if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data))
     {
         syslog(LOG_ERR, "Failed to read data from pci device file %s for device %s (%s) on socket %u",
-                pci_filepath,pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name,socketId);
+                pcipath,pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
         dRecord->errorcode = ERR_RWFAIL;
+        if (pcipath)
+            free(pcipath);
         return;
     }
 
     dRecord->data = (uint64_t) data;
+    if (pcipath)
+        free(pcipath);
 }
 
 static void
@@ -831,6 +977,7 @@ pci_write(AccessDataRecord* dRecord)
     uint32_t reg = dRecord->reg;
     uint32_t device = dRecord->device;
     uint32_t data = (uint32_t) dRecord->data;
+    char* pcipath = NULL;
 
     dRecord->errorcode = ERR_NOERROR;
 
@@ -858,21 +1005,28 @@ pci_write(AccessDataRecord* dRecord)
 
     if ( !FD_PCI[socketId][device] )
     {
-        snprintf(pci_filepath, MAX_PATH_LENGTH-1, "%s%s%s", PCI_ROOT_PATH, socket_bus[socketId], pci_devices_daemon[device].path);
-
-        FD_PCI[socketId][device] = open( pci_filepath, O_RDWR);
-
-        if ( FD_PCI[socketId][device] < 0)
+        //snprintf(pci_filepath, MAX_PATH_LENGTH-1, "%s%s%s", PCI_ROOT_PATH, socket_bus[socketId], pci_devices_daemon[device].path);
+        pcipath = malloc(1024 * sizeof(char));
+        memset(pcipath, '\0', 1024 * sizeof(char));
+        int sid = getBusFromSocket(&(pci_devices_daemon[device]), socketId, &pcipath);
+        if (sid == socketId)
         {
-            syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pci_filepath,
-                        pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
-            dRecord->errorcode = ERR_OPENFAIL;
-            return;
-        }
 #ifdef DEBUG_LIKWID
-        syslog(LOG_ERR, "Open device file %s for device %s (%s) on socket %u", pci_filepath,
-                    pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
+            syslog(LOG_ERR, "Open device file %s for device %s (%s) on socket %u", pcipath,
+                        pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
 #endif
+            FD_PCI[socketId][device] = open( pcipath, O_RDWR);
+
+            if ( FD_PCI[socketId][device] < 0)
+            {
+                syslog(LOG_ERR, "Failed to open device file %s for device %s (%s) on socket %u", pcipath, pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
+                dRecord->errorcode = ERR_OPENFAIL;
+                if (pcipath)
+                    free(pcipath);
+                return;
+            }
+        }
+        
     }
 
     if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
@@ -880,8 +1034,12 @@ pci_write(AccessDataRecord* dRecord)
         syslog(LOG_ERR, "Failed to write data to pci device file %s for device %s (%s) on socket %u",pci_filepath,
                 pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
         dRecord->errorcode = ERR_RWFAIL;
+        if (pcipath)
+            free(pcipath);
         return;
     }
+    if (pcipath)
+        free(pcipath);
 }
 
 static void
@@ -933,7 +1091,7 @@ stop_daemon(void)
 }
 
 static int
-getBusFromSocket(const uint32_t socket)
+getBusFromSocketOld(const uint32_t socket, const char* name, const uint32_t in_dev_id)
 {
     int cur_bus = 0;
     uint32_t cur_socket = 0;
@@ -942,7 +1100,7 @@ getBusFromSocket(const uint32_t socket)
     int ret = 0;
     while(cur_socket <= socket)
     {
-        snprintf(pci_filepath, MAX_PATH_LENGTH-1, "%s%02x/05.0", PCI_ROOT_PATH, cur_bus);
+        snprintf(pci_filepath, MAX_PATH_LENGTH-1, "%s%02x/%s", PCI_ROOT_PATH, cur_bus, name);
         fp = open(pci_filepath, O_RDONLY);
         if (fp < 0)
         {
@@ -967,6 +1125,87 @@ getBusFromSocket(const uint32_t socket)
 
     return -1;
 }
+
+#define SKYLAKE_SERVER_SOCKETID_MBOX_DID 0x2042
+static int getBusFromSocketSysFS(const uint32_t socket, const char* name, const uint32_t in_dev_id)
+{
+    struct dirent *pDirent, *pDirentInner;
+    DIR *pDir, *pDirInner;
+    pDir = opendir ("/sys/devices");
+    FILE* fp = NULL;
+    char iPath[200], iiPath[200], buff[100];
+    char testDev[50];
+    size_t ret = 0;
+    int bus_id = -1;
+    if (pDir == NULL)
+    {
+        syslog(LOG_ERR, "Failed open directory /sys/devices");
+        return -1;
+    }
+    
+    while ((pDirent = readdir(pDir)) != NULL)
+    {
+        if (strncmp(pDirent->d_name, "pci0", 4) == 0)
+        {
+            sprintf(iPath, "/sys/devices/%s", pDirent->d_name);
+            char bus[4];
+            strncpy(bus, &(pDirent->d_name[strlen(pDirent->d_name)-2]), 2);
+            bus[2] = '\0';
+            
+            pDirInner = opendir (iPath);
+            if (pDir == NULL)
+            {
+                syslog(LOG_ERR, "Failed read file %s", iPath);
+                return -1;
+            }
+            while ((pDirentInner = readdir(pDirInner)) != NULL)
+            {
+                if (strncmp(pDirentInner->d_name, "0000", 4) == 0)
+                {
+                    uint32_t dev_id = 0x0;
+                    int numa_node = 0;
+                    sprintf(iiPath, "/sys/devices/%s/%s/device", pDirent->d_name, pDirentInner->d_name);
+                    fp = fopen(iiPath,"r");
+                    if( fp == NULL )
+                    {
+                        continue;
+                    }
+                    ret = fread(buff, sizeof(char), 99, fp);
+                    dev_id = strtoul(buff, NULL, 16);
+                    if (dev_id == in_dev_id)
+                    {
+                        fclose(fp);
+                        iiPath[0] = '\0';
+                        sprintf(iiPath, "/sys/devices/%s/%s/numa_node", pDirent->d_name, pDirentInner->d_name);
+                        fp = fopen(iiPath,"r");
+                        if( fp == NULL )
+                        {
+                            continue;
+                        }
+                        ret = fread(buff, sizeof(char), 99, fp);
+                        numa_node = atoi(buff);
+                        if (numa_node == socket)
+                        {
+                            bus_id = strtoul(bus, NULL, 16);
+                        }
+                    }
+                    fclose(fp);
+                    iiPath[0] = '\0';
+                    buff[0] = '\0';
+                    if (bus_id != -1)
+                        break;
+                }
+            }
+            closedir (pDirInner);
+            iPath[0] = '\0';
+            if (bus_id != -1)
+                break;
+        }
+    }
+    closedir (pDir);
+    return bus_id;
+}
+
 
 static void
 Signal_Handler(int sig)
@@ -1129,6 +1368,12 @@ int main(void)
                     allowed = allowed_sandybridge;
                     allowedPci = allowed_pci_haswell;
                 }
+                else if (model == SKYLAKEX)
+                {
+                    isPCIUncore = 1;
+                    allowed = allowed_skx;
+                    allowedPci = allowed_pci_skx;
+                }
                 else if ((model == ATOM_SILVERMONT_C) ||
                          (model == ATOM_SILVERMONT_E) ||
                          (model == ATOM_SILVERMONT_Z1) ||
@@ -1275,6 +1520,11 @@ int main(void)
                 //testDevice = 0x80862f30;
                 pci_devices_daemon = broadwellEP_pci_devices;
             }
+            else if (model == SKYLAKEX)
+            {
+                //testDevice = 0x80862f30;
+                pci_devices_daemon = skylakeX_pci_devices;
+            }
             else if (model == XEON_PHI_KNL)
             {
                 pci_devices_daemon = knl_pci_devices;
@@ -1288,23 +1538,46 @@ int main(void)
 
             for (int j=0; j<MAX_NUM_NODES; j++)
             {
-                socket_bus[j] = (char*)malloc(4);
-                sprintf(socket_bus[j], "N-A");
+                //socket_bus[j] = (char*)malloc(4);
+                //sprintf(socket_bus[j], "N-A");
                 for (int i=0; i<MAX_NUM_PCI_DEVICES; i++)
                 {
                     FD_PCI[j][i] = -2;
                 }
             }
+            
+            for (int i=1; i<MAX_NUM_PCI_DEVICES; i++)
+            {
+                if (pci_devices_daemon[i].path && strlen(pci_devices_daemon[i].path) > 0)
+                {
+                    int socket_id = getBusFromSocket(&(pci_devices_daemon[i]), 0, NULL);
+                    if (socket_id == 0)
+                    {
+                        for (int j=0; j<MAX_NUM_NODES; j++)
+                        {
+                            FD_PCI[j][i] = 0;
+                        }
+                        pci_devices_daemon[i].online = 1;
+                    }
+                    else
+                    {
+                        syslog(LOG_ERR, "Device %s for socket %d, excluded it from device list: %s\n",pci_devices_daemon[i].name, 0, strerror(errno));
+                    }
+                }
+            }
 
             /* determine PCI-BUSID mapping ... */
+            /*syslog(LOG_ERR, "Determine PCI-BUSID mapping");
             int sbus = -1;
             cntr = 0;
-            sbus = getBusFromSocket(cntr);
-            while (sbus != -1)
+            sbus = getSocketBus(cntr);
+            syslog(LOG_ERR, "Socket %d Bus %02x", cntr, sbus);
+            while (sbus != -1 && sbus < 0xFF)
             {
                 sprintf(socket_bus[cntr], "%02x/", sbus);
                 cntr++;
-                sbus = getBusFromSocket(cntr);
+                sbus = getSocketBus(cntr);
+                syslog(LOG_ERR, "Socket %d Bus %02x", cntr, sbus);
             }
 
             if ( cntr == 0 )
@@ -1332,13 +1605,13 @@ int main(void)
 #ifdef DEBUG_LIKWID
                             else if (j==0)
                             {
-                                syslog(LOG_NOTICE, "Device %s for socket %d not found at path %s, excluded it from device list: %s\n",pci_devices_daemon[i].name,j, pci_filepath, strerror(errno));
+                                syslog(LOG_ERR, "Device %s for socket %d not found at path %s, excluded it from device list: %s\n",pci_devices_daemon[i].name,j, pci_filepath, strerror(errno));
                             }
 #endif
                         }
                     }
                 }
-            }
+            }*/
         }
     }
 LOOP:

@@ -641,7 +641,7 @@ topology_setName(void)
 
                 case SKYLAKEX:
                     cpuid_info.name = skylakeX_str;
-                    cpuid_info.short_name = short_skylake;
+                    cpuid_info.short_name = short_skylakeX;
                     break;
 
                 case KABYLAKE1:

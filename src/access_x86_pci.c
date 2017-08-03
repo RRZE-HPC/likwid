@@ -129,6 +129,9 @@ access_x86_pci_init(const int socket)
             case XEON_PHI_KNL:
                 testDevice = 0x7843;
                 break;
+            case SKYLAKEX:
+                testDevice = 0x2042;
+                break;
             default:
                 DEBUG_PRINT(DEBUGLEV_INFO,CPU model %s does not support PCI based Uncore performance monitoring, cpuid_info.name);
                 return -ENODEV;

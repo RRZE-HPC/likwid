@@ -1,5 +1,10 @@
+# Changelog 4.3.0
+- Support for Intel Skylake SP architecture (core, uncore, energy)
+- Support for AMD Zen architecture (core, l2, energy)
+- Pinning strategy 'balanced'
+
 # Changelog 4.2.1
- Fix for logical selection strings
+- Fix for logical selection strings
 - likwid-agent: general update
 - likwid-mpirun: Improved SLURM support
 - likwid-mpirun: Print metrics sorted as they are listen in perf. group

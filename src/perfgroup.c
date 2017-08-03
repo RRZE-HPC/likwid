@@ -746,7 +746,7 @@ read_group(
 {
     FILE* fp;
     int i, s, e, err = 0;
-    char buf[512];
+    char buf[1024];
     GroupFileSections sec = GROUP_NONE;
     bstring REQUIRE = bformat("REQUIRE_NOHT");
     if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL))
@@ -801,7 +801,7 @@ read_group(
         return -EACCES;
     }
     struct bstrList * linelist;
-    while (fgets (buf, sizeof(buf), fp)) {
+    while (fgets (buf, 1023*sizeof(char), fp)) {
         if ((strlen(buf) == 0) || (buf[0] == '#'))
             continue;
 
