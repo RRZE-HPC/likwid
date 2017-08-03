@@ -704,7 +704,7 @@ if use_timeline == true then
     for i, cpu in pairs(cpulist) do
         cores_string = cores_string .. tostring(cpu) .. "|"
     end
-    print_stderr("# "..cores_string:sub(1,cores_string:len()-1))
+    print("# "..cores_string:sub(1,cores_string:len()-1))
     for i, gid in pairs(group_ids) do
         local strlist = {}
         if likwid.getNumberOfMetrics(gid) == 0 then
@@ -716,7 +716,7 @@ if use_timeline == true then
                 table.insert(strlist, likwid.getNameOfMetric(gid, m))
             end
         end
-        print_stderr("# "..table.concat(strlist, "|").."\n")
+        print("# "..table.concat(strlist, "|").."\n")
     end
 end
 
@@ -791,7 +791,6 @@ if use_wrapper or use_timeline then
                 else
                     results = likwid.getLastMetrics()
                 end
-                --str = tostring(math.tointeger(activeGroup)) .. " "..tostring(#results[activeGroup]).." "..tostring(#cpulist).." "..tostring(time)
                 local outList = {}
                 table.insert(outList, tostring(math.tointeger(activeGroup)))
                 table.insert(outList, tostring(#results[activeGroup]))
@@ -799,12 +798,10 @@ if use_wrapper or use_timeline then
                 table.insert(outList, tostring(time))
                 for i,l1 in pairs(results[activeGroup]) do
                     for j, value in pairs(l1) do
-                        --str = str .. " " .. tostring(value)
                         table.insert(outList, tostring(value))
                     end
                 end
-                --io.stderr:write(str.."\n")
-                io.stderr:write(table.concat(outList, timeline_delim).."\n")
+                print(table.concat(outList, timeline_delim))
                 groupTime[activeGroup] = time
             else
                 likwid.readCounters()
