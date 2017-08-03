@@ -1,3 +1,18 @@
+# Changelog 4.2.1
+ Fix for logical selection strings
+- likwid-agent: general update
+- likwid-mpirun: Improved SLURM support
+- likwid-mpirun: Print metrics sorted as they are listen in perf. group
+- likwid-perfctr: Print metrics/events as header in timeline mode
+- likwid-setFrequency: Commandline options to set min, max and current frequency
+- Pinning-Library: Automatically detect and skip shepard threads
+- Intel Broadwell: Added support for E3 (like Desktop), Fix for L3 group
+- Intel IvyBridge: Fix for PCU fixed-purpose counters
+- Intel Skylake: Fix for events CYCLE_ACTIVITY, new event L2_LINES_OUT
+- Intel Xeon Phi (KNL): Fix for overflow register, Update for ENERGY group
+- Intel SandyBridge: Fix for L3CACHE group
+- Event/Counter list contains only usable counters and events
+
 # Changelog 4.2.0
 - Support for Intel Xeon Phi (Knights Landing): Core, Uncore, RAPL
 - Support for Uncore counters of some desktop chips (SandyBridge, IvyBridge,
