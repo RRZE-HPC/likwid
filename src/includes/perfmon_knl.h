@@ -72,6 +72,10 @@ int knl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
 
+    if (event->eventId == 0xB7 && tile_lock[affinity_thread2tile_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
 
     flags |= (1ULL<<16)|(1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
