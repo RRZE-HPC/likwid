@@ -25,6 +25,41 @@ It consists of:
 
 For further information please take a look at the [Wiki](https://github.com/RRZE-HPC/likwid/wiki).
 
+
+--------------------------------------------------------------------------------
+Supported architectures
+--------------------------------------------------------------------------------
+Intel
+- Intel Atom
+- Intel Pentium M
+- Intel Core2
+- Intel Nehalem
+- Intel NehalemEX
+- Intel Westmere
+- Intel WestmereEX
+- Intel Xeon Phi (KNC)
+- Intel Silvermont & Airmont
+- Intel Goldmont
+- Intel SandyBridge
+- Intel SandyBridge EP/EN
+- Intel IvyBridge
+- Intel IvyBridge EP/EN/EX
+- Intel Haswell
+- Intel Haswell EP/EN/EX
+- Intel Broadwell
+- Intel Broadwell D
+- Intel Broadwell EP
+- Intel Skylake
+- Intel Skylake SP
+- Intel Xeon Phi (KNL)
+
+AMD
+- AMD K8
+- AMD K10
+- AMD Interlagos
+- AMD Kabini
+- AMD Zen
+
 --------------------------------------------------------------------------------
 Download, Build and Install
 --------------------------------------------------------------------------------
@@ -40,7 +75,7 @@ $ tar -xjf likwid-<VERSION>.tar.bz2
 $ cd likwid-<VERSION>
 $ vi config.mk (configure build, e.g. change installation prefix)
 $ make
-$ sudo make install
+$ sudo make install (sudo required to install the access daemon with proper permissions)
 ```
 --------------------------------------------------------------------------------
 Documentation
@@ -81,6 +116,6 @@ https://groups.google.com/forum/#!topic/likwid-users/F7TDho3k7ps
 Funding
 --------------------------------------------------------------------------------
 
-LIKWID development was funded by BMBF Germany under the FEPA project, grant 01IH13009.
+LIKWID development was funded by BMBF Germany under the FEPA project, grant 01IH13009. Since 2017 the development is further funded by BMBF Germany under the SeASiTe project, grant 01IH16012A.
 
 <div align=center><img src="https://raw.githubusercontent.com/wiki/RRZE-HPC/likwid/images/BMBF.png" alt="BMBF logo"/></div>
