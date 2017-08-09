@@ -584,7 +584,7 @@ int skx_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (event->options[j].value & 0x1FULL) << 32;
                     break;
                 case EVENT_OPTION_MATCH1:
-                    flafs |= (event->options[j].value & 0x3FF) << 46;
+                    flags |= (event->options[j].value & 0x3FF) << 46;
                     break;
                 default:
                     break;
