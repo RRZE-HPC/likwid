@@ -85,6 +85,54 @@ static char* translate_types[NUM_UNITS] = {
     [RBOX0] = "/sys/bus/event_source/devices/uncore_r3qpi_0",
     [RBOX1] = "/sys/bus/event_source/devices/uncore_r3qpi_1",
     [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
+    [IBOX0] = "/sys/bus/event_source/devices/uncore_irp",
+};
+
+static char* translate_typesSKX[NUM_UNITS] = {
+    [FIXED] = "/sys/bus/event_source/devices/cpu",
+    [PMC] = "/sys/bus/event_source/devices/cpu",
+    [MBOX0] = "/sys/bus/event_source/devices/uncore_imc_0",
+    [MBOX1] = "/sys/bus/event_source/devices/uncore_imc_1",
+    [MBOX2] = "/sys/bus/event_source/devices/uncore_imc_2",
+    [MBOX3] = "/sys/bus/event_source/devices/uncore_imc_3",
+    [CBOX0] = "/sys/bus/event_source/devices/uncore_cbox_0",
+    [CBOX1] = "/sys/bus/event_source/devices/uncore_cbox_1",
+    [CBOX2] = "/sys/bus/event_source/devices/uncore_cbox_2",
+    [CBOX3] = "/sys/bus/event_source/devices/uncore_cbox_3",
+    [CBOX4] = "/sys/bus/event_source/devices/uncore_cbox_4",
+    [CBOX5] = "/sys/bus/event_source/devices/uncore_cbox_5",
+    [CBOX6] = "/sys/bus/event_source/devices/uncore_cbox_6",
+    [CBOX7] = "/sys/bus/event_source/devices/uncore_cbox_7",
+    [CBOX8] = "/sys/bus/event_source/devices/uncore_cbox_8",
+    [CBOX9] = "/sys/bus/event_source/devices/uncore_cbox_9",
+    [CBOX10] = "/sys/bus/event_source/devices/uncore_cbox_10",
+    [CBOX11] = "/sys/bus/event_source/devices/uncore_cbox_11",
+    [CBOX12] = "/sys/bus/event_source/devices/uncore_cbox_12",
+    [CBOX13] = "/sys/bus/event_source/devices/uncore_cbox_13",
+    [CBOX14] = "/sys/bus/event_source/devices/uncore_cbox_14",
+    [CBOX15] = "/sys/bus/event_source/devices/uncore_cbox_15",
+    [CBOX16] = "/sys/bus/event_source/devices/uncore_cbox_16",
+    [CBOX17] = "/sys/bus/event_source/devices/uncore_cbox_17",
+    [CBOX18] = "/sys/bus/event_source/devices/uncore_cbox_18",
+    [CBOX19] = "/sys/bus/event_source/devices/uncore_cbox_19",
+    [CBOX20] = "/sys/bus/event_source/devices/uncore_cbox_20",
+    [CBOX21] = "/sys/bus/event_source/devices/uncore_cbox_21",
+    [CBOX22] = "/sys/bus/event_source/devices/uncore_cbox_22",
+    [CBOX23] = "/sys/bus/event_source/devices/uncore_cbox_23",
+    [CBOX24] = "/sys/bus/event_source/devices/uncore_cbox_24",
+    [CBOX25] = "/sys/bus/event_source/devices/uncore_cbox_25",
+    [CBOX26] = "/sys/bus/event_source/devices/uncore_cbox_26",
+    [CBOX27] = "/sys/bus/event_source/devices/uncore_cbox_27",
+    [BBOX0] = "/sys/bus/event_source/devices/uncore_m2m_0",
+    [BBOX1] = "/sys/bus/event_source/devices/uncore_m2m_1",
+    [WBOX] = "/sys/bus/event_source/devices/uncore_pcu",
+    [SBOX0] = "/sys/bus/event_source/devices/uncore_upi_0",
+    [SBOX1] = "/sys/bus/event_source/devices/uncore_upi_1",
+    [SBOX2] = "/sys/bus/event_source/devices/uncore_upi_2",
+    [RBOX0] = "/sys/bus/event_source/devices/uncore_m3upi_0",
+    [RBOX1] = "/sys/bus/event_source/devices/uncore_m3upi_1",
+    [RBOX2] = "/sys/bus/event_source/devices/uncore_m3upi_2",
+    [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
 };
 
 
@@ -211,7 +259,10 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         return 1;
     }
     attr->type = 0;
-    ret = sprintf(checkfolder, "%s", translate_types[type]);
+    if (cpuid_info.family == P6_FAMILY && cpuid_info.model == SKYLAKEX)
+        ret = sprintf(checkfolder, "%s", translate_typesSKX[type]);
+    else
+        ret = sprintf(checkfolder, "%s", translate_types[type]);
     if (access(checkfolder, F_OK))
     {
         if ((type == UBOX)||(type == UBOXFIX))
