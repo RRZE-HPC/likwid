@@ -137,6 +137,8 @@ gotC = false
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid())
 cpuClock = 1
 execpid = false
+perfflags = nil
+perfpid = nil
 likwid.catchSignal()
 
 if #arg == 0 then
@@ -144,7 +146,7 @@ if #arg == 0 then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats", "execpid"}) do
+for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats", "execpid", "perfflags:", "perfpid:"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -205,6 +207,10 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         print_events = true
     elseif (opt == "execpid") then
         execpid = true
+    elseif (opt == "perfflags") then
+        perfflags = arg
+    elseif (opt == "perfpid") then
+        perfpid = arg
     elseif (opt == "E") then
         if arg ~= nil then
             print_event = arg
@@ -684,6 +690,9 @@ if #execList > 0 then
     else
         pid = likwid.startProgram(execString, 0, cpulist)
     end
+    if execpid then
+        perfpid = pid
+    end
 end
 if not pid and #execList > 0 then
     print_stderr(string.format("Failed to execute command: %s", table.concat(execList," ")))
@@ -701,8 +710,11 @@ if os.getenv("LIKWID_FORCE") == nil or (forceOverwrite == 1 and os.getenv("LIKWI
 end
 for i, event_string in pairs(event_string_list) do
     if event_string:len() > 0 then
-        if execpid then
-            event_string = event_string..string.format(":PERF_PID=%d", pid)
+        if perfpid ~= nil then
+            likwid.setenv("LIKWID_PERF_PID", tostring(perfpid))
+        end
+        if perfpid ~= nil and perfflags ~= nil then
+            likwid.setenv("LIKWID_PERF_FLAGS", tostring(perfflags))
         end
         local gid = likwid.addEventSet(event_string)
         if gid < 0 then
@@ -723,7 +735,11 @@ if #group_ids == 0 then
 end
 
 activeGroup = group_ids[1]
-likwid.setupCounters(activeGroup)
+ret = likwid.setupCounters(activeGroup)
+if ret < 0 then
+    likwid.killProgram(pid)
+    os.exit(1)
+end
 if outfile == nil then
     print_stdout(likwid.hline)
 end
@@ -789,7 +805,7 @@ if use_wrapper or use_timeline then
     while true do
         if likwid.getSignalState() ~= 0 then
             if #execList > 0 then
-                likwid.killProgram()
+                likwid.killProgram(pid)
             end
             break
         end
