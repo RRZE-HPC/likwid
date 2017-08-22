@@ -40,19 +40,23 @@
 #include <asm/unistd.h>
 #include <string.h>
 
-
+extern char** translate_types;
 static int* cpu_event_fds[MAX_NUM_THREADS] = { NULL };
 static int paranoid_level = -1;
 static int informed_paranoid = 0;
 static int running_group = -1;
 
-static char* translate_types[NUM_UNITS] = {
+/*static char* translate_types[NUM_UNITS] = {
     [FIXED] = "/sys/bus/event_source/devices/cpu",
     [PMC] = "/sys/bus/event_source/devices/cpu",
     [MBOX0] = "/sys/bus/event_source/devices/uncore_imc_0",
     [MBOX1] = "/sys/bus/event_source/devices/uncore_imc_1",
     [MBOX2] = "/sys/bus/event_source/devices/uncore_imc_2",
     [MBOX3] = "/sys/bus/event_source/devices/uncore_imc_3",
+    [MBOX4] = "/sys/bus/event_source/devices/uncore_imc_4",
+    [MBOX5] = "/sys/bus/event_source/devices/uncore_imc_5",
+    [MBOX6] = "/sys/bus/event_source/devices/uncore_imc_6",
+    [MBOX7] = "/sys/bus/event_source/devices/uncore_imc_7",
     [CBOX0] = "/sys/bus/event_source/devices/uncore_cbox_0",
     [CBOX1] = "/sys/bus/event_source/devices/uncore_cbox_1",
     [CBOX2] = "/sys/bus/event_source/devices/uncore_cbox_2",
@@ -77,10 +81,16 @@ static char* translate_types[NUM_UNITS] = {
     [CBOX21] = "/sys/bus/event_source/devices/uncore_cbox_21",
     [CBOX22] = "/sys/bus/event_source/devices/uncore_cbox_22",
     [CBOX23] = "/sys/bus/event_source/devices/uncore_cbox_23",
-    [BBOX0] = "/sys/bus/event_source/devices/uncore_ha",
+    [BBOX0] = "/sys/bus/event_source/devices/uncore_ha_0",
+    [BBOX0] = "/sys/bus/event_source/devices/uncore_ha_1",
     [WBOX] = "/sys/bus/event_source/devices/uncore_pcu",
-    [SBOX0] = "/sys/bus/event_source/devices/uncore_qpi_0",
-    [SBOX1] = "/sys/bus/event_source/devices/uncore_qpi_1",
+    [QBOX0] = "/sys/bus/event_source/devices/uncore_qpi_0",
+    [QBOX1] = "/sys/bus/event_source/devices/uncore_qpi_1",
+    [QBOX1] = "/sys/bus/event_source/devices/uncore_qpi_2",
+    [SBOX0] = "/sys/bus/event_source/devices/uncore_sbox_0",
+    [SBOX1] = "/sys/bus/event_source/devices/uncore_sbox_1",
+    [SBOX2] = "/sys/bus/event_source/devices/uncore_sbox_2",
+    [SBOX3] = "/sys/bus/event_source/devices/uncore_sbox_3",
     [PBOX] = "/sys/bus/event_source/devices/uncore_r2pcie",
     [RBOX0] = "/sys/bus/event_source/devices/uncore_r3qpi_0",
     [RBOX1] = "/sys/bus/event_source/devices/uncore_r3qpi_1",
@@ -95,6 +105,10 @@ static char* translate_typesSKX[NUM_UNITS] = {
     [MBOX1] = "/sys/bus/event_source/devices/uncore_imc_1",
     [MBOX2] = "/sys/bus/event_source/devices/uncore_imc_2",
     [MBOX3] = "/sys/bus/event_source/devices/uncore_imc_3",
+    [MBOX4] = "/sys/bus/event_source/devices/uncore_imc_4",
+    [MBOX5] = "/sys/bus/event_source/devices/uncore_imc_5",
+    [MBOX6] = "/sys/bus/event_source/devices/uncore_imc_6",
+    [MBOX7] = "/sys/bus/event_source/devices/uncore_imc_7",
     [CBOX0] = "/sys/bus/event_source/devices/uncore_cbox_0",
     [CBOX1] = "/sys/bus/event_source/devices/uncore_cbox_1",
     [CBOX2] = "/sys/bus/event_source/devices/uncore_cbox_2",
@@ -133,7 +147,7 @@ static char* translate_typesSKX[NUM_UNITS] = {
     [RBOX1] = "/sys/bus/event_source/devices/uncore_m3upi_1",
     [RBOX2] = "/sys/bus/event_source/devices/uncore_m3upi_2",
     [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
-};
+};*/
 
 
 static long
@@ -169,15 +183,17 @@ int perfmon_init_perfevent(int cpu_id)
             paranoid_level = atoi(buff);
         }
         fclose(fd);
-        if (paranoid_level > 0)
+        if (paranoid_level > 0 && getuid() != 0)
         {
             fprintf(stderr, "WARN: Linux kernel configured with paranoid level %d\n", paranoid_level);
 #if defined(__x86_64__) || defined(__i386__)
-            fprintf(stderr, "WARN: Paranoid level 0 is required to measure Uncore counters\n");
+            fprintf(stderr, "WARN: Paranoid level 0 or root access is required to measure Uncore counters\n");
 #endif
         }
         informed_paranoid = 1;
     }
+    lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
     if (cpu_event_fds[cpu_id] == NULL)
     {
         cpu_event_fds[cpu_id] = (int*) malloc(perfmon_numCounters * sizeof(int));
@@ -216,7 +232,7 @@ int perf_fixed_setup(struct perf_event_attr *attr, PerfmonEvent *event)
         ret = 0;
     }
 #endif
-    
+
     return ret;
 }
 
@@ -243,7 +259,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, PerfmonEvent *event)
             }
         }
     }
-    
+
     return 0;
 }
 
@@ -259,10 +275,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         return 1;
     }
     attr->type = 0;
-    if (cpuid_info.family == P6_FAMILY && cpuid_info.model == SKYLAKEX)
-        ret = sprintf(checkfolder, "%s", translate_typesSKX[type]);
-    else
-        ret = sprintf(checkfolder, "%s", translate_types[type]);
+    ret = sprintf(checkfolder, "%s", translate_types[type]);
     if (access(checkfolder, F_OK))
     {
         if ((type == UBOX)||(type == UBOXFIX))
@@ -291,8 +304,8 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     attr->config = (event->umask<<8) + event->eventId;
     attr->disabled = 1;
     attr->inherit = 1;
-    attr->exclude_kernel = 1;
-    attr->exclude_hv = 1;
+
+    //attr->exclusive = 1;
     return 0;
 }
 
@@ -307,14 +320,37 @@ int perfmon_setupCountersThread_perfevent(
     int cpu_id = groupSet->threads[thread_id].processorId;
     struct perf_event_attr attr;
     int group_fd = -1;
+    int is_uncore = 0;
+    pid_t allpid = -1;
+    unsigned long allflags = 0;
+
+    if (getenv("LIKWID_PERF_PID") != NULL)
+    {
+        allpid = (pid_t)atoi(getenv("LIKWID_PERF_PID"));
+    }
+    else if (paranoid_level > 0)
+    {
+        fprintf(stderr, "Cannot setup events without PID of executed application because perf_event_paranoid > 0\n");
+        fprintf(stderr, "You can use either --execpid to track the started application or --perfpid <pid> to monitor another application\n");
+        return -((int)thread_id+1);
+    }
+    if (getenv("LIKWID_PERF_FLAGS") != NULL)
+    {
+        allflags = strtoul(getenv("LIKWID_PERF_FLAGS"), NULL, 16);
+    }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
+        is_uncore = 0;
         RegisterIndex index = eventSet->events[i].index;
         if (cpu_event_fds[cpu_id][index] != -1)
         {
             continue;
         }
         RegisterType type = eventSet->events[i].type;
+        if (!TESTTYPE(eventSet, type))
+        {
+            continue;
+        }
         PerfmonEvent *event = &(eventSet->events[i].event);
         memset(&attr, 0, sizeof(struct perf_event_attr));
         attr.size = sizeof(struct perf_event_attr);
@@ -337,6 +373,10 @@ int perfmon_setupCountersThread_perfevent(
             case MBOX1:
             case MBOX2:
             case MBOX3:
+            case MBOX4:
+            case MBOX5:
+            case MBOX6:
+            case MBOX7:
             case CBOX0:
             case CBOX1:
             case CBOX2:
@@ -345,15 +385,42 @@ int perfmon_setupCountersThread_perfevent(
             case CBOX5:
             case CBOX6:
             case CBOX7:
+            case CBOX8:
+            case CBOX9:
+            case CBOX10:
+            case CBOX11:
+            case CBOX12:
+            case CBOX13:
+            case CBOX14:
+            case CBOX15:
+            case CBOX16:
+            case CBOX17:
+            case CBOX18:
+            case CBOX19:
+            case CBOX20:
+            case CBOX21:
+            case CBOX22:
+            case CBOX23:
+            case CBOX24:
+            case CBOX25:
+            case CBOX26:
+            case CBOX27:
             case UBOX:
             case SBOX0:
             case SBOX1:
+            case SBOX2:
+            case SBOX3:
+            case QBOX0:
+            case QBOX1:
+            case QBOX2:
             case WBOX:
             case PBOX:
             case RBOX0:
             case RBOX1:
             case BBOX0:
                 ret = perf_uncore_setup(&attr, type, event);
+                is_uncore = 1;
+                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_UNCORE);
                 break;
 #endif
             default:
@@ -361,39 +428,35 @@ int perfmon_setupCountersThread_perfevent(
         }
         if (ret == 0)
         {
-            pid_t pid = 0;
-            unsigned long flags = 0;
 
-            for (int j = 0; j < event->numberOfOptions; j++)
+            if (!is_uncore || socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
             {
-                switch (event->options[j].type)
+                pid_t curpid = allpid;
+                if (is_uncore && curpid >= 0)
+                    curpid = -1;
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d, cpu_id, curpid, allflags);
+                cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
+                if (cpu_event_fds[cpu_id][index] < 0)
                 {
-                    case EVENT_OPTION_PERF_PID:
-                        pid = event->options[j].value;
-                        break;
-                    case EVENT_OPTION_PERF_FLAGS:
-                        flags = event->options[j].value;
-                        break;
-                    default:
-                        break;
+                    fprintf(stderr, "Setup of event %s on CPU %d failed: %s\n", event->name, cpu_id, strerror(errno));
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d, cpu_id, curpid, allflags);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, type %d, attr.type);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, size %d, attr.size);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, config 0x%llX, attr.config);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, read_format %d, attr.read_format);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, disabled %d, attr.disabled);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, inherit %d, attr.inherit);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, pinned %d, attr.pinned);
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, exclusive %d, attr.exclusive);
+                    continue;
                 }
+                if (group_fd < 0)
+                {
+                    group_fd = cpu_event_fds[cpu_id][index];
+                    running_group = group_fd;
+                }
+                eventSet->events[i].threadCounter[thread_id].init = TRUE;
             }
-
-            cpu_event_fds[cpu_id][index] = perf_event_open(&attr, pid, cpu_id, -1, flags);
-            if (cpu_event_fds[cpu_id][index] < 0)
-            {
-                fprintf(stderr, "Setup of event %s on CPU %d failed: %s\n", event->name, cpu_id, strerror(errno));
-                fprintf(stderr, "perf_event_open: pid=%d, flags=%d\n", pid, flags);
-                fprintf(stderr, "Config of event 0x%X\n", attr.config);
-                fprintf(stderr, "Type of event 0x%X\n", attr.type);
-                continue;
-            }
-            if (group_fd < 0)
-            {
-                group_fd = cpu_event_fds[cpu_id][index];
-                running_group = group_fd;
-            }
-            eventSet->events[i].threadCounter[thread_id].init = TRUE;
         }
     }
     return 0;
@@ -435,7 +498,7 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
             tmp = 0;
             ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, READ CPU %d COUNTER %d VALUE %llu, cpu_id, index, tmp);
+            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
             if (ret == sizeof(long long))
             {
                 eventSet->events[i].threadCounter[thread_id].counterData = tmp;

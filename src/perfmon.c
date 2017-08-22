@@ -83,6 +83,8 @@ PerfmonEvent* eventHash = NULL;
 RegisterMap* counter_map = NULL;
 BoxMap* box_map = NULL;
 PciDevice* pci_devices = NULL;
+char** translate_types = NULL;
+
 int perfmon_numCounters = 0;
 int perfmon_numCoreCounters = 0;
 int perfmon_numArchEvents = 0;
@@ -133,6 +135,18 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     ,"PERF_PID"
     ,"PERF_FLAGS"
 #endif
+};
+
+char* default_translate_types[NUM_UNITS] = {
+    [FIXED] = "/sys/bus/event_source/devices/cpu",
+    [PMC] = "/sys/bus/event_source/devices/cpu",
+    [MBOX0] = "/sys/bus/event_source/devices/uncore_imc",
+    [CBOX0] = "/sys/bus/event_source/devices/uncore_cbox_0",
+    [CBOX1] = "/sys/bus/event_source/devices/uncore_cbox_1",
+    [CBOX2] = "/sys/bus/event_source/devices/uncore_cbox_2",
+    [CBOX3] = "/sys/bus/event_source/devices/uncore_cbox_3",
+    [UBOX] = "/sys/bus/event_source/devices/uncore_arb",
+    [POWER] = "/sys/bus/event_source/devices/power",
 };
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -369,7 +383,6 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
     {
         event->options[i].type = EVENT_OPTION_NONE;
     }
-
     if (tokens->qty-2 > MAX_EVENT_OPTIONS)
     {
         return -ERANGE;
@@ -378,6 +391,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
 
     for (i=2;i<tokens->qty;i++)
     {
+        printf("%s\n", bdata(tokens->entry[i]));
         subtokens = bsplit(tokens->entry[i],'=');
         btolower(subtokens->entry[0]);
         if (subtokens->qty == 1)
@@ -508,6 +522,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
 #ifdef LIKWID_USE_PERFEVENT
             else if (biseqcstr(subtokens->entry[0], "perf_pid") == 1)
             {
+                printf("Found option perf_pid\n");
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
                                     event->numberOfOptions, EVENT_OPTION_PERF_PID, 0);
             }
@@ -781,6 +796,7 @@ perfmon_init_maps(void)
                     counter_map = pm_counter_map;
                     box_map = pm_box_map;
                     perfmon_numCounters = perfmon_numCounters_pm;
+                    translate_types = default_translate_types;
                     break;
 
                 case ATOM_45:
@@ -792,6 +808,7 @@ perfmon_init_maps(void)
                     counter_map = core2_counter_map;
                     perfmon_numCounters = perfmon_numCountersCore2;
                     box_map = core2_box_map;
+                    translate_types = default_translate_types;
                     break;
 
                 case ATOM_SILVERMONT_E:
@@ -806,6 +823,7 @@ perfmon_init_maps(void)
                     box_map = silvermont_box_map;
                     perfmon_numCounters = perfmon_numCountersSilvermont;
                     perfmon_numCoreCounters = perfmon_numCoreCountersSilvermont;
+                    translate_types = default_translate_types;
                     break;
 
                 case ATOM_SILVERMONT_GOLD:
@@ -815,6 +833,7 @@ perfmon_init_maps(void)
                     box_map = goldmont_box_map;
                     perfmon_numCounters = perfmon_numCountersGoldmont;
                     perfmon_numCoreCounters = perfmon_numCoreCountersGoldmont;
+                    translate_types = default_translate_types;
                     break;
 
                 case CORE_DUO:
@@ -829,6 +848,7 @@ perfmon_init_maps(void)
                     counter_map = core2_counter_map;
                     perfmon_numCounters = perfmon_numCountersCore2;
                     box_map = core2_box_map;
+                    translate_types = default_translate_types;
                     break;
 
                 case NEHALEM_EX:
@@ -837,6 +857,7 @@ perfmon_init_maps(void)
                     counter_map = nehalemEX_counter_map;
                     perfmon_numCounters = perfmon_numCountersNehalemEX;
                     box_map = nehalemEX_box_map;
+                    translate_types = default_translate_types;
                     break;
 
                 case WESTMERE_EX:
@@ -855,6 +876,7 @@ perfmon_init_maps(void)
                     counter_map = nehalem_counter_map;
                     perfmon_numCounters = perfmon_numCountersNehalem;
                     box_map = nehalem_box_map;
+                    translate_types = default_translate_types;
                     break;
 
                 case NEHALEM_WESTMERE_M:
@@ -864,10 +886,12 @@ perfmon_init_maps(void)
                     counter_map = nehalem_counter_map;
                     perfmon_numCounters = perfmon_numCountersNehalem;
                     box_map = nehalem_box_map;
+                    translate_types = default_translate_types;
                     break;
 
                 case IVYBRIDGE_EP:
                     pci_devices = ivybridgeEP_pci_devices;
+                    translate_types = ivybridgeEP_translate_types;
                     box_map = ivybridgeEP_box_map;
                     eventHash = ivybridgeEP_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsIvybridgeEP;
@@ -876,6 +900,7 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersIvybridgeEP;
                     break;
                 case IVYBRIDGE:
+                    translate_types = default_translate_types;
                     eventHash = ivybridge_arch_events;
                     box_map = ivybridge_box_map;
                     perfmon_numArchEvents = perfmon_numArchEventsIvybridge;
@@ -886,6 +911,7 @@ perfmon_init_maps(void)
 
                 case HASWELL_EP:
                     eventHash = haswellEP_arch_events;
+                    translate_types = haswellEP_translate_types;
                     perfmon_numArchEvents = perfmon_numArchEventsHaswellEP;
                     counter_map = haswellEP_counter_map;
                     perfmon_numCounters = perfmon_numCountersHaswellEP;
@@ -902,10 +928,12 @@ perfmon_init_maps(void)
                     perfmon_numCounters = perfmon_numCountersHaswell;
                     perfmon_numCoreCounters = perfmon_numCoreCountersHaswell;
                     box_map = haswell_box_map;
+                    translate_types = default_translate_types;
                     break;
 
                 case SANDYBRIDGE_EP:
                     pci_devices = sandybridgeEP_pci_devices;
+                    translate_types = sandybridgeEP_translate_types;
                     box_map = sandybridgeEP_box_map;
                     eventHash = sandybridgeEP_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsSandybridgeEP;
@@ -920,6 +948,7 @@ perfmon_init_maps(void)
                     counter_map = sandybridge_counter_map;
                     perfmon_numCounters = perfmon_numCountersSandybridge;
                     perfmon_numCoreCounters = perfmon_numCoreCountersSandybridge;
+                    translate_types = default_translate_types;
                     break;
 
                 case BROADWELL:
@@ -930,9 +959,11 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsBroadwell;
                     perfmon_numCounters = perfmon_numCountersBroadwell;
                     perfmon_numCoreCounters = perfmon_numCoreCountersBroadwell;
+                    translate_types = default_translate_types;
                     break;
                 case BROADWELL_D:
                     pci_devices = broadwelld_pci_devices;
+                    translate_types = broadwellEP_translate_types;
                     box_map = broadwelld_box_map;
                     eventHash = broadwelld_arch_events;
                     counter_map = broadwelld_counter_map;
@@ -944,6 +975,7 @@ perfmon_init_maps(void)
                     pci_devices = broadwellEP_pci_devices;
                     box_map = broadwellEP_box_map;
                     eventHash = broadwellEP_arch_events;
+                    translate_types = broadwellEP_translate_types;
                     counter_map = broadwellEP_counter_map;
                     perfmon_numArchEvents = perfmon_numArchEventsBroadwellEP;
                     perfmon_numCounters = perfmon_numCountersBroadwellEP;
@@ -960,6 +992,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsSkylake;
                     perfmon_numCounters = perfmon_numCountersSkylake;
                     perfmon_numCoreCounters = perfmon_numCoreCountersSkylake;
+                    translate_types = default_translate_types;
                     break;
                 case SKYLAKEX:
                     box_map = skylakeX_box_map;
@@ -968,6 +1001,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsSkylakeX;
                     perfmon_numCounters = perfmon_numCountersSkylakeX;
                     perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
+                    translate_types = skylakeX_translate_types;
                     break;
 
                 case XEON_PHI_KNL:
@@ -977,6 +1011,7 @@ perfmon_init_maps(void)
                     counter_map = knl_counter_map;
                     box_map = knl_box_map;
                     perfmon_numCounters = perfmon_numCountersKNL;
+                    translate_types = knl_translate_types;
                     break;
 
                 default:
@@ -995,6 +1030,7 @@ perfmon_init_maps(void)
                     counter_map = phi_counter_map;
                     box_map = phi_box_map;
                     perfmon_numCounters = perfmon_numCountersPhi;
+                    translate_types = default_translate_types;
                     break;
 
                 default:
@@ -1009,6 +1045,7 @@ perfmon_init_maps(void)
             counter_map = k10_counter_map;
             box_map = k10_box_map;
             perfmon_numCounters = perfmon_numCountersK10;
+            translate_types = default_translate_types;
             break;
 
         case K10_FAMILY:
@@ -1017,6 +1054,7 @@ perfmon_init_maps(void)
             counter_map = k10_counter_map;
             box_map = k10_box_map;
             perfmon_numCounters = perfmon_numCountersK10;
+            translate_types = default_translate_types;
             break;
 
         case K15_FAMILY:
@@ -1025,6 +1063,7 @@ perfmon_init_maps(void)
             counter_map = interlagos_counter_map;
             box_map = interlagos_box_map;
             perfmon_numCounters = perfmon_numCountersInterlagos;
+            translate_types = default_translate_types;
             break;
 
         case K16_FAMILY:
@@ -1033,6 +1072,7 @@ perfmon_init_maps(void)
             counter_map = kabini_counter_map;
             box_map = kabini_box_map;
             perfmon_numCounters = perfmon_numCountersKabini;
+            translate_types = default_translate_types;
             break;
 
         case ZEN_FAMILY:
@@ -1041,6 +1081,7 @@ perfmon_init_maps(void)
             counter_map = zen_counter_map;
             box_map = zen_box_map;
             perfmon_numCounters = perfmon_numCountersZen;
+            translate_types = zen_translate_types;
             break;
 
         default:
@@ -1585,14 +1626,28 @@ perfmon_addEventSet(const char* eventCString)
                     groupSet->numberOfActiveGroups+1,
                     groupSet->numberOfGroups+1);
 
-    if (strchr(eventCString, ':') == NULL)
+    cstringcopy = malloc((strlen(eventCString)+1)*sizeof(char));
+    if (!cstringcopy)
+        return -ENOMEM;
+    strcpy(cstringcopy, eventCString);
+    char* perf_pid = strstr(eventCString, "PERF_PID");
+    if (perf_pid != NULL)
+    {
+#ifdef LIKWID_USE_PERFEVENT
+        printf("perf_pid %s\n", perf_pid);
+        snprintf(cstringcopy, strlen(eventCString)-strlen(perf_pid), "%s", eventCString);
+#endif
+    }
+
+
+    if (strchr(cstringcopy, ':') == NULL)
     {
         err = read_group(config->groupPath, cpuid_info.short_name,
-                         eventCString,
+                         cstringcopy,
                          &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err == -EACCES)
         {
-            ERROR_PRINT(Access to performance group %s not allowed, eventCString);
+            ERROR_PRINT(Access to performance group %s not allowed, cstringcopy);
             return err;
         }
         else if (err == -ENODEV)
@@ -1602,21 +1657,35 @@ perfmon_addEventSet(const char* eventCString)
         }
         else if (err < 0)
         {
-            ERROR_PRINT(Cannot read performance group %s, eventCString);
+            ERROR_PRINT(Cannot read performance group %s, cstringcopy);
             return err;
         }
         isPerfGroup = 1;
     }
     else
     {
-        err = custom_group(eventCString, &groupSet->groups[groupSet->numberOfActiveGroups].group);
+        err = custom_group(cstringcopy, &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err)
         {
-            ERROR_PRINT(Cannot transform %s to performance group, eventCString);
+            ERROR_PRINT(Cannot transform %s to performance group, cstringcopy);
             return err;
         }
     }
     char * evstr = get_eventStr(&groupSet->groups[groupSet->numberOfActiveGroups].group);
+    if (perf_pid != NULL)
+    {
+        char* tmp = realloc(evstr, strlen(evstr)+strlen(perf_pid)+1);
+        if (!tmp)
+        {
+            return -ENOMEM;
+        }
+        else
+        {
+            evstr = tmp;
+            strcat(evstr, ":");
+            strcat(evstr, perf_pid);
+        }
+    }
     eventBString = bfromcstr(evstr);
     eventtokens = bsplit(eventBString,',');
     free(evstr);
@@ -1664,6 +1733,7 @@ perfmon_addEventSet(const char* eventCString)
             if (event->type == NOTYPE)
             {
                 DEBUG_PRINT(DEBUGLEV_INFO, Cannot access counter register %s, bdata(subtokens->entry[1]));
+                event->type = NOTYPE;
                 goto past_checks;
             }
 #else
@@ -1672,6 +1742,7 @@ perfmon_addEventSet(const char* eventCString)
             if (path == NULL || stat(path, &st) != 0)
             {
                 DEBUG_PRINT(DEBUGLEV_INFO, Cannot access counter register %s, bdata(subtokens->entry[1]));
+                event->type = NOTYPE;
                 goto past_checks;
             }
 #endif
@@ -1777,14 +1848,19 @@ int
 __perfmon_setupCountersThread(int thread_id, int groupId)
 {
     int i;
+    int ret;
     if (groupId >= groupSet->numberOfActiveGroups)
     {
         ERROR_PRINT(Group %d does not exist in groupSet, groupId);
         return -ENOENT;
     }
 
-    CHECK_AND_RETURN_ERROR(perfmon_setupCountersThread(thread_id, &groupSet->groups[groupId]),
-            Setup of counters failed);
+    ret = perfmon_setupCountersThread(thread_id, &groupSet->groups[groupId]);
+    if (ret < 0)
+    {
+        fprintf(stderr, "Setup of counters failed for thread %d\n", (ret+1)*-1);
+        return ret;
+    }
 
     groupSet->activeGroup = groupId;
     return 0;

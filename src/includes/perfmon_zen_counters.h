@@ -98,3 +98,10 @@ static BoxMap zen_box_map[NUM_UNITS] = {
     [POWER] = {0, 0, 0, 0, 0, 0, 32},
 };
 
+
+static char* zen_translate_types[NUM_UNITS] = {
+    [FIXED] = "/sys/bus/event_source/devices/cpu",
+    [PMC] = "/sys/bus/event_source/devices/cpu",
+    [CBOX0] = "/sys/bus/event_source/devices/amd_l2",
+    [UNCORE] = "/sys/bus/event_source/devices/amd_nb",
+};
