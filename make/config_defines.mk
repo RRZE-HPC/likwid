@@ -106,6 +106,7 @@ ACCESSMODE = direct
 DEFINES += -DACCESSMODE=0
 endif
 else
+ifneq ($(USE_PERF_EVENT),true)
 ifeq ($(ACCESSMODE),accessdaemon)
 ifneq ($(COMPILER),MIC)
 ifneq ($(BUILDDAEMON),true)
@@ -120,6 +121,7 @@ ACCESSMODE = direct
 endif
 else
 DEFINES += -DACCESSMODE=0
+endif
 endif
 endif
 
