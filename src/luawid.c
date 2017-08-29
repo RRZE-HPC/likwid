@@ -41,6 +41,7 @@
 #include <sched.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <sys/syscall.h>
 
 #include <lua.h>                               /* Always include this */
 #include <lauxlib.h>                           /* Always include this */
@@ -54,6 +55,8 @@
 #ifdef COLOR
 #include <textcolor.h>
 #endif
+
+#define gettid() syscall(SYS_gettid)
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -2067,6 +2070,37 @@ lua_likwid_pinProcess(lua_State* L)
 }
 
 static int
+lua_likwid_pinThread(lua_State* L)
+{
+    int cpuID = luaL_checknumber(L,-2);
+    int silent = luaL_checknumber(L,-1);
+#ifdef HAS_SCHEDAFFINITY
+    luaL_argcheck(L, cpuID >= 0, 1, "CPU ID must be greater or equal 0");
+    if (affinity_isInitialized == 0)
+    {
+        affinity_init();
+        affinity_isInitialized = 1;
+        affinity = get_affinityDomains();
+    }
+    affinity_pinThread(cpuID);
+    if (!silent)
+    {
+#ifdef COLOR
+            color_on(BRIGHT, COLOR);
+#endif
+            printf("[likwid-pin] PID %lu -> core %d - OK", gettid(), cpuID);
+#ifdef COLOR
+            color_reset();
+#endif
+            printf("\n");
+    }
+#else
+    printf("Pinning of threads is not supported by your system\n")
+#endif
+    return 0;
+}
+
+static int
 lua_likwid_setenv(lua_State* L)
 {
     const char* element = (const char*)luaL_checkstring(L, -2);
@@ -2750,6 +2784,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_memSweepDomain", lua_likwid_memSweepDomain);
     // Pinning functions
     lua_register(L, "likwid_pinProcess", lua_likwid_pinProcess);
+    lua_register(L, "likwid_pinThread", lua_likwid_pinThread);
     // Helper functions
     lua_register(L, "likwid_setenv", lua_likwid_setenv);
     lua_register(L, "likwid_unsetenv", lua_likwid_unsetenv);
