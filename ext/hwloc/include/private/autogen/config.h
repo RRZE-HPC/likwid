@@ -386,16 +386,16 @@
 #define HAVE_WCHAR_T 1
 
 /* Define to 1 if you have the <X11/keysym.h> header file. */
-#define HAVE_X11_KEYSYM_H 1
+//#define HAVE_X11_KEYSYM_H 1
 
 /* Define to 1 if you have the <X11/Xlib.h> header file. */
-#define HAVE_X11_XLIB_H 1
+//#define HAVE_X11_XLIB_H 1
 
 /* Define to 1 if you have the <X11/Xutil.h> header file. */
-#define HAVE_X11_XUTIL_H 1
+//#define HAVE_X11_XUTIL_H 1
 
 /* Define to 1 if you have the <xlocale.h> header file. */
-#define HAVE_XLOCALE_H 1
+//#define HAVE_XLOCALE_H 1
 
 /* Define to '1' if __progname is present and usable */
 #define HAVE___PROGNAME 1
