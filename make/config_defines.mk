@@ -138,7 +138,7 @@ DEBUG_FLAGS =
 endif
 
 ifeq ($(USE_PERF_EVENT),true)
-$(info Info: Compiling for perf_event interface. Features like power consumption or thermal stuff is disabled);
+$(info Info: Compiling for perf_event interface. Measurements of thermal information is disabled);
 $(info Info: Currently Uncore support is experimental);
 DEFINES += -DLIKWID_USE_PERFEVENT
 endif
