@@ -361,7 +361,7 @@ static RegisterMap skylakeX_counter_map[NUM_COUNTERS_SKYLAKEX] = {
     {"IUTIL3PO1", PMC276, IBOX3FIX, 0, MSR_UNC_SKX_II0_PCIE2_UTIL_PORT1_OUT, 0, 0, 0},
     {"IUTIL3PO2", PMC277, IBOX3FIX, 0, MSR_UNC_SKX_II0_PCIE2_UTIL_PORT2_OUT, 0, 0, 0},
     {"IUTIL3PO3", PMC278, IBOX3FIX, 0, MSR_UNC_SKX_II0_PCIE2_UTIL_PORT3_OUT, 0, 0, 0},
-    
+
     {"IBOX4C0", PMC279, IBOX4, MSR_UNC_SKX_II0_MCP0_CTL0, MSR_UNC_SKX_II0_MCP0_CTR0, 0, 0, SKX_VALID_OPTIONS_IBOX},
     {"IBOX4C1", PMC280, IBOX4, MSR_UNC_SKX_II0_MCP0_CTL1, MSR_UNC_SKX_II0_MCP0_CTR1, 0, 0, SKX_VALID_OPTIONS_IBOX},
     {"IBOX4C2", PMC281, IBOX4, MSR_UNC_SKX_II0_MCP0_CTL2, MSR_UNC_SKX_II0_MCP0_CTR2, 0, 0, SKX_VALID_OPTIONS_IBOX},
@@ -511,6 +511,7 @@ static PciDevice skylakeX_pci_devices[MAX_NUM_PCI_DEVICES] = {
 static char* skylakeX_translate_types[NUM_UNITS] = {
     [FIXED] = "/sys/bus/event_source/devices/cpu",
     [PMC] = "/sys/bus/event_source/devices/cpu",
+    [POWER] = "/sys/bus/event_source/devices/power",
     [MBOX0] = "/sys/bus/event_source/devices/uncore_imc_0",
     [MBOX1] = "/sys/bus/event_source/devices/uncore_imc_1",
     [MBOX2] = "/sys/bus/event_source/devices/uncore_imc_2",

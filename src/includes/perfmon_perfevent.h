@@ -149,7 +149,6 @@ static char* translate_typesSKX[NUM_UNITS] = {
     [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
 };*/
 
-
 static long
 perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
                 int cpu, int group_fd, unsigned long flags)
@@ -368,6 +367,12 @@ int perfmon_setupCountersThread_perfevent(
                 ret = perf_pmc_setup(&attr, event);
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
                 break;
+        case POWER:
+        ret = perf_uncore_setup(&attr, type, event);
+                is_uncore = 1;
+                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
+                break;
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)
             case MBOX0:
             case MBOX1:
@@ -475,7 +480,9 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
             VERBOSEPRINTREG(cpu_id, 0x0, 0x0, RESET_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_RESET, 0);
             eventSet->events[i].threadCounter[thread_id].startData = 0x0ULL;
-            VERBOSEPRINTREG(cpu_id, 0x0, 0x0, START_COUNTER);
+            if (eventSet->events[i].type == POWER)
+                read(cpu_event_fds[cpu_id][index], &eventSet->events[i].threadCounter[thread_id].startData, sizeof(long long));
+            VERBOSEPRINTREG(cpu_id, 0x0, eventSet->events[i].threadCounter[thread_id].startData, START_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_ENABLE, 0);
         }
     }

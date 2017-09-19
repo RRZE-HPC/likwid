@@ -325,8 +325,8 @@ UMASK_L3_MISS                            0x01
 
 # Energy Events
 
-EVENT_RAPL_CORE_ENERGY                  0x00 PWR0
+EVENT_RAPL_CORE_ENERGY                  0x01 PWR0
 UMASK_RAPL_CORE_ENERGY                  0x00
 
-EVENT_RAPL_PKG_ENERGY                  0x00 PWR1
+EVENT_RAPL_PKG_ENERGY                  0x02 PWR1
 UMASK_RAPL_PKG_ENERGY                  0x00
