@@ -581,7 +581,7 @@ int skx_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (1ULL<<45);
                     break;
                 case EVENT_OPTION_MATCH0:
-                    flags |= (event->options[j].value & 0x1FULL) << 32;
+                    flags |= (event->options[j].value & 0xFFULL) << 32;
                     break;
                 case EVENT_OPTION_MATCH1:
                     flags |= (event->options[j].value & 0x3FF) << 46;
@@ -679,10 +679,10 @@ int skx_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (event->options[j].value & 0xFFFULL) << 24;
                     break;
                 case EVENT_OPTION_MASK0:
-                    flags |= (event->options[j].value & 0x1FFULL) << 35;
+                    flags |= (event->options[j].value & 0xFFULL) << 36;
                     break;
                 case EVENT_OPTION_MASK1:
-                    flags |= (event->options[j].value & 0xFULL) << 43;
+                    flags |= (event->options[j].value & 0x7ULL) << 44;
                     break;
                 default:
                     break;
