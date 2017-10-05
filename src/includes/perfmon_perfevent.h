@@ -368,7 +368,7 @@ int perfmon_setupCountersThread_perfevent(
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
                 break;
         case POWER:
-        ret = perf_uncore_setup(&attr, type, event);
+                ret = perf_uncore_setup(&attr, type, event);
                 is_uncore = 1;
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
                 break;
@@ -423,6 +423,22 @@ int perfmon_setupCountersThread_perfevent(
             case RBOX0:
             case RBOX1:
             case BBOX0:
+            case EDBOX0:
+            case EDBOX1:
+            case EDBOX2:
+            case EDBOX3:
+            case EDBOX4:
+            case EDBOX5:
+            case EDBOX6:
+            case EDBOX7:
+            case EUBOX0:
+            case EUBOX1:
+            case EUBOX2:
+            case EUBOX3:
+            case EUBOX4:
+            case EUBOX5:
+            case EUBOX6:
+            case EUBOX7:
                 ret = perf_uncore_setup(&attr, type, event);
                 is_uncore = 1;
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_UNCORE);
