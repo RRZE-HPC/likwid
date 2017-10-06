@@ -370,7 +370,14 @@ cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int length)
     }
     struct bstrList* strlist;
     strlist = bsplit(bcpustr, ':');
-    if (strlist->qty == 3)
+    if (strlist->qty == 2)
+    {
+        bdomain = bstrcpy(strlist->entry[1]);
+        count = cpuid_topology->activeHWThreads;
+        stride = 1;
+        chunk = 1;
+    }
+    else if (strlist->qty == 3)
     {
         bdomain = bstrcpy(strlist->entry[1]);
         count = check_and_atoi(bdata(strlist->entry[2]));
@@ -462,7 +469,13 @@ cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
     strlist = bsplit(bcpustr, ':');
     if (strlist->qty != 3)
     {
-        fprintf(stderr, "ERROR: Invalid expression, should look like L:<domain>:<indexlist> or be in a cpuset\n");
+        fprintf(stderr, "ERROR: Invalid expression, should look like <domain>:<indexlist> or L:<domain>:<indexlist>\n");
+        bstrListDestroy(strlist);
+        return 0;
+    }
+    if (blength(strlist->entry[2]) == 0)
+    {
+        fprintf(stderr, "ERROR: Invalid expression, should look like <domain>:<indexlist> or L:<domain>:<indexlist>\n");
         bstrListDestroy(strlist);
         return 0;
     }
@@ -699,7 +712,23 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
                     }
                     else
                     {
-                        fprintf(stderr, "CPU %d not in domain %s\n", j, bdata(affinity->domains[domainidx].tag));
+                        int notInCpuSet = 0;
+                        for (int k=0;k<cpuid_topology->numHWThreads;k++)
+                        {
+                            if (cpuid_topology->threadPool[k].apicId == j && !cpuid_topology->threadPool[k].inCpuSet)
+                            {
+                                notInCpuSet = 1;
+                            }
+                        }
+                        fprintf(stderr, "CPU %d not in domain %s.", j, bdata(affinity->domains[domainidx].tag));
+                        if (notInCpuSet)
+                        {
+                            fprintf(stderr, " It is not in the given cpuset\n");
+                        }
+                        else
+                        {
+                            fprintf(stderr, "\n");
+                        }
                     }
                 }
             }
@@ -719,7 +748,23 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
                     }
                     else
                     {
-                        fprintf(stderr, "CPU %d not in domain %s\n", j, bdata(affinity->domains[domainidx].tag));
+                        int notInCpuSet = 0;
+                        for (int k=0;k<cpuid_topology->numHWThreads;k++)
+                        {
+                            if (cpuid_topology->threadPool[k].apicId == j && !cpuid_topology->threadPool[k].inCpuSet)
+                            {
+                                notInCpuSet = 1;
+                            }
+                        }
+                        fprintf(stderr, "CPU %d not in domain %s.", j, bdata(affinity->domains[domainidx].tag));
+                        if (notInCpuSet)
+                        {
+                            fprintf(stderr, " It is not in the given cpuset\n");
+                        }
+                        else
+                        {
+                            fprintf(stderr, "\n");
+                        }
                     }
                 }
             }
@@ -744,7 +789,23 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
             }
             else
             {
-                fprintf(stderr, "CPU %d not in domain %s\n", cpu, bdata(affinity->domains[domainidx].tag));
+                int notInCpuSet = 0;
+                for (int k=0;k<cpuid_topology->numHWThreads;k++)
+                {
+                    if (cpuid_topology->threadPool[k].apicId == cpu && !cpuid_topology->threadPool[k].inCpuSet)
+                    {
+                        notInCpuSet = 1;
+                    }
+                }
+                fprintf(stderr, "CPU %d not in domain %s.", cpu, bdata(affinity->domains[domainidx].tag));
+                if (notInCpuSet)
+                {
+                    fprintf(stderr, " It is not in the given cpuset\n");
+                }
+                else
+                {
+                    fprintf(stderr, "\n");
+                }
             }
         }
     }
@@ -779,6 +840,7 @@ cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
         bdestroy(bcpustr);
         return -ENOMEM;
     }
+    memset(tmpList, 0, length * sizeof(int));
     for (int i=0; i< strlist->qty; i++)
     {
         if (binstr(strlist->entry[i], 0, scattercheck) != BSTR_ERR ||
@@ -797,16 +859,13 @@ cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
             ret = cpustr_to_cpulist_logical(strlist->entry[i], tmpList, length);
             insert += cpulist_concat(cpulist, insert, tmpList, ret);
         }
-        else if (cpuid_topology->activeHWThreads < cpuid_topology->numHWThreads)
+
+        else if ((bstrchrp(strlist->entry[i], 'N', 0) == 0) ||
+                 (bstrchrp(strlist->entry[i], 'S', 0) == 0) ||
+                 (bstrchrp(strlist->entry[i], 'C', 0) == 0) ||
+                 (bstrchrp(strlist->entry[i], 'M', 0) == 0))
         {
-            fprintf(stdout,
-                    "INFO: You are running LIKWID in a cpuset with %d CPUs, only logical numbering allowed\n",
-                    cpuid_topology->activeHWThreads);
-            if (((bstrchrp(strlist->entry[i], 'N', 0) == 0) ||
-                (bstrchrp(strlist->entry[i], 'S', 0) == 0) ||
-                (bstrchrp(strlist->entry[i], 'C', 0) == 0) ||
-                (bstrchrp(strlist->entry[i], 'M', 0) == 0)) &&
-                (bstrchrp(strlist->entry[i], ':', 0) != BSTR_ERR))
+            if (bstrchrp(strlist->entry[i], ':', 0) != BSTR_ERR)
             {
                 bstring newstr = bformat("L:");
                 bconcat(newstr, strlist->entry[i]);
@@ -816,30 +875,34 @@ cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
             }
             else
             {
+                bstring newstr = bformat("E:");
+                bconcat(newstr, strlist->entry[i]);
+                ret = cpustr_to_cpulist_expression(newstr, tmpList, length);
+                insert += cpulist_concat(cpulist, insert, tmpList, ret);
+                bdestroy(newstr);
+            }
+        }
+        else
+        {
+            if (cpuid_topology->activeHWThreads < cpuid_topology->numHWThreads)
+            {
+                if (getenv("LIKWID_SILENT") == NULL)
+                {
+                    fprintf(stdout,
+                        "INFO: You are running LIKWID in a cpuset with %d CPUs. Taking given IDs as logical ID in cpuset\n",
+                        cpuid_topology->activeHWThreads);
+                }
                 bstring newstr = bformat("L:N:");
                 bconcat(newstr, strlist->entry[i]);
                 ret = cpustr_to_cpulist_logical(newstr, tmpList, length);
                 insert += cpulist_concat(cpulist, insert, tmpList, ret);
                 bdestroy(newstr);
             }
-        }
-        else if (((bstrchrp(strlist->entry[i], 'N', 0) == 0) ||
-            (bstrchrp(strlist->entry[i], 'S', 0) == 0) ||
-            (bstrchrp(strlist->entry[i], 'C', 0) == 0) ||
-            (bstrchrp(strlist->entry[i], 'M', 0) == 0)) &&
-            (bstrchrp(strlist->entry[i], ':', 0) != BSTR_ERR))
-        {
-            bstring newstr = bformat("L:");
-            bconcat(newstr, strlist->entry[i]);
-            ret = cpustr_to_cpulist_logical(newstr, tmpList, length);
-            insert += cpulist_concat(cpulist, insert, tmpList, ret);
-            bdestroy(newstr);
-        }
-
-        else
-        {
-            ret = cpustr_to_cpulist_physical(strlist->entry[i], tmpList, length);
-            insert += cpulist_concat(cpulist, insert, tmpList, ret);
+            else
+            {
+                ret = cpustr_to_cpulist_physical(strlist->entry[i], tmpList, length);
+                insert += cpulist_concat(cpulist, insert, tmpList, ret);
+            }
         }
     }
     free(tmpList);

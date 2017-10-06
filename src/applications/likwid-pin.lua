@@ -199,7 +199,7 @@ elseif print_domains then
 end
 
 if num_threads == 0 then
-    num_threads, cpu_list = likwid.cpustr_to_cpulist("N:0-"..cputopo["numHWThreads"]-1)
+    num_threads, cpu_list = likwid.cpustr_to_cpulist("N")
 end
 if (#arg == 0) then
     print_stderr("Executable must be given on commandline")
