@@ -340,12 +340,14 @@ if num_cpus == 0 and
    not print_groups and
    not print_group_help and
    not print_info then
-    print_stderr("Option -c <list> or -C <list> must be given on commandline")
-    usage()
-    if outfile and likwid.access(outfile..".tmp", "e") == 0 then
-        os.remove(outfile..".tmp")
+    cpulist = {}
+    pin_cpus = false
+    for cntr=0,cputopo["numHWThreads"]-1 do
+        if cputopo["threadPool"][cntr]["inCpuSet"] == 1 then
+            num_cpus = num_cpus + 1
+            table.insert(cpulist, cputopo["threadPool"][cntr]["apicId"])
+        end
     end
-    os.exit(1)
 elseif num_cpus == 0 and
        gotC and
        not print_events and
