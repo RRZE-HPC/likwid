@@ -9,7 +9,7 @@
  *      Released:  <DATE>
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
- *                Jan Treibig (jt), jan.treibig@gmail.com
+ *                Amin Nabikhani, amin.nabikhani@gmail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
