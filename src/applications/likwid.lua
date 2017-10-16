@@ -150,14 +150,13 @@ likwid.markerRegionCount = likwid_markerRegionCount
 likwid.markerRegionResult = likwid_markerRegionResult
 likwid.markerRegionMetric = likwid_markerRegionMetric
 likwid.getCpuClockCurrent = likwid_getCpuClockCurrent
-likwid.setCpuClockCurrent = likwid_setCpuClockCurrent
 likwid.getCpuClockMin = likwid_getCpuClockMin
 likwid.setCpuClockMin = likwid_setCpuClockMin
 likwid.getCpuClockMax = likwid_getCpuClockMax
 likwid.setCpuClockMax = likwid_setCpuClockMax
 likwid.getGovernor = likwid_getGovernor
 likwid.setGovernor = likwid_setGovernor
-likwid.getDriver = likwid_getDriver
+likwid.setTurbo = likwid_setTurbo
 likwid.setUncoreFreqMin = likwid_setUncoreFreqMin
 likwid.getUncoreFreqMin = likwid_getUncoreFreqMin
 likwid.setUncoreFreqMax = likwid_setUncoreFreqMax
@@ -1170,14 +1169,12 @@ local function llikwid_getAvailFreq(cpu)
     local freq_str = likwid_getAvailFreq(cpu)
     local freqs = {}
     if not freq_str then
-        return freqs, 0
+        return freqs
     end
     for item in freq_str:gmatch("[%d%.]+") do
         table.insert(freqs, item)
     end
-    local turbo = freqs[1]
-    table.remove(freqs, 1)
-    return freqs, turbo
+    return freqs
 end
 
 likwid.getAvailFreq = llikwid_getAvailFreq
