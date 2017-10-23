@@ -106,6 +106,7 @@ ACCESSMODE = direct
 DEFINES += -DACCESSMODE=0
 endif
 else
+ifneq ($(USE_PERF_EVENT),true)
 ifeq ($(ACCESSMODE),accessdaemon)
 ifneq ($(COMPILER),MIC)
 ifneq ($(BUILDDAEMON),true)
@@ -122,6 +123,7 @@ else
 DEFINES += -DACCESSMODE=0
 endif
 endif
+endif
 
 ifeq ($(DEBUG),true)
 DEBUG_FLAGS = -g
@@ -136,7 +138,7 @@ DEBUG_FLAGS =
 endif
 
 ifeq ($(USE_PERF_EVENT),true)
-$(info Info: Compiling for perf_event interface. Features like power consumption or thermal stuff is disabled);
+$(info Info: Compiling for perf_event interface. Measurements of thermal information is disabled);
 $(info Info: Currently Uncore support is experimental);
 DEFINES += -DLIKWID_USE_PERFEVENT
 endif

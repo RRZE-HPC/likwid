@@ -60,8 +60,8 @@
 #define AMD_K17_L3_SLICE_SHIFT 48
 #define AMD_K17_L3_SLICE_MASK 0xFULL
 
-#define ZEN_VALID_OPTIONS_PMC EVENT_OPTION_EDGE_MASK|EVENT_OPTION_COUNT_KERNEL_MASK|EVENT_OPTION_INVERT_MASK|EVENT_OPTION_THRESHOLD
-#define ZEN_VALID_OPTIONS_L3 EVENT_OPTION_TID|EVENT_OPTION_MATCH0
+#define ZEN_VALID_OPTIONS_PMC EVENT_OPTION_EDGE_MASK|EVENT_OPTION_COUNT_KERNEL_MASK|EVENT_OPTION_INVERT_MASK|EVENT_OPTION_THRESHOLD_MASK
+#define ZEN_VALID_OPTIONS_L3 EVENT_OPTION_TID_MASK|EVENT_OPTION_MATCH0_MASK
 
 static RegisterMap zen_counter_map[NUM_COUNTERS_ZEN] = {
     /* Fixed counters */
@@ -96,5 +96,13 @@ static BoxMap zen_box_map[NUM_UNITS] = {
     [CBOX0] = {0, 0, 0, 0, 0, 0, 48},
     [UNCORE] = {0, 0, 0, 0, 0, 0, 48},
     [POWER] = {0, 0, 0, 0, 0, 0, 32},
+};
+
+static char* zen_translate_types[NUM_UNITS] = {
+    [FIXED] = "/sys/bus/event_source/devices/cpu",
+    [PMC] = "/sys/bus/event_source/devices/cpu",
+    [CBOX0] = "/sys/bus/event_source/devices/amd_l2",
+    [UNCORE] = "/sys/bus/event_source/devices/amd_nb",
+    [POWER] = "/sys/bus/event_source/devices/power",
 };
 

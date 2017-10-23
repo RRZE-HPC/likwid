@@ -368,9 +368,9 @@ if not print_info and not print_temp then
         end
         print_stdout(likwid.hline)
     else
-        err = os.execute(table.concat(execList," "))
+        err = os.execute(execString)
         if err == false then
-            print_stderr(string.format("Failed to execute %s!",table.concat(execList," ")))
+            print_stderr(string.format("Failed to execute %s!", execString))
             likwid.putPowerInfo()
             likwid.finalize()
             os.exit(1)

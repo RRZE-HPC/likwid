@@ -335,12 +335,9 @@ int skx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (event->options[j].value & 0xFFULL) << 24;
                     break;
                 case EVENT_OPTION_OPCODE:
-                    filter_flags1 |= (0x3<<27);
-                    filter_flags1 |= (extractBitField(event->options[j].value,18,0) << 20);
+                    filter_flags1 |= (0x3<<17);
+                    filter_flags1 |= (extractBitField(event->options[j].value,20,0) << 9);
                     opc_match = 1;
-                    break;
-                case EVENT_OPTION_NID:
-                    filter_flags1 |= (extractBitField(event->options[j].value,16,0));
                     break;
                 case EVENT_OPTION_STATE:
                     filter_flags0 |= (extractBitField(event->options[j].value,10,0) << 17);
@@ -354,7 +351,7 @@ int skx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     filter_flags1 |= ((extractBitField(event->options[j].value,2,0) & 0x3ULL) << 30);
                     break;
                 case EVENT_OPTION_MATCH1:
-                    filter_flags1 |= (extractBitField(event->options[j].value,6,0) & 0x3B);
+                    filter_flags1 |= (extractBitField(event->options[j].value,6,0) & 0x33);
                     match1 = 1;
                     break;
                 default:
@@ -546,6 +543,62 @@ int skx_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     return 0;
 }
 
+int skx_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
+{
+    int j = 0;
+    uint64_t flags = 0x0ULL;
+    PciDeviceIndex dev = counter_map[index].device;
+
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
+    {
+        return 0;
+    }
+    if (!HPMcheck(dev, cpu_id))
+    {
+        return -ENODEV;
+    }
+
+    flags = (1ULL<<20)|(1ULL<<22);
+    flags |= (event->umask<<8) + event->eventId;
+    if (event->numberOfOptions > 0)
+    {
+        for(j = 0; j < event->numberOfOptions; j++)
+        {
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_EDGE:
+                    flags |= (1ULL<<18);
+                    break;
+                case EVENT_OPTION_INVERT:
+                    flags |= (1ULL<<23);
+                    break;
+                case EVENT_OPTION_THRESHOLD:
+                    flags |= (event->options[j].value & 0xFFULL) << 24;
+                    break;
+                case EVENT_OPTION_NID:
+                    flags |= (event->options[j].value & 0xFULL) << 40;
+                    flags |= (1ULL<<45);
+                    break;
+                case EVENT_OPTION_MATCH0:
+                    flags |= (event->options[j].value & 0xFFULL) << 32;
+                    break;
+                case EVENT_OPTION_MATCH1:
+                    flags |= (event->options[j].value & 0x3FF) << 46;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    if (flags != currentConfig[cpu_id][index])
+    {
+        VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, flags, SETUP_SBOX_BOX);
+        CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter_map[index].configRegister, flags));
+        currentConfig[cpu_id][index] = flags;
+    }
+    return 0;
+}
+
 
 int skx_uncorebox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
@@ -626,10 +679,10 @@ int skx_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (event->options[j].value & 0xFFFULL) << 24;
                     break;
                 case EVENT_OPTION_MASK0:
-                    flags |= (event->options[j].value & 0x1FFULL) << 35;
+                    flags |= (event->options[j].value & 0xFFULL) << 36;
                     break;
                 case EVENT_OPTION_MASK1:
-                    flags |= (event->options[j].value & 0xFULL) << 43;
+                    flags |= (event->options[j].value & 0x7ULL) << 44;
                     break;
                 default:
                     break;
@@ -791,10 +844,12 @@ int perfmon_setupCounterThread_skylake(
             case MBOX5FIX:
                 skx_mboxfix_setup(cpu_id, index, event);
                 break;
-            case BBOX0:
-            case BBOX1:
             case SBOX0:
             case SBOX1:
+                skx_sbox_setup(cpu_id, index, event);
+                break;
+            case BBOX0:
+            case BBOX1:
             case SBOX2:
             case RBOX0:
             case RBOX1:

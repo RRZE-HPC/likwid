@@ -34,9 +34,13 @@
 #define NUM_COUNTERS_UNCORE_SKYLAKEX 321
 
 #define SKX_VALID_OPTIONS_FIXED EVENT_OPTION_ANYTHREAD_MASK|EVENT_OPTION_COUNT_KERNEL_MASK
-#define SKX_VALID_OPTIONS_PMC EVENT_OPTION_EDGE_MASK|EVENT_OPTION_COUNT_KERNEL_MASK|EVENT_OPTION_INVERT_MASK| \
-            EVENT_OPTION_ANYTHREAD_MASK|EVENT_OPTION_IN_TRANS_MASK|EVENT_OPTION_THRESHOLD_MASK
-#define SKX_VALID_OPTIONS_CBOX EVENT_OPTION_EDGE_MASK|EVENT_OPTION_INVERT_MASK|EVENT_OPTION_THRESHOLD_MASK
+#define SKX_VALID_OPTIONS_PMC EVENT_OPTION_EDGE_MASK|EVENT_OPTION_COUNT_KERNEL_MASK| \
+            EVENT_OPTION_INVERT_MASK|EVENT_OPTION_ANYTHREAD_MASK| \
+            EVENT_OPTION_IN_TRANS_MASK|EVENT_OPTION_THRESHOLD_MASK
+#define SKX_VALID_OPTIONS_CBOX EVENT_OPTION_EDGE_MASK|EVENT_OPTION_INVERT_MASK|\
+            EVENT_OPTION_THRESHOLD_MASK|EVENT_OPTION_TID_MASK| \
+            EVENT_OPTION_MATCH0_MASK|EVENT_OPTION_MATCH1_MASK| \
+            EVENT_OPTION_OPCODE_MASK|EVENT_OPTION_STATE_MASK
 #define SKX_VALID_OPTIONS_UBOX EVENT_OPTION_THRESHOLD_MASK|EVENT_OPTION_EDGE_MASK|EVENT_OPTION_INVERT_MASK
 #define SKX_VALID_OPTIONS_MBOX EVENT_OPTION_EDGE_MASK|EVENT_OPTION_INVERT_MASK|EVENT_OPTION_THRESHOLD_MASK
 #define SKX_VALID_OPTIONS_WBOX EVENT_OPTION_EDGE_MASK|EVENT_OPTION_INVERT_MASK|EVENT_OPTION_THRESHOLD_MASK|EVENT_OPTION_OCCUPANCY_MASK|EVENT_OPTION_OCCUPANCY_FILTER_MASK|EVENT_OPTION_OCCUPANCY_EDGE_MASK|EVENT_OPTION_OCCUPANCY_INVERT_MASK
@@ -502,4 +506,57 @@ static PciDevice skylakeX_pci_devices[MAX_NUM_PCI_DEVICES] = {
  [PCI_R3QPI_DEVICE_LINK_2] = {R3QPI, "12.4", "PCI_R3QPI_DEVICE_LINK_2", "RBOX2", 0x204c},
  [PCI_HA_DEVICE_0] = {HA, "08.0", "PCI_M2M_DEVICE_0", "BBOX0", 0x2066},
  [PCI_HA_DEVICE_1] = {HA, "09.0", "PCI_M2M_DEVICE_1", "BBOX1", 0x2066},
+};
+
+
+static char* skylakeX_translate_types[NUM_UNITS] = {
+    [FIXED] = "/sys/bus/event_source/devices/cpu",
+    [PMC] = "/sys/bus/event_source/devices/cpu",
+    [MBOX0] = "/sys/bus/event_source/devices/uncore_imc_0",
+    [MBOX1] = "/sys/bus/event_source/devices/uncore_imc_1",
+    [MBOX2] = "/sys/bus/event_source/devices/uncore_imc_2",
+    [MBOX3] = "/sys/bus/event_source/devices/uncore_imc_3",
+    [MBOX4] = "/sys/bus/event_source/devices/uncore_imc_4",
+    [MBOX5] = "/sys/bus/event_source/devices/uncore_imc_5",
+    [MBOX6] = "/sys/bus/event_source/devices/uncore_imc_6",
+    [MBOX7] = "/sys/bus/event_source/devices/uncore_imc_7",
+    [CBOX0] = "/sys/bus/event_source/devices/uncore_cbox_0",
+    [CBOX1] = "/sys/bus/event_source/devices/uncore_cbox_1",
+    [CBOX2] = "/sys/bus/event_source/devices/uncore_cbox_2",
+    [CBOX3] = "/sys/bus/event_source/devices/uncore_cbox_3",
+    [CBOX4] = "/sys/bus/event_source/devices/uncore_cbox_4",
+    [CBOX5] = "/sys/bus/event_source/devices/uncore_cbox_5",
+    [CBOX6] = "/sys/bus/event_source/devices/uncore_cbox_6",
+    [CBOX7] = "/sys/bus/event_source/devices/uncore_cbox_7",
+    [CBOX8] = "/sys/bus/event_source/devices/uncore_cbox_8",
+    [CBOX9] = "/sys/bus/event_source/devices/uncore_cbox_9",
+    [CBOX10] = "/sys/bus/event_source/devices/uncore_cbox_10",
+    [CBOX11] = "/sys/bus/event_source/devices/uncore_cbox_11",
+    [CBOX12] = "/sys/bus/event_source/devices/uncore_cbox_12",
+    [CBOX13] = "/sys/bus/event_source/devices/uncore_cbox_13",
+    [CBOX14] = "/sys/bus/event_source/devices/uncore_cbox_14",
+    [CBOX15] = "/sys/bus/event_source/devices/uncore_cbox_15",
+    [CBOX16] = "/sys/bus/event_source/devices/uncore_cbox_16",
+    [CBOX17] = "/sys/bus/event_source/devices/uncore_cbox_17",
+    [CBOX18] = "/sys/bus/event_source/devices/uncore_cbox_18",
+    [CBOX19] = "/sys/bus/event_source/devices/uncore_cbox_19",
+    [CBOX20] = "/sys/bus/event_source/devices/uncore_cbox_20",
+    [CBOX21] = "/sys/bus/event_source/devices/uncore_cbox_21",
+    [CBOX22] = "/sys/bus/event_source/devices/uncore_cbox_22",
+    [CBOX23] = "/sys/bus/event_source/devices/uncore_cbox_23",
+    [CBOX24] = "/sys/bus/event_source/devices/uncore_cbox_24",
+    [CBOX25] = "/sys/bus/event_source/devices/uncore_cbox_25",
+    [CBOX26] = "/sys/bus/event_source/devices/uncore_cbox_26",
+    [CBOX27] = "/sys/bus/event_source/devices/uncore_cbox_27",
+    [BBOX0] = "/sys/bus/event_source/devices/uncore_m2m_0",
+    [BBOX1] = "/sys/bus/event_source/devices/uncore_m2m_1",
+    [WBOX] = "/sys/bus/event_source/devices/uncore_pcu",
+    [SBOX0] = "/sys/bus/event_source/devices/uncore_upi_0",
+    [SBOX1] = "/sys/bus/event_source/devices/uncore_upi_1",
+    [SBOX2] = "/sys/bus/event_source/devices/uncore_upi_2",
+    [RBOX0] = "/sys/bus/event_source/devices/uncore_m3upi_0",
+    [RBOX1] = "/sys/bus/event_source/devices/uncore_m3upi_1",
+    [RBOX2] = "/sys/bus/event_source/devices/uncore_m3upi_2",
+    [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
+    [POWER] = "/sys/bus/event_source/devices/power",
 };

@@ -109,6 +109,7 @@ likwid.readTemp = likwid_readTemp
 likwid.memSweep = likwid_memSweep
 likwid.memSweepDomain = likwid_memSweepDomain
 likwid.pinProcess = likwid_pinProcess
+likwid.pinThread = likwid_pinThread
 likwid.setenv = likwid_setenv
 likwid.unsetenv = likwid_unsetenv
 likwid.getpid = likwid_getpid

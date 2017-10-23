@@ -37,8 +37,15 @@
 #include <bitUtil.h>
 #include <error.h>
 #include <access.h>
+#include <unistd.h>
 
 const char* power_names[NUM_POWER_DOMAINS] = {"PKG", "PP0", "PP1", "DRAM"};
+const char* perf_power_names[NUM_POWER_DOMAINS] = {
+    "/sys/devices/power/events/energy-pkg.scale",
+    "/sys/devices/power/events/energy-cores.scale",
+    "",
+    "/sys/devices/power/events/energy-ram.scale",
+};
 
 uint32_t power_regs[NUM_POWER_DOMAINS] = {MSR_PKG_ENERGY_STATUS,
                                 MSR_PP0_ENERGY_STATUS,
@@ -202,6 +209,23 @@ power_tread(int socket_fd, int cpuId, uint64_t reg, uint32_t *data)
 double
 power_getEnergyUnit(int domain)
 {
+#ifdef LIKWID_USE_PERFEVENT
+    FILE* fd = NULL;
+    char out[512];
+    if (power_info.domains[domain].energyUnit == 0)
+    {
+        if (!access(perf_power_names[domain], R_OK))
+        {
+            fd = fopen(perf_power_names[domain], "r");
+            if (fd != NULL)
+            {
+                fread(out, sizeof(char), 512, fd);
+                fclose(fd);
+                power_info.domains[domain].energyUnit = atof(out);
+            }
+        }
+    }
+#endif
     return power_info.domains[domain].energyUnit;
 }
 

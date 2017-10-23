@@ -126,11 +126,11 @@ int k17_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
             switch (event->options[j].type)
             {
                 case EVENT_OPTION_TID:
-                    flags |= (~((uint64_t)(event->options[j].value & AMD_K17_L3_TID_MASK))) << AMD_K17_L3_TID_SHIFT;
+                    flags |= ((uint64_t)(event->options[j].value & AMD_K17_L3_TID_MASK)) << AMD_K17_L3_TID_SHIFT;
                     has_tid = 1;
                     break;
                 case EVENT_OPTION_MATCH0:
-                    flags |= (~((uint64_t)(event->options[j].value & AMD_K17_L3_SLICE_MASK))) << AMD_K17_L3_SLICE_SHIFT;
+                    flags |= ((uint64_t)(event->options[j].value & AMD_K17_L3_SLICE_MASK)) << AMD_K17_L3_SLICE_SHIFT;
                     has_match0 = 1;
                     break;
                 default:

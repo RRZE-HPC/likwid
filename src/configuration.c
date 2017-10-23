@@ -43,7 +43,7 @@
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
-Configuration config = {NULL,NULL,NULL,NULL,-1,MAX_NUM_THREADS,MAX_NUM_NODES};
+Likwid_Configuration config = {NULL,NULL,NULL,NULL,-1,MAX_NUM_THREADS,MAX_NUM_NODES};
 int init_config = 0;
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
