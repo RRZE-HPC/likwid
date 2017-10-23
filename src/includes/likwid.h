@@ -277,10 +277,10 @@ typedef struct {
     AccessMode daemonMode; /*!< \brief Access mode to the MSR and PCI registers */
     int maxNumThreads; /*!< \brief Maximum number of HW threads */
     int maxNumNodes; /*!< \brief Maximum number of NUMA nodes */
-} Configuration;
+} Likwid_Configuration;
 
 /** \brief Pointer for exporting the Configuration data structure */
-typedef Configuration* Configuration_t;
+typedef Likwid_Configuration* Configuration_t;
 /*! \brief Read the config file of LIKWID, if it exists
 
 Search for LIKWID config file and read the values in

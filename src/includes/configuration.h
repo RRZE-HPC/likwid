@@ -34,7 +34,7 @@
 #include <likwid.h>
 #include <error.h>
 
-extern Configuration config;
+extern Likwid_Configuration config;
 extern int init_config;
 
 #endif
