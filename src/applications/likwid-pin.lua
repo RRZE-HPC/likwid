@@ -79,7 +79,7 @@ local function usage()
     print_stdout("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)")
     print_stdout("-i\t\t\t Set numa interleave policy with all involved numa nodes")
     print_stdout("-S, --sweep\t\t Sweep memory and LLC of involved NUMA nodes")
-    print_stdout("-c <list>\t\t Comma separated processor IDs or expression")
+    print_stdout("-c/-C <list>\t\t Comma separated processor IDs or expression")
     print_stdout("-s, --skip <hex>\t Bitmask with threads to skip")
     print_stdout("-p\t\t\t Print available domains with mapping on physical IDs")
     print_stdout("\t\t\t If used together with -p option outputs a physical processor IDs.")
@@ -115,7 +115,7 @@ if (#arg == 0) then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t:", "v", "V:", "verbose:", "help", "version", "skip","sweep", "quiet"}) do
+for opt,arg in likwid.getopt(arg, {"c:", "C:", "d:", "h", "i", "p", "q", "s:", "S", "t:", "v", "V:", "verbose:", "help", "version", "skip","sweep", "quiet"}) do
     if opt == "h" or opt == "help" then
         usage()
         close_and_exit(0)
@@ -125,7 +125,7 @@ for opt,arg in likwid.getopt(arg, {"c:", "d:", "h", "i", "p", "q", "s:", "S", "t
     elseif opt == "V" or opt == "verbose" then
         verbose = tonumber(arg)
         likwid.setVerbosity(verbose)
-    elseif (opt == "c") then
+    elseif (opt == "c") or (opt == "C") then
         cpustr = arg
     elseif (opt == "d") then
         delimiter = arg
