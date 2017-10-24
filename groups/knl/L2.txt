@@ -1,0 +1,36 @@
+SHORT L2 cache bandwidth in MBytes/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+PMC0  L2_REQUESTS_REFERENCE
+PMC1:MATCH0=0x0002:MATCH1=0x1 OFFCORE_RESPONSE_0_OPTIONS
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+L2 non-RFO bandwidth [MBytes/s] 1.E-06*(PMC0)*64.0/time
+L2 non-RFO data volume [GByte] 1.E-09*PMC0*64.0
+L2 RFO bandwidth [MBytes/s] 1.E-06*(PMC1:MATCH0=0x0002:MATCH1=0x1)*64.0/time
+L2 RFO data volume [GByte] 1.E-09*(PMC1:MATCH0=0x0002:MATCH1=0x1)*64.0
+L2 bandwidth [MBytes/s] 1.E-06*(PMC0+PMC1:MATCH0=0x0002:MATCH1=0x1)*64.0/time
+L2 data volume [GByte] 1.E-06*(PMC0+PMC1:MATCH0=0x0002:MATCH1=0x1)*64.0
+
+LONG
+Formula:
+L2 non-RFO bandwidth [MBytes/s] = 1.E-06*L2_REQUESTS_REFERENCE*64.0/time
+L2 non-RFO data volume [GByte] = 1.E-09*L2_REQUESTS_REFERENCE*64.0
+L2 RFO bandwidth [MBytes/s] = 1.E-06*(OFFCORE_RESPONSE_0_OPTIONS:MATCH0=0x0002:MATCH1=0x1)*64.0/time
+L2 RFO data volume [GByte] = 1.E-09*(OFFCORE_RESPONSE_0_OPTIONS:MATCH0=0x0002:MATCH1=0x1)*64.0
+L2 bandwidth [MBytes/s] = 1.E-06*(L2_REQUESTS_REFERENCE+OFFCORE_RESPONSE_0_OPTIONS:MATCH0=0x0002:MATCH1=0x1)*64.0/time
+L2 data volume [GByte] = 1.E-09*(L2_REQUESTS_REFERENCE+OFFCORE_RESPONSE_0_OPTIONS:MATCH0=0x0002:MATCH1=0x1)*64.0
+--
+The L2 bandwidth and data volume does not contain RFOs (also called
+write-allocates). The RFO bandwidth and data volume is only accurate when all
+used data fits in the L2 cache. As soon as the data exceeds the L2 cache size,
+the RFO metrics are too high.
+Moreover, with increasing count of measured cores, the non-RFO metrics overcount
+but commonly stay withing 10% error.
