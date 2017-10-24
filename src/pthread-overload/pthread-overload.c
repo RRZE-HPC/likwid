@@ -41,6 +41,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -49,6 +50,8 @@
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 #define LLU_CAST  (unsigned long long)
+
+#define gettid() syscall(SYS_gettid)
 
 extern int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize, const cpu_set_t *cpuset);
 
@@ -169,20 +172,37 @@ pthread_create(pthread_t* thread,
         FILE* fpipe;
         char cmd[512];
         char buff[512];
+        char file[256];
+        unsigned int ptr = ((void*)start_routine) - info.dli_fbase;
+
         buff[0] = '\0';
-        sprintf(cmd, "nm %s 2>/dev/null | grep %x ", info.dli_fname, ((void*)start_routine) - info.dli_fbase);
-        if ( !(fpipe = (FILE*)popen(cmd,"r")) )
-        {  // If fpipe is NULL
-            fprintf(stderr, "Problems");
-        }
-        char* t = fgets(buff, 512, fpipe);
-        char* tmp = strstr(buff, "monitor");
-        if (tmp != NULL)
+        snprintf(file, 255, "/tmp/likwidpin.%d", gettid());
+        snprintf(cmd, 511, "rm -f %s; nm %s 2>/dev/null | grep %x > %s",
+                 file, info.dli_fname, ptr, file);
+        ret = system(cmd);
+        if (!access(file, R_OK))
         {
-            shepard = 1;
-            skipMask |= 1ULL<<(ncalled);
+            fpipe = fopen(file, "r");
+            if (!fpipe)
+            {
+                fprintf(stderr, "Problems reading symbols for shepard thread detection\n");
+            }
+            else
+            {
+                char* t = fgets(buff, 512, fpipe);
+                char* tmp = strstr(buff, "monitor");
+                if (tmp != NULL)
+                {
+                    shepard = 1;
+                    skipMask |= 1ULL<<(ncalled);
+                }
+                fclose(fpipe);
+            }
         }
-        pclose(fpipe);
+        else
+        {
+            fprintf(stderr, "Problems reading symbols for shepard thread detection\n");
+        }
     }
 
     /* Handle dll related stuff */
