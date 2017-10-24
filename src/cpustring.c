@@ -36,6 +36,10 @@
 
 #include <likwid.h>
 
+#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
+#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+
+
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static int
@@ -104,6 +108,21 @@ cpu_in_domain(int domainidx, int cpu)
         }
     }
     return 0;
+}
+
+static int
+get_domain_idx(bstring bdomain)
+{
+    affinity_init();
+    AffinityDomains_t affinity = get_affinityDomains();
+    for (int i=0;i<affinity->numberOfAffinityDomains; i++)
+    {
+        if (bstrcmp(affinity->domains[i].tag, bdomain) == BSTR_OK)
+        {
+            return i;
+        }
+    }
+    return -1;
 }
 
 static int
@@ -406,14 +425,7 @@ cpustr_to_cpulist_expression(bstring bcpustr, int* cpulist, int length)
         bstrListDestroy(strlist);
         return 0;
     }
-    for (int i=0; i<affinity->numberOfAffinityDomains; i++)
-    {
-        if (bstrcmp(bdomain, affinity->domains[i].tag) == 0)
-        {
-            domainidx = i;
-            break;
-        }
-    }
+    domainidx = get_domain_idx(bdomain);
     if (domainidx < 0)
     {
         fprintf(stderr, "Cannot find domain %s\n", bdata(bdomain));
@@ -482,14 +494,7 @@ cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
     bdomain = bstrcpy(strlist->entry[1]);
     blist = bstrcpy(strlist->entry[2]);
     bstrListDestroy(strlist);
-    for (int i=0; i<affinity->numberOfAffinityDomains; i++)
-    {
-        if (bstrcmp(bdomain, affinity->domains[i].tag) == 0)
-        {
-            domainidx = i;
-            break;
-        }
-    }
+    domainidx = get_domain_idx(bdomain);
     if (domainidx < 0)
     {
         fprintf(stderr, "ERROR: Cannot find domain %s\n", bdata(bdomain));
@@ -663,14 +668,7 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
         bdomain = bformat("N");
         blist = bstrcpy(bcpustr);
     }
-    for (int i=0; i<affinity->numberOfAffinityDomains; i++)
-    {
-        if (bstrcmp(bdomain, affinity->domains[i].tag) == 0)
-        {
-            domainidx = i;
-            break;
-        }
-    }
+    domainidx = get_domain_idx(bdomain);
     if (domainidx < 0)
     {
         fprintf(stderr, "Cannot find domain %s\n", bdata(bdomain));
@@ -678,6 +676,7 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
         bdestroy(blist);
         return 0;
     }
+    bstring domtag = affinity->domains[domainidx].tag;
 
     strlist = bsplit(blist, ',');
     int insert = 0;
@@ -720,7 +719,7 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
                                 notInCpuSet = 1;
                             }
                         }
-                        fprintf(stderr, "CPU %d not in domain %s.", j, bdata(affinity->domains[domainidx].tag));
+                        fprintf(stderr, "CPU %d not in domain %s.", j, bdata(domtag));
                         if (notInCpuSet)
                         {
                             fprintf(stderr, " It is not in the given cpuset\n");
@@ -756,7 +755,7 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
                                 notInCpuSet = 1;
                             }
                         }
-                        fprintf(stderr, "CPU %d not in domain %s.", j, bdata(affinity->domains[domainidx].tag));
+                        fprintf(stderr, "CPU %d not in domain %s.", j, bdata(domtag));
                         if (notInCpuSet)
                         {
                             fprintf(stderr, " It is not in the given cpuset\n");
@@ -797,7 +796,7 @@ cpustr_to_cpulist_physical(bstring bcpustr, int* cpulist, int length)
                         notInCpuSet = 1;
                     }
                 }
-                fprintf(stderr, "CPU %d not in domain %s.", cpu, bdata(affinity->domains[domainidx].tag));
+                fprintf(stderr, "CPU %d not in domain %s.", cpu, bdata(domtag));
                 if (notInCpuSet)
                 {
                     fprintf(stderr, " It is not in the given cpuset\n");
@@ -875,11 +874,22 @@ cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
             }
             else
             {
-                bstring newstr = bformat("E:");
-                bconcat(newstr, strlist->entry[i]);
-                ret = cpustr_to_cpulist_expression(newstr, tmpList, length);
-                insert += cpulist_concat(cpulist, insert, tmpList, ret);
-                bdestroy(newstr);
+                int dom = get_domain_idx(strlist->entry[i]);
+                if (dom >= 0)
+                {
+                    AffinityDomains_t affinity = get_affinityDomains();
+                    bstring newstr = bformat("E:");
+                    bconcat(newstr, strlist->entry[i]);
+                    length = MIN(length, affinity->domains[dom].numberOfProcessors);
+                    ret = cpustr_to_cpulist_expression(newstr, tmpList, length);
+                    insert += cpulist_concat(cpulist, insert, tmpList, ret);
+                    bdestroy(newstr);
+                }
+                else
+                {
+                    fprintf(stderr, "Cannot find domain %s\n", bdata(strlist->entry[i]));
+                    continue;
+                }
             }
         }
         else
