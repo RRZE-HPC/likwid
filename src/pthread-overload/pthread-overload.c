@@ -197,6 +197,8 @@ pthread_create(pthread_t* thread,
                     skipMask |= 1ULL<<(ncalled);
                 }
                 fclose(fpipe);
+                snprintf(cmd, 511, "rm -f %s 2>/dev/null", file);
+                ret = system(cmd);
             }
         }
         else
