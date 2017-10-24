@@ -147,6 +147,8 @@ $(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) 
 $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
 	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION).$(RELEASE) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB) $(RPATHS)
+	@ln -sf $(TARGET_LIB) $(TARGET_LIB).$(VERSION).$(RELEASE)
+	@sed -e s+'@PREFIX@'+$(PREFIX)+g make/likwid-config.cmake > likwid-config.cmake
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
@@ -162,6 +164,7 @@ $(BUILD_DIR):
 $(PINLIB):
 	@echo "===>  CREATE LIB  $(PINLIB)"
 	$(Q)$(MAKE) -C src/pthread-overload/ $(PINLIB)
+	@ln -sf $(PINLIB) $(PINLIB).$(VERSION).$(RELEASE)
 
 $(GENGROUPLOCK): $(foreach directory,$(shell ls $(GROUP_DIR)), $(wildcard $(GROUP_DIR)/$(directory)/*.txt))
 	@echo "===>  GENERATE GROUP HEADERS"
@@ -177,6 +180,7 @@ ifeq ($(LUA_INTERNAL),true)
 $(TARGET_LUA_LIB):
 	@echo "===>  ENTER  $(LUA_FOLDER)"
 	$(Q)$(MAKE) --no-print-directory -C $(LUA_FOLDER) $(MAKECMDGOALS)
+	@ln -sf $(LUA_FOLDER)/liblikwid-lua.so liblikwid-lua.so.$(VERSION).$(RELEASE)
 else
 $(TARGET_LUA_LIB):
 	@echo "===>  EXTERNAL LUA"
@@ -185,6 +189,7 @@ endif
 $(TARGET_HWLOC_LIB):
 	@echo "===>  ENTER  $(HWLOC_FOLDER)"
 	$(Q)$(MAKE) --no-print-directory -C $(HWLOC_FOLDER) $(MAKECMDGOALS)
+	@ln -sf $(HWLOC_FOLDER)/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION).$(RELEASE)
 
 $(BENCH_TARGET):
 	@echo "===>  ENTER  $(BENCH_FOLDER)"
@@ -415,6 +420,7 @@ install: install_daemon install_freq
 	@for F in $(FILTERS); do \
 		install -m 755 $$F  $(abspath $(PREFIX)/share/likwid/filter); \
 	done
+	@install -m 644 likwid-config.cmake $(LIBPREFIX)
 
 move: move_daemon move_freq
 	@echo "===> MOVE applications from $(BINPREFIX) to $(INSTALLED_BINPREFIX)"
@@ -485,6 +491,7 @@ move: move_daemon move_freq
 	@chmod 755 $(LIKWIDFILTERPATH)
 	@cp -f $(abspath $(PREFIX)/share/likwid/filter)/* $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
+	@install -m 644 $(LIBPREFIX)/likwid-config.cmake $(INSTALLED_LIBPREFIX)
 
 uninstall: uninstall_daemon uninstall_freq
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
@@ -520,6 +527,7 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -rf $(PREFIX)/share/likwid/docs
 	@rm -rf $(PREFIX)/share/likwid/examples
 	@rm -rf $(PREFIX)/share/likwid
+	@rm -rf $(LIBPREFIX)/likwid-config.cmake
 
 uninstall_moved: uninstall_daemon_moved uninstall_freq_moved
 	@echo "===> REMOVING applications from $(INSTALLED_PREFIX)/bin"
@@ -555,6 +563,7 @@ uninstall_moved: uninstall_daemon_moved uninstall_freq_moved
 	@rm -rf $(INSTALLED_PREFIX)/share/likwid/docs
 	@rm -rf $(INSTALLED_PREFIX)/share/likwid/examples
 	@rm -rf $(INSTALLED_PREFIX)/share/likwid
+	@rm -rf $(INSTALLED_LIBPREFIX)/likwid-config.cmake
 
 local: $(L_APPS) likwid.lua
 	@echo "===> Setting Lua scripts to run from current directory"
