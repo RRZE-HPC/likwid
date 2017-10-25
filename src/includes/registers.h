@@ -2250,6 +2250,7 @@
 #define MSR_TURBO_RATIO_LIMIT1          0x1AE
 #define MSR_TURBO_RATIO_LIMIT2          0x1AF
 #define MSR_TURBO_RATIO_LIMIT3          0x1AC
+#define MSR_TURBO_RATIO_LIMIT_CORES     MSR_TURBO_RATIO_LIMIT1
 
 /* MISC Intel register */
 #define MSR_MPERF                       0xE7

@@ -1111,7 +1111,7 @@ extern void timer_finalize(void) __attribute__ ((visibility ("default") ));
 \def NUM_POWER_DOMAINS
 Amount of currently supported RAPL domains
 */
-#define NUM_POWER_DOMAINS 4
+#define NUM_POWER_DOMAINS 5
 /*! \brief List of all RAPL domain names
 */
 extern const char* power_names[NUM_POWER_DOMAINS] __attribute__ ((visibility ("default") ));
@@ -1158,7 +1158,8 @@ typedef enum {
     PKG = 0, /*!< \brief PKG domain, mostly one CPU socket/package */
     PP0 = 1, /*!< \brief PP0 domain, not clearly defined by Intel */
     PP1 = 2, /*!< \brief PP1 domain, not clearly defined by Intel */
-    DRAM = 3 /*!< \brief DRAM domain, the memory modules */
+    DRAM = 3, /*!< \brief DRAM domain, the memory modules */
+    PLATFORM = 4 /*!< \brief DRAM domain, the memory modules */
 } PowerType;
 
 /*! \brief Structure describing an RAPL power domain

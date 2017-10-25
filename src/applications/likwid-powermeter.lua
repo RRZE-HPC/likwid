@@ -84,7 +84,7 @@ time_interval = 2.E06
 time_orig = "2s"
 read_interval = 30.E06
 sockets = {}
-domainList = {"PKG", "PP0", "PP1", "DRAM"}
+domainList = {"PKG", "PP0", "PP1", "DRAM", "PLATFORM"}
 
 cpuinfo = likwid.getCpuInfo()
 cputopo = likwid.getCpuTopology()
@@ -226,7 +226,7 @@ end
 if (print_info) then
     for i, dname in pairs(domainList) do
         local domain = power["domains"][dname]
-        if domain["supportInfo"] then
+        if domain and domain["supportInfo"] then
             print_stdout(string.format("Info for RAPL domain %s:", dname));
             print_stdout(string.format("Thermal Spec Power: %g Watt",domain["tdp"]*1E-6))
             print_stdout(string.format("Minimum Power: %g Watt",domain["minPower"]*1E-6))
