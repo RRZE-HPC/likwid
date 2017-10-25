@@ -201,23 +201,32 @@ power_init(int cpuId)
                     int reg_idx = 1;
                     int valid_idx = 0;
                     flag_vals[0] = flags;
-                    err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT1, &flag_vals[1]);
-                    if (err)
+                    if (power_info.turbo.numSteps > 8)
                     {
-                        ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT1);
-                        flag_vals[1] = 0;
+                        err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT1, &flag_vals[1]);
+                        if (err)
+                        {
+                            ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT1);
+                            flag_vals[1] = 0;
+                        }
                     }
-                    err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT2, &flag_vals[2]);
-                    if (err)
+                    if (power_info.turbo.numSteps > 16)
                     {
-                        ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT2);
-                        flag_vals[2] = 0;
+                        err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT2, &flag_vals[2]);
+                        if (err)
+                        {
+                            ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT2);
+                            flag_vals[2] = 0;
+                        }
                     }
-                    err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT3, &flag_vals[3]);
-                    if (err)
+                    if (power_info.turbo.numSteps > 24)
                     {
-                        ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT3);
-                        flag_vals[3] = 0;
+                        err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT3, &flag_vals[3]);
+                        if (err)
+                        {
+                            ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT3);
+                            flag_vals[3] = 0;
+                        }
                     }
                     power_info.turbo.steps[0] = busSpeed * (double) field64(flags,0, 8);
                     for (int i=1; i < power_info.turbo.numSteps; i++)
