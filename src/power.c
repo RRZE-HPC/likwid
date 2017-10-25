@@ -99,19 +99,24 @@ power_init(int cpuId)
                 case BROADWELL_E3:
                 case HASWELL_M1:
                 case HASWELL_M2:
+                case XEON_PHI_KNL:
+                    power_info.hasRAPL = 1;
+                    numDomains = NUM_POWER_DOMAINS - 1;
+                    break;
                 case SKYLAKE1:
                 case SKYLAKE2:
                 case SKYLAKEX:
                 case KABYLAKE1:
                 case KABYLAKE2:
-                case XEON_PHI_KNL:
                     power_info.hasRAPL = 1;
+                    numDomains = NUM_POWER_DOMAINS;
                     break;
                 case ATOM_SILVERMONT_C:
                     power_info.hasRAPL = 1;
                     /* The info_regs list needs an update for Silvermont Type C
                        because it uses another info register */
                     info_regs[PKG] = MSR_PKG_POWER_INFO_SILVERMONT;
+                    numDomains = NUM_POWER_DOMAINS - 1;
                     break;
 
                 default:
@@ -181,7 +186,7 @@ power_init(int cpuId)
             {
                 return -ENOMEM;
             }
-
+            memset(power_info.turbo.steps, 0, power_info.turbo.numSteps * sizeof(double));
             err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT, &flags);
             if (err)
             {
@@ -189,50 +194,67 @@ power_init(int cpuId)
             }
             else
             {
-                for (int i=0; i < power_info.turbo.numSteps; i++)
+                if (cpuid_info.model != SKYLAKEX)
                 {
-                    if (i < 8)
+                    unsigned long flag_vals[4];
+                    int flag_idx = 0;
+                    int reg_idx = 1;
+                    int valid_idx = 0;
+                    flag_vals[0] = flags;
+                    err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT1, &flag_vals[1]);
+                    if (err)
                     {
-                        power_info.turbo.steps[i] = busSpeed * (double) field64(flags,i*8, 8);
+                        ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT1);
+                        flag_vals[1] = 0;
                     }
-                    else
+                    err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT2, &flag_vals[2]);
+                    if (err)
                     {
-                        power_info.turbo.steps[i] = power_info.turbo.steps[7];
+                        ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT2);
+                        flag_vals[2] = 0;
+                    }
+                    err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT3, &flag_vals[3]);
+                    if (err)
+                    {
+                        ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT3);
+                        flag_vals[3] = 0;
+                    }
+                    power_info.turbo.steps[0] = busSpeed * (double) field64(flags,0, 8);
+                    for (int i=1; i < power_info.turbo.numSteps; i++)
+                    {
+                        if (i % 8 == 0)
+                        {
+                            flag_idx++;
+                            reg_idx = 0;
+                        }
+                        power_info.turbo.steps[i] = busSpeed * (double) field64(flag_vals[flag_idx],(i%8)*8, 8);
+                        if (power_info.turbo.steps[i] > 0)
+                            valid_idx = i;
+                        else
+                            power_info.turbo.steps[i] = power_info.turbo.steps[valid_idx];
                     }
                 }
-            }
-            if (power_info.turbo.numSteps > 8)
-            {
-                err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT1, &flags);
-                if (!err)
+                else
                 {
-                    for (int i=8; i < power_info.turbo.numSteps; i++)
+                    uint64_t flags_cores = 0;
+                    int insert = 0;
+                    err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT_CORES, &flags_cores);
+                    if (err)
                     {
-                        if (i < 16)
-                        {
-                            power_info.turbo.steps[i] = busSpeed * (double) field64(flags,i*8, 8);
-                        }
-                        else
-                        {
-                            power_info.turbo.steps[i] = power_info.turbo.steps[15];
-                        }
+                        ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT_CORES);
+                        flags_cores = 0;
                     }
-                }
-            }
-            if (power_info.turbo.numSteps > 16)
-            {
-                err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT2, &flags);
-                if (!err)
-                {
-                    for (int i=16; i < power_info.turbo.numSteps; i++)
+                    for (int i = 0; i < 8; i++)
                     {
-                        if (i < 24)
+                        int num_cores_befores = 0;
+                        if (i > 0)
+                            num_cores_befores = field64(flags_cores,(i-1)*8, 8);
+                        int num_cores = field64(flags_cores,i*8, 8);
+                        double freq = busSpeed * (double) field64(flags, i*8, 8);
+                        for (int j = num_cores_befores; j < num_cores && insert < power_info.turbo.numSteps; j++)
                         {
-                            power_info.turbo.steps[i] = busSpeed * (double) field64(flags,i*8, 8);
-                        }
-                        else
-                        {
-                            power_info.turbo.steps[i] = power_info.turbo.steps[23];
+                            power_info.turbo.steps[insert] = freq;
+                            insert++;
                         }
                     }
                 }
@@ -318,6 +340,8 @@ power_init(int cpuId)
                         {
                             power_info.domains[i].minPower = (double) extractBitField(flags,15,16) * power_info.powerUnit;
                             power_info.domains[i].maxPower = (double) extractBitField(flags,15,32) * power_info.powerUnit;
+                            if (power_info.domains[i].minPower > power_info.domains[i].maxPower)
+                                power_info.domains[i].minPower = 0;
                             power_info.domains[i].maxTimeWindow = (double) extractBitField(flags,7,48) * power_info.timeUnit;
                         }
                     }
