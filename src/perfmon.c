@@ -1683,6 +1683,7 @@ perfmon_addEventSet(const char* eventCString)
             strcat(evstr, perf_pid);
         }
     }
+    free(cstringcopy);
     eventBString = bfromcstr(evstr);
     eventtokens = bsplit(eventBString,',');
     free(evstr);
