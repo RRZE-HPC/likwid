@@ -757,7 +757,6 @@ int tokenize(char *str, char *(**tokensRef))
             tmp = (char**)realloc(tokens, numTokens * sizeof(char*));
             if (tmp == NULL)
             {
-                free(newToken);
                 if (tokens != NULL)
                 {
                     for(i=0;i<numTokens-1;i++)
