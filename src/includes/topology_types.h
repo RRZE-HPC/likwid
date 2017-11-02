@@ -67,6 +67,7 @@ typedef enum {
     HLE, /*!< \brief Hardware Lock Elision */
     HTT, /*!< \brief Hyper-Threading Technology */
     RDSEED, /*!< \brief Non-deterministic random bit generator */
+    AVX512, /*!< \brief 512-bit wide vector registers for Advanced Vector Extensions */
 } FeatureBit;
 /** @}*/
 #endif /*CPUID_TYPES_H*/

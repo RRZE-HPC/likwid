@@ -392,6 +392,11 @@ proc_init_cpuFeatures(void)
             cpuid_info.featureFlags |= (1<<HTT);
             strcat(cpuid_info.features, "HTT ");
         }
+        else if (strncmp(cptr,"avx512", 6) == 0 && !(cpuid_info.featureFlags & (1<<AVX512)))
+        {
+            cpuid_info.featureFlags |= (1<<AVX512);
+            strcat(cpuid_info.features, "AVX512 ");
+        }
         cptr = strtok(NULL, delimiter);
     }
 
