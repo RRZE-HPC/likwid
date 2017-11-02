@@ -68,8 +68,11 @@ bstr_to_doubleSize(const_bstring str, DataType type)
 {
     int ret;
     bstring unit = bmidstr(str, blength(str)-2, 2);
+    bstring single_unit = bmidstr(str, blength(str)-1, 1);
     bstring sizeStr = bmidstr(str, 0, blength(str)-2);
+    bstring single_sizeStr = bmidstr(str, 0, blength(str)-1);
     uint64_t sizeU = 0;
+    uint64_t single_sizeU = 0;
     uint64_t junk = 0;
     uint64_t bytesize = 0;
     if (blength(sizeStr) == 0)
@@ -80,6 +83,15 @@ bstr_to_doubleSize(const_bstring str, DataType type)
     if (ret >= 0)
     {
         sizeU = str2int(bdata(sizeStr));
+    }
+    else
+    {
+        return 0;
+    }
+    ret = str2int(bdata(single_sizeStr));
+    if (ret >= 0)
+    {
+        single_sizeU = str2int(bdata(single_sizeStr));
     }
     else
     {
@@ -100,12 +112,14 @@ bstr_to_doubleSize(const_bstring str, DataType type)
     {
         junk = (sizeU *1000000000)/bytesize;
     }
-    else if (biseqcstr(unit, "B"))
+    else if (biseqcstr(single_unit, "B"))
     {
-        junk = (sizeU)/bytesize;
+        junk = (single_sizeU)/bytesize;
     }
     bdestroy(unit);
+    bdestroy(single_unit);
     bdestroy(sizeStr);
+    bdestroy(single_sizeStr);
     return junk;
 }
 
