@@ -177,7 +177,7 @@ if cpustr ~= nil then
         close_and_exit(1)
     end
     if verbose > 0 and quiet == 0 then
-        print_stdout("Evaluated CPU string to CPUs: ".. table.concat(cpu_list, ","))
+        print_stdout("Evaluated CPU string to CPUs: ")
     end
 end
 
@@ -192,7 +192,7 @@ if print_domains and num_threads > 0 then
 elseif print_domains then
     for k,v in pairs(affinity["domains"]) do
         print_stdout(string.format("Domain %s:", v["tag"]))
-        print_stdout("\t" .. table.concat(v["processorList"], ","))
+        print_stdout("\t" .. table.concat(v["processorList"], delimiter))
         print_stdout("")
     end
     close_and_exit(0)
