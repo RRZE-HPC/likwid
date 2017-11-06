@@ -206,7 +206,6 @@ power_init(int cpuId)
                         err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT1, &flag_vals[1]);
                         if (err)
                         {
-                            ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT1);
                             flag_vals[1] = 0;
                         }
                     }
@@ -215,7 +214,6 @@ power_init(int cpuId)
                         err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT2, &flag_vals[2]);
                         if (err)
                         {
-                            ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT2);
                             flag_vals[2] = 0;
                         }
                     }
@@ -224,7 +222,6 @@ power_init(int cpuId)
                         err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT3, &flag_vals[3]);
                         if (err)
                         {
-                            ERROR_PLAIN_PRINT(Cannot read MSR TURBO_RATIO_LIMIT3);
                             flag_vals[3] = 0;
                         }
                     }
