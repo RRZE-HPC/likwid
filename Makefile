@@ -82,7 +82,6 @@ L_APPS      =   likwid-perfctr \
 				likwid-powermeter \
 				likwid-topology \
 				likwid-memsweeper \
-				likwid-agent \
 				likwid-mpirun \
 				likwid-features \
 				likwid-perfscope \
