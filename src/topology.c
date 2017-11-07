@@ -60,6 +60,7 @@ static char* atom_22_str = "Intel Atom 22nm processor";
 static char* atom_silvermont_str = "Intel Atom (Silvermont) processor";
 static char* atom_airmont_str = "Intel Atom (Airmont) processor";
 static char* atom_goldmont_str = "Intel Atom (Goldmont) processor";
+static char* atom_goldmontplus_str = "Intel Atom (Goldmont Plus) processor";
 static char* nehalem_bloom_str = "Intel Core Bloomfield processor";
 static char* nehalem_lynn_str = "Intel Core Lynnfield processor";
 static char* nehalem_west_str = "Intel Core Westmere processor";
@@ -76,11 +77,13 @@ static char* broadwell_ep_str = "Intel Xeon Broadwell EN/EP/EX processor";
 static char* skylake_str = "Intel Skylake processor";
 static char* skylakeX_str = "Intel Skylake SP processor";
 static char* kabylake_str = "Intel Kabylake processor";
+static char* cannonlake_str = "Intel Cannonlake processor";
 static char* nehalem_ex_str = "Intel Nehalem EX processor";
 static char* westmere_ex_str = "Intel Westmere EX processor";
 static char* xeon_mp_string = "Intel Xeon MP processor";
 static char* xeon_phi_string = "Intel Xeon Phi (Knights Corner) Coprocessor";
 static char* xeon_phi2_string = "Intel Xeon Phi (Knights Landing) (Co)Processor";
+static char* xeon_phi3_string = "Intel Xeon Phi (Knights Mill) (Co)Processor";
 static char* barcelona_str = "AMD Barcelona processor";
 static char* shanghai_str = "AMD Shanghai processor";
 static char* istanbul_str = "AMD Istanbul processor";
@@ -104,6 +107,7 @@ static char* short_atom = "atom";
 static char* short_pm = "pentiumm";
 static char* short_silvermont = "silvermont";
 static char* short_goldmont = "goldmont";
+static char* short_goldmontplus = "goldmontplus";
 static char* short_nehalem = "nehalem";
 static char* short_nehalemEX = "nehalemEX";
 static char* short_westmere = "westmere";
@@ -120,8 +124,10 @@ static char* short_sandybridge_ep = "sandybridgeEP";
 static char* short_skylake = "skylake";
 static char* short_skylakeX = "skylakeX";
 static char* short_kabylake = "skylake";
+static char* short_cannonlake = "cannonlake";
 static char* short_phi = "phi";
 static char* short_phi2 = "knl";
+static char* short_phi3 = "kml";
 static char* short_k8 = "k8";
 static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
@@ -650,10 +656,21 @@ topology_setName(void)
                     cpuid_info.short_name = short_skylake;
                     break;
 
+                case CANNONLAKE:
+                    cpuid_info.name = cannonlake_str;
+                    cpuid_info.short_name = short_cannonlake;
+                    break;
+
                 case XEON_PHI_KNL:
                     cpuid_info.supportUncore = 1;
                     cpuid_info.name = xeon_phi2_string;
                     cpuid_info.short_name = short_phi2;
+                    break;
+
+                case XEON_PHI_KML:
+                    cpuid_info.supportUncore = 1;
+                    cpuid_info.name = xeon_phi3_string;
+                    cpuid_info.short_name = short_phi3;
                     break;
 
                 case NEHALEM_EX:
@@ -701,8 +718,14 @@ topology_setName(void)
                     cpuid_info.short_name = short_silvermont;
                     break;
                 case ATOM_SILVERMONT_GOLD:
+                case ATOM_DENVERTON:
                     cpuid_info.name = atom_goldmont_str;
                     cpuid_info.short_name = short_goldmont;
+                    break;
+                
+                case ATOM_GOLDMONT_PLUS:
+                    cpuid_info.name = atom_goldmontplus_str;
+                    cpuid_info.short_name = short_goldmontplus;
                     break;
 
                 default:

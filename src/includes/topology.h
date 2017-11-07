@@ -73,6 +73,8 @@ struct topology_functions {
 #define ATOM_SILVERMONT_F    0x5DU
 #define ATOM_SILVERMONT_AIR  0x4CU
 #define ATOM_SILVERMONT_GOLD 0x5CU
+#define ATOM_DENVERTON       0x5FU
+#define ATOM_GOLDMONT_PLUS   0x7AU
 #define NEHALEM              0x1AU
 #define NEHALEM_BLOOMFIELD   0x1AU
 #define NEHALEM_LYNNFIELD    0x1EU
@@ -99,10 +101,12 @@ struct topology_functions {
 #define SKYLAKEX             0x55U
 #define KABYLAKE1            0x8EU
 #define KABYLAKE2            0x9EU
+#define CANNONLAKE           0x66U
 
 /* Intel MIC */
 #define XEON_PHI           0x01U
 #define XEON_PHI_KNL       0x57U
+#define XEON_PHI_KML       0x85U
 
 /* AMD K10 */
 #define BARCELONA      0x02U
