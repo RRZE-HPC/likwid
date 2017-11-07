@@ -546,10 +546,10 @@ int skx_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skx_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    int j = 0;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
-    
+
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -558,7 +558,6 @@ int skx_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return -ENODEV;
     }
-    
     flags = (1ULL<<20)|(1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
@@ -846,6 +845,10 @@ int perfmon_setupCounterThread_skylake(
                 break;
             case SBOX0:
             case SBOX1:
+                skx_sbox_setup(cpu_id, index, event);
+                break;
+            case BBOX0:
+            case BBOX1:
             case SBOX2:
                 skx_sbox_setup(cpu_id, index, event);
                 break;

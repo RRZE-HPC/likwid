@@ -1479,7 +1479,6 @@ lua_likwid_getPowerInfo(lua_State* L)
             return 0;
         }
     }
-
     lua_newtable(L);
     lua_pushstring(L,"hasRAPL");
     lua_pushboolean(L,power_hasRAPL);
@@ -1629,7 +1628,7 @@ lua_likwid_startPower(lua_State* L)
 #else
     PowerType type = (PowerType) ((lua_Unsigned)lua_tointegerx(L,2, NULL));
 #endif
-    luaL_argcheck(L, type >= PKG+1 && type <= DRAM+1, 2, "Type not valid");
+    luaL_argcheck(L, type >= PKG+1 && type <= NUM_POWER_DOMAINS, 2, "Type not valid");
     power_start(&pwrdata, cpuId, type-1);
     lua_pushnumber(L,pwrdata.before);
     return 1;
@@ -1646,7 +1645,7 @@ lua_likwid_stopPower(lua_State* L)
 #else
     PowerType type = (PowerType) ((lua_Unsigned)lua_tointegerx(L,2, NULL));
 #endif
-    luaL_argcheck(L, type >= PKG+1 && type <= DRAM+1, 2, "Type not valid");
+    luaL_argcheck(L, type >= PKG+1 && type <= NUM_POWER_DOMAINS, 2, "Type not valid");
     power_stop(&pwrdata, cpuId, type-1);
     lua_pushnumber(L,pwrdata.after);
     return 1;

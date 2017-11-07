@@ -900,6 +900,7 @@ perfmon_init_maps(void)
                     counter_map = ivybridgeEP_counter_map;
                     perfmon_numCounters = perfmon_numCountersIvybridgeEP;
                     perfmon_numCoreCounters = perfmon_numCoreCountersIvybridgeEP;
+                    translate_types = ivybridgeEP_translate_types;
                     break;
                 case IVYBRIDGE:
                     translate_types = default_translate_types;
@@ -909,6 +910,7 @@ perfmon_init_maps(void)
                     counter_map = ivybridge_counter_map;
                     perfmon_numCounters = perfmon_numCountersIvybridge;
                     perfmon_numCoreCounters = perfmon_numCoreCountersIvybridge;
+                    translate_types = default_translate_types;
                     break;
 
                 case HASWELL_EP:
@@ -920,6 +922,7 @@ perfmon_init_maps(void)
                     perfmon_numCoreCounters = perfmon_numCoreCountersHaswellEP;
                     box_map = haswellEP_box_map;
                     pci_devices = haswellEP_pci_devices;
+                    translate_types = haswellEP_translate_types;
                     break;
                 case HASWELL:
                 case HASWELL_M1:
@@ -942,6 +945,7 @@ perfmon_init_maps(void)
                     counter_map = sandybridgeEP_counter_map;
                     perfmon_numCounters = perfmon_numCountersSandybridgeEP;
                     perfmon_numCoreCounters = perfmon_numCoreCountersSandybridgeEP;
+                    translate_types = sandybridgeEP_translate_types;
                     break;
                 case SANDYBRIDGE:
                     box_map = sandybridge_box_map;
@@ -972,6 +976,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsBroadwellD;
                     perfmon_numCounters = perfmon_numCountersBroadwellD;
                     perfmon_numCoreCounters = perfmon_numCoreCountersBroadwellD;
+                    translate_types = broadwellEP_translate_types;
                     break;
                 case BROADWELL_E:
                     pci_devices = broadwellEP_pci_devices;
@@ -982,6 +987,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsBroadwellEP;
                     perfmon_numCounters = perfmon_numCountersBroadwellEP;
                     perfmon_numCoreCounters = perfmon_numCoreCountersBroadwellEP;
+                    translate_types = broadwellEP_translate_types;
                     break;
 
                 case SKYLAKE1:
@@ -1629,6 +1635,17 @@ perfmon_addEventSet(const char* eventCString)
     DEBUG_PRINT(DEBUGLEV_INFO, Currently %d groups of %d active,
                     groupSet->numberOfActiveGroups+1,
                     groupSet->numberOfGroups+1);
+    cstringcopy = malloc((strlen(eventCString)+1)*sizeof(char));
+    if (!cstringcopy)
+        return -ENOMEM;
+    strcpy(cstringcopy, eventCString);
+    char* perf_pid = strstr(eventCString, "PERF_PID");
+    if (perf_pid != NULL)
+    {
+#ifdef LIKWID_USE_PERFEVENT
+        snprintf(cstringcopy, strlen(eventCString)-strlen(perf_pid), "%s", eventCString);
+#endif
+    }
 
     cstringcopy = malloc((strlen(eventCString)+1)*sizeof(char));
     if (!cstringcopy)
@@ -1638,11 +1655,9 @@ perfmon_addEventSet(const char* eventCString)
     if (perf_pid != NULL)
     {
 #ifdef LIKWID_USE_PERFEVENT
-        printf("perf_pid %s\n", perf_pid);
         snprintf(cstringcopy, strlen(eventCString)-strlen(perf_pid), "%s", eventCString);
 #endif
     }
-
 
     if (strchr(cstringcopy, ':') == NULL)
     {

@@ -1024,7 +1024,7 @@ bool postfix(token *tokens, int numTokens, Stack *output)
     // free remaining intermediate results
     while (stackSize(&intermediate) > 0)
     {
-        stackPop(&intermediate);
+        free(stackPop(&intermediate));
     }
     if (err == true)
     {
@@ -1066,6 +1066,7 @@ calculate_infix(char* finfix, double *result)
                 tokens[i] = NULL;
         }
         *result = strtod((char*)stackTop(&expr), NULL);
+        free(stackPop(&expr));
     }
     ret = 0;
 calcerror:

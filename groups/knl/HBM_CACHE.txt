@@ -89,4 +89,3 @@ DDR Memory bandwidth [MBytes/s] = 1.0E-06*(sum(MC_CAS_READS)+sum(MC_CAS_WRITES))
 DDR Memory data volume [GBytes] = 1.0E-09*(sum(MC_CAS_READS)+sum(MC_CAS_WRITES))*64
 -
 Profiling group to measure data transfers from and to the high bandwidth memory (HBM).
-
