@@ -3040,32 +3040,6 @@ or<BR>
 </TR>
 </TABLE>
 
-\anchor setCpuClockCurrent
-<H2>setCpuClockCurrent(cpuID, freq)</H2>
-<P>Set the current CPU clock frequency</P>
-<TABLE>
-<TR>
-  <TH>Direction</TH>
-  <TH>Data type(s)</TH>
-</TR>
-<TR>
-  <TD>Input Parameter</TD>
-  <TD><TABLE>
-    <TR>
-      <TD>\a cpuID</TD>
-      <TD>CPU to set clock speed</TD>
-    </TR>
-    <TR>
-      <TD>\a freq</TD>
-      <TD>CPU frequency in kHz</TD>
-    </TR>
-  </TABLE></TD>
-</TR>
-<TR>
-  <TD>Returns</TD>
-  <TD>Frequency for success, 0 in case of errors.</TD>
-</TR>
-</TABLE>
 
 \anchor getCpuClockMin
 <H2>getCpuClockMin(cpuID)</H2>
@@ -3214,29 +3188,6 @@ or<BR>
 <TR>
   <TD>Returns</TD>
   <TD>1 for success, 0 in case of errors.</TD>
-</TR>
-</TABLE>
-
-\anchor getDriver
-<H2>getDriver(cpuID)</H2>
-<P>Get the current cpufreq driver</P>
-<TABLE>
-<TR>
-  <TH>Direction</TH>
-  <TH>Data type(s)</TH>
-</TR>
-<TR>
-  <TD>Input Parameter</TD>
-  <TD><TABLE>
-    <TR>
-      <TD>\a cpuID</TD>
-      <TD>CPU to get the current cpufreq driver</TD>
-    </TR>
-  </TABLE></TD>
-</TR>
-<TR>
-  <TD>Returns</TD>
-  <TD>Driver for success, nil in case of errors.</TD>
 </TR>
 </TABLE>
 

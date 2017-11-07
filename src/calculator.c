@@ -745,7 +745,7 @@ int tokenize(char *str, char *(**tokensRef))
             /*if(tokens == NULL) // First allocation
                 tokens = (char**)malloc(numTokens * sizeof(char*));
             else*/
-            
+
             newToken = malloc((strlen(tmpToken)+1) * sizeof(char));
             if (!newToken)
             {
@@ -789,7 +789,7 @@ bool leftAssoc(token op)
     {
         case addop:
         case multop:
-        
+
             ret = true;
             break;
         case function:
@@ -822,7 +822,7 @@ int precedence(token op1, token op2)
     else if(tokenType(op1) == expop
             && tokenType(op2) == multop) // op1 has higher precedence
         ret = 1;
-    else if (tokenType(op1) == function 
+    else if (tokenType(op1) == function
             && (tokenType(op2) == addop || tokenType(op2) == multop || tokenType(op2) == expop || tokenType(op2) == lparen))
         ret = 1;
     else if ((tokenType(op1) == addop || tokenType(op1) == multop || tokenType(op1) == expop)

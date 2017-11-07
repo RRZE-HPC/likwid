@@ -47,16 +47,87 @@
 #include <registers.h>
 
 #include <frequency.h>
+#include <frequency_acpi.h>
+#include <frequency_pstate.h>
 
 char* daemon_path = TOSTRING(INSTALL_PREFIX) "/sbin/likwid-setFreq";
 
 
-enum  {
+typedef enum  {
+    NOT_DETECTED = 0,
     ACPICPUFREQ,
     INTELPSTATE,
     PPCCPUFREQ,
-} freq_driver;
+} likwid_freq_driver;
 
+likwid_freq_driver drv = NOT_DETECTED;
+
+static int freq_getDriver(const int cpu_id )
+{
+    FILE *f = NULL;
+    char buff[256];
+    char* rptr = NULL;
+    bstring bbuff;
+
+    sprintf(buff, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_driver", cpu_id);
+    f = fopen(buff, "r");
+    if (f == NULL)
+    {
+        fprintf(stderr, "Unable to open path %s for reading\n", buff);
+        return -errno;
+    }
+    rptr = fgets(buff, 256, f);
+    if (rptr != NULL)
+    {
+        bbuff = bfromcstr(buff);
+        btrimws(bbuff);
+        if (strncmp(bdata(bbuff), "acpi-cpufreq", blength(bbuff)) == 0)
+        {
+            drv = ACPICPUFREQ;
+        }
+        else if (strncmp(bdata(bbuff), "intel_pstate", blength(bbuff)) == 0)
+        {
+            drv = INTELPSTATE;
+        }
+        bdestroy(bbuff);
+    }
+    fclose(f);
+    return 0;
+}
+
+uint64_t freq_getCpuClockMax(const int cpu_id )
+{
+    if (drv == NOT_DETECTED)
+    {
+        freq_getDriver(cpu_id);
+    }
+    if (drv == ACPICPUFREQ)
+    {
+        return freq_acpi_getCpuClockMax(cpu_id);
+    }
+    else if (drv == INTELPSTATE)
+    {
+        return freq_pstate_getCpuClockMax(cpu_id);
+    }
+    return 0;
+}
+
+uint64_t freq_getCpuClockMin(const int cpu_id )
+{
+    if (drv == NOT_DETECTED)
+    {
+        freq_getDriver(cpu_id);
+    }
+    if (drv == ACPICPUFREQ)
+    {
+        return freq_acpi_getCpuClockMin(cpu_id);
+    }
+    else if (drv == INTELPSTATE)
+    {
+        return freq_pstate_getCpuClockMin(cpu_id);
+    }
+    return 0;
+}
 
 
 uint64_t freq_getCpuClockCurrent(const int cpu_id )
@@ -82,67 +153,6 @@ uint64_t freq_getCpuClockCurrent(const int cpu_id )
     return clock * 1E3;
 }
 
-uint64_t freq_setCpuClockCurrent(const int cpu_id, const uint64_t freq)
-{
-    FILE *fpipe = NULL;
-    char cmd[256];
-    char buff[256];
-    uint64_t cur = 0x0ULL;
-    char* drv = freq_getDriver(cpu_id);
-    if (strcmp(drv, "intel_pstate") == 0)
-    {
-        fprintf(stderr, "CPUfreq driver intel_pstate not supported\n");
-        free(drv);
-        return 0x0ULL;
-    }
-    free(drv);
-    cur = freq_getCpuClockCurrent(cpu_id);
-    if (cur == freq)
-    {
-        return cur;
-    }
-
-    sprintf(buff, "%s", daemon_path);
-    if (access(buff, X_OK))
-    {
-        fprintf(stderr, "Daemon %s not executable", buff);
-        return 0;
-    }
-
-    sprintf(cmd, "%s %d cur %lu", daemon_path, cpu_id, freq);
-    if ( !(fpipe = (FILE*)popen(cmd,"r")) )
-    {  // If fpipe is NULL
-        fprintf(stderr, "Problems setting cpu frequency of CPU %d", cpu_id);
-        return 0;
-    }
-    if (pclose(fpipe))
-        return 0;
-
-    return freq;
-}
-
-uint64_t freq_getCpuClockMax(const int cpu_id )
-{
-    FILE *f = NULL;
-    char cmd[256];
-    char buff[256];
-    char* eptr = NULL;
-    uint64_t clock = 0x0ULL;
-
-    sprintf(buff, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_max_freq", cpu_id);
-    f = fopen(buff, "r");
-    if (f == NULL) {
-        fprintf(stderr, "Unable to open path %s for reading\n", buff);
-        return 0;
-    }
-    eptr = fgets(cmd, 256, f);
-    if (eptr != NULL)
-    {
-        clock = strtoull(cmd, NULL, 10);
-    }
-    fclose(f);
-    return clock *1E3;
-}
 
 uint64_t freq_setCpuClockMax(const int cpu_id, const uint64_t freq)
 {
@@ -150,14 +160,7 @@ uint64_t freq_setCpuClockMax(const int cpu_id, const uint64_t freq)
     char cmd[256];
     char buff[256];
     uint64_t cur = 0x0ULL;
-    char* drv = freq_getDriver(cpu_id);
-    if (strcmp(drv, "intel_pstate") == 0)
-    {
-        fprintf(stderr, "CPUfreq driver intel_pstate not supported\n");
-        free(drv);
-        return 0x0ULL;
-    }
-    free(drv);
+
     cur = freq_getCpuClockMax(cpu_id);
     if (cur == freq)
     {
@@ -171,7 +174,15 @@ uint64_t freq_setCpuClockMax(const int cpu_id, const uint64_t freq)
         return 0;
     }
 
-    sprintf(cmd, "%s %d max %lu", daemon_path, cpu_id, freq);
+    if (drv == ACPICPUFREQ)
+    {
+        sprintf(cmd, "%s %d max %lu", daemon_path, cpu_id, freq);
+    }
+    else if (drv == INTELPSTATE)
+    {
+        double f = (double)freq;
+        sprintf(cmd, "%s %d max %g", daemon_path, cpu_id, f/1000000);
+    }
     if ( !(fpipe = (FILE*)popen(cmd,"r")) )
     {  // If fpipe is NULL
         fprintf(stderr, "Problems setting cpu frequency of CPU %d", cpu_id);
@@ -183,29 +194,29 @@ uint64_t freq_setCpuClockMax(const int cpu_id, const uint64_t freq)
     return freq;
 }
 
-uint64_t freq_getCpuClockMin(const int cpu_id )
-{
+/*uint64_t freq_getCpuClockMin(const int cpu_id )*/
+/*{*/
 
-    uint64_t clock = 0x0ULL;
-    FILE *f = NULL;
-    char cmd[256];
-    char buff[256];
-    char* eptr = NULL;
+/*    uint64_t clock = 0x0ULL;*/
+/*    FILE *f = NULL;*/
+/*    char cmd[256];*/
+/*    char buff[256];*/
+/*    char* eptr = NULL;*/
 
-    sprintf(buff, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_min_freq", cpu_id);
-    f = fopen(buff, "r");
-    if (f == NULL) {
-        fprintf(stderr, "Unable to open path %s for reading\n", buff);
-        return 0;
-    }
-    eptr = fgets(cmd, 256, f);
-    if (eptr != NULL)
-    {
-        clock = strtoull(cmd, NULL, 10);
-    }
-    fclose(f);
-    return clock *1E3;
-}
+/*    sprintf(buff, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_min_freq", cpu_id);*/
+/*    f = fopen(buff, "r");*/
+/*    if (f == NULL) {*/
+/*        fprintf(stderr, "Unable to open path %s for reading\n", buff);*/
+/*        return 0;*/
+/*    }*/
+/*    eptr = fgets(cmd, 256, f);*/
+/*    if (eptr != NULL)*/
+/*    {*/
+/*        clock = strtoull(cmd, NULL, 10);*/
+/*    }*/
+/*    fclose(f);*/
+/*    return clock *1E3;*/
+/*}*/
 
 uint64_t freq_setCpuClockMin(const int cpu_id, const uint64_t freq)
 {
@@ -213,14 +224,7 @@ uint64_t freq_setCpuClockMin(const int cpu_id, const uint64_t freq)
     char cmd[256];
     char buff[256];
     uint64_t cur = 0x0ULL;
-    char* drv = freq_getDriver(cpu_id);
-    if (strcmp(drv, "intel_pstate") == 0)
-    {
-        fprintf(stderr, "CPUfreq driver intel_pstate not supported\n");
-        free(drv);
-        return 0x0ULL;
-    }
-    free(drv);
+
     cur = freq_getCpuClockMin(cpu_id);
     if (cur == freq)
     {
@@ -234,7 +238,16 @@ uint64_t freq_setCpuClockMin(const int cpu_id, const uint64_t freq)
         return 0;
     }
 
-    sprintf(cmd, "%s %d min %lu", daemon_path, cpu_id, freq);
+    //sprintf(cmd, "%s %d min %lu", daemon_path, cpu_id, freq);
+    if (drv == ACPICPUFREQ)
+    {
+        sprintf(cmd, "%s %d min %lu", daemon_path, cpu_id, freq);
+    }
+    else if (drv == INTELPSTATE)
+    {
+        double f = (double)freq;
+        sprintf(cmd, "%s %d min %g", daemon_path, cpu_id, f/1000000);
+    }
     if ( !(fpipe = (FILE*)popen(cmd,"r")) )
     {  // If fpipe is NULL
         fprintf(stderr, "Problems setting cpu frequency of CPU %d", cpu_id);
@@ -277,19 +290,28 @@ char * freq_getGovernor(const int cpu_id )
     return NULL;
 }
 
+int freq_setTurbo(const int cpu_id, int turbo)
+{
+    FILE *fpipe = NULL;
+    char cmd[256];
+
+    sprintf(cmd, "%s %d tur %d", daemon_path, cpu_id, turbo);
+    if ( !(fpipe = (FILE*)popen(cmd,"r")) )
+    {  // If fpipe is NULL
+        fprintf(stderr, "Problems setting turbo mode of CPU %d", cpu_id);
+        return 0;
+    }
+    if (pclose(fpipe))
+        return 0;
+    return 1;
+}
+
 int freq_setGovernor(const int cpu_id, const char* gov)
 {
     FILE *fpipe = NULL;
     char cmd[256];
     char buff[256];
-    char* drv = freq_getDriver(cpu_id);
-    if (strcmp(drv, "intel_pstate") == 0)
-    {
-        fprintf(stderr, "CPUfreq driver intel_pstate not supported\n");
-        free(drv);
-        return 0;
-    }
-    free(drv);
+
     sprintf(buff, "%s", daemon_path);
     if (access(buff, X_OK))
     {
@@ -311,133 +333,114 @@ int freq_setGovernor(const int cpu_id, const char* gov)
 char * freq_getAvailFreq(const int cpu_id )
 {
     int i, j, k;
-    FILE *f = NULL;
+    FILE *fpipe = NULL;
     char cmd[256];
-    char buff[256];
+    char buff[2048];
     char tmp[10];
     char *eptr = NULL, *rptr = NULL, *sptr = NULL;
-    double d = 0.0;
+    double d = 0;
+    int take_next = 0;
     bstring bbuff;
 
-    sprintf(buff, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_available_frequencies", cpu_id);
-    f = fopen(buff, "r");
-    if (f == NULL)
-    {
-        fprintf(stderr, "Unable to open path %s for reading\n", buff);
+    sprintf(cmd, "%s 2>&1", daemon_path);
+    if ( !(fpipe = (FILE*)popen(cmd,"r")) )
+    {  // If fpipe is NULL
+        fprintf(stderr, "Problem executing %s\n",daemon_path);
         return NULL;
     }
-    rptr = fgets(buff, 256, f);
-    if (rptr != NULL)
+    while (fgets(buff, 2048, fpipe))
     {
-        struct bstrList * freq_list;
-        bbuff = bfromcstr(buff);
-        btrimws(bbuff);
-        DEBUG_PRINT(DEBUGLEV_DETAIL, Result: %s, bdata(bbuff));
-
-        freq_list = bsplit(bbuff, ' ');
-        eptr = malloc(freq_list->qty * 10 * sizeof(char));
-        if (eptr == NULL)
+        if (strncmp(buff, "Frequency steps:", 16) == 0)
         {
-            fclose(f);
-            return NULL;
+            //printf("Take next\n");
+            take_next = 1;
+            continue;
         }
-        sptr = bdata(freq_list->entry[0]);
-        d = strtod(sptr, NULL);
-        j = sprintf(eptr, "%.3f", d * 1E-6);
-        for (i=1; i< freq_list->qty; i++)
+        if (take_next)
         {
-            sptr = bdata(freq_list->entry[i]);
-            d = strtod(sptr, NULL);
-            sprintf(tmp, " %.3f", d * 1E-6);
-            for (k= strlen(tmp)-1; k >= 0; k--)
+            int eidx = 0;
+            //printf("Take %s\n", buff);
+            eptr = malloc(strlen(buff) * sizeof(char));
+            sptr = strtok(buff, " ");
+            while (sptr != NULL)
             {
-                if (tmp[k] != '0') break;
-                if (tmp[k] == '0' && k > 0 && tmp[k-1] != '.') tmp[k] = '\0';
+                d = atof(sptr);
+                if (d > 0)
+                {
+                    eidx += snprintf(&(eptr[eidx]), 19, "%g ", d*1E-6);
+                }
+                sptr = strtok(NULL, " ");
             }
-            j+= sprintf(&(eptr[j]), "%s", tmp);
+            break;
         }
-        bstrListDestroy(freq_list);
     }
-    fclose(f);
+    if (pclose(fpipe) == -1)
+    {
+        return NULL;
+    }
+    for (int i=strlen(eptr)-1; i>= 0; i--)
+    {
+        if (eptr[i] == ' ')
+        {
+            eptr[i] = '\0';
+        }
+        else
+        {
+            break;
+        }
+    }
     return eptr;
 }
 
 char * freq_getAvailGovs(const int cpu_id )
 {
     int i, j, k;
-    FILE *f = NULL;
+    FILE *fpipe = NULL;
     char cmd[256];
-    char buff[256];
+    char buff[2048];
     char tmp[10];
-    char* eptr = NULL, *rptr = NULL;
+    char *eptr = NULL, *rptr = NULL, *sptr = NULL;
+    double d = 0;
+    int take_next = 0;
     bstring bbuff;
 
-    sprintf(buff, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_available_governors", cpu_id);
-    f = fopen(buff, "r");
-    if (f == NULL)
-    {
-        fprintf(stderr, "Unable to open path %s for reading\n", buff);
+    sprintf(cmd, "%s 2>&1", daemon_path);
+    if ( !(fpipe = (FILE*)popen(cmd,"r")) )
+    {  // If fpipe is NULL
+        fprintf(stderr, "Problem executing %s\n",daemon_path);
         return NULL;
     }
-    rptr = fgets(buff, 256, f);
-    if (rptr != NULL)
+    while (fgets(buff, 2048, fpipe))
     {
-        struct bstrList * freq_list;
-        bbuff = bfromcstr(buff);
-        btrimws(bbuff);
-        freq_list = bsplit(bbuff, ' ');
-        k = 0;
-        for (i=0;i < freq_list->qty; i++)
+        if (strncmp(buff, "Governors:", 10) == 0)
         {
-            k += blength(freq_list->entry[i]);
+            take_next = 1;
+            continue;
         }
-        eptr = malloc((k+1) * sizeof(char));
-        if (eptr == NULL)
+        if (take_next)
         {
-            fclose(f);
-            return NULL;
+            int eidx = 0;
+            eptr = malloc((strlen(buff)+1) * sizeof(char));
+            memset(eptr, 0, (strlen(buff)+1) * sizeof(char));
+            strncpy(eptr, buff, strlen(buff));
+            break;
         }
-        j = sprintf(eptr, "%s", bdata(freq_list->entry[0]));
-
-        for (i=1; i< freq_list->qty; i++)
-        {
-            j += sprintf(&(eptr[j]), " %s", bdata(freq_list->entry[i]));
-        }
-        bstrListDestroy(freq_list);
     }
-    fclose(f);
-    return eptr;
-}
-
-char * freq_getDriver(const int cpu_id )
-{
-    FILE *f = NULL;
-    char cmd[256];
-    char buff[256];
-    char* eptr = NULL, *rptr = NULL;
-    bstring bbuff;
-
-    sprintf(buff, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_driver", cpu_id);
-    f = fopen(buff, "r");
-    if (f == NULL)
+    if (pclose(fpipe) == -1)
     {
-        fprintf(stderr, "Unable to open path %s for reading\n", buff);
         return NULL;
     }
-    rptr = fgets(buff, 256, f);
-    if (rptr != NULL)
+    for (int i=strlen(eptr)-1; i>= 0; i--)
     {
-        bbuff = bfromcstr(buff);
-        btrimws(bbuff);
-        eptr = malloc((strlen(buff)+1) * sizeof(char));
-        if (eptr == NULL)
+        if (eptr[i] == ' ')
         {
-            fclose(f);
-            return NULL;
+            eptr[i] = '\0';
         }
-        sprintf(eptr, "%s", bdata(bbuff));
+        else
+        {
+            break;
+        }
     }
-    fclose(f);
     return eptr;
 }
 
@@ -461,12 +464,14 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
         return -ENODEV;
     }
     char* avail = freq_getAvailFreq(cpuId);
-    char* ptr = NULL;
+    char ptr[20];
     for (int i=strlen(avail)-1;i>=0;i--)
     {
         if (avail[i] == ' ')
+        {
+            snprintf(ptr, strlen(avail) - i, "%s", &(avail[i+1]));
             break;
-        ptr = &(avail[i]);
+        }
     }
     double d = atof(ptr);
     d *= 1000;
@@ -612,12 +617,14 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
         return -ENODEV;
     }
     char* avail = freq_getAvailFreq(cpuId);
-    char* ptr = NULL;
+    char ptr[20];
     for (int i=strlen(avail)-1;i>=0;i--)
     {
         if (avail[i] == ' ')
+        {
+            snprintf(ptr, strlen(avail) - i, "%s", &(avail[i+1]));
             break;
-        ptr = &(avail[i]);
+        }
     }
     double d = atof(ptr);
     d *= 1000;

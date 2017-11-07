@@ -391,7 +391,6 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
 
     for (i=2;i<tokens->qty;i++)
     {
-        printf("%s\n", bdata(tokens->entry[i]));
         subtokens = bsplit(tokens->entry[i],'=');
         btolower(subtokens->entry[0]);
         if (subtokens->qty == 1)
@@ -827,6 +826,8 @@ perfmon_init_maps(void)
                     break;
 
                 case ATOM_SILVERMONT_GOLD:
+                case ATOM_DENVERTON:
+                case ATOM_GOLDMONT_PLUS:
                     eventHash = goldmont_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsGoldmont;
                     counter_map = goldmont_counter_map;
@@ -866,6 +867,7 @@ perfmon_init_maps(void)
                     counter_map = westmereEX_counter_map;
                     perfmon_numCounters = perfmon_numCountersWestmereEX;
                     box_map = westmereEX_box_map;
+                    translate_types = default_translate_types;
                     break;
 
                 case NEHALEM_BLOOMFIELD:
@@ -1142,6 +1144,8 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
 
                 case ATOM_SILVERMONT_GOLD:
+                case ATOM_DENVERTON:
+                case ATOM_GOLDMONT_PLUS:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_goldmont;
@@ -1686,6 +1690,7 @@ perfmon_addEventSet(const char* eventCString)
             strcat(evstr, perf_pid);
         }
     }
+    free(cstringcopy);
     eventBString = bfromcstr(evstr);
     eventtokens = bsplit(eventBString,',');
     free(evstr);
@@ -1847,8 +1852,8 @@ perfmon_delEventSet(int groupID)
 int
 __perfmon_setupCountersThread(int thread_id, int groupId)
 {
-    int i;
-    int ret;
+    int i = 0;
+    int ret = 0;
     if (groupId >= groupSet->numberOfActiveGroups)
     {
         ERROR_PRINT(Group %d does not exist in groupSet, groupId);

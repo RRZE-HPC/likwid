@@ -39,34 +39,44 @@
 #include <access.h>
 #include <unistd.h>
 
-const char* power_names[NUM_POWER_DOMAINS] = {"PKG", "PP0", "PP1", "DRAM"};
-const char* perf_power_names[NUM_POWER_DOMAINS] = {"/sys/devices/power/events/energy-pkg.scale", "/sys/devices/power/events/energy-cores.scale", "", "/sys/devices/power/events/energy-ram.scale"};
-
+const char* power_names[NUM_POWER_DOMAINS] = {"PKG", "PP0", "PP1", "DRAM", "PLATFORM"};
+const char* perf_power_names[NUM_POWER_DOMAINS] = {
+    "/sys/devices/power/events/energy-pkg.scale",
+    "/sys/devices/power/events/energy-cores.scale",
+    "",
+    "/sys/devices/power/events/energy-ram.scale",
+    "/sys/devices/power/events/energy-platform.scale",
+};
 
 uint32_t power_regs[NUM_POWER_DOMAINS] = {MSR_PKG_ENERGY_STATUS,
                                 MSR_PP0_ENERGY_STATUS,
                                 MSR_PP1_ENERGY_STATUS,
-                                MSR_DRAM_ENERGY_STATUS};
+                                MSR_DRAM_ENERGY_STATUS,
+                                MSR_PLATFORM_ENERGY_STATUS};
 
 uint32_t limit_regs[NUM_POWER_DOMAINS] = {MSR_PKG_RAPL_POWER_LIMIT,
                                 MSR_PP0_RAPL_POWER_LIMIT,
                                 MSR_PP1_RAPL_POWER_LIMIT,
-                                MSR_DRAM_RAPL_POWER_LIMIT};
+                                MSR_DRAM_RAPL_POWER_LIMIT,
+                                MSR_PLATFORM_POWER_LIMIT};
 
 uint32_t policy_regs[NUM_POWER_DOMAINS] = {0,
                                 MSR_PP0_ENERGY_POLICY,
                                 MSR_PP1_ENERGY_POLICY,
+                                0,
                                 0};
 
 uint32_t perf_regs[NUM_POWER_DOMAINS] = {MSR_PKG_PERF_STATUS,
                                 MSR_PP0_PERF_STATUS,
                                 0,
-                                MSR_DRAM_PERF_STATUS};
+                                MSR_DRAM_PERF_STATUS,
+                                0};
 
 uint32_t info_regs[NUM_POWER_DOMAINS] = {MSR_PKG_POWER_INFO,
                                 0,
                                 0,
-                                MSR_DRAM_POWER_INFO};
+                                MSR_DRAM_POWER_INFO,
+                                MSR_PLATFORM_INFO};
 
 
 double
