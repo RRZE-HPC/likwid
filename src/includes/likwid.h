@@ -1448,14 +1448,7 @@ Get the current clock frequency of a core
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_getCpuClockCurrent(const int cpu_id ) __attribute__ ((visibility ("default") ));
-/*! \brief Set the current clock frequency of a core
 
-Set the current clock frequency of a core
-@param [in] cpu_id CPU ID
-@param [in] freq Frequency in kHz
-@return Frequency or 0 in case of errors
-*/
-extern uint64_t freq_setCpuClockCurrent(const int cpu_id, const uint64_t freq) __attribute__ ((visibility ("default") ));
 /*! \brief Get the maximal clock frequency of a core
 
 Get the maximal clock frequency of a core
@@ -1486,6 +1479,14 @@ Set the minimal clock frequency of a core
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_setCpuClockMin(const int cpu_id, const uint64_t freq) __attribute__ ((visibility ("default") ));
+/*! \brief De/Activate turbo mode for core
+
+De/Activate turbo mode for core
+@param [in] cpu_id CPU ID
+@param [in] turbo (0=off, 1=on)
+@return 1 or 0 in case of errors
+*/
+extern int freq_setTurbo(const int cpu_id, int turbo) __attribute__ ((visibility ("default") ));
 /*! \brief Get the frequency governor of a core
 
 Get the frequency governor of a core. The returned string must be freed by the caller.
@@ -1515,13 +1516,6 @@ Get the available frequency governors of a core. The returned string must be fre
 @return String with available frequency governors or NULL in case of errors
 */
 extern char * freq_getAvailGovs(const int cpu_id ) __attribute__ ((visibility ("default") ));
-/*! \brief Get the name of the currently active cpufreq driver
-
-Get the name of the currently active cpufreq driver. The returned string must be freed by the caller.
-@param [in] cpu_id CPU ID
-@return String with active cpufreq driver or NULL in case of errors
-*/
-extern char * freq_getDriver(const int cpu_id ) __attribute__ ((visibility ("default") ));
 
 /*! \brief Set the minimal Uncore frequency
 
