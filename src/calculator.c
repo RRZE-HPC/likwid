@@ -1024,7 +1024,7 @@ bool postfix(token *tokens, int numTokens, Stack *output)
     // free remaining intermediate results
     while (stackSize(&intermediate) > 0)
     {
-        free(stackPop(&intermediate));
+        stackPop(&intermediate);
     }
     if (err == true)
     {
