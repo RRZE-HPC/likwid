@@ -836,7 +836,7 @@ if use_wrapper or use_timeline then
                     table.insert(outList, tostring(value))
                 end
             end
-            print(table.concat(outList, timeline_delim))
+            print_stderr(table.concat(outList, timeline_delim))
             groupTime[activeGroup] = time
         else
             likwid.readCounters()
