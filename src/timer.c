@@ -448,13 +448,14 @@ timer_sleep(unsigned long usec)
     int status = -1;
     struct timespec req;
     struct timespec rem = {0,0};
+
     if (sleepbase == 0x0ULL)
     {
         init_sleep();
     }
     if (usec >= 1000000)
     {
-        status = sleep(usec / 1000000);
+        status = sleep(((usec-sleepbase)+500000) / 1000000);
     }
     else
     {
