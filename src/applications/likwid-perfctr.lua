@@ -777,6 +777,7 @@ end
 io.stdout:flush()
 local groupTime = {}
 local exitvalue = 0
+local twork = 0
 if use_wrapper or use_timeline then
     local start = likwid.startClock()
     local stop = 0
@@ -797,7 +798,6 @@ if use_wrapper or use_timeline then
 
     likwid.sendSignal(pid, 18)
 
-    
     start = likwid.startClock()
     groupTime[activeGroup] = 0
     timeline_delim = " "
@@ -811,7 +811,7 @@ if use_wrapper or use_timeline then
             end
             break
         end
-        local remain = likwid.sleep(duration)
+        local remain = likwid.sleep(math.floor(duration-(twork*1E6)))
         exitvalue = likwid.checkProgram(pid)
         if remain > 0 or exitvalue >= 0 then
             io.stdout:flush()
@@ -819,9 +819,12 @@ if use_wrapper or use_timeline then
                 break
             end
         end
+
         if use_timeline == true then
             stop = likwid.stopClock()
+            xstart = likwid.startClock()
             likwid.readCounters()
+
             local time = likwid.getClock(start, stop)
             if likwid.getNumberOfMetrics(activeGroup) == 0 then
                 results = likwid.getLastResults()
@@ -840,8 +843,13 @@ if use_wrapper or use_timeline then
             end
             print_stderr(table.concat(outList, timeline_delim))
             groupTime[activeGroup] = time
+            xstop = likwid.stopClock()
+            twork = likwid.getClock(xstart, xstop)
         else
+            xstart = likwid.startClock()
             likwid.readCounters()
+            xstop = likwid.stopClock()
+            twork = likwid.getClock(xstart, xstop)
         end
         if #group_ids > 1 then
             likwid.switchGroup(activeGroup + 1)
