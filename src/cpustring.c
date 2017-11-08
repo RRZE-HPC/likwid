@@ -836,6 +836,7 @@ cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
     {
         bstrListDestroy(strlist);
         bdestroy(scattercheck);
+        bdestroy(balancedcheck);
         bdestroy(bcpustr);
         return -ENOMEM;
     }
@@ -918,6 +919,7 @@ cpustr_to_cpulist(const char* cpustring, int* cpulist, int length)
     free(tmpList);
     bdestroy(bcpustr);
     bdestroy(scattercheck);
+    bdestroy(balancedcheck);
     bstrListDestroy(strlist);
     return insert;
 }
