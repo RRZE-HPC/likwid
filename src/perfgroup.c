@@ -773,6 +773,7 @@ read_group(
         }
         else
         {
+            bdestroy(fullpath);
             fullpath = bstrcpy(homepath);
         }
     }
