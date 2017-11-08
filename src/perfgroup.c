@@ -43,10 +43,15 @@
 
 #include <error.h>
 #include <perfgroup.h>
-#include <calculator.h>
 #include <likwid.h>
 
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+#include <math.h>
+
 static int totalgroups = 0;
+static lua_State *L = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -1423,6 +1428,30 @@ destroy_clist(CounterList* clist)
     }
 }
 
+const char* func_str = "require('math')\nfunction ARGS(...) x=0;for k,v in pairs({...}) do x = x+1 end return x end\nfunction SUM(...) x=0;for k,v in pairs({...}) do x = x + v end; return x end\nfunction AVG(...) return SUM(...)/ARGS(...) end\nfunction MIN(...) return math.min(...) end\nfunction MAX(...) return math.max(...) end\nfunction MEDIAN(...) local x = {...}; local l = ARGS(...); table.sort(x); return x[math.floor(l/2)] end\nMEAN=AVG";
+
+
+static double do_calc(char* s)
+{
+    double res = NAN;
+    if (!L)
+    {
+        L = luaL_newstate();
+        luaL_openlibs(L);
+    }
+    char* t = NULL;
+    asprintf(&t, "%s\nreturn %s", func_str, s);
+    int ret = luaL_dostring (L, t);
+    if (!ret)
+    {
+        res = lua_tonumber(L, -1);
+    }
+    free(t);
+
+    return res;
+}
+
+
 int
 calc_metric(char* formula, CounterList* clist, double *result)
 {
@@ -1459,8 +1488,16 @@ calc_metric(char* formula, CounterList* clist, double *result)
         maxstrlen--;
     }
     // now we can calculate the formula
-    i = calculate_infix(bdata(f), result);
+    *result = do_calc(bdata(f));
     bdestroy(f);
     return i;
+}
+
+void __attribute__((destructor (103))) close_perfgroup(void)
+{
+    if (L)
+    {
+        lua_close(L);
+    }
 }
 
