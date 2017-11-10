@@ -102,6 +102,7 @@ static int FD_MSR[MAX_NUM_THREADS];
 static int FD_PCI[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
 static int bus_map[MAX_NUM_NODES];
 static int isPCIUncore = 0;
+static int isPCI64 = 0;
 static PciDevice* pci_devices_daemon = NULL;
 static char pci_filepath[MAX_PATH_LENGTH];
 static int num_pmc_counters = 0;
@@ -904,6 +905,7 @@ pci_read(AccessDataRecord* dRecord)
     uint32_t reg = dRecord->reg;
     uint32_t device = dRecord->device;
     uint32_t data;
+    uint64_t data64;
     char* pcipath = NULL;
 
     dRecord->errorcode = ERR_NOERROR;
@@ -955,17 +957,34 @@ pci_read(AccessDataRecord* dRecord)
         }
     }
 
-    if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data))
+    if (!isPCI64)
     {
-        syslog(LOG_ERR, "Failed to read data from pci device file %s for device %s (%s) on socket %u",
-                pcipath,pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
-        dRecord->errorcode = ERR_RWFAIL;
-        if (pcipath)
-            free(pcipath);
-        return;
-    }
+        if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data, sizeof(data), reg) != sizeof(data))
+        {
+            syslog(LOG_ERR, "Failed to read data from pci device file %s for device %s (%s) on socket %u",
+                    pcipath,pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
+            dRecord->errorcode = ERR_RWFAIL;
+            if (pcipath)
+                free(pcipath);
+            return;
+        }
 
-    dRecord->data = (uint64_t) data;
+        dRecord->data = (uint64_t) data;
+    }
+    else
+    {
+        if (FD_PCI[socketId][device] > 0 && pread(FD_PCI[socketId][device], &data64, sizeof(data64), reg) != sizeof(data64))
+        {
+            syslog(LOG_ERR, "Failed to read data from pci device file %s for device %s (%s) on socket %u",
+                    pcipath,pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
+            dRecord->errorcode = ERR_RWFAIL;
+            if (pcipath)
+                free(pcipath);
+            return;
+        }
+
+        dRecord->data = data64;
+    }
     if (pcipath)
         free(pcipath);
 }
@@ -976,7 +995,8 @@ pci_write(AccessDataRecord* dRecord)
     uint32_t socketId = dRecord->cpu;
     uint32_t reg = dRecord->reg;
     uint32_t device = dRecord->device;
-    uint32_t data = (uint32_t) dRecord->data;
+    uint32_t data = (uint32_t)dRecord->data;
+    uint64_t data64 = dRecord->data;
     char* pcipath = NULL;
 
     dRecord->errorcode = ERR_NOERROR;
@@ -1029,14 +1049,29 @@ pci_write(AccessDataRecord* dRecord)
         
     }
 
-    if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
+    if (!isPCI64)
     {
-        syslog(LOG_ERR, "Failed to write data to pci device file %s for device %s (%s) on socket %u",pci_filepath,
-                pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
-        dRecord->errorcode = ERR_RWFAIL;
-        if (pcipath)
-            free(pcipath);
-        return;
+        if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data, sizeof data, reg) != sizeof data)
+        {
+            syslog(LOG_ERR, "Failed to write data to pci device file %s for device %s (%s) on socket %u",pci_filepath,
+                    pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
+            dRecord->errorcode = ERR_RWFAIL;
+            if (pcipath)
+                free(pcipath);
+            return;
+        }
+    }
+    else
+    {
+        if (FD_PCI[socketId][device] > 0 && pwrite(FD_PCI[socketId][device], &data64, sizeof data64, reg) != sizeof data64)
+        {
+            syslog(LOG_ERR, "Failed to write data to pci device file %s for device %s (%s) on socket %u",pci_filepath,
+                    pci_types[pci_devices_daemon[device].type].name, pci_devices_daemon[device].name, socketId);
+            dRecord->errorcode = ERR_RWFAIL;
+            if (pcipath)
+                free(pcipath);
+            return;
+        }
     }
     if (pcipath)
         free(pcipath);
@@ -1373,6 +1408,7 @@ int main(void)
                     isPCIUncore = 1;
                     allowed = allowed_skx;
                     allowedPci = allowed_pci_skx;
+                    isPCI64 = 1;
                 }
                 else if ((model == ATOM_SILVERMONT_C) ||
                          (model == ATOM_SILVERMONT_E) ||
