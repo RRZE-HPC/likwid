@@ -84,6 +84,7 @@ RegisterMap* counter_map = NULL;
 BoxMap* box_map = NULL;
 PciDevice* pci_devices = NULL;
 char** translate_types = NULL;
+
 int perfmon_numCounters = 0;
 int perfmon_numCoreCounters = 0;
 int perfmon_numArchEvents = 0;
@@ -382,7 +383,6 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
     {
         event->options[i].type = EVENT_OPTION_NONE;
     }
-
     if (tokens->qty-2 > MAX_EVENT_OPTIONS)
     {
         return -ERANGE;
@@ -521,6 +521,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
 #ifdef LIKWID_USE_PERFEVENT
             else if (biseqcstr(subtokens->entry[0], "perf_pid") == 1)
             {
+                printf("Found option perf_pid\n");
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
                                     event->numberOfOptions, EVENT_OPTION_PERF_PID, 0);
             }
@@ -642,6 +643,7 @@ calculateResult(int groupId, int eventId, int threadId)
         {
             result += (double) ((counter->overflows-1) * maxValue);
         }
+        counter->overflows = 0;
     }
     if (counter_map[event->index].type == POWER)
     {
@@ -892,6 +894,7 @@ perfmon_init_maps(void)
 
                 case IVYBRIDGE_EP:
                     pci_devices = ivybridgeEP_pci_devices;
+                    translate_types = ivybridgeEP_translate_types;
                     box_map = ivybridgeEP_box_map;
                     eventHash = ivybridgeEP_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsIvybridgeEP;
@@ -901,6 +904,7 @@ perfmon_init_maps(void)
                     translate_types = ivybridgeEP_translate_types;
                     break;
                 case IVYBRIDGE:
+                    translate_types = default_translate_types;
                     eventHash = ivybridge_arch_events;
                     box_map = ivybridge_box_map;
                     perfmon_numArchEvents = perfmon_numArchEventsIvybridge;
@@ -912,6 +916,7 @@ perfmon_init_maps(void)
 
                 case HASWELL_EP:
                     eventHash = haswellEP_arch_events;
+                    translate_types = haswellEP_translate_types;
                     perfmon_numArchEvents = perfmon_numArchEventsHaswellEP;
                     counter_map = haswellEP_counter_map;
                     perfmon_numCounters = perfmon_numCountersHaswellEP;
@@ -934,6 +939,7 @@ perfmon_init_maps(void)
 
                 case SANDYBRIDGE_EP:
                     pci_devices = sandybridgeEP_pci_devices;
+                    translate_types = sandybridgeEP_translate_types;
                     box_map = sandybridgeEP_box_map;
                     eventHash = sandybridgeEP_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsSandybridgeEP;
@@ -964,6 +970,7 @@ perfmon_init_maps(void)
                     break;
                 case BROADWELL_D:
                     pci_devices = broadwelld_pci_devices;
+                    translate_types = broadwellEP_translate_types;
                     box_map = broadwelld_box_map;
                     eventHash = broadwelld_arch_events;
                     counter_map = broadwelld_counter_map;
@@ -976,6 +983,7 @@ perfmon_init_maps(void)
                     pci_devices = broadwellEP_pci_devices;
                     box_map = broadwellEP_box_map;
                     eventHash = broadwellEP_arch_events;
+                    translate_types = broadwellEP_translate_types;
                     counter_map = broadwellEP_counter_map;
                     perfmon_numArchEvents = perfmon_numArchEventsBroadwellEP;
                     perfmon_numCounters = perfmon_numCountersBroadwellEP;
@@ -1639,7 +1647,6 @@ perfmon_addEventSet(const char* eventCString)
         snprintf(cstringcopy, strlen(eventCString)-strlen(perf_pid), "%s", eventCString);
 #endif
     }
-
 
     if (strchr(cstringcopy, ':') == NULL)
     {
@@ -2335,8 +2342,8 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     }
     add_to_clist(&clist, "time", perfmon_getTimeOfGroup(groupId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
-    add_to_clist(&clist, "true", 1);
-    add_to_clist(&clist, "false", 0);
+    add_to_clist(&clist, "TRUE", 1);
+    add_to_clist(&clist, "FALSE", 0);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -2345,6 +2352,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
+    add_to_clist(&clist, "CPU", cpu);
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
@@ -2418,8 +2426,8 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     }
     add_to_clist(&clist, "time", perfmon_getLastTimeOfGroup(groupId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
-    add_to_clist(&clist, "true", 1);
-    add_to_clist(&clist, "false", 0);
+    add_to_clist(&clist, "TRUE", 1);
+    add_to_clist(&clist, "FALSE", 0);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -2428,6 +2436,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
+    add_to_clist(&clist, "CPU", cpu);
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
