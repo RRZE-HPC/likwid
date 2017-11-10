@@ -50,8 +50,32 @@
 #include <lualib.h>
 #include <math.h>
 
+
+char* in_func_str = "require('math');function SUM(...);local s = 0;for k,v in pairs({...}) do;s = s + v;end;return s;end;function ARGS(...) return #arg end;function AVG(...) return SUM(...)/ARGS(...) end;MEAN = AVG;function MIN(...) return math.min(...) end;function MAX(...) return math.max(...) end;function MEDIAN(...);local x = {...};local l = ARGS(...);table.sort(x);return x[math.floor(l/2)];end;function PERCENTILE(perc, ...);local x = {...};local xlen = #x;table.sort(x);local idx = math.ceil((perc/100.0)*xlen);return x[idx];end;function IFELSE(cond, valid, invalid);if cond then;return valid;else;return invalid;end;end";
+char* in_expand_str = "function expand_str(x);hist = {};runs = 0;for pref, elem in x:gmatch('([%a%d]*)%[([%d,]+)%]') do;runs = runs + 1;matches = {};for num in elem:gmatch('%d+') do;for _,v in pairs(varlist) do;if v:match(string.format('.*%s%s.*', pref, num)) then;if not hist[v] then;hist[v] = 1;else;hist[v] = hist[v] + 1;end;end;end;end;end;res = {};for k,v in pairs(hist) do;if v == runs then table.insert(res, k) end;end;return table.concat(res, ',');end;function eval_str(s);repl = {};fcopy = s;for x in s:gmatch('[%a%d%[%],%.]+') do;if x:match('%[') and x:match('%]') then;repl[x:gsub('%[', '%%['):gsub('%]', '%%]')] = expand_str(x);end;end;for k,v in pairs(repl) do;fcopy = fcopy:gsub(k..'[%a%d_]*',v);end;return fcopy;end;";
+char* in_user_func_str = NULL;
+
+lua_State** lua_states = NULL;
+int num_states = 0;
+char** defines = NULL;
+int* num_defines = NULL;
+
 static int totalgroups = 0;
-static lua_State *L = NULL;
+
+/* #####   FUNCTION DEFINITIONS  -  INTERNAL FUNCTIONS   ################## */
+
+static inline void *realloc_buffer(void *ptrmem, size_t size) {
+    void *ptr = realloc(ptrmem, size);
+    if (!ptr)  {
+        fprintf(stderr, "realloc(%p, %lu): errno=%d\n", ptrmem, size, errno);
+        free (ptrmem);
+    }
+    if (!ptrmem)
+    {
+        memset(ptr, 0, size);
+    }
+    return ptr;
+}
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -1429,20 +1453,100 @@ destroy_clist(CounterList* clist)
     }
 }
 
-const char* func_str = "require('math')\nfunction ARGS(...) x=0;for k,v in pairs({...}) do x = x+1 end return x end\nfunction SUM(...) x=0;for k,v in pairs({...}) do x = x + v end; return x end\nfunction AVG(...) return SUM(...)/ARGS(...) end\nfunction MIN(...) return math.min(...) end\nfunction MAX(...) return math.max(...) end\nfunction MEDIAN(...) local x = {...}; local l = ARGS(...); table.sort(x); return x[math.floor(l/2)] end\nMEAN=AVG";
 
 
-static double do_calc(char* s)
+int add_to_varlist(char* name, char** varlist)
+{
+    int slen = 0;
+    int ret = 0;
+    if (*varlist)
+        slen = strlen(*varlist);
+    int add = strlen(name)+4;
+    *varlist = realloc_buffer(*varlist, slen + add + 5);
+    if (!*varlist)
+    {
+        return -ENOMEM;
+    }
+    if (slen == 0)
+        ret = snprintf(*varlist, add+4, "\"%s\"", name);
+    else
+        ret = snprintf(&((*varlist)[slen]), add+4, ", \"%s\"", name);
+    return 0;
+}
+
+int add_var(char* name, char* value, char** varstr, char** varlist)
+{
+    int slen = 0;
+    int ret = 0;
+    if (*varstr)
+        slen = strlen(*varstr);
+    int add = strlen(name) + strlen(value) + 4;
+    *varstr = realloc_buffer(*varstr, slen + add + 4);
+    if (!*varstr)
+    {
+        return -ENOMEM;
+    }
+    ret = snprintf(&((*varstr)[slen]), add+4, "%s = %s\n", name, value);
+    ret = add_to_varlist(name, varlist);
+    return 0;
+}
+
+int add_def(char* name, char* value, int cpu, char** varlist)
+{
+    int slen = 0;
+    int ret = 0;
+    if (defines[cpu])
+        slen = strlen(defines[cpu]);
+    int add = strlen(name) + strlen(value) + 4;
+    defines[cpu] = realloc_buffer(defines[cpu], slen + add + 2);
+    if (!defines[cpu])
+    {
+        return -ENOMEM;
+    }
+    ret = snprintf(&(defines[cpu][slen]), add+2, "%s = %s\n", name, value);
+    num_defines[cpu]++;
+    ret = add_to_varlist(name, varlist);
+    return 0;
+}
+
+int set_user_funcs(char* s)
+{
+    if (in_user_func_str)
+        free(in_user_func_str);
+    in_user_func_str = NULL;
+    int ret = asprintf(&in_user_func_str, "%s", s);
+    if (ret < 0)
+        return ret;
+    return 0;
+}
+
+double do_calc(int cpu, char* s, char* vars, char* varlist)
 {
     double res = NAN;
+    int ret = 0;
+    char* t = NULL;
+    lua_State *L = lua_states[cpu];
     if (!L)
     {
-        L = luaL_newstate();
-        luaL_openlibs(L);
+            L = luaL_newstate();
+            luaL_openlibs(L);
+            lua_states[cpu] = L;
     }
-    char* t = NULL;
-    asprintf(&t, "%s\nreturn %s", func_str, s);
-    int ret = luaL_dostring (L, t);
+
+    if (vars && defines[cpu])
+        ret = asprintf(&t, "%s\n%s\n%s\nreturn %s", in_func_str, defines[cpu], vars, s);
+    else if (vars && !defines[cpu])
+        ret = asprintf(&t, "%s\n%s\nreturn %s", in_func_str, vars, s);
+    else if (defines[cpu] && !vars)
+        ret = asprintf(&t, "%s\n%s\nreturn %s", in_func_str, defines[cpu], s);
+    else
+        ret = asprintf(&t, "%s\nreturn %s", in_func_str, s);
+    if (ret < 0)
+    {
+        return res;
+    }
+
+    ret = luaL_dostring (L, t);
     if (!ret)
     {
         res = lua_tonumber(L, -1);
@@ -1452,53 +1556,114 @@ static double do_calc(char* s)
     return res;
 }
 
+char* do_expand(int cpu, char* s, char *varlist)
+{
+    int ret = 0;
+    char* out = NULL;
+    char* t = NULL;
+
+    lua_State *L = lua_states[cpu];
+    if (!L)
+    {
+        L = luaL_newstate();
+        luaL_openlibs(L);
+        lua_states[cpu] = L;
+    }
+    ret = asprintf(&t, "varlist={%s}\n%s\nreturn eval_str(\"%s\")", varlist, in_expand_str, s);
+    if (ret < 0)
+    {
+        return NULL;
+    }
+    ret = luaL_dostring (L, t);
+    if (!ret)
+    {
+        out = (char*)lua_tostring(L, -1);
+    }
+    free(t);
+    return out;
+}
+
+
 
 int
 calc_metric(char* formula, CounterList* clist, double *result)
 {
     int i=0;
-    *result = 0.0;
+    char* f;
     int maxstrlen = 0, minstrlen = 10000;
+    int cpu = 0;
+    char buf[128];
 
-    if ((formula == NULL) || (clist == NULL))
+    if ((formula == NULL) || (clist == NULL) || (result == NULL))
         return -EINVAL;
+    *result = 0.0;
 
-    bstring f = bfromcstr(formula);
+    char* vars = NULL;
+    char* varlist = NULL;
+
     for(i=0;i<clist->counters;i++)
     {
-        if (strlen(clist->cnames[i]) > maxstrlen)
-            maxstrlen = strlen(clist->cnames[i]);
-        if (strlen(clist->cnames[i]) < minstrlen)
-            minstrlen = strlen(clist->cnames[i]);
+        snprintf(buf, 127, "%.25f", clist->cvalues[i]);
+        add_var(clist->cnames[i], buf, &vars, &varlist);
+        if (strcmp(clist->cnames[i], "CPU") == 0)
+            cpu = (int)clist->cvalues[i];
+        memset(buf, 0, 128 * sizeof(char));
+    }
+    f = do_expand(cpu, formula, varlist);
+    if (f)
+    {
+        *result = do_calc(cpu, f, vars, varlist);
     }
 
-    // try to replace each counter name in clist
-    while (maxstrlen >= minstrlen)
-    {
-        for(i=0;i<clist->counters;i++)
-        {
-            if (strlen(clist->cnames[i]) != maxstrlen)
-                continue;
-            // if we find the counter name, replace it with the value
-            bstring c = bfromcstr(clist->cnames[i]);
-            bstring v = bformat("%.20f", clist->cvalues[i]);
-            bfindreplace(f, c, v, 0);
-            bdestroy(c);
-            bdestroy(v);
-        }
-        maxstrlen--;
-    }
-    // now we can calculate the formula
-    *result = do_calc(bdata(f));
-    bdestroy(f);
+    if (vars)
+        free(vars);
+    if (varlist)
+        free(varlist);
     return i;
+}
+
+void __attribute__((constructor (103))) init_perfgroup(void)
+{
+    int ret = 0;
+    int cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    lua_states = (lua_State**)malloc(cpus * sizeof(lua_State*));
+    if (lua_states)
+    {
+        memset(lua_states, 0, cpus * sizeof(lua_State*));
+    }
+    num_states = cpus;
+    defines = (char**)malloc(cpus * sizeof(char*));
+    if (defines)
+    {
+        memset(defines, 0, cpus * sizeof(char*));
+    }
+    num_defines = (int*)malloc(cpus * sizeof(int));
+    if (defines)
+    {
+        memset(num_defines, 0, cpus * sizeof(int));
+    }
 }
 
 void __attribute__((destructor (103))) close_perfgroup(void)
 {
-    if (L)
+    if (lua_states && num_states > 0)
     {
-        lua_close(L);
+        for (int i = 0; i < num_states; i++)
+        {
+            if (lua_states[i])
+                lua_close(lua_states[i]);
+        }
+        free(lua_states);
     }
+    for (int i = 0; i < num_states; i++)
+    {
+        if (defines[i])
+        {
+            free(defines[i]);
+            num_defines[i] = 0;
+        }
+    }
+    free(defines);
+    free(num_defines);
 }
 
