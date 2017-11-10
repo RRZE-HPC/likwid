@@ -335,8 +335,9 @@ int skx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     flags |= (event->options[j].value & 0xFFULL) << 24;
                     break;
                 case EVENT_OPTION_OPCODE:
-                    filter_flags1 |= (0x3<<17);
                     filter_flags1 |= (extractBitField(event->options[j].value,20,0) << 9);
+                    filter_flags1 |= (0x3<<27);
+                    filter_flags1 |= (0x3<<17);
                     opc_match = 1;
                     break;
                 case EVENT_OPTION_STATE:
@@ -364,7 +365,7 @@ int skx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         filter_flags1 |= 0x33ULL;
         VERBOSEPRINTREG(cpu_id, filter1, filter_flags1, SETUP_CBOX_ADD_OPCODE_MATCH1);
     }
-    
+
     if (filter_flags0 != 0x0ULL)
     {
         VERBOSEPRINTREG(cpu_id, filter0, filter_flags0, SETUP_CBOX_FILTER0);
@@ -557,7 +558,6 @@ int skx_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     {
         return -ENODEV;
     }
-
     flags = (1ULL<<20)|(1ULL<<22);
     flags |= (event->umask<<8) + event->eventId;
     if (event->numberOfOptions > 0)
@@ -598,7 +598,6 @@ int skx_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     return 0;
 }
-
 
 int skx_uncorebox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
@@ -846,11 +845,11 @@ int perfmon_setupCounterThread_skylake(
                 break;
             case SBOX0:
             case SBOX1:
+            case SBOX2:
                 skx_sbox_setup(cpu_id, index, event);
                 break;
             case BBOX0:
             case BBOX1:
-            case SBOX2:
             case RBOX0:
             case RBOX1:
             case RBOX2:
@@ -1011,13 +1010,13 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
                 case IBOX3:
                 case IBOX4:
                 case IBOX5:
-                case EUBOX0: 
+                case EUBOX0:
                 case EUBOX1:
                 case EUBOX2:
                 case EUBOX3:
                 case EUBOX4:
                 case EUBOX5:
-                
+
                 case IBOX0FIX:
                 case IBOX1FIX:
                 case IBOX2FIX:
@@ -1120,15 +1119,16 @@ int skl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
     //printf("%s: %lu\n", counter_map[index].key, result);
     result = field64(result, 0, box_map[type].regWidth);
     //printf("%s: %lu\n", counter_map[index].key, result);
-    printf("Old %llu Cur %llu CMP %d\n", *cur_result, result, (result < *cur_result));
     if (result < *cur_result)
     {
         uint64_t ovf_values = 0x0ULL;
         int global_offset = box_map[type].ovflOffset;
         int test_local = 0;
         uint32_t global_status_reg = MSR_UNC_V3_U_PMON_GLOBAL_STATUS;
-        if (cpuid_info.model == SKYLAKEX)
+        if (cpuid_info.model != SKYLAKEX)
+        {
             global_status_reg = MSR_V4_UNC_PERF_GLOBAL_STATUS;
+        }
         if (global_offset != -1)
         {
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV,
@@ -1239,7 +1239,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case THERMAL:
                     CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
                     break;
-                
+
                 case UBOXFIX:
                     if (haveLock)
                     {
@@ -1316,9 +1316,9 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case MBOX3:
                 case MBOX4:
                 case MBOX5:
-                    
+
                     skl_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
+                                    FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index)+1);
                     counter_result = *current;
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
                     break;
@@ -1331,7 +1331,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case MBOX6FIX:
                 case MBOX7FIX:
                     bdw_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, ovf_offset, -1);
+                                    FREEZE_FLAG_CLEAR_CTR, ovf_offset, 0);
                     counter_result = *current;
                     break;
                 case BBOX0:
@@ -1358,7 +1358,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                                     FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                     counter_result = *current;
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_BBOX)
-                    
+
                     break;
                 default:
                     break;
@@ -1375,7 +1375,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_STATUS, counter_result));
         }
     }
-    
+
 
     return 0;
 }
@@ -1452,7 +1452,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                     CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
                     eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
                     break;
-                
+
                 case UBOXFIX:
                 case WBOX0FIX:
                 case IBOX0FIX:
@@ -1523,7 +1523,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case MBOX4:
                 case MBOX5:
                     skl_uncore_read(cpu_id, index, event, current, overflows,
-                                    0, ovf_offset, getCounterTypeOffset(index));
+                                    0, ovf_offset, getCounterTypeOffset(index)+1);
                     counter_result = *current;
                     break;
                 case MBOX0FIX:
@@ -1533,7 +1533,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case MBOX4FIX:
                 case MBOX5FIX:
                     skl_uncore_read(cpu_id, index, event, current, overflows,
-                                    0, ovf_offset, -1);
+                                    0, ovf_offset, 0);
                     counter_result = *current;
                     break;
                 case BBOX0:
