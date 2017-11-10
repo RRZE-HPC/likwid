@@ -845,10 +845,6 @@ int perfmon_setupCounterThread_skylake(
                 break;
             case SBOX0:
             case SBOX1:
-                skx_sbox_setup(cpu_id, index, event);
-                break;
-            case BBOX0:
-            case BBOX1:
             case SBOX2:
                 skx_sbox_setup(cpu_id, index, event);
                 break;

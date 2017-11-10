@@ -1647,18 +1647,6 @@ perfmon_addEventSet(const char* eventCString)
 #endif
     }
 
-    cstringcopy = malloc((strlen(eventCString)+1)*sizeof(char));
-    if (!cstringcopy)
-        return -ENOMEM;
-    strcpy(cstringcopy, eventCString);
-    char* perf_pid = strstr(eventCString, "PERF_PID");
-    if (perf_pid != NULL)
-    {
-#ifdef LIKWID_USE_PERFEVENT
-        snprintf(cstringcopy, strlen(eventCString)-strlen(perf_pid), "%s", eventCString);
-#endif
-    }
-
     if (strchr(cstringcopy, ':') == NULL)
     {
         err = read_group(config->groupPath, cpuid_info.short_name,

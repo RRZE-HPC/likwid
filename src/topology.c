@@ -728,11 +728,6 @@ topology_setName(void)
                     cpuid_info.short_name = short_goldmontplus;
                     break;
 
-                case ATOM_GOLDMONT_PLUS:
-                    cpuid_info.name = atom_goldmontplus_str;
-                    cpuid_info.short_name = short_goldmontplus;
-                    break;
-
                 default:
                     cpuid_info.name = unknown_intel_str;
                     cpuid_info.short_name = short_unknown;
