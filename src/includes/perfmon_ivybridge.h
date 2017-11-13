@@ -1024,7 +1024,7 @@ int ivb_uncore_overflow(int cpu_id, RegisterIndex index, PerfmonEvent *event,
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV,
                                            MSR_UNC_U_PMON_GLOBAL_STATUS,
                                            &ovf_values));
-            if (ovf_values & (1<<global_offset))
+            if (ovf_values & (1ULL<<global_offset))
             {
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV,
                                                  MSR_UNC_U_PMON_GLOBAL_STATUS,
@@ -1052,7 +1052,7 @@ int ivb_uncore_overflow(int cpu_id, RegisterIndex index, PerfmonEvent *event,
                                               box_map[type].statusRegister,
                                               &ovf_values));
             }
-            if (ovf_values & (1<<box_offset))
+            if (ovf_values & (1ULL<<box_offset))
             {
                 (*overflows)++;
                 if (ivybridge_box_map[type].isPci)

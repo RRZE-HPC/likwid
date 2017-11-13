@@ -1339,7 +1339,7 @@ int has_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
                                            global_status_reg,
                                            &ovf_values));
             VERBOSEPRINTREG(cpu_id, global_status_reg, LLU_CAST ovf_values, READ_GLOBAL_OVFL);
-            if (ovf_values & (1<<global_offset))
+            if (ovf_values & (1ULL<<global_offset))
             {
                 VERBOSEPRINTREG(cpu_id, global_status_reg, LLU_CAST (1<<global_offset), CLEAR_GLOBAL_OVFL);
                 CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV,
@@ -1360,7 +1360,7 @@ int has_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
                                               box_map[type].statusRegister,
                                               &ovf_values));
             VERBOSEPRINTPCIREG(cpu_id, dev, box_map[type].statusRegister, LLU_CAST ovf_values, READ_BOX_OVFL);
-            if (ovf_values & (1<<box_offset))
+            if (ovf_values & (1ULL<<box_offset))
             {
                 (*overflows)++;
                 VERBOSEPRINTPCIREG(cpu_id, dev, box_map[type].statusRegister, LLU_CAST (1<<box_offset), RESET_BOX_OVFL);
