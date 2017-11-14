@@ -3084,8 +3084,8 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     }
     add_to_clist(&clist, "time", perfmon_getTimeOfRegion(region, threadId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
-    add_to_clist(&clist, "true", 1);
-    add_to_clist(&clist, "false", 0);
+    add_to_clist(&clist, "TRUE", 1);
+    add_to_clist(&clist, "FALSE", 0);
     int cpu = 0, sock_cpu = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
