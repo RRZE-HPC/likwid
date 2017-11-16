@@ -84,10 +84,11 @@ static char* xeon_mp_string = "Intel Xeon MP processor";
 static char* xeon_phi_string = "Intel Xeon Phi (Knights Corner) Coprocessor";
 static char* xeon_phi2_string = "Intel Xeon Phi (Knights Landing) (Co)Processor";
 static char* xeon_phi3_string = "Intel Xeon Phi (Knights Mill) (Co)Processor";
-static char* barcelona_str = "AMD Barcelona processor";
-static char* shanghai_str = "AMD Shanghai processor";
-static char* istanbul_str = "AMD Istanbul processor";
-static char* magnycours_str = "AMD Magny Cours processor";
+static char* barcelona_str = "AMD K10 (Barcelona) processor";
+static char* shanghai_str = "AMD K10 (Shanghai) processor";
+static char* istanbul_str = "AMD K10 (Istanbul) processor";
+static char* magnycours_str = "AMD K10 (Magny Cours) processor";
+static char* thuban_str = "AMD K10 (Thuban) processor";
 static char* interlagos_str = "AMD Interlagos processor";
 static char* kabini_str = "AMD Family 16 model - Kabini processor";
 static char* opteron_sc_str = "AMD Opteron single core 130nm processor";
@@ -813,6 +814,10 @@ topology_setName(void)
 
                 case MAGNYCOURS:
                     cpuid_info.name = magnycours_str;
+                    break;
+
+                case THUBAN:
+                    cpuid_info.name = thuban_str;
                     break;
 
                 default:
