@@ -37,6 +37,7 @@
 
 #include <topology.h>
 #include <affinity.h>
+#include <cpuid.h>
 #ifdef LIKWID_USE_HWLOC
 #include <hwloc.h>
 #include <topology_hwloc.h>
@@ -47,6 +48,25 @@
 hwloc_topology_t hwloc_topology = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+
+static int
+readCacheInclusiveIntel(int level)
+{
+    uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
+    eax = 0x04;
+    ecx = level;
+    CPUID(eax, ebx, ecx, edx);
+    return edx & 0x2;
+}
+
+static int readCacheInclusiveAMD(int level)
+{
+    uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
+    eax = 0x8000001D;
+    ecx = level;
+    CPUID(eax, ebx, ecx, edx);
+    return (edx & (0x1<<1));
+}
 
 #ifdef LIKWID_USE_HWLOC
 int
@@ -337,18 +357,31 @@ hwloc_init_cacheTopology(void)
         cachePool[id].threads = likwid_hwloc_record_objs_of_type_below_obj(
                         hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
 #if defined(__x86_64) || defined(__i386__)
-        while (!(info = likwid_hwloc_obj_get_info_by_name(obj, "inclusiveness")) && obj->next_cousin)
+        if (obj->infos_count > 0)
         {
-            obj = obj->next_cousin; // If some PU/core are not bindable because of cgroup, hwloc may not know the inclusiveness of some of their cache.
+            while (!(info = likwid_hwloc_obj_get_info_by_name(obj, "inclusiveness")) && obj->next_cousin)
+            {
+                // If some PU/core are not bindable because of cgroup, hwloc may
+                // not know the inclusiveness of some of their cache.
+                obj = obj->next_cousin;
+            }
+            if(info)
+            {
+                cachePool[id].inclusive = info[0]=='t';
+            }
+            else if (cpuid_info.isIntel)
+            {
+                cachePool[id].inclusive = readCacheInclusiveIntel(obj->attr->cache.depth);
+            }
         }
-        if(info)
+        else
         {
-            cachePool[id].inclusive = info[0]=='t';
-        }
-        else if (cpuid_info.isIntel)
-        {
-            DEBUG_PLAIN_PRINT(DEBUGLEV_ONLY_ERROR, Cannot read cache inclusiveness);
-            cachePool[id].inclusive = 0;
+            // If a CPU is already pinned, it might not get the cache infos,
+            // so we get the inclusiveness through CPUID
+            if (cpuid_info.isIntel)
+                cachePool[id].inclusive = readCacheInclusiveIntel(obj->attr->cache.depth);
+            else
+                cachePool[id].inclusive = readCacheInclusiveAMD(obj->attr->cache.depth);
         }
 #endif
 #if defined(_ARCH_PPC)
