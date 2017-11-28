@@ -621,9 +621,12 @@ likwid_markerGetRegion(
 {
     if (! likwid_init)
     {
-        *nr_events = 0;
-        *time = 0;
-        *count = 0;
+        if (nr_events)
+            *nr_events = 0;
+        if (time)
+            *time = 0;
+        if (count)
+            *count = 0;
         return;
     }
     int length = 0;
@@ -638,14 +641,19 @@ likwid_markerGetRegion(
 
     cpu_id = hashTable_get(tag, &results);
     thread_id = getThreadID(myCPU);
-    *count = results->count;
-    *time = results->time;
-    length = MIN(groupSet->groups[groupSet->activeGroup].numberOfEvents, *nr_events);
-    for(int i=0;i<length;i++)
+    if (count)
+        *count = results->count;
+    if (time)
+        *time = results->time;
+    if (nr_events && events && *nr_events > 0)
     {
-        events[i] = results->PMcounters[i];
+        length = MIN(groupSet->groups[groupSet->activeGroup].numberOfEvents, *nr_events);
+        for(int i=0;i<length;i++)
+        {
+            events[i] = results->PMcounters[i];
+        }
+        *nr_events = length;
     }
-    *nr_events = length;
     bdestroy(tag);
     return;
 }
