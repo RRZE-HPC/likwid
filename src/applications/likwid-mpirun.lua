@@ -214,18 +214,16 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
 
-    local f = io.popen(string.format("%s -V 2>&1", mpiexecutable), "r")
-    if f ~= nil then
-        local input = f:read("*a")
-        ver1,ver2,ver3 = input:match("(%d+)%.(%d+)%.(%d+)")
-        if ver1 == "1" then
-            if tonumber(ver2) >= 7 then
-                bindstr = "--bind-to none"
-            elseif ver2 == "6" then
-                bindstr = "--bind-to-none"
-            end
+
+    ver1,ver2 = getMpiVersion()
+    if ver1 == 1 then
+        if ver2 >= 7 then
+            bindstr = "--bind-to none"
+        elseif ver2 == "6" then
+            bindstr = "--bind-to-none"
         end
-        f:close()
+    elseif ver1 == 2 then
+        bindstr = "--bind-to none"
     end
 
     local cmd = string.format("%s -hostfile %s %s -np %d -npernode %d %s %s",
@@ -649,6 +647,40 @@ local function getMpiType()
         print_stderr("WARN: No supported MPI loaded in module system")
     end
     return mpitype
+end
+
+function getMpiVersion()
+    maj = nil
+    min = nil
+    intel_match = "Version (%d+) Update (%d+)"
+    openmpi_match = "(%d+)%.(%d+)%.%d+"
+    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun"}) do
+        f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
+        if f ~= nil then
+            mpiexec = f:read("*line")
+            if mpiexec then
+                cmd = mpiexec .. " --version"
+                f:close()
+                f = io.popen(cmd, 'r')
+                if f ~= nil then
+                    local t = f:read("*all")
+                    f:close()
+                    for l in t:gmatch("[^\r\n]+") do
+                        if l:match(intel_match) then
+                            maj, min = l:match(intel_match)
+                            maj = tonumber(maj)
+                            min = tonumber(min)
+                        elseif l:match(openmpi_match) then
+                            maj, min = l:match(openmpi_match)
+                            maj = tonumber(maj)
+                            min = tonumber(min)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return maj, min
 end
 
 local function getMpiExec(mpitype)
@@ -1930,14 +1962,19 @@ end
 
 if skipStr == "" then
     if mpitype == "intelmpi" then
-        if omptype == "intel" and nrNodes > 1 then
-            skipStr = '-s 0x3'
-        elseif omptype == "intel" and nrNodes == 1 then
-            skipStr = '-s 0x3'
-        elseif omptype == "gnu" and nrNodes > 1 then
-            skipStr = '-s 0x1'
-        elseif omptype == "gnu" and nrNodes == 1 then
-            skipStr = '-s 0x0'
+        maj, min = getMpiVersion()
+        if maj < 2017 and min <= 1 then
+            if omptype == "intel" and nrNodes > 1 then
+                skipStr = '-s 0x3'
+            elseif omptype == "intel" and nrNodes == 1 then
+                skipStr = '-s 0x3'
+            elseif omptype == "gnu" and nrNodes > 1 then
+                skipStr = '-s 0x1'
+            elseif omptype == "gnu" and nrNodes == 1 then
+                skipStr = '-s 0x0'
+            end
+        else
+            skipStr = "-s 0x0"
         end
     elseif mpitype == "mvapich2" then
         if omptype == "intel" and nrNodes > 1 then
