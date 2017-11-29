@@ -92,6 +92,7 @@ end
 
 local np = 0
 local ppn = 0
+local tpp = 1
 local nperdomain = nil
 local npernode = 0
 local cpuexprs = {}
@@ -103,6 +104,7 @@ local mpitype = nil
 local omptype = nil
 local skipStr = ""
 local executable = {}
+local envsettings = {}
 local mpiopts = {}
 local debug = false
 local use_marker = false
@@ -174,8 +176,14 @@ local function readHostfileOpenMPI(filename)
         if host["maxslots"] == nil or host["maxslots"] == 0 then
             host["maxslots"] = topo.numHWThreads
         end
-        if debug then
-            print_stdout(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
+    end
+    if debug then
+        print_stdout("Available hosts for scheduling:")
+        s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
+        print_stdout(s)
+        for i, host in pairs(hostlist) do
+            s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
+            print_stdout (s)
         end
     end
     return hostlist
@@ -263,8 +271,12 @@ local function readHostfileIntelMPI(filename)
         end
     end
     if debug then
+        print_stdout("Available hosts for scheduling:")
+        s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
+        print_stdout(s)
         for i, host in pairs(hostlist) do
-            print_stdout(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
+            s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
+            print_stdout (s)
         end
     end
     return hostlist
@@ -392,8 +404,14 @@ local function readHostfileMvapich2(filename)
         end
     end
     if debug then
-        for i, host in pairs(hostlist) do
-            print_stdout(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
+        if debug then
+            print_stdout("Available hosts for scheduling:")
+            s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
+            print_stdout(s)
+            for i, host in pairs(hostlist) do
+                s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
+                print_stdout (s)
+            end
         end
     end
     return hostlist
@@ -485,8 +503,12 @@ local function readHostfilePBS(filename)
         end
     end
     if debug then
+        print_stdout("Available hosts for scheduling:")
+        s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
+        print_stdout(s)
         for i, host in pairs(hostlist) do
-            print_stdout(string.format("DEBUG: Read host %s with %d slots and %d slots maximally", host["hostname"], host["slots"], host["maxslots"]))
+            s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
+            print_stdout (s)
         end
     end
     return hostlist
@@ -497,6 +519,15 @@ local function readHostfileSlurm(hostlist)
     if hostlist and nperhost then
         hostfile = write_hostlist_to_file(hostlist, nperhost)
         hosts = readHostfilePBS(hostfile)
+        if debug then
+            print_stdout("Available hosts for scheduling:")
+            s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
+            print_stdout(s)
+            for i, host in pairs(hosts) do
+                s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
+                print_stdout (s)
+            end
+        end
         os.remove(hostfile)
     end
     return hosts
@@ -778,23 +809,18 @@ local function getOmpType()
     return omptype
 end
 
-local function assignHosts(hosts, np, ppn)
+local function assignHosts(hosts, np, ppn, tpp)
     tmp = np
     newhosts = {}
     current = 0
     if debug then
-        print_stdout(string.format("Assign %d processes with %d per node to %d hosts", np, ppn, #hosts))
-        print_stdout("Available hosts for scheduling:")
-        print_stdout("Host", "Slots", "MaxSlots", "Interface")
-        for i, h in pairs(hosts) do
-            print_stdout (h["hostname"], h["slots"], h["maxslots"],"", h["interface"])
-        end
+        print_stdout(string.format("DEBUG: Assign %d processes with %d per node and %d threads per process to %d hosts", np, ppn, tpp, #hosts))
     end
     local break_while = false
     while tmp > 0 and #hosts > 0 do
         for i, host in pairs(hosts) do
-            if host["slots"] and host["slots"] >= ppn then
-                if host["maxslots"] and host["maxslots"] < ppn then
+            if host["slots"] and host["slots"] >= ppn*tpp then
+                if host["maxslots"] and host["maxslots"] < ppn*tpp then
                     table.insert(newhosts, {hostname=host["hostname"],
                                             slots=host["maxslots"],
                                             maxslots=host["maxslots"],
@@ -806,17 +832,17 @@ local function assignHosts(hosts, np, ppn)
                     hosts[i] = nil
                 else
                     table.insert(newhosts, {hostname=host["hostname"],
-                                            slots=ppn,
+                                            slots=ppn*tpp,
                                             maxslots=host["slots"],
                                             interface=host["interface"]})
                     if debug then
-                        print_stdout(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], ppn))
+                        print_stdout(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], ppn*tpp))
                     end
-                    current = ppn
+                    current = ppn*tpp
                     hosts[i] = nil
                 end
             elseif host["slots"] then
-                --[[if host["maxslots"] then
+                --[[if host["maxslotsno"] then
                     if host["maxslots"] < ppn then
                         print_stderr(string.format("WARN: Oversubscription for host %s needed, but max-slots set to %d.",
                                                 host["hostname"], host["maxslots"]))
@@ -847,19 +873,19 @@ local function assignHosts(hosts, np, ppn)
                 os.exit(1)
             else
                 table.insert(newhosts, {hostname=host["hostname"],
-                                        slots=ppn,
+                                        slots=ppn*tpp,
                                         maxslots=host["slots"],
                                         interface=host["interface"]})
                 if debug then
-                    print_stdout(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], ppn))
+                    print_stdout(string.format("DEBUG: Add Host %s with %d slots to host list", host["hostname"], ppn*tpp))
                 end
-                current = ppn
+                current = ppn*tpp
             end
             tmp = tmp - current
             if tmp < 1 then
                 break_while = true
                 break
-            elseif tmp < ppn then
+            elseif tmp < ppn*tpp then
                 ppn = tmp
             end
         end
@@ -911,7 +937,7 @@ local function calculatePinExpr(cpuexprs)
         for _, c in pairs(list) do
             table.insert(strList, c)
         end
-        table.insert(newexprs, table.concat(strList,","))
+        table.insert(newexprs, strList)
     end
     return newexprs
 end
@@ -921,7 +947,10 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
     local affinity = likwid.getAffinityInfo()
     local domainlist = {}
     local newexprs = {}
-    domainname, count = nperdomain:match("[E:]*(%g*):(%d+)")
+    domainname, count, threads = nperdomain:match("[E]*[:]*([NSCM]*):(%d+)[:]*(%d*)")
+    count = math.tointeger(count)
+    threads = math.tointeger(threads)
+    if threads == nil then threads = 1 end
 
     for i, domain in pairs(affinity["domains"]) do
         if domain["tag"]:match(domainname.."%d*") then
@@ -945,14 +974,18 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
         end
         local tmplist = {}
         for j=1,count do
-            table.insert(newexprs, tostring(sortedlist[1]))
-            table.remove(sortedlist, 1)
+            local tmplist = {}
+            for t=1,threads do
+                table.insert(tmplist, tostring(sortedlist[1]))
+                table.remove(sortedlist, 1)
+            end
+            table.insert(newexprs, tmplist)
         end
     end
     if debug then
         local str = "DEBUG: Resolved NperDomain string "..nperdomain.." to CPUs: "
         for i, expr in pairs(newexprs) do
-            str = str .. expr .. " "
+            str = str .. "[" .. table.concat(expr,",") .. "]" .. " "
         end
         print_stdout(str)
     end
@@ -990,7 +1023,7 @@ local function setPerfStrings(perflist, cpuexprs)
             for j,cpu in pairs(d["processorList"]) do
                 table.insert(tmpList, cpu)
             end
-            table.insert(socketList, tmpList)
+            table.insert(socketList, notmpList)
             table.insert(socketListFlags, 1)
         end
     end
@@ -1081,7 +1114,7 @@ local function checkLikwid()
     end
 end
 
-local function writeWrapperScript(scriptname, execStr, hosts, outputname)
+local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outputname)
     if scriptname == nil or scriptname == "" then
         return
     end
@@ -1153,7 +1186,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
         end
         table.insert(cmd,skipStr)
         table.insert(cmd,cpuexpr_opt)
-        table.insert(cmd,cpuexprs[i])
+        table.insert(cmd,table.concat(cpuexprs[i], ","))
         if #perf > 0 then
             for j, expr in pairs(perfexprs) do
                 table.insert(cmd,"-g")
@@ -1176,6 +1209,12 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
     end
     if mpitype == "intelmpi" then
         f:write("export I_MPI_PIN=disable\n")
+    end
+    for i, e in pairs(envsettings) do
+        if debug then
+            print_stdout(string.format("DEBUG: Env %s", e))
+        end
+        f:write(string.format("export %s\n", e))
     end
     f:write("LOCALSIZE="..losize_var.."\n\n")
 
@@ -1203,14 +1242,14 @@ local function writeWrapperScript(scriptname, execStr, hosts, outputname)
 
     f:write("if [ \"$LOCALRANK\" -eq 0 ]; then\n")
     if debug then
-        print_stdout("NODE_EXEC: "..commands[1])
+        print_stdout(string.format("EXEC (Rank 0): %s",commands[1]))
     end
     f:write("\t"..commands[1].."\n")
 
     for i=2,#commands do
         f:write("elif [ \"$LOCALRANK\" -eq "..tostring(i-1).." ]; then\n")
         if debug then
-            print_stdout("NODE_EXEC: "..commands[i])
+            print_stdout(string.format("EXEC (Rank %d): %s", i-1,commands[i]))
         end
         f:write("\t"..commands[i].."\n")
     end
@@ -1628,7 +1667,19 @@ if #arg == 0 then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:","h","help","v","g:","group:","mpi:","omp:","d","m","O","debug","marker","version","s:","skip:","f"}) do
+local cmd_options = {"h","help", -- default options for help message
+                     "v","version", -- default options for version message
+                     "d", "debug", -- activate debugging output
+                     "n:","np:", -- default options for number of MPI processes
+                     "t:","tpp:", -- default options for number of threads per process
+                     "mpi:","omp:", -- options to overwrite detection
+                     "s:","skip:", -- options to specify custom skip mask for threads
+                     "g:","group:", -- options to set group for performance measurements using likwid
+                     "m","marker", -- options to activate MarkerAPI
+                     "e:", "env:", -- options to forward environment variables
+                     "nperdomain:","pin:","hostfile:","O","f"} -- other options
+
+for opt,arg in likwid.getopt(arg,  cmd_options) do
     if (type(arg) == "string") then
         local s,e = arg:find("-")
         if s == 1 then
@@ -1658,12 +1709,32 @@ for opt,arg in likwid.getopt(arg, {"n:","np:", "nperdomain:","pin:","hostfile:",
             print_stderr("Argument for -n/-np must be a number")
             os.exit(1)
         end
+    elseif opt == "t" or opt == "tpp" then
+        tpp = tonumber(arg)
+        if tpp == nil then
+            print_stderr("Argument for -t/-tpp must be a number")
+            os.exit(1)
+        end
+        if tpp == 0 then
+            print_stderr("Cannot run with 0 threads, at least 1 is required, sanitizing tpp to 1")
+            tpp = 1
+        end
     elseif opt == "nperdomain" then
-        nperdomain = arg
-        local domain, count = nperdomain:match("([NSCM]%d*):(%d+)")
-        if domain == nil then
+        local domain, count, threads = arg:match("([NSCM]):(%d+)[:]*(%d*)")
+        if domain == nil or count == nil then
             print_stderr("Invalid option to -nperdomain")
             os.exit(1)
+        end
+        nperdomain = string.format("%s:%s", domain, count)
+        if threads ~= nil then
+            nperdomain = nperdomain .. ":" ..threads
+        end
+    elseif opt == "e" or opt == "env" then
+        name, val = arg:match("([%a%d]+)=([%a%d]+)")
+        if name == nil or val == nil then
+            print_stderr("Invalid argument for -e/-env, must be varname=varvalue")
+        else
+            table.insert(envsettings, arg)
         end
     elseif opt == "hostfile" then
         hostfile = arg
@@ -1744,6 +1815,10 @@ end
 
 if mpitype == nil then
     mpitype = getMpiType()
+    if mpitype == nil then
+        print_stderr("ERROR: Cannot find MPI implementation")
+        os.exit(1)
+    end
     if debug then
         print_stdout("DEBUG: Using MPI implementation "..mpitype)
     end
@@ -1825,12 +1900,15 @@ if #cpuexprs > 0 then
     if debug then
         str = "["
         for i, expr in pairs(cpuexprs) do
-            str = str .. "["..expr.."], "
+            str = str .. "["..table.concat(expr,",").."], "
         end
         str = str:sub(1,str:len()-2) .. "]"
         print_stdout("DEBUG: Evaluated CPU expressions: ".. str)
     end
     ppn = #cpuexprs
+    tpp = #cpuexprs[1]
+    print(tpp)
+
     if np == 0 then
         if debug then
             print_stdout(string.format("DEBUG: No -np given , setting according to pin expression and number of available hosts"))
@@ -1850,14 +1928,38 @@ if #cpuexprs > 0 then
         np = #cpuexprs*givenNrNodes
         ppn = #cpuexprs
     end
-    newhosts = assignHosts(hosts, np, ppn)
+    newhosts, ppn = assignHosts(hosts, np, ppn, tpp)
     if np > #cpuexprs*#newhosts and #perf > 0 then
         print_stderr("ERROR: Oversubsribing not allowed.")
         print_stderr(string.format("ERROR: You want %d processes but the pinning expression has only expressions for %d processes. There are only %d hosts in the host list.", np, #cpuexprs*#newhosts, #newhosts))
         os.exit(1)
     end
-elseif nperdomain ~= nil then
+else 
+    ppn = math.tointeger(np / givenNrNodes)
+    if nperdomain == nil then
+        nperdomain = "N:"..tostring(ppn)
+        if tpp > 0 then
+            nperdomain = nperdomain..":"..tostring(tpp)
+        end
+    end
+    domainname, count, threads = nperdomain:match("[E]*[:]*([NSCM]*):(%d+)[:]*(%d*)")
+    if math.tointeger(threads) == nil then
+        if tpp > 1 then
+            nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp)
+        else
+            tpp = 1
+            nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp)
+        end
+    else
+        tpp = math.tointeger(threads)
+        nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp)
+    end
     cpuexprs = calculateCpuExprs(nperdomain, cpuexprs)
+    if debug then
+        for p, ex in pairs(cpuexprs) do
+            print_stdout(string.format("DEBUG: Process %d runs on CPUs %s", p, table.concat(ex, ",")))
+        end
+    end
     ppn = #cpuexprs
     if np == 0 then
         np = givenNrNodes * ppn
@@ -1878,72 +1980,9 @@ elseif nperdomain ~= nil then
         print_stderr(string.format("ERROR: You want %d processes with %d on each of the %d hosts", np, ppn, givenNrNodes))
         os.exit(1)
     end
-    newhosts, ppn = assignHosts(hosts, np, ppn)
-elseif ppn == 0 and np > 0 then
-    maxnp = 0
-    maxppn = 0
-    for i, host in pairs(hosts) do
-        maxnp = maxnp + host["slots"]
-        if host["slots"] > maxppn then
-            maxppn = host["slots"]
-        end
-    end
-    if ppn == 0 then
-        ppn = 1
-    end
-    if ppn > maxppn and np > maxppn then
-        ppn = maxppn
-    elseif np < maxppn then
-        ppn = np
-    elseif maxppn == np then
-        ppn = maxppn
-    end
-    if (ppn * givenNrNodes) < np then
-        if #perf == 0 then
-            print_stderr("ERROR: Processes cannot be equally distributed")
-            print_stderr(string.format("WARN: You want %d processes on %d hosts.", np, givenNrNodes))
-            ppn = np/givenNrNodes
-            print_stderr(string.format("WARN: Sanitizing number of processes per node to %d", ppn))
-        else
-            ppn = 0
-            os.exit(1)
-        end
-    end
-    local newexprs = calculateCpuExprs("E:N:"..tostring(ppn), cpuexprs)
-    local copynp = np
-    while copynp > 0 do
-        for i, expr in pairs(newexprs) do
-            local exprlist = likwid.stringsplit(expr, ",")
-            local seclength = math.ceil(#exprlist/ppn)
-            local offset = 0
-            for p=1, ppn do
-                local str = ""
-                for j=1, seclength do
-                    if exprlist[((p-1)*seclength) + j] then
-                        str = str .. exprlist[((p-1)*seclength) + j] ..","
-                    end
-                end
-                if str ~= "" then
-                    str = str:sub(1,#str-1)
-                    table.insert(cpuexprs, str)
-                    copynp = copynp - seclength
-                else
-                    break
-                end
-            end
-        end
-    end
-    newhosts, ppn = assignHosts(hosts, np, ppn)
-    if np < ppn*#newhosts then
-        np = 0
-        for i, host in pairs(newhosts) do
-            np = np + host["slots"]
-        end
-    end
-else
-    print_stderr("ERROR: Commandline settings are not supported.")
-    os.exit(1)
+    newhosts, ppn = assignHosts(hosts, np, ppn, tpp)
 end
+
 
 local grouplist = {}
 if #perf > 0 then
@@ -2009,7 +2048,7 @@ if writeHostfile == nil or getEnvironment == nil or executeCommand == nil then
 end
 
 writeHostfile(newhosts, hostfilename)
-writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, outfilename)
+writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, envsettings, outfilename)
 local env = getEnvironment()
 local exitvalue = executeCommand(scriptfilename, hostfilename, env, nrNodes)
 
