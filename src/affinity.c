@@ -457,7 +457,6 @@ affinity_init()
     affinityDomains.numberOfProcessorsPerCache = numberOfProcessorsPerCache;
     affinityDomains.domains = domains;
     affinity_initialized = 1;
-    perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 }
 
 void
