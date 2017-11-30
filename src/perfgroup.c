@@ -1562,7 +1562,6 @@ double do_calc(int cpu, char* s, char* vars, char* varlist)
     {
         return res;
     }
-    printf("%s\n", t);
     ret = luaL_dostring (L, t);
     if (!ret)
     {
