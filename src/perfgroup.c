@@ -1491,6 +1491,23 @@ int add_var(char* name, char* value, char** varstr, char** varlist)
     return 0;
 }
 
+int add_dbl_var(char* name, double value, char** varstr, char** varlist)
+{
+    int slen = 0;
+    int ret = 0;
+    if (*varstr)
+        slen = strlen(*varstr);
+    int add = strlen(name) + 45;
+    *varstr = realloc_buffer(*varstr, slen + add + 4);
+    if (!*varstr)
+    {
+        return -ENOMEM;
+    }
+    ret = snprintf(&((*varstr)[slen]), add+4, "%s = %20.20f\n", name, value);
+    ret = add_to_varlist(name, varlist);
+    return 0;
+}
+
 int add_def(char* name, char* value, int cpu, char** varlist)
 {
     int slen = 0;
@@ -1545,7 +1562,7 @@ double do_calc(int cpu, char* s, char* vars, char* varlist)
     {
         return res;
     }
-
+    printf("%s\n", t);
     ret = luaL_dostring (L, t);
     if (!ret)
     {
@@ -1586,39 +1603,23 @@ char* do_expand(int cpu, char* s, char *varlist)
 
 
 int
-calc_metric(char* formula, CounterList* clist, double *result)
+calc_metric(int cpu, char* formula, char* vars, char* varlist, double *result)
 {
     int i=0;
     char* f;
     int maxstrlen = 0, minstrlen = 10000;
-    int cpu = 0;
     char buf[128];
 
-    if ((formula == NULL) || (clist == NULL) || (result == NULL))
+    if ((formula == NULL) || (vars == NULL) || (varlist == NULL) || (result == NULL))
         return -EINVAL;
     *result = 0.0;
 
-    char* vars = NULL;
-    char* varlist = NULL;
-
-    for(i=0;i<clist->counters;i++)
-    {
-        snprintf(buf, 127, "%.25f", clist->cvalues[i]);
-        add_var(clist->cnames[i], buf, &vars, &varlist);
-        if (strcmp(clist->cnames[i], "CPU") == 0)
-            cpu = (int)clist->cvalues[i];
-        memset(buf, 0, 128 * sizeof(char));
-    }
     f = do_expand(cpu, formula, varlist);
     if (f)
     {
         *result = do_calc(cpu, f, vars, varlist);
     }
 
-    if (vars)
-        free(vars);
-    if (varlist)
-        free(varlist);
     return i;
 }
 

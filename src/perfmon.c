@@ -2307,7 +2307,10 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
 {
     int e = 0;
     double result = 0;
-    CounterList clist;
+    char* vars = NULL;
+    char* varlist = NULL;
+    char split[2] = ":";
+    //CounterList clist;
     if (unlikely(groupSet == NULL))
     {
         return 0;
@@ -2333,17 +2336,16 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     {
         return 0.0;
     }
-    timer_init();
-    init_clist(&clist);
     for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
     {
-        add_to_clist(&clist,groupSet->groups[groupId].group.counters[e],
-                     perfmon_getResult(groupId, e, threadId));
+        char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
+        add_dbl_var(ctr, perfmon_getLastResult(groupId, e, threadId),
+                &vars, &varlist);
     }
-    add_to_clist(&clist, "time", perfmon_getTimeOfGroup(groupId));
-    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
-    add_to_clist(&clist, "TRUE", 1);
-    add_to_clist(&clist, "FALSE", 0);
+    add_dbl_var("time", perfmon_getLastTimeOfGroup(groupId), &vars, &varlist);
+    add_dbl_var("inverseClock", 1.0/timer_getCycleClock(), &vars, &varlist);
+    add_var("TRUE", "true", &vars, &varlist);
+    add_var("FALSE", "false", &vars, &varlist);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -2352,7 +2354,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
-    add_to_clist(&clist, "CPU", cpu);
+    add_dbl_var("CPU", cpu, &vars, &varlist);
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
@@ -2368,7 +2370,10 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
             if (perfmon_isUncoreCounter(groupSet->groups[groupId].group.counters[e]) &&
                 !perfmon_isUncoreCounter(groupSet->groups[groupId].group.metricformulas[metricId]))
             {
-                err = update_clist(&clist,groupSet->groups[groupId].group.counters[e], perfmon_getResult(groupId, e, sock_cpu));
+/*                err = update_clist(&clist,groupSet->groups[groupId].group.counters[e], perfmon_getResult(groupId, e, sock_cpu));*/
+                char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
+                err = add_dbl_var(ctr, perfmon_getLastResult(groupId, e, sock_cpu),
+                              &vars, &varlist);
                 if (err < 0)
                 {
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
@@ -2376,13 +2381,18 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
             }
         }
     }
-    e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
+    //e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
+    e = calc_metric(cpu, groupSet->groups[groupId].group.metricformulas[metricId], vars, varlist, &result);
+    if (vars)
+        free(vars);
+    if (varlist)
+        free(varlist);
     if (e < 0)
     {
         result = 0.0;
         //ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
     }
-    destroy_clist(&clist);
+    //destroy_clist(&clist);
     return result;
 }
 
@@ -2391,7 +2401,10 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
 {
     int e = 0;
     double result = 0;
-    CounterList clist;
+    char* vars = NULL;
+    char* varlist = NULL;
+    char split[2] = ":";
+    //CounterList clist;
     if (unlikely(groupSet == NULL))
     {
         return 0;
@@ -2417,17 +2430,17 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     {
         return 0.0;
     }
-    timer_init();
-    init_clist(&clist);
+
     for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
     {
-        add_to_clist(&clist,groupSet->groups[groupId].group.counters[e],
-                     perfmon_getLastResult(groupId, e, threadId));
+        char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
+        add_dbl_var(ctr, perfmon_getLastResult(groupId, e, threadId),
+                &vars, &varlist);
     }
-    add_to_clist(&clist, "time", perfmon_getLastTimeOfGroup(groupId));
-    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
-    add_to_clist(&clist, "TRUE", 1);
-    add_to_clist(&clist, "FALSE", 0);
+    add_dbl_var("time", perfmon_getLastTimeOfGroup(groupId), &vars, &varlist);
+    add_dbl_var("inverseClock", 1.0/timer_getCycleClock(), &vars, &varlist);
+    add_var("TRUE", "true", &vars, &varlist);
+    add_var("FALSE", "false", &vars, &varlist);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -2436,7 +2449,8 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
-    add_to_clist(&clist, "CPU", cpu);
+/*    add_to_clist(&clist, "CPU", cpu);*/
+    add_dbl_var("CPU", cpu, &vars, &varlist);
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
@@ -2452,7 +2466,10 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
             if (perfmon_isUncoreCounter(groupSet->groups[groupId].group.counters[e]) &&
                 !perfmon_isUncoreCounter(groupSet->groups[groupId].group.metricformulas[metricId]))
             {
-                err = update_clist(&clist,groupSet->groups[groupId].group.counters[e], perfmon_getLastResult(groupId, e, sock_cpu));
+                //err = update_clist(&clist,groupSet->groups[groupId].group.counters[e], perfmon_getLastResult(groupId, e, sock_cpu));
+                char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
+                err = add_dbl_var(ctr, perfmon_getLastResult(groupId, e, sock_cpu),
+                              &vars, &varlist);
                 if (err < 0)
                 {
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
@@ -2460,13 +2477,17 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
             }
         }
     }
-    e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
+    e = calc_metric(cpu, groupSet->groups[groupId].group.metricformulas[metricId], vars, varlist, &result);
+    if (vars)
+        free(vars);
+    if (varlist)
+        free(varlist);
     if (e < 0)
     {
         result = 0.0;
         //ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
     }
-    destroy_clist(&clist);
+    //destroy_clist(&clist);
     return result;
 }
 
@@ -3045,7 +3066,9 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
 {
     int e = 0, err = 0;
     double result = 0.0;
-    CounterList clist;
+    char split[2] = ":";
+    char *vars = NULL;
+    char *varlist = NULL;
     if (perfmon_initialized != 1)
     {
         ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
@@ -3067,25 +3090,24 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     {
         return -EINVAL;
     }
-    timer_init();
-    init_clist(&clist);
+
     for (e=0;e<markerResults[region].eventCount;e++)
     {
-        err = add_to_clist(&clist,
-                     groupSet->groups[markerResults[region].groupID].group.counters[e],
-                     perfmon_getResultOfRegionThread(region, e, threadId));
+        char* ctr = strtok(groupSet->groups[markerResults[region].groupID].group.counters[e], split);
+        err = add_dbl_var(ctr, perfmon_getResultOfRegionThread(region, e, threadId), &vars, &varlist);
         if (err)
         {
             printf("Cannot add counter %s to counter list for metric calculation\n",
                     counter_map[groupSet->groups[markerResults[region].groupID].events[e].index].key);
-            destroy_clist(&clist);
+            if (vars) free(vars);
+            if (varlist) free(varlist);
             return 0;
         }
     }
-    add_to_clist(&clist, "time", perfmon_getTimeOfRegion(region, threadId));
-    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
-    add_to_clist(&clist, "TRUE", 1);
-    add_to_clist(&clist, "FALSE", 0);
+    add_dbl_var("time", perfmon_getTimeOfRegion(region, threadId), &vars, &varlist);
+    add_dbl_var("inverseClock", 1.0/timer_getCycleClock(), &vars, &varlist);
+    add_var("TRUE", "true", &vars, &varlist);
+    add_var("FALSE", "false", &vars, &varlist);
     int cpu = 0, sock_cpu = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -3094,6 +3116,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
+    add_dbl_var("CPU", cpu, &vars, &varlist);
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
@@ -3109,7 +3132,8 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
             if (perfmon_isUncoreCounter(groupSet->groups[markerResults[region].groupID].group.counters[e]) &&
                 !perfmon_isUncoreCounter(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId]))
             {
-                err = update_clist(&clist,groupSet->groups[markerResults[region].groupID].group.counters[e], perfmon_getResultOfRegionThread(region, e, sock_cpu));
+                char *ctr = strtok(groupSet->groups[markerResults[region].groupID].group.counters[e], split);
+                err = add_dbl_var(ctr, perfmon_getResultOfRegionThread(region, e, sock_cpu), &vars, &varlist);
                 if (err < 0)
                 {
                     DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[markerResults[region].groupID].group.counters[e], threadId);
@@ -3117,12 +3141,16 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
             }
         }
     }
-    err = calc_metric(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId], &clist, &result);
+    char* f = groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId];
+    err = calc_metric(cpu, f, vars, varlist, &result);
+    if (vars)
+        free(vars);
+    if (varlist)
+        free(varlist);
     if (err < 0)
     {
-        ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId]);
+        ERROR_PRINT(Cannot calculate formula %s, f);
     }
-    destroy_clist(&clist);
     return result;
 }
 

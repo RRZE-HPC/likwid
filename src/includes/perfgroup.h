@@ -88,6 +88,8 @@ extern int add_to_clist(CounterList* clist, char* counter, double result);
 extern int update_clist(CounterList* clist, char* counter, double result);
 extern void destroy_clist(CounterList* clist);
 
-extern int calc_metric(char* formula, CounterList* clist, double *result);
+int add_var(char* name, char* value, char** varstr, char** varlist);
+int add_dbl_var(char* name, double value, char** varstr, char** varlist);
+extern int calc_metric(int cpu, char* formula, char* varstr, char* varlist, double *result);
 
 #endif /* PERFGROUP_H */

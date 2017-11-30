@@ -16,7 +16,7 @@ Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 Used cycles ratio [%] 100*PMC0/PMC2
 Unused cycles ratio [%] 100*PMC1/PMC2
-Avg stall duration [cycles] PMC1/PMC3:EDGEDETECT
+Avg stall duration [cycles] PMC1/PMC3
 
 
 LONG
