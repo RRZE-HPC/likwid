@@ -13,9 +13,9 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-L3 request rate PMC1:MATCH0=0x0081:MATCH1=0x1/FIXC0
-L3 miss rate PMC0:MATCH0=0x0081:MATCH1=0x3fffc0/FIXC0
-L3 miss ratio PMC0:MATCH0=0x0081:MATCH1=0x3fffc0/PMC1:MATCH0=0x0081:MATCH1=0x1
+L3 request rate PMC1/FIXC0
+L3 miss rate PMC0/FIXC0
+L3 miss ratio PMC0/PMC1
 
 LONG
 Formulas:

@@ -14,10 +14,10 @@ Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 L2 non-RFO bandwidth [MBytes/s] 1.E-06*(PMC0)*64.0/time
 L2 non-RFO data volume [GByte] 1.E-09*PMC0*64.0
-L2 RFO bandwidth [MBytes/s] 1.E-06*(PMC1:MATCH0=0x0002:MATCH1=0x1)*64.0/time
-L2 RFO data volume [GByte] 1.E-09*(PMC1:MATCH0=0x0002:MATCH1=0x1)*64.0
-L2 bandwidth [MBytes/s] 1.E-06*(PMC0+PMC1:MATCH0=0x0002:MATCH1=0x1)*64.0/time
-L2 data volume [GByte] 1.E-06*(PMC0+PMC1:MATCH0=0x0002:MATCH1=0x1)*64.0
+L2 RFO bandwidth [MBytes/s] 1.E-06*(PMC1)*64.0/time
+L2 RFO data volume [GByte] 1.E-09*(PMC1)*64.0
+L2 bandwidth [MBytes/s] 1.E-06*(PMC0+PMC1)*64.0/time
+L2 data volume [GByte] 1.E-06*(PMC0+PMC1)*64.0
 
 LONG
 Formula:
