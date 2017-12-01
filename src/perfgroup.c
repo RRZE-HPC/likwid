@@ -1574,7 +1574,7 @@ static double do_calc(int cpu, char* s, bstring vars)
         bconcat(scratch, vars);
         bcatcstr(scratch, "\n");
     }
-    
+
     bcatcstr(scratch, "return ");
     bcatcstr(scratch, s);
     bcatcstr(scratch, "\n");
@@ -1627,7 +1627,14 @@ calc_metric(int cpu, char* formula, bstring vars, bstring varlist, double *resul
     int maxstrlen = 0, minstrlen = 10000;
     char buf[128];
 
-    if ((formula == NULL) || (vars == NULL) || (varlist == NULL) || (result == NULL))
+    if ((formula == NULL) ||
+        (result == NULL) ||
+        (cpu < 0) ||
+        (cpu > cpuid_topology.numHWThreads) ||
+        (vars == NULL) ||
+        (varlist == NULL))
+        return -EINVAL;
+    if (strlen(formula) == 0 || blength(vars) == 0 || blength(varlist) == 0)
         return -EINVAL;
     *result = NAN;
 
