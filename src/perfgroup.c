@@ -52,13 +52,18 @@
 
 
 char* in_func_str = "require('math');function SUM(...);local s = 0;for k,v in pairs({...}) do;s = s + v;end;return s;end;function ARGS(...) return #arg end;function AVG(...) return SUM(...)/ARGS(...) end;MEAN = AVG;function MIN(...) return math.min(...) end;function MAX(...) return math.max(...) end;function MEDIAN(...);local x = {...};local l = ARGS(...);table.sort(x);return x[math.floor(l/2)];end;function PERCENTILE(perc, ...);local x = {...};local xlen = #x;table.sort(x);local idx = math.ceil((perc/100.0)*xlen);return x[idx];end;function IFELSE(cond, valid, invalid);if cond then;return valid;else;return invalid;end;end";
-char* in_expand_str = "function expand_str(x);hist = {};runs = 0;for pref, elem in x:gmatch('([%a%d]*)%[([%d,]+)%]') do;runs = runs + 1;matches = {};for num in elem:gmatch('%d+') do;for _,v in pairs(varlist) do;if v:match(string.format('.*%s%s.*', pref, num)) then;if not hist[v] then;hist[v] = 1;else;hist[v] = hist[v] + 1;end;end;end;end;end;res = {};for k,v in pairs(hist) do;if v == runs then table.insert(res, k) end;end;return table.concat(res, ',');end;function eval_str(s);repl = {};fcopy = s;for x in s:gmatch('[%a%d%[%],%.]+') do;if x:match('%[') and x:match('%]') then;repl[x:gsub('%[', '%%['):gsub('%]', '%%]')] = expand_str(x);end;end;for k,v in pairs(repl) do;fcopy = fcopy:gsub(k..'[%a%d_]*',v);end;return fcopy;end;";
+char* in_expand_str = "function expand_str(x);hist = {};runs = 0;for pref, elem in x:gmatch('([%a%d]*)%[([%d,]+)%]') do;runs = runs + 1;matches = {};for num in elem:gmatch('%d+') do;for _,v in pairs(varlist) do;if v:match(string.format('.*%s%s.*', pref, num)) then;if not hist[v] then;hist[v] = 1;else;hist[v] = hist[v] + 1;end;end;end;end;end;res = {};for k,v in pairs(hist) do;if v == runs then table.insert(res, k) end;end;return table.concat(res, ',');end;function eval_str(s);repl = {};for x in s:gmatch('([%a%d_]+%[[%d,]+%])') do;repl[x:gsub('%[', '%%['):gsub('%]', '%%]')] = expand_str(x);end;for k,v in pairs(repl) do;s = s:gsub(k..'[%a%d_]*',v);end;return s;end;";
 char* in_user_func_str = NULL;
+
+char* not_allowed[] = {"io.", "popen(", "load", "get", "set", "call(", "require", "module", NULL};
 
 lua_State** lua_states = NULL;
 int num_states = 0;
 char** defines = NULL;
+bstring *bdefines = NULL;
 int* num_defines = NULL;
+bstring bglob_defines;
+bstring bglob_defines_list;
 
 static int totalgroups = 0;
 
@@ -812,6 +817,7 @@ read_group(
     ginfo->metricformulas = NULL;
     ginfo->metricnames = NULL;
     ginfo->longinfo = NULL;
+    ginfo->lua_funcs = NULL;
     ginfo->groupname = (char*)malloc((strlen(groupname)+10)*sizeof(char));
     if (ginfo->groupname == NULL)
     {
@@ -870,6 +876,11 @@ read_group(
         else if (strncmp(groupFileSectionNames[GROUP_LONG], buf, strlen(groupFileSectionNames[GROUP_LONG])) == 0)
         {
             sec = GROUP_LONG;
+            continue;
+        }
+        else if (strncmp(groupFileSectionNames[GROUP_LUA], buf, strlen(groupFileSectionNames[GROUP_LUA])) == 0)
+        {
+            sec = GROUP_LUA;
             continue;
         }
         if (sec == GROUP_NONE)
@@ -1082,6 +1093,24 @@ read_group(
             sprintf(&(ginfo->longinfo[s]), "%.*s", (int)strlen(buf), buf);
             continue;
         }
+        else if (sec == GROUP_LUA)
+        {
+            s = (ginfo->lua_funcs == NULL ? 0 : strlen(ginfo->lua_funcs));
+            char *tmp;
+            tmp = realloc(ginfo->lua_funcs, (s + strlen(buf) + 3) * sizeof(char));
+            if (tmp == NULL)
+            {
+                free(ginfo->lua_funcs);
+                err = -ENOMEM;
+                goto cleanup;
+            }
+            else
+            {
+                ginfo->lua_funcs = tmp;
+            }
+            sprintf(&(ginfo->lua_funcs[s]), "%.*s", (int)strlen(buf), buf);
+            continue;
+        }
     }
     //bstrListDestroy(linelist);
     fclose(fp);
@@ -1099,6 +1128,8 @@ cleanup:
         free(ginfo->shortinfo);
     if (ginfo->longinfo)
         free(ginfo->longinfo);
+    if (ginfo->lua_funcs)
+        free(ginfo->lua_funcs);
     if (ginfo->nevents > 0)
     {
         for(i=0;i<ginfo->nevents; i++)
@@ -1377,167 +1408,140 @@ return_group(GroupInfo* ginfo)
     ginfo->nmetrics = 0;
 }
 
-void
-init_clist(CounterList* clist)
+
+int calc_add_to_varlist(char* name, bstring bvarlist)
 {
-    clist->counters = 0;
-    clist->cnames = NULL;
-    clist->cvalues = NULL;
-}
-
-int
-add_to_clist(CounterList* clist, char* counter, double result)
-{
-    char** tmpnames;
-    double* tmpvalues;
-    if ((clist == NULL)||(counter == NULL))
-        return -EINVAL;
-    tmpnames = realloc(clist->cnames, (clist->counters + 1) * sizeof(char*));
-    if (tmpnames == NULL)
-    {
-        return -ENOMEM;
-    }
-    clist->cnames = tmpnames;
-    tmpvalues = realloc(clist->cvalues, (clist->counters + 1) * sizeof(double));
-    if (tmpvalues == NULL)
-    {
-        return -ENOMEM;
-    }
-    clist->cvalues = tmpvalues;
-    clist->cnames[clist->counters] = malloc((strlen(counter)+2)*sizeof(char));
-    if (clist->cnames[clist->counters] == NULL)
-    {
-        return -ENOMEM;
-    }
-    sprintf(clist->cnames[clist->counters],"%s", counter);
-    clist->cvalues[clist->counters] = result;
-    clist->counters++;
-    return 0;
-}
-
-int
-update_clist(CounterList* clist, char* counter, double result)
-{
-    int i;
-    int found = 0;
-    if ((clist == NULL)||(counter == NULL))
-        return -EINVAL;
-    for (i=0; i< clist->counters; i++)
-    {
-        if (strcmp(clist->cnames[i], counter) == 0)
-        {
-            clist->cvalues[i] = result;
-            found = 1;
-            break;
-        }
-    }
-    if (!found)
-    {
-        return -ENOENT;
-    }
-    return 0;
-}
-
-void
-destroy_clist(CounterList* clist)
-{
-    int i;
-    if (clist != NULL)
-    {
-        for (i=0;i<clist->counters;i++)
-        {
-            free(clist->cnames[i]);
-        }
-        free(clist->cnames);
-        free(clist->cvalues);
-    }
-}
-
-
-
-int add_to_varlist(char* name, char** varlist)
-{
-    int slen = 0;
     int ret = 0;
-    if (*varlist)
-        slen = strlen(*varlist);
-    int add = strlen(name)+4;
-    *varlist = realloc_buffer(*varlist, slen + add + 5);
-    if (!*varlist)
+    if (!name)
+        return -EINVAL;
+    bstring bname = bformat("\"%s\"", name);
+    if (blength(bvarlist) > 0)
+        bcatcstr(bvarlist, ",");
+    ret = bconcat(bvarlist, bname);
+    return ret;
+}
+
+int calc_add_str_var(char* name, char* value, bstring vars, bstring varlist)
+{
+    int ret = 0;
+    bstring add = bformat("%s = %s\n", name, value);
+    ret = bconcat(vars, add);
+    if (ret == BSTR_OK)
+        ret = calc_add_to_varlist(name, varlist);
+    bdestroy(add);
+    return ret;
+}
+
+int calc_add_dbl_var(char* name, double value, bstring bvars, bstring varlist)
+{
+    int ret = 0;
+    bstring add = bformat("%s = %20.20f\n", name, value);
+    ret = bconcat(bvars, add);
+    if (ret == BSTR_OK)
+        ret = calc_add_to_varlist(name, varlist);
+    bdestroy(add);
+    return ret;
+}
+
+int calc_add_int_var(char* name, int value, bstring bvars, bstring varlist)
+{
+    int ret = 0;
+    bstring add = bformat("%s = %d\n", name, value);
+    ret = bconcat(bvars, add);
+    if (ret == BSTR_OK)
+        ret = calc_add_to_varlist(name, varlist);
+    bdestroy(add);
+    return ret;
+}
+
+static int _calc_add_def(bstring add, int cpu)
+{
+    int ret = 0;
+    if (cpu < 0)
     {
-        return -ENOMEM;
+        ret = bconcat(bglob_defines, add);
     }
-    if (slen == 0)
-        ret = snprintf(*varlist, add+4, "\"%s\"", name);
     else
-        ret = snprintf(&((*varlist)[slen]), add+4, ", \"%s\"", name);
-    return 0;
-}
-
-int add_var(char* name, char* value, char** varstr, char** varlist)
-{
-    int slen = 0;
-    int ret = 0;
-    if (*varstr)
-        slen = strlen(*varstr);
-    int add = strlen(name) + strlen(value) + 4;
-    *varstr = realloc_buffer(*varstr, slen + add + 4);
-    if (!*varstr)
     {
-        return -ENOMEM;
+        ret = bconcat(bdefines[cpu], add);
     }
-    ret = snprintf(&((*varstr)[slen]), add+4, "%s = %s\n", name, value);
-    ret = add_to_varlist(name, varlist);
-    return 0;
+    return ret;
 }
 
-int add_dbl_var(char* name, double value, char** varstr, char** varlist)
+// cpu == -1 means global definition
+int calc_add_dbl_def(char* name, double value, int cpu)
 {
-    int slen = 0;
     int ret = 0;
-    if (*varstr)
-        slen = strlen(*varstr);
-    int add = strlen(name) + 45;
-    *varstr = realloc_buffer(*varstr, slen + add + 4);
-    if (!*varstr)
-    {
-        return -ENOMEM;
-    }
-    ret = snprintf(&((*varstr)[slen]), add+4, "%s = %20.20f\n", name, value);
-    ret = add_to_varlist(name, varlist);
-    return 0;
+    bstring add = bformat("%s = %20.20f\n", name, value);
+    ret = _calc_add_def(add, cpu);
+    if (!ret)
+        ret = calc_add_to_varlist(name, bglob_defines_list);
+    return ret;
 }
 
-int add_def(char* name, char* value, int cpu, char** varlist)
+// cpu == -1 means global definition
+int calc_add_int_def(char* name, int value, int cpu)
 {
-    int slen = 0;
     int ret = 0;
-    if (defines[cpu])
-        slen = strlen(defines[cpu]);
-    int add = strlen(name) + strlen(value) + 4;
-    defines[cpu] = realloc_buffer(defines[cpu], slen + add + 2);
-    if (!defines[cpu])
-    {
-        return -ENOMEM;
-    }
-    ret = snprintf(&(defines[cpu][slen]), add+2, "%s = %s\n", name, value);
-    num_defines[cpu]++;
-    ret = add_to_varlist(name, varlist);
-    return 0;
+    bstring add = bformat("%s = %d\n", name, value);
+    ret = _calc_add_def(add, cpu);
+    if (!ret)
+        ret = calc_add_to_varlist(name, bglob_defines_list);
+    return ret;
 }
 
-int set_user_funcs(char* s)
+// cpu == -1 means global definition
+int calc_add_str_def(char* name, char* value, int cpu)
 {
+    int ret = 0;
+    bstring add = bformat("%s = %s\n", name, value);
+    ret = _calc_add_def(add, cpu);
+    if (!ret)
+        ret = calc_add_to_varlist(name, bglob_defines_list);
+    return ret;
+}
+
+
+int calc_set_user_funcs(char* s)
+{
+    if (!s)
+        return -EINVAL;
     if (in_user_func_str)
         free(in_user_func_str);
+
+    int i = 0;
+    while (not_allowed[i])
+    {
+        char* p = strstr(s, not_allowed[i]);
+        if (p)
+        {
+            fprintf(stderr, "ERROR: User function string contains invalid commands\n");
+            return -EINVAL;
+        }
+        i++;
+    }
+
+    // test user given functions
+    lua_State *L = luaL_newstate();
+    luaL_openlibs(L);
     in_user_func_str = NULL;
-    int ret = asprintf(&in_user_func_str, "%s", s);
-    if (ret < 0)
-        return ret;
+    int ret = luaL_dostring (L, s);
+    lua_close(L);
+    if (ret)
+    {
+        fprintf(stderr, "WARN: Defined functions not valid Lua\n");
+        return 1;
+    }
+    else
+    {
+        ret = asprintf(&in_user_func_str, "%s", s);
+        if (ret < 0)
+            return ret;
+    }
     return 0;
 }
 
-double do_calc(int cpu, char* s, char* vars, char* varlist)
+static double do_calc(int cpu, char* s, bstring vars)
 {
     double res = NAN;
     int ret = 0;
@@ -1545,34 +1549,48 @@ double do_calc(int cpu, char* s, char* vars, char* varlist)
     lua_State *L = lua_states[cpu];
     if (!L)
     {
-            L = luaL_newstate();
-            luaL_openlibs(L);
-            lua_states[cpu] = L;
+        L = luaL_newstate();
+        luaL_openlibs(L);
+        lua_states[cpu] = L;
     }
-
-    if (vars && defines[cpu])
-        ret = asprintf(&t, "%s\n%s\n%s\nreturn %s", in_func_str, defines[cpu], vars, s);
-    else if (vars && !defines[cpu])
-        ret = asprintf(&t, "%s\n%s\nreturn %s", in_func_str, vars, s);
-    else if (defines[cpu] && !vars)
-        ret = asprintf(&t, "%s\n%s\nreturn %s", in_func_str, defines[cpu], s);
-    else
-        ret = asprintf(&t, "%s\nreturn %s", in_func_str, s);
-    if (ret < 0)
+    bstring scratch = bfromcstr(in_func_str);
+    bcatcstr(scratch, "\n");
+    if (blength(bglob_defines) > 0)
     {
-        return res;
+        bconcat(scratch, bglob_defines);
     }
-    ret = luaL_dostring (L, t);
+    if (bdefines[cpu])
+    {
+        bconcat(scratch, bdefines[cpu]);
+        bcatcstr(scratch, "\n");
+    }
+    if (in_user_func_str)
+    {
+        bcatcstr(scratch, in_user_func_str);
+        bcatcstr(scratch, "\n");
+    }
+    if (blength(vars) > 0)
+    {
+        bconcat(scratch, vars);
+        bcatcstr(scratch, "\n");
+    }
+    
+    bcatcstr(scratch, "return ");
+    bcatcstr(scratch, s);
+    bcatcstr(scratch, "\n");
+
+    ret = luaL_dostring (L, bdata(scratch));
     if (!ret)
     {
-        res = lua_tonumber(L, -1);
+        if (strncmp(luaL_typename(L, -1), "number", 6) == 0)
+            res = lua_tonumber(L, -1);
     }
-    free(t);
+    bdestroy(scratch);
 
     return res;
 }
 
-char* do_expand(int cpu, char* s, char *varlist)
+static char* do_expand(int cpu, char* f, bstring varlist)
 {
     int ret = 0;
     char* out = NULL;
@@ -1585,24 +1603,24 @@ char* do_expand(int cpu, char* s, char *varlist)
         luaL_openlibs(L);
         lua_states[cpu] = L;
     }
-    ret = asprintf(&t, "varlist={%s}\n%s\nreturn eval_str(\"%s\")", varlist, in_expand_str, s);
+    bstring scratch = bformat("varlist={%s,%s}\n%s\nreturn eval_str(\"%s\")", bdata(bglob_defines_list), bdata(varlist), in_expand_str, f);
     if (ret < 0)
     {
         return NULL;
     }
-    ret = luaL_dostring (L, t);
+    ret = luaL_dostring (L, bdata(scratch));
     if (!ret)
     {
         out = (char*)lua_tostring(L, -1);
     }
-    free(t);
+    bdestroy(scratch);
     return out;
 }
 
 
 
 int
-calc_metric(int cpu, char* formula, char* vars, char* varlist, double *result)
+calc_metric(int cpu, char* formula, bstring vars, bstring varlist, double *result)
 {
     int i=0;
     char* f;
@@ -1611,37 +1629,72 @@ calc_metric(int cpu, char* formula, char* vars, char* varlist, double *result)
 
     if ((formula == NULL) || (vars == NULL) || (varlist == NULL) || (result == NULL))
         return -EINVAL;
-    *result = 0.0;
+    *result = NAN;
 
-    f = do_expand(cpu, formula, varlist);
-    if (f)
+    if (strchr(formula, '[') != NULL)
     {
-        *result = do_calc(cpu, f, vars, varlist);
+        f = do_expand(cpu, formula, varlist);
+        if (f)
+        {
+            *result = do_calc(cpu, f, vars);
+            return 0;
+        }
+    }
+    else
+    {
+        *result = do_calc(cpu, formula, vars);
+        return 0;
     }
 
-    return i;
+    return 1;
 }
 
 void __attribute__((constructor (103))) init_perfgroup(void)
 {
     int ret = 0;
-    int cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    topology_init();
+    CpuTopology_t cputopo = get_cpuTopology();
+    CpuInfo_t cpuinfo = get_cpuInfo();
+    int cpus = cputopo->numHWThreads;
     lua_states = (lua_State**)malloc(cpus * sizeof(lua_State*));
     if (lua_states)
     {
         memset(lua_states, 0, cpus * sizeof(lua_State*));
     }
     num_states = cpus;
-    defines = (char**)malloc(cpus * sizeof(char*));
-    if (defines)
+    bdefines = (bstring*)malloc(cpus * sizeof(bstring));
+    if (bdefines)
     {
-        memset(defines, 0, cpus * sizeof(char*));
+        memset(bdefines, 0, cpus * sizeof(bdefines));
+        for (int i = 0; i < cpus; i++)
+        {
+            bdefines[i] = bformat("");
+            calc_add_int_def("CPUID", cputopo->threadPool[i].apicId, cputopo->threadPool[i].apicId);
+        }
     }
     num_defines = (int*)malloc(cpus * sizeof(int));
-    if (defines)
+    if (num_defines)
     {
         memset(num_defines, 0, cpus * sizeof(int));
     }
+    bglob_defines = bformat("");
+    bglob_defines_list = bformat("");
+    calc_add_str_def("TRUE", "true", -1);
+    calc_add_str_def("FALSE", "false", -1);
+    calc_add_int_def("CPU_COUNT", cpus, -1);
+    calc_add_int_def("CPU_ACTIVE", cputopo->activeHWThreads, -1);
+    calc_add_int_def("SOCKET_COUNT", cputopo->numSockets, -1);
+    calc_add_int_def("CORES_PER_SOCKET", cputopo->numCoresPerSocket, -1);
+    calc_add_int_def("CPUS_PER_CORE", cputopo->numThreadsPerCore, -1);
+    for (int i= 0; i < cputopo->numCacheLevels; i++)
+    {
+        char name[100];
+        snprintf(name, 99, "L%d_SIZE", cputopo->cacheLevels[i].level);
+        calc_add_int_def(name, cputopo->cacheLevels[i].size, -1);
+        snprintf(name, 99, "L%d_LINESIZE", cputopo->cacheLevels[i].level);
+        calc_add_int_def(name, cputopo->cacheLevels[i].lineSize, -1);
+    }
+    calc_add_int_def("MEM_LINESIZE", 64, -1);
 }
 
 void __attribute__((destructor (103))) close_perfgroup(void)
@@ -1657,13 +1710,14 @@ void __attribute__((destructor (103))) close_perfgroup(void)
     }
     for (int i = 0; i < num_states; i++)
     {
-        if (defines[i])
+        if (bdefines[i])
         {
-            free(defines[i]);
+            bdestroy(bdefines[i]);
             num_defines[i] = 0;
         }
     }
-    free(defines);
+    bdestroy(bglob_defines_list);
+    bdestroy(bglob_defines);
     free(num_defines);
 }
 
