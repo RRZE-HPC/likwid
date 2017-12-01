@@ -3113,8 +3113,8 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     int e = 0, err = 0;
     double result = 0.0;
     char split[2] = ":";
-    bstring vars = NULL;
-    bstring varlist = NULL;
+    bstring vars = bformat("");
+    bstring varlist = bformat("");
     if (perfmon_initialized != 1)
     {
         ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
