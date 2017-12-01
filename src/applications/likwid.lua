@@ -310,8 +310,8 @@ local function get_spaces(str, min_space, max_space)
     local front = 0
     if tonumber(str) == nil then
         back = math.ceil((max_space-str:len()) /2)
-    else
-        back = 0
+--    else
+--        back = 0
     end
     front = max_space - back - str:len()
     if (front < back) then
@@ -666,7 +666,9 @@ likwid.parse_time = parse_time
 
 local function num2str(value)
     local tmp = "0"
-    if value ~= 0 then
+    if value ~= value then
+        return "nan"
+    elseif value ~= 0 then
         if tostring(value):match("%.0$") or value == math.tointeger(value) then
             tmp = tostring(math.tointeger(value))
         elseif string.format("%.4f", value):len() < 12 and
@@ -720,16 +722,23 @@ local function tableMinMaxAvgSum(inputtable, skip_cols, skip_lines)
     for j=skip_cols+1,nr_columns do
         for i=skip_lines+1, nr_lines do
             local res = tonumber(inputtable[j][i])
-            if res ~= nil then
-                minOfLine[i-skip_lines+1] = math.min(res, minOfLine[i-skip_lines+1])
-                maxOfLine[i-skip_lines+1] = math.max(res, maxOfLine[i-skip_lines+1])
-                sumOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1] + res
+            if inputtable[j][i] ~= "nan" then
+                if res ~= nil then
+                    minOfLine[i-skip_lines+1] = math.min(res, minOfLine[i-skip_lines+1])
+                    maxOfLine[i-skip_lines+1] = math.max(res, maxOfLine[i-skip_lines+1])
+                    sumOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1] + res
+                else
+                    minOfLine[i-skip_lines+1] = 0
+                    maxOfLine[i-skip_lines+1] = 0
+                    sumOfLine[i-skip_lines+1] = 0
+                end
+                avgOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1]/(nr_columns-skip_cols)
             else
-                minOfLine[i-skip_lines+1] = 0
-                maxOfLine[i-skip_lines+1] = 0
-                sumOfLine[i-skip_lines+1] = 0
+                minOfLine[i-skip_lines+1] = 0/0
+                maxOfLine[i-skip_lines+1] = 0/0
+                sumOfLine[i-skip_lines+1] = 0/0
+                avgOfLine[i-skip_lines+1] = 0/0
             end
-            avgOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1]/(nr_columns-skip_cols)
         end
     end
     for i=2,#minOfLine do
