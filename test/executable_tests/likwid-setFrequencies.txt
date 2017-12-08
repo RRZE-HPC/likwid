@@ -10,5 +10,5 @@
 -f | EXIT 1 | GREP Option requires an argument
 -g performance | EXIT 0
 -f FREQ | EXIT 0
--c 0 -g conservative | EXIT 0
+-c 0 -g powersave | EXIT 0
 -c 0 -f FREQ | EXIT 0

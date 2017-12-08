@@ -7,6 +7,7 @@ fi
 EXECPATH=/usr/local/bin
 EXEC=$1
 TMPFILE=/tmp/testout
+
 FREQ="2.3"
 
 f_grep() {
@@ -41,6 +42,8 @@ if [ ! -e ${EXEC}.txt ]; then
     echo "Cannot find testfile ${EXEC}.txt"
     exit 1
 fi
+LOGFILE=/tmp/tester-${EXEC}.log
+rm -f ${LOGFILE}
 if [ "${EXEC}" == "likwid-setFrequencies" ]; then
     FREQ=$(${EXECPATH}/likwid-setFrequencies -l | grep -v frequencies | awk '{print $2}')
     CURFREQ=$(${EXECPATH}/likwid-setFrequencies -p | head -n2 | tail -n 1 | rev | awk '{print $2}' | rev | awk -F'/' '{print $2}')
@@ -80,11 +83,20 @@ while read -r LINE || [[ -n $LINE ]]; do
             STATE=$?
         fi
     done
+    
+    
     if [ $STATE -eq 0 ]; then
         echo "SUCCESS : ${EXEC}" "${OPTIONS}"
     else
         echo "FAIL : ${EXEC}" "${OPTIONS}"
+        echo "######################################################################" >> ${LOGFILE}
+        echo "${EXEC}" "${OPTIONS}" >> ${LOGFILE}
+        cat ${TMPFILE} >> ${LOGFILE}
+        echo "EXITCODE: ${EXITCODE}" >> ${LOGFILE}
+        echo "FAIL : ${EXEC}" "${OPTIONS}" >> ${LOGFILE}
+        echo "######################################################################" >> ${LOGFILE}
     fi
+    
 done < ${EXEC}.txt
 
 
