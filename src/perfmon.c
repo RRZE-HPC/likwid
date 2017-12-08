@@ -1461,6 +1461,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         ERROR_PLAIN_PRINT(Cannot set access functions);
         free(groupSet->threads);
         free(groupSet);
+        groupSet = NULL;
         return ret;
     }
 #endif
@@ -1483,6 +1484,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             ERROR_PLAIN_PRINT(Cannot get access to performance counters);
             free(groupSet->threads);
             free(groupSet);
+            groupSet = NULL;
             return ret;
         }
 
@@ -1492,6 +1494,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             fprintf(stderr, "Cannot get access to MSRs. Please check permissions to the MSRs\n");
             free(groupSet->threads);
             free(groupSet);
+            groupSet = NULL;
             return -EACCES;
         }
 #endif
