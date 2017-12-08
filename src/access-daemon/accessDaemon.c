@@ -1172,6 +1172,7 @@ static int getBusFromSocketSysFS(const uint32_t socket, const char* name, const 
     char testDev[50];
     size_t ret = 0;
     int bus_id = -1;
+    int numa_ctr = 0;
     if (pDir == NULL)
     {
         syslog(LOG_ERR, "Failed open directory /sys/devices");
@@ -1219,6 +1220,11 @@ static int getBusFromSocketSysFS(const uint32_t socket, const char* name, const 
                         }
                         ret = fread(buff, sizeof(char), 99, fp);
                         numa_node = atoi(buff);
+                        if (numa_node < 0)
+                        {
+                            numa_node = numa_ctr;
+                            numa_ctr++;
+                        }
                         if (numa_node == socket)
                         {
                             bus_id = strtoul(bus, NULL, 16);
