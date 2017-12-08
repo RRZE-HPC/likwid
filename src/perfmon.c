@@ -257,11 +257,16 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         }
         if ((check_settings) && (tmp != 0x0ULL))
         {
-            if (force == 1)
+            if (force == 1 || groupSet->numberOfGroups >= 1)
             {
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s has bits set (0x%llx) but we are forced to overwrite them,
                                              counter_map[index].key, LLU_CAST tmp);
-                err = HPMwrite(testcpu, counter_map[index].device, reg, 0x0ULL);
+/*                err = HPMwrite(testcpu, counter_map[index].device, reg, 0x0ULL);*/
+/*                for (int i = 0; i < groupSet->numberOfThreads; i++)*/
+/*                {*/
+/*                    int cpu_id = groupSet->threads[i].processorId;*/
+/*                    currentConfig[cpu_id][index] = 0x0ULL;*/
+/*                }*/
             }
             else if ((force == 0) && ((type != FIXED)&&(type != THERMAL)&&(type != POWER)&&(type != WBOX0FIX)))
             {
@@ -2347,16 +2352,15 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
         if (groupSet->groups[groupId].events[e].type != NOTYPE)
         {
             char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            calc_add_dbl_var(ctr, perfmon_getResult(groupId, e, threadId), vars, varlist);
+            if (ctr)
+                calc_add_dbl_var(ctr, perfmon_getLastResult(groupId, e, threadId), vars, varlist);
         }
         else
         {
             char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            if (strstr(f, ctr) != NULL)
+            if (ctr && strstr(f, ctr) != NULL)
             {
-                bdestroy(vars);
-                bdestroy(varlist);
-                return NAN;
+                calc_add_int_var(ctr, 0, vars, varlist);
             }
         }
     }
@@ -2461,16 +2465,15 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
         if (groupSet->groups[groupId].events[e].type != NOTYPE)
         {
             char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            calc_add_dbl_var(ctr, perfmon_getLastResult(groupId, e, threadId), vars, varlist);
+            if (ctr)
+                calc_add_dbl_var(ctr, perfmon_getLastResult(groupId, e, threadId), vars, varlist);
         }
         else
         {
             char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            if (strstr(f, ctr) != NULL)
+            if (ctr && strstr(f, ctr) != NULL)
             {
-                bdestroy(vars);
-                bdestroy(varlist);
-                return NAN;
+                calc_add_int_var(ctr, 0, vars, varlist);
             }
         }
     }
@@ -3143,17 +3146,18 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
         if (groupSet->groups[markerResults[region].groupID].events[e].type != NOTYPE)
         {
             char* ctr = strtok(groupSet->groups[markerResults[region].groupID].group.counters[e], split);
-            double res = perfmon_getResultOfRegionThread(region, e, threadId);
-            calc_add_dbl_var(ctr, res, vars, varlist);
+            if (ctr)
+            {
+                double res = perfmon_getResultOfRegionThread(region, e, threadId);
+                calc_add_dbl_var(ctr, res, vars, varlist);
+            }
         }
         else
         {
             char *ctr = strtok(groupSet->groups[markerResults[region].groupID].group.counters[e], split);
-            if (strstr(f, ctr) != NULL)
+            if (ctr && strstr(f, ctr) != NULL)
             {
-                bdestroy(vars);
-                bdestroy(varlist);
-                return NAN;
+                calc_add_int_var(ctr, 0, vars, varlist);
             }
         }
     }
