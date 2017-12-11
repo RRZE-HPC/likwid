@@ -98,9 +98,10 @@ static char* filepath;
 static const char* ident = "accessD";
 static AllowedPrototype allowed = NULL;
 static AllowedPciPrototype allowedPci = NULL;
-static int FD_MSR[MAX_NUM_THREADS];
-static int FD_PCI[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];
-static int bus_map[MAX_NUM_NODES];
+/*static int FD_MSR[MAX_NUM_THREADS];*/
+/*static int FD_PCI[MAX_NUM_NODES][MAX_NUM_PCI_DEVICES];*/
+static int* FD_MSR = NULL;
+static int** FD_PCI = NULL;
 static int isPCIUncore = 0;
 static int isPCI64 = 0;
 static PciDevice* pci_devices_daemon = NULL;
@@ -115,7 +116,68 @@ static int num_pmc_counters = 0;
  *   2                  0xbf
  *   3                  0xff
  */
-static char* socket_bus[MAX_NUM_NODES] = { [0 ... (MAX_NUM_NODES-1)] = NULL};
+//static char* socket_bus[MAX_NUM_NODES] = { [0 ... (MAX_NUM_NODES-1)] = NULL};
+static char** socket_bus = NULL;
+static int avail_sockets = 0;
+static int avail_cpus = 0;
+
+void __attribute__((constructor (101))) init_accessdaemon(void)
+{
+    FILE *fpipe = NULL;
+    char *ptr = NULL;
+    char cmd_cpu[] = "cat /proc/cpuinfo  | grep 'processor' | sort -u | wc -l";
+    char cmd_sock[] = "cat /proc/cpuinfo  | grep 'physical id' | sort -u | wc -l";
+    //static long avail_sockets = 0;
+    char buff[256];
+    //avail_cpus = sysconf(_SC_NPROCESSORS_CONF);
+
+    if ( !(fpipe = (FILE*)popen(cmd_cpu,"r")) )
+    {  // If fpipe is NULL
+        return;
+    }
+    ptr = fgets(buff, 256, fpipe);
+    if (pclose(fpipe))
+        return;
+    avail_cpus = atoi(buff);
+
+    if ( !(fpipe = (FILE*)popen(cmd_sock,"r")) )
+    {  // If fpipe is NULL
+        return;
+    }
+    ptr = fgets(buff, 256, fpipe);
+    if (pclose(fpipe))
+        return;
+    avail_sockets = atoi(buff);
+
+    FD_MSR = malloc(avail_cpus * sizeof(int));
+    //memset(FD_MSR, 0, avail_cpus * sizeof(int));
+
+    socket_bus = malloc(avail_sockets * sizeof(char*));
+    //memset(socket_bus, 0, avail_sockets * sizeof(char*));
+
+    FD_PCI = malloc(avail_sockets * sizeof(int*));
+    //memset(FD_PCI, 0, avail_sockets * sizeof(int*));
+    for (int i = 0; i < avail_sockets; i++)
+    {
+        FD_PCI[i] = malloc(MAX_NUM_PCI_DEVICES * sizeof(int));
+        //memset(FD_PCI[i], 0, MAX_NUM_PCI_DEVICES * sizeof(int));
+    }
+}
+
+void __attribute__((destructor (101))) close_accessdaemon(void)
+{
+    for (int i = 0; i < avail_sockets; i++)
+    {
+        free(FD_PCI[i]);
+        FD_PCI[i] = NULL;
+    }
+    free(FD_PCI);
+    FD_PCI = NULL;
+    free(socket_bus);
+    socket_bus = NULL;
+    free(FD_MSR);
+    FD_MSR = NULL;
+}
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -1328,7 +1390,7 @@ int main(void)
     mode_t oldumask;
     uint32_t numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
     uint32_t model;
-    for (int i=0;i<MAX_NUM_THREADS;i++)
+    for (int i=0;i<avail_cpus;i++)
     {
         FD_MSR[i] = -1;
     }
@@ -1338,6 +1400,11 @@ int main(void)
     if (!lock_check())
     {
         syslog(LOG_ERR,"Access to performance counters is locked.\n");
+        stop_daemon();
+    }
+    if (!FD_MSR || !FD_PCI || !socket_bus)
+    {
+        syslog(LOG_ERR,"Failed to allocate FD space.\n");
         stop_daemon();
     }
 
@@ -1515,7 +1582,7 @@ int main(void)
 
         /* Open MSR device files for less overhead.
          * NOTICE: This assumes consecutive processor Ids! */
-        for ( uint32_t i=0; i < numHWThreads; i++ )
+        for ( uint32_t i=0; i < avail_cpus; i++ )
         {
             sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
             FD_MSR[i] = open(msr_file_name, O_RDWR);
@@ -1578,7 +1645,7 @@ int main(void)
                 goto LOOP;
             }
 
-            for (int j=0; j<MAX_NUM_NODES; j++)
+            for (int j=0; j<avail_sockets; j++)
             {
                 //socket_bus[j] = (char*)malloc(4);
                 //sprintf(socket_bus[j], "N-A");
@@ -1595,7 +1662,7 @@ int main(void)
                     int socket_id = getBusFromSocket(&(pci_devices_daemon[i]), 0, NULL);
                     if (socket_id == 0)
                     {
-                        for (int j=0; j<MAX_NUM_NODES; j++)
+                        for (int j=0; j<avail_sockets; j++)
                         {
                             FD_PCI[j][i] = 0;
                         }

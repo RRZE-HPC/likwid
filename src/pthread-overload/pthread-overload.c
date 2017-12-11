@@ -77,6 +77,47 @@ static char * sosearchpaths[] = {
     } while(0)
 #endif
 
+static int *pin_ids = NULL;
+static int ncpus = 0;
+static uint64_t skipMask = 0x0;
+static int silent = 0;
+void __attribute__((constructor (103))) init_pthread_overload(void)
+{
+    char *str = NULL;
+    char *token = NULL, *saveptr = NULL;
+    char *delimiter = ",";
+    int i = 0;
+    static long avail_cpus = 0;
+    avail_cpus = sysconf(_SC_NPROCESSORS_CONF);
+    pin_ids = malloc(avail_cpus * sizeof(int));
+    memset(pin_ids, 0, avail_cpus * sizeof(int));
+    str = getenv("LIKWID_PIN");
+    if (str != NULL)
+    {
+        token = str;
+        while (token)
+        {
+            token = strtok_r(str,delimiter,&saveptr);
+            str = NULL;
+            if (token)
+            {
+                ncpus++;
+                pin_ids[i++] = strtoul(token, &token, 10);
+            }
+        }
+    }
+    str = getenv("LIKWID_SKIP");
+    if (str != NULL)
+    {
+        skipMask = strtoul(str, &str, 16);
+    }
+
+    if (getenv("LIKWID_SILENT") != NULL)
+    {
+        silent = 1;
+    }
+}
+
 int __attribute__ ((visibility ("default") ))
 pthread_create(pthread_t* thread,
         const pthread_attr_t* attr,
@@ -92,33 +133,15 @@ pthread_create(pthread_t* thread,
     static int ncalled = 0;
     static int overflow = 0;
     static int overflowed = 0;
-    static int silent = 0;
-    static int pin_ids[MAX_NUM_THREADS];
-    static uint64_t skipMask = 0x0;
-    static int ncpus = 0;
     static long online_cpus = 0;
     static int shepard = 0;
     online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
 
     /* On first entry: Get Evironment Variable and initialize pin_ids */
-    if (ncalled == 0)
+    if (ncalled == 0 && pin_ids != NULL)
     {
-        char *str;
-        char *token, *saveptr;
-        char *delimiter = ",";
-        int i = 0;
+        char* str = NULL;
         cpu_set_t cpuset;
-
-        str = getenv("LIKWID_SKIP");
-        if (str != NULL)
-        {
-            skipMask = strtoul(str, &str, 16);
-        }
-
-        if (getenv("LIKWID_SILENT") != NULL)
-        {
-            silent = 1;
-        }
 
         if (!silent)
         {
@@ -128,17 +151,6 @@ pthread_create(pthread_t* thread,
         str = getenv("LIKWID_PIN");
         if (str != NULL)
         {
-            token = str;
-            while (token)
-            {
-                token = strtok_r(str,delimiter,&saveptr);
-                str = NULL;
-                if (token)
-                {
-                    ncpus++;
-                    pin_ids[i++] = strtoul(token, &token, 10);
-                }
-            }
             CPU_ZERO(&cpuset);
             CPU_SET(pin_ids[ncpus-1], &cpuset);
             ret = sched_setaffinity(getpid(), sizeof(cpu_set_t), &cpuset);
@@ -299,5 +311,10 @@ pthread_create(pthread_t* thread,
     dlclose(handle);
 
     return ret;
+}
+
+void __attribute__((destructor (103))) close_pthread_overload(void)
+{
+    free(pin_ids);
 }
 

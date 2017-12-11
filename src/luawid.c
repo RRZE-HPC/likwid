@@ -1336,13 +1336,19 @@ lua_likwid_cpustr_to_cpulist(lua_State* L)
 {
     int ret = 0;
     char* cpustr = (char *)luaL_checkstring(L, 1);
-    int* cpulist = (int*) malloc(MAX_NUM_THREADS * sizeof(int));
+    if (!cputopo)
+    {
+        topology_init();
+        cputopo = get_cpuTopology();
+        topology_isInitialized = 1;
+    }
+    int* cpulist = (int*) malloc(cputopo->numHWThreads * sizeof(int));
     if (cpulist == NULL)
     {
         lua_pushstring(L,"Cannot allocate data for the CPU list");
         lua_error(L);
     }
-    ret = cpustr_to_cpulist(cpustr, cpulist, MAX_NUM_THREADS);
+    ret = cpustr_to_cpulist(cpustr, cpulist, cputopo->numHWThreads);
     if (ret <= 0)
     {
         lua_pushstring(L,"Cannot parse cpustring");
@@ -1365,13 +1371,21 @@ lua_likwid_nodestr_to_nodelist(lua_State* L)
 {
     int ret = 0;
     char* nodestr = (char *)luaL_checkstring(L, 1);
-    int* nodelist = (int*) malloc(MAX_NUM_NODES * sizeof(int));
+    if (!numainfo)
+    {
+        topology_init();
+        numa_init();
+        numainfo = get_numaTopology();
+        topology_isInitialized = 1;
+        numa_isInitialized = 1;
+    }
+    int* nodelist = (int*) malloc(numainfo->numberOfNodes * sizeof(int));
     if (nodelist == NULL)
     {
         lua_pushstring(L,"Cannot allocate data for the node list");
         lua_error(L);
     }
-    ret = nodestr_to_nodelist(nodestr, nodelist, MAX_NUM_NODES);
+    ret = nodestr_to_nodelist(nodestr, nodelist, numainfo->numberOfNodes);
     if (ret <= 0)
     {
         lua_pushstring(L,"Cannot parse node string");
@@ -1394,13 +1408,19 @@ lua_likwid_sockstr_to_socklist(lua_State* L)
 {
     int ret = 0;
     char* sockstr = (char *)luaL_checkstring(L, 1);
-    int* socklist = (int*) malloc(MAX_NUM_NODES * sizeof(int));
+    if (!cputopo)
+    {
+        topology_init();
+        cputopo = get_cpuTopology();
+        topology_isInitialized = 1;
+    }
+    int* socklist = (int*) malloc(cputopo->numSockets * sizeof(int));
     if (socklist == NULL)
     {
         lua_pushstring(L,"Cannot allocate data for the socket list");
         lua_error(L);
     }
-    ret = nodestr_to_nodelist(sockstr, socklist, MAX_NUM_NODES);
+    ret = nodestr_to_nodelist(sockstr, socklist, cputopo->numSockets);
     if (ret <= 0)
     {
         lua_pushstring(L,"Cannot parse socket string");
@@ -1909,13 +1929,23 @@ lua_likwid_startProgram(lua_State* L)
     char *argv[4096];
     exec = (char *)luaL_checkstring(L, 1);
     int nrThreads = luaL_checknumber(L,2);
-    int cpus[MAX_NUM_THREADS];
+    CpuTopology_t cputopo = get_cpuTopology();
+    if (nrThreads > cputopo->numHWThreads)
+    {
+        lua_pushstring(L,"Number of threads greater than available HW threads");
+        lua_error(L);
+        return 0;
+    }
+    int *cpus = malloc(cputopo->numHWThreads * sizeof(int));
+    if (!cpus)
+        return 0;
     cpu_set_t cpuset;
     if (nrThreads > 0)
     {
         if (!lua_istable(L, -1)) {
           lua_pushstring(L,"No table given as second argument");
           lua_error(L);
+          free(cpus);
         }
         for (status = 1; status<=nrThreads; status++)
         {
@@ -1939,6 +1969,7 @@ lua_likwid_startProgram(lua_State* L)
     pid = fork();
     if (pid < 0)
     {
+        free(cpus);
         return 0;
     }
     else if ( pid == 0)
@@ -1958,6 +1989,7 @@ lua_likwid_startProgram(lua_State* L)
     else
     {
         signal(SIGCHLD, catch_sigchild);
+        free(cpus);
         lua_pushnumber(L, pid);
     }
     return 1;
