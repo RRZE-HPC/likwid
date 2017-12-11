@@ -95,6 +95,90 @@ static int freq_getDriver(const int cpu_id )
     return 0;
 }
 
+static int _freq_getUncoreMinMax(const int socket_id, int *cpuId, double* min, double* max)
+{
+    int cpu = -1;
+    *cpuId = -1;
+    *min = 0;
+    *max = 0;
+    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    {
+        if (cpuid_topology.threadPool[i].packageId == socket_id)
+        {
+            cpu = cpuid_topology.threadPool[i].apicId;
+            break;
+        }
+    }
+    if (cpu < 0)
+    {
+        fprintf(stderr, "Unknown socket ID %d\n", socket_id);
+        return -ENODEV;
+    }
+
+    char* avail = freq_getAvailFreq(cpu);
+    if (!avail)
+    {
+        fprintf(stderr, "Failed to get available frequencies\n");
+        return -EINVAL;
+    }
+
+    double dmin = 0.0;
+    double dmax = 0.0;
+    bstring bavail = bfromcstr(avail);
+    free(avail);
+    struct bstrList* bavail_list;
+    bavail_list = bsplit(bavail, ' ');
+    bdestroy(bavail);
+    if (bavail_list->qty < 2)
+    {
+        fprintf(stderr, "Failed to read minimal and maximal frequencies\n");
+        bstrListDestroy(bavail_list);
+        return -EINVAL;
+    }
+    if (blength(bavail_list->entry[0]) > 0)
+    {
+        char* tptr = NULL;
+        dmin = strtod(bdata(bavail_list->entry[0]), &tptr);
+        if (bdata(bavail_list->entry[0]) != tptr)
+        {
+            dmin *= 1000;
+        }
+        else
+        {
+            fprintf(stderr, "Problem converting %s to double for comparison with given freq.\n", bdata(bavail_list->entry[0]));
+            return -EINVAL;
+        }
+    }
+    if (blength(bavail_list->entry[bavail_list->qty-1]) > 0)
+    {
+        char* tptr = NULL;
+        dmax = strtod(bdata(bavail_list->entry[bavail_list->qty-1]), &tptr);
+        if (bdata(bavail_list->entry[bavail_list->qty-1]) != tptr)
+        {
+            dmax *= 1000;
+        }
+        else
+        {
+            fprintf(stderr, "Problem converting %s to double for comparison with given freq.\n", bdata(bavail_list->entry[bavail_list->qty-1]));
+            return -EINVAL;
+        }
+    }
+    bstrListDestroy(bavail_list);
+
+    *cpuId = cpu;
+    if (dmin < dmax)
+    {
+        *min = dmin;
+        *max = dmax;
+    }
+    else
+    {
+        *max = dmin;
+        *min = dmax;
+    }
+    return 0;
+}
+
 uint64_t freq_getCpuClockMax(const int cpu_id )
 {
     if (drv == NOT_DETECTED)
@@ -450,38 +534,23 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
     int own_hpm = 0;
     int cpuId = -1;
     uint64_t f = freq;
-    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    double fmin, fmax;
+    err = _freq_getUncoreMinMax(socket_id, &cpuId, &fmin, &fmax);
+    if (err < 0)
     {
-        if (cpuid_topology.threadPool[i].packageId == socket_id)
-        {
-            cpuId = cpuid_topology.threadPool[i].apicId;
-            break;
-        }
+        return err;
     }
-    if (cpuId < 0)
+    if (freq < (uint64_t)fmin)
     {
-        fprintf(stderr, "Unknown socket ID %d\n", socket_id);
-        return -ENODEV;
-    }
-    char* avail = freq_getAvailFreq(cpuId);
-    char ptr[20];
-    for (int i=strlen(avail)-1;i>=0;i--)
-    {
-        if (avail[i] == ' ')
-        {
-            snprintf(ptr, strlen(avail) - i, "%s", &(avail[i+1]));
-            break;
-        }
-    }
-    double d = atof(ptr);
-    d *= 1000;
-    if (freq < (uint64_t)d)
-    {
-        fprintf(stderr, "Given frequency %llu MHz lower than system limit of %.0f MHz\n", f, d);
+        fprintf(stderr, "Given frequency %llu MHz lower than system limit of %.0f MHz\n", freq, fmin);
         return -EINVAL;
     }
-    free(avail);
-
+    if (freq > (uint64_t)fmax)
+    {
+        fprintf(stderr, "Given frequency %llu MHz higher than system limit of %.0f MHz\n", freq, fmax);
+        return -EINVAL;
+    }
+    
     if (!HPMinitialized())
     {
         HPMinit();
@@ -493,18 +562,11 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
             return err;
         }
     }
-
     err = power_init(cpuId);
     if (err < 0)
     {
         fprintf(stderr, "Cannot initialize power module on CPU %d\n", cpuId);
         return err;
-    }
-    d = power_info.turbo.steps[0];
-    if (freq > (uint64_t)d)
-    {
-        fprintf(stderr, "Given frequency %llu MHz higher than system limit of %.0f MHz\n", f, d);
-        return -EINVAL;
     }
 
     if (power_info.hasRAPL)
@@ -536,6 +598,9 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
         HPMfinalize();
     return 0;
 }
+
+
+
 
 uint64_t freq_getUncoreFreqMin(const int socket_id)
 {
@@ -603,37 +668,23 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
     int own_hpm = 0;
     int cpuId = -1;
     uint64_t f = freq;
-    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    double fmin, fmax;
+    err = _freq_getUncoreMinMax(socket_id, &cpuId, &fmin, &fmax);
+    if (err < 0)
     {
-        if (cpuid_topology.threadPool[i].packageId == socket_id)
-        {
-            cpuId = cpuid_topology.threadPool[i].apicId;
-            break;
-        }
+        return err;
     }
-    if (cpuId < 0)
+    if (freq < (uint64_t)fmin)
     {
-        fprintf(stderr, "Unknown socket ID %d\n", socket_id);
-        return -ENODEV;
-    }
-    char* avail = freq_getAvailFreq(cpuId);
-    char ptr[20];
-    for (int i=strlen(avail)-1;i>=0;i--)
-    {
-        if (avail[i] == ' ')
-        {
-            snprintf(ptr, strlen(avail) - i, "%s", &(avail[i+1]));
-            break;
-        }
-    }
-    double d = atof(ptr);
-    d *= 1000;
-    if (freq < (uint64_t)d)
-    {
-        fprintf(stderr, "Given frequency %llu MHz lower than system limit of %.0f MHz\n", f, d);
+        fprintf(stderr, "Given frequency %llu MHz lower than system limit of %.0f MHz\n", freq, fmin);
         return -EINVAL;
     }
-    free(avail);
+    if (freq > (uint64_t)fmax)
+    {
+        fprintf(stderr, "Given frequency %llu MHz higher than system limit of %.0f MHz\n", freq, fmax);
+        return -EINVAL;
+    }
+
     if (!HPMinitialized())
     {
         HPMinit();
@@ -651,12 +702,38 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
         fprintf(stderr, "Cannot initialize power module on CPU %d\n", cpuId);
         return err;
     }
-    d = power_info.turbo.steps[0];
-    if (freq > (uint64_t)d)
-    {
-        fprintf(stderr, "Given frequency %llu MHz higher than system limit of %.0f MHz\n", f, d);
-        return -EINVAL;
-    }
+/*    double d = power_info.turbo.steps[power_info.turbo.numSteps];*/
+/*    printf("max %f\n", d);*/
+/*    if (freq > (uint64_t)d)*/
+/*    {*/
+/*        fprintf(stderr, "Given frequency %llu MHz higher than system limit of %.0f MHz\n", f, d);*/
+/*        return -EINVAL;*/
+/*    }*/
+/*    free(avail);*/
+/*    if (!HPMinitialized())*/
+/*    {*/
+/*        HPMinit();*/
+/*        own_hpm = 1;*/
+/*        err = HPMaddThread(cpuId);*/
+/*        if (err != 0)*/
+/*        {*/
+/*            ERROR_PLAIN_PRINT(Cannot get access to MSRs)*/
+/*            return err;*/
+/*        }*/
+/*    }*/
+/*    err = power_init(cpuId);*/
+/*    if (err < 0)*/
+/*    {*/
+/*        fprintf(stderr, "Cannot initialize power module on CPU %d\n", cpuId);*/
+/*        return err;*/
+/*    }*/
+/*    d = power_info.turbo.steps[power_info.turbo.numSteps-1];*/
+/*    printf("min %f\n", d);*/
+/*    if (freq < (uint64_t)d)*/
+/*    {*/
+/*        fprintf(stderr, "Given frequency %llu MHz lower than system limit of %.0f MHz\n", f, d);*/
+/*        return -EINVAL;*/
+/*    }*/
     if (power_info.hasRAPL)
     {
         f /= 100;

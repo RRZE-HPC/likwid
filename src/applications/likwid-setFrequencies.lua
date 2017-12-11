@@ -58,7 +58,7 @@ function usage()
     print_stdout("-p\t\t Print current frequencies (CPUs + Uncore)")
     print_stdout("-l\t\t List available CPU frequencies")
     print_stdout("-m\t\t List available CPU governors")
-    print_stdout("-t/--turbo <0|1> De/Activate turbo mode")
+    print_stdout("-t/--turbo <1|0> De/Activate turbo mode")
     print_stdout("")
     print_stdout("-x/--min freq\t Set minimal CPU frequency")
     print_stdout("-y/--max freq\t Set maximal CPU frequency")
@@ -249,22 +249,21 @@ if printAvailGovs or printAvailFreq or printCurFreq then
 end
 
 if do_reset then
+    local f = likwid.setTurbo(cpulist[i], 1)
     local availfreqs = likwid.getAvailFreq(cpulist[1])
     local availgovs = likwid.getAvailGovs(cpulist[1])
     if not min_freq then
-        print("min", availfreqs[1])
         min_freq = availfreqs[1]
     end
     if not (set_turbo or max_freq) then
         set_turbo = true
         turbo = 1
-        print("max", availfreqs[#availfreqs])
         max_freq = availfreqs[#availfreqs]
     end
     if not governor then
         governor = availgovs[#availgovs]
     end
-    print_stdout(string.format("Reset to governor %s with min freq. %g GHz and activate turbo mode", governor, min_freq))
+    print_stdout(string.format("Reset to governor %s with min freq. %g GHz and deactivate turbo mode", governor, min_freq))
 end
 
 if numthreads > 0 and not (frequency or min_freq or max_freq or governor or min_u_freq or max_u_freq or set_turbo) then
