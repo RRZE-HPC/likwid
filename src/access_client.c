@@ -383,7 +383,7 @@ void
 access_client_finalize(int cpu_id)
 {
     AccessDataRecord record;
-    if (cpuSockets[cpu_id] > 0)
+    if (cpuSockets && cpuSockets[cpu_id] > 0)
     {
         record.type = DAEMON_EXIT;
         CHECK_ERROR(write(cpuSockets[cpu_id], &record, sizeof(AccessDataRecord)),socket write failed);
@@ -394,10 +394,6 @@ access_client_finalize(int cpu_id)
     if (cpuSockets_open == 0)
     {
         globalSocket = -1;
-        free(cpuSockets);
-        cpuSockets = NULL;
-        free(cpuLocks);
-        cpuLocks = NULL;
     }
     masterPid = 0;
 }
@@ -434,5 +430,19 @@ access_client_check(PciDeviceIndex dev, int cpu_id)
         }
     }
     return 0;
+}
+
+void __attribute__((destructor (104))) close_access_client(void)
+{
+    if (cpuSockets)
+    {
+        free(cpuSockets);
+        cpuSockets = NULL;
+    }
+    if (cpuLocks)
+    {
+        free(cpuLocks);
+        cpuLocks = NULL;
+    }
 }
 

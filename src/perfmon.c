@@ -91,7 +91,7 @@ int perfmon_numArchEvents = 0;
 int perfmon_initialized = 0;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 int maps_checked = 0;
-uint64_t currentConfig[MAX_NUM_THREADS][NUM_PMC] = { 0 };
+uint64_t **currentConfig = NULL;
 
 PerfmonGroupSet* groupSet = NULL;
 LikwidResults* markerResults = NULL;
@@ -1438,20 +1438,39 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         free(groupSet);
         return -ENOMEM;
     }
+    currentConfig = malloc(cpuid_topology.numHWThreads*sizeof(uint64_t*));
+    if (!currentConfig)
+    {
+        ERROR_PLAIN_PRINT(Cannot allocate config lists);
+        free(groupSet);
+        return -ENOMEM;
+    }
     groupSet->numberOfThreads = nrThreads;
     groupSet->numberOfGroups = 0;
     groupSet->numberOfActiveGroups = 0;
     groupSet->groups = NULL;
     groupSet->activeGroup = -1;
 
-    for(i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
-    for(i=0; i<MAX_NUM_THREADS; i++)
+    for(i=0; i<cpuid_topology.numSockets; i++) socket_lock[i] = LOCK_INIT;
+    for(i=0; i<cpuid_topology.numHWThreads; i++)
     {
         tile_lock[i] = LOCK_INIT;
         core_lock[i] = LOCK_INIT;
         sharedl3_lock[i] = LOCK_INIT;
+        sharedl2_lock[i] = LOCK_INIT;
+        numa_lock[i] = LOCK_INIT;
+        currentConfig[i] = malloc(NUM_PMC * sizeof(uint64_t));
+        if (!currentConfig[i])
+        {
+            for (int j = 0; j < i; j++)
+            {
+                free(currentConfig[j]);
+            }
+            free(groupSet);
+            return -ENOMEM;
+        }
+        memset(currentConfig[i], 0, NUM_PMC * sizeof(uint64_t));
     }
-
 
     /* Initialize access interface */
 #ifndef LIKWID_USE_PERFEVENT
@@ -1551,9 +1570,15 @@ perfmon_finalize(void)
     groupSet->activeGroup = -1;
     if (groupSet)
         free(groupSet);
-    for (group=0; group < MAX_NUM_THREADS; group++)
+    if (currentConfig)
     {
-        memset(currentConfig[group], 0, NUM_PMC * sizeof(uint64_t));
+        for (group=0; group < cpuid_topology.numHWThreads; group++)
+        {
+            memset(currentConfig[group], 0, NUM_PMC * sizeof(uint64_t));
+            free(currentConfig[group]);
+        }
+        free(currentConfig);
+        currentConfig = NULL;
     }
     if (markerResults != NULL)
     {

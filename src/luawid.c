@@ -2032,8 +2032,10 @@ lua_likwid_waitpid(lua_State* L)
     pid_t retpid = waitpid(pid, &status, 0);
     if (pid == retpid)
     {
-        if (WIFEXITED(status))
+        if (WIFEXITED(status) || WIFSIGNALED(status))
+        {
             ret = WEXITSTATUS(status);
+        }
     }
     lua_pushinteger(L, ret);
     return 1;

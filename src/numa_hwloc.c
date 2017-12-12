@@ -219,6 +219,7 @@ hwloc_numa_init(void)
     int d;
     int depth;
     int cores_per_socket;
+    int numPUs = 0;
     hwloc_obj_t obj;
     const struct hwloc_distances_s* distances;
     hwloc_obj_type_t hwloc_type = HWLOC_OBJ_NODE;
@@ -232,6 +233,7 @@ hwloc_numa_init(void)
     }
 
     numa_info.numberOfNodes = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, hwloc_type);
+    numPUs = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
 
     /* If the amount of NUMA nodes == 0, there is actually no NUMA node, hence
        aggregate all sockets in the system into the single virtually created NUMA node */
@@ -250,11 +252,11 @@ hwloc_numa_init(void)
         numa_info.nodes[0].numberOfProcessors = 0;
         numa_info.nodes[0].totalMemory = getTotalNodeMem(0);
         numa_info.nodes[0].freeMemory = getFreeNodeMem(0);
-        numa_info.nodes[0].processors = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
+        numa_info.nodes[0].processors = (uint32_t*) malloc(numPUs * sizeof(uint32_t));
         if (!numa_info.nodes[0].processors)
         {
             fprintf(stderr,"No memory to allocate %ld byte for processors array of NUMA node %d\n",
-                    MAX_NUM_THREADS * sizeof(uint32_t),0);
+                    numPUs * sizeof(uint32_t),0);
             return -1;
         }
         numa_info.nodes[0].distances = (uint32_t*) malloc(sizeof(uint32_t));
@@ -308,11 +310,11 @@ hwloc_numa_init(void)
             }
             /* freeMemory not detected by hwloc, do it the native way */
             numa_info.nodes[i].freeMemory = getFreeNodeMem(numa_info.nodes[i].id);
-            numa_info.nodes[i].processors = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
+            numa_info.nodes[i].processors = (uint32_t*) malloc(numPUs * sizeof(uint32_t));
             if (!numa_info.nodes[i].processors)
             {
                 fprintf(stderr,"No memory to allocate %ld byte for processors array of NUMA node %d\n",
-                        MAX_NUM_THREADS * sizeof(uint32_t), i);
+                        numPUs * sizeof(uint32_t), i);
                 return -1;
             }
             d = 0;

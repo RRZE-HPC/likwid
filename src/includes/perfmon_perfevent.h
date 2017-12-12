@@ -41,7 +41,8 @@
 #include <string.h>
 
 extern char** translate_types;
-static int* cpu_event_fds[MAX_NUM_THREADS] = { NULL };
+static int** cpu_event_fds = NULL;
+static int active_cpus = 0;
 static int paranoid_level = -1;
 static int informed_paranoid = 0;
 static int running_group = -1;
@@ -90,6 +91,12 @@ int perfmon_init_perfevent(int cpu_id)
     }
     lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
+    if (cpu_event_fds == NULL)
+    {
+        cpu_event_fds = malloc(cpuid_topology.numHWThreads * sizeof(int*));
+        for (int i=0; i < cpuid_topology.numHWThreads; i++)
+            cpu_event_fds[i] = NULL;
+    }
     if (cpu_event_fds[cpu_id] == NULL)
     {
         cpu_event_fds[cpu_id] = (int*) malloc(perfmon_numCounters * sizeof(int));
@@ -98,6 +105,7 @@ int perfmon_init_perfevent(int cpu_id)
             return -ENOMEM;
         }
         memset(cpu_event_fds[cpu_id], -1, perfmon_numCounters * sizeof(int));
+        active_cpus += 1;
     }
     return 0;
 }
@@ -264,19 +272,11 @@ int perfmon_setupCountersThread_perfevent(
                 ret = perf_pmc_setup(&attr, event);
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
                 break;
-<<<<<<< HEAD
-        case POWER:
-=======
             case POWER:
->>>>>>> 9b33b64baf09ada25c95c587bbf600874db602d6
                 ret = perf_uncore_setup(&attr, type, event);
                 is_uncore = 1;
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
                 break;
-<<<<<<< HEAD
-
-=======
->>>>>>> 9b33b64baf09ada25c95c587bbf600874db602d6
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)
             case MBOX0:
             case MBOX1:
@@ -486,7 +486,17 @@ int perfmon_finalizeCountersThread_perfevent(int thread_id, PerfmonEventSet* eve
             cpu_event_fds[cpu_id][index] = -1;
         }
     }
-    free(cpu_event_fds[cpu_id]);
+    if (cpu_event_fds[cpu_id] != NULL)
+    {
+        free(cpu_event_fds[cpu_id]);
+        cpu_event_fds[cpu_id] = NULL;
+        active_cpus--;
+    }
+    if (active_cpus == 0)
+    {
+        free(cpu_event_fds);
+        cpu_event_fds = NULL;
+    }
     return 0;
 }
 

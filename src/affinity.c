@@ -49,16 +49,17 @@
 #include <likwid.h>
 #include <numa.h>
 #include <affinity.h>
+#include <lock.h>
 #include <tree.h>
 #include <topology.h>
 #include <topology_hwloc.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
-int affinity_thread2socket_lookup[MAX_NUM_THREADS];
-int affinity_thread2core_lookup[MAX_NUM_THREADS];
-int affinity_thread2sharedl3_lookup[MAX_NUM_THREADS];
-int affinity_thread2numa_lookup[MAX_NUM_THREADS];
+int *affinity_thread2core_lookup = NULL;
+int *affinity_thread2socket_lookup = NULL;
+int *affinity_thread2numa_lookup = NULL;
+int *affinity_thread2sharedl3_lookup = NULL;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -78,8 +79,9 @@ static int
 getProcessorID(cpu_set_t* cpu_set)
 {
     int processorId;
+    topology_init();
 
-    for ( processorId = 0; processorId < MAX_NUM_THREADS; processorId++ )
+    for ( processorId = 0; processorId < cpuid_topology.numHWThreads; processorId++ )
     {
         if ( CPU_ISSET(processorId,cpu_set) )
         {
@@ -164,12 +166,28 @@ static int get_id_of_type(hwloc_obj_t base, hwloc_obj_type_t type)
     return -1;
 }
 
-static int create_locks()
+static int create_lookups()
 {
-    memset(affinity_thread2core_lookup, -1, MAX_NUM_THREADS*sizeof(int));
-    memset(affinity_thread2socket_lookup, -1, MAX_NUM_THREADS*sizeof(int));
-    memset(affinity_thread2sharedl3_lookup, -1, MAX_NUM_THREADS*sizeof(int));
-    memset(affinity_thread2numa_lookup, -1, MAX_NUM_THREADS*sizeof(int));
+    if (!affinity_thread2core_lookup)
+    {
+        affinity_thread2core_lookup = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(affinity_thread2core_lookup, -1, cpuid_topology.numHWThreads*sizeof(int));
+    }
+    if (!affinity_thread2socket_lookup)
+    {
+        affinity_thread2socket_lookup = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(affinity_thread2socket_lookup, -1, cpuid_topology.numHWThreads*sizeof(int));
+    }
+    if (!affinity_thread2sharedl3_lookup)
+    {
+        affinity_thread2sharedl3_lookup = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(affinity_thread2sharedl3_lookup, -1, cpuid_topology.numHWThreads*sizeof(int));
+    }
+    if (!affinity_thread2numa_lookup)
+    {
+        affinity_thread2numa_lookup = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(affinity_thread2numa_lookup, -1, cpuid_topology.numHWThreads*sizeof(int));
+    }
 
     int num_pu = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
     for (int pu_idx = 0; pu_idx < num_pu; pu_idx++)
@@ -220,6 +238,42 @@ static int create_locks()
     return 0;
 }
 
+/*static int create_locks()*/
+/*{*/
+/*    numa_init();*/
+/*    if (!socket_lock)*/
+/*    {*/
+/*        socket_lock = malloc(cpuid_topology.numSockets * sizeof(int));*/
+/*        memset(socket_lock, LOCK_INIT, cpuid_topology.numSockets*sizeof(int));*/
+/*    }*/
+/*    if (!tile_lock)*/
+/*    {*/
+/*        tile_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));*/
+/*        memset(tile_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));*/
+/*    }*/
+/*    if (!numa_lock)*/
+/*    {*/
+/*        numa_lock = malloc(numa_info.numberOfNodes * sizeof(int));*/
+/*        memset(numa_lock, LOCK_INIT, numa_info.numberOfNodes*sizeof(int));*/
+/*    }*/
+/*    if (!core_lock)*/
+/*    {*/
+/*        int cores = (cpuid_topology.numHWThreads/cpuid_topology.numThreadsPerCore);*/
+/*        core_lock = malloc(cores * sizeof(int));*/
+/*        memset(core_lock, LOCK_INIT, cores*sizeof(int));*/
+/*    }*/
+/*    if (!sharedl2_lock)*/
+/*    {*/
+/*        sharedl2_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));*/
+/*        memset(sharedl2_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));*/
+/*    }*/
+/*    if (!sharedl3_lock)*/
+/*    {*/
+/*        sharedl3_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));*/
+/*        memset(sharedl3_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));*/
+/*    }*/
+/*}*/
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void
@@ -236,7 +290,8 @@ affinity_init()
     }
     topology_init();
 
-    create_locks();
+    create_lookups();
+    //create_locks();
     int numberOfSocketDomains = cpuid_topology.numSockets;
 
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Socket domains %d, numberOfSocketDomains);
@@ -483,6 +538,27 @@ affinity_finalize()
     {
         free(affinityDomains.domains);
     }
+    if (affinity_thread2core_lookup)
+        free(affinity_thread2core_lookup);
+    if (affinity_thread2socket_lookup)
+        free(affinity_thread2socket_lookup);
+    if (affinity_thread2sharedl3_lookup)
+        free(affinity_thread2sharedl3_lookup);
+    if (affinity_thread2numa_lookup)
+        free(affinity_thread2numa_lookup);
+/*    if (socket_lock)*/
+/*        free(socket_lock);*/
+/*    if (core_lock)*/
+/*        free(core_lock);*/
+/*    if (tile_lock)*/
+/*        free(tile_lock);*/
+/*    if (numa_lock)*/
+/*        free(numa_lock);*/
+/*    if (sharedl2_lock)*/
+/*        free(sharedl2_lock);*/
+/*    if (sharedl3_lock)*/
+/*        free(sharedl3_lock);*/
+
     affinityDomains.domains = NULL;
     affinity_numberOfDomains = 0;
     affinityDomains.numberOfAffinityDomains = 0;

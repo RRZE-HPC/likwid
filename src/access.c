@@ -57,7 +57,7 @@
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int registeredCpus = 0;
-static int registeredCpuList[MAX_NUM_THREADS] = { [0 ... (MAX_NUM_THREADS-1)] = 0 };
+static int *registeredCpuList = NULL;
 static int (*access_read)(PciDeviceIndex dev, const int cpu, uint32_t reg, uint64_t *data) = NULL;
 static int (*access_write)(PciDeviceIndex dev, const int cpu, uint32_t reg, uint64_t data) = NULL;
 static int (*access_init) (int cpu_id) = NULL;
@@ -79,6 +79,12 @@ int
 HPMinit(void)
 {
     int ret = 0;
+    if (registeredCpuList == NULL)
+    {
+        registeredCpuList = malloc(cpuid_topology.numHWThreads* sizeof(int));
+        memset(registeredCpuList, 0, cpuid_topology.numHWThreads* sizeof(int));
+        registeredCpus = 0;
+    }
     if (access_init == NULL)
     {
 #if defined(__x86_64__) || defined(__i386__)
@@ -161,6 +167,11 @@ HPMfinalize()
                 registeredCpus--;
                 registeredCpuList[i] = 0;
             }
+        }
+        if (registeredCpuList && registeredCpus == 0)
+        {
+            free(registeredCpuList);
+            registeredCpuList = NULL;
         }
     }
     if (access_init != NULL)

@@ -47,7 +47,7 @@
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
-static uint64_t cpuFeatureMask[MAX_NUM_THREADS] = {0x0ULL};
+static uint64_t *cpuFeatureMask = NULL;
 static int features_initialized = 0;
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
@@ -258,6 +258,12 @@ cpuFeatures_init()
     }
 
     topology_init();
+    if (!cpuFeatureMask)
+    {
+        cpuFeatureMask = malloc(cpuid_topology.numHWThreads*sizeof(uint64_t));
+        memset(cpuFeatureMask, 0, cpuid_topology.numHWThreads*sizeof(uint64_t));
+    }
+
     if (!HPMinitialized())
     {
         HPMinit();
@@ -642,3 +648,12 @@ cpuFeatures_name(CpuFeature type)
     return NULL;
 }
 
+
+void __attribute__((destructor (104))) cpuFeatures_finalizeDestruct(void)
+{
+    if (cpuFeatureMask)
+    {
+        free(cpuFeatureMask);
+        cpuFeatureMask = NULL;
+    }
+}

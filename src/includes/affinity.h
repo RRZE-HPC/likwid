@@ -40,15 +40,13 @@ int tile_lock[MAX_NUM_THREADS];
 int numa_lock[MAX_NUM_THREADS];
 int sharedl2_lock[MAX_NUM_THREADS];
 int sharedl3_lock[MAX_NUM_THREADS];
+
 extern AffinityDomains affinityDomains;
 
-//extern int affinity_thread2socket_lookup[MAX_NUM_THREADS];
-//extern int affinity_thread2core_lookup[MAX_NUM_THREADS];
-//
-extern int affinity_thread2core_lookup[MAX_NUM_THREADS];
-extern int affinity_thread2socket_lookup[MAX_NUM_THREADS];
-extern int affinity_thread2numa_lookup[MAX_NUM_THREADS];
-extern int affinity_thread2sharedl3_lookup[MAX_NUM_THREADS];
+extern int *affinity_thread2core_lookup;
+extern int *affinity_thread2socket_lookup;
+extern int *affinity_thread2numa_lookup;
+extern int *affinity_thread2sharedl3_lookup;
 extern int affinity_processGetProcessorId();
 extern int affinity_threadGetProcessorId();
 extern const AffinityDomain* affinity_getDomain(bstring domain);
