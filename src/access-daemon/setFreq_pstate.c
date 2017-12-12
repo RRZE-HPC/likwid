@@ -384,6 +384,7 @@ do_pstate (int argn, char** argv)
             throw(argv[0]);
             exit(EXIT_FAILURE);
         }
+        frq_pct = (frq_pct == 1 ? 0 : 1);
     }
     else
     {

@@ -201,12 +201,12 @@ uint64_t freq_pstate_getCpuClockMax(const int cpu_id )
 {
     char buff[256];
     unsigned int pct = 0;
-    uint64_t clock = 0;
     unsigned int maxFreq = getMax();
     if (num_steps == 0)
     {
         steps();
     }
+    uint64_t clock = ((percent[num_steps-1]) * maxFreq) * 10;
     FILE* f = fopen("/sys/devices/system/cpu/intel_pstate/max_perf_pct","r");
     if (f != NULL)
     {
@@ -235,12 +235,12 @@ uint64_t freq_pstate_getCpuClockMin(const int cpu_id )
 {
     char buff[256];
     unsigned int pct = 0;
-    uint64_t clock = 0;
     unsigned int maxFreq = getMax();
     if (num_steps == 0)
     {
         steps();
     }
+    uint64_t clock = ((percent[0]) * maxFreq) * 10;
     FILE* f = fopen("/sys/devices/system/cpu/intel_pstate/min_perf_pct","r");
     if (f != NULL)
     {
