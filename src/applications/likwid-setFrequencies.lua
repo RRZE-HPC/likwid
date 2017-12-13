@@ -414,7 +414,6 @@ if governor then
     local cur_min = {}
     local cur_max = {}
     for i,c in pairs(cpulist) do
-        --table.insert(cur_govs, likwid.getGovernor(c))
         cur_govs[i] = likwid.getGovernor(c)
         cur_min[i] = likwid.getCpuClockMin(c)
         cur_max[i] = likwid.getCpuClockMax(c)
@@ -428,13 +427,6 @@ if governor then
         end
     end
     local cur_freqs = {}
-    if governor == "turbo" and availturbo ~= "0" then
-        valid_gov = true
-        governor = "performance"
-        for i=1,#cpulist do
-            cur_freqs[cpulist[i]] = availturbo
-        end
-    end
     if not valid_gov then
         print_stderr(string.format("ERROR: Governor %s not available! Please select one of\n%s", governor, table.concat(govs, ", ")))
         os.exit(1)
@@ -444,15 +436,11 @@ if governor then
             print_stdout(string.format("DEBUG: Set governor for CPU %d to %s", cpulist[i], governor))
         end
         local f = likwid.setGovernor(cpulist[i], governor)
+        if do_reset then
+            likwid.setCpuClockMin(cpulist[i], cur_min[i])
+            likwid.setCpuClockMax(cpulist[i], cur_max[i])
+        end
     end
---    for i,c in pairs(cpulist) do
---        if (cur_min[i] ~= likwid.getCpuClockMin(c)) then
---            likwid.setCpuClockMin(c, cur_min[i])
---        end
---        if (cur_max[i] ~= likwid.getCpuClockMax(c)) then
---            likwid.setCpuClockMax(c, cur_max[i])
---        end
---    end
 end
 likwid.putAffinityInfo()
 likwid.putTopology()
