@@ -107,9 +107,12 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     {
         setenv("HWLOC_HIDE_ERRORS", "1", 1);
     }
-    likwid_hwloc_topology_init(&hwloc_topology);
-    likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
-    likwid_hwloc_topology_load(hwloc_topology);
+    if (!hwloc_topology)
+    {
+        likwid_hwloc_topology_init(&hwloc_topology);
+        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
+        likwid_hwloc_topology_load(hwloc_topology);
+    }
     obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_SOCKET, 0);
 
     cpuid_info.model = 0;
@@ -403,7 +406,8 @@ hwloc_close(void)
 {
     if (hwloc_topology)
     {
-        hwloc_topology_destroy(hwloc_topology);
+        likwid_hwloc_topology_destroy(hwloc_topology);
+        hwloc_topology = NULL;
     }
 }
 #else

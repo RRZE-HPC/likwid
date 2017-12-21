@@ -1418,6 +1418,7 @@ int calc_add_to_varlist(char* name, bstring bvarlist)
     if (blength(bvarlist) > 0)
         bcatcstr(bvarlist, ",");
     ret = bconcat(bvarlist, bname);
+    bdestroy(bname);
     return ret;
 }
 
@@ -1474,6 +1475,7 @@ int calc_add_dbl_def(char* name, double value, int cpu)
     int ret = 0;
     bstring add = bformat("%s = %20.20f\n", name, value);
     ret = _calc_add_def(add, cpu);
+    bdestroy(add);
     if (!ret)
         ret = calc_add_to_varlist(name, bglob_defines_list);
     return ret;
@@ -1485,6 +1487,7 @@ int calc_add_int_def(char* name, int value, int cpu)
     int ret = 0;
     bstring add = bformat("%s = %d\n", name, value);
     ret = _calc_add_def(add, cpu);
+    bdestroy(add);
     if (!ret)
         ret = calc_add_to_varlist(name, bglob_defines_list);
     return ret;
@@ -1496,6 +1499,7 @@ int calc_add_str_def(char* name, char* value, int cpu)
     int ret = 0;
     bstring add = bformat("%s = %s\n", name, value);
     ret = _calc_add_def(add, cpu);
+    bdestroy(add);
     if (!ret)
         ret = calc_add_to_varlist(name, bglob_defines_list);
     return ret;

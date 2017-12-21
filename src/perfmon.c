@@ -1410,6 +1410,8 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         return -EINVAL;
     }
 
+    init_configuration();
+
     if ((cpuid_info.family == 0) && (cpuid_info.model == 0))
     {
         ERROR_PLAIN_PRINT(Topology module not inialized. Needed to determine current CPU type);
@@ -1485,6 +1487,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     }
 #endif
     timer_init();
+    affinity_init();
 
     /* Initialize maps pointer to current architecture maps */
     perfmon_init_maps();

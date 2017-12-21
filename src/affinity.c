@@ -168,6 +168,7 @@ static int get_id_of_type(hwloc_obj_t base, hwloc_obj_type_t type)
 
 static int create_lookups()
 {
+    topology_init();
     if (!affinity_thread2core_lookup)
     {
         affinity_thread2core_lookup = malloc(cpuid_topology.numHWThreads * sizeof(int));
@@ -206,12 +207,12 @@ static int create_lookups()
     }
     int maxNumLevels = 0;
     int depth = likwid_hwloc_topology_get_depth(hwloc_topology);
-    for (int d = 0; d < depth; d++)
+    for (int d = 1; d <= depth; d++)
     {
         if (likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_CACHE)
             maxNumLevels++;
     }
-    for(int d=depth-1;d >= 0; d--)
+    for(int d=depth-1;d >= 1; d--)
     {
         if (likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_CACHE)
         {
@@ -537,15 +538,28 @@ affinity_finalize()
     if (affinityDomains.domains != NULL)
     {
         free(affinityDomains.domains);
+        affinityDomains.domains = NULL;
     }
     if (affinity_thread2core_lookup)
+    {
         free(affinity_thread2core_lookup);
+        affinity_thread2core_lookup = NULL;
+    }
     if (affinity_thread2socket_lookup)
+    {
         free(affinity_thread2socket_lookup);
+        affinity_thread2socket_lookup = NULL;
+    }
     if (affinity_thread2sharedl3_lookup)
+    {
         free(affinity_thread2sharedl3_lookup);
+        affinity_thread2sharedl3_lookup = NULL;
+    }
     if (affinity_thread2numa_lookup)
+    {
         free(affinity_thread2numa_lookup);
+        affinity_thread2numa_lookup = NULL;
+    }
 /*    if (socket_lock)*/
 /*        free(socket_lock);*/
 /*    if (core_lock)*/
