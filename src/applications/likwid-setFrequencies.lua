@@ -252,14 +252,20 @@ if printCurFreq then
         freq = tonumber(likwid.getCpuClockCurrent(cpulist[i]))/1E9
         min = tonumber(likwid.getCpuClockMin(cpulist[i]))/1E9
         max = tonumber(likwid.getCpuClockMax(cpulist[i]))/1E9
-        print_stdout(string.format("CPU %d: governor %12s min/cur/max %s/%s/%s GHz",cpulist[i], gov, round(min), round(freq), round(max)))
+        t = tonumber(likwid.getTurbo(cpulist[i]));
+        print_stdout(string.format("CPU %d: governor %12s min/cur/max %s/%s/%s GHz Turbo %d",cpulist[i], gov, round(min), round(freq), round(max), t))
     end
     print_stdout("")
-    print_stdout("Current Uncore frequencies:")
-    for i=1,#socklist do
-        min = tonumber(likwid.getUncoreFreqMin(socklist[i]))/1000.0
-        max = tonumber(likwid.getUncoreFreqMax(socklist[i]))/1000.0
-        print_stdout(string.format("Socket %d: min/max %s/%s GHz", socklist[i], round(min), round(max)))
+    test = likwid.getUncoreFreqMin(socklist[i])
+    if test ~= 0 then
+        print_stdout("Current Uncore frequencies:")
+        for i=1,#socklist do
+            min = tonumber(likwid.getUncoreFreqMin(socklist[i]))/1000.0
+            max = tonumber(likwid.getUncoreFreqMax(socklist[i]))/1000.0
+            print_stdout(string.format("Socket %d: min/max %s/%s GHz", socklist[i], round(min), round(max)))
+        end
+    else
+        print("No support for Uncore frequencies")
     end
 end
 

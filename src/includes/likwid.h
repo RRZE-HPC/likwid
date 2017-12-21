@@ -1487,6 +1487,13 @@ De/Activate turbo mode for core
 @return 1 or 0 in case of errors
 */
 extern int freq_setTurbo(const int cpu_id, int turbo) __attribute__ ((visibility ("default") ));
+/*! \brief Get state of turbo mode for core
+
+Get state of  turbo mode for core
+@param [in] cpu_id CPU ID
+@return 1=Turbo active or 0=Turbo inactive
+*/
+extern int freq_getTurbo(const int cpu_id) __attribute__ ((visibility ("default") ));
 /*! \brief Get the frequency governor of a core
 
 Get the frequency governor of a core. The returned string must be freed by the caller.

@@ -157,6 +157,7 @@ likwid.setCpuClockMax = likwid_setCpuClockMax
 likwid.getGovernor = likwid_getGovernor
 likwid.setGovernor = likwid_setGovernor
 likwid.setTurbo = likwid_setTurbo
+likwid.getTurbo = likwid_getTurbo
 likwid.setUncoreFreqMin = likwid_setUncoreFreqMin
 likwid.getUncoreFreqMin = likwid_getUncoreFreqMin
 likwid.setUncoreFreqMax = likwid_setUncoreFreqMax

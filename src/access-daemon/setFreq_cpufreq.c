@@ -34,7 +34,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 #include <setFreq.h>
+
+#define AMD_TURBO_MSR 0xC0010015
 
 static char setfiles[3][100] = {"scaling_min_freq", "scaling_max_freq", "scaling_setspeed"};
 static char getfiles[3][100] = {"cpuinfo_min_freq", "cpuinfo_max_freq", "cpuinfo_cur_freq"};
@@ -75,6 +82,41 @@ static int isTurbo(const int cpu_id)
     }
     return 0;
 }
+
+static int isAMD()
+{
+    unsigned int eax,ebx,ecx,edx;
+    eax = 0x0;
+    CPUID(eax,ebx,ecx,edx);
+    if (ecx == 0x444d4163)
+        return 1;
+    return 0;
+}
+
+static int setAMDTurbo(const int cpu_id, const int turbo)
+{
+    int ret = 0;
+    int fd = 0;
+    unsigned long int data = 0x0ULL;
+    char buff[256];
+    sprintf(buff, "/dev/cpu/%d/msr", cpu_id);
+    fd = open(buff, O_RDWR);
+    ret = pread(fd, &data, sizeof(unsigned long int), AMD_TURBO_MSR);
+
+    if (turbo)
+    {
+        data &= ~(1ULL << 25);
+    }
+    else
+    {
+        data |= (1ULL << 25);
+    }
+    ret = pwrite(fd, &data, sizeof(unsigned long int), AMD_TURBO_MSR);
+    if (ret != sizeof(unsigned long int))
+        return EXIT_FAILURE;
+    return EXIT_SUCCESS;
+}
+
 
 static int getAvailFreq(const int cpu_id )
 {
@@ -176,8 +218,8 @@ help(char *execname)
     printf("Frequency steps: (Freqs. in kHz)\n");
     if (num_steps == 0)
         nsteps = getAvailFreq(0);
-    //printf("%s ", turbo_step);
-    if (!isTurbo(0))
+
+    if ((!isTurbo(0)) && (!isAMD()))
         stepstart = 1;
     for (int s=nsteps-1; s>=stepstart; s--)
         printf("%s ", steps[s]);
@@ -456,31 +498,37 @@ do_cpufreq (int argn, char** argv)
             fclose(f);
             break;
         case TURBO:
-            
-            if (turbo == 0)
+            if (!isAMD())
             {
-                double fr = 0;
-                snprintf(fpath, 99, "/sys/devices/system/cpu/cpu%d/cpufreq/%s", cpuid, setfiles[MAXIMUM]);
-                f = fopen(fpath, "w");
-                if (f == NULL) {
-                    fprintf(stderr, "Unable to open path %s for writing\n",fpath);
-                    free(fpath);
-                    return (EXIT_FAILURE);
+                if (turbo == 0)
+                {
+                    double fr = 0;
+                    snprintf(fpath, 99, "/sys/devices/system/cpu/cpu%d/cpufreq/%s", cpuid, setfiles[MAXIMUM]);
+                    f = fopen(fpath, "w");
+                    if (f == NULL) {
+                        fprintf(stderr, "Unable to open path %s for writing\n",fpath);
+                        free(fpath);
+                        return (EXIT_FAILURE);
+                    }
+                    fprintf(f,"%s",steps[1]);
+                    fclose(f);
                 }
-                fprintf(f,"%s",steps[1]);
-                fclose(f);
+                else
+                {
+                    snprintf(fpath, 99, "/sys/devices/system/cpu/cpu%d/cpufreq/%s", cpuid, setfiles[MAXIMUM]);
+                    f = fopen(fpath, "w");
+                    if (f == NULL) {
+                        fprintf(stderr, "Unable to open path %s for writing\n",fpath);
+                        free(fpath);
+                        return (EXIT_FAILURE);
+                    }
+                    fprintf(f,"%s", turbo_step);
+                    fclose(f);
+                }
             }
             else
             {
-                snprintf(fpath, 99, "/sys/devices/system/cpu/cpu%d/cpufreq/%s", cpuid, setfiles[MAXIMUM]);
-                f = fopen(fpath, "w");
-                if (f == NULL) {
-                    fprintf(stderr, "Unable to open path %s for writing\n",fpath);
-                    free(fpath);
-                    return (EXIT_FAILURE);
-                }
-                fprintf(f,"%s", turbo_step);
-                fclose(f);
+                return setAMDTurbo(cpuid, turbo);
             }
             break;
         case GOVERNER:

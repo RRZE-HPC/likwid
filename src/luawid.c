@@ -2536,6 +2536,14 @@ lua_likwid_setTurbo(lua_State* L)
 }
 
 static int
+lua_likwid_getTurbo(lua_State* L)
+{
+    const int cpu_id = lua_tointeger(L,-1);
+    lua_pushnumber(L, freq_getTurbo(cpu_id));
+    return 1;
+}
+
+static int
 lua_likwid_getGovernor(lua_State* L)
 {
     const int cpu_id = lua_tointeger(L,-1);
@@ -2865,6 +2873,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getAvailFreq", lua_likwid_getAvailFreq);
     lua_register(L, "likwid_getAvailGovs", lua_likwid_getAvailGovs);
     lua_register(L, "likwid_setTurbo", lua_likwid_setTurbo);
+    lua_register(L, "likwid_getTurbo", lua_likwid_getTurbo);
     lua_register(L, "likwid_setUncoreFreqMin", lua_likwid_setUncoreFreqMin);
     lua_register(L, "likwid_getUncoreFreqMin", lua_likwid_getUncoreFreqMin);
     lua_register(L, "likwid_setUncoreFreqMax", lua_likwid_setUncoreFreqMax);

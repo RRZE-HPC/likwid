@@ -264,8 +264,10 @@ uint64_t freq_pstate_getCpuClockMin(const int cpu_id )
         fclose(f);
     }
     return clock;
+}
 
-
-
+int freq_pstate_getTurbo(const int cpu_id )
+{
+    return (mode() ? 0 : 1);
 }
 
