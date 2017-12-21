@@ -447,8 +447,7 @@ int test_perfmoninit_valid()
 {
     int cpu = 0;
     init_configuration();
-    topology_init();
-    affinity_init();
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
     {
@@ -466,8 +465,7 @@ int test_perfmoninit_valid()
         goto fail;
     }
     perfmon_finalize();
-    affinity_finalize();
-    topology_finalize();
+
     destroy_configuration();
     return 1;
 fail:
