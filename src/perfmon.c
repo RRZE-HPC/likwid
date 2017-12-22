@@ -1411,6 +1411,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     }
 
     init_configuration();
+    topology_init();
 
     if ((cpuid_info.family == 0) && (cpuid_info.model == 0))
     {
@@ -1514,8 +1515,8 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             free(groupSet->threads);
             free(groupSet);
             groupSet = NULL;
-            for(i=0; i<cpuid_topology.numHWThreads; i++)
-            free(currentConfig[i]);
+            for(int j=0; j<cpuid_topology.numHWThreads; j++)
+                free(currentConfig[j]);
             free(currentConfig);
             currentConfig = NULL;
             return ret;
@@ -1528,8 +1529,8 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             free(groupSet->threads);
             free(groupSet);
             groupSet = NULL;
-            for(i=0; i<cpuid_topology.numHWThreads; i++)
-            free(currentConfig[i]);
+            for(int j=0; j<cpuid_topology.numHWThreads; j++)
+                free(currentConfig[j]);
             free(currentConfig);
             currentConfig = NULL;
             return -EACCES;
