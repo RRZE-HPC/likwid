@@ -189,7 +189,7 @@ power_init(int cpuId)
         err = HPMread(cpuId, MSR_DEV, MSR_TURBO_RATIO_LIMIT, &flags);
         if (err)
         {
-            fprintf(stderr,"Cannot gather values from MSR_TURBO_RATIO_LIMIT,\n");
+            fprintf(stderr,"Cannot gather values from MSR_TURBO_RATIO_LIMIT\n");
         }
         else
         {
@@ -267,7 +267,7 @@ power_init(int cpuId)
     }
     else
     {
-        fprintf(stderr,"Cannot gather values from MSR_PLATFORM_INFO,\n");
+        fprintf(stderr,"Cannot gather values from MSR_PLATFORM_INFO\n");
     }
 
     /* determine RAPL parameters */

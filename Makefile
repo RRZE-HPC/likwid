@@ -397,6 +397,7 @@ install: install_daemon install_freq
 	@cp -rf groups/* $(PREFIX)/share/likwid/perfgroups
 	@chmod 755 $(PREFIX)/share/likwid/perfgroups/*
 	@find $(PREFIX)/share/likwid/perfgroups -name "*.txt" -exec chmod 644 {} \;
+	@echo "===> INSTALL docs and examples to $(PREFIX)/share/likwid/docs"
 	@mkdir -p $(PREFIX)/share/likwid/docs
 	@chmod 755 $(PREFIX)/share/likwid/docs
 	@install -m 644 doc/bstrlib.txt $(PREFIX)/share/likwid/docs

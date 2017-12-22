@@ -157,6 +157,7 @@ likwid.setCpuClockMax = likwid_setCpuClockMax
 likwid.getGovernor = likwid_getGovernor
 likwid.setGovernor = likwid_setGovernor
 likwid.setTurbo = likwid_setTurbo
+likwid.getTurbo = likwid_getTurbo
 likwid.setUncoreFreqMin = likwid_setUncoreFreqMin
 likwid.getUncoreFreqMin = likwid_getUncoreFreqMin
 likwid.setUncoreFreqMax = likwid_setUncoreFreqMax
@@ -327,7 +328,7 @@ local function calculate_metric(formula, counters_to_values)
         if a:len() > b:len() then return true end
         return false
     end
-    local result = "Nan"
+    local result = "nan"
     local err = false
     local clist = {}
     for counter,value in pairs(counters_to_values) do
@@ -335,7 +336,11 @@ local function calculate_metric(formula, counters_to_values)
     end
     table.sort(clist, cmp)
     for _,counter in pairs(clist) do
-        formula = string.gsub(formula, tostring(counter), tostring(counters_to_values[counter]))
+        if tostring(counters_to_values[counter]) ~= "-nan" then
+            formula = string.gsub(formula, tostring(counter), tostring(counters_to_values[counter]))
+        else
+            formula = string.gsub(formula, tostring(counter), tostring(0))
+        end
     end
     for c in formula:gmatch"." do
         if c ~= "+" and c ~= "-" and  c ~= "*" and  c ~= "/" and c ~= "(" and c ~= ")" and c ~= "." and c:lower() ~= "e" then
@@ -458,6 +463,8 @@ local function stringsplit(astr, sSeparator, nMax, bRegexp)
     assert(sSeparator ~= '')
     assert(nMax == nil or nMax >= 1)
     if astr == nil then return {} end
+    astr = tostring(astr)
+    local astrlen = astr:len() or 0
     local aRecord = {}
 
     if astr:len() > 0 then
@@ -472,7 +479,7 @@ local function stringsplit(astr, sSeparator, nMax, bRegexp)
             nStart = nLast+1
             nFirst,nLast = astr:find(sSeparator, nStart, bPlain)
             nMax = nMax-1
-            end
+        end
         aRecord[nField] = astr:sub(nStart)
     end
 
@@ -668,7 +675,7 @@ local function num2str(value)
     local tmp = "0"
     if value ~= value then
         return "nan"
-    elseif value ~= 0 then
+    elseif type(value) == "number" and value ~= 0 then
         if tostring(value):match("%.0$") or value == math.tointeger(value) then
             tmp = tostring(math.tointeger(value))
         elseif string.format("%.4f", value):len() < 12 and
@@ -677,6 +684,8 @@ local function num2str(value)
         else
             tmp = string.format("%e", value)
         end
+    elseif type(value) == "string" then
+        tmp = value
     end
     return tmp
 end

@@ -137,6 +137,8 @@ gotC = false
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid())
 cpuClock = 1
 execpid = false
+perfflags = nil
+perfpid = nil
 likwid.catchSignal()
 
 if #arg == 0 then

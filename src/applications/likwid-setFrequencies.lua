@@ -81,6 +81,25 @@ function usage()
     print_stdout("needed.")
 end
 
+function round(x)
+    if (type(x) ~= "number") then
+        x = tonumber(x)
+    end
+
+    s = string.format("%f", x)
+    if not s:match("%d+%.%d+") then
+        s = s.. ".0"
+    end
+    slen = s:len()
+    while slen > 3 do
+        if s:sub(slen,slen) ~= "0" then break end
+        slen = slen - 1
+    end
+    if slen > 5 then
+        slen = 5
+    end
+    return s:sub(1, slen)
+end
 
 verbosity = 0
 governor = nil
@@ -128,7 +147,7 @@ for opt,arg in likwid.getopt(arg, {"V:", "g:", "c:", "f:", "l", "p", "h", "v", "
         if (t >= 0 and t <= 1) then
             turbo = t
         else
-            print_stderr(string.format("ERROR: Value %s for turbo not valid", arg))
+            print_stderr(string.format("ERROR: Value %s for turbo not valid: 1=active turbo, 0=disabled turbo", arg))
         end
     elseif opt == "V" then
         local s = tonumber(arg)
@@ -233,14 +252,20 @@ if printCurFreq then
         freq = tonumber(likwid.getCpuClockCurrent(cpulist[i]))/1E9
         min = tonumber(likwid.getCpuClockMin(cpulist[i]))/1E9
         max = tonumber(likwid.getCpuClockMax(cpulist[i]))/1E9
-        print_stdout(string.format("CPU %d: governor %12s min/cur/max %.2f/%.2f/%.2f GHz",cpulist[i], gov, min, freq, max))
+        t = tonumber(likwid.getTurbo(cpulist[i]));
+        print_stdout(string.format("CPU %d: governor %12s min/cur/max %s/%s/%s GHz Turbo %d",cpulist[i], gov, round(min), round(freq), round(max), t))
     end
     print_stdout("")
-    print_stdout("Current Uncore frequencies:")
-    for i=1,#socklist do
-        min = tonumber(likwid.getUncoreFreqMin(socklist[i]))/1000.0
-        max = tonumber(likwid.getUncoreFreqMax(socklist[i]))/1000.0
-        print_stdout(string.format("Socket %d: min/max %.2f/%.2f GHz", socklist[i], min, max))
+    test = likwid.getUncoreFreqMin(socklist[i])
+    if test ~= 0 then
+        print_stdout("Current Uncore frequencies:")
+        for i=1,#socklist do
+            min = tonumber(likwid.getUncoreFreqMin(socklist[i]))/1000.0
+            max = tonumber(likwid.getUncoreFreqMax(socklist[i]))/1000.0
+            print_stdout(string.format("Socket %d: min/max %s/%s GHz", socklist[i], round(min), round(max)))
+        end
+    else
+        print("No support for Uncore frequencies")
     end
 end
 
@@ -249,22 +274,21 @@ if printAvailGovs or printAvailFreq or printCurFreq then
 end
 
 if do_reset then
+    local f = likwid.setTurbo(cpulist[1], 0)
     local availfreqs = likwid.getAvailFreq(cpulist[1])
     local availgovs = likwid.getAvailGovs(cpulist[1])
     if not min_freq then
-        print("min", availfreqs[1])
         min_freq = availfreqs[1]
     end
     if not (set_turbo or max_freq) then
         set_turbo = true
-        turbo = 1
-        print("max", availfreqs[#availfreqs])
+        turbo = 0
         max_freq = availfreqs[#availfreqs]
     end
     if not governor then
         governor = availgovs[#availgovs]
     end
-    print_stdout(string.format("Reset to governor %s with min freq. %g GHz and activate turbo mode", governor, min_freq))
+    print_stdout(string.format("Reset to governor %s with min freq. %g GHz and deactivate turbo mode", governor, min_freq))
 end
 
 if numthreads > 0 and not (frequency or min_freq or max_freq or governor or min_u_freq or max_u_freq or set_turbo) then
@@ -287,6 +311,10 @@ end
 
 
 local availfreqs = likwid.getAvailFreq(cpulist[i])
+local savailfreqs = {}
+for i,f in pairs(availfreqs) do
+    savailfreqs[i] = round(f)
+end
 if verbosity == 3 then
     print_stdout("DEBUG Available freq.: "..table.concat(availfreqs, ", "))
 end
@@ -296,7 +324,7 @@ for x=1,2 do
     if min_freq then
         for i=1,#cpulist do
             local valid_freq = false
-            for k,v in pairs(availfreqs) do
+            for k,v in pairs(savailfreqs) do
                 if (min_freq == v) then
                     if verbosity == 3 then
                         print_stdout(string.format("DEBUG: Min frequency %g valid", min_freq))
@@ -309,7 +337,7 @@ for x=1,2 do
                 valid_freq = true
             end
             if not valid_freq then
-                print_stderr(string.format("ERROR: Selected min. frequency %s not available for CPU %d! Please select one of\n%s", min_freq, cpulist[i], table.concat(availfreqs, ", ")))
+                print_stderr(string.format("ERROR: Selected min. frequency %s not available for CPU %d! Please select one of\n%s", min_freq, cpulist[i], table.concat(savailfreqs, ", ")))
                 os.exit(1)
             end
             if verbosity == 3 then
@@ -331,7 +359,7 @@ for x=1,2 do
     if max_freq then
         for i=1,#cpulist do
             local valid_freq = false
-            for k,v in pairs(availfreqs) do
+            for k,v in pairs(savailfreqs) do
                 if (max_freq == v) then
                     if verbosity == 3 then
                         print_stdout(string.format("DEBUG: Max frequency %g valid", max_freq))
@@ -344,7 +372,7 @@ for x=1,2 do
                 valid_freq = true
             end
             if not valid_freq then
-                print_stderr(string.format("ERROR: Selected max. frequency %s not available for CPU %d! Please select one of\n%s", max_freq, cpulist[i], table.concat(availfreqs, ", ")))
+                print_stderr(string.format("ERROR: Selected max. frequency %s not available for CPU %d! Please select one of\n%s", max_freq, cpulist[i], table.concat(savailfreqs, ", ")))
                 os.exit(1)
             end
             if verbosity == 3 then
@@ -389,8 +417,12 @@ if governor then
     end
     local govs = likwid.getAvailGovs(cpulist[1])
     local cur_govs = {}
+    local cur_min = {}
+    local cur_max = {}
     for i,c in pairs(cpulist) do
-        table.insert(cur_govs, likwid.getGovernor(cpulist[1]))
+        cur_govs[i] = likwid.getGovernor(c)
+        cur_min[i] = likwid.getCpuClockMin(c)
+        cur_max[i] = likwid.getCpuClockMax(c)
     end
     
     local valid_gov = false
@@ -401,13 +433,6 @@ if governor then
         end
     end
     local cur_freqs = {}
-    if governor == "turbo" and availturbo ~= "0" then
-        valid_gov = true
-        governor = "performance"
-        for i=1,#cpulist do
-            cur_freqs[cpulist[i]] = availturbo
-        end
-    end
     if not valid_gov then
         print_stderr(string.format("ERROR: Governor %s not available! Please select one of\n%s", governor, table.concat(govs, ", ")))
         os.exit(1)
@@ -417,6 +442,10 @@ if governor then
             print_stdout(string.format("DEBUG: Set governor for CPU %d to %s", cpulist[i], governor))
         end
         local f = likwid.setGovernor(cpulist[i], governor)
+        if do_reset then
+            likwid.setCpuClockMin(cpulist[i], cur_min[i])
+            likwid.setCpuClockMax(cpulist[i], cur_max[i])
+        end
     end
 end
 likwid.putAffinityInfo()

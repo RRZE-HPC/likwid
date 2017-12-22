@@ -370,6 +370,7 @@ static PciDevice broadwellEP_pci_devices[MAX_NUM_PCI_DEVICES] = {
 static char* broadwellEP_translate_types[NUM_UNITS] = {
     [FIXED] = "/sys/bus/event_source/devices/cpu",
     [PMC] = "/sys/bus/event_source/devices/cpu",
+    [POWER] = "/sys/bus/event_source/devices/power",
     [MBOX0] = "/sys/bus/event_source/devices/uncore_imc_0",
     [MBOX1] = "/sys/bus/event_source/devices/uncore_imc_1",
     [MBOX2] = "/sys/bus/event_source/devices/uncore_imc_2",
@@ -417,5 +418,4 @@ static char* broadwellEP_translate_types[NUM_UNITS] = {
     [RBOX1] = "/sys/bus/event_source/devices/uncore_r3qpi_1",
     [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
     [IBOX0] = "/sys/bus/event_source/devices/uncore_irp",
-    [POWER] = "/sys/bus/event_source/devices/power",
 };

@@ -1,22 +1,24 @@
 
 
-all: topology pin markerAPI perfctr memsweeper powermeter bench genTopoCfg setFrequencies
+all: likwid-topology likwid-pin likwid-markerAPI likwid-perfctr likwid-memsweeper likwid-powermeter likwid-bench likwid-genTopoCfg likwid-setFrequencies
 
-topology:
+likwid-topology:
 	./tester.sh likwid-topology
-pin:
+likwid-pin:
 	./tester.sh likwid-pin
-perfctr:
+likwid-perfctr:
 	./tester.sh likwid-perfctr
-memsweeper:
+likwid-memsweeper:
 	./tester.sh likwid-memsweeper
-powermeter:
+likwid-powermeter:
 	./tester.sh likwid-powermeter
-bench:
+likwid-bench:
 	./tester.sh likwid-bench
-genTopoCfg:
+likwid-mpirun:
+	./tester.sh likwid-mpirun
+likwid-genTopoCfg:
 	./tester.sh likwid-genTopoCfg
-setFrequencies:
+likwid-setFrequencies:
 	./tester.sh likwid-setFrequencies
-markerAPI:
+likwid-markerAPI:
 	make -s -C .. streamGCC
