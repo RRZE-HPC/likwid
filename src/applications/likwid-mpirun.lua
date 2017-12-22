@@ -80,6 +80,7 @@ local function usage()
     print_stdout("-m/-marker\t\t Activate marker API mode")
     print_stdout("-O\t\t\t Output easily parseable CSV instead of fancy tables")
     print_stdout("-f\t\t\t Force overwrite of registers if they are in use. You can also use environment variable LIKWID_FORCE")
+    print_stdout("-e, --env <key>=<value>\t Set environment variables for MPI processes")
     print_stdout("")
     print_stdout("Processes are pinned to physical CPU cores first. For syntax questions see likwid-pin")
     print_stdout("")
@@ -107,6 +108,7 @@ local executable = {}
 local envsettings = {}
 local mpiopts = {}
 local debug = false
+local likwiddebug = false
 local use_marker = false
 local use_csv = false
 local force = false
@@ -1009,6 +1011,53 @@ local function createEventString(eventlist)
     return str
 end
 
+local function splitUncoreEvents(groupdata)
+    local core = {}
+    local uncore = {}
+    for i, e in pairs(groupdata["Events"]) do
+        if  not e["Counter"]:match("FIXC%d") and
+            not e["Counter"]:match("^PMC%d") and
+            not e["Counter"]:match("TMP%d") then
+            local event = e["Event"]..":"..e["Counter"]
+            table.insert(uncore, event)
+        else
+            local event = e["Event"]..":"..e["Counter"]
+            table.insert(core, event)
+        end
+    end
+    cevents = table.concat(core, ",")
+    uevents = table.concat(core, ",")
+    if #uncore > 0 then
+        uevents = uevents..","..table.concat(uncore,",")
+    end
+    return cevents, uevents
+end
+
+local function inList(value, list)
+    for _,l in pairs(list) do
+        if value == l then
+            return true
+        end
+    end
+    return false
+end
+
+local function uniqueList(list)
+    local newl = {}
+    for _,l in pairs(list) do
+        found = false
+        for _,k in pairs(newl) do
+            if l == k then
+                found = true
+            end
+        end
+        if not found then
+            table.insert(newl, l)
+        end
+    end
+    return newl
+end
+
 local function setPerfStrings(perflist, cpuexprs)
     local uncore = false
     local perfexprs = {}
@@ -1023,17 +1072,15 @@ local function setPerfStrings(perflist, cpuexprs)
             for j,cpu in pairs(d["processorList"]) do
                 table.insert(tmpList, cpu)
             end
-            table.insert(socketList, notmpList)
+            table.insert(socketList, tmpList)
             table.insert(socketListFlags, 1)
         end
     end
 
     for k, perfStr in pairs(perflist) do
-        local coreevents = {}
-        local uncoreevents = {}
         local gdata = nil
         gdata = likwid.get_groupdata(perfStr)
-        if gdata == nil then
+        if gdata == nil or gdata["EventString"]:len() == 0 then
             print_stderr("Cannot get data for group "..perfStr..". Skipping...")
         else
             table.insert(grouplist, gdata)
@@ -1041,47 +1088,38 @@ local function setPerfStrings(perflist, cpuexprs)
                 perfexprs[k] = {}
             end
 
-            for i, e in pairs(gdata["Events"]) do
-                if  not e["Counter"]:match("FIXC%d") and
-                    not e["Counter"]:match("^PMC%d") and
-                    not e["Counter"]:match("TMP%d") then
-                    table.insert(uncoreevents, e)
-                else
-                    table.insert(coreevents, e)
-                end
-            end
+            local coreevents = ""
+            local uncoreevents = ""
+            coreevents, uncoreevents = splitUncoreEvents(gdata)
+
             local tmpSocketFlags = {}
             for _,e in pairs(socketListFlags) do
                 table.insert(tmpSocketFlags, e)
             end
 
             for i,cpuexpr in pairs(cpuexprs) do
-                for j, cpu in pairs(likwid.stringsplit(cpuexpr,",")) do
-                    local uncore = false
-                    for sidx, socket in pairs(socketList) do
-                        local switchedFlag = false
-                        for _,c in pairs(socket) do
-                            if c == tonumber(cpu) then
-                                if tmpSocketFlags[sidx] == 1 then
-                                    local eventStr = createEventString(coreevents)
-                                    if #uncoreevents > 0 then
-                                        eventStr = eventStr .. ","..createEventString(uncoreevents)
-                                    end
-                                    table.insert(perfexprs[k], eventStr)
-                                    tmpSocketFlags[sidx] = 0
-                                    switchedFlag = true
-                                    uncore = true
-                                    break
-                                else
-                                    table.insert(perfexprs[k], createEventString(coreevents))
-                                    switchedFlag = true
-                                    uncore = true
-                                end
-                            end
+                local slist = {}
+                for j, cpu in pairs(cpuexpr) do
+                    for l, socklist in pairs(socketList) do
+                        if inList(cpu, socklist) then
+                            table.insert(slist, l)
                         end
-                        if switchedFlag then break end
                     end
-                    if uncore then break end
+                end
+                slist = uniqueList(slist)
+                local uncore = false
+                for _, s in pairs(slist) do
+                    if tmpSocketFlags[s] == 1 then
+                        tmpSocketFlags[s] = 0
+                        uncore = true
+                    end
+                end
+                if perfexprs[k][i] == nil then
+                    if uncore then
+                        perfexprs[k][i] = uncoreevents
+                    else
+                        perfexprs[k][i] = coreevents
+                    end
                 end
             end
 
@@ -1091,6 +1129,10 @@ local function setPerfStrings(perflist, cpuexprs)
                 end
             end
         end
+    end
+    if #grouplist == 0 then
+        print_stderr("No group can be configured for measurments, exiting.")
+        os.exit(1)
     end
     return perfexprs, grouplist
 end
@@ -1184,6 +1226,9 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
         if force and #perf > 0 then
             table.insert(cmd,"-f")
         end
+        if likwiddebug then
+            table.insert(cmd,"-V 3")
+        end
         table.insert(cmd,skipStr)
         table.insert(cmd,cpuexpr_opt)
         table.insert(cmd,table.concat(cpuexprs[i], ","))
@@ -1212,7 +1257,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     end
     for i, e in pairs(envsettings) do
         if debug then
-            print_stdout(string.format("DEBUG: Env %s", e))
+            print_stdout(string.format("DEBUG: Environment variable %s", e))
         end
         f:write(string.format("export %s\n", e))
     end
@@ -1369,6 +1414,7 @@ local function parseMarkerOutputFile(filename)
     local cpulist = {}
     local eventlist = {}
     local counterlist = {}
+    local regionlist = {}
     local idx = 1
     local results = {}
     local f = io.open(filename, "r")
@@ -1415,6 +1461,7 @@ local function parseMarkerOutputFile(filename)
                     results[current_region][gidx]["time"] = {}
                     results[current_region][gidx]["calls"] = {}
                 end
+                table.insert(regionlist, current_region)
             elseif parse_reg_info and line:match("^Region Info") then
                 linelist = likwid.stringsplit(line,",")
                 table.remove(linelist,1)
@@ -1465,7 +1512,12 @@ local function parseMarkerOutputFile(filename)
                         results[current_region][gidx][counter] = {}
                     end
                     for j, value in pairs(linelist) do
-                        results[current_region][gidx][counter][cpulist[j]] = tonumber(value)
+                        v = tonumber(value)
+                        if v then
+                            results[current_region][gidx][counter][cpulist[j]] = v
+                        else
+                            results[current_region][gidx][counter][cpulist[j]] = 0/0
+                        end
                     end
                     idx = idx + 1
                 end
@@ -1476,7 +1528,7 @@ local function parseMarkerOutputFile(filename)
         results[region]["clock"] = clock
     end
 
-    return host, tonumber(rank), results, cpulist
+    return host, tonumber(rank), results, cpulist, regionlist
 end
 
 
@@ -1609,7 +1661,8 @@ function printMpiOutput(group_list, all_results, regionname)
                     counterlist["inverseClock"] = 1.0/all_results[rank]["results"]["clock"]
                     tmpList = {all_results[rank]["hostname"]..":"..tostring(rank)..":"..tostring(cpu)}
                     for j=1,#groupdata["Metrics"] do
-                        local tmp = likwid.num2str(likwid.calculate_metric(gdata["Metrics"][j]["formula"], counterlist))
+                        local f = gdata["Metrics"][j]["formula"]
+                        local tmp = likwid.num2str(likwid.calculate_metric(f, counterlist))
                         table.insert(tmpList, tmp)
                     end
                     table.insert(secondtab,tmpList)
@@ -1677,6 +1730,7 @@ local cmd_options = {"h","help", -- default options for help message
                      "g:","group:", -- options to set group for performance measurements using likwid
                      "m","marker", -- options to activate MarkerAPI
                      "e:", "env:", -- options to forward environment variables
+                     "ld",         -- option to activate debugging in likwid-perfctr
                      "nperdomain:","pin:","hostfile:","O","f"} -- other options
 
 for opt,arg in likwid.getopt(arg,  cmd_options) do
@@ -1730,11 +1784,16 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
             nperdomain = nperdomain .. ":" ..threads
         end
     elseif opt == "e" or opt == "env" then
-        name, val = arg:match("([%a%d]+)=([%a%d]+)")
-        if name == nil or val == nil then
+        name, val = arg:match("([%a%d_]+)[=]*([%a%d_\"\"']*)")
+        if name == nil and (val == nil or tostring(val):len() == 0) then
             print_stderr("Invalid argument for -e/-env, must be varname=varvalue")
         else
-            table.insert(envsettings, arg)
+            if (val == nil or tostring(val):len() == 0) then
+                val = os.getenv(name) or ''
+            end
+            if name:len() > 0 and val:len() > 0 then
+                table.insert(envsettings, string.format("%s=%s", name, val))
+            end
         end
     elseif opt == "hostfile" then
         hostfile = arg
@@ -1746,6 +1805,8 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         mpitype = arg
     elseif opt == "omp" then
         omptype = arg
+    elseif opt == "ld" then
+        likwiddebug = true
     elseif opt == "s" or opt == "skip" then
         skipStr = "-s "..arg
     elseif opt == "?" then
@@ -1907,7 +1968,6 @@ if #cpuexprs > 0 then
     end
     ppn = #cpuexprs
     tpp = #cpuexprs[1]
-    print(tpp)
 
     if np == 0 then
         if debug then
@@ -2077,21 +2137,26 @@ if not use_marker then
 else
     local tmpList = {}
     local cpuCount = 0
+    local regionlist = {}
     for i, file in pairs(filelist) do
-        host, rank, results, cpulist = parseMarkerOutputFile(file)
+        host, rank, results, cpulist, rlist = parseMarkerOutputFile(file)
         if host ~= nil and rank ~= nil then
             if all_results[rank] == nil then
                 all_results[rank] = {}
             end
             all_results[rank]["hostname"] = host
             all_results[rank]["cpus"] = cpulist
+            for _, r in pairs(rlist) do
+                table.insert(regionlist, r)
+            end
             cpuCount = cpuCount + #cpulist
             tmpList[rank] = results
             os.remove(file)
         end
     end
+    regionlist = uniqueList(regionlist)
     if likwid.tablelength(all_results) > 0 then
-        for region, _ in pairs(tmpList[0]) do
+        for _,region in pairs(regionlist) do
             for rank,_ in pairs(all_results) do
                 all_results[rank]["results"] = tmpList[rank][region]
             end
