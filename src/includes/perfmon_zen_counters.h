@@ -5,8 +5,8 @@
  *
  *      Description:  Counter Header File of perfmon module for AMD Family 17
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.3.0
+ *      Released:  22.12.2017
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

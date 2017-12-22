@@ -6,13 +6,13 @@
  *      Description:  Header File NUMA module for internal use. External functions are
  *                    defined in likwid.h
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.3.0
+ *      Released:  22.12.2017
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2017 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
