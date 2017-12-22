@@ -98,6 +98,27 @@ static unsigned int getMax()
     return maxFreq;
 }
 
+static unsigned int getCurMax()
+{
+    char line[1024];
+    unsigned int maxFreq = 0;
+    char* eptr;
+    FILE* fp = fopen("/sys/devices/system/cpu/intel_pstate/max_perf_pct", "r");
+    if(fp != NULL)
+    {
+        eptr = fgets(line, 1024, fp);
+        maxFreq = strtoul(line, NULL, 10);
+        fclose(fp);
+    }
+    else
+    {
+        fprintf(stderr, "\tEXIT WITH ERROR:  Max Freq. could not be read\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return maxFreq;
+}
+
 
 static unsigned int getMin()
 {
@@ -105,6 +126,27 @@ static unsigned int getMin()
     unsigned int minFreq = 0;
     char* eptr;
     FILE* fp = fopen("/sys/devices/system/cpu/cpufreq/policy0/cpuinfo_min_freq", "r");
+    if(fp != NULL)
+    {
+        eptr = fgets(line, 1024, fp);
+        minFreq = strtoul(line, NULL, 10);
+        fclose(fp);
+    }
+    else
+    {
+        fprintf(stderr, "\tEXIT WITH ERROR:  Max Freq. could not be read\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return minFreq;
+}
+
+static unsigned int getCurMin()
+{
+    char line[1024];
+    unsigned int minFreq = 0;
+    char* eptr;
+    FILE* fp = fopen("/sys/devices/system/cpu/intel_pstate/min_perf_pct", "r");
     if(fp != NULL)
     {
         eptr = fgets(line, 1024, fp);
@@ -156,7 +198,7 @@ static unsigned int num_pstates()
     return num;
 }
 
-static char mode()
+static int mode()
 {
     char readval[5];
     char tmode;
@@ -165,7 +207,7 @@ static char mode()
     {
         while( fgets(readval, 5, fp) )
         {
-            tmode = readval[0];
+            tmode = atoi(readval);
         }
         fclose(fp);
     }
@@ -218,8 +260,8 @@ static void steps()
 
     if(maxFreq != 0)
     {
-        char t = mode();
-        if (t != '0')
+        int t = mode();
+        if (t != 0)
         {
             maxFreq = getMax()/(1+0.01*trb);
         }
@@ -384,6 +426,7 @@ do_pstate (int argn, char** argv)
             throw(argv[0]);
             exit(EXIT_FAILURE);
         }
+        frq_pct = (frq_pct == 1 ? 0 : 1);
     }
     else
     {
@@ -399,6 +442,7 @@ do_pstate (int argn, char** argv)
         exit(EXIT_FAILURE);
     }
 
+redo:
     switch(key)
     {
         case MINIMUM:
@@ -418,6 +462,7 @@ do_pstate (int argn, char** argv)
 
         case GOVERNOR:
             snprintf(fpath, 99, "/sys/devices/system/cpu/cpu%s/cpufreq/scaling_governor", argv[1]);
+            unsigned int bturbo = mode();
             f = fopen(fpath, "w");
             if (f == NULL) {
                 fprintf(stderr, "Unable to open path \"%s\" for writing\n", fpath);
@@ -426,6 +471,13 @@ do_pstate (int argn, char** argv)
             }
             fprintf(f,"%s",gov);
             fclose(f);
+            unsigned int aturbo = mode();
+            if (bturbo != aturbo)
+            {
+                frq_pct = bturbo;
+                key = TURBO;
+                goto redo;
+            }
             break;
 
         case TURBO:
