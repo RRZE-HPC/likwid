@@ -199,6 +199,9 @@ access_client_startDaemon(int cpu_id)
 int
 access_client_init(int cpu_id)
 {
+    topology_init();
+    numa_init();
+    affinity_init();
     if (masterPid != 0 && gettid() == masterPid)
     {
         return 0;
