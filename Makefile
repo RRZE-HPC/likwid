@@ -381,7 +381,6 @@ install: install_daemon install_freq
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<GITCOMMIT>/$(GITCOMMIT)/g" -e "s/<MINOR>/$(MINOR)/g" < $(DOC_DIR)/likwid-setFreq.1 > $(MANPREFIX)/man1/likwid-setFreq.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<GITCOMMIT>/$(GITCOMMIT)/g" -e "s/<MINOR>/$(MINOR)/g" < $(DOC_DIR)/likwid-features.1 > $(MANPREFIX)/man1/likwid-features.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<GITCOMMIT>/$(GITCOMMIT)/g" -e "s/<MINOR>/$(MINOR)/g" < $(DOC_DIR)/likwid-bench.1 > $(MANPREFIX)/man1/likwid-bench.1
-	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<GITCOMMIT>/$(GITCOMMIT)/g" -e "s/<MINOR>/$(MINOR)/g" < $(DOC_DIR)/likwid-agent.1 > $(MANPREFIX)/man1/likwid-agent.1
 	@sed -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<GITCOMMIT>/$(GITCOMMIT)/g" -e "s/<MINOR>/$(MINOR)/g" < $(DOC_DIR)/likwid-setFrequencies.1 > $(MANPREFIX)/man1/likwid-setFrequencies.1
 	@sed -e "s/.TH LUA/.TH LIKWID-LUA/g" -e "s/lua - Lua interpreter/likwid-lua - Lua interpreter included in LIKWID/g" -e "s/.B lua/.B likwid-lua/g" -e "s/.BR luac (1)//g" $(DOC_DIR)/likwid-lua.1 > $(MANPREFIX)/man1/likwid-lua.1
 	@chmod 644 $(MANPREFIX)/man1/likwid-*
@@ -398,21 +397,12 @@ install: install_daemon install_freq
 	@cp -rf groups/* $(PREFIX)/share/likwid/perfgroups
 	@chmod 755 $(PREFIX)/share/likwid/perfgroups/*
 	@find $(PREFIX)/share/likwid/perfgroups -name "*.txt" -exec chmod 644 {} \;
-	@echo "===> INSTALL monitoring groups to $(PREFIX)/share/likwid/mongroups"
-	@mkdir -p $(PREFIX)/share/likwid/mongroups
-	@chmod 755 $(PREFIX)/share/likwid/mongroups
-	@cp -rf monitoring/groups/* $(PREFIX)/share/likwid/mongroups
-	@chmod 755 $(PREFIX)/share/likwid/mongroups/*
-	@find $(PREFIX)/share/likwid/mongroups -name "*.txt" -exec chmod 644 {} \;
 	@mkdir -p $(PREFIX)/share/likwid/docs
 	@chmod 755 $(PREFIX)/share/likwid/docs
 	@install -m 644 doc/bstrlib.txt $(PREFIX)/share/likwid/docs
 	@mkdir -p $(PREFIX)/share/likwid/examples
 	@chmod 755 $(PREFIX)/share/likwid/examples
 	@install -m 644 examples/* $(PREFIX)/share/likwid/examples
-	@echo "===> INSTALL default likwid-agent.conf to $(PREFIX)/share/likwid/mongroups"
-	@sed -e "s+<PREFIX>+$(PREFIX)+g" monitoring/likwid-agent.conf > $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
-	@chmod 644 $(PREFIX)/share/likwid/mongroups/likwid-agent.conf
 	@echo "===> INSTALL filters to $(abspath $(PREFIX)/share/likwid/filter)"
 	@mkdir -p $(abspath $(PREFIX)/share/likwid/filter)
 	@chmod 755 $(abspath $(PREFIX)/share/likwid/filter)
@@ -470,21 +460,12 @@ move: move_daemon move_freq
 	@cp -rf $(PREFIX)/share/likwid/perfgroups/* $(INSTALLED_PREFIX)/share/likwid/perfgroups
 	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/perfgroups/*
 	@find $(INSTALLED_PREFIX)/share/likwid/perfgroups -name "*.txt" -exec chmod 644 {} \;
-	@echo "===> MOVE monitoring groups from $(PREFIX)/share/likwid/mongroups to $(INSTALLED_PREFIX)/share/likwid/mongroups"
-	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/mongroups
-	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/mongroups
-	@cp -rf $(PREFIX)/share/likwid/mongroups/* $(INSTALLED_PREFIX)/share/likwid/mongroups
-	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/mongroups/*
-	@find $(INSTALLED_PREFIX)/share/likwid/mongroups -name "*.txt" -exec chmod 644 {} \;
 	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/docs
 	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/docs
 	@install -m 644 $(PREFIX)/share/likwid/docs/bstrlib.txt $(INSTALLED_PREFIX)/share/likwid/docs
 	@mkdir -p $(INSTALLED_PREFIX)/share/likwid/examples
 	@chmod 755 $(INSTALLED_PREFIX)/share/likwid/examples
 	@install -m 644 examples/* $(INSTALLED_PREFIX)/share/likwid/examples
-	@echo "===> MOVE default likwid-agent.conf from $(PREFIX)/share/likwid/mongroups to $(INSTALLED_PREFIX)/share/likwid/mongroups"
-	@install $(PREFIX)/share/likwid/mongroups/likwid-agent.conf $(INSTALLED_PREFIX)/share/likwid/mongroups/likwid-agent.conf
-	@chmod 644 $(INSTALLED_PREFIX)/share/likwid/mongroups/likwid-agent.conf
 	@echo "===> MOVE filters from $(abspath $(PREFIX)/share/likwid/filter) to $(LIKWIDFILTERPATH)"
 	@mkdir -p $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)
@@ -521,7 +502,6 @@ uninstall: uninstall_daemon uninstall_freq
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter, groups and default configs from $(PREFIX)/share/likwid"
 	@rm -rf $(abspath $(PREFIX)/share/likwid/filter)
-	@rm -rf $(PREFIX)/share/likwid/mongroups
 	@rm -rf $(PREFIX)/share/likwid/perfgroups
 	@rm -rf $(PREFIX)/share/likwid/docs
 	@rm -rf $(PREFIX)/share/likwid/examples
@@ -557,7 +537,6 @@ uninstall_moved: uninstall_daemon_moved uninstall_freq_moved
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter, groups and default configs from $(INSTALLED_PREFIX)/share/likwid"
 	@rm -rf $(LIKWIDFILTERPATH)
-	@rm -rf $(INSTALLED_PREFIX)/share/likwid/mongroups
 	@rm -rf $(INSTALLED_PREFIX)/share/likwid/perfgroups
 	@rm -rf $(INSTALLED_PREFIX)/share/likwid/docs
 	@rm -rf $(INSTALLED_PREFIX)/share/likwid/examples
@@ -572,7 +551,6 @@ local: $(L_APPS) likwid.lua
 		chmod +x $$APP; \
 	done
 	@sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<RELEASE>/$(RELEASE)/g" -e "s+$(PREFIX)/lib+$(PWD)+g" -e "s+$(PREFIX)/share/likwid/perfgroups+$(PWD)/groups+g" -e "s/<GITCOMMIT>/$(GITCOMMIT)/g" -e "s/<MINOR>/$(MINOR)/g" likwid.lua;
-	@sed -i -e "s+$(PREFIX)/share/likwid/mongroups+$(PWD)/monitoring/groups+g" -e "s/<GITCOMMIT>/$(GITCOMMIT)/g" -e "s/<MINOR>/$(MINOR)/g" likwid-agent
 	@ln -sf liblikwid.so liblikwid.so.$(VERSION)
 	@ln -sf ext/hwloc/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION)
 	@ln -sf ext/lua/liblikwid-lua.so liblikwid-lua.so.$(VERSION)
