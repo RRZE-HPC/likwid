@@ -91,7 +91,7 @@ int perfmon_numArchEvents = 0;
 int perfmon_initialized = 0;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 int maps_checked = 0;
-uint64_t currentConfig[MAX_NUM_THREADS][NUM_PMC] = { 0 };
+uint64_t **currentConfig = NULL;
 
 PerfmonGroupSet* groupSet = NULL;
 LikwidResults* markerResults = NULL;
@@ -257,11 +257,16 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         }
         if ((check_settings) && (tmp != 0x0ULL))
         {
-            if (force == 1)
+            if (force == 1 || groupSet->numberOfGroups >= 1)
             {
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s has bits set (0x%llx) but we are forced to overwrite them,
                                              counter_map[index].key, LLU_CAST tmp);
-                err = HPMwrite(testcpu, counter_map[index].device, reg, 0x0ULL);
+/*                err = HPMwrite(testcpu, counter_map[index].device, reg, 0x0ULL);*/
+/*                for (int i = 0; i < groupSet->numberOfThreads; i++)*/
+/*                {*/
+/*                    int cpu_id = groupSet->threads[i].processorId;*/
+/*                    currentConfig[cpu_id][index] = 0x0ULL;*/
+/*                }*/
             }
             else if ((force == 0) && ((type != FIXED)&&(type != THERMAL)&&(type != POWER)&&(type != WBOX0FIX)))
             {
@@ -1405,6 +1410,8 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         return -EINVAL;
     }
 
+    init_configuration();
+
     if ((cpuid_info.family == 0) && (cpuid_info.model == 0))
     {
         ERROR_PLAIN_PRINT(Topology module not inialized. Needed to determine current CPU type);
@@ -1433,20 +1440,39 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         free(groupSet);
         return -ENOMEM;
     }
+    currentConfig = malloc(cpuid_topology.numHWThreads*sizeof(uint64_t*));
+    if (!currentConfig)
+    {
+        ERROR_PLAIN_PRINT(Cannot allocate config lists);
+        free(groupSet);
+        return -ENOMEM;
+    }
     groupSet->numberOfThreads = nrThreads;
     groupSet->numberOfGroups = 0;
     groupSet->numberOfActiveGroups = 0;
     groupSet->groups = NULL;
     groupSet->activeGroup = -1;
 
-    for(i=0; i<MAX_NUM_NODES; i++) socket_lock[i] = LOCK_INIT;
-    for(i=0; i<MAX_NUM_THREADS; i++)
+    for(i=0; i<cpuid_topology.numSockets; i++) socket_lock[i] = LOCK_INIT;
+    for(i=0; i<cpuid_topology.numHWThreads; i++)
     {
         tile_lock[i] = LOCK_INIT;
         core_lock[i] = LOCK_INIT;
         sharedl3_lock[i] = LOCK_INIT;
+        sharedl2_lock[i] = LOCK_INIT;
+        numa_lock[i] = LOCK_INIT;
+        currentConfig[i] = malloc(NUM_PMC * sizeof(uint64_t));
+        if (!currentConfig[i])
+        {
+            for (int j = 0; j < i; j++)
+            {
+                free(currentConfig[j]);
+            }
+            free(groupSet);
+            return -ENOMEM;
+        }
+        memset(currentConfig[i], 0, NUM_PMC * sizeof(uint64_t));
     }
-
 
     /* Initialize access interface */
 #ifndef LIKWID_USE_PERFEVENT
@@ -1456,10 +1482,12 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         ERROR_PLAIN_PRINT(Cannot set access functions);
         free(groupSet->threads);
         free(groupSet);
+        groupSet = NULL;
         return ret;
     }
 #endif
     timer_init();
+    affinity_init();
 
     /* Initialize maps pointer to current architecture maps */
     perfmon_init_maps();
@@ -1478,6 +1506,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             ERROR_PLAIN_PRINT(Cannot get access to performance counters);
             free(groupSet->threads);
             free(groupSet);
+            groupSet = NULL;
             return ret;
         }
 
@@ -1487,6 +1516,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             fprintf(stderr, "Cannot get access to MSRs. Please check permissions to the MSRs\n");
             free(groupSet->threads);
             free(groupSet);
+            groupSet = NULL;
             return -EACCES;
         }
 #endif
@@ -1543,9 +1573,15 @@ perfmon_finalize(void)
     groupSet->activeGroup = -1;
     if (groupSet)
         free(groupSet);
-    for (group=0; group < MAX_NUM_THREADS; group++)
+    if (currentConfig)
     {
-        memset(currentConfig[group], 0, NUM_PMC * sizeof(uint64_t));
+        for (group=0; group < cpuid_topology.numHWThreads; group++)
+        {
+            memset(currentConfig[group], 0, NUM_PMC * sizeof(uint64_t));
+            free(currentConfig[group]);
+        }
+        free(currentConfig);
+        currentConfig = NULL;
     }
     if (markerResults != NULL)
     {
@@ -2347,16 +2383,15 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
         if (groupSet->groups[groupId].events[e].type != NOTYPE)
         {
             char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            calc_add_dbl_var(ctr, perfmon_getResult(groupId, e, threadId), vars, varlist);
+            if (ctr)
+                calc_add_dbl_var(ctr, perfmon_getLastResult(groupId, e, threadId), vars, varlist);
         }
         else
         {
             char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            if (strstr(f, ctr) != NULL)
+            if (ctr && strstr(f, ctr) != NULL)
             {
-                bdestroy(vars);
-                bdestroy(varlist);
-                return NAN;
+                calc_add_int_var(ctr, 0, vars, varlist);
             }
         }
     }
@@ -2461,16 +2496,15 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
         if (groupSet->groups[groupId].events[e].type != NOTYPE)
         {
             char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            calc_add_dbl_var(ctr, perfmon_getLastResult(groupId, e, threadId), vars, varlist);
+            if (ctr)
+                calc_add_dbl_var(ctr, perfmon_getLastResult(groupId, e, threadId), vars, varlist);
         }
         else
         {
             char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            if (strstr(f, ctr) != NULL)
+            if (ctr && strstr(f, ctr) != NULL)
             {
-                bdestroy(vars);
-                bdestroy(varlist);
-                return NAN;
+                calc_add_int_var(ctr, 0, vars, varlist);
             }
         }
     }
@@ -3143,17 +3177,18 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
         if (groupSet->groups[markerResults[region].groupID].events[e].type != NOTYPE)
         {
             char* ctr = strtok(groupSet->groups[markerResults[region].groupID].group.counters[e], split);
-            double res = perfmon_getResultOfRegionThread(region, e, threadId);
-            calc_add_dbl_var(ctr, res, vars, varlist);
+            if (ctr)
+            {
+                double res = perfmon_getResultOfRegionThread(region, e, threadId);
+                calc_add_dbl_var(ctr, res, vars, varlist);
+            }
         }
         else
         {
             char *ctr = strtok(groupSet->groups[markerResults[region].groupID].group.counters[e], split);
-            if (strstr(f, ctr) != NULL)
+            if (ctr && strstr(f, ctr) != NULL)
             {
-                bdestroy(vars);
-                bdestroy(varlist);
-                return NAN;
+                calc_add_int_var(ctr, 0, vars, varlist);
             }
         }
     }
