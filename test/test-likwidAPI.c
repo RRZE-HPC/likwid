@@ -432,34 +432,47 @@ int test_perfmoninit_faulty()
     int cpu = 0;
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
+    {
+        if (verbose) fprintf(stderr, "perfmon_init failed with %d: %s\n", ret, strerror(errno));
         goto fail;
-    perfmon_finalize();
-    return 0;
-fail:
+    }
     perfmon_finalize();
     return 1;
+fail:
+    perfmon_finalize();
+    return 0;
 }
 
 int test_perfmoninit_valid()
 {
     int cpu = 0;
-    topology_init();
-    affinity_init();
+    init_configuration();
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
+    {
+        if (verbose) fprintf(stderr, "perfmon_init failed with %d: %s\n", ret, strerror(errno));
         goto fail;
+    }
     if (perfmon_getNumberOfGroups() != 0)
+    {
+        if (verbose) fprintf(stderr, "perfmon_getNumberOfGroups() unequal to zero\n");
         goto fail;
+    }
     if (perfmon_getNumberOfThreads() != 1)
+    {
+        if (verbose) fprintf(stderr, "perfmon_getNumberOfThreads() unequal to 1\n");
         goto fail;
+    }
     perfmon_finalize();
-    affinity_finalize();
-    topology_finalize();
+
+    destroy_configuration();
     return 1;
 fail:
     perfmon_finalize();
     affinity_finalize();
     topology_finalize();
+    destroy_configuration();
     return 0;
 }
 
@@ -677,13 +690,22 @@ int test_perfmongetgroups()
     char** slist = NULL;
     char** llist = NULL;
     int ret = perfmon_getGroups(&glist, &slist, &llist);
-
+    fprintf(stderr, "perfmon_getGroups() returned %d groups\n", ret);
     if (ret <= 0)
     {
         goto fail;
     }
+
     for (i=0; i< ret; i++)
     {
+        if (!glist[i])
+            fprintf(stderr, "No group name");
+        if (!slist[i])
+            fprintf(stderr, "No short info for group name %s\n", glist[i]);
+        if (!llist[i])
+            fprintf(stderr, "No long info for group name %s\n", glist[i]);
+        if (!llist[i] || !glist[i] || !slist[i])
+            goto fail;
         if (strcmp(glist[i], "") == 0)
         {
             goto fail;
@@ -1157,9 +1179,10 @@ fail:
 int test_perfmonresult_noinit()
 {
     double result = perfmon_getResult(0,0,0);
-    if (result != 0)
-        goto fail;
-    return 1;
+    if (isnan(result));
+    {
+        return 1;
+    }
 fail:
     return 0;
 }
@@ -1180,7 +1203,7 @@ int test_perfmonresult_noadd()
     if (ret != 0)
         goto fail;
     double result = perfmon_getResult(0,0,0);
-    if (result != 0)
+    if (!(isnan(result)))
         goto fail;
     perfmon_finalize();
     topology_finalize();
@@ -1523,7 +1546,7 @@ fail:
 int test_perfmonmetric_noinit()
 {
     double result = perfmon_getMetric(0,0,0);
-    if (result != 0)
+    if (!(isnan(result)))
         goto fail;
     return 1;
 fail:
@@ -1546,7 +1569,7 @@ int test_perfmonmetric_noadd()
     if (ret != 0)
         goto fail;
     double result = perfmon_getMetric(0,0,0);
-    if (result != 0)
+    if (!(isnan(result)))
         goto fail;
     perfmon_finalize();
     topology_finalize();
@@ -1577,7 +1600,7 @@ int test_perfmonmetric_nosetup()
         goto fail;
     group = ret;
     double result = perfmon_getMetric(group,0,0);
-    if (result != 0)
+    if (!(isnan(result)))
         goto fail;
     perfmon_finalize();
     topology_finalize();
@@ -1611,7 +1634,7 @@ int test_perfmonmetric_nostart()
     if (ret != 0)
         goto fail;
     double result = perfmon_getMetric(group,0,0);
-    if (result != 0)
+    if (!(isnan(result)))
         goto fail;
     perfmon_finalize();
     topology_finalize();
@@ -1648,7 +1671,7 @@ int test_perfmonmetric_nostop()
     if (ret != 0)
         goto fail;
     double result = perfmon_getMetric(group,0,0);
-    if (result != 0)
+    if (!(isnan(result)))
         goto fail;
     perfmon_finalize();
     topology_finalize();
@@ -1705,7 +1728,7 @@ fail:
 int test_perfmonlastmetric_noinit()
 {
     double result = perfmon_getLastMetric(0,0,0);
-    if (result != 0)
+    if (!(isnan(result)))
         goto fail;
     return 1;
 fail:
@@ -1728,7 +1751,7 @@ int test_perfmonlastmetric_noadd()
     if (ret != 0)
         goto fail;
     double result = perfmon_getLastMetric(0,0,0);
-    if (result != 0)
+    if (!(isnan(result)))
         goto fail;
     perfmon_finalize();
     topology_finalize();
@@ -1759,7 +1782,7 @@ int test_perfmonlastmetric_nosetup()
         goto fail;
     group = ret;
     double result = perfmon_getLastMetric(group,0,0);
-    if (result != 0)
+    if (!(isnan(result)))
         goto fail;
     perfmon_finalize();
     topology_finalize();
@@ -1793,7 +1816,7 @@ int test_perfmonlastmetric_nostart()
     if (ret != 0)
         goto fail;
     double result = perfmon_getLastMetric(group,0,0);
-    if (result != 0)
+    if (!(isnan(result)))
         goto fail;
     perfmon_finalize();
     topology_finalize();
@@ -1830,7 +1853,7 @@ int test_perfmonlastmetric_nostop()
     if (ret != 0)
         goto fail;
     double result = perfmon_getLastMetric(group,0,0);
-    if (result != 0)
+    if (!(isnan(result)))
         goto fail;
     perfmon_finalize();
     topology_finalize();
@@ -2132,15 +2155,17 @@ static test testlist[] = {
 int main()
 {
     int i = 0;
+    int ret = 0;
     //fclose(stderr);
     if (verbose > 0) perfmon_setVerbosity(3);
     while (testlist[i].testfunc != NULL)
     {
         printf("%s:\t", testlist[i].testname);
         if (verbose > 0) printf("\n");
-        if (testlist[i].testfunc() != testlist[i].result)
+        ret = testlist[i].testfunc();
+        if (ret != testlist[i].result)
         {
-            printf("FAILED\n");
+            printf("FAILED with return code %d instead of expected %d\n", ret, testlist[i].result);
             return 1;
         }
         printf("OK\n");
