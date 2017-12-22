@@ -40,6 +40,7 @@
 #include <sched.h>
 #include <pthread.h>
 #include <inttypes.h>
+#include <math.h>
 
 #include <likwid.h>
 #include <bitUtil.h>
@@ -527,14 +528,22 @@ likwid_markerStartRegion(const char* regionTag)
     results->cpuID = cpu_id;
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, START [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu,
-                regionTag, thread_id, cpu_id, i,
-                LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
-        //groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].startData =
-        //        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
+        if (groupSet->groups[groupSet->activeGroup].events[i].type != NOTYPE)
+        {
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, START [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu,
+                    regionTag, thread_id, cpu_id, i,
+                    LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
+            //groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].startData =
+            //        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
 
-        results->StartPMcounters[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
-        results->StartOverflows[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows;
+            results->StartPMcounters[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData;
+            results->StartOverflows[i] = groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows;
+        }
+        else
+        {
+            results->StartPMcounters[i] = NAN;
+            results->StartOverflows[i] = -1;
+        }
     }
     results->state = MARKER_STATE_START;
 
@@ -588,19 +597,26 @@ likwid_markerStopRegion(const char* regionTag)
 
     for(int i=0;i<groupSet->groups[groupSet->activeGroup].numberOfEvents;i++)
     {
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu, regionTag, thread_id, cpu_id, i,
-                        LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
-        result = calculateMarkerResult(groupSet->groups[groupSet->activeGroup].events[i].index, results->StartPMcounters[i],
-                                        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData,
-                                        groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows -
-                                        results->StartOverflows[i]);
-        if (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != THERMAL)
+        if (groupSet->groups[groupSet->activeGroup].events[i].type != NOTYPE)
         {
-            results->PMcounters[i] += result;
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, STOP [%s] READ EVENT [%d=%d] EVENT %d VALUE %llu, regionTag, thread_id, cpu_id, i,
+                            LLU_CAST groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData);
+            result = calculateMarkerResult(groupSet->groups[groupSet->activeGroup].events[i].index, results->StartPMcounters[i],
+                                            groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData,
+                                            groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows -
+                                            results->StartOverflows[i]);
+            if (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != THERMAL)
+            {
+                results->PMcounters[i] += result;
+            }
+            else
+            {
+                results->PMcounters[i] = result;
+            }
         }
         else
         {
-            results->PMcounters[i] = result;
+            results->PMcounters[i] = NAN;
         }
     }
     results->state = MARKER_STATE_STOP;
@@ -621,12 +637,9 @@ likwid_markerGetRegion(
 {
     if (! likwid_init)
     {
-        if (nr_events)
-            *nr_events = 0;
-        if (time)
-            *time = 0;
-        if (count)
-            *count = 0;
+        *nr_events = 0;
+        *time = 0;
+        *count = 0;
         return;
     }
     int length = 0;
@@ -641,19 +654,14 @@ likwid_markerGetRegion(
 
     cpu_id = hashTable_get(tag, &results);
     thread_id = getThreadID(myCPU);
-    if (count)
-        *count = results->count;
-    if (time)
-        *time = results->time;
-    if (nr_events && events && *nr_events > 0)
+    *count = results->count;
+    *time = results->time;
+    length = MIN(groupSet->groups[groupSet->activeGroup].numberOfEvents, *nr_events);
+    for(int i=0;i<length;i++)
     {
-        length = MIN(groupSet->groups[groupSet->activeGroup].numberOfEvents, *nr_events);
-        for(int i=0;i<length;i++)
-        {
-            events[i] = results->PMcounters[i];
-        }
-        *nr_events = length;
+        events[i] = results->PMcounters[i];
     }
+    *nr_events = length;
     bdestroy(tag);
     return;
 }
