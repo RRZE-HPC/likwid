@@ -1438,6 +1438,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     {
         ERROR_PLAIN_PRINT(Cannot allocate set of threads);
         free(groupSet);
+        groupSet = NULL;
         return -ENOMEM;
     }
     currentConfig = malloc(cpuid_topology.numHWThreads*sizeof(uint64_t*));
@@ -1445,6 +1446,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
     {
         ERROR_PLAIN_PRINT(Cannot allocate config lists);
         free(groupSet);
+        groupSet = NULL;
         return -ENOMEM;
     }
     groupSet->numberOfThreads = nrThreads;
@@ -1469,6 +1471,7 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
                 free(currentConfig[j]);
             }
             free(groupSet);
+            groupSet = NULL;
             return -ENOMEM;
         }
         memset(currentConfig[i], 0, NUM_PMC * sizeof(uint64_t));
@@ -1483,6 +1486,10 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
         free(groupSet->threads);
         free(groupSet);
         groupSet = NULL;
+        for(i=0; i<cpuid_topology.numHWThreads; i++)
+            free(currentConfig[i]);
+        free(currentConfig);
+        currentConfig = NULL;
         return ret;
     }
 #endif
@@ -1507,6 +1514,10 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             free(groupSet->threads);
             free(groupSet);
             groupSet = NULL;
+            for(i=0; i<cpuid_topology.numHWThreads; i++)
+            free(currentConfig[i]);
+            free(currentConfig);
+            currentConfig = NULL;
             return ret;
         }
 
@@ -1517,6 +1528,10 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
             free(groupSet->threads);
             free(groupSet);
             groupSet = NULL;
+            for(i=0; i<cpuid_topology.numHWThreads; i++)
+            free(currentConfig[i]);
+            free(currentConfig);
+            currentConfig = NULL;
             return -EACCES;
         }
 #endif

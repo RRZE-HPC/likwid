@@ -299,22 +299,29 @@ destroy_configuration(void)
     if (config.configFileName != NULL)
     {
         free(config.configFileName);
+        config.configFileName = NULL;
     }
     if (config.groupPath != NULL)
     {
         free(config.groupPath);
+        config.groupPath = NULL;
     }
     if (config.topologyCfgFileName != NULL)
     {
         free(config.topologyCfgFileName);
+        config.topologyCfgFileName = NULL;
     }
     if (config.daemonMode != ACCESSMODE_DIRECT)
     {
         if (config.daemonPath != NULL)
         {
             free(config.daemonPath);
+            config.daemonPath = NULL;
         }
     }
+    config.daemonMode = -1;
+    config.maxNumThreads = MAX_NUM_THREADS;
+    config.maxNumNodes = MAX_NUM_NODES;
     init_config = 0;
     return 0;
 }
