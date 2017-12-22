@@ -174,7 +174,7 @@ nodeProcessorList(int node, uint32_t** list)
 //    int unitSize = (int) (sizeof(unsigned long)*8);
     int unitSize = (int) 32; /* 8 nibbles */
 
-    *list = (uint32_t*) malloc(MAX_NUM_THREADS * sizeof(uint32_t));
+    *list = (uint32_t*) malloc(cpuid_topology.numHWThreads * sizeof(uint32_t));
     if (!(*list))
     {
         return -ENOMEM;
@@ -210,7 +210,7 @@ nodeProcessorList(int node, uint32_t** list)
                 {
                     if (val&(1UL<<j))
                     {
-                        if (count < MAX_NUM_THREADS)
+                        if (count < cpuid_topology.numHWThreads)
                         {
                             (*list)[count] = (j+cursor);
                         }

@@ -41,114 +41,11 @@
 #include <string.h>
 
 extern char** translate_types;
-static int* cpu_event_fds[MAX_NUM_THREADS] = { NULL };
+static int** cpu_event_fds = NULL;
+static int active_cpus = 0;
 static int paranoid_level = -1;
 static int informed_paranoid = 0;
 static int running_group = -1;
-
-/*static char* translate_types[NUM_UNITS] = {
-    [FIXED] = "/sys/bus/event_source/devices/cpu",
-    [PMC] = "/sys/bus/event_source/devices/cpu",
-    [MBOX0] = "/sys/bus/event_source/devices/uncore_imc_0",
-    [MBOX1] = "/sys/bus/event_source/devices/uncore_imc_1",
-    [MBOX2] = "/sys/bus/event_source/devices/uncore_imc_2",
-    [MBOX3] = "/sys/bus/event_source/devices/uncore_imc_3",
-    [MBOX4] = "/sys/bus/event_source/devices/uncore_imc_4",
-    [MBOX5] = "/sys/bus/event_source/devices/uncore_imc_5",
-    [MBOX6] = "/sys/bus/event_source/devices/uncore_imc_6",
-    [MBOX7] = "/sys/bus/event_source/devices/uncore_imc_7",
-    [CBOX0] = "/sys/bus/event_source/devices/uncore_cbox_0",
-    [CBOX1] = "/sys/bus/event_source/devices/uncore_cbox_1",
-    [CBOX2] = "/sys/bus/event_source/devices/uncore_cbox_2",
-    [CBOX3] = "/sys/bus/event_source/devices/uncore_cbox_3",
-    [CBOX4] = "/sys/bus/event_source/devices/uncore_cbox_4",
-    [CBOX5] = "/sys/bus/event_source/devices/uncore_cbox_5",
-    [CBOX6] = "/sys/bus/event_source/devices/uncore_cbox_6",
-    [CBOX7] = "/sys/bus/event_source/devices/uncore_cbox_7",
-    [CBOX8] = "/sys/bus/event_source/devices/uncore_cbox_8",
-    [CBOX9] = "/sys/bus/event_source/devices/uncore_cbox_9",
-    [CBOX10] = "/sys/bus/event_source/devices/uncore_cbox_10",
-    [CBOX11] = "/sys/bus/event_source/devices/uncore_cbox_11",
-    [CBOX12] = "/sys/bus/event_source/devices/uncore_cbox_12",
-    [CBOX13] = "/sys/bus/event_source/devices/uncore_cbox_13",
-    [CBOX14] = "/sys/bus/event_source/devices/uncore_cbox_14",
-    [CBOX15] = "/sys/bus/event_source/devices/uncore_cbox_15",
-    [CBOX16] = "/sys/bus/event_source/devices/uncore_cbox_16",
-    [CBOX17] = "/sys/bus/event_source/devices/uncore_cbox_17",
-    [CBOX18] = "/sys/bus/event_source/devices/uncore_cbox_18",
-    [CBOX19] = "/sys/bus/event_source/devices/uncore_cbox_19",
-    [CBOX20] = "/sys/bus/event_source/devices/uncore_cbox_20",
-    [CBOX21] = "/sys/bus/event_source/devices/uncore_cbox_21",
-    [CBOX22] = "/sys/bus/event_source/devices/uncore_cbox_22",
-    [CBOX23] = "/sys/bus/event_source/devices/uncore_cbox_23",
-    [BBOX0] = "/sys/bus/event_source/devices/uncore_ha_0",
-    [BBOX0] = "/sys/bus/event_source/devices/uncore_ha_1",
-    [WBOX] = "/sys/bus/event_source/devices/uncore_pcu",
-    [QBOX0] = "/sys/bus/event_source/devices/uncore_qpi_0",
-    [QBOX1] = "/sys/bus/event_source/devices/uncore_qpi_1",
-    [QBOX1] = "/sys/bus/event_source/devices/uncore_qpi_2",
-    [SBOX0] = "/sys/bus/event_source/devices/uncore_sbox_0",
-    [SBOX1] = "/sys/bus/event_source/devices/uncore_sbox_1",
-    [SBOX2] = "/sys/bus/event_source/devices/uncore_sbox_2",
-    [SBOX3] = "/sys/bus/event_source/devices/uncore_sbox_3",
-    [PBOX] = "/sys/bus/event_source/devices/uncore_r2pcie",
-    [RBOX0] = "/sys/bus/event_source/devices/uncore_r3qpi_0",
-    [RBOX1] = "/sys/bus/event_source/devices/uncore_r3qpi_1",
-    [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
-    [IBOX0] = "/sys/bus/event_source/devices/uncore_irp",
-};
-
-static char* translate_typesSKX[NUM_UNITS] = {
-    [FIXED] = "/sys/bus/event_source/devices/cpu",
-    [PMC] = "/sys/bus/event_source/devices/cpu",
-    [MBOX0] = "/sys/bus/event_source/devices/uncore_imc_0",
-    [MBOX1] = "/sys/bus/event_source/devices/uncore_imc_1",
-    [MBOX2] = "/sys/bus/event_source/devices/uncore_imc_2",
-    [MBOX3] = "/sys/bus/event_source/devices/uncore_imc_3",
-    [MBOX4] = "/sys/bus/event_source/devices/uncore_imc_4",
-    [MBOX5] = "/sys/bus/event_source/devices/uncore_imc_5",
-    [MBOX6] = "/sys/bus/event_source/devices/uncore_imc_6",
-    [MBOX7] = "/sys/bus/event_source/devices/uncore_imc_7",
-    [CBOX0] = "/sys/bus/event_source/devices/uncore_cbox_0",
-    [CBOX1] = "/sys/bus/event_source/devices/uncore_cbox_1",
-    [CBOX2] = "/sys/bus/event_source/devices/uncore_cbox_2",
-    [CBOX3] = "/sys/bus/event_source/devices/uncore_cbox_3",
-    [CBOX4] = "/sys/bus/event_source/devices/uncore_cbox_4",
-    [CBOX5] = "/sys/bus/event_source/devices/uncore_cbox_5",
-    [CBOX6] = "/sys/bus/event_source/devices/uncore_cbox_6",
-    [CBOX7] = "/sys/bus/event_source/devices/uncore_cbox_7",
-    [CBOX8] = "/sys/bus/event_source/devices/uncore_cbox_8",
-    [CBOX9] = "/sys/bus/event_source/devices/uncore_cbox_9",
-    [CBOX10] = "/sys/bus/event_source/devices/uncore_cbox_10",
-    [CBOX11] = "/sys/bus/event_source/devices/uncore_cbox_11",
-    [CBOX12] = "/sys/bus/event_source/devices/uncore_cbox_12",
-    [CBOX13] = "/sys/bus/event_source/devices/uncore_cbox_13",
-    [CBOX14] = "/sys/bus/event_source/devices/uncore_cbox_14",
-    [CBOX15] = "/sys/bus/event_source/devices/uncore_cbox_15",
-    [CBOX16] = "/sys/bus/event_source/devices/uncore_cbox_16",
-    [CBOX17] = "/sys/bus/event_source/devices/uncore_cbox_17",
-    [CBOX18] = "/sys/bus/event_source/devices/uncore_cbox_18",
-    [CBOX19] = "/sys/bus/event_source/devices/uncore_cbox_19",
-    [CBOX20] = "/sys/bus/event_source/devices/uncore_cbox_20",
-    [CBOX21] = "/sys/bus/event_source/devices/uncore_cbox_21",
-    [CBOX22] = "/sys/bus/event_source/devices/uncore_cbox_22",
-    [CBOX23] = "/sys/bus/event_source/devices/uncore_cbox_23",
-    [CBOX24] = "/sys/bus/event_source/devices/uncore_cbox_24",
-    [CBOX25] = "/sys/bus/event_source/devices/uncore_cbox_25",
-    [CBOX26] = "/sys/bus/event_source/devices/uncore_cbox_26",
-    [CBOX27] = "/sys/bus/event_source/devices/uncore_cbox_27",
-    [BBOX0] = "/sys/bus/event_source/devices/uncore_m2m_0",
-    [BBOX1] = "/sys/bus/event_source/devices/uncore_m2m_1",
-    [WBOX] = "/sys/bus/event_source/devices/uncore_pcu",
-    [SBOX0] = "/sys/bus/event_source/devices/uncore_upi_0",
-    [SBOX1] = "/sys/bus/event_source/devices/uncore_upi_1",
-    [SBOX2] = "/sys/bus/event_source/devices/uncore_upi_2",
-    [RBOX0] = "/sys/bus/event_source/devices/uncore_m3upi_0",
-    [RBOX1] = "/sys/bus/event_source/devices/uncore_m3upi_1",
-    [RBOX2] = "/sys/bus/event_source/devices/uncore_m3upi_2",
-    [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
-};*/
-
 
 static long
 perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
@@ -194,6 +91,12 @@ int perfmon_init_perfevent(int cpu_id)
     }
     lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
+    if (cpu_event_fds == NULL)
+    {
+        cpu_event_fds = malloc(cpuid_topology.numHWThreads * sizeof(int*));
+        for (int i=0; i < cpuid_topology.numHWThreads; i++)
+            cpu_event_fds[i] = NULL;
+    }
     if (cpu_event_fds[cpu_id] == NULL)
     {
         cpu_event_fds[cpu_id] = (int*) malloc(perfmon_numCounters * sizeof(int));
@@ -202,6 +105,7 @@ int perfmon_init_perfevent(int cpu_id)
             return -ENOMEM;
         }
         memset(cpu_event_fds[cpu_id], -1, perfmon_numCounters * sizeof(int));
+        active_cpus += 1;
     }
     return 0;
 }
@@ -497,9 +401,11 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_RESET, 0);
             eventSet->events[i].threadCounter[thread_id].startData = 0x0ULL;
             if (eventSet->events[i].type == POWER)
+            {
                 read(cpu_event_fds[cpu_id][index],
                      &eventSet->events[i].threadCounter[thread_id].startData,
                      sizeof(long long));
+            }
             VERBOSEPRINTREG(cpu_id, 0x0,
                             eventSet->events[i].threadCounter[thread_id].startData,
                             START_COUNTER);
@@ -580,7 +486,17 @@ int perfmon_finalizeCountersThread_perfevent(int thread_id, PerfmonEventSet* eve
             cpu_event_fds[cpu_id][index] = -1;
         }
     }
-    free(cpu_event_fds[cpu_id]);
+    if (cpu_event_fds[cpu_id] != NULL)
+    {
+        free(cpu_event_fds[cpu_id]);
+        cpu_event_fds[cpu_id] = NULL;
+        active_cpus--;
+    }
+    if (active_cpus == 0)
+    {
+        free(cpu_event_fds);
+        cpu_event_fds = NULL;
+    }
     return 0;
 }
 

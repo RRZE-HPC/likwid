@@ -59,9 +59,9 @@
 static int globalSocket = -1;
 static pid_t masterPid = 0;
 static int cpuSockets_open = 0;
-static int cpuSockets[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = -1};
+static int *cpuSockets = NULL;
 static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t cpuLocks[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = PTHREAD_MUTEX_INITIALIZER };
+static pthread_mutex_t *cpuLocks = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -102,6 +102,7 @@ static int
 access_client_startDaemon(int cpu_id)
 {
     /* Check the function of the daemon here */
+    int res = 0;
     char* filepath;
     char *newargv[] = { NULL };
     char *newenv[] = { NULL };
@@ -113,6 +114,7 @@ access_client_startDaemon(int cpu_id)
     pid_t pid;
     int timeout = 1000;
     int socket_fd = -1;
+    int print_once = 0;
 
     if (config.daemonPath != NULL)
     {
@@ -162,10 +164,10 @@ access_client_startDaemon(int cpu_id)
     snprintf(address.sun_path, sizeof(address.sun_path), TOSTRING(LIKWIDSOCKETBASE) "-%d", pid);
     filepath = strdup(address.sun_path);
 
-    while (timeout > 0)
+    res = connect(socket_fd, (struct sockaddr *) &address, address_length);
+    while (res && timeout > 0)
     {
-        int res;
-        usleep(1000);
+        usleep(2500);
         res = connect(socket_fd, (struct sockaddr *) &address, address_length);
 
         if (res == 0)
@@ -200,6 +202,19 @@ access_client_init(int cpu_id)
     if (masterPid != 0 && gettid() == masterPid)
     {
         return 0;
+    }
+    if (!cpuSockets)
+    {
+        cpuSockets = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(cpuSockets, -1, cpuid_topology.numHWThreads * sizeof(int));
+    }
+    if (!cpuLocks)
+    {
+        cpuLocks = malloc(cpuid_topology.numHWThreads * sizeof(pthread_mutex_t));
+        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        {
+            pthread_mutex_init(&cpuLocks[i], NULL);
+        }
     }
     if (cpuSockets[cpu_id] < 0)
     {
@@ -368,7 +383,7 @@ void
 access_client_finalize(int cpu_id)
 {
     AccessDataRecord record;
-    if (cpuSockets[cpu_id] > 0)
+    if (cpuSockets && cpuSockets[cpu_id] > 0)
     {
         record.type = DAEMON_EXIT;
         CHECK_ERROR(write(cpuSockets[cpu_id], &record, sizeof(AccessDataRecord)),socket write failed);
@@ -415,5 +430,19 @@ access_client_check(PciDeviceIndex dev, int cpu_id)
         }
     }
     return 0;
+}
+
+void __attribute__((destructor (104))) close_access_client(void)
+{
+    if (cpuSockets)
+    {
+        free(cpuSockets);
+        cpuSockets = NULL;
+    }
+    if (cpuLocks)
+    {
+        free(cpuLocks);
+        cpuLocks = NULL;
+    }
 }
 

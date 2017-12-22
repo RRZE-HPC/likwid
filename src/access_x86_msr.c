@@ -59,13 +59,13 @@
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
-#define MAX_LENGTH_MSR_DEV_NAME  20
+#define MAX_LENGTH_MSR_DEV_NAME  24
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-static int FD[MAX_NUM_THREADS] = { [0 ... MAX_NUM_THREADS-1] = -1 };
+static int *FD = NULL;
 static int rdpmc_works_pmc = -1;
 static int rdpmc_works_fixed = -1;
 
@@ -147,6 +147,11 @@ access_x86_msr_init(const int cpu_id)
     int i = 0;
 
     char* msr_file_name;
+    if (!FD)
+    {
+        FD = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(FD, -1, cpuid_topology.numHWThreads * sizeof(int));
+    }
     if (FD[cpu_id] > 0)
     {
         return 0;
@@ -244,10 +249,15 @@ access_x86_msr_finalize(const int cpu_id)
 {
     int i = 0;
 
-    if (FD[cpu_id] > 0)
+    if (FD && FD[cpu_id] > 0)
     {
         close(FD[cpu_id]);
         FD[cpu_id] = 0;
+    }
+    if (FD)
+    {
+        free(FD);
+        FD = NULL;
     }
 }
 
