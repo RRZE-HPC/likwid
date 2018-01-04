@@ -12,9 +12,9 @@ my $lc = ' *';
 
 #my $VERSION   = '<VERSION>';
 #my $DATE   = '<DATE>';
-my $VERSION   = '4.3.0';
-my $DATE   = '22.12.2017';
-my $YEAR  = '2017';
+my $VERSION   = '4.3.1';
+my $DATE   = '04.01.2018';
+my $YEAR  = '2018';
 my $AUTHOR = 'RRZE, University Erlangen-Nuremberg';
 my $LICENSE = 'gpl';
 

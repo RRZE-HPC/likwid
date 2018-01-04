@@ -5,14 +5,14 @@
  *
  *      Description:  Interface to the hwloc based topology backend
  *
- *      Version:   4.3.0
- *      Released:  22.12.2017
+ *      Version:   4.3.1
+ *      Released:  04.01.2018
  *
  *      Authors:  Thomas Roehl (tr), thomas.roehl@googlemail.com
  *
  *      Project:  likwid
  *
- *      Copyright (C) 2017 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

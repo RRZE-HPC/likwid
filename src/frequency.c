@@ -5,14 +5,14 @@
  *
  *      Description:  Module implementing an interface for frequency manipulation
  *
- *      Version:   4.3.0
- *      Released:  22.12.2017
+ *      Version:   4.3.1
+ *      Released:  04.01.2018
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *                Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2017 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
