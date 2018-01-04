@@ -37,7 +37,9 @@
 
 #include <topology.h>
 #include <affinity.h>
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
 #include <cpuid.h>
+#endif
 #ifdef LIKWID_USE_HWLOC
 #include <hwloc.h>
 #include <topology_hwloc.h>
@@ -47,8 +49,69 @@
 
 hwloc_topology_t hwloc_topology = NULL;
 
-/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+/* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
+#ifdef __ARM_ARCH_8A
+int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping)
+{
+    int i = 0;
+    FILE *fp = NULL;
+    uint32_t f = 0;
+    uint32_t v = 0;
+    uint32_t s = 0;
+    int (*ownatoi)(const char*);
+    ownatoi = &atoi;
 
+    if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
+    {
+        const_bstring familyString = bformat("CPU architecture:");
+        const_bstring variantString = bformat("CPU variant\t:");
+        const_bstring steppingString = bformat("CPU revision\t:");
+        bstring src = bread ((bNread) fread, fp);
+        struct bstrList* tokens = bsplit(src,(char) '\n');
+        bdestroy(src);
+        fclose(fp);
+        for (i=0;i<tokens->qty;i++)
+        {
+            if ((f == 0) && (binstr(tokens->entry[i],0,familyString) != BSTR_ERR))
+            {
+                struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
+                bltrimws(subtokens->entry[1]);
+                f = ownatoi(bdata(subtokens->entry[1]));
+                bstrListDestroy(subtokens);
+            }
+            else if ((s == 0) && (binstr(tokens->entry[i],0,steppingString) != BSTR_ERR))
+            {
+                struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
+                bltrimws(subtokens->entry[1]);
+                s = ownatoi(bdata(subtokens->entry[1]));
+                bstrListDestroy(subtokens);
+            }
+            else if ((v == 0) && (binstr(tokens->entry[i],0,variantString) != BSTR_ERR))
+            {
+                struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
+                bltrimws(subtokens->entry[1]);
+                v = strtol(bdata(subtokens->entry[1]), NULL, 0);
+                bstrListDestroy(subtokens);
+            }
+        }
+        bstrListDestroy(tokens);
+        /*bdestroy(familyString);
+        bdestroy(variantString);
+        bdestroy(steppingString);*/
+    }
+    else
+    {
+        return -1;
+    }
+    *family = f;
+    *variant = v;
+    *stepping = s;
+    return 0;
+}
+#endif
+
+/* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
 static int
 readCacheInclusiveIntel(int level)
 {
@@ -67,6 +130,7 @@ static int readCacheInclusiveAMD(int level)
     CPUID(eax, ebx, ecx, edx);
     return (edx & (0x1<<1));
 }
+#endif
 
 #ifdef LIKWID_USE_HWLOC
 int
@@ -127,16 +191,27 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     }
 
     const char * info;
-    if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUModelNumber")))
+#ifdef __x86_64
+    if ((info = hwloc_obj_get_info_by_name(obj, "CPUModelNumber")))
         cpuid_info.model = atoi(info);
     if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUFamilyNumber")))
        cpuid_info.family = atoi(info);
     if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUVendor")))
         cpuid_info.isIntel = strcmp(info, "GenuineIntel") == 0;
-    if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUModel")))
-        strcpy(cpuid_info.osname, info);
     if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUStepping")))
         cpuid_info.stepping = atoi(info);
+#endif
+#ifdef __ARM_ARCH_7A__
+    if ((info = hwloc_obj_get_info_by_name(obj, "CPUArchitecture")))
+       cpuid_info.family = atoi(info);
+    if ((info = hwloc_obj_get_info_by_name(obj, "CPURevision")))
+        cpuid_info.model = atoi(info);
+#endif
+#ifdef __ARM_ARCH_8A
+    parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping);
+#endif
+    if ((info = hwloc_obj_get_info_by_name(obj, "CPUModel")))
+        strcpy(cpuid_info.osname, info);
 
     cpuid_topology.numHWThreads = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
     DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d activeHWThreads %d,
@@ -238,7 +313,11 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             hwThreadPool[id].packageId = 0;
             continue;
         }
+#ifdef __ARM_ARCH_8A
+        hwThreadPool[id].coreId = hwThreadPool[id].apicId;
+#else
         hwThreadPool[id].coreId = obj->logical_index;
+#endif
 #if defined(__x86_64) || defined(__i386__)
         if (maxNumLogicalProcsPerCore == 1 && cpuid_info.isIntel == 0)
         {
@@ -273,7 +352,18 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             hwThreadPool[id].packageId = 0;
             continue;
         }
+#ifdef __ARM_ARCH_8A
+        if (obj->type == HWLOC_OBJ_SOCKET)
+        {
+            hwThreadPool[id].packageId = obj->os_index;
+        }
+        else
+        {
+            hwThreadPool[id].packageId = 0;
+        }
+#else
         hwThreadPool[id].packageId = obj->os_index;
+#endif
         DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Thread Pool PU %d Thread %d Core %d Socket %d inCpuSet %d,
                             hwThreadPool[id].apicId,
                             hwThreadPool[id].threadId,
@@ -387,7 +477,7 @@ hwloc_init_cacheTopology(void)
                 cachePool[id].inclusive = readCacheInclusiveAMD(obj->attr->cache.depth);
         }
 #endif
-#if defined(_ARCH_PPC)
+#if defined(_ARCH_PPC) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
         cachePool[id].inclusive = 0;
 #endif
         DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Cache Pool ID %d Level %d Size %d,

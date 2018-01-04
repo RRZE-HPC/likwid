@@ -391,7 +391,7 @@ if min_u_freq then
         end
         local err = likwid.setUncoreFreqMin(socket, min_u_freq*1000);
         if err ~= 0 then
-            print_stderr(string.format("Setting of minimal Uncore frequency %f failed on socket %d\n", min_u_freq, socket))
+            print_stderr(string.format("Setting of minimal Uncore frequency %f failed on socket %d\n", tonumber(min_u_freq)*1000, socket))
             os.exit(1)
         end
     end
@@ -405,7 +405,7 @@ if max_u_freq then
         end
         local err = likwid.setUncoreFreqMax(socket, max_u_freq*1000);
         if err ~= 0 then
-            print_stderr(string.format("Setting of maximal Uncore frequency %d failed on socket %d\n", max_u_freq, socket))
+            print_stderr(string.format("Setting of maximal Uncore frequency %d failed on socket %d\n", tonumber(max_u_freq)*1000, socket))
             os.exit(1)
         end
     end

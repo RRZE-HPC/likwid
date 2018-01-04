@@ -49,7 +49,9 @@
 #include <topology.h>
 #include <access.h>
 #include <perfgroup.h>
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
 #include <cpuid.h>
+#endif
 
 #include <perfmon_pm.h>
 #include <perfmon_atom.h>
@@ -72,6 +74,9 @@
 #include <perfmon_broadwell.h>
 #include <perfmon_skylake.h>
 #include <perfmon_zen.h>
+#if defined(__ARM_ARCH_8A)
+#include <perfmon_a57.h>
+#endif
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -1093,6 +1098,15 @@ perfmon_init_maps(void)
             box_map = zen_box_map;
             perfmon_numCounters = perfmon_numCountersZen;
             translate_types = zen_translate_types;
+            break;
+
+        case ARMV8_FAMILY:
+            eventHash = a57_arch_events;
+            perfmon_numArchEvents = perfmon_numArchEventsA57;
+            counter_map = a57_counter_map;
+            box_map = a57_box_map;
+            perfmon_numCounters = perfmon_numCountersA57;
+            translate_types = a57_translate_types;
             break;
 
         default:

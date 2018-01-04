@@ -223,6 +223,7 @@ MSR and PCI devices. The daemon mode forwards the operations to a daemon with
 higher priviledges.
 */
 typedef enum {
+    ACCESSMODE_PERF = -1, /*!< \brief Access performance monitoring through perf_event kernel interface */
     ACCESSMODE_DIRECT = 0, /*!< \brief Access performance monitoring registers directly */
     ACCESSMODE_DAEMON = 1 /*!< \brief Use the access daemon to access the registers */
 } AccessMode;

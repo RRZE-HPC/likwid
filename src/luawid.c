@@ -205,6 +205,18 @@ lua_likwid_setAccessMode(lua_State* L)
 }
 
 static int
+lua_likwid_getAccessMode(lua_State* L)
+{
+#ifdef LIKWID_USE_PERFEVENT
+    return ACCESSMODE_PERF;
+#else
+    init_configuration()
+    Configuration_t config = get_configuration();
+    return config->daemonMode;
+#endif
+}
+
+static int
 lua_likwid_init(lua_State* L)
 {
     int ret;
@@ -2753,6 +2765,7 @@ luaopen_liblikwid(lua_State* L){
     // Perfmon functions
     //lua_register(L, "accessClient_setaccessmode",lua_accessClient_setaccessmode);
     lua_register(L, "likwid_setAccessClientMode",lua_likwid_setAccessMode);
+    lua_register(L, "likwid_getAccessClientMode",lua_likwid_getAccessMode);
     lua_register(L, "likwid_init",lua_likwid_init);
     lua_register(L, "likwid_addEventSet", lua_likwid_addEventSet);
     lua_register(L, "likwid_setupCounters",lua_likwid_setupCounters);

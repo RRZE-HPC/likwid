@@ -41,6 +41,9 @@ CFLAGS    +=  -m32
 endif
 CPPFLAGS :=  $(DEFINES) $(INCLUDES)
 
+ifeq ($(COMPILER),GCCARMv8)
+all:
+else
 all: $(DAEMON_TARGET) $(SETFREQ_TARGET)
 
 $(DAEMON_TARGET): accessDaemon.c
@@ -49,3 +52,4 @@ $(DAEMON_TARGET): accessDaemon.c
 $(SETFREQ_TARGET): setFreq.c setFreq_cpufreq.c setFreq_pstate.c
 	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -I. -o ../../$(SETFREQ_TARGET) setFreq.c setFreq_cpufreq.c setFreq_pstate.c
 
+endif

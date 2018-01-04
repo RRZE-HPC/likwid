@@ -3,7 +3,7 @@ ifneq ($(strip $(MAKECMDGOALS)),docs)
 # determine kernel Version
 KERNEL_VERSION_MAJOR := $(shell uname -r | awk '{split($$1,a,"."); print a[1]}' | cut -d '-' -f1)
 KERNEL_VERSION := $(shell uname -r | awk  '{split($$1,a,"."); print a[2]}' | cut -d '-' -f1)
-KERNEL_VERSION_MINOR := $(shell uname -r | awk '{split($$1,a,"."); print a[3]}' | cut -d '-' -f1)
+KERNEL_VERSION_MINOR := $(shell uname -r | sed 's/[^[:digit:].]*//g' | awk '{split($$1,a,"."); print a[3]}' | cut -d '-' -f1)
 
 HAS_MEMPOLICY = $(shell if [ $(KERNEL_VERSION) -lt 7 -a $(KERNEL_VERSION_MAJOR) -lt 3 -a $(KERNEL_VERSION_MINOR) -lt 8 ]; then \
                echo 0;  else echo 1; \

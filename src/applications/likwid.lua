@@ -52,6 +52,7 @@ likwid.getConfiguration = likwid_getConfiguration
 likwid.setGroupPath = likwid_setGroupPath
 likwid.putConfiguration = likwid_putConfiguration
 likwid.setAccessClientMode = likwid_setAccessClientMode
+likwid.getAccessClientMode = likwid_getAccessClientMode
 likwid.init = likwid_init
 likwid.addEventSet = likwid_addEventSet
 likwid.setupCounters = likwid_setupCounters
@@ -1211,5 +1212,17 @@ end
 
 likwid.getAvailGovs = llikwid_getAvailGovs
 
+local function llikwid_getArch()
+    local f = io.popen("uname -m")
+    if (f ~= nil)
+    {
+        local res = f:read("*a")
+        f:close()
+        return res
+    }
+    return "unknown"
+end
+
+likwid.getArch = llikwid_getArch
 
 return likwid

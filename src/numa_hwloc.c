@@ -231,15 +231,22 @@ hwloc_numa_init(void)
         likwid_hwloc_topology_init(&hwloc_topology);
         likwid_hwloc_topology_load(hwloc_topology);
     }
-
+#ifdef __X86_64
     numa_info.numberOfNodes = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, hwloc_type);
+#endif
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__)
+    numa_info.numberOfNodes = 0;
+#endif
     numPUs = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
-
     /* If the amount of NUMA nodes == 0, there is actually no NUMA node, hence
        aggregate all sockets in the system into the single virtually created NUMA node */
     if (numa_info.numberOfNodes == 0)
     {
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__)
+        hwloc_type = HWLOC_OBJ_NODE;
+#else
         hwloc_type = HWLOC_OBJ_SOCKET;
+#endif
         numa_info.numberOfNodes = 1;
 
         numa_info.nodes = (NumaNode*) malloc(sizeof(NumaNode));

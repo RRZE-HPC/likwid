@@ -503,6 +503,18 @@ int main(int argc, char** argv)
     }
 
     time = (double) maxCycles / (double) cyclesClock;
+#ifdef __ARM_ARCH_7A__
+    if (maxCycles > 0)
+    {
+        ownprintf("WARNING: The cycle based values are calculated using the current but fixed CPU frequency on ARMv7\n");
+    }
+    else
+    {
+        ownprintf(bdata(HLINE));
+        ownprintf("WARNING: All cycle based values will be zero on ARMv7!\n");
+        ownprintf("WARNING: The cycle count cannot be calculated because the clock frequency is not fixed.\n");
+    }
+#endif
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
     ownprintf("CPU Clock:\t\t%" PRIu64 "\n", timer_getCpuClock());

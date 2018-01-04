@@ -1,0 +1,18 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 8
+DESC Cache line load
+LOADS 1
+STORES 0
+INSTR_CONST 4
+INSTR_LOOP 7
+UOPS 7
+LOOP 32
+ldr     GPR4, [STR0, GPR6, lsl 3]
+add     GPR9, GPR6, 8
+ldr     GPR5, [STR0, GPR9, lsl 3]
+add     GPR10, GPR6, 16
+ldr     GPR7, [STR0, GPR10, lsl 3]
+add     GPR11, GPR6, 24
+ldr     GPR8, [STR0, GPR11, lsl 3]

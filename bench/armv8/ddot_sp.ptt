@@ -1,0 +1,17 @@
+STREAMS 2
+TYPE SINGLE
+FLOPS 2
+BYTES 8
+DESC Single-precision dot product of two vectors, only scalar operations
+LOADS 2
+STORES 0
+INSTR_CONST 5
+INSTR_LOOP 3
+fmov s4, WZR 
+LOOP 1
+fmov s5, w1
+fmov s6, w2
+fmul s5, s5, s6
+fadd s4, s4, s5 
+add w1, w1, 32
+add w2, w2, 32

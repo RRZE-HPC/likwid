@@ -33,13 +33,16 @@
 
 #include <topology_proc.h>
 #include <affinity.h>
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
 #include <cpuid.h>
+#endif
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static int
 get_cpu_perf_data(void)
 {
+#ifdef __X86_64
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     int largest_function = 0;
     eax = 0x00;
@@ -70,6 +73,7 @@ get_cpu_perf_data(void)
             cpuid_info.turbo = 0;
         }
     }
+#endif
     return 0;
 }
 
@@ -128,7 +132,7 @@ fillList(int* outList, int outOffset, bstring list)
     bstrListDestroy(tokens);
     return current;
 }
-
+#ifdef __X86_64
 static int
 readCacheInclusiveIntel(int level)
 {
@@ -147,6 +151,16 @@ static int readCacheInclusiveAMD(int level)
     CPUID(eax, ebx, ecx, edx);
     return (edx & (0x1<<1));
 }
+#else
+static int readCacheInclusiveIntel(int level)
+{
+    return 0;
+}
+static int readCacheInclusiveAMD(int level)
+{
+    return 0;
+}
+#endif
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -194,24 +208,28 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 cpuid_info.model = ownatoi(bdata(subtokens->entry[1]));
+                bstrListDestroy(subtokens);
             }
             else if ((cpuid_info.family == 0) && (binstr(tokens->entry[i],0,familyString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 cpuid_info.family = ownatoi(bdata(subtokens->entry[1]));
+                bstrListDestroy(subtokens);
             }
             else if (binstr(tokens->entry[i],0,steppingString) != BSTR_ERR)
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 cpuid_info.stepping = ownatoi(bdata(subtokens->entry[1]));
+                bstrListDestroy(subtokens);
             }
             else if (binstr(tokens->entry[i],0,nameString) != BSTR_ERR)
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 ownstrcpy(cpuid_info.osname, bdata(subtokens->entry[1]));
+                bstrListDestroy(subtokens);
             }
             else if (binstr(tokens->entry[i],0,vendorString) != BSTR_ERR)
             {
@@ -221,8 +239,10 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
                 {
                     cpuid_info.isIntel = 1;
                 }
+                bstrListDestroy(subtokens);
             }
         }
+        bstrListDestroy(tokens);
         cpuid_topology.numHWThreads = HWthreads;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
                             cpuid_info.family,
@@ -253,7 +273,12 @@ proc_init_cpuFeatures(void)
     while( fgets(buf, sizeof(buf)-1, file) )
     {
         ret = sscanf(buf, "%s\t:", &(ident[0]));
-        if (ret != 1 || strcmp(ident,"flags") != 0)
+#ifdef __x86_64
+        if (ret != 1 || strcmp(ident,"flags") != 0 || strcmp(ident, "Features") != 0)
+#endif
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__) || defined(__ARM_ARCH_8A)
+        if (ret != 1 || strcmp(ident, "Features") != 0)
+#endif
         {
             continue;
         }
@@ -396,6 +421,41 @@ proc_init_cpuFeatures(void)
         {
             cpuid_info.featureFlags |= (1<<AVX512);
             strcat(cpuid_info.features, "AVX512 ");
+        }
+        else if (strcmp(cptr,"swp") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<SWP);
+            strcat(cpuid_info.features, "SWP ");
+        }
+        else if (strcmp(cptr,"neon") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<NEON);
+            strcat(cpuid_info.features, "NEON ");
+        }
+        else if (strcmp(cptr,"vfp") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<VFP);
+            strcat(cpuid_info.features, "VFP ");
+        }
+        else if (strcmp(cptr,"vfpv3") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<VFPV3);
+            strcat(cpuid_info.features, "VFPv3 ");
+        }
+        else if (strcmp(cptr,"vfpv4") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<VFPV4);
+            strcat(cpuid_info.features, "VFPv4 ");
+        }
+        else if (strcmp(cptr,"edsp") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<EDSP);
+            strcat(cpuid_info.features, "EDSP ");
+        }
+        else if (strcmp(cptr,"tls") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<TLS);
+            strcat(cpuid_info.features, "TLS ");
         }
         cptr = strtok(NULL, delimiter);
     }

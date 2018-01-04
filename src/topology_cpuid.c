@@ -41,7 +41,9 @@
 #include <bitUtil.h>
 #include <tlb-info.h>
 #include <topology.h>
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
 #include <cpuid.h>
+#endif
 #include <affinity.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */

@@ -1,0 +1,15 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 0
+BYTES 32
+DESC Double-precision vector copy with two elements per instruction 
+LOADS 1
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 2
+UOPS 2
+LOOP 32
+ldp     GPR4, GPR5, [STR0]
+stp     GPR4, GPR5, [STR1]
+add STR0, STR0, 128
+add STR1, STR1, 128

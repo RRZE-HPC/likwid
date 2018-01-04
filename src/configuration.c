@@ -105,6 +105,8 @@ default_configuration(void)
         goto use_hardcoded;
     }
     fclose(fp);
+#else
+    config.daemonMode = ACCESSMODE_PERF;
 #endif
     init_config = 1;
     return 0;

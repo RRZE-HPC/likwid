@@ -100,6 +100,8 @@ static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
 static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
 static char* amd_k8_str = "AMD K8 architecture";
 static char* amd_zen_str = "AMD K17 (Zen) architecture";
+static char* armv7l_str = "ARM 7l architecture";
+static char* armv8_str = "ARM 8 architecture";
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 
@@ -134,6 +136,8 @@ static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
 static char* short_zen = "zen";
+static char* short_arm7 = "arm7";
+static char* short_arm8 = "arm8";
 static char* short_unknown = "unknown";
 
 /* #####  EXPORTED VARIABLES  ########################################## */
@@ -842,6 +846,31 @@ topology_setName(void)
             cpuid_info.short_name = short_zen;
             break;
 
+        case ARMV7_FAMILY:
+            switch (cpuid_info.model)
+            {
+                case ARM7L:
+                    cpuid_info.name = armv7l_str;
+                    cpuid_info.short_name = short_arm7;
+                    break;
+                default:
+                    return EXIT_FAILURE;
+                    break;
+            }
+            break;
+        case ARMV8_FAMILY:
+            switch (cpuid_info.model)
+            {
+                case CORTEX_A57_1:
+                    cpuid_info.name = armv8_str;
+                    cpuid_info.short_name = short_arm8;
+                    break;
+                default:
+                    return EXIT_FAILURE;
+                    break;
+            }
+            break;
+
         default:
             return EXIT_FAILURE;
             break;
@@ -942,10 +971,14 @@ standard_init:
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
         if (cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF))
         {
+#if !defined(__ARM_ARCH_7A__)
             cpuid_topology.activeHWThreads =
                 ((cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF)) ?
                 cpu_count(&cpuSet) :
                 sysconf(_SC_NPROCESSORS_CONF));
+#else
+            cpuid_topology.activeHWThreads = sysconf(_SC_NPROCESSORS_ONLN);
+#endif
         }
         else
         {

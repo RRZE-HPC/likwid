@@ -45,7 +45,9 @@
 #include <topology.h>
 #include <access.h>
 #include <registers.h>
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
 #include <cpuid.h>
+#endif
 
 #include <frequency.h>
 #include <frequency_acpi.h>
@@ -542,7 +544,7 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
         HPMfinalize();
     return err == 0;
 }
-
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
 static int isAMD()
 {
     unsigned int eax,ebx,ecx,edx;
@@ -552,6 +554,12 @@ static int isAMD()
         return 1;
     return 0;
 }
+#else
+static int isAMD()
+{
+    return 0;
+}
+#endif
 
 int freq_getTurbo(const int cpu_id)
 {

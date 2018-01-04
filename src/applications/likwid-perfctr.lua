@@ -111,7 +111,7 @@ print_group_help = false
 skip_mask = nil
 counter_mask = {}
 access_flags = "e"
-if config["daemonMode"] < 0 then
+if config["daemonMode"] == 1 then
     access_mode = 1
 else
     access_mode = config["daemonMode"]
@@ -137,6 +137,9 @@ gotC = false
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid())
 cpuClock = 1
 execpid = false
+if config["daemonMode"] == -1 then
+    execpid = true
+end
 perfflags = nil
 perfpid = nil
 likwid.catchSignal()
