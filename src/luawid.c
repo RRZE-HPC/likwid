@@ -210,7 +210,7 @@ lua_likwid_getAccessMode(lua_State* L)
 #ifdef LIKWID_USE_PERFEVENT
     return ACCESSMODE_PERF;
 #else
-    init_configuration()
+    init_configuration();
     Configuration_t config = get_configuration();
     return config->daemonMode;
 #endif

@@ -74,9 +74,7 @@
 #include <perfmon_broadwell.h>
 #include <perfmon_skylake.h>
 #include <perfmon_zen.h>
-#if defined(__ARM_ARCH_8A)
 #include <perfmon_a57.h>
-#endif
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -2476,7 +2474,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     {
         calc_add_int_var("SOCKET_CPU", cpu, vars, varlist);
     }
-    
+
     e = calc_metric(cpu, f, vars, varlist, &result);
     bdestroy(vars);
     bdestroy(varlist);
@@ -2590,7 +2588,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     {
         calc_add_int_var("SOCKET_CPU", cpu, vars, varlist);
     }
-    
+
     e = calc_metric(cpu, f, vars, varlist, &result);
     bdestroy(vars);
     bdestroy(varlist);
@@ -3240,7 +3238,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
-    
+
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
@@ -3274,7 +3272,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     {
         calc_add_int_var("SOCKET_CPU", cpu, vars, varlist);
     }
-    
+
     err = calc_metric(cpu, f, vars, varlist, &result);
     bdestroy(vars);
     bdestroy(varlist);
