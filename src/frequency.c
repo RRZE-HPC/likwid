@@ -375,7 +375,7 @@ char * freq_getGovernor(const int cpu_id )
     return NULL;
 }
 
-int freq_setTurbo(const int cpu_id, int turbo)
+/*int freq_setTurbo(const int cpu_id, int turbo)
 {
     FILE *fpipe = NULL;
     char cmd[256];
@@ -389,7 +389,7 @@ int freq_setTurbo(const int cpu_id, int turbo)
     if (pclose(fpipe))
         return 0;
     return 1;
-}
+}*/
 
 static int getAMDTurbo(const int cpu_id)
 {
@@ -569,12 +569,24 @@ int freq_getTurbo(const int cpu_id)
     return -1;
 }
 
-/*int freq_setTurbo(const int cpu_id, const int turbo)*/
-/*{*/
-/*    if (isAMD())*/
-/*        return setAMDTurbo(cpu_id, turbo);*/
-/*    return setIntelTurbo(cpu_id, turbo);*/
-/*}*/
+int freq_setTurbo(const int cpu_id, const int turbo)
+{
+    FILE *fpipe = NULL;
+    char cmd[256];
+
+    sprintf(cmd, "%s %d tur %d", daemon_path, cpu_id, turbo);
+    if ( !(fpipe = (FILE*)popen(cmd,"r")) )
+    {  // If fpipe is NULL
+        fprintf(stderr, "Problems setting turbo mode of CPU %d", cpu_id);
+        return 0;
+    }
+    pclose(fpipe);
+    if (isAMD())
+        return setAMDTurbo(cpu_id, turbo);
+    else
+        return setIntelTurbo(cpu_id, turbo);
+    return 1;
+}
 
 int freq_setGovernor(const int cpu_id, const char* gov)
 {
