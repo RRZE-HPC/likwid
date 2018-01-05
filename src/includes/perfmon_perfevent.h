@@ -389,6 +389,7 @@ int perfmon_setupCountersThread_perfevent(
 
 int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSet)
 {
+    int ret = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -402,9 +403,9 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
             eventSet->events[i].threadCounter[thread_id].startData = 0x0ULL;
             if (eventSet->events[i].type == POWER)
             {
-                read(cpu_event_fds[cpu_id][index],
-                     &eventSet->events[i].threadCounter[thread_id].startData,
-                     sizeof(long long));
+                ret = read(cpu_event_fds[cpu_id][index],
+                        &eventSet->events[i].threadCounter[thread_id].startData,
+                        sizeof(long long));
             }
             VERBOSEPRINTREG(cpu_id, 0x0,
                             eventSet->events[i].threadCounter[thread_id].startData,

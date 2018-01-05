@@ -216,6 +216,7 @@ double
 power_getEnergyUnit(int domain)
 {
 #ifdef LIKWID_USE_PERFEVENT
+    int ret = 0;
     FILE* fd = NULL;
     char out[512];
     if (power_info.domains[domain].energyUnit == 0)
@@ -225,7 +226,7 @@ power_getEnergyUnit(int domain)
             fd = fopen(perf_power_names[domain], "r");
             if (fd != NULL)
             {
-                fread(out, sizeof(char), 512, fd);
+                ret = fread(out, sizeof(char), 512, fd);
                 fclose(fd);
                 power_info.domains[domain].energyUnit = atof(out);
             }
