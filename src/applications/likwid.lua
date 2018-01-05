@@ -1214,12 +1214,11 @@ likwid.getAvailGovs = llikwid_getAvailGovs
 
 local function llikwid_getArch()
     local f = io.popen("uname -m")
-    if (f ~= nil)
-    {
+    if (f ~= nil) then
         local res = f:read("*a")
         f:close()
         return res
-    }
+    end
     return "unknown"
 end
 
