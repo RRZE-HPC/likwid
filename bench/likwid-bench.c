@@ -485,8 +485,10 @@ int main(int argc, char** argv)
     }
 #endif
 
+    timer_start(&itertime);
     threads_create(runTest);
     threads_join();
+    timer_stop(&itertime);
 
     for (int i=0; i<globalNumberOfThreads; i++)
     {
@@ -502,19 +504,27 @@ int main(int argc, char** argv)
         }
     }
 
-    time = (double) maxCycles / (double) cyclesClock;
-#ifdef __ARM_ARCH_7A__
-    if (maxCycles > 0)
+    if (cyclesClock > 0)
     {
-        ownprintf("WARNING: The cycle based values are calculated using the current but fixed CPU frequency on ARMv7\n");
+        time = (double) maxCycles / (double) cyclesClock;
     }
     else
     {
-        ownprintf(bdata(HLINE));
-        ownprintf("WARNING: All cycle based values will be zero on ARMv7!\n");
-        ownprintf("WARNING: The cycle count cannot be calculated because the clock frequency is not fixed.\n");
+        time = timer_print(&itertime);
     }
-#endif
+
+/*#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)*/
+/*    if (maxCycles > 0)*/
+/*    {*/
+/*        ownprintf("WARNING: The cycle based values are calculated using the current but fixed CPU frequency on ARMv7/8\n");*/
+/*    }*/
+/*    else*/
+/*    {*/
+/*        ownprintf(bdata(HLINE));*/
+/*        ownprintf("WARNING: All cycle based values will be zero on ARMv7!\n");*/
+/*        ownprintf("WARNING: The cycle count cannot be calculated because the clock frequency is not fixed.\n");*/
+/*    }*/
+/*#endif*/
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
     ownprintf("CPU Clock:\t\t%" PRIu64 "\n", timer_getCpuClock());
