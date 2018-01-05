@@ -887,11 +887,19 @@ topology_functions topology_funcs = {
     .init_cacheTopology = proc_init_cacheTopology,
     .close_topology = NULL,
 #else
+#if !defined(__ARM_ARCH_8A)
     .init_cpuInfo = hwloc_init_cpuInfo,
     .init_nodeTopology = hwloc_init_nodeTopology,
     .init_cacheTopology = hwloc_init_cacheTopology,
     .init_cpuFeatures = proc_init_cpuFeatures,
     .close_topology = hwloc_close,
+#else
+    .init_cpuInfo = proc_init_cpuInfo,
+    .init_cpuFeatures = proc_init_cpuFeatures,
+    .init_nodeTopology = proc_init_nodeTopology,
+    .init_cacheTopology = proc_init_cacheTopology,
+    .close_topology = NULL,
+#endif
 #endif
     .init_fileTopology = initTopologyFile,
 };
