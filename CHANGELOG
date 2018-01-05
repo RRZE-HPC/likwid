@@ -1,3 +1,7 @@
+# Changelog 4.3.1
+- Fix for setting/getting turbo mode in frequency module
+- Exchanged two events in perf. groups of Intel Skylake X
+
 # Changelog 4.3.0
 - Support for Intel Skylake SP architecture (core, uncore, energy)
 - Support for AMD Zen architecture (core, l2, energy)
