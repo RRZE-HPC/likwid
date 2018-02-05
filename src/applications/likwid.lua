@@ -115,6 +115,7 @@ likwid.setenv = likwid_setenv
 likwid.unsetenv = likwid_unsetenv
 likwid.getpid = likwid_getpid
 likwid.setVerbosity = likwid_setVerbosity
+likwid.getVerbosity = likwid_getVerbosity
 likwid.access = likwid_access
 likwid.startProgram = likwid_startProgram
 likwid.checkProgram = likwid_checkProgram

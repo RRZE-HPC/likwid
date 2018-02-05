@@ -2180,6 +2180,13 @@ lua_likwid_setVerbosity(lua_State* L)
 }
 
 static int
+lua_likwid_getVerbosity(lua_State* L)
+{
+    lua_pushinteger(L, (lua_Integer)(perfmon_verbosity));
+    return 1;
+}
+
+static int
 lua_likwid_access(lua_State* L)
 {
     int flags = 0;
@@ -2848,6 +2855,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_sendSignal", lua_likwid_send_signal);
     // Verbosity functions
     lua_register(L, "likwid_setVerbosity", lua_likwid_setVerbosity);
+    lua_register(L, "likwid_getVerbosity", lua_likwid_getVerbosity);
     // Marker API functions
     lua_register(L, "likwid_markerInit", lua_likwid_markerInit);
     lua_register(L, "likwid_markerThreadInit", lua_likwid_markerThreadInit);
