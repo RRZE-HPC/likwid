@@ -42,7 +42,7 @@
 static int
 get_cpu_perf_data(void)
 {
-#ifdef __X86_64
+#if defined(__x86_64) || defined(__i386__)
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     int largest_function = 0;
     eax = 0x00;
