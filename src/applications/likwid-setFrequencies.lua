@@ -65,6 +65,10 @@ function usage()
     print_stdout("--umin freq\t Set minimal Uncore frequency")
     print_stdout("--umax freq\t Set maximal Uncore frequency")
     print_stdout("")
+    print_stdout("-reset\tSet governor 'performance', set minimal and maximal frequency to")
+    print_stdout("\tthe CPU limits and deactivate turbo")
+    print_stdout("-ureset\tSet Uncore frequencies to its min and max limits")
+    print_stdout("")
     print_stdout("For the options -f, -x and -y:")
     print_stdout("\t acpi-cpufreq driver: set the userspace governor implicitly")
     print_stdout("\t intel_pstate driver: keep current governor")
@@ -72,9 +76,14 @@ function usage()
     print_stdout("The min/max frequencies can be slightly off with the intel_pstate driver as")
     print_stdout("the value is calculated while the current frequency is read from sysfs.")
     print_stdout("")
-    print_stdout("The min/max Uncore frequency can be set freely, even to 0 or 1E20 but the hardware")
-    print_stdout("stays inside its limits. To check whether the set Uncore frequency is really set")
-    print_stdout("and fixed, use likwid-perfctr -g UNCORE_CLOCK:UBOXFIX -C 0 -S 1s")
+    print_stdout("In general the min/max Uncore frequency can be set freely, even to 0 or 1E20")
+    print_stdout("but the hardware stays inside its limits. LIKWID reduces the range of possible")
+    print_stdout("frequencies to the minimal core frequency (likwid-setFrequencies -l) and the ")
+    print_stdout("maximally achievable turbo frequency with a single core (C0 value at")
+    print_stdout("likwid-powermeter -i output).")
+    print_stdout("To check whether the set Uncore frequency is really set and fixed, use")
+    print_stdout("likwid-perfctr -g UNCORE_CLOCK:UBOXFIX -C 0 <exec_doing_work>.")
+    print_stdout("Sleeping is commonly not sufficient.")
     print_stdout("")
     print_stdout("If you switch governors with the intel_pstate driver, it might be that the driver")
     print_stdout("changes the frequency settings, please check afterwards and re-set frequencies if")
@@ -113,6 +122,7 @@ printCurFreq = false
 printAvailFreq = false
 printAvailGovs = false
 do_reset = false
+do_ureset = false
 set_turbo = false
 turbo = 0
 
@@ -122,7 +132,7 @@ if #arg == 0 then
 end
 
 
-for opt,arg in likwid.getopt(arg, {"V:", "g:", "c:", "f:", "l", "p", "h", "v", "m", "x:", "y:", "t:", "help","version","freq:", "min:", "max:", "umin:", "umax:", "reset", "turbo:"}) do
+for opt,arg in likwid.getopt(arg, {"V:", "g:", "c:", "f:", "l", "p", "h", "v", "m", "x:", "y:", "t:", "help","version","freq:", "min:", "max:", "umin:", "umax:", "reset", "turbo:", "ureset"}) do
     if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
@@ -158,6 +168,8 @@ for opt,arg in likwid.getopt(arg, {"V:", "g:", "c:", "f:", "l", "p", "h", "v", "
         end
     elseif opt == "reset" then
         do_reset = true
+    elseif opt == "ureset" then
+        do_ureset = true
     elseif opt == "umin" then
         min_u_freq = arg
     elseif opt == "umax" then
@@ -289,6 +301,15 @@ if do_reset then
         governor = availgovs[#availgovs]
     end
     print_stdout(string.format("Reset to governor %s with min freq. %g GHz and deactivate turbo mode", governor, min_freq))
+end
+
+if do_ureset then
+    local availfreqs = likwid.getAvailFreq(cpulist[1])
+    local power = likwid.getPowerInfo()
+    local minf = tonumber(availfreqs[1])
+    local maxf = tonumber(power["turbo"]["steps"][1]) / 1000
+    min_u_freq = minf
+    max_u_freq = maxf
 end
 
 if numthreads > 0 and not (frequency or min_freq or max_freq or governor or min_u_freq or max_u_freq or set_turbo) then

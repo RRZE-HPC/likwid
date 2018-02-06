@@ -179,6 +179,16 @@ static int _freq_getUncoreMinMax(const int socket_id, int *cpuId, double* min, d
         *max = dmin;
         *min = dmax;
     }
+
+    power_init(cpu);
+    if (power_info.turbo.numSteps > 0)
+    {
+        if (power_info.turbo.steps[0] > *max)
+        {
+            *max = power_info.turbo.steps[0];
+        }
+    }
+
     return 0;
 }
 
@@ -738,7 +748,7 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
     int err = 0;
     int own_hpm = 0;
     int cpuId = -1;
-    uint64_t f = freq;
+    uint64_t f = freq / 100;
     double fmin, fmax;
     if (isAMD())
     {
@@ -771,27 +781,12 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
             return err;
         }
     }
-    err = power_init(cpuId);
-    if (err < 0)
-    {
-        ERROR_PRINT(Cannot initialize power module on CPU %d, cpuId);
-        return err;
-    }
-
-    if (power_info.hasRAPL)
-    {
-        f /= 100;
-    }
-    else
-    {
-        f /= 133;
-    }
 
     uint64_t tmp = 0x0ULL;
     err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
     if (err)
     {
-        ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
+        //ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
         return err;
     }
     tmp &= ~(0xFF00);
@@ -845,30 +840,14 @@ uint64_t freq_getUncoreFreqMin(const int socket_id)
         }
     }
 
-    err = power_init(cpuId);
-    if (err < 0)
-    {
-        ERROR_PRINT(Cannot initialize power module on CPU %d, cpuId);
-        return 0;
-    }
-
-
     uint64_t tmp = 0x0ULL;
     err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
     if (err)
     {
-        ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
+        //ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
         return 0;
     }
-    tmp = (tmp>>8) & 0xFFULL;
-    if (power_info.hasRAPL)
-    {
-        tmp *= 100;
-    }
-    else
-    {
-        tmp *= 133;
-    }
+    tmp = ((tmp>>8) & 0xFFULL) * 100;
 
     if (own_hpm)
         HPMfinalize();
@@ -880,8 +859,12 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
     int err = 0;
     int own_hpm = 0;
     int cpuId = -1;
-    uint64_t f = freq;
+    uint64_t f = freq / 100;
     double fmin, fmax;
+    if (isAMD())
+    {
+        return 0;
+    }
     err = _freq_getUncoreMinMax(socket_id, &cpuId, &fmin, &fmax);
     if (err < 0)
     {
@@ -909,27 +892,12 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
             return err;
         }
     }
-    err = power_init(cpuId);
-    if (err < 0)
-    {
-        ERROR_PRINT(Cannot initialize power module on CPU %d, cpuId);
-        return err;
-    }
-
-    if (power_info.hasRAPL)
-    {
-        f /= 100;
-    }
-    else
-    {
-        f /= 133;
-    }
 
     uint64_t tmp = 0x0ULL;
     err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
     if (err)
     {
-        ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
+        //ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
         return err;
     }
     tmp &= ~(0xFFULL);
@@ -940,6 +908,7 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
         ERROR_PRINT(Cannot write register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
         return err;
     }
+
     if (own_hpm)
         HPMfinalize();
     return 0;
@@ -978,29 +947,16 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
             return 0;
         }
     }
-    err = power_init(cpuId);
-    if (err < 0)
-    {
-        ERROR_PRINT(Cannot initialize power module on CPU %d, cpuId);
-        return 0;
-    }
 
     uint64_t tmp = 0x0ULL;
     err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ, &tmp);
     if (err)
     {
-        ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
+        //ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
         return 0;
     }
-    tmp = tmp & 0xFFULL;
-    if (power_info.hasRAPL)
-    {
-        tmp *= 100;
-    }
-    else
-    {
-        tmp *= 133;
-    }
+    tmp = (tmp & 0xFFULL) * 100;
+
     if (own_hpm)
         HPMfinalize();
     return tmp;
