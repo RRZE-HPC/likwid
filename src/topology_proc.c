@@ -132,7 +132,7 @@ fillList(int* outList, int outOffset, bstring list)
     bstrListDestroy(tokens);
     return current;
 }
-#ifdef __X86_64
+#if defined(__x86_64) || defined(__i386__)
 static int
 readCacheInclusiveIntel(int level)
 {

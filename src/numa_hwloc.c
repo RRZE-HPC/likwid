@@ -231,7 +231,7 @@ hwloc_numa_init(void)
         likwid_hwloc_topology_init(&hwloc_topology);
         likwid_hwloc_topology_load(hwloc_topology);
     }
-#ifdef __X86_64
+#if defined(__x86_64) || defined(__i386__)
     numa_info.numberOfNodes = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, hwloc_type);
 #endif
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__)
