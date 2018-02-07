@@ -2431,7 +2431,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
             groupSet->groups[groupId].group.lua_funcs = NULL;
         }
     }
-    calc_add_dbl_var("time", perfmon_getLastTimeOfGroup(groupId), vars, varlist);
+    calc_add_dbl_var("time", perfmon_getTimeOfGroup(groupId), vars, varlist);
     calc_add_dbl_var("inverseClock", 1.0/timer_getCycleClock(), vars, varlist);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
