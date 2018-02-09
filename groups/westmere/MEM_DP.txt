@@ -1,0 +1,66 @@
+SHORT Main memory bandwidth in MBytes/s
+
+EVENTSET
+FIXC0  INSTR_RETIRED_ANY
+FIXC1  CPU_CLK_UNHALTED_CORE
+FIXC2  CPU_CLK_UNHALTED_REF
+PMC0  FP_COMP_OPS_EXE_SSE_FP_PACKED
+PMC1  FP_COMP_OPS_EXE_SSE_FP_SCALAR
+PMC2  FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION
+PMC3  FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION
+UPMC0  UNC_QMC_NORMAL_READS_ANY
+UPMC1  UNC_QMC_WRITES_FULL_ANY
+UPMC2  UNC_QHL_REQUESTS_REMOTE_READS
+UPMC3  UNC_QHL_REQUESTS_REMOTE_WRITES
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+DP MFLOP/s  1.0E-06*(PMC0*2.0+PMC1)/time
+Packed MUOPS/s   1.0E-06*PMC0/time
+Scalar MUOPS/s 1.0E-06*PMC1/time
+SP MUOPS/s 1.0E-06*PMC2/time
+DP MUOPS/s 1.0E-06*PMC3/time
+Memory read bandwidth [MBytes/s] 1.0E-06*UPMC0*64.0/time
+Memory read data volume [GBytes] 1.0E-09*UPMC0*64.0
+Memory write bandwidth [MBytes/s] 1.0E-06*UPMC1*64.0/time
+Memory write data volume [GBytes] 1.0E-09*UPMC1*64.0
+Memory bandwidth [MBytes/s] 1.0E-06*(UPMC0+UPMC1)*64.0/time
+Memory data volume [GBytes] 1.0E-09*(UPMC0+UPMC1)*64.0
+Remote memory read bandwidth [MBytes/s] 1.0E-06*UPMC2*64.0/time
+Remote memory read data volume [GBytes] 1.0E-09*UPMC2*64.0
+Remote memory write bandwidth [MBytes/s] 1.0E-06*UPMC3*64.0/time
+Remote memory write data volume [GBytes] 1.0E-09*UPMC3*64.0
+Remote memory bandwidth [MBytes/s] 1.0E-06*(UPMC2+UPMC3)*64.0/time
+Remote memory data volume [GBytes] 1.0E-09*(UPMC2+UPMC3)*64.0
+Operational intensity (PMC0*2.0+PMC1)/((UPMC0+UPMC1)*64.0)
+
+LONG
+Formulas:
+DP MFLOP/s = 1.0E-06*(FP_COMP_OPS_EXE_SSE_FP_PACKED*2+FP_COMP_OPS_EXE_SSE_FP_SCALAR)/runtime
+Packed MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_PACKED/runtime
+Scalar MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_SCALAR/runtime
+SP MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION/runtime
+DP MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION/runtime
+Memory read bandwidth [MBytes/s] = 1.0E-06*UNC_QMC_NORMAL_READS_ANY*64.0/time
+Memory read data volume [GBytes] = 1.0E-09*UNC_QMC_NORMAL_READS_ANY*64.0
+Memory write bandwidth [MBytes/s] = 1.0E-06*UNC_QMC_WRITES_FULL_ANY*64.0/time
+Memory write data volume [GBytes] = 1.0E-09*UNC_QMC_WRITES_FULL_ANY*64.0
+Memory bandwidth [MBytes/s] = 1.0E-06*(UNC_QMC_NORMAL_READS_ANY+UNC_QMC_WRITES_FULL_ANY)*64.0/time
+Memory data volume [GBytes] = 1.0E-09*(UNC_QMC_NORMAL_READS_ANY+UNC_QMC_WRITES_FULL_ANY)*64.0
+Remote memory read bandwidth [MBytes/s] = 1.0E-06*UNC_QHL_REQUESTS_REMOTE_READS*64.0/time
+Remote memory read data volume [GBytes] = 1.0E-09*UNC_QHL_REQUESTS_REMOTE_READS*64.0
+Remote memory write bandwidth [MBytes/s] = 1.0E-06*UNC_QHL_REQUESTS_REMOTE_WRITES*64.0/time
+Remote memory write data volume [GBytes] = 1.0E-09*UNC_QHL_REQUESTS_REMOTE_WRITES*64.0
+Remote memory bandwidth [MBytes/s] = 1.0E-06*(UNC_QHL_REQUESTS_REMOTE_READS+UNC_QHL_REQUESTS_REMOTE_WRITES)*64.0/time
+Remote memory data volume [GBytes] = 1.0E-09*(UNC_QHL_REQUESTS_REMOTE_READS+UNC_QHL_REQUESTS_REMOTE_WRITES)*64.0
+Operational intensity (FP_COMP_OPS_EXE_SSE_FP_PACKED*2+FP_COMP_OPS_EXE_SSE_FP_SCALAR)/((UNC_QMC_NORMAL_READS_ANY+UNC_QMC_WRITES_FULL_ANY)*64.0)
+-
+Profiling group to measure memory bandwidth drawn by all cores of a socket.
+This group will be measured by one core per socket. The remote read BW tells
+you if cache lines are transferred between sockets, meaning that cores access
+data owned by a remote NUMA domain. The group also reports total data volume
+transferred from main memory.
+
