@@ -2412,7 +2412,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
         {
             char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
             if (ctr)
-                calc_add_dbl_var(ctr, perfmon_getLastResult(groupId, e, threadId), vars, varlist);
+                calc_add_dbl_var(ctr, perfmon_getResult(groupId, e, threadId), vars, varlist);
         }
         else
         {
