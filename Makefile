@@ -163,7 +163,6 @@ $(BUILD_DIR):
 $(PINLIB):
 	@echo "===>  CREATE LIB  $(PINLIB)"
 	$(Q)$(MAKE) -C src/pthread-overload/ $(PINLIB)
-	@ln -sf $(PINLIB) $(PINLIB).$(VERSION).$(RELEASE)
 
 $(GENGROUPLOCK): $(foreach directory,$(shell ls $(GROUP_DIR)), $(wildcard $(GROUP_DIR)/$(directory)/*.txt))
 	@echo "===>  GENERATE GROUP HEADERS"
@@ -179,7 +178,6 @@ ifeq ($(LUA_INTERNAL),true)
 $(TARGET_LUA_LIB):
 	@echo "===>  ENTER  $(LUA_FOLDER)"
 	$(Q)$(MAKE) --no-print-directory -C $(LUA_FOLDER) $(MAKECMDGOALS)
-	@ln -sf $(LUA_FOLDER)/liblikwid-lua.so liblikwid-lua.so.$(VERSION).$(RELEASE)
 else
 $(TARGET_LUA_LIB):
 	@echo "===>  EXTERNAL LUA"
@@ -188,7 +186,6 @@ endif
 $(TARGET_HWLOC_LIB):
 	@echo "===>  ENTER  $(HWLOC_FOLDER)"
 	$(Q)$(MAKE) --no-print-directory -C $(HWLOC_FOLDER) $(MAKECMDGOALS)
-	@ln -sf $(HWLOC_FOLDER)/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION).$(RELEASE)
 
 $(BENCH_TARGET):
 	@echo "===>  ENTER  $(BENCH_FOLDER)"
@@ -244,11 +241,13 @@ distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	done
 	@rm -f likwid.lua
 	@rm -f $(STATIC_TARGET_LIB)
-	@rm -f $(DYNAMIC_TARGET_LIB)
-	@rm -f $(PINLIB)
+	@rm -f $(DYNAMIC_TARGET_LIB)*
+	@rm -f $(PINLIB)*
 	@rm -f $(FORTRAN_IF_NAME)
 	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
 	@rm -rf $(BUILD_DIR)
+	@rm -rf $(TARGET_LUA_LIB).*
+	@rm -rf $(TARGET_HWLOC_LIB).*
 	@rm -f $(GENGROUPLOCK)
 	@rm -rf doc/html
 	@rm -f tags
@@ -553,11 +552,14 @@ local: $(L_APPS) likwid.lua
 	done
 	@sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<RELEASE>/$(RELEASE)/g" -e "s+$(PREFIX)/lib+$(PWD)+g" -e "s+$(PREFIX)/share/likwid/perfgroups+$(PWD)/groups+g" -e "s/<GITCOMMIT>/$(GITCOMMIT)/g" -e "s/<MINOR>/$(MINOR)/g" likwid.lua;
 	@ln -sf liblikwid.so liblikwid.so.$(VERSION)
-	@ln -sf ext/hwloc/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION)
-	@ln -sf ext/lua/liblikwid-lua.so liblikwid-lua.so.$(VERSION)
 	@ln -sf liblikwid.so liblikwid.so.$(VERSION).$(RELEASE)
-	@ln -sf ext/hwloc/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION).$(RELEASE)
-	@ln -sf ext/lua/liblikwid-lua.so liblikwid-lua.so.$(VERSION).$(RELEASE)
+	@ln -sf $(HWLOC_FOLDER)/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION)
+	@ln -sf $(HWLOC_FOLDER)/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION).$(RELEASE)
+	@ln -sf $(LUA_FOLDER)/liblikwid-lua.so liblikwid-lua.so.$(VERSION)
+	@ln -sf $(LUA_FOLDER)/liblikwid-lua.so liblikwid-lua.so.$(VERSION).$(RELEASE)
+	@if [ -e $(LUA_FOLDER)/liblikwid-lua.so ]; then ln -sf $(LUA_FOLDER)/liblikwid-lua.so liblikwid-lua.so.$(VERSION).$(RELEASE); fi
+	@if [ -e $(HWLOC_FOLDER)/liblikwid-hwloc.so ]; then ln -sf $(HWLOC_FOLDER)/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION).$(RELEASE); fi
+	@if [ -e $(PINLIB) ]; then ln -sf $(PINLIB) $(PINLIB).$(VERSION).$(RELEASE); fi
 	@echo "export LD_LIBRARY_PATH=$(PWD):$$LD_LIBRARY_PATH"
 
 testit: test/test-likwidAPI.c
