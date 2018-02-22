@@ -939,10 +939,13 @@ likwid.printOutput = printOutput
 
 
 
-local function getResults()
+local function getResults(nan2value)
     local results = {}
     local nr_groups = likwid_getNumberOfGroups()
     local nr_threads = likwid_getNumberOfThreads()
+    if not nan2value then
+        nan2value = '-'
+    end
     for i=1,nr_groups do
         results[i] = {}
         local nr_events = likwid_getNumberOfEvents(i)
@@ -950,6 +953,9 @@ local function getResults()
             results[i][j] = {}
             for k=1, nr_threads do
                 results[i][j][k] = likwid_getResult(i,j,k)
+                if results[i][j][k] ~= results[i][j][k] then
+                    results[i][j][k] = nan2value
+                end
             end
         end
     end
@@ -958,10 +964,13 @@ end
 
 likwid.getResults = getResults
 
-local function getLastResults()
+local function getLastResults(nan2value)
     local results = {}
     local nr_groups = likwid_getNumberOfGroups()
     local nr_threads = likwid_getNumberOfThreads()
+    if not nan2value then
+        nan2value = '-'
+    end
     for i=1,nr_groups do
         results[i] = {}
         local nr_events = likwid_getNumberOfEvents(i)
@@ -969,6 +978,9 @@ local function getLastResults()
             results[i][j] = {}
             for k=1, nr_threads do
                 results[i][j][k] = likwid_getLastResult(i,j,k)
+                if results[i][j][k] ~= results[i][j][k] then
+                    results[i][j][k] = nan2value
+                end
             end
         end
     end
@@ -977,10 +989,13 @@ end
 
 likwid.getLastResults = getLastResults
 
-local function getMetrics()
+local function getMetrics(nan2value)
     local results = {}
     local nr_groups = likwid_getNumberOfGroups()
     local nr_threads = likwid_getNumberOfThreads()
+    if not nan2value then
+        nan2value = '-'
+    end
     for i=1,nr_groups do
         results[i] = {}
         local nr_metrics = likwid_getNumberOfMetrics(i)
@@ -988,6 +1003,9 @@ local function getMetrics()
             results[i][j] = {}
             for k=1, nr_threads do
                 results[i][j][k] = likwid_getMetric(i,j, k)
+                if results[i][j][k] ~= results[i][j][k] then
+                    results[i][j][k] = nan2value
+                end
             end
         end
     end
@@ -996,10 +1014,13 @@ end
 
 likwid.getMetrics = getMetrics
 
-local function getLastMetrics()
+local function getLastMetrics(nan2value)
     local results = {}
     local nr_groups = likwid_getNumberOfGroups()
     local nr_threads = likwid_getNumberOfThreads()
+    if not nan2value then
+        nan2value = '-'
+    end
     for i=1,nr_groups do
         results[i] = {}
         local nr_metrics = likwid_getNumberOfMetrics(i)
@@ -1007,6 +1028,9 @@ local function getLastMetrics()
             results[i][j] = {}
             for k=1, nr_threads do
                 results[i][j][k] = likwid_getLastMetric(i,j, k)
+                if results[i][j][k] ~= results[i][j][k] then
+                    results[i][j][k] = nan2value
+                end
             end
         end
     end
@@ -1015,13 +1039,16 @@ end
 
 likwid.getLastMetrics = getLastMetrics
 
-local function getMarkerResults(filename, cpulist)
+local function getMarkerResults(filename, cpulist, nan2value)
     local cpuinfo = likwid.getCpuInfo()
     local ret = likwid.readMarkerFile(filename)
     if ret < 0 then
         return nil, nil
     elseif ret == 0 then
         return {}, {}
+    end
+    if not nan2value then
+        nan2value = '-'
     end
     results = {}
     metrics = {}
@@ -1039,6 +1066,9 @@ local function getMarkerResults(filename, cpulist)
             results[i][groupID][k] = {}
             for j=1, regionThreads do
                 results[i][groupID][k][j] = likwid.markerRegionResult(i,k,j)
+                if results[i][groupID][k][j] ~= results[i][groupID][k][j] then
+                    results[i][groupID][k][j] = nan2value
+                end
             end
         end
         if likwid.getNumberOfMetrics(groupID) > 0 then
@@ -1047,6 +1077,9 @@ local function getMarkerResults(filename, cpulist)
                 metrics[i][likwid.markerRegionGroup(i)][k] = {}
                 for j=1, regionThreads do
                     metrics[i][groupID][k][j] = likwid.markerRegionMetric(i,k,j)
+                    if metrics[i][groupID][k][j] ~= metrics[i][groupID][k][j] then
+                        metrics[i][groupID][k][j] = nan2value
+                    end
                 end
             end
         end

@@ -139,6 +139,7 @@ cpuClock = 1
 execpid = false
 perfflags = nil
 perfpid = nil
+nan2value = '-'
 likwid.catchSignal()
 
 if #arg == 0 then
@@ -146,7 +147,7 @@ if #arg == 0 then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats", "execpid", "perfflags:", "perfpid:"}) do
+for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats", "execpid", "perfflags:", "perfpid:", "Z"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -203,6 +204,8 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         gotC = true
     elseif (opt == "a") then
         print_groups = true
+    elseif (opt == "Z") then
+        nan2value = 0
     elseif (opt == "e") then
         print_events = true
     elseif (opt == "execpid") then
@@ -827,9 +830,9 @@ if use_wrapper or use_timeline then
 
             local time = likwid.getClock(start, stop)
             if likwid.getNumberOfMetrics(activeGroup) == 0 then
-                results = likwid.getLastResults()
+                results = likwid.getLastResults(nan2value)
             else
-                results = likwid.getLastMetrics()
+                results = likwid.getLastMetrics(nan2value)
             end
             local outList = {}
             table.insert(outList, tostring(math.tointeger(activeGroup)))
@@ -892,7 +895,7 @@ end
 
 if use_marker == true then
     if likwid.access(markerFile, "e") >= 0 then
-        results, metrics = likwid.getMarkerResults(markerFile, cpulist)
+        results, metrics = likwid.getMarkerResults(markerFile, cpulist, nan2value)
         if not results then
             print_stderr("Failure reading Marker API result file.")
         elseif #results == 0 then
@@ -907,8 +910,8 @@ if use_marker == true then
         print_stderr("Marker API result file does not exist. This may happen if the application has not called LIKWID_MARKER_CLOSE.")
     end
 elseif use_timeline == false then
-    results = likwid.getResults()
-    metrics = likwid.getMetrics()
+    results = likwid.getResults(nan2value)
+    metrics = likwid.getMetrics(nan2value)
     likwid.printOutput(results, metrics, cpulist, nil, print_stats)
 end
 
