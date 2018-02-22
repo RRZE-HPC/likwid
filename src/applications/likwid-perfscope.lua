@@ -177,13 +177,14 @@ local mfreq = 1.0
 local plotrange = 0
 local host = nil
 local force = false
+local verbose = nil
 
 if #arg == 0 then
     usage()
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","t:","r:","a","d","p","f","help", "version","group:","time:","dump","range:","plotdump","all", "host:", "force"}) do
+for opt,arg in likwid.getopt(arg, {"h","v","V:","g:","C:","c:","t:","r:","a","d","p","f","help", "version","group:","time:","dump","range:","plotdump","all", "host:", "force"}) do
     if opt == "h" or opt == "help" then
         usage()
         os.exit(0)
@@ -212,6 +213,11 @@ for opt,arg in likwid.getopt(arg, {"h","v","g:","C:","c:","t:","r:","a","d","p",
         host = arg
     elseif opt == "f" or opt == "force" then
         force = true
+    elseif opt == "V" then
+        local v = tonumber(arg)
+        if v >= 0 and v <= 3 then
+            verbose = v
+        end
     elseif opt == "?" then
         print_stderr("Invalid commandline option -"..arg)
         os.exit(1)
@@ -422,6 +428,9 @@ else
 end
 if force then
     cmd = cmd .. " -f"
+end
+if verbose then
+    cmd = cmd .. string.format(" -V %d", verbose)
 end
 cmd = cmd .. string.format(" -t %s", timeline)
 
