@@ -36,10 +36,10 @@
 #include <cpuid.h>
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-
 static int
 get_cpu_perf_data(void)
 {
+#if defined(__x86_64) || defined(__i386__)
     uint32_t eax = 0x0U, ebx = 0x0U, ecx = 0x0U, edx = 0x0U;
     int largest_function = 0;
     eax = 0x00;
@@ -70,6 +70,7 @@ get_cpu_perf_data(void)
             cpuid_info.turbo = 0;
         }
     }
+#endif
     return 0;
 }
 
