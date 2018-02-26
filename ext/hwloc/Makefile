@@ -42,6 +42,8 @@ endif
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
+.NOTPARALLEL: all
+
 all: $(BUILD_DIR) $(OBJ) $(LIBHWLOC)
 
 $(BUILD_DIR):
