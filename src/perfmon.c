@@ -2377,8 +2377,6 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
 {
     int e = 0;
     double result = 0;
-    bstring vars = bformat("");
-    bstring varlist = bformat("");
     char split[2] = ":";
     if (unlikely(groupSet == NULL))
     {
@@ -2405,6 +2403,8 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     {
         return NAN;
     }
+    bstring vars = bformat("");
+    bstring varlist = bformat("");
     char* f = groupSet->groups[groupId].group.metricformulas[metricId];
     for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
     {
@@ -2490,8 +2490,6 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
 {
     int e = 0;
     double result = 0;
-    bstring vars = bformat("");
-    bstring varlist = bformat("");
     char split[2] = ":";
     if (unlikely(groupSet == NULL))
     {
@@ -2518,6 +2516,8 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     {
         return NAN;
     }
+    bstring vars = bformat("");
+    bstring varlist = bformat("");
     char* f = groupSet->groups[groupId].group.metricformulas[metricId];
     for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
     {
