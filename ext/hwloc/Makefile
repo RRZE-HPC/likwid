@@ -35,6 +35,8 @@ LIBHWLOC = $(shell basename $(TARGET_HWLOC_LIB))
 
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
+.NOTPARALLEL: all
+
 all: $(BUILD_DIR) $(OBJ) $(LIBHWLOC)
 
 $(BUILD_DIR):
