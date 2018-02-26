@@ -50,6 +50,7 @@
 #include <lualib.h>
 #include <math.h>
 
+#define LUA_STATES_CLEAN_DEFAULT 100
 
 char* in_func_str = "require('math');function SUM(...);local s = 0;for k,v in pairs({...}) do;s = s + v;end;return s;end;function ARGS(...) return #arg end;function AVG(...) return SUM(...)/ARGS(...) end;MEAN = AVG;function MIN(...) return math.min(...) end;function MAX(...) return math.max(...) end;function MEDIAN(...);local x = {...};local l = ARGS(...);table.sort(x);return x[math.floor(l/2)];end;function PERCENTILE(perc, ...);local x = {...};local xlen = #x;table.sort(x);local idx = math.ceil((perc/100.0)*xlen);return x[idx];end;function IFELSE(cond, valid, invalid);if cond then;return valid;else;return invalid;end;end";
 char* in_expand_str = "function expand_str(x); hist = {}; runs = 0; for pref, elem in x:gmatch('([%a%d]*)%[([%d,]+)%]') do;  runs = runs + 1;  matches = {};  for num in elem:gmatch('%d+') do;   for _,v in pairs(varlist) do; if v:match(string.format('.*%s%s.*', pref, num)) then;  if not hist[v] then;   hist[v] = 1;  else;   hist[v] = hist[v] + 1; end; end; end;  end; end; res = {}; for k,v in pairs(hist) do;  if v == runs then table.insert(res, k) end; end; return table.concat(res, ',');end;;function expand_wildcard(x); cond = {}; newx = x:gsub('%*','[%%d]'); for _,v in pairs(varlist) do;  if v:match(newx) then;   table.insert(cond, v);  end; end; return table.concat(cond, ',');end;;function eval_str(s); repl = {}; for x in s:gmatch('([%a%d_]+%[[%d,]+%])') do;  repl[x:gsub('%[', '%%['):gsub('%]', '%%]')] = expand_str(x); end; for x in s:gmatch('[%a%d*%._]+') do;  if x:match('*') then;t = expand_wildcard(x); if t:len > 0 then repl[x..'*'] = t end; end; end; for k,v in pairs(repl) do;  s = s:gsub(k..'[%a%d_]*',v); end; return s;end;";
@@ -57,7 +58,12 @@ char* in_user_func_str = NULL;
 
 char* not_allowed[] = {"io.", "popen(", "load", "get", "set", "call(", "require", "module", NULL};
 
+// Keep the Lua states per cpu
 lua_State** lua_states = NULL;
+// A clean counter is needed per cpu to close Lua state from time
+// to time since it grows with each calculation and in some cases,
+// like monitoring, the state would increase memory usage.
+int *lua_states_clean = NULL;
 int num_states = 0;
 char** defines = NULL;
 bstring *bdefines = NULL;
@@ -1551,11 +1557,13 @@ static double do_calc(int cpu, char* s, bstring vars)
     int ret = 0;
     char* t = NULL;
     lua_State *L = lua_states[cpu];
+    // Allocate a new Lua state for the cpu
     if (!L)
     {
         L = luaL_newstate();
         luaL_openlibs(L);
         lua_states[cpu] = L;
+        lua_states_clean[cpu] = LUA_STATES_CLEAN_DEFAULT;
     }
     bstring scratch = bfromcstr(in_func_str);
     bcatcstr(scratch, "\n");
@@ -1591,6 +1599,14 @@ static double do_calc(int cpu, char* s, bstring vars)
     }
     bdestroy(scratch);
 
+    // decrement clean counter for cpu and close the Lua state if zero
+    lua_states_clean[cpu]--;
+    if (lua_states[cpu] && lua_states_clean[cpu] == 0 )
+    {
+        lua_close(lua_states[cpu]);
+        lua_states[cpu] = NULL;
+    }
+
     return res;
 }
 
@@ -1600,12 +1616,14 @@ static char* do_expand(int cpu, char* f, bstring varlist)
     char* out = NULL;
     char* t = NULL;
 
+    // Allocate a new Lua state for the cpu
     lua_State *L = lua_states[cpu];
     if (!L)
     {
         L = luaL_newstate();
         luaL_openlibs(L);
         lua_states[cpu] = L;
+        lua_states_clean[cpu] = LUA_STATES_CLEAN_DEFAULT;
     }
     bstring scratch = bformat("varlist={%s,%s}\n%s\nreturn eval_str(\"%s\")", bdata(bglob_defines_list), bdata(varlist), in_expand_str, f);
     if (ret < 0)
@@ -1618,6 +1636,14 @@ static char* do_expand(int cpu, char* f, bstring varlist)
         out = (char*)lua_tostring(L, -1);
     }
     bdestroy(scratch);
+
+    // decrement clean counter for cpu and close the Lua state of the cpu if zero
+    lua_states_clean[cpu]--;
+    if (lua_states[cpu] && lua_states_clean[cpu] == 0 )
+    {
+        lua_close(lua_states[cpu]);
+        lua_states[cpu] = NULL;
+    }
     return out;
 }
 
@@ -1673,6 +1699,11 @@ void __attribute__((constructor (103))) init_perfgroup(void)
     {
         memset(lua_states, 0, cpus * sizeof(lua_State*));
     }
+    lua_states_clean = (int*)malloc(cpus * sizeof(int));
+    if (lua_states_clean)
+    {
+        memset(lua_states_clean, 0, cpus * sizeof(int));
+    }
     num_states = cpus;
     bdefines = (bstring*)malloc(cpus * sizeof(bstring));
     if (bdefines)
@@ -1716,9 +1747,18 @@ void __attribute__((destructor (103))) close_perfgroup(void)
         for (int i = 0; i < num_states; i++)
         {
             if (lua_states[i])
+            {
                 lua_close(lua_states[i]);
+                lua_states[i] = NULL;
+            }
         }
         free(lua_states);
+        lua_states = NULL;
+    }
+    if (lua_states_clean)
+    {
+        free(lua_states_clean);
+        lua_states_clean = NULL;
     }
     for (int i = 0; i < num_states; i++)
     {
