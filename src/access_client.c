@@ -250,6 +250,7 @@ access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t 
     int socket = globalSocket;
     pthread_mutex_t* lockptr = &globalLock;
     AccessDataRecord record;
+    memset(&record, 0, sizeof(AccessDataRecord));
     record.cpu = cpu_id;
     record.device = MSR_DEV;
     record.errorcode = ERR_OPENFAIL;
@@ -320,6 +321,7 @@ access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t
     int socket = globalSocket;
     int ret;
     AccessDataRecord record;
+    memset(&record, 0, sizeof(AccessDataRecord));
     record.cpu = cpu_id;
     record.device = MSR_DEV;
     pthread_mutex_t* lockptr = &globalLock;
@@ -386,6 +388,7 @@ void
 access_client_finalize(int cpu_id)
 {
     AccessDataRecord record;
+    memset(&record, 0, sizeof(AccessDataRecord));
     if (cpuSockets && cpuSockets[cpu_id] > 0)
     {
         record.type = DAEMON_EXIT;
@@ -408,6 +411,7 @@ access_client_check(PciDeviceIndex dev, int cpu_id)
     pthread_mutex_t* lockptr = &globalLock;
 
     AccessDataRecord record;
+    memset(&record, 0, sizeof(AccessDataRecord));
     record.cpu = cpu_id;
     record.device = dev;
     record.type = DAEMON_CHECK;
