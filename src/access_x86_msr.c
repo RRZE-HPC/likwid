@@ -220,7 +220,6 @@ access_x86_msr_init(const int cpu_id)
         if (fd < 0)
         {
             sprintf(msr_file_name,"/dev/cpu/%d/msr", cpu_id);
-            printf("%s\n", msr_file_name);
         }
         else
         {
