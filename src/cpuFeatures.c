@@ -86,6 +86,10 @@ cpuFeatures_update(int cpu)
 {
     int ret;
     uint64_t flags = 0x0ULL;
+    if (cpuid_info.isIntel == 0)
+    {
+        return;
+    }
     ret = HPMread(cpu, MSR_DEV, MSR_IA32_MISC_ENABLE, &flags);
     if (ret != 0)
     {
@@ -263,7 +267,10 @@ cpuFeatures_init()
         cpuFeatureMask = malloc(cpuid_topology.numHWThreads*sizeof(uint64_t));
         memset(cpuFeatureMask, 0, cpuid_topology.numHWThreads*sizeof(uint64_t));
     }
-
+    if (cpuid_info.isIntel == 0)
+    {
+        return;
+    }
     if (!HPMinitialized())
     {
         HPMinit();
@@ -366,9 +373,14 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
         if (type == FEAT_CL_PREFETCHER ||
             type == FEAT_IP_PREFETCHER)
         {
-            fprintf(stderr, "CL_PREFETCHER and IP_PREFETCHER not available on Intel Xeon Phi (KNL)");
+            fprintf(stderr, "CL_PREFETCHER and IP_PREFETCHER not available on Intel Xeon Phi (KNL)\n");
             return 0;
         }
+    }
+    if (cpuid_info.isIntel == 0)
+    {
+        fprintf(stderr, "Enabling features is only available on Intel platforms\n");
+        return -EINVAL;
     }
 
     ret = HPMread(cpu, MSR_DEV, reg, &flags);
@@ -520,6 +532,11 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
             fprintf(stderr, "CL_PREFETCHER and IP_PREFETCHER not available on Intel Xeon Phi (KNL)");
             return 0;
         }
+    }
+    if (cpuid_info.isIntel == 0)
+    {
+        fprintf(stderr, "Disabling features is only available on Intel platforms\n");
+        return -EINVAL;
     }
     ret = HPMread(cpu, MSR_DEV, reg, &flags);
     if (ret != 0)
