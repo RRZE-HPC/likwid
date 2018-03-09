@@ -18,14 +18,22 @@ typedef struct {
 
 static int verbose = 0;
 
-static char eventset_ok[] = "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,CPU_CLK_UNHALTED_REF:FIXC2";
-static char event1_ok[] = "INSTR_RETIRED_ANY";
-static char event2_ok[] = "CPU_CLK_UNHALTED_CORE";
-static char event3_ok[] = "CPU_CLK_UNHALTED_REF";
-static char ctr1_ok[] = "FIXC0";
-static char ctr2_ok[] = "FIXC1";
-static char ctr3_ok[] = "FIXC2";
-static char eventset_option[] = "INSTR_RETIRED_ANY:FIXC0:ANYTHREAD,CPU_CLK_UNHALTED_CORE:FIXC1:ANYTHREAD,CPU_CLK_UNHALTED_REF:FIXC2:ANYTHREAD";
+static char eventset_ok_intel[] = "INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,CPU_CLK_UNHALTED_REF:FIXC2";
+static char eventset_ok_amd[] = "RETIRED_INSTRUCTIONS:PMC0,RETIRED_BRANCH_INSTR:PMC1,RETIRED_MISP_BRANCH_INSTR:PMC2";
+static char event1_ok_intel[] = "INSTR_RETIRED_ANY";
+static char event2_ok_intel[] = "CPU_CLK_UNHALTED_CORE";
+static char event3_ok_intel[] = "CPU_CLK_UNHALTED_REF";
+static char event1_ok_amd[] = "RETIRED_INSTRUCTIONS";
+static char event2_ok_amd[] = "RETIRED_BRANCH_INSTR";
+static char event3_ok_amd[] = "RETIRED_MISP_BRANCH_INSTR";
+static char ctr1_ok_intel[] = "FIXC0";
+static char ctr2_ok_intel[] = "FIXC1";
+static char ctr3_ok_intel[] = "FIXC2";
+static char ctr1_ok_amd[] = "PMC0";
+static char ctr2_ok_amd[] = "PMC1";
+static char ctr3_ok_amd[] = "PMC2";
+static char eventset_option_intel[] = "INSTR_RETIRED_ANY:FIXC0:ANYTHREAD,CPU_CLK_UNHALTED_CORE:FIXC1:ANYTHREAD,CPU_CLK_UNHALTED_REF:FIXC2:ANYTHREAD";
+static char eventset_option_amd[] = "RETIRED_INSTRUCTIONS:PMC0:EDGEDETECT,RETIRED_BRANCH_INSTR:PMC1:EDGEDETECT,RETIRED_MISP_BRANCH_INSTR:PMC2:EDGEDETECT";
 static int isIntel = 0;
 static char perfgroup_ok[] = "BRANCH";
 static char perfgroup_fail[] = "BRAN";
@@ -506,11 +514,6 @@ int test_perfmonaddeventset()
     int cpu = 0;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
     int ret = perfmon_init(1, &cpu);
     if (ret != 0) {
         if (verbose > 0) printf("Perfmon init failed\n");
@@ -528,7 +531,10 @@ int test_perfmonaddeventset()
         if (verbose > 0) printf("Perfmon id of active group != -1\n");
         goto fail;
     }
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0) {
         if (verbose > 0) printf("Perfmon addEventSet(ok) failed\n");
         goto fail;
@@ -545,7 +551,11 @@ int test_perfmonaddeventset()
         if (verbose > 0) printf("Perfmon id of active group != -1\n");
         goto fail;
     }
-    ret = perfmon_addEventSet(eventset_option);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_option_intel);
+    else
+        ret = perfmon_addEventSet(eventset_option_amd);
+    
     if (ret != 1) {
         if (verbose > 0) printf("Perfmon addEventSet(options) failed\n");
         goto fail;
@@ -597,11 +607,18 @@ fail:
 
 int test_perfmonaddeventset_noinit()
 {
-    int ret = perfmon_addEventSet(eventset_ok);
+    int ret = 0;
+    topology_init();
+    CpuInfo_t cpuinfo = get_cpuInfo();
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret == 0)
         goto fail;
     return 1;
 fail:
+    topology_finalize();
     return 0;
 }
 
@@ -616,7 +633,11 @@ int test_perfmoncustomgroup()
         if (verbose > 0) printf("Perfmon init failed\n");
         goto fail;
     }
-    ret = perfmon_addEventSet(eventset_ok);
+
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0) {
         if (verbose > 0) printf("Perfmon addEventSet(ok) failed\n");
         goto fail;
@@ -629,29 +650,59 @@ int test_perfmoncustomgroup()
         if (verbose > 0) printf("Perfmon number of metrics != 0\n");
         goto fail;
     }
-    if (strcmp(perfmon_getEventName(ret, 0), event1_ok) != 0)
+    if (cpuinfo->isIntel)
     {
-        goto fail;
+        if (strcmp(perfmon_getEventName(ret, 0), event1_ok_intel) != 0)
+        {
+            goto fail;
+        }
+        if (strcmp(perfmon_getEventName(ret, 1), event2_ok_intel) != 0)
+        {
+            goto fail;
+        }
+        if (strcmp(perfmon_getEventName(ret, 2), event3_ok_intel) != 0)
+        {
+            goto fail;
+        }
+        if (strcmp(perfmon_getCounterName(ret, 0), ctr1_ok_intel) != 0)
+        {
+            goto fail;
+        }
+        if (strcmp(perfmon_getCounterName(ret, 1), ctr2_ok_intel) != 0)
+        {
+            goto fail;
+        }
+        if (strcmp(perfmon_getCounterName(ret, 2), ctr3_ok_intel) != 0)
+        {
+            goto fail;
+        }
     }
-    if (strcmp(perfmon_getEventName(ret, 1), event2_ok) != 0)
+    else
     {
-        goto fail;
-    }
-    if (strcmp(perfmon_getEventName(ret, 2), event3_ok) != 0)
-    {
-        goto fail;
-    }
-    if (strcmp(perfmon_getCounterName(ret, 0), ctr1_ok) != 0)
-    {
-        goto fail;
-    }
-    if (strcmp(perfmon_getCounterName(ret, 1), ctr2_ok) != 0)
-    {
-        goto fail;
-    }
-    if (strcmp(perfmon_getCounterName(ret, 2), ctr3_ok) != 0)
-    {
-        goto fail;
+        if (strcmp(perfmon_getEventName(ret, 0), event1_ok_amd) != 0)
+        {
+            goto fail;
+        }
+        if (strcmp(perfmon_getEventName(ret, 1), event2_ok_amd) != 0)
+        {
+            goto fail;
+        }
+        if (strcmp(perfmon_getEventName(ret, 2), event3_ok_amd) != 0)
+        {
+            goto fail;
+        }
+        if (strcmp(perfmon_getCounterName(ret, 0), ctr1_ok_amd) != 0)
+        {
+            goto fail;
+        }
+        if (strcmp(perfmon_getCounterName(ret, 1), ctr2_ok_amd) != 0)
+        {
+            goto fail;
+        }
+        if (strcmp(perfmon_getCounterName(ret, 2), ctr3_ok_amd) != 0)
+        {
+            goto fail;
+        }
     }
 
     if (strcmp(perfmon_getGroupName(ret), "Custom") != 0)
@@ -689,8 +740,8 @@ int test_perfmongetgroups()
     char** glist = NULL;
     char** slist = NULL;
     char** llist = NULL;
+
     int ret = perfmon_getGroups(&glist, &slist, &llist);
-    fprintf(stderr, "perfmon_getGroups() returned %d groups\n", ret);
     if (ret <= 0)
     {
         goto fail;
@@ -708,14 +759,17 @@ int test_perfmongetgroups()
             goto fail;
         if (strcmp(glist[i], "") == 0)
         {
+            fprintf(stderr, "Empty group name\n");
             goto fail;
         }
         if (strcmp(slist[i], "") == 0)
         {
+            fprintf(stderr, "Empty short info in group %s\n", glist[i]);
             goto fail;
         }
         if (strcmp(llist[i], "") == 0)
         {
+            fprintf(stderr, "Empty long info in group %s\n", glist[i]);
             goto fail;
         }
     }
@@ -843,11 +897,7 @@ int test_perfmonsetup()
     int cpu = 0;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
@@ -855,7 +905,10 @@ int test_perfmonsetup()
         goto fail;
     if (perfmon_getNumberOfThreads() != 1)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group1 = ret;
@@ -868,7 +921,10 @@ int test_perfmonsetup()
         goto fail;
     if (perfmon_getIdOfActiveGroup() != group1)
         goto fail;
-    ret = perfmon_addEventSet(eventset_option);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_option_intel);
+    else
+        ret = perfmon_addEventSet(eventset_option_amd);
     if (ret != 1)
         goto fail;
     group2 = ret;
@@ -896,21 +952,29 @@ int test_perfmonswitch()
     int cpu = 0;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
-    if (ret != 0)
-        goto fail;
-    group1 = ret;
-    ret = perfmon_addEventSet(eventset_option);
-    if (ret != 1)
-        goto fail;
+    if (cpuinfo->isIntel)
+    {
+        ret = perfmon_addEventSet(eventset_ok_intel);
+        if (ret != 0)
+            goto fail;
+        group1 = ret;
+        ret = perfmon_addEventSet(eventset_option_intel);
+        if (ret != 1)
+            goto fail;
+    }
+    else
+    {
+        ret = perfmon_addEventSet(eventset_ok_amd);
+        if (ret != 0)
+            goto fail;
+        group1 = ret;
+        ret = perfmon_addEventSet(eventset_option_amd);
+        if (ret != 1)
+            goto fail;
+    }
     group2 = ret;
     ret = perfmon_setupCounters(group1);
     if (ret != 0)
@@ -936,15 +1000,13 @@ int test_perfmonstart()
     int cpu = 0;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group1 = ret;
@@ -1045,15 +1107,13 @@ int test_perfmonstop()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1119,15 +1179,13 @@ int test_perfmonstop_nosetup()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     ret = perfmon_stopCounters();
@@ -1149,15 +1207,14 @@ int test_perfmonstop_nostart()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1194,11 +1251,6 @@ int test_perfmonresult_noadd()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
@@ -1221,15 +1273,14 @@ int test_perfmonresult_nosetup()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1252,15 +1303,14 @@ int test_perfmonresult_nostart()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1286,15 +1336,14 @@ int test_perfmonresult_nostop()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1323,15 +1372,14 @@ int test_perfmonresult()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1376,11 +1424,7 @@ int test_perfmonlastresult_noadd()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
@@ -1403,15 +1447,14 @@ int test_perfmonlastresult_nosetup()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1434,15 +1477,14 @@ int test_perfmonlastresult_nostart()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1468,15 +1510,14 @@ int test_perfmonlastresult_nostop()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1505,15 +1546,14 @@ int test_perfmonlastresult()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1560,11 +1600,7 @@ int test_perfmonmetric_noadd()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
@@ -1587,15 +1623,14 @@ int test_perfmonmetric_nosetup()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1618,15 +1653,14 @@ int test_perfmonmetric_nostart()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1652,15 +1686,14 @@ int test_perfmonmetric_nostop()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1689,15 +1722,14 @@ int test_perfmonmetric_ok()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(perfgroup_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1742,11 +1774,7 @@ int test_perfmonlastmetric_noadd()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
@@ -1769,19 +1797,19 @@ int test_perfmonlastmetric_nosetup()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
     double result = perfmon_getLastMetric(group,0,0);
+    printf("%f\n", result);
     if (!(isnan(result)))
         goto fail;
     perfmon_finalize();
@@ -1800,15 +1828,14 @@ int test_perfmonlastmetric_nostart()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1834,15 +1861,14 @@ int test_perfmonlastmetric_nostop()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(eventset_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(eventset_ok_intel);
+    else
+        ret = perfmon_addEventSet(eventset_ok_amd);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1871,15 +1897,14 @@ int test_perfmonlastmetric_ok()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-    if (cpuinfo->isIntel == 0)
-    {
-        topology_finalize();
-        return 1;
-    }
+
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
-    ret = perfmon_addEventSet(perfgroup_ok);
+    if (cpuinfo->isIntel)
+        ret = perfmon_addEventSet(perfgroup_ok);
+    else
+        ret = perfmon_addEventSet(perfgroup_ok);
     if (ret != 0)
         goto fail;
     group = ret;
@@ -1894,6 +1919,7 @@ int test_perfmonlastmetric_ok()
     ret = perfmon_stopCounters();
     if (ret != 0)
         goto fail;
+
     if ((perfmon_getLastMetric(group,0,0) == 0)||(perfmon_getLastMetric(group,1,0) == 0))
         goto fail;
     if (perfmon_getLastMetric(group,0,0) != perfmon_getMetric(group,0,0))
