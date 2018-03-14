@@ -693,6 +693,9 @@ end
 local pid = nil
 if #execList > 0 then
     local execString = table.concat(execList," ")
+    if (execpid) then
+        likwid.setenv("LIKWID_PERF_EXECPID", "1")
+    end
     if pin_cpus then
         pid = likwid.startProgram(execString, #cpulist, cpulist)
     else

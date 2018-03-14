@@ -151,6 +151,8 @@ likwid_markerInit(void)
     char* eventStr = getenv("LIKWID_EVENTS");
     char* cThreadStr = getenv("LIKWID_THREADS");
     char* filepath = getenv("LIKWID_FILEPATH");
+    char* perfpid = getenv("LIKWID_PERF_EXECPID");
+    char execpid[20];
     /* Dirty hack to avoid nonnull warnings */
     int (*ownatoi)(const char*);
     ownatoi = &atoi;
@@ -217,6 +219,18 @@ likwid_markerInit(void)
             }
         }
     }
+#ifdef LIKWID_USE_PERFEVENT
+    if (perfpid != NULL)
+    {
+        snprintf(execpid, 19, "%d", getpid());
+        setenv("LIKWID_PERF_PID", execpid, 1);
+        char* perfflags = getenv("LIKWID_PERF_FLAGS");
+        if (perfflags)
+        {
+            setenv("LIKWID_PERF_FLAGS", getenv("LIKWID_PERF_FLAGS"), 1);
+        }
+    }
+#endif
 
     i = perfmon_init(num_cpus, threads2Cpu);
     if (i<0)
@@ -259,7 +273,6 @@ likwid_markerInit(void)
     registered_cpus++;
 
     groupSet->activeGroup = 0;
-//#ifdef LIKWID_USE_PERFEVENT
     perfmon_setupCounters(groupSet->activeGroup);
     perfmon_startCounters();
 //#endif
