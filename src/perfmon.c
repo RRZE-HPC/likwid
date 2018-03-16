@@ -222,7 +222,6 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
             check_settings = 0;
         }
         err = HPMread(testcpu, counter_map[index].device, reg, &tmp);
-        printf("Read %llX check %d\n", tmp, check_settings);
         if (err != 0)
         {
             if (err == -ENODEV)
