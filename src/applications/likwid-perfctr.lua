@@ -713,7 +713,7 @@ elseif #execList > 0 then
 end
 
 
-if os.getenv("LIKWID_FORCE") == nil or (forceOverwrite == 1 and os.getenv("LIKWID_FORCE") ~= tostring(forceOverwrite)) then
+if forceOverwrite == 1 and os.getenv("LIKWID_FORCE") ~= tostring(forceOverwrite) then
     likwid.setenv("LIKWID_FORCE", tostring(forceOverwrite))
 end
 for i, event_string in pairs(event_string_list) do
