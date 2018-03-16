@@ -222,6 +222,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
             check_settings = 0;
         }
         err = HPMread(testcpu, counter_map[index].device, reg, &tmp);
+        printf("Read %llX check %d\n", tmp, check_settings);
         if (err != 0)
         {
             if (err == -ENODEV)
@@ -272,7 +273,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
             {
                 fprintf(stderr, "ERROR: The selected register %s is in use.\n", counter_map[index].key);
                 fprintf(stderr, "Please run likwid with force option (-f, --force) to overwrite settings\n");
-                exit(EXIT_SUCCESS);
+                type = NOTYPE;
             }
         }
     }
@@ -304,7 +305,7 @@ checkCounter(bstring counterName, const char* limit)
     tokens = bsplit(limitString,'|');
     for(i=0; i<tokens->qty; i++)
     {
-        if(bstrncmp(counterName, tokens->entry[i], blength(tokens->entry[i])))
+        if(bstrncmp(counterName, tokens->entry[i], blength(tokens->entry[i])) && bstrncmp(tokens->entry[i], counterName, blength(counterName)))
         {
             ret = FALSE;
         }
@@ -2429,6 +2430,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
+
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
@@ -2462,7 +2464,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     {
         calc_add_int_var("SOCKET_CPU", cpu, vars, varlist);
     }
-    
+
     e = calc_metric(cpu, f, vars, varlist, &result);
     bdestroy(vars);
     bdestroy(varlist);
@@ -2543,6 +2545,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
         }
     }
     calc_add_int_var("CPU", cpu, vars, varlist);
+
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
@@ -2576,7 +2579,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     {
         calc_add_int_var("SOCKET_CPU", cpu, vars, varlist);
     }
-    
+
     e = calc_metric(cpu, f, vars, varlist, &result);
     bdestroy(vars);
     bdestroy(varlist);
@@ -3226,7 +3229,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
-    
+
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
@@ -3260,7 +3263,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     {
         calc_add_int_var("SOCKET_CPU", cpu, vars, varlist);
     }
-    
+
     err = calc_metric(cpu, f, vars, varlist, &result);
     bdestroy(vars);
     bdestroy(varlist);
