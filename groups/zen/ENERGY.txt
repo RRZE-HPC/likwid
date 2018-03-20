@@ -1,9 +1,9 @@
 SHORT Power and Energy consumption
 
 EVENTSET
-FIXC0 INST_RETIRED_ANY
 FIXC1 ACTUAL_CPU_CLOCK
 FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
 PWR0  RAPL_CORE_ENERGY
 PWR1  RAPL_PKG_ENERGY
 
@@ -13,7 +13,7 @@ METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s]   FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
-CPI   FIXC1/FIXC0
+CPI   FIXC1/PMC0
 Energy Core [J]  PWR0
 Power Core [W] PWR0/time
 Energy PKG [J]  PWR1
