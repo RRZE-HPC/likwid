@@ -675,7 +675,7 @@ topology_setName(void)
                 case XEON_PHI_KML:
                     cpuid_info.supportUncore = 1;
                     cpuid_info.name = xeon_phi3_string;
-                    cpuid_info.short_name = short_phi3;
+                    cpuid_info.short_name = short_phi2;
                     break;
 
                 case NEHALEM_EX:
