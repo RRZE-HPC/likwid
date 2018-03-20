@@ -79,6 +79,88 @@ getBusFromSocket(const uint32_t socket)
     return -1;
 }
 
+#define PCI_SLOT(devfn)         (((devfn) >> 3) & 0x1f)
+#define PCI_FUNC(devfn)         ((devfn) & 0x07)
+
+
+/* This code gets the PCI device using the given devid in pcidev. It assumes that the
+ * PCI busses are sorted like: if sock_id1 < sock_id2 then bus1 < bus2 end
+ * This code is only the fallback if a device is not found using the combination of
+ * filename and devid
+ */
+typedef struct {
+    uint32_t bus;
+    uint32_t devfn;
+} PciCandidate;
+
+static int getBusFromSocketByDevid(const uint32_t socket, uint16_t testDevice)
+{
+    int ret = 0;
+    int cur_socket = (int)socket;
+    int out_bus_id = -1;
+    uint32_t out_devfn = 0x0;
+    int bufflen = 1024;
+    char buff[1024];
+    FILE* fp = NULL;
+    uint32_t bus, devfn, vendor, devid;
+    PciCandidate candidates[10];
+    int candidate = -1;
+    int cand_idx = 0;
+
+    fp = fopen("/proc/bus/pci/devices", "r");
+    if (fp)
+    {
+        while (fgets(buff, bufflen, fp) != NULL)
+        {
+            ret = sscanf((char*)buff, "%02x%02x\t%04x%04x", &bus, &devfn, &vendor, &devid);
+            if (ret == 4 && devid == testDevice)
+            {
+                candidates[cand_idx].bus = bus;
+                candidates[cand_idx].devfn = devfn;
+                cand_idx++;
+            }
+        }
+        fclose(fp);
+    }
+    else
+    {
+        ERROR_PLAIN_PRINT(Failed read file /proc/bus/pci/devices);
+    }
+
+    while (cur_socket >= 0)
+    {
+        int min_idx = 0;
+        uint32_t min = 0xFFF;
+        for (ret = 0; ret < cand_idx; ret++)
+        {
+            if (candidates[ret].bus < min)
+            {
+                min = candidates[ret].bus;
+                min_idx = ret;
+            }
+        }
+        if (cur_socket > 0)
+        {
+            candidates[min_idx].bus = 0xFFF;
+            cur_socket--;
+        }
+        else
+        {
+            if (candidates[min_idx].bus <= 0xff)
+            {
+                candidate = min_idx;
+            }
+            cur_socket = -1;
+            break;
+        }
+    }
+
+    if (candidate >= 0 && candidates[candidate].bus > 0 && candidates[candidate].devfn > 0)
+        return candidates[candidate].bus;
+    return -1;
+}
+
+
 int
 proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
 {
@@ -98,11 +180,11 @@ proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
 
     while( fgets(buf, sizeof(buf)-1, fptr) )
     {
-        if ( sscanf(buf, "%2x%2x %4x%4x", &sbus, &sdevfn, &svend, &sdev) == 4 &&
+        if ( sscanf(buf, "%02x%02x\t%04x%04x", &sbus, &sdevfn, &svend, &sdev) == 4 &&
              svend == testVendor && sdev == testDevice )
         {
             socket_bus[cntr] = (char*)malloc(4);
-            busID = getBusFromSocket(cntr);
+            busID = getBusFromSocketByDevid(cntr, testDevice);
             if (busID == sbus)
             {
                 sprintf(socket_bus[cntr], "%02x/", sbus);

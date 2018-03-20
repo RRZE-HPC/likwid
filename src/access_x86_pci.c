@@ -249,7 +249,7 @@ access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t
             *data = 0ULL;
             return -EACCES;
         }
-        DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s, pci_devices[dev].name);
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s: %s, pci_devices[dev].name, bdata(filepath));
     }
 
     if ( FD[socket][dev] > 0 &&
@@ -292,7 +292,7 @@ access_x86_pci_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_
                                 bdata(filepath));
             return -EACCES;
         }
-        DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s, pci_devices[dev].name);
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s: %s, pci_devices[dev].name, bdata(filepath));
     }
 
     if ( FD[socket][dev] > 0 &&
