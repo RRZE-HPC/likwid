@@ -275,7 +275,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
             {
                 fprintf(stderr, "ERROR: The selected register %s is in use.\n", counter_map[index].key);
                 fprintf(stderr, "Please run likwid with force option (-f, --force) to overwrite settings\n");
-                exit(EXIT_SUCCESS);
+                type = NOTYPE;
             }
         }
     }
@@ -307,7 +307,8 @@ checkCounter(bstring counterName, const char* limit)
     tokens = bsplit(limitString,'|');
     for(i=0; i<tokens->qty; i++)
     {
-        if(bstrncmp(counterName, tokens->entry[i], blength(tokens->entry[i])))
+        if(bstrncmp(counterName, tokens->entry[i], blength(tokens->entry[i])) &&
+           bstrncmp(tokens->entry[i], counterName, blength(counterName)))
         {
             ret = FALSE;
         }
