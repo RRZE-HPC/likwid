@@ -232,6 +232,9 @@ elseif num_threads > tonumber(omp_threads) and (quiet == 0 and verbose > 0) then
 end
 if omp_threads and tonumber(omp_threads) < num_threads then
     num_threads = tonumber(omp_threads)
+    for i=#cpulist,num_threads+1,-1 do
+        cpulist[i] = nil
+    end
 end
 
 likwid.setenv("KMP_AFFINITY","disabled")
