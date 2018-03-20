@@ -2261,6 +2261,7 @@
 #define MSR_ANY_GFXE_C0                 0x65A
 #define MSR_CORE_GFXE_OVERLAP_C0        0x65B
 #define MSR_UNCORE_FREQ                 0x620
+#define MSR_UNCORE_FREQ_READ            0x621
 #define MSR_FSB_FREQ                    0xCD
 #define MSR_ENERGY_PERF_BIAS            0x1B0
 #define MSR_ALT_PEBS                    0x39C
