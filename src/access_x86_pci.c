@@ -8,14 +8,14 @@
  *                   performance monitoring registers in PCI Cfg space
  *                   for Intel Sandy Bridge Processors.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.3.1
+ *      Released:  04.01.2018
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com,
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -249,7 +249,7 @@ access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t
             *data = 0ULL;
             return -EACCES;
         }
-        DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s, pci_devices[dev].name);
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s: %s, pci_devices[dev].name, bdata(filepath));
     }
 
     if ( FD[socket][dev] > 0 &&
@@ -292,7 +292,7 @@ access_x86_pci_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_
                                 bdata(filepath));
             return -EACCES;
         }
-        DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s, pci_devices[dev].name);
+        DEBUG_PRINT(DEBUGLEV_DETAIL, Opened PCI device %s: %s, pci_devices[dev].name, bdata(filepath));
     }
 
     if ( FD[socket][dev] > 0 &&

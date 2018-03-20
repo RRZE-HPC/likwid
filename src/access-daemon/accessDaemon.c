@@ -5,15 +5,15 @@
  *
  *      Description:  Implementation of access daemon.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.3.1
+ *      Released:  04.01.2018
  *
  *      Authors:  Michael Meier, michael.meier@rrze.fau.de
  *                Jan Treibig (jt), jan.treibig@gmail.com,
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -907,56 +907,211 @@ msr_check(AccessDataRecord * dRecord)
     return;
 }
 
-static int
-getBusFromSocket(PciDevice* dev, int socket, char** filepath)
+
+#define PCI_SLOT(devfn)         (((devfn) >> 3) & 0x1f)
+#define PCI_FUNC(devfn)         ((devfn) & 0x07)
+/* This code uses the filename and the devid specified in the PciDevice list.
+ * It traverses sysfs because the sysfs contains (commonly) the node ID the PCI
+ * device is attached to. If the numa_node == -1 it uses a counter to get the
+ * node ID
+ */
+static int getBusFromSocketByNameDevid(const uint32_t socket, PciDevice* pcidev, int pathlen, char** filepath)
 {
-    int cur_bus = 0;
-    uint32_t cur_socket = socket;
-    char pci_filepath[1024];
-    int fp;
-    int ret = 0;
-    while(socket >= 0)
+    struct dirent *pDirent, *pDirentInner;
+    DIR *pDir, *pDirInner;
+    FILE* fp = NULL;
+    int tmplen = 200;
+    char tmpPath[200], buff[200];
+    size_t ret = 0;
+    int bus_id = -1;
+    int numa_ctr = 0;
+
+    pDir = opendir ("/sys/devices");
+    if (pDir == NULL)
     {
-        while (cur_bus <= 255)
+        syslog(LOG_ERR, "Failed open directory /sys/devices\n");
+        return -1;
+    }
+
+    while ((pDirent = readdir(pDir)) != NULL)
+    {
+        if (strncmp(pDirent->d_name, "pci0", 4) == 0)
         {
-            snprintf(pci_filepath, 1023, "/proc/bus/pci/%02x/%s", cur_bus, dev->path);
-            fp = open(pci_filepath, O_RDONLY);
-            if (fp < 0)
+            memset(tmpPath, '\0', tmplen*sizeof(char));
+            sprintf(tmpPath, "/sys/devices/%s", pDirent->d_name);
+
+            char bus[4];
+            strncpy(bus, &(pDirent->d_name[strlen(pDirent->d_name)-2]), 2);
+            bus[2] = '\0';
+
+            pDirInner = opendir (tmpPath);
+            if (pDir == NULL)
             {
-                cur_bus++;
-                continue;
+                syslog(LOG_ERR, "Failed read file %s\n", tmpPath);
+                return -1;
             }
-            if (fp > 0)
+            while ((pDirentInner = readdir(pDirInner)) != NULL)
             {
-                uint32_t indev = 0;
-                ret = pread(fp, &indev, sizeof(uint32_t), 0x0);
-                indev = (indev >> 16);
-                if (indev != dev->devid)
+                if (strncmp(pDirentInner->d_name, "0000", 4) == 0)
                 {
-                    cur_bus++;
-                    continue;
+                    uint32_t dev_id = 0x0;
+                    int numa_node = 0;
+                    memset(tmpPath, '\0', tmplen*sizeof(char));
+                    sprintf(tmpPath, "/sys/devices/%s/%s/device", pDirent->d_name, pDirentInner->d_name);
+                    if (pcidev->path && strcmp(&(pDirentInner->d_name[strlen(pDirentInner->d_name)-4]), pcidev->path) != 0)
+                    {
+                        continue;
+                    }
+                    fp = fopen(tmpPath,"r");
+                    if( fp != NULL )
+                    {
+                        memset(buff, '\0', tmplen*sizeof(char));
+                        ret = fread(buff, sizeof(char), tmplen-1, fp);
+                        fclose(fp);
+                        if (ret > 0)
+                        {
+                            dev_id = strtoul(buff, NULL, 16);
+
+                            if (dev_id == pcidev->devid)
+                            {
+                                memset(tmpPath, '\0', tmplen*sizeof(char));
+                                sprintf(tmpPath, "/sys/devices/%s/%s/numa_node", pDirent->d_name, pDirentInner->d_name);
+                                syslog(LOG_ERR, "Read file %s\n", tmpPath);
+                                fp = fopen(tmpPath,"r");
+                                if( fp != NULL )
+                                {
+                                    memset(buff, '\0', tmplen*sizeof(char));
+                                    ret = fread(buff, sizeof(char), tmplen-1, fp);
+                                    numa_node = atoi(buff);
+                                    if (numa_node < 0)
+                                    {
+                                        numa_node = numa_ctr;
+                                        numa_ctr++;
+                                    }
+                                    if (numa_node == socket)
+                                    {
+                                        bus_id = strtoul(bus, NULL, 16);
+                                        if (filepath && *filepath && pathlen > 0)
+                                            snprintf(*filepath, pathlen-1, "/proc/bus/pci/%02x/%s", bus_id, pcidev->path);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            if (fp > 0 && socket > 0)
+            closedir (pDirInner);
+            if (bus_id != -1)
+                break;
+        }
+    }
+    closedir (pDir);
+    return bus_id;
+}
+
+
+
+/* This code gets the PCI device using the given devid in pcidev. It assumes that the
+ * PCI busses are sorted like: if sock_id1 < sock_id2 then bus1 < bus2 end
+ * This code is only the fallback if a device is not found using the combination of
+ * filename and devid
+ */
+typedef struct {
+    uint32_t bus;
+    uint32_t devfn;
+} PciCandidate;
+
+static int getBusFromSocketByDevid(const uint32_t socket, PciDevice* pcidev, int pathlen, char** filepath)
+{
+    int ret = 0;
+    int cur_socket = (int)socket;
+    int out_bus_id = -1;
+    uint32_t out_devfn = 0x0;
+    int bufflen = 1024;
+    char buff[1024];
+    FILE* fp = NULL;
+    uint32_t bus, devfn, vendor, devid;
+    PciCandidate candidates[10];
+    int candidate = -1;
+    int cand_idx = 0;
+
+    fp = fopen("/proc/bus/pci/devices", "r");
+    if (fp)
+    {
+        while (fgets(buff, bufflen, fp) != NULL)
+        {
+            ret = sscanf((char*)buff, "%02x%02x\t%04x%04x", &bus, &devfn, &vendor, &devid);
+            if (ret == 4 && devid == pcidev->devid)
             {
-                cur_bus++;
-                socket--;
-                close(fp);
-                continue;
+                candidates[cand_idx].bus = bus;
+                candidates[cand_idx].devfn = devfn;
+                cand_idx++;
             }
-            
+        }
+        fclose(fp);
+    }
+    else
+    {
+        syslog(LOG_ERR, "Failed read file /proc/bus/pci/devices\n");
+    }
+
+    while (cur_socket >= 0)
+    {
+        int min_idx = 0;
+        uint32_t min = 0xFFF;
+        for (ret = 0; ret < cand_idx; ret++)
+        {
+            if (candidates[ret].bus < min)
+            {
+                min = candidates[ret].bus;
+                min_idx = ret;
+            }
+        }
+        if (cur_socket > 0)
+        {
+            candidates[min_idx].bus = 0xFFF;
+            cur_socket--;
+        }
+        else
+        {
+            if (candidates[min_idx].bus <= 0xff)
+            {
+                candidate = min_idx;
+            }
+            cur_socket = -1;
             break;
         }
-        socket--;
     }
-    if (fp > 0)
+
+    if (filepath && *filepath && pathlen > 0 && candidate >= 0 && candidates[candidate].bus >= 0 && candidates[candidate].bus <= 0xff)
     {
-        if (filepath)
-            strncpy(*filepath, pci_filepath, strlen(pci_filepath));
-        close(fp);
-        return cur_socket;
+        snprintf(*filepath, pathlen-1, "/proc/bus/pci/%02x/%02x.%01x", candidates[candidate].bus, PCI_SLOT(candidates[candidate].devfn), PCI_FUNC(candidates[candidate].devfn));
     }
+
+    if (candidate >= 0 && candidates[candidate].bus > 0 && candidates[candidate].devfn > 0)
+        return candidates[candidate].bus;
     return -1;
+}
+
+
+static int getBusFromSocket(const uint32_t socket, PciDevice* pcidev, int pathlen, char** filepath)
+{
+    int ret_sock = -1;
+    int ret = getBusFromSocketByNameDevid(socket, pcidev, pathlen, filepath);
+    if (ret < 0)
+    {
+        ret = getBusFromSocketByDevid(socket, pcidev, pathlen, filepath);
+        if (ret > 0)
+        {
+            ret_sock = socket;
+        }
+    }
+    else
+    {
+        ret_sock = socket;
+    }
+    return ret_sock;
 }
 
 
@@ -996,10 +1151,9 @@ pci_read(AccessDataRecord* dRecord)
     }
     if ( !FD_PCI[socketId][device] )
     {
-        //snprintf(pci_filepath, MAX_PATH_LENGTH-1, "%s%s%s", PCI_ROOT_PATH, socket_bus[socketId], pci_devices_daemon[device].path);
         pcipath = malloc(1024 * sizeof(char));
         memset(pcipath, '\0', 1024 * sizeof(char));
-        int sid = getBusFromSocket(&(pci_devices_daemon[device]), socketId, &pcipath);
+        int sid = getBusFromSocket(socketId, &(pci_devices_daemon[device]), 1024, &pcipath);
         if (sid == socketId)
         {
 #ifdef DEBUG_LIKWID
@@ -1087,10 +1241,9 @@ pci_write(AccessDataRecord* dRecord)
 
     if ( !FD_PCI[socketId][device] )
     {
-        //snprintf(pci_filepath, MAX_PATH_LENGTH-1, "%s%s%s", PCI_ROOT_PATH, socket_bus[socketId], pci_devices_daemon[device].path);
         pcipath = malloc(1024 * sizeof(char));
         memset(pcipath, '\0', 1024 * sizeof(char));
-        int sid = getBusFromSocket(&(pci_devices_daemon[device]), socketId, &pcipath);
+        int sid = getBusFromSocket(socketId, &(pci_devices_daemon[device]), 1024, &pcipath);
         if (sid == socketId)
         {
 #ifdef DEBUG_LIKWID
@@ -1187,127 +1340,6 @@ stop_daemon(void)
     exit(EXIT_SUCCESS);
 }
 
-static int
-getBusFromSocketOld(const uint32_t socket, const char* name, const uint32_t in_dev_id)
-{
-    int cur_bus = 0;
-    uint32_t cur_socket = 0;
-    char pci_filepath[1024];
-    int fp;
-    int ret = 0;
-    while(cur_socket <= socket)
-    {
-        snprintf(pci_filepath, MAX_PATH_LENGTH-1, "%s%02x/%s", PCI_ROOT_PATH, cur_bus, name);
-        fp = open(pci_filepath, O_RDONLY);
-        if (fp < 0)
-        {
-            return -1;
-        }
-        uint32_t cpubusno = 0;
-        ret = pread(fp, &cpubusno, sizeof(uint32_t), 0x108);
-        if (ret != sizeof(uint32_t))
-        {
-            close(fp);
-            return -1;
-        }
-        cur_bus = (cpubusno >> 8) & 0x0ff;
-        close(fp);
-        if(socket == cur_socket)
-            return cur_bus;
-        ++cur_socket;
-        ++cur_bus;
-        if(cur_bus > 0x0ff)
-           return -1;
-    }
-
-    return -1;
-}
-
-#define SKYLAKE_SERVER_SOCKETID_MBOX_DID 0x2042
-static int getBusFromSocketSysFS(const uint32_t socket, const char* name, const uint32_t in_dev_id)
-{
-    struct dirent *pDirent, *pDirentInner;
-    DIR *pDir, *pDirInner;
-    pDir = opendir ("/sys/devices");
-    FILE* fp = NULL;
-    char iPath[200], iiPath[200], buff[100];
-    char testDev[50];
-    size_t ret = 0;
-    int bus_id = -1;
-    int numa_ctr = 0;
-    if (pDir == NULL)
-    {
-        syslog(LOG_ERR, "Failed open directory /sys/devices");
-        return -1;
-    }
-    
-    while ((pDirent = readdir(pDir)) != NULL)
-    {
-        if (strncmp(pDirent->d_name, "pci0", 4) == 0)
-        {
-            sprintf(iPath, "/sys/devices/%s", pDirent->d_name);
-            char bus[4];
-            strncpy(bus, &(pDirent->d_name[strlen(pDirent->d_name)-2]), 2);
-            bus[2] = '\0';
-            
-            pDirInner = opendir (iPath);
-            if (pDir == NULL)
-            {
-                syslog(LOG_ERR, "Failed read file %s", iPath);
-                return -1;
-            }
-            while ((pDirentInner = readdir(pDirInner)) != NULL)
-            {
-                if (strncmp(pDirentInner->d_name, "0000", 4) == 0)
-                {
-                    uint32_t dev_id = 0x0;
-                    int numa_node = 0;
-                    sprintf(iiPath, "/sys/devices/%s/%s/device", pDirent->d_name, pDirentInner->d_name);
-                    fp = fopen(iiPath,"r");
-                    if( fp == NULL )
-                    {
-                        continue;
-                    }
-                    ret = fread(buff, sizeof(char), 99, fp);
-                    dev_id = strtoul(buff, NULL, 16);
-                    if (dev_id == in_dev_id)
-                    {
-                        fclose(fp);
-                        iiPath[0] = '\0';
-                        sprintf(iiPath, "/sys/devices/%s/%s/numa_node", pDirent->d_name, pDirentInner->d_name);
-                        fp = fopen(iiPath,"r");
-                        if( fp == NULL )
-                        {
-                            continue;
-                        }
-                        ret = fread(buff, sizeof(char), 99, fp);
-                        numa_node = atoi(buff);
-                        if (numa_node < 0)
-                        {
-                            numa_node = numa_ctr;
-                            numa_ctr++;
-                        }
-                        if (numa_node == socket)
-                        {
-                            bus_id = strtoul(bus, NULL, 16);
-                        }
-                    }
-                    fclose(fp);
-                    iiPath[0] = '\0';
-                    buff[0] = '\0';
-                    if (bus_id != -1)
-                        break;
-                }
-            }
-            closedir (pDirInner);
-            iPath[0] = '\0';
-            if (bus_id != -1)
-                break;
-        }
-    }
-    closedir (pDir);
-    return bus_id;
-}
 
 
 static void
@@ -1659,7 +1691,7 @@ int main(void)
             {
                 if (pci_devices_daemon[i].path && strlen(pci_devices_daemon[i].path) > 0)
                 {
-                    int socket_id = getBusFromSocket(&(pci_devices_daemon[i]), 0, NULL);
+                    int socket_id = getBusFromSocket(0, &(pci_devices_daemon[i]), 0, NULL);
                     if (socket_id == 0)
                     {
                         for (int j=0; j<avail_sockets; j++)
