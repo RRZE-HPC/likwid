@@ -260,7 +260,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         }
         if ((check_settings) && (tmp != 0x0ULL))
         {
-            if (force == 1 || groupSet->numberOfGroups >= 1)
+            if (force == 1 || groupSet->numberOfGroups > 1)
             {
                 DEBUG_PRINT(DEBUGLEV_DETAIL, Counter %s has bits set (0x%llx) but we are forced to overwrite them,
                                              counter_map[index].key, LLU_CAST tmp);
@@ -1780,9 +1780,10 @@ perfmon_addEventSet(const char* eventCString)
 
     int forceOverwrite = 0;
     int valid_events = 0;
-    if (getenv("LIKWID_FORCE") != NULL)
+    char* force_str = getenv("LIKWID_FORCE");
+    if (force_str != NULL)
     {
-        forceOverwrite = atoi(getenv("LIKWID_FORCE"));
+        forceOverwrite = atoi(force_str);
     }
     for(i=0;i<eventtokens->qty;i++)
     {
