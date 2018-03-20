@@ -843,7 +843,7 @@ local function assignHosts(hosts, np, ppn, tpp)
                     current = ppn*tpp
                     hosts[i] = nil
                 end
-            elseif host["slots"] then
+            elseif host["slots"] and host["slots"] < ppn then
                 --[[if host["maxslotsno"] then
                     if host["maxslots"] < ppn then
                         print_stderr(string.format("WARN: Oversubscription for host %s needed, but max-slots set to %d.",
