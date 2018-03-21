@@ -232,8 +232,8 @@ elseif num_threads > tonumber(omp_threads) and (quiet == 0 and verbose > 0) then
 end
 if omp_threads and tonumber(omp_threads) < num_threads then
     num_threads = tonumber(omp_threads)
-    for i=#cpulist,num_threads+1,-1 do
-        cpulist[i] = nil
+    for i=#cpu_list,num_threads+1,-1 do
+        cpu_list[i] = nil
     end
 end
 
