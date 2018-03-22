@@ -1,0 +1,20 @@
+---
+# tasks file for ansible.likwid
+
+# Here we will clione
+- name: create initial folder for downloading likwid
+  shell: mkdir -p "{{likwid_dir}}"
+  become: yes
+
+- name: Extract likwid-stable.tar.gz
+  unarchive:
+    src: http://ftp.fau.de/pub/likwid/likwid-stable.tar.gz
+    dest: "{{likwid_dir}}"
+    remote_src: yes
+      
+
+- name: install the packages
+  shell: cd likwid-* && make && make install
+  args:
+    chdir: "{{likwid_dir}}"
+  become: yes

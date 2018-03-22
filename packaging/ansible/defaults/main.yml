@@ -1,0 +1,3 @@
+---
+# defaults file for ansible.likwid
+likwid_dir: /opt/likwid
