@@ -247,27 +247,44 @@ end
 
 if printAvailGovs then
     local govs = likwid.getAvailGovs(0)
-    print_stdout("Available governors:")
-    print_stdout(string.format("%s", table.concat(govs, " ")))
+    if #govs > 0 then
+        print_stdout("Available governors:")
+        print_stdout(string.format("%s", table.concat(govs, " ")))
+    else
+        print_stdout("Cannot get governors from cpufreq module")
+    end
 end
 
 if printAvailFreq then
     local freqs = likwid.getAvailFreq(0)
-    print_stdout("Available frequencies:")
-    print_stdout(string.format("%s", table.concat(freqs, " ")))
+    if #freqs > 0 then
+        print_stdout("Available frequencies:")
+        print_stdout(string.format("%s", table.concat(freqs, " ")))
+    else
+        print_stdout("Cannot get frequencies from cpufreq module")
+    end
 end
 
 if printCurFreq then
-    print_stdout("Current CPU frequencies:")
+    str = {"Current CPU frequencies:"}
+    local processed = 0
     for i=1,#cpulist do
         gov = likwid.getGovernor(cpulist[i])
         freq = tonumber(likwid.getCpuClockCurrent(cpulist[i]))/1E9
         min = tonumber(likwid.getCpuClockMin(cpulist[i]))/1E9
         max = tonumber(likwid.getCpuClockMax(cpulist[i]))/1E9
         t = tonumber(likwid.getTurbo(cpulist[i]));
-        print_stdout(string.format("CPU %d: governor %12s min/cur/max %s/%s/%s GHz Turbo %d",cpulist[i], gov, round(min), round(freq), round(max), t))
+        if gov and freq and min and max and t >= 0 then
+            processed = processed + 1
+            table.insert(str, string.format("CPU %d: governor %12s min/cur/max %s/%s/%s GHz Turbo %d",cpulist[i], gov, round(min), round(freq), round(max), t))
+        end
     end
-    print_stdout("")
+    table.insert(str, "")
+    if processed > 0 then
+        print_stdout(table.concat(str, "\n"))
+    else
+        print_stdout("Cannot read frequency data from cpufreq module\n")
+    end
     test = likwid.getUncoreFreqMin(socklist[i])
     if test ~= 0 then
         print_stdout("Current Uncore frequencies:")
@@ -300,7 +317,9 @@ if do_reset then
     if not governor then
         governor = availgovs[#availgovs]
     end
-    print_stdout(string.format("Reset to governor %s with min freq. %g GHz and deactivate turbo mode", governor, min_freq))
+    if min_freq and governor then
+        print_stdout(string.format("Reset to governor %s with min freq. %g GHz and deactivate turbo mode", governor, min_freq))
+    end
 end
 
 if do_ureset then
@@ -332,6 +351,10 @@ end
 
 
 local availfreqs = likwid.getAvailFreq(cpulist[i])
+if (frequency or min_freq or max_freq) and #availfreqs == 0 then
+    print_stdout("Cannot set CPU frequency, cpufreq module not properly loaded")
+    os.exit(1)
+end
 local savailfreqs = {}
 for i,f in pairs(availfreqs) do
     savailfreqs[i] = round(f)
@@ -346,7 +369,7 @@ for x=1,2 do
         for i=1,#cpulist do
             local valid_freq = false
             for k,v in pairs(savailfreqs) do
-                if (min_freq == v) then
+                if (tonumber(min_freq) == tonumber(v)) then
                     if verbosity == 3 then
                         print_stdout(string.format("DEBUG: Min frequency %g valid", min_freq))
                     end
@@ -381,7 +404,7 @@ for x=1,2 do
         for i=1,#cpulist do
             local valid_freq = false
             for k,v in pairs(savailfreqs) do
-                if (max_freq == v) then
+                if (tonumber(max_freq) == tonumber(v)) then
                     if verbosity == 3 then
                         print_stdout(string.format("DEBUG: Max frequency %g valid", max_freq))
                     end
@@ -412,8 +435,7 @@ if min_u_freq then
         end
         local err = likwid.setUncoreFreqMin(socket, min_u_freq*1000);
         if err ~= 0 then
-            print_stderr(string.format("Setting of minimal Uncore frequency %f failed on socket %d\n", tonumber(min_u_freq)*1000, socket))
-            os.exit(1)
+            print_stderr(string.format("Setting of minimal Uncore frequency %f failed on socket %d", tonumber(min_u_freq)*1000, socket))
         end
     end
 end
@@ -426,8 +448,7 @@ if max_u_freq then
         end
         local err = likwid.setUncoreFreqMax(socket, max_u_freq*1000);
         if err ~= 0 then
-            print_stderr(string.format("Setting of maximal Uncore frequency %d failed on socket %d\n", tonumber(max_u_freq)*1000, socket))
-            os.exit(1)
+            print_stderr(string.format("Setting of maximal Uncore frequency %d failed on socket %d", tonumber(max_u_freq)*1000, socket))
         end
     end
 end
