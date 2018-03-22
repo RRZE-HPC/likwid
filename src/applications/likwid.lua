@@ -164,6 +164,7 @@ likwid.setUncoreFreqMin = likwid_setUncoreFreqMin
 likwid.getUncoreFreqMin = likwid_getUncoreFreqMin
 likwid.setUncoreFreqMax = likwid_setUncoreFreqMax
 likwid.getUncoreFreqMax = likwid_getUncoreFreqMax
+likwid.getUncoreFreqCur = likwid_getUncoreFreqCur
 likwid.getuid = likwid_getuid
 likwid.geteuid = likwid_geteuid
 likwid.setuid = likwid_setuid

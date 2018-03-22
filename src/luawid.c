@@ -2653,6 +2653,15 @@ lua_likwid_getUncoreFreqMax(lua_State* L)
 }
 
 static int
+lua_likwid_getUncoreFreqCur(lua_State* L)
+{
+    const int socket_id = lua_tointeger(L,-1);
+    uint64_t freq = freq_getUncoreFreqCur(socket_id);
+    lua_pushinteger(L, freq);
+    return 1;
+}
+
+static int
 lua_likwid_getuid(lua_State* L)
 {
     int r = geteuid();
@@ -2899,6 +2908,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getUncoreFreqMin", lua_likwid_getUncoreFreqMin);
     lua_register(L, "likwid_setUncoreFreqMax", lua_likwid_setUncoreFreqMax);
     lua_register(L, "likwid_getUncoreFreqMax", lua_likwid_getUncoreFreqMax);
+    lua_register(L, "likwid_getUncoreFreqCur", lua_likwid_getUncoreFreqCur);
     // setuid&friends
     lua_register(L, "likwid_getuid", lua_likwid_getuid);
     lua_register(L, "likwid_geteuid", lua_likwid_geteuid);

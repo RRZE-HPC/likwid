@@ -234,6 +234,14 @@ uint64_t freq_getCpuClockCurrent(const int cpu_id )
     char buff[256];
     char* eptr = NULL;
     uint64_t clock = 0x0ULL;
+    if (drv == NOT_DETECTED)
+    {
+        freq_getDriver(cpu_id);
+        if (drv == NOT_DETECTED)
+        {
+            return 0;
+        }
+    }
 
     sprintf(buff, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_cur_freq", cpu_id);
     f = fopen(buff, "r");
@@ -257,6 +265,14 @@ uint64_t freq_setCpuClockMax(const int cpu_id, const uint64_t freq)
     char cmd[256];
     char buff[256];
     uint64_t cur = 0x0ULL;
+    if (drv == NOT_DETECTED)
+    {
+        freq_getDriver(cpu_id);
+        if (drv == NOT_DETECTED)
+        {
+            return 0;
+        }
+    }
 
     cur = freq_getCpuClockMax(cpu_id);
     if (cur == freq)
@@ -321,6 +337,14 @@ uint64_t freq_setCpuClockMin(const int cpu_id, const uint64_t freq)
     char cmd[256];
     char buff[256];
     uint64_t cur = 0x0ULL;
+    if (drv == NOT_DETECTED)
+    {
+        freq_getDriver(cpu_id);
+        if (drv == NOT_DETECTED)
+        {
+            return 0;
+        }
+    }
 
     cur = freq_getCpuClockMin(cpu_id);
     if (cur == freq)
@@ -362,6 +386,14 @@ char * freq_getGovernor(const int cpu_id )
     char cmd[256];
     char buff[256];
     char* eptr = NULL, *sptr = NULL;
+    if (drv == NOT_DETECTED)
+    {
+        freq_getDriver(cpu_id);
+        if (drv == NOT_DETECTED)
+        {
+            return NULL;
+        }
+    }
 
     sprintf(buff, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_governor", cpu_id);
     f = fopen(buff, "r");
@@ -590,6 +622,14 @@ int freq_setTurbo(const int cpu_id, const int turbo)
 {
     FILE *fpipe = NULL;
     char cmd[256];
+    if (drv == NOT_DETECTED)
+    {
+        freq_getDriver(cpu_id);
+        if (drv == NOT_DETECTED)
+        {
+            return 0;
+        }
+    }
 
     sprintf(cmd, "%s %d tur %d", daemon_path, cpu_id, turbo);
     if ( !(fpipe = (FILE*)popen(cmd,"r")) )
@@ -610,6 +650,14 @@ int freq_setGovernor(const int cpu_id, const char* gov)
     FILE *fpipe = NULL;
     char cmd[256];
     char buff[256];
+    if (drv == NOT_DETECTED)
+    {
+        freq_getDriver(cpu_id);
+        if (drv == NOT_DETECTED)
+        {
+            return 0;
+        }
+    }
 
     sprintf(buff, "%s", daemon_path);
     if (access(buff, X_OK))
@@ -640,6 +688,14 @@ char * freq_getAvailFreq(const int cpu_id )
     double d = 0;
     int take_next = 0;
     bstring bbuff;
+    if (drv == NOT_DETECTED)
+    {
+        freq_getDriver(cpu_id);
+        if (drv == NOT_DETECTED)
+        {
+            return NULL;
+        }
+    }
 
     sprintf(cmd, "%s 2>&1", daemon_path);
     if ( !(fpipe = (FILE*)popen(cmd,"r")) )
@@ -702,6 +758,14 @@ char * freq_getAvailGovs(const int cpu_id )
     double d = 0;
     int take_next = 0;
     bstring bbuff;
+    if (drv == NOT_DETECTED)
+    {
+        freq_getDriver(cpu_id);
+        if (drv == NOT_DETECTED)
+        {
+            return 0;
+        }
+    }
 
     sprintf(cmd, "%s 2>&1", daemon_path);
     if ( !(fpipe = (FILE*)popen(cmd,"r")) )
@@ -774,12 +838,12 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
     {
         HPMinit();
         own_hpm = 1;
-        err = HPMaddThread(cpuId);
-        if (err != 0)
-        {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
-            return err;
-        }
+    }
+    err = HPMaddThread(cpuId);
+    if (err != 0)
+    {
+        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        return 0;
     }
 
     uint64_t tmp = 0x0ULL;
@@ -832,12 +896,12 @@ uint64_t freq_getUncoreFreqMin(const int socket_id)
     {
         HPMinit();
         own_hpm = 1;
-        err = HPMaddThread(cpuId);
-        if (err != 0)
-        {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
-            return 0;
-        }
+    }
+    err = HPMaddThread(cpuId);
+    if (err != 0)
+    {
+        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        return 0;
     }
 
     uint64_t tmp = 0x0ULL;
@@ -885,12 +949,12 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
     {
         HPMinit();
         own_hpm = 1;
-        err = HPMaddThread(cpuId);
-        if (err != 0)
-        {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
-            return err;
-        }
+    }
+    err = HPMaddThread(cpuId);
+    if (err != 0)
+    {
+        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        return 0;
     }
 
     uint64_t tmp = 0x0ULL;
@@ -940,12 +1004,12 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
     {
         HPMinit();
         own_hpm = 1;
-        err = HPMaddThread(cpuId);
-        if (err != 0)
-        {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
-            return 0;
-        }
+    }
+    err = HPMaddThread(cpuId);
+    if (err != 0)
+    {
+        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        return 0;
     }
 
     uint64_t tmp = 0x0ULL;
