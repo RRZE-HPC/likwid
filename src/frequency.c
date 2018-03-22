@@ -826,17 +826,17 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
         ERROR_PRINT(Given frequency %llu MHz higher than system limit of %.0f MHz, freq, fmax);
         return -EINVAL;
     }
-    
+
     if (!HPMinitialized())
     {
         HPMinit();
         own_hpm = 1;
-        err = HPMaddThread(cpuId);
-        if (err != 0)
-        {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
-            return err;
-        }
+    }
+    err = HPMaddThread(cpuId);
+    if (err != 0)
+    {
+        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        return 0;
     }
 
     uint64_t tmp = 0x0ULL;
@@ -889,12 +889,12 @@ uint64_t freq_getUncoreFreqMin(const int socket_id)
     {
         HPMinit();
         own_hpm = 1;
-        err = HPMaddThread(cpuId);
-        if (err != 0)
-        {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
-            return 0;
-        }
+    }
+    err = HPMaddThread(cpuId);
+    if (err != 0)
+    {
+        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        return 0;
     }
 
     uint64_t tmp = 0x0ULL;
@@ -942,12 +942,12 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
     {
         HPMinit();
         own_hpm = 1;
-        err = HPMaddThread(cpuId);
-        if (err != 0)
-        {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
-            return err;
-        }
+    }
+    err = HPMaddThread(cpuId);
+    if (err != 0)
+    {
+        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        return 0;
     }
 
     uint64_t tmp = 0x0ULL;
@@ -996,12 +996,12 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
     {
         HPMinit();
         own_hpm = 1;
-        err = HPMaddThread(cpuId);
-        if (err != 0)
-        {
-            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
-            return 0;
-        }
+    }
+    err = HPMaddThread(cpuId);
+    if (err != 0)
+    {
+        ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+        return 0;
     }
 
     uint64_t tmp = 0x0ULL;
