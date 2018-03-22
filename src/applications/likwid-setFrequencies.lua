@@ -309,13 +309,11 @@ if do_reset then
     local availgovs = likwid.getAvailGovs(cpulist[1])
     if not min_freq then
         min_freq = availfreqs[1]
-        print(min_freq)
     end
     if not (set_turbo or max_freq) then
         set_turbo = true
         turbo = 0
         max_freq = availfreqs[#availfreqs]
-        print(max_freq)
     end
     if not governor then
         governor = availgovs[#availgovs]
