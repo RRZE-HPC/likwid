@@ -1558,6 +1558,13 @@ Get the maximal Uncore frequency.
 @return frequency in MHz or 0 at failure
 */
 extern uint64_t freq_getUncoreFreqMax(const int socket_id) __attribute__ ((visibility ("default") ));
+/*! \brief Get the current Uncore frequency
+
+Get the current Uncore frequency.
+@param [in] socket_id ID of socket
+@return frequency in MHz or 0 at failure
+*/
+extern uint64_t freq_getUncoreFreqCur(const int socket_id) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 #ifdef __cplusplus
