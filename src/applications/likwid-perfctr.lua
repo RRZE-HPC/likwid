@@ -643,6 +643,7 @@ if use_marker == true then
     likwid.setenv("LIKWID_EVENTS", str)
     likwid.setenv("LIKWID_THREADS", table.concat(cpulist,","))
     likwid.setenv("LIKWID_FORCE", "-1")
+    likwid.setenv("KMP_INIT_AT_FORK", "FALSE")
 end
 
 --[[for i, event_string in pairs(event_string_list) do
