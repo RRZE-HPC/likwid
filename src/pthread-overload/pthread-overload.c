@@ -266,7 +266,7 @@ pthread_create(pthread_t* thread,
             if (!silent)
             {
                 if (shepard)
-                    color_print("\tthreadid %lu -> SKIP SHEPARD\n", *thread);
+                    color_print("\tthreadid %lu -> SKIP SHEPHERD\n", *thread);
                 else
                     color_print("\tthreadid %lu -> SKIP \n", *thread);
                 shepard = 0;
