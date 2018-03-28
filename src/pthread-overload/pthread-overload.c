@@ -3,7 +3,7 @@
  *
  *      Filename:  pthread-overload.c
  *
- *      Description:  Overloaded library for pthread_create call. 
+ *      Description:  Overloaded library for pthread_create call.
  *                    Implements pinning of threads together with likwid-pin.
  *
  *      Version:   4.3.1
@@ -227,7 +227,7 @@ pthread_create(pthread_t* thread,
         {
             break;
         }
-        if (sosearchpaths[reallpthrindex] != NULL) 
+        if (sosearchpaths[reallpthrindex] != NULL)
         {
             reallpthrindex++;
         }
@@ -266,7 +266,7 @@ pthread_create(pthread_t* thread,
             if (!silent)
             {
                 if (shepard)
-                    color_print("\tthreadid %lu -> SKIP SHEPARD\n", *thread);
+                    color_print("\tthreadid %lu -> SKIP SHEPHERD\n", *thread);
                 else
                     color_print("\tthreadid %lu -> SKIP \n", *thread);
                 shepard = 0;
