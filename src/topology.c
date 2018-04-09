@@ -78,6 +78,7 @@ static char* skylake_str = "Intel Skylake processor";
 static char* skylakeX_str = "Intel Skylake SP processor";
 static char* kabylake_str = "Intel Kabylake processor";
 static char* cannonlake_str = "Intel Cannonlake processor";
+static char* coffeelake_str = "Intel Coffeelake processor";
 static char* nehalem_ex_str = "Intel Nehalem EX processor";
 static char* westmere_ex_str = "Intel Westmere EX processor";
 static char* xeon_mp_string = "Intel Xeon MP processor";
@@ -128,7 +129,6 @@ static char* short_kabylake = "skylake";
 static char* short_cannonlake = "cannonlake";
 static char* short_phi = "phi";
 static char* short_phi2 = "knl";
-static char* short_phi3 = "kml";
 static char* short_k8 = "k8";
 static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
@@ -652,8 +652,12 @@ topology_setName(void)
                     break;
 
                 case KABYLAKE1:
-                case KABYLAKE2:
                     cpuid_info.name = kabylake_str;
+                    cpuid_info.short_name = short_skylake;
+                    break;
+
+                case KABYLAKE2:
+                    cpuid_info.name = coffeelake_str;
                     cpuid_info.short_name = short_skylake;
                     break;
 
@@ -671,7 +675,7 @@ topology_setName(void)
                 case XEON_PHI_KML:
                     cpuid_info.supportUncore = 1;
                     cpuid_info.name = xeon_phi3_string;
-                    cpuid_info.short_name = short_phi3;
+                    cpuid_info.short_name = short_phi2;
                     break;
 
                 case NEHALEM_EX:
