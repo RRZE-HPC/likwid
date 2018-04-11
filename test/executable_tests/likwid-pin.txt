@@ -1,7 +1,7 @@
 -h | EXIT 0 | GREP Help message
 -v | EXIT 0 | GREP likwid-pin
 -i | EXIT 1 | GREP Executable must be given on commandline
--i hostname | EXIT 0 | GREP set mem_policy to interleaved
+-i -V 1 hostname | EXIT 0 | GREP mem_policy to interleaved
 -S | EXIT 1 |GREP Executable must be given on commandline
 -S hostname | EXIT 0 | GREP Sweeping domain
 -c | EXIT 1 |GREP Option requires an argument
@@ -13,10 +13,10 @@
 -c S0 -p | EXIT 0 | GREP 0
 -c M0 -p | EXIT 0 | GREP 0
 -c N:0 -p | EXIT 0 | GREP 0
--c S0:0-1 -p | EXIT 0 | GREP 0,1
--c N:0@N:1 -p | EXIT 0 | GREP 0,1
--c N:0@N:1@N:2 -p | EXIT 0 | GREP 0,1,2
--c C0:1-0 -p | EXIT 0 | GREP 0 | GREP 1
+-c S0:0-1 -p | EXIT 0 | GREP 0,
+-c N:0@N:1 -p | EXIT 0 | GREP 0,
+-c N:0@N:1@N:2 -p | EXIT 0 | GREP 0,
+-c C0:1-0 -p | EXIT 0 | GREP 0 | GREP ,0
 -c E:N:1 -p | EXIT 0 | GREP 0
 -c E:N:2 -p | EXIT 0 | LISTLEN , 2
 -c E:N:2:1:2 -p | EXIT 0 | LISTLEN , 2

@@ -4,8 +4,17 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-EXECPATH=/usr/local/bin
-EXEC=$1
+if [ ${#EXECPATH} == 0 ]; then
+    EXECPATH=/usr/local/bin
+fi
+PATH=${EXECPATH}:$PATH
+if [ $(which $1 2>/dev/null | wc -l) == 1 ]; then
+    echo "Use executable $(which $1)"
+    EXEC=$1
+else
+    echo "Cannot find executable $1"
+    exit 1
+fi
 TMPFILE=/tmp/testout
 
 FREQ="2.3"
@@ -62,7 +71,7 @@ while read -r LINE || [[ -n $LINE ]]; do
     OPTIONS=${OPTIONS//'FREQ'/"${FREQ}"}
     RESULTS=$(echo "${LINE}" | cut -d '|' -f 2-)
     NUM_RESULTS="${RESULTS//[^|]}"
-    EXITCODE=$(${EXECPATH}/${EXEC} ${OPTIONS} 1>${TMPFILE} 2>&1 </dev/null; echo $?)
+    EXITCODE=$(${EXEC} ${OPTIONS} 1>${TMPFILE} 2>&1 </dev/null; echo $?)
     STATE=0
     for ((i=1;i<=${#NUM_RESULTS}+1;i++)); do
         RESULT=$(echo ${RESULTS} | cut -d '|' -f ${i})
