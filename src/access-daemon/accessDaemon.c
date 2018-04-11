@@ -110,14 +110,16 @@ static int num_pmc_counters = 0;
 
 /* Socket to bus mapping -- will be determined at runtime;
  * typical mappings are:
- * Socket  Bus (2S)  Bus (4s)
- *   0        0xff      0x3f
- *   1        0x7f      0x7f
- *   2                  0xbf
- *   3                  0xff
+ * Socket  Bus (2S)  Bus (4s)  Bus (8s)
+ *   0        0xff      0x3f     0x1f
+ *   1        0x7f      0x7f     0x3f
+ *   2                  0xbf     0x5f
+ *   3                  0xff     0x7f
+ *                               0x9f
+ *                               0xbf
+ *                               0xdf
+ *                               0xff
  */
-//static char* socket_bus[MAX_NUM_NODES] = { [0 ... (MAX_NUM_NODES-1)] = NULL};
-static char** socket_bus = NULL;
 static int avail_sockets = 0;
 static int avail_cpus = 0;
 
@@ -152,9 +154,6 @@ void __attribute__((constructor (101))) init_accessdaemon(void)
     FD_MSR = malloc(avail_cpus * sizeof(int));
     //memset(FD_MSR, 0, avail_cpus * sizeof(int));
 
-    socket_bus = malloc(avail_sockets * sizeof(char*));
-    //memset(socket_bus, 0, avail_sockets * sizeof(char*));
-
     FD_PCI = malloc(avail_sockets * sizeof(int*));
     //memset(FD_PCI, 0, avail_sockets * sizeof(int*));
     for (int i = 0; i < avail_sockets; i++)
@@ -173,8 +172,7 @@ void __attribute__((destructor (101))) close_accessdaemon(void)
     }
     free(FD_PCI);
     FD_PCI = NULL;
-    free(socket_bus);
-    socket_bus = NULL;
+
     free(FD_MSR);
     FD_MSR = NULL;
 }
@@ -1322,13 +1320,6 @@ static void
 stop_daemon(void)
 {
     kill_client();
-    for (int i=0;i<MAX_NUM_NODES;i++)
-    {
-        if (socket_bus[i] != NULL)
-        {
-            free(socket_bus[i]);
-        }
-    }
 
     if (sockfd != -1)
     {
@@ -1434,7 +1425,7 @@ int main(void)
         syslog(LOG_ERR,"Access to performance counters is locked.\n");
         stop_daemon();
     }
-    if (!FD_MSR || !FD_PCI || !socket_bus)
+    if (!FD_MSR || !FD_PCI)
     {
         syslog(LOG_ERR,"Failed to allocate FD space.\n");
         stop_daemon();
@@ -1679,8 +1670,6 @@ int main(void)
 
             for (int j=0; j<avail_sockets; j++)
             {
-                //socket_bus[j] = (char*)malloc(4);
-                //sprintf(socket_bus[j], "N-A");
                 for (int i=0; i<MAX_NUM_PCI_DEVICES; i++)
                 {
                     FD_PCI[j][i] = -2;
@@ -1706,53 +1695,6 @@ int main(void)
                     }
                 }
             }
-
-            /* determine PCI-BUSID mapping ... */
-            /*syslog(LOG_ERR, "Determine PCI-BUSID mapping");
-            int sbus = -1;
-            cntr = 0;
-            sbus = getSocketBus(cntr);
-            syslog(LOG_ERR, "Socket %d Bus %02x", cntr, sbus);
-            while (sbus != -1 && sbus < 0xFF)
-            {
-                sprintf(socket_bus[cntr], "%02x/", sbus);
-                cntr++;
-                sbus = getSocketBus(cntr);
-                syslog(LOG_ERR, "Socket %d Bus %02x", cntr, sbus);
-            }
-
-            if ( cntr == 0 )
-            {
-                syslog(LOG_NOTICE, "Uncore not supported on this system");
-            }
-            else
-            {
-                socket_count = cntr;
-                int fd;
-                for (int j=0; j<socket_count; j++)
-                {
-                    for (int i=1; i<MAX_NUM_PCI_DEVICES; i++)
-                    {
-                        if (pci_devices_daemon[i].path)
-                        {
-                            sprintf(pci_filepath, "%s%s%s", PCI_ROOT_PATH, socket_bus[j], pci_devices_daemon[i].path);
-                            fd = open(pci_filepath, O_RDWR);
-                            if (fd > 0)
-                            {
-                                FD_PCI[j][i] = 0;
-                                pci_devices_daemon[i].online = 1;
-                                close(fd);
-                            }
-#ifdef DEBUG_LIKWID
-                            else if (j==0)
-                            {
-                                syslog(LOG_ERR, "Device %s for socket %d not found at path %s, excluded it from device list: %s\n",pci_devices_daemon[i].name,j, pci_filepath, strerror(errno));
-                            }
-#endif
-                        }
-                    }
-                }
-            }*/
         }
     }
 LOOP:
