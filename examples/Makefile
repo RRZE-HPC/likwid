@@ -4,7 +4,7 @@ include ../make/include_$(COMPILER).mk
 
 LIKWID_BINDIR ?= $(PREFIX)/bin
 LIKWID_INCLUDE ?= -I$(PREFIX)/include
-LIKWID_LIBDIR ?= -L$(PREFIX)/lib
+LIKWID_LIBDIR ?= $(PREFIX)/lib
 LIKWID_LIB ?= -llikwid
 LIKWID_DEFINES ?= -DLIKWID_PERFMON
 
@@ -43,7 +43,7 @@ C-internalMarkerAPI-run: C-internalMarkerAPI
 	OMP_NUM_THREADS=3 ./C-internalMarkerAPI
 
 monitoring:
-	$(CC) $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) monitoring.c -o monitoring $(LIKWID_LIB) -lm
+	$(CC) $(LIKWID_INCLUDE) -L$(LIKWID_LIBDIR) monitoring.c -o monitoring $(LIKWID_LIB) -lm
 
 monitoring-run: monitoring
 	./monitoring

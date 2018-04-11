@@ -25,6 +25,7 @@ int main (int argc, char* argv[])
     numa_init();
     affinity_init();
     timer_init();
+    HPMmode(0);
     CpuInfo_t cpuinfo = get_cpuInfo();
     CpuTopology_t cputopo = get_cpuTopology();
     int numCPUs = cputopo->activeHWThreads;
@@ -49,27 +50,27 @@ int main (int argc, char* argv[])
     AffinityDomains_t affi = get_affinityDomains();
     timer = timer_getCpuClock();
     perfmon_init(numCPUs, cpus);
-    int gid1 = perfmon_addEventSet("L2");
+    int gid1 = perfmon_addEventSet("MEM_SP");
     if (gid1 < 0)
     {
         printf("Failed to add performance group L2\n");
         err = 1;
         goto monitor_exit;
     }
-    int gid2 = perfmon_addEventSet("L3");
+    int gid2 = perfmon_addEventSet("MEM_DP");
     if (gid2 < 0)
     {
         printf("Failed to add performance group L3\n");
         err = 1;
         goto monitor_exit;
     }
-    int gid3 = perfmon_addEventSet("ENERGY");
+    /*int gid3 = perfmon_addEventSet("ENERGY");
     if (gid3 < 0)
     {
         printf("Failed to add performance group ENERGY\n");
         err = 1;
         goto monitor_exit;
-    }
+    }*/
     signal(SIGINT, INThandler);
 
     while (run)
@@ -78,25 +79,22 @@ int main (int argc, char* argv[])
         perfmon_startCounters();
         sleep(sleeptime);
         perfmon_stopCounters();
-        for (c = 0; c < 8; c++)
+        for (i = 0; i< perfmon_getNumberOfMetrics(gid1); i++)
         {
-            for (i = 0; i< perfmon_getNumberOfMetrics(gid1); i++)
-            {
-                printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid1, i), cpus[c], perfmon_getLastMetric(gid1, i, c));
-            }
+            printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid1, i), 0, perfmon_getLastMetric(gid1, i, 0));
+            printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid1, i), 22, perfmon_getLastMetric(gid1, i, 22));
         }
+
         perfmon_setupCounters(gid2);
         perfmon_startCounters();
         sleep(sleeptime);
         perfmon_stopCounters();
-        for (c = 0; c < 8; c++)
+        for (i = 0; i< perfmon_getNumberOfMetrics(gid2); i++)
         {
-            for (i = 0; i< perfmon_getNumberOfMetrics(gid2); i++)
-            {
-                printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid2, i), cpus[c], perfmon_getLastMetric(gid2, i, c));
-            }
+            printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid2, i), 0, perfmon_getLastMetric(gid2, i, 0));
+            printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid2, i), 22, perfmon_getLastMetric(gid2, i, 22));
         }
-        perfmon_setupCounters(gid3);
+        /*perfmon_setupCounters(gid3);
         perfmon_startCounters();
         sleep(sleeptime);
         perfmon_stopCounters();
@@ -106,7 +104,7 @@ int main (int argc, char* argv[])
             {
                 printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid3, i), cpus[c], perfmon_getLastMetric(gid3, i, c));
             }
-        }
+        }*/
     }
 monitor_exit:
     free(cpus);

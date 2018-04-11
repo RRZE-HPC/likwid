@@ -12,8 +12,8 @@ my $lc = ' *';
 
 #my $VERSION   = '<VERSION>';
 #my $DATE   = '<DATE>';
-my $VERSION   = '4.3.1';
-my $DATE   = '04.01.2018';
+my $VERSION   = '4.3.2';
+my $DATE   = '12.04.2018';
 my $YEAR  = '2018';
 my $AUTHOR = 'RRZE, University Erlangen-Nuremberg';
 my $LICENSE = 'gpl';

@@ -5,8 +5,8 @@
  *
  *      Description:  Implementation of timer module
  *
- *      Version:   4.3.1
- *      Released:  04.01.2018
+ *      Version:   4.3.2
+ *      Released:  12.04.2018
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
