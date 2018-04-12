@@ -1515,7 +1515,8 @@ int main(void)
                 {
                     allowed = allowed_silvermont;
                 }
-                else if (model == XEON_PHI_KNL)
+                else if ((model == XEON_PHI_KNL) ||
+                         (model == XEON_PHI_KML))
                 {
                     allowed = allowed_knl;
                     isPCIUncore = 1;
@@ -1657,7 +1658,8 @@ int main(void)
                 //testDevice = 0x80862f30;
                 pci_devices_daemon = skylakeX_pci_devices;
             }
-            else if (model == XEON_PHI_KNL)
+            else if ((model == XEON_PHI_KNL) ||
+                     (model == XEON_PHI_KML))
             {
                 pci_devices_daemon = knl_pci_devices;
             }

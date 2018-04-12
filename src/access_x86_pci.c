@@ -127,6 +127,7 @@ access_x86_pci_init(const int socket)
                 testDevice = 0x6f30;
                 break;
             case XEON_PHI_KNL:
+            case XEON_PHI_KML:
                 testDevice = 0x7843;
                 break;
             case SKYLAKEX:

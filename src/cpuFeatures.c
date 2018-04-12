@@ -207,7 +207,8 @@ cpuFeatures_update(int cpu)
         TEST_FLAG_INV(FEAT_HW_PREFETCHER,0);
     }
 
-    if (cpuid_info.model == XEON_PHI_KNL)
+    if ((cpuid_info.model == XEON_PHI_KNL) ||
+        (cpuid_info.model == XEON_PHI_KML))
     {
         ret = HPMread(cpu, MSR_DEV, MSR_PREFETCH_ENABLE, &flags);
         if (ret != 0)
@@ -359,7 +360,8 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
         reg = MSR_PREFETCH_ENABLE;
         newOffsets = 1;
     }
-    if (cpuid_info.model == XEON_PHI_KNL)
+    if ((cpuid_info.model == XEON_PHI_KNL) ||
+        (cpuid_info.model == XEON_PHI_KML))
     {
         reg = MSR_PREFETCH_ENABLE;
         knlOffsets = 1;
@@ -510,7 +512,8 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
         reg = MSR_PREFETCH_ENABLE;
         newOffsets = 1;
     }
-    if (cpuid_info.model == XEON_PHI_KNL)
+    if ((cpuid_info.model == XEON_PHI_KNL) ||
+        (cpuid_info.model == XEON_PHI_KML))
     {
         reg = MSR_PREFETCH_ENABLE;
         knlOffsets = 1;
