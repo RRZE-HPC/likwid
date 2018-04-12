@@ -1016,6 +1016,7 @@ perfmon_init_maps(void)
                     break;
 
                 case XEON_PHI_KNL:
+                case XEON_PHI_KML:
                     pci_devices = knl_pci_devices;
                     eventHash = knl_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsKNL;
@@ -1288,6 +1289,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     break;
 
                 case XEON_PHI_KNL:
+                case XEON_PHI_KML:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_knl;

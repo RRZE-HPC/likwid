@@ -100,6 +100,7 @@ power_init(int cpuId)
                 case HASWELL_M1:
                 case HASWELL_M2:
                 case XEON_PHI_KNL:
+                case XEON_PHI_KML:
                     power_info.hasRAPL = 1;
                     numDomains = NUM_POWER_DOMAINS - 1;
                     break;
@@ -306,7 +307,8 @@ power_init(int cpuId)
                 (cpuid_info.model == BROADWELL_D) ||
                 (cpuid_info.model == BROADWELL_E) ||
                 (cpuid_info.model == SKYLAKEX) ||
-                (cpuid_info.model == XEON_PHI_KNL))
+                (cpuid_info.model == XEON_PHI_KNL) ||
+                (cpuid_info.model == XEON_PHI_KML))
             {
                 power_info.domains[DRAM].energyUnit = 15.3E-6;
             }
