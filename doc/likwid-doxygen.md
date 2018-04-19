@@ -91,13 +91,16 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage broadwelld
 - \subpage broadwellep
 - \subpage skylake
+- \subpage skylakesp
 - \subpage phi_knl
+- \subpage phi_kkm
 
 \subsection Architectures_AMD AMD&reg;
 - \subpage k8
 - \subpage k10
 - \subpage interlagos
 - \subpage kabini
+- \subpage zen
 
 \section Examples Example Codes
 Using the Likwid API:
