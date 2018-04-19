@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['edsp',['EDSP',['../group__CPUTopology.html#gga52449c09ecd31358c0de0b6c6c73798bad1b04164b700120d673f9b4873c85e88',1,'topology_types.h']]],
   ['eist',['EIST',['../group__CPUTopology.html#gga52449c09ecd31358c0de0b6c6c73798ba6ec99b4388886c35ec6c87d965efe67f',1,'topology_types.h']]],
   ['event_5foption_5fanythread',['EVENT_OPTION_ANYTHREAD',['../group__PerfMon.html#ggae11ac851952c63f70ae85831aa0b1b9cab826050c207a1f30d555deb011d97816',1,'perfmon_types.h']]],
   ['event_5foption_5fcount_5fkernel',['EVENT_OPTION_COUNT_KERNEL',['../group__PerfMon.html#ggae11ac851952c63f70ae85831aa0b1b9ca80ff313d2f159cbe8b5673935ed6a24e',1,'perfmon_types.h']]],

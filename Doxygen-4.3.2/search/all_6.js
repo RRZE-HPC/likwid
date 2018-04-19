@@ -33,6 +33,7 @@ var searchData=
   ['freq_5fgetcpuclockmin',['freq_getCpuClockMin',['../group__CpuFreq.html#gac7a42d2c07d8b18f0980387433717c71',1,'likwid.h']]],
   ['freq_5fgetgovernor',['freq_getGovernor',['../group__CpuFreq.html#ga6c87f06825855aa2122e646662173341',1,'likwid.h']]],
   ['freq_5fgetturbo',['freq_getTurbo',['../group__CpuFreq.html#ga27265a92a0358369f61e3d3f4c5f38a7',1,'likwid.h']]],
+  ['freq_5fgetuncorefreqcur',['freq_getUncoreFreqCur',['../group__CpuFreq.html#ga2a4fc55398fbbbfeaf064c959f4d8d20',1,'likwid.h']]],
   ['freq_5fgetuncorefreqmax',['freq_getUncoreFreqMax',['../group__CpuFreq.html#ga8401d33a640f1202f1bc65b01363a87e',1,'likwid.h']]],
   ['freq_5fgetuncorefreqmin',['freq_getUncoreFreqMin',['../group__CpuFreq.html#gafde5c9dd7e184010df274a2b62b99fca',1,'likwid.h']]],
   ['freq_5fsetcpuclockmax',['freq_setCpuClockMax',['../group__CpuFreq.html#gaf0bb78804f7d43692b19da35d48bceec',1,'likwid.h']]],

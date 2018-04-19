@@ -31,6 +31,7 @@ var searchData=
   ['timerdata',['TimerData',['../structTimerData.html',1,'']]],
   ['time_20measurement_20module',['Time measurement module',['../group__TimerMon.html',1,'']]],
   ['timeunit',['timeUnit',['../structPowerInfo.html#acfc689d5f9f6b2190f70361cd9c9ad78',1,'PowerInfo']]],
+  ['tls',['TLS',['../group__CPUTopology.html#gga52449c09ecd31358c0de0b6c6c73798bac60337f6c63b015a24fe86e2a387e08c',1,'topology_types.h']]],
   ['tm',['TM',['../group__CPUTopology.html#gga52449c09ecd31358c0de0b6c6c73798bac0f142a65b7d596e898b5ede310ac154',1,'topology_types.h']]],
   ['tm2',['TM2',['../group__CPUTopology.html#gga52449c09ecd31358c0de0b6c6c73798ba35d35d88f0336bb5c02aea87921e054c',1,'topology_types.h']]],
   ['topology_5ffinalize',['topology_finalize',['../group__CPUTopology.html#ga172163ecf6b848305009cd73ff3607b2',1,'likwid.h']]],

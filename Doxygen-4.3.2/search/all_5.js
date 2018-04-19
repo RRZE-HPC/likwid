@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['edsp',['EDSP',['../group__CPUTopology.html#gga52449c09ecd31358c0de0b6c6c73798bad1b04164b700120d673f9b4873c85e88',1,'topology_types.h']]],
   ['eist',['EIST',['../group__CPUTopology.html#gga52449c09ecd31358c0de0b6c6c73798ba6ec99b4388886c35ec6c87d965efe67f',1,'topology_types.h']]],
   ['energyunit',['energyUnit',['../structPowerDomain.html#a587b01b967b20112f671d754eb7120a7',1,'PowerDomain']]],
   ['event',['event',['../structPerfmonEventSetEntry.html#a321bd91ddedd5a6be2684ad6bd7c5a58',1,'PerfmonEventSetEntry']]],

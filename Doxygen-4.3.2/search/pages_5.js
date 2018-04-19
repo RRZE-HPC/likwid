@@ -19,10 +19,12 @@ var searchData=
   ['intel_26reg_3b_20pentium_20m',['Intel&amp;reg; Pentium M',['../pentiumm.html',1,'index']]],
   ['intel_26reg_3b_20xeon_20phi',['Intel&amp;reg; Xeon Phi',['../phi.html',1,'index']]],
   ['intel_26reg_3b_20xeon_20phi_20_28knights_20landing_29',['Intel&amp;reg; Xeon Phi (Knights Landing)',['../phi_knl.html',1,'index']]],
+  ['intel_26reg_3b_20xeon_20phi_20_28knights_20mill_29',['Intel&amp;reg; Xeon Phi (Knights Mill)',['../phi_knm.html',1,'index']]],
   ['intel_26reg_3b_20sandybridge',['Intel&amp;reg; SandyBridge',['../sandybridge.html',1,'index']]],
   ['intel_26reg_3b_20sandybridge_20ep_2fen',['Intel&amp;reg; SandyBridge EP/EN',['../sandybridgeep.html',1,'index']]],
   ['intel_26reg_3b_20silvermont_2fairmont',['Intel&amp;reg; Silvermont/Airmont',['../silvermont.html',1,'index']]],
   ['intel_26reg_3b_20skylake',['Intel&amp;reg; Skylake',['../skylake.html',1,'index']]],
+  ['intel_26reg_3b_20skylake_20sp',['Intel&amp;reg; Skylake SP',['../skylakesp.html',1,'index']]],
   ['intel_26reg_3b_20westmere',['Intel&amp;reg; Westmere',['../westmere.html',1,'index']]],
   ['intel_26reg_3b_20westmere_20ex',['Intel&amp;reg; Westmere EX',['../westmereex.html',1,'index']]]
 ];

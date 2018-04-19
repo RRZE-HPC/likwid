@@ -108,6 +108,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ga27265a92a0358369f61e3d3f4c5f38a7"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__CpuFreq.html#ga27265a92a0358369f61e3d3f4c5f38a7">freq_getTurbo</a> (const int cpu_id) <a class="el" href="group__PowerMon.html#ga831e87005a48426483b681a4c7f607c8">__attribute__</a>((visibility(&quot;default&quot;)))</td></tr>
 <tr class="memdesc:ga27265a92a0358369f61e3d3f4c5f38a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get state of turbo mode for core.  <a href="#ga27265a92a0358369f61e3d3f4c5f38a7">More...</a><br /></td></tr>
 <tr class="separator:ga27265a92a0358369f61e3d3f4c5f38a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga2a4fc55398fbbbfeaf064c959f4d8d20"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__CpuFreq.html#ga2a4fc55398fbbbfeaf064c959f4d8d20">freq_getUncoreFreqCur</a> (const int socket_id) <a class="el" href="group__PowerMon.html#ga831e87005a48426483b681a4c7f607c8">__attribute__</a>((visibility(&quot;default&quot;)))</td></tr>
+<tr class="memdesc:ga2a4fc55398fbbbfeaf064c959f4d8d20"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the current Uncore frequency.  <a href="#ga2a4fc55398fbbbfeaf064c959f4d8d20">More...</a><br /></td></tr>
+<tr class="separator:ga2a4fc55398fbbbfeaf064c959f4d8d20"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8401d33a640f1202f1bc65b01363a87e"><td class="memItemLeft" align="right" valign="top">uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__CpuFreq.html#ga8401d33a640f1202f1bc65b01363a87e">freq_getUncoreFreqMax</a> (const int socket_id) <a class="el" href="group__PowerMon.html#ga831e87005a48426483b681a4c7f607c8">__attribute__</a>((visibility(&quot;default&quot;)))</td></tr>
 <tr class="memdesc:ga8401d33a640f1202f1bc65b01363a87e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the maximal Uncore frequency.  <a href="#ga8401d33a640f1202f1bc65b01363a87e">More...</a><br /></td></tr>
 <tr class="separator:ga8401d33a640f1202f1bc65b01363a87e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -307,6 +310,31 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>1=Turbo active or 0=Turbo inactive </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ga2a4fc55398fbbbfeaf064c959f4d8d20"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint64_t freq_getUncoreFreqCur </td>
+          <td>(</td>
+          <td class="paramtype">const int&#160;</td>
+          <td class="paramname"><em>socket_id</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the current Uncore frequency. </p>
+<p>Get the current Uncore frequency. </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">socket_id</td><td>ID of socket </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>frequency in MHz or 0 at failure </dd></dl>
 
 </div>
 </div>
@@ -579,7 +607,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 19 2018 10:48:47 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 19 2018 16:37:06 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

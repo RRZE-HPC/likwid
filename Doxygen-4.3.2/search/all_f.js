@@ -5,6 +5,7 @@ var searchData=
   ['pentiumm',['pentiumm',['../md_doc_archs_pentiumm.html',1,'']]],
   ['phi',['phi',['../md_doc_archs_phi.html',1,'']]],
   ['phi_5fknl',['phi_knl',['../md_doc_archs_phi_knl.html',1,'']]],
+  ['phi_5fknm',['phi_knm',['../md_doc_archs_phi_knm.html',1,'']]],
   ['packageid',['packageId',['../structHWThread.html#a4ba5e94d50ba66b4c0748b7f8254446f',1,'HWThread']]],
   ['pci_5fdevices',['pci_devices',['../group__PerfMon.html#gabf2e50b9aed17480fe73e54bb33311e3',1,'perfmon_types.h']]],
   ['perf_5fnum_5fctr',['perf_num_ctr',['../structCpuInfo.html#a2d0c0326d610193b126a5b8d28effeff',1,'CpuInfo']]],

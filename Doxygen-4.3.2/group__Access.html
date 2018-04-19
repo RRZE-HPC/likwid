@@ -88,7 +88,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:gab22d35ed086a478dd91e93ac78037f40"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Access.html#gab22d35ed086a478dd91e93ac78037f40">AccessMode</a> { <a class="el" href="group__Access.html#ggab22d35ed086a478dd91e93ac78037f40a3d69f4b5587040e452d12494bb6ae79b">ACCESSMODE_DIRECT</a> = 0, 
+<tr class="memitem:gab22d35ed086a478dd91e93ac78037f40"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__Access.html#gab22d35ed086a478dd91e93ac78037f40">AccessMode</a> { <a class="el" href="group__Access.html#ggab22d35ed086a478dd91e93ac78037f40a87f67383150a47f9c5ce697d8752642d">ACCESSMODE_PERF</a> = -1, 
+<a class="el" href="group__Access.html#ggab22d35ed086a478dd91e93ac78037f40a3d69f4b5587040e452d12494bb6ae79b">ACCESSMODE_DIRECT</a> = 0, 
 <a class="el" href="group__Access.html#ggab22d35ed086a478dd91e93ac78037f40aee38d8bf9593a6062f44405669197dd7">ACCESSMODE_DAEMON</a> = 1
  }<tr class="memdesc:gab22d35ed086a478dd91e93ac78037f40"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enum for the access modes.  <a href="group__Access.html#gab22d35ed086a478dd91e93ac78037f40">More...</a><br /></td></tr>
 </td></tr>
@@ -124,7 +125,10 @@ Functions</h2></td></tr>
 <p>Enum for the access modes. </p>
 <p>LIKWID supports multiple access modes to the MSR and PCI performance monitoring registers. For direct access the user must have enough priviledges to access the MSR and PCI devices. The daemon mode forwards the operations to a daemon with higher priviledges. </p>
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a class="anchor" id="ggab22d35ed086a478dd91e93ac78037f40a3d69f4b5587040e452d12494bb6ae79b"></a>ACCESSMODE_DIRECT&#160;</td><td class="fielddoc">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a class="anchor" id="ggab22d35ed086a478dd91e93ac78037f40a87f67383150a47f9c5ce697d8752642d"></a>ACCESSMODE_PERF&#160;</td><td class="fielddoc">
+<p>Access performance monitoring through perf_event kernel interface. </p>
+</td></tr>
+<tr><td class="fieldname"><a class="anchor" id="ggab22d35ed086a478dd91e93ac78037f40a3d69f4b5587040e452d12494bb6ae79b"></a>ACCESSMODE_DIRECT&#160;</td><td class="fielddoc">
 <p>Access performance monitoring registers directly. </p>
 </td></tr>
 <tr><td class="fieldname"><a class="anchor" id="ggab22d35ed086a478dd91e93ac78037f40aee38d8bf9593a6062f44405669197dd7"></a>ACCESSMODE_DAEMON&#160;</td><td class="fielddoc">
@@ -223,7 +227,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 19 2018 10:48:47 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 19 2018 16:37:06 for LIKWID by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.11
 </small></address>

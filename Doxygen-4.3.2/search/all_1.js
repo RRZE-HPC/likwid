@@ -4,6 +4,7 @@ var searchData=
   ['accessmode',['AccessMode',['../group__Access.html#gab22d35ed086a478dd91e93ac78037f40',1,'likwid.h']]],
   ['accessmode_5fdaemon',['ACCESSMODE_DAEMON',['../group__Access.html#ggab22d35ed086a478dd91e93ac78037f40aee38d8bf9593a6062f44405669197dd7',1,'likwid.h']]],
   ['accessmode_5fdirect',['ACCESSMODE_DIRECT',['../group__Access.html#ggab22d35ed086a478dd91e93ac78037f40a3d69f4b5587040e452d12494bb6ae79b',1,'likwid.h']]],
+  ['accessmode_5fperf',['ACCESSMODE_PERF',['../group__Access.html#ggab22d35ed086a478dd91e93ac78037f40a87f67383150a47f9c5ce697d8752642d',1,'likwid.h']]],
   ['acpi',['ACPI',['../group__CPUTopology.html#gga52449c09ecd31358c0de0b6c6c73798bafdd0da8ec1bb05338944f4acbd1bffb3',1,'topology_types.h']]],
   ['activegroup',['activeGroup',['../structPerfmonGroupSet.html#ad8af9b21ddc3d389b561633a63b312bd',1,'PerfmonGroupSet']]],
   ['activehwthreads',['activeHWThreads',['../structCpuTopology.html#a119e739e9728968ed935f0a5f277516c',1,'CpuTopology']]],
@@ -29,5 +30,6 @@ var searchData=
   ['amd_26reg_3b_20k8',['AMD&amp;reg; K8',['../k8.html',1,'index']]],
   ['amd_26reg_3b_20kabini',['AMD&amp;reg; Kabini',['../kabini.html',1,'index']]],
   ['access_20client_20module',['Access client module',['../lua_Access.html',1,'']]],
-  ['atom',['atom',['../md_doc_archs_atom.html',1,'']]]
+  ['atom',['atom',['../md_doc_archs_atom.html',1,'']]],
+  ['amd_26reg_3b_20zen',['AMD&amp;reg; Zen',['../zen.html',1,'index']]]
 ];

@@ -4,6 +4,7 @@ var searchData=
   ['nehalem',['nehalem',['../md_doc_archs_nehalem.html',1,'']]],
   ['nehalemex',['nehalemex',['../md_doc_archs_nehalemex.html',1,'']]],
   ['name',['name',['../structCpuInfo.html#a543077bafdaaa87a293df1dcb1e9f21d',1,'CpuInfo::name()'],['../structPerfmonEvent.html#a436d5f9aa17265f9b6c870d4feffe13c',1,'PerfmonEvent::name()']]],
+  ['neon',['NEON',['../group__CPUTopology.html#gga52449c09ecd31358c0de0b6c6c73798ba3a55613814a4515c9ac2a72ccf73372e',1,'topology_types.h']]],
   ['nocache',['NOCACHE',['../group__CPUTopology.html#gga707cb231e76de0fed4a632ab6fa9a639abc525d4665935fc4355cb460c85386b3',1,'likwid.h']]],
   ['nodes',['nodes',['../structNumaTopology.html#a597f0db393df4f53b915b41be937e745',1,'NumaTopology']]],
   ['nodestr_5fto_5fnodelist',['nodestr_to_nodelist',['../group__CPUParse.html#ga53159950dd4af6e5e94c2989c5399c9b',1,'likwid.h']]],

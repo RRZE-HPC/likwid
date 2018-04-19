@@ -8,5 +8,6 @@ var searchData=
   ['ssse3',['SSSE3',['../group__CPUTopology.html#gga52449c09ecd31358c0de0b6c6c73798ba3bf865c30966497ad2f666485802e94b',1,'topology_types.h']]],
   ['state_5fnone',['STATE_NONE',['../group__PerfMon.html#gga28ba8325f0898ed34334448a529be7efac36e5c9ac597253191be83acf0b51d25',1,'perfmon_types.h']]],
   ['state_5fsetup',['STATE_SETUP',['../group__PerfMon.html#gga28ba8325f0898ed34334448a529be7efa5ba2ad50883542bd2294d7460ce92edb',1,'perfmon_types.h']]],
-  ['state_5fstart',['STATE_START',['../group__PerfMon.html#gga28ba8325f0898ed34334448a529be7efa1844f314039d713261df43a309145446',1,'perfmon_types.h']]]
+  ['state_5fstart',['STATE_START',['../group__PerfMon.html#gga28ba8325f0898ed34334448a529be7efa1844f314039d713261df43a309145446',1,'perfmon_types.h']]],
+  ['swp',['SWP',['../group__CPUTopology.html#gga52449c09ecd31358c0de0b6c6c73798ba14b415b7fe3af93d71a9bb8c0664dbd5',1,'topology_types.h']]]
 ];
