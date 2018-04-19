@@ -1,4 +1,4 @@
-/*! \page skylake Intel&reg; Skylake SP
+/*! \page skylakesp Intel&reg; Skylake SP
 
 <P>This page is valid for Skylake SP. The Skylake SP microarchitecture supports the UBOX and the CBOX Uncore devices.</P>
 
@@ -91,6 +91,9 @@
   <TD>*</TD>
 </TR>
 </TABLE>
+<P>If HyperThreading is disabled, you can additionally use the PMC registers of the disabled SMT thread and thus have 8 PMC registers</P>
+
+
 <H3>Available Options</H3>
 <TABLE>
 <TR>
@@ -328,7 +331,7 @@
   <TD>state</TD>
   <TD>10 bit hex value</TD>
   <TD>Set bits 17-27 in MSR_UNC_C&lt;0-27&gt;_PMON_BOX_FILTER register</TD>
-  <TD>M': 0x40, D: 0x20, F: 0x10, M: 0x08, E: 0x04, S: 0x02, I: 0x01</TD>
+  <TD>LLC F: 0x80, LLC M: 0x40, LLC E: 0x20, LLC S: 0x10, SF H: 0x08, SF E: 0x04, SF S: 0x02, LLC I: 0x01</TD>
 </TR>
 <TR>
   <TD>opcode</TD>
@@ -714,6 +717,39 @@ The M2M devices is first introduced in the Intel&reg; Skylake SP microarchitectu
 <I>IIO stacks are responsible for managing traffic between the PCIe domain and the Mesh domain. The IIO PMON block is situated near the IIO stack’s traffic controller capturing traffic controller as well as PCIe root port information. The traffic controller is responsible for translating traffic coming in from the Mesh (through M2PCIe) and processed by IRP into the PCIe domain to IO agents such as CBDMA, PCIe and MCP.</I></BR>
 The IIO box counters are exposed to the operating system through the MSR interface. The IBOX was introduced with the Intel&reg; IvyBridge EP/EN/EX microarchitecture.
 </P>
+
+<H3>Box description</H3>
+<TABLE>
+<TR>
+  <TH>Unit number</TH>
+  <TH>Unit description</TH>
+</TR>
+<TR>
+  <TD>0</TD>
+  <TD>CBDMA</TD>
+</TR>
+<TR>
+  <TD>1</TD>
+  <TD>PCIe0</TD>
+</TR>
+<TR>
+  <TD>2</TD>
+  <TD>PCIe1</TD>
+</TR>
+<TR>
+  <TD>3</TD>
+  <TD>PCIe2</TD>
+</TR>
+<TR>
+  <TD>4</TD>
+  <TD>MCP0</TD>
+</TR>
+<TR>
+  <TD>5</TD>
+  <TD>MCP1</TD>
+</TR>
+</TABLE>
+
 <H3>Counter and events</H3>
 <TABLE>
 <TR>

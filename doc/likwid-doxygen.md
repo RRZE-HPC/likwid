@@ -93,7 +93,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage skylake
 - \subpage skylakesp
 - \subpage phi_knl
-- \subpage phi_kkm
+- \subpage phi_knm
 
 \subsection Architectures_AMD AMD&reg;
 - \subpage k8

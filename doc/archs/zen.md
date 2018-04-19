@@ -1,4 +1,4 @@
-/*! \page skylake AMD&reg; Zen
+/*! \page zen AMD&reg; Zen
 
 <P>This page is valid for AMD&reg; Zen.</P>
 
