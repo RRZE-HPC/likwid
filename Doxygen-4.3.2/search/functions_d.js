@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['thermal_5finit',['thermal_init',['../group__ThermalMon.html#gab126f3b4c02c1360beca24ce67327aaf',1,'likwid.h']]],
+  ['thermal_5fread',['thermal_read',['../group__ThermalMon.html#ga1889809f5daf4cc1054c38c3c4e9743a',1,'likwid.h']]],
+  ['thermal_5ftread',['thermal_tread',['../group__ThermalMon.html#ga523788e48b283b1d484777f9303e718f',1,'likwid.h']]],
+  ['timer_5ffinalize',['timer_finalize',['../group__TimerMon.html#gab71a2cf9050828050b7365900f1131fa',1,'likwid.h']]],
+  ['timer_5fgetbaseline',['timer_getBaseline',['../group__TimerMon.html#gaa75a513c086fc4b1aee170bb0e61b70f',1,'likwid.h']]],
+  ['timer_5fgetcpuclock',['timer_getCpuClock',['../group__TimerMon.html#ga2668e5f856229d59b3408415af300521',1,'likwid.h']]],
+  ['timer_5fgetcpuclockcurrent',['timer_getCpuClockCurrent',['../group__TimerMon.html#ga45213adc4527fc528644ebf770601f04',1,'likwid.h']]],
+  ['timer_5fgetcycleclock',['timer_getCycleClock',['../group__TimerMon.html#gac377213bf29bcf240793bb2a31fa6d6e',1,'likwid.h']]],
+  ['timer_5finit',['timer_init',['../group__TimerMon.html#ga7fb8e87b75ca3cc7c02ec2a87a98113c',1,'likwid.h']]],
+  ['timer_5fprint',['timer_print',['../group__TimerMon.html#ga6bd7269889723beacfd51630bf0c4ef2',1,'likwid.h']]],
+  ['timer_5fprintcycles',['timer_printCycles',['../group__TimerMon.html#gafb8d8fcaea1632c4a686693e86be13b0',1,'likwid.h']]],
+  ['timer_5freset',['timer_reset',['../group__TimerMon.html#ga524a976d749f9dd68f6545aca6798d65',1,'likwid.h']]],
+  ['timer_5fsleep',['timer_sleep',['../group__TimerMon.html#gaf7b49d2b79a5083d567b16d262c4a599',1,'likwid.h']]],
+  ['timer_5fstart',['timer_start',['../group__TimerMon.html#ga745efb0b7ac7e9d3716fff783934ee5b',1,'likwid.h']]],
+  ['timer_5fstop',['timer_stop',['../group__TimerMon.html#gac57c15b22d392951f2309398a06e910e',1,'likwid.h']]],
+  ['topology_5ffinalize',['topology_finalize',['../group__CPUTopology.html#ga172163ecf6b848305009cd73ff3607b2',1,'likwid.h']]],
+  ['topology_5finit',['topology_init',['../group__CPUTopology.html#gaed8402831b977e056e599efdfd81c69f',1,'likwid.h']]]
+];

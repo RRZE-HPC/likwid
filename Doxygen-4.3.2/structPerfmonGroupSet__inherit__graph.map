@@ -1,0 +1,8 @@
+<map id="PerfmonGroupSet" name="PerfmonGroupSet">
+<area shape="rect" id="node2" href="$structPerfmonEventSet.html" title="Structure specifying an performance monitoring event group. " alt="" coords="68,80,193,107"/>
+<area shape="rect" id="node7" href="$structPerfmonThread.html" title="Structure specifying thread to CPU relation. " alt="" coords="218,80,329,107"/>
+<area shape="rect" id="node3" href="$structPerfmonEventSetEntry.html" title="Structure specifying an performance monitoring event. " alt="" coords="53,155,209,181"/>
+<area shape="rect" id="node4" href="$structPerfmonCounter.html" title="Structure describing performance monitoring counter data. " alt="" coords="5,229,123,256"/>
+<area shape="rect" id="node5" href="$structPerfmonEvent.html" title="Structure specifying an performance monitoring event. " alt="" coords="146,229,251,256"/>
+<area shape="rect" id="node6" href="$structPerfmonEventOption.html" title="Structure specifying event/counter options and their value. " alt="" coords="127,304,270,331"/>
+</map>

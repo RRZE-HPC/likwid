@@ -1,0 +1,9 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$structPerfmonGroupSet.html" title="Structure specifying all performance monitoring event groups. " alt="" coords="5,56,132,83"/>
+<area shape="rect" id="node2" href="$structPerfmonEventSet.html" title="Structure specifying an performance monitoring event group. " alt="" coords="180,31,305,57"/>
+<area shape="rect" id="node7" href="$structPerfmonThread.html" title="Structure specifying thread to CPU relation. " alt="" coords="187,81,298,108"/>
+<area shape="rect" id="node3" href="$structPerfmonEventSetEntry.html" title="Structure specifying an performance monitoring event. " alt="" coords="353,31,509,57"/>
+<area shape="rect" id="node4" href="$structPerfmonCounter.html" title="Structure describing performance monitoring counter data. " alt="" coords="557,5,675,32"/>
+<area shape="rect" id="node5" href="$structPerfmonEvent.html" title="Structure specifying an performance monitoring event. " alt="" coords="563,56,669,83"/>
+<area shape="rect" id="node6" href="$structPerfmonEventOption.html" title="Structure specifying event/counter options and their value. " alt="" coords="723,56,865,83"/>
+</map>

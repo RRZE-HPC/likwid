@@ -1,0 +1,4 @@
+<map id="TurboBoost" name="TurboBoost">
+<area shape="rect" id="node2" href="$structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility. " alt="" coords="17,95,98,121"/>
+<area shape="rect" id="node3" href="$structPowerDomain.html" title="Structure describing an RAPL power domain. " alt="" coords="5,184,109,211"/>
+</map>

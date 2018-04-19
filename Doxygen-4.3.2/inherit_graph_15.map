@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$structPowerInfo.html" title="Information structure of CPU&#39;s power measurement facility. " alt="" coords="5,31,87,57"/>
+<area shape="rect" id="node2" href="$structPowerDomain.html" title="Structure describing an RAPL power domain. " alt="" coords="135,5,239,32"/>
+<area shape="rect" id="node3" href="$structTurboBoost.html" title="Information structure of CPU&#39;s turbo mode. " alt="" coords="142,56,231,83"/>
+</map>
