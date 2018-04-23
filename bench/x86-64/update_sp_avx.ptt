@@ -1,0 +1,21 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 0
+BYTES 16
+DESC Single-precision vector update, optimized for AVX
+LOADS 1
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 11
+UOPS 14
+LOOP 32
+vmovaps    ymm1, [STR0 + GPR1 * 4]
+vmovaps    [STR0 + GPR1 * 4]     , ymm1
+vmovaps    ymm2, [STR0 + GPR1 * 4 + 32]
+vmovaps    ymm3, [STR0 + GPR1 * 4 + 64]
+vmovaps    ymm4, [STR0 + GPR1 * 4 + 96]
+vmovaps    [STR0 + GPR1 * 4 + 32], ymm2
+vmovaps    [STR0 + GPR1 * 4 + 64], ymm3
+vmovaps    [STR0 + GPR1 * 4 + 96], ymm4
+
+

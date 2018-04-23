@@ -1,0 +1,21 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 0
+BYTES 16
+DESC Single-precision vector update, optimized for AVX-512
+LOADS 1
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 11
+UOPS 14
+LOOP 64
+vmovapd    zmm1, [STR0 + GPR1 * 4]
+vmovapd    [STR0 + GPR1 * 4]     , zmm1
+vmovapd    zmm2, [STR0 + GPR1 * 4 + 64]
+vmovapd    zmm3, [STR0 + GPR1 * 4 + 128]
+vmovapd    zmm4, [STR0 + GPR1 * 4 + 192]
+vmovapd    [STR0 + GPR1 * 4 + 64], zmm2
+vmovapd    [STR0 + GPR1 * 4 + 128], zmm3
+vmovapd    [STR0 + GPR1 * 4 + 192], zmm4
+
+

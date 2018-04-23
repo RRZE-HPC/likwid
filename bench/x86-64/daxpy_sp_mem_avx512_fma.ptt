@@ -1,0 +1,25 @@
+STREAMS 2
+TYPE SINGLE
+FLOPS 2
+BYTES 12
+DESC Single-precision linear combination of two vectors, optimized for AVX-512 FMAs and non-temporal stores
+LOADS 2
+STORES 1
+INSTR_CONST 17
+INSTR_LOOP 15
+UOPS 22
+vmovaps zmm7, [rip+SCALAR]
+LOOP 64
+vmovaps   zmm1, [STR0 + GPR1*4]
+vmovaps   zmm2, [STR0 + GPR1*4+64]
+vmovaps   zmm3, [STR0 + GPR1*4+128]
+vmovaps   zmm4, [STR0 + GPR1*4+192]
+vfmadd213ps zmm1, zmm7, [STR1 + GPR1*4]
+vfmadd213ps zmm2, zmm7, [STR1 + GPR1*4+64]
+vfmadd213ps zmm3, zmm7, [STR1 + GPR1*4+128]
+vfmadd213ps zmm4, zmm7, [STR1 + GPR1*4+192]
+vmovntps    [STR1 + GPR1*4], zmm1
+vmovntps    [STR1 + GPR1*4+64], zmm2
+vmovntps    [STR1 + GPR1*4+128], zmm3
+vmovntps    [STR1 + GPR1*4+192], zmm4
+
