@@ -734,22 +734,13 @@ local function tableMinMaxAvgSum(inputtable, skip_cols, skip_lines)
     for j=skip_cols+1,nr_columns do
         for i=skip_lines+1, nr_lines do
             local res = tonumber(inputtable[j][i])
-            if inputtable[j][i] ~= "nan" then
+            if inputtable[j][i] ~= "nan" and inputtable[j][i] ~= "-" then
                 if res ~= nil then
                     minOfLine[i-skip_lines+1] = math.min(res, minOfLine[i-skip_lines+1])
                     maxOfLine[i-skip_lines+1] = math.max(res, maxOfLine[i-skip_lines+1])
                     sumOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1] + res
-                else
-                    minOfLine[i-skip_lines+1] = 0
-                    maxOfLine[i-skip_lines+1] = 0
-                    sumOfLine[i-skip_lines+1] = 0
                 end
                 avgOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1]/(nr_columns-skip_cols)
-            else
-                minOfLine[i-skip_lines+1] = 0/0
-                maxOfLine[i-skip_lines+1] = 0/0
-                sumOfLine[i-skip_lines+1] = 0/0
-                avgOfLine[i-skip_lines+1] = 0/0
             end
         end
     end
