@@ -8,7 +8,7 @@ STORES 0
 INSTR_CONST 20
 INSTR_LOOP 7
 UOPS 10
-vxorps  zmm1, zmm1, zmm1
+vmovaps zmm1, [rip+SCALAR]
 vmovaps zmm2, zmm1
 vmovaps zmm3, zmm1
 vmovaps zmm4, zmm1
