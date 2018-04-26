@@ -3,6 +3,16 @@ compiler: gcc
 install: true
 dist: trusty
 sudo: required
+addons: {
+    apt: {
+        sources: [
+            ubuntu-toolchain-r-test
+        ],
+    packages: [
+        "gcc-7"
+    ]
+    }
+}
 script:
   - make && sudo make install
   - /usr/local/bin/likwid-topology -c -C -g
