@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 package feedgnuplot; # for the metacpan indexer
 
@@ -1331,7 +1331,7 @@ Perl supports storing data and code in the same file. This can also be used to
 create self-plotting files:
 
  $ cat plotdata.pl
- #!/usr/bin/perl
+ #!/usr/bin/env perl
  use strict;
  use warnings;
 
