@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 #########################################################################################
 #   HPCBench
 #
@@ -29,6 +29,7 @@
 package xmgrace;
 use Exporter;
 use Data::Dumper;
+use warnings;
 
 @ISA = ('Exporter');
 @EXPORT = qw(&xmgrace);
