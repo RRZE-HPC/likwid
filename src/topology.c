@@ -621,6 +621,7 @@ topology_setName(void)
                 case HASWELL:
                 case HASWELL_M1:
                 case HASWELL_M2:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = haswell_str;
                     cpuid_info.short_name = short_haswell;
                     break;
@@ -646,6 +647,7 @@ topology_setName(void)
 
                 case SKYLAKE1:
                 case SKYLAKE2:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = skylake_str;
                     cpuid_info.short_name = short_skylake;
                     break;

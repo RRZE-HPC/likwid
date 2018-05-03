@@ -834,3 +834,12 @@ UMASK_COH_TRK_REQUESTS_ALL                  0x01
 
 EVENT_UNCORE_CLOCK                          0x00 UBOXFIX
 UMASK_UNCORE_CLOCK                          0x01
+
+EVENT_IO_REQUESTS                          0x00 MBOX0C0
+UMASK_IO_REQUESTS                          0x00
+
+EVENT_DRAM_READS                         0x01 MBOX0C1
+UMASK_DRAM_READS                         0x01
+
+EVENT_DRAM_WRITES                        0x02 MBOX0C2
+UMASK_DRAM_WRITES                        0x02

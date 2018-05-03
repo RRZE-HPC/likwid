@@ -525,17 +525,9 @@ UMASK_LOCK_CYCLES_CACHE_LOCK_COUNT      0x02
 EVENT_OFFCORE_REQUESTS_BUFFER_SQ_FULL   0xB2 PMC
 UMASK_OFFCORE_REQUESTS_BUFFER_SQ_FULL   0x01
 
-# The only officially released event is L2_TRANS_L2_WB
-# All others count something but no guarantees
-EVENT_L2_TRANS                0xF0  PMC
-UMASK_L2_TRANS_DEMAND_DATA_RD 0x01
-UMASK_L2_TRANS_RFO            0x02
-UMASK_L2_TRANS_CODE_RD        0x04
-UMASK_L2_TRANS_ALL_PF         0x08
-UMASK_L2_TRANS_L1D_WB         0x10
-UMASK_L2_TRANS_L2_FILL        0x20
-UMASK_L2_TRANS_L2_WB          0x40
-UMASK_L2_TRANS_ALL_REQUESTS   0x80
+EVENT_L2_TRANS                          0xF0 PMC
+UMASK_L2_TRANS_L2_WB                    0x40
+UMASK_L2_TRANS_ALL_REQUESTS             0x80
 
 EVENT_LONGEST_LAT_CACHE                 0x2E PMC
 UMASK_LONGEST_LAT_CACHE_MISS            0x41
@@ -683,9 +675,6 @@ UMASK_IDQ_ALL_CYCLES_5_UOPS        0x3C
 DEFAULT_OPTIONS_IDQ_ALL_CYCLES_6_UOPS EVENT_OPTION_THRESHOLD=0x6
 UMASK_IDQ_ALL_CYCLES_6_UOPS        0x3C
 
-EVENT_ROB_MISC_EVENTS_LBR_INSERTS       0xCC PMC
-UMASK_ROB_MISC_EVENTS_LBR_INSERTS       0x20
-
 EVENT_L2_LINES_IN                       0xF1 PMC
 UMASK_L2_LINES_IN_I                     0x01
 UMASK_L2_LINES_IN_S                     0x02
@@ -799,3 +788,12 @@ UMASK_COH_TRK_REQUESTS_ALL                  0x01
 
 EVENT_UNCORE_CLOCK                          0x00 UBOXFIX
 UMASK_UNCORE_CLOCK                          0x01
+
+EVENT_IO_REQUESTS                          0x00 MBOX0C0
+UMASK_IO_REQUESTS                          0x00
+
+EVENT_DRAM_READS                         0x01 MBOX0C1
+UMASK_DRAM_READS                         0x01
+
+EVENT_DRAM_WRITES                        0x02 MBOX0C2
+UMASK_DRAM_WRITES                        0x02

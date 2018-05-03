@@ -45,6 +45,7 @@
 #include <access_x86.h>
 #include <access_x86_msr.h>
 #include <access_x86_pci.h>
+#include <access_x86_clientmem.h>
 #include <affinity.h>
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -58,6 +59,10 @@ access_x86_init(int cpu_id)
         if (cpuid_info.supportUncore)
         {
             ret = access_x86_pci_init(affinity_thread2socket_lookup[cpu_id]);
+        }
+        else if (cpuid_info.supportClientmem)
+        {
+            ret = access_x86_clientmem_init(affinity_thread2socket_lookup[cpu_id]);
         }
     }
     return ret;
@@ -75,9 +80,16 @@ access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *da
     }
     else
     {
-        if (access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]))
+        if (cpuid_info.supportUncore && access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]))
         {
             err = access_x86_pci_read(dev, affinity_thread2socket_lookup[cpu_id], reg, &tmp);
+            *data = tmp;
+        }
+        else if (cpuid_info.supportClientmem &&
+                 dev == PCI_IMC_DEVICE_0_CH_0 &&
+                 access_x86_clientmem_check(dev, affinity_thread2socket_lookup[cpu_id]))
+        {
+            err = access_x86_clientmem_read(dev, affinity_thread2socket_lookup[cpu_id], reg, &tmp);
             *data = tmp;
         }
     }
@@ -94,9 +106,15 @@ access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t da
     }
     else
     {
-        if (access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]))
+        if (cpuid_info.supportUncore && access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]))
         {
             err = access_x86_pci_write(dev, affinity_thread2socket_lookup[cpu_id], reg, data);
+        }
+        else if (cpuid_info.supportClientmem &&
+                 dev == PCI_IMC_DEVICE_0_CH_0 &&
+                 access_x86_clientmem_check(dev, affinity_thread2socket_lookup[cpu_id]))
+        {
+            err = access_x86_clientmem_write(dev, affinity_thread2socket_lookup[cpu_id], reg, data);
         }
     }
     return err;
@@ -110,6 +128,10 @@ access_x86_finalize(int cpu_id)
     {
         access_x86_pci_finalize(affinity_thread2socket_lookup[cpu_id]);
     }
+    if (cpuid_info.supportClientmem)
+    {
+        access_x86_clientmem_finalize(affinity_thread2socket_lookup[cpu_id]);
+    }
 }
 
 int
@@ -121,7 +143,14 @@ access_x86_check(PciDeviceIndex dev, int cpu_id)
     }
     else
     {
-        return access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]);
+        if (cpuid_info.supportUncore)
+        {
+            return access_x86_pci_check(dev, affinity_thread2socket_lookup[cpu_id]);
+        }
+        else if (cpuid_info.supportClientmem && dev == PCI_IMC_DEVICE_0_CH_0)
+        {
+            return access_x86_clientmem_check(dev, affinity_thread2socket_lookup[cpu_id]);
+        }
     }
     return 0;
 }

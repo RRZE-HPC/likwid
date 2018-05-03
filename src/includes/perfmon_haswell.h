@@ -961,7 +961,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
     }
 
 #define HASEP_UNFREEZE_UNCORE_AND_RESET_CTR \
-    if (haveLock && MEASURE_UNCORE(eventSet)) \
+    if (haveLock && cpuid_info.model == HASWELL_EP && MEASURE_UNCORE(eventSet)) \
     { \
         for (int i=0;i < eventSet->numberOfEvents;i++) \
         { \
@@ -995,7 +995,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
     }
 
 #define HASEP_FREEZE_UNCORE_AND_RESET_CTL \
-    if (haveLock && MEASURE_UNCORE(eventSet)) \
+    if (haveLock && cpuid_info.model == HASWELL_EP && MEASURE_UNCORE(eventSet)) \
     { \
         HASEP_FREEZE_UNCORE; \
         for (int i=0;i < eventSet->numberOfEvents;i++) \
@@ -1130,6 +1130,11 @@ int perfmon_setupCounterThread_haswell(
                 break;
 
             case MBOX0:
+                if (!cpuid_info.supportClientmem)
+                {
+                    hasep_mbox_setup(cpu_id, index, event);
+                }
+                break;
             case MBOX1:
             case MBOX2:
             case MBOX3:
@@ -1265,6 +1270,22 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
                             CHECK_PCI_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
                             VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST tmp, START_QBOXFIX);
                             eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                        }
+                    }
+                    break;
+                case MBOX0:
+                    if (haveLock)
+                    {
+                        if (!cpuid_info.supportClientmem)
+                        {
+                            VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_BOX)
+                            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
+                        }
+                        else
+                        {
+                            CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
+                            eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST tmp, READ_MBOX)
                         }
                     }
                     break;
@@ -1529,6 +1550,26 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     break;
 
                 case MBOX0:
+                    if (haveLock)
+                    {
+                        if (!cpuid_info.supportClientmem)
+                        {
+                            has_uncore_read(cpu_id, index, event, current, overflows,
+                                    FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index)+1);
+                        }
+                        else
+                        {
+                            CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
+                            if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                            {
+                                VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_CLIENTMEM)
+                                eventSet->events[i].threadCounter[thread_id].overflows++;
+                            }
+                            *current = counter_result;
+                        }
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
+                    }
+                    break;
                 case MBOX1:
                 case MBOX2:
                 case MBOX3:
@@ -1711,6 +1752,26 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     break;
 
                 case MBOX0:
+                    if (haveLock)
+                    {
+                        if (!cpuid_info.supportClientmem)
+                        {
+                            has_uncore_read(cpu_id, index, event, current, overflows,
+                                    0, ovf_offset, getCounterTypeOffset(index)+1);
+                        }
+                        else
+                        {
+                            CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
+                            if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                            {
+                                VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_CLIENTMEM)
+                                eventSet->events[i].threadCounter[thread_id].overflows++;
+                            }
+                            *current = counter_result;
+                        }
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
+                    }
+                    break;
                 case MBOX1:
                 case MBOX2:
                 case MBOX3:

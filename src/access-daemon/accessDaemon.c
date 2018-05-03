@@ -49,6 +49,7 @@
 #include <sys/fsuid.h>
 #include <getopt.h>
 #include <dirent.h>
+#include <sys/mman.h>
 
 #include <types.h>
 #include <registers.h>
@@ -81,6 +82,12 @@
 #define MAX_PATH_LENGTH   80
 //#define MAX_NUM_NODES    4
 
+#define PCM_CLIENT_IMC_BAR_OFFSET       (0x0048)
+#define PCM_CLIENT_IMC_DRAM_IO_REQUESTS  (0x5048)
+#define PCM_CLIENT_IMC_DRAM_DATA_READS  (0x5050)
+#define PCM_CLIENT_IMC_DRAM_DATA_WRITES (0x5054)
+#define PCM_CLIENT_IMC_MMAP_SIZE (0x6000)
+
 /* Lock file controlled from outside which prevents likwid to start.
  * Can be used to synchronize access to the hardware counters
  * with an external monitoring system. */
@@ -107,6 +114,10 @@ static int isPCI64 = 0;
 static PciDevice* pci_devices_daemon = NULL;
 static char pci_filepath[MAX_PATH_LENGTH];
 static int num_pmc_counters = 0;
+
+static int clientmem_handle = -1;
+static char *clientmem_addr = NULL;
+static int isClientMem = 0;
 
 /* Socket to bus mapping -- will be determined at runtime;
  * typical mappings are:
@@ -809,6 +820,155 @@ allowed_amd17(uint32_t reg)
     }
 }
 
+static int
+clientmem_getStartAddr(uint64_t* startAddr)
+{
+    uint64_t imcbar = 0;
+
+    int pcihandle = open("/proc/bus/pci/00/00.0", O_RDONLY);
+    if (pcihandle < 0)
+    {
+        syslog(LOG_ERR, "ClientMem: Failed to open /proc/bus/pci/00/00.0\n");
+        return -1;
+    }
+
+    ssize_t ret = pread(pcihandle, &imcbar, sizeof(uint64_t), PCM_CLIENT_IMC_BAR_OFFSET);
+    if (ret < 0)
+    {
+        syslog(LOG_ERR, "ClientMem: mmap failed: %s\n", strerror(errno));
+        close(pcihandle);
+        return -1;
+    }
+    if (!imcbar)
+    {
+        syslog(LOG_ERR, "ClientMem: imcbar is zero.\n");
+        close(pcihandle);
+        return -1;
+    }
+
+    close(pcihandle);
+    if (startAddr)
+        *startAddr = imcbar & (~(4096 - 1));
+    return 1;
+}
+
+static int
+clientmem_init()
+{
+    uint64_t startAddr = 0;
+
+    int ret = clientmem_getStartAddr(&startAddr);
+    if (ret < 0)
+    {
+        syslog(LOG_ERR, "ClientMem: Failed to get startAddr\n");
+        return -1;
+    }
+    
+    clientmem_handle = open("/dev/mem", O_RDONLY);
+    if (clientmem_handle < 0)
+    {
+        syslog(LOG_ERR, "ClientMem: Cannot open /dev/mem\n");
+        return -1;
+    }
+
+    clientmem_addr = (char *)mmap(NULL, PCM_CLIENT_IMC_MMAP_SIZE, PROT_READ, MAP_SHARED, clientmem_handle, startAddr);
+    if (clientmem_addr == MAP_FAILED)
+    {
+        close(clientmem_handle);
+        syslog(LOG_ERR, "ClientMem: mmap failed: %s\n", strerror(errno));
+        return -1;
+    }
+    return 0;
+}
+
+static void
+clientmem_finalize()
+{
+    if (isClientMem)
+    {
+        if (clientmem_handle >= 0)
+        {
+            if (clientmem_addr)
+            {
+                munmap(clientmem_addr, PCM_CLIENT_IMC_MMAP_SIZE);
+            }
+            close(clientmem_handle);
+        }
+    }
+}
+
+static void
+clientmem_read(AccessDataRecord *dRecord)
+{
+    uint64_t data = 0;
+    uint32_t reg = dRecord->reg;
+
+    dRecord->errorcode = ERR_NOERROR;
+    dRecord->data = 0x0ULL;
+    
+
+    if (!lock_check())
+    {
+        syslog(LOG_ERR,"Access to performance counters is locked.\n");
+        dRecord->errorcode = ERR_LOCKED;
+        return;
+    }
+
+    if (!isClientMem)
+    {
+        syslog(LOG_ERR, "ClientMem: Not available for this architecture\n");
+        dRecord->errorcode = ERR_RESTREG;
+        return;
+    }
+
+    if (clientmem_handle < 0 || !clientmem_addr)
+    {
+        syslog(LOG_ERR, "ClientMem: Handle %d Addr %p\n", clientmem_handle, clientmem_addr);
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+    switch (reg)
+    {
+        case 0x00:
+            data = (uint64_t)*((uint32_t *)(clientmem_addr + PCM_CLIENT_IMC_DRAM_IO_REQUESTS));
+            break;
+        case 0x01:
+            data = (uint64_t)*((uint32_t *)(clientmem_addr + PCM_CLIENT_IMC_DRAM_DATA_READS));
+            break;
+        case 0x02:
+            data = (uint64_t)*((uint32_t *)(clientmem_addr + PCM_CLIENT_IMC_DRAM_DATA_WRITES));
+            break;
+        default:
+            syslog(LOG_ERR, "Access to register 0x%X not allowed\n", reg);
+#ifdef DEBUG_LIKWID
+            syslog(LOG_ERR, "%s", strerror(errno));
+#endif
+            dRecord->errorcode = ERR_RESTREG;
+            return;
+    }
+    dRecord->data = data;
+}
+
+static void
+clientmem_check(AccessDataRecord *dRecord)
+{
+    dRecord->errorcode = ERR_NOERROR;
+    if (!isClientMem)
+    {
+        syslog(LOG_ERR, "ClientMem: Not available for this architecture\n");
+        dRecord->errorcode = ERR_RESTREG;
+        return;
+    }
+
+    if (clientmem_handle < 0 || !clientmem_addr)
+    {
+        syslog(LOG_ERR, "ClientMem: Handle %d Addr %p\n", clientmem_handle, clientmem_addr);
+        dRecord->errorcode = ERR_NODEV;
+        return;
+    }
+    return;
+}
+
 static void
 msr_read(AccessDataRecord * dRecord)
 {
@@ -1461,6 +1621,7 @@ int main(void)
 
                 if ((model == SANDYBRIDGE) || (model == IVYBRIDGE))
                 {
+                    isClientMem = 1;
                     allowed = allowed_sandybridge;
                 }
                 else if ((model == SANDYBRIDGE_EP) || (model == IVYBRIDGE_EP))
@@ -1480,6 +1641,7 @@ int main(void)
                          (model == KABYLAKE2))
                 {
                     allowed = allowed_sandybridge;
+                    isClientMem = 1;
                 }
                 else if (model == BROADWELL_D)
                 {
@@ -1624,6 +1786,14 @@ int main(void)
         }
 
         free(msr_file_name);
+        if (isClientMem)
+        {
+            ret = clientmem_init();
+            if (ret)
+            {
+                syslog(LOG_ERR, "Failed to initialize Intel desktop memory support");
+            }
+        }
         if (isPCIUncore)
         {
             int cntr = 0;
@@ -1726,6 +1896,10 @@ LOOP:
             {
                 msr_read(&dRecord);
             }
+            else if (isClientMem)
+            {
+                clientmem_read(&dRecord);
+            }
             else
             {
                 pci_read(&dRecord);
@@ -1749,6 +1923,10 @@ LOOP:
             if (dRecord.device == MSR_DEV)
             {
                 msr_check(&dRecord);
+            }
+            else if (isClientMem)
+            {
+                clientmem_check(&dRecord);
             }
             else
             {
