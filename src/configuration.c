@@ -75,7 +75,7 @@ default_configuration(void)
     }
     config.daemonMode = ACCESSMODE_DAEMON;
 
-    FILE* fp = popen("which likwid-accessD 2>/dev/null | tr -d '\n'","r");
+    FILE* fp = popen("bash --noprofile -c \"which likwid-accessD 2>/dev/null | tr -d '\n'\"","r");
     if (fp == NULL)
     {
         goto use_hardcoded;
@@ -83,7 +83,7 @@ default_configuration(void)
     ret = getline(&fptr, &len, fp);
     if (ret < 0)
     {
-        fclose(fp);
+        pclose(fp);
         if (fptr)
             free(fptr);
         goto use_hardcoded;
