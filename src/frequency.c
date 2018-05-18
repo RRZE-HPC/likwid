@@ -95,6 +95,11 @@ static int freq_getDriver(const int cpu_id )
         bdestroy(bbuff);
     }
     fclose(f);
+    if (access(daemon_path, X_OK) != 0)
+    {
+        fprintf(stderr, "WARN: SetFreq daemon not found, cannot change settings\n");
+        drv = NOT_DETECTED;
+    }
     return 0;
 }
 
