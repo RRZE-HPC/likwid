@@ -382,7 +382,7 @@ int skx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     }
     else
     {
-        VERBOSEPRINTREG(cpu_id, filter0, filter_flags0, SETUP_CBOX_DEF_FILTER_STATE);
+        VERBOSEPRINTREG(cpu_id, filter1, 0x3BULL, SETUP_CBOX_DEF_FILTER_STATE);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, filter1, 0x3BULL));
     }
 
