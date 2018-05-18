@@ -1546,6 +1546,14 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                                     FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index));
                     break;
 
+                case WBOX0FIX:
+                    if (haveLock)
+                    {
+                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, STOP_WBOXFIX);
+                    }
+                    break;
+
                 case QBOX0FIX:
                 case QBOX1FIX:
                     if (haveLock)
@@ -1737,6 +1745,14 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                 case QBOX2:
                     bdw_uncore_read(cpu_id, index, event, current, overflows,
                                     0, ovf_offset, getCounterTypeOffset(index));
+                    break;
+
+                case WBOX0FIX:
+                    if (haveLock)
+                    {
+                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
+                        VERBOSEPRINTPCIREG(cpu_id, dev, counter1, LLU_CAST counter_result, READ_WBOXFIX);
+                    }
                     break;
 
                 case QBOX0FIX:
