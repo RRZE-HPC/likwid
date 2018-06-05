@@ -60,7 +60,7 @@ hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     if (!hwloc_topology)
     {
         likwid_hwloc_topology_init(&hwloc_topology);
-        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
+        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM|HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
         likwid_hwloc_topology_load(hwloc_topology);
     }
 
