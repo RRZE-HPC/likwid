@@ -657,7 +657,8 @@ static void summarize(struct hwloc_backend *backend, struct procinfo *infos, int
                 if(caches[i]->type == type)
                   break;
               }
-            hwloc_obj_add_info(object,"inclusiveness",caches[cacheId]->inclusiveness?"true":"false");
+            if (cacheId >= 0)
+                hwloc_obj_add_info(object,"inclusiveness",caches[cacheId]->inclusiveness?"true":"false");
 
           }
           break;
