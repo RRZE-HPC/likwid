@@ -209,12 +209,18 @@ access_x86_pci_init(const int socket)
 void
 access_x86_pci_finalize(const int socket)
 {
-    for (int j=1; j<MAX_NUM_PCI_DEVICES; j++)
+    if (access_x86_initialized)
     {
-        if (FD[socket][j] > 0)
+        for (int j=1; j<MAX_NUM_PCI_DEVICES; j++)
         {
-            close(FD[socket][j]);
+            if (FD[socket][j] > 0)
+            {
+                close(FD[socket][j]);
+                FD[socket][j] = -2;
+                pci_devices[j].online = 0;
+            }
         }
+        access_x86_initialized = 0;
     }
 }
 
