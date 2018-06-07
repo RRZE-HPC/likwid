@@ -94,6 +94,8 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage skylakesp
 - \subpage phi_knl
 - \subpage phi_knm
+- Kaby Lake (use \subpage skylake)
+- Coffee Lake (use \subpage skylake)
 
 \subsection Architectures_AMD AMD&reg;
 - \subpage k8
