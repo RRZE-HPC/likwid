@@ -1954,6 +1954,7 @@ perfmon_setupCounters(int groupId)
 {
     int i;
     int ret = 0;
+    int force_setup = (getenv("LIKWID_FORCE_SETUP") != NULL);
     if (!lock_check())
     {
         ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
@@ -1977,6 +1978,10 @@ perfmon_setupCounters(int groupId)
 
     for(i=0;i<groupSet->numberOfThreads;i++)
     {
+        if (force_setup)
+        {
+            memset(currentConfig[groupSet->threads[i].processorId], 0, NUM_PMC * sizeof(uint64_t));
+        }
         ret = __perfmon_setupCountersThread(groupSet->threads[i].thread_id, groupId);
         if (ret != 0)
         {
