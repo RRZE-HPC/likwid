@@ -187,6 +187,11 @@ LIKWID_MARKER_REGISTER("name");
 
 /* Start measurement 
  * Note: No whitespace characters are allowed in the region tags
+ * Note: If you measure Uncore counters with MarkerAPI, the responsible threads
+ *       take longer to read all events. Consequently, the measurements might
+ *       be wrong because other threads are already running the loop while
+ *       the Uncore counters are still stopped. Use barriers if you want exact
+ *       results.
  */
 LIKWID_MARKER_START("name");
 /*
