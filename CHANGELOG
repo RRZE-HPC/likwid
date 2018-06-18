@@ -1,3 +1,20 @@
+# Changelog 4.3.2
+- Fix in internal metric calculator
+- Support for Intel Knights Mill (core, rapl, uncore)
+- Intel Skylake X: Some fixes for events and perf. groups
+- Set KMP_INIT_AT_FORK to bypass bug in Intel OpenMP memory allocator
+- AMD Zen: Use RETIRED_INSTRUCTION instead of fixed-purpose counter for metric calculation
+- All FLOPS_* groups now have vectorization ratio
+- Fix for MarkerAPI with perf_event backend
+- Fix for maximal/minimal uncore frequency
+- Skip counters that are already in use, don't exit
+- likwid-mpirun: minor fix when overloading a host
+- Improved detection of PCI devices
+
+# Changelog 4.3.1
+- Fix for setting/getting turbo mode in frequency module
+- Exchanged two events in perf. groups of Intel Skylake X
+
 # Changelog 4.3.0
 - Support for Intel Skylake SP architecture (core, uncore, energy)
 - Support for AMD Zen architecture (core, l2, energy)

@@ -1127,6 +1127,8 @@ print_supportedCPUs (void)
     printf("\t%s\n",xeon_phi2_string);
     printf("\t%s\n",skylakeX_str);
     printf("\t%s\n",xeon_phi3_string);
+    printf("\t%s\n",kabylake_str);
+    printf("\t%s\n",coffeelake_str);
     printf("\n");
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);

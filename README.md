@@ -51,7 +51,9 @@ Intel
 - Intel Broadwell EP
 - Intel Skylake
 - Intel Skylake SP
-- Intel Xeon Phi (KNL)
+- Intel Xeon Phi (KNL, KNM)
+- Intel Kabylake
+- Intel Coffeelake
 
 AMD
 - AMD K8
