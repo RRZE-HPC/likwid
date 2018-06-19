@@ -126,6 +126,12 @@ int
 HPMaddThread(int cpu_id)
 {
     int ret;
+    if (registeredCpuList == NULL)
+    {
+        registeredCpuList = malloc(cpuid_topology.numHWThreads* sizeof(int));
+        memset(registeredCpuList, 0, cpuid_topology.numHWThreads* sizeof(int));
+        registeredCpus = 0;
+    }
     if (registeredCpuList[cpu_id] == 0)
     {
         if (access_init != NULL)
