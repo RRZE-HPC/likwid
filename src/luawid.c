@@ -2013,17 +2013,23 @@ lua_likwid_checkProgram(lua_State* L)
     int ret = -1;
     if (lua_gettop(L) == 1)
     {
-        int status;
-        pid_t retpid;
+        int status = 0;
+        pid_t retpid = 0;
         pid_t pid = lua_tonumber(L, 1);
         retpid = waitpid(pid, &status, WNOHANG);
         if (retpid == pid)
         {
             if (WIFEXITED(status))
+            {
                 ret = WEXITSTATUS(status);
+            }
+            else if (WIFSIGNALED(status))
+            {
+                ret = 128 + WTERMSIG(status);
+            }
         }
     }
-    lua_pushinteger(L, ret);
+    lua_pushinteger(L, (lua_Integer)ret);
     return 1;
 }
 
@@ -2038,18 +2044,22 @@ lua_likwid_killProgram(lua_State* L)
 static int
 lua_likwid_waitpid(lua_State* L)
 {
-    int status;
+    int status = 0;
     int ret = -1;
     pid_t pid = lua_tonumber(L, 1);
     pid_t retpid = waitpid(pid, &status, 0);
     if (pid == retpid)
     {
-        if (WIFEXITED(status) || WIFSIGNALED(status))
+        if (WIFEXITED(status))
         {
             ret = WEXITSTATUS(status);
         }
+        else if (WIFSIGNALED(status))
+        {
+            ret = 128 + WTERMSIG(status);
+        }
     }
-    lua_pushinteger(L, ret);
+    lua_pushinteger(L, (lua_Integer)ret);
     return 1;
 }
 
