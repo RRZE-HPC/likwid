@@ -1101,7 +1101,7 @@ local function setPerfStrings(perflist, cpuexprs)
                 local slist = {}
                 for j, cpu in pairs(cpuexpr) do
                     for l, socklist in pairs(socketList) do
-                        if inList(cpu, socklist) then
+                        if inList(tonumber(cpu), socklist) then
                             table.insert(slist, l)
                         end
                     end
