@@ -1213,7 +1213,7 @@ typedef PowerData* PowerData_t;
 Additionally, it reads basic information about the energy measurements like
 minimal measurement time.
 @param [in] cpuId Initialize energy facility for this CPU
-@return error code
+@return RAPL status (0=No RAPL, 1=RAPL working)
 */
 extern int power_init(int cpuId) __attribute__ ((visibility ("default") ));
 /*! \brief Get a pointer to the energy facility information
