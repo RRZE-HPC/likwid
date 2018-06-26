@@ -141,6 +141,7 @@ int main(int argc, char** argv)
     binsertch(HLINE, 0, 80, '-');
     binsertch(HLINE, 80, 1, '\n');
     int (*ownprintf)(const char *format, ...);
+    int clsize = sysconf (_SC_LEVEL1_DCACHE_LINESIZE);
     ownprintf = &printf;
 
     /* Handling of command line options */
@@ -373,7 +374,8 @@ int main(int argc, char** argv)
                             newsize = (((int)(floor(orig_size/nrThreads))/stride)*(stride))*nrThreads;
                             if (warn_once)
                             {
-                                fprintf (stderr, "Warning: Sanitizing vector length to a multiple of the loop stride %d and thread count %d from %d elements (%d bytes) to %d elements (%d bytes)\n",stride, nrThreads, orig_size, orig_size*test->bytes, newsize, newsize*test->bytes);
+                                int typesize = allocator_dataTypeLength(test->type);
+                                fprintf (stderr, "Warning: Sanitizing vector length to a multiple of the loop stride %d and thread count %d from %d elements (%d bytes) to %d elements (%d bytes)\n",stride, nrThreads, orig_size, orig_size*typesize, newsize, newsize*typesize);
                                 warn_once = 0;
                             }
                         }
@@ -525,6 +527,7 @@ int main(int argc, char** argv)
 /*        ownprintf("WARNING: The cycle count cannot be calculated because the clock frequency is not fixed.\n");*/
 /*    }*/
 /*#endif*/
+    int datatypesize = allocator_dataTypeLength(test->type);
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
     ownprintf("CPU Clock:\t\t%" PRIu64 "\n", timer_getCpuClock());
@@ -533,15 +536,15 @@ int main(int argc, char** argv)
     ownprintf("Iterations:\t\t%" PRIu64 "\n", realIter);
     ownprintf("Iterations per thread:\t%" PRIu64 "\n",threads_data[0].data.iter);
     ownprintf("Inner loop executions:\t%d\n", (int)(((double)realSize)/((double)test->stride*globalNumberOfThreads)));
-    ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize*test->bytes );
-    ownprintf("Size per thread:\t%" PRIu64 "\n", threads_data[0].data.size*test->bytes);
+    ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize * datatypesize * test->streams );
+    ownprintf("Size per thread:\t%" PRIu64 "\n", threads_data[0].data.size * datatypesize * test->streams);
     ownprintf("Number of Flops:\t%" PRIu64 "\n", (threads_data[0].data.iter * realSize *  test->flops));
     ownprintf("MFlops/s:\t\t%.2f\n",
             1.0E-06 * ((double) threads_data[0].data.iter * realSize *  test->flops/  time));
     ownprintf("Data volume (Byte):\t%llu\n",
-            LLU_CAST (threads_data[0].data.iter * realSize *  test->bytes));
+            LLU_CAST (threads_data[0].data.iter * realSize *  datatypesize * test->streams));
     ownprintf("MByte/s:\t\t%.2f\n",
-            1.0E-06 * ( (double) threads_data[0].data.iter * realSize *  test->bytes/ time));
+            1.0E-06 * ( (double) threads_data[0].data.iter * realSize * datatypesize * test->streams / time));
 
 
     size_t destsize = 0;
@@ -552,20 +555,20 @@ int main(int argc, char** argv)
         case INT:
             datasize = test->bytes/sizeof(int);
             destsize = test->bytes/test->streams;
-            perUpFactor = (64.0/sizeof(int));
+            perUpFactor = (clsize/sizeof(int));
             break;
         case SINGLE:
             datasize = test->bytes/sizeof(float);
             destsize = test->bytes/test->streams;
-            perUpFactor = (64.0/sizeof(float));
+            perUpFactor = (clsize/sizeof(float));
             break;
         case DOUBLE:
             datasize = test->bytes/sizeof(double);
             destsize = test->bytes/test->streams;
-            perUpFactor = (64.0/sizeof(double));
+            perUpFactor = (clsize/sizeof(double));
             break;
     }
-    cycPerCL = (double) maxCycles/(threads_data[0].data.iter*realSize*destsize/64);
+    cycPerCL = (double) maxCycles/(threads_data[0].data.iter*realSize*destsize/clsize);
     ownprintf("Cycles per update:\t%f\n", cycPerCL/perUpFactor);
     ownprintf("Cycles per cacheline:\t%f\n", cycPerCL);
     ownprintf("Loads per update:\t%ld\n", test->loads );
