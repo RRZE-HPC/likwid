@@ -32,6 +32,9 @@ typedef short  gshort;
 typedef long   glong;
 typedef int    gint;
 typedef gint   gboolean;
+typedef int64_t guint64;
+
+# define GPOINTER_TO_UINT(p) ((guint) (guint64) (p))
 
 typedef unsigned char   guchar;
 typedef unsigned short  gushort;
@@ -110,5 +113,7 @@ extern guint    g_int_hash     (gconstpointer  v);
 extern gboolean g_int64_equal  (gconstpointer  v1, gconstpointer  v2);
 extern guint    g_int64_hash   (gconstpointer  v);
 
+extern gboolean g_direct_equal  (gconstpointer  v1, gconstpointer  v2);
+extern guint    g_direct_hash   (gconstpointer  v);
 
 #endif /* __G_HASH_H__ */

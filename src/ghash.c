@@ -750,3 +750,16 @@ g_int64_hash (gconstpointer v)
   return (guint) *(const int64_t*) v;
 }
 
+guint
+g_direct_hash (gconstpointer v)
+{
+  return GPOINTER_TO_UINT (v);
+}
+
+gboolean
+g_direct_equal (gconstpointer v1,
+                gconstpointer v2)
+{
+  return v1 == v2;
+}
+
