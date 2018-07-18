@@ -169,7 +169,7 @@ if #sockets > 0 then
     end
 else
     for j, domain in pairs(affinity["domains"]) do
-        if domain["tag"]:match("S%d+") then
+        if domain["tag"]:match("S%d+") and #domain["processorList"] > 0 then
             table.insert(cpulist,domain["processorList"][1])
             table.insert(sockets, domain["tag"]:match("S(%d+)"))
             before[domain["processorList"][1]] = {}
