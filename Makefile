@@ -173,7 +173,7 @@ $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB)
 	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
 	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION).$(RELEASE) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB) $(RPATHS)
 	@ln -sf $(TARGET_LIB) $(TARGET_LIB).$(VERSION).$(RELEASE)
-	@sed -e s+'@PREFIX@'+$(PREFIX)+g make/likwid-config.cmake > likwid-config.cmake
+	@sed -e s+'@PREFIX@'+$(INSTALLED_PREFIX)+g make/likwid-config.cmake > likwid-config.cmake
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
