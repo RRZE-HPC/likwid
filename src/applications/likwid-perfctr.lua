@@ -782,18 +782,19 @@ if use_timeline == true then
         table.insert(clist, tostring(cpu))
     end
     print("# Cores"..word_delim..table.concat(clist, delim))
---    local cores_string = string.format("CORES%s", word_delim)
---    for i, cpu in pairs(cpulist) do
---        cores_string = cores_string .. tostring(cpu) .. word_delim
---    end
---    print("# "..cores_string:sub(1,cores_string:len()-1))
     for i, gid in pairs(group_ids) do
-        local strlist = {}
+        local strlist = {"GID"}
         if likwid.getNumberOfMetrics(gid) == 0 then
+            table.insert(strlist, "EventCount")
+            table.insert(strlist, "CpuCount")
+            table.insert(strlist, "Total runtime [s]")
             for e=1,likwid.getNumberOfEvents(gid) do
                 table.insert(strlist, likwid.getNameOfEvent(gid, e))
             end
         else
+            table.insert(strlist, "MetricsCount")
+            table.insert(strlist, "CpuCount")
+            table.insert(strlist, "Total runtime [s]")
             for m=1,likwid.getNumberOfMetrics(gid) do
                 table.insert(strlist, likwid.getNameOfMetric(gid, m))
             end
