@@ -140,8 +140,117 @@ int perf_fixed_setup(struct perf_event_attr *attr, PerfmonEvent *event)
     return ret;
 }
 
+typedef enum {
+    PERF_EVENT_INVAL_REG = 0,
+    PERF_EVENT_CONFIG_REG,
+    PERF_EVENT_CONFIG1_REG,
+    PERF_EVENT_CONFIG2_REG,
+} PERF_EVENT_PMC_OPT_REGS;
+
+static char* perfEventOptionNames[] = {
+    [EVENT_OPTION_EDGE] = "edge",
+    [EVENT_OPTION_ANYTHREAD] = "any",
+    [EVENT_OPTION_THRESHOLD] = "cmask",
+    [EVENT_OPTION_INVERT] = "inv",
+    [EVENT_OPTION_IN_TRANS] = "in_tx",
+    [EVENT_OPTION_IN_TRANS_ABORT] = "in_tx_cp",
+    [EVENT_OPTION_MATCH0] = "offcore_rsp",
+    [EVENT_OPTION_MATCH1] = "offcore_rsp",
+    [EVENT_OPTION_TID] = "tid_en",
+    [EVENT_OPTION_STATE] = "filter_state",
+    [EVENT_OPTION_NID] = "filter_nid",
+    [EVENT_OPTION_OPCODE] = "filter_opc",
+    [EVENT_OPTION_OCCUPANCY] = "occ_sel",
+    [EVENT_OPTION_OCCUPANCY_FILTER] = "occ_band0",
+    [EVENT_OPTION_OCCUPANCY_EDGE] = "occ_edge",
+    [EVENT_OPTION_OCCUPANCY_INVERT] = "occ_inv",
+};
+
+int getEventOptionConfig(char* base, EventOptionType type, PERF_EVENT_PMC_OPT_REGS *reg, int* start, int* end)
+{
+    PERF_EVENT_PMC_OPT_REGS r;
+    int s = 0;
+    int e = 0;
+    if (!base || !reg || !start || !end)
+    {
+        return -EINVAL;
+    }
+    if (strlen(base) > 0 && strlen(perfEventOptionNames[type]) > 0)
+    {
+        char path[1024];
+        char buff[1024];
+        int ret = snprintf(path, 1023, "%s/format/%s", base, perfEventOptionNames[type]);
+        FILE *fp = fopen(path, "r");
+        if (fp)
+        {
+            ret = fread(buff, sizeof(char), 1023, fp);
+            buff[ret] = '\0';
+            if (strncmp(buff, "config:", 7) == 0)
+            {
+                r = PERF_EVENT_CONFIG_REG;
+            }
+            else if (strncmp(buff, "config1", 7) == 0)
+            {
+                r = PERF_EVENT_CONFIG1_REG;
+            }
+            else if (strncmp(buff, "config2", 7) == 0)
+            {
+                r = PERF_EVENT_CONFIG2_REG;
+            }
+            while(buff[s] != ':' && e < strlen(buff)) {
+                s++;
+            }
+            s++;
+            e = s;
+            while(buff[e] != '-' && e < strlen(buff)) {
+                e++;
+            }
+            e++;
+            sscanf(&buff[s], "%d", &s);
+            if (e < strlen(buff))
+            {
+                sscanf(&buff[e], "%d", &e);
+            }
+            else
+            {
+                e = -1;
+            }
+            *reg = r;
+            *start = s;
+            *end = e;
+            fclose(fp);
+        }
+        else
+        {
+            *reg = PERF_EVENT_INVAL_REG;
+            *start = -1;
+            *end = -1;
+        }
+    }
+    return 0;
+}
+
+uint64_t create_mask(uint32_t value, int start, int end)
+{
+    if (end < 0)
+    {
+        return (value<<start);
+    }
+    else
+    {
+        uint64_t mask = 0x0ULL;
+        for (int i = start; i <=end; i++)
+            mask |= (1ULL<<i);
+        return (value << start ) & mask;
+    }
+    return 0x0ULL;
+}
+
 int perf_pmc_setup(struct perf_event_attr *attr, PerfmonEvent *event)
 {
+    uint64_t offcore_flags = 0x0ULL;
+    PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
+    int start = 0, end = -1;
     attr->type = PERF_TYPE_RAW;
     attr->config = (event->umask<<8) + event->eventId;
     attr->exclude_kernel = 1;
@@ -153,14 +262,68 @@ int perf_pmc_setup(struct perf_event_attr *attr, PerfmonEvent *event)
     {
         for(int j = 0; j < event->numberOfOptions; j++)
         {
+            
             switch (event->options[j].type)
             {
                 case EVENT_OPTION_COUNT_KERNEL:
                     attr->exclude_kernel = 0;
                     break;
+                case EVENT_OPTION_EDGE:
+                case EVENT_OPTION_ANYTHREAD:
+                case EVENT_OPTION_THRESHOLD:
+                case EVENT_OPTION_INVERT:
+                case EVENT_OPTION_IN_TRANS:
+                case EVENT_OPTION_IN_TRANS_ABORT:
+                    getEventOptionConfig("/sys/devices/cpu", event->options[j].type, &reg, &start, &end);
+                    printf("Type %d, start %d, end %d\n", reg, start, end);
+                    switch(reg)
+                    {
+                        case PERF_EVENT_CONFIG_REG:
+                            attr->config |= create_mask(event->options[j].value, start, end);
+                            break;
+                        case PERF_EVENT_CONFIG1_REG:
+                            attr->config1 |= create_mask(event->options[j].value, start, end);
+                            break;
+                        case PERF_EVENT_CONFIG2_REG:
+                            attr->config2 |= create_mask(event->options[j].value, start, end);
+                            break;
+                    }
+                    break;
+                case EVENT_OPTION_MATCH0:
+                    if (event->eventId == 0xB7 || event->eventId == 0xBB)
+                    {
+                        offcore_flags |= (event->options[j].value & 0xFFFFULL);
+                    }
+                    break;
+                case EVENT_OPTION_MATCH1:
+                    if (event->eventId == 0xB7 || event->eventId == 0xBB)
+                    {
+                        offcore_flags |= (event->options[j].value & 0x3FFFFFFFULL)<<16;
+                    }
+                    break;
                 default:
                     break;
             }
+        }
+    }
+    if (event->eventId == 0xB7 || event->eventId == 0xBB)
+    {
+        if ((event->cfgBits != 0xFF) && (event->cmask != 0xFF))
+        {
+            offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
+        }
+        getEventOptionConfig("/sys/devices/cpu", EVENT_OPTION_MATCH0, &reg, &start, &end);
+        switch(reg)
+        {
+            case PERF_EVENT_CONFIG_REG:
+                attr->config |= create_mask(offcore_flags, start, end);
+                break;
+            case PERF_EVENT_CONFIG1_REG:
+                attr->config1 |= create_mask(offcore_flags, start, end);
+                break;
+            case PERF_EVENT_CONFIG2_REG:
+                attr->config2 |= create_mask(offcore_flags, start, end);
+                break;
         }
     }
 
@@ -171,9 +334,11 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
 {
 
     char checkfolder[1024];
-    int ret;
-    FILE* fp;
-    int perf_type;
+    int ret = 0;
+    FILE* fp = NULL;
+    int perf_type = 0;
+    PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
+    int start = 0, end = -1;
     if (paranoid_level > 0)
     {
         return 1;
@@ -210,6 +375,44 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     attr->inherit = 1;
 
     //attr->exclusive = 1;
+    if (event->numberOfOptions > 0)
+    {
+        for(int j = 0; j < event->numberOfOptions; j++)
+        {
+            
+            switch (event->options[j].type)
+            {
+                case EVENT_OPTION_COUNT_KERNEL:
+                    attr->exclude_kernel = 0;
+                    break;
+                case EVENT_OPTION_EDGE:
+                case EVENT_OPTION_ANYTHREAD:
+                case EVENT_OPTION_THRESHOLD:
+                case EVENT_OPTION_INVERT:
+                case EVENT_OPTION_IN_TRANS:
+                case EVENT_OPTION_IN_TRANS_ABORT:
+                case EVENT_OPTION_MATCH0:
+                case EVENT_OPTION_MATCH1:
+                case EVENT_OPTION_TID:
+                    getEventOptionConfig(translate_types[type], event->options[j].type, &reg, &start, &end);
+                    switch(reg)
+                    {
+                        case PERF_EVENT_CONFIG_REG:
+                            attr->config |= create_mask(event->options[j].value, start, end);
+                            break;
+                        case PERF_EVENT_CONFIG1_REG:
+                            attr->config1 |= create_mask(event->options[j].value, start, end);
+                            break;
+                        case PERF_EVENT_CONFIG2_REG:
+                            attr->config2 |= create_mask(event->options[j].value, start, end);
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
     return 0;
 }
 
