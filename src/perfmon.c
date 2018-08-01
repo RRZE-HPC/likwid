@@ -133,10 +133,10 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     "OCCUPANCY_EDGEDETECT",
     "OCCUPANCY_INVERT",
     "IN_TRANSACTION",
-    "IN_TRANSACTION_ABORTED"
+    "IN_TRANSACTION_ABORTED",
 #ifdef LIKWID_USE_PERFEVENT
-    ,"PERF_PID"
-    ,"PERF_FLAGS"
+    "PERF_PID",
+    "PERF_FLAGS",
 #endif
 };
 
@@ -343,7 +343,7 @@ getEvent(bstring event_str, bstring counter_str, PerfmonEvent* event)
 }
 
 static int
-assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type, int zero_value)
+assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type, int noval_value)
 {
     int found_double = -1;
     int return_index = index;
@@ -358,6 +358,7 @@ assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type
     }
     if (found_double >= 0)
     {
+        DEBUG_PRINT(DEBUGLEV_INFO, "Found option multiple times for event %s, last value wins!", event->name);
         index = found_double;
     }
     else
@@ -365,15 +366,18 @@ assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type
         return_index++;
     }
     event->options[index].type = type;
-    if (zero_value)
+    if (noval_value)
     {
-        event->options[index].value = 0;
+        event->options[index].value = noval_value;
     }
     else
     {
         value = 0;
-        sscanf(bdata(entry), "%llx", &value);
-        event->options[index].value = value;
+        int ret = sscanf(bdata(entry), "%llx", &value);
+        if (ret == 1)
+        {
+            event->options[index].value = value;
+        }
     }
     return return_index;
 }
@@ -445,7 +449,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
                 fprintf(stderr, "WARN: Option '%s' unknown, skipping option\n", bdata(subtokens->entry[0]));
                 continue;
             }
-            event->options[event->numberOfOptions].value = 0;
+            event->options[event->numberOfOptions].value = 1;
         }
         else if (subtokens->qty == 2)
         {

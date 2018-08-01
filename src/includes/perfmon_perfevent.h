@@ -262,7 +262,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, PerfmonEvent *event)
     {
         for(int j = 0; j < event->numberOfOptions; j++)
         {
-            
+
             switch (event->options[j].type)
             {
                 case EVENT_OPTION_COUNT_KERNEL:
@@ -275,7 +275,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, PerfmonEvent *event)
                 case EVENT_OPTION_IN_TRANS:
                 case EVENT_OPTION_IN_TRANS_ABORT:
                     getEventOptionConfig("/sys/devices/cpu", event->options[j].type, &reg, &start, &end);
-                    printf("Type %d, start %d, end %d\n", reg, start, end);
+                    printf("Event %s Type %d, reg %d, start %d, end %d, value 0x%lx\n", event->name, event->options[j].type, reg, start, end, event->options[j].value);
                     switch(reg)
                     {
                         case PERF_EVENT_CONFIG_REG:
@@ -379,7 +379,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     {
         for(int j = 0; j < event->numberOfOptions; j++)
         {
-            
+
             switch (event->options[j].type)
             {
                 case EVENT_OPTION_COUNT_KERNEL:
