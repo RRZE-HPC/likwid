@@ -275,7 +275,6 @@ int perf_pmc_setup(struct perf_event_attr *attr, PerfmonEvent *event)
                 case EVENT_OPTION_IN_TRANS:
                 case EVENT_OPTION_IN_TRANS_ABORT:
                     getEventOptionConfig("/sys/devices/cpu", event->options[j].type, &reg, &start, &end);
-                    printf("Event %s Type %d, reg %d, start %d, end %d, value 0x%lx\n", event->name, event->options[j].type, reg, start, end, event->options[j].value);
                     switch(reg)
                     {
                         case PERF_EVENT_CONFIG_REG:
