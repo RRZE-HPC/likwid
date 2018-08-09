@@ -572,7 +572,7 @@ local function writeHostfileSlurm(hostlist, filename)
     cmd = string.format("scontrol show hostlist %s", table.concat(l,","))
     f = io.popen(cmd, 'r')
     if f ~= nil then
-        likwid.setenv("SLURM_NODELIST", f:read('*a'))
+        likwid.setenv("SLURM_NODELIST", f:read('*l'))
         f:close()
     else
         print_stderr("ERROR: Cannot transform list of hosts to SLURM hostlist format")
