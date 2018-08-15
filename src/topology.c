@@ -193,7 +193,7 @@ initTopologyFile(FILE* file)
 }
 
 static int
-readTopologyFile(const char* filename)
+readTopologyFile(const char* filename, cpu_set_t cpuSet)
 {
     FILE* fp;
     char structure[256];
@@ -309,6 +309,14 @@ readTopologyFile(const char* filename)
                 else if (strcmp(value, "apicId") == 0)
                 {
                     cpuid_topology.threadPool[thread].apicId = tmp;
+                    if (CPU_ISSET(tmp, &cpuSet))
+                    {
+                        cpuid_topology.threadPool[thread].inCpuSet = 1;
+                    }
+                    else
+                    {
+                        cpuid_topology.threadPool[thread].inCpuSet = 0;
+                    }
                 }
 
             }
@@ -1009,9 +1017,9 @@ standard_init:
     else
     {
         CPU_ZERO(&cpuSet);
-        sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
+        sched_getaffinity(0, sizeof(cpu_set_t), &cpuSet);
         DEBUG_PRINT(DEBUGLEV_INFO, Reading topology information from %s, config.topologyCfgFileName);
-        ret = readTopologyFile(config.topologyCfgFileName);
+        ret = readTopologyFile(config.topologyCfgFileName, cpuSet);
         if (ret < 0)
             goto standard_init;
         cpuid_topology.activeHWThreads = 0;
