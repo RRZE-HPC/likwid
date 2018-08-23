@@ -119,7 +119,8 @@ int skl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     /* set custom cfg and cmask */
     if ((event->cfgBits != 0) &&
         (event->eventId != 0xB7) &&
-        (event->eventId != 0xBB))
+        (event->eventId != 0xBB) &&
+        (event->eventId != 0xCD))
     {
         flags |= ((event->cmask<<8) + event->cfgBits)<<16;
     }
@@ -169,7 +170,7 @@ int skl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         {
             offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
         }
-        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
+        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE0);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, offcore_flags));
     }
     else if (event->eventId == 0xBB)
@@ -178,13 +179,21 @@ int skl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
         {
             offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
         }
-        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE);
+        VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, LLU_CAST offcore_flags, SETUP_PMC_OFFCORE1);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, offcore_flags));
     }
-    if (event->eventId == 0xC6)
+    if ((event->eventId == 0xC6) &&
+        (event->cmask != 0))
     {
         VERBOSEPRINTREG(cpu_id, MSR_V4_PEBS_FRONTEND, LLU_CAST event->cmask, SETUP_PMC_FRONTEND);
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_PEBS_FRONTEND, event->cmask));
+    }
+    if ((event->eventId == 0xCD) &&
+        (cpuid_info.model == SKYLAKEX) &&
+        (event->cmask != 0))
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_PEBS_LD_LAT, LLU_CAST event->cmask, SETUP_PMC_LATENCY);
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_LD_LAT, event->cmask));
     }
     if (flags != currentConfig[cpu_id][index])
     {
@@ -1672,13 +1681,23 @@ int perfmon_finalizeCountersThread_skylake(int thread_id, PerfmonEventSet* event
                 ovf_values_core |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));
                 if ((haveTileLock) && (eventSet->events[i].event.eventId == 0xB7))
                 {
-                    VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL, CLEAR_OFFCORE_RESP0);
+                    VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL, CLEAR_PMC_OFFCORE0);
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, 0x0ULL));
                 }
                 else if ((haveTileLock) && (eventSet->events[i].event.eventId == 0xBB))
                 {
-                    VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL, CLEAR_OFFCORE_RESP1);
+                    VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL, CLEAR_PMC_OFFCORE1);
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, 0x0ULL));
+                }
+                else if (eventSet->events[i].event.eventId == 0xCD)
+                {
+                    VERBOSEPRINTREG(cpu_id, MSR_PEBS_LD_LAT, 0x0ULL, CLEAR_PMC_LATENCY);
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_LD_LAT, 0x0ULL));
+                }
+                else if (eventSet->events[i].event.eventId == 0xC6)
+                {
+                    VERBOSEPRINTREG(cpu_id, MSR_V4_PEBS_FRONTEND, 0x0ULL, CLEAR_PMC_FRONTEND);
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_PEBS_FRONTEND, 0x0ULL));
                 }
                 break;
             case FIXED:
