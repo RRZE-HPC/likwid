@@ -138,6 +138,8 @@ void __attribute__((constructor (101))) init_accessdaemon(void)
 {
     FILE *fpipe = NULL;
     char *ptr = NULL;
+    FILE *rdpmc_file = NULL;
+    FILE *nmi_watchdog_file = NULL;
     char cmd_cpu[] = "cat /proc/cpuinfo  | grep 'processor' | sort -u | wc -l";
     char cmd_sock[] = "cat /proc/cpuinfo  | grep 'physical id' | sort -u | wc -l";
     //static long avail_sockets = 0;
@@ -163,14 +165,25 @@ void __attribute__((constructor (101))) init_accessdaemon(void)
     avail_sockets = atoi(buff);
 
     FD_MSR = malloc(avail_cpus * sizeof(int));
-    //memset(FD_MSR, 0, avail_cpus * sizeof(int));
 
     FD_PCI = malloc(avail_sockets * sizeof(int*));
-    //memset(FD_PCI, 0, avail_sockets * sizeof(int*));
     for (int i = 0; i < avail_sockets; i++)
     {
         FD_PCI[i] = malloc(MAX_NUM_PCI_DEVICES * sizeof(int));
-        //memset(FD_PCI[i], 0, MAX_NUM_PCI_DEVICES * sizeof(int));
+    }
+    // Explicitly allow RDPMC instruction
+    rdpmc_file = fopen("/sys/bus/event_source/devices/cpu/rdpmc", "wb");
+    if (rdpmc_file)
+    {
+        fputc('2', rdpmc_file);
+        fclose(rdpmc_file);
+    }
+    // Explicitly disable NMI watchdog (Uses the first fixed-purpose counter INSTR_RETIRED_ANY)
+    nmi_watchdog_file = fopen("/proc/sys/kernel/nmi_watchdog", "wb");
+    if (nmi_watchdog_file)
+    {
+        fputc('0', nmi_watchdog_file);
+        fclose(nmi_watchdog_file);
     }
 }
 
