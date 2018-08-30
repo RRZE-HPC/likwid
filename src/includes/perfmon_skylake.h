@@ -54,6 +54,9 @@ int (*skylake_cbox_setup)(int, RegisterIndex, PerfmonEvent *);
 
 int skl_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
+    cpu_id++;
+    index++;
+    event++;
     return 0;
 }
 int perfmon_init_skylake(int cpu_id)
@@ -89,6 +92,7 @@ uint32_t skl_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = (1ULL<<(1+(index*4)));
+    cpu_id++;
     for(j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
@@ -248,7 +252,7 @@ int skl_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 int skl_uboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
-
+    event++;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -287,6 +291,8 @@ int skl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     break;
                 case EVENT_OPTION_THRESHOLD:
                     flags |= (event->options[j].value & 0x1FULL) << 24;
+                    break;
+                default:
                     break;
             }
         }
@@ -462,7 +468,7 @@ int skx_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     int j;
     uint64_t flags = 0x0ULL;
     PciDeviceIndex dev = counter_map[index].device;
-
+    event++;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -484,7 +490,7 @@ int skx_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int skx_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    int j = 0;
     uint64_t flags = 0x0ULL;
     uint64_t filter = box_map[counter_map[index].type].filterRegister1;
     int clean_filter = 1;
@@ -743,7 +749,6 @@ int perfmon_setupCounterThread_skylake(
         PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    uint64_t flags;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
@@ -772,7 +777,6 @@ int perfmon_setupCounterThread_skylake(
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = counter_map[index].configRegister;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
-        flags = 0x0ULL;
         switch (type)
         {
             case PMC:
@@ -1093,11 +1097,11 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
     { \
         uint64_t ovf_values = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values)); \
-        if (ovf_values & (1ULL<<offset)) \
+        if (ovf_values & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
         } \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<offset))); \
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<(offset)))); \
     }
 
 #define SKL_CHECK_UNCORE_OVERFLOW(offset) \
@@ -1105,7 +1109,7 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
     { \
         uint64_t ovf_values = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_STATUS, &ovf_values)); \
-        if (ovf_values & (1ULL<<offset)) \
+        if (ovf_values & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
         } \
@@ -1117,10 +1121,10 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
         uint64_t ovf_values = 0x0ULL; \
         uint64_t offset = getCounterTypeOffset(eventSet->events[i].index); \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, &ovf_values)); \
-        if (ovf_values & (1ULL<<offset)) \
+        if (ovf_values & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, (1ULL<<offset))); \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, (1ULL<<(offset)))); \
         } \
     }
 
@@ -1133,6 +1137,7 @@ int skl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
     RegisterType type = counter_map[index].type;
     PciDeviceIndex dev = counter_map[index].device;
     uint64_t counter1 = counter_map[index].counterRegister;
+    event++;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -1151,7 +1156,7 @@ int skl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
     if (result < *cur_result)
     {
         uint64_t ovf_values = 0x0ULL;
-        int global_offset = box_map[type].ovflOffset;
+        //int global_offset = box_map[type].ovflOffset;
         int test_local = 0;
         uint32_t global_status_reg = MSR_UNC_V3_U_PMON_GLOBAL_STATUS;
         if (cpuid_info.model != SKYLAKEX)

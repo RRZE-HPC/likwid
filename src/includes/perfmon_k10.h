@@ -38,6 +38,7 @@ static int perfmon_numArchEventsK10 = NUM_ARCH_EVENTS_K10;
 
 int perfmon_init_k10(int cpu_id)
 {
+    cpu_id++;
     return 0;
 }
 

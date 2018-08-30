@@ -51,6 +51,7 @@ uint32_t neh_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = (1ULL<<(1+(index*4)));
+    cpu_id++;
     for(j = 0; j < event->numberOfOptions; j++)
     {
         switch (event->options[j].type)
@@ -361,10 +362,10 @@ int perfmon_startCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet
     { \
         uint64_t tmp = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &tmp)); \
-        if (tmp & (1ULL<<offset)) \
+        if (tmp & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (tmp & (1ULL<<offset)))); \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (tmp & (1ULL<<(offset))))); \
         } \
     }
 
@@ -373,10 +374,10 @@ int perfmon_startCountersThread_nehalem(int thread_id, PerfmonEventSet* eventSet
     { \
         uint64_t tmp = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_STATUS, &tmp)); \
-        if (tmp & (1ULL<<offset)) \
+        if (tmp & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_OVF_CTRL, (tmp & (1ULL<<offset)))); \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_UNCORE_PERF_GLOBAL_OVF_CTRL, (tmp & (1ULL<<(offset))))); \
         } \
     }
 

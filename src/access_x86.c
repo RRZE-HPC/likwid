@@ -71,7 +71,7 @@ access_x86_init(int cpu_id)
 int
 access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *data)
 {
-    int err;
+    int err = -EINVAL;
     uint64_t tmp = 0x0ULL;
     if (dev == MSR_DEV)
     {
@@ -99,7 +99,7 @@ access_x86_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t *da
 int
 access_x86_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t data)
 {
-    int err;
+    int err = -EINVAL;
     if (dev == MSR_DEV)
     {
         err = access_x86_msr_write(cpu_id, reg, data);

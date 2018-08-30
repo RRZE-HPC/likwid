@@ -40,5 +40,5 @@ static RegisterMap pm_counter_map[NUM_COUNTERS_PM] = {
 };
 
 static BoxMap pm_box_map[NUM_UNITS] = {
-    [PMC] = {0, 0, 0, 0, 0, 0, 48}
+    [PMC] = {0, 0, 0, 0, 0, 0, 48, 0, 0},
 };

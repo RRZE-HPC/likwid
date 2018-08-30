@@ -47,10 +47,11 @@ int perfmon_init_zen(int cpu_id)
 int k17_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
+    cpu_id++;
+    index++;
     switch (event->eventId)
     {
         case 0x1:
-
             flags |= (1ULL << AMD_K17_INST_RETIRE_ENABLE_BIT);
             VERBOSEPRINTREG(cpu_id, 0x00, LLU_CAST flags, SETUP_FIXC0);
             break;
@@ -455,7 +456,6 @@ int perfmon_finalizeCountersThread_zen(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveSLock = 0;
     int haveL3Lock = 0;
-    int haveCLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
@@ -466,10 +466,7 @@ int perfmon_finalizeCountersThread_zen(int thread_id, PerfmonEventSet* eventSet)
     {
         haveL3Lock = 1;
     }
-    if (core_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
-    {
-        haveCLock = 1;
-    }
+
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         RegisterType type = eventSet->events[i].type;

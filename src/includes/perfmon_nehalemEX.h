@@ -54,8 +54,9 @@ int perfmon_init_nehalemEX(int cpu_id)
 
 uint32_t nex_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    int j = 0;
     uint32_t flags = (1ULL<<(1+(index*4)));
+    cpu_id++;
     for(j = 0; j < event->numberOfOptions; j++)
     {
         switch (event->options[j].type)
@@ -74,7 +75,7 @@ uint32_t nex_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int nex_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    int j = 0;
     uint64_t flags = 0x0ULL;
     uint64_t offcore_flags = 0x0ULL;
     uint64_t reg = counter_map[index].configRegister;
@@ -147,7 +148,7 @@ int nex_mbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     uint64_t flags = 0x41ULL;
     uint64_t subflags1 = 0x0ULL;
     uint64_t subflags2 = 0x0ULL;
-    int number;
+    int number = 0;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
@@ -400,7 +401,7 @@ int nex_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x01ULL;
     uint64_t subflags = 0x0ULL;
-    int number;
+    int number = 0;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
@@ -490,7 +491,7 @@ int nex_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int nex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    int j = 0;
     uint64_t flags = 0x1ULL; /* set enable bit */
     uint64_t reg = counter_map[index].configRegister;
     RegisterType type = counter_map[index].type;
@@ -531,7 +532,7 @@ int nex_bbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int nex_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    int j = 0;
     uint64_t flags = 0x0ULL;
     uint64_t reg = counter_map[index].configRegister;
 
@@ -575,7 +576,7 @@ int nex_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
     uint64_t reg = counter_map[index].configRegister;
-    int j;
+    int j = 0;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
@@ -614,7 +615,7 @@ int nex_wbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 
 int nex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
-    int j;
+    int j = 0;
     int match_mask = 0;
     uint64_t flags = 0x0ULL;
     uint64_t reg = counter_map[index].configRegister;
@@ -722,7 +723,6 @@ int nex_sbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    int haveTileLock = 0;
     uint64_t flags = 0x0ULL;
     uint64_t fixed_flags = 0x0ULL;
     uint64_t ubox_flags = 0x0ULL;
@@ -732,10 +732,7 @@ int perfmon_setupCounterThread_nehalemEX(int thread_id, PerfmonEventSet* eventSe
     {
         haveLock = 1;
     }
-    if (tile_lock[affinity_thread2core_lookup[cpu_id]] == cpu_id)
-    {
-        haveTileLock = 1;
-    }
+
     if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_PMC_AND_FIXED)
@@ -1017,10 +1014,10 @@ int perfmon_startCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventS
     { \
         uint64_t tmp = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[id].statusRegister, &tmp)); \
-        if (tmp & (1ULL<<offset)) \
+        if (tmp & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].statusRegister, (tmp & (1ULL<<offset)))); \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].statusRegister, (tmp & (1ULL<<(offset))))); \
         } \
     }
 
@@ -1029,10 +1026,10 @@ int perfmon_startCountersThread_nehalemEX(int thread_id, PerfmonEventSet* eventS
     { \
         uint64_t tmp = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[id].statusRegister, &tmp)); \
-        if (tmp & (1ULL<<offset)) \
+        if (tmp & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ovflRegister, (tmp & (1ULL<<offset)))); \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ovflRegister, (tmp & (1ULL<<(offset))))); \
         } \
     }
 

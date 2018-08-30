@@ -53,6 +53,7 @@ uint32_t glm_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = (1ULL<<(1+(index*4)));
+    cpu_id++;
     for(j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
@@ -158,15 +159,8 @@ int perfmon_setupCounterThread_goldmont(
         int thread_id,
         PerfmonEventSet* eventSet)
 {
-    int haveLock = 0;
-    uint64_t flags;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
-
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
-        haveLock = 1;
-    }
 
     if (MEASURE_CORE(eventSet))
     {
@@ -187,7 +181,6 @@ int perfmon_setupCounterThread_goldmont(
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = counter_map[index].configRegister;
         eventSet->events[i].threadCounter[thread_id].init = TRUE;
-        flags = 0x0ULL;
         switch (type)
         {
             case PMC:
@@ -200,7 +193,7 @@ int perfmon_setupCounterThread_goldmont(
 
             case POWER:
                 break;
-                break;
+
             default:
                 break;
         }
@@ -287,11 +280,11 @@ int perfmon_startCountersThread_goldmont(int thread_id, PerfmonEventSet* eventSe
     { \
         uint64_t ovf_values = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values)); \
-        if (ovf_values & (1ULL<<offset)) \
+        if (ovf_values & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
         } \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<offset))); \
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<(offset)))); \
     }
 
 #define GLM_CHECK_LOCAL_OVERFLOW \
@@ -300,10 +293,10 @@ int perfmon_startCountersThread_goldmont(int thread_id, PerfmonEventSet* eventSe
         uint64_t ovf_values = 0x0ULL; \
         uint64_t offset = getCounterTypeOffset(eventSet->events[i].index); \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, &ovf_values)); \
-        if (ovf_values & (1ULL<<offset)) \
+        if (ovf_values & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, (1ULL<<offset))); \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, (1ULL<<(offset)))); \
         } \
     }
 

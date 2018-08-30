@@ -107,6 +107,8 @@ void
 empty_numa_setInterleaved(const int* processorList, int numberOfProcessors)
 {
     printf("MEMPOLICY NOT supported in kernel!\n");
+    if (!processorList || numberOfProcessors < 0)
+        printf("Invalid options\n");
     return;
 }
 
@@ -114,6 +116,8 @@ void
 empty_numa_membind(void* ptr, size_t size, int domainId)
 {
     printf("MBIND NOT supported in kernel!\n");
+    if (!ptr || size <= 0 || domainId < 0)
+        printf("Invalid options\n");
     return;
 }
 
@@ -176,14 +180,16 @@ void
 numa_setInterleaved(const int* processorList, int numberOfProcessors)
 {
     const struct numa_functions funcs = numa_funcs;
-    return funcs.numa_setInterleaved(processorList, numberOfProcessors);
+    funcs.numa_setInterleaved(processorList, numberOfProcessors);
+    return;
 }
 
 void
 numa_membind(void* ptr, size_t size, int domainId)
 {
     const struct numa_functions funcs = numa_funcs;
-    return funcs.numa_membind(ptr, size, domainId);
+    funcs.numa_membind(ptr, size, domainId);
+    return;
 }
 
 #ifndef HAS_MEMPOLICY
@@ -196,12 +202,12 @@ numa_finalize(void)
 void
 numa_finalize(void)
 {
-    int i;
+    int i = 0;
     if (!numaInitialized)
     {
         return;
     }
-    for(i=0;i<numa_info.numberOfNodes;i++)
+    for(i = 0; i < (int)numa_info.numberOfNodes; i++)
     {
         if (numa_info.nodes[i].processors)
         {
