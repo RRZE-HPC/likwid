@@ -1878,17 +1878,17 @@ past_checks:
                 event->threadCounter[j].init = FALSE;
             }
 
-            eventSet->numberOfEvents++;
 
             if (event->type != NOTYPE)
             {
                 valid_events++;
                 DEBUG_PRINT(DEBUGLEV_INFO,
                         Added event %s for counter %s to group %d,
-                        event->event.name,
-                        counter_map[event->index].key,
+                        groupSet->groups[groupSet->numberOfActiveGroups].group.events[eventSet->numberOfEvents],
+                        groupSet->groups[groupSet->numberOfActiveGroups].group.counters[eventSet->numberOfEvents],
                         groupSet->numberOfActiveGroups);
             }
+            eventSet->numberOfEvents++;
         }
         bstrListDestroy(subtokens);
     }
