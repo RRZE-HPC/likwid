@@ -61,9 +61,19 @@ int skl_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 }
 int perfmon_init_skylake(int cpu_id)
 {
+    int ret = 0;
     lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
+    ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL);
+    if (ret != 0)
+    {
+        ERROR_PRINT(Cannot zero MSR_PEBS_ENABLE (0x%X), MSR_PEBS_ENABLE);
+    }
+    ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_FRONTEND, 0x0ULL);
+    if (ret != 0)
+    {
+        ERROR_PRINT(Cannot zero MSR_PEBS_FRONTEND (0x%X), MSR_PEBS_FRONTEND);
+    }
     if (cpuid_info.model == SKYLAKEX)
     {
         skylake_cbox_setup = skx_cbox_setup;
@@ -73,7 +83,6 @@ int perfmon_init_skylake(int cpu_id)
              socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id &&
              skl_did_cbox_check == 0)
     {
-        int ret = 0;
         uint64_t data = 0x0ULL;
         ret = HPMwrite(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, 0x0ULL);
         ret += HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, &data);
