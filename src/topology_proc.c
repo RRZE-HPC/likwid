@@ -517,6 +517,12 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
             fclose(fp);
         }
         bdestroy(file);
+#ifdef __ARM_ARCH_8A
+        if (hwThreadPool[i].packageId == -1)
+            hwThreadPool[i].packageId = 0;
+        if (hwThreadPool[i].apicId != 0 && hwThreadPool[i].coreId == 0)
+            hwThreadPool[i].coreId = hwThreadPool[i].apicId;
+#endif
         DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC Thread Pool PU %d Thread %d Core %d Socket %d inCpuSet %d,
                             hwThreadPool[i].apicId,
                             hwThreadPool[i].threadId,
