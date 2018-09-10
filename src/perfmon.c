@@ -75,6 +75,7 @@
 #include <perfmon_skylake.h>
 #include <perfmon_zen.h>
 #include <perfmon_a57.h>
+#include <perfmon_a15.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -1102,6 +1103,21 @@ perfmon_init_maps(void)
             box_map = zen_box_map;
             perfmon_numCounters = perfmon_numCountersZen;
             translate_types = zen_translate_types;
+            break;
+
+        case ARMV7_FAMILY:
+            switch ( cpuid_info.model )
+            {
+                case ARMV7L:
+                case ARM7L:
+                    eventHash = a15_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsA15;
+                    counter_map = a15_counter_map;
+                    box_map = a15_box_map;
+                    perfmon_numCounters = perfmon_numCountersA15;
+                    translate_types = a15_translate_types;
+                    break;
+            }
             break;
 
         case ARMV8_FAMILY:

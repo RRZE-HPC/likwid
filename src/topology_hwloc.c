@@ -50,7 +50,7 @@
 hwloc_topology_t hwloc_topology = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-#ifdef __ARM_ARCH_8A
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
 int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping, uint32_t *part)
 {
     int i = 0;
@@ -241,6 +241,16 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
        cpuid_info.family = atoi(info);
     if ((info = hwloc_obj_get_info_by_name(obj, "CPURevision")))
         cpuid_info.model = atoi(info);
+    if (cpuid_info.family == 0 || cpuid_info.model == 0)
+    {
+        uint32_t part = 0;
+        parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &part);
+        if (cpuid_info.model == 0 && part != 0)
+        {
+            cpuid_info.model = part;
+        }
+        parse_cpuname(cpuid_info.osname);
+    }
 #endif
 #ifdef __ARM_ARCH_8A
     uint32_t part = 0;
