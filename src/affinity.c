@@ -168,6 +168,9 @@ static int get_id_of_type(hwloc_obj_t base, hwloc_obj_type_t type)
 
 static int create_lookups()
 {
+    int do_cache = 1;
+    int cachelimit = 0;
+    int cacheIdx = -1;
     topology_init();
     numa_init();
     NumaTopology_t ntopo = get_numaTopology();
@@ -193,8 +196,15 @@ static int create_lookups()
     }
 
     int num_pu = cpuid_topology.numHWThreads;
-    int cachelimit = cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
-    int cacheIdx = -1;
+    if (cpuid_topology.numCacheLevels == 0)
+    {
+        do_cache = 0;
+    }
+    if (do_cache)
+    {
+        cachelimit = cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
+        cacheIdx = -1;
+    }
     for (int pu_idx = 0; pu_idx < num_pu; pu_idx++)
     {
         HWThread* t = &cpuid_topology.threadPool[pu_idx];
@@ -219,12 +229,15 @@ static int create_lookups()
         }
         affinity_thread2numa_lookup[hwthreadid] = memid;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2numa_lookup[%d] = %d, hwthreadid, memid);
-        if (pu_idx % cachelimit == 0)
+        if (do_cache)
         {
-            cacheIdx++;
+            if (pu_idx % cachelimit == 0)
+            {
+                cacheIdx++;
+            }
+            affinity_thread2sharedl3_lookup[hwthreadid] = cacheIdx;
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2sharedl3_lookup[%d] = %d, hwthreadid, cacheIdx);
         }
-        affinity_thread2sharedl3_lookup[hwthreadid] = cacheIdx;
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2sharedl3_lookup[%d] = %d, hwthreadid, cacheIdx);
     }
 
     return 0;
@@ -524,7 +537,8 @@ affinity_finalize()
     }
     for ( int i=0; i < affinityDomains.numberOfAffinityDomains; i++ )
     {
-        bdestroy(affinityDomains.domains[i].tag);
+        if (affinityDomains.domains[i].tag)
+            bdestroy(affinityDomains.domains[i].tag);
         if (affinityDomains.domains[i].processorList != NULL)
         {
             free(affinityDomains.domains[i].processorList);
