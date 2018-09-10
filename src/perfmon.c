@@ -1105,12 +1105,25 @@ perfmon_init_maps(void)
             break;
 
         case ARMV8_FAMILY:
-            eventHash = a57_arch_events;
-            perfmon_numArchEvents = perfmon_numArchEventsA57;
-            counter_map = a57_counter_map;
-            box_map = a57_box_map;
-            perfmon_numCounters = perfmon_numCountersA57;
-            translate_types = a57_translate_types;
+            switch ( cpuid_info.model )
+            {
+                case CORTEX_A57_1:
+                    eventHash = a57_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsA57;
+                    counter_map = a57_counter_map;
+                    box_map = a57_box_map;
+                    perfmon_numCounters = perfmon_numCountersA57;
+                    translate_types = a57_translate_types;
+                    break;
+                case CORTEX_A53_1:
+                    eventHash = a57_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsA57;
+                    counter_map = a57_counter_map;
+                    box_map = a57_box_map;
+                    perfmon_numCounters = perfmon_numCountersA57;
+                    translate_types = a53_translate_types;
+                    break;
+            }
             break;
 
         default:

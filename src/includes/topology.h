@@ -131,6 +131,7 @@ struct topology_functions {
 /* ARM */
 #define  ARM7L          0x3U
 #define  CORTEX_A57_1   0x1U
+#define  CORTEX_A53_1   0xD03U
 
 #define  P6_FAMILY        0x6U
 #define  MIC_FAMILY       0xBU

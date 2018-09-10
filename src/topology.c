@@ -876,6 +876,7 @@ topology_setName(void)
             switch (cpuid_info.model)
             {
                 case CORTEX_A57_1:
+                case CORTEX_A53_1:
                     cpuid_info.name = armv8_str;
                     cpuid_info.short_name = short_arm8;
                     break;
@@ -908,7 +909,7 @@ topology_functions topology_funcs = {
     .init_cpuFeatures = proc_init_cpuFeatures,
     .close_topology = hwloc_close,
 #else
-    .init_cpuInfo = proc_init_cpuInfo,
+    .init_cpuInfo = hwloc_init_cpuInfo,
     .init_cpuFeatures = proc_init_cpuFeatures,
     .init_nodeTopology = proc_init_nodeTopology,
     .init_cacheTopology = proc_init_cacheTopology,
