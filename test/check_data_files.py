@@ -3,7 +3,7 @@
 
 # =======================================================================================
 #
-#      Filename:  check_events_files.py
+#      Filename:  check_data_files.py
 #
 #      Description:  Basic checks for performance event list files
 #
