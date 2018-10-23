@@ -1484,7 +1484,7 @@ UMASK_IMC_READS_ALL                     0x04
 UMASK_IMC_READS_TO_DDRT                 0x08
 UMASK_IMC_READS_FROM_TRANSGRESS         0x10
 
-EVENT_IMC_WRITES                         0x37 M2M
+EVENT_IMC_WRITES                         0x38 M2M
 UMASK_IMC_WRITES_FULL                    0x01
 UMASK_IMC_WRITES_PARTIAL                 0x02
 UMASK_IMC_WRITES_FULL_ISOCH              0x04
