@@ -79,6 +79,10 @@ Shortcut for likwid_markerGetResults() for \a regionTag if compiled with -DLIKWI
 Shortcut for likwid_markerNextGroup() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
+\def LIKWID_MARKER_RESET(regionTag)
+Shortcut for likwid_markerResetRegion() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
+*/
+/*!
 \def LIKWID_MARKER_CLOSE
 Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
@@ -92,6 +96,7 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #define LIKWID_MARKER_START(regionTag) likwid_markerStartRegion(regionTag)
 #define LIKWID_MARKER_STOP(regionTag) likwid_markerStopRegion(regionTag)
 #define LIKWID_MARKER_CLOSE likwid_markerClose()
+#define LIKWID_MARKER_RESET(regionTag) likwid_markerResetRegion(regionTag)
 #define LIKWID_MARKER_GET(regionTag, nevents, events, time, count) likwid_markerGetRegion(regionTag, nevents, events, time, count)
 #else
 #define LIKWID_MARKER_INIT
@@ -102,6 +107,7 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #define LIKWID_MARKER_STOP(regionTag)
 #define LIKWID_MARKER_CLOSE
 #define LIKWID_MARKER_GET(regionTag, nevents, events, time, count)
+#define LIKWID_MARKER_RESET(regionTag)
 #endif
 
 #ifdef __cplusplus
@@ -170,7 +176,13 @@ in regionTag. The measurement data of the stopped region gets summed up in globa
 @return Error code of stop operation
 */
 extern int likwid_markerStopRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+/*! \brief Reset a measurement region
 
+Reset the values of all configured counters and timers.
+@param regionTag [in] Reset data using this string
+@return Error code of reset operation
+*/
+extern int likwid_markerResetRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
 /*! \brief Get accumulated data of a code region
 
 Get the accumulated data of the current thread for the given regionTag.
