@@ -234,6 +234,8 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
         end
     elseif ver1 == 2 then
         bindstr = "--bind-to none"
+    elseif ver1 == 3 then
+        bindstr = "--bind-to none"
     end
 
     local cmd = string.format("%s -hostfile %s %s -np %d -npernode %d %s %s",
