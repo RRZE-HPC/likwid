@@ -53,6 +53,9 @@ int (*ivy_cbox_setup)(int, RegisterIndex, PerfmonEvent*);
 
 int ivb_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
+    cpu_id++;
+    index++;
+    event++;
     return 0;
 }
 
@@ -90,6 +93,7 @@ uint32_t ivb_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint32_t flags = 0x0UL;
     flags |= (1ULL<<(1+(index*4)));
+    cpu_id++;
     for(int j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
@@ -283,6 +287,7 @@ int ivb_pci_box_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 int ivb_mboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x0ULL;
+    event++;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -426,6 +431,8 @@ int ivb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 case EVENT_OPTION_INVERT:
                     flags |= (1ULL<<23);
                     break;
+                default:
+                    break;
             }
         }
     }
@@ -474,9 +481,10 @@ int ivbep_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     break;
                 case EVENT_OPTION_NID:
                     mask = 0x0ULL;
-                    for (int i=0; i<affinityDomains.numberOfNumaDomains;i++)
+                    for (uint32_t i=0; i < affinityDomains.numberOfNumaDomains; i++)
+                    {
                         mask |= (1ULL<<i);
-
+                    }
                     if (event->options[j].value & mask)
                     {
                         filter1 |= (event->options[j].value & 0xFFFFULL);
@@ -564,6 +572,7 @@ int ivb_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 int ivb_uboxfix_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint32_t flags = 0x0UL;
+    event++;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -973,6 +982,7 @@ uint64_t ivb_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event, i
     PciDeviceIndex dev = counter_map[index].device;
     uint64_t counter1 = counter_map[index].counterRegister;
     uint64_t counter2 = counter_map[index].counterRegister2;
+    event++;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
@@ -1017,6 +1027,7 @@ int ivb_uncore_overflow(int cpu_id, RegisterIndex index, PerfmonEvent *event,
     uint64_t ovf_values = 0x0ULL;
     RegisterType type = counter_map[index].type;
     PciDeviceIndex dev = counter_map[index].device;
+    event++;
     if (result < cur_result)
     {
         if (global_offset != -1)
@@ -1118,7 +1129,7 @@ int perfmon_stopCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     {
                         uint64_t ovf_values = 0x0ULL;
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, MSR_PERF_GLOBAL_STATUS, &ovf_values));
-                        if (ovf_values & (1<<index-cpuid_info.perf_num_fixed_ctr))
+                        if (ovf_values & (1<<(index-cpuid_info.perf_num_fixed_ctr)))
                         {
                             (*overflows)++;
                         }
@@ -1326,7 +1337,7 @@ int perfmon_readCountersThread_ivybridge(int thread_id, PerfmonEventSet* eventSe
                     {
                         uint64_t ovf_values = 0x0ULL;
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values));
-                        if (ovf_values & (1<<index-cpuid_info.perf_num_fixed_ctr))
+                        if (ovf_values & (1<<(index-cpuid_info.perf_num_fixed_ctr)))
                         {
                             (*overflows)++;
                         }

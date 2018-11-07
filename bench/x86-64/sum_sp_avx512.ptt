@@ -1,0 +1,20 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 1
+BYTES 4
+DESC Single-precision sum of a vector, optimized for AVX-512
+LOADS 1
+STORES 0
+INSTR_CONST 20
+INSTR_LOOP 7
+UOPS 10
+vmovaps zmm1, [rip+SCALAR]
+vmovaps zmm2, zmm1
+vmovaps zmm3, zmm1
+vmovaps zmm4, zmm1
+LOOP 64
+vaddps     zmm1, zmm1, [STR0 + GPR1*4]
+vaddps     zmm2, zmm2, [STR0 + GPR1*4+64]
+vaddps     zmm3, zmm3, [STR0 + GPR1*4+128]
+vaddps     zmm4, zmm4, [STR0 + GPR1*4+192]
+

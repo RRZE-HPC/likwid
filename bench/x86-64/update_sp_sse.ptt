@@ -1,0 +1,21 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 0
+BYTES 16
+DESC Single-precision vector update, optimized for SSE
+LOADS 1
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 11
+UOPS 14
+LOOP 16
+movaps    FPR1, [STR0 + GPR1 * 4]
+movaps    [STR0 + GPR1 * 4]     , FPR1
+movaps    FPR2, [STR0 + GPR1 * 4 + 16]
+movaps    FPR3, [STR0 + GPR1 * 4 + 32]
+movaps    FPR4, [STR0 + GPR1 * 4 + 48]
+movaps    [STR0 + GPR1 * 4 + 16], FPR2
+movaps    [STR0 + GPR1 * 4 + 32], FPR3
+movaps    [STR0 + GPR1 * 4 + 48], FPR4
+
+

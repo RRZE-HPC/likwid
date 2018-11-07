@@ -189,7 +189,7 @@ initTopologyFile(FILE* file)
 }
 
 static int
-readTopologyFile(const char* filename)
+readTopologyFile(const char* filename, cpu_set_t cpuSet)
 {
     FILE* fp;
     char structure[256];
@@ -305,6 +305,14 @@ readTopologyFile(const char* filename)
                 else if (strcmp(value, "apicId") == 0)
                 {
                     cpuid_topology.threadPool[thread].apicId = tmp;
+                    if (CPU_ISSET(tmp, &cpuSet))
+                    {
+                        cpuid_topology.threadPool[thread].inCpuSet = 1;
+                    }
+                    else
+                    {
+                        cpuid_topology.threadPool[thread].inCpuSet = 0;
+                    }
                 }
 
             }
@@ -968,7 +976,7 @@ standard_init:
         CPU_ZERO(&cpuSet);
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
         DEBUG_PRINT(DEBUGLEV_INFO, Reading topology information from %s, config.topologyCfgFileName);
-        ret = readTopologyFile(config.topologyCfgFileName);
+        ret = readTopologyFile(config.topologyCfgFileName, cpuSet);
         if (ret < 0)
             goto standard_init;
         cpuid_topology.activeHWThreads = 0;
@@ -1083,6 +1091,9 @@ print_supportedCPUs (void)
     printf("\t%s\n",atom_goldmont_str);
     printf("\t%s\n",xeon_phi2_string);
     printf("\t%s\n",skylakeX_str);
+    printf("\t%s\n",xeon_phi3_string);
+    printf("\t%s\n",kabylake_str);
+    printf("\t%s\n",coffeelake_str);
     printf("\n");
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);

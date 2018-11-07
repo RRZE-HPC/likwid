@@ -1,0 +1,24 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 8
+BYTES 8
+vmovaps ymm1, [rip+SCALAR]
+vmovaps ymm2, [rip+SCALAR]
+vmovaps ymm3, [rip+SCALAR]
+vmovaps ymm4, [rip+SCALAR]
+vmovaps ymm5, [rip+SCALAR]
+vmovaps ymm6, [rip+SCALAR]
+vmovaps ymm7, [rip+SCALAR]
+vmovaps ymm8, [rip+SCALAR]
+vmovaps ymm9, [rip+SCALAR]
+.align 32
+LOOP 4
+vmovapd    ymm1, [STR0 + GPR1 * 8 ]
+vaddpd     ymm2, ymm2, ymm1
+vmulpd     ymm3, ymm3, ymm1
+vaddpd     ymm4, ymm4, ymm1
+vmulpd     ymm5, ymm5, ymm1
+vaddpd     ymm6, ymm6, ymm1
+vmulpd     ymm7, ymm7, ymm1
+vaddpd     ymm8, ymm8, ymm1
+vmulpd     ymm9, ymm9, ymm1

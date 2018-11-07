@@ -40,6 +40,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <pthread.h>
 
 #include <error.h>
 #include <perfgroup.h>
@@ -64,6 +65,7 @@ lua_State** lua_states = NULL;
 // to time since it grows with each calculation and in some cases,
 // like monitoring, the state would increase memory usage.
 int *lua_states_clean = NULL;
+pthread_mutex_t* lua_states_locks = NULL;
 int num_states = 0;
 char** defines = NULL;
 bstring *bdefines = NULL;
@@ -1481,9 +1483,9 @@ int calc_add_dbl_def(char* name, double value, int cpu)
     int ret = 0;
     bstring add = bformat("%s = %20.20f\n", name, value);
     ret = _calc_add_def(add, cpu);
+    bdestroy(add);
     if (!ret)
         ret = calc_add_to_varlist(name, bglob_defines_list);
-    bdestroy(add);
     return ret;
 }
 
@@ -1493,9 +1495,9 @@ int calc_add_int_def(char* name, int value, int cpu)
     int ret = 0;
     bstring add = bformat("%s = %d\n", name, value);
     ret = _calc_add_def(add, cpu);
+    bdestroy(add);
     if (!ret)
         ret = calc_add_to_varlist(name, bglob_defines_list);
-    bdestroy(add);
     return ret;
 }
 
@@ -1505,9 +1507,9 @@ int calc_add_str_def(char* name, char* value, int cpu)
     int ret = 0;
     bstring add = bformat("%s = %s\n", name, value);
     ret = _calc_add_def(add, cpu);
+    bdestroy(add);
     if (!ret)
         ret = calc_add_to_varlist(name, bglob_defines_list);
-    bdestroy(add);
     return ret;
 }
 
@@ -1556,15 +1558,16 @@ static double do_calc(int cpu, char* s, bstring vars)
     double res = NAN;
     int ret = 0;
     char* t = NULL;
-
-    // Allocate a new Lua state for the cpu
     lua_State *L = lua_states[cpu];
-    if (!L)
+    // Allocate a new Lua state for the cpu
+    if (lua_states && !L)
     {
+        pthread_mutex_lock(&lua_states_locks[cpu]);
         L = luaL_newstate();
         luaL_openlibs(L);
         lua_states[cpu] = L;
         lua_states_clean[cpu] = LUA_STATES_CLEAN_DEFAULT;
+        pthread_mutex_unlock(&lua_states_locks[cpu]);
     }
     bstring scratch = bfromcstr(in_func_str);
     bcatcstr(scratch, "\n");
@@ -1601,13 +1604,14 @@ static double do_calc(int cpu, char* s, bstring vars)
     bdestroy(scratch);
 
     // decrement clean counter for cpu and close the Lua state if zero
+    pthread_mutex_lock(&lua_states_locks[cpu]);
     lua_states_clean[cpu]--;
-    if (lua_states[cpu] && lua_states_clean[cpu] == 0 )
+    if (lua_states && lua_states[cpu] && lua_states_clean[cpu] == 0 )
     {
         lua_close(lua_states[cpu]);
         lua_states[cpu] = NULL;
     }
-
+    pthread_mutex_unlock(&lua_states_locks[cpu]);
     return res;
 }
 
@@ -1619,12 +1623,14 @@ static char* do_expand(int cpu, char* f, bstring varlist)
 
     // Allocate a new Lua state for the cpu
     lua_State *L = lua_states[cpu];
-    if (!L)
+    if (lua_states && !L)
     {
+        pthread_mutex_lock(&lua_states_locks[cpu]);
         L = luaL_newstate();
         luaL_openlibs(L);
         lua_states[cpu] = L;
         lua_states_clean[cpu] = LUA_STATES_CLEAN_DEFAULT;
+        pthread_mutex_unlock(&lua_states_locks[cpu]);
     }
     bstring scratch = bformat("varlist={%s,%s}\n%s\nreturn eval_str(\"%s\")", bdata(bglob_defines_list), bdata(varlist), in_expand_str, f);
     if (ret < 0)
@@ -1639,12 +1645,14 @@ static char* do_expand(int cpu, char* f, bstring varlist)
     bdestroy(scratch);
 
     // decrement clean counter for cpu and close the Lua state of the cpu if zero
+    pthread_mutex_lock(&lua_states_locks[cpu]);
     lua_states_clean[cpu]--;
-    if (lua_states[cpu] && lua_states_clean[cpu] == 0 )
+    if (lua_states && lua_states[cpu] && lua_states_clean[cpu] == 0 )
     {
         lua_close(lua_states[cpu]);
         lua_states[cpu] = NULL;
     }
+    pthread_mutex_unlock(&lua_states_locks[cpu]);
     return out;
 }
 
@@ -1674,17 +1682,18 @@ calc_metric(int cpu, char* formula, bstring vars, bstring varlist, double *resul
 /*        f = do_expand(cpu, formula, varlist);*/
 /*        if (f)*/
 /*        {*/
-/*            *result = do_calc(cpu, f, vars);*/
+/*            *result = do_calc(cpu, formula, vars);*/
 /*            return 0;*/
 /*        }*/
 /*    }*/
 /*    else*/
 /*    {*/
-        *result = do_calc(cpu, formula, vars);
-        return 0;
+/*        *result = do_calc(cpu, formula, vars);*/
+/*        return 0;*/
 /*    }*/
-
-    return 1;
+/*    return 1;*/
+    *result = do_calc(cpu, formula, vars);
+    return 0;
 }
 
 void __attribute__((constructor (103))) init_perfgroup(void)
@@ -1697,12 +1706,24 @@ void __attribute__((constructor (103))) init_perfgroup(void)
     lua_states = (lua_State**)malloc(cpus * sizeof(lua_State*));
     if (lua_states)
     {
-        memset(lua_states, 0, cpus * sizeof(lua_State*));
+        //memset(lua_states, 0, cpus * sizeof(lua_State*));
+        for (int i = 0; i < cpus; i++)
+        {
+            lua_states[i] = NULL;
+        }
     }
     lua_states_clean = (int*)malloc(cpus * sizeof(int));
     if (lua_states_clean)
     {
         memset(lua_states_clean, 0, cpus * sizeof(int));
+    }
+    lua_states_locks = (pthread_mutex_t*)malloc(cpus * sizeof(pthread_mutex_t));
+    if (lua_states_locks)
+    {
+        for (int i = 0; i < cpus; i++)
+        {
+            pthread_mutex_init(&lua_states_locks[i], NULL);
+        }
     }
     num_states = cpus;
     bdefines = (bstring*)malloc(cpus * sizeof(bstring));
@@ -1738,6 +1759,7 @@ void __attribute__((constructor (103))) init_perfgroup(void)
         calc_add_int_def(name, cputopo->cacheLevels[i].lineSize, -1);
     }
     calc_add_int_def("MEM_LINESIZE", 64, -1);
+    //topology_finalize();
 }
 
 void __attribute__((destructor (103))) close_perfgroup(void)
@@ -1760,6 +1782,16 @@ void __attribute__((destructor (103))) close_perfgroup(void)
         free(lua_states_clean);
         lua_states_clean = NULL;
     }
+    if (lua_states_locks)
+    {
+        for (int i = 0; i < num_states; i++)
+        {
+            pthread_mutex_destroy(&lua_states_locks[i]);
+        }
+        free(lua_states_locks);
+        lua_states_locks = NULL;
+    }
+
     for (int i = 0; i < num_states; i++)
     {
         if (bdefines[i])
@@ -1771,5 +1803,6 @@ void __attribute__((destructor (103))) close_perfgroup(void)
     bdestroy(bglob_defines_list);
     bdestroy(bglob_defines);
     free(num_defines);
+    num_states = 0;
 }
 

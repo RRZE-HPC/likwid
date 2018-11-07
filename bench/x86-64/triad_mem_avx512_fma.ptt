@@ -1,0 +1,20 @@
+STREAMS 4
+TYPE DOUBLE
+FLOPS 2
+BYTES 32
+DESC Double-precision triad A(i) = B(i) * C(i) + D(i), optimized for AVX-512 FMAs and non-temporal stores
+LOADS 3
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 11
+UOPS 14
+LOOP 16
+vmovaps zmm1, [STR1 + GPR1*8]
+vmovaps zmm2, [STR2 + GPR1*8]
+vmovaps zmm3, [STR1 + GPR1*8+64]
+vmovaps zmm4, [STR2 + GPR1*8+64]
+vfmadd213pd zmm1, zmm2, [STR3 + GPR1*8]
+vfmadd213pd zmm3, zmm4, [STR3 + GPR1*8+64]
+vmovntpd [STR0 + GPR1*8], zmm1
+vmovntpd [STR0 + GPR1*8+64], zmm3
+

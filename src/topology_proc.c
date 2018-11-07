@@ -195,24 +195,28 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 cpuid_info.model = ownatoi(bdata(subtokens->entry[1]));
+                bstrListDestroy(subtokens);
             }
             else if ((cpuid_info.family == 0) && (binstr(tokens->entry[i],0,familyString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 cpuid_info.family = ownatoi(bdata(subtokens->entry[1]));
+                bstrListDestroy(subtokens);
             }
             else if (binstr(tokens->entry[i],0,steppingString) != BSTR_ERR)
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 cpuid_info.stepping = ownatoi(bdata(subtokens->entry[1]));
+                bstrListDestroy(subtokens);
             }
             else if (binstr(tokens->entry[i],0,nameString) != BSTR_ERR)
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 ownstrcpy(cpuid_info.osname, bdata(subtokens->entry[1]));
+                bstrListDestroy(subtokens);
             }
             else if (binstr(tokens->entry[i],0,vendorString) != BSTR_ERR)
             {
@@ -222,8 +226,10 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
                 {
                     cpuid_info.isIntel = 1;
                 }
+                bstrListDestroy(subtokens);
             }
         }
+        bstrListDestroy(tokens);
         cpuid_topology.numHWThreads = HWthreads;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
                             cpuid_info.family,
@@ -253,12 +259,7 @@ proc_init_cpuFeatures(void)
     ret = 0;
     while( fgets(buf, sizeof(buf)-1, file) )
     {
-        ret = sscanf(buf, "%s\t:", &(ident[0]));
-        if (ret != 1 || strcmp(ident,"flags") != 0)
-        {
-            continue;
-        }
-        else
+        if (strncmp(buf, "flags", 5) == 0 || strncmp(ident, "Features", 8) == 0)
         {
             ret = 1;
             break;
@@ -269,13 +270,11 @@ proc_init_cpuFeatures(void)
     {
         return;
     }
-
+    buf[strcspn(buf, "\n")] = '\0';
     cpuid_info.featureFlags = 0;
     cpuid_info.features = (char*) malloc(MAX_FEATURE_STRING_LENGTH*sizeof(char));
     cpuid_info.features[0] = '\0';
-    buf[strcspn(buf, "\n")] = '\0';
     cptr = strtok(&(buf[6]),delimiter);
-
     while (cptr != NULL)
     {
         if (strcmp(cptr,"ssse3") == 0)

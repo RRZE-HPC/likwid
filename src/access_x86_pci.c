@@ -209,12 +209,18 @@ access_x86_pci_init(const int socket)
 void
 access_x86_pci_finalize(const int socket)
 {
-    for (int j=1; j<MAX_NUM_PCI_DEVICES; j++)
+    if (access_x86_initialized)
     {
-        if (FD[socket][j] > 0)
+        for (int j=1; j<MAX_NUM_PCI_DEVICES; j++)
         {
-            close(FD[socket][j]);
+            if (FD[socket][j] > 0)
+            {
+                close(FD[socket][j]);
+                FD[socket][j] = -2;
+                pci_devices[j].online = 0;
+            }
         }
+        access_x86_initialized = 0;
     }
 }
 
@@ -223,7 +229,6 @@ access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t
 {
     bstring filepath = NULL;
     uint32_t tmp;
-    int err;
 
     if (dev == MSR_DEV)
     {
@@ -268,7 +273,6 @@ int
 access_x86_pci_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t data)
 {
     bstring filepath = NULL;
-    int err;
     uint32_t tmp = (uint32_t)data;
 
     if (dev == MSR_DEV)

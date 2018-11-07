@@ -54,6 +54,9 @@ int (*haswell_cbox_setup)(int, RegisterIndex, PerfmonEvent *);
 
 int has_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
+    cpu_id++;
+    index++;
+    event++;
     return 0;
 }
 
@@ -92,6 +95,7 @@ uint32_t hasep_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = (1ULL<<(1+(index*4)));
+    cpu_id++;
     for(j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
@@ -219,6 +223,8 @@ int has_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     break;
                 case EVENT_OPTION_THRESHOLD:
                     flags |= (event->options[j].value & 0x1FULL) << 24;
+                    break;
+                default:
                     break;
             }
         }
@@ -961,7 +967,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
     }
 
 #define HASEP_UNFREEZE_UNCORE_AND_RESET_CTR \
-    if (haveLock && MEASURE_UNCORE(eventSet)) \
+    if (haveLock && cpuid_info.model == HASWELL_EP && MEASURE_UNCORE(eventSet)) \
     { \
         for (int i=0;i < eventSet->numberOfEvents;i++) \
         { \
@@ -995,7 +1001,7 @@ int hasep_qbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event, PciDe
     }
 
 #define HASEP_FREEZE_UNCORE_AND_RESET_CTL \
-    if (haveLock && MEASURE_UNCORE(eventSet)) \
+    if (haveLock && cpuid_info.model == HASWELL_EP && MEASURE_UNCORE(eventSet)) \
     { \
         HASEP_FREEZE_UNCORE; \
         for (int i=0;i < eventSet->numberOfEvents;i++) \
@@ -1299,6 +1305,7 @@ int has_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
     PciDeviceIndex dev = counter_map[index].device;
     uint64_t counter1 = counter_map[index].counterRegister;
     uint64_t counter2 = counter_map[index].counterRegister2;
+    event++;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -1328,7 +1335,7 @@ int has_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
     if (result < *cur_result)
     {
         uint64_t ovf_values = 0x0ULL;
-        int global_offset = box_map[type].ovflOffset;
+        //int global_offset = box_map[type].ovflOffset;
         int test_local = 0;
         uint32_t global_status_reg = MSR_UNC_V3_U_PMON_GLOBAL_STATUS;
         if (cpuid_info.model == HASWELL)
@@ -1379,11 +1386,11 @@ int has_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
     { \
         uint64_t ovf_values = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values)); \
-        if (ovf_values & (1ULL<<offset)) \
+        if (ovf_values & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
         } \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<offset))); \
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<(offset)))); \
     }
 
 
@@ -1393,10 +1400,10 @@ int has_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
         uint64_t ovf_values = 0x0ULL; \
         uint64_t offset = getCounterTypeOffset(eventSet->events[i].index); \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, &ovf_values)); \
-        if (ovf_values & (1ULL<<offset)) \
+        if (ovf_values & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, (1ULL<<offset))); \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[eventSet->events[i].type].statusRegister, (1ULL<<(offset)))); \
         } \
     }
 

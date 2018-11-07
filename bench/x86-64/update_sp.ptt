@@ -1,0 +1,21 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 0
+BYTES 16
+DESC Single-precision vector update, only scalar operations
+LOADS 1
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 11
+UOPS 14
+LOOP 4
+movss    FPR1, [STR0 + GPR1 * 4]
+movss    [STR0 + GPR1 * 4]     , FPR1
+movss    FPR2, [STR0 + GPR1 * 4 + 4]
+movss    FPR3, [STR0 + GPR1 * 4 + 8]
+movss    FPR4, [STR0 + GPR1 * 4 + 12]
+movss    [STR0 + GPR1 * 4 + 4], FPR2
+movss    [STR0 + GPR1 * 4 + 8], FPR3
+movss    [STR0 + GPR1 * 4 + 12], FPR4
+
+

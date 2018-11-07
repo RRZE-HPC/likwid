@@ -59,9 +59,9 @@
 static int
 proc_findProcessor(uint32_t nodeId, uint32_t coreId)
 {
-    int i;
+    int i = 0;
 
-    for (i=0; i<numa_info.nodes[nodeId].numberOfProcessors; i++)
+    for (i=0; i < (int)numa_info.nodes[nodeId].numberOfProcessors; i++)
     {
         if (numa_info.nodes[nodeId].processors[i] == coreId)
         {
@@ -74,8 +74,8 @@ proc_findProcessor(uint32_t nodeId, uint32_t coreId)
 static int
 setConfiguredNodes(void)
 {
-    DIR *dir;
-    struct dirent *de;
+    DIR *dir = NULL;
+    struct dirent *de = NULL;
     int maxIdConfiguredNode = 0;
 
     dir = opendir("/sys/devices/system/node");
@@ -164,9 +164,9 @@ nodeProcessorList(int node, uint32_t** list)
 {
     FILE *fp;
     bstring filename;
-    int count = 0;
+    uint32_t count = 0;
     bstring src;
-    int i,j;
+    int i = 0, j = 0;
     struct bstrList* tokens;
     unsigned long val;
     char* endptr;
@@ -188,7 +188,7 @@ nodeProcessorList(int node, uint32_t** list)
         src = bread ((bNread) fread, fp);
         tokens = bsplit(src,',');
 
-        for (i=(tokens->qty-1); i>=0 ;i--)
+        for (i=(int)(tokens->qty-1); i >= 0 ; i--)
         {
             val = strtoul((char*) tokens->entry[i]->data, &endptr, 16);
 

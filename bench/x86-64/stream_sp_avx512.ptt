@@ -1,0 +1,27 @@
+STREAMS 3
+TYPE SINGLE
+FLOPS 2
+BYTES 12
+DESC Single-precision stream triad A(i) = B(i)*c + C(i), optimized for AVX-512
+LOADS 2
+STORES 1
+INSTR_CONST 17
+INSTR_LOOP 19
+UOPS 26
+LOOP 64
+vmovaps   zmm2, [STR1 + GPR1*4]
+vmovaps   zmm3, [STR1 + GPR1*4+64]
+vmovaps   zmm4, [STR1 + GPR1*4+128]
+vmovaps   zmm5, [STR1 + GPR1*4+192]
+vmulps    zmm2, zmm2, zmm1
+vaddps    zmm2, zmm2, [STR2 + GPR1*4]
+vmulps    zmm3, zmm3, zmm1
+vaddps    zmm3, zmm3, [STR2 + GPR1*4+64]
+vmulps    zmm4, zmm4, zmm1
+vaddps    zmm4, zmm4, [STR2 + GPR1*4+128]
+vmulps    zmm5, zmm5, zmm1
+vaddps    zmm5, zmm5, [STR2 + GPR1*4+192]
+vmovaps   [STR0 + GPR1*4], zmm2
+vmovaps   [STR0 + GPR1*4+64], zmm3
+vmovaps   [STR0 + GPR1*4+128], zmm4
+vmovaps   [STR0 + GPR1*4+192], zmm5

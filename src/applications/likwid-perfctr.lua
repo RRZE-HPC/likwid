@@ -111,7 +111,7 @@ print_group_help = false
 skip_mask = nil
 counter_mask = {}
 access_flags = "e"
-if config["daemonMode"] < 0 then
+if config["daemonMode"] == 1 then
     access_mode = 1
 else
     access_mode = config["daemonMode"]
@@ -132,11 +132,15 @@ use_csv = false
 print_stats = false
 execString = nil
 outfile = nil
+outfile_orig = nil
 forceOverwrite = 0
 gotC = false
 markerFile = string.format("/tmp/likwid_%d.txt",likwid.getpid())
 cpuClock = 1
 execpid = false
+if config["daemonMode"] == -1 then
+    execpid = true
+end
 perfflags = nil
 perfpid = nil
 nan2value = '-'
@@ -302,6 +306,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         if suffix ~= "txt" then
             use_csv = true
         end
+        outfile_orig = arg
         outfile = arg:gsub("%%h", likwid.gethostname())
         outfile = outfile:gsub("%%p", likwid.getpid())
         outfile = outfile:gsub("%%j", likwid.getjid())
@@ -606,6 +611,9 @@ if pin_cpus then
     if os.getenv("CILK_NWORKERS") == nil then
         likwid.setenv("CILK_NWORKERS", tostring(math.tointeger(num_cpus)))
     end
+    if os.getenv("TBB_MAX_NUM_THREADS") == nil then
+        likwid.setenv("TBB_MAX_NUM_THREADS", tostring(math.tointeger(num_cpus)))
+    end
     if skip_mask then
         likwid.setenv("LIKWID_SKIP",skip_mask)
     end
@@ -757,31 +765,48 @@ end
 
 
 
-
+timeline_delim = " "
+if use_csv then
+    timeline_delim = ","
+end
 if use_timeline == true then
-    local cores_string = "CORES: "
-    for i, cpu in pairs(cpulist) do
-        cores_string = cores_string .. tostring(cpu) .. "|"
+    local delim = "|"
+    local word_delim = ": "
+    if outfile_orig ~= nil then
+        io.output(outfile_orig)
+        delim = timeline_delim
+        word_delim = timeline_delim
     end
-    print("# "..cores_string:sub(1,cores_string:len()-1))
+    local clist = {}
+    for i, cpu in pairs(cpulist) do
+        table.insert(clist, tostring(cpu))
+    end
+    print("# Cores"..word_delim..table.concat(clist, delim))
     for i, gid in pairs(group_ids) do
-        local strlist = {}
+        local strlist = {"GID"}
         if likwid.getNumberOfMetrics(gid) == 0 then
+            table.insert(strlist, "EventCount")
+            table.insert(strlist, "CpuCount")
+            table.insert(strlist, "Total runtime [s]")
             for e=1,likwid.getNumberOfEvents(gid) do
                 table.insert(strlist, likwid.getNameOfEvent(gid, e))
             end
         else
+            table.insert(strlist, "MetricsCount")
+            table.insert(strlist, "CpuCount")
+            table.insert(strlist, "Total runtime [s]")
             for m=1,likwid.getNumberOfMetrics(gid) do
                 table.insert(strlist, likwid.getNameOfMetric(gid, m))
             end
         end
-        print("# "..table.concat(strlist, "|"))
+        print("# "..table.concat(strlist, delim))
     end
 end
 
 
 
 io.stdout:flush()
+io.stderr:flush()
 local groupTime = {}
 local exitvalue = 0
 local twork = 0
@@ -807,10 +832,7 @@ if use_wrapper or use_timeline then
 
     start = likwid.startClock()
     groupTime[activeGroup] = 0
-    timeline_delim = " "
-    if use_csv then
-        timeline_delim = ","
-    end
+    
     while true do
         if likwid.getSignalState() ~= 0 then
             if #execList > 0 then
@@ -848,7 +870,12 @@ if use_wrapper or use_timeline then
                     table.insert(outList, tostring(value))
                 end
             end
-            print_stderr(table.concat(outList, timeline_delim))
+            if not outfile then
+                print_stderr(table.concat(outList, timeline_delim))
+            else
+                print(table.concat(outList, timeline_delim))
+                io.flush()
+            end
             groupTime[activeGroup] = time
             xstop = likwid.stopClock()
             twork = likwid.getClock(xstart, xstop)
@@ -919,7 +946,7 @@ elseif use_timeline == false then
     likwid.printOutput(results, metrics, cpulist, nil, print_stats)
 end
 
-if outfile then
+if outfile and outfile ~= outfile_orig then
     local suffix = ""
     if string.match(outfile,".-[^\\/]-%.?([^%.\\/]*)$") then
         suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")

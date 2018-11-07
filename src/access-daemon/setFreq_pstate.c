@@ -9,7 +9,7 @@
  *      Released:  12.04.2018
  *
  *      Authors:  Thomas Roehl (tr), thomas.roehl@googlemail.com
- *
+ *                Amin Nabikhani, amin.nabikhani@gmail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg

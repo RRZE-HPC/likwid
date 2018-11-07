@@ -9,7 +9,7 @@ INSTR_CONST 17
 INSTR_LOOP 15
 UOPS 22
 vmovaps ymm7, [rip+SCALAR]
-LOOP 16
+LOOP 32
 vmovaps   ymm1, [STR0 + GPR1*4]
 vmovaps   ymm2, [STR0 + GPR1*4+32]
 vmovaps   ymm3, [STR0 + GPR1*4+64]

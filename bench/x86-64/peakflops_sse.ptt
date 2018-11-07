@@ -1,0 +1,26 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 8
+BYTES 8
+movaps xmm1, [rip+SCALAR]
+movaps xmm2, [rip+SCALAR]
+movaps xmm3, [rip+SCALAR]
+movaps xmm4, [rip+SCALAR]
+movaps xmm5, [rip+SCALAR]
+movaps xmm6, [rip+SCALAR]
+movaps xmm7, [rip+SCALAR]
+movaps xmm8, [rip+SCALAR]
+movaps xmm9, [rip+SCALAR]
+.align 32
+LOOP 2
+movapd    xmm1, [STR0 + GPR1 * 8 ]
+addpd     xmm2, xmm1
+mulpd     xmm3, xmm1
+addpd     xmm4, xmm1
+mulpd     xmm5, xmm1
+addpd     xmm6, xmm1
+mulpd     xmm7, xmm1
+addpd     xmm8, xmm1
+mulpd     xmm9, xmm1
+
+

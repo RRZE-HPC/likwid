@@ -205,6 +205,18 @@ lua_likwid_setAccessMode(lua_State* L)
 }
 
 static int
+lua_likwid_getAccessMode(lua_State* L)
+{
+#ifdef LIKWID_USE_PERFEVENT
+    return ACCESSMODE_PERF;
+#else
+    init_configuration();
+    Configuration_t config = get_configuration();
+    return config->daemonMode;
+#endif
+}
+
+static int
 lua_likwid_init(lua_State* L)
 {
     int ret;
@@ -2001,17 +2013,23 @@ lua_likwid_checkProgram(lua_State* L)
     int ret = -1;
     if (lua_gettop(L) == 1)
     {
-        int status;
-        pid_t retpid;
+        int status = 0;
+        pid_t retpid = 0;
         pid_t pid = lua_tonumber(L, 1);
         retpid = waitpid(pid, &status, WNOHANG);
         if (retpid == pid)
         {
             if (WIFEXITED(status))
+            {
                 ret = WEXITSTATUS(status);
+            }
+            else if (WIFSIGNALED(status))
+            {
+                ret = 128 + WTERMSIG(status);
+            }
         }
     }
-    lua_pushinteger(L, ret);
+    lua_pushinteger(L, (lua_Integer)ret);
     return 1;
 }
 
@@ -2026,18 +2044,22 @@ lua_likwid_killProgram(lua_State* L)
 static int
 lua_likwid_waitpid(lua_State* L)
 {
-    int status;
+    int status = 0;
     int ret = -1;
     pid_t pid = lua_tonumber(L, 1);
     pid_t retpid = waitpid(pid, &status, 0);
     if (pid == retpid)
     {
-        if (WIFEXITED(status) || WIFSIGNALED(status))
+        if (WIFEXITED(status))
         {
             ret = WEXITSTATUS(status);
         }
+        else if (WIFSIGNALED(status))
+        {
+            ret = 128 + WTERMSIG(status);
+        }
     }
-    lua_pushinteger(L, ret);
+    lua_pushinteger(L, (lua_Integer)ret);
     return 1;
 }
 
@@ -2641,6 +2663,15 @@ lua_likwid_getUncoreFreqMax(lua_State* L)
 }
 
 static int
+lua_likwid_getUncoreFreqCur(lua_State* L)
+{
+    const int socket_id = lua_tointeger(L,-1);
+    uint64_t freq = freq_getUncoreFreqCur(socket_id);
+    lua_pushinteger(L, freq);
+    return 1;
+}
+
+static int
 lua_likwid_getuid(lua_State* L)
 {
     int r = geteuid();
@@ -2760,6 +2791,7 @@ luaopen_liblikwid(lua_State* L){
     // Perfmon functions
     //lua_register(L, "accessClient_setaccessmode",lua_accessClient_setaccessmode);
     lua_register(L, "likwid_setAccessClientMode",lua_likwid_setAccessMode);
+    lua_register(L, "likwid_getAccessClientMode",lua_likwid_getAccessMode);
     lua_register(L, "likwid_init",lua_likwid_init);
     lua_register(L, "likwid_addEventSet", lua_likwid_addEventSet);
     lua_register(L, "likwid_setupCounters",lua_likwid_setupCounters);
@@ -2842,7 +2874,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_sendSignal", lua_likwid_send_signal);
     // Verbosity functions
     lua_register(L, "likwid_setVerbosity", lua_likwid_setVerbosity);
-    lua_register(L, "likwid_getVerbosity", lua_likwid_getVerbosity); 
+    lua_register(L, "likwid_getVerbosity", lua_likwid_getVerbosity);
     // Marker API functions
     lua_register(L, "likwid_markerInit", lua_likwid_markerInit);
     lua_register(L, "likwid_markerThreadInit", lua_likwid_markerThreadInit);
@@ -2886,6 +2918,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getUncoreFreqMin", lua_likwid_getUncoreFreqMin);
     lua_register(L, "likwid_setUncoreFreqMax", lua_likwid_setUncoreFreqMax);
     lua_register(L, "likwid_getUncoreFreqMax", lua_likwid_getUncoreFreqMax);
+    lua_register(L, "likwid_getUncoreFreqCur", lua_likwid_getUncoreFreqCur);
     // setuid&friends
     lua_register(L, "likwid_getuid", lua_likwid_getuid);
     lua_register(L, "likwid_geteuid", lua_likwid_geteuid);

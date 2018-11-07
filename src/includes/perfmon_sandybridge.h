@@ -50,6 +50,9 @@ int (*sandy_cbox_setup)(int, RegisterIndex, PerfmonEvent*);
 
 int snb_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
+    cpu_id++;
+    index++;
+    event++;
     return 0; 
 }
 
@@ -88,6 +91,7 @@ uint32_t snb_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = (1ULL<<(1+(index*4)));
+    cpu_id++;
     for(j=0;j<event->numberOfOptions;j++)
     {
         switch (event->options[j].type)
@@ -278,8 +282,10 @@ uint32_t snb_cbox_filter(PerfmonEvent *event)
                 break;
             case EVENT_OPTION_NID:
                 mask = 0x0ULL;
-                for (int i=0; i<affinityDomains.numberOfNumaDomains;i++)
+                for (uint32_t i = 0; i < affinityDomains.numberOfNumaDomains; i++)
+                {
                     mask |= (1ULL<<i);
+                }
                 if (event->options[j].value & mask)
                 {
                     ret |= ((event->options[j].value & 0xFFULL) << 10);
@@ -334,6 +340,8 @@ int snb_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 break;
             case EVENT_OPTION_THRESHOLD:
                 flags |= (event->options[j].value & 0x1FULL)<<24;
+                break;
+            default:
                 break;
         }
     }
@@ -780,7 +788,6 @@ int perfmon_setupCounterThread_sandybridge(
 {
     int i;
     int haveLock = 0;
-    uint64_t flags = 0x0ULL;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
@@ -833,7 +840,6 @@ int perfmon_setupCounterThread_sandybridge(
 
     for (i=0;i < eventSet->numberOfEvents;i++)
     {
-        flags = 0x0ULL;
         RegisterType type = eventSet->events[i].type;
         if (!TESTTYPE(eventSet, type))
         {

@@ -636,7 +636,7 @@ int wex_rbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t flags = 0x01ULL;
     uint64_t subflags = 0x0ULL;
-    int number;
+    int number = 0;
 
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
@@ -1028,14 +1028,8 @@ int perfmon_setupCounterThread_westmereEX(int thread_id, PerfmonEventSet* eventS
 
 int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* eventSet)
 {
-    int haveLock = 0;
     uint64_t core_ctrl_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
-
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
-        haveLock = 1;
-    }
 
     //wex_uncore_freeze(cpu_id, eventSet, FREEZE_FLAG_CLEAR_CTR);
 
@@ -1086,15 +1080,15 @@ int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* event
     { \
         uint64_t tmp = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[id].statusRegister, &tmp)); \
-        if (tmp & (1ULL<<offset)) \
+        if (tmp & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ovflRegister, (1ULL<<offset))); \
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ovflRegister, (1ULL<<(offset)))); \
         } \
     }
 
 #define WEX_CLEAR_OVERFLOW(id, offset) \
-    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ctrlRegister, (1<<offset)));
+    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ctrlRegister, (1<<(offset))));
 
 
 #define WEX_CHECK_UNCORE_OVERFLOW(id, offset) \
@@ -1123,10 +1117,10 @@ int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* event
                 default: \
                     break; \
             } \
-            if ((gl_offset != -1) && (tmp & (1ULL<<gl_offset))) \
+            if ((gl_offset != -1) && (tmp & (1ULL<<(gl_offset)))) \
             { \
                 check_local = 1; \
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_OVF_CTRL, (1ULL<<gl_offset))); \
+                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_U_PMON_GLOBAL_OVF_CTRL, (1ULL<<(gl_offset)))); \
             } \
         } \
         else \
@@ -1136,10 +1130,10 @@ int perfmon_startCountersThread_westmereEX(int thread_id, PerfmonEventSet* event
         if (check_local) \
         { \
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, box_map[id].statusRegister, &tmp)); \
-            if (tmp & (1ULL<<offset)) \
+            if (tmp & (1ULL<<(offset))) \
             { \
                 eventSet->events[i].threadCounter[thread_id].overflows++; \
-                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ovflRegister, (1ULL<<offset))); \
+                CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, box_map[id].ovflRegister, (1ULL<<(offset)))); \
             } \
         } \
     }

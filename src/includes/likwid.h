@@ -79,6 +79,10 @@ Shortcut for likwid_markerGetResults() for \a regionTag if compiled with -DLIKWI
 Shortcut for likwid_markerNextGroup() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
 /*!
+\def LIKWID_MARKER_RESET(regionTag)
+Shortcut for likwid_markerResetRegion() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
+*/
+/*!
 \def LIKWID_MARKER_CLOSE
 Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
 */
@@ -92,6 +96,7 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #define LIKWID_MARKER_START(regionTag) likwid_markerStartRegion(regionTag)
 #define LIKWID_MARKER_STOP(regionTag) likwid_markerStopRegion(regionTag)
 #define LIKWID_MARKER_CLOSE likwid_markerClose()
+#define LIKWID_MARKER_RESET(regionTag) likwid_markerResetRegion(regionTag)
 #define LIKWID_MARKER_GET(regionTag, nevents, events, time, count) likwid_markerGetRegion(regionTag, nevents, events, time, count)
 #else
 #define LIKWID_MARKER_INIT
@@ -102,6 +107,7 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #define LIKWID_MARKER_STOP(regionTag)
 #define LIKWID_MARKER_CLOSE
 #define LIKWID_MARKER_GET(regionTag, nevents, events, time, count)
+#define LIKWID_MARKER_RESET(regionTag)
 #endif
 
 #ifdef __cplusplus
@@ -170,7 +176,13 @@ in regionTag. The measurement data of the stopped region gets summed up in globa
 @return Error code of stop operation
 */
 extern int likwid_markerStopRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+/*! \brief Reset a measurement region
 
+Reset the values of all configured counters and timers.
+@param regionTag [in] Reset data using this string
+@return Error code of reset operation
+*/
+extern int likwid_markerResetRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
 /*! \brief Get accumulated data of a code region
 
 Get the accumulated data of the current thread for the given regionTag.
@@ -223,6 +235,7 @@ MSR and PCI devices. The daemon mode forwards the operations to a daemon with
 higher priviledges.
 */
 typedef enum {
+    ACCESSMODE_PERF = -1, /*!< \brief Access performance monitoring through perf_event kernel interface */
     ACCESSMODE_DIRECT = 0, /*!< \brief Access performance monitoring registers directly */
     ACCESSMODE_DAEMON = 1 /*!< \brief Use the access daemon to access the registers */
 } AccessMode;
@@ -1211,7 +1224,7 @@ typedef PowerData* PowerData_t;
 Additionally, it reads basic information about the energy measurements like
 minimal measurement time.
 @param [in] cpuId Initialize energy facility for this CPU
-@return error code
+@return RAPL status (0=No RAPL, 1=RAPL working)
 */
 extern int power_init(int cpuId) __attribute__ ((visibility ("default") ));
 /*! \brief Get a pointer to the energy facility information
@@ -1557,6 +1570,13 @@ Get the maximal Uncore frequency.
 @return frequency in MHz or 0 at failure
 */
 extern uint64_t freq_getUncoreFreqMax(const int socket_id) __attribute__ ((visibility ("default") ));
+/*! \brief Get the current Uncore frequency
+
+Get the current Uncore frequency.
+@param [in] socket_id ID of socket
+@return frequency in MHz or 0 at failure
+*/
+extern uint64_t freq_getUncoreFreqCur(const int socket_id) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 #ifdef __cplusplus

@@ -65,6 +65,7 @@
 #define MSR_PERF_GLOBAL_OVF_CTRL  0x390
 #define MSR_PEBS_ENABLE           0x3F1
 #define MSR_PEBS_LD_LAT           0x3F6
+#define MSR_PEBS_FRONTEND         0x3F7
 /* Perfmon V3 */
 #define MSR_OFFCORE_RESP0              0x1A6
 #define MSR_OFFCORE_RESP1              0x1A7
@@ -2261,6 +2262,7 @@
 #define MSR_ANY_GFXE_C0                 0x65A
 #define MSR_CORE_GFXE_OVERLAP_C0        0x65B
 #define MSR_UNCORE_FREQ                 0x620
+#define MSR_UNCORE_FREQ_READ            0x621
 #define MSR_FSB_FREQ                    0xCD
 #define MSR_ENERGY_PERF_BIAS            0x1B0
 #define MSR_ALT_PEBS                    0x39C

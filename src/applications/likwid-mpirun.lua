@@ -234,6 +234,8 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
         end
     elseif ver1 == 2 then
         bindstr = "--bind-to none"
+    elseif ver1 == 3 then
+        bindstr = "--bind-to none"
     end
 
     local cmd = string.format("%s -hostfile %s %s -np %d -npernode %d %s %s",
@@ -572,7 +574,7 @@ local function writeHostfileSlurm(hostlist, filename)
     cmd = string.format("scontrol show hostlist %s", table.concat(l,","))
     f = io.popen(cmd, 'r')
     if f ~= nil then
-        likwid.setenv("SLURM_NODELIST", f:read('*a'))
+        likwid.setenv("SLURM_NODELIST", f:read('*l'))
         f:close()
     else
         print_stderr("ERROR: Cannot transform list of hosts to SLURM hostlist format")
@@ -843,7 +845,7 @@ local function assignHosts(hosts, np, ppn, tpp)
                     current = ppn*tpp
                     hosts[i] = nil
                 end
-            elseif host["slots"]  and host["slots"] < ppn then
+            elseif host["slots"] and host["slots"] < ppn then
                 --[[if host["maxslotsno"] then
                     if host["maxslots"] < ppn then
                         print_stderr(string.format("WARN: Oversubscription for host %s needed, but max-slots set to %d.",
@@ -1101,7 +1103,7 @@ local function setPerfStrings(perflist, cpuexprs)
                 local slist = {}
                 for j, cpu in pairs(cpuexpr) do
                     for l, socklist in pairs(socketList) do
-                        if inList(cpu, socklist) then
+                        if inList(tonumber(cpu), socklist) then
                             table.insert(slist, l)
                         end
                     end

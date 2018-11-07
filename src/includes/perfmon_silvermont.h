@@ -47,6 +47,7 @@ int perfmon_init_silvermont(int cpu_id)
 uint32_t svm_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint32_t flags = (1ULL<<(1+(index*4)));
+    cpu_id++;
     if (event->numberOfOptions > 0)
     {
         for(int i=0;i<event->numberOfOptions;i++)
@@ -163,15 +164,8 @@ int perfmon_setupCountersThread_silvermont(
         int thread_id,
         PerfmonEventSet* eventSet)
 {
-    int haveLock = 0;
-    uint64_t flags = 0x0ULL;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
-
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
-        haveLock = 1;
-    }
 
     if (MEASURE_CORE(eventSet))
     {
@@ -186,7 +180,6 @@ int perfmon_setupCountersThread_silvermont(
         {
             continue;
         }
-        flags = 0x0ULL;
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         eventSet->events[i].threadCounter[thread_id].init = TRUE;

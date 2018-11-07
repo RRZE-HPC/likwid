@@ -219,7 +219,6 @@ likwid_markerInit(void)
             }
         }
     }
-
 #ifdef LIKWID_USE_PERFEVENT
     if (perfpid != NULL)
     {
@@ -228,7 +227,7 @@ likwid_markerInit(void)
         char* perfflags = getenv("LIKWID_PERF_FLAGS");
         if (perfflags)
         {
-            setenv("LIKWID_PERF_FLAGS", perfflags, 1);
+            setenv("LIKWID_PERF_FLAGS", getenv("LIKWID_PERF_FLAGS"), 1);
         }
     }
 #endif
@@ -517,7 +516,6 @@ likwid_markerRegisterRegion(const char* regionTag)
     HPMread(cpu_id, MSR_DEV, reg, &tmp);
 
     return ret;
-
 }
 
 int
@@ -675,16 +673,61 @@ likwid_markerGetRegion(
 
     cpu_id = hashTable_get(tag, &results);
     thread_id = getThreadID(myCPU);
-    *count = results->count;
-    *time = results->time;
-    length = MIN(groupSet->groups[groupSet->activeGroup].numberOfEvents, *nr_events);
-    for(int i=0;i<length;i++)
+    if (count != NULL)
     {
-        events[i] = results->PMcounters[i];
+        *count = results->count;
     }
-    *nr_events = length;
+    if (time != NULL)
+    {
+        *time = results->time;
+    }
+    if (nr_events != NULL && events != NULL && *nr_events > 0)
+    {
+        length = MIN(groupSet->groups[groupSet->activeGroup].numberOfEvents, *nr_events);
+        for(int i=0;i<length;i++)
+        {
+            events[i] = results->PMcounters[i];
+        }
+        *nr_events = length;
+    }
     bdestroy(tag);
     return;
+}
+
+
+int
+likwid_markerResetRegion(const char* regionTag)
+{
+    if (! likwid_init)
+    {
+        return -EFAULT;
+    }
+    int cpu_id;
+    int myCPU = likwid_getProcessorId();
+    if (getThreadID(myCPU) < 0)
+    {
+        return -EFAULT;
+    }
+    bstring tag = bfromcstr(regionTag);
+    char groupSuffix[100];
+    LikwidThreadResults* results;
+    sprintf(groupSuffix, "-%d", groupSet->activeGroup);
+    bcatcstr(tag, groupSuffix);
+
+    cpu_id = hashTable_get(tag, &results);
+    if (results->state != MARKER_STATE_STOP)
+    {
+        fprintf(stderr, "ERROR: Can only reset stopped regions\n");
+        return -EFAULT;
+    }
+
+    memset(results->StartPMcounters, 0, groupSet->groups[groupSet->activeGroup].numberOfEvents*sizeof(double));
+    memset(results->PMcounters, 0, groupSet->groups[groupSet->activeGroup].numberOfEvents*sizeof(double));
+    memset(results->StartOverflows, 0, groupSet->groups[groupSet->activeGroup].numberOfEvents*sizeof(double));
+    results->count = 0;
+    results->time = 0;
+    timer_reset(&results->startTime);
+    return 0;
 }
 
 int

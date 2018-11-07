@@ -93,6 +93,11 @@ static int freq_getDriver(const int cpu_id )
         bdestroy(bbuff);
     }
     fclose(f);
+    if (access(daemon_path, X_OK) != 0)
+    {
+        fprintf(stderr, "WARN: SetFreq daemon not found, cannot change settings\n");
+        drv = NOT_DETECTED;
+    }
     return 0;
 }
 
@@ -442,7 +447,7 @@ static int getAMDTurbo(const int cpu_id)
     {
         HPMinit();
         own_hpm = 1;
-        
+
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
@@ -473,7 +478,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
     {
         HPMinit();
         own_hpm = 1;
-        
+
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
@@ -489,7 +494,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
         ERROR_PLAIN_PRINT(Cannot read register 0xC0010015);
         return err;
     }
-    
+
     if (turbo)
     {
         tmp &= ~(1ULL<<25);
@@ -549,7 +554,7 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
     {
         HPMinit();
         own_hpm = 1;
-        
+
         err = HPMaddThread(cpu_id);
         if (err != 0)
         {
@@ -565,7 +570,6 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
         ERROR_PRINT(Cannot read register 0x%x, MSR_IA32_MISC_ENABLE);
         return err;
     }
-    
     if (turbo)
     {
         tmp &= ~(1ULL << 38);
@@ -965,6 +969,7 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
         ERROR_PRINT(Cannot write register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
         return err;
     }
+
     if (own_hpm)
         HPMfinalize();
     return 0;
@@ -1009,6 +1014,54 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
     if (err)
     {
         //ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ, cpuId);
+        return 0;
+    }
+    tmp = (tmp & 0xFFULL) * 100;
+
+    if (own_hpm)
+        HPMfinalize();
+    return tmp;
+}
+
+uint64_t freq_getUncoreFreqCur(const int socket_id)
+{
+    int err = 0;
+    int own_hpm = 0;
+    int cpuId = -1;
+    if (isAMD())
+    {
+        return 0;
+    }
+    for (int i=0; i<cpuid_topology.numHWThreads; i++)
+    {
+        if (cpuid_topology.threadPool[i].packageId == socket_id)
+        {
+            cpuId = cpuid_topology.threadPool[i].apicId;
+            break;
+        }
+    }
+    if (cpuId < 0)
+    {
+        ERROR_PRINT(Unknown socket ID %d, socket_id);
+        return 0;
+    }
+    if (!HPMinitialized())
+    {
+        HPMinit();
+        own_hpm = 1;
+        err = HPMaddThread(cpuId);
+        if (err != 0)
+        {
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            return 0;
+        }
+    }
+
+    uint64_t tmp = 0x0ULL;
+    err = HPMread(cpuId, MSR_DEV, MSR_UNCORE_FREQ_READ, &tmp);
+    if (err)
+    {
+        //ERROR_PRINT(Cannot read register 0x%X on CPU %d, MSR_UNCORE_FREQ_READ, cpuId);
         return 0;
     }
     tmp = (tmp & 0xFFULL) * 100;

@@ -211,13 +211,13 @@ for opt,arg in likwid.getopt(arg, {"h","v","V:","g:","C:","c:","t:","r:","a","d"
         print_configs = true
     elseif opt == "host" then
         host = arg
-    elseif opt == "f" or opt == "force" then
-        force = true
     elseif opt == "V" then
         local v = tonumber(arg)
         if v >= 0 and v <= 3 then
             verbose = v
         end
+    elseif opt == "f" or opt == "force" then
+        force = true
     elseif opt == "?" then
         print_stderr("Invalid commandline option -"..arg)
         os.exit(1)

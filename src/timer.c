@@ -135,6 +135,31 @@ fRDTSCP(TscCounter* cpu_c)
 }
 #endif
 #endif
+
+static int os_timer(TscCounter* time)
+{
+    int ret;
+    struct timeval cur;
+    ret = gettimeofday(&cur, NULL);
+    if (!ret)
+    {
+        time->int64 = ((uint64_t)cur.tv_sec) * 1E6;
+        time->int64 += cur.tv_usec;
+    }
+    return ret;
+}
+
+static void os_timer_start(TscCounter* time)
+{
+    os_timer(time);
+}
+
+static void os_timer_stop(TscCounter* time)
+{
+    os_timer(time);
+}
+
+
 static void
 _timer_start( TimerData* time )
 {
@@ -177,24 +202,26 @@ _timer_stop( TimerData* time )
 static uint64_t
 _timer_printCycles( const TimerData* time )
 {
+    uint64_t cycles = 0x0ULL;
     /* clamp to zero if something goes wrong */
     if (((time->stop.int64-baseline) < time->start.int64) ||
         (time->start.int64 == time->stop.int64))
     {
-        return 0ULL;
+        cycles = 0ULL;
     }
     else
     {
-        return (time->stop.int64 - time->start.int64 - baseline);
+        cycles = (time->stop.int64 - time->start.int64 - baseline);
     }
+    return cycles;
 }
 
 /* Return time duration in seconds */
 static double
 _timer_print( const TimerData* time )
 {
-    uint64_t cycles;
-    /* clamp to zero if something goes wrong */
+    uint64_t cycles = 0x0ULL;
+    cycles = _timer_printCycles(time);
     if (((time->stop.int64-baseline) < time->start.int64) ||
         (time->start.int64 == time->stop.int64))
     {

@@ -110,7 +110,7 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     if (!hwloc_topology)
     {
         likwid_hwloc_topology_init(&hwloc_topology);
-        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
+        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM|HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
         likwid_hwloc_topology_load(hwloc_topology);
     }
     obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_SOCKET, 0);
@@ -139,6 +139,8 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
         cpuid_info.stepping = atoi(info);
 
     cpuid_topology.numHWThreads = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
+    if (cpuid_topology.activeHWThreads > cpuid_topology.numHWThreads)
+        cpuid_topology.numHWThreads = cpuid_topology.activeHWThreads;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d activeHWThreads %d,
                             cpuid_info.family,
                             cpuid_info.model,

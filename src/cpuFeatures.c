@@ -86,16 +86,11 @@ cpuFeatures_update(int cpu)
 {
     int ret;
     uint64_t flags = 0x0ULL;
-    if (cpuid_info.isIntel == 0)
-    {
-        return;
-    }
     ret = HPMread(cpu, MSR_DEV, MSR_IA32_MISC_ENABLE, &flags);
     if (ret != 0)
     {
         fprintf(stderr, "Cannot read register 0x%X on cpu %d: err %d\n", MSR_IA32_MISC_ENABLE, cpu, ret);
     }
-
     /*cpuFeatureFlags.fastStrings = 0;
     cpuFeatureFlags.thermalControl = 0;
     cpuFeatureFlags.perfMonitoring = 0;
@@ -268,24 +263,23 @@ cpuFeatures_init()
         cpuFeatureMask = malloc(cpuid_topology.numHWThreads*sizeof(uint64_t));
         memset(cpuFeatureMask, 0, cpuid_topology.numHWThreads*sizeof(uint64_t));
     }
-    if (cpuid_info.isIntel == 0)
-    {
-        return;
-    }
+
     if (!HPMinitialized())
     {
         HPMinit();
-
-        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    }
+    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    {
+        int ret = HPMaddThread(cpuid_topology.threadPool[i].apicId);
+        if (ret != 0)
         {
-            int ret = HPMaddThread(cpuid_topology.threadPool[i].apicId);
-            if (ret != 0)
-            {
-                ERROR_PRINT(Cannot get access to register CPU feature register on CPU %d, cpuid_topology.threadPool[i].apicId);
-                return;
-            }
-            cpuFeatures_update(cpuid_topology.threadPool[i].apicId);
+            ERROR_PRINT(Cannot get access to register CPU feature register on CPU %d, cpuid_topology.threadPool[i].apicId);
+            return;
         }
+    }
+    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    {
+        cpuFeatures_update(cpuid_topology.threadPool[i].apicId);
     }
 
     features_initialized = 1;
@@ -375,14 +369,9 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
         if (type == FEAT_CL_PREFETCHER ||
             type == FEAT_IP_PREFETCHER)
         {
-            fprintf(stderr, "CL_PREFETCHER and IP_PREFETCHER not available on Intel Xeon Phi (KNL)\n");
+            fprintf(stderr, "CL_PREFETCHER and IP_PREFETCHER not available on Intel Xeon Phi (KNL)");
             return 0;
         }
-    }
-    if (cpuid_info.isIntel == 0)
-    {
-        fprintf(stderr, "Enabling features is only available on Intel platforms\n");
-        return -EINVAL;
     }
 
     ret = HPMread(cpu, MSR_DEV, reg, &flags);
@@ -535,11 +524,6 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
             fprintf(stderr, "CL_PREFETCHER and IP_PREFETCHER not available on Intel Xeon Phi (KNL)");
             return 0;
         }
-    }
-    if (cpuid_info.isIntel == 0)
-    {
-        fprintf(stderr, "Disabling features is only available on Intel platforms\n");
-        return -EINVAL;
     }
     ret = HPMread(cpu, MSR_DEV, reg, &flags);
     if (ret != 0)

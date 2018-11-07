@@ -257,7 +257,6 @@ end
 
 if printAvailFreq then
     local freqs = likwid.getAvailFreq(0)
-    
     if #freqs > 0 then
         print_stdout("Available frequencies:")
         print_stdout(string.format("%s", table.concat(freqs, " ")))

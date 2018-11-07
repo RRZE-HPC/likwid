@@ -52,6 +52,7 @@ likwid.getConfiguration = likwid_getConfiguration
 likwid.setGroupPath = likwid_setGroupPath
 likwid.putConfiguration = likwid_putConfiguration
 likwid.setAccessClientMode = likwid_setAccessClientMode
+likwid.getAccessClientMode = likwid_getAccessClientMode
 likwid.init = likwid_init
 likwid.addEventSet = likwid_addEventSet
 likwid.setupCounters = likwid_setupCounters
@@ -114,6 +115,7 @@ likwid.setenv = likwid_setenv
 likwid.unsetenv = likwid_unsetenv
 likwid.getpid = likwid_getpid
 likwid.setVerbosity = likwid_setVerbosity
+likwid.getVerbosity = likwid_getVerbosity
 likwid.access = likwid_access
 likwid.startProgram = likwid_startProgram
 likwid.checkProgram = likwid_checkProgram
@@ -162,6 +164,7 @@ likwid.setUncoreFreqMin = likwid_setUncoreFreqMin
 likwid.getUncoreFreqMin = likwid_getUncoreFreqMin
 likwid.setUncoreFreqMax = likwid_setUncoreFreqMax
 likwid.getUncoreFreqMax = likwid_getUncoreFreqMax
+likwid.getUncoreFreqCur = likwid_getUncoreFreqCur
 likwid.getuid = likwid_getuid
 likwid.geteuid = likwid_geteuid
 likwid.setuid = likwid_setuid
@@ -731,22 +734,13 @@ local function tableMinMaxAvgSum(inputtable, skip_cols, skip_lines)
     for j=skip_cols+1,nr_columns do
         for i=skip_lines+1, nr_lines do
             local res = tonumber(inputtable[j][i])
-            if inputtable[j][i] ~= "nan" then
+            if inputtable[j][i] ~= "nan" and inputtable[j][i] ~= "-" then
                 if res ~= nil then
                     minOfLine[i-skip_lines+1] = math.min(res, minOfLine[i-skip_lines+1])
                     maxOfLine[i-skip_lines+1] = math.max(res, maxOfLine[i-skip_lines+1])
                     sumOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1] + res
-                else
-                    minOfLine[i-skip_lines+1] = 0
-                    maxOfLine[i-skip_lines+1] = 0
-                    sumOfLine[i-skip_lines+1] = 0
                 end
                 avgOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1]/(nr_columns-skip_cols)
-            else
-                minOfLine[i-skip_lines+1] = 0/0
-                maxOfLine[i-skip_lines+1] = 0/0
-                sumOfLine[i-skip_lines+1] = 0/0
-                avgOfLine[i-skip_lines+1] = 0/0
             end
         end
     end
@@ -1244,5 +1238,16 @@ end
 
 likwid.getAvailGovs = llikwid_getAvailGovs
 
+local function llikwid_getArch()
+    local f = io.popen("uname -m")
+    if (f ~= nil) then
+        local res = f:read("*a")
+        f:close()
+        return res
+    end
+    return "unknown"
+end
+
+likwid.getArch = llikwid_getArch
 
 return likwid

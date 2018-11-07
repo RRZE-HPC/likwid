@@ -97,13 +97,13 @@ PerfmonGroupSet* groupSet = NULL;
 LikwidResults* markerResults = NULL;
 int markerRegions = 0;
 
-int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-int (*perfmon_readCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-int (*perfmon_finalizeCountersThread) (int thread_id, PerfmonEventSet* eventSet);
+int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet) = NULL;
+int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet) = NULL;
+int (*perfmon_readCountersThread) (int thread_id, PerfmonEventSet* eventSet) = NULL;
+int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet) = NULL;
+int (*perfmon_finalizeCountersThread) (int thread_id, PerfmonEventSet* eventSet) = NULL;
 
-int (*initThreadArch) (int cpu_id);
+int (*initThreadArch) (int cpu_id) = NULL;
 void perfmon_delEventSet(int groupID);
 
 char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
@@ -130,10 +130,10 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     "OCCUPANCY_EDGEDETECT",
     "OCCUPANCY_INVERT",
     "IN_TRANSACTION",
-    "IN_TRANSACTION_ABORTED"
+    "IN_TRANSACTION_ABORTED",
 #ifdef LIKWID_USE_PERFEVENT
-    ,"PERF_PID"
-    ,"PERF_FLAGS"
+    "PERF_PID",
+    "PERF_FLAGS",
 #endif
 };
 
@@ -304,7 +304,8 @@ checkCounter(bstring counterName, const char* limit)
     tokens = bsplit(limitString,'|');
     for(i=0; i<tokens->qty; i++)
     {
-        if(bstrncmp(counterName, tokens->entry[i], blength(tokens->entry[i])) && bstrncmp(tokens->entry[i], counterName, blength(counterName)))
+        if(bstrncmp(counterName, tokens->entry[i], blength(tokens->entry[i])) &&
+           bstrncmp(tokens->entry[i], counterName, blength(counterName)))
         {
             ret = FALSE;
         }
@@ -339,7 +340,7 @@ getEvent(bstring event_str, bstring counter_str, PerfmonEvent* event)
 }
 
 static int
-assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type, int zero_value)
+assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type, int noval_value)
 {
     int found_double = -1;
     int return_index = index;
@@ -354,6 +355,7 @@ assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type
     }
     if (found_double >= 0)
     {
+        DEBUG_PRINT(DEBUGLEV_INFO, "Found option multiple times for event %s, last value wins!", event->name);
         index = found_double;
     }
     else
@@ -361,15 +363,18 @@ assignOption(PerfmonEvent* event, bstring entry, int index, EventOptionType type
         return_index++;
     }
     event->options[index].type = type;
-    if (zero_value)
+    if (noval_value)
     {
-        event->options[index].value = 0;
+        event->options[index].value = noval_value;
     }
     else
     {
         value = 0;
-        sscanf(bdata(entry), "%llx", &value);
-        event->options[index].value = value;
+        int ret = sscanf(bdata(entry), "%llx", &value);
+        if (ret == 1)
+        {
+            event->options[index].value = value;
+        }
     }
     return return_index;
 }
@@ -441,7 +446,7 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
                 fprintf(stderr, "WARN: Option '%s' unknown, skipping option\n", bdata(subtokens->entry[0]));
                 continue;
             }
-            event->options[event->numberOfOptions].value = 0;
+            event->options[event->numberOfOptions].value = 1;
         }
         else if (subtokens->qty == 2)
         {
@@ -1861,17 +1866,17 @@ past_checks:
                 event->threadCounter[j].init = FALSE;
             }
 
-            eventSet->numberOfEvents++;
 
             if (event->type != NOTYPE)
             {
                 valid_events++;
                 DEBUG_PRINT(DEBUGLEV_INFO,
                         Added event %s for counter %s to group %d,
-                        event->event.name,
-                        counter_map[event->index].key,
+                        groupSet->groups[groupSet->numberOfActiveGroups].group.events[eventSet->numberOfEvents],
+                        groupSet->groups[groupSet->numberOfActiveGroups].group.counters[eventSet->numberOfEvents],
                         groupSet->numberOfActiveGroups);
             }
+            eventSet->numberOfEvents++;
         }
         bstrListDestroy(subtokens);
     }
@@ -1941,6 +1946,7 @@ perfmon_setupCounters(int groupId)
 {
     int i;
     int ret = 0;
+    int force_setup = (getenv("LIKWID_FORCE_SETUP") != NULL);
     if (!lock_check())
     {
         ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
@@ -1964,6 +1970,10 @@ perfmon_setupCounters(int groupId)
 
     for(i=0;i<groupSet->numberOfThreads;i++)
     {
+        if (force_setup)
+        {
+            memset(currentConfig[groupSet->threads[i].processorId], 0, NUM_PMC * sizeof(uint64_t));
+        }
         ret = __perfmon_setupCountersThread(groupSet->threads[i].thread_id, groupId);
         if (ret != 0)
         {
@@ -2394,9 +2404,9 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     {
         return NAN;
     }
-    char* f = groupSet->groups[groupId].group.metricformulas[metricId];
     bstring vars = bformat("");
     bstring varlist = bformat("");
+    char* f = groupSet->groups[groupId].group.metricformulas[metricId];
     for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
     {
         if (groupSet->groups[groupId].events[e].type != NOTYPE)
@@ -2508,9 +2518,9 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     {
         return NAN;
     }
-    char* f = groupSet->groups[groupId].group.metricformulas[metricId];
     bstring vars = bformat("");
     bstring varlist = bformat("");
+    char* f = groupSet->groups[groupId].group.metricformulas[metricId];
     for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
     {
         if (groupSet->groups[groupId].events[e].type != NOTYPE)

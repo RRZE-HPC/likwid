@@ -168,7 +168,12 @@ static int get_id_of_type(hwloc_obj_t base, hwloc_obj_type_t type)
 
 static int create_lookups()
 {
+    int do_cache = 1;
+    int cachelimit = 0;
+    int cacheIdx = -1;
     topology_init();
+    numa_init();
+    NumaTopology_t ntopo = get_numaTopology();
     if (!affinity_thread2core_lookup)
     {
         affinity_thread2core_lookup = malloc(cpuid_topology.numHWThreads * sizeof(int));
@@ -190,50 +195,48 @@ static int create_lookups()
         memset(affinity_thread2numa_lookup, -1, cpuid_topology.numHWThreads*sizeof(int));
     }
 
-    int num_pu = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
+    int num_pu = cpuid_topology.numHWThreads;
+    if (cpuid_topology.numCacheLevels == 0)
+    {
+        do_cache = 0;
+    }
+    if (do_cache)
+    {
+        cachelimit = cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
+        cacheIdx = -1;
+    }
     for (int pu_idx = 0; pu_idx < num_pu; pu_idx++)
     {
-        hwloc_obj_t pu = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PU, pu_idx);
-        int hwthreadid = pu->os_index;
-        int coreid = get_id_of_type(pu, HWLOC_OBJ_CORE);
-        int sockid = get_id_of_type(pu, HWLOC_OBJ_PACKAGE);
-        int memid = get_id_of_type(pu, HWLOC_OBJ_NUMANODE);
+        HWThread* t = &cpuid_topology.threadPool[pu_idx];
+        int hwthreadid = t->apicId;
+        int coreid = t->coreId;
+        int sockid = t->packageId;
         affinity_thread2core_lookup[hwthreadid] = coreid;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2core_lookup[%d] = %d, hwthreadid, coreid);
         affinity_thread2socket_lookup[hwthreadid] = sockid;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2socket_lookup[%d] = %d, hwthreadid, sockid);
-        affinity_thread2numa_lookup[hwthreadid] = memid;
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2numa_lookup[%d] = %d, hwthreadid, memid);
-    }
-    int maxNumLevels = 0;
-    int depth = likwid_hwloc_topology_get_depth(hwloc_topology);
-    for (int d = 1; d <= depth; d++)
-    {
-        if (likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_CACHE)
-            maxNumLevels++;
-    }
-    for(int d=depth-1;d >= 1; d--)
-    {
-        if (likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_CACHE)
+        int memid = 0;
+        for (int n = 0; n < ntopo->numberOfNodes; n++)
         {
-            hwloc_obj_t cobj = likwid_hwloc_get_obj_by_depth(hwloc_topology, d, 0);
-            if (cobj->attr->cache.depth != 3)
+            for (int i = 0; i < ntopo->nodes[n].numberOfProcessors; i++)
             {
-                continue;
-            }
-            int num_caches = likwid_hwloc_get_nbobjs_by_depth(hwloc_topology, d);
-            for (int c = 0; c < num_caches; c++)
-            {
-                cobj = likwid_hwloc_get_obj_by_depth(hwloc_topology, d, c);
-                for (int i = 0; i < num_pu; i++)
+                if (ntopo->nodes[n].processors[i] == hwthreadid)
                 {
-                    if (likwid_hwloc_bitmap_isset(cobj->cpuset, i))
-                    {
-                        affinity_thread2sharedl3_lookup[i] = c;
-                        DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2sharedl3_lookup[%d] = %d, i, c);
-                    }
+                    memid = n;
+                    break;
                 }
             }
+        }
+        affinity_thread2numa_lookup[hwthreadid] = memid;
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2numa_lookup[%d] = %d, hwthreadid, memid);
+        if (do_cache)
+        {
+            if (pu_idx % cachelimit == 0)
+            {
+                cacheIdx++;
+            }
+            affinity_thread2sharedl3_lookup[hwthreadid] = cacheIdx;
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2sharedl3_lookup[%d] = %d, hwthreadid, cacheIdx);
         }
     }
     return 0;
@@ -302,23 +305,28 @@ affinity_init()
     int numberOfProcessorsPerSocket =
         cpuid_topology.numCoresPerSocket * cpuid_topology.numThreadsPerCore;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPUs per socket %d, numberOfProcessorsPerSocket);
-    int numberOfCacheDomains;
 
-    int numberOfCoresPerCache =
-        cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads/
-        cpuid_topology.numThreadsPerCore;
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPU cores per LLC %d, numberOfCoresPerCache);
+    int numberOfCacheDomains = 0;
+    int numberOfCoresPerCache = 0;
+    int numberOfProcessorsPerCache = 0;
+    if (cpuid_topology.numCacheLevels > 0)
+    {
+        numberOfCoresPerCache =
+            cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads/
+            cpuid_topology.numThreadsPerCore;
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPU cores per LLC %d, numberOfCoresPerCache);
 
-    int numberOfProcessorsPerCache =
-        cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPUs per LLC %d, numberOfProcessorsPerCache);
-    /* for the cache domain take only into account last level cache and assume
-     * all sockets to be uniform. */
+        numberOfProcessorsPerCache =
+            cpuid_topology.cacheLevels[cpuid_topology.numCacheLevels-1].threads;
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: CPUs per LLC %d, numberOfProcessorsPerCache);
+        /* for the cache domain take only into account last level cache and assume
+         * all sockets to be uniform. */
 
-    /* determine how many last level shared caches exist per socket */
-    numberOfCacheDomains = cpuid_topology.numSockets *
-        (cpuid_topology.numCoresPerSocket/numberOfCoresPerCache);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Cache domains %d, numberOfCacheDomains);
+        /* determine how many last level shared caches exist per socket */
+        numberOfCacheDomains = cpuid_topology.numSockets *
+            (cpuid_topology.numCoresPerSocket/numberOfCoresPerCache);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Cache domains %d, numberOfCacheDomains);
+    }
     /* determine total number of domains */
     numberOfDomains += numberOfSocketDomains + numberOfCacheDomains + numberOfNumaDomains;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: All domains %d, numberOfDomains);
@@ -528,7 +536,8 @@ affinity_finalize()
     }
     for ( int i=0; i < affinityDomains.numberOfAffinityDomains; i++ )
     {
-        bdestroy(affinityDomains.domains[i].tag);
+        if (affinityDomains.domains[i].tag)
+            bdestroy(affinityDomains.domains[i].tag);
         if (affinityDomains.domains[i].processorList != NULL)
         {
             free(affinityDomains.domains[i].processorList);

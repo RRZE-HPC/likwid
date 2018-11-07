@@ -1,0 +1,20 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 0
+BYTES 16
+DESC Double-precision vector copy, uses AVX-512 and non-temporal stores
+LOADS 1
+STORES 1
+INSTR_CONST 16
+INSTR_LOOP 11
+UOPS 14
+LOOP 32
+vmovaps    zmm1, [STR0 + GPR1 * 8]
+vmovaps    zmm2, [STR0 + GPR1 * 8 + 64]
+vmovaps    zmm3, [STR0 + GPR1 * 8 + 128]
+vmovaps    zmm4, [STR0 + GPR1 * 8 + 192]
+vmovntps   [STR1 + GPR1 * 8]     , zmm1
+vmovntps   [STR1 + GPR1 * 8 + 64], zmm2
+vmovntps   [STR1 + GPR1 * 8 + 128], zmm3
+vmovntps   [STR1 + GPR1 * 8 + 192], zmm4
+

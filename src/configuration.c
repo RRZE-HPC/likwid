@@ -48,7 +48,7 @@ int init_config = 0;
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
-static int daemonPath_len = 0;
+//static int daemonPath_len = 0;
 static int groupPath_len = 0;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -75,7 +75,7 @@ default_configuration(void)
     }
     config.daemonMode = ACCESSMODE_DAEMON;
 
-    FILE* fp = popen("which likwid-accessD 2>/dev/null | tr -d '\n'","r");
+    FILE* fp = popen("bash --noprofile -c \"which likwid-accessD 2>/dev/null | tr -d '\n'\"","r");
     if (fp == NULL)
     {
         goto use_hardcoded;
@@ -83,7 +83,7 @@ default_configuration(void)
     ret = getline(&fptr, &len, fp);
     if (ret < 0)
     {
-        fclose(fp);
+        pclose(fp);
         if (fptr)
             free(fptr);
         goto use_hardcoded;
@@ -105,6 +105,8 @@ default_configuration(void)
         goto use_hardcoded;
     }
     fclose(fp);
+#else
+    config.daemonMode = ACCESSMODE_PERF;
 #endif
     init_config = 1;
     return 0;
@@ -133,8 +135,7 @@ use_hardcoded:
 int
 init_configuration(void)
 {
-    int i;
-    FILE* fp;
+    FILE* fp = NULL;
     char line[512];
     char name[128];
     char value[256];
@@ -335,7 +336,7 @@ config_setGroupPath(const char* path)
     stat(path, &st);
     if (S_ISDIR(st.st_mode))
     {
-        if (strlen(path)+1 > groupPath_len)
+        if ((int)(strlen(path)+1) > groupPath_len)
         {
             new = malloc(strlen(path)+1);
             if (new == NULL)
