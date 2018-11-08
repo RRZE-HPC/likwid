@@ -117,6 +117,13 @@ interface
   INTEGER :: count
   end subroutine likwid_markerGetRegion
 
+!> \ingroup Fortran_Interface
+!! \brief Reset the counters for a code region to zero
+  subroutine likwid_markerResetRegion( regionTag )
+!> \param regionTag Name for the code region for later identification
+  character(*) :: regionTag
+  end subroutine likwid_markerResetRegion
+
 end interface
 
 end module likwid

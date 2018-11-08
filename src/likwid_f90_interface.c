@@ -139,3 +139,20 @@ likwid_markergetregion_(
     free(tmp);
 }
 
+void __attribute__ ((visibility ("default") ))
+likwid_markerresetregion_(char* regionTag, int len)
+{
+    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    strncpy(tmp, regionTag, len * sizeof(char) );
+
+    for (int i=(len-1); len > 0; len--)
+    {
+        if (tmp[i] != ' ') {
+            tmp[i+1] = 0;
+            break;
+        }
+    }
+    likwid_markerResetRegion( tmp);
+    free(tmp);
+}
+
