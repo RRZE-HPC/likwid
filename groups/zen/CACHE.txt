@@ -4,18 +4,19 @@ EVENTSET
 FIXC1 ACTUAL_CPU_CLOCK
 FIXC2 MAX_CPU_CLOCK
 PMC0  RETIRED_INSTRUCTIONS
-PMC1  DATA_CACHE_ACCESSES
-PMC2  DATA_CACHE_REFILLS_ALL
+PMC1  CPU_CLOCKS_UNHALTED
+PMC2  DATA_CACHE_ACCESSES
+PMC3  DATA_CACHE_REFILLS_ALL
 
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s]   FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
-CPI   FIXC1/PMC0
+CPI   PMC1/PMC0
 data cache misses PMC2
-data cache request rate PMC1/PMC0
-data cache miss rate (PMC2)/PMC0
-data cache miss ratio (PMC2)/PMC1
+data cache request rate PMC2/PMC0
+data cache miss rate (PMC3)/PMC0
+data cache miss ratio (PMC3)/PMC2
 
 LONG
 Formulas:
