@@ -467,10 +467,15 @@ end
 avail_groups = likwid.getGroups()
 if print_groups == true then
     if avail_groups then
-        print_stdout(string.format("%11s\t%s","Group name", "Description"))
+        local max_len = 0
+        for i,g in pairs(avail_groups) do
+            if g["Name"]:len() > max_len then max_len = g["Name"]:len() end
+        end
+        local s = string.format("%%%ds\t%%s", max_len)
+        print_stdout(string.format(s,"Group name", "Description"))
         print_stdout(likwid.hline)
         for i,g in pairs(avail_groups) do
-            print_stdout(string.format("%11s\t%s",g["Name"], g["Info"]))
+            print_stdout(string.format(s, g["Name"], g["Info"]))
         end
     else
         print_stdout(string.format("No groups defined for %s",cpuinfo["name"]))
