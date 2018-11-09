@@ -60,6 +60,7 @@ while (<INFILE>) {
             {
                 my @tmplist = split("=", $opt);
                 $defaultopts = $defaultopts."{".$tmplist[0].",".$tmplist[1]."},";
+                $opts = $opts."|".$tmplist[0]."_MASK";
                 $nropts++;
             }
         }
@@ -97,6 +98,7 @@ while (<INFILE>) {
             {
                 my @tmplist = split("=", $opt);
                 $defaultopts = $defaultopts."{".$tmplist[0].",".$tmplist[1]."},";
+                $opts = $opts."|".$tmplist[0]."_MASK";
                 $nropts++;
             }
         }
