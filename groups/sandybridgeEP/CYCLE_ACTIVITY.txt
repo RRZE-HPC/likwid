@@ -4,26 +4,29 @@ EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
 FIXC2 CPU_CLK_UNHALTED_REF
-PMC1 CYCLE_ACTIVITY_STALLS_L2_PENDING
-PMC2 CYCLE_ACTIVITY_STALLS_L1D_PENDING
-PMC3 CYCLE_ACTIVITY_CYCLES_NO_DISPATCH
+PMC0 CYCLE_ACTIVITY_CYCLES_L2_PENDING
+PMC2 CYCLE_ACTIVITY_CYCLES_L1D_PENDING
+PMC3 CYCLE_ACTIVITY_CYCLES_NO_EXECUTE
 
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-Cycles without execution [%] PMC3/FIXC1*100
-Cycles with stalls due to L1D [%] PMC2/FIXC1*100
-Cycles with stalls due to L2 [%] PMC1/FIXC1*100
+Cycles without execution [%] (PMC3/FIXC1)*100
+Cycles without execution due to L1D [%] (PMC2/FIXC1)*100
+Cycles without execution due to L2 [%] (PMC0/FIXC1)*100
 
 LONG
-Formulas:
-Cycles without execution [%] = 100.0 * CYCLE_ACTIVITY_CYCLES_NO_DISPATCH/CPU_CLK_UNHALTED_CORE
-Cycles with stalls due to L1D [%] = 100.0 * CYCLE_ACTIVITY_STALLS_L1D_PENDING/CPU_CLK_UNHALTED_CORE
-Cycles with stalls due to L2 [%] = 100.0 * CYCLE_ACTIVITY_STALLS_L2_PENDING/CPU_CLK_UNHALTED_CORE
+Cycles without execution [%] = CYCLE_ACTIVITY_CYCLES_NO_EXECUTE/CPU_CLK_UNHALTED_CORE*100
+Cycles with stalls due to L1D [%] = CYCLE_ACTIVITY_CYCLES_L1D_PENDING/CPU_CLK_UNHALTED_CORE*100
+Cycles with stalls due to L2 [%] = CYCLE_ACTIVITY_CYCLES_L2_PENDING/CPU_CLK_UNHALTED_CORE*100
 --
-This performance group measures the execution stalls due to load misses in
-the L1D and L2 cache. The group measures only the cycles where the CPU cannot
-execute any instruction, it does not measure the duration of stalls in the cache
-layers.
+This performance group measures the cycles while waiting for data from the cache
+and memory hierarchy.
+CYCLE_ACTIVITY_CYCLES_NO_EXECUTE: Counts number of cycles nothing is executed on
+any execution port.
+CYCLE_ACTIVITY_CYCLES_L1D_PENDING: Cycles while L1 cache miss demand load is
+outstanding.
+CYCLE_ACTIVITY_CYCLES_L2_PENDING: Cycles while L2 cache miss demand load is
+outstanding.
