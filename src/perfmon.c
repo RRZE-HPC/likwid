@@ -697,8 +697,15 @@ perfmon_check_counter_map(int cpu_id)
         ERROR_PLAIN_PRINT(Counter and event maps not initialized.);
         return;
     }
+
     if (maps_checked)
         return;
+
+    if (!lock_check())
+    {
+        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        return;
+    }
 #ifndef LIKWID_USE_PERFEVENT
     if (!HPMinitialized())
     {

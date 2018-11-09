@@ -38,6 +38,7 @@
 #include <types.h>
 #include <power.h>
 #include <topology.h>
+#include <lock.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -60,7 +61,7 @@ power_init(int cpuId)
 
     /* determine Turbo Mode features */
     double busSpeed;
-    if (power_initialized)
+    if (power_initialized || !lock_check())
     {
         return 0;
     }

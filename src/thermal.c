@@ -37,6 +37,7 @@
 #include <types.h>
 #include <thermal.h>
 #include <topology.h>
+#include <lock.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -48,6 +49,11 @@ void
 thermal_init(int cpuId)
 {
     uint64_t flags=0ULL;
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to thermal backend is locked.\n");
+        return;
+    }
     HPMinit();
     if (HPMaddThread(cpuId) < 0)
         fprintf(stderr, "Cannot initialize access to registers on CPU %d\n", cpuId);

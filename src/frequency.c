@@ -46,6 +46,7 @@
 #include <access.h>
 #include <registers.h>
 #include <cpuid.h>
+#include <lock.h>
 
 #include <frequency.h>
 #include <frequency_acpi.h>
@@ -107,6 +108,7 @@ static int _freq_getUncoreMinMax(const int socket_id, int *cpuId, double* min, d
     *cpuId = -1;
     *min = 0;
     *max = 0;
+
     for (int i=0; i<cpuid_topology.numHWThreads; i++)
     {
         if (cpuid_topology.threadPool[i].packageId == socket_id)
@@ -276,6 +278,11 @@ uint64_t freq_setCpuClockMax(const int cpu_id, const uint64_t freq)
             return 0;
         }
     }
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return 0;
+    }
 
     cur = freq_getCpuClockMax(cpu_id);
     if (cur == freq)
@@ -347,6 +354,11 @@ uint64_t freq_setCpuClockMin(const int cpu_id, const uint64_t freq)
         {
             return 0;
         }
+    }
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return 0;
     }
 
     cur = freq_getCpuClockMin(cpu_id);
@@ -443,6 +455,12 @@ static int getAMDTurbo(const int cpu_id)
     int err = 0;
     int own_hpm = 0;
 
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return 0;
+    }
+
     if (!HPMinitialized())
     {
         HPMinit();
@@ -473,6 +491,11 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
 {
     int err = 0;
     int own_hpm = 0;
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return -EPERM;
+    }
 
     if (!HPMinitialized())
     {
@@ -520,6 +543,12 @@ static int getIntelTurbo(const int cpu_id)
     int err = 0;
     int own_hpm = 0;
 
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return 0;
+    }
+
     if (!HPMinitialized())
     {
         HPMinit();
@@ -549,6 +578,11 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
 {
     int err = 0;
     int own_hpm = 0;
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return -EPERM;
+    }
 
     if (!HPMinitialized())
     {
@@ -627,6 +661,11 @@ int freq_setTurbo(const int cpu_id, const int turbo)
             return 0;
         }
     }
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return 0;
+    }
 
     sprintf(cmd, "%s %d tur %d", daemon_path, cpu_id, turbo);
     if ( !(fpipe = (FILE*)popen(cmd,"r")) )
@@ -654,6 +693,11 @@ int freq_setGovernor(const int cpu_id, const char* gov)
         {
             return 0;
         }
+    }
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return 0;
     }
 
     sprintf(buff, "%s", daemon_path);
@@ -760,7 +804,7 @@ char * freq_getAvailGovs(const int cpu_id )
         freq_getDriver(cpu_id);
         if (drv == NOT_DETECTED)
         {
-            return 0;
+            return NULL;
         }
     }
 
@@ -811,6 +855,11 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
     int cpuId = -1;
     uint64_t f = freq / 100;
     double fmin, fmax;
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return -EPERM;
+    }
     if (isAMD())
     {
         return 0;
@@ -872,6 +921,12 @@ uint64_t freq_getUncoreFreqMin(const int socket_id)
     int err = 0;
     int own_hpm = 0;
     int cpuId = -1;
+
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return 0;
+    }
     if (isAMD())
     {
         return 0;
@@ -922,6 +977,11 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
     int cpuId = -1;
     uint64_t f = freq / 100;
     double fmin, fmax;
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return -EPERM;
+    }
     if (isAMD())
     {
         return 0;
@@ -980,6 +1040,13 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
     int err = 0;
     int own_hpm = 0;
     int cpuId = -1;
+
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return 0;
+    }
+
     if (isAMD())
     {
         return 0;
@@ -1028,6 +1095,12 @@ uint64_t freq_getUncoreFreqCur(const int socket_id)
     int err = 0;
     int own_hpm = 0;
     int cpuId = -1;
+
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return 0;
+    }
     if (isAMD())
     {
         return 0;

@@ -247,7 +247,7 @@ end
 
 if printAvailGovs then
     local govs = likwid.getAvailGovs(0)
-    if #govs > 0 then
+    if govs and #govs > 0 then
         print_stdout("Available governors:")
         print_stdout(string.format("%s", table.concat(govs, " ")))
     else
@@ -270,6 +270,7 @@ if printCurFreq then
     local processed = 0
     for i=1,#cpulist do
         gov = likwid.getGovernor(cpulist[i])
+        if not gov then break end
         freq = tonumber(likwid.getCpuClockCurrent(cpulist[i]))/1E9
         min = tonumber(likwid.getCpuClockMin(cpulist[i]))/1E9
         max = tonumber(likwid.getCpuClockMax(cpulist[i]))/1E9
@@ -284,6 +285,7 @@ if printCurFreq then
         print_stdout(table.concat(str, "\n"))
     else
         print_stdout("Cannot read frequency data from cpufreq module\n")
+        os.exit(1)
     end
     test = likwid.getUncoreFreqMin(socklist[i])
     if test ~= 0 then
@@ -388,6 +390,7 @@ for x=1,2 do
                 print_stdout(string.format("DEBUG: Set min. frequency for CPU %d to %d", cpulist[i], tonumber(min_freq)*1E6))
             end
             local f = likwid.setCpuClockMin(cpulist[i], tonumber(min_freq)*1E6)
+            if (f ~= tonumber(min_freq)*1E6) then os.exit(0) end
         end
     end
 
@@ -423,6 +426,7 @@ for x=1,2 do
                 print_stdout(string.format("DEBUG: Set max. frequency for CPU %d to %d", cpulist[i], tonumber(max_freq)*1E6))
             end
             local f = likwid.setCpuClockMax(cpulist[i], tonumber(max_freq)*1E6)
+            if (f ~= tonumber(max_freq)*1E6) then os.exit(0) end
         end
     end
 end
@@ -484,6 +488,7 @@ if governor then
             print_stdout(string.format("DEBUG: Set governor for CPU %d to %s", cpulist[i], governor))
         end
         local f = likwid.setGovernor(cpulist[i], governor)
+        if f == 0 then os.exit(0) end
         if do_reset then
             likwid.setCpuClockMin(cpulist[i], cur_min[i])
             likwid.setCpuClockMax(cpulist[i], cur_max[i])
