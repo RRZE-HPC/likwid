@@ -27,7 +27,8 @@
 
 import sys, os, re, glob, os.path, subprocess
 
-SRCPATH="/home/rrze/unrz/unrz139/Work/likwid"
+#SRCPATH="/home/rrze/unrz/unrz139/Work/likwid"
+SRCPATH="/home/tom/Work/likwid-branch-4.3.0"
 GROUPPATH=os.path.join(SRCPATH, "groups")
 EVENTHEADERPATH=os.path.join(SRCPATH, "src/includes")
 PERFCTR="likwid-perfctr"

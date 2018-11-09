@@ -5,8 +5,8 @@
  *
  *      Description:  Interface to the hwloc based topology backend
  *
- *      Version:   4.3.2
- *      Released:  12.04.2018
+ *      Version:   4.3.3
+ *      Released:  09.11.2018
  *
  *      Authors:  Thomas Roehl (tr), thomas.roehl@googlemail.com
  *

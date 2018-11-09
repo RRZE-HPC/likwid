@@ -5,8 +5,8 @@
  *
  *      Description:  Example how to use the LIKWID API in C/C++ applications
  *
- *      Version:   4.3.2
- *      Released:  12.04.2018
+ *      Version:   4.3.3
+ *      Released:  09.11.2018
  *
  *      Author:  Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     int gid;
     double result = 0.0;
     char estr[] = "L2_LINES_IN_ALL:PMC0,L2_TRANS_L2_WB:PMC1";
-    //perfmon_setVerbosity(3);
+    perfmon_setVerbosity(3);
     // Load the topology module and print some values.
     err = topology_init();
     if (err < 0)
@@ -103,6 +103,25 @@ int main(int argc, char* argv[])
         return 1;
     }
     // Start all counters in the previously set up event set.
+    err = perfmon_startCounters();
+    if (err < 0)
+    {
+        printf("Failed to start counters for group %d for thread %d\n",gid, (-1*err)-1);
+        perfmon_finalize();
+        topology_finalize();
+        return 1;
+    }
+    // Perform something
+    sleep(10);
+    // Stop all counters in the previously started event set.
+    err = perfmon_stopCounters();
+    if (err < 0)
+    {
+        printf("Failed to stop counters for group %d for thread %d\n",gid, (-1*err)-1);
+        perfmon_finalize();
+        topology_finalize();
+        return 1;
+    }
     err = perfmon_startCounters();
     if (err < 0)
     {

@@ -5,8 +5,8 @@
  *
  *      Description: Counter header file of perfmon module for Intel Ivy Bridge.
  *
- *      Version:   4.3.2
- *      Released:  12.04.2018
+ *      Version:   4.3.3
+ *      Released:  09.11.2018
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com

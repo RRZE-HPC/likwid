@@ -6,8 +6,8 @@
  *      Description:  Header File of topology module that contains the TLB
  *                    describing strings. Not used currently.
  *
- *      Version:   4.3.2
- *      Released:  12.04.2018
+ *      Version:   4.3.3
+ *      Released:  09.11.2018
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
