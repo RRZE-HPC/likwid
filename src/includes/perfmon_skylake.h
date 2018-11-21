@@ -1584,7 +1584,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                         if (!cpuid_info.supportClientmem)
                         {
                             skl_uncore_read(cpu_id, index, event, current, overflows,
-                                            FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index)+1);
+                                            0, ovf_offset, getCounterTypeOffset(index)+1);
                             counter_result = *current;
                         }
                         else
