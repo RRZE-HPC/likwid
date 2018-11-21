@@ -177,7 +177,7 @@ if cpustr ~= nil then
         close_and_exit(1)
     end
     if verbose > 0 and quiet == 0 then
-        print_stdout("Evaluated CPU string to CPUs: ")
+        print_stdout("Evaluated CPU string to CPUs: " .. cpustr)
     end
 end
 
@@ -277,7 +277,12 @@ if verbose > 0 and quiet == 0 then
     print_stdout("Running: " .. exec)
     mask = 0
     for _, c in pairs(cpu_list) do
-        mask = mask | (1<<c)
+        -- Check whether the Lua version has bit32 module (>= 5.2)
+        if not bit32 then
+            mask = mask | (1<<c)
+        else
+            mask = bit32.bor(mask, bit32.lshift(1, c))
+        end
     end
     print_stdout(string.format("Using %d thread(s) (cpuset: 0x%x)", num_threads, mask))
 end
