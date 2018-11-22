@@ -422,7 +422,7 @@ or<BR>
       <TD>ID of socket</TD>
     </TR>
     <TR>
-      <TD>\a Childs</TD>
+      <TD>\a Children</TD>
       <TD><TABLE>
         <TR>
             <TH>Membername</TH>
@@ -433,7 +433,7 @@ or<BR>
             <TD>ID of CPU core</TD>
         </TR>
         <TR>
-            <TD>\a Childs</TD>
+            <TD>\a Children</TD>
             <TD>List of thread IDs for the current CPU core</TD>
         </TR>
       </TABLE></TD>
