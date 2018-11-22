@@ -137,7 +137,9 @@ This measures the L2 bandwidth with likwid-perfctr every second on CPU core 0 an
 .IP 3. 5
 Custom event set with plotting configuration:
 .TP
-.B likwid-perfscope -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,CPI=FIXC0/FIXC1:YTITLE="Cycles per Instruction" -C 0 --time 500ms ./a.out
+.B likwid-perfscope -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,
+.BR
+.B CPI=FIXC0/FIXC1:YTITLE="Cycles per Instruction" -C 0 --time 500ms ./a.out
 .PP
 Executes
 .B likwid-perfctr
