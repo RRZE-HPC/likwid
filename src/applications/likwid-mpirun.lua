@@ -1914,7 +1914,7 @@ if not hostfile then
     elseif os.getenv("LOADL_HOSTFILE") ~= nil then
         hostfile = os.getenv("LOADL_HOSTFILE")
         hosts = readHostfilePBS(hostfile)
-    elseif mpitype == "slurm" and os.getenv("SLURM_NODELIST") ~= nil then
+    elseif os.getenv("SLURM_NODELIST") ~= nil then
         hostlist = os.getenv("SLURM_NODELIST")
         hosts = readHostfileSlurm(hostlist)
     else

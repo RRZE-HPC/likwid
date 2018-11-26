@@ -84,9 +84,12 @@ time_interval = 2.E06
 time_orig = "2s"
 read_interval = 30.E06
 sockets = {}
-domainList = {"PKG", "PP0", "PP1", "DRAM", "PLATFORM"}
-
 cpuinfo = likwid.getCpuInfo()
+if cpuinfo["isIntel"] == 1 then
+    domainList = {"PKG", "PP0", "PP1", "DRAM", "PLATFORM"}
+else
+    domainList = {"CORE", "PKG"}
+end
 cputopo = likwid.getCpuTopology()
 numatopo = likwid.getNumaInfo()
 affinity = likwid_getAffinityInfo()
@@ -169,7 +172,7 @@ if #sockets > 0 then
     end
 else
     for j, domain in pairs(affinity["domains"]) do
-        if domain["tag"]:match("S%d+") and #domain["processorList"] > 0 then
+        if domain["tag"]:match("S%d+") then
             table.insert(cpulist,domain["processorList"][1])
             table.insert(sockets, domain["tag"]:match("S(%d+)"))
             before[domain["processorList"][1]] = {}
@@ -291,7 +294,9 @@ if not print_info and not print_temp then
         for i,socket in pairs(sockets) do
             cpu = cpulist[i]
             for idx, dom in pairs(domainList) do
-                if (power["domains"][dom]["supportStatus"]) then before[cpu][dom] = likwid.startPower(cpu, idx) end
+                if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
+                    before[cpu][dom] = likwid.startPower(cpu, idx)
+                end
             end
         end
 
@@ -303,7 +308,9 @@ if not print_info and not print_temp then
                     for i,socket in pairs(sockets) do
                         cpu = cpulist[i]
                         for idx, dom in pairs(domainList) do
-                            if (power["domains"][dom]["supportStatus"]) then after[cpu][dom] = likwid.stopPower(cpu, idx) end
+                            if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
+                                after[cpu][dom] = likwid.stopPower(cpu, idx)
+                            end
                         end
                     end
                     time_interval = time_interval - read_interval
@@ -330,7 +337,9 @@ if not print_info and not print_temp then
                 for i,socket in pairs(sockets) do
                     cpu = cpulist[i]
                     for idx, dom in pairs(domainList) do
-                        if (power["domains"][dom]["supportStatus"]) then after[cpu][dom] = likwid.stopPower(cpu, idx) end
+                        if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
+                            after[cpu][dom] = likwid.stopPower(cpu, idx)
+                        end
                     end
                 end
                 exitvalue = likwid.checkProgram(pid)
@@ -345,7 +354,9 @@ if not print_info and not print_temp then
         for i,socket in pairs(sockets) do
             cpu = cpulist[i]
             for idx, dom in pairs(domainList) do
-                if (power["domains"][dom]["supportStatus"]) then after[cpu][dom] = likwid.stopPower(cpu, idx) end
+                if (power["domains"][dom] and power["domains"][dom]["supportStatus"]) then
+                    after[cpu][dom] = likwid.stopPower(cpu, idx)
+                end
             end
         end
         runtime = likwid.getClock(time_before, time_after)
@@ -356,8 +367,9 @@ if not print_info and not print_temp then
         for i,socket in pairs(sockets) do
             cpu = cpulist[i]
             print_stdout(string.format("Measure for socket %d on CPU %d", socket,cpu ))
+            table.concat(domainList, ",")
             for j, dom in pairs(domainList) do
-                if power["domains"][dom]["supportStatus"] then
+                if power["domains"][dom] and power["domains"][dom]["supportStatus"] then
                     local energy = likwid.calcPower(before[cpu][dom], after[cpu][dom], j-1)
                     print_stdout(string.format("Domain %s:", dom))
                     print_stdout(string.format("Energy consumed: %g Joules",energy))
@@ -399,6 +411,8 @@ if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
         end
     end
     print_stdout(likwid.hline)
+elseif print_temp then
+    print_stdout("Architecture does not support temperature reading")
 end
 
 likwid.putPowerInfo()
