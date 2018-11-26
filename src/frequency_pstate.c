@@ -1,9 +1,10 @@
 /*
  * =======================================================================================
  *
- *      Filename:  frequency.c
+ *      Filename:  frequency_pstate.c
  *
- *      Description:  Module implementing an interface for frequency manipulation
+ *      Description:  Module implementing an interface for frequency manipulation, the
+ *                    Intel PState backend
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
