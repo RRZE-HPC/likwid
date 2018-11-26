@@ -54,6 +54,7 @@ uint32_t wex_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     int j;
     uint32_t flags = (1ULL<<(1+(index*4)));
+    cpu_id++;
     for(j = 0; j < event->numberOfOptions; j++)
     {
         switch (event->options[j].type)

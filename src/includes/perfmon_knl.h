@@ -47,6 +47,7 @@ int perfmon_init_knl(int cpu_id)
 uint32_t knl_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint32_t flags = (1ULL<<(1+(index*4)));
+    cpu_id++;
     if (event->numberOfOptions > 0)
     {
         for(int i=0;i<event->numberOfOptions;i++)
