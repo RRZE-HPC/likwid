@@ -1760,7 +1760,7 @@ void __attribute__((constructor (103))) init_perfgroup(void)
         calc_add_int_def(name, cputopo->cacheLevels[i].lineSize, -1);
     }
     calc_add_int_def("MEM_LINESIZE", 64, -1);
-    topology_finalize();
+    //topology_finalize();
 }
 
 void __attribute__((destructor (103))) close_perfgroup(void)
