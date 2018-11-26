@@ -987,7 +987,6 @@ static int getBusFromSocketByNameDevid(const uint32_t socket, PciDevice* pcidev,
                             {
                                 memset(tmpPath, '\0', tmplen*sizeof(char));
                                 sprintf(tmpPath, "/sys/devices/%s/%s/numa_node", pDirent->d_name, pDirentInner->d_name);
-                                syslog(LOG_ERR, "Read file %s\n", tmpPath);
                                 fp = fopen(tmpPath,"r");
                                 if( fp != NULL )
                                 {
@@ -1726,7 +1725,7 @@ LOOP:
         }
         else if ((ret == 0) && (dRecord.type != DAEMON_EXIT))
         {
-            syslog(LOG_ERR, "ERROR - [%s:%d] zero read", __FILE__, __LINE__);
+            syslog(LOG_ERR, "ERROR - [%s:%d] zero read, remote socket closed before reading", __FILE__, __LINE__);
             stop_daemon();
         }
         else if (ret != sizeof(AccessDataRecord))
