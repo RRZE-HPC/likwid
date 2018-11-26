@@ -9,9 +9,9 @@ PMC2  RETIRED_UOPS
 
 METRICS
 Runtime (RDTSC) [s] time
-Runtime unhalted [s]   FIXC1*inverseClock
+Runtime unhalted [s]   PMC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
-CPI FIXC1/PMC0
+CPI PMC1/PMC0
 CPI (based on uops)   PMC1/PMC2
 IPC PMC0/PMC1
 
