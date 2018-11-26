@@ -147,7 +147,7 @@ $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB)
 	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
 	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION).$(RELEASE) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB) $(RPATHS)
 	@ln -sf $(TARGET_LIB) $(TARGET_LIB).$(VERSION).$(RELEASE)
-	@sed -e s+'@PREFIX@'+$(PREFIX)+g make/likwid-config.cmake > likwid-config.cmake
+	@sed -e s+'@PREFIX@'+$(INSTALLED_PREFIX)+g make/likwid-config.cmake > likwid-config.cmake
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
@@ -229,10 +229,11 @@ clean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	done
 	@rm -f likwid.lua
 	@rm -f $(STATIC_TARGET_LIB)
-	@rm -f $(DYNAMIC_TARGET_LIB)
-	@rm -f $(PINLIB)
+	@rm -f $(DYNAMIC_TARGET_LIB)*
+	@rm -f $(PINLIB)*
 	@rm -f $(FORTRAN_IF_NAME)
 	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
+	@rm -f likwid-config.cmake
 
 distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	@echo "===>  DIST CLEAN"
@@ -246,9 +247,10 @@ distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	@rm -f $(FORTRAN_IF_NAME)
 	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
 	@rm -rf $(BUILD_DIR)
-	@rm -rf $(TARGET_LUA_LIB).*
-	@rm -rf $(TARGET_HWLOC_LIB).*
+	@rm -rf $(TARGET_LUA_LIB).* $(shell basename $(TARGET_LUA_LIB)).*
+	@rm -rf $(TARGET_HWLOC_LIB).* $(shell basename $(TARGET_HWLOC_LIB)).*
 	@rm -f $(GENGROUPLOCK)
+	@rm -f likwid-config.cmake
 	@rm -rf doc/html
 	@rm -f tags
 

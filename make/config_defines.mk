@@ -44,6 +44,18 @@ ifneq ($(strip $(COLOR)),NONE)
 DEFINES += -DCOLOR=$(COLOR)
 endif
 
+ifeq ($(strip $(COMPILER)),MIC)
+    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+        $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
+        ACCESSMODE = direct
+        BUILDDAEMON = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+        $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
+        ACCESSMODE = direct
+        BUILDDAEMON = false
+    endif
+endif
 ifeq ($(strip $(BUILDDAEMON)),true)
 ifneq ($(strip $(COMPILER)),MIC)
     DAEMON_TARGET = likwid-accessD
@@ -51,6 +63,8 @@ else
     $(info Info: Compiling for Xeon Phi. Disabling build of likwid-accessD.);
     DAEMON_TARGET =
 endif
+else
+    DAEMON_TARGET =
 endif
 
 ifeq ($(strip $(BUILDFREQ)),true)
@@ -58,7 +72,10 @@ ifneq ($(strip $(COMPILER)),MIC)
     FREQ_TARGET = likwid-setFreq
 else
     $(info Info: Compiling for Xeon Phi. Disabling build of likwid-setFreq.);
+    FREQ_TARGET =
 endif
+else
+    FREQ_TARGET =
 endif
 
 ifeq ($(strip $(HAS_MEMPOLICY)),1)
@@ -98,18 +115,6 @@ FILTER_HWLOC_OBJ =
 
 #DEFINES += -DACCESSDAEMON=$(ACCESSDAEMON)
 
-ifeq ($(strip $(COMPILER)),MIC)
-    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
-        $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
-        ACCESSMODE = direct
-    endif
-    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
-        $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
-        ACCESSMODE = direct
-    endif
-endif
-
-
 ifeq ($(strip $(ACCESSMODE)),sysdaemon)
     DEFINES += -DACCESSMODE=2
 else
@@ -121,6 +126,7 @@ else
         else
             ifeq ($(strip $(ACCESSMODE)),perf_event)
                 DEFINES += -DLIKWID_USE_PERFEVENT
+                DEFINES += -DACCESSMODE=-1
                 BUILDDAEMON = false
                 $(info Info: Compiling for perf_event interface. Measurements of thermal information is disabled);
             else
