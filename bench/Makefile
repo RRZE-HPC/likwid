@@ -50,14 +50,12 @@ CFLAGS := $(filter-out -fvisibility=hidden, $(CFLAGS))
 BUILD_DIR  = ./$(COMPILER)
 Q         ?= @
 
+BENCH_DIR   = ./x86-64
 ifeq ($(COMPILER),MIC)
 BENCH_DIR   = ./phi
-else
+endif
 ifeq ($(COMPILER),GCCX86)
 BENCH_DIR   = ./x86
-else
-BENCH_DIR   = ./x86-64
-endif
 endif
 
 SHARED_TARGET_LIB := -L.. -L../ext/hwloc/ -L$(LUA_LIB_DIR) -llikwid -llikwid-hwloc -l$(LUA_LIB_NAME)
