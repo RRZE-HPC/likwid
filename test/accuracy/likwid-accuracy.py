@@ -225,7 +225,7 @@ def write_gnuplot(group, test, plain_file, marker_file, scale = 1.0, papi_file=N
         fp.write("set style line %d linetype 1 linecolor rgb '%s' lw 2 pt %s\n" % (i+1, color,gnu_marks[i]))
     fp.write("set terminal jpeg\n")
     fp.write("set encoding utf8\n")
-    fp.write("set title 'Group %s - Test %s'\n" % (printgrp, test,))
+    fp.write("set title 'Group %s - Test %s'\n" % (printgrp.replace("_", "\_"), test.replace("_", "\_"),))
     if legend(plain_file, marker_file) == "no":
         fp.write("set key top right\n")
     else:
