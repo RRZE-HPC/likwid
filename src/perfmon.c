@@ -73,6 +73,7 @@
 #include <perfmon_goldmont.h>
 #include <perfmon_broadwell.h>
 #include <perfmon_skylake.h>
+#include <perfmon_cascadelake.h>
 #include <perfmon_zen.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
@@ -101,43 +102,43 @@ PerfmonGroupSet* groupSet = NULL;
 LikwidResults* markerResults = NULL;
 int markerRegions = 0;
 
-int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-int (*perfmon_readCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet);
-int (*perfmon_finalizeCountersThread) (int thread_id, PerfmonEventSet* eventSet);
+int (*perfmon_startCountersThread) (int thread_id, PerfmonEventSet* eventSet) = NULL;
+int (*perfmon_stopCountersThread) (int thread_id, PerfmonEventSet* eventSet) = NULL;
+int (*perfmon_readCountersThread) (int thread_id, PerfmonEventSet* eventSet) = NULL;
+int (*perfmon_setupCountersThread) (int thread_id, PerfmonEventSet* eventSet) = NULL;
+int (*perfmon_finalizeCountersThread) (int thread_id, PerfmonEventSet* eventSet) = NULL;
 
-int (*initThreadArch) (int cpu_id);
+int (*initThreadArch) (int cpu_id) = NULL;
 void perfmon_delEventSet(int groupID);
 
 char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
-    "NONE",
-    "OPCODE",
-    "MATCH0",
-    "MATCH1",
-    "MATCH2",
-    "MATCH3",
-    "MASK0",
-    "MASK1",
-    "MASK2",
-    "MASK3",
-    "NID",
-    "TID",
-    "STATE",
-    "EDGEDETECT",
-    "THRESHOLD",
-    "INVERT",
-    "KERNEL",
-    "ANYTHREAD",
-    "OCCUPANCY",
-    "OCCUPANCY_FILTER",
-    "OCCUPANCY_EDGEDETECT",
-    "OCCUPANCY_INVERT",
-    "IN_TRANSACTION",
-    "IN_TRANSACTION_ABORTED",
+    [EVENT_OPTION_NONE] = "NONE",
+    [EVENT_OPTION_OPCODE] = "OPCODE",
+    [EVENT_OPTION_MATCH0] = "MATCH0",
+    [EVENT_OPTION_MATCH1] = "MATCH1",
+    [EVENT_OPTION_MATCH2] = "MATCH2",
+    [EVENT_OPTION_MATCH3] = "MATCH3",
+    [EVENT_OPTION_MASK0] = "MASK0",
+    [EVENT_OPTION_MASK1] = "MASK1",
+    [EVENT_OPTION_MASK2] = "MASK2",
+    [EVENT_OPTION_MASK3] = "MASK3",
+    [EVENT_OPTION_NID] = "NID",
+    [EVENT_OPTION_TID] = "TID",
+    [EVENT_OPTION_STATE] = "STATE",
+    [EVENT_OPTION_EDGE] = "EDGEDETECT",
+    [EVENT_OPTION_THRESHOLD] = "THRESHOLD",
+    [EVENT_OPTION_INVERT] = "INVERT",
+    [EVENT_OPTION_COUNT_KERNEL] = "KERNEL",
+    [EVENT_OPTION_ANYTHREAD] = "ANYTHREAD",
+    [EVENT_OPTION_OCCUPANCY] = "OCCUPANCY",
+    [EVENT_OPTION_OCCUPANCY_FILTER] = "OCCUPANCY_FILTER",
+    [EVENT_OPTION_OCCUPANCY_EDGE] = "OCCUPANCY_EDGEDETECT",
+    [EVENT_OPTION_OCCUPANCY_INVERT] = "OCCUPANCY_INVERT",
+    [EVENT_OPTION_IN_TRANS] = "IN_TRANSACTION",
+    [EVENT_OPTION_IN_TRANS_ABORT] = "IN_TRANSACTION_ABORTED",
 #ifdef LIKWID_USE_PERFEVENT
-    "PERF_PID",
-    "PERF_FLAGS",
+    [EVENT_OPTION_PERF_PID] = "PERF_PID",
+    [EVENT_OPTION_PERF_FLAGS] = "PERF_FLAGS",
 #endif
 };
 
@@ -170,6 +171,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             break;
         }
     }
+
     return ret;
 }
 
@@ -701,8 +703,15 @@ perfmon_check_counter_map(int cpu_id)
         ERROR_PLAIN_PRINT(Counter and event maps not initialized.);
         return;
     }
+
     if (maps_checked)
         return;
+
+    if (!lock_check())
+    {
+        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        return;
+    }
 #ifndef LIKWID_USE_PERFEVENT
     if (!HPMinitialized())
     {
@@ -1015,13 +1024,26 @@ perfmon_init_maps(void)
                     translate_types = default_translate_types;
                     break;
                 case SKYLAKEX:
-                    box_map = skylakeX_box_map;
-                    eventHash = skylakeX_arch_events;
-                    counter_map = skylakeX_counter_map;
-                    perfmon_numArchEvents = perfmon_numArchEventsSkylakeX;
-                    perfmon_numCounters = perfmon_numCountersSkylakeX;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
-                    translate_types = skylakeX_translate_types;
+                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping <= 5)
+                    {
+                        box_map = skylakeX_box_map;
+                        eventHash = skylakeX_arch_events;
+                        counter_map = skylakeX_counter_map;
+                        perfmon_numArchEvents = perfmon_numArchEventsSkylakeX;
+                        perfmon_numCounters = perfmon_numCountersSkylakeX;
+                        perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
+                        translate_types = skylakeX_translate_types;
+                    }
+                    else
+                    {
+                        box_map = skylakeX_box_map;
+                        eventHash = cascadelakeX_arch_events;
+                        counter_map = skylakeX_counter_map;
+                        perfmon_numArchEvents = perfmon_numArchEventsCascadelakeX;
+                        perfmon_numCounters = perfmon_numCountersSkylakeX;
+                        perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
+                        translate_types = skylakeX_translate_types;
+                    }
                     break;
 
                 case XEON_PHI_KNL:
