@@ -44,6 +44,7 @@
 #include <registers.h>
 #include <textcolor.h>
 #include <likwid.h>
+#include <lock.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -257,6 +258,11 @@ cpuFeatures_init()
     {
         return;
     }
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to CPU feature backend is locked.\n");
+        return;
+    }
 
     topology_init();
     if (!cpuFeatureMask)
@@ -268,17 +274,19 @@ cpuFeatures_init()
     if (!HPMinitialized())
     {
         HPMinit();
-
-        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    }
+    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    {
+        int ret = HPMaddThread(cpuid_topology.threadPool[i].apicId);
+        if (ret != 0)
         {
-            int ret = HPMaddThread(cpuid_topology.threadPool[i].apicId);
-            if (ret != 0)
-            {
-                ERROR_PRINT(Cannot get access to register CPU feature register on CPU %d, cpuid_topology.threadPool[i].apicId);
-                return;
-            }
-            cpuFeatures_update(cpuid_topology.threadPool[i].apicId);
+            ERROR_PRINT(Cannot get access to register CPU feature register on CPU %d, cpuid_topology.threadPool[i].apicId);
+            return;
         }
+    }
+    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    {
+        cpuFeatures_update(cpuid_topology.threadPool[i].apicId);
     }
 
     features_initialized = 1;
@@ -327,6 +335,10 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
     uint32_t reg = MSR_IA32_MISC_ENABLE;
     int newOffsets = 0;
     int knlOffsets = 0;
+    if (!features_initialized)
+    {
+        return -1;
+    }
     if (IF_FLAG(type))
     {
         return 0;
@@ -479,6 +491,10 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
     uint32_t reg = MSR_IA32_MISC_ENABLE;
     int newOffsets = 0;
     int knlOffsets = 1;
+    if (!features_initialized)
+    {
+        return -1;
+    }
     if (!IF_FLAG(type))
     {
         return 0;
@@ -627,6 +643,10 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
 int
 cpuFeatures_get(int cpu, CpuFeature type)
 {
+    if (!features_initialized)
+    {
+        return -EINVAL;
+    }
     if ((type >= FEAT_HW_PREFETCHER) && (type < CPUFEATURES_MAX))
     {
         if (IF_FLAG(type))
