@@ -76,6 +76,7 @@ static char* broadwell_e3_str = "Intel Xeon E3 Broadwell processor";
 static char* broadwell_ep_str = "Intel Xeon Broadwell EN/EP/EX processor";
 static char* skylake_str = "Intel Skylake processor";
 static char* skylakeX_str = "Intel Skylake SP processor";
+static char* cascadelakeX_str = "Intel Cascadelake SP processor";
 static char* kabylake_str = "Intel Kabylake processor";
 static char* cannonlake_str = "Intel Cannonlake processor";
 static char* coffeelake_str = "Intel Coffeelake processor";
@@ -126,6 +127,7 @@ static char* short_sandybridge_ep = "sandybridgeEP";
 static char* short_skylake = "skylake";
 static char* short_skylakeX = "skylakeX";
 static char* short_kabylake = "skylake";
+static char* short_cascadelakeX = "skylakeX";
 static char* short_cannonlake = "cannonlake";
 static char* short_phi = "phi";
 static char* short_phi2 = "knl";
@@ -655,8 +657,16 @@ topology_setName(void)
                     break;
 
                 case SKYLAKEX:
-                    cpuid_info.name = skylakeX_str;
-                    cpuid_info.short_name = short_skylakeX;
+                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping <= 5)
+                    {
+                        cpuid_info.name = skylakeX_str;
+                        cpuid_info.short_name = short_skylakeX;
+                    }
+                    else
+                    {
+                        cpuid_info.name = cascadelakeX_str;
+                        cpuid_info.short_name = short_cascadelakeX;
+                    }
                     break;
 
                 case KABYLAKE1:
@@ -974,7 +984,7 @@ standard_init:
     else
     {
         CPU_ZERO(&cpuSet);
-        sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
+        sched_getaffinity(0, sizeof(cpu_set_t), &cpuSet);
         DEBUG_PRINT(DEBUGLEV_INFO, Reading topology information from %s, config.topologyCfgFileName);
         ret = readTopologyFile(config.topologyCfgFileName, cpuSet);
         if (ret < 0)
@@ -1094,6 +1104,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",xeon_phi3_string);
     printf("\t%s\n",kabylake_str);
     printf("\t%s\n",coffeelake_str);
+    printf("\t%s\n",cascadelakeX_str);
     printf("\n");
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);

@@ -71,6 +71,7 @@
 #include <perfmon_goldmont.h>
 #include <perfmon_broadwell.h>
 #include <perfmon_skylake.h>
+#include <perfmon_cascadelake.h>
 #include <perfmon_zen.h>
 
 #ifdef LIKWID_USE_PERFEVENT
@@ -1018,13 +1019,26 @@ perfmon_init_maps(void)
                     translate_types = default_translate_types;
                     break;
                 case SKYLAKEX:
-                    box_map = skylakeX_box_map;
-                    eventHash = skylakeX_arch_events;
-                    counter_map = skylakeX_counter_map;
-                    perfmon_numArchEvents = perfmon_numArchEventsSkylakeX;
-                    perfmon_numCounters = perfmon_numCountersSkylakeX;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
-                    translate_types = skylakeX_translate_types;
+                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping <= 5)
+                    {
+                        box_map = skylakeX_box_map;
+                        eventHash = skylakeX_arch_events;
+                        counter_map = skylakeX_counter_map;
+                        perfmon_numArchEvents = perfmon_numArchEventsSkylakeX;
+                        perfmon_numCounters = perfmon_numCountersSkylakeX;
+                        perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
+                        translate_types = skylakeX_translate_types;
+                    }
+                    else
+                    {
+                        box_map = skylakeX_box_map;
+                        eventHash = cascadelakeX_arch_events;
+                        counter_map = skylakeX_counter_map;
+                        perfmon_numArchEvents = perfmon_numArchEventsCascadelakeX;
+                        perfmon_numCounters = perfmon_numCountersSkylakeX;
+                        perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
+                        translate_types = skylakeX_translate_types;
+                    }
                     break;
 
                 case XEON_PHI_KNL:
