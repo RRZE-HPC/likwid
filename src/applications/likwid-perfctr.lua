@@ -155,7 +155,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
-            print_stderr(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
+            print_stderr(string.format("Argument %s to option -%s starts with invalid character -.", arg, opt))
             print_stderr("Did you forget an argument to an option?")
             os.exit(1)
         end
