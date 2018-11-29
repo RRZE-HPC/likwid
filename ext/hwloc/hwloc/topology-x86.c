@@ -624,7 +624,7 @@ static void summarize(struct hwloc_backend *backend, struct procinfo *infos, int
       unsigned infoId = pu->os_index;
       if(infoId<0)
         continue;
-      
+
       int numCaches = infos[infoId].numcaches;
       struct cacheinfo **caches = malloc(numCaches*sizeof(struct cacheinfo*));
       int i;
@@ -650,24 +650,25 @@ static void summarize(struct hwloc_backend *backend, struct procinfo *infos, int
               case HWLOC_OBJ_CACHE_UNIFIED : type = 3;
                 break;
             }
-            int cacheId =-1; 
+            int cacheId =-1;
             for(i=0;i<numCaches;i++)
-              if(caches[i]->level == object->attr->cache.depth){ // the level is exact, not always the type. If at the level there is a cache with the good type we return it. Else we return a random cache of the level. 
+              if(caches[i]->level == object->attr->cache.depth){ // the level is exact, not always the type. If at the level there is a cache with the good type we return it. Else we return a random cache of the level.
                 cacheId = i;
                 if(caches[i]->type == type)
                   break;
               }
-            hwloc_obj_add_info(object,"inclusiveness",caches[cacheId]->inclusiveness?"true":"false");
+            if (cacheId >= 0)
+              hwloc_obj_add_info(object,"inclusiveness",caches[cacheId]->inclusiveness?"true":"false");
 
           }
           break;
         case HWLOC_OBJ_PACKAGE:
-          { 
+          {
             /* Annotate packages previously-existing package */
-	    // FIXME: ideally, we should check all bits in case x86 and the native backend disagree. 
-	       
+	    // FIXME: ideally, we should check all bits in case x86 and the native backend disagree.
+
             //We already know the pakage from topology-linux. We only check if the package detected by x86 doesn't disagree
-	    if (infos[i].packageid == object->os_index || object->os_index == (unsigned) -1) { 
+	    if (infos[i].packageid == object->os_index || object->os_index == (unsigned) -1) {
 	      hwloc_x86_add_cpuinfos(object, &infos[infoId], 1);
             }
           }
