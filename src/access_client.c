@@ -135,13 +135,6 @@ access_client_startDaemon(int cpu_id)
 
     if (pid == 0)
     {
-        if (cpu_id >= 0)
-        {
-            cpu_set_t cpuset;
-            CPU_ZERO(&cpuset);
-            CPU_SET(cpu_id, &cpuset);
-            sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
-        }
         ret = execve (exeprog, newargv, newenv);
 
         if (ret < 0)
