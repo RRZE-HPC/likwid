@@ -5,13 +5,13 @@
  *
  *      Description:  Utility string routines building upon bstrlib
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   4.3.3
+ *      Released:  09.11.2018
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com.
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -127,6 +127,7 @@ bstring
 parse_workgroup(Workgroup* group, const_bstring str, DataType type)
 {
     CpuTopology_t topo;
+    AffinityDomains_t doms;
     struct bstrList* tokens;
     bstring cpustr;
     int numThreads = 0;
@@ -135,8 +136,28 @@ parse_workgroup(Workgroup* group, const_bstring str, DataType type)
     tokens = bsplit(str,':');
     if (tokens->qty == 2)
     {
+        int domidx = -1;
         topo = get_cpuTopology();
-        numThreads = topo->activeHWThreads;
+        doms = get_affinityDomains();
+
+        for (int i = 0; i < doms->numberOfAffinityDomains; i++)
+        {
+            if (bstrcmp(doms->domains[i].tag, tokens->entry[0]) == BSTR_OK)
+            {
+                domidx = i;
+                break;
+            }
+        }
+        if (domidx >= 0)
+        {
+            numThreads = doms->domains[domidx].numberOfProcessors;
+        }
+        else
+        {
+            fprintf(stderr, "Unknown affinity domain %s\n", bdata(tokens->entry[2]));
+            bstrListDestroy(tokens);
+            return NULL;
+        }
         cpustr = bformat("E:%s:%d", bdata(tokens->entry[0]), numThreads );
     }
     else if (tokens->qty == 3)
@@ -186,8 +207,9 @@ parse_workgroup(Workgroup* group, const_bstring str, DataType type)
         return NULL;
     }
     group->numberOfThreads = numThreads;
-    if (cpustr_to_cpulist(bdata(cpustr),group->processorIds, numThreads) < 0 )
+    if (cpustr_to_cpulist(bdata(cpustr), group->processorIds, numThreads) < 0 )
     {
+        fprintf(stderr, "Failed to get list of CPUs for string %s\n", bdata(cpustr));
         free(group->processorIds);
         bstrListDestroy(tokens);
         return NULL;
