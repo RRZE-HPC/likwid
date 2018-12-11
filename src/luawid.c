@@ -911,7 +911,7 @@ lua_likwid_getCpuTopology(lua_State* L)
         lua_pushstring(L, "ID");
         lua_pushinteger(L, (lua_Integer)(socketNode->id));
         lua_settable(L, -3);
-        lua_pushstring(L, "Childs");
+        lua_pushstring(L, "Children");
         lua_newtable(L);
         coreCount = 0;
         coreNode = tree_getChildNode(socketNode);
@@ -922,7 +922,7 @@ lua_likwid_getCpuTopology(lua_State* L)
             lua_pushstring(L, "ID");
             lua_pushinteger(L, (lua_Integer)(coreNode->id));
             lua_settable(L,-3);
-            lua_pushstring(L, "Childs");
+            lua_pushstring(L, "Children");
             lua_newtable(L);
             threadNode = tree_getChildNode(coreNode);
             threadCount = 0;

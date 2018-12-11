@@ -1,17 +1,17 @@
 # =======================================================================================
 #
-#      Filename:  perfmon_skylake_events.txt
+#      Filename:  perfmon_cascadelakeX_events.txt
 #
-#      Description:  Event list for Intel Skylake
+#      Description:  Event list for Intel CascadeLake X
 #
-#      Version:   <VERSION>
-#      Released:  <DATE>
+#      Version:   4.3.3
+#      Released:  09.11.2018
 #
 #      Author:   Jan Treibig (jt), jan.treibig@gmail.com
 #                Thomas Roehl (tr), thomas.roehl@googlemail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+#      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -283,6 +283,7 @@ UMASK_MEM_LOAD_RETIRED_FB_HIT           0x40
 UMASK_MEM_LOAD_RETIRED_L1_ALL           0x09
 UMASK_MEM_LOAD_RETIRED_L2_ALL           0x12
 UMASK_MEM_LOAD_RETIRED_L3_ALL           0x24
+UMASK_MEM_LOAD_RETIRED_LOCAL_PMM        0x80
 
 EVENT_MEM_LOAD_L3_HIT_RETIRED           0xD2 PMC
 UMASK_MEM_LOAD_L3_HIT_RETIRED_XSNP_MISS 0x01
@@ -297,6 +298,7 @@ UMASK_MEM_LOAD_L3_MISS_RETIRED_REMOTE_DRAM  0x02
 UMASK_MEM_LOAD_L3_MISS_RETIRED_REMOTE_HITM  0x04
 UMASK_MEM_LOAD_L3_MISS_RETIRED_REMOTE_FWD   0x08
 UMASK_MEM_LOAD_L3_MISS_RETIRED_REMOTE_ALL   0x0E
+UMASK_MEM_LOAD_L3_MISS_RETIRED_REMOTE_REMOTE_PMM 0x10
 
 EVENT_MEM_LOAD_MISC_RETIRED             0xD4 PMC
 UMASK_MEM_LOAD_MISC_RETIRED_UC          0x04
@@ -772,6 +774,9 @@ EVENT_CORE_POWER                        0x28 PMC
 UMASK_CORE_POWER_LVL0_TURBO_LICENSE     0x07
 UMASK_CORE_POWER_LVL1_TURBO_LICENSE     0x18
 UMASK_CORE_POWER_LVL2_TURBO_LICENSE     0x20
+
+EVENT_MEMORY_DISAMBIGUATION_HISTORY_RESET   0x09 PMC
+UMASK_MEMORY_DISAMBIGUATION_HISTORY_RESET   0x01
 
 EVENT_OFFCORE_RESPONSE_0                            0xB7 PMC
 OPTIONS_OFFCORE_RESPONSE_0_OPTIONS                  EVENT_OPTION_MATCH0_MASK|EVENT_OPTION_MATCH1_MASK

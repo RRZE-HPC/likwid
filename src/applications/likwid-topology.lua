@@ -64,7 +64,7 @@ for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O","help","ver
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
-            print_stderr(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
+            print_stderr(string.format("Argument %s to option -%s starts with invalid character -.", arg, opt))
             print_stderr("Did you forget an argument to an option?")
             os.exit(1)
         end
@@ -163,9 +163,9 @@ table.insert(output_csv, likwid.hline)
 table.insert(output_csv, "STRUCT,Sockets,"..tostring(cputopo["numSockets"]))
 for socket=0, #cputopo["topologyTree"] do
     csv_str = string.format("Socket %d:\t\t( ",cputopo["topologyTree"][socket]["ID"])
-    for core = 0, #cputopo["topologyTree"][socket]["Childs"] do
-        for thread = 0, #cputopo["topologyTree"][socket]["Childs"][core]["Childs"] do
-            csv_str = csv_str ..tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread]).. ","
+    for core = 0, #cputopo["topologyTree"][socket]["Children"] do
+        for thread = 0, #cputopo["topologyTree"][socket]["Children"][core]["Children"] do
+            csv_str = csv_str ..tostring(cputopo["topologyTree"][socket]["Children"][core]["Children"][thread]).. ","
         end
     end
     table.insert(output_csv, csv_str:sub(1,#csv_str-1).." )")
@@ -211,13 +211,13 @@ for level=1,cputopo["numCacheLevels"] do
         local threads = cputopo["cacheLevels"][level]["threads"]
         str = "Cache groups:\t\t( "
         for socket=0, #cputopo["topologyTree"] do
-            for core = 0, #cputopo["topologyTree"][socket]["Childs"] do
-                for cpu = 0, #cputopo["topologyTree"][socket]["Childs"][core]["Childs"] do
+            for core = 0, #cputopo["topologyTree"][socket]["Children"] do
+                for cpu = 0, #cputopo["topologyTree"][socket]["Children"][core]["Children"] do
                     if (threads ~= 0) then
-                        str = str .. cputopo["topologyTree"][socket]["Childs"][core]["Childs"][cpu] .. " "
+                        str = str .. cputopo["topologyTree"][socket]["Children"][core]["Children"][cpu] .. " "
                         threads = threads - 1
                     else
-                        str = str .. string.format(") ( %d ",cputopo["topologyTree"][socket]["Childs"][core]["Childs"][cpu])
+                        str = str .. string.format(") ( %d ",cputopo["topologyTree"][socket]["Children"][core]["Children"][cpu])
                         threads = cputopo["cacheLevels"][level]["threads"]
                         threads = threads - 1
                     end
@@ -305,13 +305,13 @@ if print_graphical and not print_csv then
     for socket=0, #cputopo["topologyTree"] do
         print_stdout(string.format("Socket %d:",cputopo["topologyTree"][socket]["ID"]))
         container = {}
-        for core = 0, #cputopo["topologyTree"][socket]["Childs"] do
+        for core = 0, #cputopo["topologyTree"][socket]["Children"] do
             local tmpString = ""
-            for thread = 0, #cputopo["topologyTree"][socket]["Childs"][core]["Childs"] do
+            for thread = 0, #cputopo["topologyTree"][socket]["Children"][core]["Children"] do
                 if thread == 0 then
-                    tmpString = tmpString .. tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread])
+                    tmpString = tmpString .. tostring(cputopo["topologyTree"][socket]["Children"][core]["Children"][thread])
                 else
-                    tmpString = tmpString .. " " .. tostring(cputopo["topologyTree"][socket]["Childs"][core]["Childs"][thread]).. " "
+                    tmpString = tmpString .. " " .. tostring(cputopo["topologyTree"][socket]["Children"][core]["Children"][thread]).. " "
                 end
             end
             likwid.addSimpleAsciiBox(container, 1, core+1, tmpString)

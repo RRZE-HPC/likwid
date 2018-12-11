@@ -42,7 +42,7 @@ def get_caches():
     return level
 
 def get_important_tests():
-    important = ["L2", "L3", "MEM", "CLOCK", "UOPS"]
+    important = ["L2", "L3", "MEM", "CLOCK", "UOPS", "HA"]
     adjust = []
     regular = []
     fp = open("SET.txt")
@@ -57,7 +57,7 @@ def get_important_tests():
         if not found:
             regular.append(line)
     return adjust, regular
-    
+
 def adjust_tests(testgroup):
     fp = open("TESTS/"+testgroup+".txt", "r")
     f = fp.read().strip().split("\n")

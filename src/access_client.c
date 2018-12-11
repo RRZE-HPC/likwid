@@ -202,10 +202,6 @@ access_client_init(int cpu_id)
     topology_init();
     numa_init();
     affinity_init();
-    if (masterPid != 0 && gettid() == masterPid)
-    {
-        return 0;
-    }
     if (!cpuSockets)
     {
         cpuSockets = malloc(cpuid_topology.numHWThreads * sizeof(int));
@@ -218,6 +214,10 @@ access_client_init(int cpu_id)
         {
             pthread_mutex_init(&cpuLocks[i], NULL);
         }
+    }
+    if (masterPid != 0 && gettid() == masterPid)
+    {
+        return 0;
     }
     if (cpuSockets[cpu_id] < 0)
     {

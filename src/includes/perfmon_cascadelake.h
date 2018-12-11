@@ -1,15 +1,15 @@
 /*
  * =======================================================================================
  *
- *      Filename:  setFreq.c
+ *      Filename:  perfmon_cascadelake.h
  *
- *      Description:  Entry point of frequency daemon
+ *      Description:  Header File of perfmon module for Intel CascadeLake.
  *
- *      Version:   4.3.2
- *      Released:  12.04.2018
+ *      Version:   4.3.3
+ *      Released:  09.11.2018
  *
- *      Authors:  Thomas Roehl (tr), thomas.roehl@googlemail.com
- *
+ *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
+ *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg
@@ -29,35 +29,7 @@
  * =======================================================================================
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <dirent.h>
-#include <errno.h>
-#include <setFreq.h>
+#include <perfmon_cascadelakeX_events.h>
 
 
-static int is_pstate()
-{
-    int ret = 1;
-    DIR* dir = opendir("/sys/devices/system/cpu/intel_pstate");
-    if (ENOENT == errno)
-    {
-        //fprintf(stderr, "\tEXIT WITH ERROR:  intel_pstate is not present!\n");
-        ret = 0;
-    }
-
-    closedir(dir);
-    return ret;
-}
-
-
-int main(int argc, char** argv)
-{
-    if (is_pstate())
-    {
-        printf("Pstate driver\n");
-        return do_pstate(argc, argv);
-    }
-    else
-        return do_cpufreq(argc, argv);
-}
+static int perfmon_numArchEventsCascadelakeX = NUM_ARCH_EVENTS_CASCADELAKEX;

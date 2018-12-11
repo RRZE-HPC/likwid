@@ -15,13 +15,13 @@ fmov FPR4, XZR
 LOOP 4
 fmov FPR5, STR0
 fadd FPR1, FPR1, FPR5
-add STR0, STR0, 64
+add STR0, STR0, 8
 fmov FPR6, STR0
 fadd FPR2, FPR2, FPR6
-add STR0, STR0, 64
+add STR0, STR0, 8
 fmov FPR7, STR0
 fadd FPR3, FPR3, FPR7
-add STR0, STR0, 64
+add STR0, STR0, 8
 fmov FPR8, STR0
 fadd FPR4, FPR4, FPR8
-add STR0, STR0, 64
+add STR0, STR0, 8

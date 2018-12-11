@@ -73,6 +73,7 @@
 #include <perfmon_goldmont.h>
 #include <perfmon_broadwell.h>
 #include <perfmon_skylake.h>
+#include <perfmon_cascadelake.h>
 #include <perfmon_zen.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
@@ -170,6 +171,7 @@ getIndexAndType (bstring reg, RegisterIndex* index, RegisterType* type)
             break;
         }
     }
+
     return ret;
 }
 
@@ -701,8 +703,15 @@ perfmon_check_counter_map(int cpu_id)
         ERROR_PLAIN_PRINT(Counter and event maps not initialized.);
         return;
     }
+
     if (maps_checked)
         return;
+
+    if (!lock_check())
+    {
+        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        return;
+    }
 #ifndef LIKWID_USE_PERFEVENT
     if (!HPMinitialized())
     {
@@ -1015,13 +1024,26 @@ perfmon_init_maps(void)
                     translate_types = default_translate_types;
                     break;
                 case SKYLAKEX:
-                    box_map = skylakeX_box_map;
-                    eventHash = skylakeX_arch_events;
-                    counter_map = skylakeX_counter_map;
-                    perfmon_numArchEvents = perfmon_numArchEventsSkylakeX;
-                    perfmon_numCounters = perfmon_numCountersSkylakeX;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
-                    translate_types = skylakeX_translate_types;
+                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping <= 5)
+                    {
+                        box_map = skylakeX_box_map;
+                        eventHash = skylakeX_arch_events;
+                        counter_map = skylakeX_counter_map;
+                        perfmon_numArchEvents = perfmon_numArchEventsSkylakeX;
+                        perfmon_numCounters = perfmon_numCountersSkylakeX;
+                        perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
+                        translate_types = skylakeX_translate_types;
+                    }
+                    else
+                    {
+                        box_map = skylakeX_box_map;
+                        eventHash = cascadelakeX_arch_events;
+                        counter_map = skylakeX_counter_map;
+                        perfmon_numArchEvents = perfmon_numArchEventsCascadelakeX;
+                        perfmon_numCounters = perfmon_numCountersSkylakeX;
+                        perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
+                        translate_types = skylakeX_translate_types;
+                    }
                     break;
 
                 case XEON_PHI_KNL:

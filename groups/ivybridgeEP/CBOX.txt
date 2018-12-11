@@ -47,7 +47,7 @@ LLC data written to MEM [MBytes] 1E-6*(CBOX0C1+CBOX1C1+CBOX2C1+CBOX3C1+CBOX4C1+C
 LONG
 Formulas:
 LLC misses per instruction sum(LLC_VICTIMS_M_STATE)/INSTR_RETIRED_ANY
-LLC data written to MEM [MBytes] sum(LLC_LOOKUP_ANY)*64*1E-6
+LLC data written to MEM [MBytes] sum(LLC_LOOKUP_ANY:STATE=0x1)*64*1E-6
 --
 The CBOXes mediate the traffic from the L2 cache to the segmented L3 cache. Each
 CBOX is responsible for one segment (2.5 MByte). The boxes maintain the coherence between all

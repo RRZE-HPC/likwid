@@ -142,7 +142,7 @@ event. If you want this you have to include this event in your custom event stri
 .IP 3. 4
 As wrapper with custom event set on Intel:
 .TP
-.B likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1,UNC_L3_LINES_IN_ANY:UPMC0 ./stream-icc
+.B likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0,CPU_CLK_UNHALTED_CORE:FIXC1 ./stream-icc
 .PP
 On Intel processors fixed events are measured on dedicated counters. These are
 .B INSTR_RETIRED_ANY
@@ -187,11 +187,6 @@ LIKWID_MARKER_REGISTER("name");
 
 /* Start measurement 
  * Note: No whitespace characters are allowed in the region tags
- * Note: If you measure Uncore counters with MarkerAPI, the responsible threads
- *       take longer to read all events. Consequently, the measurements might
- *       be wrong because other threads are already running the loop while
- *       the Uncore counters are still stopped. Use barriers if you want exact
- *       results.
  */
 LIKWID_MARKER_START("name");
 /*
