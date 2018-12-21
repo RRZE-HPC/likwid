@@ -602,6 +602,7 @@ topology_setName(void)
                     break;
 
                 case SANDYBRIDGE:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = sandybridge_str;
                     cpuid_info.short_name = short_sandybridge;
                     break;
@@ -613,6 +614,7 @@ topology_setName(void)
                     break;
 
                 case IVYBRIDGE:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = ivybridge_str;
                     cpuid_info.short_name = short_ivybridge;
                     break;
@@ -637,6 +639,7 @@ topology_setName(void)
                     break;
 
                 case BROADWELL:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = broadwell_str;
                     cpuid_info.short_name = short_broadwell;
                     break;
@@ -676,16 +679,19 @@ topology_setName(void)
                     break;
 
                 case KABYLAKE1:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = kabylake_str;
                     cpuid_info.short_name = short_skylake;
                     break;
 
                 case KABYLAKE2:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = coffeelake_str;
                     cpuid_info.short_name = short_skylake;
                     break;
 
                 case CANNONLAKE:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = cannonlake_str;
                     cpuid_info.short_name = short_cannonlake;
                     break;
