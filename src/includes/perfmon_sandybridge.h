@@ -868,6 +868,11 @@ int perfmon_setupCounterThread_sandybridge(
                 break;
 
             case MBOX0:
+                if (!cpuid_info.supportClientmem)
+                {
+                    snb_mbox_setup(cpu_id, index, event);
+                }
+                break;
             case MBOX1:
             case MBOX2:
             case MBOX3:
@@ -1070,6 +1075,25 @@ int perfmon_startCountersThread_sandybridge(int thread_id, PerfmonEventSet* even
                     break;
 
                 case MBOX0:
+                    if (!cpuid_info.supportClientmem)
+                    {
+                        if (haveLock && HPMcheck(dev, cpu_id))
+                        {
+                            CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
+                            CHECK_PCI_WRITE_ERROR(HPMwrite(cpu_id, dev, counter2, 0x0ULL));
+                        }
+                    }
+                    else
+                    {
+                        if (haveLock)
+                        {
+                            uint64_t tmp = 0x0;
+                            CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
+                            eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST tmp, READ_MBOX);
+                        }
+                    }
+                    break;
                 case MBOX1:
                 case MBOX2:
                 case MBOX3:
@@ -1341,8 +1365,22 @@ int perfmon_stopCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     break;
 
                 case MBOX0:
-                    SNB_READ_PCI_BOX(MBOX0, dev, counter1, counter2);
-                    SNB_CHECK_OVERFLOW;
+                    if (!cpuid_info.supportClientmem)
+                    {
+                        SNB_READ_PCI_BOX(MBOX0, dev, counter1, counter2);
+                        SNB_CHECK_OVERFLOW;
+                    }
+                    else if (haveLock)
+                    {
+                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
+                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        {
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_CLIENTMEM)
+                            eventSet->events[i].threadCounter[thread_id].overflows++;
+                        }
+                        *current = counter_result;
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
+                    }
                     break;
 
                 case MBOX1:
@@ -1639,8 +1677,22 @@ int perfmon_readCountersThread_sandybridge(int thread_id, PerfmonEventSet* event
                     break;
 
                 case MBOX0:
-                    SNB_READ_PCI_BOX(MBOX0, dev, counter1, counter2);
-                    SNB_CHECK_OVERFLOW;
+                    if (!cpuid_info.supportClientmem)
+                    {
+                        SNB_READ_PCI_BOX(MBOX0, dev, counter1, counter2);
+                        SNB_CHECK_OVERFLOW;
+                    }
+                    else if (haveLock)
+                    {
+                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &counter_result));
+                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        {
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_CLIENTMEM)
+                            eventSet->events[i].threadCounter[thread_id].overflows++;
+                        }
+                        *current = counter_result;
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
+                    }
                     break;
 
                 case MBOX1:
