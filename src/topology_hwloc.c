@@ -51,7 +51,7 @@ hwloc_topology_t hwloc_topology = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 #if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
-int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping, uint32_t *part)
+int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping, uint32_t *part, uint32_t *vendor)
 {
     int i = 0;
     FILE *fp = NULL;
@@ -59,6 +59,7 @@ int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping, uint3
     uint32_t v = 0;
     uint32_t s = 0;
     uint32_t p = 0;
+    uint32_t vend = 0;
     int (*ownatoi)(const char*);
     ownatoi = &atoi;
 
@@ -68,6 +69,7 @@ int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping, uint3
         const_bstring variantString = bformat("CPU variant\t:");
         const_bstring steppingString = bformat("CPU revision\t:");
         const_bstring partString = bformat("CPU part\t:");
+        const_bstring vendString = bformat("CPU implementer\t:");
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
         bdestroy(src);
@@ -102,6 +104,13 @@ int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping, uint3
                 p = strtol(bdata(subtokens->entry[1]), NULL, 0);
                 bstrListDestroy(subtokens);
             }
+            else if ((p == 0) && (binstr(tokens->entry[i],0,vendString) != BSTR_ERR))
+            {
+                struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
+                bltrimws(subtokens->entry[1]);
+                vend = strtol(bdata(subtokens->entry[1]), NULL, 0);
+                bstrListDestroy(subtokens);
+            }
         }
         bstrListDestroy(tokens);
         /*bdestroy(familyString);
@@ -116,6 +125,7 @@ int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping, uint3
     *variant = v;
     *stepping = s;
     *part = p;
+    *vendor = vend;
     return 0;
 }
 
@@ -218,6 +228,8 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     cpuid_info.family = 0;
     cpuid_info.isIntel = 0;
     cpuid_info.stepping = 0;
+    cpuid_info.vendor = 0;
+    cpuid_info.part = 0;
     cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
     cpuid_info.osname[0] = '\0';
     if (!obj)
@@ -244,21 +256,13 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     if (cpuid_info.family == 0 || cpuid_info.model == 0)
     {
         uint32_t part = 0;
-        parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &part);
-        if (cpuid_info.model == 0 && part != 0)
-        {
-            cpuid_info.model = part;
-        }
+        parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
         parse_cpuname(cpuid_info.osname);
     }
 #endif
 #ifdef __ARM_ARCH_8A
     uint32_t part = 0;
-    parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &part);
-    if (cpuid_info.model == 0 && part != 0)
-    {
-        cpuid_info.model = part;
-    }
+    parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
     parse_cpuname(cpuid_info.osname);
 #endif
     if ((info = hwloc_obj_get_info_by_name(obj, "CPUModel")))
@@ -267,10 +271,12 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     cpuid_topology.numHWThreads = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
     if (cpuid_topology.activeHWThreads > cpuid_topology.numHWThreads)
         cpuid_topology.numHWThreads = cpuid_topology.activeHWThreads;
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d activeHWThreads %d,
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d Vendor 0x%X Part 0x%X isIntel %d numHWThreads %d activeHWThreads %d,
                             cpuid_info.family,
                             cpuid_info.model,
                             cpuid_info.stepping,
+                            cpuid_info.vendor,
+                            cpuid_info.part,
                             cpuid_info.isIntel,
                             cpuid_topology.numHWThreads,
                             cpuid_topology.activeHWThreads)

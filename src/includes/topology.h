@@ -131,8 +131,34 @@ struct topology_functions {
 /* ARM */
 #define  ARM7L          0x3U
 #define  ARMV7L         0xC07U
-#define  CORTEX_A57_1   0x1U
-#define  CORTEX_A53_1   0xD03U
+#define  ARM_CORTEX_A35     0xD04U
+#define  ARM_CORTEX_A53     0xD03U
+#define  ARM_CORTEX_A57     0xD07U
+#define  ARM_CORTEX_A72     0xD08U
+#define  ARM_CORTEX_A73     0xD09U
+#define  CAV_THUNDERX	0x0A0U
+#define  CAV_THUNDERX88	0x0A1U
+#define  CAV_THUNDERX81	0x0A2U
+#define  CAV_THUNDERX82	0x0A3U
+#define  CAV_THUNDERX2T99  0x0AFU
+#define  CAV_THUNDERX2T99P1 0x516U
+#define  NV_DENVER1	0x00U
+#define  NV_DENVER2	0x03U
+#define  APP_XGENE1	0x00U
+
+/* ARM vendors */
+#define DEFAULT_ARM	0x41U
+#define CAVIUM1		0x42U
+#define CAVIUM2		0x43U
+#define NVIDIA_ARM	0x4EU
+#define APPLIEDMICRO	0x50U
+#define QUALCOMM	0x51U
+#define SAMSUNG		0x53U
+#define APPLE		0x67U
+#define MARVELL		0x56U
+#define INTEL_ARM	0x69U
+
+
 
 #define  P6_FAMILY        0x6U
 #define  MIC_FAMILY       0xBU

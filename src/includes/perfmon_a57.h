@@ -1,6 +1,8 @@
 
 #include <perfmon_a57_events.h>
 #include <perfmon_a57_counters.h>
+#include <perfmon_cavtx2_events.h>
+#include <perfmon_cavtx2_counters.h>
 
 #include <error.h>
 #include <affinity.h>
@@ -10,6 +12,9 @@
 
 static int perfmon_numCountersA57 = NUM_COUNTERS_A57;
 static int perfmon_numArchEventsA57 = NUM_ARCH_EVENTS_A57;
+
+static int perfmon_numCountersCavTx2 = NUM_COUNTERS_A57;
+static int perfmon_numArchEventsCavTx2 = NUM_ARCH_EVENTS_CAVTX2;
 
 //int perfmon_init_a57(int cpu_id)
 //{

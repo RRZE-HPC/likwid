@@ -95,6 +95,15 @@ get_listPosition(int ownid, bstring list)
 }
 
 static int
+get_listLength(bstring list)
+{
+    struct bstrList* tokens = bsplit(list,(char) ',');
+    int len = tokens->qty;
+    bstrListDestroy(tokens);
+    return len;
+}
+
+static int
 fillList(int* outList, int outOffset, bstring list)
 {
     int current = 0;
@@ -473,6 +482,8 @@ proc_init_cpuFeatures(void)
 void
 proc_init_nodeTopology(cpu_set_t cpuSet)
 {
+    int numCoresPerSocket = 0;
+    int numThreadsPerCore = 0;
     HWThread* hwThreadPool;
     FILE *fp;
     bstring cpudir;
@@ -514,14 +525,20 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         {
             bstring src = bread ((bNread) fread, fp);
             hwThreadPool[i].threadId = get_listPosition(i, src);
+            if (hwThreadPool[i].threadId == 0 && hwThreadPool[i].packageId == 0)
+            {
+                numCoresPerSocket++;
+            }
+            if (numThreadsPerCore == 0)
+            {
+                numThreadsPerCore = get_listLength(src);
+            }
             fclose(fp);
         }
         bdestroy(file);
 #ifdef __ARM_ARCH_8A
         if (hwThreadPool[i].packageId == -1)
             hwThreadPool[i].packageId = 0;
-        if (hwThreadPool[i].apicId != 0 && hwThreadPool[i].coreId == 0)
-            hwThreadPool[i].coreId = hwThreadPool[i].apicId;
 #endif
         DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC Thread Pool PU %d Thread %d Core %d Socket %d inCpuSet %d,
                             hwThreadPool[i].apicId,
@@ -531,6 +548,8 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
                             hwThreadPool[i].inCpuSet)
         bdestroy(cpudir);
     }
+    cpuid_topology.numThreadsPerCore = numThreadsPerCore;
+    cpuid_topology.numCoresPerSocket = numCoresPerSocket;
     cpuid_topology.threadPool = hwThreadPool;
     return;
 }

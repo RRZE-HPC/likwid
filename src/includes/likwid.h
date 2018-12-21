@@ -344,6 +344,8 @@ typedef struct {
     uint32_t family; /*!< \brief CPU family ID*/
     uint32_t model; /*!< \brief CPU model ID */
     uint32_t stepping; /*!< \brief Stepping (version) of the CPU */
+    uint32_t vendor; /*!< \brief Vendor of the CPU */
+    uint32_t part; /*!< \brief Part number of the CPU */
     uint64_t clock; /*!< \brief Current clock frequency of the executing CPU*/
     int      turbo; /*!< \brief Flag if CPU has a turbo mode */
     char*  osname; /*!< \brief Name of the CPU reported by OS */

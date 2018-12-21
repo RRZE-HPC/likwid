@@ -1143,27 +1143,66 @@ perfmon_init_maps(void)
             break;
 
         case ARMV8_FAMILY:
-            switch ( cpuid_info.model )
+            switch ( cpuid_info.vendor)
             {
-                case CORTEX_A57_1:
-                    eventHash = a57_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsA57;
-                    counter_map = a57_counter_map;
-                    box_map = a57_box_map;
-                    perfmon_numCounters = perfmon_numCountersA57;
-                    translate_types = a57_translate_types;
+                case DEFAULT_ARM:
+                    switch ( cpuid_info.part )
+                    {
+                        case ARM_CORTEX_A57:
+                            eventHash = a57_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsA57;
+                            counter_map = a57_counter_map;
+                            box_map = a57_box_map;
+                            perfmon_numCounters = perfmon_numCountersA57;
+                            translate_types = a57_translate_types;
+                            break;
+                        case ARM_CORTEX_A53:
+                            eventHash = a57_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsA57;
+                            counter_map = a57_counter_map;
+                            box_map = a57_box_map;
+                            perfmon_numCounters = perfmon_numCountersA57;
+                            translate_types = a53_translate_types;
+                            break;
+                        default:
+                            break;
+                    }
                     break;
-                case CORTEX_A53_1:
-                    eventHash = a57_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsA57;
-                    counter_map = a57_counter_map;
-                    box_map = a57_box_map;
-                    perfmon_numCounters = perfmon_numCountersA57;
-                    translate_types = a53_translate_types;
+                case CAVIUM2:
+                    switch (cpuid_info.part)
+                    {
+                        case CAV_THUNDERX2T99:
+                            eventHash = cavtx2_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsCavTx2;
+                            counter_map = a57_counter_map;
+                            box_map = a57_box_map;
+                            perfmon_numCounters = perfmon_numCountersCavTx2;
+                            translate_types = cav_tx2_translate_types;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case CAVIUM1:
+                    switch (cpuid_info.part)
+                    {
+                        case CAV_THUNDERX2T99P1:
+                            eventHash = cavtx2_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsCavTx2;
+                            counter_map = a57_counter_map;
+                            box_map = a57_box_map;
+                            perfmon_numCounters = perfmon_numCountersCavTx2;
+                            translate_types = cav_tx2_translate_types;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);
                     break;
             }
             break;
-
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);
             break;

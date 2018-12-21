@@ -45,6 +45,7 @@
 #include <bitUtil.h>
 //#include <strUtil.h>
 #include <configuration.h>
+#include <topology_cavtx2.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -104,6 +105,10 @@ static char* amd_k8_str = "AMD K8 architecture";
 static char* amd_zen_str = "AMD K17 (Zen) architecture";
 static char* armv7l_str = "ARM 7l architecture";
 static char* armv8_str = "ARM 8 architecture";
+static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
+static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
+static char* arm_cortex_a57 = "ARM Cortex A57 (ARMv8)";
+static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 
@@ -140,6 +145,8 @@ static char* short_k16 = "kabini";
 static char* short_zen = "zen";
 static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
+static char* short_arm8_cav_tx2 = "arm8_tx2";
+static char* short_arm8_cav_tx = "arm8_tx";
 static char* short_unknown = "unknown";
 
 /* #####  EXPORTED VARIABLES  ########################################## */
@@ -890,21 +897,50 @@ topology_setName(void)
             }
             break;
         case ARMV8_FAMILY:
-            switch (cpuid_info.model)
+            switch (cpuid_info.vendor)
             {
-                case CORTEX_A57_1:
-                case CORTEX_A53_1:
-                    cpuid_info.name = armv8_str;
-                    cpuid_info.short_name = short_arm8;
+                case DEFAULT_ARM:
+                    switch (cpuid_info.part)
+                    {
+                        case ARM_CORTEX_A57:
+                            cpuid_info.name = arm_cortex_a57;
+                            cpuid_info.short_name = short_arm8;
+                            break;
+                        case ARM_CORTEX_A53:
+                            cpuid_info.name = arm_cortex_a53;
+                            cpuid_info.short_name = short_arm8;
+                            break;
+                        default:
+                            return EXIT_FAILURE;
+                            break;
+                    }
+                    break;
+                case CAVIUM1:
+                case CAVIUM2:
+                    switch (cpuid_info.part)
+                    {
+                        case CAV_THUNDERX2T99:
+                        case CAV_THUNDERX2T99P1:
+                            cpuid_info.name = cavium_thunderx2t99_str;
+                            cpuid_info.short_name = short_arm8_cav_tx2;
+                            break;
+                        case CAV_THUNDERX:
+                        case CAV_THUNDERX88:
+                        case CAV_THUNDERX81:
+                        case CAV_THUNDERX82:
+                            cpuid_info.name = cavium_thunderx_str;
+                            cpuid_info.short_name = short_arm8_cav_tx;
+                            break;
+                        default:
+                            return EXIT_FAILURE;
+                            break;
+                    }
                     break;
                 default:
                     return EXIT_FAILURE;
                     break;
             }
-            break;
-
         default:
-            return EXIT_FAILURE;
             break;
     }
     return EXIT_SUCCESS;
@@ -1028,6 +1064,63 @@ standard_init:
         funcs.init_cpuFeatures();
         funcs.init_nodeTopology(cpuSet);
         funcs.init_cacheTopology();
+        if (cpuid_topology.numCacheLevels == 0)
+        {
+            CacheLevel* cachePool = NULL;
+            switch(cpuid_info.family)
+            {
+                case ARMV8_FAMILY:
+                    switch (cpuid_info.vendor)
+                    {
+                        case CAVIUM2:
+                            switch (cpuid_info.part) {
+                                case CAV_THUNDERX2T99:
+                                    cachePool = (CacheLevel*) malloc(3 * sizeof(CacheLevel));
+                                    for(int i=0;i < 3; i++)
+                                    {
+                                        cachePool[i].level = caviumTX2_caches[i].level;
+                                        cachePool[i].size = caviumTX2_caches[i].size;
+                                        cachePool[i].lineSize = caviumTX2_caches[i].lineSize;
+                                        cachePool[i].threads = caviumTX2_caches[i].threads;
+                                        cachePool[i].inclusive = caviumTX2_caches[i].inclusive;
+                                        cachePool[i].sets = caviumTX2_caches[i].sets;
+                                        cachePool[i].associativity = caviumTX2_caches[i].associativity;
+                                    }
+                                    cpuid_topology.cacheLevels = cachePool;
+                                    cpuid_topology.numCacheLevels = 3;
+                                    break;
+                                default:
+                                    break;
+                            }
+                            break;
+                        case CAVIUM1:
+                            switch (cpuid_info.part) {
+                                case CAV_THUNDERX2T99P1:
+                                    cachePool = (CacheLevel*) malloc(3 * sizeof(CacheLevel));
+                                    for(int i=0;i < 3; i++)
+                                    {
+                                        cachePool[i].level = caviumTX2_caches[i].level;
+                                        cachePool[i].size = caviumTX2_caches[i].size;
+                                        cachePool[i].lineSize = caviumTX2_caches[i].lineSize;
+                                        cachePool[i].threads = caviumTX2_caches[i].threads;
+                                        cachePool[i].inclusive = caviumTX2_caches[i].inclusive;
+                                        cachePool[i].sets = caviumTX2_caches[i].sets;
+                                        cachePool[i].associativity = caviumTX2_caches[i].associativity;
+                                    }
+                                    cpuid_topology.cacheLevels = cachePool;
+                                    cpuid_topology.numCacheLevels = 3;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
         topology_setupTree();
         sched_setaffinity(0, sizeof(cpu_set_t), &cpuSet);
     }
