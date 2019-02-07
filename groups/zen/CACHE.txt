@@ -13,15 +13,17 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s]   FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI   PMC1/PMC0
-data cache misses PMC2
+data cache requests PMC2
 data cache request rate PMC2/PMC0
-data cache miss rate (PMC3)/PMC0
-data cache miss ratio (PMC3)/PMC2
+data cache misses PMC3
+data cache miss rate PMC3/PMC0
+data cache miss ratio PMC3/PMC2
 
 LONG
 Formulas:
-data cache misses = DATA_CACHE_REFILLS_ALL
+data cache requests = DATA_CACHE_ACCESSES
 data cache request rate = DATA_CACHE_ACCESSES / RETIRED_INSTRUCTIONS
+data cache misses = DATA_CACHE_REFILLS_ALL
 data cache miss rate = DATA_CACHE_REFILLS_ALL / RETIRED_INSTRUCTIONS
 data cache miss ratio = DATA_CACHE_REFILLS_ALL / DATA_CACHE_ACCESSES
 -
