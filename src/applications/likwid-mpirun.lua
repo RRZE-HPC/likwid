@@ -1133,7 +1133,7 @@ local function setPerfStrings(perflist, cpuexprs)
         end
     end
     if #grouplist == 0 then
-        print_stderr("No group can be configured for measurments, exiting.")
+        print_stderr("No group can be configured for measurements, exiting.")
         os.exit(1)
     end
     return perfexprs, grouplist
