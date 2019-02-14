@@ -1589,6 +1589,8 @@ function printMpiOutput(group_list, all_results, regionname)
         local secondtab_combined = {}
         local total_threads = 0
         local all_counters = {}
+        local groupName = gdata["GroupString"]
+
         for rank = 0, #all_results do
             total_threads = total_threads + #all_results[rank]["cpus"]
         end
@@ -1687,14 +1689,35 @@ function printMpiOutput(group_list, all_results, regionname)
                 if #secondtab_combined > maxLineFields then maxLineFields = #secondtab_combined end
             end
             if region then
-                print_stdout("Region,"..tostring(region).. string.rep(",", maxLineFields  - 2))
+                print_stdout(string.format("TABLE,Region %s,Group %d Raw,%s,%d%s",tostring(region), gidx,groupName,#firsttab[1]-1,string.rep(",",maxLineFields-5)))
+            else
+                print_stdout(string.format("TABLE,Group %d Raw,%s,%d%s",gidx,groupName,#firsttab[1]-1,string.rep(",",maxLineFields-4)))
             end
-            print_stdout("Group,"..tostring(gidx) .. string.rep(",", maxLineFields  - 2))
+            --print_stdout("Group,"..tostring(gidx) .. string.rep(",", maxLineFields  - 2))
             likwid.printcsv(firsttab, maxLineFields)
-            if total_threads > 1 then likwid.printcsv(firsttab_combined, maxLineFields) end
+            if total_threads > 1 then
+                if region == nil then
+                    print(string.format("TABLE,Group %d Raw STAT,%s,%d%s",gidx,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
+                else
+                    print(string.format("TABLE,Region %s,Group %d Raw STAT,%s,%d%s",regionName, gidx,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                end
+                likwid.printcsv(firsttab_combined, maxLineFields)
+            end
             if gdata["Metrics"] then
+                if region == nil then
+                    print(string.format("TABLE,Group %d Metric,%s,%d%s",gidx,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-4)))
+                else
+                    print(string.format("TABLE,Region %s,Group %d Metric,%s,%d%s",regionName,gidx,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-5)))
+                end
                 likwid.printcsv(secondtab, maxLineFields)
-                if total_threads > 1 then likwid.printcsv(secondtab_combined, maxLineFields) end
+                if total_threads > 1 then
+                    if region == nil then
+                        print(string.format("TABLE,Group %d Metric STAT,%s,%d%s",gidx,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))
+                    else
+                        print(string.format("TABLE,Region %s,Group %d Metric STAT,%s,%d%s",regionName,gidx,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                    end
+                    likwid.printcsv(secondtab_combined, maxLineFields)
+                end
             end
         else
             if region then
