@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+
+import json
+import sys
+import re
+import os.path
+
+if len(sys.argv) != 3:
+    sys.stderr.write("Filter failed! Please report bug.\n")
+    sys.exit(1)
+
+filename = sys.argv[1]
+filetype = sys.argv[2]
+
+i_fp = None
+if os.path.exists(filename):
+    i_fp = open(filename, "r")
+else:
+    sys.stderr.write("Filter failed! Cannot open file %s!" % filename)
+    sys.exit(1)
+
+outfile = filename.replace("csv", "json").replace(".tmp", "")
+print(outfile)
+o_fp = open(outfile, "w")
+
+def fill_table(lines, headlist):
+    out = []
+    for l in lines:
+        elems = [ e for e in re.split("\s*,\s*", l) if len(e) > 0 ]
+        
+        t = {}
+        for h, v in zip(headlist, elems):
+            t.update({h : v.replace(" STAT", "")})
+        #print("%%TABLE: %s " % str(t))
+        out.append(t)
+    return out
+
+def fill_struct(lines):
+    struct = {}
+    for l in lines:
+        elems = [ e for e in re.split("\s*,\s*", l) if len(e) > 0 ]
+        
+        if len(elems) == 2:
+            struct.update({ elems[0] : elems[1] })
+        else:
+            struct.update({ elems[0] : elems[1:] })
+        #print("%%STRUCT: %s " % str(struct))
+    return struct
+
+
+if filetype == "perfctr" or filetype == "topology":
+    inp = i_fp.read().strip().split("\n")
+    out = {}
+    tmp = {}
+    name = None
+    i = 0
+    while i<len(inp):
+        l = inp[i]
+        if l.startswith("STRUCT") or l.startswith("TABLE") or i == len(inp)-1:
+            if name and len(tmp) > 0:
+                out[name] = tmp
+                #sys.stderr.write(json.dumps(out)+"\n")
+                tmp = {}
+                name = ""
+        if l.startswith("STRUCT"):
+            llist = l.split(",")
+            name = llist[1]
+            lines = int(llist[2])
+            s = fill_struct(inp[i+1:i+lines+1])
+            out.update({name: s})
+            i += lines-1
+        elif l.startswith("TABLE"):
+            #sys.stderr.write(l+"\n")
+            name = None
+            gid = None
+            gname = None
+            reg = None
+            regname = None
+            head = inp[i+1]
+            hlist = [ e for e in re.split("\s*,\s*", head) if len(e) > 0 ]
+            llist = [ e for e in re.split("\s*,\s*", l) if len(e) > 0 ]
+            if len(llist) == 3:
+                tabname = llist[1]
+                lines = int(llist[2])
+            elif len(llist) == 4:
+                tabname = llist[1]
+                grp = llist[2]
+                lines = int(llist[3])
+            elif len(llist) == 5:
+                regname = llist[1]
+                tabname = llist[2]
+                grp = llist[3]
+                lines = int(llist[4])
+            if filetype == "perfctr":
+                m = re.match("(Group \d+) (.+)", tabname)
+                if m:
+                    gid, gname = m.groups()
+                if regname:
+                    m = re.match("Region (.+)", regname)
+                    if m:
+                        gid = m.group(1) + " " + gid
+
+            t = fill_table(inp[i+2:i+lines+2], hlist)
+            if gid and gname:
+                if gid not in out:
+                    out[gid] = {}
+                out[gid].update({gname : t})
+            else:
+                out.update({tabname : t})
+            i += lines-1
+        i += 1
+    o_fp.write(json.dumps(out, indent=4, sort_keys=True)+"\n")
+else:
+    sys.stderr.write("Filter failed! Unknown application type %s!" % filetype)
+    i_fp.close()
+    o_fp.close()
+    sys.exit(1)
+
+i_fp.close()
+o_fp.close()
+os.remove(filename)
