@@ -952,16 +952,16 @@ elseif use_timeline == false then
     likwid.printOutput(results, metrics, cpulist, nil, print_stats)
 end
 
-if outfile and outfile ~= outfile_orig then
+if outfile then
     local suffix = ""
-    if string.match(outfile,".-[^\\/]-%.?([^%.\\/]*)$") then
+    if string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$") then
         suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
     end
     local command = "<INSTALLED_PREFIX>/share/likwid/filter/" .. suffix
     local tmpfile = outfile..".tmp"
     if suffix == "" then
         os.rename(tmpfile, outfile)
-    elseif suffix ~= "txt" and suffix ~= "csv" and not likwid.access(command, "x") then
+    elseif suffix ~= "txt" and suffix ~= "csv" and not likwid.access(command,"x") then
         print_stderr("Cannot find filter script, save output in CSV format to file "..outfile)
         os.rename(tmpfile, outfile)
     else
