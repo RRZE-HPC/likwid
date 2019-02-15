@@ -20,7 +20,6 @@ else:
     sys.exit(1)
 
 outfile = filename.replace("csv", "json").replace(".tmp", "")
-print(outfile)
 o_fp = open(outfile, "w")
 
 def fill_table(lines, headlist):
@@ -101,7 +100,11 @@ if filetype == "perfctr" or filetype == "topology":
                         gid = m.group(1) + " " + gid
 
             t = fill_table(inp[i+2:i+lines+2], hlist)
-            if gid and gname:
+            if grp and gname:
+                if grp not in out:
+                    out[grp] = {}
+                out[grp].update({gname : t})
+            elif gid and gname:
                 if gid not in out:
                     out[gid] = {}
                 out[gid].update({gname : t})
