@@ -36,6 +36,10 @@
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
 #include <cpuid.h>
 #endif
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -482,19 +486,22 @@ proc_init_cpuFeatures(void)
 void
 proc_init_nodeTopology(cpu_set_t cpuSet)
 {
-    int numCoresPerSocket = 0;
-    int numThreadsPerCore = 0;
     HWThread* hwThreadPool;
     FILE *fp;
     bstring cpudir;
     bstring file;
     int (*ownatoi)(const char*);
     ownatoi = &atoi;
+    int last_socket = -1;
+    int num_sockets = 0;
+    int num_cores_per_socket = 0;
+    int num_threads_per_core = 0;
 
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
     for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
     {
         hwThreadPool[i].apicId = i;
+        cpudir = bformat("/sys/devices/system/cpu/cpu%d/topology",i);
         hwThreadPool[i].threadId = -1;
         hwThreadPool[i].coreId = -1;
         hwThreadPool[i].packageId = -1;
@@ -503,20 +510,29 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         {
             hwThreadPool[i].inCpuSet = 1;
         }
-        cpudir = bformat("/sys/devices/system/cpu/cpu%d/topology",i);
+        file = bformat("%s/physical_package_id", bdata(cpudir));
+        if (NULL != (fp = fopen (bdata(file), "r")))
+        {
+            bstring src = bread ((bNread) fread, fp);
+            int packageId = ownatoi(bdata(src));
+            hwThreadPool[i].packageId = packageId;
+            if (packageId > last_socket)
+            {
+                num_sockets++;
+                last_socket = packageId;
+            }
+            fclose(fp);
+        }
+        bdestroy(file);
         file = bformat("%s/core_id", bdata(cpudir));
         if (NULL != (fp = fopen (bdata(file), "r")))
         {
             bstring src = bread ((bNread) fread, fp);
             hwThreadPool[i].coreId = ownatoi(bdata(src));
-            fclose(fp);
-        }
-        bdestroy(file);
-        file = bformat("%s/physical_package_id", bdata(cpudir));
-        if (NULL != (fp = fopen (bdata(file), "r")))
-        {
-            bstring src = bread ((bNread) fread, fp);
-            hwThreadPool[i].packageId = ownatoi(bdata(src));
+            if (hwThreadPool[i].packageId == 0)
+            {
+                num_cores_per_socket++;
+            }
             fclose(fp);
         }
         bdestroy(file);
@@ -525,13 +541,10 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         {
             bstring src = bread ((bNread) fread, fp);
             hwThreadPool[i].threadId = get_listPosition(i, src);
-            if (hwThreadPool[i].threadId == 0 && hwThreadPool[i].packageId == 0)
+            if (hwThreadPool[i].packageId == 0 &&
+                hwThreadPool[i].coreId == 0)
             {
-                numCoresPerSocket++;
-            }
-            if (numThreadsPerCore == 0)
-            {
-                numThreadsPerCore = get_listLength(src);
+                num_threads_per_core++;
             }
             fclose(fp);
         }
@@ -548,11 +561,65 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
                             hwThreadPool[i].inCpuSet)
         bdestroy(cpudir);
     }
-    cpuid_topology.numThreadsPerCore = numThreadsPerCore;
-    cpuid_topology.numCoresPerSocket = numCoresPerSocket;
     cpuid_topology.threadPool = hwThreadPool;
+    cpuid_topology.numSockets = num_sockets;
+    cpuid_topology.numCoresPerSocket = num_cores_per_socket;
+    cpuid_topology.numThreadsPerCore = num_threads_per_core;
     return;
 }
+
+void proc_split_llc_check(CacheLevel* llc_cache)
+{
+    int num_sockets = cpuid_topology.numSockets;
+    int num_nodes = 0;
+    int num_threads_per_node = 0;
+    int num_threads_per_socket = (cpuid_topology.numCoresPerSocket * cpuid_topology.numThreadsPerCore) / num_sockets;
+    struct dirent *ep = NULL;
+    DIR *dp = NULL;
+    dp = opendir("/sys/devices/system/node");
+    if (dp == NULL)
+    {
+        fprintf(stderr, "No NUMA support (no folder %s)\n", "/sys/devices/system/node");
+        return;
+    }
+    while (ep = readdir(dp))
+    {
+        if (strncmp(ep->d_name, "node", 4) == 0)
+        {
+            num_nodes++;
+        }
+    }
+    closedir(dp);
+    dp = opendir("/sys/devices/system/node/node0/");
+    if (dp == NULL)
+    {
+        fprintf(stderr, "No NUMA support (no folder %s)\n", "/sys/devices/system/node/node0/");
+        return;
+    }
+    while (ep = readdir(dp))
+    {
+        if (strncmp(ep->d_name, "cpu", 3) == 0 &&
+            ep->d_name[strlen(ep->d_name)-1] >= '0' &&
+            ep->d_name[strlen(ep->d_name)-1] <= '9')
+        {
+            num_threads_per_node++;
+        }
+    }
+    closedir(dp);
+    if (num_sockets == num_nodes)
+    {
+        return;
+    }
+    if (num_threads_per_node < num_threads_per_socket)
+    {
+        llc_cache->threads = num_threads_per_node;
+        uint32_t size = llc_cache->size;
+        double factor = (((double)num_threads_per_node)/((double)num_threads_per_socket));
+        llc_cache->size = (uint32_t)(size*factor);
+    }
+    return;
+}
+
 
 void
 proc_init_cacheTopology(void)

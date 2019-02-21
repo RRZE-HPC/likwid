@@ -438,6 +438,29 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     return;
 }
 
+void hwloc_split_llc_check(CacheLevel* llc_cache)
+{
+    hwloc_obj_t obj = NULL;
+    int num_sockets = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_SOCKET);
+    int num_nodes = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_NODE);
+    if (num_sockets == num_nodes)
+    {
+        return;
+    }
+    obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_SOCKET, 0);
+    int num_threads_per_socket = likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
+    obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_NODE, 0);
+    int num_threads_per_node = likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
+    if (num_threads_per_node < num_threads_per_socket)
+    {
+        llc_cache->threads = num_threads_per_node;
+        uint32_t size = llc_cache->size;
+        double factor = (((double)num_threads_per_node)/((double)num_threads_per_socket));
+        llc_cache->size = (uint32_t)(size*factor);
+    }
+    return;
+}
+
 void
 hwloc_init_cacheTopology(void)
 {
@@ -543,6 +566,21 @@ hwloc_init_cacheTopology(void)
                                       id, cachePool[id].level,
                                       cachePool[id].size);
         id++;
+    }
+
+    if (cpuid_info.family == P6_FAMILY)
+    {
+        switch (cpuid_info.model)
+        {
+            case HASWELL_EP:
+            case BROADWELL_E:
+            case BROADWELL_D:
+            case SKYLAKEX:
+                hwloc_split_llc_check(&cachePool[maxNumLevels-1]);
+                break;
+            default:
+                break;
+        }
     }
 
     cpuid_topology.numCacheLevels = maxNumLevels;
