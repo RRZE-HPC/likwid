@@ -65,6 +65,7 @@
 #define MSR_PERF_GLOBAL_OVF_CTRL  0x390
 #define MSR_PEBS_ENABLE           0x3F1
 #define MSR_PEBS_LD_LAT           0x3F6
+#define MSR_PEBS_FRONTEND         0x3F7
 /* Perfmon V3 */
 #define MSR_OFFCORE_RESP0              0x1A6
 #define MSR_OFFCORE_RESP1              0x1A7

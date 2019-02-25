@@ -41,6 +41,7 @@ static int perfmon_numArchEvents_pm = NUM_ARCH_EVENTS_PM;
 
 int perfmon_init_pm(int cpu_id)
 {
+    cpu_id++;
     return 0;
 }
 

@@ -155,7 +155,7 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
-            print_stderr(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
+            print_stderr(string.format("Argument %s to option -%s starts with invalid character -.", arg, opt))
             print_stderr("Did you forget an argument to an option?")
             os.exit(1)
         end
@@ -467,10 +467,15 @@ end
 avail_groups = likwid.getGroups()
 if print_groups == true then
     if avail_groups then
-        print_stdout(string.format("%11s\t%s","Group name", "Description"))
+        local max_len = 0
+        for i,g in pairs(avail_groups) do
+            if g["Name"]:len() > max_len then max_len = g["Name"]:len() end
+        end
+        local s = string.format("%%%ds\t%%s", max_len)
+        print_stdout(string.format(s,"Group name", "Description"))
         print_stdout(likwid.hline)
         for i,g in pairs(avail_groups) do
-            print_stdout(string.format("%11s\t%s",g["Name"], g["Info"]))
+            print_stdout(string.format(s, g["Name"], g["Info"]))
         end
     else
         print_stdout(string.format("No groups defined for %s",cpuinfo["name"]))
@@ -699,7 +704,7 @@ end
 local pid = nil
 if #execList > 0 then
     local execString = table.concat(execList," ")
-    if (execpid) then
+    if execpid then
         likwid.setenv("LIKWID_PERF_EXECPID", "1")
     end
     if pin_cpus then
@@ -947,16 +952,16 @@ elseif use_timeline == false then
     likwid.printOutput(results, metrics, cpulist, nil, print_stats)
 end
 
-if outfile and outfile ~= outfile_orig then
+if outfile then
     local suffix = ""
-    if string.match(outfile,".-[^\\/]-%.?([^%.\\/]*)$") then
+    if string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$") then
         suffix = string.match(outfile, ".-[^\\/]-%.?([^%.\\/]*)$")
     end
     local command = "<INSTALLED_PREFIX>/share/likwid/filter/" .. suffix
     local tmpfile = outfile..".tmp"
     if suffix == "" then
         os.rename(tmpfile, outfile)
-    elseif suffix ~= "txt" and suffix ~= "csv" and not likwid.access(command, "x") then
+    elseif suffix ~= "txt" and suffix ~= "csv" and not likwid.access(command,"x") then
         print_stderr("Cannot find filter script, save output in CSV format to file "..outfile)
         os.rename(tmpfile, outfile)
     else

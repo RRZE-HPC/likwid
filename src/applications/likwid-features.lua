@@ -79,7 +79,7 @@ for opt,arg in likwid.getopt(arg, {"h","v","l","c:","e:","d:","a","help","versio
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
-            print_stderr(string.format("Argmument %s to option -%s starts with invalid character -.", arg, opt))
+            print_stderr(string.format("Argument %s to option -%s starts with invalid character -.", arg, opt))
             print_stderr("Did you forget an argument to an option?")
             os.exit(1)
         end
@@ -95,6 +95,9 @@ for opt,arg in likwid.getopt(arg, {"h","v","l","c:","e:","d:","a","help","versio
     elseif opt == "l" or opt == "list" then
         listFeatures = true
     elseif opt == "a" or opt == "all" then
+        if cpuinfo["isIntel"] == 0 then
+            print_stdout("INFO: Manipulation of CPU features is only available on Intel platforms")
+        end
         print_stdout("Available features:")
         for i=0,likwid.tablelength(likwid.cpuFeatures)-1 do
             local found = false
@@ -137,6 +140,11 @@ for opt,arg in likwid.getopt(arg, {"h","v","l","c:","e:","d:","a","help","versio
         print_stderr("Option requires an argument")
         os.exit(1)
     end
+end
+
+if cpuinfo["isIntel"] == 0 then
+    print_stdout("INFO: Manipulation of CPU features is only available on Intel platforms")
+    os.exit(0)
 end
 
 likwid.initCpuFeatures()

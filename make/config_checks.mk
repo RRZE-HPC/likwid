@@ -22,6 +22,25 @@ ifneq ($(strip $(ENOUGH_CPUS)), True)
 $(info Warning: $(ENOUGH_CPUS) The MAX_NUM_THREADS variable must be larger or equal to the available CPUs. Currently, LIKWID is configured for $(MAX_NUM_THREADS) CPUs, but there are $(INSTALLED_CPUS) CPUs in the systen)
 endif
 
+ifneq ($(strip ${DESTDIR}),)
+$(info Info: Destdir ${DESTDIR})
+PREFIX := ${DESTDIR}
+INSTALLED_PREFIX ?= ${DESTDIR}
+MANPREFIX ?= $(PREFIX)/man#NO SPACE
+BINPREFIX ?= $(PREFIX)/bin#NO SPACE
+LIBPREFIX ?= $(PREFIX)/lib#NO SPACE
+ACCESSDAEMON = $(PREFIX)/sbin/likwid-accessD#NO SPACE
+INSTALLED_PREFIX := $(PREFIX)#NO SPACE
+INSTALLED_BINPREFIX ?= $(INSTALLED_PREFIX)/bin#NO SPACE
+INSTALLED_LIBPREFIX ?= $(INSTALLED_PREFIX)/lib#NO SPACE
+INSTALLED_ACCESSDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-accessD#NO SPACE
+RPATHS = -Wl,-rpath=$(INSTALLED_LIBPREFIX)
+LIBLIKWIDPIN = $(abspath $(INSTALLED_LIBPREFIX)/liblikwidpin.so.$(VERSION).$(RELEASE))
+LIKWIDFILTERPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/filter)
+LIKWIDGROUPPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/perfgroups)
+endif
+
+
 INST_PREFIX := $(strip $(INSTALLED_PREFIX))
 ifneq "$(strip $(PREFIX))" "$(strip $(INST_PREFIX))"
 $(info Info: PREFIX and INSTALLED_PREFIX differ, be aware that you have to move stuff after make install from $(strip $(PREFIX)) to $(strip $(INSTALLED_PREFIX)). You can use make move for this.)

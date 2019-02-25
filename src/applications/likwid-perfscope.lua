@@ -184,7 +184,7 @@ if #arg == 0 then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"h","v","V:", "g:","C:","c:","t:","r:","a","d","p","f","help", "version","group:","time:","dump","range:","plotdump","all", "host:", "force"}) do
+for opt,arg in likwid.getopt(arg, {"h","v","V:","g:","C:","c:","t:","r:","a","d","p","f","help", "version","group:","time:","dump","range:","plotdump","all", "host:", "force"}) do
     if opt == "h" or opt == "help" then
         usage()
         os.exit(0)

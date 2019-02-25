@@ -19,3 +19,7 @@ static BoxMap a57_box_map[NUM_UNITS] = {
 static char* a57_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3",
 };
+
+static char* a53_translate_types[NUM_UNITS] = {
+    [PMC] = "/sys/bus/event_source/devices/cpu",
+};

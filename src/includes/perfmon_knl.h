@@ -47,6 +47,7 @@ int perfmon_init_knl(int cpu_id)
 uint32_t knl_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 {
     uint32_t flags = (1ULL<<(1+(index*4)));
+    cpu_id++;
     if (event->numberOfOptions > 0)
     {
         for(int i=0;i<event->numberOfOptions;i++)
@@ -187,6 +188,8 @@ int knl_ubox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     break;
                 case EVENT_OPTION_TID:
                     flags |= (1ULL<<19);
+                    break;
+                default:
                     break;
             }
         }
@@ -431,7 +434,6 @@ int perfmon_setupCountersThread_knl(
         PerfmonEventSet* eventSet)
 {
     int haveLock = 0;
-    uint64_t flags = 0x0ULL;
     uint64_t fixed_flags = 0x0ULL;
     int cpu_id = groupSet->threads[thread_id].processorId;
 
@@ -462,7 +464,6 @@ int perfmon_setupCountersThread_knl(
         {
             continue;
         }
-        flags = 0x0ULL;
         RegisterIndex index = eventSet->events[i].index;
         PerfmonEvent *event = &(eventSet->events[i].event);
         uint64_t reg = counter_map[index].configRegister;
@@ -767,6 +768,7 @@ int knl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
     PciDeviceIndex dev = counter_map[index].device;
     uint64_t counter1 = counter_map[index].counterRegister;
     uint64_t counter2 = counter_map[index].counterRegister2;
+    event++;
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] != cpu_id)
     {
         return 0;
@@ -795,7 +797,7 @@ int knl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
     if (result < *cur_result)
     {
         uint64_t ovf_values = 0x0ULL;
-        int global_offset = box_map[type].ovflOffset;
+        //int global_offset = box_map[type].ovflOffset;
         int test_local = 0;
         if (global_offset != -1)
         {
@@ -847,11 +849,11 @@ int knl_uncore_read(int cpu_id, RegisterIndex index, PerfmonEvent *event,
     { \
         uint64_t ovf_values = 0x0ULL; \
         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_STATUS, &ovf_values)); \
-        if (ovf_values & (1ULL<<offset)) \
+        if (ovf_values & (1ULL<<(offset))) \
         { \
             eventSet->events[i].threadCounter[thread_id].overflows++; \
         } \
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<offset))); \
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<(offset)))); \
     }
 
 int perfmon_stopCountersThread_knl(int thread_id, PerfmonEventSet* eventSet)

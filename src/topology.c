@@ -45,6 +45,7 @@
 #include <bitUtil.h>
 //#include <strUtil.h>
 #include <configuration.h>
+#include <topology_cavtx2.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -76,6 +77,7 @@ static char* broadwell_e3_str = "Intel Xeon E3 Broadwell processor";
 static char* broadwell_ep_str = "Intel Xeon Broadwell EN/EP/EX processor";
 static char* skylake_str = "Intel Skylake processor";
 static char* skylakeX_str = "Intel Skylake SP processor";
+static char* cascadelakeX_str = "Intel Cascadelake SP processor";
 static char* kabylake_str = "Intel Kabylake processor";
 static char* cannonlake_str = "Intel Cannonlake processor";
 static char* coffeelake_str = "Intel Coffeelake processor";
@@ -103,6 +105,10 @@ static char* amd_k8_str = "AMD K8 architecture";
 static char* amd_zen_str = "AMD K17 (Zen) architecture";
 static char* armv7l_str = "ARM 7l architecture";
 static char* armv8_str = "ARM 8 architecture";
+static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
+static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
+static char* arm_cortex_a57 = "ARM Cortex A57 (ARMv8)";
+static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 
@@ -128,6 +134,7 @@ static char* short_sandybridge_ep = "sandybridgeEP";
 static char* short_skylake = "skylake";
 static char* short_skylakeX = "skylakeX";
 static char* short_kabylake = "skylake";
+static char* short_cascadelakeX = "skylakeX";
 static char* short_cannonlake = "cannonlake";
 static char* short_phi = "phi";
 static char* short_phi2 = "knl";
@@ -138,6 +145,8 @@ static char* short_k16 = "kabini";
 static char* short_zen = "zen";
 static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
+static char* short_arm8_cav_tx2 = "arm8_tx2";
+static char* short_arm8_cav_tx = "arm8_tx";
 static char* short_unknown = "unknown";
 
 /* #####  EXPORTED VARIABLES  ########################################## */
@@ -193,7 +202,7 @@ initTopologyFile(FILE* file)
 }
 
 static int
-readTopologyFile(const char* filename)
+readTopologyFile(const char* filename, cpu_set_t cpuSet)
 {
     FILE* fp;
     char structure[256];
@@ -309,6 +318,14 @@ readTopologyFile(const char* filename)
                 else if (strcmp(value, "apicId") == 0)
                 {
                     cpuid_topology.threadPool[thread].apicId = tmp;
+                    if (CPU_ISSET(tmp, &cpuSet))
+                    {
+                        cpuid_topology.threadPool[thread].inCpuSet = 1;
+                    }
+                    else
+                    {
+                        cpuid_topology.threadPool[thread].inCpuSet = 0;
+                    }
                 }
 
             }
@@ -592,6 +609,7 @@ topology_setName(void)
                     break;
 
                 case SANDYBRIDGE:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = sandybridge_str;
                     cpuid_info.short_name = short_sandybridge;
                     break;
@@ -603,6 +621,7 @@ topology_setName(void)
                     break;
 
                 case IVYBRIDGE:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = ivybridge_str;
                     cpuid_info.short_name = short_ivybridge;
                     break;
@@ -627,6 +646,7 @@ topology_setName(void)
                     break;
 
                 case BROADWELL:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = broadwell_str;
                     cpuid_info.short_name = short_broadwell;
                     break;
@@ -653,21 +673,32 @@ topology_setName(void)
                     break;
 
                 case SKYLAKEX:
-                    cpuid_info.name = skylakeX_str;
-                    cpuid_info.short_name = short_skylakeX;
+                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping <= 5)
+                    {
+                        cpuid_info.name = skylakeX_str;
+                        cpuid_info.short_name = short_skylakeX;
+                    }
+                    else
+                    {
+                        cpuid_info.name = cascadelakeX_str;
+                        cpuid_info.short_name = short_cascadelakeX;
+                    }
                     break;
 
                 case KABYLAKE1:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = kabylake_str;
                     cpuid_info.short_name = short_skylake;
                     break;
 
                 case KABYLAKE2:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = coffeelake_str;
                     cpuid_info.short_name = short_skylake;
                     break;
 
                 case CANNONLAKE:
+                    cpuid_info.supportClientmem = 1;
                     cpuid_info.name = cannonlake_str;
                     cpuid_info.short_name = short_cannonlake;
                     break;
@@ -856,6 +887,7 @@ topology_setName(void)
             switch (cpuid_info.model)
             {
                 case ARM7L:
+                case ARMV7L:
                     cpuid_info.name = armv7l_str;
                     cpuid_info.short_name = short_arm7;
                     break;
@@ -865,20 +897,50 @@ topology_setName(void)
             }
             break;
         case ARMV8_FAMILY:
-            switch (cpuid_info.model)
+            switch (cpuid_info.vendor)
             {
-                case CORTEX_A57_1:
-                    cpuid_info.name = armv8_str;
-                    cpuid_info.short_name = short_arm8;
+                case DEFAULT_ARM:
+                    switch (cpuid_info.part)
+                    {
+                        case ARM_CORTEX_A57:
+                            cpuid_info.name = arm_cortex_a57;
+                            cpuid_info.short_name = short_arm8;
+                            break;
+                        case ARM_CORTEX_A53:
+                            cpuid_info.name = arm_cortex_a53;
+                            cpuid_info.short_name = short_arm8;
+                            break;
+                        default:
+                            return EXIT_FAILURE;
+                            break;
+                    }
+                    break;
+                case CAVIUM1:
+                case CAVIUM2:
+                    switch (cpuid_info.part)
+                    {
+                        case CAV_THUNDERX2T99:
+                        case CAV_THUNDERX2T99P1:
+                            cpuid_info.name = cavium_thunderx2t99_str;
+                            cpuid_info.short_name = short_arm8_cav_tx2;
+                            break;
+                        case CAV_THUNDERX:
+                        case CAV_THUNDERX88:
+                        case CAV_THUNDERX81:
+                        case CAV_THUNDERX82:
+                            cpuid_info.name = cavium_thunderx_str;
+                            cpuid_info.short_name = short_arm8_cav_tx;
+                            break;
+                        default:
+                            return EXIT_FAILURE;
+                            break;
+                    }
                     break;
                 default:
                     return EXIT_FAILURE;
                     break;
             }
-            break;
-
         default:
-            return EXIT_FAILURE;
             break;
     }
     return EXIT_SUCCESS;
@@ -900,7 +962,7 @@ topology_functions topology_funcs = {
     .init_cpuFeatures = proc_init_cpuFeatures,
     .close_topology = hwloc_close,
 #else
-    .init_cpuInfo = proc_init_cpuInfo,
+    .init_cpuInfo = hwloc_init_cpuInfo,
     .init_cpuFeatures = proc_init_cpuFeatures,
     .init_nodeTopology = proc_init_nodeTopology,
     .init_cacheTopology = proc_init_cacheTopology,
@@ -966,7 +1028,6 @@ topology_init(void)
     int ret = 0;
     cpu_set_t cpuSet;
     struct topology_functions funcs = topology_funcs;
-
     if (topology_initialized)
     {
         return EXIT_SUCCESS;
@@ -1003,15 +1064,72 @@ standard_init:
         funcs.init_cpuFeatures();
         funcs.init_nodeTopology(cpuSet);
         funcs.init_cacheTopology();
+        if (cpuid_topology.numCacheLevels == 0)
+        {
+            CacheLevel* cachePool = NULL;
+            switch(cpuid_info.family)
+            {
+                case ARMV8_FAMILY:
+                    switch (cpuid_info.vendor)
+                    {
+                        case CAVIUM2:
+                            switch (cpuid_info.part) {
+                                case CAV_THUNDERX2T99:
+                                    cachePool = (CacheLevel*) malloc(3 * sizeof(CacheLevel));
+                                    for(int i=0;i < 3; i++)
+                                    {
+                                        cachePool[i].level = caviumTX2_caches[i].level;
+                                        cachePool[i].size = caviumTX2_caches[i].size;
+                                        cachePool[i].lineSize = caviumTX2_caches[i].lineSize;
+                                        cachePool[i].threads = caviumTX2_caches[i].threads;
+                                        cachePool[i].inclusive = caviumTX2_caches[i].inclusive;
+                                        cachePool[i].sets = caviumTX2_caches[i].sets;
+                                        cachePool[i].associativity = caviumTX2_caches[i].associativity;
+                                    }
+                                    cpuid_topology.cacheLevels = cachePool;
+                                    cpuid_topology.numCacheLevels = 3;
+                                    break;
+                                default:
+                                    break;
+                            }
+                            break;
+                        case CAVIUM1:
+                            switch (cpuid_info.part) {
+                                case CAV_THUNDERX2T99P1:
+                                    cachePool = (CacheLevel*) malloc(3 * sizeof(CacheLevel));
+                                    for(int i=0;i < 3; i++)
+                                    {
+                                        cachePool[i].level = caviumTX2_caches[i].level;
+                                        cachePool[i].size = caviumTX2_caches[i].size;
+                                        cachePool[i].lineSize = caviumTX2_caches[i].lineSize;
+                                        cachePool[i].threads = caviumTX2_caches[i].threads;
+                                        cachePool[i].inclusive = caviumTX2_caches[i].inclusive;
+                                        cachePool[i].sets = caviumTX2_caches[i].sets;
+                                        cachePool[i].associativity = caviumTX2_caches[i].associativity;
+                                    }
+                                    cpuid_topology.cacheLevels = cachePool;
+                                    cpuid_topology.numCacheLevels = 3;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
         topology_setupTree();
         sched_setaffinity(0, sizeof(cpu_set_t), &cpuSet);
     }
     else
     {
         CPU_ZERO(&cpuSet);
-        sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
+        sched_getaffinity(0, sizeof(cpu_set_t), &cpuSet);
         DEBUG_PRINT(DEBUGLEV_INFO, Reading topology information from %s, config.topologyCfgFileName);
-        ret = readTopologyFile(config.topologyCfgFileName);
+        ret = readTopologyFile(config.topologyCfgFileName, cpuSet);
         if (ret < 0)
             goto standard_init;
         cpuid_topology.activeHWThreads = 0;
@@ -1129,6 +1247,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",xeon_phi3_string);
     printf("\t%s\n",kabylake_str);
     printf("\t%s\n",coffeelake_str);
+    printf("\t%s\n",cascadelakeX_str);
     printf("\n");
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);

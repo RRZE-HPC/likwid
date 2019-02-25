@@ -169,7 +169,7 @@ proc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     int cntr = 0;
     uint16_t testVendor = 0x8086;
     uint32_t sbus, sdevfn, svend, sdev;
-    int busID;
+    uint32_t busID;
 
     if ( (fptr = fopen( "/proc/bus/pci/devices", "r")) == NULL )
     {

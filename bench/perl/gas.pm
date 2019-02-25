@@ -187,8 +187,8 @@ sub loop_entry
   } elsif ($main::ISA eq 'ARMv8') {
     print "\tmov   x6, 0\n";
     print ".loop:\n";
-    print "\tcmp w0, w6\n";
-    print "\tblt .exit\n";
+    #print "\tcmp w0, w6\n";
+    #print "\tblt .exit\n";
   }
   if ($main::ISA eq 'ARMv7') {
 	  print ".align 2\n";
@@ -221,8 +221,9 @@ sub loop_exit
     print "add r4, #$step\n";
     print "cmp r4, r0\n";
   } elsif ($main::ISA eq 'ARMv8') {
-    print "\tadd x6, x6, $step\n";
-    print "\tb .loop\n";
+    print "\tadd x6, x6, #$step\n";
+    print "\tcmp x6, x0\n";
+    print "\tblt .loop\n";
   }
   if ($MODE eq 'GLOBAL') {
     print "jl $symbolname\n";

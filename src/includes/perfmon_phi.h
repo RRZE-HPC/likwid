@@ -39,6 +39,7 @@ static int perfmon_numArchEventsPhi = NUM_ARCH_EVENTS_PHI;
 
 int perfmon_init_phi(int cpu_id)
 {
+    cpu_id++;
     return 0;
 }
 

@@ -229,7 +229,6 @@ access_x86_pci_read(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t
 {
     bstring filepath = NULL;
     uint32_t tmp;
-    int err;
 
     if (dev == MSR_DEV)
     {
@@ -274,7 +273,6 @@ int
 access_x86_pci_write(PciDeviceIndex dev, const int socket, uint32_t reg, uint64_t data)
 {
     bstring filepath = NULL;
-    int err;
     uint32_t tmp = (uint32_t)data;
 
     if (dev == MSR_DEV)

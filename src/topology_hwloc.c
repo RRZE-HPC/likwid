@@ -50,14 +50,16 @@
 hwloc_topology_t hwloc_topology = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
-#ifdef __ARM_ARCH_8A
-int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping)
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping, uint32_t *part, uint32_t *vendor)
 {
     int i = 0;
     FILE *fp = NULL;
     uint32_t f = 0;
     uint32_t v = 0;
     uint32_t s = 0;
+    uint32_t p = 0;
+    uint32_t vend = 0;
     int (*ownatoi)(const char*);
     ownatoi = &atoi;
 
@@ -66,6 +68,8 @@ int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping)
         const_bstring familyString = bformat("CPU architecture:");
         const_bstring variantString = bformat("CPU variant\t:");
         const_bstring steppingString = bformat("CPU revision\t:");
+        const_bstring partString = bformat("CPU part\t:");
+        const_bstring vendString = bformat("CPU implementer\t:");
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
         bdestroy(src);
@@ -93,6 +97,20 @@ int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping)
                 v = strtol(bdata(subtokens->entry[1]), NULL, 0);
                 bstrListDestroy(subtokens);
             }
+            else if ((p == 0) && (binstr(tokens->entry[i],0,partString) != BSTR_ERR))
+            {
+                struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
+                bltrimws(subtokens->entry[1]);
+                p = strtol(bdata(subtokens->entry[1]), NULL, 0);
+                bstrListDestroy(subtokens);
+            }
+            else if ((p == 0) && (binstr(tokens->entry[i],0,vendString) != BSTR_ERR))
+            {
+                struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
+                bltrimws(subtokens->entry[1]);
+                vend = strtol(bdata(subtokens->entry[1]), NULL, 0);
+                bstrListDestroy(subtokens);
+            }
         }
         bstrListDestroy(tokens);
         /*bdestroy(familyString);
@@ -106,6 +124,33 @@ int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping)
     *family = f;
     *variant = v;
     *stepping = s;
+    *part = p;
+    *vendor = vend;
+    return 0;
+}
+
+int parse_cpuname(char *name)
+{
+    FILE *fp = NULL;
+    if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
+    {
+        const_bstring nameString = bformat("Hardware\t:");
+        bstring src = bread ((bNread) fread, fp);
+        struct bstrList* tokens = bsplit(src,(char) '\n');
+        bdestroy(src);
+        fclose(fp);
+        for (int i = 0; i < tokens->qty; i++)
+        {
+            if ((binstr(tokens->entry[i],0,nameString) != BSTR_ERR))
+            {
+                struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
+                bltrimws(subtokens->entry[1]);
+                strncpy(name, bdata(subtokens->entry[1]), MAX_MODEL_STRING_LENGTH-1);
+                bstrListDestroy(subtokens);
+            }
+        }
+        bstrListDestroy(tokens);
+    }
     return 0;
 }
 #endif
@@ -183,6 +228,8 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     cpuid_info.family = 0;
     cpuid_info.isIntel = 0;
     cpuid_info.stepping = 0;
+    cpuid_info.vendor = 0;
+    cpuid_info.part = 0;
     cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
     cpuid_info.osname[0] = '\0';
     if (!obj)
@@ -206,18 +253,30 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
        cpuid_info.family = atoi(info);
     if ((info = hwloc_obj_get_info_by_name(obj, "CPURevision")))
         cpuid_info.model = atoi(info);
+    if (cpuid_info.family == 0 || cpuid_info.model == 0)
+    {
+        uint32_t part = 0;
+        parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
+        parse_cpuname(cpuid_info.osname);
+    }
 #endif
 #ifdef __ARM_ARCH_8A
-    parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping);
+    uint32_t part = 0;
+    parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
+    parse_cpuname(cpuid_info.osname);
 #endif
     if ((info = hwloc_obj_get_info_by_name(obj, "CPUModel")))
         strcpy(cpuid_info.osname, info);
 
     cpuid_topology.numHWThreads = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d activeHWThreads %d,
+    if (cpuid_topology.activeHWThreads > cpuid_topology.numHWThreads)
+        cpuid_topology.numHWThreads = cpuid_topology.activeHWThreads;
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d Vendor 0x%X Part 0x%X isIntel %d numHWThreads %d activeHWThreads %d,
                             cpuid_info.family,
                             cpuid_info.model,
                             cpuid_info.stepping,
+                            cpuid_info.vendor,
+                            cpuid_info.part,
                             cpuid_info.isIntel,
                             cpuid_topology.numHWThreads,
                             cpuid_topology.activeHWThreads)
@@ -379,6 +438,29 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     return;
 }
 
+void hwloc_split_llc_check(CacheLevel* llc_cache)
+{
+    hwloc_obj_t obj = NULL;
+    int num_sockets = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_SOCKET);
+    int num_nodes = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_NODE);
+    if (num_sockets == num_nodes)
+    {
+        return;
+    }
+    obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_SOCKET, 0);
+    int num_threads_per_socket = likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
+    obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_NODE, 0);
+    int num_threads_per_node = likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
+    if (num_threads_per_node < num_threads_per_socket)
+    {
+        llc_cache->threads = num_threads_per_node;
+        uint32_t size = llc_cache->size;
+        double factor = (((double)num_threads_per_node)/((double)num_threads_per_socket));
+        llc_cache->size = (uint32_t)(size*factor);
+    }
+    return;
+}
+
 void
 hwloc_init_cacheTopology(void)
 {
@@ -484,6 +566,21 @@ hwloc_init_cacheTopology(void)
                                       id, cachePool[id].level,
                                       cachePool[id].size);
         id++;
+    }
+
+    if (cpuid_info.family == P6_FAMILY)
+    {
+        switch (cpuid_info.model)
+        {
+            case HASWELL_EP:
+            case BROADWELL_E:
+            case BROADWELL_D:
+            case SKYLAKEX:
+                hwloc_split_llc_check(&cachePool[maxNumLevels-1]);
+                break;
+            default:
+                break;
+        }
     }
 
     cpuid_topology.numCacheLevels = maxNumLevels;

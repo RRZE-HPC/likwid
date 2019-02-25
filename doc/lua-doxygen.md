@@ -422,7 +422,7 @@ or<BR>
       <TD>ID of socket</TD>
     </TR>
     <TR>
-      <TD>\a Childs</TD>
+      <TD>\a Children</TD>
       <TD><TABLE>
         <TR>
             <TH>Membername</TH>
@@ -433,7 +433,7 @@ or<BR>
             <TD>ID of CPU core</TD>
         </TR>
         <TR>
-            <TD>\a Childs</TD>
+            <TD>\a Children</TD>
             <TD>List of thread IDs for the current CPU core</TD>
         </TR>
       </TABLE></TD>
@@ -3250,7 +3250,7 @@ for opt,arg in likwid.getopt(arg, {"n:","h"}) do<BR>
 &nbsp;&nbsp;&nbsp;&nbsp;if (type(arg) == "string") then<BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;local s,e = arg:find("-")<BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if s == 1 then<BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(string.format("ERROR: Argmument %s to option -%s starts with invalid character -.", arg, opt))<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(string.format("ERROR: Argument %s to option -%s starts with invalid character -.", arg, opt))<BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print("ERROR: Did you forget an argument to an option?")<BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;os.exit(1)<BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end<BR>

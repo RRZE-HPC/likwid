@@ -1,9 +1,10 @@
 /*
  * =======================================================================================
  *
- *      Filename:  frequency.c
+ *      Filename:  frequency_acpi.c
  *
- *      Description:  Module implementing an interface for frequency manipulation
+ *      Description:  Module implementing an interface for frequency manipulation, the
+ *                    ACPI CPUFreq backend
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>

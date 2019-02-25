@@ -107,13 +107,7 @@ int ilg_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 
 int perfmon_setupCounterThread_interlagos(int thread_id, PerfmonEventSet* eventSet)
 {
-    int haveLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
-
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
-        haveLock = 1;
-    }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
@@ -232,14 +226,8 @@ int perfmon_stopCountersThread_interlagos(int thread_id, PerfmonEventSet* eventS
 
 int perfmon_readCountersThread_interlagos(int thread_id, PerfmonEventSet* eventSet)
 {
-    int haveLock = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
     uint64_t tmp;
-
-    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
-    {
-        haveLock = 1;
-    }
 
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {

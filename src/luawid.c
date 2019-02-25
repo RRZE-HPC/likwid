@@ -911,7 +911,7 @@ lua_likwid_getCpuTopology(lua_State* L)
         lua_pushstring(L, "ID");
         lua_pushinteger(L, (lua_Integer)(socketNode->id));
         lua_settable(L, -3);
-        lua_pushstring(L, "Childs");
+        lua_pushstring(L, "Children");
         lua_newtable(L);
         coreCount = 0;
         coreNode = tree_getChildNode(socketNode);
@@ -922,7 +922,7 @@ lua_likwid_getCpuTopology(lua_State* L)
             lua_pushstring(L, "ID");
             lua_pushinteger(L, (lua_Integer)(coreNode->id));
             lua_settable(L,-3);
-            lua_pushstring(L, "Childs");
+            lua_pushstring(L, "Children");
             lua_newtable(L);
             threadNode = tree_getChildNode(coreNode);
             threadCount = 0;
@@ -1042,14 +1042,13 @@ lua_likwid_getEventsAndCounters(lua_State* L)
         lua_pushstring(L,eventHash[i-1].limit);
         lua_settable(L,-3);
         lua_pushstring(L,"Options");
-        for(int j=1; j<NUM_EVENT_OPTIONS; j++)
+        for(int j=0; j<eventHash[i-1].numberOfOptions; j++)
         {
-            if (eventHash[i-1].optionMask & REG_TYPE_MASK(j))
-            {
-                bstring tmp = bformat("%s|", eventOptionTypeName[j]);
-                bconcat(optString, tmp);
-                bdestroy(tmp);
-            }
+            char* type = eventOptionTypeName[eventHash[i-1].options[j].type];
+            uint64_t value = eventHash[i-1].options[j].value;
+            bstring tmp = bformat("%s=0x%lX|", type, value);
+            bconcat(optString, tmp);
+            bdestroy(tmp);
         }
         bdelete(optString, blength(optString)-1, 1);
         lua_pushstring(L,bdata(optString));

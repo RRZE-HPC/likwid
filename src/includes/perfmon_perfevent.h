@@ -80,13 +80,19 @@ int perfmon_init_perfevent(int cpu_id)
             paranoid_level = atoi(buff);
         }
         fclose(fd);
+#if defined(__x86_64__) || defined(__i386__)
         if (paranoid_level > 0 && getuid() != 0)
         {
             fprintf(stderr, "WARN: Linux kernel configured with paranoid level %d\n", paranoid_level);
-#if defined(__x86_64__) || defined(__i386__)
             fprintf(stderr, "WARN: Paranoid level 0 or root access is required to measure Uncore counters\n");
-#endif
         }
+#endif
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+	if (paranoid_level > 1 && getuid() != 0)
+        {
+	    fprintf(stderr, "WARN: Linux kernel configured with paranoid level %d\n", paranoid_level);
+	}
+#endif
         informed_paranoid = 1;
     }
     lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);

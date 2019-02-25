@@ -726,7 +726,7 @@ local function tableMinMaxAvgSum(inputtable, skip_cols, skip_lines)
     sumOfLine = {"Sum"}
     avgOfLine = {"Avg"}
     for i=skip_lines+1,nr_lines do
-        minOfLine[i-skip_lines+1] = math.huge
+        minOfLine[i-skip_lines+1] = math.huge - 1
         maxOfLine[i-skip_lines+1] = 0
         sumOfLine[i-skip_lines+1] = 0
         avgOfLine[i-skip_lines+1] = 0
