@@ -528,24 +528,25 @@ int main(int argc, char** argv)
 /*    }*/
 /*#endif*/
     int datatypesize = allocator_dataTypeLength(test->type);
+    uint64_t size_per_thread = threads_data[0].data.size;
+    uint64_t iters_per_thread = threads_data[0].data.iter;
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
     ownprintf("CPU Clock:\t\t%" PRIu64 "\n", timer_getCpuClock());
     ownprintf("Cycle Clock:\t\t%" PRIu64 "\n", cyclesClock);
     ownprintf("Time:\t\t\t%e sec\n", time);
     ownprintf("Iterations:\t\t%" PRIu64 "\n", realIter);
-    ownprintf("Iterations per thread:\t%" PRIu64 "\n",threads_data[0].data.iter);
+    ownprintf("Iterations per thread:\t%" PRIu64 "\n",iters_per_thread);
     ownprintf("Inner loop executions:\t%d\n", (int)(((double)realSize)/((double)test->stride*globalNumberOfThreads)));
     ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize * datatypesize * test->streams );
-    ownprintf("Size per thread:\t%" PRIu64 "\n", threads_data[0].data.size * datatypesize * test->streams);
-    ownprintf("Number of Flops:\t%" PRIu64 "\n", (threads_data[0].data.iter * realSize *  test->flops));
+    ownprintf("Size per thread:\t%" PRIu64 "\n", size_per_thread * test->bytes);
+    ownprintf("Number of Flops:\t%" PRIu64 "\n", (iters_per_thread * realSize *  test->flops));
     ownprintf("MFlops/s:\t\t%.2f\n",
-            1.0E-06 * ((double) threads_data[0].data.iter * realSize *  test->flops/  time));
+            1.0E-06 * ((double) (iters_per_thread * realSize *  test->flops) /  time));
     ownprintf("Data volume (Byte):\t%llu\n",
-            LLU_CAST (threads_data[0].data.iter * realSize *  datatypesize * test->streams));
+            LLU_CAST (iters_per_thread * realSize * test->bytes));
     ownprintf("MByte/s:\t\t%.2f\n",
-            1.0E-06 * ( (double) threads_data[0].data.iter * realSize * datatypesize * test->streams / time));
-
+            1.0E-06 * ( (double) (iters_per_thread * realSize * test->bytes) / time));
 
     size_t destsize = 0;
     size_t datasize = 0;
