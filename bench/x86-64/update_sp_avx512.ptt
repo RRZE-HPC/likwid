@@ -1,7 +1,7 @@
 STREAMS 1
 TYPE SINGLE
 FLOPS 0
-BYTES 16
+BYTES 8
 DESC Single-precision vector update, optimized for AVX-512
 LOADS 1
 STORES 1
