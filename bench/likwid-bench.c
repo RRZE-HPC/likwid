@@ -530,6 +530,8 @@ int main(int argc, char** argv)
     int datatypesize = allocator_dataTypeLength(test->type);
     uint64_t size_per_thread = threads_data[0].data.size;
     uint64_t iters_per_thread = threads_data[0].data.iter;
+    uint64_t datavol = iters_per_thread * realSize * test->bytes;
+    uint64_t allIters = realIter * (int)(((double)realSize)/((double)test->stride*globalNumberOfThreads));
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
     ownprintf("CPU Clock:\t\t%" PRIu64 "\n", timer_getCpuClock());
@@ -538,13 +540,13 @@ int main(int argc, char** argv)
     ownprintf("Iterations:\t\t%" PRIu64 "\n", realIter);
     ownprintf("Iterations per thread:\t%" PRIu64 "\n",iters_per_thread);
     ownprintf("Inner loop executions:\t%d\n", (int)(((double)realSize)/((double)test->stride*globalNumberOfThreads)));
-    ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize * datatypesize * test->streams );
+    ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize * test->bytes );
     ownprintf("Size per thread:\t%" PRIu64 "\n", size_per_thread * test->bytes);
     ownprintf("Number of Flops:\t%" PRIu64 "\n", (iters_per_thread * realSize *  test->flops));
     ownprintf("MFlops/s:\t\t%.2f\n",
             1.0E-06 * ((double) (iters_per_thread * realSize *  test->flops) /  time));
     ownprintf("Data volume (Byte):\t%llu\n",
-            LLU_CAST (iters_per_thread * realSize * test->bytes));
+            LLU_CAST (datavol));
     ownprintf("MByte/s:\t\t%.2f\n",
             1.0E-06 * ( (double) (iters_per_thread * realSize * test->bytes) / time));
 
@@ -569,7 +571,8 @@ int main(int argc, char** argv)
             perUpFactor = (clsize/sizeof(double));
             break;
     }
-    cycPerCL = (double) maxCycles/(threads_data[0].data.iter*realSize*destsize/clsize);
+
+    cycPerCL = (double) maxCycles/((double)datavol/(clsize*datasize));
     ownprintf("Cycles per update:\t%f\n", cycPerCL/perUpFactor);
     ownprintf("Cycles per cacheline:\t%f\n", cycPerCL);
     ownprintf("Loads per update:\t%ld\n", test->loads );
