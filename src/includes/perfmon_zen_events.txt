@@ -109,7 +109,7 @@ UMASK_LOCKS_SPEC_LOCK_MAP_COMMIT       0x08
 EVENT_RETIRED_CLFLUSH                   0x26 PMC
 UMASK_RETIRED_CLFLUSH                   0x00
 
-EVENT_RETIRED_CPUID                     0x26 PMC
+EVENT_RETIRED_CPUID                     0x27 PMC
 UMASK_RETIRED_CPUID                     0x00
 
 EVENT_LS_DISPATCH                      0x29    PMC
@@ -123,7 +123,7 @@ UMASK_SMIS_RECEIVED                    0x00
 EVENT_ST_TO_LD_FWD                     0x35 PMC
 UMASK_ST_TO_LD_FWD                     0x00
 
-EVENT_ST_COMMIT_CANCELS                0x27
+EVENT_ST_COMMIT_CANCELS                0x37 PMC
 UMASK_ST_COMMIT_CANCELS                0x01
 
 EVENT_DATA_CACHE_ACCESSES              0x40    PMC
