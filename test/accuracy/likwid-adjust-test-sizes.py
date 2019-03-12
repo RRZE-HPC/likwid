@@ -3,7 +3,7 @@
 
 import os, sys, os.path, re, subprocess
 
-topology_exec = "../../likwid-topology"
+topology_exec = "/home/hpc/unrz/unrz139/Apps-arm/bin/likwid-topology"
 topology_re_size = re.compile("^Size:\s+(.*)")
 re_size_unit = re.compile("(\d+)\s(\w+)")
 
@@ -11,12 +11,16 @@ cachesizes = []
 
 def get_caches():
     level = 0
+    print("here")
     p = subprocess.Popen(topology_exec, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     p.wait()
+    sout = p.stdout.read()
     if p.returncode != 0:
+        print("err", p.returncode )
         return level
-    for line in p.stdout.read().split("\n"):
+    for line in sout.split("\n"):
         if line.startswith("Size:"):
+            print(line)
             string = topology_re_size.match(line).group(1).strip()
             size, unit = re_size_unit.match(string).groups()
             if unit == "kB":
@@ -68,6 +72,7 @@ def adjust_tests(testgroup):
         level = int(level.group(1))-1
     else:
         level = len(cachesizes)-1
+    print(level, cachesizes)
     min_size = int((cachesizes[level-1] + (0.3*cachesizes[level-1]))/1024)
     max_size = int((cachesizes[level] - (0.2*cachesizes[level]))/1024)
     diff = (cachesizes[level] - cachesizes[level-1])/1024

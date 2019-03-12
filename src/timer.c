@@ -102,7 +102,7 @@ fRDTSC(TscCounter* cpu_c)
     __asm__ volatile( \
     "xchgl %%ebx, %2\n\t"  \
     "xor %%eax,%%eax\n\t" \
-    "cpuid\n\t"           \
+    "lfence\n\t"           \
     "rdtsc\n\t"           \
     "movl %%eax, %0\n\t"  \
     "movl %%edx, %1\n\t"  \

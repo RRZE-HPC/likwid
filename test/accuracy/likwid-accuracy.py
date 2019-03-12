@@ -12,10 +12,10 @@ import glob
 import statistics
 
 bench_plain = "./likwid-bench-plain"
-bench_marker = "./likwid-bench-marker"
+bench_marker = "/home/hpc/unrz/unrz139/Apps-arm/bin/likwid-bench"
 bench_papi = "./likwid-bench-papi"
-perfctr = "../../likwid-perfctr"
-topology = "../../likwid-topology"
+perfctr = "/home/hpc/unrz/unrz139/Apps-arm/bin/likwid-perfctr"
+topology = "/home/hpc/unrz/unrz139/Apps-arm/bin/likwid-topology"
 topology_name = re.compile("^CPU name:\s+(.*)")
 topology_stepping = re.compile("^CPU stepping:\s+(\d*)")
 topology_type = re.compile("^CPU type:\s+(.*)")
@@ -75,7 +75,7 @@ def usage():
     print "--gnuplot:\tCreate GNUPlot script for each test"
     print "--grace:\tCreate Grace script that can be evaluated with gracebat"
     print "--script:\tActivate recording of commands in a bash script"
-    print "--scriptname:\tRecord commands to create pictures in file (default: %s)" % (os.path.join(os.path.join(resultfolder,hostname),scriptfilename))
+    print "--scriptname:\tRecord commands to create pictures in file (default: %s)" % (os.path.join(destfolder,scriptfilename))
 
 
 def get_groups():
@@ -119,6 +119,19 @@ def get_test_groups(groupdict):
 
     return groups
 
+def get_avail_tests():
+    tests = []
+    p = subprocess.Popen(bench_marker+" -a", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p.wait()
+    if p.returncode != 0:
+        return tests
+    for line in p.stdout.read().split("\n"):
+        m = re.match("(.*) - (.*)", line)
+        if m:
+            name, desc = m.groups()
+            tests.append(name)
+    return tests
+
 def write_topology(path):
     try:
         f = open(os.path.join(path, topology_outputfile),"w")
@@ -160,11 +173,11 @@ def legend(file1, file2):
         numbers1.append(line.split(" ")[1])
     for line in input2:
         numbers2.append(line.split(" ")[1])
-    if float(numbers1[0]) > float(numbers1[-1]) and float(numbers2[0]) > float(numbers2[-1]):
+    if float(numbers1[1]) > float(numbers1[-1]) and float(numbers2[1]) > float(numbers2[-1]):
         return "no"
-    elif float(numbers1[0]) < float(numbers1[-1]) and float(numbers2[0]) < float(numbers2[-1]):
+    elif float(numbers1[1]) < float(numbers1[-1]) and float(numbers2[1]) < float(numbers2[-1]):
         return "so"
-    elif approx(float(numbers1[0]), float(numbers1[-1])) and approx(float(numbers2[0]), float(numbers2[-1])):
+    elif approx(float(numbers1[1]), float(numbers1[-1])) and approx(float(numbers2[1]), float(numbers2[-1])):
         return "so"
     return "no"
 
@@ -173,7 +186,7 @@ def write_pgf(group, test, plain_file, marker_file, scale=0.0,papi_file=None, ex
     printgrp = group
     if translate_group.has_key(group):
         printgrp = translate_group[group]
-    filename = os.path.join(os.path.join(resultfolder,hostname),printgrp+"_"+test+".tex")
+    filename = os.path.join(destfolder,printgrp+"_"+test+".tex")
     sizelist = []
     sizeindex = []
     lentry = "north east"
@@ -219,18 +232,18 @@ def write_gnuplot(group, test, plain_file, marker_file, scale = 1.0, papi_file=N
     printgrp = group
     if translate_group.has_key(group):
         printgrp = translate_group[group]
-    filename = os.path.join(os.path.join(resultfolder,hostname),printgrp+"_"+test+".plot")
+    filename = os.path.join(destfolder,printgrp+"_"+test+".plot")
     fp = open(filename,'w')
     for i,color in enumerate(gnu_colors):
         fp.write("set style line %d linetype 1 linecolor rgb '%s' lw 2 pt %s\n" % (i+1, color,gnu_marks[i]))
-    fp.write("set terminal jpeg\n")
+    fp.write("set terminal jpeg enhanced\n")
     fp.write("set encoding utf8\n")
     fp.write("set title 'Group %s - Test %s'\n" % (printgrp.replace("_", "\_"), test.replace("_", "\_"),))
     if legend(plain_file, marker_file) == "no":
         fp.write("set key top right\n")
     else:
         fp.write("set key bottom right\n")
-    fp.write("set output '%s'\n" % (os.path.basename(os.path.join(os.path.join(resultfolder,hostname),printgrp+"_"+test+".jpg")),))
+    fp.write("set output '%s'\n" % (os.path.basename(os.path.join(destfolder,printgrp+"_"+test+".jpg")),))
     fp.write("set xlabel 'Size - %d runs each'\n" % (test_set[group][test]["RUNS"],))
     fp.write("set ylabel '%s'\n" % (units[group],))
     fp.write("set yrange  [0:]\n")
@@ -238,12 +251,12 @@ def write_gnuplot(group, test, plain_file, marker_file, scale = 1.0, papi_file=N
     fp.write("set xtics %d\n" % (test_set[group][test]["RUNS"]*len(test_set[group][test]["variants"]),))
     for i,variant in enumerate(test_set[group][test]["variants"]):
         fp.write("set xtics add (\"%s\" %f)\n" % (variant, (i*test_set[group][test]["RUNS"])+(0.5*test_set[group][test]["RUNS"]),))
-    plot_string = "plot '%s' using 1:2 title 'bench' with linespoints ls 1, \\\n"  % (os.path.basename(plain_file),)
+    plot_string = "plot '%s' using 1:3 title 'Reference' with linespoints ls 1, \\\n"  % (os.path.basename(plain_file),)
     if scale > 0.0:
-        plot_string = plot_string+" '%s' using 1:($2*%f) title 'scaled bench' with linespoints ls 2, \\\n" % (os.path.basename(plain_file), scale,)
-    plot_string = plot_string+" '%s' using 1:2 title 'perfctr' with linespoints ls 3" % (os.path.basename(marker_file),)
+        plot_string = plot_string+" '%s' using 1:($3*%f) title 'Scaled Reference' with linespoints ls 2, \\\n" % (os.path.basename(plain_file), scale,)
+    plot_string = plot_string+" '%s' using 1:3 title 'Measurement (LIKWID)' with linespoints ls 3" % (os.path.basename(marker_file),)
     if papi and papi_file:
-        plot_string += ", \\\n '%s' using 1:2 title 'papi' with linespoints ls 4\n" % (os.path.basename(papi_file),)
+        plot_string += ", \\\n '%s' using 1:3 title 'Measurement (PAPI)' with linespoints ls 4\n" % (os.path.basename(papi_file),)
     fp.write(plot_string+"\n")
     fp.close()
     if execute:
@@ -262,9 +275,9 @@ def write_grace(group, test, plain_file, correct_file, marker_file, papi_file=No
     printgrp = group
     if translate_group.has_key(group):
         printgrp = translate_group[group]
-    filename = os.path.join(os.path.join(resultfolder,hostname),printgrp+"_"+test+".bat")
-    agrname = os.path.join(os.path.join(resultfolder,hostname),printgrp+"_"+test+".agr")
-    pngname = os.path.join(os.path.join(resultfolder,hostname),printgrp+"_"+test+".png")
+    filename = os.path.join(destfolder,printgrp+"_"+test+".bat")
+    agrname = os.path.join(destfolder,printgrp+"_"+test+".agr")
+    pngname = os.path.join(destfolder,printgrp+"_"+test+".png")
     if execute or script:
         plain_file = os.path.basename(plain_file)
         marker_file = os.path.basename(marker_file)
@@ -358,7 +371,45 @@ def write_grace(group, test, plain_file, correct_file, marker_file, papi_file=No
         script.write("gracebat %s -param %s %s\n" % (cmd_options, os.path.basename(filename),out_options,))
     return filename
 
+def get_bytes(s):
+    m = re.match("(\d+)[bB]", s)
+    if m:
+        return int(m.group(1))
+    m = re.match("(\d+)[kK][bB]", s)
+    if m:
+        return int(m.group(1))*1024
+    m = re.match("(\d+)[mM][bB]", s)
+    if m:
+        return int(m.group(1))*1024*1024
+    m = re.match("(\d+)[gG][bB]", s)
+    if m:
+        return int(m.group(1))*1024*1024*1024
 
+def get_sizestr(b):
+    bint = int(b)
+    if int(bint / 1024.0) == 0:
+        return "%dB" % (bint)
+    if int(bint / (1024.0*1024.0)) == 0:
+        if bint % (1024) == 0:
+            return "%dkB" % (bint/(1024))
+        else:
+            return "%dB" % (bint)
+    if int(bint / (1024.0*1024.0*1024.0)) == 0:
+        if bint % (1024*1024) == 0:
+            return "%dMB" % (bint/(1024*1024))
+        else:
+            return "%dkB" % (bint/(1024))
+    if int(bint / (1024.0*1024.0*1024.0*1024.0)) == 0:
+        if bint % (1024*1024*1024) == 0:
+            return "%dGB" % (bint/(1024*1024*1024))
+        else:
+            return "%dMB" % (bint/(1024*1024))
+
+def get_variants(start, end, step):
+    bstart = get_bytes(start)
+    bend = get_bytes(end)
+    bstep = get_bytes(step)
+    return [ get_sizestr(x) for x in range(bstart, bend, bstep) ] + [end]
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "hs:c:", ["help", "sets=","script","scriptname=","wiki","only_wiki=","pgf","gnuplot","grace","papi"])
@@ -467,8 +518,22 @@ for line in sets:
                 corrected_set[groupname][test][variant] = []
                 marker_set[groupname][test][variant] = []
                 papi_set[groupname][test][variant] = []
+            if testline.startswith("RANGE") and test:
+                linelist = re.split("\s+",testline);
+                start = linelist[1]
+                end = linelist[2]
+                step = linelist[3]
+                if not test_set[groupname][test].has_key("variants"):
+                    test_set[groupname][test]["variants"] = []
+                variants = get_variants(start, end, step)
+                for variant in variants:
+                    test_set[groupname][test][variant] = "1"
+                    test_set[groupname][test]["variants"].append(variant)
+                    plain_set[groupname][test][variant] = []
+                    corrected_set[groupname][test][variant] = []
+                    marker_set[groupname][test][variant] = []
+                    papi_set[groupname][test][variant] = []
         testfp.close()
-
 
 
 if len(test_set.keys()) == 0:
@@ -477,32 +542,49 @@ if len(test_set.keys()) == 0:
 
 if not os.path.exists(resultfolder):
     os.mkdir(resultfolder)
-if not os.path.exists(os.path.join(resultfolder,hostname)):
-    os.mkdir(os.path.join(resultfolder,hostname))
-write_topology(os.path.join(resultfolder,hostname))
+
+destfolder = os.path.join(resultfolder, hostname)
+if not os.path.exists(destfolder):
+    os.mkdir(destfolder)
+
+write_topology(destfolder)
+
+avail_tests = get_avail_tests()
+
 if not only_wiki:
-    scriptfile = os.path.join(os.path.join(resultfolder,hostname),scriptfilename)
+
+    scriptfile = os.path.join(destfolder, scriptfilename)
     script = open(scriptfile,'w')
     script.write("#!/bin/bash\n")
 
+
     for group in test_set.keys():
-        perfctr_string = "%s -f -C E:N:%d:1:2 -g %s -m " % (perfctr,nrThreads, group,)
+        perfctr_string = "%s -f -C E:N:%d:1:2 -g %s -m " % (perfctr, nrThreads, group,)
         no_scale = False
         for test in test_set[group].keys():
             if test.startswith("REGEX"): continue
-            file_plain = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+"_plain.dat")
-            raw_plain = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+"_plain.raw")
-            file_correct = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+"_correct.dat")
-            file_marker = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+"_marker.dat")
-            raw_marker = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+"_marker.raw")
-            outfp_plain = open(file_plain,'w')
-            outfp_correct = open(file_correct,'w')
-            outfp_marker = open(file_marker,'w')
-            rawfp_marker = open(raw_marker,'w')
+            if test not in avail_tests:
+                print "Skip Group %s Test %s" % (group, test,)
+                continue
+            filebase = "%s_%s" % (group, test)
+
+            file_plain = os.path.join(destfolder,filebase+"_plain.dat")
+            #raw_plain = os.path.join(destfolder,filebase+"_plain.raw")
+            file_correct = os.path.join(destfolder,filebase+"_correct.dat")
+            file_marker = os.path.join(destfolder,filebase+"_marker.dat")
+            raw_marker = os.path.join(destfolder,filebase+"_marker.raw")
+            fp_ref = open(file_plain,'w')
+            fp_ref.write("#Counter Size Reference Scaled_Reference\n")
+            fp_scale_ref = open(file_correct,'w')
+            fp_scale_ref.write("#Counter Size Scaled_Reference\n")
+            fp_likwid = open(file_marker,'w')
+            fp_likwid.write("#Counter Size Measurement\n")
+            rawfp_likwid = open(raw_marker,'w')
             if papi:
-                file_papi = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+"_papi.dat")
-                raw_papi = os.path.join(os.path.join(resultfolder,hostname),group+"_"+test+"_papi.raw")
-                outfp_papi = open(file_papi,'w')
+                file_papi = os.path.join(destfolder, filebase+"_papi.dat")
+                raw_papi = os.path.join(destfolder, filebase+"_papi.raw")
+                fp_papi = open(file_papi,'w')
+                fp_papi.write("#Counter Size Measurement\n")
                 rawfp_papi = open(raw_papi,'w')
             else:
                 file_papi = None
@@ -517,7 +599,7 @@ if not only_wiki:
                     print "*",
                     sys.stdout.flush()
                     # Run with LIKWID instrumented likwid-bench and likwid-perfctr
-                    rawfp_marker.write(perfctr_string+" "+bench_marker+" "+bench_options+"\n")
+                    rawfp_likwid.write(perfctr_string+" "+bench_marker+" "+bench_options+"\n")
                     p = subprocess.Popen(perfctr_string+" "+bench_marker+" "+bench_options, shell=True, stdout=subprocess.PIPE,stderr=subprocess.STDOUT,executable="/bin/bash")
                     stdout = ""
                     try:
@@ -533,7 +615,8 @@ if not only_wiki:
                             match = test_set[group]["REGEX_PERF"].match(line)
                             if match:
                                 marker_set[group][test][size].append(float(match.group(1)))
-                                outfp_marker.write(str(counter)+" "+str(float(match.group(1)))+"\n")
+                                #fp_likwid.write(str(counter)+" "+str(float(match.group(1)))+"\n")
+                                fp_likwid.write("%d %d %f\n" % (counter, get_bytes(size), float(match.group(1))))
                                 found_perfctr = True
                             match = test_set[group]["REGEX_BENCH"].match(line)
                             if match:
@@ -541,33 +624,38 @@ if not only_wiki:
                                 value = float(match.group(1)) * test_set[group][test]["WA_FACTOR"]
                                 plain_set[group][test][size].append(match.group(1))
                                 corrected_set[group][test][size].append(str(value))
-                                outfp_plain.write(str(counter)+" "+match.group(1)+"\n")
-                                outfp_correct.write(str(counter)+" "+str(value)+"\n")
-                        rawfp_marker.write(line+"\n")
+                                fp_ref.write("%d %d %f %f\n" % (counter, get_bytes(size), float(match.group(1)), value))
+                                #fp_ref.write(str(counter)+" "+match.group(1)+"\n")
+                                #fp_scale_ref.write(str(counter)+" "+str(value)+"\n")
+                                fp_scale_ref.write("%d %d %f\n" % (counter, get_bytes(size), value))
+                        rawfp_likwid.write(line+"\n")
                     if not found_bench:
-                        value = str(test_set[group][test]["WA_FACTOR"])
+                        value = "0"
                         plain_set[group][test][size].append(value)
                         corrected_set[group][test][size].append(value)
-                        outfp_plain.write(str(counter)+" "+value+"\n")
-                        outfp_correct.write(str(counter)+" "+value+"\n")
+                        #fp_ref.write(str(counter)+" "+value+"\n")
+                        fp_ref.write("%d %d %f %f\n" % (counter, get_bytes(size), float(match.group(1)), float(value)))
+                        #fp_scale_ref.write(str(counter)+" "+value+"\n")
+                        fp_scale_ref.write("%d %d %f\n" % (counter, get_bytes(size), value))
                         no_scale = True
                     if not found_perfctr:
                         marker_set[group][test][size].append(0)
-                        outfp_marker.write(str(counter)+" "+str(0)+"\n")
+                        #fp_likwid.write(str(counter)+" "+str(0)+"\n")
+                        fp_likwid.write("%d %d %f\n" % (counter, get_bytes(size), 0.0))
                     counter += 1
                 print("")
-            outfp_plain.close()
-            outfp_correct.close()
-            outfp_marker.close()
-            rawfp_marker.close()
+            fp_ref.close()
+            fp_scale_ref.close()
+            fp_likwid.close()
+            rawfp_likwid.close()
             if papi:
-                outfp_papi.close()
+                fp_papi.close()
                 rawfp_papi.close()
             if no_scale:
                 test_set[group][test]["WA_FACTOR"] = 0.0
             if out_pgf:
                 pgf_file = write_pgf(group, test, file_plain, file_marker, test_set[group][test]["WA_FACTOR"],file_papi, script=script)
-            if out_gnuplot: plot_file = write_gnuplot(group, test, file_plain,file_marker, test_set[group][test]["WA_FACTOR"], file_papi, script=script)
+            if out_gnuplot: plot_file = write_gnuplot(group, test, file_plain, file_marker, test_set[group][test]["WA_FACTOR"], file_papi, script=script)
             if out_grace: grace_file = write_grace(group, test, file_plain, file_correct, file_marker, file_papi, script=script)
 
 

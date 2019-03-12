@@ -1392,7 +1392,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case MBOX5FIX:
                 case MBOX6FIX:
                 case MBOX7FIX:
-                    bdw_uncore_read(cpu_id, index, event, current, overflows,
+                    skl_uncore_read(cpu_id, index, event, current, overflows,
                                     FREEZE_FLAG_CLEAR_CTR, ovf_offset, 0);
                     counter_result = *current;
                     break;

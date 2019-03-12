@@ -53,30 +53,30 @@
 #include <cpuid.h>
 #endif
 
-#include <perfmon_pm.h>
-#include <perfmon_atom.h>
-#include <perfmon_core2.h>
-#include <perfmon_nehalem.h>
-#include <perfmon_westmere.h>
-#include <perfmon_westmereEX.h>
-#include <perfmon_nehalemEX.h>
-#include <perfmon_sandybridge.h>
-#include <perfmon_ivybridge.h>
-#include <perfmon_haswell.h>
-#include <perfmon_phi.h>
-#include <perfmon_knl.h>
-#include <perfmon_k8.h>
-#include <perfmon_k10.h>
-#include <perfmon_interlagos.h>
-#include <perfmon_kabini.h>
-#include <perfmon_silvermont.h>
-#include <perfmon_goldmont.h>
-#include <perfmon_broadwell.h>
+/*#include <perfmon_pm.h>*/
+/*#include <perfmon_atom.h>*/
+/*#include <perfmon_core2.h>*/
+/*#include <perfmon_nehalem.h>*/
+/*#include <perfmon_westmere.h>*/
+/*#include <perfmon_westmereEX.h>*/
+/*#include <perfmon_nehalemEX.h>*/
+/*#include <perfmon_sandybridge.h>*/
+/*#include <perfmon_ivybridge.h>*/
+/*#include <perfmon_haswell.h>*/
+/*#include <perfmon_phi.h>*/
+/*#include <perfmon_knl.h>*/
+/*#include <perfmon_k8.h>*/
+/*#include <perfmon_k10.h>*/
+/*#include <perfmon_interlagos.h>*/
+/*#include <perfmon_kabini.h>*/
+/*#include <perfmon_silvermont.h>*/
+/*#include <perfmon_goldmont.h>*/
+/*#include <perfmon_broadwell.h>*/
 #include <perfmon_skylake.h>
-#include <perfmon_cascadelake.h>
-#include <perfmon_zen.h>
-#include <perfmon_a57.h>
-#include <perfmon_a15.h>
+/*#include <perfmon_cascadelake.h>*/
+/*#include <perfmon_zen.h>*/
+/*#include <perfmon_a57.h>*/
+/*#include <perfmon_a15.h>*/
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -809,207 +809,207 @@ perfmon_init_maps(void)
 
             switch ( cpuid_info.model )
             {
-                case PENTIUM_M_BANIAS:
-                case PENTIUM_M_DOTHAN:
-                    eventHash = pm_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEvents_pm;
-                    counter_map = pm_counter_map;
-                    box_map = pm_box_map;
-                    perfmon_numCounters = perfmon_numCounters_pm;
-                    translate_types = default_translate_types;
-                    break;
+/*                case PENTIUM_M_BANIAS:*/
+/*                case PENTIUM_M_DOTHAN:*/
+/*                    eventHash = pm_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEvents_pm;*/
+/*                    counter_map = pm_counter_map;*/
+/*                    box_map = pm_box_map;*/
+/*                    perfmon_numCounters = perfmon_numCounters_pm;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
 
-                case ATOM_45:
-                case ATOM_32:
-                case ATOM_22:
-                case ATOM:
-                    eventHash = atom_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsAtom;
-                    counter_map = core2_counter_map;
-                    perfmon_numCounters = perfmon_numCountersCore2;
-                    box_map = core2_box_map;
-                    translate_types = default_translate_types;
-                    break;
+/*                case ATOM_45:*/
+/*                case ATOM_32:*/
+/*                case ATOM_22:*/
+/*                case ATOM:*/
+/*                    eventHash = atom_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsAtom;*/
+/*                    counter_map = core2_counter_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersCore2;*/
+/*                    box_map = core2_box_map;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
 
-                case ATOM_SILVERMONT_E:
-                case ATOM_SILVERMONT_C:
-                case ATOM_SILVERMONT_Z1:
-                case ATOM_SILVERMONT_Z2:
-                case ATOM_SILVERMONT_F:
-                case ATOM_SILVERMONT_AIR:
-                    eventHash = silvermont_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsSilvermont;
-                    counter_map = silvermont_counter_map;
-                    box_map = silvermont_box_map;
-                    perfmon_numCounters = perfmon_numCountersSilvermont;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersSilvermont;
-                    translate_types = default_translate_types;
-                    break;
+/*                case ATOM_SILVERMONT_E:*/
+/*                case ATOM_SILVERMONT_C:*/
+/*                case ATOM_SILVERMONT_Z1:*/
+/*                case ATOM_SILVERMONT_Z2:*/
+/*                case ATOM_SILVERMONT_F:*/
+/*                case ATOM_SILVERMONT_AIR:*/
+/*                    eventHash = silvermont_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsSilvermont;*/
+/*                    counter_map = silvermont_counter_map;*/
+/*                    box_map = silvermont_box_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersSilvermont;*/
+/*                    perfmon_numCoreCounters = perfmon_numCoreCountersSilvermont;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
 
-                case ATOM_SILVERMONT_GOLD:
-                case ATOM_DENVERTON:
-                case ATOM_GOLDMONT_PLUS:
-                    eventHash = goldmont_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsGoldmont;
-                    counter_map = goldmont_counter_map;
-                    box_map = goldmont_box_map;
-                    perfmon_numCounters = perfmon_numCountersGoldmont;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersGoldmont;
-                    translate_types = default_translate_types;
-                    break;
+/*                case ATOM_SILVERMONT_GOLD:*/
+/*                case ATOM_DENVERTON:*/
+/*                case ATOM_GOLDMONT_PLUS:*/
+/*                    eventHash = goldmont_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsGoldmont;*/
+/*                    counter_map = goldmont_counter_map;*/
+/*                    box_map = goldmont_box_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersGoldmont;*/
+/*                    perfmon_numCoreCounters = perfmon_numCoreCountersGoldmont;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
 
-                case CORE_DUO:
-                    ERROR_PLAIN_PRINT(Unsupported Processor);
-                    break;
+/*                case CORE_DUO:*/
+/*                    ERROR_PLAIN_PRINT(Unsupported Processor);*/
+/*                    break;*/
 
-                case XEON_MP:
-                case CORE2_65:
-                case CORE2_45:
-                    eventHash = core2_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsCore2;
-                    counter_map = core2_counter_map;
-                    perfmon_numCounters = perfmon_numCountersCore2;
-                    box_map = core2_box_map;
-                    translate_types = default_translate_types;
-                    break;
+/*                case XEON_MP:*/
+/*                case CORE2_65:*/
+/*                case CORE2_45:*/
+/*                    eventHash = core2_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsCore2;*/
+/*                    counter_map = core2_counter_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersCore2;*/
+/*                    box_map = core2_box_map;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
 
-                case NEHALEM_EX:
-                    eventHash = nehalemEX_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsNehalemEX;
-                    counter_map = nehalemEX_counter_map;
-                    perfmon_numCounters = perfmon_numCountersNehalemEX;
-                    box_map = nehalemEX_box_map;
-                    translate_types = default_translate_types;
-                    break;
+/*                case NEHALEM_EX:*/
+/*                    eventHash = nehalemEX_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsNehalemEX;*/
+/*                    counter_map = nehalemEX_counter_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersNehalemEX;*/
+/*                    box_map = nehalemEX_box_map;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
 
-                case WESTMERE_EX:
-                    eventHash = westmereEX_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsWestmereEX;
-                    counter_map = westmereEX_counter_map;
-                    perfmon_numCounters = perfmon_numCountersWestmereEX;
-                    box_map = westmereEX_box_map;
-                    translate_types = default_translate_types;
-                    break;
+/*                case WESTMERE_EX:*/
+/*                    eventHash = westmereEX_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsWestmereEX;*/
+/*                    counter_map = westmereEX_counter_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersWestmereEX;*/
+/*                    box_map = westmereEX_box_map;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
 
-                case NEHALEM_BLOOMFIELD:
-                case NEHALEM_LYNNFIELD:
-                case NEHALEM_LYNNFIELD_M:
-                    eventHash = nehalem_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsNehalem;
-                    counter_map = nehalem_counter_map;
-                    perfmon_numCounters = perfmon_numCountersNehalem;
-                    box_map = nehalem_box_map;
-                    translate_types = default_translate_types;
-                    break;
+/*                case NEHALEM_BLOOMFIELD:*/
+/*                case NEHALEM_LYNNFIELD:*/
+/*                case NEHALEM_LYNNFIELD_M:*/
+/*                    eventHash = nehalem_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsNehalem;*/
+/*                    counter_map = nehalem_counter_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersNehalem;*/
+/*                    box_map = nehalem_box_map;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
 
-                case NEHALEM_WESTMERE_M:
-                case NEHALEM_WESTMERE:
-                    eventHash = westmere_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsWestmere;
-                    counter_map = nehalem_counter_map;
-                    perfmon_numCounters = perfmon_numCountersNehalem;
-                    box_map = nehalem_box_map;
-                    translate_types = default_translate_types;
-                    break;
+/*                case NEHALEM_WESTMERE_M:*/
+/*                case NEHALEM_WESTMERE:*/
+/*                    eventHash = westmere_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsWestmere;*/
+/*                    counter_map = nehalem_counter_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersNehalem;*/
+/*                    box_map = nehalem_box_map;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
 
-                case IVYBRIDGE_EP:
-                    pci_devices = ivybridgeEP_pci_devices;
-                    translate_types = ivybridgeEP_translate_types;
-                    box_map = ivybridgeEP_box_map;
-                    eventHash = ivybridgeEP_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsIvybridgeEP;
-                    counter_map = ivybridgeEP_counter_map;
-                    perfmon_numCounters = perfmon_numCountersIvybridgeEP;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersIvybridgeEP;
-                    translate_types = ivybridgeEP_translate_types;
-                    break;
-                case IVYBRIDGE:
-                    translate_types = default_translate_types;
-                    eventHash = ivybridge_arch_events;
-                    box_map = ivybridge_box_map;
-                    perfmon_numArchEvents = perfmon_numArchEventsIvybridge;
-                    counter_map = ivybridge_counter_map;
-                    perfmon_numCounters = perfmon_numCountersIvybridge;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersIvybridge;
-                    translate_types = default_translate_types;
-                    break;
+/*                case IVYBRIDGE_EP:*/
+/*                    pci_devices = ivybridgeEP_pci_devices;*/
+/*                    translate_types = ivybridgeEP_translate_types;*/
+/*                    box_map = ivybridgeEP_box_map;*/
+/*                    eventHash = ivybridgeEP_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsIvybridgeEP;*/
+/*                    counter_map = ivybridgeEP_counter_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersIvybridgeEP;*/
+/*                    perfmon_numCoreCounters = perfmon_numCoreCountersIvybridgeEP;*/
+/*                    translate_types = ivybridgeEP_translate_types;*/
+/*                    break;*/
+/*                case IVYBRIDGE:*/
+/*                    translate_types = default_translate_types;*/
+/*                    eventHash = ivybridge_arch_events;*/
+/*                    box_map = ivybridge_box_map;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsIvybridge;*/
+/*                    counter_map = ivybridge_counter_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersIvybridge;*/
+/*                    perfmon_numCoreCounters = perfmon_numCoreCountersIvybridge;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
 
-                case HASWELL_EP:
-                    eventHash = haswellEP_arch_events;
-                    translate_types = haswellEP_translate_types;
-                    perfmon_numArchEvents = perfmon_numArchEventsHaswellEP;
-                    counter_map = haswellEP_counter_map;
-                    perfmon_numCounters = perfmon_numCountersHaswellEP;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersHaswellEP;
-                    box_map = haswellEP_box_map;
-                    pci_devices = haswellEP_pci_devices;
-                    translate_types = haswellEP_translate_types;
-                    break;
-                case HASWELL:
-                case HASWELL_M1:
-                case HASWELL_M2:
-                    eventHash = haswell_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsHaswell;
-                    counter_map = haswell_counter_map;
-                    perfmon_numCounters = perfmon_numCountersHaswell;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersHaswell;
-                    box_map = haswell_box_map;
-                    translate_types = default_translate_types;
-                    break;
+/*                case HASWELL_EP:*/
+/*                    eventHash = haswellEP_arch_events;*/
+/*                    translate_types = haswellEP_translate_types;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsHaswellEP;*/
+/*                    counter_map = haswellEP_counter_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersHaswellEP;*/
+/*                    perfmon_numCoreCounters = perfmon_numCoreCountersHaswellEP;*/
+/*                    box_map = haswellEP_box_map;*/
+/*                    pci_devices = haswellEP_pci_devices;*/
+/*                    translate_types = haswellEP_translate_types;*/
+/*                    break;*/
+/*                case HASWELL:*/
+/*                case HASWELL_M1:*/
+/*                case HASWELL_M2:*/
+/*                    eventHash = haswell_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsHaswell;*/
+/*                    counter_map = haswell_counter_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersHaswell;*/
+/*                    perfmon_numCoreCounters = perfmon_numCoreCountersHaswell;*/
+/*                    box_map = haswell_box_map;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
 
-                case SANDYBRIDGE_EP:
-                    pci_devices = sandybridgeEP_pci_devices;
-                    translate_types = sandybridgeEP_translate_types;
-                    box_map = sandybridgeEP_box_map;
-                    eventHash = sandybridgeEP_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsSandybridgeEP;
-                    counter_map = sandybridgeEP_counter_map;
-                    perfmon_numCounters = perfmon_numCountersSandybridgeEP;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersSandybridgeEP;
-                    translate_types = sandybridgeEP_translate_types;
-                    break;
-                case SANDYBRIDGE:
-                    box_map = sandybridge_box_map;
-                    eventHash = sandybridge_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsSandybridge;
-                    counter_map = sandybridge_counter_map;
-                    perfmon_numCounters = perfmon_numCountersSandybridge;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersSandybridge;
-                    translate_types = default_translate_types;
-                    break;
+/*                case SANDYBRIDGE_EP:*/
+/*                    pci_devices = sandybridgeEP_pci_devices;*/
+/*                    translate_types = sandybridgeEP_translate_types;*/
+/*                    box_map = sandybridgeEP_box_map;*/
+/*                    eventHash = sandybridgeEP_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsSandybridgeEP;*/
+/*                    counter_map = sandybridgeEP_counter_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersSandybridgeEP;*/
+/*                    perfmon_numCoreCounters = perfmon_numCoreCountersSandybridgeEP;*/
+/*                    translate_types = sandybridgeEP_translate_types;*/
+/*                    break;*/
+/*                case SANDYBRIDGE:*/
+/*                    box_map = sandybridge_box_map;*/
+/*                    eventHash = sandybridge_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsSandybridge;*/
+/*                    counter_map = sandybridge_counter_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersSandybridge;*/
+/*                    perfmon_numCoreCounters = perfmon_numCoreCountersSandybridge;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
 
-                case BROADWELL:
-                case BROADWELL_E3:
-                    box_map = broadwell_box_map;
-                    eventHash = broadwell_arch_events;
-                    counter_map = broadwell_counter_map;
-                    perfmon_numArchEvents = perfmon_numArchEventsBroadwell;
-                    perfmon_numCounters = perfmon_numCountersBroadwell;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersBroadwell;
-                    translate_types = default_translate_types;
-                    break;
-                case BROADWELL_D:
-                    pci_devices = broadwelld_pci_devices;
-                    translate_types = broadwellEP_translate_types;
-                    box_map = broadwelld_box_map;
-                    eventHash = broadwelld_arch_events;
-                    counter_map = broadwelld_counter_map;
-                    perfmon_numArchEvents = perfmon_numArchEventsBroadwellD;
-                    perfmon_numCounters = perfmon_numCountersBroadwellD;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersBroadwellD;
-                    translate_types = broadwellEP_translate_types;
-                    break;
-                case BROADWELL_E:
-                    pci_devices = broadwellEP_pci_devices;
-                    box_map = broadwellEP_box_map;
-                    eventHash = broadwellEP_arch_events;
-                    translate_types = broadwellEP_translate_types;
-                    counter_map = broadwellEP_counter_map;
-                    perfmon_numArchEvents = perfmon_numArchEventsBroadwellEP;
-                    perfmon_numCounters = perfmon_numCountersBroadwellEP;
-                    perfmon_numCoreCounters = perfmon_numCoreCountersBroadwellEP;
-                    translate_types = broadwellEP_translate_types;
-                    break;
+/*                case BROADWELL:*/
+/*                case BROADWELL_E3:*/
+/*                    box_map = broadwell_box_map;*/
+/*                    eventHash = broadwell_arch_events;*/
+/*                    counter_map = broadwell_counter_map;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsBroadwell;*/
+/*                    perfmon_numCounters = perfmon_numCountersBroadwell;*/
+/*                    perfmon_numCoreCounters = perfmon_numCoreCountersBroadwell;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
+/*                case BROADWELL_D:*/
+/*                    pci_devices = broadwelld_pci_devices;*/
+/*                    translate_types = broadwellEP_translate_types;*/
+/*                    box_map = broadwelld_box_map;*/
+/*                    eventHash = broadwelld_arch_events;*/
+/*                    counter_map = broadwelld_counter_map;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsBroadwellD;*/
+/*                    perfmon_numCounters = perfmon_numCountersBroadwellD;*/
+/*                    perfmon_numCoreCounters = perfmon_numCoreCountersBroadwellD;*/
+/*                    translate_types = broadwellEP_translate_types;*/
+/*                    break;*/
+/*                case BROADWELL_E:*/
+/*                    pci_devices = broadwellEP_pci_devices;*/
+/*                    box_map = broadwellEP_box_map;*/
+/*                    eventHash = broadwellEP_arch_events;*/
+/*                    translate_types = broadwellEP_translate_types;*/
+/*                    counter_map = broadwellEP_counter_map;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsBroadwellEP;*/
+/*                    perfmon_numCounters = perfmon_numCountersBroadwellEP;*/
+/*                    perfmon_numCoreCounters = perfmon_numCoreCountersBroadwellEP;*/
+/*                    translate_types = broadwellEP_translate_types;*/
+/*                    break;*/
 
                 case SKYLAKE1:
                 case SKYLAKE2:
@@ -1024,7 +1024,7 @@ perfmon_init_maps(void)
                     translate_types = default_translate_types;
                     break;
                 case SKYLAKEX:
-                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping <= 5)
+                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping < 5)
                     {
                         box_map = skylakeX_box_map;
                         eventHash = skylakeX_arch_events;
@@ -1046,16 +1046,16 @@ perfmon_init_maps(void)
                     }
                     break;
 
-                case XEON_PHI_KNL:
-                case XEON_PHI_KML:
-                    pci_devices = knl_pci_devices;
-                    eventHash = knl_arch_events;
-                    perfmon_numArchEvents = perfmon_numArchEventsKNL;
-                    counter_map = knl_counter_map;
-                    box_map = knl_box_map;
-                    perfmon_numCounters = perfmon_numCountersKNL;
-                    translate_types = knl_translate_types;
-                    break;
+/*                case XEON_PHI_KNL:*/
+/*                case XEON_PHI_KML:*/
+/*                    pci_devices = knl_pci_devices;*/
+/*                    eventHash = knl_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsKNL;*/
+/*                    counter_map = knl_counter_map;*/
+/*                    box_map = knl_box_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersKNL;*/
+/*                    translate_types = knl_translate_types;*/
+/*                    break;*/
 
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
@@ -1064,7 +1064,6 @@ perfmon_init_maps(void)
             break;
 
         case MIC_FAMILY:
-
             switch ( cpuid_info.model )
             {
                 case XEON_PHI:
@@ -1203,6 +1202,148 @@ perfmon_init_maps(void)
                     break;
             }
             break;
+=======
+/*        case MIC_FAMILY:*/
+
+/*            switch ( cpuid_info.model )*/
+/*            {*/
+/*                case XEON_PHI:*/
+/*                    eventHash = phi_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsPhi;*/
+/*                    counter_map = phi_counter_map;*/
+/*                    box_map = phi_box_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersPhi;*/
+/*                    translate_types = default_translate_types;*/
+/*                    break;*/
+
+/*                default:*/
+/*                    ERROR_PLAIN_PRINT(Unsupported Processor);*/
+/*                    break;*/
+/*            }*/
+/*            break;*/
+
+/*        case K8_FAMILY:*/
+/*            eventHash = k8_arch_events;*/
+/*            perfmon_numArchEvents = perfmon_numArchEventsK8;*/
+/*            counter_map = k10_counter_map;*/
+/*            box_map = k10_box_map;*/
+/*            perfmon_numCounters = perfmon_numCountersK10;*/
+/*            translate_types = default_translate_types;*/
+/*            break;*/
+
+/*        case K10_FAMILY:*/
+/*            eventHash = k10_arch_events;*/
+/*            perfmon_numArchEvents = perfmon_numArchEventsK10;*/
+/*            counter_map = k10_counter_map;*/
+/*            box_map = k10_box_map;*/
+/*            perfmon_numCounters = perfmon_numCountersK10;*/
+/*            translate_types = default_translate_types;*/
+/*            break;*/
+
+/*        case K15_FAMILY:*/
+/*            eventHash = interlagos_arch_events;*/
+/*            perfmon_numArchEvents = perfmon_numArchEventsInterlagos;*/
+/*            counter_map = interlagos_counter_map;*/
+/*            box_map = interlagos_box_map;*/
+/*            perfmon_numCounters = perfmon_numCountersInterlagos;*/
+/*            translate_types = default_translate_types;*/
+/*            break;*/
+
+/*        case K16_FAMILY:*/
+/*            eventHash = kabini_arch_events;*/
+/*            perfmon_numArchEvents = perfmon_numArchEventsKabini;*/
+/*            counter_map = kabini_counter_map;*/
+/*            box_map = kabini_box_map;*/
+/*            perfmon_numCounters = perfmon_numCountersKabini;*/
+/*            translate_types = default_translate_types;*/
+/*            break;*/
+
+/*        case ZEN_FAMILY:*/
+/*            eventHash = zen_arch_events;*/
+/*            perfmon_numArchEvents = perfmon_numArchEventsZen;*/
+/*            counter_map = zen_counter_map;*/
+/*            box_map = zen_box_map;*/
+/*            perfmon_numCounters = perfmon_numCountersZen;*/
+/*            translate_types = zen_translate_types;*/
+/*            break;*/
+
+/*        case ARMV7_FAMILY:*/
+/*            switch ( cpuid_info.model )*/
+/*            {*/
+/*                case ARMV7L:*/
+/*                case ARM7L:*/
+/*                    eventHash = a15_arch_events;*/
+/*                    perfmon_numArchEvents = perfmon_numArchEventsA15;*/
+/*                    counter_map = a15_counter_map;*/
+/*                    box_map = a15_box_map;*/
+/*                    perfmon_numCounters = perfmon_numCountersA15;*/
+/*                    translate_types = a15_translate_types;*/
+/*                    break;*/
+/*            }*/
+/*            break;*/
+
+/*        case ARMV8_FAMILY:*/
+/*            switch ( cpuid_info.vendor)*/
+/*            {*/
+/*                case DEFAULT_ARM:*/
+/*                    switch ( cpuid_info.part )*/
+/*                    {*/
+/*                        case ARM_CORTEX_A57:*/
+/*                            eventHash = a57_arch_events;*/
+/*                            perfmon_numArchEvents = perfmon_numArchEventsA57;*/
+/*                            counter_map = a57_counter_map;*/
+/*                            box_map = a57_box_map;*/
+/*                            perfmon_numCounters = perfmon_numCountersA57;*/
+/*                            translate_types = a57_translate_types;*/
+/*                            break;*/
+/*                        case ARM_CORTEX_A53:*/
+/*                            eventHash = a57_arch_events;*/
+/*                            perfmon_numArchEvents = perfmon_numArchEventsA57;*/
+/*                            counter_map = a57_counter_map;*/
+/*                            box_map = a57_box_map;*/
+/*                            perfmon_numCounters = perfmon_numCountersA57;*/
+/*                            translate_types = a53_translate_types;*/
+/*                            break;*/
+/*                        default:*/
+/*                            break;*/
+/*                    }*/
+/*                    break;*/
+/*                case CAVIUM2:*/
+/*                    switch (cpuid_info.part)*/
+/*                    {*/
+/*                        case CAV_THUNDERX2T99:*/
+/*                            eventHash = cavtx2_arch_events;*/
+/*                            perfmon_numArchEvents = perfmon_numArchEventsCavTx2;*/
+/*                            counter_map = a57_counter_map;*/
+/*                            box_map = a57_box_map;*/
+/*                            perfmon_numCounters = perfmon_numCountersCavTx2;*/
+/*                            translate_types = cav_tx2_translate_types;*/
+/*                            break;*/
+/*                        default:*/
+/*                            break;*/
+/*                    }*/
+/*                    break;*/
+/*                case CAVIUM1:*/
+/*                    switch (cpuid_info.part)*/
+/*                    {*/
+/*                        case CAV_THUNDERX2T99P1:*/
+/*                            eventHash = cavtx2_arch_events;*/
+/*                            perfmon_numArchEvents = perfmon_numArchEventsCavTx2;*/
+/*                            counter_map = a57_counter_map;*/
+/*                            box_map = a57_box_map;*/
+/*                            perfmon_numCounters = perfmon_numCountersCavTx2;*/
+/*                            translate_types = cav_tx2_translate_types;*/
+/*                            break;*/
+/*                        default:*/
+/*                            break;*/
+/*                    }*/
+/*                    break;*/
+/*                default:*/
+/*                    ERROR_PLAIN_PRINT(Unsupported ARMv8 Processor);*/
+/*                    break;*/
+/*            }*/
+/*            break;*/
+>>>>>>> internal/master
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);
             break;
@@ -1222,163 +1363,163 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
             switch ( cpuid_info.model )
             {
-                case PENTIUM_M_BANIAS:
-                case PENTIUM_M_DOTHAN:
-                    initThreadArch = perfmon_init_pm;
-                    perfmon_startCountersThread = perfmon_startCountersThread_pm;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_pm;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_pm;
-                    perfmon_readCountersThread = perfmon_readCountersThread_pm;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_pm;
-                    break;
+/*                case PENTIUM_M_BANIAS:*/
+/*                case PENTIUM_M_DOTHAN:*/
+/*                    initThreadArch = perfmon_init_pm;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_pm;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_pm;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_pm;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_pm;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_pm;*/
+/*                    break;*/
 
-                case ATOM_45:
-                case ATOM_32:
-                case ATOM_22:
-                case ATOM:
-                    initThreadArch = perfmon_init_core2;
-                    perfmon_startCountersThread = perfmon_startCountersThread_core2;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_core2;
-                    perfmon_readCountersThread = perfmon_readCountersThread_core2;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_core2;
-                    break;
+/*                case ATOM_45:*/
+/*                case ATOM_32:*/
+/*                case ATOM_22:*/
+/*                case ATOM:*/
+/*                    initThreadArch = perfmon_init_core2;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_core2;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_core2;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_core2;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_core2;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_core2;*/
+/*                    break;*/
 
-                case ATOM_SILVERMONT_E:
-                case ATOM_SILVERMONT_C:
-                case ATOM_SILVERMONT_Z1:
-                case ATOM_SILVERMONT_Z2:
-                case ATOM_SILVERMONT_F:
-                case ATOM_SILVERMONT_AIR:
-                    initialize_power = TRUE;
-                    initialize_thermal = TRUE;
-                    initThreadArch = perfmon_init_silvermont;
-                    perfmon_startCountersThread = perfmon_startCountersThread_silvermont;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_silvermont;
-                    perfmon_setupCountersThread = perfmon_setupCountersThread_silvermont;
-                    perfmon_readCountersThread = perfmon_readCountersThread_silvermont;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_silvermont;
-                    break;
+/*                case ATOM_SILVERMONT_E:*/
+/*                case ATOM_SILVERMONT_C:*/
+/*                case ATOM_SILVERMONT_Z1:*/
+/*                case ATOM_SILVERMONT_Z2:*/
+/*                case ATOM_SILVERMONT_F:*/
+/*                case ATOM_SILVERMONT_AIR:*/
+/*                    initialize_power = TRUE;*/
+/*                    initialize_thermal = TRUE;*/
+/*                    initThreadArch = perfmon_init_silvermont;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_silvermont;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_silvermont;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCountersThread_silvermont;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_silvermont;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_silvermont;*/
+/*                    break;*/
 
-                case ATOM_SILVERMONT_GOLD:
-                case ATOM_DENVERTON:
-                case ATOM_GOLDMONT_PLUS:
-                    initialize_power = TRUE;
-                    initialize_thermal = TRUE;
-                    initThreadArch = perfmon_init_goldmont;
-                    perfmon_startCountersThread = perfmon_startCountersThread_goldmont;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_goldmont;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_goldmont;
-                    perfmon_readCountersThread = perfmon_readCountersThread_goldmont;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_goldmont;
-                    break;
+/*                case ATOM_SILVERMONT_GOLD:*/
+/*                case ATOM_DENVERTON:*/
+/*                case ATOM_GOLDMONT_PLUS:*/
+/*                    initialize_power = TRUE;*/
+/*                    initialize_thermal = TRUE;*/
+/*                    initThreadArch = perfmon_init_goldmont;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_goldmont;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_goldmont;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_goldmont;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_goldmont;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_goldmont;*/
+/*                    break;*/
 
-                case CORE_DUO:
-                    ERROR_PLAIN_PRINT(Unsupported Processor);
-                    break;
+/*                case CORE_DUO:*/
+/*                    ERROR_PLAIN_PRINT(Unsupported Processor);*/
+/*                    break;*/
 
-                case XEON_MP:
-                case CORE2_65:
-                case CORE2_45:
-                    initThreadArch = perfmon_init_core2;
-                    perfmon_startCountersThread = perfmon_startCountersThread_core2;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_core2;
-                    perfmon_readCountersThread = perfmon_readCountersThread_core2;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_core2;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_core2;
-                    break;
+/*                case XEON_MP:*/
+/*                case CORE2_65:*/
+/*                case CORE2_45:*/
+/*                    initThreadArch = perfmon_init_core2;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_core2;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_core2;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_core2;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_core2;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_core2;*/
+/*                    break;*/
 
-                case NEHALEM_EX:
-                    initThreadArch = perfmon_init_nehalemEX;
-                    perfmon_startCountersThread = perfmon_startCountersThread_nehalemEX;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_nehalemEX;
-                    perfmon_readCountersThread = perfmon_readCountersThread_nehalemEX;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_nehalemEX;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_nehalemEX;
-                    break;
+/*                case NEHALEM_EX:*/
+/*                    initThreadArch = perfmon_init_nehalemEX;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_nehalemEX;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_nehalemEX;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_nehalemEX;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_nehalemEX;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_nehalemEX;*/
+/*                    break;*/
 
-                case WESTMERE_EX:
-                    initThreadArch = perfmon_init_westmereEX;
-                    perfmon_startCountersThread = perfmon_startCountersThread_westmereEX;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_westmereEX;
-                    perfmon_readCountersThread = perfmon_readCountersThread_westmereEX;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_westmereEX;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_westmereEX;
-                    break;
+/*                case WESTMERE_EX:*/
+/*                    initThreadArch = perfmon_init_westmereEX;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_westmereEX;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_westmereEX;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_westmereEX;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_westmereEX;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_westmereEX;*/
+/*                    break;*/
 
-                case NEHALEM_BLOOMFIELD:
-                case NEHALEM_LYNNFIELD:
-                    initialize_thermal = TRUE;
-                    initThreadArch = perfmon_init_nehalem;
-                    perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
-                    perfmon_readCountersThread = perfmon_readCountersThread_nehalem;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_nehalem;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_nehalem;
-                    break;
+/*                case NEHALEM_BLOOMFIELD:*/
+/*                case NEHALEM_LYNNFIELD:*/
+/*                    initialize_thermal = TRUE;*/
+/*                    initThreadArch = perfmon_init_nehalem;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_nehalem;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_nehalem;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_nehalem;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_nehalem;*/
+/*                    break;*/
 
-                case NEHALEM_WESTMERE_M:
-                case NEHALEM_WESTMERE:
-                    initialize_thermal = TRUE;
-                    initThreadArch = perfmon_init_nehalem;
-                    perfmon_startCountersThread = perfmon_startCountersThread_nehalem;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;
-                    perfmon_readCountersThread = perfmon_readCountersThread_nehalem;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_nehalem;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_nehalem;
-                    break;
+/*                case NEHALEM_WESTMERE_M:*/
+/*                case NEHALEM_WESTMERE:*/
+/*                    initialize_thermal = TRUE;*/
+/*                    initThreadArch = perfmon_init_nehalem;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_nehalem;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_nehalem;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_nehalem;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_nehalem;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_nehalem;*/
+/*                    break;*/
 
-                case IVYBRIDGE_EP:
-                case IVYBRIDGE:
-                    initialize_power = TRUE;
-                    initialize_thermal = TRUE;
-                    initThreadArch = perfmon_init_ivybridge;
-                    perfmon_startCountersThread = perfmon_startCountersThread_ivybridge;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_ivybridge;
-                    perfmon_readCountersThread = perfmon_readCountersThread_ivybridge;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_ivybridge;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_ivybridge;
-                    break;
+/*                case IVYBRIDGE_EP:*/
+/*                case IVYBRIDGE:*/
+/*                    initialize_power = TRUE;*/
+/*                    initialize_thermal = TRUE;*/
+/*                    initThreadArch = perfmon_init_ivybridge;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_ivybridge;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_ivybridge;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_ivybridge;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_ivybridge;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_ivybridge;*/
+/*                    break;*/
 
-                case HASWELL_EP:
-                case HASWELL:
-                case HASWELL_M1:
-                case HASWELL_M2:
-                    initialize_power = TRUE;
-                    initialize_thermal = TRUE;
-                    initThreadArch = perfmon_init_haswell;
-                    perfmon_startCountersThread = perfmon_startCountersThread_haswell;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_haswell;
-                    perfmon_readCountersThread = perfmon_readCountersThread_haswell;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_haswell;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_haswell;
-                    break;
+/*                case HASWELL_EP:*/
+/*                case HASWELL:*/
+/*                case HASWELL_M1:*/
+/*                case HASWELL_M2:*/
+/*                    initialize_power = TRUE;*/
+/*                    initialize_thermal = TRUE;*/
+/*                    initThreadArch = perfmon_init_haswell;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_haswell;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_haswell;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_haswell;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_haswell;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_haswell;*/
+/*                    break;*/
 
-                case SANDYBRIDGE_EP:
-                case SANDYBRIDGE:
-                    initialize_power = TRUE;
-                    initialize_thermal = TRUE;
-                    initThreadArch = perfmon_init_sandybridge;
-                    perfmon_startCountersThread = perfmon_startCountersThread_sandybridge;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_sandybridge;
-                    perfmon_readCountersThread = perfmon_readCountersThread_sandybridge;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_sandybridge;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_sandybridge;
-                    break;
+/*                case SANDYBRIDGE_EP:*/
+/*                case SANDYBRIDGE:*/
+/*                    initialize_power = TRUE;*/
+/*                    initialize_thermal = TRUE;*/
+/*                    initThreadArch = perfmon_init_sandybridge;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_sandybridge;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_sandybridge;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_sandybridge;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_sandybridge;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_sandybridge;*/
+/*                    break;*/
 
-                case BROADWELL:
-                case BROADWELL_E:
-                case BROADWELL_D:
-                case BROADWELL_E3:
-                    initialize_power = TRUE;
-                    initialize_thermal = TRUE;
-                    initThreadArch = perfmon_init_broadwell;
-                    perfmon_startCountersThread = perfmon_startCountersThread_broadwell;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_broadwell;
-                    perfmon_readCountersThread = perfmon_readCountersThread_broadwell;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_broadwell;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_broadwell;
-                    break;
+/*                case BROADWELL:*/
+/*                case BROADWELL_E:*/
+/*                case BROADWELL_D:*/
+/*                case BROADWELL_E3:*/
+/*                    initialize_power = TRUE;*/
+/*                    initialize_thermal = TRUE;*/
+/*                    initThreadArch = perfmon_init_broadwell;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_broadwell;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_broadwell;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_broadwell;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_broadwell;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_broadwell;*/
+/*                    break;*/
 
                 case SKYLAKE1:
                 case SKYLAKE2:
@@ -1395,17 +1536,17 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_skylake;
                     break;
 
-                case XEON_PHI_KNL:
-                case XEON_PHI_KML:
-                    initialize_power = TRUE;
-                    initialize_thermal = TRUE;
-                    initThreadArch = perfmon_init_knl;
-                    perfmon_startCountersThread = perfmon_startCountersThread_knl;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_knl;
-                    perfmon_readCountersThread = perfmon_readCountersThread_knl;
-                    perfmon_setupCountersThread = perfmon_setupCountersThread_knl;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_knl;
-                    break;
+/*                case XEON_PHI_KNL:*/
+/*                case XEON_PHI_KML:*/
+/*                    initialize_power = TRUE;*/
+/*                    initialize_thermal = TRUE;*/
+/*                    initThreadArch = perfmon_init_knl;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_knl;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_knl;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_knl;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCountersThread_knl;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_knl;*/
+/*                    break;*/
 
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
@@ -1413,70 +1554,70 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             }
             break;
 
-        case MIC_FAMILY:
+/*        case MIC_FAMILY:*/
 
-            switch ( cpuid_info.model )
-            {
-                case XEON_PHI:
-                    initThreadArch = perfmon_init_phi;
-                    perfmon_startCountersThread = perfmon_startCountersThread_phi;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_phi;
-                    perfmon_readCountersThread = perfmon_readCountersThread_phi;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_phi;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_phi;
-                    break;
+/*            switch ( cpuid_info.model )*/
+/*            {*/
+/*                case XEON_PHI:*/
+/*                    initThreadArch = perfmon_init_phi;*/
+/*                    perfmon_startCountersThread = perfmon_startCountersThread_phi;*/
+/*                    perfmon_stopCountersThread = perfmon_stopCountersThread_phi;*/
+/*                    perfmon_readCountersThread = perfmon_readCountersThread_phi;*/
+/*                    perfmon_setupCountersThread = perfmon_setupCounterThread_phi;*/
+/*                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_phi;*/
+/*                    break;*/
 
-                default:
-                    ERROR_PLAIN_PRINT(Unsupported Processor);
-                    break;
-            }
-            break;
+/*                default:*/
+/*                    ERROR_PLAIN_PRINT(Unsupported Processor);*/
+/*                    break;*/
+/*            }*/
+/*            break;*/
 
-        case K8_FAMILY:
-            initThreadArch = perfmon_init_k10;
-            perfmon_startCountersThread = perfmon_startCountersThread_k10;
-            perfmon_stopCountersThread = perfmon_stopCountersThread_k10;
-            perfmon_readCountersThread = perfmon_readCountersThread_k10;
-            perfmon_setupCountersThread = perfmon_setupCounterThread_k10;
-            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_k10;
-            break;
+/*        case K8_FAMILY:*/
+/*            initThreadArch = perfmon_init_k10;*/
+/*            perfmon_startCountersThread = perfmon_startCountersThread_k10;*/
+/*            perfmon_stopCountersThread = perfmon_stopCountersThread_k10;*/
+/*            perfmon_readCountersThread = perfmon_readCountersThread_k10;*/
+/*            perfmon_setupCountersThread = perfmon_setupCounterThread_k10;*/
+/*            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_k10;*/
+/*            break;*/
 
-        case K10_FAMILY:
-            initThreadArch = perfmon_init_k10;
-            perfmon_startCountersThread = perfmon_startCountersThread_k10;
-            perfmon_stopCountersThread = perfmon_stopCountersThread_k10;
-            perfmon_readCountersThread = perfmon_readCountersThread_k10;
-            perfmon_setupCountersThread = perfmon_setupCounterThread_k10;
-            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_k10;
-            break;
+/*        case K10_FAMILY:*/
+/*            initThreadArch = perfmon_init_k10;*/
+/*            perfmon_startCountersThread = perfmon_startCountersThread_k10;*/
+/*            perfmon_stopCountersThread = perfmon_stopCountersThread_k10;*/
+/*            perfmon_readCountersThread = perfmon_readCountersThread_k10;*/
+/*            perfmon_setupCountersThread = perfmon_setupCounterThread_k10;*/
+/*            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_k10;*/
+/*            break;*/
 
-        case K15_FAMILY:
-            initThreadArch = perfmon_init_interlagos;
-            perfmon_startCountersThread = perfmon_startCountersThread_interlagos;
-            perfmon_stopCountersThread = perfmon_stopCountersThread_interlagos;
-            perfmon_readCountersThread = perfmon_readCountersThread_interlagos;
-            perfmon_setupCountersThread = perfmon_setupCounterThread_interlagos;
-            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_interlagos;
-            break;
+/*        case K15_FAMILY:*/
+/*            initThreadArch = perfmon_init_interlagos;*/
+/*            perfmon_startCountersThread = perfmon_startCountersThread_interlagos;*/
+/*            perfmon_stopCountersThread = perfmon_stopCountersThread_interlagos;*/
+/*            perfmon_readCountersThread = perfmon_readCountersThread_interlagos;*/
+/*            perfmon_setupCountersThread = perfmon_setupCounterThread_interlagos;*/
+/*            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_interlagos;*/
+/*            break;*/
 
-        case K16_FAMILY:
-            initThreadArch = perfmon_init_kabini;
-            perfmon_startCountersThread = perfmon_startCountersThread_kabini;
-            perfmon_stopCountersThread = perfmon_stopCountersThread_kabini;
-            perfmon_readCountersThread = perfmon_readCountersThread_kabini;
-            perfmon_setupCountersThread = perfmon_setupCounterThread_kabini;
-            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_kabini;
-            break;
+/*        case K16_FAMILY:*/
+/*            initThreadArch = perfmon_init_kabini;*/
+/*            perfmon_startCountersThread = perfmon_startCountersThread_kabini;*/
+/*            perfmon_stopCountersThread = perfmon_stopCountersThread_kabini;*/
+/*            perfmon_readCountersThread = perfmon_readCountersThread_kabini;*/
+/*            perfmon_setupCountersThread = perfmon_setupCounterThread_kabini;*/
+/*            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_kabini;*/
+/*            break;*/
 
-        case ZEN_FAMILY:
-            initThreadArch = perfmon_init_zen;
-            initialize_power = TRUE;
-            perfmon_startCountersThread = perfmon_startCountersThread_zen;
-            perfmon_stopCountersThread = perfmon_stopCountersThread_zen;
-            perfmon_readCountersThread = perfmon_readCountersThread_zen;
-            perfmon_setupCountersThread = perfmon_setupCounterThread_zen;
-            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen;
-            break;
+/*        case ZEN_FAMILY:*/
+/*            initThreadArch = perfmon_init_zen;*/
+/*            initialize_power = TRUE;*/
+/*            perfmon_startCountersThread = perfmon_startCountersThread_zen;*/
+/*            perfmon_stopCountersThread = perfmon_stopCountersThread_zen;*/
+/*            perfmon_readCountersThread = perfmon_readCountersThread_zen;*/
+/*            perfmon_setupCountersThread = perfmon_setupCounterThread_zen;*/
+/*            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen;*/
+/*            break;*/
 
         default:
             ERROR_PLAIN_PRINT(Unsupported Processor);

@@ -1,2 +1,5 @@
 L3
-
+L2
+MEM
+FLOPS_DP
+FLOPS_SP
