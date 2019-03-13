@@ -2,23 +2,23 @@ STREAMS 2
 TYPE DOUBLE
 FLOPS 2
 BYTES 24
-DESC Double-precision linear combination of two vectors, optimized for AVX-512 and non-temporal stores (Just for architectural research)
+DESC Double-precision linear combination of two vectors, optimized for AVX-512 and non-temporal stores
 LOADS 2
 STORES 1
 INSTR_CONST 17
 INSTR_LOOP 14
 UOPS 22
-vmovaps ymm7, [rip+SCALAR]
+vmovaps zmm7, [rip+SCALAR]
 LOOP 32
-vmulpd    ymm1, ymm7, [STR0 + GPR1*8]
-vaddpd    ymm1, ymm1, [STR1 + GPR1*8]
-vmulpd    ymm2, ymm7, [STR0 + GPR1*8+64]
-vaddpd    ymm2, ymm2, [STR1 + GPR1*8+64]
-vmovntps    [STR1 + GPR1*8], ymm1
-vmovntps    [STR1 + GPR1*8+64], ymm2
-vmulpd    ymm3, ymm7, [STR0 + GPR1*8+128]
-vaddpd    ymm3, ymm3, [STR1 + GPR1*8+128]
-vmulpd    ymm4, ymm7, [STR0 + GPR1*8+192]
-vaddpd    ymm4, ymm4, [STR1 + GPR1*8+192]
-vmovntps    [STR1 + GPR1*8+128], ymm3
-vmovntps    [STR1 + GPR1*8+192], ymm4
+vmulpd    zmm1, zmm7, [STR0 + GPR1*8]
+vaddpd    zmm1, zmm1, [STR1 + GPR1*8]
+vmulpd    zmm2, zmm7, [STR0 + GPR1*8+64]
+vaddpd    zmm2, zmm2, [STR1 + GPR1*8+64]
+vmovntps    [STR1 + GPR1*8], zmm1
+vmovntps    [STR1 + GPR1*8+64], zmm2
+vmulpd    zmm3, zmm7, [STR0 + GPR1*8+128]
+vaddpd    zmm3, zmm3, [STR1 + GPR1*8+128]
+vmulpd    zmm4, zmm7, [STR0 + GPR1*8+192]
+vaddpd    zmm4, zmm4, [STR1 + GPR1*8+192]
+vmovntps    [STR1 + GPR1*8+128], zmm3
+vmovntps    [STR1 + GPR1*8+192], zmm4
