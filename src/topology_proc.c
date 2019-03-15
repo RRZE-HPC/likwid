@@ -786,6 +786,10 @@ proc_init_cacheTopology(void)
             case K10_FAMILY:
                 cachePool[i].inclusive = 1;
                 break;
+            case ARMV8_FAMILY:
+            case ARMV7_FAMILY:
+                cachePool[i].inclusive = 0;
+                break;
             default:
                 ERROR_PLAIN_PRINT(Processor is not supported);
                 break;

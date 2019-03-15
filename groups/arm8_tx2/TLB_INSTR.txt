@@ -1,0 +1,23 @@
+SHORT  L1 Instruction TLB miss rate/ratio
+
+EVENTSET
+PMC0  INST_RETIRED
+PMC1  CPU_CYCLES
+PMC2  L1I_TLB_REFILL
+
+METRICS
+Runtime (RDTSC) [s] time
+Clock [MHz] 1.E-06*PMC1/time
+CPI  PMC1/PMC0
+L1 ITLB misses     PMC2
+L1 ITLB miss rate  PMC2/PMC0
+
+
+LONG
+Formulas:
+L1 ITLB misses = L1I_TLB_REFILL
+L1 ITLB miss rate = L1I_TLB_REFILL / INST_RETIRED
+-
+The ITLB miss rates gives a measure how often a TLB miss occurred
+per instruction.
+

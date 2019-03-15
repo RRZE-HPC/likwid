@@ -1173,8 +1173,8 @@ perfmon_init_maps(void)
                         case CAV_THUNDERX2T99:
                             eventHash = cavtx2_arch_events;
                             perfmon_numArchEvents = perfmon_numArchEventsCavTx2;
-                            counter_map = a57_counter_map;
-                            box_map = a57_box_map;
+                            counter_map = cav_tx2_counter_map;
+                            box_map = cav_tx2_box_map;
                             perfmon_numCounters = perfmon_numCountersCavTx2;
                             translate_types = cav_tx2_translate_types;
                             break;
@@ -1188,8 +1188,8 @@ perfmon_init_maps(void)
                         case CAV_THUNDERX2T99P1:
                             eventHash = cavtx2_arch_events;
                             perfmon_numArchEvents = perfmon_numArchEventsCavTx2;
-                            counter_map = a57_counter_map;
-                            box_map = a57_box_map;
+                            counter_map = cav_tx2_counter_map;
+                            box_map = cav_tx2_box_map;
                             perfmon_numCounters = perfmon_numCountersCavTx2;
                             translate_types = cav_tx2_translate_types;
                             break;

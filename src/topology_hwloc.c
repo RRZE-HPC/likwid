@@ -431,6 +431,36 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
                             hwThreadPool[id].inCpuSet)
     }
 
+    int socket_nums[16];
+    int num_sockets = 0;
+    printf("Sanitize socket IDs\n");
+    for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
+    {
+        int found = 0;
+        for (uint32_t j=0; j < num_sockets; j++)
+        {
+            if (hwThreadPool[i].packageId == socket_nums[j])
+            {
+                found = 1;
+                break;
+            }
+        }
+        if (!found)
+        {
+            socket_nums[num_sockets] = hwThreadPool[i].packageId;
+            num_sockets++;
+        }
+    }
+    for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
+    {
+        for (uint32_t j=0; j < num_sockets; j++)
+        {
+            if (hwThreadPool[i].packageId == socket_nums[j])
+            {
+                hwThreadPool[i].packageId = j;
+            }
+        }
+    }
     cpuid_topology.threadPool = hwThreadPool;
     cpuid_topology.numThreadsPerCore = maxNumLogicalProcsPerCore;
     cpuid_topology.numCoresPerSocket = maxNumCoresPerSocket;

@@ -1,0 +1,13 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 16
+DESC Double-precision update, only scalar operations
+LOADS 1
+STORES 1
+INSTR_CONST 4
+INSTR_LOOP 1
+UOPS 8
+LOOP 1
+ldr     GPR4, [STR0, GPR6, lsl 3]
+str     GPR4, [STR0, GPR6, lsl 3]

@@ -88,10 +88,10 @@ int perfmon_init_perfevent(int cpu_id)
         }
 #endif
 #if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
-	if (paranoid_level > 1 && getuid() != 0)
+        if (paranoid_level > 1 && getuid() != 0)
         {
-	    fprintf(stderr, "WARN: Linux kernel configured with paranoid level %d\n", paranoid_level);
-	}
+            fprintf(stderr, "WARN: Linux kernel configured with paranoid level %d\n", paranoid_level);
+        }
 #endif
         informed_paranoid = 1;
     }
