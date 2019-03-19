@@ -371,12 +371,27 @@ int main(int argc, char** argv)
                         }
                         if ((int)(floor(orig_size/currentWorkgroup->numberOfThreads)) % test->stride)
                         {
+                            int typesize = allocator_dataTypeLength(test->type);
                             newsize = (((int)(floor(orig_size/nrThreads))/stride)*(stride))*nrThreads;
-                            if (warn_once)
+                            if (newsize > 0 && warn_once)
                             {
-                                int typesize = allocator_dataTypeLength(test->type);
                                 fprintf (stderr, "Warning: Sanitizing vector length to a multiple of the loop stride %d and thread count %d from %d elements (%d bytes) to %d elements (%d bytes)\n",stride, nrThreads, orig_size, orig_size*typesize, newsize, newsize*typesize);
                                 warn_once = 0;
+                            }
+                            else if (newsize == 0)
+                            {
+                                int given = currentWorkgroup->size*test->streams*typesize;
+                                int each_iter = test->stride*test->bytes;
+                                // For the case that one stream is used for loading and storing
+                                // Cases are daxpy and update
+                                if (test->streams*typesize*test->stride < each_iter)
+                                {
+                                    each_iter = test->streams*typesize*test->stride;
+                                }
+                                fprintf(stderr, "Error: The given vector length of %dB is too small to fit %d threads because each loop iteration of kernel '%s' requires %d Bytes (%d x %dB = %dB). So the minimal selectable size for the kernel is %dB.\n", given, nrThreads, test->name, each_iter, nrThreads, each_iter, each_iter*nrThreads, each_iter*nrThreads);
+                                allocator_finalize();
+                                workgroups_destroy(&groups, numberOfWorkgroups, test->streams);
+                                exit(EXIT_FAILURE);
                             }
                         }
                         else
