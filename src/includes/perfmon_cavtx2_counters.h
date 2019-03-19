@@ -1,5 +1,5 @@
 
-#define NUM_COUNTERS_CAV_TX2 22
+#define NUM_COUNTERS_CAV_TX2 38
 
 static RegisterMap cav_tx2_counter_map[NUM_COUNTERS_CAV_TX2] = {
     {"PMC0", PMC0, PMC, A57_PERFEVTSEL0, A57_PMC0, 0, 0, EVENT_OPTION_NONE_MASK},
@@ -24,6 +24,22 @@ static RegisterMap cav_tx2_counter_map[NUM_COUNTERS_CAV_TX2] = {
     {"MBOX1C1", PMC19, MBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
     {"MBOX1C2", PMC20, MBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
     {"MBOX1C3", PMC21, MBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX0C0", PMC22, SBOX0, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX0C1", PMC23, SBOX0, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX0C2", PMC24, SBOX0, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX0C3", PMC25, SBOX0, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX0C4", PMC26, SBOX0, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX0C5", PMC27, SBOX0, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX0C6", PMC28, SBOX0, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX0C7", PMC29, SBOX0, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX1C0", PMC30, SBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX1C1", PMC31, SBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX1C2", PMC32, SBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX1C3", PMC33, SBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX1C4", PMC34, SBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX1C5", PMC35, SBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX1C6", PMC36, SBOX1, 0x0, 0x0, 0, 0, EVENT_OPTION_NONE_MASK},
+    {"SBOX1C7", PMC37, SBOX1},
 };
 
 static BoxMap cav_tx2_box_map[NUM_UNITS] = {
@@ -32,6 +48,8 @@ static BoxMap cav_tx2_box_map[NUM_UNITS] = {
     [CBOX1] = {0x0, 0x0, 0x0, 0, 0, 0, 64},
     [MBOX0] = {0x0, 0x0, 0x0, 0, 0, 0, 64},
     [MBOX1] = {0x0, 0x0, 0x0, 0, 0, 0, 64},
+    [SBOX0] = {0x0, 0x0, 0x0, 0, 0, 0, 64},
+    [SBOX1] = {0x0, 0x0, 0x0, 0, 0, 0, 64},
 };
 
 static char* cav_tx2_translate_types[NUM_UNITS] = {
@@ -40,4 +58,6 @@ static char* cav_tx2_translate_types[NUM_UNITS] = {
     [CBOX1] = "/sys/bus/event_source/devices/uncore_l3c_1",
     [MBOX0] = "/sys/bus/event_source/devices/uncore_dmc_0",
     [MBOX1] = "/sys/bus/event_source/devices/uncore_dmc_1",
+    [SBOX0] = "/sys/bus/event_source/devices/uncore_ccpi2_0",
+    [SBOX1] = "/sys/bus/event_source/devices/uncore_ccpi2_1",
 };
