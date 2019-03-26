@@ -73,6 +73,7 @@ runTest(void* arg)
     size_t size;
     size_t vecsize;
     size_t i;
+    size_t j;
     BarrierData barr;
     ThreadData* data;
     ThreadUserData* myData;
@@ -96,43 +97,6 @@ runTest(void* arg)
     if (size != vecsize && data->threadId == 0)
         printf("Sanitizing vector length to a multiple of the loop stride from %d elements (%d bytes) to %d elements (%d bytes)\n", vecsize, vecsize*myData->test->bytes, size, size*myData->test->bytes);
 
-    switch ( myData->test->type )
-    {
-        case SINGLE:
-            {
-                float* sptr;
-                for (i=0; i <  myData->test->streams; i++)
-                {
-                    sptr = (float*) myData->streams[i];
-                    sptr +=  offset;
-                    myData->streams[i] = (float*) sptr;
-                }
-            }
-            break;
-        case INT:
-            {
-                int* sptr;
-                for (i=0; i <  myData->test->streams; i++)
-                {
-                    sptr = (int*) myData->streams[i];
-                    sptr +=  offset;
-                    myData->streams[i] = (int*) sptr;
-                }
-            }
-            break;
-        case DOUBLE:
-            {
-                double* dptr;
-                for (i=0; i <  myData->test->streams; i++)
-                {
-                    dptr = (double*) myData->streams[i];
-                    dptr +=  offset;
-                    myData->streams[i] = (double*) dptr;
-                }
-            }
-            break;
-    }
-
     /* pin the thread */
     likwid_pinThread(myData->processors[threadId]);
     printf("Group: %d Thread %d Global Thread %d running on core %d - Vector length %llu Offset %d\n",
@@ -144,6 +108,56 @@ runTest(void* arg)
             offset);
     BARRIER;
 
+    /* Prepare streams and initialize data to follow first-touch policy */
+    switch ( myData->test->type )
+    {
+        case SINGLE:
+            {
+                float* sptr;
+                for (i=0; i <  myData->test->streams; i++)
+                {
+                    sptr = (float*) myData->streams[i];
+                    sptr +=  offset;
+                    myData->streams[i] = (float*) sptr;
+
+                    for(j=0; j < vecsize; j++) {
+                        sptr[j] = 1.0;
+                    }
+                }
+            }
+            break;
+        case INT:
+            {
+                int* sptr;
+                for (i=0; i <  myData->test->streams; i++)
+                {
+                    sptr = (int*) myData->streams[i];
+                    sptr +=  offset;
+                    myData->streams[i] = (int*) sptr;
+
+                    for(j=0; j < vecsize; j++) {
+                        sptr[j] = 1;
+                    }
+                }
+            }
+            break;
+        case DOUBLE:
+            {
+                double* dptr;
+                for (i=0; i <  myData->test->streams; i++)
+                {
+                    dptr = (double*) myData->streams[i];
+                    dptr +=  offset;
+                    myData->streams[i] = (double*) dptr;
+
+                    for(j=0; j < vecsize; j++) {
+                        dptr[j] = 1.0;
+                    }
+                }
+            }
+            break;
+    }
+    
     /* Up to 10 streams the following registers are used for Array ptr:
      * Size rdi
      * in Registers: rsi  rdx  rcx  r8  r9

@@ -161,48 +161,5 @@ allocator_allocateVector(
             offset,
             LLU_CAST elements);
 
-    switch ( type )
-    {
-        case INT:
-            {
-                int* sptr = (int*) (*ptr);
-                sptr += offset;
-
-                for ( uint64_t i=0; i < size; i++ )
-                {
-                    sptr[i] = 1;
-                }
-                *ptr = (void*) sptr;
-
-            }
-            break;
-
-        case SINGLE:
-            {
-                float* sptr = (float*) (*ptr);
-                sptr += offset;
-
-                for ( uint64_t i=0; i < size; i++ )
-                {
-                    sptr[i] = 1.0;
-                }
-                *ptr = (void*) sptr;
-
-            }
-            break;
-
-        case DOUBLE:
-            {
-                double* dptr = (double*) (*ptr);
-                dptr += offset;
-
-                for ( uint64_t i=0; i < size; i++ )
-                {
-                    dptr[i] = 1.0;
-                }
-                *ptr = (void*) dptr;
-            }
-            break;
-    }
+    // Initialization of data happens in bench.c:runTest() to follow first-touch policy
 }
-
