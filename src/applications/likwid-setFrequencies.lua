@@ -318,7 +318,24 @@ if do_reset then
         max_freq = availfreqs[#availfreqs]
     end
     if not governor then
-        governor = availgovs[#availgovs]
+        governor = nil
+        for i, g in pairs(availgovs) do
+            if g:match("^performance") then
+                governor = g
+                break
+            end
+        end
+        if not governor then
+            for i, g in pairs(availgovs) do
+                if g:match("^conservative") then
+                    governor = g
+                    break
+                end
+            end
+            if not governor then
+                governor = availgovs[#availgovs]
+            end
+        end
     end
     if min_freq and governor then
         print_stdout(string.format("Reset to governor %s with min freq. %g GHz and deactivate turbo mode", governor, min_freq))
