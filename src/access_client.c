@@ -60,6 +60,9 @@ static int globalSocket = -1;
 static pid_t masterPid = 0;
 static int cpuSockets_open = 0;
 static int *cpuSockets = NULL;
+static int nr_daemons = 0;
+static pid_t *daemon_pids = NULL;
+static int *daemon_pinned = NULL;
 static pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t *cpuLocks = NULL;
 
@@ -135,13 +138,15 @@ access_client_startDaemon(int cpu_id)
 
     if (pid == 0)
     {
-        if (cpu_id >= 0)
-        {
-            cpu_set_t cpuset;
-            CPU_ZERO(&cpuset);
-            CPU_SET(cpu_id, &cpuset);
-            sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
-        }
+/*        Remove pinning here and delay it until first read or write call to check*/
+/*        if we are running in a multi-threaded environment.*/
+/*        if (cpu_id >= 0)*/
+/*        {*/
+/*            cpu_set_t cpuset;*/
+/*            CPU_ZERO(&cpuset);*/
+/*            CPU_SET(cpu_id, &cpuset);*/
+/*            sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);*/
+/*        }*/
         ret = execve (exeprog, newargv, newenv);
 
         if (ret < 0)
@@ -190,7 +195,8 @@ access_client_startDaemon(int cpu_id)
     }
     DEBUG_PRINT(DEBUGLEV_INFO, Successfully opened socket %s to daemon for CPU %d, filepath, cpu_id);
     free(filepath);
-
+    daemon_pids[cpu_id] = pid;
+    nr_daemons++;
     return socket_fd;
 }
 
@@ -206,6 +212,13 @@ access_client_init(int cpu_id)
     {
         cpuSockets = malloc(cpuid_topology.numHWThreads * sizeof(int));
         memset(cpuSockets, -1, cpuid_topology.numHWThreads * sizeof(int));
+    }
+    if (!daemon_pids)
+    {
+        daemon_pids = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(daemon_pids, 0, cpuid_topology.numHWThreads * sizeof(int));
+        daemon_pinned = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(daemon_pinned, 0, cpuid_topology.numHWThreads * sizeof(int));
     }
     if (!cpuLocks)
     {
@@ -265,7 +278,26 @@ access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t 
         pthread_mutex_lock(&cpuLocks[cpu_id]);
         cpuSockets[cpu_id] = access_client_startDaemon(cpu_id);
         cpuSockets_open++;
+        if (!daemon_pinned[cpu_id])
+        {
+            cpu_set_t cpuset;
+            CPU_ZERO(&cpuset);
+            CPU_SET(cpu_id, &cpuset);
+            DEBUG_PRINT(DEBUGLEV_INFO, Pinning daemon %d to CPU %d, daemon_pids[cpu_id], cpu_id);
+            sched_setaffinity(daemon_pids[cpu_id], sizeof(cpu_set_t), &cpuset);
+            daemon_pinned[cpu_id] = 1;
+        }
         pthread_mutex_unlock(&cpuLocks[cpu_id]);
+    }
+    else if (cpuSockets[cpu_id] > 0 && gettid() == masterPid &&
+             cpuSockets_open > 1 && !daemon_pinned[cpu_id])
+    {
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(cpu_id, &cpuset);
+        DEBUG_PRINT(DEBUGLEV_INFO, Pinning master daemon %d to CPU %d, daemon_pids[cpu_id], cpu_id);
+        sched_setaffinity(daemon_pids[cpu_id], sizeof(cpu_set_t), &cpuset);
+        daemon_pinned[cpu_id] = 1;
     }
 
     if ((cpuSockets[cpu_id] >= 0) && (cpuSockets[cpu_id] != globalSocket))
@@ -337,7 +369,26 @@ access_client_write(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t
         pthread_mutex_lock(&cpuLocks[cpu_id]);
         cpuSockets[cpu_id] = access_client_startDaemon(cpu_id);
         cpuSockets_open++;
+        if (!daemon_pinned[cpu_id])
+        {
+            cpu_set_t cpuset;
+            CPU_ZERO(&cpuset);
+            CPU_SET(cpu_id, &cpuset);
+            DEBUG_PRINT(DEBUGLEV_INFO, Pinning daemon %d to CPU %d, daemon_pids[cpu_id], cpu_id);
+            sched_setaffinity(daemon_pids[cpu_id], sizeof(cpu_set_t), &cpuset);
+            daemon_pinned[cpu_id] = 1;
+        }
         pthread_mutex_unlock(&cpuLocks[cpu_id]);
+    }
+    else if (cpuSockets[cpu_id] > 0 && gettid() == masterPid &&
+             cpuSockets_open > 1 && !daemon_pinned[cpu_id])
+    {
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(cpu_id, &cpuset);
+        DEBUG_PRINT(DEBUGLEV_INFO, Pinning master daemon %d to CPU %d, daemon_pids[cpu_id], cpu_id);
+        sched_setaffinity(daemon_pids[cpu_id], sizeof(cpu_set_t), &cpuset);
+        daemon_pinned[cpu_id] = 1;
     }
 
     if ((cpuSockets[cpu_id] >= 0) && (cpuSockets[cpu_id] != socket))
@@ -395,6 +446,8 @@ access_client_finalize(int cpu_id)
         CHECK_ERROR(write(cpuSockets[cpu_id], &record, sizeof(AccessDataRecord)),socket write failed);
         CHECK_ERROR(close(cpuSockets[cpu_id]),socket close failed);
         cpuSockets[cpu_id] = -1;
+        daemon_pids[cpu_id] = 0;
+        nr_daemons--;
         cpuSockets_open--;
     }
     if (cpuSockets_open == 0)
@@ -445,6 +498,15 @@ void __attribute__((destructor (104))) close_access_client(void)
     {
         free(cpuSockets);
         cpuSockets = NULL;
+        cpuSockets_open = 0;
+    }
+    if (daemon_pids)
+    {
+        free(daemon_pids);
+        daemon_pids = NULL;
+        free(daemon_pinned);
+        daemon_pinned = NULL;
+        nr_daemons = 0;
     }
     if (cpuLocks)
     {

@@ -1019,7 +1019,7 @@ perfmon_init_maps(void)
                     translate_types = default_translate_types;
                     break;
                 case SKYLAKEX:
-                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping <= 5)
+                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping < 5)
                     {
                         box_map = skylakeX_box_map;
                         eventHash = skylakeX_arch_events;
@@ -1301,7 +1301,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 
                 case SKYLAKE1:
                 case SKYLAKE2:
-                case SKYLAKEX:
+                case SKYLAKEX: /* This one includes CascadeLake SP */
                 case KABYLAKE1:
                 case KABYLAKE2:
                     initialize_power = TRUE;

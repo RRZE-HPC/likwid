@@ -555,7 +555,7 @@ int test_perfmonaddeventset()
         ret = perfmon_addEventSet(eventset_option_intel);
     else
         ret = perfmon_addEventSet(eventset_option_amd);
-    
+
     if (ret != 1) {
         if (verbose > 0) printf("Perfmon addEventSet(options) failed\n");
         goto fail;

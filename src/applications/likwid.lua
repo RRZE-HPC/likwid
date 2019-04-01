@@ -726,7 +726,7 @@ local function tableMinMaxAvgSum(inputtable, skip_cols, skip_lines)
     sumOfLine = {"Sum"}
     avgOfLine = {"Avg"}
     for i=skip_lines+1,nr_lines do
-        minOfLine[i-skip_lines+1] = math.huge
+        minOfLine[i-skip_lines+1] = math.huge - 1
         maxOfLine[i-skip_lines+1] = 0
         sumOfLine[i-skip_lines+1] = 0
         avgOfLine[i-skip_lines+1] = 0
@@ -1209,6 +1209,17 @@ end
 
 likwid.getMPIrank = getMPIrank
 
+local function llikwid_getFreqDriver(cpu)
+    file = string.format("/sys/devices/system/cpu/cpu%d/cpufreq/scaling_driver", cpu)
+    local f = io.open(file, "rb")
+    if f then
+        drv = f:read("*l"):gsub("%s+", "")
+        f:close()
+        return drv
+    end
+end
+
+likwid.getFreqDriver = llikwid_getFreqDriver
 
 local function llikwid_getAvailFreq(cpu)
     local freq_str = likwid_getAvailFreq(cpu)

@@ -163,6 +163,7 @@ for opt,arg in likwid.getopt(arg, {"V:", "g:", "c:", "f:", "l", "p", "h", "v", "
         local s = tonumber(arg)
         if (s >= 0 and s <= 3) then
             verbosity = s
+            likwid.setVerbosity(s)
         else
             print_stderr(string.format("ERROR: Value %s for verbosity not valid", arg))
         end

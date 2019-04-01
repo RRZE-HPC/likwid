@@ -4,8 +4,8 @@ include ../make/include_$(COMPILER).mk
 
 LIKWID_BINDIR ?= $(PREFIX)/bin
 LIKWID_INCLUDE ?= -I$(PREFIX)/include
-LIKWID_LIBDIR ?= $(PREFIX)/lib
-LIKWID_LIB ?= -L$(PREFIX)/lib -llikwid
+LIKWID_LIBDIR ?= -L$(PREFIX)/lib
+LIKWID_LIB ?= -llikwid
 LIKWID_DEFINES ?= -DLIKWID_PERFMON
 
 all: C-markerAPI C-likwidAPI F-markerAPI Lua-likwidAPI C-markerAPI-run C-likwidAPI-run Lua-likwidAPI-run F-markerAPI-run
@@ -31,7 +31,7 @@ C-markerAPI-run: C-markerAPI
 	$(LIKWID_BINDIR)/likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -m ./C-markerAPI
 
 C-likwidAPI:
-	$(CC) -fopenmp $(LIKWID_INCLUDE)  C-likwidAPI.c -o C-likwidAPI $(LIKWID_LIB) -lm
+	$(CC) -fopenmp $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) C-likwidAPI.c -o C-likwidAPI $(LIKWID_LIB) -lm
 
 C-likwidAPI-run: C-likwidAPI
 	./C-likwidAPI
@@ -43,7 +43,7 @@ C-internalMarkerAPI-run: C-internalMarkerAPI
 	OMP_NUM_THREADS=3 ./C-internalMarkerAPI
 
 monitoring:
-	$(CC) $(LIKWID_INCLUDE) -L$(LIKWID_LIBDIR) monitoring.c -o monitoring $(LIKWID_LIB) -lm
+	$(CC) $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) monitoring.c -o monitoring $(LIKWID_LIB) -lm
 
 monitoring-run: monitoring
 	./monitoring

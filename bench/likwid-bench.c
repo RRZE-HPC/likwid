@@ -371,12 +371,27 @@ int main(int argc, char** argv)
                         }
                         if ((int)(floor(orig_size/currentWorkgroup->numberOfThreads)) % test->stride)
                         {
+                            int typesize = allocator_dataTypeLength(test->type);
                             newsize = (((int)(floor(orig_size/nrThreads))/stride)*(stride))*nrThreads;
-                            if (warn_once)
+                            if (newsize > 0 && warn_once)
                             {
-                                int typesize = allocator_dataTypeLength(test->type);
                                 fprintf (stderr, "Warning: Sanitizing vector length to a multiple of the loop stride %d and thread count %d from %d elements (%d bytes) to %d elements (%d bytes)\n",stride, nrThreads, orig_size, orig_size*typesize, newsize, newsize*typesize);
                                 warn_once = 0;
+                            }
+                            else if (newsize == 0)
+                            {
+                                int given = currentWorkgroup->size*test->streams*typesize;
+                                int each_iter = test->stride*test->bytes;
+                                // For the case that one stream is used for loading and storing
+                                // Cases are daxpy and update
+                                if (test->streams*typesize*test->stride < each_iter)
+                                {
+                                    each_iter = test->streams*typesize*test->stride;
+                                }
+                                fprintf(stderr, "Error: The given vector length of %dB is too small to fit %d threads because each loop iteration of kernel '%s' requires %d Bytes (%d x %dB = %dB). So the minimal selectable size for the kernel is %dB.\n", given, nrThreads, test->name, each_iter, nrThreads, each_iter, each_iter*nrThreads, each_iter*nrThreads);
+                                allocator_finalize();
+                                workgroups_destroy(&groups, numberOfWorkgroups, test->streams);
+                                exit(EXIT_FAILURE);
                             }
                         }
                         else
@@ -515,24 +530,27 @@ int main(int argc, char** argv)
         time = timer_print(&itertime);
     }
     int datatypesize = allocator_dataTypeLength(test->type);
+    uint64_t size_per_thread = threads_data[0].data.size;
+    uint64_t iters_per_thread = threads_data[0].data.iter;
+    uint64_t datavol = iters_per_thread * realSize * test->bytes;
+    uint64_t allIters = realIter * (int)(((double)realSize)/((double)test->stride*globalNumberOfThreads));
     ownprintf(bdata(HLINE));
     ownprintf("Cycles:\t\t\t%" PRIu64 "\n", maxCycles);
     ownprintf("CPU Clock:\t\t%" PRIu64 "\n", timer_getCpuClock());
     ownprintf("Cycle Clock:\t\t%" PRIu64 "\n", cyclesClock);
     ownprintf("Time:\t\t\t%e sec\n", time);
     ownprintf("Iterations:\t\t%" PRIu64 "\n", realIter);
-    ownprintf("Iterations per thread:\t%" PRIu64 "\n",threads_data[0].data.iter);
+    ownprintf("Iterations per thread:\t%" PRIu64 "\n",iters_per_thread);
     ownprintf("Inner loop executions:\t%d\n", (int)(((double)realSize)/((double)test->stride*globalNumberOfThreads)));
-    ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize * datatypesize * test->streams );
-    ownprintf("Size per thread:\t%" PRIu64 "\n", threads_data[0].data.size * datatypesize * test->streams);
-    ownprintf("Number of Flops:\t%" PRIu64 "\n", (threads_data[0].data.iter * realSize *  test->flops));
+    ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize * test->bytes );
+    ownprintf("Size per thread:\t%" PRIu64 "\n", size_per_thread * test->bytes);
+    ownprintf("Number of Flops:\t%" PRIu64 "\n", (iters_per_thread * realSize *  test->flops));
     ownprintf("MFlops/s:\t\t%.2f\n",
-            1.0E-06 * ((double) threads_data[0].data.iter * realSize *  test->flops/  time));
+            1.0E-06 * ((double) (iters_per_thread * realSize *  test->flops) /  time));
     ownprintf("Data volume (Byte):\t%llu\n",
-            LLU_CAST (threads_data[0].data.iter * realSize *  datatypesize * test->streams));
+            LLU_CAST (datavol));
     ownprintf("MByte/s:\t\t%.2f\n",
-            1.0E-06 * ( (double) threads_data[0].data.iter * realSize * datatypesize * test->streams / time));
-
+            1.0E-06 * ( (double) (iters_per_thread * realSize * test->bytes) / time));
 
     size_t destsize = 0;
     size_t datasize = 0;
@@ -555,7 +573,8 @@ int main(int argc, char** argv)
             perUpFactor = (clsize/sizeof(double));
             break;
     }
-    cycPerCL = (double) maxCycles/(threads_data[0].data.iter*realSize*destsize/clsize);
+
+    cycPerCL = (double) maxCycles/((double)datavol/(clsize*datasize));
     ownprintf("Cycles per update:\t%f\n", cycPerCL/perUpFactor);
     ownprintf("Cycles per cacheline:\t%f\n", cycPerCL);
     ownprintf("Loads per update:\t%ld\n", test->loads );

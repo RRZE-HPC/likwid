@@ -273,10 +273,9 @@ likwid_markerInit(void)
     registered_cpus++;
 
     groupSet->activeGroup = 0;
-//#ifdef LIKWID_USE_PERFEVENT
+
     perfmon_setupCounters(groupSet->activeGroup);
     perfmon_startCounters();
-//#endif
 }
 
 void

@@ -657,7 +657,7 @@ topology_setName(void)
                     break;
 
                 case SKYLAKEX:
-                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping <= 5)
+                    if (cpuid_info.stepping >= 0 && cpuid_info.stepping < 5)
                     {
                         cpuid_info.name = skylakeX_str;
                         cpuid_info.short_name = short_skylakeX;

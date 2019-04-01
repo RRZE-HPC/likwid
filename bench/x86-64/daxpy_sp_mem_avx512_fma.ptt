@@ -2,7 +2,7 @@ STREAMS 2
 TYPE SINGLE
 FLOPS 2
 BYTES 12
-DESC Single-precision linear combination of two vectors, optimized for AVX-512 FMAs and non-temporal stores
+DESC Single-precision linear combination of two vectors, optimized for AVX-512 FMAs and non-temporal stores (Just for architectural research)
 LOADS 2
 STORES 1
 INSTR_CONST 17

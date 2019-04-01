@@ -768,7 +768,7 @@ static int allowed_skx(uint32_t reg)
             (reg == MSR_PREFETCH_ENABLE) ||
             ((reg & 0xA00U) == 0xA00U))
             return 1;
-    }   
+    }
     return 0;
 }
 
@@ -1474,7 +1474,7 @@ pci_write(AccessDataRecord* dRecord)
                 return;
             }
         }
-        
+
     }
 
     if (!isPCI64)
@@ -1906,10 +1906,12 @@ int main(void)
                         }
                         pci_devices_daemon[i].online = 1;
                     }
+#ifdef DEBUG_LIKWID
                     else
                     {
-                        syslog(LOG_ERR, "Device %s for socket %d, excluded it from device list: %s\n",pci_devices_daemon[i].name, 0, strerror(errno));
+                        syslog(LOG_ERR, "Device %s not found, excluded it from device list\n",pci_devices_daemon[i].name);
                     }
+#endif
                 }
             }
         }

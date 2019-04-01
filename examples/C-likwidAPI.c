@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     int gid;
     double result = 0.0;
     char estr[] = "L2_LINES_IN_ALL:PMC0,L2_TRANS_L2_WB:PMC1";
-    perfmon_setVerbosity(3);
+    //perfmon_setVerbosity(3);
     // Load the topology module and print some values.
     err = topology_init();
     if (err < 0)

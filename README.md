@@ -25,6 +25,7 @@ It consists of:
 
 For further information please take a look at the [Wiki](https://github.com/RRZE-HPC/likwid/wiki).
 
+
 --------------------------------------------------------------------------------
 Supported architectures
 --------------------------------------------------------------------------------
@@ -50,7 +51,9 @@ Intel
 - Intel Broadwell EP
 - Intel Skylake
 - Intel Skylake SP
-- Intel Xeon Phi (KNL)
+- Intel Xeon Phi (KNL, KNM)
+- Intel Kabylake
+- Intel Coffeelake
 
 AMD
 - AMD K8
@@ -58,6 +61,7 @@ AMD
 - AMD Interlagos
 - AMD Kabini
 - AMD Zen
+
 
 --------------------------------------------------------------------------------
 Download, Build and Install

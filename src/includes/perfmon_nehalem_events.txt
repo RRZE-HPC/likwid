@@ -134,7 +134,7 @@ UMASK_INST_DECODED_DECO           0x01
 EVENT_TWO_UPOS_INST               0x19   PMC
 UMASK_TWO_UPOS_INST_DECODED       0x01
 
-EVENT_HW_INT                     0x1D   PMC
+EVENT_HW                         0x1D   PMC
 UMASK_HW_INT_RCV                 0x01
 UMASK_HW_CYCLES_MASKED           0x02
 UMASK_HW_CYCLES_PENDING_AND_MASKED  0x04
@@ -355,7 +355,7 @@ UMASK_BACLEAR_FORCE_IQ              0x01
 
 EVENT_LSD_UOPS              0xA8   PMC
 UMASK_LSD_UOPS              0x01
-UMASK_LSD_CYCLES              0x01 0xC1  0x01
+UMASK_LSD_UOPS_CYCLES       0x01 0xC1  0x01
 
 EVENT_ITLB_FLUSH              0xAE   PMC
 UMASK_ITLB_FLUSH              0x01

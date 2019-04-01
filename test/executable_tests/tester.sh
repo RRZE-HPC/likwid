@@ -71,7 +71,7 @@ while read -r LINE || [[ -n $LINE ]]; do
     OPTIONS=${OPTIONS//'FREQ'/"${FREQ}"}
     RESULTS=$(echo "${LINE}" | cut -d '|' -f 2-)
     NUM_RESULTS="${RESULTS//[^|]}"
-    EXITCODE=$(${EXEC} ${OPTIONS} 1>${TMPFILE} 2>&1 </dev/null; echo $?)
+    EXITCODE=$(${EXECPATH}/${EXEC} ${OPTIONS} 1>${TMPFILE} 2>&1 </dev/null; echo $?)
     STATE=0
     for ((i=1;i<=${#NUM_RESULTS}+1;i++)); do
         RESULT=$(echo ${RESULTS} | cut -d '|' -f ${i})

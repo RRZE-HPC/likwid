@@ -50,14 +50,14 @@ int main (int argc, char* argv[])
     AffinityDomains_t affi = get_affinityDomains();
     timer = timer_getCpuClock();
     perfmon_init(numCPUs, cpus);
-    int gid1 = perfmon_addEventSet("MEM_SP");
+    int gid1 = perfmon_addEventSet("L2");
     if (gid1 < 0)
     {
         printf("Failed to add performance group L2\n");
         err = 1;
         goto monitor_exit;
     }
-    int gid2 = perfmon_addEventSet("MEM_DP");
+    int gid2 = perfmon_addEventSet("L3");
     if (gid2 < 0)
     {
         printf("Failed to add performance group L3\n");
@@ -79,20 +79,23 @@ int main (int argc, char* argv[])
         perfmon_startCounters();
         sleep(sleeptime);
         perfmon_stopCounters();
-        for (i = 0; i< perfmon_getNumberOfMetrics(gid1); i++)
+        for (c = 0; c < 8; c++)
         {
-            printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid1, i), 0, perfmon_getLastMetric(gid1, i, 0));
-            printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid1, i), 22, perfmon_getLastMetric(gid1, i, 22));
+            for (i = 0; i< perfmon_getNumberOfMetrics(gid1); i++)
+            {
+                printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid1, i), cpus[c], perfmon_getLastMetric(gid1, i, c));
+            }
         }
-
         perfmon_setupCounters(gid2);
         perfmon_startCounters();
         sleep(sleeptime);
         perfmon_stopCounters();
-        for (i = 0; i< perfmon_getNumberOfMetrics(gid2); i++)
+        for (c = 0; c < 8; c++)
         {
-            printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid2, i), 0, perfmon_getLastMetric(gid2, i, 0));
-            printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid2, i), 22, perfmon_getLastMetric(gid2, i, 22));
+            for (i = 0; i< perfmon_getNumberOfMetrics(gid2); i++)
+            {
+                printf("%s,cpu=%d %f\n", perfmon_getMetricName(gid2, i), cpus[c], perfmon_getLastMetric(gid2, i, c));
+            }
         }
         /*perfmon_setupCounters(gid3);
         perfmon_startCounters();

@@ -2,7 +2,7 @@ STREAMS 2
 TYPE DOUBLE
 FLOPS 2
 BYTES 24
-DESC Double-precision linear combination of two vectors, optimized for AVX FMAs and non-temporal stores
+DESC Double-precision linear combination of two vectors, optimized for AVX FMAs and non-temporal stores (Just for architectural research)
 LOADS 2
 STORES 1
 INSTR_CONST 17
