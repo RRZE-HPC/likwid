@@ -6,14 +6,14 @@
  *      Description:  Implementation of Linux NUMA interface. Selects between hwloc and
  *                    procfs/sysfs backends.
  *
- *      Version:   4.3.3
- *      Released:  09.11.2018
+ *      Version:   4.3.4
+ *      Released:  01.04.2019
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

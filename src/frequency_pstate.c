@@ -6,14 +6,14 @@
  *      Description:  Module implementing an interface for frequency manipulation, the
  *                    Intel PState backend
  *
- *      Version:   4.3.3
- *      Released:  09.11.2018
+ *      Version:   4.3.4
+ *      Released:  01.04.2019
  *
  *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
  *                Amin Nabikhani, amin.nabikhani@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
