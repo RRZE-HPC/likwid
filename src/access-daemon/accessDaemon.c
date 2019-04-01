@@ -50,6 +50,7 @@
 #include <getopt.h>
 #include <dirent.h>
 #include <sys/mman.h>
+#include <fnmatch.h>
 
 #include <types.h>
 #include <registers.h>
@@ -133,43 +134,106 @@ static int isClientMem = 0;
  */
 static int avail_sockets = 0;
 static int avail_cpus = 0;
+static int avail_nodes = 0;
+
+static int getNumberOfCPUs()
+{
+    FILE* fpipe = NULL;
+    char cmd[1024] = "cat /proc/cpuinfo | grep \"processor\" | sort -u | wc -l";
+    char buff[1024];
+    if ( !(fpipe = popen(cmd,"r")) )
+    {
+        return 0;
+    }
+    char* ptr = fgets(buff, 1024, fpipe);
+    if (ptr)
+    {
+        return atoi(buff);
+    }
+    return 0;
+}
+
+static int getNumberOfSockets()
+{
+    FILE* fpipe = NULL;
+    char cmd[1024] = "cat /proc/cpuinfo | grep \"physical id\" | sort -u | wc -l";
+    char buff[1024];
+    if ( !(fpipe = popen(cmd,"r")) )
+    {
+        return 0;
+    }
+    char* ptr = fgets(buff, 1024, fpipe);
+    if (ptr)
+    {
+        return atoi(buff);
+    }
+    return 0;
+}
+
+static int getNumberOfNumaNodes()
+{
+    DIR *dp = NULL;
+    struct dirent *ep = NULL;
+    int count = 0;
+    dp = opendir ("/sys/devices/system/node/");
+    if (dp != NULL)
+    {
+        while (ep = readdir (dp))
+        {
+            if (fnmatch("node?*", ep->d_name, FNM_PATHNAME) == 0)
+            {
+                count++;
+            }
+        }
+        closedir(dp);
+    }
+    return count;
+}
 
 void __attribute__((constructor (101))) init_accessdaemon(void)
 {
-    FILE *fpipe = NULL;
-    char *ptr = NULL;
+
     FILE *rdpmc_file = NULL;
     FILE *nmi_watchdog_file = NULL;
-    char cmd_cpu[] = "cat /proc/cpuinfo  | grep 'processor' | sort -u | wc -l";
-    char cmd_sock[] = "cat /proc/cpuinfo  | grep 'physical id' | sort -u | wc -l";
-    //static long avail_sockets = 0;
-    char buff[256];
-    //avail_cpus = sysconf(_SC_NPROCESSORS_CONF);
+    int retries = 10;
 
-    if ( !(fpipe = (FILE*)popen(cmd_cpu,"r")) )
-    {  // If fpipe is NULL
-        return;
-    }
-    ptr = fgets(buff, 256, fpipe);
-    if (pclose(fpipe))
-        return;
-    avail_cpus = atoi(buff);
-
-    if ( !(fpipe = (FILE*)popen(cmd_sock,"r")) )
-    {  // If fpipe is NULL
-        return;
-    }
-    ptr = fgets(buff, 256, fpipe);
-    if (pclose(fpipe))
-        return;
-    avail_sockets = atoi(buff);
+    do {
+        avail_cpus = getNumberOfCPUs();
+        retries--;
+    } while (avail_cpus == 0 && retries > 0);
+    if (retries <= 0) return;
+    retries = 10;
+    do {
+        avail_sockets = getNumberOfSockets();
+        retries--;
+    } while (avail_sockets == 0 && retries > 0);
+    if (retries <= 0) return;
+    retries = 10;
+    do {
+        avail_nodes = getNumberOfNumaNodes();
+        retries--;
+    } while (avail_nodes == 0 && retries > 0);
+    if (retries <= 0) return;
 
     FD_MSR = malloc(avail_cpus * sizeof(int));
+    if (!FD_MSR)
+        return;
 
     FD_PCI = malloc(avail_sockets * sizeof(int*));
+    if (!FD_PCI)
+        return;
     for (int i = 0; i < avail_sockets; i++)
     {
         FD_PCI[i] = malloc(MAX_NUM_PCI_DEVICES * sizeof(int));
+        if (!FD_PCI[i])
+        {
+            for (int j = i-1; j >= 0; j--)
+            {
+                free(FD_PCI[j]);
+            }
+            free(FD_PCI);
+            return;
+        }
     }
     // Explicitly allow RDPMC instruction
     rdpmc_file = fopen("/sys/bus/event_source/devices/cpu/rdpmc", "wb");
@@ -189,16 +253,24 @@ void __attribute__((constructor (101))) init_accessdaemon(void)
 
 void __attribute__((destructor (101))) close_accessdaemon(void)
 {
-    for (int i = 0; i < avail_sockets; i++)
+    if (FD_PCI)
     {
-        free(FD_PCI[i]);
-        FD_PCI[i] = NULL;
+        for (int i = 0; i < avail_sockets; i++)
+        {
+            if (FD_PCI[i])
+            {
+                free(FD_PCI[i]);
+                FD_PCI[i] = NULL;
+            }
+        }
+        free(FD_PCI);
+        FD_PCI = NULL;
     }
-    free(FD_PCI);
-    FD_PCI = NULL;
-
-    free(FD_MSR);
-    FD_MSR = NULL;
+    if (FD_MSR)
+    {
+        free(FD_MSR);
+        FD_MSR = NULL;
+    }
 }
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -707,7 +779,7 @@ static int allowed_skx(uint32_t reg)
             (reg == MSR_PREFETCH_ENABLE) ||
             ((reg & 0xA00U) == 0xA00U))
             return 1;
-    }   
+    }
     return 0;
 }
 
@@ -876,7 +948,7 @@ clientmem_init()
         syslog(LOG_ERR, "ClientMem: Failed to get startAddr\n");
         return -1;
     }
-    
+
     clientmem_handle = open("/dev/mem", O_RDONLY);
     if (clientmem_handle < 0)
     {
@@ -918,7 +990,7 @@ clientmem_read(AccessDataRecord *dRecord)
 
     dRecord->errorcode = ERR_NOERROR;
     dRecord->data = 0x0ULL;
-    
+
 
     if (!lock_check())
     {
@@ -1014,8 +1086,8 @@ msr_read(AccessDataRecord * dRecord)
 
     if (pread(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data))
     {
-        syslog(LOG_ERR, "Failed to read data from register 0x%x on core %u", reg, cpu);
 #ifdef DEBUG_LIKWID
+        syslog(LOG_ERR, "Failed to read data from register 0x%x on core %u", reg, cpu);
         syslog(LOG_ERR, "%s", strerror(errno));
 #endif
         dRecord->errorcode = ERR_RWFAIL;
@@ -1055,8 +1127,8 @@ msr_write(AccessDataRecord * dRecord)
 
     if (pwrite(FD_MSR[cpu], &data, sizeof(data), reg) != sizeof(data))
     {
-        syslog(LOG_ERR, "Failed to write data to register 0x%x on core %u", reg, cpu);
 #ifdef DEBUG_LIKWID
+        syslog(LOG_ERR, "Failed to write data to register 0x%x on core %u", reg, cpu);
         syslog(LOG_ERR, "%s", strerror(errno));
 #endif
         dRecord->errorcode = ERR_RWFAIL;
@@ -1177,6 +1249,9 @@ static int getBusFromSocketByNameDevid(const uint32_t socket, PciDevice* pcidev,
         }
     }
     closedir (pDir);
+#ifdef DEBUG_LIKWID
+    syslog(LOG_INFO, "PCI device %s (%s) for socket %d is on PCI bus 0x%02x", pcidev->likwid_name, pcidev->path, socket, bus_id);
+#endif
     return bus_id;
 }
 
@@ -1265,14 +1340,142 @@ static int getBusFromSocketByDevid(const uint32_t socket, PciDevice* pcidev, int
 }
 
 
+static int get_devid(int pathlen, char* path)
+{
+    uint32_t devid = 0x0;
+    int ret = 0;
+    char devidpath[1024];
+    char buff[1024];
+
+    ret = snprintf(devidpath, 1023, "%.*s/device", pathlen, path);
+    if (ret)
+    {
+        devidpath[ret] = '\0';
+        FILE *fp = fopen(devidpath, "r");
+        if (fp)
+        {
+            ret = fread(buff, sizeof(char), 1023, fp);
+            if (ret)
+            {
+                buff[ret] = '\0';
+                ret = sscanf(buff, "%x", &devid);
+                if (ret == 1)
+                {
+                    devid = -1;
+                }
+            }
+            fclose(fp);
+        }
+    }
+    return 0x0;
+}
+
+static int get_nodeid(int pathlen, char* path)
+{
+    int nodeid = -1;
+    int ret = 0;
+    char devidpath[1024];
+    char buff[1024];
+
+    ret = snprintf(devidpath, 1023, "%.*s/numa_node", pathlen, path);
+    if (ret)
+    {
+        devidpath[ret] = '\0';
+        FILE *fp = fopen(devidpath, "r");
+        if (fp)
+        {
+            ret = fread(buff, sizeof(char), 1023, fp);
+            if (ret)
+            {
+                buff[ret] = '\0';
+                ret = sscanf(buff, "%d", &nodeid);
+                if (ret != 1)
+                {
+                    nodeid = -1;
+                }
+            }
+            fclose(fp);
+        }
+    }
+    return nodeid;
+}
+
+static int getBusFromSocketByNameDevidNode(const uint32_t socket, PciDevice* pcidev, int pathlen, char** filepath)
+{
+    FILE *fpipe = NULL;
+    int isSNC = 0;
+    int SNCscale = 1;
+    if (avail_sockets != avail_nodes)
+    {
+        isSNC = 1;
+        SNCscale = avail_nodes/avail_sockets;
+    }
+    uint32_t devid = 0x0;
+    int nodeid = -1;
+    char cmd[1024];
+    char buff[1024];
+    int ret = 0;
+
+    snprintf(cmd, 1023, "ls -d /sys/bus/pci/devices/*%s* 2>/dev/null", pcidev->path);
+    if ( !(fpipe = popen(cmd,"r")) )
+    {
+        return -1;
+    }
+    while ((fgets(buff, 1024, fpipe)) != NULL)
+    {
+        if (strncmp(buff, ".", 1) == 0) continue;
+        devid = get_devid((int)(strlen(buff)-1), buff);
+        if (devid == 0) continue;
+        nodeid = get_nodeid((int)(strlen(buff)-1), buff);
+        if (nodeid < 0) continue;
+        nodeid /= SNCscale;
+        if (devid == pcidev->devid && nodeid == socket)
+        {
+            int mid = 0;
+            int start = 0;
+            for (int i= strlen(buff)-1; i>= 0; i--)
+            {
+                if (mid == 0 && buff[i] == ':')
+                {
+                    mid = i+1;
+                    continue;
+                }
+                if (mid > 0 && start == 0 && buff[i] == ':')
+                {
+                    start = i+1;
+                }
+            }
+            if (filepath && *filepath && pathlen > 0 && mid > 0 && start > 0)
+            {
+                ret = snprintf(*filepath, pathlen-1, "/proc/bus/pci/%.*s/%.*s", (int)(mid-start-1), &(buff[start]), (int)(strlen(buff)-mid-1), &(buff[mid]));
+                if (ret > 0)
+                    (*filepath)[ret] = '\0';
+            }
+            fclose(fpipe);
+            return socket;
+        }
+    }
+    fclose(fpipe);
+    return -1;
+}
+
+
 static int getBusFromSocket(const uint32_t socket, PciDevice* pcidev, int pathlen, char** filepath)
 {
     int ret_sock = -1;
-    int ret = getBusFromSocketByNameDevid(socket, pcidev, pathlen, filepath);
+    int ret = getBusFromSocketByNameDevidNode(socket, pcidev, pathlen, filepath);
     if (ret < 0)
     {
-        ret = getBusFromSocketByDevid(socket, pcidev, pathlen, filepath);
-        if (ret > 0)
+        ret = getBusFromSocketByNameDevid(socket, pcidev, pathlen, filepath);
+        if (ret < 0)
+        {
+            ret = getBusFromSocketByDevid(socket, pcidev, pathlen, filepath);
+            if (ret >= 0)
+            {
+                ret_sock = socket;
+            }
+        }
+        else
         {
             ret_sock = socket;
         }
@@ -1431,7 +1634,7 @@ pci_write(AccessDataRecord* dRecord)
                 return;
             }
         }
-        
+
     }
 
     if (!isPCI64)
@@ -1859,7 +2062,7 @@ int main(void)
                     FD_PCI[j][i] = -2;
                 }
             }
-            
+
             for (int i=1; i<MAX_NUM_PCI_DEVICES; i++)
             {
                 if (pci_devices_daemon[i].path && strlen(pci_devices_daemon[i].path) > 0)
@@ -1873,10 +2076,12 @@ int main(void)
                         }
                         pci_devices_daemon[i].online = 1;
                     }
+#ifdef DEBUG_LIKWID
                     else
                     {
-                        syslog(LOG_ERR, "Device %s for socket %d, excluded it from device list: %s\n",pci_devices_daemon[i].name, 0, strerror(errno));
+                        syslog(LOG_ERR, "Device %s not found, excluded it from device list\n",pci_devices_daemon[i].name);
                     }
+#endif
                 }
             }
         }
