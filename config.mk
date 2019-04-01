@@ -10,7 +10,7 @@
 COMPILER = GCC#NO SPACE
 
 # Path were to install likwid
-PREFIX = /usr/local#NO SPACE
+PREFIX ?= /usr/local#NO SPACE
 
 # Set the default mode for MSR access.
 # This can usually be overriden on the commandline.
@@ -49,7 +49,7 @@ LIBPREFIX = $(PREFIX)/lib#NO SPACE
 # Keep in mind that the access and setFreq daemon need enough
 # privileges that may be deleted when copying the files to
 # the INTSTALLED_PREFIX
-INSTALLED_PREFIX = $(PREFIX)#NO SPACE
+INSTALLED_PREFIX ?= $(PREFIX)#NO SPACE
 INSTALLED_BINPREFIX = $(INSTALLED_PREFIX)/bin#NO SPACE
 INSTALLED_LIBPREFIX = $(INSTALLED_PREFIX)/lib#NO SPACE
 
