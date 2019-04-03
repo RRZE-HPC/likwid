@@ -45,7 +45,7 @@
 #include <topology.h>
 #include <access.h>
 #include <registers.h>
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 #include <cpuid.h>
 #endif
 #include <lock.h>
@@ -623,7 +623,7 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
         HPMfinalize();
     return err == 0;
 }
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 static int isAMD()
 {
     unsigned int eax,ebx,ecx,edx;
