@@ -198,7 +198,7 @@ loop:  LOOP SYMBOL INUMBER SNUMBER block
 | LOOP SYMBOL INUMBER SREG block
 {[
 {FUNC => 'as::loop_entry',
- ARGS => [$item{SYMBOL}[1],$item{SREG}[1]]},
+ ARGS => [$item{SYMBOL}[1],$item{INUMBER}[1][1]]},
  $item{block},
 {FUNC => 'as::loop_exit',
  ARGS => [$item{SYMBOL}[1],$item{INUMBER}[1][1]]}

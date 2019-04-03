@@ -141,9 +141,14 @@ barrier_synchronize(BarrierData* barr)
         {
 #if defined(__arm__) || defined(__ARM_ARCH_8A)
             __asm__ ("nop");
-#else
+#endif
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
             __asm__ ("pause");
 #endif
+#ifdef _ARCH_PCC
+            __asm__ ("noop");
+#endif
+
         }
     }
 

@@ -141,7 +141,11 @@ int main(int argc, char** argv)
     binsertch(HLINE, 0, 80, '-');
     binsertch(HLINE, 80, 1, '\n');
     int (*ownprintf)(const char *format, ...);
+#ifdef _ARCH_PPC
+    int clsize = 128;
+#else
     int clsize = sysconf (_SC_LEVEL1_DCACHE_LINESIZE);
+#endif
     ownprintf = &printf;
 
     /* Handling of command line options */
@@ -358,6 +362,7 @@ int main(int argc, char** argv)
                 size_t newsize = 0;
                 size_t stride = test->stride;
                 int nrThreads = currentWorkgroup->numberOfThreads;
+                int clsize = 128;
                 size_t orig_size = currentWorkgroup->size;
                 if (i == 0)
                 {

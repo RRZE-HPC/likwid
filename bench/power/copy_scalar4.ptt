@@ -1,0 +1,21 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 0
+BYTES 16
+
+LOOP 4
+
+lfd     0, 0(STR0)
+stfd    0, 0(STR1)
+
+lfd     1, 8(STR0)
+stfd    1, 8(STR1)
+
+lfd     2, 16(STR0)
+stfd    2, 16(STR1)
+
+lfd     3, 24(STR0)
+stfd    3, 24(STR1)
+
+addi STR0, STR0, 32
+addi STR1, STR1, 32
