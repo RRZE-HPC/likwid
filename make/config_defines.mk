@@ -104,6 +104,29 @@ ifeq ($(strip $(COMPILER)),GCCARMv7)
         BUILDDAEMON = false
     endif
 endif
+ifeq ($(strip $(COMPILER)),GCCPOWER)
+    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+        $(info Info: Compiling for IBM POWER. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+        $(info Info: Compiling for IBM POWER. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),direct)
+        $(info Info: Compiling for IBM POWER. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+endif
 
 ifeq ($(strip $(BUILDDAEMON)),true)
 ifneq ($(strip $(COMPILER)),MIC)

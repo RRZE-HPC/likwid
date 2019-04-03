@@ -25,6 +25,7 @@ CFLAGS += -mmic
 LFLAGS += -mmic
 endif
 
+
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
 
@@ -37,6 +38,12 @@ OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
 endif
 ifeq ($(COMPILER), GCCARMv8)
 OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
+endif
+ifeq ($(COMPILER),GCCPOWER)
+OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o,$(OBJ))
+endif
+ifeq ($(COMPILER),XLC)
+OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o,$(OBJ))
 endif
 
 
