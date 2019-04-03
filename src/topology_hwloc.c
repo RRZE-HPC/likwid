@@ -265,8 +265,40 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
     parse_cpuname(cpuid_info.osname);
 #endif
+
+#ifndef _ARCH_PPC
     if ((info = hwloc_obj_get_info_by_name(obj, "CPUModel")))
         strcpy(cpuid_info.osname, info);
+#else
+    if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUModel")))
+    {
+        if (strstr(info, "POWER7") != NULL)
+        {
+            cpuid_info.model = POWER7;
+            cpuid_info.family = PPC_FAMILY;
+            cpuid_info.isIntel = 0;
+            strcpy(cpuid_info.osname, info);
+            cpuid_info.stepping = 0;
+        }
+        if (strstr(info, "POWER8") != NULL)
+        {
+            cpuid_info.model = POWER8;
+            cpuid_info.family = PPC_FAMILY;
+            cpuid_info.isIntel = 0;
+            strcpy(cpuid_info.osname, info);
+            cpuid_info.stepping = 0;
+        }
+        if (strstr(info, "POWER9") != NULL)
+        {
+            cpuid_info.model = POWER9;
+            cpuid_info.family = PPC_FAMILY;
+            cpuid_info.isIntel = 0;
+            strcpy(cpuid_info.osname, info);
+            cpuid_info.stepping = 0;
+        }
+    }
+#endif
+
 
     cpuid_topology.numHWThreads = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
     if (cpuid_topology.activeHWThreads > cpuid_topology.numHWThreads)
@@ -433,7 +465,6 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
 
     int socket_nums[16];
     int num_sockets = 0;
-    printf("Sanitize socket IDs\n");
     for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
     {
         int found = 0;
@@ -552,6 +583,15 @@ hwloc_init_cacheTopology(void)
         cachePool[id].lineSize = obj->attr->cache.linesize;
         cachePool[id].size = obj->attr->cache.size;
         cachePool[id].sets = 0;
+#ifdef _ARCH_PPC
+        if ((cpuid_info.family == PPC_FAMILY) && ((cpuid_info.model == POWER8) || (cpuid_info.model == POWER9)))
+        {
+            if (cachePool[id].lineSize == 0)
+                cachePool[id].lineSize = 128;
+            if (cachePool[id].associativity == 0)
+                cachePool[id].associativity = 8;
+        }
+#endif
         if ((cachePool[id].associativity * cachePool[id].lineSize) != 0)
         {
             cachePool[id].sets = cachePool[id].size /

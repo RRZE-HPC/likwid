@@ -109,8 +109,12 @@ static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
 static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
 static char* arm_cortex_a57 = "ARM Cortex A57 (ARMv8)";
 static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
+static char* power7_str = "POWER7 architecture";
+static char* power8_str = "POWER8 architecture";
+static char* power9_str = "POWER9 architecture";
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
+static char* unknown_power_str = "Unknown POWER Processor";
 
 static char* short_core2 = "core2";
 static char* short_atom = "atom";
@@ -147,6 +151,9 @@ static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
 static char* short_arm8_cav_tx2 = "arm8_tx2";
 static char* short_arm8_cav_tx = "arm8_tx";
+static char* short_power7 = "power7";
+static char* short_power8 = "power8";
+static char* short_power9 = "power9";
 static char* short_unknown = "unknown";
 
 /* #####  EXPORTED VARIABLES  ########################################## */
@@ -877,6 +884,29 @@ topology_setName(void)
             cpuid_info.name = kabini_str;
             cpuid_info.short_name = short_k16;
             break;
+
+	case PPC_FAMILY:
+            switch(cpuid_info.model)
+            {
+                case POWER7:
+                    cpuid_info.name = power7_str;
+                    cpuid_info.short_name = short_power7;
+                    break;
+                case POWER8:
+                    cpuid_info.name = power8_str;
+                    cpuid_info.short_name = short_power8;
+                    break;
+                case POWER9:
+                    cpuid_info.name = power9_str;
+                    cpuid_info.short_name = short_power9;
+                    break;
+                default:
+                    cpuid_info.name = unknown_power_str;
+                    cpuid_info.short_name = short_unknown;
+                    break;
+           }
+           break;
+
 
         case ZEN_FAMILY:
             cpuid_info.name = amd_zen_str;

@@ -302,6 +302,11 @@ affinity_init()
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Socket domains %d, numberOfSocketDomains);
     numa_init();
     int numberOfNumaDomains = numa_info.numberOfNodes;
+    for (int i = numberOfNumaDomains-1; i >= 0; i--)
+    {
+        if (numa_info.nodes[i].numberOfProcessors == 0)
+	    numberOfNumaDomains--;
+    }
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: NUMA domains %d, numberOfNumaDomains);
     int numberOfProcessorsPerSocket =
         cpuid_topology.numCoresPerSocket * cpuid_topology.numThreadsPerCore;

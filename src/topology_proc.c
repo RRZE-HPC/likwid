@@ -189,17 +189,27 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
     ownatoi = &atoi;
     ownstrcpy = &strcpy;
 
-    const_bstring countString = bformat("processor\t:");
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     const_bstring modelString = bformat("model\t\t:");
-    const_bstring familyString = bformat("cpu family\t:");
     const_bstring steppingString = bformat("stepping\t:");
+    const_bstring nameString = bformat("model name\t:");
+#endif
+#ifdef _ARCH_PPC
+    const_bstring modelString = bformat("cpu\t\t:");
+    const_bstring steppingString = bformat("revision\t:");
+    const_bstring nameString = bformat("machine\t\t:");
+#endif
+    const_bstring familyString = bformat("cpu family\t:");
+    const_bstring countString = bformat("processor\t:");
     const_bstring vendorString = bformat("vendor_id\t:");
     const_bstring vendorIntelString = bformat("GenuineIntel");
-    const_bstring nameString = bformat("model name\t:");
 
     cpuid_info.isIntel = 0;
     cpuid_info.model = 0;
     cpuid_info.family = 0;
+#ifdef _ARCH_PPC
+    cpuid_info.family = PPC_FAMILY;
+#endif
     cpuid_info.stepping = 0;
     cpuid_topology.numHWThreads = 0;
     cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
@@ -212,16 +222,35 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
         fclose(fp);
         for (i=0;i<tokens->qty;i++)
         {
+            printf("%d\n", binstr(tokens->entry[i],0,modelString));
             if (binstr(tokens->entry[i],0,countString) != BSTR_ERR)
             {
                 HWthreads++;
             }
             else if ((cpuid_info.model == 0) && (binstr(tokens->entry[i],0,modelString) != BSTR_ERR))
             {
+#ifndef _ARCH_PPC
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 cpuid_info.model = ownatoi(bdata(subtokens->entry[1]));
                 bstrListDestroy(subtokens);
+#else
+		const_bstring power7str = bformat("POWER7");
+		const_bstring power8str = bformat("POWER8");
+		const_bstring power9str = bformat("POWER9");
+		if (binstr(tokens->entry[i],0, power7str) != BSTR_ERR)
+		{
+			cpuid_info.model = POWER7;
+		}
+		else if (binstr(tokens->entry[i],0, power8str) != BSTR_ERR)
+                {
+                        cpuid_info.model = POWER8;
+                }
+		else if (binstr(tokens->entry[i],0, power9str) != BSTR_ERR)
+                {
+                        cpuid_info.model = POWER9;
+                }
+#endif
             }
             else if ((cpuid_info.family == 0) && (binstr(tokens->entry[i],0,familyString) != BSTR_ERR))
             {
@@ -276,6 +305,9 @@ proc_init_cpuFeatures(void)
     char ident[30];
     char delimiter[] = " ";
     char* cptr;
+#ifdef _ARCH_PPC
+    return;
+#endif
 
     if ( (file = fopen( "/proc/cpuinfo", "r")) == NULL )
     {
@@ -291,6 +323,9 @@ proc_init_cpuFeatures(void)
 #endif
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__) || defined(__ARM_ARCH_8A)
         if (ret != 1 || strcmp(ident, "Features") != 0)
+#endif
+#ifdef _ARCH_PPC
+	if (ret != 1)
 #endif
         {
             continue;
@@ -788,6 +823,7 @@ proc_init_cacheTopology(void)
                 break;
             case ARMV8_FAMILY:
             case ARMV7_FAMILY:
+	    case PPC_FAMILY:
                 cachePool[i].inclusive = 0;
                 break;
             default:
