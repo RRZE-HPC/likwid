@@ -1,0 +1,27 @@
+SHORT Memory bandwidth in MBytes/s for local and remote memory
+
+EVENTSET
+PMC1  PM_DATA_ALL_FROM_LMEM 
+PMC3  PM_DATA_ALL_FROM_DMEM
+PMC4  PM_RUN_INST_CMPL
+PMC5  PM_RUN_CYC
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC5/PMC4
+Local bandwidth [MBytes/s] 1.0E-06*(PMC1)*128.0/time
+Local data volume [GBytes] 1.0E-09*(PMC1)*128.0
+Remote bandwidth [MBytes/s] 1.0E-06*(PMC3)*128.0/time
+Remote data volume [GBytes] 1.0E-09*(PMC3)*128.0
+Memory load bandwidth [MBytes/s] 1.0E-06*(PMC1+PMC3)*128.0/time
+Memory load data volume [GBytes] 1.0E-09*(PMC1+PMC3)*128.0
+
+LONG
+Formulas:
+CPI = PM_RUN_CYC / PM_RUN_INST_CMPL
+Memory load bandwidth [MBytes/s] = 1.0E-06* (PM_DATA_ALL_FROM_MEMORY)*128/time
+Memory load data volume [GBytes] = 1.0E-09* (PM_DATA_ALL_FROM_MEMORY)*128
+Memory evict bandwidth [MBytes/s] = 1.0E-06* (PM_MEM_CO)*128/time
+Memory evict data volume [GBytes] = 1.0E-09* (PM_MEM_CO)*128
+Memory bandwidth [MBytes/s] = 1.0E-06* (PM_DATA_ALL_FROM_MEMORY+PM_MEM_CO)*128/time
+Memory data volume [GBytes] = 1.0E-09* (PM_DATA_ALL_FROM_MEMORY+PM_MEM_CO)*128

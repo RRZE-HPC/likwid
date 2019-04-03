@@ -116,7 +116,7 @@ int perfmon_init_perfevent(int cpu_id)
     return 0;
 }
 
-int perf_fixed_setup(struct perf_event_attr *attr, PerfmonEvent *event)
+int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
 {
     int ret = -1;
     attr->type = PERF_TYPE_HARDWARE;
@@ -170,6 +170,10 @@ static char* perfEventOptionNames[] = {
     [EVENT_OPTION_OCCUPANCY_FILTER] = "occ_band0",
     [EVENT_OPTION_OCCUPANCY_EDGE] = "occ_edge",
     [EVENT_OPTION_OCCUPANCY_INVERT] = "occ_inv",
+#ifdef _ARCH_PPC
+    [EVENT_OPTION_PMC] = "pmc",
+    [EVENT_OPTION_PMCXSEL] = "pmcxsel",
+#endif
 };
 
 int getEventOptionConfig(char* base, EventOptionType type, PERF_EVENT_PMC_OPT_REGS *reg, int* start, int* end)
@@ -252,7 +256,7 @@ uint64_t create_mask(uint32_t value, int start, int end)
     return 0x0ULL;
 }
 
-int perf_pmc_setup(struct perf_event_attr *attr, PerfmonEvent *event)
+int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t offcore_flags = 0x0ULL;
     PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
@@ -331,7 +335,23 @@ int perf_pmc_setup(struct perf_event_attr *attr, PerfmonEvent *event)
                 break;
         }
     }
-
+#ifdef _ARCH_PPC
+    getEventOptionConfig("/sys/devices/cpu", EVENT_OPTION_PMC, &reg, &start, &end);
+    switch(reg)
+    {
+        case PERF_EVENT_CONFIG_REG:
+            attr->config |= create_mask(getCounterTypeOffset(index)+1,start, end);
+	    break;
+        case PERF_EVENT_CONFIG1_REG:
+            attr->config1 |= create_mask(getCounterTypeOffset(index)+1,start, end);
+	    break;
+        case PERF_EVENT_CONFIG2_REG:
+            attr->config2 |= create_mask(getCounterTypeOffset(index)+1,start, end);
+	    break;
+        default:
+            break;
+    }
+#endif
     return 0;
 }
 
@@ -469,7 +489,7 @@ int perfmon_setupCountersThread_perfevent(
         switch (type)
         {
             case FIXED:
-                ret = perf_fixed_setup(&attr, event);
+                ret = perf_fixed_setup(&attr, index, event);
                 if (ret < 0)
                 {
                     continue;
@@ -477,7 +497,7 @@ int perfmon_setupCountersThread_perfevent(
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_FIXED);
                 break;
             case PMC:
-                ret = perf_pmc_setup(&attr, event);
+                ret = perf_pmc_setup(&attr, index, event);
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
                 break;
             case POWER:

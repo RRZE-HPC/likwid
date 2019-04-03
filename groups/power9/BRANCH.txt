@@ -1,0 +1,28 @@
+SHORT Branch prediction miss rate/ratio
+
+EVENTSET
+PMC4  PM_BR_CMPL
+PMC3  PM_BR_MPRED_CMPL
+PMC2  PM_RUN_INST_CMPL
+PMC5  PM_RUN_CYC
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC5/PMC2
+Branch rate   (PMC4)/PMC2
+Branch misprediction rate  PMC3/PMC2
+Branch misprediction ratio  PMC2/(PMC4)
+Instructions per branch  PMC2/(PMC4)
+
+LONG
+Formulas:
+Branch rate = BR_INST_RETIRED_ALL_BRANCHES/INSTR_RETIRED_ANY
+Branch misprediction rate =  BR_MISP_RETIRED_ALL_BRANCHES/INSTR_RETIRED_ANY
+Branch misprediction ratio = BR_MISP_RETIRED_ALL_BRANCHES/BR_INST_RETIRED_ALL_BRANCHES
+Instructions per branch = INSTR_RETIRED_ANY/BR_INST_RETIRED_ALL_BRANCHES
+-
+The rates state how often in average a branch or a mispredicted branch occured
+per instruction retired in total. The Branch misprediction ratio sets directly
+into relation what ratio of all branch instruction where mispredicted.
+Instructions per branch is 1/Branch rate.
+

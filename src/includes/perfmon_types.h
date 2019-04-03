@@ -83,6 +83,10 @@ typedef enum {
     EVENT_OPTION_PERF_PID, /*!< \brief PID parameter to use in the perf_event_open call */
     EVENT_OPTION_PERF_FLAGS, /*!< \brief FLAGS parameters to use in the perf_event_open call */
 #endif
+#ifdef _ARCH_PPC
+    EVENT_OPTION_PMC,
+    EVENT_OPTION_PMCXSEL,
+#endif
     NUM_EVENT_OPTIONS /*!< \brief Amount of defined options */
 } EventOptionType;
 
@@ -169,11 +173,11 @@ the event options are hold here.
 typedef struct {
     const char*     name; /*!< \brief Name of the event */
     const char*     limit; /*!< \brief Valid counters for the event */
-    uint16_t        eventId; /*!< \brief ID of the event */
-    uint8_t         umask; /*!< \brief Most events need to specify a mask to limit counting */
-    uint8_t         cfgBits; /*!< \brief Misc configuration bits */
+    uint64_t        eventId; /*!< \brief ID of the event */
+    uint64_t        umask; /*!< \brief Most events need to specify a mask to limit counting */
+    uint64_t        cfgBits; /*!< \brief Misc configuration bits */
     uint64_t        cmask; /*!< \brief Misc mask bits */
-    uint8_t         numberOfOptions; /*!< \brief Number of options for the event */
+    uint64_t         numberOfOptions; /*!< \brief Number of options for the event */
     uint64_t        optionMask; /*!< \brief Bitmask for fast check of set options */
     PerfmonEventOption options[NUM_EVENT_OPTIONS]; /*!< \brief List of options */
 } PerfmonEvent;

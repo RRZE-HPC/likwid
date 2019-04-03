@@ -1,0 +1,33 @@
+SHORT  L2 cache bandwidth in MBytes/s
+
+EVENTSET
+PMC0  PM_LD_REF_L1 
+PMC1  PM_ST_CMPL
+PMC2  PM_LSU_L1_PREF
+PMC4  PM_RUN_INST_CMPL
+PMC5  PM_RUN_CYC
+
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC5/PMC4
+L2D load bandwidth [MBytes/s]  1.0E-06*((PMC0+PMC2)/2)*64.0/time
+L2D load data volume [GBytes]  1.0E-09*((PMC0+PMC2)/2)*64.0
+L2D store bandwidth [MBytes/s]  1.0E-06*((PMC1/2))*64.0/time
+L2D store data volume [GBytes]  1.0E-09*((PMC1/2))*64.0
+L2 bandwidth [MBytes/s] 1.0E-06*((PMC1+PMC0+PMC2)/2)*64.0/time
+L2 data volume [GBytes] 1.0E-09*((PMC1+PMC0+PMC2)/2)*64.0
+
+LONG
+Formulas:
+CPI = PM_RUN_CYC/PM_RUN_INST_CMPL
+L2D load bandwidth [MBytes/s] = 1.0E-06*(PM_DATA_FROM_L2/2)*128.0/time
+L2D load data volume [GBytes] = 1.0E-09*(PM_DATA_FROM_L2/2)*128.0
+L2D store bandwidth [MBytes/s] = 1.0E-06*(PM_ST_MISS_L1)*128.0/time
+L2D store data volume [GBytes] = 1.0E-09*(PM_ST_MISS_L1)*128.0
+L2 bandwidth [MBytes/s] = 1.0E-06*(PM_DATA_FROM_L2/2 + PM_ST_MISS_L1)*128.0/time
+L2 data volume [GBytes] = 1.0E-09*(PM_DATA_FROM_L2/2 + PM_ST_MISS_L1)*128.0
+-
+Profiling group to measure L2 cache bandwidth. The bandwidth is computed by the
+number of cacheline loaded from the L2 to the L1 data cache. There is currently no
+event to get the evicted data volume.

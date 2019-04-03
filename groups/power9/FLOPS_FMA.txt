@@ -1,0 +1,20 @@
+SHORT Group 124 as used in IBM Parallel Environment Developer Edition
+
+EVENTSET
+PMC0  PM_VSU0_DP_FMA
+PMC1  PM_VSU1_DP_FMA
+PMC2  PM_VSU0_FMA
+PMC3  PM_VSU1_FMA
+PMC4  PM_RUN_INST_CMPL
+PMC5  PM_RUN_CYC
+
+METRICS
+CPI PMC5/PMC4
+DP FMAs PMC0+PMC1
+Scalar FMAs PMC2+PMC3
+DP FMA MFLOP/s 1E-6*(PMC0+PMC1)*4.0/time
+Scalar FMA MFLOP/s 1E-6*(PMC2+PMC3)*2.0/time
+MFLOP/s 1E-6*(((PMC0+PMC1)*4.0)+((PMC2+PMC3)*2.0))/time
+
+LONG
+Group 124 from web page http://www.ibm.com/support/knowledgecenter/en/SSFK5S_2.2.0/com.ibm.cluster.pedev.v2r2.pedev100.doc/bl7ug_power8metrics.htm

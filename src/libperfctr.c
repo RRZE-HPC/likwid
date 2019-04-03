@@ -182,9 +182,9 @@ likwid_markerInit(void)
     affinity_init();
     hashTable_init();
 
-//#ifndef LIKWID_USE_PERFEVENT
+#ifndef LIKWID_USE_PERFEVENT
     HPMmode(atoi(modeStr));
-//#endif
+#endif
     if (getenv("LIKWID_DEBUG") != NULL)
     {
         perfmon_verbosity = atoi(getenv("LIKWID_DEBUG"));
