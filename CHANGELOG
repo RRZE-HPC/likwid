@@ -1,3 +1,16 @@
+# Changelog 4.3.3
+- Fixes for likwid-mpirun
+- Fixes for events of Intel Skylake SP and Intel Broadwell
+- Support for Intel CascadeLake X (only new eventlist, uses code from Intel Skylake SP)
+- Fix for bitmask creation in Lua
+- Event options for perf_event backend
+- New assembly benchmarks in likwid-bench
+- MarkerAPI: Function to reset regions
+- Some new performance groups (DIVIDE and TMA)
+- Fixes for AMD Zen performance groups
+- Fix when using topology input file
+- Minor bugfixes
+
 # Changelog 4.3.2
 - Fix in internal metric calculator
 - Support for Intel Knights Mill (core, rapl, uncore)
