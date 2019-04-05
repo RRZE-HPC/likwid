@@ -1,3 +1,13 @@
+# Changelog 4.3.4
+- Fix for detecting PCI devices if system can split up LLC and memory channels (Intel CoD or SNC)
+- Don't pin accessDaemon to threads to avoid long access latencies due to busy hardware thread
+- Fix for calculations in likwid-bench if streams are used for input and output
+- Fix for LIKWID_MARKER_REGISTER with perf_event backend
+- Support for Intel Atom (Tremont) (nothing new, same as Intel Atom (Goldmont Plus))
+- Workaround for topology detection if LLC and memory channels are split up. Kernel does not detect it properly sometimes. (Intel CoD or SNC)
+- Minor updates for build system
+- Minor updates for documentation
+
 # Changelog 4.3.3
 - Fixes for likwid-mpirun
 - Fixes for events of Intel Skylake SP and Intel Broadwell
