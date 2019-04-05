@@ -150,23 +150,26 @@ end
 likwid.initCpuFeatures()
 
 if listFeatures and #cpulist > 0 then
-    local str = "Feature"..string.rep(" ",string.len("BRANCH_TRACE_STORAGE")-string.len("Feature")+2)
-    for j, c in pairs(cpulist) do
-        str = str..string.format("CPU %d\t",c)
-    end
-    print_stdout(str)
-    str = ""
-    for i=0,likwid.tablelength(likwid.cpuFeatures)-1 do
-        str = likwid.cpuFeatures[i]..string.rep(" ",string.len("BRANCH_TRACE_STORAGE")-string.len(likwid.cpuFeatures[i])+2)
+    if likwid.getCpuFeatures(c, 0) >= 0 then
+        local str = "Feature"..string.rep(" ",string.len("BRANCH_TRACE_STORAGE")-string.len("Feature")+2)
         for j, c in pairs(cpulist) do
-            if (likwid.getCpuFeatures(c, i) == 1) then
-                str = str .. "on\t"
-            else
-                str = str .. "off\t"
-            end
+            str = str..string.format("CPU %d\t",c)
         end
         print_stdout(str)
+        str = ""
+        for i=0,likwid.tablelength(likwid.cpuFeatures)-1 do
+            str = likwid.cpuFeatures[i]..string.rep(" ",string.len("BRANCH_TRACE_STORAGE")-string.len(likwid.cpuFeatures[i])+2)
+            for j, c in pairs(cpulist) do
+                if (likwid.getCpuFeatures(c, i) == 1) then
+                    str = str .. "on\t"
+                else
+                    str = str .. "off\t"
+                end
+            end
+            print_stdout(str)
+        end
     end
+    os.exit(1)
 elseif #cpulist == 0 then
     print_stderr("Need CPU to list current feature state")
     os.exit(1)

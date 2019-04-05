@@ -192,7 +192,7 @@ end
 
 power = likwid.getPowerInfo()
 if not power then
-    print_stderr(string.format("The %s does not support reading power data",cpuinfo["name"]))
+    print_stderr(string.format("The %s does not support reading power data or access is locked",cpuinfo["name"]))
     os.exit(1)
 end
 
