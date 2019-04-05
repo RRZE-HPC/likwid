@@ -17,7 +17,6 @@ This is an effort to develop easy to use but yet powerful performance tools for 
 - \ref likwid-perfctr : A tool to measure hardware performance counters on recent Intel and AMD processors. It can be used as wrapper application without modifying the profiled code or with a marker API to measure only parts of the code.
 - \ref likwid-powermeter : A tool for accessing RAPL counters and query Turbo mode steps on Intel processor. RAPL counters are also available in \ref likwid-perfctr.
 - \ref likwid-setFrequencies : A tool to print and manage the clock frequency of CPU cores.
-- \ref likwid-agent : A monitoring agent for LIKWID with multiple output backends.
 - \ref likwid-memsweeper : A tool to cleanup ccNUMA domains and LLC caches to get a clean environment for benchmarks.
 - \ref likwid-bench : A benchmarking framework for streaming benchmark kernels written in assembly.
 - \ref likwid-genTopoCfg : A config file writer that gets system topology and writes them to file for faster LIKWID startup.
@@ -81,6 +80,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage westmereex
 - \subpage phi
 - \subpage silvermont
+- \subpage goldmont
 - \subpage sandybridge
 - \subpage sandybridgeep
 - \subpage ivybridge
@@ -96,6 +96,7 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage phi_knm
 - Kaby Lake (use \subpage skylake)
 - Coffee Lake (use \subpage skylake)
+- Cascade Lake SP/AP (use \subpage skylake)
 
 \subsection Architectures_AMD AMD&reg;
 - \subpage k8
@@ -196,7 +197,7 @@ can be used without installation.
 \subsection accessD Setting up access for hardware performance monitoring
 Hardware performance monitoring on x86 is enabled using model-specific registers (MSR). MSR registers are special registers not part of the instruction set architecture. To read and write to these registers the x86 ISA provides special instructions. These instructions can only be executed in protected mode or in other words only kernel code can execute these instructions. Fortunately, any Linux kernel 2.6 or newer provides access to these registers via a set of device files. This allows to implement all of the functionality in user space. Still it does not allow to use those more advanced features of hardware performance monitoring which require to setup interrupt service routines  or kernel located memory.
 
-Per default only root has read/write access to these msr device files. In order to use the LIKWID tools, which need access to these files (likwid-perfctr, likwid-powermeter and likwid-agent) as standard user, you need to setup access rights to these files.
+Per default only root has read/write access to these msr device files. In order to use the LIKWID tools, which need access to these files (likwid-perfctr, likwid-powermeter, ...) as standard user, you need to setup access rights to these files.
 
 likwid-perfctr, likwid-powermeter and likwid-features require the Linux <CODE>msr</CODE> kernel module. This module is part of most standard distro kernels. You have to be root to do the initial setup.
 
@@ -219,7 +220,6 @@ This is only possible on local file systems. A feasible way is to use the \ref l
 \subsubsection depends Dependencies
 Although we tried to minimize the external dependencies of LIKWID, some advanced tools or only specific tool options require external packages.<BR>
 \ref likwid-perfscope uses the Perl script <A HREF="https://github.com/dkogan/feedgnuplot">feedGnuplot</A> to forward the real-time data to gnuplot. <A HREF="https://github.com/dkogan/feedgnuplot">feedGnuplot</A> is included into LIKWID, but <A HREF="http://www.gnuplot.info/">gnuplot</A> itself is not.<BR>
-\ref likwid-agent provided multiple backends to output the periodically measured data. The syslog backend requires the shell tool \a logger to be installed. The <A HREF="https://oss.oetiker.ch/rrdtool/">RRD</A> backend requires \a rrdtool and the GMetric backend the \a gmetric tool, part of the <A HREF="http://ganglia.sourceforge.net/">Ganglia Monitoring System</A>.<BR>
 In order to create the HTML documentation of LIKWID, the tool <A HREF="www.doxygen.org">Doxygen</A> is required.
 */
 
