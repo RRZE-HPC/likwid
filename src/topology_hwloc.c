@@ -433,7 +433,6 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
 
     int socket_nums[16];
     int num_sockets = 0;
-    printf("Sanitize socket IDs\n");
     for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
     {
         int found = 0;
