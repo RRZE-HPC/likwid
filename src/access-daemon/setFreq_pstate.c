@@ -6,7 +6,7 @@
  *      Description:  Implementation of frequency daemon with Intel PState backend
  *
  *      Version:   4.3.4
- *      Released:  01.04.2019
+ *      Released:  05.04.2019
  *
  *      Authors:  Thomas Roehl (tr), thomas.roehl@googlemail.com
  *                Amin Nabikhani, amin.nabikhani@gmail.com

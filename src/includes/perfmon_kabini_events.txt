@@ -5,7 +5,7 @@
 #      Description:  Event list for AMD Kabini
 #
 #      Version:   4.3.4
-#      Released:  01.04.2019
+#      Released:  05.04.2019
 #
 #      Author:   saravanan.ekanathan@amd.com
 #      Project:  likwid

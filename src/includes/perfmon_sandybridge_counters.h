@@ -6,7 +6,7 @@
  *      Description: Counter header file of perfmon module for Intel Sandy Bridge.
  *
  *      Version:   4.3.4
- *      Released:  01.04.2019
+ *      Released:  05.04.2019
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com

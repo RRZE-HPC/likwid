@@ -7,7 +7,7 @@
  *                    The setup routines and registers are similar to AMD K10
  *
  *      Version:   4.3.4
- *      Released:  01.04.2019
+ *      Released:  05.04.2019
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Roehl (tr), thomas.roehl@googlemail.com

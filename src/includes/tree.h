@@ -7,7 +7,7 @@
  *                    Implements a simple tree data structure.
  *
  *      Version:   4.3.4
- *      Released:  01.04.2019
+ *      Released:  05.04.2019
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
