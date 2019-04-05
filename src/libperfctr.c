@@ -508,12 +508,13 @@ likwid_markerRegisterRegion(const char* regionTag)
     int cpu_id = hashTable_get(tag, &results);
     bdestroy(tag);
 
-    // Add CPU to access layer
+#ifndef LIKWID_USE_PERFEVENT
+    // Add CPU to access layer if ACCESSMODE is direct or accessdaemon
     ret =  HPMaddThread(cpu_id);
     // Perform one access to fully initialize connection to access daemon
     uint32_t reg = counter_map[groupSet->groups[groups[0]].events[0].index].counterRegister;
     HPMread(cpu_id, MSR_DEV, reg, &tmp);
-
+#endif
     return ret;
 }
 
