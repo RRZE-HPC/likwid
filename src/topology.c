@@ -61,6 +61,7 @@ static char* atom_silvermont_str = "Intel Atom (Silvermont) processor";
 static char* atom_airmont_str = "Intel Atom (Airmont) processor";
 static char* atom_goldmont_str = "Intel Atom (Goldmont) processor";
 static char* atom_goldmontplus_str = "Intel Atom (Goldmont Plus) processor";
+static char* atom_tremont_str = "Intel Atom (Tremont) processor";
 static char* nehalem_bloom_str = "Intel Core Bloomfield processor";
 static char* nehalem_lynn_str = "Intel Core Lynnfield processor";
 static char* nehalem_west_str = "Intel Core Westmere processor";
@@ -745,9 +746,12 @@ topology_setName(void)
                     cpuid_info.name = atom_goldmont_str;
                     cpuid_info.short_name = short_goldmont;
                     break;
-                
                 case ATOM_GOLDMONT_PLUS:
                     cpuid_info.name = atom_goldmontplus_str;
+                    cpuid_info.short_name = short_goldmontplus;
+                    break;
+                case ATOM_TREMONT:
+                    cpuid_info.name = atom_tremont_str;
                     cpuid_info.short_name = short_goldmontplus;
                     break;
 

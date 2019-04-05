@@ -73,6 +73,7 @@ struct topology_functions {
 #define ATOM_SILVERMONT_GOLD 0x5CU
 #define ATOM_DENVERTON       0x5FU
 #define ATOM_GOLDMONT_PLUS   0x7AU
+#define ATOM_TREMONT         0x86U
 #define NEHALEM              0x1AU
 #define NEHALEM_BLOOMFIELD   0x1AU
 #define NEHALEM_LYNNFIELD    0x1EU

@@ -844,6 +844,7 @@ perfmon_init_maps(void)
                 case ATOM_SILVERMONT_GOLD:
                 case ATOM_DENVERTON:
                 case ATOM_GOLDMONT_PLUS:
+                case ATOM_TREMONT:
                     eventHash = goldmont_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsGoldmont;
                     counter_map = goldmont_counter_map;
@@ -1182,6 +1183,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                 case ATOM_SILVERMONT_GOLD:
                 case ATOM_DENVERTON:
                 case ATOM_GOLDMONT_PLUS:
+                case ATOM_TREMONT:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_goldmont;
