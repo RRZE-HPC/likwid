@@ -80,7 +80,7 @@ int perfmon_init_perfevent(int cpu_id)
             paranoid_level = atoi(buff);
         }
         fclose(fd);
-#if defined(__x86_64__) || defined(__i386__) || define(_ARCH_PPC)
+#if defined(__x86_64__) || defined(__i386__) || defined(_ARCH_PPC)
         if (paranoid_level > 0 && getuid() != 0)
         {
             fprintf(stderr, "WARN: Linux kernel configured with paranoid level %d\n", paranoid_level);
