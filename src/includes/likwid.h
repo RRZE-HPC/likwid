@@ -1472,6 +1472,13 @@ Get the maximal clock frequency of a core
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_getCpuClockMax(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/*! \brief Get the maximal available clock frequency of a core
+
+Get the maximal clock frequency of a core
+@param [in] cpu_id CPU ID
+@return Frequency or 0 in case of errors
+*/
+extern uint64_t freq_getConfCpuClockMax(const int cpu_id) __attribute__ ((visibility ("default") ));
 /*! \brief Set the maximal clock frequency of a core
 
 Set the maximal clock frequency of a core
@@ -1487,6 +1494,13 @@ Get the minimal clock frequency of a core
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_getCpuClockMin(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/*! \brief Get the minimal available clock frequency of a core
+
+Get the minimal clock frequency of a core
+@param [in] cpu_id CPU ID
+@return Frequency or 0 in case of errors
+*/
+extern uint64_t freq_getConfCpuClockMin(const int cpu_id) __attribute__ ((visibility ("default") ));
 /*! \brief Set the minimal clock frequency of a core
 
 Set the minimal clock frequency of a core

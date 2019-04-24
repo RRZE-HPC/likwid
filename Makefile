@@ -179,7 +179,7 @@ $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
 	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-accessD
 
-$(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreq.c
+$(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreqDaemon.c
 	@echo "===>  BUILD frequency daemon likwid-setFreq"
 	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-setFreq
 

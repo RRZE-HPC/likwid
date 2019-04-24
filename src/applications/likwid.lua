@@ -153,8 +153,10 @@ likwid.markerRegionResult = likwid_markerRegionResult
 likwid.markerRegionMetric = likwid_markerRegionMetric
 likwid.getCpuClockCurrent = likwid_getCpuClockCurrent
 likwid.getCpuClockMin = likwid_getCpuClockMin
+likwid.getConfCpuClockMin = likwid_getConfCpuClockMin
 likwid.setCpuClockMin = likwid_setCpuClockMin
 likwid.getCpuClockMax = likwid_getCpuClockMax
+likwid.getConfCpuClockMax = likwid_getConfCpuClockMax
 likwid.setCpuClockMax = likwid_setCpuClockMax
 likwid.getGovernor = likwid_getGovernor
 likwid.setGovernor = likwid_setGovernor
@@ -1209,6 +1211,17 @@ end
 
 likwid.getMPIrank = getMPIrank
 
+local function llikwid_getFreqDriver(cpu)
+    file = string.format("/sys/devices/system/cpu/cpu%d/cpufreq/scaling_driver", cpu)
+    local f = io.open(file, "rb")
+    if f then
+        drv = f:read("*l"):gsub("%s+", "")
+        f:close()
+        return drv
+    end
+end
+
+likwid.getFreqDriver = llikwid_getFreqDriver
 
 local function llikwid_getAvailFreq(cpu)
     local freq_str = likwid_getAvailFreq(cpu)

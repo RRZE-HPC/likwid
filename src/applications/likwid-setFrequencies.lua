@@ -125,6 +125,7 @@ do_reset = false
 do_ureset = false
 set_turbo = false
 turbo = 0
+driver = nil
 
 if #arg == 0 then
     usage()
@@ -163,6 +164,7 @@ for opt,arg in likwid.getopt(arg, {"V:", "g:", "c:", "f:", "l", "p", "h", "v", "
         local s = tonumber(arg)
         if (s >= 0 and s <= 3) then
             verbosity = s
+            likwid.setVerbosity(s)
         else
             print_stderr(string.format("ERROR: Value %s for verbosity not valid", arg))
         end
@@ -229,6 +231,8 @@ for i, dom in pairs(affinity["domains"]) do
     end
 end
 
+driver = likwid.getFreqDriver(cpulist[1])
+
 if verbosity == 3 then
     print_stdout(string.format("DEBUG: Given CPU expression expands to %d CPU cores:", numthreads))
     local str = "DEBUG: " .. tostring(cpulist[1])
@@ -247,6 +251,7 @@ end
 
 if printAvailGovs then
     local govs = likwid.getAvailGovs(0)
+    govs = likwid.getAvailGovs(0)
     if #govs > 0 then
         print_stdout("Available governors:")
         print_stdout(string.format("%s", table.concat(govs, " ")))
@@ -262,6 +267,9 @@ if printAvailFreq then
         print_stdout(string.format("%s", table.concat(freqs, " ")))
     else
         print_stdout("Cannot get frequencies from cpufreq module")
+        if driver == "intel_pstate" then
+            print_stdout("The intel_pstate module allows free selection of frequencies in the available range")
+        end
     end
 end
 
@@ -270,9 +278,9 @@ if printCurFreq then
     local processed = 0
     for i=1,#cpulist do
         gov = likwid.getGovernor(cpulist[i])
-        freq = tonumber(likwid.getCpuClockCurrent(cpulist[i]))/1E9
-        min = tonumber(likwid.getCpuClockMin(cpulist[i]))/1E9
-        max = tonumber(likwid.getCpuClockMax(cpulist[i]))/1E9
+        freq = tonumber(likwid.getCpuClockCurrent(cpulist[i]))/1E6
+        min = tonumber(likwid.getCpuClockMin(cpulist[i]))/1E6
+        max = tonumber(likwid.getCpuClockMax(cpulist[i]))/1E6
         t = tonumber(likwid.getTurbo(cpulist[i]));
         if gov and freq and min and max and t >= 0 then
             processed = processed + 1
@@ -303,9 +311,11 @@ if printAvailGovs or printAvailFreq or printCurFreq then
 end
 
 if do_reset then
-    local f = likwid.setTurbo(cpulist[1], 0)
     local availfreqs = likwid.getAvailFreq(cpulist[1])
     local availgovs = likwid.getAvailGovs(cpulist[1])
+    if driver == "intel_pstate" then
+        availfreqs = {likwid.getConfCpuClockMin(cpulist[1])/1E6, likwid.getConfCpuClockMax(cpulist[1])/1E6}
+    end
     if not min_freq then
         min_freq = availfreqs[1]
     end
@@ -315,7 +325,24 @@ if do_reset then
         max_freq = availfreqs[#availfreqs]
     end
     if not governor then
-        governor = availgovs[#availgovs]
+        governor = nil
+        for i, g in pairs(availgovs) do
+            if g:match("^performance") then
+                governor = g
+                break
+            end
+        end
+        if not governor then
+            for i, g in pairs(availgovs) do
+                if g:match("^conservative") then
+                    governor = g
+                    break
+                end
+            end
+            if not governor then
+                governor = availgovs[#availgovs]
+            end
+        end
     end
     if min_freq and governor then
         print_stdout(string.format("Reset to governor %s with min freq. %g GHz and deactivate turbo mode", governor, min_freq))
@@ -350,8 +377,11 @@ if min_u_freq and max_u_freq and max_u_freq < min_u_freq then
 end
 
 
-local availfreqs = likwid.getAvailFreq(cpulist[i])
-if (frequency or min_freq or max_freq) and #availfreqs == 0 then
+local availfreqs = likwid.getAvailFreq(cpulist[1])
+if driver == "intel_pstate" then
+    availfreqs = {likwid.getConfCpuClockMin(cpulist[1])/1E6, likwid.getConfCpuClockMax(cpulist[1])/1E6}
+end
+if (frequency or min_freq or max_freq) and #availfreqs == 0 and likwid.getFreqDriver(cpulist[1]) ~= "intel_pstate" then
     print_stdout("Cannot set CPU frequency, cpufreq module not properly loaded")
     os.exit(1)
 end
@@ -367,22 +397,24 @@ end
 for x=1,2 do
     if min_freq then
         for i=1,#cpulist do
-            local valid_freq = false
-            for k,v in pairs(savailfreqs) do
-                if (tonumber(min_freq) == tonumber(v)) then
-                    if verbosity == 3 then
-                        print_stdout(string.format("DEBUG: Min frequency %g valid", min_freq))
+            if driver ~= "intel_pstate" then
+                local valid_freq = false
+                for k,v in pairs(savailfreqs) do
+                    if (tonumber(min_freq) == tonumber(v)) then
+                        if verbosity == 3 then
+                            print_stdout(string.format("DEBUG: Min frequency %g valid", min_freq))
+                        end
+                        valid_freq = true
+                        break
                     end
-                    valid_freq = true
-                    break
                 end
-            end
-            if min_freq == availturbo then
-                valid_freq = true
-            end
-            if not valid_freq then
-                print_stderr(string.format("ERROR: Selected min. frequency %s not available for CPU %d! Please select one of\n%s", min_freq, cpulist[i], table.concat(savailfreqs, ", ")))
-                os.exit(1)
+                if min_freq == availturbo then
+                    valid_freq = true
+                end
+                if not valid_freq then
+                    print_stderr(string.format("ERROR: Selected min. frequency %s not available for CPU %d! Please select one of\n%s", min_freq, cpulist[i], table.concat(savailfreqs, ", ")))
+                    os.exit(1)
+                end
             end
             if verbosity == 3 then
                 print_stdout(string.format("DEBUG: Set min. frequency for CPU %d to %d", cpulist[i], tonumber(min_freq)*1E6))
@@ -402,22 +434,24 @@ for x=1,2 do
     end
     if max_freq then
         for i=1,#cpulist do
-            local valid_freq = false
-            for k,v in pairs(savailfreqs) do
-                if (tonumber(max_freq) == tonumber(v)) then
-                    if verbosity == 3 then
-                        print_stdout(string.format("DEBUG: Max frequency %g valid", max_freq))
+            if driver ~= "intel_pstate" then
+                local valid_freq = false
+                for k,v in pairs(savailfreqs) do
+                    if (tonumber(max_freq) == tonumber(v)) then
+                        if verbosity == 3 then
+                            print_stdout(string.format("DEBUG: Max frequency %g valid", max_freq))
+                        end
+                        valid_freq = true
+                        break
                     end
-                    valid_freq = true
-                    break
                 end
-            end
-            if max_freq == availturbo then
-                valid_freq = true
-            end
-            if not valid_freq then
-                print_stderr(string.format("ERROR: Selected max. frequency %s not available for CPU %d! Please select one of\n%s", max_freq, cpulist[i], table.concat(savailfreqs, ", ")))
-                os.exit(1)
+                if max_freq == availturbo then
+                    valid_freq = true
+                end
+                if not valid_freq then
+                    print_stderr(string.format("ERROR: Selected max. frequency %s not available for CPU %d! Please select one of\n%s", max_freq, cpulist[i], table.concat(savailfreqs, ", ")))
+                    os.exit(1)
+                end
             end
             if verbosity == 3 then
                 print_stdout(string.format("DEBUG: Set max. frequency for CPU %d to %d", cpulist[i], tonumber(max_freq)*1E6))
