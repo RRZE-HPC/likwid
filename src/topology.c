@@ -88,6 +88,9 @@ static char* xeon_mp_string = "Intel Xeon MP processor";
 static char* xeon_phi_string = "Intel Xeon Phi (Knights Corner) Coprocessor";
 static char* xeon_phi2_string = "Intel Xeon Phi (Knights Landing) (Co)Processor";
 static char* xeon_phi3_string = "Intel Xeon Phi (Knights Mill) (Co)Processor";
+static char* icelake_str = "Intel Icelake processor";
+//static char* snowridgex_str = "Intel SnowridgeX processor";
+
 static char* barcelona_str = "AMD K10 (Barcelona) processor";
 static char* shanghai_str = "AMD K10 (Shanghai) processor";
 static char* istanbul_str = "AMD K10 (Istanbul) processor";
@@ -110,6 +113,7 @@ static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
 static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
 static char* arm_cortex_a57 = "ARM Cortex A57 (ARMv8)";
 static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
+
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 
@@ -139,15 +143,20 @@ static char* short_cascadelakeX = "skylakeX";
 static char* short_cannonlake = "cannonlake";
 static char* short_phi = "phi";
 static char* short_phi2 = "knl";
+static char* short_icelake = "ICL";
+//static char* short_snowridgex = "SNR";
+
 static char* short_k8 = "k8";
 static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
 static char* short_zen = "zen";
+
 static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
 static char* short_arm8_cav_tx2 = "arm8_tx2";
 static char* short_arm8_cav_tx = "arm8_tx";
+
 static char* short_unknown = "unknown";
 
 /* #####  EXPORTED VARIABLES  ########################################## */
@@ -773,6 +782,16 @@ topology_setName(void)
                     cpuid_info.name = atom_tremont_str;
                     cpuid_info.short_name = short_goldmontplus;
                     break;
+
+                case ICELAKE:
+                    cpuid_info.name = icelake_str;
+                    cpuid_info.short_name = short_icelake;
+                    break;
+
+/*                case SNOWRIDGEX:*/
+/*                    cpuid_info.name = snowridgex_str;*/
+/*                    cpuid_info.short_name = short_snowridgex;*/
+/*                    break;*/
 
                 default:
                     cpuid_info.name = unknown_intel_str;
