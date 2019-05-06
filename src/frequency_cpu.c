@@ -48,8 +48,6 @@
 
 #include <frequency.h>
 #include <frequency_client.h>
-/*#include <frequency_acpi.h>*/
-/*#include <frequency_pstate.h>*/
 
 #include <sys/socket.h>
 #include <sys/un.h>
