@@ -45,7 +45,7 @@
    fprintf(stderr,  "ERROR - [%s:%s:%d] " str(msg) "\n", __FILE__, __func__,__LINE__);
 
 #define ERROR_PRINT(fmt, ...) \
-   fprintf(stderr,  "ERROR - [%s:%s:%d] %s.\n" str(fmt) "\n", __FILE__,  __func__,__LINE__, strerror(errno), __VA_ARGS__);
+   fprintf(stderr,  "ERROR - [%s:%s:%d] %s.\n" str(fmt) "\n", __FILE__,  __func__,__LINE__, strerror(errno), ##__VA_ARGS__);
 
 #define CHECK_ERROR(func, msg)  \
     if ((func) < 0) { \
@@ -83,7 +83,7 @@
 
 #define DEBUG_PRINT(lev, fmt, ...) \
     if ((lev >= 0) && (lev <= perfmon_verbosity)) { \
-        fprintf(stdout, "DEBUG - [%s:%d] " str(fmt) "\n", __func__, __LINE__,__VA_ARGS__); \
+        fprintf(stdout, "DEBUG - [%s:%d] " str(fmt) "\n", __func__, __LINE__,##__VA_ARGS__); \
         fflush(stdout); \
     }
 
