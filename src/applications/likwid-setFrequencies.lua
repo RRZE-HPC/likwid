@@ -51,7 +51,8 @@ function usage()
     print_stdout("-h\t\t Help message")
     print_stdout("-v\t\t Version information")
     print_stdout("-V <0-3>\t Verbosity (0=only_error, 3=developer)")
-    print_stdout("-c dom\t\t Likwid thread domain which to apply settings (default are all CPUs)")
+    print_stdout("-c dom\t\t CPU selection or LIKWID thread domain")
+    print_stdout("\t\t Default behavior is to apply the frequencies to all CPUs.")
     print_stdout("\t\t See likwid-pin -h for details")
     print_stdout("-g gov\t\t Set governor (" .. table.concat(likwid.getAvailGovs(0), ", ") .. ")")
     print_stdout("-f/--freq freq\t Set minimal and maximal CPU frequency")
@@ -72,9 +73,6 @@ function usage()
     print_stdout("For the options -f, -x and -y:")
     print_stdout("\t acpi-cpufreq driver: set the userspace governor implicitly")
     print_stdout("\t intel_pstate driver: keep current governor")
-    print_stdout("")
-    print_stdout("The min/max frequencies can be slightly off with the intel_pstate driver as")
-    print_stdout("the value is calculated while the current frequency is read from sysfs.")
     print_stdout("")
     print_stdout("In general the min/max Uncore frequency can be set freely, even to 0 or 1E20")
     print_stdout("but the hardware stays inside its limits. LIKWID reduces the range of possible")
@@ -104,9 +102,7 @@ function round(x)
         if s:sub(slen,slen) ~= "0" then break end
         slen = slen - 1
     end
-    if slen > 5 then
-        slen = 5
-    end
+    if s:sub(slen,slen) == "." then slen = slen - 1 end
     return s:sub(1, slen)
 end
 
@@ -145,13 +141,13 @@ for opt,arg in likwid.getopt(arg, {"V:", "g:", "c:", "f:", "l", "p", "h", "v", "
     elseif (opt == "g") then
         governor = arg
     elseif opt == "f" or opt == "freq" then
-        frequency = arg
-        min_freq = arg
-        max_freq = arg
+        frequency = arg*1E6
+        min_freq = arg*1E6
+        max_freq = arg*1E6
     elseif opt == "x" or opt == "min" then
-        min_freq = arg
+        min_freq = arg*1E6
     elseif opt == "y" or opt == "max" then
-        max_freq = arg
+        max_freq = arg*1E6
     elseif opt == "t" or opt == "turbo" then
         set_turbo = true
         local t = tonumber(arg)
@@ -191,6 +187,7 @@ for opt,arg in likwid.getopt(arg, {"V:", "g:", "c:", "f:", "l", "p", "h", "v", "
     end
 end
 
+cpuinfo = likwid.getCpuInfo()
 topo = likwid.getCpuTopology()
 affinity = likwid.getAffinityInfo()
 if not domain or domain == "N" then
@@ -264,11 +261,18 @@ if printAvailFreq then
     local freqs = likwid.getAvailFreq(0)
     if #freqs > 0 then
         print_stdout("Available frequencies:")
-        print_stdout(string.format("%s", table.concat(freqs, " ")))
+        outfreqs = {}
+        for _, f in pairs(freqs) do
+            table.insert(outfreqs, round(tonumber(f)/1.E6))
+        end
+        print_stdout(string.format("%s", table.concat(outfreqs, " ")))
     else
         print_stdout("Cannot get frequencies from cpufreq module")
         if driver == "intel_pstate" then
+            freqs = {}
             print_stdout("The intel_pstate module allows free selection of frequencies in the available range")
+            print_stdout(string.format("Minimal CPU frequency %s", round(min)))
+            print_stdout(string.format("Maximal CPU frequency %s", round(max)))
         end
     end
 end
@@ -319,10 +323,16 @@ if do_reset then
     if not min_freq then
         min_freq = availfreqs[1]
     end
+    if min_freq >= availfreqs[#availfreqs] then
+        min_freq = availfreqs[#availfreqs]
+    end
     if not (set_turbo or max_freq) then
         set_turbo = true
         turbo = 0
         max_freq = availfreqs[#availfreqs]
+        if max_freq <= availfreqs[1] then
+            max_freq = availfreqs[1]
+        end
     end
     if not governor then
         governor = nil
@@ -345,17 +355,22 @@ if do_reset then
         end
     end
     if min_freq and governor then
-        print_stdout(string.format("Reset to governor %s with min freq. %g GHz and deactivate turbo mode", governor, min_freq))
+        print_stdout(string.format("Reset to governor %s with min freq. %s GHz and deactivate turbo mode", governor, round(min_freq)))
     end
 end
 
 if do_ureset then
-    local availfreqs = likwid.getAvailFreq(cpulist[1])
-    local power = likwid.getPowerInfo()
-    local minf = tonumber(availfreqs[1])
-    local maxf = tonumber(power["turbo"]["steps"][1]) / 1000
-    min_u_freq = minf
-    max_u_freq = maxf
+    if cpuinfo["isIntel"] == 1 then
+        local availfreqs = likwid.getAvailFreq(cpulist[1])
+        local power = likwid.getPowerInfo()
+        local minf = tonumber(availfreqs[1])
+        local maxf = tonumber(power["turbo"]["steps"][1]) / 1000
+        min_u_freq = minf
+        max_u_freq = maxf
+    else
+        print_stderr("ERROR: AMD CPUs provide no interface to manipulate the Uncore frequency.")
+        os.exit(1)
+    end
 end
 
 if numthreads > 0 and not (frequency or min_freq or max_freq or governor or min_u_freq or max_u_freq or set_turbo) then
@@ -402,7 +417,7 @@ for x=1,2 do
                 for k,v in pairs(savailfreqs) do
                     if (tonumber(min_freq) == tonumber(v)) then
                         if verbosity == 3 then
-                            print_stdout(string.format("DEBUG: Min frequency %g valid", min_freq))
+                            print_stdout(string.format("DEBUG: Min frequency %d valid", min_freq))
                         end
                         valid_freq = true
                         break
@@ -417,9 +432,9 @@ for x=1,2 do
                 end
             end
             if verbosity == 3 then
-                print_stdout(string.format("DEBUG: Set min. frequency for CPU %d to %d", cpulist[i], tonumber(min_freq)*1E6))
+                print_stdout(string.format("DEBUG: Set min. frequency for CPU %d to %d", cpulist[i], tonumber(min_freq)))
             end
-            local f = likwid.setCpuClockMin(cpulist[i], tonumber(min_freq)*1E6)
+            local f = likwid.setCpuClockMin(cpulist[i], tonumber(min_freq))
         end
     end
 
@@ -439,7 +454,7 @@ for x=1,2 do
                 for k,v in pairs(savailfreqs) do
                     if (tonumber(max_freq) == tonumber(v)) then
                         if verbosity == 3 then
-                            print_stdout(string.format("DEBUG: Max frequency %g valid", max_freq))
+                            print_stdout(string.format("DEBUG: Max frequency %d valid", max_freq))
                         end
                         valid_freq = true
                         break
@@ -454,36 +469,44 @@ for x=1,2 do
                 end
             end
             if verbosity == 3 then
-                print_stdout(string.format("DEBUG: Set max. frequency for CPU %d to %d", cpulist[i], tonumber(max_freq)*1E6))
+                print_stdout(string.format("DEBUG: Set max. frequency for CPU %d to %d", cpulist[i], tonumber(max_freq)))
             end
-            local f = likwid.setCpuClockMax(cpulist[i], tonumber(max_freq)*1E6)
+            local f = likwid.setCpuClockMax(cpulist[i], tonumber(max_freq))
         end
     end
 end
 
 if min_u_freq then
-    for s=1,#socklist do
-        socket = socklist[s]
-        if verbosity == 3 then
-            print_stdout(string.format("DEBUG: Set min. uncore frequency for socket %d to %d MHz", socket, min_u_freq*1000))
+    if cpuinfo["isIntel"] == 1 then
+        for s=1,#socklist do
+            socket = socklist[s]
+            if verbosity == 3 then
+                print_stdout(string.format("DEBUG: Set min. uncore frequency for socket %d to %d MHz", socket, min_u_freq*1000))
+            end
+            local err = likwid.setUncoreFreqMin(socket, min_u_freq*1000);
+            if err ~= 0 then
+                print_stderr(string.format("Setting of minimal Uncore frequency %f failed on socket %d", tonumber(min_u_freq)*1000, socket))
+            end
         end
-        local err = likwid.setUncoreFreqMin(socket, min_u_freq*1000);
-        if err ~= 0 then
-            print_stderr(string.format("Setting of minimal Uncore frequency %f failed on socket %d", tonumber(min_u_freq)*1000, socket))
-        end
+    else
+        print_stderr("ERROR: AMD CPUs provide no interface to manipulate the Uncore frequency.")
     end
 end
 
 if max_u_freq then
-    for s=1,#socklist do
-        socket = socklist[s]
-        if verbosity == 3 then
-            print_stdout(string.format("DEBUG: Set max. uncore frequency for socket %d to %d MHz", socket, max_u_freq*1000))
+    if cpuinfo["isIntel"] == 1 then
+        for s=1,#socklist do
+            socket = socklist[s]
+            if verbosity == 3 then
+                print_stdout(string.format("DEBUG: Set max. uncore frequency for socket %d to %d MHz", socket, max_u_freq*1000))
+            end
+            local err = likwid.setUncoreFreqMax(socket, max_u_freq*1000);
+            if err ~= 0 then
+                print_stderr(string.format("Setting of maximal Uncore frequency %d failed on socket %d", tonumber(max_u_freq)*1000, socket))
+            end
         end
-        local err = likwid.setUncoreFreqMax(socket, max_u_freq*1000);
-        if err ~= 0 then
-            print_stderr(string.format("Setting of maximal Uncore frequency %d failed on socket %d", tonumber(max_u_freq)*1000, socket))
-        end
+    else
+        print_stderr("ERROR: AMD CPUs provide no interface to manipulate the Uncore frequency.")
     end
 end
 

@@ -68,6 +68,8 @@ static int own_hpm = 0;
 
 static struct cpufreq_files* cpufiles = NULL;
 
+static char* basefolder1 = "/sys/devices/system/cpu/cpu";
+static char* basefolder2 = "/cpufreq";
 
 static int fsocket = -1;
 
@@ -75,39 +77,24 @@ struct cpufreq_files {
     int  cur_freq;
     int  max_freq;
     int  min_freq;
+    int  set_gov;
     int  avail_freq;
     int  avail_govs;
     int  driver;
     int  set_freq;
-    int  set_gov;
     int  conf_max_freq;
     int  conf_min_freq;
 };
 
-char* cpufreq_files[] ={
-    "scaling_cur_freq",
-    "scaling_max_freq",
-    "scaling_min_freq",
-    "scaling_available_frequencies",
-    "scaling_available_governors",
-    "scaling_driver",
-    "scaling_setspeed",
-    "scaling_governor",
-    "cpuinfo_max_freq",
-    "cpuinfo_min_freq",
-    NULL,
-};
-
-char* pstate_files[] ={
-    "scaling_cur_freq",
-    "scaling_max_freq",
-    "scaling_min_freq",
-    NULL,
-    "scaling_available_governors",
-    "scaling_driver",
-    "scaling_setspeed",
-    "scaling_governor",
-    NULL,
+char* cpufreq_filenames[MAX_FREQ_LOCS] ={
+    [FREQ_LOC_CUR] = "scaling_cur_freq",
+    [FREQ_LOC_MAX] = "scaling_max_freq",
+    [FREQ_LOC_MIN] = "scaling_min_freq",
+    [FREQ_LOC_AVAIL_FREQ] = "scaling_available_frequencies",
+    [FREQ_LOC_AVAIL_GOV] = "scaling_available_governors",
+    [FREQ_LOC_AVAIL_GOV] = "scaling_governor",
+    [FREQ_LOC_CONF_MAX] = "cpuinfo_max_freq",
+    [FREQ_LOC_CONF_MIN] = "cpuinfo_min_freq",
 };
 
 static void close_cpu(struct cpufreq_files* cpufiles)
@@ -200,26 +187,19 @@ static int open_cpu_file(char* filename, int* fd)
     return 0;
 }
 
+
 static int open_cpu(int cpu, struct cpufreq_files* files)
 {
-    char dname[1025];
+    //char dname[1025];
+    int ret = 0;
     char fname[1025];
 
     FILE* fp = NULL;
     if (cpu >= 0)
     {
-        int ret = snprintf(dname, 1024, "/sys/devices/system/cpu/cpu%d/cpufreq", cpu);
-        if (ret > 0)
-        {
-            dname[ret] = '\0';
-        }
-        else
-        {
-            return -1;
-        }
+        memset(files, -1, sizeof(struct cpufreq_files));
 
-
-        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_cur_freq");
+        ret = snprintf(fname, 1024, "%s%d%s/%s", basefolder1, cpu, basefolder2, "scaling_cur_freq");
         if (ret > 0)
         {
             fname[ret] = '\0';
@@ -228,7 +208,7 @@ static int open_cpu(int cpu, struct cpufreq_files* files)
                 goto cleanup;
             }
         }
-        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_max_freq");
+        ret = snprintf(fname, 1024, "%s%d%s/%s", basefolder1, cpu, basefolder2, "scaling_max_freq");
         if (ret > 0)
         {
             fname[ret] = '\0';
@@ -237,7 +217,7 @@ static int open_cpu(int cpu, struct cpufreq_files* files)
                 goto cleanup;
             }
         }
-        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_min_freq");
+        ret = snprintf(fname, 1024, "%s%d%s/%s", basefolder1, cpu, basefolder2, "scaling_min_freq");
         if (ret > 0)
         {
             fname[ret] = '\0';
@@ -246,16 +226,7 @@ static int open_cpu(int cpu, struct cpufreq_files* files)
                 goto cleanup;
             }
         }
-        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_setspeed");
-        if (ret > 0)
-        {
-            fname[ret] = '\0';
-            if (open_cpu_file(fname, &files->set_freq) < 0)
-            {
-                goto cleanup;
-            }
-        }
-        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_governor");
+        ret = snprintf(fname, 1024, "%s%d%s/%s", basefolder1, cpu, basefolder2, "scaling_governor");
         if (ret > 0)
         {
             fname[ret] = '\0';
@@ -264,51 +235,60 @@ static int open_cpu(int cpu, struct cpufreq_files* files)
                 goto cleanup;
             }
         }
-        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_available_governors");
-        if (ret > 0)
-        {
-            fname[ret] = '\0';
-            if (open_cpu_file(fname, &files->avail_govs) < 0)
-            {
-                goto cleanup;
-            }
-        }
-        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_available_frequencies");
-        if (ret > 0)
-        {
-            fname[ret] = '\0';
-            if (open_cpu_file(fname, &files->avail_freq) < 0)
-            {
-                goto cleanup;
-            }
-        }
-        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_driver");
-        if (ret > 0)
-        {
-            fname[ret] = '\0';
-            if (open_cpu_file(fname, &files->driver) < 0)
-            {
-                goto cleanup;
-            }
-        }
-        ret = snprintf(fname, 1024, "%s/%s", dname, "cpuinfo_min_freq");
-        if (ret > 0)
-        {
-            fname[ret] = '\0';
-            if (open_cpu_file(fname, &files->conf_min_freq) < 0)
-            {
-                goto cleanup;
-            }
-        }
-        ret = snprintf(fname, 1024, "%s/%s", dname, "cpuinfo_max_freq");
-        if (ret > 0)
-        {
-            fname[ret] = '\0';
-            if (open_cpu_file(fname, &files->conf_max_freq) < 0)
-            {
-                goto cleanup;
-            }
-        }
+/*        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_setspeed");*/
+/*        if (ret > 0)*/
+/*        {*/
+/*            fname[ret] = '\0';*/
+/*            if (open_cpu_file(fname, &files->set_freq) < 0)*/
+/*            {*/
+/*                goto cleanup;*/
+/*            }*/
+/*        }*/
+/*        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_available_governors");*/
+/*        if (ret > 0)*/
+/*        {*/
+/*            fname[ret] = '\0';*/
+/*            if (open_cpu_file(fname, &files->avail_govs) < 0)*/
+/*            {*/
+/*                goto cleanup;*/
+/*            }*/
+/*        }*/
+/*        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_available_frequencies");*/
+/*        if (ret > 0)*/
+/*        {*/
+/*            fname[ret] = '\0';*/
+/*            if (open_cpu_file(fname, &files->avail_freq) < 0)*/
+/*            {*/
+/*                goto cleanup;*/
+/*            }*/
+/*        }*/
+/*        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_driver");*/
+/*        if (ret > 0)*/
+/*        {*/
+/*            fname[ret] = '\0';*/
+/*            if (open_cpu_file(fname, &files->driver) < 0)*/
+/*            {*/
+/*                goto cleanup;*/
+/*            }*/
+/*        }*/
+/*        ret = snprintf(fname, 1024, "%s/%s", dname, "cpuinfo_min_freq");*/
+/*        if (ret > 0)*/
+/*        {*/
+/*            fname[ret] = '\0';*/
+/*            if (open_cpu_file(fname, &files->conf_min_freq) < 0)*/
+/*            {*/
+/*                goto cleanup;*/
+/*            }*/
+/*        }*/
+/*        ret = snprintf(fname, 1024, "%s/%s", dname, "cpuinfo_max_freq");*/
+/*        if (ret > 0)*/
+/*        {*/
+/*            fname[ret] = '\0';*/
+/*            if (open_cpu_file(fname, &files->conf_max_freq) < 0)*/
+/*            {*/
+/*                goto cleanup;*/
+/*            }*/
+/*        }*/
         return 0;
     }
 cleanup:
@@ -400,7 +380,7 @@ freq_client_startDaemon()
         fprintf(stderr, "it usually means that likwid-accessD just failed to start.\n");
         exit(EXIT_FAILURE);
     }
-    DEBUG_PRINT(DEBUGLEV_DEVELOP, "Successfully opened socket %s to daemon\n", filepath);
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Successfully opened socket %s to daemon, filepath);
     free(filepath);
 
     return socket_fd;
@@ -429,6 +409,29 @@ static void freq_init_direct()
     return;
 }
 
+static int freq_read_location(FreqDataRecordLocation loc, int cpu, int len, char* data)
+{
+    char fname[1024];
+    int fd = -1;
+    //printf("Calling %s\n", __func__);
+    int ret = snprintf(fname, 1023, "%s%d%s/%s", basefolder1, cpu, basefolder2, cpufreq_filenames[loc]);
+    if (ret > 0)
+    {
+        fname[ret] = '\0';
+        ret = open_cpu_file(fname, &fd);
+        if (ret == 0)
+        {
+            lseek(fd, 0, SEEK_SET);
+            ret = read(fd, data, len);
+            close(fd);
+            if (ret < 0)
+                return ret;
+            return 0;
+        }
+    }
+    return 0;
+}
+
 static int freq_send_direct(FreqDataRecordType type, FreqDataRecordLocation loc, int cpu, int len, char* data)
 {
     //printf("Calling %s\n", __func__);
@@ -442,63 +445,70 @@ static int freq_send_direct(FreqDataRecordType type, FreqDataRecordLocation loc,
         case FREQ_LOC_CUR:
             fd = f->cur_freq;
             only_read = 1;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_CUR FD %d\n", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_CUR FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_MIN:
             fd = f->min_freq;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_MIN FD %d\n", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_MIN FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_MAX:
             fd = f->max_freq;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_MAX FD %d\n", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_MAX FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_GOV:
             fd = f->set_gov;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_GOV FD %d\n", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_GOV FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_AVAIL_GOV:
             fd = f->avail_govs;
             only_read = 1;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_AVAIL_GOV FD %d\n", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_AVAIL_GOV FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_AVAIL_FREQ:
             fd = f->avail_freq;
             only_read = 1;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_AVAIL_FREQ FD %d\n", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_AVAIL_FREQ FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_CONF_MIN:
             fd = f->conf_min_freq;
             only_read = 1;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_CONF_MIN FD %d\n", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_CONF_MIN FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         case FREQ_LOC_CONF_MAX:
             fd = f->conf_max_freq;
             only_read = 1;
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, "CMD %s CPU %d FREQ_LOC_CONF_MAX FD %d\n", (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, CMD %s CPU %d FREQ_LOC_CONF_MAX FD %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, fd);
             break;
         default:
             fprintf(stderr,"Invalid location specified in record\n");
             break;
     }
-    if (fd < 0)
-        return -1;
-    switch (type)
+    if (fd > 0)
     {
-        case FREQ_WRITE:
-            if (only_read)
-            {
-                return -EPERM;
-            }
-            lseek(fd, 0, SEEK_SET);
-            ret = write(fd, data, len);
-            break;
-        case FREQ_READ:
-            lseek(fd, 0, SEEK_SET);
-            ret = read(fd, data, len);
-            break;
+        switch (type)
+        {
+            case FREQ_WRITE:
+                if (only_read)
+                {
+                    return -EPERM;
+                }
+                lseek(fd, 0, SEEK_SET);
+                ret = write(fd, data, len);
+                break;
+            case FREQ_READ:
+                lseek(fd, 0, SEEK_SET);
+                ret = read(fd, data, len);
+                break;
+        }
+        if (ret < 0)
+            return ret;
     }
-    if (ret < 0)
-        return ret;
+    else
+    {
+        ret = freq_read_location(loc, cpu, len, data);
+        if (ret < 0)
+            return ret;
+    }
     return 0;
 }
 
@@ -538,11 +548,11 @@ static int freq_send_client(FreqDataRecordType type, FreqDataRecordLocation loc,
         record.errorcode = FREQ_ERR_NONE;
         snprintf(record.data, LIKWID_FREQUENCY_MAX_DATA_LENGTH, "%.*s", len, data);
         record.datalen = len;
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, DAEMON CMD %s CPU %d LOC %d, (type == FREQ_WRITE ? "WRITE" : "READ"), cpu, loc);
         CHECK_ERROR(write(fsocket, &record, sizeof(FreqDataRecord)),socket write failed);
         CHECK_ERROR(read(fsocket, &record, sizeof(FreqDataRecord)), socket read failed);
         if (record.errorcode != FREQ_ERR_NONE)
         {
-            
             switch(record.errorcode)
             {
                 case FREQ_ERR_NOFILE:
@@ -572,6 +582,7 @@ static void freq_finalize_client()
     {
         memset(&record, 0, sizeof(FreqDataRecord));
         record.type = FREQ_EXIT;
+        DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, DAEMON CMD CLOSE);
         CHECK_ERROR(write(fsocket, &record, sizeof(FreqDataRecord)),socket write failed);
         CHECK_ERROR(close(fsocket),socket close failed);
         fsocket = -1;

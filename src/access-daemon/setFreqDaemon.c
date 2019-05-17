@@ -164,25 +164,25 @@ static void close_cpu(struct cpufreq_files* cpufiles)
 /*        }*/
         if (cpufiles->max_freq >= 0)
         {
-            syslog(LOG_INFO, "Close max_freq %d\n", cpufiles->cur_freq);
+            //syslog(LOG_INFO, "Close max_freq %d\n", cpufiles->cur_freq);
             close(cpufiles->max_freq);
             cpufiles->max_freq = -1;
         }
         if (cpufiles->min_freq >= 0)
         {
-            syslog(LOG_INFO, "Close min_freq %d\n", cpufiles->cur_freq);
+            //syslog(LOG_INFO, "Close min_freq %d\n", cpufiles->cur_freq);
             close(cpufiles->min_freq);
             cpufiles->min_freq = -1;
         }
         if (cpufiles->set_freq >= 0)
         {
-            syslog(LOG_INFO, "Close set_freq %d\n", cpufiles->cur_freq);
+            //syslog(LOG_INFO, "Close set_freq %d\n", cpufiles->cur_freq);
             close(cpufiles->set_freq);
             cpufiles->set_freq = -1;
         }
         if (cpufiles->set_gov >= 0)
         {
-            syslog(LOG_INFO, "Close set_gov %d\n", cpufiles->cur_freq);
+            //syslog(LOG_INFO, "Close set_gov %d\n", cpufiles->cur_freq);
             close(cpufiles->set_gov);
             cpufiles->set_gov = -1;
         }
@@ -222,7 +222,7 @@ static int open_cpu_file(char* filename, int* fd)
         return 0;
     }
     *fd = f;
-    syslog(LOG_INFO, "Opened %s %s = %d\n", filename, (open_flag == O_RDONLY ? "readable" : "writable"), *fd);
+    //syslog(LOG_INFO, "Opened %s %s = %d\n", filename, (open_flag == O_RDONLY ? "readable" : "writable"), *fd);
     return 0;
 }
 
@@ -320,7 +320,7 @@ static int open_cpu(int cpu, struct cpufreq_files* files)
         return 0;
     }
 cleanup:
-    syslog(LOG_ERR, "Cleanup\n");
+    //syslog(LOG_ERR, "Cleanup\n");
     close_cpu(files);
     return -1;
 }
@@ -505,7 +505,7 @@ static int freq_write(FreqDataRecord *rec)
         rec->errorcode = FREQ_ERR_NOFILE;
         return -1;
     }
-    syslog(LOG_INFO, "FD %d %.*s\n", write_fd, rec->datalen, rec->data);
+    //syslog(LOG_INFO, "FD %d %.*s\n", write_fd, rec->datalen, rec->data);
     int ret = write(write_fd, rec->data, rec->datalen);
     if (ret < 0)
     {
@@ -513,7 +513,7 @@ static int freq_write(FreqDataRecord *rec)
         rec->errorcode = FREQ_ERR_NOPERM;
         return -1;
     }
-    syslog(LOG_ERR,"All good\n");
+    //syslog(LOG_ERR,"All good\n");
     rec->errorcode = FREQ_ERR_NONE;
     return 0;
 }
@@ -617,7 +617,7 @@ int main(void)
     for (int i=0;i<avail_cpus;i++)
     {
         memset(&cpufiles[i], -1, sizeof(struct cpufreq_files));
-        syslog(LOG_INFO,"Open files for CPU %d\n", i);
+        //syslog(LOG_INFO,"Open files for CPU %d\n", i);
         ret = open_cpu(i, &cpufiles[i]);
         if (ret < 0)
         {
@@ -628,7 +628,7 @@ int main(void)
 
 
 LOOP:
-    syslog(LOG_ERR, "Starting loop %d\n", avail_cpus);
+    //syslog(LOG_ERR, "Starting loop %d\n", avail_cpus);
     while (1)
     {
         ret = read(connfd, (void*) &dRecord, sizeof(FreqDataRecord));
@@ -643,12 +643,6 @@ LOOP:
             syslog(LOG_ERR, "ERROR - [%s:%d] zero read, remote socket closed before reading", __FILE__, __LINE__);
             stop_daemon();
         }
-        else if (ret != sizeof(FreqDataRecord))
-        {
-            syslog(LOG_ERR, "ERROR - [%s:%d] unaligned read", __FILE__, __LINE__);
-            stop_daemon();
-        }
-
 
         if (dRecord.type == FREQ_READ)
         {
