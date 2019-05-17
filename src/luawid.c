@@ -2513,6 +2513,20 @@ lua_likwid_markerRegionMetric(lua_State* L)
 }
 
 static int
+lua_likwid_initFreq(lua_State* L)
+{
+    lua_pushnumber(L, freq_init());
+    return 1;
+}
+
+static int
+lua_likwid_finalizeFreq(lua_State* L)
+{
+    freq_finalize();
+    return 0;
+}
+
+static int
 lua_likwid_getCpuClockCurrent(lua_State* L)
 {
     const int cpu_id = lua_tointeger(L,-1);
@@ -2921,6 +2935,8 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_markerRegionResult", lua_likwid_markerRegionResult);
     lua_register(L, "likwid_markerRegionMetric", lua_likwid_markerRegionMetric);
     // CPU frequency functions
+    lua_register(L, "likwid_initFreq", lua_likwid_initFreq);
+    lua_register(L, "likwid_finalizeFreq", lua_likwid_finalizeFreq);
     lua_register(L, "likwid_getCpuClockCurrent", lua_likwid_getCpuClockCurrent);
     lua_register(L, "likwid_getCpuClockMin", lua_likwid_getCpuClockMin);
     lua_register(L, "likwid_getConfCpuClockMin", lua_likwid_getConfCpuClockMin);

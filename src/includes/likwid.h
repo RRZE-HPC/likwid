@@ -1457,6 +1457,12 @@ extern int cpuFeatures_disable(int cpu, CpuFeature type, int print) __attribute_
 /** \addtogroup CpuFreq Retrieval and manipulation of processor clock frequencies
  *  @{
  */
+/*! \brief Initialize cpu frequency module
+
+Initialize cpu frequency module
+@return returns 0 if successfull and 1 if invalid accessmode
+*/
+extern int freq_init(void) __attribute__ ((visibility ("default") ));
 /*! \brief Get the current clock frequency of a core
 
 Get the current clock frequency of a core
@@ -1594,6 +1600,11 @@ Get the current Uncore frequency.
 @return frequency in MHz or 0 at failure
 */
 extern uint64_t freq_getUncoreFreqCur(const int socket_id) __attribute__ ((visibility ("default") ));
+/*! \brief Finalize cpu frequency module
+
+Finalize cpu frequency module
+*/
+extern void freq_finalize(void) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 #ifdef __cplusplus

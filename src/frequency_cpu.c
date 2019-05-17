@@ -60,9 +60,9 @@
 #endif
 
 
-void (*freq_init)() = NULL;
+void (*freq_init_f)() = NULL;
 int (*freq_send)(FreqDataRecordType type, FreqDataRecordLocation loc, int cpu, int len, char* data) = NULL;
-void (*freq_finalize)() = NULL;
+void (*freq_finalize_f)() = NULL;
 static int freq_initialized = 0;
 static int own_hpm = 0;
 
@@ -797,7 +797,7 @@ _freqInit(void)
 {
     int ret = 0;
 
-    if (freq_init == NULL)
+    if (freq_init_f == NULL)
     {
 #if defined(__x86_64__) || defined(__i386__)
         if (config.daemonMode == -1)
@@ -807,50 +807,65 @@ _freqInit(void)
         if (config.daemonMode == ACCESSMODE_DAEMON)
         {
             DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for daemon mode);
-            freq_init = freq_init_client;
+            freq_init_f = freq_init_client;
             freq_send = freq_send_client;
-            freq_finalize = freq_finalize_client;
+            freq_finalize_f = freq_finalize_client;
         }
         else if (config.daemonMode == ACCESSMODE_DIRECT)
         {
             DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Adjusting functions for direct mode);
-            freq_init = freq_init_direct;
+            freq_init_f = freq_init_direct;
             freq_send = freq_send_direct;
-            freq_finalize = freq_finalize_direct;
+            freq_finalize_f = freq_finalize_direct;
         }
         else if (config.daemonMode == ACCESSMODE_PERF)
         {
             DEBUG_PLAIN_PRINT(DEBUGLEV_DEVELOP, Frequency module not usable in perf_event mode);
         }
-#endif
-        if (freq_init)
+        else
         {
-            freq_init();
+            ret = 1;
         }
-        if (freq_init != freq_init_direct)
+#endif
+        if (freq_init_f)
+        {
+            freq_init_f();
+        }
+        if (freq_init_f != freq_init_direct)
         {
             freq_init_direct();
         }
         freq_initialized = 1;
     }
+    return ret;
 }
 
 void _freqFinalize(void)
 {
-    if (freq_finalize)
+    if (freq_finalize_f)
     {
-        freq_finalize();
+        freq_finalize_f();
     }
-    if (freq_finalize != freq_finalize_direct)
+    if (freq_finalize_f != freq_finalize_direct)
     {
         freq_finalize_direct();
     }
     freq_initialized = 0;
-    freq_finalize = NULL;
+    freq_finalize_f = NULL;
     freq_send = NULL;
-    freq_init = NULL;
+    freq_init_f = NULL;
     if (own_hpm)
         HPMfinalize();
+}
+
+int freq_init(void)
+{
+    return _freqInit();
+}
+
+void freq_finalize(void)
+{
+    _freqFinalize();
 }
 
 uint64_t freq_setCpuClockMax(const int cpu_id, const uint64_t freq)

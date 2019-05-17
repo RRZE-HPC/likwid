@@ -228,6 +228,7 @@ for i, dom in pairs(affinity["domains"]) do
     end
 end
 
+likwid.initFreq()
 driver = likwid.getFreqDriver(cpulist[1])
 
 if verbosity == 3 then
@@ -311,6 +312,7 @@ if printCurFreq then
 end
 
 if printAvailGovs or printAvailFreq or printCurFreq then
+    likwid.finalizeFreq()
     os.exit(0)
 end
 
@@ -369,25 +371,30 @@ if do_ureset then
         max_u_freq = maxf
     else
         print_stderr("ERROR: AMD CPUs provide no interface to manipulate the Uncore frequency.")
+        likwid.finalizeFreq()
         os.exit(1)
     end
 end
 
 if numthreads > 0 and not (frequency or min_freq or max_freq or governor or min_u_freq or max_u_freq or set_turbo) then
     print_stderr("ERROR: You need to set either a frequency or governor for the selected CPUs on commandline")
+    likwid.finalizeFreq()
     os.exit(1)
 end
 
 if min_freq and max_freq and min_freq > max_freq then
     print_stderr("ERROR: Minimal CPU frequency higher than maximal frequency.")
+    likwid.finalizeFreq()
     os.exit(1)
 end
 if min_freq and max_freq and max_freq < min_freq then
     print_stderr("ERROR: Maximal CPU frequency lower than minimal frequency.")
+    likwid.finalizeFreq()
     os.exit(1)
 end
 if min_u_freq and max_u_freq and max_u_freq < min_u_freq then
     print_stderr("ERROR: Maximal Uncore frequency lower than minimal frequency.")
+    likwid.finalizeFreq()
     os.exit(1)
 end
 
@@ -398,6 +405,7 @@ if driver == "intel_pstate" then
 end
 if (frequency or min_freq or max_freq) and #availfreqs == 0 and likwid.getFreqDriver(cpulist[1]) ~= "intel_pstate" then
     print_stdout("Cannot set CPU frequency, cpufreq module not properly loaded")
+    likwid.finalizeFreq()
     os.exit(1)
 end
 local savailfreqs = {}
@@ -428,6 +436,7 @@ for x=1,2 do
                 end
                 if not valid_freq then
                     print_stderr(string.format("ERROR: Selected min. frequency %s not available for CPU %d! Please select one of\n%s", min_freq, cpulist[i], table.concat(savailfreqs, ", ")))
+                    likwid.finalizeFreq()
                     os.exit(1)
                 end
             end
@@ -465,6 +474,7 @@ for x=1,2 do
                 end
                 if not valid_freq then
                     print_stderr(string.format("ERROR: Selected max. frequency %s not available for CPU %d! Please select one of\n%s", max_freq, cpulist[i], table.concat(savailfreqs, ", ")))
+                    likwid.finalizeFreq()
                     os.exit(1)
                 end
             end
@@ -532,21 +542,22 @@ if governor then
         end
     end
     local cur_freqs = {}
-    if not valid_gov then
+    if valid_gov then
+        for i=1,#cpulist do
+            if verbosity == 3 then
+                print_stdout(string.format("DEBUG: Set governor for CPU %d to %s", cpulist[i], governor))
+            end
+            local f = likwid.setGovernor(cpulist[i], governor)
+            if do_reset then
+                likwid.setCpuClockMin(cpulist[i], cur_min[i])
+                likwid.setCpuClockMax(cpulist[i], cur_max[i])
+            end
+        end
+    else
         print_stderr(string.format("ERROR: Governor %s not available! Please select one of\n%s", governor, table.concat(govs, ", ")))
-        os.exit(1)
-    end
-    for i=1,#cpulist do
-        if verbosity == 3 then
-            print_stdout(string.format("DEBUG: Set governor for CPU %d to %s", cpulist[i], governor))
-        end
-        local f = likwid.setGovernor(cpulist[i], governor)
-        if do_reset then
-            likwid.setCpuClockMin(cpulist[i], cur_min[i])
-            likwid.setCpuClockMax(cpulist[i], cur_max[i])
-        end
     end
 end
+likwid.finalizeFreq()
 likwid.putAffinityInfo()
 likwid.putTopology()
 os.exit(0)
