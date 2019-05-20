@@ -92,7 +92,7 @@ char* cpufreq_filenames[MAX_FREQ_LOCS] ={
     [FREQ_LOC_MIN] = "scaling_min_freq",
     [FREQ_LOC_AVAIL_FREQ] = "scaling_available_frequencies",
     [FREQ_LOC_AVAIL_GOV] = "scaling_available_governors",
-    [FREQ_LOC_AVAIL_GOV] = "scaling_governor",
+    [FREQ_LOC_GOV] = "scaling_governor",
     [FREQ_LOC_CONF_MAX] = "cpuinfo_max_freq",
     [FREQ_LOC_CONF_MIN] = "cpuinfo_min_freq",
 };
