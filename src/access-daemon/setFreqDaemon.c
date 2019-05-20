@@ -131,6 +131,10 @@ static char* filepath;
 static const char* ident = "setFreqD";
 static int avail_cpus = 0;
 static struct cpufreq_files* cpufiles = NULL;
+static char** avail_freqs = NULL;
+static int avail_freqs_count = 0;
+static int no_avail_freqs = 0;
+static char* avail_govs = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
@@ -149,6 +153,104 @@ static int get_avail_cpus(void)
     if (pclose(fpipe))
         return -errno;
     return atoi(buff);
+}
+
+static int is_gov_valid(int len, char* data)
+{
+    if (avail_govs == NULL)
+    {
+        int fd = 0;
+        char buff[LIKWID_FREQUENCY_MAX_DATA_LENGTH];
+        char *filename = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors";
+        if (!access(filename, R_OK))
+        {
+            fd = open(filename, O_RDONLY);
+            if (fd > 0)
+            {
+                int ret = read(fd, buff, LIKWID_FREQUENCY_MAX_DATA_LENGTH-1);
+                if (ret > 0)
+                {
+                    buff[ret] = '\0';
+                    avail_govs = malloc((strlen(buff)+2)*sizeof(char));
+                    if (avail_govs)
+                    {
+                        ret = snprintf(avail_govs, strlen(buff)+1, "%s", buff);
+                        if (ret > 0)
+                        {
+                            avail_govs[ret] = '\0';
+                        }
+                    }
+                }
+                close(fd);
+            }
+        }
+    }
+    return strstr(avail_govs, data) != NULL;
+}
+
+
+static int is_freq_valid(int len, char* data)
+{
+    int i = 0;
+    if (avail_freqs == NULL)
+    {
+        int fd = 0;
+        char buff[LIKWID_FREQUENCY_MAX_DATA_LENGTH];
+        char *filename = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies";
+        if (!access(filename, R_OK))
+        {
+            fd = open(filename, O_RDONLY);
+            if (fd > 0)
+            {
+                int ret = read(fd, buff, LIKWID_FREQUENCY_MAX_DATA_LENGTH-1);
+                if (ret > 0)
+                {
+                    int count = 0;
+                    buff[ret] = '\0';
+                    for (i = 0; i < strlen(buff); i++)
+                    {
+                        if (buff[i] == '\n') break;
+                        if (buff[i] == ' ') count++;
+                    }
+                    avail_freqs = malloc((count+2) * sizeof(char*));
+                    if (avail_freqs)
+                    {
+                        char* token = strtok(buff, " ");
+                        count = 0;
+                        while (token != NULL) {
+                            avail_freqs[count] = malloc((strlen(token)+2) * sizeof(char));
+                            if (avail_freqs[count])
+                            {
+                                ret = snprintf(avail_freqs[count], strlen(token)+1, "%s", token);
+                                if (ret > 0)
+                                {
+                                    avail_freqs[count][ret] = '\0';
+                                    count++;
+                                }
+                                token = strtok(NULL, " ");
+                                if (token && token[0] == '\n') { break; }
+                            }
+                        }
+                        avail_freqs_count = count;
+                    }
+                    close(fd);
+                }
+            }
+        }
+        else
+        {
+            no_avail_freqs = 1;
+            return 1;
+        }
+    }
+    for (i = 0; i < avail_freqs_count; i++)
+    {
+        if (strncmp(avail_freqs[i], data, strlen(avail_freqs[i])) == 0)
+        {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 
@@ -348,7 +450,23 @@ stop_daemon(void)
     }
 
     free(filepath);
-    if (cpufiles)
+    if (avail_freqs != NULL)
+    {
+        for (int i=0; i < avail_freqs_count; i++)
+        {
+            if (avail_freqs[i] != NULL)
+                free(avail_freqs[i]);
+        }
+        free(avail_freqs);
+        avail_freqs = NULL;
+        avail_freqs_count = 0;
+    }
+    if (avail_govs != NULL)
+    {
+        free(avail_govs);
+        avail_govs = NULL;
+    }
+    if (cpufiles != NULL)
     {
         for (int i=0;i<avail_cpus;i++)
         {
@@ -475,24 +593,30 @@ static int freq_write(FreqDataRecord *rec)
 {
     int write_fd = -1;
     int cpu = rec->cpu;
+    int check_freq = 0;
+    int check_gov = 0;
     struct cpufreq_files* f = &cpufiles[cpu];
     
     switch(rec->loc)
     {
         case FREQ_LOC_CUR:
             write_fd = f->cur_freq;
+            check_freq = 1;
             syslog(LOG_INFO, "CMD WRITE CPU %d FREQ_LOC_CUR %d", cpu, write_fd);
             break;
         case FREQ_LOC_MIN:
             write_fd = f->min_freq;
+            check_freq = 1;
             syslog(LOG_INFO, "CMD WRITE CPU %d FREQ_LOC_MIN %d", cpu, write_fd);
             break;
         case FREQ_LOC_MAX:
             write_fd = f->max_freq;
+            check_freq = 1;
             syslog(LOG_INFO, "CMD WRITE CPU %d FREQ_LOC_MAX %d", cpu, write_fd);
             break;
         case FREQ_LOC_GOV:
             write_fd = f->set_gov;
+            check_gov = 1;
             syslog(LOG_INFO, "CMD WRITE CPU %d FREQ_LOC_GOV %d", cpu, write_fd);
             break;
         default:
@@ -505,16 +629,25 @@ static int freq_write(FreqDataRecord *rec)
         rec->errorcode = FREQ_ERR_NOFILE;
         return -1;
     }
-    //syslog(LOG_INFO, "FD %d %.*s\n", write_fd, rec->datalen, rec->data);
-    int ret = write(write_fd, rec->data, rec->datalen);
-    if (ret < 0)
+    if ((check_freq && is_freq_valid(rec->datalen, rec->data)) ||
+        (check_gov && is_gov_valid(rec->datalen, rec->data)))
     {
-        syslog(LOG_ERR,"No permission: %s\n", strerror(errno));
+        //syslog(LOG_INFO, "FD %d %.*s\n", write_fd, rec->datalen, rec->data);
+        int ret = write(write_fd, rec->data, rec->datalen);
+        if (ret < 0)
+        {
+            syslog(LOG_ERR,"No permission: %s\n", strerror(errno));
+            rec->errorcode = FREQ_ERR_NOPERM;
+            return -1;
+        }
+        //syslog(LOG_ERR,"All good\n");
+        rec->errorcode = FREQ_ERR_NONE;
+    }
+    else
+    {
         rec->errorcode = FREQ_ERR_NOPERM;
         return -1;
     }
-    //syslog(LOG_ERR,"All good\n");
-    rec->errorcode = FREQ_ERR_NONE;
     return 0;
 }
 
