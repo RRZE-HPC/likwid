@@ -271,9 +271,12 @@ if printAvailFreq then
         print_stdout("Cannot get frequencies from cpufreq module")
         if driver == "intel_pstate" then
             freqs = {}
+            min = tonumber(likwid.getConfCpuClockMin(cpulist[1]))/1E6
+            max = tonumber(likwid.getConfCpuClockMax(cpulist[1]))/1E6
             print_stdout("The intel_pstate module allows free selection of frequencies in the available range")
             print_stdout(string.format("Minimal CPU frequency %s", round(min)))
             print_stdout(string.format("Maximal CPU frequency %s", round(max)))
+            os.exit(0)
         end
     end
 end
