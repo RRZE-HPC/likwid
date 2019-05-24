@@ -1699,7 +1699,7 @@ function printMpiOutput(group_list, all_results, regionname)
                 if region == nil then
                     print(string.format("TABLE,Group %d Raw STAT,%s,%d%s",gidx,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
                 else
-                    print(string.format("TABLE,Region %s,Group %d Raw STAT,%s,%d%s",regionName, gidx,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                    print(string.format("TABLE,Region %s,Group %d Raw STAT,%s,%d%s",tostring(region), gidx,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-5)))
                 end
                 likwid.printcsv(firsttab_combined, maxLineFields)
             end
@@ -1707,14 +1707,14 @@ function printMpiOutput(group_list, all_results, regionname)
                 if region == nil then
                     print(string.format("TABLE,Group %d Metric,%s,%d%s",gidx,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-4)))
                 else
-                    print(string.format("TABLE,Region %s,Group %d Metric,%s,%d%s",regionName,gidx,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-5)))
+                    print(string.format("TABLE,Region %s,Group %d Metric,%s,%d%s",tostring(region),gidx,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-5)))
                 end
                 likwid.printcsv(secondtab, maxLineFields)
                 if total_threads > 1 then
                     if region == nil then
                         print(string.format("TABLE,Group %d Metric STAT,%s,%d%s",gidx,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))
                     else
-                        print(string.format("TABLE,Region %s,Group %d Metric STAT,%s,%d%s",regionName,gidx,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                        print(string.format("TABLE,Region %s,Group %d Metric STAT,%s,%d%s",tostring(region),gidx,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-5)))
                     end
                     likwid.printcsv(secondtab_combined, maxLineFields)
                 end
