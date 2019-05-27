@@ -1807,7 +1807,9 @@ int main(void)
     }
 
     daemonize(&pid);
+#ifdef DEBUG_LIKWID
     syslog(LOG_INFO, "AccessDaemon runs with UID %d, eUID %d\n", getuid(), geteuid());
+#endif
 
     {
         uint32_t  eax = 0x00;
