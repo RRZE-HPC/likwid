@@ -324,7 +324,9 @@ static int open_cpu_file(char* filename, int* fd)
         return 0;
     }
     *fd = f;
-    //syslog(LOG_INFO, "Opened %s %s = %d\n", filename, (open_flag == O_RDONLY ? "readable" : "writable"), *fd);
+#ifdef DEBUG_LIKWID
+    syslog(LOG_INFO, "Opened %s %s = %d\n", filename, (open_flag == O_RDONLY ? "readable" : "writable"), *fd);
+#endif
     return 0;
 }
 
@@ -602,22 +604,30 @@ static int freq_write(FreqDataRecord *rec)
         case FREQ_LOC_CUR:
             write_fd = f->cur_freq;
             check_freq = 1;
+#ifdef DEBUG_LIKWID
             syslog(LOG_INFO, "CMD WRITE CPU %d FREQ_LOC_CUR %d", cpu, write_fd);
+#endif
             break;
         case FREQ_LOC_MIN:
             write_fd = f->min_freq;
             check_freq = 1;
+#ifdef DEBUG_LIKWID
             syslog(LOG_INFO, "CMD WRITE CPU %d FREQ_LOC_MIN %d", cpu, write_fd);
+#endif
             break;
         case FREQ_LOC_MAX:
             write_fd = f->max_freq;
             check_freq = 1;
+#ifdef DEBUG_LIKWID
             syslog(LOG_INFO, "CMD WRITE CPU %d FREQ_LOC_MAX %d", cpu, write_fd);
+#endif
             break;
         case FREQ_LOC_GOV:
             write_fd = f->set_gov;
             check_gov = 1;
+#ifdef DEBUG_LIKWID
             syslog(LOG_INFO, "CMD WRITE CPU %d FREQ_LOC_GOV %d", cpu, write_fd);
+#endif
             break;
         default:
             syslog(LOG_ERR, "Invalid location specified in record\n");
@@ -680,13 +690,15 @@ int main(void)
     }
 
     daemonize(&pid);
+#ifdef DEBUG_LIKWID
     syslog(LOG_INFO, "FrequencyDaemon runs with UID %d, eUID %d\n", getuid(), geteuid());
+#endif
 
 
     /* setup filename for socket */
     filepath = (char*) calloc(sizeof(addr1.sun_path), 1);
     snprintf(filepath, sizeof(addr1.sun_path), TOSTRING(LIKWIDSOCKETBASE) "-freq-%d", pid);
-    syslog(LOG_INFO, "Filepath %s\n", filepath);
+
     /* get a socket */
     LOG_AND_EXIT_IF_ERROR(sockfd = socket(AF_LOCAL, SOCK_STREAM, 0), socket failed);
 
