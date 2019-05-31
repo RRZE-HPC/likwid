@@ -69,7 +69,7 @@ void*
 runTest(void* arg)
 {
     int threadId;
-    int offset;
+    size_t offset;
     size_t size;
     size_t vecsize;
     size_t i;
