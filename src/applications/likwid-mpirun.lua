@@ -112,6 +112,7 @@ local likwiddebug = false
 local use_marker = false
 local use_csv = false
 local force = false
+local print_stats = false
 if os.getenv("LIKWID_FORCE") ~= nil then
     force = true
 end
@@ -1542,6 +1543,9 @@ function percentile_table(inputtable, skip_cols, skip_lines)
         else
             index = math.floor(index)
         end
+        if index == 0 then
+            index = 1
+        end
         return tonumber(sorted_valuelist[index])
     end
     local outputtable = {}
@@ -1578,6 +1582,7 @@ function percentile_table(inputtable, skip_cols, skip_lines)
 end
 
 function printMpiOutput(group_list, all_results, regionname)
+    print(print_stats)
     region = regionname or nil
     if #group_list == 0 or likwid.tablelength(all_results) == 0 then
         return
@@ -1641,7 +1646,7 @@ function printMpiOutput(group_list, all_results, regionname)
             end
         end
 
-        if total_threads > 1 then
+        if total_threads > 1 or print_stats then
             firsttab_combined = likwid.tableToMinMaxAvgSum(firsttab, 2, 1)
         end
         if gdata["Metrics"] then
@@ -1673,7 +1678,7 @@ function printMpiOutput(group_list, all_results, regionname)
                 end
             end
 
-            if total_threads > 1 then
+            if total_threads > 1 or print_stats then
                 secondtab_combined = likwid.tableToMinMaxAvgSum(secondtab, 1, 1)
                 local tmp = percentile_table(secondtab, 1, 1)
                 for i, col in pairs(tmp) do
@@ -1695,7 +1700,7 @@ function printMpiOutput(group_list, all_results, regionname)
             end
             --print_stdout("Group,"..tostring(gidx) .. string.rep(",", maxLineFields  - 2))
             likwid.printcsv(firsttab, maxLineFields)
-            if total_threads > 1 then
+            if total_threads > 1 or print_stats then
                 if region == nil then
                     print(string.format("TABLE,Group %d Raw STAT,%s,%d%s",gidx,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
                 else
@@ -1710,7 +1715,7 @@ function printMpiOutput(group_list, all_results, regionname)
                     print(string.format("TABLE,Region %s,Group %d Metric,%s,%d%s",tostring(region),gidx,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-5)))
                 end
                 likwid.printcsv(secondtab, maxLineFields)
-                if total_threads > 1 then
+                if total_threads > 1 or print_stats then
                     if region == nil then
                         print(string.format("TABLE,Group %d Metric STAT,%s,%d%s",gidx,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))
                     else
@@ -1725,10 +1730,10 @@ function printMpiOutput(group_list, all_results, regionname)
             end
             print_stdout("Group: "..tostring(gidx))
             likwid.printtable(firsttab)
-            if total_threads > 1 then likwid.printtable(firsttab_combined) end
+            if total_threads > 1 or print_stats then likwid.printtable(firsttab_combined) end
             if gdata["Metrics"] then
                 likwid.printtable(secondtab)
-                if total_threads > 1 then likwid.printtable(secondtab_combined) end
+                if total_threads > 1 or print_stats then likwid.printtable(secondtab_combined) end
             end
         end
     end
@@ -1756,7 +1761,7 @@ local cmd_options = {"h","help", -- default options for help message
                      "m","marker", -- options to activate MarkerAPI
                      "e:", "env:", -- options to forward environment variables
                      "ld",         -- option to activate debugging in likwid-perfctr
-                     "nperdomain:","pin:","hostfile:","O","f"} -- other options
+                     "nperdomain:","pin:","hostfile:","O","f", "stats"} -- other options
 
 for opt,arg in likwid.getopt(arg,  cmd_options) do
     if (type(arg) == "string") then
@@ -1782,6 +1787,8 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         use_csv = true
     elseif opt == "f" then
         force = true
+    elseif opt == "stats" then
+        print_stats = true
     elseif opt == "n" or opt == "np" then
         np = tonumber(arg)
         if np == nil then
@@ -1979,6 +1986,10 @@ if #perf > 0 then
         print_stderr("ERROR: Processes requested exceeds maximally available slots of given hosts. Maximal processes: "..sum_maxslots)
         os.exit(1)
     end
+end
+if #perf == 0 and print_stats then
+    print_stderr("WARN: Printing statistics only available when measuring counters (-g option)")
+    print_stats = false
 end
 
 if #cpuexprs > 0 then
