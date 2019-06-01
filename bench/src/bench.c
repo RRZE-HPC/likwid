@@ -69,7 +69,7 @@ void*
 runTest(void* arg)
 {
     int threadId;
-    int offset;
+    size_t offset;
     size_t size;
     size_t vecsize;
     size_t i;
@@ -135,7 +135,7 @@ runTest(void* arg)
 
     /* pin the thread */
     likwid_pinThread(myData->processors[threadId]);
-    printf("Group: %d Thread %d Global Thread %d running on core %d - Vector length %llu Offset %d\n",
+    printf("Group: %d Thread %d Global Thread %d running on core %d - Vector length %llu Offset %zd\n",
             data->groupId,
             threadId,
             data->globalThreadId,
@@ -456,7 +456,7 @@ void*
 getIterSingle(void* arg)
 {
     int threadId = 0;
-    int offset = 0;
+    size_t offset = 0;
     size_t size = 0, vecsize = 0;
     size_t i;
     ThreadData* data;
