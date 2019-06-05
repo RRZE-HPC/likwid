@@ -413,7 +413,8 @@ if (frequency or min_freq or max_freq) and #availfreqs == 0 and likwid.getFreqDr
 end
 local savailfreqs = {}
 for i,f in pairs(availfreqs) do
-    savailfreqs[i] = round(f)
+    newf = tonumber(f)/1E6
+    savailfreqs[i] = round(newf)
 end
 if verbosity == 3 then
     print_stdout("DEBUG Available freq.: "..table.concat(availfreqs, ", "))
@@ -428,7 +429,7 @@ for x=1,2 do
                 for k,v in pairs(savailfreqs) do
                     if (tonumber(min_freq) == tonumber(v)) then
                         if verbosity == 3 then
-                            print_stdout(string.format("DEBUG: Min frequency %d valid", min_freq))
+                            print_stdout(string.format("DEBUG: Min frequency %d valid", round(min_freq/1E6)))
                         end
                         valid_freq = true
                         break
@@ -438,13 +439,13 @@ for x=1,2 do
                     valid_freq = true
                 end
                 if not valid_freq then
-                    print_stderr(string.format("ERROR: Selected min. frequency %s not available for CPU %d! Please select one of\n%s", min_freq, cpulist[i], table.concat(savailfreqs, ", ")))
+                    print_stderr(string.format("ERROR: Selected min. frequency %s not available for CPU %d! Please select one of\n%s", round(min_freq/1E6), cpulist[i], table.concat(savailfreqs, ", ")))
                     likwid.finalizeFreq()
                     os.exit(1)
                 end
             end
             if verbosity == 3 then
-                print_stdout(string.format("DEBUG: Set min. frequency for CPU %d to %d", cpulist[i], tonumber(min_freq)))
+                print_stdout(string.format("DEBUG: Set min. frequency for CPU %d to %d", cpulist[i], round(min_freq/1E6)))
             end
             local f = likwid.setCpuClockMin(cpulist[i], tonumber(min_freq))
         end
@@ -466,7 +467,7 @@ for x=1,2 do
                 for k,v in pairs(savailfreqs) do
                     if (tonumber(max_freq) == tonumber(v)) then
                         if verbosity == 3 then
-                            print_stdout(string.format("DEBUG: Max frequency %d valid", max_freq))
+                            print_stdout(string.format("DEBUG: Max frequency %d valid", round(max_freq/1E6)))
                         end
                         valid_freq = true
                         break
@@ -476,15 +477,15 @@ for x=1,2 do
                     valid_freq = true
                 end
                 if not valid_freq then
-                    print_stderr(string.format("ERROR: Selected max. frequency %s not available for CPU %d! Please select one of\n%s", max_freq, cpulist[i], table.concat(savailfreqs, ", ")))
+                    print_stderr(string.format("ERROR: Selected max. frequency %s not available for CPU %d! Please select one of\n%s", round(max_freq/1E6), cpulist[i], table.concat(savailfreqs, ", ")))
                     likwid.finalizeFreq()
                     os.exit(1)
                 end
             end
             if verbosity == 3 then
-                print_stdout(string.format("DEBUG: Set max. frequency for CPU %d to %d", cpulist[i], tonumber(max_freq)))
+                print_stdout(string.format("DEBUG: Set max. frequency for CPU %d to %d", cpulist[i], round(max_freq/1E6)))
             end
-            local f = likwid.setCpuClockMax(cpulist[i], tonumber(max_freq))
+            local f = likwid.setCpuClockMax(cpulist[i], round(max_freq/1E6))
         end
     end
 end
