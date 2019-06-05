@@ -368,8 +368,16 @@ if do_ureset then
     if cpuinfo["isIntel"] == 1 then
         local availfreqs = likwid.getAvailFreq(cpulist[1])
         local power = likwid.getPowerInfo()
-        local minf = tonumber(availfreqs[1])
+        local minf = tonumber(availfreqs[1]/1E6)
+        if (minf > tonumber(availfreqs[#availfreqs]/1E6)) then
+            minf = tonumber(availfreqs[#availfreqs]/1E6)
+        end
         local maxf = tonumber(power["turbo"]["steps"][1]) / 1000
+        if (minf > maxf) then
+            local s = minf
+            minf = maxf
+            maxf = s
+        end
         min_u_freq = minf
         max_u_freq = maxf
     else
