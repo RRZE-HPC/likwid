@@ -367,6 +367,9 @@ end
 if do_ureset then
     if cpuinfo["isIntel"] == 1 then
         local availfreqs = likwid.getAvailFreq(cpulist[1])
+        if #availfreqs == 0 then
+            availfreqs = {likwid.getConfCpuClockMin(cpulist[1]), likwid.getConfCpuClockMax(cpulist[1])}
+        end
         local power = likwid.getPowerInfo()
         local minf = tonumber(availfreqs[1]/1E6)
         if (minf > tonumber(availfreqs[#availfreqs]/1E6)) then

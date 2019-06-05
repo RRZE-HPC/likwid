@@ -34,8 +34,26 @@ static int _freq_getUncoreMinMax(const int socket_id, int *cpuId, double* min, d
     char* avail = freq_getAvailFreq(cpu);
     if (!avail)
     {
-        fprintf(stderr, "Failed to get available CPU frequencies\n");
-        return -EINVAL;
+        avail = malloc(1000 * sizeof(char));
+        if (avail)
+        {
+            int ret = snprintf(avail, 999, "%d %d", freq_getConfCpuClockMin(cpu)/1000000, freq_getConfCpuClockMax(cpu)/1000000);
+            if (ret > 0)
+            {
+                avail[ret] = '\0';
+            }
+            else
+            {
+                free(avail);
+                fprintf(stderr, "Failed to get available CPU frequencies\n");
+                return -EINVAL;
+            }
+        }
+        else
+        {
+            fprintf(stderr, "Failed to get available CPU frequencies\n");
+            return -EINVAL;
+        }
     }
 
     double dmin = 0.0;
