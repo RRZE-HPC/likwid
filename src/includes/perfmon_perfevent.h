@@ -87,7 +87,6 @@ int perfmon_init_perfevent(int cpu_id)
             fprintf(stderr, "WARN: Paranoid level 0 or root access is required to measure Uncore counters\n");
         }
 #endif
-        }
         informed_paranoid = 1;
     }
     lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
