@@ -789,7 +789,30 @@ int perfmon_setupCounterThread_skylake(
         switch (type)
         {
             case PMC:
-                skl_pmc_setup(cpu_id, index, event);
+                if ((getCounterTypeOffset(index) == 3) &&
+                    (cpuid_info.featureFlags & (1ULL<<RTM)) &&
+                    (cpuid_info.model == SKYLAKEX) &&
+                    (cpuid_info.stepping < 5))
+                {
+                    uint64_t flags = 0x0;
+                    HPMread(cpu_id, MSR_DEV, TSX_FORCE_ABORT, &flags);
+                    if (flags & 0x1 == 0)
+                    {
+                        fprintf(stderr, "Warning: Counter PMC3 cannot be used if Restricted Transactional Memory feature is enabled and\n");
+                        fprintf(stderr, "         bit 0 of register TSX_FORCE_ABORT is 0. As workaround write 0x1 to TSX_FORCE_ABORT:\n");
+                        fprintf(stderr, "         sudo wrmsr 0x10f 0x1\n");
+                        eventSet->events[i].type = NOTYPE;
+                        continue;
+                    }
+                    else
+                    {
+                        skl_pmc_setup(cpu_id, index, event);
+                    }
+                }
+                else
+                {
+                    skl_pmc_setup(cpu_id, index, event);
+                }
                 break;
 
             case FIXED:
