@@ -286,7 +286,7 @@ proc_init_cpuFeatures(void)
     while( fgets(buf, sizeof(buf)-1, file) )
     {
         ret = sscanf(buf, "%s\t:", &(ident[0]));
-#ifdef __x86_64
+#if defined(__x86_64__) || defined(__i386__)
         if (ret != 1 || strcmp(ident,"flags") != 0 || strcmp(ident, "Features") != 0)
 #endif
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__) || defined(__ARM_ARCH_8A)
