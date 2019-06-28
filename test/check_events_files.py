@@ -368,7 +368,12 @@ def test_EventParser(opts):
 def resolve_events_files(opts):
 
     if not opts.files:
-        files = opts.input_dir.glob("perfmon_*_events.txt")
+        files = list(opts.input_dir.glob("perfmon_*_events.txt"))
+        if not files:
+            raise Exception("Couldn't find any events files in '{}', "
+                            "please use --input-dir option.\n"
+                            "Use `{} events --help` for details."
+                            .format(opts.input_dir, sys.argv[0]))
     else:
         files = []
         for f in opts.files:
