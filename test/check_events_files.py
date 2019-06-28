@@ -222,6 +222,7 @@ class EventParser():
         self.options, self.default_options = None, None
         self.opts = opts
         self.nerrors = 0
+        self.line_num = 0
 
 
     def load(self, afile, opts):
@@ -245,7 +246,6 @@ class EventParser():
 
     def parse_lines(self, afile):
 
-        self.line_num = 0
         for l in afile:
             self.line_num += 1
             l = l.strip()
