@@ -323,7 +323,7 @@ if do_reset then
     local availfreqs = likwid.getAvailFreq(cpulist[1])
     local availgovs = likwid.getAvailGovs(cpulist[1])
     if driver == "intel_pstate" then
-        availfreqs = {likwid.getConfCpuClockMin(cpulist[1])/1E6, likwid.getConfCpuClockMax(cpulist[1])/1E6}
+        availfreqs = {likwid.getConfCpuClockMin(cpulist[1]), likwid.getConfCpuClockMax(cpulist[1])}
     end
     if not min_freq then
         min_freq = availfreqs[1]
@@ -360,7 +360,7 @@ if do_reset then
         end
     end
     if min_freq and governor then
-        print_stdout(string.format("Reset to governor %s with min freq. %s GHz and deactivate turbo mode", governor, round(min_freq)))
+        print_stdout(string.format("Reset to governor %s with min freq. %s GHz and deactivate turbo mode", governor, round(min_freq/1E6)))
     end
 end
 
@@ -424,8 +424,7 @@ if (frequency or min_freq or max_freq) and #availfreqs == 0 and likwid.getFreqDr
 end
 local savailfreqs = {}
 for i,f in pairs(availfreqs) do
-    newf = tonumber(f)/1E6
-    savailfreqs[i] = round(newf)
+    savailfreqs[i] = round(f)
 end
 if verbosity == 3 then
     print_stdout("DEBUG Available freq.: "..table.concat(savailfreqs, ", "))
@@ -460,6 +459,9 @@ for x=1,2 do
                 print_stdout(string.format("DEBUG: Set min. frequency for CPU %d to %s", cpulist[i], test_freq))
             end
             local f = likwid.setCpuClockMin(cpulist[i], min_freq)
+            if x == 2 and f ~= min_freq then
+                print_stderr(string.format("ERROR: Setting of max. frequency for %d to %s failed", cpulist[i], test_freq))
+            end
         end
     end
 
@@ -499,6 +501,9 @@ for x=1,2 do
                 print_stdout(string.format("DEBUG: Set max. frequency for CPU %d to %s", cpulist[i], test_freq))
             end
             local f = likwid.setCpuClockMax(cpulist[i], max_freq)
+            if x == 2 and f ~= max_freq then
+                print_stderr(string.format("ERROR: Setting of max. frequency for %d to %s failed", cpulist[i], test_freq))
+            end
         end
     end
 end

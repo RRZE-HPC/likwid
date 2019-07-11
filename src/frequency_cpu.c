@@ -556,15 +556,12 @@ static int freq_send_client(FreqDataRecordType type, FreqDataRecordLocation loc,
             switch(record.errorcode)
             {
                 case FREQ_ERR_NOFILE:
-                    fprintf(stderr, "Error %d: No such file\n", record.errorcode);
                     return -ENOENT;
                     break;
                 case FREQ_ERR_NOPERM:
-                    fprintf(stderr, "Error %d: No permission\n", record.errorcode);
                     return -EACCES;
                     break;
                 case FREQ_ERR_UNKNOWN:
-                    fprintf(stderr, "Error %d: Unknown error\n", record.errorcode);
                     return -EBADF;
                     break;
             }
