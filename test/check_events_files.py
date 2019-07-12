@@ -1,5 +1,5 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#!/usr/bin/python3
 
 # =======================================================================================
 #
@@ -25,7 +25,7 @@
 #      this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # =======================================================================================
-
+from collections import OrderedDict
 import json
 from pathlib import Path
 import sys
@@ -127,26 +127,37 @@ class EventParser():
 
         self.Event = ( self.Umask | self.Evt | self.Options | self.DefaultOptions | Comment ) + StringEnd()
 
-        self.event_head, self.event_count, self.events = None, 0, []
+        self.event_head, self.event_count, self.events = None, 0, OrderedDict()
         self.options, self.default_options = None, None
 
 
     def _set_event(self, s, loc, token):
 
-        if self.event_head and self.event_count == 0:
-            if token['name'].startswith(self.event_head['name']):
-                err('\n{}:{}:', self.fname, self.line_num)
-                err("Expected: 'UMASK_{}'", token['name'])
-                err("Found:    'EVENT_{}'", token['name'])
-            else:
-                err('\n{}:{}:', self.fname, self.line_num)
-                err("Expected: 'UMASK_{}_....'", self.event_head['name'])
-                err("Found:    'EVENT_{}'", token['name'])
-
-        self.event_head, self.event_count = token.asDict(), 0
+        event_head = token.asDict()
         for key in ('number', 'subsystem'):
-            value = self.event_head[key]
-            self.event_head[key] = value if len(value) > 1 else value[0]
+            value = event_head[key]
+            event_head[key] = tuple(value) if len(value) > 1 else value[0]
+        event_head.update(line_num = self.line_num)
+
+        if self.event_head:
+            if event_head['name'] == self.event_head['name'] and event_head['subsystem'] == self.event_head['subsystem']:
+                self.nerrors += 1
+                err("\n{}:{}:\nDuplicate event name: {}"
+                    "\nPrevious declaration is here:\n{}:{}:\n",
+                    self.fname, self.line_num, event_head['name'], self.fname, self.event_head['line_num'])
+            if self.event_count == 0:
+                if event_head['name'].startswith(self.event_head['name']):
+                    self.nerrors += 1
+                    err('\n{}:{}:', self.fname, self.line_num)
+                    err("Expected: 'UMASK_{}'", event_head['name'])
+                    err("Found:    'EVENT_{}'", event_head['name'])
+                else:
+                    self.nerrors += 1
+                    err('\n{}:{}:', self.fname, self.line_num)
+                    err("Expected: 'UMASK_{}_....'", self.event_head['name'])
+                    err("Found:    'EVENT_{}'", event_head['name'])
+
+        self.event_head, self.event_count = event_head, 0
 
 
     def _set_options(self, s, loc, token):
@@ -184,23 +195,42 @@ class EventParser():
 
         event = self.event_head.copy()
         event.update(name=token['name'],
-                     umask = token['umask'] if len(token['umask']) > 1 else token['umask'][0]
+                     umask = token['umask'] if len(token['umask']) > 1 else token['umask'][0],
+                     line_num = self.line_num
                      )
+
+        key = event['subsystem'], event['name']
+        if key in self.events:
+            self.nerrors += 1
+            err("\n{}:{}:\nDuplicate event name: {}"
+                "\nPrevious declaration is here:\n{}:{}:\n",
+                self.fname, self.line_num, event['name'], self.fname, self.events[key]['line_num'])
+
         if self.options is not None:
             event['options'], self.options = self.options, None
         if self.default_options is not None:
             event['default_options'], self.default_options = self.default_options, None
-        self.events.append(event)
+
+        self.events[key] = event
         self.event_count += 1
 
 
     def reset(self, fname, opts):
 
         self.fname = fname
-        self.event_head, self.event_count, self.events = None, 0, []
+        self.event_head, self.event_count, self.events = None, 0, OrderedDict()
         self.options, self.default_options = None, None
         self.opts = opts
         self.nerrors = 0
+        self.line_num = 0
+
+
+    def load(self, afile, opts):
+        import copy
+        lopts = copy.deepcopy(opts)
+        lopts.naming = False
+        self.check(afile, lopts)
+        return self.events
 
 
     def check(self, afile, opts):
@@ -216,7 +246,6 @@ class EventParser():
 
     def parse_lines(self, afile):
 
-        self.line_num = 0
         for l in afile:
             self.line_num += 1
             l = l.strip()
@@ -234,7 +263,9 @@ class EventParser():
 
     def to_json(self, f, indent=4, sort_keys=True):
 
-        json.dump(self.events, f, indent=indent, sort_keys=sort_keys)
+        json.dump([ dict([ (k, v) for k, v in V.items() if k != 'line_num' ])
+                    for V in self.events.values() ],
+                  f, indent=indent, sort_keys=sort_keys)
 
 
 
@@ -337,7 +368,12 @@ def test_EventParser(opts):
 def resolve_events_files(opts):
 
     if not opts.files:
-        files = opts.input_dir.glob("perfmon_*_events.txt")
+        files = list(opts.input_dir.glob("perfmon_*_events.txt"))
+        if not files:
+            raise Exception("Couldn't find any events files in '{}', "
+                            "please use --input-dir option.\n"
+                            "Use `{} events --help` for details."
+                            .format(opts.input_dir, sys.argv[0]))
     else:
         files = []
         for f in opts.files:
