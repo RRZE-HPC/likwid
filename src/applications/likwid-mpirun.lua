@@ -461,7 +461,7 @@ local function executeMvapich2(wrapperscript, hostfile, env, nrNodes)
 
     local envstr = ""
     for i, e in pairs(env) do
-        envstr = envstr .. string.format("%s=%s ", i, e)
+        envstr = envstr .. string.format("-genv %s %s ", i, e)
     end
 
     local cmd = string.format("%s -f %s -np %d -ppn %d %s %s %s",
