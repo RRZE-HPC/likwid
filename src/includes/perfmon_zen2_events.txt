@@ -108,7 +108,7 @@ UMASK_RETIRED_CLFLUSH                   0x00
 EVENT_RETIRED_CPUID                     0x27 PMC
 UMASK_RETIRED_CPUID                     0x00
 
-EVENT_LS_DISPATCH                      0x29    PMC
+EVENT_LS_DISPATCH                      0x29 PMC
 UMASK_LS_DISPATCH_LOADS                0x01
 UMASK_LS_DISPATCH_STORES               0x02
 UMASK_LS_DISPATCH_LOAD_OP_STORES       0x04
@@ -253,7 +253,7 @@ UMASK_OC_MODE_SWITCH_OC_IC                0x02
 
 # DE Events
 
-EVENT_UOPS_DISP                           0xAA
+EVENT_UOPS_DISP                           0xAA PMC
 UMASK_UOPS_DISP_FROM_DEC                  0x01
 UMASK_UOPS_DISP_FROM_OPCACHE              0x02
 
@@ -381,25 +381,51 @@ UMASK_L2_PF_MISS_IN_L3                    0x00
 
 # L3 Cache Events
 
-EVENT_L3_ACCESS                        0x01 CPMC
-UMASK_L3_ACCESS                        0x80
+EVENT_L3_ACCESS                           0x01 CPMC
+UMASK_L3_ACCESS                           0x80
 
-EVENT_L3_MISS                            0x06 CPMC
-UMASK_L3_MISS                            0x01
+EVENT_L3_MISS                             0x06 CPMC
+UMASK_L3_MISS                             0x01
 
-EVENT_L3_CACHE_REQ                       0x04 CPMC
-UMASK_L3_CACHE_REQ                       0xFF
+EVENT_L3_CACHE_REQ                        0x04 CPMC
+UMASK_L3_CACHE_REQ                        0xFF
 
-EVENT_L3_MISS_LAT                        0x90 CPMC
-UMASK_L3_MISS_LAT                        0x00
+EVENT_L3_MISS_LAT                         0x90 CPMC
+UMASK_L3_MISS_LAT                         0x00
 
-EVENT_L3_MISS_REQ                        0x9A CPMC
-UMASK_L3_MISS_REQ                        0x00
+EVENT_L3_MISS_REQ                         0x9A CPMC
+UMASK_L3_MISS_REQ                         0x00
 
 # Energy Events
 
-EVENT_RAPL_CORE_ENERGY                  0x01 PWR0
-UMASK_RAPL_CORE_ENERGY                  0x00
+EVENT_RAPL_CORE_ENERGY                    0x01 PWR0
+UMASK_RAPL_CORE_ENERGY                    0x00
 
-EVENT_RAPL_PKG_ENERGY                   0x02 PWR1
-UMASK_RAPL_PKG_ENERGY                   0x00
+EVENT_RAPL_PKG_ENERGY                     0x02 PWR1
+UMASK_RAPL_PKG_ENERGY                     0x00
+
+# Data fabric events
+
+EVENT_DATA_FROM_LOCAL_DRAM_CHANNEL    0x07 DFC
+UMASK_DATA_FROM_LOCAL_DRAM_CHANNEL    0x38
+
+EVENT_DATA_TO_LOCAL_DRAM_CHANNEL      0x47 DFC
+UMASK_DATA_TO_LOCAL_DRAM_CHANNEL      0x38
+
+EVENT_DATA_OUT_TO_REMOTE_0            0x187 DFC
+UMASK_DATA_OUT_TO_REMOTE_0            0x02
+
+EVENT_DATA_OUT_TO_REMOTE_1            0x1C7 DFC
+UMASK_DATA_OUT_TO_REMOTE_1            0x02
+
+EVENT_DATA_OUT_TO_REMOTE_2            0x207 DFC
+UMASK_DATA_OUT_TO_REMOTE_2            0x02
+
+EVENT_DATA_OUT_TO_REMOTE_3            0x287 DFC
+UMASK_DATA_OUT_TO_REMOTE_3            0x02
+
+EVENT_DATA_OUT_TO_REMOTE_4            0x247 DFC
+UMASK_DATA_OUT_TO_REMOTE_4            0x02
+
+EVENT_DATA_OUT_TO_REMOTE_5            0x2C7 DFC
+UMASK_DATA_OUT_TO_REMOTE_5            0x02
