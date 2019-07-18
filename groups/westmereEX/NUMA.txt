@@ -20,7 +20,7 @@ Memory data volume [GByte]  1.E-09*(PMC0+PMC1)*64
 Memory bandwidth [MByte/s]  1.E-06*((PMC0+PMC1)*64)/time
 
 LONG
-Formula:
+Formulas:
 CPI = CPU_CLK_UNHALTED_CORE/INSTR_RETIRED_ANY
 Local DRAM data volume [GByte] = 1.E-09*OFFCORE_RESPONSE_0_LOCAL_DRAM*64
 Local DRAM bandwidth [MByte/s] = 1.E-06*(OFFCORE_RESPONSE_0_LOCAL_DRAM*64)/time

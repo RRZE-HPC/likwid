@@ -8,15 +8,15 @@ PMC2  CPU_CLOCKS_UNHALTED
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s] PMC2*inverseClock
-SP MFLOP/s  1.0E-06*(PMC0+PMC1)/time
-SP Add MFLOP/s  1.0E-06*PMC0/time
-SP Mult MFLOP/s   1.0E-06*PMC1/time
+SP [MFLOP/s]  1.0E-06*(PMC0+PMC1)/time
+SP Add [MFLOP/s]  1.0E-06*PMC0/time
+SP Mult [MFLOP/s]   1.0E-06*PMC1/time
 
 LONG
 Formulas:
-SP MFLOP/s = 1.0E-06*(SSE_RETIRED_ADD_SINGLE_FLOPS+SSE_RETIRED_MULT_SINGLE_FLOPS)/time
-SP Add MFLOP/s = 1.0E-06*(SSE_RETIRED_ADD_SINGLE_FLOPS)/time
-SP Mult MFLOP/s = 1.0E-06*(SSE_RETIRED_MULT_SINGLE_FLOPS)/time
+SP [MFLOP/s] = 1.0E-06*(SSE_RETIRED_ADD_SINGLE_FLOPS+SSE_RETIRED_MULT_SINGLE_FLOPS)/time
+SP Add [MFLOP/s] = 1.0E-06*(SSE_RETIRED_ADD_SINGLE_FLOPS)/time
+SP Mult [MFLOP/s] = 1.0E-06*(SSE_RETIRED_MULT_SINGLE_FLOPS)/time
 -
 Profiling group to measure single precision SSE FLOPs.
 Don't forget that your code might also execute X87 FLOPs.

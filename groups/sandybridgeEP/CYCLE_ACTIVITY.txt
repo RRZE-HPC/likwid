@@ -18,6 +18,7 @@ Cycles without execution due to L1D [%] (PMC2/FIXC1)*100
 Cycles without execution due to L2 [%] (PMC0/FIXC1)*100
 
 LONG
+Formulas:
 Cycles without execution [%] = CYCLE_ACTIVITY_CYCLES_NO_EXECUTE/CPU_CLK_UNHALTED_CORE*100
 Cycles with stalls due to L1D [%] = CYCLE_ACTIVITY_CYCLES_L1D_PENDING/CPU_CLK_UNHALTED_CORE*100
 Cycles with stalls due to L2 [%] = CYCLE_ACTIVITY_CYCLES_L2_PENDING/CPU_CLK_UNHALTED_CORE*100

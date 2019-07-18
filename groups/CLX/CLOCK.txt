@@ -17,7 +17,7 @@ Energy [J]  PWR0
 Power [W] PWR0/time
 
 LONG
-Formula:
+Formulas:
 Power =  PWR_PKG_ENERGY / time
 Uncore Clock [MHz] = 1.E-06 * UNCORE_CLOCK / time
 -

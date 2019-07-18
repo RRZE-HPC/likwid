@@ -14,19 +14,19 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-SP MFLOP/s 1.0E-06*(PMC0*4.0+PMC1)/time
-Packed MUOPS/s   1.0E-06*PMC0/time
-Scalar MUOPS/s 1.0E-06*PMC1/time
-SP MUOPS/s 1.0E-06*PMC2/time
-DP MUOPS/s 1.0E-06*PMC3/time
+SP [MFLOP/s] 1.0E-06*(PMC0*4.0+PMC1)/time
+Packed [MUOPS/s]   1.0E-06*PMC0/time
+Scalar [MUOPS/s] 1.0E-06*PMC1/time
+SP [MUOPS/s] 1.0E-06*PMC2/time
+DP [MUOPS/s] 1.0E-06*PMC3/time
 
 LONG
-Formula:
-SP MFLOP/s = 1.0E-06*(FP_COMP_OPS_EXE_SSE_FP_PACKED*4+FP_COMP_OPS_EXE_SSE_FP_SCALAR)/runtime
-Packed MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_PACKED/runtime
-Scalar MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_SCALAR/runtime
-SP MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION/runtime
-DP MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION/runtime
+Formulas:
+SP [MFLOP/s] = 1.0E-06*(FP_COMP_OPS_EXE_SSE_FP_PACKED*4+FP_COMP_OPS_EXE_SSE_FP_SCALAR)/runtime
+Packed [MUOPS/s] = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_PACKED/runtime
+Scalar [MUOPS/s] = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_SCALAR/runtime
+SP [MUOPS/s] = 1.0E-06*FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION/runtime
+DP [MUOPS/s] = 1.0E-06*FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION/runtime
 -
 Westmere has no possibility to measure MFLOPs if mixed precision calculations are done.
 Therefore both single as well as double precision are measured to ensure the correctness

@@ -10,6 +10,7 @@ Runtime unhalted [s]  PMC1*inverseClock
 VPU stall ratio [%] 100*(VPU_STALL_REG/PMC0)
 
 LONG
+Formulas:
 VPU stall ratio [%] = 100*(VPU_STALL_REG/VPU_INSTRUCTIONS_EXECUTED)
 --
 This group measures how efficient the processor works with

@@ -15,10 +15,10 @@ DRAM read/write local to 7 [MegaEvents/s]  1.0E-06*UPMC3/time
 
 LONG
 Formulas:
-DRAM read/write local to 4 [MegaEvents/s]  1.0E-06*UNC_CPU_TO_DRAM_LOCAL_TO_4/time
-DRAM read/write local to 5 [MegaEvents/s]  1.0E-06*UNC_CPU_TO_DRAM_LOCAL_TO_5/time
-DRAM read/write local to 6 [MegaEvents/s]  1.0E-06*UNC_CPU_TO_DRAM_LOCAL_TO_6/time
-DRAM read/write local to 7 [MegaEvents/s]  1.0E-06*UNC_CPU_TO_DRAM_LOCAL_TO_7/time
+DRAM read/write local to 4 [MegaEvents/s]  = 1.0E-06*UNC_CPU_TO_DRAM_LOCAL_TO_4/time
+DRAM read/write local to 5 [MegaEvents/s]  = 1.0E-06*UNC_CPU_TO_DRAM_LOCAL_TO_5/time
+DRAM read/write local to 6 [MegaEvents/s]  = 1.0E-06*UNC_CPU_TO_DRAM_LOCAL_TO_6/time
+DRAM read/write local to 7 [MegaEvents/s]  = 1.0E-06*UNC_CPU_TO_DRAM_LOCAL_TO_7/time
 -
 Profiling group to measure the traffic from local CPU to the different
 DRAM NUMA nodes. This group allows to detect NUMA problems in a threaded

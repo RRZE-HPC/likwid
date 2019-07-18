@@ -18,4 +18,9 @@ Number of divide ops PMC2
 Avg. divide unit usage duration PMC3/PMC2
 
 LONG
+Formulas:
+CPI = CPU_CLOCKS_UNHALTED/RETIRED_INSTRUCTIONS
+Number of divide ops = DIV_OP_COUNT
+Avg. divide unit usage duration = DIV_BUSY_CYCLES/DIV_OP_COUNT
+-
 This performance group measures the average latency of divide operations

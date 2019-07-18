@@ -23,12 +23,12 @@ L1 DTLB store miss duration PMC3
 
 LONG
 Formulas:
-L1 DTLB load misses     DTLB_LOAD_MISSES_CAUSES_A_WALK
-L1 DTLB load miss rate  DTLB_LOAD_MISSES_CAUSES_A_WALK / INSTR_RETIRED_ANY
-L1 DTLB load miss duration DTLB_LOAD_MISSES_WALK_DURATION
-L1 DTLB store misses     DTLB_STORE_MISSES_CAUSES_A_WALK
-L1 DTLB store miss rate  DTLB_STORE_MISSES_CAUSES_A_WALK / INSTR_RETIRED_ANY
-L1 DTLB store miss duration DTLB_STORE_MISSES_WALK_DURATION
+L1 DTLB load misses     = DTLB_LOAD_MISSES_CAUSES_A_WALK
+L1 DTLB load miss rate  = DTLB_LOAD_MISSES_CAUSES_A_WALK / INSTR_RETIRED_ANY
+L1 DTLB load miss duration = DTLB_LOAD_MISSES_WALK_DURATION
+L1 DTLB store misses     = DTLB_STORE_MISSES_CAUSES_A_WALK
+L1 DTLB store miss rate  = DTLB_STORE_MISSES_CAUSES_A_WALK / INSTR_RETIRED_ANY
+L1 DTLB store miss duration = DTLB_STORE_MISSES_WALK_DURATION
 -
 The DTLB load and store miss rates gives a measure how often a TLB miss occurred
 per instruction. The duration measures the time in cycles how long a walk did take.
