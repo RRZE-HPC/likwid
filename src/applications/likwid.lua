@@ -135,6 +135,7 @@ likwid.registerRegion = likwid_registerRegion
 likwid.startRegion = likwid_startRegion
 likwid.stopRegion = likwid_stopRegion
 likwid.getRegion = likwid_getRegion
+likwid.resetRegion = likwid_resetRegion
 likwid.initCpuFeatures = likwid_cpuFeaturesInit
 likwid.getCpuFeatures = likwid_cpuFeaturesGet
 likwid.enableCpuFeatures = likwid_cpuFeaturesEnable
