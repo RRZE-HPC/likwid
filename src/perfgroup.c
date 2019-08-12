@@ -168,9 +168,12 @@ get_groups(
     bstring SHORT = bformat("SHORT");
     bstring LONG = bformat("LONG");
     bstring REQUIRE = bformat("REQUIRE_NOHT");
+    char* Home = getenv("HOME");
+    
     int read_long = 0;
-    if ((grouppath == NULL)||(architecture == NULL)||(groupnames == NULL))
+    if ((grouppath == NULL)||(architecture == NULL)||(groupnames == NULL)||(Home == NULL))
         return -EINVAL;
+
     char* fullpath = malloc((strlen(grouppath)+strlen(architecture)+50) * sizeof(char));
     if (fullpath == NULL)
     {
@@ -179,7 +182,7 @@ get_groups(
         bdestroy(REQUIRE);
         return -ENOMEM;
     }
-    char* homepath = malloc((strlen(getenv("HOME"))+strlen(architecture)+50) * sizeof(char));
+    char* homepath = malloc((strlen(Home)+strlen(architecture)+50) * sizeof(char));
     if (homepath == NULL)
     {
         free(fullpath);
@@ -225,7 +228,7 @@ get_groups(
         }
     }
     closedir(dp);
-    hsize = sprintf(homepath, "%s/.likwid/groups/%s", getenv("HOME"), architecture);
+    hsize = sprintf(homepath, "%s/.likwid/groups/%s", Home, architecture);
     if (isdir(homepath))
     {
         search_home = 1;
@@ -792,11 +795,12 @@ read_group(
     char buf[1024];
     GroupFileSections sec = GROUP_NONE;
     bstring REQUIRE = bformat("REQUIRE_NOHT");
-    if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL))
+    char* Home = getenv("HOME");
+    if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL)||(Home == NULL))
         return -EINVAL;
 
     bstring fullpath = bformat("%s/%s/%s.txt", grouppath,architecture, groupname);
-    bstring homepath = bformat("%s/.likwid/groups/%s/%s.txt", getenv("HOME"),architecture, groupname);
+    bstring homepath = bformat("%s/.likwid/groups/%s/%s.txt", Home,architecture, groupname);
 
     if (access(bdata(fullpath), R_OK))
     {
