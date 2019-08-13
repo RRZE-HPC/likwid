@@ -65,11 +65,11 @@ int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping, uint3
 
     if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
     {
-        const_bstring familyString = bformat("CPU architecture:");
-        const_bstring variantString = bformat("CPU variant\t:");
-        const_bstring steppingString = bformat("CPU revision\t:");
-        const_bstring partString = bformat("CPU part\t:");
-        const_bstring vendString = bformat("CPU implementer\t:");
+        const_bstring familyString = bformat("CPU architecture");
+        const_bstring variantString = bformat("CPU variant");
+        const_bstring steppingString = bformat("CPU revision");
+        const_bstring partString = bformat("CPU part");
+        const_bstring vendString = bformat("CPU implementer");
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
         bdestroy(src);
@@ -134,7 +134,9 @@ int parse_cpuname(char *name)
     FILE *fp = NULL;
     if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
     {
-        const_bstring nameString = bformat("Hardware\t:");
+        int found = 0;
+        const_bstring nameString = bformat("Hardware");
+        const_bstring nameString2 = bformat("model name");
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
         bdestroy(src);
@@ -145,8 +147,24 @@ int parse_cpuname(char *name)
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
-                strncpy(name, bdata(subtokens->entry[1]), MAX_MODEL_STRING_LENGTH-1);
+                ownstrncpy(name, bdata(subtokens->entry[1]), MAX_MODEL_STRING_LENGTH-1);
                 bstrListDestroy(subtokens);
+                found = 1;
+                break;
+            }
+        }
+        if (!found)
+        {
+            for (int i = 0; i < tokens->qty; i++)
+            {
+                if ((binstr(tokens->entry[i],0,nameString2) != BSTR_ERR))
+                {
+                    struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
+                    bltrimws(subtokens->entry[1]);
+                    ownstrncpy(name, bdata(subtokens->entry[1]), MAX_MODEL_STRING_LENGTH-1);
+                    bstrListDestroy(subtokens);
+                    break;
+                }
             }
         }
         bstrListDestroy(tokens);
