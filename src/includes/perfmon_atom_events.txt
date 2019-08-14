@@ -70,8 +70,8 @@ UMASK_BUS_HIT_DRV_THIS_A                              0x00
 UMASK_BUS_HIT_DRV_ALL_A                               0x20
 
 EVENT_BUS_HITM_DRV                                    0x7B PMC
-UMASK_BUS_HITM_DRV                                    0x00
-UMASK_BUS_HITM_DRV                                    0x20
+UMASK_BUS_HITM_DRV_THIS_A                             0x00
+UMASK_BUS_HITM_DRV_ALL_A                              0x20
 
 EVENT_BUS_IO_WAIT                                     0x7F PMC
 UMASK_BUS_IO_WAIT_ALL_CORES                           0xC0
@@ -174,55 +174,55 @@ EVENT_CYCLES_DIV_BUSY            0x14   PMC0
 UMASK_CYCLES_DIV_BUSY            0x00
 
 EVENT_CYCLES_INT_MASKED                               0xC6 PMC
-UMASK_CYCLES_INT_MASKED_CYCLES_INT_MASKED             0x01 
-UMASK_CYCLES_INT_MASKED_CYCLES_INT_PENDING_AND_MASKED 0x02  
+UMASK_CYCLES_INT_MASKED_CYCLES_INT_MASKED             0x01
+UMASK_CYCLES_INT_MASKED_CYCLES_INT_PENDING_AND_MASKED 0x02
 
 EVENT_DATA_TLB_MISSES                                 0x08 PMC
-UMASK_DATA_TLB_MISSES_DTLB_MISS                       0x07 
-UMASK_DATA_TLB_MISSES.DTLB_MISS_LD                    0x05 
-UMASK_DATA_TLB_MISSES.DTLB_MISS_ST                    0x06 
-UMASK_DATA_TLB_MISSES.L0_DTLB_MISS_LD                 0x09 
+UMASK_DATA_TLB_MISSES_DTLB_MISS                       0x07
+UMASK_DATA_TLB_MISSES.DTLB_MISS_LD                    0x05
+UMASK_DATA_TLB_MISSES.DTLB_MISS_ST                    0x06
+UMASK_DATA_TLB_MISSES.L0_DTLB_MISS_LD                 0x09
 
 EVENT_DIV                                             0x13 PMC
-UMASK_DIV_AR                                          0x81 
-UMASK_DIV_S                                           0x01 
+UMASK_DIV_AR                                          0x81
+UMASK_DIV_S                                           0x01
 
 EVENT_EIST_TRANS               0x3A  PMC
 UMASK_EIST_TRANS               0x00
 
 EVENT_EXT_SNOOP                                       0x77 PMC
-UMASK_EXT_SNOOP_ALL_CORES_MODIFIED                    0xC8  
-UMASK_EXT_SNOOP_ALL_CORES_EXCLUSIVE                   0xC4  
-UMASK_EXT_SNOOP_ALL_CORES_SHARED                      0xC2  
-UMASK_EXT_SNOOP_ALL_CORES_INVALID                     0xC1  
-UMASK_EXT_SNOOP_ALL_CORES_MESI                        0xCF  
-UMASK_EXT_SNOOP_THIS_CORE_MODIFIED                    0x48  
-UMASK_EXT_SNOOP_THIS_CORE_EXCLUSIVE                   0x44  
-UMASK_EXT_SNOOP_THIS_CORE_SHARED                      0x42  
-UMASK_EXT_SNOOP_THIS_CORE_INVALID                     0x41  
-UMASK_EXT_SNOOP_THIS_CORE_MESI                        0x4F  
+UMASK_EXT_SNOOP_ALL_CORES_MODIFIED                    0xC8
+UMASK_EXT_SNOOP_ALL_CORES_EXCLUSIVE                   0xC4
+UMASK_EXT_SNOOP_ALL_CORES_SHARED                      0xC2
+UMASK_EXT_SNOOP_ALL_CORES_INVALID                     0xC1
+UMASK_EXT_SNOOP_ALL_CORES_MESI                        0xCF
+UMASK_EXT_SNOOP_THIS_CORE_MODIFIED                    0x48
+UMASK_EXT_SNOOP_THIS_CORE_EXCLUSIVE                   0x44
+UMASK_EXT_SNOOP_THIS_CORE_SHARED                      0x42
+UMASK_EXT_SNOOP_THIS_CORE_INVALID                     0x41
+UMASK_EXT_SNOOP_THIS_CORE_MESI                        0x4F
 
 EVENT_FP_ASSIST                                       0x11 PMC
-UMASK_FP_ASSIST                                       0x01 
-UMASK_FP_ASSIST_AR                                    0x81 
+UMASK_FP_ASSIST                                       0x01
+UMASK_FP_ASSIST_AR                                    0x81
 
 EVENT_HW_INT_RCV             0xC8   PMC
 UMASK_HW_INT_RCV    0x00
 
 EVENT_ICACHE                                         0x80  PMC
-UMASK_ICACHE_ACCESSES                                0x03 
-UMASK_ICACHE_MISSES                                  0x02 
+UMASK_ICACHE_ACCESSES                                0x03
+UMASK_ICACHE_MISSES                                  0x02
 
 EVENT_INST_RETIRED               0xC0   PMC
 UMASK_INST_RETIRED_ANY_P         0x00
 
 EVENT_ITLB                                            0x82 PMC
-UMASK_ITLB_MISSES                                     0x02 
-UMASK_ITLB_FLUSH                                      0x04 
+UMASK_ITLB_MISSES                                     0x02
+UMASK_ITLB_FLUSH                                      0x04
 
 EVENT_L1D_CACHE                                       0x40 PMC
 UMASK_L1D_CACHE_LD                                    0x21
-UMASK_L1D_CACHE_ST                                    0x22 
+UMASK_L1D_CACHE_ST                                    0x22
 
 EVENT_L2_ADS                     0x21   PMC
 UMASK_L2_ADS_ALL_CORES           0xC0
@@ -397,18 +397,18 @@ UMASK_L2_ST_THIS_CORE_INVALID    0x41
 UMASK_L2_ST_THIS_CORE_MESI       0x4F
 
 EVENT_MACHINE_CLEARS                                  0xC3 PMC
-UMASK_MACHINE_CLEARS_SMC                              0x01 
+UMASK_MACHINE_CLEARS_SMC                              0x01
 
 EVENT_MACRO_INSTS          0xAA  PMC
 UMASK_MACRO_INSTS_DECODED          0x01
 UMASK_MACRO_INSTS_CISC_DECODED     0x08
 
 EVENT_MEM_LOAD_RETIRED           0xCB    PMC0
-UMASK_MEM_LOAD_RETIRED_L1D_MISS       0x01 
-UMASK_MEM_LOAD_RETIRED_L1D_LINE_MISS  0x02 
-UMASK_MEM_LOAD_RETIRED_L2_MISS        0x04 
-UMASK_MEM_LOAD_RETIRED_L2_LINE_MISS   0x08 
-UMASK_MEM_LOAD_RETIRED_DTLB_MISS      0x10 
+UMASK_MEM_LOAD_RETIRED_L1D_MISS       0x01
+UMASK_MEM_LOAD_RETIRED_L1D_LINE_MISS  0x02
+UMASK_MEM_LOAD_RETIRED_L2_MISS        0x04
+UMASK_MEM_LOAD_RETIRED_L2_LINE_MISS   0x08
+UMASK_MEM_LOAD_RETIRED_DTLB_MISS      0x10
 
 EVENT_MUL                        0x12   PMC1
 UMASK_MUL                        0x00
@@ -420,9 +420,9 @@ UMASK_PAGE_WALKS_WALKS            0x03
 UMASK_PAGE_WALKS_CYCLES           0x02
 
 EVENT_PREFETCH                                        0x07 PMC
-UMASK_PREFETCH_PREFETCHNTA                            0x08 
-UMASK_PREFETCH_PREFETCHT0                             0x01 
-UMASK_PREFETCH_SW_L2                                  0x06 
+UMASK_PREFETCH_PREFETCHNTA                            0x08
+UMASK_PREFETCH_PREFETCHT0                             0x01
+UMASK_PREFETCH_SW_L2                                  0x06
 
 EVENT_SEGMENT_REG_LOADS          0x06   PMC
 UMASK_SEGMENT_REG_LOADS_ANY          0x00
@@ -438,7 +438,7 @@ UMASK_SIMD_COMP_INST_RETIRED_PACKED_SINGLE     0x01
 UMASK_SIMD_COMP_INST_RETIRED_SCALAR_SINGLE     0x02
 UMASK_SIMD_COMP_INST_RETIRED_PACKED_DOUBLE     0x04
 UMASK_SIMD_COMP_INST_RETIRED_SCALAR_DOUBLE     0x08
-UMASK_SIMD_COMP_INST_RETIRED_ANY               0x1F 
+UMASK_SIMD_COMP_INST_RETIRED_ANY               0x1F
 
 EVENT_SIMD_INST_RETIRED          0xC7   PMC
 UMASK_SIMD_INST_RETIRED_PACKED_SINGLE       0x01
@@ -453,25 +453,25 @@ UMASK_SIMD_SAT_INSTR_RETIRED    0x00
 
 EVENT_SIMD_SAT_UOPS_EXEC            0xB1  PMC
 UMASK_SIMD_SAT_UOPS_EXEC_S        0x00
-UMASK_SIMD_SAT_UOP_EXEC_AR                            0x80 
+UMASK_SIMD_SAT_UOP_EXEC_AR                            0x80
 
 EVENT_SIMD_UOPS_EXEC            0xB0  PMC
 UMASK_SIMD_UOPS_EXEC_S          0x00
-UMASK_SIMD_UOPS_EXEC_AR                               0xB0 0x80 
+UMASK_SIMD_UOPS_EXEC_AR                               0xB0 0x80
 
 EVENT_SIMD_UOP_TYPE_EXEC               0xB3  PMC
-UMASK_SIMD_UOP_TYPE_EXEC_ARITHMETIC_AR                0xA0 
-UMASK_SIMD_UOP_TYPE_EXEC_ARITHMETIC_S                 0x20 
-UMASK_SIMD_UOP_TYPE_EXEC_LOGICAL_AR                   0x90 
-UMASK_SIMD_UOP_TYPE_EXEC_LOGICAL_S                    0x10 
-UMASK_SIMD_UOP_TYPE_EXEC_MUL_AR                       0x81 
-UMASK_SIMD_UOP_TYPE_EXEC_MUL_S                        0x01 
-UMASK_SIMD_UOP_TYPE_EXEC_PACK_AR                      0x84 
-UMASK_SIMD_UOP_TYPE_EXEC_PACK_S                       0x04 
-UMASK_SIMD_UOP_TYPE_EXEC_SHIFT_AR                     0x82 
-UMASK_SIMD_UOP_TYPE_EXEC_SHIFT_SSIMD                  0x02 
-UMASK_SIMD_UOP_TYPE_EXEC_UNPACK_AR                    0x88 
-UMASK_SIMD_UOP_TYPE_EXEC_UNPACK_S                     0x08 
+UMASK_SIMD_UOP_TYPE_EXEC_ARITHMETIC_AR                0xA0
+UMASK_SIMD_UOP_TYPE_EXEC_ARITHMETIC_S                 0x20
+UMASK_SIMD_UOP_TYPE_EXEC_LOGICAL_AR                   0x90
+UMASK_SIMD_UOP_TYPE_EXEC_LOGICAL_S                    0x10
+UMASK_SIMD_UOP_TYPE_EXEC_MUL_AR                       0x81
+UMASK_SIMD_UOP_TYPE_EXEC_MUL_S                        0x01
+UMASK_SIMD_UOP_TYPE_EXEC_PACK_AR                      0x84
+UMASK_SIMD_UOP_TYPE_EXEC_PACK_S                       0x04
+UMASK_SIMD_UOP_TYPE_EXEC_SHIFT_AR                     0x82
+UMASK_SIMD_UOP_TYPE_EXEC_SHIFT_SSIMD                  0x02
+UMASK_SIMD_UOP_TYPE_EXEC_UNPACK_AR                    0x88
+UMASK_SIMD_UOP_TYPE_EXEC_UNPACK_S                     0x08
 
 EVENT_SNOOP_STALL_DRV                                 0x7E PMC
 UMASK_SNOOP_STALL_DRV_ALL_CORES_THIS_A    0xC0
@@ -480,7 +480,7 @@ UMASK_SNOOP_STALL_DRV_THIS_CORE_THIS_A    0x40
 UMASK_SNOOP_STALL_DRV_THIS_CORE_ALL_A     0x60
 
 EVENT_STORE_FORWARDS_GOOD                             0x02  PMC
-UMASK_STORE_FORWARDS_GOOD 0x81 
+UMASK_STORE_FORWARDS_GOOD 0x81
 
 EVENT_THERMAL_TRIP               0x3B  PMC
 UMASK_THERMAL_TRIP               0xC0
@@ -489,5 +489,5 @@ EVENT_UOPS_RETIRED               0xC2   PMC
 UMASK_UOPS_RETIRED_ANY           0x00
 
 EVENT_X87_COMP_OPS_EXE                                0x10 PMC
-UMASK_X87_COMP_OPS_EXE_ANY_S                          0x01 
-UMASK_X87_COMP_OPS_EXE_ANY_AR                         0x81 
+UMASK_X87_COMP_OPS_EXE_ANY_S                          0x01
+UMASK_X87_COMP_OPS_EXE_ANY_AR                         0x81
