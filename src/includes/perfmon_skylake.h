@@ -38,6 +38,7 @@
 #include <limits.h>
 #include <topology.h>
 #include <access.h>
+#include <linux/version.h>
 
 static int perfmon_numCountersSkylake = NUM_COUNTERS_SKYLAKE;
 static int perfmon_numCoreCountersSkylake = NUM_COUNTERS_CORE_SKYLAKE;
