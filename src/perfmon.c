@@ -2482,7 +2482,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
 {
     int e = 0;
     double result = 0;
-    char split[2] = ":";
+    CounterList clist;
     if (unlikely(groupSet == NULL))
     {
         return NAN;
@@ -2508,36 +2508,17 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     {
         return NAN;
     }
-    bstring vars = bformat("");
-    bstring varlist = bformat("");
-    char* f = groupSet->groups[groupId].group.metricformulas[metricId];
+    timer_init();
+    init_clist(&clist);
     for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
     {
-        if (groupSet->groups[groupId].events[e].type != NOTYPE)
-        {
-            char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            if (ctr)
-                calc_add_dbl_var(ctr, perfmon_getResult(groupId, e, threadId), vars, varlist);
-        }
-        else
-        {
-            char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            if (ctr && strstr(f, ctr) != NULL)
-            {
-                calc_add_int_var(ctr, 0, vars, varlist);
-            }
-        }
+        add_to_clist(&clist,groupSet->groups[groupId].group.counters[e],
+                     perfmon_getResult(groupId, e, threadId));
     }
-    if (groupSet->groups[groupId].group.lua_funcs)
-    {
-        if (calc_set_user_funcs(groupSet->groups[groupId].group.lua_funcs))
-        {
-            free(groupSet->groups[groupId].group.lua_funcs);
-            groupSet->groups[groupId].group.lua_funcs = NULL;
-        }
-    }
-    calc_add_dbl_var("time", perfmon_getTimeOfGroup(groupId), vars, varlist);
-    calc_add_dbl_var("inverseClock", 1.0/timer_getCycleClock(), vars, varlist);
+    add_to_clist(&clist, "time", perfmon_getTimeOfGroup(groupId));
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
+    add_to_clist(&clist, "true", 1);
+    add_to_clist(&clist, "false", 0);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -2556,46 +2537,34 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
                 sock_cpu = groupSet->threads[e].thread_id;
             }
         }
-        calc_add_int_var("SOCKET_CPU", sock_cpu, vars, varlist);
         for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
         {
             if (perfmon_isUncoreCounter(groupSet->groups[groupId].group.counters[e]) &&
                 !perfmon_isUncoreCounter(groupSet->groups[groupId].group.metricformulas[metricId]))
             {
-                if (groupSet->groups[groupId].events[e].type != NOTYPE)
+                err = update_clist(&clist,groupSet->groups[groupId].group.counters[e], perfmon_getResult(groupId, e, sock_cpu));
+                if (err < 0)
                 {
-                    char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-                    double res = perfmon_getResult(groupId, e, sock_cpu);
-                    err = calc_add_dbl_var(ctr, res, vars, varlist);
-                    if (err < 0)
-                    {
-                        DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
-                    }
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
                 }
             }
         }
     }
-    else
-    {
-        calc_add_int_var("SOCKET_CPU", cpu, vars, varlist);
-    }
-
-    e = calc_metric(cpu, f, vars, varlist, &result);
-    bdestroy(vars);
-    bdestroy(varlist);
+    e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
     if (e < 0)
     {
-        result = NAN;
+        result = 0.0;
+        //ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
     }
+    destroy_clist(&clist);
     return result;
 }
-
 double
 perfmon_getLastMetric(int groupId, int metricId, int threadId)
 {
     int e = 0;
     double result = 0;
-    char split[2] = ":";
+    CounterList clist;
     if (unlikely(groupSet == NULL))
     {
         return NAN;
@@ -2621,36 +2590,17 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     {
         return NAN;
     }
-    bstring vars = bformat("");
-    bstring varlist = bformat("");
-    char* f = groupSet->groups[groupId].group.metricformulas[metricId];
+    timer_init();
+    init_clist(&clist);
     for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
     {
-        if (groupSet->groups[groupId].events[e].type != NOTYPE)
-        {
-            char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            if (ctr)
-                calc_add_dbl_var(ctr, perfmon_getLastResult(groupId, e, threadId), vars, varlist);
-        }
-        else
-        {
-            char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            if (ctr && strstr(f, ctr) != NULL)
-            {
-                calc_add_int_var(ctr, 0, vars, varlist);
-            }
-        }
+        add_to_clist(&clist,groupSet->groups[groupId].group.counters[e],
+                     perfmon_getLastResult(groupId, e, threadId));
     }
-    if (groupSet->groups[groupId].group.lua_funcs)
-    {
-        if (calc_set_user_funcs(groupSet->groups[groupId].group.lua_funcs))
-        {
-            free(groupSet->groups[groupId].group.lua_funcs);
-            groupSet->groups[groupId].group.lua_funcs = NULL;
-        }
-    }
-    calc_add_dbl_var("time", perfmon_getLastTimeOfGroup(groupId), vars, varlist);
-    calc_add_dbl_var("inverseClock", 1.0/timer_getCycleClock(), vars, varlist);
+    add_to_clist(&clist, "time", perfmon_getLastTimeOfGroup(groupId));
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
+    add_to_clist(&clist, "true", 1);
+    add_to_clist(&clist, "false", 0);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -2659,7 +2609,6 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
-    calc_add_int_var("CPU", cpu, vars, varlist);
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
@@ -2670,37 +2619,26 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
                 sock_cpu = groupSet->threads[e].thread_id;
             }
         }
-        calc_add_int_var("SOCKET_CPU", sock_cpu, vars, varlist);
         for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
         {
             if (perfmon_isUncoreCounter(groupSet->groups[groupId].group.counters[e]) &&
                 !perfmon_isUncoreCounter(groupSet->groups[groupId].group.metricformulas[metricId]))
             {
-                if (groupSet->groups[groupId].events[e].type != NOTYPE)
+                err = update_clist(&clist,groupSet->groups[groupId].group.counters[e], perfmon_getLastResult(groupId, e, sock_cpu));
+                if (err < 0)
                 {
-                    char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-                    double res = perfmon_getLastResult(groupId, e, sock_cpu);
-                    err = calc_add_dbl_var(ctr, res, vars, varlist);
-                    if (err < 0)
-                    {
-                        DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
-                    }
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
                 }
             }
         }
     }
-    else
-    {
-        calc_add_int_var("SOCKET_CPU", cpu, vars, varlist);
-    }
-
-    e = calc_metric(cpu, f, vars, varlist, &result);
-    bdestroy(vars);
-    bdestroy(varlist);
+    e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
     if (e < 0)
     {
-        result = NAN;
+        result = 0.0;
+        //ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
     }
+    destroy_clist(&clist);
     return result;
 }
 
@@ -3279,9 +3217,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
 {
     int e = 0, err = 0;
     double result = 0.0;
-    char split[2] = ":";
-    bstring vars = bformat("");
-    bstring varlist = bformat("");
+    CounterList clist;
     if (perfmon_initialized != 1)
     {
         ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
@@ -3303,38 +3239,25 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     {
         return NAN;
     }
-
-    char* f = groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId];
+    timer_init();
+    init_clist(&clist);
     for (e=0;e<markerResults[region].eventCount;e++)
     {
-        if (groupSet->groups[markerResults[region].groupID].events[e].type != NOTYPE)
+        err = add_to_clist(&clist,
+                     groupSet->groups[markerResults[region].groupID].group.counters[e],
+                     perfmon_getResultOfRegionThread(region, e, threadId));
+        if (err)
         {
-            char* ctr = strtok(groupSet->groups[markerResults[region].groupID].group.counters[e], split);
-            if (ctr)
-            {
-                double res = perfmon_getResultOfRegionThread(region, e, threadId);
-                calc_add_dbl_var(ctr, res, vars, varlist);
-            }
-        }
-        else
-        {
-            char *ctr = strtok(groupSet->groups[markerResults[region].groupID].group.counters[e], split);
-            if (ctr && strstr(f, ctr) != NULL)
-            {
-                calc_add_int_var(ctr, 0, vars, varlist);
-            }
+            printf("Cannot add counter %s to counter list for metric calculation\n",
+                    counter_map[groupSet->groups[markerResults[region].groupID].events[e].index].key);
+            destroy_clist(&clist);
+            return 0;
         }
     }
-    if (groupSet->groups[markerResults[region].groupID].group.lua_funcs)
-    {
-        if (calc_set_user_funcs(groupSet->groups[markerResults[region].groupID].group.lua_funcs))
-        {
-            free(groupSet->groups[markerResults[region].groupID].group.lua_funcs);
-            groupSet->groups[markerResults[region].groupID].group.lua_funcs = NULL;
-        }
-    }
-    calc_add_dbl_var("time", perfmon_getTimeOfRegion(region, threadId), vars, varlist);
-    calc_add_dbl_var("inverseClock", 1.0/timer_getCycleClock(), vars, varlist);
+    add_to_clist(&clist, "time", perfmon_getTimeOfRegion(region, threadId));
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
+    add_to_clist(&clist, "true", 1);
+    add_to_clist(&clist, "false", 0);
     int cpu = 0, sock_cpu = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -3343,7 +3266,6 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
-
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
@@ -3354,38 +3276,25 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
                 sock_cpu = groupSet->threads[e].thread_id;
             }
         }
-        calc_add_int_var("SOCKET_CPU", sock_cpu, vars, varlist);
         for (e=0;e<markerResults[region].eventCount;e++)
         {
             if (perfmon_isUncoreCounter(groupSet->groups[markerResults[region].groupID].group.counters[e]) &&
                 !perfmon_isUncoreCounter(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId]))
             {
-                if (groupSet->groups[markerResults[region].groupID].events[e].type != NOTYPE)
+                err = update_clist(&clist,groupSet->groups[markerResults[region].groupID].group.counters[e], perfmon_getResultOfRegionThread(region, e, sock_cpu));
+                if (err < 0)
                 {
-                    char *ctr = strtok(groupSet->groups[markerResults[region].groupID].group.counters[e], split);
-                    double res = perfmon_getResultOfRegionThread(region, e, sock_cpu);
-                    err = calc_add_dbl_var(ctr, res, vars, varlist);
-                    if (err < 0)
-                    {
-                        DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[markerResults[region].groupID].group.counters[e], threadId);
-                    }
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[markerResults[region].groupID].group.counters[e], threadId);
                 }
             }
         }
     }
-    else
-    {
-        calc_add_int_var("SOCKET_CPU", cpu, vars, varlist);
-    }
-
-    err = calc_metric(cpu, f, vars, varlist, &result);
-    bdestroy(vars);
-    bdestroy(varlist);
+    err = calc_metric(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId], &clist, &result);
     if (err < 0)
     {
-        ERROR_PRINT(Cannot calculate formula %s, f);
-        return NAN;
+        ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId]);
     }
+    destroy_clist(&clist);
     return result;
 }
 
@@ -3553,4 +3462,3 @@ perfmon_destroyMarkerResults()
         free(markerResults);
     }
 }
-
