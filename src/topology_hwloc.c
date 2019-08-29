@@ -147,7 +147,7 @@ int parse_cpuname(char *name)
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
-                ownstrncpy(name, bdata(subtokens->entry[1]), MAX_MODEL_STRING_LENGTH-1);
+                strncpy(name, bdata(subtokens->entry[1]), MAX_MODEL_STRING_LENGTH-1);
                 bstrListDestroy(subtokens);
                 found = 1;
                 break;
@@ -161,7 +161,7 @@ int parse_cpuname(char *name)
                 {
                     struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                     bltrimws(subtokens->entry[1]);
-                    ownstrncpy(name, bdata(subtokens->entry[1]), MAX_MODEL_STRING_LENGTH-1);
+                    strncpy(name, bdata(subtokens->entry[1]), MAX_MODEL_STRING_LENGTH-1);
                     bstrListDestroy(subtokens);
                     break;
                 }
