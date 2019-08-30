@@ -11,8 +11,11 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-X87 MFLOP/s  1.0E-06*PMC0/time
+X87 [MFLOP/s]  1.0E-06*PMC0/time
 
 LONG
+Formulas:
+X87 [MFLOP/s] = 1.0E-06*INST_RETIRED_X87/runtime
+-
 Profiling group to measure X87 FLOP rate.
 

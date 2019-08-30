@@ -20,7 +20,7 @@ Executed UOPs PMC1
 Retired UOPs PMC2
 
 LONG
-Formula:
+Formulas:
 Issued UOPs = UOPS_ISSUED_ANY
 Executed UOPs = UOPS_EXECUTED_THREAD
 Retired UOPs = UOPS_RETIRED_ALL

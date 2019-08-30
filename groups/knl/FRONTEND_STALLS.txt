@@ -18,7 +18,8 @@ Frontend stall ratio PMC0/FIXC1
 
 LONG
 Formulas:
--
 Frontend stalls = NO_ALLOC_CYCLES_ALL
 Avg. frontend stall duration [cyc] = NO_ALLOC_CYCLES_ALL/NO_ALLOC_CYCLES_ALL_COUNT
 Frontend stall ratio = NO_ALLOC_CYCLES_ALL/CPU_CLK_UNHALTED_CORE
+-
+Frontend stalls

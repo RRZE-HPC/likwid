@@ -3,7 +3,7 @@
 
 # =======================================================================================
 #
-#      Filename:  check_events_files.py
+#      Filename:  check_data_files.py
 #
 #      Description:  Basic checks for performance event list files
 #
@@ -25,9 +25,12 @@
 #      this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # =======================================================================================
+
 from collections import OrderedDict
 import json
+import logging as log
 from pathlib import Path
+from pprint import pprint, pformat
 import sys
 
 from pyparsing import *
@@ -36,7 +39,7 @@ ParserElement.setDefaultWhitespaceChars(' \t')
 
 
 def err(fmt, *args, **kw):
-    print(fmt.format(*args, **kw), file=sys.stderr)
+    log.error(fmt.format(*args, **kw))
 
 
 
@@ -389,22 +392,263 @@ def resolve_events_files(opts):
     return files
 
 
+
 def check_events(opts):
 
+    start_logging(args)
     files = resolve_events_files(opts)
+    if opts.json:
+        opts.output_dir.mkdir(parents=True, exist_ok=True)
     ep = EventParser()
     nerrors = 0
     for fn in files:
-        if opts.verbose:
-            print("checking: {}".format(fn))
+        log.info("checking: {}".format(fn))
         with fn.open() as f:
             nerrors += ep.check(f, opts)
         if opts.json:
             o = opts.output_dir / fn.name.replace(fn.suffix, '.json')
-            ep.to_json(o.open('w'), indent=4)
-    if opts.verbose and nerrors:
-        print("\nFound {} errors".format(nerrors))
+            with o.open('w') as jf:
+                ep.to_json(jf, indent=4)
+    if nerrors:
+        log.info("\nFound {} errors".format(nerrors))
     return nerrors > 0
+
+
+
+UNITS = [
+    's',
+    'MHz',
+    'MFLOP/s',
+    'MUOPS/s',
+    'MBytes/s',
+    'GBytes',
+    '%',
+    'J',
+    'W',
+    'C',
+    ]
+
+def miss_brackets_in_units(s):
+
+    for dim in UNITS:
+        if ' {} '.format(dim) in s:
+            return dim
+        if s.endswith(' {}'.format(dim)):
+            return dim
+    return None
+
+
+
+def extract_units(s):
+
+    l = s.split()
+    if len(l) > 1 and l[-1].startswith('[') and l[-1].endswith(']'):
+        return ' '.join(l[:-1]), l[-1][1:-1]
+    else:
+        return s, None
+
+
+
+class GroupParser():
+    """
+    eol = '\n' ;
+    letter = 'A' - 'Z' | 'a' - 'z' ;
+    digit = '0' - '9'
+    name = letter, { letter | digit | '_' } ;
+    word = -eol, { -eol } ;
+    line = word, { word }, eol ;
+    op = '*' | '/' | '+' | '-' ;
+
+    short = "SHORT", short_title, eol ;
+    noht = "REQUIRE_NOHT", eol ;
+    counter_name = name ;
+    event_name = name ;
+    event = counter_name, event_name, eol ;
+    eventset = "EVENTSET", eol, event, { event }, eol ;
+    metric_name = letter, { letter | digit | '_' | '(' | ')' | ' ' } ;
+    units = UNITS
+    metric = metric_name, [ units ], counter_name, {  op, counter_name }, eol ;
+    metrics = "METRICS", eol, metric, { metric }, eol ;
+    formula = metric_name, [ units ], '=', event_name, {  op,  event_name}, eol ;
+    formulas = "Formulas:", eol, formula, { formula } ;
+    sep = '--' | '-', eol ;
+    long = line, { line } ;
+    group = short, [ noht ], eventset, metrics, "LONG", eol, formulas, sep, long
+    """
+
+    def __init__(self):
+
+        EOL = LineEnd().suppress()
+        Line = LineStart() + SkipTo(LineEnd(), failOn=LineStart()+LineEnd()) + EOL
+
+        short = Keyword('SHORT').suppress() + SkipTo(LineEnd(), failOn=LineStart()+LineEnd()) + EOL
+        short.setParseAction(
+            lambda s, loc, toks:
+                self.group.update(short=toks[0])
+        )
+        self.parser = short + OneOrMore(EOL)
+
+        noht = Keyword('REQUIRE_NOHT')
+        noht.setParseAction(
+            lambda s, loc, toks:
+                self.group.update(require_noht=True)
+        )
+        self.parser += Optional(noht() + OneOrMore(EOL))
+
+        eventset = Keyword('EVENTSET').suppress() + EOL + \
+        Group(OneOrMore(
+            LineStart() + Group(Word(alphanums) + SkipTo(LineEnd(), failOn=LineStart()+LineEnd())
+                            ).setParseAction(self.add_event) + EOL
+        ))
+        self.parser += eventset + OneOrMore(EOL)
+
+        metrics = Keyword('METRICS').suppress() + EOL + \
+        Group(OneOrMore(
+            LineStart() + Group(OneOrMore(Word(alphanums+'.[]()-+*/')) + SkipTo(LineEnd(), failOn=LineStart()+LineEnd())
+                            ).setParseAction(self.add_metric) + EOL
+        ))
+        self.parser += metrics + OneOrMore(EOL)
+
+        long = Keyword('LONG').suppress() + EOL
+        self.parser += long
+
+        formulae = Keyword('Formulas:') + EOL + OneOrMore(Line().setParseAction(self.add_formula))
+        self.parser += formulae
+
+        descr = (Keyword('-') ^ Keyword('--')).suppress() + EOL + Group(OneOrMore(Line()))
+        descr.setParseAction(
+            lambda s, loc, toks:
+                self.group.update(long=' '.join(toks[0]))
+        )
+        self.parser += descr
+
+
+    def add_event(self, s, loc, toks):
+        log.debug("add_event: |{}|".format(toks[0]))
+        self.group['events'].append(dict(counter=toks[0][0], event=toks[0][1]))
+
+
+    def add_metric(self, s, loc, toks):
+        log.debug("add_metric: |{}|".format(toks[0]))
+        metric = ' '.join(toks[0][0:-2])
+        dim = miss_brackets_in_units(metric)
+        if dim:
+            raise ParseSyntaxException(s, loc, "expected '[{}]', found '{}'".format(dim, dim))
+        metric, units = extract_units(metric)
+        formula = toks[0][-2]
+        self.group['metrics'].append(dict(metric=metric, formula=formula, units=units))
+
+
+    def add_formula(self, s, loc, toks):
+        if not '=' in toks[0]:
+            raise ParseException(s,loc,"expected '=' sign")
+        metric, formula = [ x.strip() for x in toks[0].split('=', 1) ]
+        dim = miss_brackets_in_units(metric)
+        if dim:
+            raise ParseSyntaxException(s, loc, "expected '[{}]', found '{}'".format(dim, dim))
+        metric, units = extract_units(metric)
+        log.debug("add_formula: |{}| = |{}|".format(metric, formula))
+        #if metric in self.group['formulae']:
+            #self.nerrors += 1
+            #err("\n{}:{}:\nDuplicate metric formula: {}", self.fname, self.line_num, token['name'])
+        self.group['formulae'].append(dict(metric=metric, formula=formula, units=units))
+
+
+    def reset(self, fname, opts):
+        self.fname = fname
+        self.opts = opts
+        self.nerrors = 0
+        self.group = dict(
+                          short=None,
+                          events=[],
+                          metrics=[],
+                          formulae=[],
+                          long=[]
+                          )
+        self.nerrors = 0
+
+
+    def check(self, afile, opts):
+        self.reset(afile.name, opts)
+        try:
+            res =self.parser.parseFile(afile)
+            log.debug(pformat(self.group))
+            log.debug('\ngroup=\n{}'.format(json.dumps(self.group, indent=2)))
+        except Exception as pex:
+            self.nerrors += 1
+            err('\n{}:{}:{}:', self.fname, pex.lineno, pex.col)
+            err('{}:', pex.msg)
+            err('{}', pex.line)
+            err("{}^", '-'*(pex.col-1))
+        return self.nerrors
+
+
+    def to_json(self, f, indent=4, sort_keys=True):
+
+        json.dump(self.group, f, indent=indent, sort_keys=sort_keys)
+
+
+
+def resolve_group_files(opts):
+
+    if not opts.files:
+        files = list(opts.input_dir.glob("**/*.txt"))
+        if not files:
+            raise Exception("Couldn't find any group files in '{}', "
+                            "please use --input-dir option.\n"
+                            "Use `{} groups --help` for details."
+                            .format(opts.input_dir, sys.argv[0]))
+    else:
+        files = []
+        for f in opts.files:
+            f = Path(f).expanduser()
+            _files = []
+            if f.is_file():
+                _files.append(f.resolve())
+            elif (opts.input_dir / f).is_file():
+                _files.append((opts.input_dir / f).resolve())
+            elif (opts.input_dir / "{}.txt".format(f)).is_file():
+                _files.append((opts.input_dir / "{}.txt".format(f)).resolve())
+            elif (opts.input_dir / f).is_dir():
+                _files = [x.resolve() for x in (opts.input_dir / f).glob("*.txt")]
+            if not _files:
+                trials = [f, (opts.input_dir / f), opts.input_dir / "{}.txt".format(f), (opts.input_dir / f / '*.txt')]
+                raise Exception("Can't find data file:\n\t   '{}'".format("'\n\tor '".join([str(f) for f in trials])))
+            files.extend(_files)
+    return files
+
+
+
+def check_groups(opts):
+
+    start_logging(args)
+    files = resolve_group_files(opts)
+    gp = GroupParser()
+    nerrors = 0
+    for fn in files:
+        log.info("checking: {}".format(fn))
+        with fn.open() as f:
+            nerrors += gp.check(f, opts)
+        if opts.json:
+            o = opts.output_dir / fn.relative_to(opts.input_dir).with_suffix('.json')
+            o.parent.mkdir(parents=True, exist_ok=True)
+            with o.open('w') as jf:
+                gp.to_json(jf, indent=4)
+    if nerrors:
+        log.info("\nFound {} errors".format(nerrors))
+    return nerrors > 0
+
+
+
+def start_logging(args):
+
+    log_levels = log.ERROR, log.INFO, log.DEBUG,
+    log_level = log_levels[min(args.verbose, len(log_levels) - 1)]
+    log.basicConfig(
+                    #filename=str(Path(__file__).with_suffix('.log')),
+                    #filemode='w',
+                    format='%(message)s',
+                    level=log_level)
 
 
 
@@ -418,7 +662,6 @@ if __name__ == "__main__":
     subparsers = ap.add_subparsers(title='subcommands',
                                         description="use '<subcmd> --help' for "
                                                     "help on subcommands",
-                                        #help='valid subcommands'
                                         )
 
     etest = subparsers.add_parser('events', help="test events data files")
@@ -442,7 +685,7 @@ if __name__ == "__main__":
                 help="dump event descriptions in JSON format"
                 )
     etest.add_argument('--output-dir', '-o', type=Path, default=Path('.'),
-                help="path to the directory where to put output files, "
+                help="directory where to put output JSON files, "
                      "default: current directory"
                 )
     etest.add_argument('--naming', '-n', action='store_true', default=False,
@@ -451,8 +694,27 @@ if __name__ == "__main__":
                      "have the name from the EVENT line as a prefix."
                 )
 
-    self_test = subparsers.add_parser('self', help="self test for the checker")
+    self_test = subparsers.add_parser('self', help="self test for the events checker")
     self_test.set_defaults(func=test_EventParser)
+
+    gtest = subparsers.add_parser('groups', help="test group ddescriptions")
+    gtest.set_defaults(func=check_groups)
+    gtest.add_argument('--verbose', '-v', action='count', default=0)
+    default = Path(__file__).parent / "../groups"
+    if default.exists():
+        default = default.resolve()
+    else:
+        default = Path(__file__).parent
+    gtest.add_argument('--input-dir', '-d', type=Path,
+                        default=default,
+                        help='path to the directory with groups data files, default: {}'.format(default))
+    gtest.add_argument('files', metavar='FILE', type=str, nargs='*',
+                    help='group data file to check')
+    gtest.add_argument('--json', '-j', action='store_true', default=False,
+                    help="dump group descriptions in JSON format")
+    gtest.add_argument('--output-dir', '-o', type=Path,
+                        default=Path('.'),
+                        help='directory where to put output JSON files, default: current directory')
 
     args = ap.parse_args()
 

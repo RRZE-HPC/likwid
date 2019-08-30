@@ -25,11 +25,11 @@ Data volume QPI to HA or IIO [GBytes] 1.0E-09*(((SBOX0C1+SBOX0C2+SBOX1C1+SBOX1C2
 
 LONG
 Formulas:
-Received bandwidth from QPI [MBytes/s] 1.0E-06*(sum(RXL_FLITS_G1_DRS_DATA)+sum(RXL_FLITS_G2_NCB_DATA))*8/time
-Received data volume from QPI [GBytes] 1.0E-09*(sum(RXL_FLITS_G1_DRS_DATA)+sum(RXL_FLITS_G2_NCB_DATA))*8
-Bandwidth QPI to LLC [MBytes/s] 1.0E-06*(sum(DIRECT2CORE_SUCCESS))*64/time
-Data volume QPI to LLC [GBytes] 1.0E-09*(sum(DIRECT2CORE_SUCCESS))*64
-Bandwidth QPI to HA or IIO [MBytes/s] 1.0E-06*(((sum(RXL_FLITS_G1_DRS_DATA)+sum(RXL_FLITS_G2_NCB_DATA))*8)-((sum(DIRECT2CORE_SUCCESS))*64))/time
-Data volume QPI to HA or IIO [GBytes] 1.0E-09*(((sum(RXL_FLITS_G1_DRS_DATA)+sum(RXL_FLITS_G2_NCB_DATA))*8)-((sum(DIRECT2CORE_SUCCESS))*64))
+Received bandwidth from QPI [MBytes/s] = 1.0E-06*(sum(RXL_FLITS_G1_DRS_DATA)+sum(RXL_FLITS_G2_NCB_DATA))*8/time
+Received data volume from QPI [GBytes] = 1.0E-09*(sum(RXL_FLITS_G1_DRS_DATA)+sum(RXL_FLITS_G2_NCB_DATA))*8
+Bandwidth QPI to LLC [MBytes/s] = 1.0E-06*(sum(DIRECT2CORE_SUCCESS))*64/time
+Data volume QPI to LLC [GBytes] = 1.0E-09*(sum(DIRECT2CORE_SUCCESS))*64
+Bandwidth QPI to HA or IIO [MBytes/s] = 1.0E-06*(((sum(RXL_FLITS_G1_DRS_DATA)+sum(RXL_FLITS_G2_NCB_DATA))*8)-((sum(DIRECT2CORE_SUCCESS))*64))/time
+Data volume QPI to HA or IIO [GBytes] = 1.0E-09*(((sum(RXL_FLITS_G1_DRS_DATA)+sum(RXL_FLITS_G2_NCB_DATA))*8)-((sum(DIRECT2CORE_SUCCESS))*64))
 -
 Profiling group to measure traffic on the QPI.

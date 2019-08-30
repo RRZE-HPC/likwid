@@ -25,6 +25,7 @@ Retiring [%] PMC1/(4*FIXC1)*100
 Back End [%] (1-((PMC2+PMC0+(4*PMC3))/(4*FIXC1)))*100
 
 LONG
+Formulas:
 Total Slots = 4*CPU_CLK_UNHALTED_CORE
 Slots Retired = UOPS_RETIRED_RETIRE_SLOTS
 Fetch Bubbles = IDQ_UOPS_NOT_DELIVERED_CORE

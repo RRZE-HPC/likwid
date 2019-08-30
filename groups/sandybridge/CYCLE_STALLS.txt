@@ -21,6 +21,7 @@ Stalls caused by L1D misses rate [%] (PMC2/FIXC1)*100
 Stalls caused by L2 misses rate [%] (PMC0/FIXC1)*100
 
 LONG
+Formulas:
 Total execution stalls = CYCLE_ACTIVITY_STALLS_TOTAL
 Stalls caused by L1D misses [%] = (CYCLE_ACTIVITY_STALLS_L1D_PENDING/CYCLE_ACTIVITY_STALLS_TOTAL)*100
 Stalls caused by L2 misses [%] = (CYCLE_ACTIVITY_STALLS_L2_PENDING/CYCLE_ACTIVITY_STALLS_TOTAL)*100

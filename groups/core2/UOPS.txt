@@ -18,5 +18,9 @@ Executed UOPs PMC0
 Retired UOPs PMC1
 
 LONG
+Formulas:
+Executed UOPs = RS_UOPS_DISPATCHED_ALL
+Retired UOPs = UOPS_RETIRED_ANY
+-
 Performance group measures the executed and retired micro ops. The difference
 between executed and retired uOPs are the speculatively executed uOPs.

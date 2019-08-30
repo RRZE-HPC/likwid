@@ -20,7 +20,7 @@ Energy DRAM [J]  PWR3
 Power DRAM [W] PWR3/time
 
 LONG
-Formula:
+Formulas:
 Power =  PWR_PKG_ENERGY / time
 Power DRAM =  PWR_DRAM_ENERGY / time
 Uncore Clock [MHz] = 1.E-06 * UNCORE_CLOCK / time

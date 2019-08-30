@@ -17,4 +17,8 @@ Number of divide ops PMC1
 Avg. divide unit usage duration PMC0/PMC1
 
 LONG
+Formulas:
+Number of divide ops = CYCLES_DIV_BUSY_ALL_COUNT
+Avg. divide unit usage duration = CYCLES_DIV_BUSY_ALL/CYCLES_DIV_BUSY_ALL_COUNT
+-
 This performance group measures the average latency of divide operations
