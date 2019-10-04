@@ -73,6 +73,8 @@ local function usage()
     io.stdout:write("-i, --info\t\t Print CPU info\n")
     io.stdout:write("-T <time>\t\t Switch eventsets with given frequency\n")
     io.stdout:write("-f, --force\t\t Force overwrite of registers if they are in use\n")
+    io.stdout:write("-G, --gpus <list>\t List of GPUs to monitor\n")
+    io.stdout:write("-w, --gpugroup <string>\t Performance group or custom event set string for GPU monitoring\n")
     io.stdout:write("Modes:")
     io.stdout:write("-S <time>\t\t Stethoscope mode with duration in s, ms or us, e.g 20ms\n")
     io.stdout:write("-t <time>\t\t Timeline mode with frequency in s, ms or us, e.g. 300ms\n")
@@ -144,6 +146,17 @@ end
 perfflags = nil
 perfpid = nil
 nan2value = '-'
+
+
+---------------------------
+num_gpus = 0
+gpulist = {}
+gpu_event_string_list = {}
+gpuMarkerFile = string.format("/tmp/likwid_gpu_%d.txt",likwid.getpid())
+gotG = false
+gpugroups = {}
+---------------------------
+
 likwid.catchSignal()
 
 if #arg == 0 then
@@ -151,7 +164,7 @@ if #arg == 0 then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats", "execpid", "perfflags:", "perfpid:", "Z"}) do
+for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "i", "m", "M:", "o:", "O", "P", "s:", "S:", "t:", "v", "V:", "T:", "G:", "W:", "f", "group:", "help", "info", "version", "verbose:", "output:", "skip:", "marker", "force", "stats", "execpid", "perfflags:", "perfpid:", "Z", "gpugroup:"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -317,6 +330,29 @@ for opt,arg in likwid.getopt(arg, {"a", "c:", "C:", "e", "E:", "g:", "h", "H", "
         use_csv = true
     elseif (opt == "stats") then
         print_stats = true
+---------------------------
+    elseif (opt == "G") then
+        if arg ~= nil then
+            num_gpus, gpulist = likwid.gpustr_to_gpulist(arg)
+        else
+            print_stderr("Option requires an argument")
+            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
+                os.remove(outfile..".tmp")
+            end
+            os.exit(1)
+        end
+        gotG = true
+    elseif opt == "W" or opt == "gpugroup" then
+        if arg ~= nil then
+            table.insert(gpu_event_string_list, arg)
+        else
+            print_stderr("Option requires an argument")
+            if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
+                os.remove(outfile..".tmp")
+            end
+            os.exit(1)
+        end
+---------------------------
     elseif opt == "?" then
         print_stderr("Invalid commandline option -"..arg)
         if outfile ~= nil and likwid.access(outfile..".tmp", "e") == 0 then
@@ -339,7 +375,9 @@ end
 io.stdout:setvbuf("no")
 cpuinfo = likwid.getCpuInfo()
 cputopo = likwid.getCpuTopology()
-
+---------------------------
+gputopo = likwid.getGpuTopology()
+---------------------------
 
 if num_cpus == 0 and
    not gotC and
@@ -370,6 +408,23 @@ elseif num_cpus == 0 and
     os.exit(1)
 end
 
+---------------------------
+if num_gpus == 0 and
+   not gotG and
+   gpuinfo and
+   not print_events and
+   print_event == nil and
+   not print_groups and
+   not print_group_help and
+   not print_info then
+    newgpulist = {}
+    for g=1,gputopo["numDevices"] do
+        num_gpus = num_gpus + 1
+        table.insert(newgpulist, gputopo["devices"][g]["id"])
+    end
+    gpulist = newgpulist
+end
+---------------------------
 
 if num_cpus > 0 then
     for i,cpu1 in pairs(cpulist) do
@@ -385,7 +440,21 @@ if num_cpus > 0 then
     end
 end
 
-
+---------------------------
+if gpuinfo and num_gpus > 0 then
+    for i,gpu1 in pairs(gpulist) do
+        for j, gpu2 in pairs(gpulist) do
+            if i ~= j and gpu1 == gpu2 then
+                print_stderr("List of GPUs is not unique, got two times GPU " .. tostring(gpu1))
+                if outfile and likwid.access(outfile..".tmp", "e") == 0 then
+                    os.remove(outfile..".tmp")
+                end
+                os.exit(1)
+            end
+        end
+    end
+end
+---------------------------
 
 if print_events == true then
     local tab = likwid.getEventsAndCounters()
@@ -410,6 +479,14 @@ if print_events == true then
             outstr = outstr .. string.format(", %s",eventTab["Options"])
         end
         print_stdout(outstr)
+    end
+    if gputopo then
+        tab = likwid.getGpuEventsAndCounters()
+        print_stdout("\n\n")
+        print_stdout(string.format("The GPUs have %d events.",#tab["Events"]))
+        for _, eventTab in pairs(tab["Events"]) do
+            print_stdout(eventTab)
+        end
     end
     os.exit(0)
 end
@@ -480,6 +557,24 @@ if print_groups == true then
     else
         print_stdout(string.format("No groups defined for %s",cpuinfo["name"]))
     end
+    print(gputopo)
+    if gputopo then
+        avail_groups = likwid.getGpuGroups()
+        if avail_groups then
+            local max_len = 0
+            for i,g in pairs(avail_groups) do
+                if g["Name"]:len() > max_len then max_len = g["Name"]:len() end
+            end
+            local s = string.format("%%%ds\t%%s", max_len)
+            print_stdout(string.format(s,"Group name", "Description"))
+            print_stdout(likwid.hline)
+            for i,g in pairs(avail_groups) do
+                print_stdout(string.format(s, g["Name"], g["Info"]))
+            end
+        else
+            print_stdout(string.format("No groups defined for %s",gputopo["devices"][1]["name"]))
+        end
+    end
     likwid.putTopology()
     likwid.putConfiguration()
     os.exit(0)
@@ -508,8 +603,8 @@ if print_group_help == true then
     os.exit(0)
 end
 
-if #event_string_list == 0 and not print_info then
-    print_stderr("Option(s) -g <string> must be given on commandline")
+if #event_string_list == 0 and #gpu_event_string_list == 0 and not print_info then
+    print_stderr("Option(s) -g <string> or -W <string> must be given on commandline")
     usage()
     likwid.putTopology()
     likwid.putConfiguration()
@@ -587,7 +682,12 @@ if use_marker then
         print_stderr("Please purge all MarkerAPI files from /tmp.")
         os.exit(1)
     end
-    if not pin_cpus then
+    if #gpulist and likwid.access(gpuMarkerFile, "rw") ~= -1 then
+        print_stderr(string.format("ERROR: GPUMarkerAPI file %s not accessible. Maybe a remaining file of another user.", gpuMarkerFile))
+        print_stderr("Please purge all GPUMarkerAPI files from /tmp.")
+        os.exit(1)
+    end
+    if not pin_cpus and #cpulist > 0 and #event_string_list > 0 then
         print_stderr("Warning: The Marker API requires the application to run on the selected CPUs.")
         print_stderr("Warning: likwid-perfctr pins the application only when using the -C command line option.")
         print_stderr("Warning: LIKWID assumes that the application does it before the first instrumented code region is started.")
@@ -657,6 +757,12 @@ if use_marker == true then
     likwid.setenv("LIKWID_THREADS", table.concat(cpulist,","))
     likwid.setenv("LIKWID_FORCE", "-1")
     likwid.setenv("KMP_INIT_AT_FORK", "FALSE")
+    if #gpulist > 0 and #gpu_event_string_list > 0 then
+        likwid.setenv("LIKWID_GPUS", table.concat(gpulist,","))
+        str = table.concat(gpu_event_string_list, "|")
+        likwid.setenv("LIKWID_GEVENTS", str)
+        likwid.setenv("LIKWID_GPUFILEPATH", gpuMarkerFile)
+    end
 end
 
 --[[for i, event_string in pairs(event_string_list) do
@@ -672,19 +778,27 @@ end
     event_string_list[i] = groupdata["EventString"]
 end]]
 
+if #event_string_list > 0 then
+    if set_access_modes then
+        if likwid.setAccessClientMode(access_mode) ~= 0 then
+            likwid.putTopology()
+            likwid.putConfiguration()
+            os.exit(1)
+        end
+    end
 
-if set_access_modes then
-    if likwid.setAccessClientMode(access_mode) ~= 0 then
+    if likwid.init(num_cpus, cpulist) < 0 then
         likwid.putTopology()
         likwid.putConfiguration()
         os.exit(1)
     end
 end
 
-if likwid.init(num_cpus, cpulist) < 0 then
-    likwid.putTopology()
-    likwid.putConfiguration()
-    os.exit(1)
+if #gpu_event_string_list > 0 then
+    if likwid.gpuInit(num_gpus, gpulist) < 0 then
+        likwid.putGpuTopology()
+        os.exit(1)
+    end
 end
 
 
@@ -748,7 +862,19 @@ for i, event_string in pairs(event_string_list) do
         table.insert(group_ids, gid)
     end
 end
-if #group_ids == 0 then
+for i, event_string in pairs(gpu_event_string_list) do
+    if event_string:len() > 0 then
+        local gid = likwid.gpuAddEventSet(event_string)
+        if gid < 0 then
+            likwid.putGpuTopology()
+            likwid.putConfiguration()
+            likwid.gpuFinalize()
+            os.exit(1)
+        end
+        table.insert(gpugroups, gid)
+    end
+end
+if #group_ids == 0 and not (#gpu_event_string_list > 0 and use_marker) then
     print_stderr("ERROR: No valid eventset given on commandline. Exiting...")
     likwid.putTopology()
     likwid.putConfiguration()
@@ -756,58 +882,60 @@ if #group_ids == 0 then
     os.exit(1)
 end
 
-activeGroup = group_ids[1]
-ret = likwid.setupCounters(activeGroup)
-if ret < 0 then
-    likwid.killProgram(pid)
-    os.exit(1)
-end
-if outfile == nil then
-    print_stdout(likwid.hline)
-end
-
-
-
-
-
-timeline_delim = " "
-if use_csv then
-    timeline_delim = ","
-end
-if use_timeline == true then
-    local delim = "|"
-    local word_delim = ": "
-    if outfile_orig ~= nil then
-        io.output(outfile_orig)
-        delim = timeline_delim
-        word_delim = timeline_delim
+if #event_string_list > 0 then
+    activeGroup = group_ids[1]
+    ret = likwid.setupCounters(activeGroup)
+    if ret < 0 then
+        likwid.killProgram(pid)
+        os.exit(1)
     end
-    local clist = {}
-    for i, cpu in pairs(cpulist) do
-        table.insert(clist, tostring(cpu))
+    if outfile == nil then
+        print_stdout(likwid.hline)
     end
-    print("# Cores"..word_delim..table.concat(clist, delim))
-    for i, gid in pairs(group_ids) do
-        local strlist = {"GID"}
-        if likwid.getNumberOfMetrics(gid) == 0 then
-            table.insert(strlist, "EventCount")
-            table.insert(strlist, "CpuCount")
-            table.insert(strlist, "Total runtime [s]")
-            for e=1,likwid.getNumberOfEvents(gid) do
-                table.insert(strlist, likwid.getNameOfEvent(gid, e))
-            end
-        else
-            table.insert(strlist, "MetricsCount")
-            table.insert(strlist, "CpuCount")
-            table.insert(strlist, "Total runtime [s]")
-            for m=1,likwid.getNumberOfMetrics(gid) do
-                table.insert(strlist, likwid.getNameOfMetric(gid, m))
-            end
+end
+
+
+
+
+if #event_string_list > 0 then
+    timeline_delim = " "
+    if use_csv then
+        timeline_delim = ","
+    end
+    if use_timeline == true then
+        local delim = "|"
+        local word_delim = ": "
+        if outfile_orig ~= nil then
+            io.output(outfile_orig)
+            delim = timeline_delim
+            word_delim = timeline_delim
         end
-        print("# "..table.concat(strlist, delim))
+        local clist = {}
+        for i, cpu in pairs(cpulist) do
+            table.insert(clist, tostring(cpu))
+        end
+        print("# Cores"..word_delim..table.concat(clist, delim))
+        for i, gid in pairs(group_ids) do
+            local strlist = {"GID"}
+            if likwid.getNumberOfMetrics(gid) == 0 then
+                table.insert(strlist, "EventCount")
+                table.insert(strlist, "CpuCount")
+                table.insert(strlist, "Total runtime [s]")
+                for e=1,likwid.getNumberOfEvents(gid) do
+                    table.insert(strlist, likwid.getNameOfEvent(gid, e))
+                end
+            else
+                table.insert(strlist, "MetricsCount")
+                table.insert(strlist, "CpuCount")
+                table.insert(strlist, "Total runtime [s]")
+                for m=1,likwid.getNumberOfMetrics(gid) do
+                    table.insert(strlist, likwid.getNameOfMetric(gid, m))
+                end
+            end
+            print("# "..table.concat(strlist, delim))
+        end
     end
 end
-
 
 
 io.stdout:flush()
@@ -837,7 +965,7 @@ if use_wrapper or use_timeline then
 
     start = likwid.startClock()
     groupTime[activeGroup] = 0
-    
+
     while true do
         if likwid.getSignalState() ~= 0 then
             if #execList > 0 then
@@ -855,7 +983,7 @@ if use_wrapper or use_timeline then
         end
 
         if use_timeline == true then
-            
+
             stop = likwid.stopClock()
             xstart = likwid.startClock()
             likwid.readCounters()
@@ -946,6 +1074,22 @@ if use_marker == true then
     else
         print_stderr("Marker API result file does not exist. This may happen if the application has not called LIKWID_MARKER_CLOSE.")
     end
+    if likwid.access(gpuMarkerFile, "e") >= 0 then
+        results, metrics = likwid.getGpuMarkerResults(gpuMarkerFile, markergpulist, nan2value)
+        if not results then
+            print_stderr("Failure reading GPU Marker API result file.")
+        elseif #results == 0 then
+            print_stderr("No regions could be found in GPU Marker API result file.")
+        else
+            for r=1, #results do
+                likwid.printGpuOutput(results[r], metrics[r], gpulist, r, print_stats)
+            end
+        end
+        likwid.destroyGpuMarkerFile()
+        os.remove(gpuMarkerFile)
+    else
+        print_stderr("GPU Marker API result file does not exist. This may happen if the application has not called LIKWID_GPUMARKER_CLOSE.")
+    end
 elseif use_timeline == false then
     results = likwid.getResults(nan2value)
     metrics = likwid.getMetrics(nan2value)
@@ -990,6 +1134,9 @@ if outfile then
     end
 end
 
+if #gpu_event_string_list > 0 then
+    likwid.gpuFinalize()
+end
 likwid.finalize()
 likwid.putTopology()
 likwid.putNumaInfo()

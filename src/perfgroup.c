@@ -616,6 +616,7 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
     int has_fix0 = 0;
     int has_fix1 = 0;
     int has_fix2 = 0;
+    int gpu_events = 0;
     ginfo->shortinfo = NULL;
     ginfo->nevents = 0;
     ginfo->events = NULL;
@@ -629,6 +630,7 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
     bstring fix0 = bformat("FIXC0");
     bstring fix1 = bformat("FIXC1");
     bstring fix2 = bformat("FIXC2");
+    bstring gpu = bformat("GPU");
     DEBUG_PRINT(DEBUGLEV_INFO, Creating custom group for event string %s, eventStr);
     ginfo->shortinfo = malloc(7 * sizeof(char));
     if (ginfo->shortinfo == NULL)
@@ -728,11 +730,15 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
         }
         sprintf(ginfo->events[i], "%s", bdata(elist->entry[0]));
         snprintf(ginfo->counters[i], blength(ctr)+1, "%s", bdata(ctr));
+        if (binstr(elist->entry[1], 0, gpu) != BSTR_ERR)
+        {
+            gpu_events++;
+        }
         bdestroy(ctr);
         bstrListDestroy(elist);
     }
     i = eventList->qty;
-    if (cpuid_info.isIntel)
+    if (cpuid_info.isIntel && i != gpu_events)
     {
         if ((!has_fix0) && cpuid_info.perf_num_fixed_ctr > 0)
         {
@@ -759,10 +765,12 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
             i++;
         }
     }
+    ginfo->nevents = i;
     bstrListDestroy(eventList);
     bdestroy(fix0);
     bdestroy(fix1);
     bdestroy(fix2);
+    bdestroy(gpu);
     bdestroy(edelim);
     return 0;
 cleanup:
@@ -770,6 +778,7 @@ cleanup:
     bdestroy(fix0);
     bdestroy(fix1);
     bdestroy(fix2);
+    bdestroy(gpu);
     bdestroy(edelim);
     if (ginfo->shortinfo != NULL)
         free(ginfo->shortinfo);
@@ -1806,4 +1815,3 @@ void __attribute__((destructor (103))) close_perfgroup(void)
     free(num_defines);
     num_states = 0;
 }
-

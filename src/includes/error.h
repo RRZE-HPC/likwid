@@ -49,12 +49,12 @@
 
 #define CHECK_ERROR(func, msg)  \
     if ((func) < 0) { \
-        fprintf(stderr, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno));  \
+        ERROR_PRINT(msg); \
     }
 
 #define CHECK_AND_RETURN_ERROR(func, msg)  \
     if ((func) < 0) { \
-        fprintf(stderr, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno));  \
+        ERROR_PRINT(msg); \
         return errno; \
     }
 
@@ -92,6 +92,16 @@
         fprintf(stdout, "DEBUG - [%s:%d] " str(msg) "\n",__func__, __LINE__);  \
         fflush(stdout); \
     }
+
+#define INFO_PRINT(fmt, ...) \
+    if (perfmon_verbosity >= DEBUGLEV_INFO) \
+    { \
+        fprintf(stdout, "INFO - " STRINGIFY(fmt) "\n", ##__VA_ARGS__); \
+    }
+
+#define TODO_PRINT(fmt, ...)  \
+    fprintf(stdout, "TODO - " STRINGIFY(fmt) "\n", ##__VA_ARGS__);
+
 
 #define CHECK_MSR_WRITE_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR write operation failed);
 #define CHECK_MSR_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR read operation failed);

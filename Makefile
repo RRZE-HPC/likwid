@@ -89,6 +89,9 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
 else
 OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
+ifneq ($(NVIDIA_INTERFACE), true)
+OBJ := $(filter-out $(BUILD_DIR)/nvmon.o,$(OBJ))
+endif
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
 OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)
@@ -623,4 +626,3 @@ help:
 	@echo "The common configuration is INSTALLED_PREFIX = PREFIX, so changing PREFIX is enough."
 	@echo "If PREFIX and INSTALLED_PREFIX differ, you have to move anything after 'make install' to"
 	@echo "the INSTALLED_PREFIX. You can also use 'make move' which does the job for you."
-
