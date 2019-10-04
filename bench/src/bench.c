@@ -49,6 +49,7 @@
 #define BARRIER   barrier_synchronize(&barr)
 
 #define EXECUTE(func)   \
+    LIKWID_MARKER_REGISTER("bench");  \
     BARRIER; \
     LIKWID_MARKER_START("bench");  \
     timer_start(&time); \
@@ -88,7 +89,7 @@ runTest(void* arg)
     /* Prepare ptrs for thread */
     vecsize = myData->size / data->numberOfThreads;
     size = myData->size / data->numberOfThreads;
-    
+
     size -= (size % myData->test->stride);
     myData->size = size;
     offset = data->threadId * size;
@@ -473,7 +474,7 @@ getIterSingle(void* arg)
     //size = myData->size - (myData->size % myData->test->stride);
     vecsize = myData->size;
     size = myData->size / data->numberOfThreads;
-    
+
     size -= (size % myData->test->stride);
     offset = data->threadId * size;
 
