@@ -84,10 +84,10 @@ static RegisterMap zen_counter_map[NUM_COUNTERS_ZEN] = {
     {"PWR0", PMC13, POWER, 0, MSR_AMD17_RAPL_CORE_STATUS, 0, 0},
     {"PWR1", PMC14, POWER, 0, MSR_AMD17_RAPL_PKG_STATUS, 0, 0},
     /* Northbridge counters */
-    {"UPMC0",PMC15, UNCORE, MSR_AMD16_NB_PERFEVTSEL0, MSR_AMD16_NB_PMC0, 0, 0},
-    {"UPMC1",PMC16, UNCORE, MSR_AMD16_NB_PERFEVTSEL1, MSR_AMD16_NB_PMC1, 0, 0},
-    {"UPMC2",PMC17, UNCORE, MSR_AMD16_NB_PERFEVTSEL2, MSR_AMD16_NB_PMC2, 0, 0},
-    {"UPMC3",PMC18, UNCORE, MSR_AMD16_NB_PERFEVTSEL3, MSR_AMD16_NB_PMC3, 0, 0}
+    {"DFC0",PMC15, UNCORE, MSR_AMD16_NB_PERFEVTSEL0, MSR_AMD16_NB_PMC0, 0, 0},
+    {"DFC1",PMC16, UNCORE, MSR_AMD16_NB_PERFEVTSEL1, MSR_AMD16_NB_PMC1, 0, 0},
+    {"DFC2",PMC17, UNCORE, MSR_AMD16_NB_PERFEVTSEL2, MSR_AMD16_NB_PMC2, 0, 0},
+    {"DFC3",PMC18, UNCORE, MSR_AMD16_NB_PERFEVTSEL3, MSR_AMD16_NB_PMC3, 0, 0}
 };
 
 static BoxMap zen_box_map[NUM_UNITS] = {
@@ -103,5 +103,5 @@ static char* zen_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/cpu",
     [POWER] = "/sys/bus/event_source/devices/power",
     [CBOX0] = "/sys/bus/event_source/devices/amd_l3",
-    [UNCORE] = "/sys/bus/event_source/devices/amd_nb",
+    [UNCORE] = "/sys/bus/event_source/devices/amd_df",
 };
