@@ -131,6 +131,10 @@ sub function_entry
             print ".set r5,5; .set r6,6; .set r7,7; .set r8,8; .set r9,9; .set r10,10\n";
             print ".set x0,0; .set x1,1; .set x2,2; .set x3,3; .set x4,4\n";
             print ".set x5,5; .set x6,6; .set x7,7; .set x8,8; .set x9,9;\n";
+	    print ".set vec0,0; .set vec1,1; .set vec2,2; .set vec3,3;\n";
+	    print ".set vec4,4; .set vec5,5; .set vec6,6; .set vec7,7;\n";
+	    print ".set vec8,8; .set vec9,9; .set vec10,10; .set vec11,11;\n";
+	    print ".set vec12,12;\n";
             #}
         print ".abiversion 2\n";
         print ".section    \".toc\",\"aw\"\n";
@@ -237,9 +241,11 @@ sub loop_entry
             print "1:\n";
         }
     } elsif ($main::ISA eq 'ppc64') {
+	print "li r0, r10\n";
         print "li r10, $step\n";
 	print "divd r10, r3, r10\n";
 	print "mtctr r10\n";
+	print "li r10, r0\n";
         print "$symbolname:\n";
     }
 
