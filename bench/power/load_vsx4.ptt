@@ -17,7 +17,7 @@ xvsubdp 5, 5, 5    # set to zero
 xvsubdp 6, 6, 6    # set to zero
 xvsubdp 7, 7, 7    # set to zero
 
-LOOP 16
+LOOP 8
 
 lxvd2x 10, STR0, r7
 xvadddp 0, 0, 10
@@ -27,14 +27,4 @@ lxvd2x 12, STR0, r9
 xvadddp 2, 2, 12
 lxvd2x 13, STR0, r10
 xvadddp 3, 3, 13
-addi STR0, STR0, 64
-
-lxvd2x 14, STR0, r7
-xvadddp 4, 4, 14
-lxvd2x 15, STR0, r8
-xvadddp 5, 5, 15
-lxvd2x 16, STR0, r9
-xvadddp 6, 6, 16
-lxvd2x 17, STR0, r10
-xvadddp 7, 7, 17
 addi STR0, STR0, 64
