@@ -3,28 +3,30 @@ SHORT Main memory bandwidth in MBytes/s
 EVENTSET
 PMC0  INST_RETIRED
 PMC1  CPU_CYCLES
-PMC2  MEM_ACCESS_LD
-PMC3  MEM_ACCESS_ST
-
+MBOX0C0  MEMORY_READS
+MBOX0C1  MEMORY_WRITES
+MBOX1C0  MEMORY_READS
+MBOX1C1  MEMORY_WRITES
 
 METRICS
 Runtime (RDTSC) [s] time
 Clock [MHz] 1.E-06*PMC1/time
 CPI  PMC1/PMC0
-Memory read bandwidth [MBytes/s] 1.0E-06*(PMC2)*64.0/time
-Memory read data volume [GBytes] 1.0E-09*(PMC2)*64.0
-Memory write bandwidth [MBytes/s] 1.0E-06*(PMC3)*64.0/time
-Memory write data volume [GBytes] 1.0E-09*(PMC3)*64.0
-Memory bandwidth [MBytes/s] 1.0E-06*(PMC2+PMC3)*64.0/time
-Memory data volume [GBytes] 1.0E-09*(PMC2+PMC3)*64.0
+Memory read bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0)*64.0/time
+Memory read data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0)*64.0
+Memory write bandwidth [MBytes/s] 1.0E-06*(MBOX0C1+MBOX1C1)*64.0/time
+Memory write data volume [GBytes] 1.0E-09*(MBOX0C1+MBOX1C1)*64.0
+Memory bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0+MBOX0C1+MBOX1C1)*64.0/time
+Memory data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0+MBOX0C1+MBOX1C1)*64.0
 
 LONG
 Formulas:
-Memory read bandwidth [MBytes/s] = 1.0E-06*(MEM_ACCESS_LD)*64.0/runtime
-Memory read data volume [GBytes] = 1.0E-09*(MEM_ACCESS_LD)*64.0
-Memory write bandwidth [MBytes/s] = 1.0E-06*(MEM_ACCESS_ST)*64.0/runtime
-Memory write data volume [GBytes] = 1.0E-09*(MEM_ACCESS_ST)*64.0
-Memory bandwidth [MBytes/s] = 1.0E-06*(MEM_ACCESS_LD+MEM_ACCESS_ST)*64.0/runtime
-Memory data volume [GBytes] = 1.0E-09*(MEM_ACCESS_LD+MEM_ACCESS_ST)*64.0
+Memory read bandwidth [MBytes/s] = 1.0E-06*(SUM(MEMORY_READS))*64.0/runtime
+Memory read data volume [GBytes] = 1.0E-09*(SUM(MEMORY_READS))*64.0
+Memory write bandwidth [MBytes/s] = 1.0E-06*(SUM(MEMORY_WRITES))*64.0/runtime
+Memory write data volume [GBytes] = 1.0E-09*(SUM(MEMORY_WRITES))*64.0
+Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(MEMORY_READS)+SUM(MEMORY_WRITES))*64.0/runtime
+Memory data volume [GBytes] = 1.0E-09*(SUM(MEMORY_READS)+SUM(MEMORY_WRITES))*64.0
 -
-Profiling group to measure memory bandwidth.
+Profiling group to measure memory bandwidth. It uses the performance monitoring
+hardware of the memory controllers.
