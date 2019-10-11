@@ -6,7 +6,8 @@
 
 # Please have a look in INSTALL and the WIKI for details on
 # configuration options setup steps.
-# supported: GCC, CLANG, ICC, MIC (ICC), GCCX86 (for 32bit systems)
+# Supported: GCC, CLANG, ICC, MIC (ICC), GCCX86 (for 32bit systems)
+# GCCARMv8, GCCARMv7 and GCCPOWER
 COMPILER = GCC#NO SPACE
 
 # Path were to install likwid

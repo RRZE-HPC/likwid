@@ -1,17 +1,17 @@
-DEFINES   += -DVERSION=$(VERSION)         \
-		 -DRELEASE=$(RELEASE)                 \
-		 -DMINORVERSION=$(MINOR)                 \
-		 -DCFGFILE=$(CFG_FILE_PATH)           \
-		 -DTOPOFILE=$(TOPO_FILE_PATH)           \
-		 -DINSTALL_PREFIX=$(INSTALLED_PREFIX) \
-		 -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) \
-		 -DMAX_NUM_NODES=$(MAX_NUM_NODES)     \
-		 -DACCESSDAEMON=$(INSTALLED_ACCESSDAEMON) \
-		 -DGROUPPATH=$(LIKWIDGROUPPATH) \
-		 -DLIKWIDLOCK=$(LIKWIDLOCKPATH) \
-		 -DLIKWIDSOCKETBASE=$(LIKWIDSOCKETBASE) \
-		 -DGITCOMMIT=$(GITCOMMIT) \
-		 -D_GNU_SOURCE
+DEFINES   += -DVERSION=$(VERSION)		 \
+			 -DRELEASE=$(RELEASE)				 \
+			 -DMINORVERSION=$(MINOR)				 \
+			 -DCFGFILE=$(CFG_FILE_PATH)		   \
+			 -DTOPOFILE=$(TOPO_FILE_PATH)		   \
+			 -DINSTALL_PREFIX=$(INSTALLED_PREFIX) \
+			 -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) \
+			 -DMAX_NUM_NODES=$(MAX_NUM_NODES)	 \
+			 -DACCESSDAEMON=$(INSTALLED_ACCESSDAEMON) \
+			 -DGROUPPATH=$(LIKWIDGROUPPATH) \
+			 -DLIKWIDLOCK=$(LIKWIDLOCKPATH) \
+			 -DLIKWIDSOCKETBASE=$(LIKWIDSOCKETBASE) \
+			 -DGITCOMMIT=$(GITCOMMIT) \
+			 -D_GNU_SOURCE
 
 COMPILER := $(strip $(COMPILER))
 
@@ -45,86 +45,137 @@ DEFINES += -DCOLOR=$(COLOR)
 endif
 
 ifeq ($(strip $(COMPILER)),MIC)
-    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
-        $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
-        ACCESSMODE = direct
-        BUILDDAEMON = false
-    endif
-    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
-        $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
-        ACCESSMODE = direct
-        BUILDDAEMON = false
-    endif
+	ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+		$(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
+		ACCESSMODE := direct
+		BUILDDAEMON := false
+		BUILDFREQ := false
+	endif
+	ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+		$(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
+		ACCESSMODE := direct
+		BUILDDAEMON := false
+		BUILDFREQ := false
+	endif
+	ifeq ($(strip $(ACCESSMODE)),perf_event)
+		$(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
+		ACCESSMODE := direct
+		BUILDDAEMON := false
+		BUILDFREQ := false
+	endif
+	ifeq ($(strip $(ACCESSMODE)),direct)
+		BUILDDAEMON := false
+		BUILDFREQ := false
+	endif
 endif
 
 ifeq ($(strip $(COMPILER)),GCCARMv8)
-    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
-        $(info Info: Compiling for ARMv8. Changing accessmode to perf_event.)
-        ACCESSMODE := perf_event
-        DEFINES += -DLIKWID_USE_PERFEVENT
-        BUILDDAEMON = false
-        BUILDFREQ = false
-    endif
-    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
-        $(info Info: Compiling for ARMv8. Changing accessmode to perf_event.)
-        ACCESSMODE := perf_event
-        DEFINES += -DLIKWID_USE_PERFEVENT
-        BUILDDAEMON = false
-        BUILDFREQ = false
-    endif
-    ifeq ($(strip $(ACCESSMODE)),direct)
-        $(info Info: Compiling for ARMv8. Changing accessmode to perf_event.)
-        ACCESSMODE := perf_event
-        DEFINES += -DLIKWID_USE_PERFEVENT
-        BUILDDAEMON = false
-        BUILDFREQ = false
-    endif
+	ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+		$(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)
+		ACCESSMODE := perf_event
+		DEFINES += -DLIKWID_USE_PERFEVENT
+		BUILDDAEMON := false
+		BUILDFREQ := false
+	endif
+	ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+		$(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)
+		ACCESSMODE := perf_event
+		DEFINES += -DLIKWID_USE_PERFEVENT
+		BUILDDAEMON := false
+		BUILDFREQ := false
+	endif
+	ifeq ($(strip $(ACCESSMODE)),direct)
+		$(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)
+		ACCESSMODE := perf_event
+		DEFINES += -DLIKWID_USE_PERFEVENT
+		BUILDDAEMON := false
+		BUILDFREQ := false
+	endif
+	ifeq ($(strip $(ACCESSMODE)),perf_event)
+		DEFINES += -DLIKWID_USE_PERFEVENT
+		BUILDDAEMON := false
+		BUILDFREQ := false
+	endif
 endif
 
 ifeq ($(strip $(COMPILER)),GCCARMv7)
-    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
-        $(info Info: Compiling for ARMv7. Changing accessmode to perf_event.)
-        ACCESSMODE := perf_event
-        DEFINES += -DLIKWID_USE_PERFEVENT
-        BUILDDAEMON = false
-        BUILDFREQ = false
-    endif
-    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
-        $(info Info: Compiling for ARMv7. Changing accessmode to perf_event.)
-        ACCESSMODE := perf_event
-        DEFINES += -DLIKWID_USE_PERFEVENT
-        BUILDDAEMON = false
-        BUILDFREQ = false
-    endif
-    ifeq ($(strip $(ACCESSMODE)),direct)
-        $(info Info: Compiling for ARMv7. Changing accessmode to perf_event.)
-        ACCESSMODE := perf_event
-        DEFINES += -DLIKWID_USE_PERFEVENT
-        BUILDFREQ = false
-        BUILDDAEMON = false
-    endif
+	ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+		$(info Info: Compiling for ARMv7 architecture. Changing accessmode to perf_event.)
+		ACCESSMODE := perf_event
+		DEFINES += -DLIKWID_USE_PERFEVENT
+		BUILDDAEMON = false
+		BUILDFREQ = false
+	endif
+	ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+		$(info Info: Compiling for ARMv7 architecture. Changing accessmode to perf_event.)
+		ACCESSMODE := perf_event
+		DEFINES += -DLIKWID_USE_PERFEVENT
+		BUILDDAEMON = false
+		BUILDFREQ = false
+	endif
+	ifeq ($(strip $(ACCESSMODE)),direct)
+		$(info Info: Compiling for ARMv7 architecture. Changing accessmode to perf_event.)
+		ACCESSMODE := perf_event
+		DEFINES += -DLIKWID_USE_PERFEVENT
+		BUILDFREQ = false
+		BUILDDAEMON = false
+	endif
+	ifeq ($(strip $(ACCESSMODE)),perf_event)
+		DEFINES += -DLIKWID_USE_PERFEVENT
+		BUILDDAEMON := false
+		BUILDFREQ := false
+	endif
+endif
+
+ifeq ($(strip $(COMPILER)),GCCPOWER)
+	ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+		$(info Info: Compiling for POWER architecture. Changing accessmode to perf_event.)
+		ACCESSMODE := perf_event
+		DEFINES += -DLIKWID_USE_PERFEVENT
+		BUILDDAEMON = false
+		BUILDFREQ = false
+	endif
+	ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+		$(info Info: Compiling for POWER architecture. Changing accessmode to perf_event.)
+		ACCESSMODE := perf_event
+		DEFINES += -DLIKWID_USE_PERFEVENT
+		BUILDDAEMON = false
+		BUILDFREQ = false
+	endif
+	ifeq ($(strip $(ACCESSMODE)),direct)
+		$(info Info: Compiling for POWER architecture. Changing accessmode to perf_event.)
+		ACCESSMODE := perf_event
+		DEFINES += -DLIKWID_USE_PERFEVENT
+		BUILDFREQ = false
+		BUILDDAEMON = false
+	endif
+	ifeq ($(strip $(ACCESSMODE)),perf_event)
+		DEFINES += -DLIKWID_USE_PERFEVENT
+		BUILDDAEMON := false
+		BUILDFREQ := false
+	endif
 endif
 
 ifeq ($(strip $(BUILDDAEMON)),true)
 ifneq ($(strip $(COMPILER)),MIC)
-    DAEMON_TARGET = likwid-accessD
+	DAEMON_TARGET = likwid-accessD
 else
-    $(info Info: Compiling for Xeon Phi. Disabling build of likwid-accessD.);
-    DAEMON_TARGET =
+	$(info Info: Compiling for Xeon Phi. Disabling build of likwid-accessD.);
+	DAEMON_TARGET =
 endif
 else
-    DAEMON_TARGET =
+	DAEMON_TARGET =
 endif
 
 ifeq ($(strip $(BUILDFREQ)),true)
-ifneq ($(strip $(COMPILER)),MIC)
-    FREQ_TARGET = likwid-setFreq
+	ifneq ($(strip $(COMPILER)),MIC)
+		FREQ_TARGET = likwid-setFreq
+	else
+		$(info Info: Compiling for Xeon Phi. Disabling build of likwid-setFreq.);
+		FREQ_TARGET =
+	endif
 else
-    $(info Info: Compiling for Xeon Phi. Disabling build of likwid-setFreq.);
-    FREQ_TARGET =
-endif
-else
-    FREQ_TARGET =
+	FREQ_TARGET =
 endif
 
 ifeq ($(strip $(HAS_MEMPOLICY)),1)
@@ -165,31 +216,31 @@ FILTER_HWLOC_OBJ =
 #DEFINES += -DACCESSDAEMON=$(ACCESSDAEMON)
 
 ifeq ($(strip $(ACCESSMODE)),sysdaemon)
-    DEFINES += -DACCESSMODE=2
+	DEFINES += -DACCESSMODE=2
 else
-    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
-        DEFINES += -DACCESSMODE=1
-    else
-        ifeq ($(strip $(ACCESSMODE)),direct)
-            DEFINES += -DACCESSMODE=0
-        else
-            ifeq ($(strip $(ACCESSMODE)),perf_event)
-                DEFINES += -DLIKWID_USE_PERFEVENT
-                DEFINES += -DACCESSMODE=-1
-                BUILDDAEMON = false
-                $(info Info: Compiling for perf_event interface. Measurements of thermal information is disabled);
-            else
-                $(info Error: Unknown access mode $(ACCESSMODE))
-            endif
-        endif
-    endif
+	ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+		DEFINES += -DACCESSMODE=1
+	else
+		ifeq ($(strip $(ACCESSMODE)),direct)
+			DEFINES += -DACCESSMODE=0
+		else
+			ifeq ($(strip $(ACCESSMODE)),perf_event)
+				DEFINES += -DLIKWID_USE_PERFEVENT
+				DEFINES += -DACCESSMODE=-1
+				BUILDDAEMON = false
+				$(info Info: Compiling for perf_event interface. Measurements of thermal information is disabled);
+			else
+				$(info Error: Unknown access mode $(ACCESSMODE))
+			endif
+		endif
+	endif
 endif
 
 ifeq ($(strip $(ACCESSMODE)),accessdaemon)
-    ifneq ($(strip $(BUILDDAEMON)),true)
-        $(info Info: Compiling with accessdaemon access mode but without building the access daemon.);
-        $(info Info: Make sure an accessdaemon is installed and the paths ACCESSDAEMON and INSTALLED_ACCESSDAEMON point to it);
-    endif
+	ifneq ($(strip $(BUILDDAEMON)),true)
+		$(info Info: Compiling with accessdaemon access mode but without building the access daemon.);
+		$(info Info: Make sure an accessdaemon is installed and the paths ACCESSDAEMON and INSTALLED_ACCESSDAEMON point to it);
+	endif
 endif
 
 
@@ -204,5 +255,3 @@ DEFINES += -DDEBUG_LIKWID
 else
 DEBUG_FLAGS =
 endif
-
-
