@@ -128,7 +128,7 @@ const struct numa_functions numa_funcs = {
     .numa_membind = empty_numa_membind
 #else
 #ifdef LIKWID_USE_HWLOC
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__) || defined(__ARM_ARCH_8A)
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__) || defined(__ARM_ARCH_8A) || defined(_ARCH_PPC64)
     .numa_init = proc_numa_init,
 #else
     .numa_init = hwloc_numa_init,
