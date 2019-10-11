@@ -114,6 +114,7 @@ while (defined(my $file = readdir(DIR))) {
 
         $file =~ /([A-Za-z_0-9]+)\.ptt/;
         $name = $1;
+        if ($name =~ /^$/) { continue; }
 
         $isLoop = 0;
         $skip=0;
@@ -121,6 +122,7 @@ while (defined(my $file = readdir(DIR))) {
         $prolog='';
         $loop='';
         $desc='';
+        $streams=1;
         my $loads=-1;
         my $stores=-1;
         my $branches=-1;
