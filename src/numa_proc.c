@@ -216,7 +216,7 @@ nodeProcessorList(int node, uint32_t** list)
                         }
                         else
                         {
-                            ERROR_PRINT(Number Of threads %d too large,count);
+                            ERROR_PRINT(Number Of threads %d too large for NUMA node %d, count, node);
                             return -EFAULT;
                         }
                         count++;
