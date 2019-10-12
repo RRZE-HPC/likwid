@@ -772,11 +772,11 @@ static int allowed_skx(uint32_t reg)
         return 1;
     else
     {
-        syslog(LOG_ERR, "Testing 0x%X %d %d\n", reg, (reg & 0xF00U), (reg & 0xA00U));
         if (((reg & 0xF00U) == 0x700U) ||
             ((reg & 0xF00U) == 0xE00U) ||
             ((reg & 0xF00U) == 0xF00U) ||
             (reg == MSR_PREFETCH_ENABLE) ||
+            (reg == TSX_FORCE_ABORT) ||
             ((reg & 0xA00U) == 0xA00U))
             return 1;
     }
