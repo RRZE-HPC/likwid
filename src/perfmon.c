@@ -2718,11 +2718,18 @@ __perfmon_switchActiveGroupThread(int thread_id, int new_group)
         ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
         return -EINVAL;
     }
-
-    timer_stop(&groupSet->groups[groupSet->activeGroup].timer);
-    groupSet->groups[groupSet->activeGroup].rdtscTime =
-                timer_print(&groupSet->groups[groupSet->activeGroup].timer);
-    groupSet->groups[groupSet->activeGroup].runTime += groupSet->groups[groupSet->activeGroup].rdtscTime;
+    if (thread_id < 0 || thread_id >= groupSet->numberOfThreads)
+    {
+        return -EINVAL;
+    }
+    if (new_group < 0 || new_group >= groupSet->numberOfGroups)
+    {
+        return -EINVAL;
+    }
+    if (new_group == groupSet->activeGroup)
+    {
+        return 0;
+    }
     state = groupSet->groups[groupSet->activeGroup].state;
 
     if (state == STATE_START)
@@ -2737,6 +2744,7 @@ __perfmon_switchActiveGroupThread(int thread_id, int new_group)
             groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].init = FALSE;
         }
     }
+    // This updates groupSet->activeGroup to new_group
     ret = perfmon_setupCounters(new_group);
     if (ret != 0)
     {
@@ -3556,4 +3564,3 @@ perfmon_destroyMarkerResults()
         free(markerResults);
     }
 }
-
