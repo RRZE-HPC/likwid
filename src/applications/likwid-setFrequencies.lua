@@ -444,17 +444,21 @@ if verbosity == 3 then
     print_stdout("DEBUG Available freq.: "..table.concat(savailfreqs, ", "))
 end
 if driver ~= "intel_pstate" then
-    local test_freq = round(tonumber(max_freq))
-    if not valid_freq(test_freq, savailfreqs, availturbo) then
-        print_stderr(string.format("ERROR: Selected max. frequency %s not available! Please select one of\n%s", test_freq, table.concat(savailfreqs, ", ")))
-        likwid.finalizeFreq()
-        os.exit(1)
+    if max_freq then
+        local test_freq = round(tonumber(max_freq))
+        if not valid_freq(test_freq, savailfreqs, availturbo) then
+            print_stderr(string.format("ERROR: Selected max. frequency %s not available! Please select one of\n%s", test_freq, table.concat(savailfreqs, ", ")))
+            likwid.finalizeFreq()
+            os.exit(1)
+        end
     end
-    test_freq = round(tonumber(min_freq))
-    if not valid_freq(test_freq, savailfreqs, availturbo) then
-        print_stderr(string.format("ERROR: Selected min. frequency %s not available! Please select one of\n%s", test_freq, table.concat(savailfreqs, ", ")))
-        likwid.finalizeFreq()
-        os.exit(1)
+    if min_freq then
+        local test_freq = round(tonumber(min_freq))
+        if not valid_freq(test_freq, savailfreqs, availturbo) then
+            print_stderr(string.format("ERROR: Selected min. frequency %s not available! Please select one of\n%s", test_freq, table.concat(savailfreqs, ", ")))
+            likwid.finalizeFreq()
+            os.exit(1)
+        end
     end
 end
 
@@ -501,6 +505,24 @@ else
         local f = likwid.setCpuClockMax(cpulist[i], max_freq)
     end
 end
+
+if min_u_freq then
+    test = likwid.getUncoreFreqMin(socklist[1])
+    if test == 0 then
+        print_stderr("ERROR: This CPU does not provide an interface to manipulate the Uncore frequency.")
+        min_u_freq = nil
+        os.exit(1)
+    end
+end
+if max_u_freq then
+    test = likwid.getUncoreFreqMax(socklist[1])
+    if test == 0 then
+        print_stderr("ERROR: This CPU does not provide an interface to manipulate the Uncore frequency.")
+        max_u_freq = nil
+        os.exit(1)
+    end
+end
+
 
 if min_u_freq then
     if cpuinfo["isIntel"] == 1 then
