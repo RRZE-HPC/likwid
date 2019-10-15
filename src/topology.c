@@ -139,7 +139,7 @@ static char* short_sandybridge_ep = "sandybridgeEP";
 static char* short_skylake = "skylake";
 static char* short_skylakeX = "skylakeX";
 static char* short_kabylake = "skylake";
-static char* short_cascadelakeX = "skylakeX";
+static char* short_cascadelakeX = "CLX";
 static char* short_cannonlake = "cannonlake";
 static char* short_phi = "phi";
 static char* short_phi2 = "knl";
@@ -1069,7 +1069,7 @@ standard_init:
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
         if (cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF))
         {
-#if !defined(__ARM_ARCH_7A__)
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
             cpuid_topology.activeHWThreads =
                 ((cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF)) ?
                 cpu_count(&cpuSet) :
@@ -1284,6 +1284,13 @@ print_supportedCPUs (void)
     printf("\t%s\n",kabini_str);
     printf("\t%s\n",amd_zen_str);
     printf("\n");
+    printf("Supported ARMv8 processors:\n");
+    printf("\t%s\n",arm_cortex_a53);
+    printf("\t%s\n",arm_cortex_a57);
+    printf("\t%s\n",cavium_thunderx_str);
+    printf("\t%s\n",cavium_thunderx2t99_str);
+    printf("\n");
+
 }
 
 CpuTopology_t

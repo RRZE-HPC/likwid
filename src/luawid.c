@@ -2285,7 +2285,7 @@ static int
 lua_likwid_getRegion(lua_State* L)
 {
     int i = 0;
-    const char* tag = (const char*)luaL_checkstring(L, -2);
+    const char* tag = (const char*)luaL_checkstring(L, -1);
     int nr_events = perfmon_getNumberOfEvents(perfmon_getIdOfActiveGroup());
     double* events = NULL;
     double time = 0.0;
@@ -2313,6 +2313,13 @@ lua_likwid_getRegion(lua_State* L)
     lua_pushinteger(L, count);
     free(events);
     return 4;
+}
+
+static int
+lua_likwid_resetRegion(lua_State* L)
+{
+    const char* tag = (const char*)luaL_checkstring(L, -1);
+    lua_pushinteger(L, likwid_markerResetRegion(tag));
 }
 
 static int
@@ -2916,6 +2923,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_startRegion", lua_likwid_startRegion);
     lua_register(L, "likwid_stopRegion", lua_likwid_stopRegion);
     lua_register(L, "likwid_getRegion", lua_likwid_getRegion);
+    lua_register(L, "likwid_resetRegion", lua_likwid_resetRegion);
     // CPU feature manipulation functions
     lua_register(L, "likwid_cpuFeaturesInit", lua_likwid_cpuFeatures_init);
     lua_register(L, "likwid_cpuFeaturesGet", lua_likwid_cpuFeatures_get);

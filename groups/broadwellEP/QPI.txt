@@ -31,7 +31,7 @@ QPI total transfer volume [GByte] 1.E-09*(QBOX0C0+QBOX1C0+QBOX0C2+QBOX1C2+QBOX0C
 QPI total bandwidth [MByte/s] 1.E-06*(QBOX0C0+QBOX1C0+QBOX0C2+QBOX1C2+QBOX0C1+QBOX1C1+QBOX0C3+QBOX1C3)*8/time
 
 LONG
-Formula:
+Formulas:
 QPI send data volume [GByte] = 1.E-09*(sum(TXL_FLITS_G0_DATA)*8)
 QPI send data bandwidth [MByte/s] = 1.E-06*(sum(TXL_FLITS_G0_DATA)*8)/runtime
 QPI send link volume [GByte] = 1.E-09*((sum(TXL_FLITS_G0_DATA)+sum(TXL_FLITS_G0_NON_DATA))*8)

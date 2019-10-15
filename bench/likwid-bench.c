@@ -555,8 +555,8 @@ int main(int argc, char** argv)
     ownprintf("Iterations:\t\t%" PRIu64 "\n", realIter);
     ownprintf("Iterations per thread:\t%" PRIu64 "\n",iters_per_thread);
     ownprintf("Inner loop executions:\t%d\n", (int)(((double)realSize)/((double)test->stride*globalNumberOfThreads)));
-    ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize * test->bytes );
-    ownprintf("Size per thread:\t%" PRIu64 "\n", size_per_thread * test->bytes);
+    ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize * datatypesize * test->streams);
+    ownprintf("Size per thread:\t%" PRIu64 "\n", size_per_thread * datatypesize * test->streams);
     ownprintf("Number of Flops:\t%" PRIu64 "\n", (iters_per_thread * realSize *  test->flops));
     ownprintf("MFlops/s:\t\t%.2f\n",
             1.0E-06 * ((double) (iters_per_thread * realSize *  test->flops) /  time));

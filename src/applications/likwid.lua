@@ -135,6 +135,7 @@ likwid.registerRegion = likwid_registerRegion
 likwid.startRegion = likwid_startRegion
 likwid.stopRegion = likwid_stopRegion
 likwid.getRegion = likwid_getRegion
+likwid.resetRegion = likwid_resetRegion
 likwid.initCpuFeatures = likwid_cpuFeaturesInit
 likwid.getCpuFeatures = likwid_cpuFeaturesGet
 likwid.enableCpuFeatures = likwid_cpuFeaturesEnable
@@ -1191,9 +1192,13 @@ end
 likwid.gethostname = gethostname
 
 local function getjid()
-    local jid = os.getenv("PBS_JOBID")
-    if jid == nil then
-        jid = "X"
+    jid = "X"
+    for _, v in {"PBS_JOBID", "SLURM_JOB_ID", "SLURM_JOBID", "LOADL_STEP_ID", "LSB_JOBID" } do
+        x = os.getenv(v)
+        if x then
+            jid = x
+            break
+        end
     end
     return jid
 end
@@ -1201,11 +1206,12 @@ end
 likwid.getjid = getjid
 
 local function getMPIrank()
-    local rank = os.getenv("PMI_RANK")
-    if rank == nil then
-        rank = os.getenv("OMPI_COMM_WORLD_RANK")
-        if rank == nil then
-            rank = "X"
+    rank = "X"
+    for _, v in {"PMI_RANK", "OMPI_COMM_WORLD_RANK", "SLURM_PROCID"} do
+        x = os.getenv(v)
+        if x then
+            rank = x
+            break
         end
     end
     return rank

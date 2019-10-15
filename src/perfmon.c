@@ -1149,6 +1149,8 @@ perfmon_init_maps(void)
                     switch ( cpuid_info.part )
                     {
                         case ARM_CORTEX_A57:
+                        case ARM_CORTEX_A72:
+                        case ARM_CORTEX_A73:
                             eventHash = a57_arch_events;
                             perfmon_numArchEvents = perfmon_numArchEventsA57;
                             counter_map = a57_counter_map;
@@ -1156,6 +1158,7 @@ perfmon_init_maps(void)
                             perfmon_numCounters = perfmon_numCountersA57;
                             translate_types = a57_translate_types;
                             break;
+                        case ARM_CORTEX_A35:
                         case ARM_CORTEX_A53:
                             eventHash = a57_arch_events;
                             perfmon_numArchEvents = perfmon_numArchEventsA57;
@@ -2715,11 +2718,18 @@ __perfmon_switchActiveGroupThread(int thread_id, int new_group)
         ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
         return -EINVAL;
     }
-
-    timer_stop(&groupSet->groups[groupSet->activeGroup].timer);
-    groupSet->groups[groupSet->activeGroup].rdtscTime =
-                timer_print(&groupSet->groups[groupSet->activeGroup].timer);
-    groupSet->groups[groupSet->activeGroup].runTime += groupSet->groups[groupSet->activeGroup].rdtscTime;
+    if (thread_id < 0 || thread_id >= groupSet->numberOfThreads)
+    {
+        return -EINVAL;
+    }
+    if (new_group < 0 || new_group >= groupSet->numberOfGroups)
+    {
+        return -EINVAL;
+    }
+    if (new_group == groupSet->activeGroup)
+    {
+        return 0;
+    }
     state = groupSet->groups[groupSet->activeGroup].state;
 
     if (state == STATE_START)
@@ -2734,6 +2744,7 @@ __perfmon_switchActiveGroupThread(int thread_id, int new_group)
             groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].init = FALSE;
         }
     }
+    // This updates groupSet->activeGroup to new_group
     ret = perfmon_setupCounters(new_group);
     if (ret != 0)
     {
@@ -3553,4 +3564,3 @@ perfmon_destroyMarkerResults()
         free(markerResults);
     }
 }
-

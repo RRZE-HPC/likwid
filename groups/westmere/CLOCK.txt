@@ -12,7 +12,10 @@ Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 
 LONG
-Formula:
+Formulas:
+Runtime (RDTSC) [s] = time
+Runtime unhalted [s] = CPU_CLK_UNHALTED_CORE*inverseClock
+Clock [MHz] = 1.E-06*(CPU_CLK_UNHALTED_CORE/CPU_CLK_UNHALTED_REF)/inverseClock
+CPI = CPU_CLK_UNHALTED_CORE/INSTR_RETIRED_ANY
 -
-
-
+CPU clock information

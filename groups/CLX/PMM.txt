@@ -1,0 +1,46 @@
+SHORT Intel Optance DC bandwidth in MBytes/s
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+MBOX0C0 PMM_CMD1_RD
+MBOX0C1 PMM_CMD1_WR
+MBOX1C0 PMM_CMD1_RD
+MBOX1C1 PMM_CMD1_WR
+MBOX2C0 PMM_CMD1_RD
+MBOX2C1 PMM_CMD1_WR
+MBOX3C0 PMM_CMD1_RD
+MBOX3C1 PMM_CMD1_WR
+MBOX4C0 PMM_CMD1_RD
+MBOX4C1 PMM_CMD1_WR
+MBOX5C0 PMM_CMD1_RD
+MBOX5C1 PMM_CMD1_WR
+
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+PMM read bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0)*64.0/time
+PMM read data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0)*64.0
+PMM write bandwidth [MBytes/s] 1.0E-06*(MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1)*64.0/time
+PMM write data volume [GBytes] 1.0E-09*(MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1)*64.0
+PMM bandwidth [MBytes/s] 1.0E-06*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0+MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1)*64.0/time
+PMM data volume [GBytes] 1.0E-09*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0+MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1)*64.0
+
+LONG
+Formulas:
+PMM read bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0))*64.0/runtime
+PMM read data volume [GBytes] = 1.0E-09*(SUM(MBOXxC0))*64.0
+PMM write bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC1))*64.0/runtime
+PMM write data volume [GBytes] = 1.0E-09*(SUM(MBOXxC1))*64.0
+PMM bandwidth [MBytes/s] = 1.0E-06*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0/runtime
+PMM data volume [GBytes] = 1.0E-09*(SUM(MBOXxC0)+SUM(MBOXxC1))*64.0
+-
+Profiling group to measure data rate and volume for accesses to Intel Optane DC
+persistent memory. The Intel Optance DC devices are handled by the memory
+controllers but require different events.
+

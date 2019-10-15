@@ -17,4 +17,8 @@ Number of divide ops PMC0
 Avg. divide unit usage duration PMC1/PMC0
 
 LONG
+Formulas:
+Number of divide ops = ARITH_NUM_DIV
+Avg. divide unit usage duration = ARITH_FPU_DIV_ACTIVE/ARITH_NUM_DIV
+-
 This performance group measures the average latency of divide operations

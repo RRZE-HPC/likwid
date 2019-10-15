@@ -97,6 +97,8 @@ int perfmon_init_perfevent(int cpu_id)
     }
     lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &numa_lock[affinity_thread2numa_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]], cpu_id);
     if (cpu_event_fds == NULL)
     {
         cpu_event_fds = malloc(cpuid_topology.numHWThreads * sizeof(int*));
@@ -452,6 +454,7 @@ int perfmon_setupCountersThread_perfevent(
     }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
+        int has_lock = 0;
         is_uncore = 0;
         RegisterIndex index = eventSet->events[i].index;
         if (cpu_event_fds[cpu_id][index] != -1)
@@ -551,9 +554,34 @@ int perfmon_setupCountersThread_perfevent(
             case EUBOX5:
             case EUBOX6:
             case EUBOX7:
-                ret = perf_uncore_setup(&attr, type, event);
-                is_uncore = 1;
-                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_UNCORE);
+
+                if (cpuid_info.family == ZEN_FAMILY && type == MBOX0)
+                {
+                    if (numa_lock[affinity_thread2numa_lookup[cpu_id]] == cpu_id)
+                    {
+                        has_lock = 1;
+                    }
+                }
+                else if (cpuid_info.family == ZEN_FAMILY && type == CBOX0)
+                {
+                    if (sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]] == cpu_id)
+                    {
+                        has_lock = 1;
+                    }
+                }
+                else
+                {
+                    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
+                    {
+                        has_lock = 1;
+                    }
+                }
+                if (has_lock)
+                {
+                    ret = perf_uncore_setup(&attr, type, event);
+                    is_uncore = 1;
+                    VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_UNCORE);
+                }
                 break;
 #endif
             default:
@@ -561,8 +589,7 @@ int perfmon_setupCountersThread_perfevent(
         }
         if (ret == 0)
         {
-
-            if (!is_uncore || socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
+            if (!is_uncore || has_lock)
             {
                 pid_t curpid = allpid;
                 if (is_uncore && curpid >= 0)
@@ -708,4 +735,3 @@ int perfmon_finalizeCountersThread_perfevent(int thread_id, PerfmonEventSet* eve
     }
     return 0;
 }
-

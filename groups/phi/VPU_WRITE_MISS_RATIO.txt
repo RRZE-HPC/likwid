@@ -9,7 +9,7 @@ Runtime (RDTSC) [s] time
 VPU write miss ratio PMC1/PMC0
 
 LONG
-Formula:
+Formulas:
 VPU write miss ratio = PMC1/PMC0
 --
 This performance group determines the ratio between writes and writes that miss

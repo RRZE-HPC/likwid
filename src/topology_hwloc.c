@@ -51,7 +51,7 @@ hwloc_topology_t hwloc_topology = NULL;
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 #if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
-int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping, uint32_t *part, uint32_t *vendor)
+int parse_cpuinfo(uint32_t* count, uint32_t* family, uint32_t* variant, uint32_t *stepping, uint32_t *part, uint32_t *vendor)
 {
     int i = 0;
     FILE *fp = NULL;
@@ -60,23 +60,29 @@ int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping, uint3
     uint32_t s = 0;
     uint32_t p = 0;
     uint32_t vend = 0;
+    uint32_t c = 0;
     int (*ownatoi)(const char*);
     ownatoi = &atoi;
 
     if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
     {
-        const_bstring familyString = bformat("CPU architecture:");
-        const_bstring variantString = bformat("CPU variant\t:");
-        const_bstring steppingString = bformat("CPU revision\t:");
-        const_bstring partString = bformat("CPU part\t:");
-        const_bstring vendString = bformat("CPU implementer\t:");
+        const_bstring familyString = bformat("CPU architecture");
+        const_bstring variantString = bformat("CPU variant");
+        const_bstring steppingString = bformat("CPU revision");
+        const_bstring partString = bformat("CPU part");
+        const_bstring vendString = bformat("CPU implementer");
+        const_bstring procString = bformat("processor");
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
         bdestroy(src);
         fclose(fp);
         for (i=0;i<tokens->qty;i++)
         {
-            if ((f == 0) && (binstr(tokens->entry[i],0,familyString) != BSTR_ERR))
+            if ((f == 0) && (binstr(tokens->entry[i],0,procString) != BSTR_ERR))
+            {
+                c++;
+            }
+            else if ((f == 0) && (binstr(tokens->entry[i],0,familyString) != BSTR_ERR))
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
@@ -126,6 +132,7 @@ int parse_cpuinfo(uint32_t* family, uint32_t* variant, uint32_t *stepping, uint3
     *stepping = s;
     *part = p;
     *vendor = vend;
+    *count = c;
     return 0;
 }
 
@@ -134,7 +141,9 @@ int parse_cpuname(char *name)
     FILE *fp = NULL;
     if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
     {
-        const_bstring nameString = bformat("Hardware\t:");
+        int found = 0;
+        const_bstring nameString = bformat("Hardware");
+        const_bstring nameString2 = bformat("model name");
         bstring src = bread ((bNread) fread, fp);
         struct bstrList* tokens = bsplit(src,(char) '\n');
         bdestroy(src);
@@ -147,6 +156,22 @@ int parse_cpuname(char *name)
                 bltrimws(subtokens->entry[1]);
                 strncpy(name, bdata(subtokens->entry[1]), MAX_MODEL_STRING_LENGTH-1);
                 bstrListDestroy(subtokens);
+                found = 1;
+                break;
+            }
+        }
+        if (!found)
+        {
+            for (int i = 0; i < tokens->qty; i++)
+            {
+                if ((binstr(tokens->entry[i],0,nameString2) != BSTR_ERR))
+                {
+                    struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
+                    bltrimws(subtokens->entry[1]);
+                    strncpy(name, bdata(subtokens->entry[1]), MAX_MODEL_STRING_LENGTH-1);
+                    bstrListDestroy(subtokens);
+                    break;
+                }
             }
         }
         bstrListDestroy(tokens);
@@ -256,19 +281,25 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     if (cpuid_info.family == 0 || cpuid_info.model == 0)
     {
         uint32_t part = 0;
-        parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
+        uint32_t count = 0;
+        parse_cpuinfo(&count, &cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
         parse_cpuname(cpuid_info.osname);
     }
 #endif
 #ifdef __ARM_ARCH_8A
     uint32_t part = 0;
-    parse_cpuinfo(&cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
+    uint32_t count = 0;
+    parse_cpuinfo(&count, &cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
     parse_cpuname(cpuid_info.osname);
 #endif
     if ((info = hwloc_obj_get_info_by_name(obj, "CPUModel")))
         strcpy(cpuid_info.osname, info);
 
     cpuid_topology.numHWThreads = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+    if (count > cpuid_topology.numHWThreads)
+        cpuid_topology.numHWThreads = count;
+#endif
     if (cpuid_topology.activeHWThreads > cpuid_topology.numHWThreads)
         cpuid_topology.numHWThreads = cpuid_topology.activeHWThreads;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d Vendor 0x%X Part 0x%X isIntel %d numHWThreads %d activeHWThreads %d,

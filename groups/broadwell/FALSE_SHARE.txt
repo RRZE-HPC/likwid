@@ -16,7 +16,7 @@ Local LLC false sharing [MByte] 1.E-06*PMC0*64
 Local LLC false sharing rate PMC0/PMC2
 
 LONG
-Formula:
+Formulas:
 Local LLC false sharing [MByte] = 1.E-06*MEM_LOAD_UOPS_L3_HIT_RETIRED_XSNP_HITM*64
 Local LLC false sharing rate = MEM_LOAD_UOPS_L3_HIT_RETIRED_XSNP_HITM/MEM_UOPS_RETIRED_LOADS_ALL
 -

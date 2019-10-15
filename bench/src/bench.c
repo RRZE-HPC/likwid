@@ -49,6 +49,7 @@
 #define BARRIER   barrier_synchronize(&barr)
 
 #define EXECUTE(func)   \
+    LIKWID_MARKER_REGISTER("bench");  \
     BARRIER; \
     LIKWID_MARKER_START("bench");  \
     timer_start(&time); \
@@ -69,7 +70,7 @@ void*
 runTest(void* arg)
 {
     int threadId;
-    int offset;
+    size_t offset;
     size_t size;
     size_t vecsize;
     size_t i;
@@ -88,7 +89,7 @@ runTest(void* arg)
     /* Prepare ptrs for thread */
     vecsize = myData->size / data->numberOfThreads;
     size = myData->size / data->numberOfThreads;
-    
+
     size -= (size % myData->test->stride);
     myData->size = size;
     offset = data->threadId * size;
@@ -135,7 +136,7 @@ runTest(void* arg)
 
     /* pin the thread */
     likwid_pinThread(myData->processors[threadId]);
-    printf("Group: %d Thread %d Global Thread %d running on core %d - Vector length %llu Offset %d\n",
+    printf("Group: %d Thread %d Global Thread %d running on core %d - Vector length %llu Offset %zd\n",
             data->groupId,
             threadId,
             data->globalThreadId,
@@ -456,7 +457,7 @@ void*
 getIterSingle(void* arg)
 {
     int threadId = 0;
-    int offset = 0;
+    size_t offset = 0;
     size_t size = 0, vecsize = 0;
     size_t i;
     ThreadData* data;
@@ -473,7 +474,7 @@ getIterSingle(void* arg)
     //size = myData->size - (myData->size % myData->test->stride);
     vecsize = myData->size;
     size = myData->size / data->numberOfThreads;
-    
+
     size -= (size % myData->test->stride);
     offset = data->threadId * size;
 

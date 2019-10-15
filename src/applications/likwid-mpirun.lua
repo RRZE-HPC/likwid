@@ -70,8 +70,9 @@ local function usage()
     print_stdout("-n/-np <count>\t\t Set the number of processes")
     print_stdout("-nperdomain <domain>\t Set the number of processes per node by giving an affinity domain and count")
     print_stdout("-pin <list>\t\t Specify pinning of threads. CPU expressions like likwid-pin separated with '_'")
+    print_stdout("-t/-tpp <count>\t\t Set the number of threads per MPI process")
     print_stdout("-s, --skip <hex>\t Bitmask with threads to skip")
-    print_stdout("-mpi <id>\t\t Specify which MPI should be used. Possible values: openmpi, intelmpi and mvapich2")
+    print_stdout("-mpi <id>\t\t Specify which MPI should be used. Possible values: openmpi, intelmpi, mvapich2 or slurm")
     print_stdout("\t\t\t If not set, module system is checked")
     print_stdout("-omp <id>\t\t Specify which OpenMP should be used. Possible values: gnu and intel")
     print_stdout("\t\t\t Only required for statically linked executables.")
@@ -112,6 +113,7 @@ local likwiddebug = false
 local use_marker = false
 local use_csv = false
 local force = false
+local print_stats = false
 if os.getenv("LIKWID_FORCE") ~= nil then
     force = true
 end
@@ -460,7 +462,7 @@ local function executeMvapich2(wrapperscript, hostfile, env, nrNodes)
 
     local envstr = ""
     for i, e in pairs(env) do
-        envstr = envstr .. string.format("%s=%s ", i, e)
+        envstr = envstr .. string.format("-genv %s %s ", i, e)
     end
 
     local cmd = string.format("%s -f %s -np %d -ppn %d %s %s %s",
@@ -874,6 +876,9 @@ local function assignHosts(hosts, np, ppn, tpp)
                     current = ppn
                 end]]
                 print_stderr(string.format("ERROR: Oversubscription required. Host %s has only %s slots but %d needed per host", host["hostname"], host["slots"], ppn))
+                if mpitype == "slurm" then
+                    print_stderr("In SLURM environments, it might be a problem with --ntasks (the slots) and --cpus-per-task options")
+                end
                 os.exit(1)
             else
                 table.insert(newhosts, {hostname=host["hostname"],
@@ -1186,9 +1191,9 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
         glsize_var = tostring(math.tointeger(np))
         losize_var = tostring(math.tointeger(ppn))
     elseif mpitype == "slurm" then
-        glrank_var = "${PMI_RANK:-$(($GLOBALSIZE * 2))}"
+        glrank_var = "${SLURM_PROCID:-$(($GLOBALSIZE * 2))}"
         glsize_var = tostring(math.tointeger(np))
-        losize_var = "${MPI_LOCALNRANKS:-$SLURM_NTASKS_PER_NODE}"
+        losize_var = string.format("${SLURM_NTASKS_PER_NODE:-%d}", math.tointeger(ppn))
     else
         print_stderr("Invalid MPI vendor "..mpitype)
         return
@@ -1542,6 +1547,9 @@ function percentile_table(inputtable, skip_cols, skip_lines)
         else
             index = math.floor(index)
         end
+        if index == 0 then
+            index = 1
+        end
         return tonumber(sorted_valuelist[index])
     end
     local outputtable = {}
@@ -1578,6 +1586,7 @@ function percentile_table(inputtable, skip_cols, skip_lines)
 end
 
 function printMpiOutput(group_list, all_results, regionname)
+    print(print_stats)
     region = regionname or nil
     if #group_list == 0 or likwid.tablelength(all_results) == 0 then
         return
@@ -1641,7 +1650,7 @@ function printMpiOutput(group_list, all_results, regionname)
             end
         end
 
-        if total_threads > 1 then
+        if total_threads > 1 or print_stats then
             firsttab_combined = likwid.tableToMinMaxAvgSum(firsttab, 2, 1)
         end
         if gdata["Metrics"] then
@@ -1673,7 +1682,7 @@ function printMpiOutput(group_list, all_results, regionname)
                 end
             end
 
-            if total_threads > 1 then
+            if total_threads > 1 or print_stats then
                 secondtab_combined = likwid.tableToMinMaxAvgSum(secondtab, 1, 1)
                 local tmp = percentile_table(secondtab, 1, 1)
                 for i, col in pairs(tmp) do
@@ -1695,11 +1704,11 @@ function printMpiOutput(group_list, all_results, regionname)
             end
             --print_stdout("Group,"..tostring(gidx) .. string.rep(",", maxLineFields  - 2))
             likwid.printcsv(firsttab, maxLineFields)
-            if total_threads > 1 then
+            if total_threads > 1 or print_stats then
                 if region == nil then
                     print(string.format("TABLE,Group %d Raw STAT,%s,%d%s",gidx,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
                 else
-                    print(string.format("TABLE,Region %s,Group %d Raw STAT,%s,%d%s",regionName, gidx,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                    print(string.format("TABLE,Region %s,Group %d Raw STAT,%s,%d%s",tostring(region), gidx,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-5)))
                 end
                 likwid.printcsv(firsttab_combined, maxLineFields)
             end
@@ -1707,14 +1716,14 @@ function printMpiOutput(group_list, all_results, regionname)
                 if region == nil then
                     print(string.format("TABLE,Group %d Metric,%s,%d%s",gidx,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-4)))
                 else
-                    print(string.format("TABLE,Region %s,Group %d Metric,%s,%d%s",regionName,gidx,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-5)))
+                    print(string.format("TABLE,Region %s,Group %d Metric,%s,%d%s",tostring(region),gidx,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-5)))
                 end
                 likwid.printcsv(secondtab, maxLineFields)
-                if total_threads > 1 then
+                if total_threads > 1 or print_stats then
                     if region == nil then
                         print(string.format("TABLE,Group %d Metric STAT,%s,%d%s",gidx,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))
                     else
-                        print(string.format("TABLE,Region %s,Group %d Metric STAT,%s,%d%s",regionName,gidx,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                        print(string.format("TABLE,Region %s,Group %d Metric STAT,%s,%d%s",tostring(region),gidx,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-5)))
                     end
                     likwid.printcsv(secondtab_combined, maxLineFields)
                 end
@@ -1725,10 +1734,10 @@ function printMpiOutput(group_list, all_results, regionname)
             end
             print_stdout("Group: "..tostring(gidx))
             likwid.printtable(firsttab)
-            if total_threads > 1 then likwid.printtable(firsttab_combined) end
+            if total_threads > 1 or print_stats then likwid.printtable(firsttab_combined) end
             if gdata["Metrics"] then
                 likwid.printtable(secondtab)
-                if total_threads > 1 then likwid.printtable(secondtab_combined) end
+                if total_threads > 1 or print_stats then likwid.printtable(secondtab_combined) end
             end
         end
     end
@@ -1756,7 +1765,7 @@ local cmd_options = {"h","help", -- default options for help message
                      "m","marker", -- options to activate MarkerAPI
                      "e:", "env:", -- options to forward environment variables
                      "ld",         -- option to activate debugging in likwid-perfctr
-                     "nperdomain:","pin:","hostfile:","O","f"} -- other options
+                     "nperdomain:","pin:","hostfile:","O","f", "stats"} -- other options
 
 for opt,arg in likwid.getopt(arg,  cmd_options) do
     if (type(arg) == "string") then
@@ -1782,6 +1791,8 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         use_csv = true
     elseif opt == "f" then
         force = true
+    elseif opt == "stats" then
+        print_stats = true
     elseif opt == "n" or opt == "np" then
         np = tonumber(arg)
         if np == nil then
@@ -1980,6 +1991,10 @@ if #perf > 0 then
         os.exit(1)
     end
 end
+if #perf == 0 and print_stats then
+    print_stderr("WARN: Printing statistics only available when measuring counters (-g option)")
+    print_stats = false
+end
 
 if #cpuexprs > 0 then
     cpuexprs = calculatePinExpr(cpuexprs)
@@ -2019,7 +2034,7 @@ if #cpuexprs > 0 then
         print_stderr(string.format("ERROR: You want %d processes but the pinning expression has only expressions for %d processes. There are only %d hosts in the host list.", np, #cpuexprs*#newhosts, #newhosts))
         os.exit(1)
     end
-else 
+else
     ppn = math.tointeger(np / givenNrNodes)
     if nperdomain == nil then
         nperdomain = "N:"..tostring(ppn)
