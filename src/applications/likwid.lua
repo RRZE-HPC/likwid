@@ -1193,7 +1193,7 @@ likwid.gethostname = gethostname
 
 local function getjid()
     jid = "X"
-    for _, v in {"PBS_JOBID", "SLURM_JOB_ID", "SLURM_JOBID", "LOADL_STEP_ID", "LSB_JOBID" } do
+    for _, v in pairs({"PBS_JOBID", "SLURM_JOB_ID", "SLURM_JOBID", "LOADL_STEP_ID", "LSB_JOBID" }) do
         x = os.getenv(v)
         if x then
             jid = x
@@ -1207,7 +1207,7 @@ likwid.getjid = getjid
 
 local function getMPIrank()
     rank = "X"
-    for _, v in {"PMI_RANK", "OMPI_COMM_WORLD_RANK", "SLURM_PROCID"} do
+    for _, v in pairs({"PMI_RANK", "OMPI_COMM_WORLD_RANK", "SLURM_PROCID"}) do
         x = os.getenv(v)
         if x then
             rank = x
