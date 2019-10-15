@@ -876,6 +876,9 @@ local function assignHosts(hosts, np, ppn, tpp)
                     current = ppn
                 end]]
                 print_stderr(string.format("ERROR: Oversubscription required. Host %s has only %s slots but %d needed per host", host["hostname"], host["slots"], ppn))
+                if mpitype == "slurm" then
+                    print_stderr("In SLURM environments, it might be a problem with --ntasks (the slots) and --cpus-per-task options")
+                end
                 os.exit(1)
             else
                 table.insert(newhosts, {hostname=host["hostname"],
@@ -1188,9 +1191,9 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
         glsize_var = tostring(math.tointeger(np))
         losize_var = tostring(math.tointeger(ppn))
     elseif mpitype == "slurm" then
-        glrank_var = "${PMI_RANK:-$(($GLOBALSIZE * 2))}"
+        glrank_var = "${SLURM_PROCID:-$(($GLOBALSIZE * 2))}"
         glsize_var = tostring(math.tointeger(np))
-        losize_var = "${MPI_LOCALNRANKS:-$SLURM_NTASKS_PER_NODE}"
+        losize_var = string.format("${SLURM_NTASKS_PER_NODE:-%d}", math.tointeger(ppn))
     else
         print_stderr("Invalid MPI vendor "..mpitype)
         return
@@ -2031,7 +2034,7 @@ if #cpuexprs > 0 then
         print_stderr(string.format("ERROR: You want %d processes but the pinning expression has only expressions for %d processes. There are only %d hosts in the host list.", np, #cpuexprs*#newhosts, #newhosts))
         os.exit(1)
     end
-else 
+else
     ppn = math.tointeger(np / givenNrNodes)
     if nperdomain == nil then
         nperdomain = "N:"..tostring(ppn)
