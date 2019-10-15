@@ -47,7 +47,8 @@
 #include <likwid.h>
 
 #include <calculator.h>
-
+#include <bstrlib.h>
+#include <bstrlib_helper.h>
 
 
 
@@ -1404,37 +1405,19 @@ void
 init_clist(CounterList* clist)
 {
     clist->counters = 0;
-    clist->cnames = NULL;
-    clist->cvalues = NULL;
+    clist->cnames = bstrListCreate();
+    clist->cvalues = bstrListCreate();
 }
 
 int
 add_to_clist(CounterList* clist, char* counter, double result)
 {
-    char** tmpnames;
-    double* tmpvalues;
-    if ((clist == NULL)||(counter == NULL))
-        return -EINVAL;
-    tmpnames = realloc(clist->cnames, (clist->counters + 1) * sizeof(char*));
-    if (tmpnames == NULL)
-    {
-        return -ENOMEM;
-    }
-    clist->cnames = tmpnames;
-    tmpvalues = realloc(clist->cvalues, (clist->counters + 1) * sizeof(double));
-    if (tmpvalues == NULL)
-    {
-        return -ENOMEM;
-    }
-    clist->cvalues = tmpvalues;
-    clist->cnames[clist->counters] = malloc((strlen(counter)+2)*sizeof(char));
-    if (clist->cnames[clist->counters] == NULL)
-    {
-        return -ENOMEM;
-    }
-    sprintf(clist->cnames[clist->counters],"%s", counter);
-    clist->cvalues[clist->counters] = result;
+
+    bstrListAddChar(clist->cnames, counter);
+    bstring v = bformat("%.20f", result);
+    bstrListAdd(clist->cvalues, v);
     clist->counters++;
+    bdestroy(v);
     return 0;
 }
 
@@ -1445,15 +1428,22 @@ update_clist(CounterList* clist, char* counter, double result)
     int found = 0;
     if ((clist == NULL)||(counter == NULL))
         return -EINVAL;
+    bstring c = bfromcstr(counter);
     for (i=0; i< clist->counters; i++)
     {
-        if (strcmp(clist->cnames[i], counter) == 0)
+        bstring comp = bstrListGet(clist->cnames, i);
+        if (bstrcmp(comp, c) == BSTR_OK)
         {
-            clist->cvalues[i] = result;
+            bstring v = bformat("%.20f", result);
+            bstring val = bstrListGet(clist->cvalues, i);
+            btrunc(val, 0);
+            bconcat(val, v);
+            bdestroy(v);
             found = 1;
             break;
         }
     }
+    bdestroy(c);
     if (!found)
     {
         return -ENOENT;
@@ -1467,12 +1457,9 @@ destroy_clist(CounterList* clist)
     int i;
     if (clist != NULL)
     {
-        for (i=0;i<clist->counters;i++)
-        {
-            free(clist->cnames[i]);
-        }
-        free(clist->cnames);
-        free(clist->cvalues);
+        bstrListDestroy(clist->cnames);
+        bstrListDestroy(clist->cvalues);
+        clist->counters = 0;
     }
 }
 
@@ -1489,10 +1476,10 @@ calc_metric(char* formula, CounterList* clist, double *result)
     bstring f = bfromcstr(formula);
     for(i=0;i<clist->counters;i++)
     {
-        if (strlen(clist->cnames[i]) > maxstrlen)
-            maxstrlen = strlen(clist->cnames[i]);
-        if (strlen(clist->cnames[i]) < minstrlen)
-            minstrlen = strlen(clist->cnames[i]);
+        bstring c = bstrListGet(clist->cnames, i);
+        int len = blength(c);
+        maxstrlen = (maxstrlen > len ? maxstrlen : len);
+        minstrlen = (minstrlen < len ? minstrlen : len);
     }
 
     // try to replace each counter name in clist
@@ -1500,14 +1487,11 @@ calc_metric(char* formula, CounterList* clist, double *result)
     {
         for(i=0;i<clist->counters;i++)
         {
-            if (strlen(clist->cnames[i]) != maxstrlen)
+            bstring c = bstrListGet(clist->cnames, i);
+            if (blength(c) != maxstrlen)
                 continue;
-            // if we find the counter name, replace it with the value
-            bstring c = bfromcstr(clist->cnames[i]);
-            bstring v = bformat("%.20f", clist->cvalues[i]);
+            bstring v = bstrListGet(clist->cvalues, i);
             bfindreplace(f, c, v, 0);
-            bdestroy(c);
-            bdestroy(v);
         }
         maxstrlen--;
     }

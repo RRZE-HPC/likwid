@@ -30,6 +30,9 @@
 #ifndef PERFGROUP_H
 #define PERFGROUP_H
 
+#include <bstrlib.h>
+#include <bstrlib_helper.h>
+
  /*! \brief The groupInfo data structure describes a performance group
 
 Groups can be either be read in from file or be a group with custom event set. For
@@ -71,8 +74,8 @@ static char* groupFileSectionNames[MAX_GROUP_FILE_SECTIONS] = {
 
 typedef struct {
     int counters; /*!< \brief Number of entries in the list */
-    char** cnames; /*!< \brief List of counter names */
-    double* cvalues; /*!< \brief List of counter values */
+    struct bstrList* cnames; /*!< \brief List of counter names */
+    struct bstrList* cvalues; /*!< \brief List of counter values */
 } CounterList;
 
 extern int get_groups(const char* grouppath, const char* architecture, char*** groupnames, char*** groupshort, char*** grouplong);
