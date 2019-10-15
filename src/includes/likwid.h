@@ -1457,6 +1457,12 @@ extern int cpuFeatures_disable(int cpu, CpuFeature type, int print) __attribute_
 /** \addtogroup CpuFreq Retrieval and manipulation of processor clock frequencies
  *  @{
  */
+/*! \brief Initialize cpu frequency module
+
+Initialize cpu frequency module
+@return returns 0 if successfull and 1 if invalid accessmode
+*/
+extern int freq_init(void) __attribute__ ((visibility ("default") ));
 /*! \brief Get the current clock frequency of a core
 
 Get the current clock frequency of a core
@@ -1472,6 +1478,13 @@ Get the maximal clock frequency of a core
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_getCpuClockMax(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/*! \brief Get the maximal available clock frequency of a core
+
+Get the maximal clock frequency of a core
+@param [in] cpu_id CPU ID
+@return Frequency or 0 in case of errors
+*/
+extern uint64_t freq_getConfCpuClockMax(const int cpu_id) __attribute__ ((visibility ("default") ));
 /*! \brief Set the maximal clock frequency of a core
 
 Set the maximal clock frequency of a core
@@ -1487,6 +1500,13 @@ Get the minimal clock frequency of a core
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_getCpuClockMin(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/*! \brief Get the minimal available clock frequency of a core
+
+Get the minimal clock frequency of a core
+@param [in] cpu_id CPU ID
+@return Frequency or 0 in case of errors
+*/
+extern uint64_t freq_getConfCpuClockMin(const int cpu_id) __attribute__ ((visibility ("default") ));
 /*! \brief Set the minimal clock frequency of a core
 
 Set the minimal clock frequency of a core
@@ -1580,6 +1600,11 @@ Get the current Uncore frequency.
 @return frequency in MHz or 0 at failure
 */
 extern uint64_t freq_getUncoreFreqCur(const int socket_id) __attribute__ ((visibility ("default") ));
+/*! \brief Finalize cpu frequency module
+
+Finalize cpu frequency module
+*/
+extern void freq_finalize(void) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 #ifdef __cplusplus

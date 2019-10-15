@@ -59,6 +59,9 @@ INSTALLED_LIBPREFIX = $(INSTALLED_PREFIX)/lib#NO SPACE
 ACCESSDAEMON = $(PREFIX)/sbin/likwid-accessD#NO SPACE
 INSTALLED_ACCESSDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-accessD#NO SPACE
 
+FREQDAEMON = $(PREFIX)/sbin/likwid-setFreq#NO SPACE
+INSTALLED_FREQDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-setFreq#NO SPACE
+
 # Build the accessDaemon. Have a look in the WIKI for details.
 BUILDDAEMON = true#NO SPACE
 # Build the setFrequencies daemon to allow users setting the CPU and Uncore
