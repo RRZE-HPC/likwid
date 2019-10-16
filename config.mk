@@ -54,19 +54,20 @@ INSTALLED_PREFIX ?= $(PREFIX)#NO SPACE
 INSTALLED_BINPREFIX = $(INSTALLED_PREFIX)/bin#NO SPACE
 INSTALLED_LIBPREFIX = $(INSTALLED_PREFIX)/lib#NO SPACE
 
+# Build the accessDaemon. Have a look in the WIKI for details.
+BUILDDAEMON = true#NO SPACE
 # For the daemon based secure msr/pci access configure
 # the absolute path to the msr daemon executable.
 ACCESSDAEMON = $(PREFIX)/sbin/likwid-accessD#NO SPACE
 INSTALLED_ACCESSDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-accessD#NO SPACE
 
-FREQDAEMON = $(PREFIX)/sbin/likwid-setFreq#NO SPACE
-INSTALLED_FREQDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-setFreq#NO SPACE
-
-# Build the accessDaemon. Have a look in the WIKI for details.
-BUILDDAEMON = true#NO SPACE
 # Build the setFrequencies daemon to allow users setting the CPU and Uncore
 # frequency
 BUILDFREQ = true#NO SPACE
+# Paths for frequencie deaemon after installation
+FREQDAEMON = $(PREFIX)/sbin/likwid-setFreq#NO SPACE
+INSTALLED_FREQDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-setFreq#NO SPACE
+
 
 # chown installed tools to this user/group
 # if you change anything here, make sure that the user/group can access
