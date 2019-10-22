@@ -46,6 +46,7 @@
 #define LIKWID_COMMIT GITCOMMIT
 
 extern int perfmon_verbosity;
+extern int likwid_nvmon_verbosity;
 
 /** \addtogroup MarkerAPI Marker API module
 *  @{
@@ -1736,6 +1737,21 @@ char* nvmon_getTagOfRegion(int region) __attribute__ ((visibility ("default") ))
 int nvmon_getEventsOfRegion(int region) __attribute__ ((visibility ("default") ));
 double nvmon_getResultOfRegionGpu(int region, int event, int gpu) __attribute__ ((visibility ("default") ));
 double nvmon_getMetricOfRegionGpu(int region, int metricId, int threadId) __attribute__ ((visibility ("default") ));
+
+typedef struct {
+    char* name;
+    char* desc;
+    char* limit;
+} NvmonEventListEntry;
+
+typedef struct {
+    int numEvents;
+    NvmonEventListEntry *events;
+} NvmonEventList;
+typedef NvmonEventList* NvmonEventList_t;
+
+int nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list);
+void nvmon_returnEventsOfGpu(NvmonEventList_t list);
 
 int nvmon_init(int nrGpus, const int* gpuIds) __attribute__ ((visibility ("default") ));
 void nvmon_finalize(void) __attribute__ ((visibility ("default") ));
