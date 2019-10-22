@@ -998,4 +998,5 @@ gpustr_to_gpulist(const char* gpustr, int* gpulist, int length)
             }
         }
     }
+    return insert;
 }
