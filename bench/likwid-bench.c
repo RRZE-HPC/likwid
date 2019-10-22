@@ -421,8 +421,6 @@ int main(int argc, char** argv)
         }
     }
 
-    /* :WARNING:05/04/2010 08:58:05 AM:jt: At the moment the thread
-     * module only allows equally sized thread groups*/
     for (i=0; i<numberOfWorkgroups; i++)
     {
         globalNumberOfThreads += groups[i].numberOfThreads;
@@ -438,7 +436,7 @@ int main(int argc, char** argv)
 
 
     threads_init(globalNumberOfThreads);
-    threads_createGroups(numberOfWorkgroups);
+    threads_createGroups(numberOfWorkgroups, groups);
 
     /* we configure global barriers only */
     barrier_init(1);

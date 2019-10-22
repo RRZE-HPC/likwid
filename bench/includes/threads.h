@@ -32,6 +32,7 @@
 
 #include <pthread.h>
 #include <threads_types.h>
+#include <strUtil.h>
 
 #define THREADS_BARRIER pthread_barrier_wait(&threads_barrier)
 #define MIN_ITERATIONS 10
@@ -107,7 +108,8 @@ extern void threads_destroy(int numberOfGroups, int numberOfStreams);
 /**
  * @brief  Create Thread groups
  * @param  numberOfGroups The number of groups to create
+ * @param  groups Pointer to the groups data
  */
-extern void threads_createGroups(int numberOfGroups);
+extern void threads_createGroups(int numberOfGroups, Workgroup *groups);
 
 #endif /* THREADS_H */
