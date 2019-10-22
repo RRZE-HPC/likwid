@@ -480,14 +480,23 @@ if print_events == true then
         end
         print_stdout(outstr)
     end
+---------------------------
     if gputopo then
         tab = likwid.getGpuEventsAndCounters()
-        print_stdout("\n\n")
-        print_stdout(string.format("The GPUs have %d events.",#tab["Events"]))
-        for _, eventTab in pairs(tab["Events"]) do
-            print_stdout(eventTab)
+        for d=0,tab["numDevices"]-1,1 do
+            if tab["devices"][d] then
+                print_stdout("\n\n")
+                print_stdout(string.format("The GPUs %d provides %d events.", d, #tab["devices"][d]))
+                print_stdout("You can use as many GPUx counters until you get an error.")
+                print_stdout("Event tags (tag, counters)")
+                for _,e in pairs(tab["devices"][d]) do
+                    outstr = string.format("%s, %s", e["Name"], e["Limit"])
+                    print_stdout(outstr)
+                end
+            end
         end
     end
+---------------------------
     os.exit(0)
 end
 
@@ -518,12 +527,36 @@ if print_event ~= nil then
             end
         end
     end
+---------------------------
+    if gputopo then
+        tab = likwid.getGpuEventsAndCounters()
+        for d=0,tab["numDevices"]-1,1 do
+            for _,e in pairs(tab["devices"][d]) do
+                if e["Name"]:match(case_insensitive_pattern(print_event)) then
+                    local f = false
+                    for _,x in pairs(events) do
+                        if e["Name"] == x["Name"] then
+                            f = true
+                            break
+                        end
+                    end
+                    if not f then
+                        table.insert(events, e)
+                        counters["GPU"] = {["Name"] = "GPU", ["TypeName"] = "Nvidia GPU counters"}
+                    end
+                end
+            end
+        end
+    end
+---------------------------
     print_stdout(string.format("Found %d event(s) with search key %s:", #events, print_event))
     for _, eventTab in pairs(events) do
         outstr = eventTab["Name"] .. ", "
-        outstr = outstr .. string.format("0x%X, 0x%X, ",eventTab["ID"],eventTab["UMask"])
+        if (eventTab["ID"] and eventTab["UMask"]) then
+            outstr = outstr .. string.format("0x%X, 0x%X, ",eventTab["ID"],eventTab["UMask"])
+        end
         outstr = outstr .. eventTab["Limit"]
-        if #eventTab["Options"] > 0 then
+        if eventTab["Options"] and #eventTab["Options"] > 0 then
             outstr = outstr .. string.format(", %s",eventTab["Options"])
         end
         print_stdout(outstr)
@@ -531,7 +564,7 @@ if print_event ~= nil then
     print_stdout("\nUsable counter(s) for above event(s):")
     for i, counter in pairs(counters) do
         outstr = string.format("%s, %s", counter["Name"], counter["TypeName"]);
-        if counter["Options"]:len() > 0 then
+        if counter["Options"] and counter["Options"]:len() > 0 then
             outstr = outstr .. string.format(", %s",counter["Options"])
         end
         print_stdout(outstr)

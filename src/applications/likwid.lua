@@ -175,7 +175,7 @@ likwid.setresuser = likwid_setresuser
 
 likwid.getGpuTopology = likwid_getGpuTopology
 likwid.putGpuTopology = likwid_putGpuTopology
---likwid.getGpuEventsAndCounters = likwid_getGpuEventsAndCounters
+likwid.getGpuEventsAndCounters = likwid_getGpuEventsAndCounters
 likwid.getGpuGroups = likwid_getGpuGroups
 likwid.gpustr_to_gpulist = likwid_gpustr_to_gpulist
 likwid.gpuGetNameOfGroup = likwid_gpuGetNameOfGroup
@@ -1397,11 +1397,12 @@ local function printGpuOutput(results, metrics, gpulist, region, stats)
             secondtab[1] = {"Metric"}
             secondtab_combined[1] = {"Metric"}
             for m=1, likwid.gpuMarkerRegionMetrics(g) do
-                table.insert(secondtab[1], likwid.getNameOfMetric(g, m))
-                table.insert(secondtab_combined[1], likwid.getNameOfMetric(g, m).." STAT" )
+                local mname = likwid.gpuGetNameOfMetric(g, m)
+                table.insert(secondtab[1], mname)
+                table.insert(secondtab_combined[1], mname .." STAT" )
             end
             for c, gpu in pairs(cur_gpulist) do
-                local tmpList = {"GPU "..tostring(cpu)}
+                local tmpList = {"GPU "..tostring(gpu)}
                 for m=1, likwid.gpuMarkerRegionMetrics(g) do
                     local tmp = tostring(likwid.num2str(metrics[g][m][c]))
                     table.insert(tmpList, tmp)
