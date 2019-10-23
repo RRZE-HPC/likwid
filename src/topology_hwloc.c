@@ -244,7 +244,11 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     if (!hwloc_topology)
     {
         likwid_hwloc_topology_init(&hwloc_topology);
+#if HWLOC_API_VERSION > 0x00020000
+        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM );
+#else
         likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM|HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
+#endif
         likwid_hwloc_topology_load(hwloc_topology);
     }
     obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_SOCKET, 0);
@@ -536,8 +540,17 @@ hwloc_init_cacheTopology(void)
     depth = likwid_hwloc_topology_get_depth(hwloc_topology);
     for (d = 0; d < depth; d++)
     {
+#if HWLOC_API_VERSION > 0x00020000
+        if (likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_L1CACHE ||
+            likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_L2CACHE ||
+            likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_L3CACHE ||
+            likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_L4CACHE ||
+            likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_L5CACHE)
+            maxNumLevels++;
+#else
         if (likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_CACHE)
             maxNumLevels++;
+#endif
     }
     cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
     /* Start at the bottom of the tree to get all cache levels in order */
@@ -546,7 +559,12 @@ hwloc_init_cacheTopology(void)
     for(d=depth-1;d >= 0; d--)
     {
         /* We only need caches, so skip other levels */
-        if (likwid_hwloc_get_depth_type(hwloc_topology, d) != HWLOC_OBJ_CACHE)
+#if HWLOC_API_VERSION > 0x00020000
+        if (likwid_hwloc_get_depth_type(hwloc_topology, d) < HWLOC_OBJ_L1CACHE &&
+            likwid_hwloc_get_depth_type(hwloc_topology, d) < HWLOC_OBJ_L5CACHE)
+#else
+        if (likwid_hwloc_get_depth_type(hwloc_topology, d) < HWLOC_OBJ_CACHE)
+#endif
         {
             continue;
         }
