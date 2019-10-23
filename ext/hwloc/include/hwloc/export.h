@@ -1,5 +1,5 @@
 /*
- * Copyright © 2009-2015 Inria.  All rights reserved.
+ * Copyright © 2009-2018 Inria.  All rights reserved.
  * Copyright © 2009-2012 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -28,9 +28,32 @@ extern "C" {
  * @{
  */
 
+/** \brief Flags for exporting XML topologies.
+ *
+ * Flags to be given as a OR'ed set to hwloc_topology_export_xml().
+ */
+enum hwloc_topology_export_xml_flags_e {
+ /** \brief Export XML that is loadable by hwloc v1.x.
+  * However, the export may miss some details about the topology.
+  * \hideinitializer
+  */
+ HWLOC_TOPOLOGY_EXPORT_XML_FLAG_V1 = (1UL<<0)
+};
+
 /** \brief Export the topology into an XML file.
  *
  * This file may be loaded later through hwloc_topology_set_xml().
+ *
+ * By default, the latest export format is used, which means older hwloc
+ * releases (e.g. v1.x) will not be able to import it.
+ * Exporting to v1.x specific XML format is possible using flag
+ * ::HWLOC_TOPOLOGY_EXPORT_XML_FLAG_V1 but it may miss some details
+ * about the topology.
+ * If there is any chance that the exported file may ever be imported
+ * back by a process using hwloc 1.x, one should consider detecting
+ * it at runtime and using the corresponding export format.
+ *
+ * \p flags is a OR'ed set of ::hwloc_topology_export_xml_flags_e.
  *
  * \return -1 if a failure occured.
  *
@@ -45,7 +68,7 @@ extern "C" {
  *
  * \note If \p name is "-", the XML output is sent to the standard output.
  */
-HWLOC_DECLSPEC int hwloc_topology_export_xml(hwloc_topology_t topology, const char *xmlpath);
+HWLOC_DECLSPEC int hwloc_topology_export_xml(hwloc_topology_t topology, const char *xmlpath, unsigned long flags);
 
 /** \brief Export the topology into a newly-allocated XML memory buffer.
  *
@@ -53,6 +76,20 @@ HWLOC_DECLSPEC int hwloc_topology_export_xml(hwloc_topology_t topology, const ch
  * hwloc_free_xmlbuffer() later in the caller.
  *
  * This memory buffer may be loaded later through hwloc_topology_set_xmlbuffer().
+ *
+ * By default, the latest export format is used, which means older hwloc
+ * releases (e.g. v1.x) will not be able to import it.
+ * Exporting to v1.x specific XML format is possible using flag
+ * ::HWLOC_TOPOLOGY_EXPORT_XML_FLAG_V1 but it may miss some details
+ * about the topology.
+ * If there is any chance that the exported buffer may ever be imported
+ * back by a process using hwloc 1.x, one should consider detecting
+ * it at runtime and using the corresponding export format.
+ *
+ * The returned buffer ends with a \0 that is included in the returned
+ * length.
+ *
+ * \p flags is a OR'ed set of ::hwloc_topology_export_xml_flags_e.
  *
  * \return -1 if a failure occured.
  *
@@ -65,7 +102,7 @@ HWLOC_DECLSPEC int hwloc_topology_export_xml(hwloc_topology_t topology, const ch
  * Any other character, especially any non-ASCII character, will be silently
  * dropped.
  */
-HWLOC_DECLSPEC int hwloc_topology_export_xmlbuffer(hwloc_topology_t topology, char **xmlbuffer, int *buflen);
+HWLOC_DECLSPEC int hwloc_topology_export_xmlbuffer(hwloc_topology_t topology, char **xmlbuffer, int *buflen, unsigned long flags);
 
 /** \brief Free a buffer allocated by hwloc_topology_export_xmlbuffer() */
 HWLOC_DECLSPEC void hwloc_free_xmlbuffer(hwloc_topology_t topology, char *xmlbuffer);
@@ -183,7 +220,27 @@ enum hwloc_topology_export_synthetic_flags_e {
   * This is required if loading the synthetic description with hwloc < 1.10.
   * \hideinitializer
   */
- HWLOC_TOPOLOGY_EXPORT_SYNTHETIC_FLAG_NO_ATTRS = (1UL<<1)
+ HWLOC_TOPOLOGY_EXPORT_SYNTHETIC_FLAG_NO_ATTRS = (1UL<<1),
+
+ /** \brief Export the memory hierarchy as expected in hwloc 1.x.
+  *
+  * Instead of attaching memory children to levels, export single NUMA node child
+  * as normal intermediate levels, when possible.
+  * This is required if loading the synthetic description with hwloc 1.x.
+  * However this may fail if some objects have multiple local NUMA nodes.
+  * \hideinitializer
+  */
+ HWLOC_TOPOLOGY_EXPORT_SYNTHETIC_FLAG_V1 = (1UL<<2),
+
+ /** \brief Do not export memory information.
+  *
+  * Only export the actual hierarchy of normal CPU-side objects and ignore
+  * where memory is attached.
+  * This is useful for when the hierarchy of CPUs is what really matters,
+  * but it behaves as if there was a single machine-wide NUMA node.
+  * \hideinitializer
+  */
+ HWLOC_TOPOLOGY_EXPORT_SYNTHETIC_FLAG_IGNORE_MEMORY = (1UL<<3)
 };
 
 /** \brief Export the topology as a synthetic string.
@@ -193,7 +250,7 @@ enum hwloc_topology_export_synthetic_flags_e {
  *
  * This exported string may be given back to hwloc_topology_set_synthetic().
  *
- * \p flags is a OR'ed set of hwloc_topology_export_synthetic_flags_e.
+ * \p flags is a OR'ed set of ::hwloc_topology_export_synthetic_flags_e.
  *
  * \return The number of characters that were written,
  * not including the terminating \0.
