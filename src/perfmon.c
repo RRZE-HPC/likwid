@@ -75,6 +75,7 @@
 #include <perfmon_skylake.h>
 #include <perfmon_cascadelake.h>
 #include <perfmon_zen.h>
+#include <perfmon_zen2.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
 
