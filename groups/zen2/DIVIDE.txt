@@ -1,0 +1,21 @@
+SHORT Divide unit information
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  CPU_CLOCKS_UNHALTED
+PMC2  DIV_OP_COUNT
+PMC3  DIV_BUSY_CYCLES
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s]   FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI PMC1/PMC0
+Number of divide ops PMC2
+Avg. divide unit usage duration PMC3/PMC2
+
+LONG
+This performance group measures the average latency of divide operations

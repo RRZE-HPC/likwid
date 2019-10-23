@@ -1,0 +1,39 @@
+SHORT  TLB miss rate/ratio
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  DATA_CACHE_ACCESSES
+PMC2  L1_DTLB_MISS_ANY_L2_HIT
+PMC3  L1_DTLB_MISS_ANY_L2_MISS
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s]   FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI   FIXC1/PMC0
+L1 DTLB request rate  PMC1/PMC0
+L1 DTLB miss rate   (PMC2+PMC3)/PMC0
+L1 DTLB miss ratio   (PMC2+PMC3)/PMC1
+L2 DTLB request rate   (PMC2+PMC3)/PMC0
+L2 DTLB miss rate    PMC3/PMC0
+L2 DTLB miss ratio    PMC3/(PMC2+PMC3)
+
+
+LONG
+Formulas:
+L1 DTLB request rate  DATA_CACHE_ACCESSES / RETIRED_INSTRUCTIONS
+L1 DTLB miss rate  (L1_DTLB_MISS_ANY_L2_HIT+L1_DTLB_MISS_ANY_L2_MISS)/RETIRED_INSTRUCTIONS
+L1 DTLB miss ratio  (L1_DTLB_MISS_ANY_L2_HIT+L1_DTLB_MISS_ANY_L2_MISS)/DATA_CACHE_ACCESSES
+L2 DTLB request rate  (L1_DTLB_MISS_ANY_L2_HIT+L1_DTLB_MISS_ANY_L2_MISS)/RETIRED_INSTRUCTIONS
+L2 DTLB miss rate  L1_DTLB_MISS_ANY_L2_MISS / RETIRED_INSTRUCTIONS
+L2 DTLB miss ratio L1_DTLB_MISS_ANY_L2_MISS / (L1_DTLB_MISS_ANY_L2_HIT+L1_DTLB_MISS_ANY_L2_MISS)
+-
+L1 DTLB request  rate tells you how data intensive your code is
+or how many data accesses you have on average per instruction.
+The DTLB miss  rate gives a measure how often a TLB miss occurred
+per instruction. And finally L1 DTLB  miss ratio tells you how many
+of your memory references required caused a TLB miss on average.
+NOTE: The L2 metrics are only relevant if L2 DTLB request rate is
+equal to the L1 DTLB miss rate!
