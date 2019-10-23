@@ -216,11 +216,11 @@ int perfmon_setupCounterThread_zen2(int thread_id, PerfmonEventSet* eventSet)
     if ((fixed_flags > 0x0ULL))
     {
         uint64_t tmp = 0x0ULL;
-        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_AMD17_2_HW_CONFIG, &tmp));
-        VERBOSEPRINTREG(cpu_id, MSR_AMD17_2_HW_CONFIG, LLU_CAST tmp, READ_HW_CONFIG);
+        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_AMD17_HW_CONFIG, &tmp));
+        VERBOSEPRINTREG(cpu_id, MSR_AMD17_HW_CONFIG, LLU_CAST tmp, READ_HW_CONFIG);
         tmp |= fixed_flags;
-        VERBOSEPRINTREG(cpu_id, MSR_AMD17_2_HW_CONFIG, LLU_CAST tmp, WRITE_HW_CONFIG)
-        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_AMD17_2_HW_CONFIG, tmp));
+        VERBOSEPRINTREG(cpu_id, MSR_AMD17_HW_CONFIG, LLU_CAST tmp, WRITE_HW_CONFIG)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_AMD17_HW_CONFIG, tmp));
     }
     return 0;
 }
@@ -522,12 +522,12 @@ int perfmon_finalizeCountersThread_zen2(int thread_id, PerfmonEventSet* eventSet
         else if (type == FIXED)
         {
             uint64_t tmp = 0x0ULL;
-            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_AMD17_2_HW_CONFIG, &tmp));
+            CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_AMD17_HW_CONFIG, &tmp));
             if (tmp & (1ULL << AMD_K17_INST_RETIRE_ENABLE_BIT))
             {
                 tmp &= ~(1ULL << AMD_K17_INST_RETIRE_ENABLE_BIT);
             }
-            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_AMD17_2_HW_CONFIG, tmp));
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_AMD17_HW_CONFIG, tmp));
         }
     }
     return 0;
