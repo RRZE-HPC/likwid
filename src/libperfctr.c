@@ -153,6 +153,8 @@ likwid_markerInit(void)
     char* cThreadStr = getenv("LIKWID_THREADS");
     char* filepath = getenv("LIKWID_FILEPATH");
     char* perfpid = getenv("LIKWID_PERF_EXECPID");
+    char* debugStr = getenv("LIKWID_DEBUG");
+    char* pinStr = getenv("LIKWID_PIN");
     char execpid[20];
     /* Dirty hack to avoid nonnull warnings */
     int (*ownatoi)(const char*);
@@ -186,9 +188,9 @@ likwid_markerInit(void)
 //#ifndef LIKWID_USE_PERFEVENT
     HPMmode(atoi(modeStr));
 //#endif
-    if (getenv("LIKWID_DEBUG") != NULL)
+    if (debugStr != NULL)
     {
-        perfmon_verbosity = atoi(getenv("LIKWID_DEBUG"));
+        perfmon_verbosity = atoi(debugStr);
         verbosity = perfmon_verbosity;
     }
 
@@ -202,7 +204,7 @@ likwid_markerInit(void)
     bdestroy(bThreadStr);
     bstrListDestroy(threadTokens);
 
-    if (getenv("LIKWID_PIN") != NULL)
+    if (pinStr != NULL)
     {
         likwid_pinThread(threads2Cpu[0]);
         if (getenv("OMP_NUM_THREADS") != NULL)
@@ -288,6 +290,7 @@ likwid_markerThreadInit(void)
     {
         return;
     }
+    char* pinStr = getenv("LIKWID_PIN");
 
     pthread_mutex_lock(&globalLock);
     t = pthread_self();
@@ -305,7 +308,7 @@ likwid_markerThreadInit(void)
     }
     pthread_mutex_unlock(&globalLock);
 
-    if (getenv("LIKWID_PIN") != NULL)
+    if (pinStr != NULL)
     {
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
