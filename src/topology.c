@@ -152,7 +152,7 @@ static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
 static char* short_zen = "zen";
-static char* short_zen = "zen2";
+static char* short_zen2 = "zen2";
 
 static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
@@ -912,10 +912,10 @@ topology_setName(void)
                     break;
                 case ZEN2_RYZEN:
                     cpuid_info.name = amd_zen2_str;
-                    cpuid_info.short_name = short_zen;
+                    cpuid_info.short_name = short_zen2;
                     break;
             }
-            break
+            break;
 
         case ARMV7_FAMILY:
             switch (cpuid_info.model)
