@@ -1119,12 +1119,27 @@ perfmon_init_maps(void)
             break;
 
         case ZEN_FAMILY:
-            eventHash = zen_arch_events;
-            perfmon_numArchEvents = perfmon_numArchEventsZen;
-            counter_map = zen_counter_map;
-            box_map = zen_box_map;
-            perfmon_numCounters = perfmon_numCountersZen;
-            translate_types = zen_translate_types;
+            switch ( cpuid_info.model )
+            {
+                case ZEN_RYZEN:
+                    eventHash = zen_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen;
+                    counter_map = zen_counter_map;
+                    box_map = zen_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen;
+                    translate_types = zen_translate_types;
+                    break;
+                case ZEN2_RYZEN:
+                    eventHash = zen2_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen2;
+                    counter_map = zen2_counter_map;
+                    box_map = zen2_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen2;
+                    translate_types = zen2_translate_types;
+                    break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
+            }
             break;
 
         case ARMV7_FAMILY:
