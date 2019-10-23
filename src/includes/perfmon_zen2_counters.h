@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_zen_counters.h
+ *      Filename:  perfmon_zen2_counters.h
  *
- *      Description:  Counter Header File of perfmon module for AMD Family 17
+ *      Description:  Counter Header File of perfmon module for AMD Family 17 (Zen2)
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -31,35 +31,6 @@
 #define NUM_COUNTERS_ZEN2 19
 #define NUM_COUNTERS_CORE_ZEN2 7
 
-/*#define AMD_K17_ENABLE_BIT 22*/
-
-/*#define AMD_K17_2_INST_RETIRE_ENABLE_BIT 30*/
-
-/*#define AMD_K17_2_PMC_INVERT_BIT 23*/
-/*#define AMD_K17_2_PMC_EDGE_BIT 18*/
-/*#define AMD_K17_2_PMC_KERNEL_BIT 17*/
-/*#define AMD_K17_2_PMC_USER_BIT 16*/
-/*#define AMD_K17_2_PMC_THRES_SHIFT 24*/
-/*#define AMD_K17_2_PMC_THRES_MASK 0x7FULL*/
-/*#define AMD_K17_2_PMC_HOST_BIT 41*/
-/*#define AMD_K17_2_PMC_GUEST_BIT 40*/
-
-/*#define AMD_K17_2_PMC_UNIT_SHIFT 8*/
-/*#define AMD_K17_2_PMC_UNIT_MASK 0xFFULL*/
-/*#define AMD_K17_2_PMC_EVSEL_SHIFT 0*/
-/*#define AMD_K17_2_PMC_EVSEL_MASK 0xFFULL*/
-/*#define AMD_K17_2_PMC_EVSEL_SHIFT2 32*/
-/*#define AMD_K17_2_PMC_EVSEL_MASK2 0xFULL*/
-
-/*#define AMD_K17_2_L3_UNIT_SHIFT 8*/
-/*#define AMD_K17_2_L3_UNIT_MASK 0xFFULL*/
-/*#define AMD_K17_2_L3_EVSEL_SHIFT 0*/
-/*#define AMD_K17_2_L3_EVSEL_MASK 0xFFULL*/
-/*#define AMD_K17_2_L3_TID_SHIFT 56*/
-/*#define AMD_K17_2_L3_TID_MASK 0xFFULL*/
-/*#define AMD_K17_2_L3_SLICE_SHIFT 48*/
-/*#define AMD_K17_2_L3_SLICE_MASK 0xFULL*/
-
 #define AMD_K17_DF_EVSEL_SHIFT  0
 #define AMD_K17_DF_EVSEL_MASK   0xFFULL
 #define AMD_K17_DF_EVSEL_SHIFT1 32
@@ -72,7 +43,7 @@
 #define ZEN2_VALID_OPTIONS_PMC EVENT_OPTION_EDGE_MASK|EVENT_OPTION_COUNT_KERNEL_MASK|EVENT_OPTION_INVERT_MASK|EVENT_OPTION_THRESHOLD_MASK
 #define ZEN2_VALID_OPTIONS_L3 EVENT_OPTION_TID_MASK|EVENT_OPTION_MATCH0_MASK
 
-static RegisterMap zen_counter_map[NUM_COUNTERS_ZEN] = {
+static RegisterMap zen2_counter_map[NUM_COUNTERS_ZEN2] = {
     /* Fixed counters */
     {"FIXC0", PMC0, FIXED, MSR_AMD17_HW_CONFIG, MSR_AMD17_RO_INST_RETIRED_CTR, 0, 0, 0},
     {"FIXC1", PMC1, FIXED, 0, MSR_AMD17_RO_APERF, 0, 0, 0},
@@ -101,7 +72,7 @@ static RegisterMap zen_counter_map[NUM_COUNTERS_ZEN] = {
     {"DFC3",PMC18, MBOX0, MSR_AMD17_2_DF_PERFEVTSEL3, MSR_AMD17_2_DF_PMC3, 0, 0},
 };
 
-static BoxMap zen_box_map[NUM_UNITS] = {
+static BoxMap zen2_box_map[NUM_UNITS] = {
     [FIXED] = {0, 0, 0, 0, 0, 0, 64},
     [PMC] = {0, 0, 0, 0, 0, 0, 48},
     [CBOX0] = {0, 0, 0, 0, 0, 0, 48},
@@ -109,7 +80,7 @@ static BoxMap zen_box_map[NUM_UNITS] = {
     [POWER] = {0, 0, 0, 0, 0, 0, 32},
 };
 
-static char* zen_translate_types[NUM_UNITS] = {
+static char* zen2_translate_types[NUM_UNITS] = {
     [FIXED] = "/sys/bus/event_source/devices/cpu",
     [PMC] = "/sys/bus/event_source/devices/cpu",
     [POWER] = "/sys/bus/event_source/devices/power",

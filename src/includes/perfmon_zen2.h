@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_zen.h
+ *      Filename:  perfmon_zen2.h
  *
  *      Description:  Header file of perfmon module for AMD Family 17 (ZEN2)
  *
@@ -41,10 +41,11 @@ int perfmon_init_zen2(int cpu_id)
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &core_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &sharedl3_lock[affinity_thread2sharedl3_lookup[cpu_id]], cpu_id);
+    lock_acquire((int*) &numa_lock[affinity_thread2numa_lookup[cpu_id]], cpu_id);
     return 0;
 }
 
-int k17_2_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+int zen2_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
     cpu_id++;
@@ -65,7 +66,7 @@ int k17_2_fixed_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     return flags;
 }
 
-int k17_2_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+int zen2_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
 
@@ -107,7 +108,7 @@ int k17_2_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     return 0;
 }
 
-int k17_2_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+int zen2_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
     int has_tid = 0;
@@ -142,7 +143,7 @@ int k17_2_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     if (!has_tid)
         flags |= AMD_K17_L3_TID_MASK << AMD_K17_L3_TID_SHIFT;
     if (!has_match0)
-        flags |= AMD_K17_L3_SLICE_MASK << AMD_K17_2_L3_SLICE_SHIFT;
+        flags |= AMD_K17_L3_SLICE_MASK << AMD_K17_L3_SLICE_SHIFT;
     if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_CBOX);
@@ -152,7 +153,7 @@ int k17_2_cache_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
     return 0;
 }
 
-int k17_2_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
+int zen2_uncore_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
 {
     uint64_t flags = 0x0ULL;
 
@@ -194,18 +195,18 @@ int perfmon_setupCounterThread_zen2(int thread_id, PerfmonEventSet* eventSet)
         switch (type)
         {
             case PMC:
-                k17_2_pmc_setup(cpu_id, index, event);
+                zen2_pmc_setup(cpu_id, index, event);
                 break;
             case CBOX0:
-                k17_2_cache_setup(cpu_id, index, event);
+                zen2_cache_setup(cpu_id, index, event);
                 break;
             case POWER:
                 break;
             case FIXED:
-                fixed_flags |= k17_2_fixed_setup(cpu_id, index, event);
+                fixed_flags |= zen2_fixed_setup(cpu_id, index, event);
                 break;
             case MBOX0:
-                k17_2_uncore_setup(cpu_id, index, event);
+                zen2_uncore_setup(cpu_id, index, event);
                 break;
             default:
                 break;
@@ -503,7 +504,7 @@ int perfmon_finalizeCountersThread_zen2(int thread_id, PerfmonEventSet* eventSet
         }
         RegisterIndex index = eventSet->events[i].index;
         if ((type == PMC) ||
-            ((type == MBOX0) && (haveMLock)) ||
+            ((type == MBOX0) && (haveSLock)) ||
             ((type == CBOX0) && (haveL3Lock)))
         {
             if (counter_map[index].configRegister != 0x0)
@@ -522,9 +523,9 @@ int perfmon_finalizeCountersThread_zen2(int thread_id, PerfmonEventSet* eventSet
         {
             uint64_t tmp = 0x0ULL;
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, MSR_AMD17_2_HW_CONFIG, &tmp));
-            if (tmp & (1ULL << AMD_K17_2_INST_RETIRE_ENABLE_BIT))
+            if (tmp & (1ULL << AMD_K17_INST_RETIRE_ENABLE_BIT))
             {
-                tmp &= ~(1ULL << AMD_K17_2_INST_RETIRE_ENABLE_BIT);
+                tmp &= ~(1ULL << AMD_K17_INST_RETIRE_ENABLE_BIT);
             }
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_AMD17_2_HW_CONFIG, tmp));
         }

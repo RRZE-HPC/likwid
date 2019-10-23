@@ -1,8 +1,8 @@
 # =======================================================================================
 #
-#      Filename:  perfmon_zen_events.txt
+#      Filename:  perfmon_zen2_events.txt
 #
-#      Description:  Event list for AMD Zen
+#      Description:  Event list for AMD Zen (Gen2)
 #
 #      Version:   <VERSION>
 #      Released:  <DATE>
