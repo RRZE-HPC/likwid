@@ -75,6 +75,7 @@
 #include <perfmon_skylake.h>
 #include <perfmon_cascadelake.h>
 #include <perfmon_zen.h>
+#include <perfmon_zen2.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
 
@@ -1119,12 +1120,27 @@ perfmon_init_maps(void)
             break;
 
         case ZEN_FAMILY:
-            eventHash = zen_arch_events;
-            perfmon_numArchEvents = perfmon_numArchEventsZen;
-            counter_map = zen_counter_map;
-            box_map = zen_box_map;
-            perfmon_numCounters = perfmon_numCountersZen;
-            translate_types = zen_translate_types;
+            switch ( cpuid_info.model )
+            {
+                case ZEN_RYZEN:
+                    eventHash = zen_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen;
+                    counter_map = zen_counter_map;
+                    box_map = zen_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen;
+                    translate_types = zen_translate_types;
+                    break;
+                case ZEN2_RYZEN:
+                    eventHash = zen2_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen2;
+                    counter_map = zen2_counter_map;
+                    box_map = zen2_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen2;
+                    translate_types = zen2_translate_types;
+                    break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
+            }
             break;
 
         case ARMV7_FAMILY:
@@ -1474,13 +1490,27 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             break;
 
         case ZEN_FAMILY:
-            initThreadArch = perfmon_init_zen;
-            initialize_power = TRUE;
-            perfmon_startCountersThread = perfmon_startCountersThread_zen;
-            perfmon_stopCountersThread = perfmon_stopCountersThread_zen;
-            perfmon_readCountersThread = perfmon_readCountersThread_zen;
-            perfmon_setupCountersThread = perfmon_setupCounterThread_zen;
-            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen;
+            switch ( cpuid_info.model )
+            {
+                case ZEN_RYZEN:
+                    initThreadArch = perfmon_init_zen;
+                    initialize_power = TRUE;
+                    perfmon_startCountersThread = perfmon_startCountersThread_zen;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_zen;
+                    perfmon_readCountersThread = perfmon_readCountersThread_zen;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_zen;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen;
+                    break;
+                case ZEN2_RYZEN:
+                    initThreadArch = perfmon_init_zen2;
+                    initialize_power = TRUE;
+                    perfmon_startCountersThread = perfmon_startCountersThread_zen2;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_zen2;
+                    perfmon_readCountersThread = perfmon_readCountersThread_zen2;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_zen2;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen2;
+                    break;
+            }
             break;
 
         default:
