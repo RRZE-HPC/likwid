@@ -470,6 +470,21 @@ proc_init_cpuFeatures(void)
             cpuid_info.featureFlags |= (1<<TLS);
             strcat(cpuid_info.features, "TLS ");
         }
+        else if (strcmp(cptr,"asimd") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<ASIMD);
+            strcat(cpuid_info.features, "ASIMD ");
+        }
+        else if (strcmp(cptr,"asimdrdm") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<ASIMDRDM);
+            strcat(cpuid_info.features, "ASIMDRDM ");
+        }
+        else if (strcmp(cptr,"pmull") == 0)
+        {
+            cpuid_info.featureFlags |= (1<<PMULL);
+            strcat(cpuid_info.features, "PMULL ");
+        }
         cptr = strtok(NULL, delimiter);
     }
 

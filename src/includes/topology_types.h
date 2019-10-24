@@ -75,6 +75,10 @@ typedef enum {
     VFPV3, /*!< \brief First generation SIMD Version 3 */
     VFPV4, /*!< \brief First generation SIMD Version 4 */
     TLS, /*!< \brief Thread-local storage registers */
+    FP, /*!< \brief Floating-point support */
+    ASIMD, /*!< \brief ARMv8 Advanced SIMD */
+    ASIMDRDM, /*!< \brief ARMv8 Advanced SIMD: Rounding double multiply */
+    PMULL, /*!< \brief ARMv8 Advanced SIMD: Polynomial multiply long */
 } FeatureBit;
 /** @}*/
 #endif /*CPUID_TYPES_H*/
