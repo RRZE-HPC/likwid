@@ -68,7 +68,7 @@ get_cpu_perf_data(void)
 
         eax = 0x06;
         CPUID(eax, ebx, ecx, edx);
-        if (eax & (1<<1))
+        if (eax & (1ULL<<1))
         {
             cpuid_info.turbo = 1;
         }
@@ -162,7 +162,7 @@ static int readCacheInclusiveAMD(int level)
     eax = 0x8000001D;
     ecx = level;
     CPUID(eax, ebx, ecx, edx);
-    return (edx & (0x1<<1));
+    return (edx & (0x1ULL<<1));
 }
 #else
 static int readCacheInclusiveIntel(int level)
@@ -317,180 +317,180 @@ proc_init_cpuFeatures(void)
     {
         if (strcmp(cptr,"ssse3") == 0)
         {
-            cpuid_info.featureFlags |= (1<<SSSE3);
+            cpuid_info.featureFlags |= (1ULL<<SSSE3);
             strcat(cpuid_info.features, "SSSE3 ");
         }
         else if (strcmp(cptr,"sse3") == 0)
         {
-            cpuid_info.featureFlags |= (1<<SSE3);
+            cpuid_info.featureFlags |= (1ULL<<SSE3);
             strcat(cpuid_info.features, "SSE3 ");
         }
         else if (strcmp(cptr,"monitor") == 0)
         {
-            cpuid_info.featureFlags |= (1<<MONITOR);
+            cpuid_info.featureFlags |= (1ULL<<MONITOR);
             strcat(cpuid_info.features, "MONITOR ");
         }
         else if (strcmp(cptr,"mmx") == 0)
         {
-            cpuid_info.featureFlags |= (1<<MMX);
+            cpuid_info.featureFlags |= (1ULL<<MMX);
             strcat(cpuid_info.features, "MMX ");
         }
         else if (strcmp(cptr,"sse") == 0)
         {
-            cpuid_info.featureFlags |= (1<<SSE);
+            cpuid_info.featureFlags |= (1ULL<<SSE);
             strcat(cpuid_info.features, "SSE ");
         }
         else if (strcmp(cptr,"sse2") == 0)
         {
-            cpuid_info.featureFlags |= (1<<SSE2);
+            cpuid_info.featureFlags |= (1ULL<<SSE2);
             strcat(cpuid_info.features, "SSE2 ");
         }
         else if (strcmp(cptr,"acpi") == 0)
         {
-            cpuid_info.featureFlags |= (1<<ACPI);
+            cpuid_info.featureFlags |= (1ULL<<ACPI);
             strcat(cpuid_info.features, "ACPI ");
         }
         else if (strcmp(cptr,"rdtscp") == 0)
         {
-            cpuid_info.featureFlags |= (1<<RDTSCP);
+            cpuid_info.featureFlags |= (1ULL<<RDTSCP);
             strcat(cpuid_info.features, "RDTSCP ");
         }
         else if (strcmp(cptr,"vmx") == 0)
         {
-            cpuid_info.featureFlags |= (1<<VMX);
+            cpuid_info.featureFlags |= (1ULL<<VMX);
             strcat(cpuid_info.features, "VMX ");
         }
         else if (strcmp(cptr,"est") == 0)
         {
-            cpuid_info.featureFlags |= (1<<EIST);
+            cpuid_info.featureFlags |= (1ULL<<EIST);
             strcat(cpuid_info.features, "EIST ");
         }
         else if (strcmp(cptr,"tm") == 0)
         {
-            cpuid_info.featureFlags |= (1<<TM);
+            cpuid_info.featureFlags |= (1ULL<<TM);
             strcat(cpuid_info.features, "TM ");
         }
         else if (strcmp(cptr,"tm2") == 0)
         {
-            cpuid_info.featureFlags |= (1<<TM2);
+            cpuid_info.featureFlags |= (1ULL<<TM2);
             strcat(cpuid_info.features, "TM2 ");
         }
         else if (strcmp(cptr,"aes") == 0)
         {
-            cpuid_info.featureFlags |= (1<<AES);
+            cpuid_info.featureFlags |= (1ULL<<AES);
             strcat(cpuid_info.features, "AES ");
         }
         else if (strcmp(cptr,"rdrand") == 0)
         {
-            cpuid_info.featureFlags |= (1<<RDRAND);
+            cpuid_info.featureFlags |= (1ULL<<RDRAND);
             strcat(cpuid_info.features, "RDRAND ");
         }
         else if (strcmp(cptr,"sse4_1") == 0)
         {
-            cpuid_info.featureFlags |= (1<<SSE41);
+            cpuid_info.featureFlags |= (1ULL<<SSE41);
             strcat(cpuid_info.features, "SSE4.1 ");
         }
         else if (strcmp(cptr,"sse4_2") == 0)
         {
-            cpuid_info.featureFlags |= (1<<SSE42);
+            cpuid_info.featureFlags |= (1ULL<<SSE42);
             strcat(cpuid_info.features, "SSE4.2 ");
         }
         else if (strcmp(cptr,"avx") == 0)
         {
-            cpuid_info.featureFlags |= (1<<AVX);
+            cpuid_info.featureFlags |= (1ULL<<AVX);
             strcat(cpuid_info.features, "AVX ");
         }
         else if (strcmp(cptr,"fma") == 0)
         {
-            cpuid_info.featureFlags |= (1<<FMA);
+            cpuid_info.featureFlags |= (1ULL<<FMA);
             strcat(cpuid_info.features, "FMA ");
         }
         else if (strcmp(cptr,"avx2") == 0)
         {
-            cpuid_info.featureFlags |= (1<<AVX2);
+            cpuid_info.featureFlags |= (1ULL<<AVX2);
             strcat(cpuid_info.features, "AVX2 ");
         }
         else if (strcmp(cptr,"rtm") == 0)
         {
-            cpuid_info.featureFlags |= (1<<RTM);
+            cpuid_info.featureFlags |= (1ULL<<RTM);
             strcat(cpuid_info.features, "RTM ");
         }
         else if (strcmp(cptr,"hle") == 0)
         {
-            cpuid_info.featureFlags |= (1<<HLE);
+            cpuid_info.featureFlags |= (1ULL<<HLE);
             strcat(cpuid_info.features, "HLE ");
         }
         else if (strcmp(cptr,"rdseed") == 0)
         {
-            cpuid_info.featureFlags |= (1<<RDSEED);
+            cpuid_info.featureFlags |= (1ULL<<RDSEED);
             strcat(cpuid_info.features, "RDSEED ");
         }
         else if (strcmp(cptr,"ht") == 0)
         {
-            cpuid_info.featureFlags |= (1<<HTT);
+            cpuid_info.featureFlags |= (1ULL<<HTT);
             strcat(cpuid_info.features, "HTT ");
         }
-        else if (strncmp(cptr,"avx512", 6) == 0 && !(cpuid_info.featureFlags & (1<<AVX512)))
+        else if (strncmp(cptr,"avx512", 6) == 0 && !(cpuid_info.featureFlags & (1ULL<<AVX512)))
         {
-            cpuid_info.featureFlags |= (1<<AVX512);
+            cpuid_info.featureFlags |= (1ULL<<AVX512);
             strcat(cpuid_info.features, "AVX512 ");
         }
         else if (strcmp(cptr,"swp") == 0)
         {
-            cpuid_info.featureFlags |= (1<<SWP);
+            cpuid_info.featureFlags |= (1ULL<<SWP);
             strcat(cpuid_info.features, "SWP ");
         }
         else if (strcmp(cptr,"neon") == 0)
         {
-            cpuid_info.featureFlags |= (1<<NEON);
+            cpuid_info.featureFlags |= (1ULL<<NEON);
             strcat(cpuid_info.features, "NEON ");
         }
         else if (strcmp(cptr,"vfp") == 0)
         {
-            cpuid_info.featureFlags |= (1<<VFP);
+            cpuid_info.featureFlags |= (1ULL<<VFP);
             strcat(cpuid_info.features, "VFP ");
         }
         else if (strcmp(cptr,"vfpv3") == 0)
         {
-            cpuid_info.featureFlags |= (1<<VFPV3);
+            cpuid_info.featureFlags |= (1ULL<<VFPV3);
             strcat(cpuid_info.features, "VFPv3 ");
         }
         else if (strcmp(cptr,"vfpv4") == 0)
         {
-            cpuid_info.featureFlags |= (1<<VFPV4);
+            cpuid_info.featureFlags |= (1ULL<<VFPV4);
             strcat(cpuid_info.features, "VFPv4 ");
         }
         else if (strcmp(cptr,"edsp") == 0)
         {
-            cpuid_info.featureFlags |= (1<<EDSP);
+            cpuid_info.featureFlags |= (1ULL<<EDSP);
             strcat(cpuid_info.features, "EDSP ");
         }
         else if (strcmp(cptr,"tls") == 0)
         {
-            cpuid_info.featureFlags |= (1<<TLS);
+            cpuid_info.featureFlags |= (1ULL<<TLS);
             strcat(cpuid_info.features, "TLS ");
         }
         else if (strcmp(cptr,"asimd") == 0)
         {
-            cpuid_info.featureFlags |= (1<<ASIMD);
+            cpuid_info.featureFlags |= (1ULL<<ASIMD);
             strcat(cpuid_info.features, "ASIMD ");
         }
         else if (strcmp(cptr,"asimdrdm") == 0)
         {
-            cpuid_info.featureFlags |= (1<<ASIMDRDM);
+            cpuid_info.featureFlags |= (1ULL<<ASIMDRDM);
             strcat(cpuid_info.features, "ASIMDRDM ");
         }
         else if (strcmp(cptr,"pmull") == 0)
         {
-            cpuid_info.featureFlags |= (1<<PMULL);
+            cpuid_info.featureFlags |= (1ULL<<PMULL);
             strcat(cpuid_info.features, "PMULL ");
         }
         cptr = strtok(NULL, delimiter);
     }
 
-    if ((cpuid_info.featureFlags & (1<<SSSE3)) && !((cpuid_info.featureFlags) & (1<<SSE3)))
+    if ((cpuid_info.featureFlags & (1ULL<<SSSE3)) && !((cpuid_info.featureFlags) & (1ULL<<SSE3)))
     {
-        cpuid_info.featureFlags |= (1<<SSE3);
+        cpuid_info.featureFlags |= (1ULL<<SSE3);
         strcat(cpuid_info.features, "SSE3 ");
     }
 

@@ -355,7 +355,7 @@ typedef struct {
     int         isIntel; /*!< \brief Flag if it is an Intel CPU*/
     int     supportUncore; /*!< \brief Flag if system has Uncore performance monitors */
     int     supportClientmem; /*!< \brief Flag if system has mappable memory controllers */
-    uint32_t featureFlags; /*!< \brief Mask of all features supported by the CPU*/
+    uint64_t featureFlags; /*!< \brief Mask of all features supported by the CPU*/
     uint32_t perf_version; /*!< \brief Version of Intel's performance monitoring facility */
     uint32_t perf_num_ctr; /*!< \brief Number of general purpose core-local performance monitoring counters */
     uint32_t perf_width_ctr; /*!< \brief Bit width of fixed and general purpose counters */
