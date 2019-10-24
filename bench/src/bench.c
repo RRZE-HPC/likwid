@@ -42,7 +42,8 @@
 #include <allocator.h>
 #include <threads.h>
 #include <barrier.h>
-#include <likwid.h>
+//#include <likwid.h>
+#include <likwid-cpumarker.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 

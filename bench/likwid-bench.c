@@ -49,6 +49,7 @@
 #include <allocator.h>
 
 #include <likwid.h>
+#include <likwid-cpumarker.h>
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
