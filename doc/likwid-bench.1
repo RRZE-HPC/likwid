@@ -11,6 +11,8 @@ likwid-bench \- low-level benchmark suite and microbenchmarking framework
 .IR <min_time> ]
 .RB [ \-w
 .IR <workgroup_expression> ]
+.RB [ \-W
+.IR <workgroup_expression_short> ]
 .RB [ \-l
 .IR <testname> ]
 .RB [ \-d
@@ -50,7 +52,10 @@ The amount of iterations is determined using this value. Default: 1 second.
 Name of the benchmark code to run (mandatory).
 .TP
 .B \-\^w <workgroup_expression>
-Specify the affinity domain, thread count and data set size for the current benchmarking run (mandatory).
+Specify the affinity domain, thread count and data set size for the current benchmarking run (mandatory). First thread in thread domain initializes the stream.
+.TP
+.B \-\^W <workgroup_expression_short>
+Specify the affinity domain, thread count and data set size for the current benchmarking run (mandatory). Each thread in the workgroup initializes its own chunk of the stream.
 .TP
 .B \-\^l <testname>
 list properties of a benchmark code.
@@ -82,8 +87,9 @@ can be provided. Optionally for every stream (array, vector) the placement can b
 the threads are running in. To place the data in a different domain for every stream of a benchmark case (the total number of streams can be aquired by the
 .B \-l
 option) the domain to place the data in can be specified. Multiple streams are comma separated. Either the placement is provided or all streams have to be explicitly placed. Please refer to the Wiki pages on
-.B http://code.google.com/p/likwid/wiki/LikwidBench
+.B https://github.com/RRZE-HPC/likwid/wiki/Likwid-Bench
 for further details and examples on usage.
+With -W each thread initializes its own chunk of the streams but pleacement of the streams is deactivated.
 
 
 .SH EXAMPLE

@@ -74,6 +74,7 @@ runTest(void* arg)
     size_t size;
     size_t vecsize;
     size_t i;
+    size_t j = 0;
     BarrierData barr;
     ThreadData* data;
     ThreadUserData* myData;
@@ -97,6 +98,17 @@ runTest(void* arg)
     if (size != vecsize && data->threadId == 0)
         printf("Sanitizing vector length to a multiple of the loop stride from %d elements (%d bytes) to %d elements (%d bytes)\n", vecsize, vecsize*myData->test->bytes, size, size*myData->test->bytes);
 
+    /* pin the thread */
+    likwid_pinThread(myData->processors[threadId]);
+    printf("Group: %d Thread %d Global Thread %d running on core %d - Vector length %llu Offset %zd\n",
+            data->groupId,
+            threadId,
+            data->globalThreadId,
+            affinity_threadGetProcessorId(),
+            LLU_CAST size,
+            offset);
+    BARRIER;
+
     switch ( myData->test->type )
     {
         case SINGLE:
@@ -106,6 +118,13 @@ runTest(void* arg)
                 {
                     sptr = (float*) myData->streams[i];
                     sptr +=  offset;
+                    if (myData->init_per_thread)
+                    {
+                        for (j = 0; j < vecsize; j++)
+                        {
+                            sptr[j] = 1.0;
+                        }
+                    }
                     myData->streams[i] = (float*) sptr;
                 }
             }
@@ -117,6 +136,13 @@ runTest(void* arg)
                 {
                     sptr = (int*) myData->streams[i];
                     sptr +=  offset;
+                    if (myData->init_per_thread)
+                    {
+                        for (j = 0; j < vecsize; j++)
+                        {
+                            sptr[j] = 1;
+                        }
+                    }
                     myData->streams[i] = (int*) sptr;
                 }
             }
@@ -128,21 +154,19 @@ runTest(void* arg)
                 {
                     dptr = (double*) myData->streams[i];
                     dptr +=  offset;
+                    if (myData->init_per_thread)
+                    {
+                        for (j = 0; j < vecsize; j++)
+                        {
+                            dptr[j] = 1.0;
+                        }
+                    }
                     myData->streams[i] = (double*) dptr;
                 }
             }
             break;
     }
 
-    /* pin the thread */
-    likwid_pinThread(myData->processors[threadId]);
-    printf("Group: %d Thread %d Global Thread %d running on core %d - Vector length %llu Offset %zd\n",
-            data->groupId,
-            threadId,
-            data->globalThreadId,
-            affinity_threadGetProcessorId(),
-            LLU_CAST size,
-            offset);
     BARRIER;
 
     /* Up to 10 streams the following registers are used for Array ptr:

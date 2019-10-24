@@ -105,6 +105,7 @@ typedef struct {
     const TestCase* test;
     uint64_t   cycles;
     uint32_t numberOfThreads;
+    int    init_per_thread;
     int* processors;
     void** streams;
 } ThreadUserData;
