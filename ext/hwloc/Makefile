@@ -14,7 +14,7 @@ INCLUDES  += -I./include
 LIBS      = -L. -lm
 LFLAGS    = -fPIC -fvisibility=hidden
 Q         ?= @
-DEFINES := $(filter-out -DVERSION=$(VERSION),$(DEFINES))
+DEFINES := $(filter-out -DVERSION=$(VERSION),$(DEFINES)) -DRUNSTATEDIR=\"/var/run\"
 ifeq ($(DEBUG),true)
 DEBUG_FLAGS = -g
 else

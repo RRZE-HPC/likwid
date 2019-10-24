@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2014 Inria.  All rights reserved.
+ * Copyright © 2009-2017 Inria.  All rights reserved.
  * Copyright © 2009-2010, 2012 Université Bordeaux
  * See COPYING in top-level directory.
  */
@@ -15,7 +15,8 @@
 #ifndef HWLOC_LINUX_LIBNUMA_H
 #define HWLOC_LINUX_LIBNUMA_H
 
-#include <hwloc.h>
+#include "hwloc.h"
+
 #include <numa.h>
 
 
@@ -196,7 +197,7 @@ hwloc_cpuset_to_linux_libnuma_bitmask(hwloc_topology_t topology, hwloc_const_cpu
   if (!bitmask)
     return NULL;
   while ((node = hwloc_get_next_obj_covering_cpuset_by_depth(topology, cpuset, depth, node)) != NULL)
-    if (node->memory.local_memory)
+    if (node->attr->numanode.local_memory)
       numa_bitmask_setbit(bitmask, node->os_index);
   return bitmask;
 }
@@ -221,7 +222,7 @@ hwloc_nodeset_to_linux_libnuma_bitmask(hwloc_topology_t topology, hwloc_const_no
   if (!bitmask)
     return NULL;
   while ((node = hwloc_get_next_obj_by_depth(topology, depth, node)) != NULL)
-    if (hwloc_bitmap_isset(nodeset, node->os_index) && node->memory.local_memory)
+    if (hwloc_bitmap_isset(nodeset, node->os_index) && node->attr->numanode.local_memory)
       numa_bitmask_setbit(bitmask, node->os_index);
   return bitmask;
 }

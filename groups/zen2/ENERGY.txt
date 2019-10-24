@@ -1,0 +1,32 @@
+SHORT Power and Energy consumption
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  CPU_CLOCKS_UNHALTED
+PWR0  RAPL_CORE_ENERGY
+PWR1  RAPL_PKG_ENERGY
+
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s]   FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI   PMC1/PMC0
+Energy Core [J]  PWR0
+Power Core [W] PWR0/time
+Energy PKG [J]  PWR1
+Power PKG [W] PWR1/time
+
+LONG
+Formula:
+Power Core [W] RAPL_CORE_ENERGY/time
+Power PKG [W] RAPL_PKG_ENERGY/time
+-
+Ryzen implements the RAPL interface previously introduced by Intel.
+This interface enables to monitor the consumed energy on the core and package
+domain.
+It is not documented by AMD which parts of the CPU are in which domain.
+

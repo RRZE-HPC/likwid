@@ -60,7 +60,11 @@ hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
     if (!hwloc_topology)
     {
         likwid_hwloc_topology_init(&hwloc_topology);
+#if HWLOC_API_VERSION > 0x00020000
+        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM );
+#else
         likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM|HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
+#endif
         likwid_hwloc_topology_load(hwloc_topology);
     }
 

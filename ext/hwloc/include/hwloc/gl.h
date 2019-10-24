@@ -14,7 +14,7 @@
 #ifndef HWLOC_GL_H
 #define HWLOC_GL_H
 
-#include <hwloc.h>
+#include "hwloc.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -48,7 +48,7 @@ extern "C" {
  * I/O devices detection and the GL component must be enabled in the topology.
  *
  * \note The corresponding PCI device object can be obtained by looking
- * at the OS device parent object.
+ * at the OS device parent object (unless PCI devices are filtered out).
  */
 static __hwloc_inline hwloc_obj_t
 hwloc_gl_get_display_osdev_by_port_device(hwloc_topology_t topology,
@@ -79,7 +79,7 @@ hwloc_gl_get_display_osdev_by_port_device(hwloc_topology_t topology,
  * I/O devices detection and the GL component must be enabled in the topology.
  *
  * \note The corresponding PCI device object can be obtained by looking
- * at the OS device parent object.
+ * at the OS device parent object (unless PCI devices are filtered out).
  */
 static __hwloc_inline hwloc_obj_t
 hwloc_gl_get_display_osdev_by_name(hwloc_topology_t topology,
