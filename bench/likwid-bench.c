@@ -39,6 +39,7 @@
 #include <ctype.h>
 #include <inttypes.h>
 #include <math.h>
+#include <signal.h>
 
 #include <bstrlib.h>
 #include <errno.h>
@@ -114,6 +115,13 @@ copyThreadData(ThreadUserData* src,ThreadUserData* dst)
 }
 
 
+void illhandler(int signum, siginfo_t *info, void *ptr)
+{
+    fprintf(stderr, "ERROR: Illegal instruction\n");
+    fprintf(stderr, "This happens if you want to run a kernel that uses instructions not available on your system.\n");
+    exit(EXIT_FAILURE);
+}
+
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -149,6 +157,7 @@ int main(int argc, char** argv)
     int (*ownprintf)(const char *format, ...);
     int clsize = sysconf (_SC_LEVEL1_DCACHE_LINESIZE);
     ownprintf = &printf;
+    struct sigaction sig;
 
     /* Handling of command line options */
     if (argc ==  1)
@@ -328,6 +337,11 @@ int main(int argc, char** argv)
     numa_init();
     affinity_init();
     timer_init();
+
+    memset(&sig, 0, sizeof(struct sigaction));
+    sig.sa_sigaction = illhandler;
+    sig.sa_flags = SA_SIGINFO;
+    sigaction(SIGILL, &sig, NULL);
 
     if (optPrintDomains)
     {
