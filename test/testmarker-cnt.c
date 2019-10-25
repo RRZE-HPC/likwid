@@ -3,7 +3,7 @@
 #include <string.h>
 #include <omp.h>
 
-#include <likwid.h>
+#include <likwid-cpumarker.h>
 
 #define SIZE 1000000
 

@@ -15,7 +15,7 @@
 
 // Added by Thomas Roehl
 #include <sched.h>
-#include <likwid.h>
+#include <likwid-cpumarker.h>
 
 
 struct mytask {
