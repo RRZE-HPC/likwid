@@ -279,7 +279,7 @@ if verbose > 0 and quiet == 0 then
     for _, c in pairs(cpu_list) do
         -- Check whether the Lua version has bit32 module (>= 5.2)
         if not bit32 then
-            mask = mask | (1<<c)
+            mask = mask + 2 ^ c
         else
             mask = bit32.bor(mask, bit32.lshift(1, c))
         end
