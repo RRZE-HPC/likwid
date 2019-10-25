@@ -447,6 +447,27 @@ int main(int argc, char** argv)
                 break;
         }
     }
+    if (numberOfWorkgroups > 1)
+    {
+        int g0_numberOfThreads = groups[0].numberOfThreads;
+        int g0_size = groups[0].size;
+        for (i = 1; i < numberOfWorkgroups; i++)
+        {
+            if (g0_numberOfThreads != groups[i].numberOfThreads)
+            {
+                fprintf (stderr, "Warning: Multiple workgroups with different thread counts are not recommended. Use with case!\n");
+                break;
+            }
+        }
+        for (i = 1; i < numberOfWorkgroups; i++)
+        {
+            if (g0_size != groups[i].size)
+            {
+                fprintf (stderr, "Warning: Multiple workgroups with different sizes are not recommended. Use with case!\n");
+                break;
+            }
+        }
+    }
 
     for (i=0; i<numberOfWorkgroups; i++)
     {
