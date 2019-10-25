@@ -73,7 +73,12 @@ extern void* getIterSingle(void* arg);
     printf("-l <TEST>\t list properties of benchmark \n"); \
     printf("-t <TEST>\t type of test \n"); \
     printf("-w\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>]\n"); \
-    printf("\t\t <size> in kB, MB or GB  (mandatory)\n"); \
+    printf("-W\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]]\n"); \
+    printf("\t\t <size> in kB, MB or GB (mandatory)\n"); \
+    printf("\n"); \
+    printf("Difference between -w and -W :\n"); \
+    printf("-w allocates the streams in the thread_domain with one thread and support placement of streams\n"); \
+    printf("-W allocates the streams chunk-wise by each thread in the thread_domain\n"); \
     printf("\n"); \
     printf("Usage: \n"); \
     printf("# Run the store benchmark on all CPUs of the system with a vector size of 1 GB\n"); \
@@ -152,7 +157,7 @@ int main(int argc, char** argv)
         exit(EXIT_SUCCESS);
     }
 
-    while ((c = getopt (argc, argv, "w:t:s:l:aphvi:")) != -1) {
+    while ((c = getopt (argc, argv, "W:w:t:s:l:aphvi:")) != -1) {
         switch (c)
         {
             case 'h':
@@ -165,6 +170,7 @@ int main(int argc, char** argv)
                 ownprintf(TESTS"\n");
                 exit (EXIT_SUCCESS);
             case 'w':
+            case 'W':
                 numberOfWorkgroups++;
                 break;
             case 's':
@@ -344,16 +350,22 @@ int main(int argc, char** argv)
 
     allocator_init(numberOfWorkgroups * MAX_STREAMS);
     groups = (Workgroup*) malloc(numberOfWorkgroups*sizeof(Workgroup));
+    memset(groups, 0, numberOfWorkgroups*sizeof(Workgroup));
     tmp = 0;
 
     optind = 0;
-    while ((c = getopt (argc, argv, "w:t:s:l:i:aphv")) != -1)
+    while ((c = getopt (argc, argv, "W:w:t:s:l:i:aphv")) != -1)
     {
         switch (c)
         {
             case 'w':
+            case 'W':
                 currentWorkgroup = groups+tmp;
                 bstring groupstr = bfromcstr(optarg);
+                if (c == 'W')
+                {
+                    currentWorkgroup->init_per_thread = 1;
+                }
                 i = bstr_to_workgroup(currentWorkgroup, groupstr, test->type, test->streams);
                 bdestroy(groupstr);
                 size_t newsize = 0;
@@ -405,7 +417,8 @@ int main(int argc, char** argv)
                                                     currentWorkgroup->streams[i].offset,
                                                     test->type,
                                                     test->stride,
-                                                    currentWorkgroup->streams[i].domain);
+                                                    currentWorkgroup->streams[i].domain,
+                                                    currentWorkgroup->init_per_thread && nrThreads > 1);
                     }
                     tmp++;
                 }
@@ -414,7 +427,20 @@ int main(int argc, char** argv)
                     exit(EXIT_FAILURE);
                 }
                 if (newsize != currentWorkgroup->size)
+                {
                     currentWorkgroup->size = newsize;
+                }
+                if (nrThreads > 1)
+                {
+                    if (currentWorkgroup->init_per_thread)
+                    {
+                        printf("Initialization: Each thread in domain initializes its own stream chunks\n");
+                    }
+                    else
+                    {
+                        printf("Initialization: First thread in domain initializes the whole stream\n");
+                    }
+                }
                 break;
             default:
                 continue;
@@ -469,6 +495,7 @@ int main(int argc, char** argv)
         myData.test = test;
         myData.cycles = 0;
         myData.numberOfThreads = groups[i].numberOfThreads;
+        myData.init_per_thread = groups[i].init_per_thread;
         myData.processors = (int*) malloc(myData.numberOfThreads * sizeof(int));
         myData.streams = (void**) malloc(test->streams * sizeof(void*));
 

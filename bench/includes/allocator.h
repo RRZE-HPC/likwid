@@ -45,6 +45,7 @@ extern void allocator_allocateVector(void** ptr,
                 int offset,
                 DataType type,
                 int stride,
-                bstring domain);
+                bstring domain,
+                int init_per_thread);
 
 #endif /*ALLOCATOR_H*/
