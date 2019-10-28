@@ -243,41 +243,6 @@ static int create_lookups()
     return 0;
 }
 
-/*static int create_locks()*/
-/*{*/
-/*    numa_init();*/
-/*    if (!socket_lock)*/
-/*    {*/
-/*        socket_lock = malloc(cpuid_topology.numSockets * sizeof(int));*/
-/*        memset(socket_lock, LOCK_INIT, cpuid_topology.numSockets*sizeof(int));*/
-/*    }*/
-/*    if (!tile_lock)*/
-/*    {*/
-/*        tile_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));*/
-/*        memset(tile_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));*/
-/*    }*/
-/*    if (!numa_lock)*/
-/*    {*/
-/*        numa_lock = malloc(numa_info.numberOfNodes * sizeof(int));*/
-/*        memset(numa_lock, LOCK_INIT, numa_info.numberOfNodes*sizeof(int));*/
-/*    }*/
-/*    if (!core_lock)*/
-/*    {*/
-/*        int cores = (cpuid_topology.numHWThreads/cpuid_topology.numThreadsPerCore);*/
-/*        core_lock = malloc(cores * sizeof(int));*/
-/*        memset(core_lock, LOCK_INIT, cores*sizeof(int));*/
-/*    }*/
-/*    if (!sharedl2_lock)*/
-/*    {*/
-/*        sharedl2_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));*/
-/*        memset(sharedl2_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));*/
-/*    }*/
-/*    if (!sharedl3_lock)*/
-/*    {*/
-/*        sharedl3_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));*/
-/*        memset(sharedl3_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));*/
-/*    }*/
-/*}*/
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -570,18 +535,6 @@ affinity_finalize()
         free(affinity_thread2numa_lookup);
         affinity_thread2numa_lookup = NULL;
     }
-/*    if (socket_lock)*/
-/*        free(socket_lock);*/
-/*    if (core_lock)*/
-/*        free(core_lock);*/
-/*    if (tile_lock)*/
-/*        free(tile_lock);*/
-/*    if (numa_lock)*/
-/*        free(numa_lock);*/
-/*    if (sharedl2_lock)*/
-/*        free(sharedl2_lock);*/
-/*    if (sharedl3_lock)*/
-/*        free(sharedl3_lock);*/
 
     affinityDomains.domains = NULL;
     affinity_numberOfDomains = 0;
