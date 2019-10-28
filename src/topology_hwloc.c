@@ -541,11 +541,12 @@ hwloc_init_cacheTopology(void)
     for (d = 0; d < depth; d++)
     {
 #if HWLOC_API_VERSION > 0x00020000
-        if (likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_L1CACHE ||
-            likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_L2CACHE ||
-            likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_L3CACHE ||
-            likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_L4CACHE ||
-            likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_L5CACHE)
+        hwloc_obj_type_t depth_type = likwid_hwloc_get_depth_type(hwloc_topology, d);
+        if (depth_type == HWLOC_OBJ_L1CACHE ||
+            depth_type == HWLOC_OBJ_L2CACHE ||
+            depth_type == HWLOC_OBJ_L3CACHE ||
+            depth_type == HWLOC_OBJ_L4CACHE ||
+            depth_type == HWLOC_OBJ_L5CACHE)
             maxNumLevels++;
 #else
         if (likwid_hwloc_get_depth_type(hwloc_topology, d) == HWLOC_OBJ_CACHE)
@@ -560,8 +561,12 @@ hwloc_init_cacheTopology(void)
     {
         /* We only need caches, so skip other levels */
 #if HWLOC_API_VERSION > 0x00020000
-        if (likwid_hwloc_get_depth_type(hwloc_topology, d) < HWLOC_OBJ_L1CACHE &&
-            likwid_hwloc_get_depth_type(hwloc_topology, d) < HWLOC_OBJ_L5CACHE)
+        hwloc_obj_type_t depth_type = likwid_hwloc_get_depth_type(hwloc_topology, d);
+        if (depth_type != HWLOC_OBJ_L1CACHE &&
+            depth_type != HWLOC_OBJ_L2CACHE &&
+            depth_type != HWLOC_OBJ_L3CACHE &&
+            depth_type != HWLOC_OBJ_L4CACHE &&
+            depth_type != HWLOC_OBJ_L5CACHE)
 #else
         if (likwid_hwloc_get_depth_type(hwloc_topology, d) < HWLOC_OBJ_CACHE)
 #endif
