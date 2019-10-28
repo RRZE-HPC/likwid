@@ -166,7 +166,8 @@ numa_init(void)
         cpu_set_t cpuSet;
         CPU_ZERO(&cpuSet);
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
-        if (cpuid_topology.activeHWThreads < cpuid_topology.numHWThreads)
+        if (cpuid_topology.activeHWThreads < cpuid_topology.numHWThreads &&
+            getenv("HWLOC_FSROOT") == NULL)
         {
             ret = proc_numa_init();
         }

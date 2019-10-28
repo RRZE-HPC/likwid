@@ -332,13 +332,21 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
     int nr_sockets = 1;
     int id = 0;
     int consecutive_cores = -1;
+    int from_file = (getenv("HWLOC_FSROOT") != NULL);
     hwloc_obj_type_t socket_type = HWLOC_OBJ_SOCKET;
-    for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
+    if (!from_file)
     {
-        if (CPU_ISSET(i, &cpuSet))
+        for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
         {
-            poolsize = i+1;
+            if (CPU_ISSET(i, &cpuSet))
+            {
+                poolsize = i+1;
+            }
         }
+    }
+    else
+    {
+        poolsize = cpuid_topology.numHWThreads;
     }
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
     for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
@@ -381,7 +389,13 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
         }
         id = obj->os_index;
         if (CPU_ISSET(id, &cpuSet))
+        {
             hwThreadPool[id].inCpuSet = 1;
+        }
+        else if (from_file)
+        {
+            hwThreadPool[id].inCpuSet = 1;
+        }
         hwThreadPool[id].apicId = obj->os_index;
         hwThreadPool[id].threadId = obj->sibling_rank;
         if (maxNumLogicalProcsPerCore > 1)
