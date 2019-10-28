@@ -739,20 +739,13 @@ local function tableMinMaxAvgSum(inputtable, skip_cols, skip_lines)
     end
     for j=skip_cols+1,nr_columns do
         for i=skip_lines+1, nr_lines do
-            if not isSpecial(inputtable[j][i]) then
-                local res = tonumber(inputtable[j][i])
-                if res ~= nil then
-                    minOfLine[i-skip_lines+1] = math.min(res, minOfLine[i-skip_lines+1])
-                    maxOfLine[i-skip_lines+1] = math.max(res, maxOfLine[i-skip_lines+1])
-                    sumOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1] + res
-                end
-                avgOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1]/(nr_columns-skip_cols)
-            else
-                minOfLine[i-skip_lines+1] = inputtable[j][i]
-                maxOfLine[i-skip_lines+1] = inputtable[j][i]
-                sumOfLine[i-skip_lines+1] = inputtable[j][i]
-                avgOfLine[i-skip_lines+1] = inputtable[j][i]
+            local res = tonumber(inputtable[j][i])
+            if res ~= nil then
+                minOfLine[i-skip_lines+1] = math.min(res, minOfLine[i-skip_lines+1])
+                maxOfLine[i-skip_lines+1] = math.max(res, maxOfLine[i-skip_lines+1])
+                sumOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1] + res
             end
+            avgOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1]/(nr_columns-skip_cols)
         end
     end
     for i=2,#minOfLine do
