@@ -554,6 +554,12 @@ hwloc_init_cacheTopology(void)
 #endif
     }
     cachePool = (CacheLevel*) malloc(maxNumLevels * sizeof(CacheLevel));
+    if (!cachePool)
+    {
+        cpuid_topology.numCacheLevels = 0;
+        cpuid_topology.cacheLevels = NULL;
+        return;
+    }
     /* Start at the bottom of the tree to get all cache levels in order */
     depth = likwid_hwloc_topology_get_depth(hwloc_topology);
     id = 0;
