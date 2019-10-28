@@ -415,6 +415,12 @@ hwloc_numa_init(void)
                 }
             }
         }
+#if HWLOC_API_VERSION > 0x00020000
+        if (dists)
+        {
+            hwloc_distances_release_remove(hwloc_topology, dists);
+        }
+#endif
     }
 
     if (numa_info.nodes[0].numberOfProcessors == 0)
