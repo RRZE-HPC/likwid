@@ -465,6 +465,14 @@ extern void numa_setInterleaved(const int* processorList, int numberOfProcessors
 @param [in] domainId ID of NUMA node for the allocation
 */
 extern void numa_membind(void* ptr, size_t size, int domainId) __attribute__ ((visibility ("default") ));
+/*! \brief Set memory allocation policy to membind
+
+Set the memory allocation policy to membind for given list of CPUs. This forces
+allocation to be placed in NUMA domains spanning the given processor list.
+@param [in] processorList List of processors
+@param [in] numberOfProcessors Length of processor list
+*/
+extern void numa_setMembind(const int* processorList, int numberOfProcessors) __attribute__ ((visibility ("default") ));
 /*! \brief Destroy NUMA information structure
 
 Destroys the NUMA information structure NumaTopology_t. Retrieved pointers

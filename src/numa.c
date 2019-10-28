@@ -113,6 +113,15 @@ empty_numa_setInterleaved(const int* processorList, int numberOfProcessors)
 }
 
 void
+empty_numa_setMembind(const int* processorList, int numberOfProcessors)
+{
+    printf("MEMPOLICY NOT supported in kernel!\n");
+    if (!processorList || numberOfProcessors < 0)
+        printf("Invalid options\n");
+    return;
+}
+
+void
 empty_numa_membind(void* ptr, size_t size, int domainId)
 {
     printf("MBIND NOT supported in kernel!\n");
@@ -125,7 +134,8 @@ const struct numa_functions numa_funcs = {
 #ifndef HAS_MEMPOLICY
     .numa_init = empty_numa_init,
     .numa_setInterleaved = empty_numa_setInterleaved,
-    .numa_membind = empty_numa_membind
+    .numa_membind = empty_numa_membind,
+    .numa_setMembind = empty_numa_setMembind,
 #else
 #ifdef LIKWID_USE_HWLOC
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__) || defined(__ARM_ARCH_8A)
@@ -137,7 +147,8 @@ const struct numa_functions numa_funcs = {
     .numa_init = proc_numa_init,
 #endif
     .numa_setInterleaved = proc_numa_setInterleaved,
-    .numa_membind = proc_numa_membind
+    .numa_membind = proc_numa_membind,
+    .numa_setMembind = proc_numa_setMembind,
 #endif
 };
 
@@ -194,6 +205,14 @@ numa_membind(void* ptr, size_t size, int domainId)
 {
     const struct numa_functions funcs = numa_funcs;
     funcs.numa_membind(ptr, size, domainId);
+    return;
+}
+
+void
+numa_setMembind(const int* processorList, int numberOfProcessors)
+{
+    const struct numa_functions funcs = numa_funcs;
+    funcs.numa_setMembind(processorList, numberOfProcessors);
     return;
 }
 

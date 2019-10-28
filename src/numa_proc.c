@@ -370,6 +370,35 @@ proc_numa_setInterleaved(const int* processorList, int numberOfProcessors)
 }
 
 void
+proc_numa_setMembind(const int* processorList, int numberOfProcessors)
+{
+    long i;
+    int j;
+    int ret=0;
+    unsigned long numberOfNodes = 65;
+    unsigned long mask = 0UL;
+
+    for (i=0; i<numa_info.numberOfNodes; i++)
+    {
+        for (j=0; j<numberOfProcessors; j++)
+        {
+            if (proc_findProcessor(i,processorList[j]))
+            {
+                mask |= (1UL<<i);
+                break;
+            }
+        }
+    }
+
+    ret = set_mempolicy(MPOL_BIND, &mask, numberOfNodes);
+
+    if (ret < 0)
+    {
+        ERROR;
+    }
+}
+
+void
 proc_numa_membind(void* ptr, size_t size, int domainId)
 {
     int ret=0;
