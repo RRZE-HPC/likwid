@@ -229,7 +229,7 @@ static int create_lookups()
         }
         affinity_thread2numa_lookup[hwthreadid] = memid;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2numa_lookup[%d] = %d, hwthreadid, memid);
-        if (do_cache)
+        if (do_cache && cachelimit > 0)
         {
             if (pu_idx % cachelimit == 0)
             {
