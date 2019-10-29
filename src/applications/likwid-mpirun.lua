@@ -522,6 +522,15 @@ end
 
 local function readHostfileSlurm(hostlist)
     nperhost = tonumber(os.getenv("SLURM_TASKS_PER_NODE"):match("(%d+)"))
+    if force then
+        if os.getenv("SLURM_CPUS_ON_NODE") ~= nil then
+            nperhost = tonumber(os.getenv("SLURM_CPUS_ON_NODE"):match("(%d+)")) / nperhost
+        elseif os.getenv("SLURM_CPUS_PER_TASK") ~= nil then
+            nperhost = tonumber(os.getenv("SLURM_CPUS_PER_TASK"):match("(%d+)"))
+        else
+            nperhost = cpuCount() / nperhost
+        end
+    end
     if hostlist and nperhost then
         hostfile = write_hostlist_to_file(hostlist, nperhost)
         hosts = readHostfilePBS(hostfile)
