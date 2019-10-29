@@ -94,7 +94,10 @@ end
 
 local np = 0
 local ppn = 0
+local dist = 1
 local tpp = 1
+local tpp_orderings = {"close", "spread"}
+local tpp_ordering = "spread"
 local nperdomain = nil
 local npernode = 0
 local cpuexprs = {}
@@ -985,9 +988,15 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
 
     for i, domidx in pairs(domainlist) do
         local sortedlist = {}
-        for off=1,topo["numThreadsPerCore"] do
-            for i=0,affinity["domains"][domidx]["numberOfProcessors"]/topo["numThreadsPerCore"] do
-                table.insert(sortedlist, affinity["domains"][domidx]["processorList"][off + (i*topo["numThreadsPerCore"])])
+        if tpp_ordering == "spread" then
+            for off=1,topo["numThreadsPerCore"] do
+                for i=0,affinity["domains"][domidx]["numberOfProcessors"]/topo["numThreadsPerCore"] do
+                    table.insert(sortedlist, affinity["domains"][domidx]["processorList"][off + (i*topo["numThreadsPerCore"])])
+                end
+            end
+        elseif tpp_ordering == "close" then
+            for i=0,affinity["domains"][domidx]["numberOfProcessors"] do
+                table.insert(sortedlist, affinity["domains"][domidx]["processorList"][i])
             end
         end
         local tmplist = {}
@@ -1264,7 +1273,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     f:write("GLOBALSIZE="..glsize_var.."\n")
     f:write("GLOBALRANK="..glrank_var.."\n")
     if os.getenv("OMP_NUM_THREADS") == nil then
-        f:write("unset OMP_NUM_THREADS\n")
+        f:write(string.format("export OMP_NUM_THREADS=%d\n", tpp))
     else
         f:write(string.format("export OMP_NUM_THREADS=%s\n", os.getenv("OMP_NUM_THREADS")))
     end
@@ -1774,6 +1783,7 @@ local cmd_options = {"h","help", -- default options for help message
                      "m","marker", -- options to activate MarkerAPI
                      "e:", "env:", -- options to forward environment variables
                      "ld",         -- option to activate debugging in likwid-perfctr
+                     "dist:",      -- option to specifiy distance between two MPI processes
                      "nperdomain:","pin:","hostfile:","O","f", "stats"} -- other options
 
 for opt,arg in likwid.getopt(arg,  cmd_options) do
@@ -1809,14 +1819,77 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
             os.exit(1)
         end
     elseif opt == "t" or opt == "tpp" then
-        tpp = tonumber(arg)
-        if tpp == nil then
+        if arg:match("%d+:%a+") then
+            t, order = arg:match("(%d+):(%a+)")
+            tpp = tonumber(t)
+            if tpp == nil then
+                print_stderr("Argument for -t/-tpp must be a number")
+                os.exit(1)
+            end
+            if tpp == 0 then
+                print_stderr("Cannot run with 0 threads, at least 1 is required, sanitizing tpp to 1")
+                tpp = 1
+            end
+            local valid_order = false
+            for _, o in pairs(tpp_orderings) do
+                if o == order then
+                    valid_order = true
+                    break
+                end
+            end
+            if valid_order then
+                tpp_ordering = order
+            end
+            print_stdout(tpp, tpp_ordering)
+        elseif arg:match("%d+") then
+            tpp = tonumber(arg)
+            if tpp == nil then
+                print_stderr("Argument for -t/-tpp must be a number")
+                os.exit(1)
+            end
+            if tpp == 0 then
+                print_stderr("Cannot run with 0 threads, at least 1 is required, sanitizing tpp to 1")
+                tpp = 1
+            end
+        else
             print_stderr("Argument for -t/-tpp must be a number")
             os.exit(1)
         end
-        if tpp == 0 then
-            print_stderr("Cannot run with 0 threads, at least 1 is required, sanitizing tpp to 1")
-            tpp = 1
+    elseif opt == "dist" then
+        if arg:match("%d+:%a+") then
+            t, order = arg:match("(%d+):(%a+)")
+            local valid_order = false
+            for _, o in pairs(tpp_orderings) do
+                if o == order then
+                    valid_order = true
+                    break
+                end
+            end
+            if valid_order then
+                tpp_ordering = order
+            end
+            dist = tonumber(t)
+            if dist == nil then
+                print_stderr("Argument for -dist must be a number or number:ordering")
+                os.exit(1)
+            end
+            if dist == 0 then
+                print_stderr("Cannot run with distance 0, at least 1 is required, sanitizing dist to 1")
+                dist = 1
+            end
+        elseif arg:match("%d+") then
+            dist = tonumber(arg)
+            if dist == nil then
+                print_stderr("Argument for -dist must be a number or number:ordering")
+                os.exit(1)
+            end
+            if dist == 0 then
+                print_stderr("Cannot run with distance 0, at least 1 is required, sanitizing dist to 1")
+                dist = 1
+            end
+        else
+            print_stderr("Argument for -dist must be a number or number:ordering")
+            os.exit(1)
         end
     elseif opt == "nperdomain" then
         local domain, count, threads = arg:match("([NSCM]):(%d+)[:]*(%d*)")
@@ -2049,19 +2122,24 @@ else
         nperdomain = "N:"..tostring(ppn)
         if tpp > 0 then
             nperdomain = nperdomain..":"..tostring(tpp)
+            if dist > 1 then
+                nperdomain = nperdomain..":"..tostring(dist)
+            end
         end
     end
-    domainname, count, threads = nperdomain:match("[E]*[:]*([NSCM]*):(%d+)[:]*(%d*)")
+    print_stdout(nperdomain)
+    domainname, count, threads, distance = nperdomain:match("[E]*[:]*([NSCM]*):(%d+)[:]*(%d*)[:]*(%d*)")
     if math.tointeger(threads) == nil then
         if tpp > 1 then
-            nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp)
+            nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp, dist)
         else
             tpp = 1
-            nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp)
+            nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp, dist)
         end
     else
         tpp = math.tointeger(threads)
-        nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp)
+        print_stdout(dist)
+        nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp, dist)
     end
     cpuexprs = calculateCpuExprs(nperdomain, cpuexprs)
     if debug then
