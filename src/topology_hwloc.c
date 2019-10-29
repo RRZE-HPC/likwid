@@ -518,6 +518,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
 
 void hwloc_split_llc_check(CacheLevel* llc_cache)
 {
+    int i = 0;
     hwloc_obj_t obj = NULL;
     int num_sockets = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_SOCKET);
     int num_nodes = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_NODE);
@@ -527,8 +528,24 @@ void hwloc_split_llc_check(CacheLevel* llc_cache)
     }
     obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_SOCKET, 0);
     int num_threads_per_socket = likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
+    if (num_threads_per_socket == 0)
+    {
+        for (i = 0; i < likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU); i++)
+        {
+            if (hwloc_bitmap_isset(obj->cpuset, i))
+                num_threads_per_socket++;
+        }
+    }
     obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_NODE, 0);
     int num_threads_per_node = likwid_hwloc_record_objs_of_type_below_obj(hwloc_topology, obj, HWLOC_OBJ_PU, NULL, NULL);
+    if (num_threads_per_node == 0)
+    {
+        for (i = 0; i < likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU); i++)
+        {
+            if (hwloc_bitmap_isset(obj->cpuset, i))
+                num_threads_per_node++;
+        }
+    }
     if (num_threads_per_node < num_threads_per_socket)
     {
         llc_cache->threads = num_threads_per_node;
@@ -665,9 +682,10 @@ hwloc_init_cacheTopology(void)
 #if defined(_ARCH_PPC) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
         cachePool[id].inclusive = 0;
 #endif
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Cache Pool ID %d Level %d Size %d,
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC Cache Pool ID %d Level %d Size %d Threads %d,
                                       id, cachePool[id].level,
-                                      cachePool[id].size);
+                                      cachePool[id].size,
+                                      cachePool[id].threads);
         id++;
     }
 

@@ -259,13 +259,13 @@ affinity_init()
         return;
     }
     topology_init();
+    numa_init();
 
-    create_lookups();
     //create_locks();
     int numberOfSocketDomains = cpuid_topology.numSockets;
 
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Socket domains %d, numberOfSocketDomains);
-    numa_init();
+
     int numberOfNumaDomains = numa_info.numberOfNodes;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: NUMA domains %d, numberOfNumaDomains);
     int numberOfProcessorsPerSocket =
@@ -486,6 +486,9 @@ affinity_init()
     affinityDomains.numberOfCoresPerCache = numberOfCoresPerCache;
     affinityDomains.numberOfProcessorsPerCache = numberOfProcessorsPerCache;
     affinityDomains.domains = domains;
+
+    create_lookups();
+
     affinity_initialized = 1;
 }
 
