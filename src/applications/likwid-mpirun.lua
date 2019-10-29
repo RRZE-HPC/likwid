@@ -119,6 +119,7 @@ local use_csv = false
 local outfile = nil
 local force = false
 local print_stats = false
+local test_mpiOpts = false
 if os.getenv("LIKWID_FORCE") ~= nil then
     force = true
 end
@@ -1786,16 +1787,21 @@ local cmd_options = {"h","help", -- default options for help message
                      "e:", "env:", -- options to forward environment variables
                      "ld",         -- option to activate debugging in likwid-perfctr
                      "dist:",      -- option to specifiy distance between two MPI processes
-                     "o:","output:" -- option to specifiy an output file
+                     "o:","output:", -- option to specifiy an output file
                      "nperdomain:","pin:","hostfile:","O","f", "stats"} -- other options
 
 for opt,arg in likwid.getopt(arg,  cmd_options) do
     if (type(arg) == "string") then
-        local s,e = arg:find("-")
-        if s == 1 then
-            print_stderr(string.format("ERROR: Argument %s to option -%s starts with invalid character -.", arg, opt))
-            print_stderr("ERROR: Did you forget an argument to an option?")
-            os.exit(1)
+        if opt == "--" and arg == "--" then
+            test_mpiOpts = true
+            break
+        else
+            local s,e = arg:find("-")
+            if s == 1 then
+                print_stderr(string.format("ERROR: Argument %s to option -%s starts with invalid character -.", arg, opt))
+                print_stderr("ERROR: Did you forget an argument to an option?")
+                os.exit(1)
+            end
         end
     end
 
@@ -1939,6 +1945,9 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
     elseif opt == "!" then
         print_stderr("Option requires an argument")
         os.exit(1)
+    else
+        table.insert(mpiopts, opt)
+        if arg then table.insert(mpiopts, arg) end
     end
 end
 
@@ -1953,15 +1962,11 @@ if use_marker and #perf == 0 then
     os.exit(1)
 end
 
-local test_mpiOpts = false
 for i=1,#arg do
-    if arg[i] == '--' then
-        test_mpiOpts = true
-    end
-    if not test_mpiOpts then
-        table.insert(executable, arg[i])
-    elseif arg[i] ~= '--' then
+    if arg[i]:sub(1, 1) == "-" then
         table.insert(mpiopts, arg[i])
+    else
+        table.insert(executable, arg[i])
     end
 end
 
@@ -2133,7 +2138,6 @@ else
             end
         end
     end
-    print_stdout(nperdomain)
     domainname, count, threads, distance = nperdomain:match("[E]*[:]*([NSCM]*):(%d+)[:]*(%d*)[:]*(%d*)")
     if math.tointeger(threads) == nil then
         if tpp > 1 then
@@ -2144,7 +2148,6 @@ else
         end
     else
         tpp = math.tointeger(threads)
-        print_stdout(dist)
         nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp, dist)
     end
     cpuexprs = calculateCpuExprs(nperdomain, cpuexprs)
