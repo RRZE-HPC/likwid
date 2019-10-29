@@ -80,6 +80,7 @@ local function usage()
     print_stdout("-g/-group <perf>\t Set a likwid-perfctr conform event set for measuring on nodes")
     print_stdout("-m/-marker\t\t Activate marker API mode")
     print_stdout("-O\t\t\t Output easily parseable CSV instead of fancy tables")
+    print_stdout("-o/--output <file>\tWrite output to a file. The file is reformatted according to the suffix.")
     print_stdout("-f\t\t\t Force overwrite of registers if they are in use. You can also use environment variable LIKWID_FORCE")
     print_stdout("-e, --env <key>=<value>\t Set environment variables for MPI processes")
     print_stdout("")
@@ -115,6 +116,7 @@ local debug = false
 local likwiddebug = false
 local use_marker = false
 local use_csv = false
+local outfile = nil
 local force = false
 local print_stats = false
 if os.getenv("LIKWID_FORCE") ~= nil then
@@ -1784,6 +1786,7 @@ local cmd_options = {"h","help", -- default options for help message
                      "e:", "env:", -- options to forward environment variables
                      "ld",         -- option to activate debugging in likwid-perfctr
                      "dist:",      -- option to specifiy distance between two MPI processes
+                     "o:","output:" -- option to specifiy an output file
                      "nperdomain:","pin:","hostfile:","O","f", "stats"} -- other options
 
 for opt,arg in likwid.getopt(arg,  cmd_options) do
@@ -1925,6 +1928,9 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         omptype = arg
     elseif opt == "ld" then
         likwiddebug = true
+    elseif opt == "o" or opt == "output" then
+        outfile = arg
+        print_stderr("WARN: The output file option is currently ignored. Will be available in upcoming releases")
     elseif opt == "s" or opt == "skip" then
         skipStr = "-s "..arg
     elseif opt == "?" then
