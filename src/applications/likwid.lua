@@ -86,6 +86,7 @@ likwid.putTopology = likwid_putTopology
 likwid.getNumaInfo = likwid_getNumaInfo
 likwid.putNumaInfo = likwid_putNumaInfo
 likwid.setMemInterleaved = likwid_setMemInterleaved
+likwid.setMembind = likwid_setMembind
 likwid.getAffinityInfo = likwid_getAffinityInfo
 likwid.putAffinityInfo = likwid_putAffinityInfo
 likwid.getPowerInfo = likwid_getPowerInfo

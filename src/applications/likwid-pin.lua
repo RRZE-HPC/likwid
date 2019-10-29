@@ -78,6 +78,7 @@ local function usage()
     print_stdout("-v, --version\t\t Version information")
     print_stdout("-V, --verbose <level>\t Verbose output, 0 (only errors), 1 (info), 2 (details), 3 (developer)")
     print_stdout("-i\t\t\t Set numa interleave policy with all involved numa nodes")
+    print_stdout("-m\t\t\t Set numa membind policy with all involved numa nodes")
     print_stdout("-S, --sweep\t\t Sweep memory and LLC of involved NUMA nodes")
     print_stdout("-c/-C <list>\t\t Comma separated processor IDs or expression")
     print_stdout("-s, --skip <hex>\t Bitmask with threads to skip")
@@ -101,6 +102,7 @@ delimiter = ','
 quiet = 0
 sweep_sockets = false
 interleaved_policy = false
+membind_policy = false
 print_domains = false
 cpu_list = {}
 skip_mask = nil
@@ -115,7 +117,7 @@ if (#arg == 0) then
     os.exit(0)
 end
 
-for opt,arg in likwid.getopt(arg, {"c:", "C:", "d:", "h", "i", "p", "q", "s:", "S", "t:", "v", "V:", "verbose:", "help", "version", "skip","sweep", "quiet"}) do
+for opt,arg in likwid.getopt(arg, {"c:", "C:", "d:", "h", "i", "m", "p", "q", "s:", "S", "t:", "v", "V:", "verbose:", "help", "version", "skip","sweep", "quiet"}) do
     if opt == "h" or opt == "help" then
         usage()
         close_and_exit(0)
@@ -133,6 +135,8 @@ for opt,arg in likwid.getopt(arg, {"c:", "C:", "d:", "h", "i", "p", "q", "s:", "
         sweep_sockets = true
     elseif (opt == "i") then
         interleaved_policy = true
+    elseif (opt == "m") then
+        membind_policy = true
     elseif (opt == "p") then
         print_domains = true
     elseif opt == "s" or opt == "skip" then
@@ -214,6 +218,16 @@ if interleaved_policy then
         likwid.setMemInterleaved(num_threads, cpu_list)
     else
         print_stdout("No need to set mem_policy to interleaved, only one NUMA node available")
+    end
+end
+if membind_policy then
+    if numainfo["numberOfNodes"] > 1 then
+        if verbose > 0 and quiet == 0 then
+            print_stdout("Set mem_policy to membind")
+        end
+        likwid.setMembind(num_threads, cpu_list)
+    else
+        print_stdout("No need to set mem_policy to membind, only one NUMA node available")
     end
 end
 

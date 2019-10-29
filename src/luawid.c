@@ -1243,6 +1243,31 @@ lua_likwid_setMemInterleaved(lua_State* L)
 }
 
 static int
+lua_likwid_setMembind(lua_State* L)
+{
+    int ret;
+    int nrThreads = luaL_checknumber(L,1);
+    luaL_argcheck(L, nrThreads > 0, 1, "Thread count must be greater than 0");
+    int cpus[nrThreads];
+    if (!lua_istable(L, -1)) {
+      lua_pushstring(L,"No table given as second argument");
+      lua_error(L);
+    }
+    for (ret = 1; ret<=nrThreads; ret++)
+    {
+        lua_rawgeti(L,-1,ret);
+#if LUA_VERSION_NUM == 501
+        cpus[ret-1] = ((lua_Integer)lua_tointeger(L,-1));
+#else
+        cpus[ret-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
+#endif
+        lua_pop(L,1);
+    }
+    numa_setMembind(cpus, nrThreads);
+    return 0;
+}
+
+static int
 lua_likwid_getAffinityInfo(lua_State* L)
 {
     int i,j;
@@ -2865,6 +2890,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getNumaInfo",lua_likwid_getNumaInfo);
     lua_register(L, "likwid_putNumaInfo",lua_likwid_putNumaInfo);
     lua_register(L, "likwid_setMemInterleaved", lua_likwid_setMemInterleaved);
+    lua_register(L, "likwid_setMembind", lua_likwid_setMembind);
     lua_register(L, "likwid_getAffinityInfo",lua_likwid_getAffinityInfo);
     lua_register(L, "likwid_putAffinityInfo",lua_likwid_putAffinityInfo);
     lua_register(L, "likwid_getPowerInfo",lua_likwid_getPowerInfo);
