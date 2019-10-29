@@ -2070,7 +2070,7 @@ else
         end
         for i=np+1,ppn do
             if debug then
-                print_stderr("WARN: Remove cpuexpr: "..cpuexprs[#cpuexprs])
+                print_stderr("WARN: Remove cpuexpr: "..table.concat(cpuexprs[#cpuexprs], ","))
             end
             table.remove(cpuexprs, #cpuexprs)
         end
