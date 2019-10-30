@@ -71,6 +71,7 @@ local function usage()
     print_stdout("-nperdomain <domain>\t Set the number of processes per node by giving an affinity domain and count")
     print_stdout("-pin <list>\t\t Specify pinning of threads. CPU expressions like likwid-pin separated with '_'")
     print_stdout("-t/-tpp <count>\t\t Set the number of threads per MPI process")
+    print_stdout("--dist <d>(:order)\t Specify the CPU distance between MPI processes. Possible orders are close and spread.")
     print_stdout("-s, --skip <hex>\t Bitmask with threads to skip")
     print_stdout("-mpi <id>\t\t Specify which MPI should be used. Possible values: openmpi, intelmpi, mvapich2 or slurm")
     print_stdout("\t\t\t If not set, module system is checked")
@@ -1010,6 +1011,9 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
                 table.remove(sortedlist, 1)
             end
             table.insert(newexprs, tmplist)
+            if dist > threads then
+                for t=1, dist-threads do table.remove(sortedlist, 1) end
+            end
         end
     end
     if debug then
