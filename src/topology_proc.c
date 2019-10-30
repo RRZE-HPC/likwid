@@ -257,6 +257,15 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
         }
         bstrListDestroy(tokens);
         cpuid_topology.numHWThreads = HWthreads;
+#ifdef __x86_64
+        snprintf(cpuid_info.architecture, 19, "x86_64");
+#endif
+#ifdef __ARM_ARCH_7A__
+        snprintf(cpuid_info.architecture, 19, "armv7");
+#endif
+#ifdef __ARM_ARCH_8A
+        snprintf(cpuid_info.architecture, 19, "armv8");
+#endif
         DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
                             cpuid_info.family,
                             cpuid_info.model,

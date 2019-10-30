@@ -278,25 +278,26 @@ General information covers CPU family, model, name and current clock and vendor
 specific information like the version of Intel's performance monitoring facility.
 */
 typedef struct {
-    uint32_t family; /*!< \brief CPU family ID*/
-    uint32_t model; /*!< \brief CPU model ID */
-    uint32_t stepping; /*!< \brief Stepping (version) of the CPU */
-    uint32_t vendor; /*!< \brief Vendor of the CPU */
-    uint32_t part; /*!< \brief Part number of the CPU */
-    uint64_t clock; /*!< \brief Current clock frequency of the executing CPU*/
-    int      turbo; /*!< \brief Flag if CPU has a turbo mode */
-    char*  osname; /*!< \brief Name of the CPU reported by OS */
-    char*  name; /*!< \brief Name of the CPU as identified by LIKWID */
-    char*  short_name; /*!< \brief Short name of the CPU*/
-    char*  features; /*!< \brief String with all features supported by the CPU*/
+    uint32_t    family; /*!< \brief CPU family ID*/
+    uint32_t    model; /*!< \brief CPU model ID */
+    uint32_t    stepping; /*!< \brief Stepping (version) of the CPU */
+    uint32_t    vendor; /*!< \brief Vendor of the CPU */
+    uint32_t    part; /*!< \brief Part number of the CPU */
+    uint64_t    clock; /*!< \brief Current clock frequency of the executing CPU*/
+    int         turbo; /*!< \brief Flag if CPU has a turbo mode */
+    char*       osname; /*!< \brief Name of the CPU reported by OS */
+    char*       name; /*!< \brief Name of the CPU as identified by LIKWID */
+    char*       short_name; /*!< \brief Short name of the CPU*/
+    char*       features; /*!< \brief String with all features supported by the CPU*/
     int         isIntel; /*!< \brief Flag if it is an Intel CPU*/
-    int     supportUncore; /*!< \brief Flag if system has Uncore performance monitors */
-    int     supportClientmem; /*!< \brief Flag if system has mappable memory controllers */
-    uint64_t featureFlags; /*!< \brief Mask of all features supported by the CPU*/
-    uint32_t perf_version; /*!< \brief Version of Intel's performance monitoring facility */
-    uint32_t perf_num_ctr; /*!< \brief Number of general purpose core-local performance monitoring counters */
-    uint32_t perf_width_ctr; /*!< \brief Bit width of fixed and general purpose counters */
-    uint32_t perf_num_fixed_ctr; /*!< \brief Number of fixed purpose core-local performance monitoring counters */
+    char        architecture[20]; /*!< \brief name of the architecture like x86_64 or ppc64 (comparable with uname -m)*/
+    int         supportUncore; /*!< \brief Flag if system has Uncore performance monitors */
+    int         supportClientmem; /*!< \brief Flag if system has mappable memory controllers */
+    uint64_t    featureFlags; /*!< \brief Mask of all features supported by the CPU*/
+    uint32_t    perf_version; /*!< \brief Version of Intel's performance monitoring facility */
+    uint32_t    perf_num_ctr; /*!< \brief Number of general purpose core-local performance monitoring counters */
+    uint32_t    perf_width_ctr; /*!< \brief Bit width of fixed and general purpose counters */
+    uint32_t    perf_num_fixed_ctr; /*!< \brief Number of fixed purpose core-local performance monitoring counters */
 } CpuInfo;
 
 /*! \brief Structure with IDs of a HW thread

@@ -732,6 +732,9 @@ lua_likwid_getCpuInfo(lua_State* L)
     lua_pushstring(L,"features");
     lua_pushstring(L,cpuinfo->features);
     lua_settable(L,-3);
+    lua_pushstring(L,"architecture");
+    lua_pushstring(L,cpuinfo->architecture);
+    lua_settable(L,-3);
     lua_pushstring(L,"isIntel");
     lua_pushinteger(L,cpuinfo->isIntel);
     lua_settable(L,-3);

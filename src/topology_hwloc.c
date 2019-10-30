@@ -276,6 +276,7 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
         cpuid_info.isIntel = strcmp(info, "GenuineIntel") == 0;
     if ((info = likwid_hwloc_obj_get_info_by_name(obj, "CPUStepping")))
         cpuid_info.stepping = atoi(info);
+    snprintf(cpuid_info.architecture, 19, "x86_64");
 #endif
 #ifdef __ARM_ARCH_7A__
     if ((info = hwloc_obj_get_info_by_name(obj, "CPUArchitecture")))
@@ -289,12 +290,14 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
         parse_cpuinfo(&count, &cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
         parse_cpuname(cpuid_info.osname);
     }
+    snprintf(cpuid_info.architecture, 19, "armv7");
 #endif
 #ifdef __ARM_ARCH_8A
     uint32_t part = 0;
     uint32_t count = 0;
     parse_cpuinfo(&count, &cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
     parse_cpuname(cpuid_info.osname);
+    snprintf(cpuid_info.architecture, 19, "armv8");
 #endif
     if ((info = hwloc_obj_get_info_by_name(obj, "CPUModel")))
         strcpy(cpuid_info.osname, info);
