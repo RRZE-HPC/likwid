@@ -1045,24 +1045,47 @@ end
 
 local function splitUncoreEvents(groupdata)
     local core = {}
-    local uncore = {}
+    local socket = {}
+    local numa = {}
+    local llc = {}
+    local cpuinfo = likwid.getCpuInfo()
+
     for i, e in pairs(groupdata["Events"]) do
         if  not e["Counter"]:match("FIXC%d") and
             not e["Counter"]:match("^PMC%d") and
             not e["Counter"]:match("TMP%d") then
             local event = e["Event"]..":"..e["Counter"]
-            table.insert(uncore, event)
+            if cpuinfo["architecture"] == "x86_64" and cpuinfo["isIntel"] == 1 then
+                table.insert(socket, event)
+            elseif cpuinfo["architecture"] == "x86_64" then
+                if e["Counter"]:match("^CPMC%d") then
+                    table.insert(llc, event)
+                elseif e["Counter"]:match("^DFC%d") then
+                    table.insert(numa, event)
+                end
+            elseif cpuinfo["architecture"] == "armv8" then
+                table.insert(socket, event)
+            elseif cpuinfo["architecture"] == "armv7" then
+                table.insert(socket, event)
+            end
         else
             local event = e["Event"]..":"..e["Counter"]
             table.insert(core, event)
         end
     end
-    cevents = table.concat(core, ",")
-    uevents = table.concat(core, ",")
-    if #uncore > 0 then
-        uevents = uevents..","..table.concat(uncore,",")
+    sevents = ""
+    nevents = ""
+    levents = ""
+    if #socket > 0 then
+        sevents = table.concat(socket,",")
     end
-    return cevents, uevents
+    if #numa > 0 then
+        nevents = table.concat(numa, ",")
+    end
+    if #llc > 0 then
+        levents = table.concat(llc, ",")
+    end
+    return table.concat(core, ","), sevents, nevents, levents
 end
 
 local function inList(value, list)
@@ -1091,13 +1114,17 @@ local function uniqueList(list)
 end
 
 local function setPerfStrings(perflist, cpuexprs)
-    local uncore = false
+    local suncore = false
     local perfexprs = {}
     local grouplist = {}
-    local cpuinfo = likwid.getCpuInfo()
+    
     local affinity = likwid.getAffinityInfo()
     local socketList = {}
     local socketListFlags = {}
+    local numaList = {}
+    local numaListFlags = {}
+    local llcList = {}
+    local llcListFlags = {}
     for i, d in pairs(affinity["domains"]) do
         if d["tag"]:match("S%d+") then
             local tmpList = {}
@@ -1106,6 +1133,22 @@ local function setPerfStrings(perflist, cpuexprs)
             end
             table.insert(socketList, tmpList)
             table.insert(socketListFlags, 1)
+        end
+        if d["tag"]:match("M%d+") then
+            local tmpList = {}
+            for j,cpu in pairs(d["processorList"]) do
+                table.insert(tmpList, cpu)
+            end
+            table.insert(numaList, tmpList)
+            table.insert(numaListFlags, 1)
+        end
+        if d["tag"]:match("C%d+") then
+            local tmpList = {}
+            for j,cpu in pairs(d["processorList"]) do
+                table.insert(tmpList, cpu)
+            end
+            table.insert(llcList, tmpList)
+            table.insert(llcListFlags, 1)
         end
     end
 
@@ -1121,12 +1164,22 @@ local function setPerfStrings(perflist, cpuexprs)
             end
 
             local coreevents = ""
-            local uncoreevents = ""
-            coreevents, uncoreevents = splitUncoreEvents(gdata)
+            local socketevents = ""
+            local numaevents = ""
+            local llcevents = ""
+            coreevents, socketevents, numaevents, llcevents = splitUncoreEvents(gdata)
 
             local tmpSocketFlags = {}
             for _,e in pairs(socketListFlags) do
                 table.insert(tmpSocketFlags, e)
+            end
+            local tmpNumaFlags = {}
+            for _,e in pairs(numaListFlags) do
+                table.insert(tmpNumaFlags, e)
+            end
+            local tmpCacheFlags = {}
+            for _,e in pairs(llcListFlags) do
+                table.insert(tmpCacheFlags, e)
             end
 
             for i,cpuexpr in pairs(cpuexprs) do
@@ -1139,19 +1192,57 @@ local function setPerfStrings(perflist, cpuexprs)
                     end
                 end
                 slist = uniqueList(slist)
-                local uncore = false
+                local mlist = {}
+                for j, cpu in pairs(cpuexpr) do
+                    for l, numalist in pairs(numaList) do
+                        if inList(tonumber(cpu), numalist) then
+                            table.insert(mlist, l)
+                        end
+                    end
+                end
+                mlist = uniqueList(mlist)
+                local clist = {}
+                for j, cpu in pairs(cpuexpr) do
+                    for l, llclist in pairs(llcList) do
+                        if inList(tonumber(cpu), llclist) then
+                            table.insert(clist, l)
+                        end
+                    end
+                end
+                clist = uniqueList(clist)
+                local suncore = false
+                local muncore = false
+                local cuncore = false
                 for _, s in pairs(slist) do
                     if tmpSocketFlags[s] == 1 then
                         tmpSocketFlags[s] = 0
-                        uncore = true
+                        suncore = true
+                    end
+                end
+                for _, s in pairs(mlist) do
+                    if tmpNumaFlags[s] == 1 then
+                        tmpNumaFlags[s] = 0
+                        muncore = true
+                    end
+                end
+                for _, s in pairs(clist) do
+                    if tmpCacheFlags[s] == 1 then
+                        tmpCacheFlags[s] = 0
+                        cuncore = true
                     end
                 end
                 if perfexprs[k][i] == nil then
-                    if uncore then
-                        perfexprs[k][i] = uncoreevents
-                    else
-                        perfexprs[k][i] = coreevents
+                    local elist = {coreevents}
+                    if cuncore and llcevents:len() > 0 then
+                        table.insert(elist, llcevents)
                     end
+                    if muncore and numaevents:len() > 0 then
+                        table.insert(elist, numaevents)
+                    end
+                    if suncore and socketevents:len() > 0 then
+                        table.insert(elist, socketevents)
+                    end
+                    perfexprs[k][i] = table.concat(elist, ",")
                 end
             end
 
@@ -1611,7 +1702,6 @@ function percentile_table(inputtable, skip_cols, skip_lines)
 end
 
 function printMpiOutput(group_list, all_results, regionname)
-    print(print_stats)
     region = regionname or nil
     if #group_list == 0 or likwid.tablelength(all_results) == 0 then
         return
