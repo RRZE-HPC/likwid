@@ -44,7 +44,7 @@
 #include <types.h>
 #include <tree.h>
 
-#define MAX_FEATURE_STRING_LENGTH 512
+#define MAX_FEATURE_STRING_LENGTH 512 /* only used in deprecated topology_cpuid.c */
 #define MAX_MODEL_STRING_LENGTH 512
 
 struct topology_functions {

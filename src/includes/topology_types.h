@@ -60,6 +60,7 @@ typedef enum {
     SSSE3, /*!< \brief Supplemental Streaming SIMD Extensions 3 */
     SSE41, /*!< \brief Streaming SIMD Extensions 4.1 */
     SSE42, /*!< \brief Streaming SIMD Extensions 4.2 */
+    SSE4A, /*!< \brief Streaming SIMD Extensions 4A */
     AVX, /*!< \brief Advanced Vector Extensions */
     FMA, /*!< \brief Fused multiply-add (FMA3) */
     AVX2, /*!< \brief Advanced Vector Extensions 2 */
