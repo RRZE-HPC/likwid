@@ -201,15 +201,11 @@ local function getopt(args, ostrlist)
             place = 1
             if #args == 0 or args[1]:sub(1, 1) ~= '-' then place = 0; return nil end
             if #args[1] >= 2 then
-                if args[1] == "--" then
-                    table.remove(args, 1)
-                    place = 0; return "--", "--"
-                end
                 if args[1]:sub(2, 2) == '-' then
                     if #args[1] == 2 then -- found "--"
                         place = 0
                         table.remove(args, 1)
-                        return args[1], nil
+                        return "-", nil
                     end
                     place = place + 1
                 end

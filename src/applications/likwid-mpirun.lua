@@ -1792,16 +1792,11 @@ local cmd_options = {"h","help", -- default options for help message
 
 for opt,arg in likwid.getopt(arg,  cmd_options) do
     if (type(arg) == "string") then
-        if opt == "--" and arg == "--" then
-            test_mpiOpts = true
-            break
-        else
-            local s,e = arg:find("-")
-            if s == 1 then
-                print_stderr(string.format("ERROR: Argument %s to option -%s starts with invalid character -.", arg, opt))
-                print_stderr("ERROR: Did you forget an argument to an option?")
-                os.exit(1)
-            end
+        local s,e = arg:find("-")
+        if s == 1 then
+            print_stderr(string.format("ERROR: Argument %s to option -%s starts with invalid character -.", arg, opt))
+            print_stderr("ERROR: Did you forget an argument to an option?")
+            os.exit(1)
         end
     end
 
@@ -1945,9 +1940,9 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
     elseif opt == "!" then
         print_stderr("Option requires an argument")
         os.exit(1)
-    else
-        table.insert(mpiopts, opt)
-        if arg then table.insert(mpiopts, arg) end
+    elseif opt == "-" then
+        test_mpiOpts = true
+        break
     end
 end
 
@@ -1962,43 +1957,58 @@ if use_marker and #perf == 0 then
     os.exit(1)
 end
 
-for i=1,#arg do
-    if arg[i]:sub(1, 1) == "-" then
-        table.insert(mpiopts, arg[i])
-    else
-        table.insert(executable, arg[i])
+if test_mpiOpts then
+    for i=1,#arg do
+        if arg[i]:sub(1,1) == "-" then
+            table.insert(mpiopts, arg[i])
+        else
+            if likwid.access(arg[i], "x") == -1 then
+                local f = io.popen(string.format("which '%s' 2>/dev/null || echo 'ERROR'", arg[i]))
+                if f == nil then
+                    table.insert(mpiopts, arg[i])
+                else
+                    local out = f:read("*line")
+                    f:close()
+                    if out:match("ERROR") or out:match("^Usage") then
+                        table.insert(mpiopts, arg[i])
+                    else
+                        break
+                    end
+                end
+            else
+                table.insert(mpiopts, arg[i])
+                break
+            end
+        end
     end
+    for i=1,#mpiopts do
+        table.remove(arg, 1)
+    end
+end
+for i=1,#arg do
+    local item = arg[i]
+    if likwid.access(arg[i], "x") == -1 then
+        local f = io.popen(string.format("which '%s' 2>/dev/null || echo 'ERROR'", arg[i]))
+        if f ~= nil then
+            local out = f:read("*line")
+            f:close()
+            if not (out:match("ERROR") or out:match("^Usage")) then
+                item = out
+            end
+        end
+    end
+    table.insert(executable, item)
 end
 
 if #executable == 0 then
     print_stderr("ERROR: No executable given on commandline")
     os.exit(1)
-else
-    local do_which = false
-    local found = false
-    if likwid.access(executable[1], "x") == -1 then
-        do_which = true
-    else
-        found = true
-    end
-    if not found then
-        if do_which then
-            local f = io.popen(string.format("which %s 2>/dev/null", executable[1]))
-            if f ~= nil then
-                executable[1] = f:read("*line")
-                f:close()
-                found = true
-            end
-            if debug then
-                print_stdout("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
-            end
-        end
-    end
-    if not found then
-        print_stderr("ERROR: Cannot find executable given on commandline")
-        os.exit(1)
-    end
 end
+
+if debug then
+    print_stdout("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
+end
+
 if #mpiopts > 0 and debug then
     print_stdout("DEBUG: MPI options given on commandline: "..table.concat(mpiopts, " "))
 end
