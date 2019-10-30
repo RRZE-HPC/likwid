@@ -461,17 +461,9 @@ likwid_markerClose(void)
         fprintf(stderr, "%s", strerror(errno));
     }
     if (validRegions)
+    {
         free(validRegions);
-}
-
-void __attribute__((destructor (101))) likwid_markerCloseDestruct(void)
-{
-    LikwidResults* results = NULL;
-    int numberOfThreads = 0;
-    int numberOfRegions = 0;
-    if (!likwid_init)
-        return;
-    hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
+    }
     if ((numberOfThreads == 0)||(numberOfThreads == 0))
     {
         return;
@@ -488,7 +480,6 @@ void __attribute__((destructor (101))) likwid_markerCloseDestruct(void)
         free(results[i].cpulist);
         free(results[i].counters);
     }
-
     if (results != NULL)
     {
         free(results);
