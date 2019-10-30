@@ -535,6 +535,7 @@ if print_info or verbose > 0 then
     print_stdout(string.format("CPU short:\t%s", cpuinfo["short_name"]))
     print_stdout(string.format("CPU stepping:\t%u", cpuinfo["stepping"]))
     print_stdout(string.format("CPU features:\t%s", cpuinfo["features"]))
+    print_stdout(string.format("CPU arch:\t%s", cpuinfo["architecture"]))
     P6_FAMILY = 6
     if cpuinfo["family"] == P6_FAMILY and cpuinfo["perf_version"] > 0 then
         print_stdout(likwid.hline)
