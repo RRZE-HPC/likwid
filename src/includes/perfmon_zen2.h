@@ -504,7 +504,7 @@ int perfmon_finalizeCountersThread_zen2(int thread_id, PerfmonEventSet* eventSet
         }
         RegisterIndex index = eventSet->events[i].index;
         if ((type == PMC) ||
-            ((type == MBOX0) && (haveSLock)) ||
+            ((type == MBOX0) && (haveMLock)) ||
             ((type == CBOX0) && (haveL3Lock)))
         {
             if (counter_map[index].configRegister != 0x0)
