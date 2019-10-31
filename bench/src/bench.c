@@ -179,6 +179,9 @@ runTest(void* arg)
      * */
 
     switch ( myData->test->streams ) {
+        case STREAM_0:
+            EXECUTE(func(size));
+            break;
         case STREAM_1:
             EXECUTE(func(size,myData->streams[0]));
             break;
@@ -510,6 +513,9 @@ getIterSingle(void* arg)
 #endif
 
     switch ( myData->test->streams ) {
+        case STREAM_0:
+            MEASURE(func(size));
+            break;
         case STREAM_1:
             MEASURE(func(size,myData->streams[0]));
             break;
@@ -797,4 +803,3 @@ getIterSingle(void* arg)
 #endif
     return NULL;
 }
-

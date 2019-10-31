@@ -338,7 +338,10 @@ bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int number
         return 1;
     }
     bstrListDestroy(tokens);
-    group->size /= numberOfStreams;
+    if (numberOfStreams > STREAM_0)
+    {
+        group->size /= numberOfStreams;
+    }
     return 0;
 }
 
@@ -362,4 +365,3 @@ workgroups_destroy(Workgroup** groupList, int numberOfGroups, int numberOfStream
     }
     free(list);
 }
-

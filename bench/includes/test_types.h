@@ -41,6 +41,7 @@ typedef enum {
     INT} DataType;
 
 typedef enum {
+    STREAM_0 = 0,
     STREAM_1 = 1,
     STREAM_2,
     STREAM_3,

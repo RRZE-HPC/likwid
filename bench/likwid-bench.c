@@ -440,7 +440,7 @@ int main(int argc, char** argv)
                 {
                     exit(EXIT_FAILURE);
                 }
-                if (newsize != currentWorkgroup->size)
+                if (newsize > 0 && newsize != currentWorkgroup->size)
                 {
                     currentWorkgroup->size = newsize;
                 }
@@ -513,7 +513,6 @@ int main(int argc, char** argv)
     LIKWID_MARKER_INIT;
     ownprintf(bdata(HLINE));
 #endif
-
 
     /* initialize data structures for threads */
     for (i=0; i<numberOfWorkgroups; i++)
@@ -616,43 +615,61 @@ int main(int argc, char** argv)
     ownprintf("Iterations:\t\t%" PRIu64 "\n", realIter);
     ownprintf("Iterations per thread:\t%" PRIu64 "\n",iters_per_thread);
     ownprintf("Inner loop executions:\t%d\n", (int)(((double)realSize)/((double)test->stride*globalNumberOfThreads)));
-    ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize * datatypesize * test->streams);
-    ownprintf("Size per thread:\t%" PRIu64 "\n", size_per_thread * datatypesize * test->streams);
-    ownprintf("Number of Flops:\t%" PRIu64 "\n", (iters_per_thread * realSize *  test->flops));
-    ownprintf("MFlops/s:\t\t%.2f\n",
-            1.0E-06 * ((double) (iters_per_thread * realSize *  test->flops) /  time));
-    ownprintf("Data volume (Byte):\t%llu\n",
-            LLU_CAST (datavol));
-    ownprintf("MByte/s:\t\t%.2f\n",
-            1.0E-06 * ( (double) (iters_per_thread * realSize * test->bytes) / time));
+    if (test->streams > 0)
+    {
+        ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize * datatypesize * test->streams);
+        ownprintf("Size per thread:\t%" PRIu64 "\n", size_per_thread * datatypesize * test->streams);
+    }
+    if (test->flops > 0)
+    {
+        ownprintf("Number of Flops:\t%" PRIu64 "\n", (iters_per_thread * realSize *  test->flops));
+        ownprintf("MFlops/s:\t\t%.2f\n",
+                1.0E-06 * ((double) (iters_per_thread * realSize *  test->flops) /  time));
+    }
+    if (test->bytes > 0)
+    {
+        ownprintf("Data volume (Byte):\t%llu\n",
+                LLU_CAST (datavol));
+        ownprintf("MByte/s:\t\t%.2f\n",
+                1.0E-06 * ( (double) (iters_per_thread * realSize * test->bytes) / time));
+    }
 
     size_t destsize = 0;
     size_t datasize = 0;
     double perUpFactor = 0.0;
-    switch (test->type)
+    if (test->streams > 0)
     {
-        case INT:
-            datasize = test->bytes/sizeof(int);
-            destsize = test->bytes/test->streams;
-            perUpFactor = (clsize/sizeof(int));
-            break;
-        case SINGLE:
-            datasize = test->bytes/sizeof(float);
-            destsize = test->bytes/test->streams;
-            perUpFactor = (clsize/sizeof(float));
-            break;
-        case DOUBLE:
-            datasize = test->bytes/sizeof(double);
-            destsize = test->bytes/test->streams;
-            perUpFactor = (clsize/sizeof(double));
-            break;
-    }
+        switch (test->type)
+        {
+            case INT:
+                datasize = test->bytes/sizeof(int);
+                destsize = test->bytes/test->streams;
+                perUpFactor = (clsize/sizeof(int));
+                break;
+            case SINGLE:
+                datasize = test->bytes/sizeof(float);
+                destsize = test->bytes/test->streams;
+                perUpFactor = (clsize/sizeof(float));
+                break;
+            case DOUBLE:
+                datasize = test->bytes/sizeof(double);
+                destsize = test->bytes/test->streams;
+                perUpFactor = (clsize/sizeof(double));
+                break;
+        }
 
-    cycPerCL = (double) maxCycles/((double)datavol/(clsize*datasize));
-    ownprintf("Cycles per update:\t%f\n", cycPerCL/perUpFactor);
-    ownprintf("Cycles per cacheline:\t%f\n", cycPerCL);
-    ownprintf("Loads per update:\t%ld\n", test->loads );
-    ownprintf("Stores per update:\t%ld\n", test->stores );
+        cycPerCL = (double) maxCycles/((double)datavol/(clsize*datasize));
+        ownprintf("Cycles per update:\t%f\n", cycPerCL/perUpFactor);
+        ownprintf("Cycles per cacheline:\t%f\n", cycPerCL);
+    }
+    if (test->loads >= 0)
+    {
+        ownprintf("Loads per update:\t%ld\n", test->loads );
+    }
+    if (test->stores >= 0)
+    {
+        ownprintf("Stores per update:\t%ld\n", test->stores );
+    }
     if (test->loads > 0 && test->stores > 0)
     {
         double ratio = (double)test->loads/(double)(test->stores+test->loads);
@@ -676,13 +693,15 @@ int main(int argc, char** argv)
     }
     if ((test->instr_loop > 0) && (test->instr_const > 0))
     {
-        ownprintf("Instructions:\t\t%" PRIu64 "\n",
-                LLU_CAST ((double)realSize/test->stride)*test->instr_loop*threads_data[0].data.iter + test->instr_const );
+        uint64_t instr = LLU_CAST ((double)realSize/test->stride)*test->instr_loop*threads_data[0].data.iter + test->instr_const;
+        ownprintf("Instructions:\t\t%" PRIu64 "\n", instr);
+        ownprintf("Cyc/Instr:\t\t%.2f\n", ((double)maxCycles)/instr);
     }
     if (test->uops > 0)
     {
-        ownprintf("UOPs:\t\t\t%" PRIu64 "\n",
-                LLU_CAST ((double)realSize/test->stride)*test->uops*threads_data[0].data.iter);
+        uint64_t uops = LLU_CAST ((double)realSize/test->stride)*test->uops*threads_data[0].data.iter;
+        ownprintf("UOPs:\t\t\t%" PRIu64 "\n", uops);
+        ownprintf("Cyc/UOPs:\t\t%.2f\n", ((double)maxCycles)/uops);
     }
 
     ownprintf(bdata(HLINE));
@@ -701,4 +720,3 @@ int main(int argc, char** argv)
     bdestroy(HLINE);
     return EXIT_SUCCESS;
 }
-

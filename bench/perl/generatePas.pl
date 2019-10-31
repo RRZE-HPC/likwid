@@ -122,7 +122,9 @@ while (defined(my $file = readdir(DIR))) {
         $prolog='';
         $loop='';
         $desc='';
-        $streams=1;
+        $streams=0;
+        my $bytes=-1;
+        my $flops=-1;
         my $loads=-1;
         my $stores=-1;
         my $branches=-1;
@@ -223,5 +225,3 @@ $Vars->{Testcases} = \@TestcasesSorted;
 $Vars->{numKernels} = $#TestcasesSorted+1;
 $Vars->{allTests} = join('\n',map {$_->{name}." - ".$_->{desc}} @TestcasesSorted);
 $tpl->process('testcases.tt', $Vars, "$OutputDirectory/testcases.h");
-
-
