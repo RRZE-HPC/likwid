@@ -48,6 +48,7 @@
 #include <testcases.h>
 #include <strUtil.h>
 #include <allocator.h>
+#include <ptt2asm.h>
 
 #include <likwid.h>
 #include <likwid-cpumarker.h>
@@ -140,7 +141,7 @@ int main(int argc, char** argv)
     double time;
     double cycPerUp = 0.0;
     double cycPerCL = 0.0;
-    const TestCase* test = NULL;
+    TestCase* test = NULL;
     uint64_t realSize = 0;
     uint64_t realIter = 0;
     uint64_t maxCycles = 0;
@@ -156,6 +157,8 @@ int main(int argc, char** argv)
     binsertch(HLINE, 80, 1, '\n');
     int (*ownprintf)(const char *format, ...);
     int clsize = sysconf (_SC_LEVEL1_DCACHE_LINESIZE);
+    char compilepath[512] = "/tmp";
+    char compileflags[512] = "-shared -fPIC";
     ownprintf = &printf;
     struct sigaction sig;
 
@@ -177,6 +180,26 @@ int main(int argc, char** argv)
                 exit (EXIT_SUCCESS);
             case 'a':
                 ownprintf(TESTS"\n");
+                struct bstrList* l = get_benchmarks();
+                if (l)
+                {
+                    bstring upath = get_user_path();
+
+                    for (i = 0; i < l->qty; i++)
+                    {
+                        TestCase* t = NULL;
+                        bstring path = bformat("%s/%s.ptt", bdata(upath), bdata(l->entry[i]));
+                        int err = ptt2asm(bdata(path), &t, NULL);
+                        if (!err && t)
+                        {
+                            printf("%s - %s\n", t->name, t->desc);
+                            free_testcase(t);
+                        }
+                        bdestroy(path);
+                    }
+                    bdestroy(upath);
+                    bstrListDestroy(l);
+                }
                 exit (EXIT_SUCCESS);
             case 'w':
             case 'W':
@@ -196,13 +219,29 @@ int main(int argc, char** argv)
             case 'l':
                 bdestroy(testcase);
                 testcase = bfromcstr(optarg);
+                int builtin = 1;
                 for (i=0; i<NUMKERNELS; i++)
                 {
                     if (biseqcstr(testcase, kernels[i].name))
                     {
-                        test = kernels+i;
+                        test = (TestCase*)kernels+i;
                         break;
                     }
+                }
+
+                if (test == NULL)
+                {
+                    bstring upath = get_user_path();
+                    bstring path = bformat("%s/%s.ptt", bdata(upath), optarg);
+                    int err = ptt2asm(bdata(path), &test, NULL);
+                    if (err || (!test))
+                    {
+                        fprintf (stderr, "Error: Parseing error %s\n", bdata(path));
+                        return EXIT_FAILURE;
+                    }
+                    builtin = 0;
+                    bdestroy(upath);
+                    bdestroy(path);
                 }
 
                 if (test == NULL)
@@ -271,6 +310,10 @@ int main(int argc, char** argv)
                     }
                 }
                 bdestroy(testcase);
+                if (!builtin)
+                {
+                    free_testcase(test);
+                }
                 exit (EXIT_SUCCESS);
 
                 break;
@@ -291,9 +334,36 @@ int main(int argc, char** argv)
                 {
                     if (biseqcstr(testcase, kernels[i].name))
                     {
-                        test = kernels+i;
+                        test = (TestCase*)kernels+i;
                         break;
                     }
+                }
+
+                if (test == NULL)
+                {
+                    bstring upath = get_user_path();
+                    bstring path = bformat("%s/%s.ptt", bdata(upath), optarg);
+                    bstring outpath = bfromcstr(compilepath);
+                    bstring asmfile = bformat("%s/%s.s", bdata(outpath), optarg);
+                    bstring objfile = bformat("%s/%s.o", bdata(outpath), optarg);
+                    int err = ptt2asm(bdata(path), &test, bdata(asmfile));
+
+                    if (!err)
+                    {
+                        bstring compiler = get_compiler();
+                        bstring cflags = bfromcstr(compileflags);
+
+                        compile_file(compiler, cflags, asmfile, objfile);
+
+                        open_function(objfile, test);
+                        bdestroy(compiler);
+                        bdestroy(cflags);
+                    }
+                    bdestroy(path);
+                    bdestroy(upath);
+                    bdestroy(outpath);
+                    bdestroy(asmfile);
+                    bdestroy(objfile);
                 }
 
                 if (test == NULL)
@@ -698,7 +768,18 @@ int main(int argc, char** argv)
     LIKWID_MARKER_CLOSE;
 #endif
 
+    if (test->dlhandle != NULL)
+    {
+        close_function(test);
+        bstring asmfile = bformat("%s/%s.s", compilepath, test->name);
+        bstring objfile = bformat("%s/%s.o", compilepath, test->name);
+        free_testcase(test);
+        remove(bdata(asmfile));
+        remove(bdata(objfile));
+        bdestroy(asmfile);
+        bdestroy(objfile);
+    }
+
     bdestroy(HLINE);
     return EXIT_SUCCESS;
 }
-
