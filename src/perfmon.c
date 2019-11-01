@@ -2043,6 +2043,13 @@ past_checks:
         fprintf(stderr,"       Either the events or counters do not exist for the\n");
         fprintf(stderr,"       current architecture. If event options are set, they might\n");
         fprintf(stderr,"       be invalid.\n");
+        return_group(&groupSet->groups[groupSet->numberOfActiveGroups].group);
+        for(j = 0; j < eventSet->numberOfEvents; j++)
+        {
+            PerfmonEventSetEntry* event = &(eventSet->events[j]);
+            free(event->threadCounter);
+        }
+        free(eventSet->events);
         return -EINVAL;
     }
 }
