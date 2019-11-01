@@ -77,6 +77,8 @@ extern void* getIterSingle(void* arg);
     printf("-w\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>]\n"); \
     printf("-W\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]]\n"); \
     printf("\t\t <size> in kB, MB or GB (mandatory)\n"); \
+    printf("For dynamically loaded benchmarks\n"); \
+    printf("-f <PATH>\t Specify a folder for the temporary files. default: /tmp\n"); \
     printf("\n"); \
     printf("Difference between -w and -W :\n"); \
     printf("-w allocates the streams in the thread_domain with one thread and support placement of streams\n"); \
@@ -89,6 +91,8 @@ extern void* getIterSingle(void* arg);
     printf("likwid-bench -t copy -w S0:100kB:1\n"); \
     printf("# Run the copy benchmark on one CPU at CPU socket 0 with a vector size of 100MB but place one stream on CPU socket 1\n"); \
     printf("likwid-bench -t copy -w S0:100MB:1-0:S0,1:S1\n"); \
+/*    printf("-c <COMP_LIST>\t Specify a list of compilers that should be searched for. default: gcc,icc,pgcc\n"); \*/
+/*    printf("-f <COMP_FLAGS>\t Specify compiler flags. Use \". default: \"-shared -fPIC\"\n"); \*/
 
 #define VERSION_MSG \
     printf("likwid-bench -- Version %d.%d.%d\n",VERSION,RELEASE,MINORVERSION); \
@@ -157,7 +161,9 @@ int main(int argc, char** argv)
     binsertch(HLINE, 80, 1, '\n');
     int (*ownprintf)(const char *format, ...);
     int clsize = sysconf (_SC_LEVEL1_DCACHE_LINESIZE);
-    char compilepath[512] = "/tmp";
+    char compilers[512] = "gcc,icc,pgcc";
+    char defcompilepath[512] = "/tmp";
+    char compilepath[513] = "";
     char compileflags[512] = "-shared -fPIC";
     ownprintf = &printf;
     struct sigaction sig;
@@ -169,7 +175,23 @@ int main(int argc, char** argv)
         exit(EXIT_SUCCESS);
     }
 
-    while ((c = getopt (argc, argv, "W:w:t:s:l:aphvi:")) != -1) {
+    while ((c = getopt (argc, argv, "W:w:t:s:l:aphvi:f:")) != -1) {
+        switch (c)
+        {
+            case 'f':
+                tmp = snprintf(compilepath, 512, "%s", optarg);
+                if (tmp > 0)
+                {
+                    compilepath[tmp] = '\0';
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    optind = 0;
+
+    while ((c = getopt (argc, argv, "W:w:t:s:l:aphvi:f:")) != -1) {
         switch (c)
         {
             case 'h':
@@ -180,24 +202,24 @@ int main(int argc, char** argv)
                 exit (EXIT_SUCCESS);
             case 'a':
                 ownprintf(TESTS"\n");
-                struct bstrList* l = get_benchmarks();
+
+                struct bstrList* l = dynbench_getall();
                 if (l)
                 {
-                    bstring upath = get_user_path();
-
+                    ownprintf("\nUser benchmarks:\n");
                     for (i = 0; i < l->qty; i++)
                     {
-                        TestCase* t = NULL;
-                        bstring path = bformat("%s/%s.ptt", bdata(upath), bdata(l->entry[i]));
-                        int err = ptt2asm(bdata(path), &t, NULL);
-                        if (!err && t)
+                        if (dynbench_test(l->entry[i]))
                         {
-                            printf("%s - %s\n", t->name, t->desc);
-                            free_testcase(t);
+                            TestCase* t = NULL;
+                            int err = dynbench_load(l->entry[i], &t, NULL, NULL, NULL);
+                            if (!err && t)
+                            {
+                                printf("%s - %s\n", t->name, t->desc);
+                                dynbench_close(t, NULL);
+                            }
                         }
-                        bdestroy(path);
                     }
-                    bdestroy(upath);
                     bstrListDestroy(l);
                 }
                 exit (EXIT_SUCCESS);
@@ -229,19 +251,10 @@ int main(int argc, char** argv)
                     }
                 }
 
-                if (test == NULL)
+                if (test == NULL && dynbench_test(testcase))
                 {
-                    bstring upath = get_user_path();
-                    bstring path = bformat("%s/%s.ptt", bdata(upath), optarg);
-                    int err = ptt2asm(bdata(path), &test, NULL);
-                    if (err || (!test))
-                    {
-                        fprintf (stderr, "Error: Parseing error %s\n", bdata(path));
-                        return EXIT_FAILURE;
-                    }
+                    dynbench_load(testcase, &test, NULL, NULL, NULL);
                     builtin = 0;
-                    bdestroy(upath);
-                    bdestroy(path);
                 }
 
                 if (test == NULL)
@@ -312,7 +325,7 @@ int main(int argc, char** argv)
                 bdestroy(testcase);
                 if (!builtin)
                 {
-                    free_testcase(test);
+                    dynbench_close(test, NULL);
                 }
                 exit (EXIT_SUCCESS);
 
@@ -339,31 +352,14 @@ int main(int argc, char** argv)
                     }
                 }
 
-                if (test == NULL)
+                if (test == NULL && dynbench_test(testcase))
                 {
-                    bstring upath = get_user_path();
-                    bstring path = bformat("%s/%s.ptt", bdata(upath), optarg);
-                    bstring outpath = bfromcstr(compilepath);
-                    bstring asmfile = bformat("%s/%s.s", bdata(outpath), optarg);
-                    bstring objfile = bformat("%s/%s.o", bdata(outpath), optarg);
-                    int err = ptt2asm(bdata(path), &test, bdata(asmfile));
-
-                    if (!err)
+                    if (strlen(compilepath) == 0)
                     {
-                        bstring compiler = get_compiler();
-                        bstring cflags = bfromcstr(compileflags);
-
-                        compile_file(compiler, cflags, asmfile, objfile);
-
-                        open_function(objfile, test);
-                        bdestroy(compiler);
-                        bdestroy(cflags);
+                        int ret = snprintf(compilepath, 512, "%s", defcompilepath);
+                        if (ret > 0) compilepath[ret] = '\0';
                     }
-                    bdestroy(path);
-                    bdestroy(upath);
-                    bdestroy(outpath);
-                    bdestroy(asmfile);
-                    bdestroy(objfile);
+                    dynbench_load(testcase, &test, compilepath, compilers, compileflags);
                 }
 
                 if (test == NULL)
@@ -372,6 +368,8 @@ int main(int argc, char** argv)
                     return EXIT_FAILURE;
                 }
                 bdestroy(testcase);
+                break;
+            case 'f':
                 break;
             case '?':
                 if (isprint (optopt))
@@ -770,14 +768,7 @@ int main(int argc, char** argv)
 
     if (test->dlhandle != NULL)
     {
-        close_function(test);
-        bstring asmfile = bformat("%s/%s.s", compilepath, test->name);
-        bstring objfile = bformat("%s/%s.o", compilepath, test->name);
-        free_testcase(test);
-        remove(bdata(asmfile));
-        remove(bdata(objfile));
-        bdestroy(asmfile);
-        bdestroy(objfile);
+        dynbench_close(test, compilepath);
     }
 
     bdestroy(HLINE);

@@ -1,9 +1,33 @@
+/*
+ * =======================================================================================
+ *      Filename:  isa_armv8.h
+ *
+ *      Description:  Definitions used for dynamically compile benchmarks for ARMv8 systems
+ *
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
+ *
+ *      Author:   Thomas Gruber (tg), thomas.roehl@gmail.com
+ *      Project:  likwid
+ *
+ *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
+ *
+ *      This program is free software: you can redistribute it and/or modify it under
+ *      the terms of the GNU General Public License as published by the Free Software
+ *      Foundation, either version 3 of the License, or (at your option) any later
+ *      version.
+ *
+ *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License along with
+ *      this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * =======================================================================================
+ */
 #ifndef LIKWID_BENCH_ISA_ARMV8_H
 #define LIKWID_BENCH_ISA_ARMV8_H
-
-#define DBL_ALIGNMENT 64
-#define SGL_ALIGNMENT 64
-#define INT_ALIGNMENT 16
 
 #include <bstrlib.h>
 #include <bstrlib_helper.h>
@@ -63,9 +87,9 @@ int footer(struct bstrList* code, char* funcname)
 
     bstrListAddChar(code, "\n");
 
-//    bstrListAddChar(code, "#if defined(__linux__) && defined(__ELF__)");
-//    bstrListAddChar(code, ".section .note.GNU-stack,"",%progbits");
-//    bstrListAddChar(code, "#endif");
+    bstrListAddChar(code, "#if defined(__linux__) && defined(__ELF__)");
+    bstrListAddChar(code, ".section .note.GNU-stack,\"\",%progbits");
+    bstrListAddChar(code, "#endif");
 
     bdestroy(line);
 }

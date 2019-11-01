@@ -1,3 +1,32 @@
+/*
+ * =======================================================================================
+ *      Filename:  ptt2asm.c
+ *
+ *      Description:  The interface to dynamically load ptt files
+ *
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
+ *
+ *      Author:   Thomas Gruber (tg), thomas.roehl@gmail.com
+ *      Project:  likwid
+ *
+ *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
+ *
+ *      This program is free software: you can redistribute it and/or modify it under
+ *      the terms of the GNU General Public License as published by the Free Software
+ *      Foundation, either version 3 of the License, or (at your option) any later
+ *      version.
+ *
+ *      This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *      WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *      PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ *      You should have received a copy of the GNU General Public License along with
+ *      this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * =======================================================================================
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -6,6 +35,8 @@
 #include <libgen.h>
 #include <dirent.h>
 #include <dlfcn.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <bstrlib.h>
 #include <bstrlib_helper.h>
@@ -31,20 +62,43 @@
 #include <isa_ppc64.h>
 #endif
 
-static struct bstrList* read_ptt(char *pttfile)
+static int registerMapLength(RegisterMap* map)
+{
+    int i = 0;
+    while (strlen(map[i].pattern) > 0)
+    {
+        i++;
+    }
+    return i;
+}
+
+static int registerMapMaxPattern(RegisterMap* map)
+{
+    int i = 0;
+    int max = 0;
+    while (strlen(map[i].pattern) > 0)
+    {
+        if (strlen(map[i].pattern) > max)
+            max = strlen(map[i].pattern);
+        i++;
+    }
+    return max;
+}
+
+static struct bstrList* read_ptt(bstring pttfile)
 {
     int ret = 0;
     FILE* fp = NULL;
     char buf[BUFSIZ];
     struct bstrList* l = NULL;
 
-    if (access(pttfile, R_OK))
+    if (access(bdata(pttfile), R_OK))
     {
         return NULL;
     }
 
     bstring content = bfromcstr("");
-    fp = fopen(pttfile, "r");
+    fp = fopen(bdata(pttfile), "r");
     if (fp == NULL) {
         fprintf(stderr, "fopen(%s): errno=%d\n", pttfile, errno);
         return NULL;
@@ -73,12 +127,12 @@ static struct bstrList* read_ptt(char *pttfile)
     return l;
 }
 
-static int write_asm(char* filename, struct bstrList* code)
+static int write_asm(bstring filename, struct bstrList* code)
 {
     FILE* fp = NULL;
     char newline = '\n';
     size_t (*ownfwrite)(const void *ptr, size_t size, size_t nmemb, FILE *stream) = &fwrite;
-    fp = fopen(filename, "w");
+    fp = fopen(bdata(filename), "w");
     if (fp)
     {
         for (int i = 0; i < code->qty; i++)
@@ -98,7 +152,7 @@ static int write_asm(char* filename, struct bstrList* code)
     (variable) = ownatoi(bdata(tmp)); \
     bdestroy(tmp); \
 
-static struct bstrList* analyse_ptt(char* pttfile, TestCase** testcase)
+static struct bstrList* analyse_ptt(bstring pttfile, TestCase** testcase)
 {
     struct bstrList* ptt = NULL;
     TestCase* test = NULL;
@@ -388,29 +442,8 @@ static int prepare_code(struct bstrList* code)
     return 0;
 }
 
-static void print_testcase(TestCase* test)
-{
-    printf("Name: %s\n", test->name);
-    printf("Desc: %s\n", test->desc);
-    printf("Bytes: %d\n", test->bytes);
-    printf("Flops: %d\n", test->flops);
-    printf("Type: %d\n", test->type);
-    printf("Loads: %d\n", test->loads);
-}
 
-
-
-void free_testcase(TestCase *testcase)
-{
-    if (testcase)
-    {
-        free(testcase->name);
-        free(testcase->desc);
-        free(testcase);
-    }
-}
-
-struct bstrList* get_benchmarks()
+struct bstrList* dynbench_getall()
 {
     int totalgroups = 0;
     struct bstrList* list = NULL;
@@ -440,68 +473,52 @@ struct bstrList* get_benchmarks()
             }
             closedir(dp);
         }
+        else
+        {
+            fprintf(stderr, "Failed to enter folder %s\n", bdata(path));
+        }
     }
     bdestroy(path);
     return list;
 }
 
-bstring get_user_path()
-{
-    return bformat("%s/.likwid/bench/%s", getenv("HOME"), ARCHNAME);
-}
 
-bstring get_compiler()
+static bstring get_compiler(bstring candidates)
 {
+    bstring compiler = NULL;
     bstring path = bfromcstr(getenv("PATH"));
     struct bstrList *plist = NULL;
+    struct bstrList *clist = NULL;
     int (*ownaccess)(const char*, int) = access;
 
     plist = bsplit(path, ':');
+    clist = bsplit(candidates, ',');
 
-    for (int i = 0; i < plist->qty; i++)
+    for (int i = 0; i < plist->qty && (!compiler); i++)
     {
-        bstring tmp = bformat("%s/gcc", bdata(plist->entry[i]));
-        if (!ownaccess(bdata(tmp), R_OK|X_OK))
+        for (int j = 0; j < clist->qty && (!compiler); j++)
         {
-            bdestroy(path);
-            bstrListDestroy(plist);
-            return tmp;
+            bstring tmp = bformat("%s/%s", bdata(plist->entry[i]), bdata(clist->entry[j]));
+            if (!ownaccess(bdata(tmp), R_OK|X_OK))
+            {
+                compiler = bstrcpy(tmp);
+            }
+            bdestroy(tmp);
         }
-        bdestroy(tmp);
-        tmp = bformat("%s/icc", bdata(plist->entry[i]));
-        if (!ownaccess(bdata(tmp), R_OK|X_OK))
-        {
-            bdestroy(path);
-            bstrListDestroy(plist);
-            return tmp;
-        }
-        bdestroy(tmp);
-        tmp = bformat("%s/pgcc", bdata(plist->entry[i]));
-        if (!ownaccess(bdata(tmp), R_OK|X_OK))
-        {
-            bdestroy(path);
-            bstrListDestroy(plist);
-            return tmp;
-        }
-        bdestroy(tmp);
     }
     bdestroy(path);
     bstrListDestroy(plist);
-    return bfromcstr("");
+    bstrListDestroy(clist);
+    return compiler;
 }
 
-int compile_file(bstring compiler, bstring flags, bstring asmfile, bstring objfile)
+static int compile_file(bstring compiler, bstring flags, bstring asmfile, bstring objfile)
 {
     if (blength(compiler) == 0 || blength(asmfile) == 0)
         return -1;
     char buf[1024];
     bstring bstdout = bfromcstr("");
 
-
-/*    bcatcstr(outfile, basename(bdata(file)));*/
-/*    btrunc(outfile, blength(outfile)-1);*/
-/*    bconchar(outfile, 'o');*/
-/*    binsert(outfile, 0, outfolder, '\0');*/
 
     bstring cmd = bformat("%s %s %s -o %s", bdata(compiler), bdata(flags), bdata(asmfile), bdata(objfile));
 
@@ -522,6 +539,10 @@ int compile_file(bstring compiler, bstring flags, bstring asmfile, bstring objfi
             }
             bcatblk(bstdout, buf, ret);
         }
+        if (blength(bstdout) > 0)
+        {
+            fprintf(stderr, "%s\n", bdata(bstdout));
+        }
         pclose(fp);
     }
     bdestroy(cmd);
@@ -531,11 +552,10 @@ int compile_file(bstring compiler, bstring flags, bstring asmfile, bstring objfi
 }
 
 
-int open_function(bstring location, TestCase *testcase)
+static int open_function(bstring location, TestCase *testcase)
 {
     void* handle;
     char *error;
-    FuncPrototype func = NULL;
     void* (*owndlsym)(void*, const char*) = dlsym;
 
     dlerror();
@@ -556,75 +576,192 @@ int open_function(bstring location, TestCase *testcase)
     return 0;
 }
 
-void close_function(TestCase *testcase)
+
+int dynbench_test(bstring testname)
 {
-    if (testcase)
+    int exist = 0;
+    char* home = getenv("HOME");
+    if (!home)
     {
-        dlclose(testcase->dlhandle);
-        testcase->dlhandle = NULL;
-        testcase->kernel = NULL;
+        fprintf(stderr, "Failed to get $HOME from environment\n");
+        return exist;
     }
+    bstring path = bformat("%s/.likwid/bench/%s/%s.ptt", home, ARCHNAME, bdata(testname));
+    if (!access(bdata(path), R_OK))
+    {
+        exist = 1;
+    }
+    bdestroy(path);
+    return exist;
 }
 
-int ptt2asm(char* pttfile, TestCase **testcase, char* asmfile)
+int dynbench_load(bstring testname, TestCase **testcase, char* tmpfolder, char *compilers, char* compileflags)
 {
-    int err = 0;
+    int err = -1;
     TestCase *test = NULL;
-    struct bstrList* code = analyse_ptt(pttfile, &test);
-    if (code)
+    char* home = getenv("HOME");
+    if (!home)
     {
-        set_testname(pttfile, test);
-        if (asmfile)
+        fprintf(stderr, "Failed to get $HOME from environment\n");
+        return err;
+    }
+    bstring pttfile = bformat("%s/.likwid/bench/%s/%s.ptt", home, ARCHNAME, bdata(testname));
+    if (!access(bdata(pttfile), R_OK))
+    {
+        struct bstrList* code = analyse_ptt(pttfile, &test);
+        if (code && test)
         {
-            struct bstrList* asmb = parse_asm(test, code);
-            prepare_code(asmb);
-            write_asm(asmfile, asmb);
-            bstrListDestroy(asmb);
+            test->dlhandle = NULL;
+            test->kernel = NULL;
+            test->name = malloc((blength(testname)+2) * sizeof(char));
+            if (test->name)
+            {
+                int ret = snprintf(test->name, blength(testname)+1, "%s", bdata(testname));
+                if (ret > 0)
+                {
+                    test->name[ret] = '\0';
+                }
+                if (tmpfolder && compilers)
+                {
+                    pid_t pid = getpid();
+                    bstring buildfolder = bformat("%s/%ld", tmpfolder, pid);
+                    if (mkdir(bdata(buildfolder), 0700) == 0)
+                    {
+                        int asm_written = 0;
+                        bstring asmfile = bformat("%s/%ld/%s.S", tmpfolder , pid, bdata(testname));
+
+                        struct bstrList* asmb = parse_asm(test, code);
+                        if (asmb)
+                        {
+                            prepare_code(asmb);
+                            if (write_asm(asmfile, asmb) != 0)
+                            {
+                                fprintf(stderr, "Failed to write assembly to file %s\n", bdata(asmfile));
+                            }
+                            else
+                            {
+                                asm_written = 1;
+                            }
+                            bstrListDestroy(asmb);
+                        }
+                        else
+                        {
+                            fprintf(stderr, "Cannot parse assembly\n");
+                        }
+
+                        bstring candidates = bfromcstr(compilers);
+                        bstring compiler = get_compiler(candidates);
+                        if (asm_written && compiler)
+                        {
+                            int cret = 0;
+                            bstring cflags;
+                            if (compileflags)
+                            {
+                                cflags = bfromcstr(compileflags);
+                            }
+                            else
+                            {
+                                cflags = bfromcstr("");
+                            }
+                            bstring objfile = bformat("%s/%ld/%s.o", tmpfolder , pid, bdata(testname));
+                            cret = compile_file(compiler, cflags, asmfile, objfile);
+                            if (cret == 0)
+                            {
+                                cret = open_function(objfile, test);
+                                if (cret == 0)
+                                {
+                                    err = 0;
+                                    *testcase = test;
+                                }
+                                else
+                                {
+                                    fprintf(stderr, "Cannot load function %s from %s\n", bdata(testname), bdata(objfile));
+                                }
+                            }
+                            else
+                            {
+                                fprintf(stderr, "Cannot compile file %s to %s\n", bdata(asmfile), bdata(objfile));
+                            }
+                            bdestroy(cflags);
+                            bdestroy(objfile);
+                        }
+                        else
+                        {
+                            fprintf(stderr, "Cannot find any compiler %s\n", bdata(buildfolder));
+                        }
+                        bdestroy(candidates);
+                        bdestroy(compiler);
+                        bdestroy(asmfile);
+
+
+                    }
+                    else
+                    {
+                        fprintf(stderr, "Cannot create temporary directory %s\n", bdata(buildfolder));
+                        err = errno;
+                    }
+                    bdestroy(buildfolder);
+                }
+                else
+                {
+                    err = 0;
+                    *testcase = test;
+                }
+            }
+            else
+            {
+                fprintf(stderr, "Failed to allocate space for the testname\n");
+            }
+            bstrListDestroy(code);
+
         }
+        else
+        {
+            fprintf(stderr, "Cannot read ptt file %s\n", bdata(pttfile));
+        }
+
     }
     else
     {
-        err = 1;
+        fprintf(stderr, "Cannot open ptt file %s\n", bdata(pttfile));
     }
-    bstrListDestroy(code);
-    *testcase = test;
+    bdestroy(pttfile);
+
     return err;
 }
 
-
-int registerMapLength(RegisterMap* map)
+int dynbench_close(TestCase* testcase, char* tmpfolder)
 {
-    int i = 0;
-    while (strlen(map[i].pattern) > 0)
+    if (testcase)
     {
-        i++;
+        if (testcase->dlhandle)
+        {
+            dlclose(testcase->dlhandle);
+            testcase->dlhandle = NULL;
+            testcase->kernel = NULL;
+        }
+        if (tmpfolder)
+        {
+            pid_t pid = getpid();
+
+            bstring buildfolder = bformat("%s/%ld", tmpfolder, pid);
+            bstring asmfile = bformat("%s/%s.S", bdata(buildfolder), testcase->name);
+            bstring objfile = bformat("%s/%s.o", bdata(buildfolder), testcase->name);
+
+            if (!access(bdata(asmfile), R_OK)) unlink(bdata(asmfile));
+            if (!access(bdata(objfile), R_OK)) unlink(bdata(objfile));
+            if (!access(bdata(buildfolder), R_OK)) rmdir(bdata(buildfolder));
+
+            bdestroy(asmfile);
+            bdestroy(objfile);
+            bdestroy(buildfolder);
+        }
+        free(testcase->name);
+        testcase->name = NULL;
+        free(testcase->desc);
+        testcase->desc = NULL;
+        free(testcase);
+        testcase = NULL;
     }
-    return i;
+    return 0;
 }
-
-int registerMapMaxPattern(RegisterMap* map)
-{
-    int i = 0;
-    int max = 0;
-    while (strlen(map[i].pattern) > 0)
-    {
-        if (strlen(map[i].pattern) > max)
-            max = strlen(map[i].pattern);
-        i++;
-    }
-    return max;
-}
-
-/*int main()*/
-/*{*/
-/*    TestCase *testcase;*/
-/*    ptt2asm("x86-64/load.ptt", &testcase, "load.s");*/
-/*    free_testcase(testcase);*/
-
-/*    struct bstrList* l = get_benchmarks();*/
-/*    if (l)*/
-/*    {*/
-/*        for (int i = 0; i < l->qty; i++)*/
-/*            printf("%s\n", bdata(l->entry[i]));*/
-/*    }*/
-/*}*/
