@@ -741,8 +741,6 @@ for i, event_string in pairs(event_string_list) do
         end
         local gid = likwid.addEventSet(event_string)
         if gid < 0 then
-            likwid.putTopology()
-            likwid.putConfiguration()
             likwid.finalize()
             os.exit(1)
         end
@@ -751,8 +749,6 @@ for i, event_string in pairs(event_string_list) do
 end
 if #group_ids == 0 then
     print_stderr("ERROR: No valid eventset given on commandline. Exiting...")
-    likwid.putTopology()
-    likwid.putConfiguration()
     likwid.finalize()
     os.exit(1)
 end
@@ -838,7 +834,7 @@ if use_wrapper or use_timeline then
 
     start = likwid.startClock()
     groupTime[activeGroup] = 0
-    
+
     while true do
         if likwid.getSignalState() ~= 0 then
             if #execList > 0 then
@@ -856,7 +852,7 @@ if use_wrapper or use_timeline then
         end
 
         if use_timeline == true then
-            
+
             stop = likwid.stopClock()
             xstart = likwid.startClock()
             likwid.readCounters()
@@ -920,8 +916,6 @@ if not use_marker then
     if ret < 0 then
         print_stderr(string.format("Error stopping counters for thread %d.",ret * (-1)))
         likwid.finalize()
-        likwid.putTopology()
-        likwid.putConfiguration()
         os.exit(exitvalue)
     end
 end
@@ -992,7 +986,4 @@ if outfile then
 end
 
 likwid.finalize()
-likwid.putTopology()
-likwid.putNumaInfo()
-likwid.putConfiguration()
 os.exit(exitvalue)
