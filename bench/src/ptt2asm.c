@@ -459,11 +459,11 @@ struct bstrList* dynbench_getall()
         dp = ownopendir(bdata(path));
         if (dp != NULL)
         {
-            list = bstrListCreate();
             while (ep = readdir(dp))
             {
                 if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".ptt", 4) == 0)
                 {
+                    if (!list) list = bstrListCreate();
                     totalgroups++;
                     bstring dname = bfromcstr(ep->d_name);
                     btrunc(dname, blength(dname)-4);
