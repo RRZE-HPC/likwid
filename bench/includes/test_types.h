@@ -96,6 +96,8 @@ typedef struct {
     int instr_const;
     int instr_loop;
     int uops;
+    int loadstores;
+    void* dlhandle;
 } TestCase;
 
 typedef struct {

@@ -19,6 +19,8 @@ likwid-bench \- low-level benchmark suite and microbenchmarking framework
 .IR <delimiter> ]
 .RB [ \-i
 .IR <iterations> ]
+.RB [ \-f
+.IR <filepath> ]
 .SH DESCRIPTION
 .B likwid-bench
 is a benchmark suite for low-level (assembly) benchmarks to measure bandwidths and instruction throughput for specific instruction code on x86 systems. The currently included benchmark codes include common data access patterns like load and store but also calculations like vector triad and sum.
@@ -31,7 +33,7 @@ as a wrapper to
 .B likwid-bench.
 This requires to build
 .B likwid-bench
-with instrumentation enabled in config.mk.
+with instrumentation enabled in config.mk. Benchmarks can be dynamically added when a proper ptt file is present at $HOME/.likwid/bench/<arch>/<testname>.ptt . The files are compiled to a .S file and compiled using either gcc, icc or pgcc (searched in $PATH). The default folder is /tmp/<PID>.
 .SH OPTIONS
 .TP
 .B \-\^h
@@ -62,6 +64,9 @@ list properties of a benchmark code.
 .TP
 .B \-\^i <iterations>
 Set the number of iterations per thread (optional)
+.TP
+.B \-\^f <filepath>
+Filepath for the dynamic generation of benchmarks. Default /tmp/. <PID> is always attached
 
 .SH WORKGROUP SYNTAX
 
@@ -103,7 +108,7 @@ benchmark on socket 0 (
 .TP
 .B likwid-bench -t copy -w S0:100kB
 .PP
-Since no 
+Since no
 .B <num_threads>
 is given in the workload expression, each core of socket 0 gets one thread. The workload is split up between all threads and the number of iterations is determined automatically.
 .IP 2. 4
