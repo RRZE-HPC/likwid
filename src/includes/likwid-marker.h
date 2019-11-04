@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  likwid-cpumarker.h
+ *      Filename:  likwid-marker.h
  *
- *      Description:  Header File of likwid CPU Marker API
+ *      Description:  Header File of likwid Marker API
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -28,8 +28,8 @@
  *
  * =======================================================================================
  */
-#ifndef LIKWID_CPUMARKER_H
-#define LIKWID_CPUMARKER_H
+#ifndef LIKWID_MARKER_H
+#define LIKWID_MARKER_H
 
 
 /** \addtogroup MarkerAPI Marker API module
@@ -96,4 +96,4 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #define LIKWID_MARKER_RESET(regionTag)
 #endif /* LIKWID_PERFMON */
 
-#endif /* LIKWID_CPUMARKER_H */
+#endif /* LIKWID_MARKER_H */
