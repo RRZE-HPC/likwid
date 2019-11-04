@@ -25,8 +25,9 @@ DP [MFLOP/s] (SSE assumed) = 1.0E-06*(RETIRED_SSE_AVX_FLOPS_DOUBLE_ADD_MULT_DIV 
 DP [MFLOP/s] (AVX assumed) = 1.0E-06*(RETIRED_SSE_AVX_FLOPS_DOUBLE_ADD_MULT_DIV + (RETIRED_MMX_FP_INSTR_ALL*2)+(RETIRED_SSE_AVX_FLOPS_DOUBLE_FMA*2))/time
 -
 Profiling group to measure double precisision FLOP rate. The Zen architecture
-does not provide distinct events for SSE and AVX FLOPs. Moreover, scalar FP
-instructions are counted as SSE instruction in RETIRED_MMX_FP_INSTR_ALL.
-Therefore, you have to select the DP MFLOP/s metric based on the measured code.
+does not provide distinct events for SSE and AVX FLOPs. Moreover, all FP
+instructions are counted in RETIRED_MMX_FP_INSTR_ALL.
+Therefore, you have to select the SP MFLOP/s metric based on the measured code.
+Moreover, the SSE and AVX metrics overcount but SSE metrics are more accurate.
 
 
