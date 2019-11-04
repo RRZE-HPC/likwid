@@ -544,6 +544,14 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
                                     event->numberOfOptions, EVENT_OPTION_PERF_FLAGS, 0);
             }
 #endif
+            else if (biseqcstr(subtokens->entry[0], "config") == 1)
+            {
+                event->eventId = strtoull(bdata(subtokens->entry[1]), NULL, 16);
+            }
+            else if (biseqcstr(subtokens->entry[0], "umask") == 1)
+            {
+                event->umask = strtoull(bdata(subtokens->entry[1]), NULL, 16);
+            }
             else
             {
                 fprintf(stderr, "WARN: Option '%s' unknown, skipping option\n", bdata(subtokens->entry[0]));
@@ -1227,6 +1235,43 @@ perfmon_init_maps(void)
             ERROR_PLAIN_PRINT(Unsupported Processor);
             break;
     }
+    if (eventHash)
+    {
+        PerfmonEvent* tmp = malloc((perfmon_numArchEvents+10)*sizeof(PerfmonEvent));
+        if (tmp)
+        {
+            memcpy(tmp, eventHash, perfmon_numArchEvents*sizeof(PerfmonEvent));
+            eventHash = tmp;
+            eventHash[perfmon_numArchEvents].name = "GENERIC_EVENT";
+            bstring blim = bfromcstr("PMC");
+            for (int i = 0; i < perfmon_numArchEvents; i++)
+            {
+                bstring x = bfromcstr(eventHash[i].limit);
+                if (binstr(blim, 0, x) == BSTR_ERR)
+                {
+                    bconchar(blim, '|');
+                    bconcat(blim, x);
+                }
+                bdestroy(x);
+            }
+            eventHash[perfmon_numArchEvents].limit = malloc((blength(blim)+2)*sizeof(char));
+            int ret = snprintf(eventHash[perfmon_numArchEvents].limit,
+                               blength(blim)+1, "%s", bdata(blim));
+            if (ret > 0)
+            {
+                eventHash[perfmon_numArchEvents].limit[ret] = '\0';
+            }
+            bdestroy(blim);
+            eventHash[perfmon_numArchEvents].optionMask = EVENT_OPTION_GENERIC_CONFIG_MASK|EVENT_OPTION_GENERIC_UMASK_MASK;
+            eventHash[perfmon_numArchEvents].numberOfOptions = 2;
+            eventHash[perfmon_numArchEvents].options[0].type = EVENT_OPTION_GENERIC_CONFIG;
+            eventHash[perfmon_numArchEvents].options[0].value = 0x0ULL;
+            eventHash[perfmon_numArchEvents].options[1].type = EVENT_OPTION_GENERIC_UMASK;
+            eventHash[perfmon_numArchEvents].options[1].value = 0x0ULL;
+            perfmon_numArchEvents++;
+        }
+    }
+
     return;
 }
 
@@ -1751,6 +1796,11 @@ perfmon_finalize(void)
 #ifndef LIKWID_USE_PERFEVENT
     HPMfinalize();
 #endif
+    if (eventHash)
+    {
+        free(eventHash[perfmon_numArchEvents-1].limit);
+        free(eventHash);
+    }
     perfmon_initialized = 0;
     groupSet = NULL;
     return;
