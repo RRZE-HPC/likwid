@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <likwid-cpumarker.h>
+#include <likwid-marker.h>
 
 int main(int argc, char* argv[])
 {

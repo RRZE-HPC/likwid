@@ -17,7 +17,7 @@
 #define SIZE 40000000
 
 #define gettid() syscall(SYS_gettid)
-#include <likwid-cpumarker.h>
+#include <likwid-marker.h>
 #define HLINE "-------------------------------------------------------------\n"
 
 #ifndef MIN
@@ -246,4 +246,3 @@ int main(int argn, char** argc)
     free(d);
     return 0;
 }
-

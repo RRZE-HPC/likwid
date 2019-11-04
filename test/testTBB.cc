@@ -15,7 +15,7 @@
 
 // Added by Thomas Roehl
 #include <sched.h>
-#include <likwid-cpumarker.h>
+#include <likwid-marker.h>
 
 
 struct mytask {
@@ -23,10 +23,10 @@ struct mytask {
     :_n(n)
   {}
   void operator()() {
-    
+
     for (int i=0;i<10000000;++i) {}  // Deliberately run slow
     std::cerr << "[" << sched_getcpu() << "]";
-    
+
   }
   size_t _n;
 };
