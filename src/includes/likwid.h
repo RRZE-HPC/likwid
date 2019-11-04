@@ -828,7 +828,6 @@ extern int perfmon_getIdOfActiveGroup(void) __attribute__ ((visibility ("default
 */
 extern int perfmon_getNumberOfThreads(void) __attribute__ ((visibility ("default") ));
 
-
 /*! \brief Set verbosity of LIKWID library
 
 */
@@ -850,6 +849,7 @@ Get the counter name as defined in the performance group file
 @return The counter name or NULL in case of failure
 */
 extern char* perfmon_getCounterName(int groupId, int eventId) __attribute__ ((visibility ("default") ));
+
 /*! \brief Get the name group
 
 Get the name of group. Either it is the name of the performance group or "Custom"
@@ -968,6 +968,217 @@ extern double perfmon_getResultOfRegionThread(int region, int event, int thread)
 @return Metric result of a region for a thread
 */
 extern double perfmon_getMetricOfRegionThread(int region, int metricId, int threadId) __attribute__ ((visibility ("default") ));
+
+/** @}*/
+
+/*
+################################################################################
+# Performance group related functions
+################################################################################
+*/
+
+/** \addtogroup PerfGroup performance group module
+ *  @{
+ */
+
+/*! \brief The groupInfo data structure describes a performance group
+
+Groups can be either be read in from file or be a group with custom event set. For
+performance groups commonly all values are set. For groups with custom event set,
+the fields groupname and shortinfo are set to 'Custom', longinfo is NULL and in
+general the nmetrics value is 0.
+*/
+typedef struct {
+    char* groupname; /*!< \brief Name of the group: performance group name or 'Custom' */
+    char* shortinfo; /*!< \brief Short info string for the group or 'Custom' */
+    int nevents; /*!< \brief Number of event/counter combinations */
+    char** events; /*!< \brief List of events */
+    char** counters; /*!< \brief List of counter registers */
+    int nmetrics; /*!< \brief Number of metrics */
+    char** metricnames; /*!< \brief Metric names */
+    char** metricformulas; /*!< \brief Metric formulas */
+    char* longinfo; /*!< \brief Descriptive text about the group or empty */
+} GroupInfo;
+
+/*! \brief Initialize values in GroupInfo struct
+
+Initialize values in GroupInfo struct. The function does NOT allocate the GroupInfo struct
+*/
+int perfgroup_new(GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+
+/*! \brief Add a counter and event combination to the group
+
+Add a counter and event combination to the group.
+@param [in] ginfo GroupInfo struct
+@param [in] counter String with counter name
+@param [in] event String with event name
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_addEvent(GroupInfo* ginfo, char* counter, char* event) __attribute__ ((visibility ("default") ));
+
+/*! \brief Remove a counter and event combination from a group
+
+Remove a counter and event combination from a group
+@param [in] ginfo GroupInfo struct
+@param [in] counter String with counter name
+*/
+void perfgroup_removeEvent(GroupInfo* ginfo, char* counter) __attribute__ ((visibility ("default") ));
+
+/*! \brief Add a metric to the group
+
+Add a metric to the group
+@param [in] ginfo GroupInfo struct
+@param [in] mname String with metric name/description
+@param [in] mcalc String with metric formula. No spaces in string.
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_addMetric(GroupInfo* ginfo, char* mname, char* mcalc) __attribute__ ((visibility ("default") ));
+/*! \brief Remove a metric from a group
+
+Remove a metric from a group
+@param [in] ginfo GroupInfo struct
+@param [in] counter String with counter name
+*/
+void perfgroup_removeMetric(GroupInfo* ginfo, char* mname) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the event string of a group needed for perfmon_addEventSet
+
+Get the event string of a group needed for perfmon_addEventSet
+@param [in] ginfo GroupInfo struct
+@return String with eventset or NULL
+*/
+char* perfgroup_getEventStr(GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+/*! \brief Return the eventset string of a group
+
+Return the event string of a group
+@param [in] eventStr Eventset string
+*/
+void perfgroup_returnEventStr(char* eventStr) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the group name of a group
+
+Get the group name of a group
+@param [in] ginfo GroupInfo struct
+@return String with group name or NULL
+*/
+char* perfgroup_getGroupName(GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+/*! \brief Set the group name of a group
+
+Set the group name of a group. String must be zero-terminated
+@param [in] ginfo GroupInfo struct
+@param [in] groupName String with group name
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_setGroupName(GroupInfo* ginfo, char* groupName) __attribute__ ((visibility ("default") ));
+/*! \brief Return the group name string of a group
+
+Return the group name string of a group
+@param [in] gname Group name string
+*/
+void perfgroup_returnGroupName(char* gname) __attribute__ ((visibility ("default") ));
+
+
+/*! \brief Set the short information string of a group
+
+Set the short information string of a group. String must be zero-terminated
+@param [in] ginfo GroupInfo struct
+@param [in] shortInfo String with short information
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_setShortInfo(GroupInfo* ginfo, char* shortInfo) __attribute__ ((visibility ("default") ));
+/*! \brief Get the short information string of a group
+
+Get the short information string of a group
+@param [in] ginfo GroupInfo struct
+@return String with short information or NULL
+*/
+char* perfgroup_getShortInfo(GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+/*! \brief Return the short information string of a group
+
+Return the short information string of a group
+@param [in] sinfo Short information string
+*/
+void perfgroup_returnShortInfo(char* sinfo) __attribute__ ((visibility ("default") ));
+
+/*! \brief Set the long information string of a group
+
+Set the long information string of a group. String must be zero-terminated
+@param [in] ginfo GroupInfo struct
+@param [in] longInfo String with long information
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_setLongInfo(GroupInfo* ginfo, char* longInfo) __attribute__ ((visibility ("default") ));
+/*! \brief Get the long information string of a group
+
+Get the long information string of a group
+@param [in] ginfo GroupInfo struct
+@return String with long information or NULL
+*/
+char* perfgroup_getLongInfo(GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+/*! \brief Return the long information string of a group
+
+Return the long information string of a group
+@param [in] sinfo Long information string
+*/
+void perfgroup_returnLongInfo(char* linfo) __attribute__ ((visibility ("default") ));
+
+/*! \brief Merge two groups
+
+Merge two groups (group2 into group1).
+@param [in,out] grp1 Group1
+@param [in] grp2 Group2
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_mergeGroups(GroupInfo* grp1, GroupInfo* grp2) __attribute__ ((visibility ("default") ));
+
+/*! \brief Read group from file
+
+Read group from file
+@param [in] grouppath Base path to all groups
+@param [in] architecture Architecture string (e.g. short_info in cpuid_info)
+@param [in] groupname Group name
+@param [in,out] ginfo Group filled with data from file
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_readGroup(const char* grouppath, const char* architecture, const char* groupname, GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+/*! \brief Create group from event string
+
+Create group from event string (list of event:counter(:opts)).
+@param [in] eventStr event string
+@param [in,out] ginfo Group filled with data from event string
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+
+/*! \brief Return group
+
+Return group (frees internal lists)
+@param [in] ginfo Performance group info
+*/
+void perfgroup_returnGroup(GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+/*! \brief Get all groups available in the system (base + user home)
+
+Get all groups available in the system (base + user home)
+@param [in] grouppath Base path to all groups
+@param [in] architecture Architecture string (e.g. short_info in cpuid_info)
+@param [out] groupnames List of group names
+@param [out] groupshort List of groups' short information string
+@param [out] grouplong List of groups' long information string
+@return number of groups, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_getGroups( const char* grouppath, const char* architecture, char*** groupnames, char*** groupshort, char*** grouplong) __attribute__ ((visibility ("default") ));
+/*! \brief Return list of all groups
+
+Return list of all groups
+@param [in] groups Number of groups
+@param [in] groupnames List of group names
+@param [in] groupshort List of groups' short information string
+@param [in] grouplong List of groups' long information string
+*/
+void perfgroup_returnGroups(int groups, char** groupnames, char** groupshort, char** grouplong) __attribute__ ((visibility ("default") ));
+
+
+
 
 /** @}*/
 
