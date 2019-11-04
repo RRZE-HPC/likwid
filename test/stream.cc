@@ -4,7 +4,7 @@
 #include <string>
 #include <atomic>
 #include <thread>
-#include <likwid-cpumarker.h>
+#include <likwid-marker.h>
 #include <sched.h>
 #include <syscall.h>
 #include <sys/time.h>

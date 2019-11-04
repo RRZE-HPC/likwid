@@ -51,7 +51,7 @@
 #include <ptt2asm.h>
 
 #include <likwid.h>
-#include <likwid-cpumarker.h>
+#include <likwid-marker.h>
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)

@@ -4,7 +4,7 @@
 #include <omp.h>
 #include <unistd.h>
 
-#include <likwid-cpumarker.h>
+#include <likwid-marker.h>
 
 #define SIZE 1000000
 
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
 
             LIKWID_MARKER_START("plain");
             for (int k = 0; k < (threadId+1); k++)  {
-                for (int i = 0; i < SIZE; i++) 
+                for (int i = 0; i < SIZE; i++)
                 {
                     a[i] = b[i] + alpha * c[i];
                     sum += a[i];

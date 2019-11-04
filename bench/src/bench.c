@@ -43,7 +43,7 @@
 #include <threads.h>
 #include <barrier.h>
 //#include <likwid.h>
-#include <likwid-cpumarker.h>
+#include <likwid-marker.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
@@ -797,4 +797,3 @@ getIterSingle(void* arg)
 #endif
     return NULL;
 }
-
