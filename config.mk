@@ -68,6 +68,11 @@ BUILDFREQ = true#NO SPACE
 FREQDAEMON = $(PREFIX)/sbin/likwid-setFreq#NO SPACE
 INSTALLED_FREQDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-setFreq#NO SPACE
 
+# Build the appDaemon. It's not really a daemon but an LD_PRELOAD library
+# It is required to get access to the application context.
+BUILDAPPDAEMON=true
+APPDAEMON = $(PREFIX)/lib/likwid-appDaemon.so#NO SPACE
+INSTALLED_APPDAEMON = $(INSTALLED_PREFIX)/lib/likwid-appDaemon.so#NO SPACE
 
 # chown installed tools to this user/group
 # if you change anything here, make sure that the user/group can access
