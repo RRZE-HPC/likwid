@@ -1291,7 +1291,7 @@ int perfmon_startCountersThread_broadwell(int thread_id, PerfmonEventSet* eventS
         }
     }
 
-    BDW_UNFREEZE_UNCORE_AND_RESET_CTR;
+    BDW_UNFREEZE_UNCORE;
 
     if (MEASURE_CORE(eventSet))
     {
