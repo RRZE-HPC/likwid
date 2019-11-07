@@ -282,7 +282,7 @@ distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TA
 	@rm -f $(DYNAMIC_TARGET_LIB)*
 	@rm -f $(PINLIB)*
 	@rm -f $(FORTRAN_IF_NAME)
-	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
+	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET) $(APPDAEMON_TARGET)
 	@rm -rf $(BUILD_DIR)
 	@rm -rf $(TARGET_LUA_LIB).* $(shell basename $(TARGET_LUA_LIB)).*
 	@rm -rf $(TARGET_HWLOC_LIB).* $(shell basename $(TARGET_HWLOC_LIB)).*
