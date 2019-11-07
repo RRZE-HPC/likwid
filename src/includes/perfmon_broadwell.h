@@ -1092,6 +1092,7 @@ int perfmon_setupCounterThread_broadwell(
 
             case POWER:
             case THERMAL:
+            case MBOX0TMP:
                 break;
 
             case UBOX:
@@ -1261,7 +1262,22 @@ int perfmon_startCountersThread_broadwell(int thread_id, PerfmonEventSet* eventS
                         eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
                     }
                     break;
-
+                case MBOX0:
+                    if (haveLock)
+                    {
+                        if (!cpuid_info.supportClientmem)
+                        {
+                            VERBOSEPRINTREG(cpu_id, counter1, 0x0ULL, CLEAR_BOX)
+                            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
+                        }
+                        else
+                        {
+                            CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
+                            eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST tmp, READ_MBOX)
+                        }
+                    }
+                    break;
                 case WBOX0FIX:
                     if (haveLock)
                     {
@@ -1488,20 +1504,25 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                     break;
 
                 case MBOX0:
-                    if (!cpuid_info.supportClientmem)
+                case MBOX0TMP:
+                    if (haveLock)
                     {
-                        bdw_uncore_read(cpu_id, index, event, &counter_result, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index)+1);
-                    }
-                    else
-                    {
-                        if (haveLock)
+                        if (!cpuid_info.supportClientmem)
                         {
-                            uint64_t tmp = 0x0;
-                            CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
-                            eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
-                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST tmp, READ_MBOX)
+                            bdw_uncore_read(cpu_id, index, event, current, overflows,
+                                            FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index)+1);
+                            counter_result = *current;
                         }
+                        else
+                        {
+                            CHECK_MSR_READ_ERROR(HPMread(cpu_id, PCI_IMC_DEVICE_0_CH_0, counter1, &counter_result));
+                            if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                            {
+                                VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_CLIENTMEM)
+                                eventSet->events[i].threadCounter[thread_id].overflows++;
+                            }
+                        }
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
                     }
                     break;
                 case MBOX1:
@@ -1711,6 +1732,7 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                     break;
 
                 case MBOX0:
+                case MBOX0TMP:
                     if (!cpuid_info.supportClientmem)
                     {
                         bdw_uncore_read(cpu_id, index, event, current, overflows,
@@ -1727,7 +1749,8 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                         *current = counter_result;
                         VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
                     }
-                    
+                    break;
+
                 case MBOX1:
                 case MBOX2:
                 case MBOX3:
