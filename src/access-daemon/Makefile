@@ -28,13 +28,11 @@
 
 include  ../../config.mk
 include  ../../make/include_$(COMPILER).mk
-include  ../../make/config_git.mk
-include  ../../make/config_checks.mk
-include  ../../make/config_defines.mk
 
 DAEMON_TARGET = likwid-accessD
 SETFREQ_TARGET = likwid-setFreq
 APPDAEMON_TARGET = likwid-appDaemon.so
+GOTCHA_FOLDER = ../../ext/GOTCHA
 Q         ?= @
 
 DEFINES   += -D_GNU_SOURCE -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) -DMAX_NUM_NODES=$(MAX_NUM_NODES) -DLIKWIDLOCK=$(LIKWIDLOCKPATH) -DLIKWIDSOCKETBASE=$(LIKWIDSOCKETBASE)
@@ -55,7 +53,7 @@ $(DAEMON_TARGET): accessDaemon.c
 	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c
 
 $(SETFREQ_TARGET): setFreqDaemon.c
-	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -I. -o ../../$(SETFREQ_TARGET) setFreqDaemon.c
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(SETFREQ_TARGET) setFreqDaemon.c
 
 $(APPDAEMON_TARGET): $(GOTCHA_TARGET) appDaemon.c
-	$(Q)$(CC) -shared -fPIC -Wl,-soname,$(APPDAEMON_TARGET).$(VERSION).$(RELEASE) -fstack-protector -I. -I../includes -I$(GOTCHA_FOLDER)/include -L$(GOTCHA_FOLDER) appDaemon.c -o ../../$(APPDAEMON_TARGET)  -llikwid-gotcha
+	$(Q)$(CC) -shared -fPIC $(CPPFLAGS) -Wl,-soname,$(APPDAEMON_TARGET).$(VERSION).$(RELEASE) -fstack-protector -I. -I$(GOTCHA_FOLDER)/include  -L$(GOTCHA_FOLDER) appDaemon.c -o ../../$(APPDAEMON_TARGET)  -llikwid-gotcha
