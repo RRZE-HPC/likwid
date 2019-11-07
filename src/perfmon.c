@@ -1893,9 +1893,9 @@ perfmon_addEventSet(const char* eventCString)
 
     if (strchr(cstringcopy, ':') == NULL)
     {
-        err = read_group(config->groupPath, cpuid_info.short_name,
-                         cstringcopy,
-                         &groupSet->groups[groupSet->numberOfActiveGroups].group);
+        err = perfgroup_readGroup(config->groupPath, cpuid_info.short_name,
+                                  cstringcopy,
+                                  &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err == -EACCES)
         {
             ERROR_PRINT(Access to performance group %s not allowed, cstringcopy);
@@ -1915,14 +1915,14 @@ perfmon_addEventSet(const char* eventCString)
     }
     else
     {
-        err = custom_group(cstringcopy, &groupSet->groups[groupSet->numberOfActiveGroups].group);
+        err = perfgroup_customGroup(cstringcopy, &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err)
         {
             ERROR_PRINT(Cannot transform %s to performance group, cstringcopy);
             return err;
         }
     }
-    char * evstr = get_eventStr(&groupSet->groups[groupSet->numberOfActiveGroups].group);
+    char * evstr = perfgroup_getEventStr(&groupSet->groups[groupSet->numberOfActiveGroups].group);
     if (perf_pid != NULL)
     {
         char* tmp = realloc(evstr, strlen(evstr)+strlen(perf_pid)+1);
@@ -2093,7 +2093,7 @@ past_checks:
         fprintf(stderr,"       Either the events or counters do not exist for the\n");
         fprintf(stderr,"       current architecture. If event options are set, they might\n");
         fprintf(stderr,"       be invalid.\n");
-        return_group(&groupSet->groups[groupSet->numberOfActiveGroups].group);
+        perfgroup_returnGroup(&groupSet->groups[groupSet->numberOfActiveGroups].group);
         for(j = 0; j < eventSet->numberOfEvents; j++)
         {
             PerfmonEventSetEntry* event = &(eventSet->events[j]);
@@ -2109,7 +2109,7 @@ perfmon_delEventSet(int groupID)
 {
     if (groupID >= groupSet->numberOfGroups || groupID < 0)
         return;
-    return_group(&groupSet->groups[groupID].group);
+    perfgroup_returnGroup(&groupSet->groups[groupID].group);
     return;
 }
 
@@ -3054,14 +3054,14 @@ perfmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
     int ret = 0;
     init_configuration();
     Configuration_t config = get_configuration();
-    ret = get_groups(config->groupPath, cpuid_info.short_name, groups, shortinfos, longinfos);
+    ret = perfgroup_getGroups(config->groupPath, cpuid_info.short_name, groups, shortinfos, longinfos);
     return ret;
 }
 
 void
 perfmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos)
 {
-    return_groups(nrgroups, groups, shortinfos, longinfos);
+    perfgroup_returnGroups(nrgroups, groups, shortinfos, longinfos);
 }
 
 int
