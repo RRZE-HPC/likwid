@@ -1383,6 +1383,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                     }
                     break;
                 case MBOX0:
+                case MBOX0TMP:
                     if (haveLock)
                     {
                         if (!cpuid_info.supportClientmem)
@@ -1608,6 +1609,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                     }
                     break;
                 case MBOX0:
+                case MBOX0TMP:
                     if (haveLock)
                     {
                         if (!cpuid_info.supportClientmem)

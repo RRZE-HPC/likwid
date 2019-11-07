@@ -1092,7 +1092,6 @@ int perfmon_setupCounterThread_broadwell(
 
             case POWER:
             case THERMAL:
-            case MBOX0TMP:
                 break;
 
             case UBOX:

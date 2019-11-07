@@ -166,6 +166,7 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [MBOX5FIX] = "Memory Controller 1 Channel 1 Fixed Counter",
     [MBOX6FIX] = "Memory Controller 1 Channel 2 Fixed Counter",
     [MBOX7FIX] = "Memory Controller 1 Channel 3 Fixed Counter",
+    [MBOX0TMP] = "PP0/PP1 Temperature Sensor",
     [BBOX0] = "Home Agent box 0",
     [BBOX1] = "Home Agent box 1",
     [RBOX0] = "Routing box 0",

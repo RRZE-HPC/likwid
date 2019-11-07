@@ -801,3 +801,9 @@ UMASK_DRAM_READS                         0x01
 
 EVENT_DRAM_WRITES                        0x02 MBOX0C2
 UMASK_DRAM_WRITES                        0x02
+
+EVENT_PP0_TEMP                        0x00 MBOX0TMP0
+UMASK_PP0_TEMP                        0x00
+
+EVENT_PP1_TEMP                        0x01 MBOX0TMP1
+UMASK_PP1_TEMP                        0x01

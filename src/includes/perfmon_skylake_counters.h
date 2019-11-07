@@ -29,7 +29,7 @@
  * =======================================================================================
  */
 
-#define NUM_COUNTERS_SKYLAKE 31
+#define NUM_COUNTERS_SKYLAKE 33
 #define NUM_COUNTERS_CORE_SKYLAKE 12
 #define NUM_COUNTERS_UNCORE_SKYLAKE 24
 
@@ -77,6 +77,8 @@ static RegisterMap skylake_counter_map[NUM_COUNTERS_SKYLAKE] = {
     {"MBOX0C0", PMC28, MBOX0, 0x0, 0x0, 0, PCI_IMC_DEVICE_0_CH_0},
     {"MBOX0C1", PMC29, MBOX0, 0x0, 0x1, 0, PCI_IMC_DEVICE_0_CH_0},
     {"MBOX0C2", PMC30, MBOX0, 0x0, 0x2, 0, PCI_IMC_DEVICE_0_CH_0},
+    {"MBOX0TMP0", PMC31, MBOX0TMP, 0x0, 0x3, 0, PCI_IMC_DEVICE_0_CH_0},
+    {"MBOX0TMP1", PMC32, MBOX0TMP, 0x0, 0x4, 0, PCI_IMC_DEVICE_0_CH_0},
 };
 
 
