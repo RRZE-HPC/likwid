@@ -63,7 +63,9 @@ void *gotcha_malloc(size_t size)
 {
    malloc_link_t *cur, *prev, *newalloc;
    malloc_link_t *best_fit = NULL, *best_fit_prev;
-   ssize_t best_fit_diff, diff, block_size;
+   // Initialization of best_fit_diff to SIZE_MAX added by Thomas Gruber to
+   // avoid warnings
+   ssize_t best_fit_diff = SIZE_MAX, diff, block_size;
    void *result;
 
    if (size < MIN_SIZE)
