@@ -275,7 +275,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
 /*                    currentConfig[cpu_id][index] = 0x0ULL;*/
 /*                }*/
             }
-            else if ((force == 0) && ((type != FIXED)&&(type != THERMAL)&&(type != POWER)&&(type != WBOX0FIX)))
+            else if ((force == 0) && ((type != FIXED)&&(type != THERMAL)&&(type != POWER)&&(type != WBOX0FIX)&&(type != MBOX0TMP)))
             {
                 fprintf(stderr, "ERROR: The selected register %s is in use.\n", counter_map[index].key);
                 fprintf(stderr, "Please run likwid with force option (-f, --force) to overwrite settings\n");
@@ -671,7 +671,8 @@ calculateResult(int groupId, int eventId, int threadId)
     {
         result *= power_getEnergyUnit(getCounterTypeOffset(event->index));
     }
-    else if (counter_map[event->index].type == THERMAL)
+    else if ((counter_map[event->index].type == THERMAL) ||
+             (counter_map[event->index].type == MBOX0TMP))
     {
         result = (double)counter->counterData;
     }
@@ -2519,6 +2520,14 @@ perfmon_getResult(int groupId, int eventId, int threadId)
 
     if ((groupSet->groups[groupId].events[eventId].threadCounter[threadId].fullResult == 0) ||
         (groupSet->groups[groupId].events[eventId].type == THERMAL) ||
+        (groupSet->groups[groupId].events[eventId].type == MBOX0TMP) ||
+        (groupSet->groups[groupId].events[eventId].type == MBOX1TMP) ||
+        (groupSet->groups[groupId].events[eventId].type == MBOX2TMP) ||
+        (groupSet->groups[groupId].events[eventId].type == MBOX3TMP) ||
+        (groupSet->groups[groupId].events[eventId].type == MBOX4TMP) ||
+        (groupSet->groups[groupId].events[eventId].type == MBOX5TMP) ||
+        (groupSet->groups[groupId].events[eventId].type == MBOX6TMP) ||
+        (groupSet->groups[groupId].events[eventId].type == MBOX7TMP) ||
         (groupSet->groups[groupId].events[eventId].type == QBOX0FIX) ||
         (groupSet->groups[groupId].events[eventId].type == QBOX1FIX) ||
         (groupSet->groups[groupId].events[eventId].type == QBOX2FIX) ||
