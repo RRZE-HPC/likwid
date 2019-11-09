@@ -58,28 +58,33 @@ perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
     return ret;
 }
 
+int perfevent_paranoid_value()
+{
+    FILE* fd;
+    int paranoid = 3;
+    char buff[100];
+    fd = fopen("/proc/sys/kernel/perf_event_paranoid", "r");
+    if (fd == NULL)
+    {
+        fprintf(stderr, "ERROR: Linux kernel has no perf_event support\n");
+        fprintf(stderr, "ERROR: Cannot open file /proc/sys/kernel/perf_event_paranoid\n");
+        return paranoid;
+    }
+    size_t read = fread(buff, sizeof(char), 100, fd);
+    if (read > 0)
+    {
+        paranoid = atoi(buff);
+    }
+    fclose(fd);
+    return paranoid;
+}
+
 int perfmon_init_perfevent(int cpu_id)
 {
-    size_t read;
     int paranoid = -1;
-    char buff[100];
-    FILE* fd;
     if (!informed_paranoid)
     {
-        fd = fopen("/proc/sys/kernel/perf_event_paranoid", "r");
-        if (fd == NULL)
-        {
-            fprintf(stderr, "ERROR: Linux kernel has no perf_event support\n");
-            fprintf(stderr, "ERROR: Cannot open file /proc/sys/kernel/perf_event_paranoid\n");
-            fclose(fd);
-            exit(EXIT_FAILURE);
-        }
-        read = fread(buff, sizeof(char), 100, fd);
-        if (read > 0)
-        {
-            paranoid_level = atoi(buff);
-        }
-        fclose(fd);
+        paranoid_level = perfevent_paranoid_value();
 #if defined(__x86_64__) || defined(__i386__) || defined(_ARCH_PPC)
         if (paranoid_level > 0 && getuid() != 0)
         {
@@ -341,13 +346,13 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     {
         case PERF_EVENT_CONFIG_REG:
             attr->config |= create_mask(getCounterTypeOffset(index)+1,start, end);
-	    break;
+            break;
         case PERF_EVENT_CONFIG1_REG:
             attr->config1 |= create_mask(getCounterTypeOffset(index)+1,start, end);
-	    break;
+            break;
         case PERF_EVENT_CONFIG2_REG:
             attr->config2 |= create_mask(getCounterTypeOffset(index)+1,start, end);
-	    break;
+            break;
         default:
             break;
     }
