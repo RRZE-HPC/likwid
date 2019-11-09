@@ -54,7 +54,7 @@ local function examples()
     if likwid.gpuSupported() then
         io.stdout:write("Run command and measure on GPU 1 the performance group FLOPS_DP (Only with NVMarkerAPI):\n")
         io.stdout:write("likwid-perfctr -G 1 -W FLOPS_DP -m ./a.out\n")
-        io.stdout:write("It is possible to combine CPU and GPU measurements (with MarkerAPI and NVMarkerAPI):\n)
+        io.stdout:write("It is possible to combine CPU and GPU measurements (with MarkerAPI and NVMarkerAPI):\n")
         io.stdout:write("likwid-perfctr -C 2 -g CLOCK -G 1 -W FLOPS_DP -m ./a.out\n")
     end
 end
