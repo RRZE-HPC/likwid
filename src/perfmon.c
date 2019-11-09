@@ -766,6 +766,22 @@ perfmon_check_counter_map(int cpu_id)
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
         }
+#else
+        char* path = translate_types[counter_map[i].type];
+        struct stat st;
+        if (path == NULL || stat(path, &st) != 0)
+        {
+            counter_map[i].type = NOTYPE;
+            counter_map[i].optionMask = 0x0ULL;
+        }
+        if (counter_map[i].type != PMC && counter_map[i].type != FIXED)
+        {
+            if (perfevent_paranoid_value() > 0 && getuid() != 0)
+            {
+                counter_map[i].type = NOTYPE;
+                counter_map[i].optionMask = 0x0ULL;
+            }
+        }
 #endif
     }
     if (own_hpm)
@@ -785,7 +801,7 @@ perfmon_check_counter_map(int cpu_id)
                 continue;
             PerfmonEvent event;
             bstring cstr = bfromcstr(counter_map[j].key);
-            if (getEvent(estr, cstr, &event))
+            if (getEvent(estr, cstr, &event) && checkCounter(cstr, eventHash[i].limit))
             {
                 found = 1;
                 bdestroy(cstr);
@@ -1950,14 +1966,12 @@ perfmon_addEventSet(const char* eventCString)
                 event->type = NOTYPE;
                 goto past_checks;
             }
-#ifndef LIKWID_USE_PERFEVENT
             if (!checkCounter(subtokens->entry[1], event->event.limit))
             {
                 fprintf(stderr, "WARN: Register %s not allowed for event %s (limit %s)\n", bdata(subtokens->entry[1]),bdata(subtokens->entry[0]),event->event.limit);
                 event->type = NOTYPE;
                 goto past_checks;
             }
-#endif
             if (parseOptions(subtokens, &event->event, event->index) < 0)
             {
                 event->type = NOTYPE;
