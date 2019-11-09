@@ -76,7 +76,6 @@ static int nvmon_initialized = 0;
 
 CpuInfo_t cpuinfo = NULL;
 CpuTopology_t cputopo = NULL;
-GpuTopology_t gputopo = NULL;
 NumaTopology_t numainfo = NULL;
 AffinityDomains_t affinity = NULL;
 PowerInfo_t power;
@@ -1453,40 +1452,6 @@ lua_likwid_sockstr_to_socklist(lua_State* L)
     return 2;
 }
 
-static int
-lua_likwid_gpustr_to_gpulist(lua_State* L)
-{
-    int ret = 0;
-    char* gpustr = (char *)luaL_checkstring(L, 1);
-    if (!gputopology_isInitialized)
-    {
-        topology_gpu_init();
-        gputopo = get_gpuTopology();
-        gputopology_isInitialized = 1;
-    }
-    int* gpulist = (int*) malloc(gputopo->numDevices * sizeof(int));
-    if (gpulist == NULL)
-    {
-        lua_pushstring(L,"Cannot allocate data for the GPU list");
-        lua_error(L);
-    }
-    ret = gpustr_to_gpulist(gpustr, gpulist, gputopo->numDevices);
-    if (ret <= 0)
-    {
-        lua_pushstring(L,"Cannot parse GPU string");
-        lua_error(L);
-    }
-    lua_pushnumber(L, ret);
-    lua_newtable(L);
-    for (int i=0;i<ret;i++)
-    {
-        lua_pushinteger(L, (lua_Integer)( i+1));
-        lua_pushinteger(L, (lua_Integer)( gpulist[i]));
-        lua_settable(L,-3);
-    }
-    free(gpulist);
-    return 2;
-}
 
 static int
 lua_likwid_putAffinityInfo(lua_State* L)
@@ -2224,7 +2189,9 @@ lua_likwid_setVerbosity(lua_State* L)
     luaL_argcheck(L, (verbosity >= 0 && verbosity <= DEBUGLEV_DEVELOP), -1,
                 "Verbosity must be between 0 (only errors) and 3 (developer)");
     perfmon_setVerbosity(verbosity);
+#ifdef LIKWID_WITH_NVMON
     nvmon_setVerbosity(verbosity);
+#endif /* LIKWID_WITH_NVMON */
     return 0;
 }
 
@@ -2817,7 +2784,9 @@ lua_likwid_setresuser(lua_State* L)
     return 1;
 }
 
+#ifdef LIKWID_WITH_NVMON
 
+GpuTopology_t gputopo = NULL;
 
 static int
 lua_likwid_getGpuTopology(lua_State* L)
@@ -2962,6 +2931,41 @@ lua_likwid_putGpuTopology(lua_State* L)
         topology_gpu_finalize();
     }
     return 0;
+}
+
+static int
+lua_likwid_gpustr_to_gpulist(lua_State* L)
+{
+    int ret = 0;
+    char* gpustr = (char *)luaL_checkstring(L, 1);
+    if (!gputopology_isInitialized)
+    {
+        topology_gpu_init();
+        gputopo = get_gpuTopology();
+        gputopology_isInitialized = 1;
+    }
+    int* gpulist = (int*) malloc(gputopo->numDevices * sizeof(int));
+    if (gpulist == NULL)
+    {
+        lua_pushstring(L,"Cannot allocate data for the GPU list");
+        lua_error(L);
+    }
+    ret = gpustr_to_gpulist(gpustr, gpulist, gputopo->numDevices);
+    if (ret <= 0)
+    {
+        lua_pushstring(L,"Cannot parse GPU string");
+        lua_error(L);
+    }
+    lua_pushnumber(L, ret);
+    lua_newtable(L);
+    for (int i=0;i<ret;i++)
+    {
+        lua_pushinteger(L, (lua_Integer)( i+1));
+        lua_pushinteger(L, (lua_Integer)( gpulist[i]));
+        lua_settable(L,-3);
+    }
+    free(gpulist);
+    return 2;
 }
 
 static int
@@ -3327,6 +3331,21 @@ lua_likwid_gpuFinalize(lua_State *L)
     return 0;
 }
 
+static int
+lua_likwid_gpuSupported(lua_State *L)
+{
+    lua_pushboolean(L, 1);
+    return 1;
+}
+#else
+static int
+lua_likwid_gpuSupported(lua_State *L)
+{
+    lua_pushboolean(L, 1);
+    return 0;
+}
+#endif /* LIKWID_WITH_NVMON */
+
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -3474,7 +3493,9 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_seteuid", lua_likwid_seteuid);
     lua_register(L, "likwid_setresuid", lua_likwid_setresuid);
     lua_register(L, "likwid_setresuser", lua_likwid_setresuser);
-    // gpu functions
+    // Nvidia GPU functions
+    lua_register(L, "likwid_gpuSupported", lua_likwid_gpuSupported);
+#ifdef LIKWID_WITH_NVMON
     lua_register(L, "likwid_getGpuTopology", lua_likwid_getGpuTopology);
     lua_register(L, "likwid_putGpuTopology", lua_likwid_putGpuTopology);
     lua_register(L, "likwid_getGpuEventsAndCounters", lua_likwid_getGpuEventsAndCounters);
@@ -3500,9 +3521,10 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_gpuGetNameOfCounter",lua_likwid_gpuGetNameOfCounter);
     lua_register(L, "likwid_gpuGetNameOfMetric",lua_likwid_gpuGetNameOfMetric);
     lua_register(L, "likwid_gpuGetNameOfGroup",lua_likwid_gpuGetNameOfGroup);
+#endif /* LIKWID_WITH_NVMON */
 #ifdef __MIC__
     setuid(0);
     seteuid(0);
-#endif
+#endif /* __MIC__ */
     return 0;
 }

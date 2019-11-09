@@ -37,6 +37,8 @@
 #include <inttypes.h>
 #include <perfgroup.h>
 
+#include <cupti.h>
+
 #define NVMON_DEFAULT_STR_LEN 1024
 
 typedef enum {
@@ -93,6 +95,7 @@ A NvmonEventSet holds a set of event and counter combinations and some global in
 \extends NvmonGroupSet
 */
 typedef struct {
+    int                   id; /*!< \brief ID of event set */
     int                   numberOfEvents; /*!< \brief Number of events in \a events */
     NvmonEvent_t*         nvEvents; /*!< \brief List of events with length numberOfEvents */
     NvmonEventResult*     results; /* \brief List of event results with length numberOfEvents */
@@ -101,6 +104,12 @@ typedef struct {
     double                rdtscTime; /*!< \brief Evaluation of the Time information in seconds */
     double                runTime; /*!< \brief Sum of all time information in seconds that the group was running */
 } NvmonEventSet;
+
+
+typedef enum {
+    LIKWID_NVMON_CUPTI_BACKEND,
+    LIKWID_NVMON_PERFWORKS_BACKEND,
+} NvmonBackends;
 
 typedef struct {
     int deviceId;
@@ -122,6 +131,7 @@ typedef struct {
     uint64_t timeStart;
     uint64_t timeRead;
     uint64_t timeStop;
+    NvmonBackends backend;
 } NvmonDevice;
 typedef NvmonDevice* NvmonDevice_t;
 
@@ -132,6 +142,17 @@ typedef NvmonDevice* NvmonDevice_t;
 /*typedef NvmonControl* NvmonControl_t;*/
 
 
+typedef struct {
+    int  (*getEventList)(int gpuId, NvmonEventList_t* list);
+    int (*createDevice)(int id, NvmonDevice *dev);
+    void (*freeDevice)(NvmonDevice* dev);
+    int (*addEvents)(NvmonDevice* device, const char* eventString);
+    int (*setupCounters)(NvmonDevice* device, NvmonEventSet* eventSet);
+    int (*startCounters)(NvmonDevice* device);
+    int (*stopCounters)(NvmonDevice* device);
+    int (*readCounters)(NvmonDevice* device);
+    int (*finalizeCounters)(NvmonDevice* device);
+} NvmonFunctions;
 
 
 /*! \brief Structure specifying all performance monitoring event groups
@@ -149,6 +170,9 @@ typedef struct {
     //NvmonEventSet*   groups; /*!< \brief List of eventSets */
     int              numberOfGPUs; /*!< \brief Amount of GPUs in \a gpus */
     NvmonDevice*     gpus; /*!< \brief List of GPUs */
+    int              numberOfBackends;
+    NvmonFunctions*  backends[3];
 } NvmonGroupSet;
+
 
 #endif

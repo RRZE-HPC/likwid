@@ -682,6 +682,7 @@ defined in the selection string.
 */
 extern int sockstr_to_socklist(const char* sockstr, int* sockets, int length)  __attribute__ ((visibility ("default") ));
 
+#ifdef LIKWID_WITH_NVMON
 /*! \brief Read GPU selection string and resolve to available GPUs numbers
 
 Reads the GPU selection string and fills the given list with the GPU numbers defined in the selection string.
@@ -691,6 +692,8 @@ Reads the GPU selection string and fills the given list with the GPU numbers def
 @return error code (>0 on success for the returned list length, -ERRORCODE on failure)
 */
 extern int gpustr_to_gpulist(const char* gpustr, int* gpulist, int length)  __attribute__ ((visibility ("default") ));
+
+#endif /* LIKWID_WITH_NVMON */
 
 /** @}*/
 
@@ -1603,11 +1606,13 @@ extern uint64_t freq_getUncoreFreqCur(const int socket_id) __attribute__ ((visib
  *  @{
  */
 
+#ifdef LIKWID_WITH_NVMON
+
 typedef struct {
     int devid;
     int numaNode;
     char* name;
-    size_t mem;
+    unsigned long long mem;
     int ccapMajor;
     int ccapMinor;
     int maxThreadsPerBlock;
@@ -1783,6 +1788,8 @@ int nvmon_getNumberOfMetrics(int groupId) __attribute__ ((visibility ("default")
 
 
 /** @}*/
+
+#endif /* LIKWID_WITH_NVMON */
 
 #ifdef __cplusplus
 }

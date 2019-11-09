@@ -77,7 +77,7 @@ endif
 endif
 
 ifeq ($(strip $(NVIDIA_INTERFACE)), true)
-LIBS+= -lcuda -ldl
+#LIBS+= -lcuda -ldl
 INCLUDES += -I$(CUDAINCLUDE) -I$(CUPTIINCLUDE)
-CPPFLAGS += -L$(CUDALIBDIR) -L$(CUPTILIBDIR)
+#CPPFLAGS += -L$(CUDALIBDIR) -L$(CUPTILIBDIR)
 endif

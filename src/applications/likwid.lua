@@ -183,6 +183,7 @@ likwid.gpuGetNameOfMetric = likwid_gpuGetNameOfMetric
 likwid.gpuGetNameOfEvent = likwid_gpuGetNameOfEvent
 likwid.gpuGetNameOfCounter = likwid_gpuGetNameOfCounter
 
+likwid.gpuSupported = likwid_gpuSupported
 likwid.readGpuMarkerFile = likwid_readGpuMarkerFile
 likwid.destroyGpuMarkerFile = likwid_destroyGpuMarkerFile
 likwid.gpuMarkerNumRegions = likwid_gpuMarkerNumRegions

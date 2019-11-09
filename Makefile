@@ -91,6 +91,8 @@ OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
 ifneq ($(NVIDIA_INTERFACE), true)
 OBJ := $(filter-out $(BUILD_DIR)/nvmon.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/topology_gpu.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/libnvctr.o,$(OBJ))
 endif
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)

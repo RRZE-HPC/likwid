@@ -41,7 +41,7 @@
 
 #include <cupti.h>
 #include <dlfcn.h>
-#include <cuda_runtime_api.h>
+#include <cuda.h>
 
 #include <error.h>
 #include <likwid.h>
@@ -69,6 +69,8 @@ static void *topo_dl_libcuda = NULL;
 static int topology_gpu_initialized = 0;
 GpuTopology gpuTopology = {0, NULL};
 
+#ifdef LIKWID_WITH_NVMON
+
 DECLARECUFUNC(cuDeviceGet, (CUdevice *, int));
 DECLARECUFUNC(cuDeviceGetCount, (int *));
 DECLARECUFUNC(cuDeviceGetName, (char *, int, CUdevice));
@@ -77,6 +79,7 @@ DECLARECUFUNC(cuDeviceComputeCapability, (int*, int*, CUdevice));
 DECLARECUFUNC(cuDeviceGetAttribute, (int*, CUdevice_attribute, CUdevice));
 DECLARECUFUNC(cuDeviceGetProperties, (CUdevprop* prop, CUdevice));
 DECLARECUFUNC(cuDeviceTotalMem, (size_t*, CUdevice));
+DECLARECUFUNC(cuDeviceTotalMem_v2, (size_t*, CUdevice));
 
 
 static int
@@ -103,6 +106,7 @@ topo_link_libraries(void)
     cuDeviceGetAttributePtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGetAttribute");
     cuDeviceGetPropertiesPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceGetProperties");
     cuDeviceTotalMemPtr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceTotalMem");
+    cuDeviceTotalMem_v2Ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceTotalMem_v2");
     return 0;
 }
 
@@ -180,13 +184,13 @@ topology_gpu_init()
     ret = topo_link_libraries();
     if (ret != 0)
     {
-        ERROR_PLAIN_PRINT(Cannot open CUPA library to fill GPU topology);
+        ERROR_PLAIN_PRINT(Cannot open CUDA library to fill GPU topology);
         return EXIT_FAILURE;
     }
     int num_devs = topo_get_numDevices();
     if (num_devs < 0)
     {
-        ERROR_PLAIN_PRINT(Cannot get number of devices from CUPA library);
+        ERROR_PLAIN_PRINT(Cannot get number of devices from CUDA library);
         return EXIT_FAILURE;
     }
     if (num_devs > 0)
@@ -200,6 +204,17 @@ topology_gpu_init()
         {
             CUdevice dev;
             CU_CALL((*cuDeviceGetPtr)(&dev, i), return topology_gpu_cleanup(i-1, -ENODEV));
+            size_t s = 0;
+#if __CUDA_API_VERSION >= 10000
+            CU_CALL((*cuDeviceTotalMem_v2Ptr)(&s, dev), return topology_gpu_cleanup(i-1, -ENOMEM));
+            if (s == 0)
+            {
+                CU_CALL((*cuDeviceTotalMemPtr)(&s, dev), return topology_gpu_cleanup(i-1, -ENOMEM));
+            }
+#else
+            CU_CALL((*cuDeviceTotalMemPtr)(&s, dev), return topology_gpu_cleanup(i-1, -ENOMEM));
+#endif
+            gpuTopology.devices[i].mem = (unsigned long long)s;
             gpuTopology.devices[i].name = malloc(1024 * sizeof(char));
             if (!gpuTopology.devices[i].name)
             {
@@ -209,7 +224,7 @@ topology_gpu_init()
             CU_CALL((*cuDeviceGetNamePtr)(gpuTopology.devices[i].name, 1023, dev), return topology_gpu_cleanup(i-1, -ENOMEM));
             gpuTopology.devices[i].name[1024] = '\0';
             gpuTopology.devices[i].devid = i;
-            CU_CALL((*cuDeviceTotalMemPtr)(&gpuTopology.devices[i].mem, dev), return topology_gpu_cleanup(i-1, -ENOMEM));
+
             CU_CALL((*cuDeviceComputeCapabilityPtr)(&gpuTopology.devices[i].ccapMajor, &gpuTopology.devices[i].ccapMinor, dev), return topology_gpu_cleanup(i-1, -ENOMEM));
             CUdevprop props;
             CU_CALL((*cuDeviceGetPropertiesPtr)(&props, dev), return topology_gpu_cleanup(i-1, -ENOMEM));
@@ -269,3 +284,5 @@ get_gpuTopology(void)
         return &gpuTopology;
     }
 }
+
+#endif /* LIKWID_WITH_NVMON */

@@ -949,6 +949,8 @@ sockstr_to_socklist(const char* sockstr, int* sockets, int length)
     return ret;
 }
 
+#ifdef LIKWID_WITH_NVMON
+
 static int valid_gpu(GpuTopology_t topo, int id)
 {
     for (int i = 0; i < topo->numDevices; i++)
@@ -1000,3 +1002,5 @@ gpustr_to_gpulist(const char* gpustr, int* gpulist, int length)
     }
     return insert;
 }
+
+#endif /* LIKWID_WITH_NVMON */

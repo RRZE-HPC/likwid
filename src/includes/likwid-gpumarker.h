@@ -31,7 +31,6 @@
 #ifndef LIKWID_GPUMARKER_H
 #define LIKWID_GPUMARKER_H
 
-#include <likwid.h>
 
 /** \addtogroup MarkerAPI Marker API module
 *  @{
@@ -75,6 +74,7 @@ Shortcut for likwid_gpuMarkerClose() if compiled with -DLIKWID_NVMON. Otherwise 
 /** @}*/
 
 #ifdef LIKWID_NVMON
+#include <likwid.h>
 #define LIKWID_GPUMARKER_INIT likwid_gpuMarkerInit()
 #define LIKWID_GPUMARKER_THREADINIT likwid_gpuMarkerThreadInit()
 #define LIKWID_GPUMARKER_SWITCH likwid_gpuMarkerNextGroup()

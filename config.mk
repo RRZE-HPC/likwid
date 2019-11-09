@@ -10,7 +10,7 @@
 COMPILER = GCC#NO SPACE
 
 # Path were to install likwid
-PREFIX ?= /usr/local#NO SPACE
+PREFIX ?= /apps/likwid/4.3.4#NO SPACE
 
 # Set the default mode for MSR access.
 # This can usually be overriden on the commandline.
@@ -26,6 +26,7 @@ FORTRAN_INTERFACE = false#NO SPACE
 INSTRUMENT_BENCH = true#NO SPACE
 
 # Build LIKWID with NVIDIA interface (CUDA, CUPTI)
+# For configuring include paths, go to CUDA section
 NVIDIA_INTERFACE = true#NO SPACE
 
 #################################################################
@@ -85,7 +86,7 @@ INSTALL_CHOWN = -g root -o root#NO SPACE
 SHARED_LIBRARY = true#NO SPACE
 
 # Build LIKWID with debug flags
-DEBUG = false#NO SPACE
+DEBUG = true#NO SPACE
 
 # Basic configuration for some internal arrays.
 # Maximal number of hardware threads
@@ -140,12 +141,11 @@ LIKWIDFILTERPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/filter)
 # $HOME/.likwid/groups
 LIKWIDGROUPPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/perfgroups)
 
-# CUDA info
+# CUDA / CUPTI build data
+# LIKWID requires CUDA and CUPTI to be present only for compilation with
+# NVIDIA_INTERFACE=true. At runtime, the CUDA and the CUPTI library have
+# to be in the LD_LIBRARY_PATH to dynamically load the libraries.
 # Include directory for CUDA headers
 CUDAINCLUDE = $(CUDA_HOME)/include
-# Library directory for CUDA libs
-CUDALIBDIR = $(CUDA_HOME)/lib64
 # Include directory for CUPTI headers
 CUPTIINCLUDE = $(CUDA_HOME)/extras/CUPTI/include
-# Library directory for CUPTI libs
-CUPTILIBDIR = $(CUDA_HOME)/extras/CUPTI/lib64
