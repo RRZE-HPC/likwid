@@ -96,13 +96,15 @@ allocator_allocateVector(
         int offset,
         DataType type,
         int stride,
-        bstring domainString)
+        bstring domainString,
+        int init_per_thread)
 {
     int i;
     size_t bytesize = 0;
     const AffinityDomain* domain = NULL;
     int errorCode;
     int elements = 0;
+    affinity_init();
 
     size_t typesize = allocator_dataTypeLength(type);
     bytesize = (size+offset) * typesize;
@@ -161,48 +163,50 @@ allocator_allocateVector(
             offset,
             LLU_CAST elements);
 
-    switch ( type )
+    if (!init_per_thread)
     {
-        case INT:
-            {
-                int* sptr = (int*) (*ptr);
-                sptr += offset;
-
-                for ( uint64_t i=0; i < size; i++ )
+        switch ( type )
+        {
+            case INT:
                 {
-                    sptr[i] = 1;
+                    int* sptr = (int*) (*ptr);
+                    sptr += offset;
+
+                    for ( uint64_t i=0; i < size; i++ )
+                    {
+                        sptr[i] = 1;
+                    }
+                    *ptr = (void*) sptr;
+
                 }
-                *ptr = (void*) sptr;
+                break;
 
-            }
-            break;
-
-        case SINGLE:
-            {
-                float* sptr = (float*) (*ptr);
-                sptr += offset;
-
-                for ( uint64_t i=0; i < size; i++ )
+            case SINGLE:
                 {
-                    sptr[i] = 1.0;
+                    float* sptr = (float*) (*ptr);
+                    sptr += offset;
+
+                    for ( uint64_t i=0; i < size; i++ )
+                    {
+                        sptr[i] = 1.0;
+                    }
+                    *ptr = (void*) sptr;
+
                 }
-                *ptr = (void*) sptr;
+                break;
 
-            }
-            break;
-
-        case DOUBLE:
-            {
-                double* dptr = (double*) (*ptr);
-                dptr += offset;
-
-                for ( uint64_t i=0; i < size; i++ )
+            case DOUBLE:
                 {
-                    dptr[i] = 1.0;
+                    double* dptr = (double*) (*ptr);
+                    dptr += offset;
+
+                    for ( uint64_t i=0; i < size; i++ )
+                    {
+                        dptr[i] = 1.0;
+                    }
+                    *ptr = (void*) dptr;
                 }
-                *ptr = (void*) dptr;
-            }
-            break;
+                break;
+        }
     }
 }
-

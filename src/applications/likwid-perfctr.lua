@@ -85,7 +85,7 @@ local function usage()
     io.stdout:write("-i, --info\t\t Print CPU info\n")
     io.stdout:write("-T <time>\t\t Switch eventsets with given frequency\n")
     io.stdout:write("-f, --force\t\t Force overwrite of registers if they are in use\n")
-    io.stdout:write("Modes:")
+    io.stdout:write("Modes:\n")
     io.stdout:write("-S <time>\t\t Stethoscope mode with duration in s, ms or us, e.g 20ms\n")
     io.stdout:write("-t <time>\t\t Timeline mode with frequency in s, ms or us, e.g. 300ms\n")
     io.stdout:write("\t\t\t The output format (to stderr) is:\n")
@@ -692,6 +692,7 @@ if print_info or verbose > 0 then
     print_stdout(string.format("CPU short:\t%s", cpuinfo["short_name"]))
     print_stdout(string.format("CPU stepping:\t%u", cpuinfo["stepping"]))
     print_stdout(string.format("CPU features:\t%s", cpuinfo["features"]))
+    print_stdout(string.format("CPU arch:\t%s", cpuinfo["architecture"]))
     P6_FAMILY = 6
     if cpuinfo["family"] == P6_FAMILY and cpuinfo["perf_version"] > 0 then
         print_stdout(likwid.hline)
@@ -934,8 +935,6 @@ for i, event_string in pairs(event_string_list) do
         end
         local gid = likwid.addEventSet(event_string)
         if gid < 0 then
-            likwid.putTopology()
-            likwid.putConfiguration()
             likwid.finalize()
             os.exit(1)
         end
@@ -958,8 +957,6 @@ if gpusSupported then
 end
 if #group_ids == 0 and not (#gpu_event_string_list > 0 and use_marker) then
     print_stderr("ERROR: No valid eventset given on commandline. Exiting...")
-    likwid.putTopology()
-    likwid.putConfiguration()
     likwid.finalize()
     os.exit(1)
 end
@@ -1136,8 +1133,6 @@ if not use_marker then
     if ret < 0 then
         print_stderr(string.format("Error stopping counters for thread %d.",ret * (-1)))
         likwid.finalize()
-        likwid.putTopology()
-        likwid.putConfiguration()
         os.exit(exitvalue)
     end
 end
@@ -1231,7 +1226,4 @@ end
 --    likwid.gpuFinalize()
 --end
 likwid.finalize()
-likwid.putTopology()
-likwid.putNumaInfo()
-likwid.putConfiguration()
 os.exit(exitvalue)

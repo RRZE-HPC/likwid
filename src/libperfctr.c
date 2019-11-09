@@ -153,6 +153,8 @@ likwid_markerInit(void)
     char* cThreadStr = getenv("LIKWID_THREADS");
     char* filepath = getenv("LIKWID_FILEPATH");
     char* perfpid = getenv("LIKWID_PERF_EXECPID");
+    char* debugStr = getenv("LIKWID_DEBUG");
+    char* pinStr = getenv("LIKWID_PIN");
     char execpid[20];
     /* Dirty hack to avoid nonnull warnings */
     int (*ownatoi)(const char*);
@@ -183,12 +185,12 @@ likwid_markerInit(void)
     affinity_init();
     hashTable_init();
 
-//#ifndef LIKWID_USE_PERFEVENT
+#ifndef LIKWID_USE_PERFEVENT
     HPMmode(atoi(modeStr));
-//#endif
-    if (getenv("LIKWID_DEBUG") != NULL)
+#endif
+    if (debugStr != NULL)
     {
-        perfmon_verbosity = atoi(getenv("LIKWID_DEBUG"));
+        perfmon_verbosity = atoi(debugStr);
         verbosity = perfmon_verbosity;
     }
 
@@ -202,7 +204,7 @@ likwid_markerInit(void)
     bdestroy(bThreadStr);
     bstrListDestroy(threadTokens);
 
-    if (getenv("LIKWID_PIN") != NULL)
+    if (pinStr != NULL)
     {
         likwid_pinThread(threads2Cpu[0]);
         if (getenv("OMP_NUM_THREADS") != NULL)
@@ -288,6 +290,7 @@ likwid_markerThreadInit(void)
     {
         return;
     }
+    char* pinStr = getenv("LIKWID_PIN");
 
     pthread_mutex_lock(&globalLock);
     t = pthread_self();
@@ -305,7 +308,7 @@ likwid_markerThreadInit(void)
     }
     pthread_mutex_unlock(&globalLock);
 
-    if (getenv("LIKWID_PIN") != NULL)
+    if (pinStr != NULL)
     {
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
@@ -458,17 +461,9 @@ likwid_markerClose(void)
         fprintf(stderr, "%s", strerror(errno));
     }
     if (validRegions)
+    {
         free(validRegions);
-}
-
-void __attribute__((destructor (101))) likwid_markerCloseDestruct(void)
-{
-    LikwidResults* results = NULL;
-    int numberOfThreads = 0;
-    int numberOfRegions = 0;
-    if (!likwid_init)
-        return;
-    hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
+    }
     if ((numberOfThreads == 0)||(numberOfThreads == 0))
     {
         return;
@@ -485,7 +480,6 @@ void __attribute__((destructor (101))) likwid_markerCloseDestruct(void)
         free(results[i].cpulist);
         free(results[i].counters);
     }
-
     if (results != NULL)
     {
         free(results);
@@ -793,4 +787,3 @@ likwid_pinProcess(int processorId)
 
     return TRUE;
 }
-

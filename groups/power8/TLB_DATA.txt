@@ -1,0 +1,29 @@
+SHORT  L1 Data TLB miss rate/ratio
+
+EVENTSET
+PMC0  PM_DTLB_MISS_16G
+PMC1  PM_DTLB_MISS_4K
+PMC2  PM_DTLB_MISS_64K
+PMC3  PM_DTLB_MISS_16M
+PMC4  PM_RUN_INST_CMPL
+PMC5  PM_RUN_CYC
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC5/PMC4
+L1 DTLB 4K misses     PMC1
+L1 DTLB 4K miss rate  PMC1/PMC4
+L1 DTLB 64K misses     PMC2
+L1 DTLB 64K miss rate  PMC2/PMC4
+L1 DTLB 16M misses     PMC3
+L1 DTLB 16M miss rate  PMC3/PMC4
+L1 DTLB 16G misses     PMC0
+L1 DTLB 16G miss rate  PMC0/PMC4
+
+LONG
+Formulas:
+
+-
+The DTLB load and store miss rates gives a measure how often a TLB miss occured
+per instruction. The duration measures the time in cycles how long a walk did take.
+

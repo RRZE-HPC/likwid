@@ -139,6 +139,23 @@ fRDTSCP(TscCounter* cpu_c)
 #endif
 #endif
 
+#if defined(_ARCH_PPC)
+static void
+TIMER(TscCounter* cpu_c)
+{
+    uint32_t tbl, tbu0, tbu1;
+
+    do {
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu0));
+        __asm__ __volatile__ ("mftb %0" : "=r"(tbl));
+        __asm__ __volatile__ ("mftbu %0" : "=r"(tbu1));
+    } while (tbu0 != tbu1);
+
+    (cpu_c)->int64 = (((uint64_t)tbu0) << 32) | tbl;
+}
+#endif
+
+
 static int os_timer(TscCounter* time)
 {
     int ret;
@@ -426,6 +443,10 @@ timer_init( void )
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
         TSTART = os_timer_start;
         TSTOP = os_timer_stop;
+#endif
+#ifdef _ARCH_PPC
+        TSTART = TIMER;
+        TSTOP = TIMER;
 #endif
     }
     if (cpuClock == 0ULL)

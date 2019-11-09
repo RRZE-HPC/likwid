@@ -1,0 +1,15 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 2
+BYTES 24
+DESC Double-precision linear combination of two vectors, only scalar operations
+LOADS 2
+STORES 1
+INSTR_LOOP 4
+fmov     FPR7, ARG1
+LOOP 1
+ldr      FPR1, [STR0], #8
+fmul     FPR1, FPR1, FPR7
+ldr      FPR2, [STR1]
+fadd     FPR1, FPR1, FPR2
+str      FPR1, [STR1], #8

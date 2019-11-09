@@ -1,0 +1,1 @@
+install(DIRECTORY gotcha DESTINATION include FILES_MATCHING PATTERN *.h)

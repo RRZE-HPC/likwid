@@ -1,0 +1,18 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 8
+
+fsub    x0, x0, x0     # zero
+fsub    x1, x1, x1     # zero
+fsub    x2, x2, x2     # zero
+fsub    x3, x3, x3     # zero
+
+LOOP 4
+
+stfd    x0, 0(STR0)
+stfd    x1, 8(STR0)
+stfd    x2, 16(STR0)
+stfd    x3, 24(STR0)
+
+addi STR0, STR0, 32

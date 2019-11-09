@@ -107,15 +107,20 @@ static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
 static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
 static char* amd_k8_str = "AMD K8 architecture";
 static char* amd_zen_str = "AMD K17 (Zen) architecture";
+static char* amd_zen2_str = "AMD K17 (Zen2) architecture";
 static char* armv7l_str = "ARM 7l architecture";
 static char* armv8_str = "ARM 8 architecture";
 static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
 static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
 static char* arm_cortex_a57 = "ARM Cortex A57 (ARMv8)";
 static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
+static char* power7_str = "POWER7 architecture";
+static char* power8_str = "POWER8 architecture";
+static char* power9_str = "POWER9 architecture";
 
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
+static char* unknown_power_str = "Unknown POWER Processor";
 
 static char* short_core2 = "core2";
 static char* short_atom = "atom";
@@ -151,11 +156,16 @@ static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
 static char* short_zen = "zen";
+static char* short_zen2 = "zen2";
 
 static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
 static char* short_arm8_cav_tx2 = "arm8_tx2";
 static char* short_arm8_cav_tx = "arm8_tx";
+
+static char* short_power7 = "power7";
+static char* short_power8 = "power8";
+static char* short_power9 = "power9";
 
 static char* short_unknown = "unknown";
 
@@ -901,9 +911,41 @@ topology_setName(void)
             cpuid_info.short_name = short_k16;
             break;
 
+	case PPC_FAMILY:
+            switch(cpuid_info.model)
+            {
+                case POWER7:
+                    cpuid_info.name = power7_str;
+                    cpuid_info.short_name = short_power7;
+                    break;
+                case POWER8:
+                    cpuid_info.name = power8_str;
+                    cpuid_info.short_name = short_power8;
+                    break;
+                case POWER9:
+                    cpuid_info.name = power9_str;
+                    cpuid_info.short_name = short_power9;
+                    break;
+                default:
+                    cpuid_info.name = unknown_power_str;
+                    cpuid_info.short_name = short_unknown;
+                    break;
+           }
+           break;
+
+
         case ZEN_FAMILY:
-            cpuid_info.name = amd_zen_str;
-            cpuid_info.short_name = short_zen;
+            switch (cpuid_info.model)
+            {
+                case ZEN_RYZEN:
+                    cpuid_info.name = amd_zen_str;
+                    cpuid_info.short_name = short_zen;
+                    break;
+                case ZEN2_RYZEN:
+                    cpuid_info.name = amd_zen2_str;
+                    cpuid_info.short_name = short_zen2;
+                    break;
+            }
             break;
 
         case ARMV7_FAMILY:
@@ -1069,7 +1111,7 @@ standard_init:
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
         if (cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF))
         {
-#if !defined(__ARM_ARCH_7A__)
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
             cpuid_topology.activeHWThreads =
                 ((cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF)) ?
                 cpu_count(&cpuSet) :
@@ -1283,7 +1325,15 @@ print_supportedCPUs (void)
     printf("\t%s\n",interlagos_str);
     printf("\t%s\n",kabini_str);
     printf("\t%s\n",amd_zen_str);
+    printf("\t%s\n",amd_zen2_str);
     printf("\n");
+    printf("Supported ARMv8 processors:\n");
+    printf("\t%s\n",arm_cortex_a53);
+    printf("\t%s\n",arm_cortex_a57);
+    printf("\t%s\n",cavium_thunderx_str);
+    printf("\t%s\n",cavium_thunderx2t99_str);
+    printf("\n");
+
 }
 
 CpuTopology_t
@@ -1303,4 +1353,3 @@ get_numaTopology(void)
 {
     return &numa_info;
 }
-

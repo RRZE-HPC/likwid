@@ -1,0 +1,22 @@
+SHORT Rate of useful instructions
+
+EVENTSET
+PMC0  PM_RUN_SPURR
+PMC1  PM_INST_DISP
+PMC3  PM_RUN_PURR
+PMC4  PM_RUN_INST_CMPL
+PMC5  PM_RUN_CYC
+
+METRICS
+CPI  PMC5/PMC4
+Useful instr. rate [%] (PMC4/PMC1)*100.0
+Processor Utilization [%] (PMC0/PMC3)*100.0
+
+
+LONG
+Formulas:
+Useful instr. rate [%] = (PM_RUN_INST_CMPL/PM_INST_DISP)*100
+Processor Utilization [%] = (PM_RUN_SPURR/PM_RUN_PURR)*100
+--
+This performance group shows the overhead of speculative
+execution of instructions and the processor utilization.

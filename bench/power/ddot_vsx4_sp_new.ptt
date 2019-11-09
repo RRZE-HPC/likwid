@@ -1,0 +1,41 @@
+STREAMS 2
+TYPE SINGLE
+FLOPS 2
+BYTES 8
+
+li r10, 16          # eight (4x2) elements per loop iteration
+divd r10, r3, r10   # r3 holds loop limit, divide by elements per loop iteration
+mtctr r10           # move to count register
+li r7, 0            # load immediate value of 0 into r7 (used as offset in addressing)
+li r8, 16           # load immediate value of 16 into r8 (used as offset in addressing)
+li r9, 32           # load immediate value of 32 into r9 (used as offset in addressing)
+li r10, 48          # load immediate value of 48 into r10 (used as offset in addressing)
+
+xvsubsp 0, 0, 0    # set to zero
+xvsubsp 1, 1, 1    # set to zero
+xvsubsp 2, 2, 2    # set to zero
+xvsubsp 3, 3, 3    # set to zero
+
+LOOP 16
+
+lxvd2x 4, STR0, r7
+lxvd2x 5, STR1, r7
+lxvd2x 6, STR0, r8
+lxvd2x 7, STR1, r8
+
+addi STR0, STR0, 64
+
+xvmaddasp 2, 8, 9
+xvmaddasp 3, 10, 11
+
+lxvd2x 8, STR0, r9
+lxvd2x 9, STR1, r9
+lxvd2x 10, STR0, r10
+lxvd2x 11, STR1, r10
+
+addi STR1, STR1, 64
+
+xvmaddasp 0, 4, 5
+xvmaddasp 1, 6, 7
+
+

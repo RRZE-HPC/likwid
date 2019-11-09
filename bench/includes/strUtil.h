@@ -50,6 +50,7 @@ typedef struct {
     uint32_t numberOfThreads;
     int* processorIds;
     uint64_t size;
+    int init_per_thread;
     Stream* streams;
 } Workgroup;
 

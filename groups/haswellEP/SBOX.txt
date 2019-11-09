@@ -18,7 +18,7 @@ Ring transfer bandwidth [MByte/s] 1.E-06*(SBOX0C0+SBOX1C0+SBOX2C0+SBOX3C0)*32/ti
 Ring transfer data volume [GByte] 1.E-09*(SBOX0C0+SBOX1C0+SBOX2C0+SBOX3C0)*32
 
 LONG
-Formula:
+Formulas:
 Ring transfer bandwidth [MByte/s] = 1.E-06*(SUM(SBOXxC0)*32)/time
 Ring transfer data volume [GByte] = 1.E-09*(SUM(SBOXxC0)*32)
 --

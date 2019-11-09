@@ -58,13 +58,22 @@ power_init(int cpuId)
     int err;
     uint32_t unit_reg = MSR_RAPL_POWER_UNIT;
     int numDomains = NUM_POWER_DOMAINS;
+    Configuration_t config;
 
     /* determine Turbo Mode features */
     double busSpeed;
-    if (power_initialized || !lock_check())
+    if (power_initialized)
     {
         return 0;
     }
+    if (!lock_check())
+    {
+        ERROR_PLAIN_PRINT(Access to performance monitoring registers locked);
+        return -ENOLCK;
+    }
+    init_configuration();
+    config = get_configuration();
+
 
     power_info.baseFrequency = 0;
     power_info.minFrequency = 0;
@@ -76,6 +85,11 @@ power_init(int cpuId)
     power_info.uncoreMinFreq = 0;
     power_info.uncoreMaxFreq = 0;
     power_info.perfBias = 0;
+    if (config->daemonMode == ACCESSMODE_PERF)
+    {
+        ERROR_PRINT(RAPL in access mode 'perf_event' only available with perfmon);
+        return 0;
+    }
 
     switch (cpuid_info.family)
     {
@@ -128,7 +142,8 @@ power_init(int cpuId)
             }
             break;
         case ZEN_FAMILY:
-            if (cpuid_info.model == ZEN_RYZEN)
+            if (cpuid_info.model == ZEN_RYZEN ||
+                cpuid_info.model == ZEN2_RYZEN)
             {
                 cpuid_info.turbo = 0;
                 power_info.hasRAPL = 1;
@@ -650,4 +665,3 @@ get_powerInfo(void)
 {
     return &power_info;
 }
-

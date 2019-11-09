@@ -22,14 +22,29 @@ else:
 outfile = filename.replace("csv", "json").replace(".tmp", "")
 o_fp = open(outfile, "w")
 
+def tryint(s):
+    o = s
+    try:
+        o = int(s)
+    except:
+        t = s.replace(" ", "")
+        try:
+            t = int(t)
+            elems = [ int(e) for e in s.split(" ") if len(e) > 0 ]
+            o = elems
+        except: pass
+    return o
+
 def fill_table(lines, headlist):
     out = []
     for l in lines:
-        elems = [ e for e in re.split("\s*,\s*", l) if len(e) > 0 ]
-        
+        elems = [ tryint(e) for e in re.split("\s*,\s*", l) if len(e) > 0 ]
         t = {}
         for h, v in zip(headlist, elems):
-            t.update({h : v.replace(" STAT", "")})
+            if type(v) == "str":
+                t.update({h : v.replace(" STAT", "")})
+            else:
+                t.update({h : v})
         #print("%%TABLE: %s " % str(t))
         out.append(t)
     return out
@@ -37,8 +52,7 @@ def fill_table(lines, headlist):
 def fill_struct(lines):
     struct = {}
     for l in lines:
-        elems = [ e for e in re.split("\s*,\s*", l) if len(e) > 0 ]
-        
+        elems = [ tryint(e) for e in re.split("\s*,\s*", l) if len(e) > 0 ]
         if len(elems) == 2:
             struct.update({ elems[0] : elems[1] })
         else:
@@ -46,6 +60,8 @@ def fill_struct(lines):
         #print("%%STRUCT: %s " % str(struct))
     return struct
 
+tables = {}
+groups = []
 
 if filetype == "perfctr" or filetype == "topology":
     inp = i_fp.read().strip().split("\n")
@@ -66,12 +82,15 @@ if filetype == "perfctr" or filetype == "topology":
             name = llist[1]
             lines = int(llist[2])
             s = fill_struct(inp[i+1:i+lines+1])
-            out.update({name: s})
+            info_struct = s;
+            info_name = name
+            tables.update({name: s})
             i += lines-1
         elif l.startswith("TABLE"):
             #sys.stderr.write(l+"\n")
             name = None
             gid = None
+            grp = None
             gname = None
             reg = None
             regname = None
@@ -101,17 +120,97 @@ if filetype == "perfctr" or filetype == "topology":
 
             t = fill_table(inp[i+2:i+lines+2], hlist)
             if grp and gname:
-                if grp not in out:
-                    out[grp] = {}
-                out[grp].update({gname : t})
+                if grp not in tables:
+                    tables[grp] = {}
+                    groups.append(grp)
+                tables[grp].update({gname : t})
             elif gid and gname:
-                if gid not in out:
-                    out[gid] = {}
-                out[gid].update({gname : t})
+                if gid not in tables:
+                    tables[gid] = {}
+                    groups.append(grp)
+                tables[gid].update({gname : t})
             else:
-                out.update({tabname : t})
+                tables.update({tabname : t})
             i += lines-1
         i += 1
+
+    if filetype == "perfctr":
+        cpulist = []
+        gpulist = []
+
+        for elems in tables[groups[0]]["Raw"]:
+            for k in elems:
+                m = re.match("Core (\d+)", k)
+                if m:
+                    cpulist.append(int(m.group(1)))
+                m = re.match("GPU (\d+)", k)
+                if m:
+                    gpulist.append(int(m.group(1)))
+
+        for g in groups:
+            counters = []
+            metrics = []
+            for tabkey in tables[g]:
+                if not "STAT" in tabkey:
+                    for line in tables[g][tabkey]:
+                        for k in line:
+                            if k == "Counter": counters.append(line[k])
+                            if k == "Metric": metrics.append(line[k])
+            group = {}
+            for tabkey in tables[g]:
+                if g not in group:
+                    group[g] = {}
+                group[g][tabkey] = {}
+                if "Raw" in tabkey and not "STAT" in tabkey:
+                    for c in counters:
+                        event = None
+                        values = []
+                        for line in tables[g][tabkey]:
+                            if line["Counter"] == c:
+                                event = line["Event"]
+                                values = []
+                                for k in line:
+                                    if k != "Counter" and k != "Event":
+                                        values.append(float(line[k]))
+                                group[g][tabkey][c] = {"Event" : event, "Values" : values}
+                                break
+                elif "Metric" in tabkey and not "STAT" in tabkey:
+                    for m in metrics:
+                        values = []
+                        for line in tables[g][tabkey]:
+                            if line["Metric"] == m:
+                                values = []
+                                for k in line:
+                                    if k != "Metric":
+                                        values.append(float(line[k]))
+                                group[g][tabkey][m] = {"Values" : values}
+                                break
+                else:
+                    new = {}
+                    for line in tables[g][tabkey]:
+                        key = None
+                        tmp = {}
+                        if "Counter" in line:
+                            key = line["Counter"]
+                        elif "Metric" in line:
+                            key = line["Metric"]
+                        for k in line:
+                            if line[k] != key:
+                                v = line[k]
+                                try:
+                                    v = float(v)
+                                except: pass
+                                tmp.update({k: v})
+                        new[key] = tmp
+                    group[g][tabkey] = new
+
+            out[g] = group
+        tables["Info"].update({"CPU list" : list(set(cpulist))})
+        if len(gpulist) > 0:
+            tables["Info"].update({"GPU list" : list(set(gpulist))})
+        out["Info"] = tables["Info"]
+    else:
+        out = tables
     o_fp.write(json.dumps(out, indent=4, sort_keys=True)+"\n")
 else:
     sys.stderr.write("Filter failed! Unknown application type %s!" % filetype)

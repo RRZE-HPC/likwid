@@ -44,7 +44,7 @@
 #include <types.h>
 #include <tree.h>
 
-#define MAX_FEATURE_STRING_LENGTH 512
+#define MAX_FEATURE_STRING_LENGTH 512 /* only used in deprecated topology_cpuid.c */
 #define MAX_MODEL_STRING_LENGTH 512
 
 struct topology_functions {
@@ -130,6 +130,7 @@ struct topology_functions {
 #define ATHLON64_G1     0x6FU
 #define ATHLON64_G2     0x7FU
 #define ZEN_RYZEN       0x01
+#define ZEN2_RYZEN      0x31
 
 /* ARM */
 #define  ARM7L          0x3U
@@ -161,7 +162,10 @@ struct topology_functions {
 #define MARVELL		0x56U
 #define INTEL_ARM	0x69U
 
-
+/* POWER */
+#define POWER7          0x7U
+#define POWER8          0x8U
+#define POWER9          0x9U
 
 #define  P6_FAMILY        0x6U
 #define  MIC_FAMILY       0xBU
@@ -173,6 +177,7 @@ struct topology_functions {
 #define  K8_FAMILY        0xFU
 #define  ARMV7_FAMILY     0x7U
 #define  ARMV8_FAMILY     0x8U
+#define  PPC_FAMILY       0x42U
 
 extern int cpu_count(cpu_set_t* set);
 

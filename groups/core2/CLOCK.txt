@@ -12,7 +12,7 @@ Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
 
 LONG
-Formula:
+Formulas:
 CPI = CPU_CLK_UNHALTED_CORE / INSTR_RETIRED_ANY
 -
 Most basic performance group measuring the the clock frequency of the machine.

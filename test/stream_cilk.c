@@ -17,7 +17,7 @@
 #define SIZE 40000000
 
 #define gettid() syscall(SYS_gettid)
-#include <likwid.h>
+#include <likwid-marker.h>
 #define HLINE "-------------------------------------------------------------\n"
 
 #ifndef MIN
@@ -196,7 +196,7 @@ int main(){
     }
     time_stop(&timer);
     triad_time = time_print(&timer)/(double)ITER;
-    
+
     printf("Processed %.1f Mbyte at copy benchmark in %.4f seconds: %.2f MByte/s\n",
                         1E-6*(2*SIZE*sizeof(double)),
                         copy_time,

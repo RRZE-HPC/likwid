@@ -17,4 +17,8 @@ Number of divide ops PMC0
 Avg. divide unit usage duration PMC1/PMC0
 
 LONG
+Formulas:
+Number of divide ops = ARITH_CYCLES_DIV_BUSY:EDGEDETECT
+Avg. divide unit usage duration = ARITH_CYCLES_DIV_BUSY/ARITH_CYCLES_DIV_BUSY:EDGEDETECT
+-
 This performance group measures the average latency of divide operations

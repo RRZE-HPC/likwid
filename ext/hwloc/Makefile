@@ -14,7 +14,7 @@ INCLUDES  += -I./include
 LIBS      = -L. -lm
 LFLAGS    = -fPIC -fvisibility=hidden
 Q         ?= @
-DEFINES := $(filter-out -DVERSION=$(VERSION),$(DEFINES))
+DEFINES := $(filter-out -DVERSION=$(VERSION),$(DEFINES)) -DRUNSTATEDIR=\"/var/run\"
 ifeq ($(DEBUG),true)
 DEBUG_FLAGS = -g
 else
@@ -25,6 +25,7 @@ CFLAGS += -mmic
 LFLAGS += -mmic
 endif
 
+
 #CONFIGURE BUILD SYSTEM
 BUILD_DIR  = ./$(COMPILER)
 
@@ -32,11 +33,17 @@ VPATH     = $(SRC_DIRS)
 FILES     = $(notdir $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c)))
 OBJ       = $(patsubst %.c, $(BUILD_DIR)/%.o, $(FILES))
 LIBHWLOC = $(shell basename $(TARGET_HWLOC_LIB))
-ifeq ($(COMPILER), GCCARMv7)
+ifeq ($(strip $(COMPILER)), GCCARMv7)
 OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
 endif
-ifeq ($(COMPILER), GCCARMv8)
+ifeq ($(strip $(COMPILER)), GCCARMv8)
 OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o, $(OBJ))
+endif
+ifeq ($(COMPILER),GCCPOWER)
+OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o,$(OBJ))
+endif
+ifeq ($(COMPILER),XLC)
+OBJ := $(filter-out $(BUILD_DIR)/topology-x86.o,$(OBJ))
 endif
 
 

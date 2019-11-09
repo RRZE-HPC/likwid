@@ -75,11 +75,17 @@
 #include <perfmon_skylake.h>
 #include <perfmon_cascadelake.h>
 #include <perfmon_zen.h>
+#include <perfmon_zen2.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
+#endif
+
+#ifdef _ARCH_PPC
+#include <perfmon_power8.h>
+#include <perfmon_power9.h>
 #endif
 
 /* #####   EXPORTED VARIABLES   ########################################### */
@@ -543,6 +549,14 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
                                     event->numberOfOptions, EVENT_OPTION_PERF_FLAGS, 0);
             }
 #endif
+            else if (biseqcstr(subtokens->entry[0], "config") == 1)
+            {
+                event->eventId = strtoull(bdata(subtokens->entry[1]), NULL, 16);
+            }
+            else if (biseqcstr(subtokens->entry[0], "umask") == 1)
+            {
+                event->umask = strtoull(bdata(subtokens->entry[1]), NULL, 16);
+            }
             else
             {
                 fprintf(stderr, "WARN: Option '%s' unknown, skipping option\n", bdata(subtokens->entry[0]));
@@ -761,6 +775,22 @@ perfmon_check_counter_map(int cpu_id)
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
         }
+#else
+        char* path = translate_types[counter_map[i].type];
+        struct stat st;
+        if (path == NULL || stat(path, &st) != 0)
+        {
+            counter_map[i].type = NOTYPE;
+            counter_map[i].optionMask = 0x0ULL;
+        }
+        if (counter_map[i].type != PMC && counter_map[i].type != FIXED)
+        {
+            if (perfevent_paranoid_value() > 0 && getuid() != 0)
+            {
+                counter_map[i].type = NOTYPE;
+                counter_map[i].optionMask = 0x0ULL;
+            }
+        }
 #endif
     }
     if (own_hpm)
@@ -780,7 +810,7 @@ perfmon_check_counter_map(int cpu_id)
                 continue;
             PerfmonEvent event;
             bstring cstr = bfromcstr(counter_map[j].key);
-            if (getEvent(estr, cstr, &event))
+            if (getEvent(estr, cstr, &event) && checkCounter(cstr, eventHash[i].limit))
             {
                 found = 1;
                 bdestroy(cstr);
@@ -1119,13 +1149,51 @@ perfmon_init_maps(void)
             break;
 
         case ZEN_FAMILY:
-            eventHash = zen_arch_events;
-            perfmon_numArchEvents = perfmon_numArchEventsZen;
-            counter_map = zen_counter_map;
-            box_map = zen_box_map;
-            perfmon_numCounters = perfmon_numCountersZen;
-            translate_types = zen_translate_types;
+            switch ( cpuid_info.model )
+            {
+                case ZEN_RYZEN:
+                    eventHash = zen_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen;
+                    counter_map = zen_counter_map;
+                    box_map = zen_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen;
+                    translate_types = zen_translate_types;
+                    break;
+                case ZEN2_RYZEN:
+                    eventHash = zen2_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen2;
+                    counter_map = zen2_counter_map;
+                    box_map = zen2_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen2;
+                    translate_types = zen2_translate_types;
+                    break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
+            }
             break;
+#ifdef _ARCH_PPC
+	case PPC_FAMILY:
+	    switch ( cpuid_info.model )
+            {
+                case POWER8:
+		    eventHash = power8_arch_events;
+	            counter_map = power8_counter_map;
+	            box_map = power8_box_map;
+                    translate_types = power8_translate_types;
+	            perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER8;
+	            perfmon_numCounters = NUM_COUNTERS_POWER8;
+	            break;
+                case POWER9:
+		    eventHash = power9_arch_events;
+	            counter_map = power9_counter_map;
+	            box_map = power9_box_map;
+                    translate_types = power9_translate_types;
+	            perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER9;
+	            perfmon_numCounters = NUM_COUNTERS_POWER9;
+	            break;
+	    }
+            break;
+#endif
 
         case ARMV7_FAMILY:
             switch ( cpuid_info.model )
@@ -1149,6 +1217,8 @@ perfmon_init_maps(void)
                     switch ( cpuid_info.part )
                     {
                         case ARM_CORTEX_A57:
+                        case ARM_CORTEX_A72:
+                        case ARM_CORTEX_A73:
                             eventHash = a57_arch_events;
                             perfmon_numArchEvents = perfmon_numArchEventsA57;
                             counter_map = a57_counter_map;
@@ -1156,6 +1226,7 @@ perfmon_init_maps(void)
                             perfmon_numCounters = perfmon_numCountersA57;
                             translate_types = a57_translate_types;
                             break;
+                        case ARM_CORTEX_A35:
                         case ARM_CORTEX_A53:
                             eventHash = a57_arch_events;
                             perfmon_numArchEvents = perfmon_numArchEventsA57;
@@ -1208,6 +1279,43 @@ perfmon_init_maps(void)
             ERROR_PLAIN_PRINT(Unsupported Processor);
             break;
     }
+    if (eventHash)
+    {
+        PerfmonEvent* tmp = malloc((perfmon_numArchEvents+10)*sizeof(PerfmonEvent));
+        if (tmp)
+        {
+            memcpy(tmp, eventHash, perfmon_numArchEvents*sizeof(PerfmonEvent));
+            eventHash = tmp;
+            eventHash[perfmon_numArchEvents].name = "GENERIC_EVENT";
+            bstring blim = bfromcstr("PMC");
+            for (int i = 0; i < perfmon_numArchEvents; i++)
+            {
+                bstring x = bfromcstr(eventHash[i].limit);
+                if (binstr(blim, 0, x) == BSTR_ERR)
+                {
+                    bconchar(blim, '|');
+                    bconcat(blim, x);
+                }
+                bdestroy(x);
+            }
+            eventHash[perfmon_numArchEvents].limit = malloc((blength(blim)+2)*sizeof(char));
+            int ret = snprintf(eventHash[perfmon_numArchEvents].limit,
+                               blength(blim)+1, "%s", bdata(blim));
+            if (ret > 0)
+            {
+                eventHash[perfmon_numArchEvents].limit[ret] = '\0';
+            }
+            bdestroy(blim);
+            eventHash[perfmon_numArchEvents].optionMask = EVENT_OPTION_GENERIC_CONFIG_MASK|EVENT_OPTION_GENERIC_UMASK_MASK;
+            eventHash[perfmon_numArchEvents].numberOfOptions = 2;
+            eventHash[perfmon_numArchEvents].options[0].type = EVENT_OPTION_GENERIC_CONFIG;
+            eventHash[perfmon_numArchEvents].options[0].value = 0x0ULL;
+            eventHash[perfmon_numArchEvents].options[1].type = EVENT_OPTION_GENERIC_UMASK;
+            eventHash[perfmon_numArchEvents].options[1].value = 0x0ULL;
+            perfmon_numArchEvents++;
+        }
+    }
+
     return;
 }
 
@@ -1471,13 +1579,27 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             break;
 
         case ZEN_FAMILY:
-            initThreadArch = perfmon_init_zen;
-            initialize_power = TRUE;
-            perfmon_startCountersThread = perfmon_startCountersThread_zen;
-            perfmon_stopCountersThread = perfmon_stopCountersThread_zen;
-            perfmon_readCountersThread = perfmon_readCountersThread_zen;
-            perfmon_setupCountersThread = perfmon_setupCounterThread_zen;
-            perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen;
+            switch ( cpuid_info.model )
+            {
+                case ZEN_RYZEN:
+                    initThreadArch = perfmon_init_zen;
+                    initialize_power = TRUE;
+                    perfmon_startCountersThread = perfmon_startCountersThread_zen;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_zen;
+                    perfmon_readCountersThread = perfmon_readCountersThread_zen;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_zen;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen;
+                    break;
+                case ZEN2_RYZEN:
+                    initThreadArch = perfmon_init_zen2;
+                    initialize_power = TRUE;
+                    perfmon_startCountersThread = perfmon_startCountersThread_zen2;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_zen2;
+                    perfmon_readCountersThread = perfmon_readCountersThread_zen2;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_zen2;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen2;
+                    break;
+            }
             break;
 
         default:
@@ -1718,6 +1840,11 @@ perfmon_finalize(void)
 #ifndef LIKWID_USE_PERFEVENT
     HPMfinalize();
 #endif
+    if (eventHash)
+    {
+        free(eventHash[perfmon_numArchEvents-1].limit);
+        free(eventHash);
+    }
     perfmon_initialized = 0;
     groupSet = NULL;
     return;
@@ -1810,9 +1937,9 @@ perfmon_addEventSet(const char* eventCString)
 
     if (strchr(cstringcopy, ':') == NULL)
     {
-        err = read_group(config->groupPath, cpuid_info.short_name,
-                         cstringcopy,
-                         &groupSet->groups[groupSet->numberOfActiveGroups].group);
+        err = perfgroup_readGroup(config->groupPath, cpuid_info.short_name,
+                                  cstringcopy,
+                                  &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err == -EACCES)
         {
             ERROR_PRINT(Access to performance group %s not allowed, cstringcopy);
@@ -1832,14 +1959,14 @@ perfmon_addEventSet(const char* eventCString)
     }
     else
     {
-        err = custom_group(cstringcopy, &groupSet->groups[groupSet->numberOfActiveGroups].group);
+        err = perfgroup_customGroup(cstringcopy, &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err)
         {
             ERROR_PRINT(Cannot transform %s to performance group, cstringcopy);
             return err;
         }
     }
-    char * evstr = get_eventStr(&groupSet->groups[groupSet->numberOfActiveGroups].group);
+    char * evstr = perfgroup_getEventStr(&groupSet->groups[groupSet->numberOfActiveGroups].group);
     if (perf_pid != NULL)
     {
         char* tmp = realloc(evstr, strlen(evstr)+strlen(perf_pid)+1);
@@ -1924,14 +2051,12 @@ perfmon_addEventSet(const char* eventCString)
                 event->type = NOTYPE;
                 goto past_checks;
             }
-#ifndef LIKWID_USE_PERFEVENT
             if (!checkCounter(subtokens->entry[1], event->event.limit))
             {
                 fprintf(stderr, "WARN: Register %s not allowed for event %s (limit %s)\n", bdata(subtokens->entry[1]),bdata(subtokens->entry[0]),event->event.limit);
                 event->type = NOTYPE;
                 goto past_checks;
             }
-#endif
             if (parseOptions(subtokens, &event->event, event->index) < 0)
             {
                 event->type = NOTYPE;
@@ -2010,6 +2135,13 @@ past_checks:
         fprintf(stderr,"       Either the events or counters do not exist for the\n");
         fprintf(stderr,"       current architecture. If event options are set, they might\n");
         fprintf(stderr,"       be invalid.\n");
+        perfgroup_returnGroup(&groupSet->groups[groupSet->numberOfActiveGroups].group);
+        for(j = 0; j < eventSet->numberOfEvents; j++)
+        {
+            PerfmonEventSetEntry* event = &(eventSet->events[j]);
+            free(event->threadCounter);
+        }
+        free(eventSet->events);
         return -EINVAL;
     }
 }
@@ -2019,7 +2151,7 @@ perfmon_delEventSet(int groupID)
 {
     if (groupID >= groupSet->numberOfGroups || groupID < 0)
         return;
-    return_group(&groupSet->groups[groupID].group);
+    perfgroup_returnGroup(&groupSet->groups[groupID].group);
     return;
 }
 
@@ -2482,7 +2614,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
 {
     int e = 0;
     double result = 0;
-    char split[2] = ":";
+    CounterList clist;
     if (unlikely(groupSet == NULL))
     {
         return NAN;
@@ -2508,36 +2640,17 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     {
         return NAN;
     }
-    bstring vars = bformat("");
-    bstring varlist = bformat("");
-    char* f = groupSet->groups[groupId].group.metricformulas[metricId];
+    timer_init();
+    init_clist(&clist);
     for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
     {
-        if (groupSet->groups[groupId].events[e].type != NOTYPE)
-        {
-            char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            if (ctr)
-                calc_add_dbl_var(ctr, perfmon_getResult(groupId, e, threadId), vars, varlist);
-        }
-        else
-        {
-            char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            if (ctr && strstr(f, ctr) != NULL)
-            {
-                calc_add_int_var(ctr, 0, vars, varlist);
-            }
-        }
+        add_to_clist(&clist,groupSet->groups[groupId].group.counters[e],
+                     perfmon_getResult(groupId, e, threadId));
     }
-    if (groupSet->groups[groupId].group.lua_funcs)
-    {
-        if (calc_set_user_funcs(groupSet->groups[groupId].group.lua_funcs))
-        {
-            free(groupSet->groups[groupId].group.lua_funcs);
-            groupSet->groups[groupId].group.lua_funcs = NULL;
-        }
-    }
-    calc_add_dbl_var("time", perfmon_getTimeOfGroup(groupId), vars, varlist);
-    calc_add_dbl_var("inverseClock", 1.0/timer_getCycleClock(), vars, varlist);
+    add_to_clist(&clist, "time", perfmon_getTimeOfGroup(groupId));
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
+    add_to_clist(&clist, "true", 1);
+    add_to_clist(&clist, "false", 0);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -2556,46 +2669,34 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
                 sock_cpu = groupSet->threads[e].thread_id;
             }
         }
-        calc_add_int_var("SOCKET_CPU", sock_cpu, vars, varlist);
         for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
         {
             if (perfmon_isUncoreCounter(groupSet->groups[groupId].group.counters[e]) &&
                 !perfmon_isUncoreCounter(groupSet->groups[groupId].group.metricformulas[metricId]))
             {
-                if (groupSet->groups[groupId].events[e].type != NOTYPE)
+                err = update_clist(&clist,groupSet->groups[groupId].group.counters[e], perfmon_getResult(groupId, e, sock_cpu));
+                if (err < 0)
                 {
-                    char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-                    double res = perfmon_getResult(groupId, e, sock_cpu);
-                    err = calc_add_dbl_var(ctr, res, vars, varlist);
-                    if (err < 0)
-                    {
-                        DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
-                    }
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
                 }
             }
         }
     }
-    else
-    {
-        calc_add_int_var("SOCKET_CPU", cpu, vars, varlist);
-    }
-
-    e = calc_metric(cpu, f, vars, varlist, &result);
-    bdestroy(vars);
-    bdestroy(varlist);
+    e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
     if (e < 0)
     {
-        result = NAN;
+        result = 0.0;
+        //ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
     }
+    destroy_clist(&clist);
     return result;
 }
-
 double
 perfmon_getLastMetric(int groupId, int metricId, int threadId)
 {
     int e = 0;
     double result = 0;
-    char split[2] = ":";
+    CounterList clist;
     if (unlikely(groupSet == NULL))
     {
         return NAN;
@@ -2621,36 +2722,17 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     {
         return NAN;
     }
-    bstring vars = bformat("");
-    bstring varlist = bformat("");
-    char* f = groupSet->groups[groupId].group.metricformulas[metricId];
+    timer_init();
+    init_clist(&clist);
     for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
     {
-        if (groupSet->groups[groupId].events[e].type != NOTYPE)
-        {
-            char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            if (ctr)
-                calc_add_dbl_var(ctr, perfmon_getLastResult(groupId, e, threadId), vars, varlist);
-        }
-        else
-        {
-            char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-            if (ctr && strstr(f, ctr) != NULL)
-            {
-                calc_add_int_var(ctr, 0, vars, varlist);
-            }
-        }
+        add_to_clist(&clist,groupSet->groups[groupId].group.counters[e],
+                     perfmon_getLastResult(groupId, e, threadId));
     }
-    if (groupSet->groups[groupId].group.lua_funcs)
-    {
-        if (calc_set_user_funcs(groupSet->groups[groupId].group.lua_funcs))
-        {
-            free(groupSet->groups[groupId].group.lua_funcs);
-            groupSet->groups[groupId].group.lua_funcs = NULL;
-        }
-    }
-    calc_add_dbl_var("time", perfmon_getLastTimeOfGroup(groupId), vars, varlist);
-    calc_add_dbl_var("inverseClock", 1.0/timer_getCycleClock(), vars, varlist);
+    add_to_clist(&clist, "time", perfmon_getLastTimeOfGroup(groupId));
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
+    add_to_clist(&clist, "true", 1);
+    add_to_clist(&clist, "false", 0);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -2659,7 +2741,6 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
-    calc_add_int_var("CPU", cpu, vars, varlist);
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
@@ -2670,37 +2751,26 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
                 sock_cpu = groupSet->threads[e].thread_id;
             }
         }
-        calc_add_int_var("SOCKET_CPU", sock_cpu, vars, varlist);
         for (e=0;e<groupSet->groups[groupId].numberOfEvents;e++)
         {
             if (perfmon_isUncoreCounter(groupSet->groups[groupId].group.counters[e]) &&
                 !perfmon_isUncoreCounter(groupSet->groups[groupId].group.metricformulas[metricId]))
             {
-                if (groupSet->groups[groupId].events[e].type != NOTYPE)
+                err = update_clist(&clist,groupSet->groups[groupId].group.counters[e], perfmon_getLastResult(groupId, e, sock_cpu));
+                if (err < 0)
                 {
-                    char *ctr = strtok(groupSet->groups[groupId].group.counters[e], split);
-                    double res = perfmon_getLastResult(groupId, e, sock_cpu);
-                    err = calc_add_dbl_var(ctr, res, vars, varlist);
-                    if (err < 0)
-                    {
-                        DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
-                    }
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[groupId].group.counters[e], threadId);
                 }
             }
         }
     }
-    else
-    {
-        calc_add_int_var("SOCKET_CPU", cpu, vars, varlist);
-    }
-
-    e = calc_metric(cpu, f, vars, varlist, &result);
-    bdestroy(vars);
-    bdestroy(varlist);
+    e = calc_metric(groupSet->groups[groupId].group.metricformulas[metricId], &clist, &result);
     if (e < 0)
     {
-        result = NAN;
+        result = 0.0;
+        //ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[groupId].group.metricformulas[metricId]);
     }
+    destroy_clist(&clist);
     return result;
 }
 
@@ -2715,11 +2785,18 @@ __perfmon_switchActiveGroupThread(int thread_id, int new_group)
         ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
         return -EINVAL;
     }
-
-    timer_stop(&groupSet->groups[groupSet->activeGroup].timer);
-    groupSet->groups[groupSet->activeGroup].rdtscTime =
-                timer_print(&groupSet->groups[groupSet->activeGroup].timer);
-    groupSet->groups[groupSet->activeGroup].runTime += groupSet->groups[groupSet->activeGroup].rdtscTime;
+    if (thread_id < 0 || thread_id >= groupSet->numberOfThreads)
+    {
+        return -EINVAL;
+    }
+    if (new_group < 0 || new_group >= groupSet->numberOfGroups)
+    {
+        return -EINVAL;
+    }
+    if (new_group == groupSet->activeGroup)
+    {
+        return 0;
+    }
     state = groupSet->groups[groupSet->activeGroup].state;
 
     if (state == STATE_START)
@@ -2734,6 +2811,7 @@ __perfmon_switchActiveGroupThread(int thread_id, int new_group)
             groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].init = FALSE;
         }
     }
+    // This updates groupSet->activeGroup to new_group
     ret = perfmon_setupCounters(new_group);
     if (ret != 0)
     {
@@ -3018,14 +3096,14 @@ perfmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
     int ret = 0;
     init_configuration();
     Configuration_t config = get_configuration();
-    ret = get_groups(config->groupPath, cpuid_info.short_name, groups, shortinfos, longinfos);
+    ret = perfgroup_getGroups(config->groupPath, cpuid_info.short_name, groups, shortinfos, longinfos);
     return ret;
 }
 
 void
 perfmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos)
 {
-    return_groups(nrgroups, groups, shortinfos, longinfos);
+    perfgroup_returnGroups(nrgroups, groups, shortinfos, longinfos);
 }
 
 int
@@ -3279,9 +3357,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
 {
     int e = 0, err = 0;
     double result = 0.0;
-    char split[2] = ":";
-    bstring vars = bformat("");
-    bstring varlist = bformat("");
+    CounterList clist;
     if (perfmon_initialized != 1)
     {
         ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
@@ -3303,38 +3379,25 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     {
         return NAN;
     }
-
-    char* f = groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId];
+    timer_init();
+    init_clist(&clist);
     for (e=0;e<markerResults[region].eventCount;e++)
     {
-        if (groupSet->groups[markerResults[region].groupID].events[e].type != NOTYPE)
+        err = add_to_clist(&clist,
+                     groupSet->groups[markerResults[region].groupID].group.counters[e],
+                     perfmon_getResultOfRegionThread(region, e, threadId));
+        if (err)
         {
-            char* ctr = strtok(groupSet->groups[markerResults[region].groupID].group.counters[e], split);
-            if (ctr)
-            {
-                double res = perfmon_getResultOfRegionThread(region, e, threadId);
-                calc_add_dbl_var(ctr, res, vars, varlist);
-            }
-        }
-        else
-        {
-            char *ctr = strtok(groupSet->groups[markerResults[region].groupID].group.counters[e], split);
-            if (ctr && strstr(f, ctr) != NULL)
-            {
-                calc_add_int_var(ctr, 0, vars, varlist);
-            }
+            printf("Cannot add counter %s to counter list for metric calculation\n",
+                    counter_map[groupSet->groups[markerResults[region].groupID].events[e].index].key);
+            destroy_clist(&clist);
+            return 0;
         }
     }
-    if (groupSet->groups[markerResults[region].groupID].group.lua_funcs)
-    {
-        if (calc_set_user_funcs(groupSet->groups[markerResults[region].groupID].group.lua_funcs))
-        {
-            free(groupSet->groups[markerResults[region].groupID].group.lua_funcs);
-            groupSet->groups[markerResults[region].groupID].group.lua_funcs = NULL;
-        }
-    }
-    calc_add_dbl_var("time", perfmon_getTimeOfRegion(region, threadId), vars, varlist);
-    calc_add_dbl_var("inverseClock", 1.0/timer_getCycleClock(), vars, varlist);
+    add_to_clist(&clist, "time", perfmon_getTimeOfRegion(region, threadId));
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
+    add_to_clist(&clist, "true", 1);
+    add_to_clist(&clist, "false", 0);
     int cpu = 0, sock_cpu = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -3343,7 +3406,6 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
             cpu = groupSet->threads[e].processorId;
         }
     }
-
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
     if (cpu != sock_cpu)
     {
@@ -3354,38 +3416,25 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
                 sock_cpu = groupSet->threads[e].thread_id;
             }
         }
-        calc_add_int_var("SOCKET_CPU", sock_cpu, vars, varlist);
         for (e=0;e<markerResults[region].eventCount;e++)
         {
             if (perfmon_isUncoreCounter(groupSet->groups[markerResults[region].groupID].group.counters[e]) &&
                 !perfmon_isUncoreCounter(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId]))
             {
-                if (groupSet->groups[markerResults[region].groupID].events[e].type != NOTYPE)
+                err = update_clist(&clist,groupSet->groups[markerResults[region].groupID].group.counters[e], perfmon_getResultOfRegionThread(region, e, sock_cpu));
+                if (err < 0)
                 {
-                    char *ctr = strtok(groupSet->groups[markerResults[region].groupID].group.counters[e], split);
-                    double res = perfmon_getResultOfRegionThread(region, e, sock_cpu);
-                    err = calc_add_dbl_var(ctr, res, vars, varlist);
-                    if (err < 0)
-                    {
-                        DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[markerResults[region].groupID].group.counters[e], threadId);
-                    }
+                    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot add socket result of counter %s for thread %d, groupSet->groups[markerResults[region].groupID].group.counters[e], threadId);
                 }
             }
         }
     }
-    else
-    {
-        calc_add_int_var("SOCKET_CPU", cpu, vars, varlist);
-    }
-
-    err = calc_metric(cpu, f, vars, varlist, &result);
-    bdestroy(vars);
-    bdestroy(varlist);
+    err = calc_metric(groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId], &clist, &result);
     if (err < 0)
     {
-        ERROR_PRINT(Cannot calculate formula %s, f);
-        return NAN;
+        ERROR_PRINT(Cannot calculate formula %s, groupSet->groups[markerResults[region].groupID].group.metricformulas[metricId]);
     }
+    destroy_clist(&clist);
     return result;
 }
 
@@ -3553,4 +3602,3 @@ perfmon_destroyMarkerResults()
         free(markerResults);
     }
 }
-

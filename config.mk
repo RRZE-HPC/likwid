@@ -6,7 +6,8 @@
 
 # Please have a look in INSTALL and the WIKI for details on
 # configuration options setup steps.
-# supported: GCC, CLANG, ICC, MIC (ICC), GCCX86 (for 32bit systems)
+# Supported: GCC, CLANG, ICC, MIC (ICC), GCCX86 (for 32bit systems)
+# GCCARMv8, GCCARMv7 and GCCPOWER
 COMPILER = GCC#NO SPACE
 
 # Path were to install likwid
@@ -57,16 +58,25 @@ INSTALLED_PREFIX ?= $(PREFIX)#NO SPACE
 INSTALLED_BINPREFIX = $(INSTALLED_PREFIX)/bin#NO SPACE
 INSTALLED_LIBPREFIX = $(INSTALLED_PREFIX)/lib#NO SPACE
 
+# Build the accessDaemon. Have a look in the WIKI for details.
+BUILDDAEMON = true#NO SPACE
 # For the daemon based secure msr/pci access configure
 # the absolute path to the msr daemon executable.
 ACCESSDAEMON = $(PREFIX)/sbin/likwid-accessD#NO SPACE
 INSTALLED_ACCESSDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-accessD#NO SPACE
 
-# Build the accessDaemon. Have a look in the WIKI for details.
-BUILDDAEMON = true#NO SPACE
 # Build the setFrequencies daemon to allow users setting the CPU and Uncore
 # frequency
 BUILDFREQ = true#NO SPACE
+# Paths for frequencie deaemon after installation
+FREQDAEMON = $(PREFIX)/sbin/likwid-setFreq#NO SPACE
+INSTALLED_FREQDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-setFreq#NO SPACE
+
+# Build the appDaemon. It's not really a daemon but an LD_PRELOAD library
+# It is required to get access to the application context.
+BUILDAPPDAEMON=true
+APPDAEMON = $(PREFIX)/lib/likwid-appDaemon.so#NO SPACE
+INSTALLED_APPDAEMON = $(INSTALLED_PREFIX)/lib/likwid-appDaemon.so#NO SPACE
 
 # chown installed tools to this user/group
 # if you change anything here, make sure that the user/group can access

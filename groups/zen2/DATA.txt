@@ -1,0 +1,23 @@
+SHORT Load to store ratio
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  CPU_CLOCKS_UNHALTED
+PMC2  LS_DISPATCH_LOADS
+PMC3  LS_DISPATCH_STORES
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s]   FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI   PMC1/PMC0
+Load to store ratio PMC2/PMC3
+
+LONG
+Formulas:
+Load to store ratio = LS_DISPATCH_LOADS/LS_DISPATCH_STORES
+-
+This is a simple metric to determine your load to store ratio.
+

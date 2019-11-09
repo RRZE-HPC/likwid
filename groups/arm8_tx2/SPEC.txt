@@ -29,6 +29,7 @@ Other ops spec. ratio (PMC0-PMC1-PMC2-PMC3-PMC4-PMC5)/PMC0
 
 
 LONG
+Formulas:
 Load ops spec. ratio = LD_SPEC / INST_SPEC
 Store ops spec. ratio = ST_SPEC / INST_SPEC
 Integer data ops spec. ratio = DP_SPEC / INST_SPEC

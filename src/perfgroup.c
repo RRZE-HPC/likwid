@@ -44,34 +44,13 @@
 
 #include <error.h>
 #include <perfgroup.h>
+#include <topology.h>
 #include <likwid.h>
 
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
-#include <math.h>
+#include <calculator.h>
+#include <bstrlib.h>
+#include <bstrlib_helper.h>
 
-#define LUA_STATES_CLEAN_DEFAULT 100
-
-char* in_func_str = "require('math');function SUM(...);local s = 0;for k,v in pairs({...}) do;s = s + v;end;return s;end;function ARGS(...) return #arg end;function AVG(...) return SUM(...)/ARGS(...) end;MEAN = AVG;function MIN(...) return math.min(...) end;function MAX(...) return math.max(...) end;function MEDIAN(...);local x = {...};local l = ARGS(...);table.sort(x);return x[math.floor(l/2)];end;function PERCENTILE(perc, ...);local x = {...};local xlen = #x;table.sort(x);local idx = math.ceil((perc/100.0)*xlen);return x[idx];end;function IFELSE(cond, valid, invalid);if cond then;return valid;else;return invalid;end;end";
-char* in_expand_str = "function expand_str(x); hist = {}; runs = 0; for pref, elem in x:gmatch('([%a%d]*)%[([%d,]+)%]') do;  runs = runs + 1;  matches = {};  for num in elem:gmatch('%d+') do;   for _,v in pairs(varlist) do; if v:match(string.format('.*%s%s.*', pref, num)) then;  if not hist[v] then;   hist[v] = 1;  else;   hist[v] = hist[v] + 1; end; end; end;  end; end; res = {}; for k,v in pairs(hist) do;  if v == runs then table.insert(res, k) end; end; return table.concat(res, ',');end;;function expand_wildcard(x); cond = {}; newx = x:gsub('%*','[%%d]'); for _,v in pairs(varlist) do;  if v:match(newx) then;   table.insert(cond, v);  end; end; return table.concat(cond, ',');end;;function eval_str(s); repl = {}; for x in s:gmatch('([%a%d_]+%[[%d,]+%])') do;  repl[x:gsub('%[', '%%['):gsub('%]', '%%]')] = expand_str(x); end; for x in s:gmatch('[%a%d*%._]+') do;  if x:match('*') then;t = expand_wildcard(x); if t:len > 0 then repl[x..'*'] = t end; end; end; for k,v in pairs(repl) do;  s = s:gsub(k..'[%a%d_]*',v); end; return s;end;";
-char* in_user_func_str = NULL;
-
-char* not_allowed[] = {"io.", "popen(", "load", "get", "set", "call(", "require", "module", NULL};
-
-// Keep the Lua states per cpu
-lua_State** lua_states = NULL;
-// A clean counter is needed per cpu to close Lua state from time
-// to time since it grows with each calculation and in some cases,
-// like monitoring, the state would increase memory usage.
-int *lua_states_clean = NULL;
-pthread_mutex_t* lua_states_locks = NULL;
-int num_states = 0;
-char** defines = NULL;
-bstring *bdefines = NULL;
-int* num_defines = NULL;
-bstring bglob_defines;
-bstring bglob_defines_list;
 
 
 static int totalgroups = 0;
@@ -107,7 +86,7 @@ isdir(char* dirname)
 }
 
 void
-return_groups(int groups, char** groupnames, char** groupshort, char** grouplong)
+perfgroup_returnGroups(int groups, char** groupnames, char** groupshort, char** grouplong)
 {
     int i;
     int freegroups = (totalgroups < groups ? groups : totalgroups);
@@ -148,7 +127,7 @@ return_groups(int groups, char** groupnames, char** groupshort, char** grouplong
 
 
 int
-get_groups(
+perfgroup_getGroups(
         const char* grouppath,
         const char* architecture,
         char*** groupnames,
@@ -168,9 +147,12 @@ get_groups(
     bstring SHORT = bformat("SHORT");
     bstring LONG = bformat("LONG");
     bstring REQUIRE = bformat("REQUIRE_NOHT");
+    char* Home = getenv("HOME");
+
     int read_long = 0;
-    if ((grouppath == NULL)||(architecture == NULL)||(groupnames == NULL))
+    if ((grouppath == NULL)||(architecture == NULL)||(groupnames == NULL)||(Home == NULL))
         return -EINVAL;
+
     char* fullpath = malloc((strlen(grouppath)+strlen(architecture)+50) * sizeof(char));
     if (fullpath == NULL)
     {
@@ -179,7 +161,7 @@ get_groups(
         bdestroy(REQUIRE);
         return -ENOMEM;
     }
-    char* homepath = malloc((strlen(getenv("HOME"))+strlen(architecture)+50) * sizeof(char));
+    char* homepath = malloc((strlen(Home)+strlen(architecture)+50) * sizeof(char));
     if (homepath == NULL)
     {
         free(fullpath);
@@ -225,7 +207,7 @@ get_groups(
         }
     }
     closedir(dp);
-    hsize = sprintf(homepath, "%s/.likwid/groups/%s", getenv("HOME"), architecture);
+    hsize = sprintf(homepath, "%s/.likwid/groups/%s", Home, architecture);
     if (isdir(homepath))
     {
         search_home = 1;
@@ -378,7 +360,7 @@ get_groups(
                             free(fullpath);
                             bdestroy(long_info);
                             bstrListDestroy(linelist);
-                            return_groups(i, *groupnames, *groupshort, *grouplong);
+                            perfgroup_returnGroups(i, *groupnames, *groupshort, *grouplong);
                             return -ENOMEM;
                         }
                         s = sprintf((*groupshort)[i], "%s", bdata(sinfo));
@@ -443,7 +425,7 @@ skip_cur_def_group:
     if (!search_home)
     {
         if (i==0)
-            return_groups(totalgroups, *groupnames, *groupshort, *grouplong);
+            perfgroup_returnGroups(totalgroups, *groupnames, *groupshort, *grouplong);
         /*else if (i < totalgroups)
         {
             for (s=i;s<totalgroups;s++)
@@ -524,7 +506,7 @@ skip_cur_def_group:
                                 free(fullpath);
                                 bstrListDestroy(linelist);
                                 bdestroy(long_info);
-                                return_groups(i, *groupnames, *groupshort, *grouplong);
+                                perfgroup_returnGroups(i, *groupnames, *groupshort, *grouplong);
                                 return -ENOMEM;
                             }
                             s = sprintf((*groupshort)[i], "%s", bdata(sinfo));
@@ -586,7 +568,7 @@ skip_cur_home_group:
         closedir(dp);
     }
     if (i==0)
-        return_groups(totalgroups, *groupnames, *groupshort, *grouplong);
+        perfgroup_returnGroups(totalgroups, *groupnames, *groupshort, *grouplong);
 /*    else if (i < totalgroups)
     {
         for (s=i;s<totalgroups;s++)
@@ -607,7 +589,7 @@ skip_cur_home_group:
 
 
 
-int custom_group(const char* eventStr, GroupInfo* ginfo)
+int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
 {
     int i, j;
     int err = 0;
@@ -627,10 +609,18 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
     ginfo->longinfo = NULL;
     bstring eventBstr;
     struct bstrList * eventList;
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bstring fix0 = bformat("FIXC0");
     bstring fix1 = bformat("FIXC1");
     bstring fix2 = bformat("FIXC2");
+#endif
+#ifdef _ARCH_PPC
+    bstring fix0 = bformat("PMC4");
+    bstring fix1 = bformat("PMC5");
+#endif
+#ifdef LIKWID_WITH_NVMON
     bstring gpu = bformat("GPU");
+#endif
     DEBUG_PRINT(DEBUGLEV_INFO, Creating custom group for event string %s, eventStr);
     ginfo->shortinfo = malloc(7 * sizeof(char));
     if (ginfo->shortinfo == NULL)
@@ -656,7 +646,7 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
     eventBstr = bfromcstr(eventStr);
     eventList = bsplit(eventBstr, delim);
     ginfo->nevents = eventList->qty;
-    if (cpuid_info.isIntel)
+    if (cpuid_info.isIntel || cpuid_info.family == PPC_FAMILY)
     {
         if (binstr(eventBstr, 0, fix0) > 0)
         {
@@ -674,6 +664,7 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
         {
             ginfo->nevents++;
         }
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
         if (binstr(eventBstr, 0, fix2) > 0)
         {
             has_fix2 = 1;
@@ -682,6 +673,7 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
         {
             ginfo->nevents++;
         }
+#endif
     }
     bdestroy(eventBstr);
 
@@ -730,14 +722,17 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
         }
         sprintf(ginfo->events[i], "%s", bdata(elist->entry[0]));
         snprintf(ginfo->counters[i], blength(ctr)+1, "%s", bdata(ctr));
+#ifdef LIKWID_WITH_NVMON
         if (binstr(elist->entry[1], 0, gpu) != BSTR_ERR)
         {
             gpu_events++;
         }
+#endif
         bdestroy(ctr);
         bstrListDestroy(elist);
     }
     i = eventList->qty;
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     if (cpuid_info.isIntel && i != gpu_events)
     {
         if ((!has_fix0) && cpuid_info.perf_num_fixed_ctr > 0)
@@ -766,19 +761,43 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
         }
     }
     ginfo->nevents = i;
+#endif
+#ifdef _ARCH_PPC
+    if (!has_fix0)
+    {
+        ginfo->events[i] = malloc(18 * sizeof(char));
+        ginfo->counters[i] = malloc(6 * sizeof(char));
+        sprintf(ginfo->events[i], "%s", "PM_RUN_INST_CMPL");
+        sprintf(ginfo->counters[i], "%s", "PMC4");
+        i++;
+    }
+    if (!has_fix1)
+    {
+        ginfo->events[i] = malloc(22 * sizeof(char));
+        ginfo->counters[i] = malloc(6 * sizeof(char));
+        sprintf(ginfo->events[i], "%s", "PM_RUN_CYC");
+        sprintf(ginfo->counters[i], "%s", "PMC5");
+        i++;
+    }
+#endif
     bstrListDestroy(eventList);
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bdestroy(fix0);
     bdestroy(fix1);
     bdestroy(fix2);
-    bdestroy(gpu);
+#endif
     bdestroy(edelim);
     return 0;
 cleanup:
     bstrListDestroy(eventList);
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bdestroy(fix0);
     bdestroy(fix1);
     bdestroy(fix2);
+#endif
+#ifdef LIKWID_WITH_NVMON
     bdestroy(gpu);
+#endif
     bdestroy(edelim);
     if (ginfo->shortinfo != NULL)
         free(ginfo->shortinfo);
@@ -790,7 +809,7 @@ cleanup:
 }
 
 int
-read_group(
+perfgroup_readGroup(
         const char* grouppath,
         const char* architecture,
         const char* groupname,
@@ -801,11 +820,12 @@ read_group(
     char buf[1024];
     GroupFileSections sec = GROUP_NONE;
     bstring REQUIRE = bformat("REQUIRE_NOHT");
-    if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL))
+    char* Home = getenv("HOME");
+    if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL)||(Home == NULL))
         return -EINVAL;
 
     bstring fullpath = bformat("%s/%s/%s.txt", grouppath,architecture, groupname);
-    bstring homepath = bformat("%s/.likwid/groups/%s/%s.txt", getenv("HOME"),architecture, groupname);
+    bstring homepath = bformat("%s/.likwid/groups/%s/%s.txt", Home,architecture, groupname);
 
     if (access(bdata(fullpath), R_OK))
     {
@@ -835,7 +855,6 @@ read_group(
     ginfo->metricformulas = NULL;
     ginfo->metricnames = NULL;
     ginfo->longinfo = NULL;
-    ginfo->lua_funcs = NULL;
     ginfo->groupname = (char*)malloc((strlen(groupname)+10)*sizeof(char));
     if (ginfo->groupname == NULL)
     {
@@ -1111,24 +1130,6 @@ read_group(
             sprintf(&(ginfo->longinfo[s]), "%.*s", (int)strlen(buf), buf);
             continue;
         }
-        else if (sec == GROUP_LUA)
-        {
-            s = (ginfo->lua_funcs == NULL ? 0 : strlen(ginfo->lua_funcs));
-            char *tmp;
-            tmp = realloc(ginfo->lua_funcs, (s + strlen(buf) + 3) * sizeof(char));
-            if (tmp == NULL)
-            {
-                free(ginfo->lua_funcs);
-                err = -ENOMEM;
-                goto cleanup;
-            }
-            else
-            {
-                ginfo->lua_funcs = tmp;
-            }
-            sprintf(&(ginfo->lua_funcs[s]), "%.*s", (int)strlen(buf), buf);
-            continue;
-        }
     }
     //bstrListDestroy(linelist);
     fclose(fp);
@@ -1146,8 +1147,6 @@ cleanup:
         free(ginfo->shortinfo);
     if (ginfo->longinfo)
         free(ginfo->longinfo);
-    if (ginfo->lua_funcs)
-        free(ginfo->lua_funcs);
     if (ginfo->nevents > 0)
     {
         for(i=0;i<ginfo->nevents; i++)
@@ -1181,7 +1180,7 @@ cleanup:
 }
 
 int
-new_group(GroupInfo* ginfo)
+perfgroup_new(GroupInfo* ginfo)
 {
     if (!ginfo)
         return -EINVAL;
@@ -1198,7 +1197,7 @@ new_group(GroupInfo* ginfo)
 }
 
 char*
-get_eventStr(GroupInfo* ginfo)
+perfgroup_getEventStr(GroupInfo* ginfo)
 {
     int i;
     char* string;
@@ -1227,7 +1226,7 @@ get_eventStr(GroupInfo* ginfo)
 }
 
 void
-put_eventStr(char* eventset)
+perfgroup_returnEventStr(char* eventset)
 {
     if (eventset != NULL)
     {
@@ -1237,7 +1236,7 @@ put_eventStr(char* eventset)
 }
 
 int
-add_event(GroupInfo* ginfo, char* event, char* counter)
+perfgroup_addEvent(GroupInfo* ginfo, char* counter, char* event)
 {
     if ((!ginfo) || (!event) || (!counter))
         return -EINVAL;
@@ -1259,32 +1258,63 @@ add_event(GroupInfo* ginfo, char* event, char* counter)
     return 0;
 }
 
+void perfgroup_removeEvent(GroupInfo* ginfo, char* counter)
+{
+    fprintf(stderr, "perfgroup_removeEvent not implemented\n");
+}
+
 int
-add_metric(GroupInfo* ginfo, char* mname, char* mcalc)
+perfgroup_addMetric(GroupInfo* ginfo, char* mname, char* mcalc)
 {
     if ((!ginfo) || (!mname) || (!mcalc))
         return -EINVAL;
     ginfo->metricnames = realloc(ginfo->metricnames, (ginfo->nmetrics + 1) * sizeof(char*));
     if (!ginfo->metricnames)
+    {
+        ERROR_PRINT(Cannot increase space for metricnames to %d bytes, (ginfo->nmetrics + 1) * sizeof(char*));
         return -ENOMEM;
+    }
     ginfo->metricformulas = realloc(ginfo->metricformulas, (ginfo->nmetrics + 1) * sizeof(char*));
     if (!ginfo->metricformulas)
+    {
+        ERROR_PRINT(Cannot increase space for metricformulas to %d bytes, (ginfo->nmetrics + 1) * sizeof(char*));
         return -ENOMEM;
+    }
     ginfo->metricnames[ginfo->nmetrics] = malloc((strlen(mname) + 1) * sizeof(char));
     if (!ginfo->metricnames[ginfo->nmetrics])
+    {
+        ERROR_PRINT(Cannot increase space for metricname to %d bytes, (strlen(mname) + 1) * sizeof(char));
         return -ENOMEM;
+    }
     ginfo->metricformulas[ginfo->nmetrics] = malloc((strlen(mcalc) + 1) * sizeof(char));
     if (!ginfo->metricformulas[ginfo->nmetrics])
+    {
+        ERROR_PRINT(Cannot increase space for metricformula to %d bytes, (strlen(mcalc) + 1) * sizeof(char));
         return -ENOMEM;
-    sprintf(ginfo->metricnames[ginfo->nmetrics], "%s", mname);
-    sprintf(ginfo->metricformulas[ginfo->nmetrics], "%s", mcalc);
+    }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding metric %s = %s, mname, mcalc);
+    int ret = sprintf(ginfo->metricnames[ginfo->nmetrics], "%s", mname);
+    if (ret > 0)
+    {
+        ginfo->metricnames[ginfo->nmetrics][ret] = '\0';
+    }
+    ret = sprintf(ginfo->metricformulas[ginfo->nmetrics], "%s", mcalc);
+    if (ret > 0)
+    {
+        ginfo->metricformulas[ginfo->nmetrics][ret] = '\0';
+    }
     ginfo->nmetrics++;
     return 0;
 }
 
+void perfgroup_removeMetric(GroupInfo* ginfo, char* mname)
+{
+    fprintf(stderr, "perfgroup_removeEvent not implemented\n");
+}
+
 
 char*
-get_groupName(GroupInfo* ginfo)
+perfgroup_getGroupName(GroupInfo* ginfo)
 {
     if ((ginfo != NULL) && (ginfo->groupname != NULL))
     {
@@ -1296,21 +1326,39 @@ get_groupName(GroupInfo* ginfo)
     return NULL;
 }
 
+void
+perfgroup_returnGroupName(char* gname)
+{
+    if (gname != NULL)
+    {
+        free(gname);
+        gname = NULL;
+    }
+}
+
 int
-set_groupName(GroupInfo* ginfo, char* groupName)
+perfgroup_setGroupName(GroupInfo* ginfo, char* groupName)
 {
     if ((ginfo == NULL) || (groupName == NULL))
         return -EINVAL;
     int size = strlen(groupName)+1;
     ginfo->groupname = realloc(ginfo->groupname, size * sizeof(char));
     if (ginfo->groupname == NULL)
+    {
+        ERROR_PRINT(Cannot increase space for groupname to %d bytes, size * sizeof(char));
         return -ENOMEM;
-    sprintf(ginfo->groupname, "%s", groupName);
+    }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Setting group name to %s, groupName);
+    int ret = sprintf(ginfo->groupname, "%s", groupName);
+    if (ret > 0)
+    {
+        ginfo->groupname[ret] = '\0';
+    }
     return 0;
 }
 
 char*
-get_shortInfo(GroupInfo* ginfo)
+perfgroup_getShortInfo(GroupInfo* ginfo)
 {
     if ((ginfo != NULL) && (ginfo->shortinfo != NULL))
     {
@@ -1323,7 +1371,7 @@ get_shortInfo(GroupInfo* ginfo)
 }
 
 void
-put_shortInfo(char* sinfo)
+perfgroup_returnShortInfo(char* sinfo)
 {
     if (sinfo != NULL)
     {
@@ -1333,7 +1381,7 @@ put_shortInfo(char* sinfo)
 }
 
 int
-set_shortInfo(GroupInfo* ginfo, char* shortInfo)
+perfgroup_setShortInfo(GroupInfo* ginfo, char* shortInfo)
 {
     if ((ginfo == NULL) || (shortInfo == NULL))
         return -EINVAL;
@@ -1346,7 +1394,7 @@ set_shortInfo(GroupInfo* ginfo, char* shortInfo)
 }
 
 char*
-get_longInfo(GroupInfo* ginfo)
+perfgroup_getLongInfo(GroupInfo* ginfo)
 {
     if ((ginfo != NULL) && (ginfo->longinfo != NULL))
     {
@@ -1359,7 +1407,7 @@ get_longInfo(GroupInfo* ginfo)
 }
 
 void
-put_longInfo(char* linfo)
+perfgroup_returnLongInfo(char* linfo)
 {
     if (linfo != NULL)
     {
@@ -1369,7 +1417,7 @@ put_longInfo(char* linfo)
 }
 
 int
-set_longInfo(GroupInfo* ginfo, char* longInfo)
+perfgroup_setLongInfo(GroupInfo* ginfo, char* longInfo)
 {
     if ((ginfo == NULL) || (longInfo == NULL))
         return -EINVAL;
@@ -1382,7 +1430,7 @@ set_longInfo(GroupInfo* ginfo, char* longInfo)
 }
 
 void
-return_group(GroupInfo* ginfo)
+perfgroup_returnGroup(GroupInfo* ginfo)
 {
     int i;
     if (ginfo->groupname)
@@ -1427,391 +1475,109 @@ return_group(GroupInfo* ginfo)
 }
 
 
-int calc_add_to_varlist(char* name, bstring bvarlist)
+int perfgroup_mergeGroups(GroupInfo* grp1, GroupInfo* grp2)
 {
-    int ret = 0;
-    if (!name)
-        return -EINVAL;
-    bstring bname = bformat("\"%s\"", name);
-    if (blength(bvarlist) > 0)
-        bcatcstr(bvarlist, ",");
-    ret = bconcat(bvarlist, bname);
-    bdestroy(bname);
-    return ret;
-}
-
-int calc_add_str_var(char* name, char* value, bstring vars, bstring varlist)
-{
-    int ret = 0;
-    bstring add = bformat("%s = %s\n", name, value);
-    ret = bconcat(vars, add);
-    if (ret == BSTR_OK)
-        ret = calc_add_to_varlist(name, varlist);
-    bdestroy(add);
-    return ret;
-}
-
-int calc_add_dbl_var(char* name, double value, bstring bvars, bstring varlist)
-{
-    int ret = 0;
-    bstring add = bformat("%s = %20.20f\n", name, value);
-    ret = bconcat(bvars, add);
-    if (ret == BSTR_OK)
-        ret = calc_add_to_varlist(name, varlist);
-    bdestroy(add);
-    return ret;
-}
-
-int calc_add_int_var(char* name, int value, bstring bvars, bstring varlist)
-{
-    int ret = 0;
-    bstring add = bformat("%s = %d\n", name, value);
-    ret = bconcat(bvars, add);
-    if (ret == BSTR_OK)
-        ret = calc_add_to_varlist(name, varlist);
-    bdestroy(add);
-    return ret;
-}
-
-static int _calc_add_def(bstring add, int cpu)
-{
-    int ret = 0;
-    if (cpu < 0)
-    {
-        ret = bconcat(bglob_defines, add);
-    }
-    else
-    {
-        ret = bconcat(bdefines[cpu], add);
-    }
-    return ret;
-}
-
-// cpu == -1 means global definition
-int calc_add_dbl_def(char* name, double value, int cpu)
-{
-    int ret = 0;
-    bstring add = bformat("%s = %20.20f\n", name, value);
-    ret = _calc_add_def(add, cpu);
-    bdestroy(add);
-    if (!ret)
-        ret = calc_add_to_varlist(name, bglob_defines_list);
-    return ret;
-}
-
-// cpu == -1 means global definition
-int calc_add_int_def(char* name, int value, int cpu)
-{
-    int ret = 0;
-    bstring add = bformat("%s = %d\n", name, value);
-    ret = _calc_add_def(add, cpu);
-    bdestroy(add);
-    if (!ret)
-        ret = calc_add_to_varlist(name, bglob_defines_list);
-    return ret;
-}
-
-// cpu == -1 means global definition
-int calc_add_str_def(char* name, char* value, int cpu)
-{
-    int ret = 0;
-    bstring add = bformat("%s = %s\n", name, value);
-    ret = _calc_add_def(add, cpu);
-    bdestroy(add);
-    if (!ret)
-        ret = calc_add_to_varlist(name, bglob_defines_list);
-    return ret;
+    fprintf(stderr, "perfgroup_mergeGroups not implemented\n");
+    return -1;
 }
 
 
-int calc_set_user_funcs(char* s)
+void
+init_clist(CounterList* clist)
 {
-    if (!s)
-        return -EINVAL;
-    if (in_user_func_str)
-        free(in_user_func_str);
-
-    int i = 0;
-    while (not_allowed[i])
-    {
-        char* p = strstr(s, not_allowed[i]);
-        if (p)
-        {
-            fprintf(stderr, "ERROR: User function string contains invalid commands\n");
-            return -EINVAL;
-        }
-        i++;
-    }
-
-    // test user given functions
-    lua_State *L = luaL_newstate();
-    luaL_openlibs(L);
-    in_user_func_str = NULL;
-    int ret = luaL_dostring (L, s);
-    lua_close(L);
-    if (ret)
-    {
-        fprintf(stderr, "WARN: Defined functions not valid Lua\n");
-        return 1;
-    }
-    else
-    {
-        ret = asprintf(&in_user_func_str, "%s", s);
-        if (ret < 0)
-            return ret;
-    }
-    return 0;
+    clist->counters = 0;
+    clist->cnames = bstrListCreate();
+    clist->cvalues = bstrListCreate();
 }
-
-static double do_calc(int cpu, char* s, bstring vars)
-{
-    double res = NAN;
-    int ret = 0;
-    char* t = NULL;
-    lua_State *L = lua_states[cpu];
-    // Allocate a new Lua state for the cpu
-    if (lua_states && !L)
-    {
-        pthread_mutex_lock(&lua_states_locks[cpu]);
-        L = luaL_newstate();
-        luaL_openlibs(L);
-        lua_states[cpu] = L;
-        lua_states_clean[cpu] = LUA_STATES_CLEAN_DEFAULT;
-        pthread_mutex_unlock(&lua_states_locks[cpu]);
-    }
-    bstring scratch = bfromcstr(in_func_str);
-    bcatcstr(scratch, "\n");
-    if (blength(bglob_defines) > 0)
-    {
-        bconcat(scratch, bglob_defines);
-    }
-    if (bdefines[cpu])
-    {
-        bconcat(scratch, bdefines[cpu]);
-        bcatcstr(scratch, "\n");
-    }
-    if (in_user_func_str)
-    {
-        bcatcstr(scratch, in_user_func_str);
-        bcatcstr(scratch, "\n");
-    }
-    if (blength(vars) > 0)
-    {
-        bconcat(scratch, vars);
-        bcatcstr(scratch, "\n");
-    }
-
-    bcatcstr(scratch, "return ");
-    bcatcstr(scratch, s);
-    bcatcstr(scratch, "\n");
-
-    ret = luaL_dostring (L, bdata(scratch));
-    if (!ret)
-    {
-        if (strncmp(luaL_typename(L, -1), "number", 6) == 0)
-            res = lua_tonumber(L, -1);
-    }
-    bdestroy(scratch);
-
-    // decrement clean counter for cpu and close the Lua state if zero
-    pthread_mutex_lock(&lua_states_locks[cpu]);
-    lua_states_clean[cpu]--;
-    if (lua_states && lua_states[cpu] && lua_states_clean[cpu] == 0 )
-    {
-        lua_close(lua_states[cpu]);
-        lua_states[cpu] = NULL;
-    }
-    pthread_mutex_unlock(&lua_states_locks[cpu]);
-    return res;
-}
-
-static char* do_expand(int cpu, char* f, bstring varlist)
-{
-    int ret = 0;
-    char* out = NULL;
-    char* t = NULL;
-
-    // Allocate a new Lua state for the cpu
-    lua_State *L = lua_states[cpu];
-    if (lua_states && !L)
-    {
-        pthread_mutex_lock(&lua_states_locks[cpu]);
-        L = luaL_newstate();
-        luaL_openlibs(L);
-        lua_states[cpu] = L;
-        lua_states_clean[cpu] = LUA_STATES_CLEAN_DEFAULT;
-        pthread_mutex_unlock(&lua_states_locks[cpu]);
-    }
-    bstring scratch = bformat("varlist={%s,%s}\n%s\nreturn eval_str(\"%s\")", bdata(bglob_defines_list), bdata(varlist), in_expand_str, f);
-    if (ret < 0)
-    {
-        return NULL;
-    }
-    ret = luaL_dostring (L, bdata(scratch));
-    if (!ret)
-    {
-        out = (char*)lua_tostring(L, -1);
-    }
-    bdestroy(scratch);
-
-    // decrement clean counter for cpu and close the Lua state of the cpu if zero
-    pthread_mutex_lock(&lua_states_locks[cpu]);
-    lua_states_clean[cpu]--;
-    if (lua_states && lua_states[cpu] && lua_states_clean[cpu] == 0 )
-    {
-        lua_close(lua_states[cpu]);
-        lua_states[cpu] = NULL;
-    }
-    pthread_mutex_unlock(&lua_states_locks[cpu]);
-    return out;
-}
-
-
 
 int
-calc_metric(int cpu, char* formula, bstring vars, bstring varlist, double *result)
+add_to_clist(CounterList* clist, char* counter, double result)
 {
-    int i=0;
-    char* f;
-    int maxstrlen = 0, minstrlen = 10000;
-    char buf[128];
 
-    if ((formula == NULL) ||
-        (result == NULL) ||
-        (cpu < 0) ||
-        (cpu > cpuid_topology.numHWThreads) ||
-        (vars == NULL) ||
-        (varlist == NULL))
-        return -EINVAL;
-    if (strlen(formula) == 0 || blength(vars) == 0 || blength(varlist) == 0)
-        return -EINVAL;
-    *result = NAN;
-
-/*    if (strchr(formula, '[') != NULL)*/
-/*    {*/
-/*        f = do_expand(cpu, formula, varlist);*/
-/*        if (f)*/
-/*        {*/
-/*            *result = do_calc(cpu, formula, vars);*/
-/*            return 0;*/
-/*        }*/
-/*    }*/
-/*    else*/
-/*    {*/
-/*        *result = do_calc(cpu, formula, vars);*/
-/*        return 0;*/
-/*    }*/
-/*    return 1;*/
-    *result = do_calc(cpu, formula, vars);
+    bstrListAddChar(clist->cnames, counter);
+    bstring v = bformat("%.20f", result);
+    bstrListAdd(clist->cvalues, v);
+    clist->counters++;
+    bdestroy(v);
     return 0;
 }
 
-void __attribute__((constructor (103))) init_perfgroup(void)
+int
+update_clist(CounterList* clist, char* counter, double result)
 {
-    int ret = 0;
-    topology_init();
-    CpuTopology_t cputopo = get_cpuTopology();
-    CpuInfo_t cpuinfo = get_cpuInfo();
-    int cpus = cputopo->numHWThreads;
-    lua_states = (lua_State**)malloc(cpus * sizeof(lua_State*));
-    if (lua_states)
+    int i;
+    int found = 0;
+    if ((clist == NULL)||(counter == NULL))
+        return -EINVAL;
+    bstring c = bfromcstr(counter);
+    for (i=0; i< clist->counters; i++)
     {
-        //memset(lua_states, 0, cpus * sizeof(lua_State*));
-        for (int i = 0; i < cpus; i++)
+        bstring comp = bstrListGet(clist->cnames, i);
+        if (bstrcmp(comp, c) == BSTR_OK)
         {
-            lua_states[i] = NULL;
+            bstring v = bformat("%.20f", result);
+            bstring val = bstrListGet(clist->cvalues, i);
+            btrunc(val, 0);
+            bconcat(val, v);
+            bdestroy(v);
+            found = 1;
+            break;
         }
     }
-    lua_states_clean = (int*)malloc(cpus * sizeof(int));
-    if (lua_states_clean)
+    bdestroy(c);
+    if (!found)
     {
-        memset(lua_states_clean, 0, cpus * sizeof(int));
+        return -ENOENT;
     }
-    lua_states_locks = (pthread_mutex_t*)malloc(cpus * sizeof(pthread_mutex_t));
-    if (lua_states_locks)
-    {
-        for (int i = 0; i < cpus; i++)
-        {
-            pthread_mutex_init(&lua_states_locks[i], NULL);
-        }
-    }
-    num_states = cpus;
-    bdefines = (bstring*)malloc(cpus * sizeof(bstring));
-    if (bdefines)
-    {
-        memset(bdefines, 0, cpus * sizeof(bdefines));
-        for (int i = 0; i < cpus; i++)
-        {
-            bdefines[i] = bformat("");
-            calc_add_int_def("CPUID", cputopo->threadPool[i].apicId, cputopo->threadPool[i].apicId);
-        }
-    }
-    num_defines = (int*)malloc(cpus * sizeof(int));
-    if (num_defines)
-    {
-        memset(num_defines, 0, cpus * sizeof(int));
-    }
-    bglob_defines = bformat("");
-    bglob_defines_list = bformat("");
-    calc_add_str_def("TRUE", "true", -1);
-    calc_add_str_def("FALSE", "false", -1);
-    calc_add_int_def("CPU_COUNT", cpus, -1);
-    calc_add_int_def("CPU_ACTIVE", cputopo->activeHWThreads, -1);
-    calc_add_int_def("SOCKET_COUNT", cputopo->numSockets, -1);
-    calc_add_int_def("CORES_PER_SOCKET", cputopo->numCoresPerSocket, -1);
-    calc_add_int_def("CPUS_PER_CORE", cputopo->numThreadsPerCore, -1);
-    for (int i= 0; i < cputopo->numCacheLevels; i++)
-    {
-        char name[100];
-        snprintf(name, 99, "L%d_SIZE", cputopo->cacheLevels[i].level);
-        calc_add_int_def(name, cputopo->cacheLevels[i].size, -1);
-        snprintf(name, 99, "L%d_LINESIZE", cputopo->cacheLevels[i].level);
-        calc_add_int_def(name, cputopo->cacheLevels[i].lineSize, -1);
-    }
-    calc_add_int_def("MEM_LINESIZE", 64, -1);
-    //topology_finalize();
+    return 0;
 }
 
-void __attribute__((destructor (103))) close_perfgroup(void)
+void
+destroy_clist(CounterList* clist)
 {
-    if (lua_states && num_states > 0)
+    int i;
+    if (clist != NULL)
     {
-        for (int i = 0; i < num_states; i++)
-        {
-            if (lua_states[i])
-            {
-                lua_close(lua_states[i]);
-                lua_states[i] = NULL;
-            }
-        }
-        free(lua_states);
-        lua_states = NULL;
+        bstrListDestroy(clist->cnames);
+        bstrListDestroy(clist->cvalues);
+        clist->counters = 0;
     }
-    if (lua_states_clean)
+}
+
+int
+calc_metric(char* formula, CounterList* clist, double *result)
+{
+    int i=0;
+    *result = 0.0;
+    int maxstrlen = 0, minstrlen = 10000;
+
+    if ((formula == NULL) || (clist == NULL))
+        return -EINVAL;
+
+    bstring f = bfromcstr(formula);
+    for(i=0;i<clist->counters;i++)
     {
-        free(lua_states_clean);
-        lua_states_clean = NULL;
-    }
-    if (lua_states_locks)
-    {
-        for (int i = 0; i < num_states; i++)
-        {
-            pthread_mutex_destroy(&lua_states_locks[i]);
-        }
-        free(lua_states_locks);
-        lua_states_locks = NULL;
+        bstring c = bstrListGet(clist->cnames, i);
+        int len = blength(c);
+        maxstrlen = (maxstrlen > len ? maxstrlen : len);
+        minstrlen = (minstrlen < len ? minstrlen : len);
     }
 
-    for (int i = 0; i < num_states; i++)
+    // try to replace each counter name in clist
+    while (maxstrlen >= minstrlen)
     {
-        if (bdefines[i])
+        for(i=0;i<clist->counters;i++)
         {
-            bdestroy(bdefines[i]);
-            num_defines[i] = 0;
+            bstring c = bstrListGet(clist->cnames, i);
+            if (blength(c) != maxstrlen)
+                continue;
+            bstring v = bstrListGet(clist->cvalues, i);
+            bfindreplace(f, c, v, 0);
         }
+        maxstrlen--;
     }
-    bdestroy(bglob_defines_list);
-    bdestroy(bglob_defines);
-    free(num_defines);
-    num_states = 0;
+    // now we can calculate the formula
+    i = calculate_infix(bdata(f), result);
+    bdestroy(f);
+    return i;
 }

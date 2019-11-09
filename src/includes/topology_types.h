@@ -60,6 +60,7 @@ typedef enum {
     SSSE3, /*!< \brief Supplemental Streaming SIMD Extensions 3 */
     SSE41, /*!< \brief Streaming SIMD Extensions 4.1 */
     SSE42, /*!< \brief Streaming SIMD Extensions 4.2 */
+    SSE4A, /*!< \brief Streaming SIMD Extensions 4A */
     AVX, /*!< \brief Advanced Vector Extensions */
     FMA, /*!< \brief Fused multiply-add (FMA3) */
     AVX2, /*!< \brief Advanced Vector Extensions 2 */
@@ -75,6 +76,10 @@ typedef enum {
     VFPV3, /*!< \brief First generation SIMD Version 3 */
     VFPV4, /*!< \brief First generation SIMD Version 4 */
     TLS, /*!< \brief Thread-local storage registers */
+    FP, /*!< \brief Floating-point support */
+    ASIMD, /*!< \brief ARMv8 Advanced SIMD */
+    ASIMDRDM, /*!< \brief ARMv8 Advanced SIMD: Rounding double multiply */
+    PMULL, /*!< \brief ARMv8 Advanced SIMD: Polynomial multiply long */
 } FeatureBit;
 /** @}*/
 #endif /*CPUID_TYPES_H*/

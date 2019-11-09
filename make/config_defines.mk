@@ -1,17 +1,18 @@
 DEFINES   += -DVERSION=$(VERSION)         \
-		 -DRELEASE=$(RELEASE)                 \
-		 -DMINORVERSION=$(MINOR)                 \
-		 -DCFGFILE=$(CFG_FILE_PATH)           \
-		 -DTOPOFILE=$(TOPO_FILE_PATH)           \
-		 -DINSTALL_PREFIX=$(INSTALLED_PREFIX) \
-		 -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) \
-		 -DMAX_NUM_NODES=$(MAX_NUM_NODES)     \
-		 -DACCESSDAEMON=$(INSTALLED_ACCESSDAEMON) \
-		 -DGROUPPATH=$(LIKWIDGROUPPATH) \
-		 -DLIKWIDLOCK=$(LIKWIDLOCKPATH) \
-		 -DLIKWIDSOCKETBASE=$(LIKWIDSOCKETBASE) \
-		 -DGITCOMMIT=$(GITCOMMIT) \
-		 -D_GNU_SOURCE
+             -DRELEASE=$(RELEASE)                 \
+             -DMINORVERSION=$(MINOR)                 \
+             -DCFGFILE=$(CFG_FILE_PATH)           \
+             -DTOPOFILE=$(TOPO_FILE_PATH)           \
+             -DINSTALL_PREFIX=$(INSTALLED_PREFIX) \
+             -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) \
+             -DMAX_NUM_NODES=$(MAX_NUM_NODES)     \
+             -DACCESSDAEMON=$(INSTALLED_ACCESSDAEMON) \
+             -DFREQDAEMON=$(INSTALLED_FREQDAEMON) \
+             -DGROUPPATH=$(LIKWIDGROUPPATH) \
+             -DLIKWIDLOCK=$(LIKWIDLOCKPATH) \
+             -DLIKWIDSOCKETBASE=$(LIKWIDSOCKETBASE) \
+             -DGITCOMMIT=$(GITCOMMIT) \
+             -D_GNU_SOURCE
 
 COMPILER := $(strip $(COMPILER))
 
@@ -36,6 +37,10 @@ HWLOC_FOLDER := $(PWD)/ext/hwloc
 STATIC_LIBHWLOC := liblikwid-hwloc.a
 SHARED_LIBHWLOC := liblikwid-hwloc.so
 
+GOTCHA_FOLDER := $(PWD)/ext/GOTCHA
+STATIC_LIBGOTCHA := liblikwid-gotcha.a
+SHARED_LIBGOTCHA := liblikwid-gotcha.so
+
 BENCH_FOLDER := bench
 BENCH_NAME := likwid-bench
 BENCH_TARGET := $(BENCH_FOLDER)/$(BENCH_NAME)
@@ -47,61 +52,135 @@ endif
 ifeq ($(strip $(COMPILER)),MIC)
     ifeq ($(strip $(ACCESSMODE)),sysdaemon)
         $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
-        ACCESSMODE = direct
-        BUILDDAEMON = false
+        ACCESSMODE := direct
+        BUILDDAEMON := false
+        BUILDFREQ := false
     endif
     ifeq ($(strip $(ACCESSMODE)),accessdaemon)
         $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
-        ACCESSMODE = direct
-        BUILDDAEMON = false
+        ACCESSMODE := direct
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
+        ACCESSMODE := direct
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),direct)
+        BUILDDAEMON := false
+        BUILDFREQ := false
     endif
 endif
 
 ifeq ($(strip $(COMPILER)),GCCARMv8)
     ifeq ($(strip $(ACCESSMODE)),sysdaemon)
-        $(info Info: Compiling for ARMv8. Changing accessmode to perf_event.)
+        $(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
         DEFINES += -DLIKWID_USE_PERFEVENT
-        BUILDDAEMON = false
-        BUILDFREQ = false
+        BUILDDAEMON := false
+        BUILDFREQ := false
     endif
     ifeq ($(strip $(ACCESSMODE)),accessdaemon)
-        $(info Info: Compiling for ARMv8. Changing accessmode to perf_event.)
+        $(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
         DEFINES += -DLIKWID_USE_PERFEVENT
-        BUILDDAEMON = false
-        BUILDFREQ = false
+        BUILDDAEMON := false
+        BUILDFREQ := false
     endif
     ifeq ($(strip $(ACCESSMODE)),direct)
-        $(info Info: Compiling for ARMv8. Changing accessmode to perf_event.)
+        $(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
         DEFINES += -DLIKWID_USE_PERFEVENT
-        BUILDDAEMON = false
-        BUILDFREQ = false
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
     endif
 endif
 
 ifeq ($(strip $(COMPILER)),GCCARMv7)
     ifeq ($(strip $(ACCESSMODE)),sysdaemon)
-        $(info Info: Compiling for ARMv7. Changing accessmode to perf_event.)
+        $(info Info: Compiling for ARMv7 architecture. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
         DEFINES += -DLIKWID_USE_PERFEVENT
         BUILDDAEMON = false
         BUILDFREQ = false
     endif
     ifeq ($(strip $(ACCESSMODE)),accessdaemon)
-        $(info Info: Compiling for ARMv7. Changing accessmode to perf_event.)
+        $(info Info: Compiling for ARMv7 architecture. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
         DEFINES += -DLIKWID_USE_PERFEVENT
         BUILDDAEMON = false
         BUILDFREQ = false
     endif
     ifeq ($(strip $(ACCESSMODE)),direct)
-        $(info Info: Compiling for ARMv7. Changing accessmode to perf_event.)
+        $(info Info: Compiling for ARMv7 architecture. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
         DEFINES += -DLIKWID_USE_PERFEVENT
         BUILDFREQ = false
         BUILDDAEMON = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+endif
+
+ifeq ($(strip $(COMPILER)),GCCPOWER)
+    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+        $(info Info: Compiling for POWER architecture. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+        $(info Info: Compiling for POWER architecture. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),direct)
+        $(info Info: Compiling for POWER architecture. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDFREQ = false
+        BUILDDAEMON = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+endif
+ifeq ($(strip $(COMPILER)),GCCPOWER)
+    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+        $(info Info: Compiling for IBM POWER. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+        $(info Info: Compiling for IBM POWER. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),direct)
+        $(info Info: Compiling for IBM POWER. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
     endif
 endif
 
@@ -117,14 +196,19 @@ else
 endif
 
 ifeq ($(strip $(BUILDFREQ)),true)
-ifneq ($(strip $(COMPILER)),MIC)
-    FREQ_TARGET = likwid-setFreq
+    ifneq ($(strip $(COMPILER)),MIC)
+        FREQ_TARGET = likwid-setFreq
+    else
+        $(info Info: Compiling for Xeon Phi. Disabling build of likwid-setFreq.);
+        FREQ_TARGET =
+    endif
 else
-    $(info Info: Compiling for Xeon Phi. Disabling build of likwid-setFreq.);
     FREQ_TARGET =
 endif
+ifeq ($(strip $(BUILDAPPDAEMON)),true)
+	APPDAEMON_TARGET = likwid-appDaemon.so
 else
-    FREQ_TARGET =
+	APPDAEMON_TARGET =
 endif
 
 ifeq ($(strip $(HAS_MEMPOLICY)),1)
@@ -140,10 +224,12 @@ LIBS += -L. -pthread -lm -ldl
 TARGET_LIB := $(DYNAMIC_TARGET_LIB)
 TARGET_HWLOC_LIB=$(HWLOC_FOLDER)/$(SHARED_LIBHWLOC)
 TARGET_LUA_LIB=$(LUA_LIB_DIR)/$(SHARED_LIBLUA)
+TARGET_GOTCHA_LIB=$(GOTCHA_LIB_DIR)/$(SHARED_LIBGOTCHA)
 else
 TARGET_LIB := $(STATIC_TARGET_LIB)
 TARGET_HWLOC_LIB=$(HWLOC_FOLDER)/$(STATIC_LIBHWLOC)
 TARGET_LUA_LIB=$(LUA_LIB_DIR)/$(STATIC_LIBLUA)
+TARGET_GOTCHA_LIB=$(GOTCHA_LIB_DIR)/$(STATIC_LIBGOTCHA)
 endif
 
 ifeq ($(strip $(HAS_SCHEDAFFINITY)),1)

@@ -30,25 +30,10 @@
 #ifndef PERFGROUP_H
 #define PERFGROUP_H
 
- /*! \brief The groupInfo data structure describes a performance group
+#include <bstrlib.h>
+#include <bstrlib_helper.h>
 
-Groups can be either be read in from file or be a group with custom event set. For
-performance groups commonly all values are set. For groups with custom event set,
-the fields groupname and shortinfo are set to 'Custom', longinfo is NULL and in
-general the nmetrics value is 0.
-*/
-typedef struct {
-    char* groupname; /*!< \brief Name of the group: performance group name or 'Custom' */
-    char* shortinfo; /*!< \brief Short info string for the group or 'Custom' */
-    int nevents; /*!< \brief Number of event/counter combinations */
-    char** events; /*!< \brief List of events */
-    char** counters; /*!< \brief List of counter registers */
-    int nmetrics; /*!< \brief Number of metrics */
-    char** metricnames; /*!< \brief Metric names */
-    char** metricformulas; /*!< \brief Metric formulas */
-    char* longinfo; /*!< \brief Descriptive text about the group or empty */
-    char* lua_funcs; /*!< \brief Custom Lua functions used in metric formulas */
-} GroupInfo;
+#include <likwid.h>
 
 typedef enum {
     GROUP_NONE = 0,
@@ -69,26 +54,33 @@ static char* groupFileSectionNames[MAX_GROUP_FILE_SECTIONS] = {
     "LUA"
 };
 
-extern int get_groups(const char* grouppath, const char* architecture, char*** groupnames, char*** groupshort, char*** grouplong);
-extern void return_groups(int groups, char** groupnames, char** groupshort, char** grouplong);
-extern int read_group(const char* grouppath, const char* architecture, const char* groupname, GroupInfo* ginfo);
-extern int custom_group(const char* eventStr, GroupInfo* ginfo);
-extern char* get_eventStr(GroupInfo* ginfo);
-void put_eventStr(char* eventset);
-extern char* get_shortInfo(GroupInfo* ginfo);
-void put_shortInfo(char* sinfo);
-extern char* get_longInfo(GroupInfo* ginfo);
-void put_longInfo(char* linfo);
-extern void return_group(GroupInfo* ginfo);
+typedef struct {
+    int counters; /*!< \brief Number of entries in the list */
+    struct bstrList* cnames; /*!< \brief List of counter names */
+    struct bstrList* cvalues; /*!< \brief List of counter values */
+} CounterList;
+
+//extern int get_groups(const char* grouppath, const char* architecture, char*** groupnames, char*** groupshort, char*** grouplong);
+//extern void return_groups(int groups, char** groupnames, char** groupshort, char** grouplong);
+//extern int read_group(const char* grouppath, const char* architecture, const char* groupname, GroupInfo* ginfo);
+//extern int custom_group(const char* eventStr, GroupInfo* ginfo);
+//extern char* get_eventStr(GroupInfo* ginfo);
+//void put_eventStr(char* eventset);
+//extern char* get_shortInfo(GroupInfo* ginfo);
+//void put_shortInfo(char* sinfo);
+//extern char* get_longInfo(GroupInfo* ginfo);
+//void put_longInfo(char* linfo);
+//extern void return_group(GroupInfo* ginfo);
+
+
+extern void init_clist(CounterList* clist);
+extern int add_to_clist(CounterList* clist, char* counter, double result);
+extern int update_clist(CounterList* clist, char* counter, double result);
+extern void destroy_clist(CounterList* clist);
+
+extern int calc_metric(char* formula, CounterList* clist, double *result);
 
 
 
-extern int calc_add_str_def(char* name, char* value, int cpu);
-extern int calc_add_int_def(char* name, int value, int cpu);
-extern int calc_add_dbl_def(char* name, double value, int cpu);
-extern int calc_add_str_var(char* name, char* value, bstring vars, bstring varlist);
-extern int calc_add_dbl_var(char* name, double value, bstring vars, bstring varlist);
-extern int calc_add_int_var(char* name, int value, bstring vars, bstring varlist);
-extern int calc_set_user_funcs(char* s);
-extern int calc_metric(int cpu, char* formula, bstring varstr, bstring varlist, double *result);
+
 #endif /* PERFGROUP_H */

@@ -2,7 +2,7 @@
 .SH NAME
 likwid-perfctr \- configure and read out hardware performance counters on x86 CPUs
 .SH SYNOPSIS
-.B likwid-perfctr 
+.B likwid-perfctr
 .RB [\-vhHmaiefO]
 .RB [ \-c
 .IR core_list ]
@@ -61,7 +61,7 @@ print available performance groups for current processor, then exit.
 print available counters and performance events of current processor.
 .TP
 .B \-\^o, \-\-\^output <filename>
-store all ouput to a file instead of stdout. For the filename the following placeholders are supported: 
+store all ouput to a file instead of stdout. For the filename the following placeholders are supported:
 %j for PBS_JOBID, %r for MPI RANK (only Intel MPI at the moment), %h host name and %p for process pid.
 The placeholders must be separated by underscore as, e.g., -o test_%h_%p. You must specify a suffix to
 the filename. For txt the output is printed as is to the file. Other suffixes trigger a filter on the output.
@@ -76,11 +76,11 @@ for details).
 print cpuid information about processor and about Intel Performance Monitoring features, then exit.
 .TP
 .B \-\^c <cpu expression>
-specify a numerical list of processors. The list may contain multiple 
+specify a numerical list of processors. The list may contain multiple
 items, separated by comma, and ranges. For example 0,3,9-11.
 .TP
 .B \-\^C <cpu expression>
-specify a numerical list of processors. The list may contain multiple 
+specify a numerical list of processors. The list may contain multiple
 items, separated by comma, and ranges. For example 0,3,9-11. This variant will
 also pin the threads to the cores. Also logical numberings can be used.
 .TP
@@ -111,7 +111,7 @@ Print only events and corresponding counters matching <search_str>
 Always print statistics table
 
 .SH EXAMPLE
-Because 
+Because
 .B likwid-perfctr
 measures on processors and not single applications it is necessary to ensure
 that processes and threads are pinned to dedicated resources. You can either pin the application yourself
@@ -148,7 +148,7 @@ On Intel processors fixed events are measured on dedicated counters. These are
 .B INSTR_RETIRED_ANY
 and
 .B CPU_CLK_UNHALTED_CORE.
-If you configure these fixed counters, 
+If you configure these fixed counters,
 .B likwid-perfctr
 will calculate the run time and CPI metrics for your run.
 
@@ -162,12 +162,12 @@ Examples can be found in examples folder <INSTALLEDPREFIX>/share/likwid/examples
 The following code snippet shows the necessary calls:
 
 .nf
-#include <likwid.h>
+#include <likwid-marker.h>
 
 /* only one thread calls init */
 LIKWID_MARKER_INIT;
 
-/* Must be called by each thread the should 
+/* Must be called by each thread the should
  * perform measurements.
  * If you place it in the same parallel
  * region as LIKWID_MARKER_START, perform a
@@ -181,11 +181,11 @@ LIKWID_MARKER_THREADINIT;
  * of START and STOP calls. Call it once for each
  * thread in parallel environment.
  * Note: No whitespace characters are allowed in the region tags
- * This call is optional, START will do the same operations.
+ * This call is optional but RECOMMENDED, START will do the same operations.
  */
 LIKWID_MARKER_REGISTER("name");
 
-/* Start measurement 
+/* Start measurement
  * Note: No whitespace characters are allowed in the region tags
  */
 LIKWID_MARKER_START("name");
@@ -200,6 +200,19 @@ LIKWID_MARKER_STOP("name");
  * Switches through groups in round-robin fashion
  */
 LIKWID_MARKER_SWITCH;
+
+/* If you want to get the data of a region inside your application
+ * nevents in an (int*) and used as input length of the events array. After the
+ * call, nevents contains the actual amount of events
+ * events is an array of doubles (double*), time is a pointer to double to
+ * retrieve the measured runtime of the region and count is a pointer to int
+ * and is filled with the call count of the region.
+ */
+LIKWID_MARKER_GET("name", nevents, events, time, count);
+
+/* If you want to reset the counts for a region
+ */
+LIKWID_MARKER_RESET("name");
 
 /* Finally */
 LIKWID_MARKER_CLOSE;
@@ -219,7 +232,7 @@ mode is for custom event sets:
 For performance groups with metrics:
 .B <groupID> <numberOfMetrics> <numberOfThreads> <Timestamp> <Metric1_Thread1> <Metric2_Thread1> ... <Metric1_Thread2> ...<MetricN_ThreadM>
 
-For timeline mode there is a frontend application likwid-perfscope(1), which enables live plotting of selected events. Please be aware that with high frequencies (<100ms), the values differ from the real results but the behavior of them is valid. 
+For timeline mode there is a frontend application likwid-perfscope(1), which enables live plotting of selected events. Please be aware that with high frequencies (<100ms), the values differ from the real results but the behavior of them is valid.
 
 .IP 6. 4
 Using likwid in stethoscope mode:

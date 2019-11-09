@@ -41,6 +41,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <bstrlib.h>
+#include <bstrlib_helper.h>
+
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
 static int
@@ -68,7 +71,7 @@ get_cpu_perf_data(void)
 
         eax = 0x06;
         CPUID(eax, ebx, ecx, edx);
-        if (eax & (1<<1))
+        if (eax & (1ULL<<1))
         {
             cpuid_info.turbo = 1;
         }
@@ -162,7 +165,7 @@ static int readCacheInclusiveAMD(int level)
     eax = 0x8000001D;
     ecx = level;
     CPUID(eax, ebx, ecx, edx);
-    return (edx & (0x1<<1));
+    return (edx & (0x1ULL<<1));
 }
 #else
 static int readCacheInclusiveIntel(int level)
@@ -189,20 +192,31 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
     ownatoi = &atoi;
     ownstrcpy = &strcpy;
 
-    const_bstring countString = bformat("processor\t:");
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     const_bstring modelString = bformat("model\t\t:");
-    const_bstring familyString = bformat("cpu family\t:");
     const_bstring steppingString = bformat("stepping\t:");
+    const_bstring nameString = bformat("model name\t:");
+#endif
+#ifdef _ARCH_PPC
+    const_bstring modelString = bformat("cpu\t\t:");
+    const_bstring steppingString = bformat("revision\t:");
+    const_bstring nameString = bformat("machine\t\t:");
+#endif
+    const_bstring familyString = bformat("cpu family\t:");
+    const_bstring countString = bformat("processor\t:");
     const_bstring vendorString = bformat("vendor_id\t:");
     const_bstring vendorIntelString = bformat("GenuineIntel");
-    const_bstring nameString = bformat("model name\t:");
 
     cpuid_info.isIntel = 0;
     cpuid_info.model = 0;
     cpuid_info.family = 0;
+#ifdef _ARCH_PPC
+    cpuid_info.family = PPC_FAMILY;
+#endif
     cpuid_info.stepping = 0;
     cpuid_topology.numHWThreads = 0;
     cpuid_info.osname = malloc(MAX_MODEL_STRING_LENGTH * sizeof(char));
+    cpuid_info.osname[0] = '\0';
 
     if (NULL != (fp = fopen ("/proc/cpuinfo", "r")))
     {
@@ -212,16 +226,35 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
         fclose(fp);
         for (i=0;i<tokens->qty;i++)
         {
+            printf("%d\n", binstr(tokens->entry[i],0,modelString));
             if (binstr(tokens->entry[i],0,countString) != BSTR_ERR)
             {
                 HWthreads++;
             }
             else if ((cpuid_info.model == 0) && (binstr(tokens->entry[i],0,modelString) != BSTR_ERR))
             {
+#ifndef _ARCH_PPC
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
                 cpuid_info.model = ownatoi(bdata(subtokens->entry[1]));
                 bstrListDestroy(subtokens);
+#else
+		const_bstring power7str = bformat("POWER7");
+		const_bstring power8str = bformat("POWER8");
+		const_bstring power9str = bformat("POWER9");
+		if (binstr(tokens->entry[i],0, power7str) != BSTR_ERR)
+		{
+			cpuid_info.model = POWER7;
+		}
+		else if (binstr(tokens->entry[i],0, power8str) != BSTR_ERR)
+                {
+                        cpuid_info.model = POWER8;
+                }
+		else if (binstr(tokens->entry[i],0, power9str) != BSTR_ERR)
+                {
+                        cpuid_info.model = POWER9;
+                }
+#endif
             }
             else if ((cpuid_info.family == 0) && (binstr(tokens->entry[i],0,familyString) != BSTR_ERR))
             {
@@ -241,6 +274,7 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
             {
                 struct bstrList* subtokens = bsplit(tokens->entry[i],(char) ':');
                 bltrimws(subtokens->entry[1]);
+
                 ownstrcpy(cpuid_info.osname, bdata(subtokens->entry[1]));
                 bstrListDestroy(subtokens);
             }
@@ -257,6 +291,15 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
         }
         bstrListDestroy(tokens);
         cpuid_topology.numHWThreads = HWthreads;
+#ifdef __x86_64
+        snprintf(cpuid_info.architecture, 19, "x86_64");
+#endif
+#ifdef __ARM_ARCH_7A__
+        snprintf(cpuid_info.architecture, 19, "armv7");
+#endif
+#ifdef __ARM_ARCH_8A
+        snprintf(cpuid_info.architecture, 19, "armv8");
+#endif
         DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
                             cpuid_info.family,
                             cpuid_info.model,
@@ -267,217 +310,249 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
     return;
 }
 
+
 void
 proc_init_cpuFeatures(void)
 {
-    int ret;
+    int ret = 0;
     FILE* file;
     char buf[1024];
     char ident[30];
     char delimiter[] = " ";
     char* cptr;
+#ifdef _ARCH_PPC
+    return;
+#endif
+    const_bstring flagString = bformat("flags");
+    const_bstring featString = bformat("Features");
+    bstring flagline = bfromcstr("");
 
-    if ( (file = fopen( "/proc/cpuinfo", "r")) == NULL )
+    bstring cpuinfo = read_file("/proc/cpuinfo");
+    struct bstrList* cpulines = bsplit(cpuinfo, '\n');
+    bdestroy(cpuinfo);
+    for (int i = 0; i < cpulines->qty; i++)
     {
-        fprintf(stderr, "Cannot open /proc/cpuinfo\n");
-        return;
-    }
-    ret = 0;
-    while( fgets(buf, sizeof(buf)-1, file) )
-    {
-        ret = sscanf(buf, "%s\t:", &(ident[0]));
 #if defined(__x86_64__) || defined(__i386__)
-        if (ret != 1 || strcmp(ident,"flags") != 0 || strcmp(ident, "Features") != 0)
+        if (bstrncmp(cpulines->entry[i], flagString, 5) == BSTR_OK ||
+            bstrncmp(cpulines->entry[i], featString, 8) == BSTR_OK)
 #endif
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__) || defined(__ARM_ARCH_8A)
-        if (ret != 1 || strcmp(ident, "Features") != 0)
+        if (bstrncmp(cpulines->entry[i], featString, 8) == BSTR_OK)
+#endif
+#ifdef _ARCH_PPC
+	if (ret != 1)
 #endif
         {
-            continue;
-        }
-        else
-        {
-            ret = 1;
+            bdestroy(flagline);
+            flagline = bstrcpy(cpulines->entry[i]);
             break;
         }
     }
-    fclose(file);
-    if (ret == 0)
-    {
-        return;
-    }
+    bstrListDestroy(cpulines);
+
+    struct bstrList* flaglist = bsplit(flagline, ' ');
+    bstring bfeatures = bfromcstr("");
 
     cpuid_info.featureFlags = 0;
-    cpuid_info.features = (char*) malloc(MAX_FEATURE_STRING_LENGTH*sizeof(char));
-    cpuid_info.features[0] = '\0';
-    buf[strcspn(buf, "\n")] = '\0';
-    cptr = strtok(&(buf[6]),delimiter);
 
-    while (cptr != NULL)
+    for (int i = 1; i < flaglist->qty; i++)
     {
-        if (strcmp(cptr,"ssse3") == 0)
+        if (bisstemeqblk(flaglist->entry[i], "sse4_1", 6) == 1)
         {
-            cpuid_info.featureFlags |= (1<<SSSE3);
-            strcat(cpuid_info.features, "SSSE3 ");
+            setBit(cpuid_info.featureFlags, SSE41);
+            bcatcstr(bfeatures, "SSE4.1 ");
         }
-        else if (strcmp(cptr,"sse3") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "sse4_2", 6) == 1)
         {
-            cpuid_info.featureFlags |= (1<<SSE3);
-            strcat(cpuid_info.features, "SSE3 ");
+            setBit(cpuid_info.featureFlags, SSE42);
+            bcatcstr(bfeatures, "SSE4.2 ");
         }
-        else if (strcmp(cptr,"monitor") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "sse4a", 6) == 1)
         {
-            cpuid_info.featureFlags |= (1<<MONITOR);
-            strcat(cpuid_info.features, "MONITOR ");
+            setBit(cpuid_info.featureFlags, SSE4A);
+            bcatcstr(bfeatures, "SSE4a ");
         }
-        else if (strcmp(cptr,"mmx") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "ssse3", 5) == 1)
         {
-            cpuid_info.featureFlags |= (1<<MMX);
-            strcat(cpuid_info.features, "MMX ");
+            setBit(cpuid_info.featureFlags, SSSE3);
+            bcatcstr(bfeatures, "SSSE ");
         }
-        else if (strcmp(cptr,"sse") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "sse3", 4) == 1)
         {
-            cpuid_info.featureFlags |= (1<<SSE);
-            strcat(cpuid_info.features, "SSE ");
+            setBit(cpuid_info.featureFlags, SSE3);
+            bcatcstr(bfeatures, "SSE3 ");
         }
-        else if (strcmp(cptr,"sse2") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "sse2", 4) == 1)
         {
-            cpuid_info.featureFlags |= (1<<SSE2);
-            strcat(cpuid_info.features, "SSE2 ");
+            setBit(cpuid_info.featureFlags, SSE2);
+            bcatcstr(bfeatures, "SSE2 ");
         }
-        else if (strcmp(cptr,"acpi") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "monitor", 7) == 1)
         {
-            cpuid_info.featureFlags |= (1<<ACPI);
-            strcat(cpuid_info.features, "ACPI ");
+            setBit(cpuid_info.featureFlags, MONITOR);
+            bcatcstr(bfeatures, "MONITOR ");
         }
-        else if (strcmp(cptr,"rdtscp") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "mmx", 3) == 1)
         {
-            cpuid_info.featureFlags |= (1<<RDTSCP);
-            strcat(cpuid_info.features, "RDTSCP ");
+            setBit(cpuid_info.featureFlags, MMX);
+            bcatcstr(bfeatures, "MMX ");
         }
-        else if (strcmp(cptr,"vmx") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "sse", 3) == 1)
         {
-            cpuid_info.featureFlags |= (1<<VMX);
-            strcat(cpuid_info.features, "VMX ");
+            setBit(cpuid_info.featureFlags, SSE);
+            bcatcstr(bfeatures, "SSE ");
         }
-        else if (strcmp(cptr,"est") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "acpi", 4) == 1)
         {
-            cpuid_info.featureFlags |= (1<<EIST);
-            strcat(cpuid_info.features, "EIST ");
+            setBit(cpuid_info.featureFlags, ACPI);
+            bcatcstr(bfeatures, "ACPI ");
         }
-        else if (strcmp(cptr,"tm") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "rdtscp", 6) == 1)
         {
-            cpuid_info.featureFlags |= (1<<TM);
-            strcat(cpuid_info.features, "TM ");
+            setBit(cpuid_info.featureFlags, RDTSCP);
+            bcatcstr(bfeatures, "RDTSCP ");
         }
-        else if (strcmp(cptr,"tm2") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "vmx", 3) == 1)
         {
-            cpuid_info.featureFlags |= (1<<TM2);
-            strcat(cpuid_info.features, "TM2 ");
+            setBit(cpuid_info.featureFlags, VMX);
+            bcatcstr(bfeatures, "VMX ");
         }
-        else if (strcmp(cptr,"aes") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "est", 3) == 1)
         {
-            cpuid_info.featureFlags |= (1<<AES);
-            strcat(cpuid_info.features, "AES ");
+            setBit(cpuid_info.featureFlags, EIST);
+            bcatcstr(bfeatures, "EIST ");
         }
-        else if (strcmp(cptr,"rdrand") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "tm2", 3) == 1)
         {
-            cpuid_info.featureFlags |= (1<<RDRAND);
-            strcat(cpuid_info.features, "RDRAND ");
+            setBit(cpuid_info.featureFlags, TM2);
+            bcatcstr(bfeatures, "TM2 ");
         }
-        else if (strcmp(cptr,"sse4_1") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "tm", 2) == 1)
         {
-            cpuid_info.featureFlags |= (1<<SSE41);
-            strcat(cpuid_info.features, "SSE4.1 ");
+            setBit(cpuid_info.featureFlags, TM);
+            bcatcstr(bfeatures, "TM ");
         }
-        else if (strcmp(cptr,"sse4_2") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "aes", 3) == 1)
         {
-            cpuid_info.featureFlags |= (1<<SSE42);
-            strcat(cpuid_info.features, "SSE4.2 ");
+            setBit(cpuid_info.featureFlags, AES);
+            bcatcstr(bfeatures, "AES ");
         }
-        else if (strcmp(cptr,"avx") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "rdrand", 6) == 1)
         {
-            cpuid_info.featureFlags |= (1<<AVX);
-            strcat(cpuid_info.features, "AVX ");
+            setBit(cpuid_info.featureFlags, RDRAND);
+            bcatcstr(bfeatures, "RDRAND ");
         }
-        else if (strcmp(cptr,"fma") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "rdseed", 6) == 1)
         {
-            cpuid_info.featureFlags |= (1<<FMA);
-            strcat(cpuid_info.features, "FMA ");
+            setBit(cpuid_info.featureFlags, RDSEED);
+            bcatcstr(bfeatures, "RDSEED ");
         }
-        else if (strcmp(cptr,"avx2") == 0)
+        else if ((bisstemeqblk(flaglist->entry[i], "avx512", 6) == 1) && (!testBit(cpuid_info.featureFlags, AVX512)))
         {
-            cpuid_info.featureFlags |= (1<<AVX2);
-            strcat(cpuid_info.features, "AVX2 ");
+            setBit(cpuid_info.featureFlags, AVX512);
+            bcatcstr(bfeatures, "AVX512 ");
         }
-        else if (strcmp(cptr,"rtm") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "avx2", 4) == 1)
         {
-            cpuid_info.featureFlags |= (1<<RTM);
-            strcat(cpuid_info.features, "RTM ");
+            setBit(cpuid_info.featureFlags, AVX2);
+            bcatcstr(bfeatures, "AVX2 ");
         }
-        else if (strcmp(cptr,"hle") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "avx", 3) == 1)
         {
-            cpuid_info.featureFlags |= (1<<HLE);
-            strcat(cpuid_info.features, "HLE ");
+            setBit(cpuid_info.featureFlags, AVX);
+            bcatcstr(bfeatures, "AVX ");
         }
-        else if (strcmp(cptr,"rdseed") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "fma", 3) == 1)
         {
-            cpuid_info.featureFlags |= (1<<RDSEED);
-            strcat(cpuid_info.features, "RDSEED ");
+            setBit(cpuid_info.featureFlags, FMA);
+            bcatcstr(bfeatures, "FMA ");
         }
-        else if (strcmp(cptr,"ht") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "rtm", 3) == 1)
         {
-            cpuid_info.featureFlags |= (1<<HTT);
-            strcat(cpuid_info.features, "HTT ");
+            setBit(cpuid_info.featureFlags, RTM);
+            bcatcstr(bfeatures, "RTM ");
         }
-        else if (strncmp(cptr,"avx512", 6) == 0 && !(cpuid_info.featureFlags & (1<<AVX512)))
+        else if (bisstemeqblk(flaglist->entry[i], "hle", 3) == 1)
         {
-            cpuid_info.featureFlags |= (1<<AVX512);
-            strcat(cpuid_info.features, "AVX512 ");
+            setBit(cpuid_info.featureFlags, HLE);
+            bcatcstr(bfeatures, "HLE ");
         }
-        else if (strcmp(cptr,"swp") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "ht", 2) == 1)
         {
-            cpuid_info.featureFlags |= (1<<SWP);
-            strcat(cpuid_info.features, "SWP ");
+            setBit(cpuid_info.featureFlags, HTT);
+            bcatcstr(bfeatures, "HTT ");
         }
-        else if (strcmp(cptr,"neon") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "fp", 2) == 1)
         {
-            cpuid_info.featureFlags |= (1<<NEON);
-            strcat(cpuid_info.features, "NEON ");
+            setBit(cpuid_info.featureFlags, FP);
+            bcatcstr(bfeatures, "FP ");
         }
-        else if (strcmp(cptr,"vfp") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "swp", 3) == 1)
         {
-            cpuid_info.featureFlags |= (1<<VFP);
-            strcat(cpuid_info.features, "VFP ");
+            setBit(cpuid_info.featureFlags, SWP);
+            bcatcstr(bfeatures, "SWP ");
         }
-        else if (strcmp(cptr,"vfpv3") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "vfpv3", 5) == 1)
         {
-            cpuid_info.featureFlags |= (1<<VFPV3);
-            strcat(cpuid_info.features, "VFPv3 ");
+            setBit(cpuid_info.featureFlags, VFPV3);
+            bcatcstr(bfeatures, "VFPV3 ");
         }
-        else if (strcmp(cptr,"vfpv4") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "vfpv4", 5) == 1)
         {
-            cpuid_info.featureFlags |= (1<<VFPV4);
-            strcat(cpuid_info.features, "VFPv4 ");
+            setBit(cpuid_info.featureFlags, VFPV4);
+            bcatcstr(bfeatures, "VFPV4 ");
         }
-        else if (strcmp(cptr,"edsp") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "vfp", 3) == 1)
         {
-            cpuid_info.featureFlags |= (1<<EDSP);
-            strcat(cpuid_info.features, "EDSP ");
+            setBit(cpuid_info.featureFlags, VFP);
+            bcatcstr(bfeatures, "VFP ");
         }
-        else if (strcmp(cptr,"tls") == 0)
+        else if (bisstemeqblk(flaglist->entry[i], "neon", 4) == 1)
         {
-            cpuid_info.featureFlags |= (1<<TLS);
-            strcat(cpuid_info.features, "TLS ");
+            setBit(cpuid_info.featureFlags, NEON);
+            bcatcstr(bfeatures, "NEON ");
         }
-        cptr = strtok(NULL, delimiter);
+        else if (bisstemeqblk(flaglist->entry[i], "edsp", 4) == 1)
+        {
+            setBit(cpuid_info.featureFlags, EDSP);
+            bcatcstr(bfeatures, "EDSP ");
+        }
+        else if (bisstemeqblk(flaglist->entry[i], "tls", 3) == 1)
+        {
+            setBit(cpuid_info.featureFlags, TLS);
+            bcatcstr(bfeatures, "TLS ");
+        }
+        else if (bisstemeqblk(flaglist->entry[i], "asimdrdm", 8) == 1)
+        {
+            setBit(cpuid_info.featureFlags, ASIMDRDM);
+            bcatcstr(bfeatures, "ASIMDRDM ");
+        }
+        else if (bisstemeqblk(flaglist->entry[i], "asimd", 5) == 1)
+        {
+            setBit(cpuid_info.featureFlags, ASIMD);
+            bcatcstr(bfeatures, "ASIMD ");
+        }
+        else if (bisstemeqblk(flaglist->entry[i], "pmull", 5) == 1)
+        {
+            setBit(cpuid_info.featureFlags, PMULL);
+            bcatcstr(bfeatures, "PMULL ");
+        }
     }
 
-    if ((cpuid_info.featureFlags & (1<<SSSE3)) && !((cpuid_info.featureFlags) & (1<<SSE3)))
+    if (testBit(cpuid_info.featureFlags, SSSE3) && !testBit(cpuid_info.featureFlags, SSE3))
     {
-        cpuid_info.featureFlags |= (1<<SSE3);
-        strcat(cpuid_info.features, "SSE3 ");
+        setBit(cpuid_info.featureFlags, SSE3);
+        bcatcstr(bfeatures, "SSE3 ");
     }
+
+    cpuid_info.features = (char*) malloc((blength(bfeatures)+2)*sizeof(char));
+    ret = snprintf(cpuid_info.features, blength(bfeatures)+1, "%s", bdata(bfeatures));
+    if (ret > 0)
+    {
+        cpuid_info.features[ret] = '\0';
+    }
+    bdestroy(bfeatures);
+    bstrListDestroy(flaglist);
 
     get_cpu_perf_data();
     return;
@@ -788,6 +863,7 @@ proc_init_cacheTopology(void)
                 break;
             case ARMV8_FAMILY:
             case ARMV7_FAMILY:
+	    case PPC_FAMILY:
                 cachePool[i].inclusive = 0;
                 break;
             default:
@@ -800,4 +876,3 @@ proc_init_cacheTopology(void)
     cpuid_topology.cacheLevels = cachePool;
     return;
 }
-

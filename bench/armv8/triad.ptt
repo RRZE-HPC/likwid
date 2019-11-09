@@ -1,0 +1,16 @@
+STREAMS 4
+TYPE DOUBLE
+FLOPS 2
+BYTES 32
+DESC Double-precision triad A(i) = B(i) * C(i) + D(i), only scalar operations
+LOADS 3
+STORES 1
+INSTR_LOOP 6
+LOOP 1
+ldr   D1, [STR1], #8
+ldr   D2, [STR2], #8
+ldr   D3, [STR3], #8
+fmul  D1, D1, D2
+fadd  D1, D1, D3
+str   D1, [STR0], #8
+

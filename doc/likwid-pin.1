@@ -3,7 +3,7 @@
 likwid-pin \- pin a sequential or threaded application to dedicated processors
 .SH SYNOPSIS
 .B likwid-pin
-.RB [\-vhSpqi]
+.RB [\-vhSpqim]
 .RB [ \-V
 .IR <verbosity> ]
 .RB [ \-c/\-C
@@ -80,6 +80,9 @@ prints the available thread domains for logical pinning
 .TP
 .B \-\^i
 set NUMA memory policy to interleave involving all NUMA nodes involved in pinning
+.TP
+.B \-\^m
+set NUMA memory policy to membind involving all NUMA nodes involved in pinning
 .TP
 .B \-\^d <delim>
 usable with

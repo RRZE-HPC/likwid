@@ -39,6 +39,7 @@
 #include <ctype.h>
 #include <inttypes.h>
 #include <math.h>
+#include <signal.h>
 
 #include <bstrlib.h>
 #include <errno.h>
@@ -47,8 +48,10 @@
 #include <testcases.h>
 #include <strUtil.h>
 #include <allocator.h>
+#include <ptt2asm.h>
 
 #include <likwid.h>
+#include <likwid-marker.h>
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -72,7 +75,14 @@ extern void* getIterSingle(void* arg);
     printf("-l <TEST>\t list properties of benchmark \n"); \
     printf("-t <TEST>\t type of test \n"); \
     printf("-w\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]-<streamId>:<domain_id>[:<offset>]\n"); \
-    printf("\t\t <size> in kB, MB or GB  (mandatory)\n"); \
+    printf("-W\t\t <thread_domain>:<size>[:<num_threads>[:<chunk size>:<stride>]]\n"); \
+    printf("\t\t <size> in kB, MB or GB (mandatory)\n"); \
+    printf("For dynamically loaded benchmarks\n"); \
+    printf("-f <PATH>\t Specify a folder for the temporary files. default: /tmp\n"); \
+    printf("\n"); \
+    printf("Difference between -w and -W :\n"); \
+    printf("-w allocates the streams in the thread_domain with one thread and support placement of streams\n"); \
+    printf("-W allocates the streams chunk-wise by each thread in the thread_domain\n"); \
     printf("\n"); \
     printf("Usage: \n"); \
     printf("# Run the store benchmark on all CPUs of the system with a vector size of 1 GB\n"); \
@@ -81,6 +91,8 @@ extern void* getIterSingle(void* arg);
     printf("likwid-bench -t copy -w S0:100kB:1\n"); \
     printf("# Run the copy benchmark on one CPU at CPU socket 0 with a vector size of 100MB but place one stream on CPU socket 1\n"); \
     printf("likwid-bench -t copy -w S0:100MB:1-0:S0,1:S1\n"); \
+/*    printf("-c <COMP_LIST>\t Specify a list of compilers that should be searched for. default: gcc,icc,pgcc\n"); \*/
+/*    printf("-f <COMP_FLAGS>\t Specify compiler flags. Use \". default: \"-shared -fPIC\"\n"); \*/
 
 #define VERSION_MSG \
     printf("likwid-bench -- Version %d.%d.%d\n",VERSION,RELEASE,MINORVERSION); \
@@ -108,6 +120,13 @@ copyThreadData(ThreadUserData* src,ThreadUserData* dst)
 }
 
 
+void illhandler(int signum, siginfo_t *info, void *ptr)
+{
+    fprintf(stderr, "ERROR: Illegal instruction\n");
+    fprintf(stderr, "This happens if you want to run a kernel that uses instructions not available on your system.\n");
+    exit(EXIT_FAILURE);
+}
+
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
@@ -126,7 +145,7 @@ int main(int argc, char** argv)
     double time;
     double cycPerUp = 0.0;
     double cycPerCL = 0.0;
-    const TestCase* test = NULL;
+    TestCase* test = NULL;
     uint64_t realSize = 0;
     uint64_t realIter = 0;
     uint64_t maxCycles = 0;
@@ -141,8 +160,17 @@ int main(int argc, char** argv)
     binsertch(HLINE, 0, 80, '-');
     binsertch(HLINE, 80, 1, '\n');
     int (*ownprintf)(const char *format, ...);
+#ifdef _ARCH_PPC
+    int clsize = 128;
+#else
     int clsize = sysconf (_SC_LEVEL1_DCACHE_LINESIZE);
+#endif
+    char compilers[512] = "gcc,icc,pgcc";
+    char defcompilepath[512] = "/tmp";
+    char compilepath[513] = "";
+    char compileflags[512] = "-shared -fPIC";
     ownprintf = &printf;
+    struct sigaction sig;
 
     /* Handling of command line options */
     if (argc ==  1)
@@ -151,7 +179,23 @@ int main(int argc, char** argv)
         exit(EXIT_SUCCESS);
     }
 
-    while ((c = getopt (argc, argv, "w:t:s:l:aphvi:")) != -1) {
+    while ((c = getopt (argc, argv, "W:w:t:s:l:aphvi:f:")) != -1) {
+        switch (c)
+        {
+            case 'f':
+                tmp = snprintf(compilepath, 512, "%s", optarg);
+                if (tmp > 0)
+                {
+                    compilepath[tmp] = '\0';
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    optind = 0;
+
+    while ((c = getopt (argc, argv, "W:w:t:s:l:aphvi:f:")) != -1) {
         switch (c)
         {
             case 'h':
@@ -162,8 +206,29 @@ int main(int argc, char** argv)
                 exit (EXIT_SUCCESS);
             case 'a':
                 ownprintf(TESTS"\n");
+
+                struct bstrList* l = dynbench_getall();
+                if (l)
+                {
+                    ownprintf("\nUser benchmarks:\n");
+                    for (i = 0; i < l->qty; i++)
+                    {
+                        if (dynbench_test(l->entry[i]))
+                        {
+                            TestCase* t = NULL;
+                            int err = dynbench_load(l->entry[i], &t, NULL, NULL, NULL);
+                            if (!err && t)
+                            {
+                                printf("%s - %s\n", t->name, t->desc);
+                                dynbench_close(t, NULL);
+                            }
+                        }
+                    }
+                    bstrListDestroy(l);
+                }
                 exit (EXIT_SUCCESS);
             case 'w':
+            case 'W':
                 numberOfWorkgroups++;
                 break;
             case 's':
@@ -180,13 +245,20 @@ int main(int argc, char** argv)
             case 'l':
                 bdestroy(testcase);
                 testcase = bfromcstr(optarg);
+                int builtin = 1;
                 for (i=0; i<NUMKERNELS; i++)
                 {
                     if (biseqcstr(testcase, kernels[i].name))
                     {
-                        test = kernels+i;
+                        test = (TestCase*)kernels+i;
                         break;
                     }
+                }
+
+                if (test == NULL && dynbench_test(testcase))
+                {
+                    dynbench_load(testcase, &test, NULL, NULL, NULL);
+                    builtin = 0;
                 }
 
                 if (test == NULL)
@@ -255,6 +327,10 @@ int main(int argc, char** argv)
                     }
                 }
                 bdestroy(testcase);
+                if (!builtin)
+                {
+                    dynbench_close(test, NULL);
+                }
                 exit (EXIT_SUCCESS);
 
                 break;
@@ -275,9 +351,19 @@ int main(int argc, char** argv)
                 {
                     if (biseqcstr(testcase, kernels[i].name))
                     {
-                        test = kernels+i;
+                        test = (TestCase*)kernels+i;
                         break;
                     }
+                }
+
+                if (test == NULL && dynbench_test(testcase))
+                {
+                    if (strlen(compilepath) == 0)
+                    {
+                        int ret = snprintf(compilepath, 512, "%s", defcompilepath);
+                        if (ret > 0) compilepath[ret] = '\0';
+                    }
+                    dynbench_load(testcase, &test, compilepath, compilers, compileflags);
                 }
 
                 if (test == NULL)
@@ -286,6 +372,8 @@ int main(int argc, char** argv)
                     return EXIT_FAILURE;
                 }
                 bdestroy(testcase);
+                break;
+            case 'f':
                 break;
             case '?':
                 if (isprint (optopt))
@@ -322,6 +410,11 @@ int main(int argc, char** argv)
     affinity_init();
     timer_init();
 
+    memset(&sig, 0, sizeof(struct sigaction));
+    sig.sa_sigaction = illhandler;
+    sig.sa_flags = SA_SIGINFO;
+    sigaction(SIGILL, &sig, NULL);
+
     if (optPrintDomains)
     {
         bdestroy(testcase);
@@ -343,21 +436,28 @@ int main(int argc, char** argv)
 
     allocator_init(numberOfWorkgroups * MAX_STREAMS);
     groups = (Workgroup*) malloc(numberOfWorkgroups*sizeof(Workgroup));
+    memset(groups, 0, numberOfWorkgroups*sizeof(Workgroup));
     tmp = 0;
 
     optind = 0;
-    while ((c = getopt (argc, argv, "w:t:s:l:i:aphv")) != -1)
+    while ((c = getopt (argc, argv, "W:w:t:s:l:i:aphv")) != -1)
     {
         switch (c)
         {
             case 'w':
+            case 'W':
                 currentWorkgroup = groups+tmp;
                 bstring groupstr = bfromcstr(optarg);
+                if (c == 'W')
+                {
+                    currentWorkgroup->init_per_thread = 1;
+                }
                 i = bstr_to_workgroup(currentWorkgroup, groupstr, test->type, test->streams);
                 bdestroy(groupstr);
                 size_t newsize = 0;
                 size_t stride = test->stride;
                 int nrThreads = currentWorkgroup->numberOfThreads;
+                int clsize = 128;
                 size_t orig_size = currentWorkgroup->size;
                 if (i == 0)
                 {
@@ -404,7 +504,8 @@ int main(int argc, char** argv)
                                                     currentWorkgroup->streams[i].offset,
                                                     test->type,
                                                     test->stride,
-                                                    currentWorkgroup->streams[i].domain);
+                                                    currentWorkgroup->streams[i].domain,
+                                                    currentWorkgroup->init_per_thread && nrThreads > 1);
                     }
                     tmp++;
                 }
@@ -413,16 +514,48 @@ int main(int argc, char** argv)
                     exit(EXIT_FAILURE);
                 }
                 if (newsize != currentWorkgroup->size)
+                {
                     currentWorkgroup->size = newsize;
+                }
+                if (nrThreads > 1)
+                {
+                    if (currentWorkgroup->init_per_thread)
+                    {
+                        printf("Initialization: Each thread in domain initializes its own stream chunks\n");
+                    }
+                    else
+                    {
+                        printf("Initialization: First thread in domain initializes the whole stream\n");
+                    }
+                }
                 break;
             default:
                 continue;
                 break;
         }
     }
+    if (numberOfWorkgroups > 1)
+    {
+        int g0_numberOfThreads = groups[0].numberOfThreads;
+        int g0_size = groups[0].size;
+        for (i = 1; i < numberOfWorkgroups; i++)
+        {
+            if (g0_numberOfThreads != groups[i].numberOfThreads)
+            {
+                fprintf (stderr, "Warning: Multiple workgroups with different thread counts are not recommended. Use with case!\n");
+                break;
+            }
+        }
+        for (i = 1; i < numberOfWorkgroups; i++)
+        {
+            if (g0_size != groups[i].size)
+            {
+                fprintf (stderr, "Warning: Multiple workgroups with different sizes are not recommended. Use with case!\n");
+                break;
+            }
+        }
+    }
 
-    /* :WARNING:05/04/2010 08:58:05 AM:jt: At the moment the thread
-     * module only allows equally sized thread groups*/
     for (i=0; i<numberOfWorkgroups; i++)
     {
         globalNumberOfThreads += groups[i].numberOfThreads;
@@ -438,7 +571,7 @@ int main(int argc, char** argv)
 
 
     threads_init(globalNumberOfThreads);
-    threads_createGroups(numberOfWorkgroups);
+    threads_createGroups(numberOfWorkgroups, groups);
 
     /* we configure global barriers only */
     barrier_init(1);
@@ -468,6 +601,7 @@ int main(int argc, char** argv)
         myData.test = test;
         myData.cycles = 0;
         myData.numberOfThreads = groups[i].numberOfThreads;
+        myData.init_per_thread = groups[i].init_per_thread;
         myData.processors = (int*) malloc(myData.numberOfThreads * sizeof(int));
         myData.streams = (void**) malloc(test->streams * sizeof(void*));
 
@@ -555,8 +689,8 @@ int main(int argc, char** argv)
     ownprintf("Iterations:\t\t%" PRIu64 "\n", realIter);
     ownprintf("Iterations per thread:\t%" PRIu64 "\n",iters_per_thread);
     ownprintf("Inner loop executions:\t%d\n", (int)(((double)realSize)/((double)test->stride*globalNumberOfThreads)));
-    ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize * test->bytes );
-    ownprintf("Size per thread:\t%" PRIu64 "\n", size_per_thread * test->bytes);
+    ownprintf("Size (Byte):\t\t%" PRIu64 "\n",  realSize * datatypesize * test->streams);
+    ownprintf("Size per thread:\t%" PRIu64 "\n", size_per_thread * datatypesize * test->streams);
     ownprintf("Number of Flops:\t%" PRIu64 "\n", (iters_per_thread * realSize *  test->flops));
     ownprintf("MFlops/s:\t\t%.2f\n",
             1.0E-06 * ((double) (iters_per_thread * realSize *  test->flops) /  time));
@@ -637,7 +771,11 @@ int main(int argc, char** argv)
     LIKWID_MARKER_CLOSE;
 #endif
 
+    if (test->dlhandle != NULL)
+    {
+        dynbench_close(test, compilepath);
+    }
+
     bdestroy(HLINE);
     return EXIT_SUCCESS;
 }
-

@@ -37,6 +37,26 @@
 
 extern char* daemon_path;
 
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
+#include <cpuid.h>
+#endif
+
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
+static int isAMD()
+{
+    unsigned int eax,ebx,ecx,edx;
+    eax = 0x0;
+    CPUID(eax,ebx,ecx,edx);
+    if (ecx == 0x444d4163)
+        return 1;
+    return 0;
+}
+#else
+static int isAMD()
+{
+    return 0;
+}
+#endif
 
 
 #endif /* FREQUENCY_H */
