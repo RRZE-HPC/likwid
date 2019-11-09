@@ -1,0 +1,32 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 3
+BYTES 16
+
+.set vec0,0; .set vec1,1; .set vec2,2; .set vec3,3;
+.set vec4,4; .set vec5,5; .set vec6,6; .set vec7,7;
+.set vec8,8; .set vec9,9; .set vec10,10; .set vec11,11;
+
+mtctr r3            # move to count register
+li r7, 0            # load immediate value of 0 into r7 (used as offset in addressing)
+
+xssubdp vec0, vec0, vec0    # set to zero
+xssubdp vec1, vec1, vec1    # set to zero
+xssubdp vec2, vec2, vec2    # set to zero
+xssubdp vec3, vec3, vec3    # set to zero
+xssubdp vec4, vec4, vec4    # set to zero
+xssubdp vec5, vec5, vec5    # set to zero
+xssubdp vec10, vec10, vec10 # set to zero
+
+LOOP 1
+
+lfd vec0, 0(STR0)
+lfd vec10, 0(STR1)
+
+fmadd vec0, vec1, vec10, vec0 # uses both loaded values and a constant
+fmadd vec0, vec3, vec4, vec0  # has to wait for vec0 from previous FMA, has to wait for vec0 from previous iteration's mul
+fmul vec4, vec0, vec5   # has to wait for vec0 from previous FMA
+stfd vec4, 0(STR1)
+
+addi STR0, STR0, 8
+addi STR1, STR1, 8

@@ -83,6 +83,11 @@
 #include <perfmon_perfevent.h>
 #endif
 
+#ifdef _ARCH_PPC
+#include <perfmon_power8.h>
+#include <perfmon_power9.h>
+#endif
+
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 PerfmonEvent* eventHash = NULL;
@@ -770,6 +775,22 @@ perfmon_check_counter_map(int cpu_id)
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
         }
+#else
+        char* path = translate_types[counter_map[i].type];
+        struct stat st;
+        if (path == NULL || stat(path, &st) != 0)
+        {
+            counter_map[i].type = NOTYPE;
+            counter_map[i].optionMask = 0x0ULL;
+        }
+        if (counter_map[i].type != PMC && counter_map[i].type != FIXED)
+        {
+            if (perfevent_paranoid_value() > 0 && getuid() != 0)
+            {
+                counter_map[i].type = NOTYPE;
+                counter_map[i].optionMask = 0x0ULL;
+            }
+        }
 #endif
     }
     if (own_hpm)
@@ -789,7 +810,7 @@ perfmon_check_counter_map(int cpu_id)
                 continue;
             PerfmonEvent event;
             bstring cstr = bfromcstr(counter_map[j].key);
-            if (getEvent(estr, cstr, &event))
+            if (getEvent(estr, cstr, &event) && checkCounter(cstr, eventHash[i].limit))
             {
                 found = 1;
                 bdestroy(cstr);
@@ -1150,6 +1171,29 @@ perfmon_init_maps(void)
                     ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
             }
             break;
+#ifdef _ARCH_PPC
+	case PPC_FAMILY:
+	    switch ( cpuid_info.model )
+            {
+                case POWER8:
+		    eventHash = power8_arch_events;
+	            counter_map = power8_counter_map;
+	            box_map = power8_box_map;
+                    translate_types = power8_translate_types;
+	            perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER8;
+	            perfmon_numCounters = NUM_COUNTERS_POWER8;
+	            break;
+                case POWER9:
+		    eventHash = power9_arch_events;
+	            counter_map = power9_counter_map;
+	            box_map = power9_box_map;
+                    translate_types = power9_translate_types;
+	            perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER9;
+	            perfmon_numCounters = NUM_COUNTERS_POWER9;
+	            break;
+	    }
+            break;
+#endif
 
         case ARMV7_FAMILY:
             switch ( cpuid_info.model )
@@ -2007,14 +2051,12 @@ perfmon_addEventSet(const char* eventCString)
                 event->type = NOTYPE;
                 goto past_checks;
             }
-#ifndef LIKWID_USE_PERFEVENT
             if (!checkCounter(subtokens->entry[1], event->event.limit))
             {
                 fprintf(stderr, "WARN: Register %s not allowed for event %s (limit %s)\n", bdata(subtokens->entry[1]),bdata(subtokens->entry[0]),event->event.limit);
                 event->type = NOTYPE;
                 goto past_checks;
             }
-#endif
             if (parseOptions(subtokens, &event->event, event->index) < 0)
             {
                 event->type = NOTYPE;

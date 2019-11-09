@@ -104,6 +104,7 @@ allocator_allocateVector(
     const AffinityDomain* domain = NULL;
     int errorCode;
     int elements = 0;
+    affinity_init();
 
     size_t typesize = allocator_dataTypeLength(type);
     bytesize = (size+offset) * typesize;

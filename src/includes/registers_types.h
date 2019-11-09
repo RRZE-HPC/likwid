@@ -163,15 +163,24 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [MBOX5FIX] = "Memory Controller 1 Channel 1 Fixed Counter",
     [MBOX6FIX] = "Memory Controller 1 Channel 2 Fixed Counter",
     [MBOX7FIX] = "Memory Controller 1 Channel 3 Fixed Counter",
+#ifdef _ARCH_PPC
+    [BBOX0] = "Memory controller synchronous (port 0 & 1)",
+    [BBOX1] = "Memory controller synchronous (port 2 & 3)",
+#else
     [BBOX0] = "Home Agent box 0",
     [BBOX1] = "Home Agent box 1",
+#endif
     [RBOX0] = "Routing box 0",
     [RBOX1] = "Routing box 1",
     [RBOX2] = "Routing box 2",
     [WBOX] = "Power control box",
     [WBOX0FIX] = "Power control box fixed counter 0",
     [WBOX1FIX] = "Power control box fixed counter 1",
+#ifdef _ARCH_PPC
+    [SBOX0] = "PowerBus",
+#else
     [SBOX0] = "QPI Link Layer box 0",
+#endif
     [SBOX1] = "QPI Link Layer box 1",
     [SBOX2] = "QPI Link Layer box 2",
     [SBOX3] = "QPI Link Layer box 3",
@@ -229,8 +238,15 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [IBOX3] = "Coherency Maintainer for IIO traffic",
     [IBOX4] = "Coherency Maintainer for IIO traffic",
     [IBOX5] = "Coherency Maintainer for IIO traffic",
+#ifdef _ARCH_PPC
+    [QBOX0] = "Xlink 0",
+    [QBOX1] = "Xlink 1",
+    [QBOX2] = "Xlink 2",
+#else
     [QBOX0] = "QPI Link Layer 0",
     [QBOX1] = "QPI Link Layer 1",
+    [QBOX2] = "QPI Link Layer 2",
+#endif
     [QBOX0FIX] = "QPI Link Layer rate status 0",
     [QBOX1FIX] = "QPI Link Layer rate status 1",
     [EUBOX0] = "Embedded DRAM controller 0",

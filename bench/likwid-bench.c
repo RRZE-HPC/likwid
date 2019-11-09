@@ -160,7 +160,11 @@ int main(int argc, char** argv)
     binsertch(HLINE, 0, 80, '-');
     binsertch(HLINE, 80, 1, '\n');
     int (*ownprintf)(const char *format, ...);
+#ifdef _ARCH_PPC
+    int clsize = 128;
+#else
     int clsize = sysconf (_SC_LEVEL1_DCACHE_LINESIZE);
+#endif
     char compilers[512] = "gcc,icc,pgcc";
     char defcompilepath[512] = "/tmp";
     char compilepath[513] = "";
@@ -453,6 +457,7 @@ int main(int argc, char** argv)
                 size_t newsize = 0;
                 size_t stride = test->stride;
                 int nrThreads = currentWorkgroup->numberOfThreads;
+                int clsize = 128;
                 size_t orig_size = currentWorkgroup->size;
                 if (i == 0)
                 {

@@ -659,7 +659,7 @@
 
 /* Define to 1 if X11 headers including Xutil.h and keysym.h are available. */
 #define HWLOC_HAVE_X11_KEYSYM 1
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 /* Define to 1 if you have x86 cpuid */
 #define HWLOC_HAVE_X86_CPUID 1
 #endif
@@ -685,7 +685,7 @@
 /* The size of `unsigned int', as computed by sizeof */
 #define HWLOC_SIZEOF_UNSIGNED_INT 4
 /* The size of `unsigned long', as computed by sizeof */
-#ifdef __x86_64
+#if defined(__x86_64) || defined(_ARCH_PPC)
 #define HWLOC_SIZEOF_UNSIGNED_LONG 8
 #else
 #if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
@@ -706,7 +706,9 @@
 #define HWLOC_SYM_TRANSFORM 1
 
 /* Define to 1 on unsupported systems */
-/* #undef HWLOC_UNSUPPORTED_SYS */
+#ifdef _ARCH_PPC
+#define HWLOC_UNSUPPORTED_SYS 1
+#endif 
 
 /* Define to 1 if ncurses works, preferred over curses */
 /* #undef HWLOC_USE_NCURSES */
