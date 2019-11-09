@@ -62,7 +62,9 @@ static void split_allocation(malloc_link_t *allocation, size_t new_size)
 void *gotcha_malloc(size_t size)
 {
    malloc_link_t *cur, *prev, *newalloc;
-   malloc_link_t *best_fit = NULL, *best_fit_prev;
+   // Initialization of best_fit_prev to NULL added by Thomas Gruber to avoid
+   // warnings
+   malloc_link_t *best_fit = NULL, *best_fit_prev = NULL;
    // Initialization of best_fit_diff to SIZE_MAX added by Thomas Gruber to
    // avoid warnings
    ssize_t best_fit_diff = SIZE_MAX, diff, block_size;
