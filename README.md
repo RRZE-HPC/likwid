@@ -3,8 +3,9 @@ Introduction
 --------------------------------------------------------------------------------
 
 Likwid is a simple to install and use toolsuite of command line applications
-for performance oriented programmers. It works for Intel, AMD and ARMv8 processors
-on the Linux operating system.
+for performance oriented programmers. It works for Intel, AMD, ARMv8 and POWER9 
+processors on the Linux operating system. There is support for ARMv7 and POWER8
+but there is currently no test machine in our hands to test them properly.
 
 [![Build Status](https://travis-ci.org/RRZE-HPC/likwid.svg?branch=master)](https://travis-ci.org/RRZE-HPC/likwid)
 
@@ -61,9 +62,16 @@ AMD
 - AMD Interlagos
 - AMD Kabini
 - AMD Zen
+- AMD Zen2
 
-ARMv8 (experimental)
-- Tested on Marvell Thunder X2
+ARM (experimental)
+- ARMv7
+- ARMv8
+- Special support for Marvell Thunder X2
+
+POWER (experimental)
+- IBM POWER8
+- IBM POWER9
 
 --------------------------------------------------------------------------------
 Download, Build and Install
