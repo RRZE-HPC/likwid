@@ -79,6 +79,8 @@ typedef enum {
     EVENT_OPTION_OCCUPANCY_INVERT, /*!< \brief Invert filter for occupancy counting */
     EVENT_OPTION_IN_TRANS, /*!< \brief Count events during transactions */
     EVENT_OPTION_IN_TRANS_ABORT, /*!< \brief Count events that aborted during transactions */
+    EVENT_OPTION_GENERIC_CONFIG, /*!< \brief Configuration bitmask for generic event */
+    EVENT_OPTION_GENERIC_UMASK, /*!< \brief Umask bitmask for generic event */
 #ifdef LIKWID_USE_PERFEVENT
     EVENT_OPTION_PERF_PID, /*!< \brief PID parameter to use in the perf_event_open call */
     EVENT_OPTION_PERF_FLAGS, /*!< \brief FLAGS parameters to use in the perf_event_open call */
@@ -139,6 +141,8 @@ extern char* eventOptionTypeName[NUM_EVENT_OPTIONS];
 #define EVENT_OPTION_OCCUPANCY_INVERT_MASK (1ULL<<EVENT_OPTION_OCCUPANCY_INVERT)
 #define EVENT_OPTION_IN_TRANS_MASK (1ULL<<EVENT_OPTION_IN_TRANS)
 #define EVENT_OPTION_IN_TRANS_ABORT_MASK (1ULL<<EVENT_OPTION_IN_TRANS_ABORT)
+#define EVENT_OPTION_GENERIC_CONFIG_MASK (1ULL<<EVENT_OPTION_GENERIC_CONFIG)
+#define EVENT_OPTION_GENERIC_UMASK_MASK (1ULL<<EVENT_OPTION_GENERIC_UMASK)
 /** @endcond */
 
 /*! \brief Structure specifying thread to CPU relation
@@ -172,7 +176,7 @@ the event options are hold here.
 */
 typedef struct {
     const char*     name; /*!< \brief Name of the event */
-    const char*     limit; /*!< \brief Valid counters for the event */
+    char*           limit; /*!< \brief Valid counters for the event */
     uint64_t        eventId; /*!< \brief ID of the event */
     uint64_t        umask; /*!< \brief Most events need to specify a mask to limit counting */
     uint64_t        cfgBits; /*!< \brief Misc configuration bits */

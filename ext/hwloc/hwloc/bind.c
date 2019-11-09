@@ -1,15 +1,16 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2011 inria.  All rights reserved.
+ * Copyright © 2009-2019 Inria.  All rights reserved.
  * Copyright © 2009-2010, 2012 Université Bordeaux
- * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
+ * Copyright © 2011-2015 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
-#include <private/private.h>
-#include <hwloc/helper.h>
+#include "private/autogen/config.h"
+#include "hwloc.h"
+#include "private/private.h"
+#include "hwloc/helper.h"
+
 #ifdef HAVE_SYS_MMAN_H
 #  include <sys/mman.h>
 #endif
@@ -23,26 +24,20 @@
 #include <stdlib.h>
 #include <errno.h>
 
-/* TODO: HWLOC_GNU_SYS, HWLOC_IRIX_SYS,
- *
- * IRIX: see MP_MUSTRUN / _DSM_MUSTRUN, pthread_setrunon_np, /hw, procss_cpulink, numa_create
+/* TODO: HWLOC_GNU_SYS,
  *
  * We could use glibc's sched_setaffinity generically when it is available
  *
  * Darwin and OpenBSD don't seem to have binding facilities.
  */
 
+#define HWLOC_CPUBIND_ALLFLAGS (HWLOC_CPUBIND_PROCESS|HWLOC_CPUBIND_THREAD|HWLOC_CPUBIND_STRICT|HWLOC_CPUBIND_NOMEMBIND)
+
 static hwloc_const_bitmap_t
 hwloc_fix_cpubind(hwloc_topology_t topology, hwloc_const_bitmap_t set)
 {
   hwloc_const_bitmap_t topology_set = hwloc_topology_get_topology_cpuset(topology);
   hwloc_const_bitmap_t complete_set = hwloc_topology_get_complete_cpuset(topology);
-
-  if (!topology_set) {
-    /* The topology is composed of several systems, the cpuset is ambiguous. */
-    errno = EXDEV;
-    return NULL;
-  }
 
   if (hwloc_bitmap_iszero(set)) {
     errno = EINVAL;
@@ -63,6 +58,11 @@ hwloc_fix_cpubind(hwloc_topology_t topology, hwloc_const_bitmap_t set)
 int
 hwloc_set_cpubind(hwloc_topology_t topology, hwloc_const_bitmap_t set, int flags)
 {
+  if (flags & ~HWLOC_CPUBIND_ALLFLAGS) {
+    errno = EINVAL;
+    return -1;
+  }
+
   set = hwloc_fix_cpubind(topology, set);
   if (!set)
     return -1;
@@ -74,9 +74,13 @@ hwloc_set_cpubind(hwloc_topology_t topology, hwloc_const_bitmap_t set, int flags
     if (topology->binding_hooks.set_thisthread_cpubind)
       return topology->binding_hooks.set_thisthread_cpubind(topology, set, flags);
   } else {
-    if (topology->binding_hooks.set_thisproc_cpubind)
-      return topology->binding_hooks.set_thisproc_cpubind(topology, set, flags);
-    else if (topology->binding_hooks.set_thisthread_cpubind)
+    if (topology->binding_hooks.set_thisproc_cpubind) {
+      int err = topology->binding_hooks.set_thisproc_cpubind(topology, set, flags);
+      if (err >= 0 || errno != ENOSYS)
+        return err;
+      /* ENOSYS, fallback */
+    }
+    if (topology->binding_hooks.set_thisthread_cpubind)
       return topology->binding_hooks.set_thisthread_cpubind(topology, set, flags);
   }
 
@@ -87,6 +91,11 @@ hwloc_set_cpubind(hwloc_topology_t topology, hwloc_const_bitmap_t set, int flags
 int
 hwloc_get_cpubind(hwloc_topology_t topology, hwloc_bitmap_t set, int flags)
 {
+  if (flags & ~HWLOC_CPUBIND_ALLFLAGS) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (flags & HWLOC_CPUBIND_PROCESS) {
     if (topology->binding_hooks.get_thisproc_cpubind)
       return topology->binding_hooks.get_thisproc_cpubind(topology, set, flags);
@@ -94,9 +103,13 @@ hwloc_get_cpubind(hwloc_topology_t topology, hwloc_bitmap_t set, int flags)
     if (topology->binding_hooks.get_thisthread_cpubind)
       return topology->binding_hooks.get_thisthread_cpubind(topology, set, flags);
   } else {
-    if (topology->binding_hooks.get_thisproc_cpubind)
-      return topology->binding_hooks.get_thisproc_cpubind(topology, set, flags);
-    else if (topology->binding_hooks.get_thisthread_cpubind)
+    if (topology->binding_hooks.get_thisproc_cpubind) {
+      int err = topology->binding_hooks.get_thisproc_cpubind(topology, set, flags);
+      if (err >= 0 || errno != ENOSYS)
+        return err;
+      /* ENOSYS, fallback */
+    }
+    if (topology->binding_hooks.get_thisthread_cpubind)
       return topology->binding_hooks.get_thisthread_cpubind(topology, set, flags);
   }
 
@@ -107,6 +120,11 @@ hwloc_get_cpubind(hwloc_topology_t topology, hwloc_bitmap_t set, int flags)
 int
 hwloc_set_proc_cpubind(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_const_bitmap_t set, int flags)
 {
+  if (flags & ~HWLOC_CPUBIND_ALLFLAGS) {
+    errno = EINVAL;
+    return -1;
+  }
+
   set = hwloc_fix_cpubind(topology, set);
   if (!set)
     return -1;
@@ -121,6 +139,11 @@ hwloc_set_proc_cpubind(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_const_b
 int
 hwloc_get_proc_cpubind(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_bitmap_t set, int flags)
 {
+  if (flags & ~HWLOC_CPUBIND_ALLFLAGS) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (topology->binding_hooks.get_proc_cpubind)
     return topology->binding_hooks.get_proc_cpubind(topology, pid, set, flags);
 
@@ -132,6 +155,11 @@ hwloc_get_proc_cpubind(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_bitmap_
 int
 hwloc_set_thread_cpubind(hwloc_topology_t topology, hwloc_thread_t tid, hwloc_const_bitmap_t set, int flags)
 {
+  if (flags & ~HWLOC_CPUBIND_ALLFLAGS) {
+    errno = EINVAL;
+    return -1;
+  }
+
   set = hwloc_fix_cpubind(topology, set);
   if (!set)
     return -1;
@@ -146,6 +174,11 @@ hwloc_set_thread_cpubind(hwloc_topology_t topology, hwloc_thread_t tid, hwloc_co
 int
 hwloc_get_thread_cpubind(hwloc_topology_t topology, hwloc_thread_t tid, hwloc_bitmap_t set, int flags)
 {
+  if (flags & ~HWLOC_CPUBIND_ALLFLAGS) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (topology->binding_hooks.get_thread_cpubind)
     return topology->binding_hooks.get_thread_cpubind(topology, tid, set, flags);
 
@@ -157,6 +190,11 @@ hwloc_get_thread_cpubind(hwloc_topology_t topology, hwloc_thread_t tid, hwloc_bi
 int
 hwloc_get_last_cpu_location(hwloc_topology_t topology, hwloc_bitmap_t set, int flags)
 {
+  if (flags & ~HWLOC_CPUBIND_ALLFLAGS) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (flags & HWLOC_CPUBIND_PROCESS) {
     if (topology->binding_hooks.get_thisproc_last_cpu_location)
       return topology->binding_hooks.get_thisproc_last_cpu_location(topology, set, flags);
@@ -164,9 +202,13 @@ hwloc_get_last_cpu_location(hwloc_topology_t topology, hwloc_bitmap_t set, int f
     if (topology->binding_hooks.get_thisthread_last_cpu_location)
       return topology->binding_hooks.get_thisthread_last_cpu_location(topology, set, flags);
   } else {
-    if (topology->binding_hooks.get_thisproc_last_cpu_location)
-      return topology->binding_hooks.get_thisproc_last_cpu_location(topology, set, flags);
-    else if (topology->binding_hooks.get_thisthread_last_cpu_location)
+    if (topology->binding_hooks.get_thisproc_last_cpu_location) {
+      int err = topology->binding_hooks.get_thisproc_last_cpu_location(topology, set, flags);
+      if (err >= 0 || errno != ENOSYS)
+        return err;
+      /* ENOSYS, fallback */
+    }
+    if (topology->binding_hooks.get_thisthread_last_cpu_location)
       return topology->binding_hooks.get_thisthread_last_cpu_location(topology, set, flags);
   }
 
@@ -177,6 +219,11 @@ hwloc_get_last_cpu_location(hwloc_topology_t topology, hwloc_bitmap_t set, int f
 int
 hwloc_get_proc_last_cpu_location(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_bitmap_t set, int flags)
 {
+  if (flags & ~HWLOC_CPUBIND_ALLFLAGS) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (topology->binding_hooks.get_proc_last_cpu_location)
     return topology->binding_hooks.get_proc_last_cpu_location(topology, pid, set, flags);
 
@@ -184,24 +231,13 @@ hwloc_get_proc_last_cpu_location(hwloc_topology_t topology, hwloc_pid_t pid, hwl
   return -1;
 }
 
+#define HWLOC_MEMBIND_ALLFLAGS (HWLOC_MEMBIND_PROCESS|HWLOC_MEMBIND_THREAD|HWLOC_MEMBIND_STRICT|HWLOC_MEMBIND_MIGRATE|HWLOC_MEMBIND_NOCPUBIND|HWLOC_MEMBIND_BYNODESET)
+
 static hwloc_const_nodeset_t
 hwloc_fix_membind(hwloc_topology_t topology, hwloc_const_nodeset_t nodeset)
 {
   hwloc_const_bitmap_t topology_nodeset = hwloc_topology_get_topology_nodeset(topology);
   hwloc_const_bitmap_t complete_nodeset = hwloc_topology_get_complete_nodeset(topology);
-
-  if (!hwloc_topology_get_topology_cpuset(topology)) {
-    /* The topology is composed of several systems, the nodeset is thus
-     * ambiguous. */
-    errno = EXDEV;
-    return NULL;
-  }
-
-  if (!complete_nodeset) {
-    /* There is no NUMA node */
-    errno = ENODEV;
-    return NULL;
-  }
 
   if (hwloc_bitmap_iszero(nodeset)) {
     errno = EINVAL;
@@ -226,19 +262,6 @@ hwloc_fix_membind_cpuset(hwloc_topology_t topology, hwloc_nodeset_t nodeset, hwl
   hwloc_const_bitmap_t complete_set = hwloc_topology_get_complete_cpuset(topology);
   hwloc_const_bitmap_t complete_nodeset = hwloc_topology_get_complete_nodeset(topology);
 
-  if (!topology_set) {
-    /* The topology is composed of several systems, the cpuset is thus
-     * ambiguous. */
-    errno = EXDEV;
-    return -1;
-  }
-
-  if (!complete_nodeset) {
-    /* There is no NUMA node */
-    errno = ENODEV;
-    return -1;
-  }
-
   if (hwloc_bitmap_iszero(cpuset)) {
     errno = EINVAL;
     return -1;
@@ -258,9 +281,25 @@ hwloc_fix_membind_cpuset(hwloc_topology_t topology, hwloc_nodeset_t nodeset, hwl
   return 0;
 }
 
-int
-hwloc_set_membind_nodeset(hwloc_topology_t topology, hwloc_const_nodeset_t nodeset, hwloc_membind_policy_t policy, int flags)
+static __hwloc_inline int hwloc__check_membind_policy(hwloc_membind_policy_t policy)
 {
+  if (policy == HWLOC_MEMBIND_DEFAULT
+      || policy == HWLOC_MEMBIND_FIRSTTOUCH
+      || policy == HWLOC_MEMBIND_BIND
+      || policy == HWLOC_MEMBIND_INTERLEAVE
+      || policy == HWLOC_MEMBIND_NEXTTOUCH)
+    return 0;
+  return -1;
+}
+
+static int
+hwloc_set_membind_by_nodeset(hwloc_topology_t topology, hwloc_const_nodeset_t nodeset, hwloc_membind_policy_t policy, int flags)
+{
+  if ((flags & ~HWLOC_MEMBIND_ALLFLAGS) || hwloc__check_membind_policy(policy) < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
   nodeset = hwloc_fix_membind(topology, nodeset);
   if (!nodeset)
     return -1;
@@ -272,9 +311,13 @@ hwloc_set_membind_nodeset(hwloc_topology_t topology, hwloc_const_nodeset_t nodes
     if (topology->binding_hooks.set_thisthread_membind)
       return topology->binding_hooks.set_thisthread_membind(topology, nodeset, policy, flags);
   } else {
-    if (topology->binding_hooks.set_thisproc_membind)
-      return topology->binding_hooks.set_thisproc_membind(topology, nodeset, policy, flags);
-    else if (topology->binding_hooks.set_thisthread_membind)
+    if (topology->binding_hooks.set_thisproc_membind) {
+      int err = topology->binding_hooks.set_thisproc_membind(topology, nodeset, policy, flags);
+      if (err >= 0 || errno != ENOSYS)
+        return err;
+      /* ENOSYS, fallback */
+    }
+    if (topology->binding_hooks.set_thisthread_membind)
       return topology->binding_hooks.set_thisthread_membind(topology, nodeset, policy, flags);
   }
 
@@ -283,23 +326,31 @@ hwloc_set_membind_nodeset(hwloc_topology_t topology, hwloc_const_nodeset_t nodes
 }
 
 int
-hwloc_set_membind(hwloc_topology_t topology, hwloc_const_cpuset_t set, hwloc_membind_policy_t policy, int flags)
+hwloc_set_membind(hwloc_topology_t topology, hwloc_const_bitmap_t set, hwloc_membind_policy_t policy, int flags)
 {
-  hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
   int ret;
 
-  if (hwloc_fix_membind_cpuset(topology, nodeset, set))
-    ret = -1;
-  else
-    ret = hwloc_set_membind_nodeset(topology, nodeset, policy, flags);
-
-  hwloc_bitmap_free(nodeset);
+  if (flags & HWLOC_MEMBIND_BYNODESET) {
+    ret = hwloc_set_membind_by_nodeset(topology, set, policy, flags);
+  } else {
+    hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
+    if (hwloc_fix_membind_cpuset(topology, nodeset, set))
+      ret = -1;
+    else
+      ret = hwloc_set_membind_by_nodeset(topology, nodeset, policy, flags);
+    hwloc_bitmap_free(nodeset);
+  }
   return ret;
 }
 
-int
-hwloc_get_membind_nodeset(hwloc_topology_t topology, hwloc_nodeset_t nodeset, hwloc_membind_policy_t * policy, int flags)
+static int
+hwloc_get_membind_by_nodeset(hwloc_topology_t topology, hwloc_nodeset_t nodeset, hwloc_membind_policy_t * policy, int flags)
 {
+  if (flags & ~HWLOC_MEMBIND_ALLFLAGS) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (flags & HWLOC_MEMBIND_PROCESS) {
     if (topology->binding_hooks.get_thisproc_membind)
       return topology->binding_hooks.get_thisproc_membind(topology, nodeset, policy, flags);
@@ -307,9 +358,13 @@ hwloc_get_membind_nodeset(hwloc_topology_t topology, hwloc_nodeset_t nodeset, hw
     if (topology->binding_hooks.get_thisthread_membind)
       return topology->binding_hooks.get_thisthread_membind(topology, nodeset, policy, flags);
   } else {
-    if (topology->binding_hooks.get_thisproc_membind)
-      return topology->binding_hooks.get_thisproc_membind(topology, nodeset, policy, flags);
-    else if (topology->binding_hooks.get_thisthread_membind)
+    if (topology->binding_hooks.get_thisproc_membind) {
+      int err = topology->binding_hooks.get_thisproc_membind(topology, nodeset, policy, flags);
+      if (err >= 0 || errno != ENOSYS)
+        return err;
+      /* ENOSYS, fallback */
+    }
+    if (topology->binding_hooks.get_thisthread_membind)
       return topology->binding_hooks.get_thisthread_membind(topology, nodeset, policy, flags);
   }
 
@@ -318,24 +373,31 @@ hwloc_get_membind_nodeset(hwloc_topology_t topology, hwloc_nodeset_t nodeset, hw
 }
 
 int
-hwloc_get_membind(hwloc_topology_t topology, hwloc_cpuset_t set, hwloc_membind_policy_t * policy, int flags)
+hwloc_get_membind(hwloc_topology_t topology, hwloc_bitmap_t set, hwloc_membind_policy_t * policy, int flags)
 {
-  hwloc_nodeset_t nodeset;
   int ret;
 
-  nodeset = hwloc_bitmap_alloc();
-  ret = hwloc_get_membind_nodeset(topology, nodeset, policy, flags);
+  if (flags & HWLOC_MEMBIND_BYNODESET) {
+    ret = hwloc_get_membind_by_nodeset(topology, set, policy, flags);
+  } else {
+    hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
+    ret = hwloc_get_membind_by_nodeset(topology, nodeset, policy, flags);
+    if (!ret)
+      hwloc_cpuset_from_nodeset(topology, set, nodeset);
+    hwloc_bitmap_free(nodeset);
+  }
 
-  if (!ret)
-    hwloc_cpuset_from_nodeset(topology, set, nodeset);
-
-  hwloc_bitmap_free(nodeset);
   return ret;
 }
 
-int
-hwloc_set_proc_membind_nodeset(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_const_nodeset_t nodeset, hwloc_membind_policy_t policy, int flags)
+static int
+hwloc_set_proc_membind_by_nodeset(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_const_nodeset_t nodeset, hwloc_membind_policy_t policy, int flags)
 {
+  if ((flags & ~HWLOC_MEMBIND_ALLFLAGS) || hwloc__check_membind_policy(policy) < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
   nodeset = hwloc_fix_membind(topology, nodeset);
   if (!nodeset)
     return -1;
@@ -349,23 +411,32 @@ hwloc_set_proc_membind_nodeset(hwloc_topology_t topology, hwloc_pid_t pid, hwloc
 
 
 int
-hwloc_set_proc_membind(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_const_cpuset_t set, hwloc_membind_policy_t policy, int flags)
+hwloc_set_proc_membind(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_const_bitmap_t set, hwloc_membind_policy_t policy, int flags)
 {
-  hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
   int ret;
 
-  if (hwloc_fix_membind_cpuset(topology, nodeset, set))
-    ret = -1;
-  else
-    ret = hwloc_set_proc_membind_nodeset(topology, pid, nodeset, policy, flags);
+  if (flags & HWLOC_MEMBIND_BYNODESET) {
+    ret = hwloc_set_proc_membind_by_nodeset(topology, pid, set, policy, flags);
+  } else {
+    hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
+    if (hwloc_fix_membind_cpuset(topology, nodeset, set))
+      ret = -1;
+    else
+      ret = hwloc_set_proc_membind_by_nodeset(topology, pid, nodeset, policy, flags);
+    hwloc_bitmap_free(nodeset);
+  }
 
-  hwloc_bitmap_free(nodeset);
   return ret;
 }
 
-int
-hwloc_get_proc_membind_nodeset(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_nodeset_t nodeset, hwloc_membind_policy_t * policy, int flags)
+static int
+hwloc_get_proc_membind_by_nodeset(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_nodeset_t nodeset, hwloc_membind_policy_t * policy, int flags)
 {
+  if (flags & ~HWLOC_MEMBIND_ALLFLAGS) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (topology->binding_hooks.get_proc_membind)
     return topology->binding_hooks.get_proc_membind(topology, pid, nodeset, policy, flags);
 
@@ -374,24 +445,35 @@ hwloc_get_proc_membind_nodeset(hwloc_topology_t topology, hwloc_pid_t pid, hwloc
 }
 
 int
-hwloc_get_proc_membind(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_cpuset_t set, hwloc_membind_policy_t * policy, int flags)
+hwloc_get_proc_membind(hwloc_topology_t topology, hwloc_pid_t pid, hwloc_bitmap_t set, hwloc_membind_policy_t * policy, int flags)
 {
-  hwloc_nodeset_t nodeset;
   int ret;
 
-  nodeset = hwloc_bitmap_alloc();
-  ret = hwloc_get_proc_membind_nodeset(topology, pid, nodeset, policy, flags);
+  if (flags & HWLOC_MEMBIND_BYNODESET) {
+    ret = hwloc_get_proc_membind_by_nodeset(topology, pid, set, policy, flags);
+  } else {
+    hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
+    ret = hwloc_get_proc_membind_by_nodeset(topology, pid, nodeset, policy, flags);
+    if (!ret)
+      hwloc_cpuset_from_nodeset(topology, set, nodeset);
+    hwloc_bitmap_free(nodeset);
+  }
 
-  if (!ret)
-    hwloc_cpuset_from_nodeset(topology, set, nodeset);
-
-  hwloc_bitmap_free(nodeset);
   return ret;
 }
 
-int
-hwloc_set_area_membind_nodeset(hwloc_topology_t topology, const void *addr, size_t len, hwloc_const_nodeset_t nodeset, hwloc_membind_policy_t policy, int flags)
+static int
+hwloc_set_area_membind_by_nodeset(hwloc_topology_t topology, const void *addr, size_t len, hwloc_const_nodeset_t nodeset, hwloc_membind_policy_t policy, int flags)
 {
+  if ((flags & ~HWLOC_MEMBIND_ALLFLAGS) || hwloc__check_membind_policy(policy) < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (!len)
+    /* nothing to do */
+    return 0;
+
   nodeset = hwloc_fix_membind(topology, nodeset);
   if (!nodeset)
     return -1;
@@ -404,23 +486,38 @@ hwloc_set_area_membind_nodeset(hwloc_topology_t topology, const void *addr, size
 }
 
 int
-hwloc_set_area_membind(hwloc_topology_t topology, const void *addr, size_t len, hwloc_const_cpuset_t set, hwloc_membind_policy_t policy, int flags)
+hwloc_set_area_membind(hwloc_topology_t topology, const void *addr, size_t len, hwloc_const_bitmap_t set, hwloc_membind_policy_t policy, int flags)
 {
-  hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
   int ret;
 
-  if (hwloc_fix_membind_cpuset(topology, nodeset, set))
-    ret = -1;
-  else
-    ret = hwloc_set_area_membind_nodeset(topology, addr, len, nodeset, policy, flags);
+  if (flags & HWLOC_MEMBIND_BYNODESET) {
+    ret = hwloc_set_area_membind_by_nodeset(topology, addr, len, set, policy, flags);
+  } else {
+    hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
+    if (hwloc_fix_membind_cpuset(topology, nodeset, set))
+      ret = -1;
+    else
+      ret = hwloc_set_area_membind_by_nodeset(topology, addr, len, nodeset, policy, flags);
+    hwloc_bitmap_free(nodeset);
+  }
 
-  hwloc_bitmap_free(nodeset);
   return ret;
 }
 
-int
-hwloc_get_area_membind_nodeset(hwloc_topology_t topology, const void *addr, size_t len, hwloc_nodeset_t nodeset, hwloc_membind_policy_t * policy, int flags)
+static int
+hwloc_get_area_membind_by_nodeset(hwloc_topology_t topology, const void *addr, size_t len, hwloc_nodeset_t nodeset, hwloc_membind_policy_t * policy, int flags)
 {
+  if (flags & ~HWLOC_MEMBIND_ALLFLAGS) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (!len) {
+    /* nothing to query */
+    errno = EINVAL;
+    return -1;
+  }
+
   if (topology->binding_hooks.get_area_membind)
     return topology->binding_hooks.get_area_membind(topology, addr, len, nodeset, policy, flags);
 
@@ -429,25 +526,64 @@ hwloc_get_area_membind_nodeset(hwloc_topology_t topology, const void *addr, size
 }
 
 int
-hwloc_get_area_membind(hwloc_topology_t topology, const void *addr, size_t len, hwloc_cpuset_t set, hwloc_membind_policy_t * policy, int flags)
+hwloc_get_area_membind(hwloc_topology_t topology, const void *addr, size_t len, hwloc_bitmap_t set, hwloc_membind_policy_t * policy, int flags)
 {
-  hwloc_nodeset_t nodeset;
   int ret;
 
-  nodeset = hwloc_bitmap_alloc();
-  ret = hwloc_get_area_membind_nodeset(topology, addr, len, nodeset, policy, flags);
+  if (flags & HWLOC_MEMBIND_BYNODESET) {
+    ret = hwloc_get_area_membind_by_nodeset(topology, addr, len, set, policy, flags);
+  } else {
+    hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
+    ret = hwloc_get_area_membind_by_nodeset(topology, addr, len, nodeset, policy, flags);
+    if (!ret)
+      hwloc_cpuset_from_nodeset(topology, set, nodeset);
+    hwloc_bitmap_free(nodeset);
+  }
 
-  if (!ret)
-    hwloc_cpuset_from_nodeset(topology, set, nodeset);
+  return ret;
+}
 
-  hwloc_bitmap_free(nodeset);
+static int
+hwloc_get_area_memlocation_by_nodeset(hwloc_topology_t topology, const void *addr, size_t len, hwloc_nodeset_t nodeset, int flags)
+{
+  if (flags & ~HWLOC_MEMBIND_ALLFLAGS) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (!len)
+    /* nothing to do */
+    return 0;
+
+  if (topology->binding_hooks.get_area_memlocation)
+    return topology->binding_hooks.get_area_memlocation(topology, addr, len, nodeset, flags);
+
+  errno = ENOSYS;
+  return -1;
+}
+
+int
+hwloc_get_area_memlocation(hwloc_topology_t topology, const void *addr, size_t len, hwloc_cpuset_t set, int flags)
+{
+  int ret;
+
+  if (flags & HWLOC_MEMBIND_BYNODESET) {
+    ret = hwloc_get_area_memlocation_by_nodeset(topology, addr, len, set, flags);
+  } else {
+    hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
+    ret = hwloc_get_area_memlocation_by_nodeset(topology, addr, len, nodeset, flags);
+    if (!ret)
+      hwloc_cpuset_from_nodeset(topology, set, nodeset);
+    hwloc_bitmap_free(nodeset);
+  }
+
   return ret;
 }
 
 void *
 hwloc_alloc_heap(hwloc_topology_t topology __hwloc_attribute_unused, size_t len)
 {
-  void *p;
+  void *p = NULL;
 #if defined(hwloc_getpagesize) && defined(HAVE_POSIX_MEMALIGN)
   errno = posix_memalign(&p, hwloc_getpagesize(), len);
   if (errno)
@@ -464,7 +600,8 @@ hwloc_alloc_heap(hwloc_topology_t topology __hwloc_attribute_unused, size_t len)
 void *
 hwloc_alloc_mmap(hwloc_topology_t topology __hwloc_attribute_unused, size_t len)
 {
-  return mmap(NULL, len, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  void * buffer = mmap(NULL, len, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  return buffer == MAP_FAILED ? NULL : buffer;
 }
 #endif
 
@@ -493,10 +630,16 @@ hwloc_alloc(hwloc_topology_t topology, size_t len)
   return hwloc_alloc_heap(topology, len);
 }
 
-void *
-hwloc_alloc_membind_nodeset(hwloc_topology_t topology, size_t len, hwloc_const_nodeset_t nodeset, hwloc_membind_policy_t policy, int flags)
+static void *
+hwloc_alloc_membind_by_nodeset(hwloc_topology_t topology, size_t len, hwloc_const_nodeset_t nodeset, hwloc_membind_policy_t policy, int flags)
 {
   void *p;
+
+  if ((flags & ~HWLOC_MEMBIND_ALLFLAGS) || hwloc__check_membind_policy(policy) < 0) {
+    errno = EINVAL;
+    return NULL;
+  }
+
   nodeset = hwloc_fix_membind(topology, nodeset);
   if (!nodeset)
     goto fallback;
@@ -531,20 +674,24 @@ fallback:
 }
 
 void *
-hwloc_alloc_membind(hwloc_topology_t topology, size_t len, hwloc_const_cpuset_t set, hwloc_membind_policy_t policy, int flags)
+hwloc_alloc_membind(hwloc_topology_t topology, size_t len, hwloc_const_bitmap_t set, hwloc_membind_policy_t policy, int flags)
 {
-  hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
   void *ret;
 
-  if (hwloc_fix_membind_cpuset(topology, nodeset, set)) {
-    if (flags & HWLOC_MEMBIND_STRICT)
-      ret = NULL;
-    else
-      ret = hwloc_alloc(topology, len);
-  } else
-    ret = hwloc_alloc_membind_nodeset(topology, len, nodeset, policy, flags);
+  if (flags & HWLOC_MEMBIND_BYNODESET) {
+    ret = hwloc_alloc_membind_by_nodeset(topology, len, set, policy, flags);
+  } else {
+    hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
+    if (hwloc_fix_membind_cpuset(topology, nodeset, set)) {
+      if (flags & HWLOC_MEMBIND_STRICT)
+	ret = NULL;
+      else
+	ret = hwloc_alloc(topology, len);
+    } else
+      ret = hwloc_alloc_membind_by_nodeset(topology, len, nodeset, policy, flags);
+    hwloc_bitmap_free(nodeset);
+  }
 
-  hwloc_bitmap_free(nodeset);
   return ret;
 }
 
@@ -562,12 +709,8 @@ hwloc_free(hwloc_topology_t topology, void *addr, size_t len)
 
 static int dontset_return_complete_cpuset(hwloc_topology_t topology, hwloc_cpuset_t set)
 {
-  hwloc_const_cpuset_t cpuset = hwloc_topology_get_complete_cpuset(topology);
-  if (cpuset) {
-    hwloc_bitmap_copy(set, hwloc_topology_get_complete_cpuset(topology));
-    return 0;
-  } else
-    return -1;
+  hwloc_bitmap_copy(set, hwloc_topology_get_complete_cpuset(topology));
+  return 0;
 }
 
 static int dontset_thisthread_cpubind(hwloc_topology_t topology __hwloc_attribute_unused, hwloc_const_bitmap_t set __hwloc_attribute_unused, int flags __hwloc_attribute_unused)
@@ -607,13 +750,9 @@ static int dontget_thread_cpubind(hwloc_topology_t topology __hwloc_attribute_un
 
 static int dontset_return_complete_nodeset(hwloc_topology_t topology, hwloc_nodeset_t set, hwloc_membind_policy_t *policy)
 {
-  hwloc_const_nodeset_t nodeset = hwloc_topology_get_complete_nodeset(topology);
-  if (nodeset) {
-    hwloc_bitmap_copy(set, hwloc_topology_get_complete_nodeset(topology));
-    *policy = HWLOC_MEMBIND_DEFAULT;
-    return 0;
-  } else
-    return -1;
+  hwloc_bitmap_copy(set, hwloc_topology_get_complete_nodeset(topology));
+  *policy = HWLOC_MEMBIND_MIXED;
+  return 0;
 }
 
 static int dontset_thisproc_membind(hwloc_topology_t topology __hwloc_attribute_unused, hwloc_const_bitmap_t set __hwloc_attribute_unused, hwloc_membind_policy_t policy __hwloc_attribute_unused, int flags __hwloc_attribute_unused)
@@ -651,6 +790,11 @@ static int dontget_area_membind(hwloc_topology_t topology __hwloc_attribute_unus
 {
   return dontset_return_complete_nodeset(topology, set, policy);
 }
+static int dontget_area_memlocation(hwloc_topology_t topology __hwloc_attribute_unused, const void *addr __hwloc_attribute_unused, size_t size __hwloc_attribute_unused, hwloc_bitmap_t set, int flags __hwloc_attribute_unused)
+{
+  hwloc_membind_policy_t policy;
+  return dontset_return_complete_nodeset(topology, set, &policy);
+}
 
 static void * dontalloc_membind(hwloc_topology_t topology __hwloc_attribute_unused, size_t size __hwloc_attribute_unused, hwloc_const_bitmap_t set __hwloc_attribute_unused, hwloc_membind_policy_t policy __hwloc_attribute_unused, int flags __hwloc_attribute_unused)
 {
@@ -687,6 +831,7 @@ static void hwloc_set_dummy_hooks(struct hwloc_binding_hooks *hooks,
   hooks->get_proc_membind = dontget_proc_membind;
   hooks->set_area_membind = dontset_area_membind;
   hooks->get_area_membind = dontget_area_membind;
+  hooks->get_area_memlocation = dontget_area_memlocation;
   hooks->alloc_membind = dontalloc_membind;
   hooks->free_membind = dontfree_membind;
 }
@@ -705,10 +850,6 @@ hwloc_set_native_binding_hooks(struct hwloc_binding_hooks *hooks, struct hwloc_t
 #    ifdef HWLOC_AIX_SYS
     hwloc_set_aix_hooks(hooks, support);
 #    endif /* HWLOC_AIX_SYS */
-
-#    ifdef HWLOC_OSF_SYS
-    hwloc_set_osf_hooks(hooks, support);
-#    endif /* HWLOC_OSF_SYS */
 
 #    ifdef HWLOC_SOLARIS_SYS
     hwloc_set_solaris_hooks(hooks, support);
@@ -745,6 +886,8 @@ hwloc_set_binding_hooks(struct hwloc_topology *topology)
   } else {
     /* not this system, use dummy binding hooks that do nothing (but don't return ENOSYS) */
     hwloc_set_dummy_hooks(&topology->binding_hooks, &topology->support);
+
+    /* Linux has some hooks that also work in this case, but they are not strictly needed yet. */
   }
 
   /* if not is_thissystem, set_cpubind is fake
@@ -776,6 +919,7 @@ hwloc_set_binding_hooks(struct hwloc_topology *topology)
     DO(mem,get_proc_membind);
     DO(mem,set_area_membind);
     DO(mem,get_area_membind);
+    DO(mem,get_area_memlocation);
     DO(mem,alloc_membind);
   }
 }

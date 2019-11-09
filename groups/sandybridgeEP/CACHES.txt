@@ -86,7 +86,7 @@ L3 to/from system bandwidth [MBytes/s] = 1.0E-06*(SUM(LLC_LOOKUP_DATA_READ:STATE
 L3 to/from system data volume [GBytes] = 1.0E-09*(SUM(LLC_LOOKUP_DATA_READ:STATE=0x3F)+SUM(LLC_VICTIMS_M_STATE))*64
 Memory read bandwidth [MBytes/s] = 1.0E-06*(SUM(CAS_COUNT_RD))*64.0/time
 Memory read data volume [GBytes] = 1.0E-09*(SUM(CAS_COUNT_RD))*64.0
-Memory write bandwidth [MBytes/s] 1.0E-06*(SUM(CAS_COUNT_WR))*64.0/time
+Memory write bandwidth [MBytes/s] = 1.0E-06*(SUM(CAS_COUNT_WR))*64.0/time
 Memory write data volume [GBytes] = 1.0E-09*(SUM(CAS_COUNT_WR))*64.0
 Memory bandwidth [MBytes/s] = 1.0E-06*(SUM(CAS_COUNT_RD)+SUM(CAS_COUNT_WR))*64.0/time
 Memory data volume [GBytes] = 1.0E-09*(SUM(CAS_COUNT_RD)+SUM(CAS_COUNT_WR))*64.0

@@ -49,7 +49,7 @@ all: $(DAEMON_TARGET) $(SETFREQ_TARGET)
 $(DAEMON_TARGET): accessDaemon.c
 	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -o ../../$(DAEMON_TARGET) accessDaemon.c
 
-$(SETFREQ_TARGET): setFreq.c setFreq_cpufreq.c setFreq_pstate.c
-	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -I. -o ../../$(SETFREQ_TARGET) setFreq.c setFreq_cpufreq.c setFreq_pstate.c
+$(SETFREQ_TARGET): setFreqDaemon.c
+	$(Q)$(CC) $(CFLAGS) $(CPPFLAGS) -I. -o ../../$(SETFREQ_TARGET) setFreqDaemon.c
 
 endif

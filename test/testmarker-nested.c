@@ -5,7 +5,7 @@
 #include <omp.h>
 #include <sched.h>
 
-#include <likwid.h>
+#include <likwid-cpumarker.h>
 
 #define SIZE 1000000
 #define N1   1000

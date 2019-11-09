@@ -30,6 +30,9 @@
 #ifndef PERFGROUP_H
 #define PERFGROUP_H
 
+#include <bstrlib.h>
+#include <bstrlib_helper.h>
+
  /*! \brief The groupInfo data structure describes a performance group
 
 Groups can be either be read in from file or be a group with custom event set. For
@@ -69,6 +72,12 @@ static char* groupFileSectionNames[MAX_GROUP_FILE_SECTIONS] = {
     "LUA"
 };
 
+typedef struct {
+    int counters; /*!< \brief Number of entries in the list */
+    struct bstrList* cnames; /*!< \brief List of counter names */
+    struct bstrList* cvalues; /*!< \brief List of counter values */
+} CounterList;
+
 extern int get_groups(const char* grouppath, const char* architecture, char*** groupnames, char*** groupshort, char*** grouplong);
 extern void return_groups(int groups, char** groupnames, char** groupshort, char** grouplong);
 extern int read_group(const char* grouppath, const char* architecture, const char* groupname, GroupInfo* ginfo);
@@ -82,13 +91,10 @@ void put_longInfo(char* linfo);
 extern void return_group(GroupInfo* ginfo);
 
 
+extern void init_clist(CounterList* clist);
+extern int add_to_clist(CounterList* clist, char* counter, double result);
+extern int update_clist(CounterList* clist, char* counter, double result);
+extern void destroy_clist(CounterList* clist);
 
-extern int calc_add_str_def(char* name, char* value, int cpu);
-extern int calc_add_int_def(char* name, int value, int cpu);
-extern int calc_add_dbl_def(char* name, double value, int cpu);
-extern int calc_add_str_var(char* name, char* value, bstring vars, bstring varlist);
-extern int calc_add_dbl_var(char* name, double value, bstring vars, bstring varlist);
-extern int calc_add_int_var(char* name, int value, bstring vars, bstring varlist);
-extern int calc_set_user_funcs(char* s);
-extern int calc_metric(int cpu, char* formula, bstring varstr, bstring varlist, double *result);
+extern int calc_metric(char* formula, CounterList* clist, double *result);
 #endif /* PERFGROUP_H */

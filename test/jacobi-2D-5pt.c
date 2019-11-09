@@ -4,7 +4,7 @@
 #include<sys/time.h>
 
 #ifdef LIKWID_PERFMON
-#include <likwid.h>
+#include <likwid-cpumarker.h>
 #endif
 
 int main()

@@ -732,6 +732,9 @@ lua_likwid_getCpuInfo(lua_State* L)
     lua_pushstring(L,"features");
     lua_pushstring(L,cpuinfo->features);
     lua_settable(L,-3);
+    lua_pushstring(L,"architecture");
+    lua_pushstring(L,cpuinfo->architecture);
+    lua_settable(L,-3);
     lua_pushstring(L,"isIntel");
     lua_pushinteger(L,cpuinfo->isIntel);
     lua_settable(L,-3);
@@ -1239,6 +1242,31 @@ lua_likwid_setMemInterleaved(lua_State* L)
         lua_pop(L,1);
     }
     numa_setInterleaved(cpus, nrThreads);
+    return 0;
+}
+
+static int
+lua_likwid_setMembind(lua_State* L)
+{
+    int ret;
+    int nrThreads = luaL_checknumber(L,1);
+    luaL_argcheck(L, nrThreads > 0, 1, "Thread count must be greater than 0");
+    int cpus[nrThreads];
+    if (!lua_istable(L, -1)) {
+      lua_pushstring(L,"No table given as second argument");
+      lua_error(L);
+    }
+    for (ret = 1; ret<=nrThreads; ret++)
+    {
+        lua_rawgeti(L,-1,ret);
+#if LUA_VERSION_NUM == 501
+        cpus[ret-1] = ((lua_Integer)lua_tointeger(L,-1));
+#else
+        cpus[ret-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
+#endif
+        lua_pop(L,1);
+    }
+    numa_setMembind(cpus, nrThreads);
     return 0;
 }
 
@@ -2285,7 +2313,7 @@ static int
 lua_likwid_getRegion(lua_State* L)
 {
     int i = 0;
-    const char* tag = (const char*)luaL_checkstring(L, -2);
+    const char* tag = (const char*)luaL_checkstring(L, -1);
     int nr_events = perfmon_getNumberOfEvents(perfmon_getIdOfActiveGroup());
     double* events = NULL;
     double time = 0.0;
@@ -2313,6 +2341,13 @@ lua_likwid_getRegion(lua_State* L)
     lua_pushinteger(L, count);
     free(events);
     return 4;
+}
+
+static int
+lua_likwid_resetRegion(lua_State* L)
+{
+    const char* tag = (const char*)luaL_checkstring(L, -1);
+    lua_pushinteger(L, likwid_markerResetRegion(tag));
 }
 
 static int
@@ -2513,6 +2548,20 @@ lua_likwid_markerRegionMetric(lua_State* L)
 }
 
 static int
+lua_likwid_initFreq(lua_State* L)
+{
+    lua_pushnumber(L, freq_init());
+    return 1;
+}
+
+static int
+lua_likwid_finalizeFreq(lua_State* L)
+{
+    freq_finalize();
+    return 0;
+}
+
+static int
 lua_likwid_getCpuClockCurrent(lua_State* L)
 {
     const int cpu_id = lua_tointeger(L,-1);
@@ -2525,6 +2574,14 @@ lua_likwid_getCpuClockMin(lua_State* L)
 {
     const int cpu_id = lua_tointeger(L,-1);
     lua_pushnumber(L, freq_getCpuClockMin(cpu_id));
+    return 1;
+}
+
+static int
+lua_likwid_getConfCpuClockMin(lua_State* L)
+{
+    const int cpu_id = lua_tointeger(L,-1);
+    lua_pushnumber(L, freq_getConfCpuClockMin(cpu_id));
     return 1;
 }
 
@@ -2542,6 +2599,14 @@ lua_likwid_getCpuClockMax(lua_State* L)
 {
     const int cpu_id = lua_tointeger(L,-1);
     lua_pushnumber(L, freq_getCpuClockMax(cpu_id));
+    return 1;
+}
+
+static int
+lua_likwid_getConfCpuClockMax(lua_State* L)
+{
+    const int cpu_id = lua_tointeger(L,-1);
+    lua_pushnumber(L, freq_getConfCpuClockMax(cpu_id));
     return 1;
 }
 
@@ -2616,7 +2681,10 @@ lua_likwid_getAvailGovs(lua_State* L)
     const int cpu_id = lua_tointeger(L,-1);
     char* avail = freq_getAvailGovs(cpu_id);
     if (avail)
+    {
         lua_pushstring(L, avail);
+        free(avail);
+    }
     else
         lua_pushnil(L);
     return 1;
@@ -2825,6 +2893,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_getNumaInfo",lua_likwid_getNumaInfo);
     lua_register(L, "likwid_putNumaInfo",lua_likwid_putNumaInfo);
     lua_register(L, "likwid_setMemInterleaved", lua_likwid_setMemInterleaved);
+    lua_register(L, "likwid_setMembind", lua_likwid_setMembind);
     lua_register(L, "likwid_getAffinityInfo",lua_likwid_getAffinityInfo);
     lua_register(L, "likwid_putAffinityInfo",lua_likwid_putAffinityInfo);
     lua_register(L, "likwid_getPowerInfo",lua_likwid_getPowerInfo);
@@ -2883,6 +2952,7 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_startRegion", lua_likwid_startRegion);
     lua_register(L, "likwid_stopRegion", lua_likwid_stopRegion);
     lua_register(L, "likwid_getRegion", lua_likwid_getRegion);
+    lua_register(L, "likwid_resetRegion", lua_likwid_resetRegion);
     // CPU feature manipulation functions
     lua_register(L, "likwid_cpuFeaturesInit", lua_likwid_cpuFeatures_init);
     lua_register(L, "likwid_cpuFeaturesGet", lua_likwid_cpuFeatures_get);
@@ -2902,10 +2972,14 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_markerRegionResult", lua_likwid_markerRegionResult);
     lua_register(L, "likwid_markerRegionMetric", lua_likwid_markerRegionMetric);
     // CPU frequency functions
+    lua_register(L, "likwid_initFreq", lua_likwid_initFreq);
+    lua_register(L, "likwid_finalizeFreq", lua_likwid_finalizeFreq);
     lua_register(L, "likwid_getCpuClockCurrent", lua_likwid_getCpuClockCurrent);
     lua_register(L, "likwid_getCpuClockMin", lua_likwid_getCpuClockMin);
+    lua_register(L, "likwid_getConfCpuClockMin", lua_likwid_getConfCpuClockMin);
     lua_register(L, "likwid_setCpuClockMin", lua_likwid_setCpuClockMin);
     lua_register(L, "likwid_getCpuClockMax", lua_likwid_getCpuClockMax);
+    lua_register(L, "likwid_getConfCpuClockMax", lua_likwid_getConfCpuClockMax);
     lua_register(L, "likwid_setCpuClockMax", lua_likwid_setCpuClockMax);
     lua_register(L, "likwid_getGovernor", lua_likwid_getGovernor);
     lua_register(L, "likwid_setGovernor", lua_likwid_setGovernor);

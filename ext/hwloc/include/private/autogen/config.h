@@ -30,7 +30,8 @@
 
 /* Define to 1 if you have the `close' function. */
 #define HAVE_CLOSE 1
-
+/* Define to 1 if you have the `clock_gettime' function. */
+#define HAVE_CLOCK_GETTIME 1
 /* Define to 1 if you have the `clz' function. */
 /* #undef HAVE_CLZ */
 
@@ -86,6 +87,14 @@
    don't. */
 #define HAVE_DECL_HW_NCPU 0
 
+/* Define to 1 if you have the declaration of `lgrp_latency_cookie', and to 0
+   if you don't. */
+/* #undef HAVE_DECL_LGRP_LATENCY_COOKIE */
+
+/* Define to 1 if you have the declaration of `modff', and to 0 if you don't.
+   */
+#define HAVE_DECL_MODFF 1
+
 /* Define to 1 if you have the declaration of
    `nvmlDeviceGetMaxPcieLinkGeneration', and to 0 if you don't. */
 /* #undef HAVE_DECL_NVMLDEVICEGETMAXPCIELINKGENERATION */
@@ -98,9 +107,24 @@
    0 if you don't. */
 #define HAVE_DECL_PTHREAD_SETAFFINITY_NP 1
 
+/* Embedded mode; just assume we do not have Valgrind support */
+#define HAVE_DECL_RUNNING_ON_VALGRIND 0
+
+/* Define to 1 if you have the declaration of `sched_getcpu', and to 0 if you
+   don't. */
+#define HAVE_DECL_SCHED_GETCPU 1
+
+/* Define to 1 if you have the declaration of `snprintf', and to 0 if you
+   don't. */
+#define HAVE_DECL_SNPRINTF 1
+
 /* Define to 1 if you have the declaration of `strtoull', and to 0 if you
    don't. */
 #define HAVE_DECL_STRTOULL 1
+
+/* Define to 1 if you have the declaration of `_putenv', and to 0 if you
+   don't. */
+#define HAVE_DECL__PUTENV 0
 
 /* Define to 1 if you have the declaration of `_SC_LARGE_PAGESIZE', and to 0
    if you don't. */
@@ -129,6 +153,10 @@
 /* Define to 1 if you have the declaration of `_SC_PAGE_SIZE', and to 0 if you
    don't. */
 #define HAVE_DECL__SC_PAGE_SIZE 1
+
+/* Define to 1 if you have the declaration of `_strdup', and to 0 if you
+   don't. */
+#define HAVE_DECL__STRDUP 0
 
 /* Define to 1 if you have the <dirent.h> header file. */
 #define HAVE_DIRENT_H 1
@@ -238,7 +266,11 @@
 
 /* Define to 1 if you have the <myriexpress.h> header file. */
 /* #undef HAVE_MYRIEXPRESS_H */
+/* Define to 1 if you have the `mkstemp' function. */
+#define HAVE_MKSTEMP 1
 
+/* Define to 1 if you have the <mpi.h> header file. */
+/* #undef HAVE_MPI_H */
 /* Define to 1 if you have the `nl_langinfo' function. */
 #define HAVE_NL_LANGINFO 1
 
@@ -260,6 +292,9 @@
 /* Define to 1 if you have the `openat' function. */
 #define HAVE_OPENAT 1
 
+/* Define to 1 if you have the <OpenCL/cl_ext.h> header file. */
+/* #undef HAVE_OPENCL_CL_EXT_H */
+
 /* Define to 1 if you have the <picl.h> header file. */
 /* #undef HAVE_PICL_H */
 
@@ -271,6 +306,9 @@
 
 /* Define to 1 if the system has the type `PROCESSOR_GROUP_INFO'. */
 /* #undef HAVE_PROCESSOR_GROUP_INFO */
+
+/* Define to 1 if the system has the type `PROCESSOR_NUMBER'. */
+/* #undef HAVE_PROCESSOR_NUMBER */
 
 /* Define to 1 if the system has the type `PROCESSOR_RELATIONSHIP'. */
 /* #undef HAVE_PROCESSOR_RELATIONSHIP */
@@ -310,11 +348,17 @@
 /* Define to 1 if you have the `setlocale' function. */
 #define HAVE_SETLOCALE 1
 
+/* Define to 1 if the system has the type `ssize_t'. */
+#define HAVE_SSIZE_T 1
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
+
+/* Define to 1 if you have the `strcasecmp' function. */
+#define HAVE_STRCASECMP 1
 
 /* Define to 1 if you have the `strftime' function. */
 #define HAVE_STRFTIME 1
@@ -334,6 +378,10 @@
 /* Define to 1 if gcc's __sync builtins are available */
 #define HAVE_SYNC_BUILTINS 1
 #endif
+
+/* Define to 1 if you have the `strtoull' function. */
+/* #undef HAVE_STRTOULL */
+
 /* Define to '1' if sysctl is present and usable */
 /* #undef HAVE_SYSCTL */
 
@@ -377,6 +425,9 @@
 /* Define to 1 if you have the <sys/utsname.h> header file. */
 #define HAVE_SYS_UTSNAME_H 1
 
+/* Define to 1 if you have the <time.h> header file. */
+#define HAVE_TIME_H 1
+
 /* Define to 1 if you have the `uname' function. */
 #define HAVE_UNAME 1
 
@@ -389,6 +440,9 @@
 
 /* Define to 1 if you have the `uselocale' function. */
 #define HAVE_USELOCALE 1
+
+/* Define to 1 if you have the <valgrind/valgrind.h> header file. */
+/* #undef HAVE_VALGRIND_VALGRIND_H */
 
 /* Define to 1 if the system has the type `wchar_t'. */
 #define HAVE_WCHAR_T 1
@@ -487,13 +541,16 @@
 /* #undef HWLOC_HAVE_BROKEN_FFS */
 
 /* Define to 1 if you have the `cairo' library. */
-#define HWLOC_HAVE_CAIRO 1
+/* #undef HWLOC_HAVE_CAIRO */
 
 /* Define to 1 if you have the `clz' function. */
 /* #undef HWLOC_HAVE_CLZ */
 
 /* Define to 1 if you have the `clzl' function. */
 /* #undef HWLOC_HAVE_CLZL */
+/* Define to 1 if snprintf supports NULL output buffer and returns the correct
+   length on truncation */
+#undef HWLOC_HAVE_CORRECT_SNPRINTF
 
 /* Define to 1 if the CPU_SET macro works */
 #define HWLOC_HAVE_CPU_SET 1
@@ -522,6 +579,9 @@
 /* Define to 1 if function `flsl' is declared by system headers */
 /* #undef HWLOC_HAVE_DECL_FLSL */
 
+/* Define to 1 if function `strcasecmp' is declared by system headers */
+#define HWLOC_HAVE_DECL_STRCASECMP 1
+
 /* Define to 1 if function `strncasecmp' is declared by system headers */
 #define HWLOC_HAVE_DECL_STRNCASECMP 1
 
@@ -543,11 +603,18 @@
 /* Define to 1 if you have a library providing the termcap interface */
 /* #undef HWLOC_HAVE_LIBTERMCAP */
 
+/* Define to 1 if you have libudev. */
+/* #undef HWLOC_HAVE_LIBUDEV */
+
 /* Define to 1 if you have the `libxml2' library. */
 /* #undef HWLOC_HAVE_LIBXML2 */
 
 /* Define to 1 if building the Linux PCI component */
 #define HWLOC_HAVE_LINUXPCI 1
+
+/* Define to 1 if building the Linux I/O component */
+#define HWLOC_HAVE_LINUXIO 1
+
 
 /* Define to 1 if mbind is available. */
 /* #undef HWLOC_HAVE_MBIND */
@@ -583,6 +650,9 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HWLOC_HAVE_STDINT_H 1
+
+/* Define to 1 if function `syscall' is available with 6 parameters */
+#define HWLOC_HAVE_SYSCALL 1
 
 /* Define to 1 if you have the `windows.h' header. */
 /* #undef HWLOC_HAVE_WINDOWS_H */
@@ -645,7 +715,19 @@
 
 /* The library version, always available, even in embedded mode, contrary to
    VERSION */
-#define HWLOC_VERSION "2.0.0a1-git"
+#define HWLOC_VERSION "2.1.0"
+
+/* The library version optional greek suffix string */
+#define HWLOC_VERSION_GREEK ""
+
+/* The library version major number */
+#define HWLOC_VERSION_MAJOR 2
+
+/* The library version minor number */
+#define HWLOC_VERSION_MINOR 1
+
+/* The library version release number */
+#define HWLOC_VERSION_RELEASE 0
 
 /* Define to 1 on WINDOWS */
 /* #undef HWLOC_WIN_SYS */
@@ -662,21 +744,23 @@
 #endif
 #endif
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #define LT_OBJDIR ".libs/"
+
+/* Define to 1 if scotch is netlocscotch is enabled */
+/* #undef NETLOC_SCOTCH */
 
 /* Name of package */
 #define PACKAGE "hwloc"
 
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "http://www.open-mpi.org/projects/hwloc/"
+#define PACKAGE_BUGREPORT "http://github.com/open-mpi/hwloc/issues"
 
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "hwloc"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "hwloc 2.0.0a1-git"
+#define PACKAGE_STRING "hwloc 2.1.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "hwloc"
@@ -685,7 +769,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "2.0.0a1-git"
+#define PACKAGE_VERSION "2.1.0"
 
 /* The size of `unsigned int', as computed by sizeof. */
 #define SIZEOF_UNSIGNED_INT 4
@@ -744,10 +828,10 @@
 #endif
 
 /* Version number of package */
-#define VERSION "2.0.0a1-git"
+#define VERSION "2.1.0"
 
 /* Define to 1 if the X Window System is missing or not being used. */
-/* #undef X_DISPLAY_MISSING */
+#define X_DISPLAY_MISSING 1
 
 /* Are we building for HP-UX? */
 #define _HPUX_SOURCE 1

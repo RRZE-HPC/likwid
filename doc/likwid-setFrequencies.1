@@ -14,6 +14,14 @@ likwid-setFrequencies \- print and manage the clock frequency of CPU cores
 .IR <min_freq> ]
 .RB [ \-y,\-\-\^max
 .IR <max_freq> ]
+.RB [ \-t,\-\-\^turbo
+.IR <0|1> ]
+.RB [ \-\-\^umin
+.IR <uncore_min_freq> ]
+.RB [ \-\-\^umax
+.IR <uncore_max_freq> ]
+.RB [ \-\-\^reset]
+.RB [ \-\-\^ureset]
 .SH DESCRIPTION
 .B likwid-setFrequencies
 is a command line application to set the clock frequency of CPU cores. Since only priviledged users are allowed to change the frequency of CPU cores, the application works in combination with a daemon
@@ -61,6 +69,29 @@ set a fixed minimal frequency at all CPU cores inside the affinity domain. Can b
 .TP
 .B \-\^y, \-\-\^max <max_freq>
 set a fixed maximal frequency at all CPU cores inside the affinity domain. Can be used in combination with a dynamic governor.
+.TP
+.B \-\^t, \-\-\^turbo <0|1>
+deactivates/activates Turbo mode for the specified CPU cores.
+.TP
+.B \-\-\^umin <uncore_min_freq>
+set the minimal frequency for the uncore. There are no limits available, but
+.B likwid-setFrequencies
+allows the available minimal CPU frequency as minimal Uncore frequency.
+.TP
+.B \-\-\^umax <uncore_max_freq>
+set the maximal frequency for the uncore. There are no limits available, but
+.B likwid-setFrequencies
+allows the available maximal CPU frequency (with a single core and Turbo) as maximal Uncore frequency.
+.TP
+.B \-\-\^reset
+resets the CPU cores to maximal range, deactivates Turbo mode and sets the
+governor to "performance", "conservative" or the last one in the governor list
+as fallback
+.TP
+.B \-\-\^ureset
+resets the Uncore to maximal range. It uses the minimally available CPU
+frequency as minimal Uncore frequency and the maximally achievable CPU frequency
+(single core, Turbo active) as maximal Uncore frequency.
 
 .SH AUTHOR
 Written by Thomas Roehl <thomas.roehl@googlemail.com>.

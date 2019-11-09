@@ -1,7 +1,7 @@
 /* include/hwloc/autogen/config.h.  Generated from config.h.in by configure.  */
 /* -*- c -*-
  * Copyright © 2009 CNRS
- * Copyright © 2009-2014 Inria.  All rights reserved.
+ * Copyright © 2009-2018 Inria.  All rights reserved.
  * Copyright © 2009-2012 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -68,6 +68,13 @@
 #define GCC_ABOVE_3_3 0
 #endif
 
+#if !defined(__cplusplus) &&					\
+    (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4))
+#define GCC_ABOVE_3_4 1
+#else
+#define GCC_ABOVE_3_4 0
+#endif
+
 /* Maybe before gcc 2.95 too */
 #ifdef HWLOC_HAVE_ATTRIBUTE_UNUSED
 #define __HWLOC_HAVE_ATTRIBUTE_UNUSED HWLOC_HAVE_ATTRIBUTE_UNUSED 
@@ -121,6 +128,7 @@
 # define __hwloc_attribute_pure
 #endif
 
+#ifndef __hwloc_attribute_deprecated /* allow the user to disable these warnings by defining this macro to nothing */
 #ifdef HWLOC_HAVE_ATTRIBUTE_DEPRECATED
 #define __HWLOC_HAVE_ATTRIBUTE_DEPRECATED HWLOC_HAVE_ATTRIBUTE_DEPRECATED 
 #elif defined(__GNUC__)
@@ -132,6 +140,7 @@
 # define __hwloc_attribute_deprecated __attribute__((__deprecated__))
 #else
 # define __hwloc_attribute_deprecated
+#endif
 #endif
 
 #ifdef HWLOC_HAVE_ATTRIBUTE_MAY_ALIAS
@@ -145,6 +154,19 @@
 # define __hwloc_attribute_may_alias __attribute__((__may_alias__))
 #else
 # define __hwloc_attribute_may_alias
+#endif
+
+#ifdef HWLOC_HAVE_ATTRIBUTE_WARN_UNUSED_RESULT
+#define __HWLOC_HAVE_ATTRIBUTE_WARN_UNUSED_RESULT HWLOC_HAVE_ATTRIBUTE_WARN_UNUSED_RESULT
+#elif defined(__GNUC__)
+# define __HWLOC_HAVE_ATTRIBUTE_WARN_UNUSED_RESULT (GXX_ABOVE_3_4 || GCC_ABOVE_3_4)
+#else
+# define __HWLOC_HAVE_ATTRIBUTE_WARN_UNUSED_RESULT 0
+#endif
+#if __HWLOC_HAVE_ATTRIBUTE_WARN_UNUSED_RESULT
+# define __hwloc_attribute_warn_unused_result __attribute__((__warn_unused_result__))
+#else
+# define __hwloc_attribute_warn_unused_result
 #endif
 
 #ifdef HWLOC_C_HAVE_VISIBILITY

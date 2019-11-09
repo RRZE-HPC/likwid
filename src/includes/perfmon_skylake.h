@@ -38,6 +38,7 @@
 #include <limits.h>
 #include <topology.h>
 #include <access.h>
+#include <linux/version.h>
 
 static int perfmon_numCountersSkylake = NUM_COUNTERS_SKYLAKE;
 static int perfmon_numCoreCountersSkylake = NUM_COUNTERS_CORE_SKYLAKE;
@@ -789,7 +790,35 @@ int perfmon_setupCounterThread_skylake(
         switch (type)
         {
             case PMC:
-                skl_pmc_setup(cpu_id, index, event);
+                if ((getCounterTypeOffset(index) == 3) &&
+                    (cpuid_info.featureFlags & (1ULL<<RTM)) &&
+                    (cpuid_info.model == SKYLAKEX) &&
+                    (cpuid_info.stepping < 5))
+                {
+                    uint64_t flags = 0x0;
+                    HPMread(cpu_id, MSR_DEV, TSX_FORCE_ABORT, &flags);
+                    if (flags & 0x1 == 0)
+                    {
+                        fprintf(stderr, "Warning: Counter PMC3 cannot be used if Restricted Transactional Memory feature is enabled and\n");
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,2,0)
+                        fprintf(stderr, "         bit 0 of register TSX_FORCE_ABORT is 0. As workaround enable\n");
+                        fprintf(stderr, "         allow_tsx_force_abort in /sys/devices/cpu/\n");
+#else
+                        fprintf(stderr, "         bit 0 of register TSX_FORCE_ABORT is 0. As workaround write 0x1 to TSX_FORCE_ABORT:\n");
+                        fprintf(stderr, "         sudo wrmsr 0x10f 0x1\n");
+#endif
+                        eventSet->events[i].type = NOTYPE;
+                        continue;
+                    }
+                    else
+                    {
+                        skl_pmc_setup(cpu_id, index, event);
+                    }
+                }
+                else
+                {
+                    skl_pmc_setup(cpu_id, index, event);
+                }
                 break;
 
             case FIXED:

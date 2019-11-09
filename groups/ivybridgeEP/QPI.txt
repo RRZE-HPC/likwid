@@ -38,7 +38,7 @@ QPI link volume [MByte] 1.E-06*(SBOX0C1+SBOX1C1+SBOX2C1+SBOX0C2+SBOX1C2+SBOX2C2)
 QPI link bandwidth [MByte/s] 1.E-06*(SBOX0C1+SBOX1C1+SBOX2C1+SBOX0C2+SBOX1C2+SBOX2C2)*8/time
 
 LONG
-Formula:
+Formulas:
 QPI Speed Link 0/1/2 [GT/s] = ((SBOX_CLOCKTICKS)/time)*clock*(8/1000)
 QPI Rate Link 0/1/2 [GT/s] = 1.E-09*(QPI_RATE)
 data from QPI to LLC [MByte] = 1.E-06*(sum(DIRECT2CORE_SUCCESS_RBT_HIT)*64)

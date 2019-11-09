@@ -15,7 +15,7 @@ Energy [J]  PWR0
 Power [W] PWR0/time
 
 LONG
-Formula:
+Formulas:
 Power =  PWR_PKG_ENERGY / time
 -
 The Xeon Phi (Knights Landing) implements the new RAPL interface. This interface enables to

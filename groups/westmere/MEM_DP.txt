@@ -18,11 +18,11 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-DP MFLOP/s  1.0E-06*(PMC0*2.0+PMC1)/time
-Packed MUOPS/s   1.0E-06*PMC0/time
-Scalar MUOPS/s 1.0E-06*PMC1/time
-SP MUOPS/s 1.0E-06*PMC2/time
-DP MUOPS/s 1.0E-06*PMC3/time
+DP [MFLOP/s]  1.0E-06*(PMC0*2.0+PMC1)/time
+Packed [MUOPS/s]   1.0E-06*PMC0/time
+Scalar [MUOPS/s] 1.0E-06*PMC1/time
+SP [MUOPS/s] 1.0E-06*PMC2/time
+DP [MUOPS/s] 1.0E-06*PMC3/time
 Memory read bandwidth [MBytes/s] 1.0E-06*UPMC0*64.0/time
 Memory read data volume [GBytes] 1.0E-09*UPMC0*64.0
 Memory write bandwidth [MBytes/s] 1.0E-06*UPMC1*64.0/time
@@ -39,11 +39,11 @@ Operational intensity (PMC0*2.0+PMC1)/((UPMC0+UPMC1)*64.0)
 
 LONG
 Formulas:
-DP MFLOP/s = 1.0E-06*(FP_COMP_OPS_EXE_SSE_FP_PACKED*2+FP_COMP_OPS_EXE_SSE_FP_SCALAR)/runtime
-Packed MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_PACKED/runtime
-Scalar MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_SCALAR/runtime
-SP MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION/runtime
-DP MUOPS/s = 1.0E-06*FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION/runtime
+DP [MFLOP/s] = 1.0E-06*(FP_COMP_OPS_EXE_SSE_FP_PACKED*2+FP_COMP_OPS_EXE_SSE_FP_SCALAR)/runtime
+Packed [MUOPS/s] = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_PACKED/runtime
+Scalar [MUOPS/s] = 1.0E-06*FP_COMP_OPS_EXE_SSE_FP_SCALAR/runtime
+SP [MUOPS/s] = 1.0E-06*FP_COMP_OPS_EXE_SSE_SINGLE_PRECISION/runtime
+DP [MUOPS/s] = 1.0E-06*FP_COMP_OPS_EXE_SSE_DOUBLE_PRECISION/runtime
 Memory read bandwidth [MBytes/s] = 1.0E-06*UNC_QMC_NORMAL_READS_ANY*64.0/time
 Memory read data volume [GBytes] = 1.0E-09*UNC_QMC_NORMAL_READS_ANY*64.0
 Memory write bandwidth [MBytes/s] = 1.0E-06*UNC_QMC_WRITES_FULL_ANY*64.0/time
@@ -56,7 +56,7 @@ Remote memory write bandwidth [MBytes/s] = 1.0E-06*UNC_QHL_REQUESTS_REMOTE_WRITE
 Remote memory write data volume [GBytes] = 1.0E-09*UNC_QHL_REQUESTS_REMOTE_WRITES*64.0
 Remote memory bandwidth [MBytes/s] = 1.0E-06*(UNC_QHL_REQUESTS_REMOTE_READS+UNC_QHL_REQUESTS_REMOTE_WRITES)*64.0/time
 Remote memory data volume [GBytes] = 1.0E-09*(UNC_QHL_REQUESTS_REMOTE_READS+UNC_QHL_REQUESTS_REMOTE_WRITES)*64.0
-Operational intensity (FP_COMP_OPS_EXE_SSE_FP_PACKED*2+FP_COMP_OPS_EXE_SSE_FP_SCALAR)/((UNC_QMC_NORMAL_READS_ANY+UNC_QMC_WRITES_FULL_ANY)*64.0)
+Operational intensity = (FP_COMP_OPS_EXE_SSE_FP_PACKED*2+FP_COMP_OPS_EXE_SSE_FP_SCALAR)/((UNC_QMC_NORMAL_READS_ANY+UNC_QMC_WRITES_FULL_ANY)*64.0)
 -
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
 This group will be measured by one core per socket. The remote read BW tells

@@ -90,6 +90,7 @@ OBJ       = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.
 ifeq ($(SHARED_LIBRARY),false)
 OBJ := $(filter-out $(BUILD_DIR)/bstrlib.o,$(OBJ))
 TARGET_LIB = $(STATIC_TARGET_LIB)
+LIBS += -ldl
 endif
 OBJ_BENCH  =  $(patsubst $(BENCH_DIR)/%.ptt, $(BUILD_DIR)/%.o,$(wildcard $(BENCH_DIR)/*.ptt))
 BENCH = $(shell basename $(BENCH_TARGET))

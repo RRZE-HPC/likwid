@@ -1,17 +1,18 @@
 DEFINES   += -DVERSION=$(VERSION)         \
-		 -DRELEASE=$(RELEASE)                 \
-		 -DMINORVERSION=$(MINOR)                 \
-		 -DCFGFILE=$(CFG_FILE_PATH)           \
-		 -DTOPOFILE=$(TOPO_FILE_PATH)           \
-		 -DINSTALL_PREFIX=$(INSTALLED_PREFIX) \
-		 -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) \
-		 -DMAX_NUM_NODES=$(MAX_NUM_NODES)     \
-		 -DACCESSDAEMON=$(INSTALLED_ACCESSDAEMON) \
-		 -DGROUPPATH=$(LIKWIDGROUPPATH) \
-		 -DLIKWIDLOCK=$(LIKWIDLOCKPATH) \
-		 -DLIKWIDSOCKETBASE=$(LIKWIDSOCKETBASE) \
-		 -DGITCOMMIT=$(GITCOMMIT) \
-		 -D_GNU_SOURCE
+             -DRELEASE=$(RELEASE)                 \
+             -DMINORVERSION=$(MINOR)                 \
+             -DCFGFILE=$(CFG_FILE_PATH)           \
+             -DTOPOFILE=$(TOPO_FILE_PATH)           \
+             -DINSTALL_PREFIX=$(INSTALLED_PREFIX) \
+             -DMAX_NUM_THREADS=$(MAX_NUM_THREADS) \
+             -DMAX_NUM_NODES=$(MAX_NUM_NODES)     \
+             -DACCESSDAEMON=$(INSTALLED_ACCESSDAEMON) \
+             -DFREQDAEMON=$(INSTALLED_FREQDAEMON) \
+             -DGROUPPATH=$(LIKWIDGROUPPATH) \
+             -DLIKWIDLOCK=$(LIKWIDLOCKPATH) \
+             -DLIKWIDSOCKETBASE=$(LIKWIDSOCKETBASE) \
+             -DGITCOMMIT=$(GITCOMMIT) \
+             -D_GNU_SOURCE
 
 COMPILER := $(strip $(COMPILER))
 
@@ -47,61 +48,112 @@ endif
 ifeq ($(strip $(COMPILER)),MIC)
     ifeq ($(strip $(ACCESSMODE)),sysdaemon)
         $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
-        ACCESSMODE = direct
-        BUILDDAEMON = false
+        ACCESSMODE := direct
+        BUILDDAEMON := false
+        BUILDFREQ := false
     endif
     ifeq ($(strip $(ACCESSMODE)),accessdaemon)
         $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
-        ACCESSMODE = direct
-        BUILDDAEMON = false
+        ACCESSMODE := direct
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
+        ACCESSMODE := direct
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),direct)
+        BUILDDAEMON := false
+        BUILDFREQ := false
     endif
 endif
 
 ifeq ($(strip $(COMPILER)),GCCARMv8)
     ifeq ($(strip $(ACCESSMODE)),sysdaemon)
-        $(info Info: Compiling for ARMv8. Changing accessmode to perf_event.)
+        $(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
         DEFINES += -DLIKWID_USE_PERFEVENT
-        BUILDDAEMON = false
-        BUILDFREQ = false
+        BUILDDAEMON := false
+        BUILDFREQ := false
     endif
     ifeq ($(strip $(ACCESSMODE)),accessdaemon)
-        $(info Info: Compiling for ARMv8. Changing accessmode to perf_event.)
+        $(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
         DEFINES += -DLIKWID_USE_PERFEVENT
-        BUILDDAEMON = false
-        BUILDFREQ = false
+        BUILDDAEMON := false
+        BUILDFREQ := false
     endif
     ifeq ($(strip $(ACCESSMODE)),direct)
-        $(info Info: Compiling for ARMv8. Changing accessmode to perf_event.)
+        $(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
         DEFINES += -DLIKWID_USE_PERFEVENT
-        BUILDDAEMON = false
-        BUILDFREQ = false
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
     endif
 endif
 
 ifeq ($(strip $(COMPILER)),GCCARMv7)
     ifeq ($(strip $(ACCESSMODE)),sysdaemon)
-        $(info Info: Compiling for ARMv7. Changing accessmode to perf_event.)
+        $(info Info: Compiling for ARMv7 architecture. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
         DEFINES += -DLIKWID_USE_PERFEVENT
         BUILDDAEMON = false
         BUILDFREQ = false
     endif
     ifeq ($(strip $(ACCESSMODE)),accessdaemon)
-        $(info Info: Compiling for ARMv7. Changing accessmode to perf_event.)
+        $(info Info: Compiling for ARMv7 architecture. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
         DEFINES += -DLIKWID_USE_PERFEVENT
         BUILDDAEMON = false
         BUILDFREQ = false
     endif
     ifeq ($(strip $(ACCESSMODE)),direct)
-        $(info Info: Compiling for ARMv7. Changing accessmode to perf_event.)
+        $(info Info: Compiling for ARMv7 architecture. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
         DEFINES += -DLIKWID_USE_PERFEVENT
         BUILDFREQ = false
         BUILDDAEMON = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+endif
+
+ifeq ($(strip $(COMPILER)),GCCPOWER)
+    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+        $(info Info: Compiling for POWER architecture. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+        $(info Info: Compiling for POWER architecture. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),direct)
+        $(info Info: Compiling for POWER architecture. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDFREQ = false
+        BUILDDAEMON = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
     endif
 endif
 ifeq ($(strip $(COMPILER)),GCCPOWER)
@@ -140,12 +192,12 @@ else
 endif
 
 ifeq ($(strip $(BUILDFREQ)),true)
-ifneq ($(strip $(COMPILER)),MIC)
-    FREQ_TARGET = likwid-setFreq
-else
-    $(info Info: Compiling for Xeon Phi. Disabling build of likwid-setFreq.);
-    FREQ_TARGET =
-endif
+    ifneq ($(strip $(COMPILER)),MIC)
+        FREQ_TARGET = likwid-setFreq
+    else
+        $(info Info: Compiling for Xeon Phi. Disabling build of likwid-setFreq.);
+        FREQ_TARGET =
+    endif
 else
     FREQ_TARGET =
 endif
@@ -227,5 +279,3 @@ DEFINES += -DDEBUG_LIKWID
 else
 DEBUG_FLAGS =
 endif
-
-

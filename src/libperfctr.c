@@ -53,6 +53,7 @@
 #include <access.h>
 #include <affinity.h>
 #include <perfmon.h>
+#include <bstrlib.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -152,6 +153,8 @@ likwid_markerInit(void)
     char* cThreadStr = getenv("LIKWID_THREADS");
     char* filepath = getenv("LIKWID_FILEPATH");
     char* perfpid = getenv("LIKWID_PERF_EXECPID");
+    char* debugStr = getenv("LIKWID_DEBUG");
+    char* pinStr = getenv("LIKWID_PIN");
     char execpid[20];
     /* Dirty hack to avoid nonnull warnings */
     int (*ownatoi)(const char*);
@@ -185,9 +188,9 @@ likwid_markerInit(void)
 #ifndef LIKWID_USE_PERFEVENT
     HPMmode(atoi(modeStr));
 #endif
-    if (getenv("LIKWID_DEBUG") != NULL)
+    if (debugStr != NULL)
     {
-        perfmon_verbosity = atoi(getenv("LIKWID_DEBUG"));
+        perfmon_verbosity = atoi(debugStr);
         verbosity = perfmon_verbosity;
     }
 
@@ -201,7 +204,7 @@ likwid_markerInit(void)
     bdestroy(bThreadStr);
     bstrListDestroy(threadTokens);
 
-    if (getenv("LIKWID_PIN") != NULL)
+    if (pinStr != NULL)
     {
         likwid_pinThread(threads2Cpu[0]);
         if (getenv("OMP_NUM_THREADS") != NULL)
@@ -287,6 +290,7 @@ likwid_markerThreadInit(void)
     {
         return;
     }
+    char* pinStr = getenv("LIKWID_PIN");
 
     pthread_mutex_lock(&globalLock);
     t = pthread_self();
@@ -304,7 +308,7 @@ likwid_markerThreadInit(void)
     }
     pthread_mutex_unlock(&globalLock);
 
-    if (getenv("LIKWID_PIN") != NULL)
+    if (pinStr != NULL)
     {
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
@@ -352,8 +356,6 @@ likwid_markerClose(void)
     int numberOfThreads = 0;
     int numberOfRegions = 0;
     char* markerfile = NULL;
-    int lineidx = 0;
-    char line[1024];
     int* validRegions = NULL;
 
     if ( ! likwid_init )
@@ -409,15 +411,19 @@ likwid_markerClose(void)
         DEBUG_PRINT(DEBUGLEV_DEVELOP,
                 Creating Marker file %s with %d regions %d groups and %d threads,
                 markerfile, newNumberOfRegions, numberOfGroups, numberOfThreads);
-        fprintf(file,"%d %d %d\n",numberOfThreads, newNumberOfRegions, numberOfGroups);
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, %d %d %d, numberOfThreads, newNumberOfRegions, numberOfGroups);
+        bstring thread_regs_grps = bformat("%d %d %d", numberOfThreads, newNumberOfRegions, numberOfGroups);
+        fprintf(file,"%s\n", bdata(thread_regs_grps));
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, %s, bdata(thread_regs_grps));
+        bdestroy(thread_regs_grps);
 
         for (int i=0; i<numberOfRegions; i++)
         {
             if (validRegions[i] == 0)
                 continue;
-            fprintf(file,"%d:%s\n",newRegionID,bdata(results[i].tag));
-            DEBUG_PRINT(DEBUGLEV_DEVELOP, %d:%s, newRegionID,bdata(results[i].tag));
+            bstring tmp = bformat("%d:%s", newRegionID, bdata(results[i].tag));
+            fprintf(file,"%s\n", bdata(tmp));
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, %s, bdata(tmp));
+            bdestroy(tmp);
             newRegionID++;
         }
         newRegionID = 0;
@@ -425,25 +431,25 @@ likwid_markerClose(void)
         {
             if (validRegions[i] == 0)
                 continue;
+            int nevents = groupSet->groups[results[i].groupID].numberOfEvents;
             for (int j=0; j<numberOfThreads; j++)
             {
-                fprintf(file,"%d ",newRegionID);
-                fprintf(file,"%d ",results[i].groupID);
-                fprintf(file,"%d ",results[i].cpulist[j]);
-                fprintf(file,"%u ",results[i].count[j]);
-                fprintf(file,"%e ",results[i].time[j]);
-                fprintf(file,"%d ",groupSet->groups[results[i].groupID].numberOfEvents);
-                lineidx = sprintf(&(line[0]), "%d %d %d %u %e %d ",
-                        newRegionID, results[i].groupID,results[i].cpulist[j],results[i].count[j],
-                        results[i].time[j],groupSet->groups[results[i].groupID].numberOfEvents);
+                bstring l = bformat("%d %d %d %u %e %d ", newRegionID,
+                                                          results[i].groupID,
+                                                          results[i].cpulist[j],
+                                                          results[i].count[j],
+                                                          results[i].time[j],
+                                                          nevents);
 
-                for (int k=0; k<groupSet->groups[results[i].groupID].numberOfEvents; k++)
+                for (int k=0; k < MIN(nevents, NUM_PMC); k++)
                 {
-                    fprintf(file,"%e ",results[i].counters[j][k]);
-                    lineidx += sprintf(&(line[lineidx]), "%e ", results[i].counters[j][k]);
+                    bstring tmp = bformat("%e ", results[i].counters[j][k]);
+                    bconcat(l, tmp);
+                    bdestroy(tmp);
                 }
-                fprintf(file,"\n");
-                DEBUG_PRINT(DEBUGLEV_DEVELOP, %s,line);
+                fprintf(file,"%s\n", bdata(l));
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, %s, bdata(l));
+                bdestroy(l);
             }
             newRegionID++;
         }
@@ -454,17 +460,10 @@ likwid_markerClose(void)
         fprintf(stderr, "Cannot open file %s\n", markerfile);
         fprintf(stderr, "%s", strerror(errno));
     }
-    free(validRegions);
-}
-
-void __attribute__((destructor (101))) likwid_markerCloseDestruct(void)
-{
-    LikwidResults* results = NULL;
-    int numberOfThreads = 0;
-    int numberOfRegions = 0;
-    if (!likwid_init)
-        return;
-    hashTable_finalize(&numberOfThreads, &numberOfRegions, &results);
+    if (validRegions)
+    {
+        free(validRegions);
+    }
     if ((numberOfThreads == 0)||(numberOfThreads == 0))
     {
         return;
@@ -481,7 +480,6 @@ void __attribute__((destructor (101))) likwid_markerCloseDestruct(void)
         free(results[i].cpulist);
         free(results[i].counters);
     }
-
     if (results != NULL)
     {
         free(results);
@@ -508,12 +506,13 @@ likwid_markerRegisterRegion(const char* regionTag)
     int cpu_id = hashTable_get(tag, &results);
     bdestroy(tag);
 
-    // Add CPU to access layer
+#ifndef LIKWID_USE_PERFEVENT
+    // Add CPU to access layer if ACCESSMODE is direct or accessdaemon
     ret =  HPMaddThread(cpu_id);
     // Perform one access to fully initialize connection to access daemon
     uint32_t reg = counter_map[groupSet->groups[groups[0]].events[0].index].counterRegister;
     HPMread(cpu_id, MSR_DEV, reg, &tmp);
-
+#endif
     return ret;
 }
 
@@ -788,4 +787,3 @@ likwid_pinProcess(int processorId)
 
     return TRUE;
 }
-

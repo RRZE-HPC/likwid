@@ -225,6 +225,11 @@ parse_streams(Workgroup* group, const_bstring str, int numberOfStreams)
 {
     struct bstrList* tokens;
     struct bstrList* subtokens;
+    if (group->init_per_thread)
+    {
+        fprintf(stderr, "Error: Cannot place stream in different stream when initialization per thread is selected.\n");
+        return -1;
+    }
     tokens = bsplit(str,',');
 
     if (tokens->qty < numberOfStreams)
@@ -297,8 +302,13 @@ bstr_to_workgroup(Workgroup* group, const_bstring str, DataType type, int number
             bstrListDestroy(tokens);
             return 1;
         }
-        parse_streams(group, tokens->entry[1], numberOfStreams);
+        parseStreams = parse_streams(group, tokens->entry[1], numberOfStreams);
         bdestroy(domain);
+        if (parseStreams)
+        {
+            bstrListDestroy(tokens);
+            return parseStreams;
+        }
     }
     else if (tokens->qty == 1)
     {

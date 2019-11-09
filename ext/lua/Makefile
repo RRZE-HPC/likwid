@@ -14,12 +14,12 @@ DEFINES   = -DLUA_COMPAT_ALL -DLUA_COMPAT_5_2 -DLUA_USE_LINUX
 LIBS      = -lm -Wl,-E -ldl
 
 Q         ?= @
-ifeq ($(DEBUG),true)
+ifeq ($(strip $(DEBUG)),true)
 DEBUG_FLAGS = -g
 else
 DEBUG_FLAGS =
 endif
-ifeq ($(COMPILER),MIC)
+ifeq ($(strip $(COMPILER)),MIC)
 CFLAGS += -mmic
 LFLAGS += -mmic
 endif

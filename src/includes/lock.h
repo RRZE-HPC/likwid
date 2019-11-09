@@ -91,7 +91,7 @@ lock_check(void)
         }
     }
 
-    if (lock_handle)
+    if (lock_handle > 0)
     {
         close(lock_handle);
     }

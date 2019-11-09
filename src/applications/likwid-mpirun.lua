@@ -70,8 +70,10 @@ local function usage()
     print_stdout("-n/-np <count>\t\t Set the number of processes")
     print_stdout("-nperdomain <domain>\t Set the number of processes per node by giving an affinity domain and count")
     print_stdout("-pin <list>\t\t Specify pinning of threads. CPU expressions like likwid-pin separated with '_'")
+    print_stdout("-t/-tpp <count>\t\t Set the number of threads per MPI process")
+    print_stdout("--dist <d>(:order)\t Specify the CPU distance between MPI processes. Possible orders are close and spread.")
     print_stdout("-s, --skip <hex>\t Bitmask with threads to skip")
-    print_stdout("-mpi <id>\t\t Specify which MPI should be used. Possible values: openmpi, intelmpi and mvapich2")
+    print_stdout("-mpi <id>\t\t Specify which MPI should be used. Possible values: openmpi, intelmpi, mvapich2 or slurm")
     print_stdout("\t\t\t If not set, module system is checked")
     print_stdout("-omp <id>\t\t Specify which OpenMP should be used. Possible values: gnu and intel")
     print_stdout("\t\t\t Only required for statically linked executables.")
@@ -79,6 +81,7 @@ local function usage()
     print_stdout("-g/-group <perf>\t Set a likwid-perfctr conform event set for measuring on nodes")
     print_stdout("-m/-marker\t\t Activate marker API mode")
     print_stdout("-O\t\t\t Output easily parseable CSV instead of fancy tables")
+    print_stdout("-o/--output <file>\tWrite output to a file. The file is reformatted according to the suffix.")
     print_stdout("-f\t\t\t Force overwrite of registers if they are in use. You can also use environment variable LIKWID_FORCE")
     print_stdout("-e, --env <key>=<value>\t Set environment variables for MPI processes")
     print_stdout("")
@@ -93,7 +96,10 @@ end
 
 local np = 0
 local ppn = 0
+local dist = 1
 local tpp = 1
+local tpp_orderings = {"close", "spread"}
+local tpp_ordering = "spread"
 local nperdomain = nil
 local npernode = 0
 local cpuexprs = {}
@@ -111,7 +117,10 @@ local debug = false
 local likwiddebug = false
 local use_marker = false
 local use_csv = false
+local outfile = nil
 local force = false
+local print_stats = false
+local test_mpiOpts = false
 if os.getenv("LIKWID_FORCE") ~= nil then
     force = true
 end
@@ -460,7 +469,7 @@ local function executeMvapich2(wrapperscript, hostfile, env, nrNodes)
 
     local envstr = ""
     for i, e in pairs(env) do
-        envstr = envstr .. string.format("%s=%s ", i, e)
+        envstr = envstr .. string.format("-genv %s %s ", i, e)
     end
 
     local cmd = string.format("%s -f %s -np %d -ppn %d %s %s %s",
@@ -520,6 +529,15 @@ end
 
 local function readHostfileSlurm(hostlist)
     nperhost = tonumber(os.getenv("SLURM_TASKS_PER_NODE"):match("(%d+)"))
+    if force then
+        if os.getenv("SLURM_CPUS_ON_NODE") ~= nil then
+            nperhost = tonumber(os.getenv("SLURM_CPUS_ON_NODE"):match("(%d+)")) / nperhost
+        elseif os.getenv("SLURM_CPUS_PER_TASK") ~= nil then
+            nperhost = tonumber(os.getenv("SLURM_CPUS_PER_TASK"):match("(%d+)"))
+        else
+            nperhost = cpuCount() / nperhost
+        end
+    end
     if hostlist and nperhost then
         hostfile = write_hostlist_to_file(hostlist, nperhost)
         hosts = readHostfilePBS(hostfile)
@@ -874,6 +892,9 @@ local function assignHosts(hosts, np, ppn, tpp)
                     current = ppn
                 end]]
                 print_stderr(string.format("ERROR: Oversubscription required. Host %s has only %s slots but %d needed per host", host["hostname"], host["slots"], ppn))
+                if mpitype == "slurm" then
+                    print_stderr("In SLURM environments, it might be a problem with --ntasks (the slots) and --cpus-per-task options")
+                end
                 os.exit(1)
             else
                 table.insert(newhosts, {hostname=host["hostname"],
@@ -971,9 +992,15 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
 
     for i, domidx in pairs(domainlist) do
         local sortedlist = {}
-        for off=1,topo["numThreadsPerCore"] do
-            for i=0,affinity["domains"][domidx]["numberOfProcessors"]/topo["numThreadsPerCore"] do
-                table.insert(sortedlist, affinity["domains"][domidx]["processorList"][off + (i*topo["numThreadsPerCore"])])
+        if tpp_ordering == "spread" then
+            for off=1,topo["numThreadsPerCore"] do
+                for i=0,affinity["domains"][domidx]["numberOfProcessors"]/topo["numThreadsPerCore"] do
+                    table.insert(sortedlist, affinity["domains"][domidx]["processorList"][off + (i*topo["numThreadsPerCore"])])
+                end
+            end
+        elseif tpp_ordering == "close" then
+            for i=0,affinity["domains"][domidx]["numberOfProcessors"] do
+                table.insert(sortedlist, affinity["domains"][domidx]["processorList"][i])
             end
         end
         local tmplist = {}
@@ -984,6 +1011,9 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
                 table.remove(sortedlist, 1)
             end
             table.insert(newexprs, tmplist)
+            if dist > threads then
+                for t=1, dist-threads do table.remove(sortedlist, 1) end
+            end
         end
     end
     if debug then
@@ -1015,24 +1045,47 @@ end
 
 local function splitUncoreEvents(groupdata)
     local core = {}
-    local uncore = {}
+    local socket = {}
+    local numa = {}
+    local llc = {}
+    local cpuinfo = likwid.getCpuInfo()
+
     for i, e in pairs(groupdata["Events"]) do
         if  not e["Counter"]:match("FIXC%d") and
             not e["Counter"]:match("^PMC%d") and
             not e["Counter"]:match("TMP%d") then
             local event = e["Event"]..":"..e["Counter"]
-            table.insert(uncore, event)
+            if cpuinfo["architecture"] == "x86_64" and cpuinfo["isIntel"] == 1 then
+                table.insert(socket, event)
+            elseif cpuinfo["architecture"] == "x86_64" then
+                if e["Counter"]:match("^CPMC%d") then
+                    table.insert(llc, event)
+                elseif e["Counter"]:match("^DFC%d") then
+                    table.insert(numa, event)
+                end
+            elseif cpuinfo["architecture"] == "armv8" then
+                table.insert(socket, event)
+            elseif cpuinfo["architecture"] == "armv7" then
+                table.insert(socket, event)
+            end
         else
             local event = e["Event"]..":"..e["Counter"]
             table.insert(core, event)
         end
     end
-    cevents = table.concat(core, ",")
-    uevents = table.concat(core, ",")
-    if #uncore > 0 then
-        uevents = uevents..","..table.concat(uncore,",")
+    sevents = ""
+    nevents = ""
+    levents = ""
+    if #socket > 0 then
+        sevents = table.concat(socket,",")
     end
-    return cevents, uevents
+    if #numa > 0 then
+        nevents = table.concat(numa, ",")
+    end
+    if #llc > 0 then
+        levents = table.concat(llc, ",")
+    end
+    return table.concat(core, ","), sevents, nevents, levents
 end
 
 local function inList(value, list)
@@ -1061,13 +1114,17 @@ local function uniqueList(list)
 end
 
 local function setPerfStrings(perflist, cpuexprs)
-    local uncore = false
+    local suncore = false
     local perfexprs = {}
     local grouplist = {}
-    local cpuinfo = likwid.getCpuInfo()
+    
     local affinity = likwid.getAffinityInfo()
     local socketList = {}
     local socketListFlags = {}
+    local numaList = {}
+    local numaListFlags = {}
+    local llcList = {}
+    local llcListFlags = {}
     for i, d in pairs(affinity["domains"]) do
         if d["tag"]:match("S%d+") then
             local tmpList = {}
@@ -1076,6 +1133,22 @@ local function setPerfStrings(perflist, cpuexprs)
             end
             table.insert(socketList, tmpList)
             table.insert(socketListFlags, 1)
+        end
+        if d["tag"]:match("M%d+") then
+            local tmpList = {}
+            for j,cpu in pairs(d["processorList"]) do
+                table.insert(tmpList, cpu)
+            end
+            table.insert(numaList, tmpList)
+            table.insert(numaListFlags, 1)
+        end
+        if d["tag"]:match("C%d+") then
+            local tmpList = {}
+            for j,cpu in pairs(d["processorList"]) do
+                table.insert(tmpList, cpu)
+            end
+            table.insert(llcList, tmpList)
+            table.insert(llcListFlags, 1)
         end
     end
 
@@ -1091,12 +1164,22 @@ local function setPerfStrings(perflist, cpuexprs)
             end
 
             local coreevents = ""
-            local uncoreevents = ""
-            coreevents, uncoreevents = splitUncoreEvents(gdata)
+            local socketevents = ""
+            local numaevents = ""
+            local llcevents = ""
+            coreevents, socketevents, numaevents, llcevents = splitUncoreEvents(gdata)
 
             local tmpSocketFlags = {}
             for _,e in pairs(socketListFlags) do
                 table.insert(tmpSocketFlags, e)
+            end
+            local tmpNumaFlags = {}
+            for _,e in pairs(numaListFlags) do
+                table.insert(tmpNumaFlags, e)
+            end
+            local tmpCacheFlags = {}
+            for _,e in pairs(llcListFlags) do
+                table.insert(tmpCacheFlags, e)
             end
 
             for i,cpuexpr in pairs(cpuexprs) do
@@ -1109,19 +1192,57 @@ local function setPerfStrings(perflist, cpuexprs)
                     end
                 end
                 slist = uniqueList(slist)
-                local uncore = false
+                local mlist = {}
+                for j, cpu in pairs(cpuexpr) do
+                    for l, numalist in pairs(numaList) do
+                        if inList(tonumber(cpu), numalist) then
+                            table.insert(mlist, l)
+                        end
+                    end
+                end
+                mlist = uniqueList(mlist)
+                local clist = {}
+                for j, cpu in pairs(cpuexpr) do
+                    for l, llclist in pairs(llcList) do
+                        if inList(tonumber(cpu), llclist) then
+                            table.insert(clist, l)
+                        end
+                    end
+                end
+                clist = uniqueList(clist)
+                local suncore = false
+                local muncore = false
+                local cuncore = false
                 for _, s in pairs(slist) do
                     if tmpSocketFlags[s] == 1 then
                         tmpSocketFlags[s] = 0
-                        uncore = true
+                        suncore = true
+                    end
+                end
+                for _, s in pairs(mlist) do
+                    if tmpNumaFlags[s] == 1 then
+                        tmpNumaFlags[s] = 0
+                        muncore = true
+                    end
+                end
+                for _, s in pairs(clist) do
+                    if tmpCacheFlags[s] == 1 then
+                        tmpCacheFlags[s] = 0
+                        cuncore = true
                     end
                 end
                 if perfexprs[k][i] == nil then
-                    if uncore then
-                        perfexprs[k][i] = uncoreevents
-                    else
-                        perfexprs[k][i] = coreevents
+                    local elist = {coreevents}
+                    if cuncore and llcevents:len() > 0 then
+                        table.insert(elist, llcevents)
                     end
+                    if muncore and numaevents:len() > 0 then
+                        table.insert(elist, numaevents)
+                    end
+                    if suncore and socketevents:len() > 0 then
+                        table.insert(elist, socketevents)
+                    end
+                    perfexprs[k][i] = table.concat(elist, ",")
                 end
             end
 
@@ -1186,9 +1307,9 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
         glsize_var = tostring(math.tointeger(np))
         losize_var = tostring(math.tointeger(ppn))
     elseif mpitype == "slurm" then
-        glrank_var = "${PMI_RANK:-$(($GLOBALSIZE * 2))}"
+        glrank_var = "${SLURM_PROCID:-$(($GLOBALSIZE * 2))}"
         glsize_var = tostring(math.tointeger(np))
-        losize_var = "${MPI_LOCALNRANKS:-$SLURM_NTASKS_PER_NODE}"
+        losize_var = string.format("${SLURM_NTASKS_PER_NODE:-%d}", math.tointeger(ppn))
     else
         print_stderr("Invalid MPI vendor "..mpitype)
         return
@@ -1250,7 +1371,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     f:write("GLOBALSIZE="..glsize_var.."\n")
     f:write("GLOBALRANK="..glrank_var.."\n")
     if os.getenv("OMP_NUM_THREADS") == nil then
-        f:write("unset OMP_NUM_THREADS\n")
+        f:write(string.format("export OMP_NUM_THREADS=%d\n", tpp))
     else
         f:write(string.format("export OMP_NUM_THREADS=%s\n", os.getenv("OMP_NUM_THREADS")))
     end
@@ -1542,6 +1663,9 @@ function percentile_table(inputtable, skip_cols, skip_lines)
         else
             index = math.floor(index)
         end
+        if index == 0 then
+            index = 1
+        end
         return tonumber(sorted_valuelist[index])
     end
     local outputtable = {}
@@ -1641,7 +1765,7 @@ function printMpiOutput(group_list, all_results, regionname)
             end
         end
 
-        if total_threads > 1 then
+        if total_threads > 1 or print_stats then
             firsttab_combined = likwid.tableToMinMaxAvgSum(firsttab, 2, 1)
         end
         if gdata["Metrics"] then
@@ -1673,7 +1797,7 @@ function printMpiOutput(group_list, all_results, regionname)
                 end
             end
 
-            if total_threads > 1 then
+            if total_threads > 1 or print_stats then
                 secondtab_combined = likwid.tableToMinMaxAvgSum(secondtab, 1, 1)
                 local tmp = percentile_table(secondtab, 1, 1)
                 for i, col in pairs(tmp) do
@@ -1695,11 +1819,11 @@ function printMpiOutput(group_list, all_results, regionname)
             end
             --print_stdout("Group,"..tostring(gidx) .. string.rep(",", maxLineFields  - 2))
             likwid.printcsv(firsttab, maxLineFields)
-            if total_threads > 1 then
+            if total_threads > 1 or print_stats then
                 if region == nil then
                     print(string.format("TABLE,Group %d Raw STAT,%s,%d%s",gidx,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
                 else
-                    print(string.format("TABLE,Region %s,Group %d Raw STAT,%s,%d%s",regionName, gidx,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                    print(string.format("TABLE,Region %s,Group %d Raw STAT,%s,%d%s",tostring(region), gidx,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-5)))
                 end
                 likwid.printcsv(firsttab_combined, maxLineFields)
             end
@@ -1707,14 +1831,14 @@ function printMpiOutput(group_list, all_results, regionname)
                 if region == nil then
                     print(string.format("TABLE,Group %d Metric,%s,%d%s",gidx,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-4)))
                 else
-                    print(string.format("TABLE,Region %s,Group %d Metric,%s,%d%s",regionName,gidx,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-5)))
+                    print(string.format("TABLE,Region %s,Group %d Metric,%s,%d%s",tostring(region),gidx,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-5)))
                 end
                 likwid.printcsv(secondtab, maxLineFields)
-                if total_threads > 1 then
+                if total_threads > 1 or print_stats then
                     if region == nil then
                         print(string.format("TABLE,Group %d Metric STAT,%s,%d%s",gidx,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))
                     else
-                        print(string.format("TABLE,Region %s,Group %d Metric STAT,%s,%d%s",regionName,gidx,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                        print(string.format("TABLE,Region %s,Group %d Metric STAT,%s,%d%s",tostring(region),gidx,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-5)))
                     end
                     likwid.printcsv(secondtab_combined, maxLineFields)
                 end
@@ -1725,10 +1849,10 @@ function printMpiOutput(group_list, all_results, regionname)
             end
             print_stdout("Group: "..tostring(gidx))
             likwid.printtable(firsttab)
-            if total_threads > 1 then likwid.printtable(firsttab_combined) end
+            if total_threads > 1 or print_stats then likwid.printtable(firsttab_combined) end
             if gdata["Metrics"] then
                 likwid.printtable(secondtab)
-                if total_threads > 1 then likwid.printtable(secondtab_combined) end
+                if total_threads > 1 or print_stats then likwid.printtable(secondtab_combined) end
             end
         end
     end
@@ -1756,7 +1880,9 @@ local cmd_options = {"h","help", -- default options for help message
                      "m","marker", -- options to activate MarkerAPI
                      "e:", "env:", -- options to forward environment variables
                      "ld",         -- option to activate debugging in likwid-perfctr
-                     "nperdomain:","pin:","hostfile:","O","f"} -- other options
+                     "dist:",      -- option to specifiy distance between two MPI processes
+                     "o:","output:", -- option to specifiy an output file
+                     "nperdomain:","pin:","hostfile:","O","f", "stats"} -- other options
 
 for opt,arg in likwid.getopt(arg,  cmd_options) do
     if (type(arg) == "string") then
@@ -1782,6 +1908,8 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         use_csv = true
     elseif opt == "f" then
         force = true
+    elseif opt == "stats" then
+        print_stats = true
     elseif opt == "n" or opt == "np" then
         np = tonumber(arg)
         if np == nil then
@@ -1789,14 +1917,77 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
             os.exit(1)
         end
     elseif opt == "t" or opt == "tpp" then
-        tpp = tonumber(arg)
-        if tpp == nil then
+        if arg:match("%d+:%a+") then
+            t, order = arg:match("(%d+):(%a+)")
+            tpp = tonumber(t)
+            if tpp == nil then
+                print_stderr("Argument for -t/-tpp must be a number")
+                os.exit(1)
+            end
+            if tpp == 0 then
+                print_stderr("Cannot run with 0 threads, at least 1 is required, sanitizing tpp to 1")
+                tpp = 1
+            end
+            local valid_order = false
+            for _, o in pairs(tpp_orderings) do
+                if o == order then
+                    valid_order = true
+                    break
+                end
+            end
+            if valid_order then
+                tpp_ordering = order
+            end
+            print_stdout(tpp, tpp_ordering)
+        elseif arg:match("%d+") then
+            tpp = tonumber(arg)
+            if tpp == nil then
+                print_stderr("Argument for -t/-tpp must be a number")
+                os.exit(1)
+            end
+            if tpp == 0 then
+                print_stderr("Cannot run with 0 threads, at least 1 is required, sanitizing tpp to 1")
+                tpp = 1
+            end
+        else
             print_stderr("Argument for -t/-tpp must be a number")
             os.exit(1)
         end
-        if tpp == 0 then
-            print_stderr("Cannot run with 0 threads, at least 1 is required, sanitizing tpp to 1")
-            tpp = 1
+    elseif opt == "dist" then
+        if arg:match("%d+:%a+") then
+            t, order = arg:match("(%d+):(%a+)")
+            local valid_order = false
+            for _, o in pairs(tpp_orderings) do
+                if o == order then
+                    valid_order = true
+                    break
+                end
+            end
+            if valid_order then
+                tpp_ordering = order
+            end
+            dist = tonumber(t)
+            if dist == nil then
+                print_stderr("Argument for -dist must be a number or number:ordering")
+                os.exit(1)
+            end
+            if dist == 0 then
+                print_stderr("Cannot run with distance 0, at least 1 is required, sanitizing dist to 1")
+                dist = 1
+            end
+        elseif arg:match("%d+") then
+            dist = tonumber(arg)
+            if dist == nil then
+                print_stderr("Argument for -dist must be a number or number:ordering")
+                os.exit(1)
+            end
+            if dist == 0 then
+                print_stderr("Cannot run with distance 0, at least 1 is required, sanitizing dist to 1")
+                dist = 1
+            end
+        else
+            print_stderr("Argument for -dist must be a number or number:ordering")
+            os.exit(1)
         end
     elseif opt == "nperdomain" then
         local domain, count, threads = arg:match("([NSCM]):(%d+)[:]*(%d*)")
@@ -1832,6 +2023,9 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         omptype = arg
     elseif opt == "ld" then
         likwiddebug = true
+    elseif opt == "o" or opt == "output" then
+        outfile = arg
+        print_stderr("WARN: The output file option is currently ignored. Will be available in upcoming releases")
     elseif opt == "s" or opt == "skip" then
         skipStr = "-s "..arg
     elseif opt == "?" then
@@ -1840,6 +2034,9 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
     elseif opt == "!" then
         print_stderr("Option requires an argument")
         os.exit(1)
+    elseif opt == "-" then
+        test_mpiOpts = true
+        break
     end
 end
 
@@ -1854,47 +2051,58 @@ if use_marker and #perf == 0 then
     os.exit(1)
 end
 
-local test_mpiOpts = false
+if test_mpiOpts then
+    for i=1,#arg do
+        if arg[i]:sub(1,1) == "-" then
+            table.insert(mpiopts, arg[i])
+        else
+            if likwid.access(arg[i], "x") == -1 then
+                local f = io.popen(string.format("which '%s' 2>/dev/null || echo 'ERROR'", arg[i]))
+                if f == nil then
+                    table.insert(mpiopts, arg[i])
+                else
+                    local out = f:read("*line")
+                    f:close()
+                    if out:match("ERROR") or out:match("^Usage") then
+                        table.insert(mpiopts, arg[i])
+                    else
+                        break
+                    end
+                end
+            else
+                table.insert(mpiopts, arg[i])
+                break
+            end
+        end
+    end
+    for i=1,#mpiopts do
+        table.remove(arg, 1)
+    end
+end
 for i=1,#arg do
-    if arg[i] == '--' then
-        test_mpiOpts = true
+    local item = arg[i]
+    if likwid.access(arg[i], "x") == -1 then
+        local f = io.popen(string.format("which '%s' 2>/dev/null || echo 'ERROR'", arg[i]))
+        if f ~= nil then
+            local out = f:read("*line")
+            f:close()
+            if not (out:match("ERROR") or out:match("^Usage")) then
+                item = out
+            end
+        end
     end
-    if not test_mpiOpts then
-        table.insert(executable, arg[i])
-    elseif arg[i] ~= '--' then
-        table.insert(mpiopts, arg[i])
-    end
+    table.insert(executable, item)
 end
 
 if #executable == 0 then
     print_stderr("ERROR: No executable given on commandline")
     os.exit(1)
-else
-    local do_which = false
-    local found = false
-    if likwid.access(executable[1], "x") == -1 then
-        do_which = true
-    else
-        found = true
-    end
-    if not found then
-        if do_which then
-            local f = io.popen(string.format("which %s 2>/dev/null", executable[1]))
-            if f ~= nil then
-                executable[1] = f:read("*line")
-                f:close()
-                found = true
-            end
-            if debug then
-                print_stdout("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
-            end
-        end
-    end
-    if not found then
-        print_stderr("ERROR: Cannot find executable given on commandline")
-        os.exit(1)
-    end
 end
+
+if debug then
+    print_stdout("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
+end
+
 if #mpiopts > 0 and debug then
     print_stdout("DEBUG: MPI options given on commandline: "..table.concat(mpiopts, " "))
 end
@@ -1980,6 +2188,10 @@ if #perf > 0 then
         os.exit(1)
     end
 end
+if #perf == 0 and print_stats then
+    print_stderr("WARN: Printing statistics only available when measuring counters (-g option)")
+    print_stats = false
+end
 
 if #cpuexprs > 0 then
     cpuexprs = calculatePinExpr(cpuexprs)
@@ -2019,25 +2231,28 @@ if #cpuexprs > 0 then
         print_stderr(string.format("ERROR: You want %d processes but the pinning expression has only expressions for %d processes. There are only %d hosts in the host list.", np, #cpuexprs*#newhosts, #newhosts))
         os.exit(1)
     end
-else 
+else
     ppn = math.tointeger(np / givenNrNodes)
     if nperdomain == nil then
         nperdomain = "N:"..tostring(ppn)
         if tpp > 0 then
             nperdomain = nperdomain..":"..tostring(tpp)
+            if dist > 1 then
+                nperdomain = nperdomain..":"..tostring(dist)
+            end
         end
     end
-    domainname, count, threads = nperdomain:match("[E]*[:]*([NSCM]*):(%d+)[:]*(%d*)")
+    domainname, count, threads, distance = nperdomain:match("[E]*[:]*([NSCM]*):(%d+)[:]*(%d*)[:]*(%d*)")
     if math.tointeger(threads) == nil then
         if tpp > 1 then
-            nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp)
+            nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp, dist)
         else
             tpp = 1
-            nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp)
+            nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp, dist)
         end
     else
         tpp = math.tointeger(threads)
-        nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp)
+        nperdomain = string.format("E:%s:%d:%d", domainname, count, tpp, dist)
     end
     cpuexprs = calculateCpuExprs(nperdomain, cpuexprs)
     if debug then
@@ -2055,7 +2270,7 @@ else
         end
         for i=np+1,ppn do
             if debug then
-                print_stderr("WARN: Remove cpuexpr: "..cpuexprs[#cpuexprs])
+                print_stderr("WARN: Remove cpuexpr: "..table.concat(cpuexprs[#cpuexprs], ","))
             end
             table.remove(cpuexprs, #cpuexprs)
         end

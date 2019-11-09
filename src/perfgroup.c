@@ -47,32 +47,10 @@
 #include <topology.h>
 #include <likwid.h>
 
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
-#include <math.h>
+#include <calculator.h>
+#include <bstrlib.h>
+#include <bstrlib_helper.h>
 
-#define LUA_STATES_CLEAN_DEFAULT 100
-
-char* in_func_str = "require('math');function SUM(...);local s = 0;for k,v in pairs({...}) do;s = s + v;end;return s;end;function ARGS(...) return #arg end;function AVG(...) return SUM(...)/ARGS(...) end;MEAN = AVG;function MIN(...) return math.min(...) end;function MAX(...) return math.max(...) end;function MEDIAN(...);local x = {...};local l = ARGS(...);table.sort(x);return x[math.floor(l/2)];end;function PERCENTILE(perc, ...);local x = {...};local xlen = #x;table.sort(x);local idx = math.ceil((perc/100.0)*xlen);return x[idx];end;function IFELSE(cond, valid, invalid);if cond then;return valid;else;return invalid;end;end";
-char* in_expand_str = "function expand_str(x); hist = {}; runs = 0; for pref, elem in x:gmatch('([%a%d]*)%[([%d,]+)%]') do;  runs = runs + 1;  matches = {};  for num in elem:gmatch('%d+') do;   for _,v in pairs(varlist) do; if v:match(string.format('.*%s%s.*', pref, num)) then;  if not hist[v] then;   hist[v] = 1;  else;   hist[v] = hist[v] + 1; end; end; end;  end; end; res = {}; for k,v in pairs(hist) do;  if v == runs then table.insert(res, k) end; end; return table.concat(res, ',');end;;function expand_wildcard(x); cond = {}; newx = x:gsub('%*','[%%d]'); for _,v in pairs(varlist) do;  if v:match(newx) then;   table.insert(cond, v);  end; end; return table.concat(cond, ',');end;;function eval_str(s); repl = {}; for x in s:gmatch('([%a%d_]+%[[%d,]+%])') do;  repl[x:gsub('%[', '%%['):gsub('%]', '%%]')] = expand_str(x); end; for x in s:gmatch('[%a%d*%._]+') do;  if x:match('*') then;t = expand_wildcard(x); if t:len > 0 then repl[x..'*'] = t end; end; end; for k,v in pairs(repl) do;  s = s:gsub(k..'[%a%d_]*',v); end; return s;end;";
-char* in_user_func_str = NULL;
-
-char* not_allowed[] = {"io.", "popen(", "load", "get", "set", "call(", "require", "module", NULL};
-
-// Keep the Lua states per cpu
-lua_State** lua_states = NULL;
-// A clean counter is needed per cpu to close Lua state from time
-// to time since it grows with each calculation and in some cases,
-// like monitoring, the state would increase memory usage.
-int *lua_states_clean = NULL;
-pthread_mutex_t* lua_states_locks = NULL;
-int num_states = 0;
-char** defines = NULL;
-bstring *bdefines = NULL;
-int* num_defines = NULL;
-bstring bglob_defines;
-bstring bglob_defines_list;
 
 
 static int totalgroups = 0;
@@ -169,9 +147,12 @@ get_groups(
     bstring SHORT = bformat("SHORT");
     bstring LONG = bformat("LONG");
     bstring REQUIRE = bformat("REQUIRE_NOHT");
+    char* Home = getenv("HOME");
+
     int read_long = 0;
-    if ((grouppath == NULL)||(architecture == NULL)||(groupnames == NULL))
+    if ((grouppath == NULL)||(architecture == NULL)||(groupnames == NULL)||(Home == NULL))
         return -EINVAL;
+
     char* fullpath = malloc((strlen(grouppath)+strlen(architecture)+50) * sizeof(char));
     if (fullpath == NULL)
     {
@@ -180,7 +161,7 @@ get_groups(
         bdestroy(REQUIRE);
         return -ENOMEM;
     }
-    char* homepath = malloc((strlen(getenv("HOME"))+strlen(architecture)+50) * sizeof(char));
+    char* homepath = malloc((strlen(Home)+strlen(architecture)+50) * sizeof(char));
     if (homepath == NULL)
     {
         free(fullpath);
@@ -226,7 +207,7 @@ get_groups(
         }
     }
     closedir(dp);
-    hsize = sprintf(homepath, "%s/.likwid/groups/%s", getenv("HOME"), architecture);
+    hsize = sprintf(homepath, "%s/.likwid/groups/%s", Home, architecture);
     if (isdir(homepath))
     {
         search_home = 1;
@@ -825,11 +806,12 @@ read_group(
     char buf[1024];
     GroupFileSections sec = GROUP_NONE;
     bstring REQUIRE = bformat("REQUIRE_NOHT");
-    if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL))
+    char* Home = getenv("HOME");
+    if ((grouppath == NULL)||(architecture == NULL)||(groupname == NULL)||(ginfo == NULL)||(Home == NULL))
         return -EINVAL;
 
     bstring fullpath = bformat("%s/%s/%s.txt", grouppath,architecture, groupname);
-    bstring homepath = bformat("%s/.likwid/groups/%s/%s.txt", getenv("HOME"),architecture, groupname);
+    bstring homepath = bformat("%s/.likwid/groups/%s/%s.txt", Home,architecture, groupname);
 
     if (access(bdata(fullpath), R_OK))
     {
@@ -1451,392 +1433,103 @@ return_group(GroupInfo* ginfo)
 }
 
 
-int calc_add_to_varlist(char* name, bstring bvarlist)
+
+void
+init_clist(CounterList* clist)
 {
-    int ret = 0;
-    if (!name)
-        return -EINVAL;
-    bstring bname = bformat("\"%s\"", name);
-    if (blength(bvarlist) > 0)
-        bcatcstr(bvarlist, ",");
-    ret = bconcat(bvarlist, bname);
-    bdestroy(bname);
-    return ret;
+    clist->counters = 0;
+    clist->cnames = bstrListCreate();
+    clist->cvalues = bstrListCreate();
 }
-
-int calc_add_str_var(char* name, char* value, bstring vars, bstring varlist)
-{
-    int ret = 0;
-    bstring add = bformat("%s = %s\n", name, value);
-    ret = bconcat(vars, add);
-    if (ret == BSTR_OK)
-        ret = calc_add_to_varlist(name, varlist);
-    bdestroy(add);
-    return ret;
-}
-
-int calc_add_dbl_var(char* name, double value, bstring bvars, bstring varlist)
-{
-    int ret = 0;
-    bstring add = bformat("%s = %20.20f\n", name, value);
-    ret = bconcat(bvars, add);
-    if (ret == BSTR_OK)
-        ret = calc_add_to_varlist(name, varlist);
-    bdestroy(add);
-    return ret;
-}
-
-int calc_add_int_var(char* name, int value, bstring bvars, bstring varlist)
-{
-    int ret = 0;
-    bstring add = bformat("%s = %d\n", name, value);
-    ret = bconcat(bvars, add);
-    if (ret == BSTR_OK)
-        ret = calc_add_to_varlist(name, varlist);
-    bdestroy(add);
-    return ret;
-}
-
-static int _calc_add_def(bstring add, int cpu)
-{
-    int ret = 0;
-    if (cpu < 0)
-    {
-        ret = bconcat(bglob_defines, add);
-    }
-    else
-    {
-        ret = bconcat(bdefines[cpu], add);
-    }
-    return ret;
-}
-
-// cpu == -1 means global definition
-int calc_add_dbl_def(char* name, double value, int cpu)
-{
-    int ret = 0;
-    bstring add = bformat("%s = %20.20f\n", name, value);
-    ret = _calc_add_def(add, cpu);
-    bdestroy(add);
-    if (!ret)
-        ret = calc_add_to_varlist(name, bglob_defines_list);
-    return ret;
-}
-
-// cpu == -1 means global definition
-int calc_add_int_def(char* name, int value, int cpu)
-{
-    int ret = 0;
-    bstring add = bformat("%s = %d\n", name, value);
-    ret = _calc_add_def(add, cpu);
-    bdestroy(add);
-    if (!ret)
-        ret = calc_add_to_varlist(name, bglob_defines_list);
-    return ret;
-}
-
-// cpu == -1 means global definition
-int calc_add_str_def(char* name, char* value, int cpu)
-{
-    int ret = 0;
-    bstring add = bformat("%s = %s\n", name, value);
-    ret = _calc_add_def(add, cpu);
-    bdestroy(add);
-    if (!ret)
-        ret = calc_add_to_varlist(name, bglob_defines_list);
-    return ret;
-}
-
-
-int calc_set_user_funcs(char* s)
-{
-    if (!s)
-        return -EINVAL;
-    if (in_user_func_str)
-        free(in_user_func_str);
-
-    int i = 0;
-    while (not_allowed[i])
-    {
-        char* p = strstr(s, not_allowed[i]);
-        if (p)
-        {
-            fprintf(stderr, "ERROR: User function string contains invalid commands\n");
-            return -EINVAL;
-        }
-        i++;
-    }
-
-    // test user given functions
-    lua_State *L = luaL_newstate();
-    luaL_openlibs(L);
-    in_user_func_str = NULL;
-    int ret = luaL_dostring (L, s);
-    lua_close(L);
-    if (ret)
-    {
-        fprintf(stderr, "WARN: Defined functions not valid Lua\n");
-        return 1;
-    }
-    else
-    {
-        ret = asprintf(&in_user_func_str, "%s", s);
-        if (ret < 0)
-            return ret;
-    }
-    return 0;
-}
-
-static double do_calc(int cpu, char* s, bstring vars)
-{
-    double res = NAN;
-    int ret = 0;
-    char* t = NULL;
-    lua_State *L = lua_states[cpu];
-    // Allocate a new Lua state for the cpu
-    if (lua_states && !L)
-    {
-        pthread_mutex_lock(&lua_states_locks[cpu]);
-        L = luaL_newstate();
-        luaL_openlibs(L);
-        lua_states[cpu] = L;
-        lua_states_clean[cpu] = LUA_STATES_CLEAN_DEFAULT;
-        pthread_mutex_unlock(&lua_states_locks[cpu]);
-    }
-    bstring scratch = bfromcstr(in_func_str);
-    bcatcstr(scratch, "\n");
-    if (blength(bglob_defines) > 0)
-    {
-        bconcat(scratch, bglob_defines);
-    }
-    if (bdefines[cpu])
-    {
-        bconcat(scratch, bdefines[cpu]);
-        bcatcstr(scratch, "\n");
-    }
-    if (in_user_func_str)
-    {
-        bcatcstr(scratch, in_user_func_str);
-        bcatcstr(scratch, "\n");
-    }
-    if (blength(vars) > 0)
-    {
-        bconcat(scratch, vars);
-        bcatcstr(scratch, "\n");
-    }
-
-    bcatcstr(scratch, "return ");
-    bcatcstr(scratch, s);
-    bcatcstr(scratch, "\n");
-
-    ret = luaL_dostring (L, bdata(scratch));
-    if (!ret)
-    {
-        if (strncmp(luaL_typename(L, -1), "number", 6) == 0)
-            res = lua_tonumber(L, -1);
-    }
-    bdestroy(scratch);
-
-    // decrement clean counter for cpu and close the Lua state if zero
-    pthread_mutex_lock(&lua_states_locks[cpu]);
-    lua_states_clean[cpu]--;
-    if (lua_states && lua_states[cpu] && lua_states_clean[cpu] == 0 )
-    {
-        lua_close(lua_states[cpu]);
-        lua_states[cpu] = NULL;
-    }
-    pthread_mutex_unlock(&lua_states_locks[cpu]);
-    return res;
-}
-
-static char* do_expand(int cpu, char* f, bstring varlist)
-{
-    int ret = 0;
-    char* out = NULL;
-    char* t = NULL;
-
-    // Allocate a new Lua state for the cpu
-    lua_State *L = lua_states[cpu];
-    if (lua_states && !L)
-    {
-        pthread_mutex_lock(&lua_states_locks[cpu]);
-        L = luaL_newstate();
-        luaL_openlibs(L);
-        lua_states[cpu] = L;
-        lua_states_clean[cpu] = LUA_STATES_CLEAN_DEFAULT;
-        pthread_mutex_unlock(&lua_states_locks[cpu]);
-    }
-    bstring scratch = bformat("varlist={%s,%s}\n%s\nreturn eval_str(\"%s\")", bdata(bglob_defines_list), bdata(varlist), in_expand_str, f);
-    if (ret < 0)
-    {
-        return NULL;
-    }
-    ret = luaL_dostring (L, bdata(scratch));
-    if (!ret)
-    {
-        out = (char*)lua_tostring(L, -1);
-    }
-    bdestroy(scratch);
-
-    // decrement clean counter for cpu and close the Lua state of the cpu if zero
-    pthread_mutex_lock(&lua_states_locks[cpu]);
-    lua_states_clean[cpu]--;
-    if (lua_states && lua_states[cpu] && lua_states_clean[cpu] == 0 )
-    {
-        lua_close(lua_states[cpu]);
-        lua_states[cpu] = NULL;
-    }
-    pthread_mutex_unlock(&lua_states_locks[cpu]);
-    return out;
-}
-
-
 
 int
-calc_metric(int cpu, char* formula, bstring vars, bstring varlist, double *result)
+add_to_clist(CounterList* clist, char* counter, double result)
 {
-    int i=0;
-    char* f;
-    int maxstrlen = 0, minstrlen = 10000;
-    char buf[128];
 
-    if ((formula == NULL) ||
-        (result == NULL) ||
-        (cpu < 0) ||
-        (cpu > cpuid_topology.numHWThreads) ||
-        (vars == NULL) ||
-        (varlist == NULL))
-        return -EINVAL;
-    if (strlen(formula) == 0 || blength(vars) == 0 || blength(varlist) == 0)
-        return -EINVAL;
-    *result = NAN;
-
-/*    if (strchr(formula, '[') != NULL)*/
-/*    {*/
-/*        f = do_expand(cpu, formula, varlist);*/
-/*        if (f)*/
-/*        {*/
-/*            *result = do_calc(cpu, formula, vars);*/
-/*            return 0;*/
-/*        }*/
-/*    }*/
-/*    else*/
-/*    {*/
-/*        *result = do_calc(cpu, formula, vars);*/
-/*        return 0;*/
-/*    }*/
-/*    return 1;*/
-    *result = do_calc(cpu, formula, vars);
+    bstrListAddChar(clist->cnames, counter);
+    bstring v = bformat("%.20f", result);
+    bstrListAdd(clist->cvalues, v);
+    clist->counters++;
+    bdestroy(v);
     return 0;
 }
 
-void __attribute__((constructor (103))) init_perfgroup(void)
+int
+update_clist(CounterList* clist, char* counter, double result)
 {
-    int ret = 0;
-    topology_init();
-    CpuTopology_t cputopo = get_cpuTopology();
-    CpuInfo_t cpuinfo = get_cpuInfo();
-    int cpus = cputopo->numHWThreads;
-    lua_states = (lua_State**)malloc(cpus * sizeof(lua_State*));
-    if (lua_states)
+    int i;
+    int found = 0;
+    if ((clist == NULL)||(counter == NULL))
+        return -EINVAL;
+    bstring c = bfromcstr(counter);
+    for (i=0; i< clist->counters; i++)
     {
-        //memset(lua_states, 0, cpus * sizeof(lua_State*));
-        for (int i = 0; i < cpus; i++)
+        bstring comp = bstrListGet(clist->cnames, i);
+        if (bstrcmp(comp, c) == BSTR_OK)
         {
-            lua_states[i] = NULL;
+            bstring v = bformat("%.20f", result);
+            bstring val = bstrListGet(clist->cvalues, i);
+            btrunc(val, 0);
+            bconcat(val, v);
+            bdestroy(v);
+            found = 1;
+            break;
         }
     }
-    lua_states_clean = (int*)malloc(cpus * sizeof(int));
-    if (lua_states_clean)
+    bdestroy(c);
+    if (!found)
     {
-        memset(lua_states_clean, 0, cpus * sizeof(int));
+        return -ENOENT;
     }
-    lua_states_locks = (pthread_mutex_t*)malloc(cpus * sizeof(pthread_mutex_t));
-    if (lua_states_locks)
-    {
-        for (int i = 0; i < cpus; i++)
-        {
-            pthread_mutex_init(&lua_states_locks[i], NULL);
-        }
-    }
-    num_states = cpus;
-    bdefines = (bstring*)malloc(cpus * sizeof(bstring));
-    if (bdefines)
-    {
-        memset(bdefines, 0, cpus * sizeof(bdefines));
-        for (int i = 0; i < cpus; i++)
-        {
-            bdefines[i] = bformat("");
-            calc_add_int_def("CPUID", cputopo->threadPool[i].apicId, cputopo->threadPool[i].apicId);
-        }
-    }
-    num_defines = (int*)malloc(cpus * sizeof(int));
-    if (num_defines)
-    {
-        memset(num_defines, 0, cpus * sizeof(int));
-    }
-    bglob_defines = bformat("");
-    bglob_defines_list = bformat("");
-    calc_add_str_def("TRUE", "true", -1);
-    calc_add_str_def("FALSE", "false", -1);
-    calc_add_int_def("CPU_COUNT", cpus, -1);
-    calc_add_int_def("CPU_ACTIVE", cputopo->activeHWThreads, -1);
-    calc_add_int_def("SOCKET_COUNT", cputopo->numSockets, -1);
-    calc_add_int_def("CORES_PER_SOCKET", cputopo->numCoresPerSocket, -1);
-    calc_add_int_def("CPUS_PER_CORE", cputopo->numThreadsPerCore, -1);
-    for (int i= 0; i < cputopo->numCacheLevels; i++)
-    {
-        char name[100];
-        snprintf(name, 99, "L%d_SIZE", cputopo->cacheLevels[i].level);
-        calc_add_int_def(name, cputopo->cacheLevels[i].size, -1);
-        snprintf(name, 99, "L%d_LINESIZE", cputopo->cacheLevels[i].level);
-        calc_add_int_def(name, cputopo->cacheLevels[i].lineSize, -1);
-    }
-    calc_add_int_def("MEM_LINESIZE", 64, -1);
-    //topology_finalize();
+    return 0;
 }
 
-void __attribute__((destructor (103))) close_perfgroup(void)
+void
+destroy_clist(CounterList* clist)
 {
-    if (lua_states && num_states > 0)
+    int i;
+    if (clist != NULL)
     {
-        for (int i = 0; i < num_states; i++)
-        {
-            if (lua_states[i])
-            {
-                lua_close(lua_states[i]);
-                lua_states[i] = NULL;
-            }
-        }
-        free(lua_states);
-        lua_states = NULL;
+        bstrListDestroy(clist->cnames);
+        bstrListDestroy(clist->cvalues);
+        clist->counters = 0;
     }
-    if (lua_states_clean)
-    {
-        free(lua_states_clean);
-        lua_states_clean = NULL;
-    }
-    if (lua_states_locks)
-    {
-        for (int i = 0; i < num_states; i++)
-        {
-            pthread_mutex_destroy(&lua_states_locks[i]);
-        }
-        free(lua_states_locks);
-        lua_states_locks = NULL;
-    }
-
-    for (int i = 0; i < num_states; i++)
-    {
-        if (bdefines[i])
-        {
-            bdestroy(bdefines[i]);
-            num_defines[i] = 0;
-        }
-    }
-    bdestroy(bglob_defines_list);
-    bdestroy(bglob_defines);
-    free(num_defines);
-    num_states = 0;
 }
 
+int
+calc_metric(char* formula, CounterList* clist, double *result)
+{
+    int i=0;
+    *result = 0.0;
+    int maxstrlen = 0, minstrlen = 10000;
+
+    if ((formula == NULL) || (clist == NULL))
+        return -EINVAL;
+
+    bstring f = bfromcstr(formula);
+    for(i=0;i<clist->counters;i++)
+    {
+        bstring c = bstrListGet(clist->cnames, i);
+        int len = blength(c);
+        maxstrlen = (maxstrlen > len ? maxstrlen : len);
+        minstrlen = (minstrlen < len ? minstrlen : len);
+    }
+
+    // try to replace each counter name in clist
+    while (maxstrlen >= minstrlen)
+    {
+        for(i=0;i<clist->counters;i++)
+        {
+            bstring c = bstrListGet(clist->cnames, i);
+            if (blength(c) != maxstrlen)
+                continue;
+            bstring v = bstrListGet(clist->cvalues, i);
+            bfindreplace(f, c, v, 0);
+        }
+        maxstrlen--;
+    }
+    // now we can calculate the formula
+    i = calculate_infix(bdata(f), result);
+    bdestroy(f);
+    return i;
+}

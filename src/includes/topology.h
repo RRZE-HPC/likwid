@@ -44,7 +44,7 @@
 #include <types.h>
 #include <tree.h>
 
-#define MAX_FEATURE_STRING_LENGTH 512
+#define MAX_FEATURE_STRING_LENGTH 512 /* only used in deprecated topology_cpuid.c */
 #define MAX_MODEL_STRING_LENGTH 512
 
 struct topology_functions {
@@ -75,6 +75,7 @@ struct topology_functions {
 #define ATOM_SILVERMONT_GOLD 0x5CU
 #define ATOM_DENVERTON       0x5FU
 #define ATOM_GOLDMONT_PLUS   0x7AU
+#define ATOM_TREMONT         0x86U
 #define NEHALEM              0x1AU
 #define NEHALEM_BLOOMFIELD   0x1AU
 #define NEHALEM_LYNNFIELD    0x1EU
@@ -102,6 +103,8 @@ struct topology_functions {
 #define KABYLAKE1            0x8EU
 #define KABYLAKE2            0x9EU
 #define CANNONLAKE           0x66U
+#define ICELAKE              0x7EU
+#define SNOWRIDGEX           0x86U
 
 /* Intel MIC */
 #define XEON_PHI           0x01U
@@ -127,6 +130,7 @@ struct topology_functions {
 #define ATHLON64_G1     0x6FU
 #define ATHLON64_G2     0x7FU
 #define ZEN_RYZEN       0x01
+#define ZEN2_RYZEN      0x31
 
 /* ARM */
 #define  ARM7L          0x3U

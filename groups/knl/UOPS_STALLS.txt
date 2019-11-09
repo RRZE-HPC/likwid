@@ -17,9 +17,9 @@ Avg. stall duration [cyc] PMC0/PMC1
 Stall ratio PMC0/FIXC1
 
 LONG
+Formulas:
 Number of stalls = UOPS_RETIRED_STALLS
 Avg. stall duration [cyc] = UOPS_RETIRED_STALLED_CYCLES/UOPS_RETIRED_STALLS
 Stall ratio = UOPS_RETIRED_STALLED_CYCLES/CPU_CLK_UNHALTED_CORE
-Formulas:
 -
 This group measures stalls in the UOP retirement. 

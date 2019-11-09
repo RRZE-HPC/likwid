@@ -11,12 +11,16 @@ likwid-bench \- low-level benchmark suite and microbenchmarking framework
 .IR <min_time> ]
 .RB [ \-w
 .IR <workgroup_expression> ]
+.RB [ \-W
+.IR <workgroup_expression_short> ]
 .RB [ \-l
 .IR <testname> ]
 .RB [ \-d
 .IR <delimiter> ]
 .RB [ \-i
 .IR <iterations> ]
+.RB [ \-f
+.IR <filepath> ]
 .SH DESCRIPTION
 .B likwid-bench
 is a benchmark suite for low-level (assembly) benchmarks to measure bandwidths and instruction throughput for specific instruction code on x86 systems. The currently included benchmark codes include common data access patterns like load and store but also calculations like vector triad and sum.
@@ -29,7 +33,7 @@ as a wrapper to
 .B likwid-bench.
 This requires to build
 .B likwid-bench
-with instrumentation enabled in config.mk.
+with instrumentation enabled in config.mk. Benchmarks can be dynamically added when a proper ptt file is present at $HOME/.likwid/bench/<arch>/<testname>.ptt . The files are compiled to a .S file and compiled using either gcc, icc or pgcc (searched in $PATH). The default folder is /tmp/<PID>.
 .SH OPTIONS
 .TP
 .B \-\^h
@@ -50,13 +54,19 @@ The amount of iterations is determined using this value. Default: 1 second.
 Name of the benchmark code to run (mandatory).
 .TP
 .B \-\^w <workgroup_expression>
-Specify the affinity domain, thread count and data set size for the current benchmarking run (mandatory).
+Specify the affinity domain, thread count and data set size for the current benchmarking run (mandatory). First thread in thread domain initializes the stream.
+.TP
+.B \-\^W <workgroup_expression_short>
+Specify the affinity domain, thread count and data set size for the current benchmarking run (mandatory). Each thread in the workgroup initializes its own chunk of the stream.
 .TP
 .B \-\^l <testname>
 list properties of a benchmark code.
 .TP
 .B \-\^i <iterations>
 Set the number of iterations per thread (optional)
+.TP
+.B \-\^f <filepath>
+Filepath for the dynamic generation of benchmarks. Default /tmp/. <PID> is always attached
 
 .SH WORKGROUP SYNTAX
 
@@ -82,8 +92,9 @@ can be provided. Optionally for every stream (array, vector) the placement can b
 the threads are running in. To place the data in a different domain for every stream of a benchmark case (the total number of streams can be aquired by the
 .B \-l
 option) the domain to place the data in can be specified. Multiple streams are comma separated. Either the placement is provided or all streams have to be explicitly placed. Please refer to the Wiki pages on
-.B http://code.google.com/p/likwid/wiki/LikwidBench
+.B https://github.com/RRZE-HPC/likwid/wiki/Likwid-Bench
 for further details and examples on usage.
+With -W each thread initializes its own chunk of the streams but pleacement of the streams is deactivated.
 
 
 .SH EXAMPLE
@@ -97,7 +108,7 @@ benchmark on socket 0 (
 .TP
 .B likwid-bench -t copy -w S0:100kB
 .PP
-Since no 
+Since no
 .B <num_threads>
 is given in the workload expression, each core of socket 0 gets one thread. The workload is split up between all threads and the number of iterations is determined automatically.
 .IP 2. 4

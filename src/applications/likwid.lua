@@ -86,6 +86,7 @@ likwid.putTopology = likwid_putTopology
 likwid.getNumaInfo = likwid_getNumaInfo
 likwid.putNumaInfo = likwid_putNumaInfo
 likwid.setMemInterleaved = likwid_setMemInterleaved
+likwid.setMembind = likwid_setMembind
 likwid.getAffinityInfo = likwid_getAffinityInfo
 likwid.putAffinityInfo = likwid_putAffinityInfo
 likwid.getPowerInfo = likwid_getPowerInfo
@@ -135,6 +136,7 @@ likwid.registerRegion = likwid_registerRegion
 likwid.startRegion = likwid_startRegion
 likwid.stopRegion = likwid_stopRegion
 likwid.getRegion = likwid_getRegion
+likwid.resetRegion = likwid_resetRegion
 likwid.initCpuFeatures = likwid_cpuFeaturesInit
 likwid.getCpuFeatures = likwid_cpuFeaturesGet
 likwid.enableCpuFeatures = likwid_cpuFeaturesEnable
@@ -151,13 +153,17 @@ likwid.markerRegionTime = likwid_markerRegionTime
 likwid.markerRegionCount = likwid_markerRegionCount
 likwid.markerRegionResult = likwid_markerRegionResult
 likwid.markerRegionMetric = likwid_markerRegionMetric
+likwid.initFreq = likwid_initFreq
 likwid.getCpuClockCurrent = likwid_getCpuClockCurrent
 likwid.getCpuClockMin = likwid_getCpuClockMin
+likwid.getConfCpuClockMin = likwid_getConfCpuClockMin
 likwid.setCpuClockMin = likwid_setCpuClockMin
 likwid.getCpuClockMax = likwid_getCpuClockMax
+likwid.getConfCpuClockMax = likwid_getConfCpuClockMax
 likwid.setCpuClockMax = likwid_setCpuClockMax
 likwid.getGovernor = likwid_getGovernor
 likwid.setGovernor = likwid_setGovernor
+likwid.finalizeFreq = likwid_finalizeFreq
 likwid.setTurbo = likwid_setTurbo
 likwid.getTurbo = likwid_getTurbo
 likwid.setUncoreFreqMin = likwid_setUncoreFreqMin
@@ -199,7 +205,7 @@ local function getopt(args, ostrlist)
                     if #args[1] == 2 then -- found "--"
                         place = 0
                         table.remove(args, 1)
-                        return args[1], nil
+                        return "-", nil
                     end
                     place = place + 1
                 end
@@ -712,6 +718,7 @@ local function min_max_avg(values)
 end
 
 local function tableMinMaxAvgSum(inputtable, skip_cols, skip_lines)
+    local function isSpecial(s) return s == "nan" or s ~= "-" or s == "int" end
     local outputtable = {}
     local nr_columns = #inputtable
     if nr_columns == 0 then
@@ -734,14 +741,12 @@ local function tableMinMaxAvgSum(inputtable, skip_cols, skip_lines)
     for j=skip_cols+1,nr_columns do
         for i=skip_lines+1, nr_lines do
             local res = tonumber(inputtable[j][i])
-            if inputtable[j][i] ~= "nan" and inputtable[j][i] ~= "-" then
-                if res ~= nil then
-                    minOfLine[i-skip_lines+1] = math.min(res, minOfLine[i-skip_lines+1])
-                    maxOfLine[i-skip_lines+1] = math.max(res, maxOfLine[i-skip_lines+1])
-                    sumOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1] + res
-                end
-                avgOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1]/(nr_columns-skip_cols)
+            if res ~= nil then
+                minOfLine[i-skip_lines+1] = math.min(res, minOfLine[i-skip_lines+1])
+                maxOfLine[i-skip_lines+1] = math.max(res, maxOfLine[i-skip_lines+1])
+                sumOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1] + res
             end
+            avgOfLine[i-skip_lines+1] = sumOfLine[i-skip_lines+1]/(nr_columns-skip_cols)
         end
     end
     for i=2,#minOfLine do
@@ -1187,9 +1192,13 @@ end
 likwid.gethostname = gethostname
 
 local function getjid()
-    local jid = os.getenv("PBS_JOBID")
-    if jid == nil then
-        jid = "X"
+    jid = "X"
+    for _, v in pairs({"PBS_JOBID", "SLURM_JOB_ID", "SLURM_JOBID", "LOADL_STEP_ID", "LSB_JOBID" }) do
+        x = os.getenv(v)
+        if x then
+            jid = x
+            break
+        end
     end
     return jid
 end
@@ -1197,11 +1206,12 @@ end
 likwid.getjid = getjid
 
 local function getMPIrank()
-    local rank = os.getenv("PMI_RANK")
-    if rank == nil then
-        rank = os.getenv("OMPI_COMM_WORLD_RANK")
-        if rank == nil then
-            rank = "X"
+    rank = "X"
+    for _, v in pairs({"PMI_RANK", "OMPI_COMM_WORLD_RANK", "SLURM_PROCID"}) do
+        x = os.getenv(v)
+        if x then
+            rank = x
+            break
         end
     end
     return rank
@@ -1209,6 +1219,17 @@ end
 
 likwid.getMPIrank = getMPIrank
 
+local function llikwid_getFreqDriver(cpu)
+    file = string.format("/sys/devices/system/cpu/cpu%d/cpufreq/scaling_driver", cpu)
+    local f = io.open(file, "rb")
+    if f then
+        drv = f:read("*l"):gsub("%s+", "")
+        f:close()
+        return drv
+    end
+end
+
+likwid.getFreqDriver = llikwid_getFreqDriver
 
 local function llikwid_getAvailFreq(cpu)
     local freq_str = likwid_getAvailFreq(cpu)

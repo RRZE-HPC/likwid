@@ -10,18 +10,18 @@ METRICS
 Runtime (RDTSC) [s] time
 Clock [MHz] 1.E-06*PMC1/time
 CPI  PMC1/PMC0
-DP MFLOP/s  1.0E-06*(PMC3*2.0+PMC2)/time
-NEON DP MFLOP/s  1.0E-06*(PMC3*2.0)/time
-Packed MUOPS/s   1.0E-06*(PMC3)/time
-Scalar MUOPS/s 1.0E-06*PMC2/time
+DP [MFLOP/s]  1.0E-06*(PMC3*2.0+PMC2)/time
+NEON DP [MFLOP/s]  1.0E-06*(PMC3*2.0)/time
+Packed [MUOPS/s]   1.0E-06*(PMC3)/time
+Scalar [MUOPS/s] 1.0E-06*PMC2/time
 Vectorization ratio 100*(PMC3)/(PMC2+PMC3)
 
 LONG
-Formula:
-DP MFLOP/s = 1.0E-06*(ASE_SPEC*2+VFP_SPEC)/runtime
-NEON DP MFLOP/s = 1.0E-06*(ASE_SPEC*4)/runtime
-Packed MUOPS/s = 1.0E-06*(ASE_SPEC)/runtime
-Scalar MUOPS/s = 1.0E-06*VFP_SPEC/runtime
+Formulas:
+DP [MFLOP/s] = 1.0E-06*(ASE_SPEC*2+VFP_SPEC)/runtime
+NEON DP [MFLOP/s] = 1.0E-06*(ASE_SPEC*4)/runtime
+Packed [MUOPS/s] = 1.0E-06*(ASE_SPEC)/runtime
+Scalar [MUOPS/s] = 1.0E-06*VFP_SPEC/runtime
 Vectorization ratio = 100*(ASE_SPEC)/(ASE_SPEC+VFP_SPEC)
 -
 NEON scalar and packed double precision FLOP rates.

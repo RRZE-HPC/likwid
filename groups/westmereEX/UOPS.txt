@@ -20,7 +20,7 @@ Merged UOPs PMC3
 Retired UOPs PMC2
 
 LONG
-Formula:
+Formulas:
 Issued UOPs = UOPS_ISSUED_ANY
 Merged UOPs = UOPS_ISSUED_FUSED
 Retired UOPs = UOPS_RETIRED_ANY

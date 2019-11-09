@@ -3,7 +3,7 @@
 likwid-perfctr \- configure and read out hardware performance counters on x86 CPUs
 .SH SYNOPSIS
 .B likwid-perfctr 
-.RB [\-vhHmaief]
+.RB [\-vhHmaiefO]
 .RB [ \-c
 .IR core_list ]
 .RB [ \-C
@@ -162,7 +162,7 @@ Examples can be found in examples folder <INSTALLEDPREFIX>/share/likwid/examples
 The following code snippet shows the necessary calls:
 
 .nf
-#include <likwid.h>
+#include <likwid-cpumarker.h>
 
 /* only one thread calls init */
 LIKWID_MARKER_INIT;
@@ -181,7 +181,7 @@ LIKWID_MARKER_THREADINIT;
  * of START and STOP calls. Call it once for each
  * thread in parallel environment.
  * Note: No whitespace characters are allowed in the region tags
- * This call is optional, START will do the same operations.
+ * This call is optional but RECOMMENDED, START will do the same operations.
  */
 LIKWID_MARKER_REGISTER("name");
 
@@ -200,6 +200,19 @@ LIKWID_MARKER_STOP("name");
  * Switches through groups in round-robin fashion
  */
 LIKWID_MARKER_SWITCH;
+
+/* If you want to get the data of a region inside your application
+ * nevents in an (int*) and used as input length of the events array. After the
+ * call, nevents contains the actual amount of events
+ * events is an array of doubles (double*), time is a pointer to double to 
+ * retrieve the measured runtime of the region and count is a pointer to int
+ * and is filled with the call count of the region.
+ */
+LIKWID_MARKER_GET("name", nevents, events, time, count);
+
+/* If you want to reset the counts for a region
+ */
+LIKWID_MARKER_RESET("name");
 
 /* Finally */
 LIKWID_MARKER_CLOSE;

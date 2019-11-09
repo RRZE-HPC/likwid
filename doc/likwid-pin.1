@@ -3,13 +3,15 @@
 likwid-pin \- pin a sequential or threaded application to dedicated processors
 .SH SYNOPSIS
 .B likwid-pin
-.RB [\-vhSpqi]
+.RB [\-vhSpqim]
 .RB [ \-V
-.IR verbosity ]
-.RB [ \-c
-.IR corelist ]
+.IR <verbosity> ]
+.RB [ \-c/\-C
+.IR <corelist> ]
 .RB [ \-s
-.IR skip_mask ]
+.IR <skip_mask> ]
+.RB [ \-d
+.IR <delim> ]
 .SH DESCRIPTION
 .B likwid-pin
 is a command line application to pin a sequential or multithreaded
@@ -62,12 +64,12 @@ prints version information to standard output, then exits.
 .B \-\^V, \-\-\^verbose <level>
 verbose output during execution for debugging. 0 for only errors, 1 for informational output, 2 for detailed output and 3 for developer output
 .TP
-.B \-\^c <cpu expression>
+.B \-\^c,\-\^C <cpu expression>
 specify a numerical list of processors. The list may contain multiple  items, separated by comma, and ranges. For example 0,3,9-11. Other format are available, see the
 .B CPU EXPRESSION
 section.
 .TP
-.B \-\^s, \-\-\^skip <mask>
+.B \-\^s, \-\-\^skip <skip_mask>
 Specify skip mask as HEX number. For each set bit the corresponding thread is skipped.
 .TP
 .B \-\^S,\-\-\^sweep
@@ -78,6 +80,14 @@ prints the available thread domains for logical pinning
 .TP
 .B \-\^i
 set NUMA memory policy to interleave involving all NUMA nodes involved in pinning
+.TP
+.B \-\^m
+set NUMA memory policy to membind involving all NUMA nodes involved in pinning
+.TP
+.B \-\^d <delim>
+usable with
+.B \-\^p
+to specify the CPU delimiter in the cpulist
 .TP
 .B \-\^q,\-\-\^quiet
 silent execution without output

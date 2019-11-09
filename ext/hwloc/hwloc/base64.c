@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012 Inria.  All rights reserved.
+ * Copyright © 2012-2018 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  *
  * Modifications after import:
@@ -7,6 +7,11 @@
  * - updated prototypes
  * - updated #include
  */
+
+/* include hwloc's config before anything else
+ * so that extensions and features are properly enabled
+ */
+#include "private/private.h"
 
 /*	$OpenBSD: base64.c,v 1.5 2006/10/21 09:55:03 otto Exp $	*/
 
@@ -125,8 +130,6 @@ static const char Pad64 = '=';
 #include <string.h>
 #include <ctype.h>
 
-#include <private/private.h>
-
 int
 hwloc_encode_to_base64(const char *src, size_t srclength, char *target, size_t targsize)
 {
@@ -178,7 +181,7 @@ hwloc_encode_to_base64(const char *src, size_t srclength, char *target, size_t t
 	if (datalength >= targsize)
 		return (-1);
 	target[datalength] = '\0';	/* Returned value doesn't count \0. */
-	return (datalength);
+	return (int)(datalength);
 }
 
 /* skips all whitespace anywhere.
@@ -213,7 +216,7 @@ hwloc_decode_from_base64(char const *src, char *target, size_t targsize)
 			if (target) {
 				if (tarindex >= targsize)
 					return (-1);
-				target[tarindex] = (pos - Base64) << 2;
+				target[tarindex] = (char)(pos - Base64) << 2;
 			}
 			state = 1;
 			break;

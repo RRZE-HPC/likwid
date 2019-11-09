@@ -182,6 +182,7 @@ $(L_HELPER):
 $(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE STATIC LIB  $(TARGET_LIB)"
 	$(Q)${AR} -crus $(STATIC_TARGET_LIB) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
+	@sed -e s+'@PREFIX@'+$(INSTALLED_PREFIX)+g make/likwid-config.cmake > likwid-config.cmake
 
 $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
@@ -193,7 +194,7 @@ $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
 	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-accessD
 
-$(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreq.c
+$(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreqDaemon.c
 	@echo "===>  BUILD frequency daemon likwid-setFreq"
 	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-setFreq
 
@@ -429,6 +430,7 @@ install: install_daemon install_freq
 	@mkdir -p $(PREFIX)/include
 	@chmod 755 $(PREFIX)/include
 	@install -m 644 src/includes/likwid.h  $(PREFIX)/include/
+	@install -m 644 src/includes/likwid-cpumarker.h  $(PREFIX)/include/
 	@install -m 644 src/includes/bstrlib.h  $(PREFIX)/include/
 	$(FORTRAN_INSTALL)
 	@echo "===> INSTALL groups to $(PREFIX)/share/likwid/perfgroups"
@@ -493,6 +495,7 @@ move: move_daemon move_freq
 	@mkdir -p $(INSTALLED_PREFIX)/include
 	@chmod 755 $(INSTALLED_PREFIX)/include
 	@install -m 644 $(PREFIX)/include/likwid.h $(INSTALLED_PREFIX)/include/likwid.h
+	@install -m 644 $(PREFIX)/include/likwid-cpumarker.h $(INSTALLED_PREFIX)/include/likwid-cpumarker.h
 	@install -m 644 $(PREFIX)/include/bstrlib.h $(INSTALLED_PREFIX)/include/bstrlib.h
 	@if [ -e $(PREFIX)/include/likwid.mod ]; then install $(PREFIX)/include/likwid.mod $(INSTALLED_PREFIX)/include/likwid.mod; fi
 	@echo "===> MOVE groups from $(PREFIX)/share/likwid/perfgroups to $(INSTALLED_PREFIX)/share/likwid/perfgroups"
@@ -540,6 +543,7 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -f $(MANPREFIX)/man1/likwid-bench.1
 	@echo "===> REMOVING header from $(PREFIX)/include"
 	@rm -f $(PREFIX)/include/likwid.h
+	@rm -f $(PREFIX)/include/likwid-cpumarker.h
 	@rm -f $(PREFIX)/include/bstrlib.h
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter, groups and default configs from $(PREFIX)/share/likwid"
@@ -575,6 +579,7 @@ uninstall_moved: uninstall_daemon_moved uninstall_freq_moved
 	@rm -f $(INSTALLED_MANPREFIX)/man1/likwid-bench.1
 	@echo "===> REMOVING header from $(INSTALLED_PREFIX)/include"
 	@rm -f $(INSTALLED_PREFIX)/include/likwid.h
+	@rm -f $(PREFIX)/include/likwid-cpumarker.h
 	@rm -f $(INSTALLED_PREFIX)/include/bstrlib.h
 	$(FORTRAN_REMOVE)
 	@echo "===> REMOVING filter, groups and default configs from $(INSTALLED_PREFIX)/share/likwid"

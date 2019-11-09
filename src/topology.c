@@ -62,6 +62,7 @@ static char* atom_silvermont_str = "Intel Atom (Silvermont) processor";
 static char* atom_airmont_str = "Intel Atom (Airmont) processor";
 static char* atom_goldmont_str = "Intel Atom (Goldmont) processor";
 static char* atom_goldmontplus_str = "Intel Atom (Goldmont Plus) processor";
+static char* atom_tremont_str = "Intel Atom (Tremont) processor";
 static char* nehalem_bloom_str = "Intel Core Bloomfield processor";
 static char* nehalem_lynn_str = "Intel Core Lynnfield processor";
 static char* nehalem_west_str = "Intel Core Westmere processor";
@@ -87,6 +88,9 @@ static char* xeon_mp_string = "Intel Xeon MP processor";
 static char* xeon_phi_string = "Intel Xeon Phi (Knights Corner) Coprocessor";
 static char* xeon_phi2_string = "Intel Xeon Phi (Knights Landing) (Co)Processor";
 static char* xeon_phi3_string = "Intel Xeon Phi (Knights Mill) (Co)Processor";
+static char* icelake_str = "Intel Icelake processor";
+//static char* snowridgex_str = "Intel SnowridgeX processor";
+
 static char* barcelona_str = "AMD K10 (Barcelona) processor";
 static char* shanghai_str = "AMD K10 (Shanghai) processor";
 static char* istanbul_str = "AMD K10 (Istanbul) processor";
@@ -103,6 +107,7 @@ static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
 static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
 static char* amd_k8_str = "AMD K8 architecture";
 static char* amd_zen_str = "AMD K17 (Zen) architecture";
+static char* amd_zen2_str = "AMD K17 (Zen2) architecture";
 static char* armv7l_str = "ARM 7l architecture";
 static char* armv8_str = "ARM 8 architecture";
 static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
@@ -112,6 +117,7 @@ static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
 static char* power7_str = "POWER7 architecture";
 static char* power8_str = "POWER8 architecture";
 static char* power9_str = "POWER9 architecture";
+
 static char* unknown_intel_str = "Unknown Intel Processor";
 static char* unknown_amd_str = "Unknown AMD Processor";
 static char* unknown_power_str = "Unknown POWER Processor";
@@ -138,22 +144,29 @@ static char* short_sandybridge_ep = "sandybridgeEP";
 static char* short_skylake = "skylake";
 static char* short_skylakeX = "skylakeX";
 static char* short_kabylake = "skylake";
-static char* short_cascadelakeX = "skylakeX";
+static char* short_cascadelakeX = "CLX";
 static char* short_cannonlake = "cannonlake";
 static char* short_phi = "phi";
 static char* short_phi2 = "knl";
+static char* short_icelake = "ICL";
+//static char* short_snowridgex = "SNR";
+
 static char* short_k8 = "k8";
 static char* short_k10 = "k10";
 static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
 static char* short_zen = "zen";
+static char* short_zen2 = "zen2";
+
 static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
 static char* short_arm8_cav_tx2 = "arm8_tx2";
 static char* short_arm8_cav_tx = "arm8_tx";
+
 static char* short_power7 = "power7";
 static char* short_power8 = "power8";
 static char* short_power9 = "power9";
+
 static char* short_unknown = "unknown";
 
 /* #####  EXPORTED VARIABLES  ########################################## */
@@ -771,11 +784,24 @@ topology_setName(void)
                     cpuid_info.name = atom_goldmont_str;
                     cpuid_info.short_name = short_goldmont;
                     break;
-                
                 case ATOM_GOLDMONT_PLUS:
                     cpuid_info.name = atom_goldmontplus_str;
                     cpuid_info.short_name = short_goldmontplus;
                     break;
+                case ATOM_TREMONT:
+                    cpuid_info.name = atom_tremont_str;
+                    cpuid_info.short_name = short_goldmontplus;
+                    break;
+
+                case ICELAKE:
+                    cpuid_info.name = icelake_str;
+                    cpuid_info.short_name = short_icelake;
+                    break;
+
+/*                case SNOWRIDGEX:*/
+/*                    cpuid_info.name = snowridgex_str;*/
+/*                    cpuid_info.short_name = short_snowridgex;*/
+/*                    break;*/
 
                 default:
                     cpuid_info.name = unknown_intel_str;
@@ -909,8 +935,17 @@ topology_setName(void)
 
 
         case ZEN_FAMILY:
-            cpuid_info.name = amd_zen_str;
-            cpuid_info.short_name = short_zen;
+            switch (cpuid_info.model)
+            {
+                case ZEN_RYZEN:
+                    cpuid_info.name = amd_zen_str;
+                    cpuid_info.short_name = short_zen;
+                    break;
+                case ZEN2_RYZEN:
+                    cpuid_info.name = amd_zen2_str;
+                    cpuid_info.short_name = short_zen2;
+                    break;
+            }
             break;
 
         case ARMV7_FAMILY:
@@ -1076,7 +1111,7 @@ standard_init:
         sched_getaffinity(0,sizeof(cpu_set_t), &cpuSet);
         if (cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF))
         {
-#if !defined(__ARM_ARCH_7A__)
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
             cpuid_topology.activeHWThreads =
                 ((cpu_count(&cpuSet) < sysconf(_SC_NPROCESSORS_CONF)) ?
                 cpu_count(&cpuSet) :
@@ -1290,7 +1325,15 @@ print_supportedCPUs (void)
     printf("\t%s\n",interlagos_str);
     printf("\t%s\n",kabini_str);
     printf("\t%s\n",amd_zen_str);
+    printf("\t%s\n",amd_zen2_str);
     printf("\n");
+    printf("Supported ARMv8 processors:\n");
+    printf("\t%s\n",arm_cortex_a53);
+    printf("\t%s\n",arm_cortex_a57);
+    printf("\t%s\n",cavium_thunderx_str);
+    printf("\t%s\n",cavium_thunderx2t99_str);
+    printf("\n");
+
 }
 
 CpuTopology_t
@@ -1310,4 +1353,3 @@ get_numaTopology(void)
 {
     return &numa_info;
 }
-

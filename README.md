@@ -3,7 +3,7 @@ Introduction
 --------------------------------------------------------------------------------
 
 Likwid is a simple to install and use toolsuite of command line applications
-for performance oriented programmers. It works for Intel and AMD processors
+for performance oriented programmers. It works for Intel, AMD and ARMv8 processors
 on the Linux operating system.
 
 [![Build Status](https://travis-ci.org/RRZE-HPC/likwid.svg?branch=master)](https://travis-ci.org/RRZE-HPC/likwid)
@@ -11,17 +11,16 @@ on the Linux operating system.
 It consists of:
 
 - likwid-topology: print thread, cache and NUMA topology
-- likwid-perfctr: configure and read out hardware performance counters on Intel and AMD processors
+- likwid-perfctr: configure and read out hardware performance counters on Intel, AMD and ARMv8 processors
 - likwid-powermeter: read out RAPL Energy information and get info about Turbo mode steps
 - likwid-pin: pin your threaded application (pthread, Intel and gcc OpenMP to dedicated processors)
 - likwid-bench: Micro benchmarking platform
 - likwid-features: Print and manipulate cpu features like hardware prefetchers
 - likwid-genTopoCfg: Dumps topology information to a file
-- likwid-mpirun: Wrapper to start MPI and Hybrid MPI/OpenMP applications (Supports Intel MPI, OpenMPI and MPICH)
+- likwid-mpirun: Wrapper to start MPI and Hybrid MPI/OpenMP applications (Supports Intel MPI, OpenMPI, MPICH and SLURM)
 - likwid-perfscope: Frontend to the timeline mode of likwid-perfctr, plots live graphs of performance metrics using gnuplot
-- likwid-agent: Monitoring agent for hardware performance counters
 - likwid-memsweeper: Sweep memory of NUMA domains and evict cachelines from the last level cache
-- likwid-setFrequencies: Tool to control the CPU frequency
+- likwid-setFrequencies: Tool to control the CPU and Uncore frequencies (x86 only)
 
 For further information please take a look at the [Wiki](https://github.com/RRZE-HPC/likwid/wiki).
 
@@ -44,16 +43,17 @@ Intel
 - Intel SandyBridge EP/EN
 - Intel IvyBridge
 - Intel IvyBridge EP/EN/EX
+- Intel Xeon Phi (KNL, KNM)
 - Intel Haswell
 - Intel Haswell EP/EN/EX
 - Intel Broadwell
 - Intel Broadwell D
 - Intel Broadwell EP
 - Intel Skylake
-- Intel Skylake SP
-- Intel Xeon Phi (KNL, KNM)
 - Intel Kabylake
 - Intel Coffeelake
+- Intel Skylake SP
+- Intel Cascadelake SP
 
 AMD
 - AMD K8
@@ -62,6 +62,8 @@ AMD
 - AMD Kabini
 - AMD Zen
 
+ARMv8 (experimental)
+- Tested on Marvell Thunder X2
 
 --------------------------------------------------------------------------------
 Download, Build and Install
@@ -103,9 +105,9 @@ https://github.com/rrze-likwid/likwid/issues
 Extras
 --------------------------------------------------------------------------------
 - If you want to use the Marker API with Java, you can find the Java module here:
-https://github.com/jlewandowski/likwid-java-api
+https://github.com/jacek-lewandowski/likwid-java-api
 - For Python you can find an interface to the LIKWID API here:
-https://github.com/RRZE-HPC/pylikwid
+https://github.com/RRZE-HPC/pylikwid or `pip install pylikwid`
 
 --------------------------------------------------------------------------------
 Survey

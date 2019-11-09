@@ -37,6 +37,7 @@
 
 #include <errno.h>
 #include <threads.h>
+#include <strUtil.h>
 
 /* #####   EXPORTED VARIABLES   ########################################### */
 
@@ -135,21 +136,11 @@ threads_create(void *(*startRoutine)(void*))
 }
 
 void
-threads_createGroups(int numberOfGroups)
+threads_createGroups(int numberOfGroups, Workgroup *groups)
 {
     int i;
     int j;
-    int numThreadsPerGroup;
     int globalId = 0;
-
-    if (numThreads % numberOfGroups)
-    {
-        fprintf(stderr, "ERROR: Not enough threads %d to create %d groups\n",numThreads,numberOfGroups);
-    }
-    else
-    {
-        numThreadsPerGroup = numThreads / numberOfGroups;
-    }
 
     threads_groups = (ThreadGroup*) malloc(numberOfGroups * sizeof(ThreadGroup));
     if (!threads_groups)
@@ -160,20 +151,20 @@ threads_createGroups(int numberOfGroups)
 
     for (i = 0; i < numberOfGroups; i++)
     {
-        threads_groups[i].numberOfThreads = numThreadsPerGroup;
-        threads_groups[i].threadIds = (int*) malloc(numThreadsPerGroup * sizeof(int));
+        threads_groups[i].numberOfThreads = groups[i].numberOfThreads;
+        threads_groups[i].threadIds = (int*) malloc(threads_groups[i].numberOfThreads * sizeof(int));
         if (!threads_groups[i].threadIds)
         {
             fprintf(stderr, "ERROR: Cannot allocate threadID list for thread groups - %s\n", strerror(errno));
             exit(EXIT_FAILURE);
         }
 
-        for (j = 0; j < numThreadsPerGroup; j++)
+        for (j = 0; j < threads_groups[i].numberOfThreads; j++)
         {
             threads_data[globalId].threadId = j;
             threads_data[globalId].groupId = i;
             threads_data[globalId].numberOfGroups = numberOfGroups;
-            threads_data[globalId].numberOfThreads = numThreadsPerGroup;
+            threads_data[globalId].numberOfThreads = threads_groups[i].numberOfThreads;
             threads_groups[i].threadIds[j] = globalId++;
         }
     }

@@ -227,7 +227,7 @@ pthread_create(pthread_t* thread,
         {
             break;
         }
-        if (sosearchpaths[reallpthrindex] != NULL) 
+        if (sosearchpaths[reallpthrindex] != NULL)
         {
             reallpthrindex++;
         }

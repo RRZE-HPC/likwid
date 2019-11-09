@@ -47,69 +47,6 @@
 
 extern int perfmon_verbosity;
 
-/** \addtogroup MarkerAPI Marker API module
-*  @{
-*/
-/*!
-\def LIKWID_MARKER_INIT
-Shortcut for likwid_markerInit() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
-*/
-/*!
-\def LIKWID_MARKER_THREADINIT
-Shortcut for likwid_markerThreadInit() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
-*/
-/*!
-\def LIKWID_MARKER_REGISTER(regionTag)
-Shortcut for likwid_markerRegisterRegion() with \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
-*/
-/*!
-\def LIKWID_MARKER_START(regionTag)
-Shortcut for likwid_markerStartRegion() with \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
-*/
-/*!
-\def LIKWID_MARKER_STOP(regionTag)
-Shortcut for likwid_markerStopRegion() with \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
-*/
-/*!
-\def LIKWID_MARKER_GET(regionTag, nevents, events, time, count)
-Shortcut for likwid_markerGetResults() for \a regionTag if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
-*/
-/*!
-\def LIKWID_MARKER_SWITCH
-Shortcut for likwid_markerNextGroup() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
-*/
-/*!
-\def LIKWID_MARKER_RESET(regionTag)
-Shortcut for likwid_markerResetRegion() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
-*/
-/*!
-\def LIKWID_MARKER_CLOSE
-Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
-*/
-/** @}*/
-
-#ifdef LIKWID_PERFMON
-#define LIKWID_MARKER_INIT likwid_markerInit()
-#define LIKWID_MARKER_THREADINIT likwid_markerThreadInit()
-#define LIKWID_MARKER_SWITCH likwid_markerNextGroup()
-#define LIKWID_MARKER_REGISTER(regionTag) likwid_markerRegisterRegion(regionTag)
-#define LIKWID_MARKER_START(regionTag) likwid_markerStartRegion(regionTag)
-#define LIKWID_MARKER_STOP(regionTag) likwid_markerStopRegion(regionTag)
-#define LIKWID_MARKER_CLOSE likwid_markerClose()
-#define LIKWID_MARKER_RESET(regionTag) likwid_markerResetRegion(regionTag)
-#define LIKWID_MARKER_GET(regionTag, nevents, events, time, count) likwid_markerGetRegion(regionTag, nevents, events, time, count)
-#else
-#define LIKWID_MARKER_INIT
-#define LIKWID_MARKER_THREADINIT
-#define LIKWID_MARKER_SWITCH
-#define LIKWID_MARKER_REGISTER(regionTag)
-#define LIKWID_MARKER_START(regionTag)
-#define LIKWID_MARKER_STOP(regionTag)
-#define LIKWID_MARKER_CLOSE
-#define LIKWID_MARKER_GET(regionTag, nevents, events, time, count)
-#define LIKWID_MARKER_RESET(regionTag)
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -341,25 +278,26 @@ General information covers CPU family, model, name and current clock and vendor
 specific information like the version of Intel's performance monitoring facility.
 */
 typedef struct {
-    uint32_t family; /*!< \brief CPU family ID*/
-    uint32_t model; /*!< \brief CPU model ID */
-    uint32_t stepping; /*!< \brief Stepping (version) of the CPU */
-    uint32_t vendor; /*!< \brief Vendor of the CPU */
-    uint32_t part; /*!< \brief Part number of the CPU */
-    uint64_t clock; /*!< \brief Current clock frequency of the executing CPU*/
-    int      turbo; /*!< \brief Flag if CPU has a turbo mode */
-    char*  osname; /*!< \brief Name of the CPU reported by OS */
-    char*  name; /*!< \brief Name of the CPU as identified by LIKWID */
-    char*  short_name; /*!< \brief Short name of the CPU*/
-    char*  features; /*!< \brief String with all features supported by the CPU*/
+    uint32_t    family; /*!< \brief CPU family ID*/
+    uint32_t    model; /*!< \brief CPU model ID */
+    uint32_t    stepping; /*!< \brief Stepping (version) of the CPU */
+    uint32_t    vendor; /*!< \brief Vendor of the CPU */
+    uint32_t    part; /*!< \brief Part number of the CPU */
+    uint64_t    clock; /*!< \brief Current clock frequency of the executing CPU*/
+    int         turbo; /*!< \brief Flag if CPU has a turbo mode */
+    char*       osname; /*!< \brief Name of the CPU reported by OS */
+    char*       name; /*!< \brief Name of the CPU as identified by LIKWID */
+    char*       short_name; /*!< \brief Short name of the CPU*/
+    char*       features; /*!< \brief String with all features supported by the CPU*/
     int         isIntel; /*!< \brief Flag if it is an Intel CPU*/
-    int     supportUncore; /*!< \brief Flag if system has Uncore performance monitors */
-    int     supportClientmem; /*!< \brief Flag if system has mappable memory controllers */
-    uint32_t featureFlags; /*!< \brief Mask of all features supported by the CPU*/
-    uint32_t perf_version; /*!< \brief Version of Intel's performance monitoring facility */
-    uint32_t perf_num_ctr; /*!< \brief Number of general purpose core-local performance monitoring counters */
-    uint32_t perf_width_ctr; /*!< \brief Bit width of fixed and general purpose counters */
-    uint32_t perf_num_fixed_ctr; /*!< \brief Number of fixed purpose core-local performance monitoring counters */
+    char        architecture[20]; /*!< \brief name of the architecture like x86_64 or ppc64 (comparable with uname -m)*/
+    int         supportUncore; /*!< \brief Flag if system has Uncore performance monitors */
+    int         supportClientmem; /*!< \brief Flag if system has mappable memory controllers */
+    uint64_t    featureFlags; /*!< \brief Mask of all features supported by the CPU*/
+    uint32_t    perf_version; /*!< \brief Version of Intel's performance monitoring facility */
+    uint32_t    perf_num_ctr; /*!< \brief Number of general purpose core-local performance monitoring counters */
+    uint32_t    perf_width_ctr; /*!< \brief Bit width of fixed and general purpose counters */
+    uint32_t    perf_num_fixed_ctr; /*!< \brief Number of fixed purpose core-local performance monitoring counters */
 } CpuInfo;
 
 /*! \brief Structure with IDs of a HW thread
@@ -528,6 +466,14 @@ extern void numa_setInterleaved(const int* processorList, int numberOfProcessors
 @param [in] domainId ID of NUMA node for the allocation
 */
 extern void numa_membind(void* ptr, size_t size, int domainId) __attribute__ ((visibility ("default") ));
+/*! \brief Set memory allocation policy to membind
+
+Set the memory allocation policy to membind for given list of CPUs. This forces
+allocation to be placed in NUMA domains spanning the given processor list.
+@param [in] processorList List of processors
+@param [in] numberOfProcessors Length of processor list
+*/
+extern void numa_setMembind(const int* processorList, int numberOfProcessors) __attribute__ ((visibility ("default") ));
 /*! \brief Destroy NUMA information structure
 
 Destroys the NUMA information structure NumaTopology_t. Retrieved pointers
@@ -1457,6 +1403,12 @@ extern int cpuFeatures_disable(int cpu, CpuFeature type, int print) __attribute_
 /** \addtogroup CpuFreq Retrieval and manipulation of processor clock frequencies
  *  @{
  */
+/*! \brief Initialize cpu frequency module
+
+Initialize cpu frequency module
+@return returns 0 if successfull and 1 if invalid accessmode
+*/
+extern int freq_init(void) __attribute__ ((visibility ("default") ));
 /*! \brief Get the current clock frequency of a core
 
 Get the current clock frequency of a core
@@ -1472,6 +1424,13 @@ Get the maximal clock frequency of a core
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_getCpuClockMax(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/*! \brief Get the maximal available clock frequency of a core
+
+Get the maximal clock frequency of a core
+@param [in] cpu_id CPU ID
+@return Frequency or 0 in case of errors
+*/
+extern uint64_t freq_getConfCpuClockMax(const int cpu_id) __attribute__ ((visibility ("default") ));
 /*! \brief Set the maximal clock frequency of a core
 
 Set the maximal clock frequency of a core
@@ -1487,6 +1446,13 @@ Get the minimal clock frequency of a core
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_getCpuClockMin(const int cpu_id ) __attribute__ ((visibility ("default") ));
+/*! \brief Get the minimal available clock frequency of a core
+
+Get the minimal clock frequency of a core
+@param [in] cpu_id CPU ID
+@return Frequency or 0 in case of errors
+*/
+extern uint64_t freq_getConfCpuClockMin(const int cpu_id) __attribute__ ((visibility ("default") ));
 /*! \brief Set the minimal clock frequency of a core
 
 Set the minimal clock frequency of a core
@@ -1580,6 +1546,11 @@ Get the current Uncore frequency.
 @return frequency in MHz or 0 at failure
 */
 extern uint64_t freq_getUncoreFreqCur(const int socket_id) __attribute__ ((visibility ("default") ));
+/*! \brief Finalize cpu frequency module
+
+Finalize cpu frequency module
+*/
+extern void freq_finalize(void) __attribute__ ((visibility ("default") ));
 /** @}*/
 
 #ifdef __cplusplus
