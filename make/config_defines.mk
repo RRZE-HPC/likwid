@@ -182,6 +182,11 @@ ifeq ($(strip $(COMPILER)),GCCPOWER)
         BUILDDAEMON = false
         BUILDFREQ = false
     endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
 endif
 
 ifeq ($(strip $(BUILDDAEMON)),true)
