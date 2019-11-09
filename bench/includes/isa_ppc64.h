@@ -110,7 +110,7 @@ int footer(struct bstrList* code, char* funcname)
     {
         line = bformat(".size kernelfunction, .-kernelfunction");
     }
-    bstrListAddChar(code, "blr")
+    bstrListAddChar(code, "blr");
     bstrListAdd(code, line);
 
     bstrListAddChar(code, "\n");
@@ -179,14 +179,14 @@ static RegisterMap Registers[] = {
     {"GPR4", "r6"},
     {"GPR5", "r7"},
     {"GPR6", "r8"},
-    {"GPR7", "9"},
-    {"GPR8", "10"},
-    {"GPR9", "11"},
-    {"GPR10", "12"},
-    {"GPR11", "13"},
-    {"GPR12", "14"},
-    {"GPR13", "15"},
-    {"GPR14", "16"},
+    {"GPR7", "r9"},
+    {"GPR8", "r10"},
+    {"GPR9", "r11"},
+    {"GPR10", "r12"},
+    {"GPR11", "r13"},
+    {"GPR12", "r14"},
+    {"GPR13", "r15"},
+    {"GPR14", "r16"},
     {"GPR15", "17"},
     {"GPR16", "18"},
     {"GPR17", "19"},
@@ -202,18 +202,18 @@ static RegisterMap Registers[] = {
     {"GPR27", "29"},
     {"GPR28", "30"},
     {"GPR29", "31"},
-    {"FPR1", "xmm0"},
-    {"FPR2", "xmm1"},
-    {"FPR3", "xmm2"},
-    {"FPR4", "xmm3"},
-    {"FPR5", "xmm4"},
-    {"FPR6", "xmm5"},
-    {"FPR7", "xmm6"},
-    {"FPR8", "xmm7"},
-    {"FPR9", "8"},
-    {"FPR10", "9"},
-    {"FPR11", "10"},
-    {"FPR12", "11"},
+    {"FPR1", "vec0"},
+    {"FPR2", "vec1"},
+    {"FPR3", "vec2"},
+    {"FPR4", "vec3"},
+    {"FPR5", "vec4"},
+    {"FPR6", "vec5"},
+    {"FPR7", "vec6"},
+    {"FPR8", "vec7"},
+    {"FPR9", "vec8"},
+    {"FPR10", "vec9"},
+    {"FPR11", "vec10"},
+    {"FPR12", "vec11"},
     {"FPR13", "12"},
     {"FPR14", "13"},
     {"FPR15", "14"},
@@ -233,7 +233,7 @@ static RegisterMap Registers[] = {
     {"FPR29", "28"},
     {"FPR30", "29"},
     {"FPR31", "30"},
-    {"FPR32", "31'
+    {"FPR32", "31"},
     {"", ""},
 };
 
@@ -247,7 +247,6 @@ static RegisterMap Arguments[] = {
     {"ARG7", "r9"},
     {"ARG8", "r10"},
     {"ARG9", "[BPTR+56]"},
-
     {"", ""},
 };
 
