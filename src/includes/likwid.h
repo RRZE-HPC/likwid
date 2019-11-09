@@ -46,6 +46,7 @@
 #define LIKWID_COMMIT GITCOMMIT
 
 extern int perfmon_verbosity;
+extern int likwid_nvmon_verbosity;
 
 #ifdef __cplusplus
 extern "C" {
@@ -626,6 +627,19 @@ defined in the selection string.
 @return error code (>0 on success for the returned list length, -ERRORCODE on failure)
 */
 extern int sockstr_to_socklist(const char* sockstr, int* sockets, int length)  __attribute__ ((visibility ("default") ));
+
+#ifdef LIKWID_WITH_NVMON
+/*! \brief Read GPU selection string and resolve to available GPUs numbers
+
+Reads the GPU selection string and fills the given list with the GPU numbers defined in the selection string.
+@param [in] gpustr Selection string
+@param [out] gpulist List of available GPU
+@param [in] length Length of GPU list
+@return error code (>0 on success for the returned list length, -ERRORCODE on failure)
+*/
+extern int gpustr_to_gpulist(const char* gpustr, int* gpulist, int length)  __attribute__ ((visibility ("default") ));
+
+#endif /* LIKWID_WITH_NVMON */
 
 /** @}*/
 
@@ -1763,6 +1777,201 @@ Finalize cpu frequency module
 */
 extern void freq_finalize(void) __attribute__ ((visibility ("default") ));
 /** @}*/
+
+
+/*
+################################################################################
+# Performance monitoring for NVIDIA GPUs related functions
+################################################################################
+*/
+/** \addtogroup Nvmon Performance monitoring for NVIDIA GPUs
+ *  @{
+ */
+
+#ifdef LIKWID_WITH_NVMON
+
+typedef struct {
+    int devid;
+    int numaNode;
+    char* name;
+    unsigned long long mem;
+    int ccapMajor;
+    int ccapMinor;
+    int maxThreadsPerBlock;
+    int maxThreadsDim[3];
+    int maxGridSize[3];
+    int sharedMemPerBlock;
+    int totalConstantMemory;
+    int simdWidth;
+    int memPitch;
+    int regsPerBlock;
+    int clockRatekHz;
+    int textureAlign;
+    int surfaceAlign;
+    int l2Size;
+    int memClockRatekHz;
+    int pciBus;
+    int pciDev;
+    int pciDom;
+    int maxBlockRegs;
+    int numMultiProcs;
+    int maxThreadPerMultiProc;
+    int memBusWidth;
+    int unifiedAddrSpace;
+    int ecc;
+    int asyncEngines;
+    int mapHostMem;
+    int integrated;
+} GpuDevice;
+
+typedef struct {
+    int numDevices;
+    GpuDevice* devices;
+} GpuTopology;
+
+/*! \brief Variable holding the global gpu information structure */
+extern GpuTopology gpuTopology;
+/** \brief Pointer for exporting the GpuTopology data structure */
+typedef GpuTopology* GpuTopology_t;
+
+extern int topology_gpu_init(void) __attribute__ ((visibility ("default") ));
+extern void topology_gpu_finalize(void) __attribute__ ((visibility ("default") ));
+extern GpuTopology_t get_gpuTopology(void) __attribute__ ((visibility ("default") ));
+
+
+/*
+################################################################################
+# Marker API related functions
+################################################################################
+*/
+/** \addtogroup MarkerAPI Marker API module
+*  @{
+*/
+/*! \brief Initialize LIKWID's marker API
+
+Must be called in serial region of the application to set up basic data structures
+of LIKWID.
+Reads environment variables:
+- LIKWID_MODE (access mode)
+- LIKWID_MASK (event bitmask)
+- LIKWID_EVENTS (event string)
+- LIKWID_THREADS (cpu list separated by ,)
+- LIKWID_GROUPS (amount of groups)
+*/
+extern void likwid_gpuMarkerInit(void) __attribute__ ((visibility ("default") ));
+/*! \brief Select next group to measure
+
+Must be called in parallel region of the application to switch group on every CPU.
+*/
+extern void likwid_gpuMarkerNextGroup(void) __attribute__ ((visibility ("default") ));
+/*! \brief Close LIKWID's marker API
+
+Must be called in serial region of the application. It gathers all data of regions and
+writes them out to a file (filepath in env variable LIKWID_FILEPATH).
+*/
+extern void likwid_gpuMarkerClose(void) __attribute__ ((visibility ("default") ));
+/*! \brief Register a measurement region
+
+Initializes the hashTable entry in order to reduce execution time of likwid_gpuMarkerStartRegion()
+@param regionTag [in] Initialize data using this string
+@return Error code
+*/
+extern int likwid_gpuMarkerRegisterRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+/*! \brief Start a measurement region
+
+Reads the values of all configured counters and saves the results under the name given
+in regionTag.
+@param regionTag [in] Store data using this string
+@return Error code of start operation
+*/
+extern int likwid_gpuMarkerStartRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+/*! \brief Stop a measurement region
+
+Reads the values of all configured counters and saves the results under the name given
+in regionTag. The measurement data of the stopped region gets summed up in global region counters.
+@param regionTag [in] Store data using this string
+@return Error code of stop operation
+*/
+extern int likwid_gpuMarkerStopRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+/*! \brief Reset a measurement region
+
+Reset the values of all configured counters and timers.
+@param regionTag [in] Reset data using this string
+@return Error code of reset operation
+*/
+extern int likwid_gpuMarkerResetRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+/*! \brief Get accumulated data of a code region
+
+Get the accumulated data of the current thread for the given regionTag.
+@param regionTag [in] Print data using this string
+@param nr_events [in,out] Length of events array
+@param events [out] Events array for the intermediate results
+@param time [out] Accumulated measurement time
+@param count [out] Call count of the code region
+*/
+extern void likwid_gpuMarkerGetRegion(const char* regionTag, int* nr_gpus, int* nr_events, double** events, double **time, int **count) __attribute__ ((visibility ("default") ));
+
+int nvmon_readMarkerFile(const char* filename) __attribute__ ((visibility ("default") ));
+void nvmon_destroyMarkerResults() __attribute__ ((visibility ("default") ));
+int nvmon_getNumberOfRegions() __attribute__ ((visibility ("default") ));
+int nvmon_getMetricsOfRegion(int region) __attribute__ ((visibility ("default") ));
+int nvmon_getGpusOfRegion(int region) __attribute__ ((visibility ("default") ));
+int nvmon_getGpulistOfRegion(int region, int count, int* gpulist) __attribute__ ((visibility ("default") ));
+double nvmon_getTimeOfRegion(int region, int gpu) __attribute__ ((visibility ("default") ));
+int nvmon_getCountOfRegion(int region, int gpu) __attribute__ ((visibility ("default") ));
+int nvmon_getGroupOfRegion(int region) __attribute__ ((visibility ("default") ));
+char* nvmon_getTagOfRegion(int region) __attribute__ ((visibility ("default") ));
+int nvmon_getEventsOfRegion(int region) __attribute__ ((visibility ("default") ));
+double nvmon_getResultOfRegionGpu(int region, int event, int gpu) __attribute__ ((visibility ("default") ));
+double nvmon_getMetricOfRegionGpu(int region, int metricId, int threadId) __attribute__ ((visibility ("default") ));
+
+typedef struct {
+    char* name;
+    char* desc;
+    char* limit;
+} NvmonEventListEntry;
+
+typedef struct {
+    int numEvents;
+    NvmonEventListEntry *events;
+} NvmonEventList;
+typedef NvmonEventList* NvmonEventList_t;
+
+int nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list);
+void nvmon_returnEventsOfGpu(NvmonEventList_t list);
+
+int nvmon_init(int nrGpus, const int* gpuIds) __attribute__ ((visibility ("default") ));
+void nvmon_finalize(void) __attribute__ ((visibility ("default") ));
+int nvmon_addEventSet(const char* eventCString) __attribute__ ((visibility ("default") ));
+int nvmon_setupCounters(int gid) __attribute__ ((visibility ("default") ));
+int nvmon_startCounters(void) __attribute__ ((visibility ("default") ));
+int nvmon_stopCounters(void) __attribute__ ((visibility ("default") ));
+int nvmon_readCounters(void) __attribute__ ((visibility ("default") ));
+int nvmon_switchActiveGroup(int new_group) __attribute__ ((visibility ("default") ));
+void nvmon_setVerbosity(int level) __attribute__ ((visibility ("default") ));
+
+double nvmon_getResult(int groupId, int eventId, int gpuId) __attribute__ ((visibility ("default") ));
+double nvmon_getLastResult(int groupId, int eventId, int gpuId) __attribute__ ((visibility ("default") ));
+int nvmon_getNumberOfGroups(void) __attribute__ ((visibility ("default") ));
+int nvmon_getIdOfActiveGroup(void) __attribute__ ((visibility ("default") ));
+int nvmon_getNumberOfGPUs(void) __attribute__ ((visibility ("default") ));
+int nvmon_getNumberOfEvents(int groupId) __attribute__ ((visibility ("default") ));
+double nvmon_getTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
+double nvmon_getLastTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
+char* nvmon_getEventName(int groupId, int eventId) __attribute__ ((visibility ("default") ));
+char* nvmon_getCounterName(int groupId, int eventId) __attribute__ ((visibility ("default") ));
+char* nvmon_getMetricName(int groupId, int metricId) __attribute__ ((visibility ("default") ));
+char* nvmon_getGroupName(int groupId) __attribute__ ((visibility ("default") ));
+char* nvmon_getGroupInfoShort(int groupId) __attribute__ ((visibility ("default") ));
+char* nvmon_getGroupInfoLong(int groupId) __attribute__ ((visibility ("default") ));
+int nvmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos) __attribute__ ((visibility ("default") ));
+int nvmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos) __attribute__ ((visibility ("default") ));
+int nvmon_getNumberOfMetrics(int groupId) __attribute__ ((visibility ("default") ));
+
+
+/** @}*/
+
+#endif /* LIKWID_WITH_NVMON */
 
 #ifdef __cplusplus
 }

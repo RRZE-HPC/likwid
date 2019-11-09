@@ -26,6 +26,10 @@ FORTRAN_INTERFACE = false#NO SPACE
 # Instrument likwid-bench with Marker API calls for use with likwid-perfctr
 INSTRUMENT_BENCH = true#NO SPACE
 
+# Build LIKWID with NVIDIA interface (CUDA, CUPTI)
+# For configuring include paths, go to CUDA section
+NVIDIA_INTERFACE = false#NO SPACE
+
 #################################################################
 #################################################################
 # Advanced configuration options                                #
@@ -92,7 +96,7 @@ INSTALL_CHOWN = -g root -o root#NO SPACE
 SHARED_LIBRARY = true#NO SPACE
 
 # Build LIKWID with debug flags
-DEBUG = false#NO SPACE
+DEBUG = true#NO SPACE
 
 # Basic configuration for some internal arrays.
 # Maximal number of hardware threads
@@ -146,3 +150,12 @@ LIKWIDFILTERPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/filter)
 # performance group files. Despite this folder, LIKWID also checks
 # $HOME/.likwid/groups
 LIKWIDGROUPPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/perfgroups)
+
+# CUDA / CUPTI build data
+# LIKWID requires CUDA and CUPTI to be present only for compilation with
+# NVIDIA_INTERFACE=true. At runtime, the CUDA and the CUPTI library have
+# to be in the LD_LIBRARY_PATH to dynamically load the libraries.
+# Include directory for CUDA headers
+CUDAINCLUDE = $(CUDA_HOME)/include
+# Include directory for CUPTI headers
+CUPTIINCLUDE = $(CUDA_HOME)/extras/CUPTI/include

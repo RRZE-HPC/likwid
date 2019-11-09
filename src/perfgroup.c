@@ -598,6 +598,7 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
     int has_fix0 = 0;
     int has_fix1 = 0;
     int has_fix2 = 0;
+    int gpu_events = 0;
     ginfo->shortinfo = NULL;
     ginfo->nevents = 0;
     ginfo->events = NULL;
@@ -616,6 +617,9 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
 #ifdef _ARCH_PPC
     bstring fix0 = bformat("PMC4");
     bstring fix1 = bformat("PMC5");
+#endif
+#ifdef LIKWID_WITH_NVMON
+    bstring gpu = bformat("GPU");
 #endif
     DEBUG_PRINT(DEBUGLEV_INFO, Creating custom group for event string %s, eventStr);
     ginfo->shortinfo = malloc(7 * sizeof(char));
@@ -718,12 +722,18 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
         }
         sprintf(ginfo->events[i], "%s", bdata(elist->entry[0]));
         snprintf(ginfo->counters[i], blength(ctr)+1, "%s", bdata(ctr));
+#ifdef LIKWID_WITH_NVMON
+        if (binstr(elist->entry[1], 0, gpu) != BSTR_ERR)
+        {
+            gpu_events++;
+        }
+#endif
         bdestroy(ctr);
         bstrListDestroy(elist);
     }
     i = eventList->qty;
 #if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
-    if (cpuid_info.isIntel)
+    if (cpuid_info.isIntel && i != gpu_events)
     {
         if ((!has_fix0) && cpuid_info.perf_num_fixed_ctr > 0)
         {
@@ -750,6 +760,7 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
             i++;
         }
     }
+    ginfo->nevents = i;
 #endif
 #ifdef _ARCH_PPC
     if (!has_fix0)
@@ -770,19 +781,22 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
     }
 #endif
     bstrListDestroy(eventList);
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bdestroy(fix0);
     bdestroy(fix1);
-#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bdestroy(fix2);
 #endif
     bdestroy(edelim);
     return 0;
 cleanup:
     bstrListDestroy(eventList);
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bdestroy(fix0);
     bdestroy(fix1);
-#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bdestroy(fix2);
+#endif
+#ifdef LIKWID_WITH_NVMON
+    bdestroy(gpu);
 #endif
     bdestroy(edelim);
     if (ginfo->shortinfo != NULL)

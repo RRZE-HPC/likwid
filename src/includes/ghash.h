@@ -75,6 +75,11 @@ char* g_strdup (const char *str);
 
 extern GHashTable* g_hash_table_new(GHashFunc hash_func, GEqualFunc key_equal_func);
 
+extern GHashTable* g_hash_table_new_full (GHashFunc      hash_func,
+                                          GEqualFunc     key_equal_func,
+                                          GDestroyNotify key_destroy_func,
+                                          GDestroyNotify value_destroy_func);
+
 extern void        g_hash_table_destroy(GHashTable  *hash_table);
 
 extern gboolean    g_hash_table_insert(GHashTable  *hash_table,
@@ -100,7 +105,8 @@ extern void        g_hash_table_iter_init(GHashTableIter *iter,
 extern gboolean    g_hash_table_iter_next(GHashTableIter *iter,
                                             gpointer       *key,
                                             gpointer       *value);
-
+extern int         g_hash_table_remove(GHashTable *hash_table,
+                                            gpointer key);
 
 /* Hash Functions
  */
@@ -115,5 +121,4 @@ extern guint    g_int64_hash   (gconstpointer  v);
 
 extern gboolean g_direct_equal  (gconstpointer  v1, gconstpointer  v2);
 extern guint    g_direct_hash   (gconstpointer  v);
-
 #endif /* __G_HASH_H__ */

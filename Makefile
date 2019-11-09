@@ -89,6 +89,11 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
 else
 OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
+ifneq ($(NVIDIA_INTERFACE), true)
+OBJ := $(filter-out $(BUILD_DIR)/nvmon.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/topology_gpu.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/libnvctr.o,$(OBJ))
+endif
 ifeq ($(COMPILER),GCCPOWER)
 OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/access_x86.o,$(OBJ))

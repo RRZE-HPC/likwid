@@ -259,7 +259,32 @@ else
     end
 end
 
+if likwid.gpuSupported() then
+    gputopo = likwid.getGpuTopology()
+    if gputopo then
+        table.insert(output_csv, likwid.sline)
+        table.insert(output_csv, "GPU Topology")
+        table.insert(output_csv, likwid.sline)
+        table.insert(output_csv, string.format("GPU count:\t\t%d", gputopo["numDevices"]))
+        table.insert(output_csv, likwid.hline)
 
+        for i=1, gputopo["numDevices"] do
+            gpu = gputopo["devices"][i]
+            table.insert(output_csv, string.format("STRUCT,GPU Topology %d,9", gpu["id"]))
+            table.insert(output_csv, string.format("ID:\t\t\t%d", gpu["id"]))
+            table.insert(output_csv, string.format("Name:\t\t\t%s", gpu["name"]))
+            table.insert(output_csv, string.format("Compute capability:\t%d.%d", gpu["ccapMajor"], gpu["ccapMinor"]))
+            table.insert(output_csv, string.format("L2 size:\t\t%.2f MB", gpu["l2Size"]/(1024*1024)))
+            table.insert(output_csv, string.format("Memory:\t\t\t%.2f GB", gpu["memory"]/(1024*1024*1024)))
+            table.insert(output_csv, string.format("SIMD width:\t\t%d", gpu["simdWidth"]))
+            table.insert(output_csv, string.format("Clock rate:\t\t%d kHz", gpu["clockRatekHz"]))
+            table.insert(output_csv, string.format("Memory clock rate:\t%d kHz", gpu["memClockRatekHz"]))
+            table.insert(output_csv, string.format("Attached to NUMA node:\t%d", gpu["numaNode"]))
+            table.insert(output_csv, likwid.hline)
+        end
+    end
+    likwid.putGpuTopology()
+end
 
 if print_csv then
     longest_line = 0
