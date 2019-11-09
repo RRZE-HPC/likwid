@@ -11,7 +11,7 @@
 COMPILER = GCC#NO SPACE
 
 # Path were to install likwid
-PREFIX ?= /apps/likwid/4.3.4#NO SPACE
+PREFIX ?= /usr/local#NO SPACE
 
 # Set the default mode for MSR access.
 # This can usually be overriden on the commandline.
@@ -28,7 +28,7 @@ INSTRUMENT_BENCH = true#NO SPACE
 
 # Build LIKWID with NVIDIA interface (CUDA, CUPTI)
 # For configuring include paths, go to CUDA section
-NVIDIA_INTERFACE = true#NO SPACE
+NVIDIA_INTERFACE = false#NO SPACE
 
 #################################################################
 #################################################################
