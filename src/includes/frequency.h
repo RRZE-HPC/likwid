@@ -37,11 +37,11 @@
 
 extern char* daemon_path;
 
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 #include <cpuid.h>
 #endif
 
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 static int isAMD()
 {
     unsigned int eax,ebx,ecx,edx;
