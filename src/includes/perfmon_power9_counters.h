@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_power9.h
+ *      Filename:  perfmon_power9_counters.h
  *
  *      Description:  Counter header File of perfmon module for IBM POWER9.
  *

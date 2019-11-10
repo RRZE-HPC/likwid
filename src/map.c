@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  memsweep.c
+ *      Filename:  map.c
  *
- *      Description:  Implementation a map in C using ghash as backend
+ *      Description:  Implementation a hashmap in C using ghash as backend
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>

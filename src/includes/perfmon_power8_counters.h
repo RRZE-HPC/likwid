@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_power8.h
+ *      Filename:  perfmon_power8_counters.h
  *
  *      Description:  Counter header File of perfmon module for IBM POWER8.
  *
