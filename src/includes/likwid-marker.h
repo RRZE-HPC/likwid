@@ -96,4 +96,72 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #define LIKWID_MARKER_RESET(regionTag)
 #endif /* LIKWID_PERFMON */
 
+
+/** \addtogroup MarkerAPI Marker API module
+*  @{
+*/
+/*!
+\def LIKWID_GPUMARKER_INIT
+Shortcut for likwid_gpuMarkerInit() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
+*/
+/*!
+\def LIKWID_GPUMARKER_THREADINIT
+Shortcut for likwid_gpuMarkerThreadInit() if compiled with -DLIKWID_PERFMON. Otherwise no operation is performed
+*/
+/*!
+\def LIKWID_GPUMARKER_REGISTER(regionTag)
+Shortcut for likwid_gpuMarkerRegisterRegion() with \a regionTag if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
+*/
+/*!
+\def LIKWID_GPUMARKER_START(regionTag)
+Shortcut for likwid_gpuMarkerStartRegion() with \a regionTag if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
+*/
+/*!
+\def LIKWID_GPUMARKER_STOP(regionTag)
+Shortcut for likwid_gpuMarkerStopRegion() with \a regionTag if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
+*/
+/*!
+\def LIKWID_GPUMARKER_GET(regionTag, ngpus, nevents, events, time, count)
+Shortcut for likwid_gpuMarkerGetRegion() for \a regionTag if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
+*/
+/*!
+\def LIKWID_GPUMARKER_SWITCH
+Shortcut for likwid_gpuMarkerNextGroup() if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
+*/
+/*!
+\def LIKWID_GPUMARKER_RESET(regionTag)
+Shortcut for likwid_gpuMarkerResetRegion() if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
+*/
+/*!
+\def LIKWID_GPUMARKER_CLOSE
+Shortcut for likwid_gpuMarkerClose() if compiled with -DLIKWID_NVMON. Otherwise no operation is performed
+*/
+/** @}*/
+
+#ifdef LIKWID_NVMON
+#include <likwid.h>
+#define LIKWID_GPUMARKER_INIT likwid_gpuMarkerInit()
+#define LIKWID_GPUMARKER_THREADINIT likwid_gpuMarkerThreadInit()
+#define LIKWID_GPUMARKER_SWITCH likwid_gpuMarkerNextGroup()
+#define LIKWID_GPUMARKER_REGISTER(regionTag) likwid_gpuMarkerGetRegion(regionTag)
+#define LIKWID_GPUMARKER_START(regionTag) likwid_gpuMarkerStartRegion(regionTag)
+#define LIKWID_GPUMARKER_STOP(regionTag) likwid_gpuMarkerStopRegion(regionTag)
+#define LIKWID_GPUMARKER_CLOSE likwid_gpuMarkerClose()
+#define LIKWID_GPUMARKER_RESET(regionTag) likwid_gpuMarkerResetRegion(regionTag)
+#define LIKWID_GPUMARKER_GET(regionTag, ngpus, nevents, events, time, count) \
+    likwid_gpuMarkerGetRegion(regionTag, ngpus, nevents, events, time, count)
+#else /* LIKWID_NVMON */
+#define LIKWID_GPUMARKER_INIT
+#define LIKWID_GPUMARKER_THREADINIT
+#define LIKWID_GPUMARKER_SWITCH
+#define LIKWID_GPUMARKER_REGISTER(regionTag)
+#define LIKWID_GPUMARKER_START(regionTag)
+#define LIKWID_GPUMARKER_STOP(regionTag)
+#define LIKWID_GPUMARKER_CLOSE
+#define LIKWID_GPUMARKER_GET(regionTag, nevents, events, time, count)
+#define LIKWID_GPUMARKER_RESET(regionTag)
+#endif /* LIKWID_NVMON */
+
+
+
 #endif /* LIKWID_MARKER_H */
