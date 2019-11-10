@@ -834,8 +834,8 @@ local function printOutput(results, metrics, cpulist, region, stats)
             for c, cpu in pairs(cur_cpulist) do
                 local tmpList = {}
                 table.insert(tmpList, "Core "..tostring(cpu))
-                table.insert(tmpList, string.format("%.6f", likwid.gpuMarkerRegionTime(region, c)))
-                table.insert(tmpList, tostring(likwid.gpuMarkerRegionCount(region, c)))
+                table.insert(tmpList, string.format("%.6f", likwid.markerRegionTime(region, c)))
+                table.insert(tmpList, tostring(likwid.markerRegionCount(region, c)))
                 table.insert(infotab, tmpList)
             end
         end
@@ -861,7 +861,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
                 if region == nil then
                     table.insert(tmpList, string.format("%e", runtime))
                 else
-                    table.insert(tmpList, string.format("%e", likwid.gpuMarkerRegionTime(region, c)))
+                    table.insert(tmpList, string.format("%e", likwid.markerRegionTime(region, c)))
                 end
             end
             for e, event in pairs(group) do
