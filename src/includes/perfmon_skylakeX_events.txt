@@ -1,8 +1,8 @@
 # =======================================================================================
 #
-#      Filename:  perfmon_skylake_events.txt
+#      Filename:  perfmon_skylakeX_events.txt
 #
-#      Description:  Event list for Intel Skylake
+#      Description:  Event list for Intel Skylake X
 #
 #      Version:   <VERSION>
 #      Released:  <DATE>
@@ -3439,8 +3439,3 @@ UMASK_VERT_RING_BL_IN_USE_DN_ODD        0x08
 EVENT_VERT_RING_IV_IN_USE               0xAC CBOX|M2M|RBOX|PBOX
 UMASK_VERT_RING_IV_IN_USE_UP            0x01
 UMASK_VERT_RING_IV_IN_USE_DN            0x04
-
-
-
-
-

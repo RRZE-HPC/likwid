@@ -36,8 +36,8 @@
  *
  *      Some changes done for the integration in LIKWID, see inline comments
  *
- *      Version:   4.2
- *      Released:  22.12.2016
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Roehl (tr), thomas.roehl@gmail.com

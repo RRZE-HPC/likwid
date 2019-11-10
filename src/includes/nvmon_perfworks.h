@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  nvmon_cupti.h
+ *      Filename:  nvmon_perfworks.h
  *
  *      Description:  Header File of nvmon module (PerfWorks backend).
  *

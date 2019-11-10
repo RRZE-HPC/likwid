@@ -1,7 +1,7 @@
 /*
  * =======================================================================================
  *
- *      Filename:  topology_proc.h
+ *      Filename:  topology_misc.h
  *
  *      Description:  Header File of topology backend using procfs/sysfs
  *

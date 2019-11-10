@@ -1,8 +1,8 @@
 /*
  * =======================================================================================
- *      Filename:  isa_x86.h
+ *      Filename:  isa_ppc64.h
  *
- *      Description:  Definitions used for dynamically compile benchmarks for x86 systems
+ *      Description:  Definitions used for dynamically compile benchmarks for POWER systems
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>

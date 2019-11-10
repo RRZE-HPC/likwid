@@ -1,9 +1,10 @@
 /*
  * =======================================================================================
  *
- *      Filename:  frequency.c
+ *      Filename:  frequency_cpu.c
  *
  *      Description:  Module implementing an interface for frequency manipulation
+ *                    Module for manipuating CPU frequencies
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -627,7 +628,7 @@ static int getAMDTurbo(const int cpu_id)
         ERROR_PLAIN_PRINT(Cannot read register 0xC0010015);
         return err;
     }
-    
+
     err = ((tmp >> 25) & 0x1);
     return err == 0;
 }
@@ -736,7 +737,7 @@ static int getIntelTurbo(const int cpu_id)
 static int setIntelTurbo(const int cpu_id, const int turbo)
 {
     int err = 0;
-    
+
     if (!lock_check())
     {
         fprintf(stderr,"Access to frequency backend is locked.\n");
