@@ -1083,19 +1083,19 @@ local function getMarkerResults(filename, cpulist, nan2value)
     results = {}
     metrics = {}
     for i=1, likwid.markerNumRegions() do
-        local regionName = likwid.gpuMarkerRegionTag(i)
-        local groupID = likwid.gpuMarkerRegionGroup(i)
-        local regionThreads = likwid.gpuMarkerRegionThreads(i)
+        local regionName = likwid.markerRegionTag(i)
+        local groupID = likwid.markerRegionGroup(i)
+        local regionThreads = likwid.markerRegionThreads(i)
         results[i] = {}
         metrics[i] = {}
         results[i][groupID] = {}
         metrics[i][groupID] = {}
-        for k=1, likwid.gpuMarkerRegionEvents(i) do
+        for k=1, likwid.markerRegionEvents(i) do
             local eventName = likwid.getNameOfEvent(groupID, k)
             local counterName = likwid.getNameOfCounter(groupID, k)
             results[i][groupID][k] = {}
             for j=1, regionThreads do
-                results[i][groupID][k][j] = likwid.gpuMarkerRegionResult(i,k,j)
+                results[i][groupID][k][j] = likwid.markerRegionResult(i,k,j)
                 if results[i][groupID][k][j] ~= results[i][groupID][k][j] then
                     results[i][groupID][k][j] = nan2value
                 end
@@ -1104,9 +1104,9 @@ local function getMarkerResults(filename, cpulist, nan2value)
         if likwid.getNumberOfMetrics(groupID) > 0 then
             for k=1, likwid.getNumberOfMetrics(groupID) do
                 local metricName = likwid.getNameOfMetric(groupID, k)
-                metrics[i][likwid.gpuMarkerRegionGroup(i)][k] = {}
+                metrics[i][likwid.markerRegionGroup(i)][k] = {}
                 for j=1, regionThreads do
-                    metrics[i][groupID][k][j] = likwid.gpuMarkerRegionMetric(i,k,j)
+                    metrics[i][groupID][k][j] = likwid.markerRegionMetric(i,k,j)
                     if metrics[i][groupID][k][j] ~= metrics[i][groupID][k][j] then
                         metrics[i][groupID][k][j] = nan2value
                     end
