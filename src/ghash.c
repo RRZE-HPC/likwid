@@ -485,7 +485,7 @@ GHashTable *
 g_hash_table_new (GHashFunc  hash_func,
                   GEqualFunc key_equal_func)
 {
-  /* Thomas Roehl added g_free as destructor of hash table keys. This reduces
+  /* Thomas Gruber added g_free as destructor of hash table keys. This reduces
    * memory leaks since we know that all key strings are duplicated.
    */
   return g_hash_table_new_full (hash_func, key_equal_func, g_free, NULL);

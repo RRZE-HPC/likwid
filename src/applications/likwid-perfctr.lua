@@ -10,7 +10,7 @@
  *      Version:   4.2
  *      Released:  22.12.2016
  *
- *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg

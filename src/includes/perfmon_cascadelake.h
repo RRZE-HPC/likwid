@@ -9,7 +9,7 @@
  *      Released:  09.11.2018
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
- *                Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg

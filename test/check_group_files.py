@@ -6,7 +6,7 @@
 #
 #      Description:  Basic checks for performance group files
 #
-#      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
+#      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
 #      Project:  likwid
 #
 #      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg

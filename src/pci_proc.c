@@ -8,7 +8,7 @@
  *      Version:   4.3.1
  *      Released:  04.01.2018
  *
- *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg

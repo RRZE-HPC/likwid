@@ -40,7 +40,7 @@
  *      Released:  <DATE>
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
- *                Thomas Roehl (tr), thomas.roehl@gmail.com
+ *                Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -84,7 +84,7 @@
 #define INFINITY (1.0/0.0)
 #endif
 
-/* Added by Thomas Roehl (Thomas.Roehl@fau.de) to reduce reallocs by allocating a temporary
+/* Added by Thomas Gruber (Thomas.Roehl@fau.de) to reduce reallocs by allocating a temporary
  * token for parsing as well as for transforming a number to a string.
  */
 #define MAXTOKENLENGTH 512
@@ -1067,7 +1067,7 @@ bool postfix(token *tokens, int numTokens, Stack *output)
     stackFree(&operators);
     return err;
 }
-/* Added by Thomas Roehl (Thomas.Roehl@fau.de) as interface for LIKWID */
+/* Added by Thomas Gruber (Thomas.Roehl@fau.de) as interface for LIKWID */
 int
 calculate_infix(char* finfix, double *result)
 {

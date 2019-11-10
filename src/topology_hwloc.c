@@ -8,7 +8,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Authors:  Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Authors:  Thomas Gruber (tr), thomas.roehl@googlemail.com
  *
  *      Project:  likwid
  *
