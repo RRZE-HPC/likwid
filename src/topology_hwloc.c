@@ -181,7 +181,7 @@ int parse_cpuname(char *name)
 #endif
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 static int
 readCacheInclusiveIntel(int level)
 {
