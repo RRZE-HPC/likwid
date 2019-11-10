@@ -99,7 +99,7 @@ struct link_map *get_vdso_from_auxv()
    parse_auxv_contents();
    if (!vdso_ehdr)
       return NULL;
-   
+
    vdso_phdrs = (ElfW(Phdr) *) (vdso_ehdr->e_phoff + ((unsigned char *) vdso_ehdr));
    vdso_phdr_num = vdso_ehdr->e_phnum;
 
@@ -189,7 +189,7 @@ static int read_hex(char *str, unsigned long *val)
    }
 }
 
-static int read_word(char *str, char *word, int word_size) 
+static int read_word(char *str, char *word, int word_size)
 {
    int word_cur = 0;
    int len = 0;
@@ -224,11 +224,13 @@ struct link_map *get_vdso_from_maps()
 {
    int maps, hit_eof;
    ElfW(Addr) addr_begin, addr_end, dynamic;
-   char name[4096], line[4096], *line_pos;
+   // Changed length of name and line to 4097
+   char name[4097], line[4097], *line_pos;
    struct link_map *m;
    maps = gotcha_open("/proc/self/maps", O_RDONLY);
    for (;;) {
-      hit_eof = read_line(line, 4097, maps);
+      // changed length input to 4096
+      hit_eof = read_line(line, 4096, maps);
       if (hit_eof) {
          gotcha_close(maps);
          return NULL;
@@ -255,7 +257,7 @@ struct link_map *get_vdso_from_maps()
       if (dynamic >= addr_begin && dynamic < addr_end)
          return m;
    }
-   
+
    return NULL;
 }
 
@@ -269,7 +271,7 @@ int is_vdso(struct link_map *map)
       return 0;
    if (vdso_checked)
       return (map == vdso);
-   
+
    vdso_checked = 1;
 
    result = get_vdso_from_aliases();
