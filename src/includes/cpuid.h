@@ -34,6 +34,8 @@
  * Kernel version 3.19
  * File: arch/x86/boot/cpuflags.c
 */
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
+
 
 #if defined(__i386__) && defined(__PIC__)
 # define EBX_REG "=r"
@@ -54,4 +56,8 @@
     __asm__ volatile("cpuid" : "=a" (eax), "=c" (ecx), "=d" (edx), EBX_REG (ebx) : "a" (eax), "c" (ecx) );
 #endif
 
-#endif
+#else /* ARCH Filters */
+#define CPUID(eax,ebx,ecx,edx)
+#endif /* ARCH Filters */
+
+#endif /* LIKWID_CPUID_H */
