@@ -814,11 +814,11 @@ local function printOutput(results, metrics, cpulist, region, stats)
     local maxLineFields = 0
     local cpuinfo = likwid_getCpuInfo()
     local clock = likwid.getCpuClock()
-    local regionName = likwid.gpuMarkerRegionTag(region)
-    local regionThreads = likwid.gpuMarkerRegionThreads(region)
+    local regionName = likwid.markerRegionTag(region)
+    local regionThreads = likwid.markerRegionThreads(region)
     local cur_cpulist = cpulist
     if region ~= nil then
-        cur_cpulist = likwid.gpuMarkerRegionCpulist(region)
+        cur_cpulist = likwid.markerRegionCpulist(region)
     end
 
     for g, group in pairs(results) do
