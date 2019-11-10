@@ -389,11 +389,11 @@ ifeq ($(BUILDAPPDAEMON),true)
 install_appdaemon:
 	@echo "===> INSTALL application interface appDaemon to $(PREFIX)/lib/$(APPDAEMON_TARGET)"
 	@mkdir -p $(PREFIX)/lib
-	@install -m 755 $(INSTALL_CHOWN) $(APPDAEMON_TARGET) $(PREFIX)/lib/$(APPDAEMON_TARGET)
+	@install -m 755 $(APPDAEMON_TARGET) $(PREFIX)/lib/$(APPDAEMON_TARGET)
 move_appdaemon:
 	@echo "===> MOVE application interface appDaemon from $(PREFIX)/lib/$(APPDAEMON_TARGET) to $(INSTALLED_PREFIX)/lib/$(APPDAEMON_TARGET)"
 	@mkdir -p $(INSTALLED_PREFIX)/lib
-	@install -m 755 $(INSTALL_CHOWN) $(PREFIX)/lib/$(APPDAEMON_TARGET) $(INSTALLED_PREFIX)/lib/$(APPDAEMON_TARGET)
+	@install -m 755 $(PREFIX)/lib/$(APPDAEMON_TARGET) $(INSTALLED_PREFIX)/lib/$(APPDAEMON_TARGET)
 uninstall_appdaemon:
 	@echo "===> REMOVING application interface appDaemon from $(PREFIX)/lib/$(APPDAEMON_TARGET)"
 	@rm -f $(PREFIX)/lib/$(APPDAEMON_TARGET)
