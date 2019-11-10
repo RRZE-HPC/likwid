@@ -18,7 +18,7 @@ my $YEAR  = '2015';
 my $AUTHOR = 'RRZE, University Erlangen-Nuremberg';
 my $LICENSE = 'gpl';
 
-my @SKIPLIST = ('ghash.c','ghash.h','loadData.S','bstrlib.c','bstrlib.h', 'calculator_stack.h', 'calculator_stack.c');
+my @SKIPLIST = ('ghash.c','ghash.h','loadData.S','loadDataARM.S','bstrlib.c','bstrlib.h', 'calculator_stack.h', 'calculator_stack.c');
 
 sub print_copyright
 {
