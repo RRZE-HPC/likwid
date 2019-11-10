@@ -159,3 +159,6 @@ LIKWIDGROUPPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/perfgroups)
 CUDAINCLUDE = $(CUDA_HOME)/include
 # Include directory for CUPTI headers
 CUPTIINCLUDE = $(CUDA_HOME)/extras/CUPTI/include
+# In order to hook into the CUDA application, the appDaemon is required
+# If you just want the NvMarkerAPI, you can keep it false
+BUILDAPPDAEMON=false
