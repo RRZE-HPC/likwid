@@ -3002,7 +3002,7 @@ lua_likwid_putGpuTopology(lua_State* L)
 }
 
 static int
-lua_likwid_gpustr_to_gpulist(lua_State* L)
+lua_likwid_nvstr_to_gpulist(lua_State* L)
 {
     int ret = 0;
     char* gpustr = (char *)luaL_checkstring(L, 1);
@@ -3123,7 +3123,7 @@ lua_likwid_getGpuGroups(lua_State* L)
 
 
 static int
-lua_likwid_gpuGetNameOfEvent(lua_State* L)
+lua_likwid_nvGetNameOfEvent(lua_State* L)
 {
     int eventId, groupId;
     char* tmp;
@@ -3139,7 +3139,7 @@ lua_likwid_gpuGetNameOfEvent(lua_State* L)
 }
 
 static int
-lua_likwid_gpuGetNameOfCounter(lua_State* L)
+lua_likwid_nvGetNameOfCounter(lua_State* L)
 {
     int eventId, groupId;
     char* tmp;
@@ -3156,7 +3156,7 @@ lua_likwid_gpuGetNameOfCounter(lua_State* L)
 
 
 static int
-lua_likwid_gpuGetNameOfMetric(lua_State* L)
+lua_likwid_nvGetNameOfMetric(lua_State* L)
 {
     int metricId, groupId;
     char* tmp;
@@ -3172,7 +3172,7 @@ lua_likwid_gpuGetNameOfMetric(lua_State* L)
 }
 
 static int
-lua_likwid_gpuGetNameOfGroup(lua_State* L)
+lua_likwid_nvGetNameOfGroup(lua_State* L)
 {
     int groupId;
     char* tmp;
@@ -3187,7 +3187,7 @@ lua_likwid_gpuGetNameOfGroup(lua_State* L)
 }
 
 static int
-lua_likwid_gpuMarkerFile_read(lua_State* L)
+lua_likwid_nvMarkerFile_read(lua_State* L)
 {
     const char* filename = (const char*)luaL_checkstring(L, -1);
     int ret = nvmon_readMarkerFile(filename);
@@ -3196,21 +3196,21 @@ lua_likwid_gpuMarkerFile_read(lua_State* L)
 }
 
 static int
-lua_likwid_gpuMarkerFile_destroy(lua_State* L)
+lua_likwid_nvMarkerFile_destroy(lua_State* L)
 {
     nvmon_destroyMarkerResults();
     return 0;
 }
 
 static int
-lua_likwid_gpuMarkerNumRegions(lua_State* L)
+lua_likwid_nvMarkerNumRegions(lua_State* L)
 {
     lua_pushinteger(L, nvmon_getNumberOfRegions());
     return 1;
 }
 
 static int
-lua_likwid_gpuMarkerRegionGroup(lua_State* L)
+lua_likwid_nvMarkerRegionGroup(lua_State* L)
 {
     int region = lua_tointeger(L,-1);
     lua_pushinteger(L, nvmon_getGroupOfRegion(region-1)+1);
@@ -3218,7 +3218,7 @@ lua_likwid_gpuMarkerRegionGroup(lua_State* L)
 }
 
 static int
-lua_likwid_gpuMarkerRegionTag(lua_State* L)
+lua_likwid_nvMarkerRegionTag(lua_State* L)
 {
     int region = lua_tointeger(L,-1);
     lua_pushstring(L, nvmon_getTagOfRegion(region-1));
@@ -3226,7 +3226,7 @@ lua_likwid_gpuMarkerRegionTag(lua_State* L)
 }
 
 static int
-lua_likwid_gpuMarkerRegionEvents(lua_State* L)
+lua_likwid_nvMarkerRegionEvents(lua_State* L)
 {
     int region = lua_tointeger(L,-1);
     lua_pushinteger(L, nvmon_getEventsOfRegion(region-1));
@@ -3234,7 +3234,7 @@ lua_likwid_gpuMarkerRegionEvents(lua_State* L)
 }
 
 static int
-lua_likwid_gpuMarkerRegionMetrics(lua_State* L)
+lua_likwid_nvMarkerRegionMetrics(lua_State* L)
 {
     int region = lua_tointeger(L,-1);
     lua_pushinteger(L, nvmon_getMetricsOfRegion(region-1));
@@ -3243,7 +3243,7 @@ lua_likwid_gpuMarkerRegionMetrics(lua_State* L)
 
 
 static int
-lua_likwid_gpuMarkerRegionGpus(lua_State* L)
+lua_likwid_nvMarkerRegionGpus(lua_State* L)
 {
     int region = lua_tointeger(L,-1);
     lua_pushinteger(L, nvmon_getGpusOfRegion(region-1));
@@ -3251,7 +3251,7 @@ lua_likwid_gpuMarkerRegionGpus(lua_State* L)
 }
 
 static int
-lua_likwid_gpuMarkerRegionGpulist(lua_State* L)
+lua_likwid_nvMarkerRegionGpulist(lua_State* L)
 {
     int i = 0;
     int region = lua_tointeger(L,-1);
@@ -3287,7 +3287,7 @@ lua_likwid_gpuMarkerRegionGpulist(lua_State* L)
 }
 
 static int
-lua_likwid_gpuMarkerRegionTime(lua_State* L)
+lua_likwid_nvMarkerRegionTime(lua_State* L)
 {
     int region = lua_tointeger(L,-2);
     int thread = lua_tointeger(L,-1);
@@ -3296,7 +3296,7 @@ lua_likwid_gpuMarkerRegionTime(lua_State* L)
 }
 
 static int
-lua_likwid_gpuMarkerRegionCount(lua_State* L)
+lua_likwid_nvMarkerRegionCount(lua_State* L)
 {
     int region = lua_tointeger(L,-2);
     int thread = lua_tointeger(L,-1);
@@ -3305,7 +3305,7 @@ lua_likwid_gpuMarkerRegionCount(lua_State* L)
 }
 
 static int
-lua_likwid_gpuMarkerRegionResult(lua_State* L)
+lua_likwid_nvMarkerRegionResult(lua_State* L)
 {
     int region = lua_tointeger(L,-3);
     int event = lua_tointeger(L,-2);
@@ -3315,7 +3315,7 @@ lua_likwid_gpuMarkerRegionResult(lua_State* L)
 }
 
 static int
-lua_likwid_gpuMarkerRegionMetric(lua_State* L)
+lua_likwid_nvMarkerRegionMetric(lua_State* L)
 {
     int region = lua_tointeger(L,-3);
     int metric = lua_tointeger(L,-2);
@@ -3326,7 +3326,7 @@ lua_likwid_gpuMarkerRegionMetric(lua_State* L)
 
 
 static int
-lua_likwid_gpuInit(lua_State* L)
+lua_likwid_nvInit(lua_State* L)
 {
     int ret;
     int nrGpus = luaL_checknumber(L,1);
@@ -3371,7 +3371,7 @@ lua_likwid_gpuInit(lua_State* L)
 }
 
 static int
-lua_likwid_gpuAddEventSet(lua_State* L)
+lua_likwid_nvAddEventSet(lua_State* L)
 {
     int groupId, n;
     const char* tmpString;
@@ -3392,7 +3392,7 @@ lua_likwid_gpuAddEventSet(lua_State* L)
 }
 
 static int
-lua_likwid_gpuFinalize(lua_State *L)
+lua_likwid_nvFinalize(lua_State *L)
 {
     if (nvmon_initialized)
         nvmon_finalize();
@@ -3400,14 +3400,14 @@ lua_likwid_gpuFinalize(lua_State *L)
 }
 
 static int
-lua_likwid_gpuSupported(lua_State *L)
+lua_likwid_nvSupported(lua_State *L)
 {
     lua_pushboolean(L, 1);
     return 1;
 }
 #else
 static int
-lua_likwid_gpuSupported(lua_State *L)
+lua_likwid_nvSupported(lua_State *L)
 {
     lua_pushboolean(L, 1);
     return 0;
@@ -3568,33 +3568,33 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_setresuid", lua_likwid_setresuid);
     lua_register(L, "likwid_setresuser", lua_likwid_setresuser);
     // Nvidia GPU functions
-    lua_register(L, "likwid_gpuSupported", lua_likwid_gpuSupported);
+    lua_register(L, "likwid_nvSupported", lua_likwid_nvSupported);
 #ifdef LIKWID_WITH_NVMON
     lua_register(L, "likwid_getGpuTopology", lua_likwid_getGpuTopology);
     lua_register(L, "likwid_putGpuTopology", lua_likwid_putGpuTopology);
     lua_register(L, "likwid_getGpuEventsAndCounters", lua_likwid_getGpuEventsAndCounters);
     lua_register(L, "likwid_getGpuGroups", lua_likwid_getGpuGroups);
     lua_register(L, "likwid_gpustr_to_gpulist", lua_likwid_gpustr_to_gpulist);
-    lua_register(L, "likwid_readGpuMarkerFile", lua_likwid_gpuMarkerFile_read);
-    lua_register(L, "likwid_destroyGpuMarkerFile", lua_likwid_gpuMarkerFile_destroy);
-    lua_register(L, "likwid_gpuMarkerNumRegions", lua_likwid_gpuMarkerNumRegions);
-    lua_register(L, "likwid_gpuMarkerRegionGroup", lua_likwid_gpuMarkerRegionGroup);
-    lua_register(L, "likwid_gpuMarkerRegionTag", lua_likwid_gpuMarkerRegionTag);
-    lua_register(L, "likwid_gpuMarkerRegionEvents", lua_likwid_gpuMarkerRegionEvents);
-    lua_register(L, "likwid_gpuMarkerRegionMetrics", lua_likwid_gpuMarkerRegionMetrics);
-    lua_register(L, "likwid_gpuMarkerRegionGpus", lua_likwid_gpuMarkerRegionGpus);
-    lua_register(L, "likwid_gpuMarkerRegionGpulist", lua_likwid_gpuMarkerRegionGpulist);
-    lua_register(L, "likwid_gpuMarkerRegionTime", lua_likwid_gpuMarkerRegionTime);
-    lua_register(L, "likwid_gpuMarkerRegionCount", lua_likwid_gpuMarkerRegionCount);
-    lua_register(L, "likwid_gpuMarkerRegionResult", lua_likwid_gpuMarkerRegionResult);
-    lua_register(L, "likwid_gpuMarkerRegionMetric", lua_likwid_gpuMarkerRegionMetric);
-    lua_register(L, "likwid_gpuInit",lua_likwid_gpuInit);
-    lua_register(L, "likwid_gpuAddEventSet", lua_likwid_gpuAddEventSet);
-    lua_register(L, "likwid_gpuFinalize",lua_likwid_gpuFinalize);
-    lua_register(L, "likwid_gpuGetNameOfEvent",lua_likwid_gpuGetNameOfEvent);
-    lua_register(L, "likwid_gpuGetNameOfCounter",lua_likwid_gpuGetNameOfCounter);
-    lua_register(L, "likwid_gpuGetNameOfMetric",lua_likwid_gpuGetNameOfMetric);
-    lua_register(L, "likwid_gpuGetNameOfGroup",lua_likwid_gpuGetNameOfGroup);
+    lua_register(L, "likwid_readNvMarkerFile", lua_likwid_nvMarkerFile_read);
+    lua_register(L, "likwid_destroyNvMarkerFile", lua_likwid_nvMarkerFile_destroy);
+    lua_register(L, "likwid_nvMarkerNumRegions", lua_likwid_nvMarkerNumRegions);
+    lua_register(L, "likwid_nvMarkerRegionGroup", lua_likwid_nvMarkerRegionGroup);
+    lua_register(L, "likwid_nvMarkerRegionTag", lua_likwid_nvMarkerRegionTag);
+    lua_register(L, "likwid_nvMarkerRegionEvents", lua_likwid_nvMarkerRegionEvents);
+    lua_register(L, "likwid_nvMarkerRegionMetrics", lua_likwid_nvMarkerRegionMetrics);
+    lua_register(L, "likwid_nvMarkerRegionGpus", lua_likwid_nvMarkerRegionGpus);
+    lua_register(L, "likwid_nvMarkerRegionGpulist", lua_likwid_nvMarkerRegionGpulist);
+    lua_register(L, "likwid_nvMarkerRegionTime", lua_likwid_nvMarkerRegionTime);
+    lua_register(L, "likwid_nvMarkerRegionCount", lua_likwid_nvMarkerRegionCount);
+    lua_register(L, "likwid_nvMarkerRegionResult", lua_likwid_nvMarkerRegionResult);
+    lua_register(L, "likwid_nvMarkerRegionMetric", lua_likwid_nvMarkerRegionMetric);
+    lua_register(L, "likwid_nvInit",lua_likwid_nvInit);
+    lua_register(L, "likwid_nvAddEventSet", lua_likwid_nvAddEventSet);
+    lua_register(L, "likwid_nvFinalize",lua_likwid_nvFinalize);
+    lua_register(L, "likwid_nvGetNameOfEvent",lua_likwid_nvGetNameOfEvent);
+    lua_register(L, "likwid_nvGetNameOfCounter",lua_likwid_nvGetNameOfCounter);
+    lua_register(L, "likwid_nvGetNameOfMetric",lua_likwid_nvGetNameOfMetric);
+    lua_register(L, "likwid_nvGetNameOfGroup",lua_likwid_nvGetNameOfGroup);
 #endif /* LIKWID_WITH_NVMON */
 #ifdef __MIC__
     setuid(0);

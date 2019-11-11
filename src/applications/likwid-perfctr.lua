@@ -51,7 +51,7 @@ local function examples()
     io.stdout:write("likwid-perfctr -E L2\n")
     io.stdout:write("Run command on CPU 2 and measure performance group CLOCK:\n")
     io.stdout:write("likwid-perfctr -C 2 -g CLOCK ./a.out\n")
-    if likwid.gpuSupported() then
+    if likwid.nvSupported() then
         io.stdout:write("Run command and measure on GPU 1 the performance group FLOPS_DP (Only with NVMarkerAPI):\n")
         io.stdout:write("likwid-perfctr -G 1 -W FLOPS_DP -m ./a.out\n")
         io.stdout:write("It is possible to combine CPU and GPU measurements (with MarkerAPI and NVMarkerAPI):\n")
@@ -69,11 +69,11 @@ local function usage()
     io.stdout:write("-c <list>\t\t Processor ids to measure (required), e.g. 1,2-4,8\n")
     io.stdout:write("-C <list>\t\t Processor ids to pin threads and measure, e.g. 1,2-4,8\n")
     io.stdout:write("\t\t\t For information about the <list> syntax, see likwid-pin\n")
-    if likwid.gpuSupported() then
+    if likwid.nvSupported() then
         io.stdout:write("-G, --gpus <list>\t List of GPUs to monitor\n")
     end
     io.stdout:write("-g, --group <string>\t Performance group or custom event set string for CPU monitoring\n")
-    if likwid.gpuSupported() then
+    if likwid.nvSupported() then
         io.stdout:write("-W, --gpugroup <string>\t Performance group or custom event set string for GPU monitoring\n")
     end
     io.stdout:write("-H\t\t\t Get group help (together with -g switch)\n")
@@ -160,11 +160,11 @@ nan2value = '-'
 
 
 ---------------------------
-gpusSupported = likwid.gpuSupported()
+gpusSupported = likwid.nvSupported()
 num_gpus = 0
 gpulist = {}
 gpu_event_string_list = {}
-gpuMarkerFile = string.format("%s/likwid_gpu_%d.txt", markerFolder, likwid.getpid())
+nvMarkerFile = string.format("%s/likwid_gpu_%d.txt", markerFolder, likwid.getpid())
 gotG = false
 gpugroups = {}
 ---------------------------
@@ -457,7 +457,7 @@ if num_cpus > 0 then
 end
 
 ---------------------------
-if gpuSupported and gputopo and num_gpus > 0 then
+if nvSupported and gputopo and num_gpus > 0 then
     for i,gpu1 in pairs(gpulist) do
         for j, gpu2 in pairs(gpulist) do
             if i ~= j and gpu1 == gpu2 then
@@ -497,7 +497,7 @@ if print_events == true then
         print_stdout(outstr)
     end
 ---------------------------
-    if gpuSupported and gputopo then
+    if nvSupported and gputopo then
         local cudahome = os.getenv("CUDA_HOME")
         if cudahome and cudahome:len() > 0 then
             ldpath = os.getenv("LD_LIBRARY_PATH")
@@ -550,7 +550,7 @@ if print_event ~= nil then
         end
     end
 ---------------------------
-    if gpuSupported and gputopo then
+    if nvSupported and gputopo then
         local cudahome = os.getenv("CUDA_HOME")
         if cudahome and cudahome:len() > 0 then
             ldpath = os.getenv("LD_LIBRARY_PATH")
@@ -620,7 +620,7 @@ if print_groups == true then
     else
         print_stdout(string.format("No groups defined for %s",cpuinfo["name"]))
     end
-    if gpuSupported and gputopo then
+    if nvSupported and gputopo then
         avail_groups = likwid.getGpuGroups()
         if avail_groups then
             local max_len = 0
@@ -701,7 +701,7 @@ if print_info or verbose > 0 then
         print_stdout(string.format("PERFMON width of counters:\t%u",cpuinfo["perf_width_ctr"]))
         print_stdout(string.format("PERFMON number of fixed counters:\t%u",cpuinfo["perf_num_fixed_ctr"]))
     end
-    if gpuSupported and gputopo then
+    if nvSupported and gputopo then
         print_stdout(likwid.hline)
         for i=1, gputopo["numDevices"] do
             gpu = gputopo["devices"][i]
@@ -752,8 +752,8 @@ if use_marker then
         print_stderr(string.format("Please purge all MarkerAPI files from %s.", markerFolder))
         os.exit(1)
     end
-    if gpuSupported and #gpulist and likwid.access(gpuMarkerFile, "rw") ~= -1 then
-        print_stderr(string.format("ERROR: GPUMarkerAPI file %s not accessible. Maybe a remaining file of another user.", gpuMarkerFile))
+    if nvSupported and #gpulist and likwid.access(nvMarkerFile, "rw") ~= -1 then
+        print_stderr(string.format("ERROR: GPUMarkerAPI file %s not accessible. Maybe a remaining file of another user.", nvMarkerFile))
         print_stderr(string.format("Please purge all GPUMarkerAPI files from %s.", markerFolder))
         os.exit(1)
     end
@@ -831,7 +831,7 @@ if use_marker == true then
         likwid.setenv("LIKWID_GPUS", table.concat(gpulist,","))
         str = table.concat(gpu_event_string_list, "|")
         likwid.setenv("LIKWID_GEVENTS", str)
-        likwid.setenv("LIKWID_GPUFILEPATH", gpuMarkerFile)
+        likwid.setenv("LIKWID_GPUFILEPATH", nvMarkerFile)
     end
 end
 
@@ -864,7 +864,7 @@ if #event_string_list > 0 then
     end
 end
 ---------------------------
-if gpuSupported and #gpu_event_string_list > 0 then
+if nvSupported and #gpu_event_string_list > 0 then
     if likwid.gpuInit(num_gpus, gpulist) < 0 then
         likwid.putGpuTopology()
         os.exit(1)
@@ -1161,8 +1161,8 @@ if use_marker == true then
         end
     end
     if gpusSupported and #gpu_event_string_list > 0 then
-        if likwid.access(gpuMarkerFile, "e") >= 0 then
-            results, metrics = likwid.getGpuMarkerResults(gpuMarkerFile, markergpulist, nan2value)
+        if likwid.access(nvMarkerFile, "e") >= 0 then
+            results, metrics = likwid.getGpuMarkerResults(nvMarkerFile, markergpulist, nan2value)
             if not results then
                 print_stderr("Failure reading GPU Marker API result file.")
             elseif #results == 0 then
@@ -1172,8 +1172,8 @@ if use_marker == true then
                     likwid.printGpuOutput(results[r], metrics[r], gpulist, r, print_stats)
                 end
             end
-            likwid.destroyGpuMarkerFile()
-            os.remove(gpuMarkerFile)
+            likwid.destroyNvMarkerFile()
+            os.remove(nvMarkerFile)
         else
             print_stderr("GPU Marker API result file does not exist. This may happen if the application has not called LIKWID_GPUMARKER_CLOSE.")
         end
