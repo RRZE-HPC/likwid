@@ -1287,7 +1287,7 @@ nvmon_getEventsOfRegion(int region)
     return gMarkerResults[region].eventCount;
 }
 
-double nvmon_getResultOfRegionGpu(int region, int event, int gpu)
+double nvmon_getResultOfRegionGpu(int region, int eventId, int gpuId)
 {
     if (gMarkerResults == NULL)
     {
