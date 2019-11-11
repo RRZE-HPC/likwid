@@ -97,7 +97,7 @@ Shortcut for likwid_markerClose() if compiled with -DLIKWID_PERFMON. Otherwise n
 #endif /* LIKWID_PERFMON */
 
 
-/** \addtogroup MarkerAPI Marker API module
+/** \addtogroup NvMarkerAPI NvMarker API module (MarkerAPI for Nvidia GPUs)
 *  @{
 */
 /*!
