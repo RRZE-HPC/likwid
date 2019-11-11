@@ -1,3 +1,22 @@
+# Changelog 5.0.0
+- Support for ARM architectures. Special support for Marvell Thunder X2
+- Support for IBM POWER architectures. Support for POWER8 and POWER9.
+- Support for AMD Zen2 microarchitecture.
+- Support for data fabric counters of AMD Zen microarchitecture
+- Support for Nvidia GPU monitoring (with NvMarkerAPI)
+- New clock frequency backend (with less overhead)
+- Generation of benchmarks for likwid-bench on-the-fly from ptt files
+- Switch back to C-based metric calculator (less overhead)
+- Interface function to performance groups, create your own.
+- Integration of GOTCHA for hooking into client application at runtime
+- Thread-local initialization of streams for likwid-bench
+- Enhanced support for SLURM with likwid-mpirun
+- New MPI and Hybrid pinning features for likwid-mpirun
+- Interface to enable the membind kernel memory policy
+- JSON output filter file (use -o output.json)
+- Update of internal HWLOC to 2.1.0
+
+
 # Changelog 4.3.4
 - Fix for detecting PCI devices if system can split up LLC and memory channels (Intel CoD or SNC)
 - Don't pin accessDaemon to threads to avoid long access latencies due to busy hardware thread
