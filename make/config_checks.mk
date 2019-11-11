@@ -1,5 +1,5 @@
 
-ifneq ($(strip $(MAKECMDGOALS)),docs)
+#ifneq ($(strip $(MAKECMDGOALS)),docs)
 # determine kernel Version
 KERNEL_VERSION_MAJOR := $(shell uname -r | awk '{split($$1,a,"."); print a[1]}' | cut -d '-' -f1)
 KERNEL_VERSION := $(shell uname -r | awk  '{split($$1,a,"."); print a[2]}' | cut -d '-' -f1)
@@ -74,7 +74,7 @@ FORTRAN_INSTALL =
 FORTRAN_REMOVE =
 FORTRAN_REMOVE_MOVED =
 endif
-endif
+#endif
 
 ifeq ($(strip $(NVIDIA_INTERFACE)), true)
 #LIBS+= -lcuda -ldl
