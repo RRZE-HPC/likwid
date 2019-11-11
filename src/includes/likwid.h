@@ -1050,7 +1050,7 @@ int perfgroup_addMetric(GroupInfo* ginfo, char* mname, char* mcalc) __attribute_
 
 Remove a metric from a group
 @param [in] ginfo GroupInfo struct
-@param [in] counter String with counter name
+@param [in] mname String with metric name/description
 */
 void perfgroup_removeMetric(GroupInfo* ginfo, char* mname) __attribute__ ((visibility ("default") ));
 
@@ -1131,7 +1131,7 @@ char* perfgroup_getLongInfo(GroupInfo* ginfo) __attribute__ ((visibility ("defau
 /*! \brief Return the long information string of a group
 
 Return the long information string of a group
-@param [in] sinfo Long information string
+@param [in] linfo Long information string
 */
 void perfgroup_returnLongInfo(char* linfo) __attribute__ ((visibility ("default") ));
 
@@ -1926,6 +1926,7 @@ extern int likwid_gpuMarkerResetRegion(const char* regionTag) __attribute__ ((vi
 
 Get the accumulated data of the current thread for the given regionTag.
 @param regionTag [in] Print data using this string
+@param nr_gpus [in,out] Length of first dimension of the arrys. Afterwards the actual count of GPUs.
 @param nr_events [in,out] Length of events array
 @param events [out] Events array for the intermediate results
 @param time [out] Accumulated measurement time
@@ -2030,11 +2031,13 @@ typedef struct {
 
 /*! \brief Output list from nvmon_getEventsOfGpu with all supported events
 
+Output list from nvmon_getEventsOfGpu with all supported events
 */
 typedef struct {
     int numEvents; /*! \brief Number of events */
     NvmonEventListEntry *events; /*! \brief List of events */
 } NvmonEventList;
+/** \brief Pointer for exporting the NvmonEventList data structure */
 typedef NvmonEventList* NvmonEventList_t;
 
 
@@ -2081,7 +2084,7 @@ The eventname and countername are checked if they are available.
 int nvmon_addEventSet(const char* eventCString) __attribute__ ((visibility ("default") ));
 /*! \brief Setup all Nvmon performance monitoring counters of an eventSet
 
-@param [in] groupId (returned from perfmon_addEventSet()
+@param [in] gid (returned from perfmon_addEventSet()
 @return error code (-ENOENT if groupId is invalid and -1 if the counters of one CPU cannot be set up)
 */
 int nvmon_setupCounters(int gid) __attribute__ ((visibility ("default") ));
