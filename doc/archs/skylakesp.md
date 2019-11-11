@@ -714,7 +714,7 @@ The M2M devices is first introduced in the Intel&reg; Skylake SP microarchitectu
 \anchor SKX_IBOXGEN
 <H2>IIO box counters (general-purpose)</H2>
 <P>The Intel&reg; Skylake SP microarchitecture provides measurements of the IIO box in the Uncore. The description from Intel&reg;:<BR>
-<I>IIO stacks are responsible for managing traffic between the PCIe domain and the Mesh domain. The IIO PMON block is situated near the IIO stack’s traffic controller capturing traffic controller as well as PCIe root port information. The traffic controller is responsible for translating traffic coming in from the Mesh (through M2PCIe) and processed by IRP into the PCIe domain to IO agents such as CBDMA, PCIe and MCP.</I></BR>
+<I>IIO stacks are responsible for managing traffic between the PCIe domain and the Mesh domain. The IIO PMON block is situated near the IIO stack’s traffic controller capturing traffic controller as well as PCIe root port information. The traffic controller is responsible for translating traffic coming in from the Mesh (through M2PCIe) and processed by IRP into the PCIe domain to IO agents such as CBDMA, PCIe and MCP.</I><BR>
 The IIO box counters are exposed to the operating system through the MSR interface. The IBOX was introduced with the Intel&reg; IvyBridge EP/EN/EX microarchitecture.
 </P>
 
@@ -930,7 +930,7 @@ The IIO box counters are exposed to the operating system through the MSR interfa
 \anchor SKX_IRP
 <H2>IRP box counters</H2>
 <P>The Intel&reg; Skylake SP microarchitecture provides measurements of the IRP box in the Uncore. The description from Intel&reg;:<BR>
-<I>IRP is responsible for maintaining coherency for IIO traffic targeting coherent memory.</I></BR>
+<I>IRP is responsible for maintaining coherency for IIO traffic targeting coherent memory.</I><BR>
 The IRP box counters are exposed to the operating system through the MSR interface. The IRP was introduced with the Intel&reg; IvyBridge EP/EN/EX microarchitecture.
 </P>
 
