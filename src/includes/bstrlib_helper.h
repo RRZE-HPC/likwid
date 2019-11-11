@@ -5,8 +5,8 @@
  *
  *      Description:  Additional functions to the bstrlib library (header file)
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.0
+ *      Released:  10.11.2019
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

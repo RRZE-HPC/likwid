@@ -5,8 +5,8 @@
  *
  *      Description:  Header File for C Hashmap
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.0
+ *      Released:  10.11.2019
  *
  *      Author:   Thomas Gruber (tg), thomas.gruber@googlemail.com
  *      Project:  likwid
