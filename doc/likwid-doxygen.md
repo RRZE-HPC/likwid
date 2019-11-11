@@ -130,6 +130,9 @@ Using the Marker API:
 - \ref C-markerAPI-code
 - \ref F-markerAPI-code
 
+Using the NvMarker API (for Nvidia GPUs):
+- \ref C-nvMarkerAPI-code
+
 If you have problems with LIKWID:<BR>
 GitHub: <A HREF="https://github.com/RRZE-HPC/likwid">https://github.com/RRZE-HPC/likwid</A><BR>
 Bugs: <A HREF="https://github.com/RRZE-HPC/likwid/issues">https://github.com/RRZE-HPC/likwid/issues</A><BR>
@@ -269,6 +272,11 @@ In order to create the HTML documentation of LIKWID, the tool <A HREF="www.doxyg
 /*! \page Lua-likwidAPI-code LIKWID API in a Lua application
 \include Lua-likwidAPI.lua
 */
+
+/*! \page C-nvMarkerAPI-code NvMarker API in a C/C++ application (Nvidia GPU monitoring)
+\include C-nvMarkerAPI.c
+*/
+
 
 /*! \page faq FAQ
 \section faq1 Which architectures are supported?
