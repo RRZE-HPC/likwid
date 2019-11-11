@@ -28,17 +28,9 @@ is a command line application to set the clock frequency of CPU cores. Since onl
 .B likwid-setFreq(1).
 The daemon needs the suid permission bit to be set in order to manipulate the sysfs entries. With
 .B likwid-setFrequencies
-the clock of all cores inside a the cpu_list or affinity domain can be set to a specific frequency or governor at once.
+the clock of all cores inside the cpu_list or affinity domain can be set to a specific frequency or governor at once.
 .B likwid-setFrequencies
-works only with the kernel module
-.B acpi-cpufreq.
-The recent
-.B intel_pstate
-module does not allow to set fixed frequencies. In order to deactivate
-.B intel_pstate
-add 'intel_pstate=disable' to your kernel boot commandline (commonly in grub) and load the
-.B acpi-cpufreq
-module.
+works now with the cpufreq drivers 'acpi-cpufreq' and 'intel_pstate'.
 .SH OPTIONS
 .TP
 .B \-h
@@ -62,7 +54,7 @@ For detailed information about affinity domains see
 set the governor of all CPU cores inside the affinity domain. Current governors are ondemand, performance, turbo. Default is ondemand
 .TP
 .B \-\^f, \-\-\^freq <frequency>
-set a fixed frequency at all CPU cores inside the affinity domain. Implicitly sets userspace governor for the cores.
+set a fixed frequency at all CPU cores inside the affinity domain. Implicitly sets 'userspace' governor for the cores when using the acpi-cpufreq driver.
 .TP
 .B \-\^x, \-\-\^min <min_freq>
 set a fixed minimal frequency at all CPU cores inside the affinity domain. Can be used in combination with a dynamic governor.
@@ -74,14 +66,14 @@ set a fixed maximal frequency at all CPU cores inside the affinity domain. Can b
 deactivates/activates Turbo mode for the specified CPU cores.
 .TP
 .B \-\-\^umin <uncore_min_freq>
-set the minimal frequency for the uncore. There are no limits available, but
+set the minimal frequency for the Uncore. There are no limits available, but
 .B likwid-setFrequencies
-allows the available minimal CPU frequency as minimal Uncore frequency.
+allows the available minimal CPU frequency as minimal Uncore frequency. Only available for Intel architectures.
 .TP
 .B \-\-\^umax <uncore_max_freq>
-set the maximal frequency for the uncore. There are no limits available, but
+set the maximal frequency for the Uncore. There are no limits available, but
 .B likwid-setFrequencies
-allows the available maximal CPU frequency (with a single core and Turbo) as maximal Uncore frequency.
+allows the available maximal CPU frequency (with a single core and Turbo) as maximal Uncore frequency. Only available for Intel architectures.
 .TP
 .B \-\-\^reset
 resets the CPU cores to maximal range, deactivates Turbo mode and sets the

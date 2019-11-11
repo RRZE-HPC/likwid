@@ -5,29 +5,23 @@ likwid-setFreq \- Mediator for
 that performs the actual setting of CPU cores' frequency and governor.
 .SH SYNOPSIS
 .B likwid-setFreq
-.IR <coreId>
-.IR <command>
-.IR <frequency|governor>
 
 .SH OPTIONS
 .TP
-.B <command>
-Valid commands are
-.B cur
-,
-.B min
-,
-.B max
-and
-.B gov
+.B No options
 
 .SH DESCRIPTION
 .B likwid-setFreq
 is a command line application that mediates the request from
 .B likwid-setFrequencies(1)
-because setting a CPU core's frequency and/or governor requires root privileges. This executable must be suid-root.
+because setting a CPU core's frequency and/or governor requires root privileges. When starting the daemon,
+it opens a UNIX socket and waits for connects from LIKWID. When the connection is established, the library
+can send commands to
 .B likwid-setFreq
-works only with the kernel module acpi-cpufreq. The recent intel_pstate module does not allow to set fixed frequencies.
+. The daemon is just used to change the sysfs files, the library accesses the files itself for reading
+to minimize overhead. This executable must be suid-root.
+.B likwid-setFreq
+works with the 'acpu_cpufreq' and the 'intel_pstate' driver. 
 
 
 .SH AUTHOR

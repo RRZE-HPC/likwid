@@ -25,7 +25,7 @@ likwid-bench \- low-level benchmark suite and microbenchmarking framework
 .B likwid-bench
 is a benchmark suite for low-level (assembly) benchmarks to measure bandwidths and instruction throughput for specific instruction code on x86 systems. The currently included benchmark codes include common data access patterns like load and store but also calculations like vector triad and sum.
 .B likwid-bench
-includes architecture specific benchmarks for x86, x86_64 and x86 for Intel Xeon Phi coprocessors. The performance values can either be calculated by
+includes architecture specific benchmarks for x86, x86_64 and x86 for Intel Xeon Phi coprocessors. With LIKWID 5 also ARM and POWER benchmarks are supported. The performance values can either be calculated by
 .B likwid-bench
 or measured using performance counters by using
 .B likwid-perfctr
@@ -33,7 +33,7 @@ as a wrapper to
 .B likwid-bench.
 This requires to build
 .B likwid-bench
-with instrumentation enabled in config.mk. Benchmarks can be dynamically added when a proper ptt file is present at $HOME/.likwid/bench/<arch>/<testname>.ptt . The files are compiled to a .S file and compiled using either gcc, icc or pgcc (searched in $PATH). The default folder is /tmp/<PID>.
+with instrumentation enabled in config.mk. Benchmarks can be dynamically added when a proper ptt file is present at $HOME/.likwid/bench/<arch>/<testname>.ptt . The files are compiled to a .S file and compiled using either gcc, icc or pgcc (searched in $PATH). The default folder is /tmp/<PID>. Possible values for <arch> are 'x86', 'x86-64', 'phi', armv7', 'armv8' and 'power'.
 .SH OPTIONS
 .TP
 .B \-\^h
@@ -54,10 +54,10 @@ The amount of iterations is determined using this value. Default: 1 second.
 Name of the benchmark code to run (mandatory).
 .TP
 .B \-\^w <workgroup_expression>
-Specify the affinity domain, thread count and data set size for the current benchmarking run (mandatory). First thread in thread domain initializes the stream.
+Specify the affinity domain, thread count and data set size for the current benchmarking run (-w or -W mandatory). First thread in thread domain initializes the stream.
 .TP
 .B \-\^W <workgroup_expression_short>
-Specify the affinity domain, thread count and data set size for the current benchmarking run (mandatory). Each thread in the workgroup initializes its own chunk of the stream.
+Specify the affinity domain, thread count and data set size for the current benchmarking run (-w or -W mandatory). Each thread in the workgroup initializes its own chunk of the stream.
 .TP
 .B \-\^l <testname>
 list properties of a benchmark code.
@@ -94,7 +94,7 @@ the threads are running in. To place the data in a different domain for every st
 option) the domain to place the data in can be specified. Multiple streams are comma separated. Either the placement is provided or all streams have to be explicitly placed. Please refer to the Wiki pages on
 .B https://github.com/RRZE-HPC/likwid/wiki/Likwid-Bench
 for further details and examples on usage.
-With -W each thread initializes its own chunk of the streams but pleacement of the streams is deactivated.
+With -W each thread initializes its own chunk of the streams but pleacement of the streams is deactivated. 
 
 
 .SH EXAMPLE
@@ -172,6 +172,9 @@ Stream id 0 and 1 are placed in thread domains
 .B S1,
 which is socket 1. This can be verified as the initialization threads output where they are running.
 
+.SH WARNING
+Since LIKWID 5.0, it is possible to have different numbers of threads in workgroups. Also different sizes are allowed. Both features seem promising, but they show a range of problems. If you have a NUMA system and run with multiple threads on NUMA node 0 but with less on NUMA node 1, the threads on NUMA node 1 cause less preassure on the memory interface and consequently achieve higher throughput. They will finish early compared to the threads on NUMA node 0. The runtime used for caluclating the bandwidth and MFlops/s values use the maximal runtime of all threads, hence one of NUMA node 0.
+Similar problems exist with different sizes. One workgroup might run in cache while the other waits for data from the memory interface.
 
 .SH AUTHOR
 Written by Thomas Gruber <thomas.roehl@googlemail.com>.

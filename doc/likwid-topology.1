@@ -11,10 +11,12 @@ likwid-topology \- print thread and cache topology
 .SH DESCRIPTION
 .B likwid-topology
 is a command line application to print the thread and cache
-topology on multicore x86 processors. Used with mono spaced fonts it can
-draw the processor topology of a machine in ascii art. Beyond topology
+topology on multicore x86, ARM and POWER processors. Used with mono spaced fonts it can
+draw the processor topology of a machine in ASCII art. Beyond topology
 likwid-topology determines the clock of a processor and prints detailed
 informations about the caches hierarchy.
+When compiled with NVIDIA_INTERFACE=true in config.mk and the CUDA/CUPTI library reachable
+at runtime, likwid-topology prints information about the Nvidia GPUs in the system.
 .SH OPTIONS
 .TP
 .B \-h, \-\-\^help
