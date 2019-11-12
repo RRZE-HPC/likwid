@@ -174,4 +174,3 @@
 - Most LIKWID applications are written in Lua (only exception likwid-bench)
 - Monitoring daemon likwid-agent with multiple output backends
 - More performance groups
-
