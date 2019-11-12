@@ -1305,9 +1305,9 @@ print_supportedCPUs (void)
     printf("\t%s\n",broadwell_str);
     printf("\t%s\n",broadwell_d_str);
     printf("\t%s\n",broadwell_ep_str);
-    printf("\t%s\n",skylake_str);
     printf("\t%s\n",atom_goldmont_str);
     printf("\t%s\n",xeon_phi2_string);
+    printf("\t%s\n",skylake_str);
     printf("\t%s\n",skylakeX_str);
     printf("\t%s\n",xeon_phi3_string);
     printf("\t%s\n",kabylake_str);
@@ -1333,7 +1333,13 @@ print_supportedCPUs (void)
     printf("\t%s\n",cavium_thunderx_str);
     printf("\t%s\n",cavium_thunderx2t99_str);
     printf("\n");
-
+    printf("Supported ARMv7 processors:\n");
+    printf("\t%s\n",armv7l_str);
+    printf("\n");
+    printf("Supported POWER processors:\n");
+    printf("\t%s\n",power8_str);
+    printf("\t%s\n",power9_str);
+    printf("\n");
 }
 
 CpuTopology_t
