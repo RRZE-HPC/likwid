@@ -139,11 +139,14 @@ Shortcut for likwid_gpuMarkerClose() if compiled with -DLIKWID_NVMON. Otherwise 
 /** @}*/
 
 #ifdef LIKWID_NVMON
+#ifndef LIKWID_WITH_NVMON
+#define LIKWID_WITH_NVMON
+#endif
 #include <likwid.h>
 #define LIKWID_NVMARKER_INIT likwid_gpuMarkerInit()
 #define LIKWID_NVMARKER_THREADINIT likwid_gpuMarkerThreadInit()
 #define LIKWID_NVMARKER_SWITCH likwid_gpuMarkerNextGroup()
-#define LIKWID_NVMARKER_REGISTER(regionTag) likwid_gpuMarkerGetRegion(regionTag)
+#define LIKWID_NVMARKER_REGISTER(regionTag) likwid_gpuMarkerRegisterRegion(regionTag)
 #define LIKWID_NVMARKER_START(regionTag) likwid_gpuMarkerStartRegion(regionTag)
 #define LIKWID_NVMARKER_STOP(regionTag) likwid_gpuMarkerStopRegion(regionTag)
 #define LIKWID_NVMARKER_CLOSE likwid_gpuMarkerClose()
