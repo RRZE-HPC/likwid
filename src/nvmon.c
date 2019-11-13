@@ -271,7 +271,6 @@ nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
         return -ENODEV;
     }
     GpuTopology_t gtopo = get_gpuTopology();
-    printf("Here\n");
     int available = -1;
     for (int i = 0; i < gtopo->numDevices; i++)
     {
@@ -281,19 +280,19 @@ nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
             break;
         }
     }
-    printf("Device %d\n", available);
     if (available >= 0)
     {
-        if (gtopo->devices[available].ccapMajor < 7)
-        {
-            err = nvmon_cupti_functions.getEventList(available, list);
-        }
-        else
-        {
-            ERROR_PRINT(NVIDIA PerfWorks API current not supported);
-            return -ENODEV;
-            //err = nvmon_perfworks_functions.getEventList(available, list);
-        }
+        err = nvmon_cupti_functions.getEventList(available, list);
+/*        if (gtopo->devices[available].ccapMajor < 7)*/
+/*        {*/
+/*            err = nvmon_cupti_functions.getEventList(available, list);*/
+/*        }*/
+/*        else*/
+/*        {*/
+/*            ERROR_PRINT(NVIDIA PerfWorks API current not supported);*/
+/*            return -ENODEV;*/
+/*            //err = nvmon_perfworks_functions.getEventList(available, list);*/
+/*        }*/
     }
     return err;
 

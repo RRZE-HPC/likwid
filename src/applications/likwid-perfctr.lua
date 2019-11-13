@@ -457,7 +457,7 @@ if num_cpus > 0 then
 end
 
 ---------------------------
-if nvSupported and gputopo and num_gpus > 0 then
+if gpusSupported and gputopo and num_gpus > 0 then
     for i,gpu1 in pairs(gpulist) do
         for j, gpu2 in pairs(gpulist) do
             if i ~= j and gpu1 == gpu2 then
@@ -497,7 +497,7 @@ if print_events == true then
         print_stdout(outstr)
     end
 ---------------------------
-    if nvSupported and gputopo then
+    if gpusSupported and gputopo then
         local cudahome = os.getenv("CUDA_HOME")
         if cudahome and cudahome:len() > 0 then
             ldpath = os.getenv("LD_LIBRARY_PATH")
@@ -550,7 +550,7 @@ if print_event ~= nil then
         end
     end
 ---------------------------
-    if nvSupported and gputopo then
+    if gpusSupported and gputopo then
         local cudahome = os.getenv("CUDA_HOME")
         if cudahome and cudahome:len() > 0 then
             ldpath = os.getenv("LD_LIBRARY_PATH")
@@ -620,7 +620,7 @@ if print_groups == true then
     else
         print_stdout(string.format("No groups defined for %s",cpuinfo["name"]))
     end
-    if nvSupported and gputopo then
+    if gpusSupported and gputopo then
         avail_groups = likwid.getGpuGroups()
         if avail_groups then
             local max_len = 0
@@ -701,7 +701,7 @@ if print_info or verbose > 0 then
         print_stdout(string.format("PERFMON width of counters:\t%u",cpuinfo["perf_width_ctr"]))
         print_stdout(string.format("PERFMON number of fixed counters:\t%u",cpuinfo["perf_num_fixed_ctr"]))
     end
-    if nvSupported and gputopo then
+    if gpusSupported and gputopo then
         print_stdout(likwid.hline)
         for i=1, gputopo["numDevices"] do
             gpu = gputopo["devices"][i]
@@ -752,7 +752,7 @@ if use_marker then
         print_stderr(string.format("Please purge all MarkerAPI files from %s.", markerFolder))
         os.exit(1)
     end
-    if nvSupported and #gpulist and likwid.access(nvMarkerFile, "rw") ~= -1 then
+    if gpusSupported and #gpulist and likwid.access(nvMarkerFile, "rw") ~= -1 then
         print_stderr(string.format("ERROR: GPUMarkerAPI file %s not accessible. Maybe a remaining file of another user.", nvMarkerFile))
         print_stderr(string.format("Please purge all GPUMarkerAPI files from %s.", markerFolder))
         os.exit(1)
@@ -864,7 +864,7 @@ if #event_string_list > 0 then
     end
 end
 ---------------------------
-if nvSupported and #gpu_event_string_list > 0 then
+if gpusSupported and #gpu_event_string_list > 0 then
     if likwid.gpuInit(num_gpus, gpulist) < 0 then
         likwid.putGpuTopology()
         os.exit(1)

@@ -2861,9 +2861,16 @@ lua_likwid_getGpuTopology(lua_State* L)
 {
     if (!gputopology_isInitialized)
     {
-        topology_gpu_init();
-        gputopo = get_gpuTopology();
-        gputopology_isInitialized = 1;
+        if (topology_gpu_init() == EXIT_SUCCESS)
+        {
+            gputopo = get_gpuTopology();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
     }
     lua_newtable(L);
     lua_pushstring(L,"numDevices");
@@ -3008,9 +3015,17 @@ lua_likwid_gpustr_to_gpulist(lua_State* L)
     char* gpustr = (char *)luaL_checkstring(L, 1);
     if (!gputopology_isInitialized)
     {
-        topology_gpu_init();
-        gputopo = get_gpuTopology();
-        gputopology_isInitialized = 1;
+        if (topology_gpu_init() == EXIT_SUCCESS)
+        {
+            gputopo = get_gpuTopology();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnumber(L, 0);
+            lua_pushnil(L);
+            return 2;
+        }
     }
     int* gpulist = (int*) malloc(gputopo->numDevices * sizeof(int));
     if (gpulist == NULL)
@@ -3041,9 +3056,16 @@ lua_likwid_getGpuEventsAndCounters(lua_State* L)
 {
     if (!gputopology_isInitialized)
     {
-        topology_gpu_init();
-        gputopo = get_gpuTopology();
-        gputopology_isInitialized = 1;
+        if (topology_gpu_init() == EXIT_SUCCESS)
+        {
+            gputopo = get_gpuTopology();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
     }
 
     lua_newtable(L);
@@ -3092,9 +3114,18 @@ lua_likwid_getGpuGroups(lua_State* L)
 {
     int i, ret;
     char** tmp, **infos, **longs;
-    if (gputopology_isInitialized == 0)
+    if (!gputopology_isInitialized)
     {
-        topology_gpu_init();
+        if (topology_gpu_init() == EXIT_SUCCESS)
+        {
+            gputopo = get_gpuTopology();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
     }
     ret = nvmon_getGroups(&tmp, &infos, &longs);
     if (ret > 0)
