@@ -173,11 +173,12 @@ nvmon_init(int nrGpus, const int* gpuIds)
         }
         else
         {
-            ERROR_PRINT(NVIDIA PerfWorks API current not supported);
-            free(nvGroupSet->gpus);
-            free(nvGroupSet);
-            nvGroupSet = NULL;
-            return -ENOMEM;
+            fprintf(stderr, "NVIDIA PerfWorks API current not supported. Trying CUPTI\n");
+/*            free(nvGroupSet->gpus);*/
+/*            free(nvGroupSet);*/
+/*            nvGroupSet = NULL;*/
+/*            return -ENOMEM;*/
+            device->backend = LIKWID_NVMON_CUPTI_BACKEND;
         }
 
         NvmonFunctions* funcs = nvGroupSet->backends[device->backend];
@@ -342,7 +343,7 @@ nvmon_addEventSet(const char* eventCString)
     {
         return -EFAULT;
     }
-
+    init_configuration();
     config = get_configuration();
 
     if (nvGroupSet->numberOfActiveGroups == nvGroupSet->numberOfGroups)
@@ -601,6 +602,7 @@ int nvmon_getNumberOfGroups(void)
     }
     return nvGroupSet->numberOfActiveGroups;
 }
+
 int nvmon_getIdOfActiveGroup(void)
 {
     if ((!nvGroupSet) || (!nvmon_initialized))
@@ -814,7 +816,7 @@ double nvmon_getMetric(int groupId, int metricId, int gpuId)
     {
         add_to_clist(&clist,ginfo->counters[e], nvmon_getResult(groupId, e, gpuId));
     }
-    add_to_clist(&clist, "time", perfmon_getTimeOfGroup(groupId));
+    add_to_clist(&clist, "time", nvmon_getTimeOfGroup(groupId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
@@ -876,7 +878,7 @@ double nvmon_getLastMetric(int groupId, int metricId, int gpuId)
     {
         add_to_clist(&clist,ginfo->counters[e], nvmon_getLastResult(groupId, e, gpuId));
     }
-    add_to_clist(&clist, "time", perfmon_getTimeOfGroup(groupId));
+    add_to_clist(&clist, "time", nvmon_getTimeOfGroup(groupId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
@@ -891,56 +893,7 @@ double nvmon_getLastMetric(int groupId, int metricId, int gpuId)
     return result;
 }
 
-double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
-{
-    int e = 0, err = 0;
-    double result = 0.0;
-    CounterList clist;
-    if (nvmon_initialized != 1)
-    {
-        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
-        return NAN;
-    }
-    if (region < 0 || region >= gMarkerRegions)
-    {
-        return NAN;
-    }
-    if (gMarkerResults == NULL)
-    {
-        return NAN;
-    }
-    if (gpuId < 0 || gpuId >= gMarkerResults[region].gpuCount)
-    {
-        return NAN;
-    }
-    GroupInfo* ginfo = &nvGroupSet->groups[gMarkerResults[region].groupID];
-    if (metricId < 0 || metricId >= ginfo->nmetrics)
-    {
-        return NAN;
-    }
-    char *f = ginfo->metricformulas[metricId];
-    timer_init();
-    init_clist(&clist);
-    for (e = 0; e < gMarkerResults[region].eventCount; e++)
-    {
-        double res = nvmon_getResultOfRegionGpu(region, e, gpuId);
-        char* ctr = ginfo->counters[e];
-        add_to_clist(&clist, ctr, res);
-    }
-    add_to_clist(&clist, "time", perfmon_getTimeOfGroup(gMarkerResults[region].groupID));
-    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
-    add_to_clist(&clist, "true", 1);
-    add_to_clist(&clist, "false", 0);
 
-    err = calc_metric(f, &clist, &result);
-    if (err < 0)
-    {
-        ERROR_PRINT(Cannot calculate formula %s, f);
-        return NAN;
-    }
-    destroy_clist(&clist);
-    return result;
-}
 
 
 void
@@ -1309,4 +1262,55 @@ double nvmon_getResultOfRegionGpu(int region, int eventId, int gpuId)
         return 0.0;
     }
     return gMarkerResults[region].counters[gpuId][eventId];
+}
+
+double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
+{
+    int e = 0, err = 0;
+    double result = 0.0;
+    CounterList clist;
+    if (nvmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Nvmon module not properly initialized);
+        return NAN;
+    }
+    if (region < 0 || region >= gMarkerRegions)
+    {
+        return NAN;
+    }
+    if (gMarkerResults == NULL)
+    {
+        return NAN;
+    }
+    if (gpuId < 0 || gpuId >= gMarkerResults[region].gpuCount)
+    {
+        return NAN;
+    }
+    GroupInfo* ginfo = &nvGroupSet->groups[gMarkerResults[region].groupID];
+    if (metricId < 0 || metricId >= ginfo->nmetrics)
+    {
+        return NAN;
+    }
+    char *f = ginfo->metricformulas[metricId];
+    timer_init();
+    init_clist(&clist);
+    for (e = 0; e < gMarkerResults[region].eventCount; e++)
+    {
+        double res = nvmon_getResultOfRegionGpu(region, e, gpuId);
+        char* ctr = ginfo->counters[e];
+        add_to_clist(&clist, ctr, res);
+    }
+    add_to_clist(&clist, "time", nvmon_getTimeOfRegion(gMarkerResults[region].groupID, gpuId));
+    add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
+    add_to_clist(&clist, "true", 1);
+    add_to_clist(&clist, "false", 0);
+
+    err = calc_metric(f, &clist, &result);
+    if (err < 0)
+    {
+        ERROR_PRINT(Cannot calculate formula %s, f);
+        return NAN;
+    }
+    destroy_clist(&clist);
+    return result;
 }

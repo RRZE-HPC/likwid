@@ -1787,7 +1787,7 @@ extern void freq_finalize(void) __attribute__ ((visibility ("default") ));
  *  @{
  */
 
-#ifdef LIKWID_WITH_NVMON
+#if defined(LIKWID_WITH_NVMON) || defined(LIKWID_NVMON)
 /*! \brief Structure with general GPU information for each device
 
 General information covers GPU devid, name and clock and memory specific information.

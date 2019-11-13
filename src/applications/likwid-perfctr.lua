@@ -705,7 +705,7 @@ if print_info or verbose > 0 then
         print_stdout(likwid.hline)
         for i=1, gputopo["numDevices"] do
             gpu = gputopo["devices"][i]
-            print_stdout(string.format("NVMON GPU %d Compute capability:\t%.%d", gpu["id"], gpu["ccapMajor"], gpu["ccapMinor"]))
+            print_stdout(string.format("NVMON GPU %d Compute capability:\t%d.%d", gpu["id"], gpu["ccapMajor"], gpu["ccapMinor"]))
         end
     end
     print_stdout(likwid.hline)
@@ -865,7 +865,7 @@ if #event_string_list > 0 then
 end
 ---------------------------
 if gpusSupported and #gpu_event_string_list > 0 then
-    if likwid.gpuInit(num_gpus, gpulist) < 0 then
+    if likwid.nvInit(num_gpus, gpulist) < 0 then
         likwid.putGpuTopology()
         os.exit(1)
     end
@@ -944,11 +944,11 @@ end
 if gpusSupported then
     for i, event_string in pairs(gpu_event_string_list) do
         if event_string:len() > 0 then
-            local gid = likwid.gpuAddEventSet(event_string)
+            local gid = likwid.nvAddEventSet(event_string)
             if gid < 0 then
                 likwid.putGpuTopology()
                 likwid.putConfiguration()
-                likwid.gpuFinalize()
+                likwid.nvFinalize()
                 os.exit(1)
             end
             table.insert(gpugroups, gid)
@@ -1162,7 +1162,7 @@ if use_marker == true then
     end
     if gpusSupported and #gpu_event_string_list > 0 then
         if likwid.access(nvMarkerFile, "e") >= 0 then
-            results, metrics = likwid.getGpuMarkerResults(nvMarkerFile, markergpulist, nan2value)
+            results, metrics = likwid.getNvMarkerResults(nvMarkerFile, markergpulist, nan2value)
             if not results then
                 print_stderr("Failure reading GPU Marker API result file.")
             elseif #results == 0 then
