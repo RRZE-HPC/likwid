@@ -96,11 +96,11 @@ INSTALL_CHOWN = -g root -o root#NO SPACE
 SHARED_LIBRARY = true#NO SPACE
 
 # Build LIKWID with debug flags
-DEBUG = true#NO SPACE
+DEBUG = false#NO SPACE
 
 # Basic configuration for some internal arrays.
 # Maximal number of hardware threads
-MAX_NUM_THREADS = 263
+MAX_NUM_THREADS = 300
 # Maximal number of sockets
 MAX_NUM_NODES = 64
 
