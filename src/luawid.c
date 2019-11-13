@@ -3002,7 +3002,7 @@ lua_likwid_putGpuTopology(lua_State* L)
 }
 
 static int
-lua_likwid_nvstr_to_gpulist(lua_State* L)
+lua_likwid_gpustr_to_gpulist(lua_State* L)
 {
     int ret = 0;
     char* gpustr = (char *)luaL_checkstring(L, 1);
