@@ -618,6 +618,10 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
     bstring fix0 = bformat("PMC4");
     bstring fix1 = bformat("PMC5");
 #endif
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    bstring fix0 = bformat("012345");
+    bstring fix1 = bformat("012345");
+#endif
 #ifdef LIKWID_WITH_NVMON
     bstring gpu = bformat("GPU");
 #endif
