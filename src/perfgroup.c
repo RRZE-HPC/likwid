@@ -1550,11 +1550,17 @@ calc_metric(char* formula, CounterList* clist, double *result)
     int i=0;
     *result = 0.0;
     int maxstrlen = 0, minstrlen = 10000;
+    bstring nan;
+    bstring zero;
+    bstring inf;
 
     if ((formula == NULL) || (clist == NULL))
         return -EINVAL;
 
     bstring f = bfromcstr(formula);
+    nan = bfromcstr("nan");
+    inf = bfromcstr("inf");
+    zero = bfromcstr("0.0");
     for(i=0;i<clist->counters;i++)
     {
         bstring c = bstrListGet(clist->cnames, i);
@@ -1572,12 +1578,21 @@ calc_metric(char* formula, CounterList* clist, double *result)
             if (blength(c) != maxstrlen)
                 continue;
             bstring v = bstrListGet(clist->cvalues, i);
-            bfindreplace(f, c, v, 0);
+            if ((bstrncmp(v, nan, 3) != BSTR_OK) && (bstrncmp(v, inf, 3) != BSTR_OK))
+            {
+                bfindreplace(f, c, v, 0);
+            }
+            else
+            {
+                bfindreplace(f, c, zero, 0);
+            }
         }
         maxstrlen--;
     }
     // now we can calculate the formula
     i = calculate_infix(bdata(f), result);
     bdestroy(f);
+    bdestroy(nan);
+    bdestroy(zero);
     return i;
 }
