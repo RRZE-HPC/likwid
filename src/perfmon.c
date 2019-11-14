@@ -103,6 +103,7 @@ int perfmon_initialized = 0;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 int maps_checked = 0;
 uint64_t **currentConfig = NULL;
+static int added_generic_event = 0;
 
 PerfmonGroupSet* groupSet = NULL;
 LikwidResults* markerResults = NULL;
@@ -1287,6 +1288,7 @@ perfmon_init_maps(void)
         if (tmp)
         {
             memcpy(tmp, eventHash, perfmon_numArchEvents*sizeof(PerfmonEvent));
+            memset(tmp + perfmon_numArchEvents, '\0', 10*sizeof(PerfmonEvent));
             eventHash = tmp;
             eventHash[perfmon_numArchEvents].name = "GENERIC_EVENT";
             bstring blim = bfromcstr("PMC");
@@ -1315,6 +1317,7 @@ perfmon_init_maps(void)
             eventHash[perfmon_numArchEvents].options[1].type = EVENT_OPTION_GENERIC_UMASK;
             eventHash[perfmon_numArchEvents].options[1].value = 0x0ULL;
             perfmon_numArchEvents++;
+            added_generic_event = 1;
         }
     }
 
@@ -1842,10 +1845,19 @@ perfmon_finalize(void)
 #ifndef LIKWID_USE_PERFEVENT
     HPMfinalize();
 #endif
-    if (eventHash)
+    if (eventHash && added_generic_event)
     {
-        free(eventHash[perfmon_numArchEvents-1].limit);
-        free(eventHash);
+        if (eventHash[perfmon_numArchEvents-1].limit)
+        {
+            free(eventHash[perfmon_numArchEvents-1].limit);
+            eventHash[perfmon_numArchEvents-1].limit = NULL;
+        }
+        if (eventHash)
+        {
+            free(eventHash);
+            eventHash = NULL;
+        }
+        added_generic_event = 0;
     }
     perfmon_initialized = 0;
     groupSet = NULL;
