@@ -12,7 +12,7 @@
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -196,15 +196,26 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
     const_bstring modelString = bformat("model\t\t:");
     const_bstring steppingString = bformat("stepping\t:");
     const_bstring nameString = bformat("model name\t:");
+    const_bstring vendorString = bformat("vendor_id\t:");
+    const_bstring familyString = bformat("cpu family\t:");
 #endif
 #ifdef _ARCH_PPC
     const_bstring modelString = bformat("cpu\t\t:");
     const_bstring steppingString = bformat("revision\t:");
     const_bstring nameString = bformat("machine\t\t:");
-#endif
-    const_bstring familyString = bformat("cpu family\t:");
-    const_bstring countString = bformat("processor\t:");
     const_bstring vendorString = bformat("vendor_id\t:");
+    const_bstring familyString = bformat("cpu family\t:");
+#endif
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    const_bstring modelString = bformat("CPU variant\t:");
+    const_bstring steppingString = bformat("CPU revision\t:");
+    const_bstring nameString = bformat("machine\t\t:");
+    const_bstring vendorString = bformat("CPU implementer\t:");
+    const_bstring familyString = bformat("CPU architecture");
+#endif
+
+    const_bstring countString = bformat("processor\t:");
+
     const_bstring vendorIntelString = bformat("GenuineIntel");
 
     cpuid_info.isIntel = 0;
@@ -226,7 +237,6 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
         fclose(fp);
         for (i=0;i<tokens->qty;i++)
         {
-            printf("%d\n", binstr(tokens->entry[i],0,modelString));
             if (binstr(tokens->entry[i],0,countString) != BSTR_ERR)
             {
                 HWthreads++;

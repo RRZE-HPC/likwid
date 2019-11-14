@@ -12,7 +12,7 @@
  *                Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -617,6 +617,10 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
 #ifdef _ARCH_PPC
     bstring fix0 = bformat("PMC4");
     bstring fix1 = bformat("PMC5");
+#endif
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    bstring fix0 = bformat("012345");
+    bstring fix1 = bformat("012345");
 #endif
 #ifdef LIKWID_WITH_NVMON
     bstring gpu = bformat("GPU");
