@@ -186,7 +186,10 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
         ERROR_PRINT(Given frequency %llu MHz higher than system limit of %.0f MHz, freq, fmax);
         return -EINVAL;
     }
-
+#ifdef LIKWID_USE_PERFEVENT
+    fprintf(stderr,"Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
+    return 0;
+#else
     if (!HPMinitialized())
     {
         HPMinit();
@@ -218,6 +221,7 @@ int freq_setUncoreFreqMin(const int socket_id, const uint64_t freq)
     if (own_hpm)
         HPMfinalize();
     return 0;
+#endif
 }
 
 
@@ -251,6 +255,10 @@ uint64_t freq_getUncoreFreqMin(const int socket_id)
         ERROR_PRINT(Unknown socket ID %d, socket_id);
         return 0;
     }
+#ifdef LIKWID_USE_PERFEVENT
+    fprintf(stderr,"Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
+    return 0;
+#else
     if (!HPMinitialized())
     {
         HPMinit();
@@ -275,6 +283,7 @@ uint64_t freq_getUncoreFreqMin(const int socket_id)
     if (own_hpm)
         HPMfinalize();
     return tmp;
+#endif
 }
 
 int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
@@ -308,7 +317,10 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
         ERROR_PRINT(Given frequency %llu MHz higher than system limit of %.0f MHz, freq, fmax);
         return -EINVAL;
     }
-
+#ifdef LIKWID_USE_PERFEVENT
+    fprintf(stderr,"Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
+    return -1;
+#else
     if (!HPMinitialized())
     {
         HPMinit();
@@ -340,6 +352,7 @@ int freq_setUncoreFreqMax(const int socket_id, const uint64_t freq)
     if (own_hpm)
         HPMfinalize();
     return 0;
+#endif
 }
 
 uint64_t freq_getUncoreFreqMax(const int socket_id)
@@ -371,6 +384,10 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
         ERROR_PRINT(Unknown socket ID %d, socket_id);
         return 0;
     }
+#ifdef LIKWID_USE_PERFEVENT
+    fprintf(stderr,"Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
+    return 0;
+#else
     if (!HPMinitialized())
     {
         HPMinit();
@@ -395,6 +412,7 @@ uint64_t freq_getUncoreFreqMax(const int socket_id)
     if (own_hpm)
         HPMfinalize();
     return tmp;
+#endif
 }
 
 uint64_t freq_getUncoreFreqCur(const int socket_id)
@@ -425,6 +443,10 @@ uint64_t freq_getUncoreFreqCur(const int socket_id)
         ERROR_PRINT(Unknown socket ID %d, socket_id);
         return 0;
     }
+#ifdef LIKWID_USE_PERFEVENT
+    fprintf(stderr,"Cannot manipulate Uncore frequency with ACCESSMODE=perf_event.\n");
+    return 0;
+#else
     if (!HPMinitialized())
     {
         HPMinit();
@@ -449,4 +471,5 @@ uint64_t freq_getUncoreFreqCur(const int socket_id)
     if (own_hpm)
         HPMfinalize();
     return tmp;
+#endif
 }

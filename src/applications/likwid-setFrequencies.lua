@@ -151,17 +151,19 @@ for opt,arg in likwid.getopt(arg, {"V:", "g:", "c:", "f:", "l", "p", "h", "v", "
         version()
         os.exit(0)
     elseif (opt == "c") then
-        domain = arg
+        domain = tostring(arg)
     elseif (opt == "g") then
-        governor = arg
+        governor = tostring(arg)
     elseif opt == "f" or opt == "freq" then
-        frequency = arg*1E6
-        min_freq = arg*1E6
-        max_freq = arg*1E6
+        if arg then
+            frequency = tonumber(arg)*1E6
+            min_freq = tonumber(arg)*1E6
+            max_freq = tonumber(arg)*1E6
+        end
     elseif opt == "x" or opt == "min" then
-        min_freq = arg*1E6
+        if arg then min_freq = tonumber(arg)*1E6 end
     elseif opt == "y" or opt == "max" then
-        max_freq = arg*1E6
+        if arg then max_freq = tonumber(arg)*1E6 end
     elseif opt == "t" or opt == "turbo" then
         set_turbo = true
         local t = tonumber(arg)
@@ -183,9 +185,9 @@ for opt,arg in likwid.getopt(arg, {"V:", "g:", "c:", "f:", "l", "p", "h", "v", "
     elseif opt == "ureset" then
         do_ureset = true
     elseif opt == "umin" then
-        min_u_freq = arg
+        if arg then min_u_freq = tostring(arg) end
     elseif opt == "umax" then
-        max_u_freq = arg
+        if arg then max_u_freq = tostring(arg) end
     elseif (opt == "p") then
         printCurFreq = true
     elseif (opt == "l") then
@@ -223,7 +225,7 @@ for i, dom in pairs(affinity["domains"]) do
             local found = false
             for j, c in pairs(cpulist) do
                 if c == d then
-                    
+
                     found = true
                     break
                 end
@@ -571,7 +573,7 @@ if governor then
         cur_min[i] = likwid.getCpuClockMin(c)
         cur_max[i] = likwid.getCpuClockMax(c)
     end
-    
+
     local valid_gov = false
     for k,v in pairs(govs) do
         if (governor == v) then
