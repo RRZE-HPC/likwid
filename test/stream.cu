@@ -5,8 +5,8 @@
  *
  *      Description:  STREAM benchmark with NvMarkerAPI
  *
- *      Version:   5.0
- *      Released:  10.11.2019
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
@@ -148,7 +148,7 @@ int main(int argn, char** argc)
 #endif
 
     LIKWID_NVMARKER_INIT;
-    
+
     dim3 dimBlock(blockSize);
     dim3 dimGrid(SIZE/dimBlock.x );
     if( SIZE % dimBlock.x != 0 ) dimGrid.x+=1;

@@ -5,10 +5,10 @@
  *
  *      Description:  Triad kernel in CUDA to test NvMarkerAPI
  *
- *      Version:   5.0
- *      Released:  10.11.2019
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
- *      Author:   Dominik Ernst (de)
+ *      Author:   Dominik Ernst (de) dominik.ernst@fau.de
  *      Project:  likwid
  *
  *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
