@@ -249,7 +249,7 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
 
     local cmd = string.format("%s -hostfile %s %s -np %d -npernode %d %s %s",
                                 mpiexecutable, hostfile, bindstr,
-                                np, ppn, mpiopts, wrapperscript)
+                                np, ppn, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..cmd)
     end
@@ -475,7 +475,7 @@ local function executeMvapich2(wrapperscript, hostfile, env, nrNodes)
 
     local cmd = string.format("%s -f %s -np %d -ppn %d %s %s %s",
                                 mpiexecutable, hostfile,
-                                np, ppn, envstr, mpiopts, wrapperscript)
+                                np, ppn, envstr, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..cmd)
     end
@@ -609,7 +609,7 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
     local exec = string.format("srun -N %d --ntasks-per-node=%d --cpu_bind=none %s %s",
-                                nrNodes, ppn, mpiopts, wrapperscript)
+                                nrNodes, ppn, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..exec)
     end
