@@ -53,7 +53,7 @@ extern "C" {
 #endif
 
 #ifndef LIKWID_MARKER_INIT
-#include <likwid-markers.h>
+#include <likwid-marker.h>
 #endif
 
 /*
