@@ -28,7 +28,7 @@
  * =======================================================================================
  */
 
-#define NUM_COUNTERS_BROADWELL 32
+#define NUM_COUNTERS_BROADWELL 33
 #define NUM_COUNTERS_CORE_BROADWELL 12
 #define NUM_COUNTERS_UNCORE_BROADWELL 15
 
@@ -76,6 +76,8 @@ static RegisterMap broadwell_counter_map[NUM_COUNTERS_BROADWELL] = {
     {"MBOX0C2", PMC29, MBOX0, 0x0, 0x2, 0, PCI_IMC_DEVICE_0_CH_0},
     {"MBOX0TMP0", PMC30, MBOX0TMP, 0x0, 0x3, 0, PCI_IMC_DEVICE_0_CH_0},
     {"MBOX0TMP1", PMC31, MBOX0TMP, 0x0, 0x4, 0, PCI_IMC_DEVICE_0_CH_0},
+    /* Vcore Status*/
+    {"VTG0", PMC32, THERMAL, 0, MSR_PERF_STATUS, 0, 0, EVENT_OPTION_NONE_MASK},
 };
 
 
