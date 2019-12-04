@@ -29,7 +29,7 @@
  * =======================================================================================
  */
 
-#define NUM_COUNTERS_SKYLAKE 33
+#define NUM_COUNTERS_SKYLAKE 34
 #define NUM_COUNTERS_CORE_SKYLAKE 12
 #define NUM_COUNTERS_UNCORE_SKYLAKE 24
 
@@ -79,12 +79,15 @@ static RegisterMap skylake_counter_map[NUM_COUNTERS_SKYLAKE] = {
     {"MBOX0C2", PMC30, MBOX0, 0x0, 0x2, 0, PCI_IMC_DEVICE_0_CH_0},
     {"MBOX0TMP0", PMC31, MBOX0TMP, 0x0, 0x3, 0, PCI_IMC_DEVICE_0_CH_0},
     {"MBOX0TMP1", PMC32, MBOX0TMP, 0x0, 0x4, 0, PCI_IMC_DEVICE_0_CH_0},
+    /* Vcore Status*/
+    {"VTG0", PMC33, VOLTAGE, 0, MSR_PERF_STATUS, 0, 0, EVENT_OPTION_NONE_MASK},
 };
 
 
 static BoxMap skylake_box_map[NUM_UNITS] = {
     [PMC] = {MSR_PERF_GLOBAL_CTRL, MSR_V4_PERF_GLOBAL_STATUS, MSR_V4_PERF_GLOBAL_STATUS_RESET, 0, 0, 0, 48},
     [THERMAL] = {0, 0, 0, 0, 0, 0, 8},
+    [VOLTAGE] = {0, 0, 0, 0, 0, 0, 16},
     [FIXED] =  {MSR_PERF_GLOBAL_CTRL, MSR_V4_PERF_GLOBAL_STATUS, MSR_V4_PERF_GLOBAL_STATUS_RESET, 0, 0, 0, 48},
     [POWER] = {0, 0, 0, 0, 0, 0, 32},
     [UBOXFIX] = {MSR_V4_UNC_PERF_GLOBAL_CTRL, MSR_V4_UNC_PERF_GLOBAL_STATUS, MSR_V4_UNC_PERF_GLOBAL_STATUS, 0, 0, 0, 44},

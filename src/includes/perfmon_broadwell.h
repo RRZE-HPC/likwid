@@ -39,6 +39,7 @@
 #include <limits.h>
 #include <topology.h>
 #include <access.h>
+#include <voltage.h>
 
 
 static int perfmon_numCountersBroadwell = NUM_COUNTERS_BROADWELL;
@@ -1092,6 +1093,7 @@ int perfmon_setupCounterThread_broadwell(
 
             case POWER:
             case THERMAL:
+            case VOLTAGE:
                 break;
 
             case UBOX:
@@ -1495,6 +1497,10 @@ int perfmon_stopCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
                 case THERMAL:
                     CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
                     break;
+                
+                case VOLTAGE:
+                    CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
+                    break;
 
                 case BBOX0:
                 case BBOX1:
@@ -1727,6 +1733,11 @@ int perfmon_readCountersThread_broadwell(int thread_id, PerfmonEventSet* eventSe
 
                 case THERMAL:
                     CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
+                    *current = field64(counter_result, 0, box_map[type].regWidth);
+                    break;
+                
+                case VOLTAGE:
+                    CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
                     *current = field64(counter_result, 0, box_map[type].regWidth);
                     break;
 

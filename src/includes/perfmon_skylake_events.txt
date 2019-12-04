@@ -807,3 +807,6 @@ UMASK_PP0_TEMP                        0x00
 
 EVENT_PP1_TEMP                        0x01 MBOX0TMP1
 UMASK_PP1_TEMP                        0x01
+
+EVENT_VOLTAGE_CORE          0x00   VTG0
+UMASK_VOLTAGE_CORE          0x00

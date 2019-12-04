@@ -318,6 +318,7 @@ allowed_sandybridge(uint32_t reg)
     if ((allowed_intel(reg)) ||
         (((reg & 0xF00U) == 0x600U)) ||
         (((reg & 0xF00U) == 0x700U)) ||
+        (reg == MSR_PERF_STATUS)  ||
         (reg == MSR_ALT_PEBS))
     {
         return 1;

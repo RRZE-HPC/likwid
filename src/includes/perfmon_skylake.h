@@ -38,6 +38,7 @@
 #include <limits.h>
 #include <topology.h>
 #include <access.h>
+#include <voltage.h>
 #include <linux/version.h>
 
 static int perfmon_numCountersSkylake = NUM_COUNTERS_SKYLAKE;
@@ -1311,6 +1312,10 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case THERMAL:
                     CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
                     break;
+                
+                case VOLTAGE:
+                    CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
+                    break;
 
                 case UBOXFIX:
                     if (haveLock)
@@ -1542,6 +1547,11 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
 
                 case THERMAL:
                     CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
+                    eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+                    break;
+                
+                case VOLTAGE:
+                    CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
                     eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
                     break;
 
