@@ -467,7 +467,7 @@ int perfmon_setupCountersThread_perfevent(
     {
         allpid = (pid_t)atoi(getenv("LIKWID_PERF_PID"));
     }
-    else if (paranoid_level > 0)
+    else if (paranoid_level > 0 && getuid() != 0)
     {
         fprintf(stderr, "Cannot setup events without PID of executed application because perf_event_paranoid > 0\n");
         fprintf(stderr, "You can use either --execpid to track the started application or --perfpid <pid> to monitor another application\n");
