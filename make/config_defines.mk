@@ -37,6 +37,10 @@ HWLOC_FOLDER := $(PWD)/ext/hwloc
 STATIC_LIBHWLOC := liblikwid-hwloc.a
 SHARED_LIBHWLOC := liblikwid-hwloc.so
 
+GOTCHA_FOLDER := $(PWD)/ext/GOTCHA
+STATIC_LIBGOTCHA := liblikwid-gotcha.a
+SHARED_LIBGOTCHA := liblikwid-gotcha.so
+
 BENCH_FOLDER := bench
 BENCH_NAME := likwid-bench
 BENCH_TARGET := $(BENCH_FOLDER)/$(BENCH_NAME)
@@ -156,6 +160,34 @@ ifeq ($(strip $(COMPILER)),GCCPOWER)
         BUILDFREQ := false
     endif
 endif
+ifeq ($(strip $(COMPILER)),GCCPOWER)
+    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+        $(info Info: Compiling for IBM POWER. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+        $(info Info: Compiling for IBM POWER. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),direct)
+        $(info Info: Compiling for IBM POWER. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+endif
 
 ifeq ($(strip $(BUILDDAEMON)),true)
 ifneq ($(strip $(COMPILER)),MIC)
@@ -178,6 +210,11 @@ ifeq ($(strip $(BUILDFREQ)),true)
 else
     FREQ_TARGET =
 endif
+ifeq ($(strip $(BUILDAPPDAEMON)),true)
+	APPDAEMON_TARGET = likwid-appDaemon.so
+else
+	APPDAEMON_TARGET =
+endif
 
 ifeq ($(strip $(HAS_MEMPOLICY)),1)
 DEFINES += -DHAS_MEMPOLICY
@@ -192,10 +229,12 @@ LIBS += -L. -pthread -lm -ldl
 TARGET_LIB := $(DYNAMIC_TARGET_LIB)
 TARGET_HWLOC_LIB=$(HWLOC_FOLDER)/$(SHARED_LIBHWLOC)
 TARGET_LUA_LIB=$(LUA_LIB_DIR)/$(SHARED_LIBLUA)
+TARGET_GOTCHA_LIB=$(GOTCHA_LIB_DIR)/$(SHARED_LIBGOTCHA)
 else
 TARGET_LIB := $(STATIC_TARGET_LIB)
 TARGET_HWLOC_LIB=$(HWLOC_FOLDER)/$(STATIC_LIBHWLOC)
 TARGET_LUA_LIB=$(LUA_LIB_DIR)/$(STATIC_LIBLUA)
+TARGET_GOTCHA_LIB=$(GOTCHA_LIB_DIR)/$(STATIC_LIBGOTCHA)
 endif
 
 ifeq ($(strip $(HAS_SCHEDAFFINITY)),1)
@@ -255,4 +294,10 @@ CFLAGS = -O0 $(DEBUG_CFLAGS)
 DEFINES += -DDEBUG_LIKWID
 else
 DEBUG_FLAGS =
+endif
+
+ifeq ($(strip $(NVIDIA_INTERFACE)),true)
+DEFINES += -DLIKWID_WITH_NVMON
+else
+BUILDAPPDAEMON := false
 endif

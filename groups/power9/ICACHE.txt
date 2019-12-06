@@ -1,0 +1,22 @@
+SHORT  Instruction cache miss rate/ratio
+
+EVENTSET
+PMC0  PM_INST_FROM_L1
+PMC1  PM_L1_ICACHE_MISS
+PMC4  PM_RUN_INST_CMPL
+PMC5  PM_RUN_CYC
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC5/PMC4
+L1I request rate PMC0/PMC4
+L1I miss rate PMC1/PMC4
+L1I miss ratio PMC1/PMC0
+
+LONG
+Formulas:
+L1I request rate = ICACHE_ACCESSES / INSTR_RETIRED_ANY
+L1I miss rate = ICACHE_MISSES / INSTR_RETIRED_ANY
+L1I miss ratio = ICACHE_MISSES / ICACHE_ACCESSES
+-
+This group measures some L1 instruction cache metrics.

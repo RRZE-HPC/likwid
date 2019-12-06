@@ -1,16 +1,16 @@
 /*
  * =======================================================================================
  *
- *      Filename:  accessDaemon.c
+ *      Filename:  setFreqDaemon.c
  *
- *      Description:  Implementation of access daemon.
+ *      Description:  Implementation of frequency daemon.
  *
  *      Version:   4.3.1
  *      Released:  04.01.2018
  *
  *      Authors:  Michael Meier, michael.meier@rrze.fau.de
  *                Jan Treibig (jt), jan.treibig@gmail.com,
- *                Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2018 RRZE, University Erlangen-Nuremberg
@@ -598,7 +598,7 @@ static int freq_write(FreqDataRecord *rec)
     int check_freq = 0;
     int check_gov = 0;
     struct cpufreq_files* f = &cpufiles[cpu];
-    
+
     switch(rec->loc)
     {
         case FREQ_LOC_CUR:
@@ -673,7 +673,7 @@ int main(void)
     socklen_t socklen;
     mode_t oldumask;
     uint32_t numHWThreads = sysconf(_SC_NPROCESSORS_CONF);
-    
+
 
     avail_cpus = get_avail_cpus();
     if (avail_cpus < 0)
@@ -728,10 +728,10 @@ int main(void)
         sigaction(SIGPIPE, &sia, NULL);
         sigaction(SIGTERM, &sia, NULL);
     }
-    
+
     /* setup an alarm to stop the daemon if there is no connect.*/
     alarm(15U);
-    
+
     if ((connfd = accept(sockfd, (SA*) &addr1, &socklen)) < 0)
     {
         if (errno == EINTR)
@@ -745,7 +745,7 @@ int main(void)
         CHECK_ERROR(unlink(filepath), unlink of socket failed);
         exit(EXIT_FAILURE);
     }
-    
+
     alarm(0);
     CHECK_ERROR(unlink(filepath), unlink of socket failed);
 
@@ -813,4 +813,3 @@ LOOP:
     /* never reached */
     return EXIT_SUCCESS;
 }
-

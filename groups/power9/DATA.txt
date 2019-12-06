@@ -1,0 +1,23 @@
+SHORT Load to store ratio
+
+EVENTSET
+PMC3  PM_LD_CMPL
+PMC1  PM_ST_CMPL
+PMC4  PM_RUN_INST_CMPL
+PMC5  PM_RUN_CYC
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC5/PMC4
+Load to store ratio PMC3/PMC1
+Load rate PMC3/PMC4
+Store rate PMC1/PMC4
+
+LONG
+Formulas:
+Load to store ratio = PM_LD_CMPL/PM_ST_CMPL
+Load ratio = PM_LD_CMPL/PM_RUN_INST_CMPL
+Store ratio = PM_ST_CMPL/PM_RUN_INST_CMPL
+-
+This is a metric to determine your load to store ratio.
+

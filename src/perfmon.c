@@ -9,7 +9,7 @@
  *      Released:  <DATE>
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
- *                Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -83,6 +83,11 @@
 #include <perfmon_perfevent.h>
 #endif
 
+#ifdef _ARCH_PPC
+#include <perfmon_power8.h>
+#include <perfmon_power9.h>
+#endif
+
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 PerfmonEvent* eventHash = NULL;
@@ -98,6 +103,7 @@ int perfmon_initialized = 0;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 int maps_checked = 0;
 uint64_t **currentConfig = NULL;
+static int added_generic_event = 0;
 
 PerfmonGroupSet* groupSet = NULL;
 LikwidResults* markerResults = NULL;
@@ -137,6 +143,8 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     [EVENT_OPTION_OCCUPANCY_INVERT] = "OCCUPANCY_INVERT",
     [EVENT_OPTION_IN_TRANS] = "IN_TRANSACTION",
     [EVENT_OPTION_IN_TRANS_ABORT] = "IN_TRANSACTION_ABORTED",
+    [EVENT_OPTION_GENERIC_CONFIG] = "CONFIG",
+    [EVENT_OPTION_GENERIC_UMASK] = "UMASK",
 #ifdef LIKWID_USE_PERFEVENT
     [EVENT_OPTION_PERF_PID] = "PERF_PID",
     [EVENT_OPTION_PERF_FLAGS] = "PERF_FLAGS",
@@ -772,6 +780,22 @@ perfmon_check_counter_map(int cpu_id)
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
         }
+#else
+        char* path = translate_types[counter_map[i].type];
+        struct stat st;
+        if (path == NULL || stat(path, &st) != 0)
+        {
+            counter_map[i].type = NOTYPE;
+            counter_map[i].optionMask = 0x0ULL;
+        }
+        if (counter_map[i].type != PMC && counter_map[i].type != FIXED)
+        {
+            if (perfevent_paranoid_value() > 0 && getuid() != 0)
+            {
+                counter_map[i].type = NOTYPE;
+                counter_map[i].optionMask = 0x0ULL;
+            }
+        }
 #endif
     }
     if (own_hpm)
@@ -791,7 +815,7 @@ perfmon_check_counter_map(int cpu_id)
                 continue;
             PerfmonEvent event;
             bstring cstr = bfromcstr(counter_map[j].key);
-            if (getEvent(estr, cstr, &event))
+            if (getEvent(estr, cstr, &event) && checkCounter(cstr, eventHash[i].limit))
             {
                 found = 1;
                 bdestroy(cstr);
@@ -1152,6 +1176,29 @@ perfmon_init_maps(void)
                     ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
             }
             break;
+#ifdef _ARCH_PPC
+	case PPC_FAMILY:
+	    switch ( cpuid_info.model )
+            {
+                case POWER8:
+		    eventHash = power8_arch_events;
+	            counter_map = power8_counter_map;
+	            box_map = power8_box_map;
+                    translate_types = power8_translate_types;
+	            perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER8;
+	            perfmon_numCounters = NUM_COUNTERS_POWER8;
+	            break;
+                case POWER9:
+		    eventHash = power9_arch_events;
+	            counter_map = power9_counter_map;
+	            box_map = power9_box_map;
+                    translate_types = power9_translate_types;
+	            perfmon_numArchEvents = NUM_ARCH_EVENTS_POWER9;
+	            perfmon_numCounters = NUM_COUNTERS_POWER9;
+	            break;
+	    }
+            break;
+#endif
 
         case ARMV7_FAMILY:
             switch ( cpuid_info.model )
@@ -1243,6 +1290,7 @@ perfmon_init_maps(void)
         if (tmp)
         {
             memcpy(tmp, eventHash, perfmon_numArchEvents*sizeof(PerfmonEvent));
+            memset(tmp + perfmon_numArchEvents, '\0', 10*sizeof(PerfmonEvent));
             eventHash = tmp;
             eventHash[perfmon_numArchEvents].name = "GENERIC_EVENT";
             bstring blim = bfromcstr("PMC");
@@ -1271,6 +1319,7 @@ perfmon_init_maps(void)
             eventHash[perfmon_numArchEvents].options[1].type = EVENT_OPTION_GENERIC_UMASK;
             eventHash[perfmon_numArchEvents].options[1].value = 0x0ULL;
             perfmon_numArchEvents++;
+            added_generic_event = 1;
         }
     }
 
@@ -1798,10 +1847,19 @@ perfmon_finalize(void)
 #ifndef LIKWID_USE_PERFEVENT
     HPMfinalize();
 #endif
-    if (eventHash)
+    if (eventHash && added_generic_event)
     {
-        free(eventHash[perfmon_numArchEvents-1].limit);
-        free(eventHash);
+        if (eventHash[perfmon_numArchEvents-1].limit)
+        {
+            free(eventHash[perfmon_numArchEvents-1].limit);
+            eventHash[perfmon_numArchEvents-1].limit = NULL;
+        }
+        if (eventHash)
+        {
+            free(eventHash);
+            eventHash = NULL;
+        }
+        added_generic_event = 0;
     }
     perfmon_initialized = 0;
     groupSet = NULL;
@@ -1895,9 +1953,9 @@ perfmon_addEventSet(const char* eventCString)
 
     if (strchr(cstringcopy, ':') == NULL)
     {
-        err = read_group(config->groupPath, cpuid_info.short_name,
-                         cstringcopy,
-                         &groupSet->groups[groupSet->numberOfActiveGroups].group);
+        err = perfgroup_readGroup(config->groupPath, cpuid_info.short_name,
+                                  cstringcopy,
+                                  &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err == -EACCES)
         {
             ERROR_PRINT(Access to performance group %s not allowed, cstringcopy);
@@ -1917,14 +1975,14 @@ perfmon_addEventSet(const char* eventCString)
     }
     else
     {
-        err = custom_group(cstringcopy, &groupSet->groups[groupSet->numberOfActiveGroups].group);
+        err = perfgroup_customGroup(cstringcopy, &groupSet->groups[groupSet->numberOfActiveGroups].group);
         if (err)
         {
             ERROR_PRINT(Cannot transform %s to performance group, cstringcopy);
             return err;
         }
     }
-    char * evstr = get_eventStr(&groupSet->groups[groupSet->numberOfActiveGroups].group);
+    char * evstr = perfgroup_getEventStr(&groupSet->groups[groupSet->numberOfActiveGroups].group);
     if (perf_pid != NULL)
     {
         char* tmp = realloc(evstr, strlen(evstr)+strlen(perf_pid)+1);
@@ -2009,14 +2067,12 @@ perfmon_addEventSet(const char* eventCString)
                 event->type = NOTYPE;
                 goto past_checks;
             }
-#ifndef LIKWID_USE_PERFEVENT
             if (!checkCounter(subtokens->entry[1], event->event.limit))
             {
                 fprintf(stderr, "WARN: Register %s not allowed for event %s (limit %s)\n", bdata(subtokens->entry[1]),bdata(subtokens->entry[0]),event->event.limit);
                 event->type = NOTYPE;
                 goto past_checks;
             }
-#endif
             if (parseOptions(subtokens, &event->event, event->index) < 0)
             {
                 event->type = NOTYPE;
@@ -2095,7 +2151,7 @@ past_checks:
         fprintf(stderr,"       Either the events or counters do not exist for the\n");
         fprintf(stderr,"       current architecture. If event options are set, they might\n");
         fprintf(stderr,"       be invalid.\n");
-        return_group(&groupSet->groups[groupSet->numberOfActiveGroups].group);
+        perfgroup_returnGroup(&groupSet->groups[groupSet->numberOfActiveGroups].group);
         for(j = 0; j < eventSet->numberOfEvents; j++)
         {
             PerfmonEventSetEntry* event = &(eventSet->events[j]);
@@ -2111,7 +2167,7 @@ perfmon_delEventSet(int groupID)
 {
     if (groupID >= groupSet->numberOfGroups || groupID < 0)
         return;
-    return_group(&groupSet->groups[groupID].group);
+    perfgroup_returnGroup(&groupSet->groups[groupID].group);
     return;
 }
 
@@ -3065,14 +3121,14 @@ perfmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
     int ret = 0;
     init_configuration();
     Configuration_t config = get_configuration();
-    ret = get_groups(config->groupPath, cpuid_info.short_name, groups, shortinfos, longinfos);
+    ret = perfgroup_getGroups(config->groupPath, cpuid_info.short_name, groups, shortinfos, longinfos);
     return ret;
 }
 
 void
 perfmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos)
 {
-    return_groups(nrgroups, groups, shortinfos, longinfos);
+    perfgroup_returnGroups(nrgroups, groups, shortinfos, longinfos);
 }
 
 int

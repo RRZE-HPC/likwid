@@ -10,7 +10,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -84,6 +84,7 @@ local function usage()
     print_stdout("-o/--output <file>\tWrite output to a file. The file is reformatted according to the suffix.")
     print_stdout("-f\t\t\t Force overwrite of registers if they are in use. You can also use environment variable LIKWID_FORCE")
     print_stdout("-e, --env <key>=<value>\t Set environment variables for MPI processes")
+    print_stdout("--mpiopts <str>\t Hand over options to underlying MPI. Please use proper quoting.")
     print_stdout("")
     print_stdout("Processes are pinned to physical CPU cores first. For syntax questions see likwid-pin")
     print_stdout("")
@@ -112,7 +113,7 @@ local omptype = nil
 local skipStr = ""
 local executable = {}
 local envsettings = {}
-local mpiopts = {}
+local mpiopts = nil
 local debug = false
 local likwiddebug = false
 local use_marker = false
@@ -120,7 +121,6 @@ local use_csv = false
 local outfile = nil
 local force = false
 local print_stats = false
-local test_mpiOpts = false
 if os.getenv("LIKWID_FORCE") ~= nil then
     force = true
 end
@@ -249,7 +249,7 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
 
     local cmd = string.format("%s -hostfile %s %s -np %d -npernode %d %s %s",
                                 mpiexecutable, hostfile, bindstr,
-                                np, ppn, table.concat(mpiopts, ' '), wrapperscript)
+                                np, ppn, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..cmd)
     end
@@ -356,8 +356,9 @@ local function executeIntelMPI(wrapperscript, hostfile, env, nrNodes)
             envstr = envstr .. string.format("-env %s %s ", i, e)
         end
     end
-    for i,e in pairs(mpiopts) do
-        envstr = envstr .. string.format("%s ",e)
+
+    if mpiopts and mpiopts:len() > 0 then
+        envstr = envstr .. mpiopts
     end
     if os.getenv("LIKWID_MPI_CONNECT") ~= nil then
         mpi_connect = os.getenv("LIKWID_MPI_CONNECT")
@@ -474,7 +475,7 @@ local function executeMvapich2(wrapperscript, hostfile, env, nrNodes)
 
     local cmd = string.format("%s -f %s -np %d -ppn %d %s %s %s",
                                 mpiexecutable, hostfile,
-                                np, ppn, envstr, table.concat(mpiopts, ' '), wrapperscript)
+                                np, ppn, envstr, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..cmd)
     end
@@ -608,7 +609,7 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
     local exec = string.format("srun -N %d --ntasks-per-node=%d --cpu_bind=none %s %s",
-                                nrNodes, ppn, table.concat(mpiopts, ' '), wrapperscript)
+                                nrNodes, ppn, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..exec)
     end
@@ -1882,10 +1883,11 @@ local cmd_options = {"h","help", -- default options for help message
                      "ld",         -- option to activate debugging in likwid-perfctr
                      "dist:",      -- option to specifiy distance between two MPI processes
                      "o:","output:", -- option to specifiy an output file
+                     "mpiopts:", -- option to specifiy MPI options forwarded to the underlying MPI
                      "nperdomain:","pin:","hostfile:","O","f", "stats"} -- other options
 
 for opt,arg in likwid.getopt(arg,  cmd_options) do
-    if (type(arg) == "string") then
+    if (type(arg) == "string") and opt ~= "mpiopts" then
         local s,e = arg:find("-")
         if s == 1 then
             print_stderr(string.format("ERROR: Argument %s to option -%s starts with invalid character -.", arg, opt))
@@ -2028,6 +2030,8 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         print_stderr("WARN: The output file option is currently ignored. Will be available in upcoming releases")
     elseif opt == "s" or opt == "skip" then
         skipStr = "-s "..arg
+    elseif opt == "mpiopts" then
+        mpiopts = tostring(arg)
     elseif opt == "?" then
         print_stderr("Invalid commandline option -"..arg)
         os.exit(1)
@@ -2035,7 +2039,6 @@ for opt,arg in likwid.getopt(arg,  cmd_options) do
         print_stderr("Option requires an argument")
         os.exit(1)
     elseif opt == "-" then
-        test_mpiOpts = true
         break
     end
 end
@@ -2051,47 +2054,8 @@ if use_marker and #perf == 0 then
     os.exit(1)
 end
 
-if test_mpiOpts then
-    for i=1,#arg do
-        if arg[i]:sub(1,1) == "-" then
-            table.insert(mpiopts, arg[i])
-        else
-            if likwid.access(arg[i], "x") == -1 then
-                local f = io.popen(string.format("which '%s' 2>/dev/null || echo 'ERROR'", arg[i]))
-                if f == nil then
-                    table.insert(mpiopts, arg[i])
-                else
-                    local out = f:read("*line")
-                    f:close()
-                    if out:match("ERROR") or out:match("^Usage") then
-                        table.insert(mpiopts, arg[i])
-                    else
-                        break
-                    end
-                end
-            else
-                table.insert(mpiopts, arg[i])
-                break
-            end
-        end
-    end
-    for i=1,#mpiopts do
-        table.remove(arg, 1)
-    end
-end
-for i=1,#arg do
-    local item = arg[i]
-    if likwid.access(arg[i], "x") == -1 then
-        local f = io.popen(string.format("which '%s' 2>/dev/null || echo 'ERROR'", arg[i]))
-        if f ~= nil then
-            local out = f:read("*line")
-            f:close()
-            if not (out:match("ERROR") or out:match("^Usage")) then
-                item = out
-            end
-        end
-    end
-    table.insert(executable, item)
+for _,x in pairs(arg) do
+    table.insert(executable, x)
 end
 
 if #executable == 0 then
@@ -2103,8 +2067,8 @@ if debug then
     print_stdout("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
 end
 
-if #mpiopts > 0 and debug then
-    print_stdout("DEBUG: MPI options given on commandline: "..table.concat(mpiopts, " "))
+if mpiopts and mpiopts:len() > 0 and debug then
+    print_stdout("DEBUG: MPI options given on commandline: "..mpiopts)
 end
 
 if mpitype == nil then

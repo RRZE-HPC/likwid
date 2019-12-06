@@ -1,0 +1,22 @@
+SHORT  L2 cache bandwidth in MBytes/s
+
+EVENTSET
+PMC0  PM_L2_ST
+PMC4  PM_RUN_INST_CMPL
+PMC5  PM_RUN_CYC
+
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC5/PMC4
+L2 store bandwidth [MBytes/s]  1.0E-06*(PMC0)*128.0/time
+L2 store data volume [GBytes]  1.0E-09*(PMC0)*128.0
+
+LONG
+Formulas:
+CPI = PM_RUN_CYC/PM_RUN_INST_CMPL
+L2 load bandwidth [MBytes/s] = 1.0E-06*(PM_L2_ST)*128.0/time
+L2 load data volume [GBytes] = 1.0E-09*(PM_L2_ST)*128.0
+-
+Profiling group to measure L2 store cache bandwidth. The bandwidth is computed by the
+number of cacheline stored from L1 cache to L2.

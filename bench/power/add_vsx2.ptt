@@ -1,0 +1,20 @@
+STREAMS 3
+TYPE DOUBLE
+FLOPS 1
+BYTES 24
+
+li r7, 0            # load immediate value of 0 into r7 (used as offset in addressing)
+li r8, 16           # load immediate value of 16 into r8 (used as offset in addressing)
+
+LOOP 4
+lxvd2x x1, STR0, r7
+lxvd2x x2, STR1, r7
+xvadddp x0, x1, x2
+stxvd2x x0, STR2, r7
+addi r7, r7, 32
+
+lxvd2x x1, STR0, r8
+lxvd2x x2, STR1, r8
+xvadddp x0, x1, x2
+stxvd2x x0, STR2, r8
+addi r8, r8, 32

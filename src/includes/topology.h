@@ -9,7 +9,7 @@
  *      Released:  <DATE>
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
- *                Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -162,7 +162,10 @@ struct topology_functions {
 #define MARVELL		0x56U
 #define INTEL_ARM	0x69U
 
-
+/* POWER */
+#define POWER7          0x7U
+#define POWER8          0x8U
+#define POWER9          0x9U
 
 #define  P6_FAMILY        0x6U
 #define  MIC_FAMILY       0xBU
@@ -174,6 +177,7 @@ struct topology_functions {
 #define  K8_FAMILY        0xFU
 #define  ARMV7_FAMILY     0x7U
 #define  ARMV8_FAMILY     0x8U
+#define  PPC_FAMILY       0x42U
 
 extern int cpu_count(cpu_set_t* set);
 

@@ -9,10 +9,10 @@
  *      Released:  <DATE>
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
- *                Thomas Roehl (tr), thomas.roehl@gmail.com
+ *                Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -44,6 +44,7 @@
 
 #include <error.h>
 #include <perfgroup.h>
+#include <topology.h>
 #include <likwid.h>
 
 #include <calculator.h>
@@ -85,7 +86,7 @@ isdir(char* dirname)
 }
 
 void
-return_groups(int groups, char** groupnames, char** groupshort, char** grouplong)
+perfgroup_returnGroups(int groups, char** groupnames, char** groupshort, char** grouplong)
 {
     int i;
     int freegroups = (totalgroups < groups ? groups : totalgroups);
@@ -126,7 +127,7 @@ return_groups(int groups, char** groupnames, char** groupshort, char** grouplong
 
 
 int
-get_groups(
+perfgroup_getGroups(
         const char* grouppath,
         const char* architecture,
         char*** groupnames,
@@ -359,7 +360,7 @@ get_groups(
                             free(fullpath);
                             bdestroy(long_info);
                             bstrListDestroy(linelist);
-                            return_groups(i, *groupnames, *groupshort, *grouplong);
+                            perfgroup_returnGroups(i, *groupnames, *groupshort, *grouplong);
                             return -ENOMEM;
                         }
                         s = sprintf((*groupshort)[i], "%s", bdata(sinfo));
@@ -424,7 +425,7 @@ skip_cur_def_group:
     if (!search_home)
     {
         if (i==0)
-            return_groups(totalgroups, *groupnames, *groupshort, *grouplong);
+            perfgroup_returnGroups(totalgroups, *groupnames, *groupshort, *grouplong);
         /*else if (i < totalgroups)
         {
             for (s=i;s<totalgroups;s++)
@@ -505,7 +506,7 @@ skip_cur_def_group:
                                 free(fullpath);
                                 bstrListDestroy(linelist);
                                 bdestroy(long_info);
-                                return_groups(i, *groupnames, *groupshort, *grouplong);
+                                perfgroup_returnGroups(i, *groupnames, *groupshort, *grouplong);
                                 return -ENOMEM;
                             }
                             s = sprintf((*groupshort)[i], "%s", bdata(sinfo));
@@ -567,7 +568,7 @@ skip_cur_home_group:
         closedir(dp);
     }
     if (i==0)
-        return_groups(totalgroups, *groupnames, *groupshort, *grouplong);
+        perfgroup_returnGroups(totalgroups, *groupnames, *groupshort, *grouplong);
 /*    else if (i < totalgroups)
     {
         for (s=i;s<totalgroups;s++)
@@ -588,7 +589,7 @@ skip_cur_home_group:
 
 
 
-int custom_group(const char* eventStr, GroupInfo* ginfo)
+int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
 {
     int i, j;
     int err = 0;
@@ -597,6 +598,7 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
     int has_fix0 = 0;
     int has_fix1 = 0;
     int has_fix2 = 0;
+    int gpu_events = 0;
     ginfo->shortinfo = NULL;
     ginfo->nevents = 0;
     ginfo->events = NULL;
@@ -607,9 +609,22 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
     ginfo->longinfo = NULL;
     bstring eventBstr;
     struct bstrList * eventList;
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bstring fix0 = bformat("FIXC0");
     bstring fix1 = bformat("FIXC1");
     bstring fix2 = bformat("FIXC2");
+#endif
+#ifdef _ARCH_PPC
+    bstring fix0 = bformat("PMC4");
+    bstring fix1 = bformat("PMC5");
+#endif
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    bstring fix0 = bformat("012345");
+    bstring fix1 = bformat("012345");
+#endif
+#ifdef LIKWID_WITH_NVMON
+    bstring gpu = bformat("GPU");
+#endif
     DEBUG_PRINT(DEBUGLEV_INFO, Creating custom group for event string %s, eventStr);
     ginfo->shortinfo = malloc(7 * sizeof(char));
     if (ginfo->shortinfo == NULL)
@@ -635,7 +650,7 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
     eventBstr = bfromcstr(eventStr);
     eventList = bsplit(eventBstr, delim);
     ginfo->nevents = eventList->qty;
-    if (cpuid_info.isIntel)
+    if (cpuid_info.isIntel || cpuid_info.family == PPC_FAMILY)
     {
         if (binstr(eventBstr, 0, fix0) > 0)
         {
@@ -653,6 +668,7 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
         {
             ginfo->nevents++;
         }
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
         if (binstr(eventBstr, 0, fix2) > 0)
         {
             has_fix2 = 1;
@@ -661,6 +677,7 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
         {
             ginfo->nevents++;
         }
+#endif
     }
     bdestroy(eventBstr);
 
@@ -709,11 +726,18 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
         }
         sprintf(ginfo->events[i], "%s", bdata(elist->entry[0]));
         snprintf(ginfo->counters[i], blength(ctr)+1, "%s", bdata(ctr));
+#ifdef LIKWID_WITH_NVMON
+        if (binstr(elist->entry[1], 0, gpu) != BSTR_ERR)
+        {
+            gpu_events++;
+        }
+#endif
         bdestroy(ctr);
         bstrListDestroy(elist);
     }
     i = eventList->qty;
-    if (cpuid_info.isIntel)
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
+    if (cpuid_info.isIntel && i != gpu_events)
     {
         if ((!has_fix0) && cpuid_info.perf_num_fixed_ctr > 0)
         {
@@ -740,17 +764,44 @@ int custom_group(const char* eventStr, GroupInfo* ginfo)
             i++;
         }
     }
+    ginfo->nevents = i;
+#endif
+#ifdef _ARCH_PPC
+    if (!has_fix0)
+    {
+        ginfo->events[i] = malloc(18 * sizeof(char));
+        ginfo->counters[i] = malloc(6 * sizeof(char));
+        sprintf(ginfo->events[i], "%s", "PM_RUN_INST_CMPL");
+        sprintf(ginfo->counters[i], "%s", "PMC4");
+        i++;
+    }
+    if (!has_fix1)
+    {
+        ginfo->events[i] = malloc(22 * sizeof(char));
+        ginfo->counters[i] = malloc(6 * sizeof(char));
+        sprintf(ginfo->events[i], "%s", "PM_RUN_CYC");
+        sprintf(ginfo->counters[i], "%s", "PMC5");
+        i++;
+    }
+#endif
     bstrListDestroy(eventList);
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bdestroy(fix0);
     bdestroy(fix1);
     bdestroy(fix2);
+#endif
     bdestroy(edelim);
     return 0;
 cleanup:
     bstrListDestroy(eventList);
+#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__x86_64)
     bdestroy(fix0);
     bdestroy(fix1);
     bdestroy(fix2);
+#endif
+#ifdef LIKWID_WITH_NVMON
+    bdestroy(gpu);
+#endif
     bdestroy(edelim);
     if (ginfo->shortinfo != NULL)
         free(ginfo->shortinfo);
@@ -762,7 +813,7 @@ cleanup:
 }
 
 int
-read_group(
+perfgroup_readGroup(
         const char* grouppath,
         const char* architecture,
         const char* groupname,
@@ -808,7 +859,6 @@ read_group(
     ginfo->metricformulas = NULL;
     ginfo->metricnames = NULL;
     ginfo->longinfo = NULL;
-    ginfo->lua_funcs = NULL;
     ginfo->groupname = (char*)malloc((strlen(groupname)+10)*sizeof(char));
     if (ginfo->groupname == NULL)
     {
@@ -1084,24 +1134,6 @@ read_group(
             sprintf(&(ginfo->longinfo[s]), "%.*s", (int)strlen(buf), buf);
             continue;
         }
-        else if (sec == GROUP_LUA)
-        {
-            s = (ginfo->lua_funcs == NULL ? 0 : strlen(ginfo->lua_funcs));
-            char *tmp;
-            tmp = realloc(ginfo->lua_funcs, (s + strlen(buf) + 3) * sizeof(char));
-            if (tmp == NULL)
-            {
-                free(ginfo->lua_funcs);
-                err = -ENOMEM;
-                goto cleanup;
-            }
-            else
-            {
-                ginfo->lua_funcs = tmp;
-            }
-            sprintf(&(ginfo->lua_funcs[s]), "%.*s", (int)strlen(buf), buf);
-            continue;
-        }
     }
     //bstrListDestroy(linelist);
     fclose(fp);
@@ -1119,8 +1151,6 @@ cleanup:
         free(ginfo->shortinfo);
     if (ginfo->longinfo)
         free(ginfo->longinfo);
-    if (ginfo->lua_funcs)
-        free(ginfo->lua_funcs);
     if (ginfo->nevents > 0)
     {
         for(i=0;i<ginfo->nevents; i++)
@@ -1154,7 +1184,7 @@ cleanup:
 }
 
 int
-new_group(GroupInfo* ginfo)
+perfgroup_new(GroupInfo* ginfo)
 {
     if (!ginfo)
         return -EINVAL;
@@ -1171,7 +1201,7 @@ new_group(GroupInfo* ginfo)
 }
 
 char*
-get_eventStr(GroupInfo* ginfo)
+perfgroup_getEventStr(GroupInfo* ginfo)
 {
     int i;
     char* string;
@@ -1200,7 +1230,7 @@ get_eventStr(GroupInfo* ginfo)
 }
 
 void
-put_eventStr(char* eventset)
+perfgroup_returnEventStr(char* eventset)
 {
     if (eventset != NULL)
     {
@@ -1210,7 +1240,7 @@ put_eventStr(char* eventset)
 }
 
 int
-add_event(GroupInfo* ginfo, char* event, char* counter)
+perfgroup_addEvent(GroupInfo* ginfo, char* counter, char* event)
 {
     if ((!ginfo) || (!event) || (!counter))
         return -EINVAL;
@@ -1232,32 +1262,63 @@ add_event(GroupInfo* ginfo, char* event, char* counter)
     return 0;
 }
 
+void perfgroup_removeEvent(GroupInfo* ginfo, char* counter)
+{
+    fprintf(stderr, "perfgroup_removeEvent not implemented\n");
+}
+
 int
-add_metric(GroupInfo* ginfo, char* mname, char* mcalc)
+perfgroup_addMetric(GroupInfo* ginfo, char* mname, char* mcalc)
 {
     if ((!ginfo) || (!mname) || (!mcalc))
         return -EINVAL;
     ginfo->metricnames = realloc(ginfo->metricnames, (ginfo->nmetrics + 1) * sizeof(char*));
     if (!ginfo->metricnames)
+    {
+        ERROR_PRINT(Cannot increase space for metricnames to %d bytes, (ginfo->nmetrics + 1) * sizeof(char*));
         return -ENOMEM;
+    }
     ginfo->metricformulas = realloc(ginfo->metricformulas, (ginfo->nmetrics + 1) * sizeof(char*));
     if (!ginfo->metricformulas)
+    {
+        ERROR_PRINT(Cannot increase space for metricformulas to %d bytes, (ginfo->nmetrics + 1) * sizeof(char*));
         return -ENOMEM;
+    }
     ginfo->metricnames[ginfo->nmetrics] = malloc((strlen(mname) + 1) * sizeof(char));
     if (!ginfo->metricnames[ginfo->nmetrics])
+    {
+        ERROR_PRINT(Cannot increase space for metricname to %d bytes, (strlen(mname) + 1) * sizeof(char));
         return -ENOMEM;
+    }
     ginfo->metricformulas[ginfo->nmetrics] = malloc((strlen(mcalc) + 1) * sizeof(char));
     if (!ginfo->metricformulas[ginfo->nmetrics])
+    {
+        ERROR_PRINT(Cannot increase space for metricformula to %d bytes, (strlen(mcalc) + 1) * sizeof(char));
         return -ENOMEM;
-    sprintf(ginfo->metricnames[ginfo->nmetrics], "%s", mname);
-    sprintf(ginfo->metricformulas[ginfo->nmetrics], "%s", mcalc);
+    }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Adding metric %s = %s, mname, mcalc);
+    int ret = sprintf(ginfo->metricnames[ginfo->nmetrics], "%s", mname);
+    if (ret > 0)
+    {
+        ginfo->metricnames[ginfo->nmetrics][ret] = '\0';
+    }
+    ret = sprintf(ginfo->metricformulas[ginfo->nmetrics], "%s", mcalc);
+    if (ret > 0)
+    {
+        ginfo->metricformulas[ginfo->nmetrics][ret] = '\0';
+    }
     ginfo->nmetrics++;
     return 0;
 }
 
+void perfgroup_removeMetric(GroupInfo* ginfo, char* mname)
+{
+    fprintf(stderr, "perfgroup_removeEvent not implemented\n");
+}
+
 
 char*
-get_groupName(GroupInfo* ginfo)
+perfgroup_getGroupName(GroupInfo* ginfo)
 {
     if ((ginfo != NULL) && (ginfo->groupname != NULL))
     {
@@ -1269,21 +1330,39 @@ get_groupName(GroupInfo* ginfo)
     return NULL;
 }
 
+void
+perfgroup_returnGroupName(char* gname)
+{
+    if (gname != NULL)
+    {
+        free(gname);
+        gname = NULL;
+    }
+}
+
 int
-set_groupName(GroupInfo* ginfo, char* groupName)
+perfgroup_setGroupName(GroupInfo* ginfo, char* groupName)
 {
     if ((ginfo == NULL) || (groupName == NULL))
         return -EINVAL;
     int size = strlen(groupName)+1;
     ginfo->groupname = realloc(ginfo->groupname, size * sizeof(char));
     if (ginfo->groupname == NULL)
+    {
+        ERROR_PRINT(Cannot increase space for groupname to %d bytes, size * sizeof(char));
         return -ENOMEM;
-    sprintf(ginfo->groupname, "%s", groupName);
+    }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Setting group name to %s, groupName);
+    int ret = sprintf(ginfo->groupname, "%s", groupName);
+    if (ret > 0)
+    {
+        ginfo->groupname[ret] = '\0';
+    }
     return 0;
 }
 
 char*
-get_shortInfo(GroupInfo* ginfo)
+perfgroup_getShortInfo(GroupInfo* ginfo)
 {
     if ((ginfo != NULL) && (ginfo->shortinfo != NULL))
     {
@@ -1296,7 +1375,7 @@ get_shortInfo(GroupInfo* ginfo)
 }
 
 void
-put_shortInfo(char* sinfo)
+perfgroup_returnShortInfo(char* sinfo)
 {
     if (sinfo != NULL)
     {
@@ -1306,7 +1385,7 @@ put_shortInfo(char* sinfo)
 }
 
 int
-set_shortInfo(GroupInfo* ginfo, char* shortInfo)
+perfgroup_setShortInfo(GroupInfo* ginfo, char* shortInfo)
 {
     if ((ginfo == NULL) || (shortInfo == NULL))
         return -EINVAL;
@@ -1319,7 +1398,7 @@ set_shortInfo(GroupInfo* ginfo, char* shortInfo)
 }
 
 char*
-get_longInfo(GroupInfo* ginfo)
+perfgroup_getLongInfo(GroupInfo* ginfo)
 {
     if ((ginfo != NULL) && (ginfo->longinfo != NULL))
     {
@@ -1332,7 +1411,7 @@ get_longInfo(GroupInfo* ginfo)
 }
 
 void
-put_longInfo(char* linfo)
+perfgroup_returnLongInfo(char* linfo)
 {
     if (linfo != NULL)
     {
@@ -1342,7 +1421,7 @@ put_longInfo(char* linfo)
 }
 
 int
-set_longInfo(GroupInfo* ginfo, char* longInfo)
+perfgroup_setLongInfo(GroupInfo* ginfo, char* longInfo)
 {
     if ((ginfo == NULL) || (longInfo == NULL))
         return -EINVAL;
@@ -1355,7 +1434,7 @@ set_longInfo(GroupInfo* ginfo, char* longInfo)
 }
 
 void
-return_group(GroupInfo* ginfo)
+perfgroup_returnGroup(GroupInfo* ginfo)
 {
     int i;
     if (ginfo->groupname)
@@ -1399,6 +1478,12 @@ return_group(GroupInfo* ginfo)
     ginfo->nmetrics = 0;
 }
 
+
+int perfgroup_mergeGroups(GroupInfo* grp1, GroupInfo* grp2)
+{
+    fprintf(stderr, "perfgroup_mergeGroups not implemented\n");
+    return -1;
+}
 
 
 void
@@ -1469,11 +1554,17 @@ calc_metric(char* formula, CounterList* clist, double *result)
     int i=0;
     *result = 0.0;
     int maxstrlen = 0, minstrlen = 10000;
+    bstring nan;
+    bstring zero;
+    bstring inf;
 
     if ((formula == NULL) || (clist == NULL))
         return -EINVAL;
 
     bstring f = bfromcstr(formula);
+    nan = bfromcstr("nan");
+    inf = bfromcstr("inf");
+    zero = bfromcstr("0.0");
     for(i=0;i<clist->counters;i++)
     {
         bstring c = bstrListGet(clist->cnames, i);
@@ -1491,12 +1582,21 @@ calc_metric(char* formula, CounterList* clist, double *result)
             if (blength(c) != maxstrlen)
                 continue;
             bstring v = bstrListGet(clist->cvalues, i);
-            bfindreplace(f, c, v, 0);
+            if ((bstrncmp(v, nan, 3) != BSTR_OK) && (bstrncmp(v, inf, 3) != BSTR_OK))
+            {
+                bfindreplace(f, c, v, 0);
+            }
+            else
+            {
+                bfindreplace(f, c, zero, 0);
+            }
         }
         maxstrlen--;
     }
     // now we can calculate the formula
     i = calculate_infix(bdata(f), result);
     bdestroy(f);
+    bdestroy(nan);
+    bdestroy(zero);
     return i;
 }

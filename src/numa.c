@@ -10,7 +10,7 @@
  *      Released:  <DATE>
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
- *                Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -138,7 +138,7 @@ const struct numa_functions numa_funcs = {
     .numa_setMembind = empty_numa_setMembind,
 #else
 #ifdef LIKWID_USE_HWLOC
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__) || defined(__ARM_ARCH_8A)
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__) || defined(__ARM_ARCH_8A) || defined(_ARCH_PPC64)
     .numa_init = proc_numa_init,
 #else
     .numa_init = hwloc_numa_init,

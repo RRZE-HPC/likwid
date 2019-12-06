@@ -3612,3 +3612,270 @@ The option 'n' takes an argument, specified by the ':'. If found the option argu
 </TR>
 </TABLE>
 */
+
+/*! \page lua_GPUTopology GPU Topology module
+<H1>Data type definition for GPU topology module in the Lua API</H1>
+\anchor lua_gputopology
+<H2>GPU Topology</H2>
+<P>This structure is returned by \ref getGpuTopology function<BR>It is similar to the C struct GpuTopology</P>
+<TABLE>
+<TR>
+  <TH>Membername</TH>
+  <TH>Comment</TH>
+</TR>
+<TR>
+  <TD>\a numDevices</TD>
+  <TD>Number of GPU devices</TD>
+</TR>
+<TR>
+  <TD>\a devices<BR>(List with<BR>\a numDevices entries)</TD>
+    <TD>
+    <TABLE>
+    <TR>
+      <TH>Membername</TH>
+      <TH>Comment</TH>
+    </TR>
+    <TR>
+      <TD>\a id</TD>
+      <TD>GPU ID</TD>
+    </TR>
+    <TR>
+      <TD>\a name</TD>
+      <TD>Name of the device</TD>
+    </TR>
+    <TR>
+      <TD>\a numaNode</TD>
+      <TD>Closest NUMA node</TD>
+    </TR>
+    <TR>
+      <TD>\a memory</TD>
+      <TD>Total memory of the device</TD>
+    </TR>
+    <TR>
+      <TD>\a ccapMajor</TD>
+      <TD>Major number of device's compute capability</TD>
+    </TR>
+    <TR>
+      <TD>\a ccapMinor</TD>
+      <TD>Minor number of device's compute capability</TD>
+    </TR>
+    <TR>
+      <TD>\a simdWidth</TD>
+      <TD>SIMD width of arithmetic units = warp size</TD>
+    </TR>
+    <TR>
+      <TD>\a l2Size</TD>
+      <TD>L2 cache in bytes. 0 if the device doesn't have L2 cache</TD>
+    </TR>
+    <TR>
+      <TD>\a maxThreadsPerBlock</TD>
+      <TD>Maximam number of thread per block</TD>
+    </TR>
+    <TR>
+      <TD>\a sharedMemPerBlock</TD>
+      <TD>Total amount of shared memory available per block</TD>
+    </TR>
+    <TR>
+      <TD>\a totalConstantMemory</TD>
+      <TD>Total amount of constant memory available on the device</TD>
+    </TR>
+    <TR>
+      <TD>\a memPitch</TD>
+      <TD>Maximum pitch allowed by the memory copy functions that involve memory regions allocated through cuMemAllocPitch()</TD>
+    </TR>
+    <TR>
+      <TD>\a regsPerBlock</TD>
+      <TD>Total number of registers available per block</TD>
+    </TR>
+    <TR>
+      <TD>\a clockRatekHz</TD>
+      <TD>Clock frequency in kilohertz</TD>
+    </TR>
+    <TR>
+      <TD>\a textureAlign</TD>
+      <TD>Alignment requirement</TD>
+    </TR>
+    <TR>
+      <TD>\a surfaceAlign</TD>
+      <TD>Alignment requirement for surfaces</TD>
+    </TR>
+    <TR>
+      <TD>\a memClockRatekHz</TD>
+      <TD>Peak memory clock frequency in kilohertz</TD>
+    </TR>
+    <TR>
+      <TD>\a pciBus</TD>
+      <TD>PCI bus identifier of the device</TD>
+    </TR>
+    <TR>
+      <TD>\a pciDev</TD>
+      <TD>PCI device (also known as slot) identifier of the device</TD>
+    </TR>
+    <TR>
+      <TD>\a pciDom</TD>
+      <TD>PCI domain identifier of the device</TD>
+    </TR>
+    <TR>
+      <TD>\a maxBlockRegs</TD>
+      <TD>Maximum number of 32-bit registers available to a thread block</TD>
+    </TR>
+    <TR>
+      <TD>\a numMultiProcs</TD>
+      <TD>Number of multiprocessors on the device</TD>
+    </TR>
+    <TR>
+      <TD>\a maxThreadPerMultiProc</TD>
+      <TD>Maximum resident threads per multiprocessor</TD>
+    </TR>
+    <TR>
+      <TD>\a memBusWidth</TD>
+      <TD>Global memory bus width in bits</TD>
+    </TR>
+    <TR>
+      <TD>\a unifiedAddrSpace</TD>
+      <TD>1 if the device shares a unified address space with the host, or 0 if not</TD>
+    </TR>
+    <TR>
+      <TD>\a ecc</TD>
+      <TD>1 if error correction is enabled on the device, 0 if error correction is disabled or not supported by the device</TD>
+    </TR>
+    <TR>
+      <TD>\a asyncEngines</TD>
+      <TD>Number of asynchronous engines</TD>
+    </TR>
+    <TR>
+      <TD>\a mapHostMem</TD>
+      <TD>1 if the device can map host memory into the CUDA address space</TD>
+    </TR>
+    <TR>
+      <TD>\a integrated</TD>
+      <TD>1 if the device is an integrated (motherboard) GPU and 0 if it is a discrete (card) component/TD>
+    </TR>
+    <TR>
+      <TD>\a maxThreadsDim[3]</TD>
+      <TD>Maximum sizes of each dimension of a block</TD>
+    </TR>
+     <TR>
+      <TD>\a maxGridSize[3]</TD>
+      <TD>Maximum sizes of each dimension of a grid</TD>
+    </TR>
+    </TABLE>
+    </TD>
+</TR>
+</TABLE>
+
+\anchor gpuSupported
+<H2>gpuSupported()</H2>
+<P>Returns true if LIKWID was build with GPU support. </P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Return</TD>
+  <TD>true/false</TD>
+</TR>
+</TABLE>
+
+
+\anchor getGpuTopology
+<H2>getGpuTopology()</H2>
+<P>Get the topology information about the GPUs in the system</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Return</TD>
+  <TD>Gpu Topology \ref lua_gputopology</TD>
+</TR>
+</TABLE>
+
+\anchor putGpuTopology
+<H2>putGpuTopology()</H2>
+<P>Return the topology information about the GPUs in the system</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Return</TD>
+  <TD>None</TD>
+</TR>
+</TABLE>
+
+\anchor gpustr_to_gpulist
+<H2>gpustr_to_gpulist()</H2>
+<P>Read GPU selection string and resolve to available GPUs numbers</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD><TABLE>
+    <TR>
+      <TD>\a gpustr</TD>
+      <TD>GPU identifier string</TD>
+    </TR>
+  </TABLE></TD>
+</TR>
+<TR>
+  <TD>Return</TD>
+  <TD>List with GPU identifier</TD>
+</TR>
+</TABLE>getGpuEventsAndCounters
+
+
+\anchor getGpuEventsAndCounters
+<H2>getGpuEventsAndCounters()</H2>
+<P>Return the events and counters povided by the available GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Return</TD>
+  <TD>Table with keys \a numDevices and \a devices. \a devices is a table where each entry has \a Name, \a Description and \a Limit.</TD>
+</TR>
+</TABLE>
+
+\anchor getGpuGroups
+<H2>getGpuGroups()</H2>
+<P>Returns a list of all performance groups in \a groupfolder for GPUs</P>
+<TABLE>
+<TR>
+  <TH>Direction</TH>
+  <TH>Data type(s)</TH>
+</TR>
+<TR>
+  <TD>Input Parameter</TD>
+  <TD>None</TD>
+</TR>
+<TR>
+  <TD>Returns</TD>
+  <TD>List of performance groups, see \ref lua_groupinfo for structure</TD>
+</TR>
+</TABLE>
+*/

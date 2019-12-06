@@ -8,7 +8,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -61,6 +61,7 @@
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
 static int topology_isInitialized = 0;
+static int gputopology_isInitialized = 0;
 static int numa_isInitialized = 0;
 static int affinity_isInitialized = 0;
 static int perfmon_isInitialized = 0;
@@ -68,6 +69,8 @@ static int timer_isInitialized = 0;
 static int power_isInitialized = 0;
 static int power_hasRAPL = 0;
 static int config_isInitialized = 0;
+
+static int nvmon_initialized = 0;
 
 /* #####   VARIABLES  -  EXPORTED VARIABLES   ############################# */
 
@@ -1477,6 +1480,7 @@ lua_likwid_sockstr_to_socklist(lua_State* L)
     return 2;
 }
 
+
 static int
 lua_likwid_putAffinityInfo(lua_State* L)
 {
@@ -2212,7 +2216,10 @@ lua_likwid_setVerbosity(lua_State* L)
     int verbosity = lua_tointeger(L,-1);
     luaL_argcheck(L, (verbosity >= 0 && verbosity <= DEBUGLEV_DEVELOP), -1,
                 "Verbosity must be between 0 (only errors) and 3 (developer)");
-    perfmon_verbosity = verbosity;
+    perfmon_setVerbosity(verbosity);
+#ifdef LIKWID_WITH_NVMON
+    nvmon_setVerbosity(verbosity);
+#endif /* LIKWID_WITH_NVMON */
     return 0;
 }
 
@@ -2845,6 +2852,598 @@ lua_likwid_setresuser(lua_State* L)
     return 1;
 }
 
+#ifdef LIKWID_WITH_NVMON
+
+GpuTopology_t gputopo = NULL;
+
+static int
+lua_likwid_getGpuTopology(lua_State* L)
+{
+    if (!gputopology_isInitialized)
+    {
+        if (topology_gpu_init() == EXIT_SUCCESS)
+        {
+            gputopo = get_gpuTopology();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+    }
+    lua_newtable(L);
+    lua_pushstring(L,"numDevices");
+    lua_pushinteger(L, (lua_Integer)(gputopo->numDevices));
+    lua_settable(L,-3);
+
+    lua_pushstring(L,"devices");
+    lua_newtable(L);
+    for (int i = 0; i < gputopo->numDevices; i++)
+    {
+        GpuDevice* gpu = &gputopo->devices[i];
+        lua_pushinteger(L, i+1);
+        lua_newtable(L);
+        lua_pushstring(L,"id");
+        lua_pushinteger(L, (lua_Integer)(gpu->devid));
+        lua_settable(L,-3);
+        lua_pushstring(L,"numaNode");
+        lua_pushinteger(L, (lua_Integer)(gpu->numaNode));
+        lua_settable(L,-3);
+        lua_pushstring(L,"name");
+        lua_pushstring(L, gpu->name);
+        lua_settable(L,-3);
+        lua_pushstring(L,"memory");
+        lua_pushinteger(L, (lua_Integer)(gpu->mem));
+        lua_settable(L,-3);
+        lua_pushstring(L,"ccapMajor");
+        lua_pushinteger(L, (lua_Integer)(gpu->ccapMajor));
+        lua_settable(L,-3);
+        lua_pushstring(L,"ccapMinor");
+        lua_pushinteger(L, (lua_Integer)(gpu->ccapMinor));
+        lua_settable(L,-3);
+        lua_pushstring(L,"simdWidth");
+        lua_pushinteger(L, (lua_Integer)(gpu->simdWidth));
+        lua_settable(L,-3);
+        lua_pushstring(L,"l2Size");
+        lua_pushinteger(L, (lua_Integer)(gpu->l2Size));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxThreadsPerBlock");
+        lua_pushinteger(L, (lua_Integer)(gpu->maxThreadsPerBlock));
+        lua_settable(L,-3);
+        lua_pushstring(L,"sharedMemPerBlock");
+        lua_pushinteger(L, (lua_Integer)(gpu->sharedMemPerBlock));
+        lua_settable(L,-3);
+        lua_pushstring(L,"totalConstantMemory");
+        lua_pushinteger(L, (lua_Integer)(gpu->totalConstantMemory));
+        lua_settable(L,-3);
+        lua_pushstring(L,"memPitch");
+        lua_pushinteger(L, (lua_Integer)(gpu->memPitch));
+        lua_settable(L,-3);
+        lua_pushstring(L,"regsPerBlock");
+        lua_pushinteger(L, (lua_Integer)(gpu->regsPerBlock));
+        lua_settable(L,-3);
+        lua_pushstring(L,"clockRatekHz");
+        lua_pushinteger(L, (lua_Integer)(gpu->clockRatekHz));
+        lua_settable(L,-3);
+        lua_pushstring(L,"textureAlign");
+        lua_pushinteger(L, (lua_Integer)(gpu->textureAlign));
+        lua_settable(L,-3);
+        lua_pushstring(L,"surfaceAlign");
+        lua_pushinteger(L, (lua_Integer)(gpu->surfaceAlign));
+        lua_settable(L,-3);
+        lua_pushstring(L,"memClockRatekHz");
+        lua_pushinteger(L, (lua_Integer)(gpu->memClockRatekHz));
+        lua_settable(L,-3);
+        lua_pushstring(L,"pciBus");
+        lua_pushinteger(L, (lua_Integer)(gpu->pciBus));
+        lua_settable(L,-3);
+        lua_pushstring(L,"pciDev");
+        lua_pushinteger(L, (lua_Integer)(gpu->pciDev));
+        lua_settable(L,-3);
+        lua_pushstring(L,"pciDom");
+        lua_pushinteger(L, (lua_Integer)(gpu->pciDom));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxBlockRegs");
+        lua_pushinteger(L, (lua_Integer)(gpu->maxBlockRegs));
+        lua_settable(L,-3);
+        lua_pushstring(L,"numMultiProcs");
+        lua_pushinteger(L, (lua_Integer)(gpu->numMultiProcs));
+        lua_settable(L,-3);
+        lua_pushstring(L,"maxThreadPerMultiProc");
+        lua_pushinteger(L, (lua_Integer)(gpu->maxThreadPerMultiProc));
+        lua_settable(L,-3);
+        lua_pushstring(L,"memBusWidth");
+        lua_pushinteger(L, (lua_Integer)(gpu->memBusWidth));
+        lua_settable(L,-3);
+        lua_pushstring(L,"unifiedAddrSpace");
+        lua_pushinteger(L, (lua_Integer)(gpu->unifiedAddrSpace));
+        lua_settable(L,-3);
+        lua_pushstring(L,"ecc");
+        lua_pushinteger(L, (lua_Integer)(gpu->ecc));
+        lua_settable(L,-3);
+        lua_pushstring(L,"asyncEngines");
+        lua_pushinteger(L, (lua_Integer)(gpu->asyncEngines));
+        lua_settable(L,-3);
+        lua_pushstring(L,"mapHostMem");
+        lua_pushinteger(L, (lua_Integer)(gpu->mapHostMem));
+        lua_settable(L,-3);
+        lua_pushstring(L,"integrated");
+        lua_pushinteger(L, (lua_Integer)(gpu->integrated));
+        lua_settable(L,-3);
+
+        lua_pushstring(L,"maxThreadsDim");
+        lua_newtable(L);
+        for (int j = 0; j < 3; j++)
+        {
+            lua_pushinteger(L, j+1);
+            lua_pushinteger(L, (lua_Integer)(gpu->maxThreadsDim[j]));
+            lua_settable(L,-3);
+        }
+        lua_settable(L,-3);
+
+        lua_pushstring(L,"maxGridSize");
+        lua_newtable(L);
+        for (int j = 0; j < 3; j++)
+        {
+            lua_pushinteger(L, j+1);
+            lua_pushinteger(L, (lua_Integer)(gpu->maxGridSize[j]));
+            lua_settable(L,-3);
+        }
+        lua_settable(L,-3);
+
+        lua_settable(L,-3);
+    }
+    lua_settable(L,-3);
+    return 1;
+}
+
+static int
+lua_likwid_putGpuTopology(lua_State* L)
+{
+    if (gputopology_isInitialized)
+    {
+        topology_gpu_finalize();
+    }
+    return 0;
+}
+
+static int
+lua_likwid_gpustr_to_gpulist(lua_State* L)
+{
+    int ret = 0;
+    char* gpustr = (char *)luaL_checkstring(L, 1);
+    if (!gputopology_isInitialized)
+    {
+        if (topology_gpu_init() == EXIT_SUCCESS)
+        {
+            gputopo = get_gpuTopology();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnumber(L, 0);
+            lua_pushnil(L);
+            return 2;
+        }
+    }
+    int* gpulist = (int*) malloc(gputopo->numDevices * sizeof(int));
+    if (gpulist == NULL)
+    {
+        lua_pushstring(L,"Cannot allocate data for the GPU list");
+        lua_error(L);
+    }
+    ret = gpustr_to_gpulist(gpustr, gpulist, gputopo->numDevices);
+    if (ret <= 0)
+    {
+        lua_pushstring(L,"Cannot parse GPU string");
+        lua_error(L);
+    }
+    lua_pushnumber(L, ret);
+    lua_newtable(L);
+    for (int i=0;i<ret;i++)
+    {
+        lua_pushinteger(L, (lua_Integer)( i+1));
+        lua_pushinteger(L, (lua_Integer)( gpulist[i]));
+        lua_settable(L,-3);
+    }
+    free(gpulist);
+    return 2;
+}
+
+static int
+lua_likwid_getGpuEventsAndCounters(lua_State* L)
+{
+    if (!gputopology_isInitialized)
+    {
+        if (topology_gpu_init() == EXIT_SUCCESS)
+        {
+            gputopo = get_gpuTopology();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+    }
+
+    lua_newtable(L);
+    lua_pushstring(L,"numDevices");
+    lua_pushinteger(L, (lua_Integer)(gputopo->numDevices));
+    lua_settable(L,-3);
+
+    lua_pushstring(L,"devices");
+    lua_newtable(L);
+    for (int i = 0; i < gputopo->numDevices; i++)
+    {
+        NvmonEventList_t l;
+        GpuDevice* gpu = &gputopo->devices[i];
+        lua_pushinteger(L, gpu->devid);
+        lua_newtable(L);
+
+        int ret = nvmon_getEventsOfGpu(gpu->devid, &l);
+        if (ret == 0)
+        {
+            for (int j = 0; j < l->numEvents; j++)
+            {
+                lua_pushinteger(L, j+1);
+                lua_newtable(L);
+                lua_pushstring(L,"Name");
+                lua_pushstring(L, l->events[j].name);
+                lua_settable(L,-3);
+                lua_pushstring(L,"Description");
+                lua_pushstring(L, l->events[j].desc);
+                lua_settable(L,-3);
+                lua_pushstring(L,"Limit");
+                lua_pushstring(L, l->events[j].limit);
+                lua_settable(L,-3);
+                lua_settable(L,-3);
+            }
+            lua_settable(L,-3);
+            nvmon_returnEventsOfGpu(l);
+        }
+    }
+    lua_settable(L,-3);
+    return 1;
+}
+
+
+static int
+lua_likwid_getGpuGroups(lua_State* L)
+{
+    int i, ret;
+    char** tmp, **infos, **longs;
+    if (!gputopology_isInitialized)
+    {
+        if (topology_gpu_init() == EXIT_SUCCESS)
+        {
+            gputopo = get_gpuTopology();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+    }
+    ret = nvmon_getGroups(&tmp, &infos, &longs);
+    if (ret > 0)
+    {
+        lua_newtable(L);
+        for (i=0;i<ret;i++)
+        {
+            lua_pushinteger(L, (lua_Integer)( i+1));
+            lua_newtable(L);
+            lua_pushstring(L, "Name");
+            lua_pushstring(L, tmp[i]);
+            lua_settable(L,-3);
+            lua_pushstring(L, "Info");
+            lua_pushstring(L, infos[i]);
+            lua_settable(L,-3);
+            lua_pushstring(L, "Long");
+            lua_pushstring(L, longs[i]);
+            lua_settable(L,-3);
+            lua_settable(L,-3);
+        }
+        nvmon_returnGroups(ret, tmp, infos, longs);
+        return 1;
+    }
+    return 0;
+}
+
+
+static int
+lua_likwid_nvGetNameOfEvent(lua_State* L)
+{
+    int eventId, groupId;
+    char* tmp;
+    if (nvmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    eventId = lua_tonumber(L,2);
+    tmp = nvmon_getEventName(groupId-1, eventId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int
+lua_likwid_nvGetNameOfCounter(lua_State* L)
+{
+    int eventId, groupId;
+    char* tmp;
+    if (nvmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    eventId = lua_tonumber(L,2);
+    tmp = nvmon_getCounterName(groupId-1, eventId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+
+static int
+lua_likwid_nvGetNameOfMetric(lua_State* L)
+{
+    int metricId, groupId;
+    char* tmp;
+    if (nvmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    metricId = lua_tonumber(L,2);
+    tmp = nvmon_getMetricName(groupId-1, metricId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int
+lua_likwid_nvGetNameOfGroup(lua_State* L)
+{
+    int groupId;
+    char* tmp;
+    if (nvmon_initialized == 0)
+    {
+        return 0;
+    }
+    groupId = lua_tonumber(L,1);
+    tmp = nvmon_getGroupName(groupId-1);
+    lua_pushstring(L,tmp);
+    return 1;
+}
+
+static int
+lua_likwid_nvMarkerFile_read(lua_State* L)
+{
+    const char* filename = (const char*)luaL_checkstring(L, -1);
+    int ret = nvmon_readMarkerFile(filename);
+    lua_pushinteger(L, ret);
+    return 1;
+}
+
+static int
+lua_likwid_nvMarkerFile_destroy(lua_State* L)
+{
+    nvmon_destroyMarkerResults();
+    return 0;
+}
+
+static int
+lua_likwid_nvMarkerNumRegions(lua_State* L)
+{
+    lua_pushinteger(L, nvmon_getNumberOfRegions());
+    return 1;
+}
+
+static int
+lua_likwid_nvMarkerRegionGroup(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushinteger(L, nvmon_getGroupOfRegion(region-1)+1);
+    return 1;
+}
+
+static int
+lua_likwid_nvMarkerRegionTag(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushstring(L, nvmon_getTagOfRegion(region-1));
+    return 1;
+}
+
+static int
+lua_likwid_nvMarkerRegionEvents(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushinteger(L, nvmon_getEventsOfRegion(region-1));
+    return 1;
+}
+
+static int
+lua_likwid_nvMarkerRegionMetrics(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushinteger(L, nvmon_getMetricsOfRegion(region-1));
+    return 1;
+}
+
+
+static int
+lua_likwid_nvMarkerRegionGpus(lua_State* L)
+{
+    int region = lua_tointeger(L,-1);
+    lua_pushinteger(L, nvmon_getGpusOfRegion(region-1));
+    return 1;
+}
+
+static int
+lua_likwid_nvMarkerRegionGpulist(lua_State* L)
+{
+    int i = 0;
+    int region = lua_tointeger(L,-1);
+    int* gpulist;
+    int regionGPUs = 0;
+    if (gputopology_isInitialized == 0)
+    {
+        topology_gpu_init();
+    }
+    if ((gputopology_isInitialized) && (gputopo == NULL))
+    {
+        gputopo = get_gpuTopology();
+    }
+
+    gpulist = (int*)malloc(gputopo->numDevices * sizeof(int));
+    if (gpulist == NULL)
+    {
+        return 0;
+    }
+    regionGPUs = nvmon_getGpulistOfRegion(region-1, gputopo->numDevices, gpulist);
+    if (regionGPUs > 0)
+    {
+        lua_newtable(L);
+        for (i=0; i < regionGPUs; i++)
+        {
+            lua_pushinteger(L, i+1);
+            lua_pushinteger(L, gpulist[i]);
+            lua_settable(L, -3);
+        }
+        return 1;
+    }
+    return 0;
+}
+
+static int
+lua_likwid_nvMarkerRegionTime(lua_State* L)
+{
+    int region = lua_tointeger(L,-2);
+    int thread = lua_tointeger(L,-1);
+    lua_pushnumber(L, nvmon_getTimeOfRegion(region-1, thread-1));
+    return 1;
+}
+
+static int
+lua_likwid_nvMarkerRegionCount(lua_State* L)
+{
+    int region = lua_tointeger(L,-2);
+    int thread = lua_tointeger(L,-1);
+    lua_pushinteger(L, nvmon_getCountOfRegion(region-1, thread-1));
+    return 1;
+}
+
+static int
+lua_likwid_nvMarkerRegionResult(lua_State* L)
+{
+    int region = lua_tointeger(L,-3);
+    int event = lua_tointeger(L,-2);
+    int gpu = lua_tointeger(L,-1);
+    lua_pushnumber(L, nvmon_getResultOfRegionGpu(region-1, event-1, gpu-1));
+    return 1;
+}
+
+static int
+lua_likwid_nvMarkerRegionMetric(lua_State* L)
+{
+    int region = lua_tointeger(L,-3);
+    int metric = lua_tointeger(L,-2);
+    int gpu = lua_tointeger(L,-1);
+    lua_pushnumber(L, nvmon_getMetricOfRegionGpu(region-1, metric-1, gpu-1));
+    return 1;
+}
+
+
+static int
+lua_likwid_nvInit(lua_State* L)
+{
+    int ret;
+    int nrGpus = luaL_checknumber(L,1);
+    luaL_argcheck(L, nrGpus > 0, 1, "GPU count must be greater than 0");
+    int gpus[nrGpus];
+    if (!lua_istable(L, -1)) {
+      lua_pushstring(L,"No table given as second argument");
+      lua_error(L);
+    }
+    for (ret = 1; ret<=nrGpus; ret++)
+    {
+        lua_rawgeti(L,-1,ret);
+#if LUA_VERSION_NUM == 501
+        gpus[ret-1] = ((lua_Integer)lua_tointeger(L,-1));
+#else
+        gpus[ret-1] = ((lua_Unsigned)lua_tointegerx(L,-1, NULL));
+#endif
+        lua_pop(L,1);
+    }
+    if (gputopology_isInitialized == 0)
+    {
+        topology_gpu_init();
+    }
+    if ((gputopology_isInitialized) && (gputopo == NULL))
+    {
+        gputopo = get_gpuTopology();
+    }
+    if (nvmon_initialized == 0)
+    {
+        ret = nvmon_init(nrGpus, gpus);
+        if (ret != 0)
+        {
+            lua_pushstring(L,"Cannot initialize likwid perfmon");
+            nvmon_finalize();
+            lua_pushinteger(L,ret);
+            return 1;
+        }
+        nvmon_initialized = 1;
+        lua_pushinteger(L,ret);
+    }
+    return 1;
+}
+
+static int
+lua_likwid_nvAddEventSet(lua_State* L)
+{
+    int groupId, n;
+    const char* tmpString;
+    if (nvmon_initialized == 0)
+    {
+        return 0;
+    }
+    n = lua_gettop(L);
+    tmpString = luaL_checkstring(L, n);
+    luaL_argcheck(L, strlen(tmpString) > 0, n, "Event string must be larger than 0");
+
+    groupId = nvmon_addEventSet((char*)tmpString);
+    if (groupId >= 0)
+        lua_pushinteger(L, groupId+1);
+    else
+        lua_pushinteger(L, groupId);
+    return 1;
+}
+
+static int
+lua_likwid_nvFinalize(lua_State *L)
+{
+    if (nvmon_initialized)
+        nvmon_finalize();
+    return 0;
+}
+
+static int
+lua_likwid_nvSupported(lua_State *L)
+{
+    lua_pushboolean(L, 1);
+    return 1;
+}
+#else
+static int
+lua_likwid_nvSupported(lua_State *L)
+{
+    lua_pushboolean(L, 1);
+    return 0;
+}
+#endif /* LIKWID_WITH_NVMON */
 
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
@@ -2999,10 +3598,38 @@ luaopen_liblikwid(lua_State* L){
     lua_register(L, "likwid_seteuid", lua_likwid_seteuid);
     lua_register(L, "likwid_setresuid", lua_likwid_setresuid);
     lua_register(L, "likwid_setresuser", lua_likwid_setresuser);
+    // Nvidia GPU functions
+    lua_register(L, "likwid_nvSupported", lua_likwid_nvSupported);
+#ifdef LIKWID_WITH_NVMON
+    lua_register(L, "likwid_getGpuTopology", lua_likwid_getGpuTopology);
+    lua_register(L, "likwid_putGpuTopology", lua_likwid_putGpuTopology);
+    lua_register(L, "likwid_getGpuEventsAndCounters", lua_likwid_getGpuEventsAndCounters);
+    lua_register(L, "likwid_getGpuGroups", lua_likwid_getGpuGroups);
+    lua_register(L, "likwid_gpustr_to_gpulist", lua_likwid_gpustr_to_gpulist);
+    lua_register(L, "likwid_readNvMarkerFile", lua_likwid_nvMarkerFile_read);
+    lua_register(L, "likwid_destroyNvMarkerFile", lua_likwid_nvMarkerFile_destroy);
+    lua_register(L, "likwid_nvMarkerNumRegions", lua_likwid_nvMarkerNumRegions);
+    lua_register(L, "likwid_nvMarkerRegionGroup", lua_likwid_nvMarkerRegionGroup);
+    lua_register(L, "likwid_nvMarkerRegionTag", lua_likwid_nvMarkerRegionTag);
+    lua_register(L, "likwid_nvMarkerRegionEvents", lua_likwid_nvMarkerRegionEvents);
+    lua_register(L, "likwid_nvMarkerRegionMetrics", lua_likwid_nvMarkerRegionMetrics);
+    lua_register(L, "likwid_nvMarkerRegionGpus", lua_likwid_nvMarkerRegionGpus);
+    lua_register(L, "likwid_nvMarkerRegionGpulist", lua_likwid_nvMarkerRegionGpulist);
+    lua_register(L, "likwid_nvMarkerRegionTime", lua_likwid_nvMarkerRegionTime);
+    lua_register(L, "likwid_nvMarkerRegionCount", lua_likwid_nvMarkerRegionCount);
+    lua_register(L, "likwid_nvMarkerRegionResult", lua_likwid_nvMarkerRegionResult);
+    lua_register(L, "likwid_nvMarkerRegionMetric", lua_likwid_nvMarkerRegionMetric);
+    lua_register(L, "likwid_nvInit",lua_likwid_nvInit);
+    lua_register(L, "likwid_nvAddEventSet", lua_likwid_nvAddEventSet);
+    lua_register(L, "likwid_nvFinalize",lua_likwid_nvFinalize);
+    lua_register(L, "likwid_nvGetNameOfEvent",lua_likwid_nvGetNameOfEvent);
+    lua_register(L, "likwid_nvGetNameOfCounter",lua_likwid_nvGetNameOfCounter);
+    lua_register(L, "likwid_nvGetNameOfMetric",lua_likwid_nvGetNameOfMetric);
+    lua_register(L, "likwid_nvGetNameOfGroup",lua_likwid_nvGetNameOfGroup);
+#endif /* LIKWID_WITH_NVMON */
 #ifdef __MIC__
     setuid(0);
     seteuid(0);
-#endif
+#endif /* __MIC__ */
     return 0;
 }
-

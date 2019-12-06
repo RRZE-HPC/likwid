@@ -1,7 +1,7 @@
 Name: likwid
-Version: 4.3.0
+Version: 5.0.0
 Release: 1
-Source: likwid-4.3.0.tar.gz
+Source: likwid-5.0.0.tar.gz
 License: GPL-3.0+
 Group: Development/Tools
 Packager: Holger Obermaier <holger.obermaier@kit.edu>
@@ -67,7 +67,7 @@ It consists of:
  * likwid-topology:
      print thread, cache and NUMA topology
  * likwid-perfctr:
-     configure and read out hardware performance counters on Intel and AMD
+     configure and read out hardware performance counters on x86, ARM and POWER
      processors
  * likwid-powermeter:
      read out RAPL Energy information and get info about Turbo mode steps
@@ -132,7 +132,15 @@ Some examples how to use the LIKWID library for hardware performance measurement
 %ifarch i386 i486 i586 i686
 COMPILER="GCCX86"
 %else
+%ifarch %{arm}
+COMPILER="GCCARMv8"
+%else
+%ifarch %{power64}
+COMPILER="GCCPOWER"
+%else
 COMPILER="GCC"
+%endif
+%endif
 %endif
 # Parallel build fails
 %{__make} \
@@ -154,7 +162,15 @@ COMPILER="GCC"
 %ifarch i386 i486 i586 i686
 COMPILER="GCCX86"
 %else
+%ifarch %{arm}
+COMPILER="GCCARMv8"
+%else
+%ifarch %{power64}
+COMPILER="GCCPOWER"
+%else
 COMPILER="GCC"
+%endif
+%endif
 %endif
 %{__make} install \
     PREFIX="$RPM_BUILD_ROOT/%{_prefix}" \

@@ -1,14 +1,15 @@
 /*
  * =======================================================================================
  *
- *      Filename:  frequency.c
+ *      Filename:  frequency_cpu.c
  *
  *      Description:  Module implementing an interface for frequency manipulation
+ *                    Module for manipuating CPU frequencies
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *                Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
@@ -597,7 +598,10 @@ static int getAMDTurbo(const int cpu_id)
         fprintf(stderr,"Access to frequency backend is locked.\n");
         return 0;
     }
-
+#ifdef LIKWID_USE_PERFEVENT
+    fprintf(stderr,"Cannot manipulate CPU turbo with ACCESSMODE=perf_event.\n");
+    return -1;
+#else
     if (!HPMinitialized())
     {
         HPMinit();
@@ -627,9 +631,10 @@ static int getAMDTurbo(const int cpu_id)
         ERROR_PLAIN_PRINT(Cannot read register 0xC0010015);
         return err;
     }
-    
+
     err = ((tmp >> 25) & 0x1);
     return err == 0;
+#endif
 }
 
 static int setAMDTurbo(const int cpu_id, const int turbo)
@@ -641,7 +646,10 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
         fprintf(stderr,"Access to frequency backend is locked.\n");
         return -EPERM;
     }
-
+#ifdef LIKWID_USE_PERFEVENT
+    fprintf(stderr,"Cannot manipulate CPU turbo with ACCESSMODE=perf_event.\n");
+    return -1;
+#else
     if (!HPMinitialized())
     {
         HPMinit();
@@ -688,6 +696,7 @@ static int setAMDTurbo(const int cpu_id, const int turbo)
     }
 
     return err == 0;
+#endif
 }
 
 static int getIntelTurbo(const int cpu_id)
@@ -699,7 +708,10 @@ static int getIntelTurbo(const int cpu_id)
         fprintf(stderr,"Access to frequency backend is locked.\n");
         return 0;
     }
-
+#ifdef LIKWID_USE_PERFEVENT
+    fprintf(stderr,"Cannot manipulate CPU turbo with ACCESSMODE=perf_event.\n");
+    return -1;
+#else
     if (!HPMinitialized())
     {
         HPMinit();
@@ -731,18 +743,22 @@ static int getIntelTurbo(const int cpu_id)
 
     err = ((tmp >> 38) & 0x1);
     return err == 0;
+#endif
 }
 
 static int setIntelTurbo(const int cpu_id, const int turbo)
 {
     int err = 0;
-    
+
     if (!lock_check())
     {
         fprintf(stderr,"Access to frequency backend is locked.\n");
         return -EPERM;
     }
-
+#ifdef LIKWID_USE_PERFEVENT
+    fprintf(stderr,"Cannot manipulate CPU turbo with ACCESSMODE=perf_event.\n");
+    return -1;
+#else
     if (!HPMinitialized())
     {
         HPMinit();
@@ -787,6 +803,7 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
         return err;
     }
     return err == 0;
+#endif
 }
 
 int

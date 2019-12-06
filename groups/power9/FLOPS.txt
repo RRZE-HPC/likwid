@@ -1,0 +1,25 @@
+SHORT SP/DP scalar/vector MFlops/s
+
+EVENTSET
+PMC3  PM_FLOP_CMPL
+PMC4  PM_RUN_INST_CMPL
+PMC5  PM_RUN_CYC
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC5/PMC4
+MFlops/s (SP/DP scalar assumed) 1.0E-06*PMC3*2.0/time
+MFlops/s (SP vector assumed) 1.0E-06*PMC3*8.0/time
+MFlops/s (DP vector assumed) 1.0E-06*PMC3*4.0/time
+
+LONG
+Formula:
+CPI = PM_RUN_CYC/PM_RUN_INST_CMPL
+MFlops/s (SP/DP scalar assumed) = 1.0E-06*PM_FLOP_CMPL*2.0/runtime
+MFlops/s (SP vector assumed) = 1.0E-06*PM_FLOP_CMPL*8.0/runtime
+MFlops/s (DP vector assumed) = 1.0E-06*PM_FLOP_CMPL*4.0/runtime
+-
+This group counts floating-point operations. All is derived out of a
+single event PM_FLOP_CMPL, so if you have mixed usage of SP or DP and
+scalar and vector operations, the count won't be exact. With pure codes
+the counts are pretty accurate (e.g. when using likwid-bench).

@@ -9,7 +9,7 @@
  *      Released:  <DATE>
  *
  *      Authors:  Jan Treibig (jt), jan.treibig@gmail.com
- *                Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -187,9 +187,9 @@ likwid_markerInit(void)
     affinity_init();
     hashTable_init();
 
-//#ifndef LIKWID_USE_PERFEVENT
+#ifndef LIKWID_USE_PERFEVENT
     HPMmode(atoi(modeStr));
-//#endif
+#endif
     if (debugStr != NULL)
     {
         perfmon_verbosity = atoi(debugStr);
@@ -791,4 +791,3 @@ likwid_pinProcess(int processorId)
 
     return TRUE;
 }
-

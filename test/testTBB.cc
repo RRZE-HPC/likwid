@@ -3,7 +3,7 @@
     Author: timday (stackoverflow)
     Source: http://stackoverflow.com/questions/10607215/simplest-tbb-example
 
-    Extended by Thomas Roehl to do LIKWID Marker API calls and print the CPU for
+    Extended by Thomas Gruber to do LIKWID Marker API calls and print the CPU for
     the threads instead of 'n'
 */
 
@@ -13,7 +13,7 @@
 #include <iostream>
 #include <vector>
 
-// Added by Thomas Roehl
+// Added by Thomas Gruber
 #include <sched.h>
 #include <likwid-marker.h>
 

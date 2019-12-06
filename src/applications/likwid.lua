@@ -8,7 +8,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:   Thomas Roehl (tr), thomas.roehl@gmail.com
+ *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -177,6 +177,36 @@ likwid.setuid = likwid_setuid
 likwid.seteuid = likwid_seteuid
 likwid.setresuid = likwid_setresuid
 likwid.setresuser = likwid_setresuser
+
+
+likwid.getGpuTopology = likwid_getGpuTopology
+likwid.putGpuTopology = likwid_putGpuTopology
+likwid.getGpuEventsAndCounters = likwid_getGpuEventsAndCounters
+likwid.getGpuGroups = likwid_getGpuGroups
+likwid.gpustr_to_gpulist = likwid_gpustr_to_gpulist
+likwid.nvGetNameOfGroup = likwid_nvGetNameOfGroup
+likwid.nvGetNameOfMetric = likwid_nvGetNameOfMetric
+likwid.nvGetNameOfEvent = likwid_nvGetNameOfEvent
+likwid.nvGetNameOfCounter = likwid_nvGetNameOfCounter
+
+likwid.nvSupported = likwid_nvSupported
+likwid.readNvMarkerFile = likwid_readNvMarkerFile
+likwid.destroyNvMarkerFile = likwid_destroyNvMarkerFile
+likwid.nvMarkerNumRegions = likwid_nvMarkerNumRegions
+likwid.nvMarkerRegionGroup = likwid_nvMarkerRegionGroup
+likwid.nvMarkerRegionTag = likwid_nvMarkerRegionTag
+likwid.nvMarkerRegionEvents = likwid_nvMarkerRegionEvents
+likwid.nvMarkerRegionMetrics = likwid_nvMarkerRegionMetrics
+likwid.nvMarkerRegionGpulist = likwid_nvMarkerRegionGpulist
+likwid.nvMarkerRegionGpus = likwid_nvMarkerRegionGpus
+likwid.nvMarkerRegionTime = likwid_nvMarkerRegionTime
+likwid.nvMarkerRegionCount = likwid_nvMarkerRegionCount
+likwid.nvMarkerRegionResult = likwid_nvMarkerRegionResult
+likwid.nvMarkerRegionMetric = likwid_nvMarkerRegionMetric
+likwid.nvInit = likwid_nvInit
+likwid.nvAddEventSet = likwid_nvAddEventSet
+likwid.nvFinalize = likwid_nvFinalize
+
 
 likwid.cpuFeatures = { [0]="HW_PREFETCHER", [1]="CL_PREFETCHER", [2]="DCU_PREFETCHER", [3]="IP_PREFETCHER",
                         [4]="FAST_STRINGS", [5]="THERMAL_CONTROL", [6]="PERF_MON", [7]="FERR_MULTIPLEX",
@@ -1270,5 +1300,263 @@ local function llikwid_getArch()
 end
 
 likwid.getArch = llikwid_getArch
+
+
+local function getGpuMarkerResults(filename, gpulist, nan2value)
+    local gputopo = likwid.getGpuTopology()
+    local ret = likwid.readNvMarkerFile(filename)
+    if ret < 0 then
+        return nil, nil
+    elseif ret == 0 then
+        return {}, {}
+    end
+    if not nan2value then
+        nan2value = '-'
+    end
+    results = {}
+    metrics = {}
+    for i=1, likwid.nvMarkerNumRegions() do
+        local regionName = likwid.nvMarkerRegionTag(i)
+        local groupID = likwid.nvMarkerRegionGroup(i)
+        local regionGPUs = likwid.nvMarkerRegionGpus(i)
+        results[i] = {}
+        metrics[i] = {}
+        results[i][groupID] = {}
+        metrics[i][groupID] = {}
+        for k=1, likwid.nvMarkerRegionEvents(i) do
+            local eventName = likwid.nvGetNameOfEvent(groupID, k)
+            local counterName = likwid.nvGetNameOfCounter(groupID, k)
+            results[i][groupID][k] = {}
+            for j=1, regionGPUs do
+                results[i][groupID][k][j] = likwid.nvMarkerRegionResult(i,k,j)
+                if results[i][groupID][k][j] ~= results[i][groupID][k][j] then
+                    results[i][groupID][k][j] = nan2value
+                end
+            end
+        end
+        if likwid.nvMarkerRegionMetrics(groupID) > 0 then
+            for k=1, likwid.nvMarkerRegionMetrics(groupID) do
+                local metricName = likwid.getNameOfMetric(groupID, k)
+                metrics[i][likwid.nvMarkerRegionGroup(i)][k] = {}
+                for j=1, regionGPUs do
+                    metrics[i][groupID][k][j] = likwid.nvMarkerRegionMetric(i,k,j)
+                    if metrics[i][groupID][k][j] ~= metrics[i][groupID][k][j] then
+                        metrics[i][groupID][k][j] = nan2value
+                    end
+                end
+            end
+        end
+    end
+    return results, metrics
+end
+
+likwid.getGpuMarkerResults = getGpuMarkerResults
+
+local function printGpuOutput(results, metrics, gpulist, region, stats)
+    local maxLineFields = 0
+    local gputopo = likwid.getGpuTopology()
+    local regionName = likwid.nvMarkerRegionTag(region)
+    local regionGPUs = likwid.nvMarkerRegionGpus(region)
+    local cur_gpulist = gpulist
+    if region ~= nil then
+        cur_gpulist = likwid.nvMarkerRegionGpulist(region)
+    end
+
+    for g, group in pairs(results) do
+        local infotab = {}
+        local firsttab = {}
+        local firsttab_combined = {}
+        local secondtab = {}
+        local secondtab_combined = {}
+        local runtime = likwid.nvMarkerRegionTime(g, 0)
+        local groupName = likwid.nvGetNameOfGroup(g)
+        if region ~= nil then
+            infotab[1] = {"Region Info","RDTSC Runtime [s]","call count"}
+            for c, gpu in pairs(cur_gpulist) do
+                local tmpList = {}
+                table.insert(tmpList, "GPU "..tostring(gpu))
+                table.insert(tmpList, string.format("%.6f", likwid.nvMarkerRegionTime(region, c)))
+                table.insert(tmpList, tostring(likwid.nvMarkerRegionCount(region, c)))
+                table.insert(infotab, tmpList)
+            end
+        end
+        firsttab[1] = {"Event"}
+        firsttab_combined[1] = {"Event"}
+        firsttab[2] = {"Counter"}
+        firsttab_combined[2] = {"Counter"}
+        if likwid.nvMarkerRegionMetrics(g) == 0 then
+            table.insert(firsttab[1],"Runtime (RDTSC) [s]")
+            table.insert(firsttab[2],"TSC")
+        end
+        for e, event in pairs(group) do
+            eventname = likwid.nvGetNameOfEvent(g, e)
+            countername = likwid.nvGetNameOfCounter(g, e)
+            table.insert(firsttab[1], eventname)
+            table.insert(firsttab[2], countername)
+            table.insert(firsttab_combined[1], eventname .. " STAT")
+            table.insert(firsttab_combined[2], countername)
+        end
+        for c, gpu in pairs(cur_gpulist) do
+            local tmpList = {"GPU "..tostring(gpu)}
+            if likwid.nvMarkerRegionMetrics(g) == 0 then
+                if region == nil then
+                    table.insert(tmpList, string.format("%e", runtime))
+                else
+                    table.insert(tmpList, string.format("%e", likwid.nvMarkerRegionTime(region, c)))
+                end
+            end
+            for e, event in pairs(group) do
+                local tmp = tostring(likwid.num2str(event[c]))
+                table.insert(tmpList, tmp)
+            end
+            table.insert(firsttab, tmpList)
+        end
+        if #gpulist > 1 or stats == true then
+            firsttab_combined = tableMinMaxAvgSum(firsttab, 2, 1)
+        end
+        if likwid.nvMarkerRegionMetrics(g) > 0 then
+            secondtab[1] = {"Metric"}
+            secondtab_combined[1] = {"Metric"}
+            for m=1, likwid.nvMarkerRegionMetrics(g) do
+                local mname = likwid.nvGetNameOfMetric(g, m)
+                table.insert(secondtab[1], mname)
+                table.insert(secondtab_combined[1], mname .." STAT" )
+            end
+            for c, gpu in pairs(cur_gpulist) do
+                local tmpList = {"GPU "..tostring(gpu)}
+                for m=1, likwid.nvMarkerRegionMetrics(g) do
+                    local tmp = tostring(likwid.num2str(metrics[g][m][c]))
+                    table.insert(tmpList, tmp)
+                end
+                table.insert(secondtab, tmpList)
+            end
+            if #gpulist > 1 or stats == true  then
+                secondtab_combined = tableMinMaxAvgSum(secondtab, 1, 1)
+            end
+        end
+        maxLineFields = math.max(#firsttab, #firsttab_combined,
+                                 #secondtab, #secondtab_combined)
+        if use_csv then
+--            print(string.format("STRUCT,Info,3%s",string.rep(",",maxLineFields-3)))
+--            print(string.format("GPU name:,%s%s", cpuinfo["osname"],string.rep(",",maxLineFields-2)))
+--            print(string.format("CPU type:,%s%s", cpuinfo["name"],string.rep(",",maxLineFields-2)))
+--            print(string.format("CPU clock:,%s GHz%s", clock*1.E-09,string.rep(",",maxLineFields-2)))
+            if region == nil then
+                print(string.format("TABLE,Group %d Raw,%s,%d%s",g,groupName,#firsttab[1]-1,string.rep(",",maxLineFields-4)))
+            else
+                print(string.format("TABLE,Region %s,Group %d Raw,%s,%d%s",regionName,g,groupName,#firsttab[1]-1,string.rep(",",maxLineFields-5)))
+            end
+            if #infotab > 0 then
+                likwid.printcsv(infotab, maxLineFields)
+            end
+            likwid.printcsv(firsttab, maxLineFields)
+        else
+            if outfile ~= nil then
+                print(likwid.hline)
+--                print(string.format("CPU name:\t%s",cpuinfo["osname"]))
+--                print(string.format("CPU type:\t%s",cpuinfo["name"]))
+--                print(string.format("CPU clock:\t%3.2f GHz",clock * 1.E-09))
+                print(likwid.hline)
+            end
+            if region == nil then
+                print("Group "..tostring(g)..": "..groupName)
+            else
+                print("Region "..regionName..", Group "..tostring(g)..": "..groupName)
+            end
+            if #infotab > 0 then
+                likwid.printtable(infotab)
+            end
+            likwid.printtable(firsttab)
+        end
+        if #cur_gpulist > 1 or stats == true then
+            if use_csv then
+                if region == nil then
+                    print(string.format("TABLE,Group %d Raw STAT,%s,%d%s",g,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-4)))
+                else
+                    print(string.format("TABLE,Region %s,Group %d Raw STAT,%s,%d%s",regionName, g,groupName,#firsttab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                end
+                likwid.printcsv(firsttab_combined, maxLineFields)
+            else
+                likwid.printtable(firsttab_combined)
+            end
+        end
+        if likwid.nvMarkerRegionMetrics(g) > 0 then
+            if use_csv then
+                if region == nil then
+                    print(string.format("TABLE,Group %d Metric,%s,%d%s",g,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-4)))
+                else
+                    print(string.format("TABLE,Region %s,Group %d Metric,%s,%d%s",regionName,g,groupName,#secondtab[1]-1,string.rep(",",maxLineFields-5)))
+                end
+                likwid.printcsv(secondtab, maxLineFields)
+            else
+                likwid.printtable(secondtab)
+            end
+            if #cur_gpulist > 1 or stats == true then
+                if use_csv then
+                    if region == nil then
+                        print(string.format("TABLE,Group %d Metric STAT,%s,%d%s",g,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-4)))
+                    else
+                        print(string.format("TABLE,Region %s,Group %d Metric STAT,%s,%d%s",regionName,g,groupName,#secondtab_combined[1]-1,string.rep(",",maxLineFields-5)))
+                    end
+                    likwid.printcsv(secondtab_combined, maxLineFields)
+                else
+                    likwid.printtable(secondtab_combined)
+                end
+            end
+        end
+    end
+end
+
+likwid.printGpuOutput = printGpuOutput
+
+local function getNvMarkerResults(filename, gpulist, nan2value)
+    local gputopo = likwid.getGpuTopology()
+    local ret = likwid.readNvMarkerFile(filename)
+    if ret < 0 then
+        return nil, nil
+    elseif ret == 0 then
+        return {}, {}
+    end
+    if not nan2value then
+        nan2value = '-'
+    end
+    results = {}
+    metrics = {}
+    for i=1, likwid.nvMarkerNumRegions() do
+        local regionName = likwid.nvMarkerRegionTag(i)
+        local groupID = likwid.nvMarkerRegionGroup(i)
+        local regionThreads = likwid.nvMarkerRegionGpus(i)
+        results[i] = {}
+        metrics[i] = {}
+        results[i][groupID] = {}
+        metrics[i][groupID] = {}
+        for k=1, likwid.nvMarkerRegionEvents(i) do
+            local eventName = likwid.getNameOfEvent(groupID, k)
+            local counterName = likwid.getNameOfCounter(groupID, k)
+            results[i][groupID][k] = {}
+            for j=1, regionThreads do
+                results[i][groupID][k][j] = likwid.nvMarkerRegionResult(i,k,j)
+                if results[i][groupID][k][j] ~= results[i][groupID][k][j] then
+                    results[i][groupID][k][j] = nan2value
+                end
+            end
+        end
+        if likwid.nvMarkerRegionMetrics(groupID) > 0 then
+            for k=1, likwid.nvMarkerRegionMetrics(groupID) do
+                local metricName = likwid.getNameOfMetric(groupID, k)
+                metrics[i][likwid.nvMarkerRegionGroup(i)][k] = {}
+                for j=1, regionThreads do
+                    metrics[i][groupID][k][j] = likwid.nvMarkerRegionMetric(i,k,j)
+                    if metrics[i][groupID][k][j] ~= metrics[i][groupID][k][j] then
+                        metrics[i][groupID][k][j] = nan2value
+                    end
+                end
+            end
+        end
+    end
+    return results, metrics
+end
+
+likwid.getNvMarkerResults = getNvMarkerResults
 
 return likwid

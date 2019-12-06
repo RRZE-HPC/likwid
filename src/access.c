@@ -8,7 +8,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -79,6 +79,7 @@ int
 HPMinit(void)
 {
     int ret = 0;
+    topology_init();
     if (registeredCpuList == NULL)
     {
         registeredCpuList = malloc(cpuid_topology.numHWThreads* sizeof(int));
@@ -159,26 +160,22 @@ HPMaddThread(int cpu_id)
 void
 HPMfinalize()
 {
-    if (registeredCpus != 0)
+    topology_init();
+    if (registeredCpuList)
     {
-        for (int i=0; i<cpuid_topology.numHWThreads; i++)
+        for (int i = 0; i < cpuid_topology.numHWThreads && registeredCpus > 0; i++)
         {
-            if (i >= cpuid_topology.numHWThreads)
-            {
-                break;
-            }
             if (registeredCpuList[i] == 1)
             {
+                DEBUG_PRINT(DEBUGLEV_DETAIL, Removing CPU %d from access module, i);
                 access_finalize(i);
                 registeredCpus--;
                 registeredCpuList[i] = 0;
             }
         }
-        if (registeredCpuList && registeredCpus == 0)
-        {
-            free(registeredCpuList);
-            registeredCpuList = NULL;
-        }
+        free(registeredCpuList);
+        registeredCpuList = NULL;
+        registeredCpus = 0;
     }
     if (access_init != NULL)
         access_init = NULL;
@@ -240,10 +237,9 @@ HPMwrite(int cpu_id, PciDeviceIndex dev, uint32_t reg, uint64_t data)
 int
 HPMcheck(PciDeviceIndex dev, int cpu_id)
 {
-    if (registeredCpuList[cpu_id] == 0)
+    if ((registeredCpuList[cpu_id] == 0) || (!access_check))
     {
         return -ENODEV;
     }
     return access_check(dev, cpu_id);
 }
-

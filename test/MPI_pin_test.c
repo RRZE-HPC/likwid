@@ -66,11 +66,13 @@ int get_sched()
     return -1;
 }
 
+
 #ifdef PTHREADS
 struct thread_info {
     int thread_id;
     int mpi_id;
     pid_t pid;
+    pid_t ppid;
 };
 
 void *
@@ -85,7 +87,7 @@ thread_start(void *arg)
         gethostname(host, HOST_NAME_MAX);
     }
     
-    printf ("Rank %d Thread %d running on Node %s core %d/%d with pid %d and tid %d\n",tinfo->mpi_id, tinfo->thread_id, host, sched_getcpu(), get_sched(), getpid(),gettid());
+    printf ("Rank %d Thread %d running on Node %s core %d/%d with pid %d and tid %d\n",tinfo->mpi_id, tinfo->thread_id, host, sched_getcpu(), get_sched(), tinfo->pid ,gettid());
     if (tinfo->thread_id == 0)
     {
         sleep(tinfo->mpi_id);
@@ -95,7 +97,8 @@ thread_start(void *arg)
 /*        system(cmd);*/
     }
     
-    pthread_exit(&i);
+    if (tinfo->thread_id != 0)
+        pthread_exit(NULL);
 }
 #endif
 
@@ -105,6 +108,7 @@ main(int argc, char **argv)
     int i = 0;
     int rank = 0, size = 1;
     char host[HOST_NAME_MAX];
+    pid_t master_pid = getpid();
 
 
     MPI_Init(&argc,&argv);
@@ -115,7 +119,7 @@ main(int argc, char **argv)
 
     MASTER(MPI started);
     MPI_Barrier(MPI_COMM_WORLD);
-    printf("Process with rank %d running on Node %s Core %d/%d\n",rank ,host, sched_getcpu(),get_cpu_id());
+    printf("Process with rank %d running on Node %s core %d/%d with pid %d\n",rank ,host, sched_getcpu(),get_cpu_id(), master_pid);
     MPI_Barrier(MPI_COMM_WORLD);
 
 
@@ -123,13 +127,14 @@ main(int argc, char **argv)
 #ifdef _OPENMP
     MASTER(Enter OpenMP parallel region);
     MPI_Barrier(MPI_COMM_WORLD);
+    MASTER(Start OpenMP threads);
 #pragma omp parallel
     {
 #pragma omp barrier
 
 #pragma omp critical
         {
-            printf ("Rank %d Thread %d running on Node %s core %d/%d with pid %d and tid %d\n",rank,omp_get_thread_num(), host, sched_getcpu(), get_sched(), getpid(),gettid());
+            printf ("Rank %d Thread %d running on Node %s core %d/%d with pid %d and tid %d\n",rank,omp_get_thread_num(), host, sched_getcpu(), get_sched(), master_pid ,gettid());
         }
 #pragma omp master
         {
@@ -153,16 +158,20 @@ main(int argc, char **argv)
     {
         tinfos[i].thread_id = i;
         tinfos[i].mpi_id = rank;
-        tinfos[i].pid = pid;
+        tinfos[i].pid = master_pid;
+        tinfos[i].ppid = pid;
     }
-
-    for (i = 0; i < 4; i++)
+    MPI_Barrier(MPI_COMM_WORLD);
+    MASTER(Start Pthread threads);
+    MPI_Barrier(MPI_COMM_WORLD);
+    for (i = 1; i < 4; i++)
     {
         err = pthread_create(&threads[i], &attrs[i], thread_start, (void*)&tinfos[i]);
         if (err != 0) printf("pthread_create %d error: %s\n", i, strerror(err));
     }
+    thread_start((void*)&tinfos[0]);
 
-    for (i = 0; i < 4; i++)
+    for (i = 1; i < 4; i++)
     {
         pthread_join(threads[i], NULL);
     }

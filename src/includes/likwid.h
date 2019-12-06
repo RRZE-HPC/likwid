@@ -8,7 +8,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Authors:  Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Authors:  Thomas Gruber (tr), thomas.roehl@googlemail.com
  *
  *      Project:  likwid
  *
@@ -46,11 +46,15 @@
 #define LIKWID_COMMIT GITCOMMIT
 
 extern int perfmon_verbosity;
+extern int likwid_nvmon_verbosity;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifndef LIKWID_MARKER_INIT
+#include <likwid-marker.h>
+#endif
 
 /*
 ################################################################################
@@ -627,6 +631,19 @@ defined in the selection string.
 */
 extern int sockstr_to_socklist(const char* sockstr, int* sockets, int length)  __attribute__ ((visibility ("default") ));
 
+#ifdef LIKWID_WITH_NVMON
+/*! \brief Read GPU selection string and resolve to available GPUs numbers
+
+Reads the GPU selection string and fills the given list with the GPU numbers defined in the selection string.
+@param [in] gpustr Selection string
+@param [out] gpulist List of available GPU
+@param [in] length Length of GPU list
+@return error code (>0 on success for the returned list length, -ERRORCODE on failure)
+*/
+extern int gpustr_to_gpulist(const char* gpustr, int* gpulist, int length)  __attribute__ ((visibility ("default") ));
+
+#endif /* LIKWID_WITH_NVMON */
+
 /** @}*/
 
 /*
@@ -691,8 +708,6 @@ The eventname, countername and options are checked if they are available.
 extern int perfmon_addEventSet(const char* eventCString) __attribute__ ((visibility ("default") ));
 /*! \brief Setup all performance monitoring counters of an eventSet
 
-A event string looks like Eventname:Countername(:Option1:Option2:...),...
-The eventname, countername and options are checked if they are available.
 @param [in] groupId (returned from perfmon_addEventSet()
 @return error code (-ENOENT if groupId is invalid and -1 if the counters of one CPU cannot be set up)
 */
@@ -707,7 +722,8 @@ extern int perfmon_startCounters(void) __attribute__ ((visibility ("default") ))
 /*! \brief Stop performance monitoring counters
 
 Stop the counters that have been previously started by perfmon_startCounters().
-All config registers get zeroed before reading the counter register.
+This function reads the counters, so afterwards the results are availble through
+perfmon_getResult, perfmon_getLastResult, perfmon_getMetric and perfmon_getLastMetric.
 @return 0 on success and -(thread_id+1) for error
 */
 extern int perfmon_stopCounters(void) __attribute__ ((visibility ("default") ));
@@ -828,7 +844,6 @@ extern int perfmon_getIdOfActiveGroup(void) __attribute__ ((visibility ("default
 */
 extern int perfmon_getNumberOfThreads(void) __attribute__ ((visibility ("default") ));
 
-
 /*! \brief Set verbosity of LIKWID library
 
 */
@@ -850,6 +865,7 @@ Get the counter name as defined in the performance group file
 @return The counter name or NULL in case of failure
 */
 extern char* perfmon_getCounterName(int groupId, int eventId) __attribute__ ((visibility ("default") ));
+
 /*! \brief Get the name group
 
 Get the name of group. Either it is the name of the performance group or "Custom"
@@ -968,6 +984,217 @@ extern double perfmon_getResultOfRegionThread(int region, int event, int thread)
 @return Metric result of a region for a thread
 */
 extern double perfmon_getMetricOfRegionThread(int region, int metricId, int threadId) __attribute__ ((visibility ("default") ));
+
+/** @}*/
+
+/*
+################################################################################
+# Performance group related functions
+################################################################################
+*/
+
+/** \addtogroup PerfGroup performance group module
+ *  @{
+ */
+
+/*! \brief The groupInfo data structure describes a performance group
+
+Groups can be either be read in from file or be a group with custom event set. For
+performance groups commonly all values are set. For groups with custom event set,
+the fields groupname and shortinfo are set to 'Custom', longinfo is NULL and in
+general the nmetrics value is 0.
+*/
+typedef struct {
+    char* groupname; /*!< \brief Name of the group: performance group name or 'Custom' */
+    char* shortinfo; /*!< \brief Short info string for the group or 'Custom' */
+    int nevents; /*!< \brief Number of event/counter combinations */
+    char** events; /*!< \brief List of events */
+    char** counters; /*!< \brief List of counter registers */
+    int nmetrics; /*!< \brief Number of metrics */
+    char** metricnames; /*!< \brief Metric names */
+    char** metricformulas; /*!< \brief Metric formulas */
+    char* longinfo; /*!< \brief Descriptive text about the group or empty */
+} GroupInfo;
+
+/*! \brief Initialize values in GroupInfo struct
+
+Initialize values in GroupInfo struct. The function does NOT allocate the GroupInfo struct
+*/
+int perfgroup_new(GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+
+/*! \brief Add a counter and event combination to the group
+
+Add a counter and event combination to the group.
+@param [in] ginfo GroupInfo struct
+@param [in] counter String with counter name
+@param [in] event String with event name
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_addEvent(GroupInfo* ginfo, char* counter, char* event) __attribute__ ((visibility ("default") ));
+
+/*! \brief Remove a counter and event combination from a group
+
+Remove a counter and event combination from a group
+@param [in] ginfo GroupInfo struct
+@param [in] counter String with counter name
+*/
+void perfgroup_removeEvent(GroupInfo* ginfo, char* counter) __attribute__ ((visibility ("default") ));
+
+/*! \brief Add a metric to the group
+
+Add a metric to the group
+@param [in] ginfo GroupInfo struct
+@param [in] mname String with metric name/description
+@param [in] mcalc String with metric formula. No spaces in string.
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_addMetric(GroupInfo* ginfo, char* mname, char* mcalc) __attribute__ ((visibility ("default") ));
+/*! \brief Remove a metric from a group
+
+Remove a metric from a group
+@param [in] ginfo GroupInfo struct
+@param [in] mname String with metric name/description
+*/
+void perfgroup_removeMetric(GroupInfo* ginfo, char* mname) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the event string of a group needed for perfmon_addEventSet
+
+Get the event string of a group needed for perfmon_addEventSet
+@param [in] ginfo GroupInfo struct
+@return String with eventset or NULL
+*/
+char* perfgroup_getEventStr(GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+/*! \brief Return the eventset string of a group
+
+Return the event string of a group
+@param [in] eventStr Eventset string
+*/
+void perfgroup_returnEventStr(char* eventStr) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the group name of a group
+
+Get the group name of a group
+@param [in] ginfo GroupInfo struct
+@return String with group name or NULL
+*/
+char* perfgroup_getGroupName(GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+/*! \brief Set the group name of a group
+
+Set the group name of a group. String must be zero-terminated
+@param [in] ginfo GroupInfo struct
+@param [in] groupName String with group name
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_setGroupName(GroupInfo* ginfo, char* groupName) __attribute__ ((visibility ("default") ));
+/*! \brief Return the group name string of a group
+
+Return the group name string of a group
+@param [in] gname Group name string
+*/
+void perfgroup_returnGroupName(char* gname) __attribute__ ((visibility ("default") ));
+
+
+/*! \brief Set the short information string of a group
+
+Set the short information string of a group. String must be zero-terminated
+@param [in] ginfo GroupInfo struct
+@param [in] shortInfo String with short information
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_setShortInfo(GroupInfo* ginfo, char* shortInfo) __attribute__ ((visibility ("default") ));
+/*! \brief Get the short information string of a group
+
+Get the short information string of a group
+@param [in] ginfo GroupInfo struct
+@return String with short information or NULL
+*/
+char* perfgroup_getShortInfo(GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+/*! \brief Return the short information string of a group
+
+Return the short information string of a group
+@param [in] sinfo Short information string
+*/
+void perfgroup_returnShortInfo(char* sinfo) __attribute__ ((visibility ("default") ));
+
+/*! \brief Set the long information string of a group
+
+Set the long information string of a group. String must be zero-terminated
+@param [in] ginfo GroupInfo struct
+@param [in] longInfo String with long information
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_setLongInfo(GroupInfo* ginfo, char* longInfo) __attribute__ ((visibility ("default") ));
+/*! \brief Get the long information string of a group
+
+Get the long information string of a group
+@param [in] ginfo GroupInfo struct
+@return String with long information or NULL
+*/
+char* perfgroup_getLongInfo(GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+/*! \brief Return the long information string of a group
+
+Return the long information string of a group
+@param [in] linfo Long information string
+*/
+void perfgroup_returnLongInfo(char* linfo) __attribute__ ((visibility ("default") ));
+
+/*! \brief Merge two groups
+
+Merge two groups (group2 into group1).
+@param [in,out] grp1 Group1
+@param [in] grp2 Group2
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_mergeGroups(GroupInfo* grp1, GroupInfo* grp2) __attribute__ ((visibility ("default") ));
+
+/*! \brief Read group from file
+
+Read group from file
+@param [in] grouppath Base path to all groups
+@param [in] architecture Architecture string (e.g. short_info in cpuid_info)
+@param [in] groupname Group name
+@param [in,out] ginfo Group filled with data from file
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_readGroup(const char* grouppath, const char* architecture, const char* groupname, GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+/*! \brief Create group from event string
+
+Create group from event string (list of event:counter(:opts)).
+@param [in] eventStr event string
+@param [in,out] ginfo Group filled with data from event string
+@return 0 for success, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+
+/*! \brief Return group
+
+Return group (frees internal lists)
+@param [in] ginfo Performance group info
+*/
+void perfgroup_returnGroup(GroupInfo* ginfo) __attribute__ ((visibility ("default") ));
+/*! \brief Get all groups available in the system (base + user home)
+
+Get all groups available in the system (base + user home)
+@param [in] grouppath Base path to all groups
+@param [in] architecture Architecture string (e.g. short_info in cpuid_info)
+@param [out] groupnames List of group names
+@param [out] groupshort List of groups' short information string
+@param [out] grouplong List of groups' long information string
+@return number of groups, -EINVAL or -ENOMEM in case of error.
+*/
+int perfgroup_getGroups( const char* grouppath, const char* architecture, char*** groupnames, char*** groupshort, char*** grouplong) __attribute__ ((visibility ("default") ));
+/*! \brief Return list of all groups
+
+Return list of all groups
+@param [in] groups Number of groups
+@param [in] groupnames List of group names
+@param [in] groupshort List of groups' short information string
+@param [in] grouplong List of groups' long information string
+*/
+void perfgroup_returnGroups(int groups, char** groupnames, char** groupshort, char** grouplong) __attribute__ ((visibility ("default") ));
+
+
+
 
 /** @}*/
 
@@ -1552,6 +1779,494 @@ Finalize cpu frequency module
 */
 extern void freq_finalize(void) __attribute__ ((visibility ("default") ));
 /** @}*/
+
+
+/*
+################################################################################
+# Performance monitoring for NVIDIA GPUs related functions
+################################################################################
+*/
+/** \addtogroup Nvmon Performance monitoring for NVIDIA GPUs
+ *  @{
+ */
+
+#if defined(LIKWID_WITH_NVMON) || defined(LIKWID_NVMON)
+/*! \brief Structure with general GPU information for each device
+
+General information covers GPU devid, name and clock and memory specific information.
+Most information comes from cuDeviceGetProperties() and cuDeviceGetAttribute().
+*/
+typedef struct {
+    int devid; /*!< \brief Device ID  */
+    int numaNode; /*!< \brief Closest NUMA domain to the device */
+    char* name; /*!< \brief Name of the device */
+    uint64_t mem; /*!< \brief Total memory of device */
+    int ccapMajor; /*!< \brief Major number of device's compute capability */
+    int ccapMinor; /*!< \brief Minor number of device's compute capability */
+    int maxThreadsPerBlock; /*!< \brief Maximam number of thread per block */
+    int maxThreadsDim[3]; /*!< \brief Maximum sizes of each dimension of a block */
+    int maxGridSize[3]; /*!< \brief Maximum sizes of each dimension of a grid */
+    int sharedMemPerBlock; /*!< \brief Total amount of shared memory available per block */
+    int totalConstantMemory; /*!< \brief Total amount of constant memory available on the device */
+    int simdWidth; /*!< \brief SIMD width of arithmetic units = warp size */
+    int memPitch; /*!< \brief Maximum pitch allowed by the memory copy functions that involve memory regions allocated through cuMemAllocPitch() */
+    int regsPerBlock; /*!< \brief Total number of registers available per block */
+    int clockRatekHz; /*!< \brief Clock frequency in kilohertz */
+    int textureAlign; /*!< \brief Alignment requirement */
+    int surfaceAlign; /*!< \brief Alignment requirement for surfaces */
+    int l2Size; /*!< \brief L2 cache in bytes. 0 if the device doesn't have L2 cache */
+    int memClockRatekHz; /*!< \brief Peak memory clock frequency in kilohertz */
+    int pciBus; /*!< \brief PCI bus identifier of the device */
+    int pciDev; /*!< \brief PCI device (also known as slot) identifier of the device */
+    int pciDom; /*!< \brief PCI domain identifier of the device */
+    int maxBlockRegs; /*!< \brief Maximum number of 32-bit registers available to a thread block */
+    int numMultiProcs; /*!< \brief Number of multiprocessors on the device */
+    int maxThreadPerMultiProc; /*!< \brief Maximum resident threads per multiprocessor */
+    int memBusWidth; /*!< \brief Global memory bus width in bits */
+    int unifiedAddrSpace; /*!< \brief 1 if the device shares a unified address space with the host, or 0 if not */
+    int ecc; /*!< \brief 1 if error correction is enabled on the device, 0 if error correction is disabled or not supported by the device */
+    int asyncEngines; /*!< \brief Number of asynchronous engines */
+    int mapHostMem; /*!< \brief 1 if the device can map host memory into the CUDA address space */
+    int integrated; /*!< \brief 1 if the device is an integrated (motherboard) GPU and 0 if it is a discrete (card) component */
+} GpuDevice;
+
+
+/*! \brief Structure holding information of all GPUs
+
+*/
+typedef struct {
+    int numDevices; /*!< \brief Number of detected devices */
+    GpuDevice* devices; /*!< \brief List with GPU-specific topology information */
+} GpuTopology;
+
+/*! \brief Variable holding the global gpu information structure */
+extern GpuTopology gpuTopology;
+/** \brief Pointer for exporting the GpuTopology data structure */
+typedef GpuTopology* GpuTopology_t;
+
+
+/*! \brief Initialize GPU topology information
+
+Reads in the topology information from the CUDA library (if found).
+\sa GpuTopology_t
+@return 0 or -errno in case of error
+*/
+extern int topology_gpu_init(void) __attribute__ ((visibility ("default") ));
+/*! \brief Destroy GPU topology structure GpuTopology_t
+
+Retrieved pointers to the structures are not valid anymore after this function call
+\sa GpuTopology_t
+*/
+extern void topology_gpu_finalize(void) __attribute__ ((visibility ("default") ));
+/*! \brief Retrieve GPU topology of the current machine
+
+\sa GpuTopology_t
+@return GpuTopology_t (pointer to internal gpuTopology structure)
+*/
+extern GpuTopology_t get_gpuTopology(void) __attribute__ ((visibility ("default") ));
+
+
+/*
+################################################################################
+# NvMarker API related functions
+################################################################################
+*/
+/** \addtogroup NvMarkerAPI Marker API module for GPUs
+*  @{
+*/
+/*! \brief Initialize NvLIKWID's marker API
+
+Must be called in serial region of the application to set up basic data structures
+of LIKWID.
+Reads environment variables:
+- LIKWID_GEVENTS (GPU event string)
+- LIKWID_GPUS (GPU list separated by ,)
+- LIKWID_GPUFILEPATH (Outputpath for NvMarkerAPI file)
+*/
+extern void likwid_gpuMarkerInit(void) __attribute__ ((visibility ("default") ));
+/*! \brief Select next group to measure
+
+Must be called in parallel region of the application to switch group on every CPU.
+*/
+extern void likwid_gpuMarkerNextGroup(void) __attribute__ ((visibility ("default") ));
+/*! \brief Close LIKWID's NvMarker API
+
+Must be called in serial region of the application. It gathers all data of regions and
+writes them out to a file (filepath in env variable LIKWID_FILEPATH).
+*/
+extern void likwid_gpuMarkerClose(void) __attribute__ ((visibility ("default") ));
+/*! \brief Register a measurement region
+
+Initializes the hashTable entry in order to reduce execution time of likwid_gpuMarkerStartRegion()
+@param regionTag [in] Initialize data using this string
+@return Error code
+*/
+extern int likwid_gpuMarkerRegisterRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+/*! \brief Start a measurement region
+
+Reads the values of all configured counters and saves the results under the name given
+in regionTag.
+@param regionTag [in] Store data using this string
+@return Error code of start operation
+*/
+extern int likwid_gpuMarkerStartRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+/*! \brief Stop a measurement region
+
+Reads the values of all configured counters and saves the results under the name given
+in regionTag. The measurement data of the stopped region gets summed up in global region counters.
+@param regionTag [in] Store data using this string
+@return Error code of stop operation
+*/
+extern int likwid_gpuMarkerStopRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+/*! \brief Reset a measurement region
+
+Reset the values of all configured counters and timers.
+@param regionTag [in] Reset data using this string
+@return Error code of reset operation
+*/
+extern int likwid_gpuMarkerResetRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
+/*! \brief Get accumulated data of a code region
+
+Get the accumulated data of the current thread for the given regionTag.
+@param regionTag [in] Print data using this string
+@param nr_gpus [in,out] Length of first dimension of the arrys. Afterwards the actual count of GPUs.
+@param nr_events [in,out] Length of events array
+@param events [out] Events array for the intermediate results
+@param time [out] Accumulated measurement time
+@param count [out] Call count of the code region
+*/
+extern void likwid_gpuMarkerGetRegion(const char* regionTag, int* nr_gpus, int* nr_events, double** events, double **time, int **count) __attribute__ ((visibility ("default") ));
+
+/*! \brief Read the output file of the NvMarker API
+@param [in] filename Filename with NvMarker API results
+@return 0 or negative error number
+*/
+int nvmon_readMarkerFile(const char* filename) __attribute__ ((visibility ("default") ));
+/*! \brief Free space for read in NvMarker API file
+*/
+void nvmon_destroyMarkerResults() __attribute__ ((visibility ("default") ));
+/*! \brief Get the number of regions listed in NvMarker API result file
+
+@return Number of regions
+*/
+int nvmon_getNumberOfRegions() __attribute__ ((visibility ("default") ));
+/*! \brief Get the number of metrics of a region
+@param [in] region ID of region
+@return Number of metrics of region
+*/
+int nvmon_getMetricsOfRegion(int region) __attribute__ ((visibility ("default") ));
+/*! \brief Get the number of GPUs of a region
+@param [in] region ID of region
+@return Number of GPUs of region
+*/
+int nvmon_getGpusOfRegion(int region) __attribute__ ((visibility ("default") ));
+/*! \brief Get the GPU list of a region
+@param [in] region ID of region
+@param [in] count Length of gpulist array
+@param [in,out] gpulist gpulist array
+@return Number of GPUs of region or count, whatever is lower
+*/
+int nvmon_getGpulistOfRegion(int region, int count, int* gpulist) __attribute__ ((visibility ("default") ));
+/*! \brief Get the accumulated measurement time of a region for a GPU
+@param [in] region ID of region
+@param [in] gpu ID of GPU
+@return Measurement time of a region for a GPU
+*/
+double nvmon_getTimeOfRegion(int region, int gpu) __attribute__ ((visibility ("default") ));
+/*! \brief Get the call count of a region for a GPU
+@param [in] region ID of region
+@param [in] gpu ID of GPU
+@return Call count of a region for a GPU
+*/
+int nvmon_getCountOfRegion(int region, int gpu) __attribute__ ((visibility ("default") ));
+/*! \brief Get the groupID of a region
+
+@param [in] region ID of region
+@return Group ID of region
+*/
+int nvmon_getGroupOfRegion(int region) __attribute__ ((visibility ("default") ));
+/*! \brief Get the tag of a region
+@param [in] region ID of region
+@return tag of region
+*/
+char* nvmon_getTagOfRegion(int region) __attribute__ ((visibility ("default") ));
+/*! \brief Get the number of events of a region
+@param [in] region ID of region
+@return Number of events of region
+*/
+int nvmon_getEventsOfRegion(int region) __attribute__ ((visibility ("default") ));
+/*! \brief Get the event result of a region for an event and GPU
+@param [in] region ID of region
+@param [in] eventId ID of event
+@param [in] gpuId ID of GPU
+@return Result of a region for an event and GPU
+*/
+double nvmon_getResultOfRegionGpu(int region, int eventId, int gpuId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the metric result of a region for a metric and GPU
+@param [in] region ID of region
+@param [in] metricId ID of metric
+@param [in] gpuId ID of GPU
+@return Metric result of a region for a GPU
+*/
+double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId) __attribute__ ((visibility ("default") ));
+
+/** @}*/
+
+/*
+################################################################################
+# Nvmon related functions (Nvidia GPU monitoring)
+################################################################################
+*/
+
+/** \addtogroup Nvmon Nvidia GPU monitoring API module for GPUs
+*  @{
+*/
+
+/*! \brief Element in the output list from nvmon_getEventsOfGpu
+
+It holds the name, the description and the limitation string for one event.
+*/
+typedef struct {
+    char* name; /*! \brief Name of the event */
+    char* desc; /*! \brief Description of the event */
+    char* limit; /*! \brief Limitation string of the event, commonly 'GPU' */
+} NvmonEventListEntry;
+
+/*! \brief Output list from nvmon_getEventsOfGpu with all supported events
+
+Output list from nvmon_getEventsOfGpu with all supported events
+*/
+typedef struct {
+    int numEvents; /*! \brief Number of events */
+    NvmonEventListEntry *events; /*! \brief List of events */
+} NvmonEventList;
+/** \brief Pointer for exporting the NvmonEventList data structure */
+typedef NvmonEventList* NvmonEventList_t;
+
+
+/*! \brief Get the list of supported event of a GPU
+
+@param [in] gpuId ID of GPU (from GPU topology)
+@param [out] list List of events
+@return Number of supported events or -errno
+*/
+int nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list);
+/*! \brief Return the list of supported event of a GPU
+
+Return the list of supported event of a GPU from nvmon_getEventsOfGpu()
+@param [in] list List of events
+*/
+void nvmon_returnEventsOfGpu(NvmonEventList_t list);
+
+
+/*! \brief Initialize the Nvidia GPU performance monitoring facility (Nvmon)
+
+Initialize the Nvidia GPU performance monitoring feature by creating basic data structures.
+The CUDA and CUPTI library paths need to be in LD_LIBRARY_PATH to be found by dlopen.
+
+@param [in] nrGpus Amount of GPUs
+@param [in] gpuIds List of GPUs
+@return error code (0 on success, -ERRORCODE on failure)
+*/
+int nvmon_init(int nrGpus, const int* gpuIds) __attribute__ ((visibility ("default") ));
+
+/*! \brief Close the Nvidia GPU perfomance monitoring facility of LIKWID (Nvmon)
+
+Deallocates all internal data that is used during Nvmon performance monitoring. Also
+the counter values are not accessible anymore after calling this function.
+*/
+void nvmon_finalize(void) __attribute__ ((visibility ("default") ));
+/*! \brief Add an event string to LIKWID Nvmon
+
+A event string looks like Eventname:Countername,...
+The eventname and countername are checked if they are available.
+
+@param [in] eventCString Event string
+@return Returns the ID of the new eventSet
+*/
+int nvmon_addEventSet(const char* eventCString) __attribute__ ((visibility ("default") ));
+/*! \brief Setup all Nvmon performance monitoring counters of an eventSet
+
+@param [in] gid (returned from perfmon_addEventSet()
+@return error code (-ENOENT if groupId is invalid and -1 if the counters of one CPU cannot be set up)
+*/
+int nvmon_setupCounters(int gid) __attribute__ ((visibility ("default") ));
+/*! \brief Start Nvmon performance monitoring counters
+
+Start the counters that have been previously set up by nvmon_setupCounters().
+The counter registered are zeroed before enabling the counters
+@return 0 on success and -(gpuid+1) for error
+*/
+int nvmon_startCounters(void) __attribute__ ((visibility ("default") ));
+/*! \brief Stop Nvmon performance monitoring counters
+
+Stop the counters that have been previously started by nvmon_startCounters().
+@return 0 on success and -(gpuid+1) for error
+*/
+int nvmon_stopCounters(void) __attribute__ ((visibility ("default") ));
+/*! \brief Read the Nvmon performance monitoring counters on all GPUs
+
+Read the counters that have been previously started by nvmon_startCounters().
+@return 0 on success and -(gpuid+1) for error
+*/
+int nvmon_readCounters(void) __attribute__ ((visibility ("default") ));
+/*! \brief Switch the active eventSet to a new one (Nvmon)
+
+Stops the currently running counters, switches the eventSet by setting up the
+counters and start the counters.
+@param [in] new_group ID of group that should be switched to.
+@return 0 on success and -(thread_id+1) for error
+*/
+int nvmon_switchActiveGroup(int new_group) __attribute__ ((visibility ("default") ));
+/*! \brief Set verbosity of LIKWID Nvmon library
+
+*/
+void nvmon_setVerbosity(int level) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get the results of the specified group, counter and GPU (Nvmon)
+
+Get the result of all measurement cycles.
+@param [in] groupId ID of the group that should be read
+@param [in] eventId ID of the event that should be read
+@param [in] gpuId ID of the GPU that should be read
+@return The counter result
+*/
+double nvmon_getResult(int groupId, int eventId, int gpuId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the last results of the specified group, counter and GPU (Nvmon)
+
+Get the result of the last measurement cycle (between start/stop, start/read, read/read or read/top).
+@param [in] groupId ID of the group that should be read
+@param [in] eventId ID of the event that should be read
+@param [in] gpuId ID of the GPU that should be read
+@return The counter result
+*/
+double nvmon_getLastResult(int groupId, int eventId, int gpuId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the metric result of the specified group, counter and GPU (Nvmon)
+
+Get the metric result of all measurement cycles. It reads all raw results for the given groupId and gpuId.
+@param [in] groupId ID of the group that should be read
+@param [in] metricId ID of the metric that should be calculated
+@param [in] gpuId ID of the GPU that should be read
+@return The metric result
+*/
+double nvmon_getMetric(int groupId, int metricId, int gpuId);
+/*! \brief Get the last metric result of the specified group, counter and GPU (Nvmon)
+
+Get the metric result of the last measurement cycle. It reads all raw results for the given groupId and gpuId.
+@param [in] groupId ID of the group that should be read
+@param [in] metricId ID of the metric that should be calculated
+@param [in] gpuId ID of the GPU that should be read
+@return The metric result
+*/
+double nvmon_getLastMetric(int groupId, int metricId, int gpuId);
+/*! \brief Get the number of configured event groups (Nvmon)
+
+@return Number of groups
+*/
+int nvmon_getNumberOfGroups(void) __attribute__ ((visibility ("default") ));
+/*! \brief Get the ID of the currently set up event group (Nvmon)
+
+@return Number of active group
+*/
+int nvmon_getIdOfActiveGroup(void) __attribute__ ((visibility ("default") ));
+/*! \brief Get the number of GPUs specified at nvmon_init() (Nvmon)
+
+@return Number of GPUs
+*/
+int nvmon_getNumberOfGPUs(void) __attribute__ ((visibility ("default") ));
+/*! \brief Get the number of configured eventSets in group (Nvmon)
+
+@param [in] groupId ID of group
+@return Number of eventSets
+*/
+int nvmon_getNumberOfEvents(int groupId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the number of configured metrics for group (Nvmon)
+
+@param [in] groupId ID of group
+@return Number of metrics
+*/
+int nvmon_getNumberOfMetrics(int groupId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the accumulated measurement time a group (Nvmon)
+
+@param [in] groupId ID of group
+@return Time in seconds the event group was measured
+*/
+double nvmon_getTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the last measurement time a group (Nvmon)
+
+@param [in] groupId ID of group
+@return Time in seconds the event group was measured the last time
+*/
+double nvmon_getLastTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the event name of the specified group and event (Nvmon)
+
+Get the metric name as defined in the performance group file
+@param [in] groupId ID of the group that should be read
+@param [in] eventId ID of the event that should be returned
+@return The event name or NULL in case of failure
+*/
+char* nvmon_getEventName(int groupId, int eventId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the counter name of the specified group and event (Nvmon)
+
+Get the counter name as defined in the performance group file
+@param [in] groupId ID of the group that should be read
+@param [in] eventId ID of the event of which the counter should be returned
+@return The counter name or NULL in case of failure
+*/
+char* nvmon_getCounterName(int groupId, int eventId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the metric name of the specified group and metric (Nvmon)
+
+Get the metric name as defined in the performance group file
+@param [in] groupId ID of the group that should be read
+@param [in] metricId ID of the metric that should be calculated
+@return The metric name or NULL in case of failure
+*/
+char* nvmon_getMetricName(int groupId, int metricId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the name group (Nvmon)
+
+Get the name of group. Either it is the name of the performance group or "Custom"
+@param [in] groupId ID of the group that should be read
+@return The group name or NULL in case of failure
+*/
+char* nvmon_getGroupName(int groupId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the short informational string of the specified group (Nvmon)
+
+Returns the short information string as defined by performance groups or "Custom"
+in case of custom event sets
+@param [in] groupId ID of the group that should be read
+@return The short information or NULL in case of failure
+*/
+char* nvmon_getGroupInfoShort(int groupId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the long descriptive string of the specified group (Nvmon)
+
+Returns the long descriptive string as defined by performance groups or NULL
+in case of custom event sets
+@param [in] groupId ID of the group that should be read
+@return The long description or NULL in case of failure
+*/
+char* nvmon_getGroupInfoLong(int groupId) __attribute__ ((visibility ("default") ));
+
+/*! \brief Get all groups (Nvmon)
+
+Checks the configured performance group path for the current GPU and
+returns all found group names
+@return Amount of found performance groups
+*/
+int nvmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos) __attribute__ ((visibility ("default") ));
+/*! \brief Free all group information (Nvmon)
+
+@param [in] nrgroups Number of groups
+@param [in] groups List of group names
+@param [in] shortinfos List of short information string about group
+@param [in] longinfos List of long information string about group
+*/
+int nvmon_returnGroups(int nrgroups, char** groups, char** shortinfos, char** longinfos) __attribute__ ((visibility ("default") ));
+
+
+
+/** @}*/
+
+#endif /* LIKWID_WITH_NVMON */
 
 #ifdef __cplusplus
 }

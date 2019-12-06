@@ -9,7 +9,7 @@
  *      Released:  <DATE>
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
- *                Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -106,6 +106,55 @@ setConfiguredNodes(void)
     return maxIdConfiguredNode;
 }
 
+static int
+get_numaNodes(int* array, int maxlen)
+{
+    DIR *dir = NULL;
+    struct dirent *de = NULL;
+    int count = 0;
+
+    dir = opendir("/sys/devices/system/node");
+
+    if (!dir)
+    {
+        count = 0;
+    }
+    else
+    {
+        while ((de = readdir(dir)) != NULL)
+        {
+            if (strncmp(de->d_name, "node", 4))
+            {
+                continue;
+            }
+	    if (array && count < maxlen)
+            {
+            	int nd = str2int(de->d_name+4);
+                array[count] = nd;
+	    }
+            count++;
+        }
+    }       
+    if (array && count > 0)
+    {
+        int i = 0;
+        int j = 0;
+        while (i < count)
+        {
+            j = i;
+            while (j > 0 && array[j-1] > array[j])
+            {
+                int tmp = array[j];
+                array[j] = array[j-1];
+                array[j-1] = tmp;
+                j--;
+            }
+            i++;
+        }
+    }
+    return count;
+}
+
 static void
 nodeMeminfo(int node, uint64_t* totalMemory, uint64_t* freeMemory)
 {
@@ -116,7 +165,6 @@ nodeMeminfo(int node, uint64_t* totalMemory, uint64_t* freeMemory)
     int i;
 
     filename = bformat("/sys/devices/system/node/node%d/meminfo", node);
-
     if (NULL != (fp = fopen (bdata(filename), "r")))
     {
         bstring src = bread ((bNread) fread, fp);
@@ -305,7 +353,14 @@ int proc_numa_init(void)
         return -1;
     }
     /* First determine maximum number of nodes */
-    numa_info.numberOfNodes = setConfiguredNodes()+1;
+    //numa_info.numberOfNodes = setConfiguredNodes()+1;
+    numa_info.numberOfNodes= get_numaNodes(NULL, 10000);
+    int* nodes = malloc(numa_info.numberOfNodes*sizeof(int));
+    if (!nodes)
+    {
+	return -ENOMEM;
+    }
+    numa_info.numberOfNodes = get_numaNodes(nodes, numa_info.numberOfNodes);
     numa_info.nodes = (NumaNode*) malloc(numa_info.numberOfNodes * sizeof(NumaNode));
     if (!numa_info.nodes)
     {
@@ -314,16 +369,17 @@ int proc_numa_init(void)
 
     for (i=0; i<numa_info.numberOfNodes; i++)
     {
-        numa_info.nodes[i].id = i;
-        nodeMeminfo(i, &numa_info.nodes[i].totalMemory, &numa_info.nodes[i].freeMemory);
-        numa_info.nodes[i].numberOfProcessors = nodeProcessorList(i,&numa_info.nodes[i].processors);
+	int id = nodes[i];
+        numa_info.nodes[i].id = id;
+        nodeMeminfo(id, &numa_info.nodes[i].totalMemory, &numa_info.nodes[i].freeMemory);
+        numa_info.nodes[i].numberOfProcessors = nodeProcessorList(id, &numa_info.nodes[i].processors);
         nrCPUs += numa_info.nodes[i].numberOfProcessors;
-        if (numa_info.nodes[i].numberOfProcessors == 0 && nrCPUs != cpuid_topology.activeHWThreads)
+        if (numa_info.nodes[i].numberOfProcessors == 0 && nrCPUs != cpuid_topology.numHWThreads)
         {
             err = -EFAULT;
             break;
         }
-        numa_info.nodes[i].numberOfDistances = nodeDistanceList(i, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
+        numa_info.nodes[i].numberOfDistances = nodeDistanceList(id, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
         if (numa_info.nodes[i].numberOfDistances == 0)
         {
             err = -EFAULT;
@@ -332,8 +388,9 @@ int proc_numa_init(void)
     }
     for (; i<numa_info.numberOfNodes; i++)
     {
+	int id = nodes[i];
         numa_info.nodes[i].numberOfProcessors = 0;
-        numa_info.nodes[i].numberOfDistances = nodeDistanceList(i, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
+        numa_info.nodes[i].numberOfDistances = nodeDistanceList(id, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
     }
     if (err == 0)
         numaInitialized = 1;

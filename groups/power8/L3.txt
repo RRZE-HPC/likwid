@@ -1,0 +1,31 @@
+SHORT  L3 cache bandwidth in MBytes/s
+
+EVENTSET
+PMC0  PM_L3_LD_PREF
+PMC3  PM_DATA_FROM_L3
+PMC4  PM_RUN_INST_CMPL
+PMC5  PM_RUN_CYC
+
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC5/PMC4
+L3D load bandwidth [MBytes/s]  1.0E-06*(PMC3+(PMC0-PMC3))*128.0/time
+L3D load data volume [GBytes]  1.0E-09*(PMC3+(PMC0-PMC3))*128.0
+L3 bandwidth [MBytes/s] 1.0E-06*(PMC3+(PMC0-PMC3))*128.0/time
+L3 data volume [GBytes] 1.0E-09*(PMC3+(PMC0-PMC3))*128.0
+Loads from local L3 per cycle 100.0*(PMC3+(PMC0-PMC3))/PMC5
+
+LONG
+Formulas:
+CPI = PM_RUN_CYC/PM_RUN_INST_CMPL
+L3D load bandwidth [MBytes/s] = 1.0E-06*(PM_DATA_FROM_L3)*128.0/time
+L3D load data volume [GBytes] = 1.0E-09*(PM_DATA_FROM_L3)*128.0
+L3D evict bandwidth [MBytes/s] = 1.0E-06*(PM_L2_CASTOUT_MOD)*128.0/time
+L3D evict data volume [GBytes] = 1.0E-09*(PM_L2_CASTOUT_MOD)*128.0
+L3 bandwidth [MBytes/s] = 1.0E-06*(PM_DATA_FROM_L3+PM_L2_CASTOUT_MOD)*128.0/time
+L3 data volume [GBytes] = 1.0E-09*(PM_DATA_FROM_L3+PM_L2_CASTOUT_MOD)*128.0
+-
+Profiling group to measure L3 cache bandwidth. The bandwidth is computed by the
+number of cacheline loaded from the L3 to the L2 data cache. There is currently no
+event to get the evicted data volume.

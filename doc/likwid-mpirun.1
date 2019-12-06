@@ -18,7 +18,8 @@ likwid-mpirun \- A tool to start and monitor MPI applications with LIKWID
 .IR mpitype ]
 .RB [ \-g
 .IR eventset ]
-.RB [\-\-]
+.RB [\-\-mpiopts
+.IR opts ]
 .SH DESCRIPTION
 .B likwid-mpirun
 is a command line application that wraps the vendor-specific mpirun tool and adds calls to
@@ -62,7 +63,7 @@ and
 .TP
 .B \-\^mpi <mpitype>
 specifies the MPI implementation that should be used by the wrapper. Possible values are
-.B intelmpi, openmpi
+.B intelmpi, openmpi, slurm
 and
 .B mvapich2
 .TP
@@ -72,8 +73,11 @@ activates the Marker API for the executed MPI processes
 .B \-\^O
 prints output in CSV not ASCII tables
 .TP
+.B \-\-\^mpiopts <opts>
+adds options for the underlying MPI implementation. Please use proper quoting.
+.TP
 .B \-\-
-stops parsing arguments for likwid-mpirun, in order to set options for underlying MPI implementation after \-\-.
+stops parsing arguments for likwid-mpirun.
 
 .SH EXAMPLE
 .IP 1. 4
@@ -103,7 +107,7 @@ event set that does not contain Uncore counters although the second part of the
 second expression would measure the Uncore counters on socket 1.
 
 .SH AUTHOR
-Written by Thomas Roehl <thomas.roehl@googlemail.com>.
+Written by Thomas Gruber <thomas.roehl@googlemail.com>.
 .SH BUGS
 Report Bugs on <https://github.com/RRZE-HPC/likwid/issues>.
 .SH "SEE ALSO"

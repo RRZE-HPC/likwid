@@ -8,7 +8,7 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -37,11 +37,11 @@
 
 extern char* daemon_path;
 
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 #include <cpuid.h>
 #endif
 
-#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A)
+#if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 static int isAMD()
 {
     unsigned int eax,ebx,ecx,edx;

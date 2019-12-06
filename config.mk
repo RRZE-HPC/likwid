@@ -26,6 +26,10 @@ FORTRAN_INTERFACE = false#NO SPACE
 # Instrument likwid-bench with Marker API calls for use with likwid-perfctr
 INSTRUMENT_BENCH = true#NO SPACE
 
+# Build LIKWID with NVIDIA interface (CUDA, CUPTI)
+# For configuring include paths, go to CUDA section
+NVIDIA_INTERFACE = false#NO SPACE
+
 #################################################################
 #################################################################
 # Advanced configuration options                                #
@@ -68,6 +72,11 @@ BUILDFREQ = true#NO SPACE
 FREQDAEMON = $(PREFIX)/sbin/likwid-setFreq#NO SPACE
 INSTALLED_FREQDAEMON = $(INSTALLED_PREFIX)/sbin/likwid-setFreq#NO SPACE
 
+# Build the appDaemon. It's not really a daemon but an LD_PRELOAD library
+# It is required to get access to the application context.
+BUILDAPPDAEMON=true
+APPDAEMON = $(PREFIX)/lib/likwid-appDaemon.so#NO SPACE
+INSTALLED_APPDAEMON = $(INSTALLED_PREFIX)/lib/likwid-appDaemon.so#NO SPACE
 
 # chown installed tools to this user/group
 # if you change anything here, make sure that the user/group can access
@@ -91,7 +100,7 @@ DEBUG = false#NO SPACE
 
 # Basic configuration for some internal arrays.
 # Maximal number of hardware threads
-MAX_NUM_THREADS = 263
+MAX_NUM_THREADS = 300
 # Maximal number of sockets
 MAX_NUM_NODES = 64
 
@@ -104,11 +113,11 @@ TOPO_FILE_PATH = /etc/likwid_topo.cfg
 
 # Versioning Information
 # The libraries are named liblikwid.<VERSION>.<RELEASE>
-VERSION = 4
-RELEASE = 3
+VERSION = 5
+RELEASE = 0
 MINOR = 0
 # Date when the release is published
-DATE    = 03.08.2017
+DATE    = 10.11.2019
 
 # In come cases it is important to set the rpaths for the LIKWID library. One
 # example is the use of sudo because it resets environment variables like
@@ -141,3 +150,15 @@ LIKWIDFILTERPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/filter)
 # performance group files. Despite this folder, LIKWID also checks
 # $HOME/.likwid/groups
 LIKWIDGROUPPATH = $(abspath $(INSTALLED_PREFIX)/share/likwid/perfgroups)
+
+# CUDA / CUPTI build data
+# LIKWID requires CUDA and CUPTI to be present only for compilation with
+# NVIDIA_INTERFACE=true. At runtime, the CUDA and the CUPTI library have
+# to be in the LD_LIBRARY_PATH to dynamically load the libraries.
+# Include directory for CUDA headers
+CUDAINCLUDE = $(CUDA_HOME)/include
+# Include directory for CUPTI headers
+CUPTIINCLUDE = $(CUDA_HOME)/extras/CUPTI/include
+# In order to hook into the CUDA application, the appDaemon is required
+# If you just want the NvMarkerAPI, you can keep it false
+BUILDAPPDAEMON=false

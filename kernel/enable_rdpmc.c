@@ -68,6 +68,6 @@ void stop_module(void)
 module_init(start_module);
 module_exit(stop_module)
 
-MODULE_AUTHOR("Thomas Roehl <Thomas.Roehl@fau.de>");
+MODULE_AUTHOR("Thomas Gruber <Thomas.Roehl@fau.de>");
 MODULE_DESCRIPTION("Enable RDPMC for userspace");
 MODULE_LICENSE("GPL");

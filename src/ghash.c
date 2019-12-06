@@ -304,11 +304,9 @@ g_hash_table_lookup_node (GHashTable    *hash_table,
   return node_index;
 }
 
-#if 0
 static void
 g_hash_table_remove_node (GHashTable   *hash_table,
-                          gint          i,
-                          gboolean      notify)
+                          gint          i)
 {
   gpointer key;
   gpointer value;
@@ -321,14 +319,27 @@ g_hash_table_remove_node (GHashTable   *hash_table,
   hash_table->values[i] = NULL;
   hash_table->nnodes--;
 
-  if (notify && hash_table->key_destroy_func)
+  if (hash_table->key_destroy_func != NULL)
     hash_table->key_destroy_func (key);
 
-  if (notify && hash_table->value_destroy_func)
+  if (hash_table->value_destroy_func != NULL)
     hash_table->value_destroy_func (value);
 
 }
-#endif
+
+int
+g_hash_table_remove(GHashTable *hash_table, gpointer key)
+{
+    int hashret = 0;
+    if (key)
+    {
+        int* key_ptr = (int*)key;
+        int keyint = *key_ptr;
+        int idx = g_hash_table_lookup_node(hash_table, key_ptr, &hashret);
+        g_hash_table_remove_node(hash_table, idx);
+        
+    }
+}
 
 static void
 g_hash_table_remove_all_nodes (GHashTable *hash_table,
@@ -355,20 +366,23 @@ g_hash_table_remove_all_nodes (GHashTable *hash_table,
   for (i = 0; i < hash_table->size; i++)
     {
       if (HASH_IS_REAL (hash_table->hashes[i]))
-        {
-          key = hash_table->keys[i];
-          value = hash_table->values[i];
+      {
+        g_hash_table_remove_node(hash_table, i);
+      }
+/*        {*/
+/*          key = hash_table->keys[i];*/
+/*          value = hash_table->values[i];*/
 
-          hash_table->hashes[i] = UNUSED_HASH_VALUE;
-          hash_table->keys[i] = NULL;
-          hash_table->values[i] = NULL;
+/*          hash_table->hashes[i] = UNUSED_HASH_VALUE;*/
+/*          hash_table->keys[i] = NULL;*/
+/*          hash_table->values[i] = NULL;*/
 
-          if (hash_table->key_destroy_func != NULL)
-            hash_table->key_destroy_func (key);
+/*          if (hash_table->key_destroy_func != NULL)*/
+/*            hash_table->key_destroy_func (key);*/
 
-          if (hash_table->value_destroy_func != NULL)
-            hash_table->value_destroy_func (value);
-        }
+/*          if (hash_table->value_destroy_func != NULL)*/
+/*            hash_table->value_destroy_func (value);*/
+/*        }*/
       else if (HASH_IS_TOMBSTONE (hash_table->hashes[i]))
         {
           hash_table->hashes[i] = UNUSED_HASH_VALUE;
@@ -471,7 +485,7 @@ GHashTable *
 g_hash_table_new (GHashFunc  hash_func,
                   GEqualFunc key_equal_func)
 {
-  /* Thomas Roehl added g_free as destructor of hash table keys. This reduces
+  /* Thomas Gruber added g_free as destructor of hash table keys. This reduces
    * memory leaks since we know that all key strings are duplicated.
    */
   return g_hash_table_new_full (hash_func, key_equal_func, g_free, NULL);
@@ -588,10 +602,32 @@ g_hash_table_remove_all (GHashTable *hash_table)
 
 
 void
+g_hash_table_unref (GHashTable *hash_table)
+{
+    
+    if (hash_table->values && hash_table->keys != hash_table->values)
+    {
+        free(hash_table->values);
+        hash_table->values = NULL;
+    }
+    if (hash_table->keys)
+    {
+        free(hash_table->keys);
+        hash_table->keys = NULL;
+    }
+    if (hash_table->hashes)
+    {
+        free(hash_table->hashes);
+        hash_table->hashes = NULL;
+    }
+    free(hash_table);
+}
+
+void
 g_hash_table_destroy (GHashTable *hash_table)
 {
   g_hash_table_remove_all (hash_table);
-//  g_hash_table_unref (hash_table);
+  g_hash_table_unref (hash_table);
 }
 
 gpointer
@@ -762,4 +798,3 @@ g_direct_equal (gconstpointer v1,
 {
   return v1 == v2;
 }
-

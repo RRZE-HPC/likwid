@@ -89,9 +89,29 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
 else
 OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
+ifneq ($(NVIDIA_INTERFACE), true)
+OBJ := $(filter-out $(BUILD_DIR)/nvmon.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/topology_gpu.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/libnvctr.o,$(OBJ))
+endif
+ifeq ($(COMPILER),GCCPOWER)
+OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/loadData.o,$(OBJ))
+endif
+ifeq ($(COMPILER),XLC)
+OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/loadData.o,$(OBJ))
+endif
 PERFMONHEADERS  = $(patsubst $(SRC_DIR)/includes/%.txt, $(BUILD_DIR)/%.h,$(wildcard $(SRC_DIR)/includes/*.txt))
 OBJ_LUA    =  $(wildcard ./ext/lua/$(COMPILER)/*.o)
 OBJ_HWLOC  =  $(wildcard ./ext/hwloc/$(COMPILER)/*.o)
+OBJ_GOTCHA = $(wildcard ./ext/GOTCHA/$(COMPILER)/*.o)
 FILTERS := $(filter-out ./filters/README,$(wildcard ./filters/*))
 
 
@@ -113,12 +133,12 @@ endif
 CPPFLAGS := $(CPPFLAGS) $(DEFINES) $(INCLUDES)
 
 ifeq ($(BUILDDAEMON),false)
-all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(FREQ_TARGET) $(BENCH_TARGET)
+all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(FREQ_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET)
 else
 ifeq ($(BUILDFREQ),false)
-all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(BENCH_TARGET)
+all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET)
 else
-all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET)
+all: $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_LIB) $(FORTRAN_IF)  $(PINLIB) $(L_APPS) $(L_HELPER) $(DAEMON_TARGET) $(FREQ_TARGET) $(BENCH_TARGET) $(APPDAEMON_TARGET)
 endif
 endif
 
@@ -184,6 +204,10 @@ $(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreqDaemon.c
 	@echo "===>  BUILD frequency daemon likwid-setFreq"
 	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-setFreq
 
+$(APPDAEMON_TARGET): $(SRC_DIR)/access-daemon/appDaemon.c $(TARGET_GOTCHA_LIB)
+	@echo "===>  BUILD application interface likwid-appDaemon.so"
+	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-appDaemon.so
+
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
 
@@ -209,6 +233,11 @@ else
 $(TARGET_LUA_LIB):
 	@echo "===>  EXTERNAL LUA"
 endif
+
+$(TARGET_GOTCHA_LIB):
+	@echo "===>  ENTER  $(GOTCHA_FOLDER)"
+	$(Q)$(MAKE) --no-print-directory -C $(GOTCHA_FOLDER) $(MAKECMDGOALS)
+
 
 $(TARGET_HWLOC_LIB):
 	@echo "===>  ENTER  $(HWLOC_FOLDER)"
@@ -243,13 +272,13 @@ ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(OBJ:.o=.d)
 endif
 
-.PHONY: clean distclean install uninstall help $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
+.PHONY: clean distclean install uninstall help $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TARGET)
 
 .PRECIOUS: $(BUILD_DIR)/%.pas
 
 .NOTPARALLEL:
 
-clean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
+clean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TARGET)
 	@echo "===>  CLEAN"
 	@for APP in $(L_APPS); do \
 		rm -f $$APP; \
@@ -259,10 +288,10 @@ clean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	@rm -f $(DYNAMIC_TARGET_LIB)*
 	@rm -f $(PINLIB)*
 	@rm -f $(FORTRAN_IF_NAME)
-	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
+	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET) $(APPDAEMON_TARGET)
 	@rm -f likwid-config.cmake
 
-distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
+distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TARGET)
 	@echo "===>  DIST CLEAN"
 	@for APP in $(L_APPS); do \
 		rm -f $$APP; \
@@ -272,10 +301,11 @@ distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(BENCH_TARGET)
 	@rm -f $(DYNAMIC_TARGET_LIB)*
 	@rm -f $(PINLIB)*
 	@rm -f $(FORTRAN_IF_NAME)
-	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET)
+	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET) $(APPDAEMON_TARGET)
 	@rm -rf $(BUILD_DIR)
 	@rm -rf $(TARGET_LUA_LIB).* $(shell basename $(TARGET_LUA_LIB)).*
 	@rm -rf $(TARGET_HWLOC_LIB).* $(shell basename $(TARGET_HWLOC_LIB)).*
+	@rm -rf $(TARGET_GOTCHA_LIB).* $(shell basename $(TARGET_GOTCHA_LIB)).*
 	@rm -f $(GENGROUPLOCK)
 	@rm -f likwid-config.cmake
 	@rm -rf doc/html
@@ -355,7 +385,33 @@ uninstall_freq_moved:
 	@echo "===> No UNINSTALL of setFrequencies tool"
 endif
 
-install: install_daemon install_freq
+ifeq ($(BUILDAPPDAEMON),true)
+install_appdaemon:
+	@echo "===> INSTALL application interface appDaemon to $(PREFIX)/lib/$(APPDAEMON_TARGET)"
+	@mkdir -p $(PREFIX)/lib
+	@install -m 755 $(APPDAEMON_TARGET) $(PREFIX)/lib/$(APPDAEMON_TARGET)
+move_appdaemon:
+	@echo "===> MOVE application interface appDaemon from $(PREFIX)/lib/$(APPDAEMON_TARGET) to $(INSTALLED_PREFIX)/lib/$(APPDAEMON_TARGET)"
+	@mkdir -p $(INSTALLED_PREFIX)/lib
+	@install -m 755 $(PREFIX)/lib/$(APPDAEMON_TARGET) $(INSTALLED_PREFIX)/lib/$(APPDAEMON_TARGET)
+uninstall_appdaemon:
+	@echo "===> REMOVING application interface appDaemon from $(PREFIX)/lib/$(APPDAEMON_TARGET)"
+	@rm -f $(PREFIX)/lib/$(APPDAEMON_TARGET)
+uninstall_appdaemon_moved:
+	@echo "===> REMOVING application interface appDaemon from $(INSTALLED_PREFIX)/lib/$(APPDAEMON_TARGET)"
+	@rm -f $(INSTALLED_PREFIX)/lib/$(APPDAEMON_TARGET)
+else
+install_appdaemon:
+	@echo "===> No INSTALL of the application interface appDaemon"
+move_appdaemon:
+	@echo "===> No MOVE of the application interface appDaemon"
+uninstall_appdaemon:
+	@echo "===> No UNINSTALL of the application interface appDaemon"
+uninstall_appdaemon_moved:
+	@echo "===> No UNINSTALL of the application interface appDaemon"
+endif
+
+install: install_daemon install_freq install_appdaemon
 	@echo "===> INSTALL applications to $(BINPREFIX)"
 	@mkdir -p $(BINPREFIX)
 	@chmod 755 $(BINPREFIX)
@@ -392,6 +448,11 @@ install: install_daemon install_freq
 	@if [ "$(LUA_INTERNAL)" = "true" ]; then \
 		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB)); \
 		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB)).$(VERSION); \
+	fi
+	@if [ "$(BUILDAPPDAEMON)" = "true" ]; then \
+		@install -m 755 $(GOTCHA_FOLDER)/$(TARGET_GOTCHA_LIB) $(LIBPREFIX)/$(TARGET_GOTCHA_LIB).$(VERSION).$(RELEASE); \
+		@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_GOTCHA_LIB)); \
+		@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION); \
 	fi
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
@@ -441,7 +502,7 @@ install: install_daemon install_freq
 	done
 	@install -m 644 likwid-config.cmake $(LIBPREFIX)
 
-move: move_daemon move_freq
+move: move_daemon move_freq move_appdaemon
 	@echo "===> MOVE applications from $(BINPREFIX) to $(INSTALLED_BINPREFIX)"
 	@mkdir -p $(INSTALLED_BINPREFIX)
 	@chmod 755 $(INSTALLED_BINPREFIX)
@@ -465,6 +526,7 @@ move: move_daemon move_freq
 	@install -m 755 $(LIBPREFIX)/$(PINLIB).$(VERSION).$(RELEASE) $(INSTALLED_LIBPREFIX)/$(PINLIB).$(VERSION).$(RELEASE)
 	@install -m 755 $(LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE) $(INSTALLED_LIBPREFIX)/$(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE)
 	@install -m 755 $(LIBPREFIX)/$(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(INSTALLED_LIBPREFIX)/$(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE)
+	@install -m 755 $(LIBPREFIX)/$(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(INSTALLED_LIBPREFIX)/$(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE)
 	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(TARGET_LIB).$(VERSION).$(RELEASE) $(TARGET_LIB)
 	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(TARGET_LIB).$(VERSION).$(RELEASE) $(TARGET_LIB).$(VERSION)
 	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(PINLIB).$(VERSION).$(RELEASE) $(PINLIB)
@@ -473,6 +535,8 @@ move: move_daemon move_freq
 	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_HWLOC_LIB)).$(VERSION)
 	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB))
 	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB)).$(VERSION)
+	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_GOTCHA_LIB))
+	@cd $(INSTALLED_LIBPREFIX) && ln -fs $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION)
 	@echo "===> MOVE man pages from $(MANPREFIX)/man1 to $(INSTALLED_MANPREFIX)/man1"
 	@mkdir -p $(INSTALLED_MANPREFIX)/man1
 	@chmod 755 $(INSTALLED_MANPREFIX)/man1
@@ -504,7 +568,7 @@ move: move_daemon move_freq
 	@chmod 755 $(LIKWIDFILTERPATH)/*
 	@install -m 644 $(LIBPREFIX)/likwid-config.cmake $(INSTALLED_LIBPREFIX)
 
-uninstall: uninstall_daemon uninstall_freq
+uninstall: uninstall_daemon uninstall_freq uninstall_appdaemon
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
 	@rm -f $(addprefix $(BINPREFIX)/,$(addsuffix  .lua,$(L_APPS)))
 	@for APP in $(L_APPS); do \
@@ -520,6 +584,7 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -rf  $(PREFIX)/share/lua/likwid.lua
 	@echo "===> REMOVING libs from $(LIBPREFIX)"
 	@rm -f $(LIBPREFIX)/liblikwid*
+	@rm -f $(LIBPREFIX)/$(TARGET_GOTCHA_LIB)
 	@echo "===> REMOVING man pages from $(MANPREFIX)/man1"
 	@rm -f $(addprefix $(MANPREFIX)/man1/,$(addsuffix  .1,$(L_APPS)))
 	@rm -f $(MANPREFIX)/man1/feedGnuplot.1
@@ -540,7 +605,7 @@ uninstall: uninstall_daemon uninstall_freq
 	@rm -rf $(PREFIX)/share/likwid
 	@rm -rf $(LIBPREFIX)/likwid-config.cmake
 
-uninstall_moved: uninstall_daemon_moved uninstall_freq_moved
+uninstall_moved: uninstall_daemon_moved uninstall_freq_moved uninstall_appdaemon_moved
 	@echo "===> REMOVING applications from $(INSTALLED_PREFIX)/bin"
 	@rm -f $(addprefix $(INSTALLED_BINPREFIX)/,$(addsuffix  .lua,$(L_APPS)))
 	@for APP in $(L_APPS); do \
@@ -556,6 +621,7 @@ uninstall_moved: uninstall_daemon_moved uninstall_freq_moved
 	@rm -rf  $(INSTALLED_PREFIX)/share/lua/likwid.lua
 	@echo "===> REMOVING libs from $(INSTALLED_LIBPREFIX)"
 	@rm -f $(INSTALLED_LIBPREFIX)/liblikwid*
+	@rm -f $(INSTALLED_LIBPREFIX)/$(TARGET_GOTCHA_LIB)
 	@echo "===> REMOVING man pages from $(INSTALLED_MANPREFIX)/man1"
 	@rm -f $(addprefix $(INSTALLED_MANPREFIX)/man1/,$(addsuffix  .1,$(L_APPS)))
 	@rm -f $(INSTALLED_MANPREFIX)/man1/feedGnuplot.1
@@ -590,6 +656,8 @@ local: $(L_APPS) likwid.lua
 	@ln -sf $(HWLOC_FOLDER)/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION).$(RELEASE)
 	@ln -sf $(LUA_FOLDER)/liblikwid-lua.so liblikwid-lua.so.$(VERSION)
 	@ln -sf $(LUA_FOLDER)/liblikwid-lua.so liblikwid-lua.so.$(VERSION).$(RELEASE)
+	@ln -sf $(GOTCHA_FOLDER)/liblikwid-gotcha.so liblikwid-gotcha.so.$(VERSION)
+	@ln -sf $(GOTCHA_FOLDER)/liblikwid-gotcha.so liblikwid-gotcha.so.$(VERSION).$(RELEASE)
 	@if [ -e $(LUA_FOLDER)/liblikwid-lua.so ]; then ln -sf $(LUA_FOLDER)/liblikwid-lua.so liblikwid-lua.so.$(VERSION).$(RELEASE); fi
 	@if [ -e $(HWLOC_FOLDER)/liblikwid-hwloc.so ]; then ln -sf $(HWLOC_FOLDER)/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION).$(RELEASE); fi
 	@if [ -e $(PINLIB) ]; then ln -sf $(PINLIB) $(PINLIB).$(VERSION).$(RELEASE); fi

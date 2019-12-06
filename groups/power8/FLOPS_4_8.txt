@@ -1,0 +1,18 @@
+SHORT Group 122 as used in IBM Parallel Environment Developer Edition
+
+EVENTSET
+PMC0  PM_VSU0_4FLOP
+PMC1  PM_VSU1_4FLOP
+PMC2  PM_VSU0_8FLOP
+PMC3  PM_VSU1_8FLOP
+PMC4  PM_RUN_INST_CMPL
+PMC5  PM_RUN_CYC
+
+METRICS
+CPI PMC5/PMC4
+Four FLOPs ops PMC0+PMC1
+Eight FLOPs ops PMC2+PMC3
+MFLOP/s 1E-6*(((PMC0+PMC1)*4.0)+((PMC2+PMC3)*8.0))/time
+
+LONG
+Group 122 from web page http://www.ibm.com/support/knowledgecenter/en/SSFK5S_2.2.0/com.ibm.cluster.pedev.v2r2.pedev100.doc/bl7ug_power8metrics.htm

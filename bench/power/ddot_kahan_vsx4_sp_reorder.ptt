@@ -1,0 +1,88 @@
+STREAMS 2
+TYPE SINGLE
+FLOPS 2
+BYTES 8
+
+li r10, 24           # sixteen (4x4) elements per loop iteration
+divd r10, r3, r10   # r3 holds loop limit, divide by elements per loop iteration
+mtctr r10           # move to count register
+li r6, 0            # load immediate value of 0 into r7 (used as offset in addressing)
+li r7, 16           # load immediate value of 16 into r8 (used as offset in addressing)
+li r8, 32           # load immediate value of 32 into r9 (used as offset in addressing)
+li r9, 48           # load immediate value of 48 into r10 (used as offset in addressing)
+li r10, 64          # load immediate value of 48 into r10 (used as offset in addressing)
+li 11, 80           # load immediate value of 48 into r10 (used as offset in addressing)
+
+# set accumulation registers to zero
+xvsubsp     0, 0, 0
+xvsubsp     1, 1, 1
+xvsubsp     2, 2, 2
+xvsubsp     3, 3, 3
+xvsubsp     4, 4, 4
+xvsubsp     5, 5, 5
+
+# set c registers to zero
+xvsubsp     6, 6, 6
+xvsubsp     7, 7, 7
+xvsubsp     8, 8, 8
+xvsubsp     9, 9, 9
+xvsubsp     10, 10, 10
+xvsubsp     11, 11, 11
+
+LOOP 24
+# load A[i]
+lxvd2x      12, STR0, r6
+lxvd2x      18, STR1, r6
+lxvd2x      13, STR0, r7
+lxvd2x      19, STR1, r7
+xvmsubasp   26, 14, 20
+xvmsubasp   27, 15, 21
+xvaddsp     34, 4, 28
+xvaddsp     35, 5, 29
+xvsubsp     36, 30, 0
+xvsubsp     37, 31, 1
+xvsubsp     8, 38, 26
+xvsubsp     9, 39, 27
+xvmovsp     4, 34
+xvmovsp     5, 35
+
+lxvd2x      14, STR0, r8
+lxvd2x      20, STR1, r8
+lxvd2x      15, STR0, r9
+lxvd2x      21, STR1, r9
+xvmsubasp   28, 16, 22
+xvmsubasp   29, 17, 23
+xvaddsp     30, 0, 24
+xvaddsp     31, 1, 25
+xvsubsp     38, 32, 2
+xvsubsp     39, 33, 3
+xvsubsp     10, 40, 28
+xvsubsp     11, 41, 29
+xvmovsp     0, 30
+xvmovsp     1, 31
+
+lxvd2x      16, STR0, r10
+lxvd2x      22, STR1, r10
+lxvd2x      17, STR0, 11
+lxvd2x      23, STR1, 11
+    addi STR0, STR0, 96
+    addi STR1, STR1, 96
+xvmsubasp   24, 12, 18
+xvmsubasp   25, 13, 19
+xvaddsp     32, 2, 26
+xvaddsp     33, 3, 27
+xvsubsp     40, 34, 4
+xvsubsp     41, 35, 5
+xvsubsp     6, 36, 24
+xvsubsp     7, 37, 25
+xvmovsp     2, 32
+xvmovsp     3, 33
+
+
+
+# tmp = t - sum; we can writewrite registers holding 'sum'
+
+# c = tmp - y = (t - sum) - y; we can overwrite register holding 'y'
+
+# sum = t
+

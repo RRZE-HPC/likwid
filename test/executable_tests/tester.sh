@@ -83,8 +83,8 @@ while read -r LINE || [[ -n $LINE ]]; do
             STATE=$?
         fi
     done
-    
-    
+
+
     if [ $STATE -eq 0 ]; then
         echo "SUCCESS : ${EXEC}" "${OPTIONS}"
     else
@@ -96,13 +96,12 @@ while read -r LINE || [[ -n $LINE ]]; do
         echo "FAIL : ${EXEC}" "${OPTIONS}" >> ${LOGFILE}
         echo "######################################################################" >> ${LOGFILE}
     fi
-    
+
 done < ${EXEC}.txt
 
 
 if [ "${EXEC}" == "likwid-setFrequencies" ]; then
-    ${EXECPATH}/${EXEC} -f "${CURFREQ}"
+    ${EXECPATH}/${EXEC} --reset
 fi
 
 rm -f /tmp/topo.txt /tmp/test /tmp/test.txt /tmp/out.txt /tmp/out
-

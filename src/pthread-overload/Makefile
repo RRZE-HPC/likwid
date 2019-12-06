@@ -8,7 +8,7 @@
 #      Released:  <DATE>
 #
 #      Author:  Jan Treibig (jt), jan.treibig@gmail.com
-#               Thomas Roehl (tr), thomas.roehl@googlemail.com
+#               Thomas Gruber (tr), thomas.roehl@googlemail.com
 #
 #      Project:  likwid
 #

@@ -9,7 +9,7 @@
  *      Released:  <DATE>
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
- *                Thomas Roehl (tr), thomas.roehl@gmail.com
+ *                Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -49,12 +49,12 @@
 
 #define CHECK_ERROR(func, msg)  \
     if ((func) < 0) { \
-        fprintf(stderr, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno));  \
+        ERROR_PRINT(msg); \
     }
 
 #define CHECK_AND_RETURN_ERROR(func, msg)  \
     if ((func) < 0) { \
-        fprintf(stderr, "ERROR - [%s:%d] " str(msg) " - %s \n", __FILE__, __LINE__, strerror(errno));  \
+        ERROR_PRINT(msg); \
         return errno; \
     }
 
@@ -87,11 +87,32 @@
         fflush(stdout); \
     }
 
+#define GPUDEBUG_PRINT(lev, fmt, ...) \
+    if ((lev >= 0) && (lev <= likwid_nvmon_verbosity)) { \
+        fprintf(stdout, "DEBUG - [%s:%d] " str(fmt) "\n", __func__, __LINE__,##__VA_ARGS__); \
+        fflush(stdout); \
+    }
+
 #define DEBUG_PLAIN_PRINT(lev, msg) \
     if ((lev >= 0) && (lev <= perfmon_verbosity)) { \
         fprintf(stdout, "DEBUG - [%s:%d] " str(msg) "\n",__func__, __LINE__);  \
         fflush(stdout); \
     }
+
+#define INFO_PRINT(fmt, ...) \
+    if (perfmon_verbosity >= DEBUGLEV_INFO) \
+    { \
+        fprintf(stdout, "INFO - " STRINGIFY(fmt) "\n", ##__VA_ARGS__); \
+    }
+#define GPUINFO_PRINT(fmt, ...) \
+    if (likwid_nvmon_verbosity >= DEBUGLEV_INFO) \
+    { \
+        fprintf(stdout, "INFO - " STRINGIFY(fmt) "\n", ##__VA_ARGS__); \
+    }
+
+#define TODO_PRINT(fmt, ...)  \
+    fprintf(stdout, "TODO - " STRINGIFY(fmt) "\n", ##__VA_ARGS__);
+
 
 #define CHECK_MSR_WRITE_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR write operation failed);
 #define CHECK_MSR_READ_ERROR(func) CHECK_AND_RETURN_ERROR(func, MSR read operation failed);

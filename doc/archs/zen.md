@@ -1,4 +1,4 @@
-/*! \page Zen AMD&reg; Zen (Ryzen, Epyc)
+/*! \page zen AMD&reg; Zen (Ryzen, Epyc)
 
 <H1>Available performance monitors for the AMD&reg; Zen microarchitecture</H1>
 <UL>
@@ -6,7 +6,7 @@
 <LI>\ref ZEN_POWER_CORE "CPU core energy counters"</LI>
 <LI>\ref ZEN_CPMC "L3 cache general-purpose counters"</LI>
 <LI>\ref ZEN_POWER_SOCKET "Socket energy counters"</LI>
-<LI> \ref ZEN_UNCORE "Uncore general-purpose counters (undocumented)"</LI>
+<LI> \ref ZEN_DATA_FABRIC "Data Fabric counters"</LI>
 </UL>
 
 
@@ -92,6 +92,7 @@
 \anchor ZEN_CPMC
 <H2>L3 general-purpose counters</H2>
 <P>The AMD&reg; Zen microarchitecture provides 6 general-purpose counters for measuring L3 cache events. They consist of a config and a counter register.</P>
+
 <H3>Counter and events</H3>
 <TABLE>
 <TR>
@@ -123,6 +124,8 @@
   <TD>*</TD>
 </TR>
 </TABLE>
+
+
 <H3>Available Options</H3>
 <TABLE>
 <TR>
@@ -162,7 +165,30 @@
 </TABLE>
 <P>There are more energy counters for each CPU core (\ref ZEN_POWER_CORE)</P>
 
-\anchor ZEN_UNCORE
-<H2>Uncore counters</H2>
-<P>The AMD&reg; Zen microarchitecture provides additional Uncore counters but AMD never published the documentation. If it will be provided, I'll integrate the events, the logic is already included.</P>
+\anchor ZEN_DATA_FABRIC
+<H2>Data Fabric counters</H2>
+<P>The AMD&reg; Zen microarchitecture provides additional Uncore counters for the so-called Data Fabric. The register configuration was published but no event configurations. The events provided for the AMD&reg; Zen microarchitecture are backported from the documentation of the AMD&reg; Zen2 microarchitecture. The counters are NUMA node specific.</P>
 
+<H3>Counter and events</H3>
+<TABLE>
+<TR>
+  <TH>Counter name</TH>
+  <TH>Event name</TH>
+</TR>
+<TR>
+  <TD>DFC0</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>DFC1</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>DFC2</TD>
+  <TD>*</TD>
+</TR>
+<TR>
+  <TD>DFC3</TD>
+  <TD>*</TD>
+</TR>
+</TABLE>

@@ -1,7 +1,9 @@
 /*! \mainpage LIKWID - Like I Knew What I Am Doing
 
 \section Introduction
-This is an effort to develop easy to use but yet powerful performance tools for the GNU Linux operating system. While the focus of LIKWID is on x86 processors some of the tools are portable and not limited to any specific architecture. LIKWID follows the philosophy:
+This is an effort to develop easy to use but yet powerful performance tools for the GNU Linux operating system. While the focus of LIKWID was on x86 processors, it is now ported to ARM and POWER processors. A backend for Nvidia GPUs is part of LIKWID with version 5.0.<BR>
+
+LIKWID follows the philosophy:
 - Simple
 - Efficient
 - Portable
@@ -14,9 +16,9 @@ This is an effort to develop easy to use but yet powerful performance tools for 
 \section Tools LIKWID Tools
 - \ref likwid-topology : A tool to display the thread and cache topology on multicore/multisocket computers.
 - \ref likwid-pin : A tool to pin your threaded application without changing your code. Works for pthreads and OpenMP.
-- \ref likwid-perfctr : A tool to measure hardware performance counters on recent Intel and AMD processors. It can be used as wrapper application without modifying the profiled code or with a marker API to measure only parts of the code.
+- \ref likwid-perfctr : A tool to measure hardware performance counters on x86, ARM and POWER processors as well as Nvidia GPUs. It can be used as wrapper application without modifying the profiled code or with a marker API to measure only parts of the code.
 - \ref likwid-powermeter : A tool for accessing RAPL counters and query Turbo mode steps on Intel processor. RAPL counters are also available in \ref likwid-perfctr.
-- \ref likwid-setFrequencies : A tool to print and manage the clock frequency of CPU cores.
+- \ref likwid-setFrequencies : A tool to print and manage the clock frequency of CPU cores and the Uncore (Intel only).
 - \ref likwid-memsweeper : A tool to cleanup ccNUMA domains and LLC caches to get a clean environment for benchmarks.
 - \ref likwid-bench : A benchmarking framework for streaming benchmark kernels written in assembly.
 - \ref likwid-genTopoCfg : A config file writer that gets system topology and writes them to file for faster LIKWID startup.
@@ -48,6 +50,8 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \ref MemSweep
 - \ref CpuFeatures
 - \ref CpuFreq
+- \ref NvMarkerAPI
+- \ref Nvmon
 
 \subsection Lua_Interface Lua Interface
 - \ref lua_Info
@@ -64,13 +68,15 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \ref lua_MemSweep
 - \ref lua_cpuFeatures
 - \ref lua_CpuFreq
+- \ref lua_GPUTopology
 - \ref lua_Misc (Some functionality not provided by Lua natively)
 
 \subsection Fortran90_Interface Fortran90 Interface
 - \ref Fortran_Interface
 
 \section Architectures Supported Architectures
-\subsection Architectures_Intel Intel&reg;
+\subsection Architectures_X86 X86 Architectures
+\subsubsection Architectures_Intel Intel&reg;
 - \subpage pentiumm
 - \subpage core2
 - \subpage atom
@@ -96,14 +102,24 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage phi_knm
 - Kaby Lake (use \subpage skylake)
 - Coffee Lake (use \subpage skylake)
-- Cascade Lake SP/AP (use \subpage skylake)
+- Cascade Lake SP/AP (use \subpage skylakesp)
 
-\subsection Architectures_AMD AMD&reg;
+\subsubsection Architectures_AMD AMD&reg;
 - \subpage k8
 - \subpage k10
 - \subpage interlagos
 - \subpage kabini
 - \subpage zen
+- \subpage zen2
+
+\subsection Architectures_ARM ARM architectures
+- \subpage armA15
+- \subpage armA57
+- \subpage armThunderX2
+
+\subsection Architectures_POWER POWER architectures
+- \subpage power8
+- \subpage power9
 
 \section Examples Example Codes
 Using the Likwid API:
@@ -114,16 +130,18 @@ Using the Marker API:
 - \ref C-markerAPI-code
 - \ref F-markerAPI-code
 
+Using the NvMarker API (for Nvidia GPUs):
+- \ref C-nvMarkerAPI-code
+
 If you have problems with LIKWID:<BR>
 GitHub: <A HREF="https://github.com/RRZE-HPC/likwid">https://github.com/RRZE-HPC/likwid</A><BR>
 Bugs: <A HREF="https://github.com/RRZE-HPC/likwid/issues">https://github.com/RRZE-HPC/likwid/issues</A><BR>
 Mailinglist: <A HREF="http://groups.google.com/group/likwid-users">http://groups.google.com/group/likwid-users</A><BR>
-*/
 
 
-/*! \page build Build and install instructions
+\page build Build and install instructions
 \section allg Introduction
-Likwid is build using GNU make and Perl. Besides the Linux kernel and the standard C library, all required dependencies are shipped with the archive (<A HREF="http://www.lua.org/">Lua</A> and <A HREF="http://www.open-mpi.org/projects/hwloc/">hwloc</A>).
+Likwid is build using GNU make and Perl. Besides the Linux kernel and the standard C library, all required dependencies are shipped with the archive (<A HREF="http://www.lua.org/">Lua</A>, <A HREF="http://www.open-mpi.org/projects/hwloc/">hwloc</A> and <A HREF="https://github.com/LLNL/GOTCHA">GOTCHA</A>).
 It should build on any Linux distribution with a recent GCC compiler or CLANG compiler and 2.6 or newer kernel without any changes.
 
 There is one generic top level Makefile and one .mk configuration file for each
@@ -138,7 +156,7 @@ src/includes/ . Lua application source files are in src/applications/. All exter
 All build products are generated in the directory ./TAG, where TAG is the compiler configuration, default ./GCC.
 
 \subsection config Configuration
-Usually the only thing you have to configure is the PREFIX install path in the build config file config.mk in the top directory.
+Usually the only thing you have to configure is the <CODE>PREFIX</CODE> install path in the build config file config.mk in the top directory.
 
 \subsubsection color Changing color of likwid-pin output
 Depending on the background of your terminal window you can choose a color for <CODE>likwid-pin</CODE> output.
@@ -148,24 +166,34 @@ Usually on your own system, you can use LIKWID with direct access to the MSR fil
 
 To enable using the access daemon, configure in config.mk:
     - Set BUILDDAEMON to true
-    - Configure the path to the accessDaemon binary at ACCESSDAEMON
+    - Configure the path to the accessDaemon binary at <CODE>ACCESSDAEMON</CODE>
     - Set the ACCESSMODE to accessdaemon
 
-ACCESSMODE can be direct, accessdaemon and sysdaemon (not yet officially supported). You can overwrite the default setting on the command line using the -M switch.
+<CODE>ACCESSMODE</CODE> can be direct, accessdaemon and perf_event.
 
 If you want to access Uncore performance counters that are located in the PCI memory range, like they are implemented in Intel SandyBridge EP and IvyBridge EP, you have to use the access daemon or have root privileges because access to the PCI space is only permitted for highly privileged users.
 
+\subsubsection perf_event Usage of Linux Kernel's perf_event interface
+
+LIKWID can be built to run on top of perf_event (config.mk: USE_PERF_EVENT in 4.2 and <CODE>ACCESSMODE=perf_event</CODE> in 4.3), an interface of the Linux kernel to the hardware performance monitors. The events and counters are the same but not all might be supported. LIKWID supports the Uncore and RAPL (energy) units provided by perf. The thermal module is currently not supported with perf_event as perf_event does not provide thermal information. For core-local measurements the paranoid level of 1 is enough to measure applications. To get the same behavior as native access, the paranoid level must be 0 or less. 0 or less is also required for Uncore measurements.
+
+Be aware that LIKWID reads information out of registers that is not provided by any other source like procfs and sysfs. When switching to perf_event backend, these registers cannot be accessed and less information is printed. An example for this are the different CPU core frequencies in turbo mode (<CODE>likwid-powermeter -i</CODE>). If you want to use perf_event for measurements and the access daemon for other operations, install LIKWID first with <CODE>ACCESSMODE=accessdaemon</CODE> and followed by make distclean, change <CODE>ACCESSMODE=perf_event</CODE> in config.mk and then build and install LIKWID again.
+
 \subsubsection setfreqinstall Usage of frequency daemon likwid-setFreq
-The application \ref likwid-setFrequencies uses another daemon to modify the frequency of CPUs. The daemon is build and later installed if BUILDFREQ is set to true in config.mk.
+The application \ref likwid-setFrequencies uses another daemon to modify the frequency of CPUs. The daemon is build and later installed if <CODE>BUILDFREQ</CODE> is set to true in config.mk.
 
 \subsubsection sharedlib Build Likwid as shared library
-Per default the LIKWID library is build as a shared library. You need the library if you want to use the Marker API. You can also use the LIKWID modules like <I>perfmon</I> directly. This is still not officially supported at the moment. In some settings it is necessary to build LIKWID as a shared library. To do so set SHARED_LIBRARY to true.
+Per default the LIKWID library is build as a shared library. You need the library if you want to use the Marker API. You can also use the LIKWID modules like <I>perfmon</I> directly. This is still not officially supported at the moment. In some settings it is necessary to build LIKWID as a shared library. To do so set <CODE>SHARED_LIBRARY</CODE> to true.
 
 \subsubsection instr_bench Instrument likwid-bench for usage with likwid-perfctr
-\ref likwid-bench is instrumented for use with \ref likwid-perfctr. This allows you to measure various metrics of your \ref likwid-bench kernels. Enable instrumentation by setting INSTRUMENT_BENCH to true in config.mk.
+\ref likwid-bench is instrumented for use with \ref likwid-perfctr. This allows you to measure various metrics of your \ref likwid-bench kernels. Enable instrumentation by setting <CODE>INSTRUMENT_BENCH</CODE> to true in config.mk.
 
 \subsubsection fortran Enabling Fortran interface for marker API
-If you want to use the Marker API in Fortran programs LIKWID offers a native Fortran90 interface. To enable it set FORTRAN_INTERFACE to true in config.mk.
+If you want to use the Marker API in Fortran programs LIKWID offers a native Fortran90 interface. To enable it set <CODE>FORTRAN_INTERFACE</CODE> to true in config.mk.
+
+\subsubsection system_lua Use system Lua instead of internal Lua
+
+By setting the variables <CODE>LUA_INCLUDE_DIR</CODE>, <CODE>LUA_LIB_DIR</CODE>, <CODE>LUA_LIB_NAME</CODE> (Lua interpreter has to use the same name, e.g. lua5.1) and <CODE>LUA_BIN</CODE> (directory of the Lua interpreter) in config.mk, the internal Lua library and interpreter are deactivated. The LIKWID library is linked against the provided Lua library and the Shebang of all Lua scripts is changed to the system Lua interpreter. LIKWID's Lua interface was patched to support Lua 5.1, 5.2 and 5.3. It is still recommended to use the internal Lua and only basic tests are done before a release.
 
 \subsection targets Build targets
 You have to edit config.mk to configure your build and install path.
@@ -194,7 +222,7 @@ can be used without installation.
   - <B>make move</B> - Copy the executables, libraries, man pages and headers from <CODE>PREFIX</CODE> in config.mk to <CODE>INSTALLED_PREFIX</CODE>.
  - <B>make uninstall_moved</B> - Delete all installed files under <CODE>INSTALLED_PREFIX</CODE>.
 
-\subsection accessD Setting up access for hardware performance monitoring
+\subsection accessD Setting up access for hardware performance monitoring on x86 processors
 Hardware performance monitoring on x86 is enabled using model-specific registers (MSR). MSR registers are special registers not part of the instruction set architecture. To read and write to these registers the x86 ISA provides special instructions. These instructions can only be executed in protected mode or in other words only kernel code can execute these instructions. Fortunately, any Linux kernel 2.6 or newer provides access to these registers via a set of device files. This allows to implement all of the functionality in user space. Still it does not allow to use those more advanced features of hardware performance monitoring which require to setup interrupt service routines  or kernel located memory.
 
 Per default only root has read/write access to these msr device files. In order to use the LIKWID tools, which need access to these files (likwid-perfctr, likwid-powermeter, ...) as standard user, you need to setup access rights to these files.
@@ -217,6 +245,13 @@ Some newer kernels implement the so-called capabilities, a fine-grained permissi
 
 This is only possible on local file systems. A feasible way is to use the \ref likwid-accessD for all accesses and just enable the capabilities for this one binary. This will enable the usage for all LIKWID tools and also for all instrumented binaries. If \ref likwid-perfctr utility should only be used in wrapper mode, it is suitable to set the capabilities for \ref likwid-perfctr only. Please remember to set the file permission of the MSR device files to read/write for all users, even if capabilites are configured correctly.
 
+\subsection accessD Installation on ARM- and POWER-based systems
+ARM support was added in January. The main switch is the <CODE>COMPILER</CODE> setting in config.mk. There are two possibilities: <CODE>GCCARMv7</CODE> and <CODE>GCCARMv8</CODE>. For build flags changes, please use the appropriate file <CODE>make/include_<COMPILER>.mk</CODE>. The backend for ARM is <CODE>perf_event</CODE>. There is a native backend as well but it is currently not usable as the user would need to measure multiple times per second to catch all register overflows. As soon as LIKWID starts a management thread to read the registers in the background, I will publish this backend as well.<BR>
+For POWER systems, the main switch is the <CODE>COMPILER</CODE> setting in config.mk. The change to <CODE>GCCPOWER</CODE> configures the build to work on POWER and switch to the proper <CODE>ACCESSMODE</CODE>.
+
+\subsubsection secureboot LIKWID and SecureBoot
+LIKWID in direct or accessdaemon mode uses the common MSR and PCI interfaces from the Linux kernel. Unfortunately, some recent operating systems (e.g. Ubuntu 18.04) patches the Linux kernel so that these interfaces (at least MSR) are not allowed to use anymore. You probably just get read/write errors because LIKWID currently has no check of the SecureBoot state. <B>If you want to use LIKWID, you have to disable SecureBoot</B>.
+
 \subsubsection depends Dependencies
 Although we tried to minimize the external dependencies of LIKWID, some advanced tools or only specific tool options require external packages.<BR>
 \ref likwid-perfscope uses the Perl script <A HREF="https://github.com/dkogan/feedgnuplot">feedGnuplot</A> to forward the real-time data to gnuplot. <A HREF="https://github.com/dkogan/feedgnuplot">feedGnuplot</A> is included into LIKWID, but <A HREF="http://www.gnuplot.info/">gnuplot</A> itself is not.<BR>
@@ -238,9 +273,14 @@ In order to create the HTML documentation of LIKWID, the tool <A HREF="www.doxyg
 \include Lua-likwidAPI.lua
 */
 
+/*! \page C-nvMarkerAPI-code NvMarker API in a C/C++ application (Nvidia GPU monitoring)
+\include C-nvMarkerAPI.c
+*/
+
+
 /*! \page faq FAQ
 \section faq1 Which architectures are supported?
-LIKWID supports a range of x86 CPU architectures but likely not all. We concentrated the development effort on Intel and AMD machines. Almost all architecture code is tested. For a list of architectures see section \ref Architectures or call <CODE>likwid-perfctr -i</CODE>.
+LIKWID supports a range of x86 CPU architectures but likely not all. We concentrated the development effort on Intel and AMD machines. Almost all architecture code is tested. With LIKWID 5.0 the ARM and POWER architectures are supported as well. For a list of architectures see section \ref Architectures or call <CODE>likwid-perfctr -i</CODE>.
 
 \section faq2 Are all hardware events supported?
 LIKWID offers almost all events that are defined in the <A HREF="http://www.Intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel&reg; Software Developer System Programming Manual</A> and the <A HREF="http://developer.amd.com/resources/documentation-articles/developer-guides-manuals/">AMD&reg; BIOS and Kernel Developer’s Guides</A>. Some may be missing caused by special handling likely with additional registers. But, LIKWID also provides some events that are not documented but we do not guarantee that they count the right stuff.
@@ -264,7 +304,7 @@ LIKWID does not support multiplexing of eventsets. It rotates through its events
 We do not really plan to port LIKWID to other operating systems. We come from the HPC world and there the main operating systems base on the Linux kernel. The latest Top500 list contains 13 systems using Unix and 1 system with Microsoft&reg; Windows.
 
 \section faq9 Are there plans to port LIKWID to other CPU architectures?
-We would like to port LIKWID to other CPU architectures that support hardware performance measurements but currently there is no time for that and we do not have other architectures than x86 inhouse. We follow the developements and if an architecture gets HPC relevant, we will likely port LIKWID to make it work. The highest probability has ARM and with lower probability we will include SPARC.
+There is currently no need, LIKWID supports already the three major HPC-relevant CPU architectures: x86, ARM and POWER.
 
 \section faq10 Do you plan to introduce a graphical frontend for LIKWID?
 No, we do not!

@@ -1,14 +1,14 @@
 /*
  * =======================================================================================
  *
- *      Filename:  topology_proc.h
+ *      Filename:  topology_misc.h
  *
  *      Description:  Header File of topology backend using procfs/sysfs
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:   Thomas Roehl (tr), thomas.roehl@googlemail.com
+ *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
