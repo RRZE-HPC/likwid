@@ -2054,8 +2054,10 @@ if use_marker and #perf == 0 then
     os.exit(1)
 end
 
-for _,x in pairs(arg) do
-    table.insert(executable, x)
+for i,x in pairs(arg) do
+    if i > 0 then
+        table.insert(executable, x)
+    end
 end
 
 if #executable == 0 then
