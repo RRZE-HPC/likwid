@@ -608,7 +608,7 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
     if wrapperscript.sub(1,1) ~= "/" then
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
-    local exec = string.format("srun -N %d --ntasks-per-node=%d --cpu_bind=none %s %s",
+    local exec = string.format("srun --nodes %d --ntasks-per-node=%d --cpu_bind=none %s %s",
                                 nrNodes, ppn, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..exec)
@@ -697,6 +697,12 @@ local function getMpiType()
             end
         end
     end
+    if mpitype then
+        local mpi_bootstrap = os.getenv("I_MPI_HYDRA_BOOTSTRAP")
+        if mpi_bootstrap == "slurm" then
+            mpitype = "slurm"
+        end
+    end
     if not mpitype then
         print_stderr("WARN: No supported MPI loaded in module system")
     end
@@ -776,10 +782,10 @@ local function getMpiExec(mpitype)
 end
 
 local function getOmpType()
-    local cmd = string.format("ldd `which %s` 2>/dev/null", executable[1])
+    local cmd = string.format("ldd $(which $(basename %s)) 2>/dev/null", executable[1])
     local f = io.popen(cmd, 'r')
     if f ~= nil then
-        cmd = string.format("ldd %s", executable[1])
+        cmd = string.format("ldd $(basename %s) 2>/dev/null", executable[1])
         f = io.popen(cmd, 'r')
     end
     omptype = nil
@@ -1242,7 +1248,10 @@ local function setPerfStrings(perflist, cpuexprs)
                     end
                 end
                 if perfexprs[k][i] == nil then
-                    local elist = {coreevents}
+                    local elist = {}
+                    if coreevents:len() > 0 then
+                        table.insert(elist, coreevents)
+                    end
                     if cuncore and llcevents:len() > 0 then
                         table.insert(elist, llcevents)
                     end
@@ -1252,13 +1261,21 @@ local function setPerfStrings(perflist, cpuexprs)
                     if suncore and socketevents:len() > 0 then
                         table.insert(elist, socketevents)
                     end
-                    perfexprs[k][i] = table.concat(elist, ",")
+                    if #elist > 0 then
+                        perfexprs[k][i] = table.concat(elist, ",")
+                    else
+                        perfexprs[k][i] = ""
+                    end
                 end
             end
 
             if debug then
                 for i, expr in pairs(perfexprs[k]) do
-                    print_stdout(string.format("DEBUG: Process %d measures with event set: %s", i-1, expr))
+                    if expr:len() > 0 then
+                        print_stdout(string.format("DEBUG: Process %d measures with event set: %s", i-1, expr))
+                    else
+                        print_stdout(string.format("DEBUG: Process %d measures with event set: No events", i-1))
+                    end
                 end
             end
         end
@@ -1295,6 +1312,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     end
     local oversubscripted = {}
     local commands = {}
+    local only_pinned_processes = {}
     tmphosts = {}
     for i, host in pairs(hosts) do
         if tmphosts[host["hostname"]] ~= nil then
@@ -1346,34 +1364,45 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     for i=1,#cpuexprs do
         local cmd = {}
         local cpuexpr_opt = "-c"
-        if #perf > 0 then
-            table.insert(cmd,LIKWID_PERFCTR)
+        local eventsets_valid = 0
+        local use_perfctr = false
+        for j, expr in pairs(perfexprs) do
+            if expr[i]:len() > 0 then eventsets_valid = eventsets_valid + 1 end
+        end
+        if #perf > 0 and eventsets_valid == #perfexprs then
+            use_perfctr = true
+        end
+        if use_perfctr then
+            table.insert(cmd, LIKWID_PERFCTR)
             if use_marker then
                 table.insert(cmd,"-m")
             end
             cpuexpr_opt = "-C"
         else
-            table.insert(cmd,LIKWID_PIN)
+            table.insert(cmd, LIKWID_PIN)
             table.insert(cmd,"-q")
+            if #perf > 0 then
+                table.insert(only_pinned_processes, i)
+            end
         end
-        if force and #perf > 0 then
+        if force and use_perfctr then
             table.insert(cmd,"-f")
         end
         if likwiddebug then
             table.insert(cmd,"-V 3")
         end
-        table.insert(cmd,skipStr)
-        table.insert(cmd,cpuexpr_opt)
-        table.insert(cmd,table.concat(cpuexprs[i], ","))
-        if #perf > 0 then
+        table.insert(cmd, skipStr)
+        table.insert(cmd, cpuexpr_opt)
+        table.insert(cmd, table.concat(cpuexprs[i], ","))
+        if use_perfctr then
             for j, expr in pairs(perfexprs) do
-                table.insert(cmd,"-g")
-                table.insert(cmd,expr[i])
+                table.insert(cmd, "-g")
+                table.insert(cmd, expr[i])
             end
-            table.insert(cmd,"-o")
-            table.insert(cmd,outputname)
+            table.insert(cmd, "-o")
+            table.insert(cmd, outputname)
         end
-        table.insert(cmd,execStr)
+        table.insert(cmd, execStr)
         commands[i] = table.concat(cmd, " ")
     end
 
@@ -1436,6 +1465,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     f:write("fi\n")
     f:close()
     os.execute("chmod +x "..scriptname)
+    return only_pinned_processes
 end
 
 
@@ -2323,7 +2353,7 @@ if writeHostfile == nil or getEnvironment == nil or executeCommand == nil then
 end
 
 writeHostfile(newhosts, hostfilename)
-writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, envsettings, outfilename)
+local skipped_ranks = writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, envsettings, outfilename)
 local env = getEnvironment()
 local exitvalue = executeCommand(scriptfilename, hostfilename, env, nrNodes)
 
