@@ -1075,6 +1075,8 @@ local function splitUncoreEvents(groupdata)
                 table.insert(socket, event)
             elseif cpuinfo["architecture"] == "armv7" then
                 table.insert(socket, event)
+            elseif cpuinfo["architecture"]:match("^power%d") then
+                table.insert(socket, event)
             end
         else
             local event = e["Event"]..":"..e["Counter"]

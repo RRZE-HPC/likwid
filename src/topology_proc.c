@@ -310,6 +310,21 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
 #ifdef __ARM_ARCH_8A
         snprintf(cpuid_info.architecture, 19, "armv8");
 #endif
+#ifdef _ARCH_PPC
+        switch (cpuid_info.model)
+        {
+            case POWER7:
+                snprintf(cpuid_info.architecture, 19, "power7");
+                break;
+            case POWER8:
+                snprintf(cpuid_info.architecture, 19, "power8");
+                break;
+            case POWER9:
+                snprintf(cpuid_info.architecture, 19, "power9");
+                break;
+        }
+
+#endif
         DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
                             cpuid_info.family,
                             cpuid_info.model,
