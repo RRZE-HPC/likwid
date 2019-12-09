@@ -1059,13 +1059,17 @@ local function splitUncoreEvents(groupdata)
             not e["Counter"]:match("^PMC%d") and
             not e["Counter"]:match("TMP%d") then
             local event = e["Event"]..":"..e["Counter"]
-            if cpuinfo["architecture"] == "x86_64" and cpuinfo["isIntel"] == 1 then
-                table.insert(socket, event)
-            elseif cpuinfo["architecture"] == "x86_64" then
-                if e["Counter"]:match("^CPMC%d") then
-                    table.insert(llc, event)
-                elseif e["Counter"]:match("^DFC%d") then
-                    table.insert(numa, event)
+            if cpuinfo["architecture"] == "x86_64" then
+                if cpuinfo["isIntel"] == 1 then
+                    table.insert(socket, event)
+                else -- AMD
+                    if e["Counter"]:match("^CPMC%d") then
+                        table.insert(llc, event)
+                    elseif e["Counter"]:match("^UPMC%d") then
+                        table.insert(socket, event)
+                    elseif e["Counter"]:match("^DFC%d") then
+                        table.insert(numa, event)
+                    end
                 end
             elseif cpuinfo["architecture"] == "armv8" then
                 table.insert(socket, event)
@@ -1121,7 +1125,7 @@ local function setPerfStrings(perflist, cpuexprs)
     local suncore = false
     local perfexprs = {}
     local grouplist = {}
-    
+
     local affinity = likwid.getAffinityInfo()
     local socketList = {}
     local socketListFlags = {}
