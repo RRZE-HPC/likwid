@@ -834,6 +834,9 @@ end
 
 local function assignHosts(hosts, np, ppn, tpp)
     tmp = np
+    if tpp > 1 then
+        tmp = np * tpp
+    end
     newhosts = {}
     current = 0
     if debug then
