@@ -797,7 +797,7 @@ int perfmon_setupCounterThread_skylake(
                 {
                     uint64_t flags = 0x0;
                     HPMread(cpu_id, MSR_DEV, TSX_FORCE_ABORT, &flags);
-                    if (flags & 0x1 == 0)
+                    if ((flags & 0x1) == 0)
                     {
                         fprintf(stderr, "Warning: Counter PMC3 cannot be used if Restricted Transactional Memory feature is enabled and\n");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,2,0)

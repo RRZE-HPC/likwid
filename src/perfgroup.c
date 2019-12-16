@@ -197,7 +197,7 @@ perfgroup_getGroups(
     }
     i = 0;
     s = 0;
-    while (ep = readdir(dp))
+    while ((ep = readdir(dp)))
     {
         if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
         {
@@ -218,7 +218,7 @@ perfgroup_getGroups(
         }
         if (search_home)
         {
-            while (ep = readdir(dp))
+            while ((ep = readdir(dp)))
             {
                 if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
                 {
@@ -296,7 +296,7 @@ perfgroup_getGroups(
     i = 0;
     int skip_group = 0;
 
-    while (ep = readdir(dp))
+    while ((ep = readdir(dp)))
     {
         if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
         {
@@ -444,7 +444,7 @@ skip_cur_def_group:
     else
     {
         dp = opendir(homepath);
-        while (ep = readdir(dp))
+        while ((ep = readdir(dp)))
         {
             if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
             {

@@ -335,10 +335,10 @@ g_hash_table_remove(GHashTable *hash_table, gpointer key)
     {
         int* key_ptr = (int*)key;
         int keyint = *key_ptr;
-        int idx = g_hash_table_lookup_node(hash_table, key_ptr, &hashret);
+        int idx = g_hash_table_lookup_node(hash_table, key_ptr, (guint*)&hashret);
         g_hash_table_remove_node(hash_table, idx);
-        
     }
+    return 0;
 }
 
 static void

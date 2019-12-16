@@ -116,7 +116,7 @@ $(BUILD_DIR):
 #PATTERN RULES
 $(BUILD_DIR)/%.o:  %.c
 	@echo "===>  COMPILE C $@"
-	$(Q)$(CC) -g -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $(TARGET_LIB) $< -o $@
+	$(Q)$(CC) -g -c $(DEBUG_FLAGS) $(CFLAGS) $(ANSI_CFLAGS) $(CPPFLAGS) $< -o $@
 	$(Q)$(CC) -g $(DEBUG_FLAGS) $(CPPFLAGS) -MT $(@:.d=.o) -MM  $< > $(BUILD_DIR)/$*.d
 
 

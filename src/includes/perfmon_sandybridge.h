@@ -64,7 +64,7 @@ int perfmon_init_sandybridge(int cpu_id)
     lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL));
     
-    if ((cpuid_info.model == SANDYBRIDGE_EP))
+    if (cpuid_info.model == SANDYBRIDGE_EP)
     {
         sandy_cbox_setup = snbep_cbox_setup;
         snb_did_cbox_test = 1;
