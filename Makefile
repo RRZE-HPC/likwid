@@ -459,9 +459,9 @@ install: install_daemon install_freq install_appdaemon
 		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB)).$(VERSION); \
 	fi
 	@if [ "$(BUILDAPPDAEMON)" = "true" ]; then \
-		@install -m 755 $(GOTCHA_FOLDER)/$(TARGET_GOTCHA_LIB) $(LIBPREFIX)/$(TARGET_GOTCHA_LIB).$(VERSION).$(RELEASE); \
-		@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_GOTCHA_LIB)); \
-		@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION); \
+		install -m 755 $(GOTCHA_FOLDER)/$(TARGET_GOTCHA_LIB) $(LIBPREFIX)/$(TARGET_GOTCHA_LIB).$(VERSION).$(RELEASE); \
+		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_GOTCHA_LIB)); \
+		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION); \
 	fi
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
