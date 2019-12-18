@@ -46,7 +46,7 @@ voltage_read(int cpuId, uint64_t *data)
         *data = 0;
         return -EIO;
     }
-    *data = result >> 32;
+    *data = (result >> 32) & 0xFFFF;
     return 0;
 }
 
@@ -59,7 +59,7 @@ voltage_tread(int socket_fd, int cpuId, uint64_t *data)
         *data = 0;
         return -EIO;
     }
-    *data = result >> 32;
+    *data = (result >> 32) & 0xFFFF;
     return 0;
 }
 
