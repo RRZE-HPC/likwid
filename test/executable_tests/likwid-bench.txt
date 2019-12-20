@@ -22,3 +22,5 @@
 -t sum -w N:100kB:1 -w N:100kB:1 | EXIT 0 | GREP Number of Flops
 -t sum -w N:100kB:2:1 | EXIT 1 | GREP Misformated workgroup string
 -t sum -w N:100kB:2:1:2 | EXIT 0 | GREP Number of Flops
+-t sum -W N:100kB:1 | EXIT 0 | GREP Number of Flops
+-t sum -W N:100kB:2 | EXIT 0 | GREP Initialization: Each thread

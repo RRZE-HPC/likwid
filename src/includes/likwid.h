@@ -52,6 +52,9 @@ extern int likwid_nvmon_verbosity;
 extern "C" {
 #endif
 
+#ifndef LIKWID_MARKER_INIT
+#include <likwid-marker.h>
+#endif
 
 /*
 ################################################################################

@@ -459,7 +459,7 @@ struct bstrList* dynbench_getall()
         dp = ownopendir(bdata(path));
         if (dp != NULL)
         {
-            while (ep = readdir(dp))
+            while ((ep = readdir(dp)))
             {
                 if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".ptt", 4) == 0)
                 {

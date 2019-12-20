@@ -92,6 +92,7 @@ int footer(struct bstrList* code, char* funcname)
     bstrListAddChar(code, "#endif");
 
     bdestroy(line);
+    return 0;
 }
 
 int loopheader(struct bstrList* code, char* loopname, int step)

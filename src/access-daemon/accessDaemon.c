@@ -178,7 +178,7 @@ static int getNumberOfNumaNodes()
     dp = opendir ("/sys/devices/system/node/");
     if (dp != NULL)
     {
-        while (ep = readdir (dp))
+        while ((ep = readdir (dp)))
         {
             if (fnmatch("node?*", ep->d_name, FNM_PATHNAME) == 0)
             {
@@ -839,6 +839,8 @@ static int allowed_pci_skx(PciDeviceType type, uint32_t reg)
                 (reg == MSR_UNC_SKX_M3UPI_PMON_BOX_CTL) ||
                 (reg == MSR_UNC_SKX_M3UPI_PMON_BOX_STATUS))
                 return 1;
+            break;
+        default:
             break;
     }
     return 0;

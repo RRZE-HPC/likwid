@@ -1952,7 +1952,7 @@ parse(char *line, char **argv)
                  *line != '\t' && *line != '\n')
                line++;             /* skip the argument until ...    */
      }
-     *argv = '\0';                 /* mark the end of argument list  */
+     *argv = (char *)'\0';                 /* mark the end of argument list  */
 }
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -2355,6 +2355,7 @@ lua_likwid_resetRegion(lua_State* L)
 {
     const char* tag = (const char*)luaL_checkstring(L, -1);
     lua_pushinteger(L, likwid_markerResetRegion(tag));
+    return 1;
 }
 
 static int

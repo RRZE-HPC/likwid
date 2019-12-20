@@ -310,6 +310,21 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
 #ifdef __ARM_ARCH_8A
         snprintf(cpuid_info.architecture, 19, "armv8");
 #endif
+#ifdef _ARCH_PPC
+        switch (cpuid_info.model)
+        {
+            case POWER7:
+                snprintf(cpuid_info.architecture, 19, "power7");
+                break;
+            case POWER8:
+                snprintf(cpuid_info.architecture, 19, "power8");
+                break;
+            case POWER9:
+                snprintf(cpuid_info.architecture, 19, "power9");
+                break;
+        }
+
+#endif
         DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
                             cpuid_info.family,
                             cpuid_info.model,
@@ -457,7 +472,7 @@ proc_init_cpuFeatures(void)
             setBit(cpuid_info.featureFlags, RDSEED);
             bcatcstr(bfeatures, "RDSEED ");
         }
-        else if ((bisstemeqblk(flaglist->entry[i], "avx512", 6) == 1) && (!testBit(cpuid_info.featureFlags, AVX512)))
+        else if ((bisstemeqblk(flaglist->entry[i], "avx512", 6) == 1) && (!(testBit(cpuid_info.featureFlags, AVX512))))
         {
             setBit(cpuid_info.featureFlags, AVX512);
             bcatcstr(bfeatures, "AVX512 ");
@@ -549,7 +564,7 @@ proc_init_cpuFeatures(void)
         }
     }
 
-    if (testBit(cpuid_info.featureFlags, SSSE3) && !testBit(cpuid_info.featureFlags, SSE3))
+    if (testBit(cpuid_info.featureFlags, SSSE3) && (!(testBit(cpuid_info.featureFlags, SSE3))))
     {
         setBit(cpuid_info.featureFlags, SSE3);
         bcatcstr(bfeatures, "SSE3 ");
@@ -667,7 +682,7 @@ void proc_split_llc_check(CacheLevel* llc_cache)
         fprintf(stderr, "No NUMA support (no folder %s)\n", "/sys/devices/system/node");
         return;
     }
-    while (ep = readdir(dp))
+    while ((ep = readdir(dp)))
     {
         if (strncmp(ep->d_name, "node", 4) == 0)
         {
@@ -681,7 +696,7 @@ void proc_split_llc_check(CacheLevel* llc_cache)
         fprintf(stderr, "No NUMA support (no folder %s)\n", "/sys/devices/system/node/node0/");
         return;
     }
-    while (ep = readdir(dp))
+    while ((ep = readdir(dp)))
     {
         if (strncmp(ep->d_name, "cpu", 3) == 0 &&
             ep->d_name[strlen(ep->d_name)-1] >= '0' &&

@@ -500,6 +500,8 @@ static int freq_send_direct(FreqDataRecordType type, FreqDataRecordLocation loc,
                 lseek(fd, 0, SEEK_SET);
                 ret = read(fd, data, len);
                 break;
+            default:
+                break;
         }
         if (ret < 0)
             return ret;
@@ -564,6 +566,8 @@ static int freq_send_client(FreqDataRecordType type, FreqDataRecordLocation loc,
                     break;
                 case FREQ_ERR_UNKNOWN:
                     return -EBADF;
+                    break;
+                default:
                     break;
             }
             return -1;

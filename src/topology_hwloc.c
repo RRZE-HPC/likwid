@@ -313,6 +313,7 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
             cpuid_info.isIntel = 0;
             strcpy(cpuid_info.osname, info);
             cpuid_info.stepping = 0;
+            snprintf(cpuid_info.architecture, 19, "power7");
         }
         if (strstr(info, "POWER8") != NULL)
         {
@@ -321,6 +322,7 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
             cpuid_info.isIntel = 0;
             strcpy(cpuid_info.osname, info);
             cpuid_info.stepping = 0;
+            snprintf(cpuid_info.architecture, 19, "power8");
         }
         if (strstr(info, "POWER9") != NULL)
         {
@@ -329,7 +331,9 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
             cpuid_info.isIntel = 0;
             strcpy(cpuid_info.osname, info);
             cpuid_info.stepping = 0;
+            snprintf(cpuid_info.architecture, 19, "power9");
         }
+
     }
 #endif
 

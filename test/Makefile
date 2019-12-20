@@ -55,6 +55,9 @@ testmarkerF90: chaos.F90
 test-mpi: MPI_pin_test.c$
 	mpicc -O2 -fopenmp -D_GNU_SOURCE  -o $@ MPI_pin_test.c
 
+test-mpi-pthreads: MPI_pin_test.c$
+	mpicc -O2 -pthread -DPTHREADS -D_GNU_SOURCE  -o $@ MPI_pin_test.c
+
 stream_cilk: stream_cilk.c
 	@if [ $(ICC_AVAILABLE) -ne 0 ]; then icc -O3 $(LIKWID_DEFINES) $(LIKWID_INCLUDES) -o $@ stream_cilk.c $(LIKWID_LIB) -llikwid; fi
 
@@ -70,7 +73,7 @@ streamCU: stream.cu
 triadCU: triad.cu
 	nvcc -O3 -I. $(LIKWID_INCLUDE) -DLIKWID_NVMON triad.cu -o $@ -lm $(LIKWID_LIB) -llikwid
 
-.PHONY: clean streamGCC streamICC streamGCC_C11 streamICC_C11 testmarker-cnt testmarker-omp testmarkerF90 test-mpi stream_cilk serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul
+.PHONY: clean streamGCC streamICC streamGCC_C11 streamICC_C11 testmarker-cnt testmarker-omp testmarkerF90 test-mpi test-mpi-pthreads stream_cilk serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul marker_overhead
 
 clean:
-	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker-cnt testmarkerF90 test-mpi testmarker-omp serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul
+	rm -f streamGCC streamICC streamGCC_C11 streamICC_C11 stream_cilk testmarker-cnt testmarkerF90 test-mpi test-mpi-pthreads testmarker-omp serial test-likwidAPI streamAPIGCC test-msr-access testTBBGCC testTBBICC jacobi-2D-5pt-icc jacobi-2D-5pt-gcc matmul_marker matmul marker_overhead

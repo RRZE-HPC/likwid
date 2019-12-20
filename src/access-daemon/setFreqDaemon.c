@@ -570,6 +570,8 @@ static int freq_read(FreqDataRecord *rec)
         case FREQ_LOC_GOV:
             read_fd = f->set_gov;
             break;
+        default:
+            break;
     }
     if (read_fd < 0)
     {
