@@ -135,6 +135,18 @@ local executeCommand = nil
 local mpiexecutable = nil
 local hostpattern = "([%.%a%d_-]+)"
 
+local function abspath(cmd)
+    local pathlist = os.getenv("PATH")
+    for p in pathlist:gmatch("[^:]*") do
+        if p then
+            local t = string.format("%s/%s", p, cmd)
+            if likwid.access(t, "e") == 0 then
+                return t
+            end
+        end
+    end
+    return nil
+end
 
 local function readHostfileOpenMPI(filename)
     local hostlist = {}
@@ -779,12 +791,17 @@ local function getMpiExec(mpitype)
             end
         end
     end
+    local testmpitype = getMpiType()
+    if mpitype ~= testmpitype then
+        print_stderr(string.format("ERROR: Cannot find executable for MPI type %s but %s", mpitype, testmpitype))
+        os.exit(1)
+    end
 end
 
 local function getOmpType()
-    local cmd = string.format("ldd $(which $(basename %s)) 2>/dev/null", executable[1])
+    local cmd = string.format("ldd %s 2>/dev/null", executable[1])
     local f = io.popen(cmd, 'r')
-    if f ~= nil then
+    if f == nil then
         cmd = string.format("ldd $(basename %s) 2>/dev/null", executable[1])
         f = io.popen(cmd, 'r')
     end
@@ -2095,7 +2112,7 @@ end
 
 for i,x in pairs(arg) do
     if i > 0 then
-        table.insert(executable, x)
+        table.insert(executable, abspath(x) or x)
     end
 end
 
@@ -2106,6 +2123,18 @@ end
 
 if debug then
     print_stdout("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
+end
+local gotExecutable = false
+for i,x in pairs(executable) do
+    if likwid.access(x, "x") == 0 then
+        gotExecutable = true
+        break
+    end
+end
+if not gotExecutable then
+    print_stderr("ERROR: Cannot find an executable on commandline")
+    print_stderr(table.concat(executable, " "))
+    os.exit(1)
 end
 
 if mpiopts and mpiopts:len() > 0 and debug then
@@ -2333,6 +2362,14 @@ if skipStr == "" then
             skipStr = '-s 0x7'
         elseif omptype == "gnu" and nrNodes == 1 then
             skipStr = '-s 0x0'
+        end
+    elseif mpitype == "slurm" then
+        if omptype == "intel" and nrNodes > 1 then
+            if nrNodes == 1 then
+                skipStr = '-s 0x1'
+            else
+                skipStr = '-s 0x3'
+            end
         end
     end
 end
