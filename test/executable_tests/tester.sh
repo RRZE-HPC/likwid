@@ -5,6 +5,9 @@ if [ $# -ne 1 ]; then
 fi
 
 EXECPATH=/usr/local/bin
+if [ ! -z "${EXECPATH_OVERRIDE}" ]; then
+    EXECPATH="${EXECPATH_OVERRIDE}"
+fi
 EXEC=$1
 TMPFILE=/tmp/testout
 
@@ -45,9 +48,14 @@ fi
 LOGFILE=/tmp/tester-${EXEC}.log
 rm -f ${LOGFILE}
 if [ "${EXEC}" == "likwid-setFrequencies" ]; then
+    LOCKED=$(${EXECPATH}/likwid-setFrequencies 2>&1 | grep "Failed to find the daemon" | wc -l)
+    if [ "$LOCKED" == "1" ]; then
+        echo "EXECUTABLE_TESTS: Some tests will fail because there is no daemon installed"
+    fi
     FREQ=$(${EXECPATH}/likwid-setFrequencies -l | grep -v frequencies | awk '{print $2}')
     CURFREQ=$(${EXECPATH}/likwid-setFrequencies -p | head -n2 | tail -n 1 | rev | awk '{print $2}' | rev | awk -F'/' '{print $2}')
 fi
+
 if [ "${EXEC}" == "likwid-mpirun" ]; then
     if [ -z "$(which mpiexec)" ] && [ -z "$(which mpiexec.hydra)" ] && [ -z "$(which mpirun)" ]; then
         echo "Cannot find MPI implementation, neither mpiexec, mpiexec.hydra nor mpirun can be found in any directory in PATH"
