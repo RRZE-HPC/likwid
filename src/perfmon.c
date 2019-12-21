@@ -2579,13 +2579,6 @@ perfmon_getResult(int groupId, int eventId, int threadId)
         (groupSet->groups[groupId].events[eventId].type == THERMAL) ||
         (groupSet->groups[groupId].events[eventId].type == VOLTAGE) ||
         (groupSet->groups[groupId].events[eventId].type == MBOX0TMP) ||
-        (groupSet->groups[groupId].events[eventId].type == MBOX1TMP) ||
-        (groupSet->groups[groupId].events[eventId].type == MBOX2TMP) ||
-        (groupSet->groups[groupId].events[eventId].type == MBOX3TMP) ||
-        (groupSet->groups[groupId].events[eventId].type == MBOX4TMP) ||
-        (groupSet->groups[groupId].events[eventId].type == MBOX5TMP) ||
-        (groupSet->groups[groupId].events[eventId].type == MBOX6TMP) ||
-        (groupSet->groups[groupId].events[eventId].type == MBOX7TMP) ||
         (groupSet->groups[groupId].events[eventId].type == QBOX0FIX) ||
         (groupSet->groups[groupId].events[eventId].type == QBOX1FIX) ||
         (groupSet->groups[groupId].events[eventId].type == QBOX2FIX) ||

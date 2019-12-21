@@ -63,4 +63,4 @@ voltage_tread(int socket_fd, int cpuId, uint64_t *data)
     return 0;
 }
 
-#endif /*THERMAL_H*/
+#endif /*VOLTAGE_H*/
