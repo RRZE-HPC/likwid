@@ -1,3 +1,22 @@
+# Changelog 5.0.1
+- Some fixes for likwid-mpirun
+  - Fix for hybrid pinning with multiple hosts
+  - Fix for perf.groups without core-local events (switch to likwid-pin)
+  - Fix for command line parser
+  - For for mpiopts parameter
+  - Add UPMC as Uncore counter to splitUncoreEvents()
+  - Expand user-given input to abspath if possible
+  - Check for at least one executable in user-given command
+  - Add skip mask for SLURM + Intel OpenMP
+  - Check if user-given MPI type is available
+- Fix for perf_event backend when used as root
+- Inlude likwid-marker.h in likwid.h to not break old MarkerAPI code
+- Enable build with ARM HPC compiler (ARMCLANG compiler setting)
+- Fix creation of likwid-bench benchmarks on POWER platforms
+- Fix for build system in NVIDIA_INTERFACE=BUILD_APPDAEMON=true
+- Update for executable tester
+- Update for MPI+X test (X: OpenMP or Pthreads)
+
 # Changelog 5.0.0
 - Support for ARM architectures. Special support for Marvell Thunder X2
 - Support for IBM POWER architectures. Support for POWER8 and POWER9.
