@@ -320,7 +320,7 @@ sub loop_exit
         } elsif ($main::ISA eq 'ARMv8') {
             #print "bgt 1b\n";
             print "\n";
-        } else {
+        } elsif ($main::ISA ne 'ppc64') {
             print "jl 1b\n";
         }
     }
