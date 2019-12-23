@@ -399,6 +399,7 @@ init_sleep()
 {
     int status;
     TimerData timer;
+    timer_init();
     struct timespec req = {0,1};
     struct timespec rem = {0,0};
     for (int i=0; i<10; ++i)
@@ -575,7 +576,7 @@ timer_sleep(unsigned long usec)
 
     if (sleepbase == 0x0ULL)
     {
-        timer_init();
+        fprintf("Sleeping longer as likwid_sleep() called without prior initialization\n");
         init_sleep();
     }
     if (usec >= 1000000)
