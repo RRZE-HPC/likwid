@@ -190,6 +190,9 @@ sub function_exit
     } elsif ($main::ISA eq 'ARMv8') {
         print ".exit:\n";
         print "ret\n";
+    } elsif ($main::ISA eq 'ppc64') {
+        print "blr\n";
+        print ".size $symbolname, .-$symbolname\n";
     }
     print "\n";
 }
