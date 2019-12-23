@@ -575,6 +575,7 @@ timer_sleep(unsigned long usec)
 
     if (sleepbase == 0x0ULL)
     {
+        timer_init();
         init_sleep();
     }
     if (usec >= 1000000)
