@@ -49,6 +49,71 @@ ifneq ($(strip $(COLOR)),NONE)
 DEFINES += -DCOLOR=$(COLOR)
 endif
 
+ifeq ($(strip $(COMPILER)),GCC)
+    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+        $(info Info: Compiling for x86. Changing accessmode to accessdaemon. 'sysdaemon' currently not supported)
+        ACCESSMODE := accessdaemon
+        BUILDDAEMON = true
+        BUILDFREQ = true
+    endif
+    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+        BUILDDAEMON := true
+        BUILDFREQ := true
+    endif
+    ifeq ($(strip $(ACCESSMODE)),direct)
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+endif
+ifeq ($(strip $(COMPILER)),CLANG)
+    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+        $(info Info: Compiling for x86. Changing accessmode to accessdaemon. 'sysdaemon' currently not supported)
+        ACCESSMODE := accessdaemon
+        BUILDDAEMON = true
+        BUILDFREQ = true
+    endif
+    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+        BUILDDAEMON := true
+        BUILDFREQ := true
+    endif
+    ifeq ($(strip $(ACCESSMODE)),direct)
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+endif
+ifeq ($(strip $(COMPILER)),PGI)
+    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+        $(info Info: Compiling for x86. Changing accessmode to accessdaemon. 'sysdaemon' currently not supported)
+        ACCESSMODE := accessdaemon
+        BUILDDAEMON = true
+        BUILDFREQ = true
+    endif
+    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+        $(info Info: Compiling for x86.)
+        BUILDDAEMON := true
+        BUILDFREQ := true
+    endif
+    ifeq ($(strip $(ACCESSMODE)),direct)
+        $(info Info: Compiling for x86.)
+        BUILDDAEMON = false
+        BUILDFREQ = false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+endif
 ifeq ($(strip $(COMPILER)),MIC)
     ifeq ($(strip $(ACCESSMODE)),sysdaemon)
         $(info Info: Compiling for Xeon Phi. Changing accessmode to direct.)
@@ -102,7 +167,34 @@ ifeq ($(strip $(COMPILER)),GCCARMv8)
         BUILDFREQ := false
     endif
 endif
-
+ifeq ($(strip $(COMPILER)),ARMCLANG)
+    ifeq ($(strip $(ACCESSMODE)),sysdaemon)
+        $(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),accessdaemon)
+        $(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),direct)
+        $(info Info: Compiling for ARMv8 architecture. Changing accessmode to perf_event.)
+        ACCESSMODE := perf_event
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+    ifeq ($(strip $(ACCESSMODE)),perf_event)
+        DEFINES += -DLIKWID_USE_PERFEVENT
+        BUILDDAEMON := false
+        BUILDFREQ := false
+    endif
+endif
 ifeq ($(strip $(COMPILER)),GCCARMv7)
     ifeq ($(strip $(ACCESSMODE)),sysdaemon)
         $(info Info: Compiling for ARMv7 architecture. Changing accessmode to perf_event.)
@@ -160,7 +252,7 @@ ifeq ($(strip $(COMPILER)),GCCPOWER)
         BUILDFREQ := false
     endif
 endif
-ifeq ($(strip $(COMPILER)),GCCPOWER)
+ifeq ($(strip $(COMPILER)),XLC)
     ifeq ($(strip $(ACCESSMODE)),sysdaemon)
         $(info Info: Compiling for IBM POWER. Changing accessmode to perf_event.)
         ACCESSMODE := perf_event
