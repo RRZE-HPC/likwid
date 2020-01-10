@@ -63,4 +63,10 @@ voltage_tread(int socket_fd, int cpuId, uint64_t *data)
     return 0;
 }
 
+double
+voltage_value(uint64_t raw_value)
+{
+    return (double)(raw_value) / 8192.0;
+}
+
 #endif /*VOLTAGE_H*/

@@ -130,10 +130,13 @@ calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int ov
         result *= power_getEnergyUnit(getCounterTypeOffset(index));
     }
     else if ((counter_map[index].type == THERMAL) ||
-             (counter_map[index].type == VOLTAGE) ||
              (counter_map[index].type == MBOX0TMP))
     {
         result = (double)stop;
+    }
+    else if (counter_map[index].type == VOLTAGE)
+    {
+        result = voltage_value(stop);
     }
     return result;
 }

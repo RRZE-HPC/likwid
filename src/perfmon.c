@@ -680,10 +680,13 @@ calculateResult(int groupId, int eventId, int threadId)
         result *= power_getEnergyUnit(getCounterTypeOffset(event->index));
     }
     else if ((counter_map[event->index].type == THERMAL) ||
-             (counter_map[event->index].type == VOLTAGE) || 
              (counter_map[event->index].type == MBOX0TMP))
     {
         result = (double)counter->counterData;
+    }
+    else if (counter_map[event->index].type == VOLTAGE)
+    {
+        result = voltage_value(counter->counterData);
     }
     return result;
 }
