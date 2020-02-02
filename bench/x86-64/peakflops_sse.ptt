@@ -2,6 +2,12 @@ STREAMS 1
 TYPE DOUBLE
 FLOPS 12
 BYTES 8
+DESC Double-precision multiplications and additions with a single load, optimised for SSE
+LOADS 1
+STORES 0
+INSTR_CONST 28
+INSTR_LOOP 16
+UOPS 15
 vmovapd xmm2, [rip+SCALAR]
 vmovapd xmm3, [rip+SCALAR]
 vmovapd xmm4, [rip+SCALAR]

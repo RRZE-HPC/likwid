@@ -2,6 +2,12 @@ STREAMS 1
 TYPE DOUBLE
 FLOPS 8
 BYTES 8
+DESC Double-precision multiplications and additions with a single load, only scalar operations
+LOADS 1
+STORES 0
+INSTR_CONST 18
+INSTR_LOOP 12
+UOPS 11
 movaps FPR1, [rip+SCALAR]
 movaps FPR2, [rip+SCALAR]
 LOOP 1

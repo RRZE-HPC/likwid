@@ -2,6 +2,12 @@ STREAMS 1
 TYPE DOUBLE
 FLOPS 24
 BYTES 8
+DESC Double-precision multiplications and additions with a single load, optimized for AVX FMAs
+LOADS 1
+STORES 0
+INSTR_CONST 28
+INSTR_LOOP 16
+UOPS 15
 vmovapd ymm1, [rip+SCALAR]
 vmovapd ymm2, [rip+SCALAR]
 vmovapd ymm3, [rip+SCALAR]
