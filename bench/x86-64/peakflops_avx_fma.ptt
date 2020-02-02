@@ -1,6 +1,6 @@
 STREAMS 1
 TYPE DOUBLE
-FLOPS 12
+FLOPS 24
 BYTES 8
 vmovapd ymm1, [rip+SCALAR]
 vmovapd ymm2, [rip+SCALAR]
@@ -18,15 +18,15 @@ vmovapd ymm13, [rip+SCALAR]
 .align 32
 LOOP 4
 vmovapd    ymm1, [STR0 + GPR1 * 8 ]
-vaddpd     ymm2, ymm2, ymm1
-vmulpd     ymm3, ymm3, ymm1
-vaddpd     ymm4, ymm4, ymm1
-vmulpd     ymm5, ymm5, ymm1
-vaddpd     ymm6, ymm6, ymm1
-vmulpd     ymm7, ymm7, ymm1
-vaddpd     ymm8, ymm8, ymm1
-vmulpd     ymm9, ymm9, ymm1
-vaddpd     ymm10, ymm10, ymm1
-vmulpd     ymm11, ymm11, ymm1
-vaddpd     ymm12, ymm12, ymm1
-vmulpd     ymm13, ymm13, ymm1
+vfmadd213pd     ymm2, ymm2, ymm1
+vfmadd213pd     ymm3, ymm3, ymm1
+vfmadd213pd     ymm4, ymm4, ymm1
+vfmadd213pd     ymm5, ymm5, ymm1
+vfmadd213pd     ymm6, ymm6, ymm1
+vfmadd213pd     ymm7, ymm7, ymm1
+vfmadd213pd     ymm8, ymm8, ymm1
+vfmadd213pd     ymm9, ymm9, ymm1
+vfmadd213pd     ymm10, ymm10, ymm1
+vfmadd213pd     ymm11, ymm11, ymm1
+vfmadd213pd     ymm12, ymm12, ymm1
+vfmadd213pd     ymm13, ymm13, ymm1
