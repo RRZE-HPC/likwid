@@ -486,6 +486,7 @@ install: install_daemon install_freq install_appdaemon
 	@mkdir -p $(PREFIX)/include
 	@chmod 755 $(PREFIX)/include
 	@install -m 644 src/includes/likwid.h  $(PREFIX)/include/
+	@sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<GITCOMMIT>/$(GITCOMMIT)/g" -e "s/<MINOR>/$(MINOR)/g" $(PREFIX)/include/likwid.h
 	@install -m 644 src/includes/likwid-marker.h  $(PREFIX)/include/
 	@install -m 644 src/includes/bstrlib.h  $(PREFIX)/include/
 	$(FORTRAN_INSTALL)
