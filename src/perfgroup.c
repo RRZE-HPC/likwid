@@ -1597,6 +1597,7 @@ calc_metric(char* formula, CounterList* clist, double *result)
     i = calculate_infix(bdata(f), result);
     bdestroy(f);
     bdestroy(nan);
+    bdestroy(inf);
     bdestroy(zero);
     return i;
 }
