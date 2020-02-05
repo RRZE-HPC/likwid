@@ -5,13 +5,13 @@
  *
  *      Description:  Implementation of timer module
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.0
+ *      Released:  10.11.2019
  *
  *      Author:  Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -394,34 +394,11 @@ getCpuSpeed(void)
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void
-init_sleep()
-{
-    int status;
-    TimerData timer;
-    timer_init();
-    struct timespec req = {0,1};
-    struct timespec rem = {0,0};
-    for (int i=0; i<10; ++i)
-    {
-        _timer_start(&timer);
-        status = clock_nanosleep(CLOCK_REALTIME,0,&req, &rem);
-        _timer_stop(&timer);
-        if (_timer_print(&timer)*1E6 > sleepbase)
-        {
-            sleepbase = _timer_print(&timer)*1E6 + 2;
-        }
-    }
-}
 
 void
-timer_init( void )
+_timer_init( void )
 {
     uint32_t eax = 0x0,ebx = 0x0,ecx = 0x0,edx = 0x0;
-    if (timer_initialized == 1)
-    {
-        return;
-    }
     if ((!TSTART) && (!TSTOP))
     {
 #if defined(__x86_64) || defined(__i386__)
@@ -454,8 +431,38 @@ timer_init( void )
     {
         getCpuSpeed();
     }
+}
+
+void
+init_sleep()
+{
+    int status;
+    TimerData timer;
+    _timer_init();
+    struct timespec req = {0,1};
+    struct timespec rem = {0,0};
+    for (int i=0; i<10; ++i)
+    {
+        _timer_start(&timer);
+        status = clock_nanosleep(CLOCK_REALTIME,0,&req, &rem);
+        _timer_stop(&timer);
+        if (_timer_print(&timer)*1E6 > sleepbase)
+        {
+            sleepbase = _timer_print(&timer)*1E6 + 2;
+        }
+    }
+}
+void timer_init(void)
+{
+    if (timer_initialized == 1)
+    {
+        return;
+    }
+    _timer_init();
+    init_sleep();
     timer_initialized = 1;
 }
+
 
 uint64_t
 timer_printCycles( const TimerData* time )
