@@ -1,0 +1,38 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 24
+BYTES 4
+DESC Single-precision multiplications and additions with a single load, optimized for AVX-512 FMAs
+LOADS 1
+STORES 0
+INSTR_CONST 28
+INSTR_LOOP 16
+UOPS 15
+vmovaps zmm1, [rip+SCALAR]
+vmovaps zmm2, [rip+SCALAR]
+vmovaps zmm3, [rip+SCALAR]
+vmovaps zmm4, [rip+SCALAR]
+vmovaps zmm5, [rip+SCALAR]
+vmovaps zmm6, [rip+SCALAR]
+vmovaps zmm7, [rip+SCALAR]
+vmovaps zmm8, [rip+SCALAR]
+vmovaps zmm9, [rip+SCALAR]
+vmovaps zmm10, [rip+SCALAR]
+vmovaps zmm11, [rip+SCALAR]
+vmovaps zmm12, [rip+SCALAR]
+vmovaps zmm13, [rip+SCALAR]
+.align 32
+LOOP 16
+vmovaps    zmm1, [STR0 + GPR1 * 4 ]
+vfmadd213ps     zmm2, zmm2, zmm1
+vfmadd213ps     zmm3, zmm3, zmm1
+vfmadd213ps     zmm4, zmm4, zmm1
+vfmadd213ps     zmm5, zmm5, zmm1
+vfmadd213ps     zmm6, zmm6, zmm1
+vfmadd213ps     zmm7, zmm7, zmm1
+vfmadd213ps     zmm8, zmm8, zmm1
+vfmadd213ps     zmm9, zmm9, zmm1
+vfmadd213ps     zmm10, zmm10, zmm1
+vfmadd213ps     zmm11, zmm11, zmm1
+vfmadd213ps     zmm12, zmm12, zmm1
+vfmadd213ps     zmm13, zmm13, zmm1

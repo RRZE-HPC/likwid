@@ -1,7 +1,7 @@
 STREAMS 1
 TYPE DOUBLE
 FLOPS 12
-BYTES 8
+BYTES 4
 DESC Double-precision multiplications and additions with a single load, optimised for SSE
 LOADS 1
 STORES 0

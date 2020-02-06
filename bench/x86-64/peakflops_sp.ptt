@@ -1,0 +1,24 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 8
+BYTES 4
+DESC Single-precision multiplications and additions with a single load, only scalar operations
+LOADS 1
+STORES 0
+INSTR_CONST 18
+INSTR_LOOP 12
+UOPS 11
+movaps FPR1, [rip+SCALAR]
+movaps FPR2, [rip+SCALAR]
+LOOP 1
+movss    FPR2, [STR0 + GPR1 * 4 ]
+addss     FPR3, FPR2
+addss     FPR4, FPR2
+addss     FPR5, FPR2
+mulss     FPR6, FPR2
+mulss     FPR7, FPR2
+mulss     FPR8, FPR2
+mulss     FPR9, FPR2
+mulss     FPR10, FPR2
+
+

@@ -1,0 +1,37 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 12
+BYTES 8
+DESC Single-precision multiplications and additions with a single load, optimised for SSE
+LOADS 1
+STORES 0
+INSTR_CONST 28
+INSTR_LOOP 16
+UOPS 15
+movaps xmm2, [rip+SCALAR]
+movaps xmm3, [rip+SCALAR]
+movaps xmm4, [rip+SCALAR]
+movaps xmm5, [rip+SCALAR]
+movaps xmm6, [rip+SCALAR]
+movaps xmm7, [rip+SCALAR]
+movaps xmm8, [rip+SCALAR]
+movaps xmm9, [rip+SCALAR]
+movaps xmm10, [rip+SCALAR]
+movaps xmm11, [rip+SCALAR]
+movaps xmm12, [rip+SCALAR]
+movaps xmm13, [rip+SCALAR]
+.align 32
+LOOP 4
+movaps    xmm1, [STR0 + GPR1 * 4 ]
+addps     xmm2, xmm1
+mulps     xmm3, xmm1
+addps     xmm4, xmm1
+mulps     xmm5, xmm1
+addps     xmm6, xmm1
+mulps     xmm7, xmm1
+addps     xmm8, xmm1
+mulps     xmm9, xmm1
+addps     xmm10, xmm1
+mulps     xmm11, xmm1
+addps     xmm12, xmm1
+mulps     xmm13, xmm1

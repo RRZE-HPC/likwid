@@ -1,0 +1,38 @@
+STREAMS 1
+TYPE SINGLE
+FLOPS 12
+BYTES 4
+DESC Single-precision multiplications and additions with a single load, optimized for AVX
+LOADS 1
+STORES 0
+INSTR_CONST 28
+INSTR_LOOP 16
+UOPS 15
+vmovaps ymm1, [rip+SCALAR]
+vmovaps ymm2, [rip+SCALAR]
+vmovaps ymm3, [rip+SCALAR]
+vmovaps ymm4, [rip+SCALAR]
+vmovaps ymm5, [rip+SCALAR]
+vmovaps ymm6, [rip+SCALAR]
+vmovaps ymm7, [rip+SCALAR]
+vmovaps ymm8, [rip+SCALAR]
+vmovaps ymm9, [rip+SCALAR]
+vmovaps ymm10, [rip+SCALAR]
+vmovaps ymm11, [rip+SCALAR]
+vmovaps ymm12, [rip+SCALAR]
+vmovaps ymm13, [rip+SCALAR]
+.align 32
+LOOP 8
+vmovaps    ymm1, [STR0 + GPR1 * 4 ]
+vaddps     ymm2, ymm2, ymm1
+vmulps     ymm3, ymm3, ymm1
+vaddps     ymm4, ymm4, ymm1
+vmulps     ymm5, ymm5, ymm1
+vaddps     ymm6, ymm6, ymm1
+vmulps     ymm7, ymm7, ymm1
+vaddps     ymm8, ymm8, ymm1
+vmulps     ymm9, ymm9, ymm1
+vaddps     ymm10, ymm10, ymm1
+vmulps     ymm11, ymm11, ymm1
+vaddps     ymm12, ymm12, ymm1
+vmulps     ymm13, ymm13, ymm1
