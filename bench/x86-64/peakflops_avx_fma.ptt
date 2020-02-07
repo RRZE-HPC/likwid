@@ -1,13 +1,14 @@
 STREAMS 1
 TYPE DOUBLE
-FLOPS 24
+FLOPS 30
 BYTES 8
 DESC Double-precision multiplications and additions with a single load, optimized for AVX FMAs
 LOADS 1
 STORES 0
-INSTR_CONST 28
-INSTR_LOOP 16
-UOPS 15
+INSTR_CONST 32
+INSTR_LOOP 19
+UOPS 18
+vmovapd ymm0, [rip+SCALAR]
 vmovapd ymm1, [rip+SCALAR]
 vmovapd ymm2, [rip+SCALAR]
 vmovapd ymm3, [rip+SCALAR]
@@ -21,9 +22,12 @@ vmovapd ymm10, [rip+SCALAR]
 vmovapd ymm11, [rip+SCALAR]
 vmovapd ymm12, [rip+SCALAR]
 vmovapd ymm13, [rip+SCALAR]
+vmovapd ymm14, [rip+SCALAR]
+vmovapd ymm15, [rip+SCALAR]
 .align 32
 LOOP 4
 vmovapd    ymm1, [STR0 + GPR1 * 8 ]
+vfmadd213pd     ymm0, ymm0, ymm1
 vfmadd213pd     ymm2, ymm2, ymm1
 vfmadd213pd     ymm3, ymm3, ymm1
 vfmadd213pd     ymm4, ymm4, ymm1
@@ -36,3 +40,5 @@ vfmadd213pd     ymm10, ymm10, ymm1
 vfmadd213pd     ymm11, ymm11, ymm1
 vfmadd213pd     ymm12, ymm12, ymm1
 vfmadd213pd     ymm13, ymm13, ymm1
+vfmadd213pd     ymm14, ymm14, ymm1
+vfmadd213pd     ymm15, ymm15, ymm1
