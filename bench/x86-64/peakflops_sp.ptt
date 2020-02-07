@@ -1,8 +1,8 @@
 STREAMS 1
-TYPE DOUBLE
+TYPE SINGLE
 FLOPS 16
-BYTES 8
-DESC Double-precision multiplications and additions with a single load, only scalar operations
+BYTES 4
+DESC Single-precision multiplications and additions with a single load, only scalar operations
 LOADS 1
 STORES 0
 INSTR_CONST 32
@@ -26,20 +26,20 @@ movaps FPR15, [rip+SCALAR]
 movaps FPR16, [rip+SCALAR]
 .align 32
 LOOP 1
-movsd    FPR2, [STR0 + GPR1 * 8 ]
-addsd     FPR1, FPR2
-addsd     FPR3, FPR4
-mulsd     FPR5, FPR6
-mulsd     FPR7, FPR8
-mulsd     FPR9, FPR10
-addsd     FPR11, FPR12
-addsd     FPR13, FPR14
-mulsd     FPR15, FPR16
-addsd     FPR1, FPR2
-addsd     FPR3, FPR4
-mulsd     FPR5, FPR6
-mulsd     FPR7, FPR8
-mulsd     FPR9, FPR10
-addsd     FPR11, FPR12
-addsd     FPR13, FPR14
-mulsd     FPR15, FPR16
+movss    FPR2, [STR0 + GPR1 * 4 ]
+addss     FPR1, FPR2
+addss     FPR3, FPR4
+mulss     FPR5, FPR6
+mulss     FPR7, FPR8
+mulss     FPR9, FPR10
+addss     FPR11, FPR12
+addss     FPR13, FPR14
+mulss     FPR15, FPR16
+addss     FPR1, FPR2
+addss     FPR3, FPR4
+mulss     FPR5, FPR6
+mulss     FPR7, FPR8
+mulss     FPR9, FPR10
+addss     FPR11, FPR12
+addss     FPR13, FPR14
+mulss     FPR15, FPR16
