@@ -194,7 +194,6 @@ access_x86_clientmem_read(PciDeviceIndex dev, const int socket, uint32_t reg, ui
             d = (uint64_t)*((uint32_t *)(clientmem_addr + PCM_CLIENT_IMC_PP1_TEMP));
             d = d & 0xFF;
             break;
-            break;
         default:
             ERROR_PRINT(Read from clientmem device at reg 0x%X failed, reg);
             break;
