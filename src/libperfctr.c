@@ -54,6 +54,7 @@
 #include <affinity.h>
 #include <perfmon.h>
 #include <bstrlib.h>
+#include <voltage.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
