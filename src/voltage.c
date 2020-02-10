@@ -28,8 +28,6 @@
  *
  * =======================================================================================
  */
-#ifndef VOLTAGE_H
-#define VOLTAGE_H
 
 #include <types.h>
 #include <registers.h>
@@ -37,8 +35,37 @@
 #include <error.h>
 #include <access.h>
 
-int voltage_read(int cpuId, uint64_t *data);
-int voltage_tread(int socket_fd, int cpuId, uint64_t *data);
-double voltage_value(uint64_t raw_value);
+#include <voltage.h>
 
-#endif /*VOLTAGE_H*/
+int
+voltage_read(int cpuId, uint64_t *data)
+{
+    uint64_t result = 0;
+    if (HPMread(cpuId, MSR_DEV, MSR_PERF_STATUS, &result))
+    {
+        *data = 0;
+        return -EIO;
+    }
+    *data = (result >> 32) & 0xFFFF;
+    return 0;
+}
+
+int
+voltage_tread(int socket_fd, int cpuId, uint64_t *data)
+{
+    uint64_t result = 0;
+    if (HPMread(cpuId, MSR_DEV, MSR_PERF_STATUS, &result))
+    {
+        *data = 0;
+        return -EIO;
+    }
+    *data = (result >> 32) & 0xFFFF;
+    return 0;
+}
+
+double
+voltage_value(uint64_t raw_value)
+{
+    return (double)(raw_value) / 8192.0;
+}
+
