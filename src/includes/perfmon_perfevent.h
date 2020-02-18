@@ -509,9 +509,13 @@ int perfmon_setupCountersThread_perfevent(
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
                 break;
             case POWER:
+                if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
+                {
+                    has_lock = 1;
+                }
+                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
                 ret = perf_uncore_setup(&attr, type, event);
                 is_uncore = 1;
-                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
                 break;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)
             case MBOX0:
@@ -579,7 +583,6 @@ int perfmon_setupCountersThread_perfevent(
             case EUBOX5:
             case EUBOX6:
             case EUBOX7:
-
                 if (cpuid_info.family == ZEN_FAMILY && type == MBOX0)
                 {
                     if (numa_lock[affinity_thread2numa_lookup[cpu_id]] == cpu_id)
@@ -596,6 +599,7 @@ int perfmon_setupCountersThread_perfevent(
                 }
                 else
                 {
+                    printf("Socket lock\n");
                     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
                     {
                         has_lock = 1;
