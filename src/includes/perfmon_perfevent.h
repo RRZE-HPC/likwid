@@ -599,7 +599,6 @@ int perfmon_setupCountersThread_perfevent(
                 }
                 else
                 {
-                    printf("Socket lock\n");
                     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
                     {
                         has_lock = 1;
