@@ -2047,7 +2047,7 @@ lua_likwid_checkProgram(lua_State* L)
         int status = 0;
         pid_t retpid = 0;
         pid_t pid = lua_tonumber(L, 1);
-        retpid = waitpid(pid, &status, WNOHANG);
+        retpid = waitpid(pid, &status, WNOHANG|WUNTRACED|WCONTINUED);
         if (retpid == pid)
         {
             if (WIFEXITED(status))
@@ -2057,6 +2057,10 @@ lua_likwid_checkProgram(lua_State* L)
             else if (WIFSIGNALED(status))
             {
                 ret = 128 + WTERMSIG(status);
+            }
+            else
+            {
+                ret = 0;
             }
         }
     }
