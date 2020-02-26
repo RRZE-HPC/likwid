@@ -1053,15 +1053,18 @@ if use_wrapper or use_timeline then
     groupTime[activeGroup] = 0
 
     while true do
-        if likwid.getSignalState() ~= 0 then
+        local state = likwid.getSignalState()
+        if state ~= 0 then
             if #execList > 0 then
                 likwid.killProgram(pid)
             end
             break
         end
         local remain = likwid.sleep(math.floor(duration-(twork*1E6)))
+        
         exitvalue = likwid.checkProgram(pid)
         if remain > 0 or exitvalue >= 0 then
+            if likwid.getSignalState() == 0 then likwid.sleep(1E4) end
             io.stdout:flush()
             if #execList > 0 then
                 break
