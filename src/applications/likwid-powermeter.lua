@@ -342,9 +342,8 @@ if not print_info and not print_temp then
                         end
                     end
                 end
-                exitvalue = likwid.checkProgram(pid)
-                if remain > 0 or exitvalue >= 0 then
-                    if likwid.getSignalState() == 0 then likwid.sleep(1E4) end
+                exitvalue, exited = likwid.checkProgram(pid)
+                if exited then
                     io.stdout:flush()
                     break
                 end

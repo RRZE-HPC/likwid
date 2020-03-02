@@ -2042,6 +2042,7 @@ static int
 lua_likwid_checkProgram(lua_State* L)
 {
     int ret = -1;
+    int exited = 0;
     if (lua_gettop(L) == 1)
     {
         int status = 0;
@@ -2053,10 +2054,12 @@ lua_likwid_checkProgram(lua_State* L)
             if (WIFEXITED(status))
             {
                 ret = WEXITSTATUS(status);
+                exited = 1;
             }
             else if (WIFSIGNALED(status))
             {
                 ret = 128 + WTERMSIG(status);
+                exited = 1;
             }
             else
             {
@@ -2065,6 +2068,7 @@ lua_likwid_checkProgram(lua_State* L)
         }
     }
     lua_pushinteger(L, (lua_Integer)ret);
+    lua_pushboolean(L, exited);
     return 1;
 }
 
