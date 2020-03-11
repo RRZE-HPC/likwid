@@ -2069,7 +2069,7 @@ lua_likwid_checkProgram(lua_State* L)
     }
     lua_pushinteger(L, (lua_Integer)ret);
     lua_pushboolean(L, exited);
-    return 1;
+    return 2;
 }
 
 static int
