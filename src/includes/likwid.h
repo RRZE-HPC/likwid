@@ -675,7 +675,10 @@ extern void perfmon_returnGroups(int nrgroups, char** groups, char** shortinfos,
 /*! \brief Initialize performance monitoring facility
 
 Initialize the performance monitoring feature by creating basic data structures.
-The access mode must already be set when calling perfmon_init()
+The CPU ids for the threadsToCpu list can be found in cpuTopology->threadPool[thread_id]->apicId.
+The access mode must already be set when calling perfmon_init().
+\sa HPMmode() function and CpuTopology structure with HWThread list
+
 @param [in] nrThreads Amount of threads
 @param [in] threadsToCpu List of CPUs
 @return error code (0 on success, -ERRORCODE on failure)
