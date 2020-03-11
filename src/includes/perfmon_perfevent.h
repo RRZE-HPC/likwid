@@ -177,7 +177,11 @@ static char* perfEventOptionNames[] = {
     [EVENT_OPTION_OCCUPANCY_FILTER] = "occ_band0",
     [EVENT_OPTION_OCCUPANCY_EDGE] = "occ_edge",
     [EVENT_OPTION_OCCUPANCY_INVERT] = "occ_inv",
+#ifdef _ARCH_PPC
+    [EVENT_OPTION_GENERIC_CONFIG] = "pmcxsel",
+#else
     [EVENT_OPTION_GENERIC_CONFIG] = "event",
+#endif
     [EVENT_OPTION_GENERIC_UMASK] = "umask",
 #ifdef _ARCH_PPC
     [EVENT_OPTION_PMC] = "pmc",
@@ -280,28 +284,34 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     getEventOptionConfig(translate_types[PMC], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
     switch(reg)
     {
-	case PERF_EVENT_CONFIG_REG:
-	    attr->config |= create_mask(event->eventId, start, end);
-	    break;
-	case PERF_EVENT_CONFIG1_REG:
-	    attr->config1 |= create_mask(event->eventId, start, end);
-	    break;
-	case PERF_EVENT_CONFIG2_REG:
-	    attr->config2 |= create_mask(event->eventId, start, end);
-	    break;
+        case PERF_EVENT_CONFIG_REG:
+            attr->config |= create_mask(event->eventId, start, end);
+            break;
+        case PERF_EVENT_CONFIG1_REG:
+            attr->config1 |= create_mask(event->eventId, start, end);
+            break;
+        case PERF_EVENT_CONFIG2_REG:
+            attr->config2 |= create_mask(event->eventId, start, end);
+            break;
     }
+#ifdef _ARCH_PPC
+    reg = PERF_EVENT_CONFIG_REG;
+    start = 8;
+    end = 15;
+#else
     getEventOptionConfig(translate_types[PMC], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
+#endif
     switch(reg)
     {
-	case PERF_EVENT_CONFIG_REG:
-	    attr->config |= create_mask(event->umask, start, end);
-	    break;
-	case PERF_EVENT_CONFIG1_REG:
-	    attr->config1 |= create_mask(event->umask, start, end);
-	    break;
-	case PERF_EVENT_CONFIG2_REG:
-	    attr->config2 |= create_mask(event->umask, start, end);
-	    break;
+        case PERF_EVENT_CONFIG_REG:
+            attr->config |= create_mask(event->umask, start, end);
+            break;
+        case PERF_EVENT_CONFIG1_REG:
+            attr->config1 |= create_mask(event->umask, start, end);
+            break;
+        case PERF_EVENT_CONFIG2_REG:
+            attr->config2 |= create_mask(event->umask, start, end);
+            break;
     }
     if (event->numberOfOptions > 0)
     {
