@@ -2674,6 +2674,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
+    add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -2756,6 +2757,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
+    add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -3421,6 +3423,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
+    add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
     int cpu = 0, sock_cpu = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
