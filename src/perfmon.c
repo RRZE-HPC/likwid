@@ -1160,6 +1160,7 @@ perfmon_init_maps(void)
             switch ( cpuid_info.model )
             {
                 case ZEN_RYZEN:
+                case ZENPLUS_RYZEN:
                     eventHash = zen_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen;
                     counter_map = zen_counter_map;
@@ -1592,6 +1593,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             switch ( cpuid_info.model )
             {
                 case ZEN_RYZEN:
+                case ZENPLUS_RYZEN:
                     initThreadArch = perfmon_init_zen;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen;
