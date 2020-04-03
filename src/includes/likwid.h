@@ -836,6 +836,13 @@ extern int perfmon_getNumberOfEvents(int groupId) __attribute__ ((visibility ("d
 @return Time in seconds the event group was measured
 */
 extern double perfmon_getTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the accumulated measurement time a group thread
+
+@param [in] groupId ID of group
+@param [in] threadId ID of thread
+@return Time in seconds the event group was measured (reset on setup, accumulation on start/stop and reads)
+*/
+extern double perfmon_getTimeOfGroupThread(int groupId, int threadId) __attribute__ ((visibility ("default") ));
 /*! \brief Get the ID of the currently set up event group
 
 @return Number of active group
@@ -914,7 +921,13 @@ extern int perfmon_getNumberOfMetrics(int groupId) __attribute__ ((visibility ("
 @return Time in seconds the event group was measured the last time
 */
 extern double perfmon_getLastTimeOfGroup(int groupId) __attribute__ ((visibility ("default") ));
+/*! \brief Get the last measurement time a group thread (reset on setup)
 
+@param [in] groupId ID of group
+@param [in] threadId ID of thread
+@return Time in seconds the event group was measured the last time
+*/
+extern double perfmon_getLastTimeOfGroupThread(int groupId, int threadId) __attribute__ ((visibility ("default") ));
 /*! \brief Read the output file of the Marker API
 @param [in] filename Filename with Marker API results
 @return 0 or negative error number

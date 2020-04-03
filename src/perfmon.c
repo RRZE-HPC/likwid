@@ -1792,6 +1792,9 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
 #endif
         groupSet->threads[i].thread_id = i;
         groupSet->threads[i].processorId = threadsToCpu[i];
+        groupSet->threads[i].runTime = 0;
+        groupSet->threads[i].rdtscTime = 0;
+        timer_reset(&groupSet->threads[i].timer);
 
         if (initialize_power == TRUE)
         {
@@ -2245,6 +2248,9 @@ perfmon_setupCounters(int groupId)
         {
             return ret;
         }
+        groupSet->threads[i].runTime = 0;
+        groupSet->threads[i].rdtscTime = 0;
+        timer_reset(&groupSet->threads[i].timer);
     }
     groupSet->groups[groupId].state = STATE_SETUP;
     return 0;
@@ -2273,6 +2279,7 @@ __perfmon_startCounters(int groupId)
         {
             return -groupSet->threads[i].thread_id-1;
         }
+        timer_start(&groupSet->threads[i].timer);
     }
     groupSet->groups[groupId].state = STATE_START;
     timer_start(&groupSet->groups[groupId].timer);
@@ -2340,11 +2347,14 @@ __perfmon_stopCounters(int groupId)
 
     for (i = 0; i<groupSet->numberOfThreads; i++)
     {
+        timer_stop(&groupSet->threads[i].timer);
         ret = perfmon_stopCountersThread(groupSet->threads[i].thread_id, &groupSet->groups[groupId]);
         if (ret)
         {
             return -groupSet->threads[i].thread_id-1;
         }
+        groupSet->threads[i].rdtscTime = timer_print(&groupSet->threads[i].timer);
+        groupSet->threads[i].runTime += groupSet->threads[i].rdtscTime;
     }
 
     for (i=0; i<perfmon_getNumberOfEvents(groupId); i++)
@@ -2441,11 +2451,14 @@ __perfmon_readCounters(int groupId, int threadId)
     {
         for (threadId = 0; threadId<groupSet->numberOfThreads; threadId++)
         {
+            timer_stop(&groupSet->threads[i].timer);
             ret = perfmon_readCountersThread(threadId, &groupSet->groups[groupId]);
             if (ret)
             {
                 return -threadId-1;
             }
+            groupSet->threads[i].rdtscTime = timer_print(&groupSet->threads[i].timer);
+            groupSet->threads[i].runTime += groupSet->threads[i].rdtscTime;
             for (j=0; j < groupSet->groups[groupId].numberOfEvents; j++)
             {
                 if (groupSet->groups[groupId].events[j].type != NOTYPE)
@@ -2461,11 +2474,14 @@ __perfmon_readCounters(int groupId, int threadId)
     }
     else if ((threadId >= 0) && (threadId < groupSet->numberOfThreads))
     {
+        timer_stop(&groupSet->threads[threadId].timer);
         ret = perfmon_readCountersThread(threadId, &groupSet->groups[groupId]);
         if (ret)
         {
             return -threadId-1;
         }
+        groupSet->threads[threadId].rdtscTime = timer_print(&groupSet->threads[threadId].timer);
+        groupSet->threads[threadId].runTime += groupSet->threads[threadId].rdtscTime;
         for (j=0; j < groupSet->groups[groupId].numberOfEvents; j++)
         {
             result = (double)calculateResult(groupId, j, threadId);
@@ -2679,7 +2695,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
         add_to_clist(&clist,groupSet->groups[groupId].group.counters[e],
                      perfmon_getResult(groupId, e, threadId));
     }
-    add_to_clist(&clist, "time", perfmon_getTimeOfGroup(groupId));
+    add_to_clist(&clist, "time", perfmon_getTimeOfGroupThread(groupId, threadId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
@@ -2762,7 +2778,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
         add_to_clist(&clist,groupSet->groups[groupId].group.counters[e],
                      perfmon_getLastResult(groupId, e, threadId));
     }
-    add_to_clist(&clist, "time", perfmon_getLastTimeOfGroup(groupId));
+    add_to_clist(&clist, "time", perfmon_getLastTimeOfGroupThread(groupId, threadId));
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
@@ -2874,6 +2890,9 @@ perfmon_switchActiveGroup(int new_group)
         {
             return ret;
         }
+        groupSet->threads[i].runTime = 0;
+        groupSet->threads[i].rdtscTime = 0;
+        timer_reset(&groupSet->threads[i].timer);
     }
     return 0;
 }
@@ -2942,6 +2961,25 @@ perfmon_getTimeOfGroup(int groupId)
 }
 
 double
+perfmon_getTimeOfGroupThread(int groupId, int threadId)
+{
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (groupId < 0)
+    {
+        groupId = groupSet->activeGroup;
+    }
+    if (threadId < 0 || threadId >= groupSet->numberOfThreads)
+    {
+        return -EINVAL;
+    }
+    return groupSet->threads[threadId].runTime;
+}
+
+double
 perfmon_getLastTimeOfGroup(int groupId)
 {
     if (perfmon_initialized != 1)
@@ -2954,6 +2992,25 @@ perfmon_getLastTimeOfGroup(int groupId)
         groupId = groupSet->activeGroup;
     }
     return groupSet->groups[groupId].rdtscTime;
+}
+
+double
+perfmon_getLastTimeOfGroupThread(int groupId, int threadId)
+{
+    if (perfmon_initialized != 1)
+    {
+        ERROR_PLAIN_PRINT(Perfmon module not properly initialized);
+        return -EINVAL;
+    }
+    if (groupId < 0)
+    {
+        groupId = groupSet->activeGroup;
+    }
+    if (threadId < 0 || threadId >= groupSet->numberOfThreads)
+    {
+        return -EINVAL;
+    }
+    return groupSet->threads[threadId].rdtscTime;
 }
 
 uint64_t

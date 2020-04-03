@@ -154,6 +154,9 @@ resolve the real HW thread ID.
 typedef struct {
     int             thread_id; /*!< \brief Thread ID how it is used internally */
     int             processorId; /*!< \brief Real HW thread ID */
+    TimerData       timer; /*!< \brief Time information how long the counters were running */
+    double          rdtscTime; /*!< \brief Evaluation of the Time information in seconds */
+    double          runTime; /*!< \brief Sum of all time information in seconds that the group was running */
 } PerfmonThread;
 
 /*! \brief Structure specifying event/counter options and their value
