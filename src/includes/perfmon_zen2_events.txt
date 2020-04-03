@@ -44,6 +44,9 @@ UMASK_MPERF                                 0x00
 
 # Core-local Events
 
+EVENT_MERGE                                            0xFFF PMC
+UMASK_MERGE                                            0x00
+
 # FP events
 
 EVENT_FPU_PIPE_ASSIGNMENT                              0x00    PMC

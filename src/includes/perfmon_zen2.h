@@ -99,6 +99,10 @@ int zen2_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent* event)
             }
         }
     }
+    if (event->eventId == 0xFFF)
+    {
+        flags |= (1ULL<<AMD_K17_PMC_ENABLE_BIT);
+    }
     if (flags != currentConfig[cpu_id][index])
     {
         VERBOSEPRINTREG(cpu_id, counter_map[index].configRegister, LLU_CAST flags, SETUP_PMC);
