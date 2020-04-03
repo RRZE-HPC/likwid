@@ -150,6 +150,7 @@ struct topology_functions {
 #define  NV_DENVER1	0x00U
 #define  NV_DENVER2	0x03U
 #define  APP_XGENE1	0x00U
+#define  ARM_NEOVERSE_N1 0xD0CU
 
 /* ARM vendors */
 #define DEFAULT_ARM	0x41U
