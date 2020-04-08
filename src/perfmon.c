@@ -1160,6 +1160,7 @@ perfmon_init_maps(void)
             switch ( cpuid_info.model )
             {
                 case ZEN_RYZEN:
+                case ZENPLUS_RYZEN:
                     eventHash = zen_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen;
                     counter_map = zen_counter_map;
@@ -1592,6 +1593,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             switch ( cpuid_info.model )
             {
                 case ZEN_RYZEN:
+                case ZENPLUS_RYZEN:
                     initThreadArch = perfmon_init_zen;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen;
@@ -2672,6 +2674,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
+    add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -2754,6 +2757,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
+    add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -3419,6 +3423,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
+    add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
     int cpu = 0, sock_cpu = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
