@@ -349,9 +349,6 @@ g_hash_table_remove_all_nodes (GHashTable *hash_table,
   gpointer key;
   gpointer value;
 
-  hash_table->nnodes = 0;
-  hash_table->noccupied = 0;
-
   if (!notify ||
       (hash_table->key_destroy_func == NULL &&
        hash_table->value_destroy_func == NULL))
@@ -388,6 +385,9 @@ g_hash_table_remove_all_nodes (GHashTable *hash_table,
           hash_table->hashes[i] = UNUSED_HASH_VALUE;
         }
     }
+
+  hash_table->nnodes = 0;
+  hash_table->noccupied = 0;
 }
 
 static void
@@ -604,7 +604,7 @@ g_hash_table_remove_all (GHashTable *hash_table)
 void
 g_hash_table_unref (GHashTable *hash_table)
 {
-    
+
     if (hash_table->values && hash_table->keys != hash_table->values)
     {
         free(hash_table->values);
