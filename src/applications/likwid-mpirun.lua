@@ -81,8 +81,8 @@ local function usage()
     print_stdout("-g/-group <perf>\t Set a likwid-perfctr conform event set for measuring on nodes")
     print_stdout("-m/-marker\t\t Activate marker API mode")
     print_stdout("-O\t\t\t Output easily parseable CSV instead of fancy tables")
-    print_stdout("-o/--output <file>\tWrite output to a file. The file is reformatted according to the suffix.")
-    print_stdout("-f\t\t\t Force overwrite of registers if they are in use. You can also use environment variable LIKWID_FORCE")
+    print_stdout("-o/--output <file>\t Write output to a file. The file is reformatted according to the suffix.")
+    print_stdout("-f\t\t\t Force execution (and measurements). You can also use environment variable LIKWID_FORCE.")
     print_stdout("-e, --env <key>=<value>\t Set environment variables for MPI processes")
     print_stdout("--mpiopts <str>\t Hand over options to underlying MPI. Please use proper quoting.")
     print_stdout("")
@@ -134,6 +134,7 @@ local getEnvironment = nil
 local executeCommand = nil
 local mpiexecutable = nil
 local hostpattern = "([%.%a%d_-]+)"
+local slurm_involved = false
 
 local function abspath(cmd)
     local pathlist = os.getenv("PATH")
@@ -509,6 +510,7 @@ local function readHostfilePBS(filename)
     if debug then
         print_stdout("DEBUG: Reading hostfile from batch system")
     end
+
     local t = f:read("*all")
     f:close()
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
@@ -554,15 +556,15 @@ local function readHostfileSlurm(hostlist)
     if hostlist and nperhost then
         hostfile = write_hostlist_to_file(hostlist, nperhost)
         hosts = readHostfilePBS(hostfile)
-        if debug then
-            print_stdout("Available hosts for scheduling:")
-            s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
-            print_stdout(s)
-            for i, host in pairs(hosts) do
-                s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
-                print_stdout (s)
-            end
-        end
+--        if debug then
+--            print_stdout("Available hosts for scheduling:")
+--            s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
+--            print_stdout(s)
+--            for i, host in pairs(hosts) do
+--                s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
+--                print_stdout (s)
+--            end
+--        end
         os.remove(hostfile)
     end
     return hosts
@@ -620,8 +622,8 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
     if wrapperscript.sub(1,1) ~= "/" then
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
-    local exec = string.format("srun --nodes %d --ntasks-per-node=%d --cpu_bind=none %s %s",
-                                nrNodes, ppn, mpiopts or "", wrapperscript)
+    local exec = string.format("srun --nodes %d --ntasks=%d --ntasks-per-node=%d --cpu_bind=none %s %s",
+                                nrNodes, np, ppn, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..exec)
     end
@@ -649,7 +651,8 @@ end
 local function getMpiType()
     local mpitype = nil
     if os.getenv("SLURM_JOB_ID") ~= nil then
-        return "slurm"
+        mpitype = "slurm"
+        slurm_involved = true
     end
     cmd = "bash -c 'tclsh /apps/modules/modulecmd.tcl sh list -t' 2>&1"
     local f = io.popen(cmd, 'r')
@@ -675,7 +678,7 @@ local function getMpiType()
             end
         end
     end
-    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun"}) do
+    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun", "srun"}) do
         f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
         if f ~= nil then
             local s = f:read('*line')
@@ -705,14 +708,28 @@ local function getMpiType()
                             break
                         end
                     end
+                    b,e = out:find("srun")
+                    if (b ~= nil) then
+                        mpitype = "slurm"
+                        slurm_involved = true
+                        break
+                    end
                 end
             end
         end
     end
     if mpitype then
-        local mpi_bootstrap = os.getenv("I_MPI_HYDRA_BOOTSTRAP")
-        if mpi_bootstrap == "slurm" then
-            mpitype = "slurm"
+--        local mpi_bootstrap = os.getenv("I_MPI_HYDRA_BOOTSTRAP")
+--        if mpi_bootstrap == "slurm" then
+--            mpitype = "slurm"
+--        end
+        if os.getenv("SLURM_JOB_ID") == nil then
+            f = io.popen(string.format("which srun 2>/dev/null"), 'r')
+            local s = f:read('*line')
+            if s ~= nil then
+                f:close()
+                mpitype = "slurm"
+            end
         end
     end
     if not mpitype then
@@ -929,9 +946,10 @@ local function assignHosts(hosts, np, ppn, tpp)
                     current = ppn
                 end]]
                 print_stderr(string.format("ERROR: Oversubscription required. Host %s has only %s slots but %d needed per host", host["hostname"], host["slots"], ppn))
-                if mpitype == "slurm" then
-                    print_stderr("In SLURM environments, it might be a problem with --ntasks (the slots) and --cpus-per-task options")
+                if slurm_involved then
+                    print_stderr("ERROR: In SLURM environments, it might be a problem with --ntasks (the slots) and --cpus-per-task options")
                 end
+                print_stderr("ERROR: Oversubscription may be forced by setting '-f' on the command line.")
                 os.exit(1)
             else
                 table.insert(newhosts, {hostname=host["hostname"],
@@ -1004,17 +1022,92 @@ local function calculatePinExpr(cpuexprs)
     return newexprs
 end
 
+local function affinityDomains()
+    domains = {}
+    local topo = likwid.getCpuTopology()
+    local numa = likwid.getNumaInfo()
+
+    -- N node domain
+    N = {}
+    N["tag"] = "N"
+    N["numberOfProcessors"] = topo["numHWThreads"]
+    N["processorList"] = {}
+    for i=0, topo["numHWThreads"]-1 do
+        table.insert(N["processorList"], topo["threadPool"][i]["apicId"])
+    end
+    table.insert(domains, N)
+
+    -- Sx socket domains
+    for s=1, topo["numSockets"] do
+        S = {}
+        S["tag"] = string.format("S%d", s-1)
+        S["numberOfProcessors"] = topo["numCoresPerSocket"]
+        S["processorList"] = {}
+        for i=0, topo["numHWThreads"]-1 do
+            if topo["threadPool"][i]["packageId"] == s-1 then
+                table.insert(S["processorList"], topo["threadPool"][i]["apicId"])
+            end
+        end
+        -- likwid.tableprint(S, true)
+        table.insert(domains, S)
+    end
+
+    -- Cy Last-level-cache domains
+    local cidx = 0
+    for s=1, topo["numSockets"] do
+        local slist = {}
+        for i=0, topo["numHWThreads"]-1 do
+            if topo["threadPool"][i]["packageId"] == s-1 then
+                table.insert(slist, topo["threadPool"][i]["apicId"])
+            end
+        end
+
+        for i = 1, #slist/topo["cacheLevels"][topo["numCacheLevels"]]["threads"] do
+            C = {}
+            C["tag"] = string.format("C%d", cidx)
+            C["numberOfProcessors"] = topo["cacheLevels"][topo["numCacheLevels"]]["threads"]
+            C["processorList"] = {}
+
+            for x=1, C["numberOfProcessors"] do
+                table.insert(C["processorList"], slist[x + (i-1)*C["numberOfProcessors"]])
+            end
+
+            -- likwid.tableprint(C, true)
+            table.insert(domains, C)
+            cidx = cidx + 1
+        end
+
+    end
+
+    -- Mz NUMA domains
+    for x=1, numa["numberOfNodes"] do
+        M = {}
+        M["tag"] = string.format("M%d", x-1)
+        M["numberOfProcessors"] = numa["nodes"][x]["numberOfProcessors"]
+        M["processorList"] = {}
+        for i,c in pairs(numa["nodes"][x]["processors"]) do
+            table.insert(M["processorList"], c)
+        end
+        -- likwid.tableprint(M, true)
+        table.insert(domains, M)
+    end
+    return domains
+end
+
 local function calculateCpuExprs(nperdomain, cpuexprs)
     local topo = likwid.getCpuTopology()
-    local affinity = likwid.getAffinityInfo()
+    local affinity = affinityDomains()
     local domainlist = {}
     local newexprs = {}
+
     domainname, count, threads = nperdomain:match("[E]*[:]*([NSCM]*):(%d+)[:]*(%d*)")
     count = math.tointeger(count)
     threads = math.tointeger(threads)
     if threads == nil then threads = 1 end
+    local threads_per_core = topo["numThreadsPerCore"]
+    local cores_per_socket = topo["numCoresPerSocket"]
 
-    for i, domain in pairs(affinity["domains"]) do
+    for i, domain in pairs(affinity) do
         if domain["tag"]:match(domainname.."%d*") then
             table.insert(domainlist, i)
         end
@@ -1022,30 +1115,50 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
     if debug then
         local str = "DEBUG: NperDomain string "..nperdomain.." covers the domains: "
         for i, idx in pairs(domainlist) do
-            str = str .. affinity["domains"][idx]["tag"] .. " "
+            str = str .. affinity[idx]["tag"] .. " "
         end
         print_stdout(str)
     end
 
+
     for i, domidx in pairs(domainlist) do
+        local num_processors = affinity[domidx]["numberOfProcessors"]
         local sortedlist = {}
+        local baselist = {}
+        local inlist = {}
+        for j=0,affinity[domidx]["numberOfProcessors"] do
+            table.insert(inlist, affinity[domidx]["processorList"][j])
+        end
+
         if tpp_ordering == "spread" then
-            for off=1,topo["numThreadsPerCore"] do
-                for i=0,affinity["domains"][domidx]["numberOfProcessors"]/topo["numThreadsPerCore"] do
-                    table.insert(sortedlist, affinity["domains"][domidx]["processorList"][off + (i*topo["numThreadsPerCore"])])
+            for off=1,threads_per_core do
+                for j=0,num_processors/threads_per_core do
+                    table.insert(baselist, inlist[off + (j*threads_per_core)])
                 end
             end
         elseif tpp_ordering == "close" then
-            for i=0,affinity["domains"][domidx]["numberOfProcessors"] do
-                table.insert(sortedlist, affinity["domains"][domidx]["processorList"][i])
+            for j=0,num_processors do
+                table.insert(baselist, inlist[j])
             end
         end
+
+
+        local c = 0
+        while c < count do
+            for j, s in pairs(baselist) do
+                table.insert(sortedlist, s)
+                c = c + 1
+            end
+        end
+
         local tmplist = {}
         for j=1,count do
             local tmplist = {}
             for t=1,threads do
-                table.insert(tmplist, tostring(sortedlist[1]))
-                table.remove(sortedlist, 1)
+                if sortedlist[1] then
+                    table.insert(tmplist, tostring(sortedlist[1]))
+                    table.remove(sortedlist, 1)
+                end
             end
             table.insert(newexprs, tmplist)
             if dist > threads then
