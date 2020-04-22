@@ -583,7 +583,7 @@ timer_sleep(unsigned long usec)
 
     if (sleepbase == 0x0ULL)
     {
-        fprintf(stderr, "Sleeping longer as likwid_sleep() called without prior initialization\n");
+        //fprintf(stderr, "Sleeping longer as likwid_sleep() called without prior initialization\n");
         init_sleep();
     }
     if (usec >= 1000000)
@@ -624,4 +624,3 @@ timer_reset( TimerData* time )
     time->start.int64 = 0;
     time->stop.int64 = 0;
 }
-
