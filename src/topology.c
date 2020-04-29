@@ -432,8 +432,9 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             else if (strcmp(field, "osname") == 0)
             {
                 strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
-                cpuid_info.osname = (char*) malloc((strlen(value)+1) * sizeof(char));
-                strncpy(cpuid_info.osname, value, strlen(value));
+		int len = 257;
+                cpuid_info.osname = (char*) malloc(len * sizeof(char));
+                strncpy(cpuid_info.osname, value, len);
                 cpuid_info.osname[strlen(value)-1] = '\0';
             }
             else if (strcmp(field, "stepping") == 0)
@@ -493,8 +494,9 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             else if (strcmp(field, "features") == 0)
             {
                 strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
-                cpuid_info.features = (char*) malloc((strlen(value)+1) * sizeof(char));
-                strncpy(cpuid_info.features, value, strlen(value));
+		int len = 257;
+                cpuid_info.features = (char*) malloc(len * sizeof(char));
+                strncpy(cpuid_info.features, value, len);
                 cpuid_info.features[strlen(value)-1] = '\0';
             }
         }
