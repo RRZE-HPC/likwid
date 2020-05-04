@@ -543,6 +543,17 @@ int perfmon_setupCountersThread_perfevent(
     {
         allflags = strtoul(getenv("LIKWID_PERF_FLAGS"), NULL, 16);
     }
+    if (groupSet->activeGroup >= 0)
+    {
+        for (int j = 0; j < perfmon_numCounters; j++)
+        {
+            if (cpu_event_fds[cpu_id][j] != -1)
+            {
+                close(cpu_event_fds[cpu_id][j]);
+                cpu_event_fds[cpu_id][j] = -1;
+            }
+        }
+    }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         int has_lock = 0;
