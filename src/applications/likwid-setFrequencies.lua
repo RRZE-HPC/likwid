@@ -207,7 +207,7 @@ cpuinfo = likwid.getCpuInfo()
 topo = likwid.getCpuTopology()
 affinity = likwid.getAffinityInfo()
 if not domain or domain == "N" then
-    domain = "N:0-" .. tostring(topo["numHWThreads"]-1)
+    domain = "N:0-" .. tostring(topo["activeHWThreads"]-1)
 end
 if domain:match("[SCM]%d") then
     for i, dom in pairs(affinity["domains"]) do
@@ -221,23 +221,24 @@ socklist = {}
 numthreads, cpulist = likwid.cpustr_to_cpulist(domain)
 for i, dom in pairs(affinity["domains"]) do
     if dom["tag"]:match("S%d") then
-        for k, d in pairs(dom["processorList"]) do
-            local found = false
-            for j, c in pairs(cpulist) do
-                if c == d then
-
-                    found = true
-                    break
+        if #dom["processorList"] > 0 then
+            for k, d in pairs(dom["processorList"]) do
+                local found = false
+                for j, c in pairs(cpulist) do
+                    if c == d then
+                        found = true
+                        break
+                    end
                 end
-            end
-            if found then
-                s = tonumber(dom["tag"]:match("S(%d)"))
-                found = false
-                for j, c in pairs(socklist) do
-                    if c == s then found = true end
-                end
-                if not found then
-                    table.insert(socklist, s)
+                if found then
+                    s = tonumber(dom["tag"]:match("S(%d)"))
+                    found = false
+                    for j, c in pairs(socklist) do
+                        if c == s then found = true end
+                    end
+                    if not found then
+                        table.insert(socklist, s)
+                    end
                 end
             end
         end
