@@ -25,6 +25,10 @@ It consists of:
 
 [LIKWID Introduction (YouTube)](https://youtu.be/6uFl1HPq-88)
 
+<iframe width="560" height="315"
+src="https://youtu.be/6uFl1HPq-88"
+frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+
 For further information please take a look at the [Wiki](https://github.com/RRZE-HPC/likwid/wiki).
 
 
