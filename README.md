@@ -7,6 +7,8 @@ for performance oriented programmers. It works for Intel, AMD, ARMv8 and POWER9
 processors on the Linux operating system. There is support for ARMv7 and POWER8
 but there is currently no test machine in our hands to test them properly.
 
+[LIKWID Introduction (YouTube)](https://youtu.be/6uFl1HPq-88)
+
 [![Build Status](https://travis-ci.org/RRZE-HPC/likwid.svg?branch=master)](https://travis-ci.org/RRZE-HPC/likwid)
 
 It consists of:
@@ -22,12 +24,6 @@ It consists of:
 - likwid-perfscope: Frontend to the timeline mode of likwid-perfctr, plots live graphs of performance metrics using gnuplot
 - likwid-memsweeper: Sweep memory of NUMA domains and evict cachelines from the last level cache
 - likwid-setFrequencies: Tool to control the CPU and Uncore frequencies (x86 only)
-
-[LIKWID Introduction (YouTube)](https://youtu.be/6uFl1HPq-88)
-
-<iframe width="560" height="315"
-src="https://youtu.be/6uFl1HPq-88"
-frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 
 For further information please take a look at the [Wiki](https://github.com/RRZE-HPC/likwid/wiki).
 
