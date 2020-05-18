@@ -1169,6 +1169,7 @@ perfmon_init_maps(void)
                     translate_types = zen_translate_types;
                     break;
                 case ZEN2_RYZEN:
+                case ZEN2_RYZEN2:
                     eventHash = zen2_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen2;
                     counter_map = zen2_counter_map;
@@ -1603,6 +1604,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen;
                     break;
                 case ZEN2_RYZEN:
+                case ZEN2_RYZEN2:
                     initThreadArch = perfmon_init_zen2;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen2;
