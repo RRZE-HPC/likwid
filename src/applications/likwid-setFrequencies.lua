@@ -120,6 +120,17 @@ function valid_freq(freq, freq_list, turbofreq)
     return valid_freq
 end
 
+function get_base_freq()
+    f = io.open("/proc/cpuinfo", "r")
+    freq = nil
+    if f ~= nil then
+        out = f:read("*a"):match("(%d.%d+)GHz")
+        freq = tonumber(out)
+        f:close()
+    end
+    return freq*1E6
+end
+
 verbosity = 0
 governor = nil
 frequency = nil
@@ -136,6 +147,7 @@ do_ureset = false
 set_turbo = false
 turbo = 0
 driver = nil
+base_freq = get_base_freq()
 
 if #arg == 0 then
     usage()
@@ -427,6 +439,26 @@ if min_u_freq and max_u_freq and max_u_freq < min_u_freq then
     print_stderr("ERROR: Maximal Uncore frequency lower than minimal frequency.")
     likwid.finalizeFreq()
     os.exit(1)
+end
+
+if max_freq and (likwid.getTurbo(cpulist[1]) == 1 or set_turbo) and tonumber(max_freq) <= base_freq then
+    print_stderr("ERROR: Setting maximal CPU frequency below base CPU frequency with activated Turbo mode is not supported.")
+    likwid.finalizeFreq()
+    os.exit(1)
+end
+if (likwid.getTurbo(cpulist[1]) == 0 and not set_turbo) then
+    local do_exit = false
+    if max_freq and tonumber(max_freq) > base_freq then
+        print_stderr("ERROR: Setting maximal CPU frequency above base CPU frequency with deactivated Turbo mode is not supported.")
+        do_exit = true
+    elseif min_freq and tonumber(min_freq) > base_freq then
+        print_stderr("ERROR: Setting minimal CPU frequency above base CPU frequency with deactivated Turbo mode is not supported.")
+        do_exit = true
+    end
+    if do_exit then
+        likwid.finalizeFreq()
+        os.exit(1)
+    end
 end
 
 
