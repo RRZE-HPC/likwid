@@ -78,6 +78,7 @@
 #include <perfmon_zen2.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
+#include <perfmon_fx1000.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -1264,6 +1265,21 @@ perfmon_init_maps(void)
                             box_map = cav_tx2_box_map;
                             perfmon_numCounters = perfmon_numCountersCavTx2;
                             translate_types = cav_tx2_translate_types;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case FUJITSU_ARM:
+                    switch (cpuid_info.part)
+                    {
+                        case A64FX_FX1000:
+                            eventHash = fx1000_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsFX1000;
+                            counter_map = fx1000_counter_map;
+                            box_map = fx1000_box_map;
+                            perfmon_numCounters = perfmon_numCountersFX1000;
+                            translate_types = fx1000_translate_types;
                             break;
                         default:
                             break;

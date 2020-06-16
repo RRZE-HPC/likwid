@@ -114,6 +114,7 @@ static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
 static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
 static char* arm_cortex_a57 = "ARM Cortex A57 (ARMv8)";
 static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
+static char* fujitsu_fx1000 = "Fujitsu A64FX (FX1000)";
 static char* power7_str = "POWER7 architecture";
 static char* power8_str = "POWER8 architecture";
 static char* power9_str = "POWER9 architecture";
@@ -162,6 +163,7 @@ static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
 static char* short_arm8_cav_tx2 = "arm8_tx2";
 static char* short_arm8_cav_tx = "arm8_tx";
+static char* short_a64fx = "arm64fx";
 
 static char* short_power7 = "power7";
 static char* short_power8 = "power8";
@@ -1001,6 +1003,17 @@ topology_setName(void)
                             break;
                     }
                     break;
+                case FUJITSU_ARM:
+                    switch (cpuid_info.part)
+                    {
+                        case A64FX_FX1000:
+                            cpuid_info.name = fujitsu_fx1000;
+                            cpuid_info.short_name = short_a64fx;
+                            break;
+                        default:
+                            return EXIT_FAILURE;
+                            break;
+                    }
                 default:
                     return EXIT_FAILURE;
                     break;
