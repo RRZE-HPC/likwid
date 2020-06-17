@@ -249,4 +249,5 @@ static char* sandybridgeEP_translate_types[NUM_UNITS] = {
     [RBOX0] = "/sys/bus/event_source/devices/uncore_r3qpi_0",
     [RBOX1] = "/sys/bus/event_source/devices/uncore_r3qpi_1",
     [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
+    [UBOXFIX] = "/sys/bus/event_source/devices/uncore_ubox",
 };

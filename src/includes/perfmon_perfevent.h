@@ -633,6 +633,7 @@ int perfmon_setupCountersThread_perfevent(
             case CBOX26:
             case CBOX27:
             case UBOX:
+            case UBOXFIX:
             case SBOX0:
             case SBOX1:
             case SBOX2:

@@ -560,4 +560,5 @@ static char* skylakeX_translate_types[NUM_UNITS] = {
     [RBOX1] = "/sys/bus/event_source/devices/uncore_m3upi_1",
     [RBOX2] = "/sys/bus/event_source/devices/uncore_m3upi_2",
     [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
+    [UBOXFIX] = "/sys/bus/event_source/devices/uncore_ubox",
 };
