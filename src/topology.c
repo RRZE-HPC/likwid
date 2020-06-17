@@ -1353,6 +1353,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",arm_cortex_a57);
     printf("\t%s\n",cavium_thunderx_str);
     printf("\t%s\n",cavium_thunderx2t99_str);
+    printf("\t%s\n",fujitsu_fx1000);
     printf("\n");
     printf("Supported ARMv7 processors:\n");
     printf("\t%s\n",armv7l_str);

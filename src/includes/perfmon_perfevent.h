@@ -281,7 +281,20 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     attr->disabled = 1;
     attr->inherit = 1;
     //attr->exclusive = 1;
-    getEventOptionConfig(translate_types[PMC], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == A64FX_FX1000)
+    {
+        reg = PERF_EVENT_CONFIG_REG;
+        start = 0;
+        end = 31;
+    }
+    else
+    {
+#endif
+        getEventOptionConfig(translate_types[PMC], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    }
+#endif
     switch(reg)
     {
         case PERF_EVENT_CONFIG_REG:
