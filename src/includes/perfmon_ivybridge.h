@@ -66,7 +66,7 @@ int perfmon_init_ivybridge(int cpu_id)
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL);
-    if ((cpuid_info.model == IVYBRIDGE_EP))
+    if (cpuid_info.model == IVYBRIDGE_EP)
     {
         ivy_cbox_setup = ivbep_cbox_setup;
         ivb_did_cbox_test = 1;

@@ -2,28 +2,28 @@
 -h | EXIT 0 | GREP Help message
 -v | EXIT 0 | GREP likwid-perfctr
 -i | EXIT 0 | GREP CPU family
--V 1 -c 0 hostname | EXIT 0 | GREP Option(s) -g <string> must be given on commandline
--V 1 | EXIT 1 | GREP Option(s) -g <string> must be given on commandline
+-V 1 -c 0 hostname | EXIT 1 | GREP Options:
+-V 1 | EXIT 1 | GREP Options
 -V | EXIT 1 | GREP Option requires an argument
 -g | EXIT 1 | GREP Option requires an argument
 -g BRANCH -H | EXIT 0 | GREP Group BRANCH:
 -a | EXIT 0 | GREP Group Name | GREP Description
 -e | EXIT 0 | GREP This architecture
--t 200ms | EXIT 1 | GREP Option(s) -g <string> must be given on commandline
+-t 200ms | EXIT 1 | GREP Option(s) -g <string> or -W <string> must be given on commandline
 -c | EXIT 1 | GREP Option requires an argument
--c 0 | EXIT 1 | GREP Option(s) -g <string> must be given on commandline
--t 200ms -c 0 | EXIT 1 | GREP Option(s) -g <string> must be given on commandline
+-c 0 | EXIT 1 | GREP Option(s) -g <string> or -W <string> must be given on commandline
+-t 200ms -c 0 | EXIT 1 | GREP Option(s) -g <string> or -W <string> must be given on commandline
 -S | EXIT 1 | GREP Option requires an argument
 -o | EXIT 1 | GREP Option requires an argument
--o /tmp/test | EXIT 1 | GREP Option(s) -g <string> must be given on commandline
--c 0 -o /tmp/test | EXIT 1 | GREP Option(s) -g <string> must be given on commandline
+-o /tmp/test | EXIT 1 | GREP Option(s) -g <string> or -W <string> must be given on commandline
+-c 0 -o /tmp/test | EXIT 1 | GREP Option(s) -g <string> or -W <string> must be given on commandline
 -C 0 -g BRANCH -o /tmp/test | EXIT 1 | GREP No Executable can be found on commandline
 -C 0 -g BRANCH -o /tmp/test hostname | EXIT 0
--o /tmp/test.txt | EXIT 1 | GREP Option(s) -g <string> must be given on commandline
+-o /tmp/test.txt | EXIT 1 | GREP Option(s) -g <string> or -W <string> must be given on commandline
 -C 0 -g BRANCH -o /tmp/test.txt hostname | EXIT 0 | NGREP Cannot find filter script, save output in CSV format
--S 1s | EXIT 1 | GREP Option(s) -g <string> must be given on commandline
--S 1s -c 0 | EXIT 1 | GREP Option(s) -g <string> must be given on commandline
--S 1s -C 0 | EXIT 1 | GREP Option(s) -g <string> must be given on commandline
+-S 1s | EXIT 1 | GREP Option(s) -g <string> or -W <string> must be given on commandline
+-S 1s -c 0 | EXIT 1 | GREP Option(s) -g <string> or -W <string> must be given on commandline
+-S 1s -C 0 | EXIT 1 | GREP Option(s) -g <string> or -W <string> must be given on commandline
 -S 1s -c 0 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP Branch
 -S 1s -C 0 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP Branch
 -S 1s -c 0,1 -g BRANCH -f | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP core 1 | GREP Branch
@@ -41,5 +41,5 @@
 -c 0 -g BRANCH -f hostname | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
 -C 0 -g BRANCH -f hostname | EXIT 0 | GREP Group 1: BRANCH | GREP core 0 | GREP Branch
 -C 0 -g BRANCH -f -m hostname | EXIT 1 | GREP Marker API result file does not exist
--C 0 -g BRANCH -f -t 200ms hostname | EXIT 0 | GREP CORES: 0
+-C 0 -g BRANCH -f -t 200ms hostname | EXIT 0 | GREP Cores: 0
 -C 0 -g BRANCH -f -m ../streamGCC | EXIT 0 | GREP Region triad | GREP Region copy

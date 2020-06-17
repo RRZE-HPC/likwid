@@ -12,7 +12,7 @@
  *                Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -197,7 +197,7 @@ perfgroup_getGroups(
     }
     i = 0;
     s = 0;
-    while (ep = readdir(dp))
+    while ((ep = readdir(dp)))
     {
         if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
         {
@@ -218,7 +218,7 @@ perfgroup_getGroups(
         }
         if (search_home)
         {
-            while (ep = readdir(dp))
+            while ((ep = readdir(dp)))
             {
                 if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
                 {
@@ -296,7 +296,7 @@ perfgroup_getGroups(
     i = 0;
     int skip_group = 0;
 
-    while (ep = readdir(dp))
+    while ((ep = readdir(dp)))
     {
         if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
         {
@@ -444,7 +444,7 @@ skip_cur_def_group:
     else
     {
         dp = opendir(homepath);
-        while (ep = readdir(dp))
+        while ((ep = readdir(dp)))
         {
             if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".txt", 4) == 0)
             {
@@ -617,6 +617,10 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
 #ifdef _ARCH_PPC
     bstring fix0 = bformat("PMC4");
     bstring fix1 = bformat("PMC5");
+#endif
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    bstring fix0 = bformat("012345");
+    bstring fix1 = bformat("012345");
 #endif
 #ifdef LIKWID_WITH_NVMON
     bstring gpu = bformat("GPU");
@@ -1550,11 +1554,17 @@ calc_metric(char* formula, CounterList* clist, double *result)
     int i=0;
     *result = 0.0;
     int maxstrlen = 0, minstrlen = 10000;
+    bstring nan;
+    bstring zero;
+    bstring inf;
 
     if ((formula == NULL) || (clist == NULL))
         return -EINVAL;
 
     bstring f = bfromcstr(formula);
+    nan = bfromcstr("nan");
+    inf = bfromcstr("inf");
+    zero = bfromcstr("0.0");
     for(i=0;i<clist->counters;i++)
     {
         bstring c = bstrListGet(clist->cnames, i);
@@ -1572,12 +1582,22 @@ calc_metric(char* formula, CounterList* clist, double *result)
             if (blength(c) != maxstrlen)
                 continue;
             bstring v = bstrListGet(clist->cvalues, i);
-            bfindreplace(f, c, v, 0);
+            if ((bstrncmp(v, nan, 3) != BSTR_OK) && (bstrncmp(v, inf, 3) != BSTR_OK))
+            {
+                bfindreplace(f, c, v, 0);
+            }
+            else
+            {
+                bfindreplace(f, c, zero, 0);
+            }
         }
         maxstrlen--;
     }
     // now we can calculate the formula
     i = calculate_infix(bdata(f), result);
     bdestroy(f);
+    bdestroy(inf);
+    bdestroy(nan);
+    bdestroy(zero);
     return i;
 }

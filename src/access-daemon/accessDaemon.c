@@ -87,6 +87,8 @@
 #define PCM_CLIENT_IMC_DRAM_IO_REQUESTS  (0x5048)
 #define PCM_CLIENT_IMC_DRAM_DATA_READS  (0x5050)
 #define PCM_CLIENT_IMC_DRAM_DATA_WRITES (0x5054)
+#define PCM_CLIENT_IMC_PP0_TEMP (0x597C)
+#define PCM_CLIENT_IMC_PP1_TEMP (0x5980)
 #define PCM_CLIENT_IMC_MMAP_SIZE (0x6000)
 
 /* Lock file controlled from outside which prevents likwid to start.
@@ -178,7 +180,7 @@ static int getNumberOfNumaNodes()
     dp = opendir ("/sys/devices/system/node/");
     if (dp != NULL)
     {
-        while (ep = readdir (dp))
+        while ((ep = readdir (dp)))
         {
             if (fnmatch("node?*", ep->d_name, FNM_PATHNAME) == 0)
             {
@@ -316,6 +318,7 @@ allowed_sandybridge(uint32_t reg)
     if ((allowed_intel(reg)) ||
         (((reg & 0xF00U) == 0x600U)) ||
         (((reg & 0xF00U) == 0x700U)) ||
+        (reg == MSR_PERF_STATUS)  ||
         (reg == MSR_ALT_PEBS))
     {
         return 1;
@@ -840,6 +843,8 @@ static int allowed_pci_skx(PciDeviceType type, uint32_t reg)
                 (reg == MSR_UNC_SKX_M3UPI_PMON_BOX_STATUS))
                 return 1;
             break;
+        default:
+            break;
     }
     return 0;
 }
@@ -903,6 +908,23 @@ allowed_amd17(uint32_t reg)
     {
         return 0;
     }
+}
+
+static int
+allowed_amd17_zen2(uint32_t reg)
+{
+    if (allowed_amd17(reg))
+    {
+        return 1;
+    }
+    else if ((reg == 0xC0010208) ||
+             (reg == 0xC0010209) ||
+             (reg == 0xC001020A) ||
+             (reg == 0xC001020B))
+    {
+        return 1;
+    }
+    return 0;
 }
 
 static int
@@ -1022,6 +1044,12 @@ clientmem_read(AccessDataRecord *dRecord)
             break;
         case 0x02:
             data = (uint64_t)*((uint32_t *)(clientmem_addr + PCM_CLIENT_IMC_DRAM_DATA_WRITES));
+            break;
+        case 0x03:
+            data = (uint64_t)*((uint32_t *)(clientmem_addr + PCM_CLIENT_IMC_PP0_TEMP));
+            break;
+        case 0x04:
+            data = (uint64_t)*((uint32_t *)(clientmem_addr + PCM_CLIENT_IMC_PP1_TEMP));
             break;
         default:
             syslog(LOG_ERR, "Access to register 0x%X not allowed\n", reg);
@@ -1913,7 +1941,14 @@ int main(void)
                 allowed = allowed_amd16;
                 break;
             case ZEN_FAMILY:
-                allowed = allowed_amd17;
+                if (model == ZEN2_RYZEN || model == ZEN2_RYZEN2)
+                {
+                    allowed = allowed_amd17_zen2;
+                }
+                else
+                {
+                    allowed = allowed_amd17;
+                }
                 break;
             default:
                 syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
@@ -2168,4 +2203,3 @@ LOOP:
     /* never reached */
     return EXIT_SUCCESS;
 }
-

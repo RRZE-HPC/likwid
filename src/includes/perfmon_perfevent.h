@@ -178,6 +178,12 @@ static char* perfEventOptionNames[] = {
     [EVENT_OPTION_OCCUPANCY_EDGE] = "occ_edge",
     [EVENT_OPTION_OCCUPANCY_INVERT] = "occ_inv",
 #ifdef _ARCH_PPC
+    [EVENT_OPTION_GENERIC_CONFIG] = "pmcxsel",
+#else
+    [EVENT_OPTION_GENERIC_CONFIG] = "event",
+#endif
+    [EVENT_OPTION_GENERIC_UMASK] = "umask",
+#ifdef _ARCH_PPC
     [EVENT_OPTION_PMC] = "pmc",
     [EVENT_OPTION_PMCXSEL] = "pmcxsel",
 #endif
@@ -269,12 +275,44 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
     int start = 0, end = -1;
     attr->type = PERF_TYPE_RAW;
-    attr->config = (event->umask<<8) + event->eventId;
+    //attr->config = (event->umask<<8) + event->eventId;
     attr->exclude_kernel = 1;
     attr->exclude_hv = 1;
     attr->disabled = 1;
     attr->inherit = 1;
     //attr->exclusive = 1;
+    getEventOptionConfig(translate_types[PMC], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
+    switch(reg)
+    {
+        case PERF_EVENT_CONFIG_REG:
+            attr->config |= create_mask(event->eventId, start, end);
+            break;
+        case PERF_EVENT_CONFIG1_REG:
+            attr->config1 |= create_mask(event->eventId, start, end);
+            break;
+        case PERF_EVENT_CONFIG2_REG:
+            attr->config2 |= create_mask(event->eventId, start, end);
+            break;
+    }
+#ifdef _ARCH_PPC
+    reg = PERF_EVENT_CONFIG_REG;
+    start = 8;
+    end = 15;
+#else
+    getEventOptionConfig(translate_types[PMC], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
+#endif
+    switch(reg)
+    {
+        case PERF_EVENT_CONFIG_REG:
+            attr->config |= create_mask(event->umask, start, end);
+            break;
+        case PERF_EVENT_CONFIG1_REG:
+            attr->config1 |= create_mask(event->umask, start, end);
+            break;
+        case PERF_EVENT_CONFIG2_REG:
+            attr->config2 |= create_mask(event->umask, start, end);
+            break;
+    }
     if (event->numberOfOptions > 0)
     {
         for(int j = 0; j < event->numberOfOptions; j++)
@@ -291,7 +329,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
                 case EVENT_OPTION_INVERT:
                 case EVENT_OPTION_IN_TRANS:
                 case EVENT_OPTION_IN_TRANS_ABORT:
-                    getEventOptionConfig("/sys/devices/cpu", event->options[j].type, &reg, &start, &end);
+                    getEventOptionConfig(translate_types[PMC], event->options[j].type, &reg, &start, &end);
                     switch(reg)
                     {
                         case PERF_EVENT_CONFIG_REG:
@@ -328,7 +366,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
         {
             offcore_flags = (1ULL<<event->cfgBits)|(1ULL<<event->cmask);
         }
-        getEventOptionConfig("/sys/devices/cpu", EVENT_OPTION_MATCH0, &reg, &start, &end);
+        getEventOptionConfig(translate_types[PMC], EVENT_OPTION_MATCH0, &reg, &start, &end);
         switch(reg)
         {
             case PERF_EVENT_CONFIG_REG:
@@ -343,7 +381,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
         }
     }
 #ifdef _ARCH_PPC
-    getEventOptionConfig("/sys/devices/cpu", EVENT_OPTION_PMC, &reg, &start, &end);
+    getEventOptionConfig(translate_types[PMC], EVENT_OPTION_PMC, &reg, &start, &end);
     switch(reg)
     {
         case PERF_EVENT_CONFIG_REG:
@@ -371,7 +409,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     int perf_type = 0;
     PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
     int start = 0, end = -1;
-    if (paranoid_level > 0)
+    if (paranoid_level > 0 && getuid() != 0)
     {
         return 1;
     }
@@ -392,6 +430,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
             return 1;
         }
     }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Get information for uncore counters from folder %s, checkfolder);
     ret = sprintf(&(checkfolder[ret]), "/type");
     fp = fopen(checkfolder, "r");
     if (fp == NULL)
@@ -402,9 +441,36 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     perf_type = atoi(checkfolder);
     fclose(fp);
     attr->type = perf_type;
-    attr->config = (event->umask<<8) + event->eventId;
     attr->disabled = 1;
     attr->inherit = 1;
+    //attr->config = (event->umask<<8) + event->eventId;
+    getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
+    switch(reg)
+    {
+	case PERF_EVENT_CONFIG_REG:
+	    attr->config |= create_mask(event->eventId, start, end);
+	    break;
+	case PERF_EVENT_CONFIG1_REG:
+	    attr->config1 |= create_mask(event->eventId, start, end);
+	    break;
+	case PERF_EVENT_CONFIG2_REG:
+	    attr->config2 |= create_mask(event->eventId, start, end);
+	    break;
+    }
+    getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
+    switch(reg)
+    {
+	case PERF_EVENT_CONFIG_REG:
+	    attr->config |= create_mask(event->umask, start, end);
+	    break;
+	case PERF_EVENT_CONFIG1_REG:
+	    attr->config1 |= create_mask(event->umask, start, end);
+	    break;
+	case PERF_EVENT_CONFIG2_REG:
+	    attr->config2 |= create_mask(event->umask, start, end);
+	    break;
+    }
+
 
     //attr->exclusive = 1;
     if (event->numberOfOptions > 0)
@@ -467,7 +533,7 @@ int perfmon_setupCountersThread_perfevent(
     {
         allpid = (pid_t)atoi(getenv("LIKWID_PERF_PID"));
     }
-    else if (paranoid_level > 0)
+    else if (paranoid_level > 0 && getuid() != 0)
     {
         fprintf(stderr, "Cannot setup events without PID of executed application because perf_event_paranoid > 0\n");
         fprintf(stderr, "You can use either --execpid to track the started application or --perfpid <pid> to monitor another application\n");
@@ -477,10 +543,22 @@ int perfmon_setupCountersThread_perfevent(
     {
         allflags = strtoul(getenv("LIKWID_PERF_FLAGS"), NULL, 16);
     }
+    if (groupSet->activeGroup >= 0)
+    {
+        for (int j = 0; j < perfmon_numCounters; j++)
+        {
+            if (cpu_event_fds[cpu_id][j] != -1)
+            {
+                close(cpu_event_fds[cpu_id][j]);
+                cpu_event_fds[cpu_id][j] = -1;
+            }
+        }
+    }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         int has_lock = 0;
         is_uncore = 0;
+	ret = 1;
         RegisterIndex index = eventSet->events[i].index;
         if (cpu_event_fds[cpu_id][index] != -1)
         {
@@ -509,9 +587,13 @@ int perfmon_setupCountersThread_perfevent(
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
                 break;
             case POWER:
-                ret = perf_uncore_setup(&attr, type, event);
+                if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
+                {
+                    has_lock = 1;
+                    VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
+                    ret = perf_uncore_setup(&attr, type, event);
+                }
                 is_uncore = 1;
-                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
                 break;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)
             case MBOX0:
@@ -579,7 +661,6 @@ int perfmon_setupCountersThread_perfevent(
             case EUBOX5:
             case EUBOX6:
             case EUBOX7:
-
                 if (cpuid_info.family == ZEN_FAMILY && type == MBOX0)
                 {
                     if (numa_lock[affinity_thread2numa_lookup[cpu_id]] == cpu_id)

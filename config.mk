@@ -96,11 +96,11 @@ INSTALL_CHOWN = -g root -o root#NO SPACE
 SHARED_LIBRARY = true#NO SPACE
 
 # Build LIKWID with debug flags
-DEBUG = true#NO SPACE
+DEBUG = false#NO SPACE
 
 # Basic configuration for some internal arrays.
 # Maximal number of hardware threads
-MAX_NUM_THREADS = 263
+MAX_NUM_THREADS = 300
 # Maximal number of sockets
 MAX_NUM_NODES = 64
 
@@ -115,9 +115,9 @@ TOPO_FILE_PATH = /etc/likwid_topo.cfg
 # The libraries are named liblikwid.<VERSION>.<RELEASE>
 VERSION = 5
 RELEASE = 0
-MINOR = 0
+MINOR = 1
 # Date when the release is published
-DATE    = 10.11.2019
+DATE    = 23.12.2019
 
 # In come cases it is important to set the rpaths for the LIKWID library. One
 # example is the use of sudo because it resets environment variables like

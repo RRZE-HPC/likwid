@@ -104,6 +104,7 @@ int perfmon_initialized = 0;
 int perfmon_verbosity = DEBUGLEV_ONLY_ERROR;
 int maps_checked = 0;
 uint64_t **currentConfig = NULL;
+static int added_generic_event = 0;
 
 PerfmonGroupSet* groupSet = NULL;
 LikwidResults* markerResults = NULL;
@@ -143,6 +144,8 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     [EVENT_OPTION_OCCUPANCY_INVERT] = "OCCUPANCY_INVERT",
     [EVENT_OPTION_IN_TRANS] = "IN_TRANSACTION",
     [EVENT_OPTION_IN_TRANS_ABORT] = "IN_TRANSACTION_ABORTED",
+    [EVENT_OPTION_GENERIC_CONFIG] = "CONFIG",
+    [EVENT_OPTION_GENERIC_UMASK] = "UMASK",
 #ifdef LIKWID_USE_PERFEVENT
     [EVENT_OPTION_PERF_PID] = "PERF_PID",
     [EVENT_OPTION_PERF_FLAGS] = "PERF_FLAGS",
@@ -225,7 +228,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
         DEBUG_PRINT(DEBUGLEV_INFO, WARNING: The device for counter %s does not exist ,bdata(reg));
         return NOTYPE;
     }
-    if ((type != THERMAL) && (type != POWER) && (type != WBOX0FIX))
+    if ((type != THERMAL) && (type != VOLTAGE) && (type != POWER) && (type != WBOX0FIX))
     {
         int check_settings = 1;
         uint32_t reg = counter_map[index].configRegister;
@@ -281,7 +284,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
 /*                    currentConfig[cpu_id][index] = 0x0ULL;*/
 /*                }*/
             }
-            else if ((force == 0) && ((type != FIXED)&&(type != THERMAL)&&(type != POWER)&&(type != WBOX0FIX)))
+            else if ((force == 0) && ((type != FIXED)&&(type != THERMAL)&&(type != VOLTAGE)&&(type != POWER)&&(type != WBOX0FIX)&&(type != MBOX0TMP)))
             {
                 fprintf(stderr, "ERROR: The selected register %s is in use.\n", counter_map[index].key);
                 fprintf(stderr, "Please run likwid with force option (-f, --force) to overwrite settings\n");
@@ -289,7 +292,7 @@ checkAccess(bstring reg, RegisterIndex index, RegisterType oldtype, int force)
             }
         }
     }
-    else if ((type == POWER) || (type == WBOX0FIX) || (type == THERMAL))
+    else if ((type == POWER) || (type == WBOX0FIX) || (type == THERMAL) || (type == VOLTAGE))
     {
         err = HPMread(testcpu, MSR_DEV, counter_map[index].counterRegister, &tmp);
         if (err != 0)
@@ -677,9 +680,14 @@ calculateResult(int groupId, int eventId, int threadId)
     {
         result *= power_getEnergyUnit(getCounterTypeOffset(event->index));
     }
-    else if (counter_map[event->index].type == THERMAL)
+    else if ((counter_map[event->index].type == THERMAL) ||
+             (counter_map[event->index].type == MBOX0TMP))
     {
         result = (double)counter->counterData;
+    }
+    else if (counter_map[event->index].type == VOLTAGE)
+    {
+        result = voltage_value(counter->counterData);
     }
     return result;
 }
@@ -1153,6 +1161,7 @@ perfmon_init_maps(void)
             switch ( cpuid_info.model )
             {
                 case ZEN_RYZEN:
+                case ZENPLUS_RYZEN:
                     eventHash = zen_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen;
                     counter_map = zen_counter_map;
@@ -1161,6 +1170,7 @@ perfmon_init_maps(void)
                     translate_types = zen_translate_types;
                     break;
                 case ZEN2_RYZEN:
+                case ZEN2_RYZEN2:
                     eventHash = zen2_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsZen2;
                     counter_map = zen2_counter_map;
@@ -1301,6 +1311,7 @@ perfmon_init_maps(void)
         if (tmp)
         {
             memcpy(tmp, eventHash, perfmon_numArchEvents*sizeof(PerfmonEvent));
+            memset(tmp + perfmon_numArchEvents, '\0', 10*sizeof(PerfmonEvent));
             eventHash = tmp;
             eventHash[perfmon_numArchEvents].name = "GENERIC_EVENT";
             bstring blim = bfromcstr("PMC");
@@ -1329,6 +1340,7 @@ perfmon_init_maps(void)
             eventHash[perfmon_numArchEvents].options[1].type = EVENT_OPTION_GENERIC_UMASK;
             eventHash[perfmon_numArchEvents].options[1].value = 0x0ULL;
             perfmon_numArchEvents++;
+            added_generic_event = 1;
         }
     }
 
@@ -1598,6 +1610,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
             switch ( cpuid_info.model )
             {
                 case ZEN_RYZEN:
+                case ZENPLUS_RYZEN:
                     initThreadArch = perfmon_init_zen;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen;
@@ -1607,6 +1620,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen;
                     break;
                 case ZEN2_RYZEN:
+                case ZEN2_RYZEN2:
                     initThreadArch = perfmon_init_zen2;
                     initialize_power = TRUE;
                     perfmon_startCountersThread = perfmon_startCountersThread_zen2;
@@ -1856,10 +1870,19 @@ perfmon_finalize(void)
 #ifndef LIKWID_USE_PERFEVENT
     HPMfinalize();
 #endif
-    if (eventHash)
+    if (eventHash && added_generic_event)
     {
-        free(eventHash[perfmon_numArchEvents-1].limit);
-        free(eventHash);
+        if (eventHash[perfmon_numArchEvents-1].limit)
+        {
+            free(eventHash[perfmon_numArchEvents-1].limit);
+            eventHash[perfmon_numArchEvents-1].limit = NULL;
+        }
+        if (eventHash)
+        {
+            free(eventHash);
+            eventHash = NULL;
+        }
+        added_generic_event = 0;
     }
     perfmon_initialized = 0;
     groupSet = NULL;
@@ -2577,6 +2600,8 @@ perfmon_getResult(int groupId, int eventId, int threadId)
 
     if ((groupSet->groups[groupId].events[eventId].threadCounter[threadId].fullResult == 0) ||
         (groupSet->groups[groupId].events[eventId].type == THERMAL) ||
+        (groupSet->groups[groupId].events[eventId].type == VOLTAGE) ||
+        (groupSet->groups[groupId].events[eventId].type == MBOX0TMP) ||
         (groupSet->groups[groupId].events[eventId].type == QBOX0FIX) ||
         (groupSet->groups[groupId].events[eventId].type == QBOX1FIX) ||
         (groupSet->groups[groupId].events[eventId].type == QBOX2FIX) ||
@@ -2667,6 +2692,7 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
+    add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -2749,6 +2775,7 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
+    add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
     int cpu = 0, sock_cpu = 0, err = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {
@@ -3414,6 +3441,7 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
     add_to_clist(&clist, "inverseClock", 1.0/timer_getCycleClock());
     add_to_clist(&clist, "true", 1);
     add_to_clist(&clist, "false", 0);
+    add_to_clist(&clist, "num_numadomains", numa_info.numberOfNodes);
     int cpu = 0, sock_cpu = 0;
     for (e=0; e<groupSet->numberOfThreads; e++)
     {

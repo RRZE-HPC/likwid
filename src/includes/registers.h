@@ -2242,6 +2242,9 @@
 #define IA32_PACKAGE_THERM_STATUS       0x1B1
 #define MSR_TEMPERATURE_TARGET          0x1A2
 
+/* Vcore Status */
+#define MSR_PERF_STATUS                 0x198
+
 /* Turbo Boost Interface */
 #define MSR_IA32_MISC_ENABLE            0x1A0
 #define MSR_PREFETCH_ENABLE             0x1A4

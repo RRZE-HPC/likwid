@@ -54,6 +54,7 @@
 #include <affinity.h>
 #include <perfmon.h>
 #include <bstrlib.h>
+#include <voltage.h>
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
 
@@ -129,9 +130,14 @@ calculateMarkerResult(RegisterIndex index, uint64_t start, uint64_t stop, int ov
     {
         result *= power_getEnergyUnit(getCounterTypeOffset(index));
     }
-    else if (counter_map[index].type == THERMAL)
+    else if ((counter_map[index].type == THERMAL) ||
+             (counter_map[index].type == MBOX0TMP))
     {
         result = (double)stop;
+    }
+    else if (counter_map[index].type == VOLTAGE)
+    {
+        result = voltage_value(stop);
     }
     return result;
 }
@@ -622,7 +628,9 @@ likwid_markerStopRegion(const char* regionTag)
                                             groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].counterData,
                                             groupSet->groups[groupSet->activeGroup].events[i].threadCounter[thread_id].overflows -
                                             results->StartOverflows[i]);
-            if (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != THERMAL)
+            if ((counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != THERMAL) &&
+                (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != VOLTAGE) &&
+                (counter_map[groupSet->groups[groupSet->activeGroup].events[i].index].type != MBOX0TMP))
             {
                 results->PMcounters[i] += result;
             }

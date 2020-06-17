@@ -12,7 +12,7 @@
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -196,15 +196,26 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
     const_bstring modelString = bformat("model\t\t:");
     const_bstring steppingString = bformat("stepping\t:");
     const_bstring nameString = bformat("model name\t:");
+    const_bstring vendorString = bformat("vendor_id\t:");
+    const_bstring familyString = bformat("cpu family\t:");
 #endif
 #ifdef _ARCH_PPC
     const_bstring modelString = bformat("cpu\t\t:");
     const_bstring steppingString = bformat("revision\t:");
     const_bstring nameString = bformat("machine\t\t:");
-#endif
-    const_bstring familyString = bformat("cpu family\t:");
-    const_bstring countString = bformat("processor\t:");
     const_bstring vendorString = bformat("vendor_id\t:");
+    const_bstring familyString = bformat("cpu family\t:");
+#endif
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    const_bstring modelString = bformat("CPU variant\t:");
+    const_bstring steppingString = bformat("CPU revision\t:");
+    const_bstring nameString = bformat("machine\t\t:");
+    const_bstring vendorString = bformat("CPU implementer\t:");
+    const_bstring familyString = bformat("CPU architecture");
+#endif
+
+    const_bstring countString = bformat("processor\t:");
+
     const_bstring vendorIntelString = bformat("GenuineIntel");
 
     cpuid_info.isIntel = 0;
@@ -226,7 +237,6 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
         fclose(fp);
         for (i=0;i<tokens->qty;i++)
         {
-            printf("%d\n", binstr(tokens->entry[i],0,modelString));
             if (binstr(tokens->entry[i],0,countString) != BSTR_ERR)
             {
                 HWthreads++;
@@ -299,6 +309,21 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
 #endif
 #ifdef __ARM_ARCH_8A
         snprintf(cpuid_info.architecture, 19, "armv8");
+#endif
+#ifdef _ARCH_PPC
+        switch (cpuid_info.model)
+        {
+            case POWER7:
+                snprintf(cpuid_info.architecture, 19, "power7");
+                break;
+            case POWER8:
+                snprintf(cpuid_info.architecture, 19, "power8");
+                break;
+            case POWER9:
+                snprintf(cpuid_info.architecture, 19, "power9");
+                break;
+        }
+
 #endif
         DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC CpuInfo Family %d Model %d Stepping %d isIntel %d numHWThreads %d,
                             cpuid_info.family,
@@ -447,7 +472,7 @@ proc_init_cpuFeatures(void)
             setBit(cpuid_info.featureFlags, RDSEED);
             bcatcstr(bfeatures, "RDSEED ");
         }
-        else if ((bisstemeqblk(flaglist->entry[i], "avx512", 6) == 1) && (!testBit(cpuid_info.featureFlags, AVX512)))
+        else if ((bisstemeqblk(flaglist->entry[i], "avx512", 6) == 1) && (!(testBit(cpuid_info.featureFlags, AVX512))))
         {
             setBit(cpuid_info.featureFlags, AVX512);
             bcatcstr(bfeatures, "AVX512 ");
@@ -539,7 +564,7 @@ proc_init_cpuFeatures(void)
         }
     }
 
-    if (testBit(cpuid_info.featureFlags, SSSE3) && !testBit(cpuid_info.featureFlags, SSE3))
+    if (testBit(cpuid_info.featureFlags, SSSE3) && (!(testBit(cpuid_info.featureFlags, SSE3))))
     {
         setBit(cpuid_info.featureFlags, SSE3);
         bcatcstr(bfeatures, "SSE3 ");
@@ -657,7 +682,7 @@ void proc_split_llc_check(CacheLevel* llc_cache)
         fprintf(stderr, "No NUMA support (no folder %s)\n", "/sys/devices/system/node");
         return;
     }
-    while (ep = readdir(dp))
+    while ((ep = readdir(dp)))
     {
         if (strncmp(ep->d_name, "node", 4) == 0)
         {
@@ -671,7 +696,7 @@ void proc_split_llc_check(CacheLevel* llc_cache)
         fprintf(stderr, "No NUMA support (no folder %s)\n", "/sys/devices/system/node/node0/");
         return;
     }
-    while (ep = readdir(dp))
+    while ((ep = readdir(dp)))
     {
         if (strncmp(ep->d_name, "cpu", 3) == 0 &&
             ep->d_name[strlen(ep->d_name)-1] >= '0' &&

@@ -34,12 +34,12 @@
 #include <types.h>
 #include <likwid.h>
 
-int socket_lock[MAX_NUM_NODES];
-int core_lock[MAX_NUM_THREADS];
-int tile_lock[MAX_NUM_THREADS];
-int numa_lock[MAX_NUM_THREADS];
-int sharedl2_lock[MAX_NUM_THREADS];
-int sharedl3_lock[MAX_NUM_THREADS];
+extern int *socket_lock;
+extern int *core_lock;
+extern int *tile_lock;
+extern int *numa_lock;
+extern int *sharedl2_lock;
+extern int *sharedl3_lock;
 
 extern AffinityDomains affinityDomains;
 

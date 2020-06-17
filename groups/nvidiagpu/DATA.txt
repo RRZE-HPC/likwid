@@ -1,0 +1,22 @@
+SHORT Load to store ratio
+
+EVENTSET
+GPU0  GLOBAL_LOAD
+GPU1  GLOBAL_STORE
+GPU2  INST_EXECUTED
+GPU3  ACTIVE_CYCLES
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  GPU3/GPU2
+Load to store ratio GPU0/GPU1
+
+LONG
+Formulas:
+CPI = ACTIVE_CYCLES/INST_EXECUTED
+Load to store ratio = GENERIC_LOAD/GENERIC_STORE
+-
+This is a metric to determine your load to store ratio.
+

@@ -107,6 +107,7 @@ static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
 static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
 static char* amd_k8_str = "AMD K8 architecture";
 static char* amd_zen_str = "AMD K17 (Zen) architecture";
+static char* amd_zenplus_str = "AMD K17 (Zen+) architecture";
 static char* amd_zen2_str = "AMD K17 (Zen2) architecture";
 static char* armv7l_str = "ARM 7l architecture";
 static char* armv8_str = "ARM 8 architecture";
@@ -433,8 +434,9 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             else if (strcmp(field, "osname") == 0)
             {
                 strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
-                cpuid_info.osname = (char*) malloc((strlen(value)+1) * sizeof(char));
-                strncpy(cpuid_info.osname, value, strlen(value));
+		int len = 257;
+                cpuid_info.osname = (char*) malloc(len * sizeof(char));
+                strncpy(cpuid_info.osname, value, len);
                 cpuid_info.osname[strlen(value)-1] = '\0';
             }
             else if (strcmp(field, "stepping") == 0)
@@ -494,8 +496,9 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             else if (strcmp(field, "features") == 0)
             {
                 strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
-                cpuid_info.features = (char*) malloc((strlen(value)+1) * sizeof(char));
-                strncpy(cpuid_info.features, value, strlen(value));
+		int len = 257;
+                cpuid_info.features = (char*) malloc(len * sizeof(char));
+                strncpy(cpuid_info.features, value, len);
                 cpuid_info.features[strlen(value)-1] = '\0';
             }
         }
@@ -943,7 +946,12 @@ topology_setName(void)
                     cpuid_info.name = amd_zen_str;
                     cpuid_info.short_name = short_zen;
                     break;
+                case ZENPLUS_RYZEN:
+                    cpuid_info.name = amd_zenplus_str;
+                    cpuid_info.short_name = short_zen;
+                    break;
                 case ZEN2_RYZEN:
+                case ZEN2_RYZEN2:
                     cpuid_info.name = amd_zen2_str;
                     cpuid_info.short_name = short_zen2;
                     break;

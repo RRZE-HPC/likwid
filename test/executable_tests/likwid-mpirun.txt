@@ -28,7 +28,7 @@
 -np 1 -mpi intelmpi cat /proc/version | EXIT 0 | GREP Linux
 -np 1 -mpi openmpi cat /proc/version | EXIT 1 | GREP Cannot find executable
 -np 1 -mpi mvapich2 cat /proc/version | EXIT 1 | GREP Cannot find executable
--np 1 -g ASD -f cat /proc/version | EXIT 1 | GREP Empty event list
+-np 1 -g ASD -f cat /proc/version | EXIT 1 | GREP Cannot get data for group ASD
 -np 1 -g CLOCK -f cat /proc/version | EXIT 0 | GREP Linux | GREP CPI
 -np 1 -nperdomain N:1 cat /proc/version | EXIT 0 | GREP Linux
 -np 1 -pin N:1 cat /proc/version | EXIT 0 | GREP Linux
@@ -37,3 +37,5 @@
 -np 1 -g CLOCK -f -O cat /proc/version | EXIT 0 | GREP Linux | GREP CPI,
 -np 1 -g CLOCK -f -O -m ../streamGCC | EXIT 0 | GREP Region: triad | GREP CPI,
 -np 1 -f -O -m ../streamGCC | EXIT 1 | GREP You selected the MarkerAPI feature
+-np 2 -t 2 ../test-mpi | EXIT 0 | GREP Rank 1 Thread 1
+-pin S0:0-1_S1:0-1 ../test-mpi | EXIT 0 | GREP Rank 1 Thread 1

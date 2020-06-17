@@ -89,6 +89,15 @@ OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
 else
 OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
 endif
+ifeq ($(COMPILER), ARMCLANG)
+OBJ := $(filter-out $(BUILD_DIR)/topology_cpuid.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/loadData.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_msr.o,$(OBJ))
+OBJ := $(filter-out $(BUILD_DIR)/access_x86_pci.o,$(OBJ))
+else
+OBJ := $(filter-out $(BUILD_DIR)/loadDataARM.o,$(OBJ))
+endif
 ifneq ($(NVIDIA_INTERFACE), true)
 OBJ := $(filter-out $(BUILD_DIR)/nvmon.o,$(OBJ))
 OBJ := $(filter-out $(BUILD_DIR)/topology_gpu.o,$(OBJ))
@@ -187,7 +196,7 @@ $(L_HELPER):
 
 $(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE STATIC LIB  $(TARGET_LIB)"
-	$(Q)${AR} -crus $(STATIC_TARGET_LIB) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
+	$(Q)${AR} -crs $(STATIC_TARGET_LIB) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@sed -e s+'@PREFIX@'+$(INSTALLED_PREFIX)+g make/likwid-config.cmake > likwid-config.cmake
 
 $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
@@ -450,9 +459,9 @@ install: install_daemon install_freq install_appdaemon
 		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_LUA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_LUA_LIB)).$(VERSION); \
 	fi
 	@if [ "$(BUILDAPPDAEMON)" = "true" ]; then \
-		@install -m 755 $(GOTCHA_FOLDER)/$(TARGET_GOTCHA_LIB) $(LIBPREFIX)/$(TARGET_GOTCHA_LIB).$(VERSION).$(RELEASE); \
-		@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_GOTCHA_LIB)); \
-		@cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION); \
+		install -m 755 $(GOTCHA_FOLDER)/$(TARGET_GOTCHA_LIB) $(LIBPREFIX)/$(TARGET_GOTCHA_LIB).$(VERSION).$(RELEASE); \
+		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_GOTCHA_LIB)); \
+		cd $(LIBPREFIX) && ln -fs $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION).$(RELEASE) $(shell basename $(TARGET_GOTCHA_LIB)).$(VERSION); \
 	fi
 	@echo "===> INSTALL man pages to $(MANPREFIX)/man1"
 	@mkdir -p $(MANPREFIX)/man1
@@ -477,6 +486,7 @@ install: install_daemon install_freq install_appdaemon
 	@mkdir -p $(PREFIX)/include
 	@chmod 755 $(PREFIX)/include
 	@install -m 644 src/includes/likwid.h  $(PREFIX)/include/
+	@sed -i -e "s/<VERSION>/$(VERSION)/g" -e "s/<DATE>/$(DATE)/g" -e "s/<GITCOMMIT>/$(GITCOMMIT)/g" -e "s/<MINOR>/$(MINOR)/g" $(PREFIX)/include/likwid.h
 	@install -m 644 src/includes/likwid-marker.h  $(PREFIX)/include/
 	@install -m 644 src/includes/bstrlib.h  $(PREFIX)/include/
 	$(FORTRAN_INSTALL)

@@ -41,6 +41,9 @@ UMASK_PWR_PP1_ENERGY          0x00
 EVENT_PWR_DRAM_ENERGY          0x03   PWR3
 UMASK_PWR_DRAM_ENERGY          0x00
 
+EVENT_VOLTAGE_CORE          0x00   VTG0
+UMASK_VOLTAGE_CORE          0x00
+
 EVENT_INSTR_RETIRED              0x00   FIXC0
 UMASK_INSTR_RETIRED_ANY          0x00
 
@@ -798,3 +801,9 @@ UMASK_DRAM_READS                         0x01
 
 EVENT_DRAM_WRITES                        0x02 MBOX0C2
 UMASK_DRAM_WRITES                        0x02
+
+EVENT_PP0_TEMP                        0x00 MBOX0TMP0
+UMASK_PP0_TEMP                        0x00
+
+EVENT_PP1_TEMP                        0x01 MBOX0TMP1
+UMASK_PP1_TEMP                        0x01

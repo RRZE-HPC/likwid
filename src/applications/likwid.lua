@@ -203,7 +203,6 @@ likwid.nvMarkerRegionTime = likwid_nvMarkerRegionTime
 likwid.nvMarkerRegionCount = likwid_nvMarkerRegionCount
 likwid.nvMarkerRegionResult = likwid_nvMarkerRegionResult
 likwid.nvMarkerRegionMetric = likwid_nvMarkerRegionMetric
-likwid.nvMarkerRegionResult = likwid_nvMarkerRegionResult
 likwid.nvInit = likwid_nvInit
 likwid.nvAddEventSet = likwid_nvAddEventSet
 likwid.nvFinalize = likwid_nvFinalize
@@ -1325,8 +1324,8 @@ local function getGpuMarkerResults(filename, gpulist, nan2value)
         results[i][groupID] = {}
         metrics[i][groupID] = {}
         for k=1, likwid.nvMarkerRegionEvents(i) do
-            local eventName = likwid.getNameOfEvent(groupID, k)
-            local counterName = likwid.getNameOfCounter(groupID, k)
+            local eventName = likwid.nvGetNameOfEvent(groupID, k)
+            local counterName = likwid.nvGetNameOfCounter(groupID, k)
             results[i][groupID][k] = {}
             for j=1, regionGPUs do
                 results[i][groupID][k][j] = likwid.nvMarkerRegionResult(i,k,j)
@@ -1510,6 +1509,54 @@ end
 
 likwid.printGpuOutput = printGpuOutput
 
+local function getNvMarkerResults(filename, gpulist, nan2value)
+    local gputopo = likwid.getGpuTopology()
+    local ret = likwid.readNvMarkerFile(filename)
+    if ret < 0 then
+        return nil, nil
+    elseif ret == 0 then
+        return {}, {}
+    end
+    if not nan2value then
+        nan2value = '-'
+    end
+    results = {}
+    metrics = {}
+    for i=1, likwid.nvMarkerNumRegions() do
+        local regionName = likwid.nvMarkerRegionTag(i)
+        local groupID = likwid.nvMarkerRegionGroup(i)
+        local regionThreads = likwid.nvMarkerRegionGpus(i)
+        results[i] = {}
+        metrics[i] = {}
+        results[i][groupID] = {}
+        metrics[i][groupID] = {}
+        for k=1, likwid.nvMarkerRegionEvents(i) do
+            local eventName = likwid.getNameOfEvent(groupID, k)
+            local counterName = likwid.getNameOfCounter(groupID, k)
+            results[i][groupID][k] = {}
+            for j=1, regionThreads do
+                results[i][groupID][k][j] = likwid.nvMarkerRegionResult(i,k,j)
+                if results[i][groupID][k][j] ~= results[i][groupID][k][j] then
+                    results[i][groupID][k][j] = nan2value
+                end
+            end
+        end
+        if likwid.nvMarkerRegionMetrics(groupID) > 0 then
+            for k=1, likwid.nvMarkerRegionMetrics(groupID) do
+                local metricName = likwid.getNameOfMetric(groupID, k)
+                metrics[i][likwid.nvMarkerRegionGroup(i)][k] = {}
+                for j=1, regionThreads do
+                    metrics[i][groupID][k][j] = likwid.nvMarkerRegionMetric(i,k,j)
+                    if metrics[i][groupID][k][j] ~= metrics[i][groupID][k][j] then
+                        metrics[i][groupID][k][j] = nan2value
+                    end
+                end
+            end
+        end
+    end
+    return results, metrics
+end
 
+likwid.getNvMarkerResults = getNvMarkerResults
 
 return likwid

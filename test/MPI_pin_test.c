@@ -67,18 +67,53 @@ int get_sched()
 }
 
 
+static int print_cmd(char* cmd)
+{
+    int ret = 0;
+    FILE* cmdfp = NULL;
+    char *cmdout = NULL;
+    size_t cmdout_size = 2000;
+    cmdfp = popen(cmd, "r");
+    if (cmdfp)
+    {
+        cmdout = malloc(cmdout_size * sizeof(char));
+        if (!cmdout)
+        {
+            return -2;
+        }
+print_cmd_more:
+        ret = fread(cmdout, sizeof(char), cmdout_size-1, cmdfp);
+        if (ret > 0)
+        {
+            cmdout[ret] = '\0';
+            printf("%s", cmdout);
+            if (ret == cmdout_size-1)
+            {
+                goto print_cmd_more;
+            }
+            printf("\n");
+        }
+        free(cmdout);
+        return pclose(cmdfp);
+    }
+    return -1;
+}
+
 #ifdef PTHREADS
 struct thread_info {
+    pthread_t pthread;
+    pthread_attr_t pattr;
     int thread_id;
     int mpi_id;
     pid_t pid;
     pid_t ppid;
+    pthread_barrier_t *barrier;
 };
 
 void *
 thread_start(void *arg)
 {
-    
+
     int i = 0;
     struct thread_info *tinfo = arg;
     char host[HOST_NAME_MAX+1];
@@ -86,17 +121,19 @@ thread_start(void *arg)
     {
         gethostname(host, HOST_NAME_MAX);
     }
-    
+    pthread_barrier_wait(tinfo->barrier);
     printf ("Rank %d Thread %d running on Node %s core %d/%d with pid %d and tid %d\n",tinfo->mpi_id, tinfo->thread_id, host, sched_getcpu(), get_sched(), tinfo->pid ,gettid());
+    pthread_barrier_wait(tinfo->barrier);
     if (tinfo->thread_id == 0)
     {
-        sleep(tinfo->mpi_id);
+        sleep(tinfo->mpi_id+1);
         char cmd[1024];
         pid_t pid = getppid();
         snprintf(cmd, 1023, "pstree -p -H %d %d",pid, pid);
-/*        system(cmd);*/
+        print_cmd(cmd);
     }
-    
+    pthread_barrier_wait(tinfo->barrier);
+
     if (tinfo->thread_id != 0)
         pthread_exit(NULL);
 }
@@ -120,6 +157,7 @@ main(int argc, char **argv)
     MASTER(MPI started);
     MPI_Barrier(MPI_COMM_WORLD);
     printf("Process with rank %d running on Node %s core %d/%d with pid %d\n",rank ,host, sched_getcpu(),get_cpu_id(), master_pid);
+    sleep(1);
     MPI_Barrier(MPI_COMM_WORLD);
 
 
@@ -136,12 +174,14 @@ main(int argc, char **argv)
         {
             printf ("Rank %d Thread %d running on Node %s core %d/%d with pid %d and tid %d\n",rank,omp_get_thread_num(), host, sched_getcpu(), get_sched(), master_pid ,gettid());
         }
+#pragma omp barrier
 #pragma omp master
         {
+            sleep(rank+1);
             pid_t pid = getppid();
             char cmd[1024];
             sprintf(cmd, "pstree -p -H %d %d",pid, pid);
-            system(cmd);
+            print_cmd(cmd);
         }
     }
 #endif
@@ -149,32 +189,56 @@ main(int argc, char **argv)
 
 #ifdef PTHREADS
     int err = 0;
-    struct thread_info tinfos[4];
-    pthread_t threads[4] = {0};
-    pthread_attr_t attrs[4];
+    int nthreads = 4;
+    if (getenv("PTHREAD_THREADS") != NULL)
+    {
+        nthreads = atoi(getenv("PTHREAD_THREADS"));
+    }
+    if (nthreads <= 0)
+    {
+        MPI_Finalize();
+        return -1;
+    }
+    struct thread_info* tinfos = NULL;
+    pthread_barrier_t bar;
+    pthread_barrierattr_t bar_attrs;
+
+
+    tinfos = malloc(nthreads * sizeof(struct thread_info));
+    if (!tinfos)
+    {
+        MPI_Finalize();
+        return -1;
+    }
+    pthread_barrier_init(&bar, NULL, nthreads);
+
 
     pid_t pid = getppid();
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < nthreads; i++)
     {
+        tinfos[i].pthread = 0;
+        tinfos[i].pattr;
         tinfos[i].thread_id = i;
         tinfos[i].mpi_id = rank;
         tinfos[i].pid = master_pid;
         tinfos[i].ppid = pid;
+        tinfos[i].barrier = &bar;
     }
     MPI_Barrier(MPI_COMM_WORLD);
     MASTER(Start Pthread threads);
     MPI_Barrier(MPI_COMM_WORLD);
-    for (i = 1; i < 4; i++)
+    for (i = 1; i < nthreads; i++)
     {
-        err = pthread_create(&threads[i], &attrs[i], thread_start, (void*)&tinfos[i]);
+        err = pthread_create(&tinfos[i].pthread, NULL, thread_start, (void*)&tinfos[i]);
         if (err != 0) printf("pthread_create %d error: %s\n", i, strerror(err));
     }
     thread_start((void*)&tinfos[0]);
 
-    for (i = 1; i < 4; i++)
+    for (i = 1; i < nthreads; i++)
     {
-        pthread_join(threads[i], NULL);
+        pthread_join(tinfos[i].pthread, NULL);
     }
+    pthread_barrier_destroy(&bar);
 #endif
 
     MPI_Finalize();

@@ -97,13 +97,14 @@ typedef enum {
 } RegisterIndex;
 
 typedef enum {
-    PMC = 0, FIXED, THERMAL,
+    PMC = 0, FIXED, THERMAL, VOLTAGE,
     POWER, UNCORE, MBOX0,
     MBOX1, MBOX2, MBOX3,
     MBOX4, MBOX5, MBOX6, MBOX7,
     MBOX0FIX, MBOX1FIX, MBOX2FIX,
     MBOX3FIX, MBOX4FIX, MBOX5FIX,
     MBOX6FIX, MBOX7FIX,
+    MBOX0TMP,
     BBOX0, BBOX1,
     RBOX0, RBOX1, RBOX2,
     WBOX,
@@ -145,6 +146,7 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [PMC] = "Core-local general purpose counters",
     [FIXED] = "Fixed counters",
     [THERMAL] = "Thermal",
+    [VOLTAGE] = "Voltage of core",
     [POWER] = "Energy/Power counters (RAPL)",
     [UNCORE] = "Socket-local general/fixed purpose counters",
     [MBOX0] = "Memory Controller 0 Channel 0",
@@ -163,6 +165,7 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [MBOX5FIX] = "Memory Controller 1 Channel 1 Fixed Counter",
     [MBOX6FIX] = "Memory Controller 1 Channel 2 Fixed Counter",
     [MBOX7FIX] = "Memory Controller 1 Channel 3 Fixed Counter",
+    [MBOX0TMP] = "PP0/PP1 Temperature Sensor",
 #ifdef _ARCH_PPC
     [BBOX0] = "Memory controller synchronous (port 0 & 1)",
     [BBOX1] = "Memory controller synchronous (port 2 & 3)",
@@ -318,7 +321,7 @@ static char* RegisterTypeNames[MAX_UNITS] = {
         (eventset->regTypeMask1 & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
 
 #define MEASURE_UNCORE(eventset) \
-        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(POWER)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4)
+        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(POWER)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4)
 
 
 typedef struct {

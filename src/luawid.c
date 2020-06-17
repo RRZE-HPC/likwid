@@ -1952,7 +1952,7 @@ parse(char *line, char **argv)
                  *line != '\t' && *line != '\n')
                line++;             /* skip the argument until ...    */
      }
-     *argv = '\0';                 /* mark the end of argument list  */
+     *argv = (char *)'\0';                 /* mark the end of argument list  */
 }
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -2042,26 +2042,34 @@ static int
 lua_likwid_checkProgram(lua_State* L)
 {
     int ret = -1;
+    int exited = 0;
     if (lua_gettop(L) == 1)
     {
         int status = 0;
         pid_t retpid = 0;
         pid_t pid = lua_tonumber(L, 1);
-        retpid = waitpid(pid, &status, WNOHANG);
+        retpid = waitpid(pid, &status, WNOHANG|WUNTRACED|WCONTINUED);
         if (retpid == pid)
         {
             if (WIFEXITED(status))
             {
                 ret = WEXITSTATUS(status);
+                exited = 1;
             }
             else if (WIFSIGNALED(status))
             {
                 ret = 128 + WTERMSIG(status);
+                exited = 1;
+            }
+            else
+            {
+                ret = 0;
             }
         }
     }
     lua_pushinteger(L, (lua_Integer)ret);
-    return 1;
+    lua_pushboolean(L, exited);
+    return 2;
 }
 
 static int
@@ -2355,6 +2363,7 @@ lua_likwid_resetRegion(lua_State* L)
 {
     const char* tag = (const char*)luaL_checkstring(L, -1);
     lua_pushinteger(L, likwid_markerResetRegion(tag));
+    return 1;
 }
 
 static int
@@ -2861,9 +2870,16 @@ lua_likwid_getGpuTopology(lua_State* L)
 {
     if (!gputopology_isInitialized)
     {
-        topology_gpu_init();
-        gputopo = get_gpuTopology();
-        gputopology_isInitialized = 1;
+        if (topology_gpu_init() == EXIT_SUCCESS)
+        {
+            gputopo = get_gpuTopology();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
     }
     lua_newtable(L);
     lua_pushstring(L,"numDevices");
@@ -3002,15 +3018,23 @@ lua_likwid_putGpuTopology(lua_State* L)
 }
 
 static int
-lua_likwid_nvstr_to_gpulist(lua_State* L)
+lua_likwid_gpustr_to_gpulist(lua_State* L)
 {
     int ret = 0;
     char* gpustr = (char *)luaL_checkstring(L, 1);
     if (!gputopology_isInitialized)
     {
-        topology_gpu_init();
-        gputopo = get_gpuTopology();
-        gputopology_isInitialized = 1;
+        if (topology_gpu_init() == EXIT_SUCCESS)
+        {
+            gputopo = get_gpuTopology();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnumber(L, 0);
+            lua_pushnil(L);
+            return 2;
+        }
     }
     int* gpulist = (int*) malloc(gputopo->numDevices * sizeof(int));
     if (gpulist == NULL)
@@ -3041,9 +3065,16 @@ lua_likwid_getGpuEventsAndCounters(lua_State* L)
 {
     if (!gputopology_isInitialized)
     {
-        topology_gpu_init();
-        gputopo = get_gpuTopology();
-        gputopology_isInitialized = 1;
+        if (topology_gpu_init() == EXIT_SUCCESS)
+        {
+            gputopo = get_gpuTopology();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
     }
 
     lua_newtable(L);
@@ -3092,9 +3123,18 @@ lua_likwid_getGpuGroups(lua_State* L)
 {
     int i, ret;
     char** tmp, **infos, **longs;
-    if (gputopology_isInitialized == 0)
+    if (!gputopology_isInitialized)
     {
-        topology_gpu_init();
+        if (topology_gpu_init() == EXIT_SUCCESS)
+        {
+            gputopo = get_gpuTopology();
+            gputopology_isInitialized = 1;
+        }
+        else
+        {
+            lua_pushnil(L);
+            return 1;
+        }
     }
     ret = nvmon_getGroups(&tmp, &infos, &longs);
     if (ret > 0)

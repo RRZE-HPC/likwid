@@ -81,8 +81,8 @@ local function usage()
     print_stdout("-g/-group <perf>\t Set a likwid-perfctr conform event set for measuring on nodes")
     print_stdout("-m/-marker\t\t Activate marker API mode")
     print_stdout("-O\t\t\t Output easily parseable CSV instead of fancy tables")
-    print_stdout("-o/--output <file>\tWrite output to a file. The file is reformatted according to the suffix.")
-    print_stdout("-f\t\t\t Force overwrite of registers if they are in use. You can also use environment variable LIKWID_FORCE")
+    print_stdout("-o/--output <file>\t Write output to a file. The file is reformatted according to the suffix.")
+    print_stdout("-f\t\t\t Force execution (and measurements). You can also use environment variable LIKWID_FORCE.")
     print_stdout("-e, --env <key>=<value>\t Set environment variables for MPI processes")
     print_stdout("--mpiopts <str>\t Hand over options to underlying MPI. Please use proper quoting.")
     print_stdout("")
@@ -134,7 +134,20 @@ local getEnvironment = nil
 local executeCommand = nil
 local mpiexecutable = nil
 local hostpattern = "([%.%a%d_-]+)"
+local slurm_involved = false
 
+local function abspath(cmd)
+    local pathlist = os.getenv("PATH")
+    for p in pathlist:gmatch("[^:]*") do
+        if p then
+            local t = string.format("%s/%s", p, cmd)
+            if likwid.access(t, "e") == 0 then
+                return t
+            end
+        end
+    end
+    return nil
+end
 
 local function readHostfileOpenMPI(filename)
     local hostlist = {}
@@ -249,7 +262,7 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
 
     local cmd = string.format("%s -hostfile %s %s -np %d -npernode %d %s %s",
                                 mpiexecutable, hostfile, bindstr,
-                                np, ppn, mpiopts, wrapperscript)
+                                np, ppn, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..cmd)
     end
@@ -475,7 +488,7 @@ local function executeMvapich2(wrapperscript, hostfile, env, nrNodes)
 
     local cmd = string.format("%s -f %s -np %d -ppn %d %s %s %s",
                                 mpiexecutable, hostfile,
-                                np, ppn, envstr, mpiopts, wrapperscript)
+                                np, ppn, envstr, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..cmd)
     end
@@ -497,6 +510,7 @@ local function readHostfilePBS(filename)
     if debug then
         print_stdout("DEBUG: Reading hostfile from batch system")
     end
+
     local t = f:read("*all")
     f:close()
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
@@ -542,15 +556,15 @@ local function readHostfileSlurm(hostlist)
     if hostlist and nperhost then
         hostfile = write_hostlist_to_file(hostlist, nperhost)
         hosts = readHostfilePBS(hostfile)
-        if debug then
-            print_stdout("Available hosts for scheduling:")
-            s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
-            print_stdout(s)
-            for i, host in pairs(hosts) do
-                s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
-                print_stdout (s)
-            end
-        end
+--        if debug then
+--            print_stdout("Available hosts for scheduling:")
+--            s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
+--            print_stdout(s)
+--            for i, host in pairs(hosts) do
+--                s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
+--                print_stdout (s)
+--            end
+--        end
         os.remove(hostfile)
     end
     return hosts
@@ -608,8 +622,8 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
     if wrapperscript.sub(1,1) ~= "/" then
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
-    local exec = string.format("srun -N %d --ntasks-per-node=%d --cpu_bind=none %s %s",
-                                nrNodes, ppn, mpiopts, wrapperscript)
+    local exec = string.format("srun --nodes %d --ntasks=%d --ntasks-per-node=%d --cpu_bind=none %s %s",
+                                nrNodes, np, ppn, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..exec)
     end
@@ -637,7 +651,8 @@ end
 local function getMpiType()
     local mpitype = nil
     if os.getenv("SLURM_JOB_ID") ~= nil then
-        return "slurm"
+        mpitype = "slurm"
+        slurm_involved = true
     end
     cmd = "bash -c 'tclsh /apps/modules/modulecmd.tcl sh list -t' 2>&1"
     local f = io.popen(cmd, 'r')
@@ -663,7 +678,7 @@ local function getMpiType()
             end
         end
     end
-    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun"}) do
+    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun", "srun"}) do
         f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
         if f ~= nil then
             local s = f:read('*line')
@@ -693,7 +708,27 @@ local function getMpiType()
                             break
                         end
                     end
+                    b,e = out:find("srun")
+                    if (b ~= nil) then
+                        mpitype = "slurm"
+                        slurm_involved = true
+                        break
+                    end
                 end
+            end
+        end
+    end
+    if mpitype then
+--        local mpi_bootstrap = os.getenv("I_MPI_HYDRA_BOOTSTRAP")
+--        if mpi_bootstrap == "slurm" then
+--            mpitype = "slurm"
+--        end
+        if os.getenv("SLURM_JOB_ID") == nil then
+            f = io.popen(string.format("which srun 2>/dev/null"), 'r')
+            local s = f:read('*line')
+            if s ~= nil then
+                f:close()
+                mpitype = "slurm"
             end
         end
     end
@@ -707,6 +742,8 @@ function getMpiVersion()
     maj = nil
     min = nil
     intel_match = "Version (%d+) Update (%d+)"
+    intel_build_match = "Version (%d+) Build (%d+)"
+    intel_match_old = "Version (%d+).(%d+).%d+"
     openmpi_match = "(%d+)%.(%d+)%.%d+"
     for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun"}) do
         f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
@@ -722,6 +759,14 @@ function getMpiVersion()
                     for l in t:gmatch("[^\r\n]+") do
                         if l:match(intel_match) then
                             maj, min = l:match(intel_match)
+                            maj = tonumber(maj)
+                            min = tonumber(min)
+                        elseif l:match(intel_match_old) then
+                            maj, min = l:match(intel_match_old)
+                            maj = tonumber(maj)
+                            min = tonumber(min)
+                        elseif l:match(intel_build_match) then
+                            maj, min = l:match(intel_build_match)
                             maj = tonumber(maj)
                             min = tonumber(min)
                         elseif l:match(openmpi_match) then
@@ -773,13 +818,18 @@ local function getMpiExec(mpitype)
             end
         end
     end
+    local testmpitype = getMpiType()
+    if mpitype ~= testmpitype then
+        print_stderr(string.format("ERROR: Cannot find executable for MPI type %s but %s", mpitype, testmpitype))
+        os.exit(1)
+    end
 end
 
 local function getOmpType()
-    local cmd = string.format("ldd `which %s` 2>/dev/null", executable[1])
+    local cmd = string.format("ldd %s 2>/dev/null", executable[1])
     local f = io.popen(cmd, 'r')
-    if f ~= nil then
-        cmd = string.format("ldd %s", executable[1])
+    if f == nil then
+        cmd = string.format("ldd $(basename %s) 2>/dev/null", executable[1])
         f = io.popen(cmd, 'r')
     end
     omptype = nil
@@ -834,6 +884,9 @@ end
 
 local function assignHosts(hosts, np, ppn, tpp)
     tmp = np
+    if tpp > 1 then
+        tmp = np * tpp
+    end
     newhosts = {}
     current = 0
     if debug then
@@ -893,9 +946,10 @@ local function assignHosts(hosts, np, ppn, tpp)
                     current = ppn
                 end]]
                 print_stderr(string.format("ERROR: Oversubscription required. Host %s has only %s slots but %d needed per host", host["hostname"], host["slots"], ppn))
-                if mpitype == "slurm" then
-                    print_stderr("In SLURM environments, it might be a problem with --ntasks (the slots) and --cpus-per-task options")
+                if slurm_involved then
+                    print_stderr("ERROR: In SLURM environments, it might be a problem with --ntasks (the slots) and --cpus-per-task options")
                 end
+                print_stderr("ERROR: Oversubscription may be forced by setting '-f' on the command line.")
                 os.exit(1)
             else
                 table.insert(newhosts, {hostname=host["hostname"],
@@ -968,17 +1022,92 @@ local function calculatePinExpr(cpuexprs)
     return newexprs
 end
 
+local function affinityDomains()
+    domains = {}
+    local topo = likwid.getCpuTopology()
+    local numa = likwid.getNumaInfo()
+
+    -- N node domain
+    N = {}
+    N["tag"] = "N"
+    N["numberOfProcessors"] = topo["numHWThreads"]
+    N["processorList"] = {}
+    for i=0, topo["numHWThreads"]-1 do
+        table.insert(N["processorList"], topo["threadPool"][i]["apicId"])
+    end
+    table.insert(domains, N)
+
+    -- Sx socket domains
+    for s=1, topo["numSockets"] do
+        S = {}
+        S["tag"] = string.format("S%d", s-1)
+        S["numberOfProcessors"] = topo["numCoresPerSocket"]
+        S["processorList"] = {}
+        for i=0, topo["numHWThreads"]-1 do
+            if topo["threadPool"][i]["packageId"] == s-1 then
+                table.insert(S["processorList"], topo["threadPool"][i]["apicId"])
+            end
+        end
+        -- likwid.tableprint(S, true)
+        table.insert(domains, S)
+    end
+
+    -- Cy Last-level-cache domains
+    local cidx = 0
+    for s=1, topo["numSockets"] do
+        local slist = {}
+        for i=0, topo["numHWThreads"]-1 do
+            if topo["threadPool"][i]["packageId"] == s-1 then
+                table.insert(slist, topo["threadPool"][i]["apicId"])
+            end
+        end
+
+        for i = 1, #slist/topo["cacheLevels"][topo["numCacheLevels"]]["threads"] do
+            C = {}
+            C["tag"] = string.format("C%d", cidx)
+            C["numberOfProcessors"] = topo["cacheLevels"][topo["numCacheLevels"]]["threads"]
+            C["processorList"] = {}
+
+            for x=1, C["numberOfProcessors"] do
+                table.insert(C["processorList"], slist[x + (i-1)*C["numberOfProcessors"]])
+            end
+
+            -- likwid.tableprint(C, true)
+            table.insert(domains, C)
+            cidx = cidx + 1
+        end
+
+    end
+
+    -- Mz NUMA domains
+    for x=1, numa["numberOfNodes"] do
+        M = {}
+        M["tag"] = string.format("M%d", x-1)
+        M["numberOfProcessors"] = numa["nodes"][x]["numberOfProcessors"]
+        M["processorList"] = {}
+        for i,c in pairs(numa["nodes"][x]["processors"]) do
+            table.insert(M["processorList"], c)
+        end
+        -- likwid.tableprint(M, true)
+        table.insert(domains, M)
+    end
+    return domains
+end
+
 local function calculateCpuExprs(nperdomain, cpuexprs)
     local topo = likwid.getCpuTopology()
-    local affinity = likwid.getAffinityInfo()
+    local affinity = affinityDomains()
     local domainlist = {}
     local newexprs = {}
+
     domainname, count, threads = nperdomain:match("[E]*[:]*([NSCM]*):(%d+)[:]*(%d*)")
     count = math.tointeger(count)
     threads = math.tointeger(threads)
     if threads == nil then threads = 1 end
+    local threads_per_core = topo["numThreadsPerCore"]
+    local cores_per_socket = topo["numCoresPerSocket"]
 
-    for i, domain in pairs(affinity["domains"]) do
+    for i, domain in pairs(affinity) do
         if domain["tag"]:match(domainname.."%d*") then
             table.insert(domainlist, i)
         end
@@ -986,30 +1115,50 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
     if debug then
         local str = "DEBUG: NperDomain string "..nperdomain.." covers the domains: "
         for i, idx in pairs(domainlist) do
-            str = str .. affinity["domains"][idx]["tag"] .. " "
+            str = str .. affinity[idx]["tag"] .. " "
         end
         print_stdout(str)
     end
 
+
     for i, domidx in pairs(domainlist) do
+        local num_processors = affinity[domidx]["numberOfProcessors"]
         local sortedlist = {}
+        local baselist = {}
+        local inlist = {}
+        for j=0,affinity[domidx]["numberOfProcessors"] do
+            table.insert(inlist, affinity[domidx]["processorList"][j])
+        end
+
         if tpp_ordering == "spread" then
-            for off=1,topo["numThreadsPerCore"] do
-                for i=0,affinity["domains"][domidx]["numberOfProcessors"]/topo["numThreadsPerCore"] do
-                    table.insert(sortedlist, affinity["domains"][domidx]["processorList"][off + (i*topo["numThreadsPerCore"])])
+            for off=1,threads_per_core do
+                for j=0,num_processors/threads_per_core do
+                    table.insert(baselist, inlist[off + (j*threads_per_core)])
                 end
             end
         elseif tpp_ordering == "close" then
-            for i=0,affinity["domains"][domidx]["numberOfProcessors"] do
-                table.insert(sortedlist, affinity["domains"][domidx]["processorList"][i])
+            for j=0,num_processors do
+                table.insert(baselist, inlist[j])
             end
         end
+
+
+        local c = 0
+        while c < count do
+            for j, s in pairs(baselist) do
+                table.insert(sortedlist, s)
+                c = c + 1
+            end
+        end
+
         local tmplist = {}
         for j=1,count do
             local tmplist = {}
             for t=1,threads do
-                table.insert(tmplist, tostring(sortedlist[1]))
-                table.remove(sortedlist, 1)
+                if sortedlist[1] then
+                    table.insert(tmplist, tostring(sortedlist[1]))
+                    table.remove(sortedlist, 1)
+                end
             end
             table.insert(newexprs, tmplist)
             if dist > threads then
@@ -1056,17 +1205,23 @@ local function splitUncoreEvents(groupdata)
             not e["Counter"]:match("^PMC%d") and
             not e["Counter"]:match("TMP%d") then
             local event = e["Event"]..":"..e["Counter"]
-            if cpuinfo["architecture"] == "x86_64" and cpuinfo["isIntel"] == 1 then
-                table.insert(socket, event)
-            elseif cpuinfo["architecture"] == "x86_64" then
-                if e["Counter"]:match("^CPMC%d") then
-                    table.insert(llc, event)
-                elseif e["Counter"]:match("^DFC%d") then
-                    table.insert(numa, event)
+            if cpuinfo["architecture"] == "x86_64" then
+                if cpuinfo["isIntel"] == 1 then
+                    table.insert(socket, event)
+                else -- AMD
+                    if e["Counter"]:match("^CPMC%d") then
+                        table.insert(llc, event)
+                    elseif e["Counter"]:match("^UPMC%d") then
+                        table.insert(socket, event)
+                    elseif e["Counter"]:match("^DFC%d") then
+                        table.insert(numa, event)
+                    end
                 end
             elseif cpuinfo["architecture"] == "armv8" then
                 table.insert(socket, event)
             elseif cpuinfo["architecture"] == "armv7" then
+                table.insert(socket, event)
+            elseif cpuinfo["architecture"]:match("^power%d") then
                 table.insert(socket, event)
             end
         else
@@ -1118,7 +1273,7 @@ local function setPerfStrings(perflist, cpuexprs)
     local suncore = false
     local perfexprs = {}
     local grouplist = {}
-    
+
     local affinity = likwid.getAffinityInfo()
     local socketList = {}
     local socketListFlags = {}
@@ -1233,7 +1388,10 @@ local function setPerfStrings(perflist, cpuexprs)
                     end
                 end
                 if perfexprs[k][i] == nil then
-                    local elist = {coreevents}
+                    local elist = {}
+                    if coreevents:len() > 0 then
+                        table.insert(elist, coreevents)
+                    end
                     if cuncore and llcevents:len() > 0 then
                         table.insert(elist, llcevents)
                     end
@@ -1243,13 +1401,21 @@ local function setPerfStrings(perflist, cpuexprs)
                     if suncore and socketevents:len() > 0 then
                         table.insert(elist, socketevents)
                     end
-                    perfexprs[k][i] = table.concat(elist, ",")
+                    if #elist > 0 then
+                        perfexprs[k][i] = table.concat(elist, ",")
+                    else
+                        perfexprs[k][i] = ""
+                    end
                 end
             end
 
             if debug then
                 for i, expr in pairs(perfexprs[k]) do
-                    print_stdout(string.format("DEBUG: Process %d measures with event set: %s", i-1, expr))
+                    if expr:len() > 0 then
+                        print_stdout(string.format("DEBUG: Process %d measures with event set: %s", i-1, expr))
+                    else
+                        print_stdout(string.format("DEBUG: Process %d measures with event set: No events", i-1))
+                    end
                 end
             end
         end
@@ -1286,6 +1452,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     end
     local oversubscripted = {}
     local commands = {}
+    local only_pinned_processes = {}
     tmphosts = {}
     for i, host in pairs(hosts) do
         if tmphosts[host["hostname"]] ~= nil then
@@ -1337,34 +1504,45 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     for i=1,#cpuexprs do
         local cmd = {}
         local cpuexpr_opt = "-c"
-        if #perf > 0 then
-            table.insert(cmd,LIKWID_PERFCTR)
+        local eventsets_valid = 0
+        local use_perfctr = false
+        for j, expr in pairs(perfexprs) do
+            if expr[i]:len() > 0 then eventsets_valid = eventsets_valid + 1 end
+        end
+        if #perf > 0 and eventsets_valid == #perfexprs then
+            use_perfctr = true
+        end
+        if use_perfctr then
+            table.insert(cmd, LIKWID_PERFCTR)
             if use_marker then
                 table.insert(cmd,"-m")
             end
             cpuexpr_opt = "-C"
         else
-            table.insert(cmd,LIKWID_PIN)
+            table.insert(cmd, LIKWID_PIN)
             table.insert(cmd,"-q")
+            if #perf > 0 then
+                table.insert(only_pinned_processes, i)
+            end
         end
-        if force and #perf > 0 then
+        if force and use_perfctr then
             table.insert(cmd,"-f")
         end
         if likwiddebug then
             table.insert(cmd,"-V 3")
         end
-        table.insert(cmd,skipStr)
-        table.insert(cmd,cpuexpr_opt)
-        table.insert(cmd,table.concat(cpuexprs[i], ","))
-        if #perf > 0 then
+        table.insert(cmd, skipStr)
+        table.insert(cmd, cpuexpr_opt)
+        table.insert(cmd, table.concat(cpuexprs[i], ","))
+        if use_perfctr then
             for j, expr in pairs(perfexprs) do
-                table.insert(cmd,"-g")
-                table.insert(cmd,expr[i])
+                table.insert(cmd, "-g")
+                table.insert(cmd, expr[i])
             end
-            table.insert(cmd,"-o")
-            table.insert(cmd,outputname)
+            table.insert(cmd, "-o")
+            table.insert(cmd, outputname)
         end
-        table.insert(cmd,execStr)
+        table.insert(cmd, execStr)
         commands[i] = table.concat(cmd, " ")
     end
 
@@ -1427,6 +1605,7 @@ local function writeWrapperScript(scriptname, execStr, hosts, envsettings, outpu
     f:write("fi\n")
     f:close()
     os.execute("chmod +x "..scriptname)
+    return only_pinned_processes
 end
 
 
@@ -2054,8 +2233,10 @@ if use_marker and #perf == 0 then
     os.exit(1)
 end
 
-for _,x in pairs(arg) do
-    table.insert(executable, x)
+for i,x in pairs(arg) do
+    if i > 0 then
+        table.insert(executable, abspath(x) or x)
+    end
 end
 
 if #executable == 0 then
@@ -2065,6 +2246,18 @@ end
 
 if debug then
     print_stdout("DEBUG: Executable given on commandline: "..table.concat(executable, " "))
+end
+local gotExecutable = false
+for i,x in pairs(executable) do
+    if likwid.access(x, "x") == 0 then
+        gotExecutable = true
+        break
+    end
+end
+if not gotExecutable then
+    print_stderr("ERROR: Cannot find an executable on commandline")
+    print_stderr(table.concat(executable, " "))
+    os.exit(1)
 end
 
 if mpiopts and mpiopts:len() > 0 and debug then
@@ -2293,6 +2486,14 @@ if skipStr == "" then
         elseif omptype == "gnu" and nrNodes == 1 then
             skipStr = '-s 0x0'
         end
+    elseif mpitype == "slurm" then
+        if omptype == "intel" and nrNodes > 1 then
+            if nrNodes == 1 then
+                skipStr = '-s 0x1'
+            else
+                skipStr = '-s 0x3'
+            end
+        end
     end
 end
 if debug and skipStr ~= "" then
@@ -2312,7 +2513,7 @@ if writeHostfile == nil or getEnvironment == nil or executeCommand == nil then
 end
 
 writeHostfile(newhosts, hostfilename)
-writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, envsettings, outfilename)
+local skipped_ranks = writeWrapperScript(scriptfilename, table.concat(executable, " "), newhosts, envsettings, outfilename)
 local env = getEnvironment()
 local exitvalue = executeCommand(scriptfilename, hostfilename, env, nrNodes)
 

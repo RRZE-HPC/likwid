@@ -457,7 +457,7 @@ if num_cpus > 0 then
 end
 
 ---------------------------
-if nvSupported and gputopo and num_gpus > 0 then
+if gpusSupported and gputopo and num_gpus > 0 then
     for i,gpu1 in pairs(gpulist) do
         for j, gpu2 in pairs(gpulist) do
             if i ~= j and gpu1 == gpu2 then
@@ -497,7 +497,7 @@ if print_events == true then
         print_stdout(outstr)
     end
 ---------------------------
-    if nvSupported and gputopo then
+    if gpusSupported and gputopo then
         local cudahome = os.getenv("CUDA_HOME")
         if cudahome and cudahome:len() > 0 then
             ldpath = os.getenv("LD_LIBRARY_PATH")
@@ -550,7 +550,7 @@ if print_event ~= nil then
         end
     end
 ---------------------------
-    if nvSupported and gputopo then
+    if gpusSupported and gputopo then
         local cudahome = os.getenv("CUDA_HOME")
         if cudahome and cudahome:len() > 0 then
             ldpath = os.getenv("LD_LIBRARY_PATH")
@@ -620,7 +620,7 @@ if print_groups == true then
     else
         print_stdout(string.format("No groups defined for %s",cpuinfo["name"]))
     end
-    if nvSupported and gputopo then
+    if gpusSupported and gputopo then
         avail_groups = likwid.getGpuGroups()
         if avail_groups then
             local max_len = 0
@@ -701,11 +701,11 @@ if print_info or verbose > 0 then
         print_stdout(string.format("PERFMON width of counters:\t%u",cpuinfo["perf_width_ctr"]))
         print_stdout(string.format("PERFMON number of fixed counters:\t%u",cpuinfo["perf_num_fixed_ctr"]))
     end
-    if nvSupported and gputopo then
+    if gpusSupported and gputopo then
         print_stdout(likwid.hline)
         for i=1, gputopo["numDevices"] do
             gpu = gputopo["devices"][i]
-            print_stdout(string.format("NVMON GPU %d Compute capability:\t%.%d", gpu["id"], gpu["ccapMajor"], gpu["ccapMinor"]))
+            print_stdout(string.format("NVMON GPU %d Compute capability:\t%d.%d", gpu["id"], gpu["ccapMajor"], gpu["ccapMinor"]))
         end
     end
     print_stdout(likwid.hline)
@@ -752,7 +752,7 @@ if use_marker then
         print_stderr(string.format("Please purge all MarkerAPI files from %s.", markerFolder))
         os.exit(1)
     end
-    if nvSupported and #gpulist and likwid.access(nvMarkerFile, "rw") ~= -1 then
+    if gpusSupported and #gpulist and likwid.access(nvMarkerFile, "rw") ~= -1 then
         print_stderr(string.format("ERROR: GPUMarkerAPI file %s not accessible. Maybe a remaining file of another user.", nvMarkerFile))
         print_stderr(string.format("Please purge all GPUMarkerAPI files from %s.", markerFolder))
         os.exit(1)
@@ -864,8 +864,8 @@ if #event_string_list > 0 then
     end
 end
 ---------------------------
-if nvSupported and #gpu_event_string_list > 0 then
-    if likwid.gpuInit(num_gpus, gpulist) < 0 then
+if gpusSupported and #gpu_event_string_list > 0 then
+    if likwid.nvInit(num_gpus, gpulist) < 0 then
         likwid.putGpuTopology()
         os.exit(1)
     end
@@ -944,11 +944,11 @@ end
 if gpusSupported then
     for i, event_string in pairs(gpu_event_string_list) do
         if event_string:len() > 0 then
-            local gid = likwid.gpuAddEventSet(event_string)
+            local gid = likwid.nvAddEventSet(event_string)
             if gid < 0 then
                 likwid.putGpuTopology()
                 likwid.putConfiguration()
-                likwid.gpuFinalize()
+                likwid.nvFinalize()
                 os.exit(1)
             end
             table.insert(gpugroups, gid)
@@ -1053,15 +1053,17 @@ if use_wrapper or use_timeline then
     groupTime[activeGroup] = 0
 
     while true do
-        if likwid.getSignalState() ~= 0 then
+        local state = likwid.getSignalState()
+        if state ~= 0 then
             if #execList > 0 then
                 likwid.killProgram(pid)
             end
             break
         end
         local remain = likwid.sleep(math.floor(duration-(twork*1E6)))
-        exitvalue = likwid.checkProgram(pid)
-        if remain > 0 or exitvalue >= 0 then
+        
+        exitvalue, exited = likwid.checkProgram(pid)
+        if exited then
             io.stdout:flush()
             if #execList > 0 then
                 break
@@ -1162,7 +1164,7 @@ if use_marker == true then
     end
     if gpusSupported and #gpu_event_string_list > 0 then
         if likwid.access(nvMarkerFile, "e") >= 0 then
-            results, metrics = likwid.getGpuMarkerResults(nvMarkerFile, markergpulist, nan2value)
+            results, metrics = likwid.getNvMarkerResults(nvMarkerFile, markergpulist, nan2value)
             if not results then
                 print_stderr("Failure reading GPU Marker API result file.")
             elseif #results == 0 then

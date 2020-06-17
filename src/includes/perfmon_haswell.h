@@ -38,6 +38,7 @@
 #include <limits.h>
 #include <topology.h>
 #include <access.h>
+#include <voltage.h>
 
 
 static int perfmon_numCountersHaswellEP = NUM_COUNTERS_HASWELL_EP;
@@ -1082,6 +1083,8 @@ int perfmon_setupCounterThread_haswell(
                 break;
 
             case POWER:
+            case THERMAL:
+            case VOLTAGE:
                 break;
 
             case CBOX0:
@@ -1303,8 +1306,8 @@ int perfmon_startCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet
         }
     }
 
-    HASEP_UNFREEZE_UNCORE_AND_RESET_CTR;
-    
+    HASEP_UNFREEZE_UNCORE;
+
     if (MEASURE_CORE(eventSet))
     {
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST (1ULL<<63)|(1ULL<<62)|flags, CLEAR_PMC_AND_FIXED_OVERFLOW)
@@ -1500,6 +1503,11 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     *current = field64(counter_result, 0, box_map[type].regWidth);
                     break;
 
+                case VOLTAGE:
+                    CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
+                    *current = field64(counter_result, 0, box_map[type].regWidth);
+                    break;
+
                 case PBOX:
                 case IBOX0:
                 case RBOX0:
@@ -1557,6 +1565,7 @@ int perfmon_stopCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     break;
 
                 case MBOX0:
+                case MBOX0TMP:
                     if (haveLock)
                     {
                         if (!cpuid_info.supportClientmem)
@@ -1738,6 +1747,11 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     *current = field64(counter_result, 0, box_map[type].regWidth);
                     break;
 
+                case VOLTAGE:
+                    CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
+                    *current = field64(counter_result, 0, box_map[type].regWidth);
+                    break;
+
                 case WBOX0FIX:
                     if (haveLock)
                     {
@@ -1759,6 +1773,7 @@ int perfmon_readCountersThread_haswell(int thread_id, PerfmonEventSet* eventSet)
                     break;
 
                 case MBOX0:
+                case MBOX0TMP:
                     if (haveLock)
                     {
                         if (!cpuid_info.supportClientmem)

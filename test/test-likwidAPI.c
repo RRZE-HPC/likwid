@@ -313,7 +313,7 @@ int test_affinityinit()
         if (doms->domains[i].numberOfProcessors < doms->domains[i].numberOfCores)
         {
             valid = 0;
-            fprintf(stderr, "WARNING: Affinity domain %d: numberOfProcessors < doms->domains[i].numberOfCores\n", i);
+            fprintf(stderr, "WARNING: Affinity domain %d: doms->domains[i].numberOfProcessors < doms->domains[i].numberOfCores\n", i);
         }
         if (doms->domains[i].processorList == NULL)
         {
@@ -1372,7 +1372,11 @@ int test_perfmonresult()
     int group;
     topology_init();
     cpuinfo = get_cpuInfo();
-
+    double tmp[100000];
+    double sum = 0;
+    for (int i = 0; i < 100000; i++)
+        tmp[i] = i;
+    likwid_pinProcess(0);
     int ret = perfmon_init(1, &cpu);
     if (ret != 0)
         goto fail;
@@ -1380,7 +1384,7 @@ int test_perfmonresult()
         ret = perfmon_addEventSet(eventset_ok_intel);
     else
         ret = perfmon_addEventSet(eventset_ok_amd);
-    if (ret != 0)
+    if (ret < 0)
         goto fail;
     group = ret;
     ret = perfmon_setupCounters(group);
@@ -1390,14 +1394,23 @@ int test_perfmonresult()
     ret = perfmon_startCounters();
     if (ret != 0)
         goto fail;
-    sleep(1);
+    //sleep(1);
+    for (int j = 0; j < 100; j++)
+    {
+        for (int i = 0; i < 100000; i++)
+            sum += tmp[i];
+    }
     ret = perfmon_stopCounters();
     if (ret != 0)
         goto fail;
     if ((perfmon_getResult(group,0,0) == 0)||(perfmon_getResult(group,1,0) == 0))
+    {
         goto fail;
+    }
     if (perfmon_getTimeOfGroup(group) == 0)
+    {
         goto fail;
+    }
     perfmon_finalize();
     topology_finalize();
     return 1;
@@ -2112,6 +2125,11 @@ static test testlist[] = {
     {"Test topology module initialization", test_topologyinit, 1},
     {"Test NUMA module initialization", test_numainit, 1},
     {"Test affinity module initialization", test_affinityinit, 1},
+    {"Test cpustring with logical input", test_cpustring_logical, 1},
+    {"Test cpustring with physical input", test_cpustring_physical, 1},
+    {"Test cpustring with expression input", test_cpustring_expression, 1},
+    {"Test cpustring with scatter input", test_cpustring_scatter, 1},
+    {"Test cpustring with combined input", test_cpustring_combined, 1},
     {"Test perfmon initialization with topology information", test_perfmoninit_valid, 1},
     {"Test adding event sets to perfmon module", test_perfmonaddeventset, 1},
     {"Test adding event sets to perfmon module without initialization of perfmon", test_perfmonaddeventset_noinit, 1},
@@ -2168,11 +2186,6 @@ static test testlist[] = {
     {"Test perfmon last metric without starting", test_perfmonlastmetric_nostart, 1},
     {"Test perfmon last metric without stopping", test_perfmonlastmetric_nostop, 1},
     {"Test perfmon last metric", test_perfmonlastmetric_ok, 1},
-    {"Test cpustring with logical input", test_cpustring_logical, 1},
-    {"Test cpustring with physical input", test_cpustring_physical, 1},
-    {"Test cpustring with expression input", test_cpustring_expression, 1},
-    {"Test cpustring with scatter input", test_cpustring_scatter, 1},
-    {"Test cpustring with combined input", test_cpustring_combined, 1},
     {NULL, NULL, 0},
 };
 

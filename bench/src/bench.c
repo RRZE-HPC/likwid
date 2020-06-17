@@ -484,7 +484,7 @@ getIterSingle(void* arg)
     int threadId = 0;
     size_t offset = 0;
     size_t size = 0, vecsize = 0;
-    size_t i;
+    size_t i, j;
     ThreadData* data;
     ThreadUserData* myData;
     TimerData time;
@@ -497,7 +497,7 @@ getIterSingle(void* arg)
     threadId = data->threadId;
 
     //size = myData->size - (myData->size % myData->test->stride);
-    vecsize = myData->size;
+    vecsize = myData->size / data->numberOfThreads;
     size = myData->size / data->numberOfThreads;
 
     size -= (size % myData->test->stride);
@@ -508,6 +508,64 @@ getIterSingle(void* arg)
 #ifdef DEBUG_LIKWID
     printf("Automatic iteration count detection:");
 #endif
+
+    switch ( myData->test->type )
+    {
+        case SINGLE:
+            {
+                float* sptr;
+                for (i=0; i <  myData->test->streams; i++)
+                {
+                    sptr = (float*) myData->streams[i];
+                    sptr +=  offset;
+                    if (myData->init_per_thread)
+                    {
+                        for (j = 0; j < vecsize; j++)
+                        {
+                            sptr[j] = 1.0;
+                        }
+                    }
+                    myData->streams[i] = (float*) sptr;
+                }
+            }
+            break;
+        case INT:
+            {
+                int* sptr;
+                for (i=0; i <  myData->test->streams; i++)
+                {
+                    sptr = (int*) myData->streams[i];
+                    sptr +=  offset;
+                    if (myData->init_per_thread)
+                    {
+                        for (j = 0; j < vecsize; j++)
+                        {
+                            sptr[j] = 1;
+                        }
+                    }
+                    myData->streams[i] = (int*) sptr;
+                }
+            }
+            break;
+        case DOUBLE:
+            {
+                double* dptr;
+                for (i=0; i <  myData->test->streams; i++)
+                {
+                    dptr = (double*) myData->streams[i];
+                    dptr +=  offset;
+                    if (myData->init_per_thread)
+                    {
+                        for (j = 0; j < vecsize; j++)
+                        {
+                            dptr[j] = 1.0;
+                        }
+                    }
+                    myData->streams[i] = (double*) dptr;
+                }
+            }
+            break;
+    }
 
     switch ( myData->test->streams ) {
         case STREAM_1:

@@ -63,6 +63,8 @@
 #define PCM_CLIENT_IMC_DRAM_IO_REQUESTS  (0x5048)
 #define PCM_CLIENT_IMC_DRAM_DATA_READS  (0x5050)
 #define PCM_CLIENT_IMC_DRAM_DATA_WRITES (0x5054)
+#define PCM_CLIENT_IMC_PP0_TEMP (0x597C)
+#define PCM_CLIENT_IMC_PP1_TEMP (0x5980)
 #define PCM_CLIENT_IMC_MMAP_SIZE (0x6000)
 
 
@@ -183,6 +185,14 @@ access_x86_clientmem_read(PciDeviceIndex dev, const int socket, uint32_t reg, ui
             break;
         case 0x02:
             d = (uint64_t)*((uint32_t *)(clientmem_addr + PCM_CLIENT_IMC_DRAM_DATA_WRITES));
+            break;
+        case 0x03:
+            d = (uint64_t)*((uint32_t *)(clientmem_addr + PCM_CLIENT_IMC_PP0_TEMP));
+            d = d & 0xFF;
+            break;
+        case 0x04:
+            d = (uint64_t)*((uint32_t *)(clientmem_addr + PCM_CLIENT_IMC_PP1_TEMP));
+            d = d & 0xFF;
             break;
         default:
             ERROR_PRINT(Read from clientmem device at reg 0x%X failed, reg);
