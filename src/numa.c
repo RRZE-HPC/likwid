@@ -100,7 +100,7 @@ int
 empty_numa_init()
 {
     printf("MEMPOLICY NOT supported in kernel!\n");
-    return 0;
+    return virtual_numa_init();
 }
 
 void

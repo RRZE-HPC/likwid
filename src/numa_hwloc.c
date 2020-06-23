@@ -262,36 +262,13 @@ hwloc_numa_init(void)
 #else
         hwloc_type = HWLOC_OBJ_SOCKET;
 #endif
-        numa_info.numberOfNodes = 1;
-
-        numa_info.nodes = (NumaNode*) malloc(sizeof(NumaNode));
-        if (!numa_info.nodes)
+        if (virtual_numa_init() < 0)
         {
-            fprintf(stderr,"No memory to allocate %ld byte for nodes array\n",sizeof(NumaNode));
             return -1;
         }
-        numa_info.nodes[0].id = 0;
+
+        /* Use hwloc to set numberOfProcessors */
         numa_info.nodes[0].numberOfProcessors = 0;
-        numa_info.nodes[0].totalMemory = getTotalNodeMem(0);
-        numa_info.nodes[0].freeMemory = getFreeNodeMem(0);
-        numa_info.nodes[0].processors = (uint32_t*) malloc(numPUs * sizeof(uint32_t));
-        if (!numa_info.nodes[0].processors)
-        {
-            fprintf(stderr,"No memory to allocate %ld byte for processors array of NUMA node %d\n",
-                    numPUs * sizeof(uint32_t),0);
-            return -1;
-        }
-        numa_info.nodes[0].distances = (uint32_t*) malloc(sizeof(uint32_t));
-        if (!numa_info.nodes[0].distances)
-        {
-            fprintf(stderr,"No memory to allocate %ld byte for distances array of NUMA node %d\n",
-                    sizeof(uint32_t),0);
-            return -1;
-        }
-        numa_info.nodes[0].distances[0] = 10;
-        numa_info.nodes[0].numberOfDistances = 1;
-        cores_per_socket = cpuid_topology.numHWThreads/cpuid_topology.numSockets;
-
         for (d=0; d<likwid_hwloc_get_nbobjs_by_type(hwloc_topology, hwloc_type); d++)
         {
             obj = likwid_hwloc_get_obj_by_type(hwloc_topology, hwloc_type, d);
