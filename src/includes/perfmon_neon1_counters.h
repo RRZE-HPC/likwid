@@ -45,6 +45,6 @@ static BoxMap neon1_box_map[NUM_UNITS] = {
 };
 
 static char* neon1_translate_types[NUM_UNITS] = {
-    [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3",
+    [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3_0",
 };
 
