@@ -164,7 +164,7 @@ static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
 static char* short_arm8_cav_tx2 = "arm8_tx2";
 static char* short_arm8_cav_tx = "arm8_tx";
-static char* short_arm8_neo_n1 = "arm8";
+static char* short_arm8_neo_n1 = "arm8_n1";
 
 static char* short_power7 = "power7";
 static char* short_power8 = "power8";

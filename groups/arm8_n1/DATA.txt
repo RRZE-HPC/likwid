@@ -1,0 +1,24 @@
+SHORT Load to store ratio
+
+EVENTSET
+PMC0  INST_RETIRED
+PMC1  CPU_CYCLES
+PMC2  LD_SPEC
+PMC3  ST_SPEC
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC1/PMC0
+Load to store ratio PMC2/PMC3
+Load ratio PMC2/PMC0
+Store ratio PMC3/PMC0
+
+LONG
+Formulas:
+CPI = CPU_CYCLES/INST_RETIRED
+Load to store ratio = LD_SPEC / ST_SPEC
+Load ratio = LD_SPEC / INST_SPEC
+Store ratio = ST_SPEC / INST_SPEC
+-
+This is a metric to determine your load to store ratio.
+
