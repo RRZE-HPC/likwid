@@ -83,9 +83,13 @@ of LIKWID. Before you can call likwid_markerThreadInit() you have to call likwid
 
 */
 extern void likwid_markerThreadInit(void) __attribute__ ((visibility ("default") ));
-/*! \brief Select next group to measure
+/*! \brief Switch to next group to measure
 
-Must be called in parallel region of the application to switch group on every CPU.
+Should be called in a serial region of code. If it is to be called from inside
+a parallel region, ensure only one thread runs it by using "#pragma omp single"
+or similar. Additionally, if this function is called in a parallel region,
+ensure that the serial regions is preceeded by a barrier ("#pragma omp barrier"
+or similar) to prevent race conditions. 
 */
 extern void likwid_markerNextGroup(void) __attribute__ ((visibility ("default") ));
 /*! \brief Close LIKWID's marker API
@@ -103,16 +107,27 @@ Initializes the hashTable entry in order to reduce execution time of likwid_mark
 extern int likwid_markerRegisterRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
 /*! \brief Start a measurement region
 
-Reads the values of all configured counters and saves the results under the name given
-in regionTag.
+Reads the values of all configured counters and saves the results under the
+name given in regionTag. Must be called on every thread that is to be measured,
+e.g. if the code to be measured is run in a parallel region, this function must
+also be called in a parallel region (typically the same parallel region as the
+measured code). If this function is to be called multiple times in one parallel
+region, place a barrier ("#pragma omp barrier" or similar) before each call to
+likwid_markerStartRegion
 @param regionTag [in] Store data using this string
 @return Error code of start operation
 */
 extern int likwid_markerStartRegion(const char* regionTag) __attribute__ ((visibility ("default") ));
 /*! \brief Stop a measurement region
 
-Reads the values of all configured counters and saves the results under the name given
-in regionTag. The measurement data of the stopped region gets summed up in global region counters.
+Reads the values of all configured counters and saves the results under the
+name given in regionTag. The measurement data of the stopped region gets summed
+up in global region counters. Must be called on every thread that is to be
+measured, e.g. if the code to be measured is run in a parallel region, this
+function must also be called in a parallel region (typically the same parallel
+region as the measured code). If this function is called multiple times in one
+parallel region, place a barrier ("#pragma omp barrier" or similar) after each
+call to likwid_markerStopRegion
 @param regionTag [in] Store data using this string
 @return Error code of stop operation
 */
