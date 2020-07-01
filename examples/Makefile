@@ -28,7 +28,7 @@ C-markerAPI:
 	$(CC) -fopenmp $(LIKWID_DEFINES) $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) C-markerAPI.c -o C-markerAPI $(LIKWID_LIB) -lm
 
 C-markerAPI-run: C-markerAPI
-	$(LIKWID_BINDIR)/likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -m ./C-markerAPI
+	LD_LIBRARY_PATH=$(PREFIX)/lib $(LIKWID_BINDIR)/likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -m ./C-markerAPI
 
 C-likwidAPI:
 	$(CC) -fopenmp $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) C-likwidAPI.c -o C-likwidAPI $(LIKWID_LIB) -lm
