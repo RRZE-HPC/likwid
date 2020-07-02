@@ -562,6 +562,11 @@ proc_init_cpuFeatures(void)
             setBit(cpuid_info.featureFlags, PMULL);
             bcatcstr(bfeatures, "PMULL ");
         }
+        else if (bisstemeqblk(flaglist->entry[i], "sve", 3) == 1)
+        {
+            setBit(cpuid_info.featureFlags, SVE);
+            bcatcstr(bfeatures, "SVE ");
+        }
     }
 
     if (testBit(cpuid_info.featureFlags, SSSE3) && (!(testBit(cpuid_info.featureFlags, SSE3))))
