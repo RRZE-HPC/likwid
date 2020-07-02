@@ -26,6 +26,22 @@
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================
+ *
+ *      Usage: 
+ *      use `make C-markerAPI` to compile and `make C-markerAPI-run` to run. 
+ *
+ *      other examples of how to run with likwid-perfctr tool:
+ *      
+ *      multiple groups:
+ *      likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -g L2 -g FLOPS_SP -m ./C-markerAPI
+ *      
+ *      multiple threads:
+ *      likwid-perfctr -C 0-4 -g INSTR_RETIRED_ANY:FIXC0 -m ./C-markerAPI
+ *      
+ *      with access daemon:
+ *      likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -M 1 -m ./C-markerAPI
+ * 
+ * =======================================================================================
  */
 
 #include <stdlib.h>
@@ -44,6 +60,7 @@ int main(int argc, char* argv[])
     double events[10];
     double time;
     int count;
+
     // Init Marker API in serial region once in the beginning
     LIKWID_MARKER_INIT;
     #pragma omp parallel
@@ -51,7 +68,11 @@ int main(int argc, char* argv[])
         // Each thread must add itself to the Marker API, therefore must be
         // in parallel region
         LIKWID_MARKER_THREADINIT;
-        // Optional. Register region name
+
+        // Register region name. Optional, but highly recommended. Reduces the
+        // overhead of LIKWID_MARKER_START. Furthermore, if regions are not
+        // registered but the access daemon is used, short regions will report
+        // lower values for the first region.
         LIKWID_MARKER_REGISTER("example");
     }
 
@@ -65,12 +86,15 @@ int main(int argc, char* argv[])
             printf("Thread %d sleeps now for %d seconds\n", omp_get_thread_num(), SLEEPTIME);
             // Start measurements inside a parallel region
             LIKWID_MARKER_START("example");
+
             // Insert your code here.
             // Often contains an OpenMP for pragma. Regions can be nested.
             sleep(SLEEPTIME);
+
             // Stop measurements inside a parallel region
             LIKWID_MARKER_STOP("example");
             printf("Thread %d wakes up again\n", omp_get_thread_num());
+
             // If you need the performance data inside your application, use
             LIKWID_MARKER_GET("example", &nevents, events, &time, &count);
             // where events is an array of doubles with nevents entries,
@@ -81,9 +105,10 @@ int main(int argc, char* argv[])
             {
                 printf("Event %d: %f\n", i, events[i]);
             }
-            // If multiple groups given, you can switch to the next group
-            LIKWID_MARKER_SWITCH;
         }
+
+        // If multiple groups given, you can switch to the next group
+        LIKWID_MARKER_SWITCH;
     }
 
     // Close Marker API and write results to file for further evaluation done
