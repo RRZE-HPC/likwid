@@ -42,22 +42,23 @@ int main(int argc, char* argv[])
      * GOMP_CPU_AFFINITY, or similar
      */
 
-    // the groups to be measured. In this case, the first 3 are group names
-    // specified in `/<LIKWID_PREFIX>/share/likwid/perfgroups/<ARCHITECTURE>/`
-    // (default prefix is `/usr/local`). The final group is a custom group
-    // specified with EVENT_NAME:COUNTER_NAME
+    /* the groups to be measured. In this case, the first 3 are group names
+     * specified in `/<LIKWID_PREFIX>/share/likwid/perfgroups/<ARCHITECTURE>/`
+     * (default prefix is `/usr/local`). The final group is a custom group
+     * specified with EVENT_NAME:COUNTER_NAME
+     */
     char groups[] = "L2|L3|FLOPS_DP|INSTR_RETIRED_ANY:FIXC0";
 
-    // list of processors that we will use
+    /* list of processors that we will use */
     char cpulist[] = "0,2,3";
 
-    // not used by likwid, used to pin threads
+    /* not used by likwid, used to pin threads */
     int cpus[NUM_THREADS] =  {0,2,3};
 
-    // the location the marker file will be stored
+    /* the location the marker file will be stored */
     char filepath[] = "/tmp/likwid_marker.out";
 
-    // 1 is the code for access daemon
+    /* 1 is the code for access daemon */
     char accessmode[] = "1"; 
 
     setenv("LIKWID_EVENTS", groups, 1);
@@ -129,33 +130,51 @@ int main(int argc, char* argv[])
     /* loop iterators */
     int i, k;
 
-    /* This group will measure everything we do */
-    LIKWID_MARKER_START("Total");
-
-    /* First, we will measure a computation region. This will be run multiple
-     * times to measure each group specified above. perfmon_getNumberOfGroups
-     * makes it easy to run computation once for each group.
+    /* The code that is to be measured will be run multiple times to measure
+     * each group specified above. perfmon_getNumberOfGroups makes it easy to
+     * run computation once for each group.
      */
     for (k=0; k<perfmon_getNumberOfGroups(); k++)
     {
         /* barriers are necessary when regions are started or stopped more than
          * once in a region. In this case, put a barrier before each call to
          * LIKWID_MARKER_START and after each call to LIKWID_MARKER_STOP.
-         * Additionally, if LIKWID_MARKER_SWITCH is called in a parallel
-         * region, it must be preceeded by a barrier and only run by one
-         * thread. 
          */
         #pragma omp barrier
-        /* this group will measure just flops */
+        /* This region will measure everything we do */
+        LIKWID_MARKER_START("Total");
+
+        #pragma omp barrier
+        /* this region will measure flop-heavy computation */
         LIKWID_MARKER_START("calc_flops");
 
         /* key region of code to measure */
         c = do_flops(a, b, c, NUM_FLOPS);
 
+        /* done measuring flop-heavy code */
         LIKWID_MARKER_STOP("calc_flops");
+
         #pragma omp barrier
 
-        /* LIKWID_MARKER_SWITCH should only be run by a single thread */
+        /* this region will measure memory-heavy code */
+        LIKWID_MARKER_START("copy");
+
+        /* do memory ops */
+        do_copy(arr, copy_arr, ARRAY_SIZE, NUM_COPIES);
+
+        /* done measuring memory-heavy code */
+        LIKWID_MARKER_STOP("copy");
+        #pragma omp barrier
+
+        /* stop region that measures everything */
+        LIKWID_MARKER_STOP("Total");
+        #pragma omp barrier
+
+        /* LIKWID_MARKER_SWITCH should only be run by a single thread. If it is
+         * called in a parallel region, it must be preceeded by a barrier and
+         * run in something like a "#pragma omp single" block to ensure only
+         * one thread runs it
+         */
         #pragma omp single
         {
             LIKWID_MARKER_SWITCH;
@@ -168,7 +187,6 @@ int main(int argc, char* argv[])
      * everything at the end.
      */
     LIKWID_MARKER_GET("calc_flops", &nr_events, events, &time, &count);
-
     printf("calc_flops Thread %d got %d events, runtime %f s, call count %d\n", 
         omp_get_thread_num(), nr_events, time, count);
 
@@ -176,28 +194,6 @@ int main(int argc, char* argv[])
      * of "events"
      */
     nr_events = MAX_NUM_EVENTS;
-
-    /* Again, we will run a loop in which measure something; in this case a
-     * copy operation. The same things discussed in the first loop apply here.
-     */
-    for (k=0; k<perfmon_getNumberOfGroups(); k++)
-    {
-        #pragma omp barrier
-        LIKWID_MARKER_START("copy");
-
-        do_copy(arr, copy_arr, ARRAY_SIZE, NUM_COPIES);
-
-        LIKWID_MARKER_STOP("copy");
-        #pragma omp barrier
-
-        #pragma omp single
-        {
-            LIKWID_MARKER_SWITCH;
-        }
-    }
-
-    /* stopping the outer region that contains everything */
-    LIKWID_MARKER_STOP("Total");
 
     /* basic info on "copy" region */
     LIKWID_MARKER_GET("copy", &nr_events, events, &time, &count);
@@ -209,9 +205,11 @@ int main(int argc, char* argv[])
     LIKWID_MARKER_GET("Total", &nr_events, events, &time, &count);
     printf("Total Thread %d got %d events, runtime %f s, call count %d\n", 
         omp_get_thread_num(), nr_events, time, count);
-}
+
+} /* end of parallel region */
 
     printf("\n");
+
     printf("final result of flops operations: %f\n", c);
     printf("entry %d of copy_arr: %f\n", ((unsigned)c) % ARRAY_SIZE,
         copy_arr[((unsigned)c) % ARRAY_SIZE]);
@@ -251,12 +249,21 @@ int main(int argc, char* argv[])
 
     for (t = 0; t < NUM_THREADS; t++) 
     {
+        /* perfmon_getNumberOfRegions actually returns num_regions *
+         * num_groups. This is because this function considers every
+         * combination of region and group its own region.
+         */
         for (i = 0; i < perfmon_getNumberOfRegions(); i++) 
         {
             regionName = perfmon_getTagOfRegion(i);
+
+            /* gid is the group ID independent of region, where as i is the ID
+             * of the region/group combo
+             */
             gid = perfmon_getGroupOfRegion(i);
             groupName = perfmon_getGroupName(gid);
 
+            /* TODO: would getNumberOfEvents also work? */
             for (k = 0; k < perfmon_getEventsOfRegion(i); k++) 
             {
                 event_name = perfmon_getEventName(gid, k);
