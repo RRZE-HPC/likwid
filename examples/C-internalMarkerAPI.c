@@ -2,151 +2,278 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdint.h>
-#include <omp.h>
 
+#include <omp.h>
 #include <likwid.h>
 
+#define NUM_FLOPS 100000000
+#define NUM_COPIES 100000
+#define NUM_THREADS 3
+#define MAX_NUM_EVENTS 20
+#define ARRAY_SIZE 2048
 
-void dummy()
-{
-    ;;
+typedef unsigned long long ull;
+
+void do_copy(double *arr, double *copy_arr, size_t n, ull num_copies) {
+  for (ull iter = 0; iter < num_copies; iter++) {
+    for (size_t i = 0; i < n; i++) {
+      copy_arr[i] = arr[i];
+    }
+  }
+}
+
+double do_flops(double a, double b, double c, ull num_flops) {
+  for (ull i = 0; i < num_flops; i++) {
+    c = a * b + c;
+  }
+  return c;
 }
 
 int main(int argc, char* argv[])
 {
-    int i, k;
-    char group[] = "L3";
-    int gid = 0;
-    char cpulist[] = "0,1,2";
-    int cpus[3] =  {0,1,2};
-    char filepath[] = "/tmp/test-marker.out";
-    char accessmode[] = "1";
-    double *A, *B;
-    size_t asize = 1024*1024;
-    
+    /* ====== Begin setting environment variables ====== 
+     * These may all be set at runtime (and typically are set at runtime) with
+     * a command like:
+     * 
+     * LIKWID_EVENTS="L2|L3" LIKWID_THREADS="0,2,3" LIKWID_FILEPATH="/tmp/likwid_marker.out" LIKWID_ACCESSMODE="1" LIKWID_FORCE="1" ./C-internalMarkerAPI
+     * 
+     * they are included here for completeness. If you specify environment
+     * variables at runtime, be sure to pin threads with likwid-pin,
+     * GOMP_CPU_AFFINITY, or similar
+     */
 
-    setenv("LIKWID_EVENTS", group, 1);
+    // the groups to be measured. In this case, the first 3 are group names
+    // specified in `/<LIKWID_PREFIX>/share/likwid/perfgroups/<ARCHITECTURE>/`
+    // (default prefix is `/usr/local`). The final group is a custom group
+    // specified with EVENT_NAME:COUNTER_NAME
+    char groups[] = "L2|L3|FLOPS_DP|INSTR_RETIRED_ANY:FIXC0";
+
+    // list of processors that we will use
+    char cpulist[] = "0,2,3";
+
+    // not used by likwid, used to pin threads
+    int cpus[NUM_THREADS] =  {0,2,3};
+
+    // the location the marker file will be stored
+    char filepath[] = "/tmp/likwid_marker.out";
+
+    // 1 is the code for access daemon
+    char accessmode[] = "1"; 
+
+    setenv("LIKWID_EVENTS", groups, 1);
     setenv("LIKWID_THREADS", cpulist, 1);
     setenv("LIKWID_FILEPATH", filepath, 1);
     setenv("LIKWID_MODE", accessmode, 1);
+
     /* If the NMI watchdog is enabled or the application does not call
      * perfmon_finalize(), e.g. because of some error, LIKWID will fail with
      * a message "Counter in use". By settings LIKWID_FORCE you can overwrite
      * the registers.
      */
-    //setenv("LIKWID_FORCE", "1", 1);
-    
-    A = malloc(asize * sizeof(double));
-    if (A==NULL)
-        return 1;
-    B = malloc(asize * sizeof(double));
-    if (B==NULL)
-    {
-        free(A);
-        return 1;
-    }
-    for (i=0; i<asize;i++)
-        B[i] = ((double)i)+1.5;
+    setenv("LIKWID_FORCE", "1", 1);
 
-    /* This is only for showcase. If your application pins them already, you
-     * don't need this
+    /* If the user desires more information about what's going on under the
+     * hood, set this to get debug information. Values from 0-3 are valid, with
+     * 0 being the default (none) and each level from 1-3 being an increased
+     * level of verbosity
+     * TODO: verify
      */
-#pragma omp parallel
-{
-    likwid_pinThread(cpus[omp_get_thread_num()]);
-}
+    // setenv("LIKWID_DEBUG", "3", 1);
+
+    /* ====== End setting environment variables ====== */
 
     /* Calls perfmon_init() and perfmon_addEventSet */
     LIKWID_MARKER_INIT;
-    /* Setup and start manually. We use group ID 0, we can switch later */
-    perfmon_setupCounters(0);
-    perfmon_startCounters();
-
-    printf("Getting results during the measurements with LIKWID_MARKER_GET\n");
-#pragma omp parallel private(k,i)
+    
+    /* Virtual threads must be pinned to a physical thread. This is
+     * demonstrated below. Alternatively, threads may be pinned at runtime
+     * using likwid-pin or similar. If GNU openmp is used, threads may be
+     * pinned by setting the GOMP_CPU_AFFINITY environment variable to the same
+     * value as LIKWID_THREADS. Be aware that in the case of openMP, threads
+     * will be sequentially numbered from 0 even if that does not correspond
+     * the physical thread number.
+     * TODO: verify
+     */
+     omp_set_num_threads(NUM_THREADS);
+#pragma omp parallel
 {
-    int nr_events = 20;
-    double time = 0;
-    int count = 0;
-    double *events = malloc(nr_events * sizeof(double));
-    memset(events, 0, nr_events * sizeof(double));
-    LIKWID_MARKER_START("Total");
-    for (k=0; k<10; k++)
-    {
-        
-        LIKWID_MARKER_START("Calc1");
-#pragma omp for
-        for (i=0; i< asize; i++)
-            A[i] = B[i];
-        if (A[i] < 0) dummy();
-        LIKWID_MARKER_STOP("Calc1");
-    }
-    LIKWID_MARKER_GET("Calc1", &nr_events, events, &time, &count);
-    printf("Calc1 Thread %d got %d events, runtime %f s, call count %d\n", omp_get_thread_num(), nr_events, time, count);
-    nr_events = 20;
-    memset(events, 0, nr_events * sizeof(double));
-    for (k=0; k<10; k++)
-    {
-        LIKWID_MARKER_START("Calc2");
-#pragma omp for
-        for (i=0; i< asize; i++)
-            A[i] = A[i] + B[i];
-        if (A[i] < 0) dummy();
-        LIKWID_MARKER_STOP("Calc2");
-    }
-    LIKWID_MARKER_STOP("Total");
-    LIKWID_MARKER_GET("Calc2", &nr_events, events, &time, &count);
-    printf("Calc2 Thread %d got %d events, runtime %f s, call count %d\n", omp_get_thread_num(), nr_events, time, count);
-    nr_events = 20;
-    memset(events, 0, nr_events * sizeof(double));
-    LIKWID_MARKER_GET("Total", &nr_events, events, &time, &count);
-    printf("Total Thread %d got %d events, runtime %f s, call count %d\n", omp_get_thread_num(), nr_events, time, count);
-    free(events);
+    likwid_pinThread(cpus[omp_get_thread_num()]);
+
+    /* each thread must be initialized with LIKWID_MARKER_THREADINIT */
+    LIKWID_MARKER_THREADINIT;
+
+    /* registering regions is optional but strongly recommended, as it reduces
+     * overhead of LIKWID_MARKER_START and prevents wrong counts
+     */
+    LIKWID_MARKER_REGISTER("Total");
+    LIKWID_MARKER_REGISTER("calc_flops");
+    LIKWID_MARKER_REGISTER("copy");
 }
 
+    /* variables needed for flops/copy computations */
+    double a, b, c;
+    a = 1.8;
+    b = 3.2;
+    c = 1.0;
+    double arr[ARRAY_SIZE];
+    double copy_arr[ARRAY_SIZE];
 
+#pragma omp parallel
+{
+    /* variables needed for LIKWID_MARKER_GET */
+    int nr_events = MAX_NUM_EVENTS;
+    double events[MAX_NUM_EVENTS];
+    double time = 0;
+    int count = 0;
+    
+    /* loop iterators */
+    int i, k;
 
-    perfmon_stopCounters();
+    /* This group will measure everything we do */
+    LIKWID_MARKER_START("Total");
+
+    /* First, we will measure a computation region. This will be run multiple
+     * times to measure each group specified above. perfmon_getNumberOfGroups
+     * makes it easy to run computation once for each group.
+     */
+    for (k=0; k<perfmon_getNumberOfGroups(); k++)
+    {
+        /* barriers are necessary when regions are started or stopped more than
+         * once in a region. In this case, put a barrier before each call to
+         * LIKWID_MARKER_START and after each call to LIKWID_MARKER_STOP.
+         * Additionally, if LIKWID_MARKER_SWITCH is called in a parallel
+         * region, it must be preceeded by a barrier and only run by one
+         * thread. 
+         */
+        #pragma omp barrier
+        /* this group will measure just flops */
+        LIKWID_MARKER_START("calc_flops");
+
+        /* key region of code to measure */
+        c = do_flops(a, b, c, NUM_FLOPS);
+
+        LIKWID_MARKER_STOP("calc_flops");
+        #pragma omp barrier
+
+        /* LIKWID_MARKER_SWITCH should only be run by a single thread */
+        #pragma omp single
+        {
+            LIKWID_MARKER_SWITCH;
+        }
+    }
+
+    /* LIKWID_MARKER_GET can give us some information about what happened in
+     * that region. The values of each event are stored in `events` and may be
+     * inspected here if desired. We choose not to, as we will inspect
+     * everything at the end.
+     */
+    LIKWID_MARKER_GET("calc_flops", &nr_events, events, &time, &count);
+
+    printf("calc_flops Thread %d got %d events, runtime %f s, call count %d\n", 
+        omp_get_thread_num(), nr_events, time, count);
+
+    /* "nr_events" must be reset because LIKWID_MARKER_GET uses it as the size
+     * of "events"
+     */
+    nr_events = MAX_NUM_EVENTS;
+
+    /* Again, we will run a loop in which measure something; in this case a
+     * copy operation. The same things discussed in the first loop apply here.
+     */
+    for (k=0; k<perfmon_getNumberOfGroups(); k++)
+    {
+        #pragma omp barrier
+        LIKWID_MARKER_START("copy");
+
+        do_copy(arr, copy_arr, ARRAY_SIZE, NUM_COPIES);
+
+        LIKWID_MARKER_STOP("copy");
+        #pragma omp barrier
+
+        #pragma omp single
+        {
+            LIKWID_MARKER_SWITCH;
+        }
+    }
+
+    /* stopping the outer region that contains everything */
+    LIKWID_MARKER_STOP("Total");
+
+    /* basic info on "copy" region */
+    LIKWID_MARKER_GET("copy", &nr_events, events, &time, &count);
+    printf("copy Thread %d got %d events, runtime %f s, call count %d\n", 
+        omp_get_thread_num(), nr_events, time, count);
+    nr_events = MAX_NUM_EVENTS;
+
+    /* basic info on "Total" region */
+    LIKWID_MARKER_GET("Total", &nr_events, events, &time, &count);
+    printf("Total Thread %d got %d events, runtime %f s, call count %d\n", 
+        omp_get_thread_num(), nr_events, time, count);
+}
+
+    printf("\n");
+    printf("final result of flops operations: %f\n", c);
+    printf("entry %d of copy_arr: %f\n", ((unsigned)c) % ARRAY_SIZE,
+        copy_arr[((unsigned)c) % ARRAY_SIZE]);
+    printf("\n");
+
+    /* stops performance monitoring and writes to the file specified in the
+     * LIKWID_FILEPATH environment variable. We will read this using likwid to
+     * view results. 
+     */
     LIKWID_MARKER_CLOSE;
 
-    
+    const char *regionName, *groupName, *event_name, *metric_name;
+    double event_value, metric_value;
+    int gid = 0;
+    int t, i, k;
 
-    perfmon_readMarkerFile(filepath);
-    printf("\nMarker API measured %d regions\n", perfmon_getNumberOfRegions());
+    /* read file output by likwid so that we can process results */
+    perfmon_readMarkerFile(getenv("LIKWID_FILEPATH"));
+
+    printf("Marker API measured %d regions\n", perfmon_getNumberOfRegions());
     for (i=0;i<perfmon_getNumberOfRegions();i++)
     {
         gid = perfmon_getGroupOfRegion(i);
-        printf("Region %s with %d events and %d metrics\n",perfmon_getTagOfRegion(i),
-                                                           perfmon_getEventsOfRegion(i),
-                                                           perfmon_getMetricsOfRegion(i));
+        printf("Region %s with %d events and %d metrics\n",
+            perfmon_getTagOfRegion(i), perfmon_getEventsOfRegion(i), 
+            perfmon_getMetricsOfRegion(i));
     }
-    printf("\nExample metrics output for thread 0\n");
-    
-    
-    for (i=0;i<perfmon_getNumberOfRegions();i++)
-    {
-        printf("Region %s\n", perfmon_getTagOfRegion(i));
-        for (k=0;k<perfmon_getEventsOfRegion(i);k++)
-            printf("Event %s:%s: %f\n", perfmon_getEventName(gid, k),
-                                        perfmon_getCounterName(gid, k),
-                                        perfmon_getResultOfRegionThread(i, k, 0));
-        for (k=0;k<perfmon_getNumberOfMetrics(gid);k++)
-            printf("Metric %s: %f\n", perfmon_getMetricName(gid, k),
-                                      perfmon_getMetricOfRegionThread(i, k, 0));
-        printf("\n");
-    }
-    remove(filepath);
-    
-    /* Reinitialize access to HPM registers, LIKWID_MARKER_CLOSE closed the connection */
-    HPMinit();
-    for (i=0;i<3; i++)
-        HPMaddThread(cpus[i]);
-    /* Finalize perfmon sets all used counters to zero and deletes marker results, so no
-       perfmon_destroyMarkerResults() required */
-    perfmon_finalize();
-    HPMfinalize();
-    free(A);
-    free(B);
-    return 0;
+    printf("\n");
 
+    /* Print per-thread results. */
+    printf("detailed results for each thread follow:\n");
+
+    const char * result_header = "%6s : %15s : %10s : %6s : %40s : %30s \n";
+    const char * result_format = "%6d : %15s : %10s : %6s : %40s : %30f \n";
+    printf(result_header, "thread", "region", "group", "type", 
+        "result name", "result value");
+
+    for (t = 0; t < NUM_THREADS; t++) 
+    {
+        for (i = 0; i < perfmon_getNumberOfRegions(); i++) 
+        {
+            regionName = perfmon_getTagOfRegion(i);
+            gid = perfmon_getGroupOfRegion(i);
+            groupName = perfmon_getGroupName(gid);
+
+            for (k = 0; k < perfmon_getEventsOfRegion(i); k++) 
+            {
+                event_name = perfmon_getEventName(gid, k);
+                event_value = perfmon_getResultOfRegionThread(i, k, t);
+                printf(result_format, t, regionName, groupName, "event", 
+                    event_name, event_value);
+            }
+
+            for (k = 0; k < perfmon_getNumberOfMetrics(gid); k++) 
+            {
+                metric_name = perfmon_getMetricName(gid, k);
+                metric_value = perfmon_getMetricOfRegionThread(i, k, t);
+                printf(result_format, t, regionName, groupName, "metric", 
+                    metric_name, metric_value);
+            }
+        }
+    }
+
+    return 0;
 }
