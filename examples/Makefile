@@ -40,7 +40,7 @@ C-internalMarkerAPI:
 	$(CC) -g -fopenmp $(LIKWID_DEFINES) $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) C-internalMarkerAPI.c -o C-internalMarkerAPI $(LIKWID_LIB) -lm
 
 C-internalMarkerAPI-run: C-internalMarkerAPI
-	OMP_NUM_THREADS=3 ./C-internalMarkerAPI
+	LD_LIBRARY_PATH=$(PREFIX)/lib ./C-internalMarkerAPI
 
 monitoring:
 	$(CC) $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) monitoring.c -o monitoring $(LIKWID_LIB) -lm
