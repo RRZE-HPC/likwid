@@ -133,7 +133,9 @@ int main(int argc, char* argv[])
             }
         }
 
-        // If multiple groups given, you can switch to the next group
+        // If multiple groups are given, you can switch to the next group. This
+        // function has no effect if one group is specified. Notice that this
+        // is called outside the parallel region: this is required.
         LIKWID_MARKER_SWITCH;
     }
 
