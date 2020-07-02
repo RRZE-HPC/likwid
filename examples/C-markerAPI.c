@@ -29,6 +29,21 @@
  *
  *      Usage: 
  *      use `make C-markerAPI` to compile and `make C-markerAPI-run` to run. 
+ * 
+ *      typically, the command to compile is something like this:
+ *      gcc -fopenmp -DLIKWID_PERFMON C-markerAPI.c -o C-markerAPI -llikwid
+ *
+ *      or, if likwid is installed in a non-standard prefix:
+ *      gcc -fopenmp -I/<PATH_TO_LIKWID>/include -L/<PATH_TO_LIKWID>/lib -DLIKWID_PERFMON C-markerAPI.c -o C-markerAPI -llikwid
+ * 
+ *      optionally, you may choose at compile time to not measure the code. Do
+ *      this by removing the `-DLIKWID_PERFMON` and -llikwid flags:
+ *      gcc -fopenmp C-markerAPI.c -o C-markerAPI
+ *
+ *      note that in this case, it may still be necessary to direct the
+ *      compiler to include likwid.h if likwid is not installed in a standard
+ *      prefix: 
+ *      gcc -fopenmp -I/<PATH_TO_LIKWID>/include C-markerAPI.c -o C-markerAPI
  *
  *      other examples of how to run with likwid-perfctr tool:
  *      
@@ -36,7 +51,7 @@
  *      likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -g L2 -g FLOPS_SP -m ./C-markerAPI
  *      
  *      multiple threads:
- *      likwid-perfctr -C 0-4 -g INSTR_RETIRED_ANY:FIXC0 -m ./C-markerAPI
+ *      likwid-perfctr -C 0-3 -g INSTR_RETIRED_ANY:FIXC0 -m ./C-markerAPI
  *      
  *      with access daemon:
  *      likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -M 1 -m ./C-markerAPI
@@ -51,13 +66,19 @@
 #include <omp.h>
 #include <likwid.h>
 
+#ifdef LIKWID_PERFMON
+#define MAX_NUM_EVENTS 10
+#else
+#define MAX_NUM_EVENTS 0
+#endif
+
 #define SLEEPTIME 2
 
 int main(int argc, char* argv[])
 {
     int i, g;
-    int nevents = 10;
-    double events[10];
+    int nevents = MAX_NUM_EVENTS;
+    double events[MAX_NUM_EVENTS];
     double time;
     int count;
 
@@ -76,10 +97,13 @@ int main(int argc, char* argv[])
         LIKWID_MARKER_REGISTER("example");
     }
 
-    // perfmon_getNumberOfGroups is not part of the MarkerAPI,
-    // it belongs to the normal LIKWID API. But the MarkerAPI
-    // has no function to get the number of configured groups.
-    for (g=0;g < perfmon_getNumberOfGroups(); g++)
+    // if the number of iterations is not greater than the number of groups you
+    // are measuring, groups after the final iteration will not be measured. In
+    // other words, if the loop specifies n iterations, only the first n groups
+    // will be measured. Furthermore, if the number of iterations is greater
+    // than the number of groups, some groups will be meausured multiple times
+    // in a round-robin fashion.
+    for (g=0; g<10; g++)
     {
         #pragma omp parallel
         {
@@ -99,8 +123,10 @@ int main(int argc, char* argv[])
             LIKWID_MARKER_GET("example", &nevents, events, &time, &count);
             // where events is an array of doubles with nevents entries,
             // time is a double* and count an int*.
-            printf("Region example measures %d events, total measurement time is %f\n", nevents, time);
-            printf("The region was called %d times\n", count);
+            if(nevents > 0){
+                printf("Region example measures %d events, total measurement time is %f\n", nevents, time);
+                printf("The region was called %d times\n", count);
+            }
             for (i = 0; i < nevents; i++)
             {
                 printf("Event %d: %f\n", i, events[i]);
