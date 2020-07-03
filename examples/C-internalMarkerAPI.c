@@ -14,6 +14,7 @@
 
 typedef unsigned long long ull;
 
+/* simple function designed to perform memory operations */
 void do_copy(double *arr, double *copy_arr, size_t n, ull num_copies) {
   for (ull iter = 0; iter < num_copies; iter++) {
     for (size_t i = 0; i < n; i++) {
@@ -22,6 +23,7 @@ void do_copy(double *arr, double *copy_arr, size_t n, ull num_copies) {
   }
 }
 
+/* simple function designed to do floating point computations */
 double do_flops(double a, double b, double c, ull num_flops) {
   for (ull i = 0; i < num_flops; i++) {
     c = a * b + c;
@@ -52,7 +54,8 @@ int main(int argc, char* argv[])
     /* list of processors that we will use */
     char cpulist[] = "0,2,3";
 
-    /* not used by likwid, used to pin threads */
+    /* not used by likwid, used to pin threads. Must match cpulist string above
+    */
     int cpus[NUM_THREADS] =  {0,2,3};
 
     /* the location the marker file will be stored */
@@ -77,7 +80,6 @@ int main(int argc, char* argv[])
      * hood, set this to get debug information. Values from 0-3 are valid, with
      * 0 being the default (none) and each level from 1-3 being an increased
      * level of verbosity
-     * TODO: verify
      */
     // setenv("LIKWID_DEBUG", "3", 1);
 
@@ -90,12 +92,14 @@ int main(int argc, char* argv[])
      * demonstrated below. Alternatively, threads may be pinned at runtime
      * using likwid-pin or similar. If GNU openmp is used, threads may be
      * pinned by setting the GOMP_CPU_AFFINITY environment variable to the same
-     * value as LIKWID_THREADS. Be aware that in the case of openMP, threads
-     * will be sequentially numbered from 0 even if that does not correspond
-     * the physical thread number.
-     * TODO: verify
+     * cpus specified in LIKWID_THREADS. E.g. if LIKWID_THREADS="0,1,3" then
+     * GOMP_CPU_AFFINITY should be set to "0 1 3"
+     * 
+     * Be aware that in the case of openMP,
+     * threads will be sequentially numbered from 0 even if that does not
+     * correspond the physical thread number. 
      */
-     omp_set_num_threads(NUM_THREADS);
+    omp_set_num_threads(NUM_THREADS);
 #pragma omp parallel
 {
     likwid_pinThread(cpus[omp_get_thread_num()]);
@@ -104,7 +108,8 @@ int main(int argc, char* argv[])
     LIKWID_MARKER_THREADINIT;
 
     /* registering regions is optional but strongly recommended, as it reduces
-     * overhead of LIKWID_MARKER_START and prevents wrong counts
+     * overhead of LIKWID_MARKER_START and prevents wrong counts in short
+     * regions 
      */
     LIKWID_MARKER_REGISTER("Total");
     LIKWID_MARKER_REGISTER("calc_flops");
@@ -210,6 +215,10 @@ int main(int argc, char* argv[])
 
     printf("\n");
 
+    /* these computations are meaningless, but printing them is an easy way to
+     * ensure the compiler doesn't optimize out the do_flops and do_copy
+     * functions 
+     */
     printf("final result of flops operations: %f\n", c);
     printf("entry %d of copy_arr: %f\n", ((unsigned)c) % ARRAY_SIZE,
         copy_arr[((unsigned)c) % ARRAY_SIZE]);
@@ -229,6 +238,7 @@ int main(int argc, char* argv[])
     /* read file output by likwid so that we can process results */
     perfmon_readMarkerFile(getenv("LIKWID_FILEPATH"));
 
+    /* get information like region name, number of events, number of metrics */
     printf("Marker API measured %d regions\n", perfmon_getNumberOfRegions());
     for (i=0;i<perfmon_getNumberOfRegions();i++)
     {
@@ -263,8 +273,8 @@ int main(int argc, char* argv[])
             gid = perfmon_getGroupOfRegion(i);
             groupName = perfmon_getGroupName(gid);
 
-            /* TODO: would getNumberOfEvents also work? */
-            for (k = 0; k < perfmon_getEventsOfRegion(i); k++) 
+            /* get info for each event */
+            for (k = 0; k < perfmon_getNumberOfEvents(gid); k++) 
             {
                 event_name = perfmon_getEventName(gid, k);
                 event_value = perfmon_getResultOfRegionThread(i, k, t);
@@ -272,6 +282,7 @@ int main(int argc, char* argv[])
                     event_name, event_value);
             }
 
+            /* get info for each metric */
             for (k = 0; k < perfmon_getNumberOfMetrics(gid); k++) 
             {
                 metric_name = perfmon_getMetricName(gid, k);
