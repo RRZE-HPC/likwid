@@ -120,9 +120,12 @@ int main(int argc, char* argv[])
             printf("Thread %d wakes up again\n", omp_get_thread_num());
 
             // If you need the performance data inside your application, use
+            // LIKWID_MARKER_GET. events is an array of doubles with
+            // nevents entries, time is a double* and count an int*.
             LIKWID_MARKER_GET("example", &nevents, events, &time, &count);
-            // where events is an array of doubles with nevents entries,
-            // time is a double* and count an int*.
+
+            // this check ensures that nothing will be printed if
+            // -DLIKWID_PERFMON is not included
             if(nevents > 0){
                 printf("Region example measures %d events, total measurement time is %f\n", nevents, time);
                 printf("The region was called %d times\n", count);
@@ -135,7 +138,8 @@ int main(int argc, char* argv[])
 
         // If multiple groups are given, you can switch to the next group. This
         // function has no effect if one group is specified. Notice that this
-        // is called outside the parallel region: this is required.
+        // is called outside the parallel region, as it should only be run by a
+        // single thread
         LIKWID_MARKER_SWITCH;
     }
 
