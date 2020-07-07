@@ -212,11 +212,6 @@ int main(int argc, char* argv[])
      */
     for (i=0; i<perfmon_getNumberOfGroups(); i++)
     {
-        /* Barriers are necessary when regions are started or stopped more than
-         * once in a region. In this case, put a barrier before each call to
-         * LIKWID_MARKER_START and after each call to LIKWID_MARKER_STOP.
-         */
-        #pragma omp barrier
 
         /* Starting and stopping regions should be done in a parallel block. If
          * regions are started/stopped in a serial region, only the master
@@ -226,7 +221,6 @@ int main(int argc, char* argv[])
         /* This region will measure everything we do */
         LIKWID_MARKER_START("Total");
 
-        #pragma omp barrier
         /* This region will measure flop-heavy computation */
         LIKWID_MARKER_START("calc_flops");
 
@@ -235,8 +229,6 @@ int main(int argc, char* argv[])
 
         /* Done measuring flop-heavy code */
         LIKWID_MARKER_STOP("calc_flops");
-
-        #pragma omp barrier
 
         /* LIKWID_MARKER_GET can give us some information about what happened
          * in a region. The values of each event are stored in `events` and
@@ -259,11 +251,9 @@ int main(int argc, char* argv[])
             "Got %d events, runtime %f s, and call count %d\n", 
             i, omp_get_thread_num(), group_name, nr_events, time, count);
 
-        /* Only allow one thread to print so that output is less verbose. The
-         * barrier prevents garbled output.
-         */
-        #pragma omp barrier
-        if(omp_get_thread_num() == 0)
+        #pragma omp barrier /* OPTIONAL: prevents garbled output */
+        /* Only allow one thread to print so that output is less verbose. */
+        // #pragma omp single
         {
             /* Uncomment the for loop if you'd like to inspect all threads. */
             t=0;
@@ -292,7 +282,15 @@ int main(int argc, char* argv[])
          */
         LIKWID_MARKER_RESET("calc_flops");
 
-        #pragma omp barrier
+        /* Barriers between regions are typically not required, but may
+         * sometimes be necessary when starting/stopping regions multiple times
+         * in a parallel block. If the user experiences errors like "WARN:
+         * Region <region> already started", "WARN: Stopping an
+         * unknown/not-started region <region>", or event values that are so
+         * incredibly high that they are unreasonable, try placing barriers
+         * between regions
+         */
+        // #pragma omp barrier
 
         /* This region will measure memory-heavy code */
         LIKWID_MARKER_START("copy");
@@ -302,10 +300,15 @@ int main(int argc, char* argv[])
 
         /* Done measuring memory-heavy code */
         LIKWID_MARKER_STOP("copy");
-        #pragma omp barrier
 
         /* Stop region that measures everything */
         LIKWID_MARKER_STOP("Total");
+        
+        /* The barrier after stopping all regions but before switching groups
+         * is absolutely required: without it, some threads may
+         * not have stopped the "copy" and "Total" regions before switching
+         * groups, which causes erroneous results
+         */
         #pragma omp barrier
 
         /* LIKWID_MARKER_SWITCH should only be run by a single thread. If it is
@@ -326,22 +329,24 @@ int main(int argc, char* argv[])
     /* For demonstration, we will inspect "calc_flops" region again even though
      * it has been rest.
      */
-    if(omp_get_thread_num() == 0)
+    #pragma omp single 
+    {
         printf("notice that calc_flops has no calls, since we reset it.\n");
+    }
     LIKWID_MARKER_GET("calc_flops", &nr_events, events, &time, &count);
     printf("Region calc_flops, thread %d got %d events, runtime %f s, call "
         "count %d\n", omp_get_thread_num(), nr_events, time, count);
     nr_events = MAX_NUM_EVENTS;
 
     /* Basic info on "copy" region */
-    #pragma omp barrier /* to prevent garbled output */
+    #pragma omp barrier /* OPTIONAL: to prevent garbled output */
     LIKWID_MARKER_GET("copy", &nr_events, events, &time, &count);
     printf("Region copy, thread %d got %d events, runtime %f s, call count "
         "%d\n", omp_get_thread_num(), nr_events, time, count);
     nr_events = MAX_NUM_EVENTS;
 
     /* Basic info on "Total" region */
-    #pragma omp barrier /* to prevent garbled output */
+    #pragma omp barrier /* OPTIONAL: to prevent garbled output */
     LIKWID_MARKER_GET("Total", &nr_events, events, &time, &count);
     printf("Region Total, thread %d got %d events, runtime %f s, call count "
         "%d\n", omp_get_thread_num(), nr_events, time, count);
