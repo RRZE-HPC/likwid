@@ -52,11 +52,11 @@
 #define MAX_NUM_EVENTS 20
 #define ARRAY_SIZE 2048
 
-typedef unsigned long long ull;
+typedef long long int lli;
 
 /* simple function designed to perform memory operations */
-void do_copy(double *arr, double *copy_arr, size_t n, ull num_copies) {
-  for (ull iter = 0; iter < num_copies; iter++) {
+void do_copy(double *arr, double *copy_arr, size_t n, lli num_copies) {
+  for (lli iter = 0; iter < num_copies; iter++) {
     for (size_t i = 0; i < n; i++) {
       copy_arr[i] = arr[i];
     }
@@ -64,8 +64,8 @@ void do_copy(double *arr, double *copy_arr, size_t n, ull num_copies) {
 }
 
 /* simple function designed to do floating point computations */
-double do_flops(double a, double b, double c, ull num_flops) {
-  for (ull i = 0; i < num_flops; i++) {
+double do_flops(double a, double b, double c, lli num_flops) {
+  for (lli i = 0; i < num_flops; i++) {
     c = a * b + c;
   }
   return c;
@@ -175,7 +175,11 @@ int main(int argc, char* argv[])
      */
     LIKWID_MARKER_REGISTER("Total");
     LIKWID_MARKER_REGISTER("calc_flops");
-    LIKWID_MARKER_REGISTER("copy");
+
+    /* To demonstrate that registering regions is optional, we do not register
+     * the "copy" region 
+     */
+    // LIKWID_MARKER_REGISTER("copy");
 }
 
     /* variables needed for flops/copy computations */
@@ -307,7 +311,8 @@ int main(int argc, char* argv[])
         /* LIKWID_MARKER_SWITCH should only be run by a single thread. If it is
          * called in a parallel region, it must be preceeded by a barrier and
          * run in something like a "#pragma omp single" block to ensure only
-         * one thread runs it.
+         * one thread runs it and all threads have stopped regions before
+         * switching groups.
          * 
          * Regions must be switched outside of all regions (e.g. after
          * "LIKWID_MARKER_STOP" is called for each region)
@@ -354,6 +359,12 @@ int main(int argc, char* argv[])
     printf("final result of flops operations: %f\n", c);
     printf("entry %d of copy_arr: %f\n", ((unsigned)c) % ARRAY_SIZE,
         copy_arr[((unsigned)c) % ARRAY_SIZE]);
+    printf("\n");
+
+    /* Explanation about likwid warnings */
+    printf("You will get a warning about calc-flops being \"skipped for.\n"
+        "evaluation\". This is to be expected, as we reset the region and \n"
+        "it was therefore not measured.\n");
     printf("\n");
 
     /* Stops performance monitoring and writes to the file specified in the
