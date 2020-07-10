@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
      * for all architectures supported by likwid except nvidiagpus and Xeon Phi
      * (KNC). 
      */
-    setenv("LIKWID_EVENTS", "L2|FLOPS_DP|INSTR_RETIRED_ANY:FIXC0", 1);
+    setenv("LIKWID_EVENTS", "FLOPS_DP|L2|INSTR_RETIRED_ANY:FIXC0", 1);
     // setenv("LIKWID_EVENTS", "BRANCH|INSTR_RETIRED_ANY:FIXC0", 1);
 
     /* LIKWID_THREADS must be set to the list of hardware threads that we will
@@ -192,6 +192,11 @@ int main(int argc, char* argv[])
 
 #pragma omp parallel
 {
+    /* first, we will demonstrate measuring a single region, getting results
+     * with LIKWID_MARKER_GET, and resetting the region so that these results
+     * do not affect later measurements
+    */
+    
     /* variables needed for LIKWID_MARKER_GET */
     int nr_events = MAX_NUM_EVENTS;
     double events[MAX_NUM_EVENTS];
@@ -201,7 +206,88 @@ int main(int argc, char* argv[])
     /* Variables for inspecting events */
     int gid;
     char * group_name, * event_name;
-    
+
+    /* loop iterators */
+    int i, t;
+
+    /* This region will measure flop-heavy computation. Notice that only the
+     * first group specified, FLOPS_DP, will be measured. Measuring multiple
+     * groups is demonstrated in the next parallel block.
+     */
+    LIKWID_MARKER_START("calc_flops");
+
+    /* Key region of code to measure */
+    a = do_flops(c, a, b, NUM_FLOPS*5);
+
+    /* Done measuring flop-heavy code */
+    LIKWID_MARKER_STOP("calc_flops");
+
+    /* LIKWID_MARKER_GET can give us some information about what happened
+     * in a region. The values of each event are stored in `events` and
+     * the number of events is stored in `nr_events`. We will inspect and
+     * reset events here, in the middle of computation, but regions may
+     * also be inspected after the marker API has been closed. This is
+     * demonstrated at the end of this file.
+     */
+    LIKWID_MARKER_GET("calc_flops", &nr_events, events, &time, &count);
+
+    /* Group ID will let us get group and event names */
+    gid = perfmon_getIdOfActiveGroup();
+
+    /* Get group name */
+    group_name = perfmon_getGroupName(gid);
+
+    /* Print basic info */
+    printf("calc_flops thread %d finished measuring group "
+        "%s.\n"
+        "Got %d events, runtime %f s, and call count %d\n", 
+        omp_get_thread_num(), group_name, nr_events, time, count);
+
+    #pragma omp barrier /* OPTIONAL: prevents garbled output */
+    /* Only allow one thread to print to prevent repeated output. */
+    #pragma omp single
+    {
+        /* Uncomment the for loop if you'd like to inspect all threads. */
+        t=0;
+        // for (t=0; t<NUM_THREADS; t++)
+        {
+            printf("detailed event results: \n");
+            for(i=0; i<nr_events; i++){
+                /* get event name */
+                event_name = perfmon_getEventName(gid, i);
+                /* print results */
+                printf("%40s: %30f\n", event_name, 
+                    perfmon_getResult(gid, i, t)
+                );
+            }
+        }
+        printf("\n");
+    }
+
+    /* "nr_events" must be reset if LIKWID_MARKER_GET will be used later. This
+        * is because LIKWID_MARKER_GET uses it to determine the capacity of
+        * "events".
+        */
+    // nr_events = MAX_NUM_EVENTS;
+
+
+    /* Regions may be reset during execution. This should be called on every
+     * thread that should be reset. Since we have already inspected results of
+     * the calc_flops region, we will reset it here:
+     */
+    LIKWID_MARKER_RESET("calc_flops");
+
+} /* end of parallel region */
+
+
+#pragma omp parallel
+{
+    /* Next, we'll demonstrate nested regions and measuring multiple groups
+     * using LIKWID_MARKER_SWITCH. These will not be inspected with
+     * LIKWID_MARKER_GET, but will instead use the marker file to inspect
+     * regions after this parallel block is finished.
+     */
+
     /* Loop iterators */
     int i, k, t;
 
@@ -220,68 +306,16 @@ int main(int argc, char* argv[])
 
         /* This region will measure everything we do */
         LIKWID_MARKER_START("Total");
-
+            
         /* This region will measure flop-heavy computation */
         LIKWID_MARKER_START("calc_flops");
 
-        /* Key region of code to measure */
+        /* Do flops */
         c = do_flops(a, b, c, NUM_FLOPS);
 
         /* Done measuring flop-heavy code */
         LIKWID_MARKER_STOP("calc_flops");
-
-        /* LIKWID_MARKER_GET can give us some information about what happened
-         * in a region. The values of each event are stored in `events` and
-         * the number of events is stored in `nr_events`. We will inspect and
-         * reset events here, in the middle of computation, but regions may
-         * also be inspected after the marker API has been closed. This is
-         * demonstrated at the end of this file.
-         */
-        LIKWID_MARKER_GET("calc_flops", &nr_events, events, &time, &count);
-
-        /* Group ID will let us get group and event names */
-        gid = perfmon_getIdOfActiveGroup();
-
-        /* Get group name */
-        group_name = perfmon_getGroupName(gid);
-
-        /* Print basic info */
-        printf("calc_flops iteration %d, thread %d finished measuring group "
-            "%s.\n"
-            "Got %d events, runtime %f s, and call count %d\n", 
-            i, omp_get_thread_num(), group_name, nr_events, time, count);
-
-        #pragma omp barrier /* OPTIONAL: prevents garbled output */
-        /* Only allow one thread to print so that output is less verbose. */
-        // #pragma omp single
-        {
-            /* Uncomment the for loop if you'd like to inspect all threads. */
-            t=0;
-            // for (t=0; t<NUM_THREADS; t++)
-            {
-                printf("detailed event results: \n");
-                for(k=0; k<nr_events; k++){
-                    /* get event name */
-                    event_name = perfmon_getEventName(gid, k);
-                    /* print results */
-                    printf("%40s: %30f\n", event_name, 
-                        perfmon_getResult(gid, k, t)
-                    );
-                }
-            }
-            printf("\n");
-        }
-
-        /* "nr_events" must be reset because LIKWID_MARKER_GET uses it to
-         * determine the capacity of "events".
-         */
-        nr_events = MAX_NUM_EVENTS;
-
-        /* Regions may be reset during execution. Since we have already
-         * inspected results of the calc_flops region, we will reset it here:
-         */
-        LIKWID_MARKER_RESET("calc_flops");
-
+        
         /* Barriers between regions are typically not required, but may
          * sometimes be necessary when starting/stopping regions multiple times
          * in a parallel block. If the user experiences errors like "WARN:
@@ -324,32 +358,7 @@ int main(int argc, char* argv[])
         {
             LIKWID_MARKER_SWITCH;
         }
-    }
-
-    /* For demonstration, we will inspect "calc_flops" region again even though
-     * it has been rest.
-     */
-    #pragma omp single 
-    {
-        printf("notice that calc_flops has no calls, since we reset it.\n");
-    }
-    LIKWID_MARKER_GET("calc_flops", &nr_events, events, &time, &count);
-    printf("Region calc_flops, thread %d got %d events, runtime %f s, call "
-        "count %d\n", omp_get_thread_num(), nr_events, time, count);
-    nr_events = MAX_NUM_EVENTS;
-
-    /* Basic info on "copy" region */
-    #pragma omp barrier /* OPTIONAL: to prevent garbled output */
-    LIKWID_MARKER_GET("copy", &nr_events, events, &time, &count);
-    printf("Region copy, thread %d got %d events, runtime %f s, call count "
-        "%d\n", omp_get_thread_num(), nr_events, time, count);
-    nr_events = MAX_NUM_EVENTS;
-
-    /* Basic info on "Total" region */
-    #pragma omp barrier /* OPTIONAL: to prevent garbled output */
-    LIKWID_MARKER_GET("Total", &nr_events, events, &time, &count);
-    printf("Region Total, thread %d got %d events, runtime %f s, call count "
-        "%d\n", omp_get_thread_num(), nr_events, time, count);
+    } /* end of for loop */
 
 } /* End of parallel region */
 
@@ -357,19 +366,14 @@ int main(int argc, char* argv[])
 
     /* These computations are meaningless, but printing them is an easy way to
      * ensure the compiler doesn't optimize out the do_flops and do_copy
-     * functions. Alternatively, those functions may be placed in another file.
-     * Another solution is to declare "c" and "copy_arr" as volatile, though
-     * that may negatively impact performance and is therefore not recommended.
+     * functions. There are some other options to prevent optimization: First,
+     * those functions may be placed in another file. Second, the user may
+     * declare "c" and "copy_arr" as volatile, though that may negatively
+     * impact performance and is therefore not recommended.
      */
     printf("final result of flops operations: %f\n", c);
     printf("entry %d of copy_arr: %f\n", ((unsigned)c) % ARRAY_SIZE,
         copy_arr[((unsigned)c) % ARRAY_SIZE]);
-    printf("\n");
-
-    /* Explanation about likwid warnings */
-    printf("You will get a warning about calc-flops being \"skipped for.\n"
-        "evaluation\". This is to be expected, as we reset the region and \n"
-        "it was therefore not measured.\n");
     printf("\n");
 
     /* Stops performance monitoring and writes to the file specified in the
