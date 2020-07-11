@@ -1227,6 +1227,13 @@ perfmon_init_maps(void)
                     switch ( cpuid_info.part )
                     {
                         case ARM_CORTEX_A57:
+                            eventHash = a57_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsA57;
+                            counter_map = a57_counter_map;
+                            box_map = a57_box_map;
+                            perfmon_numCounters = perfmon_numCountersA57;
+                            translate_types = a57_translate_types;
+                            break;
                         case ARM_CORTEX_A72:
                         case ARM_CORTEX_A73:
                             eventHash = a57_arch_events;
@@ -1234,7 +1241,7 @@ perfmon_init_maps(void)
                             counter_map = a57_counter_map;
                             box_map = a57_box_map;
                             perfmon_numCounters = perfmon_numCountersA57;
-                            translate_types = a57_translate_types;
+			    translate_types = a72_translate_types;
                             break;
                         case ARM_CORTEX_A35:
                         case ARM_CORTEX_A53:

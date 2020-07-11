@@ -115,6 +115,8 @@ static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
 static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
 static char* arm_cortex_a57 = "ARM Cortex A57 (ARMv8)";
 static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
+static char* arm_cortex_a72 = "ARM Cortex A72 (ARMv8)";
+static char* arm_cortex_a73 = "ARM Cortex A73 (ARMv8)";
 static char* power7_str = "POWER7 architecture";
 static char* power8_str = "POWER8 architecture";
 static char* power9_str = "POWER9 architecture";
@@ -981,6 +983,14 @@ topology_setName(void)
                             break;
                         case ARM_CORTEX_A53:
                             cpuid_info.name = arm_cortex_a53;
+                            cpuid_info.short_name = short_arm8;
+                            break;
+                        case ARM_CORTEX_A72:
+                            cpuid_info.name = arm_cortex_a72;
+                            cpuid_info.short_name = short_arm8;
+                            break;
+                        case ARM_CORTEX_A73:
+                            cpuid_info.name = arm_cortex_a73;
                             cpuid_info.short_name = short_arm8;
                             break;
                         default:
