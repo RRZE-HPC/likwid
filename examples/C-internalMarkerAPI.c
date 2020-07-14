@@ -83,6 +83,15 @@ int main(int argc, char* argv[])
      * specify environment variables at runtime, be sure to pin threads with 
      * likwid-pin, GOMP_CPU_AFFINITY, or similar.
      */
+    
+    if(getenv("LIKWID_PIN"))
+    {
+        fprintf(stderr, "ERROR: it appears you are running this example with "
+            "likwid-perfctr. This example\n"
+            "is intended to be run alone. Results will be incorrect "
+            "or missing.\n");
+        exit(1);
+    }
 
     /* The first envrionment variable is "LIKWID_EVENTS", which indicates the
      * groups to be measured. In this case, the first 3 are group names
