@@ -8,7 +8,8 @@
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
- *      Author:  Thomas Gruber (tr), thomas.roehl@googlemail.com
+ *      Authors:  Thomas Gruber (tr), thomas.roehl@googlemail.com
+ *                Riley Weber, rileyw13@protonmail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
