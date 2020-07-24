@@ -335,7 +335,8 @@ static struct bstrList* parse_asm(TestCase* testcase, struct bstrList* input)
         struct bstrList* pre = bstrListCreate();
         struct bstrList* loop = bstrListCreate();
         int got_loop = 0;
-        bstring bLOOP = bformat("LOOP");
+        bstring bloopname = bformat("%s_loop", testcase->name);
+	bstring bLOOP = bfromcstr("LOOP");
         int step = testcase->stride;
 
         for (int i = 0; i < input->qty; i++)
@@ -354,7 +355,6 @@ static struct bstrList* parse_asm(TestCase* testcase, struct bstrList* input)
                 bstrListAdd(loop, input->entry[i]);
             }
         }
-        bdestroy(bLOOP);
 
         output = bstrListCreate();
 
@@ -364,17 +364,19 @@ static struct bstrList* parse_asm(TestCase* testcase, struct bstrList* input)
         {
             bstrListAdd(output, pre->entry[i]);
         }
-        loopheader(output, "1", step);
+        loopheader(output, bdata(bloopname), step);
         for (int i = 0; i < loop->qty; i++)
         {
             bstrListAdd(output, loop->entry[i]);
         }
-        loopfooter(output, "1", step);
+        loopfooter(output, bdata(bloopname), step);
 
         footer(output, testcase->name);
 
         bstrListDestroy(pre);
         bstrListDestroy(loop);
+        bdestroy(bLOOP);
+        bdestroy(bloopname);
     }
     return output;
 }

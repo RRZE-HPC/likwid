@@ -35,11 +35,26 @@
 #define ARCHNAME "armv8"
 #define WORDLENGTH 4
 
+static int is_sve(char* string)
+{
+    int sve = 0;
+    bstring bstr = bfromcstr(string);
+    bstring bsve = bfromcstr("sve");
+    if (binstrcaseless(bstr, 0, bsve) != BSTR_ERR)
+    {
+        sve = 1;
+    }
+    bdestroy(bstr);
+    bdestroy(bsve);
+    return sve;
+}
+
 int header(struct bstrList* code, char* funcname)
 {
     bstring glline;
     bstring typeline;
     bstring label;
+    int sve = is_sve(funcname);
     if (funcname)
     {
         glline = bformat(".global %s", funcname);
@@ -53,9 +68,17 @@ int header(struct bstrList* code, char* funcname)
         label = bformat("kernelfunction :");
     }
 
+    if (sve)
+    {
+        bstrListAddChar(code, ".arch    armv8.2-a+crc+sve");
+    }
+    else
+    {
+        bstrListAddChar(code, ".arch    armv8.2-a+crc");
+    }
 
-    bstrListAddChar(code, ".cpu    generic+fp+simd");
     bstrListAddChar(code, ".data");
+
     bstrListAddChar(code, ".text");
     bstrListAdd(code, glline);
     bstrListAdd(code, typeline);
@@ -66,6 +89,7 @@ int header(struct bstrList* code, char* funcname)
     bdestroy(glline);
     bdestroy(typeline);
     bdestroy(label);
+
     return 0;
 }
 
@@ -108,6 +132,19 @@ int loopheader(struct bstrList* code, char* loopname, int step)
     }
 
     bstrListAddChar(code, "mov   GPR6, 0");
+    if (is_sve(loopname))
+    {
+        bstring ptrue = bformat("ptrue p1.d, vl%d", step);
+        bstrListAdd(code, ptrue);
+        bdestroy(ptrue);
+        bstrListAddChar(code, "whilelo  p0.d, GPR6, ARG1");
+        for (int i = 0; i < 6; i++)
+        {
+            bstring pcopy = bformat("mov     p%d.b, p1.b", i+2);
+            bstrListAdd(code, pcopy);
+            bdestroy(pcopy);
+        }
+    }
     bstrListAdd(code, line);
     bstrListAddChar(code, "\n");
 
@@ -118,18 +155,29 @@ int loopheader(struct bstrList* code, char* loopname, int step)
 int loopfooter(struct bstrList* code, char* loopname, int step)
 {
     bstring line;
+
+    bstring bsve = bfromcstr("sve");
+    bstring bloop = bfromcstr(loopname);
+    int sve = is_sve(loopname);
     if (loopname)
     {
-        line = bformat("tblt %s", loopname);
+        line = bformat("%s %s", (sve ? "bne" : "blt"), loopname);
     }
     else
     {
-        line = bformat("tblt kernelfunctionloop");
+        line = bformat("%s kernelfunctionloop", (sve ? "bne" : "blt"));
     }
     bstring bstep = bformat("add GPR6, GPR6, #%d", step);
     bstrListAdd(code, bstep);
     bdestroy(bstep);
-    bstrListAddChar(code, "cmp   GPR6, ARG1");
+    if (sve)
+    {
+        bstrListAddChar(code, "whilelo  p0.d, GPR6, ARG1");
+    }
+    else
+    {
+        bstrListAddChar(code, "cmp   GPR6, ARG1");
+    }
     bstrListAdd(code, line);
 
     bstrListAddChar(code, "\n");
