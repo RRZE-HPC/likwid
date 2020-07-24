@@ -570,8 +570,9 @@ int perfmon_setupCountersThread_perfevent(
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         int has_lock = 0;
+        int pmc_lock = 0;
         is_uncore = 0;
-	ret = 1;
+        ret = 1;
         RegisterIndex index = eventSet->events[i].index;
         if (cpu_event_fds[cpu_id][index] != -1)
         {
@@ -596,8 +597,28 @@ int perfmon_setupCountersThread_perfevent(
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_FIXED);
                 break;
             case PMC:
-                ret = perf_pmc_setup(&attr, index, event);
-                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
+                pmc_lock = 1;
+#if defined(__ARM_ARCH_8A)
+                if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == A64FX_FX1000)
+                {
+                    if (event->eventId == 0x3E8 ||
+                        event->eventId == 0x3E0 ||
+                        event->eventId == 0x308 ||
+                        event->eventId == 0x309 ||
+                        (event->eventId >= 0x314 &&  event->eventId <= 0x31E))
+                    {
+                        if (numa_lock[affinity_thread2numa_lookup[cpu_id]] != cpu_id)
+                        {
+                            pmc_lock = 0;
+                        }
+                    }
+                }
+#endif
+                if (pmc_lock)
+                {
+                    ret = perf_pmc_setup(&attr, index, event);
+                    VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
+                }
                 break;
             case POWER:
                 if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
