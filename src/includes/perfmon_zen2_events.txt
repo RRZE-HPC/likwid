@@ -99,8 +99,10 @@ UMASK_ST_TO_LD_FWD                     0x00
 EVENT_ST_COMMIT_CANCELS                0x37 PMC
 UMASK_ST_COMMIT_CANCELS                0x01
 
-#EVENT_DATA_CACHE_ACCESSES              0x40 PMC
-#UMASK_DATA_CACHE_ACCESSES              0x00
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_DATA_CACHE_ACCESSES              0x40 PMC
+UMASK_DATA_CACHE_ACCESSES              0x00
 
 EVENT_LS_MAB_ALLOC                  0x41 PMC
 UMASK_LS_MAB_ALLOC_LOADS            0x01
@@ -129,11 +131,13 @@ UMASK_L1_DTLB_MISS_2M_L2_MISS          0x40
 UMASK_L1_DTLB_MISS_1G_L2_MISS          0x80
 UMASK_L1_DTLB_MISS_ANY_L2_MISS         0xF0
 
-#EVENT_TABLEWALKER_ALLOC                0x46 PMC
-#UMASK_TABLEWALKER_ALLOC_DSIDE0         0x01
-#UMASK_TABLEWALKER_ALLOC_DSIDE1         0x02
-#UMASK_TABLEWALKER_ALLOC_ISIDE0         0x04
-#UMASK_TABLEWALKER_ALLOC_ISIDE1         0x08
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_TABLEWALKER_ALLOC                0x46 PMC
+UMASK_TABLEWALKER_ALLOC_DSIDE0         0x01
+UMASK_TABLEWALKER_ALLOC_DSIDE1         0x02
+UMASK_TABLEWALKER_ALLOC_ISIDE0         0x04
+UMASK_TABLEWALKER_ALLOC_ISIDE1         0x08
 
 EVENT_MISALIGNED_LOADS                      0x47    PMC
 UMASK_MISALIGNED_LOADS                      0x00
@@ -181,13 +185,17 @@ UMASK_CPU_CLOCKS_UNHALTED                    0x00
 EVENT_TLB_FLUSHES                            0x78 PMC
 UMASK_TLB_FLUSHES                            0x00
 
-#here IC and BP events
+# IC and BP events
 
-#EVENT_ICACHE_FETCHES                        0x80     PMC
-#UMASK_ICACHE_FETCHES                        0x00
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_ICACHE_FETCHES                        0x80     PMC
+UMASK_ICACHE_FETCHES                        0x00
 
-#EVENT_ICACHE_MISSES                         0x81     PMC
-#UMASK_ICACHE_MISSES                         0x00
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_ICACHE_MISSES                         0x81     PMC
+UMASK_ICACHE_MISSES                         0x00
 
 EVENT_ICACHE_L2_REFILLS                     0x82     PMC
 UMASK_ICACHE_L2_REFILLS                     0x00
@@ -210,9 +218,11 @@ UMASK_L1_BTB_CORRECTION                    0x00
 EVENT_L2_BTB_CORRECTION                    0x8B PMC
 UMASK_L2_BTB_CORRECTION                    0x00
 
-#EVENT_ICACHE_LINES_INVALIDATED             0x8C PMC
-#UMASK_ICACHE_LINES_INVALIDATED_FILL        0x01
-#UMASK_ICACHE_LINES_INVALIDATED_L2_PROBE    0x02
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_ICACHE_LINES_INVALIDATED             0x8C PMC
+UMASK_ICACHE_LINES_INVALIDATED_FILL        0x01
+UMASK_ICACHE_LINES_INVALIDATED_L2_PROBE    0x02
 
 EVENT_DEC_OVERRIDE_BTB                     0x91 PMC
 UMASK_DEC_OVERRIDE_BTB                     0x00
@@ -350,12 +360,15 @@ EVENT_L2_PF_MISS_IN_L3                    0x72 PMC
 UMASK_L2_PF_MISS_IN_L3                    0x1F
 
 # L3 Cache Events
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_L3_ACCESS                           0x01 CPMC
+UMASK_L3_ACCESS                           0x80
 
-#EVENT_L3_ACCESS                           0x01 CPMC
-#UMASK_L3_ACCESS                           0x80
-
-#EVENT_L3_MISS                             0x06 CPMC
-#UMASK_L3_MISS                             0x01
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_L3_MISS                             0x06 CPMC
+UMASK_L3_MISS                             0x01
 
 EVENT_L3_CACHE_REQ                        0x04 CPMC
 UMASK_L3_CACHE_REQ                        0xFF
