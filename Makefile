@@ -202,13 +202,23 @@ $(L_HELPER):
 $(STATIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE STATIC LIB  $(TARGET_LIB)"
 	$(Q)${AR} -crs $(STATIC_TARGET_LIB) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
-	@sed -e s+'@PREFIX@'+$(INSTALLED_PREFIX)+g make/likwid-config.cmake > likwid-config.cmake
+	@sed -e s+'@PREFIX@'+$(INSTALLED_PREFIX)+g \
+		-e s+'@NVIDIA_INTERFACE@'+$(NVIDIA_INTERFACE)+g \
+		-e s+'@FORTRAN_INTERFACE@'+$(FORTRAN_INTERFACE)+g \
+		-e s+'@LIBPREFIX@'+$(LIBPREFIX)+g \
+		-e s+'@BINPREFIX@'+$(BINPREFIX)+g \
+		make/likwid-config.cmake > likwid-config.cmake
 
 $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB)
 	@echo "===>  CREATE SHARED LIB  $(TARGET_LIB)"
 	$(Q)${CC} $(DEBUG_FLAGS) $(SHARED_LFLAGS) -Wl,-soname,$(TARGET_LIB).$(VERSION).$(RELEASE) $(SHARED_CFLAGS) -o $(DYNAMIC_TARGET_LIB) $(OBJ) $(LIBS) $(TARGET_HWLOC_LIB) $(TARGET_LUA_LIB) $(RPATHS)
 	@ln -sf $(TARGET_LIB) $(TARGET_LIB).$(VERSION).$(RELEASE)
-	@sed -e s+'@PREFIX@'+$(INSTALLED_PREFIX)+g make/likwid-config.cmake > likwid-config.cmake
+	@sed -e s+'@PREFIX@'+$(INSTALLED_PREFIX)+g \
+		-e s+'@NVIDIA_INTERFACE@'+$(NVIDIA_INTERFACE)+g \
+		-e s+'@FORTRAN_INTERFACE@'+$(FORTRAN_INTERFACE)+g \
+		-e s+'@LIBPREFIX@'+$(LIBPREFIX)+g \
+		-e s+'@BINPREFIX@'+$(BINPREFIX)+g \
+		make/likwid-config.cmake > likwid-config.cmake
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
 	@echo "===>  BUILD access daemon likwid-accessD"
@@ -515,7 +525,8 @@ install: install_daemon install_freq install_appdaemon
 	@for F in $(FILTERS); do \
 		install -m 755 $$F  $(abspath $(PREFIX)/share/likwid/filter); \
 	done
-	@install -m 644 likwid-config.cmake $(LIBPREFIX)
+	@echo "===> INSTALL cmake to $(abspath $(PREFIX)/share/likwid)"
+	@install -m 644 likwid-config.cmake $(PREFIX)/share/likwid
 
 move: move_daemon move_freq move_appdaemon
 	@echo "===> MOVE applications from $(BINPREFIX) to $(INSTALLED_BINPREFIX)"
@@ -581,7 +592,9 @@ move: move_daemon move_freq move_appdaemon
 	@chmod 755 $(LIKWIDFILTERPATH)
 	@cp -f $(abspath $(PREFIX)/share/likwid/filter)/* $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
-	@install -m 644 $(LIBPREFIX)/likwid-config.cmake $(INSTALLED_LIBPREFIX)
+	@mkdir -p $(INSTALLED_LIBPREFIX)/cmake/likwid
+	@chmod 755 $(INSTALLED_LIBPREFIX)/cmake/likwid
+	@install -m 644 $(LIBPREFIX)/likwid-config.cmake $(INSTALLED_LIBPREFIX)/share/likwid
 
 uninstall: uninstall_daemon uninstall_freq uninstall_appdaemon
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
@@ -617,8 +630,8 @@ uninstall: uninstall_daemon uninstall_freq uninstall_appdaemon
 	@rm -rf $(PREFIX)/share/likwid/perfgroups
 	@rm -rf $(PREFIX)/share/likwid/docs
 	@rm -rf $(PREFIX)/share/likwid/examples
+	@rm -rf $(PREFIX)/share/likwid/likwid-config.cmake
 	@rm -rf $(PREFIX)/share/likwid
-	@rm -rf $(LIBPREFIX)/likwid-config.cmake
 
 uninstall_moved: uninstall_daemon_moved uninstall_freq_moved uninstall_appdaemon_moved
 	@echo "===> REMOVING applications from $(INSTALLED_PREFIX)/bin"
@@ -654,8 +667,8 @@ uninstall_moved: uninstall_daemon_moved uninstall_freq_moved uninstall_appdaemon
 	@rm -rf $(INSTALLED_PREFIX)/share/likwid/perfgroups
 	@rm -rf $(INSTALLED_PREFIX)/share/likwid/docs
 	@rm -rf $(INSTALLED_PREFIX)/share/likwid/examples
+	@rm -rf $(INSTALLED_PREFIX)/share/likwid/likwid-config.cmake
 	@rm -rf $(INSTALLED_PREFIX)/share/likwid
-	@rm -rf $(INSTALLED_LIBPREFIX)/likwid-config.cmake
 
 local: $(L_APPS) likwid.lua
 	@echo "===> Setting Lua scripts to run from current directory"
