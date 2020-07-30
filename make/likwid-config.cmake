@@ -29,10 +29,9 @@ set(_LIKWID_LIB_SUFFIXES lib lib64)
 #------------------------------------------------------------------------------#
 
 # create an imported target library that CMake projects can just "link" to.
-# e.g. target_link_libraries(myexe PUBLIC likwid)
+# e.g. target_link_libraries(myexe PUBLIC likwid::likwid)
 add_library(likwid-library INTERFACE)
 add_library(likwid::likwid ALIAS likwid-library)
-# add_library(likwid::Likwid ALIAS likwid)
 
 #------------------------------------------------------------------------------#
 #
@@ -138,10 +137,10 @@ if("nvmarker" IN_LIST likwid_FIND_COMPONENTS)
         target_compile_definitions(likwid-library INTERFACE LIKWID_NVMON)
         set(LIKWID_COMPILE_DEFINITIONS "${LIKWID_COMPILE_DEFINITIONS} -DLIKWID_NVMON")
         set(likwid_nvmarker_FOUND ON)
+        list(APPEND likwid_FOUND_COMPONENTS nvmarker)
     elseif(likwid_FIND_REQUIRED_nvmarker)
         list(APPEND _LIKWID_MISSING_COMPONENTS nvmarker)
     endif()
-    list(APPEND likwid_FOUND_COMPONENTS nvmarker)
 endif()
 
 # loop over the remaining components which have libraries, e.g. liblikwid-${NAME}.so
