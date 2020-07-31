@@ -58,8 +58,8 @@ add_library(likwid::likwid ALIAS likwid-library)
 # if not found, will be LIKWID_INCLUDE_DIR-NOTFOUND
 find_path(LIKWID_INCLUDE_DIR
     NAMES likwid.h
-    HINTS ${LIKWID_ROOT_DIR} ${_LIKWID_PATH_HINTS}
-    PATHS ${LIKWID_ROOT_DIR} ${_LIKWID_PATH_HINTS}
+    HINTS ${_LIKWID_PATH_HINTS}
+    PATHS ${_LIKWID_PATH_HINTS}
     PATH_SUFFIXES include
     DOC "LIKWID profiler include directory"
     NO_DEFAULT_PATH)
@@ -67,8 +67,8 @@ find_path(LIKWID_INCLUDE_DIR
 find_library(LIKWID_LIBRARY
     NAMES likwid
     PATH_SUFFIXES ${_LIKWID_LIB_SUFFIXES}
-    HINTS ${LIKWID_ROOT_DIR} ${_LIKWID_PATH_HINTS}
-    PATHS ${LIKWID_ROOT_DIR} ${_LIKWID_PATH_HINTS}
+    HINTS ${_LIKWID_PATH_HINTS}
+    PATHS ${_LIKWID_PATH_HINTS}
     DOC "LIKWID library")
 
 #------------------------------------------------------------------------------#
@@ -117,8 +117,8 @@ set(LIKWID_EXECUTABLE_OPTIONS
 foreach(_EXE ${LIKWID_EXECUTABLE_OPTIONS})
     find_program(LIKWID_${_EXE}_EXECUTABLE
         NAMES likwid-${_EXE}
-        HINTS ${LIKWID_ROOT_DIR} ${_LIKWID_PATH_HINTS}
-        PATHS ${LIKWID_ROOT_DIR} ${_LIKWID_PATH_HINTS}
+        HINTS ${_LIKWID_PATH_HINTS}
+        PATHS ${_LIKWID_PATH_HINTS}
         PATH_SUFFIXES bin
         DOC "LIKWID ${_EXE} executable"
         NO_DEFAULT_PATH)
@@ -163,8 +163,8 @@ foreach(_COMP ${likwid_FIND_COMPONENTS})
     # find the library, e.g. likwid-lua, likwid-gotcha, likwidpin, etc.
     find_library(LIKWID_${_COMP}_LIBRARY
         NAMES   likwid-${_COMP} likwid${_COMP}
-        HINTS   ${LIKWID_ROOT_DIR} ${_LIKWID_PATH_HINTS}
-        PATHS   ${LIKWID_ROOT_DIR} ${_LIKWID_PATH_HINTS}
+        HINTS   ${_LIKWID_PATH_HINTS}
+        PATHS   ${_LIKWID_PATH_HINTS}
         DOC     "LIKWID ${_COMP} library"
         PATH_SUFFIXES ${_LIKWID_LIB_SUFFIXES})
 
