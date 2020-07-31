@@ -27,7 +27,7 @@ list(GET _DEFAULT_PREFIXES 1 _LIBPREFIX)
 list(GET _DEFAULT_PREFIXES 2 _BINPREFIX)
 
 set(LIKWID_ROOT_DIR ${_PREFIX} CACHE PATH "Path to LIKWID installation")
-set(_LIKWID_PATH_HINTS ${LIKWID_ROOT_DIR} @LIBPREFIX@ @BINPREFIX@)
+set(_LIKWID_PATH_HINTS ${LIKWID_ROOT_DIR} ${_LIBPREFIX} ${_BINPREFIX})
 set(_LIKWID_LIB_SUFFIXES lib lib64)
 
 # relevant options
@@ -192,7 +192,11 @@ find_package_handle_standard_args(
 #------------------------------------------------------------------------------#
 
 # cleanup temporary variables
+unset(_PREFIX)
 unset(_LIB_DIR)
+unset(_LIBPREFIX)
+unset(_BINPREFIX)
+unset(_DEFAULT_PREFIXES)
 unset(_LIKWID_PATH_HINTS)
 unset(_LIKWID_LIB_SUFFIXES)
 
