@@ -46,6 +46,7 @@ static int active_cpus = 0;
 static int paranoid_level = -1;
 static int informed_paranoid = 0;
 static int running_group = -1;
+static int perf_event_num_cpus = 0;
 
 static long
 perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
@@ -120,6 +121,7 @@ int perfmon_init_perfevent(int cpu_id)
         memset(cpu_event_fds[cpu_id], -1, perfmon_numCounters * sizeof(int));
         active_cpus += 1;
     }
+    perf_event_num_cpus = cpuid_topology.numHWThreads;
     return 0;
 }
 
@@ -817,28 +819,46 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
 int perfmon_finalizeCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSet)
 {
     int cpu_id = groupSet->threads[thread_id].processorId;
-    for (int i=0;i < eventSet->numberOfEvents;i++)
+    if (cpu_event_fds != NULL)
     {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
+        if (cpu_event_fds[cpu_id] != NULL)
         {
-            RegisterIndex index = eventSet->events[i].index;
-            ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
-            ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_RESET, 0);
-            eventSet->events[i].threadCounter[thread_id].init = FALSE;
-            close(cpu_event_fds[cpu_id][index]);
-            cpu_event_fds[cpu_id][index] = -1;
+            for (int j = 0; j < perfmon_numCounters; j++)
+            {
+                if (cpu_event_fds[cpu_id][j] > 0)
+                {
+                    ioctl(cpu_event_fds[cpu_id][j], PERF_EVENT_IOC_DISABLE, 0);
+                    ioctl(cpu_event_fds[cpu_id][j], PERF_EVENT_IOC_RESET, 0);
+                    close(cpu_event_fds[cpu_id][j]);
+                    cpu_event_fds[cpu_id][j] = -1;
+                    if (j < eventSet->numberOfEvents && eventSet->events[j].threadCounter[thread_id].init == TRUE)
+                    {
+                        eventSet->events[j].threadCounter[thread_id].init = FALSE;
+                    }
+                }
+            }
+            free(cpu_event_fds[cpu_id]);
+            cpu_event_fds[cpu_id] = NULL;
+            active_cpus--;
         }
     }
-    if (cpu_event_fds[cpu_id] != NULL)
+    return 0;
+}
+
+void __attribute__((destructor (101))) close_perfmon_perfevent(void)
+{
+    if (cpu_event_fds != NULL)
     {
-        free(cpu_event_fds[cpu_id]);
-        cpu_event_fds[cpu_id] = NULL;
-        active_cpus--;
-    }
-    if (active_cpus == 0)
-    {
+        for (int i = 0; i < perf_event_num_cpus; i++)
+        {
+            if (cpu_event_fds[i] != NULL)
+            {
+                free(cpu_event_fds[i]);
+                cpu_event_fds[i] = NULL;
+                active_cpus--;
+            }
+        }
         free(cpu_event_fds);
         cpu_event_fds = NULL;
     }
-    return 0;
 }
