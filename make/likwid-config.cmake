@@ -19,15 +19,18 @@ set(_DEFAULT_PREFIXES @PREFIX@ @LIBPREFIX@ @BINPREFIX@)
 
 # do not change MOVE_LIKWID_INSTALL line, used when
 # moving installation (override above defaults)
-
 # @MOVE_LIKWID_INSTALL@
 
 list(GET _DEFAULT_PREFIXES 0 _PREFIX)
 list(GET _DEFAULT_PREFIXES 1 _LIBPREFIX)
 list(GET _DEFAULT_PREFIXES 2 _BINPREFIX)
 
+# cache this variable so the user can change it if desired
 set(LIKWID_ROOT_DIR ${_PREFIX} CACHE PATH "Path to LIKWID installation")
-set(_LIKWID_PATH_HINTS ${LIKWID_ROOT_DIR} ${_LIBPREFIX} ${_BINPREFIX})
+
+# put the cached variable first to give it priority
+# and then append the paths from the install
+set(_LIKWID_PATH_HINTS ${LIKWID_ROOT_DIR} ${_PREFIX} ${_LIBPREFIX} ${_BINPREFIX})
 set(_LIKWID_LIB_SUFFIXES lib lib64)
 
 # relevant options
