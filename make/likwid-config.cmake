@@ -1,9 +1,9 @@
 # legacy variables
 set(LIKWID_INCLUDES @PREFIX@/include)
-set(LIKWID_LIBRARIES @PREFIX@/lib/liblikwid.so -llikwid)
 
 # uses IN_LIST so return if less than 3.3.2
 if(CMAKE_VERSION VERSION_LESS 3.3.2)
+    set(LIKWID_LIBRARIES @PREFIX@/lib/liblikwid.so -llikwid)
     return()
 endif()
 
@@ -15,12 +15,24 @@ cmake_policy(SET CMP0057 NEW)
 include(FindPackageHandleStandardArgs)
 
 # variables configured during install
-set(LIKWID_ROOT_DIR @PREFIX@ CACHE PATH "Path to LIKWID installation")
+set(_DEFAULT_PREFIXES @PREFIX@ @LIBPREFIX@ @BINPREFIX@)
+
+# do not change MOVE_LIKWID_INSTALL line, used when
+# moving installation (override above defaults)
+
+# @MOVE_LIKWID_INSTALL@
+
+list(GET _DEFAULT_PREFIXES 0 _PREFIX)
+list(GET _DEFAULT_PREFIXES 1 _LIBPREFIX)
+list(GET _DEFAULT_PREFIXES 2 _BINPREFIX)
+
+set(LIKWID_ROOT_DIR ${_PREFIX} CACHE PATH "Path to LIKWID installation")
+set(_LIKWID_PATH_HINTS ${LIKWID_ROOT_DIR} @LIBPREFIX@ @BINPREFIX@)
+set(_LIKWID_LIB_SUFFIXES lib lib64)
+
+# relevant options
 set(LIKWID_NVIDIA_INTERFACE @NVIDIA_INTERFACE@)
 set(LIKWID_FORTRAN_INTERFACE @FORTRAN_INTERFACE@)
-
-set(_LIKWID_PATH_HINTS @PREFIX@ @LIBPREFIX@ @BINPREFIX@)
-set(_LIKWID_LIB_SUFFIXES lib lib64)
 
 #------------------------------------------------------------------------------#
 #
@@ -124,12 +136,10 @@ set(LIKWID_COMPONENT_OPTIONS
     marker
     nvmarker)
 
-message(STATUS "COMPONENTS: ${likwid_FIND_COMPONENTS}")
 if("marker" IN_LIST likwid_FIND_COMPONENTS)
     target_compile_definitions(likwid-library INTERFACE LIKWID_PERFMON)
     set(LIKWID_COMPILE_DEFINITIONS "-DLIKWID_PERFMON")
     set(likwid_marker_FOUND ON)
-    list(APPEND likwid_FOUND_COMPONENTS marker)
 endif()
 
 if("nvmarker" IN_LIST likwid_FIND_COMPONENTS)
@@ -137,9 +147,8 @@ if("nvmarker" IN_LIST likwid_FIND_COMPONENTS)
         target_compile_definitions(likwid-library INTERFACE LIKWID_NVMON)
         set(LIKWID_COMPILE_DEFINITIONS "${LIKWID_COMPILE_DEFINITIONS} -DLIKWID_NVMON")
         set(likwid_nvmarker_FOUND ON)
-        list(APPEND likwid_FOUND_COMPONENTS nvmarker)
     elseif(likwid_FIND_REQUIRED_nvmarker)
-        list(APPEND _LIKWID_MISSING_COMPONENTS nvmarker)
+        set(likwid_nvmarker_FOUND OFF)
     endif()
 endif()
 
@@ -164,21 +173,20 @@ foreach(_COMP ${likwid_FIND_COMPONENTS})
         list(APPEND LIKWID_LIBRARIES ${LIKWID_${_COMP}_LIBRARY})
         list(APPEND LIKWID_LIBRARY_DIRS ${_LIB_DIR})
         list(APPEND likwid_FOUND_COMPONENTS ${_COMP})
+        set(likwid_${_COMP}_FOUND ON)
         target_link_libraries(likwid-library INTERFACE ${LIKWID_${_COMP}_LIBRARY})
     elseif(likwid_FIND_REQUIRED_${_COMP})
         # only append to missing if required
-        list(APPEND _LIKWID_MISSING_COMPONENTS LIKWID_${_COMP}_LIBRARY)
+        set(likwid_${_COMP}_FOUND OFF)
     endif()
 endforeach()
 
 #------------------------------------------------------------------------------#
 # find package variables, e.g. LIKWID_FOUND
-# if all required components were found _LIKWID_MISSING_COMPONENTS will
-# be empty
 find_package_handle_standard_args(
     likwid
     REQUIRED_VARS
-        LIKWID_ROOT_DIR LIKWID_INCLUDE_DIR LIKWID_LIBRARY ${_LIKWID_MISSING_COMPONENTS}
+        LIKWID_ROOT_DIR LIKWID_INCLUDE_DIR LIKWID_LIBRARY
     HANDLE_COMPONENTS)
 
 #------------------------------------------------------------------------------#

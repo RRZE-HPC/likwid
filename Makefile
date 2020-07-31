@@ -216,8 +216,8 @@ $(DYNAMIC_TARGET_LIB): $(BUILD_DIR) $(PERFMONHEADERS) $(OBJ) $(TARGET_HWLOC_LIB)
 	@sed -e s+'@PREFIX@'+$(INSTALLED_PREFIX)+g \
 		-e s+'@NVIDIA_INTERFACE@'+$(NVIDIA_INTERFACE)+g \
 		-e s+'@FORTRAN_INTERFACE@'+$(FORTRAN_INTERFACE)+g \
-		-e s+'@LIBPREFIX@'+$(LIBPREFIX)+g \
-		-e s+'@BINPREFIX@'+$(BINPREFIX)+g \
+		-e s+'@LIBPREFIX@'+$(INSTALLED_LIBPREFIX)+g \
+		-e s+'@BINPREFIX@'+$(INSTALLED_BINPREFIX)+g \
 		make/likwid-config.cmake > likwid-config.cmake
 
 $(DAEMON_TARGET): $(SRC_DIR)/access-daemon/accessDaemon.c
@@ -592,9 +592,12 @@ move: move_daemon move_freq move_appdaemon
 	@chmod 755 $(LIKWIDFILTERPATH)
 	@cp -f $(abspath $(PREFIX)/share/likwid/filter)/* $(LIKWIDFILTERPATH)
 	@chmod 755 $(LIKWIDFILTERPATH)/*
-	@mkdir -p $(INSTALLED_LIBPREFIX)/cmake/likwid
-	@chmod 755 $(INSTALLED_LIBPREFIX)/cmake/likwid
-	@install -m 644 $(LIBPREFIX)/likwid-config.cmake $(INSTALLED_LIBPREFIX)/share/likwid
+	@echo "===> MOVE cmake from $(abspath $(PREFIX)/share/likwid) to $(INSTALLED_PREFIX)/share/likwid"
+	@mkdir -p $(INSTALLED_PREFIX)/share/likwid
+	@chmod 755 $(INSTALLED_PREFIX)/share/likwid
+	@sed -e s+'\(# @MOVE_LIKWID_INSTALL@\)'+"set(_DEFAULT_PREFIXES $(INSTALLED_PREFIX) $(INSTALLED_LIBPREFIX) $(INSTALLED_BINPREFIX))\n\1"+g \
+		$(PREFIX)/share/likwid/likwid-config.cmake > $(INSTALLED_PREFIX)/share/likwid/likwid-config.cmake
+	@chmod 644 $(INSTALLED_PREFIX)/share/likwid/likwid-config.cmake
 
 uninstall: uninstall_daemon uninstall_freq uninstall_appdaemon
 	@echo "===> REMOVING applications from $(PREFIX)/bin"
