@@ -5,7 +5,8 @@
  *      Filename:  likwid-topology.lua
  *
  *      Description:  A application to determine the thread and cache topology
- *                    on x86 processors.
+ *                    on x86, ARM and POWER processors. Also the Nvidia GPU topology
+ *                    is printed
  *
  *      Version:   5.0
  *      Released:  10.11.2019
@@ -42,13 +43,14 @@ end
 
 function usage()
     version()
-    io.stdout:write("A tool to print the thread and cache topology on x86 CPUs.\n\n")
+    io.stdout:write("A tool to print the thread and cache topology on CPUs and GPUs.\n\n")
     io.stdout:write("Options:\n")
     io.stdout:write("-h, --help\t\t Help message\n")
     io.stdout:write("-v, --version\t\t Version information\n")
     io.stdout:write("-V, --verbose <level>\t Set verbosity\n")
     io.stdout:write("-c, --caches\t\t List cache information\n")
     io.stdout:write("-C, --clock\t\t Measure processor clock\n")
+    io.stdout:write("-G, --gpus\t\t Print extended GPU information\n")
     io.stdout:write("-O\t\t\t CSV output\n")
     io.stdout:write("-o, --output <file>\t Store output to file. (Optional: Apply text filter)\n")
     io.stdout:write("-g\t\t\t Graphical output\n")
@@ -56,11 +58,12 @@ end
 
 print_caches = false
 print_graphical = false
+print_gpus = false
 measure_clock = false
 outfile = nil
 output_csv = {}
 
-for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O","help","version","verbose:","clock","caches","output:"}) do
+for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O", "G","help","version","verbose:","clock","caches","output:", "gpus"}) do
     if (type(arg) == "string") then
         local s,e = arg:find("-");
         if s == 1 then
@@ -89,6 +92,8 @@ for opt,arg in likwid.getopt(arg, {"h","v","c","C","g","o:","V:","O","help","ver
         print_graphical = true
     elseif opt == "O" then
         print_csv = true
+    elseif opt == "G" or opt == "gpus" then
+        print_gpus = true
     elseif opt == "o" or opt == "output" then
         local suffix = ""
         if string.match(arg, "%.") then
@@ -280,6 +285,40 @@ if likwid.nvSupported() then
             table.insert(output_csv, string.format("Clock rate:\t\t%d kHz", gpu["clockRatekHz"]))
             table.insert(output_csv, string.format("Memory clock rate:\t%d kHz", gpu["memClockRatekHz"]))
             table.insert(output_csv, string.format("Attached to NUMA node:\t%d", gpu["numaNode"]))
+            if print_gpus then
+                table.insert(output_csv, string.format("Number of SPs:\t\t%d", gpu["numMultiProcs"]))
+                table.insert(output_csv, string.format("Max. threads per SP:\t%d", gpu["maxThreadPerMultiProc"]))
+                table.insert(output_csv, string.format("Max. threads per block:\t%d", gpu["maxThreadsPerBlock"]))
+                local s = {}
+                for i, data in pairs(gpu["maxThreadsDim"]) do
+                    table.insert(s, string.format("%d", data))
+                end
+                table.insert(output_csv, string.format("Max. thread dimensions:\t%s", table.concat(s, "/")))
+                table.insert(output_csv, string.format("Max. regs per block:\t%d", gpu["regsPerBlock"]))
+                table.insert(output_csv, string.format("Shared mem per block:\t%d", gpu["sharedMemPerBlock"]))
+
+                table.insert(output_csv, string.format("Memory bus width:\t%d", gpu["memBusWidth"]))
+                table.insert(output_csv, string.format("Texture alignment:\t%d", gpu["textureAlign"]))
+                table.insert(output_csv, string.format("Surface alignment:\t%d", gpu["surfaceAlign"]))
+                if gpu["ecc"] == 0 then
+                    table.insert(output_csv, "ECC:\t\t\toff")
+                else
+                    table.insert(output_csv, "ECC:\t\t\ton")
+                end
+                if gpu["integrated"] == 0 then
+                    table.insert(output_csv, "GPU integrated:\t\tno")
+                else
+                    table.insert(output_csv, "GPU integrated:\t\tyes")
+                end
+                s = {}
+                for i, data in pairs(gpu["maxGridSize"]) do
+                    table.insert(s, string.format("%d", data))
+                end
+                table.insert(output_csv, string.format("Max. grid sizes:\t%s", table.concat(s, "/")))
+                table.insert(output_csv, string.format("PCI bus:\t\t0x%x", gpu["pciBus"]))
+                table.insert(output_csv, string.format("PCI domain:\t\t0x%x", gpu["pciDom"]))
+                table.insert(output_csv, string.format("PCI device:\t\t0x%x", gpu["pciDev"]))
+            end
             table.insert(output_csv, likwid.hline)
         end
     end
