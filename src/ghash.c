@@ -388,6 +388,8 @@ g_hash_table_remove_all_nodes (GHashTable *hash_table,
           hash_table->hashes[i] = UNUSED_HASH_VALUE;
         }
     }
+    hash_table->nnodes = 0;
+    hash_table->noccupied = 0;
 }
 
 static void
