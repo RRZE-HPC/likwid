@@ -411,6 +411,7 @@ affinity_init()
             offset = 0;
             for ( int j=0; j < (int)ceil((double)(numberOfNumaDomains)/numberOfSocketDomains); j++ )
             {
+                if (subCounter >= numberOfNumaDomains) continue;
                 domains[currentDomain + subCounter].numberOfProcessors =
                                 numa_info.nodes[subCounter].numberOfProcessors;
 
@@ -434,16 +435,20 @@ affinity_init()
                             bdata(domains[currentDomain + subCounter].tag));
                     return;
                 }
-                if (offset >= cpuid_topology.numCoresPerSocket*cpuid_topology.numSockets)
+                for (int k = 0; k < domains[currentDomain + subCounter].numberOfProcessors; k++)
                 {
-                    continue;
+                    domains[currentDomain + subCounter].processorList[k] = numa_info.nodes[subCounter].processors[k];
                 }
-                tmp = treeFillNextEntries(cpuid_topology.topologyTree,
-                                          domains[currentDomain + subCounter].processorList, 0,
-                                          i, offset, domains[currentDomain + subCounter].numberOfCores,
-                                          domains[currentDomain + subCounter].numberOfProcessors);
-                domains[currentDomain + subCounter].numberOfProcessors = tmp;
-                offset += domains[currentDomain + subCounter].numberOfCores;
+/*                if (offset >= cpuid_topology.numCoresPerSocket*cpuid_topology.numSockets)*/
+/*                {*/
+/*                    continue;*/
+/*                }*/
+/*                tmp = treeFillNextEntries(cpuid_topology.topologyTree,*/
+/*                                          domains[currentDomain + subCounter].processorList, 0,*/
+/*                                          i, offset, domains[currentDomain + subCounter].numberOfCores,*/
+/*                                          domains[currentDomain + subCounter].numberOfProcessors);*/
+/*                domains[currentDomain + subCounter].numberOfProcessors = tmp;*/
+/*                offset += domains[currentDomain + subCounter].numberOfCores;*/
                 subCounter++;
             }
         }
