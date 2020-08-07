@@ -366,10 +366,20 @@ hwloc_numa_init(void)
 #if HWLOC_API_VERSION > 0x00020000
             for (d = 0; d < cpuid_topology.numHWThreads; d++)
             {
-                if (likwid_hwloc_bitmap_isset(obj->cpuset, d))
+                HWThread *t = &cpuid_topology.threadPool[d];
+                if (likwid_hwloc_bitmap_isset(obj->cpuset, t->apicId) && t->threadId == 0)
                 {
-                    numa_info.nodes[i].processors[j] = d;
+                    numa_info.nodes[i].processors[j] = t->apicId;
                     j++;
+                    for (int k = 0; k < cpuid_topology.numHWThreads; k++)
+                    {
+                        HWThread *x = &cpuid_topology.threadPool[k];
+                        if (t->coreId == x->coreId && t->threadId != x->threadId && likwid_hwloc_bitmap_isset(obj->cpuset, x->apicId))
+                        {
+                            numa_info.nodes[i].processors[j] = x->apicId;
+                            j++;
+                        }
+                    }
                 }
             }
             numa_info.nodes[i].numberOfProcessors = j;
