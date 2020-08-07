@@ -2042,26 +2042,34 @@ static int
 lua_likwid_checkProgram(lua_State* L)
 {
     int ret = -1;
+    int exited = 0;
     if (lua_gettop(L) == 1)
     {
         int status = 0;
         pid_t retpid = 0;
         pid_t pid = lua_tonumber(L, 1);
-        retpid = waitpid(pid, &status, WNOHANG);
+        retpid = waitpid(pid, &status, WNOHANG|WUNTRACED|WCONTINUED);
         if (retpid == pid)
         {
             if (WIFEXITED(status))
             {
                 ret = WEXITSTATUS(status);
+                exited = 1;
             }
             else if (WIFSIGNALED(status))
             {
                 ret = 128 + WTERMSIG(status);
+                exited = 1;
+            }
+            else
+            {
+                ret = 0;
             }
         }
     }
     lua_pushinteger(L, (lua_Integer)ret);
-    return 1;
+    lua_pushboolean(L, exited);
+    return 2;
 }
 
 static int
