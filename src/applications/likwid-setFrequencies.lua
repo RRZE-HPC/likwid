@@ -343,19 +343,14 @@ if do_reset then
         availfreqs = {likwid.getConfCpuClockMin(cpulist[1]), likwid.getConfCpuClockMax(cpulist[1])}
     end
     if not min_freq then
-        min_freq = availfreqs[1]
+        min_freq = likwid.getConfCpuClockMin(cpulist[1])
     end
-    if min_freq >= availfreqs[#availfreqs] then
-        min_freq = availfreqs[#availfreqs]
+    if not max_freq then
+        max_freq = base_freq
     end
-    if not (set_turbo or max_freq) then
-        set_turbo = true
-        turbo = 0
-        max_freq = availfreqs[#availfreqs]
-        if max_freq <= availfreqs[1] then
-            max_freq = availfreqs[1]
-        end
-    end
+    set_turbo = true
+    turbo = 0
+
     if not governor then
         governor = nil
         for i, g in pairs(availgovs) do
@@ -377,7 +372,7 @@ if do_reset then
         end
     end
     if min_freq and governor then
-        print_stdout(string.format("Reset to governor %s with min freq. %s GHz and deactivate turbo mode", governor, round(min_freq/1E6)))
+        print_stdout(string.format("Reset to governor %s with min freq. %s GHz, max freq. %s GHz and deactivate turbo mode", governor, round(min_freq/1E6), round(max_freq/1E6)))
     end
 end
 
@@ -474,15 +469,6 @@ if max_freq and tonumber(max_freq)/1E6 < tonumber(likwid.getCpuClockMin(cpulist[
     min_first = true
 end
 
-if set_turbo then
-    for i=1,#cpulist do
-        if verbosity == 3 then
-            print_stdout(string.format("DEBUG: Set turbo mode for CPU %d to %d", cpulist[i], turbo))
-        end
-        local f = likwid.setTurbo(cpulist[i], turbo)
-    end
-end
-
 
 if max_first and max_freq then
     for i=1,#cpulist do
@@ -504,9 +490,35 @@ elseif min_first and min_freq then
     end
 else
     for i=1,#cpulist do
-        local f = likwid.setCpuClockMin(cpulist[i], min_freq)
-        local f = likwid.setCpuClockMax(cpulist[i], max_freq)
+        if min_freq then
+            local f = likwid.setCpuClockMin(cpulist[i], min_freq)
+        end
+        if max_freq then
+            local f = likwid.setCpuClockMax(cpulist[i], max_freq)
+        end
     end
+end
+
+if set_turbo then
+    for i=1,#cpulist do
+        if verbosity == 3 then
+            print_stdout(string.format("DEBUG: Set turbo mode for CPU %d to %d", cpulist[i], turbo))
+        end
+        local f = likwid.setTurbo(cpulist[i], turbo)
+    end
+--    for i=1,#cpulist do
+--        gov = likwid.getGovernor(cpulist[i])
+--        freq = tonumber(likwid.getCpuClockCurrent(cpulist[i]))/1E6
+--        min = tonumber(likwid.getCpuClockMin(cpulist[i]))/1E6
+--        max = tonumber(likwid.getCpuClockMax(cpulist[i]))/1E6
+--        t = tonumber(likwid.getTurbo(cpulist[i]));
+--        str = {}
+--        if gov and freq and min and max and t >= 0 then
+--            table.insert(str, string.format("CPU %d: governor %12s min/cur/max %s/%s/%s GHz Turbo %d",cpulist[i], gov, round(min), round(freq), round(max), t))
+--        end
+--        print_stdout(table.concat(str, "\n"))
+
+--    end
 end
 
 if min_u_freq then
