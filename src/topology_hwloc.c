@@ -245,7 +245,8 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     {
         likwid_hwloc_topology_init(&hwloc_topology);
 #if HWLOC_API_VERSION > 0x00020000
-        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM );
+        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED );
+        likwid_hwloc_topology_set_type_filter(hwloc_topology, HWLOC_OBJ_PCI_DEVICE, HWLOC_TYPE_FILTER_KEEP_ALL);
 #else
         likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM|HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
 #endif
