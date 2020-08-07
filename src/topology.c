@@ -107,6 +107,7 @@ static char* athlon64_X2_g_str = "AMD Athlon64 X2 (AM2) Rev G 65nm processor";
 static char* athlon64_g_str = "AMD Athlon64 (AM2) Rev G 65nm processor";
 static char* amd_k8_str = "AMD K8 architecture";
 static char* amd_zen_str = "AMD K17 (Zen) architecture";
+static char* amd_zenplus_str = "AMD K17 (Zen+) architecture";
 static char* amd_zen2_str = "AMD K17 (Zen2) architecture";
 static char* armv7l_str = "ARM 7l architecture";
 static char* armv8_str = "ARM 8 architecture";
@@ -939,6 +940,10 @@ topology_setName(void)
             {
                 case ZEN_RYZEN:
                     cpuid_info.name = amd_zen_str;
+                    cpuid_info.short_name = short_zen;
+                    break;
+                case ZENPLUS_RYZEN:
+                    cpuid_info.name = amd_zenplus_str;
                     cpuid_info.short_name = short_zen;
                     break;
                 case ZEN2_RYZEN:
