@@ -908,6 +908,23 @@ allowed_amd17(uint32_t reg)
 }
 
 static int
+allowed_amd17_zen2(uint32_t reg)
+{
+    if (allowed_amd17(reg))
+    {
+        return 1;
+    }
+    else if ((reg == 0xC0010208) ||
+             (reg == 0xC0010209) ||
+             (reg == 0xC001020A) ||
+             (reg == 0xC001020B))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+static int
 clientmem_getStartAddr(uint64_t* startAddr)
 {
     uint64_t imcbar = 0;
@@ -1915,7 +1932,14 @@ int main(void)
                 allowed = allowed_amd16;
                 break;
             case ZEN_FAMILY:
-                allowed = allowed_amd17;
+                if (model == ZEN2_RYZEN)
+                {
+                    allowed = allowed_amd17_zen2;
+                }
+                else
+                {
+                    allowed = allowed_amd17;
+                }
                 break;
             default:
                 syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
