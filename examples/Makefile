@@ -28,7 +28,7 @@ C-markerAPI:
 	$(CC) -fopenmp $(LIKWID_DEFINES) $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) C-markerAPI.c -o C-markerAPI $(LIKWID_LIB) -lm
 
 C-markerAPI-run: C-markerAPI
-	$(LIKWID_BINDIR)/likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -m ./C-markerAPI
+	LD_LIBRARY_PATH=$(PREFIX)/lib $(LIKWID_BINDIR)/likwid-perfctr -C 0 -g INSTR_RETIRED_ANY:FIXC0 -m ./C-markerAPI
 
 C-likwidAPI:
 	$(CC) -fopenmp $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) C-likwidAPI.c -o C-likwidAPI $(LIKWID_LIB) -lm
@@ -40,7 +40,7 @@ C-internalMarkerAPI:
 	$(CC) -g -fopenmp $(LIKWID_DEFINES) $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) C-internalMarkerAPI.c -o C-internalMarkerAPI $(LIKWID_LIB) -lm
 
 C-internalMarkerAPI-run: C-internalMarkerAPI
-	OMP_NUM_THREADS=3 ./C-internalMarkerAPI
+	LD_LIBRARY_PATH=$(PREFIX)/lib ./C-internalMarkerAPI
 
 monitoring:
 	$(CC) $(LIKWID_INCLUDE) $(LIKWID_LIBDIR) monitoring.c -o monitoring $(LIKWID_LIB) -lm
