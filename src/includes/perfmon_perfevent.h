@@ -509,6 +509,10 @@ int perfmon_setupCountersThread_perfevent(
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
                 break;
             case POWER:
+                if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
+                {
+                    has_lock = 1;
+                }
                 ret = perf_uncore_setup(&attr, type, event);
                 is_uncore = 1;
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_POWER);
