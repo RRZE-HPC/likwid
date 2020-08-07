@@ -81,9 +81,9 @@ default_configuration(void)
         goto use_hardcoded;
     }
     ret = getline(&fptr, &len, fp);
+    pclose(fp);
     if (ret < 0)
     {
-        pclose(fp);
         if (fptr)
             free(fptr);
         goto use_hardcoded;
@@ -99,12 +99,10 @@ default_configuration(void)
     else
     {
         fprintf(stderr, "Found access daemon at %s but it is not executable, using compiled in daemon path.\n", fptr);
-        fclose(fp);
         if (fptr)
             free(fptr);
         goto use_hardcoded;
     }
-    fclose(fp);
 #else
     config.daemonMode = ACCESSMODE_PERF;
 #endif

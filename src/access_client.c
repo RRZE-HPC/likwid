@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -443,11 +444,22 @@ access_client_finalize(int cpu_id)
     {
         memset(&record, 0, sizeof(AccessDataRecord));
         record.type = DAEMON_EXIT;
+        record.cpu = cpu_id;
         CHECK_ERROR(write(cpuSockets[cpu_id], &record, sizeof(AccessDataRecord)),socket write failed);
+        if (cpuSockets[cpu_id] == globalSocket)
+        {
+            globalSocket = -1;
+        }
         CHECK_ERROR(close(cpuSockets[cpu_id]),socket close failed);
         cpuSockets[cpu_id] = -1;
-        daemon_pids[cpu_id] = 0;
-        nr_daemons--;
+        if (daemon_pids[cpu_id] != 0)
+        {
+            int status = 0;
+            waitpid(daemon_pids[cpu_id], &status, 0);
+            daemon_pids[cpu_id] = 0;
+            nr_daemons--;
+        }
+
         cpuSockets_open--;
     }
     if (cpuSockets_open == 0)
@@ -488,6 +500,10 @@ access_client_check(PciDeviceIndex dev, int cpu_id)
         {
             return 1;
         }
+        else
+        {
+            ERROR_PRINT(Device check with accessDaemon failed: %s\n, access_client_strerror(record.errorcode));
+        }
     }
     return 0;
 }
@@ -496,12 +512,31 @@ void __attribute__((destructor (104))) close_access_client(void)
 {
     if (cpuSockets)
     {
+        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        {
+            if (cpuSockets[i] > 0)
+            {
+                close(cpuSockets[i]);
+                cpuSockets[i] = -1;
+                cpuSockets_open--;
+            }
+        }
         free(cpuSockets);
         cpuSockets = NULL;
         cpuSockets_open = 0;
     }
     if (daemon_pids)
     {
+        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        {
+            if (daemon_pids[i] != 0)
+            {
+                int status = 0;
+                waitpid(daemon_pids[i], &status, 0);
+                daemon_pids[i] = 0;
+                nr_daemons--;
+            }
+        }
         free(daemon_pids);
         daemon_pids = NULL;
         free(daemon_pinned);
@@ -510,6 +545,10 @@ void __attribute__((destructor (104))) close_access_client(void)
     }
     if (cpuLocks)
     {
+        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        {
+            pthread_mutex_destroy(&cpuLocks[i]);
+        }
         free(cpuLocks);
         cpuLocks = NULL;
     }
