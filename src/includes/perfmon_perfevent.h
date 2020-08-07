@@ -178,9 +178,16 @@ static char* perfEventOptionNames[] = {
     [EVENT_OPTION_OCCUPANCY_EDGE] = "occ_edge",
     [EVENT_OPTION_OCCUPANCY_INVERT] = "occ_inv",
 #ifdef _ARCH_PPC
+    [EVENT_OPTION_GENERIC_CONFIG] = "pmcxsel",
+#else
+    [EVENT_OPTION_GENERIC_CONFIG] = "event",
+#endif
+    [EVENT_OPTION_GENERIC_UMASK] = "umask",
+#ifdef _ARCH_PPC
     [EVENT_OPTION_PMC] = "pmc",
     [EVENT_OPTION_PMCXSEL] = "pmcxsel",
 #endif
+
 };
 
 int getEventOptionConfig(char* base, EventOptionType type, PERF_EVENT_PMC_OPT_REGS *reg, int* start, int* end)
@@ -288,7 +295,13 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
             attr->config2 |= create_mask(event->eventId, start, end);
             break;
     }
+#ifdef _ARCH_PPC
+    reg = PERF_EVENT_CONFIG_REG;
+    start = 8;
+    end = 15;
+#else
     getEventOptionConfig(translate_types[PMC], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
+#endif
     switch(reg)
     {
         case PERF_EVENT_CONFIG_REG:
