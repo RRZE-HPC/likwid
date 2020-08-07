@@ -441,14 +441,17 @@ init_sleep()
     _timer_init();
     struct timespec req = {0,1};
     struct timespec rem = {0,0};
-    for (int i=0; i<10; ++i)
+    if (sleepbase == 0)
     {
-        _timer_start(&timer);
-        status = clock_nanosleep(CLOCK_REALTIME,0,&req, &rem);
-        _timer_stop(&timer);
-        if (_timer_print(&timer)*1E6 > sleepbase)
+        for (int i=0; i<10; ++i)
         {
-            sleepbase = _timer_print(&timer)*1E6 + 2;
+            _timer_start(&timer);
+            status = clock_nanosleep(CLOCK_REALTIME,0,&req, &rem);
+            _timer_stop(&timer);
+            if (_timer_print(&timer)*1E6 > sleepbase)
+            {
+                sleepbase = _timer_print(&timer)*1E6 + 2;
+            }
         }
     }
 }
@@ -583,7 +586,6 @@ timer_sleep(unsigned long usec)
 
     if (sleepbase == 0x0ULL)
     {
-        fprintf(stderr, "Sleeping longer as likwid_sleep() called without prior initialization\n");
         init_sleep();
     }
     if (usec >= 1000000)
