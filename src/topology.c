@@ -237,6 +237,7 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
     int counter;
     int i;
     uint32_t tmp, tmp1;
+    int maxStrLen = 257;
 
     fp = fopen(filename, "r");
 
@@ -432,9 +433,16 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             else if (strcmp(field, "osname") == 0)
             {
                 strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
-                cpuid_info.osname = (char*) malloc((strlen(value)+1) * sizeof(char));
-                strncpy(cpuid_info.osname, value, strlen(value));
-                cpuid_info.osname[strlen(value)-1] = '\0';
+                cpuid_info.osname = (char*) malloc(maxStrLen * sizeof(char));
+                strncpy(cpuid_info.osname, value, maxStrLen);
+                if (strlen(value)-1 < maxStrLen)
+                {
+                    cpuid_info.osname[strlen(value)-1] = '\0';
+                }
+                else
+                {
+                    cpuid_info.osname[maxStrLen] = '\0';
+                }
             }
             else if (strcmp(field, "stepping") == 0)
             {
@@ -493,9 +501,16 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             else if (strcmp(field, "features") == 0)
             {
                 strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
-                cpuid_info.features = (char*) malloc((strlen(value)+1) * sizeof(char));
-                strncpy(cpuid_info.features, value, strlen(value));
-                cpuid_info.features[strlen(value)-1] = '\0';
+                cpuid_info.features = (char*) malloc(maxStrLen * sizeof(char));
+                strncpy(cpuid_info.features, value, maxStrLen);
+                if (strlen(value)-1 < maxStrLen)
+                {
+                    cpuid_info.features[strlen(value)-1] = '\0';
+                }
+                else
+                {
+                    cpuid_info.features[maxStrLen-1] = '\0';
+                }
             }
         }
         else if (strcmp(structure, "numa_info") == 0)
