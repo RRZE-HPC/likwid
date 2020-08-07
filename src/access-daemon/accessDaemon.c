@@ -1932,7 +1932,7 @@ int main(void)
                 allowed = allowed_amd16;
                 break;
             case ZEN_FAMILY:
-                if (model == ZEN2_RYZEN)
+                if (model == ZEN2_RYZEN || model == ZEN2_RYZEN2)
                 {
                     allowed = allowed_amd17_zen2;
                 }
