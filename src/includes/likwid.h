@@ -353,7 +353,7 @@ typedef struct {
 This structure describes the topology at HW thread level like the amount of HW threads, how they are distributed over the CPU sockets/packages and how the caching hierarchy is assembled.
 */
 typedef struct {
-    uint32_t numHWThreads; /*!< \brief Amount of HW threads in the system and length of \a threadPool */
+    uint32_t numHWThreads; /*!< \brief Amount of online HW threads in the system (e.g. in cpuset) */
     uint32_t activeHWThreads; /*!< \brief Amount of HW threads in the system and length of \a threadPool */
     uint32_t numSockets; /*!< \brief Amount of CPU sockets/packages in the system */
     uint32_t numCoresPerSocket; /*!< \brief Amount of physical cores in one CPU socket/package */
@@ -675,7 +675,9 @@ extern void perfmon_returnGroups(int nrgroups, char** groups, char** shortinfos,
 /*! \brief Initialize performance monitoring facility
 
 Initialize the performance monitoring feature by creating basic data structures.
-The access mode must already be set when calling perfmon_init()
+The CPU ids for the threadsToCpu list can be found in cpuTopology->threadPool[thread_id]->apicId.
+The access mode must already be set when calling perfmon_init().
+\sa HPMmode() function and CpuTopology structure with HWThread list
 @param [in] nrThreads Amount of threads
 @param [in] threadsToCpu List of CPUs
 @return error code (0 on success, -ERRORCODE on failure)
