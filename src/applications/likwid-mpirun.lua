@@ -725,6 +725,8 @@ function getMpiVersion()
     maj = nil
     min = nil
     intel_match = "Version (%d+) Update (%d+)"
+    intel_build_match = "Version (%d+) Build (%d+)"
+    intel_match_old = "Version (%d+).(%d+).%d+"
     openmpi_match = "(%d+)%.(%d+)%.%d+"
     for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun"}) do
         f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
@@ -740,6 +742,14 @@ function getMpiVersion()
                     for l in t:gmatch("[^\r\n]+") do
                         if l:match(intel_match) then
                             maj, min = l:match(intel_match)
+                            maj = tonumber(maj)
+                            min = tonumber(min)
+                        elseif l:match(intel_build_match) then
+                            maj, min = l:match(intel_build_match)
+                            maj = tonumber(maj)
+                            min = tonumber(min)
+                        elseif l:match(intel_match_old) then
+                            maj, min = l:match(intel_match_old)
                             maj = tonumber(maj)
                             min = tonumber(min)
                         elseif l:match(openmpi_match) then
