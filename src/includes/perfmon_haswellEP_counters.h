@@ -378,5 +378,6 @@ static char* haswellEP_translate_types[NUM_UNITS] = {
     [RBOX1] = "/sys/bus/event_source/devices/uncore_r3qpi_1",
     [RBOX2] = "/sys/bus/event_source/devices/uncore_r3qpi_2",
     [UBOX] = "/sys/bus/event_source/devices/uncore_ubox",
+    [UBOXFIX] = "/sys/bus/event_source/devices/uncore_ubox",
     [IBOX0] = "/sys/bus/event_source/devices/uncore_irp",
 };
