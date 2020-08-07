@@ -30,7 +30,7 @@
 #ifndef LIKWID_NVMON_PERFWORKS_H
 #define LIKWID_NVMON_PERFWORKS_H
 
-#if __CUDA_API_VERSION >= 10000
+#if CUDA_VERSION >= 10000
 
 static void *perfw_dl_libnvperf = NULL;
 static void *perfw_dl_libnvperf_t = NULL;

@@ -132,7 +132,7 @@ topo_link_libraries(void)
     cudaDriverGetVersionPtr = DLSYM_AND_CHECK(topo_dl_libcudart, "cudaDriverGetVersion");
     cudaRuntimeGetVersionPtr = DLSYM_AND_CHECK(topo_dl_libcudart, "cudaRuntimeGetVersion");
     
-#if __CUDA_API_VERSION >= 10000
+#if CUDA_VERSION >= 10000
     cuDeviceTotalMem_v2Ptr = DLSYM_AND_CHECK(topo_dl_libcuda, "cuDeviceTotalMem_v2");
 #endif
     
@@ -239,7 +239,7 @@ topology_gpu_init()
             CUdevice dev;
             CU_CALL((*cuDeviceGetPtr)(&dev, i), ret = -ENODEV; goto topology_gpu_init_error;);
             size_t s = 0;
-#if __CUDA_API_VERSION >= 10000
+#if CUDA_VERSION >= 10000
             if (cuda_version >= 10000 && cudart_version >= 10000)
                 CU_CALL((*cuDeviceTotalMem_v2Ptr)(&s, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
                 if (s == 0)
