@@ -13,11 +13,21 @@ Runtime time
 CPI  PMC5/PMC4
 Completion stall cycles PMC3
 Stall cycles by thread conflict PMC0
-Stall ratio by thread conflict [%] PMC0/PMC3*100
+Stall ratio by thread conflict [%] PMC0/PMC3*100.0
 Stall cycles by d-cache miss PMC1
-Stall ratio by d-cache miss [%] PMC1/PMC3*100
+Stall ratio by d-cache miss [%] PMC1/PMC3*100.0
 Stall cycles by full castout queue PMC2
-Stall ratio by full castout queue [%] PMC2/PMC3*100
+Stall ratio by full castout queue [%] PMC2/PMC3*100.0
 
 
 LONG
+Formulas:
+CPI = PM_RUN_CYC / PM_RUN_INST_CMPL
+Completion stall cycles = PM_CMPLU_STALL
+Stall cycles by thread conflict = PM_CMPLU_STALL_THRD
+Stall ratio by thread conflict [%] = PM_CMPLU_STALL_THRD/PM_CMPLU_STALL*100
+Stall cycles by d-cache miss = PM_CMPLU_STALL_DCACHE_MISS
+Stall ratio by d-cache miss [%] = PM_CMPLU_STALL_DCACHE_MISS/PM_CMPLU_STALL*100
+Stall cycles by full castout queue = PM_CMPLU_STALL_COQ_FULL
+Stall ratio by full castout queue [%] = PM_CMPLU_STALL_COQ_FULL/PM_CMPLU_STALL*100
+--

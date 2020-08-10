@@ -12,8 +12,21 @@ METRICS
 CPI  PMC5/PMC4
 Stall cycles PMC0
 Stall cycles by load/store unit PMC1
+Stall ratio by load/store unit [%] PMC1/PMC0*100.0
 Stall cycles by pipeline flush PMC2
+Stall ratio by pipeline flush [%] PMC2/PMC0*100.0
 Stall cycles by branch unit PMC3
+Stall ratio by branch unit [%] PMC3/PMC0*100.0
 
 
 LONG
+Formulas:
+CPI = PM_RUN_CYC / PM_RUN_INST_CMPL
+Stall cycles = PM_CMPLU_STALL
+Stall cycles by load/store unit = PM_CMPLU_STALL_LSU
+Stall ratio by load/store unit [%] = PM_CMPLU_STALL_LSU/PM_CMPLU_STALL*100.0
+Stall cycles by pipeline flush = PM_CMPLU_STALL_FLUSH
+Stall ratio by pipeline flush [%] = PM_CMPLU_STALL_FLUSH/PM_CMPLU_STALL*100.0
+Stall cycles by branch unit = PM_CMPLU_STALL_BRU
+Stall ratio by branch unit [%] = PM_CMPLU_STALL_BRU/PM_CMPLU_STALL*100.0
+--

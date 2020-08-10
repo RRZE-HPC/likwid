@@ -2,7 +2,7 @@ SHORT Main memory bandwidth in MBytes/s
 
 EVENTSET
 PMC0  PM_L3_CO_MEPF
-PMC1  PM_DATA_ALL_FROM_MEMORY 
+PMC1  PM_DATA_ALL_FROM_MEMORY
 PMC3  PM_L3_PF_ON_CHIP_MEM
 PMC4  PM_RUN_INST_CMPL
 PMC5  PM_RUN_CYC
@@ -26,3 +26,5 @@ Memory evict bandwidth [MBytes/s] = 1.0E-06* (PM_MEM_CO)*128/time
 Memory evict data volume [GBytes] = 1.0E-09* (PM_MEM_CO)*128
 Memory bandwidth [MBytes/s] = 1.0E-06* (PM_DATA_ALL_FROM_MEMORY+PM_MEM_CO)*128/time
 Memory data volume [GBytes] = 1.0E-09* (PM_DATA_ALL_FROM_MEMORY+PM_MEM_CO)*128
+--
+This group uses the core-local events to measure data traffic from memory.

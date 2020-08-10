@@ -20,6 +20,13 @@ GCT empty cycle ratio PMC1/PM5
 
 
 LONG
+Formulas:
+Stall cycles = PM_CMPLU_STALL
+Stall cycle ratio = PM_CMPLU_STALL/PM_RUN_CYC
+Thread blocked cycles = PM_CMPLU_STALL_THRD
+Thread blocked cycle ratio = PM_CMPLU_STALL_THRD/PM_RUN_CYC
+GCT empty cycles = PM_GCT_EMPTY_CYC
+GCT empty cycle ratio = PM_GCT_EMPTY_CYC/PM_RUN_CYC
 --
 First level of IBM CPI stack. IBM names Stalled Cycles, Waiting to Complete,
 Thread Blocked, Completion Table Empty, Other and Completion Cycles. For some
