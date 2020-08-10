@@ -1292,6 +1292,8 @@ perfmon_init_maps(void)
     }
     if (eventHash)
     {
+        int cpu_id = sched_getcpu();
+        HPMaddThread(cpu_id);
         PerfmonEvent* tmp = malloc((perfmon_numArchEvents+10)*sizeof(PerfmonEvent));
         if (tmp)
         {
@@ -1299,16 +1301,35 @@ perfmon_init_maps(void)
             memset(tmp + perfmon_numArchEvents, '\0', 10*sizeof(PerfmonEvent));
             eventHash = tmp;
             eventHash[perfmon_numArchEvents].name = "GENERIC_EVENT";
-            bstring blim = bfromcstr("PMC");
+            bstring blim = bfromcstr("");
             for (int i = 0; i < perfmon_numArchEvents; i++)
             {
                 bstring x = bfromcstr(eventHash[i].limit);
-                if (binstr(blim, 0, x) == BSTR_ERR)
+                struct bstrList* xlist = bsplit(x, '|');
+                for (int j = 0; j < xlist->qty; j++)
                 {
-                    bconchar(blim, '|');
-                    bconcat(blim, x);
+                    if (binstr(blim, 0, x) == BSTR_ERR )
+                    {
+                        for (int k = 0; k < perfmon_numCounters; k++)
+                        {
+                            if (strncmp(bdata(xlist->entry[j]), counter_map[k].key, blength(xlist->entry[j])) == 0)
+                            {
+#ifndef LIKWID_USE_PERFEVENT
+                                if (HPMcheck(counter_map[k].device, cpu_id))
+#else
+                                if (translate_types[counter_map[k].type] && (!access(translate_types[counter_map[k].type], R_OK)))
+#endif
+                                {
+                                    bconchar(blim, '|');
+                                    bconcat(blim, xlist->entry[j]);
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
                 bdestroy(x);
+                bstrListDestroy(xlist);
             }
             eventHash[perfmon_numArchEvents].limit = malloc((blength(blim)+2)*sizeof(char));
             int ret = snprintf(eventHash[perfmon_numArchEvents].limit,
