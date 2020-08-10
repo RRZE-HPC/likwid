@@ -6,14 +6,11 @@ PMC1  PM_INST_DISP
 PMC2  PM_IOPS_DISP
 PMC4  PM_RUN_INST_CMPL
 PMC5  PM_RUN_CYC
-PURR  PURR_STATE
-SPURR SPURR_STATE
 
 METRICS
 CPI  PMC5/PMC4
 Useful instr. rate PMC4/PMC1*100.0
 Useful uops rate PMC0/PMC2*100.0
-Processor Utilization SPURR/PURR
 
 
 LONG
@@ -21,7 +18,6 @@ Formulas:
 CPI = PM_RUN_CYC / PM_RUN_INST_CMPL
 Useful instr. rate = PM_RUN_INST_CMPL/PM_INST_DISP*100.0
 Useful uops rate = PM_IOPS_CMPL/PM_IOPS_DISP*100.0
-Processor Utilization = SPURR_STATE/PURR_STATE
 --
 This groups measures how many of the dispatched instructions and internal operations (uops) are
 acutally completed. These metrics show the speculatively dispatches instructions compared to the
