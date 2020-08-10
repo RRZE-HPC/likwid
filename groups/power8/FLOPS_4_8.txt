@@ -15,4 +15,10 @@ Eight FLOPs ops PMC2+PMC3
 MFLOP/s 1E-6*(((PMC0+PMC1)*4.0)+((PMC2+PMC3)*8.0))/time
 
 LONG
+Formulas:
+CPI = PM_RUN_CYC/PM_RUN_INST_CMPL
+Four FLOPs ops = PM_VSU0_4FLOP+PM_VSU1_4FLOP
+Eight FLOPs ops = PM_VSU0_8FLOP+PM_VSU1_8FLOP
+MFLOP/s = 1E-6*(((PM_VSU0_4FLOP+PM_VSU1_4FLOP)*4.0)+((PM_VSU0_8FLOP+PM_VSU1_8FLOP)*8.0))/time
+--
 Group 122 from web page http://www.ibm.com/support/knowledgecenter/en/SSFK5S_2.2.0/com.ibm.cluster.pedev.v2r2.pedev100.doc/bl7ug_power8metrics.htm

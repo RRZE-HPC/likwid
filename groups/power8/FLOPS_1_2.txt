@@ -12,7 +12,13 @@ METRICS
 CPI PMC5/PMC4
 One FLOP ops PMC0+PMC1
 Two FLOPs ops PMC2+PMC3
-MFLOP/s  1E-6*(PMC0+PMC1+((PMC2+PMC3)*2))/time
+[MFLOP/s]  1E-6*(PMC0+PMC1+((PMC2+PMC3)*2))/time
 
 LONG
+Formulas:
+CPI = PM_RUN_CYC/PM_RUN_INST_CMPL
+One FLOP ops = PM_VSU0_1FLOP+PM_VSU1_1FLOP
+Two FLOPs ops = PM_VSU0_2FLOP+PM_VSU1_2FLOP
+[MFLOP/s] = 1E-6*(PM_VSU0_1FLOP+PM_VSU1_1FLOP+((PM_VSU0_2FLOP+PM_VSU1_2FLOP)*2))/time
+--
 Group 121 from web page http://www.ibm.com/support/knowledgecenter/en/SSFK5S_2.2.0/com.ibm.cluster.pedev.v2r2.pedev100.doc/bl7ug_power8metrics.htm
