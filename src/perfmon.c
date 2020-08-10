@@ -160,6 +160,7 @@ char* default_translate_types[NUM_UNITS] = {
     [CBOX2] = "/sys/bus/event_source/devices/uncore_cbox_2",
     [CBOX3] = "/sys/bus/event_source/devices/uncore_cbox_3",
     [UBOX] = "/sys/bus/event_source/devices/uncore_arb",
+    [UBOXFIX] = "/sys/bus/event_source/devices/uncore_arb",
     [POWER] = "/sys/bus/event_source/devices/power",
 };
 
