@@ -82,7 +82,7 @@ local function usage()
     print_stdout("-m/-marker\t\t Activate marker API mode")
     print_stdout("-O\t\t\t Output easily parseable CSV instead of fancy tables")
     print_stdout("-o/--output <file>\t Write output to a file. The file is reformatted according to the suffix.")
-    print_stdout("-f\t\t\t Force execution (and measurements). You can also use environment variable LIKWID_FORCE.")
+    print_stdout("-f\t\t\t Force execution (and measurements). You can also use environment variable LIKWID_FORCE")
     print_stdout("-e, --env <key>=<value>\t Set environment variables for MPI processes")
     print_stdout("--mpiopts <str>\t Hand over options to underlying MPI. Please use proper quoting.")
     print_stdout("")
@@ -109,6 +109,7 @@ local hostfile = nil
 local hosts = {}
 local perf = {}
 local mpitype = nil
+local slurm_involved = false
 local omptype = nil
 local skipStr = ""
 local executable = {}
@@ -134,7 +135,6 @@ local getEnvironment = nil
 local executeCommand = nil
 local mpiexecutable = nil
 local hostpattern = "([%.%a%d_-]+)"
-local slurm_involved = false
 
 local function abspath(cmd)
     local pathlist = os.getenv("PATH")
@@ -544,27 +544,10 @@ end
 
 local function readHostfileSlurm(hostlist)
     nperhost = tonumber(os.getenv("SLURM_TASKS_PER_NODE"):match("(%d+)"))
-    if force then
-        if os.getenv("SLURM_CPUS_ON_NODE") ~= nil then
-            nperhost = tonumber(os.getenv("SLURM_CPUS_ON_NODE"):match("(%d+)")) / nperhost
-        elseif os.getenv("SLURM_CPUS_PER_TASK") ~= nil then
-            nperhost = tonumber(os.getenv("SLURM_CPUS_PER_TASK"):match("(%d+)"))
-        else
-            nperhost = cpuCount() / nperhost
-        end
-    end
+
     if hostlist and nperhost then
         hostfile = write_hostlist_to_file(hostlist, nperhost)
         hosts = readHostfilePBS(hostfile)
---        if debug then
---            print_stdout("Available hosts for scheduling:")
---            s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
---            print_stdout(s)
---            for i, host in pairs(hosts) do
---                s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
---                print_stdout (s)
---            end
---        end
         os.remove(hostfile)
     end
     return hosts
@@ -622,7 +605,7 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
     if wrapperscript.sub(1,1) ~= "/" then
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
-    local exec = string.format("srun --nodes %d --ntasks=%d --ntasks-per-node=%d --cpu_bind=none %s %s",
+    local exec = string.format("srun --nodes %d --ntasks %d --ntasks-per-node=%d --cpu_bind=none %s %s",
                                 nrNodes, np, ppn, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..exec)
@@ -719,17 +702,9 @@ local function getMpiType()
         end
     end
     if mpitype then
---        local mpi_bootstrap = os.getenv("I_MPI_HYDRA_BOOTSTRAP")
---        if mpi_bootstrap == "slurm" then
---            mpitype = "slurm"
---        end
-        if os.getenv("SLURM_JOB_ID") == nil then
-            f = io.popen(string.format("which srun 2>/dev/null"), 'r')
-            local s = f:read('*line')
-            if s ~= nil then
-                f:close()
-                mpitype = "slurm"
-            end
+        local mpi_bootstrap = os.getenv("I_MPI_HYDRA_BOOTSTRAP")
+        if mpi_bootstrap == "slurm" then
+            mpitype = "slurm"
         end
     end
     if not mpitype then
@@ -745,7 +720,8 @@ function getMpiVersion()
     intel_build_match = "Version (%d+) Build (%d+)"
     intel_match_old = "Version (%d+).(%d+).%d+"
     openmpi_match = "(%d+)%.(%d+)%.%d+"
-    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun"}) do
+    slurm_match = "slurm (%d+).(%d+).%d+"
+    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun", "srun"}) do
         f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
         if f ~= nil then
             mpiexec = f:read("*line")
@@ -761,16 +737,20 @@ function getMpiVersion()
                             maj, min = l:match(intel_match)
                             maj = tonumber(maj)
                             min = tonumber(min)
-                        elseif l:match(intel_match_old) then
-                            maj, min = l:match(intel_match_old)
-                            maj = tonumber(maj)
-                            min = tonumber(min)
                         elseif l:match(intel_build_match) then
                             maj, min = l:match(intel_build_match)
                             maj = tonumber(maj)
                             min = tonumber(min)
+                        elseif l:match(intel_match_old) then
+                            maj, min = l:match(intel_match_old)
+                            maj = tonumber(maj)
+                            min = tonumber(min)
                         elseif l:match(openmpi_match) then
                             maj, min = l:match(openmpi_match)
+                            maj = tonumber(maj)
+                            min = tonumber(min)
+                        elseif l:match(slurm_match) then
+                            maj, min = l:match(slurm_match)
                             maj = tonumber(maj)
                             min = tonumber(min)
                         end
@@ -818,8 +798,8 @@ local function getMpiExec(mpitype)
             end
         end
     end
-    local testmpitype = getMpiType()
-    if mpitype ~= testmpitype then
+    if mpiexecutable == nil then
+        local testmpitype = getMpiType()
         print_stderr(string.format("ERROR: Cannot find executable for MPI type %s but %s", mpitype, testmpitype))
         os.exit(1)
     end
@@ -1022,92 +1002,17 @@ local function calculatePinExpr(cpuexprs)
     return newexprs
 end
 
-local function affinityDomains()
-    domains = {}
-    local topo = likwid.getCpuTopology()
-    local numa = likwid.getNumaInfo()
-
-    -- N node domain
-    N = {}
-    N["tag"] = "N"
-    N["numberOfProcessors"] = topo["numHWThreads"]
-    N["processorList"] = {}
-    for i=0, topo["numHWThreads"]-1 do
-        table.insert(N["processorList"], topo["threadPool"][i]["apicId"])
-    end
-    table.insert(domains, N)
-
-    -- Sx socket domains
-    for s=1, topo["numSockets"] do
-        S = {}
-        S["tag"] = string.format("S%d", s-1)
-        S["numberOfProcessors"] = topo["numCoresPerSocket"]
-        S["processorList"] = {}
-        for i=0, topo["numHWThreads"]-1 do
-            if topo["threadPool"][i]["packageId"] == s-1 then
-                table.insert(S["processorList"], topo["threadPool"][i]["apicId"])
-            end
-        end
-        -- likwid.tableprint(S, true)
-        table.insert(domains, S)
-    end
-
-    -- Cy Last-level-cache domains
-    local cidx = 0
-    for s=1, topo["numSockets"] do
-        local slist = {}
-        for i=0, topo["numHWThreads"]-1 do
-            if topo["threadPool"][i]["packageId"] == s-1 then
-                table.insert(slist, topo["threadPool"][i]["apicId"])
-            end
-        end
-
-        for i = 1, #slist/topo["cacheLevels"][topo["numCacheLevels"]]["threads"] do
-            C = {}
-            C["tag"] = string.format("C%d", cidx)
-            C["numberOfProcessors"] = topo["cacheLevels"][topo["numCacheLevels"]]["threads"]
-            C["processorList"] = {}
-
-            for x=1, C["numberOfProcessors"] do
-                table.insert(C["processorList"], slist[x + (i-1)*C["numberOfProcessors"]])
-            end
-
-            -- likwid.tableprint(C, true)
-            table.insert(domains, C)
-            cidx = cidx + 1
-        end
-
-    end
-
-    -- Mz NUMA domains
-    for x=1, numa["numberOfNodes"] do
-        M = {}
-        M["tag"] = string.format("M%d", x-1)
-        M["numberOfProcessors"] = numa["nodes"][x]["numberOfProcessors"]
-        M["processorList"] = {}
-        for i,c in pairs(numa["nodes"][x]["processors"]) do
-            table.insert(M["processorList"], c)
-        end
-        -- likwid.tableprint(M, true)
-        table.insert(domains, M)
-    end
-    return domains
-end
-
 local function calculateCpuExprs(nperdomain, cpuexprs)
     local topo = likwid.getCpuTopology()
-    local affinity = affinityDomains()
+    local affinity = likwid.getAffinityInfo()
     local domainlist = {}
     local newexprs = {}
-
     domainname, count, threads = nperdomain:match("[E]*[:]*([NSCM]*):(%d+)[:]*(%d*)")
     count = math.tointeger(count)
     threads = math.tointeger(threads)
     if threads == nil then threads = 1 end
-    local threads_per_core = topo["numThreadsPerCore"]
-    local cores_per_socket = topo["numCoresPerSocket"]
 
-    for i, domain in pairs(affinity) do
+    for i, domain in pairs(affinity["domains"]) do
         if domain["tag"]:match(domainname.."%d*") then
             table.insert(domainlist, i)
         end
@@ -1115,42 +1020,24 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
     if debug then
         local str = "DEBUG: NperDomain string "..nperdomain.." covers the domains: "
         for i, idx in pairs(domainlist) do
-            str = str .. affinity[idx]["tag"] .. " "
+            str = str .. affinity["domains"][idx]["tag"] .. " "
         end
         print_stdout(str)
     end
 
-
     for i, domidx in pairs(domainlist) do
-        local num_processors = affinity[domidx]["numberOfProcessors"]
         local sortedlist = {}
-        local baselist = {}
-        local inlist = {}
-        for j=0,affinity[domidx]["numberOfProcessors"] do
-            table.insert(inlist, affinity[domidx]["processorList"][j])
-        end
-
         if tpp_ordering == "spread" then
-            for off=1,threads_per_core do
-                for j=0,num_processors/threads_per_core do
-                    table.insert(baselist, inlist[off + (j*threads_per_core)])
+            for off=1,topo["numThreadsPerCore"] do
+                for i=0,affinity["domains"][domidx]["numberOfProcessors"]/topo["numThreadsPerCore"] do
+                    table.insert(sortedlist, affinity["domains"][domidx]["processorList"][off + (i*topo["numThreadsPerCore"])])
                 end
             end
         elseif tpp_ordering == "close" then
-            for j=0,num_processors do
-                table.insert(baselist, inlist[j])
+            for i=0,affinity["domains"][domidx]["numberOfProcessors"] do
+                table.insert(sortedlist, affinity["domains"][domidx]["processorList"][i])
             end
         end
-
-
-        local c = 0
-        while c < count do
-            for j, s in pairs(baselist) do
-                table.insert(sortedlist, s)
-                c = c + 1
-            end
-        end
-
         local tmplist = {}
         for j=1,count do
             local tmplist = {}
@@ -2459,6 +2346,10 @@ end
 if skipStr == "" then
     if mpitype == "intelmpi" then
         maj, min = getMpiVersion()
+        if not maj then maj = 2016 end
+        if maj < 2000 then maj = maj + 2000 end
+        if not min then min = 0 end
+        print(maj, min, omptype, nrNodes, tpp, slurm_involved)
         if maj < 2017 and min <= 1 then
             if omptype == "intel" and nrNodes > 1 then
                 skipStr = '-s 0x3'
@@ -2469,8 +2360,15 @@ if skipStr == "" then
             elseif omptype == "gnu" and nrNodes == 1 then
                 skipStr = '-s 0x0'
             end
-        else
-            skipStr = "-s 0x0"
+        elseif maj >= 2017 then
+            if omptype == "intel" then
+                skipStr = '-s 0x0'
+                if tpp > 1 then
+                    skipStr = '-s 0x1'
+                end
+            elseif omptype == "gnu" then
+                skipStr = "-s 0x1"
+            end
         end
     elseif mpitype == "mvapich2" then
         if omptype == "intel" and nrNodes > 1 then
@@ -2481,6 +2379,9 @@ if skipStr == "" then
             skipStr = '-s 0x7'
         elseif omptype == "intel" and nrNodes == 1 then
             skipStr = '-s 0x1'
+            if tpp > 1 then
+                skipStr = '-s 0x3'
+            end
         elseif omptype == "gnu" and nrNodes > 1 then
             skipStr = '-s 0x7'
         elseif omptype == "gnu" and nrNodes == 1 then
