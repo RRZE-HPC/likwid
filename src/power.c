@@ -660,6 +660,7 @@ power_finalize(void)
     power_info.uncoreMinFreq = 0;
     power_info.uncoreMaxFreq = 0;
     memset(power_info.domains, 0, NUM_POWER_DOMAINS*sizeof(PowerDomain));
+    power_initialized = 0;
 }
 
 PowerInfo_t
