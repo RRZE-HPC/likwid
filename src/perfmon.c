@@ -1301,14 +1301,24 @@ perfmon_init_maps(void)
             memset(tmp + perfmon_numArchEvents, '\0', 10*sizeof(PerfmonEvent));
             eventHash = tmp;
             eventHash[perfmon_numArchEvents].name = "GENERIC_EVENT";
-            bstring blim = bfromcstr("");
+            bstring bsep = bfromcstr("|");
+            struct bstrList* outlist = bstrListCreate();
             for (int i = 0; i < perfmon_numArchEvents; i++)
             {
                 bstring x = bfromcstr(eventHash[i].limit);
                 struct bstrList* xlist = bsplit(x, '|');
                 for (int j = 0; j < xlist->qty; j++)
                 {
-                    if (binstr(blim, 0, x) == BSTR_ERR )
+                    int found = 0;
+                    for (int k = 0; k < outlist->qty; k++)
+                    {
+                        if (binstr(outlist->entry[k], 0, xlist->entry[j]) == BSTR_OK)
+                        {
+                            found = 1;
+                            break;
+                        }
+                    }
+                    if (!found)
                     {
                         for (int k = 0; k < perfmon_numCounters; k++)
                         {
@@ -1320,8 +1330,7 @@ perfmon_init_maps(void)
                                 if (translate_types[counter_map[k].type] && (!access(translate_types[counter_map[k].type], R_OK)))
 #endif
                                 {
-                                    bconchar(blim, '|');
-                                    bconcat(blim, xlist->entry[j]);
+                                    bstrListAdd(outlist, xlist->entry[j]);
                                     break;
                                 }
                             }
@@ -1331,6 +1340,8 @@ perfmon_init_maps(void)
                 bdestroy(x);
                 bstrListDestroy(xlist);
             }
+
+            bstring blim = bjoin(outlist, bsep);
             eventHash[perfmon_numArchEvents].limit = malloc((blength(blim)+2)*sizeof(char));
             int ret = snprintf(eventHash[perfmon_numArchEvents].limit,
                                blength(blim)+1, "%s", bdata(blim));
