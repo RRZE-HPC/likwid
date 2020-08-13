@@ -1456,7 +1456,6 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
             }
             *current = field64(counter_result, 0, box_map[type].regWidth);
         }
-        eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
     if ((haveLock) && MEASURE_UNCORE(eventSet))
     {

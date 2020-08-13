@@ -1035,7 +1035,6 @@ int perfmon_stopCountersThread_knl(int thread_id, PerfmonEventSet* eventSet)
                     break;
             }
             eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
-            eventSet->events[i].threadCounter[thread_id].init = FALSE;
         }
     }
     return 0;
