@@ -502,7 +502,7 @@ access_client_check(PciDeviceIndex dev, int cpu_id)
         }
         else
         {
-            ERROR_PRINT(Device check with accessDaemon failed: %s\n, access_client_strerror(record.errorcode));
+            DEBUG_PRINT(DEBUGLEV_DEVELOP, Device check for dev %d on CPU %d with accessDaemon failed: %s\n, dev, cpu_id, access_client_strerror(record.errorcode));
         }
     }
     return 0;
