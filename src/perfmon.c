@@ -1681,6 +1681,8 @@ perfmon_init(int nrThreads, const int* threadsToCpu)
 
     init_configuration();
     topology_init();
+    numa_init();
+    affinity_init();
 
     if ((cpuid_info.family == 0) && (cpuid_info.model == 0))
     {
