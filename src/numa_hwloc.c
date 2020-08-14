@@ -253,30 +253,7 @@ hwloc_numa_init(void)
        aggregate all sockets in the system into the single virtually created NUMA node */
     if (numa_info.numberOfNodes == 0)
     {
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__)
-#if HWLOC_API_VERSION > 0x00020000
-        hwloc_type = HWLOC_OBJ_NUMANODE;
-#else
-        hwloc_type = HWLOC_OBJ_NODE;
-#endif
-#else
-        hwloc_type = HWLOC_OBJ_SOCKET;
-#endif
-        if (virtual_numa_init() < 0)
-        {
-            return -1;
-        }
-
-        /* Use hwloc to set numberOfProcessors */
-        numa_info.nodes[0].numberOfProcessors = 0;
-        for (d=0; d<likwid_hwloc_get_nbobjs_by_type(hwloc_topology, hwloc_type); d++)
-        {
-            obj = likwid_hwloc_get_obj_by_type(hwloc_topology, hwloc_type, d);
-            /* depth is here used as index in the processors array */
-            depth = d * cores_per_socket;
-            numa_info.nodes[0].numberOfProcessors += likwid_hwloc_record_objs_of_type_below_obj(
-                    likwid_hwloc_topology, obj, HWLOC_OBJ_PU, &depth, &numa_info.nodes[0].processors);
-        }
+        return virtual_numa_init();
     }
     else
     {
