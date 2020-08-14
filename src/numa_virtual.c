@@ -41,87 +41,6 @@
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
-static uint64_t
-getFreeNodeMem(void)
-{
-    FILE *fp;
-    uint64_t free = 0;
-    bstring freeString  = bformat("MemFree:");
-    int i;
-
-    if (!access("/proc/meminfo", R_OK))
-    {
-        if (NULL != (fp = fopen ("/proc/meminfo", "r")))
-        {
-            bstring src = bread ((bNread) fread, fp);
-            struct bstrList* tokens = bsplit(src,(char) '\n');
-            for (i=0;i<tokens->qty;i++)
-            {
-                if (binstr(tokens->entry[i],0,freeString) != BSTR_ERR)
-                {
-                     bstring tmp = bmidstr (tokens->entry[i], 10, blength(tokens->entry[i])-10  );
-                     bltrimws(tmp);
-                     struct bstrList* subtokens = bsplit(tmp,(char) ' ');
-                     free = str2int(bdata(subtokens->entry[0]));
-                     bdestroy(tmp);
-                     bstrListDestroy(subtokens);
-                }
-            }
-            bstrListDestroy(tokens);
-            bdestroy(src);
-            fclose(fp);
-        }
-    }
-    else
-    {
-        bdestroy(freeString);
-        ERROR;
-    }
-    bdestroy(freeString);
-    return free;
-}
-
-static uint64_t
-getTotalNodeMem(void)
-{
-    int i;
-    FILE *fp;
-    uint64_t total = 0;
-    bstring totalString  = bformat("MemTotal:");
-
-    if (!access("/proc/meminfo", R_OK))
-    {
-        if (NULL != (fp = fopen ("/proc/meminfo", "r")))
-        {
-            bstring src = bread ((bNread) fread, fp);
-            struct bstrList* tokens = bsplit(src,(char) '\n');
-            for (i=0;i<tokens->qty;i++)
-            {
-                if (binstr(tokens->entry[i],0,totalString) != BSTR_ERR)
-                {
-                     bstring tmp = bmidstr (tokens->entry[i], 10, blength(tokens->entry[i])-10  );
-                     bltrimws(tmp);
-                     struct bstrList* subtokens = bsplit(tmp,(char) ' ');
-                     total = str2int(bdata(subtokens->entry[0]));
-                     bdestroy(tmp);
-                     bstrListDestroy(subtokens);
-                }
-            }
-            bstrListDestroy(tokens);
-            bdestroy(src);
-            fclose(fp);
-        }
-    }
-    else
-    {
-        bdestroy(totalString);
-        ERROR;
-    }
-
-    bdestroy(totalString);
-    return total;
-}
-
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 int
@@ -129,38 +48,43 @@ virtual_numa_init()
 {
     int i;
 
-    numa_info.numberOfNodes = 1;
-
-    numa_info.nodes = (NumaNode*) malloc(sizeof(NumaNode));
-    if (!numa_info.nodes)
+    NumaNode* nodes = (NumaNode*) malloc(sizeof(NumaNode));
+    if (!nodes)
     {
         fprintf(stderr,"No memory to allocate %ld byte for nodes array\n",sizeof(NumaNode));
         return -1;
     }
-    numa_info.nodes[0].id = 0;
-    numa_info.nodes[0].numberOfProcessors = cpuid_topology.numHWThreads;
-    numa_info.nodes[0].totalMemory = getTotalNodeMem();
-    numa_info.nodes[0].freeMemory = getFreeNodeMem();
-    numa_info.nodes[0].processors = (uint32_t*) malloc(cpuid_topology.numHWThreads * sizeof(uint32_t));
-    if (!numa_info.nodes[0].processors)
+    nodes[0].processors = (uint32_t*) malloc(cpuid_topology.numHWThreads * sizeof(uint32_t));
+    if (!nodes[0].processors)
     {
         fprintf(stderr,"No memory to allocate %ld byte for processors array of NUMA node %d\n",
                 cpuid_topology.numHWThreads * sizeof(uint32_t),0);
+        free(nodes);
         return -1;
     }
-    for (i = 0; i < cpuid_topology.numHWThreads; i++)
-    {
-        numa_info.nodes[0].processors[i] = i;
-    }
-    numa_info.nodes[0].distances = (uint32_t*) malloc(sizeof(uint32_t));
-    if (!numa_info.nodes[0].distances)
+    nodes[0].distances = (uint32_t*) malloc(sizeof(uint32_t));
+    if (!nodes[0].distances)
     {
         fprintf(stderr,"No memory to allocate %ld byte for distances array of NUMA node %d\n",
                 sizeof(uint32_t),0);
+        free(nodes);
+        free(nodes[0].processors);
         return -1;
     }
-    numa_info.nodes[0].distances[0] = 10;
-    numa_info.nodes[0].numberOfDistances = 1;
 
+    nodes[0].id = 0;
+    nodes[0].numberOfProcessors = cpuid_topology.numHWThreads;
+    nodes[0].totalMemory = getTotalMem();
+    nodes[0].freeMemory = getFreeMem();
+    for (i = 0; i < cpuid_topology.numHWThreads; i++)
+    {
+        nodes[0].processors[i] = cpuid_topology.threadPool[i].apicId;
+    }
+    nodes[0].distances[0] = 10;
+    nodes[0].numberOfDistances = 1;
+    numa_info.numberOfNodes = 1;
+    numa_info.nodes = nodes;
+
+    numaInitialized = 1;
     return 0;
 }

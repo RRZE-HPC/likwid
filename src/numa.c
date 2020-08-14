@@ -96,6 +96,87 @@ str2int(const char* str)
     return (int) val;
 }
 
+uint64_t
+getFreeMem(void)
+{
+    FILE *fp;
+    uint64_t free = 0;
+    bstring freeString  = bformat("MemFree:");
+    int i;
+
+    if (!access("/proc/meminfo", R_OK))
+    {
+        if (NULL != (fp = fopen ("/proc/meminfo", "r")))
+        {
+            bstring src = bread ((bNread) fread, fp);
+            struct bstrList* tokens = bsplit(src,(char) '\n');
+            for (i=0;i<tokens->qty;i++)
+            {
+                if (binstr(tokens->entry[i],0,freeString) != BSTR_ERR)
+                {
+                     bstring tmp = bmidstr (tokens->entry[i], 10, blength(tokens->entry[i])-10  );
+                     bltrimws(tmp);
+                     struct bstrList* subtokens = bsplit(tmp,(char) ' ');
+                     free = str2int(bdata(subtokens->entry[0]));
+                     bdestroy(tmp);
+                     bstrListDestroy(subtokens);
+                }
+            }
+            bstrListDestroy(tokens);
+            bdestroy(src);
+            fclose(fp);
+        }
+    }
+    else
+    {
+        bdestroy(freeString);
+        ERROR;
+    }
+    bdestroy(freeString);
+    return free;
+}
+
+uint64_t
+getTotalMem(void)
+{
+    int i;
+    FILE *fp;
+    uint64_t total = 0;
+    bstring totalString  = bformat("MemTotal:");
+
+    if (!access("/proc/meminfo", R_OK))
+    {
+        if (NULL != (fp = fopen ("/proc/meminfo", "r")))
+        {
+            bstring src = bread ((bNread) fread, fp);
+            struct bstrList* tokens = bsplit(src,(char) '\n');
+            for (i=0;i<tokens->qty;i++)
+            {
+                if (binstr(tokens->entry[i],0,totalString) != BSTR_ERR)
+                {
+                     bstring tmp = bmidstr (tokens->entry[i], 10, blength(tokens->entry[i])-10  );
+                     bltrimws(tmp);
+                     struct bstrList* subtokens = bsplit(tmp,(char) ' ');
+                     total = str2int(bdata(subtokens->entry[0]));
+                     bdestroy(tmp);
+                     bstrListDestroy(subtokens);
+                }
+            }
+            bstrListDestroy(tokens);
+            bdestroy(src);
+            fclose(fp);
+        }
+    }
+    else
+    {
+        bdestroy(totalString);
+        ERROR;
+    }
+
+    bdestroy(totalString);
+    return total;
+}
+
 int
 empty_numa_init()
 {

@@ -44,6 +44,10 @@ extern int numaInitialized;
 
 extern int str2int(const char* str);
 
+extern uint64_t getFreeMem(void);
+
+extern uint64_t getTotalMem(void);
+
 struct numa_functions {
     int (*numa_init) (void);
     void (*numa_setInterleaved) (const int*, int);
