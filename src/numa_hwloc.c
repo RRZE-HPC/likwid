@@ -79,40 +79,12 @@ getFreeNodeMem(int nodeId)
         bdestroy(src);
         fclose(fp);
     }
-    else if (!access("/proc/meminfo", R_OK))
-    {
-        bdestroy(filename);
-        filename = bfromcstr("/proc/meminfo");
-        if (NULL != (fp = fopen (bdata(filename), "r")))
-        {
-            bstring src = bread ((bNread) fread, fp);
-            struct bstrList* tokens = bsplit(src,(char) '\n');
-            for (i=0;i<tokens->qty;i++)
-            {
-                if (binstr(tokens->entry[i],0,freeString) != BSTR_ERR)
-                {
-                     bstring tmp = bmidstr (tokens->entry[i], 10, blength(tokens->entry[i])-10  );
-                     bltrimws(tmp);
-                     struct bstrList* subtokens = bsplit(tmp,(char) ' ');
-                     free = str2int(bdata(subtokens->entry[0]));
-                     bdestroy(tmp);
-                     bstrListDestroy(subtokens);
-                }
-            }
-            bstrListDestroy(tokens);
-            bdestroy(src);
-            fclose(fp);
-        }
-    }
-    else
-    {
-        bdestroy(freeString);
-        bdestroy(filename);
-        ERROR;
-    }
+
     bdestroy(freeString);
     bdestroy(filename);
-    return free;
+
+    /* Fallback to system-wide free memory */
+    return getFreeMem();
 }
 
 uint64_t
@@ -147,41 +119,13 @@ getTotalNodeMem(int nodeId)
         bdestroy(src);
         fclose(fp);
     }
-    else if (!access(sptr, R_OK))
-    {
-        if (NULL != (fp = fopen (bdata(procfilename), "r")))
-        {
-            bstring src = bread ((bNread) fread, fp);
-            struct bstrList* tokens = bsplit(src,(char) '\n');
-            for (i=0;i<tokens->qty;i++)
-            {
-                if (binstr(tokens->entry[i],0,totalString) != BSTR_ERR)
-                {
-                     bstring tmp = bmidstr (tokens->entry[i], 10, blength(tokens->entry[i])-10  );
-                     bltrimws(tmp);
-                     struct bstrList* subtokens = bsplit(tmp,(char) ' ');
-                     total = str2int(bdata(subtokens->entry[0]));
-                     bdestroy(tmp);
-                     bstrListDestroy(subtokens);
-                }
-            }
-            bstrListDestroy(tokens);
-            bdestroy(src);
-            fclose(fp);
-        }
-    }
-    else
-    {
-        bdestroy(totalString);
-        bdestroy(sysfilename);
-        bdestroy(procfilename);
-        ERROR;
-    }
 
     bdestroy(totalString);
     bdestroy(sysfilename);
     bdestroy(procfilename);
-    return total;
+
+    /* Fallback to system-wide total memory */
+    return getTotalMem();
 }
 
 int
