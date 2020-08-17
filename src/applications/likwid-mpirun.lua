@@ -543,7 +543,9 @@ local function readHostfilePBS(filename)
 end
 
 local function readHostfileSlurm(hostlist)
-    nperhost = tonumber(os.getenv("SLURM_TASKS_PER_NODE"):match("(%d+)"))
+    local stasks_per_node = tonumber(os.getenv("SLURM_TASKS_PER_NODE"):match("(%d+)"))
+    local scpus_per_node = tonumber(os.getenv("SLURM_CPUS_ON_NODE"):match("(%d+)"))
+    nperhost = stasks_per_node*scpus_per_node
 
     if hostlist and nperhost then
         hostfile = write_hostlist_to_file(hostlist, nperhost)
@@ -951,6 +953,11 @@ local function assignHosts(hosts, np, ppn, tpp)
         if break_while then
             break
         end
+    end
+    if current < np then
+        print_stdout(string.format("WARN: Only %d processes out of %d can be assigned, running with %d processes", current, np, current))
+        np = current
+        ppn = np/#newhosts
     end
     for i=1, #newhosts do
         if newhosts[i] then
@@ -2348,7 +2355,7 @@ if skipStr == "" then
         if not maj then maj = 2016 end
         if maj < 2000 then maj = maj + 2000 end
         if not min then min = 0 end
-        print(maj, min, omptype, nrNodes, tpp, slurm_involved)
+
         if maj < 2017 and min <= 1 then
             if omptype == "intel" and nrNodes > 1 then
                 skipStr = '-s 0x3'
