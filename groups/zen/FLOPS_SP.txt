@@ -1,4 +1,4 @@
-SHORT Double Precision MFLOP/s
+SHORT Single Precision MFLOP/s
 
 EVENTSET
 FIXC1 ACTUAL_CPU_CLOCK
