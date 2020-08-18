@@ -1,0 +1,42 @@
+SHORT UPI data traffic
+
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+SBOX0C0 TXL_FLITS_ALL_DATA
+SBOX0C1 RXL_FLITS_ALL_DATA
+SBOX1C0 TXL_FLITS_ALL_DATA
+SBOX1C1 RXL_FLITS_ALL_DATA
+SBOX2C0 TXL_FLITS_ALL_DATA
+SBOX2C1 RXL_FLITS_ALL_DATA
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Received data bandwidth [MByte/s] 1.0E-06*((SBOX0C1+SBOX1C1+SBOX2C1)/9.0)*64.0/time
+Received data volume [GByte] 1.0E-09*((SBOX0C1+SBOX1C1+SBOX2C1)/9.0)*64.0
+Sent data bandwidth [MByte/s] 1.0E-06*((SBOX0C0+SBOX1C0+SBOX2C0)/9.0)*64.0/time
+Sent data volume [GByte] 1.0E-09*((SBOX0C0+SBOX1C0+SBOX2C0)/9.0)*64.0
+Total data bandwidth [MByte/s] 1.0E-06*((SBOX0C0+SBOX1C0+SBOX2C0+SBOX0C1+SBOX1C1+SBOX2C1)/9.0)*64.0/time
+Total data volume [GByte] 1.0E-09*((SBOX0C0+SBOX1C0+SBOX2C0+SBOX0C1+SBOX1C1+SBOX2C1)/9.0)*64.0
+
+
+LONG
+Formulas:
+Received data bandwidth [MByte/s] = 1.0E-06*(SUM(RXL_FLITS_ALL_DATA)/9.0)*64.0/runtime
+Received data volume [GByte] = 1.0E-09*(SUM(RXL_FLITS_ALL_DATA)/9.0)*64.0
+Sent data bandwidth [MByte/s] = 1.0E-06*(SUM(TXL_FLITS_ALL_DATA)/9.0)*64.0/time
+Sent data volume [GByte] = 1.0E-09*(SUM(TXL_FLITS_ALL_DATA)/9.0)*64.0
+Total data bandwidth [MByte/s] = 1.0E-06*((SUM(RXL_FLITS_ALL_DATA)+SUM(TXL_FLITS_ALL_DATA))/9.0)*64.0/time
+Total data volume [GByte] = 1.0E-09*((SUM(RXL_FLITS_ALL_DATA)+SUM(TXL_FLITS_ALL_DATA))/9.0)*64.0
+--
+This group measures the data traffic on the UPI (socket interconnect). The group
+measures all filled data slots (9 slots per 64 Byte data transfer), that's why
+the count needs to be divided by 9. These 9 data chunks are not transferred in
+a single flit but there is one flit for the header and three flits for the data.
+The metrics show higher values as expected because the events count also
+different transfers which include data.
