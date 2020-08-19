@@ -612,7 +612,11 @@ if print_groups == true then
             if g["Name"]:len() > max_len then max_len = g["Name"]:len() end
         end
         local s = string.format("%%%ds\t%%s", max_len)
-        print_stdout(string.format(s,"Group name", "Description"))
+        if gpusSupported and gputopo then
+            print_stdout(string.format(s,"PerfMon group name", "Description"))
+        else
+            print_stdout(string.format(s,"Group name", "Description"))
+        end
         print_stdout(likwid.hline)
         for i,g in pairs(avail_groups) do
             print_stdout(string.format(s, g["Name"], g["Info"]))
@@ -628,7 +632,7 @@ if print_groups == true then
                 if g["Name"]:len() > max_len then max_len = g["Name"]:len() end
             end
             local s = string.format("%%%ds\t%%s", max_len)
-            print_stdout(string.format(s,"Group name", "Description"))
+            print_stdout(string.format(s,"\nNvMon group name", "Description"))
             print_stdout(likwid.hline)
             for i,g in pairs(avail_groups) do
                 print_stdout(string.format(s, g["Name"], g["Info"]))
