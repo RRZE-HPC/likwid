@@ -1,0 +1,32 @@
+SHORT L3 cache bandwidth in MBytes/s
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  CPU_CLOCKS_UNHALTED
+CPMC0 L3_ACCESS
+CPMC1 L3_MISS
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  PMC1/PMC0
+L3 access bandwidth [MBytes/s]  1.0E-06*CPMC0*64.0/time
+L3 access data volume [GBytes]  1.0E-09*CPMC0*64.0
+L3 access rate [%] (CPMC0/PMC0)*100.0
+L3 miss rate [%] (CPMC1/PMC0)*100.0
+L3 miss ratio [%] (CPMC1/CPMC0)*100.0
+
+LONG
+Formulas:
+L3 access bandwidth [MBytes/s] = 1.0E-06*L3_ACCESS*64.0/time
+L3 access data volume [GBytes] = 1.0E-09*L3_ACCESS*64.0
+L3 access rate [%] = (L3_ACCESS/RETIRED_INSTRUCTIONS)*100
+L3 miss rate [%] = (L3_MISS/RETIRED_INSTRUCTIONS)*100
+L3 miss ratio [%]= (L3_MISS/L3_ACCESS)*100
+-
+Profiling group to measure L3 cache bandwidth. There is no way to measure
+the store traffic between L2 and L3. The only two published L3 events are
+L3_ACCESS and L3_MISS.
