@@ -189,6 +189,13 @@ ifeq ($(strip $(COMPILER)),GCCPOWER)
     endif
 endif
 
+ifeq ($(strip $(NVIDIA_INTERFACE)),true)
+DEFINES += -DLIKWID_WITH_NVMON
+BUILDAPPDAEMON := true
+else
+BUILDAPPDAEMON := false
+endif
+
 ifeq ($(strip $(BUILDDAEMON)),true)
 ifneq ($(strip $(COMPILER)),MIC)
     DAEMON_TARGET = likwid-accessD
@@ -210,6 +217,7 @@ ifeq ($(strip $(BUILDFREQ)),true)
 else
     FREQ_TARGET =
 endif
+
 ifeq ($(strip $(BUILDAPPDAEMON)),true)
 	APPDAEMON_TARGET = likwid-appDaemon.so
 else
@@ -296,8 +304,3 @@ else
 DEBUG_FLAGS =
 endif
 
-ifeq ($(strip $(NVIDIA_INTERFACE)),true)
-DEFINES += -DLIKWID_WITH_NVMON
-else
-BUILDAPPDAEMON := false
-endif
