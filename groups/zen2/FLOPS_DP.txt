@@ -13,12 +13,12 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s]   FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI   PMC1/PMC0
-SP [MFLOP/s]   1.0E-06*(PMC2)/time
+DP [MFLOP/s]   1.0E-06*(PMC2)/time
 
 LONG
 Formulas:
 CPI = CPU_CLOCKS_UNHALTED/RETIRED_INSTRUCTIONS
-SP [MFLOP/s] = 1.0E-06*(RETIRED_SSE_AVX_FLOPS_ALL)/time
+DP [MFLOP/s] = 1.0E-06*(RETIRED_SSE_AVX_FLOPS_ALL)/time
 -
 Profiling group to measure (double-precisision) FLOP rate. The event might
 have a higher per-cycle increment than 15, so the MERGE event is required. In
