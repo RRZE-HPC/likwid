@@ -4,13 +4,13 @@
 #
 #      Description:  Event list for IBM POWER9
 #
-#      Version:   <VERSION>
-#      Released:  <DATE>
+#      Version:   5.0
+#      Released:  10.11.2019
 #
 #      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
 #      Project:  likwid
 #
-#      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+#      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
 #
 #      This program is free software: you can redistribute it and/or modify it under
 #      the terms of the GNU General Public License as published by the Free Software
@@ -27,10 +27,27 @@
 # =======================================================================================
 
 
+# From POWER9 Performance Monitor Unit User's Guide to this file:
+# Example:
+# PMC1  0000014054  PM_INST_PUMP_CPRED  Pump prediction correct. Counts across all types of pumps
+# for an instruction fetch. POWER9 counters are counted 1-based and not 0-based as LIKWID, so in
+# order to get the counter (limit|specification), we have to substract 1. The LIKWID event ID and
+# umask is in the hex configuration, the last two entries are the eventID and the thrid and fourth
+# last entries the umask resulting in:
+# EVENT_PM_INST_PUMP_CPRED 0x54 PMC0
+# UMASK_PM_INST_PUMP_CPRED 0x40
+# The 1 is equal to the counter PMC1 and will be set by LIKWID. There are some events with 0 which
+# means that the event can be counted in any counter, they have the counter (limit) PMC0|PMC1|PMC2|PMC3.
+# Some other events are listed multiple times, each time with a different counter like PM_INST_CMPL
+# with 0000010002, 0000020002, 0000030002 and 0000040002. They are listed only once in this file
+# with the appropriate counter specification.
+# In order to be compliant with the docs, the fixed-purpose counters PMC4 and PMC5 are NOT renamed
+# in LIKWID to FIXC0 and FIXC1.
+
 EVENT_PM_RUN_CYC 0xF4 PMC5
 UMASK_PM_RUN_CYC 0x00
 
-EVENT_PM_RUN_INST_CMPL 0xFA PMC4
+EVENT_PM_RUN_INST_CMPL 0xFA PMC3|PMC4
 UMASK_PM_RUN_INST_CMPL 0x00
 
 
@@ -75,8 +92,9 @@ UMASK_PM_INST_GRP_PUMP_MPRED_RTY 0x40
 EVENT_PM_INST_PUMP_CPRED 0x54 PMC0
 UMASK_PM_INST_PUMP_CPRED 0x40
 
-EVENT_PM_INST_CMPL 0xFE PMC0
-UMASK_PM_INST_CMPL 0x00
+# This event is renamed by me because it is available multiple times with the same name
+EVENT_PM_INST_CMPL_ALT 0xFE PMC0
+UMASK_PM_INST_CMPL_ALT 0x00
 
 EVENT_PM_INST_FROM_L2_MEPF 0x40 PMC1
 UMASK_PM_INST_FROM_L2_MEPF 0x40
@@ -105,7 +123,7 @@ UMASK_PM_INST_GRP_PUMP_CPRED 0xC0
 EVENT_PM_INST_GRP_PUMP_MPRED 0x5E PMC1
 UMASK_PM_INST_GRP_PUMP_MPRED 0xC0
 
-EVENT_PM_INST_DISP 0xF2 PMC1
+EVENT_PM_INST_DISP 0xF2 PMC1|PMC2
 UMASK_PM_INST_DISP 0x00
 
 EVENT_PM_L1_ICACHE_MISS 0xFD PMC1
@@ -143,9 +161,6 @@ UMASK_PM_INST_SYS_PUMP_MPRED 0x40
 
 EVENT_PM_L1_ICACHE_RELOADED_PREF 0x68 PMC2
 UMASK_PM_L1_ICACHE_RELOADED_PREF 0x00
-
-EVENT_PM_INST_DISP 0xF2 PMC2
-UMASK_PM_INST_DISP 0x00
 
 EVENT_PM_THRD_CONC_RUN_INST 0xF4 PMC2
 UMASK_PM_THRD_CONC_RUN_INST 0x00
@@ -188,9 +203,6 @@ UMASK_PM_INST_SYS_PUMP_MPRED_RTY 0x40
 
 EVENT_PM_INST_PUMP_MPRED 0x52 PMC3
 UMASK_PM_INST_PUMP_MPRED 0x40
-
-EVENT_PM_RUN_INST_CMPL 0xFA PMC3
-UMASK_PM_RUN_INST_CMPL 0x00
 
 EVENT_PM_INST_FROM_L1 0x80 PMC0|PMC1|PMC2|PMC3
 UMASK_PM_INST_FROM_L1 0x40
