@@ -66,9 +66,9 @@ extern void* getIterSingle(void* arg);
     printf("Supported Options:\n"); \
     printf("-h\t\t Help message\n"); \
     printf("-a\t\t List available benchmarks \n"); \
-    printf("-d\t\t Delimiter used for physical core list (default ,) \n"); \
+    printf("-d\t\t Delimiter used for physical hwthread list (default ,) \n"); \
     printf("-p\t\t List available thread domains\n"); \
-    printf("\t\t or the physical ids of the cores selected by the -c expression \n"); \
+    printf("\t\t or the physical ids of the hwthreads selected by the -c expression \n"); \
     printf("-s <TIME>\t Seconds to run the test minimally (default 1)\n");\
     printf("\t\t If resulting iteration count is below 10, it is normalized to 10.\n");\
     printf("-i <ITERS>\t Specify the number of iterations per thread manually. \n"); \
