@@ -44,9 +44,9 @@ extern int numaInitialized;
 
 extern int str2int(const char* str);
 
-extern uint64_t getFreeMem(void);
+extern uint64_t proc_getFreeSysMem(void);
 
-extern uint64_t getTotalMem(void);
+extern uint64_t proc_getTotalSysMem(void);
 
 struct numa_functions {
     int (*numa_init) (void);

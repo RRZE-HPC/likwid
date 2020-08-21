@@ -97,7 +97,7 @@ str2int(const char* str)
 }
 
 uint64_t
-getFreeMem(void)
+proc_getFreeSysMem(void)
 {
     FILE *fp;
     uint64_t free = 0;
@@ -137,7 +137,7 @@ getFreeMem(void)
 }
 
 uint64_t
-getTotalMem(void)
+proc_getTotalSysMem(void)
 {
     int i;
     FILE *fp;

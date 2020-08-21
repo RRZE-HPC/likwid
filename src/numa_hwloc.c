@@ -84,7 +84,7 @@ getFreeNodeMem(int nodeId)
     bdestroy(filename);
 
     /* Fallback to system-wide free memory */
-    return getFreeMem();
+    return proc_getFreeSysMem();
 }
 
 uint64_t
@@ -125,7 +125,7 @@ getTotalNodeMem(int nodeId)
     bdestroy(procfilename);
 
     /* Fallback to system-wide total memory */
-    return getTotalMem();
+    return proc_getTotalSysMem();
 }
 
 int

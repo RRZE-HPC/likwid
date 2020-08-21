@@ -74,8 +74,8 @@ virtual_numa_init()
 
     nodes[0].id = 0;
     nodes[0].numberOfProcessors = cpuid_topology.numHWThreads;
-    nodes[0].totalMemory = getTotalMem();
-    nodes[0].freeMemory = getFreeMem();
+    nodes[0].totalMemory = proc_getTotalSysMem();
+    nodes[0].freeMemory = proc_getFreeSysMem();
     for (i = 0; i < cpuid_topology.numHWThreads; i++)
     {
         nodes[0].processors[i] = cpuid_topology.threadPool[i].apicId;
