@@ -945,6 +945,7 @@ topology_setName(void)
                     cpuid_info.short_name = short_zen;
                     break;
                 case ZENPLUS_RYZEN:
+                case ZENPLUS_RYZEN2:
                     cpuid_info.name = amd_zenplus_str;
                     cpuid_info.short_name = short_zen;
                     break;
