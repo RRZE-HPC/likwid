@@ -348,9 +348,8 @@ int proc_numa_init(void)
 
     if (get_mempolicy(NULL, NULL, 0, 0, 0) < 0 && errno == ENOSYS)
     {
-        numa_info.numberOfNodes = 0;
-        numa_info.nodes = NULL;
-        return -1;
+        /* Allocate a virtual node instead and bail out */
+        return virtual_numa_init();
     }
     /* First determine maximum number of nodes */
     //numa_info.numberOfNodes = setConfiguredNodes()+1;

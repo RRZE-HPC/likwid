@@ -315,6 +315,7 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
     CUpti_EventDomainID* eventDomainIds = NULL;
     int eventIdx = 0;
     uint32_t totalEvents = 0;
+    CUdevice tmpdev = -1;
 
 
     dev->deviceId = id;
@@ -325,17 +326,18 @@ nvmon_cupti_createDevice(int id, NvmonDevice *dev)
     dev->numNvEventSets = 0;
     dev->nvEventSets = NULL;
 
-    if ((!dl_libcuda) || (!dl_libcudart) || (!dl_libcupti))
+    int err = link_cputi_libraries();
+    if (err < 0)
     {
-        int err = link_cputi_libraries();
-        if (err < 0)
-        {
-            return -1;
-        }
+        return -1;
     }
 
     // Assign device ID and get cuDevice from CUDA
-    CU_CALL((*cuDeviceGetPtr)(&dev->cuDevice, id), return -1);
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Nvmon: Create device %d, id);
+    CU_CALL((*cuDeviceGetPtr)(&tmpdev, id), return -1);
+    dev->cuDevice = tmpdev;
+    GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Nvmon: Returned device %d %p %p, tmpdev, cuptiDeviceGetNumEventDomainsPtr, &numDomains);
+    
 
     // Get the number of event domains of the device
     CUPTI_CALL((*cuptiDeviceGetNumEventDomainsPtr)(dev->cuDevice, &numDomains), return -1);

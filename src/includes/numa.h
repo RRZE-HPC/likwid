@@ -38,10 +38,15 @@
 #include <likwid.h>
 #include <numa_hwloc.h>
 #include <numa_proc.h>
+#include <numa_virtual.h>
 
 extern int numaInitialized;
 
 extern int str2int(const char* str);
+
+extern uint64_t proc_getFreeSysMem(void);
+
+extern uint64_t proc_getTotalSysMem(void);
 
 struct numa_functions {
     int (*numa_init) (void);
