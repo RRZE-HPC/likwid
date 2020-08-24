@@ -1,15 +1,15 @@
 /*
  * =======================================================================================
  *
- *      Filename:  numa.h
+ *      Filename:  numa_virtual.h
  *
- *      Description:  Header File NUMA module for internal use. External functions are
- *                    defined in likwid.h
+ *      Description:  Header Virtual/Fake NUMA backend
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
+ *                Tobias Auerochs, tobi291019@gmail.com
  *      Project:  likwid
  *
  *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
@@ -28,31 +28,9 @@
  *
  * =======================================================================================
  */
-#ifndef LIKWID_NUMA
-#define LIKWID_NUMA
+#ifndef LIKWID_NUMA_VIRTUAL
+#define LIKWID_NUMA_VIRTUAL
 
-#include <stdlib.h>
-#include <stdio.h>
-
-#include <types.h>
-#include <likwid.h>
-#include <numa_hwloc.h>
-#include <numa_proc.h>
-#include <numa_virtual.h>
-
-extern int numaInitialized;
-
-extern int str2int(const char* str);
-
-extern uint64_t proc_getFreeSysMem(void);
-
-extern uint64_t proc_getTotalSysMem(void);
-
-struct numa_functions {
-    int (*numa_init) (void);
-    void (*numa_setInterleaved) (const int*, int);
-    void (*numa_setMembind) (const int*, int);
-    void (*numa_membind) (void*, size_t, int);
-};
+extern int virtual_numa_init(void);
 
 #endif
