@@ -46,7 +46,7 @@
 #include <sys/types.h>
 
 #include <dlfcn.h>
-//#include <cupti.h>
+#include <cupti.h>
 #include <cuda.h>
 
 
@@ -283,17 +283,21 @@ nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
     }
     if (available >= 0)
     {
-        err = nvmon_cupti_functions.getEventList(available, list);
-/*        if (gtopo->devices[available].ccapMajor < 7)*/
-/*        {*/
-/*            err = nvmon_cupti_functions.getEventList(available, list);*/
-/*        }*/
-/*        else*/
-/*        {*/
-/*            ERROR_PRINT(NVIDIA PerfWorks API current not supported);*/
-/*            return -ENODEV;*/
-/*            //err = nvmon_perfworks_functions.getEventList(available, list);*/
-/*        }*/
+        //err = nvmon_cupti_functions.getEventList(available, list);
+        if (gtopo->devices[available].ccapMajor < 7)
+        {
+            if (nvmon_cupti_functions.getEventList)
+            {
+                err = nvmon_cupti_functions.getEventList(available, list);
+            }
+        }
+        else
+        {
+            if (nvmon_perfworks_functions.getEventList)
+            {
+                err = nvmon_perfworks_functions.getEventList(available, list);
+            }
+        }
     }
     return err;
 
@@ -308,9 +312,12 @@ void nvmon_returnEventsOfGpu(NvmonEventList_t list)
             for (int i = 0; i < list->numEvents; i++)
             {
                 NvmonEventListEntry* out = &list->events[i];
-                free(out->name);
-                free(out->desc);
-                free(out->limit);
+                if (out->name)
+                    free(out->name);
+                if (out->desc)
+                    free(out->desc);
+                if (out->limit)
+                    free(out->limit);
             }
             free(list->events);
             list->events = NULL;

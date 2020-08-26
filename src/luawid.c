@@ -3101,9 +3101,12 @@ lua_likwid_getGpuEventsAndCounters(lua_State* L)
                 lua_pushstring(L,"Name");
                 lua_pushstring(L, l->events[j].name);
                 lua_settable(L,-3);
-                lua_pushstring(L,"Description");
-                lua_pushstring(L, l->events[j].desc);
-                lua_settable(L,-3);
+                if (l->events[j].desc)
+                {
+                    lua_pushstring(L,"Description");
+                    lua_pushstring(L, l->events[j].desc);
+                    lua_settable(L,-3);
+                }
                 lua_pushstring(L,"Limit");
                 lua_pushstring(L, l->events[j].limit);
                 lua_settable(L,-3);

@@ -44,6 +44,7 @@
 typedef enum {
     NVMON_CUPTI_EVENT,
     NVMON_NVML_EVENT,
+    NVMON_PERFWORKS_EVENT,
     NVMON_NO_TYPE
 } NvmonEventType;
 
@@ -69,6 +70,7 @@ typedef struct {
     int eventId;
     CUpti_EventID cuEventId;
     char name[NVMON_DEFAULT_STR_LEN];
+    char real[NVMON_DEFAULT_STR_LEN];
     char description[NVMON_DEFAULT_STR_LEN];
     int active;
     NvmonEventType type;
@@ -124,6 +126,7 @@ typedef struct {
     int numNvEventSets;
     NvmonEventSet* nvEventSets;
     char *name;
+    char *chip;
     int numActiveEvents;
     NvmonActiveEvent *activeEvents;
     int numActiveCuGroups;
