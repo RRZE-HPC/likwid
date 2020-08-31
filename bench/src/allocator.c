@@ -155,7 +155,7 @@ allocator_allocateVector(
     numberOfAllocatedVectors++;
 
     affinity_pinProcess(domain->processorList[0]);
-    printf("Allocate: Process running on hwthread %d (Domain %s) - Vector length %llu/%llu Offset %d Alignment %llu\n",
+    printf("Allocate: Process running on core %d (Domain %s) - Vector length %llu/%llu Offset %d Alignment %llu\n",
             affinity_processGetProcessorId(),
             bdata(domain->tag),
             LLU_CAST size,

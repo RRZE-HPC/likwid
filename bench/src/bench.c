@@ -101,7 +101,7 @@ runTest(void* arg)
 
     /* pin the thread */
     likwid_pinThread(myData->processors[threadId]);
-    printf("Group: %d Thread %d Global Thread %d running on hwthread %d - Vector length %llu Offset %zd\n",
+    printf("Group: %d Thread %d Global Thread %d running on core %d - Vector length %llu Offset %zd\n",
             data->groupId,
             threadId,
             data->globalThreadId,

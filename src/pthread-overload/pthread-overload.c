@@ -191,6 +191,7 @@ pthread_create(pthread_t* thread,
         snprintf(file, 255, "/tmp/likwidpin.%d", gettid());
         snprintf(cmd, 511, "rm -f %s; nm %s 2>/dev/null | grep %x > %s",
                  file, info.dli_fname, ptr, file);
+        fprintf(stderr, "%s\n", cmd);
         ret = system(cmd);
         if (!access(file, R_OK))
         {
@@ -281,7 +282,7 @@ pthread_create(pthread_t* thread,
             {
                 if (!silent)
                 {
-                    color_print("Roundrobin placement triggered\n\tthreadid %lu -> hwthread %d - OK", *thread, pin_ids[npinned%ncpus]);
+                    color_print("Roundrobin placement triggered\n\tthreadid %lu -> core %d - OK", *thread, pin_ids[npinned%ncpus]);
                 }
                 overflowed = 1;
                 npinned = (npinned+1)%ncpus;
@@ -290,7 +291,7 @@ pthread_create(pthread_t* thread,
             {
                 if (!silent)
                 {
-                    color_print("\tthreadid %lu -> hwthread %d - OK", *thread, pin_ids[npinned%ncpus]);
+                    color_print("\tthreadid %lu -> core %d - OK", *thread, pin_ids[npinned%ncpus]);
                 }
                 npinned++;
                 if ((npinned >= ncpus) && (overflowed))
