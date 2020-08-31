@@ -10,10 +10,10 @@ my $cc = ' *';
 my $fc = '!';
 my $lc = ' *';
 
-my $VERSION   = '<VERSION>';
-my $DATE   = '<DATE>';
-#my $VERSION   = '4.0';
-#my $DATE   = '16.6.2015';
+#my $VERSION   = '<VERSION>';
+#my $DATE   = '<DATE>';
+my $VERSION   = '5.0.2';
+my $DATE   = '31.08.2020';
 my $YEAR  = '2015';
 my $AUTHOR = 'RRZE, University Erlangen-Nuremberg';
 my $LICENSE = 'gpl';

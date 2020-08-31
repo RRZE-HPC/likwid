@@ -8,13 +8,13 @@
  *                    that is used by likwid to avoid reading the systems architecture at
  *                    each start.
  *
- *      Version:   5.0
- *      Released:  10.11.2019
+ *      Version:   5.0.2
+ *      Released:  31.08.2020
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

@@ -5,14 +5,14 @@
  *
  *      Description:  Virtual/Fake NUMA backend
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.0.2
+ *      Released:  31.08.2020
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *                Tobias Auerochs, tobi291019@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2016 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

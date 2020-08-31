@@ -5,15 +5,15 @@
  *
  *      Description:  Implementation of frequency daemon.
  *
- *      Version:   5.0
- *      Released:  10.11.2019
+ *      Version:   5.0.2
+ *      Released:  31.08.2020
  *
  *      Authors:  Michael Meier, michael.meier@rrze.fau.de
  *                Jan Treibig (jt), jan.treibig@gmail.com,
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2019 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
