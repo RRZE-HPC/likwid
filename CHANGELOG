@@ -1,3 +1,21 @@
+# Changelog 5.0.2
+- Fix memory leak in calc_metric()
+- New peakflops benchmarks in likwid-bench
+- Fix for NUMA domain handling properly
+- Improvements for perf_event backend
+- Fix for perfctr and powermeter with perf_event backend
+- Fix for likwid-mpirun for SLURM with cpusets
+- Fix for likwid-setFrequencies in cpusets
+- Update for POWER9 event list
+- Updates for AMD Zen, Zen+ and Zen2 (events, groups)
+- Fix for Intel Uncore events with same name for different devices
+- Fix for file descriptor handling
+- Fix for compilation with GCC10
+- Remove sleep timer warning
+- Update examples C-markerAPI and C-internalMarkerAPI
+
+
+
 # Changelog 5.0.1
 - Some fixes for likwid-mpirun
   - Fix for hybrid pinning with multiple hosts
