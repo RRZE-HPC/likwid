@@ -582,6 +582,28 @@ cpu_count(cpu_set_t* set)
     return s;
 }
 
+int
+likwid_cpu_online(int cpu_id)
+{
+    if (cpu_id < 0)
+        return 0;
+    int state = 0;
+    bstring bpath = bformat("/sys/devices/system/cpu/cpu%d/online", cpu_id);
+    FILE* fp = fopen(bdata(bpath), "r");
+    if (fp)
+    {
+        char buf[10];
+        int ret = fread(buf, sizeof(char), 9, fp);
+        fclose(fp);
+        if (ret == 1)
+        {
+            state = atoi(buf);
+        }
+    }
+    bdestroy(bpath);
+    return state;
+}
+
 
 int
 topology_setName(void)

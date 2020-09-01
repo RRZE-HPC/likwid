@@ -184,6 +184,7 @@ struct topology_functions {
 #define  PPC_FAMILY       0x42U
 
 extern int cpu_count(cpu_set_t* set);
+extern int likwid_cpu_online(int cpu_id);
 
 static inline int cpuid_hasFeature(FeatureBit bit)
 {
