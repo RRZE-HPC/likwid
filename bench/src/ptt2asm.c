@@ -519,6 +519,7 @@ static int compile_file(bstring compiler, bstring flags, bstring asmfile, bstrin
     if (blength(compiler) == 0 || blength(asmfile) == 0)
         return -1;
     char buf[1024];
+    int exitcode = 0;
     bstring bstdout = bfromcstr("");
 
 
@@ -545,12 +546,16 @@ static int compile_file(bstring compiler, bstring flags, bstring asmfile, bstrin
         {
             fprintf(stderr, "%s\n", bdata(bstdout));
         }
-        pclose(fp);
+        exitcode = pclose(fp);
+    }
+    else
+    {
+        exitcode = errno;
     }
     bdestroy(cmd);
     bdestroy(bstdout);
 
-    return 0;
+    return exitcode;
 }
 
 
@@ -630,7 +635,7 @@ int dynbench_load(bstring testname, TestCase **testcase, char* tmpfolder, char *
                     if (mkdir(bdata(buildfolder), 0700) == 0)
                     {
                         int asm_written = 0;
-                        bstring asmfile = bformat("%s/%ld/%s.S", tmpfolder , pid, bdata(testname));
+                        bstring asmfile = bformat("%s/%s.S", bdata(buildfolder), bdata(testname));
 
                         struct bstrList* asmb = parse_asm(test, code);
                         if (asmb)
@@ -665,7 +670,7 @@ int dynbench_load(bstring testname, TestCase **testcase, char* tmpfolder, char *
                             {
                                 cflags = bfromcstr("");
                             }
-                            bstring objfile = bformat("%s/%ld/%s.o", tmpfolder , pid, bdata(testname));
+                            bstring objfile = bformat("%s/%s.o", bdata(buildfolder), bdata(testname));
                             cret = compile_file(compiler, cflags, asmfile, objfile);
                             if (cret == 0)
                             {
@@ -678,11 +683,13 @@ int dynbench_load(bstring testname, TestCase **testcase, char* tmpfolder, char *
                                 else
                                 {
                                     fprintf(stderr, "Cannot load function %s from %s\n", bdata(testname), bdata(objfile));
+                                    err = cret;
                                 }
                             }
                             else
                             {
                                 fprintf(stderr, "Cannot compile file %s to %s\n", bdata(asmfile), bdata(objfile));
+                                err = cret;
                             }
                             bdestroy(cflags);
                             bdestroy(objfile);
@@ -690,6 +697,7 @@ int dynbench_load(bstring testname, TestCase **testcase, char* tmpfolder, char *
                         else
                         {
                             fprintf(stderr, "Cannot find any compiler %s\n", bdata(buildfolder));
+                            err = -1;
                         }
                         bdestroy(candidates);
                         bdestroy(compiler);
@@ -713,6 +721,7 @@ int dynbench_load(bstring testname, TestCase **testcase, char* tmpfolder, char *
             else
             {
                 fprintf(stderr, "Failed to allocate space for the testname\n");
+                err = -ENOMEM;
             }
             bstrListDestroy(code);
 
@@ -720,12 +729,14 @@ int dynbench_load(bstring testname, TestCase **testcase, char* tmpfolder, char *
         else
         {
             fprintf(stderr, "Cannot read ptt file %s\n", bdata(pttfile));
+            err = -EPERM;
         }
 
     }
     else
     {
         fprintf(stderr, "Cannot open ptt file %s\n", bdata(pttfile));
+        err = -ENOENT;
     }
     bdestroy(pttfile);
 
@@ -766,4 +777,33 @@ int dynbench_close(TestCase* testcase, char* tmpfolder)
         testcase = NULL;
     }
     return 0;
+}
+
+int dynbench_asm(bstring testname, char* tmpfolder, bstring outfile)
+{
+    if (blength(testname) > 0 && tmpfolder && blength(outfile) > 0)
+    {
+        int ret = 0;
+        bstring asmfile = bformat("%s/%ld/%s.S", tmpfolder, getpid(), bdata(testname));
+        char buf[1024];
+        FILE* infp = fopen(bdata(asmfile), "r");
+        if (infp)
+        {
+            FILE* outfp = fopen(bdata(outfile), "w");
+            if (outfp)
+            {
+                for (;;)
+                {
+                    ret = fread(buf, sizeof(char), sizeof(buf), infp);
+                    if (ret <= 0)
+                    {
+                        break;
+                    }
+                    ret = fwrite(buf, sizeof(char), ret, outfp);
+                }
+                fclose(outfp);
+            }
+            fclose(infp);
+        }
+    }
 }
