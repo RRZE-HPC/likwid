@@ -71,22 +71,22 @@ sub init
     $CPP_ARGS = $ARGV[1] if ($ARGV[1]);
 
     if ($INPUTFILE =~ /.pas$/) {
-        $INPUTFILE =~ s/\.pas//; 
+        $INPUTFILE =~ s/\.pas//;
     } else {
         die "ERROR: Input file must have pas ending!\n";
     }
-    if ($OPT{o}) { 
+    if ($OPT{o}) {
         $OUTPUTFILE = $OPT{o};
     }else {
         $OUTPUTFILE = "$INPUTFILE.s";
     }
-    if ($OPT{i}) { 
+    if ($OPT{i}) {
         $ISA = $OPT{i};
         print "INFO: Using isa $ISA.\n\n" if ($VERBOSE);
     } else {
         print "INFO: No isa specified.\n Using default $ISA.\n\n" if ($VERBOSE);
     }
-    if ($OPT{a}) { 
+    if ($OPT{a}) {
         $AS = $OPT{a};
         print "INFO: Using as $AS.\n\n" if ($VERBOSE);
     } else {
@@ -113,7 +113,7 @@ Optional:
 -a <ASM>  : Specify different assembler (Default: gas)
 -i <ISA>  : Specify different isa (Default: x86)
 
-Example: 
+Example:
 $0 -i x86-64  -a masm -o out.s  myfile.pas
 
 END
@@ -277,8 +277,12 @@ if ($OPT{p}) {
     close FILE;
 }
 
+my $header = $as::AS->{HEADER};
+if ($ISA eq 'ARMv8' and $INPUTFILE =~ /sve/) {
+    $header = $as::AS->{SVE_HEADER};
+}
 open STDOUT,">$OUTPUTFILE";
-print "$as::AS->{HEADER}\n";
+print "$header\n";
 
 my $parser = new Parse::RecDescent ($main::grammar)  or die "ERROR: Bad grammar!\n";
 my $parse_tree = $parser->startrule($text) or print STDERR "ERROR: Syntax Error\n";
@@ -308,5 +312,3 @@ sub tree_exec
         }
     }
 }
-
-
