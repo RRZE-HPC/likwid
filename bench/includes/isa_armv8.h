@@ -84,6 +84,19 @@ int header(struct bstrList* code, char* funcname)
     bstrListAdd(code, typeline);
     bstrListAdd(code, label);
 
+    bstrListAddChar(code, "stp x29, x30, [sp, -144]!");
+    bstrListAddChar(code, "mov x29, sp");
+    bstrListAddChar(code, "stp x19, x20, [sp, 16]");
+    bstrListAddChar(code, "stp x21, x22, [sp, 32]");
+    bstrListAddChar(code, "stp x24, x25, [sp, 48]");
+    bstrListAddChar(code, "stp x26, x27, [sp, 64]");
+    bstrListAddChar(code, "str x28, [sp, 80]");
+    bstrListAddChar(code, "str d15, [sp, 88]");
+    bstrListAddChar(code, "stp d8, d9, [sp, 96]");
+    bstrListAddChar(code, "stp d10, d11, [sp, 112]");
+    bstrListAddChar(code, "stp d12, d14, [sp, 128]");
+
+
     bstrListAddChar(code, "\n");
 
     bdestroy(glline);
@@ -105,6 +118,18 @@ int footer(struct bstrList* code, char* funcname)
         line = bformat(".size kernelfunction, .-kernelfunction");
     }
     bstrListAddChar(code, ".exit:");
+
+    bstrListAddChar(code, "ldp	x19, x20, [sp, 16]");
+    bstrListAddChar(code, "ldp	x21, x22, [sp, 32]");
+    bstrListAddChar(code, "ldp	x24, x25, [sp, 48]");
+    bstrListAddChar(code, "ldp	x26, x27, [sp, 64]");
+    bstrListAddChar(code, "ldr	x28, [sp, 80]");
+    bstrListAddChar(code, "ldr	d15, [sp, 88]");
+    bstrListAddChar(code, "ldp	d8, d9, [sp, 96]");
+    bstrListAddChar(code, "ldp	d10, d11, [sp, 112]");
+    bstrListAddChar(code, "ldp	d12, d14, [sp, 128]");
+    bstrListAddChar(code, "ldp	x29, x30, [sp], 144");
+
     bstrListAddChar(code, "ret");
 
     bstrListAdd(code, line);
