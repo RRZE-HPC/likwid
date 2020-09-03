@@ -191,7 +191,6 @@ pthread_create(pthread_t* thread,
         snprintf(file, 255, "/tmp/likwidpin.%d", gettid());
         snprintf(cmd, 511, "rm -f %s; nm %s 2>/dev/null | grep %x > %s",
                  file, info.dli_fname, ptr, file);
-        fprintf(stderr, "%s\n", cmd);
         ret = system(cmd);
         if (!access(file, R_OK))
         {
