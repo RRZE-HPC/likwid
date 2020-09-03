@@ -69,7 +69,7 @@ static int (*access_check) (PciDeviceIndex dev, int cpu_id) = NULL;
 void
 HPMmode(int mode)
 {
-    if ((mode == ACCESSMODE_DIRECT) || (mode == ACCESSMODE_DAEMON))
+    if ((mode == ACCESSMODE_DIRECT) || (mode == ACCESSMODE_DAEMON) || (mode == ACCESSMODE_PERF))
     {
         config.daemonMode = mode;
     }
