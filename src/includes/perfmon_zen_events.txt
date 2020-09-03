@@ -27,19 +27,22 @@
 # =======================================================================================
 
 # Fixed Events
-EVENT_INST_RETIRED_ANY                      0x01 FIXC0
-UMASK_INST_RETIRED_ANY                      0x00
 
-EVENT_ACTUAL_CPU_CLOCK                      0x02 FIXC1
+# Not working well. With accessdaemon the counts are off. With perf_event, the
+# event always returns zero
+#EVENT_INST_RETIRED_ANY                      0x06 FIXC0
+#UMASK_INST_RETIRED_ANY                      0x00
+
+EVENT_ACTUAL_CPU_CLOCK                      0x01 FIXC1
 UMASK_ACTUAL_CPU_CLOCK                      0x00
 
-EVENT_APERF                                 0x02 FIXC1
+EVENT_APERF                                 0x01 FIXC1
 UMASK_APERF                                 0x00
 
-EVENT_MAX_CPU_CLOCK                         0x03 FIXC2
+EVENT_MAX_CPU_CLOCK                         0x02 FIXC2
 UMASK_MAX_CPU_CLOCK                         0x00
 
-EVENT_MPERF                                 0x03 FIXC2
+EVENT_MPERF                                 0x02 FIXC2
 UMASK_MPERF                                 0x00
 
 # Core-local Events
