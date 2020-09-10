@@ -220,7 +220,7 @@ $(FREQ_TARGET): $(SRC_DIR)/access-daemon/setFreqDaemon.c
 
 $(APPDAEMON_TARGET): $(SRC_DIR)/access-daemon/appDaemon.c $(TARGET_GOTCHA_LIB)
 	@echo "===>  BUILD application interface likwid-appDaemon.so"
-	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon likwid-appDaemon.so
+	$(Q)$(MAKE) -C  $(SRC_DIR)/access-daemon $(APPDAEMON_TARGET)
 
 $(BUILD_DIR):
 	@mkdir $(BUILD_DIR)
