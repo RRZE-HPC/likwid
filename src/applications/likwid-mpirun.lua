@@ -543,9 +543,15 @@ local function readHostfilePBS(filename)
 end
 
 local function readHostfileSlurm(hostlist)
-    local stasks_per_node = tonumber(os.getenv("SLURM_TASKS_PER_NODE"):match("(%d+)"))
-    local scpus_per_node = tonumber(os.getenv("SLURM_CPUS_ON_NODE"):match("(%d+)"))
-    nperhost = stasks_per_node*scpus_per_node
+    local stasks_per_node = 1
+    local scpus_per_node = 1
+    if os.getenv("SLURM_TASKS_PER_NODE") ~= nil then
+        stasks_per_node = tonumber(os.getenv("SLURM_TASKS_PER_NODE"):match("(%d+)"))
+    end
+    if os.getenv("SLURM_CPUS_ON_NODE") ~= nil then
+        scpus_per_node = tonumber(os.getenv("SLURM_CPUS_ON_NODE"):match("(%d+)"))
+    end
+    nperhost = stasks_per_node * scpus_per_node
 
     if hostlist and nperhost then
         hostfile = write_hostlist_to_file(hostlist, nperhost)
@@ -706,7 +712,7 @@ local function getMpiType()
     if mpitype then
         local mpi_bootstrap = os.getenv("I_MPI_HYDRA_BOOTSTRAP")
         if mpi_bootstrap == "slurm" then
-            mpitype = "slurm"
+            slurm_involved = "slurm"
         end
     end
     if not mpitype then
@@ -799,6 +805,12 @@ local function getMpiExec(mpitype)
                 mpiexecutable = s
             end
         end
+    end
+    if os.getenv("I_MPI_HYDRA_BOOTSTRAP") == "slurm" then
+        slurm_involved = true
+    end
+    if os.getenv("SLURM_JOB_ID") ~= nil then
+        slurm_involved = true
     end
     if mpiexecutable == nil then
         local testmpitype = getMpiType()
@@ -2201,6 +2213,10 @@ if not hostfile then
     else
         local cpus = cpuCount()
         table.insert(hosts, {hostname='localhost', slots=cpus, maxslots=cpus})
+        if slurm_involved then
+            print_stderr("ERROR: Cannot run on localhost with SLURM involved")
+            os.exit(1)
+        end
     end
 else
     hosts = readHostfile(hostfile)
