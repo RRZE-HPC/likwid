@@ -1387,14 +1387,15 @@ lua_likwid_cpustr_to_cpulist(lua_State* L)
     int* cpulist = (int*) malloc(cputopo->numHWThreads * sizeof(int));
     if (cpulist == NULL)
     {
-        lua_pushstring(L,"Cannot allocate data for the CPU list");
-        lua_error(L);
+        lua_pushnumber(L, 0);
+        return 1;
     }
     ret = cpustr_to_cpulist(cpustr, cpulist, cputopo->numHWThreads);
     if (ret <= 0)
     {
-        lua_pushstring(L,"Cannot parse cpustring");
-        lua_error(L);
+        free(cpulist);
+        lua_pushnumber(L, 0);
+        return 1;
     }
     lua_pushnumber(L, ret);
     lua_newtable(L);
