@@ -256,7 +256,7 @@ local function executeOpenMPI(wrapperscript, hostfile, env, nrNodes)
         end
     elseif ver1 == 2 then
         bindstr = "--bind-to none"
-    elseif ver1 == 3 then
+    elseif ver1 >= 3 then
         bindstr = "--bind-to none"
     end
 
@@ -832,7 +832,7 @@ local function getOmpType()
         local s = f:read('*a')
         f:close()
         for i,line in pairs(likwid.stringsplit(s, "\n")) do
-            if line:match("libgomp.so") then
+            if line:match("libgomp.so") or line:match("libomp.so")then
                 omptype = "gnu"
                 break
             elseif line:match("libiomp%d*.so") then
@@ -2408,6 +2408,8 @@ if skipStr == "" then
             skipStr = '-s 0x7'
         elseif omptype == "gnu" and nrNodes == 1 then
             skipStr = '-s 0x0'
+        elseif omptype == nil and nrNodes == 1 and tpp > 1 then
+            skipStr = '-s 0x3'
         end
     elseif mpitype == "slurm" then
         if omptype == "intel" and nrNodes > 1 then
