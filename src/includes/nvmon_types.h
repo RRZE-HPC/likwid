@@ -88,6 +88,7 @@ typedef struct {
     CUpti_EventDomainID cuDomainId;
     CUpti_EventGroup cuGroup;
     CUpti_EventGroupSet *cuGroupSet;
+
 } NvmonActiveEvent;
 typedef NvmonActiveEvent* NvmonActiveEvent_t;
 
@@ -105,6 +106,16 @@ typedef struct {
     TimerData             timer; /*!< \brief Time information how long the counters were running */
     double                rdtscTime; /*!< \brief Evaluation of the Time information in seconds */
     double                runTime; /*!< \brief Sum of all time information in seconds that the group was running */
+    struct bstrList*      events;
+    uint32_t numStages;
+    uint8_t* configImage;
+    size_t configImageSize;
+    uint8_t* counterDataImage;
+    size_t counterDataImageSize;
+    uint8_t* counterDataScratchBuffer;
+    size_t counterDataScratchBufferSize;
+    uint8_t* counterDataImagePrefix;
+    size_t counterDataImagePrefixSize;
 } NvmonEventSet;
 
 
@@ -118,6 +129,7 @@ typedef struct {
     CUdevice cuDevice;
     CUcontext context;
     int numEventSets;
+    int activeEventSet;
     CUpti_EventGroupSets *cuEventSets;
     GHashTable* eventHash;
     GHashTable* evIdHash;
@@ -176,6 +188,8 @@ typedef struct {
     int              numberOfBackends;
     NvmonFunctions*  backends[3];
 } NvmonGroupSet;
+
+extern NvmonGroupSet* nvGroupSet;
 
 
 #endif

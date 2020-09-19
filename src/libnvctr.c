@@ -38,6 +38,7 @@
 #include <error.h>
 #include <map.h>
 #include <libnvctr_types.h>
+#include <nvmon_types.h>
 
 #define gettid() syscall(SYS_gettid)
 
@@ -82,11 +83,11 @@ likwid_gpuMarkerInit(void)
         return;
     }
 
-    if (!lock_check())
-    {
-        fprintf(stderr,"Access to GPU performance counters is locked.\n");
-        exit(EXIT_FAILURE);
-    }
+    // if (!lock_check())
+    // {
+    //     fprintf(stderr,"Access to GPU performance counters is locked.\n");
+    //     exit(EXIT_FAILURE);
+    // }
 
     timer_init();
     topology_gpu_init();
@@ -142,7 +143,8 @@ likwid_gpuMarkerInit(void)
         bdestroy(bGeventStr);
         exit(EXIT_FAILURE);
     }
-
+    
+    printf("NvMarker nvmon_init\n");
     i = nvmon_init(num_gpus, id2Gpu);
     if (i < 0)
     {
@@ -324,6 +326,11 @@ likwid_gpuMarkerRegisterRegion(const char* regionTag)
         res->groupID = activeGpuGroup;
         res->label = bformat("%s-%d", regionTag, activeGpuGroup);
         res->nevents = nvmon_getNumberOfEvents(activeGpuGroup);
+        for (int j = 0; j < res->nevents; j++)
+        {
+            res->StartPMcounters[j] = 0.0;
+            res->PMcounters[j] = 0.0;
+        }
         add_smap(gpu_maps[i], bdata(res->label), res);
     }
 }
@@ -361,13 +368,19 @@ likwid_gpuMarkerStartRegion(const char* regionTag)
                 fprintf(stderr, "Failed to register region %s\n", regionTag);
                 return -EFAULT;
             }
+            memset(results, 0, sizeof(LikwidGpuResults));
             results->time = 0;
             results->count = 0;
             results->gpuID = i;
             results->state = GPUMARKER_STATE_NEW;
             results->groupID = activeGpuGroup;
             results->label = bstrcpy(tag);
-            results->nevents = nvmon_getNumberOfEvents(activeGpuGroup);
+            results->nevents = nvmon_getNumberOfEvents(results->groupID);
+            for (int j = 0; j < results->nevents; j++)
+            {
+                results->StartPMcounters[j] = 0.0;
+                results->PMcounters[j] = 0.0;
+            }
             add_smap(gpu_maps[i], bdata(results->label), results);
             ret = 0;
         }
@@ -376,9 +389,14 @@ likwid_gpuMarkerStartRegion(const char* regionTag)
             fprintf(stderr, "WARN: Starting an already-started region %s\n", regionTag);
             return -EFAULT;
         }
-        for (int j = 0; j < nvmon_getNumberOfEvents(activeGpuGroup); j++)
+        for (int j = 0; j < results->nevents; j++)
         {
-            results->StartPMcounters[j] = nvmon_getLastResult(activeGpuGroup, j, i);
+            NvmonDevice_t device = &nvGroupSet->gpus[i];
+            if (device->backend == LIKWID_NVMON_CUPTI_BACKEND)
+                results->StartPMcounters[j] = nvmon_getLastResult(results->groupID, j, i);
+            else if (device->backend == LIKWID_NVMON_PERFWORKS_BACKEND)
+                results->StartPMcounters[j] = 0.0;
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, START Device %d Event %d: %f - %f, i, j, results->StartPMcounters[j], results->PMcounters[j]);
         }
         results->state = GPUMARKER_STATE_START;
         timer_start(&(results->startTime));
@@ -417,13 +435,19 @@ likwid_gpuMarkerStopRegion(const char* regionTag)
             fprintf(stderr, "WARN: Stopping an unknown/not-started region %s\n", regionTag);
             return -EFAULT;
         }
+
         results->startTime.stop.int64 = timestamp.stop.int64;
         results->time += timer_print(&(results->startTime));
         results->count++;
-        for (int j = 0; j < nvmon_getNumberOfEvents(activeGpuGroup); j++)
+        for (int j = 0; j < results->nevents; j++)
         {
-            double end = nvmon_getLastResult(activeGpuGroup, j, i);
-            results->PMcounters[j] += end - results->StartPMcounters[j];
+            double end = nvmon_getLastResult(results->groupID, j, i);
+            NvmonDevice_t device = &nvGroupSet->gpus[i];
+            if (device->backend == LIKWID_NVMON_CUPTI_BACKEND)
+                results->PMcounters[j] += end - results->StartPMcounters[j];
+            else if (device->backend == LIKWID_NVMON_PERFWORKS_BACKEND)
+                results->PMcounters[j] += end;
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, STOP Device %d Event %d: %f - %f, i, j, end, results->PMcounters[j]);
         }
         results->state = GPUMARKER_STATE_STOP;
     }

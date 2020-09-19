@@ -994,6 +994,7 @@ NvmonFunctions nvmon_cupti_functions = {
     .addEvents = nvmon_cupti_addEventSets,
     .setupCounters = nvmon_cupti_setupCounters,
     .startCounters = nvmon_cupti_startCounters,
+    .stopCounters = nvmon_cupti_stopCounters,
     .readCounters = nvmon_cupti_readCounters,
 };
 
