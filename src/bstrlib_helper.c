@@ -107,6 +107,40 @@ bstring bstrListGet(struct bstrList * sl, int idx)
     return sl->entry[idx];
 }
 
+int bstrListToCharList(struct bstrList* sl, char*** list)
+{
+    int i, j, err = 0;
+    if (!sl || !list) return BSTR_ERR;
+    char** l = malloc(sizeof(char*) * sl->qty);
+    if (l)
+    {
+        for (i = 0; i < sl->qty; i++)
+        {
+            l[i] = malloc(sizeof(char) * (blength(sl->entry[i]) + 2));
+            if (l[i])
+            {
+                int ret = snprintf(l[i], blength(sl->entry[i])+1, "%s", bdata(sl->entry[i]));
+                if (ret > 0)
+                {
+                    l[i][ret] = '\0';
+                }
+            }
+            else
+            {
+                for (j = 0; j < i; j++)
+                {
+                    if (l[j]) free(l[j]);
+                }
+                free(l);
+                return -ENOMEM;
+            }
+        }
+        *list = l;
+        return sl->qty;
+    }
+    return -ENOMEM;
+}
+
 /*
  * int btrimbrackets (bstring b)
  *

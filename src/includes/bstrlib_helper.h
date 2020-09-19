@@ -46,6 +46,7 @@ int bstrListDel(struct bstrList * sl, int idx);
 bstring bstrListGet(struct bstrList * sl, int idx);
 
 void bstrListPrint(struct bstrList * sl);
+int bstrListToCharList(struct bstrList* sl, char*** list);
 
 int btrimbrackets (bstring b);
 int bisnumber(bstring b);
