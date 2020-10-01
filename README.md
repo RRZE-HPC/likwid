@@ -3,7 +3,7 @@ Introduction
 --------------------------------------------------------------------------------
 
 Likwid is a simple to install and use toolsuite of command line applications
-for performance oriented programmers. It works for Intel, AMD, ARMv8 and POWER9 
+for performance oriented programmers. It works for Intel, AMD, ARMv8 and POWER9
 processors on the Linux operating system. There is support for ARMv7 and POWER8
 but there is currently no test machine in our hands to test them properly.
 
@@ -74,6 +74,8 @@ ARM (experimental)
 POWER (experimental)
 - IBM POWER8
 - IBM POWER9
+
+Nvidia GPUs (experimental)
 
 --------------------------------------------------------------------------------
 Download, Build and Install
