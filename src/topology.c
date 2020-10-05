@@ -89,6 +89,7 @@ static char* xeon_phi_string = "Intel Xeon Phi (Knights Corner) Coprocessor";
 static char* xeon_phi2_string = "Intel Xeon Phi (Knights Landing) (Co)Processor";
 static char* xeon_phi3_string = "Intel Xeon Phi (Knights Mill) (Co)Processor";
 static char* icelake_str = "Intel Icelake processor";
+static char* tigerlake_str = "Intel Tigerlake processor";
 //static char* snowridgex_str = "Intel SnowridgeX processor";
 
 static char* barcelona_str = "AMD K10 (Barcelona) processor";
@@ -147,6 +148,7 @@ static char* short_skylakeX = "skylakeX";
 static char* short_kabylake = "skylake";
 static char* short_cascadelakeX = "CLX";
 static char* short_cannonlake = "cannonlake";
+static char* short_tigerlake = "TGL";
 static char* short_phi = "phi";
 static char* short_phi2 = "knl";
 static char* short_icelake = "ICL";
@@ -806,6 +808,13 @@ topology_setName(void)
 /*                    cpuid_info.short_name = short_snowridgex;*/
 /*                    break;*/
 
+                case TIGERLAKE1:
+                case TIGERLAKE2:
+                    //cpuid_info.supportClientmem = 1;
+                    cpuid_info.name = tigerlake_str;
+                    cpuid_info.short_name = short_tigerlake;
+                    break;
+
                 default:
                     cpuid_info.name = unknown_intel_str;
                     cpuid_info.short_name = short_unknown;
@@ -1322,6 +1331,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",kabylake_str);
     printf("\t%s\n",coffeelake_str);
     printf("\t%s\n",cascadelakeX_str);
+    printf("\t%s\n",tigerlake_str);
     printf("\n");
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);

@@ -124,6 +124,8 @@ power_init(int cpuId)
                 case SKYLAKEX:
                 case KABYLAKE1:
                 case KABYLAKE2:
+                case TIGERLAKE1:
+                case TIGERLAKE2:
                     power_info.hasRAPL = 1;
                     numDomains = NUM_POWER_DOMAINS;
                     break;

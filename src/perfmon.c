@@ -78,6 +78,7 @@
 #include <perfmon_zen2.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
+#include <perfmon_tigerlake.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -1097,6 +1098,17 @@ perfmon_init_maps(void)
                     translate_types = knl_translate_types;
                     break;
 
+                case TIGERLAKE1:
+                case TIGERLAKE2:
+                    box_map = tigerlake_box_map;
+                    eventHash = tigerlake_arch_events;
+                    counter_map = tigerlake_counter_map;
+                    perfmon_numArchEvents = perfmon_numArchEventsTigerlake;
+                    perfmon_numCounters = perfmon_numCountersTigerlake;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersTigerlake;
+                    translate_types = default_translate_types;
+                    break;
+
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
                     break;
@@ -1561,6 +1573,18 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_readCountersThread = perfmon_readCountersThread_knl;
                     perfmon_setupCountersThread = perfmon_setupCountersThread_knl;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_knl;
+                    break;
+
+                case TIGERLAKE1:
+                case TIGERLAKE2:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_tigerlake;
+                    perfmon_startCountersThread = perfmon_startCountersThread_tigerlake;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_tigerlake;
+                    perfmon_readCountersThread = perfmon_readCountersThread_tigerlake;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_tigerlake;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_tigerlake;
                     break;
 
                 default:

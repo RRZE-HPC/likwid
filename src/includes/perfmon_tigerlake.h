@@ -82,9 +82,12 @@ int tgl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
     flags = (1ULL<<22)|(1ULL<<16);
     /* Intel with standard 8 bit event mask: [7:0] */
     flags |= (event->umask<<8) + event->eventId;
-    
-    flags |= ((event->cmask<<8) + event->cfgBits)<<16;
-    
+
+    if (event->cmask != 0x0)
+    {
+        flags |= (event->cmask<<24);
+    }
+
     if (event->numberOfOptions > 0)
     {
         for(j = 0; j < event->numberOfOptions; j++)
@@ -100,9 +103,6 @@ int tgl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                 case EVENT_OPTION_INVERT:
                     flags |= (1ULL<<23);
                     break;
-/*                case EVENT_OPTION_ANYTHREAD:*/
-/*                    flags |= (1ULL<<21);*/
-/*                    break;*/
                 case EVENT_OPTION_THRESHOLD:
                     flags |= (event->options[j].value & 0xFFULL) << 24;
                     break;
@@ -122,6 +122,20 @@ int tgl_pmc_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     break;
             }
         }
+    }
+    if (event->eventId == 0xCD)
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_PEBS_LD_LAT, LLU_CAST flags, SETUP_LD_LAT)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_LD_LAT, event->cfgBits));
+    }
+    else if (event->eventId == 0xC6)
+    {
+        VERBOSEPRINTREG(cpu_id, MSR_PEBS_FRONTEND, LLU_CAST flags, SETUP_FRONTEND)
+        CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_FRONTEND, event->cfgBits));
+    }
+    else if (event->cfgBits != 0x0)
+    {
+        flags |= (event->cfgBits<<16);
     }
 
     if (flags != currentConfig[cpu_id][index])
@@ -174,6 +188,11 @@ int perfmon_setupCounterThread_tigerlake(
 
             case FIXED:
                 fixed_flags |= tgl_fixed_setup(cpu_id, index, event);
+                break;
+
+            case POWER:
+            case THERMAL:
+            case VOLTAGE:
                 break;
 
             default:
@@ -229,6 +248,17 @@ int perfmon_startCountersThread_tigerlake(int thread_id, PerfmonEventSet* eventS
                     CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, dev, counter1, 0x0ULL));
                     flags |= (1ULL<<(index+32));  /* enable fixed counter */
                     break;
+
+                case POWER:
+                    if (haveLock)
+                    {
+                        tmp = 0x0ULL;
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1,(uint32_t*)&tmp));
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST tmp, START_POWER)
+                        eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                    }
+                    break;
+
                 default:
                     break;
             }
@@ -294,6 +324,27 @@ int perfmon_stopCountersThread_tigerlake(int thread_id, PerfmonEventSet* eventSe
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                     SKL_CHECK_CORE_OVERFLOW(index+32);
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_FIXED)
+                    break;
+
+                case POWER:
+                    if (haveLock)
+                    {
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, STOP_POWER)
+                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        {
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_POWER)
+                            eventSet->events[i].threadCounter[thread_id].overflows++;
+                        }
+                    }
+                    break;
+
+                case THERMAL:
+                    CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
+                    break;
+
+                case VOLTAGE:
+                    CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
                     break;
 
                 default:
@@ -368,6 +419,29 @@ int perfmon_readCountersThread_tigerlake(int thread_id, PerfmonEventSet* eventSe
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_FIXED)
                     break;
 
+                case POWER:
+                    if (haveLock)
+                    {
+                        CHECK_POWER_READ_ERROR(power_read(cpu_id, counter1, (uint32_t*)&counter_result));
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_POWER)
+                        if (counter_result < eventSet->events[i].threadCounter[thread_id].counterData)
+                        {
+                            VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, OVERFLOW_POWER)
+                            eventSet->events[i].threadCounter[thread_id].overflows++;
+                        }
+                    }
+                    break;
+
+                case THERMAL:
+                    CHECK_TEMP_READ_ERROR(thermal_read(cpu_id,(uint32_t*)&counter_result));
+                    eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+                    break;
+
+                case VOLTAGE:
+                    CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
+                    eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+                    break;
+
                 default:
                     break;
             }
@@ -415,15 +489,15 @@ int perfmon_finalizeCountersThread_tigerlake(int thread_id, PerfmonEventSet* eve
         {
             case PMC:
                 ovf_values_core |= (1ULL<<(index-cpuid_info.perf_num_fixed_ctr));
-                if ((haveTileLock) && (eventSet->events[i].event.eventId == 0xB7))
+                if (eventSet->events[i].event.eventId == 0xCD)
                 {
-                    VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP0, 0x0ULL, CLEAR_PMC_OFFCORE0);
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP0, 0x0ULL));
+                    VERBOSEPRINTREG(cpu_id, MSR_PEBS_LD_LAT, 0x0ULL, CLEAR_PMC_LATENCY);
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_LD_LAT, 0x0ULL));
                 }
-                else if ((haveTileLock) && (eventSet->events[i].event.eventId == 0xBB))
+                else if (eventSet->events[i].event.eventId == 0xC6)
                 {
-                    VERBOSEPRINTREG(cpu_id, MSR_OFFCORE_RESP1, 0x0ULL, CLEAR_PMC_OFFCORE1);
-                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_OFFCORE_RESP1, 0x0ULL));
+                    VERBOSEPRINTREG(cpu_id, MSR_V4_PEBS_FRONTEND, 0x0ULL, CLEAR_PMC_FRONTEND);
+                    CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_PEBS_FRONTEND, 0x0ULL));
                 }
                 break;
             case FIXED:
