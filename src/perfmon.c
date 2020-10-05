@@ -78,6 +78,7 @@
 #include <perfmon_zen2.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
+#include <perfmon_icelake.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -1097,6 +1098,16 @@ perfmon_init_maps(void)
                     translate_types = knl_translate_types;
                     break;
 
+                case ICELAKE:
+                    pci_devices = icelake_pci_devices;
+                    eventHash = icelake_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsIcelake;
+                    counter_map = icelake_counter_map;
+                    box_map = icelake_box_map;
+                    perfmon_numCounters = perfmon_numCountersIcelake;
+                    translate_types = default_translate_types;
+                    break;
+
                 default:
                     ERROR_PLAIN_PRINT(Unsupported Processor);
                     break;
@@ -1541,6 +1552,17 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                 case SKYLAKEX: /* This one includes CascadeLake SP */
                 case KABYLAKE1:
                 case KABYLAKE2:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_skylake;
+                    perfmon_startCountersThread = perfmon_startCountersThread_skylake;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_skylake;
+                    perfmon_readCountersThread = perfmon_readCountersThread_skylake;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_skylake;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_skylake;
+                    break;
+
+                case ICELAKE:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_skylake;

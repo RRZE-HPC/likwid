@@ -797,6 +797,7 @@ topology_setName(void)
                     break;
 
                 case ICELAKE:
+                    //cpuid_info.supportClientmem = 1;
                     cpuid_info.name = icelake_str;
                     cpuid_info.short_name = short_icelake;
                     break;
@@ -1322,6 +1323,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",kabylake_str);
     printf("\t%s\n",coffeelake_str);
     printf("\t%s\n",cascadelakeX_str);
+    printf("\t%s\n",icelake_str);
     printf("\n");
     printf("Supported AMD processors:\n");
     printf("\t%s\n",opteron_sc_str);
