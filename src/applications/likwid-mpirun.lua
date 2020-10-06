@@ -2408,6 +2408,9 @@ if skipStr == "" then
             skipStr = '-s 0x7'
         elseif omptype == "gnu" and nrNodes == 1 then
             skipStr = '-s 0x0'
+            if tpp > 1 then
+                skipStr = '-s 0x3'
+            end
         elseif omptype == nil and nrNodes == 1 and tpp > 1 then
             skipStr = '-s 0x3'
         end
