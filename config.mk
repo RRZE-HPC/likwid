@@ -11,7 +11,7 @@
 COMPILER = GCC#NO SPACE
 
 # Path were to install likwid
-PREFIX ?= /mnt/opt/likwid-5.0-dev#NO SPACE
+PREFIX ?= /usr/local#NO SPACE
 
 # Set the default mode for MSR access.
 # This can usually be overriden on the commandline.
