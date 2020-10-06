@@ -6,7 +6,7 @@
  *      Description:  Header File of perfmon module for perf_event kernel interface.
  *
  *      Version:   5.0.2
- *      Released:  31.08.2020
+ *      Released:  06.10.2020
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

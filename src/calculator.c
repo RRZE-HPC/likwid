@@ -6,7 +6,7 @@
  *      Description:  Infix calculator
  *
  *      Version:   5.0.2
- *      Released:  31.08.2020
+ *      Released:  06.10.2020
  *
  *      Author:   Brandon Mills (bm), mills.brandont@gmail.com
  *      Project:  likwid

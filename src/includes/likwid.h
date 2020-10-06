@@ -6,7 +6,7 @@
  *      Description:  Header File of likwid API
  *
  *      Version:   5.0.2
- *      Released:  31.08.2020
+ *      Released:  06.10.2020
  *
  *      Authors:  Thomas Gruber (tr), thomas.roehl@googlemail.com
  *

@@ -5,7 +5,7 @@
 #      Description:  Event list for AMD Kabini
 #
 #      Version:   5.0.2
-#      Released:  31.08.2020
+#      Released:  06.10.2020
 #
 #      Author:   saravanan.ekanathan@amd.com
 #      Project:  likwid

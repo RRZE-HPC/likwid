@@ -6,7 +6,7 @@
  *      Description:  Example how to use the LIKWID API in C/C++ applications
  *
  *      Version:   5.0.2
- *      Released:  31.08.2020
+ *      Released:  06.10.2020
  *
  *      Author:  Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

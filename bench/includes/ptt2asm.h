@@ -5,7 +5,7 @@
  *      Description:  The interface to dynamically load ptt files
  *
  *      Version:   5.0.2
- *      Released:  31.08.2020
+ *      Released:  06.10.2020
  *
  *      Author:  Thomas Gruber (tg), thomas.roehl@gmail.com
  *      Project:  likwid

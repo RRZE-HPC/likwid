@@ -8,7 +8,7 @@
  *                    variables, pinning threads, and inspecting results.
  *
  *      Version:   5.0.2
- *      Released:  31.08.2020
+ *      Released:  06.10.2020
  *
  *      Author:   Riley Weber, rileyw13@protonmail.com
  *      Project:  likwid

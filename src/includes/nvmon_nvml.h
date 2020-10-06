@@ -6,7 +6,7 @@
  *      Description:  Header File of nvmon module (NVML backend).
  *
  *      Version:   5.0.2
- *      Released:  31.08.2020
+ *      Released:  06.10.2020
  *
  *      Author:   Thomas Gruber (tg), thomas.gruber@googlemail.com
  *      Project:  likwid

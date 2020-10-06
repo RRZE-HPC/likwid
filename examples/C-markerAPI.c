@@ -6,7 +6,7 @@
  *      Description:  Example how to use the C/C++ Marker API
  *
  *      Version:   5.0.2
- *      Released:  31.08.2020
+ *      Released:  06.10.2020
  *
  *      Authors:  Thomas Gruber (tr), thomas.roehl@googlemail.com
  *                Riley Weber, rileyw13@protonmail.com
