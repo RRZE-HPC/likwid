@@ -1,0 +1,15 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 8
+DESC Double-precision load, only scalar operations
+LOADS 1
+STORES 0
+INSTR_CONST 4
+INSTR_LOOP 1
+UOPS 8
+fmov   d4, #3.0e+0
+fmov   v4.d[1], x0
+LOOP 2
+lsl GPR7, GPR6, 3
+str     q4, [STR0, GPR7]

@@ -1,0 +1,14 @@
+STREAMS 2
+TYPE DOUBLE
+FLOPS 1
+BYTES 24
+DESC Double-precision vector add A(i) = A(i) + B(i), optimized for SVE
+LOADS 2
+STORES 1
+INSTR_LOOP 7
+INSTR_CONST 9
+LOOP 2
+ld1d  z0.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d  z1.d, p0/z, [STR1, GPR6, lsl 3]
+fadd    z0.d, p1/m, z0.d, z1.d
+st1d    z0.d, p0, [STR0, GPR6, lsl 3]

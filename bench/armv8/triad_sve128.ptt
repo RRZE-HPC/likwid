@@ -1,0 +1,16 @@
+STREAMS 4
+TYPE DOUBLE
+FLOPS 2
+BYTES 32
+DESC Double-precision triad A(i) = B(i) * C(i) + D(i), optimized for SVE with a vector length of 128 bit
+LOADS 3
+STORES 1
+INSTR_LOOP 9
+INSTR_CONST 9
+LOOP 2
+ld1d  z0.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d  z1.d, p0/z, [STR1, GPR6, lsl 3]
+ld1d  z2.d, p0/z, [STR1, GPR6, lsl 3]
+fmul  z0.d, p1/m, z0.d, z1.d
+fadd  z0.d, p1/m, z0.d, z2.d
+st1d    z0.d, p0, [STR2, GPR6, lsl 3]
