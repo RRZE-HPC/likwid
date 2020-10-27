@@ -106,6 +106,7 @@ DECLARE_CUFUNC(cuCtxPushCurrent, (CUcontext pctx));
 DECLARE_CUFUNC(cuCtxSynchronize, ());
 DECLARE_CUFUNC(cuDeviceGetAttribute, (int *, CUdevice_attribute, CUdevice));
 DECLARE_CUFUNC(cuCtxCreate, (CUcontext *, unsigned int, CUdevice));
+DECLARE_CUFUNC(cuDevicePrimaryCtxRetain, (CUcontext *, CUdevice));
 
 #ifndef DECLARE_CUDAFUNC
 #define CUDAAPIWEAK __attribute__( ( weak ) )
@@ -143,6 +144,7 @@ DECLARE_NVPWFUNC(NVPW_CounterData_GetNumRanges, (NVPW_CounterData_GetNumRanges_P
 DECLARE_NVPWFUNC(NVPW_Profiler_CounterData_GetRangeDescriptions, (NVPW_Profiler_CounterData_GetRangeDescriptions_Params* params));
 DECLARE_NVPWFUNC(NVPW_MetricsContext_SetCounterData, (NVPW_MetricsContext_SetCounterData_Params* params));
 DECLARE_NVPWFUNC(NVPW_MetricsContext_EvaluateToGpuValues, (NVPW_MetricsContext_EvaluateToGpuValues_Params* params));
+DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_GetNumPasses, (NVPW_RawMetricsConfig_GetNumPasses_Params* params));
 
 #ifndef DECLARE_CUPTIFUNC
 #define CUPTIAPIWEAK __attribute__( ( weak ) )
@@ -207,6 +209,7 @@ link_perfworks_libraries(void)
     cuCtxDestroyPtr = DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuCtxDestroy");
     cuDeviceGetAttributePtr = DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuDeviceGetAttribute");
     cuCtxCreatePtr = DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuCtxCreate");
+    cuDevicePrimaryCtxRetainPtr = DLSYM_AND_CHECK(dl_perfworks_libcuda, "cuDevicePrimaryCtxRetain");
 
     dl_perfworks_libcudart = dlopen("libcudart.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
     if (!dl_perfworks_libcudart)
@@ -250,6 +253,7 @@ link_perfworks_libraries(void)
     NVPW_Profiler_CounterData_GetRangeDescriptionsPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_Profiler_CounterData_GetRangeDescriptions");
     NVPW_MetricsContext_SetCounterDataPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_MetricsContext_SetCounterData");
     NVPW_MetricsContext_EvaluateToGpuValuesPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_MetricsContext_EvaluateToGpuValues");
+    NVPW_RawMetricsConfig_GetNumPassesPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_GetNumPasses");
 
     dl_cupti = dlopen("libcupti.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
     if (!dl_cupti || dlerror() != NULL)
@@ -345,7 +349,8 @@ static int perfworks_check_nv_context(NvmonDevice_t device, CUcontext currentCon
         {
             LIKWID_CUDA_API_CALL((*cudaSetDevicePtr)(device->deviceId), return -EFAULT);
             LIKWID_CUDA_API_CALL((*cudaFreePtr)(NULL), return -EFAULT);
-            LIKWID_CUDA_API_CALL((*cuCtxGetCurrentPtr)(&device->context), return -EFAULT);
+            //LIKWID_CUDA_API_CALL((*cuCtxGetCurrentPtr)(), return -EFAULT);
+            LIKWID_CUDA_API_CALL((*cuDevicePrimaryCtxRetainPtr)(&device->context, device->cuDevice), return -EFAULT);
             GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, New context %ld for device %d, device->context, device->deviceId);
         }
     }
@@ -1073,6 +1078,22 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
             }
         }
         bstrListDestroy(parts);
+    }
+    if (eventtokens->qty == 0)
+    {
+        ERROR_PRINT(No event in eventset);
+        bstrListDestroy(eventtokens);
+        if(popContext > 0)
+        {
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Pop Context %ld for device %d, device->context, device->deviceId);
+            LIKWID_CU_CALL((*cuCtxPopCurrentPtr)(&device->context), return -EFAULT);
+        }
+        if (curDeviceId != device->deviceId)
+        {
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Switching to GPU device %d, device->deviceId);
+            LIKWID_CUDA_API_CALL((*cudaSetDevicePtr)(device->deviceId), return -EFAULT);
+        }
+        return -EFAULT;
     }
     
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Increase size of eventSet space on device %d, device->deviceId);
