@@ -371,7 +371,7 @@ int skx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     set_state_all = 0;
                     break;
                 case EVENT_OPTION_TID:
-                    filter_flags0 |= (extractBitField(event->options[j].value,8,0));
+                    filter_flags0 |= (extractBitField(event->options[j].value,9,0));
                     flags |= (1ULL<<19);
                     break;
                 case EVENT_OPTION_MATCH0:
@@ -1462,7 +1462,6 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
             }
             *current = field64(counter_result, 0, box_map[type].regWidth);
         }
-        eventSet->events[i].threadCounter[thread_id].init = FALSE;
     }
     if ((haveLock) && MEASURE_UNCORE(eventSet))
     {

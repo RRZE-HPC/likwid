@@ -27,19 +27,21 @@
 # =======================================================================================
 
 # Fixed Events
-EVENT_INST_RETIRED_ANY                      0x01 FIXC0
-UMASK_INST_RETIRED_ANY                      0x00
+# Not working well. With accessdaemon the counts are off. With perf_event, the
+# event always returns zero
+#EVENT_INST_RETIRED_ANY                      0x06 FIXC0
+#UMASK_INST_RETIRED_ANY                      0x00
 
-EVENT_ACTUAL_CPU_CLOCK                      0x02 FIXC1
+EVENT_ACTUAL_CPU_CLOCK                      0x01 FIXC1
 UMASK_ACTUAL_CPU_CLOCK                      0x00
 
-EVENT_APERF                                 0x02 FIXC1
+EVENT_APERF                                 0x01 FIXC1
 UMASK_APERF                                 0x00
 
-EVENT_MAX_CPU_CLOCK                         0x03 FIXC2
+EVENT_MAX_CPU_CLOCK                         0x02 FIXC2
 UMASK_MAX_CPU_CLOCK                         0x00
 
-EVENT_MPERF                                 0x03 FIXC2
+EVENT_MPERF                                 0x02 FIXC2
 UMASK_MPERF                                 0x00
 
 # Core-local Events
@@ -99,8 +101,10 @@ UMASK_ST_TO_LD_FWD                     0x00
 EVENT_ST_COMMIT_CANCELS                0x37 PMC
 UMASK_ST_COMMIT_CANCELS                0x01
 
-#EVENT_DATA_CACHE_ACCESSES              0x40 PMC
-#UMASK_DATA_CACHE_ACCESSES              0x00
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_DATA_CACHE_ACCESSES              0x40 PMC
+UMASK_DATA_CACHE_ACCESSES              0x00
 
 EVENT_LS_MAB_ALLOC                  0x41 PMC
 UMASK_LS_MAB_ALLOC_LOADS            0x01
@@ -111,10 +115,10 @@ EVENT_DATA_CACHE_REFILLS                            0x43 PMC
 UMASK_DATA_CACHE_REFILLS_LOCAL_L2                   0x01
 UMASK_DATA_CACHE_REFILLS_LOCAL_CACHE                0x02
 UMASK_DATA_CACHE_REFILLS_LOCAL_DRAM                 0x08
+UMASK_DATA_CACHE_REFILLS_LOCAL_ALL                  0x0B
 UMASK_DATA_CACHE_REFILLS_REMOTE_CACHE               0x10
 UMASK_DATA_CACHE_REFILLS_REMOTE_DRAM                0x40
-UMASK_DATA_CACHE_REFILLS_LOCAL                      0x0B
-UMASK_DATA_CACHE_REFILLS_REMOTE                     0x50
+UMASK_DATA_CACHE_REFILLS_REMOTE_ALL                 0x50
 UMASK_DATA_CACHE_REFILLS_ALL                        0x5B
 
 EVENT_L1_DTLB_MISS                     0x45 PMC
@@ -129,11 +133,13 @@ UMASK_L1_DTLB_MISS_2M_L2_MISS          0x40
 UMASK_L1_DTLB_MISS_1G_L2_MISS          0x80
 UMASK_L1_DTLB_MISS_ANY_L2_MISS         0xF0
 
-#EVENT_TABLEWALKER_ALLOC                0x46 PMC
-#UMASK_TABLEWALKER_ALLOC_DSIDE0         0x01
-#UMASK_TABLEWALKER_ALLOC_DSIDE1         0x02
-#UMASK_TABLEWALKER_ALLOC_ISIDE0         0x04
-#UMASK_TABLEWALKER_ALLOC_ISIDE1         0x08
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_TABLEWALKER_ALLOC                0x46 PMC
+UMASK_TABLEWALKER_ALLOC_DSIDE0         0x01
+UMASK_TABLEWALKER_ALLOC_DSIDE1         0x02
+UMASK_TABLEWALKER_ALLOC_ISIDE0         0x04
+UMASK_TABLEWALKER_ALLOC_ISIDE1         0x08
 
 EVENT_MISALIGNED_LOADS                      0x47    PMC
 UMASK_MISALIGNED_LOADS                      0x00
@@ -149,21 +155,21 @@ EVENT_SWPREF_DATA_CACHE_FILLS                   0x59 PMC
 UMASK_SWPREF_DATA_CACHE_FILLS_LOCAL_L2          0x01
 UMASK_SWPREF_DATA_CACHE_FILLS_LOCAL_CACHE       0x02
 UMASK_SWPREF_DATA_CACHE_FILLS_LOCAL_DRAM        0x08
+UMASK_SWPREF_DATA_CACHE_FILLS_LOCAL_ALL         0x0B
 UMASK_SWPREF_DATA_CACHE_FILLS_REMOTE_CACHE      0x10
 UMASK_SWPREF_DATA_CACHE_FILLS_REMOTE_DRAM       0x40
-UMASK_SWPREF_DATA_CACHE_FILLS_LOCAL                0x0B
-UMASK_SWPREF_DATA_CACHE_FILLS_REMOTE               0x50
-UMASK_SWPREF_DATA_CACHE_FILLS_ALL                  0x5B
+UMASK_SWPREF_DATA_CACHE_FILLS_REMOTE_ALL        0x50
+UMASK_SWPREF_DATA_CACHE_FILLS_ALL               0x5B
 
 EVENT_HWPREF_DATA_CACHE_FILLS                   0x5A PMC
 UMASK_HWPREF_DATA_CACHE_FILLS_LOCAL_L2          0x01
 UMASK_HWPREF_DATA_CACHE_FILLS_LOCAL_CACHE       0x02
 UMASK_HWPREF_DATA_CACHE_FILLS_LOCAL_DRAM        0x08
+UMASK_HWPREF_DATA_CACHE_FILLS_LOCAL_ALL         0x0B
 UMASK_HWPREF_DATA_CACHE_FILLS_REMOTE_CACHE      0x10
 UMASK_HWPREF_DATA_CACHE_FILLS_REMOTE_DRAM       0x40
-UMASK_HWPREF_DATA_CACHE_FILLS_LOCAL                0x0B
-UMASK_HWPREF_DATA_CACHE_FILLS_REMOTE               0x50
-UMASK_HWPREF_DATA_CACHE_FILLS_ALL                  0x5B
+UMASK_HWPREF_DATA_CACHE_FILLS_REMOTE_ALL        0x50
+UMASK_HWPREF_DATA_CACHE_FILLS_ALL               0x5B
 
 #EVENT_TABLEWALKER_DATA_CACHE_FILLS                   0x5B PMC
 #UMASK_TABLEWALKER_DATA_CACHE_FILLS_LOCAL_L2          0x01
@@ -181,13 +187,17 @@ UMASK_CPU_CLOCKS_UNHALTED                    0x00
 EVENT_TLB_FLUSHES                            0x78 PMC
 UMASK_TLB_FLUSHES                            0x00
 
-#here IC and BP events
+# IC and BP events
 
-#EVENT_ICACHE_FETCHES                        0x80     PMC
-#UMASK_ICACHE_FETCHES                        0x00
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_ICACHE_FETCHES                        0x80     PMC
+UMASK_ICACHE_FETCHES                        0x00
 
-#EVENT_ICACHE_MISSES                         0x81     PMC
-#UMASK_ICACHE_MISSES                         0x00
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_ICACHE_MISSES                         0x81     PMC
+UMASK_ICACHE_MISSES                         0x00
 
 EVENT_ICACHE_L2_REFILLS                     0x82     PMC
 UMASK_ICACHE_L2_REFILLS                     0x00
@@ -210,9 +220,11 @@ UMASK_L1_BTB_CORRECTION                    0x00
 EVENT_L2_BTB_CORRECTION                    0x8B PMC
 UMASK_L2_BTB_CORRECTION                    0x00
 
-#EVENT_ICACHE_LINES_INVALIDATED             0x8C PMC
-#UMASK_ICACHE_LINES_INVALIDATED_FILL        0x01
-#UMASK_ICACHE_LINES_INVALIDATED_L2_PROBE    0x02
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_ICACHE_LINES_INVALIDATED             0x8C PMC
+UMASK_ICACHE_LINES_INVALIDATED_FILL        0x01
+UMASK_ICACHE_LINES_INVALIDATED_L2_PROBE    0x02
 
 EVENT_DEC_OVERRIDE_BTB                     0x91 PMC
 UMASK_DEC_OVERRIDE_BTB                     0x00
@@ -311,6 +323,8 @@ UMASK_REQUESTS_TO_L2_GRP1_RD_BLOCK_X          0x40
 UMASK_REQUESTS_TO_L2_GRP1_RD_BLOCK_L          0x80
 UMASK_REQUESTS_TO_L2_GRP1_DATA_CACHE_MISSES   0xC8
 UMASK_REQUESTS_TO_L2_GRP1_L1_CACHES_MISS      0x88
+UMASK_REQUESTS_TO_L2_GRP1_ALL_NO_PF           0xF9
+UMASK_REQUESTS_TO_L2_GRP1_ALL                 0xFF
 
 EVENT_REQUESTS_TO_L2_GRP2                     0x61 PMC
 UMASK_REQUESTS_TO_L2_GRP2_BUS_LOCK_RESP       0x01
@@ -323,6 +337,7 @@ UMASK_REQUESTS_TO_L2_GRP2_LS_READ_SIZED_NC    0x20
 UMASK_REQUESTS_TO_L2_GRP2_LS_READ_SIZED       0x40
 UMASK_REQUESTS_TO_L2_GRP2_LS_READ             0x60
 UMASK_REQUESTS_TO_L2_GRP2_GRP1                0x80
+UMASK_REQUESTS_TO_L2_GRP2_IC_READ             0x18
 
 #EVENT_L2_LATENCY_CYCLES                       0x62 PMC
 #UMASK_L2_LATENCY_CYCLES_WAIT_ON_FILLS         0x01
@@ -350,12 +365,15 @@ EVENT_L2_PF_MISS_IN_L3                    0x72 PMC
 UMASK_L2_PF_MISS_IN_L3                    0x1F
 
 # L3 Cache Events
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_L3_ACCESS                           0x01 CPMC
+UMASK_L3_ACCESS                           0x80
 
-#EVENT_L3_ACCESS                           0x01 CPMC
-#UMASK_L3_ACCESS                           0x80
-
-#EVENT_L3_MISS                             0x06 CPMC
-#UMASK_L3_MISS                             0x01
+# Not in the official Zen2 documentation but in Zen. Tested on both architectures and results
+# are comparable.
+EVENT_L3_MISS                             0x06 CPMC
+UMASK_L3_MISS                             0x01
 
 EVENT_L3_CACHE_REQ                        0x04 CPMC
 UMASK_L3_CACHE_REQ                        0xFF

@@ -161,6 +161,7 @@ bstring read_file(char *filename)
         ret = fread(buf, 1, sizeof(buf), fp);
         if (ret < 0) {
             fprintf(stderr, "fread(%p, 1, %lu, %p): %d, errno=%d\n", buf, sizeof(buf), fp, ret, errno);
+            fclose(fp);
             return content;
         }
         else if (ret == 0) {
@@ -168,5 +169,6 @@ bstring read_file(char *filename)
         }
         bcatblk(content, buf, ret);
     }
+    fclose(fp);
     return content;
 }

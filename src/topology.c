@@ -433,8 +433,8 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             }
             else if (strcmp(field, "osname") == 0)
             {
-                strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
-		int len = 257;
+                strncpy(value,&(line[strlen(structure)+strlen(field)+4]), 256);
+                int len = 257;
                 cpuid_info.osname = (char*) malloc(len * sizeof(char));
                 strncpy(cpuid_info.osname, value, len);
                 cpuid_info.osname[strlen(value)-1] = '\0';
@@ -969,6 +969,7 @@ topology_setName(void)
                     cpuid_info.short_name = short_zen;
                     break;
                 case ZENPLUS_RYZEN:
+                case ZENPLUS_RYZEN2:
                     cpuid_info.name = amd_zenplus_str;
                     cpuid_info.short_name = short_zen;
                     break;

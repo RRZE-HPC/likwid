@@ -46,6 +46,7 @@ static int active_cpus = 0;
 static int paranoid_level = -1;
 static int informed_paranoid = 0;
 static int running_group = -1;
+static int perf_event_num_cpus = 0;
 
 static long
 perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
@@ -120,38 +121,11 @@ int perfmon_init_perfevent(int cpu_id)
         memset(cpu_event_fds[cpu_id], -1, perfmon_numCounters * sizeof(int));
         active_cpus += 1;
     }
+    perf_event_num_cpus = cpuid_topology.numHWThreads;
     return 0;
 }
 
-int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
-{
-    int ret = -1;
-    attr->type = PERF_TYPE_HARDWARE;
-    attr->exclude_kernel = 1;
-    attr->exclude_hv = 1;
-    attr->disabled = 1;
-    attr->inherit = 1;
-    //attr->exclusive = 1;
-    if (strcmp(event->name, "INSTR_RETIRED_ANY") == 0)
-    {
-        attr->config = PERF_COUNT_HW_INSTRUCTIONS;
-        ret = 0;
-    }
-    if (strcmp(event->name, "CPU_CLK_UNHALTED_CORE") == 0)
-    {
-        attr->config = PERF_COUNT_HW_CPU_CYCLES;
-        ret = 0;
-    }
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
-    if (strcmp(event->name, "CPU_CLK_UNHALTED_REF") == 0)
-    {
-        attr->config = PERF_COUNT_HW_REF_CPU_CYCLES;
-        ret = 0;
-    }
-#endif
 
-    return ret;
-}
 
 typedef enum {
     PERF_EVENT_INVAL_REG = 0,
@@ -267,6 +241,83 @@ uint64_t create_mask(uint32_t value, int start, int end)
         return (value << start ) & mask;
     }
     return 0x0ULL;
+}
+
+int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
+{
+    int ret = -1;
+    attr->type = PERF_TYPE_HARDWARE;
+    attr->disabled = 1;
+    attr->inherit = 1;
+    if (translate_types[FIXED] != NULL &&
+        strcmp(translate_types[PMC], translate_types[FIXED]) == 0)
+    {
+        attr->exclude_kernel = 1;
+        attr->exclude_hv = 1;
+        if (strcmp(event->name, "INSTR_RETIRED_ANY") == 0)
+        {
+            attr->config = PERF_COUNT_HW_INSTRUCTIONS;
+            ret = 0;
+        }
+        if (strcmp(event->name, "CPU_CLK_UNHALTED_CORE") == 0 ||
+            strcmp(event->name, "ACTUAL_CPU_CLOCK") == 0 ||
+            strcmp(event->name, "APERF") == 0)
+        {
+            attr->config = PERF_COUNT_HW_CPU_CYCLES;
+            ret = 0;
+        }
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
+        if (strcmp(event->name, "CPU_CLK_UNHALTED_REF") == 0)
+        {
+            attr->config = PERF_COUNT_HW_REF_CPU_CYCLES;
+            ret = 0;
+        }
+#endif
+    }
+    else
+    {
+        char checkfolder[1024];
+        int perf_type = PERF_TYPE_HARDWARE;
+        int start = 0, end = 0;
+        PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
+        int err = snprintf(checkfolder, 1023, "%s/type", translate_types[FIXED]);
+        if (err > 0)
+        {
+            checkfolder[err] = '\0';
+        }
+        FILE* fp = fopen(checkfolder, "r");
+        if (fp != NULL)
+        {
+            ret = fread(checkfolder, sizeof(char), 1024, fp);
+            fclose(fp);
+            perf_type = atoi(checkfolder);
+            if (perf_type >= 0)
+            {
+                attr->type = perf_type;
+                getEventOptionConfig(translate_types[FIXED], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
+                switch(reg)
+                {
+                    case PERF_EVENT_CONFIG_REG:
+                        attr->config |= create_mask(event->eventId, start, end);
+                        ret = 0;
+                        break;
+                    case PERF_EVENT_CONFIG1_REG:
+                        attr->config1 |= create_mask(event->eventId, start, end);
+                        ret = 0;
+                        break;
+                    case PERF_EVENT_CONFIG2_REG:
+                        attr->config2 |= create_mask(event->eventId, start, end);
+                        ret = 0;
+                        break;
+                    default:
+                        ret = -1;
+                        break;
+                }
+            }
+        }
+    }
+
+    return ret;
 }
 
 int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
@@ -460,28 +511,28 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
     switch(reg)
     {
-	case PERF_EVENT_CONFIG_REG:
-	    attr->config |= create_mask(event->eventId, start, end);
-	    break;
-	case PERF_EVENT_CONFIG1_REG:
-	    attr->config1 |= create_mask(event->eventId, start, end);
-	    break;
-	case PERF_EVENT_CONFIG2_REG:
-	    attr->config2 |= create_mask(event->eventId, start, end);
-	    break;
+        case PERF_EVENT_CONFIG_REG:
+            attr->config |= create_mask(event->eventId, start, end);
+            break;
+        case PERF_EVENT_CONFIG1_REG:
+            attr->config1 |= create_mask(event->eventId, start, end);
+            break;
+        case PERF_EVENT_CONFIG2_REG:
+            attr->config2 |= create_mask(event->eventId, start, end);
+            break;
     }
     getEventOptionConfig(translate_types[type], EVENT_OPTION_GENERIC_UMASK, &reg, &start, &end);
     switch(reg)
     {
-	case PERF_EVENT_CONFIG_REG:
-	    attr->config |= create_mask(event->umask, start, end);
-	    break;
-	case PERF_EVENT_CONFIG1_REG:
-	    attr->config1 |= create_mask(event->umask, start, end);
-	    break;
-	case PERF_EVENT_CONFIG2_REG:
-	    attr->config2 |= create_mask(event->umask, start, end);
-	    break;
+        case PERF_EVENT_CONFIG_REG:
+            attr->config |= create_mask(event->umask, start, end);
+            break;
+        case PERF_EVENT_CONFIG1_REG:
+            attr->config1 |= create_mask(event->umask, start, end);
+            break;
+        case PERF_EVENT_CONFIG2_REG:
+            attr->config2 |= create_mask(event->umask, start, end);
+            break;
     }
 
 
@@ -667,6 +718,7 @@ int perfmon_setupCountersThread_perfevent(
             case CBOX26:
             case CBOX27:
             case UBOX:
+            case UBOXFIX:
             case SBOX0:
             case SBOX1:
             case SBOX2:
@@ -850,28 +902,46 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
 int perfmon_finalizeCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSet)
 {
     int cpu_id = groupSet->threads[thread_id].processorId;
-    for (int i=0;i < eventSet->numberOfEvents;i++)
+    if (cpu_event_fds != NULL)
     {
-        if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
+        if (cpu_event_fds[cpu_id] != NULL)
         {
-            RegisterIndex index = eventSet->events[i].index;
-            ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
-            ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_RESET, 0);
-            eventSet->events[i].threadCounter[thread_id].init = FALSE;
-            close(cpu_event_fds[cpu_id][index]);
-            cpu_event_fds[cpu_id][index] = -1;
+            for (int j = 0; j < perfmon_numCounters; j++)
+            {
+                if (cpu_event_fds[cpu_id][j] > 0)
+                {
+                    ioctl(cpu_event_fds[cpu_id][j], PERF_EVENT_IOC_DISABLE, 0);
+                    ioctl(cpu_event_fds[cpu_id][j], PERF_EVENT_IOC_RESET, 0);
+                    close(cpu_event_fds[cpu_id][j]);
+                    cpu_event_fds[cpu_id][j] = -1;
+                    if (j < eventSet->numberOfEvents && eventSet->events[j].threadCounter[thread_id].init == TRUE)
+                    {
+                        eventSet->events[j].threadCounter[thread_id].init = FALSE;
+                    }
+                }
+            }
+            free(cpu_event_fds[cpu_id]);
+            cpu_event_fds[cpu_id] = NULL;
+            active_cpus--;
         }
     }
-    if (cpu_event_fds[cpu_id] != NULL)
+    return 0;
+}
+
+void __attribute__((destructor (101))) close_perfmon_perfevent(void)
+{
+    if (cpu_event_fds != NULL)
     {
-        free(cpu_event_fds[cpu_id]);
-        cpu_event_fds[cpu_id] = NULL;
-        active_cpus--;
-    }
-    if (active_cpus == 0)
-    {
+        for (int i = 0; i < perf_event_num_cpus; i++)
+        {
+            if (cpu_event_fds[i] != NULL)
+            {
+                free(cpu_event_fds[i]);
+                cpu_event_fds[i] = NULL;
+                active_cpus--;
+            }
+        }
         free(cpu_event_fds);
         cpu_event_fds = NULL;
     }
-    return 0;
 }

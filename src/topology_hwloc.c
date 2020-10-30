@@ -429,6 +429,10 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             continue;
         }
         id = obj->os_index;
+
+        if (id < 0 || id >= cpuid_topology.numHWThreads)
+            continue;
+
         if (CPU_ISSET(id, &cpuSet))
         {
             hwThreadPool[id].inCpuSet = 1;
@@ -437,10 +441,12 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
         {
             hwThreadPool[id].inCpuSet = 1;
         }
+
         if (!likwid_cpu_online(obj->os_index))
         {
             hwThreadPool[id].inCpuSet = 0;
         }
+
         hwThreadPool[id].apicId = obj->os_index;
         hwThreadPool[id].threadId = obj->sibling_rank;
         if (maxNumLogicalProcsPerCore > 1)
@@ -525,7 +531,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
                             hwThreadPool[id].inCpuSet)
     }
 
-    int socket_nums[16];
+    int socket_nums[MAX_NUM_NODES];
     int num_sockets = 0;
     for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
     {

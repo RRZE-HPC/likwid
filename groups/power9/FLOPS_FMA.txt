@@ -9,13 +9,13 @@ METRICS
 Runtime (RDTSC) [s] time
 CPI PMC5/PMC4
 Scalar FMAs PMC3
-Scalar FMA MFLOP/s 1E-6*(PMC3)*2.0/time
+Scalar FMA [MFLOP/s] 1E-6*(PMC3)*2.0/time
 
 LONG
 Formulas:
 Scalar FMAs = PM_FMA_CMPL
-Scalar FMA MFLOP/s = 1E-6*(PM_FMA_CMPL)*2.0/runtime
--
+Scalar FMA [MFLOP/s] = 1E-6*(PM_FMA_CMPL)*2.0/runtime
+--
 This groups counts scalar FMA operations.
 PM_FMA_CMPL: Two-flops instruction completed (fmadd, fnmadd, fmsub,
 fnmsub). Scalar instructions only.

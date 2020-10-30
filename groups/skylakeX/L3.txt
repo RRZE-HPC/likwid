@@ -21,7 +21,7 @@ L3 evict bandwidth [MBytes/s]  1.0E-06*PMC3*64.0/time
 L3 evict data volume [GBytes]  1.0E-09*PMC3*64.0
 L3|MEM evict bandwidth [MBytes/s]  1.0E-06*PMC1*64.0/time
 L3|MEM evict data volume [GBytes]  1.0E-09*PMC1*64.0
-Dropped CLs bandwidth [MBytes/s] 1.0E-9*PMC2*64.0/time
+Dropped CLs bandwidth [MBytes/s] 1.0E-6*PMC2*64.0/time
 Dropped CLs data volume [GBytes] 1.0E-9*PMC2*64.0
 L3 bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC1)*64.0/time
 L3 data volume [GBytes] 1.0E-09*(PMC0+PMC1)*64.0
@@ -32,14 +32,13 @@ L3 load bandwidth [MBytes/s] = 1.0E-06*L2_LINES_IN_ALL*64.0/time
 L3 load data volume [GBytes] = 1.0E-09*L2_LINES_IN_ALL*64.0
 L3 evict bandwidth [MBytes/s] = 1.0E-06*IDI_MISC_WB_UPGRADE*64.0/time
 L3 evict data volume [GBytes] = 1.0E-09*IDI_MISC_WB_UPGRADE*64.0
-Dropped CLs bandwidth [MBytes/s] = 1.0E-9*IDI_MISC_WB_DOWNGRADE*64.0/time
+Dropped CLs bandwidth [MBytes/s] = 1.0E-6*IDI_MISC_WB_DOWNGRADE*64.0/time
 Dropped CLs data volume [GBytes] = 1.0E-9*IDI_MISC_WB_DOWNGRADE*64.0
-# All data leaving L2. CLs might get dropped, evicted to L3 or Memory
 L3|MEM evict bandwidth [MBytes/s] = 1.0E-06*L2_TRANS_L2_WB*64.0/time
 L3|MEM evict data volume [GBytes] = 1.0E-09*L2_TRANS_L2_WB*64.0
 L3 bandwidth [MBytes/s] = 1.0E-06*(L2_LINES_IN_ALL+L2_TRANS_L2_WB)*64/time
 L3 data volume [GBytes] = 1.0E-09*(L2_LINES_IN_ALL+L2_TRANS_L2_WB)*64
--
+--
 Profiling group to measure L3 cache bandwidth and data volume. For Intel Skylake
 or Cascadelake, the L3 is a victim cache. This means that all data is loaded
 from memory directly into the L2 cache (if L3 prefetcher is inactive). Modified
