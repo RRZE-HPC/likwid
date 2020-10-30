@@ -152,7 +152,7 @@ struct topology_functions {
 #define  NV_DENVER1	0x00U
 #define  NV_DENVER2	0x03U
 #define  APP_XGENE1	0x00U
-#define  A64FX_FX1000 0x001U
+#define  FUJITSU_A64FX 0x001U
 
 /* ARM vendors */
 #define DEFAULT_ARM	0x41U

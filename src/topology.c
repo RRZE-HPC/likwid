@@ -115,7 +115,7 @@ static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
 static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
 static char* arm_cortex_a57 = "ARM Cortex A57 (ARMv8)";
 static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
-static char* fujitsu_fx1000 = "Fujitsu A64FX";
+static char* fujitsu_a64fx = "Fujitsu A64FX";
 static char* power7_str = "POWER7 architecture";
 static char* power8_str = "POWER8 architecture";
 static char* power9_str = "POWER9 architecture";
@@ -1074,8 +1074,8 @@ topology_setName(void)
                 case FUJITSU_ARM:
                     switch (cpuid_info.part)
                     {
-                        case A64FX_FX1000:
-                            cpuid_info.name = fujitsu_fx1000;
+                        case FUJITSU_A64FX:
+                            cpuid_info.name = fujitsu_a64fx;
                             cpuid_info.short_name = short_a64fx;
                             break;
                         default:
@@ -1413,7 +1413,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",arm_cortex_a57);
     printf("\t%s\n",cavium_thunderx_str);
     printf("\t%s\n",cavium_thunderx2t99_str);
-    printf("\t%s\n",fujitsu_fx1000);
+    printf("\t%s\n",fujitsu_a64fx);
     printf("\n");
     printf("Supported ARMv7 processors:\n");
     printf("\t%s\n",armv7l_str);

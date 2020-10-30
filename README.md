@@ -70,6 +70,7 @@ ARM (experimental)
 - ARMv7
 - ARMv8
 - Special support for Marvell Thunder X2
+- Fujitsu A64FX
 
 POWER (experimental)
 - IBM POWER8

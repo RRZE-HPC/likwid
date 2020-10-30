@@ -78,7 +78,7 @@
 #include <perfmon_zen2.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
-#include <perfmon_fx1000.h>
+#include <perfmon_a64fx.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -1285,13 +1285,13 @@ perfmon_init_maps(void)
                 case FUJITSU_ARM:
                     switch (cpuid_info.part)
                     {
-                        case A64FX_FX1000:
-                            eventHash = fx1000_arch_events;
-                            perfmon_numArchEvents = perfmon_numArchEventsFX1000;
-                            counter_map = fx1000_counter_map;
-                            box_map = fx1000_box_map;
-                            perfmon_numCounters = perfmon_numCountersFX1000;
-                            translate_types = fx1000_translate_types;
+                        case FUJITSU_A64FX:
+                            eventHash = a64fx_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsA64FX;
+                            counter_map = a64fx_counter_map;
+                            box_map = a64fx_box_map;
+                            perfmon_numCounters = perfmon_numCountersA64FX;
+                            translate_types = a64fx_translate_types;
                             break;
                         default:
                             break;

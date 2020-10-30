@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_fx1000.h
+ *      Filename:  perfmon_a64fx.h
  *
- *      Description:  Header File of perfmon module for Fujitsu A64FX FX1000
+ *      Description:  Header File of perfmon module for Fujitsu A64FX
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -28,8 +28,8 @@
  * =======================================================================================
  */
 
-#include <perfmon_fx1000_events.h>
-#include <perfmon_fx1000_counters.h>
+#include <perfmon_a64fx_events.h>
+#include <perfmon_a64fx_counters.h>
 
-static int perfmon_numCountersFX1000 = NUM_COUNTERS_FX1000;
-static int perfmon_numArchEventsFX1000 = NUM_ARCH_EVENTS_FX1000;
+static int perfmon_numCountersA64FX = NUM_COUNTERS_A64FX;
+static int perfmon_numArchEventsA64FX = NUM_ARCH_EVENTS_A64FX;

@@ -1,8 +1,8 @@
 # =======================================================================================
 #
-#      Filename:  perfmon_fx1000_events.txt
+#      Filename:  perfmon_a64fx_events.txt
 #
-#      Description:  Event list for Fujitsu A64FX FX1000
+#      Description:  Event list for Fujitsu A64FX
 #
 #      Version:   <VERSION>
 #      Released:  <DATE>

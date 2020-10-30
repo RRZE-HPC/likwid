@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  perfmon_fx1000_counters.h
+ *      Filename:  perfmon_a64fx_counters.h
  *
- *      Description:  Counter Header File of perfmon module for Fujitsu A64FX FX1000
+ *      Description:  Counter Header File of perfmon module for Fujitsu A64FX
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -28,9 +28,9 @@
  * =======================================================================================
  */
 
-#define NUM_COUNTERS_FX1000 6
+#define NUM_COUNTERS_A64FX 6
 
-static RegisterMap fx1000_counter_map[NUM_COUNTERS_FX1000] = {
+static RegisterMap a64fx_counter_map[NUM_COUNTERS_A64FX] = {
     {"PMC0", PMC0, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
     {"PMC1", PMC1, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
     {"PMC2", PMC2, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
@@ -39,10 +39,10 @@ static RegisterMap fx1000_counter_map[NUM_COUNTERS_FX1000] = {
     {"PMC5", PMC5, PMC, 0, 0, 0, 0, EVENT_OPTION_NONE_MASK},
 };
 
-static BoxMap fx1000_box_map[NUM_UNITS] = {
+static BoxMap a64fx_box_map[NUM_UNITS] = {
     [PMC] = {0, 0, 0, 0, 0, 0, 32},
 };
 
-static char* fx1000_translate_types[NUM_UNITS] = {
+static char* a64fx_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/armv8_pmuv3_0",
 };
