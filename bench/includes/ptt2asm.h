@@ -84,5 +84,6 @@ struct bstrList* dynbench_getall();
 int dynbench_test(bstring testname);
 int dynbench_load(bstring testname, TestCase **testcase, char* tmpfolder, char *compilers, char* compileflags);
 int dynbench_close(TestCase* testcase, char* tmpfolder);
+int dynbench_asm(bstring testname, char* tmpfolder, bstring outfile);
 
 #endif

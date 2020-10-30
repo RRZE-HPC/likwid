@@ -180,6 +180,7 @@ int parse_cpuname(char *name)
 }
 #endif
 
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 static int
@@ -428,6 +429,10 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             continue;
         }
         id = obj->os_index;
+
+        if (id < 0 || id >= cpuid_topology.numHWThreads)
+            continue;
+
         if (CPU_ISSET(id, &cpuSet))
         {
             hwThreadPool[id].inCpuSet = 1;
@@ -436,8 +441,12 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
         {
             hwThreadPool[id].inCpuSet = 1;
         }
-        if (id < 0 || id >= cpuid_topology.numHWThreads)
-            continue;
+
+        if (!likwid_cpu_online(obj->os_index))
+        {
+            hwThreadPool[id].inCpuSet = 0;
+        }
+
         hwThreadPool[id].apicId = obj->os_index;
         hwThreadPool[id].threadId = obj->sibling_rank;
         if (maxNumLogicalProcsPerCore > 1)

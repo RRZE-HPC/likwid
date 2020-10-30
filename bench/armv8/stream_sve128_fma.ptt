@@ -1,0 +1,15 @@
+STREAMS 3
+TYPE DOUBLE
+FLOPS 2
+BYTES 24
+DESC Double-precision triad A(i) = B(i)*c + D(i), optimized for SVE FMAs
+LOADS 2
+STORES 1
+INSTR_LOOP 7
+INSTR_CONST 10
+fmov   z2.d, #3.0e+0
+LOOP 2
+ld1d  z0.d, p0/z, [STR0, GPR6, lsl 3]
+ld1d  z1.d, p0/z, [STR1, GPR6, lsl 3]
+fmla    z0.d, p1/m, z1.d, z2.d
+st1d    z0.d, p0, [STR2, GPR6, lsl 3]
