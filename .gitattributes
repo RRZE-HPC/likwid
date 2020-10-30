@@ -1,1 +1,11 @@
 make/config_git.mk ident
+
+# set language correctly
+*.h linguist-language=C
+*.c linguist-language=C
+
+# ignore external code
+ext/* linguist-vendored
+
+# Use assembly for likwid-bench ptt files
+*.ptt linguist-language=Assembly
