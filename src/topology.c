@@ -595,9 +595,46 @@ likwid_cpu_online(int cpu_id)
         char buf[10];
         int ret = fread(buf, sizeof(char), 9, fp);
         fclose(fp);
-        if (ret == 1)
+        if (ret > 0)
         {
             state = atoi(buf);
+        }
+    }
+    else
+    {
+        fp = fopen("/sys/devices/system/cpu/online", "r");
+        if (fp)
+        {
+            char buf[100];
+            int ret = fread(buf, sizeof(char), 99, fp);
+            fclose(fp);
+            if (ret > 0)
+            {
+                bdestroy(bpath);
+                buf[ret] = '\0';
+                bpath = bfromcstr(buf);
+                struct bstrList* first = bsplit(bpath, ',');
+                for (int i = 0; i < first->qty; i++)
+                {
+                    struct bstrList* second = bsplit(first->entry[i], '-');
+                    if (second->qty == 1)
+                    {
+                        int core = atoi(bdata(second->entry[0]));
+                        if (core == cpu_id)
+                            state = 1;
+                    }
+                    else if (second->qty == 2)
+                    {
+                        int s = atoi(bdata(second->entry[0]));
+                        int e = atoi(bdata(second->entry[1]));
+                        if (cpu_id >= s && cpu_id <= e)
+                            state = 1;
+                    }
+                    bstrListDestroy(second);
+                }
+                bstrListDestroy(first);
+
+            }
         }
     }
     bdestroy(bpath);
