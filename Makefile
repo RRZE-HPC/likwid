@@ -692,7 +692,7 @@ local: $(L_APPS) likwid.lua
 	@if [ -e $(LUA_FOLDER)/liblikwid-lua.so ]; then ln -sf $(LUA_FOLDER)/liblikwid-lua.so liblikwid-lua.so.$(VERSION).$(RELEASE); fi
 	@if [ -e $(HWLOC_FOLDER)/liblikwid-hwloc.so ]; then ln -sf $(HWLOC_FOLDER)/liblikwid-hwloc.so liblikwid-hwloc.so.$(VERSION).$(RELEASE); fi
 	@if [ -e $(PINLIB) ]; then ln -sf $(PINLIB) $(PINLIB).$(VERSION).$(RELEASE); fi
-	@echo "export LD_LIBRARY_PATH=$(PWD):$$LD_LIBRARY_PATH"
+	@if [ -e $(CUDA_HOME)/extras/CUPTI/lib64 ]; then echo "export LD_LIBRARY_PATH=$(PWD):$(CUDA_HOME)/extras/CUPTI/lib64:$$LD_LIBRARY_PATH"; else echo "export LD_LIBRARY_PATH=$(PWD):$$LD_LIBRARY_PATH"; fi
 
 testit: test/test-likwidAPI.c
 	make -C test test-likwidAPI
