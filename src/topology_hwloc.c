@@ -294,7 +294,7 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     }
     snprintf(cpuid_info.architecture, 19, "armv7");
 #endif
-#ifdef defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
     uint32_t part = 0;
     uint32_t count = 0;
     parse_cpuinfo(&count, &cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
