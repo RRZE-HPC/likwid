@@ -333,7 +333,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     attr->inherit = 1;
     //attr->exclusive = 1;
 #if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
-    if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == A64FX_FX1000)
+    if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
     {
         reg = PERF_EVENT_CONFIG_REG;
         start = 0;
@@ -650,7 +650,7 @@ int perfmon_setupCountersThread_perfevent(
             case PMC:
                 pmc_lock = 1;
 #if defined(__ARM_ARCH_8A)
-                if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == A64FX_FX1000)
+                if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
                 {
                     if (event->eventId == 0x3E8 ||
                         event->eventId == 0x3E0 ||
