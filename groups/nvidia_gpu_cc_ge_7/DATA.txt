@@ -1,0 +1,18 @@
+SHORT Load to store ratio
+
+EVENTSET
+GPU0  SMSP_SASS_INST_EXECUTED_OP_GLOBAL_LD_SUM
+GPU1  SMSP_SASS_INST_EXECUTED_OP_GLOBAL_ST_SUM
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+Load to store ratio GPU0/GPU1
+
+LONG
+Formulas:
+Load to store ratio = SMSP_SASS_INST_EXECUTED_OP_GLOBAL_LD_SUM/SMSP_SASS_INST_EXECUTED_OP_GLOBAL_ST_SUM
+-
+This is a metric to determine your load to store ratio.
+
