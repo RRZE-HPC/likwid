@@ -846,6 +846,7 @@ static int nvmon_perfworks_getMetricRequests(NVPA_MetricsContext* context, struc
             {
                 s[ret] = '\0';
             }
+            req->structSize = NVPA_RAW_METRIC_REQUEST_STRUCT_SIZE;
             req->pMetricName = s;
             GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Metric Request %s, s);
             req->isolated = isolated;
@@ -885,6 +886,7 @@ static int nvmon_perfworks_createConfigImage(char* chip, struct bstrList* events
     NVPW_RawMetricsConfig_Destroy_Params rawMetricsConfigDestroyParams = { NVPW_RawMetricsConfig_Destroy_Params_STRUCT_SIZE };
     rawMetricsConfigDestroyParams.pRawMetricsConfig = pRawMetricsConfig;
 
+
     NVPW_RawMetricsConfig_BeginPassGroup_Params beginPassGroupParams = { NVPW_RawMetricsConfig_BeginPassGroup_Params_STRUCT_SIZE };
     beginPassGroupParams.pRawMetricsConfig = pRawMetricsConfig;
     LIKWID_NVPW_API_CALL((*NVPW_RawMetricsConfig_BeginPassGroupPtr)(&beginPassGroupParams), ierr = -1; goto nvmon_perfworks_createConfigImage_out;);
@@ -899,6 +901,17 @@ static int nvmon_perfworks_createConfigImage(char* chip, struct bstrList* events
     NVPW_RawMetricsConfig_EndPassGroup_Params endPassGroupParams = { NVPW_RawMetricsConfig_EndPassGroup_Params_STRUCT_SIZE };
     endPassGroupParams.pRawMetricsConfig = pRawMetricsConfig;
     LIKWID_NVPW_API_CALL((*NVPW_RawMetricsConfig_EndPassGroupPtr)(&endPassGroupParams), ierr = -1; goto nvmon_perfworks_createConfigImage_out);
+
+    NVPW_RawMetricsConfig_GetNumPasses_Params getNumPassesParams = { NVPW_RawMetricsConfig_GetNumPasses_Params_STRUCT_SIZE };
+    getNumPassesParams.pRawMetricsConfig = pRawMetricsConfig;
+    LIKWID_NVPW_API_CALL((*NVPW_RawMetricsConfig_GetNumPassesPtr)(&getNumPassesParams), ierr = -1; goto nvmon_perfworks_createConfigImage_out);
+    if (getNumPassesParams.numPipelinedPasses + getNumPassesParams.numIsolatedPasses > 1)
+    {
+        errno = 1;
+        ierr = -errno;
+        ERROR_PRINT(Given GPU eventset requires multiple passes. Currently not supported.)
+        goto nvmon_perfworks_createConfigImage_out;
+    }
 
     NVPW_RawMetricsConfig_GenerateConfigImage_Params generateConfigImageParams = { NVPW_RawMetricsConfig_GenerateConfigImage_Params_STRUCT_SIZE };
     generateConfigImageParams.pRawMetricsConfig = pRawMetricsConfig;
@@ -956,6 +969,7 @@ static int nvmon_perfworks_createCounterDataPrefixImage(char* chip, struct bstrL
     uint8_t* cdp = NULL;
 
     NVPW_CUDA_MetricsContext_Create_Params metricsContextCreateParams = { NVPW_CUDA_MetricsContext_Create_Params_STRUCT_SIZE };
+
     metricsContextCreateParams.pChipName = chip;
     LIKWID_NVPW_API_CALL((*NVPW_CUDA_MetricsContext_CreatePtr)(&metricsContextCreateParams), ierr = -1; goto nvmon_perfworks_createCounterDataPrefixImage_out);
 

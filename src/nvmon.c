@@ -148,7 +148,8 @@ nvmon_init(int nrGpus, const int* gpuIds)
     nvGroupSet->numberOfBackends++;
 #endif
 
-
+    int cputicount = 0;
+    int perfworkscount = 0;
     for (int i = 0; i < nrGpus; i++)
     {
         if (gpuIds[i] < 0) continue;
@@ -174,13 +175,23 @@ nvmon_init(int nrGpus, const int* gpuIds)
         {
             GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Device %d runs with CUPTI Event API backend, gpuIds[i]);
             device->backend = LIKWID_NVMON_CUPTI_BACKEND;
+            cputicount++;
         }
         else
         {
             GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Device %d runs with CUPTI Profiling API backend, gpuIds[i]);
             device->backend = LIKWID_NVMON_PERFWORKS_BACKEND;
+            perfworkscount++;
         }
         device->deviceId = gpuIds[i];
+        if (cputicount > 0 && perfworkscount > 0)
+        {
+            ERROR_PRINT(Cannot use GPUs with different backends in a session, gpuIds[i]);
+            free(nvGroupSet->gpus);
+            free(nvGroupSet);
+            nvGroupSet = NULL;
+            return -ENOMEM;
+        }
 
         NvmonFunctions* funcs = nvGroupSet->backends[device->backend];
         if (funcs)
@@ -383,10 +394,37 @@ nvmon_addEventSet(const char* eventCString)
     }
     else
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Performance group);
-        err = perfgroup_readGroup(config->groupPath, "nvidiagpu",
-                         eventCString,
-                         &nvGroupSet->groups[nvGroupSet->numberOfGroups-1]);
+        int cputicount = 0;
+        int perfworkscount = 0;
+        for (devId = 0; devId < nvGroupSet->numberOfGPUs; devId++)
+        {
+            device = &nvGroupSet->gpus[devId];
+            if (device->backend == LIKWID_NVMON_CUPTI_BACKEND)
+            {
+                cputicount++;
+            }
+            else if (device->backend == LIKWID_NVMON_PERFWORKS_BACKEND)
+            {
+                perfworkscount++;
+            }
+        }
+        if (cputicount > 0 && perfworkscount > 0)
+        {
+            ERROR_PRINT(GPUs with compute capability <7 and >= 7 are not allowed);
+            return -ENODEV;
+        }
+        if (cputicount > 0)
+        {
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Performance group for CUPTI backend);
+            err = perfgroup_readGroup(config->groupPath, "nvidia_gpu_cc_lt_7", eventCString,
+                                      &nvGroupSet->groups[nvGroupSet->numberOfGroups-1]);
+        }
+        else if (perfworkscount > 0)
+        {
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Performance group for PerfWorks backend);
+            err = perfgroup_readGroup(config->groupPath, "nvidia_gpu_cc_ge_7", eventCString,
+                                      &nvGroupSet->groups[nvGroupSet->numberOfGroups-1]);
+        }
         if (err == -EACCES)
         {
             ERROR_PRINT(Access to performance group %s not allowed, eventCString);
@@ -426,7 +464,9 @@ nvmon_addEventSet(const char* eventCString)
             err = funcs->addEvents(device, evstr);
             if (err < 0)
             {
+                errno = -err;
                 ERROR_PRINT(Failed to add event set for GPU %d, devId);
+                return err;
             }
         }
     }
@@ -739,12 +779,31 @@ char* nvmon_getGroupInfoLong(int groupId)
     return ginfo->longinfo;
 }
 
-int nvmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
+int nvmon_getGroups(int gpuId, char*** groups, char*** shortinfos, char*** longinfos)
 {
     int ret = 0;
+
     init_configuration();
+    int ccapMajor = 0;
     Configuration_t config = get_configuration();
-    ret = perfgroup_getGroups(config->groupPath, "nvidiagpu", groups, shortinfos, longinfos);
+    ret = topology_gpu_init();
+    if (ret != EXIT_SUCCESS)
+    {
+        return -ENODEV;
+    }
+    GpuTopology_t gtopo = get_gpuTopology();
+    if (gpuId < 0 || gpuId >= gtopo->numDevices)
+    {
+        return -ENODEV;
+    }
+    if (gtopo->devices[gpuId].ccapMajor >= 7)
+    {
+        ret = perfgroup_getGroups(config->groupPath, "nvidia_gpu_cc_ge_7", groups, shortinfos, longinfos);
+    }
+    else
+    {
+        ret = perfgroup_getGroups(config->groupPath, "nvidia_gpu_cc_lt_7", groups, shortinfos, longinfos);
+    }
     return ret;
 }
 

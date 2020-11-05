@@ -120,7 +120,7 @@ typedef struct {
 
 
 typedef enum {
-    LIKWID_NVMON_CUPTI_BACKEND,
+    LIKWID_NVMON_CUPTI_BACKEND = 0,
     LIKWID_NVMON_PERFWORKS_BACKEND,
 } NvmonBackends;
 

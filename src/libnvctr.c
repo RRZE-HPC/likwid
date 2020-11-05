@@ -144,7 +144,6 @@ likwid_gpuMarkerInit(void)
         exit(EXIT_FAILURE);
     }
     
-    printf("NvMarker nvmon_init\n");
     i = nvmon_init(num_gpus, id2Gpu);
     if (i < 0)
     {
