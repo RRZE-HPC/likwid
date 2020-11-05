@@ -979,6 +979,15 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
                     flags |= (1ULL<<(index+32));  /* enable fixed counter */
                     break;
 
+                case PERF:
+                    if (haveLock)
+                    {
+                        tmp = 0x0ULL;
+                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, counter1, &tmp));
+                        eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST tmp, READ_PERF)
+                    }
+                    break;
                 case POWER:
                     if (haveLock)
                     {
@@ -1296,6 +1305,13 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_FIXED)
                     break;
 
+                case PERF:
+                    if (haveLock)
+                    {
+                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_PERF)
+                    }
+                    break;
                 case POWER:
                     if (haveLock)
                     {
@@ -1529,6 +1545,14 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                     CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                     SKL_CHECK_CORE_OVERFLOW(index+32);
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_FIXED)
+                    break;
+
+                case PERF:
+                    if (haveLock)
+                    {
+                        CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
+                        VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_PERF)
+                    }
                     break;
 
                 case POWER:
