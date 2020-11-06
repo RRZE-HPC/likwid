@@ -116,6 +116,8 @@ typedef struct {
     size_t counterDataScratchBufferSize;
     uint8_t* counterDataImagePrefix;
     size_t counterDataImagePrefixSize;
+    uint8_t* counterAvailabilityImage;
+    size_t counterAvailabilityImageSize;
 } NvmonEventSet;
 
 

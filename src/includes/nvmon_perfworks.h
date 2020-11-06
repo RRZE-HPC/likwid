@@ -89,6 +89,49 @@ static void *dl_perfworks_libcudart = NULL;
     } while (0)
 
 
+/* This definitions are used for CUDA 10.1 */
+#if defined(CUDART_VERSION) && CUDART_VERSION < 11000
+typedef struct CUpti_Profiler_GetCounterAvailability_Params
+{
+    size_t structSize;
+    void* pPriv;
+    CUcontext ctx;
+    size_t counterAvailabilityImageSize;
+    uint8_t* pCounterAvailabilityImage;
+} CUpti_Profiler_GetCounterAvailability_Params;
+#define CUpti_Profiler_GetCounterAvailability_Params_STRUCT_SIZE sizeof(CUpti_Profiler_GetCounterAvailability_Params)
+
+CUptiResult cuptiProfilerGetCounterAvailability(CUpti_Profiler_GetCounterAvailability_Params* params)
+{
+    return CUPTI_SUCCESS;
+}
+
+typedef struct {
+    size_t structSize;
+    void* pPriv;
+    NVPA_RawMetricsConfig* pRawMetricsConfig;
+    uint8_t* pCounterAvailabilityImage;
+} NVPW_RawMetricsConfig_SetCounterAvailability_Params;
+#define NVPW_RawMetricsConfig_SetCounterAvailability_Params_STRUCT_SIZE sizeof(NVPW_RawMetricsConfig_SetCounterAvailability_Params)
+
+NVPA_Status NVPW_RawMetricsConfig_SetCounterAvailability(NVPW_RawMetricsConfig_SetCounterAvailability_Params* params)
+{
+    return NVPA_STATUS_SUCCESS;
+}
+#endif /* End of definitions for CUDA 10.1 */
+
+#define CUpti_Device_GetChipName_Params_STRUCT_SIZE10 16
+#define CUpti_Device_GetChipName_Params_STRUCT_SIZE11 32
+
+#define CUpti_Profiler_SetConfig_Params_STRUCT_SIZE10 56
+#define CUpti_Profiler_SetConfig_Params_STRUCT_SIZE11 58
+
+#define CUpti_Profiler_EndPass_Params_STRUCT_SIZE10 24
+#define CUpti_Profiler_EndPass_Params_STRUCT_SIZE11 41
+
+#define CUpti_Profiler_FlushCounterData_Params_STRUCT_SIZE10 24
+#define CUpti_Profiler_FlushCounterData_Params_STRUCT_SIZE11 40
+
 #ifndef DECLARE_CUFUNC
 #define CUAPIWEAK __attribute__( ( weak ) )
 #define DECLARE_CUFUNC(funcname, funcsig) CUresult CUAPIWEAK funcname funcsig;  CUresult( *funcname##Ptr ) funcsig;
@@ -111,10 +154,13 @@ DECLARE_CUFUNC(cuDevicePrimaryCtxRetain, (CUcontext *, CUdevice));
 #ifndef DECLARE_CUDAFUNC
 #define CUDAAPIWEAK __attribute__( ( weak ) )
 #define DECLARE_CUDAFUNC(funcname, funcsig) cudaError_t CUDAAPIWEAK funcname funcsig;  cudaError_t( *funcname##Ptr ) funcsig;
+#endif
 DECLARE_CUDAFUNC(cudaGetDevice, (int *));
 DECLARE_CUDAFUNC(cudaSetDevice, (int));
 DECLARE_CUDAFUNC(cudaFree, (void *));
-#endif
+DECLARE_CUDAFUNC(cudaDriverGetVersion, (int *));
+DECLARE_CUDAFUNC(cudaRuntimeGetVersion, (int *));
+
 
 #ifndef DECLARE_NVPWFUNC
 #define NVPWAPIWEAK __attribute__( ( weak ) )
@@ -145,6 +191,7 @@ DECLARE_NVPWFUNC(NVPW_Profiler_CounterData_GetRangeDescriptions, (NVPW_Profiler_
 DECLARE_NVPWFUNC(NVPW_MetricsContext_SetCounterData, (NVPW_MetricsContext_SetCounterData_Params* params));
 DECLARE_NVPWFUNC(NVPW_MetricsContext_EvaluateToGpuValues, (NVPW_MetricsContext_EvaluateToGpuValues_Params* params));
 DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_GetNumPasses, (NVPW_RawMetricsConfig_GetNumPasses_Params* params));
+DECLARE_NVPWFUNC(NVPW_RawMetricsConfig_SetCounterAvailability, (NVPW_RawMetricsConfig_SetCounterAvailability_Params* params));
 
 #ifndef DECLARE_CUPTIFUNC
 #define CUPTIAPIWEAK __attribute__( ( weak ) )
@@ -169,7 +216,7 @@ DECLARE_CUPTIFUNC(cuptiProfilerEndPass, (CUpti_Profiler_EndPass_Params* params))
 DECLARE_CUPTIFUNC(cuptiProfilerFlushCounterData, (CUpti_Profiler_FlushCounterData_Params* params));
 DECLARE_CUPTIFUNC(cuptiProfilerUnsetConfig, (CUpti_Profiler_UnsetConfig_Params* params));
 DECLARE_CUPTIFUNC(cuptiProfilerEndSession, (CUpti_Profiler_EndSession_Params* params));
-
+DECLARE_CUPTIFUNC(cuptiProfilerGetCounterAvailability, (CUpti_Profiler_GetCounterAvailability_Params* params));
 
 
 #ifndef DLSYM_AND_CHECK
@@ -178,6 +225,8 @@ DECLARE_CUPTIFUNC(cuptiProfilerEndSession, (CUpti_Profiler_EndSession_Params* pa
 
 
 static int cuptiProfiler_initialized = 0;
+static int cuda_runtime_version = 0;
+static int cuda_version = 0;
 
 
 
@@ -220,6 +269,8 @@ link_perfworks_libraries(void)
     cudaGetDevicePtr = DLSYM_AND_CHECK(dl_perfworks_libcudart, "cudaGetDevice");
     cudaSetDevicePtr = DLSYM_AND_CHECK(dl_perfworks_libcudart, "cudaSetDevice");
     cudaFreePtr = DLSYM_AND_CHECK(dl_perfworks_libcudart, "cudaFree");
+    cudaDriverGetVersionPtr = DLSYM_AND_CHECK(dl_perfworks_libcudart, "cudaDriverGetVersion");
+    cudaRuntimeGetVersionPtr = DLSYM_AND_CHECK(dl_perfworks_libcudart, "cudaRuntimeGetVersion");
 
     dl_libhost = dlopen("libnvperf_host.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
     if (!dl_libhost || dlerror() != NULL)
@@ -255,6 +306,7 @@ link_perfworks_libraries(void)
     NVPW_MetricsContext_EvaluateToGpuValuesPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_MetricsContext_EvaluateToGpuValues");
     NVPW_RawMetricsConfig_GetNumPassesPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_GetNumPasses");
 
+
     dl_cupti = dlopen("libcupti.so", RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
     if (!dl_cupti || dlerror() != NULL)
     {
@@ -279,6 +331,7 @@ link_perfworks_libraries(void)
     cuptiProfilerFlushCounterDataPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerFlushCounterData");
     cuptiProfilerUnsetConfigPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerUnsetConfig");
     cuptiProfilerEndSessionPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerEndSession");
+    
     dlerror();
     int curDeviceId = -1;
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Run cuInit);
@@ -294,6 +347,21 @@ link_perfworks_libraries(void)
     LIKWID_CU_CALL((*cuDeviceGetAttributePtr)(&curDeviceId, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, dev), return -EFAULT);
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Run cuDeviceGetAttribute for minor CC);
     LIKWID_CU_CALL((*cuDeviceGetAttributePtr)(&curDeviceId, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, dev), return -EFAULT);
+
+    LIKWID_CUDA_API_CALL((*cudaDriverGetVersionPtr)(&cuda_version), return -EFAULT);
+    LIKWID_CUDA_API_CALL((*cudaRuntimeGetVersionPtr)(&cuda_runtime_version), return -EFAULT);
+
+    if (cuda_version >= 11000 && cuda_runtime_version >= 11000)
+    {
+        cuptiProfilerGetCounterAvailabilityPtr = DLSYM_AND_CHECK(dl_cupti, "cuptiProfilerGetCounterAvailability");
+        NVPW_RawMetricsConfig_SetCounterAvailabilityPtr = DLSYM_AND_CHECK(dl_libhost, "NVPW_RawMetricsConfig_SetCounterAvailability");
+    }
+    else
+    {
+        cuptiProfilerGetCounterAvailabilityPtr = &cuptiProfilerGetCounterAvailability;
+        NVPW_RawMetricsConfig_SetCounterAvailabilityPtr = &NVPW_RawMetricsConfig_SetCounterAvailability;
+    }
+
     return 0;
 }
 
@@ -592,8 +660,20 @@ nvmon_perfworks_createDevice(int id, NvmonDevice *dev)
 
     NVPW_InitializeHost_Params initializeHostParams = { NVPW_InitializeHost_Params_STRUCT_SIZE };
     LIKWID_NVPW_API_CALL((*NVPW_InitializeHostPtr)(&initializeHostParams), return -1;);
-
+    /* Dirty hack to support CUDA 10.1 and CUDA 11.0 insted of
     CUpti_Device_GetChipName_Params getChipNameParams = { CUpti_Device_GetChipName_Params_STRUCT_SIZE };
+    */
+    size_t getChipNameParams_size = 0;
+    if (cuda_runtime_version < 11000)
+    {
+        getChipNameParams_size = CUpti_Device_GetChipName_Params_STRUCT_SIZE10;
+    }
+    else
+    {
+        getChipNameParams_size = CUpti_Device_GetChipName_Params_STRUCT_SIZE11;
+    }
+    CUpti_Device_GetChipName_Params getChipNameParams = { getChipNameParams_size };
+    /* End of dirty hack */
     getChipNameParams.deviceIndex = id;
     LIKWID_CUPTI_API_CALL((*cuptiDeviceGetChipNamePtr)(&getChipNameParams), return -1;);
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Current GPU chip %s, getChipNameParams.pChipName);
@@ -860,7 +940,7 @@ static int nvmon_perfworks_getMetricRequests(NVPA_MetricsContext* context, struc
     return num_reqs;
 }
 
-static int nvmon_perfworks_createConfigImage(char* chip, struct bstrList* events, uint8_t **configImage)
+static int nvmon_perfworks_createConfigImage(char* chip, struct bstrList* events, uint8_t **configImage, uint8_t* availImage)
 {
     int i = 0;
     int ierr = 0;
@@ -886,6 +966,13 @@ static int nvmon_perfworks_createConfigImage(char* chip, struct bstrList* events
     NVPW_RawMetricsConfig_Destroy_Params rawMetricsConfigDestroyParams = { NVPW_RawMetricsConfig_Destroy_Params_STRUCT_SIZE };
     rawMetricsConfigDestroyParams.pRawMetricsConfig = pRawMetricsConfig;
 
+    if(availImage)
+    {
+        NVPW_RawMetricsConfig_SetCounterAvailability_Params setCounterAvailabilityParams = {NVPW_RawMetricsConfig_SetCounterAvailability_Params_STRUCT_SIZE};
+        setCounterAvailabilityParams.pRawMetricsConfig = pRawMetricsConfig;
+        setCounterAvailabilityParams.pCounterAvailabilityImage = availImage;
+        LIKWID_NVPW_API_CALL((*NVPW_RawMetricsConfig_SetCounterAvailabilityPtr)(&setCounterAvailabilityParams), ierr = -1; goto nvmon_perfworks_createConfigImage_out);
+    }
 
     NVPW_RawMetricsConfig_BeginPassGroup_Params beginPassGroupParams = { NVPW_RawMetricsConfig_BeginPassGroup_Params_STRUCT_SIZE };
     beginPassGroupParams.pRawMetricsConfig = pRawMetricsConfig;
@@ -1051,6 +1138,8 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
     int gid = -1;
     uint8_t* configImage = NULL;
     uint8_t* prefixImage = NULL;
+    uint8_t* availImage = NULL;
+    size_t availImageSize = 0;
 
     //cuptiProfiler_init();
 
@@ -1120,8 +1209,28 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
     device->nvEventSets = tmpEventSet;
     NvmonEventSet* newEventSet = &device->nvEventSets[device->numNvEventSets];
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Filling eventset %d on device %d, device->numNvEventSets, device->deviceId);
+
+
+    if (cuda_version >= 11000 && cuda_runtime_version >= 11000)
+    {
+        CUpti_Profiler_GetCounterAvailability_Params getCounterAvailabilityParams = {CUpti_Profiler_GetCounterAvailability_Params_STRUCT_SIZE};
+        getCounterAvailabilityParams.ctx = device->context;
+        LIKWID_CUPTI_API_CALL((*cuptiProfilerGetCounterAvailabilityPtr)(&getCounterAvailabilityParams), return -EFAULT);
+        
+        availImage = malloc(getCounterAvailabilityParams.counterAvailabilityImageSize);
+        if (!availImage)
+        {
+            return -ENOMEM;
+        }
+        getCounterAvailabilityParams.ctx = device->context;
+        getCounterAvailabilityParams.pCounterAvailabilityImage = availImage;
+        LIKWID_CUPTI_API_CALL((*cuptiProfilerGetCounterAvailabilityPtr)(&getCounterAvailabilityParams), return -EFAULT);
+        availImageSize = getCounterAvailabilityParams.counterAvailabilityImageSize;
+    }
+
+    int ci_size = nvmon_perfworks_createConfigImage(device->chip, eventtokens, &configImage, availImage);
     int pi_size = nvmon_perfworks_createCounterDataPrefixImage(device->chip, eventtokens, &prefixImage);
-    int ci_size = nvmon_perfworks_createConfigImage(device->chip, eventtokens, &configImage);
+    
     
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Filling eventset %d on device %d, device->numNvEventSets, device->deviceId);
     if (configImage && prefixImage)
@@ -1134,6 +1243,8 @@ nvmon_perfworks_addEventSet(NvmonDevice_t device, const char* eventString)
         newEventSet->counterDataImageSize = 0; 
         newEventSet->counterDataScratchBuffer = NULL;
         newEventSet->counterDataScratchBufferSize = 0;
+        newEventSet->counterAvailabilityImage = availImage;
+        newEventSet->counterAvailabilityImageSize = availImageSize;
         newEventSet->events = eventtokens;
         newEventSet->numberOfEvents = tmp->qty;
         newEventSet->id = device->numNvEventSets;
@@ -1388,7 +1499,16 @@ int nvmon_perfworks_startCounters(NvmonDevice_t device)
     NvmonEventSet* eventSet = &device->nvEventSets[device->activeEventSet];
 
     CUpti_Profiler_BeginSession_Params beginSessionParams = {CUpti_Profiler_BeginSession_Params_STRUCT_SIZE};
-    CUpti_Profiler_SetConfig_Params setConfigParams = {CUpti_Profiler_SetConfig_Params_STRUCT_SIZE};
+    size_t CUpti_Profiler_SetConfig_Params_size = 3*sizeof(size_t) + sizeof(void*) + sizeof(CUcontext) + sizeof(const uint8_t*);
+    if (cuda_runtime_version < 11000)
+    {
+        CUpti_Profiler_SetConfig_Params_size = 56;//2*sizeof(uint16_t); 
+    }
+    else
+    {
+        CUpti_Profiler_SetConfig_Params_size = 58;
+    }
+    CUpti_Profiler_SetConfig_Params setConfigParams = {CUpti_Profiler_SetConfig_Params_size};
     CUpti_Profiler_EnableProfiling_Params enableProfilingParams = {CUpti_Profiler_EnableProfiling_Params_STRUCT_SIZE};
     CUpti_Profiler_PushRange_Params pushRangeParams = {CUpti_Profiler_PushRange_Params_STRUCT_SIZE};
     CUpti_Profiler_BeginPass_Params beginPassParams = {CUpti_Profiler_BeginPass_Params_STRUCT_SIZE};
@@ -1402,18 +1522,20 @@ int nvmon_perfworks_startCounters(NvmonDevice_t device)
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, (START) counterDataScratchBufferSize %ld, eventSet->counterDataScratchBufferSize);
     beginSessionParams.range = CUPTI_UserRange;
     beginSessionParams.replayMode = CUPTI_UserReplay;
-    beginSessionParams.maxRangesPerPass = numRanges;
-    beginSessionParams.maxLaunchesPerPass = numRanges;
+    beginSessionParams.maxRangesPerPass = 1;
+    beginSessionParams.maxLaunchesPerPass = 1;
 
     LIKWID_CUPTI_API_CALL((*cuptiProfilerBeginSessionPtr)(&beginSessionParams), return -1);
 
-    setConfigParams.pConfig = &(eventSet->configImage)[0];
+    setConfigParams.pConfig = eventSet->configImage;
     setConfigParams.configSize = eventSet->configImageSize;
     GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, (START) configImage %ld, eventSet->configImageSize);
 
     setConfigParams.passIndex = 0;
+    setConfigParams.ctx = device->context;
     setConfigParams.minNestingLevel = 1;
     setConfigParams.numNestingLevels = 1;
+    setConfigParams.targetNestingLevel = 1;
     LIKWID_CUPTI_API_CALL((*cuptiProfilerSetConfigPtr)(&setConfigParams), return -1);
 
     LIKWID_CUPTI_API_CALL((*cuptiProfilerBeginPassPtr)(&beginPassParams), return -1;);
@@ -1456,8 +1578,21 @@ int nvmon_perfworks_stopCounters(NvmonDevice_t device)
 
     CUpti_Profiler_DisableProfiling_Params disableProfilingParams = {CUpti_Profiler_DisableProfiling_Params_STRUCT_SIZE};
     CUpti_Profiler_PopRange_Params popRangeParams = {CUpti_Profiler_PopRange_Params_STRUCT_SIZE};
-    CUpti_Profiler_EndPass_Params endPassParams = {CUpti_Profiler_EndPass_Params_STRUCT_SIZE};
-    CUpti_Profiler_FlushCounterData_Params flushCounterDataParams = {CUpti_Profiler_FlushCounterData_Params_STRUCT_SIZE};
+    size_t CUpti_Profiler_EndPass_Params_size = 0;
+    size_t CUpti_Profiler_FlushCounterData_Params_size = 0;
+
+    if (cuda_runtime_version < 11000)
+    {
+        CUpti_Profiler_EndPass_Params_size = CUpti_Profiler_EndPass_Params_STRUCT_SIZE10;
+        CUpti_Profiler_FlushCounterData_Params_size = CUpti_Profiler_FlushCounterData_Params_STRUCT_SIZE10;
+    }
+    else
+    {
+        CUpti_Profiler_EndPass_Params_size = CUpti_Profiler_EndPass_Params_STRUCT_SIZE11;
+        CUpti_Profiler_FlushCounterData_Params_size = CUpti_Profiler_FlushCounterData_Params_STRUCT_SIZE11;
+    }
+    CUpti_Profiler_EndPass_Params endPassParams = {CUpti_Profiler_EndPass_Params_size};
+    CUpti_Profiler_FlushCounterData_Params flushCounterDataParams = {CUpti_Profiler_FlushCounterData_Params_size};
     CUpti_Profiler_UnsetConfig_Params unsetConfigParams = {CUpti_Profiler_UnsetConfig_Params_STRUCT_SIZE};
     CUpti_Profiler_EndSession_Params endSessionParams = {CUpti_Profiler_EndSession_Params_STRUCT_SIZE};
 
