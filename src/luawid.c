@@ -2903,6 +2903,9 @@ lua_likwid_getGpuTopology(lua_State* L)
         lua_pushstring(L,"name");
         lua_pushstring(L, gpu->name);
         lua_settable(L,-3);
+        lua_pushstring(L,"short");
+        lua_pushstring(L, gpu->short_name);
+        lua_settable(L,-3);
         lua_pushstring(L,"memory");
         lua_pushinteger(L, (lua_Integer)(gpu->mem));
         lua_settable(L,-3);
@@ -3102,9 +3105,12 @@ lua_likwid_getGpuEventsAndCounters(lua_State* L)
                 lua_pushstring(L,"Name");
                 lua_pushstring(L, l->events[j].name);
                 lua_settable(L,-3);
-                lua_pushstring(L,"Description");
-                lua_pushstring(L, l->events[j].desc);
-                lua_settable(L,-3);
+                if (l->events[j].desc)
+                {
+                    lua_pushstring(L,"Description");
+                    lua_pushstring(L, l->events[j].desc);
+                    lua_settable(L,-3);
+                }
                 lua_pushstring(L,"Limit");
                 lua_pushstring(L, l->events[j].limit);
                 lua_settable(L,-3);
@@ -3124,6 +3130,7 @@ lua_likwid_getGpuGroups(lua_State* L)
 {
     int i, ret;
     char** tmp, **infos, **longs;
+    int gpuId = lua_tonumber(L,1);
     if (!gputopology_isInitialized)
     {
         if (topology_gpu_init() == EXIT_SUCCESS)
@@ -3137,7 +3144,7 @@ lua_likwid_getGpuGroups(lua_State* L)
             return 1;
         }
     }
-    ret = nvmon_getGroups(&tmp, &infos, &longs);
+    ret = nvmon_getGroups(gpuId, &tmp, &infos, &longs);
     if (ret > 0)
     {
         lua_newtable(L);

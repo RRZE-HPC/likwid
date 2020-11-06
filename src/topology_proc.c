@@ -397,17 +397,17 @@ proc_init_cpuFeatures(void)
             setBit(cpuid_info.featureFlags, SSE4A);
             bcatcstr(bfeatures, "SSE4a ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "ssse3", 5) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "ssse3", 5) == 1 && (!(testBit(cpuid_info.featureFlags, SSSE3))))
         {
             setBit(cpuid_info.featureFlags, SSSE3);
             bcatcstr(bfeatures, "SSSE ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "sse3", 4) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "sse3", 4) == 1 && (!(testBit(cpuid_info.featureFlags, SSE3))))
         {
             setBit(cpuid_info.featureFlags, SSE3);
             bcatcstr(bfeatures, "SSE3 ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "sse2", 4) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "sse2", 4) == 1 && (!(testBit(cpuid_info.featureFlags, SSE2))))
         {
             setBit(cpuid_info.featureFlags, SSE2);
             bcatcstr(bfeatures, "SSE2 ");
@@ -422,7 +422,7 @@ proc_init_cpuFeatures(void)
             setBit(cpuid_info.featureFlags, MMX);
             bcatcstr(bfeatures, "MMX ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "sse", 3) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "sse", 3) == 1 && (!(testBit(cpuid_info.featureFlags, SSE))))
         {
             setBit(cpuid_info.featureFlags, SSE);
             bcatcstr(bfeatures, "SSE ");
@@ -447,12 +447,12 @@ proc_init_cpuFeatures(void)
             setBit(cpuid_info.featureFlags, EIST);
             bcatcstr(bfeatures, "EIST ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "tm2", 3) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "tm2", 3) == 1 && (!(testBit(cpuid_info.featureFlags, TM2))))
         {
             setBit(cpuid_info.featureFlags, TM2);
             bcatcstr(bfeatures, "TM2 ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "tm", 2) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "tm", 2) == 1 && (!(testBit(cpuid_info.featureFlags, TM))))
         {
             setBit(cpuid_info.featureFlags, TM);
             bcatcstr(bfeatures, "TM ");
@@ -477,12 +477,12 @@ proc_init_cpuFeatures(void)
             setBit(cpuid_info.featureFlags, AVX512);
             bcatcstr(bfeatures, "AVX512 ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "avx2", 4) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "avx2", 4) == 1 && (!testBit(cpuid_info.featureFlags, AVX2)))
         {
             setBit(cpuid_info.featureFlags, AVX2);
             bcatcstr(bfeatures, "AVX2 ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "avx", 3) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "avx", 3) == 1 && (!testBit(cpuid_info.featureFlags, AVX)))
         {
             setBit(cpuid_info.featureFlags, AVX);
             bcatcstr(bfeatures, "AVX ");
@@ -502,12 +502,12 @@ proc_init_cpuFeatures(void)
             setBit(cpuid_info.featureFlags, HLE);
             bcatcstr(bfeatures, "HLE ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "ht", 2) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "ht", 2) == 1 && (!testBit(cpuid_info.featureFlags, HTT)))
         {
             setBit(cpuid_info.featureFlags, HTT);
             bcatcstr(bfeatures, "HTT ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "fp", 2) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "fp", 2) == 1 && (!testBit(cpuid_info.featureFlags, FP)))
         {
             setBit(cpuid_info.featureFlags, FP);
             bcatcstr(bfeatures, "FP ");
@@ -527,7 +527,7 @@ proc_init_cpuFeatures(void)
             setBit(cpuid_info.featureFlags, VFPV4);
             bcatcstr(bfeatures, "VFPV4 ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "vfp", 3) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "vfp", 3) == 1 && (!testBit(cpuid_info.featureFlags, VFP)))
         {
             setBit(cpuid_info.featureFlags, VFP);
             bcatcstr(bfeatures, "VFP ");
@@ -547,12 +547,12 @@ proc_init_cpuFeatures(void)
             setBit(cpuid_info.featureFlags, TLS);
             bcatcstr(bfeatures, "TLS ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "asimdrdm", 8) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "asimdrdm", 8) == 1 && (!testBit(cpuid_info.featureFlags, ASIMDRDM)))
         {
             setBit(cpuid_info.featureFlags, ASIMDRDM);
             bcatcstr(bfeatures, "ASIMDRDM ");
         }
-        else if (bisstemeqblk(flaglist->entry[i], "asimd", 5) == 1)
+        else if (bisstemeqblk(flaglist->entry[i], "asimd", 5) == 1 && (!testBit(cpuid_info.featureFlags, ASIMD)))
         {
             setBit(cpuid_info.featureFlags, ASIMD);
             bcatcstr(bfeatures, "ASIMD ");
