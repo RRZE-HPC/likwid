@@ -9,15 +9,15 @@ PMC5  PM_RUN_CYC
 METRICS
 Runtime (RDTSC) [s] time
 CPI  PMC5/PMC4
-MFlops/s (SP assumed)  1.0E-06*(PMC3*8.0)/time
-MFlops/s (DP assumed)  1.0E-06*(PMC3*4.0)/time
+SP [MFLOP/s] (assumed)  1.0E-06*(PMC3*8.0)/time
+DP [MFLOP/s] (assumed)  1.0E-06*(PMC3*4.0)/time
 Vector MIOPS/s   1.0E-06*(PMC1)/time
 
 LONG
-Formula:
+Formulas:
 CPI = PM_RUN_CYC/PM_RUN_INST_CMPL
-MFlops/s (SP assumed) = 1.0E-06*(PM_VECTOR_FLOP_CMPL*4)/runtime
-MFlops/s (DP assumed) = 1.0E-06*(PM_VECTOR_FLOP_CMPL*8)/runtime
+SP [MFLOP/s] (assumed) = 1.0E-06*(PM_VECTOR_FLOP_CMPL*4)/runtime
+DP [MFLOP/s] (assumed) = 1.0E-06*(PM_VECTOR_FLOP_CMPL*8)/runtime
 Vector MIOPS/s = 1.0E-06*(PM_VECTOR_FLOP_CMPL)/runtime
--
-
+--
+This group measures vector operations. There is no differentiation between SP and DP possible.

@@ -144,7 +144,9 @@ power_init(int cpuId)
         case ZEN_FAMILY:
             if (cpuid_info.model == ZEN_RYZEN ||
                 cpuid_info.model == ZENPLUS_RYZEN ||
-                cpuid_info.model == ZEN2_RYZEN)
+                cpuid_info.model == ZENPLUS_RYZEN2 ||
+                cpuid_info.model == ZEN2_RYZEN ||
+                cpuid_info.model == ZEN2_RYZEN2)
             {
                 cpuid_info.turbo = 0;
                 power_info.hasRAPL = 1;
@@ -659,6 +661,7 @@ power_finalize(void)
     power_info.uncoreMinFreq = 0;
     power_info.uncoreMaxFreq = 0;
     memset(power_info.domains, 0, NUM_POWER_DOMAINS*sizeof(PowerDomain));
+    power_initialized = 0;
 }
 
 PowerInfo_t

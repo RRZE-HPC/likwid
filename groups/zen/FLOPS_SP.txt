@@ -1,33 +1,26 @@
 SHORT Single Precision MFLOP/s
 
 EVENTSET
-FIXC0 INST_RETIRED_ANY
 FIXC1 ACTUAL_CPU_CLOCK
 FIXC2 MAX_CPU_CLOCK
 PMC0  RETIRED_INSTRUCTIONS
-PMC1  RETIRED_SSE_AVX_FLOPS_SINGLE_FMA
-PMC2  RETIRED_MMX_FP_INSTR_ALL
-PMC3  RETIRED_SSE_AVX_FLOPS_SINGLE_ADD_MULT_DIV
+PMC1  CPU_CLOCKS_UNHALTED
+PMC2  RETIRED_SSE_AVX_FLOPS_SINGLE_ALL
+PMC3  MERGE
 
 METRICS
 Runtime (RDTSC) [s] time
 Runtime unhalted [s]   FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
-CPI   FIXC1/PMC0
-SP [MFLOP/s] (scalar assumed)   1.0E-06*(PMC3+(PMC2/2)+(PMC1*4))/time
-SP [MFLOP/s] (SSE assumed)   1.0E-06*(PMC3+(PMC2*2)+(PMC1*4))/time
-SP [MFLOP/s] (AVX assumed)   1.0E-06*(PMC3+(PMC2*4)+(PMC1*4))/time
-
+CPI   PMC1/PMC0
+SP [MFLOP/s]   1.0E-06*(PMC2)/time
 
 LONG
 Formulas:
-CPI = INST_RETIRED_ANY/ACTUAL_CPU_CLOCK
-SP [MFLOP/s] (scalar assumed) = 1.0E-06*(RETIRED_SSE_AVX_FLOPS_SINGLE_ADD_MULT_DIV + (RETIRED_MMX_FP_INSTR_ALL/2)+(RETIRED_SSE_AVX_FLOPS_SINGLE_FMA*4))/time
-SP [MFLOP/s] (SSE assumed) = 1.0E-06*(RETIRED_SSE_AVX_FLOPS_SINGLE_ADD_MULT_DIV + (RETIRED_MMX_FP_INSTR_ALL*2)+(RETIRED_SSE_AVX_FLOPS_SINGLE_FMA*4))/time
-SP [MFLOP/s] (AVX assumed) = 1.0E-06*(RETIRED_SSE_AVX_FLOPS_SINGLE_ADD_MULT_DIV + (RETIRED_MMX_FP_INSTR_ALL*4)+(RETIRED_SSE_AVX_FLOPS_SINGLE_FMA*4))/time
+CPI = CPU_CLOCKS_UNHALTED/RETIRED_INSTRUCTIONS
+SP [MFLOP/s] = 1.0E-06*(RETIRED_SSE_AVX_FLOPS_SINGLE_ALL)/time
 -
-Profiling group to measure single precisision FLOP rate. The Zen architecture
-does not provide distinct events for SSE and AVX FLOPs. Moreover, all FP
-instructions are counted in RETIRED_MMX_FP_INSTR_ALL.
-Therefore, you have to select the SP MFLOP/s metric based on the measured code.
-Moreover, the SSE and AVX metrics overcount but SSE metrics are more accurate.
+Profiling group to measure single precisision FLOP rate. The event might
+have a higher per-cycle increment than 15, so the MERGE event is required.
+
+

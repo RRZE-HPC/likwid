@@ -84,6 +84,7 @@ time_interval = 2.E06
 time_orig = "2s"
 read_interval = 30.E06
 sockets = {}
+raw_selection = nil
 cpuinfo = likwid.getCpuInfo()
 if cpuinfo["isIntel"] == 1 then
     domainList = {"PKG", "PP0", "PP1", "DRAM", "PLATFORM"}
@@ -114,6 +115,7 @@ for opt,arg in likwid.getopt(arg, {"V:", "c:", "h", "i", "M:", "p", "s:", "v", "
         if num_sockets == 0 then
             os.exit(1)
         end
+        raw_selection = arg
     elseif (opt == "M") then
         access_mode = tonumber(arg)
         if (access_mode == nil) then
@@ -160,12 +162,17 @@ if #sockets > 0 then
         local affinityID = "S"..tostring(socketId)
         for j, domain in pairs(affinity["domains"]) do
             if domain["tag"] == affinityID then
-                table.insert(cpulist,domain["processorList"][1])
-                before[domain["processorList"][1]] = {}
-                after[domain["processorList"][1]] = {}
-                for _, id in pairs(domainList) do
-                    before[domain["processorList"][1]][id] = 0
-                    after[domain["processorList"][1]][id] = 0
+                if #domain["processorList"] > 0 then
+                    local c = domain["processorList"][1]
+                    table.insert(cpulist,domain["processorList"][1])
+                    before[domain["processorList"][1]] = {}
+                    after[domain["processorList"][1]] = {}
+                    for _, id in pairs(domainList) do
+                        before[domain["processorList"][1]][id] = 0
+                        after[domain["processorList"][1]][id] = 0
+                    end
+                else
+                    print_stderr(string.format("No CPU available in domain %s", domain["tag"]))
                 end
             end
         end
@@ -173,13 +180,17 @@ if #sockets > 0 then
 else
     for j, domain in pairs(affinity["domains"]) do
         if domain["tag"]:match("S%d+") then
-            table.insert(cpulist,domain["processorList"][1])
-            table.insert(sockets, domain["tag"]:match("S(%d+)"))
-            before[domain["processorList"][1]] = {}
-            after[domain["processorList"][1]] = {}
-            for _, id in pairs(domainList) do
-                before[domain["processorList"][1]][id] = 0
-                after[domain["processorList"][1]][id] = 0
+            if #domain["processorList"] > 0 then
+                table.insert(cpulist,domain["processorList"][1])
+                table.insert(sockets, domain["tag"]:match("S(%d+)"))
+                before[domain["processorList"][1]] = {}
+                after[domain["processorList"][1]] = {}
+                for _, id in pairs(domainList) do
+                    before[domain["processorList"][1]][id] = 0
+                    after[domain["processorList"][1]][id] = 0
+                end
+            else
+                print_stderr(string.format("No CPU available in domain %s", domain["tag"]))
             end
         end
     end
@@ -187,6 +198,15 @@ end
 
 
 if likwid.setAccessClientMode(access_mode) ~= 0 then
+    os.exit(1)
+end
+
+if #sockets == 0 or #cpulist == 0 then
+    if raw_selection then
+        print_stderr(string.format("No CPU accessible for selection -c %s", raw_selection))
+    else
+        print_stderr(string.format("No CPU accessible in all sockets"))
+    end
     os.exit(1)
 end
 

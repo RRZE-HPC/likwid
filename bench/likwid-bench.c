@@ -66,9 +66,9 @@ extern void* getIterSingle(void* arg);
     printf("Supported Options:\n"); \
     printf("-h\t\t Help message\n"); \
     printf("-a\t\t List available benchmarks \n"); \
-    printf("-d\t\t Delimiter used for physical core list (default ,) \n"); \
+    printf("-d\t\t Delimiter used for physical hwthread list (default ,) \n"); \
     printf("-p\t\t List available thread domains\n"); \
-    printf("\t\t or the physical ids of the cores selected by the -c expression \n"); \
+    printf("\t\t or the physical ids of the hwthreads selected by the -c expression \n"); \
     printf("-s <TIME>\t Seconds to run the test minimally (default 1)\n");\
     printf("\t\t If resulting iteration count is below 10, it is normalized to 10.\n");\
     printf("-i <ITERS>\t Specify the number of iterations per thread manually. \n"); \
@@ -79,6 +79,7 @@ extern void* getIterSingle(void* arg);
     printf("\t\t <size> in kB, MB or GB (mandatory)\n"); \
     printf("For dynamically loaded benchmarks\n"); \
     printf("-f <PATH>\t Specify a folder for the temporary files. default: /tmp\n"); \
+    printf("-o <FILE>\t Save generated assembly to file\n"); \
     printf("\n"); \
     printf("Difference between -w and -W :\n"); \
     printf("-w allocates the streams in the thread_domain with one thread and support placement of streams\n"); \
@@ -138,6 +139,8 @@ int main(int argc, char** argv)
     int globalNumberOfThreads = 0;
     int optPrintDomains = 0;
     int c;
+    int saveAsm = 0;
+    bstring asmFile = bfromcstr("");
     ThreadUserData myData;
     bstring testcase = bfromcstr("none");
     uint64_t numberOfWorkgroups = 0;
@@ -179,7 +182,7 @@ int main(int argc, char** argv)
         exit(EXIT_SUCCESS);
     }
 
-    while ((c = getopt (argc, argv, "W:w:t:s:l:aphvi:f:")) != -1) {
+    while ((c = getopt (argc, argv, "W:w:t:s:l:aphvi:f:o:")) != -1) {
         switch (c)
         {
             case 'f':
@@ -189,13 +192,18 @@ int main(int argc, char** argv)
                     compilepath[tmp] = '\0';
                 }
                 break;
+            case 'o':
+                bdestroy(asmFile);
+                asmFile = bfromcstr(optarg);
+                saveAsm = 1;
+                break;
             default:
                 break;
         }
     }
     optind = 0;
 
-    while ((c = getopt (argc, argv, "W:w:t:s:l:aphvi:f:")) != -1) {
+    while ((c = getopt (argc, argv, "W:w:t:s:l:aphvi:f:o:")) != -1) {
         switch (c)
         {
             case 'h':
@@ -358,12 +366,22 @@ int main(int argc, char** argv)
 
                 if (test == NULL && dynbench_test(testcase))
                 {
+                    int ret = 0;
                     if (strlen(compilepath) == 0)
                     {
-                        int ret = snprintf(compilepath, 512, "%s", defcompilepath);
+                        ret = snprintf(compilepath, 512, "%s", defcompilepath);
                         if (ret > 0) compilepath[ret] = '\0';
                     }
-                    dynbench_load(testcase, &test, compilepath, compilers, compileflags);
+                    ret = dynbench_load(testcase, &test, compilepath, compilers, compileflags);
+                    if (saveAsm)
+                    {
+                        dynbench_asm(testcase, compilepath, asmFile);
+                    }
+                    if (ret != 0)
+                    {
+                        dynbench_close(test, compilepath);
+                        return EXIT_FAILURE;
+                    }
                 }
 
                 if (test == NULL)
@@ -373,6 +391,7 @@ int main(int argc, char** argv)
                 }
                 bdestroy(testcase);
                 break;
+            case 'o':
             case 'f':
                 break;
             case '?':
@@ -440,7 +459,7 @@ int main(int argc, char** argv)
     tmp = 0;
 
     optind = 0;
-    while ((c = getopt (argc, argv, "W:w:t:s:l:i:aphv")) != -1)
+    while ((c = getopt (argc, argv, "W:w:t:s:l:i:aphvf:o:")) != -1)
     {
         switch (c)
         {
@@ -475,7 +494,7 @@ int main(int argc, char** argv)
                             newsize = (((int)(floor(orig_size/nrThreads))/stride)*(stride))*nrThreads;
                             if (newsize > 0 && warn_once)
                             {
-                                fprintf (stderr, "Warning: Sanitizing vector length to a multiple of the loop stride %d and thread count %d from %d elements (%d bytes) to %d elements (%d bytes)\n",stride, nrThreads, orig_size, orig_size*typesize, newsize, newsize*typesize);
+                                fprintf (stdout, "Warning: Sanitizing vector length to a multiple of the loop stride %d and thread count %d from %d elements (%d bytes) to %d elements (%d bytes)\n",stride, nrThreads, orig_size, orig_size*typesize, newsize, newsize*typesize);
                                 warn_once = 0;
                             }
                             else if (newsize == 0)
@@ -521,11 +540,11 @@ int main(int argc, char** argv)
                 {
                     if (currentWorkgroup->init_per_thread)
                     {
-                        printf("Initialization: Each thread in domain initializes its own stream chunks\n");
+                        fprintf (stdout, "Initialization: Each thread in domain initializes its own stream chunks\n");
                     }
                     else
                     {
-                        printf("Initialization: First thread in domain initializes the whole stream\n");
+                        fprintf (stdout, "Initialization: First thread in domain initializes the whole stream\n");
                     }
                 }
                 break;
@@ -542,7 +561,7 @@ int main(int argc, char** argv)
         {
             if (g0_numberOfThreads != groups[i].numberOfThreads)
             {
-                fprintf (stderr, "Warning: Multiple workgroups with different thread counts are not recommended. Use with case!\n");
+                fprintf (stdout, "Warning: Multiple workgroups with different thread counts are not recommended. Use with case!\n");
                 break;
             }
         }
@@ -550,7 +569,7 @@ int main(int argc, char** argv)
         {
             if (g0_size != groups[i].size)
             {
-                fprintf (stderr, "Warning: Multiple workgroups with different sizes are not recommended. Use with case!\n");
+                fprintf (stdout, "Warning: Multiple workgroups with different sizes are not recommended. Use with case!\n");
                 break;
             }
         }
@@ -777,5 +796,6 @@ int main(int argc, char** argv)
     }
 
     bdestroy(HLINE);
+    bdestroy(asmFile);
     return EXIT_SUCCESS;
 }

@@ -1,0 +1,16 @@
+STREAMS 4
+TYPE DOUBLE
+FLOPS 2
+BYTES 32
+DESC Double-precision triad A(i) = B(i) * C(i) + D(i), only scalar operations
+LOADS 3
+STORES 1
+INSTR_LOOP 6
+LOOP 2
+lsl GPR7, GPR6, 3
+ldr   q1, [STR1, GPR7]
+ldr   q2, [STR2, GPR7]
+fmul  v1.2d, v1.2d, v2.2d
+ldr   q3, [STR3, GPR7]
+fadd  v1.2d, v1.2d, v3.2d
+str   q1, [STR0, GPR7]

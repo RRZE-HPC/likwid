@@ -1,0 +1,40 @@
+SHORT  L2 cache bandwidth in MBytes/s
+
+EVENTSET
+PMC0  INST_RETIRED
+PMC1  CPU_CYCLES
+PMC2  L1D_CACHE_REFILL
+PMC3  L1D_CACHE_WB
+PMC4  L1I_CACHE_REFILL
+
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC1/PMC0
+L1D<-L2 load bandwidth [MBytes/s]  1.0E-06*(PMC2)*256.0/time
+L1D<-L2 load data volume [GBytes]  1.0E-09*(PMC2)*256.0
+L1D->L2 evict bandwidth [MBytes/s]  1.0E-06*PMC3*256.0/time
+L1D->L2 evict data volume [GBytes]  1.0E-09*PMC3*256.0
+L1I<-L2 load bandwidth [MBytes/s]  1.0E-06*PMC4*256.0/time
+L1I<-L2 load data volume [GBytes]  1.0E-09*PMC4*256.0
+L1<->L2 bandwidth [MBytes/s] 1.0E-06*(PMC2+PMC3+PMC4)*256.0/time
+L1<->L2 data volume [GBytes] 1.0E-09*(PMC2+PMC3+PMC4)*256.0
+
+LONG
+Formulas:
+CPI = CPU_CYCLES/INST_RETIRED
+L1D<-L2 load bandwidth [MBytes/s] = 1.0E-06*L1D_CACHE_REFILL*256.0/time
+L1D<-L2 load data volume [GBytes] = 1.0E-09*L1D_CACHE_REFILL*256.0
+L1D->L2 evict bandwidth [MBytes/s] = 1.0E-06*L1D_CACHE_WB*256.0/time
+L1D->L2 evict data volume [GBytes] = 1.0E-09*L1D_CACHE_WB*256.0
+L1I<-L2 load bandwidth [MBytes/s] = 1.0E-06*L1I_CACHE_REFILL*256.0/time
+L1I<-L2 load data volume [GBytes] = 1.0E-09*L1I_CACHE_REFILL*256.0
+L1<->L2 bandwidth [MBytes/s] = 1.0E-06*(L1D_CACHE_REFILL+L1D_CACHE_WB+L1I_CACHE_REFILL)*256.0/time
+L1<->L2 data volume [GBytes] = 1.0E-09*(L1D_CACHE_REFILL+L1D_CACHE_WB+L1I_CACHE_REFILL)*256.0
+-
+Profiling group to measure L2 cache bandwidth. The bandwidth is computed by the
+number of cacheline loaded from the L2 to the L1 data cache and the writebacks from
+the L1 data cache to the L2 cache. The group also outputs total data volume transfered between
+L2 and L1. Note that this bandwidth also includes data transfers due to a write
+allocate load on a store miss in L1 and cachelines transfered in the L1 instruction
+cache.

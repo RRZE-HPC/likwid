@@ -22,8 +22,16 @@ L1 DTLB 16G miss rate  PMC0/PMC4
 
 LONG
 Formulas:
-
--
+CPI = PM_RUN_CYC / PM_RUN_INST_CMPL
+L1 DTLB 4K misses = PM_DTLB_MISS_4K
+L1 DTLB 4K miss rate = PM_DTLB_MISS_4K/PM_RUN_INST_CMPL
+L1 DTLB 64K misses = PM_DTLB_MISS_64K
+L1 DTLB 64K miss rate = PM_DTLB_MISS_64K/PM_RUN_INST_CMPL
+L1 DTLB 16M misses = PM_DTLB_MISS_16M
+L1 DTLB 16M miss rate = PM_DTLB_MISS_16M/PM_RUN_INST_CMPL
+L1 DTLB 16G misses = PM_DTLB_MISS_16G
+L1 DTLB 16G miss rate = PM_DTLB_MISS_16G/PM_RUN_INST_CMPL
+--
 The DTLB load and store miss rates gives a measure how often a TLB miss occured
-per instruction. The duration measures the time in cycles how long a walk did take.
+per instruction.
 

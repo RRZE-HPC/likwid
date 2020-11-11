@@ -79,40 +79,12 @@ getFreeNodeMem(int nodeId)
         bdestroy(src);
         fclose(fp);
     }
-    else if (!access("/proc/meminfo", R_OK))
-    {
-        bdestroy(filename);
-        filename = bfromcstr("/proc/meminfo");
-        if (NULL != (fp = fopen (bdata(filename), "r")))
-        {
-            bstring src = bread ((bNread) fread, fp);
-            struct bstrList* tokens = bsplit(src,(char) '\n');
-            for (i=0;i<tokens->qty;i++)
-            {
-                if (binstr(tokens->entry[i],0,freeString) != BSTR_ERR)
-                {
-                     bstring tmp = bmidstr (tokens->entry[i], 10, blength(tokens->entry[i])-10  );
-                     bltrimws(tmp);
-                     struct bstrList* subtokens = bsplit(tmp,(char) ' ');
-                     free = str2int(bdata(subtokens->entry[0]));
-                     bdestroy(tmp);
-                     bstrListDestroy(subtokens);
-                }
-            }
-            bstrListDestroy(tokens);
-            bdestroy(src);
-            fclose(fp);
-        }
-    }
-    else
-    {
-        bdestroy(freeString);
-        bdestroy(filename);
-        ERROR;
-    }
+
     bdestroy(freeString);
     bdestroy(filename);
-    return free;
+
+    /* Fallback to system-wide free memory */
+    return proc_getFreeSysMem();
 }
 
 uint64_t
@@ -147,41 +119,13 @@ getTotalNodeMem(int nodeId)
         bdestroy(src);
         fclose(fp);
     }
-    else if (!access(sptr, R_OK))
-    {
-        if (NULL != (fp = fopen (bdata(procfilename), "r")))
-        {
-            bstring src = bread ((bNread) fread, fp);
-            struct bstrList* tokens = bsplit(src,(char) '\n');
-            for (i=0;i<tokens->qty;i++)
-            {
-                if (binstr(tokens->entry[i],0,totalString) != BSTR_ERR)
-                {
-                     bstring tmp = bmidstr (tokens->entry[i], 10, blength(tokens->entry[i])-10  );
-                     bltrimws(tmp);
-                     struct bstrList* subtokens = bsplit(tmp,(char) ' ');
-                     total = str2int(bdata(subtokens->entry[0]));
-                     bdestroy(tmp);
-                     bstrListDestroy(subtokens);
-                }
-            }
-            bstrListDestroy(tokens);
-            bdestroy(src);
-            fclose(fp);
-        }
-    }
-    else
-    {
-        bdestroy(totalString);
-        bdestroy(sysfilename);
-        bdestroy(procfilename);
-        ERROR;
-    }
 
     bdestroy(totalString);
     bdestroy(sysfilename);
     bdestroy(procfilename);
-    return total;
+
+    /* Fallback to system-wide total memory */
+    return proc_getTotalSysMem();
 }
 
 int
@@ -253,53 +197,7 @@ hwloc_numa_init(void)
        aggregate all sockets in the system into the single virtually created NUMA node */
     if (numa_info.numberOfNodes == 0)
     {
-#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__)
-#if HWLOC_API_VERSION > 0x00020000
-        hwloc_type = HWLOC_OBJ_NUMANODE;
-#else
-        hwloc_type = HWLOC_OBJ_NODE;
-#endif
-#else
-        hwloc_type = HWLOC_OBJ_SOCKET;
-#endif
-        numa_info.numberOfNodes = 1;
-
-        numa_info.nodes = (NumaNode*) malloc(sizeof(NumaNode));
-        if (!numa_info.nodes)
-        {
-            fprintf(stderr,"No memory to allocate %ld byte for nodes array\n",sizeof(NumaNode));
-            return -1;
-        }
-        numa_info.nodes[0].id = 0;
-        numa_info.nodes[0].numberOfProcessors = 0;
-        numa_info.nodes[0].totalMemory = getTotalNodeMem(0);
-        numa_info.nodes[0].freeMemory = getFreeNodeMem(0);
-        numa_info.nodes[0].processors = (uint32_t*) malloc(numPUs * sizeof(uint32_t));
-        if (!numa_info.nodes[0].processors)
-        {
-            fprintf(stderr,"No memory to allocate %ld byte for processors array of NUMA node %d\n",
-                    numPUs * sizeof(uint32_t),0);
-            return -1;
-        }
-        numa_info.nodes[0].distances = (uint32_t*) malloc(sizeof(uint32_t));
-        if (!numa_info.nodes[0].distances)
-        {
-            fprintf(stderr,"No memory to allocate %ld byte for distances array of NUMA node %d\n",
-                    sizeof(uint32_t),0);
-            return -1;
-        }
-        numa_info.nodes[0].distances[0] = 10;
-        numa_info.nodes[0].numberOfDistances = 1;
-        cores_per_socket = cpuid_topology.numHWThreads/cpuid_topology.numSockets;
-
-        for (d=0; d<likwid_hwloc_get_nbobjs_by_type(hwloc_topology, hwloc_type); d++)
-        {
-            obj = likwid_hwloc_get_obj_by_type(hwloc_topology, hwloc_type, d);
-            /* depth is here used as index in the processors array */
-            depth = d * cores_per_socket;
-            numa_info.nodes[0].numberOfProcessors += likwid_hwloc_record_objs_of_type_below_obj(
-                    likwid_hwloc_topology, obj, HWLOC_OBJ_PU, &depth, &numa_info.nodes[0].processors);
-        }
+        return virtual_numa_init();
     }
     else
     {
@@ -366,10 +264,20 @@ hwloc_numa_init(void)
 #if HWLOC_API_VERSION > 0x00020000
             for (d = 0; d < cpuid_topology.numHWThreads; d++)
             {
-                if (likwid_hwloc_bitmap_isset(obj->cpuset, d))
+                HWThread *t = &cpuid_topology.threadPool[d];
+                if (likwid_hwloc_bitmap_isset(obj->cpuset, t->apicId) && t->threadId == 0)
                 {
-                    numa_info.nodes[i].processors[j] = d;
+                    numa_info.nodes[i].processors[j] = t->apicId;
                     j++;
+                    for (int k = 0; k < cpuid_topology.numHWThreads; k++)
+                    {
+                        HWThread *x = &cpuid_topology.threadPool[k];
+                        if (t->coreId == x->coreId && t->threadId != x->threadId && likwid_hwloc_bitmap_isset(obj->cpuset, x->apicId))
+                        {
+                            numa_info.nodes[i].processors[j] = x->apicId;
+                            j++;
+                        }
+                    }
                 }
             }
             numa_info.nodes[i].numberOfProcessors = j;

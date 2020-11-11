@@ -1,6 +1,6 @@
 STREAMS 1
 TYPE DOUBLE
-FLOPS 1
+FLOPS 0
 BYTES 8
 
 li r7, 0            # load immediate value of 0 into r7 (used as offset in addressing)

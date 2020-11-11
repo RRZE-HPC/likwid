@@ -555,7 +555,7 @@ cpustr_to_cpulist_logical(bstring bcpustr, int* cpulist, int length)
         fprintf(stderr,
                 "WARN: Selected affinity domain %s has only %d hardware threads, but selection string evaluates to %d threads.\n",
                 bdata(affinity->domains[domainidx].tag), ret, require);
-        fprintf(stderr, "     This results in multiple threads on the same hardware thread.\n");
+        fprintf(stderr, "      This results in multiple threads on the same hardware thread.\n");
         return 0;
     }
 logical_redo:

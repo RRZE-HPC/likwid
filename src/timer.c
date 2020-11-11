@@ -310,6 +310,7 @@ getCpuSpeed(void)
     }
 
     fgets(buff, 256, fpipe);
+    pclose(fpipe);
 
     cyclesClock = (uint64_t)   atoi(buff);
     if ( !(fpipe = (FILE*)popen(command2,"r")) )
@@ -523,6 +524,7 @@ timer_getCpuClockCurrent( int cpu_id )
     }
 
     rptr = fgets(buff, 256, fpipe);
+    pclose(fpipe);
     if (rptr != NULL)
     {
         clock = strtoull(buff, &eptr, 10);
@@ -583,7 +585,7 @@ timer_sleep(unsigned long usec)
 
     if (sleepbase == 0x0ULL)
     {
-        fprintf(stderr, "Sleeping longer as likwid_sleep() called without prior initialization\n");
+        //fprintf(stderr, "Sleeping longer as likwid_sleep() called without prior initialization\n");
         init_sleep();
     }
     if (usec >= 1000000)
@@ -624,4 +626,3 @@ timer_reset( TimerData* time )
     time->start.int64 = 0;
     time->stop.int64 = 0;
 }
-

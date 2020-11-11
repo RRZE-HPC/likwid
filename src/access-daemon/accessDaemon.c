@@ -148,6 +148,7 @@ static int getNumberOfCPUs()
         return 0;
     }
     char* ptr = fgets(buff, 1024, fpipe);
+    pclose(fpipe);
     if (ptr)
     {
         return atoi(buff);
@@ -165,6 +166,7 @@ static int getNumberOfSockets()
         return 0;
     }
     char* ptr = fgets(buff, 1024, fpipe);
+    pclose(fpipe);
     if (ptr)
     {
         return atoi(buff);
@@ -180,7 +182,7 @@ static int getNumberOfNumaNodes()
     dp = opendir ("/sys/devices/system/node/");
     if (dp != NULL)
     {
-        while ((ep = readdir (dp)))
+        while ((ep = readdir (dp)) != NULL)
         {
             if (fnmatch("node?*", ep->d_name, FNM_PATHNAME) == 0)
             {
@@ -190,6 +192,23 @@ static int getNumberOfNumaNodes()
         closedir(dp);
     }
     return count;
+}
+
+static void
+clientmem_finalize()
+{
+    if (isClientMem)
+    {
+        if (clientmem_handle >= 0)
+        {
+            if (clientmem_addr)
+            {
+                munmap(clientmem_addr, PCM_CLIENT_IMC_MMAP_SIZE);
+            }
+            close(clientmem_handle);
+            clientmem_handle = -1;
+        }
+    }
 }
 
 void __attribute__((constructor (101))) init_accessdaemon(void)
@@ -261,6 +280,14 @@ void __attribute__((destructor (101))) close_accessdaemon(void)
         {
             if (FD_PCI[i])
             {
+                for (int j = 0; j < MAX_NUM_PCI_DEVICES; j++)
+                {
+                    if (FD_PCI[i][j] > 0)
+                    {
+                        close(FD_PCI[i][j]);
+                        FD_PCI[i][j] = 0;
+                    }
+                }
                 free(FD_PCI[i]);
                 FD_PCI[i] = NULL;
             }
@@ -270,8 +297,20 @@ void __attribute__((destructor (101))) close_accessdaemon(void)
     }
     if (FD_MSR)
     {
+        for (int i=0; i < avail_cpus; i++)
+        {
+            if (FD_MSR[i] >= 0)
+            {
+                close(FD_MSR[i]);
+                FD_MSR[i] = -1;
+            }
+        }
         free(FD_MSR);
         FD_MSR = NULL;
+    }
+    if (isClientMem && clientmem_handle >= 0 && clientmem_addr)
+    {
+        clientmem_finalize();
     }
 }
 
@@ -911,6 +950,23 @@ allowed_amd17(uint32_t reg)
 }
 
 static int
+allowed_amd17_zen2(uint32_t reg)
+{
+    if (allowed_amd17(reg))
+    {
+        return 1;
+    }
+    else if ((reg == 0xC0010208) ||
+             (reg == 0xC0010209) ||
+             (reg == 0xC001020A) ||
+             (reg == 0xC001020B))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+static int
 clientmem_getStartAddr(uint64_t* startAddr)
 {
     uint64_t imcbar = 0;
@@ -971,21 +1027,7 @@ clientmem_init()
     return 0;
 }
 
-static void
-clientmem_finalize()
-{
-    if (isClientMem)
-    {
-        if (clientmem_handle >= 0)
-        {
-            if (clientmem_addr)
-            {
-                munmap(clientmem_addr, PCM_CLIENT_IMC_MMAP_SIZE);
-            }
-            close(clientmem_handle);
-        }
-    }
-}
+
 
 static void
 clientmem_read(AccessDataRecord *dRecord)
@@ -1235,6 +1277,7 @@ static int getBusFromSocketByNameDevid(const uint32_t socket, PciDevice* pcidev,
                                 {
                                     memset(buff, '\0', tmplen*sizeof(char));
                                     ret = fread(buff, sizeof(char), tmplen-1, fp);
+                                    fclose(fp);
                                     numa_node = atoi(buff);
                                     if (numa_node < 0)
                                     {
@@ -1462,11 +1505,11 @@ static int getBusFromSocketByNameDevidNode(const uint32_t socket, PciDevice* pci
                 if (ret > 0)
                     (*filepath)[ret] = '\0';
             }
-            fclose(fpipe);
+            pclose(fpipe);
             return socket;
         }
     }
-    fclose(fpipe);
+    pclose(fpipe);
     return -1;
 }
 
@@ -1714,6 +1757,7 @@ stop_daemon(void)
 
     free(filepath);
     closelog();
+    close_accessdaemon();
     exit(EXIT_SUCCESS);
 }
 
@@ -1924,7 +1968,14 @@ int main(void)
                 allowed = allowed_amd16;
                 break;
             case ZEN_FAMILY:
-                allowed = allowed_amd17;
+                if (model == ZEN2_RYZEN || model == ZEN2_RYZEN2)
+                {
+                    allowed = allowed_amd17_zen2;
+                }
+                else
+                {
+                    allowed = allowed_amd17;
+                }
                 break;
             default:
                 syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
@@ -1998,7 +2049,7 @@ int main(void)
          * NOTICE: This assumes consecutive processor Ids! */
         for ( uint32_t i=0; i < avail_cpus; i++ )
         {
-            sprintf(msr_file_name,"/dev/cpu/%d/msr",i);
+            snprintf(msr_file_name, MAX_PATH_LENGTH-1, "/dev/cpu/%d/msr", i);
             FD_MSR[i] = open(msr_file_name, O_RDWR);
 
             if ( FD_MSR[i] < 0 )
@@ -2179,4 +2230,3 @@ LOOP:
     /* never reached */
     return EXIT_SUCCESS;
 }
-

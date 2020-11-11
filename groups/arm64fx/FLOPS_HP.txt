@@ -1,0 +1,26 @@
+SHORT Half-Precision MFLOP/s
+
+EVENTSET
+PMC0  INST_RETIRED
+PMC1  CPU_CYCLES
+PMC3  FP_HP_FIXED_OPS_SPEC
+PMC4  FP_HP_SCALE_OPS_SPEC
+
+METRICS
+Runtime (RDTSC) [s] time
+Clock [MHz] 1.E-06*PMC1/time
+CPI  PMC1/PMC0
+HP (FP) [MFLOP/s] 1E-06*(PMC3)/time
+HP (FP+SVE128) [MFLOP/s] 1E-06*(((PMC4*128)/128)+PMC3)/time
+HP (FP+SVE256) [MFLOP/s] 1E-06*(((PMC4*256)/128)+PMC3)/time
+HP (FP+SVE512) [MFLOP/s] 1E-06*(((PMC4*512)/128)+PMC3)/time
+
+LONG
+Formulas:
+HP (FP) [MFLOP/s] 1E-06*FP_SP_FIXED_OPS_SPEC/time
+HP (FP+SVE128) [MFLOP/s]  1.0E-06*(FP_SP_FIXED_OPS_SPEC+((FP_SP_SCALE_OPS_SPEC*128)/128))/time
+HP (FP+SVE256) [MFLOP/s]  1.0E-06*(FP_SP_FIXED_OPS_SPEC+((FP_SP_SCALE_OPS_SPEC*256)/128))/time
+HP (FP+SVE512) [MFLOP/s]  1.0E-06*(FP_SP_FIXED_OPS_SPEC+((FP_SP_SCALE_OPS_SPEC*512)/128))/time
+-
+Half-precision FP rate for scalar and SVE vector operations with different widths. The events for
+the SVE metrics assumes that all vector elements are active.

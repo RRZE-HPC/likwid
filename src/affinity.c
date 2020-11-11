@@ -61,6 +61,12 @@ int *affinity_thread2socket_lookup = NULL;
 int *affinity_thread2numa_lookup = NULL;
 int *affinity_thread2sharedl3_lookup = NULL;
 
+int *socket_lock = NULL;
+int *core_lock = NULL;
+int *tile_lock = NULL;
+int *numa_lock = NULL;
+int *sharedl2_lock = NULL;
+int *sharedl3_lock = NULL;
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
 
 #define gettid() syscall(SYS_gettid)
@@ -194,6 +200,37 @@ static int create_lookups()
         affinity_thread2numa_lookup = malloc(cpuid_topology.numHWThreads * sizeof(int));
         memset(affinity_thread2numa_lookup, -1, cpuid_topology.numHWThreads*sizeof(int));
     }
+    if (!socket_lock)
+    {
+        socket_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(socket_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));
+    }
+    if (!numa_lock)
+    {
+        numa_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(numa_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));
+    }
+    if (!core_lock)
+    {
+        core_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(core_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));
+    }
+    if (!tile_lock)
+    {
+        tile_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(tile_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));
+    }
+    if (!sharedl2_lock)
+    {
+        sharedl2_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(sharedl2_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));
+    }
+    if (!sharedl3_lock)
+    {
+        sharedl3_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(sharedl3_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));
+    }
+
 
     int num_pu = cpuid_topology.numHWThreads;
     if (cpuid_topology.numCacheLevels == 0)
@@ -538,6 +575,37 @@ affinity_finalize()
         free(affinity_thread2numa_lookup);
         affinity_thread2numa_lookup = NULL;
     }
+    if (socket_lock)
+    {
+        free(socket_lock);
+        socket_lock = NULL;
+    }
+    if (numa_lock)
+    {
+        free(numa_lock);
+        numa_lock = NULL;
+    }
+    if (tile_lock)
+    {
+        free(tile_lock);
+        tile_lock = NULL;
+    }
+    if (core_lock)
+    {
+        free(core_lock);
+        core_lock = NULL;
+    }
+    if (sharedl2_lock)
+    {
+        free(sharedl2_lock);
+        sharedl2_lock = NULL;
+    }
+    if (sharedl3_lock)
+    {
+        free(sharedl3_lock);
+        sharedl3_lock = NULL;
+    }
+
 
     affinityDomains.domains = NULL;
     affinity_numberOfDomains = 0;

@@ -81,8 +81,8 @@ local function usage()
     print_stdout("-g/-group <perf>\t Set a likwid-perfctr conform event set for measuring on nodes")
     print_stdout("-m/-marker\t\t Activate marker API mode")
     print_stdout("-O\t\t\t Output easily parseable CSV instead of fancy tables")
-    print_stdout("-o/--output <file>\tWrite output to a file. The file is reformatted according to the suffix.")
-    print_stdout("-f\t\t\t Force overwrite of registers if they are in use. You can also use environment variable LIKWID_FORCE")
+    print_stdout("-o/--output <file>\t Write output to a file. The file is reformatted according to the suffix.")
+    print_stdout("-f\t\t\t Force execution (and measurements). You can also use environment variable LIKWID_FORCE")
     print_stdout("-e, --env <key>=<value>\t Set environment variables for MPI processes")
     print_stdout("--mpiopts <str>\t Hand over options to underlying MPI. Please use proper quoting.")
     print_stdout("")
@@ -109,6 +109,7 @@ local hostfile = nil
 local hosts = {}
 local perf = {}
 local mpitype = nil
+local slurm_involved = false
 local omptype = nil
 local skipStr = ""
 local executable = {}
@@ -509,6 +510,7 @@ local function readHostfilePBS(filename)
     if debug then
         print_stdout("DEBUG: Reading hostfile from batch system")
     end
+
     local t = f:read("*all")
     f:close()
     for i, line in pairs(likwid.stringsplit(t,"\n")) do
@@ -541,28 +543,19 @@ local function readHostfilePBS(filename)
 end
 
 local function readHostfileSlurm(hostlist)
-    nperhost = tonumber(os.getenv("SLURM_TASKS_PER_NODE"):match("(%d+)"))
-    if force then
-        if os.getenv("SLURM_CPUS_ON_NODE") ~= nil then
-            nperhost = tonumber(os.getenv("SLURM_CPUS_ON_NODE"):match("(%d+)")) / nperhost
-        elseif os.getenv("SLURM_CPUS_PER_TASK") ~= nil then
-            nperhost = tonumber(os.getenv("SLURM_CPUS_PER_TASK"):match("(%d+)"))
-        else
-            nperhost = cpuCount() / nperhost
-        end
+    local stasks_per_node = 1
+    local scpus_per_node = 1
+    if os.getenv("SLURM_TASKS_PER_NODE") ~= nil then
+        stasks_per_node = tonumber(os.getenv("SLURM_TASKS_PER_NODE"):match("(%d+)"))
     end
+    if os.getenv("SLURM_CPUS_ON_NODE") ~= nil then
+        scpus_per_node = tonumber(os.getenv("SLURM_CPUS_ON_NODE"):match("(%d+)"))
+    end
+    nperhost = stasks_per_node * scpus_per_node
+
     if hostlist and nperhost then
         hostfile = write_hostlist_to_file(hostlist, nperhost)
         hosts = readHostfilePBS(hostfile)
-        if debug then
-            print_stdout("Available hosts for scheduling:")
-            s = string.format("%-20s\t%s\t%s\t%s", "Host", "Slots", "MaxSlots", "Interface")
-            print_stdout(s)
-            for i, host in pairs(hosts) do
-                s = string.format("%-20s\t%s\t%s\t%s", host["hostname"], host["slots"], host["maxslots"],"")
-                print_stdout (s)
-            end
-        end
         os.remove(hostfile)
     end
     return hosts
@@ -620,8 +613,8 @@ local function executeSlurm(wrapperscript, hostfile, env, nrNodes)
     if wrapperscript.sub(1,1) ~= "/" then
         wrapperscript = os.getenv("PWD").."/"..wrapperscript
     end
-    local exec = string.format("srun --nodes %d --ntasks-per-node=%d --cpu_bind=none %s %s",
-                                nrNodes, ppn, mpiopts or "", wrapperscript)
+    local exec = string.format("srun --nodes %d --ntasks %d --ntasks-per-node=%d --cpu_bind=none %s %s",
+                                nrNodes, np, ppn, mpiopts or "", wrapperscript)
     if debug then
         print_stdout("EXEC: "..exec)
     end
@@ -649,7 +642,8 @@ end
 local function getMpiType()
     local mpitype = nil
     if os.getenv("SLURM_JOB_ID") ~= nil then
-        return "slurm"
+        mpitype = "slurm"
+        slurm_involved = true
     end
     cmd = "bash -c 'tclsh /apps/modules/modulecmd.tcl sh list -t' 2>&1"
     local f = io.popen(cmd, 'r')
@@ -675,7 +669,7 @@ local function getMpiType()
             end
         end
     end
-    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun"}) do
+    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun", "srun"}) do
         f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
         if f ~= nil then
             local s = f:read('*line')
@@ -705,6 +699,12 @@ local function getMpiType()
                             break
                         end
                     end
+                    b,e = out:find("srun")
+                    if (b ~= nil) then
+                        mpitype = "slurm"
+                        slurm_involved = true
+                        break
+                    end
                 end
             end
         end
@@ -712,7 +712,7 @@ local function getMpiType()
     if mpitype then
         local mpi_bootstrap = os.getenv("I_MPI_HYDRA_BOOTSTRAP")
         if mpi_bootstrap == "slurm" then
-            mpitype = "slurm"
+            slurm_involved = "slurm"
         end
     end
     if not mpitype then
@@ -728,7 +728,8 @@ function getMpiVersion()
     intel_build_match = "Version (%d+) Build (%d+)"
     intel_match_old = "Version (%d+).(%d+).%d+"
     openmpi_match = "(%d+)%.(%d+)%.%d+"
-    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun"}) do
+    slurm_match = "slurm (%d+).(%d+).%d+"
+    for i, exec in pairs({"mpiexec.hydra", "mpiexec", "mpirun", "srun"}) do
         f = io.popen(string.format("which %s 2>/dev/null", exec), 'r')
         if f ~= nil then
             mpiexec = f:read("*line")
@@ -744,16 +745,20 @@ function getMpiVersion()
                             maj, min = l:match(intel_match)
                             maj = tonumber(maj)
                             min = tonumber(min)
-                        elseif l:match(intel_match_old) then
-                            maj, min = l:match(intel_match_old)
-                            maj = tonumber(maj)
-                            min = tonumber(min)
                         elseif l:match(intel_build_match) then
                             maj, min = l:match(intel_build_match)
                             maj = tonumber(maj)
                             min = tonumber(min)
+                        elseif l:match(intel_match_old) then
+                            maj, min = l:match(intel_match_old)
+                            maj = tonumber(maj)
+                            min = tonumber(min)
                         elseif l:match(openmpi_match) then
                             maj, min = l:match(openmpi_match)
+                            maj = tonumber(maj)
+                            min = tonumber(min)
+                        elseif l:match(slurm_match) then
+                            maj, min = l:match(slurm_match)
                             maj = tonumber(maj)
                             min = tonumber(min)
                         end
@@ -801,8 +806,14 @@ local function getMpiExec(mpitype)
             end
         end
     end
-    local testmpitype = getMpiType()
-    if mpitype ~= testmpitype then
+    if os.getenv("I_MPI_HYDRA_BOOTSTRAP") == "slurm" then
+        slurm_involved = true
+    end
+    if os.getenv("SLURM_JOB_ID") ~= nil then
+        slurm_involved = true
+    end
+    if mpiexecutable == nil then
+        local testmpitype = getMpiType()
         print_stderr(string.format("ERROR: Cannot find executable for MPI type %s but %s", mpitype, testmpitype))
         os.exit(1)
     end
@@ -929,9 +940,10 @@ local function assignHosts(hosts, np, ppn, tpp)
                     current = ppn
                 end]]
                 print_stderr(string.format("ERROR: Oversubscription required. Host %s has only %s slots but %d needed per host", host["hostname"], host["slots"], ppn))
-                if mpitype == "slurm" then
-                    print_stderr("In SLURM environments, it might be a problem with --ntasks (the slots) and --cpus-per-task options")
+                if slurm_involved then
+                    print_stderr("ERROR: In SLURM environments, it might be a problem with --ntasks (the slots) and --cpus-per-task options")
                 end
+                print_stderr("ERROR: Oversubscription may be forced by setting '-f' on the command line.")
                 os.exit(1)
             else
                 table.insert(newhosts, {hostname=host["hostname"],
@@ -954,6 +966,11 @@ local function assignHosts(hosts, np, ppn, tpp)
         if break_while then
             break
         end
+    end
+    if current < np then
+        print_stdout(string.format("WARN: Only %d processes out of %d can be assigned, running with %d processes", current, np, current))
+        np = current
+        ppn = np/#newhosts
     end
     for i=1, #newhosts do
         if newhosts[i] then
@@ -1044,8 +1061,10 @@ local function calculateCpuExprs(nperdomain, cpuexprs)
         for j=1,count do
             local tmplist = {}
             for t=1,threads do
-                table.insert(tmplist, tostring(sortedlist[1]))
-                table.remove(sortedlist, 1)
+                if sortedlist[1] then
+                    table.insert(tmplist, tostring(sortedlist[1]))
+                    table.remove(sortedlist, 1)
+                end
             end
             table.insert(newexprs, tmplist)
             if dist > threads then
@@ -2195,6 +2214,10 @@ if not hostfile then
     else
         local cpus = cpuCount()
         table.insert(hosts, {hostname='localhost', slots=cpus, maxslots=cpus})
+        if slurm_involved then
+            print_stderr("ERROR: Cannot run on localhost with SLURM involved")
+            os.exit(1)
+        end
     end
 else
     hosts = readHostfile(hostfile)
@@ -2346,6 +2369,10 @@ end
 if skipStr == "" then
     if mpitype == "intelmpi" then
         maj, min = getMpiVersion()
+        if not maj then maj = 2016 end
+        if maj < 2000 then maj = maj + 2000 end
+        if not min then min = 0 end
+
         if maj < 2017 and min <= 1 then
             if omptype == "intel" and nrNodes > 1 then
                 skipStr = '-s 0x3'
@@ -2356,8 +2383,15 @@ if skipStr == "" then
             elseif omptype == "gnu" and nrNodes == 1 then
                 skipStr = '-s 0x0'
             end
-        else
-            skipStr = "-s 0x0"
+        elseif maj >= 2017 then
+            if omptype == "intel" then
+                skipStr = '-s 0x0'
+                if tpp > 1 then
+                    skipStr = '-s 0x1'
+                end
+            elseif omptype == "gnu" then
+                skipStr = "-s 0x1"
+            end
         end
     elseif mpitype == "mvapich2" then
         if omptype == "intel" and nrNodes > 1 then
@@ -2368,10 +2402,16 @@ if skipStr == "" then
             skipStr = '-s 0x7'
         elseif omptype == "intel" and nrNodes == 1 then
             skipStr = '-s 0x1'
+            if tpp > 1 then
+                skipStr = '-s 0x3'
+            end
         elseif omptype == "gnu" and nrNodes > 1 then
             skipStr = '-s 0x7'
         elseif omptype == "gnu" and nrNodes == 1 then
             skipStr = '-s 0x0'
+            if tpp > 0 then
+                skipStr = '-s 0x3'
+            end
         end
     elseif mpitype == "slurm" then
         if omptype == "intel" and nrNodes > 1 then

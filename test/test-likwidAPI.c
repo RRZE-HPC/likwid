@@ -51,7 +51,7 @@ int test_initconfig()
     Configuration_t config = get_configuration();
     if (config == NULL)
         goto fail;
-    if ((config->daemonMode != ACCESSMODE_DIRECT) && (config->daemonMode != ACCESSMODE_DAEMON))
+    if ((config->daemonMode != ACCESSMODE_DIRECT) && (config->daemonMode != ACCESSMODE_DAEMON) && (config->daemonMode != ACCESSMODE_PERF))
         goto fail;
     if ((config->daemonMode == ACCESSMODE_DAEMON) && (config->daemonPath == NULL))
         goto fail;
@@ -84,6 +84,9 @@ int test_hpmmode()
         goto fail;
     HPMmode(ACCESSMODE_DAEMON);
     if (config->daemonMode != ACCESSMODE_DAEMON)
+        goto fail;
+    HPMmode(ACCESSMODE_PERF);
+    if (config->daemonMode != ACCESSMODE_PERF)
         goto fail;
     HPMmode(def);
     HPMmode(ACCESSMODE_DAEMON+1);
