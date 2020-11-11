@@ -115,6 +115,7 @@ static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
 static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
 static char* arm_cortex_a57 = "ARM Cortex A57 (ARMv8)";
 static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
+static char* arm_neoverse_n1 = "ARM Neoverse N1";
 static char* fujitsu_a64fx = "Fujitsu A64FX";
 static char* power7_str = "POWER7 architecture";
 static char* power8_str = "POWER8 architecture";
@@ -164,6 +165,7 @@ static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
 static char* short_arm8_cav_tx2 = "arm8_tx2";
 static char* short_arm8_cav_tx = "arm8_tx";
+static char* short_arm8_neo_n1 = "arm8_n1";
 static char* short_a64fx = "arm64fx";
 
 static char* short_power7 = "power7";
@@ -1044,6 +1046,10 @@ topology_setName(void)
                         case ARM_CORTEX_A53:
                             cpuid_info.name = arm_cortex_a53;
                             cpuid_info.short_name = short_arm8;
+                            break;
+                        case ARM_NEOVERSE_N1:
+                            cpuid_info.name = arm_neoverse_n1;
+                            cpuid_info.short_name = short_arm8_neo_n1;
                             break;
                         default:
                             return EXIT_FAILURE;

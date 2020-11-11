@@ -78,6 +78,7 @@
 #include <perfmon_zen2.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
+#include <perfmon_neon1.h>
 #include <perfmon_a64fx.h>
 
 #ifdef LIKWID_USE_PERFEVENT
@@ -1247,6 +1248,14 @@ perfmon_init_maps(void)
                             box_map = a57_box_map;
                             perfmon_numCounters = perfmon_numCountersA57;
                             translate_types = a53_translate_types;
+                            break;
+                        case ARM_NEOVERSE_N1:
+                            eventHash = neon1_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsNeoN1;
+                            counter_map = neon1_counter_map;
+                            box_map = neon1_box_map;
+                            perfmon_numCounters = perfmon_numCountersNeoN1;
+                            translate_types = neon1_translate_types;
                             break;
                         default:
                             break;

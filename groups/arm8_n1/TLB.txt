@@ -1,0 +1,30 @@
+SHORT L1/L2 TLB information 
+
+EVENTSET
+PMC0  L1D_TLB
+PMC1  L1I_TLB
+PMC2  L2D_TLB
+PMC3  L1D_TLB_REFILL
+PMC4  L1I_TLB_REFILL
+PMC5  L2D_TLB_REFILL
+
+METRICS
+Runtime (RDTSC) [s] time
+L1 DTLB accesses PMC0
+L1 ITLB accesses PMC1
+L2 DTLB accesses PMC2
+L1 DTLB refills PMC3
+L1 ITLB refills PMC4
+L2 DTLB refills PMC5
+L1 DTLB refill ratio PMC3/PMC0
+L1 ITLB refill ratio PMC4/PMC1
+L1 DTLB refill ratio PMC5/PMC2
+
+LONG
+Formulas:
+L1 DTLB refill ratio = L1D_TLB_REFILL / L1D_TLB
+L1 ITLB refill ratio = L1I_TLB_REFILL / L1I_TLB
+L2 DTLB refill ratio = L2D_TLB_REFILL / L2D_TLB
+-
+This group gives information about the TLB usage for all TLBs:
+L1 data, L1 instruction and L2 data.
