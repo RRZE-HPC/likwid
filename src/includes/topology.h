@@ -157,6 +157,8 @@ struct topology_functions {
 #define  NV_DENVER1	0x00U
 #define  NV_DENVER2	0x03U
 #define  APP_XGENE1	0x00U
+#define  ARM_NEOVERSE_N1 0xD0CU
+#define  FUJITSU_A64FX 0x001U
 
 /* ARM vendors */
 #define DEFAULT_ARM	0x41U
@@ -169,6 +171,7 @@ struct topology_functions {
 #define APPLE		0x67U
 #define MARVELL		0x56U
 #define INTEL_ARM	0x69U
+#define FUJITSU_ARM 0x46U
 
 /* POWER */
 #define POWER7          0x7U
@@ -188,6 +191,7 @@ struct topology_functions {
 #define  PPC_FAMILY       0x42U
 
 extern int cpu_count(cpu_set_t* set);
+extern int likwid_cpu_online(int cpu_id);
 
 static inline int cpuid_hasFeature(FeatureBit bit)
 {

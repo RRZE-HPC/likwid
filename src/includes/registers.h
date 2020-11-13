@@ -2304,6 +2304,12 @@
 #define MSR_ENERGY_PERF_BIAS            0x1B0
 #define MSR_ALT_PEBS                    0x39C
 #define TSX_FORCE_ABORT                 0x10F
+#define MSR_HWP_ENABLE                  0x770
+#define MSR_HWP_CAPABILITIES            0x771
+#define MSR_HWP_REQUEST_PKG             0x774
+#define MSR_HWP_REQUEST                 0x774
+#define MSR_HWP_REQUEST_INFO            0x775
+
 /*
  * AMD
  */

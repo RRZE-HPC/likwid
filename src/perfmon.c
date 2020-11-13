@@ -79,6 +79,8 @@
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
 #include <perfmon_icelake.h>
+#include <perfmon_neon1.h>
+#include <perfmon_a64fx.h>
 
 #ifdef LIKWID_USE_PERFEVENT
 #include <perfmon_perfevent.h>
@@ -1276,6 +1278,14 @@ perfmon_init_maps(void)
                             perfmon_numCounters = perfmon_numCountersA57;
                             translate_types = a53_translate_types;
                             break;
+                        case ARM_NEOVERSE_N1:
+                            eventHash = neon1_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsNeoN1;
+                            counter_map = neon1_counter_map;
+                            box_map = neon1_box_map;
+                            perfmon_numCounters = perfmon_numCountersNeoN1;
+                            translate_types = neon1_translate_types;
+                            break;
                         default:
                             break;
                     }
@@ -1305,6 +1315,21 @@ perfmon_init_maps(void)
                             box_map = cav_tx2_box_map;
                             perfmon_numCounters = perfmon_numCountersCavTx2;
                             translate_types = cav_tx2_translate_types;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case FUJITSU_ARM:
+                    switch (cpuid_info.part)
+                    {
+                        case FUJITSU_A64FX:
+                            eventHash = a64fx_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsA64FX;
+                            counter_map = a64fx_counter_map;
+                            box_map = a64fx_box_map;
+                            perfmon_numCounters = perfmon_numCountersA64FX;
+                            translate_types = a64fx_translate_types;
                             break;
                         default:
                             break;

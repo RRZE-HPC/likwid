@@ -371,7 +371,7 @@ int skx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
                     set_state_all = 0;
                     break;
                 case EVENT_OPTION_TID:
-                    filter_flags0 |= (extractBitField(event->options[j].value,8,0));
+                    filter_flags0 |= (extractBitField(event->options[j].value,9,0));
                     flags |= (1ULL<<19);
                     break;
                 case EVENT_OPTION_MATCH0:

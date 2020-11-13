@@ -124,6 +124,86 @@ interface
   character(*) :: regionTag
   end subroutine likwid_markerResetRegion
 
+
+!> \ingroup Fortran_NvGPU_Interface
+!! \brief Initialize the Likwid NvMarker API
+!! This routine initializes the NvMarker API for Fortran. It reads some
+!! environment commonly set by likwid-perfctr.
+!! \note Must be called once in a serial region.
+  subroutine likwid_NvMarkerInit()
+  end subroutine likwid_NvMarkerInit
+
+!> \ingroup Fortran_NvGPU_Interface
+!! \brief Setup performance counters for the next event set
+!! If multiple groups should be measured this function
+!! switches to the next group in a round robin fashion.
+!! Each call reprogramms the performance counters for the current CPU,
+!! \note Do not call it while measuring a code region.
+  subroutine likwid_NvMarkerNextGroup()
+  end subroutine likwid_NvMarkerNextGroup
+
+!> \ingroup Fortran_NvGPU_Interface
+!! \brief Close the Likwid Marker API
+!! Close the Likwid Marker API and write measured results to temporary file
+!! for evaluation done by likwid-perfctr
+!! \note Must be called once in a serial region and no further
+!! Likwid calls should be used
+  subroutine likwid_NvMarkerClose()
+  end subroutine likwid_NvMarkerClose
+
+!> \ingroup Fortran_NvGPU_Interface
+!! \brief Register a code region
+!! Initializes the hash table with an empty entry to reduce the overhead
+!! at likwid_markerStartRegion()
+  subroutine likwid_NvMarkerRegisterRegion( regionTag )
+!> \param regionTag Name for the code region for later identification
+  character(*) :: regionTag
+  end subroutine likwid_NvMarkerRegisterRegion
+
+
+!> \ingroup Fortran_NvGPU_Interface
+!! \brief Start the measurement for a code region
+!! Reads the currently running event set and store the results as start values.
+!! for the measurement group identified by regionTag
+  subroutine likwid_NvMarkerStartRegion( regionTag )
+!> \param regionTag Name for the code region for later identification
+  character(*) :: regionTag
+  end subroutine likwid_NvMarkerStartRegion
+
+!> \ingroup Fortran_NvGPU_Interface
+!! \brief Stop the measurement for a code region
+!! Reads the currently running event set and accumulate the difference between
+!! stop and start data in the measurement group identified by regionTag.
+  subroutine likwid_NvMarkerStopRegion( regionTag )
+!> \param regionTag Name for the code region for later identification
+  character(*) :: regionTag
+  end subroutine likwid_NvMarkerStopRegion
+
+!> \ingroup Fortran_NvGPU_Interface
+!! \brief Get accumulated measurement results for a code region
+!! Get the accumulated data in the measurement group identified by regionTag
+!! for the current thread.
+!! \warning Experimental
+!! subroutine likwid_markerGetRegion( regionTag, nr_events, events, time, count )
+!> \param regionTag [in] Name for the code region for later identification
+!! \param nr_events [in,out] Length of the events array
+!! \param events [out] Events array to store intermediate results
+!! \param time [out] Accumulated measurement time
+!! \param count [out] Call count of the region
+!! character(*) :: regionTag
+!! INTEGER :: nr_events
+!! DOUBLE PRECISION, DIMENSION(*) :: events
+!! DOUBLE PRECISION :: time
+!! INTEGER :: count
+!! end subroutine likwid_markerGetRegion
+
+!> \ingroup Fortran_NvGPU_Interface
+!! \brief Reset the counters for a code region to zero
+  subroutine likwid_NvMarkerResetRegion( regionTag )
+!> \param regionTag Name for the code region for later identification
+  character(*) :: regionTag
+  end subroutine likwid_NvMarkerResetRegion
+
 end interface
 
 end module likwid

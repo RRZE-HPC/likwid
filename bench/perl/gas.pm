@@ -156,6 +156,18 @@ sub function_entry
 		print "add      r7, sp, #12\n";
 		print "push     {r8, r10, r11}\n";
 		print "vstmdb   sp!, {d8-d15}\n";
+	} elsif ($main::ISA eq 'ARMv8') {
+	    print "stp x29, x30, [sp, -144]!\n";
+	    print "mov x29, sp\n";
+	    print "stp x19, x20, [sp, 16]\n";
+	    print "stp x21, x22, [sp, 32]\n";
+	    print "stp x24, x25, [sp, 48]\n";
+	    print "stp x26, x27, [sp, 64]\n";
+	    print "str x28, [sp, 80]\n";
+	    print "str d15, [sp, 88]\n";
+	    print "stp d8, d9, [sp, 96]\n";
+	    print "stp d10, d11, [sp, 112]\n";
+	    print "stp d12, d14, [sp, 128]\n";
 	}
 }
 
@@ -189,11 +201,26 @@ sub function_exit
         print "pop      {r4-r7, pc}\n";
     } elsif ($main::ISA eq 'ARMv8') {
         print ".exit:\n";
+        print "ldp	x19, x20, [sp, 16]\n";
+        print "ldp	x21, x22, [sp, 32]\n";
+        print "ldp	x24, x25, [sp, 48]\n";
+        print "ldp	x26, x27, [sp, 64]\n";
+        print "ldr	x28, [sp, 80]\n";
+        print "ldr	d15, [sp, 88]\n";
+        print "ldp	d8, d9, [sp, 96]\n";
+        print "ldp	d10, d11, [sp, 112]\n";
+        print "ldp	d12, d14, [sp, 128]\n";
+        print "ldp	x29, x30, [sp], 144\n";
         print "ret\n";
+        print ".size $symbolname, .-$symbolname\n\n";
     } elsif ($main::ISA eq 'ppc64') {
         print "blr\n";
-        print ".size $symbolname, .-$symbolname\n";
+        print ".size $symbolname, .-$symbolname\n\n";
     }
+    print "#if defined(__linux__) && defined(__ELF__)\n";
+    print '.section .note.GNU-stack,"",%progbits';
+    print "\n";
+    print "#endif\n";
     print "\n";
 }
 
@@ -273,9 +300,18 @@ sub loop_entry
         print "mov   r4, #0\n";
     } elsif ($main::ISA eq 'ARMv8') {
         print "mov   x6, 0\n";
-        print ".loop:\n";
-        #print "\tcmp w0, w6\n";
-        #print "\tblt .exit\n";
+        if ($symbolname =~ /sve/)
+        {
+            print "ptrue p1.d, vl$step\n";
+            print "whilelo  p0.d, x6, x0\n";
+            print "mov     p2.b, p1.b\n";
+            print "mov     p3.b, p1.b\n";
+            print "mov     p4.b, p1.b\n";
+            print "mov     p5.b, p1.b\n";
+            print "mov     p6.b, p1.b\n";
+            print "mov     p7.b, p1.b\n";
+        }
+        print "$symbolname:\n";
     }
     if ($main::ISA ne 'ppc64') {
         if ($main::ISA eq 'ARMv7') {
@@ -312,8 +348,17 @@ sub loop_exit
         print "cmp r4, r0\n";
     } elsif ($main::ISA eq 'ARMv8') {
         print "add x6, x6, #$step\n";
-        print "cmp x6, x0\n";
-        print "blt .loop\n";
+        if ($symbolname =~ /sve/)
+        {
+            print "whilelo  p0.d, x6, x0\n";
+            print "bne $symbolname\n";
+
+        }
+        else
+        {
+            print "cmp x6, x0\n";
+            print "blt $symbolname\n";
+        }
     }
     if ($MODE eq 'GLOBAL') {
         print "jl $symbolname\n";
@@ -373,7 +418,8 @@ sub isa_init
         $REG = $isaarmv8::REG_ARMv8;
         $ARG = $isaarmv8::ARG_ARMv8 ;
         $AS = { HEADER     => ".cpu    generic+fp+simd",
-                FOOTER     => '' };
+                FOOTER     => '',
+                SVE_HEADER => ".arch    armv8.2-a+crc+sve"};
     }
 }
 

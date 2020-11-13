@@ -116,6 +116,8 @@ static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
 static char* cavium_thunderx_str = "Cavium Thunder X (ARMv8)";
 static char* arm_cortex_a57 = "ARM Cortex A57 (ARMv8)";
 static char* arm_cortex_a53 = "ARM Cortex A53 (ARMv8)";
+static char* arm_neoverse_n1 = "ARM Neoverse N1";
+static char* fujitsu_a64fx = "Fujitsu A64FX";
 static char* power7_str = "POWER7 architecture";
 static char* power8_str = "POWER8 architecture";
 static char* power9_str = "POWER9 architecture";
@@ -165,6 +167,8 @@ static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
 static char* short_arm8_cav_tx2 = "arm8_tx2";
 static char* short_arm8_cav_tx = "arm8_tx";
+static char* short_arm8_neo_n1 = "arm8_n1";
+static char* short_a64fx = "arm64fx";
 
 static char* short_power7 = "power7";
 static char* short_power8 = "power8";
@@ -433,8 +437,8 @@ readTopologyFile(const char* filename, cpu_set_t cpuSet)
             }
             else if (strcmp(field, "osname") == 0)
             {
-                strcpy(value,&(line[strlen(structure)+strlen(field)+4]));
-		int len = 257;
+                strncpy(value,&(line[strlen(structure)+strlen(field)+4]), 256);
+                int len = 257;
                 cpuid_info.osname = (char*) malloc(len * sizeof(char));
                 strncpy(cpuid_info.osname, value, len);
                 cpuid_info.osname[strlen(value)-1] = '\0';
@@ -580,6 +584,65 @@ cpu_count(cpu_set_t* set)
         }
     }
     return s;
+}
+
+int
+likwid_cpu_online(int cpu_id)
+{
+    if (cpu_id < 0)
+        return 0;
+    int state = 0;
+    bstring bpath = bformat("/sys/devices/system/cpu/cpu%d/online", cpu_id);
+    FILE* fp = fopen(bdata(bpath), "r");
+    if (fp)
+    {
+        char buf[10];
+        int ret = fread(buf, sizeof(char), 9, fp);
+        fclose(fp);
+        if (ret > 0)
+        {
+            state = atoi(buf);
+        }
+    }
+    else
+    {
+        fp = fopen("/sys/devices/system/cpu/online", "r");
+        if (fp)
+        {
+            char buf[100];
+            int ret = fread(buf, sizeof(char), 99, fp);
+            fclose(fp);
+            if (ret > 0)
+            {
+                bdestroy(bpath);
+                buf[ret] = '\0';
+                bpath = bfromcstr(buf);
+                struct bstrList* first = bsplit(bpath, ',');
+                for (int i = 0; i < first->qty; i++)
+                {
+                    struct bstrList* second = bsplit(first->entry[i], '-');
+                    if (second->qty == 1)
+                    {
+                        int core = atoi(bdata(second->entry[0]));
+                        if (core == cpu_id)
+                            state = 1;
+                    }
+                    else if (second->qty == 2)
+                    {
+                        int s = atoi(bdata(second->entry[0]));
+                        int e = atoi(bdata(second->entry[1]));
+                        if (cpu_id >= s && cpu_id <= e)
+                            state = 1;
+                    }
+                    bstrListDestroy(second);
+                }
+                bstrListDestroy(first);
+
+            }
+        }
+    }
+    bdestroy(bpath);
+    return state;
 }
 
 
@@ -994,6 +1057,10 @@ topology_setName(void)
                             cpuid_info.name = arm_cortex_a53;
                             cpuid_info.short_name = short_arm8;
                             break;
+                        case ARM_NEOVERSE_N1:
+                            cpuid_info.name = arm_neoverse_n1;
+                            cpuid_info.short_name = short_arm8_neo_n1;
+                            break;
                         default:
                             return EXIT_FAILURE;
                             break;
@@ -1020,6 +1087,17 @@ topology_setName(void)
                             break;
                     }
                     break;
+                case FUJITSU_ARM:
+                    switch (cpuid_info.part)
+                    {
+                        case FUJITSU_A64FX:
+                            cpuid_info.name = fujitsu_a64fx;
+                            cpuid_info.short_name = short_a64fx;
+                            break;
+                        default:
+                            return EXIT_FAILURE;
+                            break;
+                    }
                 default:
                     return EXIT_FAILURE;
                     break;
@@ -1352,6 +1430,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",arm_cortex_a57);
     printf("\t%s\n",cavium_thunderx_str);
     printf("\t%s\n",cavium_thunderx2t99_str);
+    printf("\t%s\n",fujitsu_a64fx);
     printf("\n");
     printf("Supported ARMv7 processors:\n");
     printf("\t%s\n",armv7l_str);

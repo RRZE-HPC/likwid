@@ -44,6 +44,7 @@
 typedef enum {
     NVMON_CUPTI_EVENT,
     NVMON_NVML_EVENT,
+    NVMON_PERFWORKS_EVENT,
     NVMON_NO_TYPE
 } NvmonEventType;
 
@@ -69,6 +70,7 @@ typedef struct {
     int eventId;
     CUpti_EventID cuEventId;
     char name[NVMON_DEFAULT_STR_LEN];
+    char real[NVMON_DEFAULT_STR_LEN];
     char description[NVMON_DEFAULT_STR_LEN];
     int active;
     NvmonEventType type;
@@ -86,6 +88,7 @@ typedef struct {
     CUpti_EventDomainID cuDomainId;
     CUpti_EventGroup cuGroup;
     CUpti_EventGroupSet *cuGroupSet;
+
 } NvmonActiveEvent;
 typedef NvmonActiveEvent* NvmonActiveEvent_t;
 
@@ -103,11 +106,23 @@ typedef struct {
     TimerData             timer; /*!< \brief Time information how long the counters were running */
     double                rdtscTime; /*!< \brief Evaluation of the Time information in seconds */
     double                runTime; /*!< \brief Sum of all time information in seconds that the group was running */
+    struct bstrList*      events;
+    uint32_t numStages;
+    uint8_t* configImage;
+    size_t configImageSize;
+    uint8_t* counterDataImage;
+    size_t counterDataImageSize;
+    uint8_t* counterDataScratchBuffer;
+    size_t counterDataScratchBufferSize;
+    uint8_t* counterDataImagePrefix;
+    size_t counterDataImagePrefixSize;
+    uint8_t* counterAvailabilityImage;
+    size_t counterAvailabilityImageSize;
 } NvmonEventSet;
 
 
 typedef enum {
-    LIKWID_NVMON_CUPTI_BACKEND,
+    LIKWID_NVMON_CUPTI_BACKEND = 0,
     LIKWID_NVMON_PERFWORKS_BACKEND,
 } NvmonBackends;
 
@@ -116,6 +131,7 @@ typedef struct {
     CUdevice cuDevice;
     CUcontext context;
     int numEventSets;
+    int activeEventSet;
     CUpti_EventGroupSets *cuEventSets;
     GHashTable* eventHash;
     GHashTable* evIdHash;
@@ -124,6 +140,7 @@ typedef struct {
     int numNvEventSets;
     NvmonEventSet* nvEventSets;
     char *name;
+    char *chip;
     int numActiveEvents;
     NvmonActiveEvent *activeEvents;
     int numActiveCuGroups;
@@ -173,6 +190,8 @@ typedef struct {
     int              numberOfBackends;
     NvmonFunctions*  backends[3];
 } NvmonGroupSet;
+
+extern NvmonGroupSet* nvGroupSet;
 
 
 #endif

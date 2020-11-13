@@ -1,0 +1,50 @@
+SHORT Overview of arithmetic and main memory performance
+
+EVENTSET
+PMC0  INST_RETIRED
+PMC1  CPU_CYCLES
+PMC2  BUS_READ_TOTAL_MEM
+PMC3  BUS_WRITE_TOTAL_MEM
+PMC4  FP_HP_FIXED_OPS_HPEC
+PMC5  FP_HP_SCALE_OPS_HPEC
+
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC1/PMC0
+HP (FP) [MFLOP/s] 1E-06*(PMC4)/time
+HP (FP+SVE128) [MFLOP/s] 1E-06*(((PMC5*128.0)/128.0)+PMC4)/time
+HP (FP+SVE256) [MFLOP/s] 1E-06*(((PMC5*256.0)/128.0)+PMC4)/time
+HP (FP+SVE512) [MFLOP/s] 1E-06*(((PMC5*512.0)/128.0)+PMC4)/time
+Memory read bandwidth [MBytes/s] 1.0E-06*(PMC2)*256.0/time
+Memory read data volume [GBytes] 1.0E-09*(PMC2)*256.0
+Memory write bandwidth [MBytes/s] 1.0E-06*(PMC3)*256.0/time
+Memory write data volume [GBytes] 1.0E-09*(PMC3)*256.0
+Memory bandwidth [MBytes/s] 1.0E-06*(PMC2+PMC3)*256.0/time
+Memory data volume [GBytes] 1.0E-09*(PMC2+PMC3)*256.0
+Operational intensity (FP) PMC4/((PMC2+PMC3)*256.0)
+Operational intensity (FP+SVE128) (((PMC5*128.0)/128.0)+PMC4)/((PMC2+PMC3)*256.0)
+Operational intensity (FP+SVE256) (((PMC5*256.0)/128.0)+PMC4)/((PMC2+PMC3)*256.0)
+Operational intensity (FP+SVE512) (((PMC5*512.0)/128.0)+PMC4)/((PMC2+PMC3)*256.0)
+
+
+LONG
+Formulas:
+HP (FP) [MFLOP/s] 1E-06*FP_HP_FIXED_OPS_HPEC/time
+HP (FP+SVE128) [MFLOP/s]  1.0E-06*(FP_HP_FIXED_OPS_HPEC+((FP_HP_SCALE_OPS_HPEC*128)/128))/time
+HP (FP+SVE256) [MFLOP/s]  1.0E-06*(FP_HP_FIXED_OPS_HPEC+((FP_HP_SCALE_OPS_HPEC*256)/128))/time
+HP (FP+SVE512) [MFLOP/s]  1.0E-06*(FP_HP_FIXED_OPS_HPEC+((FP_HP_SCALE_OPS_HPEC*512)/128))/time
+Memory read bandwidth [MBytes/s] = 1.0E-06*(BUS_READ_TOTAL_MEM)*256.0/runtime
+Memory read data volume [GBytes] = 1.0E-09*(BUS_READ_TOTAL_MEM)*256.0
+Memory write bandwidth [MBytes/s] = 1.0E-06*(BUS_WRITE_TOTAL_MEM)*256.0/runtime
+Memory write data volume [GBytes] = 1.0E-09*(BUS_WRITE_TOTAL_MEM)*256.0
+Memory bandwidth [MBytes/s] = 1.0E-06*(BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0/runtime
+Memory data volume [GBytes] = 1.0E-09*(BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0
+Operational intensity (FP) FP_HP_FIXED_OPS_HPEC/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
+Operational intensity (FP+SVE128) (FP_HP_FIXED_OPS_HPEC+((FP_HP_SCALE_OPS_HPEC*128)/128)/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
+Operational intensity (FP+SVE256) (FP_HP_FIXED_OPS_HPEC+((FP_HP_SCALE_OPS_HPEC*256)/128)/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
+Operational intensity (FP+SVE512) (FP_HP_FIXED_OPS_HPEC+((FP_HP_SCALE_OPS_HPEC*512)/128)/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
+-
+Profiling group to measure memory bandwidth and half-precision FP rate for scalar and SVE vector
+operations with different widths. The events for the SVE metrics assumes that all vector elements
+are active. The cache line size is 256 Byte.

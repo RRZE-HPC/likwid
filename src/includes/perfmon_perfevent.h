@@ -332,7 +332,20 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     attr->disabled = 1;
     attr->inherit = 1;
     //attr->exclusive = 1;
-    getEventOptionConfig(translate_types[PMC], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
+    {
+        reg = PERF_EVENT_CONFIG_REG;
+        start = 0;
+        end = 31;
+    }
+    else
+    {
+#endif
+        getEventOptionConfig(translate_types[PMC], EVENT_OPTION_GENERIC_CONFIG, &reg, &start, &end);
+#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    }
+#endif
     switch(reg)
     {
         case PERF_EVENT_CONFIG_REG:
@@ -608,6 +621,7 @@ int perfmon_setupCountersThread_perfevent(
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         int has_lock = 0;
+        int pmc_lock = 0;
         is_uncore = 0;
         ret = 1;
         RegisterIndex index = eventSet->events[i].index;
@@ -634,8 +648,28 @@ int perfmon_setupCountersThread_perfevent(
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_FIXED);
                 break;
             case PMC:
-                ret = perf_pmc_setup(&attr, index, event);
-                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
+                pmc_lock = 1;
+#if defined(__ARM_ARCH_8A)
+                if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
+                {
+                    if (event->eventId == 0x3E8 ||
+                        event->eventId == 0x3E0 ||
+                        event->eventId == 0x308 ||
+                        event->eventId == 0x309 ||
+                        (event->eventId >= 0x314 &&  event->eventId <= 0x31E))
+                    {
+                        if (numa_lock[affinity_thread2numa_lookup[cpu_id]] != cpu_id)
+                        {
+                            pmc_lock = 0;
+                        }
+                    }
+                }
+#endif
+                if (pmc_lock)
+                {
+                    ret = perf_pmc_setup(&attr, index, event);
+                    VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PMC);
+                }
                 break;
             case POWER:
                 if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)

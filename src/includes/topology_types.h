@@ -80,6 +80,7 @@ typedef enum {
     ASIMD, /*!< \brief ARMv8 Advanced SIMD */
     ASIMDRDM, /*!< \brief ARMv8 Advanced SIMD: Rounding double multiply */
     PMULL, /*!< \brief ARMv8 Advanced SIMD: Polynomial multiply long */
+    SVE, /*!< \brief ARMv8 Scalable Vector Extension */
 } FeatureBit;
 /** @}*/
 #endif /*CPUID_TYPES_H*/

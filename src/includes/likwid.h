@@ -1818,6 +1818,7 @@ typedef struct {
     int devid; /*!< \brief Device ID  */
     int numaNode; /*!< \brief Closest NUMA domain to the device */
     char* name; /*!< \brief Name of the device */
+    char* short_name; /*!< \brief Short name of the device */
     uint64_t mem; /*!< \brief Total memory of device */
     int ccapMajor; /*!< \brief Major number of device's compute capability */
     int ccapMinor; /*!< \brief Minor number of device's compute capability */
@@ -2268,9 +2269,13 @@ char* nvmon_getGroupInfoLong(int groupId) __attribute__ ((visibility ("default")
 
 Checks the configured performance group path for the current GPU and
 returns all found group names
+@param [in] gpuId Get groups for a specific GPU
+@param [out] groups List of group names
+@param [out] shortinfos List of short information string about group
+@param [out] longinfos List of long information string about group
 @return Amount of found performance groups
 */
-int nvmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos) __attribute__ ((visibility ("default") ));
+int nvmon_getGroups(int gpuId, char*** groups, char*** shortinfos, char*** longinfos) __attribute__ ((visibility ("default") ));
 /*! \brief Free all group information (Nvmon)
 
 @param [in] nrgroups Number of groups

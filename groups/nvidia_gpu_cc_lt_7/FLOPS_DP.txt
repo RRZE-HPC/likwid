@@ -16,5 +16,4 @@ Formulas:
 DP [MFLOP/s] = 1E-6*(SUM(INST_EXECUTED_FP64_PIPE_S*))/time
 --
 This group measures the double precision floating-point operations per second using the events
-INST_EXECUTED_FP64_PIPE_S*. Unfortunately, not all GPUs provide these events although they provide
-a metric for DP FP operations which are currently not usable with LIKWID.
+INST_EXECUTED_FP64_PIPE_S*.
