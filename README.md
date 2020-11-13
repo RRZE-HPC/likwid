@@ -4,8 +4,9 @@ Introduction
 
 Likwid is a simple to install and use toolsuite of command line applications
 for performance oriented programmers. It works for Intel, AMD, ARMv8 and POWER9
-processors on the Linux operating system. There is support for ARMv7 and POWER8
-but there is currently no test machine in our hands to test them properly.
+processors on the Linux operating system. There is additional support for Nvidia GPUs.
+There is support for ARMv7 and POWER8 but there is currently no test machine in
+our hands to test them properly.
 
 [LIKWID Playlist (YouTube)](https://www.youtube.com/playlist?list=PLxVedhmuwLq2CqJpAABDMbZG8Whi7pKsk)
 
@@ -14,7 +15,7 @@ but there is currently no test machine in our hands to test them properly.
 It consists of:
 
 - likwid-topology: print thread, cache and NUMA topology
-- likwid-perfctr: configure and read out hardware performance counters on Intel, AMD and ARMv8 processors
+- likwid-perfctr: configure and read out hardware performance counters on Intel, AMD and ARMv8 processors and Nvidia GPUs
 - likwid-powermeter: read out RAPL Energy information and get info about Turbo mode steps
 - likwid-pin: pin your threaded application (pthread, Intel and gcc OpenMP to dedicated processors)
 - likwid-bench: Micro benchmarking platform
@@ -57,6 +58,9 @@ Intel
 - Intel Coffeelake
 - Intel Skylake SP
 - Intel Cascadelake SP
+- Intel Icelake
+- Intel Icelake SP
+- Intel Tigerlake (experimental)
 
 AMD
 - AMD K8
@@ -91,7 +95,7 @@ For quick install:
 ```
 $ tar -xjf likwid-<VERSION>.tar.bz2
 $ cd likwid-<VERSION>
-$ vi config.mk (configure build, e.g. change installation prefix)
+$ vi config.mk (configure build, e.g. change installation prefix and architecture flags)
 $ make
 $ sudo make install (sudo required to install the access daemon with proper permissions)
 ```
