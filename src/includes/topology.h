@@ -103,7 +103,12 @@ struct topology_functions {
 #define KABYLAKE1            0x8EU
 #define KABYLAKE2            0x9EU
 #define CANNONLAKE           0x66U
-#define ICELAKE              0x7EU
+#define ICELAKE1             0x7EU
+#define ICELAKE2             0x7DU
+#define COMETLAKE1           0xA5U
+#define COMETLAKE2           0xA6U
+#define ICELAKEX1            0x6AU
+#define ICELAKEX2            0x6CU
 #define SNOWRIDGEX           0x86U
 
 /* Intel MIC */

@@ -97,7 +97,7 @@ typedef enum {
 } RegisterIndex;
 
 typedef enum {
-    PMC = 0, FIXED, THERMAL, VOLTAGE,
+    PMC = 0, FIXED, THERMAL, VOLTAGE, METRICS,
     POWER, UNCORE, MBOX0,
     MBOX1, MBOX2, MBOX3,
     MBOX4, MBOX5, MBOX6, MBOX7,
@@ -147,6 +147,7 @@ static char* RegisterTypeNames[MAX_UNITS] = {
     [FIXED] = "Fixed counters",
     [THERMAL] = "Thermal",
     [VOLTAGE] = "Voltage of core",
+    [METRICS] = "Performance metrics provided by Intel systems starting with Intel Icelake",
     [POWER] = "Energy/Power counters (RAPL)",
     [UNCORE] = "Socket-local general/fixed purpose counters",
     [MBOX0] = "Memory Controller 0 Channel 0",
@@ -318,10 +319,10 @@ static char* RegisterTypeNames[MAX_UNITS] = {
             ERROR_PRINT(Cannot set out-of-bounds type %d, (type)); \
         }
 #define MEASURE_CORE(eventset) \
-        (eventset->regTypeMask1 & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
+        (eventset->regTypeMask1 & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(METRICS)))
 
 #define MEASURE_UNCORE(eventset) \
-        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(POWER)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4)
+        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(POWER)|REG_TYPE_MASK(METRICS)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4)
 
 
 typedef struct {

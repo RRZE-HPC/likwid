@@ -96,6 +96,7 @@ RegisterMap* counter_map = NULL;
 BoxMap* box_map = NULL;
 PciDevice* pci_devices = NULL;
 char** translate_types = NULL;
+char** archRegisterTypeNames = NULL;
 
 int perfmon_numCounters = 0;
 int perfmon_numCoreCounters = 0;
@@ -690,6 +691,10 @@ calculateResult(int groupId, int eventId, int threadId)
     {
         result = voltage_value(counter->counterData);
     }
+    else if (counter_map[event->index].type == METRICS)
+    {
+        result = ((double)counter->counterData)/255.0;
+    }
     return result;
 }
 
@@ -831,6 +836,7 @@ perfmon_check_counter_map(int cpu_id)
         bdestroy(estr);
         if (!found)
         {
+	    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot respect limit %s. Removing event %s, eventHash[i].limit, eventHash[i].name);
             eventHash[i].limit = "";
         }
     }
@@ -1098,13 +1104,25 @@ perfmon_init_maps(void)
                     translate_types = knl_translate_types;
                     break;
 
-                case ICELAKE:
+                case ICELAKE1:
+                case ICELAKE2:
                     pci_devices = icelake_pci_devices;
                     eventHash = icelake_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsIcelake;
                     counter_map = icelake_counter_map;
                     box_map = icelake_box_map;
                     perfmon_numCounters = perfmon_numCountersIcelake;
+                    translate_types = default_translate_types;
+                    break;
+
+                case ICELAKEX1:
+                case ICELAKEX2:
+		            pci_devices = icelakeX_pci_devices;
+                    eventHash = icelakeX_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsIcelakeX;
+                    counter_map = icelakeX_counter_map;
+                    box_map = icelakeX_box_map;
+                    perfmon_numCounters = perfmon_numCountersIcelakeX;
                     translate_types = default_translate_types;
                     break;
 
@@ -1562,15 +1580,18 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_skylake;
                     break;
 
-                case ICELAKE:
+                case ICELAKE1:
+                case ICELAKE2:
+                case ICELAKEX1:
+                case ICELAKEX2:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
-                    initThreadArch = perfmon_init_skylake;
-                    perfmon_startCountersThread = perfmon_startCountersThread_skylake;
-                    perfmon_stopCountersThread = perfmon_stopCountersThread_skylake;
-                    perfmon_readCountersThread = perfmon_readCountersThread_skylake;
-                    perfmon_setupCountersThread = perfmon_setupCounterThread_skylake;
-                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_skylake;
+                    initThreadArch = perfmon_init_icelake;
+                    perfmon_startCountersThread = perfmon_startCountersThread_icelake;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_icelake;
+                    perfmon_readCountersThread = perfmon_readCountersThread_icelake;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_icelake;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_icelake;
                     break;
 
                 case XEON_PHI_KNL:
@@ -1687,6 +1708,12 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 #endif
     *init_power = initialize_power;
     *init_temp = initialize_thermal;
+}
+
+char** 
+getArchRegisterTypeNames()
+{
+    return archRegisterTypeNames;
 }
 
 int

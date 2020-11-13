@@ -51,6 +51,7 @@
 #include <tree.h>
 #include <access.h>
 #include <bstrlib.h>
+#include <perfmon.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -985,6 +986,7 @@ lua_likwid_getEventsAndCounters(lua_State* L)
     }
     perfmon_init_maps();
     perfmon_check_counter_map(0);
+    char** archTypeNames = getArchRegisterTypeNames();
     lua_newtable(L);
     lua_pushstring(L,"Counters");
     lua_newtable(L);
@@ -1015,7 +1017,14 @@ lua_likwid_getEventsAndCounters(lua_State* L)
         lua_pushinteger(L, (lua_Integer)( counter_map[i-1].type));
         lua_settable(L,-3);
         lua_pushstring(L,"TypeName");
-        lua_pushstring(L, RegisterTypeNames[counter_map[i-1].type]);
+        if (archTypeNames && archTypeNames[counter_map[i-1].type] != NULL)
+        {
+            lua_pushstring(L, archTypeNames[counter_map[i-1].type]);
+        }
+        else
+        {
+            lua_pushstring(L, RegisterTypeNames[counter_map[i-1].type]);
+        }
         lua_settable(L,-3);
         lua_pushstring(L,"Index");
         lua_pushinteger(L, (lua_Integer)(counter_map[i-1].index));

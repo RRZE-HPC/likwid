@@ -598,6 +598,7 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
     int has_fix0 = 0;
     int has_fix1 = 0;
     int has_fix2 = 0;
+    int has_fix3 = 0;
     int gpu_events = 0;
     ginfo->shortinfo = NULL;
     ginfo->nevents = 0;
@@ -613,6 +614,7 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
     bstring fix0 = bformat("FIXC0");
     bstring fix1 = bformat("FIXC1");
     bstring fix2 = bformat("FIXC2");
+    bstring fix3 = bformat("FIXC3");
 #endif
 #ifdef _ARCH_PPC
     bstring fix0 = bformat("PMC4");
@@ -672,6 +674,14 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
         if (binstr(eventBstr, 0, fix2) > 0)
         {
             has_fix2 = 1;
+        }
+        else
+        {
+            ginfo->nevents++;
+        }
+        if (binstr(eventBstr, 0, fix3) > 0)
+        {
+            has_fix3 = 1;
         }
         else
         {
@@ -761,6 +771,15 @@ int perfgroup_customGroup(const char* eventStr, GroupInfo* ginfo)
             ginfo->counters[i] = malloc(6 * sizeof(char));
             sprintf(ginfo->events[i], "%s", "CPU_CLK_UNHALTED_REF");
             sprintf(ginfo->counters[i], "%s", "FIXC2");
+            i++;
+        }
+        if ((!has_fix3) && cpuid_info.perf_num_fixed_ctr > 3 && 
+            (cpuid_info.model == ICELAKE1 || cpuid_info.model == ICELAKE2 || cpuid_info.model == ICELAKEX1 || cpuid_info.model == ICELAKEX2))
+        {
+            ginfo->events[i] = malloc(14 * sizeof(char));
+            ginfo->counters[i] = malloc(6 * sizeof(char));
+            sprintf(ginfo->events[i], "%s", "TOPDOWN_SLOTS");
+            sprintf(ginfo->counters[i], "%s", "FIXC3");
             i++;
         }
     }
