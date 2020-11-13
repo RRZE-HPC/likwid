@@ -52,5 +52,6 @@ extern int (*initThreadArch) (int cpu_id);
 /* Internal helpers */
 extern int getCounterTypeOffset(int index);
 extern uint64_t perfmon_getMaxCounterValue(RegisterType type);
+extern char** getArchRegisterTypeNames();
 
 #endif /*PERFMON_H*/

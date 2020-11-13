@@ -888,6 +888,25 @@ static int allowed_pci_skx(PciDeviceType type, uint32_t reg)
     return 0;
 }
 
+static int allowed_icl(uint32_t reg)
+{
+    if (allowed_sandybridge(reg))
+        return 1;
+    else
+    {
+        if (((reg & 0xF00U) == 0x700U) ||
+            ((reg & 0xF00U) == 0xA00U) ||
+            ((reg & 0xF00U) == 0xB00U) ||
+            ((reg & 0xF00U) == 0xE00U) ||
+            ((reg & 0xF00U) == 0xF00U) ||
+            (reg == MSR_PREFETCH_ENABLE) ||
+            (reg == TSX_FORCE_ABORT) ||
+            (reg == MSR_PERF_METRICS))
+            return 1;
+    }
+    return 0;
+}
+
 static int allowed_amd(uint32_t reg)
 {
     if ( (reg & 0xFFFFFFF0U) == 0xC0010000U)
@@ -1915,6 +1934,11 @@ int main(void)
                     allowed = allowed_sandybridge;
                     isClientMem = 1;
                 }
+                else if (model == ICELAKE1 || model == ICELAKE2)
+                {
+                    allowed = allowed_icl;
+                    isClientMem = 1;
+                }
                 else if (model == BROADWELL_D)
                 {
                     allowed = allowed_sandybridge;
@@ -1939,6 +1963,10 @@ int main(void)
                     allowed = allowed_skx;
                     allowedPci = allowed_pci_skx;
                     isPCI64 = 1;
+                }
+                else if (model == ICELAKEX1 || model == ICELAKEX2)
+                {
+                    allowed = allowed_icl;
                 }
                 else if ((model == ATOM_SILVERMONT_C) ||
                          (model == ATOM_SILVERMONT_E) ||
