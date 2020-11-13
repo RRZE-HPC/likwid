@@ -1128,13 +1128,12 @@ perfmon_init_maps(void)
 
                 case ICELAKEX1:
                 case ICELAKEX2:
-		            pci_devices = icelakeX_pci_devices;
+                    pci_devices = icelakeX_pci_devices;
                     eventHash = icelakeX_arch_events;
                     perfmon_numArchEvents = perfmon_numArchEventsIcelakeX;
                     counter_map = icelakeX_counter_map;
                     box_map = icelakeX_box_map;
                     perfmon_numCounters = perfmon_numCountersIcelakeX;
->>>>>>> origin/master
                     translate_types = default_translate_types;
                     break;
 
