@@ -32,7 +32,7 @@
 
 #include <bstrlib.h>
 
-#define MAX_NUM_GPUEVENTS 20
+#define MAX_NUM_GPUEVENTS 30
 
 typedef enum LikwidGpuStates {
     GPUMARKER_STATE_NEW,

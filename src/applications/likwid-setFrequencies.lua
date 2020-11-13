@@ -121,10 +121,17 @@ function valid_freq(freq, freq_list, turbofreq)
 end
 
 function get_base_freq()
-    f = io.open("/proc/cpuinfo", "r")
     freq = nil
+    f = io.open("/sys/devices/system/cpu/cpu0/cpufreq/base_frequency", "r")
     if f ~= nil then
-        out = f:read("*a"):match("(%d.%d+)GHz")
+        out = f:read("*a")
+	freq = tonumber(out)
+        f:close()
+	return freq
+    end
+    f = io.open("/proc/cpuinfo", "r")
+    if f ~= nil then
+        out = f:read("*a"):match("cpu MHz%s+:%s+(%d+.%d+)")
         freq = tonumber(out)
         f:close()
     end

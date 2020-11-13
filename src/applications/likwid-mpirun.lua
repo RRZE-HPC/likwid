@@ -2409,6 +2409,9 @@ if skipStr == "" then
             skipStr = '-s 0x7'
         elseif omptype == "gnu" and nrNodes == 1 then
             skipStr = '-s 0x0'
+            if tpp > 0 then
+                skipStr = '-s 0x3'
+            end
         end
     elseif mpitype == "slurm" then
         if omptype == "intel" and nrNodes > 1 then

@@ -8,8 +8,6 @@ GPU3  ACTIVE_CYCLES
 
 METRICS
 Runtime (RDTSC) [s] time
-Runtime unhalted [s] FIXC1*inverseClock
-Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  GPU3/GPU2
 Load to store ratio GPU0/GPU1
 

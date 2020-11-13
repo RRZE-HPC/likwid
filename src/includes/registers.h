@@ -38,10 +38,10 @@
 /* MSR Registers  */
 /* 3 80 bit fixed counters */
 #define MSR_PERF_FIXED_CTR_CTRL   0x38D
-#define MSR_PERF_FIXED_CTR0       0x309  /* INST_RETIRED.ANY */
-#define MSR_PERF_FIXED_CTR1       0x30A  /* CPU_CLK_UNHALTED.THREAD|CORE */
-#define MSR_PERF_FIXED_CTR2       0x30B  /* CPU_CLK_UNHALTED.REF_TSC */
-#define MSR_PERF_FIXED_CTR3       0x30C  /* TOPDOWN.SLOTS */
+#define MSR_PERF_FIXED_CTR0       0x309  /* Instr_Retired.Any */
+#define MSR_PERF_FIXED_CTR1       0x30A  /* CPU_CLK_UNHALTED.CORE */
+#define MSR_PERF_FIXED_CTR2       0x30B  /* CPU_CLK_UNHALTED.REF */
+#define MSR_PERF_FIXED_CTR3       0x30C  /* TOPDOWN.SLOTS starting with Intel Icelake, arch version 5 */
 /* 4 40/48 bit configurable counters */
 /* Perfmon V1 */
 #define MSR_PERFEVTSEL0           0x186
@@ -154,6 +154,38 @@
 #define MSR_V4_C3_PERF_CTRL1            0x731
 #define MSR_V4_C3_PERF_CTR1             0x737
 /* V4 Uncore registers the same as in V3 */
+#define MSR_V5_C0_PERF_CTRL0            0x700
+#define MSR_V5_C0_PERF_CTRL1            0x701
+#define MSR_V5_C0_PERF_CTR0             0x702
+#define MSR_V5_C0_PERF_CTR1             0x703
+#define MSR_V5_C1_PERF_CTRL0            0x708
+#define MSR_V5_C1_PERF_CTRL1            0x709
+#define MSR_V5_C1_PERF_CTR0             0x70A
+#define MSR_V5_C1_PERF_CTR1             0x70B
+#define MSR_V5_C2_PERF_CTRL0            0x710
+#define MSR_V5_C2_PERF_CTRL1            0x711
+#define MSR_V5_C2_PERF_CTR0             0x712
+#define MSR_V5_C2_PERF_CTR1             0x713
+#define MSR_V5_C3_PERF_CTRL0            0x718
+#define MSR_V5_C3_PERF_CTRL1            0x719
+#define MSR_V5_C3_PERF_CTR0             0x71A
+#define MSR_V5_C3_PERF_CTR1             0x71B
+#define MSR_V5_C4_PERF_CTRL0            0x720
+#define MSR_V5_C4_PERF_CTRL1            0x721
+#define MSR_V5_C4_PERF_CTR0             0x722
+#define MSR_V5_C4_PERF_CTR1             0x723
+#define MSR_V5_C5_PERF_CTRL0            0x728
+#define MSR_V5_C5_PERF_CTRL1            0x729
+#define MSR_V5_C5_PERF_CTR0             0x72A
+#define MSR_V5_C5_PERF_CTR1             0x72B
+#define MSR_V5_C6_PERF_CTRL0            0x730
+#define MSR_V5_C6_PERF_CTRL1            0x731
+#define MSR_V5_C6_PERF_CTR0             0x732
+#define MSR_V5_C6_PERF_CTR1             0x733
+#define MSR_V5_C7_PERF_CTRL0            0x738
+#define MSR_V5_C7_PERF_CTRL1            0x739
+#define MSR_V5_C7_PERF_CTR0             0x73A
+#define MSR_V5_C7_PERF_CTR1             0x73B
 
 /* Xeon Phi */
 #define MSR_MIC_TSC                   0x010
@@ -2257,6 +2289,7 @@
 #define MSR_TURBO_RATIO_LIMIT2          0x1AF
 #define MSR_TURBO_RATIO_LIMIT3          0x1AC
 #define MSR_TURBO_RATIO_LIMIT_CORES     MSR_TURBO_RATIO_LIMIT1
+#define MSR_PERF_METRICS		        0x329
 
 /* MISC Intel register */
 #define MSR_MPERF                       0xE7
@@ -2274,6 +2307,12 @@
 #define MSR_ENERGY_PERF_BIAS            0x1B0
 #define MSR_ALT_PEBS                    0x39C
 #define TSX_FORCE_ABORT                 0x10F
+#define MSR_HWP_ENABLE                  0x770
+#define MSR_HWP_CAPABILITIES            0x771
+#define MSR_HWP_REQUEST_PKG             0x774
+#define MSR_HWP_REQUEST                 0x774
+#define MSR_HWP_REQUEST_INFO            0x775
+
 /*
  * AMD
  */

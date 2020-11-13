@@ -227,15 +227,15 @@ static int open_cpu(int cpu, struct cpufreq_files* files)
                 goto cleanup;
             }
         }
-        ret = snprintf(fname, 1024, "%s%d%s/%s", basefolder1, cpu, basefolder2, "scaling_governor");
-        if (ret > 0)
-        {
-            fname[ret] = '\0';
-            if (open_cpu_file(fname, &files->set_gov) < 0)
-            {
-                goto cleanup;
-            }
-        }
+        // ret = snprintf(fname, 1024, "%s%d%s/%s", basefolder1, cpu, basefolder2, "scaling_governor");
+        // if (ret > 0)
+        // {
+        //     fname[ret] = '\0';
+        //     if (open_cpu_file(fname, &files->set_gov) < 0)
+        //     {
+        //         goto cleanup;
+        //     }
+        // }
 /*        ret = snprintf(fname, 1024, "%s/%s", dname, "scaling_setspeed");*/
 /*        if (ret > 0)*/
 /*        {*/
@@ -810,6 +810,53 @@ static int setIntelTurbo(const int cpu_id, const int turbo)
 #endif
 }
 
+static int getIntelHWP(const int cpu_id)
+{
+    int err = 0;
+
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return 0;
+    }
+#ifdef LIKWID_USE_PERFEVENT
+    fprintf(stderr,"Cannot read HWP state with ACCESSMODE=perf_event.\n");
+    return -1;
+#else
+    if (!HPMinitialized())
+    {
+        HPMinit();
+        own_hpm = 1;
+        err = HPMaddThread(cpu_id);
+        if (err != 0)
+        {
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            return err;
+        }
+    }
+    else
+    {
+        err = HPMaddThread(cpu_id);
+        if (err != 0)
+        {
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            return err;
+        }
+    }
+
+    uint64_t tmp = 0x0ULL;
+    err = HPMread(cpu_id, MSR_DEV, MSR_HWP_ENABLE, &tmp);
+    if (err)
+    {
+        ERROR_PRINT(Cannot read register 0x%x, MSR_HWP_ENABLE);
+        return err;
+    }
+
+    return (tmp & 0x1);
+#endif
+}
+
+
 int
 _freqInit(void)
 {
@@ -852,6 +899,13 @@ _freqInit(void)
         if (freq_init_f != freq_init_direct)
         {
             freq_init_direct();
+        }
+        if (cpuid_info.isIntel)
+        {
+            if (getIntelHWP(0) == 1)
+            {
+                fprintf(stderr, "WARN: Intel HWP capabilities enabled. CPU and Uncore frequency changes are ignored but allowed\n");
+            }
         }
         freq_initialized = 1;
     }

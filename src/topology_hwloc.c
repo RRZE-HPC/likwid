@@ -180,6 +180,7 @@ int parse_cpuname(char *name)
 }
 #endif
 
+
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 #if !defined(__ARM_ARCH_7A__) && !defined(__ARM_ARCH_8A) && !defined(_ARCH_PPC)
 static int
@@ -293,7 +294,7 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     }
     snprintf(cpuid_info.architecture, 19, "armv7");
 #endif
-#ifdef __ARM_ARCH_8A
+#if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
     uint32_t part = 0;
     uint32_t count = 0;
     parse_cpuinfo(&count, &cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
@@ -428,6 +429,10 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
             continue;
         }
         id = obj->os_index;
+
+        if (id < 0 || id >= cpuid_topology.numHWThreads)
+            continue;
+
         if (CPU_ISSET(id, &cpuSet))
         {
             hwThreadPool[id].inCpuSet = 1;
@@ -436,6 +441,12 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
         {
             hwThreadPool[id].inCpuSet = 1;
         }
+
+        if (!likwid_cpu_online(obj->os_index))
+        {
+            hwThreadPool[id].inCpuSet = 0;
+        }
+
         hwThreadPool[id].apicId = obj->os_index;
         hwThreadPool[id].threadId = obj->sibling_rank;
         if (maxNumLogicalProcsPerCore > 1)
@@ -520,7 +531,7 @@ hwloc_init_nodeTopology(cpu_set_t cpuSet)
                             hwThreadPool[id].inCpuSet)
     }
 
-    int socket_nums[16];
+    int socket_nums[MAX_NUM_NODES];
     int num_sockets = 0;
     for (uint32_t i=0; i< cpuid_topology.numHWThreads; i++)
     {

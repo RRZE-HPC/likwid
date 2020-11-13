@@ -1,0 +1,16 @@
+SHORT Cycles and instructions
+
+EVENTSET
+PMC0  INST_RETIRED
+PMC1  CPU_CYCLES
+
+METRICS
+Runtime (RDTSC) [s] time
+CPI  PMC1/PMC0
+
+LONG
+Formulas:
+CPI = CPU_CYCLES/INST_RETIRED
+-
+This is a metric to determine cycles per instruction.
+

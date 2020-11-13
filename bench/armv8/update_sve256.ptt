@@ -1,0 +1,12 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 16
+DESC Double-precision update, optimized for SVE with a vector length of 256 bit
+LOADS 1
+STORES 1
+INSTR_CONST 9
+INSTR_LOOP 5
+LOOP 4
+ld1d    z0.d, p0/z, [STR0, GPR6, lsl 3]
+st1d    z0.d, p0, [STR0, GPR6, lsl 3]

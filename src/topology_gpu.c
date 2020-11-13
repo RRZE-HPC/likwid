@@ -197,7 +197,14 @@ static int topology_gpu_cleanup(int idx, int err)
 {
     for (int j = idx; j >= 0; j--)
     {
-        free(gpuTopology.devices[j].name);
+        if (gpuTopology.devices[j].name)
+        {
+            free(gpuTopology.devices[j].name);
+        }
+        if (gpuTopology.devices[j].short_name)
+        {
+            free(gpuTopology.devices[j].short_name);
+        }
     }
     return err;
 }
@@ -237,6 +244,8 @@ topology_gpu_init()
         for (i = 0; i < num_devs; i++)
         {
             CUdevice dev;
+            gpuTopology.devices[i].name = NULL;
+            gpuTopology.devices[i].short_name = NULL;
             CU_CALL((*cuDeviceGetPtr)(&dev, i), ret = -ENODEV; goto topology_gpu_init_error;);
             size_t s = 0;
 #if CUDA_VERSION >= 10000
@@ -264,8 +273,23 @@ topology_gpu_init()
             CU_CALL((*cuDeviceGetNamePtr)(gpuTopology.devices[i].name, 1023, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
             gpuTopology.devices[i].name[1024] = '\0';
             gpuTopology.devices[i].devid = i;
+            gpuTopology.devices[i].short_name = malloc(50 * sizeof(char));
+            if (!gpuTopology.devices[i].short_name)
+            {
+                ERROR_PRINT(Cannot allocate space for short name of GPU %d, i);
+                ret = -ENOMEM;
+                goto topology_gpu_init_error;
+            }
 
             CU_CALL((*cuDeviceComputeCapabilityPtr)(&gpuTopology.devices[i].ccapMajor, &gpuTopology.devices[i].ccapMinor, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
+            if (gpuTopology.devices[i].ccapMajor < 7)
+            {
+                ret = snprintf(gpuTopology.devices[i].short_name, 49, "nvidia_gpu_cc_lt_7");
+            }
+            else if (gpuTopology.devices[i].ccapMajor >= 7)
+            {
+                ret = snprintf(gpuTopology.devices[i].short_name, 49, "nvidia_gpu_cc_ge_7");
+            }
             CUdevprop props;
             CU_CALL((*cuDeviceGetPropertiesPtr)(&props, dev), ret = -ENOMEM; goto topology_gpu_init_error;);
             gpuTopology.devices[i].maxThreadsPerBlock = props.maxThreadsPerBlock;

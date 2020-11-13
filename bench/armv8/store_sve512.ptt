@@ -1,0 +1,12 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 0
+BYTES 8
+DESC Double-precision store, optimized for SVE
+LOADS 1
+STORES 0
+INSTR_CONST 10
+INSTR_LOOP 4
+fmov   z0.d, #3.0e+0
+LOOP 8
+st1d  z0.d, p0, [STR0, GPR6, lsl 3]

@@ -46,7 +46,7 @@
 #include <sys/types.h>
 
 #include <dlfcn.h>
-//#include <cupti.h>
+#include <cupti.h>
 #include <cuda.h>
 
 
@@ -98,11 +98,11 @@ nvmon_init(int nrGpus, const int* gpuIds)
         return -EINVAL;
     }
 
-    if (!lock_check())
-    {
-        ERROR_PLAIN_PRINT(Access to performance monitoring locked);
-        return -EINVAL;
-    }
+    // if (!lock_check())
+    // {
+    //     ERROR_PLAIN_PRINT(Access to performance monitoring locked);
+    //     return -EINVAL;
+    // }
 
     if (nvGroupSet != NULL)
     {
@@ -115,6 +115,8 @@ nvmon_init(int nrGpus, const int* gpuIds)
         return -ENODEV;
     }
     gtopo = get_gpuTopology();
+
+    init_configuration();
 
     nvGroupSet = (NvmonGroupSet*) malloc(sizeof(NvmonGroupSet));
     if (nvGroupSet == NULL)
@@ -146,6 +148,8 @@ nvmon_init(int nrGpus, const int* gpuIds)
     nvGroupSet->numberOfBackends++;
 #endif
 
+    int cputicount = 0;
+    int perfworkscount = 0;
     for (int i = 0; i < nrGpus; i++)
     {
         if (gpuIds[i] < 0) continue;
@@ -166,30 +170,38 @@ nvmon_init(int nrGpus, const int* gpuIds)
             nvGroupSet = NULL;
             return -ENOMEM;
         }
-        NvmonDevice_t device = &nvGroupSet->gpus[idx];
+        NvmonDevice_t device = &nvGroupSet->gpus[i];
         if (gtopo->devices[gpuIds[i]].ccapMajor < 7)
         {
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Device %d runs with CUPTI Event API backend, gpuIds[i]);
             device->backend = LIKWID_NVMON_CUPTI_BACKEND;
+            cputicount++;
         }
         else
         {
-            fprintf(stderr, "NVIDIA PerfWorks API current not supported. Trying CUPTI\n");
-/*            free(nvGroupSet->gpus);*/
-/*            free(nvGroupSet);*/
-/*            nvGroupSet = NULL;*/
-/*            return -ENOMEM;*/
-            device->backend = LIKWID_NVMON_CUPTI_BACKEND;
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Device %d runs with CUPTI Profiling API backend, gpuIds[i]);
+            device->backend = LIKWID_NVMON_PERFWORKS_BACKEND;
+            perfworkscount++;
+        }
+        device->deviceId = gpuIds[i];
+        if (cputicount > 0 && perfworkscount > 0)
+        {
+            ERROR_PRINT(Cannot use GPUs with different backends in a session, gpuIds[i]);
+            free(nvGroupSet->gpus);
+            free(nvGroupSet);
+            nvGroupSet = NULL;
+            return -ENOMEM;
         }
 
         NvmonFunctions* funcs = nvGroupSet->backends[device->backend];
         if (funcs)
         {
             if (funcs->createDevice)
-                ret = funcs->createDevice(gpuIds[i], device);
+                ret = funcs->createDevice(device->deviceId, device);
         }
         if (ret < 0)
         {
-            ERROR_PRINT(Cannot create device %d, gpuIds[i]);
+            ERROR_PRINT(Cannot create device %d, device->deviceId);
             free(nvGroupSet->gpus);
             free(nvGroupSet);
             nvGroupSet = NULL;
@@ -212,7 +224,7 @@ nvmon_finalize(void)
         {
             NvmonDevice_t device = &nvGroupSet->gpus[i];
             NvmonFunctions* funcs = nvGroupSet->backends[device->backend];
-            if (funcs)
+            if (funcs && funcs->freeDevice)
                 funcs->freeDevice(&nvGroupSet->gpus[i]);
         }
         free(nvGroupSet->gpus);
@@ -283,17 +295,21 @@ nvmon_getEventsOfGpu(int gpuId, NvmonEventList_t* list)
     }
     if (available >= 0)
     {
-        err = nvmon_cupti_functions.getEventList(available, list);
-/*        if (gtopo->devices[available].ccapMajor < 7)*/
-/*        {*/
-/*            err = nvmon_cupti_functions.getEventList(available, list);*/
-/*        }*/
-/*        else*/
-/*        {*/
-/*            ERROR_PRINT(NVIDIA PerfWorks API current not supported);*/
-/*            return -ENODEV;*/
-/*            //err = nvmon_perfworks_functions.getEventList(available, list);*/
-/*        }*/
+        //err = nvmon_cupti_functions.getEventList(available, list);
+        if (gtopo->devices[available].ccapMajor < 7)
+        {
+            if (nvmon_cupti_functions.getEventList)
+            {
+                err = nvmon_cupti_functions.getEventList(available, list);
+            }
+        }
+        else
+        {
+            if (nvmon_perfworks_functions.getEventList)
+            {
+                err = nvmon_perfworks_functions.getEventList(available, list);
+            }
+        }
     }
     return err;
 
@@ -308,9 +324,12 @@ void nvmon_returnEventsOfGpu(NvmonEventList_t list)
             for (int i = 0; i < list->numEvents; i++)
             {
                 NvmonEventListEntry* out = &list->events[i];
-                free(out->name);
-                free(out->desc);
-                free(out->limit);
+                if (out->name)
+                    free(out->name);
+                if (out->desc)
+                    free(out->desc);
+                if (out->limit)
+                    free(out->limit);
             }
             free(list->events);
             list->events = NULL;
@@ -343,7 +362,7 @@ nvmon_addEventSet(const char* eventCString)
     {
         return -EFAULT;
     }
-    init_configuration();
+    // init_configuration();
     config = get_configuration();
 
     if (nvGroupSet->numberOfActiveGroups == nvGroupSet->numberOfGroups)
@@ -375,10 +394,37 @@ nvmon_addEventSet(const char* eventCString)
     }
     else
     {
-        GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Performance group);
-        err = perfgroup_readGroup(config->groupPath, "nvidiagpu",
-                         eventCString,
-                         &nvGroupSet->groups[nvGroupSet->numberOfGroups-1]);
+        int cputicount = 0;
+        int perfworkscount = 0;
+        for (devId = 0; devId < nvGroupSet->numberOfGPUs; devId++)
+        {
+            device = &nvGroupSet->gpus[devId];
+            if (device->backend == LIKWID_NVMON_CUPTI_BACKEND)
+            {
+                cputicount++;
+            }
+            else if (device->backend == LIKWID_NVMON_PERFWORKS_BACKEND)
+            {
+                perfworkscount++;
+            }
+        }
+        if (cputicount > 0 && perfworkscount > 0)
+        {
+            ERROR_PRINT(GPUs with compute capability <7 and >= 7 are not allowed);
+            return -ENODEV;
+        }
+        if (cputicount > 0)
+        {
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Performance group for CUPTI backend);
+            err = perfgroup_readGroup(config->groupPath, "nvidia_gpu_cc_lt_7", eventCString,
+                                      &nvGroupSet->groups[nvGroupSet->numberOfGroups-1]);
+        }
+        else if (perfworkscount > 0)
+        {
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Performance group for PerfWorks backend);
+            err = perfgroup_readGroup(config->groupPath, "nvidia_gpu_cc_ge_7", eventCString,
+                                      &nvGroupSet->groups[nvGroupSet->numberOfGroups-1]);
+        }
         if (err == -EACCES)
         {
             ERROR_PRINT(Access to performance group %s not allowed, eventCString);
@@ -408,9 +454,20 @@ nvmon_addEventSet(const char* eventCString)
         int err = 0;
         device = &nvGroupSet->gpus[devId];
         NvmonFunctions* funcs = nvGroupSet->backends[device->backend];
+        if (!funcs)
+        {
+            ERROR_PRINT(Backend functions undefined?);
+        }
         if (funcs->addEvents)
         {
+            GPUDEBUG_PRINT(DEBUGLEV_DEVELOP, Calling addevents);
             err = funcs->addEvents(device, evstr);
+            if (err < 0)
+            {
+                errno = -err;
+                ERROR_PRINT(Failed to add event set for GPU %d, devId);
+                return err;
+            }
         }
     }
 
@@ -423,6 +480,7 @@ nvmon_addEventSet(const char* eventCString)
 int nvmon_setupCounters(int gid)
 {
     int i = 0;
+    int err = 0;
     int oldDevId;
     CUcontext curContext;
 
@@ -439,20 +497,16 @@ int nvmon_setupCounters(int gid)
 
             NvmonEventSet* devEventSet = &device->nvEventSets[gid];
 
-            for (int j = 0; j < nvGroupSet->numberOfBackends; j++)
+            NvmonFunctions* funcs = nvGroupSet->backends[device->backend];
+            if (funcs->setupCounters)
             {
-                int err = 0;
-                NvmonFunctions* funcs = nvGroupSet->backends[j];
-                if (funcs->setupCounters)
-                {
-                    err = funcs->setupCounters(device, devEventSet);
-                }
+                err = funcs->setupCounters(device, devEventSet);
             }
         }
     }
     nvGroupSet->activeGroup = gid;
 
-    return 0;
+    return err;
 }
 
 
@@ -469,17 +523,14 @@ nvmon_startCounters(void)
     for (i = 0; i < nvGroupSet->numberOfGPUs; i++)
     {
         NvmonDevice_t device = &nvGroupSet->gpus[i];
-        for (int j = 0; j < nvGroupSet->numberOfBackends; j++)
+        NvmonFunctions* funcs = nvGroupSet->backends[device->backend];
+        if (funcs->startCounters)
         {
-            NvmonFunctions* funcs = nvGroupSet->backends[j];
-            if (funcs->startCounters)
-            {
-                err = funcs->startCounters(device);
-            }
+            err = funcs->startCounters(device);
         }
     }
 
-    return 0;
+    return err;
 }
 
 int
@@ -495,13 +546,10 @@ nvmon_stopCounters(void)
     for (i = 0; i < nvGroupSet->numberOfGPUs; i++)
     {
         NvmonDevice_t device = &nvGroupSet->gpus[i];
-        for (int j = 0; j < nvGroupSet->numberOfBackends; j++)
+        NvmonFunctions* funcs = nvGroupSet->backends[device->backend];
+        if (funcs->stopCounters)
         {
-            NvmonFunctions* funcs = nvGroupSet->backends[j];
-            if (funcs->stopCounters)
-            {
-                err = funcs->stopCounters(device);
-            }
+            err = funcs->stopCounters(device);
         }
     }
 
@@ -521,13 +569,10 @@ int nvmon_readCounters(void)
     for (i = 0; i < nvGroupSet->numberOfGPUs; i++)
     {
         NvmonDevice_t device = &nvGroupSet->gpus[i];
-        for (int j = 0; j < nvGroupSet->numberOfBackends; j++)
+        NvmonFunctions* funcs = nvGroupSet->backends[device->backend];
+        if (funcs->readCounters)
         {
-            NvmonFunctions* funcs = nvGroupSet->backends[j];
-            if (funcs->readCounters)
-            {
-                err = funcs->readCounters(device);
-            }
+            err = funcs->readCounters(device);
         }
 
     }
@@ -549,7 +594,7 @@ double nvmon_getResult(int groupId, int eventId, int gpuId)
     {
         return -EFAULT;
     }
-    NvmonEventSet* evset = &device->nvEventSets[nvGroupSet->activeGroup];
+    NvmonEventSet* evset = &device->nvEventSets[groupId];
     if (eventId < 0 || eventId >= evset->numberOfEvents)
     {
         return -EFAULT;
@@ -582,7 +627,7 @@ double nvmon_getLastResult(int groupId, int eventId, int gpuId)
     {
         return -EFAULT;
     }
-    NvmonEventSet* evset = &device->nvEventSets[nvGroupSet->activeGroup];
+    NvmonEventSet* evset = &device->nvEventSets[groupId];
     if (eventId < 0 || eventId >= evset->numberOfEvents)
     {
         return -EFAULT;
@@ -734,12 +779,31 @@ char* nvmon_getGroupInfoLong(int groupId)
     return ginfo->longinfo;
 }
 
-int nvmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos)
+int nvmon_getGroups(int gpuId, char*** groups, char*** shortinfos, char*** longinfos)
 {
     int ret = 0;
+
     init_configuration();
+    int ccapMajor = 0;
     Configuration_t config = get_configuration();
-    ret = perfgroup_getGroups(config->groupPath, "nvidiagpu", groups, shortinfos, longinfos);
+    ret = topology_gpu_init();
+    if (ret != EXIT_SUCCESS)
+    {
+        return -ENODEV;
+    }
+    GpuTopology_t gtopo = get_gpuTopology();
+    if (gpuId < 0 || gpuId >= gtopo->numDevices)
+    {
+        return -ENODEV;
+    }
+    if (gtopo->devices[gpuId].ccapMajor >= 7)
+    {
+        ret = perfgroup_getGroups(config->groupPath, "nvidia_gpu_cc_ge_7", groups, shortinfos, longinfos);
+    }
+    else
+    {
+        ret = perfgroup_getGroups(config->groupPath, "nvidia_gpu_cc_lt_7", groups, shortinfos, longinfos);
+    }
     return ret;
 }
 
@@ -1314,3 +1378,5 @@ double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId)
     destroy_clist(&clist);
     return result;
 }
+
+
