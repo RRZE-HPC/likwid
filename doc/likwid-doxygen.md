@@ -103,6 +103,9 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - Kaby Lake (use \subpage skylake)
 - Coffee Lake (use \subpage skylake)
 - Cascade Lake SP/AP (use \subpage skylakesp)
+- Icelake
+- Icelake SP
+- Tigerlake
 
 \subsubsection Architectures_AMD AMD&reg;
 - \subpage k8
@@ -111,15 +114,21 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage kabini
 - \subpage zen
 - \subpage zen2
+- Zen3
 
 \subsection Architectures_ARM ARM architectures
 - \subpage armA15
 - \subpage armA57
 - \subpage armThunderX2
+- Fujitsu A64FX
 
 \subsection Architectures_POWER POWER architectures
 - \subpage power8
 - \subpage power9
+
+\subsection Architectures_NVIDIA Nvidia GPU architectures
+- For compute capability < 7.0: support based on CUPTI Events API
+- For compute capability >= 7.0: support based on CUpti Profiling API
 
 \section Examples Example Codes
 Using the Likwid API:
