@@ -2,7 +2,7 @@
 Introduction
 --------------------------------------------------------------------------------
 
-Likwid is a simple to install and use toolsuite of command line applications
+Likwid is a simple to install and use toolsuite of command line applications and a library
 for performance oriented programmers. It works for Intel, AMD, ARMv8 and POWER9
 processors on the Linux operating system. There is additional support for Nvidia GPUs.
 There is support for ARMv7 and POWER8 but there is currently no test machine in
@@ -15,11 +15,11 @@ our hands to test them properly.
 It consists of:
 
 - likwid-topology: print thread, cache and NUMA topology
-- likwid-perfctr: configure and read out hardware performance counters on Intel, AMD and ARMv8 processors and Nvidia GPUs
+- likwid-perfctr: configure and read out hardware performance counters on Intel, AMD, ARM and POWER processors and Nvidia GPUs
 - likwid-powermeter: read out RAPL Energy information and get info about Turbo mode steps
 - likwid-pin: pin your threaded application (pthread, Intel and gcc OpenMP to dedicated processors)
-- likwid-bench: Micro benchmarking platform
-- likwid-features: Print and manipulate cpu features like hardware prefetchers
+- likwid-bench: Micro benchmarking platform for CPU architectures
+- likwid-features: Print and manipulate cpu features like hardware prefetchers (x86 only)
 - likwid-genTopoCfg: Dumps topology information to a file
 - likwid-mpirun: Wrapper to start MPI and Hybrid MPI/OpenMP applications (Supports Intel MPI, OpenMPI, MPICH and SLURM)
 - likwid-perfscope: Frontend to the timeline mode of likwid-perfctr, plots live graphs of performance metrics using gnuplot
@@ -69,12 +69,14 @@ AMD
 - AMD Kabini
 - AMD Zen
 - AMD Zen2
+- AMD Zen3 (limited)
 
 ARM (experimental)
 - ARMv7
 - ARMv8
 - Special support for Marvell Thunder X2
 - Fujitsu A64FX
+- ARM Neoverse N1 (AWS Graviton 2)
 
 POWER (experimental)
 - IBM POWER8
@@ -99,6 +101,10 @@ $ vi config.mk (configure build, e.g. change installation prefix and architectur
 $ make
 $ sudo make install (sudo required to install the access daemon with proper permissions)
 ```
+
+For ARM builds, the `COMPILER` flag in `config.mk` needs to changed to `GCCARMv8` or `ARMCLANG` (experimental).
+For POWER builds, the `COMPILER` flag in `config.mk` needs to changed to `GCCPOWER` or `XLC` (experimental).
+
 --------------------------------------------------------------------------------
 Documentation
 --------------------------------------------------------------------------------
