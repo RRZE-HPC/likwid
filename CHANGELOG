@@ -5,6 +5,7 @@
 - Support for Nvidia GPUs with compute capability >= 7.0 (CUpti Profiling API)
 - Support for Fujitsu A64FX (Core) including SVE assembly benchmarks
 - Support for ARM Neoverse N1 (AWS Graviton 2)
+- Support for AMD Zen3 (Core + Uncore but without any events)
 - Check for Intel HWP
 - Fix for TID filter of Skylake SP LLC filter0 register
 - Fix for Lua 5.1
