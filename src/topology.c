@@ -111,6 +111,7 @@ static char* amd_k8_str = "AMD K8 architecture";
 static char* amd_zen_str = "AMD K17 (Zen) architecture";
 static char* amd_zenplus_str = "AMD K17 (Zen+) architecture";
 static char* amd_zen2_str = "AMD K17 (Zen2) architecture";
+static char* amd_zen3_str = "AMD K19 (Zen3) architecture";
 static char* armv7l_str = "ARM 7l architecture";
 static char* armv8_str = "ARM 8 architecture";
 static char* cavium_thunderx2t99_str = "Cavium Thunder X2 (ARMv8)";
@@ -164,6 +165,7 @@ static char* short_k15 = "interlagos";
 static char* short_k16 = "kabini";
 static char* short_zen = "zen";
 static char* short_zen2 = "zen2";
+static char* short_zen3 = "zen3";
 
 static char* short_arm7 = "arm7";
 static char* short_arm8 = "arm8";
@@ -1038,6 +1040,19 @@ topology_setName(void)
                     break;
             }
             break;
+        case ZEN3_FAMILY:
+            switch (cpuid_info.model)
+            {
+                case ZEN3_RYZEN:
+                    cpuid_info.name = amd_zen3_str;
+                    cpuid_info.short_name = short_zen3;
+                    break;
+                case ZEN3_RYZEN2:
+                    cpuid_info.name = amd_zen3_str;
+                    cpuid_info.short_name = short_zen3;
+                    break;
+            }
+            break;
 
         case ARMV7_FAMILY:
             switch (cpuid_info.model)
@@ -1434,6 +1449,7 @@ print_supportedCPUs (void)
     printf("\t%s\n",kabini_str);
     printf("\t%s\n",amd_zen_str);
     printf("\t%s\n",amd_zen2_str);
+    printf("\t%s\n",amd_zen3_str);
     printf("\n");
     printf("Supported ARMv8 processors:\n");
     printf("\t%s\n",arm_cortex_a53);

@@ -65,8 +65,10 @@ typedef enum {
     EVENT_OPTION_MASK1, /*!< \brief Mask1 register */
     EVENT_OPTION_MASK2, /*!< \brief Mask2 register */
     EVENT_OPTION_MASK3, /*!< \brief Mask3 register */
-    EVENT_OPTION_NID, /*!< \brief Set NUMA node ID */
-    EVENT_OPTION_TID, /*!< \brief Set Thread ID */
+    EVENT_OPTION_NID, /*!< \brief Set NUMA node IDs */
+    EVENT_OPTION_TID, /*!< \brief Set Thread IDs */
+    EVENT_OPTION_CID, /*!< \brief Set Core IDs */
+    EVENT_OPTION_SLICE, /*!< \brief Set Slice IDs, often when the L3 is assembled with different sections */
     EVENT_OPTION_STATE, /*!< \brief Match for state */
     EVENT_OPTION_EDGE, /*!< \brief Increment counter at each edge */
     EVENT_OPTION_THRESHOLD, /*!< \brief Increment only if exceeding threshold */
@@ -129,6 +131,8 @@ extern char* eventOptionTypeName[NUM_EVENT_OPTIONS];
 #define EVENT_OPTION_MASK3_MASK (1ULL<<EVENT_OPTION_MASK3)
 #define EVENT_OPTION_NID_MASK (1ULL<<EVENT_OPTION_NID)
 #define EVENT_OPTION_TID_MASK (1ULL<<EVENT_OPTION_TID)
+#define EVENT_OPTION_CID_MASK (1ULL<<EVENT_OPTION_CID)
+#define EVENT_OPTION_SLICE_MASK (1ULL<<EVENT_OPTION_SLICE)
 #define EVENT_OPTION_STATE_MASK (1ULL<<EVENT_OPTION_STATE)
 #define EVENT_OPTION_EDGE_MASK (1ULL<<EVENT_OPTION_EDGE)
 #define EVENT_OPTION_THRESHOLD_MASK (1ULL<<EVENT_OPTION_THRESHOLD)
