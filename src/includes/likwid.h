@@ -2046,9 +2046,9 @@ double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId) __attribu
 It holds the name, the description and the limitation string for one event.
 */
 typedef struct {
-    char* name; /*! \brief Name of the event */
-    char* desc; /*! \brief Description of the event */
-    char* limit; /*! \brief Limitation string of the event, commonly 'GPU' */
+    char* name; /*!< \brief Name of the event */
+    char* desc; /*!< \brief Description of the event */
+    char* limit; /*!< \brief Limitation string of the event, commonly 'GPU' */
 } NvmonEventListEntry;
 
 /*! \brief Output list from nvmon_getEventsOfGpu with all supported events
@@ -2056,8 +2056,8 @@ typedef struct {
 Output list from nvmon_getEventsOfGpu with all supported events
 */
 typedef struct {
-    int numEvents; /*! \brief Number of events */
-    NvmonEventListEntry *events; /*! \brief List of events */
+    int numEvents; /*!< \brief Number of events */
+    NvmonEventListEntry *events; /*!< \brief List of events */
 } NvmonEventList;
 /** \brief Pointer for exporting the NvmonEventList data structure */
 typedef NvmonEventList* NvmonEventList_t;

@@ -103,9 +103,9 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - Kaby Lake (use \subpage skylake)
 - Coffee Lake (use \subpage skylake)
 - Cascade Lake SP/AP (use \subpage skylakesp)
-- Icelake
-- Icelake SP
-- Tigerlake
+- \subpage icelake
+- \subpage icelakesp
+- \subpage tigerlake
 
 \subsubsection Architectures_AMD AMD&reg;
 - \subpage k8
@@ -114,13 +114,14 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage kabini
 - \subpage zen
 - \subpage zen2
-- Zen3
+- \subpage zen3
 
 \subsection Architectures_ARM ARM architectures
 - \subpage armA15
 - \subpage armA57
 - \subpage armThunderX2
-- Fujitsu A64FX
+- \subpage a64fx
+- \subpage neon1
 
 \subsection Architectures_POWER POWER architectures
 - \subpage power8
@@ -255,7 +256,7 @@ Some newer kernels implement the so-called capabilities, a fine-grained permissi
 This is only possible on local file systems. A feasible way is to use the \ref likwid-accessD for all accesses and just enable the capabilities for this one binary. This will enable the usage for all LIKWID tools and also for all instrumented binaries. If \ref likwid-perfctr utility should only be used in wrapper mode, it is suitable to set the capabilities for \ref likwid-perfctr only. Please remember to set the file permission of the MSR device files to read/write for all users, even if capabilites are configured correctly.
 
 \subsection accessD Installation on ARM- and POWER-based systems
-ARM support was added in January. The main switch is the <CODE>COMPILER</CODE> setting in config.mk. There are two possibilities: <CODE>GCCARMv7</CODE> and <CODE>GCCARMv8</CODE>. For build flags changes, please use the appropriate file <CODE>make/include_<COMPILER>.mk</CODE>. The backend for ARM is <CODE>perf_event</CODE>. There is a native backend as well but it is currently not usable as the user would need to measure multiple times per second to catch all register overflows. As soon as LIKWID starts a management thread to read the registers in the background, I will publish this backend as well.<BR>
+ARM support was added in January. The main switch is the <CODE>COMPILER</CODE> setting in config.mk. There are two possibilities: <CODE>GCCARMv7</CODE> and <CODE>GCCARMv8</CODE>. For build flags changes, please use the appropriate file <CODE>make/include_&lt;COMPILER&gt;.mk</CODE>. The backend for ARM is <CODE>perf_event</CODE>. There is a native backend as well but it is currently not usable as the user would need to measure multiple times per second to catch all register overflows. As soon as LIKWID starts a management thread to read the registers in the background, I will publish this backend as well.<BR>
 For POWER systems, the main switch is the <CODE>COMPILER</CODE> setting in config.mk. The change to <CODE>GCCPOWER</CODE> configures the build to work on POWER and switch to the proper <CODE>ACCESSMODE</CODE>.
 
 \subsubsection secureboot LIKWID and SecureBoot
