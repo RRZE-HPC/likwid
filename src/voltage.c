@@ -6,13 +6,13 @@
  *      Description:  Header File Voltage Module.
  *                    Implements Intel Core Voltage Interface.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.1
+ *      Released:  16.11.2020
  *
  *      Author:   Jimmy Situ web@jimmystone.cn
  *      Project:  likwid
  *
- *      Copyright (C) 2016 Jimmy Situ
+ *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

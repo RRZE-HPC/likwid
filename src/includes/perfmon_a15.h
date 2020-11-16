@@ -5,8 +5,8 @@
  *
  *      Description:  Header File of perfmon module for ARM A15.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.1
+ *      Released:  16.11.2020
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

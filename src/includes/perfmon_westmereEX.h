@@ -5,8 +5,8 @@
  *
  *      Description:  Header File of perfmon module for Intel Westmere EX.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.1
+ *      Released:  16.11.2020
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com

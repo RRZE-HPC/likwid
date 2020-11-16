@@ -5,8 +5,8 @@
  *
  *      Description: Counter header file of perfmon module for Intel Atom (Silvermont)
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.1
+ *      Released:  16.11.2020
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

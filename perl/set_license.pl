@@ -10,10 +10,10 @@ my $cc = ' *';
 my $fc = '!';
 my $lc = ' *';
 
-my $VERSION   = '<VERSION>';
-my $DATE   = '<DATE>';
-#my $VERSION   = '4.0';
-#my $DATE   = '16.6.2015';
+#my $VERSION   = '<VERSION>';
+#my $DATE   = '<DATE>';
+my $VERSION   = '5.1';
+my $DATE   = '16.11.2020';
 my $YEAR  = '2015';
 my $AUTHOR = 'RRZE, University Erlangen-Nuremberg';
 my $LICENSE = 'gpl';
@@ -85,7 +85,7 @@ sub wanted
         $filename = $_;
     }
 
-    if (($filename =~ /^\./) or (-d $filename)) {
+    if (($filename =~ /^\./) or (-d $filename) or (-l $filename)) {
         return;
     }
 

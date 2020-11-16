@@ -5,8 +5,8 @@
  *
  *      Description:  AMD K10 performance counter definition. Also used for AMD K8.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.1
+ *      Released:  16.11.2020
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com

@@ -7,8 +7,8 @@
  *                    Configures and reads out performance counters
  *                    on x86 based architectures. Supports multi threading.
  *
- *      Version:   <VERSION>
- *      Released:  <DATE>
+ *      Version:   5.1
+ *      Released:  16.11.2020
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
