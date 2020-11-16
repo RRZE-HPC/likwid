@@ -138,9 +138,11 @@ struct topology_functions {
 #define ATHLON64_G2     0x7FU
 #define ZEN_RYZEN       0x01
 #define ZENPLUS_RYZEN   0x08
-#define ZENPLUS_RYZEN2   0x18
+#define ZENPLUS_RYZEN2  0x18
 #define ZEN2_RYZEN      0x31
-#define ZEN2_RYZEN2      0x71
+#define ZEN2_RYZEN2     0x71
+#define ZEN3_RYZEN      0x01
+#define ZEN3_RYZEN2     0x21
 
 /* ARM */
 #define  ARM7L          0x3U
@@ -183,7 +185,8 @@ struct topology_functions {
 #define  P6_FAMILY        0x6U
 #define  MIC_FAMILY       0xBU
 #define  NETBURST_FAMILY  0xFFU
-#define  ZEN_FAMILY       0x17
+#define  ZEN_FAMILY       0x17U
+#define  ZEN3_FAMILY      0x19U
 #define  K15_FAMILY       0x15U
 #define  K16_FAMILY       0x16U
 #define  K10_FAMILY       0x10U

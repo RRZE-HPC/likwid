@@ -2005,6 +2005,12 @@ int main(void)
                     allowed = allowed_amd17;
                 }
                 break;
+            case ZEN3_FAMILY:
+                if (model == ZEN3_RYZEN || model == ZEN3_RYZEN2)
+                {
+                    allowed = allowed_amd17_zen2;
+                }
+                break;
             default:
                 syslog(LOG_ERR, "ERROR - [%s:%d] - Unsupported processor. Exiting!  \n",
                         __FILE__, __LINE__);

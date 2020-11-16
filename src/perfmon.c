@@ -76,6 +76,7 @@
 #include <perfmon_cascadelake.h>
 #include <perfmon_zen.h>
 #include <perfmon_zen2.h>
+#include <perfmon_zen3.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
 #include <perfmon_tigerlake.h>
@@ -136,6 +137,8 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     [EVENT_OPTION_MASK3] = "MASK3",
     [EVENT_OPTION_NID] = "NID",
     [EVENT_OPTION_TID] = "TID",
+    [EVENT_OPTION_CID] = "CID",
+    [EVENT_OPTION_SLICE] = "SLICE",
     [EVENT_OPTION_STATE] = "STATE",
     [EVENT_OPTION_EDGE] = "EDGEDETECT",
     [EVENT_OPTION_THRESHOLD] = "THRESHOLD",
@@ -525,6 +528,16 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
             {
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
                                     event->numberOfOptions, EVENT_OPTION_TID, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "cid") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_CID, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "slice") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_SLICE, 0);
             }
             else if (biseqcstr(subtokens->entry[0], "state") == 1)
             {
@@ -1223,6 +1236,21 @@ perfmon_init_maps(void)
                     ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
             }
             break;
+        case ZEN3_FAMILY:
+            switch ( cpuid_info.model )
+            {
+                case ZEN3_RYZEN:
+                case ZEN3_RYZEN2:
+                    eventHash = zen3_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen3;
+                    counter_map = zen3_counter_map;
+                    box_map = zen3_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen3;
+                    translate_types = zen3_translate_types;
+                    break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
+            }
 #ifdef _ARCH_PPC
 	case PPC_FAMILY:
 	    switch ( cpuid_info.model )
@@ -1736,6 +1764,28 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_readCountersThread = perfmon_readCountersThread_zen2;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_zen2;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen2;
+                    break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported AMD Zen2 Processor);
+                    break;
+            }
+            break;
+
+        case ZEN3_FAMILY:
+            switch ( cpuid_info.model )
+            {
+                case ZEN3_RYZEN:
+                case ZEN3_RYZEN2:
+                    initThreadArch = perfmon_init_zen3;
+                    initialize_power = TRUE;
+                    perfmon_startCountersThread = perfmon_startCountersThread_zen3;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_zen3;
+                    perfmon_readCountersThread = perfmon_readCountersThread_zen3;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_zen3;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen3;
+                    break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported AMD Zen3 Processor);
                     break;
             }
             break;
