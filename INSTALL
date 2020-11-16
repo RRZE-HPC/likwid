@@ -1,9 +1,11 @@
 == Basic build ==
 
 1. Edit config.mk. Follow the comments there.
-   Optionally you can change compiler settings in include_[GCC|CLANG|ICC|MIC].mk.
+   Optionally you can change compiler settings in include_[GCC|CLANG|ICC|MIC|*].mk.
    Please note that only the default compiler flags GCC are supported and tested.
    For 32 bit builds the only supported compiler setting is GCCX86.
+   For ARM builds the possible compiler settings are GCCARMv8 and ARMCLANG.
+   For POWER builds the possible compiler settings are GCCPOWER and XLC.
 2. make (Builds hwloc, lua, Likwid libraries, access daemons and likwid-bench)
 3. make install (this is required for likwid-pin and if you use the accessDaemon)
 
@@ -17,7 +19,7 @@ compiler in make/include_[GCC|CLANG|ICC|MIC].mk.
 
 *NOTICE*
 
-All generated files are located in the [GCC|ICC|CLANG|MIC|GCCX86] build directory.
+All generated files are located in the [GCC|ICC|CLANG|MIC|GCCX86|*] build directory.
 This includes the dependency files, object files. The
 generated source files and the pas and assembly files for likwid-bench are build
 in bench/[GCC|ICC|CLANG|MIC|GCCX86].
@@ -70,6 +72,8 @@ Included dependencies:
 - hwloc
 - Lua
 - Perl Template toolkit
+- GOTCHA (experimental)
+
 
 Build dependencies:
 - C compiler (commonly gcc, but clang and icc are also possible)
@@ -78,11 +82,6 @@ Build dependencies:
 
 Runtime dependencies for likwid-perfscope:
 - gnuplot
-
-Runtime dependencies for likwid-agent (if enabled in configfile):
-- gmetric (Output to Ganglia Monitoring System)
-- rrdtool (Output to RRDs)
-- logger (Output to syslog)
 
 For the HTML documentation you further need doxygen.
 
@@ -180,3 +179,7 @@ Maybe it works if the versions of Lua are the same (5.3.2).
 The Lua interpreter is renamed at installation to likwid-lua, so does not
 overwrite other interpreters.
 
+==== Building LIKWID with support for Nvidia GPUs ====
+The Nvidia backend is optional and needs to be activated in config.mk. Make sure
+that the CUDA lib/inc paths and the lib/inc paths to CUPTI are adjusted accoring
+to your system. The library paths need to be in LD_LIBRARY_PATH at runtime.
