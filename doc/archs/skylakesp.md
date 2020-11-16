@@ -423,7 +423,7 @@ The integrated Memory Controllers performance counters are exposed to the operat
 <H2>Power control unit counters</H2>
 <P>The Intel&reg; Skylake SP microarchitecture provides measurements of the power control unit (PCU) in the Uncore. The description from Intel&reg;:<BR>
 <I>The PCU is the primary Power Controller for the Intel&reg; Xeon&reg; Processor Scalable Memory Family die, responsible for distributing power to core/uncore components and thermal management. It runs in firmware on an internal micro-controller and coordinates the socket’s power states.</I>
-</I><BR>
+<BR>
 The PCU performance counters are exposed to the operating system through the MSR interface. The name WBOX originates from the Nehalem EX Uncore monitoring where those functional units are called WBOX.
 </P>
 <H3>Counter and events</H3>
