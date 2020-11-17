@@ -76,25 +76,40 @@ int perfmon_init_skylake(int cpu_id)
     {
         ERROR_PRINT(Cannot zero MSR_PEBS_FRONTEND (0x%X), MSR_PEBS_FRONTEND);
     }
-    if (cpuid_info.model == SKYLAKEX)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
-        skylake_cbox_setup = skx_cbox_setup;
-        skl_did_cbox_check = 1;
-    }
-    else if ((cpuid_info.model == SKYLAKE1 || cpuid_info.model == SKYLAKE2) &&
-             socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id &&
-             skl_did_cbox_check == 0)
-    {
-        uint64_t data = 0x0ULL;
-        ret = HPMwrite(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, 0x0ULL);
-        ret += HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, &data);
-        ret += HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
-        ret += HPMread(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, &data);
-        if ((ret == 0) && (data == 0x0ULL))
-            skylake_cbox_setup = skl_cbox_setup;
-        else
-            skylake_cbox_setup = skl_cbox_nosetup;
-        skl_did_cbox_check = 1;
+        switch (cpuid_info.model)
+        {
+            case SKYLAKEX:
+                if (skl_did_cbox_check == 0)
+                {
+                    skylake_cbox_setup = skx_cbox_setup;
+                    skl_did_cbox_check = 1;
+                }
+                break;
+            case SKYLAKE1:
+            case SKYLAKE2:
+            case KABYLAKE1:
+            case KABYLAKE2:
+            case CANNONLAKE:
+                if (skl_did_cbox_check == 0)
+                {
+                    uint64_t data = 0x0ULL;
+                    ret = HPMwrite(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, 0x0ULL);
+                    ret += HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, &data);
+                    ret += HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
+                    ret += HPMread(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, &data);
+                    if ((ret == 0) && (data == 0x0ULL))
+                        skylake_cbox_setup = skl_cbox_setup;
+                    else
+                        skylake_cbox_setup = skl_cbox_nosetup;
+                    skl_did_cbox_check = 1;
+                }
+                break;
+            default:
+                skylake_cbox_setup = skl_cbox_nosetup;
+                skl_did_cbox_check = 1;
+        }
     }
     return 0;
 }
