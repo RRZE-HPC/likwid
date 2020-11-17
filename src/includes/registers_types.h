@@ -321,6 +321,8 @@ static char* RegisterTypeNames[MAX_UNITS] = {
 #define MEASURE_CORE(eventset) \
         (eventset->regTypeMask1 & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(METRICS)))
 
+#define MEASURE_METRICS(eventset) ((eventset)->regTypeMask1 & (REG_TYPE_MASK(METRICS))
+
 #define MEASURE_UNCORE(eventset) \
         (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(POWER)|REG_TYPE_MASK(METRICS)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4)
 
