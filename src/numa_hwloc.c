@@ -73,6 +73,7 @@ getFreeNodeMem(int nodeId)
                  free = str2int(bdata(subtokens->entry[0]));
                  bdestroy(tmp);
                  bstrListDestroy(subtokens);
+                 break;
             }
         }
         bstrListDestroy(tokens);
@@ -84,7 +85,7 @@ getFreeNodeMem(int nodeId)
     bdestroy(filename);
 
     /* Fallback to system-wide free memory */
-    return proc_getFreeSysMem();
+    return (free > 0 ? free : proc_getFreeSysMem());
 }
 
 uint64_t
@@ -113,6 +114,7 @@ getTotalNodeMem(int nodeId)
                  total = str2int(bdata(subtokens->entry[0]));
                  bdestroy(tmp);
                  bstrListDestroy(subtokens);
+                 break;
             }
         }
         bstrListDestroy(tokens);
@@ -125,7 +127,7 @@ getTotalNodeMem(int nodeId)
     bdestroy(procfilename);
 
     /* Fallback to system-wide total memory */
-    return proc_getTotalSysMem();
+    return (total > 0 ? total : proc_getTotalSysMem());
 }
 
 int
