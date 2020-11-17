@@ -7,8 +7,8 @@
  *                    Avoids the likwid-perfctr CLI for setting environment
  *                    variables, pinning threads, and inspecting results.
  *
- *      Version:   1.0.0
- *      Released:  2020-07-06
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
  *      Author:   Riley Weber, rileyw13@protonmail.com
  *      Project:  likwid

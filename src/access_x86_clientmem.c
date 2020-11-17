@@ -8,8 +8,8 @@
  *                   performance monitoring registers in PCI Cfg space
  *                   for Intel Sandy Bridge Processors.
  *
- *      Version:   4.3.1
- *      Released:  04.01.2018
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com,
  *                Thomas Gruber (tr), thomas.roehl@googlemail.com
