@@ -41,8 +41,6 @@ static int perfmon_numCountersIcelakeX = NUM_COUNTERS_ICELAKEX;
 static int perfmon_numCoreCountersIcelakeX = NUM_COUNTERS_CORE_ICELAKEX;
 static int perfmon_numArchEventsIcelakeX = NUM_ARCH_EVENTS_ICELAKEX;
 
-#define MEASURE_METRICS(eventset) ((eventset)->regTypeMask1 & (REG_TYPE_MASK(METRICS))
-
 static int icl_did_cbox_check = 0;
 int icl_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);
 int icx_cbox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event);

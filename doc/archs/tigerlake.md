@@ -5,8 +5,10 @@
 <H1>Available performance monitors for the Intel&reg; Tigerlake microarchitecture</H1>
 <UL>
 <LI>\ref TGL_FIXED "Fixed-purpose counters"</LI>
+<LI>\ref TGL_METRICS "Performance metric counters"</LI>
 <LI>\ref TGL_PMC "General-purpose counters"</LI>
 <LI>\ref TGL_THERMAL "Thermal counters"</LI>
+<LI>\ref TGL_VOLTAGE "Core voltage counters"</LI>
 <LI>\ref TGL_POWER "Power measurement counters"</LI>
 </UL>
 
@@ -58,6 +60,34 @@
   <TD></TD>
 </TR>
 </TABLE>
+
+\anchor TGL_METRICS
+<H2>Performance metric counters</H2>
+<P>With the Intel&reg; Tigerlake microarchitecture a new class of core-local counters was introduced, the so-called perf-metrics. The reflect the first level of the <A HREF="https://software.intel.com/content/www/us/en/develop/documentation/vtune-cookbook/top/methodologies/top-down-microarchitecture-analysis-method.html">Top-down Microarchitecture Analysis</A> tree. The events return the fraction of slots used by the event.</P>
+<H3>Counter and events</H3>
+
+<TABLE>
+<TR>
+  <TH>Counter name</TH>
+  <TH>Event name</TH>
+</TR>
+<TR>
+  <TD>TMA0</TD>
+  <TD>RETIRING</TD>
+</TR>
+<TR>
+  <TD>TMA1</TD>
+  <TD>BAD_SPECULATION</TD>
+</TR>
+<TR>
+  <TD>TMA2</TD>
+  <TD>FRONTEND_BOUND</TD>
+</TR>
+<TR>
+  <TD>TMA3</TD>
+  <TD>BACKEND_BOUND</TD>
+</TR>
+</TABLE> 
 
 
 \anchor TGL_PMC
@@ -156,6 +186,20 @@
 </TR>
 </TABLE>
 
+\anchor TGL_VOLTAGE
+<H2>Core voltage counters</H2>
+<P>The Intel&reg; Tigerlake microarchitecture provides one register for the current core voltage.</P>
+<H3>Counter and events</H3>
+<TABLE>
+<TR>
+  <TH>Counter name</TH>
+  <TH>Event name</TH>
+</TR>
+<TR>
+  <TD>VTG0</TD>
+  <TD>VOLTAGE_CORE</TD>
+</TR>
+</TABLE>
 
 <H1>Counters available for one hardware thread per socket</H1>
 \anchor TGL_POWER

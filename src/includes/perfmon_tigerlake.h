@@ -193,6 +193,7 @@ int perfmon_setupCounterThread_tigerlake(
             case POWER:
             case THERMAL:
             case VOLTAGE:
+            case METRICS:
                 break;
 
             default:
@@ -258,6 +259,12 @@ int perfmon_startCountersThread_tigerlake(int thread_id, PerfmonEventSet* eventS
                         eventSet->events[i].threadCounter[thread_id].startData = field64(tmp, 0, box_map[type].regWidth);
                     }
                     break;
+                case METRICS:
+                    flags |= (1ULL << 48);
+                    break;
+                case THERMAL:
+                case VOLTAGE:
+                    break;
 
                 default:
                     break;
@@ -268,6 +275,11 @@ int perfmon_startCountersThread_tigerlake(int thread_id, PerfmonEventSet* eventS
 
     if (MEASURE_CORE(eventSet))
     {
+        if (flags & (1ULL << 48))
+        {
+            VERBOSEPRINTREG(cpu_id, MSR_PERF_METRICS, 0x0ULL, CLEAR_METRICS)
+            CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_METRICS, 0x0ULL));
+        }
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_OVF_CTRL, LLU_CAST (1ULL<<63)|(1ULL<<62)|flags, CLEAR_PMC_AND_FIXED_OVERFLOW)
         CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_PERF_GLOBAL_OVF_CTRL, (1ULL<<63)|(1ULL<<62)|flags));
         VERBOSEPRINTREG(cpu_id, MSR_PERF_GLOBAL_CTRL, LLU_CAST flags, UNFREEZE_PMC_AND_FIXED)
@@ -345,6 +357,11 @@ int perfmon_stopCountersThread_tigerlake(int thread_id, PerfmonEventSet* eventSe
 
                 case VOLTAGE:
                     CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
+                    break;
+
+                case METRICS:
+                    CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
+                    counter_result= field64(counter_result, getCounterTypeOffset(index)*box_map[type].regWidth, box_map[type].regWidth);
                     break;
 
                 default:
@@ -439,7 +456,11 @@ int perfmon_readCountersThread_tigerlake(int thread_id, PerfmonEventSet* eventSe
 
                 case VOLTAGE:
                     CHECK_TEMP_READ_ERROR(voltage_read(cpu_id, &counter_result));
-                    eventSet->events[i].threadCounter[thread_id].counterData = field64(counter_result, 0, box_map[type].regWidth);
+                    break;
+
+                case METRICS:
+                    CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
+                    counter_result= field64(counter_result, getCounterTypeOffset(index)*box_map[type].regWidth, box_map[type].regWidth);
                     break;
 
                 default:
@@ -506,7 +527,7 @@ int perfmon_finalizeCountersThread_tigerlake(int thread_id, PerfmonEventSet* eve
             default:
                 break;
         }
-        if ((reg) && (((type == PMC)||(type == FIXED))|| ((type >= UNCORE) && (haveLock))))
+        if ((reg) && (((type == PMC)||(type == FIXED))||(type == METRICS)|| ((type >= UNCORE) && (haveLock))))
         {
             CHECK_MSR_READ_ERROR(HPMread(cpu_id, dev, reg, &ovf_values_uncore));
             VERBOSEPRINTPCIREG(cpu_id, dev, reg, ovf_values_uncore, SHOW_CTL);
