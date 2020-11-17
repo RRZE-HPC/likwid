@@ -124,6 +124,7 @@ power_init(int cpuId)
                 case SKYLAKEX:
                 case KABYLAKE1:
                 case KABYLAKE2:
+                case CANNONLAKE:
                 case TIGERLAKE1:
                 case TIGERLAKE2:
                 case ICELAKE1:
