@@ -158,7 +158,7 @@ likwid_markerresetregion_(char* regionTag, int len)
 
 
 
-
+#ifdef LIKWID_WITH_NVMON
 void __attribute__ ((visibility ("default") ))
 likwid_nvmarkerinit_(void)
 {
@@ -248,3 +248,4 @@ likwid_nvmarkerresetregion_(char* regionTag, int len)
     likwid_gpuMarkerResetRegion( tmp);
     free(tmp);
 }
+#endif
