@@ -823,6 +823,16 @@ static int getIntelHWP(const int cpu_id)
     fprintf(stderr,"Cannot read HWP state with ACCESSMODE=perf_event.\n");
     return -1;
 #else
+#if defined(__i386__) || defined(__x86_64)
+    unsigned int eax, ebx, ecx, edx;
+    eax = 0x06;
+    CPUID(eax, ebx, ecx, edx);
+    if (!(eax & (1<<7)))
+    {
+        /* HWP not supported */
+        return 0;
+    }
+#endif
     if (!HPMinitialized())
     {
         HPMinit();
