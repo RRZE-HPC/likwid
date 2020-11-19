@@ -1005,7 +1005,7 @@ if #event_string_list > 0 then
         for i, cpu in pairs(cpulist) do
             table.insert(clist, tostring(cpu))
         end
-        print("# Cores"..word_delim..table.concat(clist, delim))
+        print("# HWThreads"..word_delim..table.concat(clist, delim))
         for i, gid in pairs(group_ids) do
             local strlist = {"GID"}
             if likwid.getNumberOfMetrics(gid) == 0 then

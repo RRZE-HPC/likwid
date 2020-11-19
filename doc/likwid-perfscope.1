@@ -45,7 +45,7 @@ for further information about the syntax.
 .B \-\^C " <cpu_list>
 Measures the given group on given CPUs in <cpu_list>. See
 .B likwid-pin(1)
-for further information about the syntax. The application is pinned to that cores.
+for further information about the syntax. The application is pinned to that hardware threads.
 .TP
 .B \-\^a,\-\-\^all
 List preconfigured event and plot configurations
@@ -127,13 +127,13 @@ Measure and print a preconfigured plotting configuration:
 .TP
 .B likwid-perfscope -g L3 -C 0-2 -t 1s ./a.out
 .PP
-This measures the L3 bandwidth with likwid-perfctr every second on CPU cores 0,1,2 and use the plotting configuration L3. The plot will have a title and the axes are labeled properly.
+This measures the L3 bandwidth with likwid-perfctr every second on hardware threads 0,1,2 and use the plotting configuration L3. The plot will have a title and the axes are labeled properly.
 .IP 2. 5
 Measure and print a preconfigured plotting configuration:
 .TP
 .B likwid-perfscope -g L2:TITLE="My Title" -C 0 -t 1s ./a.out
 .PP
-This measures the L2 bandwidth with likwid-perfctr every second on CPU core 0 and use the plotting configuration L2. The title of the output plot is changed to the custom title "My Title".
+This measures the L2 bandwidth with likwid-perfctr every second on hardware thread 0 and use the plotting configuration L2. The title of the output plot is changed to the custom title "My Title".
 .IP 3. 5
 Custom event set with plotting configuration:
 .TP
@@ -143,7 +143,7 @@ Custom event set with plotting configuration:
 .PP
 Executes
 .B likwid-perfctr
-on the first core. The values for the events
+on the first hardware thread. The values for the events
 .B INSTR_RETIRED_ANY
 and
 .B CPU_CLK_UNHALTED_CORE

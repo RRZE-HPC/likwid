@@ -268,7 +268,7 @@ likwid.initFreq()
 driver = likwid.getFreqDriver(cpulist[1])
 
 if verbosity == 3 then
-    print_stdout(string.format("DEBUG: Given CPU expression expands to %d CPU cores:", numthreads))
+    print_stdout(string.format("DEBUG: Given CPU expression expands to %d HW Threads:", numthreads))
     local str = "DEBUG: " .. tostring(cpulist[1])
     for i=2, numthreads  do
         str = str .. "," .. tostring(cpulist[i])
@@ -328,7 +328,7 @@ if printCurFreq then
         t = tonumber(likwid.getTurbo(cpulist[i]));
         if gov and freq and min and max and t >= 0 then
             processed = processed + 1
-            table.insert(str, string.format("CPU %d: governor %12s min/cur/max %s/%s/%s GHz Turbo %d",cpulist[i], gov, round(min), round(freq), round(max), t))
+            table.insert(str, string.format("HWThread %d: governor %12s min/cur/max %s/%s/%s GHz Turbo %d",cpulist[i], gov, round(min), round(freq), round(max), t))
         end
     end
     table.insert(str, "")

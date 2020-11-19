@@ -2164,7 +2164,7 @@ lua_likwid_pinProcess(lua_State* L)
 #ifdef COLOR
             color_on(BRIGHT, COLOR);
 #endif
-            printf("[likwid-pin] Main PID -> core %d - OK",  cpuID);
+            printf("[likwid-pin] Main PID -> hwthread %d - OK",  cpuID);
 #ifdef COLOR
             color_reset();
 #endif
@@ -2192,7 +2192,7 @@ lua_likwid_pinThread(lua_State* L)
 #ifdef COLOR
             color_on(BRIGHT, COLOR);
 #endif
-            printf("[likwid-pin] PID %lu -> core %d - OK", gettid(), cpuID);
+            printf("[likwid-pin] PID %lu -> hwthread %d - OK", gettid(), cpuID);
 #ifdef COLOR
             color_reset();
 #endif

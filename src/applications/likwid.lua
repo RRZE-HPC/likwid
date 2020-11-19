@@ -832,7 +832,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
             infotab[1] = {"Region Info","RDTSC Runtime [s]","call count"}
             for c, cpu in pairs(cur_cpulist) do
                 local tmpList = {}
-                table.insert(tmpList, "Core "..tostring(cpu))
+                table.insert(tmpList, "HWThread "..tostring(cpu))
                 table.insert(tmpList, string.format("%.6f", likwid.markerRegionTime(region, c)))
                 table.insert(tmpList, tostring(likwid.markerRegionCount(region, c)))
                 table.insert(infotab, tmpList)
@@ -855,7 +855,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
             table.insert(firsttab_combined[2], countername)
         end
         for c, cpu in pairs(cur_cpulist) do
-            local tmpList = {"Core "..tostring(cpu)}
+            local tmpList = {"HWThread "..tostring(cpu)}
             if likwid.getNumberOfMetrics(g) == 0 then
                 if region == nil then
                     table.insert(tmpList, string.format("%e", runtime))
@@ -880,7 +880,7 @@ local function printOutput(results, metrics, cpulist, region, stats)
                 table.insert(secondtab_combined[1], likwid.getNameOfMetric(g, m).." STAT" )
             end
             for c, cpu in pairs(cur_cpulist) do
-                local tmpList = {"Core "..tostring(cpu)}
+                local tmpList = {"HWThread "..tostring(cpu)}
                 for m=1, likwid.getNumberOfMetrics(g) do
                     local tmp = tostring(likwid.num2str(metrics[g][m][c]))
                     table.insert(tmpList, tmp)

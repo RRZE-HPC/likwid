@@ -54,8 +54,8 @@ function usage()
     print_stdout("-h, --help\t\t Help message")
     print_stdout("-v, --version\t\t Version information")
     print_stdout("-a, --all\t\t List all available features")
-    print_stdout("-l, --list\t\t List features and state for given CPUs")
-    print_stdout("-c, --cpus <list>\t Perform operations on given CPUs")
+    print_stdout("-l, --list\t\t List features and state for given hardware threads")
+    print_stdout("-c, --cpus <list>\t Perform operations on given hardware threads")
     print_stdout("-e, --enable <list>\t List of features that should be enabled")
     print_stdout("-d, --disable <list>\t List of features that should be disabled")
     print_stdout()
@@ -153,7 +153,7 @@ if listFeatures and #cpulist > 0 then
     if likwid.getCpuFeatures(c, 0) >= 0 then
         local str = "Feature"..string.rep(" ",string.len("BRANCH_TRACE_STORAGE")-string.len("Feature")+2)
         for j, c in pairs(cpulist) do
-            str = str..string.format("CPU %d\t",c)
+            str = str..string.format("HWThread %d\t",c)
         end
         print_stdout(str)
         str = ""
@@ -171,7 +171,7 @@ if listFeatures and #cpulist > 0 then
     end
     os.exit(1)
 elseif #cpulist == 0 then
-    print_stderr("Need CPU to list current feature state")
+    print_stderr("Need HWThread to list current feature state")
     os.exit(1)
 end
 
@@ -199,9 +199,9 @@ if #enableList > 0 then
         for j, f in pairs(enableList) do
             local ret = likwid.enableCpuFeatures(c, f, 1)
             if ret == 0 then
-                print_stdout(string.format("Enabled %s for CPU %d", likwid.cpuFeatures[f], c))
+                print_stdout(string.format("Enabled %s for HWThread %d", likwid.cpuFeatures[f], c))
             else
-                print_stdout(string.format("Failed %s for CPU %d", likwid.cpuFeatures[f], c))
+                print_stdout(string.format("Failed %s for HWThread %d", likwid.cpuFeatures[f], c))
             end
         end
     end
@@ -211,9 +211,9 @@ if #disableList > 0 then
         for j, f in pairs(disableList) do
             local ret = likwid.disableCpuFeatures(c, f, 1)
             if ret == 0 then
-                print_stdout(string.format("Disabled %s for CPU %d", likwid.cpuFeatures[f], c))
+                print_stdout(string.format("Disabled %s for HWThread %d", likwid.cpuFeatures[f], c))
             else
-                print_stdout(string.format("Failed %s for CPU %d", likwid.cpuFeatures[f], c))
+                print_stdout(string.format("Failed %s for HWThread %d", likwid.cpuFeatures[f], c))
             end
         end
     end

@@ -94,9 +94,9 @@ silent execution without output
 
 .SH CPU EXPRESSION
 .IP 1. 4
-The most intuitive CPU selection method is a comma-separated list of physical CPU IDs. An example for this is
+The most intuitive CPU selection method is a comma-separated list of hardware thread IDs. An example for this is
 .B 0,2
-which schedules the threads on CPU cores 
+which schedules the threads on hardware threads 
 .B 0
 and
 .B 2.
@@ -117,13 +117,13 @@ for selecting the CPUs inside the given domain. Assuming an virtual affinity dom
 .B 'P'
 that contains the CPUs
 .B 0,4,1,5,2,6,3,7.
-After sorting it to have physical cores first we get:
+After sorting it to have physical hardware threads first we get:
 .B 0,1,2,3,4,5,6,7.
 The logical numbering
 .B L:P:0-2
 results in the selection
 .B 0,1,2
-from the physical cores first list.
+from the physical hardware threads first list.
 .IP 3. 4
 The expression syntax enables the selection according to an selection function with variable input parameters. The format is either
 .B E:<affinity domain>:<numberOfThreads>
@@ -131,7 +131,7 @@ to use the first <numberOfThreads> threads in affinity domain <affinity domain> 
 .B E:<affinity domain>:<numberOfThreads>:<chunksize>:<stride>
 to use <numberOfThreads> threads with <chunksize> threads selected in row while skipping <stride> threads in affinity domain <affinity domain>. Examples are
 .B E:N:4:1:2
-for selecting the first four physical CPUs on a system with 2 SMT threads per core or
+for selecting the first four physical CPUs on a system with 2 hardware thread per CPU core or
 .B E:P:4:2:4
 for choosing the first two threads in affinity domain
 .B P,
@@ -140,7 +140,7 @@ skipping 2 threads and selecting again two threads. The resulting CPU list for v
 is
 .B 0,4,2,6
 .IP 3. 4
-The last format schedules the threads not only in a single affinity domain but distributed them evenly over all available affinity domains of the same kind. In contrast to the other formats, the selection is done using the physical cores first and then the SMT threads. The format is
+The last format schedules the threads not only in a single affinity domain but distributed them evenly over all available affinity domains of the same kind. In contrast to the other formats, the selection is done using the physical hardware threads first and then the virtual hardware threads (aka SMT threads). The format is
 .B <affinity domain without number>:scatter
 like
 .B M:scatter
@@ -182,7 +182,7 @@ A common use-case for the numbering by expression is pinning of an application o
 .TP
 .B likwid-pin -c E:N:60:1:4 ./myApp
 .PP
-This command schedules one thread per physical CPU core for
+This command schedules one applicationn thread per physical CPU core for
 .B ./myApp.
 
 .SH IMPORTANT NOTICE

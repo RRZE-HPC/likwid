@@ -16,7 +16,7 @@ is a command line application to print the flags in the model
 specific register (MSR) MSR_IA32_MISC_ENABLE on Intel x86 processors. On Core2 and later processors
 it can be used to toggle the hardware prefetch flags. It does not work on AMD processors.
 For a documentation what flags are supported on which processor refer to the Intel
-Software Developer's Manual Volume 3B, Table B.2 and https://software.intel.com/en-us/articles/disclosure-of-hw-prefetcher-control-on-some-intel-processors. The MSR are set individually for every core.
+Software Developer's Manual Volume 3B, Table B.2 and https://software.intel.com/en-us/articles/disclosure-of-hw-prefetcher-control-on-some-intel-processors. The MSR are set individually for every hardware thread.
 The following hardware prefetchers can be toggled:
 .IP \[bu]
 .B HW_PREFETCHER:
@@ -50,7 +50,7 @@ List out the names of all detected features
 Print the state of all features for the given CPUs
 .TP
 .B \-\^c " cpus"
-set on which processor cores the MSR should be read and written. Syntax according to
+set on which hardware threads the MSR should be read and written. Syntax according to
 .B likwid-pin(1)
 .TP
 .B \-\^d " HW_PREFETCHER | CL_PREFETCHER | DCU_PREFETCHER | IP_PREFETCHER"
@@ -60,7 +60,7 @@ specify which prefetcher should be disabled. Argument can be a comma-separated l
 specify which prefetcher should be enabled. Argument can be a comma-separated list.
 
 .SH AUTHOR
-Written by Thomas Röhl <thomas.Roehl@gmail.com>.
+Written by Thomas Gruber <thomas.Roehl@gmail.com>.
 .SH BUGS
 Report Bugs on <https://github.com/RRZE-HPC/likwidissues>.
 .SH "SEE ALSO"
