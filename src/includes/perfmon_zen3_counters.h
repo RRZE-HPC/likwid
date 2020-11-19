@@ -90,5 +90,5 @@ static char* zen3_translate_types[NUM_UNITS] = {
     [PMC] = "/sys/bus/event_source/devices/cpu",
     [POWER] = "/sys/bus/event_source/devices/power",
     [CBOX0] = "/sys/bus/event_source/devices/amd_l3",
-    [MBOX0] = "/sys/bus/event_source/devices/amd_nb",
+    [MBOX0] = "/sys/bus/event_source/devices/amd_df",
 };
