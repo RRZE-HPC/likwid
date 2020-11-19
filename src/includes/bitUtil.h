@@ -41,7 +41,7 @@ extern uint32_t getBitFieldWidth(uint32_t number);
 #define setBit(reg,bit)  (reg) |= (1ULL<<(bit))
 #define clearBit(reg,bit) (reg) &= ~(1ULL<<(bit))
 #define toggleBit(reg,bit) (reg) ^= (1ULL<<(bit))
-#define testBit(reg,bit) (reg) & (1ULL<<(bit))
+#define testBit(reg,bit) ((reg) & (1ULL<<(bit)))
 
 #define bitMask_init(_mask)  \
     (_mask).mask[0] = 0ULL; \
