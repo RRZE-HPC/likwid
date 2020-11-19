@@ -13,8 +13,8 @@ Runtime (RDTSC) [s] time
 Runtime unhalted [s] FIXC1*inverseClock
 Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
 CPI  FIXC1/FIXC0
-Number of divide ops PMC0
-Avg. divide unit usage duration PMC1/PMC0
+Number of divide ops PMC0:EDGEDETECT
+Avg. divide unit usage duration PMC1/PMC0:EDGEDETECT
 
 LONG
 Formulas:
