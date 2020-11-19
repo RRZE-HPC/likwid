@@ -226,7 +226,7 @@ Using likwid in timeline mode:
 .TP
 .B likwid-perfctr -c 0-3 -g FLOPS_DP -t 300ms ./cacheBench > out.txt
 .PP
-This will read out the counters every 300ms on physical cores 0-3 and write the results to out.txt.
+This will read out the counters every 300ms on physical hardware threads 0-3 and write the results to out.txt.
 The application is not pinned to the CPUs. The output syntax of the timeline
 mode is for custom event sets:
 
@@ -242,7 +242,7 @@ Using likwid in stethoscope mode:
 .TP
 .B likwid-perfctr -c 0-3 -g FLOPS_DP -S 2s
 .PP
-This will start the counters and read them out after 2s on physical cores 0-3 and write the results to stdout.
+This will start the counters and read them out after 2s on physical hardware threads 0-3 and write the results to stdout.
 
 .IP 7. 4
 Using likwid with counter options:

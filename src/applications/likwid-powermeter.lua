@@ -61,7 +61,7 @@ local function usage()
     print_stdout("-i, --info\t Print information from MSR_PKG_POWER_INFO register and Turbo mode")
     print_stdout("-s <duration>\t Set measure duration in us, ms or s. (default 2s)")
     print_stdout("-p\t\t Print dynamic clocking and CPI values, uses likwid-perfctr")
-    print_stdout("-t\t\t Print current temperatures of all CPU cores")
+    print_stdout("-t\t\t Print current temperatures of all hardware threads")
     print_stdout("-f\t\t Print current temperatures in Fahrenheit")
     print_stdout("")
     examples()
@@ -412,7 +412,7 @@ end
 
 if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
     print_stdout(likwid.hline)
-    print_stdout("Current core temperatures:");
+    print_stdout("Current HW thread temperatures:");
     for i=1,cputopo["numSockets"] do
         local tag = "S" .. tostring(i-1)
         for _, domain in pairs(affinity["domains"]) do
@@ -422,9 +422,9 @@ if print_temp and (string.find(cpuinfo["features"],"TM2") ~= nil) then
                     likwid.initTemp(cpuid);
                     if (fahrenheit) then
                         local f = 1.8*tonumber(likwid.readTemp(cpuid))+32
-                        print_stdout(string.format("Socket %d Core %d: %.0f F",i-1,cpuid, f));
+                        print_stdout(string.format("Socket %d HWThread %d: %.0f F",i-1,cpuid, f));
                     else
-                        print_stdout(string.format("Socket %d Core %d: %.0f C",i-1,cpuid, tonumber(likwid.readTemp(cpuid))));
+                        print_stdout(string.format("Socket %d HWThread %d: %.0f C",i-1,cpuid, tonumber(likwid.readTemp(cpuid))));
                     end
                 end
             end

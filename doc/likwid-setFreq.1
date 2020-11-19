@@ -2,7 +2,7 @@
 .SH NAME
 likwid-setFreq \- Mediator for
 .B likwid-setFrequencies(1)
-that performs the actual setting of CPU cores' frequency and governor.
+that performs the actual setting of hardware thread's frequency and governor.
 .SH SYNOPSIS
 .B likwid-setFreq
 
@@ -14,7 +14,7 @@ that performs the actual setting of CPU cores' frequency and governor.
 .B likwid-setFreq
 is a command line application that mediates the request from
 .B likwid-setFrequencies(1)
-because setting a CPU core's frequency and/or governor requires root privileges. When starting the daemon,
+because setting a hardware thread's frequency and/or governor requires root privileges. When starting the daemon,
 it opens a UNIX socket and waits for connects from LIKWID. When the connection is established, the library
 can send commands to
 .B likwid-setFreq

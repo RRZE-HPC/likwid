@@ -97,7 +97,7 @@ For hybrid runs:
 .TP
 .B likwid-mpirun -np 32 -pin M0:0-3_M1:0-3 ./myApp
 .PP
-Will start 32 MPI processes with 2 processes per node. Threads of the first process are pinned to the cores 0-3 in NUMA domain 0 (M0). The OpenMP threads of the second process are pinned to the first four cores in NUMA domain 1 (M1)
+Will start 32 MPI processes with 2 processes per node. Threads of the first process are pinned to the hardware threads 0-3 in NUMA domain 0 (M0). The OpenMP threads of the second process are pinned to the first four hardware threads in NUMA domain 1 (M1)
 .SH BUGS
 When measuring Uncore events it is not possible to select a cpu pin expression
 that covers multiple sockets, e.g. S0:0-1_S0:2@S1:2. This runs two processes,

@@ -56,7 +56,7 @@ local function examples()
     print_stdout("")
     print_stdout("Run 2 processes on each socket and measure the MEM performance group")
     print_stdout("likwid-mpirun -nperdomain S:2 -g MEM ./a.out")
-    print_stdout("Only one process on a socket measures the Uncore/RAPL counters, the other one(s) only core-local counters")
+    print_stdout("Only one process on a socket measures the Uncore/RAPL counters, the other one(s) only HWThread-local counters")
     print_stdout("")
 end
 
@@ -86,7 +86,7 @@ local function usage()
     print_stdout("-e, --env <key>=<value>\t Set environment variables for MPI processes")
     print_stdout("--mpiopts <str>\t Hand over options to underlying MPI. Please use proper quoting.")
     print_stdout("")
-    print_stdout("Processes are pinned to physical CPU cores first. For syntax questions see likwid-pin")
+    print_stdout("Processes are pinned to physical hardware threads first. For syntax questions see likwid-pin")
     print_stdout("")
     print_stdout("For CPU selection and which MPI rank measures Uncore counters the system topology")
     print_stdout("of the current system is used. There is currently no possibility to overcome this")
@@ -1564,7 +1564,7 @@ local function parseOutputFile(filename)
                 table.remove(linelist,1)
                 table.remove(linelist,1)
                 for _, cpustr in pairs(linelist) do
-                    local test = tonumber(cpustr:match("Core (%d+)"))
+                    local test = tonumber(cpustr:match("HWThread (%d+)"))
                     if test ~= nil then
                         for _cpu in pairs(cpulist) do
                             if tonumber(cpu) == test then test = -1 end
@@ -1675,7 +1675,7 @@ local function parseMarkerOutputFile(filename)
                 linelist = likwid.stringsplit(line,",")
                 table.remove(linelist,1)
                 for _, cpustr in pairs(linelist) do
-                    if cpustr:match("Core %d+") then
+                    if cpustr:match("HWThread %d+") then
                         local test = tonumber(cpustr:match("Core (%d+)"))
                         if test ~= nil then
                             for _,cpu in pairs(cpulist) do

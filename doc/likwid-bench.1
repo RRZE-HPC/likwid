@@ -110,7 +110,7 @@ benchmark on socket 0 (
 .PP
 Since no
 .B <num_threads>
-is given in the workload expression, each core of socket 0 gets one thread. The workload is split up between all threads and the number of iterations is determined automatically.
+is given in the workload expression, each hardware thread of socket 0 gets one application thread. The workload is split up between all threads and the number of iterations is determined automatically.
 .IP 2. 4
 Run the
 .B triad
@@ -127,7 +127,7 @@ threads on the socket 0 (
 .PP
 Assuming socket 0 (
 .B S0
-) has 2 physical cores with SMT enabled, hence in total 4 hardware threads, one thread is assigned to each physical core of socket 0.
+) has 2 physical hardware threads with SMT enabled, hence in total 4 hardware threads, one thread is assigned to each physical hardware thread of socket 0.
 .IP 3. 4
 Run the
 .B update
