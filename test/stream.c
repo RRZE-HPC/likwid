@@ -145,8 +145,7 @@ int main(int argn, char** argc)
         for (int k=0; k<ITER; k++)
         {
             LIKWID_MARKER_START("copy");
-#pragma simd
-#pragma omp for
+#pragma omp for simd
             for (int j=0; j<SIZE; j++)
             {
                 c[j] = a[j];
@@ -164,8 +163,7 @@ int main(int argn, char** argc)
         {
 
             LIKWID_MARKER_START("scale");
-#pragma simd
-#pragma omp for
+#pragma omp for simd
             for (int j=0; j<SIZE; j++)
             {
                 b[j] = scalar * c[j];
@@ -183,8 +181,7 @@ int main(int argn, char** argc)
         {
 
             LIKWID_MARKER_START("add");
-#pragma simd
-#pragma omp for
+#pragma omp for simd
             for (int j=0; j<SIZE; j++)
             {
                 c[j] = a[j] + b[j];
@@ -203,8 +200,7 @@ int main(int argn, char** argc)
         {
 
             LIKWID_MARKER_START("triad");
-#pragma simd
-#pragma omp for
+#pragma omp for simd
             for (int j=0; j<SIZE; j++)
             {
 
