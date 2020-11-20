@@ -5,13 +5,13 @@
  *
  *      Description:  Header File procfs based PCI lookup backend
  *
- *      Version:   5.1
- *      Released:  16.11.2020
+ *      Version:   5.1.0
+ *      Released:  20.11.2020
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2020 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software

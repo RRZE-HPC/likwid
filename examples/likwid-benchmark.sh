@@ -7,13 +7,13 @@
 # *
 # *      Description:  Script that collects current system settings
 # *
- *      Version:   5.1
- *      Released:  16.11.2020
+ *      Version:   5.1.0
+ *      Released:  20.11.2020
 # *
 # *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
 # *      Project:  likwid
 # *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2020 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
@@ -28,4 +28,4 @@
  *      this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * =======================================================================================
- *      Version:   5.1
+ *      Version:   5.1.0

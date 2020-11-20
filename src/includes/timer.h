@@ -10,13 +10,13 @@
  *      with rdtsc of 100 cycles in the worst case. Therefore sensible
  *      measurements should be over 1000 cycles.
  *
- *      Version:   5.1
- *      Released:  16.11.2020
+ *      Version:   5.1.0
+ *      Released:  20.11.2020
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2015 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2020 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
