@@ -34,7 +34,7 @@ package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 local likwid = require("likwid")
 
 print_stdout = print
-print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
+print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(tostring(v) .. "\n") end end
 
 sys_base_path = "/sys/devices/system/cpu"
 set_command = "<INSTALLED_PREFIX>/sbin/likwid-setFreq"
@@ -125,9 +125,16 @@ function get_base_freq()
     f = io.open("/sys/devices/system/cpu/cpu0/cpufreq/base_frequency", "r")
     if f ~= nil then
         out = f:read("*a")
-	freq = tonumber(out)
+        freq = tonumber(out)
         f:close()
-	return freq
+        return freq
+    end
+    f = io.open("/sys/devices/system/cpu/cpu0/cpufreq/bios_limit", "r")
+    if f ~= nil then
+        out = f:read("*a")
+        freq = tonumber(out)
+        f:close()
+        return freq
     end
     f = io.open("/proc/cpuinfo", "r")
     if f ~= nil then
@@ -154,7 +161,7 @@ do_ureset = false
 set_turbo = false
 turbo = 0
 driver = nil
-base_freq = get_base_freq()
+base_freq = nil
 
 if #arg == 0 then
     usage()
@@ -262,6 +269,15 @@ for i, dom in pairs(affinity["domains"]) do
             end
         end
     end
+end
+
+if cpuinfo["clock"] > 0 then
+    base_freq = cpuinfo["clock"] * 1.E-03
+else
+    base_freq = get_base_freq()
+end
+if not base_freq then
+    base_freq = likwid.getCpuClock() * 1.E-03
 end
 
 likwid.initFreq()
@@ -448,7 +464,7 @@ if min_u_freq and max_u_freq and max_u_freq < min_u_freq then
     os.exit(1)
 end
 
-if max_freq and (likwid.getTurbo(cpulist[1]) == 1 or set_turbo) and tonumber(max_freq) <= base_freq then
+if max_freq and (likwid.getTurbo(cpulist[1]) == 1 or (set_turbo and turbo == 1)) and tonumber(max_freq) < base_freq then
     print_stderr("ERROR: Setting maximal CPU frequency below base CPU frequency with activated Turbo mode is not supported.")
     likwid.finalizeFreq()
     os.exit(1)
