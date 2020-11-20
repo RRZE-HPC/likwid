@@ -1,9 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  voltage.h
+ *      Filename:  voltage.c
  *
- *      Description:  Header File Voltage Module.
+ *      Description:  Implementation of the Voltage Module.
  *                    Implements Intel Core Voltage Interface.
  *
  *      Version:   <VERSION>

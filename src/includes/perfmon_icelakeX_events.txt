@@ -1,6 +1,6 @@
 # =======================================================================================
 #
-#      Filename:  perfmon_icelake_events.txt
+#      Filename:  perfmon_icelakeX_events.txt
 #
 #      Description:  Event list for Intel Icelake X
 #
