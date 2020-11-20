@@ -111,7 +111,7 @@ Documentation
 For a detailed  documentation on the usage of the tools have a look at the
 html documentation build with doxygen. Call
 
-make docs
+`make docs`
 
 or after installation, look at the man pages.
 
