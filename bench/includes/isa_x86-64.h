@@ -139,11 +139,11 @@ int loopfooter(struct bstrList* code, char* loopname, int step)
     bstring line;
     if (loopname)
     {
-        line = bformat("jl %sb", loopname);
+        line = bformat("jl %s", loopname);
     }
     else
     {
-        line = bformat("jl kernelfunctionloopb");
+        line = bformat("jl kernelfunctionloop");
     }
     bstring bstep = bformat("add GPR1, %d", step);
     bstrListAdd(code, bstep);
