@@ -64,17 +64,24 @@ int skl_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 int perfmon_init_skylake(int cpu_id)
 {
     int ret = 0;
+
     lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
-    ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL);
-    if (ret != 0)
+
+    uint64_t misc_enable = 0x0;
+    ret = HPMread(cpu_id, MSR_DEV, MSR_IA32_MISC_ENABLE, &misc_enable);
+    if (ret == 0 && testBit(misc_enable, 7) && (testBit(misc_enable, 12) == 0))
     {
-        ERROR_PRINT(Cannot zero %s (0x%X), str(MSR_PEBS_ENABLE), MSR_PEBS_ENABLE);
-    }
-    ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_FRONTEND, 0x0ULL);
-    if (ret != 0)
-    {
-        ERROR_PRINT(Cannot zero %s (0x%X), str(MSR_PEBS_FRONTEND), MSR_PEBS_FRONTEND);
+        ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL);
+        if (ret != 0)
+        {
+            ERROR_PRINT(Cannot zero %s (0x%X), str(MSR_PEBS_ENABLE), MSR_PEBS_ENABLE);
+        }
+        ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_FRONTEND, 0x0ULL);
+        if (ret != 0)
+        {
+            ERROR_PRINT(Cannot zero %s (0x%X), str(MSR_PEBS_FRONTEND), MSR_PEBS_FRONTEND);
+        }
     }
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
