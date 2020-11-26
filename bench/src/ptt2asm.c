@@ -444,43 +444,51 @@ static int prepare_code(struct bstrList* code)
     return 0;
 }
 
-
-struct bstrList* dynbench_getall()
+static int dynbench_getall_folder(char *path, struct bstrList** benchmarks)
 {
-    int totalgroups = 0;
-    struct bstrList* list = NULL;
+    int files = 0;
     DIR *dp = NULL;
     struct dirent *ep = NULL;
     DIR * (*ownopendir)(const char* folder) = &opendir;
     int (*ownaccess)(const char*, int) = &access;
 
-    bstring path = bformat("%s/.likwid/bench/%s", getenv("HOME"), ARCHNAME);
-
-    if (!ownaccess(bdata(path), R_OK|X_OK))
+    if (!ownaccess(path, R_OK|X_OK))
     {
-        dp = ownopendir(bdata(path));
+        dp = ownopendir(path);
         if (dp != NULL)
         {
             while ((ep = readdir(dp)))
             {
-                if (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".ptt", 4) == 0)
+                if ( (strncmp(&(ep->d_name[strlen(ep->d_name)-4]), ".ptt", 4) == 0))
                 {
-                    if (!list) list = bstrListCreate();
-                    totalgroups++;
+                    files++;
                     bstring dname = bfromcstr(ep->d_name);
                     btrunc(dname, blength(dname)-4);
-                    bstrListAdd(list, dname);
+                    bstrListAdd(*benchmarks, dname);
                     bdestroy(dname);
                 }
             }
             closedir(dp);
         }
-        else
-        {
-            fprintf(stderr, "Failed to enter folder %s\n", bdata(path));
-        }
     }
-    bdestroy(path);
+    return files;
+}
+
+struct bstrList* dynbench_getall()
+{
+    int totalfiles = 0;
+
+    struct bstrList* list = bstrListCreate();
+
+    bstring home = bformat("%s/.likwid/bench/%s", getenv("HOME"), ARCHNAME);
+    totalfiles += dynbench_getall_folder(bdata(home), &list);
+    bdestroy(home);
+
+    char cwd[200];
+    if (getcwd(cwd, 200) != NULL)
+    {
+        totalfiles += dynbench_getall_folder(cwd, &list);
+    }
     return list;
 }
 
@@ -547,10 +555,12 @@ static int compile_file(bstring compiler, bstring flags, bstring asmfile, bstrin
             fprintf(stderr, "%s\n", bdata(bstdout));
         }
         exitcode = pclose(fp);
+        fprintf(stderr, "CMD %s\n", bdata(cmd));
     }
     else
     {
         exitcode = errno;
+        fprintf(stderr, "CMD %s\n", bdata(cmd));
     }
     bdestroy(cmd);
     bdestroy(bstdout);
@@ -588,12 +598,25 @@ int dynbench_test(bstring testname)
 {
     int exist = 0;
     char* home = getenv("HOME");
+    char pwd[100];
+    bstring path;
     if (!home)
     {
         fprintf(stderr, "Failed to get $HOME from environment\n");
         return exist;
     }
-    bstring path = bformat("%s/.likwid/bench/%s/%s.ptt", home, ARCHNAME, bdata(testname));
+    if (getcwd(pwd, 100) == NULL)
+    {
+        fprintf(stderr, "Failed to get current working directory\n");
+        return exist;
+    }
+    path = bformat("%s/.likwid/bench/%s/%s.ptt", home, ARCHNAME, bdata(testname));
+    if (!access(bdata(path), R_OK))
+    {
+        exist = 1;
+    }
+    bdestroy(path);
+    path = bformat("%s/%s.ptt", pwd, bdata(testname));
     if (!access(bdata(path), R_OK))
     {
         exist = 1;
@@ -607,137 +630,149 @@ int dynbench_load(bstring testname, TestCase **testcase, char* tmpfolder, char *
     int err = -1;
     TestCase *test = NULL;
     char* home = getenv("HOME");
+    char pwd[100];
+    bstring folder = NULL;
     if (!home)
     {
         fprintf(stderr, "Failed to get $HOME from environment\n");
         return err;
     }
-    bstring pttfile = bformat("%s/.likwid/bench/%s/%s.ptt", home, ARCHNAME, bdata(testname));
-    if (!access(bdata(pttfile), R_OK))
+    if (getcwd(pwd, 100) == NULL)
     {
-        struct bstrList* code = analyse_ptt(pttfile, &test);
-        if (code && test)
+        fprintf(stderr, "Failed to get current working directory\n");
+        return err;
+    }
+
+    bstring pttfile = bformat("%s/%s.ptt", pwd, bdata(testname));
+    if (access(bdata(pttfile), R_OK))
+    {
+        bdestroy(pttfile);
+        pttfile = bformat("%s/.likwid/bench/%s/%s.ptt", home, ARCHNAME, bdata(testname));
+        if (access(bdata(pttfile), R_OK))
         {
-            test->dlhandle = NULL;
-            test->kernel = NULL;
-            test->name = malloc((blength(testname)+2) * sizeof(char));
-            if (test->name)
+            fprintf(stderr, "Cannot open ptt file %s.ptt in CWD or %s/.likwid/bench/%s\n", bdata(testname), home, ARCHNAME);
+            bdestroy(pttfile);
+            return err;
+        }
+    }
+
+    struct bstrList* code = analyse_ptt(pttfile, &test);
+    if (code && test)
+    {
+        test->dlhandle = NULL;
+        test->kernel = NULL;
+        test->name = malloc((blength(testname)+2) * sizeof(char));
+        if (test->name)
+        {
+            int ret = snprintf(test->name, blength(testname)+1, "%s", bdata(testname));
+            if (ret > 0)
             {
-                int ret = snprintf(test->name, blength(testname)+1, "%s", bdata(testname));
-                if (ret > 0)
+                test->name[ret] = '\0';
+            }
+            if (tmpfolder && compilers)
+            {
+                pid_t pid = getpid();
+                bstring buildfolder = bformat("%s/%ld", tmpfolder, pid);
+                if (mkdir(bdata(buildfolder), 0700) == 0)
                 {
-                    test->name[ret] = '\0';
-                }
-                if (tmpfolder && compilers)
-                {
-                    pid_t pid = getpid();
-                    bstring buildfolder = bformat("%s/%ld", tmpfolder, pid);
-                    if (mkdir(bdata(buildfolder), 0700) == 0)
+                    int asm_written = 0;
+                    bstring asmfile = bformat("%s/%s.S", bdata(buildfolder), bdata(testname));
+
+                    struct bstrList* asmb = parse_asm(test, code);
+                    if (asmb)
                     {
-                        int asm_written = 0;
-                        bstring asmfile = bformat("%s/%s.S", bdata(buildfolder), bdata(testname));
-
-                        struct bstrList* asmb = parse_asm(test, code);
-                        if (asmb)
+                        prepare_code(asmb);
+                        if (write_asm(asmfile, asmb) != 0)
                         {
-                            prepare_code(asmb);
-                            if (write_asm(asmfile, asmb) != 0)
-                            {
-                                fprintf(stderr, "Failed to write assembly to file %s\n", bdata(asmfile));
-                            }
-                            else
-                            {
-                                asm_written = 1;
-                            }
-                            bstrListDestroy(asmb);
+                            fprintf(stderr, "Failed to write assembly to file %s\n", bdata(asmfile));
                         }
                         else
                         {
-                            fprintf(stderr, "Cannot parse assembly\n");
+                            asm_written = 1;
                         }
-
-                        bstring candidates = bfromcstr(compilers);
-                        bstring compiler = get_compiler(candidates);
-                        if (asm_written && compiler)
-                        {
-                            int cret = 0;
-                            bstring cflags;
-                            if (compileflags)
-                            {
-                                cflags = bfromcstr(compileflags);
-                            }
-                            else
-                            {
-                                cflags = bfromcstr("");
-                            }
-                            bstring objfile = bformat("%s/%s.o", bdata(buildfolder), bdata(testname));
-                            cret = compile_file(compiler, cflags, asmfile, objfile);
-                            if (cret == 0)
-                            {
-                                cret = open_function(objfile, test);
-                                if (cret == 0)
-                                {
-                                    err = 0;
-                                    *testcase = test;
-                                }
-                                else
-                                {
-                                    fprintf(stderr, "Cannot load function %s from %s\n", bdata(testname), bdata(objfile));
-                                    err = cret;
-                                }
-                            }
-                            else
-                            {
-                                fprintf(stderr, "Cannot compile file %s to %s\n", bdata(asmfile), bdata(objfile));
-                                err = cret;
-                            }
-                            bdestroy(cflags);
-                            bdestroy(objfile);
-                        }
-                        else
-                        {
-                            fprintf(stderr, "Cannot find any compiler %s\n", bdata(buildfolder));
-                            err = -1;
-                        }
-                        bdestroy(candidates);
-                        bdestroy(compiler);
-                        bdestroy(asmfile);
-
-
+                        bstrListDestroy(asmb);
                     }
                     else
                     {
-                        fprintf(stderr, "Cannot create temporary directory %s\n", bdata(buildfolder));
-                        err = errno;
+                        fprintf(stderr, "Cannot parse assembly\n");
                     }
-                    bdestroy(buildfolder);
+
+                    bstring candidates = bfromcstr(compilers);
+                    bstring compiler = get_compiler(candidates);
+                    if (asm_written && compiler)
+                    {
+                        int cret = 0;
+                        bstring cflags;
+                        if (compileflags)
+                        {
+                            cflags = bfromcstr(compileflags);
+                        }
+                        else
+                        {
+                            cflags = bfromcstr("");
+                        }
+                        bstring objfile = bformat("%s/%s.o", bdata(buildfolder), bdata(testname));
+                        cret = compile_file(compiler, cflags, asmfile, objfile);
+                        if (cret == 0)
+                        {
+                            cret = open_function(objfile, test);
+                            if (cret == 0)
+                            {
+                                err = 0;
+                                *testcase = test;
+                            }
+                            else
+                            {
+                                fprintf(stderr, "Cannot load function %s from %s\n", bdata(testname), bdata(objfile));
+                                err = cret;
+                            }
+                        }
+                        else
+                        {
+                            fprintf(stderr, "Cannot compile file %s to %s\n", bdata(asmfile), bdata(objfile));
+                            err = cret;
+                        }
+                        bdestroy(cflags);
+                        bdestroy(objfile);
+                    }
+                    else
+                    {
+                        fprintf(stderr, "Cannot find any compiler %s\n", bdata(buildfolder));
+                        err = -1;
+                    }
+                    bdestroy(candidates);
+                    bdestroy(compiler);
+                    bdestroy(asmfile);
+
+
                 }
                 else
                 {
-                    err = 0;
-                    *testcase = test;
+                    fprintf(stderr, "Cannot create temporary directory %s\n", bdata(buildfolder));
+                    err = errno;
                 }
+                bdestroy(buildfolder);
             }
             else
             {
-                fprintf(stderr, "Failed to allocate space for the testname\n");
-                err = -ENOMEM;
+                err = 0;
+                *testcase = test;
             }
-            bstrListDestroy(code);
-
         }
         else
         {
-            fprintf(stderr, "Cannot read ptt file %s\n", bdata(pttfile));
-            err = -EPERM;
+            fprintf(stderr, "Failed to allocate space for the testname\n");
+            err = -ENOMEM;
         }
+        bstrListDestroy(code);
 
     }
     else
     {
-        fprintf(stderr, "Cannot open ptt file %s\n", bdata(pttfile));
-        err = -ENOENT;
+        fprintf(stderr, "Cannot read ptt file %s\n", bdata(pttfile));
+        err = -EPERM;
     }
+
     bdestroy(pttfile);
 
     return err;
