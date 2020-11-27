@@ -10,7 +10,8 @@ our hands to test them properly.
 
 [LIKWID Playlist (YouTube)](https://www.youtube.com/playlist?list=PLxVedhmuwLq2CqJpAABDMbZG8Whi7pKsk)
 
-[![Build Status](https://travis-ci.com/RRZE-HPC/likwid.svg?branch=master)](https://travis-ci.com/github/RRZE-HPC/likwid) [![DOI](https://zenodo.org/badge/35045238.svg)](https://zenodo.org/badge/latestdoi/35045238)
+[![Build Status](https://travis-ci.com/RRZE-HPC/likwid.svg?branch=master)](https://travis-ci.com/github/RRZE-HPC/likwid)
+[![LIKWID DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4275676.svg)](https://doi.org/10.5281/zenodo.4275676) [![Latest Release DOI](https://zenodo.org/badge/35045238.svg)](https://zenodo.org/badge/latestdoi/35045238)
 
 It consists of:
 
