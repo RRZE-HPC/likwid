@@ -81,6 +81,7 @@ static RegisterMap skylake_counter_map[NUM_COUNTERS_SKYLAKE] = {
     {"MBOX0C2", PMC31, MBOX0, 0x0, 0x2, 0, PCI_IMC_DEVICE_0_CH_0},
     {"MBOX0TMP0", PMC32, MBOX0TMP, 0x0, 0x3, 0, PCI_IMC_DEVICE_0_CH_0},
     {"MBOX0TMP1", PMC33, MBOX0TMP, 0x0, 0x4, 0, PCI_IMC_DEVICE_0_CH_0},
+    /* PERF */
     {"MPERF", PMC34, PERF, 0, MSR_MPERF, 0, 0, EVENT_OPTION_NONE_MASK},
     {"APERF", PMC35, PERF, 0, MSR_APERF, 0, 0, EVENT_OPTION_NONE_MASK},
     {"PPERF", PMC36, PERF, 0, MSR_PPERF, 0, 0, EVENT_OPTION_NONE_MASK},
@@ -106,4 +107,18 @@ static BoxMap skylake_box_map[NUM_UNITS] = {
 static PciDevice skylake_pci_devices[MAX_NUM_PCI_DEVICES] = {
  [MSR_DEV] = {NODEVTYPE, "", "MSR", ""},
  [PCI_IMC_DEVICE_0_CH_0] = {IMC, "00.0", "MMAP_IMC_DEVICE", "MBOX0", 0x0},
+};
+
+static char* skylake_translate_types[NUM_UNITS] = {
+    [FIXED] = "/sys/bus/event_source/devices/cpu",
+    [PERF] = "/sys/bus/event_source/devices/msr",
+    [PMC] = "/sys/bus/event_source/devices/cpu",
+    [MBOX0] = "/sys/bus/event_source/devices/uncore_imc",
+    [CBOX0] = "/sys/bus/event_source/devices/uncore_cbox_0",
+    [CBOX1] = "/sys/bus/event_source/devices/uncore_cbox_1",
+    [CBOX2] = "/sys/bus/event_source/devices/uncore_cbox_2",
+    [CBOX3] = "/sys/bus/event_source/devices/uncore_cbox_3",
+    [UBOX] = "/sys/bus/event_source/devices/uncore_arb",
+    [UBOXFIX] = "/sys/bus/event_source/devices/uncore_arb",
+    [POWER] = "/sys/bus/event_source/devices/power",
 };

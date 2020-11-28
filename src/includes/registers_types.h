@@ -322,7 +322,7 @@ static char* RegisterTypeNames[MAX_UNITS] = {
         (eventset->regTypeMask1 & (REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)))
 
 #define MEASURE_UNCORE(eventset) \
-        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(POWER)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4)
+        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(PERF)|REG_TYPE_MASK(POWER)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4)
 
 
 typedef struct {
