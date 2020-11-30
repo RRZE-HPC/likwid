@@ -146,6 +146,11 @@ access_x86_rdpmc_init(const int cpu_id)
         rdpmc_works_fixed = test_rdpmc(cpu_id, (1<<30), 0);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED counters returned %d, rdpmc_works_fixed);
     }
+    if (rdpmc_works_llc < 0)
+    {
+        rdpmc_works_llc = test_rdpmc(cpu_id, 0xA, 0);
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for L3 counters returned %d, rdpmc_works_llc);
+    }
     return 0;
 }
 
@@ -159,7 +164,7 @@ access_x86_rdpmc_finalize(const int cpu_id)
 int
 access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
 {
-    int ret;
+    int ret = 0;
 
     switch(reg)
     {
@@ -193,6 +198,44 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
                 if (ret)
                 {
                     rdpmc_works_fixed = 0;
+                    ret = -EAGAIN;
+                }
+            }
+            break;
+        case MSR_AMD17_L3_PMC0:
+        case MSR_AMD17_L3_PMC1:
+        case MSR_AMD17_L3_PMC2:
+        case MSR_AMD17_L3_PMC3:
+        case MSR_AMD17_L3_PMC4:
+        case MSR_AMD17_L3_PMC5:
+            if (rdpmc_works_llc == 1)
+            {
+                int index = (reg - MSR_PERF_FIXED_CTR0)/2;
+
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read AMD L3 counter with RDPMC instruction with index 0x%X, 0xA + index);
+                ret = __rdpmc(cpu_id, 0xA + index, data);
+                if (ret)
+                {
+                    rdpmc_works_llc = 0;
+                    ret = -EAGAIN;
+                }
+            }
+            break;
+        case MSR_AMD17_2_DF_PMC0:
+        case MSR_AMD17_2_DF_PMC1:
+        case MSR_AMD17_2_DF_PMC2:
+        case MSR_AMD17_2_DF_PMC3:
+        case MSR_AMD17_2_DF_PMC4:
+        case MSR_AMD17_2_DF_PMC5:
+            if (rdpmc_works_mem == 1)
+            {
+                int index = (reg - MSR_AMD17_2_DF_PMC0)/2;
+
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read AMD DF counter with RDPMC instruction with index 0x%X, 0x6 + index);
+                ret = __rdpmc(cpu_id, 0x6 + index, data);
+                if (ret)
+                {
+                    rdpmc_works_mem = 0;
                     ret = -EAGAIN;
                 }
             }
