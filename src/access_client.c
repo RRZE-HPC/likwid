@@ -53,6 +53,10 @@
 #include <configuration.h>
 #include <affinity.h>
 
+#if defined(__x86_64__) || defined(__i386__)
+#include <access_x86_rdpmc.h>
+#endif
+
 #define gettid() syscall(SYS_gettid)
 
 /* #####   VARIABLES  -  LOCAL TO THIS SOURCE FILE   ###################### */
@@ -229,6 +233,7 @@ access_client_init(int cpu_id)
             pthread_mutex_init(&cpuLocks[i], NULL);
         }
     }
+    access_x86_rdpmc_init(cpu_id);
     if (masterPid != 0 && gettid() == masterPid)
     {
         return 0;
@@ -311,6 +316,12 @@ access_client_read(PciDeviceIndex dev, const int cpu_id, uint32_t reg, uint64_t 
     {
         record.cpu = affinity_thread2socket_lookup[cpu_id];
         record.device = dev;
+    }
+    else
+    {
+#if defined(__x86_64__) || defined(__i386__)
+        access_x86_rdpmc_read(cpu_id, reg, data);
+#endif
     }
     if (socket != -1)
     {
@@ -467,6 +478,7 @@ access_client_finalize(int cpu_id)
         globalSocket = -1;
     }
     masterPid = 0;
+    access_x86_rdpmc_finalize(cpu_id);
 }
 
 int
