@@ -225,8 +225,6 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
         case MSR_AMD17_2_DF_PMC1:
         case MSR_AMD17_2_DF_PMC2:
         case MSR_AMD17_2_DF_PMC3:
-        case MSR_AMD17_2_DF_PMC4:
-        case MSR_AMD17_2_DF_PMC5:
             if (rdpmc_works_mem == 1)
             {
                 int index = (reg - MSR_AMD17_2_DF_PMC0)/2;
