@@ -250,7 +250,8 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
     attr->disabled = 1;
     attr->inherit = 1;
     if (translate_types[FIXED] != NULL &&
-        strcmp(translate_types[PMC], translate_types[FIXED]) == 0)
+        strcmp(translate_types[PMC], translate_types[FIXED]) == 0 ||
+        translate_types[PERF] != NULL)
     {
         attr->exclude_kernel = 1;
         attr->exclude_hv = 1;
@@ -261,7 +262,10 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
         }
         if (strcmp(event->name, "CPU_CLK_UNHALTED_CORE") == 0 ||
             strcmp(event->name, "ACTUAL_CPU_CLOCK") == 0 ||
-            strcmp(event->name, "APERF") == 0)
+            strcmp(event->name, "APERF") == 0 ||
+            strcmp(event->name, "MPERF") == 0 ||
+            strcmp(event->name, "PPERF") == 0)
+
         {
             attr->config = PERF_COUNT_HW_CPU_CYCLES;
             ret = 0;
@@ -646,6 +650,14 @@ int perfmon_setupCountersThread_perfevent(
                     continue;
                 }
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_FIXED);
+                break;
+            case PERF:
+                ret = perf_fixed_setup(&attr, index, event);
+                if (ret < 0)
+                {
+                    continue;
+                }
+                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PERF);
                 break;
             case PMC:
                 pmc_lock = 1;
