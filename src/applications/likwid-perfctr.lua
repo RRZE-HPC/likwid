@@ -36,6 +36,7 @@ local likwid = require("likwid")
 
 print_stdout = print
 print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end io.stderr:flush() end
+print_pipe = function(pipe, ...) for k,v in pairs({...}) do pipe:write(v .. "\n") end io.stderr:flush() end
 
 local function version()
     print_stdout(string.format("likwid-perfctr -- Version %d.%d.%d (commit: %s)",likwid.version,likwid.release,likwid.minor,likwid.commit))
@@ -474,19 +475,21 @@ end
 
 if print_events == true then
     local tab = likwid.getEventsAndCounters()
-    print_stdout(string.format("This architecture has %d counters.", #tab["Counters"]))
+    local pager = os.getenv("PAGER") or "less -FIRX"
+    local pipe = assert(io.popen(pager, 'w'))
+    print_pipe(pipe, string.format("This architecture has %d counters.", #tab["Counters"]))
     local outstr = "Counters names: "
-    print_stdout("Counter tags(name, type<, options>):")
+    print_pipe(pipe, "Counter tags(name, type<, options>):")
     for _, counter in pairs(tab["Counters"]) do
         outstr = string.format("%s, %s", counter["Name"], counter["TypeName"]);
         if counter["Options"]:len() > 0 then
             outstr = outstr .. string.format(", %s",counter["Options"])
         end
-        print_stdout(outstr)
+        print_pipe(pipe, outstr)
     end
-    print_stdout("\n\n")
-    print_stdout(string.format("This architecture has %d events.",#tab["Events"]))
-    print_stdout("Event tags (tag, id, umask, counters<, options>):")
+    print_pipe(pipe, "\n\n")
+    print_pipe(pipe, string.format("This architecture has %d events.",#tab["Events"]))
+    print_pipe(pipe, "Event tags (tag, id, umask, counters<, options>):")
     for _, eventTab in pairs(tab["Events"]) do
         outstr = eventTab["Name"] .. ", "
         outstr = outstr .. string.format("0x%X, 0x%X, ",eventTab["ID"],eventTab["UMask"])
@@ -494,7 +497,7 @@ if print_events == true then
         if #eventTab["Options"] > 0 then
             outstr = outstr .. string.format(", %s",eventTab["Options"])
         end
-        print_stdout(outstr)
+        print_pipe(pipe, outstr)
     end
 ---------------------------
     if gpusSupported and gputopo then
@@ -507,17 +510,18 @@ if print_events == true then
         tab = likwid.getGpuEventsAndCounters()
         for d=0,tab["numDevices"],1 do
             if tab["devices"][d] then
-                print_stdout("\n\n")
-                print_stdout(string.format("The GPUs %d provides %d events.", d, #tab["devices"][d]))
-                print_stdout("You can use as many GPUx counters until you get an error.")
-                print_stdout("Event tags (tag, counters)")
+                print_pipe(pipe, "\n\n")
+                print_pipe(pipe, string.format("The GPUs %d provides %d events.", d, #tab["devices"][d]))
+                print_pipe(pipe, "You can use as many GPUx counters until you get an error.")
+                print_pipe(pipe, "Event tags (tag, counters)")
                 for _,e in pairs(tab["devices"][d]) do
                     outstr = string.format("%s, %s", e["Name"], e["Limit"])
-                    print_stdout(outstr)
+                    print_pipe(pipe, outstr)
                 end
             end
         end
     end
+    pipe:close()
 ---------------------------
     os.exit(0)
 end
