@@ -204,6 +204,12 @@ typedef struct {
     uint64_t    counterData; /*!< \brief Intermediate data from the counters */
     double      lastResult; /*!< \brief Last measurement result*/
     double      fullResult; /*!< \brief Aggregated measurement result */
+#if defined(__x86_64__) || defined(__i386__) || defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
+    uint64_t    _padding[2]; /*!< \brief Padding to one  64B cache line */
+#endif
+#if defined(_ARCH_PPC)
+    uint64_t    _padding[10]; /*!< \brief Padding to one 128B cache line */
+#endif
 } PerfmonCounter;
 
 
