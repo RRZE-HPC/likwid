@@ -141,15 +141,42 @@ access_x86_rdpmc_init(const int cpu_id)
         rdpmc_works_pmc = test_rdpmc(cpu_id, 0, 0);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for PMC counters returned %d, rdpmc_works_pmc);
     }
-    if (rdpmc_works_fixed < 0)
+    if (rdpmc_works_fixed < 0 && cpuid_info.isIntel)
     {
         rdpmc_works_fixed = test_rdpmc(cpu_id, (1<<30), 0);
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for FIXED counters returned %d, rdpmc_works_fixed);
     }
-    if (rdpmc_works_llc < 0)
+    if (rdpmc_works_llc < 0 && (!cpuid_info.isIntel))
     {
-        rdpmc_works_llc = test_rdpmc(cpu_id, 0xA, 0);
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for L3 counters returned %d, rdpmc_works_llc);
+        switch (cpuid_info.family)
+        {
+            case 0x17:
+                rdpmc_works_llc = test_rdpmc(cpu_id, 0xA, 0);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for L3 counters returned %d, rdpmc_works_llc);
+                break;
+            case 0x19:
+                rdpmc_works_llc = test_rdpmc(cpu_id, 0xA, 0);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for L3 counters returned %d, rdpmc_works_llc);
+                break;
+            default:
+                break;
+        }
+    }
+    if (rdpmc_works_mem < 0)
+    {
+        switch (cpuid_info.family)
+        {
+            case 0x17:
+                rdpmc_works_mem = test_rdpmc(cpu_id, 0x6, 0);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for DataFabric counters returned %d, rdpmc_works_mem);
+                break;
+            case 0x19:
+                rdpmc_works_mem = test_rdpmc(cpu_id, 0x6, 0);
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Test for RDPMC for DataFabric counters returned %d, rdpmc_works_mem);
+                break;
+            default:
+                break;
+        }
     }
     return 0;
 }
@@ -159,6 +186,8 @@ access_x86_rdpmc_finalize(const int cpu_id)
 {
     rdpmc_works_pmc = -1;
     rdpmc_works_fixed = -1;
+    rdpmc_works_llc = -1;
+    rdpmc_works_mem = -1;
 }
 
 int
