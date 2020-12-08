@@ -5,8 +5,8 @@
  *
  *      Description:  Utility string routines building upon bstrlib
  *
- *      Version:   4.3.3
- *      Released:  09.11.2018
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
  *      Author:   Jan Treibig (jt), jan.treibig@gmail.com.
  *      Project:  likwid

@@ -1,3 +1,35 @@
+# Changelog 5.1.0
+- Support for Intel Icelake desktop (Core + Uncore)
+- Support for Intel Icelake server (Core only)
+- Support for Intel Tigerlake desktop (Core only)
+- Support for Nvidia GPUs with compute capability >= 7.0 (CUpti Profiling API)
+- Support for Fujitsu A64FX (Core) including SVE assembly benchmarks
+- Support for ARM Neoverse N1 (AWS Graviton 2)
+- Support for AMD Zen3 (Core + Uncore but without any events)
+- Check for Intel HWP
+- Fix for TID filter of Skylake SP LLC filter0 register
+- Fix for Lua 5.1
+- Fix for likwid-mpirun skip masks
+- Fortran90 interface for NvMarkerAPI
+- CPU_is_online check to filter non-usable CPU cores
+- 
+
+# Changelog 5.0.2
+- Fix memory leak in calc_metric()
+- New peakflops benchmarks in likwid-bench
+- Fix for NUMA domain handling properly
+- Improvements for perf_event backend
+- Fix for perfctr and powermeter with perf_event backend
+- Fix for likwid-mpirun for SLURM with cpusets
+- Fix for likwid-setFrequencies in cpusets
+- Update for POWER9 event list
+- Updates for AMD Zen, Zen+ and Zen2 (events, groups)
+- Fix for Intel Uncore events with same name for different devices
+- Fix for file descriptor handling
+- Fix for compilation with GCC10
+- Remove sleep timer warning
+- Update examples C-markerAPI and C-internalMarkerAPI
+
 # Changelog 5.0.1
 - Some fixes for likwid-mpirun
   - Fix for hybrid pinning with multiple hosts

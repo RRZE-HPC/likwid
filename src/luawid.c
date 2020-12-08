@@ -51,6 +51,7 @@
 #include <tree.h>
 #include <access.h>
 #include <bstrlib.h>
+#include <perfmon.h>
 
 #ifdef COLOR
 #include <textcolor.h>
@@ -985,6 +986,7 @@ lua_likwid_getEventsAndCounters(lua_State* L)
     }
     perfmon_init_maps();
     perfmon_check_counter_map(0);
+    char** archTypeNames = getArchRegisterTypeNames();
     lua_newtable(L);
     lua_pushstring(L,"Counters");
     lua_newtable(L);
@@ -1015,7 +1017,14 @@ lua_likwid_getEventsAndCounters(lua_State* L)
         lua_pushinteger(L, (lua_Integer)( counter_map[i-1].type));
         lua_settable(L,-3);
         lua_pushstring(L,"TypeName");
-        lua_pushstring(L, RegisterTypeNames[counter_map[i-1].type]);
+        if (archTypeNames && archTypeNames[counter_map[i-1].type] != NULL)
+        {
+            lua_pushstring(L, archTypeNames[counter_map[i-1].type]);
+        }
+        else
+        {
+            lua_pushstring(L, RegisterTypeNames[counter_map[i-1].type]);
+        }
         lua_settable(L,-3);
         lua_pushstring(L,"Index");
         lua_pushinteger(L, (lua_Integer)(counter_map[i-1].index));
@@ -2155,7 +2164,7 @@ lua_likwid_pinProcess(lua_State* L)
 #ifdef COLOR
             color_on(BRIGHT, COLOR);
 #endif
-            printf("[likwid-pin] Main PID -> core %d - OK",  cpuID);
+            printf("[likwid-pin] Main PID -> hwthread %d - OK",  cpuID);
 #ifdef COLOR
             color_reset();
 #endif
@@ -2183,7 +2192,7 @@ lua_likwid_pinThread(lua_State* L)
 #ifdef COLOR
             color_on(BRIGHT, COLOR);
 #endif
-            printf("[likwid-pin] PID %lu -> core %d - OK", gettid(), cpuID);
+            printf("[likwid-pin] PID %lu -> hwthread %d - OK", gettid(), cpuID);
 #ifdef COLOR
             color_reset();
 #endif
@@ -2903,6 +2912,9 @@ lua_likwid_getGpuTopology(lua_State* L)
         lua_pushstring(L,"name");
         lua_pushstring(L, gpu->name);
         lua_settable(L,-3);
+        lua_pushstring(L,"short");
+        lua_pushstring(L, gpu->short_name);
+        lua_settable(L,-3);
         lua_pushstring(L,"memory");
         lua_pushinteger(L, (lua_Integer)(gpu->mem));
         lua_settable(L,-3);
@@ -3102,9 +3114,12 @@ lua_likwid_getGpuEventsAndCounters(lua_State* L)
                 lua_pushstring(L,"Name");
                 lua_pushstring(L, l->events[j].name);
                 lua_settable(L,-3);
-                lua_pushstring(L,"Description");
-                lua_pushstring(L, l->events[j].desc);
-                lua_settable(L,-3);
+                if (l->events[j].desc)
+                {
+                    lua_pushstring(L,"Description");
+                    lua_pushstring(L, l->events[j].desc);
+                    lua_settable(L,-3);
+                }
                 lua_pushstring(L,"Limit");
                 lua_pushstring(L, l->events[j].limit);
                 lua_settable(L,-3);
@@ -3124,6 +3139,7 @@ lua_likwid_getGpuGroups(lua_State* L)
 {
     int i, ret;
     char** tmp, **infos, **longs;
+    int gpuId = lua_tonumber(L,1);
     if (!gputopology_isInitialized)
     {
         if (topology_gpu_init() == EXIT_SUCCESS)
@@ -3137,7 +3153,7 @@ lua_likwid_getGpuGroups(lua_State* L)
             return 1;
         }
     }
-    ret = nvmon_getGroups(&tmp, &infos, &longs);
+    ret = nvmon_getGroups(gpuId, &tmp, &infos, &longs);
     if (ret > 0)
     {
         lua_newtable(L);

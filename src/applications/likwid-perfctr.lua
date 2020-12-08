@@ -625,7 +625,7 @@ if print_groups == true then
         print_stdout(string.format("No groups defined for %s",cpuinfo["name"]))
     end
     if gpusSupported and gputopo then
-        avail_groups = likwid.getGpuGroups()
+        avail_groups = likwid.getGpuGroups(0)
         if avail_groups then
             local max_len = 0
             for i,g in pairs(avail_groups) do
@@ -700,16 +700,17 @@ if print_info or verbose > 0 then
     P6_FAMILY = 6
     if cpuinfo["family"] == P6_FAMILY and cpuinfo["perf_version"] > 0 then
         print_stdout(likwid.hline)
-        print_stdout(string.format("PERFMON version:\t%u",cpuinfo["perf_version"]))
-        print_stdout(string.format("PERFMON number of counters:\t%u",cpuinfo["perf_num_ctr"]))
-        print_stdout(string.format("PERFMON width of counters:\t%u",cpuinfo["perf_width_ctr"]))
+        print_stdout(string.format("PERFMON version:\t\t\t%u",cpuinfo["perf_version"]))
+        print_stdout(string.format("PERFMON number of counters:\t\t%u",cpuinfo["perf_num_ctr"]))
+        print_stdout(string.format("PERFMON width of counters:\t\t%u",cpuinfo["perf_width_ctr"]))
         print_stdout(string.format("PERFMON number of fixed counters:\t%u",cpuinfo["perf_num_fixed_ctr"]))
     end
     if gpusSupported and gputopo then
         print_stdout(likwid.hline)
         for i=1, gputopo["numDevices"] do
             gpu = gputopo["devices"][i]
-            print_stdout(string.format("NVMON GPU %d Compute capability:\t%d.%d", gpu["id"], gpu["ccapMajor"], gpu["ccapMinor"]))
+            print_stdout(string.format("NVMON GPU %d compute capability:\t%d.%d", gpu["id"], gpu["ccapMajor"], gpu["ccapMinor"]))
+            print_stdout(string.format("NVMON GPU %d short:\t\t%s", gpu["id"], gpu["short"]))
         end
     end
     print_stdout(likwid.hline)
@@ -1004,7 +1005,7 @@ if #event_string_list > 0 then
         for i, cpu in pairs(cpulist) do
             table.insert(clist, tostring(cpu))
         end
-        print("# Cores"..word_delim..table.concat(clist, delim))
+        print("# HWThreads"..word_delim..table.concat(clist, delim))
         for i, gid in pairs(group_ids) do
             local strlist = {"GID"}
             if likwid.getNumberOfMetrics(gid) == 0 then

@@ -43,10 +43,12 @@
 extern char** translate_types;
 static int** cpu_event_fds = NULL;
 static int active_cpus = 0;
-static int paranoid_level = -1;
-static int informed_paranoid = 0;
+static int perf_event_initialized = 0;
+/*static int informed_paranoid = 0;*/
 static int running_group = -1;
 static int perf_event_num_cpus = 0;
+static int perf_disable_uncore = 0;
+static int perf_event_paranoid = -1;
 
 static long
 perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
@@ -67,8 +69,8 @@ int perfevent_paranoid_value()
     fd = fopen("/proc/sys/kernel/perf_event_paranoid", "r");
     if (fd == NULL)
     {
-        fprintf(stderr, "ERROR: Linux kernel has no perf_event support\n");
-        fprintf(stderr, "ERROR: Cannot open file /proc/sys/kernel/perf_event_paranoid\n");
+        errno = EPERM;
+        ERROR_PRINT(Linux kernel has no perf_event support. Cannot access /proc/sys/kernel/perf_event_paranoid);
         return paranoid;
     }
     size_t read = fread(buff, sizeof(char), 100, fd);
@@ -82,25 +84,14 @@ int perfevent_paranoid_value()
 
 int perfmon_init_perfevent(int cpu_id)
 {
-    int paranoid = -1;
-    if (!informed_paranoid)
+    perf_event_paranoid = perfevent_paranoid_value();
+    if (getuid() != 0 && perf_event_paranoid > 2)
     {
-        paranoid_level = perfevent_paranoid_value();
-#if defined(__x86_64__) || defined(__i386__) || defined(_ARCH_PPC)
-        if (paranoid_level > 0 && getuid() != 0)
-        {
-            fprintf(stderr, "WARN: Linux kernel configured with paranoid level %d\n", paranoid_level);
-            fprintf(stderr, "WARN: Paranoid level 0 or root access is required to measure Uncore counters\n");
-        }
-#endif
-#if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
-        if (paranoid_level > 1 && getuid() != 0)
-        {
-            fprintf(stderr, "WARN: Linux kernel configured with paranoid level %d\n", paranoid_level);
-        }
-#endif
-        informed_paranoid = 1;
+        errno = EPERM;
+        ERROR_PRINT(Cannot use performance monitoring with perf_event_paranoid = %d, perf_event_paranoid);
+        return -(cpu_id+1);
     }
+
     lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &numa_lock[affinity_thread2numa_lookup[cpu_id]], cpu_id);
@@ -122,6 +113,7 @@ int perfmon_init_perfevent(int cpu_id)
         active_cpus += 1;
     }
     perf_event_num_cpus = cpuid_topology.numHWThreads;
+    perf_event_initialized = 1;
     return 0;
 }
 
@@ -144,6 +136,8 @@ static char* perfEventOptionNames[] = {
     [EVENT_OPTION_MATCH0] = "offcore_rsp",
     [EVENT_OPTION_MATCH1] = "offcore_rsp",
     [EVENT_OPTION_TID] = "tid_en",
+    [EVENT_OPTION_CID] = "cid",
+    [EVENT_OPTION_SLICE] = "slice",
     [EVENT_OPTION_STATE] = "filter_state",
     [EVENT_OPTION_NID] = "filter_nid",
     [EVENT_OPTION_OPCODE] = "filter_opc",
@@ -484,9 +478,9 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
     int perf_type = 0;
     PERF_EVENT_PMC_OPT_REGS reg = PERF_EVENT_INVAL_REG;
     int start = 0, end = -1;
-    if (paranoid_level > 0 && getuid() != 0)
+    if (perf_event_paranoid > 0 && getuid() != 0)
     {
-        return 1;
+        return EPERM;
     }
     attr->type = 0;
     ret = sprintf(checkfolder, "%s", translate_types[type]);
@@ -590,8 +584,6 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
 }
 
 
-
-
 int perfmon_setupCountersThread_perfevent(
         int thread_id,
         PerfmonEventSet* eventSet)
@@ -603,17 +595,26 @@ int perfmon_setupCountersThread_perfevent(
     int is_uncore = 0;
     pid_t allpid = -1;
     unsigned long allflags = 0;
+    char* env_perf_pid = getenv("LIKWID_PERF_PID");
 
-    if (getenv("LIKWID_PERF_PID") != NULL)
+    if (!perf_event_initialized)
     {
-        allpid = (pid_t)atoi(getenv("LIKWID_PERF_PID"));
+        return -(thread_id+1);
     }
-    else if (paranoid_level > 0 && getuid() != 0)
+    if (env_perf_pid != NULL)
     {
-        fprintf(stderr, "Cannot setup events without PID of executed application because perf_event_paranoid > 0\n");
-        fprintf(stderr, "You can use either --execpid to track the started application or --perfpid <pid> to monitor another application\n");
-        return -((int)thread_id+1);
+        allpid = (pid_t)atoi(env_perf_pid);
     }
+    if (perf_event_paranoid > 0 && getuid() != 0)
+    {
+        if (allpid == -1)
+        {
+            DEBUG_PRINT(DEBUGLEV_INFO, PID of application required. Use LIKWID_PERF_PID env variable or likwid-perfctr options);
+            return -EPERM;
+        }
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Using PID %d for perf_event measurements, allpid);
+    }
+
     if (getenv("LIKWID_PERF_FLAGS") != NULL)
     {
         allflags = strtoul(getenv("LIKWID_PERF_FLAGS"), NULL, 16);
@@ -800,33 +801,49 @@ int perfmon_setupCountersThread_perfevent(
         }
         if (ret == 0)
         {
-            if (!is_uncore || has_lock)
+            pid_t curpid = allpid;
+            if (is_uncore && curpid >= 0)
             {
-                pid_t curpid = allpid;
-                if (is_uncore && curpid >= 0)
-                    curpid = -1;
+                curpid = -1;
+            }
+
+            if (!is_uncore)
+            {
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d, cpu_id, curpid, allflags);
                 cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
-                if (cpu_event_fds[cpu_id][index] < 0)
+            }
+            else if ((perf_disable_uncore == 0) && (has_lock))
+            {
+                if (perf_event_paranoid > 0 && getuid() != 0)
                 {
-                    fprintf(stderr, "Setup of event %s on CPU %d failed: %s\n", event->name, cpu_id, strerror(errno));
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d, cpu_id, curpid, allflags);
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, type %d, attr.type);
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, size %d, attr.size);
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, config 0x%llX, attr.config);
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, read_format %d, attr.read_format);
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, disabled %d, attr.disabled);
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, inherit %d, attr.inherit);
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, pinned %d, attr.pinned);
-                    DEBUG_PRINT(DEBUGLEV_DEVELOP, exclusive %d, attr.exclusive);
-                    continue;
+                    DEBUG_PRINT(DEBUGLEV_INFO, Cannot measure Uncore with perf_event_paranoid value = %d, perf_event_paranoid);
+                    perf_disable_uncore = 1;
                 }
-                if (group_fd < 0)
-                {
-                    group_fd = cpu_event_fds[cpu_id][index];
-                    running_group = group_fd;
-                }
-                eventSet->events[i].threadCounter[thread_id].init = TRUE;
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, perf_event_open: cpu_id=%d pid=%d flags=%d, cpu_id, curpid, allflags);
+                cpu_event_fds[cpu_id][index] = perf_event_open(&attr, curpid, cpu_id, -1, allflags);
+            }
+            else
+            {
+                DEBUG_PRINT(DEBUGLEV_INFO, Unknown perf_event_paranoid value = %d, perf_event_paranoid);
+            }
+            if (cpu_event_fds[cpu_id][index] < 0)
+            {
+                ERROR_PRINT(Setup of event %s on CPU %d failed: %s, event->name, cpu_id, strerror(errno));
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, open error: cpu_id=%d pid=%d flags=%d type=%d config=0x%llX disabled=%d inherit=%d exclusive=%d config2=0x%llX, cpu_id, curpid, allflags, attr.type, attr.config, attr.disabled, attr.inherit, attr.exclusive);
+            }
+            if (group_fd < 0)
+            {
+                group_fd = cpu_event_fds[cpu_id][index];
+                running_group = group_fd;
+            }
+            eventSet->events[i].threadCounter[thread_id].init = TRUE;
+        }
+        else if (ret == EPERM)
+        {
+            if (is_uncore && perf_disable_uncore == 0 && perf_event_paranoid > 0 && getuid() != 0)
+            {
+                DEBUG_PRINT(DEBUGLEV_INFO, Cannot measure Uncore with perf_event_paranoid value = %d, perf_event_paranoid);
+                perf_disable_uncore = 1;
             }
         }
     }
@@ -837,6 +854,10 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
 {
     int ret = 0;
     int cpu_id = groupSet->threads[thread_id].processorId;
+    if (!perf_event_initialized)
+    {
+        return -(thread_id+1);
+    }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
@@ -867,6 +888,10 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
     int ret;
     int cpu_id = groupSet->threads[thread_id].processorId;
     long long tmp = 0;
+    if (!perf_event_initialized)
+    {
+        return -(thread_id+1);
+    }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)
@@ -895,6 +920,10 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
     int ret;
     int cpu_id = groupSet->threads[thread_id].processorId;
     long long tmp = 0;
+    if (!perf_event_initialized)
+    {
+        return -(thread_id+1);
+    }
     for (int i=0;i < eventSet->numberOfEvents;i++)
     {
         if (eventSet->events[i].threadCounter[thread_id].init == TRUE)

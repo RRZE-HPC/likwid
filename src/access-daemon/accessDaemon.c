@@ -5,8 +5,8 @@
  *
  *      Description:  Implementation of access daemon.
  *
- *      Version:   4.3.1
- *      Released:  04.01.2018
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
  *      Authors:  Michael Meier, michael.meier@rrze.fau.de
  *                Jan Treibig (jt), jan.treibig@gmail.com,
@@ -886,6 +886,25 @@ static int allowed_pci_skx(PciDeviceType type, uint32_t reg)
             break;
         default:
             break;
+    }
+    return 0;
+}
+
+static int allowed_icl(uint32_t reg)
+{
+    if (allowed_sandybridge(reg))
+        return 1;
+    else
+    {
+        if (((reg & 0xF00U) == 0x700U) ||
+            ((reg & 0xF00U) == 0xA00U) ||
+            ((reg & 0xF00U) == 0xB00U) ||
+            ((reg & 0xF00U) == 0xE00U) ||
+            ((reg & 0xF00U) == 0xF00U) ||
+            (reg == MSR_PREFETCH_ENABLE) ||
+            (reg == TSX_FORCE_ABORT) ||
+            (reg == MSR_PERF_METRICS))
+            return 1;
     }
     return 0;
 }
@@ -1917,6 +1936,11 @@ int main(void)
                     allowed = allowed_sandybridge;
                     isClientMem = 1;
                 }
+                else if (model == ICELAKE1 || model == ICELAKE2)
+                {
+                    allowed = allowed_icl;
+                    isClientMem = 1;
+                }
                 else if (model == BROADWELL_D)
                 {
                     allowed = allowed_sandybridge;
@@ -1941,6 +1965,10 @@ int main(void)
                     allowed = allowed_skx;
                     allowedPci = allowed_pci_skx;
                     isPCI64 = 1;
+                }
+                else if (model == ICELAKEX1 || model == ICELAKEX2)
+                {
+                    allowed = allowed_icl;
                 }
                 else if ((model == ATOM_SILVERMONT_C) ||
                          (model == ATOM_SILVERMONT_E) ||
@@ -1977,6 +2005,12 @@ int main(void)
                 else
                 {
                     allowed = allowed_amd17;
+                }
+                break;
+            case ZEN3_FAMILY:
+                if (model == ZEN3_RYZEN || model == ZEN3_RYZEN2)
+                {
+                    allowed = allowed_amd17_zen2;
                 }
                 break;
             default:

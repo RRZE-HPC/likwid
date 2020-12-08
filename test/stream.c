@@ -145,8 +145,13 @@ int main(int argn, char** argc)
         for (int k=0; k<ITER; k++)
         {
             LIKWID_MARKER_START("copy");
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #pragma simd
 #pragma omp for
+#endif
+#if defined(__GNUC__) && defined(__INTEL_COMPILER)
+#pragma omp for simd
+#endif
             for (int j=0; j<SIZE; j++)
             {
                 c[j] = a[j];
@@ -164,8 +169,13 @@ int main(int argn, char** argc)
         {
 
             LIKWID_MARKER_START("scale");
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #pragma simd
 #pragma omp for
+#endif
+#if defined(__GNUC__) && defined(__INTEL_COMPILER)
+#pragma omp for simd
+#endif
             for (int j=0; j<SIZE; j++)
             {
                 b[j] = scalar * c[j];
@@ -183,8 +193,13 @@ int main(int argn, char** argc)
         {
 
             LIKWID_MARKER_START("add");
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #pragma simd
 #pragma omp for
+#endif
+#if defined(__GNUC__) && defined(__INTEL_COMPILER)
+#pragma omp for simd
+#endif
             for (int j=0; j<SIZE; j++)
             {
                 c[j] = a[j] + b[j];
@@ -203,8 +218,13 @@ int main(int argn, char** argc)
         {
 
             LIKWID_MARKER_START("triad");
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #pragma simd
 #pragma omp for
+#endif
+#if defined(__GNUC__) && defined(__INTEL_COMPILER)
+#pragma omp for simd
+#endif
             for (int j=0; j<SIZE; j++)
             {
 

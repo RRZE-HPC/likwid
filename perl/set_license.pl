@@ -85,7 +85,7 @@ sub wanted
         $filename = $_;
     }
 
-    if (($filename =~ /^\./) or (-d $filename)) {
+    if (($filename =~ /^\./) or (-d $filename) or (-l $filename)) {
         return;
     }
 

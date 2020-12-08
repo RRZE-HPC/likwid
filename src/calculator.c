@@ -5,8 +5,8 @@
  *
  *      Description:  Infix calculator
  *
- *      Version:   4.2
- *      Released:  22.12.2016
+ *      Version:  <VERSION>
+ *      Released: <DATE>
  *
  *      Author:   Brandon Mills (bm), mills.brandont@gmail.com
  *      Project:  likwid

@@ -156,3 +156,96 @@ likwid_markerresetregion_(char* regionTag, int len)
     free(tmp);
 }
 
+
+
+#ifdef LIKWID_WITH_NVMON
+void __attribute__ ((visibility ("default") ))
+likwid_nvmarkerinit_(void)
+{
+    likwid_gpuMarkerInit();
+}
+
+
+void __attribute__ ((visibility ("default") ))
+likwid_nvmarkerclose_(void)
+{
+    likwid_gpuMarkerClose();
+}
+
+void __attribute__ ((visibility ("default") ))
+likwid_nvmarkernextgroup_(void)
+{
+    likwid_markerNextGroup();
+}
+
+void __attribute__ ((visibility ("default") ))
+likwid_nvmarkerregisterregion_(char* regionTag, int len)
+{
+    char* tmp = (char*) malloc((len+1) * sizeof(char) );
+    strncpy(tmp, regionTag, len * sizeof(char) );
+
+    for (int i=(len-1); len > 0; len--)
+    {
+        if (tmp[i] != ' ') {
+            tmp[i+1] = 0;
+            break;
+        }
+    }
+
+    likwid_gpuMarkerRegisterRegion( tmp );
+    free(tmp);
+}
+
+void __attribute__ ((visibility ("default") ))
+likwid_nvmarkerstartregion_(char* regionTag, int len)
+{
+    char* tmp = (char*) malloc((len+1) * sizeof(char) );
+    strncpy(tmp, regionTag, len * sizeof(char) );
+
+    for (int i=(len-1); len > 0; len--)
+    {
+        if (tmp[i] != ' ') {
+            tmp[i+1] = 0;
+            break;
+        }
+    }
+
+    likwid_gpuMarkerStartRegion( tmp );
+    free(tmp);
+}
+
+void __attribute__ ((visibility ("default") ))
+likwid_nvmarkerstopregion_(char* regionTag, int len)
+{
+    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    strncpy(tmp, regionTag, len * sizeof(char) );
+
+    for (int i=(len-1); len > 0; len--)
+    {
+        if (tmp[i] != ' ') {
+            tmp[i+1] = 0;
+            break;
+        }
+    }
+
+    likwid_gpuMarkerStopRegion( tmp );
+    free(tmp);
+}
+
+void __attribute__ ((visibility ("default") ))
+likwid_nvmarkerresetregion_(char* regionTag, int len)
+{
+    char* tmp = (char*) malloc((len+1) * sizeof(char));
+    strncpy(tmp, regionTag, len * sizeof(char) );
+
+    for (int i=(len-1); len > 0; len--)
+    {
+        if (tmp[i] != ' ') {
+            tmp[i+1] = 0;
+            break;
+        }
+    }
+    likwid_gpuMarkerResetRegion( tmp);
+    free(tmp);
+}
+#endif

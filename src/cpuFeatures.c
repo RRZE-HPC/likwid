@@ -164,7 +164,8 @@ cpuFeatures_update(int cpu)
              (cpuid_info.model == SKYLAKE2) ||
              (cpuid_info.model == SKYLAKEX) ||
              (cpuid_info.model == KABYLAKE1) ||
-             (cpuid_info.model == KABYLAKE2))
+             (cpuid_info.model == KABYLAKE2) ||
+             (cpuid_info.model == CANNONLAKE))
     {
         TEST_FLAG_INV(FEAT_TURBO_MODE,38);
     }
@@ -193,7 +194,12 @@ cpuFeatures_update(int cpu)
             (cpuid_info.model == SKYLAKEX) ||
             (cpuid_info.model == KABYLAKE1) ||
             (cpuid_info.model == KABYLAKE2) ||
-            (cpuid_info.model == ATOM_SILVERMONT_GOLD))
+            (cpuid_info.model == ICELAKE1) ||
+            (cpuid_info.model == ICELAKE2) ||
+            (cpuid_info.model == ICELAKEX1) ||
+            (cpuid_info.model == ICELAKEX2) ||
+            (cpuid_info.model == ATOM_SILVERMONT_GOLD) ||
+            (cpuid_info.model == CANNONLAKE))
     {
         ret = HPMread(cpu, MSR_DEV, MSR_PREFETCH_ENABLE, &flags);
         if (ret != 0)
@@ -367,6 +373,11 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == SKYLAKEX) ||
             (cpuid_info.model == KABYLAKE1) ||
             (cpuid_info.model == KABYLAKE2) ||
+            (cpuid_info.model == CANNONLAKE) ||
+            (cpuid_info.model == ICELAKE1) ||
+            (cpuid_info.model == ICELAKE2) ||
+            (cpuid_info.model == ICELAKEX1) ||
+            (cpuid_info.model == ICELAKEX2) ||
             (cpuid_info.model == ATOM_SILVERMONT_GOLD))
     {
         reg = MSR_PREFETCH_ENABLE;
@@ -523,6 +534,11 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == SKYLAKEX) ||
             (cpuid_info.model == KABYLAKE1) ||
             (cpuid_info.model == KABYLAKE2) ||
+            (cpuid_info.model == CANNONLAKE) ||
+            (cpuid_info.model == ICELAKE1) ||
+            (cpuid_info.model == ICELAKE2) ||
+            (cpuid_info.model == ICELAKEX1) ||
+            (cpuid_info.model == ICELAKEX2) ||
             (cpuid_info.model == ATOM_SILVERMONT_GOLD))
     {
         reg = MSR_PREFETCH_ENABLE;

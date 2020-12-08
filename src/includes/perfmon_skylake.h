@@ -64,37 +64,59 @@ int skl_cbox_nosetup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 int perfmon_init_skylake(int cpu_id)
 {
     int ret = 0;
+
     lock_acquire((int*) &tile_lock[affinity_thread2core_lookup[cpu_id]], cpu_id);
     lock_acquire((int*) &socket_lock[affinity_thread2socket_lookup[cpu_id]], cpu_id);
-    ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL);
-    if (ret != 0)
+
+    uint64_t misc_enable = 0x0;
+    ret = HPMread(cpu_id, MSR_DEV, MSR_IA32_MISC_ENABLE, &misc_enable);
+    if (ret == 0 && testBit(misc_enable, 7) && (testBit(misc_enable, 12) == 0))
     {
-        ERROR_PRINT(Cannot zero MSR_PEBS_ENABLE (0x%X), MSR_PEBS_ENABLE);
+        ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_ENABLE, 0x0ULL);
+        if (ret != 0)
+        {
+            ERROR_PRINT(Cannot zero %s (0x%X), str(MSR_PEBS_ENABLE), MSR_PEBS_ENABLE);
+        }
+        ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_FRONTEND, 0x0ULL);
+        if (ret != 0)
+        {
+            ERROR_PRINT(Cannot zero %s (0x%X), str(MSR_PEBS_FRONTEND), MSR_PEBS_FRONTEND);
+        }
     }
-    ret = HPMwrite(cpu_id, MSR_DEV, MSR_PEBS_FRONTEND, 0x0ULL);
-    if (ret != 0)
+    if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
-        ERROR_PRINT(Cannot zero MSR_PEBS_FRONTEND (0x%X), MSR_PEBS_FRONTEND);
-    }
-    if (cpuid_info.model == SKYLAKEX)
-    {
-        skylake_cbox_setup = skx_cbox_setup;
-        skl_did_cbox_check = 1;
-    }
-    else if ((cpuid_info.model == SKYLAKE1 || cpuid_info.model == SKYLAKE2) &&
-             socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id &&
-             skl_did_cbox_check == 0)
-    {
-        uint64_t data = 0x0ULL;
-        ret = HPMwrite(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, 0x0ULL);
-        ret += HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, &data);
-        ret += HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
-        ret += HPMread(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, &data);
-        if ((ret == 0) && (data == 0x0ULL))
-            skylake_cbox_setup = skl_cbox_setup;
-        else
-            skylake_cbox_setup = skl_cbox_nosetup;
-        skl_did_cbox_check = 1;
+        switch (cpuid_info.model)
+        {
+            case SKYLAKEX:
+                if (skl_did_cbox_check == 0)
+                {
+                    skylake_cbox_setup = skx_cbox_setup;
+                    skl_did_cbox_check = 1;
+                }
+                break;
+            case SKYLAKE1:
+            case SKYLAKE2:
+            case KABYLAKE1:
+            case KABYLAKE2:
+            case CANNONLAKE:
+                if (skl_did_cbox_check == 0)
+                {
+                    uint64_t data = 0x0ULL;
+                    ret = HPMwrite(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, 0x0ULL);
+                    ret += HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, &data);
+                    ret += HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
+                    ret += HPMread(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, &data);
+                    if ((ret == 0) && (data == 0x0ULL))
+                        skylake_cbox_setup = skl_cbox_setup;
+                    else
+                        skylake_cbox_setup = skl_cbox_nosetup;
+                    skl_did_cbox_check = 1;
+                }
+                break;
+            default:
+                skylake_cbox_setup = skl_cbox_nosetup;
+                skl_did_cbox_check = 1;
+        }
     }
     return 0;
 }

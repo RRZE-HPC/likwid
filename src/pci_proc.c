@@ -5,8 +5,8 @@
  *
  *      Description:  Interface to procfs/sysfs for PCI device lookup
  *
- *      Version:   4.3.1
- *      Released:  04.01.2018
+ *      Version:   <VERSION>
+ *      Released:  <DATE>
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@googlemail.com
  *      Project:  likwid

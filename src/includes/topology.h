@@ -103,8 +103,15 @@ struct topology_functions {
 #define KABYLAKE1            0x8EU
 #define KABYLAKE2            0x9EU
 #define CANNONLAKE           0x66U
-#define ICELAKE              0x7EU
+#define ICELAKE1             0x7EU
+#define ICELAKE2             0x7DU
+#define COMETLAKE1           0xA5U
+#define COMETLAKE2           0xA6U
+#define ICELAKEX1            0x6AU
+#define ICELAKEX2            0x6CU
 #define SNOWRIDGEX           0x86U
+#define TIGERLAKE1           0x8CU
+#define TIGERLAKE2           0x8DU
 
 /* Intel MIC */
 #define XEON_PHI           0x01U
@@ -131,9 +138,11 @@ struct topology_functions {
 #define ATHLON64_G2     0x7FU
 #define ZEN_RYZEN       0x01
 #define ZENPLUS_RYZEN   0x08
-#define ZENPLUS_RYZEN2   0x18
+#define ZENPLUS_RYZEN2  0x18
 #define ZEN2_RYZEN      0x31
-#define ZEN2_RYZEN2      0x71
+#define ZEN2_RYZEN2     0x71
+#define ZEN3_RYZEN      0x01
+#define ZEN3_RYZEN2     0x21
 
 /* ARM */
 #define  ARM7L          0x3U
@@ -152,6 +161,7 @@ struct topology_functions {
 #define  NV_DENVER1	0x00U
 #define  NV_DENVER2	0x03U
 #define  APP_XGENE1	0x00U
+#define  ARM_NEOVERSE_N1 0xD0CU
 #define  FUJITSU_A64FX 0x001U
 
 /* ARM vendors */
@@ -175,7 +185,8 @@ struct topology_functions {
 #define  P6_FAMILY        0x6U
 #define  MIC_FAMILY       0xBU
 #define  NETBURST_FAMILY  0xFFU
-#define  ZEN_FAMILY       0x17
+#define  ZEN_FAMILY       0x17U
+#define  ZEN3_FAMILY      0x19U
 #define  K15_FAMILY       0x15U
 #define  K16_FAMILY       0x16U
 #define  K10_FAMILY       0x10U

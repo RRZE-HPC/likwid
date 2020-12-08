@@ -2,23 +2,24 @@
 Introduction
 --------------------------------------------------------------------------------
 
-Likwid is a simple to install and use toolsuite of command line applications
-for performance oriented programmers. It works for Intel, AMD, ARMv8 and POWER9 
-processors on the Linux operating system. There is support for ARMv7 and POWER8
-but there is currently no test machine in our hands to test them properly.
+Likwid is a simple to install and use toolsuite of command line applications and a library
+for performance oriented programmers. It works for Intel, AMD, ARMv8 and POWER9
+processors on the Linux operating system. There is additional support for Nvidia GPUs.
+There is support for ARMv7 and POWER8 but there is currently no test machine in
+our hands to test them properly.
 
 [LIKWID Playlist (YouTube)](https://www.youtube.com/playlist?list=PLxVedhmuwLq2CqJpAABDMbZG8Whi7pKsk)
 
-[![Build Status](https://travis-ci.com/RRZE-HPC/likwid.svg?branch=master)](https://travis-ci.com/github/RRZE-HPC/likwid)
+[![Build Status](https://travis-ci.com/RRZE-HPC/likwid.svg?branch=master)](https://travis-ci.com/github/RRZE-HPC/likwid) [![General LIKWID DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4275676.svg)](https://doi.org/10.5281/zenodo.4275676)
 
 It consists of:
 
 - likwid-topology: print thread, cache and NUMA topology
-- likwid-perfctr: configure and read out hardware performance counters on Intel, AMD and ARMv8 processors
+- likwid-perfctr: configure and read out hardware performance counters on Intel, AMD, ARM and POWER processors and Nvidia GPUs
 - likwid-powermeter: read out RAPL Energy information and get info about Turbo mode steps
 - likwid-pin: pin your threaded application (pthread, Intel and gcc OpenMP to dedicated processors)
-- likwid-bench: Micro benchmarking platform
-- likwid-features: Print and manipulate cpu features like hardware prefetchers
+- likwid-bench: Micro benchmarking platform for CPU architectures
+- likwid-features: Print and manipulate cpu features like hardware prefetchers (x86 only)
 - likwid-genTopoCfg: Dumps topology information to a file
 - likwid-mpirun: Wrapper to start MPI and Hybrid MPI/OpenMP applications (Supports Intel MPI, OpenMPI, MPICH and SLURM)
 - likwid-perfscope: Frontend to the timeline mode of likwid-perfctr, plots live graphs of performance metrics using gnuplot
@@ -57,6 +58,9 @@ Intel
 - Intel Coffeelake
 - Intel Skylake SP
 - Intel Cascadelake SP
+- Intel Icelake
+- Intel Icelake SP
+- Intel Tigerlake (experimental)
 
 AMD
 - AMD K8
@@ -65,16 +69,20 @@ AMD
 - AMD Kabini
 - AMD Zen
 - AMD Zen2
+- AMD Zen3 (limited)
 
 ARM (experimental)
 - ARMv7
 - ARMv8
 - Special support for Marvell Thunder X2
 - Fujitsu A64FX
+- ARM Neoverse N1 (AWS Graviton 2)
 
 POWER (experimental)
 - IBM POWER8
 - IBM POWER9
+
+Nvidia GPUs (experimental)
 
 --------------------------------------------------------------------------------
 Download, Build and Install
@@ -89,17 +97,21 @@ For quick install:
 ```
 $ tar -xjf likwid-<VERSION>.tar.bz2
 $ cd likwid-<VERSION>
-$ vi config.mk (configure build, e.g. change installation prefix)
+$ vi config.mk (configure build, e.g. change installation prefix and architecture flags)
 $ make
 $ sudo make install (sudo required to install the access daemon with proper permissions)
 ```
+
+For ARM builds, the `COMPILER` flag in `config.mk` needs to changed to `GCCARMv8` or `ARMCLANG` (experimental).
+For POWER builds, the `COMPILER` flag in `config.mk` needs to changed to `GCCPOWER` or `XLC` (experimental).
+
 --------------------------------------------------------------------------------
 Documentation
 --------------------------------------------------------------------------------
 For a detailed  documentation on the usage of the tools have a look at the
 html documentation build with doxygen. Call
 
-make docs
+`make docs`
 
 or after installation, look at the man pages.
 

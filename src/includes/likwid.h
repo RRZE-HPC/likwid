@@ -314,9 +314,9 @@ typedef struct {
     int         supportClientmem; /*!< \brief Flag if system has mappable memory controllers */
     uint64_t    featureFlags; /*!< \brief Mask of all features supported by the CPU*/
     uint32_t    perf_version; /*!< \brief Version of Intel's performance monitoring facility */
-    uint32_t    perf_num_ctr; /*!< \brief Number of general purpose core-local performance monitoring counters */
+    uint32_t    perf_num_ctr; /*!< \brief Number of general purpose HWthread-local performance monitoring counters */
     uint32_t    perf_width_ctr; /*!< \brief Bit width of fixed and general purpose counters */
-    uint32_t    perf_num_fixed_ctr; /*!< \brief Number of fixed purpose core-local performance monitoring counters */
+    uint32_t    perf_num_fixed_ctr; /*!< \brief Number of fixed purpose HWthread-local performance monitoring counters */
 } CpuInfo;
 
 /*! \brief Structure with IDs of a HW thread
@@ -330,7 +330,7 @@ typedef struct {
     uint32_t coreId; /*!< \brief ID of CPU core that executes the HW thread */
     uint32_t packageId; /*!< \brief ID of CPU socket containing the HW thread */
     uint32_t apicId; /*!< \brief ID of HW thread retrieved through the Advanced Programmable Interrupt Controller */
-    uint32_t inCpuSet; /*!< \brief ID of HW thread inside the CPU core */
+    uint32_t inCpuSet; /*!< \brief Flag if HW thread is inside the CPUset */
 } HWThread;
 
 /*! \brief Enum of possible caches
@@ -526,7 +526,7 @@ The AffinityDomain data structure describes a single domain in the current syste
 typedef struct {
     bstring tag; /*!< \brief Bstring with the ID for the affinity domain. Currently possible values: N (node), SX (socket/package X), CX (LLC cache domain X) and MX (memory domain X) */
     uint32_t numberOfProcessors; /*!< \brief Number of HW threads in the domain and length of \a processorList */
-    uint32_t numberOfCores; /*!< \brief Number of CPU cores in the domain */
+    uint32_t numberOfCores; /*!< \brief Number of hardware threads in the domain */
     int*  processorList; /*!< \brief List of HW thread IDs in the domain */
 } AffinityDomain;
 
@@ -544,8 +544,8 @@ typedef struct {
     uint32_t numberOfNumaDomains; /*!< \brief Number of NUMA nodes in the system */
     uint32_t numberOfProcessorsPerSocket; /*!< \brief Number of HW threads per socket/package in the system */
     uint32_t numberOfCacheDomains; /*!< \brief Number of LLC caches in the system */
-    uint32_t numberOfCoresPerCache; /*!< \brief Number of HW threads per LLC cache in the system */
-    uint32_t numberOfProcessorsPerCache; /*!< \brief Number of CPU cores per LLC cache in the system */
+    uint32_t numberOfCoresPerCache; /*!< \brief Number of CPU cores per LLC cache in the system */
+    uint32_t numberOfProcessorsPerCache; /*!< \brief Number of hardware threads per LLC cache in the system */
     uint32_t numberOfAffinityDomains; /*!< \brief Number of affinity domains in the current system  and length of \a domains array */
     AffinityDomain* domains; /*!< \brief List of all domains in the system */
 } AffinityDomains;
@@ -702,7 +702,7 @@ extern int perfmon_init(int nrThreads, const int* threadsToCpu) __attribute__ ((
 
 /*! \brief Initialize performance monitoring maps
 
-Initialize the performance monitoring maps for counters, events and Uncore boxes#
+Initialize the performance monitoring maps for counters, events and Uncore boxes
 for the current architecture. topology_init() and numa_init() must be called before calling
 perfmon_init_maps()
 \sa RegisterMap list, PerfmonEvent list and BoxMap list
@@ -1654,98 +1654,98 @@ Initialize cpu frequency module
 @return returns 0 if successfull and 1 if invalid accessmode
 */
 extern int freq_init(void) __attribute__ ((visibility ("default") ));
-/*! \brief Get the current clock frequency of a core
+/*! \brief Get the current clock frequency of a hardware thread
 
-Get the current clock frequency of a core
+Get the current clock frequency of a hardware thread
 @param [in] cpu_id CPU ID
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_getCpuClockCurrent(const int cpu_id ) __attribute__ ((visibility ("default") ));
 
-/*! \brief Get the maximal clock frequency of a core
+/*! \brief Get the maximal clock frequency of a hardware thread
 
-Get the maximal clock frequency of a core
+Get the maximal clock frequency of a hardware thread
 @param [in] cpu_id CPU ID
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_getCpuClockMax(const int cpu_id ) __attribute__ ((visibility ("default") ));
-/*! \brief Get the maximal available clock frequency of a core
+/*! \brief Get the maximal available clock frequency of a hardware thread
 
-Get the maximal clock frequency of a core
+Get the maximal clock frequency of a hardware thread
 @param [in] cpu_id CPU ID
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_getConfCpuClockMax(const int cpu_id) __attribute__ ((visibility ("default") ));
-/*! \brief Set the maximal clock frequency of a core
+/*! \brief Set the maximal clock frequency of a hardware thread
 
-Set the maximal clock frequency of a core
+Set the maximal clock frequency of a hardware thread
 @param [in] cpu_id CPU ID
 @param [in] freq Frequency in kHz
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_setCpuClockMax(const int cpu_id, const uint64_t freq) __attribute__ ((visibility ("default") ));
-/*! \brief Get the minimal clock frequency of a core
+/*! \brief Get the minimal clock frequency of a hardware thread
 
-Get the minimal clock frequency of a core
+Get the minimal clock frequency of a hardware thread
 @param [in] cpu_id CPU ID
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_getCpuClockMin(const int cpu_id ) __attribute__ ((visibility ("default") ));
-/*! \brief Get the minimal available clock frequency of a core
+/*! \brief Get the minimal available clock frequency of a hardware thread
 
-Get the minimal clock frequency of a core
+Get the minimal clock frequency of a hardware thread
 @param [in] cpu_id CPU ID
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_getConfCpuClockMin(const int cpu_id) __attribute__ ((visibility ("default") ));
-/*! \brief Set the minimal clock frequency of a core
+/*! \brief Set the minimal clock frequency of a hardware thread
 
-Set the minimal clock frequency of a core
+Set the minimal clock frequency of a hardware thread
 @param [in] cpu_id CPU ID
 @param [in] freq Frequency in kHz
 @return Frequency or 0 in case of errors
 */
 extern uint64_t freq_setCpuClockMin(const int cpu_id, const uint64_t freq) __attribute__ ((visibility ("default") ));
-/*! \brief De/Activate turbo mode for core
+/*! \brief De/Activate turbo mode for a hardware thread
 
-De/Activate turbo mode for core
+De/Activate turbo mode for a hardware thread
 @param [in] cpu_id CPU ID
 @param [in] turbo (0=off, 1=on)
 @return 1 or 0 in case of errors
 */
 extern int freq_setTurbo(const int cpu_id, int turbo) __attribute__ ((visibility ("default") ));
-/*! \brief Get state of turbo mode for core
+/*! \brief Get state of turbo mode for a hardware thread
 
-Get state of  turbo mode for core
+Get state of turbo mode for a hardware thread
 @param [in] cpu_id CPU ID
 @return 1=Turbo active or 0=Turbo inactive
 */
 extern int freq_getTurbo(const int cpu_id) __attribute__ ((visibility ("default") ));
-/*! \brief Get the frequency governor of a core
+/*! \brief Get the frequency governor of a hardware thread
 
-Get the frequency governor of a core. The returned string must be freed by the caller.
+Get the frequency governor of a hardware thread. The returned string must be freed by the caller.
 @param [in] cpu_id CPU ID
 @return Governor or NULL in case of errors
 */
 extern char * freq_getGovernor(const int cpu_id ) __attribute__ ((visibility ("default") ));
-/*! \brief Set the frequency governor of a core
+/*! \brief Set the frequency governor of a hardware thread
 
-Set the frequency governor of a core.
+Set the frequency governor of a hardware thread.
 @param [in] cpu_id CPU ID
 @param [in] gov Governor
 @return 1 or 0 in case of errors
 */
 extern int freq_setGovernor(const int cpu_id, const char* gov) __attribute__ ((visibility ("default") ));
-/*! \brief Get the available frequencies of a core
+/*! \brief Get the available frequencies of a hardware thread
 
-Get the available frequencies of a core. The returned string must be freed by the caller.
+Get the available frequencies of a hardware thread. The returned string must be freed by the caller.
 @param [in] cpu_id CPU ID
 @return String with available frequencies or NULL in case of errors
 */
 extern char * freq_getAvailFreq(const int cpu_id ) __attribute__ ((visibility ("default") ));
-/*! \brief Get the available frequency governors of a core
+/*! \brief Get the available frequency governors of a hardware thread
 
-Get the available frequency governors of a core. The returned string must be freed by the caller.
+Get the available frequency governors of a hardware thread. The returned string must be freed by the caller.
 @param [in] cpu_id CPU ID
 @return String with available frequency governors or NULL in case of errors
 */
@@ -1818,6 +1818,7 @@ typedef struct {
     int devid; /*!< \brief Device ID  */
     int numaNode; /*!< \brief Closest NUMA domain to the device */
     char* name; /*!< \brief Name of the device */
+    char* short_name; /*!< \brief Short name of the device */
     uint64_t mem; /*!< \brief Total memory of device */
     int ccapMajor; /*!< \brief Major number of device's compute capability */
     int ccapMinor; /*!< \brief Minor number of device's compute capability */
@@ -2045,9 +2046,9 @@ double nvmon_getMetricOfRegionGpu(int region, int metricId, int gpuId) __attribu
 It holds the name, the description and the limitation string for one event.
 */
 typedef struct {
-    char* name; /*! \brief Name of the event */
-    char* desc; /*! \brief Description of the event */
-    char* limit; /*! \brief Limitation string of the event, commonly 'GPU' */
+    char* name; /*!< \brief Name of the event */
+    char* desc; /*!< \brief Description of the event */
+    char* limit; /*!< \brief Limitation string of the event, commonly 'GPU' */
 } NvmonEventListEntry;
 
 /*! \brief Output list from nvmon_getEventsOfGpu with all supported events
@@ -2055,8 +2056,8 @@ typedef struct {
 Output list from nvmon_getEventsOfGpu with all supported events
 */
 typedef struct {
-    int numEvents; /*! \brief Number of events */
-    NvmonEventListEntry *events; /*! \brief List of events */
+    int numEvents; /*!< \brief Number of events */
+    NvmonEventListEntry *events; /*!< \brief List of events */
 } NvmonEventList;
 /** \brief Pointer for exporting the NvmonEventList data structure */
 typedef NvmonEventList* NvmonEventList_t;
@@ -2268,9 +2269,13 @@ char* nvmon_getGroupInfoLong(int groupId) __attribute__ ((visibility ("default")
 
 Checks the configured performance group path for the current GPU and
 returns all found group names
+@param [in] gpuId Get groups for a specific GPU
+@param [out] groups List of group names
+@param [out] shortinfos List of short information string about group
+@param [out] longinfos List of long information string about group
 @return Amount of found performance groups
 */
-int nvmon_getGroups(char*** groups, char*** shortinfos, char*** longinfos) __attribute__ ((visibility ("default") ));
+int nvmon_getGroups(int gpuId, char*** groups, char*** shortinfos, char*** longinfos) __attribute__ ((visibility ("default") ));
 /*! \brief Free all group information (Nvmon)
 
 @param [in] nrgroups Number of groups

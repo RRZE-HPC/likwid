@@ -124,6 +124,13 @@ power_init(int cpuId)
                 case SKYLAKEX:
                 case KABYLAKE1:
                 case KABYLAKE2:
+                case CANNONLAKE:
+                case TIGERLAKE1:
+                case TIGERLAKE2:
+                case ICELAKE1:
+                case ICELAKE2:
+                case ICELAKEX1:
+                case ICELAKEX2:
                     power_info.hasRAPL = 1;
                     numDomains = NUM_POWER_DOMAINS;
                     break;
@@ -142,11 +149,14 @@ power_init(int cpuId)
             }
             break;
         case ZEN_FAMILY:
+        case ZEN3_FAMILY:
             if (cpuid_info.model == ZEN_RYZEN ||
                 cpuid_info.model == ZENPLUS_RYZEN ||
                 cpuid_info.model == ZENPLUS_RYZEN2 ||
                 cpuid_info.model == ZEN2_RYZEN ||
-                cpuid_info.model == ZEN2_RYZEN2)
+                cpuid_info.model == ZEN2_RYZEN2 ||
+                cpuid_info.model == ZEN3_RYZEN ||
+                cpuid_info.model == ZEN3_RYZEN2)
             {
                 cpuid_info.turbo = 0;
                 power_info.hasRAPL = 1;
@@ -165,6 +175,7 @@ power_init(int cpuId)
                     info_regs[i] = 0x0;
                 }
             }
+            break;
     }
 
     perfmon_init_maps();

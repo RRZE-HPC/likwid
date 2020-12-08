@@ -34,7 +34,7 @@ package.path = '<INSTALLED_PREFIX>/share/lua/?.lua;' .. package.path
 local likwid = require("likwid")
 
 print_stdout = print
-print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(v .. "\n") end end
+print_stderr = function(...) for k,v in pairs({...}) do io.stderr:write(tostring(v) .. "\n") end end
 
 sys_base_path = "/sys/devices/system/cpu"
 set_command = "<INSTALLED_PREFIX>/sbin/likwid-setFreq"
@@ -121,10 +121,24 @@ function valid_freq(freq, freq_list, turbofreq)
 end
 
 function get_base_freq()
-    f = io.open("/proc/cpuinfo", "r")
     freq = nil
+    f = io.open("/sys/devices/system/cpu/cpu0/cpufreq/base_frequency", "r")
     if f ~= nil then
-        out = f:read("*a"):match("(%d.%d+)GHz")
+        out = f:read("*a")
+        freq = tonumber(out)
+        f:close()
+        return freq
+    end
+    f = io.open("/sys/devices/system/cpu/cpu0/cpufreq/bios_limit", "r")
+    if f ~= nil then
+        out = f:read("*a")
+        freq = tonumber(out)
+        f:close()
+        return freq
+    end
+    f = io.open("/proc/cpuinfo", "r")
+    if f ~= nil then
+        out = f:read("*a"):match("cpu MHz%s+:%s+(%d+.%d+)")
         freq = tonumber(out)
         f:close()
     end
@@ -147,7 +161,7 @@ do_ureset = false
 set_turbo = false
 turbo = 0
 driver = nil
-base_freq = get_base_freq()
+base_freq = nil
 
 if #arg == 0 then
     usage()
@@ -257,11 +271,20 @@ for i, dom in pairs(affinity["domains"]) do
     end
 end
 
+if cpuinfo["clock"] > 0 then
+    base_freq = cpuinfo["clock"] * 1.E-03
+else
+    base_freq = get_base_freq()
+end
+if not base_freq then
+    base_freq = likwid.getCpuClock() * 1.E-03
+end
+
 likwid.initFreq()
 driver = likwid.getFreqDriver(cpulist[1])
 
 if verbosity == 3 then
-    print_stdout(string.format("DEBUG: Given CPU expression expands to %d CPU cores:", numthreads))
+    print_stdout(string.format("DEBUG: Given CPU expression expands to %d HW Threads:", numthreads))
     local str = "DEBUG: " .. tostring(cpulist[1])
     for i=2, numthreads  do
         str = str .. "," .. tostring(cpulist[i])
@@ -321,7 +344,7 @@ if printCurFreq then
         t = tonumber(likwid.getTurbo(cpulist[i]));
         if gov and freq and min and max and t >= 0 then
             processed = processed + 1
-            table.insert(str, string.format("CPU %d: governor %12s min/cur/max %s/%s/%s GHz Turbo %d",cpulist[i], gov, round(min), round(freq), round(max), t))
+            table.insert(str, string.format("HWThread %d: governor %12s min/cur/max %s/%s/%s GHz Turbo %d",cpulist[i], gov, round(min), round(freq), round(max), t))
         end
     end
     table.insert(str, "")
@@ -441,7 +464,7 @@ if min_u_freq and max_u_freq and max_u_freq < min_u_freq then
     os.exit(1)
 end
 
-if max_freq and (likwid.getTurbo(cpulist[1]) == 1 or set_turbo) and tonumber(max_freq) <= base_freq then
+if max_freq and (likwid.getTurbo(cpulist[1]) == 1 or (set_turbo and turbo == 1)) and tonumber(max_freq) < base_freq then
     print_stderr("ERROR: Setting maximal CPU frequency below base CPU frequency with activated Turbo mode is not supported.")
     likwid.finalizeFreq()
     os.exit(1)

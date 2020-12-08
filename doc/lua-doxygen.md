@@ -260,15 +260,15 @@ or<BR>
 </TR>
 <TR>
   <TD>\a perf_num_ctr</TD>
-  <TD>Amount of core-local general-purpose counters</TD>
+  <TD>Amount of HWthread-local general-purpose counters</TD>
 </TR>
 <TR>
   <TD>\a perf_num_fixed_ctr</TD>
-  <TD>Amount of core-local fixed-purpose counters</TD>
+  <TD>Amount of HWthread-local fixed-purpose counters</TD>
 </TR>
 <TR>
   <TD>\a perf_width_ctr</TD>
-  <TD>Register width of core-local counters</TD>
+  <TD>Register width of HWthread-local counters</TD>
 </TR>
 </TABLE>
 
@@ -299,7 +299,7 @@ or<BR>
 </TR>
 <TR>
   <TD>\a numThreadsPerCore</TD>
-  <TD>Number of hardware threads of each core in the system</TD>
+  <TD>Number of hardware threads of each CPU core in the system</TD>
 </TR>
 <TR>
   <TD>\a numCacheLevels</TD>
@@ -430,11 +430,11 @@ or<BR>
         </TR>
         <TR>
             <TD>\a ID</TD>
-            <TD>ID of CPU core</TD>
+            <TD>ID of hardware thread</TD>
         </TR>
         <TR>
             <TD>\a Children</TD>
-            <TD>List of thread IDs for the current CPU core</TD>
+            <TD>List of thread IDs for the current hardware thread</TD>
         </TR>
       </TABLE></TD>
   </TABLE></TD>

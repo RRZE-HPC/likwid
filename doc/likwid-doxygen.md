@@ -18,7 +18,7 @@ LIKWID follows the philosophy:
 - \ref likwid-pin : A tool to pin your threaded application without changing your code. Works for pthreads and OpenMP.
 - \ref likwid-perfctr : A tool to measure hardware performance counters on x86, ARM and POWER processors as well as Nvidia GPUs. It can be used as wrapper application without modifying the profiled code or with a marker API to measure only parts of the code.
 - \ref likwid-powermeter : A tool for accessing RAPL counters and query Turbo mode steps on Intel processor. RAPL counters are also available in \ref likwid-perfctr.
-- \ref likwid-setFrequencies : A tool to print and manage the clock frequency of CPU cores and the Uncore (Intel only).
+- \ref likwid-setFrequencies : A tool to print and manage the clock frequency of CPU hardware threads and the Uncore (Intel only).
 - \ref likwid-memsweeper : A tool to cleanup ccNUMA domains and LLC caches to get a clean environment for benchmarks.
 - \ref likwid-bench : A benchmarking framework for streaming benchmark kernels written in assembly.
 - \ref likwid-genTopoCfg : A config file writer that gets system topology and writes them to file for faster LIKWID startup.
@@ -103,6 +103,9 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - Kaby Lake (use \subpage skylake)
 - Coffee Lake (use \subpage skylake)
 - Cascade Lake SP/AP (use \subpage skylakesp)
+- \subpage icelake
+- \subpage icelakesp
+- \subpage tigerlake
 
 \subsubsection Architectures_AMD AMD&reg;
 - \subpage k8
@@ -111,15 +114,22 @@ Optionally, a global configuration file \ref likwid.cfg can be given to modify s
 - \subpage kabini
 - \subpage zen
 - \subpage zen2
+- \subpage zen3
 
 \subsection Architectures_ARM ARM architectures
 - \subpage armA15
 - \subpage armA57
 - \subpage armThunderX2
+- \subpage a64fx
+- \subpage neon1
 
 \subsection Architectures_POWER POWER architectures
 - \subpage power8
 - \subpage power9
+
+\subsection Architectures_NVIDIA Nvidia GPU architectures
+- For compute capability < 7.0: support based on CUPTI Events API
+- For compute capability >= 7.0: support based on CUpti Profiling API
 
 \section Examples Example Codes
 Using the Likwid API:
@@ -175,9 +185,9 @@ If you want to access Uncore performance counters that are located in the PCI me
 
 \subsubsection perf_event Usage of Linux Kernel's perf_event interface
 
-LIKWID can be built to run on top of perf_event (config.mk: USE_PERF_EVENT in 4.2 and <CODE>ACCESSMODE=perf_event</CODE> in 4.3), an interface of the Linux kernel to the hardware performance monitors. The events and counters are the same but not all might be supported. LIKWID supports the Uncore and RAPL (energy) units provided by perf. The thermal module is currently not supported with perf_event as perf_event does not provide thermal information. For core-local measurements the paranoid level of 1 is enough to measure applications. To get the same behavior as native access, the paranoid level must be 0 or less. 0 or less is also required for Uncore measurements.
+LIKWID can be built to run on top of perf_event (config.mk: USE_PERF_EVENT in 4.2 and <CODE>ACCESSMODE=perf_event</CODE> in 4.3), an interface of the Linux kernel to the hardware performance monitors. The events and counters are the same but not all might be supported. LIKWID supports the Uncore and RAPL (energy) units provided by perf. The thermal module is currently not supported with perf_event as perf_event does not provide thermal information. For HWthread-local measurements the paranoid level of 1 is enough to measure applications. To get the same behavior as native access, the paranoid level must be 0 or less. 0 or less is also required for Uncore measurements.
 
-Be aware that LIKWID reads information out of registers that is not provided by any other source like procfs and sysfs. When switching to perf_event backend, these registers cannot be accessed and less information is printed. An example for this are the different CPU core frequencies in turbo mode (<CODE>likwid-powermeter -i</CODE>). If you want to use perf_event for measurements and the access daemon for other operations, install LIKWID first with <CODE>ACCESSMODE=accessdaemon</CODE> and followed by make distclean, change <CODE>ACCESSMODE=perf_event</CODE> in config.mk and then build and install LIKWID again.
+Be aware that LIKWID reads information out of registers that is not provided by any other source like procfs and sysfs. When switching to perf_event backend, these registers cannot be accessed and less information is printed. An example for this are the different CPU hardware thread frequencies in turbo mode (<CODE>likwid-powermeter -i</CODE>). If you want to use perf_event for measurements and the access daemon for other operations, install LIKWID first with <CODE>ACCESSMODE=accessdaemon</CODE> and followed by make distclean, change <CODE>ACCESSMODE=perf_event</CODE> in config.mk and then build and install LIKWID again.
 
 \subsubsection setfreqinstall Usage of frequency daemon likwid-setFreq
 The application \ref likwid-setFrequencies uses another daemon to modify the frequency of CPUs. The daemon is build and later installed if <CODE>BUILDFREQ</CODE> is set to true in config.mk.
@@ -246,7 +256,7 @@ Some newer kernels implement the so-called capabilities, a fine-grained permissi
 This is only possible on local file systems. A feasible way is to use the \ref likwid-accessD for all accesses and just enable the capabilities for this one binary. This will enable the usage for all LIKWID tools and also for all instrumented binaries. If \ref likwid-perfctr utility should only be used in wrapper mode, it is suitable to set the capabilities for \ref likwid-perfctr only. Please remember to set the file permission of the MSR device files to read/write for all users, even if capabilites are configured correctly.
 
 \subsection accessD Installation on ARM- and POWER-based systems
-ARM support was added in January. The main switch is the <CODE>COMPILER</CODE> setting in config.mk. There are two possibilities: <CODE>GCCARMv7</CODE> and <CODE>GCCARMv8</CODE>. For build flags changes, please use the appropriate file <CODE>make/include_<COMPILER>.mk</CODE>. The backend for ARM is <CODE>perf_event</CODE>. There is a native backend as well but it is currently not usable as the user would need to measure multiple times per second to catch all register overflows. As soon as LIKWID starts a management thread to read the registers in the background, I will publish this backend as well.<BR>
+ARM support was added in January. The main switch is the <CODE>COMPILER</CODE> setting in config.mk. There are two possibilities: <CODE>GCCARMv7</CODE> and <CODE>GCCARMv8</CODE>. For build flags changes, please use the appropriate file <CODE>make/include_&lt;COMPILER&gt;.mk</CODE>. The backend for ARM is <CODE>perf_event</CODE>. There is a native backend as well but it is currently not usable as the user would need to measure multiple times per second to catch all register overflows. As soon as LIKWID starts a management thread to read the registers in the background, I will publish this backend as well.<BR>
 For POWER systems, the main switch is the <CODE>COMPILER</CODE> setting in config.mk. The change to <CODE>GCCPOWER</CODE> configures the build to work on POWER and switch to the proper <CODE>ACCESSMODE</CODE>.
 
 \subsubsection secureboot LIKWID and SecureBoot

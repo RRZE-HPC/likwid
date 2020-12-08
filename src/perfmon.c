@@ -76,8 +76,12 @@
 #include <perfmon_cascadelake.h>
 #include <perfmon_zen.h>
 #include <perfmon_zen2.h>
+#include <perfmon_zen3.h>
 #include <perfmon_a57.h>
 #include <perfmon_a15.h>
+#include <perfmon_tigerlake.h>
+#include <perfmon_icelake.h>
+#include <perfmon_neon1.h>
 #include <perfmon_a64fx.h>
 
 #ifdef LIKWID_USE_PERFEVENT
@@ -96,6 +100,7 @@ RegisterMap* counter_map = NULL;
 BoxMap* box_map = NULL;
 PciDevice* pci_devices = NULL;
 char** translate_types = NULL;
+char** archRegisterTypeNames = NULL;
 
 int perfmon_numCounters = 0;
 int perfmon_numCoreCounters = 0;
@@ -132,6 +137,8 @@ char* eventOptionTypeName[NUM_EVENT_OPTIONS] = {
     [EVENT_OPTION_MASK3] = "MASK3",
     [EVENT_OPTION_NID] = "NID",
     [EVENT_OPTION_TID] = "TID",
+    [EVENT_OPTION_CID] = "CID",
+    [EVENT_OPTION_SLICE] = "SLICE",
     [EVENT_OPTION_STATE] = "STATE",
     [EVENT_OPTION_EDGE] = "EDGEDETECT",
     [EVENT_OPTION_THRESHOLD] = "THRESHOLD",
@@ -522,6 +529,16 @@ parseOptions(struct bstrList* tokens, PerfmonEvent* event, RegisterIndex index)
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
                                     event->numberOfOptions, EVENT_OPTION_TID, 0);
             }
+            else if (biseqcstr(subtokens->entry[0], "cid") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_CID, 0);
+            }
+            else if (biseqcstr(subtokens->entry[0], "slice") == 1)
+            {
+                event->numberOfOptions = assignOption(event, subtokens->entry[1],
+                                    event->numberOfOptions, EVENT_OPTION_SLICE, 0);
+            }
             else if (biseqcstr(subtokens->entry[0], "state") == 1)
             {
                 event->numberOfOptions = assignOption(event, subtokens->entry[1],
@@ -690,6 +707,10 @@ calculateResult(int groupId, int eventId, int threadId)
     {
         result = voltage_value(counter->counterData);
     }
+    else if (counter_map[event->index].type == METRICS)
+    {
+        result = ((double)counter->counterData)/255.0;
+    }
     return result;
 }
 
@@ -831,6 +852,7 @@ perfmon_check_counter_map(int cpu_id)
         bdestroy(estr);
         if (!found)
         {
+	    DEBUG_PRINT(DEBUGLEV_DEVELOP, Cannot respect limit %s. Removing event %s, eventHash[i].limit, eventHash[i].name);
             eventHash[i].limit = "";
         }
     }
@@ -1056,6 +1078,7 @@ perfmon_init_maps(void)
                 case SKYLAKE2:
                 case KABYLAKE1:
                 case KABYLAKE2:
+                case CANNONLAKE:
                     box_map = skylake_box_map;
                     eventHash = skylake_arch_events;
                     counter_map = skylake_counter_map;
@@ -1096,6 +1119,36 @@ perfmon_init_maps(void)
                     box_map = knl_box_map;
                     perfmon_numCounters = perfmon_numCountersKNL;
                     translate_types = knl_translate_types;
+                    break;
+
+                case TIGERLAKE1:
+                case TIGERLAKE2:
+                    box_map = tigerlake_box_map;
+                    eventHash = tigerlake_arch_events;
+                    counter_map = tigerlake_counter_map;
+                    perfmon_numArchEvents = perfmon_numArchEventsTigerlake;
+                    perfmon_numCounters = perfmon_numCountersTigerlake;
+                    perfmon_numCoreCounters = perfmon_numCoreCountersTigerlake;
+                case ICELAKE1:
+                case ICELAKE2:
+                    pci_devices = icelake_pci_devices;
+                    eventHash = icelake_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsIcelake;
+                    counter_map = icelake_counter_map;
+                    box_map = icelake_box_map;
+                    perfmon_numCounters = perfmon_numCountersIcelake;
+                    translate_types = default_translate_types;
+                    break;
+
+                case ICELAKEX1:
+                case ICELAKEX2:
+                    pci_devices = icelakeX_pci_devices;
+                    eventHash = icelakeX_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsIcelakeX;
+                    counter_map = icelakeX_counter_map;
+                    box_map = icelakeX_box_map;
+                    perfmon_numCounters = perfmon_numCountersIcelakeX;
+                    translate_types = default_translate_types;
                     break;
 
                 default:
@@ -1184,6 +1237,21 @@ perfmon_init_maps(void)
                     ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
             }
             break;
+        case ZEN3_FAMILY:
+            switch ( cpuid_info.model )
+            {
+                case ZEN3_RYZEN:
+                case ZEN3_RYZEN2:
+                    eventHash = zen3_arch_events;
+                    perfmon_numArchEvents = perfmon_numArchEventsZen3;
+                    counter_map = zen3_counter_map;
+                    box_map = zen3_box_map;
+                    perfmon_numCounters = perfmon_numCountersZen3;
+                    translate_types = zen3_translate_types;
+                    break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported AMD Zen Processor);
+            }
 #ifdef _ARCH_PPC
 	case PPC_FAMILY:
 	    switch ( cpuid_info.model )
@@ -1247,6 +1315,14 @@ perfmon_init_maps(void)
                             box_map = a57_box_map;
                             perfmon_numCounters = perfmon_numCountersA57;
                             translate_types = a53_translate_types;
+                            break;
+                        case ARM_NEOVERSE_N1:
+                            eventHash = neon1_arch_events;
+                            perfmon_numArchEvents = perfmon_numArchEventsNeoN1;
+                            counter_map = neon1_counter_map;
+                            box_map = neon1_box_map;
+                            perfmon_numCounters = perfmon_numCountersNeoN1;
+                            translate_types = neon1_translate_types;
                             break;
                         default:
                             break;
@@ -1557,6 +1633,7 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                 case SKYLAKEX: /* This one includes CascadeLake SP */
                 case KABYLAKE1:
                 case KABYLAKE2:
+                case CANNONLAKE:
                     initialize_power = TRUE;
                     initialize_thermal = TRUE;
                     initThreadArch = perfmon_init_skylake;
@@ -1565,6 +1642,20 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_readCountersThread = perfmon_readCountersThread_skylake;
                     perfmon_setupCountersThread = perfmon_setupCounterThread_skylake;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_skylake;
+                    break;
+
+                case ICELAKE1:
+                case ICELAKE2:
+                case ICELAKEX1:
+                case ICELAKEX2:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_icelake;
+                    perfmon_startCountersThread = perfmon_startCountersThread_icelake;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_icelake;
+                    perfmon_readCountersThread = perfmon_readCountersThread_icelake;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_icelake;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_icelake;
                     break;
 
                 case XEON_PHI_KNL:
@@ -1577,6 +1668,18 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_readCountersThread = perfmon_readCountersThread_knl;
                     perfmon_setupCountersThread = perfmon_setupCountersThread_knl;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_knl;
+                    break;
+
+                case TIGERLAKE1:
+                case TIGERLAKE2:
+                    initialize_power = TRUE;
+                    initialize_thermal = TRUE;
+                    initThreadArch = perfmon_init_tigerlake;
+                    perfmon_startCountersThread = perfmon_startCountersThread_tigerlake;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_tigerlake;
+                    perfmon_readCountersThread = perfmon_readCountersThread_tigerlake;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_tigerlake;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_tigerlake;
                     break;
 
                 default:
@@ -1664,6 +1767,28 @@ perfmon_init_funcs(int* init_power, int* init_temp)
                     perfmon_setupCountersThread = perfmon_setupCounterThread_zen2;
                     perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen2;
                     break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported AMD Zen2 Processor);
+                    break;
+            }
+            break;
+
+        case ZEN3_FAMILY:
+            switch ( cpuid_info.model )
+            {
+                case ZEN3_RYZEN:
+                case ZEN3_RYZEN2:
+                    initThreadArch = perfmon_init_zen3;
+                    initialize_power = TRUE;
+                    perfmon_startCountersThread = perfmon_startCountersThread_zen3;
+                    perfmon_stopCountersThread = perfmon_stopCountersThread_zen3;
+                    perfmon_readCountersThread = perfmon_readCountersThread_zen3;
+                    perfmon_setupCountersThread = perfmon_setupCounterThread_zen3;
+                    perfmon_finalizeCountersThread = perfmon_finalizeCountersThread_zen3;
+                    break;
+                default:
+                    ERROR_PLAIN_PRINT(Unsupported AMD Zen3 Processor);
+                    break;
             }
             break;
 
@@ -1681,6 +1806,12 @@ perfmon_init_funcs(int* init_power, int* init_temp)
 #endif
     *init_power = initialize_power;
     *init_temp = initialize_thermal;
+}
+
+char** 
+getArchRegisterTypeNames()
+{
+    return archRegisterTypeNames;
 }
 
 int
