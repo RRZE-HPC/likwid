@@ -1,0 +1,26 @@
+SHORT Perf counters
+EVENTSET
+FIXC0 INSTR_RETIRED_ANY
+FIXC1 CPU_CLK_UNHALTED_CORE
+FIXC2 CPU_CLK_UNHALTED_REF
+MPERF MPERF
+APERF APERF
+PPERF PPERF
+
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  FIXC1/FIXC0
+Aperf/Mperf [%] APERF/MPERF*100
+Pperf/Aperf [%] PPERF/APERF*100
+
+LONG
+Formula:
+Aperf/Mperf = APERF/MPERF*100
+Pperf/Aperf = PPERF/APERF*100
+-
+Skylake implements the perf counters interface. This interface enables to
+monitor the aperf/mperf & pperf/aperf
+

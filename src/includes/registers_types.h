@@ -97,7 +97,7 @@ typedef enum {
 } RegisterIndex;
 
 typedef enum {
-    PMC = 0, FIXED, THERMAL, VOLTAGE, METRICS,
+    PMC = 0, FIXED, PERF, THERMAL, VOLTAGE, METRICS,
     POWER, UNCORE, MBOX0,
     MBOX1, MBOX2, MBOX3,
     MBOX4, MBOX5, MBOX6, MBOX7,
@@ -145,6 +145,7 @@ typedef enum {
 static char* RegisterTypeNames[MAX_UNITS] = {
     [PMC] = "Core-local general purpose counters",
     [FIXED] = "Fixed counters",
+    [PERF] = "Perf counters",
     [THERMAL] = "Thermal",
     [VOLTAGE] = "Voltage of hardware thread",
     [METRICS] = "Performance metrics provided by Intel systems starting with Intel Icelake",
@@ -324,7 +325,7 @@ static char* RegisterTypeNames[MAX_UNITS] = {
 #define MEASURE_METRICS(eventset) ((eventset)->regTypeMask1 & (REG_TYPE_MASK(METRICS))
 
 #define MEASURE_UNCORE(eventset) \
-        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(POWER)|REG_TYPE_MASK(METRICS)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4)
+        (eventset->regTypeMask1 & ~(REG_TYPE_MASK(PMC)|REG_TYPE_MASK(FIXED)|REG_TYPE_MASK(THERMAL)|REG_TYPE_MASK(VOLTAGE)|REG_TYPE_MASK(PERF)|REG_TYPE_MASK(POWER)|REG_TYPE_MASK(METRICS)) || eventset->regTypeMask2 || eventset->regTypeMask3 || eventset->regTypeMask4)
 
 
 typedef struct {
