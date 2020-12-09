@@ -216,6 +216,38 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
                 }
             }
             break;
+        case MSR_AMD17_PMC0:
+        case MSR_AMD17_PMC1:
+        case MSR_AMD17_PMC2:
+        case MSR_AMD17_PMC3:
+            if (rdpmc_works_pmc == 1 && !cpuid_info.isIntel)
+            {
+                int index = (reg - MSR_AMD17_PMC0)/2;
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read PMC counter with RDPMC instruction with index 0x%X, index);
+                ret = __rdpmc(cpu_id, index, data);
+                if (ret)
+                {
+                    rdpmc_works_pmc = 0;
+                    ret = -EAGAIN;
+                }
+            }
+            break;
+        case MSR_AMD16_PMC0:
+        case MSR_AMD16_PMC1:
+        case MSR_AMD16_PMC2:
+        case MSR_AMD16_PMC3:
+            if (rdpmc_works_pmc == 1 && !cpuid_info.isIntel)
+            {
+                int index = (reg - MSR_AMD16_PMC0)/2;
+                DEBUG_PRINT(DEBUGLEV_DEVELOP, Read PMC counter with RDPMC instruction with index 0x%X, index);
+                ret = __rdpmc(cpu_id, index, data);
+                if (ret)
+                {
+                    rdpmc_works_pmc = 0;
+                    ret = -EAGAIN;
+                }
+            }
+            break;
         case MSR_PERF_FIXED_CTR0:
         case MSR_PERF_FIXED_CTR1:
         case MSR_PERF_FIXED_CTR2:
@@ -239,7 +271,7 @@ access_x86_rdpmc_read( const int cpu_id, uint32_t reg, uint64_t *data)
         case MSR_AMD17_L3_PMC5:
             if (rdpmc_works_llc == 1)
             {
-                int index = (reg - MSR_PERF_FIXED_CTR0)/2;
+                int index = (reg - MSR_AMD17_L3_PMC0)/2;
 
                 DEBUG_PRINT(DEBUGLEV_DEVELOP, Read AMD L3 counter with RDPMC instruction with index 0x%X, 0xA + index);
                 ret = __rdpmc(cpu_id, 0xA + index, data);
@@ -282,6 +314,10 @@ access_x86_rdpmc_write( const int cpu_id, uint32_t reg, uint64_t data)
 int access_x86_rdpmc_check(PciDeviceIndex dev, int cpu_id)
 {
     if (dev == MSR_DEV && (rdpmc_works_pmc > 0 || rdpmc_works_fixed > 0))
+    {
+        return 1;
+    }
+    if (cpuid_info.isIntel == 0 && dev == MSR_DEV && (rdpmc_works_mem > 0 || rdpmc_works_llc > 0))
     {
         return 1;
     }
