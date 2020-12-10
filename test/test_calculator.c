@@ -74,8 +74,15 @@ int main(int argc, char* argv[])
     while (cur->formula)
     {
         res = 0.0;
-        calculate_infix(cur->formula, &res);
-        int ret = snprintf(ref, 99, "%.10f", cur->result);
+        int ret = calculate_infix(cur->formula, &res);
+        if (ret < 0)
+        {
+            printf("Failed calculating '%s' with reference result %f. No valid function\n", cur->formula, cur->result);
+            all++;
+            cur++;
+            continue;
+        }
+        ret = snprintf(ref, 99, "%.10f", cur->result);
         if (ret > 0)
             ref[ret] = '\0';
         ret = snprintf(test, 99, "%.10f", res);
