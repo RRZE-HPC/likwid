@@ -231,36 +231,36 @@ int doFunc(Stack *s, token function)
     number result = num;
     number counter = 0;
 
-    if(strncmp(function, "abs", 3) == 0)
+    if(strncasecmp(function, "abs", 3) == 0)
         result = fabs(num);
-    else if(strncmp(function, "floor", 5) == 0)
+    else if(strncasecmp(function, "floor", 5) == 0)
         result = floor(num);
-    else if(strncmp(function, "ceil", 4) == 0)
+    else if(strncasecmp(function, "ceil", 4) == 0)
         result = ceil(num);
-    else if(strncmp(function, "sin", 3) == 0)
+    else if(strncasecmp(function, "sin", 3) == 0)
         result = !prefs.mode.degrees ? sin(num) : sin(toRadians(num));
-    else if(strncmp(function, "cos", 3) == 0)
+    else if(strncasecmp(function, "cos", 3) == 0)
         result = !prefs.mode.degrees ? cos(num) : cos(toRadians(num));
-    else if(strncmp(function, "tan", 3) == 0)
+    else if(strncasecmp(function, "tan", 3) == 0)
         result = !prefs.mode.degrees ? tan(num) : tan(toRadians(num));
-    else if(strncmp(function, "arcsin", 6) == 0
-         || strncmp(function, "asin", 4) == 0)
+    else if(strncasecmp(function, "arcsin", 6) == 0
+         || strncasecmp(function, "asin", 4) == 0)
         result = !prefs.mode.degrees ? asin(num) : toDegrees(asin(num));
-    else if(strncmp(function, "arccos", 6) == 0
-         || strncmp(function, "acos", 4) == 0)
+    else if(strncasecmp(function, "arccos", 6) == 0
+         || strncasecmp(function, "acos", 4) == 0)
         result = !prefs.mode.degrees ? acos(num) : toDegrees(acos(num));
-    else if(strncmp(function, "arctan", 6) == 0
-         || strncmp(function, "atan", 4) == 0)
+    else if(strncasecmp(function, "arctan", 6) == 0
+         || strncasecmp(function, "atan", 4) == 0)
         result = !prefs.mode.degrees ? atan(num) : toDegrees(atan(num));
-    else if(strncmp(function, "sqrt", 4) == 0)
+    else if(strncasecmp(function, "sqrt", 4) == 0)
         result = sqrt(num);
-    else if(strncmp(function, "cbrt", 4) == 0)
+    else if(strncasecmp(function, "cbrt", 4) == 0)
         result = cbrt(num);
-    else if(strncmp(function, "log", 3) == 0)
+    else if(strncasecmp(function, "log", 3) == 0)
         result = log(num);
-    else if(strncmp(function, "exp", 3) == 0)
+    else if(strncasecmp(function, "exp", 3) == 0)
         result = exp(num);
-    else if(strncmp(function, "min", 3) == 0)
+    else if(strncasecmp(function, "min", 3) == 0)
     {
         while (stackSize(s) > 0 && strcmp(stackTop(s), FUNCTIONSEPARATOR) != 0)
         {
@@ -270,7 +270,7 @@ int doFunc(Stack *s, token function)
                 result = num;
         }
     }
-    else if(strncmp(function, "max", 3) == 0)
+    else if(strncasecmp(function, "max", 3) == 0)
     {
         while (stackSize(s) > 0 && strcmp(stackTop(s), FUNCTIONSEPARATOR) != 0)
         {
@@ -280,7 +280,7 @@ int doFunc(Stack *s, token function)
                 result = num;
         }
     }
-    else if(strncmp(function, "sum", 3) == 0)
+    else if(strncasecmp(function, "sum", 3) == 0)
     {
         while (stackSize(s) > 0  && strcmp(stackTop(s), FUNCTIONSEPARATOR) != 0)
         {
@@ -289,8 +289,8 @@ int doFunc(Stack *s, token function)
             result += num;
         }
     }
-    else if(strncmp(function, "avg", 3) == 0 ||
-            strncmp(function, "mean", 4) == 0)
+    else if(strncasecmp(function, "avg", 3) == 0 ||
+            strncasecmp(function, "mean", 4) == 0)
     {
         // Result already initialized with first number
         counter = 1;
@@ -303,7 +303,7 @@ int doFunc(Stack *s, token function)
         }
         result /= counter;
     }
-    else if(strncmp(function, "median", 6) == 0)
+    else if(strncasecmp(function, "median", 6) == 0)
     {
         // needed for sorting
         Stack tmp, safe;
@@ -348,7 +348,7 @@ int doFunc(Stack *s, token function)
         }
         stackFree(&tmp);
     }
-    else if(strncmp(function, "var", 3) == 0)
+    else if(strncasecmp(function, "var", 3) == 0)
     {
         Stack tmp;
         counter = 1;
@@ -561,34 +561,34 @@ Symbol type(char ch)
 
 bool isFunction(token tk)
 {
-    return (strncmp(tk, "abs", 3) == 0
-        || strncmp(tk, "floor", 5) == 0
-        || strncmp(tk, "ceil", 4) == 0
-        || strncmp(tk, "sin", 3) == 0
-        || strncmp(tk, "cos", 3) == 0
-        || strncmp(tk, "tan", 3) == 0
-        || strncmp(tk, "arcsin", 6) == 0
-        || strncmp(tk, "arccos", 6) == 0
-        || strncmp(tk, "arctan", 6) == 0
-        || strncmp(tk, "asin", 4) == 0
-        || strncmp(tk, "acos", 4) == 0
-        || strncmp(tk, "atan", 4) == 0
-        || strncmp(tk, "sqrt", 4) == 0
-        || strncmp(tk, "cbrt", 4) == 0
-        || strncmp(tk, "log", 3) == 0
-        || strncmp(tk, "min", 3) == 0
-        || strncmp(tk, "max", 3) == 0
-        || strncmp(tk, "sum", 3) == 0
-        || strncmp(tk, "avg", 3) == 0
-        || strncmp(tk, "mean", 4) == 0
-        || strncmp(tk, "median", 6) == 0
-        || strncmp(tk, "var", 3) == 0
-        || strncmp(tk, "exp", 3) == 0);
+    return (strncasecmp(tk, "abs", 3) == 0
+        || strncasecmp(tk, "floor", 5) == 0
+        || strncasecmp(tk, "ceil", 4) == 0
+        || strncasecmp(tk, "sin", 3) == 0
+        || strncasecmp(tk, "cos", 3) == 0
+        || strncasecmp(tk, "tan", 3) == 0
+        || strncasecmp(tk, "arcsin", 6) == 0
+        || strncasecmp(tk, "arccos", 6) == 0
+        || strncasecmp(tk, "arctan", 6) == 0
+        || strncasecmp(tk, "asin", 4) == 0
+        || strncasecmp(tk, "acos", 4) == 0
+        || strncasecmp(tk, "atan", 4) == 0
+        || strncasecmp(tk, "sqrt", 4) == 0
+        || strncasecmp(tk, "cbrt", 4) == 0
+        || strncasecmp(tk, "log", 3) == 0
+        || strncasecmp(tk, "min", 3) == 0
+        || strncasecmp(tk, "max", 3) == 0
+        || strncasecmp(tk, "sum", 3) == 0
+        || strncasecmp(tk, "avg", 3) == 0
+        || strncasecmp(tk, "mean", 4) == 0
+        || strncasecmp(tk, "median", 6) == 0
+        || strncasecmp(tk, "var", 3) == 0
+        || strncasecmp(tk, "exp", 3) == 0);
 }
 
 bool isSpecialValue(token tk)
 {
-    return (strncmp(tk, "nan", 3) == 0 || strncmp(tk, "inf", 3) == 0);
+    return (strncasecmp(tk, "nan", 3) == 0 || strncasecmp(tk, "inf", 3) == 0);
 }
 
 Symbol tokenType(token tk)
