@@ -67,6 +67,7 @@
 #include <string.h>
 #include <math.h> // Temporary
 #include <getopt.h>
+#include <calculator.h>
 #include <calculator_stack.h>
 
 /* #####   MACROS  -  LOCAL TO THIS SOURCE FILE   ######################### */
@@ -88,7 +89,7 @@
  * token for parsing as well as for transforming a number to a string.
  */
 #define MAXTOKENLENGTH 512
-#define MAXPRECISION 20
+#define MAXPRECISION CALCULATOR_MAXPRECISION
 #define DEFAULTPRECISION 5
 #define AUTOPRECISION -1
 #define FUNCTIONSEPARATOR "|"
