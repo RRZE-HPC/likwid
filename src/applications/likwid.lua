@@ -154,6 +154,7 @@ likwid.markerRegionCount = likwid_markerRegionCount
 likwid.markerRegionResult = likwid_markerRegionResult
 likwid.markerRegionMetric = likwid_markerRegionMetric
 likwid.initFreq = likwid_initFreq
+likwid.getCpuClockBase = likwid_getCpuClockBase
 likwid.getCpuClockCurrent = likwid_getCpuClockCurrent
 likwid.getCpuClockMin = likwid_getCpuClockMin
 likwid.getConfCpuClockMin = likwid_getConfCpuClockMin

@@ -127,22 +127,8 @@ function get_base_freq()
         out = f:read("*a")
         freq = tonumber(out)
         f:close()
-        return freq
     end
-    f = io.open("/sys/devices/system/cpu/cpu0/cpufreq/bios_limit", "r")
-    if f ~= nil then
-        out = f:read("*a")
-        freq = tonumber(out)
-        f:close()
-        return freq
-    end
-    f = io.open("/proc/cpuinfo", "r")
-    if f ~= nil then
-        out = f:read("*a"):match("cpu MHz%s+:%s+(%d+.%d+)")
-        freq = tonumber(out)
-        f:close()
-    end
-    return freq*1E6
+    return freq
 end
 
 verbosity = 0
@@ -271,17 +257,15 @@ for i, dom in pairs(affinity["domains"]) do
     end
 end
 
-if cpuinfo["clock"] > 0 then
-    base_freq = cpuinfo["clock"] * 1.E-03
-else
-    base_freq = get_base_freq()
-end
-if not base_freq then
-    base_freq = likwid.getCpuClock() * 1.E-03
-end
-
 likwid.initFreq()
 driver = likwid.getFreqDriver(cpulist[1])
+
+base_freq = likwid.getCpuClockBase()
+if base_freq == 0 then
+    if get_base_freq() ~= nil then
+        base_freq = get_base_freq()
+    end
+end
 
 if verbosity == 3 then
     print_stdout(string.format("DEBUG: Given CPU expression expands to %d HW Threads:", numthreads))

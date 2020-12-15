@@ -2588,6 +2588,14 @@ lua_likwid_finalizeFreq(lua_State* L)
 }
 
 static int
+lua_likwid_getCpuClockBase(lua_State* L)
+{
+    const int cpu_id = lua_tointeger(L,-1);
+    lua_pushnumber(L, freq_getCpuClockCurrent(cpu_id));
+    return 1;
+}
+
+static int
 lua_likwid_getCpuClockCurrent(lua_State* L)
 {
     const int cpu_id = lua_tointeger(L,-1);
@@ -3599,6 +3607,7 @@ luaopen_liblikwid(lua_State* L){
     // CPU frequency functions
     lua_register(L, "likwid_initFreq", lua_likwid_initFreq);
     lua_register(L, "likwid_finalizeFreq", lua_likwid_finalizeFreq);
+    lua_register(L, "likwid_getCpuClockBase", lua_likwid_getCpuClockBase);
     lua_register(L, "likwid_getCpuClockCurrent", lua_likwid_getCpuClockCurrent);
     lua_register(L, "likwid_getCpuClockMin", lua_likwid_getCpuClockMin);
     lua_register(L, "likwid_getConfCpuClockMin", lua_likwid_getConfCpuClockMin);
