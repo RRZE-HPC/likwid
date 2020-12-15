@@ -907,7 +907,8 @@ static int getBaseFreq(const int cpu_id)
         ERROR_PRINT(Cannot read register 0x%x, MSR_PLATFORM_INFO);
         return err;
     }
-    return 100 * extractBitField(tmp,8,8);
+    tmp = extractBitField(tmp,8,8);
+    return 100000 * tmp;
 #endif
 }
 
@@ -1079,7 +1080,9 @@ uint64_t freq_getCpuClockBase(const int cpu_id)
 {
     uint64_t f = getBaseFreq(cpu_id);
     if (f > 0)
+    {
         return f;
+    }
     return 0;
 }
 
