@@ -260,7 +260,7 @@ end
 likwid.initFreq()
 driver = likwid.getFreqDriver(cpulist[1])
 
-base_freq = likwid.getCpuClockBase()
+base_freq = likwid.getCpuClockBase(cpulist[1])
 if base_freq == 0 then
     if get_base_freq() ~= nil then
         base_freq = get_base_freq()
