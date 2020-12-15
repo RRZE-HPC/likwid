@@ -60,24 +60,7 @@ static int num_cpus = 0;
 static int *threads2Cpu = NULL;
 static int *cpus2threads = NULL;
 
-typedef struct {
-    int thread_id;
-    int cpu_id;
-    off_t last;
-    LikwidThreadResults* last_res;
-    Map_t regions;
-    uint64_t _padding[4];
-} GroupThreadsMap;
 
-typedef struct {
-    int numberOfThreads;
-    GroupThreadsMap *threads;
-} GroupThreads;
-
-typedef struct {
-    int numberOfGroups;
-    GroupThreads *groups;
-} MarkerGroups;
 
 static MarkerGroups* mgroups = NULL;
 #define GET_THREAD_MAP(groupID, cpuID) mgroups->groups[(groupID)].threads[cpus2threads[(cpuID)]].regions
