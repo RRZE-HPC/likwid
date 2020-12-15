@@ -2591,7 +2591,7 @@ static int
 lua_likwid_getCpuClockBase(lua_State* L)
 {
     const int cpu_id = lua_tointeger(L,-1);
-    lua_pushnumber(L, freq_getCpuClockCurrent(cpu_id));
+    lua_pushnumber(L, freq_getCpuClockBase(cpu_id));
     return 1;
 }
 
