@@ -135,11 +135,11 @@ likwid_hwloc_findProcessor(int nodeID, int cpuID)
 {
     hwloc_obj_t obj;
     int i;
-    int pu_count = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
+    int pu_count = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_PU);
 
     for (i=0; i<pu_count; i++)
     {
-        obj = likwid_hwloc_get_obj_by_type(hwloc_topology, HWLOC_OBJ_PU, i);
+        obj = LIKWID_HWLOC_NAME(get_obj_by_type)(hwloc_topology, HWLOC_OBJ_PU, i);
         if (!obj)
         {
             continue;
@@ -180,21 +180,21 @@ hwloc_numa_init(void)
 
     if (!hwloc_topology)
     {
-        likwid_hwloc_topology_init(&hwloc_topology);
+        LIKWID_HWLOC_NAME(topology_init)(&hwloc_topology);
 #if HWLOC_API_VERSION > 0x00020000
-        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM );
+        LIKWID_HWLOC_NAME(topology_set_flags)(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM );
 #else
-        likwid_hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM|HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
+        LIKWID_HWLOC_NAME(topology_set_flags)(hwloc_topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM|HWLOC_TOPOLOGY_FLAG_WHOLE_IO );
 #endif
-        likwid_hwloc_topology_load(hwloc_topology);
+        LIKWID_HWLOC_NAME(topology_load)(hwloc_topology);
     }
 #if defined(__x86_64) || defined(__i386__)
-    numa_info.numberOfNodes = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, hwloc_type);
+    numa_info.numberOfNodes = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, hwloc_type);
 #endif
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A__)
     numa_info.numberOfNodes = 0;
 #endif
-    numPUs = likwid_hwloc_get_nbobjs_by_type(hwloc_topology, HWLOC_OBJ_PU);
+    numPUs = LIKWID_HWLOC_NAME(get_nbobjs_by_type)(hwloc_topology, HWLOC_OBJ_PU);
     /* If the amount of NUMA nodes == 0, there is actually no NUMA node, hence
        aggregate all sockets in the system into the single virtually created NUMA node */
     if (numa_info.numberOfNodes == 0)
@@ -210,15 +210,15 @@ hwloc_numa_init(void)
                     numa_info.numberOfNodes * sizeof(NumaNode));
             return -1;
         }
-        depth = likwid_hwloc_get_type_depth(hwloc_topology, hwloc_type);
+        depth = LIKWID_HWLOC_NAME(get_type_depth)(hwloc_topology, hwloc_type);
 #if HWLOC_API_VERSION > 0x00020000
-        errno = likwid_hwloc_distances_get_by_type(hwloc_topology, hwloc_type, &dist_count, &dists, HWLOC_DISTANCES_KIND_FROM_OS, 0);
+        errno = LIKWID_HWLOC_NAME(distances_get_by_type)(hwloc_topology, hwloc_type, &dist_count, &dists, HWLOC_DISTANCES_KIND_FROM_OS, 0);
 #else
-        distances = likwid_hwloc_get_whole_distance_matrix_by_type(hwloc_topology, hwloc_type);
+        distances = LIKWID_HWLOC_NAME(get_whole_distance_matrix_by_type)(hwloc_topology, hwloc_type);
 #endif
         for (i=0; i<numa_info.numberOfNodes; i++)
         {
-            obj = likwid_hwloc_get_obj_by_depth(hwloc_topology, depth, i);
+            obj = LIKWID_HWLOC_NAME(get_obj_by_depth)(hwloc_topology, depth, i);
 
             numa_info.nodes[i].id = obj->os_index;
 #if HWLOC_API_VERSION > 0x00020000
@@ -267,14 +267,14 @@ hwloc_numa_init(void)
             for (d = 0; d < cpuid_topology.numHWThreads; d++)
             {
                 HWThread *t = &cpuid_topology.threadPool[d];
-                if (likwid_hwloc_bitmap_isset(obj->cpuset, t->apicId) && t->threadId == 0)
+                if (LIKWID_HWLOC_NAME(bitmap_isset)(obj->cpuset, t->apicId) && t->threadId == 0)
                 {
                     numa_info.nodes[i].processors[j] = t->apicId;
                     j++;
                     for (int k = 0; k < cpuid_topology.numHWThreads; k++)
                     {
                         HWThread *x = &cpuid_topology.threadPool[k];
-                        if (t->coreId == x->coreId && t->threadId != x->threadId && likwid_hwloc_bitmap_isset(obj->cpuset, x->apicId))
+                        if (t->coreId == x->coreId && t->threadId != x->threadId && LIKWID_HWLOC_NAME(bitmap_isset)(obj->cpuset, x->apicId))
                         {
                             numa_info.nodes[i].processors[j] = x->apicId;
                             j++;
@@ -297,11 +297,11 @@ hwloc_numa_init(void)
 #if HWLOC_API_VERSION > 0x00020000
             if (dists)
             {
-                int base = hwloc_distances_obj_index(dists, obj);
+                int base = LIKWID_HWLOC_NAME(distances_obj_index)(dists, obj);
                 for (d = 0; d < dists->nbobjs; d++)
                 {
                     hwloc_obj_t dobj = dists->objs[d];
-                    int idx = hwloc_distances_obj_index(dists, dobj);
+                    int idx = LIKWID_HWLOC_NAME(distances_obj_index)(dists, dobj);
                     numa_info.nodes[i].distances[idx] = dists->values[(base*dists->nbobjs)+idx];
                 }
                 numa_info.nodes[i].numberOfDistances = numa_info.numberOfNodes;
@@ -328,7 +328,7 @@ hwloc_numa_init(void)
 #if HWLOC_API_VERSION > 0x00020000
         if (dists)
         {
-            hwloc_distances_release_remove(hwloc_topology, dists);
+            LIKWID_HWLOC_NAME(distances_release_remove)(hwloc_topology, dists);
         }
 #endif
     }
@@ -351,15 +351,15 @@ hwloc_numa_membind(void* ptr, size_t size, int domainId)
     if (!ptr || size == 0 || domainId < 0 || domainId >= numa_info.numberOfNodes)
         return;
     hwloc_membind_flags_t flags = HWLOC_MEMBIND_STRICT|HWLOC_MEMBIND_PROCESS|HWLOC_MEMBIND_BYNODESET;
-    hwloc_nodeset_t nodeset = likwid_hwloc_bitmap_alloc();
-    likwid_hwloc_bitmap_zero(nodeset);
-    likwid_hwloc_bitmap_set(nodeset, domainId);
+    hwloc_nodeset_t nodeset = LIKWID_HWLOC_NAME(bitmap_alloc)();
+    LIKWID_HWLOC_NAME(bitmap_zero)(nodeset);
+    LIKWID_HWLOC_NAME(bitmap_set)(nodeset, domainId);
 #if HWLOC_API_VERSION > 0x00020000
-    ret = likwid_hwloc_set_area_membind(hwloc_topology, ptr, size, nodeset, HWLOC_MEMBIND_BIND, flags);
+    ret = LIKWID_HWLOC_NAME(set_area_membind)(hwloc_topology, ptr, size, nodeset, HWLOC_MEMBIND_BIND, flags);
 #else
-    ret = likwid_hwloc_set_area_membind_nodeset(hwloc_topology, ptr, size, nodeset, HWLOC_MEMBIND_BIND, flags);
+    ret = LIKWID_HWLOC_NAME(set_area_membind_nodeset)(hwloc_topology, ptr, size, nodeset, HWLOC_MEMBIND_BIND, flags);
 #endif
-    likwid_hwloc_bitmap_free(nodeset);
+    LIKWID_HWLOC_NAME(bitmap_free)(nodeset);
 
     if (ret < 0)
     {
@@ -372,21 +372,21 @@ hwloc_numa_setInterleaved(int* processorList, int numberOfProcessors)
 {
     int i,j;
     int ret = 0;
-    likwid_hwloc_cpuset_t cpuset = hwloc_bitmap_alloc();
-    likwid_hwloc_membind_flags_t flags = HWLOC_MEMBIND_STRICT|HWLOC_MEMBIND_PROCESS;
-    likwid_hwloc_bitmap_zero(cpuset);
+    LIKWID_HWLOC_NAME(cpuset_t) cpuset = LIKWID_HWLOC_NAME(bitmap_alloc)();
+    LIKWID_HWLOC_NAME(membind_flags_t) flags = HWLOC_MEMBIND_STRICT|HWLOC_MEMBIND_PROCESS;
+    LIKWID_HWLOC_NAME(bitmap_zero)(cpuset);
     for (i=0; i<numa_info.numberOfNodes; i++)
     {
         for (j=0; j<numberOfProcessors; j++)
         {
             if (likwid_hwloc_findProcessor(i,processorList[j]))
             {
-                likwid_hwloc_bitmap_set(cpuset, i);
+                LIKWID_HWLOC_NAME(bitmap_set)(cpuset, i);
             }
         }
     }
-    ret = likwid_hwloc_set_membind(hwloc_topology, cpuset, HWLOC_MEMBIND_INTERLEAVE, flags);
-    likwid_hwloc_bitmap_free(cpuset);
+    ret = LIKWID_HWLOC_NAME(set_membind)(hwloc_topology, cpuset, HWLOC_MEMBIND_INTERLEAVE, flags);
+    LIKWID_HWLOC_NAME(bitmap_free)(cpuset);
     if (ret < 0)
     {
         ERROR;
