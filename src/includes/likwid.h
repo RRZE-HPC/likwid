@@ -205,7 +205,7 @@ extern void HPMmode(int mode) __attribute__ ((visibility ("default") ));
 /*! \brief Initialize access module
 
 Initialize the module internals to either the MSR/PCI files or the access daemon
-@return error code (0 for sccess)
+@return error code (0 for access)
 */
 extern int HPMinit() __attribute__ ((visibility ("default") ));
 /*! \brief Add CPU to access module

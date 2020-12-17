@@ -814,7 +814,7 @@ perfmon_check_counter_map(int cpu_id)
             counter_map[i].type = NOTYPE;
             counter_map[i].optionMask = 0x0ULL;
         }
-        if (counter_map[i].type != PMC && counter_map[i].type != FIXED)
+        if (counter_map[i].type != PMC && counter_map[i].type != FIXED && counter_map[i].type != PERF)
         {
             if (perfevent_paranoid_value() > 0 && getuid() != 0)
             {
@@ -1085,7 +1085,7 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsSkylake;
                     perfmon_numCounters = perfmon_numCountersSkylake;
                     perfmon_numCoreCounters = perfmon_numCoreCountersSkylake;
-                    translate_types = default_translate_types;
+                    translate_types = skylake_translate_types;
                     break;
                 case SKYLAKEX:
                     if (cpuid_info.stepping >= 0 && cpuid_info.stepping < 5)

@@ -314,6 +314,17 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
     return ret;
 }
 
+int perf_perf_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
+{
+    attr->type = PERF_TYPE_HARDWARE;
+    attr->exclude_kernel = 1;
+    attr->exclude_hv = 1;
+    attr->disabled = 1;
+    attr->inherit = 1;
+    attr->config = event->eventId;
+    return 0;
+}
+
 int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEvent *event)
 {
     uint64_t offcore_flags = 0x0ULL;
@@ -647,6 +658,14 @@ int perfmon_setupCountersThread_perfevent(
                     continue;
                 }
                 VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_FIXED);
+                break;
+            case PERF:
+                ret = perf_perf_setup(&attr, index, event);
+                if (ret < 0)
+                {
+                    continue;
+                }
+                VERBOSEPRINTREG(cpu_id, index, attr.config, SETUP_PERF);
                 break;
             case PMC:
                 pmc_lock = 1;
