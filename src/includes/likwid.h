@@ -1654,6 +1654,13 @@ Initialize cpu frequency module
 @return returns 0 if successfull and 1 if invalid accessmode
 */
 extern int freq_init(void) __attribute__ ((visibility ("default") ));
+/*! \brief Get the base clock frequency of a hardware thread
+
+Get the base clock frequency of a hardware thread
+@param [in] cpu_id CPU ID
+@return Frequency or 0 in case of errors
+*/
+uint64_t freq_getCpuClockBase(const int cpu_id) __attribute__ ((visibility ("default") ));
 /*! \brief Get the current clock frequency of a hardware thread
 
 Get the current clock frequency of a hardware thread

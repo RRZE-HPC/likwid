@@ -866,6 +866,51 @@ static int getIntelHWP(const int cpu_id)
 #endif
 }
 
+static int getBaseFreq(const int cpu_id)
+{
+    int err = 0;
+
+    if (!lock_check())
+    {
+        fprintf(stderr,"Access to frequency backend is locked.\n");
+        return 0;
+    }
+#ifdef LIKWID_USE_PERFEVENT
+    fprintf(stderr,"Cannot read base frequency with ACCESSMODE=perf_event.\n");
+    return -1;
+#else
+    if (!HPMinitialized())
+    {
+        HPMinit();
+        own_hpm = 1;
+        err = HPMaddThread(cpu_id);
+        if (err != 0)
+        {
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            return err;
+        }
+    }
+    else
+    {
+        err = HPMaddThread(cpu_id);
+        if (err != 0)
+        {
+            ERROR_PLAIN_PRINT(Cannot get access to MSRs)
+            return err;
+        }
+    }
+
+    uint64_t tmp = 0x0ULL;
+    err = HPMread(cpu_id, MSR_DEV, MSR_PLATFORM_INFO, &tmp);
+    if (err)
+    {
+        ERROR_PRINT(Cannot read register 0x%x, MSR_PLATFORM_INFO);
+        return err;
+    }
+    tmp = extractBitField(tmp,8,8);
+    return 100000 * tmp;
+#endif
+}
 
 int
 _freqInit(void)
@@ -1031,6 +1076,15 @@ int freq_setGovernor(const int cpu_id, const char* gov)
     return -EINVAL;
 }
 
+uint64_t freq_getCpuClockBase(const int cpu_id)
+{
+    uint64_t f = getBaseFreq(cpu_id);
+    if (f > 0)
+    {
+        return f;
+    }
+    return 0;
+}
 
 uint64_t freq_getCpuClockCurrent(const int cpu_id)
 {
