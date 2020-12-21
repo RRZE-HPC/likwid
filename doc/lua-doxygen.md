@@ -2638,7 +2638,15 @@ or<BR>
   <TD><TABLE>
     <TR>
       <TD>\a Exec</TD>
-      <TD>String containing the executable and its options</TD>
+      <TD>String containing the executable and its arguments. Executable and arguments are separated by '|'</TD>
+    </TR>
+    <TR>
+      <TD>\a numThreads</TD>
+      <TD>Number of HW thread IDs in the cpulist (third parameter)</TD>
+    </TR>
+    <TR>
+      <TD>\a cpulist</TD>
+      <TD>List of HW thread IDs. The application's cpuset is limited to these hw threads</TD>
     </TR>
   </TABLE></TD>
 </TR>
