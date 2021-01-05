@@ -342,7 +342,7 @@ if not print_info and not print_temp then
                 likwid.sleep(time_interval)
             end
         else
-            local pid = likwid.startProgram(table.concat(execList,"|"), 0, {})
+            local pid = likwid.startProgram(table.concat(execList," "), 0, {})
             if not pid then
                 print_stderr(string.format("Failed to execute %s!",table.concat(execList," ")))
                 likwid.finalize()

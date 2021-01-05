@@ -2638,7 +2638,7 @@ or<BR>
   <TD><TABLE>
     <TR>
       <TD>\a Exec</TD>
-      <TD>String containing the executable and its arguments. Executable and arguments are separated by '|'</TD>
+      <TD>String containing the executable and its arguments. Executable and arguments are separated by ' '</TD>
     </TR>
     <TR>
       <TD>\a numThreads</TD>

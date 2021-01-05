@@ -300,7 +300,7 @@ if verbose > 0 and quiet == 0 then
     end
     print_stdout(string.format("Using %d thread(s) (cpuset: 0x%x)", num_threads, mask))
 end
-local pid = likwid.startProgram(table.concat(execList,"|"), num_threads, cpu_list)
+local pid = likwid.startProgram(table.concat(execList," "), num_threads, cpu_list)
 if (pid == nil) then
     print_stderr("Failed to execute command: ".. exec)
     close_and_exit(1)
