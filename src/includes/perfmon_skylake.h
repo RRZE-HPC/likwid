@@ -41,6 +41,14 @@
 #include <voltage.h>
 #include <linux/version.h>
 
+#define IS_SKYLAKE_CLIENT(model) ((model) == SKYLAKE1 || \
+                                  (model) == SKYLAKE2 || \
+                                  (model) == KABYLAKE1 || \
+                                  (model) == KABYLAKE2 || \
+                                  (model) == CANNONLAKE || \
+                                  (model) == COMETLAKE1 || \
+                                  (model) == COMETLAKE2)
+
 static int perfmon_numCountersSkylake = NUM_COUNTERS_SKYLAKE;
 static int perfmon_numCoreCountersSkylake = NUM_COUNTERS_CORE_SKYLAKE;
 static int perfmon_numArchEventsSkylake = NUM_ARCH_EVENTS_SKYLAKE;
@@ -86,37 +94,29 @@ int perfmon_init_skylake(int cpu_id)
     }
     if (socket_lock[affinity_thread2socket_lookup[cpu_id]] == cpu_id)
     {
-        switch (cpuid_info.model)
+        if (skl_did_cbox_check == 0)
         {
-            case SKYLAKEX:
-                if (skl_did_cbox_check == 0)
-                {
-                    skylake_cbox_setup = skx_cbox_setup;
-                    skl_did_cbox_check = 1;
-                }
-                break;
-            case SKYLAKE1:
-            case SKYLAKE2:
-            case KABYLAKE1:
-            case KABYLAKE2:
-            case CANNONLAKE:
-                if (skl_did_cbox_check == 0)
-                {
-                    uint64_t data = 0x0ULL;
-                    ret = HPMwrite(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, 0x0ULL);
-                    ret += HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, &data);
-                    ret += HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
-                    ret += HPMread(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, &data);
-                    if ((ret == 0) && (data == 0x0ULL))
-                        skylake_cbox_setup = skl_cbox_setup;
-                    else
-                        skylake_cbox_setup = skl_cbox_nosetup;
-                    skl_did_cbox_check = 1;
-                }
-                break;
-            default:
+            if (IS_SKYLAKE_CLIENT(cpuid_info.model))
+            {
+                uint64_t data = 0x0ULL;
+                ret = HPMwrite(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, 0x0ULL);
+                ret += HPMread(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, &data);
+                ret += HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL);
+                ret += HPMread(cpu_id, MSR_DEV, MSR_V4_C0_PERF_CTRL0, &data);
+                if ((ret == 0) && (data == 0x0ULL))
+                    skylake_cbox_setup = skl_cbox_setup;
+                else
+                    skylake_cbox_setup = skl_cbox_nosetup;
+            }
+            else if (cpuid_info.model == SKYLAKEX)
+            {
+                skylake_cbox_setup = skx_cbox_setup;
+            }
+            else
+            {
                 skylake_cbox_setup = skl_cbox_nosetup;
-                skl_did_cbox_check = 1;
+            }
+            skl_did_cbox_check = 1;
         }
     }
     return 0;
@@ -750,7 +750,7 @@ int skx_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 #define SKL_UNCORE_FREEZE \
     if (haveLock && MEASURE_UNCORE(eventSet)) \
     { \
-        if (cpuid_info.model == SKYLAKE1 || cpuid_info.model == SKYLAKE2) \
+        if (IS_SKYLAKE_CLIENT(cpuid_info.model)) \
         { \
             VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL, FREEZE_UNCORE) \
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, 0x0ULL)); \
@@ -766,7 +766,7 @@ int skx_ibox_setup(int cpu_id, RegisterIndex index, PerfmonEvent *event)
 #define SKL_UNCORE_UNFREEZE \
     if (haveLock && MEASURE_UNCORE(eventSet)) \
     { \
-        if (cpuid_info.model == SKYLAKE1 || cpuid_info.model == SKYLAKE2) \
+        if (IS_SKYLAKE_CLIENT(cpuid_info.model)) \
         { \
             VERBOSEPRINTREG(cpu_id, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29), UNFREEZE_UNCORE) \
             CHECK_MSR_WRITE_ERROR(HPMwrite(cpu_id, MSR_DEV, MSR_V4_UNC_PERF_GLOBAL_CTRL, uflags|(1ULL<<29))); \
@@ -1053,7 +1053,7 @@ int perfmon_startCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet
                 case CBOX25:
                 case CBOX26:
                 case CBOX27:
-                    if (haveLock && (cpuid_info.model == SKYLAKE1 || cpuid_info.model == SKYLAKE2))
+                    if (haveLock && IS_SKYLAKE_CLIENT(cpuid_info.model))
                     {
                         uflags |= (1ULL<<(type-CBOX0));
                     }
@@ -1396,7 +1396,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case CBOX26:
                 case CBOX27:
                 case WBOX:
-                    if (haveLock && (cpuid_info.model == SKYLAKE1 || cpuid_info.model == SKYLAKE2))
+                    if (haveLock && IS_SKYLAKE_CLIENT(cpuid_info.model))
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                         SKL_CHECK_UNCORE_OVERFLOW(box_map[type].ovflOffset);
@@ -1626,7 +1626,7 @@ int perfmon_readCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case CBOX25:
                 case CBOX26:
                 case CBOX27:
-                    if (haveLock && (cpuid_info.model == SKYLAKE1 || cpuid_info.model == SKYLAKE2))
+                    if (haveLock && IS_SKYLAKE_CLIENT(cpuid_info.model))
                     {
                         CHECK_MSR_READ_ERROR(HPMread(cpu_id, MSR_DEV, counter1, &counter_result));
                         SKL_CHECK_UNCORE_OVERFLOW(box_map[type].ovflOffset);

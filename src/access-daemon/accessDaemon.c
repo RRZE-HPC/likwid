@@ -1929,7 +1929,10 @@ int main(void)
                          (model == SKYLAKE1) ||
                          (model == SKYLAKE2) ||
                          (model == KABYLAKE1) ||
-                         (model == KABYLAKE2))
+                         (model == KABYLAKE2) ||
+                         (model == CANNONLAKE) ||
+                         (model == COMETLAKE1) ||
+                         (model == COMETLAKE2))
                 {
                     allowed = allowed_sandybridge;
                     isClientMem = 1;

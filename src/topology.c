@@ -82,6 +82,7 @@ static char* cascadelakeX_str = "Intel Cascadelake SP processor";
 static char* kabylake_str = "Intel Kabylake processor";
 static char* cannonlake_str = "Intel Cannonlake processor";
 static char* coffeelake_str = "Intel Coffeelake processor";
+static char* cometlake_str = "Intel Cometlake processor";
 static char* nehalem_ex_str = "Intel Nehalem EX processor";
 static char* westmere_ex_str = "Intel Westmere EX processor";
 static char* xeon_mp_string = "Intel Xeon MP processor";
@@ -793,6 +794,13 @@ topology_setName(void)
                     cpuid_info.supportClientmem = 1;
                     cpuid_info.name = cannonlake_str;
                     cpuid_info.short_name = short_cannonlake;
+                    break;
+
+                case COMETLAKE1:
+                case COMETLAKE2:
+                    cpuid_info.supportClientmem = 1;
+                    cpuid_info.name = cometlake_str;
+                    cpuid_info.short_name = short_skylake;
                     break;
 
                 case XEON_PHI_KNL:

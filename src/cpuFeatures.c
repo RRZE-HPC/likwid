@@ -165,7 +165,9 @@ cpuFeatures_update(int cpu)
              (cpuid_info.model == SKYLAKEX) ||
              (cpuid_info.model == KABYLAKE1) ||
              (cpuid_info.model == KABYLAKE2) ||
-             (cpuid_info.model == CANNONLAKE))
+             (cpuid_info.model == CANNONLAKE)||
+             (cpuid_info.model == COMETLAKE1) ||
+             (cpuid_info.model == COMETLAKE2))
     {
         TEST_FLAG_INV(FEAT_TURBO_MODE,38);
     }
@@ -194,6 +196,8 @@ cpuFeatures_update(int cpu)
             (cpuid_info.model == SKYLAKEX) ||
             (cpuid_info.model == KABYLAKE1) ||
             (cpuid_info.model == KABYLAKE2) ||
+            (cpuid_info.model == COMETLAKE1) ||
+            (cpuid_info.model == COMETLAKE2) ||
             (cpuid_info.model == ICELAKE1) ||
             (cpuid_info.model == ICELAKE2) ||
             (cpuid_info.model == ICELAKEX1) ||
@@ -374,6 +378,8 @@ cpuFeatures_enable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == KABYLAKE1) ||
             (cpuid_info.model == KABYLAKE2) ||
             (cpuid_info.model == CANNONLAKE) ||
+            (cpuid_info.model == COMETLAKE1) ||
+            (cpuid_info.model == COMETLAKE2) ||
             (cpuid_info.model == ICELAKE1) ||
             (cpuid_info.model == ICELAKE2) ||
             (cpuid_info.model == ICELAKEX1) ||
@@ -535,6 +541,8 @@ cpuFeatures_disable(int cpu, CpuFeature type, int print)
             (cpuid_info.model == KABYLAKE1) ||
             (cpuid_info.model == KABYLAKE2) ||
             (cpuid_info.model == CANNONLAKE) ||
+            (cpuid_info.model == COMETLAKE1) ||
+            (cpuid_info.model == COMETLAKE2) ||
             (cpuid_info.model == ICELAKE1) ||
             (cpuid_info.model == ICELAKE2) ||
             (cpuid_info.model == ICELAKEX1) ||
