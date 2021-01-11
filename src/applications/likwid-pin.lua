@@ -252,6 +252,11 @@ if omp_threads and tonumber(omp_threads) < num_threads then
 end
 
 likwid.setenv("KMP_AFFINITY","disabled")
+local likwid_hwthreads = {}
+for i=1,#cpu_list do
+    table.insert(likwid_hwthreads, tostring(math.tointeger(cpu_list[i])))
+end
+likwid.setenv("LIKWID_HWTHREADS", table.concat(likwid_hwthreads, ","))
 
 if os.getenv("CILK_NWORKERS") == nil then
     likwid.setenv("CILK_NWORKERS", tostring(math.tointeger(num_threads)))

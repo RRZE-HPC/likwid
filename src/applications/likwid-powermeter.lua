@@ -277,16 +277,15 @@ if (stethoscope) and (time_interval < power["timeUnit"]) then
 end
 
 local execString = ""
+affinity = likwid.getAffinityInfo()
+local pinList = {}
+for i,socket in pairs(sockets) do
+    table.insert(pinList, string.format("S%u:0-%u",socket,(cputopo["numCoresPerSocket"]*cputopo["numThreadsPerCore"])-1))
+end
 if use_perfctr then
-    affinity = likwid.getAffinityInfo()
-    argString = ""
-    for i,socket in pairs(sockets) do
-        argString = argString .. string.format("S%u:0-%u",socket,(cputopo["numCoresPerSocket"]*cputopo["numThreadsPerCore"])-1)
-        if (i < #sockets) then
-            argString = argString .. "@"
-        end
-    end
-    execString = string.format("<INSTALLED_PREFIX>/bin/likwid-perfctr -C %s -f -g CLOCK ",argString)
+    execString = string.format("<INSTALLED_PREFIX>/bin/likwid-perfctr -C %s -f -g CLOCK ",table.concat(pinList, "@"))
+elseif not stethoscope then
+    execString = string.format("<INSTALLED_PREFIX>/bin/likwid-pin -c %s -q ",table.concat(pinList, "@"))
 end
 
 local execList = {}
@@ -301,11 +300,7 @@ else
     for i=1, likwid.tablelength(arg)-2 do
         table.insert(execList, arg[i])
     end
-    if use_perfctr then
-        execString = execString .. table.concat(execList," ")
-    else
-        execString = table.concat(execList," ")
-    end
+    execString = execString .. table.concat(execList," ")
 end
 
 local exitvalue = 0
@@ -342,9 +337,9 @@ if not print_info and not print_temp then
                 likwid.sleep(time_interval)
             end
         else
-            local pid = likwid.startProgram(table.concat(execList," "), 0, {})
+            local pid = likwid.startProgram(execString, 0, {})
             if not pid then
-                print_stderr(string.format("Failed to execute %s!",table.concat(execList," ")))
+                print_stderr(string.format("Failed to execute %s!",execString))
                 likwid.finalize()
                 os.exit(1)
             end

@@ -839,6 +839,11 @@ if use_marker == true then
         likwid.setenv("LIKWID_GPUFILEPATH", nvMarkerFile)
     end
 end
+local likwid_hwthreads = {}
+for i=1,#cpulist do
+    table.insert(likwid_hwthreads, tostring(math.tointeger(cpulist[i])))
+end
+likwid.setenv("LIKWID_HWTHREADS", table.concat(likwid_hwthreads, ","))
 
 --[[for i, event_string in pairs(event_string_list) do
     local groupdata = likwid.get_groupdata(event_string)
