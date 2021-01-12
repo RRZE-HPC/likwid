@@ -92,6 +92,7 @@ class EventParser():
                 .setName("pipe (|) separated list of subsystem names (PMC, PBOX0|PBOX1 etc.)"),
                 delim='|').setResultsName("subsystem")
             ).setParseAction(self._set_event)
+        self.Evt.ignore(Comment)
 
         self.Options = (
             LinePrefix("OPTIONS") + EventName
@@ -104,6 +105,7 @@ class EventParser():
                 .setName("pipe (|) separated list of option names")
             - LineEnd()
             ).setParseAction(self._set_options)
+        self.Options.ignore(Comment)
 
         self.DefaultOptions = (
             LinePrefix("DEFAULT_OPTIONS") + EventName
@@ -119,6 +121,7 @@ class EventParser():
                 .setName("option list (comma separated list of NAME=VALUE pairs)")
             - LineEnd()
             ).setParseAction(self._set_default_options)
+        self.DefaultOptions.ignore(Comment)
 
         self.Umask = (
             LinePrefix("UMASK") + EventName
@@ -127,6 +130,7 @@ class EventParser():
                 .setName("UMASK value (integer)")
             - LineEnd()
             ).setParseAction(self._parse_umask)
+        self.Umask.ignore(Comment)
 
         self.Event = ( self.Umask | self.Evt | self.Options | self.DefaultOptions | Comment ) + StringEnd()
 
