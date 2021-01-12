@@ -512,7 +512,8 @@ class GroupParser():
         long = Keyword('LONG').suppress() + EOL
         self.parser += long
 
-        formulae = Keyword('Formulas:') + EOL + OneOrMore(Line().setParseAction(self.add_formula))
+        Formula = LineStart() + SkipTo(LineEnd(), failOn=LineStart()+(Keyword('-') ^ Keyword('--'))+LineEnd()) + EOL
+        formulae = Keyword('Formulas:') + EOL + OneOrMore(Formula().setParseAction(self.add_formula))
         self.parser += formulae
 
         descr = (Keyword('-') ^ Keyword('--')).suppress() + EOL + Group(OneOrMore(Line()))
@@ -541,7 +542,11 @@ class GroupParser():
 
     def add_formula(self, s, loc, toks):
         if not '=' in toks[0]:
-            raise ParseException(s,loc,"expected '=' sign")
+            i = [toks[0].find(x['event']) for x in self.group['events'] if toks[0].find(x['event'])>=0]
+            pos = min(i) if i else 0
+            while pos > 0 and toks[0][pos] != ' ':
+                pos -= 1
+            raise ParseSyntaxException(s,loc + pos, "expected '=' sign")
         metric, formula = [ x.strip() for x in toks[0].split('=', 1) ]
         dim = miss_brackets_in_units(metric)
         if dim:
