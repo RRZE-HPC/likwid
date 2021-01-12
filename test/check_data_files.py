@@ -652,6 +652,9 @@ def start_logging(args):
 
 
 
+def abs_path(path):
+    return Path(path).expanduser().resolve()
+
 if __name__ == "__main__":
 
     import argparse
@@ -669,9 +672,9 @@ if __name__ == "__main__":
     etest.add_argument('--verbose', '-v', action='store_true', default=False,
                        help="more verbose output"
                        )
-    default = Path(__file__).parent / "../src/includes"
+    default = abs_path(__file__).parent / "../src/includes"
     default = default.resolve()
-    etest.add_argument('--input-dir', '-d', type=Path, default=default,
+    etest.add_argument('--input-dir', '-d', type=abs_path, default=default,
                 help="path to the directory with event data files, "
                      "default: {}".format(default)
                 )
@@ -684,7 +687,7 @@ if __name__ == "__main__":
     etest.add_argument('--json', '-j', action='store_true', default=False,
                 help="dump event descriptions in JSON format"
                 )
-    etest.add_argument('--output-dir', '-o', type=Path, default=Path('.'),
+    etest.add_argument('--output-dir', '-o', type=abs_path, default=abs_path('.'),
                 help="directory where to put output JSON files, "
                      "default: current directory"
                 )
@@ -700,20 +703,20 @@ if __name__ == "__main__":
     gtest = subparsers.add_parser('groups', help="test group ddescriptions")
     gtest.set_defaults(func=check_groups)
     gtest.add_argument('--verbose', '-v', action='count', default=0)
-    default = Path(__file__).parent / "../groups"
+    default = abs_path(__file__).parent / "../groups"
     if default.exists():
         default = default.resolve()
     else:
-        default = Path(__file__).parent
-    gtest.add_argument('--input-dir', '-d', type=Path,
+        default = abs_path(__file__).parent
+    gtest.add_argument('--input-dir', '-d', type=abs_path,
                         default=default,
                         help='path to the directory with groups data files, default: {}'.format(default))
     gtest.add_argument('files', metavar='FILE', type=str, nargs='*',
                     help='group data file to check')
     gtest.add_argument('--json', '-j', action='store_true', default=False,
                     help="dump group descriptions in JSON format")
-    gtest.add_argument('--output-dir', '-o', type=Path,
-                        default=Path('.'),
+    gtest.add_argument('--output-dir', '-o', type=abs_path,
+                        default=abs_path('.'),
                         help='directory where to put output JSON files, default: current directory')
 
     args = ap.parse_args()
