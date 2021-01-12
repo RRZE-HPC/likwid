@@ -30,20 +30,20 @@ Operational intensity (FP+SVE512) (((PMC5*512.0)/128.0)+PMC4)/((PMC2+PMC3)*256.0
 
 LONG
 Formulas:
-DP (FP) [MFLOP/s] 1E-06*FP_DP_FIXED_OPS_DPEC/time
-DP (FP+SVE128) [MFLOP/s]  1.0E-06*(FP_DP_FIXED_OPS_DPEC+((FP_DP_SCALE_OPS_DPEC*128)/128))/time
-DP (FP+SVE256) [MFLOP/s]  1.0E-06*(FP_DP_FIXED_OPS_DPEC+((FP_DP_SCALE_OPS_DPEC*256)/128))/time
-DP (FP+SVE512) [MFLOP/s]  1.0E-06*(FP_DP_FIXED_OPS_DPEC+((FP_DP_SCALE_OPS_DPEC*512)/128))/time
+DP (FP) [MFLOP/s] = 1E-06*FP_DP_FIXED_OPS_DPEC/time
+DP (FP+SVE128) [MFLOP/s] = 1.0E-06*(FP_DP_FIXED_OPS_DPEC+((FP_DP_SCALE_OPS_DPEC*128)/128))/time
+DP (FP+SVE256) [MFLOP/s] = 1.0E-06*(FP_DP_FIXED_OPS_DPEC+((FP_DP_SCALE_OPS_DPEC*256)/128))/time
+DP (FP+SVE512) [MFLOP/s] = 1.0E-06*(FP_DP_FIXED_OPS_DPEC+((FP_DP_SCALE_OPS_DPEC*512)/128))/time
 Memory read bandwidth [MBytes/s] = 1.0E-06*(BUS_READ_TOTAL_MEM)*256.0/runtime
 Memory read data volume [GBytes] = 1.0E-09*(BUS_READ_TOTAL_MEM)*256.0
 Memory write bandwidth [MBytes/s] = 1.0E-06*(BUS_WRITE_TOTAL_MEM)*256.0/runtime
 Memory write data volume [GBytes] = 1.0E-09*(BUS_WRITE_TOTAL_MEM)*256.0
 Memory bandwidth [MBytes/s] = 1.0E-06*(BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0/runtime
 Memory data volume [GBytes] = 1.0E-09*(BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0
-Operational intensity (FP) FP_DP_FIXED_OPS_DPEC/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
-Operational intensity (FP+SVE128) (FP_DP_FIXED_OPS_DPEC+((FP_DP_SCALE_OPS_DPEC*128)/128)/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
-Operational intensity (FP+SVE256) (FP_DP_FIXED_OPS_DPEC+((FP_DP_SCALE_OPS_DPEC*256)/128)/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
-Operational intensity (FP+SVE512) (FP_DP_FIXED_OPS_DPEC+((FP_DP_SCALE_OPS_DPEC*512)/128)/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
+Operational intensity (FP) = FP_DP_FIXED_OPS_DPEC/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
+Operational intensity (FP+SVE128) = (FP_DP_FIXED_OPS_DPEC+((FP_DP_SCALE_OPS_DPEC*128)/128)/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
+Operational intensity (FP+SVE256) = (FP_DP_FIXED_OPS_DPEC+((FP_DP_SCALE_OPS_DPEC*256)/128)/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
+Operational intensity (FP+SVE512) = (FP_DP_FIXED_OPS_DPEC+((FP_DP_SCALE_OPS_DPEC*512)/128)/((BUS_READ_TOTAL_MEM+BUS_WRITE_TOTAL_MEM)*256.0)
 -
 Profiling group to measure memory bandwidth and double-precision FP rate for scalar and SVE vector
 operations with different widths. The events for the SVE metrics assumes that all vector elements
