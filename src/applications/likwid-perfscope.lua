@@ -479,7 +479,7 @@ for i, group in pairs(group_list) do
     end
     if group["y2title"] ~= nil then
         for c,cpu in pairs(cpulist) do
-            gnucmd = gnucmd .. string.format(" --y2 %d", cpu + (#cpulist * group["y2funcindex"]))
+            gnucmd = gnucmd .. string.format(" --y2 %d", (c-1) + (#cpulist * group["y2funcindex"]))
         end
         table.insert(extracmds, string.format("set y2label %q font \",12\"", group["y2title"]))
     end
