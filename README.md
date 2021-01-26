@@ -94,12 +94,14 @@ For build and installation hints see INSTALL file or check the build instruction
 page in the wiki https://github.com/RRZE-HPC/likwid/wiki/Build
 
 For quick install:
-```
-$ tar -xjf likwid-<VERSION>.tar.bz2
-$ cd likwid-<VERSION>
-$ vi config.mk (configure build, e.g. change installation prefix and architecture flags)
-$ make
-$ sudo make install (sudo required to install the access daemon with proper permissions)
+```bash
+$VERSION=stable
+wget http://ftp.fau.de/pub/likwid/likwid-$VERSION.tar.gz
+tar -xaf likwid-$VERSION.tar.gz
+cd likwid-$VERSION
+vi config.mk # configure build, e.g. change installation prefix and architecture flags
+make
+sudo make install # sudo required to install the access daemon with proper permissions
 ```
 
 For ARM builds, the `COMPILER` flag in `config.mk` needs to changed to `GCCARMv8` or `ARMCLANG` (experimental).
