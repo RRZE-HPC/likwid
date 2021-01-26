@@ -1,0 +1,14 @@
+STREAMS 1
+TYPE DOUBLE
+FLOPS 1
+BYTES 8
+DESC Double-precision vector sum, optimized for SVE with a vector length of 512 bit
+LOADS 1
+STORES 0
+INSTR_CONST 10
+INSTR_LOOP 5
+UOPS 5
+fmov z0.d, #0.0e+0
+LOOP 8
+ld1d  z1.d, p0/z, [STR0, GPR6, lsl 3]
+fadd  z0.d, p1/m, z0.d, z1.d
