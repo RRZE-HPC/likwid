@@ -126,6 +126,10 @@ http://groups.google.com/group/likwid-users
 or if it is bug, add an issue at:
 https://github.com/rrze-likwid/likwid/issues
 
+You can also chat with us through Matrix:
+General chat: https://matrix.to/#/#likwid:matrix.org?via=matrix.org
+Development chat: https://matrix.to/#/#likwid-dev:matrix.org?via=matrix.org
+
 --------------------------------------------------------------------------------
 Extras
 --------------------------------------------------------------------------------
