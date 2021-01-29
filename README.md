@@ -127,8 +127,8 @@ or if it is bug, add an issue at:
 https://github.com/rrze-likwid/likwid/issues
 
 You can also chat with us through Matrix:
-General chat: https://matrix.to/#/#likwid:matrix.org?via=matrix.org
-Development chat: https://matrix.to/#/#likwid-dev:matrix.org?via=matrix.org
+- General chat: https://matrix.to/#/#likwid:matrix.org?via=matrix.org
+- Development chat: https://matrix.to/#/#likwid-dev:matrix.org?via=matrix.org
 
 --------------------------------------------------------------------------------
 Extras
@@ -137,6 +137,8 @@ Extras
 https://github.com/jacek-lewandowski/likwid-java-api
 - For Python you can find an interface to the LIKWID API here:
 https://github.com/RRZE-HPC/pylikwid or `pip install pylikwid`
+- The JuliaLab created an interface for Julia:
+https://github.com/JuliaPerf/LIKWID.jl or `]add LIKWID`
 
 --------------------------------------------------------------------------------
 Survey
