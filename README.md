@@ -26,7 +26,7 @@ It consists of:
 - likwid-memsweeper: Sweep memory of NUMA domains and evict cachelines from the last level cache
 - likwid-setFrequencies: Tool to control the CPU and Uncore frequencies (x86 only)
 
-For further information please take a look at the [Wiki](https://github.com/RRZE-HPC/likwid/wiki).
+For further information please take a look at the [Wiki](https://github.com/RRZE-HPC/likwid/wiki) or contact us via Matrix chat [LIKWID General](https://matrix.to/#/#likwid:matrix.org?via=matrix.org).
 
 
 --------------------------------------------------------------------------------
