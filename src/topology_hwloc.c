@@ -345,6 +345,9 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     if (count > cpuid_topology.numHWThreads)
         cpuid_topology.numHWThreads = count;
 #endif
+    count = likwid_sysfs_list_len("/sys/devices/system/cpu/present");
+    if (count > cpuid_topology.numHWThreads)
+        cpuid_topology.numHWThreads = count;
     if (cpuid_topology.activeHWThreads > cpuid_topology.numHWThreads)
         cpuid_topology.numHWThreads = cpuid_topology.activeHWThreads;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d Vendor 0x%X Part 0x%X isIntel %d numHWThreads %d activeHWThreads %d,
