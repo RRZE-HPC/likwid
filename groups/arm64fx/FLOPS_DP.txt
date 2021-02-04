@@ -17,10 +17,10 @@ DP (FP+SVE512) [MFLOP/s] 1E-06*(((PMC4*512)/128)+PMC3)/time
 
 LONG
 Formulas:
-DP (FP) [MFLOP/s] 1E-06*FP_DP_FIXED_OPS_SPEC/time
-DP (FP+SVE128) [MFLOP/s]  1.0E-06*(FP_DP_FIXED_OPS_SPEC+((FP_DP_SCALE_OPS_SPEC*128)/128))/time
-DP (FP+SVE256) [MFLOP/s]  1.0E-06*(FP_DP_FIXED_OPS_SPEC+((FP_DP_SCALE_OPS_SPEC*256)/128))/time
-DP (FP+SVE512) [MFLOP/s]  1.0E-06*(FP_DP_FIXED_OPS_SPEC+((FP_DP_SCALE_OPS_SPEC*512)/128))/time
+DP (FP) [MFLOP/s] = 1E-06*FP_DP_FIXED_OPS_SPEC/time
+DP (FP+SVE128) [MFLOP/s] = 1.0E-06*(FP_DP_FIXED_OPS_SPEC+((FP_DP_SCALE_OPS_SPEC*128)/128))/time
+DP (FP+SVE256) [MFLOP/s] = 1.0E-06*(FP_DP_FIXED_OPS_SPEC+((FP_DP_SCALE_OPS_SPEC*256)/128))/time
+DP (FP+SVE512) [MFLOP/s] = 1.0E-06*(FP_DP_FIXED_OPS_SPEC+((FP_DP_SCALE_OPS_SPEC*512)/128))/time
 -
 Double-precision FP rate for scalar and SVE vector operations with different widths. The events for
 the SVE metrics assumes that all vector elements are active.
