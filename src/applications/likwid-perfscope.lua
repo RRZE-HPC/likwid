@@ -478,7 +478,9 @@ for i, group in pairs(group_list) do
         table.insert(extracmds, string.format("set ylabel %q font \",12\"", group["ytitle"]))
     end
     if group["y2title"] ~= nil then
-        gnucmd = gnucmd .. string.format(" --y2 %d", group["y2funcindex"])
+        for c,cpu in pairs(cpulist) do
+            gnucmd = gnucmd .. string.format(" --y2 %d", (c-1) + (#cpulist * group["y2funcindex"]))
+        end
         table.insert(extracmds, string.format("set y2label %q font \",12\"", group["y2title"]))
     end
     if group["formulas"] then
@@ -488,8 +490,8 @@ for i, group in pairs(group_list) do
             end
         else
             local curveID = 0
-            for c,cpu in pairs(cpulist) do
-                for f, fdesc in pairs(group["formulas"]) do
+            for f, fdesc in pairs(group["formulas"]) do
+                for c,cpu in pairs(cpulist) do
                     gnucmd = gnucmd .. string.format(" --legend %d %q", curveID, "C"..cpu..": "..fdesc["name"])
                     curveID = curveID + 1
                 end
