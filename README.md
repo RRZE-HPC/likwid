@@ -10,7 +10,7 @@ our hands to test them properly.
 
 [LIKWID Playlist (YouTube)](https://www.youtube.com/playlist?list=PLxVedhmuwLq2CqJpAABDMbZG8Whi7pKsk)
 
-[![Build Status](https://travis-ci.com/RRZE-HPC/likwid.svg?branch=master)](https://travis-ci.com/github/RRZE-HPC/likwid)
+[![Build Status](https://travis-ci.com/RRZE-HPC/likwid.svg?branch=master)](https://travis-ci.com/github/RRZE-HPC/likwid) [![General LIKWID DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4275676.svg)](https://doi.org/10.5281/zenodo.4275676)
 
 It consists of:
 
@@ -26,7 +26,7 @@ It consists of:
 - likwid-memsweeper: Sweep memory of NUMA domains and evict cachelines from the last level cache
 - likwid-setFrequencies: Tool to control the CPU and Uncore frequencies (x86 only)
 
-For further information please take a look at the [Wiki](https://github.com/RRZE-HPC/likwid/wiki).
+For further information please take a look at the [Wiki](https://github.com/RRZE-HPC/likwid/wiki) or contact us via Matrix chat [LIKWID General](https://matrix.to/#/#likwid:matrix.org?via=matrix.org).
 
 
 --------------------------------------------------------------------------------
@@ -94,12 +94,14 @@ For build and installation hints see INSTALL file or check the build instruction
 page in the wiki https://github.com/RRZE-HPC/likwid/wiki/Build
 
 For quick install:
-```
-$ tar -xjf likwid-<VERSION>.tar.bz2
-$ cd likwid-<VERSION>
-$ vi config.mk (configure build, e.g. change installation prefix and architecture flags)
-$ make
-$ sudo make install (sudo required to install the access daemon with proper permissions)
+```bash
+$VERSION=stable
+wget http://ftp.fau.de/pub/likwid/likwid-$VERSION.tar.gz
+tar -xaf likwid-$VERSION.tar.gz
+cd likwid-$VERSION
+vi config.mk # configure build, e.g. change installation prefix and architecture flags
+make
+sudo make install # sudo required to install the access daemon with proper permissions
 ```
 
 For ARM builds, the `COMPILER` flag in `config.mk` needs to changed to `GCCARMv8` or `ARMCLANG` (experimental).
@@ -124,6 +126,10 @@ http://groups.google.com/group/likwid-users
 or if it is bug, add an issue at:
 https://github.com/rrze-likwid/likwid/issues
 
+You can also chat with us through Matrix:
+- General chat: https://matrix.to/#/#likwid:matrix.org?via=matrix.org
+- Development chat: https://matrix.to/#/#likwid-dev:matrix.org?via=matrix.org
+
 --------------------------------------------------------------------------------
 Extras
 --------------------------------------------------------------------------------
@@ -131,6 +137,8 @@ Extras
 https://github.com/jacek-lewandowski/likwid-java-api
 - For Python you can find an interface to the LIKWID API here:
 https://github.com/RRZE-HPC/pylikwid or `pip install pylikwid`
+- The JuliaLab created an interface for Julia:
+https://github.com/JuliaPerf/LIKWID.jl or `]add LIKWID`
 
 --------------------------------------------------------------------------------
 Survey
