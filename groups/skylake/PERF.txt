@@ -1,4 +1,5 @@
 SHORT Perf counters
+
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
 FIXC1 CPU_CLK_UNHALTED_CORE
@@ -17,7 +18,7 @@ Aperf/Mperf [%] APERF/MPERF*100
 Pperf/Aperf [%] PPERF/APERF*100
 
 LONG
-Formula:
+Formulas:
 Aperf/Mperf = APERF/MPERF*100
 Pperf/Aperf = PPERF/APERF*100
 -

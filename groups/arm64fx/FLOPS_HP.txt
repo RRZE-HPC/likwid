@@ -17,10 +17,10 @@ HP (FP+SVE512) [MFLOP/s] 1E-06*(((PMC4*512)/128)+PMC3)/time
 
 LONG
 Formulas:
-HP (FP) [MFLOP/s] 1E-06*FP_SP_FIXED_OPS_SPEC/time
-HP (FP+SVE128) [MFLOP/s]  1.0E-06*(FP_SP_FIXED_OPS_SPEC+((FP_SP_SCALE_OPS_SPEC*128)/128))/time
-HP (FP+SVE256) [MFLOP/s]  1.0E-06*(FP_SP_FIXED_OPS_SPEC+((FP_SP_SCALE_OPS_SPEC*256)/128))/time
-HP (FP+SVE512) [MFLOP/s]  1.0E-06*(FP_SP_FIXED_OPS_SPEC+((FP_SP_SCALE_OPS_SPEC*512)/128))/time
+HP (FP) [MFLOP/s] = 1E-06*FP_HP_FIXED_OPS_SPEC/time
+HP (FP+SVE128) [MFLOP/s] = 1.0E-06*(FP_HP_FIXED_OPS_SPEC+((FP_HP_SCALE_OPS_SPEC*128)/128))/time
+HP (FP+SVE256) [MFLOP/s] = 1.0E-06*(FP_HP_FIXED_OPS_SPEC+((FP_HP_SCALE_OPS_SPEC*256)/128))/time
+HP (FP+SVE512) [MFLOP/s] = 1.0E-06*(FP_HP_FIXED_OPS_SPEC+((FP_HP_SCALE_OPS_SPEC*512)/128))/time
 -
 Half-precision FP rate for scalar and SVE vector operations with different widths. The events for
 the SVE metrics assumes that all vector elements are active.
