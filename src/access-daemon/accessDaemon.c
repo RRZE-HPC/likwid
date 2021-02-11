@@ -1434,7 +1434,7 @@ static int get_devid(int pathlen, char* path)
             {
                 buff[ret] = '\0';
                 ret = sscanf(buff, "%x", &devid);
-                if (ret == 1)
+                if (ret != 1)
                 {
                     devid = -1;
                 }
@@ -1442,7 +1442,7 @@ static int get_devid(int pathlen, char* path)
             fclose(fp);
         }
     }
-    return 0x0;
+    return devid;
 }
 
 static int get_nodeid(int pathlen, char* path)
