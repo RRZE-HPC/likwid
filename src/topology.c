@@ -776,6 +776,7 @@ topology_setName(void)
                         cpuid_info.name = cascadelakeX_str;
                         cpuid_info.short_name = short_cascadelakeX;
                     }
+                    cpuid_info.supportUncore = 1;
                     break;
 
                 case KABYLAKE1:
