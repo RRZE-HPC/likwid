@@ -1099,6 +1099,7 @@ perfmon_init_maps(void)
                         perfmon_numCounters = perfmon_numCountersSkylakeX;
                         perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
                         translate_types = skylakeX_translate_types;
+                        pci_devices = skylakeX_pci_devices;
                     }
                     else
                     {
@@ -1109,6 +1110,7 @@ perfmon_init_maps(void)
                         perfmon_numCounters = perfmon_numCountersSkylakeX;
                         perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
                         translate_types = skylakeX_translate_types;
+                        pci_devices = skylakeX_pci_devices;
                     }
                     break;
 
