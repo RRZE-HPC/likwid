@@ -77,8 +77,14 @@ hwloc_pci_init(uint16_t testDevice, char** socket_bus, int* nrSockets)
         }
         if ((obj->attr->pcidev.vendor_id == testVendor) && (obj->attr->pcidev.device_id == testDevice))
         {
-            socket_bus[cntr] = (char*)malloc(4);
-            sprintf(socket_bus[cntr++], "%02x/", obj->attr->pcidev.bus);
+            hwloc_obj_t walk = obj->parent;
+            while (walk->type != HWLOC_OBJ_SOCKET) walk = walk->parent;
+            if (socket_bus[walk->os_index] == NULL)
+            {
+                socket_bus[walk->os_index] = (char*)malloc(5);
+                snprintf(socket_bus[walk->os_index], 4, "%02x/", obj->attr->pcidev.bus);
+                cntr++;
+            }
         }
     }
     *nrSockets = cntr;
