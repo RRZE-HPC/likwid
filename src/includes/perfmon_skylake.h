@@ -1426,7 +1426,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                         if (!cpuid_info.supportClientmem)
                         {
                             skl_uncore_read(cpu_id, index, event, current, overflows,
-                                            FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index)+1);
+                                            0, ovf_offset, getCounterTypeOffset(index)+1);
                             counter_result = *current;
                         }
                         else
@@ -1447,7 +1447,7 @@ int perfmon_stopCountersThread_skylake(int thread_id, PerfmonEventSet* eventSet)
                 case MBOX4:
                 case MBOX5:
                     skl_uncore_read(cpu_id, index, event, current, overflows,
-                                    FREEZE_FLAG_CLEAR_CTR, ovf_offset, getCounterTypeOffset(index)+1);
+                                    0, ovf_offset, getCounterTypeOffset(index)+1);
                     counter_result = *current;
                     VERBOSEPRINTREG(cpu_id, counter1, LLU_CAST counter_result, READ_MBOX)
                     break;
