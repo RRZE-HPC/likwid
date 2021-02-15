@@ -127,14 +127,14 @@ get_numaNodes(int* array, int maxlen)
             {
                 continue;
             }
-	    if (array && count < maxlen)
+            if (array && count < maxlen)
             {
-            	int nd = str2int(de->d_name+4);
+                int nd = str2int(de->d_name+4);
                 array[count] = nd;
-	    }
+            }
             count++;
         }
-    }       
+    }
     if (array && count > 0)
     {
         int i = 0;
@@ -357,7 +357,7 @@ int proc_numa_init(void)
     int* nodes = malloc(numa_info.numberOfNodes*sizeof(int));
     if (!nodes)
     {
-	return -ENOMEM;
+        return -ENOMEM;
     }
     numa_info.numberOfNodes = get_numaNodes(nodes, numa_info.numberOfNodes);
     numa_info.nodes = (NumaNode*) malloc(numa_info.numberOfNodes * sizeof(NumaNode));
@@ -368,16 +368,21 @@ int proc_numa_init(void)
 
     for (i=0; i<numa_info.numberOfNodes; i++)
     {
-	int id = nodes[i];
+        int id = nodes[i];
         numa_info.nodes[i].id = id;
         nodeMeminfo(id, &numa_info.nodes[i].totalMemory, &numa_info.nodes[i].freeMemory);
         numa_info.nodes[i].numberOfProcessors = nodeProcessorList(id, &numa_info.nodes[i].processors);
-        nrCPUs += numa_info.nodes[i].numberOfProcessors;
-        if (numa_info.nodes[i].numberOfProcessors == 0 && nrCPUs != cpuid_topology.numHWThreads)
+        int check = 0;
+        for (int j = 0; j < numa_info.nodes[i].numberOfProcessors; j++)
         {
-            err = -EFAULT;
-            break;
+            int id = numa_info.nodes[i].processors[j];
+            if (cpuid_topology.threadPool[id].inCpuSet == 1)
+            {
+                check++;
+            }
         }
+        if (check < numa_info.nodes[i].numberOfProcessors)
+            numa_info.nodes[i].numberOfProcessors = check;
         numa_info.nodes[i].numberOfDistances = nodeDistanceList(id, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
         if (numa_info.nodes[i].numberOfDistances == 0)
         {
@@ -387,7 +392,7 @@ int proc_numa_init(void)
     }
     for (; i<numa_info.numberOfNodes; i++)
     {
-	int id = nodes[i];
+        int id = nodes[i];
         numa_info.nodes[i].numberOfProcessors = 0;
         numa_info.nodes[i].numberOfDistances = nodeDistanceList(id, numa_info.numberOfNodes, &numa_info.nodes[i].distances);
     }
