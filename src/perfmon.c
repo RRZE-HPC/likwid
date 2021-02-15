@@ -1087,7 +1087,6 @@ perfmon_init_maps(void)
                     perfmon_numArchEvents = perfmon_numArchEventsSkylake;
                     perfmon_numCounters = perfmon_numCountersSkylake;
                     perfmon_numCoreCounters = perfmon_numCoreCountersSkylake;
-                    translate_types = skylake_translate_types;
                     break;
                 case SKYLAKEX:
                     if (cpuid_info.stepping >= 0 && cpuid_info.stepping < 5)
