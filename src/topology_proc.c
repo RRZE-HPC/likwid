@@ -249,18 +249,18 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
                 cpuid_info.model = ownatoi(bdata(subtokens->entry[1]));
                 bstrListDestroy(subtokens);
 #else
-		const_bstring power7str = bformat("POWER7");
-		const_bstring power8str = bformat("POWER8");
-		const_bstring power9str = bformat("POWER9");
-		if (binstr(tokens->entry[i],0, power7str) != BSTR_ERR)
-		{
-			cpuid_info.model = POWER7;
-		}
-		else if (binstr(tokens->entry[i],0, power8str) != BSTR_ERR)
+                const_bstring power7str = bformat("POWER7");
+                const_bstring power8str = bformat("POWER8");
+                const_bstring power9str = bformat("POWER9");
+                if (binstr(tokens->entry[i],0, power7str) != BSTR_ERR)
+                {
+                    cpuid_info.model = POWER7;
+                }
+                else if (binstr(tokens->entry[i],0, power8str) != BSTR_ERR)
                 {
                         cpuid_info.model = POWER8;
                 }
-		else if (binstr(tokens->entry[i],0, power9str) != BSTR_ERR)
+                else if (binstr(tokens->entry[i],0, power9str) != BSTR_ERR)
                 {
                         cpuid_info.model = POWER9;
                 }
@@ -301,6 +301,9 @@ proc_init_cpuInfo(cpu_set_t cpuSet)
         }
         bstrListDestroy(tokens);
         cpuid_topology.numHWThreads = HWthreads;
+        HWthreads = likwid_sysfs_list_len("/sys/devices/system/cpu/present");
+        if (HWthreads > cpuid_topology.numHWThreads)
+            cpuid_topology.numHWThreads = HWthreads;
 #ifdef __x86_64
         snprintf(cpuid_info.architecture, 19, "x86_64");
 #endif
@@ -656,7 +659,33 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         bdestroy(file);
 #ifdef __ARM_ARCH_8A
         if (hwThreadPool[i].packageId == -1)
+        {
             hwThreadPool[i].packageId = 0;
+            for (int j = 0; j < num_sockets*4; j++)
+            {
+                bstring nodestr = bformat("/sys/devices/system/cpu/cpu%d/node%d", i, j);
+                if (!access(bdata(nodestr), F_OK))
+                {
+                    hwThreadPool[i].packageId = j;
+                    int offset = 0;
+                    for (int k = 0; k < i; k++)
+                    {
+                        bstring teststr = bformat("/sys/devices/system/cpu/cpu%d/node%d/cpu%d", i, j, k);
+                        if (!access(bdata(teststr), F_OK))
+                            offset++;
+                        bdestroy(teststr);
+                    }
+                    if (hwThreadPool[i].coreId == -1)
+                        hwThreadPool[i].coreId = offset;
+                    break;
+                }
+                bdestroy(nodestr);
+            }
+        }
+        if (hwThreadPool[i].coreId == -1)
+            hwThreadPool[i].coreId = 0;
+        if (hwThreadPool[i].threadId == -1)
+            hwThreadPool[i].threadId = 0;
 #endif
         DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC Thread Pool PU %d Thread %d Core %d Socket %d inCpuSet %d,
                             hwThreadPool[i].apicId,
@@ -668,7 +697,48 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     }
     cpuid_topology.threadPool = hwThreadPool;
     cpuid_topology.numSockets = num_sockets;
-    cpuid_topology.numCoresPerSocket = num_cores_per_socket;
+    num_sockets = 0;
+    last_socket = -1;
+    int workerSockets[MAX_NUM_NODES];
+    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    {
+        int found = 0;
+        int pid = (int)cpuid_topology.threadPool[i].packageId;
+        for (int j = 0; j < num_sockets; j++)
+        {
+            if (pid == workerSockets[j])
+            {
+                found = 1;
+                break;
+            }
+        }
+        if (!found)
+        {
+            workerSockets[num_sockets] = pid;
+            num_sockets++;
+        }
+    }
+    if (num_sockets > cpuid_topology.numSockets)
+        cpuid_topology.numSockets = num_sockets;
+    for (int i = 0; i < cpuid_topology.numSockets; i++)
+    {
+        int core_count = 0;
+        int max_tid = 0;
+        for (int j = 0; j < cpuid_topology.numHWThreads; j++)
+        {
+            if ((int)cpuid_topology.threadPool[j].packageId == i)
+            {
+                core_count++;
+                if (cpuid_topology.threadPool[j].threadId > max_tid)
+                    max_tid = cpuid_topology.threadPool[j].threadId;
+            }
+        }
+        if (core_count > num_cores_per_socket)
+            num_cores_per_socket = core_count;
+        if ((max_tid+1) > num_threads_per_core)
+            num_threads_per_core = max_tid+1;
+    }
+    cpuid_topology.numCoresPerSocket = num_cores_per_socket/num_threads_per_core;
     cpuid_topology.numThreadsPerCore = num_threads_per_core;
     return;
 }

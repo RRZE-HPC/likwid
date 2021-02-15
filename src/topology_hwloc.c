@@ -237,6 +237,7 @@ void
 hwloc_init_cpuInfo(cpu_set_t cpuSet)
 {
     int i;
+    uint32_t count = 0;
     hwloc_obj_t obj;
     if (perfmon_verbosity <= 1)
     {
@@ -288,7 +289,6 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     if (cpuid_info.family == 0 || cpuid_info.model == 0)
     {
         uint32_t part = 0;
-        uint32_t count = 0;
         parse_cpuinfo(&count, &cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
         parse_cpuname(cpuid_info.osname);
     }
@@ -296,7 +296,6 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
 #endif
 #if defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_8A)
     uint32_t part = 0;
-    uint32_t count = 0;
     parse_cpuinfo(&count, &cpuid_info.family, &cpuid_info.model, &cpuid_info.stepping, &cpuid_info.part, &cpuid_info.vendor);
     parse_cpuname(cpuid_info.osname);
     snprintf(cpuid_info.architecture, 19, "armv8");
@@ -345,6 +344,9 @@ hwloc_init_cpuInfo(cpu_set_t cpuSet)
     if (count > cpuid_topology.numHWThreads)
         cpuid_topology.numHWThreads = count;
 #endif
+    count = likwid_sysfs_list_len("/sys/devices/system/cpu/present");
+    if (count > cpuid_topology.numHWThreads)
+        cpuid_topology.numHWThreads = count;
     if (cpuid_topology.activeHWThreads > cpuid_topology.numHWThreads)
         cpuid_topology.numHWThreads = cpuid_topology.activeHWThreads;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, HWLOC CpuInfo Family %d Model %d Stepping %d Vendor 0x%X Part 0x%X isIntel %d numHWThreads %d activeHWThreads %d,
