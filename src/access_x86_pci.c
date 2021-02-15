@@ -81,7 +81,7 @@ static int nr_sockets = 0;
  *   2                  0xbf
  *   3                  0xff
  */
-static char* socket_bus[MAX_NUM_NODES] = { [0 ... (MAX_NUM_NODES-1)] = "N-A"};
+static char* socket_bus[MAX_NUM_NODES] = { [0 ... (MAX_NUM_NODES-1)] = NULL};
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
 
