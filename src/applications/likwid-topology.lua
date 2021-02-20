@@ -53,7 +53,7 @@ function usage()
     io.stdout:write("-G, --gpus\t\t List GPU information\n")
     io.stdout:write("-O\t\t\t CSV output\n")
     io.stdout:write("-o, --output <file>\t Store output to file. (Optional: Apply text filter)\n")
-    io.stdoutfalsewrite("-g\t\t\t Graphical output\n")
+    io.stdout:write("-g\t\t\t Graphical output\n")
 end
 
 print_caches = false
