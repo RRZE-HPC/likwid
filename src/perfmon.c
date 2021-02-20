@@ -1079,13 +1079,14 @@ perfmon_init_maps(void)
                 case KABYLAKE1:
                 case KABYLAKE2:
                 case CANNONLAKE:
+                case COMETLAKE1:
+                case COMETLAKE2:
                     box_map = skylake_box_map;
                     eventHash = skylake_arch_events;
                     counter_map = skylake_counter_map;
                     perfmon_numArchEvents = perfmon_numArchEventsSkylake;
                     perfmon_numCounters = perfmon_numCountersSkylake;
                     perfmon_numCoreCounters = perfmon_numCoreCountersSkylake;
-                    translate_types = default_translate_types;
                     break;
                 case SKYLAKEX:
                     if (cpuid_info.stepping >= 0 && cpuid_info.stepping < 5)
@@ -1097,6 +1098,7 @@ perfmon_init_maps(void)
                         perfmon_numCounters = perfmon_numCountersSkylakeX;
                         perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
                         translate_types = skylakeX_translate_types;
+                        pci_devices = skylakeX_pci_devices;
                     }
                     else
                     {
@@ -1107,6 +1109,7 @@ perfmon_init_maps(void)
                         perfmon_numCounters = perfmon_numCountersSkylakeX;
                         perfmon_numCoreCounters = perfmon_numCoreCountersSkylakeX;
                         translate_types = skylakeX_translate_types;
+                        pci_devices = skylakeX_pci_devices;
                     }
                     break;
 

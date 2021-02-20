@@ -650,6 +650,38 @@ likwid_cpu_online(int cpu_id)
     return state;
 }
 
+int likwid_sysfs_list_len(char* sysfsfile)
+{
+    int i = 0;
+    int len = 0;
+    FILE* fp;
+    if (NULL != (fp = fopen (sysfsfile, "r")))
+    {
+        bstring src = bread ((bNread) fread, fp);
+        struct bstrList* first = bsplit(src, ',');
+        for (i = 0; i < first->qty; i++)
+        {
+            struct bstrList* second = bsplit(first->entry[i], '-');
+            if (second->qty == 1)
+            {
+                len++;
+            }
+            else
+            {
+                int s = atoi(bdata(second->entry[0]));
+                int e = atoi(bdata(second->entry[1]));
+                len += e - s + 1;
+            }
+            bstrListDestroy(second);
+        }
+        bstrListDestroy(first);
+        bdestroy(src);
+        fclose(fp);
+    }
+    return len;
+}
+
+
 
 int
 topology_setName(void)
@@ -776,6 +808,7 @@ topology_setName(void)
                         cpuid_info.name = cascadelakeX_str;
                         cpuid_info.short_name = short_cascadelakeX;
                     }
+                    cpuid_info.supportUncore = 1;
                     break;
 
                 case KABYLAKE1:
@@ -1257,6 +1290,14 @@ standard_init:
         topology_setName();
         funcs.init_cpuFeatures();
         funcs.init_nodeTopology(cpuSet);
+        int activeCount = 0;
+        for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+        {
+            if (cpuid_topology.threadPool[i].inCpuSet)
+                activeCount++;
+        }
+        if (activeCount > cpuid_topology.activeHWThreads)
+            cpuid_topology.activeHWThreads = activeCount;
         funcs.init_cacheTopology();
         if (cpuid_topology.numCacheLevels == 0)
         {

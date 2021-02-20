@@ -357,6 +357,8 @@ allowed_sandybridge(uint32_t reg)
     if ((allowed_intel(reg)) ||
         (((reg & 0xF00U) == 0x600U)) ||
         (((reg & 0xF00U) == 0x700U)) ||
+        (reg == MSR_MPERF)   ||
+        (reg == MSR_APERF)   ||
         (reg == MSR_PERF_STATUS)  ||
         (reg == MSR_ALT_PEBS))
     {
@@ -1432,7 +1434,7 @@ static int get_devid(int pathlen, char* path)
             {
                 buff[ret] = '\0';
                 ret = sscanf(buff, "%x", &devid);
-                if (ret == 1)
+                if (ret != 1)
                 {
                     devid = -1;
                 }
@@ -1440,7 +1442,7 @@ static int get_devid(int pathlen, char* path)
             fclose(fp);
         }
     }
-    return 0x0;
+    return devid;
 }
 
 static int get_nodeid(int pathlen, char* path)
@@ -1930,9 +1932,9 @@ int main(void)
                          (model == SKYLAKE2) ||
                          (model == KABYLAKE1) ||
                          (model == KABYLAKE2) ||
-                         (model == CANNONLAKE) ||
                          (model == COMETLAKE1) ||
-                         (model == COMETLAKE2))
+                         (model == COMETLAKE2) ||
+                         (model == CANNONLAKE))
                 {
                     allowed = allowed_sandybridge;
                     isClientMem = 1;
