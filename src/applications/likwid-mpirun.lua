@@ -1676,7 +1676,7 @@ local function parseMarkerOutputFile(filename)
                 table.remove(linelist,1)
                 for _, cpustr in pairs(linelist) do
                     if cpustr:match("HWThread %d+") then
-                        local test = tonumber(cpustr:match("Core (%d+)"))
+                        local test = tonumber(cpustr:match("HWThread (%d+)"))
                         if test ~= nil then
                             for _,cpu in pairs(cpulist) do
                                 if test == cpu then test = -1 end
