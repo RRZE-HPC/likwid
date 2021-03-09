@@ -1952,12 +1952,14 @@ lua_likwid_send_signal(lua_State* L)
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
 void
-parse(char *line, char **argv)
+parse(char *line, char **argv, int maxlen)
 {
-     while (*line != '\0') {       /* if not the end of line ....... */
+     int len = 0;
+     while (*line != '\0' && len < maxlen) {       /* if not the end of line ....... */
           if (*line == ' ' || *line == '\t' || *line == '\n' || *line == '|')
                *line++ = '\0';     /* replace white spaces with 0    */
           *argv++ = line;          /* save the argument position     */
+          len++;
           while (*line != '\0' && *line != ' ' &&
                  *line != '\t' && *line != '\n' &&
                  *line != '|')
@@ -2018,7 +2020,7 @@ lua_likwid_startProgram(lua_State* L)
             cpus[nrThreads] = cpuid_topology.threadPool[nrThreads].apicId;
         nrThreads = cpuid_topology.numHWThreads;
     }
-    parse(exec, argv);
+    parse(exec, argv, MAX_NUM_CLIARGS);
     ppid = getpid();
     pid = fork();
     if (pid < 0)
