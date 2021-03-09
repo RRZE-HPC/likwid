@@ -103,6 +103,8 @@ DEBUG = false#NO SPACE
 MAX_NUM_THREADS = 300
 # Maximal number of sockets
 MAX_NUM_NODES = 64
+# Maximal number of CLI parameters
+MAX_NUM_CLIARGS = 16384
 
 # Paths to some configuration files that can be used to overwrite some
 # array lengths defined at compilation

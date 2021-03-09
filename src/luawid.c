@@ -1980,7 +1980,7 @@ lua_likwid_startProgram(lua_State* L)
     pid_t pid, ppid;
     int status;
     char *exec;
-    char *argv[4096];
+    char *argv[MAX_NUM_CLIARGS];
     exec = (char *)luaL_checkstring(L, 1);
     int nrThreads = luaL_checknumber(L,2);
     CpuTopology_t cputopo = get_cpuTopology();
