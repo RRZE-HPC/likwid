@@ -7,6 +7,7 @@
 - Updated group and data file checkers
 - Vector sum benchmark in SVE
 - FP_PIPE group for Fujitsu A64FX
+- Maximal number of CLI arguments configurable in config.mk (currently 16384)
 
 
 # Changelog 5.1.0
