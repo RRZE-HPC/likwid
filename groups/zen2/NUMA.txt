@@ -1,4 +1,4 @@
-SHORT L2 cache bandwidth in MBytes/s (experimental)
+SHORT Local and remote memory accesses (experimental)
 
 EVENTSET
 FIXC1 ACTUAL_CPU_CLOCK
