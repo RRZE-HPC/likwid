@@ -1951,7 +1951,7 @@ lua_likwid_send_signal(lua_State* L)
 
 /* #####   FUNCTION DEFINITIONS  -  EXPORTED FUNCTIONS   ################## */
 
-void
+int
 parse(char *line, char **argv, int maxlen)
 {
      int len = 0;
@@ -1965,6 +1965,9 @@ parse(char *line, char **argv, int maxlen)
                line++;             /* skip the argument until ...    */
      }
      *argv = (char *)'\0';                 /* mark the end of argument list  */
+     if (len < maxlen || *line == '\0')
+         return len;
+     return -1;
 }
 
 /* #####   FUNCTION DEFINITIONS  -  LOCAL TO THIS SOURCE FILE   ########### */
@@ -2019,7 +2022,13 @@ lua_likwid_startProgram(lua_State* L)
             cpus[nrThreads] = cpuid_topology.threadPool[nrThreads].apicId;
         nrThreads = cpuid_topology.numHWThreads;
     }
-    parse(exec, argv, MAX_NUM_CLIARGS);
+    int args = parse(exec, argv, MAX_NUM_CLIARGS);
+    if (args < 0)
+    {
+        lua_pushstring(L,"Number of CLI args greater than configured");
+        lua_error(L);
+        return 0;
+    }
     ppid = getpid();
     pid = fork();
     if (pid < 0)
