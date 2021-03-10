@@ -243,6 +243,7 @@ int perf_fixed_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonE
     attr->type = PERF_TYPE_HARDWARE;
     attr->disabled = 1;
     attr->inherit = 1;
+    attr->read_format = PERF_FORMAT_TOTAL_TIME_ENABLED|PERF_FORMAT_TOTAL_TIME_RUNNING;
     if (translate_types[FIXED] != NULL &&
         strcmp(translate_types[PMC], translate_types[FIXED]) == 0)
     {
@@ -322,6 +323,7 @@ int perf_perf_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEv
     attr->disabled = 1;
     attr->inherit = 1;
     attr->config = event->eventId;
+    attr->read_format = PERF_FORMAT_TOTAL_TIME_ENABLED|PERF_FORMAT_TOTAL_TIME_RUNNING;
     return 0;
 }
 
@@ -336,6 +338,7 @@ int perf_pmc_setup(struct perf_event_attr *attr, RegisterIndex index, PerfmonEve
     attr->exclude_hv = 1;
     attr->disabled = 1;
     attr->inherit = 1;
+    attr->read_format = PERF_FORMAT_TOTAL_TIME_ENABLED|PERF_FORMAT_TOTAL_TIME_RUNNING;
     //attr->exclusive = 1;
 #if defined(__ARM_ARCH_8A) || defined(__ARM_ARCH_7A__)
     if (cpuid_info.vendor == FUJITSU_ARM && cpuid_info.part == FUJITSU_A64FX)
@@ -483,6 +486,7 @@ int perf_uncore_setup(struct perf_event_attr *attr, RegisterType type, PerfmonEv
         return EPERM;
     }
     attr->type = 0;
+    attr->read_format = PERF_FORMAT_TOTAL_TIME_ENABLED|PERF_FORMAT_TOTAL_TIME_RUNNING;
     ret = sprintf(checkfolder, "%s", translate_types[type]);
     if (access(checkfolder, F_OK))
     {
@@ -870,9 +874,16 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
             eventSet->events[i].threadCounter[thread_id].startData = 0x0ULL;
             if (eventSet->events[i].type == POWER)
             {
+                long long tmp[3] = {0};
                 ret = read(cpu_event_fds[cpu_id][index],
-                        &eventSet->events[i].threadCounter[thread_id].startData,
-                        sizeof(long long));
+                        tmp,
+                        3*sizeof(long long));
+                if (tmp[1] != tmp[2])
+                {
+                    double f = ((double)tmp[1]) / tmp[2];
+                    tmp[0] = (long long)(tmp[0] * f);
+                }
+                eventSet->events[i].threadCounter[thread_id].startData = tmp[0];
             }
             VERBOSEPRINTREG(cpu_id, 0x0,
                             eventSet->events[i].threadCounter[thread_id].startData,
@@ -887,7 +898,7 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
 {
     int ret;
     int cpu_id = groupSet->threads[thread_id].processorId;
-    long long tmp = 0;
+    long long tmp[3] = {0};
     if (!perf_event_initialized)
     {
         return -(thread_id+1);
@@ -901,12 +912,17 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                 continue;
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
-            tmp = 0;
-            ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
+            tmp[0] = tmp[1] = tmp[2] = 0;
+            ret = read(cpu_event_fds[cpu_id][index], &tmp, 3*sizeof(long long));
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
-            if (ret == sizeof(long long))
+            if (ret == 3*sizeof(long long))
             {
-                eventSet->events[i].threadCounter[thread_id].counterData = tmp;
+                if (tmp[1] != tmp[2])
+                {
+                    double f = ((double)tmp[1]) / tmp[2];
+                    tmp[0] = (long long)(tmp[0] * f);
+                }
+                eventSet->events[i].threadCounter[thread_id].counterData = tmp[0];
             }
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_RESET, 0);
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, RESET_COUNTER);
@@ -919,7 +935,7 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
 {
     int ret;
     int cpu_id = groupSet->threads[thread_id].processorId;
-    long long tmp = 0;
+    long long tmp[3] = {0};
     if (!perf_event_initialized)
     {
         return -(thread_id+1);
@@ -933,12 +949,17 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                 continue;
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
-            tmp = 0;
-            ret = read(cpu_event_fds[cpu_id][index], &tmp, sizeof(long long));
+            tmp[0] = tmp[1] = tmp[2] = 0;
+            ret = read(cpu_event_fds[cpu_id][index], &tmp, 3*sizeof(long long));
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
-            if (ret == sizeof(long long))
+            if (ret == 3*sizeof(long long))
             {
-                eventSet->events[i].threadCounter[thread_id].counterData = tmp;
+                if (tmp[1] != tmp[2])
+                {
+                    double f = ((double)tmp[1]) / tmp[2];
+                    tmp[0] = (long long)(tmp[0] * f);
+                }
+                eventSet->events[i].threadCounter[thread_id].counterData = tmp[0];
             }
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, UNFREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_ENABLE, 0);
