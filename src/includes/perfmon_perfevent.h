@@ -878,12 +878,20 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
                 ret = read(cpu_event_fds[cpu_id][index],
                         tmp,
                         3*sizeof(long long));
-                if (tmp[1] != tmp[2])
+                VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp[0], START_POWER);
+                if (ret == 3*sizeof(long long))
                 {
-                    double f = ((double)tmp[1]) / tmp[2];
-                    tmp[0] = (long long)(tmp[0] * f);
+                    if (tmp[2] > 0 && tmp[1] != tmp[2])
+                    {
+                        double t0 = (double)tmp[0];
+                        double t1 = (double)tmp[1];
+                        double t2 = (double)tmp[2];
+                        double f = t0 * (t1/t2);
+                        tmp[0] = (long long)f;
+                        VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp[0], SCALE_POWER);
+                    }
+                    eventSet->events[i].threadCounter[thread_id].startData = tmp[0];
                 }
-                eventSet->events[i].threadCounter[thread_id].startData = tmp[0];
             }
             VERBOSEPRINTREG(cpu_id, 0x0,
                             eventSet->events[i].threadCounter[thread_id].startData,
@@ -913,14 +921,18 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
             tmp[0] = tmp[1] = tmp[2] = 0;
-            ret = read(cpu_event_fds[cpu_id][index], &tmp, 3*sizeof(long long));
-            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
+            ret = read(cpu_event_fds[cpu_id][index], tmp, 3*sizeof(long long));
+            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp[0], READ_COUNTER);
             if (ret == 3*sizeof(long long))
             {
-                if (tmp[1] != tmp[2])
+                if (tmp[2] > 0 && tmp[1] != tmp[2])
                 {
-                    double f = ((double)tmp[1]) / tmp[2];
-                    tmp[0] = (long long)(tmp[0] * f);
+                    double t0 = (double)tmp[0];
+                    double t1 = (double)tmp[1];
+                    double t2 = (double)tmp[2];
+                    double f = t0 * (t1/t2);
+                    tmp[0] = (long long)f;
+                    VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp[0], SCALE_COUNTER);
                 }
                 eventSet->events[i].threadCounter[thread_id].counterData = tmp[0];
             }
@@ -950,14 +962,18 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
             VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], 0x0, FREEZE_COUNTER);
             ioctl(cpu_event_fds[cpu_id][index], PERF_EVENT_IOC_DISABLE, 0);
             tmp[0] = tmp[1] = tmp[2] = 0;
-            ret = read(cpu_event_fds[cpu_id][index], &tmp, 3*sizeof(long long));
-            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp, READ_COUNTER);
+            ret = read(cpu_event_fds[cpu_id][index], tmp, 3*sizeof(long long));
+            VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp[0], READ_COUNTER);
             if (ret == 3*sizeof(long long))
             {
-                if (tmp[1] != tmp[2])
+                if (tmp[2] > 0 && tmp[1] != tmp[2])
                 {
-                    double f = ((double)tmp[1]) / tmp[2];
-                    tmp[0] = (long long)(tmp[0] * f);
+                    double t0 = (double)tmp[0];
+                    double t1 = (double)tmp[1];
+                    double t2 = (double)tmp[2];
+                    double f = t0 * (t1/t2);
+                    tmp[0] = (long long)f;
+                    VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], tmp[0], SCALE_COUNTER);
                 }
                 eventSet->events[i].threadCounter[thread_id].counterData = tmp[0];
             }
