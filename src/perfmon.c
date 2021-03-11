@@ -2876,6 +2876,10 @@ perfmon_getMetric(int groupId, int metricId, int threadId)
         }
     }
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
+    if (cpuid_info.isIntel && cpuid_info.model == SKYLAKEX && cpuid_topology.numDies != cpuid_topology.numSockets)
+    {
+        sock_cpu = die_lock[affinity_thread2die_lookup[cpu]];
+    }
     if (cpu != sock_cpu)
     {
         for (e=0; e<groupSet->numberOfThreads; e++)
@@ -2959,6 +2963,10 @@ perfmon_getLastMetric(int groupId, int metricId, int threadId)
         }
     }
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
+    if (cpuid_info.isIntel && cpuid_info.model == SKYLAKEX && cpuid_topology.numDies != cpuid_topology.numSockets)
+    {
+        sock_cpu = die_lock[affinity_thread2die_lookup[cpu]];
+    }
     if (cpu != sock_cpu)
     {
         for (e=0; e<groupSet->numberOfThreads; e++)
@@ -3625,6 +3633,10 @@ perfmon_getMetricOfRegionThread(int region, int metricId, int threadId)
         }
     }
     sock_cpu = socket_lock[affinity_thread2socket_lookup[cpu]];
+    if (cpuid_info.isIntel && cpuid_info.model == SKYLAKEX && cpuid_topology.numDies != cpuid_topology.numSockets)
+    {
+        sock_cpu = die_lock[affinity_thread2die_lookup[cpu]];
+    }
     if (cpu != sock_cpu)
     {
         for (e=0; e<groupSet->numberOfThreads; e++)
