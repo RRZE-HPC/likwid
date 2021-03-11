@@ -57,11 +57,13 @@
 /* #####   EXPORTED VARIABLES   ########################################### */
 
 int *affinity_thread2core_lookup = NULL;
+int *affinity_thread2die_lookup = NULL;
 int *affinity_thread2socket_lookup = NULL;
 int *affinity_thread2numa_lookup = NULL;
 int *affinity_thread2sharedl3_lookup = NULL;
 
 int *socket_lock = NULL;
+int *die_lock = NULL;
 int *core_lock = NULL;
 int *tile_lock = NULL;
 int *numa_lock = NULL;
@@ -200,10 +202,20 @@ static int create_lookups()
         affinity_thread2numa_lookup = malloc(cpuid_topology.numHWThreads * sizeof(int));
         memset(affinity_thread2numa_lookup, -1, cpuid_topology.numHWThreads*sizeof(int));
     }
+    if (!affinity_thread2die_lookup)
+    {
+        affinity_thread2die_lookup = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(affinity_thread2die_lookup, -1, cpuid_topology.numHWThreads*sizeof(int));
+    }
     if (!socket_lock)
     {
         socket_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));
         memset(socket_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));
+    }
+    if (!die_lock)
+    {
+        die_lock = malloc(cpuid_topology.numHWThreads * sizeof(int));
+        memset(die_lock, LOCK_INIT, cpuid_topology.numHWThreads*sizeof(int));
     }
     if (!numa_lock)
     {
@@ -247,11 +259,15 @@ static int create_lookups()
         HWThread* t = &cpuid_topology.threadPool[pu_idx];
         int hwthreadid = t->apicId;
         int coreid = t->coreId;
+        int dieid = t->dieId;
         int sockid = t->packageId;
+        int dies_per_socket = cpuid_topology.numDies/cpuid_topology.numSockets;
         affinity_thread2core_lookup[hwthreadid] = coreid;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2core_lookup[%d] = %d, hwthreadid, coreid);
         affinity_thread2socket_lookup[hwthreadid] = sockid;
         DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2socket_lookup[%d] = %d, hwthreadid, sockid);
+        affinity_thread2die_lookup[hwthreadid] = (sockid * dies_per_socket) + dieid;
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, affinity_thread2die_lookup[%d] = %d, hwthreadid, (sockid * dies_per_socket) + dieid);
         int memid = 0;
         for (int n = 0; n < ntopo->numberOfNodes; n++)
         {
@@ -298,6 +314,7 @@ affinity_init()
     topology_init();
     numa_init();
     int workSockets[MAX_NUM_NODES];
+    int workDies[MAX_NUM_NODES];
     int workNodes[MAX_NUM_NODES];
 
     //create_locks();
@@ -321,6 +338,30 @@ affinity_init()
     }
 
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Socket domains %d, numberOfSocketDomains);
+
+    int numberOfDieDomains = 0;
+    int dies_per_socket = cpuid_topology.numDies/cpuid_topology.numSockets;
+    for (int i = 0; i < cpuid_topology.numDies; i++)
+    {
+        int count = 0;
+        int first = -1;
+        for (int j = 0; j < cpuid_topology.numHWThreads; j++)
+        {
+            int pid = cpuid_topology.threadPool[j].packageId;
+            int did = cpuid_topology.threadPool[j].dieId;
+            if ((pid * dies_per_socket) + did  == i &&
+                cpuid_topology.threadPool[j].inCpuSet == 1)
+            {
+                count++;
+            }
+        }
+        if (count > 0)
+        {
+            workDies[numberOfDieDomains] = i;
+            numberOfDieDomains++;
+        }
+    }
+    DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Die domains %d, numberOfDieDomains);
 
     int numberOfNumaDomains = 0;
     for (int i = 0; i < numa_info.numberOfNodes; i++)
@@ -358,7 +399,7 @@ affinity_init()
         DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: Cache domains %d, numberOfCacheDomains);
     }
     /* determine total number of domains */
-    numberOfDomains += numberOfSocketDomains + numberOfCacheDomains + numberOfNumaDomains;
+    numberOfDomains += numberOfSocketDomains + numberOfCacheDomains + numberOfNumaDomains + numberOfDieDomains;
     DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity: All domains %d, numberOfDomains);
 
     domains = (AffinityDomain*) malloc(numberOfDomains * sizeof(AffinityDomain));
@@ -445,9 +486,57 @@ affinity_init()
                 domains[currentDomain + subCounter].numberOfCores);
         subCounter++;
     }
+    /* Die domain */
+    currentDomain += numberOfSocketDomains;
+    subCounter = 0;
+    offset = 0;
+    int last_package = -1;
+    for (int i=0; i < numberOfDieDomains; i++)
+    {
+        int did = workDies[i];
+        int pid = did / cpuid_topology.numSockets;
+        int did_in_package = did % cpuid_topology.numSockets;
+        int dies_in_package = cpuid_topology.numDies / cpuid_topology.numSockets;
+        int cores_per_die = cpuid_topology.numCoresPerSocket/dies_in_package;
+        int num_threads = 0;
+        if (pid > last_package)
+        {
+            last_package = pid;
+            offset = 0;
+        }
+        domains[currentDomain + subCounter].tag = bformat("D%d", subCounter);
+        for (int j = 0; j < cpuid_topology.numHWThreads; j++)
+        {
+            if (cpuid_topology.threadPool[j].packageId == pid &&
+                cpuid_topology.threadPool[j].dieId == did_in_package &&
+                cpuid_topology.threadPool[j].inCpuSet == 1)
+            {
+                num_threads++;
+            }
+        }
+        domains[currentDomain + subCounter].numberOfProcessors = num_threads;
+        domains[currentDomain + subCounter].numberOfCores = num_threads/cpuid_topology.numThreadsPerCore;
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, Affinity domain D%d: %d HW threads on %d cores, subCounter, domains[currentDomain + subCounter].numberOfProcessors,                domains[currentDomain + subCounter].numberOfCores);
+        domains[currentDomain + subCounter].processorList = (int*) malloc(num_threads*sizeof(int));
+        if (!domains[currentDomain + subCounter].processorList)
+        {
+            fprintf(stderr,"No more memory for %ld bytes for processor list of affinity domain %s\n",
+                    num_threads*sizeof(int),
+                    bdata(domains[currentDomain + subCounter].tag));
+            return;
+        }
+        tmp = treeFillNextEntries(cpuid_topology.topologyTree,
+                                  domains[currentDomain + subCounter].processorList, 0,
+                                  pid, offset, cores_per_die,
+                                  domains[currentDomain + subCounter].numberOfProcessors);
+
+        domains[currentDomain + subCounter].numberOfProcessors = tmp;
+        offset += (tmp < cores_per_die ? tmp : cores_per_die);
+        subCounter++;
+    }
 
     /* Cache domains */
-    currentDomain += numberOfSocketDomains;
+    currentDomain += numberOfDieDomains;
     subCounter = 0;
     for (int i=0; i < numberOfSocketDomains; i++ )
     {
@@ -641,10 +730,20 @@ affinity_finalize()
         free(affinity_thread2numa_lookup);
         affinity_thread2numa_lookup = NULL;
     }
+    if (affinity_thread2die_lookup)
+    {
+        free(affinity_thread2die_lookup);
+        affinity_thread2die_lookup = NULL;
+    }
     if (socket_lock)
     {
         free(socket_lock);
         socket_lock = NULL;
+    }
+    if (die_lock)
+    {
+        free(die_lock);
+        die_lock = NULL;
     }
     if (numa_lock)
     {
