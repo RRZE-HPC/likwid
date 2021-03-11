@@ -1219,6 +1219,12 @@ void topology_setupTree(void)
         }
         currentNode = tree_getNode(cpuid_topology.topologyTree,
                 hwThreadPool[i].packageId);
+        /*if (!tree_nodeExists(currentNode, hwThreadPool[i].dieId))
+        {
+            printf("Insert Die %d at Socket %d\n", hwThreadPool[i].dieId, hwThreadPool[i].packageId);
+            tree_insertNode(currentNode, hwThreadPool[i].dieId);
+        }
+        currentNode = tree_getNode(currentNode, hwThreadPool[i].dieId);*/
         if (!tree_nodeExists(currentNode, hwThreadPool[i].coreId))
         {
             //printf("Insert Core %d at Socket %d\n", hwThreadPool[i].coreId, hwThreadPool[i].packageId);
@@ -1230,7 +1236,7 @@ void topology_setupTree(void)
             /*
                printf("WARNING: Thread already exists!\n");
                */
-            //printf("Insert HWThread %d from Core %d at Socket %d\n", hwThreadPool[i].apicId, hwThreadPool[i].coreId, hwThreadPool[i].packageId);
+            //printf("Insert HWThread %d at Core %d Socket %d\n", hwThreadPool[i].apicId, hwThreadPool[i].coreId, hwThreadPool[i].packageId);
             tree_insertNode(currentNode, hwThreadPool[i].apicId);
         }
 

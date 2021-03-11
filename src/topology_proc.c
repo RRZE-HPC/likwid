@@ -604,6 +604,7 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
     int num_sockets = 0;
     int num_cores_per_socket = 0;
     int num_threads_per_core = 0;
+    int num_cores_per_die = 0;
 
     hwThreadPool = (HWThread*) malloc(cpuid_topology.numHWThreads * sizeof(HWThread));
     for (uint32_t i=0;i<cpuid_topology.numHWThreads;i++)
@@ -613,8 +614,9 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
         hwThreadPool[i].threadId = -1;
         hwThreadPool[i].coreId = -1;
         hwThreadPool[i].packageId = -1;
+        hwThreadPool[i].dieId = -1;
         hwThreadPool[i].inCpuSet = 0;
-        if (CPU_ISSET(i, &cpuSet))
+        if (CPU_ISSET(i, &cpuSet) && likwid_cpu_online(i))
         {
             hwThreadPool[i].inCpuSet = 1;
         }
@@ -640,6 +642,18 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
             if (hwThreadPool[i].packageId == 0)
             {
                 num_cores_per_socket++;
+            }
+            fclose(fp);
+        }
+        bdestroy(file);
+        file = bformat("%s/die_id", bdata(cpudir));
+        if (NULL != (fp = fopen (bdata(file), "r")))
+        {
+            bstring src = bread ((bNread) fread, fp);
+            hwThreadPool[i].dieId = ownatoi(bdata(src));
+            if (hwThreadPool[i].packageId == 0 && hwThreadPool[i].dieId == 0)
+            {
+                num_cores_per_die++;
             }
             fclose(fp);
         }
@@ -686,20 +700,45 @@ proc_init_nodeTopology(cpu_set_t cpuSet)
             hwThreadPool[i].coreId = 0;
         if (hwThreadPool[i].threadId == -1)
             hwThreadPool[i].threadId = 0;
+        if (hwThreadPool[i].dieId == -1)
+            hwThreadPool[i].dieId = 0;
 #endif
-        DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC Thread Pool PU %d Thread %d Core %d Socket %d inCpuSet %d,
+        DEBUG_PRINT(DEBUGLEV_DEVELOP, PROC Thread Pool PU %d Thread %d Core %d Die %d Socket %d inCpuSet %d,
                             hwThreadPool[i].apicId,
                             hwThreadPool[i].threadId,
                             hwThreadPool[i].coreId,
+                            hwThreadPool[i].dieId,
                             hwThreadPool[i].packageId,
                             hwThreadPool[i].inCpuSet)
         bdestroy(cpudir);
     }
     cpuid_topology.threadPool = hwThreadPool;
     cpuid_topology.numSockets = num_sockets;
+    int workerDies[MAX_NUM_NODES];
+    int num_dies = 0;
+    for (int i = 0; i < cpuid_topology.numHWThreads; i++)
+    {
+        int pid = hwThreadPool[i].packageId;
+        int did = hwThreadPool[i].dieId;
+        int found = 0;
+        for (int j = 0; j < num_dies; j++)
+        {
+            if (workerDies[j] == ((pid * cpuid_topology.numSockets) + did))
+            {
+                found = 1;
+                break;
+            }
+        }
+        if (!found)
+        {
+            workerDies[num_dies] = (pid * cpuid_topology.numSockets) + did;
+            num_dies++;
+        }
+    }
+    cpuid_topology.numDies = num_dies;
+    int workerSockets[MAX_NUM_NODES];
     num_sockets = 0;
     last_socket = -1;
-    int workerSockets[MAX_NUM_NODES];
     for (int i = 0; i < cpuid_topology.numHWThreads; i++)
     {
         int found = 0;

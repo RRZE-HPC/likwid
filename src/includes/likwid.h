@@ -330,6 +330,7 @@ typedef struct {
     uint32_t coreId; /*!< \brief ID of CPU core that executes the HW thread */
     uint32_t packageId; /*!< \brief ID of CPU socket containing the HW thread */
     uint32_t apicId; /*!< \brief ID of HW thread retrieved through the Advanced Programmable Interrupt Controller */
+    uint32_t dieId; /*!< \brief ID of die. A package might contain multiple dies */
     uint32_t inCpuSet; /*!< \brief Flag if HW thread is inside the CPUset */
 } HWThread;
 
@@ -371,6 +372,7 @@ typedef struct {
     uint32_t numHWThreads; /*!< \brief Amount of active HW threads in the system (e.g. in cpuset) */
     uint32_t activeHWThreads; /*!< \brief Amount of HW threads in the system and length of \a threadPool */
     uint32_t numSockets; /*!< \brief Amount of CPU sockets/packages in the system */
+    uint32_t numDies; /*!< \brief Amount of CPU dies in the system */
     uint32_t numCoresPerSocket; /*!< \brief Amount of physical cores in one CPU socket/package */
     uint32_t numThreadsPerCore; /*!< \brief Amount of HW threads in one physical CPU core */
     uint32_t numCacheLevels; /*!< \brief Amount of caches for each HW thread and length of \a cacheLevels */
