@@ -970,7 +970,6 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
 {
     int ret;
     int cpu_id = groupSet->threads[thread_id].processorId;
-    long long tmp[3] = {0};
     if (!perf_event_initialized)
     {
         return -(thread_id+1);
