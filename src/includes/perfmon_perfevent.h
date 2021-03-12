@@ -56,6 +56,7 @@ static int running_group = -1;
 static int perf_event_num_cpus = 0;
 static int perf_disable_uncore = 0;
 static int perf_event_paranoid = -1;
+static int printed_multiplex_info = 0;
 
 static long
 perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
@@ -894,6 +895,11 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
                         value *= (enabled/running);
                         res.value = (uint64_t)value;
                         VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, SCALE_POWER);
+                        if (printed_multiplex_info == 0)
+                        {
+                            fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.");
+                            printed_multiplex_info = 1;
+                        }
                     }
                     eventSet->events[i].threadCounter[thread_id].startData = res.value;
                 }
@@ -941,6 +947,11 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                     value *= (enabled/running);
                     res.value = (uint64_t)value;
                     VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, SCALE_COUNTER);
+                    if (printed_multiplex_info == 0)
+                    {
+                        fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.");
+                        printed_multiplex_info = 1;
+                    }
                 }
                 eventSet->events[i].threadCounter[thread_id].counterData = res.value;
             }
@@ -986,6 +997,11 @@ int perfmon_readCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                     value *= (enabled/running);
                     res.value = (uint64_t)value;
                     VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, SCALE_COUNTER);
+                    if (printed_multiplex_info == 0)
+                    {
+                        fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.");
+                        printed_multiplex_info = 1;
+                    }
                 }
                 eventSet->events[i].threadCounter[thread_id].counterData = res.value;
             }
