@@ -1,10 +1,9 @@
 /*
  * =======================================================================================
  *
- *      Filename:  topology_cavtx2.h
+ *      Filename:  topology_static.h
  *
- *      Description:  Header File for hardcoded cache information for Marvell/Cavium
- *                    Thunder X2.
+ *      Description:  Header File for hardcoded cache information
  *
  *      Version:   <VERSION>
  *      Released:  <DATE>
@@ -29,8 +28,8 @@
  * =======================================================================================
  */
 
-#ifndef TOPOLOGY_CAVTX2_H
-#define TOPOLOGY_CAVTX2_H
+#ifndef TOPOLOGY_STATIC_H
+#define TOPOLOGY_STATIC_H
 
 CacheLevel caviumTX2_caches[3] = {
     {1, DATACACHE, 32, 4, 64, 32768, 2, 1},
@@ -38,7 +37,10 @@ CacheLevel caviumTX2_caches[3] = {
     {3, DATACACHE, 0, 8, 64, 29360128, 112, 1},
 };
 
-
+CacheLevel a64fx_caches[2] = {
+    {1, DATACACHE, 4, 64, 256, 65536, 1, 1},
+    {1, DATACACHE, 16, 2048, 256, 8388608, 12, 1},
+};
 
 
 #endif
