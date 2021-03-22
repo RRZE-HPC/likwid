@@ -44,6 +44,7 @@ BuildRequires: liblua5_1 lua5_1-devel
 %endif
 %endif
 BuildRequires: perl
+BuildRequires: perl-Data-Dumper
 
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
