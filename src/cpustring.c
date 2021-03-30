@@ -65,16 +65,27 @@ cpulist_sort(int* incpus, int* outcpus, int length)
     {
         return -1;
     }
-    int inner_loop = ceil((double)length/cpuid_topology->numThreadsPerCore);
-    for (int off = 0; off < cpuid_topology->numThreadsPerCore; off++)
+    for (int k = 0; k < cpuid_topology->numThreadsPerCore; k++)
     {
-        for (int i = 0; i < inner_loop; i++)
+        for (int i = 0; i < length; i++)
         {
-            outcpus[insert] = incpus[(i*cpuid_topology->numThreadsPerCore)+off];
-            insert++;
+            int idx = -1;
+            for (int j = 0; j < cpuid_topology->numHWThreads; j++)
+            {
+                if (cpuid_topology->threadPool[j].apicId == incpus[i])
+                {
+                    idx = j;
+                    break;
+                }
+            }
+            if (idx >= 0 && cpuid_topology->threadPool[idx].threadId == k)
+            {
+                outcpus[insert] = incpus[i];
+                insert++;
+            }
+            if (insert == length) break;
         }
-        if (insert == length)
-            break;
+        if (insert == length) break;
     }
     return insert;
 }
