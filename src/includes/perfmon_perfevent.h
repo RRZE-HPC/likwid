@@ -879,7 +879,7 @@ int perfmon_startCountersThread_perfevent(int thread_id, PerfmonEventSet* eventS
                         VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, SCALE_POWER);
                         if (printed_multiplex_info == 0)
                         {
-                            fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.");
+                            fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.\n");
                             printed_multiplex_info = 1;
                         }
                     }
@@ -931,7 +931,7 @@ int perfmon_stopCountersThread_perfevent(int thread_id, PerfmonEventSet* eventSe
                     VERBOSEPRINTREG(cpu_id, cpu_event_fds[cpu_id][index], res.value, SCALE_COUNTER);
                     if (printed_multiplex_info == 0)
                     {
-                        fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.");
+                        fprintf(stderr, "WARN: Perf_event uses multiplexing. Raw event results are scaled to an estimated value.\n");
                         printed_multiplex_info = 1;
                     }
                 }
