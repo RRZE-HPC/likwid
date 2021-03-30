@@ -1,0 +1,36 @@
+SHORT L2 cache bandwidth in MBytes/s (experimental)
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  DATA_CACHE_REFILLS_LOCAL_ALL
+PMC1  DATA_CACHE_REFILLS_REMOTE_ALL
+PMC2  HWPREF_DATA_CACHE_FILLS_LOCAL_ALL
+PMC3  HWPREF_DATA_CACHE_FILLS_REMOTE_ALL
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI  PMC1/PMC0
+Local bandwidth [MBytes/s]  1.0E-06*(PMC0+PMC2)*64.0/time
+Local data volume [GBytes]  1.0E-09*(PMC0+PMC2)*64.0
+Remote bandwidth [MBytes/s]  1.0E-06*(PMC1+PMC3)*64.0/time
+Remote data volume [GBytes]  1.0E-09*(PMC1+PMC3)*64.0
+Total bandwidth [MBytes/s] 1.0E-06*(PMC0+PMC2+PMC1+PMC3)*64.0/time
+Total data volume [GBytes] 1.0E-09*(PMC0+PMC2+PMC1+PMC3)*64.0
+
+LONG
+Formulas:
+Local bandwidth [MBytes/s] = 1.0E-06*(DATA_CACHE_REFILLS_LOCAL_ALL+HWPREF_DATA_CACHE_FILLS_LOCAL_ALL)*64.0/time
+Local data volume [GBytes] = 1.0E-09*(DATA_CACHE_REFILLS_LOCAL_ALL+HWPREF_DATA_CACHE_FILLS_LOCAL_ALL)*64.0
+Remote bandwidth [MBytes/s] = 1.0E-06*(DATA_CACHE_REFILLS_REMOTE_ALL+HWPREF_DATA_CACHE_FILLS_REMOTE_ALL)*64.0/time
+Remote data volume [GBytes] = 1.0E-09*(DATA_CACHE_REFILLS_REMOTE_ALL+HWPREF_DATA_CACHE_FILLS_REMOTE_ALL)*64.0
+Total bandwidth [MBytes/s] = 1.0E-06*(DATA_CACHE_REFILLS_LOCAL_ALL+HWPREF_DATA_CACHE_FILLS_LOCAL_ALL+DATA_CACHE_REFILLS_REMOTE_ALL+HWPREF_DATA_CACHE_FILLS_REMOTE_ALL)*64.0/time
+Total data volume [GBytes] = 1.0E-09*(DATA_CACHE_REFILLS_LOCAL_ALL+HWPREF_DATA_CACHE_FILLS_LOCAL_ALL+
+DATA_CACHE_REFILLS_REMOTE_ALL+HWPREF_DATA_CACHE_FILLS_REMOTE_ALL)*64.0
+-
+Profiling group to measure NUMA traffic. The data sources range from
+local L2, CCX and memory for the local metrics and remote CCX and memory
+for the remote metrics. There are also events that measure the software
+prefetches from local and remote domain but AMD Zen provides only 4 counters.

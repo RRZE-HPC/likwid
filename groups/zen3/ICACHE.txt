@@ -1,0 +1,28 @@
+SHORT Instruction cache miss rate/ratio
+
+EVENTSET
+FIXC1 ACTUAL_CPU_CLOCK
+FIXC2 MAX_CPU_CLOCK
+PMC0  RETIRED_INSTRUCTIONS
+PMC1  ICACHE_FETCHES
+PMC2  ICACHE_L2_REFILLS
+PMC3  ICACHE_SYSTEM_REFILLS
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s]   FIXC1*inverseClock
+Clock [MHz]  1.E-06*(FIXC1/FIXC2)/inverseClock
+CPI   FIXC1/PMC0
+L1I request rate   PMC1/PMC0
+L1I miss rate    (PMC2+PMC3)/PMC0
+L1I miss ratio   (PMC2+PMC3)/PMC1
+
+LONG
+Formulas:
+L1I request rate = ICACHE_FETCHES / RETIRED_INSTRUCTIONS
+L1I miss rate = (ICACHE_L2_REFILLS + ICACHE_SYSTEM_REFILLS)/RETIRED_INSTRUCTIONS
+L1I miss ratio = (ICACHE_L2_REFILLS + ICACHE_SYSTEM_REFILLS)/ICACHE_FETCHES
+-
+This group measures the locality of your instruction code with regard to the
+L1 I-Cache.
+
