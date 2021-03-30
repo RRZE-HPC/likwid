@@ -275,7 +275,7 @@ if num_threads > 1 then
         likwid.setenv("LD_PRELOAD",likwid.pinlibpath .. ":" .. preload)
     end
     local ldpath = os.getenv("LD_LIBRARY_PATH")
-    local libpath = likwid.pinlibpath:match("([/%g]+)/%g+.so")
+    local libpath = likwid.pinlibpath:match("([^%s]+)/[^%s]+.so")
     if ldpath == nil then
         likwid.setenv("LD_LIBRARY_PATH", libpath)
     elseif libpath and not ldpath:match(libpath) then

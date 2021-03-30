@@ -1543,7 +1543,7 @@ local function parseOutputFile(filename)
         print_stderr("ERROR: Cannot open output file "..filename)
         os.exit(1)
     end
-    rank, host = filename:match("output_%d+_(%d+)_(%g+).csv")
+    rank, host = filename:match("output_%d+_(%d+)_([^%s]+).csv")
 
     local t = f:read("*all")
     f:close()
@@ -1631,7 +1631,7 @@ local function parseMarkerOutputFile(filename)
         print_stderr("ERROR: Cannot open output file "..filename)
         os.exit(1)
     end
-    rank, host = filename:match("output_%d+_(%d+)_(%g+).csv")
+    rank, host = filename:match("output_%d+_(%d+)_([^%s]+).csv")
     local t = f:read("*all")
     f:close()
     local parse_reg_info = false
@@ -1658,8 +1658,8 @@ local function parseMarkerOutputFile(filename)
             elseif line:match("^CPU clock:,") then
                 clock = line:match("^CPU clock:,([%d.]+)")
                 clock = tonumber(clock)*1.E09
-            elseif parse_reg_info and line:match("TABLE,Region (%g+),Group (%d+) Raw,(%g+),") then
-                current_region, gidx, gname  = line:match("TABLE,Region (%g+),Group (%d+) Raw,(%g+),")
+            elseif parse_reg_info and line:match("TABLE,Region ([^%s]+),Group (%d+) Raw,([^%s]+),") then
+                current_region, gidx, gname  = line:match("TABLE,Region ([^%s]+),Group (%d+) Raw,([^%s]+),")
                 gidx = tonumber(gidx)
                 if results[current_region] == nil then
                     results[current_region] = {}
