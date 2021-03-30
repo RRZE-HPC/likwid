@@ -142,7 +142,7 @@ function get_base_freq()
         freq = tonumber(out)
         f:close()
     end
-    return freq*1E6
+    return freq*1E3
 end
 
 verbosity = 0
