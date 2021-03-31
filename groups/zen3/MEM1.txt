@@ -1,4 +1,4 @@
-SHORT Main memory bandwidth in MBytes/s (channels 4-7)
+SHORT Main memory bandwidth in MBytes/s (channels 0-3)
 
 EVENTSET
 FIXC1 ACTUAL_CPU_CLOCK
