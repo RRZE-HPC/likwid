@@ -7,13 +7,13 @@
  *      Description:  An application to get information about power
  *      consumption on architectures implementing the RAPL interface.
  *
- *      Version:   5.1.0
- *      Released:  20.11.2020
+ *      Version:   5.1.1
+ *      Released:  31.03.2021
  *
  *      Author:   Thomas Gruber (tr), thomas.roehl@gmail.com
  *      Project:  likwid
  *
- *      Copyright (C) 2020 RRZE, University Erlangen-Nuremberg
+ *      Copyright (C) 2021 RRZE, University Erlangen-Nuremberg
  *
  *      This program is free software: you can redistribute it and/or modify it under
  *      the terms of the GNU General Public License as published by the Free Software
