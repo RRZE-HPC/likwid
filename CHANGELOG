@@ -8,6 +8,12 @@
 - Vector sum benchmark in SVE
 - FP_PIPE group for Fujitsu A64FX
 - Maximal number of CLI arguments configurable in config.mk (currently 16384)
+- Fix for cpulist_sort function
+- Fix for Intel SkylakeSP/CascadelakeSP CBOX devices in perf_event mode
+- Multiplexing-Fix for perf_event (with warning)
+- Adjust CUDA function pointer names in topology_gpu to avoid name clashes
+- Fix for Lua 5.1
+- Fix for likwid-setFrequency when reading CPU base frequency
 
 
 # Changelog 5.1.0
