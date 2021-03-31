@@ -1,0 +1,40 @@
+SHORT L2 cache miss rate/ratio (experimental)
+
+EVENTSET
+PMC0  REQUESTS_TO_L2_GRP1_ALL_NO_PF
+PMC1  L2_PF_HIT_IN_L2
+PMC2  L2_PF_HIT_IN_L3
+PMC3  L2_PF_MISS_IN_L3
+PMC4  CORE_TO_L2_CACHE_REQUESTS_HITS
+PMC5  RETIRED_INSTRUCTIONS
+
+METRICS
+Runtime (RDTSC) [s] time
+Runtime unhalted [s] FIXC1*inverseClock
+L2 request rate (PMC0+PMC1+PMC2+PMC3)/PMC5
+L2 miss rate ((PMC0+PMC1+PMC2+PMC3)-(PMC4+PMC1))/PMC5
+L2 miss ratio ((PMC0+PMC1+PMC2+PMC3)-(PMC4+PMC1))/(PMC0+PMC1+PMC2+PMC3)
+L2 accesses (PMC0+PMC1+PMC2+PMC3)
+L2 hits (PMC4+PMC1)
+L2 misses (PMC0+PMC1+PMC2+PMC3)-(PMC4+PMC1)
+
+LONG
+Formulas:
+L2 request rate = (REQUESTS_TO_L2_GRP1_ALL_NO_PF+L2_PF_HIT_IN_L2+L2_PF_HIT_IN_L3+L2_PF_MISS_IN_L3)/RETIRED_INSTRUCTIONS
+L2 miss rate = ((REQUESTS_TO_L2_GRP1_ALL_NO_PF+L2_PF_HIT_IN_L2+L2_PF_HIT_IN_L3+L2_PF_MISS_IN_L3)-(CORE_TO_L2_CACHE_REQUESTS_HITS+L2_PF_HIT_IN_L2))/INSTR_RETIRED_ANY
+L2 miss ratio = ((REQUESTS_TO_L2_GRP1_ALL_NO_PF+L2_PF_HIT_IN_L2+L2_PF_HIT_IN_L3+L2_PF_MISS_IN_L3)-(CORE_TO_L2_CACHE_REQUESTS_HITS+L2_PF_HIT_IN_L2))/(REQUESTS_TO_L2_GRP1_ALL_NO_PF+L2_PF_HIT_IN_L2+L2_PF_HIT_IN_L3+L2_PF_MISS_IN_L3)
+L2 accesses = (REQUESTS_TO_L2_GRP1_ALL_NO_PF+L2_PF_HIT_IN_L2+L2_PF_HIT_IN_L3+L2_PF_MISS_IN_L3)
+L2 hits = CORE_TO_L2_CACHE_REQUESTS_HITS+L2_PF_HIT_IN_L2
+L2 misses = (REQUESTS_TO_L2_GRP1_ALL_NO_PF+L2_PF_HIT_IN_L2+L2_PF_HIT_IN_L3+L2_PF_MISS_IN_L3)-(CORE_TO_L2_CACHE_REQUESTS_HITS+L2_PF_HIT_IN_L2)
+-
+This group measures the locality of your data accesses with regard to the
+L2 cache. L2 request rate tells you how data intensive your code is
+or how many data accesses you have on average per instruction.
+The L2 miss rate gives a measure how often it was necessary to get
+cache lines from memory. And finally L2 miss ratio tells you how many of your
+memory references required a cache line to be loaded from a higher level.
+While the# data cache miss rate might be given by your algorithm you should
+try to get data cache miss ratio as low as possible by increasing your cache reuse.
+
+
+
