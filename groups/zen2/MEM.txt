@@ -5,8 +5,8 @@ FIXC1 ACTUAL_CPU_CLOCK
 FIXC2 MAX_CPU_CLOCK
 PMC0  RETIRED_INSTRUCTIONS
 PMC1  CPU_CLOCKS_UNHALTED
-DFC0  DATA_FROM_LOCAL_DRAM_CHANNEL
-DFC1  DATA_TO_LOCAL_DRAM_CHANNEL
+DFC0  DRAM_CHANNEL_0
+DFC1  DRAM_CHANNEL_1
 
 METRICS
 Runtime (RDTSC) [s] time
@@ -18,8 +18,8 @@ Memory data volume [GBytes] 1.0E-09*(DFC0+DFC1)*(4.0/num_numadomains)*64.0
 
 LONG
 Formulas:
-Memory bandwidth [MBytes/s] = 4.0E-06*(DATA_FROM_LOCAL_DRAM_CHANNEL+DATA_TO_LOCAL_DRAM_CHANNEL)*(4.0/num_numadomains)*64.0/runtime
-Memory data volume [GBytes] = 4.0E-09*(DATA_FROM_LOCAL_DRAM_CHANNEL+DATA_TO_LOCAL_DRAM_CHANNEL)*(4.0/num_numadomains)*64.0
+Memory bandwidth [MBytes/s] = 4.0E-06*(DRAM_CHANNEL_0+DRAM_CHANNEL_1)*(4.0/num_numadomains)*64.0/runtime
+Memory data volume [GBytes] = 4.0E-09*(DRAM_CHANNEL_0+DRAM_CHANNEL_1)*(4.0/num_numadomains)*64.0
 -
 Profiling group to measure memory bandwidth drawn by all cores of a socket.
 Since this group is based on Uncore events it is only possible to measure on a
@@ -29,7 +29,3 @@ and data volume.
 The metric formulas contain a correction factor of (4.0/num_numadomains) to
 return the value for all 4 memory controllers in NPS1 mode. This is probably
 a work-around. Requested info from AMD but no answer.
-
-Be aware that despite the events imply a traffic direction (FROM and TO), the events
-cannot be used to differentiate between read and write traffic. The events will be
-renamed to avoid that confusion in the future.
