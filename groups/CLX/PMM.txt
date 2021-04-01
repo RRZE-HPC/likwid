@@ -1,4 +1,4 @@
-SHORT Intel Optance DC bandwidth in MBytes/s
+SHORT Intel Optane DC bandwidth in MBytes/s
 
 EVENTSET
 FIXC0 INSTR_RETIRED_ANY
