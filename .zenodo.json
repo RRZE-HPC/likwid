@@ -4,20 +4,20 @@
   "creators": [
     {
       "affiliation": "Reginales Rechenzentrum Erlangen, Friedrich-Alexander-Universität Erlangen-Nürnberg",
-      "name": "Thomas Gruber",
+      "name": "Thomas Gruber"
     },
     {
       "affiliation": "Reginales Rechenzentrum Erlangen, Friedrich-Alexander-Universität Erlangen-Nürnberg",
-      "name": "Jan Eitzinger",
+      "name": "Jan Eitzinger"
     },
     {
       "affiliation": "Reginales Rechenzentrum Erlangen, Friedrich-Alexander-Universität Erlangen-Nürnberg",
       "name": "Georg Hager",
-      "orcid": "0000-0002-8723-2781",
+      "orcid": "0000-0002-8723-2781"
     },
     {
       "affiliation": "Reginales Rechenzentrum Erlangen, Friedrich-Alexander-Universität Erlangen-Nürnberg",
-      "name": "Gerhard Wellein",
+      "name": "Gerhard Wellein"
     }
   ],
   "upload_type": "software",
@@ -27,7 +27,7 @@
     "performance-engineering",
     "performance-monitoring",
     "performance-analysis",
-    "open-source",
+    "open-source"
   ],
   "notes": "This research has been partially funded by grants: BMBF 01IH13009 and BMBF 01IH16012C",
   "communities": [
