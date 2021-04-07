@@ -47,7 +47,7 @@ include $(MAKE_DIR)/config_git.mk
 include $(MAKE_DIR)/config_checks.mk
 include $(MAKE_DIR)/config_defines.mk
 
-INCLUDES  += -I./src/includes -I$(LUA_INCLUDE_DIR) -I$(HWLOC_FOLDER)/include -I$(BUILD_DIR)
+INCLUDES  += -I./src/includes -I$(LUA_INCLUDE_DIR) -I$(HWLOC_INCLUDE_DIR) -I$(BUILD_DIR)
 LIBS      += -ldl
 
 ifeq ($(LUA_INTERNAL),false)
@@ -262,10 +262,15 @@ $(TARGET_GOTCHA_LIB):
 	@echo "===>  ENTER  $(GOTCHA_FOLDER)"
 	$(Q)$(MAKE) --no-print-directory -C $(GOTCHA_FOLDER) $(MAKECMDGOALS)
 
-
+ifeq ($(USE_HWLOC_INTERNAL),true)
 $(TARGET_HWLOC_LIB):
 	@echo "===>  ENTER  $(HWLOC_FOLDER)"
 	$(Q)$(MAKE) --no-print-directory -C $(HWLOC_FOLDER) $(MAKECMDGOALS)
+else
+$(TARGET_HWLOC_LIB):
+	@echo "===>  EXTERNAL HWLOC"
+endif
+
 
 $(BENCH_TARGET):
 	@echo "===>  ENTER  $(BENCH_FOLDER)"
@@ -327,9 +332,9 @@ distclean: $(TARGET_LUA_LIB) $(TARGET_HWLOC_LIB) $(TARGET_GOTCHA_LIB) $(BENCH_TA
 	@rm -f $(FORTRAN_IF_NAME)
 	@rm -f $(FREQ_TARGET) $(DAEMON_TARGET) $(APPDAEMON_TARGET)
 	@rm -rf $(BUILD_DIR)
-	@rm -rf $(TARGET_LUA_LIB).* $(shell basename $(TARGET_LUA_LIB)).*
-	@rm -rf $(TARGET_HWLOC_LIB).* $(shell basename $(TARGET_HWLOC_LIB)).*
-	@rm -rf $(TARGET_GOTCHA_LIB).* $(shell basename $(TARGET_GOTCHA_LIB)).*
+	@if [ "$(LUA_INTERNAL)" = "true" ]; then rm -f $(TARGET_LUA_LIB).* $(shell basename $(TARGET_LUA_LIB)).*; fi
+	@if [ "$(USE_INTERNAL_HWLOC)" = "true" ]; then rm -f $(TARGET_HWLOC_LIB).* $(shell basename $(TARGET_HWLOC_LIB)).*; fi
+	@rm -f $(TARGET_GOTCHA_LIB).* $(shell basename $(TARGET_GOTCHA_LIB)).*
 	@rm -f $(GENGROUPLOCK)
 	@rm -f likwid-config.cmake
 	@rm -rf doc/html
